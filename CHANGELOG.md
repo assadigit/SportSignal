@@ -6,6 +6,48 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.2-topclash] — 2026-09-10 (v12.1 regression hotfix)
+
+Two user-reported regressions of the 12.1 future-plan release, fixed live.
+
+- **"Virtually every match badged 🔥 صدر جدول" fixed**: 12.1 flagged ANY
+  fixture involving a top-3 side — with 6 leagues × 3 sides that stamped the
+  badge on 41 of 50 upcoming cards (live evidence) and flooded the default
+  big-only view. The concepts are now split: a top-3 side's fixtures still
+  JOIN the schedule (the original inclusion ask, e.g. an unselected
+  Newcastle), but the badge, the "🔥 رقابت‌های صدر جدول" section and the
+  big-view filter are reserved for genuine top-of-the-table clashes — BOTH
+  sides inside the top 3 (e.g. Roma 1st vs Inter 2nd). Single-top fixtures
+  render as regular league games.
+- **Next-big-match box back on top**: the UCL spot card ("🔥 مسابقه بزرگ
+  بعدی لیگ قهرمانان اروپا") sat BELOW the games list; the badge flood
+  buried it between the upcoming sections and the UCL card. The card now
+  renders above the games list (static HTML reorder) — it is the headline
+  fixture of the page, games follow it. The renderSpecial fallback (no big
+  match inside the month window) still pins the nearest big match on top of
+  the list.
+- **Duplicate match cards fixed** (amplified the flood — 10 pairings showed
+  twice): providers report the same fixture with kickoffs ~a day apart (FD
+  day-N evening vs TSP day-N+1 default slot, 19–31h observed). The dedupe
+  key carried the UTC date, so both copies survived. `canonDedupe`
+  (`src/dedupe.js`) gains a pairing-proximity pass: same competition +
+  same ordered pairing within 48h collapses to one row, keeping the earlier
+  kickoff (the authoritative slot in every observed pair) and adopting
+  venue/crests from the dropped copy; identical non-empty ids (the same
+  provider fixture drifted/rescheduled — observed 53h apart) merge
+  regardless of distance with the fresher copy winning. The near-scan pool
+  (`fetchMatchesFromAPI`) is deduped before notifications too, killing the
+  double "match started" risk. Real distinct meetings of the same ordered
+  pairing are weeks apart, so the window cannot over-merge.
+  `scripts/check-dedupe.js` gains 9 assertions covering the new passes.
+- Live result: KV pool 811 → 710 matches, 101 → 0 duplicate pairings; the
+  public page serves 42 unique cards with exactly 2 صدر جدول badges
+  (Paris FC–Lyon, Roma–Inter) and a 3-card big view.
+- `src/dedupe.js` normalized CRLF→LF (worker.ts was already LF; mixed
+  endings broke exact-match edits).
+
+---
+
 ## [12.1-futureplan] — 2026-09-10 (برنامه آتی — future-plan fixes)
 
 User-reported product fixes, tagged `Future-plan fix` / `Future-plan ask` in source.
