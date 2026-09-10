@@ -6,6 +6,41 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.9-weeklytables] — 2026-09-14 (end-of-week league tables in Telegram + /tables + admin force-send)
+
+User ask: "I want telegram bot to show the table fixtures of selected leagues
+at the end of the week; to test this, send league tables to bot now."
+
+- **Weekly digest**: every Monday 01:30–06:00 Tehran (after the last European
+  Sunday kickoff — La Liga's late slot ends ~01:20 Tehran), the cron delivers
+  one Telegram message per selected league with its full table. Once per ISO
+  week (`weekly_tables_v1` KV flag); the flag is set only when something was
+  delivered, so an API outage / subrequest-capped run retries on the next
+  10-min tick (standings are KV-cached by then) — the digest is never lost.
+- **Selected leagues** = admin-settings leagues (`CONFIG.LEAGUES` after
+  applySettings — currently CL, PL, PD, SA, FL1) + PGL (the Iranian league the
+  user curated onto the site's standings grid). Adding BL1/AL in settings
+  automatically joins them to the digest. Not-started tables (A-League
+  pre-season) are skipped; CL's 36-team Swiss table is capped to the top 10.
+- **Message format**: MarkdownV2, Persian digits, sequential rank renumbering
+  (providers return tied positions — two teams on pos 6 — which reads like a
+  data bug in chat), leader bolded, ⭐ marks the user's selected teams
+  (normAlias-matched), footer points at football.sportsignal.ir.
+- **On demand**: new `/tables` (also `/جدول`) bot command sends the same
+  digest immediately to the requesting chat; new admin action
+  `GET /send-tables` (Bearer ADMIN_TOKEN or admin session cookie) force-sends
+  to every registered chat for testing — it does NOT consume the weekly slot.
+- `/help` and the `/start` welcome now document `/tables`.
+- **Data check (user: "check the showing leagues results")**: pulled every
+  `standings_cache_*` from live KV — Hull City in the PL top 3 is NOT
+  corruption: Hull appears in the 2026-27 PL fixtures (Chelsea–Hull 12 Sep,
+  Newcastle–Hull 19 Sep), i.e. a promoted side in form. Duplicate `pos` values
+  are the provider's tie convention (fixed for chat by renumbering; the site
+  grid keeps provider positions).
+- Version 12.9-weeklytables; ver strings fa/en × 3 page dicts; package 12.9.0.
+
+---
+
 ## [12.8-bigmatch] — 2026-09-14 (big-match LOGIC — true big matches only, closest on top, countdown follows slot 1)
 
 User ask, paraphrased: "in مسابقات بزرگ پیش‌رو I see Liverpool vs Fulham which is
