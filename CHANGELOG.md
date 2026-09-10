@@ -6,6 +6,29 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.6-hazfi] — 2026-09-10 (جام حذفی ایران joins the cups card)
+
+User ask, verbatim: "add جام حذفی ایران to this box [the 🏆 جام‌های حذفی card]".
+
+- **Hazfi box lives in the cups grid now** (an 🇮🇷 ایران country group after
+  انگلستان/اسپانیا/ایتالیا, same pattern as the other domestic cups):
+  HAZFI_CUP joins cupOrder + countryOf("IR"), the client renders a 4th country
+  group, and the fa/en dicts gain cIR. Emblem (leagues/719.png) and the Persian
+  name (جام حذفی ایران) reuse the existing assets the retired Iran card used.
+- **Real fixture source wired — sportscore `iran-cup`**: slug verified live
+  against the fixtures API (2026-01-13: Foolad Hormozgan 0-2 Esteghlal Tehran,
+  Shams Azar Qazvin 3-0 Tractor S.C. — genuine Hazfi 1404 results). The long-view
+  cup day-sweep (10-day lookahead, stops at each cup's first fixture) now
+  includes it, so the box fills itself the moment the 1405 R1 draw publishes;
+  until then it shows the same honest "برنامه‌ای هنوز اعلام نشده" as the FA Cup
+  and Copa del Rey boxes (the new season genuinely hasn't been drawn).
+- **Display-only by design**: HAZFI_CUP is NOT added to DOMESTIC_CUP_IDS nor the
+  near-scan slug filter — Hazfi matches never notify, never join the
+  upcoming/finished lists, and the cron subrequest budget stays flat; the only
+  extra cost is the long-view cup sweep (4 → 5 cups, worst case +10 day-calls
+  while the cup is empty, mirroring the existing FA/CDR pattern).
+- Version 12.6-hazfi; ver strings fa/en × 3 page dicts.
+
 ## [12.5-iranres] — 2026-09-10 (Iran table joins the league grid + Recent Results carries the week)
 
 Two user asks, verbatim: "move iranian league to other leagues [the standings grid] ...
