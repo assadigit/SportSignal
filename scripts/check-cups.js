@@ -27,20 +27,29 @@ const LEAGUE_LOGOS = {};
 globalThis.pubMatch = (m) => m;
 globalThis.compact = (st) => (st && st.teams && st.teams.length ? st : null);
 globalThis.translateTeam = (n) => n;
+// Future-plan fix: the UCL spot block now filters for a featured (big) pairing
+// before falling back to the next fixture — stub it true so the live-first
+// assertion still selects the live match.
+globalThis.isFeaturedMatch = () => true;
 // Only WC is "known" to the stub config: a WC match exists (box shows), while EC
 // has fixtures (intl codes are fetched) but is NOT in INTL_COMPETITIONS — assert
 // the cup list only ever includes codes from the config.
 globalThis.CONFIG = { INTL_COMPETITIONS: { WC: 2000 }, CUP_PHASE_WINDOWS: { EURO_LL_START: "2026-09-28T00:00:00Z", FA_ROUND1: "2026-11-09T00:00:00Z" } };
+// Fixture dates are generated relative to "now" (d(n) = today + n days) so the
+// gate never goes stale; the FA_CUP/round-window dates stay absolute because
+// they are compared against the fixed CUP_PHASE_WINDOWS in the stub config
+// below (refreshed each season alongside worker CONFIG).
+const d = (days) => new Date(Date.now() + days * 864e5).toISOString();
 const matches = [
   { id: "cup1", competition: { code: "FA_CUP" }, status: "FINISHED", utcDate: "2026-08-05T10:00:00Z" },   // finished → excluded
-  { id: "cup9", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: "2026-09-10T10:00:00Z" },  // pre First-Round amateur tie → must be hidden
+  { id: "cup9", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: d(1) },                   // pre First-Round amateur tie → must be hidden
   { id: "cup2", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: "2026-11-10T10:00:00Z" },  // next FA cup (post Round-1, big-club entry)
   { id: "cup3", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: "2026-11-20T10:00:00Z" },  // later → not picked
   { id: "cup4", competition: { code: "CL" }, status: "LIVE", utcDate: "2026-08-08T10:00:00Z" },           // live CL → wins
-  { id: "cup5", competition: { code: "CL" }, status: "SCHEDULED", utcDate: "2026-08-09T10:00:00Z" },      // future CL
-  { id: "cup6", competition: { code: "EL" }, status: "SCHEDULED", utcDate: "2026-09-01T10:00:00Z" },       // EL (pre league-phase → labelled qualifying)
-  { id: "cup7", competition: { code: "WC" }, status: "SCHEDULED", utcDate: "2026-09-02T10:00:00Z" },       // intl WC in process
-  { id: "cup8", competition: { code: "EC" }, status: "SCHEDULED", utcDate: "2026-09-03T10:00:00Z" }        // EC data exists but unknown to config → must not appear
+  { id: "cup5", competition: { code: "CL" }, status: "SCHEDULED", utcDate: d(2) },                       // future CL
+  { id: "cup6", competition: { code: "EL" }, status: "SCHEDULED", utcDate: d(5) },                        // EL (pre league-phase → labelled qualifying)
+  { id: "cup7", competition: { code: "WC" }, status: "SCHEDULED", utcDate: d(6) },                        // intl WC in process
+  { id: "cup8", competition: { code: "EC" }, status: "SCHEDULED", utcDate: d(7) }                         // EC data exists but unknown to config → must not appear
 ];
 let cups;
 let uclOut;

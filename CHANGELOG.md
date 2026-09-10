@@ -6,6 +6,52 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.1-futureplan] — 2026-09-10 (برنامه آتی — future-plan fixes)
+
+User-reported product fixes, tagged `Future-plan fix` / `Future-plan ask` in source.
+
+- **False "match started" alerts fixed**: the match-start window opened 45
+  minutes BEFORE kickoff (`MATCH_START_WINDOW_MINUTES: 45`), so a 22:30
+  kickoff was announced "🚨 بازی شروع شد!" at 21:45. `isMatchStartingNow`
+  now fires only after the real kickoff (−1 min clock-skew grace … +20 min
+  catch-up so the 10-minute cron always lands inside the window) and never
+  for finished/postponed/suspended/cancelled fixtures. KV dedupe still keeps
+  it to one message per match.
+- **"All Champions League games marked big" fixed**: the UCL spot headline
+  ("🔥 مسابقه بزرگ بعدی لیگ قهرمانان اروپا") featured ANY next CL fixture —
+  live evidence: Fenerbahçe–Roma (`big: false`) was presented as a big match.
+  The spot now features the next CL pairing of two big clubs
+  (`isFeaturedMatch`); when none is on the horizon it falls back to the next
+  fixture and the client shows the neutral "مسابقه بعدی" headline (driven by
+  `nbig.big`).
+- **Top-of-the-table competition (رقابت‌های صدر جدول)**: the top 3 of each
+  country's current league (PL, PD, SA, FL1, BL1, AL) now join the schedule
+  even when neither club is a selected team — e.g. a top-3 Newcastle side
+  outside the English selection. The page gains a dedicated "🔥 رقابت‌های
+  صدر جدول" section plus a per-card 🔥 badge; top-of-the-table fixtures also
+  surface in the "big matches" view and in recent results. Pre-season
+  (unstarted) tables are ignored; team-name normalization is memoized per
+  sweep so CPU cost stays flat.
+- **League tables hardening**: standings no longer blank out when
+  football-data 429s (the fixture sweep spends most of the 10 req/min free
+  budget). Failed refreshes now serve the last good table, and at most 2 FD
+  tables refresh per sweep via a clock-derived time-sliced rotation (no
+  extra KV writes). Ligue 1 (FL1) joins the site's league tables.
+- **Club badges**: crest images now load with `referrerpolicy=no-referrer`;
+  a failed or missing crest renders a clean two-letter club monogram
+  instead of a bare ⚽.
+- **Share/calendar icons**: shown only while hovering (or keyboard-focusing)
+  a match card on precision pointers; touch devices keep them always
+  visible (`@media (hover:hover) and (pointer:fine)`).
+- Test gates updated: check-notify-windows asserts the post-kickoff window;
+  check-cups stubs `isFeaturedMatch` and now generates fixture dates
+  relative to "now" (its 3 old failures were stale hardcoded 2026-09 dates,
+  not code bugs).
+- Version 12.1-futureplan; page i18n gains `hUclNextAny` / `boxTop` /
+  `topBadge`; subtitle updated to mention the new section.
+
+---
+
 ## [12.0-hardened] — 2026-09-10 (audit remediation)
 
 Full-stack audit remediation — all 17 findings from the Phase 1–5 audit
