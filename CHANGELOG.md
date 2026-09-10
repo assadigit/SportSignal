@@ -6,6 +6,44 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.4-clprox] — 2026-09-10 (CL BOX proximity rule — far pairings yield to near selected-team matches)
+
+The user's rule, verbatim: "when a selected-vs-selected CL pairing is far away
+(even weeks or months) the CL box should prioritize matches that AT LEAST one
+party of match is one of selected teams — FOR EXAMPLE: REAL MADRID VS LEIPZIG."
+Live case that triggered it: through the Sep 10 → Oct 13 CL calendar gap the
+CL BOX counted down 33 days to the selected-vs-selected Atlético–ManUtd
+pairing while ManUtd–Sabah kicked off in minutes — an imminent single-selected
+fixture was crowded out by a distant two-selected derby.
+
+- **CL BOX (`ucl.nbig`) pick order rewritten**: live selected-vs-selected >
+  live ≥1-selected > live both-big > selected-vs-selected within 7 days (its
+  matchweek — the v12.3 "TOP CL GAME" rule, preserved) > earliest ≥1-selected
+  match (kickoff order; the two-selected game still wins equal kickoffs) >
+  earliest both-big pairing > plain next fixture with the neutral label. So
+  "Real Madrid vs Leipzig" (only Real Madrid selected) headlines while the
+  two-selected derby is weeks/months out, the derby takes the box back inside
+  its matchweek, and a distant derby still headlines when it is the only
+  remaining match involving a selected team.
+- **TOP BOX mirrors the rule** ("repurposed for matches/teams"): while the
+  domestic selected-vs-selected clash is far away, the box headlines the
+  earliest domestic fixture with ≥1 selected team; the far clash stays in the
+  upcoming list leading its league section (m.clash sort) whenever it is
+  inside the end-of-month window. Near/live clashes keep the box exactly as
+  in v12.3, and the headline fixture is still excluded from the list (the box
+  IS its presentation).
+- **`nbig.big` label widened**: a headline involving a selected team is "big"
+  for this user (drives the 🔥 "مسابقه بزرگ بعدی" label); only the plain
+  both-unselected fallback keeps the neutral "next UCL match" wording.
+- **CL BOX live rendering parity** (`renderUclSpot`): a live headline now
+  shows the score + LIVE chip instead of a countdown (mirrors `renderTopSpot`)
+  plus the 🔥 derby badge — the proximity rule can legitimately put a followed
+  team's live game in the box.
+- Verified with a 21-scenario harness that evals the real extracted selection
+  code (far/near/boundary/tie/live/empty cases for both boxes).
+
+---
+
 ## [12.3-topbox] — 2026-09-10 (TOP BOX — selected-vs-selected headline rule)
 
 The user's rule, verbatim: "TOP CL GAME: when two selected teams play together
