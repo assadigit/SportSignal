@@ -1,0 +1,86 @@
+// Self-check: per-cup "next match" selection + tournament tier/grouping (the cup
+// boxes on the public page). Extracts the exact selection code from worker.ts
+// (single source of truth), runs it against dummy matches, and asserts: live match
+// wins over future, future-only per cup, finished matches are excluded, UEFA tiers
+// (gold/silver/bronze) and domestic country grouping, and international cups are
+// hidden unless in process.
+const fs = require("fs");
+const src = fs.readFileSync("src/worker.ts", "utf8");
+
+// 1) Extract isLiveStatus (source of truth)
+const isLiveStatus = new Function(
+  "status",
+  src.match(/function isLiveStatus\(status\) \{[\s\S]*?\n\}/)[0].replace(/^function isLiveStatus\(status\) \{/, "").replace(/\n\}$/, "")
+);
+
+// 2) Extract the cups block from fetchPublicMatches
+const start = src.indexOf('const tierOf = (code) =>');
+const end = src.indexOf("const data = { upcoming:", start);
+if (start < 0 || end < 0) { console.error("FAIL: cups block not found in worker.ts"); process.exit(1); }
+const cupBlock = src.slice(start, end);
+
+// 3) Stub the globals the block references
+const compEn = eval("(" + src.match(/var COMP_EN = (\{[\s\S]*?\n\});/)[1] + ")");
+globalThis.COMP_EN = compEn;
+const translateCompetition = () => "x";
+const LEAGUE_LOGOS = {};
+globalThis.pubMatch = (m) => m;
+globalThis.compact = (st) => (st && st.teams && st.teams.length ? st : null);
+globalThis.translateTeam = (n) => n;
+// Only WC is "known" to the stub config: a WC match exists (box shows), while EC
+// has fixtures (intl codes are fetched) but is NOT in INTL_COMPETITIONS — assert
+// the cup list only ever includes codes from the config.
+globalThis.CONFIG = { INTL_COMPETITIONS: { WC: 2000 }, CUP_PHASE_WINDOWS: { EURO_LL_START: "2026-09-28T00:00:00Z", FA_ROUND1: "2026-11-09T00:00:00Z" } };
+const matches = [
+  { id: "cup1", competition: { code: "FA_CUP" }, status: "FINISHED", utcDate: "2026-08-05T10:00:00Z" },   // finished → excluded
+  { id: "cup9", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: "2026-09-10T10:00:00Z" },  // pre First-Round amateur tie → must be hidden
+  { id: "cup2", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: "2026-11-10T10:00:00Z" },  // next FA cup (post Round-1, big-club entry)
+  { id: "cup3", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: "2026-11-20T10:00:00Z" },  // later → not picked
+  { id: "cup4", competition: { code: "CL" }, status: "LIVE", utcDate: "2026-08-08T10:00:00Z" },           // live CL → wins
+  { id: "cup5", competition: { code: "CL" }, status: "SCHEDULED", utcDate: "2026-08-09T10:00:00Z" },      // future CL
+  { id: "cup6", competition: { code: "EL" }, status: "SCHEDULED", utcDate: "2026-09-01T10:00:00Z" },       // EL (pre league-phase → labelled qualifying)
+  { id: "cup7", competition: { code: "WC" }, status: "SCHEDULED", utcDate: "2026-09-02T10:00:00Z" },       // intl WC in process
+  { id: "cup8", competition: { code: "EC" }, status: "SCHEDULED", utcDate: "2026-09-03T10:00:00Z" }        // EC data exists but unknown to config → must not appear
+];
+let cups;
+let uclOut;
+try { const out = eval("(() => { const stPGL = null; const stCL = null; const matches = " + JSON.stringify(matches) + ";" + cupBlock.replace("const cupOrder", "var cupOrder") + "return { cups, ucl };})()"); cups = out.cups; uclOut = out.ucl; }
+catch (e) { console.error("FAIL: cups block threw: " + e.message); process.exit(1); }
+
+const byCode = {};
+cups.forEach((c) => { byCode[c.code] = c.next ? c.next.id : null; });
+const tierOf = (code) => { const c = cups.find((x) => x.code === code); return c ? c.tier : null; };
+const countryOf = (code) => { const c = cups.find((x) => x.code === code); return c ? c.country : null; };
+
+let failed = 0;
+const check = (label, actual, expected) => {
+  if (actual !== expected) { console.error(`FAIL ${label}: got ${actual}, want ${expected}`); failed++; }
+};
+check("FA_CUP next (post Round-1; pre-Round-1 amateur hidden)", byCode.FA_CUP, "cup2");
+check("CL gone from generic cups (own box now)", byCode.CL, undefined);
+check("EL next", byCode.EL, "cup6");
+check("ECL no matches -> null", byCode.ECL, null);
+check("EFL_CUP no matches -> null", byCode.EFL_CUP, null);
+check("CDR no matches -> null", byCode.CDR, null);
+check("COPPA_ITALIA no matches -> null", byCode.COPPA_ITALIA, null);
+check("WC in process -> box present", byCode.WC, "cup7");
+check("EC unknown to config -> box absent", byCode.EC, undefined);
+
+// UCL dedicated payload: live CL match wins, still in matches, full table shape
+check("ucl payload present", !!uclOut, true);
+check("ucl matches live-first", uclOut.matches[0] && uclOut.matches[0].id, "cup4");
+check("ucl nbig = live-first next UCL match", uclOut.nbig && uclOut.nbig.id, "cup4");
+check("ucl teams null when stCL null", uclOut.teams, null);
+
+check("CL tier irrelevant in cups", tierOf("CL"), null);
+check("EL tier", tierOf("EL"), "silver");
+check("ECL tier", tierOf("ECL"), "bronze");
+check("WC tier", tierOf("WC"), "gold");
+check("FA_CUP tier", tierOf("FA_CUP"), "domestic");
+check("FA_CUP country", countryOf("FA_CUP"), "EN");
+check("EFL_CUP country", countryOf("EFL_CUP"), "EN");
+check("CDR country", countryOf("CDR"), "ES");
+check("COPPA_ITALIA country", countryOf("COPPA_ITALIA"), "IT");
+
+console.log(failed ? failed + " failures" : "cups selection OK");
+process.exit(failed ? 1 : 0);

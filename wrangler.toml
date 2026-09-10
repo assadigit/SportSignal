@@ -1,0 +1,23 @@
+name = "ucl-notifier"
+main = "src/worker.ts"
+compatibility_date = "2025-11-04"
+
+# Static assets (bg.jpg etc.) served automatically before the worker runs
+[assets]
+directory = "./assets"
+not_found_handling = "none"
+
+# KV Namespace Binding
+[[kv_namespaces]]
+binding = "STATE"
+id = "432ecae8fb8c4146b6b01b91eb8f4b2a"
+preview_id = "8784e1973a984dea981010a6d644f153"
+
+# FIXED: Use only one cron trigger
+[triggers]
+crons = ["*/10 * * * *"]  # Run every 10 minutes ONLY
+
+[vars]
+TEHRAN_TZ = "Asia/Tehran"
+# Secrets (BOT_TOKEN, CHAT_ID, API_TOKEN, ADMIN_TOKEN, ADMIN_PASS, WEBHOOK_SECRET)
+# are set via `wrangler secret put` — never in vars.

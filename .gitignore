@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+package-lock.json.bak
+
+# Secrets (NEVER commit these!)
+.dev.vars
+.env
+.env.*
+!.env.example
+# Plaintext credential dumps (found in project root during audit — must NEVER be tracked)
+tokens.txt
+*.token
+*.secret
+secrets*.txt
+
+# Wrangler / Deployment artifacts
+.wrangler/
+dist/
+.dev.vars.*
+
+# Logs
+*.log
+npm-debug.log*
+wrangler-debug.log*
+
+# Local npm cache (used under the sandbox)
+npm-cache/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Local design-critique artifacts (agent skills)
+.impeccable/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
