@@ -6,6 +6,37 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.5-iranres] — 2026-09-10 (Iran table joins the league grid + Recent Results carries the week)
+
+Two user asks, verbatim: "move iranian league to other leagues [the standings grid] ...
+add iranian league table to it. and remove this [the Iran card]" and "نتایج اخیر shows
+empty but it must show the recent results for example this weeks CL matches (which
+their results were notified in telegram)".
+
+- **Iran card retired; PGL table moved into the league-standings grid**: the
+  #standings grid4 now renders 7 boxes (PL, PD, SA, FL1, BL1, AL, PGL) from one
+  d.standings payload — standings.PGL is built server-side from the same
+  KV-backed sportscore table the old card used (compact top-8, same
+  emblem/flag). The dedicated card (iranHead, collapse button, Hazfi box) is
+  fully removed: HTML, CSS (.iranHead/.collapsebtn),
+  renderIran/initIran/toggleIran/iranHidden, the 'iran' payload key, the fa/en
+  dict keys and the boot/rerender calls. PGL stays out of standCodes, so top-3
+  badge semantics (domestic leagues only) are untouched. The Hazfi cup box was
+  retired with the card (no fixtures announced — nothing to show).
+- **Recent Results fixed (was always empty)**: the finished-results window was
+  12 HOURS — every morning after a matchday the card emptied, so this week's CL
+  results (the exact ones the bot notified on Telegram) never showed. Now:
+  - fetchLongView sweeps 7 days of past matches (was the bot's 2-day near
+    window). Still 10 ten-day FD chunks — the first chunk simply starts
+    earlier — so the subrequest count is unchanged.
+  - the finished filter keeps its notification semantics (shouldNotify ||
+    top-3 involved) but extends 12h → 7 days and 5 → 12 rows, newest first.
+  - withTop now stamps p.sel (≥1 selected team — "big for THIS user", the
+    v12.4 box rule); the finished card's big-only-view filter accepts it, so a
+    notified single-selected CL result (e.g. Real Madrid vs Leipzig) can never
+    vanish behind the big view. Upcoming big-view semantics unchanged.
+- Version 12.5-iranres; ver strings fa/en × 3 page dicts.
+
 ## [12.4-clprox] — 2026-09-10 (CL BOX proximity rule — far pairings yield to near selected-team matches)
 
 The user's rule, verbatim: "when a selected-vs-selected CL pairing is far away
