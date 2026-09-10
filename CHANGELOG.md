@@ -6,6 +6,44 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.3-topbox] — 2026-09-10 (TOP BOX — selected-vs-selected headline rule)
+
+The user's rule, verbatim: "TOP CL GAME: when two selected teams play together
+→ in the CL BOX. TOP LEAGUE (internal leagues): when two selected teams play
+together → in the TOP BOX." A domestic-league fixture where BOTH sides are
+selected teams (e.g. the Manchester derby) is a headline match — it must
+present at the TOP of the upcoming matches, not 3rd/4th in kickoff order.
+
+- **TOP BOX added**: a new `card topspot` ("🔥 مسابقه بزرگ بعدی لیگ‌های
+  داخلی") renders directly above the games list (below the UCL spot = CL
+  BOX). Its headline fixture is the nearest selected-vs-selected domestic
+  league clash (live first, then kickoff, 90-day horizon). The headline
+  fixture is excluded from the upcoming list — the box IS its presentation —
+  so the derby can never appear "buried at 3rd/4th priority" again.
+- **CL BOX rule tightened** (`ucl.nbig`): the UCL spot headline now prefers a
+  selected-vs-selected CL pairing, then any featured (big-pool) pairing, then
+  the next UCL fixture with the neutral label. `nextBig`/bigbar likewise count
+  a selected-vs-selected pairing as featured.
+- **Remaining clashes stay visible**: further selected-vs-selected fixtures
+  keep their list slots, carry a new `m.clash` flag, lead their section
+  (stable sort), and are never filtered out of the big-only view.
+- **Provider legal-name aliases** (root cause found while wiring the rule):
+  football-data returns "Club Atlético de Madrid" and "FC Internazionale
+  Milano", which never normalized to the selected lists' short forms
+  ("Atlético Madrid", "Inter Milan") — Atlético/Inter matches, big/derby
+  flags and notifications silently missed those clubs (the Madrid & Milan
+  derbies were even un-badged in the live API). A small match-side alias map
+  (`TEAM_ALIASES`/`normAlias`) now folds provider variants onto the
+  selected-list keys in `shouldNotify`, `isFeaturedMatch`, `isDerby`,
+  `isMasterBigMatch` and `userFollowsMatch`; the FA dictionary gains exact
+  entries so the Persian names render (اتلتیکو مادرید / اینتر میلان).
+- **Gates**: live-derby-test now evals the alias/master helpers, asserts
+  FD-legal-name derby/notification/featured detection, and runs a new
+  scenario 3 covering the TOP BOX pick, list exclusion, clash flags and
+  nextBig preference; check-cups stubs `isMasterPair`. 10/10 gates green.
+
+---
+
 ## [12.2-topclash] — 2026-09-10 (v12.1 regression hotfix)
 
 Two user-reported regressions of the 12.1 future-plan release, fixed live.

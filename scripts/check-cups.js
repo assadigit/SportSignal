@@ -31,6 +31,9 @@ globalThis.translateTeam = (n) => n;
 // before falling back to the next fixture — stub it true so the live-first
 // assertion still selects the live match.
 globalThis.isFeaturedMatch = () => true;
+// v12.3: the CL BOX pick also considers selected-vs-selected pairings
+// (isMasterPair) — stub false so the cup fixtures here never qualify.
+globalThis.isMasterPair = () => false;
 // Only WC is "known" to the stub config: a WC match exists (box shows), while EC
 // has fixtures (intl codes are fetched) but is NOT in INTL_COMPETITIONS — assert
 // the cup list only ever includes codes from the config.
