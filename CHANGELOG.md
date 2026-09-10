@@ -6,6 +6,40 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.7-bigbox] — 2026-09-14 (🔥 مسابقات بزرگ پیش‌رو — the TOP BOX becomes a six-match card)
+
+User ask, paraphrased: the "🔥 مسابقه بزرگ بعدی لیگ‌های داخلی" single-match card
+becomes "🔥 مسابقات بزرگ پیش‌رو" — a box holding the closest big upcoming
+matches (up to 6), so the Madrid derby (Atlético–Real Madrid) and the
+Manchester derby can sit in the SAME box; a match that is both a derby and a
+رقابت برای صدر جدول must show BOTH tags.
+
+- **Up to SIX consolidated entries**: the TOP BOX pick pipeline (lgPool →
+  single `topSpotNext`) is replaced by a ranked selection — big matches
+  (selected-vs-selected clashes, derbies, genuine both-top-3 table clashes)
+  get a 4-slot guarantee, the remaining slots fill with the nearest
+  ≥1-selected fixtures, then featured (both-big) pairings. Display order:
+  live > inside the ≤7-day matchweek > farther out; within a band
+  clash > derby/top > selected > featured, then kickoff — so an imminent
+  selected match still leads the card (the v12.4 headline semantics are
+  preserved for slot 1) while the derbies are consolidated behind it.
+- **Both tags, independently**: every box entry renders the 🔥 دربی badge AND
+  the 🔥 صدر جدول badge independently — a fixture that is a derby and a
+  top-of-the-table clash (e.g. a 1st-vs-2nd Clásico) shows both, never
+  either/or. Each entry mirrors the uclspot row (live score, LIVE chip,
+  minute, venue, per-entry share row) wrapped in a new `.spotitem` entry with
+  soft dividers; share/calendar icons reveal per entry on hover/focus.
+- **Payload**: `topSpot.matches` (array, ≤6) joins the legacy `topSpot.next`
+  (kept for ≤5-min stale-KV compatibility — the client accepts both shapes).
+  All box fixtures are excluded from the upcoming list (the box IS their
+  presentation, v12.3 rule), and upcoming's "nearest big match" fallback card
+  now skips a nextBig the box already presents (no duplicate presentation).
+- **i18n**: hLgNext fa/en retitled («🔥 مسابقات بزرگ پیش‌رو» / "🔥 Big Upcoming
+  Matches"); ver strings → 12.7 across the 3 page dicts.
+- Version 12.7-bigbox; ver strings fa/en × 3 page dicts.
+
+---
+
 ## [12.6-hazfi] — 2026-09-10 (جام حذفی ایران joins the cups card)
 
 User ask, verbatim: "add جام حذفی ایران to this box [the 🏆 جام‌های حذفی card]".

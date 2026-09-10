@@ -4,7 +4,7 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
 // src/worker.ts
 import { normalizeTeamName, normTeamKey } from "./teams.js";
 import { matchKey, canonDedupe } from "./dedupe.js";
-const VERSION = "12.6-hazfi";
+const VERSION = "12.7-bigbox";
 
 var CONFIG = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -3033,40 +3033,55 @@ async function fetchPublicMatches(env, req) {
       .slice(0, 12)
   });
   let { upcoming, finished } = select(matches);
-  // ── v12.3/v12.4 TOP BOX: the golden headline card above the games list ──
+  // ── v12.3/v12.4/v12.7 TOP BOX: the golden headline card above the games list ──
   // v12.3 rule: when two selected teams meet in a domestic league (e.g. the
   // Manchester derby), that fixture headlines the page in the TOP BOX instead
-  // of sitting mid-list in kickoff order. The headline fixture is excluded
-  // from the upcoming list (the box IS its presentation); further clashes stay
-  // in the list, flagged m.clash and sorted to the top of their section
-  // client-side. 90-day horizon; live matches win.
+  // of sitting mid-list in kickoff order. The box fixtures are excluded
+  // from the upcoming list (the box IS their presentation); clashes beyond
+  // the box stay in the list, flagged m.clash and sorted to the top of their
+  // section client-side. 90-day horizon; live matches win.
   // v12.4 proximity refinement (mirrors the CL BOX rule): while the
   // selected-vs-selected clash is FAR away — weeks or months; league derbies
-  // can be a season apart — the box is repurposed for the user's near-term
-  // matches instead: the earliest domestic fixture with AT LEAST ONE selected
-  // team headlines, and the far clash stays in the list (leading its league
-  // section via the m.clash sort) whenever it is inside the end-of-month
-  // window. The clash keeps the box while it is near (≤ 7 days — its
-  // matchweek) or live. Pick order, identical to the CL BOX: live clash >
-  // live ≥1-selected > live both-big > clash within 7 days > earliest
-  // ≥1-selected (kickoff order, clash preferred on equal kickoff) > earliest
-  // both-big pairing; the card hides only when nothing qualifies.
+  // can be a season apart — the earliest domestic fixture with AT LEAST ONE
+  // selected team leads the card, so it never becomes a weeks-long countdown
+  // to a distant derby. The clash keeps the lead while it is near (≤ 7 days —
+  // its matchweek) or live.
+  // v12.7 consolidation (user's ask): the box is no longer a single headline —
+  // it holds up to SIX of the closest big upcoming DOMESTIC matches TOGETHER,
+  // so e.g. the Madrid derby (Atlético–Real Madrid) and the Manchester derby
+  // sit in the SAME box instead of queueing behind one another. Big = a derby,
+  // a genuine top-of-the-table clash (both sides in the current top 3), a
+  // selected-vs-selected clash, a fixture with ≥1 selected team, or a featured
+  // (both-big) pairing. Selection: derbies/top-clashes/clashes get a 4-slot
+  // guarantee (they must never be crowded out by routine selected-team
+  // fixtures, but must not flood the card either); the remaining slots fill
+  // with the nearest ≥1-selected fixtures, then featured pairings. Display
+  // order: live > inside the 7-day matchweek > farther out; within a band
+  // clash > derby/top > selected > featured, then kickoff — an imminent
+  // selected match still leads (v12.4 headline semantics) with the derbies
+  // consolidated behind it. The card hides only when nothing qualifies.
   const BOX_NEAR_MS = 7 * 864e5;
   const lgPool = matches
     .filter((m) => m.status !== "FINISHED" && isDomesticLeagueCode(m.competition.code) && (isLiveStatus(m.status) || (new Date(m.utcDate).getTime() > now && new Date(m.utcDate).getTime() <= now + 90 * 864e5)))
     .sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
-  const lgLive = lgPool.filter((m) => isLiveStatus(m.status));
-  const lgSel = lgPool.filter((m) => hasSelectedTeam(m)).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime() || (isMasterClash(b) ? 1 : 0) - (isMasterClash(a) ? 1 : 0));
-  const nearClash = lgPool.filter((m) => isMasterClash(m)).find((m) => new Date(m.utcDate).getTime() - now <= BOX_NEAR_MS);
-  const topSpotNext =
-    lgLive.find((m) => isMasterClash(m)) ||
-    lgLive.find((m) => hasSelectedTeam(m)) ||
-    lgLive.find((m) => isFeaturedMatch(m)) ||
-    nearClash ||
-    lgSel[0] ||
-    lgPool.find((m) => isFeaturedMatch(m)) ||
-    null;
-  const topSpotKey = topSpotNext ? String(topSpotNext.id || "") + "|" + topSpotNext.utcDate : "";
+  const bigLgOf = (m) => isMasterClash(m) || isDerby(m) || isTopTable(m);
+  const lgBand = (m) => isLiveStatus(m.status) ? 0 : new Date(m.utcDate).getTime() - now <= BOX_NEAR_MS ? 1 : 2;
+  const lgTier = (m) => isMasterClash(m) ? 0 : bigLgOf(m) ? 1 : hasSelectedTeam(m) ? 2 : 3;
+  const byBoxRank = (a, b) => lgBand(a) - lgBand(b) || lgTier(a) - lgTier(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime();
+  const lgBig = lgPool.filter((m) => bigLgOf(m)).sort(byBoxRank);
+  const lgRest = lgPool.filter((m) => !bigLgOf(m) && (hasSelectedTeam(m) || isFeaturedMatch(m))).sort(byBoxRank);
+  const topSpotPicked = [];
+  const topSpotKeys = new Set();
+  const addBox = (m) => {
+    const k = String(m.id || "") + "|" + m.utcDate;
+    if (topSpotKeys.has(k) || topSpotPicked.length >= 6) return;
+    topSpotKeys.add(k);
+    topSpotPicked.push(m);
+  };
+  lgBig.slice(0, 4).forEach(addBox);
+  lgRest.forEach(addBox);
+  const topSpotList = topSpotPicked.sort(byBoxRank);
+  const topSpotNext = topSpotList[0] || null;
   // nextBig: nearest featured match with NO end-of-month cutoff (may be months
   // away). v12.3: a selected-vs-selected pairing counts as featured here too —
   // it is the user's own definition of a big match.
@@ -3180,7 +3195,7 @@ const cupsRaw = cupOrder.map((code) => {
     teams: stCL ? stCL.teams.map((t) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), points: t.points })) : null,
     matches: clMatches.map(pubMatch)
   };
-  const data = { upcoming: upcoming.filter((m) => !topSpotKey || String(m.id || "") + "|" + m.utcDate !== topSpotKey).map(withTop), finished: finished.map(withTop), nextBig, topSpot: { next: topSpotNext ? withTop(topSpotNext) : null }, standings, cups, ucl, fetchedAt: new Date().toISOString() };
+  const data = { upcoming: upcoming.filter((m) => !topSpotKeys.has(String(m.id || "") + "|" + m.utcDate)).map(withTop), finished: finished.map(withTop), nextBig, topSpot: { next: topSpotNext ? withTop(topSpotNext) : null, matches: topSpotList.map(withTop) }, standings, cups, ucl, fetchedAt: new Date().toISOString() };
   if (upcoming.length || finished.length) {
     await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: 300 }).catch(() => {});
   } else {
@@ -3293,6 +3308,11 @@ h1{font-size:27px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em}
 @keyframes topspot-glow{0%,100%{box-shadow:0 0 8px rgba(251,191,36,.14),var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}50%{box-shadow:0 0 16px rgba(251,191,36,.26),var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}}
 [data-theme="light"] .topspot{animation-name:topspot-glow-light}
 @keyframes topspot-glow-light{0%,100%{box-shadow:0 0 6px rgba(251,191,36,.08),var(--glass-shadow)}50%{box-shadow:0 0 10px rgba(251,191,36,.2),var(--glass-shadow)}}
+/* v12.7 multi-match TOP BOX: up to six big matches stacked in the card —
+   .spotitem wraps one entry (teams row + info + share); the stock .match
+   divider separates entries, none after the last. */
+.spotitem .match{margin:0 0 8px}
+.spotitem:last-child .match{border-bottom:none}
 .ucl-head{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14.5px;margin-bottom:8px}
 .ucl-emblem{width:26px;height:26px;border-radius:6px;flex-shrink:0}
 .ucl-md{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:600}
@@ -3358,7 +3378,7 @@ h2{font-size:15px;font-weight:700;margin:0 0 12px}
    pointers via the (hover:hover) media query. */
 @media (hover:hover) and (pointer:fine){
 .share{opacity:0;transform:translateY(2px);transition:opacity .18s ease,transform .18s ease;pointer-events:none}
-.mrow:hover .share,.mrow:focus-within .share,#uclSpot:hover .share,#uclSpot:focus-within .share,.bigcard:hover .share,.bigcard:focus-within .share,.share:hover,.share:focus-within{opacity:1;transform:none;pointer-events:auto}
+.mrow:hover .share,.mrow:focus-within .share,.spotitem:hover .share,.spotitem:focus-within .share,#uclSpot:hover .share,#uclSpot:focus-within .share,.bigcard:hover .share,.bigcard:focus-within .share,.share:hover,.share:focus-within{opacity:1;transform:none;pointer-events:auto}
 }
 #msg{text-align:center;color:var(--muted);font-size:13px;padding:12px}
 .empty{color:var(--muted);text-align:center;padding:24px;font-size:14px}
@@ -3409,16 +3429,18 @@ h1{font-size:23px}
 <h2 data-i="hUclNext" id="uclSpotTitle">🔥 مسابقه بزرگ بعدی لیگ قهرمانان اروپا</h2>
 <div id="uclSpot"><div class="empty" data-i="loading">در حال بارگذاری...</div></div>
 </div>
-<!-- v12.3/v12.4 TOP BOX (league), per the user's rules: TOP CL GAME (two
-     selected teams in the Champions League) → the CL BOX above; TOP LEAGUE
-     (two selected teams in an internal league, e.g. the Manchester derby) →
-     THIS box, heading the games list so a derby can never sit 3rd/4th in
-     kickoff order. v12.4: while the clash is far away (weeks/months) the box
-     is repurposed for the nearest match with ≥1 selected team. The headline
-     fixture is excluded from the upcoming list below — this box IS its
-     presentation. Hidden when nothing qualifies. -->
+<!-- v12.3/v12.4/v12.7 TOP BOX (league), per the user's rules: TOP CL GAME (two
+     selected teams in the Champions League) → the CL BOX above; big DOMESTIC
+     matches (derbies like the Madrid derby, top-of-the-table clashes and
+     selected-vs-selected clashes like the Manchester derby) → THIS box,
+     heading the games list so a derby can never sit 3rd/4th in kickoff order.
+     v12.7: the card consolidates up to SIX of the closest big upcoming
+     matches (user's ask — Atlético–Real Madrid and the Manchester derby in
+     the SAME box); a match that is BOTH a derby and a top-of-the-table clash
+     shows BOTH tags. Box fixtures are excluded from the upcoming list below —
+     this box IS their presentation. Hidden when nothing qualifies. -->
 <div class="card topspot" id="topspotCard" style="display:none">
-<h2 data-i="hLgNext" id="topSpotTitle">🔥 مسابقه بزرگ بعدی لیگ‌های داخلی</h2>
+<h2 data-i="hLgNext" id="topSpotTitle">🔥 مسابقات بزرگ پیش‌رو</h2>
 <div id="topSpot"><div class="empty" data-i="loading">در حال بارگذاری...</div></div>
 </div>
 <div class="card">
@@ -3446,8 +3468,8 @@ h1{font-size:23px}
 <footer><span data-i="madeWith">ساخته‌شده با ❤️</span> — <a href="/admin" data-i="adminLink">ورود مدیریت</a> — <a href="https://t.me/UCL_Match_Bot" target="_blank" rel="noopener" data-i="botLink">ربات تلگرام</a></footer>
 <script>
 var I18N={
-fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو، رقابت‌های صدر جدول و نتایج تیم‌های منتخب — به‌روزرسانی خودکار",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ‌های قاره اروپا",hUcl:"🏆 لیگ قهرمانان اروپا",hUclNext:"🔥 مسابقه بزرگ بعدی لیگ قهرمانان اروپا",hUclNextAny:"🔥 مسابقه بعدی لیگ قهرمانان اروپا",hLgNext:"🔥 مسابقه بزرگ بعدی لیگ‌های داخلی",boxTop:"🔥 رقابت‌های صدر جدول",topBadge:"صدر جدول",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cIR:"🇮🇷 ایران",cupsNone:"برنامه‌ای هنوز اعلام نشده",tierEurope:"🏆 لیگ‌های قاره اروپا",intlCups:"🏆 جام‌های بین‌المللی",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"رمز عبور مدیریت (admin password)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",cal:"افزودن به گوگل تقویم",ver:"نسخه ۱۲.۶ — جام حذفی ایران",mToken:"ورود نامعتبر — رمز عبور یا نشست منقضی شده",mErr:"خطا: ",mEnterToken:"رمز عبور را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
-en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Fixtures, top-of-the-table clashes & results — auto-refreshed",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 European Leagues",hUcl:"🏆 UEFA Champions League",hUclNext:"🔥 Next Big UCL Match",hUclNextAny:"🔥 Next UCL Match",hLgNext:"🔥 Next Big Domestic Match",boxTop:"🔥 Top-of-the-Table",topBadge:"Top 3",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cIR:"🇮🇷 Iran",cupsNone:"No fixture announced yet",tierEurope:"🏆 European Continental Leagues",intlCups:"🏆 International Cups",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin password",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",cal:"Add to Google Calendar",ver:"v12.6 — Iran Hazfi Cup in cups",mToken:"Invalid login — wrong password or expired session",mErr:"Error: ",mEnterToken:"Enter the admin password",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
+fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو، رقابت‌های صدر جدول و نتایج تیم‌های منتخب — به‌روزرسانی خودکار",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ‌های قاره اروپا",hUcl:"🏆 لیگ قهرمانان اروپا",hUclNext:"🔥 مسابقه بزرگ بعدی لیگ قهرمانان اروپا",hUclNextAny:"🔥 مسابقه بعدی لیگ قهرمانان اروپا",hLgNext:"🔥 مسابقات بزرگ پیش‌رو",boxTop:"🔥 رقابت‌های صدر جدول",topBadge:"صدر جدول",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cIR:"🇮🇷 ایران",cupsNone:"برنامه‌ای هنوز اعلام نشده",tierEurope:"🏆 لیگ‌های قاره اروپا",intlCups:"🏆 جام‌های بین‌المللی",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"رمز عبور مدیریت (admin password)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",cal:"افزودن به گوگل تقویم",ver:"نسخه ۱۲.۷ — جعبه مسابقات بزرگ",mToken:"ورود نامعتبر — رمز عبور یا نشست منقضی شده",mErr:"خطا: ",mEnterToken:"رمز عبور را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
+en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Fixtures, top-of-the-table clashes & results — auto-refreshed",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 European Leagues",hUcl:"🏆 UEFA Champions League",hUclNext:"🔥 Next Big UCL Match",hUclNextAny:"🔥 Next UCL Match",hLgNext:"🔥 Big Upcoming Matches",boxTop:"🔥 Top-of-the-Table",topBadge:"Top 3",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cIR:"🇮🇷 Iran",cupsNone:"No fixture announced yet",tierEurope:"🏆 European Continental Leagues",intlCups:"🏆 International Cups",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin password",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",cal:"Add to Google Calendar",ver:"v12.7 — big matches box",mToken:"Invalid login — wrong password or expired session",mErr:"Error: ",mEnterToken:"Enter the admin password",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
 function curLang(){try{return localStorage.getItem("ucl_lang")||"fa";}catch(e){return "fa";}}
 var PAGE_TZ = "__PAGE_TZ__";
 // Complete IANA timezone list (the same set websites ship): Intl.supportedValuesOf
@@ -3776,19 +3798,30 @@ function renderSections(list, el){
   });
   if(!any) el.innerHTML = "<div class='empty'>"+T("noMatches")+"</div>";
 }
+function inTopSpot(m){
+  // v12.7: is this fixture already presented by the big-matches TOP BOX?
+  // (upcoming's fallback special card must not duplicate a box entry).
+  var ts = DATA.topSpot && DATA.topSpot.matches;
+  if(!ts || !m) return false;
+  var k = String(m.id||"") + "|" + m.utcDate;
+  for(var i=0;i<ts.length;i++){ if(String(ts[i].id||"") + "|" + ts[i].utcDate === k) return true; }
+  return false;
+}
 function applyView(){
   var bigOnly = VIEW === "big";
   var b = document.getElementById("viewBig"), a = document.getElementById("viewAll");
   if(b) b.classList.toggle("active", bigOnly);
   if(a) a.classList.toggle("active", !bigOnly);
   // v12.3: selected-vs-selected clashes count as big for this user — they are
-  // never filtered out of the big-only view (the headline one already lives in
-  // the TOP BOX above; any further clashes must stay visible here).
+  // never filtered out of the big-only view (the ones already presented in the
+  // TOP BOX above are excluded server-side; any further clashes must stay
+  // visible here).
   var list = DATA.upcoming.filter(function(m){ return !bigOnly || m.big || m.top || m.clash; });
   if(!bigOnly) list = list.slice(0, 5);
-  if(bigOnly && !list.length && DATA.nextBig){
+  if(bigOnly && !list.length && DATA.nextBig && !inTopSpot(DATA.nextBig)){
     // No big match inside the current month — always show the nearest big match
-    // (may be weeks/months away) as a highlighted card, regardless of the month window.
+    // (may be weeks/months away) as a highlighted card, unless the TOP BOX
+    // already presents it (v12.7: no duplicate presentation).
     renderSpecial(DATA.nextBig);
   } else {
     renderSections(list, document.getElementById("upcoming"));
@@ -4041,56 +4074,64 @@ function renderUclSpot(d){
   el.appendChild(info);
   var sr = shareRow(m, false); el.appendChild(sr);
 }
-// v12.3/v12.4 TOP BOX (league): headline fixture per the user's rules — a
-// selected-vs-selected domestic clash (e.g. the Manchester derby) while it is
-// near or live; otherwise (v12.4 proximity rule) the earliest domestic match
-// with AT LEAST ONE selected team, so the box never becomes a weeks-long
-// countdown to a distant derby. Mirrors the uclspot card (live score + LIVE
-// chip); the card hides when nothing qualifies. The headline fixture is
-// excluded from the upcoming list server-side — this box IS its presentation.
+// v12.3/v12.4/v12.7 TOP BOX (league): the consolidated big-matches card — up
+// to SIX entries per the user's ask (e.g. the Madrid derby and the Manchester
+// derby in the SAME box). The server picks and orders them (live > ≤7-day
+// matchweek > farther out; clash > derby/top > selected > featured within a
+// band). Each entry renders like the uclspot card (live score + LIVE chip)
+// with BOTH tags — a fixture that is a derby AND a top-of-the-table clash
+// shows both badges (v12.7 tag rule). The card hides when nothing qualifies;
+// box fixtures are excluded from the upcoming list server-side — this box IS
+// their presentation. Stale KV payloads (≤5 min) may still carry the old
+// single-match shape {next:…} — accepted for a smooth rollout.
 function renderTopSpot(d){
   var card = document.getElementById("topspotCard"), el = document.getElementById("topSpot");
   if(!card || !el) return;
   el.innerHTML = "";
-  var m = d && d.next;
-  if(!m){ card.style.display = "none"; return; }
+  var list = d && d.matches && d.matches.length ? d.matches.slice(0, 6) : (d && d.next ? [d.next] : []);
+  if(!list.length){ card.style.display = "none"; return; }
   card.style.display = "";
-  if(m.competition && m.competition.emblem){
-    var lg = document.createElement("img"); lg.className = "uclspot-logo"; lg.src = m.competition.emblem; lg.alt = ""; lg.loading = "lazy"; lg.decoding = "async"; lg.onerror = function(){ this.remove(); };
-    el.appendChild(lg);
-  }
-  var row = document.createElement("div"); row.className = "match";
-  if(m.derby) row.className += " derby";
-  var en = curLang()==="en";
-  var hName = document.createElement("div"); hName.className = "team"; hName.textContent = en ? m.homeTeam.name : (m.homeTeam.faName || m.homeTeam.name);
-  var aName = document.createElement("div"); aName.className = "team"; aName.textContent = en ? m.awayTeam.name : (m.awayTeam.faName || m.awayTeam.name);
-  var hs = document.createElement("div"); hs.className = "side"; hs.appendChild(logo(m.homeTeam)); hs.appendChild(hName);
-  var as = document.createElement("div"); as.className = "side away"; as.appendChild(aName); as.appendChild(logo(m.awayTeam));
-  var vs = document.createElement("div"); vs.className = "vs";
-  var live = m.status==="LIVE"||m.status==="IN_PLAY"||m.status==="PAUSED";
-  if(live && m.score && m.score.home !== null){ vs.className = "score"; vs.textContent = fmtNum(m.score.home) + " - " + fmtNum(m.score.away); }
-  else { vs.textContent = "🆚"; }
-  row.appendChild(hs); row.appendChild(vs); row.appendChild(as);
-  el.appendChild(row);
-  var info = document.createElement("div"); info.className = "uclspot-info";
-  var c = document.createElement("span"); c.className = "comp";
-  if(m.competition.emblem){ var cimg = document.createElement("img"); cimg.className="complogo"; cimg.src=m.competition.emblem; cimg.alt=""; cimg.loading="lazy"; cimg.decoding="async"; cimg.onerror=function(){this.remove();}; c.appendChild(cimg); }
-  c.appendChild(document.createTextNode(compName(m)));
-  info.appendChild(c);
-  if(m.derby){ var db = document.createElement("span"); db.className = "derbybadge"; db.textContent = T("derby"); info.appendChild(db); }
-  info.appendChild(document.createTextNode(fmtDate(m.utcDate)));
-  if(live){
-    var chip = document.createElement("span"); chip.className = "livechip";
-    var dot = document.createElement("span"); dot.className = "dot";
-    chip.appendChild(dot); chip.appendChild(document.createTextNode(T("live")));
-    info.appendChild(chip);
-  } else {
-    var cd = document.createElement("span"); cd.className = "countdown"; cd.textContent = fmtKick(m.utcDate);
-    info.appendChild(cd);
-  }
-  if(m.venue){ var vn = document.createElement("span"); vn.className="venue"; vn.textContent="🏟️ " + m.venue; info.appendChild(vn); }
-  el.appendChild(info);
-  var sr = shareRow(m, false); el.appendChild(sr);
+  list.forEach(function(m, idx){
+    var item = document.createElement("div"); item.className = "spotitem";
+    var row = document.createElement("div"); row.className = "match";
+    if(m.derby) row.className += " derby";
+    row.style.setProperty("--i", idx);
+    var en = curLang()==="en";
+    var hName = document.createElement("div"); hName.className = "team"; hName.textContent = en ? m.homeTeam.name : (m.homeTeam.faName || m.homeTeam.name);
+    var aName = document.createElement("div"); aName.className = "team"; aName.textContent = en ? m.awayTeam.name : (m.awayTeam.faName || m.awayTeam.name);
+    var hs = document.createElement("div"); hs.className = "side"; hs.appendChild(logo(m.homeTeam)); hs.appendChild(hName);
+    var as = document.createElement("div"); as.className = "side away"; as.appendChild(aName); as.appendChild(logo(m.awayTeam));
+    var vs = document.createElement("div"); vs.className = "vs";
+    var live = m.status==="LIVE"||m.status==="IN_PLAY"||m.status==="PAUSED";
+    if(live && m.score && m.score.home !== null){ vs.className = "score"; vs.textContent = fmtNum(m.score.home) + " - " + fmtNum(m.score.away); }
+    else { vs.textContent = "🆚"; }
+    row.appendChild(hs); row.appendChild(vs); row.appendChild(as);
+    item.appendChild(row);
+    var info = document.createElement("div"); info.className = "uclspot-info";
+    var c = document.createElement("span"); c.className = "comp";
+    if(m.competition && m.competition.emblem){ var cimg = document.createElement("img"); cimg.className="complogo"; cimg.src=m.competition.emblem; cimg.alt=""; cimg.loading="lazy"; cimg.decoding="async"; cimg.onerror=function(){this.remove();}; c.appendChild(cimg); }
+    c.appendChild(document.createTextNode(compName(m)));
+    info.appendChild(c);
+    // v12.7 tag rule: a match can be BOTH a derby and a top-of-the-table
+    // clash — each badge renders independently, never either/or.
+    if(m.derby){ var db = document.createElement("span"); db.className = "derbybadge"; db.textContent = T("derby"); info.appendChild(db); }
+    if(m.top){ var tb = document.createElement("span"); tb.className = "topbadge"; tb.textContent = "🔥 " + T("topBadge"); info.appendChild(tb); }
+    info.appendChild(document.createTextNode(fmtDate(m.utcDate)));
+    if(live){
+      var chip = document.createElement("span"); chip.className = "livechip";
+      var dot = document.createElement("span"); dot.className = "dot";
+      chip.appendChild(dot); chip.appendChild(document.createTextNode(T("live")));
+      info.appendChild(chip);
+      if(m.minute != null){ var lmin = document.createElement("span"); lmin.className = "lmin"; lmin.textContent = fmtNum(m.minute) + "ʹ"; info.appendChild(lmin); }
+    } else {
+      var cd = document.createElement("span"); cd.className = "countdown"; cd.textContent = fmtKick(m.utcDate);
+      info.appendChild(cd);
+    }
+    if(m.venue){ var vn = document.createElement("span"); vn.className="venue"; vn.textContent="🏟️ " + m.venue; info.appendChild(vn); }
+    item.appendChild(info);
+    var sr = shareRow(m, false); item.appendChild(sr);
+    el.appendChild(item);
+  });
 }
 // v12.5: renderIran/initIran/toggleIran removed — the Iran card is retired
 // and the PGL table renders through renderStandings like every other league.
@@ -4203,8 +4244,8 @@ h1{font-size:18px}
 </div>
 <script>
 var I18N={
-fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو، رقابت‌های صدر جدول و نتایج تیم‌های منتخب — به‌روزرسانی خودکار",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ قهرمانان اروپا",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cupsNone:"در انتظار برنامه",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"رمز عبور مدیریت (admin password)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",ver:"نسخه ۱۲.۶ — جام حذفی ایران",mToken:"ورود نامعتبر — رمز عبور یا نشست منقضی شده",mErr:"خطا: ",mEnterToken:"رمز عبور را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
-en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Fixtures, top-of-the-table clashes & results — auto-refreshed",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 Champions League",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cupsNone:"No fixture yet",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin password",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",ver:"v12.6 — Iran Hazfi Cup in cups",mToken:"Invalid login — wrong password or expired session",mErr:"Error: ",mEnterToken:"Enter the admin password",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
+fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو، رقابت‌های صدر جدول و نتایج تیم‌های منتخب — به‌روزرسانی خودکار",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ قهرمانان اروپا",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cupsNone:"در انتظار برنامه",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"رمز عبور مدیریت (admin password)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",ver:"نسخه ۱۲.۷ — جعبه مسابقات بزرگ",mToken:"ورود نامعتبر — رمز عبور یا نشست منقضی شده",mErr:"خطا: ",mEnterToken:"رمز عبور را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
+en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Fixtures, top-of-the-table clashes & results — auto-refreshed",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 Champions League",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cupsNone:"No fixture yet",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin password",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",ver:"v12.7 — big matches box",mToken:"Invalid login — wrong password or expired session",mErr:"Error: ",mEnterToken:"Enter the admin password",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
 function curLang(){try{return localStorage.getItem("ucl_lang")||"fa";}catch(e){return "fa";}}
 function T(k){var l=curLang(),d=I18N[l];return (d&&d[k])||I18N.fa[k]||k;}
 function fmt(k){var s=T(k);for(var i=1;i<arguments.length;i++)s=s.replace("%s",arguments[i]).replace("%d",arguments[i]);return s;}
@@ -4337,8 +4378,8 @@ button{width:100%}
 <div id="msg" role="status" aria-live="polite"></div>
 <script>
 var I18N={
-fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو، رقابت‌های صدر جدول و نتایج تیم‌های منتخب — به‌روزرسانی خودکار",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ قهرمانان اروپا",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cupsNone:"در انتظار برنامه",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"رمز عبور مدیریت (admin password)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",ver:"نسخه ۱۲.۶ — جام حذفی ایران",mToken:"ورود نامعتبر — رمز عبور یا نشست منقضی شده",mErr:"خطا: ",mEnterToken:"رمز عبور را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
-en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Fixtures, top-of-the-table clashes & results — auto-refreshed",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 Champions League",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cupsNone:"No fixture yet",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin password",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",ver:"v12.6 — Iran Hazfi Cup in cups",mToken:"Invalid login — wrong password or expired session",mErr:"Error: ",mEnterToken:"Enter the admin password",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
+fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو، رقابت‌های صدر جدول و نتایج تیم‌های منتخب — به‌روزرسانی خودکار",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ قهرمانان اروپا",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cupsNone:"در انتظار برنامه",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"رمز عبور مدیریت (admin password)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",ver:"نسخه ۱۲.۷ — جعبه مسابقات بزرگ",mToken:"ورود نامعتبر — رمز عبور یا نشست منقضی شده",mErr:"خطا: ",mEnterToken:"رمز عبور را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
+en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Fixtures, top-of-the-table clashes & results — auto-refreshed",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 Champions League",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cupsNone:"No fixture yet",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin password",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",ver:"v12.7 — big matches box",mToken:"Invalid login — wrong password or expired session",mErr:"Error: ",mEnterToken:"Enter the admin password",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
 function curLang(){try{return localStorage.getItem("ucl_lang")||"fa";}catch(e){return "fa";}}
 function T(k){var l=curLang(),d=I18N[l];return (d&&d[k])||I18N.fa[k]||k;}
 function fmt(k){var s=T(k);for(var i=1;i<arguments.length;i++)s=s.replace("%s",arguments[i]).replace("%d",arguments[i]);return s;}

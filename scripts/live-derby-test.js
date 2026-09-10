@@ -64,8 +64,10 @@ const { matchKey, canonDedupe } = require("../src/dedupe.js");
 const domCupSrc = grabFn("function isDomesticCup(code)");
 // v12.3: the alias/master helpers must leak before the functions that call them
 // (shouldNotify / isFeaturedMatch / isDerby / fetchPublicMatches all resolve
-// them through this module scope at runtime).
-const aliasSrc = grabVarBalanced("TEAM_ALIASES") + "\n" + grabFn("function normAlias(name)") + "\n" + grabFn("function isDomesticLeagueCode(code)") + "\n" + grabVar("_masterMemo") + "\n" + grabFn("function masterTeamList()") + "\n" + grabFn("function isMasterPair(match)") + "\n" + grabFn("function isMasterClash(match)");
+// them through this module scope at runtime). v12.4: hasSelectedTeam joins the
+// leak set (the TOP BOX pick calls it; it was missing and only survived
+// because the old code path never reached it with these pools).
+const aliasSrc = grabVarBalanced("TEAM_ALIASES") + "\n" + grabFn("function normAlias(name)") + "\n" + grabFn("function isDomesticLeagueCode(code)") + "\n" + grabVar("_masterMemo") + "\n" + grabFn("function masterTeamList()") + "\n" + grabFn("function isMasterPair(match)") + "\n" + grabFn("function hasSelectedTeam(match)") + "\n" + grabFn("function isMasterClash(match)");
 const shouldNotifySrc = grabFn("function shouldNotify(match)");
 const featSrc = grabVar("BIG_MATCH_TEAMS") + "\n" + grabVar("BIG_MATCH_UEFA") + "\n" + grabFn("function isFeaturedMatch(match)");
 const derbyBlockSrc = grabVarBalanced("DERBY_PAIRS") + "\n" + grabVarBalanced("DERBY_NORM") + "\n" + grabFn("function isDerby(match)");
@@ -150,14 +152,18 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
 (async () => {
   const data = await fetchPublicMatches(envStub);
   const ids = data.upcoming.map((m) => m.id);
-  chk(ids.includes("m-in"), "in-month match shown");
-  // v12.3: the LIVE selected-vs-selected clash (Manchester derby) is lifted into
-  // the TOP BOX payload instead of the list — the box IS its presentation.
-  chk(!ids.includes("m-live"), "live master clash lifted out of the list (TOP BOX)");
-  chk(!ids.includes("m-out"), "next-month match excluded from list");
-  chk(!ids.includes("m-far"), "far (2-month) match excluded from EOM list");
-  chk(!ids.includes("m-nonfollowed"), "non-followed match excluded");
-  chk(ids[0] === "m-in", "in-month match leads the list once the clash is boxed");
+  // v12.7: the TOP BOX consolidates every big fixture (up to 6) — live clash,
+  // near clash, month-out clash and the far derby ALL live in the box now, so
+  // the upcoming list is empty and the box IS their presentation.
+  chk(!ids.length, "v12.7: all big fixtures consolidated into the TOP BOX, upcoming list empty");
+  const box = data.topSpot && data.topSpot.matches;
+  chk(Array.isArray(box) && box.length === 4, "TOP BOX holds the 4 big matches (live clash + near clash + month-out clash + far derby)");
+  chk(data.topSpot.next && data.topSpot.next.id === "m-live", "TOP BOX slot 1 = live master clash (v12.4 headline semantics)");
+  const boxIds = (box || []).map((m) => m.id);
+  chk(boxIds[0] === "m-live", "slot 1 = live master clash");
+  chk(boxIds[1] === "m-in", "slot 2 = nearest ≤7-day clash");
+  chk(boxIds[2] === "m-out" && boxIds[3] === "m-far", "far slots follow kickoff order (month-out clash then far derby)");
+  chk(!boxIds.includes("m-nonfollowed"), "non-followed match never boxes");
   const live = data.topSpot && data.topSpot.next;
   chk(!!live && live.id === "m-live", "TOP BOX headline = live master clash");
   chk(live && live.minute === 67, "live minute exposed (TOP BOX)");
@@ -167,8 +173,8 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   chk(data.nextBig && data.nextBig.id === "m-live", "nextBig = nearest featured match (live wins)");
   chk(data.nextBig && data.nextBig.derby === true, "nextBig carries derby flag (Manchester derby)");
   chk(data.nextBig && data.nextBig.id != null, "nextBig exposes id");
-  chk(data.upcoming.find((m) => m.id === "m-in").derby === false, "no derby flag on Arsenal-Liverpool");
-  chk(data.upcoming.every((m) => m.id != null), "pubMatch exposes id");
+  chk((box || []).find((m) => m.id === "m-in").derby === false, "no derby flag on Arsenal-Liverpool");
+  chk((box || []).every((m) => m.id != null), "pubMatch exposes id");
 
   // Scenario 2: no featured match inside the month window → nextBig must cross EOM.
   // Purge the 3-min public-matches KV cache so the far-pool scenario actually re-runs.
@@ -200,14 +206,18 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   const d3 = await fetchPublicMatches(env3);
   chk(d3.topSpot && d3.topSpot.next && d3.topSpot.next.id === "t-derby", "TOP BOX headline = nearest selected-vs-selected league clash");
   chk(d3.topSpot.next.clash === true && d3.topSpot.next.derby === true, "TOP BOX headline carries clash+derby flags");
+  // v12.7: the further clash is CONSOLIDATED into the box (was: stays in the
+  // list) — the box holds up to six big matches together.
+  const box3 = d3.topSpot.matches || [];
+  chk(box3.map((m) => m.id).join(",") === "t-derby,t-clash2,t-one", "v12.7: box = [clash, further clash, nearest ≥1-selected] in band order");
+  const c2 = box3.find((m) => m.id === "t-clash2");
+  chk(!!c2 && c2.clash === true, "further clash consolidated into the box, clash-flagged");
   chk(!d3.upcoming.some((m) => m.id === "t-derby"), "headline clash excluded from the upcoming list");
-  const c2 = d3.upcoming.find((m) => m.id === "t-clash2");
-  chk(!!c2 && c2.clash === true, "later clash stays in the list, clash-flagged");
-  chk(d3.upcoming.find((m) => m.id === "t-one").clash === false, "single-selected match is not a clash");
-  chk(!d3.upcoming.some((m) => m.id === "t-none"), "unfollowed match excluded");
+  chk(!d3.upcoming.some((m) => m.id === "t-clash2"), "boxed further clash excluded from the upcoming list");
+  chk(box3.find((m) => m.id === "t-one").clash === false, "single-selected match is not a clash");
+  chk(!box3.some((m) => m.id === "t-none"), "unfollowed match never boxes");
   chk(d3.nextBig && d3.nextBig.id === "t-derby", "nextBig prefers the selected-vs-selected clash");
-  const ids3 = d3.upcoming.map((m) => m.id);
-  chk(ids3.indexOf("t-clash2") === 0 || ids3.indexOf("t-one") === 0, "list led by earliest fixture (clash pinned first client-side)");
+  chk(!d3.upcoming.length, "v12.7: with every big match boxed, the upcoming list is empty (box is the presentation)");
   console.log(fails === 0 ? "worker logic OK ✓" : fails + " FAILURES");
   process.exit(fails ? 1 : 0);
 })();

@@ -34,6 +34,10 @@ globalThis.isFeaturedMatch = () => true;
 // v12.3: the CL BOX pick also considers selected-vs-selected pairings
 // (isMasterPair) — stub false so the cup fixtures here never qualify.
 globalThis.isMasterPair = () => false;
+// v12.4: the CL BOX proximity rule prefers the nearest match with ≥1 selected
+// team (hasSelectedTeam) — stub false for the same reason (cup fixtures here
+// never qualify; the live-first pick must fall through to isFeaturedMatch).
+globalThis.hasSelectedTeam = () => false;
 // Only WC is "known" to the stub config: a WC match exists (box shows), while EC
 // has fixtures (intl codes are fetched) but is NOT in INTL_COMPETITIONS — assert
 // the cup list only ever includes codes from the config.
