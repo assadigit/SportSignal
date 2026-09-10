@@ -6,6 +6,53 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.8-bigmatch] — 2026-09-14 (big-match LOGIC — true big matches only, closest on top, countdown follows slot 1)
+
+User ask, paraphrased: "in مسابقات بزرگ پیش‌رو I see Liverpool vs Fulham which is
+not a big match — what's the logic?" The user's definition of a big match:
+A: two selected teams play each other; B: the match that changes the 1st
+position in the table; C: derbies; and only when none of those is around, a
+selected team against a TOP-5 side of that league ("if Tottenham is not
+selected but in the top 5 and Chelsea plays it, I want to know"). Always the
+closest upcoming match on top, and the countdown belongs to it.
+
+- **Qualification tightened (the Liverpool–Fulham rule)**: the box's fallback
+  tier is no longer "any fixture with ≥1 selected team, then featured
+  pairings". It is now a selected team vs a TOP-5 side of that league
+  (isSelVsTop5, per current standings) — and nothing else. A/B/C
+  (selected-vs-selected, both-top-3 summit clashes, derbies) fill the six
+  slots first, the fallback tops up whatever is left; featured-only pairings
+  no longer box.
+- **Strict kickoff order**: the v12.7 band/tier ranking (live > ≤7-day
+  matchweek > far; clash > derby > selected > featured within a band) is
+  replaced by a single comparator — kickoff ascending. Live matches lead
+  (their kickoff is in the past), then the closest upcoming match is ALWAYS
+  on top. The derbies follow in kickoff order instead of jumping the queue.
+- **The countdown belongs to the top match**: updateBigBar now targets the
+  TOP BOX's slot 1 (topSpot.matches[0], legacy topSpot.next tolerated for
+  ≤3-min stale KV) before nextBig — the page's one live countdown counts
+  down to the closest big match the box leads with. Box empty → the old
+  nextBig → first-big-upcoming → upcoming[0] chain applies.
+- **Paris FC name fix** (audit backlog): the fa-dict stem fallback folded
+  "Paris FC" (normKey "paris") onto "parissaintgermain" — the promoted
+  Ligue 1 club rendered as پاری‌سن‌ژرمن (PSG) in Persian. Exact dict entry
+  "Paris FC" → «پاری‌اف‌سی» wins before any fallback; "SC Paderborn 07" →
+  «پادربورن» joins too (both clubs are visible on the current page).
+- **Tests**: live-derby-test.js scenarios rewritten to the v12.8 contract —
+  single-selected vs non-top-5 never boxes and stays in the upcoming list;
+  new scenario 3b stubs PL standings and proves the fallback tier (selected
+  vs top-5 boxes) AND the strict kickoff order (the closest fallback leads
+  even over a core derby, topSpot.next = box top = countdown target).
+- **Big-view empty state**: with every big match now boxed, the default
+  "فقط بازی‌های بزرگ" view can legitimately have an empty upcoming list —
+  instead of the stark "مسابقه‌ای در راه نیست" right below a 6-entry card it
+  now says «بازی بزرگ دیگری در راه نیست — همه در جعبه بالا هستند» /
+  "No other big match ahead — they're all in the box above" (new boxAll key,
+  public-page fa/en dicts; T() key-fallback keeps other pages safe).
+- Version 12.8-bigmatch; ver strings fa/en × 3 page dicts; package 12.8.0.
+
+---
+
 ## [12.7-bigbox] — 2026-09-14 (🔥 مسابقات بزرگ پیش‌رو — the TOP BOX becomes a six-match card)
 
 User ask, paraphrased: the "🔥 مسابقه بزرگ بعدی لیگ‌های داخلی" single-match card

@@ -208,16 +208,54 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   chk(d3.topSpot.next.clash === true && d3.topSpot.next.derby === true, "TOP BOX headline carries clash+derby flags");
   // v12.7: the further clash is CONSOLIDATED into the box (was: stays in the
   // list) — the box holds up to six big matches together.
+  // v12.8: t-one (Arsenal–Brentford — ONE selected side vs a non-top-5
+  // opponent, no standings available) is NOT big anymore: it stays in the
+  // upcoming list instead of taking a box slot (the Liverpool–Fulham rule).
   const box3 = d3.topSpot.matches || [];
-  chk(box3.map((m) => m.id).join(",") === "t-derby,t-clash2,t-one", "v12.7: box = [clash, further clash, nearest ≥1-selected] in band order");
+  chk(box3.map((m) => m.id).join(",") === "t-derby,t-clash2", "v12.8: box = [nearest clash, further clash] in kickoff order");
   const c2 = box3.find((m) => m.id === "t-clash2");
   chk(!!c2 && c2.clash === true, "further clash consolidated into the box, clash-flagged");
   chk(!d3.upcoming.some((m) => m.id === "t-derby"), "headline clash excluded from the upcoming list");
   chk(!d3.upcoming.some((m) => m.id === "t-clash2"), "boxed further clash excluded from the upcoming list");
-  chk(box3.find((m) => m.id === "t-one").clash === false, "single-selected match is not a clash");
+  chk(d3.upcoming.some((m) => m.id === "t-one"), "v12.8: single-selected vs non-top-5 stays in the upcoming list (NOT big)");
+  chk(!box3.some((m) => m.id === "t-one"), "v12.8: single-selected vs non-top-5 never boxes (Liverpool–Fulham rule)");
   chk(!box3.some((m) => m.id === "t-none"), "unfollowed match never boxes");
   chk(d3.nextBig && d3.nextBig.id === "t-derby", "nextBig prefers the selected-vs-selected clash");
-  chk(!d3.upcoming.length, "v12.7: with every big match boxed, the upcoming list is empty (box is the presentation)");
+
+  // Scenario 3b (v12.8): the fallback tier + STRICT kickoff order. With PL
+  // standings stubbed (top 5: City, Arsenal, Hull, Chelsea, Tottenham):
+  //   t-fb     Liverpool–Tottenham   +1d  fallback (selected vs TOP-5 side)
+  //   t-derby  Man Utd–Man City      +2d  core (A: two selected + C: derby)
+  //   t-rout   Arsenal–Brentford     +3d  NOT big (selected vs non-top-5)
+  // Box = [t-fb, t-derby] — strictly by kickoff: the CLOSEST upcoming match
+  // is on top even when a core derby sits behind it; topSpot.next (the
+  // countdown target) is the box top. t-rout never boxes.
+  const state4 = { store: {} };
+  const env4 = {
+    API_TOKEN: "t",
+    STATE: { get: async (k, type) => { const v = state4.store[k]; return v == null ? null : type === "json" ? JSON.parse(v) : v; }, put: async (k, v) => { state4.store[k] = v; } }
+  };
+  const stand4 = { PL: { started: true, teams: [
+    { pos: 1, name: "Manchester City FC", points: 9 },
+    { pos: 2, name: "Arsenal FC", points: 9 },
+    { pos: 3, name: "Hull City AFC", points: 7 },
+    { pos: 4, name: "Chelsea FC", points: 6 },
+    { pos: 5, name: "Tottenham Hotspur FC", points: 5 }
+  ] } };
+  const pool4 = [
+    { id: "t-fb", homeTeam: { name: "Liverpool FC" }, awayTeam: { name: "Tottenham Hotspur FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 1 * 864e5).toISOString(), status: "SCHEDULED" },
+    { id: "t-derby", homeTeam: { name: "Manchester United FC" }, awayTeam: { name: "Manchester City FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 2 * 864e5).toISOString(), status: "SCHEDULED" },
+    { id: "t-rout", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Brentford FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 3 * 864e5).toISOString(), status: "SCHEDULED" }
+  ];
+  eval("const applySettings = async () => {};\nconst getCachedMatches = async () => pool4;\nconst fetchLongView = async () => pool4;\nconst enrichLiveMatches = async (e, ms) => ms;\nconst fetchStandings = async (env, code) => (stand4[code] || null);\nconst compact = (st) => (st && st.teams && st.teams.length ? st : null);\nconst COMP_EN = { PL: \"PL\", PD: \"PD\", SA: \"SA\", BL1: \"BL1\", FL1: \"FL1\", AL: \"AL\", CL: \"CL\", EL: \"EL\", ECL: \"ECL\", PGL: \"PGL\" };\nconst LEAGUE_LOGOS = {};\nconst CONFIG = { KV_PUBLIC_MATCHES: \"pm4\", INTL_COMPETITIONS: {}, DOMESTIC_CUP_IDS: { FA_CUP: 2055 }, CUP_PHASE_WINDOWS: { EURO_LL_START: \"2026-09-28T00:00:00Z\", FA_ROUND1: \"2026-11-09T00:00:00Z\" } };\n" + fetchPM);
+  const d4 = await fetchPublicMatches(env4);
+  const box4 = d4.topSpot.matches || [];
+  chk(box4.map((m) => m.id).join(",") === "t-fb,t-derby", "v12.8: strict kickoff order — closest (fallback) on top, derby behind");
+  chk(d4.topSpot.next && d4.topSpot.next.id === "t-fb", "v12.8: countdown target (topSpot.next) = the box top = closest big match");
+  chk(box4.some((m) => m.id === "t-fb"), "v12.8: selected-vs-top-5 (Liverpool–Tottenham) boxes via the fallback tier");
+  chk(!box4.some((m) => m.id === "t-rout"), "v12.8: selected-vs-non-top-5 (Arsenal–Brentford) never boxes");
+  chk(d4.upcoming.some((m) => m.id === "t-rout"), "v12.8: routine selected fixture stays in the upcoming list");
+  chk(!d4.upcoming.some((m) => m.id === "t-fb") && !d4.upcoming.some((m) => m.id === "t-derby"), "boxed fixtures excluded from the upcoming list");
   console.log(fails === 0 ? "worker logic OK ✓" : fails + " FAILURES");
   process.exit(fails ? 1 : 0);
 })();
