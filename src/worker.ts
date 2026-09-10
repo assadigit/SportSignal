@@ -4,11 +4,11 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
 // src/worker.ts
 import { normalizeTeamName, normTeamKey } from "./teams.js";
 import { matchKey, canonDedupe } from "./dedupe.js";
-const VERSION = "11.52-live";
+const VERSION = "12.0-hardened";
 
 var CONFIG = {
   API_URL: "https://api.football-data.org/v4/matches",
-  API_RETRY_ATTEMPTS: 3,
+  API_RETRY_ATTEMPTS: 2,
   API_RETRY_DELAY: 1e3,
   LEAGUES: ["CL", "PL", "PD", "SA", "FL1", "BL1"],
   // Season-dependent cup phase windows (review/update each August): EL/ECL are
@@ -137,8 +137,8 @@ var CONFIG = {
   KV_MATCH_STATUS: "match_status_v1",
   KV_LIVE_DETAIL: "live_detail_",
   // Fallback API providers (used only when the primary API fails)
-  FALLBACK_DAYS_PAST: 2,
-  FALLBACK_DAYS_FUTURE: 4,
+  FALLBACK_DAYS_PAST: 1,
+  FALLBACK_DAYS_FUTURE: 2,
   KNOWN_LEAGUE_CODES: [
     "CL", "PL", "PD", "SA", "FL1", "BL1", "EL", "ECL",
     "FA_CUP", "EFL_CUP", "CDR", "COPPA_ITALIA"
@@ -172,6 +172,13 @@ function escapeMarkdownCharacters(text) {
   return text.replace(/([\[\]\(\)~`>#\+\-=|{}\.!_])/g, "\\$1");
 }
 __name(escapeMarkdownCharacters, "escapeMarkdownCharacters");
+// Audit fix 17 (log noise): per-item debug logs are gated behind LOG_VERBOSE;
+// run-level summaries and console.error stay unconditional.
+var LOG_VERBOSE = false;
+function vlog(...args) {
+  if (LOG_VERBOSE) console.log(...args);
+}
+__name(vlog, "vlog");
 // Admin password is stored PBKDF2-hashed in KV so the user can change it from the UI
 // (Cloudflare secrets can't be written at runtime). env.ADMIN_PASS still takes
 // precedence as the bootstrap password until changed.
@@ -186,12 +193,40 @@ async function getAdminPassHash(env) {
   return await env.STATE.get("admin_pass_hash", "json").catch(() => null);
 }
 __name(getAdminPassHash, "getAdminPassHash");
+// Audit fix 14: constant-time string comparison for all secret checks (webhook
+// secret, Bearer token, session cookie, admin password). Compares over the
+// max length so timing does not leak the prefix; length mismatch burns the
+// full loop as well.
+function timingSafeEqualStr(a, b) {
+  const enc = new TextEncoder();
+  const ab = enc.encode(String(a == null ? "" : a));
+  const bb = enc.encode(String(b == null ? "" : b));
+  const len = Math.max(ab.length, bb.length);
+  let diff = ab.length === bb.length ? 0 : 1;
+  for (let i = 0; i < len; i++) diff |= (ab[i] || 0) ^ (bb[i] || 0);
+  return diff === 0;
+}
+__name(timingSafeEqualStr, "timingSafeEqualStr");
 function getNowUTC() {
   return /* @__PURE__ */ new Date();
 }
 __name(getNowUTC, "getNowUTC");
 function getNowTehran(env) {
-  return new Date((/* @__PURE__ */ new Date()).toLocaleString("en-US", { timeZone: env.TEHRAN_TZ }));
+  // Audit fix 16: robust reimplementation. CONVENTION (unchanged): the returned
+  // Date carries Tehran wall-clock on the UTC timeline — its getUTCHours() etc.
+  // read Tehran time (the +3:30 skew is intentional and documented at call
+  // sites). The old toLocaleString()-then-parse form depended on fragile
+  // en-US locale formatting; formatToParts is deterministic.
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: env.TEHRAN_TZ || "Asia/Tehran",
+    hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit"
+  }).formatToParts(/* @__PURE__ */ new Date());
+  const p = {};
+  for (const x of parts) p[x.type] = x.value;
+  const hh = p.hour === "24" ? "00" : p.hour;
+  return new Date(`${p.year}-${p.month}-${p.day}T${hh}:${p.minute}:${p.second}Z`);
 }
 __name(getNowTehran, "getNowTehran");
 function getJalaliDate(utcDateStr, env) {
@@ -234,7 +269,13 @@ function getRelativeTimeUntilMatch(matchUtcDate, _env) {
   }
 }
 __name(getRelativeTimeUntilMatch, "getRelativeTimeUntilMatch");
-function translateTeam(englishName) {
+// CPU fix (audit finding 5): translateTeam previously rebuilt this ~600-entry
+// dict on EVERY call and re-scanned it with normalization per lookup. It is now
+// built once (lazily) and served through pre-normalized Map indexes.
+var FA_TEAMS_DICT = null;
+var FA_TEAMS_NORM = null;
+var FA_TEAMS_STEM = null;
+function buildFaTeamDict() {
   // Varzesh3-standard Persian names, keyed by canonical English name.
   // Lookup: exact first, then normalized (drops "AFC/FC/CF/RCD..." so any
   // provider variant resolves — e.g. "AFC Bournemouth" and "Bournemouth").
@@ -629,24 +670,34 @@ function translateTeam(englishName) {
     "Nassaji Mazandaran": "نساجی مازندران",
     "Esteghlal Khozestan": "استقلال خوزستان"
   };
-  if (FA_TEAMS[englishName]) return FA_TEAMS[englishName];
+  return FA_TEAMS;
+}
+__name(buildFaTeamDict, "buildFaTeamDict");
+function translateTeam(englishName) {
+  if (!FA_TEAMS_DICT) {
+    FA_TEAMS_DICT = buildFaTeamDict();
+    FA_TEAMS_NORM = new Map();
+    FA_TEAMS_STEM = [];
+    for (const [en, fa] of Object.entries(FA_TEAMS_DICT)) {
+      FA_TEAMS_NORM.set(normTeamKey(en), fa);
+      FA_TEAMS_STEM.push([normTeamKey(en).replace(/\d+/g, ""), fa]);
+    }
+  }
+  if (FA_TEAMS_DICT[englishName]) return FA_TEAMS_DICT[englishName];
   const key = normTeamKey(englishName);
   if (!key) return englishName;
-  for (const [en, fa] of Object.entries(FA_TEAMS)) {
-    if (normTeamKey(en) === key) return fa;
-  }
+  const normHit = FA_TEAMS_NORM.get(key);
+  if (normHit) return normHit;
   // Stem fallback (correctness fix): provider names carry extra words or
   // foundation years the dict key lacks — e.g. "Stade Rennais FC 1901" vs
   // "Stade Rennais FC", "Real Sociedad de Fútbol" vs "Real Sociedad",
   // "Stuttgart" vs "VfB Stuttgart". Digits are stripped on both sides so the
   // shared stems compare. Accept only when exactly ONE dict entry matches, to
   // avoid ambiguous collisions.
-  const stem = (n) => normTeamKey(n).replace(/\d+/g, "");
-  const prov = stem(englishName);
+  const prov = key.replace(/\d+/g, "");
   if (prov.length >= 4) {
     let hit = null, hits = 0;
-    for (const [en, fa] of Object.entries(FA_TEAMS)) {
-      const d = stem(en);
+    for (const [d, fa] of FA_TEAMS_STEM) {
       if (d.length >= 4 && (prov.includes(d) || d.includes(prov))) { hit = fa; hits++; }
     }
     if (hits === 1) return hit;
@@ -770,12 +821,18 @@ async function saveNotifiedMatch(env, match, notificationType, notifiedMatches) 
   const allNotifications = Object.values(notifiedMatches).flat();
   const overallExpiresAt = allNotifications.length > 0 ? Math.max(...allNotifications.map((n) => n.expiresAt)) : now + CONFIG.ONE_DAY_MS;
   const ttlSeconds = Math.ceil((overallExpiresAt - now) / 1e3);
-  console.log(`\u{1F4BE} Saving notification: match=${key}, type=${notificationType}, total_tracked=${Object.keys(notifiedMatches).length}, ttl=${ttlSeconds}s`);
-  await env.STATE.put(
-    CONFIG.KV_NOTIFIED_KEY,
-    JSON.stringify(notifiedMatches),
-    { expirationTtl: ttlSeconds > 0 ? ttlSeconds : 3600 }
-  );
+  vlog(`\u{1F4BE} Saving notification: match=${key}, type=${notificationType}, total_tracked=${Object.keys(notifiedMatches).length}, ttl=${ttlSeconds}s`);
+  // Audit fix 7: a failed KV write must never abort the remaining notifications
+  // of the run — log and continue (the dedupe map is best-effort state).
+  try {
+    await env.STATE.put(
+      CONFIG.KV_NOTIFIED_KEY,
+      JSON.stringify(notifiedMatches),
+      { expirationTtl: ttlSeconds > 0 ? ttlSeconds : 3600 }
+    );
+  } catch (e) {
+    console.error("Notification state save failed (continuing): " + e.message);
+  }
 }
 __name(saveNotifiedMatch, "saveNotifiedMatch");
 async function shouldSendNotification(env, match, notificationType, notifiedMatches) {
@@ -884,6 +941,11 @@ function isMatchFinished(match) {
 }
 __name(isMatchFinished, "isMatchFinished");
 async function cleanupExpiredNotifications(env) {
+  // Audit fix 4 (KV write amplification): at most one cleanup pass per hour
+  // (was: a KV write nearly every 10-min run whenever any entry had expired).
+  const hourStamp = Math.floor(Date.now() / 36e5);
+  const lastCleanup = parseInt(await env.STATE.get("cleanup_hour").catch(() => null)) || 0;
+  if (lastCleanup === hourStamp) return;
   const notifiedMatches = await getNotifiedMatches(env);
   const now = Date.now();
   let cleanedCount = 0;
@@ -902,23 +964,48 @@ async function cleanupExpiredNotifications(env) {
     const allNotifications = Object.values(notifiedMatches).flat();
     const maxExpiry = allNotifications.length > 0 ? Math.max(...allNotifications.map((n) => n.expiresAt)) : now + 36e5;
     const ttl = Math.max(3600, Math.ceil((maxExpiry - now) / 1e3));
-    await env.STATE.put(
-      CONFIG.KV_NOTIFIED_KEY,
-      JSON.stringify(notifiedMatches),
-      // ✅ Must be string for KV
-      { expirationTtl: ttl }
-    );
+    try {
+      await env.STATE.put(
+        CONFIG.KV_NOTIFIED_KEY,
+        JSON.stringify(notifiedMatches),
+        // ✅ Must be string for KV
+        { expirationTtl: ttl }
+      );
+    } catch (e) {
+      console.error("Notification cleanup write failed: " + e.message);
+    }
     console.log(`\u{1F9F9} Cleaned up ${cleanedCount} expired notifications`);
   }
+  await env.STATE.put("cleanup_hour", String(hourStamp), { expirationTtl: 2 * 36e5 }).catch(() => {});
 }
 __name(cleanupExpiredNotifications, "cleanupExpiredNotifications");
 function shouldNotify(match) {
   const compCode = match.competition.code;
   const normHome = normalizeTeamName(match.homeTeam.name);
   const normAway = normalizeTeamName(match.awayTeam.name);
-  const allListed = Object.values(CONFIG.BIG_TEAMS_BY_LEAGUE).flat().map(normalizeTeamName);
+  // CPU fix (audit finding 5): the normalized team sets used to be rebuilt
+  // (Object.values(...).flat().map(normalizeTeamName)) on EVERY call. They are
+  // now memoized on CONFIG and invalidated by object identity — applySettings()
+  // replaces BIG_TEAMS_BY_LEAGUE with a fresh object, so a stale cache can never
+  // survive a settings change. Set.has replaces Array.includes.
+  let c = CONFIG.__teamNorm;
+  if (!c || c.sig !== CONFIG.BIG_TEAMS_BY_LEAGUE) {
+    const all = /* @__PURE__ */ new Set();
+    const byLeague = {};
+    for (const [lg, list] of Object.entries(CONFIG.BIG_TEAMS_BY_LEAGUE)) {
+      const normList = /* @__PURE__ */ new Set();
+      for (const t of list) {
+        const n = normalizeTeamName(t);
+        normList.add(n);
+        all.add(n);
+      }
+      byLeague[lg] = normList;
+    }
+    c = { sig: CONFIG.BIG_TEAMS_BY_LEAGUE, all, byLeague };
+    CONFIG.__teamNorm = c;
+  }
   if (compCode === "CL" || isDomesticCup(compCode)) {
-    if (allListed.includes(normHome) || allListed.includes(normAway)) {
+    if (c.all.has(normHome) || c.all.has(normAway)) {
       return true;
     }
     if (isQuarterFinalOrLater(match.stage)) {
@@ -926,13 +1013,10 @@ function shouldNotify(match) {
     }
     return false;
   }
-  const leagueTeams = (CONFIG.BIG_TEAMS_BY_LEAGUE[compCode] || []).map(normalizeTeamName);
+  const leagueTeams = c.byLeague[compCode];
   // FIX: notify when EITHER team is followed ("Arsenal vs Brentford" must fire),
   // not only "big matches" between two followed teams.
-  if (leagueTeams.includes(normHome) || leagueTeams.includes(normAway)) {
-    return true;
-  }
-  return false;
+  return !!(leagueTeams && (leagueTeams.has(normHome) || leagueTeams.has(normAway)));
 }
 __name(shouldNotify, "shouldNotify");
 // "Big matches only" view on the public page: BOTH teams must be big clubs.
@@ -953,11 +1037,13 @@ var BIG_MATCH_TEAMS = [
 var BIG_MATCH_UEFA = BIG_MATCH_TEAMS.concat(["Paris Saint-Germain", "PSG"]);
 function isFeaturedMatch(match) {
   const code = match.competition.code;
-  const pool = (code === "CL" || code === "EL" || code === "ECL" || isDomesticCup(code)) ? BIG_MATCH_UEFA : BIG_MATCH_TEAMS;
-  const home = normalizeTeamName(match.homeTeam.name);
-  const away = normalizeTeamName(match.awayTeam.name);
-  const poolN = pool.map(normalizeTeamName);
-  return poolN.includes(home) && poolN.includes(away);
+  const isUefa = code === "CL" || code === "EL" || code === "ECL" || isDomesticCup(code);
+  const pool = isUefa ? BIG_MATCH_UEFA : BIG_MATCH_TEAMS;
+  // CPU fix (audit finding 5): the normalized pool was rebuilt per call; it is
+  // now memoized on the (static, never-rebuilt) pool arrays as a Set.
+  if (!pool.__normSet) pool.__normSet = /* @__PURE__ */ new Set(pool.map(normalizeTeamName));
+  const nset = pool.__normSet;
+  return nset.has(normalizeTeamName(match.homeTeam.name)) && nset.has(normalizeTeamName(match.awayTeam.name));
 }
 __name(isFeaturedMatch, "isFeaturedMatch");
 var DERBY_PAIRS = [
@@ -1046,13 +1132,44 @@ function parseTSPDate(dateStr, timeStr, tsStr) {
   return isNaN(d.getTime()) ? null : d.toISOString();
 }
 __name(parseTSPDate, "parseTSPDate");
+// Audit fix 3 (subrequest budget): Cloudflare free tier caps subrequests at
+// 50 per invocation; exceeding it throws error 1101 and kills the whole run
+// (the live public-API outage). This soft counter is reset at each invocation
+// entry and makes degradation graceful instead: provider calls throw, callers
+// catch and serve partial/stale data. Concurrent invocations in one isolate
+// share the counter — acceptable: the failure mode is graceful truncation.
+var SUBREQUEST_COUNT = 0;
+var SUBREQUEST_CAP = 48;
+function resetSubrequestBudget() {
+  SUBREQUEST_COUNT = 0;
+}
+__name(resetSubrequestBudget, "resetSubrequestBudget");
 async function fetchJSON(url, attempts, headers) {
   attempts = attempts || 2;
+  if (++SUBREQUEST_COUNT > SUBREQUEST_CAP) throw new Error("Subrequest budget exhausted");
+  // Audit fix 3 (Cache API): provider day-feeds are stable for minutes —
+  // cache hits cost ZERO subrequests and cut CPU/wall time. Only headerless
+  // GETs (sportscore/TheSportsDB day feeds) are cacheable; authed fd calls
+  // keep their KV-level caching.
+  const canCache = !headers && typeof caches !== "undefined" && caches.default;
+  const cacheKey = canCache ? new Request(url, { method: "GET" }) : null;
+  if (cacheKey) {
+    try {
+      const hit = await caches.default.match(cacheKey);
+      if (hit) return await hit.json();
+    } catch (e) {}
+  }
   for (let i = 1; i <= attempts; i++) {
     try {
       const res = await fetch(url, { headers: headers || {} });
       if (!res.ok) throw new Error("HTTP " + res.status);
-      return await res.json();
+      const data = await res.json();
+      if (cacheKey) {
+        try {
+          await caches.default.put(cacheKey, new Response(JSON.stringify(data), { headers: { "content-type": "application/json", "cache-control": "max-age=300" } }));
+        } catch (e) {}
+      }
+      return data;
     } catch (e) {
       if (i < attempts) await new Promise((r) => setTimeout(r, 800 * i));
       else throw e;
@@ -1128,10 +1245,14 @@ async function fetchSportScore(env) {
     )
   );
   if (!Object.keys(slugs).length) return matches;
-  // Range: 1 day back (results ≤6h after) + 2 days ahead (24h window + slack) = 4 days.
+  // Range: 1 day back (results + result backfill) + 1 day ahead (24h window)
+  // = 3 calendar dates. Audit fix 3: was 4 dates — 8-9 slugs × 4 days was the
+  // single biggest subrequest blowout (~72 calls). Every notification window
+  // (24h/3h/1h/start/result ≤24h back) lives inside ±1 day; wider-horizon
+  // fixtures persist in the merged KV pool from the long-view sweep.
   // cacheMatches merges, so wide-horizon fixtures persist from earlier runs.
   const from = new Date(Date.now() - 864e5);
-  const to = new Date(Date.now() + 2 * 864e5);
+  const to = new Date(Date.now() + 1 * 864e5);
   const acc = { list: matches, seen };
   for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
     const dateStr = d.toISOString().split("T")[0];
@@ -1160,6 +1281,12 @@ async function cacheMatches(env, matches, source) {
     const head = (existing && Array.isArray(existing.matches) ? existing.matches : [])
       .filter((m) => new Date(m.utcDate || 0).getTime() > cutoff);
     const merged = canonDedupe([...head, ...matches]);
+    // Audit fix 4 (KV write amplification): skip the write when the merged pool
+    // is identical to what's stored (quiet periods previously rewrote the same
+    // data every 10 minutes just to bump fetchedAt).
+    if (existing && Array.isArray(existing.matches) && JSON.stringify(merged) === JSON.stringify(existing.matches)) {
+      return;
+    }
     await env.STATE.put(
       CONFIG.KV_MATCHES_KEY,
       JSON.stringify({ fetchedAt: new Date().toISOString(), source, matches: merged }),
@@ -1279,21 +1406,42 @@ async function fetchLongView(env) {
   // first found fixture (e.g. Coppa R64 = today+3) instead of burning 10 days
   // of subrequests on empty pages. EL/ECL after cups so cup data lands inside
   // the 50-subrequest cap.
+  // Audit fix 6: every sportscore day call is individually failure-tolerant
+  // (a provider hiccup degrades that day's data, never the whole page).
   const cupSlugs = [["FA_CUP", SPORTSCORE_SLUGS.FA_CUP], ["EFL_CUP", SPORTSCORE_SLUGS.EFL_CUP], ["CDR", SPORTSCORE_SLUGS.CDR], ["COPPA_ITALIA", SPORTSCORE_SLUGS.COPPA_ITALIA]];
   const cupDone = {};
   for (let i = 0; i < 10; i++) {
     const dateStr = new Date(Date.now() + i * 864e5).toISOString().split("T")[0];
     for (const [cc, slug] of cupSlugs) {
       if (cupDone[cc]) continue;
-      const n = await sportScoreDay(cc, slug, dateStr, uefaAcc);
-      if (n > 0) cupDone[cc] = true;
+      try {
+        const n = await sportScoreDay(cc, slug, dateStr, uefaAcc);
+        if (n > 0) cupDone[cc] = true;
+      } catch (e) {
+        console.error(`\u274C Long view cup ${cc} failed: ${e.message}`);
+      }
     }
   }
-  for (let i = 0; i < 10; i++) {
+  // Audit fix 3+6: EL/ECL/BL1 day sweep trimmed 10→7 days (21 calls) and made
+  // failure-tolerant per call — this was one of the two loops whose uncaught
+  // throws produced the live error-1101 outage.
+  for (let i = 0; i < 7; i++) {
     const dateStr = new Date(Date.now() + i * 864e5).toISOString().split("T")[0];
-    await sportScoreDay("EL", SPORTSCORE_SLUGS.EL, dateStr, uefaAcc);
-    await sportScoreDay("ECL", SPORTSCORE_SLUGS.ECL, dateStr, uefaAcc);
-    await sportScoreDay("BL1", SPORTSCORE_SLUGS.BL1, dateStr, uefaAcc);
+    try {
+      await sportScoreDay("EL", SPORTSCORE_SLUGS.EL, dateStr, uefaAcc);
+    } catch (e) {
+      console.error(`\u274C Long view EL failed: ${e.message}`);
+    }
+    try {
+      await sportScoreDay("ECL", SPORTSCORE_SLUGS.ECL, dateStr, uefaAcc);
+    } catch (e) {
+      console.error(`\u274C Long view ECL failed: ${e.message}`);
+    }
+    try {
+      await sportScoreDay("BL1", SPORTSCORE_SLUGS.BL1, dateStr, uefaAcc);
+    } catch (e) {
+      console.error(`\u274C Long view BL1 failed: ${e.message}`);
+    }
   }
   if (uefaAcc.list.length !== 0) {
     const uefaCount = uefaAcc.list.filter((m) => m.competition.code === "EL" || m.competition.code === "ECL").length;
@@ -1410,30 +1558,39 @@ async function fetchTheSportsDB(env) {
       });
     }
   }
-  // Sweep: eventsday for any other monitored league (e.g. cups) in the near window
-  const from = new Date(Date.now() - CONFIG.FALLBACK_DAYS_PAST * 864e5);
-  const to = new Date(Date.now() + CONFIG.FALLBACK_DAYS_FUTURE * 864e5);
-  for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
-    const dateStr = d.toISOString().split("T")[0];
-    await pace();
-    const data = await fetchJSON("https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=" + dateStr);
-    for (const e of (data && data.events) || []) {
-      const code = PROVIDER_LEAGUE_MAP[e.strLeague];
-      if (!code || !monitored.has(code)) continue;
-      if ((e.strSport || "").toLowerCase() !== "soccer") continue;
-      const utcDate = parseTSPDate(e.dateEvent, e.strTime, e.strTimestamp);
-      if (!utcDate) continue;
-      matches.push({
-        id: "tsd-" + e.idEvent,
-        utcDate,
-        status: /finished|completed/i.test(e.strStatus || "") ? "FINISHED" : "SCHEDULED",
-        stage: mapStageName(e.strRound || e.intRound),
-        competition: { code },
-        venue: e.strVenue || null,
-        homeTeam: { name: e.strHomeTeam, crest: e.strHomeTeamBadge || null },
-        awayTeam: { name: e.strAwayTeam, crest: e.strAwayTeamBadge || null },
-        score: { fullTime: { home: parseInt(e.intHomeScore) || 0, away: parseInt(e.intAwayScore) || 0 } }
-      });
+  // Sweep: eventsday for any other monitored league (e.g. cups) in the near window.
+  // Audit fix 3: this is a redundancy layer — only spend its subrequests when
+  // the per-league calls came up empty (TSP hiccup), and tolerate per-day
+  // failures so one bad day can't lose the rest of the sweep.
+  if (!matches.length) {
+    const from = new Date(Date.now() - CONFIG.FALLBACK_DAYS_PAST * 864e5);
+    const to = new Date(Date.now() + CONFIG.FALLBACK_DAYS_FUTURE * 864e5);
+    for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split("T")[0];
+      await pace();
+      try {
+        const data = await fetchJSON("https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=" + dateStr);
+        for (const e of (data && data.events) || []) {
+          const code = PROVIDER_LEAGUE_MAP[e.strLeague];
+          if (!code || !monitored.has(code)) continue;
+          if ((e.strSport || "").toLowerCase() !== "soccer") continue;
+          const utcDate = parseTSPDate(e.dateEvent, e.strTime, e.strTimestamp);
+          if (!utcDate) continue;
+          matches.push({
+            id: "tsd-" + e.idEvent,
+            utcDate,
+            status: /finished|completed/i.test(e.strStatus || "") ? "FINISHED" : "SCHEDULED",
+            stage: mapStageName(e.strRound || e.intRound),
+            competition: { code },
+            venue: e.strVenue || null,
+            homeTeam: { name: e.strHomeTeam, crest: e.strHomeTeamBadge || null },
+            awayTeam: { name: e.strAwayTeam, crest: e.strAwayTeamBadge || null },
+            score: { fullTime: { home: parseInt(e.intHomeScore) || 0, away: parseInt(e.intAwayScore) || 0 } }
+          });
+        }
+      } catch (e) {
+        console.error(`\u274C TSP day sweep ${dateStr} failed: ${e.message}`);
+      }
     }
   }
   return matches;
@@ -1515,7 +1672,11 @@ async function fetchMatchesFromAPI(env) {
     await cacheMatches(env, matches, usedSource);
   }
   if (usedSource) {
-    await env.STATE.put(CONFIG.KV_LAST_SOURCE, usedSource).catch(() => {});
+    // Audit fix 4: write only when the source actually changed (was: every run).
+    const prevSource = await env.STATE.get(CONFIG.KV_LAST_SOURCE).catch(() => null);
+    if (prevSource !== usedSource) {
+      await env.STATE.put(CONFIG.KV_LAST_SOURCE, usedSource).catch(() => {});
+    }
   }
   console.log(`\u{1F4CA} Total matches found: ${matches.length} (source: ${usedSource})`);
   return matches;
@@ -1523,12 +1684,13 @@ async function fetchMatchesFromAPI(env) {
 __name(fetchMatchesFromAPI, "fetchMatchesFromAPI");
 async function fetchWithRetry(url, apiToken, label) {
   for (let attempt = 1; attempt <= CONFIG.API_RETRY_ATTEMPTS; attempt++) {
+    if (++SUBREQUEST_COUNT > SUBREQUEST_CAP) throw new Error("Subrequest budget exhausted"); // audit fix 3
     try {
-      console.log(`${label} - Attempt ${attempt}/${CONFIG.API_RETRY_ATTEMPTS}`);
+      vlog(`${label} - Attempt ${attempt}/${CONFIG.API_RETRY_ATTEMPTS}`);
       const res = await fetch(url, {
         headers: { "X-Auth-Token": apiToken }
       });
-      console.log(`${label} Status: ${res.status} ${res.statusText}`);
+      vlog(`${label} Status: ${res.status} ${res.statusText}`);
       if (!res.ok) {
         const errorText = await res.text();
         if (res.status === 429) {
@@ -1557,8 +1719,16 @@ async function fetchWithRetry(url, apiToken, label) {
   return [];
 }
 __name(fetchWithRetry, "fetchWithRetry");
+var TELEGRAM_PAUSE_UNTIL = 0;
 async function sendTelegram(env, text, chatId) {
+  // Audit fix 11 (429 handling): a 429 no longer sleeps retry_after (can be
+  // 30s+) and stall the whole notification group. All sends pause globally for
+  // min(retryAfter, 10s); the current message gets one short retry, remaining
+  // sends defer to the next cron run (the dedupe lock is only set on success,
+  // so nothing is permanently lost).
   for (let attempt = 1; attempt <= CONFIG.TELEGRAM_RETRY_ATTEMPTS; attempt++) {
+    if (Date.now() < TELEGRAM_PAUSE_UNTIL) return false;
+    if (++SUBREQUEST_COUNT > SUBREQUEST_CAP) return false; // audit fix 3: budget guard — defer, never 1101
     try {
       const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
         method: "POST",
@@ -1570,14 +1740,17 @@ async function sendTelegram(env, text, chatId) {
         })
       });
       if (res.ok) {
-        console.log(`\u2705 Telegram sent to ${chatId}`);
+        vlog(`\u2705 Telegram sent to ${chatId}`);
         return true;
       }
       const error = await res.text();
       console.error(`Telegram error (attempt ${attempt}/${CONFIG.TELEGRAM_RETRY_ATTEMPTS}):`, error);
       if (res.status === 429) {
         const retryAfter = parseInt(res.headers.get("retry-after") || "2");
-        await new Promise((r) => setTimeout(r, retryAfter * 1000));
+        TELEGRAM_PAUSE_UNTIL = Math.max(TELEGRAM_PAUSE_UNTIL, Date.now() + Math.min(Math.max(retryAfter, 1), 10) * 1000);
+        if (attempt < CONFIG.TELEGRAM_RETRY_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, 1500));
+        }
         continue;
       }
       if (res.status >= 400 && res.status < 500) {
@@ -2122,12 +2295,20 @@ __name(getUserPrefs, "getUserPrefs");
 function userFollowsMatch(prefs, chatId, match) {
   // Mode B (priority): user follows BOTH teams -> "both".
   // Mode A: user follows exactly one -> "one". Default (no prefs) = master list.
+  // CPU fix (audit finding 5): the default (no prefs) path resolves against the
+  // memoized normalized master Set instead of re-normalizing the full list per call.
   const p = prefs[String(chatId)];
-  const teams = p && Array.isArray(p.teams) && p.teams.length ? p.teams : masterTeamList();
   const nh = normalizeTeamName(match.homeTeam.name);
   const na = normalizeTeamName(match.awayTeam.name);
-  const home = teams.some((t) => normalizeTeamName(t) === nh);
-  const away = teams.some((t) => normalizeTeamName(t) === na);
+  let home = false, away = false;
+  if (p && Array.isArray(p.teams) && p.teams.length) {
+    home = p.teams.some((t) => normalizeTeamName(t) === nh);
+    away = p.teams.some((t) => normalizeTeamName(t) === na);
+  } else {
+    masterTeamList();
+    home = _masterMemo.normSet.has(nh);
+    away = _masterMemo.normSet.has(na);
+  }
   return home && away ? "both" : home || away ? "one" : null;
 }
 __name(userFollowsMatch, "userFollowsMatch");
@@ -2135,26 +2316,35 @@ function isBigMatch(match, prefs, chatId) {
   return userFollowsMatch(prefs, chatId, match) === "both";
 }
 __name(isBigMatch, "isBigMatch");
+var _masterMemo = { sig: null, list: null, normSet: null };
 function masterTeamList() {
   // Flat unique list of all followed teams (for /teams numbering)
-  const seen = new Set();
-  const out = [];
-  for (const list of Object.values(CONFIG.BIG_TEAMS_BY_LEAGUE)) {
-    for (const t of list) {
-      if (!seen.has(t)) {
-        seen.add(t);
-        out.push(t);
+  // CPU fix (audit finding 5): memoized; identity-invalidated automatically
+  // when applySettings() replaces CONFIG.BIG_TEAMS_BY_LEAGUE.
+  if (_masterMemo.sig !== CONFIG.BIG_TEAMS_BY_LEAGUE) {
+    const seen = /* @__PURE__ */ new Set();
+    const out = [];
+    for (const list of Object.values(CONFIG.BIG_TEAMS_BY_LEAGUE)) {
+      for (const t of list) {
+        if (!seen.has(t)) {
+          seen.add(t);
+          out.push(t);
+        }
       }
     }
+    _masterMemo.sig = CONFIG.BIG_TEAMS_BY_LEAGUE;
+    _masterMemo.list = out;
+    _masterMemo.normSet = /* @__PURE__ */ new Set(out.map(normalizeTeamName));
   }
-  return out;
+  return _masterMemo.list;
 }
 __name(masterTeamList, "masterTeamList");
 function isMasterBigMatch(match) {
   // Mode B sort signal: both teams are followed teams (master list). Global
   // flag used only for ordering; per-user gating happens in the send loop.
-  const list = masterTeamList().map(normalizeTeamName);
-  return list.includes(normalizeTeamName(match.homeTeam.name)) && list.includes(normalizeTeamName(match.awayTeam.name));
+  masterTeamList();
+  const nset = _masterMemo.normSet;
+  return nset.has(normalizeTeamName(match.homeTeam.name)) && nset.has(normalizeTeamName(match.awayTeam.name));
 }
 __name(isMasterBigMatch, "isMasterBigMatch");
 // ─── Per-user timezone ───
@@ -2277,26 +2467,63 @@ __name(getRegisteredChats, "getRegisteredChats");
 function isAdminRequest(req, env) {
   // Fail closed: admin auth requires an explicit ADMIN_TOKEN secret — the
   // Telegram BOT_TOKEN must never double as the admin credential.
+  // Audit fix 14: timing-safe comparison (was: plain ===).
   if (!env.ADMIN_TOKEN) return false;
   const authHeader = req.headers.get("Authorization");
-  return authHeader === `Bearer ${env.ADMIN_TOKEN}`;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return false;
+  return timingSafeEqualStr(authHeader.slice(7), env.ADMIN_TOKEN);
 }
 __name(isAdminRequest, "isAdminRequest");
+function getAdminCookieToken(req) {
+  const m = (req.headers.get("Cookie") || "").match(/(?:^|;\s*)admin_auth=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+__name(getAdminCookieToken, "getAdminCookieToken");
+async function isValidAdminSession(env, req) {
+  // Audit fix 8: the cookie carries a random session id (admin_sess_<id> in
+  // KV, 12h TTL) — NOT the ADMIN_TOKEN master secret. An XSS or log leak can
+  // no longer compromise the admin token itself.
+  const sid = getAdminCookieToken(req);
+  if (!sid || !/^[a-f0-9]{32,80}$/i.test(sid)) return false;
+  const val = await env.STATE.get("admin_sess_" + sid).catch(() => null);
+  return !!val;
+}
+__name(isValidAdminSession, "isValidAdminSession");
+async function isAdminAuthed(req, env) {
+  return isAdminRequest(req, env) || await isValidAdminSession(env, req);
+}
+__name(isAdminAuthed, "isAdminAuthed");
 function validateWebhook(req, env) {
   // Fail closed: without WEBHOOK_SECRET the webhook rejects every update.
+  // Audit fix 14: timing-safe comparison (was: plain ===).
   if (!env.WEBHOOK_SECRET) return false;
   const secretToken = req.headers.get("X-Telegram-Bot-Api-Secret-Token");
-  return secretToken === env.WEBHOOK_SECRET;
+  return timingSafeEqualStr(secretToken, env.WEBHOOK_SECRET);
 }
 __name(validateWebhook, "validateWebhook");
+async function getCronStatus(env) {
+  // Audit fix 4: consolidated cron status (heartbeat + last_cron in ONE key)
+  // with legacy-key fallback so pre/post-upgrade readers stay compatible.
+  try {
+    const s = await env.STATE.get("cron_status_v1", "json").catch(() => null);
+    if (s && s.heartbeat) return s;
+  } catch (e) {}
+  const hb = parseInt(await env.STATE.get(CONFIG.KV_HEARTBEAT).catch(() => null)) || 0;
+  const lc = parseInt(await env.STATE.get(CONFIG.KV_LAST_CRON).catch(() => null)) || 0;
+  const src = await env.STATE.get(CONFIG.KV_LAST_SOURCE).catch(() => null);
+  return { heartbeat: hb ? String(hb) : "0", last_cron: lc ? String(lc) : "0", api_source: src || null };
+}
+__name(getCronStatus, "getCronStatus");
 async function executeScheduledLogic(env) {
+  resetSubrequestBudget(); // audit fix 3: per-invocation subrequest budget
   await applySettings(env);
   const NOW = Date.now();
+  const prevStatus = await getCronStatus(env); // audit fix 4: one read for heartbeat + last_cron (was 2 keys)
   console.log(`
 \u{1F680} Starting scheduled execution at ${new Date(NOW).toISOString()}`);
   // Catch-up alert: if the previous run was long ago (crash/outage), warn the admin once
   try {
-    const lastCron = parseInt(await env.STATE.get(CONFIG.KV_LAST_CRON).catch(() => null)) || 0;
+    const lastCron = parseInt(prevStatus.last_cron) || 0;
     const lastStale = parseInt(await env.STATE.get("stale_alert_at").catch(() => null)) || 0;
     if (lastCron && NOW - lastCron > 30 * 6e4 && NOW - lastStale > 12 * 36e5) {
       await env.STATE.put("stale_alert_at", String(NOW)).catch(() => {});
@@ -2309,17 +2536,28 @@ async function executeScheduledLogic(env) {
   } catch (e) {
     console.error("Stale alert failed: " + e.message);
   }
-  const lockValue = await env.STATE.get(CONFIG.KV_EXECUTION_LOCK);
+  // Audit fix 9: ownership-verified lock. KV has no compare-and-set; writing a
+  // unique "own:<ts>:<uuid>" value and reading it back narrows the old
+  // get-then-put race from the whole pipeline duration (seconds) to the ~ms
+  // window between put and get. The losing writer sees a foreign value and
+  // skips; legacy timestamp locks are still honored by freshness.
+  const lockValue = await env.STATE.get(CONFIG.KV_EXECUTION_LOCK).catch(() => null);
   if (lockValue) {
-    const lockTime = parseInt(lockValue);
-    if (NOW - lockTime < CONFIG.LOCK_TIMEOUT) {
+    const lockTime = parseInt(String(lockValue).replace(/^own:/, "")) || 0;
+    if (lockTime && NOW - lockTime < CONFIG.LOCK_TIMEOUT) {
       console.log("\u23ED\uFE0F Execution already in progress, skipping");
       return;
     }
   }
-  await env.STATE.put(CONFIG.KV_EXECUTION_LOCK, NOW.toString(), {
+  const lockOwner = "own:" + NOW + ":" + crypto.randomUUID();
+  await env.STATE.put(CONFIG.KV_EXECUTION_LOCK, lockOwner, {
     expirationTtl: Math.ceil(CONFIG.LOCK_TIMEOUT / 1e3)
   });
+  const lockCheck = await env.STATE.get(CONFIG.KV_EXECUTION_LOCK).catch(() => null);
+  if (lockCheck !== lockOwner) {
+    console.log("\u23ED\uFE0F Lock claimed by a concurrent run, skipping");
+    return;
+  }
   try {
     const chatIds = await getRegisteredChats(env);
     console.log(`\u{1F465} Registered users: ${chatIds.length}`);
@@ -2347,15 +2585,23 @@ async function executeScheduledLogic(env) {
       }
     }
     await sendMatchNotifications(env, matches);
-    await env.STATE.put(CONFIG.KV_HEARTBEAT, NOW.toString());
-    await env.STATE.put(CONFIG.KV_LAST_CRON, NOW.toString());
+    // Audit fix 4: ONE consolidated status write (heartbeat + last_cron) with
+    // legacy-key fallback — and no lock delete (the 240s TTL expires it long
+    // before the next 10-min cron; the delete cost 144 writes/day).
+    try {
+      await env.STATE.put("cron_status_v1", JSON.stringify({
+        heartbeat: String(NOW),
+        last_cron: String(NOW)
+      }));
+    } catch (e) {
+      await env.STATE.put(CONFIG.KV_HEARTBEAT, NOW.toString()).catch(() => {});
+      await env.STATE.put(CONFIG.KV_LAST_CRON, NOW.toString()).catch(() => {});
+    }
     console.log(`
 \u2705 Execution completed at ${(/* @__PURE__ */ new Date()).toISOString()}`);
   } catch (error) {
     console.error(`\u274C Fatal error in scheduled logic:`, error);
     throw error;
-  } finally {
-    await env.STATE.delete(CONFIG.KV_EXECUTION_LOCK);
   }
 }
 __name(executeScheduledLogic, "executeScheduledLogic");
@@ -2560,10 +2806,23 @@ function projectedUclStart() {
   const y = now.getUTCMonth() >= 9 ? now.getUTCFullYear() + 1 : now.getUTCFullYear();
   return new Date(Date.UTC(y, 8, 15, 19, 0, 0));
 }
-async function fetchPublicMatches(env) {
+async function fetchPublicMatches(env, req) {
   const cached = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null);
   if (cached && cached.ts && Date.now() - cached.ts < 18e4) return cached.data;
   await applySettings(env);
+  // Audit fixes 6+13 (the live error-1101 outage): single-flight refresh lock
+  // + per-IP courtesy limit + stale-serve. The old code let EVERY cache-expired
+  // request launch a full provider sweep; concurrent sweeps burned the
+  // 50-subrequest cap and the route 500'd ("error code: 1101") for ~55s.
+  const lockVal = parseInt(await env.STATE.get("pub_refresh_lock").catch(() => null)) || 0;
+  const lockFresh = !!(lockVal && Date.now() - lockVal < 45e3);
+  if (lockFresh && cached && cached.data) return cached.data; // one sweeper at a time; the rest serve stale
+  const ip = (req && req.headers && req.headers.get("CF-Connecting-IP")) || "";
+  const rlKey = ip ? "pub_rl_" + ip.replace(/[^0-9a-fA-F:.]/g, "") : null;
+  if (rlKey) {
+    const rl = await env.STATE.get(rlKey).catch(() => null);
+    if (rl && cached && cached.data) return cached.data; // this IP refreshed <60s ago
+  }
   // Same pool as the bot: read the notified KV cache first (the cron fills it
   // every 10 min), then fall back to the long view — UI and bot can never
   // diverge because both consume matches_v13_tracked.
@@ -2571,8 +2830,22 @@ async function fetchPublicMatches(env) {
   // Always refresh from the wide long view when stale (fetchLongView self-caches
   // 6h in the same KV pool). The near 8-day cron pool would cap the page at
   // DAYS_IN_FUTURE and hide big matches beyond the month — nextBig needs 3 months.
-  matches = await fetchLongView(env);
-  await enrichLiveMatches(env, matches);
+  // Audit fix 6: a failing sweep now degrades to stale/cached data instead of
+  // throwing (which produced the live public-page 500s).
+  try {
+    if (!lockFresh) {
+      await env.STATE.put("pub_refresh_lock", String(Date.now()), { expirationTtl: 45 }).catch(() => {});
+    }
+    if (rlKey) {
+      await env.STATE.put(rlKey, String(Date.now()), { expirationTtl: 60 }).catch(() => {});
+    }
+    matches = await fetchLongView(env);
+    await enrichLiveMatches(env, matches);
+  } catch (e) {
+    console.error("Public provider sweep failed (serving stale): " + e.message);
+    if (cached && cached.data) return cached.data;
+    matches = await getCachedMatches(env);
+  }
   const now = Date.now();
   // Big view: "from now until the end of the current month" — dynamic EOM cutoff.
   const eom = new Date(now); eom.setMonth(eom.getMonth() + 1, 0); eom.setHours(23, 59, 59, 999);
@@ -2683,6 +2956,10 @@ const cupsRaw = cupOrder.map((code) => {
   const data = { upcoming: upcoming.map(pubMatch), finished: finished.map(pubMatch), nextBig, standings, cups, iran, ucl, fetchedAt: new Date().toISOString() };
   if (upcoming.length || finished.length) {
     await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: 300 }).catch(() => {});
+  } else {
+    // Audit fix 13: empty-but-valid result — back off for a minute instead of
+    // re-sweeping providers on every page hit during quiet fixture windows.
+    await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: 60 }).catch(() => {});
   }
   return data;
 }
@@ -2914,8 +3191,8 @@ h1{font-size:23px}
 <footer><span data-i="madeWith">ساخته‌شده با ❤️</span> — <a href="/admin" data-i="adminLink">ورود مدیریت</a> — <a href="https://t.me/UCL_Match_Bot" target="_blank" rel="noopener" data-i="botLink">ربات تلگرام</a></footer>
 <script>
 var I18N={
-fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو و نتایج تیم‌های منتخب — به‌روزرسانی خودکار هر دقیقه",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ‌های قاره اروپا",hUcl:"🏆 لیگ قهرمانان اروپا",hUclNext:"🔥 مسابقه بزرگ بعدی لیگ قهرمانان اروپا",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cupsNone:"برنامه‌ای هنوز اعلام نشده",tierEurope:"🏆 لیگ‌های قاره اروپا",intlCups:"🏆 جام‌های بین‌المللی",iranTitle:"ایران — لیگ برتر خلیج فارس",iranHazfi:"جام حذفی ایران",iranHide:"پنهان کردن",iranShow:"نمایش",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"توکن مدیریت (ADMIN_TOKEN)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",cal:"افزودن به گوگل تقویم",ver:"نسخه ۱۱.۵۲ — مسابقه بعدی لیگ قهرمانان اروپا",mToken:"توکن نامعتبر است",mErr:"خطا: ",mEnterToken:"توکن را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
-en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Upcoming matches & results for your teams — auto-refresh every minute",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 European Leagues",hUcl:"🏆 UEFA Champions League",hUclNext:"🔥 Next UCL Match",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cupsNone:"No fixture announced yet",tierEurope:"🏆 European Continental Leagues",intlCups:"🏆 International Cups",iranTitle:"Iran — Persian Gulf Pro League",iranHazfi:"Iran Hazfi Cup",iranHide:"Hide",iranShow:"Show",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin token (ADMIN_TOKEN)",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",cal:"Add to Google Calendar",ver:"v11.52 — next UCL match spotlight",mToken:"Invalid token",mErr:"Error: ",mEnterToken:"Enter the token",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
+fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو و نتایج تیم‌های منتخب — به‌روزرسانی خودکار هر دقیقه",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ‌های قاره اروپا",hUcl:"🏆 لیگ قهرمانان اروپا",hUclNext:"🔥 مسابقه بزرگ بعدی لیگ قهرمانان اروپا",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cupsNone:"برنامه‌ای هنوز اعلام نشده",tierEurope:"🏆 لیگ‌های قاره اروپا",intlCups:"🏆 جام‌های بین‌المللی",iranTitle:"ایران — لیگ برتر خلیج فارس",iranHazfi:"جام حذفی ایران",iranHide:"پنهان کردن",iranShow:"نمایش",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"رمز عبور مدیریت (admin password)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",cal:"افزودن به گوگل تقویم",ver:"نسخه ۱۲.۰ — نسخه مقاوم‌شده (hardened)",mToken:"ورود نامعتبر — رمز عبور یا نشست منقضی شده",mErr:"خطا: ",mEnterToken:"رمز عبور را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
+en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Upcoming matches & results for your teams — auto-refresh every minute",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 European Leagues",hUcl:"🏆 UEFA Champions League",hUclNext:"🔥 Next UCL Match",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cupsNone:"No fixture announced yet",tierEurope:"🏆 European Continental Leagues",intlCups:"🏆 International Cups",iranTitle:"Iran — Persian Gulf Pro League",iranHazfi:"Iran Hazfi Cup",iranHide:"Hide",iranShow:"Show",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin password",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",cal:"Add to Google Calendar",ver:"v12.0 — hardened release",mToken:"Invalid login — wrong password or expired session",mErr:"Error: ",mEnterToken:"Enter the admin password",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
 function curLang(){try{return localStorage.getItem("ucl_lang")||"fa";}catch(e){return "fa";}}
 var PAGE_TZ = "__PAGE_TZ__";
 // Complete IANA timezone list (the same set websites ship): Intl.supportedValuesOf
@@ -3625,8 +3902,8 @@ h1{font-size:18px}
 </div>
 <script>
 var I18N={
-fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو و نتایج تیم‌های منتخب — به‌روزرسانی خودکار هر دقیقه",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ قهرمانان اروپا",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cupsNone:"در انتظار برنامه",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"توکن مدیریت (ADMIN_TOKEN)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",ver:"نسخه ۱۱.۵۲ — مسابقه بعدی لیگ قهرمانان اروپا",mToken:"توکن نامعتبر است",mErr:"خطا: ",mEnterToken:"توکن را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
-en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Upcoming matches & results for your teams — auto-refresh every minute",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 Champions League",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cupsNone:"No fixture yet",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin token (ADMIN_TOKEN)",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",ver:"v11.52 — next UCL match spotlight",mToken:"Invalid token",mErr:"Error: ",mEnterToken:"Enter the token",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
+fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو و نتایج تیم‌های منتخب — به‌روزرسانی خودکار هر دقیقه",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ قهرمانان اروپا",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cupsNone:"در انتظار برنامه",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"رمز عبور مدیریت (admin password)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",ver:"نسخه ۱۲.۰ — نسخه مقاوم‌شده (hardened)",mToken:"ورود نامعتبر — رمز عبور یا نشست منقضی شده",mErr:"خطا: ",mEnterToken:"رمز عبور را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
+en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Upcoming matches & results for your teams — auto-refresh every minute",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 Champions League",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cupsNone:"No fixture yet",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin password",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",ver:"v12.0 — hardened release",mToken:"Invalid login — wrong password or expired session",mErr:"Error: ",mEnterToken:"Enter the admin password",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
 function curLang(){try{return localStorage.getItem("ucl_lang")||"fa";}catch(e){return "fa";}}
 function T(k){var l=curLang(),d=I18N[l];return (d&&d[k])||I18N.fa[k]||k;}
 function fmt(k){var s=T(k);for(var i=1;i<arguments.length;i++)s=s.replace("%s",arguments[i]).replace("%d",arguments[i]);return s;}
@@ -3759,8 +4036,8 @@ button{width:100%}
 <div id="msg" role="status" aria-live="polite"></div>
 <script>
 var I18N={
-fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو و نتایج تیم‌های منتخب — به‌روزرسانی خودکار هر دقیقه",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ قهرمانان اروپا",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cupsNone:"در انتظار برنامه",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"توکن مدیریت (ADMIN_TOKEN)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",ver:"نسخه ۱۱.۵۲ — مسابقه بعدی لیگ قهرمانان اروپا",mToken:"توکن نامعتبر است",mErr:"خطا: ",mEnterToken:"توکن را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
-en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Upcoming matches & results for your teams — auto-refresh every minute",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 Champions League",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cupsNone:"No fixture yet",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin token (ADMIN_TOKEN)",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",ver:"v11.52 — next UCL match spotlight",mToken:"Invalid token",mErr:"Error: ",mEnterToken:"Enter the token",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
+fa:{title:"مسابقات پیش‌رو — اعلان‌دهنده مسابقات",h1:"⚽ اعلان‌دهنده مسابقات",sub1:"مسابقات پیش‌رو و نتایج تیم‌های منتخب — به‌روزرسانی خودکار هر دقیقه",join:"در تلگرام به ربات بپیوندید و اعلان بگیرید",hUpcoming:"📅 مسابقات پیش‌رو",hFinished:"🏁 نتایج اخیر",loading:"در حال بارگذاری...",noMatches:"مسابقه‌ای در راه نیست",errLoad:"خطا در دریافت داده‌ها",madeWith:"ساخته‌شده با ❤️",adminLink:"ورود مدیریت",botLink:"ربات تلگرام",soon:"به‌زودی",inDays:"در %d روز",barNext:"⚡ تا بازی بزرگ بعدی",barFallback:"⏳ تا مسابقه بعدی",barLive:"🔴 در جریان",barIdle:"⏳ در انتظار بازی بعدی",uDay:"روز",uHour:"ساعت",uMin:"دقیقه",uSec:"ثانیه",live:"در حال برگزاری",pen:"پنالتی",own:"گل به خودی",derby:"🔥 دربی",boxCl:"🏆 لیگ قهرمانان اروپا",boxCup:"🏆 جام‌های حذفی",boxLg:"⚽ لیگ‌های داخلی",viewBig:"⚡ فقط بازیهای بزرگ",viewAll:"همه بازیها",hStandings:"📊 جدول لیگ‌ها",hCups:"🏆 جام‌های حذفی",stEmpty:"جدول هنوز در دسترس نیست",stNot:"شروع نشده",tierGold:"🥇 سطح طلا — اروپا و بینالملل",tierSilver:"🥈 سطح نقره — اروپا",tierBronze:"🥉 سطح برنز — اروپا",cEN:"🏴 انگلستان",cES:"🇪🇸 اسپانیا",cIT:"🇮🇹 ایتالیا",cupsNone:"در انتظار برنامه",share:"اشتراک‌گذاری",copy:"کپی متن",copied:"کپی شد ✓",titleL:"ورود — مدیریت ربات",loginH1:"🔐 ورود به مدیریت ربات",lbUser:"نام کاربری",lbPass:"رمز عبور",btnLogin:"ورود",errUser:"نام کاربری را وارد کنید",errRate:"تلاش بیش از حد — چند دقیقه دیگر امتحان کنید",errCreds:"نام کاربری یا رمز اشتباه است",titleA:"تنظیمات ربات اعلان مسابقات",h1A:"⚙️ تنظیمات ربات اعلان مسابقات",hLogin:"🔑 ورود",tokenPh:"رمز عبور مدیریت (admin password)",hStatus:"📊 وضعیت",stLoading:"در حال بارگذاری...",stErr:"❌ خطا در دریافت وضعیت — دوباره وارد شوید یا توکن را بررسی کنید",stLastRun:"🕒 آخرین اجرا",stApi:"📡 منبع API",stUsers:"👥 کاربران",stIds:"🆔 شناسه‌ها",stTz:"🌍 منطقه زمانی",btnRefresh:"به‌روزرسانی وضعیت",btnTest:"📨 ارسال پیام تست",btnSim:"🧪 شبیه‌سازی ۵ اعلان",btnSources:"📡 بررسی منابع API",btnLogout:"🚪 خروج",hBroadcast:"📣 ارسال پیام به همه کاربران",lbBroadcast:"متن پیام (به فارسی یا انگلیسی)",bcPh:"متن پیام...",btnBroadcast:"📣 ارسال برای همه",hMatches:"⚽ مسابقات پیش‌رو",btnRefreshM:"به‌روزرسانی مسابقات",hSettings:"⚙️ تنظیمات",lbTz:"منطقه زمانی",lbLeagues:"لیگ‌های تحت پوشش (کدها با کاما)",elNote:"EL و ECL توسط SportScore پوشش داده می‌شوند و نیازی به افزودن ندارند.",lbTeams:"تیم‌های منتخب هر لیگ",teamPh:"نام تیم جدید",btnAdd:"+ افزودن",btnSave:"💾 ذخیره تنظیمات",btnBackup:"⬇️ پشتیبان‌گیری تنظیمات",hPass:"🔑 تغییر رمز عبور",lbNp1:"رمز جدید (حداقل ۸ کاراکتر)",lbNp2:"تکرار رمز جدید",btnCp:"تغییر رمز عبور",ver:"نسخه ۱۲.۰ — نسخه مقاوم‌شده (hardened)",mToken:"ورود نامعتبر — رمز عبور یا نشست منقضی شده",mErr:"خطا: ",mEnterToken:"رمز عبور را وارد کنید",mSaved:"✅ ذخیره شد",mLoginFirst:"ابتدا وارد شوید",mBackup:"⬇️ پشتیبان‌گیری شد",mPassShort:"رمز باید حداقل ۸ کاراکتر باشد",mPassMismatch:"رمزها یکسان نیستند",mPassOk:"🔑 رمز با موفقیت تغییر کرد",mSentTo:"📣 ارسال شد به %s از %s کاربر",mTestSent:"📨 تست ارسال شد به %s کاربر",mSimPrefix:"🧪 شبیه‌سازی: ",mNoNotif:"⚠️ هیچ اعلانی ارسال نشد",mNoMatches:"مسابقه‌ای در راه نیست",mErrMatches:"خطا در دریافت مسابقات",mEnterText:"متن پیام را وارد کنید",mErrSrc:"❌ خطا"},
+en:{title:"Upcoming Matches — Match Notifier",h1:"⚽ Match Notifier",sub1:"Upcoming matches & results for your teams — auto-refresh every minute",join:"Join the Telegram bot to get notified",hUpcoming:"📅 Upcoming Matches",hFinished:"🏁 Recent Results",loading:"Loading...",noMatches:"No matches ahead",errLoad:"Error loading data",madeWith:"Made with ❤️",adminLink:"Admin login",botLink:"Telegram bot",soon:"Soon",inDays:"in %d days",barNext:"⚡ Until the next big match",barFallback:"⏳ Until the next match",barLive:"🔴 Live now",barIdle:"⏳ Waiting for the next match",uDay:"d",uHour:"h",uMin:"m",uSec:"s",live:"LIVE",pen:"Penalty",own:"Own goal",derby:"🔥 Derby",boxCl:"🏆 Champions League",boxCup:"🏆 Elimination Cups",boxLg:"⚽ Domestic Leagues",viewBig:"⚡ Big matches only",viewAll:"All matches",hStandings:"📊 League Standings",hCups:"🏆 Tournaments",stEmpty:"Standings not available yet",stNot:"Not started",tierGold:"🥇 Gold tier — Europe & international",tierSilver:"🥈 Silver tier — Europe",tierBronze:"🥉 Bronze tier — Europe",cEN:"🏴 England",cES:"🇪🇸 Spain",cIT:"🇮🇹 Italy",cupsNone:"No fixture yet",share:"Share",copy:"Copy text",copied:"Copied ✓",titleL:"Login — Bot Admin",loginH1:"🔐 Bot Admin Login",lbUser:"Username",lbPass:"Password",btnLogin:"Login",errUser:"Enter your username",errRate:"Too many attempts — try again in a few minutes",errCreds:"Wrong username or password",titleA:"Match Bot Settings",h1A:"⚙️ Bot Settings",hLogin:"🔑 Login",tokenPh:"Admin password",hStatus:"📊 Status",stLoading:"Loading...",stErr:"❌ Status error — re-login or check token",stLastRun:"🕒 Last run",stApi:"📡 API source",stUsers:"👥 Users",stIds:"🆔 IDs",stTz:"🌍 Timezone",btnRefresh:"Refresh status",btnTest:"📨 Send test message",btnSim:"🧪 Simulate 5 alerts",btnSources:"📡 Check API sources",btnLogout:"🚪 Logout",hBroadcast:"📣 Broadcast to all users",lbBroadcast:"Message text (FA or EN)",bcPh:"Message...",btnBroadcast:"📣 Send to all",hMatches:"⚽ Upcoming Matches",btnRefreshM:"Refresh matches",hSettings:"⚙️ Settings",lbTz:"Timezone",lbLeagues:"Leagues (comma-separated codes)",elNote:"EL & ECL are covered by SportScore — no need to add them.",lbTeams:"Selected teams per league",teamPh:"New team name",btnAdd:"+ Add",btnSave:"💾 Save settings",btnBackup:"⬇️ Backup settings",hPass:"🔑 Change password",lbNp1:"New password (min 8 chars)",lbNp2:"Repeat new password",btnCp:"Change password",ver:"v12.0 — hardened release",mToken:"Invalid login — wrong password or expired session",mErr:"Error: ",mEnterToken:"Enter the admin password",mSaved:"✅ Saved",mLoginFirst:"Log in first",mBackup:"⬇️ Backup downloaded",mPassShort:"Password must be at least 8 characters",mPassMismatch:"Passwords do not match",mPassOk:"🔑 Password changed",mSentTo:"📣 Sent to %s of %s users",mTestSent:"📨 Test sent to %s users",mSimPrefix:"🧪 Simulate: ",mNoNotif:"⚠️ No notifications sent",mNoMatches:"No matches ahead",mErrMatches:"Error loading matches",mEnterText:"Enter a message",mErrSrc:"❌ error",comps:{CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"}}};
 function curLang(){try{return localStorage.getItem("ucl_lang")||"fa";}catch(e){return "fa";}}
 function T(k){var l=curLang(),d=I18N[l];return (d&&d[k])||I18N.fa[k]||k;}
 function fmt(k){var s=T(k);for(var i=1;i<arguments.length;i++)s=s.replace("%s",arguments[i]).replace("%d",arguments[i]);return s;}
@@ -3771,24 +4048,30 @@ function setTheme(t){document.documentElement.setAttribute("data-theme",t);try{l
 function toggleTheme(){setTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark");}
 function switchLang(){var l=curLang()==="fa"?"en":"fa";try{localStorage.setItem("ucl_lang",l);}catch(e){}applyLang();}
 function applyLang(skipHook){var l=curLang();document.documentElement.setAttribute("lang",l);document.documentElement.setAttribute("dir",l==="en"?"ltr":"rtl");var b=document.getElementById("lbtn");if(b)b.textContent=l==="en"?"فا":"EN";trText();trPlace();if(!skipHook&&typeof onLang==="function")onLang();}
-var TOKEN = localStorage.getItem("admin_token") || "";
+// Audit fix 8: the admin client no longer reads/stores ADMIN_TOKEN in
+// localStorage — all API calls authenticate via the HttpOnly session cookie
+// (set by /admin/login). The re-login box takes the admin PASSWORD.
+var TOKEN = "";
 var STATE = null;
 var lastUsers = null;
 var LNAMES = {CL:"لیگ قهرمانان اروپا",PL:"لیگ برتر انگلستان",PD:"لالیگا",SA:"سری آ",FL1:"لیگ یک فرانسه",BL1:"بوندس‌لیگا",EL:"لیگ اروپا",ECL:"لیگ کنفرانس",FA_CUP:"جام حذفی انگلستان",EFL_CUP:"جام اتحادیه انگلستان",CDR:"جام حذفی اسپانیا",COPPA_ITALIA:"جام حذفی ایتالیا"};
 var LNAMES_EN = {CL:"Champions League",PL:"Premier League",PD:"La Liga",SA:"Serie A",FL1:"Ligue 1",BL1:"Bundesliga",EL:"Europa League",ECL:"Conference League",FA_CUP:"FA Cup",EFL_CUP:"EFL Cup",CDR:"Copa del Rey",COPPA_ITALIA:"Coppa Italia"};
 function lname(l){return curLang()==="en"?(LNAMES_EN[l]||l):(LNAMES[l]||l);}
-function hd(){ var h = new Headers(); h.append("Authorization","Bearer "+TOKEN); h.append("Content-Type","application/json"); return h; }
+function hd(){ var h = new Headers(); h.append("Content-Type","application/json"); return h; }
 async function api(url, method, body){
-  var r = await fetch(url,{method:method||"GET",headers:hd(),body:body?JSON.stringify(body):undefined});
+  var r = await fetch(url,{method:method||"GET",headers:hd(),credentials:"same-origin",body:body?JSON.stringify(body):undefined});
   if(r.status===401){ msg(T("mToken")); return null; }
   if(!r.ok){ msg(fmt("mErr")+r.status); return null; }
   return r.json();
 }
 function login(){
-  TOKEN = document.getElementById("token").value.trim();
-  if(!TOKEN){ msg(T("mEnterToken")); return; }
-  localStorage.setItem("admin_token",TOKEN);
-  load(); refreshStatus(); loadNextMatches();
+  var p = document.getElementById("token").value;
+  if(!p){ msg(T("mEnterToken")); return; }
+  fetch("/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({username:"admin",password:p})}).then(function(r){ return r.ok ? r.json() : null; }).then(function(r){
+    if(!r){ msg(T("mToken")); return; }
+    try{ localStorage.removeItem("admin_token"); }catch(e){}
+    load(); refreshStatus(); loadNextMatches();
+  }).catch(function(){ msg(T("mErr")); });
 }
 function msg(t){ var m=document.getElementById("msg"); m.textContent=t; m.style.display="block"; setTimeout(function(){m.style.display="none";},2500); }
 async function load(){
@@ -3916,21 +4199,24 @@ async function logout(){
 setTheme(initTheme()); applyLang(true); load(); refreshStatus(); loadNextMatches();
 </script>
 </body></html>`;
-var worker_default = {
-  async fetch(req, env, ctx) {
-    const url = new URL(req.url);
-    if (url.pathname === "/webhook") {
-      if (!validateWebhook(req, env)) {
-        console.warn("\u26A0\uFE0F Invalid webhook secret");
-        return new Response("Unauthorized", { status: 403 });
-      }
-      try {
-        const telegramUpdate = await req.json();
-        if (!telegramUpdate?.message?.chat?.id) {
-          return new Response("Invalid update format", { status: 400 });
-        }
-        const chatId = telegramUpdate.message.chat.id;
-        const text = telegramUpdate.message.text;
+// Audit fixes 1+2+10: the Telegram update handler. Runs ENTIRELY in the
+// background (ctx.waitUntil) so the HTTP response is 200 OK within
+// milliseconds; dedupes update_id (Telegram re-delivers on any non-2xx/timeout
+// — retries must be no-ops); tolerates non-message updates; and swallows
+// handler errors (a 500 would make Telegram re-deliver the same failing
+// update in an infinite loop).
+async function handleTelegramUpdate(env, update) {
+  try {
+    const updId = update && update.update_id;
+    if (updId != null) {
+      const seen = await env.STATE.get("upd_" + updId).catch(() => null);
+      if (seen) return;
+      await env.STATE.put("upd_" + updId, "1", { expirationTtl: 600 }).catch(() => {});
+    }
+    const message = update && update.message;
+    if (!message || !message.chat || !message.chat.id) return;
+    const chatId = message.chat.id;
+    const text = message.text;
         if (text === "/start") {
           const chats = await getRegisteredChats(env);
           if (!chats.includes(chatId)) {
@@ -3981,11 +4267,11 @@ var worker_default = {
           const arg = text.slice(10).trim();
           if (!arg) {
             const tz = getUserTz(prefs, chatId, env);
-            await sendTelegram(env, "\u23F0 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627: " + tz + "\n\u0628\u0631\u0627\u06CC \u062A\u063A\u06CC\u06CC\u0631: /timezone london", chatId);
+            await sendTelegram(env, "\u23F0 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627: " + escapeMarkdownCharacters(tz) + "\n\u0628\u0631\u0627\u06CC \u062A\u063A\u06CC\u06CC\u0631: /timezone london", chatId);
           } else if (arg === "reset") {
             if (prefs[String(chatId)]) delete prefs[String(chatId)].tz;
             await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
-            await sendTelegram(env, "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u0628\u0647 \u067E\u06CC\u0634\u200C\u0641\u0631\u0636 \u0631\u0628\u0627\u062A \u0628\u0627\u0632\u06AF\u0634\u062A: " + env.TEHRAN_TZ, chatId);
+            await sendTelegram(env, "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u0628\u0647 \u067E\u06CC\u0634\u200C\u0641\u0631\u0636 \u0631\u0628\u0627\u062A \u0628\u0627\u0632\u06AF\u0634\u062A: " + escapeMarkdownCharacters(env.TEHRAN_TZ || ""), chatId);
           } else {
             const tz = resolveTimeZone(arg);
             if (!tz) {
@@ -3994,12 +4280,17 @@ var worker_default = {
               if (!prefs[String(chatId)]) prefs[String(chatId)] = {};
               prefs[String(chatId)].tz = tz;
               await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
-              await sendTelegram(env, "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u062A\u063A\u06CC\u06CC\u0631 \u06A9\u0631\u062F: " + tz + "\n\u067E\u06CC\u0627\u0645\u200C\u0647\u0627 \u0627\u0632 \u0627\u06CC\u0646 \u067E\u0633 \u0628\u0631 \u0627\u0633\u0627\u0633 \u0633\u0627\u0639\u062A \u0645\u062D\u0644\u06CC \u0627\u0631\u0633\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F", chatId);
+              await sendTelegram(env, "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u062A\u063A\u06CC\u06CC\u0631 \u06A9\u0631\u062F: " + escapeMarkdownCharacters(tz) + "\n\u067E\u06CC\u0627\u0645\u200C\u0647\u0627 \u0627\u0632 \u0627\u06CC\u0646 \u067E\u0633 \u0628\u0631 \u0627\u0633\u0627\u0633 \u0633\u0627\u0639\u062A \u0645\u062D\u0644\u06CC \u0627\u0631\u0633\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F", chatId);
             }
           }
         } else if (text === "/next") {
           await applySettings(env);
-          const matches = await fetchMatchesFromAPI(env);
+          // Audit fix 3 (/next subrequests): /next runs in the webhook background —
+          // reuse the cron's fresh pool (≤10 min old) instead of triggering a live
+          // 3-provider sweep (~40+ subrequests) whenever possible.
+          const pool = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
+          const poolFresh = pool && pool.fetchedAt && Date.now() - new Date(pool.fetchedAt).getTime() < 10 * 60e3 && Array.isArray(pool.matches);
+          const matches = poolFresh ? pool.matches : await fetchMatchesFromAPI(env);
           const prefs = await getUserPrefs(env);
           const now = new Date();
           const upcoming = matches.filter((m) => shouldNotify(m) && userFollowsMatch(prefs, chatId, m) && new Date(m.utcDate) > now).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 5);
@@ -4016,11 +4307,32 @@ var worker_default = {
         } else if (text && text.startsWith("/")) {
           await sendTelegram(env, "\u{1F4DD} \u062F\u0633\u062A\u0648\u0631 \u0646\u0627\u0634\u0646\u0627\u062E\u062A\u0647 \u0627\u0633\u062A\u060C \u0627\u0632 /help \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F\u060C", chatId);
         }
-        return new Response("OK");
-      } catch (error) {
-        console.error("Webhook error:", error);
-        return new Response("Internal Server Error", { status: 500 });
+    return new Response("OK");
+  } catch (error) {
+    console.error("Webhook handler error:", error);
+  }
+}
+__name(handleTelegramUpdate, "handleTelegramUpdate");
+var worker_default = {
+  async fetch(req, env, ctx) {
+    resetSubrequestBudget(); // audit fix 3: per-invocation subrequest budget
+    const url = new URL(req.url);
+    if (url.pathname === "/webhook") {
+      if (!validateWebhook(req, env)) {
+        console.warn("\u26A0\uFE0F Invalid webhook secret");
+        return new Response("Unauthorized", { status: 403 });
       }
+      // Audit fix 1 (webhook 200-fast): Telegram drops slow webhooks (>60s) and
+      // re-delivers them, amplifying work — the old handler processed the whole
+      // command chain inline (a /next could block the response 30-60s). Now the
+      // body is parsed, 200 OK returns immediately, and all processing runs in
+      // ctx.waitUntil. Errors never reach Telegram (no retry loops).
+      let update = null;
+      try { update = await req.json(); } catch (e) { update = null; }
+      if (update) {
+        ctx.waitUntil(handleTelegramUpdate(env, update).catch((e) => console.error("Webhook background error:", e)));
+      }
+      return new Response("OK");
     }
     const isAdminPath = url.pathname.startsWith("/admin") || url.pathname.startsWith("/api/");
     if (url.pathname === "/admin/login" && req.method === "POST") {
@@ -4041,24 +4353,31 @@ var worker_default = {
       // 2) the ADMIN_PASS secret as bootstrap/emergency credential.
       // Empty passwords never authenticate.
       const storedHash = await getAdminPassHash(env);
-      let ok = body && username === "admin" && !!body.password && body.password === (env.ADMIN_PASS || "");
+      let ok = !!(body && username === "admin" && body.password && env.ADMIN_PASS && timingSafeEqualStr(body.password, env.ADMIN_PASS));
       if (!ok && body && username === "admin" && body.password && storedHash) {
-        ok = (await hashPassword(body.password, storedHash.salt)) === storedHash.hash;
+        ok = timingSafeEqualStr(await hashPassword(body.password, storedHash.salt), storedHash.hash);
       }
       if (!ok) {
         await env.STATE.put(failKey, String(fails + 1), { expirationTtl: 600 }).catch(() => {});
         return jsonResponse({ error: "Invalid credentials" }, 401);
       }
       await env.STATE.delete(failKey).catch(() => {});
+      // Audit fix 8: the cookie now carries a random session id (KV-stored,
+      // 12h TTL) — the ADMIN_TOKEN master secret never leaves the server.
+      const sid = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+      await env.STATE.put("admin_sess_" + sid, JSON.stringify({ created: Date.now(), ip }), { expirationTtl: 43200 }).catch(() => {});
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
         headers: {
           "content-type": "application/json",
-          "set-cookie": "admin_auth=" + env.ADMIN_TOKEN + "; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800"
+          "set-cookie": "admin_auth=" + sid + "; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=43200"
         }
       });
     }
     if (url.pathname === "/admin/logout" && req.method === "POST") {
+      // Audit fix 8: destroy the server-side session, not just the cookie.
+      const sid = getAdminCookieToken(req);
+      if (sid) await env.STATE.delete("admin_sess_" + sid).catch(() => {});
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
         headers: {
@@ -4069,7 +4388,7 @@ var worker_default = {
     }
     if (url.pathname === "/admin/change-password" && req.method === "POST") {
       // Admin-only: set a new password (PBKDF2-hashed, stored in KV).
-      if (!isAdminRequest(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
+      if (!(await isAdminAuthed(req, env))) return jsonResponse({ error: "Unauthorized" }, 401);
       const body = await req.json().catch(() => null);
       const np = body && body.password;
       if (!np || np.length < 8) return jsonResponse({ error: "Password too short (min 8)" }, 400);
@@ -4079,28 +4398,31 @@ var worker_default = {
       return jsonResponse({ ok: true });
     }
     if (url.pathname === "/api/public-matches" && req.method === "GET") {
-      // Public (no auth): next 5 upcoming + recent results with club crests
-      return jsonResponse(await fetchPublicMatches(env));
+      // Public (no auth): next 5 upcoming + recent results with club crests.
+      // Audit fix 6: route-level try/catch — NEVER a raw 500 (Telegram-style
+      // retry storms + broken page); worst case serves an empty degraded shape.
+      try {
+        return jsonResponse(await fetchPublicMatches(env, req));
+      } catch (e) {
+        console.error("public-matches route failed: " + e.message);
+        return jsonResponse({ upcoming: [], finished: [], nextBig: null, standings: null, cups: null, iran: null, ucl: null, degraded: true });
+      }
     }
     if (url.pathname === "/public" || url.pathname === "/") {
       return new Response(PUBLIC_PAGE.replace("__PAGE_TZ__", env.TEHRAN_TZ), { headers: PAGE_SEC_HEADERS });
     }
-    if (isAdminPath && url.pathname !== "/admin" && !isAdminRequest(req, env)) {
-      // Accept the HttpOnly login cookie as API auth too — otherwise the admin
-      // page's buttons die whenever localStorage (admin_token) is empty.
-      const cookieToken = (req.headers.get("Cookie") || "").match(/(?:^|;\s*)admin_auth=([^;]+)/);
-      if (!(cookieToken && cookieToken[1] === env.ADMIN_TOKEN)) {
-        return jsonResponse({
-          error: "Unauthorized",
-          message: "Include 'Authorization: Bearer <ADMIN_TOKEN>' header"
-        }, 401);
-      }
+    if (isAdminPath && url.pathname !== "/admin" && !(await isAdminAuthed(req, env))) {
+      // Audit fix 8: the HttpOnly cookie now carries a random session id
+      // (KV-stored) — or use the Bearer token; either authenticates.
+      return jsonResponse({
+        error: "Unauthorized",
+        message: "Login via /admin/login or include 'Authorization: Bearer <ADMIN_TOKEN>' header"
+      }, 401);
     }
     await applySettings(env);
     if (url.pathname === "/admin") {
-      // Panel requires a valid Bearer header or the HttpOnly login cookie
-      const cookieToken = (req.headers.get("Cookie") || "").match(/(?:^|;\s*)admin_auth=([^;]+)/);
-      const authed = isAdminRequest(req, env) || (cookieToken && cookieToken[1] === env.ADMIN_TOKEN);
+      // Panel requires a valid Bearer header or a valid session cookie
+      const authed = await isAdminAuthed(req, env);
       return new Response(authed ? ADMIN_PAGE : LOGIN_PAGE, { headers: PAGE_SEC_HEADERS });
     }
     if (url.pathname === "/api/settings") {
@@ -4119,7 +4441,8 @@ var worker_default = {
     if (url.pathname === "/healthz") {
       // Public, no auth: for free uptime monitors (UptimeRobot etc.).
       // 200 while the cron heartbeat is fresh, 503 if stale (worker dying).
-      const heartbeat = parseInt(await env.STATE.get(CONFIG.KV_HEARTBEAT).catch(() => null)) || 0;
+      const st = await getCronStatus(env); // audit fix 4: consolidated read
+      const heartbeat = parseInt(st.heartbeat) || 0;
       const ageMin = heartbeat ? Math.round((Date.now() - heartbeat) / 6e4) : -1;
       const fresh = ageMin >= 0 && ageMin <= CONFIG.EXECUTION_FREQUENCY_MINUTES * 3;
       return new Response(JSON.stringify({ ok: fresh, heartbeat_age_min: ageMin }), {
@@ -4155,17 +4478,20 @@ var worker_default = {
       return jsonResponse({ code, matchday: fresh.matchday, teams });
     }
     if (url.pathname === "/api/status") {
-      const heartbeat = await env.STATE.get(CONFIG.KV_HEARTBEAT);
-      const lastCron = await env.STATE.get(CONFIG.KV_LAST_CRON);
-      const apiSource = await env.STATE.get(CONFIG.KV_LAST_SOURCE);
+      const st = await getCronStatus(env); // audit fix 4: consolidated read (heartbeat + last_cron + source)
       const users = await getRegisteredChats(env);
       return jsonResponse({
         version: VERSION,
-        heartbeat: heartbeat ? new Date(parseInt(heartbeat)).toISOString() : null,
-        last_cron: lastCron ? new Date(parseInt(lastCron)).toISOString() : null,
-        api_source: apiSource,
+        heartbeat: st.heartbeat && st.heartbeat !== "0" ? new Date(parseInt(st.heartbeat)).toISOString() : null,
+        last_cron: st.last_cron && st.last_cron !== "0" ? new Date(parseInt(st.last_cron)).toISOString() : null,
+        api_source: st.api_source,
         users: users.length,
-        chat_ids: users,
+        // Audit fix 15: raw chat ids masked — the admin panel only needs the
+        // count and a recognizable prefix/suffix, not full Telegram ids.
+        chat_ids: users.map((id) => {
+          const s = String(id);
+          return s.length > 6 ? s.slice(0, 3) + "\u2022\u2022\u2022" + s.slice(-2) : "\u2022\u2022\u2022";
+        }),
         timezone: env.TEHRAN_TZ,
         monitored_leagues: CONFIG.LEAGUES,
         teams_count: Object.values(CONFIG.BIG_TEAMS_BY_LEAGUE).flat().length
@@ -4297,7 +4623,7 @@ var worker_default = {
       const body = res ? await res.json() : { ok: false, error: "Telegram unreachable from worker" };
       return jsonResponse({ ...body, webhook_url: webhookUrl });
     }
-    if (url.pathname === "/api/diag-public" && isAdminRequest(req, env)) {
+    if (url.pathname === "/api/diag-public" && (await isAdminAuthed(req, env))) {
       // Temporary diagnostic: why is the public page empty?
       await applySettings(env);
       const live = await fetchMatchesFromAPI(env);
@@ -4315,7 +4641,7 @@ var worker_default = {
         cache_sample: pool.slice(0, 6).map((m) => `${m.competition.code}: ${m.homeTeam.name} vs ${m.awayTeam.name} [${m.status}] ${shouldNotify(m) ? "WORTHY" : "no"}`)
       });
     }
-    if (url.pathname === "/api/diag-fd" && isAdminRequest(req, env)) {
+    if (url.pathname === "/api/diag-fd" && (await isAdminAuthed(req, env))) {
       // Diagnostic: live football-data fetches, raw status per competition group
       const days = parseInt(url.searchParams.get("days") || "7");
       const comps = url.searchParams.get("comps") || "PD";
@@ -4328,12 +4654,12 @@ var worker_default = {
       const text = await res.text();
       let count = null;
       try { count = (JSON.parse(text).matches || []).length; } catch (e) {}
-      return jsonResponse({ comps, days, status: res.status, keyTail: key.slice(-4), count, body: text.substring(0, 200) });
+      return jsonResponse({ comps, days, status: res.status, count, body: text.substring(0, 200) });
     }
     if (req.method === "GET") {
       const path = url.pathname.substring(1) || url.searchParams.get("action") || "";
       const adminEndpoints = ["clear-notifications", "clear-locks", "trigger", "simple-test", "next-matches", "debug-notifications", "health", "teams"];
-      if (adminEndpoints.includes(path) && !isAdminRequest(req, env)) {
+      if (adminEndpoints.includes(path) && !(await isAdminAuthed(req, env))) {
         return new Response(JSON.stringify({
           error: "Unauthorized",
           message: "Include 'Authorization: Bearer <token>' header"
@@ -4414,18 +4740,20 @@ var worker_default = {
           await env.STATE.delete(CONFIG.KV_USERS_KEY);
           await env.STATE.delete(CONFIG.KV_HEARTBEAT);
           await env.STATE.delete(CONFIG.KV_LAST_CRON);
+          await env.STATE.delete("cron_status_v1");
           await env.STATE.delete(CONFIG.KV_NOTIFIED_KEY);
           await env.STATE.delete(CONFIG.KV_EXECUTION_LOCK);
           return new Response("\u2705 All cache cleared. Users need to /start again.");
         case "health":
-          const heartbeat = await env.STATE.get(CONFIG.KV_HEARTBEAT);
+          const st = await getCronStatus(env); // audit fix 4: consolidated read
+          const heartbeat = st.heartbeat;
           const users = await getRegisteredChats(env);
           const now = getNowTehran(env);
           return new Response(JSON.stringify({
             status: "healthy",
             timestamp: (/* @__PURE__ */ new Date()).toISOString(),
             tehran_time: now.toISOString(),
-            last_heartbeat: heartbeat ? new Date(parseInt(heartbeat)).toISOString() : null,
+            last_heartbeat: heartbeat && heartbeat !== "0" ? new Date(parseInt(heartbeat)).toISOString() : null,
             user_count: users.length,
             version: VERSION,
             api_source: await env.STATE.get(CONFIG.KV_LAST_SOURCE),

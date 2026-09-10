@@ -81,7 +81,7 @@ chk(isDerby({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" }
 chk(isDerby({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Tottenham Hotspur FC" } }) === true, "North London derby");
 
 // ---------- B: month-end window via real fetchPublicMatches ----------
-const fetchPM = grabFn("async function fetchPublicMatches(env)");
+const fetchPM = grabFn("async function fetchPublicMatches(env, req)"); // req optional (rate-limit only)
 const pool = [
   { id: "m-in", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 864e5).toISOString(), status: "SCHEDULED" },
   (() => { const d = new Date(); d.setMonth(d.getMonth() + 1, 1); d.setHours(12, 0, 0, 0); return { id: "m-out", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" }, utcDate: d.toISOString(), status: "SCHEDULED" }; })(),

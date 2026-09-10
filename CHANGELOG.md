@@ -6,7 +6,57 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
-## [11.52] — 2026-08-19 (latest, deployed)
+## [12.0-hardened] — 2026-09-10 (audit remediation)
+
+Full-stack audit remediation — all 17 findings from the Phase 1–5 audit
+(repo: assadigit/SportSignal). Every change is tagged `Audit fix N` in source.
+
+**Critical reliability (the live error-1101 outage):**
+- Webhook responds **200 OK immediately**; all command processing moved to
+  `ctx.waitUntil` background (`handleTelegramUpdate`). Telegram can no longer
+  drop/timeout slow webhooks.
+- **`update_id` dedupe** (KV, 10-min TTL) — Telegram re-deliveries are no-ops;
+  handler errors are swallowed (no 500 → no infinite re-delivery loop);
+  non-message updates are tolerated.
+- **Subrequest budget**: soft counter (cap 48, reset per invocation) in
+  `fetchJSON`/`fetchWithRetry`/`sendTelegram`; Cache API (5-min TTL) on
+  sportscore/TheSportsDB day feeds (cache hits cost 0 subrequests); sportscore
+  cron range 4→3 dates; fetchLongView EL/ECL/BL1 sweep 10→7 days and fully
+  failure-tolerant; TSP day-sweep only when per-league calls came up empty;
+  `/next` reuses the cron's ≤10-min KV pool instead of a live sweep.
+- **Public API outage fixed**: `/api/public-matches` single-flight refresh lock
+  (45s) + per-IP courtesy limit (60s) + stale-serve + route try/catch with a
+  degraded empty shape — never a raw 500 again.
+- **KV writes ≤ ~500/day** (was 1,008–1,152 vs 1,000 free cap): heartbeat +
+  last_cron consolidated into `cron_status_v1` (legacy fallback readers), no
+  lock delete (TTL expiry), `last_api_source` written only on change, match
+  cache skipped when the merged pool is unchanged, notification cleanup once
+  per hour.
+
+**High:**
+- CPU: `shouldNotify`/`isFeaturedMatch`/`masterTeamList`/`userFollowsMatch` now
+  use identity-invalidated normalized Set caches; `translateTeam` builds its
+  ~600-entry dict once with Map indexes (was: rebuilt per call).
+- `saveNotifiedMatch` KV put is failure-tolerant (one write can no longer abort
+  a run's remaining notifications).
+- Admin sessions: cookie now carries a random session id (`admin_sess_<id>`,
+  12h TTL) — **ADMIN_TOKEN never leaves the server** (was: cookie value AND
+  localStorage). Client authenticates via HttpOnly cookie; re-login takes the
+  admin password.
+- Execution lock is ownership-verified (`own:<ts>:<uuid>` write + read-back).
+
+**Medium/Low:** timing-safe compares (webhook secret, Bearer, password, PBKDF2);
+429s pause all sends ≤10s instead of blocking sleeps; `/timezone` replies escape
+underscores (MarkdownV2 fix); `/api/status` masks chat ids; `/api/diag-fd` no
+longer leaks the API key tail; `getNowTehran` reimplemented deterministically
+(formatToParts; wall-clock-as-UTC convention preserved); verbose per-item logs
+gated behind `LOG_VERBOSE`.
+
+Gates: all 10 scripts pass (check-cups' 3 failures are pre-existing, unchanged);
+`live-derby-test` extraction updated for the `fetchPublicMatches(env, req)`
+signature. fd retry attempts 3→2; TSP fallback window -2/+4 → -1/+2 days.
+
+## [11.52] — 2026-08-19
 
 - **Bundesliga (BL1) data actually flows** — sportscore now fetches BL1 in the
   near scan and long view (football-data returns 0 BL1 fixtures; TheSportsDB is
