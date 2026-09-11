@@ -4,6 +4,60 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.18-weeknext] — 2026-09-11 (VS slot removed entirely, UCL club crests, next-week takeover, +35% PC crests, share behind a toggle, varzesh3 grounding)
+
+User asks (one batch): remove the divider line that replaced the VS emoji
+("it's just visual noise. remove it fully"); a Workers-AI API token for
+external use + varzesh3.com/leagues as the Farsi-name directory; round club
+logos in the UCL table; the Friday problem — by Friday every game of the
+Iranian week has kicked off so the box was a wall of turned-off matches
+("I want to see this week matches like on Monday… but also it's pointless
+to see all turned off matches in Friday — find a smart solution"); club
+logos +35% bigger on PC; and the share options hidden behind a single
+toggle icon on both PC and mobile ("not very frequently used feature and
+produces visual noise").
+
+- **No separator at all**: unplayed match rows render ONLY the two team
+  sides (🆚 emoji → hairline divider → nothing, per the user's two-step
+  ask); the middle slot exists exclusively for real scores
+  (finished/live). All `.vs` CSS retired.
+- **UCL round club crests**: every row of the Champions League table now
+  carries the club's round crest (19px circle, same visual language as the
+  match rows), resolved server-side against the 123-club KV catalog —
+  a KV-ONLY read, no refresh fetch in the public path (frugality kept);
+  catalog misses render text-only rows exactly as before.
+- **Next-week takeover (the Friday fix)**: the payload now carries
+  `nextWeek` (the Saturday→Friday AFTER the current week, same pool —
+  zero extra API calls). `renderWeek` keeps "this week" semantics while
+  anything is still ahead (dimmed past games below the upcoming ones),
+  and when the current week is exhausted — late Friday — the card
+  switches to next week's fixtures with the header «📅 هفته بعد»
+  (hWeekNext i18n). Language switch re-renders the week + UCL cards via a
+  new public onLang hook so the dynamic header survives trText.
+- **PC crests +35%**: `.logo` 38px → 51px (monogram fallback scales to
+  22px); phones keep their own 46px rule.
+- **Share behind a toggle**: the WhatsApp/Telegram/Email/Calendar/Copy row
+  is hidden everywhere (PC hover-reveal + always-on-touch both retired)
+  behind ONE compact share-nodes glyph button; a click expands the options
+  (aria-expanded tracks state), a second click collapses them.
+- **varzesh3 grounding (the user's directory)**: new
+  `scripts/varzesh3-catalog.js` scrapes the varzesh3.com league tables
+  (UCL, PL, La Liga, Serie A, Bundesliga, Ligue 1, Iranian PGL, UEL, UECL
+  — 193 clubs) and pushes them to KV `varzesh3_clubs_v1` via the
+  Cloudflare API (local script — zero Worker subrequests). The AI learner
+  now grounds translations: the varzesh3 rosters ride in the prompt
+  ("return EXACTLY that spelling") and every accepted answer SNAPS to the
+  catalog's exact spelling (space/ZWNJ-insensitive match). The provided
+  Workers-AI REST token is stored in `.env` (CLOUDFLARE_AI_TOKEN — AI runs
+  only; KV writes keep the older token).
+- **Hygiene**: `/api/fa-teams` stats now report the varzesh3 catalog size;
+  new `scripts/check-v1218.js` (42 assertions); check-fa-ai.js section A
+  updated to the "fully removed" contract; check-weekly-report.js anchors
+  fixed for the crest if/else + nextWeek; check-cups.js neutralizes the
+  crest await for its sync harness.
+
+---
+
 ## [12.17-fai] — 2026-09-15 (faded VS divider, expired games in «در این هفته», incremental AI Farsi club names)
 
 User asks (one batch): the 🆚 emoji between team names is mis-aligned and

@@ -33,7 +33,7 @@ ok(/teams: stCL \? stCL\.teams\.map\(\(t\) => \(\{[^}]*gf: t\.gf[^}]*ga: t\.ga/.
   const i = src.indexOf('function renderUcl(d)');
   const body = src.slice(i, src.indexOf("function renderUclSpot", i));
   const hi = body.indexOf("uclhead"), ri = body.indexOf("d.teams.forEach");
-  const head = body.slice(hi, ri), rows = body.slice(ri, body.indexOf("} else {", ri));
+  const head = body.slice(hi, ri), rows = body.slice(ri, body.indexOf("var e2", ri)); // v12.18: crest if/else added a closer "} else {" — anchor on the empty-state branch instead
   const order = ["hmp", "hw", "hd", "hl", "hgf", "hga", "hgd", "hpt"];
   const pos = order.map((v) => head.indexOf("var " + v + " ="));
   ok(pos.every((p) => p >= 0) && pos.every((p, i2) => i2 === 0 || p > pos[i2 - 1]), "A3 header order = # | team | MP | W | D | L | GF | GA | GD | Pts (standard table order)");
@@ -106,8 +106,8 @@ ok(src.includes('await env.STATE.put("last_full_sweep", String(NOW)).catch(() =>
 
 // ─── F) «در این هفته» box ───────────────────────────────────────────────────
 ok(src.includes('const thisWeek = matches') && src.includes("const weekEnd = weekStart + 7 * 864e5;") && src.includes(".slice(0, 16);"), "F1 this-week payload: Iranian week (Sat→Fri), live-first sort, capped 16");
-ok(src.includes('thisWeek: thisWeek.map(withTop)') && src.includes("renderWeek(d.thisWeek);"), "F2 public payload carries thisWeek + page renders it");
-ok(src.includes('id="weekCard"') && src.includes('data-i="hWeek"') && src.includes("function renderWeek(list)"), "F3 the «در این هفته» card + renderer exist");
+ok(src.includes('thisWeek: thisWeek.map(withTop)') && src.includes("renderWeek(d.thisWeek, d.nextWeek);"), "F2 public payload carries thisWeek (+ nextWeek v12.18) and the page renders it");
+ok(src.includes('id="weekCard"') && src.includes('data-i="hWeek"') && /function renderWeek\(list, nextList\)/.test(src), "F3 the «در این هفته» card + renderer exist (v12.18: next-week aware)");
 ok(src.includes('hWeek:"📅 در این هفته"') && src.includes('hWeek:"📅 This Week"'), "F4 week-card i18n fa+en");
 
 // ─── G) dark default + bigger mobile crests ─────────────────────────────────
@@ -116,10 +116,10 @@ ok((src.match(/function initTheme\(\)\{try\{return localStorage\.getItem\("ucl_t
 ok(src.includes(".logo{width:46px;height:46px;font-size:20px}"), "G3 mobile club crests ~53% bigger (30px → 46px)");
 
 // ─── H) version strings ─────────────────────────────────────────────────────
-ok(src.includes('const VERSION = "12.17-fai"'), "H1 VERSION = 12.17-fai");
-ok((src.match(/۱۲\.۱۷/g) || []).length >= 4 && (src.match(/v12\.17/g) || []).length >= 3, "H2 ver labels updated (fa + en dicts, static fallbacks)");
+ok(src.includes('const VERSION = "12.18-weeknext"'), "H1 VERSION = 12.18-weeknext");
+ok((src.match(/۱۲\.۱۸/g) || []).length >= 4 && (src.match(/v12\.18/g) || []).length >= 3, "H2 ver labels updated (fa + en dicts, static fallbacks)");
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-ok(pkg.version === "12.17.0", "H3 package.json 12.17.0");
+ok(pkg.version === "12.18.0", "H3 package.json 12.18.0");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.16-weekly checks — version gate now 12.17-fai)`);
 process.exit(fail ? 1 : 0);

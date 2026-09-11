@@ -18,24 +18,22 @@ function ok(cond, name) {
   else { fail++; console.error("  ✗ FAIL: " + name); }
 }
 
-console.log("A) VS emoji → faded hairline divider");
-// A1: the emoji survives ONLY in the retirement CSS comment — no DOM/text site uses it
+console.log("A) VS emoji → (v12.18) NO separator at all");
+// v12.17 replaced the emoji with a hairline; v12.18 removed even that (the
+// user: "it's just visual noise. remove it fully"). Unplayed matches render
+// ONLY the two team sides; the middle slot exists just for real scores.
 const emojiCount = (src.match(/🆚/g) || []).length;
-ok(emojiCount === 1 && src.includes("the 🆚 emoji is RETIRED"), "A1 zero 🆚 render sites (only the retirement comment remains)");
-// A2: hairline CSS + hover affordance + score slot untouched
-ok(/\.vs\{width:1px;height:20px;[^}]*background:currentColor/.test(src), "A2 .vs is a 1px hairline (width/height/background:currentColor)");
-ok(src.includes(".match:hover .vs") && src.includes("opacity:.55"), "A2b hover gently raises the divider opacity");
-ok(src.includes(".score{font-weight:800") && /vs\.className = "score"/.test(src), "A3 finished/live rows still show the score in this slot");
-// A4: both DOM builders empty the slot + hide it from a11y tree
-ok((src.match(/vs\.textContent = "";/g) || []).length === 2, "A4 render() + spotItemNode() set empty text (2 sites)");
-ok((src.match(/vs\.setAttribute\("aria-hidden", "true"\);/g) || []).length === 2, "A4b the decorative divider is aria-hidden (2 sites)");
-// A5: the three TEXT contexts use the low-key en-dash
+ok(emojiCount === 1 && /v12\.18: the "vs" slot is GONE[\s\S]*?the 🆚 emoji/.test(src), "A1 zero 🆚 render sites (only the history comment remains)");
+ok(!/\.vs\{/.test(src) && !src.includes('className = "vs"'), "A2 no .vs CSS rule and no .vs element anywhere (fully removed)");
+ok((src.match(/row\.appendChild\(hs\); row\.appendChild\(as\);/g) || []).length === 2, "A3 render() + spotItemNode(): no middle slot when there is no score");
+ok((src.match(/var vs = document\.createElement\("div"\); vs\.className = "score";/g) || []).length === 2, "A3b the score element is created only when a score exists");
+ok(src.includes(".score{font-weight:800"), "A4 .score styling untouched (finished/live rows keep their score)");
 ok((src.match(/" – "/g) || []).length >= 3, "A5 share/cup/admin text lines use a low-key \" – \" separator");
-ok(!/🆚/.test(src.replace(/\/\* v12\.17: the 🆚 emoji is RETIRED[\s\S]*?\*\//, "")), "A5b no emoji anywhere outside that comment");
+ok(!/🆚/.test(src.replace(/\/\* v12\.[0-9]+:[\s\S]*?the 🆚 emoji[\s\S]*?\*\//, "")), "A5b no emoji anywhere outside that comment");
 
 console.log("B) «در این هفته» — past games turned off");
 ok(src.includes("function weekPast(m)") && src.includes("m.status === \"FINISHED\"") && src.includes("Date.now() - 9e4"), "B1 weekPast(): FINISHED or kickoff older than 90s → past; live never");
-ok(src.includes("{ finished: m.status === \"FINISHED\", past: weekPast(m) }"), "B2 renderWeek passes {finished, past} into spotItemNode");
+ok(src.includes("{ finished: m.status === \"FINISHED\", past: mode === \"this\" && weekPast(m) }"), "B2 renderWeek passes {finished, past} into spotItemNode (dimming scoped to this-week mode)");
 ok(src.includes("pa ? tb - ta : ta - tb"), "B3 order: live → upcoming soonest-first → past most-recent-last");
 ok(src.includes('item.className += " past"'), "B4 spotItemNode applies the .past class");
 ok(src.includes('cd.className = "wkdone"') && src.includes('"⌛ " + T("wkDone")'), "B5 expired chip (wkdone) replaces the fresh time chip");
@@ -168,10 +166,10 @@ const collectorData = {
   // C11: binding + versions
   const toml = fs.readFileSync("wrangler.toml", "utf8");
   ok(/\[ai\]/.test(toml) && /binding = "AI"/.test(toml), "C11a wrangler.toml carries the [ai] binding");
-  ok(src.includes('const VERSION = "12.17-fai";'), "C11b VERSION = 12.17-fai");
+  ok(src.includes('const VERSION = "12.18-weeknext";'), "C11b VERSION = 12.18-weeknext");
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  ok(pkg.version === "12.17.0", "C11c package.json 12.17.0");
-  ok((src.match(/نسخه ۱۲\.۱۷/g) || []).length >= 3 && (src.match(/v12\.17 — smart/g) || []).length >= 3, "C11d ver strings bumped across the page dicts + static footer");
+  ok(pkg.version === "12.18.0", "C11c package.json 12.18.0");
+  ok((src.match(/نسخه ۱۲\.۱۸/g) || []).length >= 3 && (src.match(/v12\.18 — next/g) || []).length >= 3, "C11d ver strings bumped across the page dicts + static footer");
 
   console.log(`\n${pass} passed, ${fail} failed (v12.17-fai checks)`);
   process.exit(fail ? 1 : 0);

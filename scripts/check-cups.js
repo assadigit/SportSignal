@@ -68,7 +68,12 @@ const matches = [
 ];
 let cups;
 let uclOut;
-try { const out = eval("(() => { const stPGL = null; const stCL = null; const env = {}; const matches = " + JSON.stringify(matches) + ";" + cupBlock.replace("const cupOrder", "var cupOrder") + "return { cups, ucl };})()"); cups = out.cups; uclOut = out.ucl; }
+// v12.18: the crest chain (an await on the clubs-catalog KV) is neutralized
+// for this sync harness — crestless rows are the pre-v12.18 shape anyway.
+const cupBlockSync = cupBlock
+  .replace('const clubsCat = await env.STATE.get(CONFIG.KV_CLUBS_CATALOG, "json").catch(() => null);', 'const clubsCat = null;')
+  .replace("const cupOrder", "var cupOrder");
+try { const out = eval("(() => { const stPGL = null; const stCL = null; const env = {}; const matches = " + JSON.stringify(matches) + ";" + cupBlockSync + "return { cups, ucl };})()"); cups = out.cups; uclOut = out.ucl; }
 catch (e) { console.error("FAIL: cups block threw: " + e.message); process.exit(1); }
 
 const byCode = {};
