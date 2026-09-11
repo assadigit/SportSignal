@@ -4,6 +4,50 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.22-heropulse] — 2026-09-14 (the adrenaline countdown hero: heartbeat, floodlight sweep, embers, burning fuse, urgency escalation)
+
+User asks: "Add some animation or something that raises the excitement of
+this box, and different from other boxes" (the `#bigHeroCard` countdown
+hero) — "like some css js effects, making it excitement, adrenalin, and
+evoking emotions. I dont mean just change color."
+
+- **The stage**: the hero card now carries a chrome no other box has — an
+  emerald spotlight gradient (radial from above + deep emerald base) with a
+  glowing border; the two team names grew to 16px/800 with stage-lit crest
+  circles, and the countdown clock is now the big 18px/800 number of the
+  page.
+- **The heartbeat**: a lub-dub glow rhythm (opacity peaks at 8% + 24% of
+  each cycle) breathing over the card — slow and calm when the match is
+  days away.
+- **The floodlight sweep**: a soft light band washes across the card every
+  6.5s, passing over the teams like a stadium light rig.
+- **The embers**: three tiny emerald sparks rise from the bottom of the
+  card on staggered loops (static `.hero-fx` markup, so re-renders of
+  `#heroSpot` never disturb them).
+- **The burning fuse**: the draining edge of the progress bar carries a
+  white-hot glowing tip (`.bigbar-fill::after`) — the bar literally burns
+  down to kickoff.
+- **The tick**: the clock pops every second — a 0.34s scale + brightness
+  pulse re-triggered on each `updateBigBar` pass via a reflow restart.
+- **The face-off**: the home and away sides enter the stage from their own
+  edges (0.5s ease-out slide, dir-aware for RTL/LTR) instead of a plain
+  rise.
+- **The escalation (JS)**: `updateBigBar` computes one `data-urgent` mode
+  and the whole CSS intensity ladder follows it — `far` (calm emerald),
+  `soon` (≤24h: amber glow + amber embers + amber clock + heartbeat 2.6s →
+  1.7s), `final` (≤60min: red alarm heartbeat 1.1s + pulsing «تا بازی بزرگ
+  بعدی» label + red clock + red embers + sweep 3s), `live` (the red stage
+  around the existing live bar, heartbeat .9s, sweep 2.2s).
+- **Safety**: every fx layer is pointer-transparent (the ⋯ share popover
+  still opens above them), the ember layer is clipped inside the card, all
+  animations are opacity/transform (compositor friendly), and the global
+  `prefers-reduced-motion` rule silences every one of them.
+- **Version 12.22 everywhere**: `VERSION`, the six page ver strings (fa/en
+  × public/login/admin), the admin static footer, package.json 12.22.0,
+  the new `scripts/check-v1222.js` (24 assertions) wired into `npm test`,
+  and the rolling version gates in check-weekly-report, check-fa-ai,
+  check-v1218, check-uniform, check-v1220 and check-v1221 updated.
+
 ## [12.21-uclbrand] — 2026-09-14 (emphasized section headers, UCL starball branding, PC main+rail grid, quiet share ⋯)
 
 User asks: make the section titles («🔥 مسابقات بزرگ پیش‌رو» & friends) bigger

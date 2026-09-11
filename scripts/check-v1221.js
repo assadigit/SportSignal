@@ -1,4 +1,4 @@
-// Self-check: v12.21-uclbrand — the user's four asks:
+// Self-check: v12.22-heropulse — the user's four asks:
 //   A) section titles BIGGER and emphasized (their own tinted background
 //      plate + accent edge; flagship headers one size larger);
 //   B) the UCL-dedicated box carries the UCL brand — starball mark on a
@@ -9,7 +9,7 @@
 //      cards stacking flush (no shared-row holes), hero + topbar centered;
 //   D) the labeled share pill removed — ONE quiet icon-only ⋯ ghost toggle
 //      per row with a popover, outside-click / Esc close;
-//   E) version bumped everywhere (12.21-uclbrand).
+//   E) version bumped everywhere (12.22-heropulse).
 const fs = require("fs");
 const src = fs.readFileSync("src/worker.ts", "utf8");
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -60,10 +60,10 @@ ok(src.includes("var sr = shareRow(m, false); info.appendChild(sr);") && !src.in
 ok(src.includes("function closeShare(w){") && src.includes('document.addEventListener("click", function(ev){') && src.includes('document.addEventListener("keydown", function(ev){'), "D6 closeShare + the document click/keydown listeners exist");
 
 console.log("E) version bump");
-ok(src.includes('const VERSION = "12.21-uclbrand";'), "E1 VERSION = 12.21-uclbrand");
-ok((src.match(/ver:"نسخه ۱۲\.۲۱/g) || []).length === 3, "E2 fa ver strings (public + login + admin) all ۱۲.۲۱");
-ok((src.match(/v12\.21 — emphasized section header plates/g) || []).length === 3, "E3 en ver strings all v12.21");
-ok(pkg.version === "12.21.0" && pkg.scripts.test.includes("check-v1221.js"), "E4 package.json 12.21.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.22-heropulse";'), "E1 VERSION = 12.22-heropulse");
+ok((src.match(/ver:"نسخه ۱۲\.۲۲/g) || []).length === 3, "E2 fa ver strings (public + login + admin) all ۱۲.۲۱");
+ok((src.match(/v12\.22 — adrenaline countdown hero/g) || []).length === 3, "E3 en ver strings all v12.22");
+ok(pkg.version === "12.22.0" && pkg.scripts.test.includes("check-v1221.js"), "E4 package.json 12.22.0 + this suite wired into npm test");
 
-console.log(`\n${pass} passed, ${fail} failed (v12.21-uclbrand checks)`);
+console.log(`\n${pass} passed, ${fail} failed (v12.21-uclbrand checks — the suite kept, gates rolled to v12.22)`);
 process.exit(fail ? 1 : 0);
