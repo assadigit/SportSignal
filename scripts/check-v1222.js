@@ -50,10 +50,10 @@ ok(src.includes("@media (prefers-reduced-motion:reduce){*{transition:none!import
 ok(!/hero-heart|hero-sweep/.test(src.replace(/@keyframes hero-heart\{[^}]*\}/,"").replace(/@keyframes hero-sweep\{[^}]*\}/,"")) || true, "D3 (informational) all fx are opacity/transform animations — compositor friendly");
 
 console.log("E) version bump");
-ok(src.includes('const VERSION = "12.23-watermark";'), "E1 VERSION = 12.23-watermark");
-ok((src.match(/ver:"نسخه ۱۲\.۲۳/g) || []).length === 3, "E2 fa ver strings (public + login + admin) all ۱۲.۲۳");
-ok((src.match(/v12\.23 — giant faded club crests/g) || []).length === 3, "E3 en ver strings all v12.22");
-ok(pkg.version === "12.23.0" && pkg.scripts.test.includes("check-v1222.js"), "E4 package.json 12.23.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.24-brandhead";'), "E1 VERSION = 12.24-brandhead");
+ok((src.match(/ver:"نسخه ۱۲\.۲۴/g) || []).length === 3, "E2 fa ver strings (public + login + admin) all ۱۲.۲۴");
+ok((src.match(/v12\.24 — brand header/g) || []).length === 3, "E3 en ver strings all v12.24");
+ok(pkg.version === "12.24.0" && pkg.scripts.test.includes("check-v1222.js"), "E4 package.json 12.24.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.23-watermark checks)`);
 process.exit(fail ? 1 : 0);

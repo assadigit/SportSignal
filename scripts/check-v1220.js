@@ -37,8 +37,8 @@ ok(src.includes("\\u23F3 ${timeUntil}") && src.includes("${jalaliTime}"), "A11 t
 console.log("B) countdown + progress bar really bound to time remaining");
 ok(/var p2 = function\(v\)\{ v = String\(v\); return v\.length < 2 \? "0" \+ v : v; \};/.test(src), "B1 fmtCountdown zero-pads h/m/s");
 ok(src.includes("fmtNum(p2(h))+\":\"+fmtNum(p2(m))+\":\"+fmtNum(p2(s))"), "B2 the d/h/m/s clock uses padded fields");
-ok(src.includes("var q = rem/(14*864e5);"), "B3 the fill is rem/14d — the actual TIME REMAINING share");
-ok(!src.includes("var q = 1 - rem/(14*864e5);"), "B4 the old 1-rem/14d formula (≈93% full a day out) is gone");
+ok(src.includes("var q = 1 - rem/(14*864e5);"), "B3 (v12.24 roll) the fill is a LOADING bar — 1-rem/14d: 0% at ≥14 days out, 100% at kickoff (the user's explicit base ask; percent chip + tooltip spell it out)");
+ok(!src.includes("var q = rem/(14*864e5);"), "B4 the v12.20 rem/14d DRAIN formula is gone (\"30% left at 38h\" read broken — the user's report)");
 ok(/Math\.max\(2, Math\.round\(q\*100\)\)/.test(src) && src.includes('tr.setAttribute("aria-valuenow", Math.round(q*100))'), "B5 width + aria-valuenow derive from the same q");
 ok(src.includes(".bigbar-fill.idle{width:12%;"), "B6 the fake fixed 42% idle width replaced by a low standby strip");
 
@@ -55,7 +55,7 @@ ok(src.includes(".livechip .dot{width:8px;height:8px;border-radius:50%;backgroun
 console.log("D) ≥1440px two-column layout");
 ok(src.includes("@media (min-width:1440px){"), "D1 the 1440px breakpoint exists");
 ok(/body\{max-width:1400px;display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(400px,460px\);column-gap:28px;row-gap:14px;align-items:start\}/.test(src), "D2 (v12.22) body is a MAIN + RAIL grid — match feed one side, table boxes on the other, each column stacking flush");
-ok(src.includes("#topbar,header.hero,#bigHeroCard,footer{grid-column:1/-1}"), "D3 topbar/hero/countdown-hero/footer span both columns");
+ok(src.includes("#topbar,#bigHeroCard,footer{grid-column:1/-1}"), "D3 (v12.24 roll) topbar/countdown-hero/footer span both columns — the topbar is now the WEBSITE header (logo start, controls+CTA end; hero title block retired)");
 ok(src.includes("max-width:760px;margin:0 auto;"), "D4 below the breakpoint the 760px single column is untouched");
 
 console.log("E) sticky Telegram join CTA");
@@ -84,10 +84,10 @@ ok(src.includes('syncJust:"just now"') && src.includes('syncMinAgo:"%s min ago"'
 ok(src.includes("function tickBigBar(){ if(DATA && DATA.upcoming) updateBigBar(); renderSync(); }"), "G6 the stamp re-ages every second tick");
 
 console.log("H) version bump");
-ok(src.includes('const VERSION = "12.23-watermark";'), "H1 (v12.22) VERSION = 12.23-watermark");
-ok((src.match(/ver:"نسخه ۱۲\.۲۳/g) || []).length === 3, "H2 fa ver strings (public + login + admin) all ۱۲.۲۱");
-ok((src.match(/v12\.23 — giant faded club crests/g) || []).length === 3, "H3 en ver strings all v12.22");
-ok(pkg.version === "12.23.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 package.json 12.23.0 + the v12.22 suite wired");
+ok(src.includes('const VERSION = "12.24-brandhead";'), "H1 (v12.24) VERSION = 12.24-brandhead");
+ok((src.match(/ver:"نسخه ۱۲\.۲۴/g) || []).length === 3, "H2 fa ver strings (public + login + admin) all ۱۲.۲۴");
+ok((src.match(/v12\.24 — brand header/g) || []).length === 3, "H3 en ver strings all v12.24");
+ok(pkg.version === "12.24.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 package.json 12.24.0 + the v12.22 suite wired");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.20-uxpolish checks)`);
 process.exit(fail ? 1 : 0);

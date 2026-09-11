@@ -4,6 +4,57 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.24-brandhead] — 2026-09-15 (the SportSignal website header, 40% background crests, 2× hero crests on PC, a defined progress-bar base)
+
+User asks: "i actually prefer like 40% of the logo appear in the bg, but
+bigger and more prominent."; "increase the team logos (of next big upcoming
+match by 100% in pc view)"; "when less than 38 hours is remaining from the
+next big match. why only about 30% of the progress bar is filled? when is
+the base calculation of this progress bar? we need to find a logic for
+that."; "I want to create a header, first add the logo I uploaded. and
+remove this texts: ⚽ اعلان‌دهنده مسابقات / مسابقات پیش‌رو، رقابت‌های صدر
+جدول و نتایج تیم‌های منتخب — به‌روزرسانی خودکار … [settings icons etc]
+[telegram cta button] [logo] Like websites logo."
+
+- **The brand header**: the page now opens with a real WEBSITE header —
+  the uploaded SportSignal logo (served from the worker's assets directory
+  at `/logo.png`, a 400×137 png on a white rounded chip with a glass
+  border so it reads on both themes) pinned to the start corner, and the
+  settings icons + the Telegram CTA grouped at the opposite end:
+  `[settings icons] [telegram cta button] ··· [logo]`. The top bar keeps
+  its `#topbar` id (now a semantic `<header>`), so the gear/lang/theme
+  buttons and the tz popover keep their exact wiring; the v12.20 sync
+  stamp becomes the header's quiet second row. The old
+  «⚽ اعلان‌دهنده مسابقات» h1 and its subtitle are retired; the phone
+  header compacts (33px logo, tighter CTA pill); at ≥1440px the header
+  spans the full chrome row website-style instead of centering controls.
+  The sticky bottom join bar still watches the (now header) CTA.
+- **The watermarks at 40%**: the countdown hero's background crests are
+  now far more present — 320px (was 200px) with deeper edge bleed
+  (−48px), opacity .40 on both themes (was .11/.14), 210px at .40 on
+  phones. A soft radial scrim behind the card's center plus a gentle
+  text-shadow on the team names (navy glow dark / white glow light) keep
+  the countdown and names fully readable on top of the bolder crests.
+- **2× hero crests on PC**: the countdown hero's face-off crests double
+  on every non-phone viewport (51px → 102px, monogram fallback scaling
+  with the circle) — the big-match poster feel; every other row keeps
+  its 51px crest, phones keep 46px.
+- **The progress bar's base**: the bar is a LOADING bar with a DEFINED
+  base now — `q = 1 − remaining/14d`: 0% while the match is still ≥14
+  days out, filling to 100% AT kickoff (a match 38h out reads ~89%, not
+  a mystery ~30%). The percent prints beside the clock as a chip
+  (Persian digits + ٪ in fa, % in en, fixed min-width so it never
+  jitters), the track tooltip spells the base out (`barBase`, fa/en in
+  all six dictionaries), and aria-valuenow carries the same number.
+  v12.20's rem/14d drain formula read backwards — retired.
+- Version 12.24 everywhere (VERSION, 6 ver strings + admin static
+  footer, package.json 12.24.0); NEW `scripts/check-v1224.js` (34
+  assertions: A header, B watermark, C hero crests, D progress base, E
+  version) wired into npm test; rolling gates updated in check-uniform,
+  check-weekly-report, check-fa-ai, check-v1218, check-v1220 (formula
+  B3/B4 + grid D3), check-v1221 (C6 header), check-v1222, check-v1223
+  (watermark A2/A3/A7).
+
 ## [12.23-watermark] — 2026-09-14 (giant faded club crests behind the hero, the heartbeat-scrollbar bug fixed, every match row aligned)
 
 User asks: "Can you add the expanded logo of clubs in lower opacity on the
