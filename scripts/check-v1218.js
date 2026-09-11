@@ -43,7 +43,7 @@ ok(src.includes('past: mode === "this" && weekPast(m)'), "C6 dimming applies onl
 ok(src.includes('hWeekNext:"📅 هفته بعد"') && src.includes('hWeekNext:"📅 Next Week"'), "C7 hWeekNext i18n (fa+en)");
 ok(src.includes("renderWeek(d.thisWeek, d.nextWeek)") && src.includes("renderWeek(DATA.thisWeek, DATA.nextWeek)"), "C8 load() + rerenderAll() pass both lists");
 ok(src.includes("nextWeek: []") && src.includes("nextWeek: d.nextWeek || []"), "C9 DATA carries nextWeek (init + fetch)");
-ok(src.includes("var onLang = function(){ renderWeek(DATA.thisWeek, DATA.nextWeek); renderUcl(DATA.ucl); };"), "C10 language switch re-renders the week + UCL cards (title survives trText)");
+ok(src.includes("var onLang = function(){ renderWeek(DATA.thisWeek, DATA.nextWeek); renderUcl(DATA.ucl); initTz(); };"), "C10 language switch re-renders the week + UCL cards (title survives trText; v12.19 also rebuilds the tz options)");
 
 console.log("D) PC crest size +35%");
 ok(/\.logo\{width:51px;height:51px;/.test(src), "D1 .logo 38px → 51px (+35%)");
@@ -69,10 +69,10 @@ ok(v3script.includes("varzesh3.com/football/league/") && v3script.includes("valu
 ok(v3script.includes("{ id: 25,") && v3script.includes('{ id: 6,'), "F8 covers UCL (25) + the Iranian PGL (6) among 9 leagues");
 
 console.log("G) versions");
-ok(src.includes('const VERSION = "12.18-weeknext";'), "G1 VERSION = 12.18-weeknext");
+ok(src.includes('const VERSION = "12.19-tzsettings";'), "G1 VERSION = 12.19-tzsettings");
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-ok(pkg.version === "12.18.0" && pkg.scripts.test.includes("check-v1218.js"), "G2 package.json 12.18.0 + new suite wired");
-ok((src.match(/نسخه ۱۲\.۱۸/g) || []).length >= 4 && (src.match(/v12\.18 — next/g) || []).length >= 3, "G3 ver strings bumped (dicts + static footer)");
+ok(pkg.version === "12.19.0" && pkg.scripts.test.includes("check-v1218.js"), "G2 package.json 12.19.0 + new suite wired");
+ok((src.match(/نسخه ۱۲\.۱۹/g) || []).length >= 4 && (src.match(/v12\.19 — time/g) || []).length >= 3, "G3 ver strings bumped (dicts + static footer)");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.18-weeknext checks)`);
 process.exit(fail ? 1 : 0);

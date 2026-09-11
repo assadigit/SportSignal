@@ -4,6 +4,36 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.19-tzsettings] — 2026-09-12 (timezone settings behind a gear icon, fully bilingual zone names, every GMT offset)
+
+User asks: "Hide this behind a setting icon, next to darkmode/lightmode" (the
+timezone select + search were permanent topbar clutter); "make sure it has all
+GMT times, for example i didn't find Tehran +3:30"; "In farsi, it must show
+farsi GMT names, in English, show english."
+
+- **Settings-gear popover**: the timezone search + select moved out of the
+  topbar into ONE ⚙️ button next to the dark/light toggle. A click opens a
+  compact glass popover (full-width search + full-width select — far bigger
+  touch targets than the old 100px sliver); picking a zone re-renders all
+  times instantly and closes the panel. ✕, the gear again, an outside click
+  or Esc also close it. `aria-expanded`/`aria-controls` track state; the gear
+  rotates 90° while open.
+- **Every GMT time**: the list is the full IANA set (`Intl.supportedValuesOf`)
+  PLUS the complete fixed-offset ladder Etc/GMT-14 … Etc/GMT+14 (IANA sign
+  inverted), so every pure GMT offset from −14 to +14 is selectable. Offsets
+  are computed from the zone data itself — Tehran **+3:30**, Kathmandu
+  +5:45, Eucla +8:45, Chatham +12:45 are always exact.
+- **⭐ Popular group**: UTC, Tehran, Dubai, Istanbul, London, Paris, Berlin,
+  New York, Los Angeles pinned at the very top — Tehran +3:30 is now one
+  glance away instead of 80 entries deep inside Asia.
+- **Fully bilingual labels**: a hand-transliterated Farsi dictionary covers
+  every IANA region + city (430+ entries, incl. the Argentina/Indiana/
+  Kentucky/North_Dakota subtrees and their legacy aliases). In fa mode the
+  options read «آسیا/تهران گرینویچ+۳:۳۰» (Persian digits, GMT = گرینویچ);
+  in en mode "Asia/Tehran GMT+3:30". Language switch rebuilds the options.
+- **Search matches both scripts**: «تهران», "tehran", "3:30" and "۳:۳۰" all
+  find Asia/Tehran; the search box also localizes (placeholder via i18n).
+
 ## [12.18-weeknext] — 2026-09-11 (VS slot removed entirely, UCL club crests, next-week takeover, +35% PC crests, share behind a toggle, varzesh3 grounding)
 
 User asks (one batch): remove the divider line that replaced the VS emoji
