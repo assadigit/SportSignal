@@ -6,6 +6,37 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.11-uniform] — 2026-09-15 (streamlined: no special boxes around matches — uniform rows everywhere)
+
+User ask: "The UI is inconsistent, some matches have a different border
+around them, such as manchester united vs city, but there isn't any border
+around liverpool, manchester city that is somehow equally important. Remove
+this box around them, and make all streamlined."
+
+- **`.match.derby` chrome retired**: derby rows (Man Utd–City, Atlético–Real,
+  Marseille–PSG …) used to carry an amber border + amber→violet gradient +
+  glow while equally big non-derbies (Liverpool–Man City, Roma–Inter) stayed
+  plain. Every match row now renders IDENTICALLY — same padding, same thin
+  separator, same hover. The `derby` class stays in the DOM (inert) and the
+  «دربی» badge pill in the info row still carries the label, now calm
+  (glow animation dropped, margin made RTL-safe like `topbadge`).
+- **Golden `.topspot` box chrome retired**: the hero card (countdown + its
+  match) and the «🔥 مسابقات بزرگ پیش‌رو» box are plain standard `.card`
+  sections now, visually identical to every other card on the page — no
+  golden borders, no gradient wash, no pulsing glow. The 🔥 headings and the
+  countdown bar still carry the "big match" signal.
+- **UCL gold chrome retired too**: `.uclspot` (next big UCL match card) and
+  `.uclcard` (UCL list card) drop their golden borders, yellow-tint
+  backgrounds and the `uclspot-glow` pulse — they were the last boxes that
+  set certain matches apart visually. The container classes stay in the HTML
+  as inert hooks (reduced-transparency selector unchanged); the
+  `.uclspot-logo/info/wait` layout rules are untouched.
+- **Hero card structure unchanged (v12.10)**: the countdown bar and its match
+  remain ONE stuck unit at the very top; `barTarget()` logic, view dedupe,
+  legacy `{next}` handling and the idle state are untouched — this is purely
+  a presentation unification. `renderHeroSpot()` now always sets
+  `card bighero` (no conditional `topspot` class).
+
 ## [12.10-herobox] — 2026-09-15 (hero card: the countdown bar and its match are ONE box at the top)
 
 User ask: the page's countdown bar (⚡ تا بازی بزرگ بعدی) counts to the next
