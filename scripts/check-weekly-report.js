@@ -116,10 +116,10 @@ ok((src.match(/function initTheme\(\)\{try\{return localStorage\.getItem\("ucl_t
 ok(src.includes(".logo{width:46px;height:46px;font-size:20px}"), "G3 mobile club crests ~53% bigger (30px → 46px)");
 
 // ─── H) version strings ─────────────────────────────────────────────────────
-ok(src.includes('const VERSION = "12.22-heropulse"'), "H1 VERSION = 12.22-heropulse");
-ok((src.match(/۱۲\.۲۲/g) || []).length >= 4 && (src.match(/v12\.22 — adrenaline countdown hero/g) || []).length >= 3, "H2 ver labels updated (fa + en dicts, static fallbacks)");
+ok(src.includes('const VERSION = "12.23-watermark"'), "H1 VERSION = 12.23-watermark");
+ok((src.match(/۱۲\.۲۳/g) || []).length >= 4 && (src.match(/v12\.23 — giant faded club crests/g) || []).length >= 3, "H2 ver labels updated (fa + en dicts, static fallbacks)");
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-ok(pkg.version === "12.22.0", "H3 package.json 12.22.0");
+ok(pkg.version === "12.23.0", "H3 package.json 12.23.0");
 
-console.log(`\n${pass} passed, ${fail} failed (v12.16-weekly checks — version gate now 12.22-heropulse)`);
+console.log(`\n${pass} passed, ${fail} failed (v12.16-weekly checks — version gate now 12.23-watermark)`);
 process.exit(fail ? 1 : 0);

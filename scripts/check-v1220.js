@@ -84,10 +84,10 @@ ok(src.includes('syncJust:"just now"') && src.includes('syncMinAgo:"%s min ago"'
 ok(src.includes("function tickBigBar(){ if(DATA && DATA.upcoming) updateBigBar(); renderSync(); }"), "G6 the stamp re-ages every second tick");
 
 console.log("H) version bump");
-ok(src.includes('const VERSION = "12.22-heropulse";'), "H1 (v12.22) VERSION = 12.22-heropulse");
-ok((src.match(/ver:"نسخه ۱۲\.۲۲/g) || []).length === 3, "H2 fa ver strings (public + login + admin) all ۱۲.۲۱");
-ok((src.match(/v12\.22 — adrenaline countdown hero/g) || []).length === 3, "H3 en ver strings all v12.22");
-ok(pkg.version === "12.22.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 package.json 12.22.0 + the v12.22 suite wired");
+ok(src.includes('const VERSION = "12.23-watermark";'), "H1 (v12.22) VERSION = 12.23-watermark");
+ok((src.match(/ver:"نسخه ۱۲\.۲۳/g) || []).length === 3, "H2 fa ver strings (public + login + admin) all ۱۲.۲۱");
+ok((src.match(/v12\.23 — giant faded club crests/g) || []).length === 3, "H3 en ver strings all v12.22");
+ok(pkg.version === "12.23.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 package.json 12.23.0 + the v12.22 suite wired");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.20-uxpolish checks)`);
 process.exit(fail ? 1 : 0);

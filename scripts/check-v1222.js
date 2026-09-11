@@ -1,4 +1,4 @@
-// Self-check: v12.22-heropulse — the user's ask: "Add some animation or
+// Self-check: v12.23-watermark — the user's ask: "Add some animation or
 // something that raises the excitement of this box ... like some css js
 // effects, making it excitement, adrenalin, and evoking emotions. I dont mean
 // just change color." — applied to the countdown hero (#bigHeroCard).
@@ -10,7 +10,7 @@
 //   D) accessibility/perf: pointer-events none on all fx layers, the global
 //      prefers-reduced-motion rule silences everything, compositor-friendly
 //      opacity/transform animations;
-//   E) version bumped everywhere (12.22-heropulse).
+//   E) version bumped everywhere (12.23-watermark).
 const fs = require("fs");
 const src = fs.readFileSync("src/worker.ts", "utf8");
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -50,10 +50,10 @@ ok(src.includes("@media (prefers-reduced-motion:reduce){*{transition:none!import
 ok(!/hero-heart|hero-sweep/.test(src.replace(/@keyframes hero-heart\{[^}]*\}/,"").replace(/@keyframes hero-sweep\{[^}]*\}/,"")) || true, "D3 (informational) all fx are opacity/transform animations — compositor friendly");
 
 console.log("E) version bump");
-ok(src.includes('const VERSION = "12.22-heropulse";'), "E1 VERSION = 12.22-heropulse");
-ok((src.match(/ver:"نسخه ۱۲\.۲۲/g) || []).length === 3, "E2 fa ver strings (public + login + admin) all ۱۲.۲۲");
-ok((src.match(/v12\.22 — adrenaline countdown hero/g) || []).length === 3, "E3 en ver strings all v12.22");
-ok(pkg.version === "12.22.0" && pkg.scripts.test.includes("check-v1222.js"), "E4 package.json 12.22.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.23-watermark";'), "E1 VERSION = 12.23-watermark");
+ok((src.match(/ver:"نسخه ۱۲\.۲۳/g) || []).length === 3, "E2 fa ver strings (public + login + admin) all ۱۲.۲۳");
+ok((src.match(/v12\.23 — giant faded club crests/g) || []).length === 3, "E3 en ver strings all v12.22");
+ok(pkg.version === "12.23.0" && pkg.scripts.test.includes("check-v1222.js"), "E4 package.json 12.23.0 + this suite wired into npm test");
 
-console.log(`\n${pass} passed, ${fail} failed (v12.22-heropulse checks)`);
+console.log(`\n${pass} passed, ${fail} failed (v12.23-watermark checks)`);
 process.exit(fail ? 1 : 0);

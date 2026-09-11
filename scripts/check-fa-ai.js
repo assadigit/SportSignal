@@ -166,10 +166,10 @@ const collectorData = {
   // C11: binding + versions
   const toml = fs.readFileSync("wrangler.toml", "utf8");
   ok(/\[ai\]/.test(toml) && /binding = "AI"/.test(toml), "C11a wrangler.toml carries the [ai] binding");
-  ok(src.includes('const VERSION = "12.22-heropulse";'), "C11b VERSION = 12.22-heropulse");
+  ok(src.includes('const VERSION = "12.23-watermark";'), "C11b VERSION = 12.23-watermark");
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  ok(pkg.version === "12.22.0", "C11c package.json 12.22.0");
-  ok((src.match(/نسخه ۱۲\.۲۲/g) || []).length >= 3 && (src.match(/v12\.22 — adrenaline countdown hero/g) || []).length >= 3, "C11d ver strings bumped across the page dicts + static footer");
+  ok(pkg.version === "12.23.0", "C11c package.json 12.23.0");
+  ok((src.match(/نسخه ۱۲\.۲۳/g) || []).length >= 3 && (src.match(/v12\.23 — giant faded club crests/g) || []).length >= 3, "C11d ver strings bumped across the page dicts + static footer");
 
   console.log(`\n${pass} passed, ${fail} failed (v12.17-fai checks)`);
   process.exit(fail ? 1 : 0);

@@ -4,6 +4,76 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.23-watermark] — 2026-09-14 (giant faded club crests behind the hero, the heartbeat-scrollbar bug fixed, every match row aligned)
+
+User asks: "Can you add the expanded logo of clubs in lower opacity on the
+background of the next big upcoming match? something like this: [faded logo
+big on background] [club logo] club name."; a page that "moves … every few
+seconds, a scroll appears … like a heartbeating bug that causes scroll to
+show up, and in mobile there is a transition slide every few seconds"; and
+"the results of match must be aligned … check alignment of every part.
+everything must be aligned. (notice how match results aren't in the same
+line)".
+
+- **The crest watermarks**: the countdown hero now carries each club's
+  EXPANDED crest as a giant faded watermark in the background — one ~200px
+  crest per club (150px / opacity .09 on phones), anchored to its club's
+  half of the row via logical inline edges (RTL/LTR safe), sitting at z:0
+  under the fx layers and the row, clipped inside the card and
+  pointer-transparent. The layer is static markup outside `#heroSpot` (like
+  the ember layer), so re-renders never disturb it;
+  `renderHeroSpot → heroWm()` swaps the two crest srcs per match — a club
+  without a crest hides its watermark, no crest at all hides the layer, and
+  a broken crest URL falls back to hidden (inline `onerror`). Light theme
+  runs opacity .14 unfiltered; dark lifts dark crests with a brightness
+  filter so navy crests still read.
+- **The heartbeat-scrollbar bug (root cause found)**: the v12.22 floodlight
+  sweep rode `.card.bighero::after` — an UNCLIPPED absolutely-positioned
+  layer translating to ±140% of the card, so every pass (6.5s, faster when
+  urgent) extended the DOCUMENT's scrollable width and a horizontal
+  scrollbar popped in and out — the page visibly "heartbeat" every few
+  seconds (a slide flash on phones). Three fixes layered: the sweep moved
+  into the already-clipped `.hero-fx` layer (same gradient, same rhythm),
+  the face-off entrance's ±34px edge overshoot is clipped by
+  `.bighero .match{overflow:hidden}` (the other periodic width spike, fired
+  on every hero re-render), and `html{overflow-x:hidden}` is the hard net
+  so no fx can ever widen the page again. Verified by polling
+  `documentElement.scrollWidth` every 200-250ms for 8-9.5s (full sweep
+  cycles) at 1920px and 390px: never one pixel over the viewport.
+- **Every match row aligned**: the two team sides now share the row exactly
+  50/50 (`flex:1 1 0`, was content-width `auto` — the old basis made the
+  score's x position wander per row and mobile rows wrap raggedly), and the
+  score is a FIXED CENTERED SLOT (`flex:0 0 72px`, centered, tabular, nowrap;
+  56px on phones) — every result now sits on the same vertical line (E2E:
+  all 7 finished scores at identical centers — x=1204 desktop, dead-center
+  195 mobile; both sides exactly 381px; rows uniform heights). The finished
+  card's `.info` line now matches the spot boxes' `.uclspot-info` (one
+  centered 12.5px chip-line style page-wide), the scorers block spans its
+  own full line, and the finished card's LAST row drops its divider too
+  (`.mrow:last-child`).
+- **A latent render crash removed**: `render()` carried a stray re-append
+  of `hs/vs/as` after the row was already assembled — a no-op on scored
+  rows but `appendChild(undefined)` on any unscored row, which would have
+  thrown and dragged the whole page's data down with it through `load()`'s
+  catch. The line is gone.
+- **Version 12.23 everywhere**: `VERSION`, the six page ver strings (fa/en
+  × public/login/admin), the admin static footer, package.json 12.23.0,
+  the new `scripts/check-v1223.js` (26 assertions) wired into `npm test`,
+  and the rolling version gates in check-weekly-report, check-fa-ai,
+  check-uniform, check-v1218, check-v1220, check-v1221 and check-v1222
+  updated.
+- Verified: `npm test` exit 0 (22 suites, 0 failures); local E2E preview
+  built straight from the worker source + live data (1920px: watermarks
+  populated from the live crests behind the teams, sweep computed on
+  `.hero-fx::after` at 6.5s, old sweep gone, scrollWidth 1920 stable across
+  38 samples/9.5s, 7/7 score centers identical, sides 381/381, share
+  popover opens over the fx; 390px: scrollWidth 390 stable across 41
+  samples/8s, 150px watermarks, 7/7 scores at dead-center 195, uniform row
+  heights; light theme + EN: watermark opacity/anchors flip correctly; VLM
+  review of hero/results crops; 0 console/page errors); deployed via
+  wrangler — and re-verified live on football.sportsignal.ir at both
+  widths.
+
 ## [12.22-heropulse] — 2026-09-14 (the adrenaline countdown hero: heartbeat, floodlight sweep, embers, burning fuse, urgency escalation)
 
 User asks: "Add some animation or something that raises the excitement of
