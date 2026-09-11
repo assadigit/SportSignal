@@ -69,10 +69,10 @@ ok(v3script.includes("varzesh3.com/football/league/") && v3script.includes("valu
 ok(v3script.includes("{ id: 25,") && v3script.includes('{ id: 6,'), "F8 covers UCL (25) + the Iranian PGL (6) among 9 leagues");
 
 console.log("G) versions");
-ok(src.includes('const VERSION = "12.20-uxpolish";'), "G1 VERSION = 12.20-uxpolish");
+ok(src.includes('const VERSION = "12.21-uclbrand";'), "G1 VERSION = 12.21-uclbrand");
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-ok(pkg.version === "12.20.0" && pkg.scripts.test.includes("check-v1218.js"), "G2 package.json 12.20.0 + new suite wired");
-ok((src.match(/نسخه ۱۲\.۲۰/g) || []).length >= 4 && (src.match(/v12\.20 — leaner alerts/g) || []).length >= 3, "G3 ver strings bumped (dicts + static footer)");
+ok(pkg.version === "12.21.0" && pkg.scripts.test.includes("check-v1218.js"), "G2 package.json 12.21.0 + this suite still wired");
+ok((src.match(/نسخه ۱۲\.۲۱/g) || []).length >= 4 && (src.match(/v12\.21 — emphasized section header plates/g) || []).length >= 3, "G3 ver strings bumped (dicts + static footer)");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.18-weeknext checks)`);
 process.exit(fail ? 1 : 0);

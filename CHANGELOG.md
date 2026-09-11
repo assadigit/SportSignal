@@ -4,6 +4,67 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.21-uclbrand] — 2026-09-14 (emphasized section headers, UCL starball branding, PC main+rail grid, quiet share ⋯)
+
+User asks: make the section titles («🔥 مسابقات بزرگ پیش‌رو» & friends) bigger
+and clearer — "it's not clear what they are about at first glance", give them
+their own background; brand the UCL-dedicated box with the UCL logo ("with a
+white bg if needed") so it is differentiated from the other boxes; fix the
+wide-screen layout, which "needs a lot of hierarchy alignment adjustments,
+it's not following a grid right now, it's so random"; and remove the labeled
+share pill ("visual noise and not placed well") — remove it or hide it behind
+a toggle.
+
+- **Section header plates**: every card `h2` grew from 15px/700 plain text to
+  a 17px/800 SECTION PLATE — its own tinted background, a 1px border and a
+  4px accent edge on the inline-start side (light-theme tints included). The
+  two flagship headers run one size larger (19px) with themed plates: hot
+  amber for «🔥 مسابقات بزرگ پیش‌رو», UCL navy + starball for the Champions
+  League boxes. Phones: 15.5px plates (17px flagships).
+- **UCL brand elements**: the UCL-dedicated boxes — «🔥 مسابقات مهم لیگ
+  قهرمانان اروپا» and the UCL standings card — now carry the competition's
+  identity: an inline-SVG starball (8 five-pointed stars, 1 center + 7 ring —
+  the official arrangement) on a WHITE circular chip ("with a white bg, if
+  needed") inside a navy-gradient header plate with white text, a deep-navy
+  glass body with a faint star-tile watermark and a UCL-blue border, and the
+  pre-draw wait state shows the navy starball ball. Light theme keeps the
+  navy identity with a light navy-tinted body. `data-i` moved to an inner
+  span so a language switch can never clobber the logo.
+- **PC-wide hierarchy (the real grid)**: the v12.20 auto-placed two-per-row
+  grid shared rows between columns, so shorter cards started at ragged Y
+  offsets (~500px hole under the UCL box, the standings pair ~2100px below
+  its neighbor, the results card alone at the bottom). At ≥1440px the page
+  is now full-width chrome (topbar → centered hero → countdown hero →
+  footer) over a MAIN column (every match box: topspot, UCL spot, week,
+  results) plus a 400–460px reference RAIL (UCL table, league standings,
+  cups) — each column an independent flex stack with a uniform 14px gap, no
+  shared rows, no holes. `setWide()` regroups the cards at the breakpoint
+  (ids added to the four anonymous cards) and restores the EXACT
+  single-column DOM order below it, live on breakpoint change. The topbar
+  and hero center on wide screens; the countdown hero's match row is capped
+  to 880px; the standings grid folds to 2 columns inside the rail.
+- **Quiet share control**: the labeled «اشتراک‌گذاری» pill under every entry
+  is gone. Each row now carries ONE borderless, icon-only ⋯ ghost button
+  (44×44 hit area, visually just three muted dots) riding the info chip
+  line; the options unfold in a solid popover anchored under it and close
+  from an outside click, Esc, or the next ⋯ — at most one popover is ever
+  open, and collapsed rows show no share UI at all.
+- **Version 12.21 everywhere**: `VERSION`, the six page ver strings (fa/en ×
+  public/login/admin), the admin static footer, package.json 12.21.0, the
+  new `scripts/check-v1221.js` (35 assertions) wired into `npm test`, and
+  the rolling version/share/grid gates in check-weekly-report (H1–H3),
+  check-fa-ai (C11b–d), check-v1218 (G1–G3), check-uniform and check-v1220
+  (D2, F1–F7, H1–H4) updated for the new markup.
+- Verified: `npm test` exit 0 (19 suites, 0 failures); local E2E preview
+  built straight from the worker source + live data (1920px: main 912px +
+  rail 460px, all six cards flush-stacked at exact 14px gaps, hero/topbar
+  centered; 390px: scrollWidth = innerWidth, original DOM order restored;
+  EN + light theme: starball survives the language swap, navy identity
+  intact; share popover opens with 5 options and closes on outside click
+  and Esc; 0 console/page errors); deployed via wrangler — version
+  e71ee39a-9732-478f-8e5e-c0c03d1c544d — and re-verified live on
+  football.sportsignal.ir at both widths.
+
 ## [12.20-uxpolish] — 2026-09-13 (leaner bot alerts, real countdown + progress bar, badge tokens, wide 2-column layout, sticky CTA)
 
 User asks: remove the notification text noise ("🔔 یادآوری ۲۴ ساعته …", "📱

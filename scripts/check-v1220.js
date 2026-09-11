@@ -54,7 +54,7 @@ ok(src.includes(".livechip .dot{width:8px;height:8px;border-radius:50%;backgroun
 
 console.log("D) ≥1440px two-column layout");
 ok(src.includes("@media (min-width:1440px){"), "D1 the 1440px breakpoint exists");
-ok(/body\{max-width:1400px;display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\);column-gap:24px;align-items:start\}/.test(src), "D2 body becomes a 2-column grid, cards flow two-per-row");
+ok(/body\{max-width:1400px;display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(400px,460px\);column-gap:28px;row-gap:14px;align-items:start\}/.test(src), "D2 (v12.21) body is a MAIN + RAIL grid — match feed one side, table boxes on the other, each column stacking flush");
 ok(src.includes("#topbar,header.hero,#bigHeroCard,footer{grid-column:1/-1}"), "D3 topbar/hero/countdown-hero/footer span both columns");
 ok(src.includes("max-width:760px;margin:0 auto;"), "D4 below the breakpoint the 760px single column is untouched");
 
@@ -66,13 +66,14 @@ ok(src.includes("var past = !e.isIntersecting && e.boundingClientRect.top < 0;")
 ok(src.includes('document.body.classList.toggle("joinsticky", past);') && src.includes("body.joinsticky{padding-bottom:88px}"), "E5 body clearance while shown (never covers content)");
 ok(src.includes("#joinSticky .js-inner"), "E6 the pill CTA styling exists");
 
-console.log("F) share toggle: 44px target + label + ⋯ glyph");
+console.log("F) share toggle: quiet ⋯ ghost + popover (the v12.21 evolution of the 44px pill)");
 ok(/dots: '<circle cx="5" cy="12" r="2\.1"\/><circle cx="12" cy="12" r="2\.1"\/><circle cx="19" cy="12" r="2\.1"\/>'/.test(src), "F1 horizontal three-dot glyph in S_ICONS");
 ok(src.includes('var tg = sBtn("button", null, S_ICONS.dots, T("share"));'), "F2 the toggle uses the ⋯ glyph (not the old dot-grid share-nodes)");
-ok(src.includes("min-width:44px;min-height:44px"), "F3 ≥44×44px tap target");
-ok(src.includes('tg.innerHTML = \'<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">\' + S_ICONS.dots + \'</svg><span>\' + T("share") + \'</span>\';'), "F4 visible «Share» label next to the icon");
-ok(src.includes(".share a,.share button{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;"), "F5 the option buttons grew 24→34px");
-ok(src.includes(".sharewrap{display:flex;flex-direction:column;align-items:flex-end"), "F6 the toggle keeps its inline-end position (logical, RTL/LTR-safe)");
+ok(src.includes('tg.innerHTML = \'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">\' + S_ICONS.dots + \'</svg>\';'), "F3 (v12.21) icon-ONLY toggle — the «Share» label is gone (the pill read as noise)");
+ok(/\.sharetoggle\{position:absolute;top:50%;left:50%;transform:translate\(-50%,-50%\);display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px/.test(src), "F4 the ghost toggle keeps the full 44×44px tap area");
+ok(src.includes(".share a,.share button{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;"), "F5 the option buttons stayed 34px");
+ok(src.includes(".share{display:none;position:absolute;top:32px;inset-inline-end:0;"), "F6 (v12.21) the options unfold in a popover anchored under the ⋯");
+ok(src.includes("function closeShare(w){") && src.includes('document.addEventListener("keydown", function(ev){') && src.includes('if(ev.key === "Escape")'), "F7 (v12.21) outside click + Esc close the popover");
 
 console.log("G) visible auto-update timestamp");
 ok(src.includes('id="lastSync" role="status" aria-live="polite"'), "G1 the lastSync status line exists under the subtitle");
@@ -83,10 +84,10 @@ ok(src.includes('syncJust:"just now"') && src.includes('syncMinAgo:"%s min ago"'
 ok(src.includes("function tickBigBar(){ if(DATA && DATA.upcoming) updateBigBar(); renderSync(); }"), "G6 the stamp re-ages every second tick");
 
 console.log("H) version bump");
-ok(src.includes('const VERSION = "12.20-uxpolish";'), "H1 VERSION = 12.20-uxpolish");
-ok((src.match(/ver:"نسخه ۱۲\.۲۰/g) || []).length === 3, "H2 fa ver strings (public + login + admin) all ۱۲.۲۰");
-ok((src.match(/v12\.20 — leaner alerts/g) || []).length === 3, "H3 en ver strings all v12.20");
-ok(pkg.version === "12.20.0" && pkg.scripts.test.includes("check-v1220.js"), "H4 package.json 12.20.0 + this suite wired");
+ok(src.includes('const VERSION = "12.21-uclbrand";'), "H1 (v12.21) VERSION = 12.21-uclbrand");
+ok((src.match(/ver:"نسخه ۱۲\.۲۱/g) || []).length === 3, "H2 fa ver strings (public + login + admin) all ۱۲.۲۱");
+ok((src.match(/v12\.21 — emphasized section header plates/g) || []).length === 3, "H3 en ver strings all v12.21");
+ok(pkg.version === "12.21.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 package.json 12.21.0 + the v12.21 suite wired");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.20-uxpolish checks)`);
 process.exit(fail ? 1 : 0);
