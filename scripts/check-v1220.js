@@ -77,17 +77,17 @@ ok(src.includes("function closeShare(w){") && src.includes('document.addEventLis
 
 console.log("G) visible auto-update timestamp");
 ok(src.includes('id="lastSync" role="status" aria-live="polite"'), "G1 the lastSync status line exists under the subtitle");
-ok(/function renderSync\(\)/.test(src) && src.includes("var sec = Math.max(0, Math.floor((Date.now() - SYNC_TS)/1000)), txt;"), "G2 renderSync computes the age");
+ok(/function renderSync\(\)/.test(src) && src.includes('el.textContent = fmt("lastUpd", fmtStamp(SYNC_TS));'), "G2 (v12.26 roll) renderSync prints the TRUTHFUL absolute stamp (fmtStamp) — the relative-age chain is retired");
 ok(src.includes("SYNC_TS = d.fetchedAt ? new Date(d.fetchedAt).getTime() : Date.now();"), "G3 the stamp comes from the payload's REAL fetchedAt");
-ok(src.includes('syncJust:"همین حالا"') && src.includes('syncMinAgo:"%s دقیقه پیش"') && src.includes('lastUpd:"آخرین به‌روزرسانی: %s"'), "G4 fa keys");
-ok(src.includes('syncJust:"just now"') && src.includes('syncMinAgo:"%s min ago"') && src.includes('lastUpd:"Last updated: %s"'), "G5 en keys");
+ok(src.includes('lastUpd:"آخرین به‌روزرسانی: %s"') && !src.includes("syncJust"), "G4 (v12.26 roll) fa lastUpd key kept; the syncJust/relative-age keys RETIRED (the truthful-stamp ask)");
+ok(src.includes('lastUpd:"Last updated: %s"') && src.includes('function fmtStamp(ts){'), "G5 (v12.26 roll) en lastUpd key kept + fmtStamp formats the absolute weekday/time/period stamp");
 ok(src.includes("function tickBigBar(){ if(DATA && DATA.upcoming) updateBigBar(); renderSync(); }"), "G6 the stamp re-ages every second tick");
 
 console.log("H) version bump");
-ok(src.includes('const VERSION = "12.25-alignment";'), "H1 (v12.24) VERSION = 12.25-alignment");
-ok((src.match(/ver:"نسخه ۱۲\.۲۵/g) || []).length === 3, "H2 fa ver strings (public + login + admin) all ۱۲.۲۴");
-ok((src.match(/v12\.25 — aligned match boxes/g) || []).length === 3, "H3 en ver strings all v12.24");
-ok(pkg.version === "12.25.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 package.json 12.25.0 + the v12.22 suite wired");
+ok(src.includes('const VERSION = "12.26-herostage";'), "H1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۶/g) || []).length === 3, "H2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
+ok((src.match(/v12\.26 — an adrenaline/g) || []).length === 3, "H3 (v12.26 roll) en ver strings all v12.26");
+ok(pkg.version === "12.26.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 (v12.26 roll) package.json 12.26.0 + the v12.22 suite wired");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.20-uxpolish checks)`);
 process.exit(fail ? 1 : 0);

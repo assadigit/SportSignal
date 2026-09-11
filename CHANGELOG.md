@@ -4,6 +4,66 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.26-herostage] — 2026-09-17 (the video stage behind the next big match, the original logo on both themes, 20% background crests, the redundant UCL tag retired, right-aligned about/contact, the new join button, the truthful update stamp)
+
+User asks: "In lightmode logo works, but in darkmode it turns to a white
+sillohuette. fix this. show the given logo in both light and dark mode.
+reduce the size of logo in pc view by 40%"; "reduce the opacity of
+background logos by 30% (it's still too visible)"; "remove this tag from
+UCL box : <span class=comp>…لیگ قهرمانان اروپا</span> because it's
+redundant since that box is already UCL dedicated"; "use the given video
+as background for the next big upcoming match. with this layers:
+A.deepest layer : Video > B> background logos > C> css effects > D>
+actual data (surface)"; "the تماس با ما and درباره ما must be right
+aligned. currently they're center aligned"; "turn the text of this
+button … عضویت در ربات تلگرام"; "instead of showing this: «آخرین
+به‌روزرسانی: همین حالا» show a truthful API call update like: آخرین به
+روز رسانی: جمعه 21:30 شب"
+
+- **The VIDEO STAGE (the hero's new deepest layer)**: the user's uploaded
+  7.2s mp4 (768×254, h264, no audio — 645KB, served from the worker's
+  `[assets]` as `/hero-stage.mp4`) now loops muted/autoplay/playsinline
+  behind the next big upcoming match, with the EXACT layer ladder the user
+  specified: A. video (`.hero-video`, z:0, clipped + object-fit:cover +
+  a theme-aware scrim so the stage never shouts) < B. the faded club
+  crests (`.hero-wm`, z:1) < C. the css effects — sweep + embers
+  (`.hero-fx`, z:2) < D. the actual data surface (`.hero-data`, z:3 —
+  the countdown bar + the match row, now one positioned layer above every
+  fx). A prefers-reduced-motion user gets the frozen first frame instead.
+- **The original logo on BOTH themes**: the dark theme no longer swaps in
+  the white-remap logo-light.png (the "white silhouette" the user
+  reported) — the file is deleted and the uploaded transparent png rides
+  light AND dark unchanged (its own navy + white inks read on dark, its
+  navy on light). PC size trimmed by the requested 40%: 84px → 50px
+  (phones were already 50px — one size, fixed width/height attrs kept for
+  zero CLS).
+- **Background crests one more 30% cut**: `.28 → .196` on dark + light +
+  phones (the user: "it's still too visible"), same 320px/210px canvas.
+- **The UCL box's redundant tag retired**: its rows no longer carry the
+  `<span class="comp">` league chip — the box's own starball heading
+  already says لیگ قهرمانان اروپا. Every other box (hero, big matches,
+  week) keeps the chip: there it distinguishes mixed competitions.
+- **Right-aligned about/contact**: the footer block and the nav rows that
+  carry درباره/تماس (PC header + phone footer) align to the START edge —
+  right on the RTL page, the natural reading edge — no longer centered.
+- **The join button**: «در تلگرام به ربات بپیوندید و اعلان بگیرید» →
+  «عضویت در ربات تلگرام» (en: "Join the Telegram bot"), header CTA and
+  the sticky bottom bar together.
+- **The truthful update stamp**: `/api/public-matches` no longer stamps
+  `fetchedAt` with the request clock (which made the sync line read a
+  false «همین حالا» on every visit) — the payload now carries the
+  upstream pool's REAL fetchedAt (the moment the API data last actually
+  changed), and the header line renders it absolutely:
+  «آخرین به‌روزرسانی: جمعه ۲۱:۳۰ شب» (weekday + HH:MM + a Persian period
+  word — صبح/ظهر/عصر/شب — in the user's selected timezone, Persian
+  digits; en: "Last updated: Friday 21:30"). Quiet windows honestly show
+  the last sweep that changed anything; live windows bump it every cron
+  pass.
+- New `scripts/check-v1226.js` (gates A–H); the watermark/logo/nav/join/
+  sync/version gates rolled to v12.26 in check-fa-ai, check-uniform,
+  check-v1218, check-v1220, check-v1221, check-v1222, check-v1223,
+  check-v1224, check-v1225 and check-weekly-report.
+
 ## [12.25-alignment] — 2026-09-16 (boxed aligned fixtures with the time inside each box, the transparent bigger logo, 28% background crests, the خانه/درباره/تماس nav)
 
 User asks: "reduce the opacity of background logos by 30%"; "if you can

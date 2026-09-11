@@ -45,15 +45,15 @@ ok(src.includes('#bigHeroCard[data-urgent="final"] #bigbarLabel{animation:hero-l
 ok(src.includes('#bigHeroCard[data-urgent="final"] .hero-fx i,#bigHeroCard[data-urgent="live"] .hero-fx i{background:radial-gradient(circle,rgba(252,165,165,.95),rgba(239,68,68,0) 70%)}'), "C7 the embers themselves escalate emerald → amber → red");
 
 console.log("D) safety");
-ok(src.includes(".hero-fx{position:absolute;inset:0;z-index:1;border-radius:15px;overflow:hidden;pointer-events:none}"), "D1 the ember layer is clipped + pointer-transparent (the ⋯ share popover still works above it)");
+ok(src.includes(".hero-fx{position:absolute;inset:0;z-index:2;border-radius:15px;overflow:hidden;pointer-events:none}"), "D1 (v12.26 roll) the ember layer is clipped + pointer-transparent at z:2 — above the crests + the new video stage, BELOW the data surface (the ⋯ share popover still works above it)");
 ok(src.includes("@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}"), "D2 the global prefers-reduced-motion rule silences every hero animation");
 ok(!/hero-heart|hero-sweep/.test(src.replace(/@keyframes hero-heart\{[^}]*\}/,"").replace(/@keyframes hero-sweep\{[^}]*\}/,"")) || true, "D3 (informational) all fx are opacity/transform animations — compositor friendly");
 
 console.log("E) version bump");
-ok(src.includes('const VERSION = "12.25-alignment";'), "E1 VERSION = 12.25-alignment");
-ok((src.match(/ver:"نسخه ۱۲\.۲۵/g) || []).length === 3, "E2 fa ver strings (public + login + admin) all ۱۲.۲۴");
-ok((src.match(/v12\.25 — aligned match boxes/g) || []).length === 3, "E3 en ver strings all v12.24");
-ok(pkg.version === "12.25.0" && pkg.scripts.test.includes("check-v1222.js"), "E4 package.json 12.25.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.26-herostage";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۶/g) || []).length === 3, "E2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
+ok((src.match(/v12\.26 — an adrenaline/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
+ok(pkg.version === "12.26.0" && pkg.scripts.test.includes("check-v1222.js"), "E4 (v12.26 roll) package.json 12.26.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.23-watermark checks)`);
 process.exit(fail ? 1 : 0);
