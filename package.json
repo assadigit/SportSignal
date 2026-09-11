@@ -1,12 +1,12 @@
 {
   "name": "ucl-notifier",
-  "version": "12.19.0",
+  "version": "12.20.0",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "test": "node scripts/check-weekly-report.js && node scripts/check-weekly-tables.js && node scripts/check-bl1.js && node scripts/check-cups.js && node scripts/check-clubs.js && node scripts/check-uniform.js && node scripts/check-dedupe.js && node scripts/check-fa-dict.js && node scripts/check-fa-ai.js && node scripts/check-v1218.js && node scripts/check-join-flow.js && node scripts/check-league-union.js && node scripts/check-venue.js && node scripts/check-notify-windows.js && node scripts/check-standings-bl1.js && node scripts/live-derby-test.js"
+    "test": "node scripts/check-weekly-report.js && node scripts/check-weekly-tables.js && node scripts/check-bl1.js && node scripts/check-cups.js && node scripts/check-clubs.js && node scripts/check-uniform.js && node scripts/check-dedupe.js && node scripts/check-fa-dict.js && node scripts/check-fa-ai.js && node scripts/check-v1218.js && node scripts/check-v1220.js && node scripts/check-join-flow.js && node scripts/check-league-union.js && node scripts/check-venue.js && node scripts/check-notify-windows.js && node scripts/check-standings-bl1.js && node scripts/live-derby-test.js"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230419.0",

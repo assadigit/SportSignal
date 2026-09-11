@@ -4,6 +4,60 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.20-uxpolish] — 2026-09-13 (leaner bot alerts, real countdown + progress bar, badge tokens, wide 2-column layout, sticky CTA)
+
+User asks: remove the notification text noise ("🔔 یادآوری ۲۴ ساعته …", "📱
+یادآوری بعدی: ۳ ساعت قبل از بازی" and "generally remove all kind of these text
+that do not add any value and feel repetitive"); fix the countdown timer to
+calculate real d/h/m/s and bind the progress bar to the actual time remaining;
+darken the top-of-table badge for WCAG AA contrast; a wide-viewport layout at
+≥1440px; a sticky Telegram join CTA; a proper 44px share toggle with a visible
+label + three-dot icon; named badge color tokens; a visible "updated X minutes
+ago" stamp. (The Tailwind-flavored suggestions were implemented with this
+stack's own primitives — CSS custom properties + a plain CSS media query.)
+
+- **Leaner bot messages**: every repeated no-value line is gone — the 🔔
+  24-hour boilerplate and all "📱 یادآوری بعدی / اعلام بعدی" footers (24h,
+  big-match, 3h, 1h), the 🔥/🎯 hype lines, the 📺/🏃 kickoff fillers, and the
+  weekly digest's "start & result are sent automatically" footer. Each message
+  now ends after its facts: teams, competition, date, time, ⏳ countdown.
+- **Countdown fixed (data-binding bug)**: the clock renders zero-padded
+  day/hour/minute/second values — the old unpadded format could render
+  "1:1:5"-style garbage that read like repeating placeholder "1"s. The
+  progress bar now fills with the TIME REMAINING (rem / 14-day horizon): full
+  ≥2 weeks out, draining to 0% at kickoff, so bar and label agree at both
+  ends. The old `1-rem/14d` formula rendered a match one day away ~93% full —
+  reading as "already done". The fake fixed 42% idle width became a low 12%
+  standby strip.
+- **Badge color tokens** (not Tailwind — CSS custom properties): `--badge-top`,
+  `--badge-hot`, `--badge-derby`, `--badge-league`, `--badge-live` defined for
+  dark + light themes and referenced by `.topbadge`, `.derbybadge`, `.comp`,
+  `.livechip .dot`. The top-of-table badge is now solid `#B03A2E` with its
+  white text (6.02:1 — WCAG AA pass; the old gradient sampled #D06E07 at
+  3.55:1).
+- **≥1440px two-column grid**: `body` becomes a 2-column grid (max-width
+  1400px); the topbar, hero header, countdown hero card and footer span both
+  columns; the section cards flow two-per-row. Below 1440px the 760px single
+  column is untouched.
+- **Sticky Telegram join CTA**: once the hero join button scrolls out of view
+  (past, not merely below), a fixed bottom bar with the Telegram plane +
+  label appears — `env(safe-area-inset-bottom)` padded on phones, and
+  `body.joinsticky` adds bottom clearance so it never covers content. Hides
+  again when the hero button returns to view.
+- **Share toggle rebuilt**: a labeled pill — horizontal ⋯ three-dot icon +
+  «اشتراک‌گذاری»/"Share" text — min 44×44px tap target (was 24px), tooltip
+  kept, still at the row's inline-end (logical properties, RTL/LTR-safe). The
+  option buttons grew 24→34px.
+- **Visible auto-update proof**: the API already stamped `fetchedAt` on every
+  payload — the page now renders it as «آخرین به‌روزرسانی: X دقیقه پیش» /
+  "Last updated: X min ago" under the subtitle (Persian digits in fa), aging
+  live every second, refreshed on each fetch.
+- Version bump everywhere: `VERSION` const, the six page-dict `ver` strings +
+  the admin static footer, `package.json` 12.20.0; new `check-v1220.js` suite
+  (51 assertions); the rolling version-gate checks updated
+  (check-weekly-report H1–H3, check-fa-ai C11b–d, check-v1218 G1–G3 + the E2
+  share-glyph assertion).
+
 ## [12.19-tzsettings] — 2026-09-12 (timezone settings behind a gear icon, fully bilingual zone names, every GMT offset)
 
 User asks: "Hide this behind a setting icon, next to darkmode/lightmode" (the

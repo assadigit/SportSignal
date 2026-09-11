@@ -52,7 +52,7 @@ ok(src.includes("v12.18: PC crests +35%"), "D3 documented as the user's ask");
 
 console.log("E) share options behind a toggle");
 ok(src.includes("wrap.className = \"sharewrap\"") && src.includes('tg.className = "sharetoggle"'), "E1 shareRow wraps options behind a .sharetoggle button");
-ok(src.includes("S_ICONS.share") && /share: '<circle cx="18" cy="5" r="3"\/>/.test(src), "E2 share-nodes glyph icon");
+ok(/share: '<circle cx="18" cy="5" r="3"\/>/.test(src) && /dots: '<circle cx="5" cy="12" r="2\.1"\/><circle cx="12" cy="12" r="2\.1"\/><circle cx="19" cy="12" r="2\.1"\/>'/.test(src), "E2 (v12.20) the legacy share-nodes key is kept; the toggle now drives a horizontal ⋯ three-dot glyph");
 ok(src.includes('tg.setAttribute("aria-expanded", open ? "true" : "false")') && src.includes("wrap.classList.toggle(\"open\")"), "E3 click toggles .open + aria-expanded");
 ok(/\.share\{display:none;/.test(src) && /\.sharewrap\.open \.share\{display:inline-flex\}/.test(src), "E4 options hidden until .open (both PC and mobile)");
 ok(!src.includes("@media (hover:hover) and (pointer:fine)"), "E5 the hover-reveal media query is RETIRED");
@@ -69,10 +69,10 @@ ok(v3script.includes("varzesh3.com/football/league/") && v3script.includes("valu
 ok(v3script.includes("{ id: 25,") && v3script.includes('{ id: 6,'), "F8 covers UCL (25) + the Iranian PGL (6) among 9 leagues");
 
 console.log("G) versions");
-ok(src.includes('const VERSION = "12.19-tzsettings";'), "G1 VERSION = 12.19-tzsettings");
+ok(src.includes('const VERSION = "12.20-uxpolish";'), "G1 VERSION = 12.20-uxpolish");
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-ok(pkg.version === "12.19.0" && pkg.scripts.test.includes("check-v1218.js"), "G2 package.json 12.19.0 + new suite wired");
-ok((src.match(/نسخه ۱۲\.۱۹/g) || []).length >= 4 && (src.match(/v12\.19 — time/g) || []).length >= 3, "G3 ver strings bumped (dicts + static footer)");
+ok(pkg.version === "12.20.0" && pkg.scripts.test.includes("check-v1218.js"), "G2 package.json 12.20.0 + new suite wired");
+ok((src.match(/نسخه ۱۲\.۲۰/g) || []).length >= 4 && (src.match(/v12\.20 — leaner alerts/g) || []).length >= 3, "G3 ver strings bumped (dicts + static footer)");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.18-weeknext checks)`);
 process.exit(fail ? 1 : 0);
