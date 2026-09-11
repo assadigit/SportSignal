@@ -62,8 +62,8 @@ console.log("E) sticky Telegram join CTA");
 ok(src.includes('id="joinSticky" href="https://t.me/UCL_Match_Bot"'), "E1 the sticky join anchor exists");
 ok(src.includes("#joinSticky{position:fixed;bottom:0;left:0;right:0;z-index:70;"), "E2 fixed bottom bar");
 ok(src.includes("calc(10px + env(safe-area-inset-bottom,0px))"), "E3 safe-area bottom padding");
-ok(src.includes("var past = !e.isIntersecting && e.boundingClientRect.top < 0;"), "E4 shows only when the hero CTA is scrolled PAST");
-ok(src.includes('document.body.classList.toggle("joinsticky", past);') && src.includes("body.joinsticky{padding-bottom:88px}"), "E5 body clearance while shown (never covers content)");
+ok(src.includes("past = !e.isIntersecting && e.boundingClientRect.top < 0;"), "E4 shows only when the hero CTA is scrolled PAST (v12.25: `past` is now a state var merged with the footer-in-view state)");
+ok(src.includes('document.body.classList.toggle("joinsticky", show);') && src.includes("body.joinsticky{padding-bottom:88px}"), "E5 (v12.25 roll) body clearance while shown (never covers content — and the bar stands down at the footer, where its duty is done)");
 ok(src.includes("#joinSticky .js-inner"), "E6 the pill CTA styling exists");
 
 console.log("F) share toggle: quiet ⋯ ghost + popover (the v12.22 evolution of the 44px pill)");
@@ -84,10 +84,10 @@ ok(src.includes('syncJust:"just now"') && src.includes('syncMinAgo:"%s min ago"'
 ok(src.includes("function tickBigBar(){ if(DATA && DATA.upcoming) updateBigBar(); renderSync(); }"), "G6 the stamp re-ages every second tick");
 
 console.log("H) version bump");
-ok(src.includes('const VERSION = "12.24-brandhead";'), "H1 (v12.24) VERSION = 12.24-brandhead");
-ok((src.match(/ver:"نسخه ۱۲\.۲۴/g) || []).length === 3, "H2 fa ver strings (public + login + admin) all ۱۲.۲۴");
-ok((src.match(/v12\.24 — brand header/g) || []).length === 3, "H3 en ver strings all v12.24");
-ok(pkg.version === "12.24.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 package.json 12.24.0 + the v12.22 suite wired");
+ok(src.includes('const VERSION = "12.25-alignment";'), "H1 (v12.24) VERSION = 12.25-alignment");
+ok((src.match(/ver:"نسخه ۱۲\.۲۵/g) || []).length === 3, "H2 fa ver strings (public + login + admin) all ۱۲.۲۴");
+ok((src.match(/v12\.25 — aligned match boxes/g) || []).length === 3, "H3 en ver strings all v12.24");
+ok(pkg.version === "12.25.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 package.json 12.25.0 + the v12.22 suite wired");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.20-uxpolish checks)`);
 process.exit(fail ? 1 : 0);

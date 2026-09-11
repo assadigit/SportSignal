@@ -46,7 +46,7 @@ ok(src.includes("#wideMain,#wideSide{display:flex;flex-direction:column;gap:14px
 ok(src.includes('var WIDE_MAIN = ["topspotCard","uclSpotCard","weekCard","finishedCard"];') && src.includes('var WIDE_RAIL = ["uclCard","standingsCard","cupsCard"];'), "C3 setWide() groups the match boxes into MAIN and the three table boxes into the RAIL");
 ok(src.includes('var WIDE_ORDER = ["topspotCard","uclSpotCard","weekCard","uclCard","standingsCard","cupsCard","finishedCard"];') && src.includes("WIDE_ORDER.forEach(function(id){ var e = document.getElementById(id); if(e) footer.parentNode.insertBefore(e, footer); });"), "C4 below 1440px the cards return to the EXACT single-column DOM order");
 ok(src.includes('WIDE_MQ.addEventListener("change", wideChange)') || src.includes("WIDE_MQ.addListener(wideChange)"), "C5 breakpoint change re-shuffles/restores live");
-ok(/#topbar\{margin-bottom:0\}/.test(src) && src.includes('.brand img{display:block;height:42px;') && src.includes('.head-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}'), "C6 (v12.24 roll) the WEBSITE header spans the full chrome row — brand logo pinned to the start corner, settings + Telegram CTA at the end (the centered-controls bar + hero title block are retired)");
+ok(/#topbar\{margin-bottom:0\}/.test(src) && src.includes('.brand img{display:block;height:84px;') && src.includes('.head-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}'), "C6 (v12.25 roll) the WEBSITE header spans the full chrome row — brand logo pinned to the start corner (84px transparent png, v12.25), settings + Telegram CTA at the end (the centered-controls bar + hero title block are retired)");
 ok(src.includes("#heroSpot{max-width:880px;margin:0 auto}"), "C7 the countdown hero's match row is capped to a readable width");
 ok(src.includes("#wideSide .grid4{grid-template-columns:repeat(2,1fr)}"), "C8 the standings grid folds to 2 columns inside the rail");
 ok(src.includes('id="uclCard"') && src.includes('id="standingsCard"') && src.includes('id="cupsCard"') && src.includes('id="finishedCard"'), "C9 the four previously anonymous cards carry ids for the regrouping");
@@ -60,10 +60,10 @@ ok(src.includes("var sr = shareRow(m, false); info.appendChild(sr);") && !src.in
 ok(src.includes("function closeShare(w){") && src.includes('document.addEventListener("click", function(ev){') && src.includes('document.addEventListener("keydown", function(ev){'), "D6 closeShare + the document click/keydown listeners exist");
 
 console.log("E) version bump");
-ok(src.includes('const VERSION = "12.24-brandhead";'), "E1 VERSION = 12.24-brandhead");
-ok((src.match(/ver:"نسخه ۱۲\.۲۴/g) || []).length === 3, "E2 fa ver strings (public + login + admin) all ۱۲.۲۴");
-ok((src.match(/v12\.24 — brand header/g) || []).length === 3, "E3 en ver strings all v12.24");
-ok(pkg.version === "12.24.0" && pkg.scripts.test.includes("check-v1221.js"), "E4 package.json 12.24.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.25-alignment";'), "E1 VERSION = 12.25-alignment");
+ok((src.match(/ver:"نسخه ۱۲\.۲۵/g) || []).length === 3, "E2 fa ver strings (public + login + admin) all ۱۲.۲۴");
+ok((src.match(/v12\.25 — aligned match boxes/g) || []).length === 3, "E3 en ver strings all v12.24");
+ok(pkg.version === "12.25.0" && pkg.scripts.test.includes("check-v1221.js"), "E4 package.json 12.25.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.21-uclbrand checks — the suite kept, gates rolled to v12.23)`);
 process.exit(fail ? 1 : 0);

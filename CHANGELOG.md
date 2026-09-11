@@ -4,6 +4,64 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.25-alignment] — 2026-09-16 (boxed aligned fixtures with the time inside each box, the transparent bigger logo, 28% background crests, the خانه/درباره/تماس nav)
+
+User asks: "reduce the opacity of background logos by 30%"; "if you can
+align all of the fixtures in a same line"; "the borders around the teams
+and rows are misleading. for example sometimes you incorrectly think the
+game match time belong to a row, but actually it belongs to upper row,
+there isn't enough visual distinction between rows and their info. so
+mistakes happens. so always match details inside the match box for
+example A [match info] B — alignment, alignment alignment."; "Also I gave
+you a png transparent logo, why you added white background for it. use
+transparent logo. Also increase the size in pc by 100% and Mobile by
+50%"; "Also in heading of PC, and footer of Mobile add this : خانه درباره
+تماس"
+
+- **The match boxes (the alignment round)**: every fixture on the page —
+  hero, big-matches box, UCL box, week card, finished card — is now ONE
+  self-contained bordered box (`.mrow`/`.spotitem`: border + rounded
+  corners + padding, a gap between boxes, hover highlighting the whole
+  unit). The old hairline divider sat BETWEEN a row's teams and its OWN
+  info line, so a kickoff time read as if it belonged to the row below —
+  the exact misattribution the user reported. The divider is retired;
+  nothing can leak across a row boundary anymore.
+- **The kickoff TIME owns the center slot**: unplayed rows now render
+  `A [🕒 time] B` — the time chip rides the same 92px centered x line the
+  score takes on live/finished rows (both slots 80px on phones), so every
+  fixture on the page — upcoming, live or finished — carries its center
+  element at one identical position and the team columns line up across
+  all rows and cards. The countdown chip left the info line (the
+  misattribution source); expired week rows keep their «⌛ پایان‌یافته»
+  marker in the info line, dimmed with the box they belong to.
+- **The transparent logo**: the white plate is RETIRED — the header now
+  shows the uploaded transparent png itself. Two ink variants are served
+  from the worker's assets directory: the navy-ink `/logo.png` on the
+  light theme and `/logo-light.png` (the same palette remapped to pure
+  white, alpha untouched) on the dark theme, swapped purely via CSS
+  (instant, theme-flash-free). The logo DOUBLES on PC (42px → 84px,
+  "+100%") and grows +50% on phones (33px → 50px), with fixed
+  width/height attrs so the header never shifts while the pngs load.
+- **The background crests at 28%**: the hero watermarks drop from .40 to
+  .28 opacity on both themes (phones too) — a 30% reduction per the ask —
+  keeping the same big 320px/210px canvas, scrim and team-name shadows.
+- **The «خانه درباره تماس» nav**: the classic three-link nav rides the
+  header on PC — centered between the logo and the controls at ≥1440px,
+  its own centered row on 601–1439px — and the footer's top row on
+  phones. All three links are real destinations (home reloads, about
+  anchors to the footer's identity block `id="about"`, contact opens the
+  Telegram bot), labeled via i18n keys (fa/en). Smooth anchor scrolling
+  joins the root overflow clip.
+- **The sticky join bar stands down at the footer**: once the footer is
+  in view the floating Telegram bar hides (the footer carries its own bot
+  link + the phone nav row), so a «درباره» anchor lands on clean content
+  instead of under the bar.
+- Checks: NEW `scripts/check-v1225.js` (37 assertions) wired into
+  `npm test`; rolling gates updated in 10 suites (v1218/v1220/v1221/
+  v1222/v1223/v1224/fa-ai/uniform/weekly-report + the fa-ai A3 roll).
+  `npm test` exit 0; tsc error count unchanged vs the 12.24 baseline
+  (706 pre-existing implicit-any diagnostics).
+
 ## [12.24-brandhead] — 2026-09-15 (the SportSignal website header, 40% background crests, 2× hero crests on PC, a defined progress-bar base)
 
 User asks: "i actually prefer like 40% of the logo appear in the bg, but

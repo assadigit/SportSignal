@@ -25,7 +25,7 @@ console.log("A) VS emoji → (v12.18) NO separator at all");
 const emojiCount = (src.match(/🆚/g) || []).length;
 ok(emojiCount === 1 && /v12\.18: the "vs" slot is GONE[\s\S]*?the 🆚 emoji/.test(src), "A1 zero 🆚 render sites (only the history comment remains)");
 ok(!/\.vs\{/.test(src) && !src.includes('className = "vs"'), "A2 no .vs CSS rule and no .vs element anywhere (fully removed)");
-ok((src.match(/row\.appendChild\(hs\); row\.appendChild\(as\);/g) || []).length === 2, "A3 render() + spotItemNode(): no middle slot when there is no score");
+ok((src.match(/row\.appendChild\(hs\); row\.appendChild\(kt\); row\.appendChild\(as\);/g) || []).length === 2, "A3 (v12.25 roll) render() + spotItemNode(): every unplayed row carries the .kick TIME slot in the middle (aligned with the score line)");
 ok((src.match(/var vs = document\.createElement\("div"\); vs\.className = "score";/g) || []).length === 2, "A3b the score element is created only when a score exists");
 ok(src.includes(".score{font-weight:800"), "A4 .score styling untouched (finished/live rows keep their score)");
 ok((src.match(/" – "/g) || []).length >= 3, "A5 share/cup/admin text lines use a low-key \" – \" separator");
@@ -166,10 +166,10 @@ const collectorData = {
   // C11: binding + versions
   const toml = fs.readFileSync("wrangler.toml", "utf8");
   ok(/\[ai\]/.test(toml) && /binding = "AI"/.test(toml), "C11a wrangler.toml carries the [ai] binding");
-  ok(src.includes('const VERSION = "12.24-brandhead";'), "C11b VERSION = 12.24-brandhead");
+  ok(src.includes('const VERSION = "12.25-alignment";'), "C11b VERSION = 12.25-alignment");
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  ok(pkg.version === "12.24.0", "C11c package.json 12.24.0");
-  ok((src.match(/نسخه ۱۲\.۲۴/g) || []).length >= 3 && (src.match(/v12\.24 — brand header/g) || []).length >= 3, "C11d ver strings bumped across the page dicts + static footer");
+  ok(pkg.version === "12.25.0", "C11c package.json 12.25.0");
+  ok((src.match(/نسخه ۱۲\.۲۵/g) || []).length >= 3 && (src.match(/v12\.25 — aligned match boxes/g) || []).length >= 3, "C11d ver strings bumped across the page dicts + static footer");
 
   console.log(`\n${pass} passed, ${fail} failed (v12.17-fai checks)`);
   process.exit(fail ? 1 : 0);

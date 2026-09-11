@@ -21,7 +21,7 @@ ok(!/\.vs\{/.test(src) && !/\.vs[ ,{.]/.test(src.replace(/[\s\S]*?(<style>)/, ""
 ok(!src.includes('className = "vs"') && !src.includes('vs.className = "vs"'), "A1 no element ever carries the .vs class");
 ok(!/\.vs\{/m.test(src), "A2 no .vs CSS rule remains");
 ok(!src.includes(".bigcard .vs") && !src.includes(".spotitem.past .vs"), "A2b bigcard/past .vs selectors gone");
-ok((src.match(/row\.appendChild\(hs\); row\.appendChild\(as\);/g) || []).length === 2, "A3 both builders append sides WITHOUT a middle slot when no score");
+ok((src.match(/row\.appendChild\(hs\); row\.appendChild\(kt\); row\.appendChild\(as\);/g) || []).length === 2, "A3 (v12.25 roll) both builders carry the .kick TIME center slot on unplayed rows — aligned with the score line");
 ok((src.match(/var vs = document\.createElement\("div"\); vs\.className = "score";/g) || []).length === 2, "A3b the score slot is created only when a score exists (2 sites)");
 ok(/\/\* v12\.18: the "vs" slot is GONE[\s\S]*?\*\//.test(src), "A4 the retirement comment documents the decision");
 ok(src.includes(".score{font-weight:800"), "A5 .score styling untouched");
@@ -69,10 +69,10 @@ ok(v3script.includes("varzesh3.com/football/league/") && v3script.includes("valu
 ok(v3script.includes("{ id: 25,") && v3script.includes('{ id: 6,'), "F8 covers UCL (25) + the Iranian PGL (6) among 9 leagues");
 
 console.log("G) versions");
-ok(src.includes('const VERSION = "12.24-brandhead";'), "G1 VERSION = 12.24-brandhead");
+ok(src.includes('const VERSION = "12.25-alignment";'), "G1 VERSION = 12.25-alignment");
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-ok(pkg.version === "12.24.0" && pkg.scripts.test.includes("check-v1218.js"), "G2 package.json 12.24.0 + this suite still wired");
-ok((src.match(/نسخه ۱۲\.۲۴/g) || []).length >= 4 && (src.match(/v12\.24 — brand header/g) || []).length >= 3, "G3 ver strings bumped (dicts + static footer)");
+ok(pkg.version === "12.25.0" && pkg.scripts.test.includes("check-v1218.js"), "G2 package.json 12.25.0 + this suite still wired");
+ok((src.match(/نسخه ۱۲\.۲۵/g) || []).length >= 4 && (src.match(/v12\.25 — aligned match boxes/g) || []).length >= 3, "G3 ver strings bumped (dicts + static footer)");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.18-weeknext checks)`);
 process.exit(fail ? 1 : 0);
