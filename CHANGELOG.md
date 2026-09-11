@@ -6,6 +6,44 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.12-bigfocus] — 2026-09-15 (big-only page: view toggle & upcoming list retired, 10-match box, 8-match UCL box with selected-only filter, no A-League, dark scrollbars)
+
+User ask: remove the «فقط بازی‌های بزرگ / همه بازی‌ها» toggle (big-only must be
+the default and only mode), remove the now-redundant «📅 مسابقات پیش‌رو» card,
+«مسابقات بزرگ پیش‌رو» shows up to 10 next matches, the UCL box shows up to 8
+matches ("two important today, two important tomorrow") and only games where
+at least one side is a selected club (Sabah FK vs SK Slavia Praha is noise),
+remove the Australia league from the league tables, and fix the scrollbar
+rendering light in dark mode.
+
+- **View toggle retired**: the `.viewtoggle` HTML/CSS, `setView()`, the `VIEW`
+  variable and the `ucl_view` localStorage preference are all gone — the page
+  is permanently big-only. `applyView()` shrinks to rendering the finished
+  card (the week's selected-team results).
+- **«📅 مسابقات پیش‌رو» card retired**: with the toggle gone it only ever held
+  the redundant "همه در جعبه بالا هستند" note. `renderSections`/`catOf`/
+  `CAT_CUPS` and the `.msec`/`.ucl-matches` CSS are removed with it; the hero
+  card + the topspot box + the UCL box ARE the upcoming presentation.
+- **Big-matches box × 10**: the server picks up to ELEVEN true big matches
+  (A/B/C + selected-vs-top-5 fallback, strict kickoff order); slot 1 goes to
+  the hero card (the countdown's match) and «🔥 مسابقات بزرگ پیش‌رو» shows the
+  remaining up to TEN.
+- **Generalized UCL box × 8**: `ucl.matches` now carries up to EIGHT upcoming
+  CL fixtures in kickoff order (live first) where ≥1 side is a SELECTED club —
+  the both-unselected noise (Sabah FK 🆚 SK Slavia Praha) never boxes. The old
+  single-headline `nbig` pick chain is retired; `renderUclSpot()` renders the
+  box with the same `spotItemNode` rows as the topspot box + hero (uniform),
+  hides the card when empty, and keeps the pre-draw wait state. The «🏆 لیگ
+  قهرمانان اروپا» card drops its all-fixtures list (the noise source) and is
+  standings-only now.
+- **A-League out of the league tables**: `standCodes` loses `AL` (5 European
+  leagues + PGL remain, 6 boxes); the client grid list and `FLAGS` follow. AL
+  stays in the notify config and the settings-driven weekly Telegram digest.
+- **Dark-mode scrollbars**: `color-scheme:dark` on `:root` and
+  `color-scheme:light` on `[data-theme="light"]` (all three pages) — native
+  scrollbars and form controls now match the active theme instead of always
+  rendering light.
+
 ## [12.11-uniform] — 2026-09-15 (streamlined: no special boxes around matches — uniform rows everywhere)
 
 User ask: "The UI is inconsistent, some matches have a different border

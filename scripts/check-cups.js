@@ -34,10 +34,10 @@ globalThis.isFeaturedMatch = () => true;
 // v12.3: the CL BOX pick also considers selected-vs-selected pairings
 // (isMasterPair) — stub false so the cup fixtures here never qualify.
 globalThis.isMasterPair = () => false;
-// v12.4: the CL BOX proximity rule prefers the nearest match with ≥1 selected
-// team (hasSelectedTeam) — stub false for the same reason (cup fixtures here
-// never qualify; the live-first pick must fall through to isFeaturedMatch).
-globalThis.hasSelectedTeam = () => false;
+// v12.4/v12.12: the UCL box shows ONLY matches with ≥1 selected club — stub
+// the selector so the CL fixtures here (cup4/cup5) qualify and every other
+// fixture doesn't; the old nbig pick chain is retired with the generalized box.
+globalThis.hasSelectedTeam = (m) => m.competition.code === "CL";
 // Only WC is "known" to the stub config: a WC match exists (box shows), while EC
 // has fixtures (intl codes are fetched) but is NOT in INTL_COMPETITIONS — assert
 // the cup list only ever includes codes from the config.
@@ -82,10 +82,12 @@ check("COPPA_ITALIA no matches -> null", byCode.COPPA_ITALIA, null);
 check("WC in process -> box present", byCode.WC, "cup7");
 check("EC unknown to config -> box absent", byCode.EC, undefined);
 
-// UCL dedicated payload: live CL match wins, still in matches, full table shape
+// UCL dedicated payload (v12.12): the GENERALIZED box — live CL match leads,
+// only matches with ≥1 selected club (the CL fixtures; the rest is noise),
+// the single-headline nbig pick is retired, full table shape unchanged.
 check("ucl payload present", !!uclOut, true);
-check("ucl matches live-first", uclOut.matches[0] && uclOut.matches[0].id, "cup4");
-check("ucl nbig = live-first next UCL match", uclOut.nbig && uclOut.nbig.id, "cup4");
+check("ucl box live-first, selected-only", uclOut.matches.map((m) => m.id).join(","), "cup4,cup5");
+check("ucl nbig retired (v12.12 generalized box)", uclOut.nbig, undefined);
 check("ucl teams null when stCL null", uclOut.teams, null);
 
 check("CL tier irrelevant in cups", tierOf("CL"), null);
