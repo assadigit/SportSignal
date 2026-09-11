@@ -38,6 +38,14 @@ globalThis.isMasterPair = () => false;
 // the selector so the CL fixtures here (cup4/cup5) qualify and every other
 // fixture doesn't; the old nbig pick chain is retired with the generalized box.
 globalThis.hasSelectedTeam = (m) => m.competition.code === "CL";
+// v12.16: the extracted block now also carries the «در این هفته» (this-week)
+// computation — stub its dependencies so the week window resolves empty and
+// the cups/ucl assertions stay untouched.
+globalThis.getNowTehran = () => new Date("2026-09-14T12:00:00Z");
+globalThis.liveRank = (m) => (m && m.status === "LIVE" ? 0 : 1);
+globalThis.shouldNotify = () => false;
+globalThis.isTopTeamInvolved = () => false;
+globalThis.withTop = (m) => m;
 // Only WC is "known" to the stub config: a WC match exists (box shows), while EC
 // has fixtures (intl codes are fetched) but is NOT in INTL_COMPETITIONS — assert
 // the cup list only ever includes codes from the config.
@@ -60,7 +68,7 @@ const matches = [
 ];
 let cups;
 let uclOut;
-try { const out = eval("(() => { const stPGL = null; const stCL = null; const matches = " + JSON.stringify(matches) + ";" + cupBlock.replace("const cupOrder", "var cupOrder") + "return { cups, ucl };})()"); cups = out.cups; uclOut = out.ucl; }
+try { const out = eval("(() => { const stPGL = null; const stCL = null; const env = {}; const matches = " + JSON.stringify(matches) + ";" + cupBlock.replace("const cupOrder", "var cupOrder") + "return { cups, ucl };})()"); cups = out.cups; uclOut = out.ucl; }
 catch (e) { console.error("FAIL: cups block threw: " + e.message); process.exit(1); }
 
 const byCode = {};

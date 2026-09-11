@@ -6,6 +6,95 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.16-weekly] — 2026-09-15 (weekly report round: full UCL league table, week-ahead digest, unmissable derby/UCL banners, bot members directory, «در این هفته» box, dark-mode default, bigger mobile crests, API frugality, Iranian top-8 fix)
+
+User asks (one batch): a detailed UCL league table (only points were shown —
+add matches played, goals scored etc.); a Telegram weekly report with the
+league tables AND the coming week's fixtures; derbies and both-selected UCL
+duels emphasised so nobody misses them; an admin panel list of every account
+that joined the bot (telegram ids + slugs); dark mode as the UI default;
+club crests ~50% bigger on mobile; the Iranian league showing top 8 like
+every other league (was top 5); and API thrift (no more ~144 provider sweeps
+a day).
+
+- **Detailed UCL table**: the Champions League card is a COMPLETE league
+  table now — `# | team | MP | W | D | L | GF | GA | GD | Pts` in the
+  standard order, with a sticky header row (two-line-capable Persian labels).
+  football-data already serves every stat (`playedGames/won/draw/lost/
+  goalsFor/goalsAgainst/goalDifference`); the standings cache, the public
+  payload and `renderUcl()` all carry them through. The W/D/L/GF/GA middle
+  columns fold away on phones (≤600px), leaving `# | team | MP | GD | Pts`;
+  missing stats render as "—" (old cache shape) and GD falls back to GF−GA.
+  UCL top-8 rows keep the ⭐-style `top3` tint (qualification zone).
+- **Weekly report round**: the end-of-week digest (Monday 01:30–06:00
+  Tehran, once per ISO week) now appends the **week-AHEAD fixtures** of the
+  followed teams (7 days, straight from the KV pool — zero extra API calls):
+  derbies LEAD with ⚔️🔥 + bold, both-selected UCL duels follow with 🏆🔥,
+  then the rest with ⚽, capped with a "+N more" tail; one message per chat,
+  ONE week flag for both deliveries (an all-failed run retries next tick).
+- **Unmissable emphasis banners**: EVERY bot notification for a qualifying
+  match is prefixed with a banner — `⚔️🔥 *دربی حساس* 🔥⚔️` for derbies and
+  `🏆🔥 *دوئل بزرگ لیگ قهرمانان اروپا* 🏆` when both sides are selected UCL
+  clubs (Telegram bold; ordinary matches get nothing).
+- **Bot members directory**: `GET /api/members` (admin-gated) + a new
+  «👥 اعضای ربات» card in the admin panel listing every chat that /start-ed
+  the bot with its **telegram id, @username (slug)**, display name/group
+  title and join date. Profiles are captured from incoming updates
+  (best-effort); members who never messaged are backfilled on demand via
+  `getChat` (≤40 per call, cached into KV `user_profiles_v1` so each member
+  is fetched at most once). Loads at boot + (re)login; 🔄 re-fetches;
+  re-renders on language switch.
+- **«در این هفته» box**: new public card showing the CURRENT Iranian week
+  (Saturday→Friday) — every followed/top-3 match of this week in kickoff
+  order, live first; played games keep their final score; hidden when the
+  week has no followed games. Computed from the same pool (zero extra API
+  calls), capped at 16 rows.
+- **Dark mode is the DEFAULT** on all three pages (public/login/admin): the
+  boot script + `initTheme()` fall back to `"dark"` (no stored preference →
+  dark; the toggle still persists the choice).
+- **Mobile club crests ~53% bigger**: 30px → 46px circles (`.logo`), team
+  names wrap beneath — they were too small to read.
+- **API frugality**: the cron still ticks every 10 min, but the full provider
+  sweep only runs when it MATTERS — a followed match is live, kicks off
+  within 1h, or ended <8h ago; quiet periods reuse the KV match pool (sweeps
+  at most every 2h instead of ~144×/day). Pre-match reminders keep firing
+  from the pool. A provider circuit breaker suspends sportscore for 45 min
+  after a fully-failed sweep (it is currently serving a bot challenge)
+  instead of burning subrequests on every tick.
+- **Iranian league top-8 (root cause found)**: TheSportsDB's free tier
+  truncates `lookuptable` to 5 rows — that preview WAS the PGL table (every
+  other league comes from football-data, which is why they showed 8). New
+  chain: sportscore (bot-challenged, may recover) → **Wikipedia's per-season
+  PGL table template** (ALL 18 teams with W/D/L/GF/GA, anonymous-friendly) →
+  TheSportsDB accepted ONLY when not truncated (≥8 rows). The site grid now
+  shows the same top-8 for Iran as for every other league, with full stats.
+- **Tests**: new `scripts/check-weekly-report.js` (48 assertions: table
+  columns/order/fold/i18n, banners, week-ahead, members, frugality, PGL
+  chain, this-week box, dark default, crests, versions);
+  `check-weekly-tables.js` gained the week-ahead delivery scenarios;
+  `check-cups.js`/`live-derby-test.js` stub the new this-week dependencies;
+  `check-uniform.js` tracks the 12.16 version. Full `npm test` green.
+
+## [12.15-uniform] — 2026-09-15 (uniform club names + automatic UCL selection)
+
+User ask: the same club was stored under two names ("FC Bayern München" /
+"Bayern Munich") — uniform them; and every club added in any league should
+be automatically selected for the Champions League too (so its UCL matches
+surface).
+
+- Root cause: the code DEFAULT for BL1 shipped both spellings, and the
+  name-normalizer could never fold the English exonym "Munich" onto the
+  German "München". Fix: one default name; `bayernmunich→bayernmunchen`
+  alias; `canonicalizeTeams()` folds every stored list onto the EXACT
+  catalog name (KV clubs catalog when present, normAlias dedupe otherwise)
+  on BOTH the read path (cron + admin + public) and the save path.
+- `syncUclSelection()`: CL = CL-explicit ∪ all leagues — every followed club
+  is auto-selected for the UCL; the admin add-flow mirrors it with a toast,
+  the CL box shows the auto-selection hint, and the duplicate guard is
+  variant-proof ("Bayern Munich" is recognized as "FC Bayern München").
+
+---
+
 ## [12.14-clubs] — 2026-09-15 (admin panel club-name autocomplete backed by a pre-downloaded clubs catalog)
 
 User ask: when adding clubs, the admin had to guess the exact provider name —
