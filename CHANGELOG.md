@@ -6,6 +6,44 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.10-herobox] — 2026-09-15 (hero card: the countdown bar and its match are ONE box at the top)
+
+User ask: the page's countdown bar (⚡ تا بازی بزرگ بعدی) counts to the next
+big match, but that match rendered in the big-matches box further down —
+"the next bigmatch is not stick to it (but it must …) the next and closest
+upcoming match, which happens to have a countdown, [should be] separated in
+a box (on top) from other matches".
+
+- **Hero card**: the countdown bar now lives INSIDE a new card at the very
+  top (right below the view toggle), with its own match stuck directly
+  under it — the closest upcoming big match (the big-matches box's slot 1,
+  live entries leading). The bar keeps driving label/clock/fill every
+  second; the match below it is rendered by the new `renderHeroSpot()`.
+- **One pick, two views**: new `barTarget()` is the single source of truth
+  both the countdown bar and the hero card agree on — box top → far
+  `nextBig` fallback → nearest big upcoming → plain `upcoming[0]`. The card
+  under the countdown is always EXACTLY the match being counted down to,
+  so the bar can never point at a card rendered elsewhere on the page.
+  When no big match exists at all, the hero gracefully degrades to the
+  plain next match with the "⏳ تا مسابقه بعدی" fallback label.
+- **Box separation**: the «🔥 مسابقات بزرگ پیش‌رو» box now presents the
+  REMAINING big matches (slots 2–6) — the headline is visually separated
+  from the other matches, exactly as requested. Total big-match capacity
+  is unchanged (1 hero + 5 box = 6). `spotItemNode()` extracted so hero
+  and box entries share one rendering path (badges, live chip, venue,
+  share row included).
+- **No duplication**: `applyView()` filters the hero's match out of the
+  upcoming list (the far `nextBig` fallback card formerly rendered at the
+  head of the upcoming list — `renderSpecial` — is retired; the hero IS
+  its presentation now, stuck to the countdown).
+- **Styling**: `.bighero .bigbar` renders flush inside the card (no own
+  chrome — the card provides it) with a soft divider to the match; the
+  hero takes the amber `topspot` glow when the target really is a big
+  match, neutral glass otherwise. Bonus fix: `updateBigBar`'s idle gate no
+  longer ignores a box top when `upcoming` happens to be empty.
+
+---
+
 ## [12.9-weeklytables] — 2026-09-14 (end-of-week league tables in Telegram + /tables + admin force-send)
 
 User ask: "I want telegram bot to show the table fixtures of selected leagues
