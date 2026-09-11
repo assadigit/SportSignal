@@ -6,6 +6,47 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.14-clubs] — 2026-09-15 (admin panel club-name autocomplete backed by a pre-downloaded clubs catalog)
+
+User ask: when adding clubs, the admin had to guess the exact provider name —
+typing "Roma" while football-data labels the club "AS Roma" (or "Inter Milan"
+vs "FC Internazionale Milano") would silently never match a fixture side.
+Request: pre-download a database of clubs from the same API, so typing "Ro…"
+autocompletes and confirms the catalog has the club.
+
+- **Clubs catalog in KV (`clubs_catalog`)**: `refreshClubsCatalog()` pre-downloads
+  the roster of every covered competition from the SAME providers the matcher
+  reads — football-data `/v4/competitions/{code}/teams` (CL, PL, PD, SA, FL1,
+  BL1; sequential, ≤6 authed GETs, per-code failure-tolerant) plus the
+  A-League from sportscore standings (fd doesn't serve it). A club in several
+  competitions dedupes into ONE entry with multiple league badges and the
+  merged shortName/tla/crest. Auto-refreshed when missing or older than 14
+  days (CLUBS_STALE_MS); `?refresh=1` forces a rebuild.
+- **`GET /api/clubs?q=&hint=` (admin-gated)**: prefix-scored search over the
+  catalog — exact name > exact shortName > name prefix > shortName prefix >
+  tla exact > substring, with a +0.6 bump for the league box the admin is
+  typing in. Diacritics/punctuation fold ("atletico" finds "Club Atlético de
+  Madrid"). No `q` → catalog meta (count + fetchedAt) for the panel's meta
+  line. Never a raw 500 (audit-fix-6 pattern).
+- **Admin panel autocomplete**: every "add club" input is now a combobox —
+  typing ≥2 chars (170ms debounce) queries `/api/clubs` and renders a
+  dropdown of up to 8 suggestions (crest, exact name, short name, league
+  badges); ↑/↓ navigate, Enter picks the pre-highlighted first row ("type Ro,
+  press Enter" stores Roma), Esc closes. Picking a suggestion adds the chip
+  with the EXACT provider name immediately (+ duplicate guard), so a stored
+  team can never again be a name variant the matcher won't see. Free-typed
+  names still work via the add button — the catalog is a guardrail, not a
+  gate. Plus: a catalog meta line («فهرست باشگاه‌ها: N باشگاه — بروزرسانی:
+  date») and a 🔄 refresh button in the settings card.
+- i18n: 10 new keys (acHint, acNone, acAdd, acDup, btnClubs, clubsMeta,
+  clubsNone, mClubs, clubsErr) in fa+en on all three page dicts; version
+  labels bumped to ۱۲.۱۴ / v12.14.
+- New self-check `scripts/check-clubs.js` (23 assertions): catalog dedupe/
+  merge/AL/KV write, search ranking (hint bump, tla, diacritics fold, empty
+  and degraded cases), and route/wiring presence. Wired into `npm test`.
+
+---
+
 ## [12.13-ordergrid] — 2026-09-15 (league tables 3-per-row on PC / 2 on mobile; big-matches box above the UCL box)
 
 User ask: league tables on PC must show THREE columns per row (like
