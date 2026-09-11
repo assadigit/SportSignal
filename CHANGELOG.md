@@ -4,6 +4,54 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.17-fai] — 2026-09-15 (faded VS divider, expired games in «در این هفته», incremental AI Farsi club names)
+
+User asks (one batch): the 🆚 emoji between team names is mis-aligned and
+noisy — replace it with a low-key symbol or a faded line; the «در این
+هفته» box must render games whose kickoff passed as "turned off"
+(expired); and a creative way to translate ALL clubs to their Farsi names
+— research requested, Cloudflare Workers AI suggested as the incremental
+engine (translate → store in DB → show Farsi next sessions).
+
+- **Faded VS divider**: the 🆚 emoji is retired everywhere. In the match
+  rows (upcoming list, big-matches box, hero, this-week box, UCL box) the
+  "vs" slot now renders as a hair-thin **faded vertical line** (1px × 20px,
+  `background:currentColor`, opacity .32 — .55 on hover), perfectly
+  centered and RTL-safe; finished/live rows still show the score in the
+  same slot. Text contexts (share text, cups card, admin match list) use a
+  low-key en-dash " – " separator. The decorative divider is aria-hidden.
+- **Expired week games**: `renderWeek()` marks every game whose kickoff
+  ran out (FINISHED, or kickoff older than 90s without a score) with the
+  `past` state — the whole entry dims (opacity .48) and desaturates, crests
+  gray out, and the time chip becomes a muted «⌛ پایان‌یافته» (wkdone)
+  pill instead of a fresh kickoff time. Live games are never past. Order:
+  live → upcoming (soonest first) → past (most recent at the bottom).
+- **Incremental Farsi club names (research → shipped)**: providers offer
+  no Farsi locale; Wikipedia interlinks are high-quality but rate-limited;
+  the shipped design is the user's suggestion — **Cloudflare Workers AI**
+  (`[ai]` binding, llama-3.3-70b with llama-3.1-8b fallback), one batched
+  call for up to 16 currently-unknown names, strict JSON prompt, and a
+  validation gate (Persian letters only, 2–42 chars, no Latin leakage).
+  Valid pairs are stored in KV `fa_teams_ai` under normalized keys and
+  served FOREVER; rejected/missing answers cool down 12h before re-asking.
+  `translateTeam()` layers: static dict → AI cache → stem fallback (the
+  static Varzesh3 dict always wins). The learner runs from the cron (every
+  10-min tick, throttled to one round / 15 min, zero AI calls when all
+  names are known) and opportunistically on public page hits
+  (`ctx.waitUntil`) — the NEXT payload build (≤5 min) shows the Farsi
+  names. Telegram notifications translate through the same cache.
+- **Admin**: `GET /api/fa-teams` (stats / `?run=1` force / `?forget=NAME`
+  correction) + a «🧠 ترجمه هوشمند نام باشگاه‌ها» card — learned/pending
+  counts, a scrolling sample of learned pairs (fa ← latin key), the 🔄
+  force-run button and a forget-a-bad-translation input. 12 fai i18n keys
+  in the login+admin dicts (fa+en).
+- **Hygiene**: graceful `ai-disabled` degrade when the binding is absent;
+  KV-only reads in the hot path; version gates updated in
+  check-weekly-report.js / check-uniform.js / live-derby-test.js; new
+  `scripts/check-fa-ai.js` (49 assertions: divider CSS + DOM sites, week
+  past-state + i18n, layering/priority, validation, collector, learner
+  e2e with a stubbed AI, cooldowns, wiring, admin card, versions).
+
 ---
 
 ## [12.16-weekly] — 2026-09-15 (weekly report round: full UCL league table, week-ahead digest, unmissable derby/UCL banners, bot members directory, «در این هفته» box, dark-mode default, bigger mobile crests, API frugality, Iranian top-8 fix)

@@ -77,7 +77,7 @@ ok(src.includes('if (url.pathname === "/api/members" && req.method === "GET")'),
 ok(src.includes('<div id="members">') && src.includes('onclick="loadMembers(true)"') && src.includes('data-i="hMembers"'), "C3 admin members card in the panel HTML");
 ok(src.includes("async function loadMembers(force)") && src.includes("function renderMembers()") && src.includes('var d = await api("/api/members");'), "C4 loadMembers/renderMembers fetch + render the directory");
 ok(src.includes("setTheme(initTheme()); applyLang(true); load(); refreshStatus(); loadNextMatches(); loadMembers();") && src.includes("load(); refreshStatus(); loadNextMatches(); loadMembers();"), "C5 members card loads at boot AND after (re)login");
-ok(src.includes('var onLang = function(){ refreshStatus(); loadNextMatches(); renderMembers(); };'), "C6 language switch re-renders the members rows");
+ok(src.includes('var onLang = function(){ refreshStatus(); loadNextMatches(); renderMembers(); loadFai(); };'), "C6 language switch re-renders the members + FA-AI rows");
 ok(src.includes('memCount:"%s عضو"') && src.includes('memCount:"%s members"'), "C7 member-count i18n fa+en");
 ok(src.includes('const key = String(chatId);') && src.includes('profiles[key] = next;') && src.includes('joined: cur.joined || new Date().toISOString()'), "C8 incoming Telegram updates capture member profiles into KV (username/name/title/joined)");
 
@@ -116,10 +116,10 @@ ok((src.match(/function initTheme\(\)\{try\{return localStorage\.getItem\("ucl_t
 ok(src.includes(".logo{width:46px;height:46px;font-size:20px}"), "G3 mobile club crests ~53% bigger (30px → 46px)");
 
 // ─── H) version strings ─────────────────────────────────────────────────────
-ok(src.includes('const VERSION = "12.16-weekly"'), "H1 VERSION = 12.16-weekly");
-ok((src.match(/۱۲\.۱۶/g) || []).length >= 4 && (src.match(/v12\.16/g) || []).length >= 3, "H2 ver labels updated (fa + en dicts, static fallbacks)");
+ok(src.includes('const VERSION = "12.17-fai"'), "H1 VERSION = 12.17-fai");
+ok((src.match(/۱۲\.۱۷/g) || []).length >= 4 && (src.match(/v12\.17/g) || []).length >= 3, "H2 ver labels updated (fa + en dicts, static fallbacks)");
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-ok(pkg.version === "12.16.0", "H3 package.json 12.16.0");
+ok(pkg.version === "12.17.0", "H3 package.json 12.17.0");
 
-console.log(`\n${pass} passed, ${fail} failed (v12.16-weekly checks)`);
+console.log(`\n${pass} passed, ${fail} failed (v12.16-weekly checks — version gate now 12.17-fai)`);
 process.exit(fail ? 1 : 0);
