@@ -6,6 +6,30 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.13-ordergrid] — 2026-09-15 (league tables 3-per-row on PC / 2 on mobile; big-matches box above the UCL box)
+
+User ask: league tables on PC must show THREE columns per row (like
+[A][B][C] / [E][F][G]) and two on mobile — the auto-fit grid packed four
+leagues per row; and the UCL games box must sit BELOW the other big matches
+(reading order: [next big match countdown and teams] → [big upcoming
+matches] → [big upcoming UCL matches]).
+
+- **Standings grid fixed**: `.grid4` is now explicit —
+  `grid-template-columns:repeat(2,1fr)` base (mobile) and
+  `@media (min-width:601px){...repeat(3,1fr)}` (PC). The page caps at 760px,
+  so desktop renders the 6 leagues as two tidy rows of three ~233px boxes;
+  phones keep two per row. The old `repeat(auto-fit,minmax(150px,1fr))`
+  (which packed 4 per row on desktop) is retired.
+- **Section reorder**: `#topspotCard` («🔥 مسابقات بزرگ پیش‌رو» — big upcoming
+  matches) now sits between the hero card and `#uclSpotCard` («🔥 مسابقات مهم
+  لیگ قهرمانان اروپا» — big upcoming UCL matches): hero (countdown + its
+  match) → big domestic/overall big matches → UCL matches → UCL standings →
+  league tables → tournaments → recent results. Pure HTML template move; the
+  JS renderers are id-based and order-independent, so behavior (hero = box
+  slot 1, caps, dedup, wait states) is unchanged.
+- Version labels bumped to ۱۲.۱۳ / v12.13 across the public/login/admin
+  i18n dicts.
+
 ## [12.12-bigfocus] — 2026-09-15 (big-only page: view toggle & upcoming list retired, 10-match box, 8-match UCL box with selected-only filter, no A-League, dark scrollbars)
 
 User ask: remove the «فقط بازی‌های بزرگ / همه بازی‌ها» toggle (big-only must be
