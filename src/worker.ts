@@ -4921,7 +4921,9 @@ body.joinsticky{padding-bottom:88px}
 .hero-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.78;filter:blur(2.5px) saturate(1.18) brightness(1.02);transform:scale(1.06)}
 .hero-video::after{content:"";position:absolute;inset:0;background:rgba(2,6,23,.30)}
 [data-theme="light"] .hero-video::after{background:rgba(248,250,252,.42)}
-.hero-data{position:relative;z-index:3}
+/* v12.50: hero-data is vertically centered — the match row + the countdown
+   bar sit in the MIDDLE of the hero card, not aligned to the top. */
+.hero-data{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;justify-content:center;gap:12px}
 /* v12.23: the sweep MOVED from .card.bighero::after (unclipped \u2014 the heartbeat-scrollbar bug) into the already-clipped .hero-fx layer, so the light band can wash over the stage but never escape the card. Same gradient, same rhythm. v12.26: the fx layer sits ABOVE the video + crests and BELOW the data (the user's ladder: video < logos < css effects < data). */
 .hero-fx::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.05) 44%,rgba(255,255,255,.13) 50%,rgba(255,255,255,.05) 56%,transparent 68%);transform:translateX(-140%);animation:hero-sweep 6.5s cubic-bezier(.55,0,.45,1) infinite}
 @keyframes hero-sweep{0%{transform:translateX(-140%)}42%,100%{transform:translateX(140%)}}
@@ -5171,12 +5173,10 @@ body.joinsticky{padding-bottom:88px}
    the title), not in a separate .ucl-head div below. Pushed to the inline-end
    with margin-inline-start:auto. White text on the navy gradient h2 plate,
    with a semi-transparent white pill background for visual separation. */
-/* v12.49-uclpolish: the matchday chip now sits at the START of the h2
-   (LEFT in RTL, RIGHT in LTR), with the title at the END — the user's
-   ask: '[[matchday] [section title]]' not '[matchday at the end]'.
-   Was using margin-inline-start:auto (pushed to the END); now uses
-   order:-1 so it appears before the logo + title. */
-.uclh2 .ucl-md{order:-1;font-size:12px;color:rgba(255,255,255,.92);font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:2px 10px;flex-shrink:0;white-space:nowrap}
+/* v12.50: the matchday chip sits at the END of the h2 (after the logo +
+   title), pushed to the far edge with margin-inline-start:auto. The
+   order is: [logo] [title] ... [matchday]. */
+.uclh2 .ucl-md{margin-inline-start:auto;font-size:12px;color:rgba(255,255,255,.92);font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:2px 10px;flex-shrink:0;white-space:nowrap}
 .ucl-md{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:600}
 .ucl-stand-wrap{position:relative;margin-top:10px}
 /* v12.27 (review item 2): the star tiles sit strictly BEHIND the table now \u2014
@@ -6920,7 +6920,7 @@ function updateBigBar(){
   // single-match shape {next:\u2026}.
   var t = barTarget(), next = t.m;
   if(!next){
-    lbl.textContent = "\u26BD " + T("barIdle"); clk.textContent = "--:--:--";
+    lbl.textContent = ""; clk.textContent = "--:--:--";
     if(pct) pct.textContent = "";
     fill.className = "bigbar-fill idle";
     if(tr) tr.setAttribute("aria-valuenow", "0");
@@ -6941,11 +6941,10 @@ function updateBigBar(){
   // color + speed keep driving both pseudo-elements.
   var hw = card.parentNode;
   if(hw && hw.classList && hw.classList.contains("herowrap") && hw.dataset.urgent !== urgent) hw.dataset.urgent = urgent;
-  // v12.46-herofix: prepend a ⚽ football emoji to the bar label for visual
-  // identity (the user's ask). The i18n strings already carry ⚡ for barNext;
-  // we prepend ⚽ so it reads "⚽ ⚡ تا بازی بزرگ بعدی".
-  var lblText = live ? T("barLive") : (isBig?T("barNext"):T("barFallback"));
-  lbl.textContent = "\u26BD " + lblText;
+  // v12.50: the label text is removed — the countdown is enough (the user's
+  // ask: 'remove this text ⚽ ⚡ تا بازی بزرگ بعدی, the countdown is enough').
+  // The bigbar-top now shows only the clock + percentage, no label.
+  lbl.textContent = "";
   // v12.24: the percent chip speaks the bar's BASE \u2014 100% at kickoff/live.
   var pctTxt = function(v){ return fmtNum(v) + (curLang()==="en" ? "%" : "\u066A"); };
   if(live){
