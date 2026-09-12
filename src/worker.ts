@@ -5217,7 +5217,11 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    align across EVERY fixture on the page). The time can never be misread
    as another row's: it sits between its own two teams, inside its own
    box. */
-.kick{flex:0 0 92px;display:flex;align-items:center;justify-content:center;min-width:0}
+/* v12.40-datebelow: the .kick slot is now a COLUMN for every spotitem
+   (was horizontal row) — the time chip on top, the .kickdate below.
+   flex-direction:column + gap:4px stacks them cleanly. The hero keeps
+   its own larger gap (6px) via the .bighero .kick override below. */
+.kick{flex:0 0 92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0}
 .kick .countdown{margin:0;font-size:13px;padding:4px 12px}
 /* v12.28 (the user's ask \u2014 "<span class="countdown">\u{1F552} \u06F1\u06F9:\u06F0\u06F0</span> this
    must be bigger for next big upcoming match. make it considerably
@@ -5470,7 +5474,7 @@ h2{font-size:15.5px;padding:8px 12px}
 .match .side.away{flex-direction:column-reverse}
 /* v12.32: direct children only (the hero's score is NESTED inside its .kick
    column \u2014 the old descendant selector would have re-flowed it). */
-.match>.kick,.match>.score{order:1;flex:0 0 auto;align-self:flex-start;height:46px;display:flex;align-items:center;justify-content:center;margin-top:0;min-width:0}
+.match>.kick,.match>.score{order:1;flex:0 0 auto;align-self:flex-start;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin-top:0;min-width:0}
 .bighero .match>.kick{height:auto;margin-top:3px;gap:4px}
 .logo{width:46px;height:46px;font-size:20px}
 .score{font-size:15px}
@@ -6589,11 +6593,11 @@ function spotItemNode(m, idx, opts){
   // center slot; their weekday/date line stays in the info row.
   var hero = !!(opts && opts.noDate);
   var kd = null;
-  if(hero && m.utcDate){ kd = document.createElement("div"); kd.className = "kickdate"; kd.textContent = fmtHeroDate(m.utcDate); }
+  if(m.utcDate){ kd = document.createElement("div"); kd.className = "kickdate"; kd.textContent = fmtHeroDate(m.utcDate); }
   if((live || done) && m.score && m.score.home !== null){
     var vs = scoreNode(m.score);
     if(hero){ var kw = document.createElement("div"); kw.className = "kick"; kw.appendChild(vs); if(kd) kw.appendChild(kd); row.appendChild(hs); row.appendChild(kw); row.appendChild(as); }
-    else { row.appendChild(hs); row.appendChild(vs); row.appendChild(as); }
+    else { var kw2 = document.createElement("div"); kw2.className = "kick"; kw2.appendChild(vs); if(kd) kw2.appendChild(kd); row.appendChild(hs); row.appendChild(kw2); row.appendChild(as); }
   } else {
     var kt = document.createElement("div"); kt.className = "kick";
     var kc = document.createElement("span"); kc.className = "countdown"; kc.textContent = fmtKick(m.utcDate);
@@ -6622,7 +6626,10 @@ function spotItemNode(m, idx, opts){
   // rides under the big time chip inside the kick column (.kickdate, see
   // the row assembly above), NOT in this info line. Every other box keeps
   // the full weekday/date/time run right here.
-  if(!(opts && opts.noDate)) info.appendChild(document.createTextNode(fmtDate(m.utcDate)));
+  // v12.40-datebelow: the redundant fmtDate text node is RETIRED — the date
+  // now rides under the time chip in the kick column (.kickdate) for EVERY
+  // spotitem, not just the hero. The info line carries only the competition
+  // chip + badges + live/expired chips + venue. No date, no time.
   if(live){
     var chip = document.createElement("span"); chip.className = "livechip";
     var dot = document.createElement("span"); dot.className = "dot";
