@@ -5479,11 +5479,16 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    their half-width columns). The info line centers across the FULL row
    width again; the popover unfolds under the corner dots as before. */
 .sharewrap{position:absolute;top:0;inset-inline-end:0;z-index:6;width:44px;height:44px}
-.sharetoggle{display:inline-flex;align-items:flex-start;justify-content:flex-end;width:44px;height:44px;padding-block-start:8px;padding-inline-end:4px;border-radius:14px;background:transparent;border:none;cursor:pointer;font-family:inherit;color:var(--muted);transition:color .15s,background .15s}
+.sharetoggle{display:inline-flex;align-items:flex-start;justify-content:flex-end;width:44px;height:44px;padding-block-start:8px;padding-inline-end:4px;border-radius:14px;background:transparent;border:none;cursor:pointer;font-family:inherit;color:#93c5fd;transition:color .15s,background .15s}
+/* v12.x-dots-color (the user's ask): the 3-dot share toggle is LIGHT BLUE
+   in dark mode (#93c5fd — matches the site's --link/--countdown) and
+   SILVER in light mode (#9ca3af — gray-400, reads as silver on white).
+   The hover state still brightens to var(--text) for feedback. */
+[data-theme="light"] .sharetoggle{color:#9ca3af}
 .sharetoggle:hover{color:var(--text);background:var(--hover)}
 .sharetoggle:active{transform:scale(.88)}
 .sharetoggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.sharetoggle svg{display:block}
+.sharetoggle svg{display:block;fill:currentColor}
 .share{display:none;position:absolute;top:40px;inset-inline-end:0;align-items:center;gap:5px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;box-shadow:0 12px 32px rgba(2,6,23,.45),inset 0 1px 0 var(--glass-hi);z-index:7}
 .sharewrap.open .share{display:inline-flex}
 .share a,.share button{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:var(--chip);border:1px solid var(--border);padding:0;cursor:pointer;font-family:inherit;color:var(--muted);text-decoration:none;transition:transform .15s,background .15s}
