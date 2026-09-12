@@ -5054,6 +5054,21 @@ body.joinsticky{padding-bottom:88px}
 .live-breath{display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c555;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:live-breath 2s ease-in-out infinite;vertical-align:-1px;margin-inline-end:8px;flex-shrink:0}
 @keyframes live-breath{0%,100%{opacity:.5;box-shadow:0 0 0 0 rgba(34,197,94,.4);transform:scale(.85)}50%{opacity:1;box-shadow:0 0 12px 4px rgba(34,197,94,.25);transform:scale(1.15)}}
 #liveCard h2{display:flex;align-items:center}
+/* v12.45-compact-live: compact the liveCard's spotitems ~50% — smaller logos
+   (28px vs 51px), tighter padding, hide the share button + the info line
+   (the league badge is the only context needed for live matches; the
+   share + full info line is overkill when there are 3-20 live matches
+   stacked). The score + team names are the essential data. */
+#liveCard .spotitem{padding:1px 0;border-bottom:1px solid var(--border)}
+#liveCard .spotitem:last-child{border-bottom:none}
+#liveCard .match{padding:2px 0;gap:6px}
+#liveCard .logo{width:28px;height:28px;font-size:12px;border-radius:50%}
+#liveCard .logo img{width:100%;height:100%;object-fit:contain}
+#liveCard .team{font-size:12px;font-weight:700}
+#liveCard .kick{flex:0 0 72px;gap:1px}
+#liveCard .kick .score{font-size:14px;flex:0 0 auto}
+#liveCard .uclspot-info{display:none}
+#liveCard .sharewrap{display:none}
 .lmin{display:inline-block;background:rgba(37,99,235,.12);color:var(--accent);border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;vertical-align:middle}
 [data-theme="light"] .lmin{background:rgba(37,99,235,.1)}
 .scorers{flex:1 1 100%;margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
@@ -5671,6 +5686,13 @@ footer{margin-top:0}
      v12.13: THIS box now sits BETWEEN the hero and the UCL box (user's ask \u2014
      order: [next big match countdown and teams] \u2192 [big upcoming matches] \u2192
      [big upcoming UCL matches]). -->
+<!-- v12.42-livesection: the LIVE section — matches currently playing/broadcasting
+     (whether 1 or 20), with a special LIVE badge. The card auto-hides when no
+     matches are live (display:none via renderLive). Matches stay here as long
+     as the match status is LIVE/IN_PLAY/PAUSED. -->
+<div class="card" id="liveCard" style="display:none">
+<h2 data-i="hLive">\u{1F534} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0632\u0646\u062F\u0647</h2>
+<div id="liveMatches"><div class="empty" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div></div>
 <div class="card" id="topspotCard" style="display:none">
 <h2 data-i="hLgNext" id="topSpotTitle">\u{1F525} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0628\u0632\u0631\u06AF \u067E\u06CC\u0634\u200C\u0631\u0648</h2>
 <div id="topSpot"><div class="empty" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div></div>
@@ -5706,13 +5728,7 @@ footer{margin-top:0}
      toggle gone (always big-only) it only ever held the redundant "\u0647\u0645\u0647 \u062F\u0631
      \u062C\u0639\u0628\u0647 \u0628\u0627\u0644\u0627 \u0647\u0633\u062A\u0646\u062F" note; the hero card + the topspot box + the UCL box
      ARE the upcoming presentation (the user's ask). -->
-<!-- v12.42-livesection: the LIVE section — matches currently playing/broadcasting
-     (whether 1 or 20), with a special LIVE badge. The card auto-hides when no
-     matches are live (display:none via renderLive). Matches stay here as long
-     as the match status is LIVE/IN_PLAY/PAUSED. -->
-<div class="card" id="liveCard" style="display:none">
-<h2 data-i="hLive">\u{1F534} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0632\u0646\u062F\u0647</h2>
-<div id="liveMatches"><div class="empty" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div></div>
+
 </div>
 <div class="card uclcard" id="uclCard">
 <h2 class="uclh2"><span class="ucl-logo sm" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUcl">\u{1F3C6} \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627</span></h2>
@@ -6806,24 +6822,27 @@ function renderWeek(list, nextList){
   var card = document.getElementById("weekCard"), el = document.getElementById("weekBox"), title = document.getElementById("weekTitle");
   if(!card || !el) return;
   el.innerHTML = "";
-  var upcomingThis = (list || []).filter(function(m){ return !weekPast(m); });
+  // v12.45-compact-live: remove LIVE matches from the week card — they have
+  // their own dedicated #liveCard now. Only show upcoming not-yet-played
+  // (or past-but-not-finished) matches. The week card is "what's ahead".
+  var isLive = function(m){ return m.status==="LIVE"||m.status==="IN_PLAY"||m.status==="PAUSED"; };
+  var upcomingThis = (list || []).filter(function(m){ return !weekPast(m) && !isLive(m); });
   var mode = "this";
   if(!upcomingThis.length){
-    // Nothing left THIS week \u2192 show next week's upcoming fixtures instead.
+    // Nothing left THIS week → show next week's upcoming fixtures instead.
     mode = "next";
-    list = nextList || [];
+    list = (nextList || []).filter(function(m){ return !isLive(m); });
+  } else {
+    list = upcomingThis;
   }
   if(title) title.textContent = mode === "next" ? T("hWeekNext") : T("hWeek");
   if(!list || !list.length){ card.style.display = "none"; return; }
   card.style.display = "";
-  var isLive = function(m){ return m.status==="LIVE"||m.status==="IN_PLAY"||m.status==="PAUSED"; };
   var sorted = list.slice().sort(function(a, b){
-    var la = isLive(a) ? 0 : 1, lb = isLive(b) ? 0 : 1;
-    if(la !== lb) return la - lb;
     var pa = weekPast(a), pb = weekPast(b);
     if(pa !== pb) return pa ? 1 : -1; // upcoming before past
     var ta = a.utcDate ? new Date(a.utcDate).getTime() : 0, tb = b.utcDate ? new Date(b.utcDate).getTime() : 0;
-    return pa ? tb - ta : ta - tb; // past: recent first \xB7 upcoming: soonest first
+    return pa ? tb - ta : ta - tb; // past: recent first · upcoming: soonest first
   });
   sorted.forEach(function(m, idx){
     el.appendChild(spotItemNode(m, idx, { finished: m.status === "FINISHED", past: mode === "this" && weekPast(m) }));
@@ -7033,7 +7052,11 @@ setInterval(tickBigBar, 1000);
 var WIDE_MQ = window.matchMedia ? window.matchMedia("(min-width:1440px)") : null;
 var WIDE_MAIN = ["topspotCard","uclSpotCard","weekCard","finishedCard"];
 var WIDE_RAIL = ["liveCard","uclCard","standingsCard","cupsCard"];
-var WIDE_ORDER = ["topspotCard","uclSpotCard","weekCard","liveCard","uclCard","standingsCard","cupsCard","finishedCard"];
+// v12.45-compact-live: on mobile (<1440px, single column), the liveCard
+// appears as the SECOND card after the hero (bigHeroCard, which is always
+// first in the DOM). Since bigHeroCard is not in WIDE_ORDER, liveCard at
+// index 0 puts it right after the hero, before topspotCard.
+var WIDE_ORDER = ["liveCard","topspotCard","uclSpotCard","weekCard","uclCard","standingsCard","cupsCard","finishedCard"];
 function setWide(on){
   var footer = document.querySelector("footer");
   if(!footer) return;
