@@ -4960,7 +4960,16 @@ body.joinsticky{padding-bottom:88px}
    4px minimal line has no fuse tip; the fill's own gradient + soft glow are
    the whole visual. */
 .bighero .team{font-size:16px;font-weight:800}
-.bighero .logo{box-shadow:0 0 12px rgba(52,211,153,.35)}
+/* v12.x-softshadow (the user's ask): "add some soft shadow behind clubs
+   logo" for the next big upcoming match section. Replaces the old tight
+   green halo (0 0 12px rgba(52,211,153,.35)) with a feathered drop shadow
+   that reads as depth: a large-blur ambient layer + a tighter near layer
+   lift the crest off the dark navy stage without competing with the team
+   name or the watermark. The dark neutral works on both themes; a lighter
+   tint is used in light mode so the shadow doesn't print harsh on the
+   pale stage. */
+.bighero .logo{box-shadow:0 12px 28px rgba(0,0,0,.42),0 4px 12px rgba(0,0,0,.28)}
+[data-theme="light"] .bighero .logo{box-shadow:0 10px 24px rgba(15,23,42,.22),0 4px 10px rgba(15,23,42,.14)}
 #topspotCard .spotitem .logo{box-shadow:0 2px 10px rgba(2,6,23,.25),0 0 0 1px rgba(148,163,184,.1)}
 /* v12.24 (the user's ask): the countdown hero's team crests DOUBLE on PC
    (51px \u2192 102px, the monogram fallback scales with the circle) \u2014 the
