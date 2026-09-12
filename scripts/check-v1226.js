@@ -29,8 +29,8 @@ console.log("A) the VIDEO STAGE — the user's layer ladder (video › logos ›
 ok(src.includes('<div class="hero-video" aria-hidden="true"><video src="/hero-stage.mp4" autoplay muted loop playsinline preload="auto" tabindex="-1" disablepictureinpicture referrerpolicy="no-referrer"></video></div>'), "A1 layer A: the video div is the hero card's FIRST child — the user's mp4 at /hero-stage.mp4, autoplay + muted + loop + playsinline (autoplay-safe), tabindex -1");
 ok(fs.existsSync("assets/hero-stage.mp4") && fs.statSync("assets/hero-stage.mp4").size > 600000, "A2 the 645KB mp4 actually lives in the worker's [assets] directory (served before the worker runs)");
 ok(src.includes('.hero-video{position:absolute;inset:0;z-index:0;border-radius:16px;overflow:hidden;pointer-events:none;background:transparent}'), "A3 (v12.27 roll) .hero-video: deepest layer, z:0, clipped to the card's radius, pointer-transparent");
-ok(src.includes('.hero-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.78;filter:saturate(1.18) brightness(1.02)}'), "A4 (v12.28 roll) the video runs at .78 — a PLAYING stage is VISIBLE now (was .42 + brightness .92 = a still, per the user's chrome report)");
-ok(src.includes('.hero-video::after{content:"";position:absolute;inset:0;background:linear-gradient(168deg,rgba(2,6,23,.38),rgba(2,6,23,.18))}') && src.includes('[data-theme="light"] .hero-video::after{background:linear-gradient(168deg,rgba(248,250,252,.44),rgba(248,250,252,.26))}'), "A5 (v12.28 roll) a LIGHT theme-aware scrim (.38/.18 dark, .44/.26 light) — live text keeps its own plates so the data still reads");
+ok(src.includes('object-fit:cover;opacity:.78;filter:blur(2.5px) saturate(1.18) brightness(1.02);transform:scale(1.06)'), "A4 (v12.30 roll) the video still runs at .78 — a PLAYING stage stays VISIBLE under the v12.30 navy veil + the user's touch of gaussian blur (was .42 + brightness .92 = a still, per the user's chrome report)");
+ok(src.includes('.hero-video::after{content:"";position:absolute;inset:0;background:rgba(2,6,23,.30)}') && src.includes('[data-theme="light"] .hero-video::after{background:rgba(248,250,252,.42)}'), "A5 (v12.30 roll) the scrim is the user's FLAT 30% dark-navy veil (+ a flat white veil on light) — the .38/.18 and .44/.26 gradients superseded by the explicit 30% overlay ask; live text keeps its own plates so the data still reads");
 ok(src.includes('.hero-wm{position:absolute;inset:0;z-index:1;'), "A6 layer B: the background crests (.hero-wm) sit at z:1 — ABOVE the video, below the fx");
 ok(src.includes('.hero-fx{position:absolute;inset:0;z-index:2;'), "A7 layer C: the css effects (sweep + embers) sit at z:2 — above the crests, below the data");
 ok(src.includes('.hero-data{position:relative;z-index:3}') && src.includes('<div class="hero-data">') && src.indexOf('<div class="hero-data">') < src.indexOf('<div id="bigbar"'), "A8 layer D: .hero-data (z:3) wraps the countdown bar + the match row — the data is the SURFACE, exactly the user's ladder");
@@ -47,8 +47,8 @@ ok((src.match(/\[data-theme="light"\] \.brand/g) || []).length === 0, "B5 zero [
 console.log("C) background crests — one more 30% cut");
 ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.157;transform:translateY(-50%)}'), "C1 (v12.27 roll) dark: .157 (imgs unfiltered — the brightness moved to the clipped .hero-wm layer), same big 320px canvas");
 ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.157}') && src.includes('[data-theme="light"] .hero-wm{filter:none}'), "C2 (v12.27 roll) light: .157, the filter moved to the clipped layer");
-ok(src.includes('@media (max-width:600px){.hero-wm img{width:210px;height:210px;opacity:.157}'), "C3 phones: 210px at .157");
-ok((src.match(/opacity:\.157/g) || []).length === 3, "C4 exactly three .157 rules (dark + light + phone) — no stray .28 left");
+ok(src.includes('@media (max-width:600px){.hero-wm{display:none}}'), "C3 (v12.30 roll) phones: the watermark layer is OFF (the 210px ghosts fought the face-off on a ~350px card)");
+ok((src.match(/opacity:\.157/g) || []).length === 2, "C4 (v12.30 roll) exactly two .157 rules (dark + light on PC) — the phone rule retired with the v12.30 layer hide");
 
 console.log("D) the UCL box's redundant league tag retired");
 ok(src.includes('if(!(opts && opts.noComp)){'), "D1 spotItemNode guards the competition chip behind opts.noComp");
@@ -77,11 +77,11 @@ ok(!src.includes("syncJust") && !src.includes("syncMinAgo") && !src.includes("sy
 ok(src.includes('faNum(t)') && src.includes('toLocaleDateString("fa-IR",{weekday:"long",timeZone:curTz()})'), "G6 fa renders Persian digits + the fa-IR weekday in the user's SELECTED timezone; en renders \"Friday 21:30\"");
 
 console.log("H) version + wiring");
-ok(src.includes('const VERSION = "12.29-goldtop";'), "H1 VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۹ — نشان «صدر جدول»/g) || []).length === 3, "H2 (v12.27 roll) fa ver strings (public + admin + static dicts) all ۱۲.۲۷");
-ok((src.match(/data-i="ver">نسخه ۱۲\.۲۹/g) || []).length === 1, "H3 the static footer ver div ۱۲.۲۶");
-ok((src.match(/ver:"v12\.29 — the top-of-the-table/g) || []).length === 3, "H4 en ver strings all v12.26");
-ok(pkg.version === "12.29.0" && pkg.scripts.test.includes("check-v1226.js"), "H5 package.json 12.29.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.30-herocalm";'), "H1 (v12.30 roll) VERSION = 12.30-herocalm");
+ok((src.match(/ver:"نسخه ۱۲\.۳۰ — صحنهٔ بازی بزرگ بعدی/g) || []).length === 3, "H2 (v12.30 roll) fa ver strings (public + admin + static dicts) all ۱۲.۳۰");
+ok((src.match(/data-i="ver">نسخه ۱۲\.۳۰/g) || []).length === 1, "H3 (v12.30 roll) the static footer ver div ۱۲.۳۰");
+ok((src.match(/ver:"v12\.30 — the next big match/g) || []).length === 3, "H4 (v12.30 roll) en ver strings all v12.30");
+ok(pkg.version === "12.30.0" && pkg.scripts.test.includes("check-v1226.js"), "H5 (v12.30 roll) package.json 12.30.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.26-herostage checks)`);
 process.exit(fail ? 1 : 0);

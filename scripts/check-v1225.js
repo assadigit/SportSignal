@@ -31,8 +31,8 @@ ok(!src.includes('.brand img{height:50px}'), "A6 (v12.26 roll) the separate phon
 console.log("B) background crests — opacity reduced by 30% (v12.26 roll: .28 → .196)");
 ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.157;transform:translateY(-50%)}'), "B1 (v12.27 roll) dark: .157 (imgs unfiltered — the brightness moved to the clipped .hero-wm layer), same big 320px canvas");
 ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.157}') && src.includes('[data-theme="light"] .hero-wm{filter:none}'), "B2 (v12.27 roll) light: .157, the layer filter off");
-ok(src.includes('@media (max-width:600px){.hero-wm img{width:210px;height:210px;opacity:.157}'), "B3 (v12.26 roll) phones: 210px at .157");
-ok((src.match(/opacity:\.157/g) || []).length === 3, "B4 (v12.26 roll) exactly three .157 rules (dark + light + phone) — no stray .28 left");
+ok(src.includes('@media (max-width:600px){.hero-wm{display:none}}'), "B3 (v12.30 roll) phones: the watermark layer is OFF (the v12.30 declutter — two 210px ghosts fought the face-off); PC keeps the .157 pair");
+ok((src.match(/opacity:\.157/g) || []).length === 2, "B4 (v12.30 roll) exactly two .157 rules (dark + light on PC) — the phone rule retired with the v12.30 layer hide, no stray .28 left");
 
 console.log("C) MATCH BOXES — details inside the box, one aligned line");
 ok(src.includes('.mrow,.spotitem{border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin:0 0 10px;background:var(--rowsurf);transition:background .15s,border-color .15s}'), "C1 (v12.27 roll) every fixture is a real bordered box on the SHARED surface (border + radius + padding + gap below)");
@@ -61,11 +61,11 @@ ok(src.includes('html{overflow-x:hidden;scroll-behavior:smooth}'), "D7 smooth an
 ok(src.includes('var foot = document.getElementById("about");') && src.includes('var apply = function(){ var show = past && !footIn; stick.classList.toggle("show", show); document.body.classList.toggle("joinsticky", show); };'), "D8 the sticky join bar stands DOWN once the footer is in view — a «درباره» anchor lands on clean content, and the footer's own bot link takes the CTA duty at page end");
 
 console.log("E) version + wiring");
-ok(src.includes('const VERSION = "12.29-goldtop";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۹ — نشان «صدر جدول»/g) || []).length === 3, "E2 (v12.27 roll) fa ver strings (public + login + admin) all ۱۲.۲۷");
-ok((src.match(/v12\.29 — the top-of-the-table/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
-ok((src.match(/نسخه ۱۲\.۲۹ — نشان «صدر جدول»/g) || []).length === 4, "E4 (v12.27 roll) fa ver strings + the admin static footer = 4 spots");
-ok(pkg.version === "12.29.0" && pkg.scripts.test.includes("check-v1225.js"), "E5 (v12.26 roll) package.json 12.29.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.30-herocalm";'), "E1 (v12.30 roll) VERSION = 12.30-herocalm");
+ok((src.match(/ver:"نسخه ۱۲\.۳۰ — صحنهٔ بازی بزرگ بعدی/g) || []).length === 3, "E2 (v12.30 roll) fa ver strings (public + login + admin) all ۱۲.۳۰");
+ok((src.match(/v12\.30 — the next big match/g) || []).length === 3, "E3 (v12.30 roll) en ver strings all v12.30");
+ok((src.match(/نسخه ۱۲\.۳۰ — صحنهٔ بازی بزرگ بعدی/g) || []).length === 4, "E4 (v12.30 roll) fa ver strings + the admin static footer = 4 spots");
+ok(pkg.version === "12.30.0" && pkg.scripts.test.includes("check-v1225.js"), "E5 (v12.30 roll) package.json 12.30.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.25-alignment checks)`);
 process.exit(fail ? 1 : 0);

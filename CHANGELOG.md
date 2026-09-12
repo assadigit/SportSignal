@@ -4,6 +4,36 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.30-herocalm] — 2026-09-12 (the calm navy stage: 30% veil + a touch of blur, and a decluttered mobile hero)
+
+User asks: "The header of upcoming match in mobile looks distracting.
+disorganized and messy with a lot of noise, what do you think we should
+do?" + "add a 30% dark navy overlay on the video of the next upcoming
+match + some gussian blur just a touch."
+
+- THE NAVY VEIL: the hero video's scrim becomes a FLAT 30% dark-navy
+  overlay (`rgba(2,6,23,.30)` — the old .38/.18 gradient retired), and
+  the clip itself gets a TOUCH of gaussian blur (2.5px) with a 1.06
+  scale so the blur's edge smear never paints inside the clipped card.
+  Motion stays perceivable (v12.28's autoplay work untouched); the stage
+  reads as one calm backdrop the data sits on. Light theme keeps a flat
+  white veil (`rgba(248,250,252,.42)` — a navy fill would muddy it).
+- THE PHONE HERO DECLUTTER (the VLM review of the user's screenshot
+  flagged: background imagery conflict, badge garnish, cramped seams):
+  - crest watermarks OFF below 601px — two 210px ghosts behind a ~350px
+    card fight the face-off; PC keeps the atmospheric .157 pair;
+  - the bar's decorative percent chip OFF on phones (aria-hidden
+    garnish; label + clock + track carry the story, and the freed ~56px
+    stops the top row pinching on 390px);
+  - breathing room at every seam: more space under the bar, a taller gap
+    before the 20px time number, room under the info chips so nothing
+    is crammed against the card's edge.
+- Gates: `scripts/check-v1230.js` (21 assertions: A the veil, B the
+  blur, C the mobile declutter, D versions) wired into `npm test`;
+  `check-v1229.js` D section relaxed for the 12.30 roll (strict 12.30
+  assertions live in check-v1230.js), older gates' version literals
+  rolled (incl. the loose `۱۲\.۲`/`v12\.2` forms → `۱۲\.۳`/`v12\.3`).
+
 ## [12.29-goldtop] — 2026-09-20 (the golden صدر جدول trophy badge)
 
 User ask: "Make this : golden <span class=\"topbadge\">🔥 صدر جدول</span>.

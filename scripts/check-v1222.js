@@ -50,10 +50,10 @@ ok(src.includes("@media (prefers-reduced-motion:reduce){*{transition:none!import
 ok(!/hero-heart|hero-sweep/.test(src.replace(/@keyframes hero-heart\{[^}]*\}/,"").replace(/@keyframes hero-sweep\{[^}]*\}/,"")) || true, "D3 (informational) all fx are opacity/transform animations — compositor friendly");
 
 console.log("E) version bump");
-ok(src.includes('const VERSION = "12.29-goldtop";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۹/g) || []).length === 3, "E2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.29 — the top-of-the-table/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
-ok(pkg.version === "12.29.0" && pkg.scripts.test.includes("check-v1222.js"), "E4 (v12.26 roll) package.json 12.29.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.30-herocalm";'), "E1 (v12.30 roll) VERSION = 12.30-herocalm");
+ok((src.match(/ver:"نسخه ۱۲\.۳۰/g) || []).length === 3, "E2 (v12.30 roll) fa ver strings (public + login + admin) all ۱۲.۳۰");
+ok((src.match(/v12\.30 — the next big match/g) || []).length === 3, "E3 (v12.30 roll) en ver strings all v12.30");
+ok(pkg.version === "12.30.0" && pkg.scripts.test.includes("check-v1222.js"), "E4 (v12.30 roll) package.json 12.30.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.23-watermark checks)`);
 process.exit(fail ? 1 : 0);

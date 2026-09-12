@@ -107,11 +107,11 @@ ok(src.includes('.wkdone{color:var(--muted);font-weight:700;font-size:11.5px;bac
 ok(src.includes('.venue{display:inline-block;background:var(--t-neutral-soft);'), "G8 venue on the neutral-soft token");
 ok(src.includes('--danger:var(--t-danger);') && (src.match(/--danger:var\(--t-danger\)/g) || []).length === 2, "G9 --danger resolves through the token (both themes)");
 
-console.log("H) VERSION (v12.28 superseded — strict 12.28 assertions live in check-v1228.js)");
-ok(/const VERSION = "12\.2\d-/.test(src), "H1 VERSION stays a 12.2x release tag");
-ok((src.match(/ver:"نسخه ۱۲\.۲/g) || []).length >= 3, "H2 fa ver strings present (public + login + admin dicts)");
-ok((src.match(/data-i="ver">نسخه ۱۲\.۲/g) || []).length === 1, "H3 the static footer ver div present");
-ok((src.match(/ver:"v12\.2/g) || []).length >= 3, "H4 en ver strings present");
+console.log("H) VERSION (v12.28 superseded — strict 12.28 assertions live in check-v1228.js; rolled to 12.3x for the v12.30 release)");
+ok(/const VERSION = "12\.3\d-/.test(src), "H1 VERSION stays a 12.3x release tag");
+ok((src.match(/ver:"نسخه ۱۲\.۳/g) || []).length >= 3, "H2 fa ver strings present (public + login + admin dicts)");
+ok((src.match(/data-i="ver">نسخه ۱۲\.۳/g) || []).length === 1, "H3 the static footer ver div present");
+ok((src.match(/ver:"v12\.3/g) || []).length >= 3, "H4 en ver strings present");
 ok(pkg.scripts.test.includes("check-v1227.js"), "H5 this suite stays wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.27-fixpack checks)`);

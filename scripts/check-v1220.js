@@ -84,10 +84,10 @@ ok(src.includes('lastUpd:"Last updated: %s"') && src.includes('function fmtStamp
 ok(src.includes("function tickBigBar(){ if(DATA && DATA.upcoming) updateBigBar(); renderSync(); }"), "G6 the stamp re-ages every second tick");
 
 console.log("H) version bump");
-ok(src.includes('const VERSION = "12.29-goldtop";'), "H1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۹/g) || []).length === 3, "H2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.29 — the top-of-the-table/g) || []).length === 3, "H3 (v12.26 roll) en ver strings all v12.26");
-ok(pkg.version === "12.29.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 (v12.26 roll) package.json 12.29.0 + the v12.22 suite wired");
+ok(src.includes('const VERSION = "12.30-herocalm";'), "H1 (v12.30 roll) VERSION = 12.30-herocalm");
+ok((src.match(/ver:"نسخه ۱۲\.۳۰/g) || []).length === 3, "H2 (v12.30 roll) fa ver strings (public + login + admin) all ۱۲.۳۰");
+ok((src.match(/v12\.30 — the next big match/g) || []).length === 3, "H3 (v12.30 roll) en ver strings all v12.30");
+ok(pkg.version === "12.30.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 (v12.30 roll) package.json 12.30.0 + the v12.22 suite wired");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.20-uxpolish checks)`);
 process.exit(fail ? 1 : 0);

@@ -34,12 +34,12 @@ ok((src.match(/--badge-top:#b45309;/g) || []).length === 2, "C1 both theme block
 ok(!src.includes('--badge-top:var(--t-success)'), "C2 the v12.27 success-green mapping retired (gold is brand, like .bigcard's greens)");
 ok(src.includes('--t-success:#15803d;'), "C3 the success token itself stays (live chips, winner scores still use it)");
 
-console.log("D) VERSION + ROLLING GATES");
-ok(src.includes('const VERSION = "12.29-goldtop";'), "D1 VERSION = 12.29-goldtop");
-ok((src.match(/ver:"نسخه ۱۲\.۲۹ — نشان «صدر جدول» طلایی شد/g) || []).length === 3, "D2 fa ver strings (public + login + admin dicts) all ۱۲.۲۹");
-ok((src.match(/data-i="ver">نسخه ۱۲\.۲۹ — نشان «صدر جدول» طلایی شد/g) || []).length === 1, "D3 the static footer ver div ۱۲.۲۹");
-ok((src.match(/ver:"v12\.29 — the top-of-the-table badge is GOLDEN/g) || []).length === 3, "D4 en ver strings all v12.29");
-ok(pkg.version === "12.29.0" && pkg.scripts.test.includes("check-v1229.js"), "D5 package.json 12.29.0 + this suite wired into npm test");
+console.log("D) VERSION (12.30 roll superseded — strict 12.30 assertions live in check-v1230.js)");
+ok(/const VERSION = "12\.3\d-/.test(src), "D1 VERSION stays a 12.3x release tag");
+ok((src.match(/ver:"نسخه ۱۲\.۳/g) || []).length >= 3, "D2 fa ver strings present (public + login + admin dicts)");
+ok((src.match(/data-i="ver">نسخه ۱۲\.۳/g) || []).length === 1, "D3 the static footer ver div present");
+ok((src.match(/ver:"v12\.3/g) || []).length >= 3, "D4 en ver strings present");
+ok(pkg.version === "12.30.0" && pkg.scripts.test.includes("check-v1229.js"), "D5 (v12.30 roll) package.json 12.30.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.29-goldtop checks)`);
 process.exit(fail ? 1 : 0);

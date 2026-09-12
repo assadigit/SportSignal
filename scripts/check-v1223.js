@@ -26,7 +26,7 @@ ok(src.includes('.hero-wm img:first-child{inset-inline-start:-48px}') && src.inc
 ok(src.includes('<div class="hero-wm" aria-hidden="true"><img alt="" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'"><img alt="" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'"></div>'), "A4 static markup OUTSIDE #heroSpot (survives re-renders, like the ember layer) + broken-crest fallback");
 ok(src.includes("function heroWm(card, m){") && src.includes("heroWm(card, m);") && src.includes("var c0 = m && m.homeTeam && m.homeTeam.crest, c1 = m && m.awayTeam && m.awayTeam.crest;"), "A5 heroWm() swaps the two crest srcs per match from renderHeroSpot (barTarget — the match being counted down to)");
 ok(src.includes('wm.style.display = (c0 || c1) ? "" : "none";') && src.includes("imgs[i].removeAttribute(\"src\"); imgs[i].style.display = \"none\";"), "A6 a club without a crest hides its watermark; no crest at all hides the layer");
-ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.157}') && src.includes('[data-theme="light"] .hero-wm{filter:none}') && src.includes('@media (max-width:600px){.hero-wm img{width:210px;height:210px;opacity:.157}'), "A7 (v12.27 roll) light-theme .196 unfiltered + phone variant 210px at .157 — the readability scrim .hero-wm::after radial + team-name text-shadow stay");
+ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.157}') && src.includes('[data-theme="light"] .hero-wm{filter:none}') && src.includes('@media (max-width:600px){.hero-wm{display:none}}'), "A7 (v12.30 roll) light-theme .157 unfiltered stays on PC; the phone variant is now the v12.30 layer OFF (two 210px ghosts fought the face-off on a ~350px card) — the readability scrim .hero-wm::after radial + team-name text-shadow stay");
 
 console.log("B) the heartbeat-scrollbar bug — fx can never widen the page");
 ok(src.includes('.hero-fx::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.05) 44%,rgba(255,255,255,.13) 50%,rgba(255,255,255,.05) 56%,transparent 68%);transform:translateX(-140%);animation:hero-sweep 6.5s cubic-bezier(.55,0,.45,1) infinite}'), "B1 the floodlight sweep now rides the CLIPPED .hero-fx layer (same gradient, same rhythm)");
@@ -47,11 +47,11 @@ ok(src.includes(".mrow,.spotitem{border:1px solid var(--border);border-radius:14
 ok((src.match(/row\.appendChild\(vs\); row\.appendChild\(as\);/g) || []).length === 2, "C8 the stray double-append in render() is gone (exactly the 2 legitimate score branches remain — spotItemNode + render; it crashed on unscored rows via appendChild(undefined))");
 
 console.log("D) version bump");
-ok(src.includes('const VERSION = "12.29-goldtop";'), "D1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۹/g) || []).length === 3, "D2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.29 — the top-of-the-table/g) || []).length === 3, "D3 (v12.26 roll) en ver strings all v12.26");
-ok((src.match(/نسخه ۱۲\.۲۹/g) || []).length === 4, "D4 (v12.26 roll) fa ver strings + the admin static footer = 4 spots");
-ok(pkg.version === "12.29.0" && pkg.scripts.test.includes("check-v1223.js"), "D5 (v12.26 roll) package.json 12.29.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.30-herocalm";'), "D1 (v12.30 roll) VERSION = 12.30-herocalm");
+ok((src.match(/ver:"نسخه ۱۲\.۳۰/g) || []).length === 3, "D2 (v12.30 roll) fa ver strings (public + login + admin) all ۱۲.۳۰");
+ok((src.match(/v12\.30 — the next big match/g) || []).length === 3, "D3 (v12.30 roll) en ver strings all v12.30");
+ok((src.match(/نسخه ۱۲\.۳۰/g) || []).length === 4, "D4 (v12.30 roll) fa ver strings + the admin static footer = 4 spots");
+ok(pkg.version === "12.30.0" && pkg.scripts.test.includes("check-v1223.js"), "D5 (v12.30 roll) package.json 12.30.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.23-watermark checks)`);
 process.exit(fail ? 1 : 0);

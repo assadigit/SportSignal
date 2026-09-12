@@ -35,9 +35,9 @@ let pass = 0, fail = 0;
 function ok(cond, label){ if(cond){ pass++; console.log("  ✔ " + label); } else { fail++; console.log("  ✘ " + label); } }
 
 console.log("A) VIDEO — the stage must visibly MOVE and always autoplay");
-ok(src.includes('opacity:.78;filter:saturate(1.18) brightness(1.02)'), "A1 the video runs at .78 with a livelier filter (was .42 + brightness .92)");
-ok(src.includes('.hero-video::after{content:"";position:absolute;inset:0;background:linear-gradient(168deg,rgba(2,6,23,.38),rgba(2,6,23,.18))}'), "A2 dark scrim lightened .58/.34 → .38/.18");
-ok(src.includes('[data-theme="light"] .hero-video::after{background:linear-gradient(168deg,rgba(248,250,252,.44),rgba(248,250,252,.26))}'), "A3 light scrim lightened .66/.5 → .44/.26");
+ok(src.includes('opacity:.78;filter:blur(2.5px) saturate(1.18) brightness(1.02)'), "A1 (v12.30 roll) the video runs at .78 with the livelier filter + the user's touch of gaussian blur (was .42 + brightness .92)");
+ok(src.includes('.hero-video::after{content:"";position:absolute;inset:0;background:rgba(2,6,23,.30)}'), "A2 (v12.30 roll) the dark scrim is the user's FLAT 30% dark-navy veil (supersedes the .58/.34 → .38/.18 ladder)");
+ok(src.includes('[data-theme="light"] .hero-video::after{background:rgba(248,250,252,.42)}'), "A3 (v12.30 roll) the light scrim is a flat white veil (supersedes .66/.5 → .44/.26)");
 ok(!src.includes('if(RM){ hv.pause(); return; }') && !src.includes('var RM = !!(window.matchMedia'), "A4 the prefers-reduced-motion hard-pause is RETIRED (autoplay wins, the user's twice-repeated ask)");
 ok(src.includes('try{ hv.muted = true; }catch(e){}'), "A5 muted set as a JS PROPERTY too (Safari's autoplay gate reads the property)");
 ok(src.includes('hv.addEventListener("canplay", kick);') && src.includes('hv.addEventListener("loadeddata", kick);'), "A6 the kicker ladder stays (canplay + loadeddata)");
@@ -67,7 +67,7 @@ ok(src.includes('db.className = "derbybadge"'), "C5 the 🔥 derby badge rides t
 console.log("D) CREST WATERMARKS — 20% fainter (.196 → .157)");
 ok(src.includes('object-fit:contain;opacity:.157;transform:translateY(-50%)'), "D1 base watermark opacity .157");
 ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.157}'), "D2 light theme .157");
-ok(src.includes('.hero-wm img{width:210px;height:210px;opacity:.157}'), "D3 phone rule .157");
+ok(src.includes('@media (max-width:600px){.hero-wm{display:none}}'), "D3 (v12.30 roll) the phone rule is the v12.30 layer OFF (the crest ghosts retired on phones)");
 ok(!src.includes('opacity:.196'), "D4 no .196 remnant anywhere");
 
 console.log("E) PHONE ROWS — no more two-row club names");
@@ -81,11 +81,11 @@ ok(!src.includes('.score{font-size:15px;flex-basis:80px}') && !src.includes('.ki
 ok(src.includes('@media (min-width:601px) and (max-width:900px){'), "E8 the NARROW-PC band (601–900px) exists — the 2x hero crests + big chip squeezed names to ~50px there even before this release");
 ok(src.indexOf('@media (min-width:601px) and (max-width:900px)') > src.indexOf('.bighero .kick .countdown{font-size:24px'), "E9 the mid-band block comes AFTER the big-chip rules (same-specificity source-order duel — measured 1-line names at 601/768/900)");
 
-console.log("F) VERSION (12.29 roll superseded — strict 12.29 assertions live in check-v1229.js)");
-ok(/const VERSION = "12\.2[89]-/.test(src), "F1 VERSION stays a 12.2x release tag");
-ok((src.match(/ver:"نسخه ۱۲\.۲/g) || []).length >= 3, "F2 fa ver strings present (public + login + admin dicts)");
-ok((src.match(/data-i="ver">نسخه ۱۲\.۲/g) || []).length === 1, "F3 the static footer ver div present");
-ok((src.match(/ver:"v12\.2/g) || []).length >= 3, "F4 en ver strings present");
+console.log("F) VERSION (12.29 roll superseded — strict 12.29 assertions live in check-v1229.js; rolled to 12.3x for the v12.30 release)");
+ok(/const VERSION = "12\.3\d-/.test(src), "F1 VERSION stays a 12.3x release tag");
+ok((src.match(/ver:"نسخه ۱۲\.۳/g) || []).length >= 3, "F2 fa ver strings present (public + login + admin dicts)");
+ok((src.match(/data-i="ver">نسخه ۱۲\.۳/g) || []).length === 1, "F3 the static footer ver div present");
+ok((src.match(/ver:"v12\.3/g) || []).length >= 3, "F4 en ver strings present");
 ok(pkg.scripts.test.includes("check-v1228.js"), "F5 this suite stays wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.28-herostage checks)`);

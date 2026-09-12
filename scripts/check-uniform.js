@@ -122,7 +122,7 @@ ok(src.includes('STATE.teams.CL = STATE.teams.CL || []') && src.includes('fmt("a
 ok(src.includes('uh.textContent = T("uclSync")'), "CL box renders the auto-selection hint (uclSync)");
 ok(src.includes("acAddUcl:") && (src.match(/acAddUcl:/g) || []).length === 6, "acAddUcl i18n key present in all 6 page dicts");
 ok(src.includes("uclSync:") && (src.match(/uclSync:/g) || []).length === 6, "uclSync i18n key present in all 6 page dicts");
-ok(src.includes("12.29-goldtop"), "VERSION bumped to 12.29-goldtop (uniform + UCL auto-selection still on board)");
+ok(src.includes("12.30-herocalm"), "VERSION bumped to 12.30-herocalm (uniform + UCL auto-selection still on board)");
 
 console.log(fail === 0 ? "uniform names + UCL auto-selection OK ✓" : `uniform names + UCL auto-selection FAILED (${fail})`);
 process.exit(fail === 0 ? 0 : 1);
