@@ -5215,6 +5215,12 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
 .mrow,.spotitem{position:relative;border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin:0 0 10px;background:var(--rowsurf);transition:background .15s,border-color .15s}
 .mrow:last-child,.spotitem:last-child{margin-bottom:0}
 .mrow:hover,.spotitem:hover{filter:brightness(1.07);border-color:rgba(37,99,235,.4)}
+/* v12.47-nospotbox: the hero's .spotitem is STRIPPED of its container styling
+   — no border, no background, no border-radius, no padding. The hero card
+   itself is the container; a bordered box inside it was "a container inside
+   a container" (visual noise, the user's ask). The match row + info line
+   + share button stay — just the box chrome is gone. */
+.bighero .spotitem{border:none;background:none;border-radius:0;padding:0;margin:0}
 .match{display:flex;align-items:center;gap:12px;padding:2px 0;border-radius:10px;animation:rise .35s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--i,0)*40ms)}
 .stable .match{animation:none}
 /* v12.23 (the user's ask \u2014 "everything must be aligned"): both sides share
@@ -5548,7 +5554,12 @@ h2{font-size:15.5px;padding:8px 12px}
    BETWEEN the crests (rule above: margin-top:3px centers its chip on the
    46px crest line), not on its own line below the face-off. */
 .bighero .uclspot-info{margin-top:10px;gap:6px}
-.bighero .spotitem{padding:8px 6px 12px}
+/* v12.47-nospotbox: retired the old .bighero .spotitem padding — the
+   spotitem is now borderless + backgroundless (see the v12.47 rule
+   above), so the padding that framed the old box is gone too. The
+   match row + info + share sit directly on the hero card's own
+   surface, no inner container. */
+.bighero .spotitem{padding:0}
 .mrow,.spotitem{padding:8px 10px}
 .info{font-size:11px;line-height:1.7}
 #topbar button{padding:7px 12px}
