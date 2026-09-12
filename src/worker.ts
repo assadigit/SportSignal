@@ -4844,8 +4844,8 @@ body.joinsticky{padding-bottom:88px}
    on the hero card's own background, with no separate container. The
    border-bottom divider is also retired — the thin 4px track is the
    only divider. padding adjusted for the label/clock/pct row + track. */
-.bighero .bigbar{margin:0 0 0;padding:0;background:transparent;border:none;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
-[data-theme="light"] .bighero .bigbar{background:transparent}
+.bighero .bigbar{margin:0 0 12px;padding:2px 2px 8px;background:linear-gradient(90deg,rgba(2,6,23,.46),rgba(2,6,23,.18) 16%,rgba(2,6,23,.18) 84%,rgba(2,6,23,.46));border:none;border-bottom:1px solid var(--border);border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+[data-theme="light"] .bighero .bigbar{background:linear-gradient(90deg,rgba(248,250,252,.6),rgba(248,250,252,.32) 16%,rgba(248,250,252,.32) 84%,rgba(248,250,252,.6))}
 .bighero .bigbar-clock{text-shadow:0 1px 10px rgba(2,6,23,.55)}
 [data-theme="light"] .bighero .bigbar-clock{text-shadow:0 1px 8px rgba(248,250,252,.9)}
 /* v12.38-hero: the hero's .bigbar-pct already inherits the neutral pill token
@@ -5624,18 +5624,11 @@ footer{margin-top:0}
      ride ONE positioned layer (z:3) above the video (z:0), the crests (z:1)
      and the css fx (z:2) \u2014 exactly the user's ladder. -->
 <div class="hero-data">
-<!-- v12.42-livesection: the match row (heroSpot) now rides ABOVE the
-     countdown bar (was the other way around). The user's ask: "show the
-     progress below the team logos not on top". The bigbar now sits BELOW
-     the match row, anchored to the bottom of the hero card. The bigbar's
-     own background is RETIRED (the user's ask: "there is a background
-     rectangle which I don't like — it's white-ish") — the bar is now
-     transparent, sitting directly on the hero card's own background. -->
-<div id="heroSpot"></div>
 <div id="bigbar" class="bigbar">
 <div class="bigbar-top"><span id="bigbarLabel" data-i="barNext">\u26A1 \u062A\u0627 \u0628\u0627\u0632\u06CC \u0628\u0632\u0631\u06AF \u0628\u0639\u062F\u06CC</span><span class="bb-end"><span id="bigbarClock" class="bigbar-clock">--:--:--</span><span id="bigbarPct" class="bigbar-pct" aria-hidden="true"></span></span></div>
 <div class="bigbar-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="bigbarFill" class="bigbar-fill"></div></div>
 </div>
+<div id="heroSpot"></div>
 </div>
 </div>
 </div>
@@ -5698,6 +5691,14 @@ footer{margin-top:0}
      toggle gone (always big-only) it only ever held the redundant "\u0647\u0645\u0647 \u062F\u0631
      \u062C\u0639\u0628\u0647 \u0628\u0627\u0644\u0627 \u0647\u0633\u062A\u0646\u062F" note; the hero card + the topspot box + the UCL box
      ARE the upcoming presentation (the user's ask). -->
+<!-- v12.42-livesection: the LIVE section — matches currently playing/broadcasting
+     (whether 1 or 20), with a special LIVE badge. The card auto-hides when no
+     matches are live (display:none via renderLive). Matches stay here as long
+     as the match status is LIVE/IN_PLAY/PAUSED. -->
+<div class="card" id="liveCard" style="display:none">
+<h2 data-i="hLive">\u{1F534} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0632\u0646\u062F\u0647</h2>
+<div id="liveMatches"><div class="empty" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div></div>
+</div>
 <div class="card uclcard" id="uclCard">
 <h2 class="uclh2"><span class="ucl-logo sm" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUcl">\u{1F3C6} \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627</span></h2>
 <div id="ucl"><div class="empty" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div></div>
@@ -5710,13 +5711,7 @@ footer{margin-top:0}
 <h2 data-i="hCups">\u{1F3C6} \u062A\u0648\u0631\u0646\u0645\u0646\u062A\u200C\u0647\u0627</h2>
 <div id="cups"><div class="empty" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div></div>
 </div>
-<!-- v12.42-livesection: the LIVE section — matches currently playing/broadcasting
-     (whether 1 or 20), with a special LIVE badge. The card auto-hides when no
-     matches are live (display:none via renderLive). Matches stay here as long
-     as the match status is LIVE/IN_PLAY/PAUSED. -->
-<div class="card" id="liveCard" style="display:none">
-<h2 data-i="hLive">\u{1F534} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0632\u0646\u062F\u0647</h2>
-<div id="liveMatches"><div class="empty" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div></div>
+
 </div>
 <!-- v12.5: the Iran card is gone \u2014 the PGL table lives inside the league
      standings grid above (#standings), per the user's request. -->
@@ -6994,8 +6989,8 @@ setInterval(tickBigBar, 1000);
 // renderers only touch card CONTENT, so the columns survive every re-render.
 var WIDE_MQ = window.matchMedia ? window.matchMedia("(min-width:1440px)") : null;
 var WIDE_MAIN = ["topspotCard","uclSpotCard","weekCard","finishedCard"];
-var WIDE_RAIL = ["uclCard","standingsCard","cupsCard"];
-var WIDE_ORDER = ["topspotCard","uclSpotCard","weekCard","uclCard","standingsCard","cupsCard","finishedCard"];
+var WIDE_RAIL = ["liveCard","uclCard","standingsCard","cupsCard"];
+var WIDE_ORDER = ["topspotCard","uclSpotCard","weekCard","liveCard","uclCard","standingsCard","cupsCard","finishedCard"];
 function setWide(on){
   var footer = document.querySelector("footer");
   if(!footer) return;
