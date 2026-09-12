@@ -5244,7 +5244,11 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
 /* v12.32: the date line under the hero's time chip \u2014 plain rows never
    carry it (their weekday/date stays in the info line); the hero's stack
    is [big time / smaller date]. */
-.kickdate{font-size:11px;font-weight:700;color:var(--text);text-align:center;font-variant-numeric:tabular-nums}
+/* v12.41-datecolor: the .kickdate now uses the same --countdown color as
+   the .countdown time chip above it (was var(--text) — black, while the
+   time was blue; the user's ask: 'must be same color'). Both the time and
+   its date now read in the same blue hue, visually unified. */
+.kickdate{font-size:11px;font-weight:700;color:var(--countdown);text-align:center;font-variant-numeric:tabular-nums}
 .bighero .kickdate{font-size:12.5px;font-weight:800;text-shadow:0 1px 10px rgba(2,6,23,.55)}
 [data-theme="light"] .bighero .kickdate{text-shadow:0 1px 8px rgba(248,250,252,.9)}
 /* v12.38-hero: Fix 2 + Fix 5 — the hero's kickoff-time pill is bumped to
