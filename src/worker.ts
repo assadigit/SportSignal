@@ -5285,7 +5285,11 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    (was horizontal row) — the time chip on top, the .kickdate below.
    flex-direction:column + gap:4px stacks them cleanly. The hero keeps
    its own larger gap (6px) via the .bighero .kick override below. */
-.kick{flex:0 0 92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0}
+/* v12.61: the .kick column (time over date) was centered with the .side's
+   center, but the TIME (top element) appeared higher than the team name.
+   Added a margin-top of 7px (~half the kickdate height) to push the .kick
+   down so the countdown time aligns with the team name's vertical level. */
+.kick{flex:0 0 92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;margin-top:7px}
 .kick .countdown{margin:0;font-size:13px;padding:4px 12px}
 /* v12.28 (the user's ask \u2014 "<span class="countdown">\u{1F552} \u06F1\u06F9:\u06F0\u06F0</span> this
    must be bigger for next big upcoming match. make it considerably
