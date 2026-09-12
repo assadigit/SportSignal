@@ -5045,6 +5045,15 @@ body.joinsticky{padding-bottom:88px}
 .livechip{display:inline-flex;align-items:center;gap:6px;background:var(--t-success-soft);color:var(--t-success-ink);border:1px solid var(--t-success-line);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;margin:0 6px;vertical-align:middle}
 .livechip .dot{width:8px;height:8px;border-radius:50%;background:var(--badge-live);animation:live-beep 1.1s ease-in-out infinite}
 @keyframes live-beep{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.35);transform:scale(1)}50%{box-shadow:0 0 0 6px rgba(34,197,94,0);transform:scale(1.15)}}
+/* v12.44-livepolish: the liveCard heading carries a BREATHING GREEN LIGHT
+   — a 12px green dot that pulses softly (opacity + box-shadow + scale),
+   conveying "these games are now playing" at a glance. Uses a slower 2s
+   rhythm (vs the 1.1s livechip beep) so it reads as a calm breath, not
+   an alarm. The 🔴 emoji in the heading is replaced by this dot via JS
+   (renderLive strips the emoji and injects the .live-breath span). */
+.live-breath{display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c555;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:live-breath 2s ease-in-out infinite;vertical-align:-1px;margin-inline-end:8px;flex-shrink:0}
+@keyframes live-breath{0%,100%{opacity:.5;box-shadow:0 0 0 0 rgba(34,197,94,.4);transform:scale(.85)}50%{opacity:1;box-shadow:0 0 12px 4px rgba(34,197,94,.25);transform:scale(1.15)}}
+#liveCard h2{display:flex;align-items:center}
 .lmin{display:inline-block;background:rgba(37,99,235,.12);color:var(--accent);border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;vertical-align:middle}
 [data-theme="light"] .lmin{background:rgba(37,99,235,.1)}
 .scorers{flex:1 1 100%;margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
@@ -5212,6 +5221,12 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    v12.25: unplayed rows carry the KICKOFF TIME in the center slot (.kick);
    finished/live rows keep the score element in the middle (.score). */
 .score{font-weight:800;font-size:17px;color:var(--score);flex:0 0 92px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* v12.44-livepolish: when the .score is inside .kick (column layout), the
+   92px flex-basis would apply to the HEIGHT, stretching the score to 92px
+   tall and misaligning it with the team names. Override: inside .kick, the
+   score gets flex:0 0 auto so it's only as tall as its content, and the
+   .kick's justify-content:center vertically centers it against the sides. */
+.kick .score{flex:0 0 auto}
 /* v12.27 (review item 6): the WINNER's digit is unmistakable \u2014 the winning
    number renders as a <b> (weight 900 + a soft success glow) while the
    losing number dims to .55; a draw keeps both plain. The pairing is now
@@ -6294,11 +6309,24 @@ function renderLive(){
   var card = document.getElementById("liveCard"), el = document.getElementById("liveMatches");
   if(!card || !el) return;
   el.innerHTML = "";
+  // v12.44-livepolish: replace the 🔴 emoji in the heading with a breathing
+  // green dot (.live-breath) — the CSS animation pulses softly, conveying
+  // "these games are now playing" at a glance. The dot is injected once per
+  // renderLive call (removed if already present from a previous call).
+  var h2 = card.querySelector("h2");
+  if(h2){
+    var oldBreath = h2.querySelector(".live-breath");
+    if(oldBreath) oldBreath.remove();
+    var breath = document.createElement("span"); breath.className = "live-breath"; breath.setAttribute("aria-hidden", "true");
+    h2.insertBefore(breath, h2.firstChild);
+    // Strip the 🔴 emoji from the text node (the data-i="hLive" i18n string starts with 🔴)
+    h2.childNodes.forEach(function(n){ if(n.nodeType === 3 && n.textContent.indexOf("\u{1F534}") !== -1) n.textContent = n.textContent.replace(/\u{1F534}\s*/g, ""); });
+  }
   var live = (DATA.upcoming || []).filter(function(m){ return m.status==="LIVE"||m.status==="IN_PLAY"||m.status==="PAUSED"; });
   if(!live.length){ card.style.display = "none"; return; }
   card.style.display = "";
   live.sort(function(a, b){ return (a.minute||0) - (b.minute||0) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(); });
-  live.slice(0, 20).forEach(function(m, idx){ el.appendChild(spotItemNode(m, idx, { finished: true })); });
+  live.slice(0, 20).forEach(function(m, idx){ el.appendChild(spotItemNode(m, idx, { finished: true, isLiveCard: true })); });
 }
 function renderFinished(force){
   var el = document.getElementById("finished"); if(!el) return;
@@ -6626,7 +6654,12 @@ function spotItemNode(m, idx, opts){
   // center slot; their weekday/date line stays in the info row.
   var hero = !!(opts && opts.noDate);
   var kd = null;
-  if(m.utcDate){ kd = document.createElement("div"); kd.className = "kickdate"; kd.textContent = fmtHeroDate(m.utcDate); }
+  // v12.44-livepolish: for LIVE matches the kickdate is HIDDEN — the date
+  // is redundant when the match is playing (the score is what matters).
+  // This also fixes the vertical alignment: the score sits centered in the
+  // .kick column (no date below it pushing the score up), matching the team
+  // name's vertical center.
+  if(m.utcDate && !live && !done){ kd = document.createElement("div"); kd.className = "kickdate"; kd.textContent = fmtHeroDate(m.utcDate); }
   if((live || done) && m.score && m.score.home !== null){
     var vs = scoreNode(m.score);
     if(hero){ var kw = document.createElement("div"); kw.className = "kick"; kw.appendChild(vs); if(kd) kw.appendChild(kd); row.appendChild(hs); row.appendChild(kw); row.appendChild(as); }
@@ -6664,10 +6697,20 @@ function spotItemNode(m, idx, opts){
   // spotitem, not just the hero. The info line carries only the competition
   // chip + badges + live/expired chips + venue. No date, no time.
   if(live){
-    var chip = document.createElement("span"); chip.className = "livechip";
-    var dot = document.createElement("span"); dot.className = "dot";
-    chip.appendChild(dot); chip.appendChild(document.createTextNode(T("live")));
-    info.appendChild(chip);
+    // v12.44-livepolish: the livechip "در حال برگزاری" is SKIPPED when the
+    // spotitem is inside the #liveCard (the card itself is the live section —
+    // the chip is redundant). The check uses opts.isLiveCard (passed from
+    // renderLive) because item.closest() doesn't work at build time — the
+    // element isn't in the DOM yet. For the hero + big-matches + week cards
+    // the chip still renders (those cards mix live + upcoming, so the chip
+    // distinguishes).
+    var inLiveCard = !!(opts && opts.isLiveCard);
+    if(!inLiveCard){
+      var chip = document.createElement("span"); chip.className = "livechip";
+      var dot = document.createElement("span"); dot.className = "dot";
+      chip.appendChild(dot); chip.appendChild(document.createTextNode(T("live")));
+      info.appendChild(chip);
+    }
     if(m.minute != null){ var lmin = document.createElement("span"); lmin.className = "lmin"; lmin.textContent = fmtNum(m.minute) + "\u02B9"; info.appendChild(lmin); }
   } else if(opts && opts.past){
     // v12.17/v12.25: kickoff passed, no final score yet \u2014 the expired marker
