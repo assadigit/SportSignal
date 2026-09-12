@@ -5197,7 +5197,17 @@ body.joinsticky{padding-bottom:88px}
    standings card shares the plate + border + watermark on the standard glass
    body. Light theme keeps the navy identity (light navy-tinted body).
    Brand colors are literals, the same way .bigcard carries its greens. */
-.uclh2{display:flex;align-items:center;gap:10px}
+/* v12.x-matchday-pos (the user's ask): the matchday chip ('هفته ۱') must be
+   flush to the FAR LEFT edge of the UCL header (the user drew a black
+   rectangle at the far left to show the desired position). Previously
+   margin-inline-start:auto left a ~72px gap because flex gap:10px
+   interfered with the auto-margin free-space absorption. Switched to
+   justify-content:space-between — the first DOM child (logo) sits at the
+   inline-start (RIGHT in RTL), the last DOM child (matchday chip) sits at
+   the inline-end (LEFT in RTL, flush to the edge), and the title text
+   floats in the center between them. The margin-inline-start:auto on the
+   chip is retired (space-between handles the distribution). */
+.uclh2{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .ucl-logo{flex-shrink:0;width:34px;height:34px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(2,6,23,.45),inset 0 0 0 1px rgba(14,32,88,.10)}
 .ucl-logo svg{width:29px;height:29px;display:block}
 .ucl-logo.sm{width:26px;height:26px}
@@ -5246,13 +5256,15 @@ body.joinsticky{padding-bottom:88px}
 .ucl-head{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14.5px;margin-bottom:8px}
 .ucl-emblem{width:26px;height:26px;border-radius:6px;flex-shrink:0}
 /* v12.35-uclfix: the matchday chip now lives INSIDE the h2.uclh2 (same row as
-   the title), not in a separate .ucl-head div below. Pushed to the inline-end
-   with margin-inline-start:auto. White text on the navy gradient h2 plate,
-   with a semi-transparent white pill background for visual separation. */
+   the title), not in a separate .ucl-head div below. White text on the navy
+   gradient h2 plate, with a semi-transparent white pill background for
+   visual separation. */
 /* v12.50: the matchday chip sits at the END of the h2 (after the logo +
-   title), pushed to the far edge with margin-inline-start:auto. The
-   order is: [logo] [title] ... [matchday]. */
-.uclh2 .ucl-md{margin-inline-start:auto;font-size:12px;color:rgba(255,255,255,.92);font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:2px 10px;flex-shrink:0;white-space:nowrap}
+   title), pushed to the far edge. v12.x-matchday-pos: the push is now via
+   justify-content:space-between on the .uclh2 (see above) instead of
+   margin-inline-start:auto (which left a gap). The order is: [logo]
+   [title] ... [matchday]. */
+.uclh2 .ucl-md{font-size:12px;color:rgba(255,255,255,.92);font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:2px 10px;flex-shrink:0;white-space:nowrap;margin-left:0;margin-inline-end:0}
 /* v12.x-light-ucl: the matchday chip needs dark ink + a darker pill on the
    lighter blue h2 plate in light mode (the white-on-translucent-white pill
    was designed for the navy plate). */
