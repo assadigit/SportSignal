@@ -4800,6 +4800,10 @@ body{font-family:'Vazirmatn',system-ui,sans-serif;background-color:var(--bg);col
 #sbtn[aria-expanded="true"]{transform:rotate(90deg);border-color:var(--accent)}
 #tzfilter{background:var(--field);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box;transition:border-color .15s}
 #tzsel{background:var(--field);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 11px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;width:100%;box-sizing:border-box;transition:border-color .15s}
+/* v12.x-tz-search-fix: when the select becomes a listbox (size>1 via
+   the render function), let it grow to fit the visible rows instead of
+   staying at one-line dropdown height. */
+#tzsel[size]{height:auto;max-height:280px;overflow-y:auto}
 #tzsel:hover{border-color:var(--accent)}
 #tzfilter:focus,#tzsel:focus{border-color:var(--accent);outline:none}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -4823,19 +4827,19 @@ h1{font-size:27px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em}
 body.joinsticky{padding-bottom:88px}
 /* v12.x-tg-fab: a floating Telegram FAB for PC view — a 56px circular
    button in Telegram brand blue (#229ED9) with the white paper-plane
-   logo. Fixed to the bottom-RIGHT corner in Farsi (RTL) and bottom-LEFT
-   corner in English (LTR). Uses inset-inline-start so it auto-flips:
-   in RTL, start = RIGHT; in LTR, start = LEFT. No [dir="ltr"] override
-   needed — the logical property handles both directions. Hidden on
+   logo. Fixed to the bottom-RIGHT corner in BOTH Farsi (RTL) and
+   English (LTR) — per the user's explicit ask (must be right for both
+   English and Farsi). Uses the physical right:24px (not the logical
+   inset-inline-start which would flip to left in LTR). Hidden on
    mobile (the #joinSticky bottom bar covers the mobile CTA). The
    header CTA pill (#topbar .cta) is retired on PC; this FAB replaces
-   it. The tooltip + aria-label carry the join-i18n string so the
-   language toggle updates it. A subtle pulse animation draws the eye
-   without being annoying (2.6s, ease-in-out, infinite). The FAB has a
-   soft drop shadow (filter:drop-shadow follows the circle, unlike
-   box-shadow which can render as a square on overflow:hidden +
-   border-radius elements — same fix as the hero logos). */
-#tgFab{position:fixed;bottom:24px;inset-inline-start:24px;z-index:65;display:none;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#229ED9;text-decoration:none;cursor:pointer;filter:drop-shadow(0 6px 14px rgba(34,158,217,.55)) drop-shadow(0 2px 6px rgba(0,0,0,.35));transition:transform .15s cubic-bezier(.16,1,.3,1),filter .15s;animation:tgFab-pulse 2.6s ease-in-out infinite}
+   it. The tooltip + aria-label are static Telegram in both
+   languages. A subtle pulse animation (2.6s, ease-in-out, infinite)
+   draws the eye without being annoying. The FAB has a soft drop
+   shadow (filter:drop-shadow follows the circle, unlike box-shadow
+   which can render as a square on overflow:hidden + border-radius
+   elements — same fix as the hero logos). */
+#tgFab{position:fixed;bottom:24px;right:24px;z-index:65;display:none;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#229ED9;text-decoration:none;cursor:pointer;filter:drop-shadow(0 6px 14px rgba(34,158,217,.55)) drop-shadow(0 2px 6px rgba(0,0,0,.35));transition:transform .15s cubic-bezier(.16,1,.3,1),filter .15s;animation:tgFab-pulse 2.6s ease-in-out infinite}
 #tgFab:hover{transform:scale(1.08);filter:drop-shadow(0 8px 20px rgba(34,158,217,.75)) drop-shadow(0 3px 8px rgba(0,0,0,.4))}
 #tgFab:active{transform:scale(.96)}
 #tgFab svg{flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
@@ -5015,25 +5019,26 @@ body.joinsticky{padding-bottom:88px}
    4px minimal line has no fuse tip; the fill's own gradient + soft glow are
    the whole visual. */
 .bighero .team{font-size:16px;font-weight:800}
-/* v12.x-softshadow (the user's ask): "add some soft shadow behind clubs
-   logo" for the next big upcoming match section. A feathered two-layer
-   drop shadow that reads as depth: a large-blur ambient layer + a tighter
-   near layer lift the crest off the dark navy stage without competing with
-   the team name or the watermark.
-   v12.x-SQUARE-BUGFIX: the shadow was first implemented with box-shadow,
-   but the .logo element has overflow:hidden + border-radius:50% (to
-   clip the crest img to the circle), and Chromium has a long-standing
-   rendering bug where overflow:hidden + border-radius + box-shadow
-   makes the shadow render as a SQUARE (the element's bounding box) instead
-   of following the circular border-radius. Switched from box-shadow to
-   filter:drop-shadow() — drop-shadow uses the element's actual rendered
-   alpha channel (which IS the circle, thanks to border-radius clipping),
-   so it follows the circle correctly even with overflow:hidden. The
-   dark neutral works on both themes; a lighter tint is used in light mode
-   so the shadow doesn't print harsh on the pale stage. */
-.bighero .logo{filter:drop-shadow(0 12px 28px rgba(0,0,0,.42)) drop-shadow(0 4px 12px rgba(0,0,0,.28))}
-[data-theme="light"] .bighero .logo{filter:drop-shadow(0 10px 24px rgba(15,23,42,.22)) drop-shadow(0 4px 10px rgba(15,23,42,.14))}
-#topspotCard .spotitem .logo{box-shadow:0 0 0 1px rgba(148,163,184,.1);filter:drop-shadow(0 4px 10px rgba(2,6,23,.25));width:54px;height:54px;font-size:24px}
+/* v12.x-hero-nowrap (the user's ask): 'In Top-big-incoming-box (single
+   featured) the clubs never, whatever long they're, should never be in
+   two row, always one row.' The hero's team names are forced to a
+   SINGLE line via white-space:nowrap + overflow:hidden +
+   text-overflow:ellipsis — long names like 'Manchester United' or
+   'Atlético de Madrid' truncate with '...' instead of wrapping. This
+   overrides the mobile .match .side .team rule (line ~5662) which sets
+   word-wrap:break-word;overflow-wrap:anywhere. Specificity (0,3,1)
+   beats both .bighero .team (0,2,1) and .match .side .team (0,3,0). */
+.bighero .match .side .team{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal;word-wrap:normal;max-width:100%}
+/* v12.x-no-logo-shadow (the user's ask): 'Remove the shadows behind all
+   club teams logos it created noise.' All logo drop-shadows + ring
+   shadows are RETIRED — the hero crests, the topspot crests, and any
+   other .logo elements now render flat with just their circular border
+   + background plate (no filter:drop-shadow, no box-shadow ring). The
+   crest image + the navy circle plate remain; only the shadow noise
+   is gone. Dark + light mode both clean. */
+.bighero .logo{filter:none}
+[data-theme="light"] .bighero .logo{filter:none}
+#topspotCard .spotitem .logo{box-shadow:none;filter:none;width:54px;height:54px;font-size:24px}
 /* v12.x-topspot-promoted (the user's ask): the big upcoming matches box is
    a PROMOTED section (right below the hero) — its club crests are LARGER
    than the regular match boxes (51px desktop / 46px mobile) to mark the
@@ -6467,6 +6472,20 @@ function initTz(){
     if(groups.Etc) keys.push("Etc");
     keys.forEach(function(g){ addGroup(tzGroupLabel(g), groups[g]); });
     try{ sel.value = curTz(); }catch(e){}
+    // v12.x-tz-search-fix: when the filter narrows results, the <select>
+    // defaults to a dropdown (size=1) which shows BLANK if curTz() isn't
+    // in the filtered list (the user typed 'sydney' but the select shows
+    // nothing — they have to click the arrow to see the 1 result). Fix:
+    // (1) if the current selection is empty (curTz not in filtered list),
+    //     default to the first option so the user immediately sees a result.
+    // (2) switch the select to a LISTBOX (size>1) when filtered so ALL
+    //     results are visible without clicking the dropdown arrow. When
+    //     no filter, keep it a compact dropdown (size=1) so the full 458-
+    //     option list doesn't dominate the panel. The listbox size scales
+    //     with result count (min 1, max 8 rows).
+    if(!sel.value && sel.options.length){ sel.value = sel.options[0].value; }
+    var n = sel.options.length;
+    sel.size = q ? Math.min(Math.max(n, 1), 8) : 1;
   };
   render();
   if(filter) filter.oninput = render;
