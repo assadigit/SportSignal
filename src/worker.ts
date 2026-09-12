@@ -4847,7 +4847,12 @@ body.joinsticky{padding-bottom:88px}
    11px/700 so the kickoff-time pill reads as the primary headline number. */
 .bigbar-pct{display:none !important}
 .bigbar-pct:empty{display:none}
-.bigbar-clock{font-weight:700;color:var(--countdown);font-variant-numeric:tabular-nums}
+.bigbar-clock{font-weight:700;color:#22c55e;font-variant-numeric:tabular-nums}
+/* v12.x-green-clock (the user's ask): the hero countdown clock is now GREEN
+   (matches the .bigbar-fill progress bar gradient #22c55e → #16a34a). Was
+   var(--countdown) (light blue #93c5fd dark / #2563eb light). Green keeps
+   the clock visually unified with the progress bar that fills under it. */
+[data-theme="light"] .bigbar-clock{color:#16a34a}
 /* v12.39-minbar: the track is a THIN 4px hairline, flush at the bottom of
    the .bigbar container — minimal, integrated into the container rather
    than a heavy 14px rectangle. Fully rounded (border-radius:999px) so the
@@ -5210,9 +5215,14 @@ body.joinsticky{padding-bottom:88px}
    and #uclSpotCard h2 (also 0,1,1) because it came later in the cascade —
    replacing the navy gradient with rgba(15,23,42,.04) (near-white) while
    keeping color:#fff, producing white-on-near-white unreadable text. These
-   rules have specificity (0,2,1) so they WIN, re-applying the navy gradient +
-   white text in light mode. */
-[data-theme="light"] .uclcard h2,[data-theme="light"] #uclSpotCard h2{color:#fff;background:linear-gradient(135deg,#0e2058,#1b3480);border-color:rgba(126,161,245,.30);border-inline-start-color:#7ea1f5}
+   rules have specificity (0,2,1) so they WIN.
+   v12.x-light-ucl (the user's ask): in LIGHT mode the dark navy
+   (#0e2058 → #1b3480) background acts as a CTA — it grabs attention from
+   the hero card. Switched to a LIGHTER blue gradient (#dbeafe → #bfdbfe,
+   blue-100 → blue-200) with dark navy TEXT (#0f172a) so the UCL headers
+   read as soft brand-tinted plates, not loud CTAs. Dark mode keeps the
+   navy gradient + white text. */
+[data-theme="light"] .uclcard h2,[data-theme="light"] #uclSpotCard h2{color:#0f172a;background:linear-gradient(135deg,#dbeafe,#bfdbfe);border-color:rgba(37,99,235,.22);border-inline-start-color:#3b82f6}
 /* v12.11: the .topspot golden box chrome is RETIRED \u2014 the hero card and the
    big-matches box are plain .card sections now, uniform with every other
    card on the page (the \u{1F525} heading carries the "big" signal; per the user
@@ -5243,6 +5253,10 @@ body.joinsticky{padding-bottom:88px}
    title), pushed to the far edge with margin-inline-start:auto. The
    order is: [logo] [title] ... [matchday]. */
 .uclh2 .ucl-md{margin-inline-start:auto;font-size:12px;color:rgba(255,255,255,.92);font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:2px 10px;flex-shrink:0;white-space:nowrap}
+/* v12.x-light-ucl: the matchday chip needs dark ink + a darker pill on the
+   lighter blue h2 plate in light mode (the white-on-translucent-white pill
+   was designed for the navy plate). */
+[data-theme="light"] .uclh2 .ucl-md{color:#1e3a8a;background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.28)}
 .ucl-md{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:600}
 .ucl-stand-wrap{position:relative;margin-top:10px}
 /* v12.27 (review item 2): the star tiles sit strictly BEHIND the table now \u2014
