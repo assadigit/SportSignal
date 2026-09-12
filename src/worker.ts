@@ -4844,8 +4844,8 @@ body.joinsticky{padding-bottom:88px}
    on the hero card's own background, with no separate container. The
    border-bottom divider is also retired — the thin 4px track is the
    only divider. padding adjusted for the label/clock/pct row + track. */
-.bighero .bigbar{margin:0 0 12px;padding:2px 2px 8px;background:linear-gradient(90deg,rgba(2,6,23,.46),rgba(2,6,23,.18) 16%,rgba(2,6,23,.18) 84%,rgba(2,6,23,.46));border:none;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
-[data-theme="light"] .bighero .bigbar{background:linear-gradient(90deg,rgba(248,250,252,.6),rgba(248,250,252,.32) 16%,rgba(248,250,252,.32) 84%,rgba(248,250,252,.6))}
+.bighero .bigbar{margin:0 0 12px;padding:2px 2px 8px;background:transparent;border:none;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+[data-theme="light"] .bighero .bigbar{background:transparent}
 .bighero .bigbar-clock{text-shadow:0 1px 10px rgba(2,6,23,.55)}
 [data-theme="light"] .bighero .bigbar-clock{text-shadow:0 1px 8px rgba(248,250,252,.9)}
 /* v12.38-hero: the hero's .bigbar-pct already inherits the neutral pill token
