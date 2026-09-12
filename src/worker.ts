@@ -5759,6 +5759,7 @@ footer{margin-top:0}
 <div class="card" id="liveCard" style="display:none">
 <h2 data-i="hLive">\u{1F534} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0632\u0646\u062F\u0647</h2>
 <div id="liveMatches"><div class="empty" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div></div>
+</div>
 <div class="card" id="topspotCard" style="display:none">
 <h2 data-i="hLgNext" id="topSpotTitle">\u{1F525} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0628\u0632\u0631\u06AF \u067E\u06CC\u0634\u200C\u0631\u0648</h2>
 <div id="topSpot"><div class="empty" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div></div>
