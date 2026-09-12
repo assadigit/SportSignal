@@ -4936,7 +4936,7 @@ body.joinsticky{padding-bottom:88px}
 [data-theme="light"] .hero-video::after{background:rgba(248,250,252,.42)}
 /* v12.50: hero-data is vertically centered — the match row + the countdown
    bar sit in the MIDDLE of the hero card, not aligned to the top. */
-.hero-data{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:60px 18px 18px}
+.hero-data{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:80px 18px 18px}
 /* v12.23: the sweep MOVED from .card.bighero::after (unclipped \u2014 the heartbeat-scrollbar bug) into the already-clipped .hero-fx layer, so the light band can wash over the stage but never escape the card. Same gradient, same rhythm. v12.26: the fx layer sits ABOVE the video + crests and BELOW the data (the user's ladder: video < logos < css effects < data). */
 .hero-fx::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.05) 44%,rgba(255,255,255,.13) 50%,rgba(255,255,255,.05) 56%,transparent 68%);transform:translateX(-140%);animation:hero-sweep 6.5s cubic-bezier(.55,0,.45,1) infinite}
 @keyframes hero-sweep{0%{transform:translateX(-140%)}42%,100%{transform:translateX(140%)}}
