@@ -4874,7 +4874,11 @@ body.joinsticky{padding-bottom:88px}
    heartbeat + pulsing label; live = the red stage around the live bar.
    Every layer is an opacity/transform animation (compositor friendly) and
    the global prefers-reduced-motion rule silences all of them. */
-.card.bighero{position:relative;overflow:hidden;border-radius:16px;margin:0;border-color:rgba(52,211,153,.38);background-image:radial-gradient(130% 100% at 50% -30%,rgba(52,211,153,.18),transparent 55%),linear-gradient(168deg,rgba(6,95,70,.34),rgba(2,6,23,.14))}
+/* v12.53: min-height so the hero card doesn't collapse when .hero-data is
+   position:absolute (the data layer is now absolute to center the content).
+   240px on phones gives enough room for the match row + countdown bar.
+   Desktop gets a larger min-height via the media query below. */
+.card.bighero{position:relative;overflow:hidden;border-radius:16px;margin:0;min-height:240px;border-color:rgba(52,211,153,.38);background-image:radial-gradient(130% 100% at 50% -30%,rgba(52,211,153,.18),transparent 55%),linear-gradient(168deg,rgba(6,95,70,.34),rgba(2,6,23,.14))}
 [data-theme="light"] .card.bighero{border-color:rgba(5,150,105,.38);background-image:radial-gradient(130% 100% at 50% -30%,rgba(16,185,129,.20),transparent 55%),linear-gradient(168deg,rgba(209,250,229,.70),rgba(255,255,255,.30))}
 /* v12.27 (review item 1): HERO CLIP \u2014 the card itself now clips everything to
    its own 16px radius (overflow:hidden). Before, only the inner layers clipped
@@ -4932,7 +4936,7 @@ body.joinsticky{padding-bottom:88px}
 [data-theme="light"] .hero-video::after{background:rgba(248,250,252,.42)}
 /* v12.50: hero-data is vertically centered — the match row + the countdown
    bar sit in the MIDDLE of the hero card, not aligned to the top. */
-.hero-data{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;justify-content:center;gap:12px}
+.hero-data{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:18px}
 /* v12.23: the sweep MOVED from .card.bighero::after (unclipped \u2014 the heartbeat-scrollbar bug) into the already-clipped .hero-fx layer, so the light band can wash over the stage but never escape the card. Same gradient, same rhythm. v12.26: the fx layer sits ABOVE the video + crests and BELOW the data (the user's ladder: video < logos < css effects < data). */
 .hero-fx::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.05) 44%,rgba(255,255,255,.13) 50%,rgba(255,255,255,.05) 56%,transparent 68%);transform:translateX(-140%);animation:hero-sweep 6.5s cubic-bezier(.55,0,.45,1) infinite}
 @keyframes hero-sweep{0%{transform:translateX(-140%)}42%,100%{transform:translateX(140%)}}
@@ -5546,7 +5550,7 @@ h2{font-size:15.5px;padding:8px 12px}
 .match .side.away{flex-direction:column-reverse}
 /* v12.32: direct children only (the hero's score is NESTED inside its .kick
    column \u2014 the old descendant selector would have re-flowed it). */
-.match>.kick,.match>.score{order:1;flex:0 0 auto;align-self:flex-start;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin-top:0;min-width:0}
+.match>.kick,.match>.score{order:1;flex:0 0 auto;align-self:center;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin-top:0;min-width:0}
 .bighero .match>.kick{height:auto;margin-top:3px;gap:4px}
 .logo{width:46px;height:46px;font-size:20px}
 .score{font-size:15px}
@@ -5573,7 +5577,7 @@ h2{font-size:15.5px;padding:8px 12px}
    v12.28 display-size time chip (20px) and the face-off columns are
    untouched \u2014 the ask is less noise, not a smaller headline. */
 .bighero .bigbar-pct{display:none}
-.bighero .bigbar{margin-bottom:14px;padding:2px 2px 10px}
+.bighero .bigbar{margin-bottom:0;padding:2px 2px 8px}
 /* v12.32: retired .bighero .kick{margin-top:8px} \u2014 the kick column now sits
    BETWEEN the crests (rule above: margin-top:3px centers its chip on the
    46px crest line), not on its own line below the face-off. */
