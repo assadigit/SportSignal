@@ -84,10 +84,10 @@ ok(src.includes('lastUpd:"Last updated: %s"') && src.includes('function fmtStamp
 ok(src.includes("function tickBigBar(){ if(DATA && DATA.upcoming) updateBigBar(); renderSync(); }"), "G6 the stamp re-ages every second tick");
 
 console.log("H) version bump");
-ok(src.includes('const VERSION = "12.27-fixpack";'), "H1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۷/g) || []).length === 3, "H2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.27 — guaranteed/g) || []).length === 3, "H3 (v12.26 roll) en ver strings all v12.26");
-ok(pkg.version === "12.27.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 (v12.26 roll) package.json 12.27.0 + the v12.22 suite wired");
+ok(src.includes('const VERSION = "12.28-herostage";'), "H1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۸/g) || []).length === 3, "H2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
+ok((src.match(/v12\.28 — the video stage/g) || []).length === 3, "H3 (v12.26 roll) en ver strings all v12.26");
+ok(pkg.version === "12.28.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 (v12.26 roll) package.json 12.28.0 + the v12.22 suite wired");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.20-uxpolish checks)`);
 process.exit(fail ? 1 : 0);

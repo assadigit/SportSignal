@@ -33,7 +33,8 @@ function ok(cond, label){ if(cond){ pass++; console.log("  ✔ " + label); } els
 console.log("A) VIDEO AUTOPLAY — the kicker (the user: \"it must be auto play\")");
 ok(src.includes('var heroVideoKick = function(){'), "A1 heroVideoKick defined and");
 ok(src.includes('heroVideoKick();'), "A2 …invoked at boot, right after the reduced-motion guard");
-ok(src.includes('var hv = document.querySelector(".hero-video video");') && src.includes('hv.pause();'), "A3 prefers-reduced-motion still freezes the stage (pause preserved)");
+// v12.28 superseded: the reduced-motion hard-pause is RETIRED (the user asked twice that the video autoplay unconditionally) — asserted strictly in check-v1228.js.
+ok(src.includes('var hv = document.querySelector(".hero-video video");') && !src.includes('if(RM){ hv.pause(); return; }'), "A3 (v12.28) the reduced-motion pause is GONE — autoplay wins");
 ok(src.includes('hv.addEventListener("canplay", kick);') && src.includes('hv.addEventListener("loadeddata", kick);'), "A4 play() re-attempted on canplay + loadeddata");
 ok(src.includes('document.addEventListener("visibilitychange", function(){ if(!document.hidden) kick(); });'), "A5 play() re-attempted when the tab becomes visible");
 ok(src.includes('["pointerdown","keydown","touchstart"].forEach(function(ev){'), "A6 the FIRST pointer/key/touch gesture unlocks play (once, passive)");
@@ -50,7 +51,8 @@ ok(src.includes('#topbar,.herowrap,footer{grid-column:1/-1}'), "B6 the ≥1440 g
 ok(src.includes('var hw = card.parentNode;') && src.includes('hw.classList.contains("herowrap") && hw.dataset.urgent !== urgent) hw.dataset.urgent = urgent;', ), "B7 updateBigBar mirrors data-urgent onto the wrapper (ladder drives both pseudos)");
 ok(src.includes('.herowrap[data-urgent="soon"]::before{box-shadow:0 0 46px rgba(245,158,11,.26);animation-duration:1.7s}'), "B8 the escalation ladder's outer glow selectors follow the wrapper");
 ok(src.includes('.hero-wm{position:absolute;inset:0;z-index:1;border-radius:16px;overflow:hidden;pointer-events:none;filter:brightness(1.28) saturate(1.05)}'), "B9 the crest filter MOVED to the .hero-wm layer (a filtered child can escape WebKit border-radius clipping; a filtered container clips its own children)");
-ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.196;transform:translateY(-50%)}'), "B10 the imgs themselves are unfiltered now (same .196, same canvas)");
+// v12.28 superseded: the watermark opacity dropped another 20% (.196 → .157, the user's ask) — strictly asserted in check-v1228.js.
+ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.1'), "B10 (v12.28) the imgs stay unfiltered (opacity now .157, same canvas)");
 ok(src.includes('[data-theme="light"] .hero-wm{filter:none}'), "B11 light theme: the layer filter off");
 ok(src.includes('.bighero .bigbar{margin:0 0 12px;padding:2px 2px 8px;background:linear-gradient(90deg,rgba(2,6,23,.46),rgba(2,6,23,.18) 16%'), "B12 the countdown bar's scrim is back (clock + ۸۸٪ no longer sit on the artwork)");
 ok(src.includes('.bighero .bigbar-clock{text-shadow:0 1px 10px rgba(2,6,23,.55)}'), "B13 the clock carries a text-shadow");
@@ -103,12 +105,12 @@ ok(src.includes('.wkdone{color:var(--muted);font-weight:700;font-size:11.5px;bac
 ok(src.includes('.venue{display:inline-block;background:var(--t-neutral-soft);'), "G8 venue on the neutral-soft token");
 ok(src.includes('--danger:var(--t-danger);') && (src.match(/--danger:var\(--t-danger\)/g) || []).length === 2, "G9 --danger resolves through the token (both themes)");
 
-console.log("H) VERSION");
-ok(src.includes('const VERSION = "12.27-fixpack";'), "H1 VERSION = 12.27-fixpack");
-ok((src.match(/ver:"نسخه ۱۲\.۲۷/g) || []).length === 3, "H2 fa ver strings (public + login + admin dicts) all ۱۲.۲۷");
-ok((src.match(/data-i="ver">نسخه ۱۲\.۲۷/g) || []).length === 1, "H3 the static footer ver div ۱۲.۲۷");
-ok((src.match(/ver:"v12\.27 — guaranteed/g) || []).length === 3, "H4 en ver strings all v12.27");
-ok(pkg.version === "12.27.0" && pkg.scripts.test.includes("check-v1227.js"), "H5 package.json 12.27.0 + this suite wired into npm test");
+console.log("H) VERSION (v12.28 superseded — strict 12.28 assertions live in check-v1228.js)");
+ok(/const VERSION = "12\.2[78]-/.test(src), "H1 VERSION stays a 12.2x release tag");
+ok((src.match(/ver:"نسخه ۱۲\.۲/g) || []).length >= 3, "H2 fa ver strings present (public + login + admin dicts)");
+ok((src.match(/data-i="ver">نسخه ۱۲\.۲/g) || []).length === 1, "H3 the static footer ver div present");
+ok((src.match(/ver:"v12\.2/g) || []).length >= 3, "H4 en ver strings present");
+ok(pkg.scripts.test.includes("check-v1227.js"), "H5 this suite stays wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.27-fixpack checks)`);
 process.exit(fail ? 1 : 0);

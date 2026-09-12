@@ -29,10 +29,10 @@ ok(!src.includes('.brand .brand-ink') && !src.includes('.brand .brand-white') &&
 ok(!src.includes('.brand img{height:50px}'), "A6 (v12.26 roll) the separate phone rule is gone — the base 50px serves PC and phones alike");
 
 console.log("B) background crests — opacity reduced by 30% (v12.26 roll: .28 → .196)");
-ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.196;transform:translateY(-50%)}'), "B1 (v12.27 roll) dark: .196 (imgs unfiltered — the brightness moved to the clipped .hero-wm layer), same big 320px canvas");
-ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.196}') && src.includes('[data-theme="light"] .hero-wm{filter:none}'), "B2 (v12.27 roll) light: .196, the layer filter off");
-ok(src.includes('@media (max-width:600px){.hero-wm img{width:210px;height:210px;opacity:.196}'), "B3 (v12.26 roll) phones: 210px at .196");
-ok((src.match(/opacity:\.196/g) || []).length === 3, "B4 (v12.26 roll) exactly three .196 rules (dark + light + phone) — no stray .28 left");
+ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.157;transform:translateY(-50%)}'), "B1 (v12.27 roll) dark: .157 (imgs unfiltered — the brightness moved to the clipped .hero-wm layer), same big 320px canvas");
+ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.157}') && src.includes('[data-theme="light"] .hero-wm{filter:none}'), "B2 (v12.27 roll) light: .157, the layer filter off");
+ok(src.includes('@media (max-width:600px){.hero-wm img{width:210px;height:210px;opacity:.157}'), "B3 (v12.26 roll) phones: 210px at .157");
+ok((src.match(/opacity:\.157/g) || []).length === 3, "B4 (v12.26 roll) exactly three .157 rules (dark + light + phone) — no stray .28 left");
 
 console.log("C) MATCH BOXES — details inside the box, one aligned line");
 ok(src.includes('.mrow,.spotitem{border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin:0 0 10px;background:var(--rowsurf);transition:background .15s,border-color .15s}'), "C1 (v12.27 roll) every fixture is a real bordered box on the SHARED surface (border + radius + padding + gap below)");
@@ -44,7 +44,7 @@ ok((src.match(/row\.appendChild\(hs\); row\.appendChild\(kt\); row\.appendChild\
 ok(src.includes('.kick{flex:0 0 92px;display:flex;align-items:center;justify-content:center;min-width:0}'), "C7 the kick slot is a FIXED 92px centered slot");
 ok(src.includes('.score{font-weight:800;font-size:17px;color:var(--score);flex:0 0 92px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}'), "C8 the score slot widened 72px → 92px — EXACTLY the kick slot's width, so team columns line up across every fixture");
 ok(src.includes('.kick .countdown{margin:0;font-size:13px;padding:4px 12px}'), "C9 the time chip is styled for the center stage (no info-line margins)");
-ok(src.includes('.score{font-size:15px;flex-basis:80px}') && src.includes('.kick{flex:0 0 80px}') && src.includes('.kick .countdown{font-size:11.5px;padding:3px 9px}'), "C10 phones: both slots 80px — same aligned line on mobile");
+ok(src.includes('.match .kick,.match .score{order:2;flex:1 1 100%') && src.includes('.kick .countdown{font-size:11.5px;padding:3px 9px}'), "C10 (v12.28 roll) phones: time/score ride ONE centered line under the face-off columns — no fixed 80px slots");
 ok(src.includes('.mrow,.spotitem{padding:8px 10px}'), "C11 phone boxes compact their padding (room for the center slot)");
 ok((src.match(/kc\.textContent = fmtKick\(m\.utcDate\)/g) || []).length === 2, "C12 the kickoff TIME text rides the center slot in both builders");
 ok(src.includes('cd.className = "wkdone";') && src.includes('cd.textContent = "⌛ " + T("wkDone");'), "C13 expired rows keep the «⌛ پایان‌یافته» marker in their info line (v12.17 semantics preserved)");
@@ -61,11 +61,11 @@ ok(src.includes('html{overflow-x:hidden;scroll-behavior:smooth}'), "D7 smooth an
 ok(src.includes('var foot = document.getElementById("about");') && src.includes('var apply = function(){ var show = past && !footIn; stick.classList.toggle("show", show); document.body.classList.toggle("joinsticky", show); };'), "D8 the sticky join bar stands DOWN once the footer is in view — a «درباره» anchor lands on clean content, and the footer's own bot link takes the CTA duty at page end");
 
 console.log("E) version + wiring");
-ok(src.includes('const VERSION = "12.27-fixpack";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۷ — پخش خودکار/g) || []).length === 3, "E2 (v12.27 roll) fa ver strings (public + login + admin) all ۱۲.۲۷");
-ok((src.match(/v12\.27 — guaranteed/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
-ok((src.match(/نسخه ۱۲\.۲۷ — پخش خودکار/g) || []).length === 4, "E4 (v12.27 roll) fa ver strings + the admin static footer = 4 spots");
-ok(pkg.version === "12.27.0" && pkg.scripts.test.includes("check-v1225.js"), "E5 (v12.26 roll) package.json 12.27.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.28-herostage";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۸ — صحنهٔ ویدیویی/g) || []).length === 3, "E2 (v12.27 roll) fa ver strings (public + login + admin) all ۱۲.۲۷");
+ok((src.match(/v12\.28 — the video stage/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
+ok((src.match(/نسخه ۱۲\.۲۸ — صحنهٔ ویدیویی/g) || []).length === 4, "E4 (v12.27 roll) fa ver strings + the admin static footer = 4 spots");
+ok(pkg.version === "12.28.0" && pkg.scripts.test.includes("check-v1225.js"), "E5 (v12.26 roll) package.json 12.28.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.25-alignment checks)`);
 process.exit(fail ? 1 : 0);

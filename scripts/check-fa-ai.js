@@ -166,10 +166,10 @@ const collectorData = {
   // C11: binding + versions
   const toml = fs.readFileSync("wrangler.toml", "utf8");
   ok(/\[ai\]/.test(toml) && /binding = "AI"/.test(toml), "C11a wrangler.toml carries the [ai] binding");
-  ok(src.includes('const VERSION = "12.27-fixpack";'), "C11b VERSION = 12.26-herostage");
+  ok(src.includes('const VERSION = "12.28-herostage";'), "C11b VERSION = 12.26-herostage");
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  ok(pkg.version === "12.27.0", "C11c package.json 12.27.0");
-  ok((src.match(/نسخه ۱۲\.۲۷/g) || []).length >= 3 && (src.match(/v12\.27 — guaranteed/g) || []).length >= 3, "C11d ver strings bumped across the page dicts + static footer");
+  ok(pkg.version === "12.28.0", "C11c package.json 12.28.0");
+  ok((src.match(/نسخه ۱۲\.۲۸/g) || []).length >= 3 && (src.match(/v12\.28 — the video stage/g) || []).length >= 3, "C11d ver strings bumped across the page dicts + static footer");
 
   console.log(`\n${pass} passed, ${fail} failed (v12.17-fai checks)`);
   process.exit(fail ? 1 : 0);

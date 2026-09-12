@@ -4,6 +4,66 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.28-herostage] — 2026-09-20 (the video actually LOOKS like it plays, the considerably-larger next-big-match countdown, the phone face-off rows, 20% fainter crest watermarks)
+
+User asks: "Video still doesnt play. (it's just a picture) - on chrome";
+"<span class=\"countdown\">🕒 ۱۹:۰۰</span> this must be bigger for nexxt big
+upcoming match. make it considerably larger. Also add these below it:
+<div class=\"uclspot-info\">…" (comp logo + derby badge + the date/time line +
+the share row); "still reduce opacity of CLub's logo on the background by
+20%"; "find out why the place is limited in mobile mode, so a club name like
+Manchester United, became two rows, which is ugly. (i think it's because of
+padding and spacing.)"
+
+- VIDEO (the "just a picture" diagnosis, two root causes stacked):
+  a headless-Chromium audit showed the clip MECHANICALLY playing (currentTime
+  advancing, no error) — but the clip's own motion is subtle (~4% per-channel
+  frame deltas), and the stage was tuned to bury it: video opacity .42 + a
+  .58/.34 dark scrim + brightness(.92) left the *perceived* motion under
+  ~2/255 — a playing video indistinguishable from a still. And any OS with
+  prefers-reduced-motion hit the explicit hv.pause() and got the frozen
+  first frame. Fix, both prongs: the video now runs at **.78** with
+  saturate(1.18) brightness(1.02) and only a light .38/.18 scrim (light
+  .44/.26) — the live text keeps its own plates (the bigbar's v12.27
+  gradient, the rowsurf row boxes), so nothing sits bare on the busier
+  stage; and the reduced-motion hard-pause is **RETIRED** (the user has now
+  asked twice, unconditionally, that it autoplay — the CSS fx layers still
+  honor the media query). `hv.muted = true` is also set as a JS PROPERTY
+  (Safari's autoplay gate reads the property, not just the attribute). The
+  whole v12.27 kicker ladder stays (boot / canplay / loadeddata /
+  visibility / first gesture / 5s×6 retry).
+- BIG HERO COUNTDOWN: the next-big-match kickoff chip (🕒 HH:MM) jumps from
+  a 13px inline chip to a **display-size headline** — 24px/800 PC, 20px on
+  phones, tabular digits, its own soft plate + hairline ring + drop shadow,
+  in an auto-sized center slot (the fixed 92px slot retired in the hero
+  only; every other box keeps the compact chip). The hero's LIVE score
+  takes the same display treatment; the hero's info line runs one step
+  larger (13.5px) under it.
+- INFO LINE BELOW (the user's pasted structure, kept and confirmed): the
+  `.uclspot-info` line — comp logo + league name, the 🔥 derby badge, the
+  date/time text, the ⋯ share popover (WhatsApp / Telegram / Email / Google
+  Calendar / copy) — renders directly below the (now big) time in the hero,
+  as in every spotitem.
+- PHONE FACE-OFF ROWS (the two-row club names): diagnosed — the horizontal
+  A [time] B row inside a ~314px phone box (2×12 body + 2×10 card + 2×10
+  spotitem + 2×6 match padding + 2×8 gaps + the fixed 80px time slot +
+  2×46px crests + 2×8 side gaps) left each name column ~55px, so even
+  «منچستریونایتد» wrapped (measured: 2 lines). At ≤600px the row now
+  stacks as a FACE-OFF: both sides on one line as columns (crest above its
+  centered, full-half-width name — never a 55px sliver; the away side
+  mirrors via column-reverse), and the time/score slot moves to its OWN
+  centered line below via flex order — the v12.25 rule "the time sits with
+  ITS two teams" survives vertically. Padding trimmed around the row (card
+  10→9, match 10px 6px→6px 2px, gap 8→6). The hero's 20px big chip centers
+  on that same full-width line.
+- CREST WATERMARKS: another 20% fainter — .196 → **.157** on dark, light
+  AND the phone rule (the user's third consecutive fade request).
+- Gates: `scripts/check-v1228.js` (37 assertions: A video stage, B big
+  countdown, C info-line order, D watermark opacity, E phone face-off, F
+  versions) wired into `npm test`; `check-v1227.js` A3/B10/H relaxed with
+  v12.28-supersession notes (the RM pause and the .196 opacity are the two
+  intentional behavior changes).
+
 ## [12.27-fixpack] — 2026-09-19 (guaranteed video autoplay + the ten-point design review: hero crest clip, fainter stars, the utility cluster, the Pts header, the green صدر جدول tag, winner scores, 44px touch targets, isolated Latin names, the shared match-card surface, semantic status tokens)
 
 User asks: "the background video doesnt play it must be auto play"; review

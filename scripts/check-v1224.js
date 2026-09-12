@@ -35,10 +35,10 @@ ok(src.includes('#topbar,.herowrap,footer{grid-column:1/-1}') && src.includes('#
 ok(src.includes('var cta = document.querySelector("a.cta"), stick = document.getElementById("joinSticky");'), "A11 the sticky join bar still watches the (now header) CTA — scrolled-past semantics unchanged");
 
 console.log("B) the watermark: ~40% presence, bigger, more prominent");
-ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.196;transform:translateY(-50%)}'), "B1 (v12.27 roll) 320px at opacity .196 (imgs unfiltered — the filter moved to the clipped .hero-wm layer) — the v12.25 .28 reduced by another 30% (the user: \"it's still too visible\")");
+ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.157;transform:translateY(-50%)}'), "B1 (v12.27 roll) 320px at opacity .157 (imgs unfiltered — the filter moved to the clipped .hero-wm layer) — the v12.28 roll: .196 reduced by another 20% (the user: 'still reduce opacity by 20%') (the user: \"it's still too visible\")");
 ok(src.includes('.hero-wm img:first-child{inset-inline-start:-48px}') && src.includes('.hero-wm img:last-child{inset-inline-end:-48px}'), "B2 deeper edge bleed (-48px, was -22px) — the crest reads EXPANDED, cropped safely by the clipped layer");
-ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.196}') && src.includes('[data-theme="light"] .hero-wm{filter:none}'), "B3 (v12.27 roll) light theme: .196, the layer filter off");
-ok(src.includes('@media (max-width:600px){.hero-wm img{width:210px;height:210px;opacity:.196}'), "B4 (v12.26 roll) phones: 210px at .196");
+ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.157}') && src.includes('[data-theme="light"] .hero-wm{filter:none}'), "B3 (v12.27 roll) light theme: .196, the layer filter off");
+ok(src.includes('@media (max-width:600px){.hero-wm img{width:210px;height:210px;opacity:.157}'), "B4 (v12.26 roll) phones: 210px at .157");
 ok(src.includes('.hero-wm::after{content:"";position:absolute;inset:0;background:radial-gradient(58% 62% at 50% 58%,rgba(2,6,23,.32),transparent 72%)}') && src.includes('[data-theme="light"] .hero-wm::after{background:radial-gradient(58% 62% at 50% 58%,rgba(248,250,252,.38),transparent 72%)}'), "B5 a soft radial SCRIM behind the card's center — the bolder crests stay background, the countdown/names stay readable (WCAG)");
 ok(src.includes('.bighero .team{text-shadow:0 1px 12px rgba(2,6,23,.65)}') && src.includes('[data-theme="light"] .bighero .team{text-shadow:0 1px 12px rgba(255,255,255,.8)}'), "B6 the hero team names gain a gentle text shadow (dark: navy glow, light: white glow) for separation on top of the watermarks");
 
@@ -59,11 +59,11 @@ ok(src.includes('if(pct) pct.textContent = pctTxt(100);'), "D9 live state: the c
 ok(!src.includes('var q = rem/(14*864e5);'), "D10 the v12.20 DRAIN formula is gone — the fill direction now matches the user's 0→100 loading mental model");
 
 console.log("E) version bump");
-ok(src.includes('const VERSION = "12.27-fixpack";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۷/g) || []).length === 3, "E2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.27 — guaranteed/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
-ok((src.match(/نسخه ۱۲\.۲۷/g) || []).length === 4, "E4 (v12.26 roll) fa ver strings + the admin static footer = 4 spots");
-ok(pkg.version === "12.27.0" && pkg.scripts.test.includes("check-v1224.js"), "E5 (v12.26 roll) package.json 12.27.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.28-herostage";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۸/g) || []).length === 3, "E2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
+ok((src.match(/v12\.28 — the video stage/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
+ok((src.match(/نسخه ۱۲\.۲۸/g) || []).length === 4, "E4 (v12.26 roll) fa ver strings + the admin static footer = 4 spots");
+ok(pkg.version === "12.28.0" && pkg.scripts.test.includes("check-v1224.js"), "E5 (v12.26 roll) package.json 12.28.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.25-alignment checks)`);
 process.exit(fail ? 1 : 0);
