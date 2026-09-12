@@ -4961,6 +4961,7 @@ body.joinsticky{padding-bottom:88px}
    the whole visual. */
 .bighero .team{font-size:16px;font-weight:800}
 .bighero .logo{box-shadow:0 0 12px rgba(52,211,153,.35)}
+#topspotCard .spotitem .logo{box-shadow:0 2px 10px rgba(2,6,23,.25),0 0 0 1px rgba(148,163,184,.1)}
 /* v12.24 (the user's ask): the countdown hero's team crests DOUBLE on PC
    (51px \u2192 102px, the monogram fallback scales with the circle) \u2014 the
    face-off reads like a big-match poster. Phones keep their own 46px size
@@ -5083,6 +5084,7 @@ body.joinsticky{padding-bottom:88px}
 #liveCard .kick .score{font-size:14px;flex:0 0 auto}
 #liveCard .uclspot-info{display:none}
 #liveCard .sharewrap{display:none}
+.bighero .sharewrap{display:none}
 .lmin{display:inline-block;background:rgba(37,99,235,.12);color:var(--accent);border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;vertical-align:middle}
 [data-theme="light"] .lmin{background:rgba(37,99,235,.1)}
 .scorers{flex:1 1 100%;margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
