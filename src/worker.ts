@@ -5002,7 +5002,17 @@ body.joinsticky{padding-bottom:88px}
    so the shadow doesn't print harsh on the pale stage. */
 .bighero .logo{filter:drop-shadow(0 12px 28px rgba(0,0,0,.42)) drop-shadow(0 4px 12px rgba(0,0,0,.28))}
 [data-theme="light"] .bighero .logo{filter:drop-shadow(0 10px 24px rgba(15,23,42,.22)) drop-shadow(0 4px 10px rgba(15,23,42,.14))}
-#topspotCard .spotitem .logo{box-shadow:0 2px 10px rgba(2,6,23,.25),0 0 0 1px rgba(148,163,184,.1)}
+#topspotCard .spotitem .logo{box-shadow:0 0 0 1px rgba(148,163,184,.1);filter:drop-shadow(0 4px 10px rgba(2,6,23,.25));width:54px;height:54px;font-size:24px}
+/* v12.x-topspot-promoted (the user's ask): the big upcoming matches box is
+   a PROMOTED section (right below the hero) — its club crests are LARGER
+   than the regular match boxes (51px desktop / 46px mobile) to mark the
+   promotion. 64px desktop / 54px mobile, between the regular 51/46 and
+   the hero's 102/46. Font-size scales for the monogram fallback (28/24).
+   The soft shadow switched from box-shadow to filter:drop-shadow() (same
+   fix as the hero — avoids the overflow:hidden + border-radius
+   square-shadow Chromium bug). The 1px ring stays as box-shadow (zero-blur
+   box-shadow respects border-radius). */
+@media (min-width:601px){#topspotCard .spotitem .logo{width:64px;height:64px;font-size:28px}}
 /* v12.24 (the user's ask): the countdown hero's team crests DOUBLE on PC
    (51px \u2192 102px, the monogram fallback scales with the circle) \u2014 the
    face-off reads like a big-match poster. Phones keep their own 46px size
