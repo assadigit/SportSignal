@@ -4789,14 +4789,14 @@ h1{font-size:27px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em}
 #joinSticky svg{flex-shrink:0}
 body.joinsticky{padding-bottom:88px}
 /* v12.12: the .viewtoggle block is retired (the page is always big-only) */
-.bigbar{margin:14px 0 4px;background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.4);backdrop-filter:blur(12px) saturate(1.4);border:1px solid var(--glass-border);border-radius:14px;padding:12px 16px;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+.bigbar{margin:14px 0 4px;background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.4);backdrop-filter:blur(12px) saturate(1.4);border:1px solid var(--glass-border);border-radius:16px;padding:12px 16px;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
 /* v12.38-hero: Fix 3 — the label + clock + percentage now group TOGETHER
    on the same side of the row (was space-between, which parked the label
    at the opposite edge from the values it describes). justify-content:
    flex-end groups them at the inline-end (left in RTL, right in LTR); the
    label sits directly adjacent to the .bb-end group with a small gap
    matching the gap already used between the percentage and the timer. */
-.bigbar-top{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:9px}
+.bigbar-top{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px}
 /* v12.24: the clock and the new PROGRESS PERCENT chip group at the row's
    end \u2014 the percent makes the bar's base explicit (0% far out \u2192 100% at
    kickoff) instead of a mystery fill. */
@@ -4815,12 +4815,19 @@ body.joinsticky{padding-bottom:88px}
 .bigbar-pct{font-size:11px;font-weight:700;color:var(--pill-neutral-ink);background:var(--pill-neutral-bg);border:1px solid var(--pill-neutral-line);border-radius:999px;padding:2px 9px;min-width:46px;text-align:center;box-sizing:border-box;font-variant-numeric:tabular-nums}
 .bigbar-pct:empty{display:none}
 .bigbar-clock{font-weight:700;color:var(--countdown);font-variant-numeric:tabular-nums}
-.bigbar-track{position:relative;height:14px;border-radius:999px;background:rgba(148,163,184,.2);box-shadow:inset 0 1px 3px rgba(0,0,0,.25);overflow:hidden}
-[data-theme="light"] .bigbar-track{background:rgba(15,23,42,.08);box-shadow:inset 0 1px 3px rgba(15,23,42,.12)}
-.bigbar-fill{position:absolute;top:0;left:0;height:100%;width:0%;border-radius:999px;background-image:linear-gradient(90deg,#22c55e,#16a34a),repeating-linear-gradient(45deg,rgba(255,255,255,.25) 0 10px,rgba(255,255,255,0) 10px 20px);background-size:100% 100%,28px 100%;box-shadow:0 0 8px rgba(34,197,94,.28);transition:width .7s cubic-bezier(.16,1,.3,1);animation:bigbar-stripes 1.1s linear infinite}
-@keyframes bigbar-stripes{from{background-position:0 0,0 0}to{background-position:0 0,28px 0}}
-.bigbar-fill.live{background-image:linear-gradient(90deg,#f59e0b,#ef4444),repeating-linear-gradient(45deg,rgba(255,255,255,.3) 0 10px,rgba(255,255,255,0) 10px 20px);box-shadow:0 0 10px rgba(239,68,68,.35);animation:bigbar-stripes .8s linear infinite,bigbar-pulse 1.2s ease-in-out infinite}
-.bigbar-fill.idle{width:12%;animation:bigbar-stripes .9s linear infinite}
+/* v12.39-minbar: the track is a THIN 4px hairline, flush at the bottom of
+   the .bigbar container — minimal, integrated into the container rather
+   than a heavy 14px rectangle. Fully rounded (border-radius:999px) so the
+   ends are pill-shaped. The heavy inset shadow is retired. */
+.bigbar-track{position:relative;height:4px;border-radius:999px;background:rgba(148,163,184,.18);overflow:hidden;margin-top:2px}
+[data-theme="light"] .bigbar-track{background:rgba(15,23,42,.08)}
+/* v12.39-minbar: the fill is the same thin 4px line, fully rounded, with a
+   subtle gradient + a soft glow. The animated stripes + the fuse-tip ::after
+   pseudo-element are retired (they added visual weight the user didn't
+   want). The fill now reads as a clean minimal progress line. */
+.bigbar-fill{position:absolute;top:0;left:0;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#22c55e,#16a34a);box-shadow:0 0 6px rgba(34,197,94,.22);transition:width .7s cubic-bezier(.16,1,.3,1)}
+.bigbar-fill.live{background:linear-gradient(90deg,#f59e0b,#ef4444);box-shadow:0 0 8px rgba(239,68,68,.28);animation:bigbar-pulse 1.2s ease-in-out infinite}
+.bigbar-fill.idle{width:12%}
 @keyframes bigbar-pulse{0%,100%{opacity:1}50%{opacity:.7}}
 /* v12.10/v12.11 HERO CARD: the countdown bar lives INSIDE the hero card,
    flush \u2014 with its own match right below it, so the bar and the match read
@@ -4831,7 +4838,13 @@ body.joinsticky{padding-bottom:88px}
    on the video/crest artwork. A soft horizontal gradient plate guarantees
    contrast for the bar's live text ("no live text ever sits directly on the
    high-contrast part of the crest artwork"). */
-.bighero .bigbar{margin:0 0 12px;padding:2px 2px 8px;background:linear-gradient(90deg,rgba(2,6,23,.46),rgba(2,6,23,.18) 16%,rgba(2,6,23,.18) 84%,rgba(2,6,23,.46));border:none;border-bottom:1px solid var(--border);border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+/* v12.39-minbar: the hero's .bigbar keeps border-radius:0 (flush, since it
+   sits inside the already-clipped .card.bighero). The user's "every corner
+   must be rounded" applies to the visible container elements (the card
+   itself, the pills, the track, the fill); the .bigbar inside the hero is
+   intentionally flush because the hero card's own 16px radius clips it.
+   The border-bottom is retired — the thin 4px track is the only divider. */
+.bighero .bigbar{margin:0 0 12px;padding:8px 16px 10px;background:linear-gradient(90deg,rgba(2,6,23,.46),rgba(2,6,23,.18) 16%,rgba(2,6,23,.18) 84%,rgba(2,6,23,.46));border:none;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
 [data-theme="light"] .bighero .bigbar{background:linear-gradient(90deg,rgba(248,250,252,.6),rgba(248,250,252,.32) 16%,rgba(248,250,252,.32) 84%,rgba(248,250,252,.6))}
 .bighero .bigbar-clock{text-shadow:0 1px 10px rgba(2,6,23,.55)}
 [data-theme="light"] .bighero .bigbar-clock{text-shadow:0 1px 8px rgba(248,250,252,.9)}
@@ -4927,7 +4940,10 @@ body.joinsticky{padding-bottom:88px}
 .bighero .bigbar-clock{font-size:14px;font-weight:800;letter-spacing:.01em}
 #bigbarClock.tick{animation:hero-tick .34s cubic-bezier(.34,1.56,.64,1)}
 @keyframes hero-tick{0%{transform:scale(1)}35%{transform:scale(1.055);filter:brightness(1.4)}100%{transform:scale(1)}}
-.bigbar-fill::after{content:"";position:absolute;top:-2px;bottom:-2px;right:0;width:16px;border-radius:999px;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.9));box-shadow:0 0 14px rgba(74,222,128,.8)}
+/* v12.39-minbar: the .bigbar-fill::after fuse-tip pseudo-element is RETIRED
+   — it was the white-hot burning edge of the old 14px striped bar. The new
+   4px minimal line has no fuse tip; the fill's own gradient + soft glow are
+   the whole visual. */
 .bighero .team{font-size:16px;font-weight:800}
 .bighero .logo{box-shadow:0 0 12px rgba(52,211,153,.35)}
 /* v12.24 (the user's ask): the countdown hero's team crests DOUBLE on PC
