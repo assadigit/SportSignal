@@ -5550,7 +5550,11 @@ h2{font-size:15.5px;padding:8px 12px}
 .match .side.away{flex-direction:column-reverse}
 /* v12.32: direct children only (the hero's score is NESTED inside its .kick
    column \u2014 the old descendant selector would have re-flowed it). */
-.match>.kick,.match>.score{order:1;flex:0 0 auto;align-self:center;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin-top:0;min-width:0}
+/* v12.54: separated .match>.kick (column: time over date) from
+   .match>.score (row: "2 - 2" on one line). Was sharing one rule with
+   flex-direction:column which stacked the score digits vertically. */
+.match>.kick{order:1;flex:0 0 auto;align-self:center;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin-top:0;min-width:0}
+.match>.score{order:1;flex:0 0 auto;align-self:center;height:auto;display:flex;flex-direction:row;align-items:center;justify-content:center;margin-top:0;min-width:0;white-space:nowrap}
 .bighero .match>.kick{height:auto;margin-top:3px;gap:4px}
 .logo{width:46px;height:46px;font-size:20px}
 .score{font-size:15px}
