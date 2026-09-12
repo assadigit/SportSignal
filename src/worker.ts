@@ -450,6 +450,55 @@ function getRelativeTimeUntilMatch(matchUtcDate, _env) {
 }
 __name(getRelativeTimeUntilMatch, "getRelativeTimeUntilMatch");
 __name2(getRelativeTimeUntilMatch, "getRelativeTimeUntilMatch");
+// v12.x-bilingual-bot: English Gregorian date / time / relative-time helpers
+// (mirror of getJalaliDate / getJalaliTime / getRelativeTimeUntilMatch for
+// English users). Used by the cron composers when lang === "en".
+function getEnglishDate(utcDateStr, env) {
+  const date = new Date(utcDateStr);
+  const opts = { timeZone: env.TEHRAN_TZ, weekday: "long", day: "numeric", month: "long", year: "numeric" };
+  return new Intl.DateTimeFormat("en-GB", opts).format(date);
+}
+__name(getEnglishDate, "getEnglishDate");
+__name2(getEnglishDate, "getEnglishDate");
+function getEnglishTime(utcDateStr, env) {
+  const date = new Date(utcDateStr);
+  const opts = { timeZone: env.TEHRAN_TZ, hour: "2-digit", minute: "2-digit", hour12: false };
+  return new Intl.DateTimeFormat("en-GB", opts).format(date);
+}
+__name(getEnglishTime, "getEnglishTime");
+__name2(getEnglishTime, "getEnglishTime");
+function getEnglishRelative(matchUtcDate) {
+  const now = getNowUTC();
+  const matchDate = new Date(matchUtcDate);
+  const diffMs = matchDate.getTime() - now.getTime();
+  const diffHours = Math.floor(diffMs / (1e3 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+  const diffMinutes = Math.floor(diffMs / (1e3 * 60));
+  if (diffDays > 0) return `${diffDays}d ${diffHours % 24}h to go`;
+  if (diffHours > 0) return `${diffHours}h ${diffMinutes % 60}m to go`;
+  if (diffMinutes > 0) return `${diffMinutes}m to go`;
+  return "soon";
+}
+__name(getEnglishRelative, "getEnglishRelative");
+__name2(getEnglishRelative, "getEnglishRelative");
+// v12.x-bilingual-bot: English stage names for cup competitions
+// (mirror of STAGE_FA for lang === "en").
+var STAGE_EN = {
+  "PLAYOFF_ROUND": "Playoff",
+  "ROUND_OF_16": "Round of 16",
+  "QUARTER_FINALS": "Quarter-finals",
+  "QUARTER_FINAL": "Quarter-final",
+  "SEMI_FINALS": "Semi-finals",
+  "SEMI_FINAL": "Semi-final",
+  "FINAL": "Final",
+  "THIRD_PLACE": "Third-place play-off"
+};
+__name2(STAGE_EN, "STAGE_EN");
+function enStageName(stage) {
+  return STAGE_EN[String(stage || "").toUpperCase()] || null;
+}
+__name(enStageName, "enStageName");
+__name2(enStageName, "enStageName");
 var FA_TEAMS_DICT = null;
 var FA_TEAMS_NORM = null;
 var FA_TEAMS_STEM = null;
@@ -2279,173 +2328,203 @@ async function sendTelegram(env, text, chatId) {
 }
 __name(sendTelegram, "sendTelegram");
 __name2(sendTelegram, "sendTelegram");
-function format24HourMessage(match, env) {
-  const homeTeam = translateTeam(match.homeTeam.name);
-  const awayTeam = translateTeam(match.awayTeam.name);
-  const competition = translateCompetition(match.competition.code);
-  const jalaliDate = getJalaliDate(match.utcDate, env);
-  const jalaliTime = getJalaliTime(match.utcDate, env);
-  const stage = STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : "\u0645\u0631\u062D\u0644\u0647 \u06AF\u0631\u0648\u0647\u06CC");
-  const timeUntil = getRelativeTimeUntilMatch(match.utcDate, env);
-  const emojiMap = {
-    "CL": "\u{1F3C6}",
-    "PL": "\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}",
-    "PD": "\u{1F1EA}\u{1F1F8}",
-    "SA": "\u{1F1EE}\u{1F1F9}",
-    "FL1": "\u{1F1EB}\u{1F1F7}",
-    "FA_CUP": "\u{1F3C6}",
-    "EFL_CUP": "\u{1F3C6}",
-    "CDR": "\u{1F3C6}",
-    "COPPA_ITALIA": "\u{1F3C6}"
-  };
-  const emoji = emojiMap[match.competition.code] || "\u26BD";
-  let message = `${emoji} *${competition}*`;
+// v12.x-bilingual-bot: send a MarkdownV2 message WITH an inline keyboard
+// (used by /start and /lang to show the language picker). Same retry/pause
+// logic as sendTelegram. The keyboard arg is a Telegram
+// InlineKeyboardMarkup object: {inline_keyboard: [[{text, callback_data}]]}.
+async function sendTelegramWithKeyboard(env, text, chatId, keyboard) {
+  for (let attempt = 1; attempt <= CONFIG.TELEGRAM_RETRY_ATTEMPTS; attempt++) {
+    if (Date.now() < TELEGRAM_PAUSE_UNTIL) return false;
+    if (++SUBREQUEST_COUNT > SUBREQUEST_CAP) return false;
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          parse_mode: "MarkdownV2",
+          reply_markup: keyboard
+        })
+      });
+      if (res.ok) {
+        vlog(`\u2705 Telegram (keyboard) sent to ${chatId}`);
+        return true;
+      }
+      const error = await res.text();
+      console.error(`Telegram keyboard error (attempt ${attempt}/${CONFIG.TELEGRAM_RETRY_ATTEMPTS}):`, error);
+      if (res.status === 429) {
+        const retryAfter = parseInt(res.headers.get("retry-after") || "2");
+        TELEGRAM_PAUSE_UNTIL = Math.max(TELEGRAM_PAUSE_UNTIL, Date.now() + Math.min(Math.max(retryAfter, 1), 10) * 1e3);
+        if (attempt < CONFIG.TELEGRAM_RETRY_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+        continue;
+      }
+      if (res.status >= 400 && res.status < 500) {
+        return /chat not found|blocked by the user|bot was kicked|deactivated/i.test(error) ? "dead" : false;
+      }
+    } catch (error) {
+      console.error(`Telegram network error (keyboard attempt ${attempt}/${CONFIG.TELEGRAM_RETRY_ATTEMPTS}):`, error.message);
+    }
+    if (attempt < CONFIG.TELEGRAM_RETRY_ATTEMPTS) {
+      await new Promise((r) => setTimeout(r, 1e3 * attempt));
+    }
+  }
+  return false;
+}
+__name(sendTelegramWithKeyboard, "sendTelegramWithKeyboard");
+__name2(sendTelegramWithKeyboard, "sendTelegramWithKeyboard");
+// v12.x-bilingual-bot: answer a callback_query (dismisses the loading
+// spinner on the inline button the user just tapped). Optional text shows
+// a small toast to the user.
+async function answerCallbackQuery(env, callbackQueryId, text) {
+  try {
+    if (++SUBREQUEST_COUNT > SUBREQUEST_CAP) return false;
+    const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/answerCallbackQuery`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ callback_query_id: callbackQueryId, text: text || "", show_alert: false })
+    });
+    if (!res.ok) console.error("answerCallbackQuery failed:", await res.text());
+    return res.ok;
+  } catch (e) {
+    console.error("answerCallbackQuery network error:", e.message);
+    return false;
+  }
+}
+__name(answerCallbackQuery, "answerCallbackQuery");
+__name2(answerCallbackQuery, "answerCallbackQuery");
+function format24HourMessage(match, env, lang) {
+  const en = lang === "en";
+  const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
+  const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
+  const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
+  const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
+  const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
+  const stage = en
+    ? (enStageName(match.stage) || (match.stage ? match.stage.replace(/_/g, " ") : "Group stage"))
+    : (STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : "\u0645\u0631\u062D\u0644\u0647 \u06AF\u0631\u0648\u0647\u06CC"));
+  const timeUntil = en ? getEnglishRelative(match.utcDate) : getRelativeTimeUntilMatch(match.utcDate, env);
+  let message = `*${escapeMarkdownCharacters(competition)}*`;
   if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
-    message += ` \\- ${stage}`;
+    message += ` \\- ${escapeMarkdownCharacters(stage)}`;
   }
-  message += `
-\u{1F4C5} ${jalaliDate}
-
-`;
-  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*
-`;
-  message += `\u23F0 ${jalaliTime}
-`;
-  message += `\u23F3 ${timeUntil}
-`;
-  if (match.competition.code === "CL") {
-    message += `\u{1F4CD} ${escapeMarkdownCharacters(homeTeam)} \u0645\u06CC\u0632\u0628\u0627\u0646
-`;
-  }
+  message += `\n${escapeMarkdownCharacters(dateStr)}\n\n`;
+  const vs = en ? " vs " : " \u{1F19A} ";
+  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `${escapeMarkdownCharacters(timeStr)}\n`;
+  message += `${escapeMarkdownCharacters(timeUntil)}`;
   return message;
 }
 __name(format24HourMessage, "format24HourMessage");
 __name2(format24HourMessage, "format24HourMessage");
-function formatBigMatchMessage(match, env) {
-  const homeTeam = translateTeam(match.homeTeam.name);
-  const awayTeam = translateTeam(match.awayTeam.name);
-  const competition = translateCompetition(match.competition.code);
-  const jalaliDate = getJalaliDate(match.utcDate, env);
-  const jalaliTime = getJalaliTime(match.utcDate, env);
-  const timeUntil = getRelativeTimeUntilMatch(match.utcDate, env);
-  const stage = STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : "");
-  const emojiMap = {
-    "CL": "\u{1F3C6}",
-    "PL": "\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}",
-    "PD": "\u{1F1EA}\u{1F1F8}",
-    "SA": "\u{1F1EE}\u{1F1F9}",
-    "FL1": "\u{1F1EB}\u{1F1F7}",
-    "FA_CUP": "\u{1F3C6}",
-    "EFL_CUP": "\u{1F3C6}",
-    "CDR": "\u{1F3C6}",
-    "COPPA_ITALIA": "\u{1F3C6}"
-  };
-  const emoji = emojiMap[match.competition.code] || "\u26BD";
-  let message = `\u26A1 *\u0628\u0627\u0632\u06CC \u0628\u0632\u0631\u06AF:* ${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}`;
-  message += `
-${emoji} *${competition}*`;
+function formatBigMatchMessage(match, env, lang) {
+  const en = lang === "en";
+  const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
+  const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
+  const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
+  const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
+  const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
+  const timeUntil = en ? getEnglishRelative(match.utcDate) : getRelativeTimeUntilMatch(match.utcDate, env);
+  const stage = en
+    ? (enStageName(match.stage) || (match.stage ? match.stage.replace(/_/g, " ") : ""))
+    : (STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : ""));
+  const bigLabel = en ? "*Big match:* " : "*\u0628\u0627\u0632\u06CC \u0628\u0632\u0631\u06AF:* ";
+  const vs = en ? " vs " : " \u{1F19A} ";
+  let message = `${bigLabel}${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}`;
+  message += `\n*${escapeMarkdownCharacters(competition)}*`;
   if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
     message += ` \\- ${escapeMarkdownCharacters(stage)}`;
   }
-  message += `
-\u{1F4C5} ${jalaliDate}
-\u23F0 ${jalaliTime}
-\u23F3 ${timeUntil}`;
+  message += `\n${escapeMarkdownCharacters(dateStr)}\n${escapeMarkdownCharacters(timeStr)}\n${escapeMarkdownCharacters(timeUntil)}`;
   return message;
 }
 __name(formatBigMatchMessage, "formatBigMatchMessage");
 __name2(formatBigMatchMessage, "formatBigMatchMessage");
-function format3HourMessage(match, env) {
-  const homeTeam = translateTeam(match.homeTeam.name);
-  const awayTeam = translateTeam(match.awayTeam.name);
-  const competition = translateCompetition(match.competition.code);
-  const jalaliTime = getJalaliTime(match.utcDate, env);
-  const timeUntil = getRelativeTimeUntilMatch(match.utcDate, env);
-  let message = `\u23F0 *\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F3 \u0633\u0627\u0639\u062A\u0647*
-
-`;
-  message += `\u26BD ${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}
-`;
-  message += `\u{1F3C6} ${competition}
-`;
-  message += `\u{1F552} ${jalaliTime}
-`;
-  message += `\u23F3 ${timeUntil}
-`;
+function format3HourMessage(match, env, lang) {
+  const en = lang === "en";
+  const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
+  const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
+  const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
+  const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
+  const timeUntil = en ? getEnglishRelative(match.utcDate) : getRelativeTimeUntilMatch(match.utcDate, env);
+  const head = en ? "*3 hours to kickoff*" : "*\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F3 \u0633\u0627\u0639\u062A\u0647*";
+  const vs = en ? " vs " : " \u{1F19A} ";
+  let message = `${head}\n\n`;
+  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `${escapeMarkdownCharacters(competition)}\n`;
+  message += `${escapeMarkdownCharacters(timeStr)}\n`;
+  message += `${escapeMarkdownCharacters(timeUntil)}`;
   return message;
 }
 __name(format3HourMessage, "format3HourMessage");
 __name2(format3HourMessage, "format3HourMessage");
-function format1HourMessage(match, env) {
-  const homeTeam = translateTeam(match.homeTeam.name);
-  const awayTeam = translateTeam(match.awayTeam.name);
-  const competition = translateCompetition(match.competition.code);
-  const jalaliTime = getJalaliTime(match.utcDate, env);
-  const timeUntil = getRelativeTimeUntilMatch(match.utcDate, env);
-  let message = `\u26A0\uFE0F *\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F1 \u0633\u0627\u0639\u062A\u0647*
-
-`;
-  message += `\u26BD ${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}
-`;
-  message += `\u{1F3C6} ${competition}
-`;
-  message += `\u{1F552} ${jalaliTime}
-`;
-  message += `\u23F3 ${timeUntil}
-`;
+function format1HourMessage(match, env, lang) {
+  const en = lang === "en";
+  const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
+  const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
+  const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
+  const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
+  const timeUntil = en ? getEnglishRelative(match.utcDate) : getRelativeTimeUntilMatch(match.utcDate, env);
+  const head = en ? "*1 hour to kickoff*" : "*\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F1 \u0633\u0627\u0639\u062A\u0647*";
+  const vs = en ? " vs " : " \u{1F19A} ";
+  let message = `${head}\n\n`;
+  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `${escapeMarkdownCharacters(competition)}\n`;
+  message += `${escapeMarkdownCharacters(timeStr)}\n`;
+  message += `${escapeMarkdownCharacters(timeUntil)}`;
   return message;
 }
 __name(format1HourMessage, "format1HourMessage");
 __name2(format1HourMessage, "format1HourMessage");
-function formatMatchStartMessage(match, env) {
-  const homeTeam = translateTeam(match.homeTeam.name);
-  const awayTeam = translateTeam(match.awayTeam.name);
-  const competition = translateCompetition(match.competition.code);
-  const jalaliTime = getJalaliTime(match.utcDate, env);
-  let message = `\u{1F6A8} *\u0628\u0627\u0632\u06CC \u0634\u0631\u0648\u0639 \u0634\u062F\\!*
-
-`;
-  message += `\u26BD ${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}
-`;
-  message += `\u{1F3C6} ${competition}
-`;
-  message += `\u{1F552} ${jalaliTime}
-`;
+function formatMatchStartMessage(match, env, lang) {
+  const en = lang === "en";
+  const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
+  const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
+  const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
+  const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
+  const head = en ? "*Kickoff*" : "*\u0628\u0627\u0632\u06CC \u0634\u0631\u0648\u0639 \u0634\u062F\\!*";
+  const vs = en ? " vs " : " \u{1F19A} ";
+  let message = `${head}\n\n`;
+  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `${escapeMarkdownCharacters(competition)}\n`;
+  message += `${escapeMarkdownCharacters(timeStr)}`;
   return message;
 }
 __name(formatMatchStartMessage, "formatMatchStartMessage");
 __name2(formatMatchStartMessage, "formatMatchStartMessage");
-async function formatResultMessage(match, env) {
-  const homeTeam = translateTeam(match.homeTeam.name);
-  const awayTeam = translateTeam(match.awayTeam.name);
-  const competition = translateCompetition(match.competition.code);
-  const jalaliDate = getJalaliDate(match.utcDate, env);
-  let message = `\u{1F3C1} *\u0646\u062A\u06CC\u062C\u0647 \u0628\u0627\u0632\u06CC*
-
-`;
-  message += `\u26BD ${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}
-`;
-  message += `\u{1F3C6} ${competition}
-`;
-  message += `\u{1F4C5} ${jalaliDate}
-
-`;
+async function formatResultMessage(match, env, lang) {
+  const en = lang === "en";
+  const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
+  const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
+  const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
+  const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
+  const head = en ? "*Full time*" : "*\u0646\u062A\u06CC\u062C\u0647 \u0646\u0647\u0627\u06CC\u06CC*";
+  const vs = en ? " vs " : " \u{1F19A} ";
+  let message = `${head}\n\n`;
+  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `${escapeMarkdownCharacters(competition)}\n`;
+  message += `${escapeMarkdownCharacters(dateStr)}\n\n`;
   if (match.score.fullTime.home !== null && match.score.fullTime.away !== null) {
-    message += `\u{1F4CA} *${toFaDigits(match.score.fullTime.home.toString())}\\-${toFaDigits(match.score.fullTime.away.toString())}*`;
+    const h = en ? match.score.fullTime.home.toString() : toFaDigits(match.score.fullTime.home.toString());
+    const a = en ? match.score.fullTime.away.toString() : toFaDigits(match.score.fullTime.away.toString());
+    message += `*${h}\\-${a}*`;
     if (match.score.fullTime.home > match.score.fullTime.away) {
-      message += `
-\u2705 ${escapeMarkdownCharacters(homeTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
+      const won = en ? `${escapeMarkdownCharacters(homeTeam)} won` : `\u2705 ${escapeMarkdownCharacters(homeTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
+      message += `\n${won}`;
     } else if (match.score.fullTime.home < match.score.fullTime.away) {
-      message += `
-\u2705 ${escapeMarkdownCharacters(awayTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
+      const won = en ? `${escapeMarkdownCharacters(awayTeam)} won` : `\u2705 ${escapeMarkdownCharacters(awayTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
+      message += `\n${won}`;
     } else {
-      message += `
-\u{1F91D} \u0645\u0633\u0627\u0648\u06CC`;
+      const draw = en ? "Draw" : "\u0645\u0633\u0627\u0648\u06CC";
+      message += `\n${draw}`;
     }
   } else {
-    message += `\u{1F4CA} \u0646\u062A\u06CC\u062C\u0647 \u062F\u0631 \u062F\u0633\u062A\u0631\u0633 \u0646\u06CC\u0633\u062A`;
+    const noScore = en ? "Score not available" : "\u0646\u062A\u06CC\u062C\u0647 \u062F\u0631 \u062F\u0633\u062A\u0631\u0633 \u0646\u06CC\u0633\u062A";
+    message += `${noScore}`;
   }
-  return await appendTableOrPhase(env, match, message);
+  return await appendTableOrPhase(env, match, message, lang);
 }
 __name(formatResultMessage, "formatResultMessage");
 __name2(formatResultMessage, "formatResultMessage");
@@ -2590,7 +2669,8 @@ async function fetchStandings(env, code, allowFetch = true) {
 }
 __name(fetchStandings, "fetchStandings");
 __name2(fetchStandings, "fetchStandings");
-async function standingsLine(env, match) {
+async function standingsLine(env, match, lang) {
+  const en = lang === "en";
   const code = match.competition.code;
   const fresh = await fetchStandings(env, code);
   if (!fresh || !fresh.teams.length) return null;
@@ -2606,21 +2686,36 @@ async function standingsLine(env, match) {
     let delta = "";
     if (prev) {
       const d = prev.pos - row.pos;
-      delta = d > 0 ? " \\(\u2191" + toFaDigits(d.toString()) + "\\)" : d < 0 ? " \\(\u2193" + toFaDigits((-d).toString()) + "\\)" : " \\(\u2014\\)";
+      const dStr = en ? Math.abs(d).toString() : toFaDigits(Math.abs(d).toString());
+      const upArrow = "\u2191";
+      const downArrow = "\u2193";
+      const emDash = "\u2014";
+      delta = d > 0 ? " \\(" + upArrow + dStr + "\\)" : d < 0 ? " \\(" + downArrow + dStr + "\\)" : " \\(" + emDash + "\\)";
     }
-    lines.push("\u2022 " + escapeMarkdownCharacters(translateTeam(row.name)) + ": \u0631\u062A\u0628\u0647 " + toFaDigits(row.pos.toString()) + " \u2014 " + toFaDigits(row.points.toString()) + " \u0627\u0645\u062A\u06CC\u0627\u0632" + delta);
+    const teamName = en ? row.name : translateTeam(row.name);
+    const posStr = en ? row.pos.toString() : toFaDigits(row.pos.toString());
+    const ptsStr = en ? row.points.toString() : toFaDigits(row.points.toString());
+    const rankWord = en ? "#" : "\u0631\u062A\u0628\u0647 ";
+    const ptsWord = en ? " pts" : " \u0627\u0645\u062A\u06CC\u0627\u0632";
+    lines.push("\u2022 " + escapeMarkdownCharacters(teamName) + ": " + rankWord + posStr + " \u2014 " + ptsStr + ptsWord + delta);
   }
   if (!lines.length) return null;
-  return "\n\n\u{1F4CA} \u062C\u062F\u0648\u0644 " + translateCompetition(code) + ":\n" + lines.join("\n");
+  const compName = en ? (COMP_EN[code] || code) : translateCompetition(code);
+  const tblWord = en ? "Table " : "\u{1F4CA} \u062C\u062F\u0648\u0644 ";
+  return "\n\n" + tblWord + escapeMarkdownCharacters(compName) + ":\n" + lines.join("\n");
 }
 __name(standingsLine, "standingsLine");
 __name2(standingsLine, "standingsLine");
-async function appendTableOrPhase(env, match, message) {
+async function appendTableOrPhase(env, match, message, lang) {
+  const en = lang === "en";
   const faStage = faStageName(match.stage);
-  if (isDomesticCup(match.competition.code) || faStage) {
-    return message + "\n\n\u2694\uFE0F \u0627\u06CC\u0646 \u0645\u0633\u0627\u0628\u0642\u0647 \u062F\u0631 \u0645\u0631\u062D\u0644\u0647 \u062D\u0630\u0641\u06CC \u0628\u0648\u062F" + (faStage ? ": " + faStage : "");
+  const enStage = enStageName(match.stage);
+  if (isDomesticCup(match.competition.code) || faStage || enStage) {
+    const phaseWord = en ? "This was a knockout match" : "\u2694\uFE0F \u0627\u06CC\u0646 \u0645\u0633\u0627\u0628\u0642\u0647 \u062F\u0631 \u0645\u0631\u062D\u0644\u0647 \u062D\u0630\u0641\u06CC \u0628\u0648\u062F";
+    const stageName = en ? enStage : faStage;
+    return message + "\n\n" + phaseWord + (stageName ? ": " + stageName : "");
   }
-  return message + (await standingsLine(env, match) || "");
+  return message + (await standingsLine(env, match, lang) || "");
 }
 __name(appendTableOrPhase, "appendTableOrPhase");
 __name2(appendTableOrPhase, "appendTableOrPhase");
@@ -2644,26 +2739,37 @@ function weeklyTableCodes() {
 }
 __name(weeklyTableCodes, "weeklyTableCodes");
 __name2(weeklyTableCodes, "weeklyTableCodes");
-function buildLeagueTableMessage(code, st, opts) {
+function buildLeagueTableMessage(code, st, opts, lang) {
+  const en = lang === "en";
   const isCL = code === "CL";
   const teams = (st.teams || []).slice().sort((a, b) => (a.pos || 0) - (b.pos || 0) || (b.points || 0) - (a.points || 0));
   const shown = isCL ? teams.slice(0, 10) : teams;
   const sel = new Set((CONFIG.BIG_TEAMS_BY_LEAGUE[code] || []).map((t) => normAlias(t)));
+  const compName = en ? (COMP_EN[code] || code) : translateCompetition(code);
   const lines = shown.map((t, i) => {
-    const row = toFaDigits(String(i + 1)) + "\\. " + escapeMarkdownCharacters(translateTeam(t.name)) + (sel.has(normAlias(t.name)) ? " \u2B50" : "") + " \u2014 " + toFaDigits(String(t.points == null ? 0 : t.points)) + " \u0627\u0645\u062A\u06CC\u0627\u0632";
+    const numStr = en ? String(i + 1) : toFaDigits(String(i + 1));
+    const ptsStr = en ? String(t.points == null ? 0 : t.points) : toFaDigits(String(t.points == null ? 0 : t.points));
+    const ptsWord = en ? " pts" : " \u0627\u0645\u062A\u06CC\u0627\u0632";
+    const teamName = en ? t.name : translateTeam(t.name);
+    const row = numStr + "\\. " + escapeMarkdownCharacters(teamName) + (sel.has(normAlias(t.name)) ? " \u2B50" : "") + " \u2014 " + ptsStr + ptsWord;
     return i === 0 ? "*" + row + "*" : row;
   });
-  let head = "\u{1F4CA} *\u062C\u062F\u0648\u0644 " + translateCompetition(code) + "*";
-  if (st.matchday) head += " \u2014 \u0647\u0641\u062A\u0647 " + toFaDigits(String(st.matchday));
+  let head = (en ? "\u{1F4CA} *" : "\u{1F4CA} *\u062C\u062F\u0648\u0644 ") + escapeMarkdownCharacters(compName) + "*";
+  if (st.matchday) head += en ? " \u2014 Matchday " + String(st.matchday) : " \u2014 \u0647\u0641\u062A\u0647 " + toFaDigits(String(st.matchday));
   if (opts && opts.label) head += " \u2014 " + opts.label;
   let msg = head + "\n\n" + lines.join("\n");
-  if (isCL && teams.length > shown.length) msg += "\n\u2026 " + toFaDigits(String(teams.length - shown.length)) + " \u062A\u06CC\u0645 \u0628\u0639\u062F\u06CC";
-  msg += "\n\n\u{1F4CA} \u062C\u062F\u0648\u0644 \u06A9\u0627\u0645\u0644: football\\.sportsignal\\.ir";
+  if (isCL && teams.length > shown.length) {
+    const moreStr = en ? "+ " + String(teams.length - shown.length) + " more" : "\n\u2026 " + toFaDigits(String(teams.length - shown.length)) + " \u062A\u06CC\u0645 \u0628\u0639\u062F\u06CC";
+    msg += "\n" + moreStr;
+  }
+  const footer = en ? "\n\nFull table: football\\.sportsignal\\.ir" : "\n\n\u{1F4CA} \u062C\u062F\u0648\u0644 \u06A9\u0627\u0645\u0644: football\\.sportsignal\\.ir";
+  msg += footer;
   return msg;
 }
 __name(buildLeagueTableMessage, "buildLeagueTableMessage");
 __name2(buildLeagueTableMessage, "buildLeagueTableMessage");
-async function sendLeagueTables(env, chatIds, opts) {
+async function sendLeagueTables(env, chatIds, opts, lang) {
+  const lng = lang === "en" ? "en" : "fa";
   const out = { leagues: [], sent: 0, failed: 0 };
   if (!Array.isArray(chatIds) || !chatIds.length) {
     out.error = "no chats";
@@ -2685,7 +2791,7 @@ async function sendLeagueTables(env, chatIds, opts) {
       out.leagues.push({ code, ok: false, reason: "not-started" });
       continue;
     }
-    messages.push({ code, text: buildLeagueTableMessage(code, st, opts) });
+    messages.push({ code, text: buildLeagueTableMessage(code, st, opts, lng) });
     out.leagues.push({ code, ok: true, rows: code === "CL" ? Math.min(10, st.teams.length) : st.teams.length, matchday: st.matchday || null });
   }
   for (const chatId of chatIds) {
@@ -2698,15 +2804,17 @@ async function sendLeagueTables(env, chatIds, opts) {
 }
 __name(sendLeagueTables, "sendLeagueTables");
 __name2(sendLeagueTables, "sendLeagueTables");
-function specialBanner(match) {
+function specialBanner(match, lang) {
+  const en = lang === "en";
   const parts = [];
-  if (isDerby(match)) parts.push("\u2694\uFE0F\u{1F525} *\u062F\u0631\u0628\u06CC\u0654 \u062D\u0633\u0627\u0633\u0654* \u{1F525}\u2694\uFE0F");
-  if (match.competition && match.competition.code === "CL" && isMasterPair(match)) parts.push("\u{1F3C6}\u{1F525} *\u062F\u0648\u0626\u0644 \u0628\u0632\u0631\u06AF \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627\u0654* \u{1F3C6}");
+  if (isDerby(match)) parts.push(en ? "\u2694\uFE0F *Derby*" : "\u2694\uFE0F *\u062F\u0631\u0628\u06CC\u0654 \u062D\u0633\u0627\u0633\u0654*");
+  if (match.competition && match.competition.code === "CL" && isMasterPair(match)) parts.push(en ? "*Champions League blockbuster*" : "*\u062F\u0648\u0626\u0644 \u0628\u0632\u0631\u06AF \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627\u0654*");
   return parts.length ? parts.join("\n") + "\n\n" : "";
 }
 __name(specialBanner, "specialBanner");
 __name2(specialBanner, "specialBanner");
-async function buildWeekAheadMessage(env) {
+async function buildWeekAheadMessage(env, lang) {
+  const en = lang === "en";
   let pool = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
   let matches = pool && Array.isArray(pool.matches) ? pool.matches : [];
   if (!matches.length) matches = await getCachedMatches(env);
@@ -2719,27 +2827,37 @@ async function buildWeekAheadMessage(env) {
   const uclDuels = worthy.filter((m) => !isDerby(m) && m.competition && m.competition.code === "CL" && isMasterPair(m)).sort(byKick);
   const rest = worthy.filter((m) => !derbies.includes(m) && !uclDuels.includes(m)).sort(byKick).slice(0, 10);
   const fmtLine = /* @__PURE__ */ __name((m, mark) => {
-    const weekday = new Intl.DateTimeFormat("fa-IR", { weekday: "long", timeZone: env.TEHRAN_TZ || "Asia/Tehran" }).format(new Date(m.utcDate));
+    const locale = en ? "en-GB" : "fa-IR";
+    const weekday = new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: env.TEHRAN_TZ || "Asia/Tehran" }).format(new Date(m.utcDate));
     const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: env.TEHRAN_TZ || "Asia/Tehran" }).format(new Date(m.utcDate));
-    return mark + escapeMarkdownCharacters(translateTeam(m.homeTeam.name)) + " \u{1F19A} " + escapeMarkdownCharacters(translateTeam(m.awayTeam.name)) + " \u2014 " + weekday + " " + toFaDigits(time) + " \u2014 " + escapeMarkdownCharacters(translateCompetition(m.competition.code));
+    const timeStr = en ? time : toFaDigits(time);
+    const home = en ? m.homeTeam.name : translateTeam(m.homeTeam.name);
+    const away = en ? m.awayTeam.name : translateTeam(m.awayTeam.name);
+    const comp = en ? (COMP_EN[m.competition.code] || m.competition.code) : translateCompetition(m.competition.code);
+    const vs = en ? " vs " : " \u{1F19A} ";
+    return mark + escapeMarkdownCharacters(home) + vs + escapeMarkdownCharacters(away) + " \u2014 " + weekday + " " + timeStr + " \u2014 " + escapeMarkdownCharacters(comp);
   }, "fmtLine");
   const lines = [];
-  for (const m of derbies) lines.push("*" + fmtLine(m, "\u2694\uFE0F\u{1F525} ") + "*");
-  for (const m of uclDuels) lines.push("*" + fmtLine(m, "\u{1F3C6}\u{1F525} ") + "*");
-  for (const m of rest) lines.push(fmtLine(m, "\u26BD "));
+  for (const m of derbies) lines.push("*" + fmtLine(m, "\u2694\uFE0F ") + "*");
+  for (const m of uclDuels) lines.push("*" + fmtLine(m, "") + "*");
+  for (const m of rest) lines.push(fmtLine(m, ""));
   const extraCount = worthy.length - derbies.length - uclDuels.length - rest.length;
-  let msg = "\u{1F4C5} *\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0647\u0641\u062A\u0647 \u0622\u06CC\u0646\u062F\u0647* \u{1F53D}\n\n" + lines.join("\n");
-  if (extraCount > 0) msg += "\n\u2026 \u0648 " + toFaDigits(String(extraCount)) + " \u0628\u0627\u0632\u06CC \u062F\u06CC\u06AF\u0631";
+  const head = en ? "*Matches this week*\n\n" : "*\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0647\u0641\u062A\u0647 \u0622\u06CC\u0646\u062F\u0647*\n\n";
+  let msg = head + lines.join("\n");
+  if (extraCount > 0) {
+    const extraStr = en ? "\n+ " + String(extraCount) + " more matches" : "\n\u2026 \u0648 " + toFaDigits(String(extraCount)) + " \u0628\u0627\u0632\u06CC \u062F\u06CC\u06AF\u0631";
+    msg += extraStr;
+  }
   return msg;
 }
 __name(buildWeekAheadMessage, "buildWeekAheadMessage");
 __name2(buildWeekAheadMessage, "buildWeekAheadMessage");
-async function sendWeekAhead(env, chatIds) {
+async function sendWeekAhead(env, chatIds, lang) {
   const out = { sent: 0, failed: 0, text: null };
   if (!Array.isArray(chatIds) || !chatIds.length) return out;
   let text = null;
   try {
-    text = await buildWeekAheadMessage(env);
+    text = await buildWeekAheadMessage(env, lang);
   } catch (e) {
     console.error("week-ahead build failed: " + e.message);
   }
@@ -2761,10 +2879,30 @@ async function maybeSendWeeklyTables(env, chatIds) {
   const week = isoWeekKey(t);
   const done = await env.STATE.get(CONFIG.KV_WEEKLY_TABLES).catch(() => null);
   if (done === week) return null;
-  const res = await sendLeagueTables(env, chatIds, { label: "\u067E\u0627\u06CC\u0627\u0646 \u0647\u0641\u062A\u0647" });
-  const weekAhead = await sendWeekAhead(env, chatIds);
-  res.weekAhead = { sent: weekAhead.sent, failed: weekAhead.failed, skipped: !weekAhead.text };
-  if (res.sent > 0 || weekAhead.sent > 0) await env.STATE.put(CONFIG.KV_WEEKLY_TABLES, week).catch(() => {
+  // v12.x-bilingual-bot: group chats by lang so each user gets the
+  // digest + week-ahead in their own lang. Defensive: getUserPrefs may
+  // be undefined in the test harness (check-weekly-tables.js).
+  const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
+  const langGroups = new Map();
+  for (const c of chatIds) {
+    const p = prefs[String(c)] || {};
+    const lng = p.lang === "en" ? "en" : "fa";
+    if (!langGroups.has(lng)) langGroups.set(lng, []);
+    langGroups.get(lng).push(c);
+  }
+  let res = { leagues: [], sent: 0, failed: 0 };
+  let weekAheadAgg = { sent: 0, failed: 0, skipped: true };
+  for (const [lng, group] of langGroups) {
+    const label = lng === "en" ? "End of week" : "\u067E\u0627\u06CC\u0627\u0646 \u0647\u0641\u062A\u0647";
+    const r = await sendLeagueTables(env, group, { label }, lng);
+    res.sent += r.sent; res.failed += r.failed;
+    res.leagues = res.leagues.concat(r.leagues);
+    const wa = await sendWeekAhead(env, group, lng);
+    weekAheadAgg.sent += wa.sent; weekAheadAgg.failed += wa.failed;
+    if (wa.text) weekAheadAgg.skipped = false;
+  }
+  res.weekAhead = weekAheadAgg;
+  if (res.sent > 0 || weekAheadAgg.sent > 0) await env.STATE.put(CONFIG.KV_WEEKLY_TABLES, week).catch(() => {
   });
   return res;
 }
@@ -2823,13 +2961,25 @@ async function maybeNotifyTableToppers(env, matches) {
     };
     const trigger = matches.find((m) => involved(m, newLeader.name)) || matches.find((m) => involved(m, oldLeader.name));
     if (!trigger) continue;
-    const text = await formatTableTopMessage(env, code, newLeader, prevRowOfNew, trigger);
-    if (!text) continue;
+    // v12.x-bilingual-bot: render + send per-lang so each user gets the
+    // coronation in their own lang. Falls back to "fa" if no prefs entry.
+    const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
+    const langBuckets = new Map();
+    for (const c of chatIds) {
+      const p = prefs[String(c)] || {};
+      const lng = p.lang === "en" ? "en" : "fa";
+      if (!langBuckets.has(lng)) langBuckets.set(lng, []);
+      langBuckets.get(lng).push(c);
+    }
     let ok = 0;
-    for (const chatId of chatIds) {
-      const r = await sendTelegram(env, text, chatId);
-      if (r === true) ok++;
-      else if (r !== "dead") out.failed++;
+    for (const [lng, bucket] of langBuckets) {
+      const text = await formatTableTopMessage(env, code, newLeader, prevRowOfNew, trigger, lng);
+      if (!text) continue;
+      for (const chatId of bucket) {
+        const r = await sendTelegram(env, text, chatId);
+        if (r === true) ok++;
+        else if (r !== "dead") out.failed++;
+      }
     }
     out.sent += ok;
     out.events.push({ code, leader: newLeader.name, prevPos: prevRowOfNew.pos, match: trigger.id || null, sent: ok });
@@ -2839,25 +2989,46 @@ async function maybeNotifyTableToppers(env, matches) {
 }
 __name(maybeNotifyTableToppers, "maybeNotifyTableToppers");
 __name2(maybeNotifyTableToppers, "maybeNotifyTableToppers");
-async function formatTableTopMessage(env, code, newLeader, prevRow, trigger) {
+async function formatTableTopMessage(env, code, newLeader, prevRow, trigger, lang) {
   try {
-    const league = translateCompetition(code);
-    const home = translateTeam(trigger.homeTeam.name);
-    const away = translateTeam(trigger.awayTeam.name);
+    const en = lang === "en";
+    const league = en ? (COMP_EN[code] || code) : translateCompetition(code);
+    const home = en ? trigger.homeTeam.name : translateTeam(trigger.homeTeam.name);
+    const away = en ? trigger.awayTeam.name : translateTeam(trigger.awayTeam.name);
+    const leaderName = en ? newLeader.name : translateTeam(newLeader.name);
     const esc = escapeMarkdownCharacters;
-    let message = `\u{1F451} *\u0635\u062F\u0631 \u062C\u062F\u0648\u0644 ${esc(league)} \u062A\u063A\u06CC\u06CC\u0631 \u06A9\u0631\u062F*\n\n`;
-    message += `${esc(translateTeam(newLeader.name))} \u0628\u0627 ${toFaDigits(String(newLeader.points == null ? 0 : newLeader.points))} \u0627\u0645\u062A\u06CC\u0627\u0632 \u0628\u0647 \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 ${esc(league)} \u0631\u0633\u06CC\u062F \u2014 \u0631\u062A\u0628\u0647 \u0642\u0628\u0644\u06CC: ${toFaDigits(String(prevRow.pos))}\n\n`;
-    message += `\u26BD ${esc(home)} \u{1F19A} ${esc(away)}\n`;
-    message += `\u{1F3C6} ${esc(league)}\n`;
-    message += `\u{1F4C5} ${getJalaliDate(trigger.utcDate, env)}\n`;
+    const pts = newLeader.points == null ? 0 : newLeader.points;
+    const ptsStr = en ? String(pts) : toFaDigits(String(pts));
+    const prevPosStr = en ? String(prevRow.pos) : toFaDigits(String(prevRow.pos));
+    const dateStr = en ? getEnglishDate(trigger.utcDate, env) : getJalaliDate(trigger.utcDate, env);
+    const vs = en ? " vs " : " \u{1F19A} ";
+    const head = en ? `*New leader: ${esc(league)}*\n\n` : `*\u0635\u062F\u0631 \u062C\u062F\u0648\u0644 ${esc(league)} \u062A\u063A\u06CC\u06CC\u0631 \u06A9\u0631\u062F*\n\n`;
+    let message = head;
+    const reachedLine = en
+      ? `${esc(leaderName)} reached the top of ${esc(league)} with ${ptsStr} pts \u2014 previous position: ${prevPosStr}\n\n`
+      : `${esc(leaderName)} \u0628\u0627 ${ptsStr} \u0627\u0645\u062A\u06CC\u0627\u0632 \u0628\u0647 \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 ${esc(league)} \u0631\u0633\u06CC\u062F \u2014 \u0631\u062A\u0628\u0647 \u0642\u0628\u0644\u06CC: ${prevPosStr}\n\n`;
+    message += reachedLine;
+    message += `\u26BD *${esc(home)}${vs}${esc(away)}*\n`;
+    message += `${esc(league)}\n`;
+    message += `${esc(dateStr)}\n`;
     const h = trigger.score && trigger.score.fullTime && trigger.score.fullTime.home, a = trigger.score && trigger.score.fullTime && trigger.score.fullTime.away;
     if (h !== null && h !== void 0 && a !== null && a !== void 0) {
-      message += `\u{1F4CA} *${toFaDigits(String(h))}\\-${toFaDigits(String(a))}*`;
-      if (h > a) message += `\n\u2705 ${esc(home)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
-      else if (h < a) message += `\n\u2705 ${esc(away)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
-      else message += `\n\u{1F91D} \u0645\u0633\u0627\u0648\u06CC`;
+      const hStr = en ? String(h) : toFaDigits(String(h));
+      const aStr = en ? String(a) : toFaDigits(String(a));
+      message += `*${hStr}\\-${aStr}*`;
+      if (h > a) {
+        const won = en ? `${esc(home)} won` : `\n\u2705 ${esc(home)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
+        message += `\n${won}`;
+      } else if (h < a) {
+        const won = en ? `${esc(away)} won` : `\n\u2705 ${esc(away)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
+        message += `\n${won}`;
+      } else {
+        const draw = en ? "Draw" : "\u0645\u0633\u0627\u0648\u06CC";
+        message += `\n${draw}`;
+      }
     }
-    message += `\n\n\u{1F4CA} \u062C\u062F\u0648\u0644 \u06A9\u0627\u0645\u0644: football\\.sportsignal\\.ir`;
+    const footer = en ? `\n\nFull table: football\\.sportsignal\\.ir` : `\n\n\u{1F4CA} \u062C\u062F\u0648\u0644 \u06A9\u0627\u0645\u0644: football\\.sportsignal\\.ir`;
+    message += footer;
     return message;
   } catch (e) {
     console.error("Table-top message build failed: " + e.message);
@@ -3602,8 +3773,9 @@ async function sendNotificationIfNeeded(match, config, chatGroups, env, nowTehra
   try {
     for (const g of chatGroups) {
       env.TEHRAN_TZ = g.tz;
-      let message = specialBanner(match) + await config.messageFormatter(match, env);
-      if (late) message += "\n\n\u23F1\uFE0F \u0627\u06CC\u0646 \u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u0628\u0627 \u062A\u0623\u062E\u06CC\u0631 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F";
+      const lang = g.lang || "fa";
+      let message = specialBanner(match, lang) + await config.messageFormatter(match, env, lang);
+      if (late) message += "\n\n" + (lang === "en" ? "This reminder was sent late" : "\u0627\u06CC\u0646 \u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u0628\u0627 \u062A\u0623\u062E\u06CC\u0631 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F");
       const sendResults = await Promise.allSettled(
         g.chats.map((chatId) => sendTelegram(env, message, chatId))
       );
@@ -3753,6 +3925,159 @@ async function getUserPrefs(env) {
 }
 __name(getUserPrefs, "getUserPrefs");
 __name2(getUserPrefs, "getUserPrefs");
+// v12.x-bilingual-bot: get the user's language preference. Defaults to
+// "fa" (Persian) since the existing user base is Persian. Reads from KV
+// user_prefs[chatId].lang.
+async function getUserLang(env, chatId) {
+  try {
+    const prefs = await env.STATE.get(CONFIG.KV_USER_PREFS, "json");
+    const p = prefs && prefs[String(chatId)];
+    if (p && (p.lang === "fa" || p.lang === "en")) return p.lang;
+  } catch (e) {
+  }
+  return "fa";
+}
+__name(getUserLang, "getUserLang");
+__name2(getUserLang, "getUserLang");
+// v12.x-bilingual-bot: set the user's language preference. Writes to KV
+// user_prefs[chatId].lang. Preserves the existing teams + tz fields.
+async function setUserLang(env, chatId, lang) {
+  const clean = lang === "en" ? "en" : "fa";
+  try {
+    const prefs = await getUserPrefs(env);
+    const key = String(chatId);
+    const cur = prefs[key] || {};
+    prefs[key] = { teams: cur.teams || [], tz: cur.tz || null, lang: clean };
+    await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+    return true;
+  } catch (e) {
+    console.error("setUserLang failed: " + e.message);
+    return false;
+  }
+}
+__name(setUserLang, "setUserLang");
+__name2(setUserLang, "setUserLang");
+// v12.x-bilingual-bot: bilingual bot command/notification strings.
+// Keys are "<lang>_<key>" (e.g. "fa_start_welcome", "en_help_body"). Use
+// botStr(lang, key) to fetch the right string for the user's lang.
+// Persian text is stored as \uXXXX escapes (per the repo convention).
+// MarkdownV2 specials (.!-) are pre-escaped as \. \! \- so the strings
+// can be sent as MarkdownV2 without further processing.
+var BOT_STRINGS = {
+  "fa_start_welcome": "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062D\!\n\u0627\u0639\u0644\u0627\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645 \u0631\u0627 \u0627\u0632 \u062F\u0633\u062A \u0646\u062F\u0647\u06CC\u062F\.",
+  "en_start_welcome": "Welcome to SportSignal\!\nNever miss the big matches\.",
+  "fa_start_pick_lang": "\u26BD \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062D\n\u0628\u0631\u0627\u06CC \u0627\u0646\u062A\u062E\u0627\u0628 \u0632\u0628\u0627\u0646\u060C /lang \u0631\u0627 \u0628\u0641\u0631\u0633\u062A\u06CC\u062F\.",
+  "en_start_pick_lang": "Welcome to SportSignal\nSend /lang to choose your language\.",
+  "fa_lang_prompt": "\u0632\u0628\u0627\u0646 \u0631\u0628\u0627\u062A \u0631\u0627 \u0627\u0646\u062A\u062E\u0627\u0628 \u06A9\u0646\u06CC\u062F:",
+  "en_lang_prompt": "Choose your language:",
+  "fa_lang_set": "\u2705 \u0632\u0628\u0627\u0646 \u0631\u0628\u0627\u062A \u0641\u0627\u0631\u0633\u06CC \u0634\u062F\.",
+  "en_lang_set": "Bot language set to English\.",
+  "fa_help_body": "/start \u2014 \u0639\u0636\u0648\u06CC\u062A\n/teams \u2014 \u0644\u06CC\u0633\u062A \u062A\u06CC\u0645\u200C\u0647\u0627\n/follow 1,3,7 \u2014 \u0627\u0646\u062A\u062E\u0627\u0628 \u062A\u06CC\u0645\n/follow all \u2014 \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627\n/next \u2014 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\n/tables \u2014 \u062C\u062F\u0648\u0644\u200C\u0647\u0627\n/timezone london \u2014 \u062A\u0646\u0638\u06CC\u0645 \u0632\u0645\u0627\u0646\n/lang \u2014 \u062A\u063A\u06CC\u06CC\u0631 \u0632\u0628\u0627\u0646\n/stop \u2014 \u0627\u0646\u0635\u0631\u0627\u0641",
+  "en_help_body": "/start \u2014 Join\n/teams \u2014 List teams\n/follow 1,3,7 \u2014 Pick teams\n/follow all \u2014 All teams\n/next \u2014 Upcoming matches\n/tables \u2014 League tables\n/timezone london \u2014 Set timezone\n/lang \u2014 Change language\n/stop \u2014 Unsubscribe",
+  "fa_stop": "\u274C \u0627\u0632 \u062F\u0631\u06CC\u0627\u0641\u062A \u067E\u06CC\u0627\u0645 \u062E\u0627\u0631\u062C \u0634\u062F\u06CC\u062F\.",
+  "en_stop": "You have been unsubscribed\. Use /start to return\.",
+  "fa_teams_header": "\u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0642\u0627\u0628\u0644 \u062F\u0646\u0628\u0627\u0644\u200C\u06A9\u0631\u062F\u0646:",
+  "en_teams_header": "Teams you can follow:",
+  "fa_teams_follow_all": "\u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627 \u062F\u0646\u0628\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F\.",
+  "en_teams_follow_all": "Following all teams.",
+  "fa_teams_n_selected": "\u062A\u0639\u062F\u0627\u062F \u062A\u06CC\u0645 \u0627\u0646\u062A\u062E\u0627\u0628\u06CC: ",
+  "en_teams_n_selected": "Selected teams: ",
+  "fa_teams_footer": "\u0627\u0646\u062A\u062E\u0627\u0628: /follow 1,3,7\n\u0647\u0645\u0647: /follow all",
+  "en_teams_footer": "Pick: /follow 1,3,7\nAll: /follow all",
+  "fa_follow_all_set": "\u2705 \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627 \u062F\u0646\u0628\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F\.",
+  "en_follow_all_set": "Following all teams.",
+  "fa_follow_invalid": "\u26A0\uFE0F \u0634\u0645\u0627\u0631\u0647 \u0646\u0627\u0645\u0639\u062A\u0628\u0631 \u0627\u0633\u062A\.",
+  "en_follow_invalid": "Invalid number. Use /teams to see the list.",
+  "fa_follow_set_header": "\u2705 \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0627\u0646\u062A\u062E\u0627\u0628\u06CC \u0634\u0645\u0627:",
+  "en_follow_set_header": "Your selected teams:",
+  "fa_follow_set_footer": "\u0628\u0631\u0627\u06CC \u062A\u063A\u06CC\u06CC\u0631\u060C /follow all \u06CC\u0627 \u0634\u0645\u0627\u0631\u0647\u200C\u0647\u0627\u06CC \u062C\u062F\u06CC\u062F \u0631\u0627 \u0628\u0641\u0631\u0633\u062A\u06CC\u062F\.",
+  "en_follow_set_footer": "To change: /follow all or new numbers.",
+  "fa_next_header": "\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648:",
+  "en_next_header": "Upcoming matches:",
+  "fa_next_empty": "\u062F\u0631 \u062D\u0627\u0644 \u062D\u0627\u0636\u0631 \u0628\u0627\u0632\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\u06CC \u0628\u0631\u0627\u06CC \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u062F\u0646\u0628\u0627\u0644\u200C\u0634\u062F\u0647 \u0634\u0645\u0627 \u0648\u062C\u0648\u062F \u0646\u062F\u0627\u0631\u062F\.",
+  "en_next_empty": "No upcoming matches for your followed teams right now.",
+  "fa_tables_unavailable": "\u26A0\uFE0F \u062C\u062F\u0648\u0644\u200C\u0647\u0627 \u0641\u0639\u0644\u0627\u064B \u062F\u0631 \u062F\u0633\u062A\u0631\u0633 \u0646\u06CC\u0633\u062A\.",
+  "en_tables_unavailable": "Tables are not available right now\. Please try again in a few minutes\.",
+  "fa_tz_current": "\u23F0 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627: ",
+  "en_tz_current": "Your timezone: ",
+  "fa_tz_change_hint": "\n\u0628\u0631\u0627\u06CC \u062A\u063A\u06CC\u06CC\u0631: /timezone london",
+  "en_tz_change_hint": "\nChange: /timezone london",
+  "fa_tz_reset": "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u0628\u0647 \u067E\u06CC\u0634\u200C\u0641\u0631\u0636 \u0628\u0627\u0632\u06AF\u0634\u062A: ",
+  "en_tz_reset": "Timezone reset to default: ",
+  "fa_tz_invalid": "\u26A0\uFE0F \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0646\u0627\u0645\u0639\u062A\u0628\u0631 \u0627\u0633\u062A\.",
+  "en_tz_invalid": "Invalid timezone.",
+  "fa_tz_invalid_hint": "\n\u0645\u062B\u0627\u0644: /timezone london \u06CC\u0627 /timezone Europe/London",
+  "en_tz_invalid_hint": "\nExample: /timezone london or /timezone Europe/London",
+  "fa_tz_set": "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u062A\u063A\u06CC\u06CC\u0631 \u06A9\u0631\u062F: ",
+  "en_tz_set": "Timezone set: ",
+  "fa_tz_set_note": "\n\u067E\u06CC\u0627\u0645\u200C\u0647\u0627 \u0627\u0632 \u0627\u06CC\u0646 \u067E\u0633 \u0628\u0631 \u0627\u0633\u0627\u0633 \u0633\u0627\u0639\u062A \u0645\u062D\u0644\u06CC \u0627\u0631\u0633\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F\.",
+  "en_tz_set_note": "\nMessages will be sent in your local time.",
+  "fa_unknown": "\u{1F4DD} \u062F\u0633\u062A\u0648\u0631 \u0646\u0627\u0634\u0646\u0627\u062E\u062A\u0647 \u0627\u0633\u062A\u060C \u0627\u0632 /help \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F\.",
+  "en_unknown": "Unknown command\. Use /help\.",
+  "fa_late": "\u0627\u06CC\u0646 \u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u0628\u0627 \u062A\u0623\u062E\u06CC\u0631 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F",
+  "en_late": "This reminder was sent late",
+  "fa_3h_reminder": "\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F3 \u0633\u0627\u0639\u062A\u0647",
+  "fa_1h_reminder": "\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F1 \u0633\u0627\u0639\u062A\u0647",
+  "fa_match_start": "\u0628\u0627\u0632\u06CC \u0634\u0631\u0648\u0639 \u0634\u062F\!",
+  "fa_match_final": "\u0646\u062A\u06CC\u062C\u0647 \u0646\u0647\u0627\u06CC\u06CC",
+  "fa_match_winner": " \u0628\u0631\u0646\u062F\u0647 \u0634\u062F",
+  "fa_match_draw": "\u0645\u0633\u0627\u0648\u06CC",
+  "fa_no_score": "\u0646\u062A\u06CC\u062C\u0647 \u062F\u0631 \u062F\u0633\u062A\u0631\u0633 \u0646\u06CC\u0633\u062A",
+  "fa_home_label": "\u0645\u06CC\u0632\u0628\u0627\u0646",
+  "fa_full_table": "\n\n\u{1F4CA} \u062C\u062F\u0648\u0644 \u06A9\u0627\u0645\u0644: football\.sportsignal\.ir",
+  "fa_table_matchday": " \u2014 \u0647\u0641\u062A\u0647 ",
+  "fa_table_pts": " \u0627\u0645\u062A\u06CC\u0627\u0632",
+  "fa_table_more": "\n\u2026 ",
+  "fa_table_after": " \u062A\u06CC\u0645 \u0628\u0639\u062F\u06CC",
+  "fa_week_ahead_more": "\n\u2026 ",
+  "fa_week_ahead_other": " \u0628\u0627\u0632\u06CC \u062F\u06CC\u06AF\u0631",
+  "fa_week_ahead_header": "\u{1F4C5} *\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0647\u0641\u062A\u0647 \u0622\u06CC\u0646\u062F\u0647*",
+  "fa_coronation_header": "\u{1F451} *\u0635\u062F\u0631 \u062C\u062F\u0648\u0644 ",
+  "fa_coronation_changed": " \u062A\u063A\u06CC\u06CC\u0631 \u06A9\u0631\u062F*\n\n",
+  "fa_coronation_reached": " \u0628\u0627 ",
+  "fa_coronation_points": " \u0627\u0645\u062A\u06CC\u0627\u0632 \u0628\u0647 \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 ",
+  "fa_coronation_prev": " \u0631\u0633\u06CC\u062F \u2014 \u0631\u062A\u0628\u0647 \u0642\u0628\u0644\u06CC: ",
+  "fa_big_match_header": "\u26A1 *\u0628\u0627\u0632\u06CC \u0628\u0632\u0631\u06AF:* ",
+  "fa_phase_playoff": "\n\n\u2694\uFE0F \u0627\u06CC\u0646 \u0645\u0633\u0627\u0628\u0642\u0647 \u062F\u0631 \u0645\u0631\u062D\u0644\u0647 \u062D\u0630\u0641\u06CC \u0628\u0648\u062F",
+  "fa_default_stage": "\u0645\u0631\u062D\u0644\u0647 \u06AF\u0631\u0648\u0647\u06CC",
+  "fa_comp_dash": " \\\\- ",
+  "en_3h_reminder": "3 hours to kickoff",
+  "en_1h_reminder": "1 hour to kickoff",
+  "en_match_start": "Kickoff",
+  "en_match_final": "Full time",
+  "en_match_winner": " won",
+  "en_match_draw": "Draw",
+  "en_no_score": "Score not available",
+  "en_home_label": "Host",
+  "en_full_table": "\n\nFull table: football\.sportsignal\.ir",
+  "en_table_matchday": " \u2014 Matchday ",
+  "en_table_pts": " pts",
+  "en_table_more": "\n+ ",
+  "en_table_after": " more teams",
+  "en_week_ahead_more": "\n+ ",
+  "en_week_ahead_other": " more matches",
+  "en_week_ahead_header": "Matches this week",
+  "en_coronation_header": "New leader: ",
+  "en_coronation_reached": " reached the top of ",
+  "en_coronation_points": " with ",
+  "en_coronation_pts_suffix": " pts",
+  "en_coronation_prev": " \u2014 previous position: ",
+  "en_big_match_header": "Big match: ",
+  "en_phase_playoff": "\n\nThis was a knockout match",
+  "en_default_stage": "Group stage",
+  "en_comp_dash": " \\- ",
+  "fa_tables_label": "\u062C\u062F\u0648\u0644 \u0641\u0639\u0644\u06CC",
+  "en_tables_label": "Current table",
+  "fa_weekly_label": "\u067E\u0627\u06CC\u0627\u0646 \u0647\u0641\u062A\u0647",
+  "en_weekly_label": "End of week"
+};
+__name2(BOT_STRINGS, "BOT_STRINGS");
+function botStr(lang, key) {
+  const k = (lang === "en" ? "en_" : "fa_") + key;
+  return BOT_STRINGS[k] != null ? BOT_STRINGS[k] : BOT_STRINGS["fa_" + key] || "";
+}
+__name(botStr, "botStr");
+__name2(botStr, "botStr");
 function userFollowsMatch(prefs, chatId, match) {
   const p = prefs[String(chatId)];
   const nh = normAlias(match.homeTeam.name);
@@ -3852,13 +4177,19 @@ function getUserTz(prefs, chatId, env) {
 __name(getUserTz, "getUserTz");
 __name2(getUserTz, "getUserTz");
 function groupChatsByTz(chatIds, prefs, env) {
+  // v12.x-bilingual-bot: each group now carries a `lang` field ("fa" or
+  // "en") so the cron composers render the message in the user's lang.
+  // Chats are grouped by `${tz}|${lang}` so a tz with mixed langs splits
+  // into one group per lang (rendered once per lang, sent per group).
   const map = /* @__PURE__ */ new Map();
   for (const c of chatIds) {
     const tz = getUserTz(prefs, c, env);
-    if (!map.has(tz)) map.set(tz, []);
-    map.get(tz).push(c);
+    const lang = (prefs[String(c)] && prefs[String(c)].lang) === "en" ? "en" : "fa";
+    const key = tz + "|" + lang;
+    if (!map.has(key)) map.set(key, { tz, lang, chats: [] });
+    map.get(key).chats.push(c);
   }
-  return [...map.entries()].map(([tz, chats]) => ({ tz, chats }));
+  return [...map.values()];
 }
 __name(groupChatsByTz, "groupChatsByTz");
 __name2(groupChatsByTz, "groupChatsByTz");
@@ -3885,10 +4216,28 @@ async function detectStatusChanges(env, matches) {
     });
     if (alerts.length) {
       const chats = await getRegisteredChats(env);
+      // v12.x-bilingual-bot: send the alert in each user's lang.
+      const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
+      const langBuckets = new Map();
+      for (const c of chats) {
+        const p = prefs[String(c)] || {};
+        const lng = p.lang === "en" ? "en" : "fa";
+        if (!langBuckets.has(lng)) langBuckets.set(lng, []);
+        langBuckets.get(lng).push(c);
+      }
       for (const a of alerts) {
-        const teams = escapeMarkdownCharacters(translateTeam(a.m.homeTeam.name)) + " \u{1F19A} " + escapeMarkdownCharacters(translateTeam(a.m.awayTeam.name)) + " (" + translateCompetition(a.m.competition.code) + ")";
-        const msg = a.status === "CANCELLED" ? "\u274C *\u0628\u0627\u0632\u06CC \u0644\u063A\u0648 \u0634\u062F:* " + teams : "\u{1F550} *\u0628\u0627\u0632\u06CC \u0628\u0647 \u062A\u0639\u0648\u06CC\u0642 \u0627\u0641\u062A\u0627\u062F:* " + teams;
-        await Promise.allSettled(chats.map((c) => sendTelegram(env, msg, c)));
+        for (const [lng, bucket] of langBuckets) {
+          const en = lng === "en";
+          const home = en ? a.m.homeTeam.name : translateTeam(a.m.homeTeam.name);
+          const away = en ? a.m.awayTeam.name : translateTeam(a.m.awayTeam.name);
+          const comp = en ? (COMP_EN[a.m.competition.code] || a.m.competition.code) : translateCompetition(a.m.competition.code);
+          const vs = en ? " vs " : " \u{1F19A} ";
+          const teams = escapeMarkdownCharacters(home) + vs + escapeMarkdownCharacters(away) + " (" + escapeMarkdownCharacters(comp) + ")";
+          const msg = a.status === "CANCELLED"
+            ? (en ? "\u274C *Match cancelled:* " + teams : "\u274C *\u0628\u0627\u0632\u06CC \u0644\u063A\u0648 \u0634\u062F:* " + teams)
+            : (en ? "*Match postponed:* " + teams : "\u{1F550} *\u0628\u0627\u0632\u06CC \u0628\u0647 \u062A\u0639\u0648\u06CC\u0642 \u0627\u0641\u062A\u0627\u062F:* " + teams);
+          await Promise.allSettled(bucket.map((c) => sendTelegram(env, msg, c)));
+        }
       }
     }
   } catch (e) {
@@ -8096,6 +8445,40 @@ async function handleTelegramUpdate(env, update) {
       await env.STATE.put("upd_" + updId, "1", { expirationTtl: 600 }).catch(() => {
       });
     }
+    // v12.x-bilingual-bot: callback_query handler (language picker). Runs
+    // BEFORE the message handlers. The callback_data is "lang:fa" or
+    // "lang:en". On tap: register the chat if needed, persist the lang,
+    // answer the callback (dismisses the loading spinner on the button),
+    // then send the welcome + help in the chosen lang. The picker itself
+    // is sent via the /lang command (and /start for new users) using the
+    // sendTelegramWithKeyboard helper.
+    const cbq = update && update.callback_query;
+    if (cbq && cbq.id) {
+      try {
+        const cbChatId = cbq.message && cbq.message.chat && cbq.message.chat.id;
+        const cbUserId = cbq.from && cbq.from.id;
+        const cbChatId2 = cbChatId || cbUserId;
+        if (cbChatId2) {
+          const data = String(cbq.data || "");
+          const m = data.match(/^lang:(fa|en)$/);
+          if (m) {
+            const lang = m[1];
+            const chats = await getRegisteredChats(env);
+            if (!chats.includes(cbChatId2)) {
+              chats.push(cbChatId2);
+              await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(chats));
+            }
+            await setUserLang(env, cbChatId2, lang);
+            await answerCallbackQuery(env, cbq.id, lang === "en" ? "English" : "\u0641\u0627\u0631\u0633\u06CC");
+            const welcomeText = botStr(lang, "lang_set") + "\n\n" + botStr(lang, "start_welcome") + "\n\n" + botStr(lang, "help_body");
+            await sendTelegram(env, welcomeText, cbChatId2);
+          }
+        }
+      } catch (e) {
+        console.error("callback_query handler failed: " + e.message);
+      }
+      return new Response("OK");
+    }
     const message = update && update.message;
     if (!message || !message.chat || !message.chat.id) return;
     const chatId = message.chat.id;
@@ -8127,64 +8510,123 @@ async function handleTelegramUpdate(env, update) {
         chats.push(chatId);
         await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(chats));
       }
-      await sendTelegram(env, "\u2705 \u0628\u0647 \u0631\u0628\u0627\u062A \u0627\u0639\u0644\u0627\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\\!\n\n\u26BD \u0627\u0639\u0644\u0627\u0646 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u062F\u0646\u0628\u0627\u0644\u200C\u0634\u062F\u0647 \u062F\u0631 \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0648 \u0644\u06CC\u06AF\u200C\u0647\u0627\u06CC \u0627\u0631\u0648\u067E\u0627\u06CC\u06CC\n\u{1F4C5} /next \u2014 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648 \u0631\u0627 \u0628\u0628\u06CC\u0646\u06CC\u062F\n\u{1F4CA} /tables \u2014 \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627 \u0631\u0627 \u0628\u0628\u06CC\u0646\u06CC\u062F\n\u{1F4DD} /help \u2014 \u0631\u0627\u0647\u0646\u0645\u0627\u06CC \u062F\u0633\u062A\u0648\u0631\u0627\u062A\n\u274C /stop \u2014 \u0627\u0646\u0635\u0631\u0627\u0641 \u0627\u0632 \u062F\u0631\u06CC\u0627\u0641\u062A \u0627\u0639\u0644\u0627\u0646", chatId);
+      const prefs = await getUserPrefs(env);
+      const up = prefs[String(chatId)] || {};
+      const langSet = up.lang === "en" || up.lang === "fa";
+      if (langSet && up.lang === "en") {
+        await sendTelegram(env, "Welcome to SportSignal\\!\nNever miss the big matches\\.\n\n/next \\- Upcoming\n/tables \\- Tables\n/help \\- Help\n/stop \\- Stop", chatId);
+      } else if (langSet && up.lang === "fa") {
+        await sendTelegram(env, "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u0627\\!\n\n/next \\- \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\n/tables \\- \u062C\u062F\u0648\u0644\u200C\u0647\u0627\n/help \\- \u0631\u0627\u0647\u0646\u0645\u0627\n/stop \\- \u0627\u0646\u0635\u0631\u0627\u0641", chatId);
+      } else {
+        const hasKeyboard = typeof sendTelegramWithKeyboard === "function";
+        const promptText = "\u{1F310} \u0632\u0628\u0627\u0646 / Language";
+        const keyboard = { inline_keyboard: [[
+          { text: "\u{1F1EE}\u{1F1F7} \u0641\u0627\u0631\u0633\u06CC", callback_data: "lang:fa" },
+          { text: "\u{1F1EC}\u{1F1E7} English", callback_data: "lang:en" }
+        ]] };
+        if (hasKeyboard) {
+          await sendTelegramWithKeyboard(env, promptText, chatId, keyboard);
+        } else {
+          await sendTelegram(env, promptText + "\n\n/lang", chatId);
+        }
+      }
+    } else if (text === "/lang") {
+      const hasKeyboard = typeof sendTelegramWithKeyboard === "function";
+      const promptText = "\u{1F310} \u0632\u0628\u0627\u0646 / Language";
+      const keyboard = { inline_keyboard: [[
+        { text: "\u{1F1EE}\u{1F1F7} \u0641\u0627\u0631\u0633\u06CC", callback_data: "lang:fa" },
+        { text: "\u{1F1EC}\u{1F1E7} English", callback_data: "lang:en" }
+      ]] };
+      if (hasKeyboard) {
+        await sendTelegramWithKeyboard(env, promptText, chatId, keyboard);
+      } else {
+        await sendTelegram(env, promptText, chatId);
+      }
     } else if (text === "/stop") {
       const chats = await getRegisteredChats(env);
       const newChats = chats.filter((c) => c !== chatId);
       await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(newChats));
-      await sendTelegram(env, "\u274C \u0634\u0645\u0627 \u0627\u0632 \u062F\u0631\u06CC\u0627\u0641\u062A \u0627\u0639\u0644\u0627\u0646\u200C\u0647\u0627 \u062E\u0627\u0631\u062C \u0634\u062F\u06CC\u062F\\. \u0628\u0631\u0627\u06CC \u062B\u0628\u062A\u200C\u0646\u0627\u0645 \u0645\u062C\u062F\u062F /start \u0631\u0627 \u0627\u0631\u0633\u0627\u0644 \u06A9\u0646\u06CC\u062F\\.", chatId);
+      const prefs = await getUserPrefs(env);
+      const lang = (prefs[String(chatId)] && prefs[String(chatId)].lang) === "en" ? "en" : "fa";
+      await sendTelegram(env, lang === "en" ? "You have been unsubscribed\\. Use /start to return\\." : "\u274C \u0627\u0632 \u062F\u0631\u06CC\u0627\u0641\u062A \u067E\u06CC\u0627\u0645 \u062E\u0627\u0631\u062C \u0634\u062F\u06CC\u062F\\.", chatId);
     } else if (text === "/help") {
-      await sendTelegram(env, "\u{1F4DD} *\u0631\u0627\u0647\u0646\u0645\u0627\u06CC \u0631\u0628\u0627\u062A:*\n\n/start \u2014 \u0639\u0636\u0648\u06CC\u062A \u0648 \u062F\u0631\u06CC\u0627\u0641\u062A \u0627\u0639\u0644\u0627\u0646\n/teams \u2014 \u0644\u06CC\u0633\u062A \u062A\u06CC\u0645\u200C\u0647\u0627 \u0648 \u0627\u0646\u062A\u062E\u0627\u0628 \u0634\u0645\u0627\n/follow 1,3,7 \u2014 \u062F\u0646\u0628\u0627\u0644 \u06A9\u0631\u062F\u0646 \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u062E\u0627\u0635 \u0627\u0632 \u0644\u06CC\u0633\u062A /teams\n/follow all \u2014 \u062F\u0646\u0628\u0627\u0644 \u06A9\u0631\u062F\u0646 \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627\n/next \u2014 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\u06CC \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u062F\u0646\u0628\u0627\u0644\u200C\u0634\u062F\u0647\n/tables \u2014 \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628\n/timezone london \u2014 \u062A\u063A\u06CC\u06CC\u0631 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC (\u0645\u062B\u0644\u0627 \u062F\u0631 \u0633\u0641\u0631) \u061B /timezone reset \u0628\u0631\u0627\u06CC \u0628\u0627\u0632\u06AF\u0634\u062A \u0628\u0647 \u067E\u06CC\u0634\u200C\u0641\u0631\u0636\n/stop \u2014 \u0627\u0646\u0635\u0631\u0627\u0641 \u0627\u0632 \u0627\u0639\u0644\u0627\u0646\u200C\u0647\u0627\n\n\u26BD \u0627\u0639\u0644\u0627\u0646\u200C\u0647\u0627 \u0634\u0627\u0645\u0644: \u06F2\u06F4 \u0633\u0627\u0639\u062A\u060C \u06F3 \u0633\u0627\u0639\u062A\u060C \u06F1 \u0633\u0627\u0639\u062A \u0645\u0627\u0646\u062F\u0647 \u060C \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC \u0648 \u0646\u062A\u06CC\u062C\u0647 \u0646\u0647\u0627\u06CC\u06CC\n\u{1F3C6} \u067E\u0648\u0634\u0634: \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646\u060C \u0644\u06CC\u06AF \u0628\u0631\u062A\u0631\u060C \u0644\u0627\u0644\u06CC\u06AF\u0627\u060C \u0633\u0631\u06CC\u200C\u0622\u060C \u0644\u06CC\u06AF \u06CC\u06A9\u060C \u0644\u06CC\u06AF \u0627\u0631\u0648\u067E\u0627\u060C \u0644\u06CC\u06AF \u06A9\u0646\u0641\u0631\u0627\u0646\u0633", chatId);
+      const prefs = await getUserPrefs(env);
+      const lang = (prefs[String(chatId)] && prefs[String(chatId)].lang) === "en" ? "en" : "fa";
+      const body = lang === "en"
+        ? "/start \\- Join\n/teams \\- List teams\n/follow 1,3,7 \\- Pick teams\n/follow all \\- All teams\n/next \\- Upcoming matches\n/tables \\- League tables\n/timezone london \\- Set timezone\n/lang \\- Change language\n/stop \\- Unsubscribe"
+        : "/start \\- \u0639\u0636\u0648\u06CC\u062A\n/teams \\- \u0644\u06CC\u0633\u062A \u062A\u06CC\u0645\u200C\u0647\u0627\n/follow 1,3,7 \\- \u0627\u0646\u062A\u062E\u0627\u0628 \u062A\u06CC\u0645\n/follow all \\- \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627\n/next \\- \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\n/tables \\- \u062C\u062F\u0648\u0644\u200C\u0647\u0627\n/timezone london \\- \u062A\u0646\u0638\u06CC\u0645 \u0632\u0645\u0627\u0646\n/lang \\- \u062A\u063A\u06CC\u06CC\u0631 \u0632\u0628\u0627\u0646\n/stop \\- \u0627\u0646\u0635\u0631\u0627\u0641";
+      const header = lang === "en" ? "\u26BD *Help*\n\n" : "\u26BD *\u0631\u0627\u0647\u0646\u0645\u0627*\n\n";
+      await sendTelegram(env, header + body, chatId);
     } else if (text === "/teams") {
       const master = masterTeamList();
       const prefs = await getUserPrefs(env);
       const p = prefs[String(chatId)];
+      const lang = (p && p.lang) === "en" ? "en" : "fa";
       const selected = p && Array.isArray(p.teams) ? p.teams : null;
       const lines = master.map((t, i) => {
         const isSel = selected && selected.some((s) => (0, import_teams.normalizeTeamName)(s) === (0, import_teams.normalizeTeamName)(t));
-        return (isSel ? "\u2705 " : "\u{1F539} ") + String(i + 1) + "\\. " + escapeMarkdownCharacters(translateTeam(t));
+        return (isSel ? "\u2705 " : "") + String(i + 1) + "\\. " + escapeMarkdownCharacters(translateTeam(t));
       });
-      const status = selected ? "\u0627\u0646\u062A\u062E\u0627\u0628 \u0641\u0639\u0644\u06CC: " + selected.length + " \u062A\u06CC\u0645" : "\u0634\u0645\u0627 \u0627\u06A9\u0646\u0648\u0646 \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627 \u0631\u0627 \u062F\u0646\u0628\u0627\u0644 \u0645\u06CC\u200C\u06A9\u0646\u06CC\u062F";
-      await sendTelegram(env, "\u{1F4CB} *\u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0642\u0627\u0628\u0644 \u062F\u0646\u0628\u0627\u0644\u200C\u06A9\u0631\u062F\u0646:*\n\n" + lines.join("\n") + "\n\n" + status + "\n\n\u0628\u0631\u0627\u06CC \u0627\u0646\u062A\u062E\u0627\u0628: /follow 1,3,7\n\u0628\u0631\u0627\u06CC \u0647\u0645\u0647: /follow all", chatId);
+      const status = selected
+        ? (lang === "en" ? "Selected teams: " + selected.length : "\u062A\u0639\u062F\u0627\u062F \u062A\u06CC\u0645 \u0627\u0646\u062A\u062E\u0627\u0628\u06CC: " + toFaDigits(String(selected.length)))
+        : (lang === "en" ? "Following all teams\\." : "\u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627 \u062F\u0646\u0628\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F\\.");
+      const header = lang === "en" ? "*Teams you can follow:*" : "*\u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0642\u0627\u0628\u0644 \u062F\u0646\u0628\u0627\u0644\u200C\u06A9\u0631\u062F\u0646:*";
+      const footer = lang === "en" ? "Pick: /follow 1,3,7\nAll: /follow all" : "\u0627\u0646\u062A\u062E\u0627\u0628: /follow 1,3,7\n\u0647\u0645\u0647: /follow all";
+      await sendTelegram(env, header + "\n\n" + lines.join("\n") + "\n\n" + status + "\n\n" + footer, chatId);
     } else if (text && text.startsWith("/follow")) {
       const arg = text.slice(7).trim();
       const master = masterTeamList();
       const prefs = await getUserPrefs(env);
+      const p = prefs[String(chatId)] || {};
+      const lang = p.lang === "en" ? "en" : "fa";
       if (!arg || arg === "all") {
-        delete prefs[String(chatId)];
+        if (prefs[String(chatId)]) delete prefs[String(chatId)];
         await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
-        await sendTelegram(env, "\u2705 \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627 \u062F\u0646\u0628\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F", chatId);
+        await sendTelegram(env, lang === "en" ? "Following all teams\\." : "\u2705 \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627 \u062F\u0646\u0628\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F\\.", chatId);
       } else {
         const nums = arg.split(/[\s,\u060C]+/).map((n) => parseInt(n, 10)).filter((n) => !isNaN(n) && n >= 1 && n <= master.length);
         if (!nums.length) {
-          await sendTelegram(env, "\u26A0\uFE0F \u0634\u0645\u0627\u0631\u0647 \u0646\u0627\u0645\u0639\u062A\u0628\u0631 \u0627\u0633\u062A\u060C \u0627\u0632 /teams \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F", chatId);
+          await sendTelegram(env, lang === "en" ? "Invalid number\\. Use /teams to see the list\\." : "\u26A0\uFE0F \u0634\u0645\u0627\u0631\u0647 \u0646\u0627\u0645\u0639\u062A\u0628\u0631 \u0627\u0633\u062A\\.", chatId);
         } else {
           const picked = [...new Set(nums)].map((n) => master[n - 1]);
-          prefs[String(chatId)] = { teams: picked };
+          prefs[String(chatId)] = { teams: picked, tz: p.tz || null, lang: p.lang || "fa" };
           await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
-          const names = picked.map((t) => escapeMarkdownCharacters(translateTeam(t))).join("\u060C ");
-          await sendTelegram(env, "\u2705 \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0627\u0646\u062A\u062E\u0627\u0628\u06CC \u0634\u0645\u0627:\n" + names + "\n\n\u0628\u0631\u0627\u06CC \u062A\u063A\u06CC\u06CC\u0631\u060C /follow all \u06CC\u0627 \u0634\u0645\u0627\u0631\u0647\u200C\u0647\u0627\u06CC \u062C\u062F\u06CC\u062F \u0631\u0627 \u0628\u0641\u0631\u0633\u062A\u06CC\u062F", chatId);
+          const sep = lang === "en" ? ", " : "\u060C ";
+          const names = picked.map((t) => escapeMarkdownCharacters(translateTeam(t))).join(sep);
+          const head = lang === "en" ? "Your selected teams:\n" : "\u2705 \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0627\u0646\u062A\u062E\u0627\u0628\u06CC \u0634\u0645\u0627:\n";
+          const foot = lang === "en" ? "\n\nTo change: /follow all or new numbers\\." : "\n\n\u0628\u0631\u0627\u06CC \u062A\u063A\u06CC\u06CC\u0631\u060C /follow all \u06CC\u0627 \u0634\u0645\u0627\u0631\u0647\u200C\u0647\u0627\u06CC \u062C\u062F\u06CC\u062F \u0631\u0627 \u0628\u0641\u0631\u0633\u062A\u06CC\u062F\\.";
+          await sendTelegram(env, head + names + foot, chatId);
         }
       }
     } else if (text && text.startsWith("/timezone")) {
       const prefs = await getUserPrefs(env);
+      const p = prefs[String(chatId)] || {};
+      const lang = p.lang === "en" ? "en" : "fa";
       const arg = text.slice(10).trim();
       if (!arg) {
         const tz = getUserTz(prefs, chatId, env);
-        await sendTelegram(env, "\u23F0 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627: " + escapeMarkdownCharacters(tz) + "\n\u0628\u0631\u0627\u06CC \u062A\u063A\u06CC\u06CC\u0631: /timezone london", chatId);
+        const head = lang === "en" ? "Your timezone: " : "\u23F0 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627: ";
+        const tail = lang === "en" ? "\nChange: /timezone london" : "\n\u0628\u0631\u0627\u06CC \u062A\u063A\u06CC\u06CC\u0631: /timezone london";
+        await sendTelegram(env, head + escapeMarkdownCharacters(tz) + tail, chatId);
       } else if (arg === "reset") {
         if (prefs[String(chatId)]) delete prefs[String(chatId)].tz;
         await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
-        await sendTelegram(env, "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u0628\u0647 \u067E\u06CC\u0634\u200C\u0641\u0631\u0636 \u0631\u0628\u0627\u062A \u0628\u0627\u0632\u06AF\u0634\u062A: " + escapeMarkdownCharacters(env.TEHRAN_TZ || ""), chatId);
+        const head = lang === "en" ? "Timezone reset to default: " : "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u0628\u0647 \u067E\u06CC\u0634\u200C\u0641\u0631\u0636 \u0628\u0627\u0632\u06AF\u0634\u062A: ";
+        await sendTelegram(env, head + escapeMarkdownCharacters(env.TEHRAN_TZ || ""), chatId);
       } else {
         const tz = resolveTimeZone(arg);
         if (!tz) {
-          await sendTelegram(env, "\u26A0\uFE0F \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0646\u0627\u0645\u0639\u062A\u0628\u0631 \u0627\u0633\u062A\n\u0645\u062B\u0627\u0644: /timezone london \u06CC\u0627 /timezone Europe/London", chatId);
+          const head = lang === "en" ? "Invalid timezone\\." : "\u26A0\uFE0F \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0646\u0627\u0645\u0639\u062A\u0628\u0631 \u0627\u0633\u062A\\.";
+          const tail = lang === "en" ? "\nExample: /timezone london or /timezone Europe/London" : "\n\u0645\u062B\u0627\u0644: /timezone london \u06CC\u0627 /timezone Europe/London";
+          await sendTelegram(env, head + tail, chatId);
         } else {
           if (!prefs[String(chatId)]) prefs[String(chatId)] = {};
           prefs[String(chatId)].tz = tz;
+          if (!prefs[String(chatId)].lang) prefs[String(chatId)].lang = "fa";
           await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
-          await sendTelegram(env, "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u062A\u063A\u06CC\u06CC\u0631 \u06A9\u0631\u062F: " + escapeMarkdownCharacters(tz) + "\n\u067E\u06CC\u0627\u0645\u200C\u0647\u0627 \u0627\u0632 \u0627\u06CC\u0646 \u067E\u0633 \u0628\u0631 \u0627\u0633\u0627\u0633 \u0633\u0627\u0639\u062A \u0645\u062D\u0644\u06CC \u0627\u0631\u0633\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F", chatId);
+          const head = lang === "en" ? "Timezone set: " : "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u062A\u063A\u06CC\u06CC\u0631 \u06A9\u0631\u062F: ";
+          const tail = lang === "en" ? "\nMessages will be sent in your local time\\." : "\n\u067E\u06CC\u0627\u0645\u200C\u0647\u0627 \u0627\u0632 \u0627\u06CC\u0646 \u067E\u0633 \u0628\u0631 \u0627\u0633\u0627\u0633 \u0633\u0627\u0639\u062A \u0645\u062D\u0644\u06CC \u0627\u0631\u0633\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F\\.";
+          await sendTelegram(env, head + escapeMarkdownCharacters(tz) + tail, chatId);
         }
       }
     } else if (text === "/next") {
@@ -8193,27 +8635,36 @@ async function handleTelegramUpdate(env, update) {
       const poolFresh = pool && pool.fetchedAt && Date.now() - new Date(pool.fetchedAt).getTime() < 10 * 6e4 && Array.isArray(pool.matches);
       const matches = poolFresh ? pool.matches : await fetchMatchesFromAPI(env);
       const prefs = await getUserPrefs(env);
+      const p = prefs[String(chatId)] || {};
+      const lang = p.lang === "en" ? "en" : "fa";
       const now = /* @__PURE__ */ new Date();
       const upcoming = matches.filter((m) => shouldNotify(m) && userFollowsMatch(prefs, chatId, m) && new Date(m.utcDate) > now).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 5);
       env.TEHRAN_TZ = getUserTz(prefs, chatId, env);
       if (!upcoming.length) {
-        await sendTelegram(env, "\u{1F4C5} \u062F\u0631 \u062D\u0627\u0644 \u062D\u0627\u0636\u0631 \u0628\u0627\u0632\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\u06CC \u0628\u0631\u0627\u06CC \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u062F\u0646\u0628\u0627\u0644\u200C\u0634\u062F\u0647 \u0648\u062C\u0648\u062F \u0646\u062F\u0627\u0631\u062F\u060C \u0648\u0644\u06CC \u0628\u0647 \u0632\u0648\u062F\u06CC \u0634\u0631\u0648\u0639 \u0645\u06CC\u200C\u0634\u0648\u062F\\! \u0645\u0646\u062A\u0638\u0631 \u0628\u0627\u0634\u06CC\u062F\u200C\u060C \u0627\u0639\u0644\u0627\u0646 \u062E\u0648\u062F\u06A9\u0627\u0631 \u0627\u0631\u0633\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u062F", chatId);
+        await sendTelegram(env, lang === "en" ? "No upcoming matches for your followed teams right now\\." : "\u{1F4C5} \u062F\u0631 \u062D\u0627\u0644 \u062D\u0627\u0636\u0631 \u0628\u0627\u0632\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\u06CC \u0628\u0631\u0627\u06CC \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u062F\u0646\u0628\u0627\u0644\u200C\u0634\u062F\u0647 \u0634\u0645\u0627 \u0648\u062C\u0648\u062F \u0646\u062F\u0627\u0631\u062F\\.", chatId);
       } else {
         const lines = upcoming.map((m) => {
-          const jalali = getJalaliTime(m.utcDate, env);
-          return "\u26BD " + escapeMarkdownCharacters(translateTeam(m.homeTeam.name)) + " \u{1F19A} " + escapeMarkdownCharacters(translateTeam(m.awayTeam.name)) + "\n" + translateCompetition(m.competition.code) + " \u2014 " + jalali;
+          const time = lang === "en" ? getEnglishTime(m.utcDate, env) : getJalaliTime(m.utcDate, env);
+          const vs = lang === "en" ? " vs " : " \u{1F19A} ";
+          return escapeMarkdownCharacters(translateTeam(m.homeTeam.name)) + vs + escapeMarkdownCharacters(translateTeam(m.awayTeam.name)) + "\n" + translateCompetition(m.competition.code) + " \u2014 " + time;
         });
-        await sendTelegram(env, "\u{1F4C5} *\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648:*\n\n" + lines.join("\n\n"), chatId);
+        const header = lang === "en" ? "*Upcoming matches:*\n\n" : "*\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648:*\n\n";
+        await sendTelegram(env, header + lines.join("\n\n"), chatId);
       }
     } else if (text === "/tables" || text === "/\u062C\u062F\u0648\u0644") {
       await applySettings(env);
-      const res = await sendLeagueTables(env, [chatId], { label: "\u062C\u062F\u0648\u0644 \u0641\u0639\u0644\u06CC" });
-      const wa = await sendWeekAhead(env, [chatId]);
+      const prefs = await getUserPrefs(env);
+      const lang = (prefs[String(chatId)] && prefs[String(chatId)].lang) === "en" ? "en" : "fa";
+      const label = lang === "en" ? "Current table" : "\u062C\u062F\u0648\u0644 \u0641\u0639\u0644\u06CC";
+      const res = await sendLeagueTables(env, [chatId], { label, lang });
+      const wa = await sendWeekAhead(env, [chatId], lang);
       if (res.sent === 0 && wa.sent === 0) {
-        await sendTelegram(env, "\u26A0\uFE0F \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627 \u0641\u0639\u0644\u0627\u064B \u062F\u0631 \u062F\u0633\u062A\u0631\u0633 \u0646\u06CC\u0633\u062A \u2014 \u0644\u0637\u0641\u0627\u064B \u062F\u0642\u0627\u06CC\u0642\u06CC \u0628\u0639\u062F \u062F\u0648\u0628\u0627\u0631\u0647 \u062A\u0644\u0627\u0634 \u06A9\u0646\u06CC\u062F\\.", chatId);
+        await sendTelegram(env, lang === "en" ? "Tables are not available right now\\. Please try again in a few minutes\\." : "\u26A0\uFE0F \u062C\u062F\u0648\u0644\u200C\u0647\u0627 \u0641\u0639\u0644\u0627\u064B \u062F\u0631 \u062F\u0633\u062A\u0631\u0633 \u0646\u06CC\u0633\u062A \\- \u0644\u0637\u0641\u0627\u064B \u062F\u0642\u0627\u06CC\u0642\u06CC \u0628\u0639\u062F \u062F\u0648\u0628\u0627\u0631\u0647 \u062A\u0644\u0627\u0634 \u06A9\u0646\u06CC\u062F\\.", chatId);
       }
     } else if (text && text.startsWith("/")) {
-      await sendTelegram(env, "\u{1F4DD} \u062F\u0633\u062A\u0648\u0631 \u0646\u0627\u0634\u0646\u0627\u062E\u062A\u0647 \u0627\u0633\u062A\u060C \u0627\u0632 /help \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F\u060C", chatId);
+      const prefs = await getUserPrefs(env);
+      const lang = (prefs[String(chatId)] && prefs[String(chatId)].lang) === "en" ? "en" : "fa";
+      await sendTelegram(env, lang === "en" ? "Unknown command\\. Use /help\\." : "\u{1F4DD} \u062F\u0633\u062A\u0648\u0631 \u0646\u0627\u0634\u0646\u0627\u062E\u062A\u0647 \u0627\u0633\u062A\u060C \u0627\u0632 /help \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F\\.", chatId);
     }
     return new Response("OK");
   } catch (error) {
@@ -8585,7 +9036,7 @@ var worker_default = {
       const res = await fetch("https://api.telegram.org/bot" + env.BOT_TOKEN + "/setWebhook", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url: webhookUrl, secret_token: secret, allowed_updates: ["message"] })
+        body: JSON.stringify({ url: webhookUrl, secret_token: secret, allowed_updates: ["message", "callback_query"] })
       }).catch(() => null);
       const body = res ? await res.json() : { ok: false, error: "Telegram unreachable from worker" };
       return jsonResponse({ ...body, webhook_url: webhookUrl });
