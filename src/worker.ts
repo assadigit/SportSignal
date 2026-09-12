@@ -5237,11 +5237,11 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    phones, 3 columns everywhere else (the page caps at 760px, so 3 boxes/row
    at ~233px each, two tidy rows for the 6 leagues). The old auto-fit
    minmax(150px,1fr) packed FOUR boxes per row on desktop. */
-.grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-@media (min-width:601px){.grid4{grid-template-columns:repeat(3,1fr)}}
-.stbox{position:relative;background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);border:1px solid var(--glass-border);border-radius:12px;padding:10px 12px;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
-.stbox-head{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;margin-bottom:6px}
-.stbox-head img{width:16px;height:16px;border-radius:3px}
+.grid4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:601px){.grid4{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.stbox{position:relative;background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);border:1px solid var(--glass-border);border-radius:12px;padding:10px 12px;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi);min-width:0}
+.stbox-head{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;margin-bottom:6px;min-width:0}
+.stbox-head img{width:20px;height:20px;border-radius:3px;flex-shrink:0}
 .strow{display:flex;align-items:center;gap:6px;font-size:11.5px;padding:2.5px 0;border-bottom:1px dashed var(--border)}
 .strow:last-child{border-bottom:none}
 /* v12.27 (review item 4): the compact boxes carry a COLUMN HEADER for the
@@ -5481,7 +5481,7 @@ body{max-width:1400px;display:grid;grid-template-columns:minmax(0,1fr) minmax(40
 #heroSpot{max-width:880px;margin:0 auto}
 #wideMain,#wideSide{display:flex;flex-direction:column;gap:14px}
 #wideMain>*,#wideSide>*{margin:0}
-#wideSide .grid4{grid-template-columns:repeat(2,1fr)}
+#wideSide .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
 footer{margin-top:0}
 #topbar,.herowrap,footer{grid-column:1/-1}
 }
@@ -6255,7 +6255,11 @@ function renderStandings(d){
   ["PL","PD","SA","FL1","BL1","PGL"].forEach(function(code){
     var st = d[code], box = document.createElement("div"); box.className = "stbox";
     var h = document.createElement("div"); h.className = "stbox-head";
-    if(FLAGS[code]) h.appendChild(document.createTextNode(FLAGS[code] + " "));
+    // v12.36-enfix: the country-flag emoji prefix (FLAGS[code] + " ") is RETIRED
+    // — the user's ask. In English mode the flag emoji rendered as "EN"/"ES"/
+    // "IT"/"FR" grey text labels (font fallback) before the league emblem
+    // image, which the user found noisy. The league emblem image alone is the
+    // brand mark now, bumped ~25% (16px → 20px via .stbox-head img above).
     if(st && st.emblem){ var img = document.createElement("img"); img.src = st.emblem; img.alt = ""; img.onerror = function(){ this.remove(); }; h.appendChild(img); }
     h.appendChild(document.createTextNode(compOf(st) || code));
     if(st && st.started === false){
