@@ -32,7 +32,7 @@ check("fetchTheSportsDB per-league block threads venue", /venue: e\.strVenue \|\
 // the venue chip must be rendered in both render paths
 check(
   "render() shows venue chip",
-  /if\(m\.venue\)\{ var vn = document\.createElement\("span"\); vn\.className = "venue"; vn\.textContent = "🏟️ " \+ m\.venue; info\.appendChild\(vn\); \}/g.test(src) 
+  /if\(m\.venue\)\{ var vn = document\.createElement\("span"\); vn\.className = "venue"; vn\.textContent = "\\u\{1F3DF\}\\uFE0F " \+ m\.venue; info\.appendChild\(vn\); \}/g.test(src) 
     && /render\(\)|renderSpecial/.test(src)
 );
 
@@ -67,7 +67,7 @@ check("pubMatch venue null when absent", outNull.venue === null);
 const dedupeSrc = fs.readFileSync("src/dedupe.js", "utf8");
 check(
   "cacheMatches dedupes on canonical key (module)",
-  /const merged = canonDedupe\(\[\.\.\.head, \.\.\.matches\]\);/.test(src) &&
+  /const merged = \(0, import_dedupe\.canonDedupe\)\(\[\.\.\.head, \.\.\.matches\]\);/.test(src) &&
     /const canon = \(m\) => .*normalizeTeamName/.test(dedupeSrc) &&
     /adopt\(m, cur\)/.test(dedupeSrc) &&
     /\[\.\.\.byKey\.values\(\)\]/.test(dedupeSrc)

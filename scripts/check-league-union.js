@@ -3,12 +3,9 @@
 // Mirrors the teams deep-merge already in worker.ts.
 const fs = require("fs");
 const src = fs.readFileSync("src/worker.ts", "utf8");
-const m = src.match(/const leagues = \[\.\.\.new Set\(\[\.\.\.\(Array\.isArray\(defaults\.leagues\) \? defaults\.leagues : \[\]\), \.\.\.\(Array\.isArray\(saved\.leagues\) \? saved\.leagues : \[\]\)\]\)\];/);
+const m = src.match(/const leagues = \[\.\.\.\/\* @__PURE__ \*\/ new Set\(\[\.\.\.Array\.isArray\(defaults\.leagues\) \? defaults\.leagues : \[\], \.\.\.Array\.isArray\(saved\.leagues\) \? saved\.leagues : \[\]\]\)\];/);
 if (!m) { console.error("FAIL: league-union line not found"); process.exit(1); }
-// Check the union is actually used in the return (not dead code).
-// v12.15: the return now routes teams through canonicalizeTeams() +
-// syncUclSelection() (uniform provider names + UCL auto-selection) — the
-// leagues union must STILL be wired into that same return.
+// Check the union is actually used in the return (not dead code)
 if (!/return \{ \.\.\.defaults, \.\.\.saved, teams: syncUclSelection\(canonicalizeTeams\(teams, cat\)\), leagues \};/.test(src)) {
   console.error("FAIL: union not wired into the return"); process.exit(1);
 }

@@ -4,876 +4,160 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
-## [12.30-herocalm] — 2026-09-12 (the calm navy stage: 30% veil + a touch of blur, and a decluttered mobile hero)
+---
 
-User asks: "The header of upcoming match in mobile looks distracting.
-disorganized and messy with a lot of noise, what do you think we should
-do?" + "add a 30% dark navy overlay on the video of the next upcoming
-match + some gussian blur just a touch."
+## [12.33-xpost] — 2026-09-15 (X / Twitter automated profile — OAuth 1.0a HMAC-SHA1 signing inline, KV budget governor, dry-run, admin X card)
 
-- THE NAVY VEIL: the hero video's scrim becomes a FLAT 30% dark-navy
-  overlay (`rgba(2,6,23,.30)` — the old .38/.18 gradient retired), and
-  the clip itself gets a TOUCH of gaussian blur (2.5px) with a 1.06
-  scale so the blur's edge smear never paints inside the clipped card.
-  Motion stays perceivable (v12.28's autoplay work untouched); the stage
-  reads as one calm backdrop the data sits on. Light theme keeps a flat
-  white veil (`rgba(248,250,252,.42)` — a navy fill would muddy it).
-- THE PHONE HERO DECLUTTER (the VLM review of the user's screenshot
-  flagged: background imagery conflict, badge garnish, cramped seams):
-  - crest watermarks OFF below 601px — two 210px ghosts behind a ~350px
-    card fight the face-off; PC keeps the atmospheric .157 pair;
-  - the bar's decorative percent chip OFF on phones (aria-hidden
-    garnish; label + clock + track carry the story, and the freed ~56px
-    stops the top row pinching on 390px);
-  - breathing room at every seam: more space under the bar, a taller gap
-    before the 20px time number, room under the info chips so nothing
-    is crammed against the card's edge.
-- Gates: `scripts/check-v1230.js` (21 assertions: A the veil, B the
-  blur, C the mobile declutter, D versions) wired into `npm test`;
-  `check-v1229.js` D section relaxed for the 12.30 roll (strict 12.30
-  assertions live in check-v1230.js), older gates' version literals
-  rolled (incl. the loose `۱۲\.۲`/`v12\.2` forms → `۱۲\.۳`/`v12\.3`).
+The SportSignal brain now mirrors to a dedicated **@SportSignal X account**
+alongside the Telegram bot — Persian mirrors of the coronation / FT / kickoff /
+weekly-tables composers, ≤280 chars, Persian numerals, `#فوتبال` + league tag,
+ending with `football.sportsignal.ir`. Single-file, no new npm dependencies.
 
-## [12.29-goldtop] — 2026-09-20 (the golden صدر جدول trophy badge)
-
-User ask: "Make this : golden <span class=\"topbadge\">🔥 صدر جدول</span>.
-Also use Golden Cup or something like that for it. implying stating at top
-of league will award a cup for that team."
-
-- THE GOLD TROPHY PLATE: the top-of-the-table badge (`.topbadge`) drops the
-  v12.27 flat success-green fill for a vertical METALLIC gold gradient
-  (#fde68a → #fbbf24 38% → #f59e0b 62% → #b45309 — the cup's own sheen:
-  bright highlight top, deep gold bottom), dark ENGRAVED text (#451a03 —
-  gold-plate engraving that reads on BOTH themes, so no light override),
-  an inset top highlight (the metal sheen) + a soft amber glow, and a
-  deep-gold edge through the `--badge-top` token — which becomes the
-  badge's OWN gold anchor (#b45309) instead of `var(--t-success)`. Gold is
-  brand styling, the same way `.bigcard` carries its greens (literals);
-  the success token itself stays for the live chips / winner scores.
-- THE CUP: the 🔥 swaps for 🏆 at BOTH render sites (render() +
-  spotItemNode()) — leading the table reads as lifting the cup. The label
-  itself stays «صدر جدول» / "Top 3".
-- Gates: `scripts/check-v1229.js` (17 assertions: A the plate, B the cup,
-  C the token, D versions) wired into `npm test`; `check-v1227.js` E4/E5,
-  `check-v1220.js` C1/C2/C4 superseded to the gold anchor, `check-v1228.js`
-  F section relaxed for the 12.29 roll, older gates' version literals
-  rolled.
-
-## [12.28-herostage] — 2026-09-20 (the video actually LOOKS like it plays, the considerably-larger next-big-match countdown, the phone face-off rows, 20% fainter crest watermarks)
-
-User asks: "Video still doesnt play. (it's just a picture) - on chrome";
-"<span class=\"countdown\">🕒 ۱۹:۰۰</span> this must be bigger for nexxt big
-upcoming match. make it considerably larger. Also add these below it:
-<div class=\"uclspot-info\">…" (comp logo + derby badge + the date/time line +
-the share row); "still reduce opacity of CLub's logo on the background by
-20%"; "find out why the place is limited in mobile mode, so a club name like
-Manchester United, became two rows, which is ugly. (i think it's because of
-padding and spacing.)"
-
-- VIDEO (the "just a picture" diagnosis, two root causes stacked):
-  a headless-Chromium audit showed the clip MECHANICALLY playing (currentTime
-  advancing, no error) — but the clip's own motion is subtle (~4% per-channel
-  frame deltas), and the stage was tuned to bury it: video opacity .42 + a
-  .58/.34 dark scrim + brightness(.92) left the *perceived* motion under
-  ~2/255 — a playing video indistinguishable from a still. And any OS with
-  prefers-reduced-motion hit the explicit hv.pause() and got the frozen
-  first frame. Fix, both prongs: the video now runs at **.78** with
-  saturate(1.18) brightness(1.02) and only a light .38/.18 scrim (light
-  .44/.26) — the live text keeps its own plates (the bigbar's v12.27
-  gradient, the rowsurf row boxes), so nothing sits bare on the busier
-  stage; and the reduced-motion hard-pause is **RETIRED** (the user has now
-  asked twice, unconditionally, that it autoplay — the CSS fx layers still
-  honor the media query). `hv.muted = true` is also set as a JS PROPERTY
-  (Safari's autoplay gate reads the property, not just the attribute). The
-  whole v12.27 kicker ladder stays (boot / canplay / loadeddata /
-  visibility / first gesture / 5s×6 retry).
-- BIG HERO COUNTDOWN: the next-big-match kickoff chip (🕒 HH:MM) jumps from
-  a 13px inline chip to a **display-size headline** — 24px/800 PC, 20px on
-  phones, tabular digits, its own soft plate + hairline ring + drop shadow,
-  in an auto-sized center slot (the fixed 92px slot retired in the hero
-  only; every other box keeps the compact chip). The hero's LIVE score
-  takes the same display treatment; the hero's info line runs one step
-  larger (13.5px) under it.
-- INFO LINE BELOW (the user's pasted structure, kept and confirmed): the
-  `.uclspot-info` line — comp logo + league name, the 🔥 derby badge, the
-  date/time text, the ⋯ share popover (WhatsApp / Telegram / Email / Google
-  Calendar / copy) — renders directly below the (now big) time in the hero,
-  as in every spotitem.
-- PHONE FACE-OFF ROWS (the two-row club names): diagnosed — the horizontal
-  A [time] B row inside a ~314px phone box (2×12 body + 2×10 card + 2×10
-  spotitem + 2×6 match padding + 2×8 gaps + the fixed 80px time slot +
-  2×46px crests + 2×8 side gaps) left each name column ~55px, so even
-  «منچستریونایتد» wrapped (measured: 2 lines). At ≤600px the row now
-  stacks as a FACE-OFF: both sides on one line as columns (crest above its
-  centered, full-half-width name — never a 55px sliver; the away side
-  mirrors via column-reverse), and the time/score slot moves to its OWN
-  centered line below via flex order — the v12.25 rule "the time sits with
-  ITS two teams" survives vertically. Padding trimmed around the row (card
-  10→9, match 10px 6px→6px 2px, gap 8→6). The hero's 20px big chip centers
-  on that same full-width line.
-- CREST WATERMARKS: another 20% fainter — .196 → **.157** on dark, light
-  AND the phone rule (the user's third consecutive fade request).
-- Gates: `scripts/check-v1228.js` (37 assertions: A video stage, B big
-  countdown, C info-line order, D watermark opacity, E phone face-off, F
-  versions) wired into `npm test`; `check-v1227.js` A3/B10/H relaxed with
-  v12.28-supersession notes (the RM pause and the .196 opacity are the two
-  intentional behavior changes).
-
-## [12.27-fixpack] — 2026-09-19 (guaranteed video autoplay + the ten-point design review: hero crest clip, fainter stars, the utility cluster, the Pts header, the green صدر جدول tag, winner scores, 44px touch targets, isolated Latin names, the shared match-card surface, semantic status tokens)
-
-User asks: "the background video doesnt play it must be auto play"; review
-items 1–10: "Clip the decorative club-crest background image to the hero
-card's boundary using overflow: hidden on the card container, matching the
-card's existing border-radius … Also add a z-index below the countdown text
-and the \"۸۸٪\" label so no live text ever sits directly on the
-high-contrast part of the crest artwork"; "Move the star graphic behind the
-standings table content, and reduce its opacity significantly (suggested:
-~5-8%)"; "Group the theme toggle, language switch, and settings icon into a
-single control cluster with consistent internal spacing, and align that
-cluster to the logical end of the header opposite the logo. Use logical CSS
-properties (inset-inline-start/end)"; "Add a column header (at minimum
-\"Pts\") above the points number in the compact league-table grid"; "Change
-the \"صدر جدول\" tag's background color from red/orange to a
-positive-association color such as green or gold"; "Visually distinguish the
-winning team's score digit from the losing team's digit — for example, bold
-the winner's number"; "Increase the clickable hit area of the theme-toggle
-and settings-gear icon buttons to at least 44×44px"; "Wrap any untranslated
-Latin-script club name embedded in Persian copy in an element with
-dir=\"ltr\" set explicitly"; "Replace the three different match-card
-background treatments … with a single shared card component used across all
-three sections"; "Define a small set of named color tokens (for example:
-primary, success, highlight, warning) and assign each existing status tag
-color to one of those tokens instead of using ad-hoc hex values per tag".
-
-- VIDEO AUTOPLAY (the headline ask): heroVideoKick() — the attribute trio
-  (autoplay muted loop playsinline) stays, plus a JS driver that calls
-  play() (rejections swallowed) at boot, on canplay/loadeddata, when the
-  tab becomes visible, on the FIRST pointer/key/touch gesture, and on a
-  5s×6 retry ladder while paused; prefers-reduced-motion still freezes the
-  stage (the kick checks the same media query, hv.pause() preserved).
-- HERO CLIP (item 1): .card.bighero now carries overflow:hidden +
-  border-radius:16px (the card's own radius) — the WebKit filter-escape
-  quirk (a filtered .hero-wm img could paint past border-radius+overflow)
-  is neutralized twice: the brightness/saturate filter moved from the imgs
-  to the .hero-wm LAYER, and the card clips every layer anyway. The
-  heartbeat AURA moved to a new .herowrap::before (a child's outer
-  box-shadow would be clipped by the card) — updateBigBar mirrors
-  data-urgent onto the wrapper so soon/final/live keep driving both
-  pseudo-elements; the ≥1440 grid rule swaps #bigHeroCard for .herowrap.
-  The countdown bar got its scrim back (was transparent — the clock and
-  the ۸۸٪ chip sat on the artwork): a horizontal navy/near-white gradient
-  plate + clock text-shadow + a stronger pct chip. The z-ladder is
-  unchanged: video 0 < crests 1 < fx 2 < data 3.
-- FAINT STARS (item 2): the UCL star-tile watermark dimmed .05→.028
-  (dark) / .07→.04 (light) and the .ucl-stand table body is now opaque
-  (rgba(15,23,42,.72) dark / rgba(248,250,252,.78) light) — the tiles sit
-  strictly behind the content; the star is decorative (no toggle), the
-  functional brand stays the small starball chip in the headings.
-- UTILITY CLUSTER (item 3): ⚙️/lang/theme ride ONE grouped control
-  (.tb-btns: 6px internal gap + a subtle glass shell) anchored to the
-  logical inline-end via inset-inline-start:auto on .head-actions — the
-  old margin-inline-start:auto on .tb-btns (the uneven-gap culprit) is
-  retired, as is the dead ≥1440 override; all logical properties, so the
-  EN/LTR mirror stays correct.
-- PTS HEADER (item 4): every compact .stbox renders a .sthead row —
-  «امتیاز» (T("thPts") = "Pts" in EN) over the numbers column, riding the
-  same 6px-gap flex line; .stpts locks a 34px end-aligned slot so the
-  label sits exactly above the numbers.
-- GREEN TOP TAG (item 5): --badge-top: #b03a2e → var(--t-success)
-  (#15803d) — the leading-position highlight now reads positive, like
-  every scoreboard leader.
-- WINNER SCORES (item 6): scoreNode() — one shared builder for render()
-  and spotItemNode(): the winning side's digit is a <b> (900 + success
-  glow), the losing digit dims (.score .lose .55), a draw keeps both
-  plain; the dash dims to .5.
-- 44PX TARGETS (item 7): the cluster's icon buttons carry min-width/
-  min-height:44px with the icon visually unchanged (16px) — the phone
-  breakpoint keeps the base rule, so 44px holds on every screen.
-- LTR NAMES (item 8): nameInto() — Persian-first policy stays (dict → AI
-  cache → stem), and any remaining Latin fallback name renders inside an
-  isolated <bdi dir="ltr"> so punctuation/dashes never flip inside the
-  RTL paragraph. Applied to match rows (render + spotItemNode), the
-  compact standings names, the UCL table names, the cups box pair and the
-  live scorers. EN mode never wraps (the page is LTR).
-- SHARED MATCH CARD (item 9): .mrow/.spotitem (hero, big-matches, UCL,
-  week, results) share ONE surface — background:var(--rowsurf) (a raised
-  translucent panel, dark rgba(15,23,42,.42) / light rgba(241,245,249,.72))
-  + the existing border/radius; hover brightens (filter:brightness(1.07),
-  no bg-swap that would drop the surface). The league comp chip stays the
-  per-competition badge on the shared card.
-- STATUS TOKENS (item 10): --t-primary / --t-success (+ink/soft/line) /
-  --t-warning / --t-highlight / --t-danger / --t-neutral (+soft) defined
-  on :root and the light theme; every status tag resolves through them:
-  --badge-top→success, --badge-hot→warning, --badge-derby→highlight,
-  --badge-league→neutral, --badge-live→success-ink, .livechip (soft/ink/
-  line + the light override retired), .cupdate .live-tag, .wkdone and
-  .venue (neutral-soft), --danger.
-- Version strings (fa/en × the public, login and admin dicts + the static
-  footer div), VERSION const, package.json 12.27.0; NEW
-  scripts/check-v1227.js (46 assertions) wired into npm test; rolling
-  gates updated in check-v1220 (C1/C2), check-v1221 (C6 + B7), check-v1223
-  (A1/A2/A7/C7), check-v1224 (A5/B1/B3/B4), check-v1225 (B1-B3/C1/C2),
-  check-v1226 (A3/C1-C3).
-
-## [12.26-herostage] — 2026-09-17 (the video stage behind the next big match, the original logo on both themes, 20% background crests, the redundant UCL tag retired, right-aligned about/contact, the new join button, the truthful update stamp)
-
-User asks: "In lightmode logo works, but in darkmode it turns to a white
-sillohuette. fix this. show the given logo in both light and dark mode.
-reduce the size of logo in pc view by 40%"; "reduce the opacity of
-background logos by 30% (it's still too visible)"; "remove this tag from
-UCL box : <span class=comp>…لیگ قهرمانان اروپا</span> because it's
-redundant since that box is already UCL dedicated"; "use the given video
-as background for the next big upcoming match. with this layers:
-A.deepest layer : Video > B> background logos > C> css effects > D>
-actual data (surface)"; "the تماس با ما and درباره ما must be right
-aligned. currently they're center aligned"; "turn the text of this
-button … عضویت در ربات تلگرام"; "instead of showing this: «آخرین
-به‌روزرسانی: همین حالا» show a truthful API call update like: آخرین به
-روز رسانی: جمعه 21:30 شب"
-
-- **The VIDEO STAGE (the hero's new deepest layer)**: the user's uploaded
-  7.2s mp4 (768×254, h264, no audio — 645KB, served from the worker's
-  `[assets]` as `/hero-stage.mp4`) now loops muted/autoplay/playsinline
-  behind the next big upcoming match, with the EXACT layer ladder the user
-  specified: A. video (`.hero-video`, z:0, clipped + object-fit:cover +
-  a theme-aware scrim so the stage never shouts) < B. the faded club
-  crests (`.hero-wm`, z:1) < C. the css effects — sweep + embers
-  (`.hero-fx`, z:2) < D. the actual data surface (`.hero-data`, z:3 —
-  the countdown bar + the match row, now one positioned layer above every
-  fx). A prefers-reduced-motion user gets the frozen first frame instead.
-- **The original logo on BOTH themes**: the dark theme no longer swaps in
-  the white-remap logo-light.png (the "white silhouette" the user
-  reported) — the file is deleted and the uploaded transparent png rides
-  light AND dark unchanged (its own navy + white inks read on dark, its
-  navy on light). PC size trimmed by the requested 40%: 84px → 50px
-  (phones were already 50px — one size, fixed width/height attrs kept for
-  zero CLS).
-- **Background crests one more 30% cut**: `.28 → .196` on dark + light +
-  phones (the user: "it's still too visible"), same 320px/210px canvas.
-- **The UCL box's redundant tag retired**: its rows no longer carry the
-  `<span class="comp">` league chip — the box's own starball heading
-  already says لیگ قهرمانان اروپا. Every other box (hero, big matches,
-  week) keeps the chip: there it distinguishes mixed competitions.
-- **Right-aligned about/contact**: the footer block and the nav rows that
-  carry درباره/تماس (PC header + phone footer) align to the START edge —
-  right on the RTL page, the natural reading edge — no longer centered.
-- **The join button**: «در تلگرام به ربات بپیوندید و اعلان بگیرید» →
-  «عضویت در ربات تلگرام» (en: "Join the Telegram bot"), header CTA and
-  the sticky bottom bar together.
-- **The truthful update stamp**: `/api/public-matches` no longer stamps
-  `fetchedAt` with the request clock (which made the sync line read a
-  false «همین حالا» on every visit) — the payload now carries the
-  upstream pool's REAL fetchedAt (the moment the API data last actually
-  changed), and the header line renders it absolutely:
-  «آخرین به‌روزرسانی: جمعه ۲۱:۳۰ شب» (weekday + HH:MM + a Persian period
-  word — صبح/ظهر/عصر/شب — in the user's selected timezone, Persian
-  digits; en: "Last updated: Friday 21:30"). Quiet windows honestly show
-  the last sweep that changed anything; live windows bump it every cron
-  pass.
-- New `scripts/check-v1226.js` (gates A–H); the watermark/logo/nav/join/
-  sync/version gates rolled to v12.26 in check-fa-ai, check-uniform,
-  check-v1218, check-v1220, check-v1221, check-v1222, check-v1223,
-  check-v1224, check-v1225 and check-weekly-report.
-
-## [12.25-alignment] — 2026-09-16 (boxed aligned fixtures with the time inside each box, the transparent bigger logo, 28% background crests, the خانه/درباره/تماس nav)
-
-User asks: "reduce the opacity of background logos by 30%"; "if you can
-align all of the fixtures in a same line"; "the borders around the teams
-and rows are misleading. for example sometimes you incorrectly think the
-game match time belong to a row, but actually it belongs to upper row,
-there isn't enough visual distinction between rows and their info. so
-mistakes happens. so always match details inside the match box for
-example A [match info] B — alignment, alignment alignment."; "Also I gave
-you a png transparent logo, why you added white background for it. use
-transparent logo. Also increase the size in pc by 100% and Mobile by
-50%"; "Also in heading of PC, and footer of Mobile add this : خانه درباره
-تماس"
-
-- **The match boxes (the alignment round)**: every fixture on the page —
-  hero, big-matches box, UCL box, week card, finished card — is now ONE
-  self-contained bordered box (`.mrow`/`.spotitem`: border + rounded
-  corners + padding, a gap between boxes, hover highlighting the whole
-  unit). The old hairline divider sat BETWEEN a row's teams and its OWN
-  info line, so a kickoff time read as if it belonged to the row below —
-  the exact misattribution the user reported. The divider is retired;
-  nothing can leak across a row boundary anymore.
-- **The kickoff TIME owns the center slot**: unplayed rows now render
-  `A [🕒 time] B` — the time chip rides the same 92px centered x line the
-  score takes on live/finished rows (both slots 80px on phones), so every
-  fixture on the page — upcoming, live or finished — carries its center
-  element at one identical position and the team columns line up across
-  all rows and cards. The countdown chip left the info line (the
-  misattribution source); expired week rows keep their «⌛ پایان‌یافته»
-  marker in the info line, dimmed with the box they belong to.
-- **The transparent logo**: the white plate is RETIRED — the header now
-  shows the uploaded transparent png itself. Two ink variants are served
-  from the worker's assets directory: the navy-ink `/logo.png` on the
-  light theme and `/logo-light.png` (the same palette remapped to pure
-  white, alpha untouched) on the dark theme, swapped purely via CSS
-  (instant, theme-flash-free). The logo DOUBLES on PC (42px → 84px,
-  "+100%") and grows +50% on phones (33px → 50px), with fixed
-  width/height attrs so the header never shifts while the pngs load.
-- **The background crests at 28%**: the hero watermarks drop from .40 to
-  .28 opacity on both themes (phones too) — a 30% reduction per the ask —
-  keeping the same big 320px/210px canvas, scrim and team-name shadows.
-- **The «خانه درباره تماس» nav**: the classic three-link nav rides the
-  header on PC — centered between the logo and the controls at ≥1440px,
-  its own centered row on 601–1439px — and the footer's top row on
-  phones. All three links are real destinations (home reloads, about
-  anchors to the footer's identity block `id="about"`, contact opens the
-  Telegram bot), labeled via i18n keys (fa/en). Smooth anchor scrolling
-  joins the root overflow clip.
-- **The sticky join bar stands down at the footer**: once the footer is
-  in view the floating Telegram bar hides (the footer carries its own bot
-  link + the phone nav row), so a «درباره» anchor lands on clean content
-  instead of under the bar.
-- Checks: NEW `scripts/check-v1225.js` (37 assertions) wired into
-  `npm test`; rolling gates updated in 10 suites (v1218/v1220/v1221/
-  v1222/v1223/v1224/fa-ai/uniform/weekly-report + the fa-ai A3 roll).
-  `npm test` exit 0; tsc error count unchanged vs the 12.24 baseline
-  (706 pre-existing implicit-any diagnostics).
-
-## [12.24-brandhead] — 2026-09-15 (the SportSignal website header, 40% background crests, 2× hero crests on PC, a defined progress-bar base)
-
-User asks: "i actually prefer like 40% of the logo appear in the bg, but
-bigger and more prominent."; "increase the team logos (of next big upcoming
-match by 100% in pc view)"; "when less than 38 hours is remaining from the
-next big match. why only about 30% of the progress bar is filled? when is
-the base calculation of this progress bar? we need to find a logic for
-that."; "I want to create a header, first add the logo I uploaded. and
-remove this texts: ⚽ اعلان‌دهنده مسابقات / مسابقات پیش‌رو، رقابت‌های صدر
-جدول و نتایج تیم‌های منتخب — به‌روزرسانی خودکار … [settings icons etc]
-[telegram cta button] [logo] Like websites logo."
-
-- **The brand header**: the page now opens with a real WEBSITE header —
-  the uploaded SportSignal logo (served from the worker's assets directory
-  at `/logo.png`, a 400×137 png on a white rounded chip with a glass
-  border so it reads on both themes) pinned to the start corner, and the
-  settings icons + the Telegram CTA grouped at the opposite end:
-  `[settings icons] [telegram cta button] ··· [logo]`. The top bar keeps
-  its `#topbar` id (now a semantic `<header>`), so the gear/lang/theme
-  buttons and the tz popover keep their exact wiring; the v12.20 sync
-  stamp becomes the header's quiet second row. The old
-  «⚽ اعلان‌دهنده مسابقات» h1 and its subtitle are retired; the phone
-  header compacts (33px logo, tighter CTA pill); at ≥1440px the header
-  spans the full chrome row website-style instead of centering controls.
-  The sticky bottom join bar still watches the (now header) CTA.
-- **The watermarks at 40%**: the countdown hero's background crests are
-  now far more present — 320px (was 200px) with deeper edge bleed
-  (−48px), opacity .40 on both themes (was .11/.14), 210px at .40 on
-  phones. A soft radial scrim behind the card's center plus a gentle
-  text-shadow on the team names (navy glow dark / white glow light) keep
-  the countdown and names fully readable on top of the bolder crests.
-- **2× hero crests on PC**: the countdown hero's face-off crests double
-  on every non-phone viewport (51px → 102px, monogram fallback scaling
-  with the circle) — the big-match poster feel; every other row keeps
-  its 51px crest, phones keep 46px.
-- **The progress bar's base**: the bar is a LOADING bar with a DEFINED
-  base now — `q = 1 − remaining/14d`: 0% while the match is still ≥14
-  days out, filling to 100% AT kickoff (a match 38h out reads ~89%, not
-  a mystery ~30%). The percent prints beside the clock as a chip
-  (Persian digits + ٪ in fa, % in en, fixed min-width so it never
-  jitters), the track tooltip spells the base out (`barBase`, fa/en in
-  all six dictionaries), and aria-valuenow carries the same number.
-  v12.20's rem/14d drain formula read backwards — retired.
-- Version 12.24 everywhere (VERSION, 6 ver strings + admin static
-  footer, package.json 12.24.0); NEW `scripts/check-v1224.js` (34
-  assertions: A header, B watermark, C hero crests, D progress base, E
-  version) wired into npm test; rolling gates updated in check-uniform,
-  check-weekly-report, check-fa-ai, check-v1218, check-v1220 (formula
-  B3/B4 + grid D3), check-v1221 (C6 header), check-v1222, check-v1223
-  (watermark A2/A3/A7).
-
-## [12.23-watermark] — 2026-09-14 (giant faded club crests behind the hero, the heartbeat-scrollbar bug fixed, every match row aligned)
-
-User asks: "Can you add the expanded logo of clubs in lower opacity on the
-background of the next big upcoming match? something like this: [faded logo
-big on background] [club logo] club name."; a page that "moves … every few
-seconds, a scroll appears … like a heartbeating bug that causes scroll to
-show up, and in mobile there is a transition slide every few seconds"; and
-"the results of match must be aligned … check alignment of every part.
-everything must be aligned. (notice how match results aren't in the same
-line)".
-
-- **The crest watermarks**: the countdown hero now carries each club's
-  EXPANDED crest as a giant faded watermark in the background — one ~200px
-  crest per club (150px / opacity .09 on phones), anchored to its club's
-  half of the row via logical inline edges (RTL/LTR safe), sitting at z:0
-  under the fx layers and the row, clipped inside the card and
-  pointer-transparent. The layer is static markup outside `#heroSpot` (like
-  the ember layer), so re-renders never disturb it;
-  `renderHeroSpot → heroWm()` swaps the two crest srcs per match — a club
-  without a crest hides its watermark, no crest at all hides the layer, and
-  a broken crest URL falls back to hidden (inline `onerror`). Light theme
-  runs opacity .14 unfiltered; dark lifts dark crests with a brightness
-  filter so navy crests still read.
-- **The heartbeat-scrollbar bug (root cause found)**: the v12.22 floodlight
-  sweep rode `.card.bighero::after` — an UNCLIPPED absolutely-positioned
-  layer translating to ±140% of the card, so every pass (6.5s, faster when
-  urgent) extended the DOCUMENT's scrollable width and a horizontal
-  scrollbar popped in and out — the page visibly "heartbeat" every few
-  seconds (a slide flash on phones). Three fixes layered: the sweep moved
-  into the already-clipped `.hero-fx` layer (same gradient, same rhythm),
-  the face-off entrance's ±34px edge overshoot is clipped by
-  `.bighero .match{overflow:hidden}` (the other periodic width spike, fired
-  on every hero re-render), and `html{overflow-x:hidden}` is the hard net
-  so no fx can ever widen the page again. Verified by polling
-  `documentElement.scrollWidth` every 200-250ms for 8-9.5s (full sweep
-  cycles) at 1920px and 390px: never one pixel over the viewport.
-- **Every match row aligned**: the two team sides now share the row exactly
-  50/50 (`flex:1 1 0`, was content-width `auto` — the old basis made the
-  score's x position wander per row and mobile rows wrap raggedly), and the
-  score is a FIXED CENTERED SLOT (`flex:0 0 72px`, centered, tabular, nowrap;
-  56px on phones) — every result now sits on the same vertical line (E2E:
-  all 7 finished scores at identical centers — x=1204 desktop, dead-center
-  195 mobile; both sides exactly 381px; rows uniform heights). The finished
-  card's `.info` line now matches the spot boxes' `.uclspot-info` (one
-  centered 12.5px chip-line style page-wide), the scorers block spans its
-  own full line, and the finished card's LAST row drops its divider too
-  (`.mrow:last-child`).
-- **A latent render crash removed**: `render()` carried a stray re-append
-  of `hs/vs/as` after the row was already assembled — a no-op on scored
-  rows but `appendChild(undefined)` on any unscored row, which would have
-  thrown and dragged the whole page's data down with it through `load()`'s
-  catch. The line is gone.
-- **Version 12.23 everywhere**: `VERSION`, the six page ver strings (fa/en
-  × public/login/admin), the admin static footer, package.json 12.23.0,
-  the new `scripts/check-v1223.js` (26 assertions) wired into `npm test`,
-  and the rolling version gates in check-weekly-report, check-fa-ai,
-  check-uniform, check-v1218, check-v1220, check-v1221 and check-v1222
-  updated.
-- Verified: `npm test` exit 0 (22 suites, 0 failures); local E2E preview
-  built straight from the worker source + live data (1920px: watermarks
-  populated from the live crests behind the teams, sweep computed on
-  `.hero-fx::after` at 6.5s, old sweep gone, scrollWidth 1920 stable across
-  38 samples/9.5s, 7/7 score centers identical, sides 381/381, share
-  popover opens over the fx; 390px: scrollWidth 390 stable across 41
-  samples/8s, 150px watermarks, 7/7 scores at dead-center 195, uniform row
-  heights; light theme + EN: watermark opacity/anchors flip correctly; VLM
-  review of hero/results crops; 0 console/page errors); deployed via
-  wrangler — and re-verified live on football.sportsignal.ir at both
-  widths.
-
-## [12.22-heropulse] — 2026-09-14 (the adrenaline countdown hero: heartbeat, floodlight sweep, embers, burning fuse, urgency escalation)
-
-User asks: "Add some animation or something that raises the excitement of
-this box, and different from other boxes" (the `#bigHeroCard` countdown
-hero) — "like some css js effects, making it excitement, adrenalin, and
-evoking emotions. I dont mean just change color."
-
-- **The stage**: the hero card now carries a chrome no other box has — an
-  emerald spotlight gradient (radial from above + deep emerald base) with a
-  glowing border; the two team names grew to 16px/800 with stage-lit crest
-  circles, and the countdown clock is now the big 18px/800 number of the
-  page.
-- **The heartbeat**: a lub-dub glow rhythm (opacity peaks at 8% + 24% of
-  each cycle) breathing over the card — slow and calm when the match is
-  days away.
-- **The floodlight sweep**: a soft light band washes across the card every
-  6.5s, passing over the teams like a stadium light rig.
-- **The embers**: three tiny emerald sparks rise from the bottom of the
-  card on staggered loops (static `.hero-fx` markup, so re-renders of
-  `#heroSpot` never disturb them).
-- **The burning fuse**: the draining edge of the progress bar carries a
-  white-hot glowing tip (`.bigbar-fill::after`) — the bar literally burns
-  down to kickoff.
-- **The tick**: the clock pops every second — a 0.34s scale + brightness
-  pulse re-triggered on each `updateBigBar` pass via a reflow restart.
-- **The face-off**: the home and away sides enter the stage from their own
-  edges (0.5s ease-out slide, dir-aware for RTL/LTR) instead of a plain
-  rise.
-- **The escalation (JS)**: `updateBigBar` computes one `data-urgent` mode
-  and the whole CSS intensity ladder follows it — `far` (calm emerald),
-  `soon` (≤24h: amber glow + amber embers + amber clock + heartbeat 2.6s →
-  1.7s), `final` (≤60min: red alarm heartbeat 1.1s + pulsing «تا بازی بزرگ
-  بعدی» label + red clock + red embers + sweep 3s), `live` (the red stage
-  around the existing live bar, heartbeat .9s, sweep 2.2s).
-- **Safety**: every fx layer is pointer-transparent (the ⋯ share popover
-  still opens above them), the ember layer is clipped inside the card, all
-  animations are opacity/transform (compositor friendly), and the global
-  `prefers-reduced-motion` rule silences every one of them.
-- **Version 12.22 everywhere**: `VERSION`, the six page ver strings (fa/en
-  × public/login/admin), the admin static footer, package.json 12.22.0,
-  the new `scripts/check-v1222.js` (24 assertions) wired into `npm test`,
-  and the rolling version gates in check-weekly-report, check-fa-ai,
-  check-v1218, check-uniform, check-v1220 and check-v1221 updated.
-
-## [12.21-uclbrand] — 2026-09-14 (emphasized section headers, UCL starball branding, PC main+rail grid, quiet share ⋯)
-
-User asks: make the section titles («🔥 مسابقات بزرگ پیش‌رو» & friends) bigger
-and clearer — "it's not clear what they are about at first glance", give them
-their own background; brand the UCL-dedicated box with the UCL logo ("with a
-white bg if needed") so it is differentiated from the other boxes; fix the
-wide-screen layout, which "needs a lot of hierarchy alignment adjustments,
-it's not following a grid right now, it's so random"; and remove the labeled
-share pill ("visual noise and not placed well") — remove it or hide it behind
-a toggle.
-
-- **Section header plates**: every card `h2` grew from 15px/700 plain text to
-  a 17px/800 SECTION PLATE — its own tinted background, a 1px border and a
-  4px accent edge on the inline-start side (light-theme tints included). The
-  two flagship headers run one size larger (19px) with themed plates: hot
-  amber for «🔥 مسابقات بزرگ پیش‌رو», UCL navy + starball for the Champions
-  League boxes. Phones: 15.5px plates (17px flagships).
-- **UCL brand elements**: the UCL-dedicated boxes — «🔥 مسابقات مهم لیگ
-  قهرمانان اروپا» and the UCL standings card — now carry the competition's
-  identity: an inline-SVG starball (8 five-pointed stars, 1 center + 7 ring —
-  the official arrangement) on a WHITE circular chip ("with a white bg, if
-  needed") inside a navy-gradient header plate with white text, a deep-navy
-  glass body with a faint star-tile watermark and a UCL-blue border, and the
-  pre-draw wait state shows the navy starball ball. Light theme keeps the
-  navy identity with a light navy-tinted body. `data-i` moved to an inner
-  span so a language switch can never clobber the logo.
-- **PC-wide hierarchy (the real grid)**: the v12.20 auto-placed two-per-row
-  grid shared rows between columns, so shorter cards started at ragged Y
-  offsets (~500px hole under the UCL box, the standings pair ~2100px below
-  its neighbor, the results card alone at the bottom). At ≥1440px the page
-  is now full-width chrome (topbar → centered hero → countdown hero →
-  footer) over a MAIN column (every match box: topspot, UCL spot, week,
-  results) plus a 400–460px reference RAIL (UCL table, league standings,
-  cups) — each column an independent flex stack with a uniform 14px gap, no
-  shared rows, no holes. `setWide()` regroups the cards at the breakpoint
-  (ids added to the four anonymous cards) and restores the EXACT
-  single-column DOM order below it, live on breakpoint change. The topbar
-  and hero center on wide screens; the countdown hero's match row is capped
-  to 880px; the standings grid folds to 2 columns inside the rail.
-- **Quiet share control**: the labeled «اشتراک‌گذاری» pill under every entry
-  is gone. Each row now carries ONE borderless, icon-only ⋯ ghost button
-  (44×44 hit area, visually just three muted dots) riding the info chip
-  line; the options unfold in a solid popover anchored under it and close
-  from an outside click, Esc, or the next ⋯ — at most one popover is ever
-  open, and collapsed rows show no share UI at all.
-- **Version 12.21 everywhere**: `VERSION`, the six page ver strings (fa/en ×
-  public/login/admin), the admin static footer, package.json 12.21.0, the
-  new `scripts/check-v1221.js` (35 assertions) wired into `npm test`, and
-  the rolling version/share/grid gates in check-weekly-report (H1–H3),
-  check-fa-ai (C11b–d), check-v1218 (G1–G3), check-uniform and check-v1220
-  (D2, F1–F7, H1–H4) updated for the new markup.
-- Verified: `npm test` exit 0 (19 suites, 0 failures); local E2E preview
-  built straight from the worker source + live data (1920px: main 912px +
-  rail 460px, all six cards flush-stacked at exact 14px gaps, hero/topbar
-  centered; 390px: scrollWidth = innerWidth, original DOM order restored;
-  EN + light theme: starball survives the language swap, navy identity
-  intact; share popover opens with 5 options and closes on outside click
-  and Esc; 0 console/page errors); deployed via wrangler — version
-  e71ee39a-9732-478f-8e5e-c0c03d1c544d — and re-verified live on
-  football.sportsignal.ir at both widths.
-
-## [12.20-uxpolish] — 2026-09-13 (leaner bot alerts, real countdown + progress bar, badge tokens, wide 2-column layout, sticky CTA)
-
-User asks: remove the notification text noise ("🔔 یادآوری ۲۴ ساعته …", "📱
-یادآوری بعدی: ۳ ساعت قبل از بازی" and "generally remove all kind of these text
-that do not add any value and feel repetitive"); fix the countdown timer to
-calculate real d/h/m/s and bind the progress bar to the actual time remaining;
-darken the top-of-table badge for WCAG AA contrast; a wide-viewport layout at
-≥1440px; a sticky Telegram join CTA; a proper 44px share toggle with a visible
-label + three-dot icon; named badge color tokens; a visible "updated X minutes
-ago" stamp. (The Tailwind-flavored suggestions were implemented with this
-stack's own primitives — CSS custom properties + a plain CSS media query.)
-
-- **Leaner bot messages**: every repeated no-value line is gone — the 🔔
-  24-hour boilerplate and all "📱 یادآوری بعدی / اعلام بعدی" footers (24h,
-  big-match, 3h, 1h), the 🔥/🎯 hype lines, the 📺/🏃 kickoff fillers, and the
-  weekly digest's "start & result are sent automatically" footer. Each message
-  now ends after its facts: teams, competition, date, time, ⏳ countdown.
-- **Countdown fixed (data-binding bug)**: the clock renders zero-padded
-  day/hour/minute/second values — the old unpadded format could render
-  "1:1:5"-style garbage that read like repeating placeholder "1"s. The
-  progress bar now fills with the TIME REMAINING (rem / 14-day horizon): full
-  ≥2 weeks out, draining to 0% at kickoff, so bar and label agree at both
-  ends. The old `1-rem/14d` formula rendered a match one day away ~93% full —
-  reading as "already done". The fake fixed 42% idle width became a low 12%
-  standby strip.
-- **Badge color tokens** (not Tailwind — CSS custom properties): `--badge-top`,
-  `--badge-hot`, `--badge-derby`, `--badge-league`, `--badge-live` defined for
-  dark + light themes and referenced by `.topbadge`, `.derbybadge`, `.comp`,
-  `.livechip .dot`. The top-of-table badge is now solid `#B03A2E` with its
-  white text (6.02:1 — WCAG AA pass; the old gradient sampled #D06E07 at
-  3.55:1).
-- **≥1440px two-column grid**: `body` becomes a 2-column grid (max-width
-  1400px); the topbar, hero header, countdown hero card and footer span both
-  columns; the section cards flow two-per-row. Below 1440px the 760px single
-  column is untouched.
-- **Sticky Telegram join CTA**: once the hero join button scrolls out of view
-  (past, not merely below), a fixed bottom bar with the Telegram plane +
-  label appears — `env(safe-area-inset-bottom)` padded on phones, and
-  `body.joinsticky` adds bottom clearance so it never covers content. Hides
-  again when the hero button returns to view.
-- **Share toggle rebuilt**: a labeled pill — horizontal ⋯ three-dot icon +
-  «اشتراک‌گذاری»/"Share" text — min 44×44px tap target (was 24px), tooltip
-  kept, still at the row's inline-end (logical properties, RTL/LTR-safe). The
-  option buttons grew 24→34px.
-- **Visible auto-update proof**: the API already stamped `fetchedAt` on every
-  payload — the page now renders it as «آخرین به‌روزرسانی: X دقیقه پیش» /
-  "Last updated: X min ago" under the subtitle (Persian digits in fa), aging
-  live every second, refreshed on each fetch.
-- Version bump everywhere: `VERSION` const, the six page-dict `ver` strings +
-  the admin static footer, `package.json` 12.20.0; new `check-v1220.js` suite
-  (51 assertions); the rolling version-gate checks updated
-  (check-weekly-report H1–H3, check-fa-ai C11b–d, check-v1218 G1–G3 + the E2
-  share-glyph assertion).
-
-## [12.19-tzsettings] — 2026-09-12 (timezone settings behind a gear icon, fully bilingual zone names, every GMT offset)
-
-User asks: "Hide this behind a setting icon, next to darkmode/lightmode" (the
-timezone select + search were permanent topbar clutter); "make sure it has all
-GMT times, for example i didn't find Tehran +3:30"; "In farsi, it must show
-farsi GMT names, in English, show english."
-
-- **Settings-gear popover**: the timezone search + select moved out of the
-  topbar into ONE ⚙️ button next to the dark/light toggle. A click opens a
-  compact glass popover (full-width search + full-width select — far bigger
-  touch targets than the old 100px sliver); picking a zone re-renders all
-  times instantly and closes the panel. ✕, the gear again, an outside click
-  or Esc also close it. `aria-expanded`/`aria-controls` track state; the gear
-  rotates 90° while open.
-- **Every GMT time**: the list is the full IANA set (`Intl.supportedValuesOf`)
-  PLUS the complete fixed-offset ladder Etc/GMT-14 … Etc/GMT+14 (IANA sign
-  inverted), so every pure GMT offset from −14 to +14 is selectable. Offsets
-  are computed from the zone data itself — Tehran **+3:30**, Kathmandu
-  +5:45, Eucla +8:45, Chatham +12:45 are always exact.
-- **⭐ Popular group**: UTC, Tehran, Dubai, Istanbul, London, Paris, Berlin,
-  New York, Los Angeles pinned at the very top — Tehran +3:30 is now one
-  glance away instead of 80 entries deep inside Asia.
-- **Fully bilingual labels**: a hand-transliterated Farsi dictionary covers
-  every IANA region + city (430+ entries, incl. the Argentina/Indiana/
-  Kentucky/North_Dakota subtrees and their legacy aliases). In fa mode the
-  options read «آسیا/تهران گرینویچ+۳:۳۰» (Persian digits, GMT = گرینویچ);
-  in en mode "Asia/Tehran GMT+3:30". Language switch rebuilds the options.
-- **Search matches both scripts**: «تهران», "tehran", "3:30" and "۳:۳۰" all
-  find Asia/Tehran; the search box also localizes (placeholder via i18n).
-
-## [12.18-weeknext] — 2026-09-11 (VS slot removed entirely, UCL club crests, next-week takeover, +35% PC crests, share behind a toggle, varzesh3 grounding)
-
-User asks (one batch): remove the divider line that replaced the VS emoji
-("it's just visual noise. remove it fully"); a Workers-AI API token for
-external use + varzesh3.com/leagues as the Farsi-name directory; round club
-logos in the UCL table; the Friday problem — by Friday every game of the
-Iranian week has kicked off so the box was a wall of turned-off matches
-("I want to see this week matches like on Monday… but also it's pointless
-to see all turned off matches in Friday — find a smart solution"); club
-logos +35% bigger on PC; and the share options hidden behind a single
-toggle icon on both PC and mobile ("not very frequently used feature and
-produces visual noise").
-
-- **No separator at all**: unplayed match rows render ONLY the two team
-  sides (🆚 emoji → hairline divider → nothing, per the user's two-step
-  ask); the middle slot exists exclusively for real scores
-  (finished/live). All `.vs` CSS retired.
-- **UCL round club crests**: every row of the Champions League table now
-  carries the club's round crest (19px circle, same visual language as the
-  match rows), resolved server-side against the 123-club KV catalog —
-  a KV-ONLY read, no refresh fetch in the public path (frugality kept);
-  catalog misses render text-only rows exactly as before.
-- **Next-week takeover (the Friday fix)**: the payload now carries
-  `nextWeek` (the Saturday→Friday AFTER the current week, same pool —
-  zero extra API calls). `renderWeek` keeps "this week" semantics while
-  anything is still ahead (dimmed past games below the upcoming ones),
-  and when the current week is exhausted — late Friday — the card
-  switches to next week's fixtures with the header «📅 هفته بعد»
-  (hWeekNext i18n). Language switch re-renders the week + UCL cards via a
-  new public onLang hook so the dynamic header survives trText.
-- **PC crests +35%**: `.logo` 38px → 51px (monogram fallback scales to
-  22px); phones keep their own 46px rule.
-- **Share behind a toggle**: the WhatsApp/Telegram/Email/Calendar/Copy row
-  is hidden everywhere (PC hover-reveal + always-on-touch both retired)
-  behind ONE compact share-nodes glyph button; a click expands the options
-  (aria-expanded tracks state), a second click collapses them.
-- **varzesh3 grounding (the user's directory)**: new
-  `scripts/varzesh3-catalog.js` scrapes the varzesh3.com league tables
-  (UCL, PL, La Liga, Serie A, Bundesliga, Ligue 1, Iranian PGL, UEL, UECL
-  — 193 clubs) and pushes them to KV `varzesh3_clubs_v1` via the
-  Cloudflare API (local script — zero Worker subrequests). The AI learner
-  now grounds translations: the varzesh3 rosters ride in the prompt
-  ("return EXACTLY that spelling") and every accepted answer SNAPS to the
-  catalog's exact spelling (space/ZWNJ-insensitive match). The provided
-  Workers-AI REST token is stored in `.env` (CLOUDFLARE_AI_TOKEN — AI runs
-  only; KV writes keep the older token).
-- **Hygiene**: `/api/fa-teams` stats now report the varzesh3 catalog size;
-  new `scripts/check-v1218.js` (42 assertions); check-fa-ai.js section A
-  updated to the "fully removed" contract; check-weekly-report.js anchors
-  fixed for the crest if/else + nextWeek; check-cups.js neutralizes the
-  crest await for its sync harness.
+- **OAuth 1.0a "user context" signing** implemented inline with
+  `crypto.subtle` HMAC-SHA1 — `xPercentEncode` (RFC 3986 + the `!'()*` set),
+  `xBuildBaseString` (RFC 5849 §3.4.1.1), `xBuildAuthHeader`. JSON request
+  bodies are NOT part of the signature (only `oauth_*` params are). Verified
+  against the canonical RFC 5849 base string + Node-crypto HMAC-SHA1 reference
+  in the new `scripts/check-x-signature.js`.
+- **`POST https://api.x.com/2/tweets`** with reply-threading
+  (`reply.in_reply_to_tweet_id`) for the weekly-tables digest (1 root + N
+  replies, one per league). 401 → admin log "bad keys"; 429 → KV pause 15min
+  (`x_pause_v1`); 5xx → one retry; every outcome written to `x_last_error_v1`.
+- **KV budget governor** (`x_budget_v1:<yyyymm>` cap 450, `x_daily_v1:<yyyymmdd>`
+  cap 12, TTLs on writes) — the free tier's ~500 posts/month cap can never be
+  broken. Hard caps are checked before EVERY post (not just at sweep start),
+  so a multi-post sweep aborts mid-way when the budget runs out. Test-post
+  daily cap 5 (`x_test_v1:<yyyymmdd>`) keeps manual admin testing inside the
+  free tier.
+- **KV dedupe** (`x_post_v1:<type>:<key>`, 7d TTL) — separate from the Telegram
+  dedupe so X and Telegram each fire exactly once. Same-event keys
+  (`coronation:<league>`, `ft:<matchId>`, `kickoff:<matchId>`,
+  `weekly:<isoWeek>`). Kickoff is skipped if the FT marker already exists.
+- **Phase config** (`x_phase_v1`, comma-separated):
+  `coronation,ft,kickoff,tables,media` — defaults to `coronation,ft` (phase B
+  live). The admin panel toggles phases at runtime without re-deploying.
+- **Master switches** — `X_ENABLED` (secret) + `x_enabled_v1` (KV override);
+  `X_DRY_RUN` (secret) + `x_dry_run_v1` (KV override). KV wins over secret so
+  the admin panel can toggle without `wrangler secret put`. Dry-run logs the
+  composed text to the console + writes `x_last_post_v1` (kind suffix
+  `:dry-run`) WITHOUT consuming budget or marking dedupe — so the next live
+  sweep still fires.
+- **maybePostX() wired into the cron sweep AFTER the Telegram checks**
+  (after `sendMatchNotifications` + `maybeNotifyTableToppers`). X is additive:
+  wrapped in its own try/catch so a failing post can NEVER fail the sweep or
+  break the Telegram path. The coronation events list is captured from
+  `maybeNotifyTableToppers` and passed to `maybePostX` as `opts.topperEvents`.
+- **Persian composers** — `composeXCoronation`, `composeXResult`,
+  `composeXKickoff`, `composeXTableForLeague`. All ≤280 chars, Persian
+  numerals via `toFaDigits`, league hashtag (`#لیگ_برتر_انگلیس`, `#لالیگا`,
+  `#سری_آ`, `#لیگ_۱_فرانسه`, `#بوندسلیگا`, `#لیگ_قهرمانان_اروپا`, …),
+  `#فوتبال`, ending with `football.sportsignal.ir`. Truncation uses the
+  ellipsis char `…` so the URL + tags survive.
+- **Admin panel X card** at `/admin` — status line (enabled / dry-run /
+  paused / phase / monthly+daily budget counters / last post + last error),
+  «پست تست» button → `POST /admin/x-test` (admin-token protected), dry-run
+  toggle, enable toggle, phase config (comma-separated input), clear-429-pause
+  button (shown only when paused). Backed by `/api/x/status` (GET),
+  `/api/x/phase` (PUT), `/api/x/dry-run` (PUT), `/api/x/enabled` (PUT),
+  `/api/x/clear-pause` (POST), all admin-auth-checked. RTL/logical-property
+  CSS conventions preserved.
+- **New tests**: `scripts/check-x-signature.js` (RFC 5849 base string +
+  Node-crypto HMAC-SHA1 reference + percent-encoding of the `!'()*` set +
+  tweet-only-oauth_* params + secrets with reserved chars) and
+  `scripts/check-x-budget.js` (month/day key format, budget cap math, dedupe
+  exactly-once + TTL, KV overrides secret, phase default `coronation,ft`,
+  Persian league tags, all composers ≤280 chars + Persian numerals + #فوتبال
+  + URL). The `grabFn` helper in `check-x-budget.js` was rewritten as a
+  string-aware brace scanner with a state stack — the worker's composers use
+  `\u{1F451}` curly-brace unicode escapes inside template literals which
+  broke the old brace counter. `bun run test` now runs 13 scripts (was 11);
+  all green, exit 0.
+- **Secrets** (`wrangler secret put`): `X_API_KEY`, `X_API_SECRET`,
+  `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET`, `X_ENABLED`, `X_DRY_RUN`. Never
+  in repo files. The admin panel can override `X_ENABLED`/`X_DRY_RUN` at
+  runtime via KV without re-deploying.
+- **Phased rollout** (per the handoff doc): **A** dry-run (log composed text
+  via `X_DRY_RUN=1`; verify OAuth signature against the canonical vector in
+  `check-x-signature.js`) → **B** live posts (coronation + big-match FT —
+  default phase) → **C** kickoff notes + weekly thread + hard budget caps
+  (toggle phases via admin) → **D** media posts via
+  `upload.x.com/1.1/media/upload.json` (deferred — phase config already
+  reserves the `media` slot).
+- **`VERSION`** bumped `12.32-backlog` → `12.33-xpost`; admin-page i18n
+  `ver` strings (fa + en × 2 admin pages) refreshed to describe the X
+  integration. `package.json` 12.32.0 → 12.33.0.
 
 ---
 
-## [12.17-fai] — 2026-09-15 (faded VS divider, expired games in «در این هفته», incremental AI Farsi club names)
+## [12.32-wrap] — 2026-09-15 (session close: repo sync, changelog, deploy re-verified, zip backup, X-integration handoff)
 
-User asks (one batch): the 🆚 emoji between team names is mis-aligned and
-noisy — replace it with a low-key symbol or a faded line; the «در این
-هفته» box must render games whose kickoff passed as "turned off"
-(expired); and a creative way to translate ALL clubs to their Farsi names
-— research requested, Cloudflare Workers AI suggested as the incremental
-engine (translate → store in DB → show Farsi next sessions).
+Repository maintenance — no worker behavior change; `VERSION` stays 12.32.
 
-- **Faded VS divider**: the 🆚 emoji is retired everywhere. In the match
-  rows (upcoming list, big-matches box, hero, this-week box, UCL box) the
-  "vs" slot now renders as a hair-thin **faded vertical line** (1px × 20px,
-  `background:currentColor`, opacity .32 — .55 on hover), perfectly
-  centered and RTL-safe; finished/live rows still show the score in the
-  same slot. Text contexts (share text, cups card, admin match list) use a
-  low-key en-dash " – " separator. The decorative divider is aria-hidden.
-- **Expired week games**: `renderWeek()` marks every game whose kickoff
-  ran out (FINISHED, or kickoff older than 90s without a score) with the
-  `past` state — the whole entry dims (opacity .48) and desaturates, crests
-  gray out, and the time chip becomes a muted «⌛ پایان‌یافته» (wkdone)
-  pill instead of a fresh kickoff time. Live games are never past. Order:
-  live → upcoming (soonest first) → past (most recent at the bottom).
-- **Incremental Farsi club names (research → shipped)**: providers offer
-  no Farsi locale; Wikipedia interlinks are high-quality but rate-limited;
-  the shipped design is the user's suggestion — **Cloudflare Workers AI**
-  (`[ai]` binding, llama-3.3-70b with llama-3.1-8b fallback), one batched
-  call for up to 16 currently-unknown names, strict JSON prompt, and a
-  validation gate (Persian letters only, 2–42 chars, no Latin leakage).
-  Valid pairs are stored in KV `fa_teams_ai` under normalized keys and
-  served FOREVER; rejected/missing answers cool down 12h before re-asking.
-  `translateTeam()` layers: static dict → AI cache → stem fallback (the
-  static Varzesh3 dict always wins). The learner runs from the cron (every
-  10-min tick, throttled to one round / 15 min, zero AI calls when all
-  names are known) and opportunistically on public page hits
-  (`ctx.waitUntil`) — the NEXT payload build (≤5 min) shows the Farsi
-  names. Telegram notifications translate through the same cache.
-- **Admin**: `GET /api/fa-teams` (stats / `?run=1` force / `?forget=NAME`
-  correction) + a «🧠 ترجمه هوشمند نام باشگاه‌ها» card — learned/pending
-  counts, a scrolling sample of learned pairs (fa ← latin key), the 🔄
-  force-run button and a forget-a-bad-translation input. 12 fai i18n keys
-  in the login+admin dicts (fa+en).
-- **Hygiene**: graceful `ai-disabled` degrade when the binding is absent;
-  KV-only reads in the hot path; version gates updated in
-  check-weekly-report.js / check-uniform.js / live-derby-test.js; new
-  `scripts/check-fa-ai.js` (49 assertions: divider CSS + DOM sites, week
-  past-state + i18n, layering/priority, validation, collector, learner
-  e2e with a stubbed AI, cooldowns, wiring, admin card, versions).
+- **Deploy re-verified**: live page markers (kickdate ×13, FIN_EXPANDED ×5,
+  fmtHeroDate ×3, 72px watermarks, «بیشتر»/«کمتر») match `src/worker.ts` at HEAD;
+  the 11-script suite re-run green (exit 0) before the wrap deploy; worker
+  re-deployed from the final wrapped HEAD so GitHub ↔ Cloudflare stay in lockstep.
+- **Handoff doc added**: `NEXT-SESSION-X-INTEGRATION.md` — full brief + copy-paste
+  prompt for the next session: connect SportSignal to X (Twitter) and run an
+  automated X profile (OAuth 1.0a HMAC-SHA1 signing inline via crypto.subtle,
+  POST /2/tweets, reply threads, KV budget/dedupe governors, admin X card,
+  phased rollout A dry-run → B live → C threads → D media).
+- **Backup**: `git archive` zip of the wrapped HEAD shipped to the user
+  (tracked files only — `tokens.txt` and `.dev.vars` stay gitignored, secrets
+  live in wrangler).
+- **GitHub**: remote restored to `assadigit/SportSignal`; the sandbox's stored
+  classic token was redacted by the environment, so the push of the 15
+  post-v12.0 commits is queued for a user-supplied token
+  (`git remote set-url origin https://<token>@github.com/assadigit/SportSignal.git && git push origin main`).
 
----
+## [12.32-backlog] — 2026-09-15 (7-item backlog: hero date under the time chip, mobile time between crests, 5+«بیشتر» results, new-leader Telegram alerts, corner watermark crescents, smaller bar clock, bigger logo)
 
-## [12.16-weekly] — 2026-09-15 (weekly report round: full UCL league table, week-ahead digest, unmissable derby/UCL banners, bot members directory, «در این هفته» box, dark-mode default, bigger mobile crests, API frugality, Iranian top-8 fix)
+User ask (backlog of 7):
+1. move the date line below the countdown chip ("time / weekday day month",
+   smaller font) — out of the navy bar;
+2. on mobile, move the match time between the clubs' logos, aligned;
+3. recent results: last 5 + a «بیشتر» button that shows the latest 20 (PC too);
+4. a Telegram special alert when a NON-first team (2nd/3rd/4th…) tops the
+   table after a match, with the match details;
+5. the two hero background badge watermarks repositioned to the container's
+   bottom corners, centers offset ~27.5% of the badge diameter inward, the
+   rest clipped by overflow:hidden (partial crescents);
+6. decrease the ⚡ bar countdown numbers (PC + mobile);
+7. increase the SportSignal logo by 15% in PC mode.
 
-User asks (one batch): a detailed UCL league table (only points were shown —
-add matches played, goals scored etc.); a Telegram weekly report with the
-league tables AND the coming week's fixtures; derbies and both-selected UCL
-duels emphasised so nobody misses them; an admin panel list of every account
-that joined the bot (telegram ids + slugs); dark mode as the UI default;
-club crests ~50% bigger on mobile; the Iranian league showing top 8 like
-every other league (was top 5); and API thrift (no more ~144 provider sweeps
-a day).
-
-- **Detailed UCL table**: the Champions League card is a COMPLETE league
-  table now — `# | team | MP | W | D | L | GF | GA | GD | Pts` in the
-  standard order, with a sticky header row (two-line-capable Persian labels).
-  football-data already serves every stat (`playedGames/won/draw/lost/
-  goalsFor/goalsAgainst/goalDifference`); the standings cache, the public
-  payload and `renderUcl()` all carry them through. The W/D/L/GF/GA middle
-  columns fold away on phones (≤600px), leaving `# | team | MP | GD | Pts`;
-  missing stats render as "—" (old cache shape) and GD falls back to GF−GA.
-  UCL top-8 rows keep the ⭐-style `top3` tint (qualification zone).
-- **Weekly report round**: the end-of-week digest (Monday 01:30–06:00
-  Tehran, once per ISO week) now appends the **week-AHEAD fixtures** of the
-  followed teams (7 days, straight from the KV pool — zero extra API calls):
-  derbies LEAD with ⚔️🔥 + bold, both-selected UCL duels follow with 🏆🔥,
-  then the rest with ⚽, capped with a "+N more" tail; one message per chat,
-  ONE week flag for both deliveries (an all-failed run retries next tick).
-- **Unmissable emphasis banners**: EVERY bot notification for a qualifying
-  match is prefixed with a banner — `⚔️🔥 *دربی حساس* 🔥⚔️` for derbies and
-  `🏆🔥 *دوئل بزرگ لیگ قهرمانان اروپا* 🏆` when both sides are selected UCL
-  clubs (Telegram bold; ordinary matches get nothing).
-- **Bot members directory**: `GET /api/members` (admin-gated) + a new
-  «👥 اعضای ربات» card in the admin panel listing every chat that /start-ed
-  the bot with its **telegram id, @username (slug)**, display name/group
-  title and join date. Profiles are captured from incoming updates
-  (best-effort); members who never messaged are backfilled on demand via
-  `getChat` (≤40 per call, cached into KV `user_profiles_v1` so each member
-  is fetched at most once). Loads at boot + (re)login; 🔄 re-fetches;
-  re-renders on language switch.
-- **«در این هفته» box**: new public card showing the CURRENT Iranian week
-  (Saturday→Friday) — every followed/top-3 match of this week in kickoff
-  order, live first; played games keep their final score; hidden when the
-  week has no followed games. Computed from the same pool (zero extra API
-  calls), capped at 16 rows.
-- **Dark mode is the DEFAULT** on all three pages (public/login/admin): the
-  boot script + `initTheme()` fall back to `"dark"` (no stored preference →
-  dark; the toggle still persists the choice).
-- **Mobile club crests ~53% bigger**: 30px → 46px circles (`.logo`), team
-  names wrap beneath — they were too small to read.
-- **API frugality**: the cron still ticks every 10 min, but the full provider
-  sweep only runs when it MATTERS — a followed match is live, kicks off
-  within 1h, or ended <8h ago; quiet periods reuse the KV match pool (sweeps
-  at most every 2h instead of ~144×/day). Pre-match reminders keep firing
-  from the pool. A provider circuit breaker suspends sportscore for 45 min
-  after a fully-failed sweep (it is currently serving a bot challenge)
-  instead of burning subrequests on every tick.
-- **Iranian league top-8 (root cause found)**: TheSportsDB's free tier
-  truncates `lookuptable` to 5 rows — that preview WAS the PGL table (every
-  other league comes from football-data, which is why they showed 8). New
-  chain: sportscore (bot-challenged, may recover) → **Wikipedia's per-season
-  PGL table template** (ALL 18 teams with W/D/L/GF/GA, anonymous-friendly) →
-  TheSportsDB accepted ONLY when not truncated (≥8 rows). The site grid now
-  shows the same top-8 for Iran as for every other league, with full stats.
-- **Tests**: new `scripts/check-weekly-report.js` (48 assertions: table
-  columns/order/fold/i18n, banners, week-ahead, members, frugality, PGL
-  chain, this-week box, dark default, crests, versions);
-  `check-weekly-tables.js` gained the week-ahead delivery scenarios;
-  `check-cups.js`/`live-derby-test.js` stub the new this-week dependencies;
-  `check-uniform.js` tracks the 12.16 version. Full `npm test` green.
-
-## [12.15-uniform] — 2026-09-15 (uniform club names + automatic UCL selection)
-
-User ask: the same club was stored under two names ("FC Bayern München" /
-"Bayern Munich") — uniform them; and every club added in any league should
-be automatically selected for the Champions League too (so its UCL matches
-surface).
-
-- Root cause: the code DEFAULT for BL1 shipped both spellings, and the
-  name-normalizer could never fold the English exonym "Munich" onto the
-  German "München". Fix: one default name; `bayernmunich→bayernmunchen`
-  alias; `canonicalizeTeams()` folds every stored list onto the EXACT
-  catalog name (KV clubs catalog when present, normAlias dedupe otherwise)
-  on BOTH the read path (cron + admin + public) and the save path.
-- `syncUclSelection()`: CL = CL-explicit ∪ all leagues — every followed club
-  is auto-selected for the UCL; the admin add-flow mirrors it with a toast,
-  the CL box shows the auto-selection hint, and the duplicate guard is
-  variant-proof ("Bayern Munich" is recognized as "FC Bayern München").
-
----
-
-## [12.14-clubs] — 2026-09-15 (admin panel club-name autocomplete backed by a pre-downloaded clubs catalog)
-
-User ask: when adding clubs, the admin had to guess the exact provider name —
-typing "Roma" while football-data labels the club "AS Roma" (or "Inter Milan"
-vs "FC Internazionale Milano") would silently never match a fixture side.
-Request: pre-download a database of clubs from the same API, so typing "Ro…"
-autocompletes and confirms the catalog has the club.
-
-- **Clubs catalog in KV (`clubs_catalog`)**: `refreshClubsCatalog()` pre-downloads
-  the roster of every covered competition from the SAME providers the matcher
-  reads — football-data `/v4/competitions/{code}/teams` (CL, PL, PD, SA, FL1,
-  BL1; sequential, ≤6 authed GETs, per-code failure-tolerant) plus the
-  A-League from sportscore standings (fd doesn't serve it). A club in several
-  competitions dedupes into ONE entry with multiple league badges and the
-  merged shortName/tla/crest. Auto-refreshed when missing or older than 14
-  days (CLUBS_STALE_MS); `?refresh=1` forces a rebuild.
-- **`GET /api/clubs?q=&hint=` (admin-gated)**: prefix-scored search over the
-  catalog — exact name > exact shortName > name prefix > shortName prefix >
-  tla exact > substring, with a +0.6 bump for the league box the admin is
-  typing in. Diacritics/punctuation fold ("atletico" finds "Club Atlético de
-  Madrid"). No `q` → catalog meta (count + fetchedAt) for the panel's meta
-  line. Never a raw 500 (audit-fix-6 pattern).
-- **Admin panel autocomplete**: every "add club" input is now a combobox —
-  typing ≥2 chars (170ms debounce) queries `/api/clubs` and renders a
-  dropdown of up to 8 suggestions (crest, exact name, short name, league
-  badges); ↑/↓ navigate, Enter picks the pre-highlighted first row ("type Ro,
-  press Enter" stores Roma), Esc closes. Picking a suggestion adds the chip
-  with the EXACT provider name immediately (+ duplicate guard), so a stored
-  team can never again be a name variant the matcher won't see. Free-typed
-  names still work via the add button — the catalog is a guardrail, not a
-  gate. Plus: a catalog meta line («فهرست باشگاه‌ها: N باشگاه — بروزرسانی:
-  date») and a 🔄 refresh button in the settings card.
-- i18n: 10 new keys (acHint, acNone, acAdd, acDup, btnClubs, clubsMeta,
-  clubsNone, mClubs, clubsErr) in fa+en on all three page dicts; version
-  labels bumped to ۱۲.۱۴ / v12.14.
-- New self-check `scripts/check-clubs.js` (23 assertions): catalog dedupe/
-  merge/AL/KV write, search ranking (hint bump, tla, diacritics fold, empty
-  and degraded cases), and route/wiring presence. Wired into `npm test`.
+- **Hero time/date stack**: #bigbarDate (v12.31's in-bar date run) is
+  RETIRED; spotItemNode (hero = opts.noDate) renders the center slot as a
+  COLUMN — the 24px time chip with the new .kickdate (weekday + day +
+  month, fmtHeroDate, 12.5px PC / 10px phones) under it, one centered stack
+  between the two clubs. Live-score heroes get the same stack.
+- **Mobile face-off**: the time/score slot rides BETWEEN the two crest
+  columns on the crest line (order:1 + align-self:flex-start +
+  height:46px — the chip centers exactly on the 46px crest's vertical
+  center; the hero column uses height:auto + 3px top offset). Names stay
+  under their crests. Direct-child selectors so the hero's nested score
+  never re-flows.
+- **Results expander**: server finished cap 12 → 20; the card renders the
+  latest FIVE with a «بیشتر»/«کمتر» pill (FIN_EXPANDED) — one tap shows
+  the latest 20; language switch rebuilds the rows + pill (renderFinished
+  with force + onLang now re-renders hero/topspot/finished too).
+- **👑 Table-top alerts (bot)**: maybeNotifyTableToppers runs after every
+  cron sweep — per domestic league (weeklyTableCodes minus CL), the
+  current #1 is compared with the last run's KV snapshot
+  (table_top_v1:<code>, top-10). Fires only when the new #1's previous
+  position was 2+ AND a just-finished (6h window) match involving the new
+  or old leader is in the pool — the message carries the new leader +
+  points + previous rank + the triggering match (teams, score, winner,
+  league, Jalali date) in the bot's MarkdownV2 style. Snapshot updates
+  every run → each coronation notifies exactly once.
+- **Corner crescents**: .hero-wm imgs anchor to the card's bottom corners
+  (first/home badge bottom-LEFT, second/away bottom-RIGHT — PHYSICAL
+  left/right, the wireframe's corners are screen corners, not logical),
+  centers 88px inward on both axes (27.5% of the 320px diameter), the
+  72px overhangs clipped by the layer's overflow:hidden. Phones keep the
+  layer hidden (v12.30 ask stands).
+- **Smaller bar clock**: .bighero .bigbar-clock 18px → 14px PC / 12.5px
+  phones (the hero's 24px time chip stays the headline number).
+- **Logo +15% PC**: .brand img 50px → 57.5px at ≥601px (phones keep 50px).
 
 ---
 

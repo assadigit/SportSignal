@@ -21,11 +21,9 @@ crons = ["*/10 * * * *"]  # Run every 10 minutes ONLY
 TEHRAN_TZ = "Asia/Tehran"
 # Secrets (BOT_TOKEN, CHAT_ID, API_TOKEN, ADMIN_TOKEN, ADMIN_PASS, WEBHOOK_SECRET)
 # are set via `wrangler secret put` — never in vars.
-
-# v12.17: Cloudflare Workers AI - incremental Farsi club-name translation.
-# The learner batches whatever club names the static dictionary misses (UCL's
-# 36-team table brings clubs from 16+ countries), validates the answers and
-# stores them in the STATE KV namespace (fa_teams_ai). Graceful no-op when
-# the binding is absent - translateTeam simply keeps its dict/stem layers.
-[ai]
-binding = "AI"
+# v12.33-xpost: X (Twitter) automated profile secrets — also via
+# `wrangler secret put`. The admin panel can override X_ENABLED /
+# X_DRY_RUN at runtime via KV (x_enabled_v1 / x_dry_run_v1) without
+# re-deploying.
+#   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET
+#   X_ENABLED (master switch — "1" enables), X_DRY_RUN (log-only — "1" enables)

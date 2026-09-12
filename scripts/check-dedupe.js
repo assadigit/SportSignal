@@ -14,10 +14,10 @@ const check = (name, cond) => {
 };
 
 check("canonDedupe helper defined", typeof canonDedupe === "function");
-check("cacheMatches uses canonDedupe", /const merged = canonDedupe\(\[\.\.\.head, \.\.\.matches\]\);/.test(src));
+check("cacheMatches uses canonDedupe", /const merged = \(0, import_dedupe\.canonDedupe\)\(\[\.\.\.head, \.\.\.matches\]\);/.test(src));
 check(
   "fetchLongView dedupes before returning",
-  /canonDedupe\(allMatches\)/.test(src) && /allMatches\.push\(\.\.\.deduped\)/.test(src)
+  /\(0, import_dedupe\.canonDedupe\)\(allMatches\)/.test(src) && /allMatches\.push\(\.\.\.deduped\)/.test(src)
 );
 
 // Dynamic: exercise the real helper from the dedupe module (single source of truth)

@@ -14,10 +14,13 @@ const isLiveStatus = new Function(
 );
 
 // 2) Extract the cups block from fetchPublicMatches
-const start = src.indexOf('const tierOf = (code) =>');
+const start = src.indexOf('const tierOf = /* @__PURE__ */ __name((code) =>');
 const end = src.indexOf("const data = { upcoming:", start);
 if (start < 0 || end < 0) { console.error("FAIL: cups block not found in worker.ts"); process.exit(1); }
-const cupBlock = src.slice(start, end);
+const cupBlock = src.slice(start, end)
+  // bundle-format: the v12.28+ clubs-catalog KV fetch (await) is not under
+  // test here — neutralize it so the sync eval still parses.
+  .replace(/const clubsCat = await env\.STATE\.get\([^;]+;/, "const clubsCat = null;");
 
 // 3) Stub the globals the block references
 const compEn = eval("(" + src.match(/var COMP_EN = (\{[\s\S]*?\n\});/)[1] + ")");
@@ -25,6 +28,19 @@ globalThis.COMP_EN = compEn;
 const translateCompetition = () => "x";
 const LEAGUE_LOGOS = {};
 globalThis.pubMatch = (m) => m;
+// bundle format: extracted code resolves (0, import_teams.normalizeTeamName)
+globalThis.import_teams = { normalizeTeamName: (n) => n };
+// esbuild __name wrappers (identity in the sandbox)
+globalThis.__name = (f) => f;
+// the cups block reads CUP_PHASE_WINDOWS against the current Tehran clock
+globalThis.getNowTehran = () => new Date();
+// getNowTehran(env) evaluates its argument — the block only needs a blank env
+globalThis.env = { STATE: { get: async () => null } };
+// the block also builds thisWeek/nextWeek lists (not under test) — their
+// filters need these three helpers
+globalThis.shouldNotify = () => false;
+globalThis.isTopTeamInvolved = () => false;
+globalThis.liveRank = () => 0;
 globalThis.compact = (st) => (st && st.teams && st.teams.length ? st : null);
 globalThis.translateTeam = (n) => n;
 // Future-plan fix: the UCL spot block now filters for a featured (big) pairing
@@ -38,14 +54,6 @@ globalThis.isMasterPair = () => false;
 // the selector so the CL fixtures here (cup4/cup5) qualify and every other
 // fixture doesn't; the old nbig pick chain is retired with the generalized box.
 globalThis.hasSelectedTeam = (m) => m.competition.code === "CL";
-// v12.16: the extracted block now also carries the «در این هفته» (this-week)
-// computation — stub its dependencies so the week window resolves empty and
-// the cups/ucl assertions stay untouched.
-globalThis.getNowTehran = () => new Date("2026-09-14T12:00:00Z");
-globalThis.liveRank = (m) => (m && m.status === "LIVE" ? 0 : 1);
-globalThis.shouldNotify = () => false;
-globalThis.isTopTeamInvolved = () => false;
-globalThis.withTop = (m) => m;
 // Only WC is "known" to the stub config: a WC match exists (box shows), while EC
 // has fixtures (intl codes are fetched) but is NOT in INTL_COMPETITIONS — assert
 // the cup list only ever includes codes from the config.
@@ -68,12 +76,7 @@ const matches = [
 ];
 let cups;
 let uclOut;
-// v12.18: the crest chain (an await on the clubs-catalog KV) is neutralized
-// for this sync harness — crestless rows are the pre-v12.18 shape anyway.
-const cupBlockSync = cupBlock
-  .replace('const clubsCat = await env.STATE.get(CONFIG.KV_CLUBS_CATALOG, "json").catch(() => null);', 'const clubsCat = null;')
-  .replace("const cupOrder", "var cupOrder");
-try { const out = eval("(() => { const stPGL = null; const stCL = null; const env = {}; const matches = " + JSON.stringify(matches) + ";" + cupBlockSync + "return { cups, ucl };})()"); cups = out.cups; uclOut = out.ucl; }
+try { const out = eval("(() => { const stPGL = null; const stCL = null; const matches = " + JSON.stringify(matches) + ";" + cupBlock.replace("const cupOrder", "var cupOrder") + "return { cups, ucl };})()"); cups = out.cups; uclOut = out.ucl; }
 catch (e) { console.error("FAIL: cups block threw: " + e.message); process.exit(1); }
 
 const byCode = {};

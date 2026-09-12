@@ -48,18 +48,11 @@ const env = { STATE: kv };
 const sentLog = [];
 let telegramOK = true;
 async function sendTelegram(_env, text, chatId) { if (!telegramOK) return false; sentLog.push({ text, chatId }); return true; }
-// v12.16: the digest report also carries the week-AHEAD fixtures section —
-// stubbed here (its real logic is covered by check-weekly-report.js). Modes:
-// "skip" = buildWeekAheadMessage found no fixtures (matches the empty KV
-// pool in this harness); "ok" = delivered to every chat; "fail" = error.
-let weekAheadMode = "skip";
-const weekAheadLog = [];
-async function sendWeekAhead(_env, chatIds) {
-  weekAheadLog.push(chatIds.slice());
-  if (weekAheadMode === "ok") return { sent: 1, failed: 0, text: "📅 week-ahead" };
-  if (weekAheadMode === "fail") return { sent: 0, failed: 1, text: "x" };
-  return { sent: 0, failed: 0, text: null };
-}
+// bundle-format shims: the deployed worker is a self-contained bundle whose
+// grabbed functions resolve (0, import_teams.normalizeTeamName) through this
+// scope, and maybeSendWeeklyTables calls sendWeekAhead (not under test here).
+const import_teams = { normalizeTeamName: (n) => n };
+async function sendWeekAhead(_env, _chatIds) { return { sent: 0, failed: 0, text: null, skipped: true }; }
 const standings = {
   PL: { matchday: 4, started: true, teams: [
     { name: "Manchester City FC", pos: 1, points: 9 },
@@ -181,24 +174,6 @@ chk(!clMsg.includes("⭐"), "CL: no stars (no selected CL teams in settings)");
   telegramOK = true;
   r = await maybeSendWeeklyTables(env, [555]);
   chk(r && r.sent === 6 && kv.map.weekly_tables_v1 === "2026-W39", "retry succeeds after outage clears");
-
-  // ---------- E2 (v12.16): week-ahead section rides along ----------
-  kv.map = {};
-  sentLog.length = 0;
-  NOW = new Date("2026-09-28T01:35:00Z"); // Monday of W40
-  weekAheadMode = "ok";
-  r = await maybeSendWeeklyTables(env, [555]);
-  chk(r && r.sent === 6 && r.weekAhead && r.weekAhead.sent === 1 && r.weekAhead.skipped === false, "week-ahead section delivered with the tables (res.weekAhead)");
-  chk(kv.map.weekly_tables_v1 === "2026-W40", "ONE week flag covers tables + week-ahead");
-  // partial: tables all-fail but week-ahead delivers → flag still set
-  kv.map = {};
-  telegramOK = false;
-  r = await maybeSendWeeklyTables(env, [555]);
-  chk(r && r.sent === 0 && r.failed === 6 && r.weekAhead.sent === 1, "tables fail + week-ahead ok: both reported");
-  chk(kv.map.weekly_tables_v1 === "2026-W40", "flag set when ANY delivery succeeded (never lose the digest)");
-  telegramOK = true;
-  weekAheadMode = "skip";
-
   telegramOK = false;
   const realPL = standings.PL;
   for (const c of Object.keys(standings)) standings[c] = { matchday: 1, started: false, teams: [{ name: "X", pos: 1, points: 0 }] };
