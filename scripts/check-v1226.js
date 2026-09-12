@@ -28,7 +28,7 @@ function ok(cond, label){ if(cond){ pass++; console.log("  ✔ " + label); } els
 console.log("A) the VIDEO STAGE — the user's layer ladder (video › logos › fx › data)");
 ok(src.includes('<div class="hero-video" aria-hidden="true"><video src="/hero-stage.mp4" autoplay muted loop playsinline preload="auto" tabindex="-1" disablepictureinpicture referrerpolicy="no-referrer"></video></div>'), "A1 layer A: the video div is the hero card's FIRST child — the user's mp4 at /hero-stage.mp4, autoplay + muted + loop + playsinline (autoplay-safe), tabindex -1");
 ok(fs.existsSync("assets/hero-stage.mp4") && fs.statSync("assets/hero-stage.mp4").size > 600000, "A2 the 645KB mp4 actually lives in the worker's [assets] directory (served before the worker runs)");
-ok(src.includes('.hero-video{position:absolute;inset:0;z-index:0;border-radius:15px;overflow:hidden;pointer-events:none;background:transparent}'), "A3 .hero-video: deepest layer, z:0, clipped to the card's radius, pointer-transparent");
+ok(src.includes('.hero-video{position:absolute;inset:0;z-index:0;border-radius:16px;overflow:hidden;pointer-events:none;background:transparent}'), "A3 (v12.27 roll) .hero-video: deepest layer, z:0, clipped to the card's radius, pointer-transparent");
 ok(src.includes('.hero-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.42;filter:saturate(1.12) brightness(.92)}'), "A4 the video covers the whole card (object-fit:cover) at a dimmed .42 — stage, not slideshow");
 ok(src.includes('.hero-video::after{content:"";position:absolute;inset:0;background:linear-gradient(168deg,rgba(2,6,23,.58),rgba(2,6,23,.34))}') && src.includes('[data-theme="light"] .hero-video::after{background:linear-gradient(168deg,rgba(248,250,252,.66),rgba(248,250,252,.5))}'), "A5 a theme-aware scrim over the video — dark navy on dark, near-white on light, so the data always reads");
 ok(src.includes('.hero-wm{position:absolute;inset:0;z-index:1;'), "A6 layer B: the background crests (.hero-wm) sit at z:1 — ABOVE the video, below the fx");
@@ -45,8 +45,8 @@ ok(src.includes('.brand img{display:block;height:50px;width:auto;transition:tran
 ok((src.match(/\[data-theme="light"\] \.brand/g) || []).length === 0, "B5 zero [data-theme] brand rules — the SAME logo file rides light and dark, unchanged");
 
 console.log("C) background crests — one more 30% cut");
-ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.196;filter:brightness(1.28) saturate(1.05);transform:translateY(-50%)}'), "C1 dark: .196 (was .28 — the second 30% cut), same big 320px canvas");
-ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.196;filter:none}'), "C2 light: .196 unfiltered");
+ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.196;transform:translateY(-50%)}'), "C1 (v12.27 roll) dark: .196 (imgs unfiltered — the brightness moved to the clipped .hero-wm layer), same big 320px canvas");
+ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.196}') && src.includes('[data-theme="light"] .hero-wm{filter:none}'), "C2 (v12.27 roll) light: .196, the filter moved to the clipped layer");
 ok(src.includes('@media (max-width:600px){.hero-wm img{width:210px;height:210px;opacity:.196}'), "C3 phones: 210px at .196");
 ok((src.match(/opacity:\.196/g) || []).length === 3, "C4 exactly three .196 rules (dark + light + phone) — no stray .28 left");
 
@@ -77,11 +77,11 @@ ok(!src.includes("syncJust") && !src.includes("syncMinAgo") && !src.includes("sy
 ok(src.includes('faNum(t)') && src.includes('toLocaleDateString("fa-IR",{weekday:"long",timeZone:curTz()})'), "G6 fa renders Persian digits + the fa-IR weekday in the user's SELECTED timezone; en renders \"Friday 21:30\"");
 
 console.log("H) version + wiring");
-ok(src.includes('const VERSION = "12.26-herostage";'), "H1 VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۶ — صحنهٔ ویدیویی/g) || []).length === 3, "H2 fa ver strings (public + admin + static dicts) all ۱۲.۲۶");
-ok((src.match(/data-i="ver">نسخه ۱۲\.۲۶/g) || []).length === 1, "H3 the static footer ver div ۱۲.۲۶");
-ok((src.match(/ver:"v12\.26 — an adrenaline/g) || []).length === 3, "H4 en ver strings all v12.26");
-ok(pkg.version === "12.26.0" && pkg.scripts.test.includes("check-v1226.js"), "H5 package.json 12.26.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.27-fixpack";'), "H1 VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۷ — پخش خودکار/g) || []).length === 3, "H2 (v12.27 roll) fa ver strings (public + admin + static dicts) all ۱۲.۲۷");
+ok((src.match(/data-i="ver">نسخه ۱۲\.۲۷/g) || []).length === 1, "H3 the static footer ver div ۱۲.۲۶");
+ok((src.match(/ver:"v12\.27 — guaranteed/g) || []).length === 3, "H4 en ver strings all v12.26");
+ok(pkg.version === "12.27.0" && pkg.scripts.test.includes("check-v1226.js"), "H5 package.json 12.27.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.26-herostage checks)`);
 process.exit(fail ? 1 : 0);

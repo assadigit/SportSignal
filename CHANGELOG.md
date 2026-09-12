@@ -4,6 +4,102 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.27-fixpack] — 2026-09-19 (guaranteed video autoplay + the ten-point design review: hero crest clip, fainter stars, the utility cluster, the Pts header, the green صدر جدول tag, winner scores, 44px touch targets, isolated Latin names, the shared match-card surface, semantic status tokens)
+
+User asks: "the background video doesnt play it must be auto play"; review
+items 1–10: "Clip the decorative club-crest background image to the hero
+card's boundary using overflow: hidden on the card container, matching the
+card's existing border-radius … Also add a z-index below the countdown text
+and the \"۸۸٪\" label so no live text ever sits directly on the
+high-contrast part of the crest artwork"; "Move the star graphic behind the
+standings table content, and reduce its opacity significantly (suggested:
+~5-8%)"; "Group the theme toggle, language switch, and settings icon into a
+single control cluster with consistent internal spacing, and align that
+cluster to the logical end of the header opposite the logo. Use logical CSS
+properties (inset-inline-start/end)"; "Add a column header (at minimum
+\"Pts\") above the points number in the compact league-table grid"; "Change
+the \"صدر جدول\" tag's background color from red/orange to a
+positive-association color such as green or gold"; "Visually distinguish the
+winning team's score digit from the losing team's digit — for example, bold
+the winner's number"; "Increase the clickable hit area of the theme-toggle
+and settings-gear icon buttons to at least 44×44px"; "Wrap any untranslated
+Latin-script club name embedded in Persian copy in an element with
+dir=\"ltr\" set explicitly"; "Replace the three different match-card
+background treatments … with a single shared card component used across all
+three sections"; "Define a small set of named color tokens (for example:
+primary, success, highlight, warning) and assign each existing status tag
+color to one of those tokens instead of using ad-hoc hex values per tag".
+
+- VIDEO AUTOPLAY (the headline ask): heroVideoKick() — the attribute trio
+  (autoplay muted loop playsinline) stays, plus a JS driver that calls
+  play() (rejections swallowed) at boot, on canplay/loadeddata, when the
+  tab becomes visible, on the FIRST pointer/key/touch gesture, and on a
+  5s×6 retry ladder while paused; prefers-reduced-motion still freezes the
+  stage (the kick checks the same media query, hv.pause() preserved).
+- HERO CLIP (item 1): .card.bighero now carries overflow:hidden +
+  border-radius:16px (the card's own radius) — the WebKit filter-escape
+  quirk (a filtered .hero-wm img could paint past border-radius+overflow)
+  is neutralized twice: the brightness/saturate filter moved from the imgs
+  to the .hero-wm LAYER, and the card clips every layer anyway. The
+  heartbeat AURA moved to a new .herowrap::before (a child's outer
+  box-shadow would be clipped by the card) — updateBigBar mirrors
+  data-urgent onto the wrapper so soon/final/live keep driving both
+  pseudo-elements; the ≥1440 grid rule swaps #bigHeroCard for .herowrap.
+  The countdown bar got its scrim back (was transparent — the clock and
+  the ۸۸٪ chip sat on the artwork): a horizontal navy/near-white gradient
+  plate + clock text-shadow + a stronger pct chip. The z-ladder is
+  unchanged: video 0 < crests 1 < fx 2 < data 3.
+- FAINT STARS (item 2): the UCL star-tile watermark dimmed .05→.028
+  (dark) / .07→.04 (light) and the .ucl-stand table body is now opaque
+  (rgba(15,23,42,.72) dark / rgba(248,250,252,.78) light) — the tiles sit
+  strictly behind the content; the star is decorative (no toggle), the
+  functional brand stays the small starball chip in the headings.
+- UTILITY CLUSTER (item 3): ⚙️/lang/theme ride ONE grouped control
+  (.tb-btns: 6px internal gap + a subtle glass shell) anchored to the
+  logical inline-end via inset-inline-start:auto on .head-actions — the
+  old margin-inline-start:auto on .tb-btns (the uneven-gap culprit) is
+  retired, as is the dead ≥1440 override; all logical properties, so the
+  EN/LTR mirror stays correct.
+- PTS HEADER (item 4): every compact .stbox renders a .sthead row —
+  «امتیاز» (T("thPts") = "Pts" in EN) over the numbers column, riding the
+  same 6px-gap flex line; .stpts locks a 34px end-aligned slot so the
+  label sits exactly above the numbers.
+- GREEN TOP TAG (item 5): --badge-top: #b03a2e → var(--t-success)
+  (#15803d) — the leading-position highlight now reads positive, like
+  every scoreboard leader.
+- WINNER SCORES (item 6): scoreNode() — one shared builder for render()
+  and spotItemNode(): the winning side's digit is a <b> (900 + success
+  glow), the losing digit dims (.score .lose .55), a draw keeps both
+  plain; the dash dims to .5.
+- 44PX TARGETS (item 7): the cluster's icon buttons carry min-width/
+  min-height:44px with the icon visually unchanged (16px) — the phone
+  breakpoint keeps the base rule, so 44px holds on every screen.
+- LTR NAMES (item 8): nameInto() — Persian-first policy stays (dict → AI
+  cache → stem), and any remaining Latin fallback name renders inside an
+  isolated <bdi dir="ltr"> so punctuation/dashes never flip inside the
+  RTL paragraph. Applied to match rows (render + spotItemNode), the
+  compact standings names, the UCL table names, the cups box pair and the
+  live scorers. EN mode never wraps (the page is LTR).
+- SHARED MATCH CARD (item 9): .mrow/.spotitem (hero, big-matches, UCL,
+  week, results) share ONE surface — background:var(--rowsurf) (a raised
+  translucent panel, dark rgba(15,23,42,.42) / light rgba(241,245,249,.72))
+  + the existing border/radius; hover brightens (filter:brightness(1.07),
+  no bg-swap that would drop the surface). The league comp chip stays the
+  per-competition badge on the shared card.
+- STATUS TOKENS (item 10): --t-primary / --t-success (+ink/soft/line) /
+  --t-warning / --t-highlight / --t-danger / --t-neutral (+soft) defined
+  on :root and the light theme; every status tag resolves through them:
+  --badge-top→success, --badge-hot→warning, --badge-derby→highlight,
+  --badge-league→neutral, --badge-live→success-ink, .livechip (soft/ink/
+  line + the light override retired), .cupdate .live-tag, .wkdone and
+  .venue (neutral-soft), --danger.
+- Version strings (fa/en × the public, login and admin dicts + the static
+  footer div), VERSION const, package.json 12.27.0; NEW
+  scripts/check-v1227.js (46 assertions) wired into npm test; rolling
+  gates updated in check-v1220 (C1/C2), check-v1221 (C6 + B7), check-v1223
+  (A1/A2/A7/C7), check-v1224 (A5/B1/B3/B4), check-v1225 (B1-B3/C1/C2),
+  check-v1226 (A3/C1-C3).
+
 ## [12.26-herostage] — 2026-09-17 (the video stage behind the next big match, the original logo on both themes, 20% background crests, the redundant UCL tag retired, right-aligned about/contact, the new join button, the truthful update stamp)
 
 User asks: "In lightmode logo works, but in darkmode it turns to a white

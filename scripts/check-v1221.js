@@ -34,7 +34,7 @@ ok(src.includes('const UCL_LOGO_CHIP = \'<svg viewBox="0 0 48 48" aria-hidden="t
 ok(src.includes('<h2 id="uclSpotTitle" class="uclh2"><span class="ucl-logo" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUclNext">'), "B4 the UCL matches box header carries the chip; data-i on the INNER span (language switch can never wipe the logo)");
 ok(src.includes('<h2 class="uclh2"><span class="ucl-logo sm" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUcl">'), "B5 the UCL standings card header carries the smaller chip");
 ok(/#uclSpotCard h2\{font-size:19px;color:#fff;background:linear-gradient\(135deg,#0e2058,#1b3480\);border-color:rgba\(126,161,245,\.30\);border-inline-start-color:#7ea1f5\}/.test(src), "B6 the UCL plate: 19px white text on the navy gradient, UCL-blue edge");
-ok(/#uclSpotCard\{background-image:url\("data:image\/svg\+xml,[^"]*fill='%23ffffff' fill-opacity='\.05'[^"]*"\),linear-gradient\(168deg,rgba\(27,52,128,\.72\),rgba\(13,28,71,\.80\)\);background-repeat:repeat,no-repeat;background-size:54px 54px,100% 100%;border-color:rgba\(126,161,245,\.26\)\}/.test(src), "B7 the UCL box body: navy glass + faint star-tile watermark + UCL-blue border");
+ok(/#uclSpotCard\{background-image:url\("data:image\/svg\+xml,[^"]*fill='%23ffffff' fill-opacity='\.028'[^"]*"\),linear-gradient\(168deg,rgba\(27,52,128,\.72\),rgba\(13,28,71,\.80\)\);background-repeat:repeat,no-repeat;background-size:54px 54px,100% 100%;border-color:rgba\(126,161,245,\.26\)\}/.test(src), "B7 the UCL box body: navy glass + faint star-tile watermark + UCL-blue border");
 ok(src.includes('[data-theme="light"] #uclSpotCard{background-image:url("data:image/svg+xml,') && src.includes("rgba(226,234,255,.94),rgba(201,216,248,.90)"), "B8 the light-theme UCL body keeps the navy identity");
 ok(/\.uclcard\{background-image:url\("data:image\/svg\+xml,[^"]*"\);background-repeat:repeat;background-size:54px 54px;border-color:rgba\(126,161,245,\.22\)\}/.test(src), "B9 the UCL standings card shares the watermark + border on the standard glass body");
 ok(src.includes('var UCL_BALL = ${JSON.stringify(UCL_BALL)};') && src.includes('fb.className = "uclspot-ball"; fb.setAttribute("aria-hidden", "true"); fb.innerHTML = UCL_BALL;'), "B10 the pre-draw wait state shows the starball (white stars on the navy ball)");
@@ -46,7 +46,7 @@ ok(src.includes("#wideMain,#wideSide{display:flex;flex-direction:column;gap:14px
 ok(src.includes('var WIDE_MAIN = ["topspotCard","uclSpotCard","weekCard","finishedCard"];') && src.includes('var WIDE_RAIL = ["uclCard","standingsCard","cupsCard"];'), "C3 setWide() groups the match boxes into MAIN and the three table boxes into the RAIL");
 ok(src.includes('var WIDE_ORDER = ["topspotCard","uclSpotCard","weekCard","uclCard","standingsCard","cupsCard","finishedCard"];') && src.includes("WIDE_ORDER.forEach(function(id){ var e = document.getElementById(id); if(e) footer.parentNode.insertBefore(e, footer); });"), "C4 below 1440px the cards return to the EXACT single-column DOM order");
 ok(src.includes('WIDE_MQ.addEventListener("change", wideChange)') || src.includes("WIDE_MQ.addListener(wideChange)"), "C5 breakpoint change re-shuffles/restores live");
-ok(/#topbar\{margin-bottom:0\}/.test(src) && src.includes('.brand img{display:block;height:50px;') && src.includes('.head-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}'), "C6 (v12.26 roll) the WEBSITE header spans the full chrome row — brand logo pinned to the start corner (50px transparent png, v12.26: the 40% PC trim), settings + Telegram CTA at the end (the centered-controls bar + hero title block are retired)");
+ok(/#topbar\{margin-bottom:0\}/.test(src) && src.includes('.brand img{display:block;height:50px;') && src.includes('.head-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-inline-start:auto}'), "C6 (v12.27 roll) the WEBSITE header spans the full chrome row — the action group anchors to the logical inline end — brand logo pinned to the start corner (50px transparent png, v12.26: the 40% PC trim), settings + Telegram CTA at the end (the centered-controls bar + hero title block are retired)");
 ok(src.includes("#heroSpot{max-width:880px;margin:0 auto}"), "C7 the countdown hero's match row is capped to a readable width");
 ok(src.includes("#wideSide .grid4{grid-template-columns:repeat(2,1fr)}"), "C8 the standings grid folds to 2 columns inside the rail");
 ok(src.includes('id="uclCard"') && src.includes('id="standingsCard"') && src.includes('id="cupsCard"') && src.includes('id="finishedCard"'), "C9 the four previously anonymous cards carry ids for the regrouping");
@@ -60,10 +60,10 @@ ok(src.includes("var sr = shareRow(m, false); info.appendChild(sr);") && !src.in
 ok(src.includes("function closeShare(w){") && src.includes('document.addEventListener("click", function(ev){') && src.includes('document.addEventListener("keydown", function(ev){'), "D6 closeShare + the document click/keydown listeners exist");
 
 console.log("E) version bump");
-ok(src.includes('const VERSION = "12.26-herostage";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۶/g) || []).length === 3, "E2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.26 — an adrenaline/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
-ok(pkg.version === "12.26.0" && pkg.scripts.test.includes("check-v1221.js"), "E4 (v12.26 roll) package.json 12.26.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.27-fixpack";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۷/g) || []).length === 3, "E2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
+ok((src.match(/v12\.27 — guaranteed/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
+ok(pkg.version === "12.27.0" && pkg.scripts.test.includes("check-v1221.js"), "E4 (v12.26 roll) package.json 12.27.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.21-uclbrand checks — the suite kept, gates rolled to v12.23)`);
 process.exit(fail ? 1 : 0);

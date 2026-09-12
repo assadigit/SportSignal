@@ -43,10 +43,10 @@ ok(/Math\.max\(2, Math\.round\(q\*100\)\)/.test(src) && src.includes('tr.setAttr
 ok(src.includes(".bigbar-fill.idle{width:12%;"), "B6 the fake fixed 42% idle width replaced by a low standby strip");
 
 console.log("C) badge color tokens + the #B03A2E contrast fix");
-ok(/:root\{[^}]*--badge-top:#b03a2e/.test(src), "C1 --badge-top #b03a2e defined on :root");
-ok(/\[data-theme="light"\]\{[^}]*--badge-top:#b03a2e/.test(src), "C2 the light theme carries the token set too");
+ok(/:root\{[^}]*--badge-top:var\(--t-success\)/.test(src), "C1 (v12.27 roll) --badge-top maps to the SUCCESS token on :root — the red #b03a2e retired per the review");
+ok(/\[data-theme="light"\]\{[^}]*--badge-top:var\(--t-success\)/.test(src), "C2 (v12.27 roll) the light theme carries the same token mapping");
 ok(/:root\{[^}]*--badge-hot:#b45309;--badge-derby:#7e22ce;--badge-league:#334155;--badge-live:#22c55e/.test(src), "C3 --badge-hot/--badge-derby/--badge-league/--badge-live tokens exist");
-ok(src.includes(".topbadge{display:inline-flex;align-items:center;background:var(--badge-top);"), "C4 the top-of-table badge uses var(--badge-top) — solid #b03a2e, white text (6.02:1)");
+ok(src.includes(".topbadge{display:inline-flex;align-items:center;background:var(--badge-top);"), "C4 the top-of-table badge uses var(--badge-top) — the SUCCESS green (v12.27), white text");
 ok(!src.includes("background:linear-gradient(90deg,#d97706,#b45309)"), "C5 the old #d97706→#b45309 gradient (sampled #D06E07, 3.55:1) is gone");
 ok(src.includes("background:linear-gradient(90deg,var(--badge-hot),var(--badge-derby))"), "C6 the derby badge derives from the shared tokens");
 ok(src.includes(".comp{display:inline-block;background:var(--badge-league);"), "C7 the league chip uses --badge-league");
@@ -55,7 +55,7 @@ ok(src.includes(".livechip .dot{width:8px;height:8px;border-radius:50%;backgroun
 console.log("D) ≥1440px two-column layout");
 ok(src.includes("@media (min-width:1440px){"), "D1 the 1440px breakpoint exists");
 ok(/body\{max-width:1400px;display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(400px,460px\);column-gap:28px;row-gap:14px;align-items:start\}/.test(src), "D2 (v12.22) body is a MAIN + RAIL grid — match feed one side, table boxes on the other, each column stacking flush");
-ok(src.includes("#topbar,#bigHeroCard,footer{grid-column:1/-1}"), "D3 (v12.24 roll) topbar/countdown-hero/footer span both columns — the topbar is now the WEBSITE header (logo start, controls+CTA end; hero title block retired)");
+ok(src.includes("#topbar,.herowrap,footer{grid-column:1/-1}"), "D3 (v12.27 roll) topbar/countdown-hero-wrapper/footer span both columns — the hero card rides its .herowrap shell now (the card itself clips), — the topbar is now the WEBSITE header (logo start, controls+CTA end; hero title block retired)");
 ok(src.includes("max-width:760px;margin:0 auto;"), "D4 below the breakpoint the 760px single column is untouched");
 
 console.log("E) sticky Telegram join CTA");
@@ -84,10 +84,10 @@ ok(src.includes('lastUpd:"Last updated: %s"') && src.includes('function fmtStamp
 ok(src.includes("function tickBigBar(){ if(DATA && DATA.upcoming) updateBigBar(); renderSync(); }"), "G6 the stamp re-ages every second tick");
 
 console.log("H) version bump");
-ok(src.includes('const VERSION = "12.26-herostage";'), "H1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۶/g) || []).length === 3, "H2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.26 — an adrenaline/g) || []).length === 3, "H3 (v12.26 roll) en ver strings all v12.26");
-ok(pkg.version === "12.26.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 (v12.26 roll) package.json 12.26.0 + the v12.22 suite wired");
+ok(src.includes('const VERSION = "12.27-fixpack";'), "H1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۷/g) || []).length === 3, "H2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
+ok((src.match(/v12\.27 — guaranteed/g) || []).length === 3, "H3 (v12.26 roll) en ver strings all v12.26");
+ok(pkg.version === "12.27.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 (v12.26 roll) package.json 12.27.0 + the v12.22 suite wired");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.20-uxpolish checks)`);
 process.exit(fail ? 1 : 0);

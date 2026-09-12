@@ -29,14 +29,14 @@ ok(!src.includes('.brand .brand-ink') && !src.includes('.brand .brand-white') &&
 ok(!src.includes('.brand img{height:50px}'), "A6 (v12.26 roll) the separate phone rule is gone — the base 50px serves PC and phones alike");
 
 console.log("B) background crests — opacity reduced by 30% (v12.26 roll: .28 → .196)");
-ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.196;filter:brightness(1.28) saturate(1.05);transform:translateY(-50%)}'), "B1 (v12.26 roll) dark: .196 (was .28 — the second 30% cut, the user: \"it's still too visible\"), same big 320px canvas");
-ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.196;filter:none}'), "B2 (v12.26 roll) light: .196 unfiltered");
+ok(src.includes('.hero-wm img{position:absolute;top:52%;width:320px;height:320px;object-fit:contain;opacity:.196;transform:translateY(-50%)}'), "B1 (v12.27 roll) dark: .196 (imgs unfiltered — the brightness moved to the clipped .hero-wm layer), same big 320px canvas");
+ok(src.includes('[data-theme="light"] .hero-wm img{opacity:.196}') && src.includes('[data-theme="light"] .hero-wm{filter:none}'), "B2 (v12.27 roll) light: .196, the layer filter off");
 ok(src.includes('@media (max-width:600px){.hero-wm img{width:210px;height:210px;opacity:.196}'), "B3 (v12.26 roll) phones: 210px at .196");
 ok((src.match(/opacity:\.196/g) || []).length === 3, "B4 (v12.26 roll) exactly three .196 rules (dark + light + phone) — no stray .28 left");
 
 console.log("C) MATCH BOXES — details inside the box, one aligned line");
-ok(src.includes('.mrow,.spotitem{border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin:0 0 10px;transition:background .15s,border-color .15s}'), "C1 every fixture is a real bordered box (border + radius + padding + gap below)");
-ok(src.includes('.mrow:last-child,.spotitem:last-child{margin-bottom:0}') && src.includes('.mrow:hover,.spotitem:hover{background:var(--hover)}'), "C2 last box loses the gap; hover highlights the WHOLE unit");
+ok(src.includes('.mrow,.spotitem{border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin:0 0 10px;background:var(--rowsurf);transition:background .15s,border-color .15s}'), "C1 (v12.27 roll) every fixture is a real bordered box on the SHARED surface (border + radius + padding + gap below)");
+ok(src.includes('.mrow:last-child,.spotitem:last-child{margin-bottom:0}') && src.includes('.mrow:hover,.spotitem:hover{filter:brightness(1.07);border-color:rgba(37,99,235,.4)}'), "C2 (v12.27 roll) last box loses the gap; hover brightens the WHOLE unit over its surface");
 ok(src.includes('.match{display:flex;align-items:center;gap:12px;padding:2px 0;border-radius:10px;animation:rise') && !src.includes('border-bottom:1px solid var(--border);border-radius:10px;transition:background'), "C3 the misleading hairline divider is RETIRED from .match (it sat BETWEEN a row's teams and its own info line — the misattribution source)");
 ok(!src.includes('.wrap:last-child .match,.mrow:last-child .match{border-bottom:none}'), "C4 the old :last-child divider rule is gone");
 ok((src.match(/var kt = document\.createElement\("div"\); kt\.className = "kick"/g) || []).length === 2, "C5 BOTH row builders (render + spotItemNode) give every unplayed row a .kick CENTER slot");
@@ -61,11 +61,11 @@ ok(src.includes('html{overflow-x:hidden;scroll-behavior:smooth}'), "D7 smooth an
 ok(src.includes('var foot = document.getElementById("about");') && src.includes('var apply = function(){ var show = past && !footIn; stick.classList.toggle("show", show); document.body.classList.toggle("joinsticky", show); };'), "D8 the sticky join bar stands DOWN once the footer is in view — a «درباره» anchor lands on clean content, and the footer's own bot link takes the CTA duty at page end");
 
 console.log("E) version + wiring");
-ok(src.includes('const VERSION = "12.26-herostage";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۶ — صحنهٔ ویدیویی/g) || []).length === 3, "E2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.26 — an adrenaline/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
-ok((src.match(/نسخه ۱۲\.۲۶ — صحنهٔ ویدیویی/g) || []).length === 4, "E4 (v12.26 roll) fa ver strings + the admin static footer = 4 spots");
-ok(pkg.version === "12.26.0" && pkg.scripts.test.includes("check-v1225.js"), "E5 (v12.26 roll) package.json 12.26.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.27-fixpack";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۷ — پخش خودکار/g) || []).length === 3, "E2 (v12.27 roll) fa ver strings (public + login + admin) all ۱۲.۲۷");
+ok((src.match(/v12\.27 — guaranteed/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
+ok((src.match(/نسخه ۱۲\.۲۷ — پخش خودکار/g) || []).length === 4, "E4 (v12.27 roll) fa ver strings + the admin static footer = 4 spots");
+ok(pkg.version === "12.27.0" && pkg.scripts.test.includes("check-v1225.js"), "E5 (v12.26 roll) package.json 12.27.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.25-alignment checks)`);
 process.exit(fail ? 1 : 0);

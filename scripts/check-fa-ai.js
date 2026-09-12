@@ -26,7 +26,7 @@ const emojiCount = (src.match(/🆚/g) || []).length;
 ok(emojiCount === 1 && /v12\.18: the "vs" slot is GONE[\s\S]*?the 🆚 emoji/.test(src), "A1 zero 🆚 render sites (only the history comment remains)");
 ok(!/\.vs\{/.test(src) && !src.includes('className = "vs"'), "A2 no .vs CSS rule and no .vs element anywhere (fully removed)");
 ok((src.match(/row\.appendChild\(hs\); row\.appendChild\(kt\); row\.appendChild\(as\);/g) || []).length === 2, "A3 (v12.25 roll) render() + spotItemNode(): every unplayed row carries the .kick TIME slot in the middle (aligned with the score line)");
-ok((src.match(/var vs = document\.createElement\("div"\); vs\.className = "score";/g) || []).length === 2, "A3b the score element is created only when a score exists");
+ok((src.match(/var vs = scoreNode\(m\.score\);/g) || []).length === 2 && src.includes("function scoreNode(score){"), "A3b (v12.27 roll) the score element is created only when a score exists — via the shared scoreNode() builder (winner <b>, loser .lose)");
 ok(src.includes(".score{font-weight:800"), "A4 .score styling untouched (finished/live rows keep their score)");
 ok((src.match(/" – "/g) || []).length >= 3, "A5 share/cup/admin text lines use a low-key \" – \" separator");
 ok(!/🆚/.test(src.replace(/\/\* v12\.[0-9]+:[\s\S]*?the 🆚 emoji[\s\S]*?\*\//, "")), "A5b no emoji anywhere outside that comment");
@@ -166,10 +166,10 @@ const collectorData = {
   // C11: binding + versions
   const toml = fs.readFileSync("wrangler.toml", "utf8");
   ok(/\[ai\]/.test(toml) && /binding = "AI"/.test(toml), "C11a wrangler.toml carries the [ai] binding");
-  ok(src.includes('const VERSION = "12.26-herostage";'), "C11b VERSION = 12.26-herostage");
+  ok(src.includes('const VERSION = "12.27-fixpack";'), "C11b VERSION = 12.26-herostage");
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  ok(pkg.version === "12.26.0", "C11c package.json 12.26.0");
-  ok((src.match(/نسخه ۱۲\.۲۶/g) || []).length >= 3 && (src.match(/v12\.26 — an adrenaline/g) || []).length >= 3, "C11d ver strings bumped across the page dicts + static footer");
+  ok(pkg.version === "12.27.0", "C11c package.json 12.27.0");
+  ok((src.match(/نسخه ۱۲\.۲۷/g) || []).length >= 3 && (src.match(/v12\.27 — guaranteed/g) || []).length >= 3, "C11d ver strings bumped across the page dicts + static footer");
 
   console.log(`\n${pass} passed, ${fail} failed (v12.17-fai checks)`);
   process.exit(fail ? 1 : 0);

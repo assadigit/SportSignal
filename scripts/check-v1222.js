@@ -22,7 +22,7 @@ function ok(cond, name) {
 }
 
 console.log("A) the hero stage chrome");
-ok(/\.card\.bighero\{position:relative;border-color:rgba\(52,211,153,\.38\);background-image:radial-gradient\(130% 100% at 50% -30%,rgba\(52,211,153,\.18\),transparent 55%\),linear-gradient\(168deg,rgba\(6,95,70,\.34\),rgba\(2,6,23,\.14\)\)\}/.test(src), "A1 emerald spotlight gradient + border — no other card carries this chrome");
+ok(/\.card\.bighero\{position:relative;overflow:hidden;border-radius:16px;margin:0;border-color:rgba\(52,211,153,\.38\);background-image:radial-gradient\(130% 100% at 50% -30%,rgba\(52,211,153,\.18\),transparent 55%\),linear-gradient\(168deg,rgba\(6,95,70,\.34\),rgba\(2,6,23,\.14\)\)\}/.test(src), "A1 (v12.27 roll) emerald spotlight gradient + border — the card clips at its own 16px radius (overflow:hidden), no other card carries this chrome");
 ok(src.includes('[data-theme="light"] .card.bighero{border-color:rgba(5,150,105,.38);'), "A2 the light-theme stage");
 ok(src.includes('.bighero .bigbar-clock{font-size:18px;font-weight:800;letter-spacing:.01em}'), "A3 the countdown clock is now the big 18px/800 hero number");
 ok(src.includes('.bighero .team{font-size:16px;font-weight:800}') && src.includes('.bighero .logo{box-shadow:0 0 12px rgba(52,211,153,.35)}'), "A4 grander face-off: 16px/800 team names + crest stage glow");
@@ -38,22 +38,22 @@ ok(src.includes(".bighero .match .side{animation:hero-side .5s") && src.includes
 console.log("C) escalation — the adrenaline builds toward kickoff");
 ok(src.includes('var urgent = live ? "live" : (rem <= 36e5 ? "final" : (rem <= 864e5 ? "soon" : "far"));'), "C1 updateBigBar computes the mode: far → soon (≤24h) → final (≤60min) → live");
 ok(src.includes('if(card.dataset.urgent !== urgent) card.dataset.urgent = urgent;') && src.includes('card.dataset.urgent = "far"; return;'), "C2 one data-urgent attribute drives the ladder (idle falls back to far)");
-ok(src.includes('#bigHeroCard[data-urgent="soon"]::before{box-shadow:0 0 46px rgba(245,158,11,.26),inset 0 0 70px rgba(245,158,11,.09);animation-duration:1.7s}'), "C3 soon = AMBER glow + faster heartbeat (2.6s → 1.7s)");
+ok(src.includes('#bigHeroCard[data-urgent="soon"]::before{box-shadow:inset 0 0 70px rgba(245,158,11,.09);animation-duration:1.7s}') && src.includes('.herowrap[data-urgent="soon"]::before{box-shadow:0 0 46px rgba(245,158,11,.26);animation-duration:1.7s}'), "C3 (v12.27 roll) soon = AMBER glow + faster heartbeat (2.6s → 1.7s) — inner wash on the card, outer aura on the wrapper");
 ok(src.includes('#bigHeroCard[data-urgent="final"]::before{animation-duration:1.1s}') && src.includes('#bigHeroCard[data-urgent="live"]::before{animation-duration:.9s}'), "C4 final/live = the red ALARM heartbeat (1.1s / .9s)");
 ok(src.includes('#bigHeroCard[data-urgent="final"] .bigbar-clock,#bigHeroCard[data-urgent="live"] .bigbar-clock{color:#f87171}') && src.includes('#bigHeroCard[data-urgent="soon"] .bigbar-clock{color:#fbbf24}'), "C5 the clock escalates emerald → amber → red");
 ok(src.includes('#bigHeroCard[data-urgent="final"] #bigbarLabel{animation:hero-label .9s ease-in-out infinite}'), "C6 final mode PULSES the «تا بازی بزرگ بعدی» label");
 ok(src.includes('#bigHeroCard[data-urgent="final"] .hero-fx i,#bigHeroCard[data-urgent="live"] .hero-fx i{background:radial-gradient(circle,rgba(252,165,165,.95),rgba(239,68,68,0) 70%)}'), "C7 the embers themselves escalate emerald → amber → red");
 
 console.log("D) safety");
-ok(src.includes(".hero-fx{position:absolute;inset:0;z-index:2;border-radius:15px;overflow:hidden;pointer-events:none}"), "D1 (v12.26 roll) the ember layer is clipped + pointer-transparent at z:2 — above the crests + the new video stage, BELOW the data surface (the ⋯ share popover still works above it)");
+ok(src.includes(".hero-fx{position:absolute;inset:0;z-index:2;border-radius:16px;overflow:hidden;pointer-events:none}"), "D1 (v12.27 roll) the ember layer is clipped + pointer-transparent at z:2 — above the crests + the new video stage, BELOW the data surface (the ⋯ share popover still works above it)");
 ok(src.includes("@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}"), "D2 the global prefers-reduced-motion rule silences every hero animation");
 ok(!/hero-heart|hero-sweep/.test(src.replace(/@keyframes hero-heart\{[^}]*\}/,"").replace(/@keyframes hero-sweep\{[^}]*\}/,"")) || true, "D3 (informational) all fx are opacity/transform animations — compositor friendly");
 
 console.log("E) version bump");
-ok(src.includes('const VERSION = "12.26-herostage";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۶/g) || []).length === 3, "E2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.26 — an adrenaline/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
-ok(pkg.version === "12.26.0" && pkg.scripts.test.includes("check-v1222.js"), "E4 (v12.26 roll) package.json 12.26.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.27-fixpack";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۷/g) || []).length === 3, "E2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
+ok((src.match(/v12\.27 — guaranteed/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
+ok(pkg.version === "12.27.0" && pkg.scripts.test.includes("check-v1222.js"), "E4 (v12.26 roll) package.json 12.27.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.23-watermark checks)`);
 process.exit(fail ? 1 : 0);
