@@ -5242,6 +5242,10 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
 .stbox{position:relative;background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);border:1px solid var(--glass-border);border-radius:12px;padding:10px 12px;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi);min-width:0}
 .stbox-head{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;margin-bottom:6px;min-width:0}
 .stbox-head img{width:20px;height:20px;border-radius:3px;flex-shrink:0}
+/* v12.37-pclogo: on PC (≥1440px, the wide-rail layout) the league emblem
+   images in the standings card headers are doubled (20px → 40px = +100%,
+   the user's ask). Phones + tablets keep the 20px size. */
+@media (min-width:1440px){.stbox-head img{width:40px;height:40px;border-radius:5px}}
 .strow{display:flex;align-items:center;gap:6px;font-size:11.5px;padding:2.5px 0;border-bottom:1px dashed var(--border)}
 .strow:last-child{border-bottom:none}
 /* v12.27 (review item 4): the compact boxes carry a COLUMN HEADER for the
