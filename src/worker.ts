@@ -5449,6 +5449,13 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
 .topbadge{display:inline-flex;align-items:center;background:#fef9c3;color:#451a03;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:800;margin-inline-start:6px;vertical-align:middle;border:1px solid #fde68a;opacity:.92}
 #msg{text-align:center;color:var(--muted);font-size:13px;padding:12px}
 .empty{color:var(--muted);text-align:center;padding:24px;font-size:14px}
+/* v12.56: loading animation — a subtle spinner shown while cards fetch
+   new data. The .card-loading class is added to content containers (e.g.
+   #standings, #topSpot, #finished) while load() is in progress. The
+   existing content fades to .4 opacity + a spinner appears centered. */
+.card-loading{position:relative;min-height:60px;opacity:.4;transition:opacity .25s;pointer-events:none}
+.card-loading::after{content:"";position:absolute;top:50%;left:50%;width:24px;height:24px;margin:-12px 0 0 -12px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:card-spin .7s linear infinite;opacity:1;z-index:10}
+@keyframes card-spin{to{transform:rotate(360deg)}}
 /* v12.32 (the user's ask): the «بیشتر» expander under the finished card's
    first five rows \u2014 one tap shows the latest 20 (server cap), the pill
    flips to «کمتر» to collapse. Same pill on PC and phones. */
@@ -6205,6 +6212,9 @@ function render(list, el, finished){
   });
 }
 async function load(){
+  // v12.56: show loading animation on all card content areas while fetching
+  var loadingIds = ["topSpot","uclSpot","weekBox","standings","cups","finished","liveMatches","ucl"];
+  if(!DATA.upcoming.length){ loadingIds.forEach(function(id){ var el = document.getElementById(id); if(el) el.classList.add("card-loading"); }); }
   try{
     var r = await fetch("/api/public-matches");
     if(!r.ok) throw new Error("HTTP " + r.status);
@@ -6221,6 +6231,7 @@ async function load(){
     renderWeek(d.thisWeek, d.nextWeek);
     renderLive();
     renderHeroSpot();
+    loadingIds.forEach(function(id){ var el = document.getElementById(id); if(el) el.classList.remove("card-loading"); });
   }catch(e){
     ["ucl","standings","cups","finished","liveMatches"].forEach(function(id){
       var el = document.getElementById(id);
@@ -6229,6 +6240,7 @@ async function load(){
     renderTopSpot(null);
     renderWeek(null);
     renderHeroSpot();
+    loadingIds.forEach(function(id){ var el = document.getElementById(id); if(el) el.classList.remove("card-loading"); });
   }
 }
 var DATA = { upcoming: [], finished: [], nextBig: null, topSpot: null, thisWeek: [], nextWeek: [], standings: null, cups: null };
