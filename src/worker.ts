@@ -4878,7 +4878,7 @@ body.joinsticky{padding-bottom:88px}
    position:absolute (the data layer is now absolute to center the content).
    240px on phones gives enough room for the match row + countdown bar.
    Desktop gets a larger min-height via the media query below. */
-.card.bighero{position:relative;overflow:hidden;border-radius:16px;margin:0;min-height:240px;border-color:rgba(52,211,153,.38);background-image:radial-gradient(130% 100% at 50% -30%,rgba(52,211,153,.18),transparent 55%),linear-gradient(168deg,rgba(6,95,70,.34),rgba(2,6,23,.14))}
+.card.bighero{position:relative;overflow:hidden;border-radius:16px;margin:0;min-height:200px;border-color:rgba(52,211,153,.38);background-image:radial-gradient(130% 100% at 50% -30%,rgba(52,211,153,.18),transparent 55%),linear-gradient(168deg,rgba(6,95,70,.34),rgba(2,6,23,.14))}
 [data-theme="light"] .card.bighero{border-color:rgba(5,150,105,.38);background-image:radial-gradient(130% 100% at 50% -30%,rgba(16,185,129,.20),transparent 55%),linear-gradient(168deg,rgba(209,250,229,.70),rgba(255,255,255,.30))}
 /* v12.27 (review item 1): HERO CLIP \u2014 the card itself now clips everything to
    its own 16px radius (overflow:hidden). Before, only the inner layers clipped
@@ -5590,6 +5590,13 @@ h2{font-size:15.5px;padding:8px 12px}
    v12.28 display-size time chip (20px) and the face-off columns are
    untouched \u2014 the ask is less noise, not a smaller headline. */
 .bighero .bigbar-pct{display:none}
+/* v12.57: min-height only on mobile — the video stage needs room on
+   phones. On PC the card sizes to its content (no excess space). */
+/* v12.57: min-height only on mobile — the video stage needs room on
+   phones. On PC the card also gets a min-height so the video/watermark
+   background is visible even when the heroSpot is empty, but smaller
+   than mobile (200px vs 240px) to avoid excessive empty space. */
+.card.bighero{min-height:240px}
 .bighero .bigbar{margin-bottom:0;padding:2px 2px 8px}
 /* v12.32: retired .bighero .kick{margin-top:8px} \u2014 the kick column now sits
    BETWEEN the crests (rule above: margin-top:3px centers its chip on the
