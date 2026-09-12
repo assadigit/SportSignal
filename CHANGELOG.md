@@ -4,6 +4,31 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+## [12.29-goldtop] — 2026-09-20 (the golden صدر جدول trophy badge)
+
+User ask: "Make this : golden <span class=\"topbadge\">🔥 صدر جدول</span>.
+Also use Golden Cup or something like that for it. implying stating at top
+of league will award a cup for that team."
+
+- THE GOLD TROPHY PLATE: the top-of-the-table badge (`.topbadge`) drops the
+  v12.27 flat success-green fill for a vertical METALLIC gold gradient
+  (#fde68a → #fbbf24 38% → #f59e0b 62% → #b45309 — the cup's own sheen:
+  bright highlight top, deep gold bottom), dark ENGRAVED text (#451a03 —
+  gold-plate engraving that reads on BOTH themes, so no light override),
+  an inset top highlight (the metal sheen) + a soft amber glow, and a
+  deep-gold edge through the `--badge-top` token — which becomes the
+  badge's OWN gold anchor (#b45309) instead of `var(--t-success)`. Gold is
+  brand styling, the same way `.bigcard` carries its greens (literals);
+  the success token itself stays for the live chips / winner scores.
+- THE CUP: the 🔥 swaps for 🏆 at BOTH render sites (render() +
+  spotItemNode()) — leading the table reads as lifting the cup. The label
+  itself stays «صدر جدول» / "Top 3".
+- Gates: `scripts/check-v1229.js` (17 assertions: A the plate, B the cup,
+  C the token, D versions) wired into `npm test`; `check-v1227.js` E4/E5,
+  `check-v1220.js` C1/C2/C4 superseded to the gold anchor, `check-v1228.js`
+  F section relaxed for the 12.29 roll, older gates' version literals
+  rolled.
+
 ## [12.28-herostage] — 2026-09-20 (the video actually LOOKS like it plays, the considerably-larger next-big-match countdown, the phone face-off rows, 20% fainter crest watermarks)
 
 User asks: "Video still doesnt play. (it's just a picture) - on chrome";

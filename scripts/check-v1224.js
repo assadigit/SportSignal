@@ -59,11 +59,11 @@ ok(src.includes('if(pct) pct.textContent = pctTxt(100);'), "D9 live state: the c
 ok(!src.includes('var q = rem/(14*864e5);'), "D10 the v12.20 DRAIN formula is gone — the fill direction now matches the user's 0→100 loading mental model");
 
 console.log("E) version bump");
-ok(src.includes('const VERSION = "12.28-herostage";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۸/g) || []).length === 3, "E2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.28 — the video stage/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
-ok((src.match(/نسخه ۱۲\.۲۸/g) || []).length === 4, "E4 (v12.26 roll) fa ver strings + the admin static footer = 4 spots");
-ok(pkg.version === "12.28.0" && pkg.scripts.test.includes("check-v1224.js"), "E5 (v12.26 roll) package.json 12.28.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.29-goldtop";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۹/g) || []).length === 3, "E2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
+ok((src.match(/v12\.29 — the top-of-the-table/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
+ok((src.match(/نسخه ۱۲\.۲۹/g) || []).length === 4, "E4 (v12.26 roll) fa ver strings + the admin static footer = 4 spots");
+ok(pkg.version === "12.29.0" && pkg.scripts.test.includes("check-v1224.js"), "E5 (v12.26 roll) package.json 12.29.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.25-alignment checks)`);
 process.exit(fail ? 1 : 0);

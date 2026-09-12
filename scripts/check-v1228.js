@@ -81,12 +81,12 @@ ok(!src.includes('.score{font-size:15px;flex-basis:80px}') && !src.includes('.ki
 ok(src.includes('@media (min-width:601px) and (max-width:900px){'), "E8 the NARROW-PC band (601–900px) exists — the 2x hero crests + big chip squeezed names to ~50px there even before this release");
 ok(src.indexOf('@media (min-width:601px) and (max-width:900px)') > src.indexOf('.bighero .kick .countdown{font-size:24px'), "E9 the mid-band block comes AFTER the big-chip rules (same-specificity source-order duel — measured 1-line names at 601/768/900)");
 
-console.log("F) VERSION + ROLLING GATES");
-ok(src.includes('const VERSION = "12.28-herostage";'), "F1 VERSION = 12.28-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۸ — صحنهٔ ویدیویی/g) || []).length === 3, "F2 fa ver strings (public + login + admin dicts) all ۱۲.۲۸");
-ok((src.match(/data-i="ver">نسخه ۱۲\.۲۸ — صحنهٔ ویدیویی/g) || []).length === 1, "F3 the static footer ver div ۱۲.۲۸");
-ok((src.match(/ver:"v12\.28 — the video stage/g) || []).length === 3, "F4 en ver strings all v12.28");
-ok(pkg.version === "12.28.0" && pkg.scripts.test.includes("check-v1228.js"), "F5 package.json 12.28.0 + this suite wired into npm test");
+console.log("F) VERSION (12.29 roll superseded — strict 12.29 assertions live in check-v1229.js)");
+ok(/const VERSION = "12\.2[89]-/.test(src), "F1 VERSION stays a 12.2x release tag");
+ok((src.match(/ver:"نسخه ۱۲\.۲/g) || []).length >= 3, "F2 fa ver strings present (public + login + admin dicts)");
+ok((src.match(/data-i="ver">نسخه ۱۲\.۲/g) || []).length === 1, "F3 the static footer ver div present");
+ok((src.match(/ver:"v12\.2/g) || []).length >= 3, "F4 en ver strings present");
+ok(pkg.scripts.test.includes("check-v1228.js"), "F5 this suite stays wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.28-herostage checks)`);
 process.exit(fail ? 1 : 0);

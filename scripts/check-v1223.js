@@ -47,11 +47,11 @@ ok(src.includes(".mrow,.spotitem{border:1px solid var(--border);border-radius:14
 ok((src.match(/row\.appendChild\(vs\); row\.appendChild\(as\);/g) || []).length === 2, "C8 the stray double-append in render() is gone (exactly the 2 legitimate score branches remain — spotItemNode + render; it crashed on unscored rows via appendChild(undefined))");
 
 console.log("D) version bump");
-ok(src.includes('const VERSION = "12.28-herostage";'), "D1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۸/g) || []).length === 3, "D2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.28 — the video stage/g) || []).length === 3, "D3 (v12.26 roll) en ver strings all v12.26");
-ok((src.match(/نسخه ۱۲\.۲۸/g) || []).length === 4, "D4 (v12.26 roll) fa ver strings + the admin static footer = 4 spots");
-ok(pkg.version === "12.28.0" && pkg.scripts.test.includes("check-v1223.js"), "D5 (v12.26 roll) package.json 12.28.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.29-goldtop";'), "D1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۹/g) || []).length === 3, "D2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
+ok((src.match(/v12\.29 — the top-of-the-table/g) || []).length === 3, "D3 (v12.26 roll) en ver strings all v12.26");
+ok((src.match(/نسخه ۱۲\.۲۹/g) || []).length === 4, "D4 (v12.26 roll) fa ver strings + the admin static footer = 4 spots");
+ok(pkg.version === "12.29.0" && pkg.scripts.test.includes("check-v1223.js"), "D5 (v12.26 roll) package.json 12.29.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.23-watermark checks)`);
 process.exit(fail ? 1 : 0);

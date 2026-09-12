@@ -77,11 +77,11 @@ ok(!src.includes("syncJust") && !src.includes("syncMinAgo") && !src.includes("sy
 ok(src.includes('faNum(t)') && src.includes('toLocaleDateString("fa-IR",{weekday:"long",timeZone:curTz()})'), "G6 fa renders Persian digits + the fa-IR weekday in the user's SELECTED timezone; en renders \"Friday 21:30\"");
 
 console.log("H) version + wiring");
-ok(src.includes('const VERSION = "12.28-herostage";'), "H1 VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۸ — صحنهٔ ویدیویی/g) || []).length === 3, "H2 (v12.27 roll) fa ver strings (public + admin + static dicts) all ۱۲.۲۷");
-ok((src.match(/data-i="ver">نسخه ۱۲\.۲۸/g) || []).length === 1, "H3 the static footer ver div ۱۲.۲۶");
-ok((src.match(/ver:"v12\.28 — the video stage/g) || []).length === 3, "H4 en ver strings all v12.26");
-ok(pkg.version === "12.28.0" && pkg.scripts.test.includes("check-v1226.js"), "H5 package.json 12.28.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.29-goldtop";'), "H1 VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۹ — نشان «صدر جدول»/g) || []).length === 3, "H2 (v12.27 roll) fa ver strings (public + admin + static dicts) all ۱۲.۲۷");
+ok((src.match(/data-i="ver">نسخه ۱۲\.۲۹/g) || []).length === 1, "H3 the static footer ver div ۱۲.۲۶");
+ok((src.match(/ver:"v12\.29 — the top-of-the-table/g) || []).length === 3, "H4 en ver strings all v12.26");
+ok(pkg.version === "12.29.0" && pkg.scripts.test.includes("check-v1226.js"), "H5 package.json 12.29.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.26-herostage checks)`);
 process.exit(fail ? 1 : 0);

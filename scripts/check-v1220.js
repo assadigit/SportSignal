@@ -43,10 +43,10 @@ ok(/Math\.max\(2, Math\.round\(q\*100\)\)/.test(src) && src.includes('tr.setAttr
 ok(src.includes(".bigbar-fill.idle{width:12%;"), "B6 the fake fixed 42% idle width replaced by a low standby strip");
 
 console.log("C) badge color tokens + the #B03A2E contrast fix");
-ok(/:root\{[^}]*--badge-top:var\(--t-success\)/.test(src), "C1 (v12.27 roll) --badge-top maps to the SUCCESS token on :root — the red #b03a2e retired per the review");
-ok(/\[data-theme="light"\]\{[^}]*--badge-top:var\(--t-success\)/.test(src), "C2 (v12.27 roll) the light theme carries the same token mapping");
+ok(/:root\{[^}]*--badge-top:#b45309/.test(src), "C1 (v12.29 roll) --badge-top is the badge's own deep-GOLD anchor on :root — red #b03a2e still retired, green superseded by the user's golden ask");
+ok(/\[data-theme="light"\]\{[^}]*--badge-top:#b45309/.test(src), "C2 (v12.29 roll) the light theme carries the same gold anchor");
 ok(/:root\{[^}]*--badge-hot:#b45309;--badge-derby:#7e22ce;--badge-league:#334155;--badge-live:#22c55e/.test(src), "C3 --badge-hot/--badge-derby/--badge-league/--badge-live tokens exist");
-ok(src.includes(".topbadge{display:inline-flex;align-items:center;background:var(--badge-top);"), "C4 the top-of-table badge uses var(--badge-top) — the SUCCESS green (v12.27), white text");
+ok(src.includes(".topbadge{display:inline-flex;align-items:center;background:linear-gradient(180deg,#fde68a,#fbbf24 38%,#f59e0b 62%,#b45309);"), "C4 (v12.29 roll) the top-of-table badge is a metallic GOLD plate — engraved text, gold edge via var(--badge-top)");
 ok(!src.includes("background:linear-gradient(90deg,#d97706,#b45309)"), "C5 the old #d97706→#b45309 gradient (sampled #D06E07, 3.55:1) is gone");
 ok(src.includes("background:linear-gradient(90deg,var(--badge-hot),var(--badge-derby))"), "C6 the derby badge derives from the shared tokens");
 ok(src.includes(".comp{display:inline-block;background:var(--badge-league);"), "C7 the league chip uses --badge-league");
@@ -84,10 +84,10 @@ ok(src.includes('lastUpd:"Last updated: %s"') && src.includes('function fmtStamp
 ok(src.includes("function tickBigBar(){ if(DATA && DATA.upcoming) updateBigBar(); renderSync(); }"), "G6 the stamp re-ages every second tick");
 
 console.log("H) version bump");
-ok(src.includes('const VERSION = "12.28-herostage";'), "H1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۸/g) || []).length === 3, "H2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
-ok((src.match(/v12\.28 — the video stage/g) || []).length === 3, "H3 (v12.26 roll) en ver strings all v12.26");
-ok(pkg.version === "12.28.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 (v12.26 roll) package.json 12.28.0 + the v12.22 suite wired");
+ok(src.includes('const VERSION = "12.29-goldtop";'), "H1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۹/g) || []).length === 3, "H2 (v12.26 roll) fa ver strings (public + login + admin) all ۱۲.۲۶");
+ok((src.match(/v12\.29 — the top-of-the-table/g) || []).length === 3, "H3 (v12.26 roll) en ver strings all v12.26");
+ok(pkg.version === "12.29.0" && pkg.scripts.test.includes("check-v1221.js"), "H4 (v12.26 roll) package.json 12.29.0 + the v12.22 suite wired");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.20-uxpolish checks)`);
 process.exit(fail ? 1 : 0);

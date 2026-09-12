@@ -61,11 +61,11 @@ ok(src.includes('html{overflow-x:hidden;scroll-behavior:smooth}'), "D7 smooth an
 ok(src.includes('var foot = document.getElementById("about");') && src.includes('var apply = function(){ var show = past && !footIn; stick.classList.toggle("show", show); document.body.classList.toggle("joinsticky", show); };'), "D8 the sticky join bar stands DOWN once the footer is in view — a «درباره» anchor lands on clean content, and the footer's own bot link takes the CTA duty at page end");
 
 console.log("E) version + wiring");
-ok(src.includes('const VERSION = "12.28-herostage";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
-ok((src.match(/ver:"نسخه ۱۲\.۲۸ — صحنهٔ ویدیویی/g) || []).length === 3, "E2 (v12.27 roll) fa ver strings (public + login + admin) all ۱۲.۲۷");
-ok((src.match(/v12\.28 — the video stage/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
-ok((src.match(/نسخه ۱۲\.۲۸ — صحنهٔ ویدیویی/g) || []).length === 4, "E4 (v12.27 roll) fa ver strings + the admin static footer = 4 spots");
-ok(pkg.version === "12.28.0" && pkg.scripts.test.includes("check-v1225.js"), "E5 (v12.26 roll) package.json 12.28.0 + this suite wired into npm test");
+ok(src.includes('const VERSION = "12.29-goldtop";'), "E1 (v12.26 roll) VERSION = 12.26-herostage");
+ok((src.match(/ver:"نسخه ۱۲\.۲۹ — نشان «صدر جدول»/g) || []).length === 3, "E2 (v12.27 roll) fa ver strings (public + login + admin) all ۱۲.۲۷");
+ok((src.match(/v12\.29 — the top-of-the-table/g) || []).length === 3, "E3 (v12.26 roll) en ver strings all v12.26");
+ok((src.match(/نسخه ۱۲\.۲۹ — نشان «صدر جدول»/g) || []).length === 4, "E4 (v12.27 roll) fa ver strings + the admin static footer = 4 spots");
+ok(pkg.version === "12.29.0" && pkg.scripts.test.includes("check-v1225.js"), "E5 (v12.26 roll) package.json 12.29.0 + this suite wired into npm test");
 
 console.log(`\n${pass} passed, ${fail} failed (v12.25-alignment checks)`);
 process.exit(fail ? 1 : 0);

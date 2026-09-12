@@ -78,8 +78,10 @@ console.log("E) PTS HEADER + GREEN TAG + WINNER SCORES (review items 4+5+6)");
 ok(src.includes('var th = document.createElement("div"); th.className = "sthead";') && src.includes('thp.textContent = T("thPts");'), "E1 every compact .stbox renders the Pts column header (امتیاز / Pts)");
 ok(src.includes('.sthead{display:flex;align-items:center;gap:6px;padding:0 2px 3px;border-bottom:1px solid var(--border)}') && src.includes('.sthead-p{font-size:9.5px;font-weight:700;color:var(--muted);min-width:34px;text-align:end;flex-shrink:0}'), "E2 the header row rides the rows' own flex line, label end-aligned over the numbers");
 ok(src.includes('.stpts{font-weight:800;flex-shrink:0;min-width:34px;text-align:end;font-variant-numeric:tabular-nums}'), "E3 .stpts locks the 34px end-aligned slot so label and numbers align");
-ok(src.includes('--badge-top:var(--t-success);') && !src.includes('--badge-top:#b03a2e'), "E4 the صدر جدول tag carries the SUCCESS token — no red #b03a2e anywhere");
-ok((src.match(/--badge-top:var\(--t-success\)/g) || []).length === 2, "E5 both themes' badge-top map to success");
+// v12.29 superseded: the badge is a GOLD TROPHY plate now (--badge-top:#b45309, metallic
+// gradient + engraved text) — the user's explicit ask. Strictly asserted in check-v1229.js.
+ok(src.includes('--badge-top:#b45309;') && !src.includes('--badge-top:#b03a2e'), "E4 (v12.29) the صدر جدول tag carries its own deep-gold anchor — still no red #b03a2e");
+ok((src.match(/--badge-top:#b45309;/g) || []).length === 2, "E5 (v12.29) both themes' badge-top = the gold anchor");
 ok(src.includes('.score b{font-weight:900;text-shadow:0 0 12px rgba(74,222,128,.45)}') && src.includes('.score .lose{font-weight:600;opacity:.55}'), "E6 winner digit <b> 900+glow, loser dimmed to .55");
 ok(src.includes('function scoreNode(score){') && src.includes('document.createElement(h>a ? "b" : "span")'), "E7 ONE shared score builder (render + spotItemNode)");
 ok(src.includes('scoreNode(m.score)') && (src.match(/scoreNode\(m\.score\)/g) || []).length === 2, "E8 both row anatomies use it");
@@ -106,7 +108,7 @@ ok(src.includes('.venue{display:inline-block;background:var(--t-neutral-soft);')
 ok(src.includes('--danger:var(--t-danger);') && (src.match(/--danger:var\(--t-danger\)/g) || []).length === 2, "G9 --danger resolves through the token (both themes)");
 
 console.log("H) VERSION (v12.28 superseded — strict 12.28 assertions live in check-v1228.js)");
-ok(/const VERSION = "12\.2[78]-/.test(src), "H1 VERSION stays a 12.2x release tag");
+ok(/const VERSION = "12\.2\d-/.test(src), "H1 VERSION stays a 12.2x release tag");
 ok((src.match(/ver:"نسخه ۱۲\.۲/g) || []).length >= 3, "H2 fa ver strings present (public + login + admin dicts)");
 ok((src.match(/data-i="ver">نسخه ۱۲\.۲/g) || []).length === 1, "H3 the static footer ver div present");
 ok((src.match(/ver:"v12\.2/g) || []).length >= 3, "H4 en ver strings present");
