@@ -5069,6 +5069,14 @@ body.joinsticky{padding-bottom:88px}
 .uclcard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2048%2048'%3E%3Cpath fill='%23ffffff' fill-opacity='.028' d='M24%2015L26%2021.2%2032.6%2021.2%2027.3%2025.1%2029.3%2031.3%2024%2027.4%2018.7%2031.3%2020.7%2025.1%2015.4%2021.2%2022%2021.2Z'/%3E%3C/svg%3E");background-repeat:repeat;background-size:54px 54px;border-color:rgba(126,161,245,.22)}
 [data-theme="light"] #uclSpotCard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2048%2048'%3E%3Cpath fill='%230e2058' fill-opacity='.04' d='M24%2015L26%2021.2%2032.6%2021.2%2027.3%2025.1%2029.3%2031.3%2024%2027.4%2018.7%2031.3%2020.7%2025.1%2015.4%2021.2%2022%2021.2Z'/%3E%3C/svg%3E"),linear-gradient(168deg,rgba(226,234,255,.94),rgba(201,216,248,.90));border-color:rgba(23,42,105,.22)}
 [data-theme="light"] .uclcard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2048%2048'%3E%3Cpath fill='%230e2058' fill-opacity='.04' d='M24%2015L26%2021.2%2032.6%2021.2%2027.3%2025.1%2029.3%2031.3%2024%2027.4%2018.7%2031.3%2020.7%2025.1%2015.4%2021.2%2022%2021.2Z'/%3E%3C/svg%3E");border-color:rgba(23,42,105,.16)}
+/* v12.35-uclfix: light-mode override for the UCL h2 plates. The base
+   [data-theme="light"] h2 rule (specificity 0,1,1) was overriding .uclcard h2
+   and #uclSpotCard h2 (also 0,1,1) because it came later in the cascade —
+   replacing the navy gradient with rgba(15,23,42,.04) (near-white) while
+   keeping color:#fff, producing white-on-near-white unreadable text. These
+   rules have specificity (0,2,1) so they WIN, re-applying the navy gradient +
+   white text in light mode. */
+[data-theme="light"] .uclcard h2,[data-theme="light"] #uclSpotCard h2{color:#fff;background:linear-gradient(135deg,#0e2058,#1b3480);border-color:rgba(126,161,245,.30);border-inline-start-color:#7ea1f5}
 /* v12.11: the .topspot golden box chrome is RETIRED \u2014 the hero card and the
    big-matches box are plain .card sections now, uniform with every other
    card on the page (the \u{1F525} heading carries the "big" signal; per the user
@@ -5091,6 +5099,11 @@ body.joinsticky{padding-bottom:88px}
 .wkdone{color:var(--muted);font-weight:700;font-size:11.5px;background:var(--t-neutral-soft);border-radius:999px;padding:3px 10px;display:inline-block;margin-left:6px}
 .ucl-head{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14.5px;margin-bottom:8px}
 .ucl-emblem{width:26px;height:26px;border-radius:6px;flex-shrink:0}
+/* v12.35-uclfix: the matchday chip now lives INSIDE the h2.uclh2 (same row as
+   the title), not in a separate .ucl-head div below. Pushed to the inline-end
+   with margin-inline-start:auto. White text on the navy gradient h2 plate,
+   with a semi-transparent white pill background for visual separation. */
+.uclh2 .ucl-md{margin-inline-start:auto;font-size:12px;color:rgba(255,255,255,.92);font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:2px 10px;flex-shrink:0;white-space:nowrap}
 .ucl-md{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:600}
 .ucl-stand-wrap{position:relative;margin-top:10px}
 /* v12.27 (review item 2): the star tiles sit strictly BEHIND the table now \u2014
@@ -6349,11 +6362,24 @@ function renderUcl(d){
   var el = document.getElementById("ucl"); if(!el) return;
   el.innerHTML = "";
   if(!d){ el.innerHTML = "<div class='empty'>"+T("errLoad")+"</div>"; return; }
-  var head = document.createElement("div"); head.className = "ucl-head";
-  if(d.emblem){ var ei = document.createElement("img"); ei.className="ucl-emblem"; ei.src=d.emblem; ei.alt=""; ei.onerror=function(){this.remove();}; head.appendChild(ei); }
-  if(d.matchday){ var md = document.createElement("span"); md.className="ucl-md"; md.textContent = (curLang()==="en"?"Matchday ":"\u0647\u0641\u062A\u0647 ")+fmtNum(d.matchday); head.appendChild(md); }
-
-  if(head.childNodes.length) el.appendChild(head);
+  // v12.35-uclfix: the matchday chip now lives INSIDE the h2.uclh2 (same row
+  // as the title), not in a separate .ucl-head div below. The UCL emblem
+  // image is retired (the starball SVG in the h2 is the UCL brand mark).
+  // Append the matchday span to the existing h2 element (already in the
+  // DOM with the starball + "UEFA Champions League" title). Remove any
+  // previous matchday chip first (renderUcl runs on every language switch).
+  // Use querySelector for robustness (previousElementSibling had a timing
+  // issue on the initial page load).
+  var h2ucl = document.querySelector("#uclCard h2.uclh2");
+  if(h2ucl){
+    var oldMd3 = h2ucl.querySelector(".ucl-md");
+    if(oldMd3) oldMd3.remove();
+    if(d.matchday){
+      var md2 = document.createElement("span"); md2.className="ucl-md";
+      md2.textContent = (curLang()==="en"?"Matchday ":"\u0647\u0641\u062A\u0647 ")+fmtNum(d.matchday);
+      h2ucl.appendChild(md2);
+    }
+  }
   // v12.12: the all-fixtures list is GONE from this card (Sabah FK vs SK
   // Slavia Praha noise) \u2014 upcoming CL fixtures live in the uclspot box above
   // (\u22651 selected club, up to 8). This card is standings-only now.
