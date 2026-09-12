@@ -4844,7 +4844,7 @@ body.joinsticky{padding-bottom:88px}
    on the hero card's own background, with no separate container. The
    border-bottom divider is also retired — the thin 4px track is the
    only divider. padding adjusted for the label/clock/pct row + track. */
-.bighero .bigbar{margin:0 0 12px;padding:2px 2px 8px;background:linear-gradient(90deg,rgba(2,6,23,.46),rgba(2,6,23,.18) 16%,rgba(2,6,23,.18) 84%,rgba(2,6,23,.46));border:none;border-bottom:1px solid var(--border);border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.bighero .bigbar{margin:0 0 12px;padding:2px 2px 8px;background:linear-gradient(90deg,rgba(2,6,23,.46),rgba(2,6,23,.18) 16%,rgba(2,6,23,.18) 84%,rgba(2,6,23,.46));border:none;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
 [data-theme="light"] .bighero .bigbar{background:linear-gradient(90deg,rgba(248,250,252,.6),rgba(248,250,252,.32) 16%,rgba(248,250,252,.32) 84%,rgba(248,250,252,.6))}
 .bighero .bigbar-clock{text-shadow:0 1px 10px rgba(2,6,23,.55)}
 [data-theme="light"] .bighero .bigbar-clock{text-shadow:0 1px 8px rgba(248,250,252,.9)}
@@ -4987,18 +4987,17 @@ body.joinsticky{padding-bottom:88px}
    screen's edges, not with text direction \u2014 checked: nothing else in this
    container relies on overflowing it; the layer holds only these two imgs
    + the scrim, and the card itself already clips at its 16px radius). */
-/* v12.42-livesection: the watermark images now use LOGICAL properties
-   (inset-inline-start / inset-inline-end) instead of physical left/right.
-   In RTL (Persian), the first .side (home) is on the RIGHT, so the
-   first watermark (home crest) should also be on the RIGHT — was SWAPPED
-   before because the CSS used physical left/right which don't auto-flip
-   with the page direction. Now:
-   - img:first-child (home crest) → inset-inline-end (RIGHT in RTL, LEFT in LTR)
-   - img:last-child (away crest) → inset-inline-start (LEFT in RTL, RIGHT in LTR)
-   This keeps each watermark anchored behind its own team's half of the row. */
+/* v12.46-herofix: the watermark images are SWAPPED to match the team
+   positions. In RTL (Persian), the first .side (home) is on the RIGHT
+   (inline-start), so the first watermark (home crest) must also be on
+   the RIGHT. Was using inset-inline-end (LEFT in RTL) → was swapped.
+   Now:
+   - img:first-child (home crest) → inset-inline-start (RIGHT in RTL, LEFT in LTR)
+   - img:last-child (away crest) → inset-inline-end (LEFT in RTL, RIGHT in LTR)
+   This matches the team logos' positions in both directions. */
 .hero-wm img{position:absolute;width:320px;height:320px;object-fit:contain;opacity:.157;transform:none}
-.hero-wm img:first-child{inset-inline-end:-72px;bottom:-72px;top:auto}
-.hero-wm img:last-child{inset-inline-start:-72px;bottom:-72px;top:auto}
+.hero-wm img:first-child{inset-inline-start:-72px;bottom:-72px;top:auto}
+.hero-wm img:last-child{inset-inline-end:-72px;bottom:-72px;top:auto}
 .hero-wm::after{content:"";position:absolute;inset:0;background:radial-gradient(58% 62% at 50% 58%,rgba(2,6,23,.32),transparent 72%)}
 [data-theme="light"] .hero-wm::after{background:radial-gradient(58% 62% at 50% 58%,rgba(248,250,252,.38),transparent 72%)}
 [data-theme="light"] .hero-wm img{opacity:.157}
@@ -5654,11 +5653,15 @@ footer{margin-top:0}
      ride ONE positioned layer (z:3) above the video (z:0), the crests (z:1)
      and the css fx (z:2) \u2014 exactly the user's ladder. -->
 <div class="hero-data">
+<!-- v12.46-herofix: the match row (heroSpot) rides ABOVE the countdown bar
+     (the user's ask: "move this loading to below team names"). The bigbar
+     now sits BELOW the match row, not above it. A ⚽ football emoji is
+     prepended to the bigbar label for visual identity. -->
+<div id="heroSpot"></div>
 <div id="bigbar" class="bigbar">
 <div class="bigbar-top"><span id="bigbarLabel" data-i="barNext">\u26A1 \u062A\u0627 \u0628\u0627\u0632\u06CC \u0628\u0632\u0631\u06AF \u0628\u0639\u062F\u06CC</span><span class="bb-end"><span id="bigbarClock" class="bigbar-clock">--:--:--</span><span id="bigbarPct" class="bigbar-pct" aria-hidden="true"></span></span></div>
 <div class="bigbar-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="bigbarFill" class="bigbar-fill"></div></div>
 </div>
-<div id="heroSpot"></div>
 </div>
 </div>
 </div>
@@ -6901,7 +6904,7 @@ function updateBigBar(){
   // single-match shape {next:\u2026}.
   var t = barTarget(), next = t.m;
   if(!next){
-    lbl.textContent = T("barIdle"); clk.textContent = "--:--:--";
+    lbl.textContent = "\u26BD " + T("barIdle"); clk.textContent = "--:--:--";
     if(pct) pct.textContent = "";
     fill.className = "bigbar-fill idle";
     if(tr) tr.setAttribute("aria-valuenow", "0");
@@ -6922,7 +6925,11 @@ function updateBigBar(){
   // color + speed keep driving both pseudo-elements.
   var hw = card.parentNode;
   if(hw && hw.classList && hw.classList.contains("herowrap") && hw.dataset.urgent !== urgent) hw.dataset.urgent = urgent;
-  lbl.textContent = live ? T("barLive") : (isBig?T("barNext"):T("barFallback"));
+  // v12.46-herofix: prepend a ⚽ football emoji to the bar label for visual
+  // identity (the user's ask). The i18n strings already carry ⚡ for barNext;
+  // we prepend ⚽ so it reads "⚽ ⚡ تا بازی بزرگ بعدی".
+  var lblText = live ? T("barLive") : (isBig?T("barNext"):T("barFallback"));
+  lbl.textContent = "\u26BD " + lblText;
   // v12.24: the percent chip speaks the bar's BASE \u2014 100% at kickoff/live.
   var pctTxt = function(v){ return fmtNum(v) + (curLang()==="en" ? "%" : "\u066A"); };
   if(live){
