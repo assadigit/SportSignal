@@ -6121,7 +6121,7 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    \u2014 "weekday day month", 12.5px PC, one step smaller per the user's
    sketch "19 / weekday 22 month"], so the time and its date read as ONE
    centered stack between the two clubs. */
-.bighero .kick{flex:0 0 auto;flex-direction:column;gap:6px;margin-top:0;align-self:center}
+.bighero .kick{flex:0 0 auto;flex-direction:column;gap:6px;margin-top:20px;align-self:center}
 /* v12.32: the date line under the hero's time chip \u2014 plain rows never
    carry it (their weekday/date stays in the info line); the hero's stack
    is [big time / smaller date]. */
