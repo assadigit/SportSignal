@@ -664,8 +664,8 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    the score's x position wander per row); the score below is a FIXED
    CENTERED SLOT, so every scored row on the page carries its result at the
    same x line and team columns line up across rows and cards. */
-.side{display:flex;align-items:center;gap:8px;flex:1 1 0;min-width:0;flex-wrap:nowrap}
-.side .team{flex:1;min-width:0}
+.side{display:flex;align-items:center;gap:12px;flex:1 1 0;min-width:0;flex-wrap:nowrap}
+.side .team{flex:1;min-width:0;padding-inline:4px;overflow:hidden;text-overflow:ellipsis}
 .side.away .team{text-align:end}
 /* v12.18: PC crests +35% (38px → 51px, the user's ask) — the monogram
    fallback scales with the circle. Phones keep their own 46px size below. */
@@ -1012,7 +1012,7 @@ h2{font-size:15.5px;padding:8px 12px}
    the names' band, centered between the two name columns. */
 .match{flex-wrap:wrap;gap:6px;padding:6px 2px}
 .match .side{order:1;flex-direction:column;align-items:center;gap:3px}
-.match .side .team{flex:0 0 auto;width:100%;min-width:0;text-align:center;font-size:13px;word-wrap:break-word;overflow-wrap:anywhere}
+.match .side .team{flex:0 0 auto;width:100%;min-width:0;text-align:center;font-size:13px;word-wrap:break-word;overflow-wrap:anywhere;padding:4px 6px;box-sizing:border-box}
 .match .side.away{flex-direction:column-reverse}
 /* v12.32: direct children only (the hero's score is NESTED inside its .kick
    column — the old descendant selector would have re-flowed it). */

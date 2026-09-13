@@ -304,9 +304,12 @@ export async function standingsLine(env: Env, match, lang) {
     const teamName = en ? row.name : translateTeam(row.name);
     const posStr = en ? row.pos.toString() : toFaDigits(row.pos.toString());
     const ptsStr = en ? row.points.toString() : toFaDigits(row.points.toString());
+    const playedStr = row.played != null ? (en ? row.played.toString() : toFaDigits(row.played.toString())) : "\u2014";
     const rankWord = en ? "#" : "\u0631\u062A\u0628\u0647 ";
     const ptsWord = en ? " pts" : " \u0627\u0645\u062A\u06CC\u0627\u0632";
-    lines.push("\u2022 " + escapeMarkdownCharacters(teamName) + ": " + rankWord + posStr + " \u2014 " + ptsStr + ptsWord + delta);
+    const playedWord = en ? " P" : " \u0628\u0627\u0632\u06CC";
+    // v13.28: show games played alongside points (user's ask: "match played is as important")
+    lines.push("\u2022 " + escapeMarkdownCharacters(teamName) + ": " + rankWord + posStr + " \u2014 " + playedStr + playedWord + " \u2014 " + ptsStr + ptsWord + delta);
   }
   if (!lines.length) return null;
   const compName = en ? (COMP_EN[code] || code) : translateCompetition(code);
