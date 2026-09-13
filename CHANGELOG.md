@@ -84,6 +84,44 @@ deployed live + verified. npm test exit 0 (351 assertions).
 
 ---
 
+## [13.28-fixes] — 2026-09-13 (session 2 wrap: admin panel fix, dedupe spam fix, standings + CSS fixes, cache-bust)
+
+### Session 2 summary (v13.25 → v13.28, 5 versions)
+This session shipped 5 versions fixing admin panel access, bot spamming,
+standings display, CSS overlap, and cache-busting. All deployed live + verified.
+
+### v13.28-fixes — standings games played + CSS overlap fix + cache-bust
+- **Standings show games played**: the bot's standingsLine format was
+  `#1 — 9 امتیاز` (only points). Now: `#1 — 4 بازی — 9 امتیاز` (played + points).
+- **Club name never overlaps logos**: .side gap 8→12px, .team padding-inline:4px
+  + overflow:hidden + text-overflow:ellipsis (desktop); .team padding:4px 6px
+  (mobile). Long names get ellipsis instead of running behind the logo.
+- **Cache-bust**: renamed all client assets (public-13.6.css→public-13.8.css,
+  public-13.6.js→public-13.8.js, core-13.6.js→core-13.8.js). SW cache
+  v2→v3. HTML cache-control: no-store (browser always fetches fresh HTML).
+
+### v13.27-dedupe-fix — stop bot spam (in-memory dedupe fallback)
+- Root cause: Cloudflare KV free-tier daily write quota exhausted. The
+  saveNotifiedMatch KV write failed silently → dedupe record never persisted →
+  shouldSendNotification returned true every sweep → same notification re-sent
+  every 10 min.
+- Fix: added MEM_DEDUPE (in-memory Set) as fallback. saveNotifiedMatch always
+  adds to it; shouldSendNotification checks it first. Survives for the
+  isolate's lifetime (execution lock prevents concurrent sweeps).
+
+### v13.26-session-fix — stateless HMAC session (admin panel KV fix)
+- Root cause: KV write quota exhausted → session KV write failed → admin
+  couldn't log in (bounced back to login page).
+- Fix: if KV write fails, fall back to stateless HMAC-signed token
+  (sid.HMAC(sid, ADMIN_TOKEN)). isValidAdminSession verifies the HMAC
+  without a KV lookup.
+
+### Login page credentials fix
+- The login page's doLogin() fetch was missing credentials:"same-origin"
+  → the set-cookie wasn't persisted → admin page bounced to login form.
+
+---
+
 ## [13.12-cards] — 2026-09-13 (match-card images in bot notifications — SVG card with real team crests)
 
 The bot now sends a visual match card (team crests + names + kickoff time)
