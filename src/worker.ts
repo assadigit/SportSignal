@@ -6183,6 +6183,11 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
 .bighero .score{font-size:20px}
 .bighero .team{font-size:13px}
 }
+/* v12.x-kick-5px-pc: move the time box 5px further down on PC (≥901px).
+   The base margin-top is 20px (applies to all viewports). On desktop
+   only, bump to 25px (+5px) per the user's ask. Mobile + mid-band
+   keep 20px. */
+@media (min-width:901px){.bighero .kick{margin-top:25px}}
 /* v12.23 (the user's ask): the finished card's info line now matches the
    spot boxes' .uclspot-info exactly \u2014 one centered chip line under every
    match row on the page (same flex/wrap/gap/font), so all cards read as
