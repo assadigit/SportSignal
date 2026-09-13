@@ -5468,7 +5468,7 @@ body{font-family:'Vazirmatn',system-ui,sans-serif;background-color:var(--bg);col
    grows to 57.5px (50 x 1.15); width rides width:auto, so the mark scales
    proportionally with its raster. */
 @media (min-width:601px){.brand img{height:57.5px}}
-.brand:hover img{transform:translateY(-1px)}
+.brand:hover img{transform:none}
 /* v12.27 (review items 3+7): the UTILITY CLUSTER \u2014 the settings gear, the
    language switch and the theme toggle live in ONE visually grouped control
    (.tb-btns: 6px internal gap, a subtle glass shell) anchored to the LOGICAL
