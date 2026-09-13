@@ -19,6 +19,13 @@ crons = ["*/10 * * * *"]  # Run every 10 minutes ONLY
 
 [vars]
 TEHRAN_TZ = "Asia/Tehran"
+
+# v12.x-ai-translate: Workers AI binding for automatic Farsi club name translation.
+# The worker's translateTeam function checks the AI-learned names (KV fa_teams_ai)
+# before falling back to the English name. The AI runs on each /api/public-matches
+# request via maybeRunFaAi to incrementally translate any new Latin names.
+[ai]
+binding = "AI"
 # Secrets (BOT_TOKEN, CHAT_ID, API_TOKEN, ADMIN_TOKEN, ADMIN_PASS, WEBHOOK_SECRET)
 # are set via `wrangler secret put` — never in vars.
 # v12.33-xpost: X (Twitter) automated profile secrets — also via
