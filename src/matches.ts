@@ -161,7 +161,12 @@ export function isMatchStartingNow(match, _env) {
   const now = getNowUTC();
   const matchTime = new Date(match.utcDate);
   const minutesSinceKickoff = (now.getTime() - matchTime.getTime()) / (60 * 1e3);
-  if (minutesSinceKickoff < -1 || minutesSinceKickoff > 20) return false;
+  // v13.15-reliability: widened from -1..+20min to -1..+45min. The cron
+  // ticks every 10min, so the old 21-min window only covered 2 ticks — if
+  // one tick was skipped (or busy), the match-start never fired. 46min
+  // covers ~5 ticks, so even with 2 skipped ticks the match-start lands.
+  // (Also matches the budget-guard exemption in sendMatchNotifications.)
+  if (minutesSinceKickoff < -1 || minutesSinceKickoff > 45) return false;
   const status = String(match.status || "").toUpperCase();
   return status !== "FINISHED" && status !== "POSTPONED" && status !== "SUSPENDED" && status !== "CANCELLED" && status !== "CANCEL";
 }

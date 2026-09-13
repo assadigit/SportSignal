@@ -7,7 +7,7 @@ const checks = [
   [/hoursUntilMatch <= 1\.5 && hoursUntilMatch >= 0\.75/, "1h window 0.75-1.5h"],
   // Future-plan fix: match-start must fire only AFTER the real kickoff — the
   // old pre-kickoff window (45 min early) produced false "match started" alerts.
-  [/minutesSinceKickoff < -1 \|\| minutesSinceKickoff > 20/, "match-start fires only after real kickoff (-1..+20 min)"],
+  [/minutesSinceKickoff < -1 \|\| minutesSinceKickoff > 45/, "match-start fires only after real kickoff (-1..+45 min, widened v13.15)"],
   [/status !== "FINISHED" && status !== "POSTPONED" && status !== "SUSPENDED"/, "match-start skips finished/postponed/suspended/cancelled"],
   [/case "result":\s*expiresAt = now \+ CONFIG\.ONE_DAY_MS;/, "result dedupe 24h"],
   [/default:\s*expiresAt = matchTime \+ CONFIG\.ONE_HOUR_MS;/, "72h dedupe until kickoff+1h"],

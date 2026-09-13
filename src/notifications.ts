@@ -93,8 +93,10 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
     // v13.10-animated: for match-start, send an animated ⚽ dice FIRST (a
     // spinning football that signals "kickoff!") before the text message.
     // This is Telegram's built-in sendDice animation — zero asset hosting.
+    // v13.15-reliability: fire-and-forget (no await) so a slow/failed dice
+    // never blocks the text notification. The text is the critical path.
     if (config.type === "match-start" && !late) {
-      await Promise.allSettled(g.chats.map((chatId) => sendDice(scopedEnv, chatId, "\u26BD").catch(() => null)));
+      g.chats.forEach((chatId) => { sendDice(scopedEnv, chatId, "\u26BD").catch(() => null); });
     }
     // v13.12-cards: for match-start + result, send a visual match CARD
     // (team crests + names + time) before the text. The card is an SVG
@@ -103,9 +105,12 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
     // backfills — the card would be stale + add noise). Skipped if the
     // match has no crests (the card route returns 404 → sendPhoto fails
     // silently via the .catch).
+    // v13.15-reliability: fire-and-forget (no await) — the card render takes
+    // 3-4s (fetches 2 crests + base64-encodes them) which would block the
+    // text notification. The card is a nice-to-have; the text is critical.
     if ((config.type === "match-start" || config.type === "result") && !late && (match.homeTeam.crest || match.awayTeam.crest)) {
       const cardUrl = "https://football.sportsignal.ir/api/card/" + encodeURIComponent(matchKey(match)) + "?lang=" + lang;
-      await Promise.allSettled(g.chats.map((chatId) => sendPhoto(scopedEnv, chatId, cardUrl).catch(() => null)));
+      g.chats.forEach((chatId) => { sendPhoto(scopedEnv, chatId, cardUrl).catch(() => null); });
     }
     const sendResults = await Promise.allSettled(
       g.chats.map((chatId) => sendTelegram(scopedEnv, message, chatId))
@@ -164,7 +169,17 @@ export async function sendMatchNotifications(env: Env, matches) {
     // next sweep pick up the rest. The dedupe KV hasn't been written for
     // unsent notifications, so they'll fire next time. This prevents silent
     // budget-exhaustion skips on busy matchdays (40 matches × 7 configs).
-    if (subrequestCount() > 38) {
+    // v13.15-reliability: match-start is EXEMPT from the guard — the window
+    // is narrow (-1..+45min) + missing it means the user never learns the
+    // match started. Always process match-start even if the budget is low
+    // (it's a single send per chat, ~1 subrequest).
+    const now = Date.now();
+    const matchStartActive = (() => {
+      const mt = new Date(match.utcDate).getTime();
+      const minSince = (now - mt) / 60000;
+      return minSince >= -1 && minSince <= 45;
+    })();
+    if (subrequestCount() > 38 && !matchStartActive) {
       budgetDeferred++;
       continue;
     }
