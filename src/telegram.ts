@@ -221,14 +221,19 @@ export async function sendPhoto(env: Env, chatId, photoUrl, caption?) {
 // (multipart/form-data). This is how the bot sends match-card images:
 // the Worker renders the SVG→PNG via resvg-wasm, then uploads the PNG
 // buffer directly to Telegram (no URL fetch — Telegram can't fetch SVG).
+// v13.18: if `parseMode` is true, the caption is sent as MarkdownV2
+// (so bold/team names render in the caption).
 // Returns true on success, "dead" for dead chats, false otherwise.
-export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, caption?) {
+export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, caption?, parseMode?: boolean) {
   try {
     if (bumpSubrequest()) return false;
     const formData = new FormData();
     formData.append("chat_id", String(chatId));
     formData.append("photo", new Blob([pngBuffer], { type: "image/png" }), "match-card.png");
-    if (caption) formData.append("caption", caption);
+    if (caption) {
+      formData.append("caption", caption);
+      if (parseMode) formData.append("parse_mode", "MarkdownV2");
+    }
     const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendPhoto`, {
       method: "POST",
       body: formData

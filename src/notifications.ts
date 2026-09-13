@@ -99,28 +99,48 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
     if (config.type === "match-start" && !late) {
       g.chats.forEach((chatId) => { sendDice(scopedEnv, chatId, "\u26BD").catch(() => null); });
     }
-    // v13.17-cards: for match-start + result, send a visual match CARD
-    // (team crests + names + time, rendered as PNG via resvg-wasm + sent
-    // as a binary upload). Fire-and-forget so it never blocks the text.
-    // The card uses the REAL provider crests + Vazirmatn font (inlined TTF)
-    // so Persian team names + Jalali dates render correctly. Skipped if
-    // no crests or if the PNG render fails (text still sends).
+    // v13.18-card-caption: for match-start + result, send a visual match CARD
+    // with the REAL match text as its caption (card + complementary text in
+    // ONE message). The card image carries the crests + layout; the caption
+    // carries the full date/time/teams/competition text. If the card sends
+    // successfully, the separate text message is SKIPPED (the card already
+    // has the text). If the card render or send fails, fall back to the
+    // separate text message so the notification is never lost.
+    let cardSent = false;
     if ((config.type === "match-start" || config.type === "result") && !late && (match.homeTeam.crest || match.awayTeam.crest)) {
-      renderCardPng(scopedEnv, match, lang).then((pngBuf) => {
+      try {
+        const pngBuf = await renderCardPng(scopedEnv, match, lang);
         if (pngBuf) {
-          const cap = config.type === "match-start"
-            ? (lang === "en" ? "🚀 Kickoff!" : "🚀 شروع بازی!")
-            : (lang === "en" ? "🏁 Full time" : "🏁 پایان بازی");
-          g.chats.forEach((chatId) => { sendPhotoBinary(scopedEnv, chatId, pngBuf, cap).catch(() => null); });
+          // The caption is the full match text (specialBanner + formatter).
+          // parse_mode=MarkdownV2 so the bold/team names render.
+          const caption = message;
+          const cardResults = await Promise.allSettled(
+            g.chats.map((chatId) => sendPhotoBinary(scopedEnv, chatId, pngBuf, caption, true))
+          );
+          if (cardResults.some((r) => r.status === "fulfilled" && r.value === true)) {
+            cardSent = true;
+          }
+          // Track dead chats from the card send too.
+          cardResults.forEach((r, i) => {
+            if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
+          });
         }
-      }).catch(() => null);
+      } catch (e) {
+        console.warn("Card render/send failed, falling back to text: " + e.message);
+      }
     }
-    const sendResults = await Promise.allSettled(
-      g.chats.map((chatId) => sendTelegram(scopedEnv, message, chatId))
-    );
-    sendResults.forEach((r, i) => {
-      if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
-    });
+    // If the card sent successfully, skip the separate text message (the
+    // card's caption already carries the full text). Otherwise, send the
+    // text as the fallback.
+    let sendResults: any[] = [];
+    if (!cardSent) {
+      sendResults = await Promise.allSettled(
+        g.chats.map((chatId) => sendTelegram(scopedEnv, message, chatId))
+      );
+      sendResults.forEach((r, i) => {
+        if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
+      });
+    }
     if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
   }
   if (anySuccess) {
