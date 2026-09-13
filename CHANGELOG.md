@@ -6,6 +6,84 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.25-nomiss] — 2026-09-13 (comprehensive "never miss a match" test suite)
+
+### Session wrap-up (v13.12 → v13.25)
+This session shipped 14 versions covering match cards, reliability, bot UX,
+emoji design, venue translation, and a comprehensive test suite. All
+deployed live + verified. npm test exit 0 (351 assertions).
+
+### v13.25-nomiss — "never miss a match" test suite
+- New gate `scripts/check-no-miss.js` (78 checks): exercises every
+  notification path against synthetic matches at chosen time offsets.
+  Tests window hit/miss, backfill, dedupe, skipped-cron resilience,
+  extra-time safety, provider-down fallback, budget-guard exemption,
+  result dedupe, card+caption on all types, promo footer, bot buttons,
+  featured match, migration, audit. Added to `npm test` (351 assertions).
+
+### v13.24-featured — ⭐ featured match button
+- New "⭐ بازی برتر" button (full-width, first row) on the reply keyboard.
+  When tapped, fetches the featured match (live first, then closest upcoming
+  worthy — the same match the website's hero card shows) + sends it as a
+  card image with the match text + promo footer.
+
+### v13.23-buttons — reply keyboard + onboarding + audit
+- Persistent reply keyboard (6 buttons: featured, upcoming, tables, teams,
+  language, help, stop). `normalizeCommand()` maps Persian/English labels
+  to slash commands. Onboarding: welcome message instructs users to use the
+  buttons. Audit mechanism: `auditNotifications()` compares the match pool
+  (ground truth) with `notified_matches_v6` KV, reports gaps, alerts admin
+  if >2 gaps. New `/api/audit` admin endpoint. Wired into cron.
+
+### v13.22-promo — website promotion footer
+- Every notification ends with a promo footer:
+  `------` / `مشاهده جدول لیگ‌ها و مهمترین بازی‌های پیش رو:` / `https://sportsignal.ir`
+
+### v13.21-emoji — new emoji design per user spec
+- Banner: `⚔️ دربی حساس` (no diacritics). Result header: `🚩 نتیجه نهایی`.
+  Match line: `team 🆚 team` (no ⚽/bold). Competition: plain text (no 🎯).
+  Stadium: `استادیوم <venue>`. Score: `نتیجه h-a`. Winner: `✴️`. Draw: `✴️`.
+  Standings: `جدول <league>:` (no 📊).
+
+### v13.20-fix — don't fire result during extra time
+- `isPresumablyFinished` now excludes IN_PLAY + PAUSED (match actively being
+  played — extra time, stoppage time). Only SCHEDULED/TIMED trigger the
+  fallback (provider genuinely down). Threshold widened 90→150min.
+
+### v13.19-every-card — card for EVERY notification type
+- The match card fires for all types (72h, 24h, 3h, 1h, 5min, match-start,
+  result) + late backfills. Caption truncated to 1024 chars.
+
+### v13.18-caption — real match text as card caption
+- Card caption is the full match text (date, time, teams, competition,
+  stadium). When the card sends, the separate text message is skipped.
+  Fallback to text if card fails.
+
+### v13.17-cards — inline match cards via resvg-wasm + Vazirmatn
+- `renderCardPng()` renders SVG→PNG via `@resvg/resvg-wasm` (pure-WASM,
+  Workers-compatible). Vazirmatn TTF fonts base64-inlined. `sendPhotoBinary()`
+  uploads the PNG via multipart. New `/api/card/<id>.png` endpoint.
+
+### v13.15-reliable-kickoff — match-start reliability fix (3 root causes)
+- Budget-guard exemption for match-start (always processes even at >38
+  subrequests). Fire-and-forget sendDice + sendPhoto (never blocks text).
+  Window widened -1..+20min → -1..+45min (5 cron ticks, not 2).
+
+### v13.14-progressbar — mobile progress bar fix
+- `.hero-data` top padding 80→70px on mobile so the progress bar is visible.
+
+### v13.13-venues — always notify big-match kickoff + stadium AI translation
+- `broadcastBigMatchKickoff()`: fires to ALL chats when a master big-match
+  kicks off. Venue names fetched from providers (thesportsdb strVenue, FD
+  venue). AI-translated via `runFaVenueLearner` (Workers AI, `fa_venues_ai`
+  KV). `translateVenue()` + `venueFa` field in public API.
+
+### v13.12-cards — match-card SVG route
+- `/api/card/<matchKey>` generates an SVG match card (real provider crests,
+  base64-inlined, 800×420). RTL-aware. Derby accent (purple), big-match (blue).
+
+---
+
 ## [13.12-cards] — 2026-09-13 (match-card images in bot notifications — SVG card with real team crests)
 
 The bot now sends a visual match card (team crests + names + kickoff time)
