@@ -24,11 +24,11 @@
 
 # v13.6 extracted page assets — filename-versioned, safe to cache immutably
 # for a year (bump the filename on change).
-/core-13.6.js
+/core-13.8.js
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.6.js
+/public-13.8.js
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.6.css
+/public-13.8.css
   Cache-Control: public, max-age=31536000, immutable
