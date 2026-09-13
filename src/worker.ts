@@ -7522,36 +7522,6 @@ function renderCups(d){
     frag.appendChild(grid);
   });
   el.appendChild(frag);
-}function renderCups(d){
-  var el = document.getElementById("cups"); if(!el) return;
-  el.innerHTML = "";
-  if(!d || !d.length){ el.innerHTML = "<div class='empty'>"+T("cupsNone")+"</div>"; return; }
-  // UEFA hierarchy: CL/EL/ECL are continental European LEAGUES (not knockout
-  // cups) \u2014 one group; international cups (WC/Euro/...) another; per-country
-  // elimination cups last.
-  var euro = [], intl = [], dom = {};
-  d.forEach(function(c){
-    if(c.code === "CL" || c.code === "EL" || c.code === "ECL") euro.push(c);
-    else if(c.tier === "gold") intl.push(c);
-    else { (dom[c.country||""] = dom[c.country||""] || []).push(c); }
-  });
-  var groups = [];
-  if(euro.length) groups.push({ title: T("tierEurope"), items: euro });
-  if(intl.length) groups.push({ title: T("intlCups"), items: intl });
-  var countryKey = { EN: "cEN", ES: "cES", IT: "cIT", DE: "cDE", IR: "cIR" };
-  // v12.6: Iran closes the country groups \u2014 \u062C\u0627\u0645 \u062D\u0630\u0641\u06CC \u0627\u06CC\u0631\u0627\u0646 lives here now
-  // (the old Iran card's Hazfi box, reborn inside the cups grid).
-  // v12.x-dfb-pokal: added Germany (DE) between Italy and Iran.
-  ["EN","ES","IT","DE","IR"].forEach(function(cc){ if(dom[cc]) groups.push({ title: T(countryKey[cc]), items: dom[cc] }); });
-  var frag = document.createElement("div");
-  groups.forEach(function(g){
-    var t = document.createElement("div"); t.className = "cupgroup-title"; t.textContent = g.title;
-    frag.appendChild(t);
-    var grid = document.createElement("div"); grid.className = "cupgrid";
-    g.items.forEach(function(c){ grid.appendChild(cupBox(c)); });
-    frag.appendChild(grid);
-  });
-  el.appendChild(frag);
 }
 // Dedicated UCL box: upcoming CL fixtures + the FULL league table (36-team
 // Swiss-model standings, not truncated). v12.16: the table is COMPLETE \u2014
