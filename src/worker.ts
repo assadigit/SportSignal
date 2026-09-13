@@ -5550,6 +5550,10 @@ h1{font-size:27px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em}
    hides again the moment the hero button is back in view). */
 #joinSticky{position:fixed;bottom:0;left:0;right:0;z-index:70;display:none;justify-content:center;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--glass);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);border-top:1px solid var(--glass-border);box-shadow:0 -8px 28px rgba(2,6,23,.45);text-decoration:none}
 #joinSticky.show{display:flex}
+/* v12.x-no-sticky-pc: hide the sliding sticky Telegram bar on PC — the
+   floating FAB (#tgFab) covers the PC CTA. Only show #joinSticky on
+   mobile (max-width:600px). */
+@media (min-width:601px){#joinSticky{display:none !important}}
 #joinSticky .js-inner{display:inline-flex;align-items:center;gap:9px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;padding:12px 22px;border-radius:999px;transition:background .15s,transform .15s cubic-bezier(.16,1,.3,1)}
 #joinSticky .js-inner:hover{background:var(--accent-strong);transform:translateY(-1px)}
 #joinSticky svg{flex-shrink:0}
