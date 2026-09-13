@@ -23,9 +23,12 @@ export function getAdminCookieToken(req) {
 export async function isValidAdminSession(env: Env, req) {
   const sid = getAdminCookieToken(req);
   if (!sid || !/^[a-f0-9]{32,80}(\.[a-f0-9]{64})?$/i.test(sid)) return false;
-  // v13.26-session-fix: support stateless HMAC-signed tokens (sid.signature)
-  // as a fallback when KV writes fail (quota exhausted). The token is
-  // verifiable without a KV lookup — the signature is HMAC(sid, ADMIN_TOKEN).
+  // v13.30-login-fix: sessions are ALWAYS stateless HMAC-signed tokens now
+  // (sid.signature, signature = HMAC(sid, ADMIN_TOKEN)) — verification needs
+  // zero KV reads, so the read-after-write propagation race that locked
+  // users out of the panel can never recur. The KV-backed plain-sid path
+  // below remains as a legacy fallback for pre-v13.30 cookies still in
+  // browsers (and for the unlikely case HMAC signing failed at login).
   const parts = sid.split(".");
   if (parts.length === 2 && env.ADMIN_TOKEN) {
     // Stateless token: verify the HMAC signature
@@ -38,7 +41,7 @@ export async function isValidAdminSession(env: Env, req) {
       // fall through to KV check
     }
   }
-  // KV-backed session (the normal path)
+  // KV-backed session (legacy path)
   const val = await env.STATE.get("admin_sess_" + parts[0]).catch(() => null);
   return !!val;
 }

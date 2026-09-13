@@ -60,11 +60,11 @@ async function doLogin(){
   var r=await fetch("/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({username:u,password:p})});
   if(r.status===429){ btn.disabled=false; err(T("errRate")); return; }
   if(!r.ok){ btn.disabled=false; err(T("errCreds")); return; }
-  // v13.11-admin-fix: wait 400ms before reload so the session KV write is
-  // visible on the read-back (Cloudflare KV is eventually consistent — the
-  // server-side read-after-write verify handles the worst case, but this
-  // client delay is a belt-and-suspenders so the reload doesn't race the KV).
-  setTimeout(function(){ location.reload(); }, 400);
+  // v13.30-login-fix: the session cookie is a stateless HMAC-signed token —
+  // it verifies on the next request with zero KV reads, so a short delay is
+  // no longer required for correctness. Kept (150ms) purely as a UX beat so
+  // the button's disabled state is perceivable before the reload.
+  setTimeout(function(){ location.reload(); }, 150);
 }
 document.getElementById("pass").addEventListener("keydown",function(e){ if(e.key==="Enter") doLogin(); });
 setTheme(initTheme()); applyLang(true);

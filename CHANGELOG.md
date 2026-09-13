@@ -14,6 +14,31 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.30-loginfix] — 2026-09-13 (admin panel login fixed: stateless session + rate-limit hardening)
+
+### The reported lockout ("cannot login to the management backend")
+- **Root cause (KV read-after-write race):** login wrote `admin_sess_<sid>`
+  to KV, the client reloaded after 400ms, and the `/admin` read-back hit KV
+  before the write had propagated (eventual consistency, up to ~60s cross-colo)
+  → `isValidAdminSession` false → the login page rendered again. The v13.26
+  HMAC fallback only covered the KV WRITE failing, not the READ missing.
+- **Fix: the session cookie is now ALWAYS the stateless HMAC-signed token**
+  (`sid.HMAC(sid, ADMIN_TOKEN)`, HttpOnly/Secure/SameSite=Strict, 12h
+  Max-Age). Verification is pure CPU — zero KV reads on the auth path, so
+  login can never race storage again. The KV write remains for
+  audit/observability only (and `/admin/logout` now strips the signature
+  before deleting the audit record — it previously passed the full
+  `sid.signature` string as the key).
+- Legacy plain-sid cookies still verify via the KV path (no forced re-login
+  storms for already-authed tabs).
+- **Hardening:** `429 Too many attempts` now sends `Retry-After: 600` +
+  logs the throttled IP; GET /admin/login (bookmarked) 302-redirects to
+  /admin instead of a bare 401 JSON.
+- The login page reload waits 150ms (UX beat) — correctness no longer
+  depends on any delay.
+
+---
+
 ## [13.29-clientfixes] — 2026-09-13 (standings played column in league boxes + hero overflow fix + SW cache v4)
 
 ### Bug fixes (user-reported, persisted past v13.28)
