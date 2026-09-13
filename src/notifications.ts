@@ -99,21 +99,22 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
     if (config.type === "match-start" && !late) {
       g.chats.forEach((chatId) => { sendDice(scopedEnv, chatId, "\u26BD").catch(() => null); });
     }
-    // v13.18-card-caption: for match-start + result, send a visual match CARD
-    // with the REAL match text as its caption (card + complementary text in
-    // ONE message). The card image carries the crests + layout; the caption
+    // v13.19-every-card: send a visual match CARD for EVERY notification type
+    // (72h, 24h, 3h, 1h, 5min, match-start, result) — including late
+    // backfills. The card image carries the crests + layout; the caption
     // carries the full date/time/teams/competition text. If the card sends
     // successfully, the separate text message is SKIPPED (the card already
     // has the text). If the card render or send fails, fall back to the
     // separate text message so the notification is never lost.
     let cardSent = false;
-    if ((config.type === "match-start" || config.type === "result") && !late && (match.homeTeam.crest || match.awayTeam.crest)) {
+    if (match.homeTeam.crest || match.awayTeam.crest) {
       try {
         const pngBuf = await renderCardPng(scopedEnv, match, lang);
         if (pngBuf) {
-          // The caption is the full match text (specialBanner + formatter).
-          // parse_mode=MarkdownV2 so the bold/team names render.
-          const caption = message;
+          // The caption is the full match text (specialBanner + formatter +
+          // late tag if applicable). Truncate to 1024 (Telegram caption
+          // limit) — the result formatter's standings line can push it long.
+          const caption = message.length > 1024 ? message.slice(0, 1020) + "…" : message;
           const cardResults = await Promise.allSettled(
             g.chats.map((chatId) => sendPhotoBinary(scopedEnv, chatId, pngBuf, caption, true))
           );
