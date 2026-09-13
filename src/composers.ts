@@ -24,8 +24,8 @@ export function format24HourMessage(match, env, lang) {
   // v13.10-clean: date-first layout per the user's ask. No header, no countdown.
   let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
   message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `\u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
+  message += `${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
+  message += `${escapeMarkdownCharacters(competition)}`;
   if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
     message += ` \u2014 ${escapeMarkdownCharacters(stage)}`;
   }
@@ -44,8 +44,8 @@ export function formatBigMatchMessage(match, env, lang) {
   // v13.10-clean: date-first, 🔥 on the match line. No header, no countdown.
   let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
   message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `\u{1F525} \u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
+  message += `\u{1F525} ${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
+  message += `${escapeMarkdownCharacters(competition)}`;
   if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
     message += ` \u2014 ${escapeMarkdownCharacters(stage)}`;
   }
@@ -61,8 +61,8 @@ export function format3HourMessage(match, env, lang) {
   // v13.10-clean: date-first layout per the user's ask. No header, no countdown.
   let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
   message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `\u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
+  message += `${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
+  message += `${escapeMarkdownCharacters(competition)}`;
   return message;
 }
 export function format1HourMessage(match, env, lang) {
@@ -77,8 +77,8 @@ export function format1HourMessage(match, env, lang) {
   // with match day" + "do not need to add ⏱️ ... دیگر".
   let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
   message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `\u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
+  message += `${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
+  message += `${escapeMarkdownCharacters(competition)}`;
   return message;
 }
 // v12.x-cron-gaps: 5-minute "kickoff now" reminder for BIG matches only.
@@ -92,8 +92,8 @@ export function format5MinMessage(match, env, lang) {
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
   let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
   message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `\u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
+  message += `${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
+  message += `${escapeMarkdownCharacters(competition)}`;
   return message;
 }
 export function formatMatchStartMessage(match, env, lang) {
@@ -108,12 +108,12 @@ export function formatMatchStartMessage(match, env, lang) {
   // eye-catching "ball is rolling" kickoff animation.
   let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
   message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `\u{1F680} \u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
+  message += `\u{1F680} ${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
+  message += `${escapeMarkdownCharacters(competition)}`;
   // v13.13-venues: show the stadium (AI-translated) on kickoff.
   if (match.venue) {
     const venue = en ? match.venue : (translateVenue(match.venue) || match.venue);
-    message += `\n\u{1F4CD} ${escapeMarkdownCharacters(venue)}`;
+    message += `\n\u0627\u0633\u062A\u0627\u062F\u06CC\u0645 ${escapeMarkdownCharacters(venue)}`;
   }
   return message;
 }
@@ -123,11 +123,11 @@ export async function formatResultMessage(match, env, lang?) {
   const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
-  const head = en ? "\u{1F3C8} *Full time*" : "\u{1F3C8} *\u0646\u062A\u06CC\u062C\u0647 \u0646\u0647\u0627\u06CC\u06CC*";
+  const head = en ? "\u{1F6A9} *Full time*" : "\u{1F6A9} *\u0646\u062A\u06CC\u062C\u0647 \u0646\u0647\u0627\u06CC\u06CC*";
   const vs = en ? " vs " : " \u{1F19A} ";
   let message = `${head}\n\n`;
-  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}\n`;
+  message += `${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}\n`;
+  message += `${escapeMarkdownCharacters(competition)}\n`;
   // v13.13-venues: show the stadium name (AI-translated) if available.
   if (match.venue) {
     const venue = en ? match.venue : (translateVenue(match.venue) || match.venue);
@@ -137,15 +137,15 @@ export async function formatResultMessage(match, env, lang?) {
   if (match.score.fullTime.home !== null && match.score.fullTime.away !== null) {
     const h = en ? match.score.fullTime.home.toString() : toFaDigits(match.score.fullTime.home.toString());
     const a = en ? match.score.fullTime.away.toString() : toFaDigits(match.score.fullTime.away.toString());
-    message += `\u23F0 *${h}\\-${a}*`;
+    message += `\u0646\u062A\u06CC\u062C\u0647 ${h}\\-${a}`;
     if (match.score.fullTime.home > match.score.fullTime.away) {
-      const won = en ? `\u{1F3C6} ${escapeMarkdownCharacters(homeTeam)} won` : `\u{1F3C6} ${escapeMarkdownCharacters(homeTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
+      const won = en ? `\u2734\uFE0F ${escapeMarkdownCharacters(homeTeam)} won` : `\u2734\uFE0F ${escapeMarkdownCharacters(homeTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
       message += `\n${won}`;
     } else if (match.score.fullTime.home < match.score.fullTime.away) {
-      const won = en ? `\u{1F3C6} ${escapeMarkdownCharacters(awayTeam)} won` : `\u{1F3C6} ${escapeMarkdownCharacters(awayTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
+      const won = en ? `\u2734\uFE0F ${escapeMarkdownCharacters(awayTeam)} won` : `\u2734\uFE0F ${escapeMarkdownCharacters(awayTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
       message += `\n${won}`;
     } else {
-      const draw = en ? "\u{1F91D} Draw" : "\u{1F91D} \u0645\u0633\u0627\u0648\u06CC";
+      const draw = en ? "\u2734\uFE0F Draw" : "\u2734\uFE0F \u0645\u0633\u0627\u0648\u06CC";
       message += `\n${draw}`;
     }
   } else {
@@ -310,7 +310,7 @@ export async function standingsLine(env: Env, match, lang) {
   }
   if (!lines.length) return null;
   const compName = en ? (COMP_EN[code] || code) : translateCompetition(code);
-  const tblWord = en ? "Table " : "\u{1F4CA} \u062C\u062F\u0648\u0644 ";
+  const tblWord = en ? "Table " : "\u062C\u062F\u0648\u0644 ";
   return "\n\n" + tblWord + escapeMarkdownCharacters(compName) + ":\n" + lines.join("\n");
 }
 export async function appendTableOrPhase(env: Env, match, message, lang) {
@@ -355,7 +355,7 @@ export function buildLeagueTableMessage(code, st, opts, lang) {
     const row = numStr + "\\. " + escapeMarkdownCharacters(teamName) + (sel.has(normAlias(t.name)) ? " \u2B50" : "") + " \u2014 " + ptsStr + ptsWord;
     return i === 0 ? "*" + row + "*" : row;
   });
-  let head = (en ? "\u{1F4CA} *" : "\u{1F4CA} *\u062C\u062F\u0648\u0644 ") + escapeMarkdownCharacters(compName) + "*";
+  let head = (en ? "" : "\u062C\u062F\u0648\u0644 ") + escapeMarkdownCharacters(compName) + (en ? ":" : ":");
   if (st.matchday) head += en ? " \u2014 Matchday " + String(st.matchday) : " \u2014 \u0647\u0641\u062A\u0647 " + toFaDigits(String(st.matchday));
   if (opts && opts.label) head += " \u2014 " + opts.label;
   let msg = head + "\n\n" + lines.join("\n");
@@ -363,14 +363,14 @@ export function buildLeagueTableMessage(code, st, opts, lang) {
     const moreStr = en ? "+ " + String(teams.length - shown.length) + " more" : "\n\u2026 " + toFaDigits(String(teams.length - shown.length)) + " \u062A\u06CC\u0645 \u0628\u0639\u062F\u06CC";
     msg += "\n" + moreStr;
   }
-  const footer = en ? "\n\nFull table: football\\.sportsignal\\.ir" : "\n\n\u{1F4CA} \u062C\u062F\u0648\u0644 \u06A9\u0627\u0645\u0644: football\\.sportsignal\\.ir";
+  const footer = en ? "\n\nFull table: football\\.sportsignal\\.ir" : "\n\n\u062C\u062F\u0648\u0644 \u06A9\u0627\u0645\u0644: football\\.sportsignal\\.ir";
   msg += footer;
   return msg;
 }
 export function specialBanner(match, lang) {
   const en = lang === "en";
   const parts = [];
-  if (isDerby(match)) parts.push(en ? "\u2694\uFE0F *Derby*" : "\u2694\uFE0F *\u062F\u0631\u0628\u06CC\u0654 \u062D\u0633\u0627\u0633\u0654*");
+  if (isDerby(match)) parts.push(en ? "\u2694\uFE0F *Derby*" : "\u2694\uFE0F *\u062F\u0631\u0628\u06CC \u062D\u0633\u0627\u0633*");
   if (match.competition && match.competition.code === "CL" && isMasterPair(match)) parts.push(en ? "*Champions League blockbuster*" : "*\u062F\u0648\u0626\u0644 \u0628\u0632\u0631\u06AF \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627\u0654*");
   return parts.length ? parts.join("\n") + "\n\n" : "";
 }

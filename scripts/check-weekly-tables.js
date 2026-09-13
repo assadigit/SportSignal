@@ -112,7 +112,7 @@ CONFIG.LEAGUES = ["CL", "PL", "PD", "SA", "FL1"];
 
 // ---------- C: message building ----------
 const plMsg = buildLeagueTableMessage("PL", standings.PL, { label: "پایان هفته" });
-chk(plMsg.startsWith("📊 *جدول لیگ برتر انگلیس* — هفته ۴ — پایان هفته"), "PL header: league + matchday + label");
+chk(plMsg.startsWith("جدول لیگ برتر انگلیس: — هفته ۴ — پایان هفته"), "PL header: league + matchday + label (v13.21 no 📊 emoji)");
 chk(plMsg.includes("*۱\\. Manchester City FC — ۹ امتیاز*"), "leader row bold, Persian digits");
 chk(plMsg.includes("۲\\. Arsenal FC ⭐ — ۹ امتیاز"), "selected team starred");
 chk(plMsg.includes("۴\\. Liverpool FC ⭐"), "duplicate provider pos 6 renumbered to 4 (starred: selected)");
