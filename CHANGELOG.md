@@ -6,6 +6,39 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.12-cards] — 2026-09-13 (match-card images in bot notifications — SVG card with real team crests)
+
+The bot now sends a visual match card (team crests + names + kickoff time)
+before the text notification for match-start + result. Uses the REAL provider
+crest URLs (football-data.org / sportscore / thesportsdb PNGs), not AI-generated
+images — the crests are accurate, not hallucinated.
+
+### How it works
+1. `/api/card/<matchKey>` route — generates an SVG match card server-side:
+   - Fetches both team crests, base64-inlines them (self-contained SVG).
+   - 800x420 card: dark gradient bg, two crest circles, team names, VS,
+     competition, date, time. RTL-aware (home on right for fa).
+   - Derby accent (purple), big-match accent (blue).
+2. `sendPhoto` helper in `telegram.ts` — sends the card URL via Telegram's
+   `sendPhoto` API. Telegram fetches the URL server-side.
+3. Wired into match-start + result notifications: the card is sent BEFORE
+   the text notification (and after the football dice for match-start).
+
+### Why not AI image generation?
+- Workers AI (@cf/stabilityai/stable-diffusion-xl-base-1.0) can generate
+  generic football images, but cannot render specific team logos or accurate
+  text. The template-composition approach uses the real provider crests
+  (already in the match data) for accuracy.
+
+### Card data source
+- The card route looks up the match in the tracked pool (matches_v13_tracked,
+  24h TTL) first, then the short-TTL public_matches_v1 cache as fallback.
+
+### Gate
+- npm test exit 0 (272 assertions, unchanged).
+
+---
+
 ## [13.11-migration] — 2026-09-13 (admin panel KV-propagation fix + bot migration broadcast)
 
 ### Admin panel fix ("doesn't go inside")

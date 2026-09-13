@@ -171,6 +171,60 @@ const worker_default = {
     if (url.pathname === "/public" || url.pathname === "/") {
       return new Response(PUBLIC_PAGE.replace("__PAGE_TZ__", env.TEHRAN_TZ), { headers: PAGE_SEC_HEADERS });
     }
+    // v13.12-cards: match-card SVG route. Generates a visual "team A vs
+    // team B" card with the two crests + names + kickoff time + competition.
+    // The SVG is self-contained (crests base64-inlined server-side). Used
+    // by the bot's sendPhoto (converted to PNG via Cloudflare Image Resizing
+    // if available) + available as an OG image for the public page.
+    // Public (no auth) — the card carries no sensitive data.
+    if (url.pathname.startsWith("/api/card/")) {
+      const matchKeyParam = decodeURIComponent(url.pathname.slice("/api/card/".length)).replace(/\.svg$/, "").replace(/\.png$/, "");
+      const lang = url.searchParams.get("lang") === "en" ? "en" : "fa";
+      try {
+        // v13.12-cards: look up the match in the tracked pool (KV_MATCHES_KEY,
+        // 24h TTL — reliably populated by every cron sweep) first, then the
+        // short-TTL public-matches cache as fallback.
+        let match: any = null;
+        const tracked = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
+        if (tracked && Array.isArray(tracked.matches)) {
+          match = tracked.matches.find((m: any) => {
+            if (!m || !m.homeTeam || !m.awayTeam || !m.utcDate) return false;
+            return matchKey(m) === matchKeyParam || String(m.id || "") === matchKeyParam;
+          });
+        }
+        if (!match) {
+          const cached = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null);
+          if (cached && cached.data) {
+            const pools = [].concat(
+              cached.data.upcoming || [],
+              cached.data.finished || [],
+              cached.data.thisWeek || [],
+              cached.data.nextWeek || [],
+              cached.data.topSpot && cached.data.topSpot.matches ? cached.data.topSpot.matches : [],
+              cached.data.ucl && cached.data.ucl.matches ? cached.data.ucl.matches : [],
+              cached.data.nextBig ? [cached.data.nextBig] : [],
+              cached.data.cups ? cached.data.cups.map((c: any) => c.next).filter(Boolean) : []
+            );
+            match = pools.find((m: any) => {
+              if (!m || !m.homeTeam || !m.awayTeam || !m.utcDate) return false;
+              return matchKey(m) === matchKeyParam || String(m.id || "") === matchKeyParam;
+            });
+          }
+        }
+        if (!match) return new Response("card: match not found", { status: 404, headers: { "content-type": "text/plain" } });
+        const { buildMatchCardSvg } = await import("./card");
+        const svg = await buildMatchCardSvg(env, match, lang);
+        return new Response(svg, {
+          headers: {
+            "content-type": "image/svg+xml; charset=utf-8",
+            "cache-control": "public, max-age=300",
+            "access-control-allow-origin": "*"
+          }
+        });
+      } catch (e) {
+        return new Response("card: " + e.message, { status: 500, headers: { "content-type": "text/plain" } });
+      }
+    }
     if (isAdminPath && url.pathname !== "/admin" && !await isAdminAuthed(req, env)) {
       return jsonResponse({
         error: "Unauthorized",

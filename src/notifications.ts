@@ -11,7 +11,7 @@ import { matchKey } from "./dedupe.js";
 import { translateTeam, translateCompetition, getCompetitionPriority } from "./translate";
 import { isWithin24HourWindow, isWithinBigMatchWindow, isWithin3HourWindow, isWithin1HourWindow, isWithin5MinWindow, isMatchStartingNow, isWithinPostMatchWindow, isMatchFinished, getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, cleanupExpiredNotifications, isBackfillEligible, shouldNotify } from "./matches";
 import { format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, specialBanner } from "./composers";
-import { sendTelegram, sendDice } from "./telegram";
+import { sendTelegram, sendDice, sendPhoto } from "./telegram";
 import { getRegisteredChats, getUserPrefs, groupChatsByTz, userFollowsMatch, isBigMatch, isMasterBigMatch } from "./users";
 
 export const NOTIFICATION_CONFIGS = [
@@ -95,6 +95,17 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
     // This is Telegram's built-in sendDice animation — zero asset hosting.
     if (config.type === "match-start" && !late) {
       await Promise.allSettled(g.chats.map((chatId) => sendDice(scopedEnv, chatId, "\u26BD").catch(() => null)));
+    }
+    // v13.12-cards: for match-start + result, send a visual match CARD
+    // (team crests + names + time) before the text. The card is an SVG
+    // served at /api/card/<matchKey>, converted to PNG via Cloudflare Image
+    // Resizing if available. Only for on-time notifications (not late
+    // backfills — the card would be stale + add noise). Skipped if the
+    // match has no crests (the card route returns 404 → sendPhoto fails
+    // silently via the .catch).
+    if ((config.type === "match-start" || config.type === "result") && !late && (match.homeTeam.crest || match.awayTeam.crest)) {
+      const cardUrl = "https://football.sportsignal.ir/api/card/" + encodeURIComponent(matchKey(match)) + "?lang=" + lang;
+      await Promise.allSettled(g.chats.map((chatId) => sendPhoto(scopedEnv, chatId, cardUrl).catch(() => null)));
     }
     const sendResults = await Promise.allSettled(
       g.chats.map((chatId) => sendTelegram(scopedEnv, message, chatId))
