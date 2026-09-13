@@ -5648,7 +5648,7 @@ body.joinsticky{padding-bottom:88px}
    filter moved onto the .hero-wm LAYER (a filtered container clips its own
    children \u2014 the imgs themselves stay unfiltered). */
 .herowrap{position:relative;margin:14px 0}
-.card.bighero{filter:drop-shadow(0 4px 16px rgba(0,0,0,.45))}
+.card.bighero{filter:drop-shadow(0 4px 16px rgba(0,0,0,.36))}
 .herowrap::before{content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;box-shadow:0 0 40px rgba(5,150,105,.24);opacity:.4;animation:hero-heart 2.6s ease-in-out infinite}
 .card.bighero::before{content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;box-shadow:inset 0 0 64px rgba(16,185,129,.10);opacity:.4;animation:hero-heart 2.6s ease-in-out infinite}
 @keyframes hero-heart{0%,100%{opacity:.35}8%{opacity:.9}16%{opacity:.5}24%{opacity:.75}36%{opacity:.35}}
