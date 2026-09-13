@@ -5819,15 +5819,20 @@ body.joinsticky{padding-bottom:88px}
    \xB134px overshoot once briefly widened the page on every hero re-render
    (another heartbeat-scrollbar source); the row now clips it, and the \u22EF
    share popover (in the info line, OUTSIDE .match) is unaffected. */
-.bighero .match{overflow:hidden}
-/* escalation ladder: soon (\u226424h) \u2192 amber; final (\u226460min) & live \u2192 red alarm */
-#bigHeroCard[data-urgent="soon"]{border-color:rgba(251,191,36,.5)}
+.bighero .match{overflow:hidden;gap:24px}
+/* escalation ladder: soon (≤24h) → blue; final (≤60min) & live → red alarm.
+   v12.x-blue-urgent-border (the user's ask): the 'soon' border was amber
+   (#fbbf24/.5) — the user said 'remove the yellow/green-ish border around
+   the section, instead use a blue one'. Changed to the site's --accent
+   blue (#2563eb/.55) for the 'soon' state. The final/live red alarm stays
+   (that's the urgency escalation, not a color preference). */
+#bigHeroCard[data-urgent="soon"]{border-color:rgba(37,99,235,.55)}
 #bigHeroCard[data-urgent="soon"]::before{box-shadow:inset 0 0 70px rgba(245,158,11,.09);animation-duration:1.7s}
 .herowrap[data-urgent="soon"]::before{box-shadow:0 0 46px rgba(245,158,11,.26);animation-duration:1.7s}
 #bigHeroCard[data-urgent="soon"] .hero-fx::after{animation-duration:4.2s}
-#bigHeroCard[data-urgent="soon"] .bigbar-clock{color:#fbbf24}
+#bigHeroCard[data-urgent="soon"] .bigbar-clock{color:#60a5fa}
 #bigHeroCard[data-urgent="soon"] .hero-fx i{background:radial-gradient(circle,rgba(253,224,71,.95),rgba(245,158,11,0) 70%)}
-[data-theme="light"] #bigHeroCard[data-urgent="soon"] .bigbar-clock{color:#b45309}
+[data-theme="light"] #bigHeroCard[data-urgent="soon"] .bigbar-clock{color:#2563eb}
 #bigHeroCard[data-urgent="final"],#bigHeroCard[data-urgent="live"]{border-color:rgba(239,68,68,.55)}
 #bigHeroCard[data-urgent="final"]::before,#bigHeroCard[data-urgent="live"]::before{box-shadow:inset 0 0 84px rgba(239,68,68,.11)}
 .herowrap[data-urgent="final"]::before,.herowrap[data-urgent="live"]::before{box-shadow:0 0 52px rgba(239,68,68,.28)}
@@ -6116,7 +6121,7 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    \u2014 "weekday day month", 12.5px PC, one step smaller per the user's
    sketch "19 / weekday 22 month"], so the time and its date read as ONE
    centered stack between the two clubs. */
-.bighero .kick{flex:0 0 auto;flex-direction:column;gap:6px}
+.bighero .kick{flex:0 0 auto;flex-direction:column;gap:6px;margin-top:0;align-self:center}
 /* v12.32: the date line under the hero's time chip \u2014 plain rows never
    carry it (their weekday/date stays in the info line); the hero's stack
    is [big time / smaller date]. */
