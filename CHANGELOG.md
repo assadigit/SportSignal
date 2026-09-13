@@ -6,6 +6,38 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+# Changelog
+
+All notable changes to the UCL Notifier are documented here, newest first.
+Version strings follow the value exposed by the live `/api/status` endpoint
+(see `src/worker.ts` `VERSION`).
+
+---
+
+## [13.29-clientfixes] — 2026-09-13 (standings played column in league boxes + hero overflow fix + SW cache v4)
+
+### Bug fixes (user-reported, persisted past v13.28)
+- **«بازی» (games played) column now shows in the LEAGUE standings boxes**
+  (PL/PD/SA/FL1/BL1/PGL grid). Root cause: the v13.28 fix only touched the
+  bot's standings line + the UCL full table already had it — the league
+  stboxes never rendered a played cell at all (data was in the payload all
+  along: `played` rides along since v12.16). Now each box shows
+  `# | team | بازی | امتیاز` on desktop; the column folds away ≤600px
+  (existing `.ucl-hidem` behavior) so the compact mobile grid is unchanged.
+- **Hero card team-name/crest collision fixed for real.** Root cause found:
+  `.bighero .match .side .team{white-space:nowrap;overflow:visible;
+  text-overflow:clip}` (specificity 0,4,0) was overriding BOTH the v13.28
+  base `.side .team{overflow:hidden;text-overflow:ellipsis}` fix AND the
+  mobile wrap rule — hero names never clipped and PAINTED OVER the crest
+  and score. Now: desktop truncates with ellipsis; mobile (column layout,
+  logo stacked above the name) re-allows wrapping via a later-in-file
+  rule of the same specificity.
+- **SW cache v3→v4** (`assets/sw.js`) + asset rename `public-13.8.*→
+  public-13.9.*`: browsers holding any stale asset entry get a one-shot
+  clean sweep (the SW static-asset branch is cache-first-forever, so
+  unchanged URLs never refresh on affected clients). Retired the dead
+  `public-13.6.*`/`core-13.6.js` (two generations old).
+
 ## [13.25-nomiss] — 2026-09-13 (comprehensive "never miss a match" test suite)
 
 ### Session wrap-up (v13.12 → v13.25)

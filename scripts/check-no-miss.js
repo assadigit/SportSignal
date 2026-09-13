@@ -159,18 +159,22 @@ var MEM_DEDUPE = new Set();
   console.log("\n=== A. Window hit (match IS in the notification window) ===");
   // 24h window: 20-24h before kickoff
   check("24h: match 23h before kickoff → in window", isWithin24HourWindow(matchAt(23), env));
-  check("24h: match 20h before kickoff → in window (lower edge)", isWithin24HourWindow(matchAt(20), env));
-  check("24h: match 24h before kickoff → in window (upper edge)", isWithin24HourWindow(matchAt(24), env));
+  // v13.29-harness: the nominal-edge fixtures carry ≥36s of real margin — the
+  // window fns re-read Date.now() AFTER fixture creation, so an exact-edge
+  // offset flapped in/out on a 1ms clock tick (seen once in CI as "3h 2.5h
+  // lower edge" FAIL). Offsets only; expectations unchanged.
+  check("24h: match 20h+36s before kickoff → in window (lower edge)", isWithin24HourWindow(matchAt(20.01), env));
+  check("24h: match 24h-36s before kickoff → in window (upper edge)", isWithin24HourWindow(matchAt(23.99), env));
   // 3h window: 2.5-3.5h before kickoff
   check("3h: match 3h before kickoff → in window", isWithin3HourWindow(matchAt(3), env));
-  check("3h: match 2.5h before kickoff → in window (lower edge)", isWithin3HourWindow(matchAt(2.5), env));
+  check("3h: match 2.5h+36s before kickoff → in window (lower edge)", isWithin3HourWindow(matchAt(2.51), env));
   // 1h window: 0.75-1.5h before kickoff
   check("1h: match 1h before kickoff → in window", isWithin1HourWindow(matchAt(1), env));
-  check("1h: match 0.75h before kickoff → in window (lower edge)", isWithin1HourWindow(matchAt(0.75), env));
+  check("1h: match 0.75h+36s before kickoff → in window (lower edge)", isWithin1HourWindow(matchAt(0.76), env));
   // match-start: -1..+45 min
   check("match-start: match 10min AFTER kickoff → in window", isMatchStartingNow(matchAt(-10/60, "IN_PLAY"), env));
   check("match-start: match 30min AFTER kickoff → in window", isMatchStartingNow(matchAt(-30/60, "IN_PLAY"), env));
-  check("match-start: match 45min AFTER kickoff → in window (upper edge)", isMatchStartingNow(matchAt(-45/60, "IN_PLAY"), env));
+  check("match-start: match 44min AFTER kickoff → in window (upper edge)", isMatchStartingNow(matchAt(-44/60, "IN_PLAY"), env));
 
   console.log("\n=== B. Window miss (match is NOT in the window) ===");
   check("24h: match 19h before kickoff → NOT in window (below floor)", !isWithin24HourWindow(matchAt(19), env));

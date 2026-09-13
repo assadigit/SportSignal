@@ -677,14 +677,16 @@ function renderStandings(d){
       // exactly like the full UCL table labels every column.
       var th = document.createElement("div"); th.className = "sthead";
       var thf = document.createElement("span"); thf.className = "sthead-fill";
+      var thpl = document.createElement("span"); thpl.className = "stnum ucl-hidem sthead-num"; thpl.textContent = T("thP");
       var thp = document.createElement("span"); thp.className = "sthead-p"; thp.textContent = T("thPts");
-      th.appendChild(thf); th.appendChild(thp); box.appendChild(th);
+      th.appendChild(thf); th.appendChild(thpl); th.appendChild(thp); box.appendChild(th);
       st.teams.forEach(function(t){
         var r = document.createElement("div"); r.className = "strow" + (t.pos===1 ? " top1" : "");
         var p = document.createElement("span"); p.className = "stpos" + (t.pos<=3 ? " top3" : ""); p.textContent = fmtNum(t.pos);
         var n = document.createElement("span"); n.className = "stname"; nameInto(n, curLang()==="en" ? t.name : (t.faName||t.name));
+        var pl = document.createElement("span"); pl.className = "stnum ucl-hidem"; pl.textContent = (t.played == null || isNaN(t.played)) ? "—" : fmtNum(t.played);
         var pt = document.createElement("span"); pt.className = "stpts"; pt.textContent = fmtNum(t.points);
-        r.appendChild(p); r.appendChild(n); r.appendChild(pt);
+        r.appendChild(p); r.appendChild(n); r.appendChild(pl); r.appendChild(pt);
         box.appendChild(r);
       });
     } else {

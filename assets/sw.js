@@ -11,7 +11,11 @@
 //              caches after the v13.6 asset split. The activate handler
 //              deletes every cache !== CACHE, so the bump is a one-shot
 //              clean sweep on the next SW takeover.)
-const CACHE = "sportsignal-v3";
+// Cache name:  sportsignal-v4 (v13.29: bumped from v3 — one-shot evict of
+//              any stranded/stale asset entries on client browsers; the
+//              client assets were renamed public-13.8→public-13.9 in the
+//              same release, so the bump also guarantees a clean slate.)
+const CACHE = "sportsignal-v4";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
