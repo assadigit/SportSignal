@@ -3,7 +3,7 @@
 // runs the same lookup logic (exact, then normalized) against full 2025-26 rosters
 // plus known provider name variants (football-data vs TheSportsDB).
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 
 const dictSrc = src.match(/const FA_TEAMS = (\{[\s\S]*?\n  \});/)[1];
 const FA_TEAMS = eval("(" + dictSrc + ")");

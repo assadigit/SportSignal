@@ -3,7 +3,7 @@
 // Usage: node scripts/live-derby-test.js (extracts functions from src/worker.ts)
 // NOTE: no "use strict" — sloppy-mode eval leaks function decls to module scope.
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 
 function grabFn(name) {
   const i = src.indexOf(name);
@@ -77,7 +77,7 @@ const domCupSrc = grabFn("function isDomesticCup(code)");
 // them through this module scope at runtime). v12.4: hasSelectedTeam joins the
 // leak set (the TOP BOX pick calls it; it was missing and only survived
 // because the old code path never reached it with these pools).
-const aliasSrc = grabVarBalanced("TEAM_ALIASES") + "\n" + grabFn("function normAlias(name)") + "\n" + grabFn("function isDomesticLeagueCode(code)") + "\n" + grabVar("_masterMemo") + "\n" + grabFn("function masterTeamList()") + "\n" + grabFn("function isMasterPair(match)") + "\n" + grabFn("function hasSelectedTeam(match)") + "\n" + grabFn("function isMasterClash(match)");
+const aliasSrc = grabVarBalanced("TEAM_ALIASES") + "\n" + grabFn("function normAlias(name)") + "\n" + grabFn("function isDomesticLeagueCode(code)") + "\n" + grabVar("masterMemo") + "\n" + grabFn("function masterTeamList()") + "\n" + grabFn("function isMasterPair(match)") + "\n" + grabFn("function hasSelectedTeam(match)") + "\n" + grabFn("function isMasterClash(match)");
 const shouldNotifySrc = grabFn("function shouldNotify(match)");
 const featSrc = grabVar("BIG_MATCH_TEAMS") + "\n" + grabVar("BIG_MATCH_UEFA") + "\n" + grabFn("function isFeaturedMatch(match)");
 const derbyBlockSrc = grabVarBalanced("DERBY_PAIRS") + "\n" + grabVarBalanced("DERBY_NORM") + "\n" + grabFn("function isDerby(match)");

@@ -2,8 +2,8 @@
 // added in new code (BL1/Bundesliga) survives settings saved by older versions.
 // Mirrors the teams deep-merge already in worker.ts.
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
-const m = src.match(/const leagues = \[\.\.\.\/\* @__PURE__ \*\/ new Set\(\[\.\.\.Array\.isArray\(defaults\.leagues\) \? defaults\.leagues : \[\], \.\.\.Array\.isArray\(saved\.leagues\) \? saved\.leagues : \[\]\]\)\];/);
+const src = require("./lib/worker-src")();
+const m = src.match(/const leagues = \[\.\.\.new Set\(\[\.\.\.Array\.isArray\(defaults\.leagues\) \? defaults\.leagues : \[\], \.\.\.Array\.isArray\(saved\.leagues\) \? saved\.leagues : \[\]\]\)\];/);
 if (!m) { console.error("FAIL: league-union line not found"); process.exit(1); }
 // Check the union is actually used in the return (not dead code)
 if (!/return \{ \.\.\.defaults, \.\.\.saved, teams: syncUclSelection\(canonicalizeTeams\(teams, cat\)\), leagues \};/.test(src)) {

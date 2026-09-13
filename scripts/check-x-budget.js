@@ -13,7 +13,7 @@
 // Usage: node scripts/check-x-budget.js (extracts functions from src/worker.ts)
 // NOTE: no "use strict" — sloppy-mode eval leaks function decls to module scope.
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 
 // String-aware brace-balanced slice. The worker's composers use \u{1F451}
 // curly-brace unicode escapes inside template literals, so a naive

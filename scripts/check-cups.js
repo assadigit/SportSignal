@@ -5,7 +5,7 @@
 // (gold/silver/bronze) and domestic country grouping, and international cups are
 // hidden unless in process.
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 
 // 1) Extract isLiveStatus (source of truth)
 const isLiveStatus = new Function(
@@ -14,7 +14,7 @@ const isLiveStatus = new Function(
 );
 
 // 2) Extract the cups block from fetchPublicMatches
-const start = src.indexOf('const tierOf = /* @__PURE__ */ __name((code) =>');
+const start = src.indexOf('const tierOf = (code) =>');
 const end = src.indexOf("const data = { upcoming:", start);
 if (start < 0 || end < 0) { console.error("FAIL: cups block not found in worker.ts"); process.exit(1); }
 const cupBlock = src.slice(start, end)

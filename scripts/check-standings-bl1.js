@@ -3,7 +3,7 @@
 // started:false (never present stale final points as current). The pts>0
 // "started" heuristic now guards the sportscore PGL primary.
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 const checks = [
   [/if \(!out && code === "BL1"\) \{/, "BL1 sportscore fallback in fetchStandings"],
   [/out = \{ matchday: null, started: false, teams: table\.map\(\(r, i\) => \(\{ name: r\.team, pos: i \+ 1, points: 0 \}\)\) \}/, "BL1 fallback zeroed + started:false (no stale season)"],

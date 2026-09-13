@@ -3,7 +3,7 @@
 //  2) The cross-source merge fills a missing venue from a later provider
 //  3) pubMatch exposes venue
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 
 let fails = 0;
 const check = (name, cond) => {
@@ -67,7 +67,7 @@ check("pubMatch venue null when absent", outNull.venue === null);
 const dedupeSrc = fs.readFileSync("src/dedupe.js", "utf8");
 check(
   "cacheMatches dedupes on canonical key (module)",
-  /const merged = \(0, import_dedupe\.canonDedupe\)\(\[\.\.\.head, \.\.\.matches\]\);/.test(src) &&
+  /const merged = canonDedupe\(\[\.\.\.head, \.\.\.matches\]\);/.test(src) &&
     /const canon = \(m\) => .*normalizeTeamName/.test(dedupeSrc) &&
     /adopt\(m, cur\)/.test(dedupeSrc) &&
     /\[\.\.\.byKey\.values\(\)\]/.test(dedupeSrc)

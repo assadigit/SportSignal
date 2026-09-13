@@ -4,7 +4,7 @@
 // Usage: node scripts/check-weekly-tables.js (extracts functions from src/worker.ts)
 // NOTE: no "use strict" — sloppy-mode eval leaks function decls to module scope.
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 
 function grabFn(sig) {
   // Brace-balanced slice of a function starting at its declaration signature.

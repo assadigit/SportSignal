@@ -1,6 +1,6 @@
 // Gate: notification windows + backfill + dedupe TTLs at reliability settings.
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 const checks = [
   [/hoursUntilMatch <= 24 && hoursUntilMatch >= 20/, "24h window 20-24h"],
   [/hoursUntilMatch <= 3\.5 && hoursUntilMatch >= 2\.5/, "3h window 2.5-3.5h"],

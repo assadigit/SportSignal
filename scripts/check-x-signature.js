@@ -23,7 +23,7 @@
 // NOTE: no "use strict" — sloppy-mode eval leaks function decls to module scope.
 const fs = require("fs");
 const crypto = require("crypto");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 
 function grabFn(sig) {
   const i = src.indexOf(sig);

@@ -4,7 +4,7 @@
 //  3) cacheMatches (KV writes) and fetchLongView (returned list → public page)
 //     both funnel through canonDedupe, so duplicate rows can't reach the UI
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 const { canonDedupe } = require("../src/dedupe.js");
 
 let fails = 0;
@@ -14,10 +14,10 @@ const check = (name, cond) => {
 };
 
 check("canonDedupe helper defined", typeof canonDedupe === "function");
-check("cacheMatches uses canonDedupe", /const merged = \(0, import_dedupe\.canonDedupe\)\(\[\.\.\.head, \.\.\.matches\]\);/.test(src));
+check("cacheMatches uses canonDedupe", /const merged = canonDedupe\(\[\.\.\.head, \.\.\.matches\]\);/.test(src));
 check(
   "fetchLongView dedupes before returning",
-  /\(0, import_dedupe\.canonDedupe\)\(allMatches\)/.test(src) && /allMatches\.push\(\.\.\.deduped\)/.test(src)
+  /(^|\W)canonDedupe\(allMatches\)/.test(src) && /allMatches\.push\(\.\.\.deduped\)/.test(src)
 );
 
 // Dynamic: exercise the real helper from the dedupe module (single source of truth)

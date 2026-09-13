@@ -12,7 +12,7 @@
 // The handler block is sliced verbatim out of worker.ts, so if a maintainer
 // changes the join logic, this gate fails until the assertions are updated too.
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 
 // --- Extract the webhook command chain (in-memory source of truth) ---
 const start = src.indexOf('if (text === "/start") {');

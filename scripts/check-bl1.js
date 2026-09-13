@@ -2,7 +2,7 @@
 // 429-rate-limited on the worker egress) and Bayern must have an English alias
 // (sportscore/TSP report "Bayern Munich", not "FC Bayern München").
 const fs = require("fs");
-const src = fs.readFileSync("src/worker.ts", "utf8");
+const src = require("./lib/worker-src")();
 const checks = [
   [/code === "EL" \|\| code === "ECL" \|\| code === "BL1"/, "BL1 in fetchSportScore slug filter"],
   [/await sportScoreDay\("BL1", SPORTSCORE_SLUGS\.BL1, dateStr, uefaAcc\);/, "BL1 in fetchLongView sweep"],
