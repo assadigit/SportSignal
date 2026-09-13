@@ -900,6 +900,45 @@ signature. fd retry attempts 3→2; TSP fallback window -2/+4 → -1/+2 days.
   tier/round filtering, EL/ECL qualifying relabel, scheduled-score hygiene
   (null `score` unless FINISHED/LIVE/PAUSED), BL1 season-freshness guard.
 
+## 13.6-assets — the payload split (2026-09-13)
+
+### v13.5-debtzero — reliability + type-safety zero pass
+- **`/api/simulate` no longer mutates shared CONFIG at runtime** (was swapping
+  `CONFIG.KV_NOTIFIED_KEY`/`KV_USER_PREFS` to test keys — a concurrent cron
+  sweep could read/write the TEST keys). The handler now passes a cloned env
+  (`SIM_NOTIFIED_KEY`/`SIM_PREFS_KEY`); `matches.ts`/`users.ts` resolve keys
+  per-request. Real notification state is isolated by construction.
+- **All `env.TEHRAN_TZ` shared-env mutations eliminated** (notifications.ts ×1,
+  digest.ts ×2 — the per-chat-group timezone now flows through scoped env
+  clones, same fix the `/next` handler got in v13.2). `admin.ts applySettings`
+  mutation kept — it is the deliberate KV→CONFIG settings refresh.
+- **8 silent duplicate object keys removed** (kept last-wins → zero behavior
+  change): `LEAGUE_LOGOS.PGL` ×2 (139.png dead entry), fa-dict ×5
+  (Espanyol, RCD Espanyol de Barcelona, Fajr Sepasi, Paykan, Shams Azar
+  Qazvin — space vs ZWNJ spelling), `FA_COMPS` PGL/HAZFI_CUP ×2.
+- **tsc errors 29 → 0** (types-only edits; eval-gate verified byte-identical).
+  `npm test` now gates on **`tsc --noEmit` + version-sync check** (package.json
+  ↔ `VERSION` core compare) before the 13 behavior checks.
+
+### v13.6-assets — client payload extracted to immutable versioned assets
+- **HTML 241KB → 36KB (−85%)**: the big `<style>` (92KB) and app `<script>`
+  (98KB + 16KB core) moved out of the template into
+  `assets/public-13.6.css`, `assets/public-13.6.js`, `assets/core-13.6.js`
+  (shared by /, /admin/login, /admin).
+- Assets served via Workers Static Assets with
+  `Cache-Control: public, max-age=31536000, immutable`; cache-bust by
+  renaming (version suffix in filename). `assets/_headers` updated.
+- Kept inline (first-paint critical): theme-init script, `@font-face` block,
+  `PAGE_TZ` line (serve-time `__PAGE_TZ__` substitution still works),
+  JSON-LD, and the full HTML body.
+- `src/pages/client-core.ts` retired — `assets/core-13.6.js` is the source of
+  truth for the shared I18N + theme/lang helpers now.
+- Admin footer version now interpolates `VERSION` (was hardcoded ۱۲.۳۱ —
+  three majors stale).
+- `check-venue.js` reads the extracted app JS from `assets/public-*.js`.
+- Extraction was generated from the EVALUATED page string (byte-exact served
+  bytes) by `scripts/extract-page-assets.mjs` (one-shot, kept for provenance).
+
 ## 13.4-modular — the great modularization (2026-09-13)
 
 ### v13.0-modular — 21 real ES modules replace the 10k-line bundle

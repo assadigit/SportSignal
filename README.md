@@ -100,13 +100,14 @@ src/
   bot.ts           Telegram webhook handler (/start /lang /follow /next …)
   cron.ts          the */10 sweep
   api.ts           HTTP router
-  pages/           PUBLIC / LOGIN / ADMIN templates + shared client-core.ts
-                   (ONE I18N dict + theme/lang helpers — was ×3 copies)
+  pages/           PUBLIC / LOGIN / ADMIN HTML templates (shell only — CSS/JS
+                   live in versioned asset files, see below)
 ```
 
 * `src/teams.js` / `src/dedupe.js`: shared helper modules (team-name normalization, match dedupe) — imported by the worker AND required by the test scripts.
 * `wrangler.toml`: Cloudflare Worker configuration, defining the cron trigger and KV namespace binding (`STATE`).
 * `assets/`: static assets (`bg.jpg`, hero video) + self-hosted `Vazirmatn` web fonts + `assets/_headers` cache policy.
+* `assets/core-<V>.js` + `assets/public-<V>.js` + `assets/public-<V>.css` (v13.6): the extracted client payload — ONE shared client core (I18N + theme/lang helpers, used by all three pages) plus the public page's app JS and styles. Served immutable (`max-age=31536000`); **cache-bust by renaming with a new version suffix** and updating the references in `src/pages/*.ts` — these files are the source of truth for client CSS/JS (the old `src/pages/client-core.ts` was retired).
 * `design-system/ucl-notifier/MASTER.md`: Visual design system / MASTER reference for the public page.
 * `scripts/`: self-check regression gates — `scripts/lib/worker-src.js` concatenates the modules into one source string (transformed to runnable JS) so the gates keep asserting REAL source behavior; run by `npm test`.
 * `scripts/refactor-*.mjs`: the documented, re-runnable extraction pipeline that produced the split (bundle kept at `scripts/worker.bundle-v12.33.ts`).

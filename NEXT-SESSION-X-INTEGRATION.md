@@ -1,5 +1,12 @@
 # NEXT SESSION — SportSignal × X (Twitter) Automated Profile
 
+> **⚠️ HISTORICAL (2026-09-13, pre-v13.0):** this handoff describes the OLD
+> single-file architecture (~4,900-line `src/worker.ts`). The codebase is now
+> 21 ES modules + extracted client assets (v13.6) — see `README.md` for the
+> current module map and `CHANGELOG.md` § 13.x. The X integration itself
+> SHIPPED in v12.33 (`src/x.ts`) — the background/ideas below remain useful
+> context only.
+
 Handoff date: 2026-09-15 · Handed off from: v12.32-backlog (commit 07c4f57 + wrap commit)
 Live: https://football.sportsignal.ir (Cloudflare Worker `ucl-notifier`, version 123dd8b0)
 
