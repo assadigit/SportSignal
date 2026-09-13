@@ -247,6 +247,12 @@ var CONFIG = {
   KV_STANDINGS_SNAP: "standings_snap_",
   KV_STANDINGS_CACHE: "standings_cache_",
   KV_PUBLIC_MATCHES: "public_matches_v1",
+  // v12.x-resilience: long-TTL (7 day) snapshot of the last successful
+  // public-matches build. Read ONLY when the live fetch fails (or returns
+  // an empty pool) so the page can still render last week's fixtures with
+  // a subtle "cached data" indicator instead of empty cards.
+  KV_PUBLIC_SNAPSHOT: "cache:snapshot:v1",
+  KV_PUBLIC_SNAPSHOT_TTL: 7 * 24 * 60 * 60,
   KV_USER_PREFS: "user_prefs_v1",
   // v12.16: bot-member profiles (telegram username/"slug" + first name + join
   // date), captured from every incoming message and backfilled via getChat
@@ -1338,6 +1344,8 @@ async function shouldSendNotification(env, match, notificationType, notifiedMatc
       return isWithin3HourWindow(match, env) || isBackfillEligible(match, "pre-match-3h", env);
     case "pre-match-1h":
       return isWithin1HourWindow(match, env) || isBackfillEligible(match, "pre-match-1h", env);
+    case "pre-match-5min":
+      return isWithin5MinWindow(match, env);
     case "match-start":
       return isMatchStartingNow(match, env);
     case "result":
@@ -1384,6 +1392,19 @@ function isWithin1HourWindow(match, _env) {
 }
 __name(isWithin1HourWindow, "isWithin1HourWindow");
 __name2(isWithin1HourWindow, "isWithin1HourWindow");
+// v12.x-cron-gaps: 5-minute "kickoff now" reminder window. Fires for BIG
+// matches only (both teams big), 1-10 minutes before kickoff. The 10-min
+// width matches the cron tick cadence so the sweep catches the window at
+// least once (worst case the reminder lands ~1 min before kickoff).
+function isWithin5MinWindow(match, _env) {
+  const now = getNowUTC();
+  const matchTime = new Date(match.utcDate);
+  if (matchTime <= now) return false;
+  const minutesUntilMatch = (matchTime.getTime() - now.getTime()) / (60 * 1e3);
+  return minutesUntilMatch > 0 && minutesUntilMatch <= 10;
+}
+__name(isWithin5MinWindow, "isWithin5MinWindow");
+__name2(isWithin5MinWindow, "isWithin5MinWindow");
 function isMatchStartingNow(match, _env) {
   const now = getNowUTC();
   const matchTime = new Date(match.utcDate);
@@ -2478,6 +2499,25 @@ function format1HourMessage(match, env, lang) {
 }
 __name(format1HourMessage, "format1HourMessage");
 __name2(format1HourMessage, "format1HourMessage");
+// v12.x-cron-gaps: lean 5-minute reminder for BIG matches only. Lean
+// text per the user's "reduce noise" ask: one ⚽ on the match line, no
+// per-line emojis.
+function format5MinMessage(match, env, lang) {
+  const en = lang === "en";
+  const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
+  const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
+  const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
+  const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
+  const head = en ? "*Kickoff in 5 min*" : "*\u06F5 \u062F\u0642\u06CC\u0642\u0647 \u062A\u0627 \u0634\u0631\u0648\u0639*";
+  const vs = en ? " vs " : " \u{1F19A} ";
+  let message = `${head}\n\n`;
+  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `${escapeMarkdownCharacters(competition)}\n`;
+  message += `${escapeMarkdownCharacters(timeStr)}`;
+  return message;
+}
+__name(format5MinMessage, "format5MinMessage");
+__name2(format5MinMessage, "format5MinMessage");
 function formatMatchStartMessage(match, env, lang) {
   const en = lang === "en";
   const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
@@ -2908,6 +2948,188 @@ async function maybeSendWeeklyTables(env, chatIds) {
 }
 __name(maybeSendWeeklyTables, "maybeSendWeeklyTables");
 __name2(maybeSendWeeklyTables, "maybeSendWeeklyTables");
+// v12.x-cron-gaps: matchday morning digest. Fires ONCE per chat per day at
+// 9am local time. Lists today's master big matches (both teams big) in the
+// user's lang. Per-chat dedupe via KV `digest_sent_<YYYY-MM-DD>_<chatId>`.
+// Designed to coexist with the existing weekly tables digest; it's much
+// leaner (one line per match, no full tables) and fires every day (the
+// weekly tables only fire Monday morning Tehran).
+async function maybeSendMorningDigest(env, chatIds) {
+  const out = { sent: 0, skipped: 0, noMatches: 0 };
+  if (!Array.isArray(chatIds) || !chatIds.length) return out;
+  const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
+  // Build the per-tz "is it 9am here?" lookup once. Each tz bucket is
+  // processed independently so a Sydney 9am fires ~6 hours before Tehran's.
+  const byTz = /* @__PURE__ */ new Map();
+  for (const c of chatIds) {
+    const tz = (typeof getUserTz === "function" ? getUserTz(prefs, c, env) : env.TEHRAN_TZ) || env.TEHRAN_TZ || "Asia/Tehran";
+    if (!byTz.has(tz)) byTz.set(tz, []);
+    byTz.get(tz).push(c);
+  }
+  for (const [tz, tzChats] of byTz) {
+    let hour = -1, dateKey = null;
+    try {
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: tz, hour12: false,
+        year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit"
+      }).formatToParts(/* @__PURE__ */ new Date());
+      const p = {};
+      for (const x of parts) p[x.type] = x.value;
+      const hh = p.hour === "24" ? "00" : p.hour;
+      hour = parseInt(hh, 10);
+      dateKey = p.year + "-" + p.month + "-" + p.day;
+    } catch (e) {
+      continue;
+    }
+    if (hour !== 9) continue;
+    if (!dateKey) continue;
+    // Pull the latest pool (KV first; falls back to the in-memory cron pool).
+    let pool = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
+    let matches = pool && Array.isArray(pool.matches) ? pool.matches : [];
+    if (!matches.length) matches = await getCachedMatches(env).catch(() => []);
+    if (!Array.isArray(matches) || !matches.length) continue;
+    // Today's big matches (in this tz). "Today" = midnight-to-midnight local.
+    // Build the tz-local midnight as a UTC instant using the format above.
+    let dayStart = 0, dayEnd = 0;
+    try {
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: tz, hour12: false,
+        year: "numeric", month: "2-digit", day: "2-digit"
+      }).formatToParts(/* @__PURE__ */ new Date());
+      const p = {};
+      for (const x of parts) p[x.type] = x.value;
+      dayStart = Date.UTC(parseInt(p.year, 10), parseInt(p.month, 10) - 1, parseInt(p.day, 10), 0, 0, 0);
+      dayEnd = dayStart + 24 * 60 * 60 * 1e3;
+    } catch (e) {
+      continue;
+    }
+    const todayBig = matches.filter((m) =>
+      m && m.competition && m.competition.code &&
+      isMasterBigMatch(m) &&
+      m.status !== "FINISHED" &&
+      (function () { const tt = new Date(m.utcDate).getTime(); return tt >= dayStart && tt < dayEnd; })()
+    ).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
+    if (!todayBig.length) continue;
+    // Per-chat send with dedupe. Use the original env.TEHRAN_TZ for time
+    // rendering in the user's lang (the matches are at UTC instants; the
+    // time displayed is whatever tz the user has set).
+    const originalTz = env.TEHRAN_TZ;
+    try {
+      env.TEHRAN_TZ = tz;
+      for (const c of tzChats) {
+        const dedupeKey = "digest_sent_" + dateKey + "_" + c;
+        const already = await env.STATE.get(dedupeKey).catch(() => null);
+        if (already) { out.skipped++; continue; }
+        const lang = (prefs[String(c)] && prefs[String(c)].lang) === "en" ? "en" : "fa";
+        const msg = await buildMorningDigestMessage(env, todayBig, lang);
+        const r = await sendTelegram(env, msg, c);
+        if (r === true) {
+          out.sent++;
+          await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
+        } else if (r === "dead") {
+          // Mark as sent too — don't retry a dead chat all 9am hour.
+          await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
+        }
+      }
+    } finally {
+      env.TEHRAN_TZ = originalTz;
+    }
+  }
+  if (out.sent) console.log(`\u{1F4C5} Morning digest sent=${out.sent} skipped=${out.skipped}`);
+  return out;
+}
+__name(maybeSendMorningDigest, "maybeSendMorningDigest");
+__name2(maybeSendMorningDigest, "maybeSendMorningDigest");
+async function buildMorningDigestMessage(env, matches, lang) {
+  const en = lang === "en";
+  const head = en ? "*Today's big matches:*\n\n" : "*\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0628\u0632\u0631\u06AF \u0627\u0645\u0631\u0648\u0632:*\n\n";
+  const lines = [];
+  for (const m of matches.slice(0, 8)) {
+    const home = en ? m.homeTeam.name : translateTeam(m.homeTeam.name);
+    const away = en ? m.awayTeam.name : translateTeam(m.awayTeam.name);
+    const comp = en ? (COMP_EN[m.competition.code] || m.competition.code) : translateCompetition(m.competition.code);
+    const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: env.TEHRAN_TZ || "Asia/Tehran" }).format(new Date(m.utcDate));
+    const timeStr = en ? time : toFaDigits(time);
+    const vs = en ? " vs " : " \u{1F19A} ";
+    lines.push("\u26BD " + escapeMarkdownCharacters(home) + vs + escapeMarkdownCharacters(away) + " \u2014 " + timeStr + " \u2014 " + escapeMarkdownCharacters(comp));
+  }
+  let msg = head + lines.join("\n");
+  if (matches.length > 8) {
+    const extra = matches.length - 8;
+    const extraStr = en ? "\n+ " + String(extra) + " more" : "\n\u2026 \u0648 " + toFaDigits(String(extra)) + " \u0628\u0627\u0632\u06CC \u062F\u06CC\u06AF\u0631";
+    msg += extraStr;
+  }
+  return msg;
+}
+__name(buildMorningDigestMessage, "buildMorningDigestMessage");
+__name2(buildMorningDigestMessage, "buildMorningDigestMessage");
+// v12.x-cron-gaps: big-match FT broadcast. The existing "result" config
+// only fires for users following at least one team in the match \u2014 so a
+// UCL blockbuster (Real Madrid vs Man City) only notifies users who
+// follow either side. This broadcast fills the gap: for any finished
+// master-big-match in the post-match window, FT is sent to every
+// registered chat that didn't already get it via the regular result
+// path. Uses a separate "result-big" notification type so the dedupe
+// map doesn't double-count against the existing "result" entry.
+async function broadcastBigMatchResults(env, matches) {
+  const out = { sent: 0, failed: 0, dead: 0, matches: 0 };
+  try {
+    if (!Array.isArray(matches) || !matches.length) return out;
+    const candidates = matches.filter((m) =>
+      m && isMatchFinished(m) && isWithinPostMatchWindow(m, env) && isMasterBigMatch(m)
+    );
+    if (!candidates.length) return out;
+    const chatIds = await getRegisteredChats(env);
+    if (!chatIds.length) return out;
+    const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
+    const notifiedMatches = await getNotifiedMatches(env);
+    const deadChats = [];
+    const originalTz = env.TEHRAN_TZ;
+    for (const match of candidates) {
+      out.matches++;
+      // Users who follow at least one team in the match already get the
+      // "result" notification via the regular path \u2014 skip them here.
+      const nonFollowers = chatIds.filter((c) => {
+        const f = (typeof userFollowsMatch === "function" ? userFollowsMatch(prefs, c, match) : null);
+        return f === null;
+      });
+      if (!nonFollowers.length) continue;
+      const groups = (typeof groupChatsByTz === "function" ? groupChatsByTz(nonFollowers, prefs, env) : [{ tz: env.TEHRAN_TZ, lang: "fa", chats: nonFollowers }]);
+      let anySuccess = false;
+      try {
+        for (const g of groups) {
+          env.TEHRAN_TZ = g.tz;
+          const lang = g.lang || "fa";
+          const message = specialBanner(match, lang) + await formatResultMessage(match, env, lang);
+          const sendResults = await Promise.allSettled(
+            g.chats.map((chatId) => sendTelegram(env, message, chatId))
+          );
+          sendResults.forEach((r, i) => {
+            if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
+          });
+          if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
+        }
+      } finally {
+        env.TEHRAN_TZ = originalTz;
+      }
+      if (anySuccess) {
+        await saveNotifiedMatch(env, match, "result-big", notifiedMatches);
+        out.sent++;
+      }
+    }
+    if (deadChats.length) {
+      const keep = chatIds.filter((c) => !deadChats.includes(c));
+      await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(keep)).catch(() => {});
+      out.dead = deadChats.length;
+    }
+    if (out.sent) console.log(`\u{1F4E4} result-big broadcast: ${out.sent} big-match FTs to non-followers`);
+  } catch (e) {
+    console.error("Big-match result broadcast failed: " + e.message);
+  }
+  return out;
+}
+__name(broadcastBigMatchResults, "broadcastBigMatchResults");
+__name2(broadcastBigMatchResults, "broadcastBigMatchResults");
 // v12.32 (the user's ask): "When a team that is not in the first place, such
 // as a team that is second, third, or fourth in the table, reaches the top
 // of the table, a special notification should be sent in the Telegram bot.
@@ -3740,6 +3962,16 @@ var NOTIFICATION_CONFIGS = [
     requiresFuture: true
   },
   {
+    // v12.x-cron-gaps: 5-minute "kickoff now" reminder. BIG matches only
+    // (both teams in master team list). Lean text per the user's "reduce
+    // noise" ask.
+    type: "pre-match-5min",
+    windowCheck: isWithin5MinWindow,
+    messageFormatter: format5MinMessage,
+    requiresFuture: true,
+    bigMatchOnly: true
+  },
+  {
     type: "match-start",
     windowCheck: isMatchStartingNow,
     messageFormatter: formatMatchStartMessage,
@@ -4200,6 +4432,14 @@ async function detectStatusChanges(env, matches) {
     const cur = {};
     const now = Date.now();
     const alerts = [];
+    // v12.x-cron-gaps: half-time (PAUSED) alerts for BIG matches only.
+    // Tracked separately from postponement/cancellation alerts so they get
+    // their own bilingual "HT: Team A [score] - [score] Team B" message
+    // and only fire when a SCHEDULED/TIMED/IN_PLAY match first transitions
+    // to PAUSED (HT). One fire per status transition (the KV status map
+    // flips to PAUSED so a subsequent IN_PLAY \u2192 PAUSED, e.g. after extra
+    // time, won't re-fire).
+    const htAlerts = [];
     for (const m of matches) {
       if (!shouldNotify(m)) continue;
       const t = new Date(m.utcDate).getTime();
@@ -4210,6 +4450,12 @@ async function detectStatusChanges(env, matches) {
       const old = prev[key];
       if (old && old !== status && (status === "POSTPONED" || status === "CANCELLED") && (old === "SCHEDULED" || old === "TIMED" || old === "POSTPONED")) {
         alerts.push({ m, status });
+      }
+      // v12.x-cron-gaps: PAUSED \u2192 half-time alert. BIG matches only.
+      // Trigger only on the FIRST transition into PAUSED from a non-PAUSED
+      // state (so we don't fire on every PAUSED\u2194IN_PLAY flicker).
+      if (old && old !== status && status === "PAUSED" && old !== "PAUSED" && isMasterBigMatch(m)) {
+        htAlerts.push({ m, status });
       }
     }
     await env.STATE.put(CONFIG.KV_MATCH_STATUS, JSON.stringify(cur), { expirationTtl: 14 * 86400 }).catch(() => {
@@ -4239,6 +4485,41 @@ async function detectStatusChanges(env, matches) {
           await Promise.allSettled(bucket.map((c) => sendTelegram(env, msg, c)));
         }
       }
+    }
+    // v12.x-cron-gaps: HT alerts broadcast to ALL registered chats (it's a
+    // big-match highlight, not a per-team-follow event). Grouped by lang so
+    // each user gets the HT message in their lang.
+    if (htAlerts.length) {
+      const chats = await getRegisteredChats(env);
+      const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
+      const langBuckets = new Map();
+      for (const c of chats) {
+        const p = prefs[String(c)] || {};
+        const lng = p.lang === "en" ? "en" : "fa";
+        if (!langBuckets.has(lng)) langBuckets.set(lng, []);
+        langBuckets.get(lng).push(c);
+      }
+      for (const a of htAlerts) {
+        const m = a.m;
+        const home = m.homeTeam.name;
+        const away = m.awayTeam.name;
+        const sH = m.score && m.score.fullTime && m.score.fullTime.home != null ? m.score.fullTime.home : null;
+        const sA = m.score && m.score.fullTime && m.score.fullTime.away != null ? m.score.fullTime.away : null;
+        const comp = COMP_EN[m.competition.code] || m.competition.code;
+        for (const [lng, bucket] of langBuckets) {
+          const en = lng === "en";
+          const hName = en ? home : translateTeam(home);
+          const aName = en ? away : translateTeam(away);
+          const compName = en ? comp : translateCompetition(m.competition.code);
+          const hStr = sH == null ? "?" : (en ? String(sH) : toFaDigits(String(sH)));
+          const aStr = sA == null ? "?" : (en ? String(sA) : toFaDigits(String(sA)));
+          const head = en ? "*Half time*" : "*\u0627\u0633\u062A\u0631\u0627\u062D\u062A*";
+          const vs = en ? " - " : " \u2014 ";
+          const msg = head + "\n\n\u26BD *" + escapeMarkdownCharacters(hName) + vs + escapeMarkdownCharacters(aName) + "*\n" + escapeMarkdownCharacters(compName) + "\n*" + hStr + "\\-" + aStr + "*";
+          await Promise.allSettled(bucket.map((c) => sendTelegram(env, msg, c)));
+        }
+      }
+      console.log(`\u{1F680} HT alerts sent for ${htAlerts.length} big matches`);
     }
   } catch (e) {
     console.error("Status change detection failed: " + e.message);
@@ -4412,6 +4693,24 @@ async function executeScheduledLogic(env) {
       }
     }
     await sendMatchNotifications(env, matches);
+    // v12.x-cron-gaps: big-match FT broadcast — users who follow neither
+    // team in a master-big-match still get the FT result (Real Madrid vs
+    // Man City, etc.). Additive; own try/catch so a failure here can
+    // never break the rest of the sweep.
+    try {
+      const bb = await broadcastBigMatchResults(env, matches);
+      if (bb && bb.sent) console.log(`\u{1F4E4} Big-match FT broadcast: ${bb.sent}/${bb.matches} (dead=${bb.dead})`);
+    } catch (e) {
+      console.error("Big-match FT broadcast step failed: " + e.message);
+    }
+    // v12.x-cron-gaps: matchday morning digest at 9am local tz. Fires once
+    // per chat per day; per-chat KV dedupe. Own try/catch.
+    try {
+      const md = await maybeSendMorningDigest(env, chatIds);
+      if (md && md.sent) console.log(`\u{1F4C5} Morning digest: sent=${md.sent} skipped=${md.skipped}`);
+    } catch (e) {
+      console.error("Morning digest step failed: " + e.message);
+    }
     // v12.32 (the user's ask): table-top coronation alerts \u2014 a non-first
     // team (2nd/3rd/4th\u2026) overtaking the leader after a fresh full-time
     // result gets its own special Telegram message. Own try/catch (a
@@ -4848,6 +5147,7 @@ async function fetchPublicMatches(env, req) {
     if (rl && cached && cached.data) return cached.data;
   }
   let matches = null;
+  let liveSweepFailed = false;
   try {
     if (!lockFresh) {
       await env.STATE.put("pub_refresh_lock", String(Date.now()), { expirationTtl: 45 }).catch(() => {
@@ -4861,6 +5161,7 @@ async function fetchPublicMatches(env, req) {
     await enrichLiveMatches(env, matches);
   } catch (e) {
     console.error("Public provider sweep failed (serving stale): " + e.message);
+    liveSweepFailed = true;
     if (cached && cached.data) return cached.data;
     matches = await getCachedMatches(env);
   }
@@ -5037,9 +5338,38 @@ async function fetchPublicMatches(env, req) {
   const data = { upcoming: upcoming.filter((m) => !topSpotKeys.has(String(m.id || "") + "|" + m.utcDate)).map(withTop), finished: finished.map(withTop), nextBig, topSpot: { next: topSpotNext ? withTop(topSpotNext) : null, matches: topSpotList.map(withTop) }, thisWeek: thisWeek.map(withTop), nextWeek: nextWeek.map(withTop), standings, cups, ucl, fetchedAt: null };
   const poolMeta = matches ? await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null) : null;
   data.fetchedAt = poolMeta && poolMeta.fetchedAt || (/* @__PURE__ */ new Date()).toISOString();
+  // v12.x-resilience: snapshot fallback. If the live sweep failed OR the
+  // pool came back empty (no matches at all from the API), try the long-TTL
+  // snapshot in KV \u2014 a stale week of fixtures is still better than empty
+  // cards. The data is tagged with `cached: true` + `cachedAt` so the page
+  // can show a subtle "cached data" indicator to the user. The 5-min KV
+  // cache (above) is still the fast path; this is the last-resort fallback.
+  // NOTE: we do NOT fall back when the live sweep succeeded but the upcoming
+  // list is empty (e.g. matches exist but all are far-out or unfollowed) \u2014
+  // that case still has standings/UCL/cups to render and should NOT use the
+  // stale snapshot.
+  const poolEmpty = !matches || (Array.isArray(matches) && matches.length === 0);
+  if ((liveSweepFailed || poolEmpty) && CONFIG.KV_PUBLIC_SNAPSHOT) {
+    const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
+    if (snap && snap.data && (snap.data.upcoming || snap.data.finished || snap.data.topSpot || snap.data.ucl || snap.data.standings)) {
+      const stale = Object.assign({}, snap.data, { cached: true, cachedAt: snap.ts ? new Date(snap.ts).toISOString() : snap.data.fetchedAt });
+      // Re-write the short-TTL cache too so the next visitor in the next 5
+      // min doesn't all hammer the failing API again \u2014 they all get the
+      // stale snapshot from the short cache.
+      await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data: stale }), { expirationTtl: 60 }).catch(() => {});
+      return stale;
+    }
+  }
   if (upcoming.length || finished.length) {
     await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: 300 }).catch(() => {
     });
+    // v12.x-resilience: refresh the 7-day snapshot ONLY when the live sweep
+    // succeeded with real data \u2014 otherwise we'd overwrite the snapshot
+    // with empty arrays and lose the fallback.
+    if (CONFIG.KV_PUBLIC_SNAPSHOT) {
+      await env.STATE.put(CONFIG.KV_PUBLIC_SNAPSHOT, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: CONFIG.KV_PUBLIC_SNAPSHOT_TTL || (7 * 24 * 60 * 60) }).catch(() => {
+      });
+    }
   } else {
     await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: 60 }).catch(() => {
     });
@@ -5080,9 +5410,26 @@ var PUBLIC_PAGE = `<!doctype html>
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-title" content="SportSignal">
 <meta name="application-name" content="SportSignal">
+<meta name="description" content="\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\u060C \u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627\u06CC \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u0648 \u0646\u062A\u0627\u06CC\u062C \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628 \u2014 \u0628\u0647\u200C\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06CC \u062E\u0648\u062F\u06A9\u0627\u0631">
+<meta property="og:type" content="website">
+<meta property="og:title" content="SportSignal \u2014 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648">
+<meta property="og:description" content="\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\u060C \u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627\u06CC \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u0648 \u0646\u062A\u0627\u06CC\u062C \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628">
+<meta property="og:url" content="https://football.sportsignal.ir/">
+<meta property="og:image" content="https://football.sportsignal.ir/android-chrome-512x512.png">
+<meta property="og:locale" content="fa_IR">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:site_name" content="SportSignal">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SportSignal \u2014 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648">
+<meta name="twitter:description" content="\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\u060C \u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627\u06CC \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u0648 \u0646\u062A\u0627\u06CC\u062C \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628">
+<meta name="twitter:image" content="https://football.sportsignal.ir/android-chrome-512x512.png">
+<link rel="canonical" href="https://football.sportsignal.ir/">
+<link rel="preload" href="/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"SportSignal","alternateName":"\u0627\u0633\u067E\u0648\u0631\u062A \u0633\u06CC\u06AF\u0646\u0627\u0644","url":"https://football.sportsignal.ir/","description":"\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\u060C \u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627\u06CC \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u0648 \u0646\u062A\u0627\u06CC\u062C \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628","inLanguage":["fa","en"]}<\/script>
 <script>try{var t=localStorage.getItem("ucl_theme")||"dark",l=localStorage.getItem("ucl_lang")||"fa",d=document.documentElement;d.setAttribute("data-theme",t);d.setAttribute("lang",l);d.setAttribute("dir",l==="en"?"ltr":"rtl");}catch(e){}<\/script>
 <title data-i="title">\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u0631\u0648 \u2014 \u0627\u0639\u0644\u0627\u0646\u200C\u062F\u0647\u0646\u062F\u0647 \u0645\u0633\u0627\u0628\u0642\u0627\u062A</title>
-<style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Medium.woff2') format('woff2');font-weight:500;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
+<style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
 <style>
 :root{color-scheme:dark;--bg:#0f172a;--card:#1e293b;--field:#0f172a;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#93c5fd;--score:#4ade80;--countdown:#93c5fd;--countdown-bg:rgba(96,165,250,.12);--danger:var(--t-danger);--chip:#334155;--hover:rgba(148,163,184,.08);--footer:#94a3b8;--glass:rgba(30,41,59,.55);--glass-border:rgba(148,163,184,.16);--glass-hi:rgba(255,255,255,.07);--glass-shadow:0 8px 32px rgba(0,0,0,.35);--glow1:rgba(37,99,235,.17);--glow2:rgba(29,78,216,.11);--scrim:rgba(2,6,23,.62);--rowsurf:rgba(15,23,42,.42);--t-primary:#2563eb;--t-success:#15803d;--t-success-ink:#4ade80;--t-success-soft:rgba(34,197,94,.14);--t-success-line:rgba(34,197,94,.35);--t-warning:#b45309;--t-highlight:#7e22ce;--t-danger:#f87171;--t-neutral:#334155;--t-neutral-soft:rgba(148,163,184,.14);--badge-top:#b45309;--badge-hot:var(--t-warning);--badge-derby:var(--t-highlight);--badge-league:var(--t-neutral);--badge-live:var(--t-success-ink);--nav-link:#cbd5e1;--nav-link-hover:#f1f5f9;--pill-primary-bg:var(--accent);--pill-primary-ink:#fff;--pill-primary-line:rgba(255,255,255,.22);--pill-hype-bg:linear-gradient(90deg,var(--badge-hot),var(--badge-derby));--pill-hype-ink:#fff;--pill-hype-line:rgba(255,255,255,.18);--pill-neutral-bg:rgba(148,163,184,.16);--pill-neutral-ink:#e2e8f0;--pill-neutral-line:rgba(148,163,184,.28)}
 [data-theme="light"]{color-scheme:light;--bg:#f8fafc;--card:#ffffff;--field:#f8fafc;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#1d4ed8;--score:#15803d;--countdown:#2563eb;--countdown-bg:rgba(37,99,235,.1);--danger:var(--t-danger);--chip:#e2e8f0;--hover:rgba(15,23,42,.045);--footer:#64748b;--glass:rgba(255,255,255,.62);--glass-border:rgba(15,23,42,.08);--glass-hi:rgba(255,255,255,.7);--glass-shadow:0 8px 32px rgba(15,23,42,.08);--glow1:rgba(37,99,235,.09);--glow2:rgba(96,165,250,.08);--scrim:rgba(248,250,252,.78);--rowsurf:rgba(241,245,249,.72);--t-primary:#2563eb;--t-success:#15803d;--t-success-ink:#15803d;--t-success-soft:rgba(21,128,61,.12);--t-success-line:rgba(21,128,61,.32);--t-warning:#b45309;--t-highlight:#7e22ce;--t-danger:#dc2626;--t-neutral:#e2e8f0;--t-neutral-soft:rgba(15,23,42,.05);--badge-top:#b45309;--badge-hot:var(--t-warning);--badge-derby:var(--t-highlight);--badge-league:var(--t-neutral);--badge-live:var(--t-success-ink);--nav-link:#334155;--nav-link-hover:#0f172a;--pill-primary-bg:var(--accent);--pill-primary-ink:#fff;--pill-primary-line:rgba(255,255,255,.22);--pill-hype-bg:linear-gradient(90deg,var(--badge-hot),var(--badge-derby));--pill-hype-ink:#fff;--pill-hype-line:rgba(255,255,255,.18);--pill-neutral-bg:rgba(15,23,42,.08);--pill-neutral-ink:#1e293b;--pill-neutral-line:rgba(15,23,42,.16)}
@@ -6710,8 +7057,8 @@ async function load(){
     var r = await fetch("/api/public-matches");
     if(!r.ok) throw new Error("HTTP " + r.status);
     var d = await r.json();
-    DATA = { upcoming: d.upcoming || [], finished: d.finished || [], nextBig: d.nextBig || null, topSpot: d.topSpot || null, thisWeek: d.thisWeek || [], nextWeek: d.nextWeek || [], standings: d.standings || null, cups: d.cups || null, ucl: d.ucl || null };
-    SYNC_TS = d.fetchedAt ? new Date(d.fetchedAt).getTime() : Date.now();
+    DATA = { upcoming: d.upcoming || [], finished: d.finished || [], nextBig: d.nextBig || null, topSpot: d.topSpot || null, thisWeek: d.thisWeek || [], nextWeek: d.nextWeek || [], standings: d.standings || null, cups: d.cups || null, ucl: d.ucl || null, cached: !!d.cached, cachedAt: d.cachedAt || null };
+    SYNC_TS = d.fetchedAt ? new Date(d.fetchedAt).getTime() : (d.cachedAt ? new Date(d.cachedAt).getTime() : Date.now());
     applyView();
     updateBigBar();
     renderStandings(d.standings);
@@ -6734,7 +7081,7 @@ async function load(){
     loadingIds.forEach(function(id){ var el = document.getElementById(id); if(el) el.classList.remove("card-loading"); });
   }
 }
-var DATA = { upcoming: [], finished: [], nextBig: null, topSpot: null, thisWeek: [], nextWeek: [], standings: null, cups: null };
+var DATA = { upcoming: [], finished: [], nextBig: null, topSpot: null, thisWeek: [], nextWeek: [], standings: null, cups: null, cached: false, cachedAt: null };
 var FLAGS = { PL: "\u{1F3F4}", PD: "\u{1F1EA}\u{1F1F8}", SA: "\u{1F1EE}\u{1F1F9}", FL1: "\u{1F1EB}\u{1F1F7}", BL1: "\u{1F1E9}\u{1F1EA}", PGL: "\u{1F1EE}\u{1F1F7}" };
 // v12.19 (the user's ask): the timezone controls no longer squat in the
 // topbar \u2014 ONE settings-gear button next to the theme toggle opens this
@@ -7550,7 +7897,22 @@ function fmtStamp(ts){
 function renderSync(){
   var el = document.getElementById("lastSync"); if(!el) return;
   if(!SYNC_TS){ el.textContent = ""; return; }
-  el.textContent = fmt("lastUpd", fmtStamp(SYNC_TS));
+  // v12.x-resilience: when the API failed and we're serving the 7-day
+  // snapshot, append a small "cached data" badge after the last-update
+  // stamp so the user knows the data might be stale. Inline bilingual.
+  var base = fmt("lastUpd", fmtStamp(SYNC_TS));
+  if (DATA && DATA.cached) {
+    var en = curLang() === "en";
+    var mins = DATA.cachedAt ? Math.max(1, Math.round((Date.now() - new Date(DATA.cachedAt).getTime()) / 6e4)) : null;
+    var cachedLabel = en ? "cached" : "\u0630\u062E\u06CC\u0631\u0647\u200C\u0634\u062F\u0647";
+    if (mins != null) {
+      var ageLabel = en ? (mins + "m ago") : (faNum(String(mins)) + " \u062F\u0642\u06CC\u0642\u0647 \u067E\u06CC\u0634");
+      base += " \u00B7 " + cachedLabel + " (" + ageLabel + ")";
+    } else {
+      base += " \u00B7 " + cachedLabel;
+    }
+  }
+  el.textContent = base;
 }
 function tickBigBar(){ if(DATA && DATA.upcoming) updateBigBar(); renderSync(); }
 // v12.19: this final onLang declaration is the one that WINS at runtime
@@ -7659,9 +8021,20 @@ if(WIDE_MQ){
 // row), so a \xAB\u062F\u0631\u0628\u0627\u0631\u0647\xBB anchor lands on clean content instead of under the
 // floating bar (the bar's own CTA duty is done at page end).
 (function(){
-  var cta = document.querySelector("a.cta"), stick = document.getElementById("joinSticky");
+  var stick = document.getElementById("joinSticky");
   var foot = document.getElementById("about");
-  if(!cta || !stick || !("IntersectionObserver" in window)) return;
+  if(!stick || !("IntersectionObserver" in window)) return;
+  // v12.x-joinsticky-fix: the IntersectionObserver used to watch a.cta (the
+  // header CTA button), but that button is now display:none on both mobile
+  // AND desktop (retired in v12.x-tg-fab — the floating FAB replaced it on
+  // desktop, and the mobile header icon replaced it on mobile). A
+  // display:none element has no layout box, so the observer never fired and
+  // the sticky bar never appeared on mobile. Fix: observe the hero card
+  // (#bigHeroCard) instead — it's always visible. When it scrolls out of
+  // view (past = true), show the sticky bar. When the footer comes into
+  // view (footIn = true), hide it (the footer carries its own Telegram link).
+  var anchor = document.getElementById("bigHeroCard") || document.querySelector(".card");
+  if(!anchor) return;
   var past = false, footIn = false;
   var apply = function(){ var show = past && !footIn; stick.classList.toggle("show", show); document.body.classList.toggle("joinsticky", show); };
   var io = new IntersectionObserver(function(entries){
@@ -7669,7 +8042,7 @@ if(WIDE_MQ){
     past = !e.isIntersecting && e.boundingClientRect.top < 0;
     apply();
   }, { threshold: 0 });
-  io.observe(cta);
+  io.observe(anchor);
   if(foot){
     var fo = new IntersectionObserver(function(entries){
       footIn = entries[entries.length - 1].isIntersecting;
@@ -7678,6 +8051,7 @@ if(WIDE_MQ){
     fo.observe(foot);
   }
 })();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}
 <\/script>
 </body>
 </html>`;
@@ -7688,7 +8062,7 @@ var LOGIN_PAGE = `<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script>try{var t=localStorage.getItem("ucl_theme")||"dark",l=localStorage.getItem("ucl_lang")||"fa",d=document.documentElement;d.setAttribute("data-theme",t);d.setAttribute("lang",l);d.setAttribute("dir",l==="en"?"ltr":"rtl");}catch(e){}<\/script>
 <title data-i="titleL">\u0648\u0631\u0648\u062F \u2014 \u0645\u062F\u06CC\u0631\u06CC\u062A \u0631\u0628\u0627\u062A</title>
-<style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Medium.woff2') format('woff2');font-weight:500;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
+<style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
 <style>
 :root{color-scheme:dark;--bg:#0f172a;--card:#1e293b;--field:#0f172a;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#93c5fd;--score:#4ade80;--countdown:#93c5fd;--countdown-bg:rgba(96,165,250,.12);--danger:#f87171;--chip:#334155;--hover:rgba(148,163,184,.08);--footer:#94a3b8;--glass:rgba(30,41,59,.55);--glass-border:rgba(148,163,184,.16);--glass-hi:rgba(255,255,255,.07);--glass-shadow:0 8px 32px rgba(0,0,0,.35);--glow1:rgba(37,99,235,.17);--glow2:rgba(29,78,216,.11);--scrim:rgba(2,6,23,.62);--badge-top:#15803d;--badge-hot:#b45309;--badge-derby:#7e22ce;--badge-league:#334155;--badge-live:#22c55e}
 [data-theme="light"]{color-scheme:light;--bg:#f8fafc;--card:#ffffff;--field:#f8fafc;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#1d4ed8;--score:#15803d;--countdown:#2563eb;--countdown-bg:rgba(37,99,235,.1);--danger:#dc2626;--chip:#e2e8f0;--hover:rgba(15,23,42,.045);--footer:#64748b;--glass:rgba(255,255,255,.62);--glass-border:rgba(15,23,42,.08);--glass-hi:rgba(255,255,255,.7);--glass-shadow:0 8px 32px rgba(15,23,42,.08);--glow1:rgba(37,99,235,.09);--glow2:rgba(96,165,250,.08);--scrim:rgba(248,250,252,.78);--badge-top:#15803d;--badge-hot:#b45309;--badge-derby:#7e22ce;--badge-league:#e2e8f0;--badge-live:#22c55e}
@@ -7765,7 +8139,7 @@ var ADMIN_PAGE = `<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script>try{var t=localStorage.getItem("ucl_theme")||"dark",l=localStorage.getItem("ucl_lang")||"fa",d=document.documentElement;d.setAttribute("data-theme",t);d.setAttribute("lang",l);d.setAttribute("dir",l==="en"?"ltr":"rtl");}catch(e){}<\/script>
 <title data-i="titleA">\u062A\u0646\u0638\u06CC\u0645\u0627\u062A \u0631\u0628\u0627\u062A \u0627\u0639\u0644\u0627\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A</title>
-<style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Medium.woff2') format('woff2');font-weight:500;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
+<style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
 <style>
 :root{color-scheme:dark;--bg:#0f172a;--card:#1e293b;--field:#0f172a;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#93c5fd;--score:#4ade80;--countdown:#93c5fd;--countdown-bg:rgba(96,165,250,.12);--danger:#f87171;--chip:#334155;--hover:rgba(148,163,184,.08);--footer:#94a3b8;--glass:rgba(30,41,59,.55);--glass-border:rgba(148,163,184,.16);--glass-hi:rgba(255,255,255,.07);--glass-shadow:0 8px 32px rgba(0,0,0,.35);--glow1:rgba(37,99,235,.17);--glow2:rgba(29,78,216,.11);--scrim:rgba(2,6,23,.62);--badge-top:#15803d;--badge-hot:#b45309;--badge-derby:#7e22ce;--badge-league:#334155;--badge-live:#22c55e}
 [data-theme="light"]{color-scheme:light;--bg:#f8fafc;--card:#ffffff;--field:#f8fafc;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#1d4ed8;--score:#15803d;--countdown:#2563eb;--countdown-bg:rgba(37,99,235,.1);--danger:#dc2626;--chip:#e2e8f0;--hover:rgba(15,23,42,.045);--footer:#64748b;--glass:rgba(255,255,255,.62);--glass-border:rgba(15,23,42,.08);--glass-hi:rgba(255,255,255,.7);--glass-shadow:0 8px 32px rgba(15,23,42,.08);--glow1:rgba(37,99,235,.09);--glow2:rgba(96,165,250,.08);--scrim:rgba(248,250,252,.78);--badge-top:#15803d;--badge-hot:#b45309;--badge-derby:#7e22ce;--badge-league:#e2e8f0;--badge-live:#22c55e}
@@ -8756,6 +9130,19 @@ var worker_default = {
         return jsonResponse(data);
       } catch (e) {
         console.error("public-matches route failed: " + e.message);
+        // v12.x-resilience: try the long-TTL snapshot before giving up
+        // and returning an empty degraded response. If even the snapshot
+        // is missing/empty, fall through to the degraded JSON (the page
+        // hides the cards in that case).
+        try {
+          const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
+          if (snap && snap.data && (snap.data.upcoming || snap.data.finished || snap.data.topSpot || snap.data.ucl || snap.data.standings)) {
+            const stale = Object.assign({}, snap.data, { cached: true, cachedAt: snap.ts ? new Date(snap.ts).toISOString() : snap.data.fetchedAt });
+            return jsonResponse(stale);
+          }
+        } catch (e2) {
+          console.error("public-matches snapshot fallback failed: " + e2.message);
+        }
         return jsonResponse({ upcoming: [], finished: [], nextBig: null, standings: null, cups: null, ucl: null, degraded: true });
       }
     }
@@ -8817,6 +9204,17 @@ var worker_default = {
         status: fresh ? 200 : 503,
         headers: corsHeaders
       });
+    }
+    // v12.x-seo: sitemap.xml + robots.txt for crawlers. Minimal: one URL for
+    // the SPA root; robots allows all + points at the sitemap. Both served
+    // with the right content-type so Google Search Console accepts them.
+    if (url.pathname === "/sitemap.xml") {
+      const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://football.sportsignal.ir/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>\n</urlset>\n';
+      return new Response(xml, { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600" } });
+    }
+    if (url.pathname === "/robots.txt") {
+      const body = "User-agent: *\nAllow: /\n\nSitemap: https://football.sportsignal.ir/sitemap.xml\n";
+      return new Response(body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" } });
     }
     if (url.pathname === "/api/members" && req.method === "GET") {
       try {
