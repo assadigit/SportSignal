@@ -39,6 +39,12 @@ export interface Env {
   X_DRY_RUN?: string;
   // vars
   TEHRAN_TZ?: string;
+  // v13.5-sim-scope: request-scoped KV-key overrides. /api/simulate passes a
+  // CLONED env carrying these, so notification/prefs state is isolated to the
+  // simulation without mutating the shared CONFIG at runtime (isolate-safety:
+  // a concurrent cron sweep must never observe the test keys).
+  SIM_NOTIFIED_KEY?: string;
+  SIM_PREFS_KEY?: string;
 }
 
 // ---------- football domain ----------

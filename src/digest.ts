@@ -120,7 +120,7 @@ export async function maybeSendWeeklyTables(env: Env, chatIds) {
     if (!langGroups.has(lng)) langGroups.set(lng, []);
     langGroups.get(lng).push(c);
   }
-  let res = { leagues: [], sent: 0, failed: 0 };
+  let res: any = { leagues: [], sent: 0, failed: 0 };
   let weekAheadAgg = { sent: 0, failed: 0, skipped: true };
   for (const [lng, group] of langGroups) {
     const label = lng === "en" ? "End of week" : "\u067E\u0627\u06CC\u0627\u0646 \u0647\u0641\u062A\u0647";
@@ -201,26 +201,23 @@ export async function maybeSendMorningDigest(env: Env, chatIds) {
     // Per-chat send with dedupe. Use the original env.TEHRAN_TZ for time
     // rendering in the user's lang (the matches are at UTC instants; the
     // time displayed is whatever tz the user has set).
-    const originalTz = env.TEHRAN_TZ;
-    try {
-      env.TEHRAN_TZ = tz;
-      for (const c of tzChats) {
-        const dedupeKey = "digest_sent_" + dateKey + "_" + c;
-        const already = await env.STATE.get(dedupeKey).catch(() => null);
-        if (already) { out.skipped++; continue; }
-        const lang = (prefs[String(c)] && prefs[String(c)].lang) === "en" ? "en" : "fa";
-        const msg = await buildMorningDigestMessage(env, todayBig, lang);
-        const r = await sendTelegram(env, msg, c);
-        if (r === true) {
-          out.sent++;
-          await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
-        } else if (r === "dead") {
-          // Mark as sent too — don't retry a dead chat all 9am hour.
-          await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
-        }
+    // v13.5-tz-scope: the tz flows through a CLONED env instead of mutating
+    // the shared env object (isolate-safety for concurrent requests).
+    for (const c of tzChats) {
+      const scopedEnv: Env = { ...env, TEHRAN_TZ: tz };
+      const dedupeKey = "digest_sent_" + dateKey + "_" + c;
+      const already = await env.STATE.get(dedupeKey).catch(() => null);
+      if (already) { out.skipped++; continue; }
+      const lang = (prefs[String(c)] && prefs[String(c)].lang) === "en" ? "en" : "fa";
+      const msg = await buildMorningDigestMessage(scopedEnv, todayBig, lang);
+      const r = await sendTelegram(scopedEnv, msg, c);
+      if (r === true) {
+        out.sent++;
+        await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
+      } else if (r === "dead") {
+        // Mark as sent too — don't retry a dead chat all 9am hour.
+        await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
       }
-    } finally {
-      env.TEHRAN_TZ = originalTz;
     }
   }
   if (out.sent) console.log(`\u{1F4C5} Morning digest sent=${out.sent} skipped=${out.skipped}`);
@@ -268,7 +265,6 @@ export async function broadcastBigMatchResults(env: Env, matches) {
     const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
     const notifiedMatches = await getNotifiedMatches(env);
     const deadChats = [];
-    const originalTz = env.TEHRAN_TZ;
     for (const match of candidates) {
       out.matches++;
       // Users who follow at least one team in the match already get the
@@ -280,21 +276,19 @@ export async function broadcastBigMatchResults(env: Env, matches) {
       if (!nonFollowers.length) continue;
       const groups = (typeof groupChatsByTz === "function" ? groupChatsByTz(nonFollowers, prefs, env) : [{ tz: env.TEHRAN_TZ, lang: "fa", chats: nonFollowers }]);
       let anySuccess = false;
-      try {
-        for (const g of groups) {
-          env.TEHRAN_TZ = g.tz;
-          const lang = g.lang || "fa";
-          const message = specialBanner(match, lang) + await formatResultMessage(match, env, lang);
-          const sendResults = await Promise.allSettled(
-            g.chats.map((chatId) => sendTelegram(env, message, chatId))
-          );
-          sendResults.forEach((r, i) => {
-            if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
-          });
-          if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
-        }
-      } finally {
-        env.TEHRAN_TZ = originalTz;
+      // v13.5-tz-scope: per-group tz through a CLONED env (no shared-env
+      // mutation — isolate-safety for concurrent requests).
+      for (const g of groups) {
+        const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
+        const lang = g.lang || "fa";
+        const message = specialBanner(match, lang) + await formatResultMessage(match, scopedEnv, lang);
+        const sendResults = await Promise.allSettled(
+          g.chats.map((chatId) => sendTelegram(scopedEnv, message, chatId))
+        );
+        sendResults.forEach((r, i) => {
+          if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
+        });
+        if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
       }
       if (anySuccess) {
         await saveNotifiedMatch(env, match, "result-big", notifiedMatches);

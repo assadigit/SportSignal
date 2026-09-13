@@ -269,7 +269,6 @@ export const LEAGUE_LOGOS = {
   "SA": "https://media.api-sports.io/football/leagues/135.png",
   "FL1": "https://media.api-sports.io/football/leagues/61.png",
   "BL1": "https://media.api-sports.io/football/leagues/78.png",
-  "PGL": "https://media.api-sports.io/football/leagues/139.png",
   "AL": "https://media.api-sports.io/football/leagues/188.png",
   "FA_CUP": "https://media.api-sports.io/football/leagues/45.png",
   "EFL_CUP": "https://media.api-sports.io/football/leagues/41.png",

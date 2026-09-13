@@ -52,7 +52,7 @@ export async function xBuildAuthHeader(method, url, env, opts) {
   const consumerSecret = env.X_API_SECRET || "";
   const token = env.X_ACCESS_TOKEN;
   const tokenSecret = env.X_ACCESS_TOKEN_SECRET || "";
-  const oauthParams = {
+  const oauthParams: any = {
     oauth_consumer_key: consumerKey,
     oauth_nonce: opts.nonce || xRandomNonce(),
     oauth_signature_method: "HMAC-SHA1",

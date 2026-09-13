@@ -13,7 +13,9 @@ import { masterTeamList, masterMemo } from "./users";
 
 export async function getNotifiedMatches(env: Env) {
   try {
-    const data: any = await env.STATE.get(CONFIG.KV_NOTIFIED_KEY, "json");
+    // v13.5-sim-scope: request-scoped override (set only by /api/simulate's
+    // cloned env) — the shared CONFIG is never mutated at runtime.
+    const data: any = await env.STATE.get(env.SIM_NOTIFIED_KEY || CONFIG.KV_NOTIFIED_KEY, "json");
     return data || {};
   } catch (error) {
     console.log("No notified matches found, starting fresh");
@@ -57,7 +59,7 @@ export async function saveNotifiedMatch(env: Env, match, notificationType, notif
   vlog(`\u{1F4BE} Saving notification: match=${key}, type=${notificationType}, total_tracked=${Object.keys(notifiedMatches).length}, ttl=${ttlSeconds}s`);
   try {
     await env.STATE.put(
-      CONFIG.KV_NOTIFIED_KEY,
+      env.SIM_NOTIFIED_KEY || CONFIG.KV_NOTIFIED_KEY,
       JSON.stringify(notifiedMatches),
       { expirationTtl: ttlSeconds > 0 ? ttlSeconds : 3600 }
     );
@@ -175,7 +177,7 @@ export async function cleanupExpiredNotifications(env: Env) {
   const hourStamp = Math.floor(Date.now() / 36e5);
   const lastCleanup = parseInt(await env.STATE.get("cleanup_hour").catch(() => null)) || 0;
   if (lastCleanup === hourStamp) return;
-  const notifiedMatches: any = await getNotifiedMatches(env);
+  const notifiedMatches: Record<string, any> = await getNotifiedMatches(env);
   const now = Date.now();
   let cleanedCount = 0;
   for (const [matchId, notifications] of Object.entries(notifiedMatches)) {
@@ -195,7 +197,7 @@ export async function cleanupExpiredNotifications(env: Env) {
     const ttl = Math.max(3600, Math.ceil((maxExpiry - now) / 1e3));
     try {
       await env.STATE.put(
-        CONFIG.KV_NOTIFIED_KEY,
+        env.SIM_NOTIFIED_KEY || CONFIG.KV_NOTIFIED_KEY,
         JSON.stringify(notifiedMatches),
         // ✅ Must be string for KV
         { expirationTtl: ttl }
@@ -216,7 +218,7 @@ export function shouldNotify(match) {
   if (!c || c.sig !== CONFIG.BIG_TEAMS_BY_LEAGUE) {
     const all = new Set();
     const byLeague = {};
-    for (const [lg, list] of Object.entries(CONFIG.BIG_TEAMS_BY_LEAGUE)) {
+    for (const [lg, list] of Object.entries(CONFIG.BIG_TEAMS_BY_LEAGUE) as any) {
       const normList = new Set();
       for (const t of list) {
         const n = normalizeTeamName(t);
@@ -280,7 +282,7 @@ var BIG_MATCH_UEFA = BIG_MATCH_TEAMS.concat(["Paris Saint-Germain", "PSG"]);
 export function isFeaturedMatch(match) {
   const code = match.competition.code;
   const isUefa = code === "CL" || code === "EL" || code === "ECL" || isDomesticCup(code);
-  const pool = isUefa ? BIG_MATCH_UEFA : BIG_MATCH_TEAMS;
+  const pool: any = isUefa ? BIG_MATCH_UEFA : BIG_MATCH_TEAMS;
   if (!pool.__normSet) pool.__normSet = new Set(pool.map(normalizeTeamName));
   const nset = pool.__normSet;
   return nset.has(normAlias(match.homeTeam.name)) && nset.has(normAlias(match.awayTeam.name));

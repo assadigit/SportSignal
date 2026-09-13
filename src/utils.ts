@@ -72,7 +72,7 @@ export function getJalaliDate(utcDateStr, env) {
 }
 export function getJalaliTime(utcDateStr, env) {
   const date = new Date(utcDateStr);
-  const timeOpt = {
+  const timeOpt: any = {
     timeZone: env.TEHRAN_TZ,
     hour: "2-digit",
     minute: "2-digit",

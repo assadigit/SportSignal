@@ -43,7 +43,7 @@ export async function enrichLiveMatches(env: Env, matches) {
       const d = await fetchJSON("https://api.football-data.org/v4/matches/" + m.id, 2, { "X-Auth-Token": env.API_TOKEN });
       const det = d && d.match ? d.match : d;
       if (!det) continue;
-      const detail = {
+      const detail: any = {
         minute: det.minute != null ? det.minute : null,
         scorers: (det.scorers || []).map((s) => ({
           minute: s.minute != null ? s.minute : null,
@@ -121,7 +121,7 @@ export async function fetchPublicMatches(env: Env, req) {
     // simply carry undefined and the UI renders "—").
     teams: st.teams.slice(0, 8).map((t) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), points: t.points, played: t.played, won: t.won, draw: t.draw, lost: t.lost, gf: t.gf, ga: t.ga, gd: t.gd != null ? t.gd : t.gf != null && t.ga != null ? t.gf - t.ga : null }))
   } : null;
-  const stMap = {};
+  const stMap: Record<string, any> = {};
   await Promise.all(standCodes.concat(["CL", "PGL"]).map((c) => fetchStandings(env, c, c === "PGL" || fdAllowed.has(c)).catch(() => null).then((v) => {
     stMap[c] = v || null;
   })));
@@ -172,7 +172,7 @@ export async function fetchPublicMatches(env: Env, req) {
     return selHome && set.has(norm(m.awayTeam.name)) || selAway && set.has(norm(m.homeTeam.name));
   };
   const withTop = (m) => {
-    const p = pubMatch(m);
+    const p: any = pubMatch(m);
     p.top = isTopTable(m);
     p.clash = isMasterClash(m);
     p.sel = hasSelectedTeam(m);
@@ -213,7 +213,7 @@ export async function fetchPublicMatches(env: Env, req) {
   const topSpotNext = topSpotList[0] || null;
   const featured = matches.filter((m) => m.status !== "FINISHED" && (isFeaturedMatch(m) || isMasterPair(m)) && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > Date.now())).sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
   const nextBig = featured.length ? pubMatch(featured[0]) : null;
-  const standings = {};
+  const standings: Record<string, any> = {};
   standCodes.forEach((c) => {
     standings[c] = Object.assign({ code: c, name: COMP_EN[c] || c, faName: translateCompetition(c), emblem: LEAGUE_LOGOS[c] || null }, compact(stMap[c]));
   });

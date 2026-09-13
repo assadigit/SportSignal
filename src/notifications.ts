@@ -79,24 +79,23 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
   }
   const shouldSend = await shouldSendNotification(env, match, config.type, notifiedMatches);
   if (!shouldSend) return;
-  const originalTz = env.TEHRAN_TZ;
   let anySuccess = false;
-  try {
-    for (const g of chatGroups) {
-      env.TEHRAN_TZ = g.tz;
-      const lang = g.lang || "fa";
-      let message = specialBanner(match, lang) + await config.messageFormatter(match, env, lang);
-      if (late) message += "\n\n" + (lang === "en" ? "This reminder was sent late" : "\u0627\u06CC\u0646 \u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u0628\u0627 \u062A\u0623\u062E\u06CC\u0631 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F");
-      const sendResults = await Promise.allSettled(
-        g.chats.map((chatId) => sendTelegram(env, message, chatId))
-      );
-      sendResults.forEach((r, i) => {
-        if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
-      });
-      if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
-    }
-  } finally {
-    env.TEHRAN_TZ = originalTz;
+  // v13.5-tz-scope: each chat-group's timezone flows through a CLONED env
+  // instead of mutating the shared env object — the same isolate-safety fix
+  // the /next handler got in v13.2 (concurrent requests can no longer observe
+  // another group's TZ mid-flight).
+  for (const g of chatGroups) {
+    const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
+    const lang = g.lang || "fa";
+    let message = specialBanner(match, lang) + await config.messageFormatter(match, scopedEnv, lang);
+    if (late) message += "\n\n" + (lang === "en" ? "This reminder was sent late" : "\u0627\u06CC\u0646 \u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u0628\u0627 \u062A\u0623\u062E\u06CC\u0631 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F");
+    const sendResults = await Promise.allSettled(
+      g.chats.map((chatId) => sendTelegram(scopedEnv, message, chatId))
+    );
+    sendResults.forEach((r, i) => {
+      if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
+    });
+    if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
   }
   if (anySuccess) {
     await saveNotifiedMatch(env, match, config.type, notifiedMatches);

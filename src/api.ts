@@ -3,6 +3,7 @@
 // sources / x), healthz / sitemap / robots, legacy GET action endpoints.
 
 
+import type { Env } from "./types";
 import { CONFIG, X_CONFIG, VERSION, PAGE_SEC_HEADERS } from "./config";
 import { jsonResponse, resetSubrequestBudget, hashPassword, getAdminPassHash, timingSafeEqualStr, escapeMarkdownCharacters, getNowTehran } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams.js";
@@ -334,20 +335,20 @@ const worker_default = {
     }
     if (url.pathname === "/api/simulate" && req.method === "POST") {
       const dummy = buildDummyMatches();
-      const realKey = CONFIG.KV_NOTIFIED_KEY;
-      const realPrefsKey = CONFIG.KV_USER_PREFS;
-      CONFIG.KV_NOTIFIED_KEY = "test_sim_v1";
-      CONFIG.KV_USER_PREFS = "test_sim_v1_prefs";
-      try {
-        const chats = await getRegisteredChats(env);
-        if (!chats.length) {
-          return jsonResponse({ passed: false, failures: ["no registered users \u2014 sign in to the bot via /start first"], sent: {}, probes: [] });
-        }
-        await env.STATE.delete(CONFIG.KV_NOTIFIED_KEY);
-        await sendMatchNotifications(env, dummy);
-        const tracked = await env.STATE.get(CONFIG.KV_NOTIFIED_KEY, "json").catch(() => null);
+      // v13.5-sim-scope: a CLONED env carries the simulation KV keys. The shared
+      // CONFIG is never mutated at runtime, so a concurrent cron sweep can
+      // never observe (or write to) the test keys — real notification state is
+      // untouched by construction, not by save/restore.
+      const simEnv: Env = { ...env, SIM_NOTIFIED_KEY: "test_sim_v1", SIM_PREFS_KEY: "test_sim_v1_prefs" };
+      const chats = await getRegisteredChats(simEnv);
+      if (!chats.length) {
+        return jsonResponse({ passed: false, failures: ["no registered users \u2014 sign in to the bot via /start first"], sent: {}, probes: [] });
+      }
+      await simEnv.STATE.delete(simEnv.SIM_NOTIFIED_KEY);
+      await sendMatchNotifications(simEnv, dummy);
+      const tracked = await simEnv.STATE.get(simEnv.SIM_NOTIFIED_KEY, "json").catch(() => null);
         const counts = {};
-        for (const arr of Object.values(tracked || {})) {
+        for (const arr of Object.values(tracked || {}) as any) {
           for (const n of arr) counts[n.notificationType] = (counts[n.notificationType] || 0) + 1;
         }
         const expected = [
@@ -385,8 +386,8 @@ const worker_default = {
         }
         const resultDummy = dummy.find((m) => m.id === "sim-result");
         const knockoutDummy = dummy.find((m) => m.id === "sim-probe-knockout");
-        const preview = resultDummy ? await formatResultMessage(resultDummy, env) : null;
-        const previewKnockout = knockoutDummy ? await formatResultMessage(knockoutDummy, env) : null;
+        const preview = resultDummy ? await formatResultMessage(resultDummy, simEnv) : null;
+        const previewKnockout = knockoutDummy ? await formatResultMessage(knockoutDummy, simEnv) : null;
         return jsonResponse({
           sent: counts,
           probes,
@@ -396,10 +397,6 @@ const worker_default = {
           previewKnockout,
           note: "Test messages sent to registered chats; real notification state untouched"
         });
-      } finally {
-        CONFIG.KV_NOTIFIED_KEY = realKey;
-        CONFIG.KV_USER_PREFS = realPrefsKey;
-      }
     }
     if (url.pathname === "/api/sources") {
       const report: any = {};
@@ -560,7 +557,7 @@ const worker_default = {
       switch (path) {
         case "debug-notifications":
           try {
-            const notifiedMatches: any = await getNotifiedMatches(env);
+            const notifiedMatches: Record<string, any> = await getNotifiedMatches(env);
             const now2 = Date.now();
             return new Response(JSON.stringify({
               total_matches: Object.keys(notifiedMatches).length,
@@ -742,7 +739,7 @@ const worker_default = {
           }
         case "teams":
           return new Response(JSON.stringify({
-            monitored_teams: Object.entries(CONFIG.BIG_TEAMS_BY_LEAGUE).reduce((acc, [league, teams]) => {
+            monitored_teams: Object.entries(CONFIG.BIG_TEAMS_BY_LEAGUE).reduce((acc, [league, teams]: any) => {
               acc[translateCompetition(league)] = teams.map((t) => translateTeam(t));
               return acc;
             }, {}),

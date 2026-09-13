@@ -20,7 +20,7 @@ export function collectUnknownTeamNames(data: any) {
   if (!data) return [...out];
   if (data.ucl && Array.isArray((data.ucl as any).teams)) data.ucl.teams.forEach((t) => addName(t && t.name));
   if (data.standings && typeof data.standings === "object") {
-    Object.values(data.standings).forEach((st) => {
+    Object.values(data.standings).forEach((st: any) => {
       if (st && Array.isArray(st.teams)) st.teams.forEach((t) => addName(t && t.name));
     });
   }
@@ -133,7 +133,7 @@ export async function runFaAiLearner(env: Env, names, force) {
   const v3Norm = new Map();
   let v3Hint = "";
   if (v3 && Array.isArray(v3.clubs) && v3.clubs.length) {
-    const byLeague: any = {};
+    const byLeague: Record<string, any> = {};
     for (const c of v3.clubs) {
       if (!c || !c.n) continue;
       v3Norm.set(normFa(c.n), c.n);

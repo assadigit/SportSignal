@@ -57,7 +57,9 @@ export async function getBotMembers(env: Env) {
 }
 export async function getUserPrefs(env: Env) {
   try {
-    return await env.STATE.get(CONFIG.KV_USER_PREFS, "json") || {};
+    // v13.5-sim-scope: request-scoped override (set only by /api/simulate's
+    // cloned env) — the shared CONFIG is never mutated at runtime.
+    return await env.STATE.get(env.SIM_PREFS_KEY || CONFIG.KV_USER_PREFS, "json") || {};
   } catch (e) {
     return {};
   }
@@ -67,7 +69,7 @@ export async function getUserPrefs(env: Env) {
 // user_prefs[chatId].lang.
 export async function getUserLang(env: Env, chatId) {
   try {
-    const prefs = await env.STATE.get(CONFIG.KV_USER_PREFS, "json");
+    const prefs = await env.STATE.get(env.SIM_PREFS_KEY || CONFIG.KV_USER_PREFS, "json");
     const p = prefs && prefs[String(chatId)];
     if (p && (p.lang === "fa" || p.lang === "en")) return p.lang;
   } catch (e) {
@@ -83,7 +85,7 @@ export async function setUserLang(env: Env, chatId, lang) {
     const key = String(chatId);
     const cur = prefs[key] || {};
     prefs[key] = { teams: cur.teams || [], tz: cur.tz || null, lang: clean };
-    await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+    await env.STATE.put(env.SIM_PREFS_KEY || CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
     return true;
   } catch (e) {
     console.error("setUserLang failed: " + e.message);
@@ -225,7 +227,7 @@ export function masterTeamList() {
   if (masterMemo.sig !== CONFIG.BIG_TEAMS_BY_LEAGUE) {
     const seen = new Set();
     const out = [];
-    for (const list of Object.values(CONFIG.BIG_TEAMS_BY_LEAGUE)) {
+    for (const list of Object.values(CONFIG.BIG_TEAMS_BY_LEAGUE) as any) {
       for (const t of list) {
         if (!seen.has(t)) {
           seen.add(t);
