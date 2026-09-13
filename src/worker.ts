@@ -5547,7 +5547,7 @@ body.joinsticky{padding-bottom:88px}
    shadow (filter:drop-shadow follows the circle, unlike box-shadow
    which can render as a square on overflow:hidden + border-radius
    elements — same fix as the hero logos). */
-#tgFab{position:fixed;bottom:24px;right:24px;z-index:65;display:none;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#229ED9;text-decoration:none;cursor:pointer;filter:drop-shadow(0 3px 8px rgba(34,158,217,.35)) drop-shadow(0 1px 3px rgba(0,0,0,.2));transition:transform .15s cubic-bezier(.16,1,.3,1),filter .15s;animation:tgFab-pulse 2.6s ease-in-out infinite}
+#tgFab{position:fixed;bottom:24px;right:24px;z-index:65;display:none;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#229ED9;text-decoration:none;cursor:pointer;filter:drop-shadow(0 3px 8px rgba(34,158,217,.35)) drop-shadow(0 1px 3px rgba(0,0,0,.2));transition:transform .15s cubic-bezier(.16,1,.3,1),filter .15s,opacity .3s ease;animation:tgFab-pulse 2.6s ease-in-out infinite}
 #tgFab:hover{transform:scale(1.08);filter:drop-shadow(0 5px 12px rgba(34,158,217,.5)) drop-shadow(0 2px 5px rgba(0,0,0,.25))}
 #tgFab:active{transform:scale(.96)}
 #tgFab svg{flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
@@ -8185,13 +8185,28 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catc
 // cycle repeats indefinitely. The bubble text comes from the data-promo
 // attribute (bilingual: Persian in fa mode, English in en mode — set at
 // render time + updated on language switch).
+// v12.x-fab-scroll-hide: on PC, hide the FAB while the user is scrolling
+// (avoids the floating button covering content during active scrolling).
+// The FAB reappears 1s after scrolling stops. Mobile is unaffected (the
+// FAB is already hidden on mobile via @media).
 (function(){
   var fab = document.getElementById('tgFab');
   if(!fab) return;
   var show = function(){ fab.classList.add('promo-show'); setTimeout(function(){ fab.classList.remove('promo-show'); }, 5000); };
-  // First show after 5s, then every 60s
   setTimeout(show, 5000);
   setInterval(show, 60000);
+  // Hide FAB while scrolling on PC (min-width:601px)
+  var scrollTimer = null;
+  window.addEventListener('scroll', function(){
+    if(window.innerWidth < 601) return;
+    fab.style.opacity = '0';
+    fab.style.pointerEvents = 'none';
+    if(scrollTimer) clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(function(){
+      fab.style.opacity = '';
+      fab.style.pointerEvents = '';
+    }, 800);
+  }, { passive: true });
 })();
 <\/script>
 </body>
