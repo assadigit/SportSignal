@@ -152,6 +152,8 @@ function makeStore() {
   };
 }
 const env = { STATE: makeStore(), TEHRAN_TZ: "Asia/Tehran" };
+// v13.27: stub for the in-memory dedupe Set (the eval'd shouldSendNotification checks it)
+var MEM_DEDUPE = new Set();
 
 (async () => {
   console.log("\n=== A. Window hit (match IS in the notification window) ===");

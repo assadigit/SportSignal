@@ -11,6 +11,17 @@ import { vlog, getNowUTC } from "./utils";
 import { isDomesticCup, isQuarterFinalOrLater } from "./translate";
 import { masterTeamList, masterMemo } from "./users";
 
+// v13.27-dedupe-fix: in-memory dedupe fallback. When KV writes fail (quota
+// exhausted — the free tier has a 1,000 writes/day limit), saveNotifiedMatch
+// can't persist the dedupe record. Without it, shouldSendNotification returns
+// true every sweep → the same notification re-sends forever (the "bot is
+// spamming" bug). This Set is the fallback: it lives for the isolate's
+// lifetime (survives across requests within the same Worker isolate), so
+// within a single cron sweep the dedupe works even when KV is down. Across
+// isolates (different cron invocations) it resets, but the execution lock
+// (24h TTL) prevents concurrent sweeps, so the same isolate handles both.
+var MEM_DEDUPE = new Set<string>();
+
 export async function getNotifiedMatches(env: Env) {
   try {
     // v13.5-sim-scope: request-scoped override (set only by /api/simulate's
@@ -57,38 +68,32 @@ export async function saveNotifiedMatch(env: Env, match, notificationType, notif
   const overallExpiresAt = allNotifications.length > 0 ? Math.max(...allNotifications.map((n) => n.expiresAt)) : now + CONFIG.ONE_DAY_MS;
   const ttlSeconds = Math.ceil((overallExpiresAt - now) / 1e3);
   vlog(`\u{1F4BE} Saving notification: match=${key}, type=${notificationType}, total_tracked=${Object.keys(notifiedMatches).length}, ttl=${ttlSeconds}s`);
+  // v13.27-dedupe-fix: ALWAYS record in the in-memory Set first (even if KV
+  // fails). This prevents re-sending within the same isolate (the same cron
+  // sweep processes multiple matches — if the KV write fails for one, the
+  // next sweep would re-send it). The key is matchKey + ":" + notificationType.
+  MEM_DEDUPE.add(key + ":" + notificationType);
   try {
     await env.STATE.put(
       env.SIM_NOTIFIED_KEY || CONFIG.KV_NOTIFIED_KEY,
       JSON.stringify(notifiedMatches),
       { expirationTtl: ttlSeconds > 0 ? ttlSeconds : 3600 }
     );
-    // v13.9-reliability #7: KV write-then-read verification. KV is eventually
-    // consistent — a concurrent sweep could read stale "not notified" and
-    // send a duplicate. The execution lock (24h TTL) already prevents
-    // concurrent sweeps, so this is defense-in-depth: verify the write
-    // landed so a silent KV failure (network blip, quota) doesn't lose the
-    // dedupe marker (which would cause a duplicate on the next sweep).
-    const verify = await env.STATE.get(env.SIM_NOTIFIED_KEY || CONFIG.KV_NOTIFIED_KEY, "json").catch(() => null);
-    if (verify && verify[key]) {
-      const seen = verify[key].some((n) => n.notificationType === notificationType);
-      if (!seen) {
-        // Write didn't land the record — retry once.
-        console.warn(`\u26A0\uFE0F Dedupe write verify failed for ${key}/${notificationType}, retrying`);
-        await env.STATE.put(
-          env.SIM_NOTIFIED_KEY || CONFIG.KV_NOTIFIED_KEY,
-          JSON.stringify(notifiedMatches),
-          { expirationTtl: ttlSeconds > 0 ? ttlSeconds : 3600 }
-        ).catch(() => {});
-      }
-    }
   } catch (e) {
-    console.error("Notification state save failed (continuing): " + e.message);
+    // KV write failed (quota exhausted, network) — the in-memory Set is the
+    // fallback. Log so the admin knows KV is failing.
+    console.error("Notification state KV save failed (in-memory dedupe active): " + e.message);
   }
 }
 export async function shouldSendNotification(env: Env, match, notificationType, notifiedMatches) {
   const now = Date.now();
   const key = matchKey(match);
+  // v13.27-dedupe-fix: check the in-memory Set FIRST (covers the case where
+  // KV writes are failing — without this, every sweep re-sends because the
+  // KV dedupe record was never persisted).
+  if (MEM_DEDUPE.has(key + ":" + notificationType)) {
+    return false;
+  }
   if (notifiedMatches[key]) {
     const existingNotification = notifiedMatches[key].find(
       (n) => n.notificationType === notificationType && now < n.expiresAt

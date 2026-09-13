@@ -51,9 +51,11 @@ check("#4 getCanonicalKickoff function exists", /async function getCanonicalKick
 check("#4 kickoff KV prefix is kickoff_v1:", /KV_KICKOFF_PREFIX: "kickoff_v1:"/.test(src));
 check("#4 updateCanonicalKickoffOnReschedule function exists", /async function updateCanonicalKickoffOnReschedule\(env, match\)/.test(src));
 
-// #7 KV write-then-read verification
-check("#7 saveNotifiedMatch has write-verify", /const verify = await env\.STATE\.get\(env\.SIM_NOTIFIED_KEY \|\| CONFIG\.KV_NOTIFIED_KEY, "json"\)/.test(src));
-check("#7 verify retries on miss", /Dedupe write verify failed.*retrying/.test(src));
+// #7 in-memory dedupe fallback (v13.27: replaced the KV write-verify with
+// an in-memory Set that survives KV write failures — quota exhaustion etc.)
+check("#7 MEM_DEDUPE in-memory Set exists", /var MEM_DEDUPE = new Set/.test(src));
+check("#7 shouldSendNotification checks MEM_DEDUPE first", /MEM_DEDUPE\.has\(key \+ ":"/.test(src));
+check("#7 saveNotifiedMatch adds to MEM_DEDUPE", /MEM_DEDUPE\.add\(key \+ ":"/.test(src));
 
 // v13.10-animated: sendDice (built-in animated emoji) for match-start
 check("#anim sendDice function exists", /async function sendDice\(env: Env, chatId, emoji\)/.test(src) || /async function sendDice\(env, chatId, emoji\)/.test(src));
