@@ -931,8 +931,9 @@ function translateTeam(englishName) {
   if (FA_TEAMS_DICT[englishName]) return FA_TEAMS_DICT[englishName];
   const key = (0, import_teams.normTeamKey)(englishName);
   if (!key) return englishName;
-  const normHit = FA_TEAMS_NORM.get(key);
-  if (normHit) return normHit;
+  // v12.x-admin-override: admin manual overrides take HIGHEST priority —
+  // checked before the AI cache + the static dictionary + fuzzy matching.
+  // Stored in fa_teams_ai.overrides (set via POST /api/fa-teams/override).
   if (FA_AI_CACHE && FA_AI_CACHE.size) {
     const aiHit = FA_AI_CACHE.get(key);
     if (aiHit) return aiHit;
@@ -956,6 +957,13 @@ async function ensureFaAiCache(env) {
   if (FA_AI_CACHE) return FA_AI_CACHE;
   FA_AI_CACHE = /* @__PURE__ */ new Map();
   const rec = await env.STATE.get(CONFIG.KV_FA_TEAMS, "json").catch(() => null);
+  // v12.x-admin-override: load admin manual overrides FIRST (they take
+  // priority over AI-learned names — both stored in the same KV record).
+  if (rec && rec.overrides && typeof rec.overrides === "object") {
+    for (const [k, v] of Object.entries(rec.overrides)) {
+      if (typeof v === "string" && v) FA_AI_CACHE.set(k, v);
+    }
+  }
   if (rec && rec.learned && typeof rec.learned === "object") {
     for (const [k, v] of Object.entries(rec.learned)) {
       if (typeof v === "string" && v) FA_AI_CACHE.set(k, v);
@@ -1008,7 +1016,10 @@ function collectUnknownTeamNames(data) {
   const pools = [
     Array.isArray(data.upcoming) ? data.upcoming : [],
     Array.isArray(data.finished) ? data.finished : [],
-    Array.isArray(data.thisWeek) ? data.thisWeek : []
+    Array.isArray(data.thisWeek) ? data.thisWeek : [],
+    Array.isArray(data.nextWeek) ? data.nextWeek : [],
+    // v12.x-audit: scan ucl.matches too — UCL fixtures have team names
+    data.ucl && Array.isArray(data.ucl.matches) ? data.ucl.matches : []
   ];
   if (data.topSpot && Array.isArray(data.topSpot.matches)) pools.push(data.topSpot.matches);
   if (data.topSpot && data.topSpot.next) pools.push([data.topSpot.next]);
@@ -8424,6 +8435,14 @@ button{width:100%}
 <input id="faiForget" data-p="faiForget">
 <button onclick="forgetFai()" data-i="btnFaiForget">\u062D\u0630\u0641 \u062A\u0631\u062C\u0645\u0647</button>
 </div>
+<!-- v12.x-admin-override: manual name correction — admin can set/correct
+     the Farsi name for ANY team (overrides AI + static dictionary). -->
+<div class="row" style="margin-top:10px;gap:6px">
+<input id="ovrEn" placeholder="English name (e.g. Sunderland AFC)" style="flex:1;min-width:120px">
+<input id="ovrFa" placeholder="\u0646\u0627\u0645 \u0641\u0627\u0631\u0633\u06CC (\u0645\u062B\u0644: \u0633\u0627\u0646\u062F\u0631\u0644\u0646\u062F)" style="flex:1;min-width:120px">
+<button onclick="overrideFai()">\u2705 \u062B\u0628\u062A / \u0627\u0635\u0644\u0627\u062D</button>
+</div>
+<div id="ovrMsg" class="muted" style="margin-top:4px;font-size:12px"></div>
 </div>
 <div class="card">
 <h2 data-i="hBroadcast">\u{1F4E3} \u0627\u0631\u0633\u0627\u0644 \u067E\u06CC\u0627\u0645 \u0628\u0647 \u0647\u0645\u0647 \u06A9\u0627\u0631\u0628\u0631\u0627\u0646</h2>
@@ -8856,6 +8875,19 @@ async function forgetFai(){
   var d = await api("/api/fa-teams?forget=" + encodeURIComponent(name));
   if(d && d.ok){ msg(fmt("faiForgot", name)); inp.value = ""; loadFai(false); }
   else { msg(fmt("faiNotfound", name)); }
+}
+// v12.x-admin-override: set/correct a Farsi team name manually.
+async function overrideFai(){
+  var enEl = document.getElementById("ovrEn");
+  var faEl = document.getElementById("ovrFa");
+  var msgEl = document.getElementById("ovrMsg");
+  var en = enEl && enEl.value ? enEl.value.trim() : "";
+  var fa = faEl && faEl.value ? faEl.value.trim() : "";
+  if(!en || !fa){ if(msgEl) msgEl.textContent = "Both fields required"; return; }
+  if(msgEl) msgEl.textContent = "Saving...";
+  var d = await api("/api/fa-teams/override", "POST", { en: en, fa: fa });
+  if(d && d.ok){ if(msgEl) msgEl.textContent = "\u2705 " + d.en + " \u2192 " + d.fa; enEl.value = ""; faEl.value = ""; loadFai(false); }
+  else { if(msgEl) msgEl.textContent = "\u274C " + (d && d.error ? d.error : "failed"); }
 }
 // v12.33-xpost: X (Twitter) admin handlers — status card + test post + dry-run
 // toggle + phase config. Mirrors the FAI / Members / Broadcast patterns
@@ -9417,11 +9449,32 @@ var worker_default = {
         const pending = pub && pub.data ? collectUnknownTeamNames(pub.data).length : 0;
         const lastRun = parseInt(await env.STATE.get(CONFIG.KV_FA_LAST_RUN).catch(() => null)) || 0;
         const v3 = await env.STATE.get(CONFIG.KV_V3_CATALOG, "json").catch(() => null);
-        const sample = Object.entries(rec.learned || {}).slice(0, 12).map(([k, v]) => ({ key: k, fa: v }));
-        return jsonResponse({ ok: true, ai: !!env.AI, learned: Object.keys(rec.learned || {}).length, pending, lastRun: lastRun ? new Date(lastRun).toISOString() : null, v3: v3 && Array.isArray(v3.clubs) ? v3.clubs.length : 0, sample });
+        const sample = Object.entries(rec.learned || {}).slice(0, 12).map(([k, v]) => ({ key: k, fa: v, source: "ai" }));
+        const overrideSample = Object.entries(rec.overrides || {}).slice(0, 12).map(([k, v]) => ({ key: k, fa: v, source: "admin" }));
+        return jsonResponse({ ok: true, ai: !!env.AI, learned: Object.keys(rec.learned || {}).length, overrides: Object.keys(rec.overrides || {}).length, pending, lastRun: lastRun ? new Date(lastRun).toISOString() : null, v3: v3 && Array.isArray(v3.clubs) ? v3.clubs.length : 0, sample: sample.concat(overrideSample) });
       } catch (e) {
         return jsonResponse({ ok: false, error: "fa-teams failed: " + e.message }, 200);
       }
+    }
+    // v12.x-admin-override: POST /api/fa-teams/override — admin manually sets
+    // or corrects a Farsi translation for any team name. Stored in
+    // fa_teams_ai.overrides (takes priority over AI-learned + static dict).
+    if (url.pathname === "/api/fa-teams/override" && req.method === "POST") {
+      if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
+      const body = await req.json().catch(() => null);
+      const en = body && typeof body.en === "string" ? body.en.trim() : "";
+      const fa = body && typeof body.fa === "string" ? body.fa.trim() : "";
+      if (!en || !fa) return jsonResponse({ error: "en + fa required" }, 400);
+      if (en.length > 60 || fa.length > 60) return jsonResponse({ error: "too long" }, 400);
+      const k = (0, import_teams.normTeamKey)(en);
+      if (!k) return jsonResponse({ error: "invalid name" }, 400);
+      const rec = await env.STATE.get(CONFIG.KV_FA_TEAMS, "json").catch(() => null) || { learned: {}, failed: {}, overrides: {} };
+      if (!rec.overrides) rec.overrides = {};
+      rec.overrides[k] = fa;
+      rec.ts = Date.now();
+      await env.STATE.put(CONFIG.KV_FA_TEAMS, JSON.stringify(rec)).catch(() => {});
+      resetFaAiCache();
+      return jsonResponse({ ok: true, en, fa, key: k, overrides: Object.keys(rec.overrides).length });
     }
     if (url.pathname === "/api/broadcast" && req.method === "POST") {
       const body = await req.json().catch(() => null);
