@@ -4,12 +4,13 @@
 
 
 import { CONFIG } from "./config";
+import type { Env } from "./types";
 import { toFaDigits } from "./utils";
 import { normalizeTeamName } from "./teams.js";
 import { sendTelegram } from "./telegram";
 import { normAlias } from "./matches";
 
-export async function getRegisteredChats(env) {
+export async function getRegisteredChats(env: Env) {
   try {
     const chats = await env.STATE.get(CONFIG.KV_USERS_KEY);
     if (chats) {
@@ -22,9 +23,9 @@ export async function getRegisteredChats(env) {
   const fallback = parseInt(env.CHAT_ID);
   return isNaN(fallback) ? [] : [fallback];
 }
-export async function getBotMembers(env) {
+export async function getBotMembers(env: Env) {
   const chats = await getRegisteredChats(env);
-  const profiles = await env.STATE.get(CONFIG.KV_USER_PROFILES, "json").catch(() => null) || {};
+  const profiles = (await env.STATE.get(CONFIG.KV_USER_PROFILES, "json") as any).catch(() => null) || {};
   const members = chats.map((id) => {
     const p = profiles[String(id)] || {};
     return { id, username: p.username || null, first_name: p.first_name || null, title: p.title || null, joined: p.joined || null };
@@ -35,7 +36,7 @@ export async function getBotMembers(env) {
     if (backfilled >= 40) break;
     try {
       const res = await fetch("https://api.telegram.org/bot" + env.BOT_TOKEN + "/getChat?chat_id=" + encodeURIComponent(m.id));
-      const d = await res.json();
+      const d = await res.json() as any;
       if (d && d.ok && d.result) {
         const c = d.result;
         m.username = c.username || null;
@@ -54,9 +55,9 @@ export async function getBotMembers(env) {
   members.sort((a, b) => String(a.id).localeCompare(String(b.id)));
   return { count: members.length, backfilled, members };
 }
-export async function getUserPrefs(env) {
+export async function getUserPrefs(env: Env) {
   try {
-    return await env.STATE.get(CONFIG.KV_USER_PREFS, "json") || {};
+    return (await env.STATE.get(CONFIG.KV_USER_PREFS, "json") as any) || {};
   } catch (e) {
     return {};
   }
@@ -64,9 +65,9 @@ export async function getUserPrefs(env) {
 // v12.x-bilingual-bot: get the user's language preference. Defaults to
 // "fa" (Persian) since the existing user base is Persian. Reads from KV
 // user_prefs[chatId].lang.
-export async function getUserLang(env, chatId) {
+export async function getUserLang(env: Env, chatId) {
   try {
-    const prefs = await env.STATE.get(CONFIG.KV_USER_PREFS, "json");
+    const prefs = (await env.STATE.get(CONFIG.KV_USER_PREFS, "json") as any);
     const p = prefs && prefs[String(chatId)];
     if (p && (p.lang === "fa" || p.lang === "en")) return p.lang;
   } catch (e) {
@@ -75,7 +76,7 @@ export async function getUserLang(env, chatId) {
 }
 // v12.x-bilingual-bot: set the user's language preference. Writes to KV
 // user_prefs[chatId].lang. Preserves the existing teams + tz fields.
-export async function setUserLang(env, chatId, lang) {
+export async function setUserLang(env: Env, chatId, lang) {
   const clean = lang === "en" ? "en" : "fa";
   try {
     const prefs = await getUserPrefs(env);
@@ -301,7 +302,7 @@ export function groupChatsByTz(chatIds, prefs, env) {
   }
   return [...map.values()];
 }
-export async function checkUserCap(env, count) {
+export async function checkUserCap(env: Env, count) {
   try {
     for (const lv of [15, 20, 25]) {
       if (count < lv) continue;

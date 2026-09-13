@@ -4,6 +4,7 @@
 
 
 import { CONFIG, STAGE_FA } from "./config";
+import type { Env } from "./types";
 import { normTeamKey } from "./teams.js";
 import { buildFaTeamDict } from "./fa-dict";
 
@@ -44,10 +45,10 @@ export function translateTeam(englishName) {
   }
   return englishName;
 }
-export async function ensureFaAiCache(env) {
+export async function ensureFaAiCache(env: Env) {
   if (FA_AI_CACHE) return FA_AI_CACHE;
   FA_AI_CACHE = new Map();
-  const rec = await env.STATE.get(CONFIG.KV_FA_TEAMS, "json").catch(() => null);
+  const rec = (await env.STATE.get(CONFIG.KV_FA_TEAMS, "json") as any).catch(() => null);
   // v12.x-admin-override: load admin manual overrides FIRST (they take
   // priority over AI-learned names — both stored in the same KV record).
   if (rec && rec.overrides && typeof rec.overrides === "object") {

@@ -4,6 +4,7 @@
 
 
 import { CONFIG, SPORTSCORE_SLUGS } from "./config";
+import type { Env } from "./types";
 import { timingSafeEqualStr, fetchJSON, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams.js";
 import { normAlias } from "./matches";
@@ -18,7 +19,7 @@ export function getAdminCookieToken(req) {
   const m = (req.headers.get("Cookie") || "").match(/(?:^|;\s*)admin_auth=([^;]+)/);
   return m ? decodeURIComponent(m[1]) : null;
 }
-export async function isValidAdminSession(env, req) {
+export async function isValidAdminSession(env: Env, req) {
   const sid = getAdminCookieToken(req);
   if (!sid || !/^[a-f0-9]{32,80}$/i.test(sid)) return false;
   const val = await env.STATE.get("admin_sess_" + sid).catch(() => null);
@@ -32,7 +33,7 @@ export function validateWebhook(req, env) {
   const secretToken = req.headers.get("X-Telegram-Bot-Api-Secret-Token");
   return timingSafeEqualStr(secretToken, env.WEBHOOK_SECRET);
 }
-export async function getSettings(env) {
+export async function getSettings(env: Env) {
   const defaults = {
     timezone: env.TEHRAN_TZ || "Asia/Tehran",
     teams: CONFIG.BIG_TEAMS_BY_LEAGUE,
@@ -56,7 +57,7 @@ export async function getSettings(env) {
     return defaults;
   }
 }
-export async function applySettings(env) {
+export async function applySettings(env: Env) {
   const s = await getSettings(env);
   env.TEHRAN_TZ = s.timezone;
   CONFIG.BIG_TEAMS_BY_LEAGUE = s.teams;
@@ -95,7 +96,7 @@ export function catalogNameMap(cat) {
 }
 export function canonicalizeTeams(teams, cat) {
   const map = catalogNameMap(cat);
-  const out = {};
+  const out: any = {};
   for (const [lg, list] of Object.entries(teams || {})) {
     if (!Array.isArray(list)) {
       out[lg] = [];
@@ -116,14 +117,14 @@ export function canonicalizeTeams(teams, cat) {
   return out;
 }
 export function syncUclSelection(teams) {
-  const out = {};
+  const out: any = {};
   for (const [lg, list] of Object.entries(teams || {})) out[lg] = Array.isArray(list) ? list : [];
   const seen = new Map();
   for (const t of out.CL || []) {
     const k = normAlias(t);
     if (k && !seen.has(k)) seen.set(k, t);
   }
-  for (const [lg, list] of Object.entries(out)) {
+  for (const [lg, list] of Object.entries(out) as any[]) {
     if (lg === "CL") continue;
     for (const t of list) {
       const k = normAlias(t);
@@ -134,7 +135,7 @@ export function syncUclSelection(teams) {
   return out;
 }
 var FD_TEAMS_CODES = ["CL", "PL", "PD", "SA", "FL1", "BL1"];
-export async function fetchFdTeams(env, code) {
+export async function fetchFdTeams(env: Env, code) {
   if (bumpSubrequest()) return null;
   try {
     const res = await fetch("https://api.football-data.org/v4/competitions/" + code + "/teams", {
@@ -144,7 +145,7 @@ export async function fetchFdTeams(env, code) {
       console.log("clubs catalog " + code + ": HTTP " + res.status + " (skipped)");
       return null;
     }
-    const data = await res.json();
+    const data = await res.json() as any;
     return data && Array.isArray(data.teams) && data.teams || null;
   } catch (e) {
     console.log("clubs catalog " + code + " failed: " + e.message);
@@ -161,7 +162,7 @@ export async function fetchAlTeams() {
     return null;
   }
 }
-export async function refreshClubsCatalog(env) {
+export async function refreshClubsCatalog(env: Env) {
   const byKey = new Map();
   const addTeam = (t, league) => {
     const name = String(t && t.name || "").trim();
@@ -205,7 +206,7 @@ export async function refreshClubsCatalog(env) {
   console.log(`\u{1F3E2} Clubs catalog: ${clubs.length} clubs from ${wanted.join(",")}`);
   return cat;
 }
-export async function getClubsCatalog(env, force) {
+export async function getClubsCatalog(env: Env, force) {
   let cat = null;
   try {
     cat = await env.STATE.get(CONFIG.KV_CLUBS_CATALOG, "json");

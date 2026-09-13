@@ -4,6 +4,7 @@
 
 
 import { CONFIG, COMP_EN } from "./config";
+import type { Env } from "./types";
 import { toFaDigits, getNowTehran, escapeMarkdownCharacters } from "./utils";
 import { normalizeTeamName } from "./teams.js";
 import { translateTeam, translateCompetition, getCompetitionPriority } from "./translate";
@@ -103,7 +104,7 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
     console.log(`\u{1F4E4} Sent ${config.type.toUpperCase()} notification for match ${match.id}`);
   }
 }
-export async function sendMatchNotifications(env, matches) {
+export async function sendMatchNotifications(env: Env, matches) {
   const chatIds = await getRegisteredChats(env);
   if (chatIds.length === 0) {
     console.log("\u274C No users to notify");
@@ -173,7 +174,7 @@ export async function sendMatchNotifications(env, matches) {
   const totalSent = Object.values(notificationCounts).reduce((a, b) => a + b, 0);
   console.log(`   Total: ${totalSent}`);
 }
-export async function detectStatusChanges(env, matches) {
+export async function detectStatusChanges(env: Env, matches) {
   try {
     const prev = await env.STATE.get(CONFIG.KV_MATCH_STATUS, "json") || {};
     const cur = {};

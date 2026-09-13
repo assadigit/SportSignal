@@ -4,6 +4,7 @@
 
 
 import { CONFIG, X_CONFIG } from "./config";
+import type { Env } from "./types";
 import { toFaDigits, getNowTehran, getJalaliDate, getJalaliTime } from "./utils";
 import { translateTeam, translateCompetition, getCompetitionPriority } from "./translate";
 import { isMatchFinished, isWithinPostMatchWindow, isWithin24HourWindow, isWithinBigMatchWindow, isWithin3HourWindow, isWithin1HourWindow, isWithin5MinWindow, isMatchStartingNow } from "./matches";
@@ -66,19 +67,19 @@ export async function xBuildAuthHeader(method, url, env, opts) {
   oauthParams.oauth_signature = signature;
   return "OAuth " + Object.keys(oauthParams).map((k) => xPercentEncode(k) + '="' + xPercentEncode(oauthParams[k]) + '"').join(", ");
 }
-export async function xIsEnabled(env) {
+export async function xIsEnabled(env: Env) {
   const kvVal = await env.STATE.get(X_CONFIG.KV_ENABLED).catch(() => null);
   if (kvVal === "1") return true;
   if (kvVal === "0") return false;
   return env.X_ENABLED === "1" || env.X_ENABLED === "true";
 }
-export async function xIsDryRun(env) {
+export async function xIsDryRun(env: Env) {
   const kvVal = await env.STATE.get(X_CONFIG.KV_DRY_RUN).catch(() => null);
   if (kvVal === "1") return true;
   if (kvVal === "0") return false;
   return env.X_DRY_RUN === "1" || env.X_DRY_RUN === "true";
 }
-export async function xGetPhase(env) {
+export async function xGetPhase(env: Env) {
   const v = await env.STATE.get(X_CONFIG.KV_PHASE).catch(() => null);
   if (v && typeof v === "string" && v.trim()) {
     return v.split(",").map((s) => s.trim()).filter(Boolean);
@@ -101,7 +102,7 @@ export function xDayKey() {
   const day = String(d.getUTCDate()).padStart(2, "0");
   return `${y}${m}${day}`;
 }
-export async function xBudgetCheck(env) {
+export async function xBudgetCheck(env: Env) {
   const mk = X_CONFIG.KV_BUDGET_PREFIX + xMonthKey();
   const dk = X_CONFIG.KV_DAILY_PREFIX + xDayKey();
   const monthly = parseInt(await env.STATE.get(mk).catch(() => null)) || 0;
@@ -110,7 +111,7 @@ export async function xBudgetCheck(env) {
   if (daily >= X_CONFIG.DAILY_CAP) return { ok: false, reason: "daily-cap", monthlyUsed: monthly, dailyUsed: daily };
   return { ok: true, monthlyUsed: monthly, dailyUsed: daily };
 }
-export async function xBudgetIncr(env) {
+export async function xBudgetIncr(env: Env) {
   const mk = X_CONFIG.KV_BUDGET_PREFIX + xMonthKey();
   const dk = X_CONFIG.KV_DAILY_PREFIX + xDayKey();
   const monthly = (parseInt(await env.STATE.get(mk).catch(() => null)) || 0) + 1;
@@ -121,31 +122,31 @@ export async function xBudgetIncr(env) {
   });
   return { monthly, daily };
 }
-export async function xPauseUntil(env, seconds) {
+export async function xPauseUntil(env: Env, seconds) {
   const until = new Date(Date.now() + seconds * 1e3).toISOString();
   await env.STATE.put(X_CONFIG.KV_PAUSE, until, { expirationTtl: Math.max(seconds, 60) }).catch(() => {
   });
 }
-export async function xIsPaused(env) {
+export async function xIsPaused(env: Env) {
   const until = await env.STATE.get(X_CONFIG.KV_PAUSE).catch(() => null);
   if (!until) return false;
   const t = new Date(until).getTime();
   return t > Date.now();
 }
-export async function xSetLastPost(env, info) {
+export async function xSetLastPost(env: Env, info) {
   await env.STATE.put(X_CONFIG.KV_LAST_POST, JSON.stringify(Object.assign({ ts: Date.now() }, info))).catch(() => {
   });
 }
-export async function xSetLastError(env, status, error) {
+export async function xSetLastError(env: Env, status, error) {
   await env.STATE.put(X_CONFIG.KV_LAST_ERROR, JSON.stringify({ ts: Date.now(), status, error: String(error || "").slice(0, 280) })).catch(() => {
   });
 }
-export async function xDedupeCheck(env, key) {
+export async function xDedupeCheck(env: Env, key) {
   const k = X_CONFIG.KV_DEDUPE_PREFIX + key;
   const v = await env.STATE.get(k).catch(() => null);
   return !v;
 }
-export async function xDedupeMark(env, key) {
+export async function xDedupeMark(env: Env, key) {
   const k = X_CONFIG.KV_DEDUPE_PREFIX + key;
   await env.STATE.put(k, String(Date.now()), { expirationTtl: X_CONFIG.DEDUPE_TTL_SEC }).catch(() => {
   });
@@ -153,7 +154,7 @@ export async function xDedupeMark(env, key) {
 // POST /2/tweets. Returns {ok, id, status, error}. Handles 401/403/429/5xx
 // per spec. 401/403 → log admin alert + refuse; 429 → KV pause 15min; 5xx → 1
 // retry; every outcome written to x_last_error_v1.
-export async function xPostTweet(env, text, inReplyTo) {
+export async function xPostTweet(env: Env, text, inReplyTo): Promise<any> {
   const url = X_CONFIG.API_BASE + X_CONFIG.TWEET_PATH;
   const bodyObj = inReplyTo ? { text, reply: { in_reply_to_tweet_id: String(inReplyTo) } } : { text };
   const body = JSON.stringify(bodyObj);
@@ -178,7 +179,7 @@ export async function xPostTweet(env, text, inReplyTo) {
     if (res.ok) {
       let data = null;
       try {
-        data = await res.json();
+        data = await res.json() as any;
       } catch (e) {
       }
       const id = data && data.data && data.data.id ? String(data.data.id) : null;
@@ -236,7 +237,7 @@ export function xTruncate(s, max) {
   if (s.length <= max) return s;
   return s.slice(0, max - 1) + "\u2026";
 }
-export function composeXCoronation(env, code, newLeader, prevRow, trigger) {
+export function composeXCoronation(env: Env, code, newLeader, prevRow, trigger) {
   const league = translateCompetition(code);
   const team = translateTeam(newLeader.name);
   const home = trigger && trigger.homeTeam ? translateTeam(trigger.homeTeam.name) : "";
@@ -256,7 +257,7 @@ ${team} \u0628\u0627 ${toFaDigits(String(pts))} \u0627\u0645\u062A\u06CC\u0627\u
 ${xUrl()} #\u0641\u0648\u062A\u0628\u0627\u0644${tag ? " " + tag : ""}`;
   return xTruncate(text, X_CONFIG.POST_CHAR_LIMIT);
 }
-export function composeXResult(env, match) {
+export function composeXResult(env: Env, match) {
   const home = translateTeam(match.homeTeam.name);
   const away = translateTeam(match.awayTeam.name);
   const league = translateCompetition(match.competition.code);
@@ -278,7 +279,7 @@ export function composeXResult(env, match) {
 ${xUrl()} #\u0641\u0648\u062A\u0628\u0627\u0644${tag ? " " + tag : ""}`;
   return xTruncate(text, X_CONFIG.POST_CHAR_LIMIT);
 }
-export function composeXKickoff(env, match) {
+export function composeXKickoff(env: Env, match) {
   const home = translateTeam(match.homeTeam.name);
   const away = translateTeam(match.awayTeam.name);
   const league = translateCompetition(match.competition.code);
@@ -292,7 +293,7 @@ ${home} \u2694\uFE0F ${away}
 ${xUrl()} #\u0641\u0648\u062A\u0628\u0627\u0644${tag ? " " + tag : ""}`;
   return xTruncate(text, X_CONFIG.POST_CHAR_LIMIT);
 }
-export function composeXTableForLeague(env, code, st) {
+export function composeXTableForLeague(env: Env, code, st) {
   const league = translateCompetition(code);
   const teams = (st.teams || []).slice().sort((a, b) => (a.pos || 0) - (b.pos || 0) || (b.points || 0) - (a.points || 0));
   const shown = code === "CL" ? teams.slice(0, 8) : teams.slice(0, 5);
@@ -306,7 +307,7 @@ export function composeXTableForLeague(env, code, st) {
 // Central post-or-dry-run. Bumps the budget + dedupe marker ONLY on a real
 // success; dry-run still records lastPost for the admin card but does NOT
 // consume budget or dedupe (so the next live sweep will still fire).
-export async function xSendOrDryRun(env, text, inReplyTo, kind, dedupeKey) {
+export async function xSendOrDryRun(env: Env, text, inReplyTo, kind, dedupeKey): Promise<any> {
   const dry = await xIsDryRun(env);
   if (dry) {
     console.log(`\u{1F426} X DRY-RUN [${kind}]${inReplyTo ? " reply\u2192" + inReplyTo : ""}: ${text}`);
@@ -326,7 +327,7 @@ export async function xSendOrDryRun(env, text, inReplyTo, kind, dedupeKey) {
 }
 // Orchestrator. Called from executeScheduledLogic AFTER the Telegram checks.
 // opts.topperEvents = the events list returned by maybeNotifyTableToppers.
-export async function maybePostX(env, matches, opts) {
+export async function maybePostX(env: Env, matches, opts) {
   opts = opts || {};
   const out = { sent: 0, dryRun: 0, skipped: 0, errors: [] };
   if (!(await xIsEnabled(env))) {
@@ -466,7 +467,7 @@ export async function maybePostX(env, matches, opts) {
   console.log(`\u{1F426} X sweep done: sent=${out.sent} dryRun=${out.dryRun} skipped=${out.skipped} errors=${out.errors.length}`);
   return out;
 }
-export async function maybePostXWeekly(env) {
+export async function maybePostXWeekly(env: Env) {
   const out = { sent: 0, dryRun: 0, skipped: 0, error: null };
   const t = getNowTehran(env);
   if (t.getUTCDay() !== CONFIG.WEEKLY_TABLES.day) return out;
@@ -523,7 +524,7 @@ export async function maybePostXWeekly(env) {
   await xDedupeMark(env, dedupeKey);
   return out;
 }
-export async function getXStatus(env) {
+export async function getXStatus(env: Env) {
   const enabled = await xIsEnabled(env);
   const dryRun = await xIsDryRun(env);
   const paused = await xIsPaused(env);
@@ -532,8 +533,8 @@ export async function getXStatus(env) {
   const dk = X_CONFIG.KV_DAILY_PREFIX + xDayKey();
   const monthly = parseInt(await env.STATE.get(mk).catch(() => null)) || 0;
   const daily = parseInt(await env.STATE.get(dk).catch(() => null)) || 0;
-  const lastPost = await env.STATE.get(X_CONFIG.KV_LAST_POST, "json").catch(() => null);
-  const lastError = await env.STATE.get(X_CONFIG.KV_LAST_ERROR, "json").catch(() => null);
+  const lastPost = (await env.STATE.get(X_CONFIG.KV_LAST_POST, "json") as any).catch(() => null);
+  const lastError = (await env.STATE.get(X_CONFIG.KV_LAST_ERROR, "json") as any).catch(() => null);
   return {
     enabled,
     dryRun,
@@ -547,7 +548,7 @@ export async function getXStatus(env) {
     lastError: lastError || null
   };
 }
-export async function xTestPost(env) {
+export async function xTestPost(env: Env) {
   if (!(await xIsEnabled(env))) return { ok: false, error: "X is disabled (X_ENABLED=0 or x_enabled_v1=0)" };
   const dk = X_CONFIG.KV_TEST_PREFIX + xDayKey();
   const testCount = parseInt(await env.STATE.get(dk).catch(() => null)) || 0;

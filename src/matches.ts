@@ -4,22 +4,23 @@
 
 
 import { CONFIG } from "./config";
+import type { Env } from "./types";
 import { normalizeTeamName } from "./teams.js";
 import { matchKey } from "./dedupe.js";
 import { vlog, getNowUTC } from "./utils";
 import { isDomesticCup, isQuarterFinalOrLater } from "./translate";
 import { masterTeamList, masterMemo } from "./users";
 
-export async function getNotifiedMatches(env) {
+export async function getNotifiedMatches(env: Env) {
   try {
-    const data = await env.STATE.get(CONFIG.KV_NOTIFIED_KEY, "json");
+    const data: any = await env.STATE.get(CONFIG.KV_NOTIFIED_KEY, "json");
     return data || {};
   } catch (error) {
     console.log("No notified matches found, starting fresh");
     return {};
   }
 }
-export async function saveNotifiedMatch(env, match, notificationType, notifiedMatches) {
+export async function saveNotifiedMatch(env: Env, match, notificationType, notifiedMatches: any) {
   const now = Date.now();
   const matchTime = new Date(match.utcDate).getTime();
   const key = matchKey(match);
@@ -50,7 +51,7 @@ export async function saveNotifiedMatch(env, match, notificationType, notifiedMa
     matchDate: match.utcDate,
     notificationType
   });
-  const allNotifications = Object.values(notifiedMatches).flat();
+  const allNotifications: any[] = Object.values(notifiedMatches || {}).flat();
   const overallExpiresAt = allNotifications.length > 0 ? Math.max(...allNotifications.map((n) => n.expiresAt)) : now + CONFIG.ONE_DAY_MS;
   const ttlSeconds = Math.ceil((overallExpiresAt - now) / 1e3);
   vlog(`\u{1F4BE} Saving notification: match=${key}, type=${notificationType}, total_tracked=${Object.keys(notifiedMatches).length}, ttl=${ttlSeconds}s`);
@@ -64,7 +65,7 @@ export async function saveNotifiedMatch(env, match, notificationType, notifiedMa
     console.error("Notification state save failed (continuing): " + e.message);
   }
 }
-export async function shouldSendNotification(env, match, notificationType, notifiedMatches) {
+export async function shouldSendNotification(env: Env, match, notificationType, notifiedMatches) {
   const now = Date.now();
   const key = matchKey(match);
   if (notifiedMatches[key]) {
@@ -170,11 +171,11 @@ export function isBackfillEligible(match, type, _env) {
 export function isMatchFinished(match) {
   return match.status === "FINISHED";
 }
-export async function cleanupExpiredNotifications(env) {
+export async function cleanupExpiredNotifications(env: Env) {
   const hourStamp = Math.floor(Date.now() / 36e5);
   const lastCleanup = parseInt(await env.STATE.get("cleanup_hour").catch(() => null)) || 0;
   if (lastCleanup === hourStamp) return;
-  const notifiedMatches = await getNotifiedMatches(env);
+  const notifiedMatches: any = await getNotifiedMatches(env);
   const now = Date.now();
   let cleanedCount = 0;
   for (const [matchId, notifications] of Object.entries(notifiedMatches)) {
@@ -189,7 +190,7 @@ export async function cleanupExpiredNotifications(env) {
     }
   }
   if (cleanedCount > 0) {
-    const allNotifications = Object.values(notifiedMatches).flat();
+    const allNotifications: any[] = Object.values(notifiedMatches || {}).flat();
     const maxExpiry = allNotifications.length > 0 ? Math.max(...allNotifications.map((n) => n.expiresAt)) : now + 36e5;
     const ttl = Math.max(3600, Math.ceil((maxExpiry - now) / 1e3));
     try {

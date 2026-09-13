@@ -174,7 +174,7 @@ const worker_default = {
       if (req.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: corsHeaders });
       }
-      const st = await getCronStatus(env);
+      const st: any = await getCronStatus(env);
       const heartbeat = parseInt(st.heartbeat) || 0;
       const ageMin = heartbeat ? Math.round((Date.now() - heartbeat) / 6e4) : -1;
       const fresh = ageMin >= 0 && ageMin <= CONFIG.EXECUTION_FREQUENCY_MINUTES * 3;
@@ -306,7 +306,7 @@ const worker_default = {
       }
     }
     if (url.pathname === "/api/status") {
-      const st = await getCronStatus(env);
+      const st: any = await getCronStatus(env);
       const users = await getRegisteredChats(env);
       return jsonResponse({
         version: VERSION,
@@ -402,7 +402,7 @@ const worker_default = {
       }
     }
     if (url.pathname === "/api/sources") {
-      const report = {};
+      const report: any = {};
       const sources = [
         { name: "football-data", fn: fetchFootballData },
         { name: "sportscore", fn: fetchSportScore },
@@ -535,7 +535,7 @@ const worker_default = {
       const dateTo = new Date(Date.now() + days * 864e5).toISOString().split("T")[0];
       const key = env.API_TOKEN || "";
       const u = `${CONFIG.API_URL}?competitions=${comps}&dateFrom=${dateFrom}&dateTo=${dateTo}`;
-      const res = await fetch(u, { headers: { "X-Auth-Token": key } }).catch((e) => ({ err: e.message }));
+      const res = await fetch(u, { headers: { "X-Auth-Token": key } }).catch((e) => ({ err: e.message }) as any);
       if (res.err) return jsonResponse({ comps, error: "network: " + res.err });
       const text = await res.text();
       let count = null;
@@ -560,7 +560,7 @@ const worker_default = {
       switch (path) {
         case "debug-notifications":
           try {
-            const notifiedMatches = await getNotifiedMatches(env);
+            const notifiedMatches: any = await getNotifiedMatches(env);
             const now2 = Date.now();
             return new Response(JSON.stringify({
               total_matches: Object.keys(notifiedMatches).length,
@@ -634,7 +634,7 @@ const worker_default = {
           await env.STATE.delete(CONFIG.KV_EXECUTION_LOCK);
           return new Response("\u2705 All cache cleared. Users need to /start again.");
         case "health":
-          const st = await getCronStatus(env);
+          const st: any = await getCronStatus(env);
           const heartbeat = st.heartbeat;
           const users = await getRegisteredChats(env);
           const now = getNowTehran(env);

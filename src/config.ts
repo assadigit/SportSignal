@@ -4,7 +4,7 @@
 
 export const VERSION = "12.33-xpost";
 
-export const CONFIG = {
+export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
   API_RETRY_ATTEMPTS: 2,
   API_RETRY_DELAY: 1e3,

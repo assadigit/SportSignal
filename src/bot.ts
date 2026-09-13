@@ -3,6 +3,7 @@
 
 
 import { CONFIG } from "./config";
+import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliTime, getEnglishTime } from "./utils";
 import { normalizeTeamName } from "./teams.js";
 import { translateTeam, translateCompetition } from "./translate";
@@ -13,7 +14,7 @@ import { getRegisteredChats, getUserPrefs, setUserLang, getUserTz, masterTeamLis
 import { sendLeagueTables, sendWeekAhead } from "./digest";
 import { applySettings } from "./admin";
 
-export async function handleTelegramUpdate(env, update) {
+export async function handleTelegramUpdate(env: Env, update) {
   try {
     const updId = update && update.update_id;
     if (updId != null) {
@@ -125,7 +126,7 @@ export async function handleTelegramUpdate(env, update) {
       const header = lang === "en" ? "\u26BD *Help*\n\n" : "\u26BD *\u0631\u0627\u0647\u0646\u0645\u0627*\n\n";
       await sendTelegram(env, header + body, chatId);
     } else if (text === "/teams") {
-      const master = masterTeamList();
+      const master: any = masterTeamList();
       const prefs = await getUserPrefs(env);
       const p = prefs[String(chatId)];
       const lang = (p && p.lang) === "en" ? "en" : "fa";
@@ -142,7 +143,7 @@ export async function handleTelegramUpdate(env, update) {
       await sendTelegram(env, header + "\n\n" + lines.join("\n") + "\n\n" + status + "\n\n" + footer, chatId);
     } else if (text && text.startsWith("/follow")) {
       const arg = text.slice(7).trim();
-      const master = masterTeamList();
+      const master: any = masterTeamList();
       const prefs = await getUserPrefs(env);
       const p = prefs[String(chatId)] || {};
       const lang = p.lang === "en" ? "en" : "fa";
@@ -151,11 +152,11 @@ export async function handleTelegramUpdate(env, update) {
         await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
         await sendTelegram(env, lang === "en" ? "Following all teams\\." : "\u2705 \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627 \u062F\u0646\u0628\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F\\.", chatId);
       } else {
-        const nums = arg.split(/[\s,\u060C]+/).map((n) => parseInt(n, 10)).filter((n) => !isNaN(n) && n >= 1 && n <= master.length);
+        const nums = arg.split(/[\s,\u060C]+/).map((n) => parseInt(String(n), 10)).filter((n) => !isNaN(n) && n >= 1 && n <= master.length);
         if (!nums.length) {
           await sendTelegram(env, lang === "en" ? "Invalid number\\. Use /teams to see the list\\." : "\u26A0\uFE0F \u0634\u0645\u0627\u0631\u0647 \u0646\u0627\u0645\u0639\u062A\u0628\u0631 \u0627\u0633\u062A\\.", chatId);
         } else {
-          const picked = [...new Set(nums)].map((n) => master[n - 1]);
+          const picked = [...new Set(nums)].map((n: any) => master[n - 1]);
           prefs[String(chatId)] = { teams: picked, tz: p.tz || null, lang: p.lang || "fa" };
           await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
           const sep = lang === "en" ? ", " : "\u060C ";

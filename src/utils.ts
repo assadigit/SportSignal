@@ -6,6 +6,7 @@
 // read-only, so consumers call bumpSubrequest() instead of ++SUBREQUEST_COUNT.
 
 import { CONFIG, STAGE_EN } from "./config";
+import type { Env } from "./types";
 
 export function bumpSubrequest() {
   return ++SUBREQUEST_COUNT > SUBREQUEST_CAP;
@@ -28,7 +29,7 @@ export async function hashPassword(pass, salt) {
   const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: enc.encode(salt), iterations: 1e5, hash: "SHA-256" }, key, 256);
   return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
-export async function getAdminPassHash(env) {
+export async function getAdminPassHash(env: Env) {
   return await env.STATE.get("admin_pass_hash", "json").catch(() => null);
 }
 export function timingSafeEqualStr(a, b) {
@@ -43,7 +44,7 @@ export function timingSafeEqualStr(a, b) {
 export function getNowUTC() {
   return new Date();
 }
-export function getNowTehran(env) {
+export function getNowTehran(env: Env) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: env.TEHRAN_TZ || "Asia/Tehran",
     hour12: false,
@@ -54,14 +55,14 @@ export function getNowTehran(env) {
     minute: "2-digit",
     second: "2-digit"
   }).formatToParts(new Date());
-  const p = {};
+  const p: any = {};
   for (const x of parts) p[x.type] = x.value;
   const hh = p.hour === "24" ? "00" : p.hour;
-  return new Date(`${p.year}-${p.month}-${p.day}T${hh}:${p.minute}:${p.second}Z`);
+  return new Date(`${p.year}-${p.month}-${p.day}T${hh}:${p.minute}:${p.second}Z`) // p: any;
 }
 export function getJalaliDate(utcDateStr, env) {
   const date = new Date(utcDateStr);
-  const dateOpt = { timeZone: env.TEHRAN_TZ, day: "numeric", month: "long", year: "numeric", weekday: "long" };
+  const dateOpt: any = { timeZone: env.TEHRAN_TZ, day: "numeric", month: "long", year: "numeric", weekday: "long" };
   const parts = new Intl.DateTimeFormat("fa-IR", dateOpt).formatToParts(date);
   const get = (t) => {
     const p = parts.find((x) => x.type === t);
@@ -102,12 +103,12 @@ export function getRelativeTimeUntilMatch(matchUtcDate, _env) {
 // English users). Used by the cron composers when lang === "en".
 export function getEnglishDate(utcDateStr, env) {
   const date = new Date(utcDateStr);
-  const opts = { timeZone: env.TEHRAN_TZ, weekday: "long", day: "numeric", month: "long", year: "numeric" };
+  const opts: any = { timeZone: env.TEHRAN_TZ, weekday: "long", day: "numeric", month: "long", year: "numeric" };
   return new Intl.DateTimeFormat("en-GB", opts).format(date);
 }
 export function getEnglishTime(utcDateStr, env) {
   const date = new Date(utcDateStr);
-  const opts = { timeZone: env.TEHRAN_TZ, hour: "2-digit", minute: "2-digit", hour12: false };
+  const opts: any = { timeZone: env.TEHRAN_TZ, hour: "2-digit", minute: "2-digit", hour12: false };
   return new Intl.DateTimeFormat("en-GB", opts).format(date);
 }
 export function getEnglishRelative(matchUtcDate) {
@@ -148,7 +149,7 @@ export async function fetchJSON(url, attempts?, headers?) {
     try {
       const res = await fetch(url, { headers: headers || {} });
       if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
+      const data = await res.json() as any;
       if (cacheKey) {
         try {
           await caches.default.put(cacheKey, new Response(JSON.stringify(data), { headers: { "content-type": "application/json", "cache-control": "max-age=300" } }));
@@ -186,7 +187,7 @@ export async function fetchWithRetry(url, apiToken, label) {
         }
         throw new Error(`HTTP ${res.status}: ${errorText.substring(0, 100)}`);
       }
-      const data = await res.json();
+      const data = await res.json() as any;
       return data.matches || [];
     } catch (error) {
       console.error(`${label} Attempt ${attempt} failed:`, error.message);

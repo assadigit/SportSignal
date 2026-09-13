@@ -4,6 +4,7 @@
 
 
 import { CONFIG, COMP_EN } from "./config";
+import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getNowTehran, getEnglishDate } from "./utils";
 import { translateTeam, translateCompetition } from "./translate";
 import { shouldNotify, isMatchFinished, isWithinPostMatchWindow, getNotifiedMatches, saveNotifiedMatch, normAlias, isMasterPair, isDerby } from "./matches";
@@ -12,9 +13,9 @@ import { sendTelegram } from "./telegram";
 import { getRegisteredChats, getUserPrefs, getUserTz, groupChatsByTz, userFollowsMatch, isMasterBigMatch } from "./users";
 import { getCachedMatches } from "./providers";
 
-export async function sendLeagueTables(env, chatIds, opts, lang?) {
+export async function sendLeagueTables(env: Env, chatIds, opts, lang?) {
   const lng = lang === "en" ? "en" : "fa";
-  const out = { leagues: [], sent: 0, failed: 0 };
+  const out: any = { leagues: [], sent: 0, failed: 0 };
   if (!Array.isArray(chatIds) || !chatIds.length) {
     out.error = "no chats";
     return out;
@@ -46,7 +47,7 @@ export async function sendLeagueTables(env, chatIds, opts, lang?) {
   }
   return out;
 }
-export async function buildWeekAheadMessage(env, lang) {
+export async function buildWeekAheadMessage(env: Env, lang) {
   const en = lang === "en";
   let pool = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
   let matches = pool && Array.isArray(pool.matches) ? pool.matches : [];
@@ -83,7 +84,7 @@ export async function buildWeekAheadMessage(env, lang) {
   }
   return msg;
 }
-export async function sendWeekAhead(env, chatIds, lang?) {
+export async function sendWeekAhead(env: Env, chatIds, lang?) {
   const out = { sent: 0, failed: 0, text: null };
   if (!Array.isArray(chatIds) || !chatIds.length) return out;
   let text = null;
@@ -100,7 +101,7 @@ export async function sendWeekAhead(env, chatIds, lang?) {
   }
   return out;
 }
-export async function maybeSendWeeklyTables(env, chatIds) {
+export async function maybeSendWeeklyTables(env: Env, chatIds) {
   const t = getNowTehran(env);
   if (t.getUTCDay() !== CONFIG.WEEKLY_TABLES.day) return null;
   const mins = t.getUTCHours() * 60 + t.getUTCMinutes();
@@ -141,7 +142,7 @@ export async function maybeSendWeeklyTables(env, chatIds) {
 // Designed to coexist with the existing weekly tables digest; it's much
 // leaner (one line per match, no full tables) and fires every day (the
 // weekly tables only fire Monday morning Tehran).
-export async function maybeSendMorningDigest(env, chatIds) {
+export async function maybeSendMorningDigest(env: Env, chatIds) {
   const out = { sent: 0, skipped: 0, noMatches: 0 };
   if (!Array.isArray(chatIds) || !chatIds.length) return out;
   const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
@@ -156,12 +157,12 @@ export async function maybeSendMorningDigest(env, chatIds) {
   for (const [tz, tzChats] of byTz) {
     let hour = -1, dateKey = null;
     try {
-      const parts = new Intl.DateTimeFormat("en-GB", {
+      const parts = new Intl.DateTimeFormat("en-GB", ({
         timeZone: tz, hour12: false,
         year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit"
-      }).formatToParts(new Date());
-      const p = {};
-      for (const x of parts) p[x.type] = x.value;
+      } as any)).formatToParts(new Date());
+      const p: any = {};
+  for (const x of parts) p[x.type] = x.value;
       const hh = p.hour === "24" ? "00" : p.hour;
       hour = parseInt(hh, 10);
       dateKey = p.year + "-" + p.month + "-" + p.day;
@@ -179,12 +180,12 @@ export async function maybeSendMorningDigest(env, chatIds) {
     // Build the tz-local midnight as a UTC instant using the format above.
     let dayStart = 0, dayEnd = 0;
     try {
-      const parts = new Intl.DateTimeFormat("en-GB", {
+      const parts = new Intl.DateTimeFormat("en-GB", ({
         timeZone: tz, hour12: false,
         year: "numeric", month: "2-digit", day: "2-digit"
-      }).formatToParts(new Date());
-      const p = {};
-      for (const x of parts) p[x.type] = x.value;
+      } as any)).formatToParts(new Date());
+      const p: any = {};
+  for (const x of parts) p[x.type] = x.value;
       dayStart = Date.UTC(parseInt(p.year, 10), parseInt(p.month, 10) - 1, parseInt(p.day, 10), 0, 0, 0);
       dayEnd = dayStart + 24 * 60 * 60 * 1e3;
     } catch (e) {
@@ -225,7 +226,7 @@ export async function maybeSendMorningDigest(env, chatIds) {
   if (out.sent) console.log(`\u{1F4C5} Morning digest sent=${out.sent} skipped=${out.skipped}`);
   return out;
 }
-export async function buildMorningDigestMessage(env, matches, lang) {
+export async function buildMorningDigestMessage(env: Env, matches, lang) {
   const en = lang === "en";
   const head = en ? "*Today's big matches:*\n\n" : "*\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0628\u0632\u0631\u06AF \u0627\u0645\u0631\u0648\u0632:*\n\n";
   const lines = [];
@@ -254,7 +255,7 @@ export async function buildMorningDigestMessage(env, matches, lang) {
 // registered chat that didn't already get it via the regular result
 // path. Uses a separate "result-big" notification type so the dedupe
 // map doesn't double-count against the existing "result" entry.
-export async function broadcastBigMatchResults(env, matches) {
+export async function broadcastBigMatchResults(env: Env, matches) {
   const out = { sent: 0, failed: 0, dead: 0, matches: 0 };
   try {
     if (!Array.isArray(matches) || !matches.length) return out;
@@ -329,7 +330,7 @@ export async function broadcastBigMatchResults(env, matches) {
 // snapshot updates EVERY run, so each genuine coronation notifies exactly
 // once. Recipients: every registered chat (a league-wide headline, like
 // the weekly tables digest \u2014 not a per-team-follow event).
-export async function maybeNotifyTableToppers(env, matches) {
+export async function maybeNotifyTableToppers(env: Env, matches) {
   const out = { sent: 0, failed: 0, events: [] };
   const chatIds = await getRegisteredChats(env);
   if (!Array.isArray(chatIds) || !chatIds.length) return out;
@@ -390,7 +391,7 @@ export async function maybeNotifyTableToppers(env, matches) {
   }
   return out;
 }
-export async function formatTableTopMessage(env, code, newLeader, prevRow, trigger, lang) {
+export async function formatTableTopMessage(env: Env, code, newLeader, prevRow, trigger, lang) {
   try {
     const en = lang === "en";
     const league = en ? (COMP_EN[code] || code) : translateCompetition(code);

@@ -2,6 +2,7 @@
 // thesportsdb, Wikipedia PGL table), the multi-source merger with crest/venue
 // adoption, provider circuit breaker and the KV match cache.
 import { CONFIG, PROVIDER_LEAGUE_MAP, SPORTSCORE_SLUGS, TSP_LEAGUE_IDS, CUP_TSP_IDS } from "./config";
+import type { Env } from "./types";
 import { fetchJSON, fetchWithRetry } from "./utils";
 import { normalizeTeamName } from "./teams.js";
 import { canonDedupe } from "./dedupe.js";
@@ -9,20 +10,20 @@ import { shouldNotify, mapStageName, parseTSPDate } from "./matches";
 import { getRegisteredChats } from "./users";
 import { sendTelegram } from "./telegram";
 
-export async function providerSuspended(env, key) {
+export async function providerSuspended(env: Env, key) {
   const until = parseInt(await env.STATE.get("prov_down_" + key).catch(() => null)) || 0;
   return Date.now() < until;
 }
-export async function suspendProvider(env, key, ms?) {
+export async function suspendProvider(env: Env, key, ms?) {
   const ttl = Math.ceil((ms || CONFIG.PROVIDER_SUSPEND_MS) / 1e3) + 60;
   await env.STATE.put("prov_down_" + key, String(Date.now() + (ms || CONFIG.PROVIDER_SUSPEND_MS)), { expirationTtl: ttl }).catch(() => {
   });
 }
-export async function clearProviderSuspension(env, key) {
+export async function clearProviderSuspension(env: Env, key) {
   await env.STATE.delete("prov_down_" + key).catch(() => {
   });
 }
-export async function fetchPglTableFromWikipedia(env) {
+export async function fetchPglTableFromWikipedia(env: Env) {
   try {
     const y = (new Date()).getUTCFullYear();
     const m = (new Date()).getUTCMonth() + 1;
@@ -100,7 +101,7 @@ export async function sportScoreDay(code, slug, dateStr, acc) {
   }
   return added;
 }
-export async function fetchSportScore(env) {
+export async function fetchSportScore(env: Env) {
   const matches = [];
   const seen = new Set();
   if (await providerSuspended(env, "sportscore")) {
@@ -139,7 +140,7 @@ export async function fetchSportScore(env) {
   }
   return matches;
 }
-export async function cacheMatches(env, matches, source) {
+export async function cacheMatches(env: Env, matches, source) {
   if (!matches || !matches.length) return;
   try {
     const existing = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
@@ -158,7 +159,7 @@ export async function cacheMatches(env, matches, source) {
     console.error("Match cache write failed: " + e.message);
   }
 }
-export async function getCachedMatches(env) {
+export async function getCachedMatches(env: Env) {
   try {
     const data = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json");
     if (data && Array.isArray(data.matches) && data.matches.length) {
@@ -170,7 +171,7 @@ export async function getCachedMatches(env) {
   }
   return [];
 }
-export async function fetchFootballData(env) {
+export async function fetchFootballData(env: Env) {
   const dateFrom = new Date(Date.now() - CONFIG.DAYS_IN_PAST * 864e5).toISOString().split("T")[0];
   const dateTo = new Date(Date.now() + CONFIG.DAYS_IN_FUTURE * 864e5).toISOString().split("T")[0];
   const fdLeagues = CONFIG.LEAGUES.filter((c) => !["EL", "ECL"].includes(c));
@@ -206,7 +207,7 @@ export async function fetchFootballData(env) {
   console.log(`\u2705 Found ${allMatches.length} matches total`);
   return allMatches;
 }
-export async function fetchLongView(env) {
+export async function fetchLongView(env: Env) {
   const cached = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
   const fresh = cached && cached.fetchedAt && Date.now() - new Date(cached.fetchedAt).getTime() < 6 * 36e5;
   const horizon = cached && Array.isArray(cached.matches) && cached.matches.length ? Math.max(0, ...cached.matches.map((m) => new Date(m.utcDate || 0).getTime())) : 0;
@@ -353,7 +354,7 @@ function tspEventToMatch(e, code) {
   };
 }
 
-export async function fetchTheSportsDB(env) {
+export async function fetchTheSportsDB(env: Env) {
   const matches = [];
   const monitored = new Set([...CONFIG.LEAGUES, "EL", "ECL", ...Object.keys(CONFIG.DOMESTIC_CUP_IDS), ...Object.keys(CONFIG.INTL_COMPETITIONS)]);
   let tsdbCalls = 0;
@@ -392,7 +393,7 @@ export async function fetchTheSportsDB(env) {
   }
   return matches;
 }
-export async function fetchMatchesFromAPI(env) {
+export async function fetchMatchesFromAPI(env: Env) {
   const sources = [
     { name: "football-data", fn: fetchFootballData },
     { name: "sportscore", fn: fetchSportScore },

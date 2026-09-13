@@ -4,6 +4,7 @@
 
 
 import { CONFIG, STAGE_FA, COMP_EN, SPORTSCORE_SLUGS } from "./config";
+import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, getRelativeTimeUntilMatch, getEnglishDate, getEnglishTime, getEnglishRelative, fetchJSON, enStageName } from "./utils";
 import { normalizeTeamName } from "./teams.js";
 import { translateTeam, translateCompetition, faStageName, isDomesticCup } from "./translate";
@@ -148,9 +149,9 @@ export async function formatResultMessage(match, env, lang?) {
   }
   return await appendTableOrPhase(env, match, message, lang);
 }
-export async function fetchStandings(env, code, allowFetch = true) {
+export async function fetchStandings(env: Env, code, allowFetch = true) {
   const cacheKey = CONFIG.KV_STANDINGS_CACHE + code;
-  const cached = await env.STATE.get(cacheKey, "json").catch(() => null);
+  const cached: any = await env.STATE.get(cacheKey, "json").catch(() => null);
   if (cached && cached.ts && Date.now() - cached.ts < 6e5) return cached.data;
   if (!allowFetch) return cached && cached.data && Array.isArray(cached.data.teams) && cached.data.teams.length ? cached.data : null;
   let out = null;
@@ -213,7 +214,7 @@ export async function fetchStandings(env, code, allowFetch = true) {
       const headers = { "X-Auth-Token": env.API_TOKEN };
       const res = await fetch("https://api.football-data.org/v4/competitions/" + code + "/standings", { headers });
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as any;
         const season = data.season;
         const table = data.standings && data.standings[0] && data.standings[0].table || [];
         const seasonEnded = season && season.endDate && new Date(season.endDate) < new Date();
@@ -222,7 +223,7 @@ export async function fetchStandings(env, code, allowFetch = true) {
           const tRes = await fetch("https://api.football-data.org/v4/competitions/" + code + "/teams", { headers });
           let zeroRows = null;
           if (tRes.ok) {
-            const tData = await tRes.json();
+            const tData: any = await tRes.json();
             const roster = (tData.teams || []).slice().sort((a, b) => a.name.localeCompare(b.name));
             zeroRows = roster.map((t, i) => ({ name: t.name, pos: i + 1, points: 0 }));
           }
@@ -272,13 +273,13 @@ export async function fetchStandings(env, code, allowFetch = true) {
   if (cached && cached.data && Array.isArray(cached.data.teams) && cached.data.teams.length) return cached.data;
   return null;
 }
-export async function standingsLine(env, match, lang) {
+export async function standingsLine(env: Env, match, lang) {
   const en = lang === "en";
   const code = match.competition.code;
   const fresh = await fetchStandings(env, code);
   if (!fresh || !fresh.teams.length) return null;
   const snapKey = CONFIG.KV_STANDINGS_SNAP + code;
-  const old = await env.STATE.get(snapKey, "json").catch(() => null);
+  const old = (await env.STATE.get(snapKey, "json") as any).catch(() => null);
   await env.STATE.put(snapKey, JSON.stringify(fresh)).catch(() => {
   });
   const lines = [];
@@ -307,7 +308,7 @@ export async function standingsLine(env, match, lang) {
   const tblWord = en ? "Table " : "\u{1F4CA} \u062C\u062F\u0648\u0644 ";
   return "\n\n" + tblWord + escapeMarkdownCharacters(compName) + ":\n" + lines.join("\n");
 }
-export async function appendTableOrPhase(env, match, message, lang) {
+export async function appendTableOrPhase(env: Env, match, message, lang) {
   const en = lang === "en";
   const faStage = faStageName(match.stage);
   const enStage = enStageName(match.stage);

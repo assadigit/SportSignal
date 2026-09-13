@@ -4,6 +4,7 @@
 
 
 import { CONFIG } from "./config";
+import type { Env } from "./types";
 import { toFaDigits, resetSubrequestBudget } from "./utils";
 import { translateTeam, ensureFaAiCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
@@ -16,9 +17,9 @@ import { maybePostX } from "./x";
 import { getRegisteredChats, checkUserCap } from "./users";
 import { applySettings } from "./admin";
 
-export async function getCronStatus(env) {
+export async function getCronStatus(env: Env) {
   try {
-    const s = await env.STATE.get("cron_status_v1", "json").catch(() => null);
+    const s = (await env.STATE.get("cron_status_v1", "json") as any).catch(() => null);
     if (s && s.heartbeat) return s;
   } catch (e) {
   }
@@ -27,7 +28,7 @@ export async function getCronStatus(env) {
   const src = await env.STATE.get(CONFIG.KV_LAST_SOURCE).catch(() => null);
   return { heartbeat: hb ? String(hb) : "0", last_cron: lc ? String(lc) : "0", api_source: src || null };
 }
-export async function executeScheduledLogic(env) {
+export async function executeScheduledLogic(env: Env) {
   resetSubrequestBudget();
   await applySettings(env);
   await ensureFaAiCache(env).catch(() => {

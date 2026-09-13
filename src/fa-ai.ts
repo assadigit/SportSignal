@@ -4,10 +4,11 @@
 
 
 import { CONFIG } from "./config";
+import type { Env } from "./types";
 import { normTeamKey } from "./teams.js";
 import { translateTeam, resetFaAiCache, ensureFaAiCache, isValidFaName, faAiCacheSize } from "./translate";
 
-export function collectUnknownTeamNames(data) {
+export function collectUnknownTeamNames(data: any) {
   const out = new Set();
   const addName = (n) => {
     const s = String(n || "").trim();
@@ -17,7 +18,7 @@ export function collectUnknownTeamNames(data) {
     out.add(s);
   };
   if (!data) return [...out];
-  if (data.ucl && Array.isArray(data.ucl.teams)) data.ucl.teams.forEach((t) => addName(t && t.name));
+  if (data.ucl && Array.isArray((data.ucl as any).teams)) data.ucl.teams.forEach((t) => addName(t && t.name));
   if (data.standings && typeof data.standings === "object") {
     Object.values(data.standings).forEach((st) => {
       if (st && Array.isArray(st.teams)) st.teams.forEach((t) => addName(t && t.name));
@@ -112,9 +113,9 @@ export function parseAiNameMap(raw, batch) {
   }
   return Object.keys(flat).length ? flat : null;
 }
-export async function runFaAiLearner(env, names, force) {
+export async function runFaAiLearner(env: Env, names, force) {
   if (!env || !env.AI) return { ok: false, skipped: "ai-disabled", learned: 0, failed: 0, pending: (names || []).length };
-  const rec = await env.STATE.get(CONFIG.KV_FA_TEAMS, "json").catch(() => null) || { v: 1, learned: {}, failed: {} };
+  const rec: any = await env.STATE.get(CONFIG.KV_FA_TEAMS, "json").catch(() => null) || { v: 1, learned: {}, failed: {} };
   if (!rec.learned) rec.learned = {};
   if (!rec.failed) rec.failed = {};
   const now = Date.now();
@@ -132,7 +133,7 @@ export async function runFaAiLearner(env, names, force) {
   const v3Norm = new Map();
   let v3Hint = "";
   if (v3 && Array.isArray(v3.clubs) && v3.clubs.length) {
-    const byLeague = {};
+    const byLeague: any = {};
     for (const c of v3.clubs) {
       if (!c || !c.n) continue;
       v3Norm.set(normFa(c.n), c.n);
@@ -181,14 +182,14 @@ export async function runFaAiLearner(env, names, force) {
   await env.STATE.put(CONFIG.KV_FA_TEAMS, JSON.stringify(rec)).catch(() => {
   });
   resetFaAiCache();
-  const out = { ok: true, learned, failed, model, pending: pending.length - batch.length, asked: batch.length, totalLearned: Object.keys(rec.learned).length };
+  const out: any = { ok: true, learned, failed, model, pending: pending.length - batch.length, asked: batch.length, totalLearned: Object.keys(rec.learned).length };
   if (askedAndFailed(out)) out.rawHead = rawDump || (raw ? String(raw).slice(0, 160) : "(no model output)");
   return out;
 }
 export function askedAndFailed(out) {
   return out && out.asked > 0 && out.learned === 0;
 }
-export async function maybeRunFaAi(env, force?) {
+export async function maybeRunFaAi(env: Env, force?) {
   try {
     if (!env || !env.AI) return { ok: false, skipped: "ai-disabled" };
     if (!force) {
@@ -201,7 +202,7 @@ export async function maybeRunFaAi(env, force?) {
     const cached = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null);
     const names = cached && cached.data ? collectUnknownTeamNames(cached.data) : [];
     if (!names.length) return { ok: true, learned: 0, failed: 0, pending: 0, totalLearned: faAiCacheSize() };
-    const res = await runFaAiLearner(env, names, force);
+    const res: any = await runFaAiLearner(env, names, force);
     console.log(`\u{1F9E0} FA-AI learner: asked=${res.asked || 0} learned=${res.learned || 0} rejected=${res.failed || 0} pending=${res.pending || 0} model=${res.model || "-"}`);
     return res;
   } catch (e) {
