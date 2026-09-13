@@ -5410,6 +5410,12 @@ var PUBLIC_PAGE = `<!doctype html>
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-title" content="SportSignal">
 <meta name="application-name" content="SportSignal">
+<!-- v12.x-live-lottie: the dotLottie player web component — renders the
+     Live.lottie animation (a pulsing "LIVE" badge) used as the live-chip
+     for live-broadcasting games. Loaded from the LottieFiles CDN. The
+     <dotlottie-player> custom element is used in the livechip + the
+     #liveCard h2 heading. -->
+<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 <meta name="description" content="\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\u060C \u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627\u06CC \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u0648 \u0646\u062A\u0627\u06CC\u062C \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628 \u2014 \u0628\u0647\u200C\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06CC \u062E\u0648\u062F\u06A9\u0627\u0631">
 <meta property="og:type" content="website">
 <meta property="og:title" content="SportSignal \u2014 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648">
@@ -5851,6 +5857,16 @@ body.joinsticky{padding-bottom:88px}
    ink text, line border) \u2014 the theme-aware pair replaces the light override. */
 .livechip{display:inline-flex;align-items:center;gap:6px;background:var(--t-success-soft);color:var(--t-success-ink);border:1px solid var(--t-success-line);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;margin:0 6px;vertical-align:middle}
 .livechip .dot{width:8px;height:8px;border-radius:50%;background:var(--badge-live);animation:live-beep 1.1s ease-in-out infinite}
+/* v12.x-live-lottie: the Live.lottie animation (a pulsing "LIVE" badge)
+   replaces the CSS-animated dot + "در حال برگزاری" text in the livechip
+   and the #liveCard h2 heading. The <dotlottie-player> element renders
+   the .lottie file (served from /Live.lottie). Sized to match the chip:
+   40x16px in the livechip, 56x22px in the h2 heading. The autoplay +
+   loop attributes keep the animation running. The background stays
+   transparent so it blends into the chip / heading plate. */
+dotlottie-player.live-lottie{display:inline-block;width:40px;height:16px;vertical-align:middle}
+.livechip dotlottie-player.live-lottie{width:40px;height:16px}
+#liveCard h2 dotlottie-player.live-lottie{width:56px;height:22px;vertical-align:middle;margin-inline-end:4px}
 @keyframes live-beep{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.35);transform:scale(1)}50%{box-shadow:0 0 0 6px rgba(34,197,94,0);transform:scale(1.15)}}
 /* v12.44-livepolish: the liveCard heading carries a BREATHING GREEN LIGHT
    — a 12px green dot that pulses softly (opacity + box-shadow + scale),
@@ -7045,8 +7061,8 @@ function render(list, el, finished){
     info.appendChild(document.createTextNode(fmtDate(m.utcDate)));
     if(live){
       var chip = document.createElement("span"); chip.className = "livechip";
-      var dot = document.createElement("span"); dot.className = "dot";
-      chip.appendChild(dot); chip.appendChild(document.createTextNode(T("live")));
+      var lottie = document.createElement("dotlottie-player"); lottie.className = "live-lottie"; lottie.setAttribute("src","/Live.lottie"); lottie.setAttribute("autoplay",""); lottie.setAttribute("loop",""); lottie.setAttribute("background","transparent");
+      chip.appendChild(lottie);
       info.appendChild(chip);
       if(m.minute != null){
         var lmin = document.createElement("span"); lmin.className = "lmin"; lmin.textContent = fmtNum(m.minute) + "\u02B9";
@@ -7273,16 +7289,19 @@ function renderLive(){
   var card = document.getElementById("liveCard"), el = document.getElementById("liveMatches");
   if(!card || !el) return;
   el.innerHTML = "";
-  // v12.44-livepolish: replace the 🔴 emoji in the heading with a breathing
-  // green dot (.live-breath) — the CSS animation pulses softly, conveying
-  // "these games are now playing" at a glance. The dot is injected once per
-  // renderLive call (removed if already present from a previous call).
+  // v12.x-live-lottie: replace the breathing green dot with the Live.lottie
+  // animation (a pulsing "LIVE" badge). The <dotlottie-player> is injected
+  // once per renderLive call (removed if already present from a previous
+  // call). The h2 text node keeps the "مسابقات زنده" heading (the 🔴 emoji
+  // is stripped). The Lottie animation replaces the .live-breath CSS dot.
   var h2 = card.querySelector("h2");
   if(h2){
     var oldBreath = h2.querySelector(".live-breath");
     if(oldBreath) oldBreath.remove();
-    var breath = document.createElement("span"); breath.className = "live-breath"; breath.setAttribute("aria-hidden", "true");
-    h2.insertBefore(breath, h2.firstChild);
+    var oldLottie = h2.querySelector("dotlottie-player.live-lottie");
+    if(oldLottie) oldLottie.remove();
+    var lottie = document.createElement("dotlottie-player"); lottie.className = "live-lottie"; lottie.setAttribute("src","/Live.lottie"); lottie.setAttribute("autoplay",""); lottie.setAttribute("loop",""); lottie.setAttribute("background","transparent"); lottie.setAttribute("aria-hidden","true");
+    h2.insertBefore(lottie, h2.firstChild);
     // Strip the 🔴 emoji from the text node (the data-i="hLive" i18n string starts with 🔴)
     h2.childNodes.forEach(function(n){ if(n.nodeType === 3 && n.textContent.indexOf("\u{1F534}") !== -1) n.textContent = n.textContent.replace(/\u{1F534}\s*/g, ""); });
   }
@@ -7671,8 +7690,8 @@ function spotItemNode(m, idx, opts){
     var inLiveCard = !!(opts && opts.isLiveCard);
     if(!inLiveCard){
       var chip = document.createElement("span"); chip.className = "livechip";
-      var dot = document.createElement("span"); dot.className = "dot";
-      chip.appendChild(dot); chip.appendChild(document.createTextNode(T("live")));
+      var lottie = document.createElement("dotlottie-player"); lottie.className = "live-lottie"; lottie.setAttribute("src","/Live.lottie"); lottie.setAttribute("autoplay",""); lottie.setAttribute("loop",""); lottie.setAttribute("background","transparent");
+      chip.appendChild(lottie);
       info.appendChild(chip);
     }
     if(m.minute != null){ var lmin = document.createElement("span"); lmin.className = "lmin"; lmin.textContent = fmtNum(m.minute) + "\u02B9"; info.appendChild(lmin); }
