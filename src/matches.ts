@@ -207,13 +207,23 @@ export function isBackfillEligible(match, type, _env) {
 // "presumably finished" so the result notification fires (with score
 // pending) instead of waiting for a provider that may not recover. When
 // the provider recovers, the real score updates the snapshot.
+// v13.20-fix: IN_PLAY + PAUSED are EXCLUDED — those mean the match is
+// actively being played (extra time, stoppage time, half-time). The
+// fallback should ONLY fire when the provider hasn't even started
+// reporting the match as live (SCHEDULED/TIMED at 90+min = provider is
+// genuinely down, not "the match is in extra time").
 export function isPresumablyFinished(match, _env) {
   const now = getNowUTC();
   const matchTime = new Date(match.utcDate);
   const minutesSince = (now.getTime() - matchTime.getTime()) / (60 * 1e3);
-  if (minutesSince < 90) return false;
+  // v13.20: widened to 150min (football matches with extra time can run
+  // to ~120min; stoppage time + delays can push to ~130min). 150min gives
+  // a safe margin so we don't fire during a legitimately long match.
+  if (minutesSince < 150) return false;
   const status = String(match.status || "").toUpperCase();
-  return status === "SCHEDULED" || status === "TIMED" || status === "IN_PLAY" || status === "PAUSED";
+  // ONLY SCHEDULED/TIMED — the provider hasn't started reporting live at all.
+  // IN_PLAY/PAUSED mean the match is actively being played (NOT finished).
+  return status === "SCHEDULED" || status === "TIMED";
 }
 // v13.9-reliability #2: match-start backfill. The match-start window
 // (isMatchStartingNow) only fires within -1..+20min of kickoff. If the cron

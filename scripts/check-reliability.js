@@ -63,7 +63,8 @@ check("#anim sendDice wired in notifications.ts", /sendDice\(scopedEnv, chatId/.
 
 // #8 Time-based result fallback (presumably finished)
 check("#8 isPresumablyFinished function exists", /function isPresumablyFinished\(match, _env\)/.test(src));
-check("#8 isPresumablyFinished checks 90min past", /minutesSince < 90/.test(src));
+check("#8 isPresumablyFinished checks 150min past (v13.20 widened)", /minutesSince < 150/.test(src));
+check("#8 isPresumablyFinished excludes IN_PLAY/PAUSED (v13.20)", /return status === "SCHEDULED" \|\| status === "TIMED"/.test(src));
 check("#8 isMatchFinished includes presumably-finished", /return match\.status === "FINISHED" \|\| isPresumablyFinished/.test(src));
 
 // #9 6h heartbeat
