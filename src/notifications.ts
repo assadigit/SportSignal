@@ -12,7 +12,7 @@ import { translateTeam, translateCompetition, getCompetitionPriority } from "./t
 import { isWithin24HourWindow, isWithinBigMatchWindow, isWithin3HourWindow, isWithin1HourWindow, isWithin5MinWindow, isMatchStartingNow, isWithinPostMatchWindow, isMatchFinished, getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, cleanupExpiredNotifications, isBackfillEligible, shouldNotify } from "./matches";
 import { format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, specialBanner } from "./composers";
 import { sendTelegram, sendDice, sendPhotoBinary } from "./telegram";
-import { renderCardPng } from "./card";
+import { renderCardPngCached } from "./card";
 import { getRegisteredChats, getUserPrefs, groupChatsByTz, userFollowsMatch, isBigMatch, isMasterBigMatch } from "./users";
 
 export const NOTIFICATION_CONFIGS = [
@@ -114,7 +114,7 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
     let cardSent = false;
     if (match.homeTeam.crest || match.awayTeam.crest) {
       try {
-        const pngBuf = await renderCardPng(scopedEnv, match, lang);
+        const pngBuf = await renderCardPngCached(scopedEnv, match, lang);
         if (pngBuf) {
           // The caption is the full match text (specialBanner + formatter +
           // late tag if applicable). Truncate to 1024 (Telegram caption

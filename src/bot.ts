@@ -11,7 +11,7 @@ import { shouldNotify } from "./matches";
 import { matchKey } from "./dedupe.js";
 import { fetchMatchesFromAPI } from "./providers";
 import { sendTelegram, answerCallbackQuery, sendPhotoBinary } from "./telegram";
-import { renderCardPng } from "./card";
+import { renderCardPngCached } from "./card";
 import { formatBigMatchMessage, specialBanner } from "./composers";
 import { getRegisteredChats, getUserPrefs, setUserLang, getUserTz, masterTeamList, userFollowsMatch, botStr, resolveTimeZone } from "./users";
 import { sendLeagueTables, sendWeekAhead } from "./digest";
@@ -274,7 +274,7 @@ export async function handleTelegramUpdate(env: Env, update) {
         let cardSent = false;
         if (featured.homeTeam.crest || featured.awayTeam.crest) {
           try {
-            const pngBuf = await renderCardPng(tzEnv, featured, lang);
+            const pngBuf = await renderCardPngCached(tzEnv, featured, lang);
             if (pngBuf) {
               const caption = message.length > 1024 ? message.slice(0, 1020) + "\u2026" : message;
               const r = await sendPhotoBinary(tzEnv, chatId, pngBuf, caption, true);

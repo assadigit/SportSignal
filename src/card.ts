@@ -15,6 +15,7 @@ import { CONFIG, COMP_EN, LEAGUE_LOGOS } from "./config";
 import type { Env } from "./types";
 import { getJalaliDate, getJalaliTime, getEnglishDate, getEnglishTime } from "./utils";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
+import { matchKey } from "./dedupe.js";
 import { VAZIRMATN_BOLD_TTF_B64, VAZIRMATN_EXTRABOLD_TTF_B64 } from "./card-fonts";
 
 // v13.17-cards: resvg-wasm init (lazy, once per isolate). The WASM module
@@ -146,13 +147,19 @@ export async function renderCardPng(env: Env, match: any, lang: string): Promise
     const Resvg = await ensureResvg();
     if (!Resvg) return null;
     const svg = await buildMatchCardSvg(env, match, lang);
-    // Decode the inlined Vazirmatn TTF fonts (Bold + ExtraBold).
-    const boldBuf = Uint8Array.from(atob(VAZIRMATN_BOLD_TTF_B64), (c) => c.charCodeAt(0));
-    const extraBoldBuf = Uint8Array.from(atob(VAZIRMATN_EXTRABOLD_TTF_B64), (c) => c.charCodeAt(0));
+    // v13.31-perf: the two Vazirmatn TTFs were base64-DECODED (atob) on
+    // EVERY render — several hundred KB of string churn per card, per chat
+    // sweep. They are immutable module constants: decode once per isolate.
+    if (!_fontBufs) {
+      _fontBufs = {
+        bold: Uint8Array.from(atob(VAZIRMATN_BOLD_TTF_B64), (c) => c.charCodeAt(0)),
+        extraBold: Uint8Array.from(atob(VAZIRMATN_EXTRABOLD_TTF_B64), (c) => c.charCodeAt(0))
+      };
+    }
     const resvg = new Resvg(svg, {
       fitTo: { mode: "width", value: 800 },
       font: {
-        fontBuffers: [boldBuf, extraBoldBuf],
+        fontBuffers: [_fontBufs.bold, _fontBufs.extraBold],
         loadSystemFonts: false,
         defaultFontFamily: "Vazirmatn",
         defaultFontSize: 16
@@ -165,4 +172,40 @@ export async function renderCardPng(env: Env, match: any, lang: string): Promise
     console.warn("renderCardPng failed: " + e.message);
     return null;
   }
+}
+
+// v13.31-perf: decoded font buffers — module-level, one per isolate.
+let _fontBufs: { bold: Uint8Array; extraBold: Uint8Array } | null = null;
+
+// v13.31-perf: Cache API-backed PNG cache (caches.default — NOT KV, so it
+// never touches the 1,000/day KV write quota). The same card is rendered
+// repeatedly: once per language-bucket in a notification sweep, again on
+// backfill retries, again on the bot's featured button, again on every
+// /api/card/<key>.png request. Rendering costs the wasm rasterize + two
+// crest fetches — the cache turns those into a single per-colo render per
+// hour. Key: synthetic URL keyed by (matchKey, lang). Card content (teams,
+// kickoff, competition) is stable per matchKey; a late FA-name improvement
+// within the 1h TTL is accepted (translateTeam results improve asynchronously).
+export async function renderCardPngCached(env: Env, match: any, lang: string): Promise<ArrayBuffer | null> {
+  let cacheReq: Request | null = null;
+  try {
+    cacheReq = new Request("https://cards.internal/" + encodeURIComponent(matchKey(match)) + "/" + lang + ".png");
+    const hit = await caches.default.match(cacheReq);
+    if (hit) {
+      const buf = await hit.arrayBuffer();
+      if (buf && buf.byteLength) return buf;
+    }
+  } catch (e) {
+    cacheReq = null;
+  }
+  const png = await renderCardPng(env, match, lang);
+  if (png && cacheReq) {
+    try {
+      const resp = new Response(png, { headers: { "content-type": "image/png", "cache-control": "public, max-age=3600" } });
+      await caches.default.put(cacheReq, resp.clone());
+    } catch (e) {
+      // Cache API unavailable (e.g. some runtimes) — render still succeeds.
+    }
+  }
+  return png;
 }

@@ -159,7 +159,13 @@ const worker_default = {
       // cache or a long gap still resolves inline. The 7-day snapshot
       // fallback below is unchanged.
       try {
-        const FRESH_MS = 18e4;        // 3min  — matches fetchPublicMatches' KV TTL
+        // v13.31-kv-budget: FRESH_MS 3min → 5min — now exactly the KV TTL
+        // inside fetchPublicMatches (300s). Under continuous traffic the
+        // background refresh therefore runs at most ~288×/day instead of
+        // ~480×/day (each refresh = provider sweep + KV writes), and the
+        // data served is never older than the previous 5-min cadence.
+        // STALE_GRACE_MS unchanged: serve-stale + bg-refresh window 5–10min.
+        const FRESH_MS = 3e5;         // 5min  — matches fetchPublicMatches' KV TTL
         const STALE_GRACE_MS = 6e5;   // 10min — serve stale + bg-refresh window
         const kv = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null);
         const age = kv && kv.ts ? Date.now() - kv.ts : Infinity;
@@ -245,8 +251,8 @@ const worker_default = {
           // v13.17-cards: render SVG→PNG via resvg-wasm (Workers-compatible).
           // Telegram's sendPhoto can't fetch SVG URLs, so the bot sends the
           // PNG binary directly. This endpoint is also useful for OG images.
-          const { renderCardPng } = await import("./card");
-          const png = await renderCardPng(env, match, lang);
+          const { renderCardPngCached } = await import("./card");
+          const png = await renderCardPngCached(env, match, lang);
           if (!png) return new Response("card: png render failed", { status: 500, headers: { "content-type": "text/plain" } });
           return new Response(png, {
             headers: {

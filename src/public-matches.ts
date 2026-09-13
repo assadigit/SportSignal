@@ -313,9 +313,20 @@ export async function fetchPublicMatches(env: Env, req) {
     // v12.x-resilience: refresh the 7-day snapshot ONLY when the live sweep
     // succeeded with real data \u2014 otherwise we'd overwrite the snapshot
     // with empty arrays and lose the fallback.
+    // v13.31-kv-budget: write the 7-day snapshot ONLY when the payload
+    // actually changed. It previously rode along on EVERY successful
+    // refresh (up to ~288 writes/day under continuous traffic) \u2014 a
+    // large share of the 1,000/day free-tier KV write quota that was
+    // exhausted in session 2. Standings/fixtures/cups change only around
+    // live windows, so on a quiet day this removes nearly all snapshot
+    // writes. One extra KV READ per refresh (reads: 100k/day) buys it.
     if (CONFIG.KV_PUBLIC_SNAPSHOT) {
-      await env.STATE.put(CONFIG.KV_PUBLIC_SNAPSHOT, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: CONFIG.KV_PUBLIC_SNAPSHOT_TTL || (7 * 24 * 60 * 60) }).catch(() => {
-      });
+      const prevSnap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
+      const changed = !prevSnap || !prevSnap.data || JSON.stringify(prevSnap.data) !== JSON.stringify(data);
+      if (changed) {
+        await env.STATE.put(CONFIG.KV_PUBLIC_SNAPSHOT, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: CONFIG.KV_PUBLIC_SNAPSHOT_TTL || (7 * 24 * 60 * 60) }).catch(() => {
+        });
+      }
     }
   } else {
     await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: 60 }).catch(() => {

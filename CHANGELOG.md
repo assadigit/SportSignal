@@ -14,6 +14,35 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.31-perfbudget] — 2026-09-13 (KV write quota + card latency + SWR cadence)
+
+### KV write budget (the 1,000/day free-tier ceiling hit in session 2)
+- **7-day snapshot now writes only on payload change** (`fetchPublicMatches`):
+  it previously rode along on EVERY successful refresh (≤288 writes/day under
+  continuous traffic — the single biggest avoidable consumer). One extra KV
+  read per refresh (reads are 100k/day) buys the skip; on a quiet day snapshot
+  writes drop to ~0. Fallback semantics unchanged (empty/failed sweeps never
+  overwrite the snapshot — that path still writes the short cache only).
+- **SWR FRESH window 3min → 5min** on `/api/public-matches` — now exactly the
+  KV TTL inside fetchPublicMatches, so the background refresh (provider sweep
+  + KV writes) runs at most ~288×/day instead of ~480×/day.
+- Documented daily budget math (worklog): cron liveness floor
+  (execution-lock + cron_status) = ~288 writes/day; snapshot skip removes the
+  other large block; total now sits well under ~600/day even on match days.
+- Card PNG cache uses the Cache API (`caches.default`) — deliberately NOT KV,
+  zero quota impact.
+
+### Card render latency (1–2s → cached)
+- **Vazirmatn TTFs decoded once per isolate** (previously `atob` of two large
+  fonts on EVERY render — hundreds of KB of string churn per card).
+- **`renderCardPngCached()`**: rendered PNGs cached per (matchKey, lang) in
+  the per-colo Cache API for 1h. The same card was re-rendered per language
+  bucket per sweep, on backfill retries, on the bot's featured button, and on
+  every `/api/card/<key>.png` request. All three call sites now share the
+  cache; first render per colo pays once, everyone else gets a byte-identical
+  hit.
+
+---
 ## [13.30-loginfix] — 2026-09-13 (admin panel login fixed: stateless session + rate-limit hardening)
 
 ### The reported lockout ("cannot login to the management backend")
