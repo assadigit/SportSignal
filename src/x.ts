@@ -533,8 +533,8 @@ export async function getXStatus(env: Env) {
   const dk = X_CONFIG.KV_DAILY_PREFIX + xDayKey();
   const monthly = parseInt(await env.STATE.get(mk).catch(() => null)) || 0;
   const daily = parseInt(await env.STATE.get(dk).catch(() => null)) || 0;
-  const lastPost = (await env.STATE.get(X_CONFIG.KV_LAST_POST, "json") as any).catch(() => null);
-  const lastError = (await env.STATE.get(X_CONFIG.KV_LAST_ERROR, "json") as any).catch(() => null);
+  const lastPost = await env.STATE.get(X_CONFIG.KV_LAST_POST, "json").catch(() => null);
+  const lastError = await env.STATE.get(X_CONFIG.KV_LAST_ERROR, "json").catch(() => null);
   return {
     enabled,
     dryRun,

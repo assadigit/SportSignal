@@ -279,7 +279,7 @@ export async function standingsLine(env: Env, match, lang) {
   const fresh = await fetchStandings(env, code);
   if (!fresh || !fresh.teams.length) return null;
   const snapKey = CONFIG.KV_STANDINGS_SNAP + code;
-  const old = (await env.STATE.get(snapKey, "json") as any).catch(() => null);
+  const old = await env.STATE.get(snapKey, "json").catch(() => null);
   await env.STATE.put(snapKey, JSON.stringify(fresh)).catch(() => {
   });
   const lines = [];

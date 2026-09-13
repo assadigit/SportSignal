@@ -35,7 +35,7 @@ export async function enrichLiveMatches(env: Env, matches) {
   for (const m of live.slice(0, 4)) {
     try {
       const key = CONFIG.KV_LIVE_DETAIL + m.id;
-      const cached = (await env.STATE.get(key, "json") as any).catch(() => null);
+      const cached = await env.STATE.get(key, "json").catch(() => null);
       if (cached) {
         applyLiveDetail(m, cached);
         continue;
@@ -76,7 +76,7 @@ export function projectedUclStart() {
   return new Date(Date.UTC(y, 8, 15, 19, 0, 0));
 }
 export async function fetchPublicMatches(env: Env, req) {
-  const cached = (await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json") as any).catch(() => null);
+  const cached = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null);
   if (cached && cached.ts && Date.now() - cached.ts < 18e4) return cached.data;
   await applySettings(env);
   await ensureFaAiCache(env).catch(() => {
@@ -247,7 +247,7 @@ export async function fetchPublicMatches(env: Env, req) {
   const clMatches = matches.filter((m) => m.competition.code === "CL" && m.status !== "FINISHED" && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > Date.now() && new Date(m.utcDate).getTime() <= Date.now() + 90 * 864e5)).sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
   const clBox = clMatches.filter((m) => hasSelectedTeam(m)).slice(0, 8);
   const uclStarted = stCL ? stCL.started !== false : true;
-  const clubsCat = (await env.STATE.get(CONFIG.KV_CLUBS_CATALOG, "json") as any).catch(() => null);
+  const clubsCat = await env.STATE.get(CONFIG.KV_CLUBS_CATALOG, "json").catch(() => null);
   const crestMap = new Map();
   if (clubsCat && Array.isArray(clubsCat.clubs)) {
     for (const c of clubsCat.clubs) {
@@ -280,7 +280,7 @@ export async function fetchPublicMatches(env: Env, req) {
   const thisWeek = matches.filter((m) => (shouldNotify(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekStart && new Date(m.utcDate).getTime() < weekEnd).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
   const nextWeek = matches.filter((m) => (shouldNotify(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekEnd && new Date(m.utcDate).getTime() < weekEnd + 7 * 864e5).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
   const data = { upcoming: upcoming.filter((m) => !topSpotKeys.has(String(m.id || "") + "|" + m.utcDate)).map(withTop), finished: finished.map(withTop), nextBig, topSpot: { next: topSpotNext ? withTop(topSpotNext) : null, matches: topSpotList.map(withTop) }, thisWeek: thisWeek.map(withTop), nextWeek: nextWeek.map(withTop), standings, cups, ucl, fetchedAt: null };
-  const poolMeta = matches ? (await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json") as any).catch(() => null) : null;
+  const poolMeta = matches ? await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null) : null;
   data.fetchedAt = poolMeta && poolMeta.fetchedAt || (new Date()).toISOString();
   // v12.x-resilience: snapshot fallback. If the live sweep failed OR the
   // pool came back empty (no matches at all from the API), try the long-TTL
@@ -294,7 +294,7 @@ export async function fetchPublicMatches(env: Env, req) {
   // stale snapshot.
   const poolEmpty = !matches || (Array.isArray(matches) && matches.length === 0);
   if ((liveSweepFailed || poolEmpty) && CONFIG.KV_PUBLIC_SNAPSHOT) {
-    const snap = (await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json") as any).catch(() => null);
+    const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
     if (snap && snap.data && (snap.data.upcoming || snap.data.finished || snap.data.topSpot || snap.data.ucl || snap.data.standings)) {
       const stale = Object.assign({}, snap.data, { cached: true, cachedAt: snap.ts ? new Date(snap.ts).toISOString() : snap.data.fetchedAt });
       // Re-write the short-TTL cache too so the next visitor in the next 5

@@ -23,6 +23,18 @@ function transform(ts) {
   c = c.replace(/^export default\s+/gm, "");
   // TS optional params: `name?` before `,` or `)` (never valid otherwise)
   c = c.replace(/(\w)\?([,)])/g, "$1$2");
+  // TS type annotations added by v13.3 (eval-safety): env: Env, : any,
+  // Promise<any>, as-any casts, index-signature types.
+  c = c.replace(/env: Env/g, "env");
+  c = c.replace(/\): Promise<any> \{/g, ") {");
+  c = c.replace(/: any\]([)\s,;])/g, "$1");
+  c = c.replace(/ as any\]/g, "");
+  c = c.replace(/ as any\)/g, ")");
+  c = c.replace(/: any\)/g, ")");
+  c = c.replace(/: any =/g, " =");
+  c = c.replace(/: any\]/g, "");
+  c = c.replace(/: Record<string, any> =/g, " =");
+  c = c.replace(/\(n: any\)/g, "(n)");
   return c;
 }
 

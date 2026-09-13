@@ -19,7 +19,7 @@ import { applySettings } from "./admin";
 
 export async function getCronStatus(env: Env) {
   try {
-    const s = (await env.STATE.get("cron_status_v1", "json") as any).catch(() => null);
+    const s = await env.STATE.get("cron_status_v1", "json").catch(() => null);
     if (s && s.heartbeat) return s;
   } catch (e) {
   }

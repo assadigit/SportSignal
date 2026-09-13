@@ -25,7 +25,7 @@ export async function getRegisteredChats(env: Env) {
 }
 export async function getBotMembers(env: Env) {
   const chats = await getRegisteredChats(env);
-  const profiles = (await env.STATE.get(CONFIG.KV_USER_PROFILES, "json") as any).catch(() => null) || {};
+  const profiles = await env.STATE.get(CONFIG.KV_USER_PROFILES, "json").catch(() => null) || {};
   const members = chats.map((id) => {
     const p = profiles[String(id)] || {};
     return { id, username: p.username || null, first_name: p.first_name || null, title: p.title || null, joined: p.joined || null };
@@ -57,7 +57,7 @@ export async function getBotMembers(env: Env) {
 }
 export async function getUserPrefs(env: Env) {
   try {
-    return (await env.STATE.get(CONFIG.KV_USER_PREFS, "json") as any) || {};
+    return await env.STATE.get(CONFIG.KV_USER_PREFS, "json") || {};
   } catch (e) {
     return {};
   }
@@ -67,7 +67,7 @@ export async function getUserPrefs(env: Env) {
 // user_prefs[chatId].lang.
 export async function getUserLang(env: Env, chatId) {
   try {
-    const prefs = (await env.STATE.get(CONFIG.KV_USER_PREFS, "json") as any);
+    const prefs = await env.STATE.get(CONFIG.KV_USER_PREFS, "json");
     const p = prefs && prefs[String(chatId)];
     if (p && (p.lang === "fa" || p.lang === "en")) return p.lang;
   } catch (e) {
