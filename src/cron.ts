@@ -14,7 +14,7 @@ import { sendTelegram, drainOutbox } from "./telegram";
 import { sendMatchNotifications, detectStatusChanges, reconcileSchedules } from "./notifications";
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, maybeNotifyTableToppers } from "./digest";
 import { maybePostX } from "./x";
-import { getRegisteredChats, checkUserCap } from "./users";
+import { getRegisteredChats, checkUserCap, getUserPrefs } from "./users";
 import { applySettings, buildCanaryMatch } from "./admin";
 
 export async function getCronStatus(env: Env) {
@@ -94,6 +94,55 @@ export async function executeScheduledLogic(env: Env) {
       }
     } catch (e) {
       console.error("Heartbeat failed: " + e.message);
+    }
+    // v13.11-migration: bot migration broadcast. If the admin has started a
+    // migration (POST /api/migrate/start), send a "this bot is deprecated,
+    // join the new bot" message to all registered chats every 3 days for 2
+    // weeks. Per-chat KV dedupe so each user gets it exactly once per round.
+    try {
+      const mig = await env.STATE.get(CONFIG.KV_MIGRATION, "json").catch(() => null);
+      if (mig && mig.active) {
+        const NOW_MS = Date.now();
+        const started = mig.startedAt || NOW_MS;
+        const ageDays = Math.floor((NOW_MS - started) / (24 * 36e5));
+        if (ageDays <= CONFIG.MIGRATION_TOTAL_DAYS) {
+          const lastRound = mig.lastRound || 0;
+          const roundDue = lastRound === 0 || (NOW_MS - lastRound) >= CONFIG.MIGRATION_INTERVAL_DAYS * 24 * 36e5;
+          if (roundDue) {
+            const chats = await getRegisteredChats(env);
+            const roundNum = Math.floor(ageDays / CONFIG.MIGRATION_INTERVAL_DAYS) + 1;
+            const prefs = await getUserPrefs(env).catch(() => ({}));
+            let sent = 0, failed = 0;
+            for (const chatId of chats) {
+              const dedupeKey = "mig_sent_v1:" + roundNum + ":" + chatId;
+              const already = await env.STATE.get(dedupeKey).catch(() => null);
+              if (already) continue;
+              const p = prefs[String(chatId)] || {};
+              const lang = p.lang === "en" ? "en" : "fa";
+              const msg = lang === "en"
+                ? "\u{1F6A8} *This bot is deprecated\\!*\n\nWe've moved to a new, faster bot with better features\\. Please join our new bot to continue receiving match notifications\\.\n\n\u2728 *New bot:* " + CONFIG.MIGRATION_NEW_BOT_HANDLE + "\n\u{1F517} " + CONFIG.MIGRATION_NEW_BOT_URL + "\n\n_Thank you for following \\- see you on the new bot\\!_"
+                : "\u{1F6A8} *\u0627\u06CC\u0646 \u0631\u0628\u0627\u062A \u0645\u0646\u0633\u0648\u062E \u0634\u062F\u0647\\!*\n\n\u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0645\u0627 \u0628\u0627 \u0627\u0645\u06A9\u0627\u0646\u0627\u062A \u0628\u0647\u062A\u0631 \u0648 \u0633\u0631\u0639\u062A \u0628\u0627\u0644\u0627\u062A\u0631 \u0631\u0627\u0647\u200C\u0627\u0646\u062F\u0627\u0632\u06CC \u0634\u062F\u0647 \u0627\u0633\u062A\\.\n\u0628\u0631\u0627\u06CC \u062F\u0631\u06CC\u0627\u0641\u062A \u0627\u0639\u0644\u0627\u0646\u200C\u0647\u0627\u060C \u0628\u0647 \u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0628\u067E\u06CC\u0648\u0646\u062F\u06CC\u062F\\.\n\n\u2728 *\u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F:* " + CONFIG.MIGRATION_NEW_BOT_HANDLE + "\n\u{1F517} " + CONFIG.MIGRATION_NEW_BOT_URL + "\n\n_\u0627\u0632 \u0647\u0645\u0631\u0627\u0647\u06CC\u200C\u062A\u0627\u0646 \u0645\u062A\u0634\u06A9\u0631\u06CC\u0645 \\- \u0645\u0646\u062A\u0638\u0631 \u0634\u0645\u0627 \u062F\u0631 \u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0647\u0633\u062A\u06CC\u0645_";
+              const r = await sendTelegram(env, msg, chatId);
+              if (r === true) {
+                sent++;
+                await env.STATE.put(dedupeKey, "1", { expirationTtl: CONFIG.MIGRATION_INTERVAL_DAYS * 24 * 3600 + 3600 }).catch(() => {});
+              } else if (r === "dead") failed++;
+            }
+            mig.lastRound = NOW_MS;
+            mig.totalSent = (mig.totalSent || 0) + sent;
+            await env.STATE.put(CONFIG.KV_MIGRATION, JSON.stringify(mig)).catch(() => {});
+            console.log(`\u{1F6A8} Migration broadcast: sent=${sent} failed=${failed} (round ${roundNum}/${Math.ceil(CONFIG.MIGRATION_TOTAL_DAYS / CONFIG.MIGRATION_INTERVAL_DAYS)})`);
+          }
+        } else {
+          // Migration period over — deactivate.
+          mig.active = false;
+          mig.endedAt = NOW_MS;
+          await env.STATE.put(CONFIG.KV_MIGRATION, JSON.stringify(mig)).catch(() => {});
+          console.log(`\u2705 Migration period ended (total sent: ${mig.totalSent || 0})`);
+        }
+      }
+    } catch (e) {
+      console.error("Migration broadcast failed: " + e.message);
     }
     try {
       const fa = await maybeRunFaAi(env);

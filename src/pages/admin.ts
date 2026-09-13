@@ -217,7 +217,9 @@ function login(){
   fetch("/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({username:"admin",password:p})}).then(function(r){ return r.ok ? r.json() : null; }).then(function(r){
     if(!r){ msg(T("mToken")); return; }
     try{ localStorage.removeItem("admin_token"); }catch(e){}
-    load(); refreshStatus(); loadNextMatches(); loadMembers();
+    // v13.11-admin-fix: wait 400ms so the session KV write is visible on the
+    // API calls below (KV eventual consistency).
+    setTimeout(function(){ load(); refreshStatus(); loadNextMatches(); loadMembers(); }, 400);
   }).catch(function(){ msg(T("mErr")); });
 }
 function msg(t){ var m=document.getElementById("msg"); m.textContent=t; m.style.display="block"; setTimeout(function(){m.style.display="none";},2500); }

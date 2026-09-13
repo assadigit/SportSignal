@@ -6,6 +6,56 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.11-migration] — 2026-09-13 (admin panel KV-propagation fix + bot migration broadcast)
+
+### Admin panel fix ("doesn't go inside")
+- **Root cause**: Cloudflare KV is eventually consistent — the login handler writes
+  the session to KV, then `location.reload()` immediately reads it back on the
+  next `/admin` request. If the KV write hasn't propagated yet, `isAdminAuthed`
+  returns false → serves LOGIN_PAGE again (bounces back to login).
+- **Server-side fix**: read-after-write verification in `/admin/login` — after
+  `env.STATE.put("admin_sess_" + sid, ...)`, retry the read up to 3× (200ms
+  apart) until the session is visible. Only then return the success response.
+- **Client-side fix**: 400ms delay before `location.reload()` in both the login
+  page and the admin page's re-login function — belt-and-suspenders so the
+  reload doesn't race the KV propagation.
+- **Clearer error**: if neither ADMIN_PASS nor a stored hash is set, return
+  "Admin password not configured. Run: wrangler secret put ADMIN_PASS" instead
+  of the generic "Invalid credentials".
+
+### Bot migration broadcast (old bot → new @SportSignalAlertsBot)
+- **Polished Persian migration message**:
+  ```
+  🚨 *این ربات منسوخ شده!*
+
+  ربات جدید ما با امکانات بهتر و سرعت بالاتر راه‌اندازی شده است.
+  برای دریافت اعلان‌ها، به ربات جدید بپیوندید.
+
+  ✨ *ربات جدید:* @SportSignalAlertsBot
+  🔗 https://t.me/SportSignalAlertsBot
+
+  _از همراهی‌تان متشکریم - منتظر شما در ربات جدید هستیم_
+  ```
+- **Scheduled broadcast over 2 weeks**: sends every 3 days (5 rounds: day 0,
+  3, 6, 9, 12). Per-chat per-round KV dedupe (`mig_sent_v1:<round>:<chatId>`)
+  so each user gets it exactly once per round. Auto-deactivates after 14 days.
+- **Admin API endpoints**:
+  - `POST /api/migrate/start` — start the 2-week migration broadcast
+  - `POST /api/migrate/stop` — stop early
+  - `GET /api/migrate/status` — check progress (active, lastRound, totalSent, totalUsers)
+- **Bilingual**: the migration message is sent in the user's chosen language
+  (fa/en) based on their prefs.
+- **Bot statistics**: the `/api/migrate/status` endpoint reports `totalUsers`
+  based on the current bot's `telegram_users_v6` KV (the source of truth).
+  The admin panel's user count already reads from this KV — stats are based
+  on the new bot.
+
+### Gate
+- `npm test` exit 0 (272 assertions, unchanged — the migration + admin fixes
+  are additive logic, no existing invariants changed).
+
+---
+
 ## [13.10-clean] — 2026-09-13 (clean date-first reminder format + animated ⚽ emoji on kickoff)
 
 Two asks: (1) restructure the reminder format to date-first (replace the

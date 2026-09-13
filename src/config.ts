@@ -2,7 +2,7 @@
 // Extracted verbatim from the v12.33-xpost bundle; KV keys and semantics are
 // LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.10-clean";
+export const VERSION = "13.11-migration";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -247,6 +247,16 @@ export const CONFIG: Record<string, any> = {
   // If the admin doesn't see it, something broke (cron, worker, KV, Telegram).
   KV_HEARTBEAT_LAST: "heartbeat_sent_v1",
   HEARTBEAT_INTERVAL_MS: 6 * 60 * 60 * 1e3,
+  // v13.11-migration: bot migration broadcast. Sends a "this bot is
+  // deprecated, join the new bot" message to all registered chats, every
+  // 3 days for 2 weeks (5 sends: day 0, 3, 6, 9, 12). Per-chat KV dedupe
+  // so each user gets it exactly once per send-round. The admin starts the
+  // migration via POST /api/migrate/start; it auto-expires after 14 days.
+  KV_MIGRATION: "migration_v1",
+  MIGRATION_INTERVAL_DAYS: 3,
+  MIGRATION_TOTAL_DAYS: 14,
+  MIGRATION_NEW_BOT_URL: "https://t.me/SportSignalAlertsBot",
+  MIGRATION_NEW_BOT_HANDLE: "@SportSignalAlertsBot",
   DATE_RANGE_DAYS: 10,
   DAYS_IN_PAST: 2,
   DAYS_IN_FUTURE: 8,

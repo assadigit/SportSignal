@@ -60,7 +60,11 @@ async function doLogin(){
   var r=await fetch("/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p})});
   if(r.status===429){ btn.disabled=false; err(T("errRate")); return; }
   if(!r.ok){ btn.disabled=false; err(T("errCreds")); return; }
-  location.reload();
+  // v13.11-admin-fix: wait 400ms before reload so the session KV write is
+  // visible on the read-back (Cloudflare KV is eventually consistent — the
+  // server-side read-after-write verify handles the worst case, but this
+  // client delay is a belt-and-suspenders so the reload doesn't race the KV).
+  setTimeout(function(){ location.reload(); }, 400);
 }
 document.getElementById("pass").addEventListener("keydown",function(e){ if(e.key==="Enter") doLogin(); });
 setTheme(initTheme()); applyLang(true);

@@ -63,6 +63,12 @@ const worker_default = {
         ok = timingSafeEqualStr(await hashPassword(body.password, storedHash.salt), storedHash.hash);
       }
       if (!ok) {
+        // v13.11-admin-fix: if neither ADMIN_PASS nor a stored hash is set,
+        // tell the user clearly (so they know to run `wrangler secret put
+        // ADMIN_PASS`) instead of the generic "Invalid credentials".
+        if (!env.ADMIN_PASS && !storedHash) {
+          return jsonResponse({ error: "Admin password not configured. Run: wrangler secret put ADMIN_PASS" }, 500);
+        }
         await env.STATE.put(failKey, String(fails + 1), { expirationTtl: 600 }).catch(() => {
         });
         return jsonResponse({ error: "Invalid credentials" }, 401);
@@ -72,6 +78,16 @@ const worker_default = {
       const sid = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
       await env.STATE.put("admin_sess_" + sid, JSON.stringify({ created: Date.now(), ip }), { expirationTtl: 43200 }).catch(() => {
       });
+      // v13.11-admin-fix: read-after-write verification. Cloudflare KV is
+      // eventually consistent — the session write may not be visible on the
+      // immediate read-back (location.reload() happens ~0ms after the fetch
+      // resolves). Verify the session landed; retry up to 3× (200ms apart)
+      // so the admin page doesn't bounce back to the login form.
+      for (let i = 0; i < 3; i++) {
+        const v = await env.STATE.get("admin_sess_" + sid).catch(() => null);
+        if (v) break;
+        await new Promise((r) => setTimeout(r, 200));
+      }
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
         headers: {
@@ -317,6 +333,40 @@ const worker_default = {
       const results = await Promise.allSettled(chats.map((c) => sendTelegram(env, escapeMarkdownCharacters(text), c)));
       const okCount = results.filter((r) => r.status === "fulfilled" && r.value === true).length;
       return jsonResponse({ sent: okCount, total: chats.length });
+    }
+    // v13.11-migration: bot migration control endpoints. The admin starts a
+    // 2-week migration broadcast (sends "join the new bot" every 3 days),
+    // checks status, or stops it early.
+    if (url.pathname === "/api/migrate/start" && req.method === "POST") {
+      const mig = await env.STATE.get(CONFIG.KV_MIGRATION, "json").catch(() => null) || {};
+      mig.active = true;
+      mig.startedAt = Date.now();
+      mig.lastRound = 0;
+      mig.totalSent = mig.totalSent || 0;
+      mig.newBot = CONFIG.MIGRATION_NEW_BOT_HANDLE;
+      await env.STATE.put(CONFIG.KV_MIGRATION, JSON.stringify(mig)).catch(() => {});
+      return jsonResponse({ ok: true, active: true, startedAt: new Date(mig.startedAt).toISOString(), intervalDays: CONFIG.MIGRATION_INTERVAL_DAYS, totalDays: CONFIG.MIGRATION_TOTAL_DAYS, newBot: CONFIG.MIGRATION_NEW_BOT_HANDLE });
+    }
+    if (url.pathname === "/api/migrate/stop" && req.method === "POST") {
+      const mig = await env.STATE.get(CONFIG.KV_MIGRATION, "json").catch(() => null) || {};
+      mig.active = false;
+      mig.endedAt = Date.now();
+      await env.STATE.put(CONFIG.KV_MIGRATION, JSON.stringify(mig)).catch(() => {});
+      return jsonResponse({ ok: true, active: false, totalSent: mig.totalSent || 0 });
+    }
+    if (url.pathname === "/api/migrate/status" && req.method === "GET") {
+      const mig = await env.STATE.get(CONFIG.KV_MIGRATION, "json").catch(() => null) || {};
+      const users = await getRegisteredChats(env);
+      return jsonResponse({
+        active: !!mig.active,
+        startedAt: mig.startedAt ? new Date(mig.startedAt).toISOString() : null,
+        lastRound: mig.lastRound ? new Date(mig.lastRound).toISOString() : null,
+        totalSent: mig.totalSent || 0,
+        totalUsers: users.length,
+        intervalDays: CONFIG.MIGRATION_INTERVAL_DAYS,
+        totalDays: CONFIG.MIGRATION_TOTAL_DAYS,
+        newBot: CONFIG.MIGRATION_NEW_BOT_HANDLE
+      });
     }
     if (url.pathname === "/api/standings" && req.method === "GET") {
       const code = String(url.searchParams.get("code") || "").toUpperCase();
