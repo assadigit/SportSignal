@@ -6221,6 +6221,12 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
 .sthead-p{font-size:9.5px;font-weight:700;color:var(--muted);min-width:34px;text-align:end;flex-shrink:0}
 .stpos{width:16px;text-align:center;font-weight:800;color:var(--muted);flex-shrink:0}
 .stpos.top3{color:var(--accent)}
+/* v12.x-bold-top1: the leader (position 1) of each league is bolded —
+   the entire row (position number + team name + points) gets a heavier
+   font-weight so the table leader stands out at a glance. */
+.strow.top1{font-weight:800}
+.strow.top1 .stname{font-weight:800}
+.strow.top1 .stpts{font-weight:800}
 .stname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* v12.18: UCL rows carry a ROUND club crest (the user's ask) \u2014 same circle
    language as the match rows, miniaturized for the dense table. */
@@ -7416,7 +7422,7 @@ function renderStandings(d){
       var thp = document.createElement("span"); thp.className = "sthead-p"; thp.textContent = T("thPts");
       th.appendChild(thf); th.appendChild(thp); box.appendChild(th);
       st.teams.forEach(function(t){
-        var r = document.createElement("div"); r.className = "strow";
+        var r = document.createElement("div"); r.className = "strow" + (t.pos===1 ? " top1" : "");
         var p = document.createElement("span"); p.className = "stpos" + (t.pos<=3 ? " top3" : ""); p.textContent = fmtNum(t.pos);
         var n = document.createElement("span"); n.className = "stname"; nameInto(n, curLang()==="en" ? t.name : (t.faName||t.name));
         var pt = document.createElement("span"); pt.className = "stpts"; pt.textContent = fmtNum(t.points);
