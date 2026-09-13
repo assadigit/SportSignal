@@ -91,6 +91,11 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
     const lang = g.lang || "fa";
     let message = specialBanner(match, lang) + await config.messageFormatter(match, scopedEnv, lang);
     if (late) message += "\n\n" + (lang === "en" ? "This reminder was sent late" : "\u0627\u06CC\u0646 \u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u0628\u0627 \u062A\u0623\u062E\u06CC\u0631 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F");
+    // v13.22-promo: website promotion footer on every notification. The user's
+    // exact format: a separator line, then the promo text + the site URL.
+    message += lang === "en"
+      ? "\n\n\\-\\-\\-\\-\\-\\-\nView league tables and the biggest upcoming matches:\nhttps://sportsignal\\.ir"
+      : "\n\n\\-\\-\\-\\-\\-\\-\n\u0645\u0634\u0627\u0647\u062F\u0647 \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627 \u0648 \u0645\u0647\u0645\u062A\u0631\u06CC\u0646 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634 \u0631\u0648:\nhttps://sportsignal\\.ir";
     // v13.10-animated: for match-start, send an animated ⚽ dice FIRST (a
     // spinning football that signals "kickoff!") before the text message.
     // This is Telegram's built-in sendDice animation — zero asset hosting.
