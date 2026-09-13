@@ -217,6 +217,38 @@ export async function sendPhoto(env: Env, chatId, photoUrl, caption?) {
   return false;
 }
 
+// v13.17-cards: sendPhotoBinary — send a PNG image as a binary upload
+// (multipart/form-data). This is how the bot sends match-card images:
+// the Worker renders the SVG→PNG via resvg-wasm, then uploads the PNG
+// buffer directly to Telegram (no URL fetch — Telegram can't fetch SVG).
+// Returns true on success, "dead" for dead chats, false otherwise.
+export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, caption?) {
+  try {
+    if (bumpSubrequest()) return false;
+    const formData = new FormData();
+    formData.append("chat_id", String(chatId));
+    formData.append("photo", new Blob([pngBuffer], { type: "image/png" }), "match-card.png");
+    if (caption) formData.append("caption", caption);
+    const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendPhoto`, {
+      method: "POST",
+      body: formData
+    });
+    if (res.ok) {
+      vlog(`\u{1F4F7} Photo (binary) sent to ${chatId}`);
+      return true;
+    }
+    const error = await res.text();
+    console.error(`sendPhotoBinary error: ${error}`);
+    if (res.status >= 400 && res.status < 500) {
+      return /chat not found|blocked by the user|bot was kicked|deactivated/i.test(error) ? "dead" : false;
+    }
+    return false;
+  } catch (e) {
+    console.error("sendPhotoBinary network error: " + e.message);
+    return false;
+  }
+}
+
 // Compatibility alias (v12.x call sites) — delegates to the merged sender.
 export async function sendTelegramWithKeyboard(env: Env, text, chatId, keyboard) {
   return sendTelegram(env, text, chatId, keyboard);

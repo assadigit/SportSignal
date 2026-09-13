@@ -178,7 +178,9 @@ const worker_default = {
     // if available) + available as an OG image for the public page.
     // Public (no auth) — the card carries no sensitive data.
     if (url.pathname.startsWith("/api/card/")) {
-      const matchKeyParam = decodeURIComponent(url.pathname.slice("/api/card/".length)).replace(/\.svg$/, "").replace(/\.png$/, "");
+      const rawPath = url.pathname.slice("/api/card/".length);
+      const isPng = rawPath.endsWith(".png");
+      const matchKeyParam = decodeURIComponent(rawPath).replace(/\.svg$/, "").replace(/\.png$/, "");
       const lang = url.searchParams.get("lang") === "en" ? "en" : "fa";
       try {
         // v13.12-cards: look up the match in the tracked pool (KV_MATCHES_KEY,
@@ -212,6 +214,21 @@ const worker_default = {
           }
         }
         if (!match) return new Response("card: match not found", { status: 404, headers: { "content-type": "text/plain" } });
+        if (isPng) {
+          // v13.17-cards: render SVG→PNG via resvg-wasm (Workers-compatible).
+          // Telegram's sendPhoto can't fetch SVG URLs, so the bot sends the
+          // PNG binary directly. This endpoint is also useful for OG images.
+          const { renderCardPng } = await import("./card");
+          const png = await renderCardPng(env, match, lang);
+          if (!png) return new Response("card: png render failed", { status: 500, headers: { "content-type": "text/plain" } });
+          return new Response(png, {
+            headers: {
+              "content-type": "image/png",
+              "cache-control": "public, max-age=300",
+              "access-control-allow-origin": "*"
+            }
+          });
+        }
         const { buildMatchCardSvg } = await import("./card");
         const svg = await buildMatchCardSvg(env, match, lang);
         return new Response(svg, {

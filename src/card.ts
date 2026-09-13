@@ -15,6 +15,32 @@ import { CONFIG, COMP_EN, LEAGUE_LOGOS } from "./config";
 import type { Env } from "./types";
 import { getJalaliDate, getJalaliTime, getEnglishDate, getEnglishTime } from "./utils";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
+import { VAZIRMATN_BOLD_TTF_B64, VAZIRMATN_EXTRABOLD_TTF_B64 } from "./card-fonts";
+
+// v13.17-cards: resvg-wasm init (lazy, once per isolate). The WASM module
+// is imported as a binding via wrangler rules (CompiledWasm). In the Worker
+// runtime, the .wasm file is imported as a WebAssembly.Module.
+let _resvgInit = false;
+let _Resvg = null;
+async function ensureResvg() {
+  if (_resvgInit) return _Resvg;
+  try {
+    const mod = await import("@resvg/resvg-wasm");
+    // The wasm binary is imported as a module binding (wrangler rules
+    // map *.wasm → CompiledWasm). In Workers, `import wasm from "..."` gives
+    // a WebAssembly.Module instance directly.
+    // @ts-ignore — the .wasm module has no type declarations
+    const wasmModule = (await import("@resvg/resvg-wasm/index_bg.wasm")).default;
+    await mod.initWasm(wasmModule);
+    _Resvg = mod.Resvg;
+    _resvgInit = true;
+    return _Resvg;
+  } catch (e) {
+    console.warn("resvg-wasm init failed (cards will be SVG-only): " + e.message);
+    _resvgInit = true; // don't retry
+    return null;
+  }
+}
 
 // Fetch a crest image and return it as a base64 data URI (so the SVG is
 // self-contained — no cross-origin fetch needed by the renderer). Falls
@@ -108,4 +134,35 @@ export async function buildMatchCardSvg(env: Env, match: any, lang: string): Pro
   <text x="400" y="385" text-anchor="middle" font-family="Vazirmatn, sans-serif" font-size="24" font-weight="800" fill="${accent}">${escXml(timeStr)}</text>
   ${match.venue ? `<text x="400" y="412" text-anchor="middle" font-family="Vazirmatn, sans-serif" font-size="14" font-weight="600" fill="#94a3b8">\u{1F4CD} ${escXml(en ? match.venue : (translateVenue(match.venue) || match.venue))}</text>` : ""}
 </svg>`;
+}
+
+// v13.17-cards: render the SVG to PNG via @resvg/resvg-wasm (pure-WASM,
+// runs natively in the Worker runtime — no native bindings needed).
+// Returns a PNG ArrayBuffer, or null if rendering fails (caller falls back
+// to text-only). The Vazirmatn TTF fonts are loaded into resvg so the
+// Persian team names + Jalali dates render correctly (not tofu boxes).
+export async function renderCardPng(env: Env, match: any, lang: string): Promise<ArrayBuffer | null> {
+  try {
+    const Resvg = await ensureResvg();
+    if (!Resvg) return null;
+    const svg = await buildMatchCardSvg(env, match, lang);
+    // Decode the inlined Vazirmatn TTF fonts (Bold + ExtraBold).
+    const boldBuf = Uint8Array.from(atob(VAZIRMATN_BOLD_TTF_B64), (c) => c.charCodeAt(0));
+    const extraBoldBuf = Uint8Array.from(atob(VAZIRMATN_EXTRABOLD_TTF_B64), (c) => c.charCodeAt(0));
+    const resvg = new Resvg(svg, {
+      fitTo: { mode: "width", value: 800 },
+      font: {
+        fontBuffers: [boldBuf, extraBoldBuf],
+        loadSystemFonts: false,
+        defaultFontFamily: "Vazirmatn",
+        defaultFontSize: 16
+      }
+    });
+    const png = resvg.render().asPng();
+    // resvg returns a Uint8Array; convert to ArrayBuffer for the Response.
+    return png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength);
+  } catch (e) {
+    console.warn("renderCardPng failed: " + e.message);
+    return null;
+  }
 }

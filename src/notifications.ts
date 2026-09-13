@@ -11,7 +11,8 @@ import { matchKey } from "./dedupe.js";
 import { translateTeam, translateCompetition, getCompetitionPriority } from "./translate";
 import { isWithin24HourWindow, isWithinBigMatchWindow, isWithin3HourWindow, isWithin1HourWindow, isWithin5MinWindow, isMatchStartingNow, isWithinPostMatchWindow, isMatchFinished, getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, cleanupExpiredNotifications, isBackfillEligible, shouldNotify } from "./matches";
 import { format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, specialBanner } from "./composers";
-import { sendTelegram, sendDice, sendPhoto } from "./telegram";
+import { sendTelegram, sendDice, sendPhotoBinary } from "./telegram";
+import { renderCardPng } from "./card";
 import { getRegisteredChats, getUserPrefs, groupChatsByTz, userFollowsMatch, isBigMatch, isMasterBigMatch } from "./users";
 
 export const NOTIFICATION_CONFIGS = [
@@ -98,19 +99,21 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
     if (config.type === "match-start" && !late) {
       g.chats.forEach((chatId) => { sendDice(scopedEnv, chatId, "\u26BD").catch(() => null); });
     }
-    // v13.12-cards: for match-start + result, send a visual match CARD
-    // (team crests + names + time) before the text. The card is an SVG
-    // served at /api/card/<matchKey>, converted to PNG via Cloudflare Image
-    // Resizing if available. Only for on-time notifications (not late
-    // backfills — the card would be stale + add noise). Skipped if the
-    // match has no crests (the card route returns 404 → sendPhoto fails
-    // silently via the .catch).
-    // v13.15-reliability: fire-and-forget (no await) — the card render takes
-    // 3-4s (fetches 2 crests + base64-encodes them) which would block the
-    // text notification. The card is a nice-to-have; the text is critical.
+    // v13.17-cards: for match-start + result, send a visual match CARD
+    // (team crests + names + time, rendered as PNG via resvg-wasm + sent
+    // as a binary upload). Fire-and-forget so it never blocks the text.
+    // The card uses the REAL provider crests + Vazirmatn font (inlined TTF)
+    // so Persian team names + Jalali dates render correctly. Skipped if
+    // no crests or if the PNG render fails (text still sends).
     if ((config.type === "match-start" || config.type === "result") && !late && (match.homeTeam.crest || match.awayTeam.crest)) {
-      const cardUrl = "https://football.sportsignal.ir/api/card/" + encodeURIComponent(matchKey(match)) + "?lang=" + lang;
-      g.chats.forEach((chatId) => { sendPhoto(scopedEnv, chatId, cardUrl).catch(() => null); });
+      renderCardPng(scopedEnv, match, lang).then((pngBuf) => {
+        if (pngBuf) {
+          const cap = config.type === "match-start"
+            ? (lang === "en" ? "🚀 Kickoff!" : "🚀 شروع بازی!")
+            : (lang === "en" ? "🏁 Full time" : "🏁 پایان بازی");
+          g.chats.forEach((chatId) => { sendPhotoBinary(scopedEnv, chatId, pngBuf, cap).catch(() => null); });
+        }
+      }).catch(() => null);
     }
     const sendResults = await Promise.allSettled(
       g.chats.map((chatId) => sendTelegram(scopedEnv, message, chatId))

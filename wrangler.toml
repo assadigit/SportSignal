@@ -1,6 +1,14 @@
 name = "ucl-notifier"
 main = "src/worker.ts"
 compatibility_date = "2025-11-04"
+compatibility_flags = ["nodejs_compat"]
+
+# v13.17-cards: WASM module for @resvg/resvg-wasm (SVG→PNG rendering in the
+# Worker, so the bot can send match-card images inline via sendPhoto binary).
+# The wasm file is referenced by the resvg-wasm package's import.
+rules = [
+  { type = "CompiledWasm", globs = ["**/index_bg.wasm"], fallthrough = false }
+]
 
 # Static assets (bg.jpg etc.) served automatically before the worker runs
 [assets]
