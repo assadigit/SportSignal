@@ -48,7 +48,7 @@ export const PUBLIC_PAGE = `<!doctype html>
 <meta name="color-scheme" content="dark light">
 <title data-i="title">\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u0631\u0648 \u2014 \u0627\u0639\u0644\u0627\u0646\u200C\u062F\u0647\u0646\u062F\u0647 \u0645\u0633\u0627\u0628\u0642\u0627\u062A</title>
 <style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
-<link rel="stylesheet" href="/public-13.10.css">
+<link rel="stylesheet" href="/public-13.11.css">
 </head>
 <body>
 <!-- v12.24 (the user's ask): a real WEBSITE header \u2014 the uploaded SportSignal
@@ -255,6 +255,6 @@ export const PUBLIC_PAGE = `<!doctype html>
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.8.js"><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.10.js"><\/script>
+<script src="/public-13.11.js"><\/script>
 </body>
 </html>`;

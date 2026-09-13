@@ -85,8 +85,11 @@ const featSrc = grabVar("BIG_MATCH_TEAMS") + "\n" + grabVar("BIG_MATCH_UEFA") + 
 const derbyBlockSrc = grabVarBalanced("DERBY_PAIRS") + "\n" + grabVarBalanced("DERBY_NORM") + "\n" + grabFn("function isDerby(match)");
 const livesSrc = grabFn("function isLiveStatus(status)") + "\n" + grabFn("function applyLiveDetail(m, detail)") + "\n" + grabFn("async function enrichLiveMatches(env, matches)");
 const pubSrc = grabFn("function pubMatch(m)");
+// v13.35-rounds: pubMatch now derives round/roundFa through roundLabel — the
+// grabbed pubMatch body needs roundLabel + its two consts in eval scope.
+const roundSrc = grabVar("ROUND_FA") + "\n" + grabVar("FA_ORDINALS") + "\n" + grabFn("function roundLabel(m)");
 
-eval(domCupSrc + "\n" + aliasSrc + "\n" + shouldNotifySrc + "\n" + featSrc + "\n" + derbyBlockSrc + "\n" + livesSrc + "\n" + pubSrc);
+eval(domCupSrc + "\n" + aliasSrc + "\n" + shouldNotifySrc + "\n" + featSrc + "\n" + derbyBlockSrc + "\n" + livesSrc + "\n" + roundSrc + "\n" + pubSrc);
 
 // ---------- A: derby detection ----------
 chk(isDerby({ homeTeam: { name: "Real Madrid CF" }, awayTeam: { name: "FC Barcelona" } }) === true, "El Clasico");
@@ -108,7 +111,7 @@ chk(isMasterClash({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpo
 chk(isMasterClash({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "CL" } }) === false, "CL pairings are NOT domestic clashes (CL BOX territory)");
 
 // ---------- B: month-end window via real fetchPublicMatches ----------
-const fetchPM = grabFn("async function fetchPublicMatches(env, req)"); // req optional (rate-limit only)
+const fetchPM = grabFn("async function fetchPublicMatches(env, req"); // req optional (rate-limit only); v13.35 adds opts (prewarm/pool)
 const pool = [
   { id: "m-in", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 864e5).toISOString(), status: "SCHEDULED" },
   (() => { const d = new Date(); d.setMonth(d.getMonth() + 1, 1); d.setHours(12, 0, 0, 0); return { id: "m-out", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" }, utcDate: d.toISOString(), status: "SCHEDULED" }; })(),
@@ -268,6 +271,37 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   chk(!box4.some((m) => m.id === "t-rout"), "v12.8: selected-vs-non-top-5 (Arsenal–Brentford) never boxes");
   chk(d4.upcoming.some((m) => m.id === "t-rout"), "v12.8: routine selected fixture stays in the upcoming list");
   chk(!d4.upcoming.some((m) => m.id === "t-fb") && !d4.upcoming.some((m) => m.id === "t-derby"), "boxed fixtures excluded from the upcoming list");
+
+  // Scenario 5 (v13.35): prewarm ride-along + canary strip + round labels.
+  // The cron tick passes its in-memory pool (which CONTAINS the synthetic
+  // canary match) via opts.pool + opts.prewarm: the canary must never reach
+  // the public payload, the payload must be stamped `prewarm` (and the KV
+  // write must carry it), and cup fixtures must surface round/roundFa.
+  const state5 = { store: {} };
+  const env5 = {
+    API_TOKEN: "t",
+    STATE: { get: async (k, type) => { const v = state5.store[k]; return v == null ? null : type === "json" ? JSON.parse(v) : v; }, put: async (k, v) => { state5.store[k] = v; } }
+  };
+  const pool5 = [
+    { id: "canary-1", canary: true, homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 25 * 36e5).toISOString(), status: "SCHEDULED" },
+    { id: "t-fa", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" }, competition: { code: "FA_CUP" }, utcDate: new Date(Date.now() + 70 * 864e5).toISOString(), status: "SCHEDULED", roundRaw: "Round of 16" },
+    { id: "t-el", homeTeam: { name: "Manchester United FC" }, awayTeam: { name: "Tottenham Hotspur FC" }, competition: { code: "EL" }, utcDate: new Date(Date.now() + 9 * 864e5).toISOString(), status: "SCHEDULED", roundRaw: "Quarter-finals" }
+  ];
+  eval("const applySettings = async () => {};\nconst getCachedMatches = async () => pool5;\nconst fetchLongView = async () => pool5;\nconst enrichLiveMatches = async (e, ms) => ms;\nconst fetchStandings = async (env, code) => null;\nconst compact = (st) => (st && st.teams && st.teams.length ? st : null);\nconst COMP_EN = { PL: \"PL\", PD: \"PD\", SA: \"SA\", BL1: \"BL1\", FL1: \"FL1\", CL: \"CL\", EL: \"EL\", ECL: \"ECL\", PGL: \"PGL\", FA_CUP: \"FA Cup\" };\nconst LEAGUE_LOGOS = {};\nconst CONFIG = { KV_PUBLIC_MATCHES: \"pm5\", INTL_COMPETITIONS: {}, DOMESTIC_CUP_IDS: { FA_CUP: 2055 }, CUP_PHASE_WINDOWS: { EURO_LL_START: \"2026-09-28T00:00:00Z\", FA_ROUND1: \"2026-11-09T00:00:00Z\" } };\n" + fetchPM);
+  const d5 = await fetchPublicMatches(env5, null, { prewarm: true, pool: pool5 });
+  const all5 = [].concat(d5.upcoming, d5.topSpot.matches || [], d5.thisWeek || [], d5.nextWeek || []);
+  chk(!all5.some((m) => m.canary || String(m.id || "").indexOf("canary") !== -1), "prewarm: canary match never reaches the public payload");
+  chk(d5.prewarm === true, "prewarm: payload stamped prewarm (9.25-min fresh window)");
+  const kv5 = JSON.parse(state5.store["pm5"]);
+  chk(kv5 && kv5.data && kv5.data.prewarm === true, "prewarm: KV write carries the prewarm stamp");
+  const faRow = d5.cups && d5.cups.find((c) => c.code === "FA_CUP");
+  chk(!!faRow && !!faRow.next, "prewarm: FA Cup box has its next fixture");
+  chk(faRow && faRow.next.round === "Round of 16" && faRow.next.roundFa === "یک‌هشتم نهایی", "prewarm: cup fixture carries round + FA round label (Round of 16)");
+  const elRow = d5.cups && d5.cups.find((c) => c.code === "EL");
+  chk(elRow && elRow.next.roundFa === "یک‌چهارم نهایی", "prewarm: EL quarter-final relabeled (یک‌چهارم نهایی)");
+  const leagueRow = [].concat(d5.upcoming, d5.finished).find((m) => m.competition && m.competition.code === "PL");
+  if (leagueRow) chk(leagueRow.round == null && leagueRow.roundFa == null, "prewarm: league fixtures carry NO round chip");
+
   console.log(fails === 0 ? "worker logic OK ✓" : fails + " FAILURES");
   process.exit(fails ? 1 : 0);
 })();

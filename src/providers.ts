@@ -346,6 +346,11 @@ function tspEventToMatch(e, code) {
     utcDate: parseTSPDate(e.dateEvent, e.strTime, e.strTimestamp),
     status: /finished|completed/i.test(e.strStatus || "") ? "FINISHED" : "SCHEDULED",
     stage: mapStageName(e.strRound || e.intRound),
+    // v13.35-rounds: keep the RAW round text ("3rd Round", "Quarter-finals")
+    // — mapStageName is LOSSY ("3rd Round" collapses to THIRD_PLACE, which
+    // would mislabel a cup's third round as the رده‌بندی playoff). roundLabel
+    // prefers roundRaw and only falls back to the (lossy) stage.
+    roundRaw: e.strRound || e.intRound || "",
     competition: { code },
     venue: e.strVenue || null,
     homeTeam: { name: e.strHomeTeam, crest: e.strHomeTeamBadge || null },

@@ -1156,3 +1156,48 @@ footer{margin-top:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.bigcard{box-shadow:0 0 10px rgba(5,150,105,.16),0 8px 26px rgba(0,0,0,.35),var(--glass-shadow),inset 0 1px 0 rgba(255,255,255,.16)}}
 @media (prefers-reduced-transparency:reduce){body{background:var(--bg)}.card,#topbar button,.bigbar,.stbox,.cupbox,.uclcard,.uclspot,#tzsel,#tzfilter,#tzpanel,#joinSticky{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 1px 2px rgba(15,23,42,.05)}}
 
+
+/* ===== v13.35-favs + v13.35-rounds ===== */
+/* The favorites bar: a slim glass strip above the first card. With no stars
+   it teaches the gesture (favhint); with stars it becomes a segmented
+   «⭐ منتخب‌ها / همه بازی‌ها» filter. Gold accent matches .topbadge. */
+#favbar{display:flex;justify-content:center;margin:2px 0 12px}
+#favbar .favhint{color:var(--muted);font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;background:var(--glass);border:1px dashed var(--glass-border);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#favbar .favseg{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-border);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+.favchip{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:800;padding:7px 14px;border-radius:999px;cursor:pointer;min-height:32px;transition:background .18s,color .18s,box-shadow .18s}
+.favchip:hover{color:var(--ink);background:var(--pill-neutral-bg)}
+.favchip:focus-visible{outline:2px solid var(--accent,#f59e0b);outline-offset:2px}
+.favchip.on{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#451a03;box-shadow:0 2px 8px rgba(245,158,11,.35),inset 0 1px 0 rgba(255,255,255,.35)}
+#favbar.active .favseg{border-color:rgba(245,158,11,.45);box-shadow:0 0 10px rgba(245,158,11,.14),var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+/* The per-team star: tiny ghost circle at the OUTER end of each team side. */
+.favstar{appearance:none;background:transparent;border:0;color:var(--muted);opacity:.55;font-size:15px;line-height:1;width:26px;height:26px;min-width:26px;min-height:26px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;order:99;flex:0 0 auto;margin-inline-start:2px;transition:opacity .15s,transform .15s,color .15s}
+.favstar:hover{opacity:1;color:#f59e0b;background:rgba(245,158,11,.12)}
+.favstar:focus-visible{outline:2px solid #f59e0b;outline-offset:1px;opacity:1}
+.favstar.on{opacity:1;color:#fbbf24;text-shadow:0 0 8px rgba(251,191,36,.55)}
+.favstar.on:active{transform:scale(1.25)}
+/* Gold accent on rows featuring starred teams: amber rail on the inline
+   start + a faint warm wash (both card row shapes: spotitem + .mrow .match). */
+.spotitem.hasfav{border-inline-start:3px solid rgba(251,191,36,.65)}
+[dir="rtl"] .spotitem.hasfav{background:linear-gradient(to left,rgba(251,191,36,.08),transparent 42%)}
+[dir="ltr"] .spotitem.hasfav{background:linear-gradient(to right,rgba(251,191,36,.08),transparent 42%)}
+.match.hasfav{border-inline-start:3px solid rgba(251,191,36,.65);box-shadow:inset 6px 0 14px -10px rgba(251,191,36,.5)}
+/* The cup-round chip («یک‌هشتم نهایی» / "Round of 16"). Deliberately quieter
+   than the derby/top badges: same pill anatomy, amber-tinged neutral. */
+.roundchip{display:inline-flex;align-items:center;background:var(--pill-neutral-bg);color:var(--pill-neutral-ink);border:1px solid rgba(245,158,11,.35);border-radius:999px;padding:1px 9px;font-size:10.5px;font-weight:700;margin-inline-start:6px;vertical-align:middle;white-space:nowrap}
+.cupmatch .roundchip{margin-inline-start:0;margin-top:3px;font-size:10.5px}
+[data-theme="light"] .favchip.on{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff}
+[data-theme="light"] .favstar.on{color:#d97706;text-shadow:none}
+[data-theme="light"] [dir="rtl"] .spotitem.hasfav{background:linear-gradient(to left,rgba(217,119,6,.09),transparent 42%)}
+[data-theme="light"] [dir="ltr"] .spotitem.hasfav{background:linear-gradient(to right,rgba(217,119,6,.09),transparent 42%)}
+[data-theme="light"] .match.hasfav{box-shadow:inset 6px 0 14px -10px rgba(217,119,6,.55)}
+[data-theme="light"] .roundchip{border-color:rgba(217,119,6,.4)}
+/* Cup boxes get a subtle hover lift to match the match-row hover language. */
+.cupbox{transition:transform .18s,box-shadow .18s,border-color .18s}
+.cupbox:hover{transform:translateY(-2px);border-color:rgba(245,158,11,.35);box-shadow:0 6px 18px rgba(0,0,0,.28),var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+/* Touch targets: the 26px desktop star is under the 44px guideline — on
+   coarse-pointer/small screens the HIT AREA grows (glyph stays 15-16px,
+   padding does the work). 38px keeps the row breathing on 390px phones. */
+@media (max-width:600px), (pointer:coarse){
+  .favstar{width:38px;height:38px;min-width:38px;min-height:38px;font-size:16px}
+  .favchip{min-height:38px}
+}

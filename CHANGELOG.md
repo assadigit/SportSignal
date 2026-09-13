@@ -14,6 +14,73 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.35-prewarm] — 2026-09-14 (cron pre-warm kills the cold sweep + cup round chips + team favorites)
+
+### Performance / reliability
+- **Cron pre-warm of the public payload** (the last latency gap from the
+  v13.34 QA): the first visitor after a quiet gap paid the full provider
+  sweep (~4.6s cold `/api/public-matches`). The cron tick now rebuilds the
+  payload at the END of every sweep via `fetchPublicMatches(env, null,
+  { prewarm: true, pool: matches })`:
+  - **Pool ride-along** — the sweep is the expensive part; cron hands over
+    the pool it ALREADY fetched this tick, so the pre-warm costs ZERO extra
+    provider subrequests. Budget-guarded: only runs with `< 30` subrequests
+    used (standings need ≤6; the pool is free).
+  - **Prewarm freshness window** — prewarm-stamped payloads stay fresh for
+    9.25 min (a full 10-min tick gap → the KV payload NEVER goes cold
+    between ticks); everything else keeps the 3-min SWR window. Live
+    payloads always keep 3 min (fresh minutes/scorers matter).
+  - **KV TTL 720s** for prewarm writes (≥ the tick gap; visitor writes stay
+    300s). Write math (worst case: zero visitors, all quiet): +1 payload
+    write/tick = ≤144/day; snapshot stays change-only; grand total well
+    under the 1,000/day quota.
+  - **Canary leak closed**: the canary match lives only in cron's in-memory
+    pool — comments CLAIMED the public page filters it, but nothing did
+    (protection was pure indirection: the KV pool never contains it). The
+    pre-warm path passes the in-memory pool directly, so `opts.pool` now
+    strips `m.canary` explicitly (belt-and-braces, verified by test).
+
+### Features (backlog §F: FA Cup tier/round filtering + EL/ECL qualifying relabel)
+- **Cup round chips**: cup fixtures now carry `round` (raw provider label)
+  + `roundFa` (Persian twin) on EVERY public payload row via
+  `roundLabel()` — FD stage enums (SEMI_FINALS→نیمه‌نهایی) AND sportscore
+  free text ("Round of 16"→یک‌هشتم نهایی, "Quarter-finals"→یک‌چهارم
+  نهایی, "Round 3"→دور سوم, qualifying/preliminary→مقدماتی). The UI
+  renders the chip in the cup boxes (between pairing and date), in
+  spotitem info lines, and on finished rows — league rows carry null →
+  no chip. FA mode requires a translated label (untranslated Latin stays
+  hidden in FA); EN shows any raw label.
+- **Team favorites (star your teams)** — pure client feature, ZERO KV cost:
+  tap the ☆ beside any team name to pin it (localStorage `ss_favs`, keys =
+  English provider names → stable across FA/EN switches). Starred teams'
+  matches get a gold rail + warm wash (.hasfav) and a segmented
+  «⭐ منتخب‌ها / همه بازی‌ها» filter bar (localStorage `ss_favmode`)
+  appears above the first card, filtering the big-matches, live, week and
+  results lists at once. Empty state teaches the gesture instead of
+  nagging. RTL+LTR mirrored via logical properties; focus-visible rings;
+  reduced-motion honored (global rule).
+
+### Styling details
+- Round chip: quiet amber-tinged pill (distinct from derby/top badges).
+- Favorites: gold gradient segmented control, star pop on toggle, cup-box
+  hover lift (mirrors the match-row hover language), light-theme variants
+  for all new elements.
+
+### Test harness (debt #2 paid down further)
+- worker-src.js transform: optional-marker-before-colon (`opts?:`), generic
+  `Record<...>` annotations, interface-typed params (PubOpts) — new TS
+  shapes stay eval-safe without per-case rules.
+- live-derby-test: NEW scenario 5 — prewarm ride-along end-to-end (canary
+  never reaches the payload, prewarm stamp on payload + KV write, cup
+  round labels Round of 16 / Quarter-finals, league rows chipless).
+- check-venue: round fields asserted (league null, "Round 3"→دور سوم,
+  SEMI_FINALS→نیمه‌نهایی).
+- check-reliability: 7 new v13.35 wiring checks (prewarm opts, pool
+  ride-along, 9.25-min window, 720s TTL, canary strip, budget guard,
+  pool pass-through).
+
+---
+
 ## [13.34-ux] — 2026-09-14 (skeleton loaders + back-to-top + render-skip + PGL snapshot fallback)
 
 ### Client UX (backlog §3A items: skeleton loaders, render perf, motion)

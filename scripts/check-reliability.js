@@ -46,6 +46,19 @@ check("#6 subrequestCount function defined", /function subrequestCount\(\)/.test
 check("#6 budget guard defers when >38", /subrequestCount\(\) > 38/.test(src));
 check("#6 budgetDeferred counter logged", /Subrequest budget guard: deferred/.test(src));
 
+// v13.35-prewarm: cron pre-warms the public payload from its own pool so the
+// first visitor after a quiet gap never pays the ~4.6s provider sweep.
+// (regexes run against the TRANSFORMED src — eval-harness annotations are
+// stripped, e.g. `opts?: PubOpts` becomes just `opts`)
+check("#13.35 fetchPublicMatches opts param exists", /function fetchPublicMatches\(env, req, opts\) \{/.test(src));
+check("#13.35 PubOpts interface declared", /interface PubOpts \{ prewarm: boolean; pool: any\[\] \}/.test(src));
+check("#13.35 prewarm skips the provider sweep (pool ride-along)", /if \(prePool\) \{\s*\n\s*matches = prePool;/.test(src));
+check("#13.35 prewarm payloads stamped for the 9.25-min fresh window", /freshMs = cached && cached\.data && cached\.data\.prewarm && !cachedHasLive \? 555e3 : 18e4/.test(src));
+check("#13.35 prewarm KV TTL covers the 10-min tick", /expirationTtl: prewarm \? 720 : 300/.test(src));
+check("#13.35 canary stripped from prewarm pool", /opts\.pool\.filter\(\(m\) => !m\.canary\)/.test(src));
+check("#13.35 cron pre-warm is budget-guarded", /pubStale && subrequestCount\(\) < 30/.test(src));
+check("#13.35 cron passes its pool to the pre-warm", /prewarm: true, pool: matches/.test(src));
+
 // #4 Canonical kickoff-time KV
 check("#4 getCanonicalKickoff function exists", /async function getCanonicalKickoff\(env, match\)/.test(src));
 check("#4 kickoff KV prefix is kickoff_v1:", /KV_KICKOFF_PREFIX: "kickoff_v1:"/.test(src));

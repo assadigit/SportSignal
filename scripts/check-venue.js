@@ -68,11 +68,30 @@ globalThis.LEAGUE_LOGOS = {};
 globalThis.isLiveStatus = (s) => s === "LIVE";
 globalThis.isFeaturedMatch = () => false;
 globalThis.isDerby = () => false;
+// v13.35-rounds: pubMatch derives round/roundFa through roundLabel — the
+// extracted body needs ROUND_FA + FA_ORDINALS + roundLabel in scope.
+const roundFaSrc = src.match(/var ROUND_FA = \{[\s\S]*?\n\};/)[0];
+const faOrdSrc = src.match(/var FA_ORDINALS = \[[\s\S]*?\];/)[0];
+const roundLabelSrc = src.match(/function roundLabel\(m\) \{[\s\S]*?\n\}/)[0];
+new Function(roundFaSrc + "\n" + faOrdSrc + "\n" + roundLabelSrc + "\nglobalThis.ROUND_FA = ROUND_FA; globalThis.FA_ORDINALS = FA_ORDINALS; globalThis.roundLabel = roundLabel;")();
 const pubMatch = new Function("m", pubSrc + "; return pubMatch(m);");
 const out = pubMatch({ homeTeam: { name: "Arsenal" }, awayTeam: { name: "Chelsea" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "PL" }, status: "SCHEDULED", venue: "Emirates Stadium" });
 check("pubMatch keeps venue", out.venue === "Emirates Stadium");
 const outNull = pubMatch({ homeTeam: { name: "A" }, awayTeam: { name: "B" }, utcDate: "x", competition: { code: "PL" }, status: "SCHEDULED" });
 check("pubMatch venue null when absent", outNull.venue === null);
+// v13.35-rounds: league fixture carries NO round chip; a cup fixture with a
+// sportscore round label gets round + translated roundFa.
+check("pubMatch league fixture has no round", out.round === null && out.roundFa === null);
+const outCup = pubMatch({ homeTeam: { name: "Arsenal" }, awayTeam: { name: "Chelsea" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "FA_CUP" }, status: "SCHEDULED", roundRaw: "Round 3" });
+check("pubMatch cup fixture carries round + FA label", outCup.round === "Round 3" && outCup.roundFa === "دور سوم");
+const outStage = pubMatch({ homeTeam: { name: "A" }, awayTeam: { name: "B" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "CL" }, status: "SCHEDULED", stage: "SEMI_FINALS" });
+check("pubMatch FD stage enum maps (SEMI_FINALS)", outStage.round === "SEMI_FINALS" && outStage.roundFa === "نیمه‌نهایی");
+// v13.35 fix: "3rd Round" is a cup ROUND (دور سوم), NOT the third-place
+// playoff — the round patterns must run before the loose third/3rd scan.
+const outOrd = pubMatch({ homeTeam: { name: "A" }, awayTeam: { name: "B" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "EFL_CUP" }, status: "SCHEDULED", roundRaw: "3rd Round" });
+check("pubMatch '3rd Round' = دور سوم (not رده‌بندی)", outOrd.round === "3rd Round" && outOrd.roundFa === "دور سوم");
+const outPlace = pubMatch({ homeTeam: { name: "A" }, awayTeam: { name: "B" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "CL" }, status: "SCHEDULED", roundRaw: "3rd place" });
+check("pubMatch '3rd place' = رده‌بندی", outPlace.roundFa === "رده‌بندی");
 
 // 4) canonical-key dedupe lives in src/dedupe.ts; cacheMatches wires it into the KV merge
 const dedupeSrc = fs.readFileSync("src/dedupe.ts", "utf8");

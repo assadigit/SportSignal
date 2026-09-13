@@ -16,6 +16,7 @@ import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults
 import { maybePostX } from "./x";
 import { getRegisteredChats, checkUserCap, getUserPrefs } from "./users";
 import { applySettings, buildCanaryMatch } from "./admin";
+import { fetchPublicMatches } from "./public-matches";
 
 export async function getCronStatus(env: Env) {
   try {
@@ -296,6 +297,23 @@ export async function executeScheduledLogic(env: Env) {
       });
       await env.STATE.put(CONFIG.KV_LAST_CRON, NOW.toString()).catch(() => {
       });
+    }
+    // v13.35-prewarm: kill the first-visitor cold sweep. If the public
+    // payload is (nearly) expired, rebuild it NOW from the pool this tick
+    // already fetched — the expensive provider sweep never runs twice, and
+    // visitors between ticks always hit a warm 3-minute-fresh KV payload
+    // instead of paying ~4.6s for the sweep. Budget-guarded: prewarm only
+    // with ≥18 subrequests of headroom (standings need ≤6; the pool ride-
+    // along needs 0). KV write math documented in public-matches.ts.
+    try {
+      const pub = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null) as any;
+      const pubStale = !pub || !pub.ts || Date.now() - pub.ts >= 555e3;
+      if (pubStale && subrequestCount() < 30) {
+        await fetchPublicMatches(env, null, { prewarm: true, pool: matches });
+        console.log("\u{1F525} Public payload pre-warmed for the next visitors");
+      }
+    } catch (e) {
+      console.error("Public pre-warm failed: " + e.message);
     }
     console.log(`
 \u2705 Execution completed at ${(new Date()).toISOString()}

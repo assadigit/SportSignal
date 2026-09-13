@@ -11,11 +11,18 @@
 //              caches after the v13.6 asset split. The activate handler
 //              deletes every cache !== CACHE, so the bump is a one-shot
 //              clean sweep on the next SW takeover.)
+// Cache name:  sportsignal-v7 (v13.35 mid-release hotfix: mobile touch-target
+//              CSS landed after first deploy; same-named 13.11 assets can't
+//              refresh under cache-first — the bump is the evict.)
+// Cache name:  sportsignal-v6 (v13.35: bumped from v5 — one-shot evict of
+//              stranded v13.34 asset entries; public-13.10→13.11 renamed in
+//              the same release. cache-first-forever assets can't refresh on
+//              stale clients without the bump.)
 // Cache name:  sportsignal-v4 (v13.29: bumped from v3 — one-shot evict of
 //              any stranded/stale asset entries on client browsers; the
 //              client assets were renamed public-13.8→public-13.9 in the
 //              same release, so the bump also guarantees a clean slate.)
-const CACHE = "sportsignal-v5";
+const CACHE = "sportsignal-v7";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

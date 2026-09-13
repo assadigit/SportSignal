@@ -308,13 +308,15 @@ function render(list, el, finished){
   list.forEach(function(m, idx){
     var row = document.createElement("div"); row.className = "match";
     if(m.derby) row.className += " derby";
+    // v13.35-favs: gold accent on results featuring starred teams.
+    if(hasAnyFav(m)) row.className += " hasfav";
     row.style.setProperty("--i", idx);
     var h = logo(m.homeTeam), a = logo(m.awayTeam);
     var en = curLang()==="en";
     var hName = document.createElement("div"); hName.className = "team"; nameInto(hName, en ? m.homeTeam.name : (m.homeTeam.faName || m.homeTeam.name));
     var aName = document.createElement("div"); aName.className = "team"; nameInto(aName, en ? m.awayTeam.name : (m.awayTeam.faName || m.awayTeam.name));
-    var hs = document.createElement("div"); hs.className = "side"; hs.appendChild(h); hs.appendChild(hName);
-    var as = document.createElement("div"); as.className = "side away"; as.appendChild(aName); as.appendChild(a);
+    var hs = document.createElement("div"); hs.className = "side"; hs.appendChild(h); hs.appendChild(hName); hs.appendChild(favStarBtn(m.homeTeam.name));
+    var as = document.createElement("div"); as.className = "side away"; as.appendChild(aName); as.appendChild(a); as.appendChild(favStarBtn(m.awayTeam.name));
     var live = !finished && (m.status==="LIVE"||m.status==="IN_PLAY"||m.status=="PAUSED");
     if((finished || live) && m.score && m.score.home !== null){
       var vs = scoreNode(m.score);
@@ -336,6 +338,10 @@ function render(list, el, finished){
     }
     c.appendChild(document.createTextNode(compName(m)));
     info.appendChild(c);
+    // v13.35-rounds: cup knockout rounds surface as a chip right after the
+    // competition (cups only — league rows carry no round data anyway).
+    var rc = roundChip(m);
+    if(rc) info.appendChild(rc);
     if(m.derby){ var db = document.createElement("span"); db.className = "derbybadge"; db.textContent = T("derby"); info.appendChild(db); }
     if(m.top){ var tb = document.createElement("span"); tb.className = "topbadge"; tb.textContent = "🏆 " + T("topBadge"); info.appendChild(tb); }
     info.appendChild(document.createTextNode(fmtDate(m.utcDate)));
@@ -381,6 +387,97 @@ function render(list, el, finished){
     var wrap = document.createElement("div"); wrap.className = "mrow"; wrap.appendChild(row); wrap.appendChild(info); wrap.appendChild(sr);
     el.appendChild(wrap);
   });
+}
+// ===== v13.35-favs: star your teams =====
+// Matches featuring a starred team get a gold accent + a one-tap
+// «⭐ منتخب‌ها» filter across every list (big matches, live, week, results).
+// Pure client feature: the set lives in localStorage (ss_favs), ZERO KV
+// cost, works offline, and the stored keys are the ENGLISH provider names —
+// stable across language switches (the FA display name is derived, not
+// stored). The bar renders above the first card; with no stars it teaches
+// the gesture instead of nagging.
+var FAVS = (function(){ try{ var a = JSON.parse(localStorage.getItem("ss_favs") || "[]"); var s = new Set(); (Array.isArray(a)?a:[]).forEach(function(n){ s.add(String(n).toLowerCase()); }); return s; }catch(e){ return new Set(); } })();
+var FAV_MODE = (function(){ try{ return localStorage.getItem("ss_favmode") === "1"; }catch(e){ return false; } })();
+function favKey(n){ return String(n || "").toLowerCase().trim(); }
+function isFavTeam(n){ return FAVS.has(favKey(n)); }
+function hasAnyFav(m){ return isFavTeam(m.homeTeam && m.homeTeam.name) || isFavTeam(m.awayTeam && m.awayTeam.name); }
+function saveFavs(){ try{ localStorage.setItem("ss_favs", JSON.stringify(Array.from(FAVS))); }catch(e){} }
+function toggleFavTeam(name){
+  var k = favKey(name);
+  if(FAVS.has(k)){ FAVS.delete(k); if(!FAVS.size) setFavMode(false); }
+  else FAVS.add(k);
+  saveFavs();
+  rerenderAll();
+}
+function setFavMode(on){
+  FAV_MODE = !!on;
+  try{ localStorage.setItem("ss_favmode", FAV_MODE ? "1" : "0"); }catch(e){}
+  rerenderAll();
+}
+function favFilter(list){ return FAV_MODE && FAVS.size ? (list || []).filter(function(m){ return hasAnyFav(m); }) : (list || []); }
+function ensureFavbar(){
+  var bar = document.getElementById("favbar");
+  if(bar) return bar;
+  bar = document.createElement("div");
+  bar.id = "favbar";
+  bar.setAttribute("role", "group");
+  bar.setAttribute("aria-label", curLang()==="en" ? "Favorite teams filter" : "فیلتر تیم‌های منتخب");
+  var anchor = document.getElementById("liveCard");
+  if(anchor && anchor.parentNode) anchor.parentNode.insertBefore(bar, anchor);
+  else { var fc = document.getElementById("finishedCard"); if(fc && fc.parentNode) fc.parentNode.insertBefore(bar, fc); else return null; }
+  return bar;
+}
+function renderFavbar(){
+  var bar = ensureFavbar(); if(!bar) return;
+  bar.innerHTML = "";
+  var en = curLang()==="en";
+  bar.classList.toggle("active", FAV_MODE && FAVS.size > 0);
+  if(!FAVS.size){
+    var hint = document.createElement("div"); hint.className = "favhint";
+    hint.textContent = en ? "☆ Tap the star beside a team to pin its matches" : "☆ برای دنبال‌کردن تیم موردعلاقه، روی ستاره کنار نامش بزنید";
+    bar.appendChild(hint);
+    return;
+  }
+  var seg = document.createElement("div"); seg.className = "favseg";
+  var bFav = document.createElement("button"); bFav.type = "button";
+  bFav.className = "favchip fav" + (FAV_MODE ? " on" : "");
+  bFav.setAttribute("aria-pressed", FAV_MODE ? "true" : "false");
+  bFav.textContent = "⭐ " + (en ? "Favorites" : "منتخب‌ها") + " (" + fmtNum(FAVS.size) + ")";
+  bFav.onclick = function(){ if(!FAV_MODE) setFavMode(true); };
+  var bAll = document.createElement("button"); bAll.type = "button";
+  bAll.className = "favchip all" + (!FAV_MODE ? " on" : "");
+  bAll.setAttribute("aria-pressed", !FAV_MODE ? "true" : "false");
+  bAll.textContent = en ? "All matches" : "همه بازی‌ها";
+  bAll.onclick = function(){ if(FAV_MODE) setFavMode(false); };
+  seg.appendChild(bFav); seg.appendChild(bAll);
+  bar.appendChild(seg);
+}
+// v13.35-favs: the per-team star toggle. Sits at the OUTER end of each
+// team side (flex order 99) so home/away mirror symmetrically in RTL+LTR.
+function favStarBtn(name){
+  var b = document.createElement("button");
+  b.type = "button";
+  var on = isFavTeam(name);
+  b.className = "favstar" + (on ? " on" : "");
+  b.textContent = on ? "★" : "☆";
+  b.setAttribute("aria-pressed", on ? "true" : "false");
+  b.setAttribute("aria-label", (curLang()==="en" ? "Favorite team: " : "تیم منتخب: ") + name);
+  b.title = b.getAttribute("aria-label");
+  b.onclick = function(ev){ ev.stopPropagation(); ev.preventDefault(); toggleFavTeam(name); };
+  return b;
+}
+// v13.35-rounds: the cup-round chip («یک‌هشتم نهایی» / "Round of 16").
+// Rendered only when a usable label exists for the CURRENT language —
+// FA mode needs roundFa (untranslated Latin labels stay hidden in FA),
+// EN mode shows any raw label.
+function roundChip(m){
+  if(!m) return null;
+  var txt = curLang()==="en" ? m.round : (m.roundFa || null);
+  if(!txt) return null;
+  var el = document.createElement("span");
+  el.className = "roundchip";
+  el.textContent = txt;
+  return el;
 }
 async function load(){
   // v12.56: show loading animation on all card content areas while fetching
@@ -563,6 +660,7 @@ function rerenderAll(){
   renderUclSpot(DATA.ucl);
   renderTopSpot(DATA.topSpot);
   renderWeek(DATA.thisWeek, DATA.nextWeek);
+  renderLive();
   renderHeroSpot();
   updateBigBar();
 }
@@ -571,7 +669,7 @@ function rerenderAll(){
 // UCL table's language-dependent names). v12.19: it also rebuilds the timezone
 // popover options — labels swap between «آسیا/تهران گرینویچ+۳:۳۰» and
 // "Asia/Tehran GMT+3:30".
-var onLang = function(){ renderWeek(DATA.thisWeek, DATA.nextWeek); renderUcl(DATA.ucl); renderHeroSpot(); renderTopSpot(DATA.topSpot); renderLive(); renderFinished(true); initTz(); };
+var onLang = function(){ renderWeek(DATA.thisWeek, DATA.nextWeek); renderUcl(DATA.ucl); renderHeroSpot(); renderTopSpot(DATA.topSpot); renderLive(); renderFinished(true); renderFavbar(); initTz(); };
 // v12.12: catOf/renderSections (and the CAT_CUPS table) are retired — they
 // fed the «📅 مسابقات پیش‌رو» sections list, which is gone together with the
 // view toggle (the page is always big-only now; the hero + the topspot box
@@ -617,15 +715,15 @@ function renderLive(){
     // Strip the 🔴 emoji from the text node (the data-i="hLive" i18n string starts with 🔴)
     h2.childNodes.forEach(function(n){ if(n.nodeType === 3 && n.textContent.indexOf("🔴") !== -1) n.textContent = n.textContent.replace(/🔴s*/g, ""); });
   }
-  var live = (DATA.upcoming || []).filter(function(m){ return m.status==="LIVE"||m.status==="IN_PLAY"||m.status==="PAUSED"; });
-  if(!live.length){ card.style.display = "none"; return; }
+  var live = favFilter((DATA.upcoming || []).filter(function(m){ return m.status==="LIVE"||m.status==="IN_PLAY"||m.status==="PAUSED"; }));
+  if(!live.length){ card.style.display = "none"; renderFavbar(); return; }
   card.style.display = "";
   live.sort(function(a, b){ return (a.minute||0) - (b.minute||0) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(); });
   live.slice(0, 20).forEach(function(m, idx){ el.appendChild(spotItemNode(m, idx, { finished: true, isLiveCard: true })); });
 }
 function renderFinished(force){
   var el = document.getElementById("finished"); if(!el) return;
-  var list = DATA.finished.filter(function(m){ return m.big || m.top || m.clash || m.sel; });
+  var list = favFilter(DATA.finished.filter(function(m){ return m.big || m.top || m.clash || m.sel; }));
   if(force) delete el.dataset.sig;
   render(list.slice(0, FIN_EXPANDED ? FIN_MAX : FIN_MIN), el, true);
   var old = el.querySelector(".finmore");
@@ -641,6 +739,7 @@ function renderFinished(force){
 }
 function applyView(){
   renderFinished(false);
+  renderFavbar();
 }
 // v12.10: renderSpecial removed — the far nextBig fallback card now lives
 // in the HERO CARD at the very top (stuck to its countdown bar), not at the
@@ -727,6 +826,12 @@ function cupBox(c){
     teams.appendChild(document.createTextNode(" – "));
     var t2 = document.createElement("span"); nameInto(t2, en ? n.awayTeam.name : (n.awayTeam.faName||n.awayTeam.name)); teams.appendChild(t2);
     m.appendChild(teams);
+    // v13.35-rounds: the round label («یک‌هشتم نهایی» / "Round of 16") sits
+    // between the pairing and the date — the visible half of the FA Cup /
+    // EL tier-filtering backlog (the server already hides pre-Round-1 FA
+    // noise; now the surviving round is NAMED).
+    var rc = roundChip(n);
+    if(rc) m.appendChild(rc);
     var live = n.status==="LIVE"||n.status==="IN_PLAY"||n.status==="PAUSED";
     var dt = document.createElement("div"); dt.className = "cupdate";
     if(live){ var sp = document.createElement("span"); sp.className = "live-tag"; sp.textContent = "🔴 "+T("live"); dt.appendChild(sp); }
@@ -930,14 +1035,16 @@ function spotItemNode(m, idx, opts){
   // ran out — the whole entry renders "turned off" (dimmed, see .spotitem.past)
   // and the time chip swaps to the «پایان‌یافته» (expired) state.
   if(opts && opts.past) item.className += " past";
+  // v13.35-favs: matches featuring a starred team get the gold .hasfav accent.
+  if(hasAnyFav(m)) item.className += " hasfav";
   var row = document.createElement("div"); row.className = "match";
   if(m.derby) row.className += " derby";
   row.style.setProperty("--i", idx);
   var en = curLang()==="en";
   var hName = document.createElement("div"); hName.className = "team"; nameInto(hName, en ? m.homeTeam.name : (m.homeTeam.faName || m.homeTeam.name));
   var aName = document.createElement("div"); aName.className = "team"; nameInto(aName, en ? m.awayTeam.name : (m.awayTeam.faName || m.awayTeam.name));
-  var hs = document.createElement("div"); hs.className = "side"; hs.appendChild(logo(m.homeTeam)); hs.appendChild(hName);
-  var as = document.createElement("div"); as.className = "side away"; as.appendChild(aName); as.appendChild(logo(m.awayTeam));
+  var hs = document.createElement("div"); hs.className = "side"; hs.appendChild(logo(m.homeTeam)); hs.appendChild(hName); hs.appendChild(favStarBtn(m.homeTeam.name));
+  var as = document.createElement("div"); as.className = "side away"; as.appendChild(aName); as.appendChild(logo(m.awayTeam)); as.appendChild(favStarBtn(m.awayTeam.name));
   var live = m.status==="LIVE"||m.status==="IN_PLAY"||m.status==="PAUSED";
   // v12.16: opts.finished (the «در این هفته» agenda) also shows final scores.
   // v12.25: unplayed rows carry the KICKOFF TIME in the center slot (.kick) —
@@ -1075,7 +1182,9 @@ function renderTopSpot(d){
   // match — lives in the HERO CARD above, stuck to the countdown bar; this
   // box presents the REMAINING big matches, separated from the headline.
   var rest = list.slice(1);
-  if(!rest.length){ card.style.display = "none"; return; }
+  // v13.35-favs: «⭐ منتخب‌ها» mode — only matches featuring starred teams.
+  rest = favFilter(rest);
+  if(!rest.length){ card.style.display = "none"; renderFavbar(); return; }
   card.style.display = "";
   rest.forEach(function(m, idx){
     el.appendChild(spotItemNode(m, idx + 1));
@@ -1109,12 +1218,12 @@ function renderWeek(list, nextList){
   // their own dedicated #liveCard now. Only show upcoming not-yet-played
   // (or past-but-not-finished) matches. The week card is "what's ahead".
   var isLive = function(m){ return m.status==="LIVE"||m.status==="IN_PLAY"||m.status==="PAUSED"; };
-  var upcomingThis = (list || []).filter(function(m){ return !weekPast(m) && !isLive(m); });
+  var upcomingThis = favFilter((list || []).filter(function(m){ return !weekPast(m) && !isLive(m); }));
   var mode = "this";
   if(!upcomingThis.length){
     // Nothing left THIS week → show next week's upcoming fixtures instead.
     mode = "next";
-    list = (nextList || []).filter(function(m){ return !isLive(m); });
+    list = favFilter((nextList || []).filter(function(m){ return !isLive(m); }));
   } else {
     list = upcomingThis;
   }

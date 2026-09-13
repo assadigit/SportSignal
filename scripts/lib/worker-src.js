@@ -26,6 +26,15 @@ function transform(ts) {
   c = c.replace(/^export default\s+/gm, "");
   // TS optional params: `name?` before `,` or `)` (never valid otherwise)
   c = c.replace(/(\w)\?([,)])/g, "$1$2");
+  // v13.35: optional marker before a colon (`opts?:`) — the other optional
+  // position. Kept as a separate rule so the param NAME survives (the eval'd
+  // signature keeps the param; callers without it just pass undefined).
+  c = c.replace(/(\w)\?:/g, "$1:");
+  // v13.35: interface-typed param annotation (PubOpts on fetchPublicMatches).
+  c = c.replace(/: PubOpts/g, "");
+  // v13.35: Record<...> annotations (ROUND_FA map, local maps) — generic over
+  // key/value types so new Record locals stay eval-safe without new rules.
+  c = c.replace(/: Record<[^>]+> =/g, " =");
   // TS type annotations added by v13.3 (eval-safety): env: Env, : any,
   // Promise<any>, as-any casts, index-signature types.
   c = c.replace(/env: Env/g, "env");

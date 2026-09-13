@@ -14,7 +14,79 @@ import { applySettings } from "./admin";
 import { fetchStandings } from "./composers";
 import { masterTeamList, masterMemo } from "./users";
 
+// v13.35-rounds (backlog §F "FA Cup tier/round filtering" + "EL/ECL
+// qualifying relabel"): cup fixtures now carry their ROUND to the client —
+// `round` is the raw provider label ("Round of 16", "Final", "Round 1"…),
+// `roundFa` its Persian twin (یک‌هشتم نهایی، فینال، دور ۱…). League matches
+// (REGULAR_SEASON / no round info) carry null so the UI renders no chip.
+// The map covers FD stage enums AND the free-text labels sportscore uses —
+// unknown labels pass through untranslated (better a Latin chip than none).
+export const ROUND_FA: Record<string, string> = {
+  "FINAL": "فینال",
+  "SEMI_FINALS": "نیمه‌نهایی",
+  "SEMI_FINAL": "نیمه‌نهایی",
+  "QUARTER_FINALS": "یک‌چهارم نهایی",
+  "QUARTER_FINAL": "یک‌چهارم نهایی",
+  "ROUND_OF_16": "یک‌هشتم نهایی",
+  "ROUND_OF_32": "یک‌شانزدهم نهایی",
+  "PLAYOFF_ROUND": "پلی‌آف",
+  "GROUP_STAGE": "مرحله گروهی",
+  "THIRD_PLACE": "رده‌بندی",
+  "FINAL_THIRD": "رده‌بندی",
+  "1ST_ROUND": "دور اول",
+  "2ND_ROUND": "دور دوم",
+  "3RD_ROUND": "دور سوم",
+  "4TH_ROUND": "دور چهارم",
+  "5TH_ROUND": "دور پنجم",
+  "6TH_ROUND": "دور ششم"
+};
+export const FA_ORDINALS = ["", "اول", "دوم", "سوم", "چهارم", "پنجم", "ششم", "هفتم", "هشتم", "نهم", "دهم"];
+export function roundLabel(m) {
+  const raw = m.roundRaw != null && String(m.roundRaw).trim() ? String(m.roundRaw).trim() : null;
+  const stage = m.stage && m.stage !== "REGULAR_SEASON" ? String(m.stage) : null;
+  const src = raw || stage;
+  if (!src) return { round: null, roundFa: null };
+  const s = src.toLowerCase();
+  // FD stage enums translate directly.
+  if (ROUND_FA[src.toUpperCase()]) return { round: src, roundFa: ROUND_FA[src.toUpperCase()] };
+  // sportscore free-text: "Round of 16", "Quarter-finals", "Semi Final",
+  // "Final", "3rd place", "Round 3", "First Round"…
+  // ORDER MATTERS: the explicit ROUND patterns ("round of N", "round N",
+  // "Nth round", "<word> round") must run BEFORE the loose quarter/semi/
+  // third scans — mapStageName-style collapse would turn a cup's "3rd
+  // Round" into the رده‌بندی (third-place) playoff, and "Round of 16"
+  // contains no trap but "Semi-final 2" style labels do. After the round
+  // patterns, a remaining "third"/"3rd" can only mean the place playoff.
+  const num = s.match(/round\s*of\s*(\d+)/);
+  if (num) {
+    const n = parseInt(num[1]);
+    const map: Record<number, string> = { 64: "یک‌شصت‌وچهارم نهایی", 32: "یک‌شانزدهم نهایی", 16: "یک‌هشتم نهایی" };
+    if (map[n]) return { round: src, roundFa: map[n] };
+  }
+  const rd = s.match(/round\s*(\d+)/);
+  if (rd) {
+    const n = parseInt(rd[1]);
+    if (n >= 1 && n <= 10) return { round: src, roundFa: "دور " + FA_ORDINALS[n] };
+  }
+  const ord2 = s.match(/^(\d+)\s*(?:st|nd|rd|th)\s*round/);
+  if (ord2) {
+    const n = parseInt(ord2[1]);
+    if (n >= 1 && n <= 10) return { round: src, roundFa: "دور " + FA_ORDINALS[n] };
+  }
+  const ord = s.match(/(first|second|third|fourth|fifth|sixth)\s+round/);
+  if (ord) {
+    const idx = ["first", "second", "third", "fourth", "fifth", "sixth"].indexOf(ord[1]) + 1;
+    return { round: src, roundFa: "دور " + FA_ORDINALS[idx] };
+  }
+  if (s.indexOf("quarter") !== -1) return { round: src, roundFa: "یک‌چهارم نهایی" };
+  if (s.indexOf("semi") !== -1) return { round: src, roundFa: "نیمه‌نهایی" };
+  if (s.indexOf("third") !== -1 || s.indexOf("3rd") !== -1) return { round: src, roundFa: "رده‌بندی" };
+  if (s === "final" || (s.indexOf("final") !== -1 && s.indexOf("qualif") === -1)) return { round: src, roundFa: "فینال" };
+  if (s.indexOf("qualif") !== -1 || s.indexOf("prelim") !== -1) return { round: src, roundFa: "مقدماتی" };
+  return { round: src, roundFa: null };
+}
 export function pubMatch(m) {
+  const rl = roundLabel(m);
   return {
     id: m.id || null,
     homeTeam: { name: m.homeTeam.name, faName: translateTeam(m.homeTeam.name), crest: m.homeTeam.crest || null },
@@ -22,6 +94,8 @@ export function pubMatch(m) {
     utcDate: m.utcDate,
     competition: { code: m.competition.code, faName: translateCompetition(m.competition.code), emblem: m.competition.emblem || LEAGUE_LOGOS[m.competition.code] || null },
     status: m.status,
+    round: rl.round,
+    roundFa: rl.roundFa,
     minute: isLiveStatus(m.status) && m.minute != null ? m.minute : null,
     scorers: isLiveStatus(m.status) ? (m.scorers || []).map((s) => ({ minute: s.minute, type: s.type, scorer: s.scorer, team: s.team })) : [],
     big: isFeaturedMatch(m),
@@ -76,9 +150,32 @@ export function projectedUclStart() {
   const y = now.getUTCMonth() >= 9 ? now.getUTCFullYear() + 1 : now.getUTCFullYear();
   return new Date(Date.UTC(y, 8, 15, 19, 0, 0));
 }
-export async function fetchPublicMatches(env: Env, req) {
+// v13.35-prewarm: the 4.6s cold-sweep killer. When the first visitor after a
+// quiet gap opens the site, KV_PUBLIC_MATCHES is expired and THAT visitor
+// pays the full provider sweep (~4.6s). The cron tick now pre-warms the
+// payload at the end of every sweep: opts.prewarm marks cron-context
+// (no lock/rate-limit writes — last-write-wins is harmless), opts.pool
+// reuses the pool cron ALREADY fetched (zero extra provider subrequests —
+// the sweep was the expensive part), and the payload is stamped `prewarm`
+// so it stays FRESH for ~9.25 min (a full tick gap) instead of the normal
+// 3-min SWR window — but only when NOTHING in it is live (live score data
+// still deserves the short window). KV write math (worst case, zero
+// visitors, all quiet): +1 payload write per tick (TTL 720s) = ≤144/day;
+// snapshot writes remain change-only; grand total ≪ the 1,000/day quota.
+// The canary match is stripped here — it lives ONLY in cron's in-memory
+// pool and must never leak into the public payload (the comments claimed
+// a public-side filter existed; it never did — belt-and-braces now).
+export interface PubOpts { prewarm?: boolean; pool?: any[] }
+export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
+  const prewarm = !!(opts && opts.prewarm);
+  const prePool = opts && Array.isArray(opts.pool) ? opts.pool.filter((m) => !m.canary) : null;
   const cached = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null);
-  if (cached && cached.ts && Date.now() - cached.ts < 18e4) return cached.data;
+  const cachedHasLive = !!(cached && cached.data && Array.isArray(cached.data.upcoming) && cached.data.upcoming.some((m) => isLiveStatus(m.status)));
+  // Prewarm-written payloads stretch to ~9.25min fresh (cron ticks every
+  // 10min — the payload NEVER goes cold between ticks). Everything else
+  // keeps the 3-min SWR window. Live payloads always keep 3 min.
+  const freshMs = cached && cached.data && cached.data.prewarm && !cachedHasLive ? 555e3 : 18e4;
+  if (cached && cached.ts && Date.now() - cached.ts < freshMs) return cached.data;
   await applySettings(env);
   await ensureFaAiCache(env).catch(() => {
   });
@@ -87,6 +184,7 @@ export async function fetchPublicMatches(env: Env, req) {
   const lockVal = parseInt(await env.STATE.get("pub_refresh_lock").catch(() => null)) || 0;
   const lockFresh = !!(lockVal && Date.now() - lockVal < 45e3);
   if (lockFresh && cached && cached.data) return cached.data;
+  if (prewarm && lockFresh) return cached && cached.data ? cached.data : null; // a visitor refresh is already running — let it finish
   const ip = req && req.headers && req.headers.get("CF-Connecting-IP") || "";
   const rlKey = ip ? "pub_rl_" + ip.replace(/[^0-9a-fA-F:.]/g, "") : null;
   if (rlKey) {
@@ -96,7 +194,7 @@ export async function fetchPublicMatches(env: Env, req) {
   let matches = null;
   let liveSweepFailed = false;
   try {
-    if (!lockFresh) {
+    if (!lockFresh && !prewarm) {
       await env.STATE.put("pub_refresh_lock", String(Date.now()), { expirationTtl: 45 }).catch(() => {
       });
     }
@@ -104,7 +202,13 @@ export async function fetchPublicMatches(env: Env, req) {
       await env.STATE.put(rlKey, String(Date.now()), { expirationTtl: 60 }).catch(() => {
       });
     }
-    matches = await fetchLongView(env);
+    // v13.35-prewarm: cron hands over the pool it already fetched this tick —
+    // the provider sweep (the expensive part) is skipped entirely.
+    if (prePool) {
+      matches = prePool;
+    } else {
+      matches = await fetchLongView(env);
+    }
     await enrichLiveMatches(env, matches);
   } catch (e) {
     console.error("Public provider sweep failed (serving stale): " + e.message);
@@ -301,7 +405,8 @@ export async function fetchPublicMatches(env: Env, req) {
   const weekEnd = weekStart + 7 * 864e5;
   const thisWeek = matches.filter((m) => (shouldNotify(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekStart && new Date(m.utcDate).getTime() < weekEnd).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
   const nextWeek = matches.filter((m) => (shouldNotify(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekEnd && new Date(m.utcDate).getTime() < weekEnd + 7 * 864e5).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
-  const data = { upcoming: upcoming.filter((m) => !topSpotKeys.has(String(m.id || "") + "|" + m.utcDate)).map(withTop), finished: finished.map(withTop), nextBig, topSpot: { next: topSpotNext ? withTop(topSpotNext) : null, matches: topSpotList.map(withTop) }, thisWeek: thisWeek.map(withTop), nextWeek: nextWeek.map(withTop), standings, cups, ucl, fetchedAt: null };
+  const data: any = { upcoming: upcoming.filter((m) => !topSpotKeys.has(String(m.id || "") + "|" + m.utcDate)).map(withTop), finished: finished.map(withTop), nextBig, topSpot: { next: topSpotNext ? withTop(topSpotNext) : null, matches: topSpotList.map(withTop) }, thisWeek: thisWeek.map(withTop), nextWeek: nextWeek.map(withTop), standings, cups, ucl, fetchedAt: null };
+  if (prewarm) data.prewarm = true;
   const poolMeta = matches ? await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null) : null;
   data.fetchedAt = poolMeta && poolMeta.fetchedAt || (new Date()).toISOString();
   // v12.x-resilience: snapshot fallback. If the live sweep failed OR the
@@ -327,7 +432,9 @@ export async function fetchPublicMatches(env: Env, req) {
     }
   }
   if (upcoming.length || finished.length) {
-    await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: 300 }).catch(() => {
+    // Prewarm payloads need a TTL ≥ the 10-min cron tick (720s) so they never
+    // expire between ticks; visitor writes keep the short 300s TTL.
+    await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: prewarm ? 720 : 300 }).catch(() => {
     });
     // v12.x-resilience: refresh the 7-day snapshot ONLY when the live sweep
     // succeeded with real data \u2014 otherwise we'd overwrite the snapshot
@@ -348,7 +455,7 @@ export async function fetchPublicMatches(env: Env, req) {
       }
     }
   } else {
-    await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: 60 }).catch(() => {
+    await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: prewarm ? 720 : 60 }).catch(() => {
     });
   }
   return data;
