@@ -38,6 +38,7 @@ export const PUBLIC_PAGE = `<!doctype html>
 <link rel="canonical" href="https://football.sportsignal.ir/">
 <link rel="preload" href="/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Vazirmatn-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"SportSignal","alternateName":"\u0627\u0633\u067E\u0648\u0631\u062A \u0633\u06CC\u06AF\u0646\u0627\u0644","url":"https://football.sportsignal.ir/","description":"\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\u060C \u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627\u06CC \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u0648 \u0646\u062A\u0627\u06CC\u062C \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628","inLanguage":["fa","en"]}<\/script>
 <script>try{var t=localStorage.getItem("ucl_theme")||"dark",l=localStorage.getItem("ucl_lang")||"fa",d=document.documentElement;d.setAttribute("data-theme",t);d.setAttribute("lang",l);d.setAttribute("dir",l==="en"?"ltr":"rtl");}catch(e){}<\/script>
 <!-- v12.x-force-dark: the default theme is ALWAYS dark, regardless of the

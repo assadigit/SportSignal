@@ -94,7 +94,7 @@ export async function handleTelegramUpdate(env: Env, update) {
       if (langSet && up.lang === "en") {
         await sendTelegram(env, "Welcome to SportSignal\\!\nNever miss the big matches\\.\n\n/next \\- Upcoming\n/tables \\- Tables\n/help \\- Help\n/stop \\- Stop", chatId);
       } else if (langSet && up.lang === "fa") {
-        await sendTelegram(env, "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u0627\\!\n\n/next \\- \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\n/tables \\- \u062C\u062F\u0648\u0644\u200C\u0647\u0627\n/help \\- \u0631\u0627\u0647\u0646\u0645\u0627\n/stop \\- \u0627\u0646\u0635\u0631\u0627\u0641", chatId);
+        await sendTelegram(env, "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\\!\n\n/next \\- \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\n/tables \\- \u062C\u062F\u0648\u0644\u200C\u0647\u0627\n/help \\- \u0631\u0627\u0647\u0646\u0645\u0627\n/stop \\- \u0627\u0646\u0635\u0631\u0627\u0641", chatId);
       } else {
         const promptText = "\u{1F310} \u0632\u0628\u0627\u0646 / Language";
         const keyboard = { inline_keyboard: [[

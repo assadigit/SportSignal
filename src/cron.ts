@@ -5,7 +5,7 @@
 
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { toFaDigits, resetSubrequestBudget } from "./utils";
+import { toFaDigits, resetSubrequestBudget, subrequestCount } from "./utils";
 import { translateTeam, ensureFaAiCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
@@ -181,7 +181,8 @@ export async function executeScheduledLogic(env: Env) {
       });
     }
     console.log(`
-\u2705 Execution completed at ${(new Date()).toISOString()}`);
+\u2705 Execution completed at ${(new Date()).toISOString()}
+\u{1F4CA} Subrequest budget: ${subrequestCount()}/48 used (${48 - subrequestCount()} headroom under the 50-ceiling)`);
   } catch (error) {
     console.error(`\u274C Fatal error in scheduled logic:`, error);
     throw error;

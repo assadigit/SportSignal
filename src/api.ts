@@ -8,7 +8,7 @@ import { CONFIG, X_CONFIG, VERSION, PAGE_SEC_HEADERS } from "./config";
 import { jsonResponse, resetSubrequestBudget, hashPassword, getAdminPassHash, timingSafeEqualStr, escapeMarkdownCharacters, getNowTehran } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams.js";
 import { matchKey } from "./dedupe.js";
-import { translateTeam, translateCompetition, resetFaAiCache, ensureFaAiCache } from "./translate";
+import { translateTeam, translateCompetition, resetFaAiCache, ensureFaAiCache, isValidFaName } from "./translate";
 import { maybeRunFaAi, collectUnknownTeamNames } from "./fa-ai";
 import { isWithin24HourWindow, isWithin3HourWindow, isWithin1HourWindow, isMatchStartingNow, shouldNotify, getNotifiedMatches } from "./matches";
 import { fetchFootballData, fetchSportScore, fetchTheSportsDB, fetchLongView, fetchMatchesFromAPI, getCachedMatches } from "./providers";
@@ -103,7 +103,34 @@ const worker_default = {
       return jsonResponse({ ok: true });
     }
     if (url.pathname === "/api/public-matches" && req.method === "GET") {
+      // v13.7-perf: stale-while-revalidate on the public-matches endpoint.
+      // The KV cache (CONFIG.KV_PUBLIC_MATCHES, 3-min TTL inside
+      // fetchPublicMatches) is the fast path. When it is FRESH (<3min) we
+      // await fetchPublicMatches as before (it returns the cached data
+      // without a provider sweep). When it is STALE-but-present (3–10min)
+      // we return the cached payload INSTANTLY and kick the refresh to the
+      // background via ctx.waitUntil — the first visitor after TTL expiry
+      // no longer pays the 2–5s provider-sweep latency; the next visitor
+      // sees the refreshed data. Cache older than 10min (or missing) falls
+      // through to a synchronous refresh (the original behavior), so a cold
+      // cache or a long gap still resolves inline. The 7-day snapshot
+      // fallback below is unchanged.
       try {
+        const FRESH_MS = 18e4;        // 3min  — matches fetchPublicMatches' KV TTL
+        const STALE_GRACE_MS = 6e5;   // 10min — serve stale + bg-refresh window
+        const kv = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null);
+        const age = kv && kv.ts ? Date.now() - kv.ts : Infinity;
+        if (kv && kv.data && age < STALE_GRACE_MS) {
+          const stale = age >= FRESH_MS;
+          if (stale) {
+            // Serve the stale cache now; refresh in the background. The
+            // refresh path (fetchPublicMatches) re-checks the KV + refresh
+            // lock, so a concurrent request can't double-sweep.
+            ctx.waitUntil(fetchPublicMatches(env, req).catch((e) => console.warn("SWR bg refresh failed: " + e.message)));
+          }
+          if (env.AI) ctx.waitUntil(maybeRunFaAi(env).catch((e) => console.warn("FA-AI bg run failed: " + e.message)));
+          return jsonResponse(stale ? Object.assign({}, kv.data, { swr: true, cachedAt: new Date(kv.ts).toISOString() }) : kv.data);
+        }
         const data = await fetchPublicMatches(env, req);
         if (env.AI) ctx.waitUntil(maybeRunFaAi(env).catch((e) => console.warn("FA-AI bg run failed: " + e.message)));
         return jsonResponse(data);
@@ -247,6 +274,14 @@ const worker_default = {
       const fa = body && typeof body.fa === "string" ? body.fa.trim() : "";
       if (!en || !fa) return jsonResponse({ error: "en + fa required" }, 400);
       if (en.length > 60 || fa.length > 60) return jsonResponse({ error: "too long" }, 400);
+      // v13.7-security: validate the Farsi name at the storage boundary.
+      // The AI learner already gates via isValidFaName (Persian-only charset);
+      // admin overrides are admin-controlled (auth-gated) but applying the
+      // same charset gate here is defense-in-depth — even a compromised admin
+      // token cannot store an arbitrary HTML/script payload in fa_teams_ai.
+      // (The client renders team names via textContent, so the XSS surface
+      // was already mitigated; this closes the storage door too.)
+      if (!isValidFaName(fa)) return jsonResponse({ error: "fa must be Persian letters only (2–42 chars)" }, 400);
       const k = normTeamKey(en);
       if (!k) return jsonResponse({ error: "invalid name" }, 400);
       const rec = await env.STATE.get(CONFIG.KV_FA_TEAMS, "json").catch(() => null) || { learned: {}, failed: {}, overrides: {} };

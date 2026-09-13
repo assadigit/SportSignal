@@ -2,7 +2,7 @@
 // Extracted verbatim from the v12.33-xpost bundle; KV keys and semantics are
 // LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.6-assets";
+export const VERSION = "13.7-continuation";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -358,7 +358,14 @@ export const PAGE_SEC_HEADERS = {
   "x-content-type-options": "nosniff",
   "x-frame-options": "DENY",
   "referrer-policy": "no-referrer",
-  "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self'; frame-ancestors 'none'"
+  // v13.7-security: tightened CSP — removed `https://cdn.jsdelivr.net` from
+  // style-src + font-src (dead since v13.4 removed the Lottie CDN player and
+  // v13.6 self-hosted the Vazirmatn fonts). All assets are now same-origin
+  // (Workers Static Assets). The inline @font-face + theme-init script still
+  // require 'unsafe-inline' for style-src / script-src respectively (accepted
+  // tradeoff: a nonce/hash scheme would need serve-time injection into the
+  // static HTML string). frame-ancestors 'none' blocks all framing (clickjacking).
+  "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'"
 };
 export const PROVIDER_LEAGUE_MAP = {
   "Premier League": "PL",

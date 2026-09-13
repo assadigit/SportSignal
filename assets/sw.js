@@ -1,15 +1,17 @@
-// SportSignal service worker (v12.x-pwa)
+// SportSignal service worker (v13.7-perf)
 // Strategies:
 //   - install:  skipWaiting() so a new SW takes over the next navigation
 //   - activate: claim() clients + wipe any cache that isn't ours
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
-// Cache name:  sportsignal-v1
-// Pre-cached on install: the main page, the webmanifest, the logo, the
-// hero video (mp4). These are large; we use a separate "core" cache so a
-// failed precache of one asset doesn't poison the others.
-const CACHE = "sportsignal-v1";
+// Cache name:  sportsignal-v2 (v13.7: bumped from v1 to evict orphaned
+//              pre-13.6 asset entries — public-13.5.js/css and the old
+//              inline-payload HTML — that were stranded in clients' SW
+//              caches after the v13.6 asset split. The activate handler
+//              deletes every cache !== CACHE, so the bump is a one-shot
+//              clean sweep on the next SW takeover.)
+const CACHE = "sportsignal-v2";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

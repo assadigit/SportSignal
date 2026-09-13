@@ -58,7 +58,7 @@ export function getNowTehran(env: Env) {
   const p: any = {};
   for (const x of parts) p[x.type] = x.value;
   const hh = p.hour === "24" ? "00" : p.hour;
-  return new Date(`${p.year}-${p.month}-${p.day}T${hh}:${p.minute}:${p.second}Z`) // p: any;
+  return new Date(`${p.year}-${p.month}-${p.day}T${hh}:${p.minute}:${p.second}Z`);
 }
 export function getJalaliDate(utcDateStr, env) {
   const date = new Date(utcDateStr);
@@ -132,6 +132,12 @@ var SUBREQUEST_COUNT = 0;
 var SUBREQUEST_CAP = 48;
 export function resetSubrequestBudget() {
   SUBREQUEST_COUNT = 0;
+}
+// v13.7-perf: read-only accessor for the live subrequest counter, so the
+// cron sweep can log its headroom against the 50-subrequest ceiling without
+// exposing the mutable binding (imported bindings are read-only).
+export function subrequestCount() {
+  return SUBREQUEST_COUNT;
 }
 export async function fetchJSON(url, attempts?, headers?) {
   attempts = attempts || 2;

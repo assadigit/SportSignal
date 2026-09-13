@@ -6,6 +6,78 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.7-continuation] — 2026-09-13 (continuation pass: bot flawless, perf/caching, security hardening, 3 new test gates)
+
+A continuation pass across the six focus areas from `NEXT-SESSION-CONTINUATION.md`.
+Every change deployed live + verified (curl `/healthz` + `/api/public-matches` +
+page markers; agent-browser at 1440px + 390px; zero console errors). `npm test`
+exit 0 (195 assertions, was 147 — 3 new behavior gates added).
+
+### v13.7-bot — Telegram bot flawless pass
+- **Persian welcome typo fixed** (caught by the new check-bot-edges gate): the
+  welcome "خوش آمدید" was misspelled in THREE places — `BOT_STRINGS.fa_start_welcome`
+  + `fa_start_pick_lang` ended with "خوش آمدیح" (ح instead of د), and the
+  `/start` hardcoded fa welcome ended with "خوش آمدیا" (ا instead of د). Visible
+  to every fa user on join + language change. All three → "خوش آمدید".
+- **New gate** `scripts/check-bot-edges.js` (22 assertions): callback_query
+  language picker (fa/en/malformed), `/timezone` sub-commands (show/reset/
+  invalid/valid), `/lang` picker keyboard, `/help` body, `/stop`→`/start`
+  re-join round-trip, + the Persian welcome spelling. Extracts the real
+  `BOT_STRINGS` + `botStr` + the callback + message chains from the
+  concatenated worker source (single source of truth).
+
+### v13.7-perf — performance + caching
+- **sw.js CACHE bumped** `sportsignal-v1` → `sportsignal-v2`: the activate
+  handler wipes every non-v2 cache, evicting orphaned pre-13.6 asset entries
+  (public-13.5.js/css, old inline-payload HTML) stranded in clients' SW caches
+  since the v13.6 asset split.
+- **ExtraBold font preload added**: the `<h2>` section headings (font-weight:800,
+  above-the-fold) used Vazirmatn-ExtraBold which was NOT preloaded → FOUT on
+  headings. Now 3 preloads (Regular, Bold, ExtraBold). Verified: h2 computed
+  font-weight 800.
+- **Stale-while-revalidate on `/api/public-matches`**: when the KV cache is
+  stale (3–10min), return cached data INSTANTLY + refresh via
+  `ctx.waitUntil`; the first visitor after TTL expiry no longer pays the 2–5s
+  provider-sweep latency. Cache >10min or missing → synchronous refresh
+  (cold-cache safe). The 7-day snapshot fallback unchanged.
+- **Cron subrequest headroom logging**: `subrequestCount()` accessor +
+  `📊 Subrequest budget: N/48 used (headroom under the 50-ceiling)` at sweep
+  completion (visible in `wrangler tail`).
+
+### v13.7-security — security hardening
+- **CSP tightened**: removed dead `https://cdn.jsdelivr.net` from style-src +
+  font-src (leftover from the v12.x Lottie CDN player, removed in v13.4; fonts
+  self-hosted since v13.6). New CSP: `default-src 'self'; script-src 'self'
+  'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:
+  https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'`.
+- **fa-teams override XSS gate**: `/api/fa-teams/override` now validates the
+  Farsi name via `isValidFaName` (Persian-only charset, 2–42 chars) at the
+  storage boundary — defense-in-depth so even a compromised admin token cannot
+  store an arbitrary HTML payload. (The client already renders via textContent;
+  this closes the storage door.)
+- **New gate** `scripts/check-security.js` (24 assertions): CSP strictness,
+  admin cookie flags (HttpOnly/Secure/SameSite=Strict), timing-safe token
+  compare, fa-teams override validation, webhook secret enforcement (403
+  without/wrong), `isValidFaName` charset gate, login rate-limit (5/10min).
+- **Verified solid (no change needed)**: admin auth (PBKDF2 + timing-safe
+  compare), webhook secret (live-verified 403), rate-limit coverage on
+  /api/public-matches (per-IP + refresh lock), XSS client rendering
+  (textContent/createTextNode), wrangler secret list (13 secrets, none in vars).
+
+### Debt assessment (documented, not refactored this session)
+- **api.ts router → route table** (#1): safe to refactor (eval gate doesn't
+  cover it) but needs an E2E router test script first (curl every endpoint,
+  assert status codes) — ~20 admin endpoints can't be verified live without
+  ADMIN_TOKEN.
+- **`:any` tightening** (#3) + **dedupe.js/teams.js → TS** (#4): both blocked
+  by the eval-harness transform (debt #2) which only strips `: Env`/`: any`
+  patterns, not `: string`/`: number`/`: Match`. Recommended unblock: switch
+  test scripts to esbuild (already a wrangler transitive dep) for TS→JS.
+- **Cosmetic**: removed stray `// p: any;` comment from utils.ts:61 (a
+  truncated `as any` cast leftover from the v13.3 types pass).
+
+---
+
 ## [13.6-wrap] — 2026-09-13 (session close: modularization complete, changelog restructured, deploy re-verified, zip backup, next-session prompt)
 
 Repository maintenance — no worker behavior change; `VERSION` stays 13.6-assets.
