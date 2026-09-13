@@ -14,6 +14,34 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.32-router] — 2026-09-13 (debt #1: the ~45-branch fetch if-chain is a declarative route table)
+
+### Refactor (behavior-preserving, mechanically verified)
+- The post-auth request flow in `src/api.ts` is now an ordered
+  `POST_GATE_ROUTES: RouteDef[]` table (30 routes + the legacy GET
+  catch-all) dispatched by a 8-line matcher. The pre-auth flow
+  (webhook, login GET/POST, logout, change-password, public-matches,
+  pages, card prefix, auth gate) is unchanged — it is deliberately
+  order-sensitive and documented.
+- **Mechanical transformation**: `scripts/refactor-router-table.py`
+  split the old chain by brace depth and moved every branch body
+  BYTE-IDENTICAL into its handler (no re-indent — the Persian template
+  literals in `/simple-test` are provably untouched). A post-transform
+  assertion diffs every body line against the original source and
+  verifies the exact route order. The script is kept for provenance.
+- **Semantics contract** (documented at the RouteDef type): first-match-
+  wins in registration order; `method: undefined` = any method; a
+  handler may `return null` to fall through (this encodes the old
+  chain's slip-through: `/api/settings` with an unmapped method reached
+  the legacy switch + 405 tail, and unauthed `/api/diag-*` requests
+  skipped their own branch and ended at the 404 tail).
+- `Request.json()` results in handlers are now explicitly `as any`
+  (previously implicit-any through the untyped `fetch(req, ...)`
+  signature — the RouteCtx typing surfaced it; tightened typing of the
+  router is follow-up debt, done WITHOUT behavior changes).
+- Gates: tsc 0 errors + all 18 behavior checks green (352 assertions).
+
+---
 ## [13.31-perfbudget] — 2026-09-13 (KV write quota + card latency + SWR cadence)
 
 ### KV write budget (the 1,000/day free-tier ceiling hit in session 2)
