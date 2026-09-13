@@ -57,7 +57,7 @@ async function doLogin(){
   var p=document.getElementById("pass").value;
   if(!u){ err(T("errUser")); return; }
   btn.disabled=true;
-  var r=await fetch("/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p})});
+  var r=await fetch("/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({username:u,password:p})});
   if(r.status===429){ btn.disabled=false; err(T("errRate")); return; }
   if(!r.ok){ btn.disabled=false; err(T("errCreds")); return; }
   // v13.11-admin-fix: wait 400ms before reload so the session KV write is
