@@ -995,6 +995,16 @@ function collectUnknownTeamNames(data) {
       if (st && Array.isArray(st.teams)) st.teams.forEach((t) => addName(t && t.name));
     });
   }
+  // v12.x-cups-ai: scan the cups data too — each cup has a .next match with
+  // homeTeam.name + awayTeam.name that needs AI translation. Previously the
+  // cups were not scanned, so cup-only teams (e.g. Omonia Nicosia, Celta Vigo
+  // in EL qualifying) never got AI-translated to Farsi.
+  if (data.cups && Array.isArray(data.cups)) {
+    data.cups.forEach(function(c) {
+      if (c && c.next && c.next.homeTeam) addName(c.next.homeTeam.name);
+      if (c && c.next && c.next.awayTeam) addName(c.next.awayTeam.name);
+    });
+  }
   const pools = [
     Array.isArray(data.upcoming) ? data.upcoming : [],
     Array.isArray(data.finished) ? data.finished : [],
