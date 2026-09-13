@@ -63,6 +63,25 @@ export async function saveNotifiedMatch(env: Env, match, notificationType, notif
       JSON.stringify(notifiedMatches),
       { expirationTtl: ttlSeconds > 0 ? ttlSeconds : 3600 }
     );
+    // v13.9-reliability #7: KV write-then-read verification. KV is eventually
+    // consistent — a concurrent sweep could read stale "not notified" and
+    // send a duplicate. The execution lock (24h TTL) already prevents
+    // concurrent sweeps, so this is defense-in-depth: verify the write
+    // landed so a silent KV failure (network blip, quota) doesn't lose the
+    // dedupe marker (which would cause a duplicate on the next sweep).
+    const verify = await env.STATE.get(env.SIM_NOTIFIED_KEY || CONFIG.KV_NOTIFIED_KEY, "json").catch(() => null);
+    if (verify && verify[key]) {
+      const seen = verify[key].some((n) => n.notificationType === notificationType);
+      if (!seen) {
+        // Write didn't land the record — retry once.
+        console.warn(`\u26A0\uFE0F Dedupe write verify failed for ${key}/${notificationType}, retrying`);
+        await env.STATE.put(
+          env.SIM_NOTIFIED_KEY || CONFIG.KV_NOTIFIED_KEY,
+          JSON.stringify(notifiedMatches),
+          { expirationTtl: ttlSeconds > 0 ? ttlSeconds : 3600 }
+        ).catch(() => {});
+      }
+    }
   } catch (e) {
     console.error("Notification state save failed (continuing): " + e.message);
   }
@@ -90,9 +109,9 @@ export async function shouldSendNotification(env: Env, match, notificationType, 
     case "pre-match-1h":
       return isWithin1HourWindow(match, env) || isBackfillEligible(match, "pre-match-1h", env);
     case "pre-match-5min":
-      return isWithin5MinWindow(match, env);
+      return isWithin5MinWindow(match, env) || isBackfillEligible(match, "pre-match-5min", env);
     case "match-start":
-      return isMatchStartingNow(match, env);
+      return isMatchStartingNow(match, env) || isMatchStartBackfillEligible(match, env);
     case "result":
       return isMatchFinished(match) && isWithinPostMatchWindow(match, env) || isBackfillEligible(match, "result", env);
     default:
@@ -163,15 +182,49 @@ export function isBackfillEligible(match, type, _env) {
   }
   if (matchTime <= now) return false;
   const hoursUntil = (matchTime.getTime() - now.getTime()) / CONFIG.ONE_HOUR_MS;
-  const floors = { "pre-match-24h": 3.5, "pre-match-3h": 1.5, "pre-match-1h": 10 / 60, "pre-match-72h": CONFIG.BIG_MATCH_NOTIFICATION_HOURS - 24 };
-  const maxes = { "pre-match-24h": 24, "pre-match-3h": 3.5, "pre-match-1h": 1.5, "pre-match-72h": CONFIG.BIG_MATCH_NOTIFICATION_HOURS };
+  // v13.9-reliability: backfill now covers ALL pre-match types, including
+  // 5min + match-start. Previously these two returned undefined floors → no
+  // backfill → a single skipped cron run lost the reminder forever. Now a
+  // missed 5min/match-start fires late on the next sweep (with the "late"
+  // tag) instead of vanishing. The floor keeps a small guard so we don't
+  // fire 5min at 0.5min (already kickoff) or match-start at kickoff+19min
+  // (near the window edge — would be a noisy late duplicate).
+  const floors = { "pre-match-24h": 3.5, "pre-match-3h": 1.5, "pre-match-1h": 10 / 60, "pre-match-72h": CONFIG.BIG_MATCH_NOTIFICATION_HOURS - 24, "pre-match-5min": 2 / 60 };
+  const maxes = { "pre-match-24h": 24, "pre-match-3h": 3.5, "pre-match-1h": 1.5, "pre-match-72h": CONFIG.BIG_MATCH_NOTIFICATION_HOURS, "pre-match-5min": 10 / 60 };
   const floor = floors[type];
   const max = maxes[type];
   if (floor === void 0) return false;
   return hoursUntil <= max && hoursUntil > floor;
 }
+// v13.9-reliability #8: time-based result fallback. If a match's utcDate is
+// >90min past AND the status is still SCHEDULED/TIMED (provider hasn't
+// reported FINISHED yet — all providers down or slow), treat it as
+// "presumably finished" so the result notification fires (with score
+// pending) instead of waiting for a provider that may not recover. When
+// the provider recovers, the real score updates the snapshot.
+export function isPresumablyFinished(match, _env) {
+  const now = getNowUTC();
+  const matchTime = new Date(match.utcDate);
+  const minutesSince = (now.getTime() - matchTime.getTime()) / (60 * 1e3);
+  if (minutesSince < 90) return false;
+  const status = String(match.status || "").toUpperCase();
+  return status === "SCHEDULED" || status === "TIMED" || status === "IN_PLAY" || status === "PAUSED";
+}
+// v13.9-reliability #2: match-start backfill. The match-start window
+// (isMatchStartingNow) only fires within -1..+20min of kickoff. If the cron
+// missed that window, the start notification was lost. This backfill lets
+// a late sweep fire a match-start reminder up to 30min after kickoff
+// (with the "late" tag) so the user at least knows the match started.
+export function isMatchStartBackfillEligible(match, _env) {
+  const now = getNowUTC();
+  const matchTime = new Date(match.utcDate);
+  const minutesSince = (now.getTime() - matchTime.getTime()) / (60 * 1e3);
+  if (minutesSince < 20 || minutesSince > 30) return false;
+  const status = String(match.status || "").toUpperCase();
+  return status !== "FINISHED" && status !== "POSTPONED" && status !== "CANCELLED" && status !== "SUSPENDED";
+}
 export function isMatchFinished(match) {
-  return match.status === "FINISHED";
+  return match.status === "FINISHED" || isPresumablyFinished(match, null);
 }
 export async function cleanupExpiredNotifications(env: Env) {
   const hourStamp = Math.floor(Date.now() / 36e5);

@@ -206,8 +206,19 @@ const worker_default = {
       const heartbeat = parseInt(st.heartbeat) || 0;
       const ageMin = heartbeat ? Math.round((Date.now() - heartbeat) / 6e4) : -1;
       const fresh = ageMin >= 0 && ageMin <= CONFIG.EXECUTION_FREQUENCY_MINUTES * 3;
-      return new Response(JSON.stringify({ ok: fresh, heartbeat_age_min: ageMin }), {
-        status: fresh ? 200 : 503,
+      // v13.9-reliability #10: expose the outbox depth so an external uptime
+      // monitor (Uptime Robot / BetterStack / CF Healthcheck) can alert on
+      // a growing backlog = sustained Telegram outage. The monitor points at
+      // /healthz; ok=false (heartbeat stale >30min) OR outbox_depth >50
+      // should page the admin.
+      let outboxDepth = 0;
+      try {
+        const ob = await env.STATE.get(CONFIG.KV_OUTBOX, "json").catch(() => null);
+        outboxDepth = Array.isArray(ob) ? ob.length : 0;
+      } catch (e) { }
+      const healthy = fresh && outboxDepth < 50;
+      return new Response(JSON.stringify({ ok: healthy, heartbeat_age_min: ageMin, outbox_depth: outboxDepth, version: VERSION }), {
+        status: healthy ? 200 : 503,
         headers: corsHeaders
       });
     }

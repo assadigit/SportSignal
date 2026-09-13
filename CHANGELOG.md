@@ -6,6 +6,79 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.9-reliability] — 2026-09-13 (bot dependability: 10 reliability layers — backfill for all types, dead-letter outbox, pre-scheduled notifications, canary, subrequest guard, kickoff KV, write-verify, result fallback, heartbeat, healthz depth)
+
+Implemented all 10 approaches from the dependability brainstorm. The bot
+now shrinks the miss probability to near-zero by layering defenses — every
+miss becomes either a late delivery (backfill) or a retried send (outbox).
+
+### #2 Backfill for ALL notification types (incl 5min + match-start)
+- `isBackfillEligible` now covers `pre-match-5min` (floor 2min, max 10min).
+- New `isMatchStartBackfillEligible` fires a late match-start at kickoff+20-30min.
+- `shouldSendNotification` uses backfill for 5min + match-start (was NO backfill).
+- A skipped cron no longer loses the 5min/match-start reminder — it fires late.
+
+### #3 Dead-letter outbox for Telegram sends
+- `sendTelegram` on final failure (3 retries exhausted) pushes to `pending_sends_v1` KV.
+- `drainOutbox` retries each with exponential backoff (1m→2m→5m→15m→30m→60m),
+  6 attempts max, drops dead chats. Called at the start of every cron sweep.
+- A Telegram 5xx for 30min no longer loses messages — they're retried until success.
+
+### #1 Pre-scheduled notifications
+- `reconcileSchedules` writes a `sched_v1:<matchKey>` record per worthy match
+  at discovery, listing all 6 notification types + sent-state. Every sweep
+  reconciles — a missed cron fires the notification late on the next run.
+- The dedupe KV (notified_matches_v6) is still the primary exactly-once guard;
+  the schedule is the catch-all backstop.
+
+### #5 Canary match for end-to-end monitoring
+- `buildCanaryMatch` creates a synthetic PL big-match (Arsenal vs Chelsea,
+  kickoff ~25h ahead, refreshed every 6h). Injected into the pool in cron.
+- The full pipeline (discovery → window → dedupe → send) exercises it every
+  sweep. If the canary's reminders stop arriving, the pipeline is broken.
+- Tagged `canary: true` so the public page can filter it out.
+
+### #6 Subrequest-budget guard
+- `sendMatchNotifications` checks `subrequestCount() > 38` before each match.
+  If the budget is low (<10 remaining under the 48 cap), it defers the rest
+  to the next sweep instead of silently skipping them.
+- Prevents budget-exhaustion skips on busy matchdays (40 matches × 7 configs).
+
+### #4 Canonical kickoff-time KV
+- `getCanonicalKickoff` writes `kickoff_v1:<matchKey>` at first discovery,
+  never overwritten unless POSTPONED. Prevents provider time-shift (FD day-N
+  19:00 vs sportscore day-N+1 15:00) from moving the notification windows.
+- `updateCanonicalKickoffOnReschedule` overwrites on official reschedule.
+
+### #7 KV write-then-read verification
+- `saveNotifiedMatch` reads back the KV after writing the dedupe marker; if
+  the record didn't land (network blip, quota), retries once. Defense-in-depth
+  against silent KV failures that would cause duplicates.
+
+### #8 Time-based result fallback (presumably finished)
+- `isPresumablyFinished`: if utcDate is >90min past AND status is still
+  SCHEDULED/TIMED/IN_PLAY/PAUSED (provider down or slow), treat as finished.
+- `isMatchFinished` now includes presumably-finished → the result notification
+  fires (with score pending) instead of waiting for a provider that may not recover.
+
+### #9 6h heartbeat to admin chat
+- Cron sends "✅ ربات سالم است" to the admin chat every 6h. If the admin
+  doesn't see it, something broke (cron, worker, KV, Telegram).
+
+### #10 /healthz exposes outbox depth + version
+- `/healthz` now returns `outbox_depth` + `version` alongside `ok` + `heartbeat_age_min`.
+- An external uptime monitor (Uptime Robot / BetterStack / CF Healthcheck)
+  points at `/healthz`; `ok=false` (heartbeat stale >30min OR outbox_depth ≥50)
+  should page the admin. Setup is zero-code (configure the monitor externally).
+
+### New gate
+- **`scripts/check-reliability.js`** (33 assertions): all 10 reliability invariants
+  (backfill coverage, outbox, schedule, canary, subrequest guard, kickoff KV,
+  write-verify, presumably-finished, heartbeat, healthz depth). Added to `npm test`.
+- `npm test` exit 0 (260 assertions, was 223).
+
+---
+
 ## [13.8-botnotify] — 2026-09-13 (bot notifications: date in every reminder, more emojis, dedupe fix for provider-transliteration variants)
 
 The user reported a 3-hour reminder that was missing the date (only time +

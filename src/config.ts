@@ -2,7 +2,7 @@
 // Extracted verbatim from the v12.33-xpost bundle; KV keys and semantics are
 // LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.8-botnotify";
+export const VERSION = "13.9-reliability";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -221,6 +221,32 @@ export const CONFIG: Record<string, any> = {
   KV_HEARTBEAT: "heartbeat",
   KV_EXECUTION_LOCK: "execution_lock",
   LOCK_TIMEOUT: 24e4,
+  // v13.9-reliability: dependability infrastructure KV keys (all v1, additive).
+  // #3 Dead-letter outbox for Telegram sends that exhausted their 3 retries
+  // (Telegram 5xx/429/network). Drained at the start of every cron sweep
+  // with exponential backoff. A message here is NEVER lost — retried until
+  // success or the chat is dead.
+  KV_OUTBOX: "pending_sends_v1",
+  KV_OUTBOX_MAX: 200,
+  // #1 Pre-scheduled notifications: per-match schedule record written at
+  // discovery time, reconciled every sweep. Eliminates the cron-timing
+  // dependency — a missed cron fires the notification late on the next run
+  // instead of losing it.
+  KV_SCHEDULE_PREFIX: "sched_v1:",
+  // #4 Canonical kickoff-time KV: kickoff:<matchKey> written at first
+  // discovery, never overwritten unless the match is POSTPONED. Prevents
+  // provider-time-shift from moving the notification windows.
+  KV_KICKOFF_PREFIX: "kickoff_v1:",
+  // #5 Canary match: a synthetic worthy match injected into the pool so the
+  // full notification pipeline (discovery → window → dedupe → send) is
+  // exercised end-to-end. If the canary's reminders don't arrive at the
+  // expected times, the pipeline is broken.
+  KV_CANARY: "canary_match_v1",
+  CANARY_REFRESH_MS: 6 * 60 * 60 * 1e3,
+  // #9 Heartbeat: the bot sends a "✅ alive" to the admin chat every 6h.
+  // If the admin doesn't see it, something broke (cron, worker, KV, Telegram).
+  KV_HEARTBEAT_LAST: "heartbeat_sent_v1",
+  HEARTBEAT_INTERVAL_MS: 6 * 60 * 60 * 1e3,
   DATE_RANGE_DAYS: 10,
   DAYS_IN_PAST: 2,
   DAYS_IN_FUTURE: 8,

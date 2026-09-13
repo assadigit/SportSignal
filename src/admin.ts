@@ -7,6 +7,7 @@ import { CONFIG, SPORTSCORE_SLUGS } from "./config";
 import type { Env } from "./types";
 import { timingSafeEqualStr, fetchJSON, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams.js";
+import { matchKey } from "./dedupe.js";
 import { normAlias } from "./matches";
 
 export function isAdminRequest(req, env) {
@@ -287,4 +288,54 @@ export function buildDummyMatches() {
   base.push({ ...dummyForType("pre-match-1h"), id: "sim-probe-bigmatch", utcDate: new Date(Date.now() + 71 * 36e5).toISOString(), homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" } });
   base.push({ ...dummyForType("pre-match-1h"), id: "sim-probe-bigmatch-none", utcDate: new Date(Date.now() + 71 * 36e5).toISOString(), homeTeam: { name: "Luton Town FC" }, awayTeam: { name: "Rotherham United FC" } });
   return base;
+}
+
+// v13.9-reliability #5: canary match — a synthetic worthy match injected into
+// the pool so the full notification pipeline (discovery → window-check →
+// dedupe → Telegram send) is exercised end-to-end on every sweep. If the
+// canary's reminders don't arrive at the expected times, the pipeline is
+// broken (cron not firing, KV not writing, worker erroring, Telegram down).
+// The canary is refreshed every 6h so it always has a fresh 24h+3h+1h
+// window ahead. It's tagged `canary: true` so the public page can filter
+// it out (it's a test match, not a real fixture). The match is a PL big
+// match (Arsenal vs Chelsea) so it passes shouldNotify + isBigMatch.
+export function buildCanaryMatch() {
+  const now = Date.now();
+  // Kickoff ~25h from now so the 24h reminder fires on the next sweep.
+  const kickoff = new Date(now + 25 * 36e5).toISOString();
+  return {
+    id: "canary-" + Math.floor(now / (6 * 36e5)),
+    utcDate: kickoff,
+    status: "SCHEDULED",
+    stage: "REGULAR_SEASON",
+    competition: { code: "PL" },
+    homeTeam: { name: "Arsenal FC" },
+    awayTeam: { name: "Chelsea FC" },
+    score: { fullTime: { home: null, away: null } },
+    canary: true
+  };
+}
+
+// v13.9-reliability #4: canonical kickoff-time KV. Written at first
+// discovery (when the match enters the KV pool), never overwritten unless
+// the match is POSTPONED (official reschedule). This prevents provider
+// time-shift (FD day-N 19:00 vs sportscore day-N+1 15:00) from moving the
+// notification windows — the 3h reminder always fires at kickoff−3h of
+// the FIRST verified time, not whichever copy survived dedupe last.
+export async function getCanonicalKickoff(env, match) {
+  const key = CONFIG.KV_KICKOFF_PREFIX + matchKey(match);
+  const stored = await env.STATE.get(key).catch(() => null);
+  if (stored) return stored;
+  // First discovery — write it.
+  const t = String(match.utcDate || "");
+  await env.STATE.put(key, t, { expirationTtl: 14 * 86400 }).catch(() => {});
+  return t;
+}
+export async function updateCanonicalKickoffOnReschedule(env, match) {
+  // Only called when a match transitions to POSTPONED (detectStatusChanges).
+  // Overwrites with the new time (if the provider supplies one) or clears.
+  const key = CONFIG.KV_KICKOFF_PREFIX + matchKey(match);
+  const t = String(match.utcDate || "");
+  await env.STATE.put(key, t, { expirationTtl: 14 * 86400 }).catch(() => {});
+  return t;
 }

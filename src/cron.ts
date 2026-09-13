@@ -10,12 +10,12 @@ import { translateTeam, ensureFaAiCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
 import { fetchMatchesFromAPI, getCachedMatches } from "./providers";
-import { sendTelegram } from "./telegram";
-import { sendMatchNotifications, detectStatusChanges } from "./notifications";
+import { sendTelegram, drainOutbox } from "./telegram";
+import { sendMatchNotifications, detectStatusChanges, reconcileSchedules } from "./notifications";
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, maybeNotifyTableToppers } from "./digest";
 import { maybePostX } from "./x";
 import { getRegisteredChats, checkUserCap } from "./users";
-import { applySettings } from "./admin";
+import { applySettings, buildCanaryMatch } from "./admin";
 
 export async function getCronStatus(env: Env) {
   try {
@@ -72,6 +72,29 @@ export async function executeScheduledLogic(env: Env) {
   try {
     const chatIds = await getRegisteredChats(env);
     console.log(`\u{1F465} Registered users: ${chatIds.length}`);
+    // v13.9-reliability #3: drain the dead-letter outbox FIRST. Any send
+    // that failed last sweep (Telegram 5xx/429/network) gets retried now
+    // with exponential backoff. A message is never silently lost.
+    try {
+      const dr = await drainOutbox(env);
+      if (dr.drained) console.log(`\u{1F4E9} Outbox drained: ${dr.drained} sent, ${dr.dead} dead, ${dr.remaining} pending`);
+    } catch (e) {
+      console.error("Outbox drain failed: " + e.message);
+    }
+    // v13.9-reliability #9: 6h heartbeat to the admin chat. If the admin
+    // doesn't see it, something broke (cron, worker, KV, Telegram).
+    try {
+      const lastHb = parseInt(await env.STATE.get(CONFIG.KV_HEARTBEAT_LAST).catch(() => null)) || 0;
+      if (Date.now() - lastHb > CONFIG.HEARTBEAT_INTERVAL_MS) {
+        const adminChat = parseInt(env.CHAT_ID);
+        if (!isNaN(adminChat)) {
+          await sendTelegram(env, "\u2705 *\u0631\u0628\u0627\u062A \u0633\u0627\u0644\u0645 \u0627\u0633\u062A* \u2014 \u062A\u0645\u0627\u0645 \u0633\u06CC\u0633\u062A\u0645 \u0647\u0627\u06CC \u0627\u0639\u0644\u0627\u0646\\-\u0631\u0633\u0627\u0646\u06CC \u0641\u0639\u0627\u0644 \u0627\u0633\u062A\u0646\\.", adminChat);
+          await env.STATE.put(CONFIG.KV_HEARTBEAT_LAST, String(Date.now())).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.error("Heartbeat failed: " + e.message);
+    }
     try {
       const fa = await maybeRunFaAi(env);
       if (fa && fa.ok && fa.learned) console.log(`\u{1F9E0} FA-AI: ${fa.learned} new Persian names learned (${fa.totalLearned} total)`);
@@ -110,6 +133,31 @@ export async function executeScheduledLogic(env: Env) {
       });
     }
     console.log(`\u{1F4CA} Total matches received: ${matches.length}`);
+    // v13.9-reliability #5: inject the canary match into the pool. It's a
+    // synthetic worthy PL big-match (Arsenal vs Chelsea) with kickoff ~25h
+    // ahead, refreshed every 6h. The full notification pipeline exercises it
+    // end-to-end; if the canary's reminders stop arriving, the pipeline is
+    // broken. It's tagged canary:true so the public page filters it out.
+    try {
+      const canaryLast = parseInt(await env.STATE.get(CONFIG.KV_CANARY).catch(() => null)) || 0;
+      let canary = matches.find((m) => m.canary);
+      if (!canary || Date.now() - canaryLast > CONFIG.CANARY_REFRESH_MS) {
+        canary = buildCanaryMatch();
+        matches.push(canary);
+        await env.STATE.put(CONFIG.KV_CANARY, String(Date.now()), { expirationTtl: 7 * 86400 }).catch(() => {});
+        console.log(`\u{1F4A1} Canary match injected: ${canary.homeTeam.name} vs ${canary.awayTeam.name} @ ${canary.utcDate}`);
+      }
+    } catch (e) {
+      console.error("Canary injection failed: " + e.message);
+    }
+    // v13.9-reliability #1: reconcile pre-scheduled notifications. Writes a
+    // schedule record per worthy match so a skipped cron no longer loses the
+    // 5min/match-start reminder — it fires late on the next sweep instead.
+    try {
+      await reconcileSchedules(env, matches);
+    } catch (e) {
+      console.error("Schedule reconcile failed: " + e.message);
+    }
     await detectStatusChanges(env, matches);
     const worthyMatches = matches.filter(shouldNotify);
     console.log(`\u{1F3AF} Matches meeting notification criteria: ${worthyMatches.length}`);

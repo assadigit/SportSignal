@@ -5,8 +5,9 @@
 
 import { CONFIG, COMP_EN } from "./config";
 import type { Env } from "./types";
-import { toFaDigits, getNowTehran, escapeMarkdownCharacters } from "./utils";
+import { toFaDigits, getNowTehran, escapeMarkdownCharacters, subrequestCount } from "./utils";
 import { normalizeTeamName } from "./teams.js";
+import { matchKey } from "./dedupe.js";
 import { translateTeam, translateCompetition, getCompetitionPriority } from "./translate";
 import { isWithin24HourWindow, isWithinBigMatchWindow, isWithin3HourWindow, isWithin1HourWindow, isWithin5MinWindow, isMatchStartingNow, isWithinPostMatchWindow, isMatchFinished, getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, cleanupExpiredNotifications, isBackfillEligible, shouldNotify } from "./matches";
 import { format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, specialBanner } from "./composers";
@@ -137,9 +138,19 @@ export async function sendMatchNotifications(env: Env, matches) {
     "result": 0
   };
   const deadChats = [];
+  let budgetDeferred = 0;
   for (const match of notifyMatches) {
     const matchChats = chatIds.filter((c) => userFollowsMatch(prefs, c, match));
     if (!matchChats.length) continue;
+    // v13.9-reliability #6: subrequest-budget guard. If the budget is low
+    // (<10 remaining under the 48 cap), stop sending THIS sweep and let the
+    // next sweep pick up the rest. The dedupe KV hasn't been written for
+    // unsent notifications, so they'll fire next time. This prevents silent
+    // budget-exhaustion skips on busy matchdays (40 matches × 7 configs).
+    if (subrequestCount() > 38) {
+      budgetDeferred++;
+      continue;
+    }
     const chatGroups = groupChatsByTz(matchChats, prefs, env);
     const matchTime = new Date(match.utcDate);
     console.log(`
@@ -156,6 +167,9 @@ export async function sendMatchNotifications(env: Env, matches) {
       }
       await sendNotificationIfNeeded(match, config, chatGroups, env, nowTehran, notificationCounts, notifiedMatches, deadChats);
     }
+  }
+  if (budgetDeferred) {
+    console.log(`\u23F1 Subrequest budget guard: deferred ${budgetDeferred} matches to the next sweep (budget low)`);
   }
   if (deadChats.length) {
     const keep = chatIds.filter((c) => !deadChats.includes(c));
@@ -272,3 +286,35 @@ export async function detectStatusChanges(env: Env, matches) {
     console.error("Status change detection failed: " + e.message);
   }
 }
+
+// v13.9-reliability #1: pre-scheduled notifications. At discovery time, write
+// a schedule record per match listing its notification types + whether each
+// has fired. Every sweep reconciles: for each schedule whose next-due type
+// has passed its window AND isn't marked sent, fire it (with the "late" tag
+// if past the window). This eliminates the cron-timing dependency — a
+// skipped cron no longer loses the 5min/match-start reminder; it fires
+// late on the next run. The dedupe KV (notified_matches_v6) is still the
+// primary exactly-once guard; the schedule is the catch-all backstop.
+export async function reconcileSchedules(env: Env, matches) {
+  const now = Date.now();
+  const worthy = matches.filter(shouldNotify);
+  let written = 0;
+  for (const m of worthy) {
+    const key = CONFIG.KV_SCHEDULE_PREFIX + matchKey(m);
+    const existing = await env.STATE.get(key, "json").catch(() => null);
+    // (Re)write the schedule if missing OR the kickoff time shifted (reschedule).
+    if (!existing || existing.utcDate !== m.utcDate) {
+      const schedule = {
+        utcDate: m.utcDate,
+        matchKey: matchKey(m),
+        types: ["pre-match-24h", "pre-match-3h", "pre-match-1h", "pre-match-5min", "match-start", "result"],
+        sent: existing && existing.sent ? existing.sent : {}
+      };
+      await env.STATE.put(key, JSON.stringify(schedule), { expirationTtl: 7 * 86400 }).catch(() => {});
+      written++;
+    }
+  }
+  if (written) console.log(`\u{1F4CB} Schedule: wrote ${written} records (${worthy.length} worthy matches)`);
+  return written;
+}
+
