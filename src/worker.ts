@@ -5589,7 +5589,7 @@ body.joinsticky{padding-bottom:88px}
    the .bigbar container — minimal, integrated into the container rather
    than a heavy 14px rectangle. Fully rounded (border-radius:999px) so the
    ends are pill-shaped. The heavy inset shadow is retired. */
-.bigbar-track{position:relative;height:4px;border-radius:999px;background:rgba(148,163,184,.18);overflow:hidden;margin-top:2px}
+.bigbar-track{position:relative;height:5px;border-radius:999px;background:rgba(148,163,184,.18);overflow:hidden;margin-top:2px}
 [data-theme="light"] .bigbar-track{background:rgba(15,23,42,.08)}
 /* v12.39-minbar: the fill is the same thin 4px line, fully rounded, with a
    subtle gradient + a soft glow. The animated stripes + the fuse-tip ::after
@@ -7867,14 +7867,19 @@ function fmtCountdown(ms){
   var en = curLang()==="en";
   var d = Math.floor(ms/864e5), h = Math.floor(ms%864e5/36e5), m = Math.floor(ms%36e5/6e4), s = Math.floor(ms%6e4/1e3);
   if(ms <= 0) return T("soon");
-  // v12.20 (the user's ask): zero-padded h/m/s \u2014 the old unpadded clock could
-  // render "1:1:5"-style garbage that read like repeating placeholder "1"s.
-  var p2 = function(v){ v = String(v); return v.length < 2 ? "0" + v : v; };
-  var dd = fmtNum(d)+" "+T("uDay"), hh = fmtNum(p2(h))+":"+fmtNum(p2(m))+":"+fmtNum(p2(s));
-  if(d) return dd+(en?" ":" \u0648 ")+hh;
-  if(h) return hh;
-  if(m) return fmtNum(p2(m))+":"+fmtNum(p2(s));
-  return fmtNum(s)+" "+T("uSec");
+  // v12.x-countdown-words (the user's ask): show the countdown in full
+  // words instead of HH:MM:SS — e.g. '۱۴ ساعت و ۱۵ دقیقه و ۴۸ ثانیه'
+  // (fa) / '14 hours 15 minutes 48 seconds' (en). Each non-zero unit is
+  // shown with its full name + the Persian connector between units.
+  // English uses a space-separated style. Zero units are skipped.
+  var andWord = en ? " " : " \u0648 ";
+  var parts = [];
+  if(d) parts.push(fmtNum(d) + " " + T("uDay"));
+  if(h) parts.push(fmtNum(h) + " " + T("uHour"));
+  if(m) parts.push(fmtNum(m) + " " + T("uMin"));
+  if(s) parts.push(fmtNum(s) + " " + T("uSec"));
+  if(parts.length === 0) return T("soon");
+  if(en){ return parts.join(" "); } else { return parts.join(andWord); }
 }
 // v12.10: the ONE pick the countdown bar AND the hero card agree on \u2014 box
 // top (closest upcoming big match; live entries lead) \u2192 far nextBig \u2192
