@@ -6,6 +6,100 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [12.x-maintenance] — 2026-09-13 (comprehensive maintenance, SEO, PWA, bilingual bot, AI translation, UI polish)
+
+A massive maintenance + feature batch covering 30+ individual changes across the
+SportSignal worker, bot, and site. All deployed live at `football.sportsignal.ir`.
+
+### Bot
+- **Switched to new bot** `@SportSignalAlertsBot` (8988731008) — new BOT_TOKEN +
+  WEBHOOK_SECRET set in Cloudflare, webhook registered with
+  `allowed_updates: ["message", "callback_query"]`
+- **Bilingual bot** (Farsi + English) — language picker inline keyboard at
+  `/start` (🇮🇷 فارسی / 🇬🇧 English), `/lang` command for switching, all command
+  responses rendered in the user's chosen lang, cron notifications (24h/3h/1h/
+  kickoff/final/coronation/weekly-tables) all lang-aware. Leaner text + fewer
+  emojis.
+- **Cron gaps filled** — 5-min "kickoff now" reminder for big matches,
+  half-time (PAUSED) detection + HT notification, matchday morning digest at
+  9am local tz (per-chat dedupe), big-match FT broadcast to all users (not just
+  followers).
+- **CHAT_ID cleared** — the old bot's chat ID was causing 403 errors on every
+  cron sweep. Now relies purely on the KV users list (populated by `/start`).
+
+### AI Translation
+- **Workers AI binding enabled** — `[ai] binding = "AI"` added to wrangler.toml.
+  The `maybeRunFaAi` function now runs on each `/api/public-matches` request
+  (15min cooldown) to incrementally translate unknown Latin team names.
+- **Complete data stream audit** — `collectUnknownTeamNames` now scans ALL 11
+  data streams: upcoming, finished, thisWeek, nextWeek, topSpot.matches,
+  topSpot.next, nextBig, standings, cups.next, ucl.teams, ucl.matches.
+- **Admin name correction** — `POST /api/fa-teams/override` endpoint lets the
+  admin manually set/correct the Farsi name for any team. Overrides take
+  priority over AI-learned + static dictionary. Cache invalidated on override.
+- **Admin panel UI** — two input fields (English + Farsi) + "ثبت / اصلاح"
+  button in the Smart Farsi section.
+
+### SEO + PWA
+- **Meta description** + **Open Graph** tags + **Twitter Card** tags +
+  **JSON-LD** structured data + **canonical URL** added to the main page head.
+- **sitemap.xml** route added (`/sitemap.xml` returns a minimal urlset).
+- **robots.txt** updated with Sitemap directive.
+- **Service worker** (`assets/sw.js`) — network-first for navigations,
+  cache-first for static assets, stale-while-revalidate for HTML pages.
+  Registered in the main page HTML.
+- **Font preload** for Vazirmatn Regular + Bold. Vazirmatn-Medium (500)
+  removed (never used by any element).
+
+### UI/UX Polish
+- **Floating Telegram FAB** — 56px circular blue button fixed to the
+  bottom-right on PC. Self-promoting white bubble every 60s. Hidden on
+  scroll (PC). Retired on mobile (joinSticky covers it). Retired the
+  header CTA pill on PC.
+- **Hero card** — dark navy blue border (#1e3a8a, 2px) with 40%-reduced
+  opacity, soft drop-shadow (filter:drop-shadow), team names always full
+  (no truncation, fluid clamp font-size), time box centered, time moved
+  20px+5px down, spacing expanded, kickdate enlarged (18px desktop).
+- **Hero logos** — bigger than topspot at all viewports (hero 102/64 >
+  topspot 51/43 > regular 41/37). All logo shadows removed.
+- **Topspot logos** — 20% smaller (was 64/54, now 51/43).
+- **Countdown** — full-word format ("۱۴ ساعت و ۱۵ دقیقه و ۴۸ ثانیه")
+  instead of HH:MM:SS. Progress bar 25% thicker (4px → 5px). Clock green
+  (matches progress bar) in normal state, blue in "soon" state.
+- **UCL header** — lighter blue in light mode (not navy CTA). Title moved
+  next to the starball logo (right-aligned). Matchday chip flush to the
+  far left. Trophy emoji removed.
+- **Standings** — league leader (position 1) bolded + 2pt larger font.
+  UCL standings leader also bolded.
+- **Cups grid** — all domestic cups merged into one 2-column grid (no
+  more single-box rows). DFB Pokal (جام حذفی آلمان) added.
+- **Live indicator** — Live.lottie animation replaces CSS dot in the
+  livechip + #liveCard h2 heading. loading.lottie replaces CSS spinner
+  + "در حال بارگذاری..." text in all loading states.
+- **3-dot share toggle** — silver in light mode, light blue in dark mode.
+- **Dark mode** forced as default (regardless of system preference) via
+  `<meta name="color-scheme" content="dark light">`.
+- **Admin panel buttons** — font-family:inherit (Vazirmatn, not Arial).
+- **About + Contact footer** — full bilingual origin-story text + email
+  contact box. Contact nav link anchors to #contact (not the bot URL).
+- **Favicon** — custom favicon set (favicon.ico + 16/32/180/192/512 +
+  site.webmanifest) deployed.
+- **Spotitem boxes** — content vertically centered (flex + justify-
+  content:center). Team name tooltips for truncated names.
+- **Vazirmatn font** on all admin panel + login page buttons.
+
+### Data Resilience
+- **Cached snapshot fallback** — on API failure, the worker serves the
+  last successful data snapshot from KV (7-day TTL) with a "cached" badge.
+- **Snapshot written on every successful fetch** — never overwrites with
+  empty data.
+
+### Audit Dashboard
+- **Retired** — the Next.js audit dashboard at `/` replaced with a
+  redirect to `football.sportsignal.ir`.
+
+---
+
 ## [12.33-xpost] — 2026-09-15 (X / Twitter automated profile — OAuth 1.0a HMAC-SHA1 signing inline, KV budget governor, dry-run, admin X card)
 
 The SportSignal brain now mirrors to a dedicated **@SportSignal X account**
