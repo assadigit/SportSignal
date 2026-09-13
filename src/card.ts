@@ -14,7 +14,7 @@
 import { CONFIG, COMP_EN, LEAGUE_LOGOS } from "./config";
 import type { Env } from "./types";
 import { getJalaliDate, getJalaliTime, getEnglishDate, getEnglishTime } from "./utils";
-import { translateTeam, translateCompetition } from "./translate";
+import { translateTeam, translateCompetition, translateVenue } from "./translate";
 
 // Fetch a crest image and return it as a base64 data URI (so the SVG is
 // self-contained — no cross-origin fetch needed by the renderer). Falls
@@ -106,5 +106,6 @@ export async function buildMatchCardSvg(env: Env, match: any, lang: string): Pro
   <line x1="280" y1="320" x2="520" y2="320" stroke="url(#accent)" stroke-width="2"/>
   <text x="400" y="355" text-anchor="middle" font-family="Vazirmatn, sans-serif" font-size="20" font-weight="700" fill="#e2e8f0">${escXml(dateStr)}</text>
   <text x="400" y="385" text-anchor="middle" font-family="Vazirmatn, sans-serif" font-size="24" font-weight="800" fill="${accent}">${escXml(timeStr)}</text>
+  ${match.venue ? `<text x="400" y="412" text-anchor="middle" font-family="Vazirmatn, sans-serif" font-size="14" font-weight="600" fill="#94a3b8">\u{1F4CD} ${escXml(en ? match.venue : (translateVenue(match.venue) || match.venue))}</text>` : ""}
 </svg>`;
 }

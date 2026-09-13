@@ -7,8 +7,8 @@ import { CONFIG, COMP_EN } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getNowTehran, getEnglishDate } from "./utils";
 import { translateTeam, translateCompetition } from "./translate";
-import { shouldNotify, isMatchFinished, isWithinPostMatchWindow, getNotifiedMatches, saveNotifiedMatch, normAlias, isMasterPair, isDerby } from "./matches";
-import { fetchStandings, buildLeagueTableMessage, specialBanner, formatResultMessage, isoWeekKey, weeklyTableCodes } from "./composers";
+import { shouldNotify, isMatchFinished, isWithinPostMatchWindow, getNotifiedMatches, saveNotifiedMatch, normAlias, isMasterPair, isDerby, isMatchStartingNow } from "./matches";
+import { fetchStandings, buildLeagueTableMessage, specialBanner, formatResultMessage, formatMatchStartMessage, isoWeekKey, weeklyTableCodes } from "./composers";
 import { sendTelegram } from "./telegram";
 import { getRegisteredChats, getUserPrefs, getUserTz, groupChatsByTz, userFollowsMatch, isMasterBigMatch } from "./users";
 import { getCachedMatches } from "./providers";
@@ -303,6 +303,60 @@ export async function broadcastBigMatchResults(env: Env, matches) {
     if (out.sent) console.log(`\u{1F4E4} result-big broadcast: ${out.sent} big-match FTs to non-followers`);
   } catch (e) {
     console.error("Big-match result broadcast failed: " + e.message);
+  }
+  return out;
+}
+// v13.13-kickoff: ALWAYS notify when a big match starts. Fires to ALL
+// registered chats (not just followers) when a master big-match (both teams
+// in the master list) kicks off. Parallel to broadcastBigMatchResults but
+// for kickoff. Users who follow a team already get the per-user
+// match-start notification via the regular path — this broadcast reaches
+// NON-followers too, so nobody misses a big-match kickoff. Deduped via
+// "match-start-big" so it fires exactly once per match.
+export async function broadcastBigMatchKickoff(env: Env, matches) {
+  const out = { sent: 0, failed: 0, dead: 0, matches: 0 };
+  try {
+    if (!Array.isArray(matches) || !matches.length) return out;
+    const candidates = matches.filter((m) =>
+      m && isMatchStartingNow(m, env) && isMasterBigMatch(m)
+    );
+    if (!candidates.length) return out;
+    const chatIds = await getRegisteredChats(env);
+    if (!chatIds.length) return out;
+    const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
+    const notifiedMatches = await getNotifiedMatches(env);
+    const deadChats = [];
+    for (const match of candidates) {
+      out.matches++;
+      // ALL chats get the big-match kickoff (not just non-followers — the
+      // user's ask: "always send notification when a big match is started").
+      const groups = (typeof groupChatsByTz === "function" ? groupChatsByTz(chatIds, prefs, env) : [{ tz: env.TEHRAN_TZ, lang: "fa", chats: chatIds }]);
+      let anySuccess = false;
+      for (const g of groups) {
+        const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
+        const lang = g.lang || "fa";
+        const message = specialBanner(match, lang) + await formatMatchStartMessage(match, scopedEnv, lang);
+        const sendResults = await Promise.allSettled(
+          g.chats.map((chatId) => sendTelegram(scopedEnv, message, chatId))
+        );
+        sendResults.forEach((r, i) => {
+          if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
+        });
+        if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
+      }
+      if (anySuccess) {
+        await saveNotifiedMatch(env, match, "match-start-big", notifiedMatches);
+        out.sent++;
+      }
+    }
+    if (deadChats.length) {
+      const keep = chatIds.filter((c) => !deadChats.includes(c));
+      await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(keep)).catch(() => {});
+      out.dead = deadChats.length;
+    }
+    if (out.sent) console.log(`\u{1F680} match-start-big broadcast: ${out.sent} big-match kickoffs to all chats`);
+  } catch (e) {
+    console.error("Big-match kickoff broadcast failed: " + e.message);
   }
   return out;
 }

@@ -7,7 +7,7 @@ import { CONFIG, LEAGUE_LOGOS, COMP_EN } from "./config";
 import type { Env } from "./types";
 import { fetchJSON, getNowTehran } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams.js";
-import { translateTeam, translateCompetition, ensureFaAiCache } from "./translate";
+import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus, isFeaturedMatch, normAlias, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby } from "./matches";
 import { fetchLongView, getCachedMatches } from "./providers";
 import { applySettings } from "./admin";
@@ -27,6 +27,7 @@ export function pubMatch(m) {
     big: isFeaturedMatch(m),
     derby: isDerby(m),
     venue: m.venue || null,
+    venueFa: m.venue ? (translateVenue(m.venue) || m.venue) : null,
     score: (isLiveStatus(m.status) || m.status === "FINISHED") && m.score && m.score.fullTime ? m.score.fullTime : null
   };
 }
@@ -80,6 +81,8 @@ export async function fetchPublicMatches(env: Env, req) {
   if (cached && cached.ts && Date.now() - cached.ts < 18e4) return cached.data;
   await applySettings(env);
   await ensureFaAiCache(env).catch(() => {
+  });
+  await ensureFaVenueCache(env).catch(() => {
   });
   const lockVal = parseInt(await env.STATE.get("pub_refresh_lock").catch(() => null)) || 0;
   const lockFresh = !!(lockVal && Date.now() - lockVal < 45e3);

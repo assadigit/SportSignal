@@ -2,7 +2,7 @@
 // Extracted verbatim from the v12.33-xpost bundle; KV keys and semantics are
 // LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.12-cards";
+export const VERSION = "13.13-venues";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -206,6 +206,11 @@ export const CONFIG: Record<string, any> = {
   // unknown names exist — zero AI calls when everything is translated.
   KV_FA_TEAMS: "fa_teams_ai",
   KV_FA_LAST_RUN: "fa_ai_last_run",
+  // v13.13-venues: AI-learned Persian stadium/venue names. Separate KV
+  // from fa_teams_ai (stadiums translate differently — "Emirates Stadium" →
+  // "امارات"). The AI learner collects unknown venue names from the match
+  // pool and translates them in the same batch as team names.
+  KV_FA_VENUES: "fa_venues_ai",
   FA_AI_MAX_BATCH: 16,
   FA_AI_RUN_EVERY_MS: 9e5,
   FA_AI_FAIL_RETRY_MS: 432e5,

@@ -6,13 +6,13 @@
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, resetSubrequestBudget, subrequestCount } from "./utils";
-import { translateTeam, ensureFaAiCache } from "./translate";
+import { translateTeam, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
 import { fetchMatchesFromAPI, getCachedMatches } from "./providers";
 import { sendTelegram, drainOutbox } from "./telegram";
 import { sendMatchNotifications, detectStatusChanges, reconcileSchedules } from "./notifications";
-import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, maybeNotifyTableToppers } from "./digest";
+import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, broadcastBigMatchKickoff, maybeNotifyTableToppers } from "./digest";
 import { maybePostX } from "./x";
 import { getRegisteredChats, checkUserCap, getUserPrefs } from "./users";
 import { applySettings, buildCanaryMatch } from "./admin";
@@ -32,6 +32,8 @@ export async function executeScheduledLogic(env: Env) {
   resetSubrequestBudget();
   await applySettings(env);
   await ensureFaAiCache(env).catch(() => {
+  });
+  await ensureFaVenueCache(env).catch(() => {
   });
   const NOW = Date.now();
   const prevStatus = await getCronStatus(env);
@@ -223,6 +225,15 @@ export async function executeScheduledLogic(env: Env) {
       }
     }
     await sendMatchNotifications(env, matches);
+    // v13.13-kickoff: ALWAYS notify when a big match starts. Fires to ALL
+    // chats (not just followers) when a master big-match kicks off. Own
+    // try/catch so a failure here can never break the rest of the sweep.
+    try {
+      const bk = await broadcastBigMatchKickoff(env, matches);
+      if (bk && bk.sent) console.log(`\u{1F680} Big-match kickoff broadcast: ${bk.sent}/${bk.matches} (dead=${bk.dead})`);
+    } catch (e) {
+      console.error("Big-match kickoff broadcast step failed: " + e.message);
+    }
     // v12.x-cron-gaps: big-match FT broadcast — users who follow neither
     // team in a master-big-match still get the FT result (Real Madrid vs
     // Man City, etc.). Additive; own try/catch so a failure here can

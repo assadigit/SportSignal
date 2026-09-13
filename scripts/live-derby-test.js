@@ -67,6 +67,8 @@ const { matchKey, canonDedupe } = require("../src/dedupe.js");
 const import_teams = { normalizeTeamName, normTeamKey };
 // v12.2x bundle: fetchPublicMatches awaits the FA-AI cache warm-up
 const ensureFaAiCache = async () => {};
+const ensureFaVenueCache = async () => {}; // v13.13-venues stub
+const translateVenue = (v) => v; // v13.13-venues stub
 const getNowTehran = () => new Date();
 const import_dedupe = { matchKey, canonDedupe };
 // esbuild __name wrappers (identity in the sandbox)

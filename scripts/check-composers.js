@@ -79,6 +79,7 @@ function getEnglishRelative() { return "3h 20m to go"; }
 function enStageName(s) { return s ? "Group stage" : null; }
 function translateTeam(n) { return n; }
 function translateCompetition(c) { return COMP_EN[c] || c; }
+function translateVenue(v) { return v; } // v13.13-venues stub
 function isDomesticCup() { return false; }
 function isDerby() { return false; }
 function isMasterPair() { return false; }

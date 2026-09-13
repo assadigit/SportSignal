@@ -7,7 +7,7 @@ import { CONFIG, STAGE_FA, COMP_EN, SPORTSCORE_SLUGS } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, getRelativeTimeUntilMatch, getEnglishDate, getEnglishTime, getEnglishRelative, fetchJSON, enStageName } from "./utils";
 import { normalizeTeamName } from "./teams.js";
-import { translateTeam, translateCompetition, faStageName, isDomesticCup } from "./translate";
+import { translateTeam, translateCompetition, translateVenue, faStageName, isDomesticCup } from "./translate";
 import { normAlias, isMasterPair, isDerby } from "./matches";
 import { providerSuspended, clearProviderSuspension, fetchPglTableFromWikipedia } from "./providers";
 
@@ -110,6 +110,11 @@ export function formatMatchStartMessage(match, env, lang) {
   message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
   message += `\u{1F680} \u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
   message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
+  // v13.13-venues: show the stadium (AI-translated) on kickoff.
+  if (match.venue) {
+    const venue = en ? match.venue : (translateVenue(match.venue) || match.venue);
+    message += `\n\u{1F4CD} ${escapeMarkdownCharacters(venue)}`;
+  }
   return message;
 }
 export async function formatResultMessage(match, env, lang?) {
@@ -123,6 +128,11 @@ export async function formatResultMessage(match, env, lang?) {
   let message = `${head}\n\n`;
   message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
   message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}\n`;
+  // v13.13-venues: show the stadium name (AI-translated) if available.
+  if (match.venue) {
+    const venue = en ? match.venue : (translateVenue(match.venue) || match.venue);
+    message += `\u{1F4CD} ${escapeMarkdownCharacters(venue)}\n`;
+  }
   message += `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n\n`;
   if (match.score.fullTime.home !== null && match.score.fullTime.away !== null) {
     const h = en ? match.score.fullTime.home.toString() : toFaDigits(match.score.fullTime.home.toString());

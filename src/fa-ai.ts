@@ -6,7 +6,7 @@
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { normTeamKey } from "./teams.js";
-import { translateTeam, resetFaAiCache, ensureFaAiCache, isValidFaName, faAiCacheSize } from "./translate";
+import { translateTeam, resetFaAiCache, ensureFaAiCache, ensureFaVenueCache, isValidFaName, faAiCacheSize, faVenueCacheSize } from "./translate";
 
 export function collectUnknownTeamNames(data: any) {
   const out = new Set();
@@ -50,6 +50,40 @@ export function collectUnknownTeamNames(data: any) {
       if (!m) continue;
       if (m.homeTeam) addName(m.homeTeam.name);
       if (m.awayTeam) addName(m.awayTeam.name);
+    }
+  }
+  return [...out];
+}
+// v13.13-venues: collect unknown venue/stadium names from the match pool.
+// Same pattern as collectUnknownTeamNames: skip already-Persian + already-
+// translated names. Venues come from the `venue` field on each match.
+export function collectUnknownVenueNames(data: any) {
+  const out = new Set();
+  const addVenue = (v) => {
+    const s = String(v || "").trim();
+    if (!s || s.length > 60) return;
+    if (/[\u0600-\u06FF]/.test(s)) return; // already Persian
+    out.add(s);
+  };
+  if (!data) return [...out];
+  const pools = [
+    Array.isArray(data.upcoming) ? data.upcoming : [],
+    Array.isArray(data.finished) ? data.finished : [],
+    Array.isArray(data.thisWeek) ? data.thisWeek : [],
+    Array.isArray(data.nextWeek) ? data.nextWeek : [],
+    data.ucl && Array.isArray(data.ucl.matches) ? data.ucl.matches : []
+  ];
+  if (data.topSpot && Array.isArray(data.topSpot.matches)) pools.push(data.topSpot.matches);
+  if (data.nextBig) pools.push([data.nextBig]);
+  if (data.cups && Array.isArray(data.cups)) {
+    for (const c of data.cups) {
+      if (c && c.next) addVenue(c.next.venue);
+    }
+  }
+  for (const pool of pools) {
+    for (const m of pool) {
+      if (!m) continue;
+      addVenue(m.venue);
     }
   }
   return [...out];
@@ -189,6 +223,55 @@ export async function runFaAiLearner(env: Env, names, force) {
 export function askedAndFailed(out) {
   return out && out.asked > 0 && out.learned === 0;
 }
+// v13.13-venues: translate venue/stadium names via the AI. Same pattern as
+// runFaAiLearner but for venues — stored in KV_FA_VENUES (fa_venues_ai).
+export async function runFaVenueLearner(env: Env, venues, force) {
+  if (!env || !env.AI) return { ok: false, skipped: "ai-disabled", learned: 0, failed: 0, pending: (venues || []).length };
+  const rec: any = await env.STATE.get(CONFIG.KV_FA_VENUES, "json").catch(() => null) || { v: 1, learned: {}, failed: {} };
+  if (!rec.learned) rec.learned = {};
+  if (!rec.failed) rec.failed = {};
+  const now = Date.now();
+  const pending = (venues || []).filter((v) => {
+    const k = String(v || "").toLowerCase().trim();
+    if (!k || rec.learned[k]) return false;
+    if (force) return true;
+    const failTs = parseInt(rec.failed[k]) || 0;
+    return !(failTs && now - failTs < CONFIG.FA_AI_FAIL_RETRY_MS);
+  });
+  if (!pending.length) return { ok: true, learned: 0, failed: 0, pending: 0, totalLearned: Object.keys(rec.learned).length };
+  const batch = pending.slice(0, CONFIG.FA_AI_MAX_BATCH);
+  const sys = 'You translate football stadium/venue names to Persian (Farsi) as used by Iranian sports media. Reply with ONLY a minified JSON object mapping every EXACT input name to its Persian name. Transliterate phonetically (e.g. "Emirates Stadium"→"امارات", "Camp Nou"→"کامپ نو", "Santiago Bernabéu"→"سانتیاگو برنابئو", "Allianz Arena"→"آلیانتس آرنا"). Keep it concise — the common short form Iranian commentators use. NEVER use Latin letters. No markdown, no explanations.';
+  const user = JSON.stringify(batch);
+  let raw = null, model = null;
+  for (const m of ["@cf/meta/llama-3.3-70b-instruct-fp8-fast", "@cf/meta/llama-3.1-8b-instruct"]) {
+    try {
+      const r = await env.AI.run(m, { messages: [{ role: "system", content: sys }, { role: "user", content: user }], max_tokens: 800 });
+      raw = r && (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content || r.response || r.text || (typeof r === "string" ? r : null));
+      if (raw) { model = m; break; }
+    } catch (e) {
+      console.warn("FA-Venue-AI model " + m + " failed: " + e.message);
+    }
+  }
+  const map = parseAiNameMap(raw, batch);
+  let learned = 0, failed = 0;
+  for (const venue of batch) {
+    const k = String(venue).toLowerCase().trim();
+    if (!k) continue;
+    const fa = map ? map[venue] : null;
+    if (isValidFaName(fa)) {
+      rec.learned[k] = String(fa).trim();
+      delete rec.failed[k];
+      learned++;
+    } else {
+      rec.failed[k] = String(now);
+      failed++;
+    }
+  }
+  rec.ts = now;
+  await env.STATE.put(CONFIG.KV_FA_VENUES, JSON.stringify(rec)).catch(() => {});
+  resetFaAiCache();
+  return { ok: true, learned, failed, model, pending: pending.length - batch.length, asked: batch.length, totalLearned: Object.keys(rec.learned).length };
+}
 export async function maybeRunFaAi(env: Env, force?) {
   try {
     if (!env || !env.AI) return { ok: false, skipped: "ai-disabled" };
@@ -199,12 +282,23 @@ export async function maybeRunFaAi(env: Env, force?) {
     await env.STATE.put(CONFIG.KV_FA_LAST_RUN, String(Date.now()), { expirationTtl: Math.ceil(CONFIG.FA_AI_FAIL_RETRY_MS / 1e3) }).catch(() => {
     });
     await ensureFaAiCache(env);
+    await ensureFaVenueCache(env);
     const cached = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null);
-    const names = cached && cached.data ? collectUnknownTeamNames(cached.data) : [];
-    if (!names.length) return { ok: true, learned: 0, failed: 0, pending: 0, totalLearned: faAiCacheSize() };
-    const res: any = await runFaAiLearner(env, names, force);
-    console.log(`\u{1F9E0} FA-AI learner: asked=${res.asked || 0} learned=${res.learned || 0} rejected=${res.failed || 0} pending=${res.pending || 0} model=${res.model || "-"}`);
-    return res;
+    const data = cached && cached.data ? cached.data : null;
+    const names = data ? collectUnknownTeamNames(data) : [];
+    const venues = data ? collectUnknownVenueNames(data) : [];
+    if (!names.length && !venues.length) return { ok: true, learned: 0, failed: 0, pending: 0, totalLearned: faAiCacheSize(), totalVenues: faVenueCacheSize() };
+    let teamRes: any = { ok: true, learned: 0, failed: 0, pending: 0 };
+    let venueRes: any = { ok: true, learned: 0, failed: 0, pending: 0 };
+    if (names.length) {
+      teamRes = await runFaAiLearner(env, names, force);
+      console.log(`\u{1F9E0} FA-AI team learner: asked=${teamRes.asked || 0} learned=${teamRes.learned || 0} rejected=${teamRes.failed || 0} pending=${teamRes.pending || 0} model=${teamRes.model || "-"}`);
+    }
+    if (venues.length) {
+      venueRes = await runFaVenueLearner(env, venues, force);
+      console.log(`\u{1F3DF}\uFE0F FA-AI venue learner: asked=${venueRes.asked || 0} learned=${venueRes.learned || 0} rejected=${venueRes.failed || 0} pending=${venueRes.pending || 0} model=${venueRes.model || "-"}`);
+    }
+    return { ok: true, learned: (teamRes.learned || 0) + (venueRes.learned || 0), failed: (teamRes.failed || 0) + (venueRes.failed || 0), totalLearned: faAiCacheSize(), totalVenues: faVenueCacheSize() };
   } catch (e) {
     console.error("FA-AI learner failed: " + e.message);
     return { ok: false, error: e.message };

@@ -63,6 +63,7 @@ let pubSrc = src.match(/function pubMatch\(m\) \{[\s\S]*?\n\}/)[0]
 // stub referenced helpers
 globalThis.translateTeam = (n) => n;
 globalThis.translateCompetition = () => "x";
+globalThis.translateVenue = (v) => v; // v13.13-venues stub
 globalThis.LEAGUE_LOGOS = {};
 globalThis.isLiveStatus = (s) => s === "LIVE";
 globalThis.isFeaturedMatch = () => false;

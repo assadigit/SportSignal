@@ -68,6 +68,36 @@ export function faAiCacheSize() {
 }
 export function resetFaAiCache() {
   FA_AI_CACHE = null;
+  FA_VENUE_CACHE = null;
+}
+// v13.13-venues: AI-learned Persian stadium/venue names. Loaded from
+// KV_FA_VENUES (fa_venues_ai). The translateVenue function is the venue
+// equivalent of translateTeam — returns the Persian name if known, else
+// the English original (which the AI learner will pick up + translate).
+var FA_VENUE_CACHE = null;
+export async function ensureFaVenueCache(env: Env) {
+  if (FA_VENUE_CACHE) return FA_VENUE_CACHE;
+  FA_VENUE_CACHE = new Map();
+  const rec = await env.STATE.get(CONFIG.KV_FA_VENUES, "json").catch(() => null);
+  if (rec && rec.learned && typeof rec.learned === "object") {
+    for (const [k, v] of Object.entries(rec.learned)) {
+      if (typeof v === "string" && v) FA_VENUE_CACHE.set(k, v);
+    }
+  }
+  return FA_VENUE_CACHE;
+}
+export function translateVenue(venue) {
+  if (!venue || !FA_VENUE_CACHE) return venue || null;
+  // Case-insensitive lookup (venue names come in varied casing from providers).
+  const key = String(venue).toLowerCase().trim();
+  if (FA_VENUE_CACHE.has(key)) return FA_VENUE_CACHE.get(key);
+  // Try a normalized key (strip "Stadium", "Arena", common suffixes).
+  const norm = key.replace(/\b(stadium|arena|park|ground|centre|center)\b/g, "").trim();
+  if (norm && FA_VENUE_CACHE.has(norm)) return FA_VENUE_CACHE.get(norm);
+  return venue;
+}
+export function faVenueCacheSize() {
+  return FA_VENUE_CACHE ? FA_VENUE_CACHE.size : 0;
 }
 export function isValidFaName(fa) {
   if (typeof fa !== "string") return false;
