@@ -671,6 +671,20 @@ const worker_default = {
       });
       return jsonResponse({ ok: true });
     }
+    // v13.23-audit: on-demand audit. Compares sportsignal.ir match data (ground
+    // truth from the tracked pool) with the bot's notified_matches_v6 KV.
+    // Reports which matches are missing expected notifications.
+    if (url.pathname === "/api/audit" && req.method === "GET") {
+      try {
+        const tracked = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
+        const matches = tracked && Array.isArray(tracked.matches) ? tracked.matches : [];
+        const { auditNotifications } = await import("./notifications");
+        const result = await auditNotifications(env, matches);
+        return jsonResponse(result);
+      } catch (e) {
+        return jsonResponse({ error: "audit failed: " + e.message }, 500);
+      }
+    }
     if (url.pathname === "/api/diag-public" && await isAdminAuthed(req, env)) {
       await applySettings(env);
       const live = await fetchMatchesFromAPI(env);

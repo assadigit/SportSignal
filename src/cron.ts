@@ -11,7 +11,7 @@ import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
 import { fetchMatchesFromAPI, getCachedMatches } from "./providers";
 import { sendTelegram, drainOutbox } from "./telegram";
-import { sendMatchNotifications, detectStatusChanges, reconcileSchedules } from "./notifications";
+import { sendMatchNotifications, detectStatusChanges, reconcileSchedules, auditNotifications } from "./notifications";
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, broadcastBigMatchKickoff, maybeNotifyTableToppers } from "./digest";
 import { maybePostX } from "./x";
 import { getRegisteredChats, checkUserCap, getUserPrefs } from "./users";
@@ -276,6 +276,15 @@ export async function executeScheduledLogic(env: Env) {
       if (xr && (xr.sent || xr.dryRun)) console.log(`\u{1F426} X sweep: sent=${xr.sent} dryRun=${xr.dryRun} skipped=${xr.skipped} errors=${xr.errors.length}`);
     } catch (e) {
       console.error("X post step failed: " + e.message);
+    }
+    // v13.23-audit: compare sportsignal.ir match data (ground truth) with the
+    // bot's notified_matches_v6 KV. Reports gaps — matches that should have
+    // been notified but weren't. Alerts the admin if >2 gaps found.
+    try {
+      const audit = await auditNotifications(env, matches);
+      if (audit.gaps) console.log(`\u{1F50D} Audit: ${audit.gaps}/${audit.total} gaps`);
+    } catch (e) {
+      console.error("Audit step failed: " + e.message);
     }
     try {
       await env.STATE.put("cron_status_v1", JSON.stringify({

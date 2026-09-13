@@ -93,6 +93,9 @@ globalThis.resolveTimeZone = (input) => {
   const raw = String(input || "").trim().toLowerCase();
   return map[raw] || null;
 };
+// v13.23-buttons: stubs for the reply keyboard + command normalizer
+globalThis.replyKeyboard = (lang) => ({ keyboard: [], resize_keyboard: true });
+globalThis.normalizeCommand = (text) => text;
 
 const cbHandler = new Function("env", "update", "return (async () => { " + botStrSrc + "\n" + cbChain + "\n })();");
 const msgHandler = new Function("text", "chatId", "env", "return (async () => { " + msgChain + "\n })();");

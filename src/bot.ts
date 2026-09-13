@@ -14,6 +14,46 @@ import { getRegisteredChats, getUserPrefs, setUserLang, getUserTz, masterTeamLis
 import { sendLeagueTables, sendWeekAhead } from "./digest";
 import { applySettings } from "./admin";
 
+// v13.23-buttons: persistent reply keyboard (buttons at the bottom of the
+// chat). Users tap buttons instead of typing slash commands. The button
+// labels are Persian (fa) or English (en). When tapped, Telegram sends the
+// label as a message — handled as a command alias below.
+function replyKeyboard(lang) {
+  if (lang === "en") {
+    return { keyboard: [
+      [{ text: "Upcoming" }, { text: "Tables" }],
+      [{ text: "Teams" }, { text: "Language" }],
+      [{ text: "Help" }, { text: "Stop" }]
+    ], resize_keyboard: true };
+  }
+  return { keyboard: [
+    [{ text: "\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648" }, { text: "\u062C\u062F\u0648\u0644\u200C\u0647\u0627" }],
+    [{ text: "\u062A\u06CC\u0645\u200C\u0647\u0627" }, { text: "\u0632\u0628\u0627\u0646" }],
+    [{ text: "\u0631\u0627\u0647\u0646\u0645\u0627" }, { text: "\u0627\u0646\u0635\u0631\u0627\u0641" }]
+  ], resize_keyboard: true };
+}
+
+// Normalize button labels to slash commands (so the existing if-chain
+// handles them without duplication).
+function normalizeCommand(text) {
+  if (!text) return text;
+  const t = text.trim();
+  // Persian button labels → slash commands
+  const faMap = {
+    "\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648": "/next",
+    "\u062C\u062F\u0648\u0644\u200C\u0647\u0627": "/tables",
+    "\u062A\u06CC\u0645\u200C\u0647\u0627": "/teams",
+    "\u0632\u0628\u0627\u0646": "/lang",
+    "\u0631\u0627\u0647\u0646\u0645\u0627": "/help",
+    "\u0627\u0646\u0635\u0631\u0627\u0641": "/stop"
+  };
+  if (faMap[t]) return faMap[t];
+  // English button labels → slash commands
+  const enMap = { "Upcoming": "/next", "Tables": "/tables", "Teams": "/teams", "Language": "/lang", "Help": "/help", "Stop": "/stop" };
+  if (enMap[t]) return enMap[t];
+  return text;
+}
+
 export async function handleTelegramUpdate(env: Env, update) {
   try {
     const updId = update && update.update_id;
@@ -48,8 +88,8 @@ export async function handleTelegramUpdate(env: Env, update) {
             }
             await setUserLang(env, cbChatId2, lang);
             await answerCallbackQuery(env, cbq.id, lang === "en" ? "English" : "\u0641\u0627\u0631\u0633\u06CC");
-            const welcomeText = botStr(lang, "lang_set") + "\n\n" + botStr(lang, "start_welcome") + "\n\n" + botStr(lang, "help_body");
-            await sendTelegram(env, welcomeText, cbChatId2);
+            const welcomeText = botStr(lang, "lang_set") + "\n\n" + botStr(lang, "start_welcome") + "\n\n" + (lang === "en" ? "Use the buttons below to navigate\\." : "\u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u067E\u0627\u06CC\u06CC\u0646 \u0628\u0631\u0627\u06CC \u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F\\.");
+            await sendTelegram(env, welcomeText, cbChatId2, replyKeyboard(lang));
           }
         }
       } catch (e) {
@@ -60,7 +100,8 @@ export async function handleTelegramUpdate(env: Env, update) {
     const message = update && update.message;
     if (!message || !message.chat || !message.chat.id) return;
     const chatId = message.chat.id;
-    const text = message.text;
+    // v13.23-buttons: normalize button labels (Persian/English) to slash commands.
+    const text = normalizeCommand(message.text);
     try {
       const from = message.from || {};
       const chat = message.chat || {};
@@ -92,9 +133,9 @@ export async function handleTelegramUpdate(env: Env, update) {
       const up = prefs[String(chatId)] || {};
       const langSet = up.lang === "en" || up.lang === "fa";
       if (langSet && up.lang === "en") {
-        await sendTelegram(env, "Welcome to SportSignal\\!\nNever miss the big matches\\.\n\n/next \\- Upcoming\n/tables \\- Tables\n/help \\- Help\n/stop \\- Stop", chatId);
+        await sendTelegram(env, "Welcome to SportSignal\\!\nNever miss the big matches\\.\n\nUse the buttons below to navigate\\.", chatId, replyKeyboard("en"));
       } else if (langSet && up.lang === "fa") {
-        await sendTelegram(env, "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\\!\n\n/next \\- \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\n/tables \\- \u062C\u062F\u0648\u0644\u200C\u0647\u0627\n/help \\- \u0631\u0627\u0647\u0646\u0645\u0627\n/stop \\- \u0627\u0646\u0635\u0631\u0627\u0641", chatId);
+        await sendTelegram(env, "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\\!\n\u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u067E\u0627\u06CC\u06CC\u0646 \u0628\u0631\u0627\u06CC \u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F\\.", chatId, replyKeyboard("fa"));
       } else {
         const promptText = "\u{1F310} \u0632\u0628\u0627\u0646 / Language";
         const keyboard = { inline_keyboard: [[
