@@ -6,6 +6,65 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.10-clean] — 2026-09-13 (clean date-first reminder format + animated ⚽ emoji on kickoff)
+
+Two asks: (1) restructure the reminder format to date-first (replace the
+"یادآوری" header with the date, remove the countdown), and (2) animated
+emojis in the bot.
+
+### Clean date-first reminder format
+- ALL 6 pre-match formatters restructured to the user's exact layout:
+  ```
+  📅 <date>
+  ⏰ <time>
+  ⚽️ <home> 🆚 <away>
+  🎯 <competition>
+  ```
+- No "⏳ یادآوری N ساعته" header (replaced by the date at the top).
+- No "⏱ N ساعت و M دقیقه دیگر" countdown (removed per the user's ask —
+  the kickoff time is enough; the user can compare to now).
+- Big-match keeps 🔥 on the match line; match-start keeps 🚀.
+- The 1h reminder now reads exactly as the user specified:
+  ```
+  📅 یکشنبه ۲۲ شهریور ۱۴۰۵
+  ⏰ ۱۷:۴۵
+  ⚽️ *لوانته 🆚 بارسلونا*
+  🎯 لالیگا
+  ```
+
+### Animated emoji (sendDice ⚽ on match-start)
+- New `sendDice(env, chatId, emoji)` helper in `telegram.ts` — Telegram's
+  built-in ANIMATED emoji via the `sendDice` Bot API. The ⚽ appears
+  full-screen and animates (a football spins, a player kicks it), then
+  settles on a random value. Zero asset hosting, zero deps.
+- Wired into match-start: the ⚽ dice is sent BEFORE the text notification
+  for an eye-catching "ball is rolling" kickoff animation. Only for
+  on-time match-start (not late backfills, to avoid noise).
+- Available animated emoji: 🎲 🎯 🏀 ⚽ 🎰 🎳 💎.
+
+### Other animated-emoji options (documented, not all implemented)
+- **sendDice** (implemented): built-in animated emoji, separate message.
+  The ⚽ on match-start is live now.
+- **Custom animated emoji (Telegram Premium)**: inline animated emoji in
+  message text via `custom_emoji` entities. Requires creating a custom
+  emoji sticker set via @Stickers (animated .tgs/.webm). Only Premium
+  users see the animation; non-premium see the static fallback. Future
+  enhancement if the bot owner has Premium.
+- **GIF via sendAnimation**: a looping GIF (e.g., red beeping signal for
+  live matches) sent as media. Needs asset hosting (Cloudflare R2 or a
+  Telegram file_id after first upload). Separate media message. Good for
+  a "LIVE" indicator — a future enhancement.
+- **Animated stickers (.webm)**: sent via `sendSticker`, play inline.
+  Could send a "GOAL!" sticker on live goals. Future enhancement.
+
+### Gate updates
+- `check-composers.js` updated: now asserts the clean format (date-first,
+  no countdown, no reminder-header) + the emoji floor. 33 assertions.
+- `check-reliability.js` updated: 4 new sendDice assertions. 37 assertions.
+- `npm test` exit 0 (272 assertions, was 260).
+
+---
+
 ## [13.9-reliability] — 2026-09-13 (bot dependability: 10 reliability layers — backfill for all types, dead-letter outbox, pre-scheduled notifications, canary, subrequest guard, kickoff KV, write-verify, result fallback, heartbeat, healthz depth)
 
 Implemented all 10 approaches from the dependability brainstorm. The bot

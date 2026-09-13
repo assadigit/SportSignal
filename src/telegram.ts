@@ -148,6 +148,34 @@ export async function sendTelegramDirect(env: Env, text, chatId, keyboard?) {
   return false;
 }
 
+// v13.10-animated: sendDice — Telegram's built-in ANIMATED emoji. The emoji
+// appears full-screen and animates (a football spins, a player kicks it),
+// then settles on a random value. This is the simplest "animated emoji" —
+// zero asset hosting, zero deps, one API call. Available emoji:
+//   🎲 🎯 🏀 ⚽ 🎰 🎳 💎
+// For a football bot, ⚽ on match-start is perfect — a spinning ball that
+// signals "kickoff!". Returns the dice value (1-5 for ⚽) on success, null
+// on failure. Sent as a SEPARATE message (can't be inline with text).
+export async function sendDice(env: Env, chatId, emoji) {
+  try {
+    if (bumpSubrequest()) return null;
+    const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendDice`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, emoji: emoji || "\u26BD" })
+    });
+    if (!res.ok) {
+      console.error("sendDice failed:", await res.text());
+      return null;
+    }
+    const data = await res.json() as any;
+    return data && data.result && data.result.dice ? data.result.dice.value : null;
+  } catch (e) {
+    console.error("sendDice network error:", e.message);
+    return null;
+  }
+}
+
 // Compatibility alias (v12.x call sites) — delegates to the merged sender.
 export async function sendTelegramWithKeyboard(env: Env, text, chatId, keyboard) {
   return sendTelegram(env, text, chatId, keyboard);

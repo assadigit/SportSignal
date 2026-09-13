@@ -122,45 +122,51 @@ const faMatch = {
 const env = { STATE: kv, TEHRAN_TZ: "Asia/Tehran", API_TOKEN: "x" };
 
 (async () => {
-  // 1) format3HourMessage — the user's example — now has a date line
+  // 1) format3HourMessage — v13.10 clean format: date-first, no header, no countdown
   const m3h = format3HourMessage(faMatch, env, "fa");
   check("3h reminder includes a date line (📅 or weekday)", /📅/.test(m3h) || /شنبه|یکشنبه|دوشنبه|سه‌شنبه|چهارشنبه|پنجشنبه|جمعه/.test(m3h));
   check("3h reminder still has the time", /۲۱:۰۰|۱۷:۴۵|۰[۰-۹]:[۰-۵][۰-۹]/.test(m3h));
-  check("3h reminder still has the relative time", /ساعت|دقیقه/.test(m3h));
-  check("3h reminder has ⏳ countdown head", /⏳|⏰|⏱|⏲/.test(m3h));
-  check("3h reminder has ⚽ match ball", /⚽/.test(m3h));
-  check("3h reminder has 🏆/🎯 competition tag", /🏆|🎯/.test(m3h));
+  check("3h reminder has NO countdown (v13.10 removed it)", !/دقیقه دیگر|hours to go/.test(m3h));
+  check("3h reminder has NO reminder-header (v13.10 removed it)", !/یادآوری/.test(m3h));
+  check("3h reminder has ⚽️ match ball", /⚽/.test(m3h));
+  check("3h reminder has 🎯 competition tag", /🎯/.test(m3h));
+  check("3h reminder is date-first (📅 on line 1)", m3h.trim().startsWith("📅") || /شنبه|یکشنبه/.test(m3h.split("\n")[0]));
 
-  // 2) format1HourMessage — date + emojis
+  // 2) format1HourMessage — v13.10 clean format (the user's exact example)
   const m1h = format1HourMessage(faMatch, env, "fa");
   check("1h reminder includes a date line", /📅/.test(m1h) || /شنبه|یکشنبه|دوشنبه/.test(m1h));
-  check("1h reminder has ⚽ match ball", /⚽/.test(m1h));
-  check("1h reminder has ⏳ countdown head", /⏳|⏰|⏱|⏲/.test(m1h));
+  check("1h reminder has ⚽️ match ball", /⚽/.test(m1h));
+  check("1h reminder has NO countdown (v13.10 removed it)", !/دقیقه دیگر|hours to go/.test(m1h));
+  check("1h reminder has NO reminder-header (v13.10 removed it)", !/یادآوری/.test(m1h));
+  check("1h reminder has 🎯 competition tag", /🎯/.test(m1h));
 
-  // 3) format5MinMessage — date + emojis
+  // 3) format5MinMessage — v13.10 clean format
   const m5 = format5MinMessage(faMatch, env, "fa");
   check("5min reminder includes a date line", /📅/.test(m5) || /شنبه|یکشنبه|دوشنبه/.test(m5));
-  check("5min reminder has ⚽ match ball", /⚽/.test(m5));
+  check("5min reminder has ⚽️ match ball", /⚽/.test(m5));
+  check("5min reminder has NO countdown (v13.10 removed it)", !/دقیقه دیگر/.test(m5));
 
-  // 4) formatMatchStartMessage — date + emojis
+  // 4) formatMatchStartMessage — v13.10 clean format + 🚀
   const ms = formatMatchStartMessage(faMatch, env, "fa");
   check("match-start includes a date line", /📅/.test(ms) || /شنبه|یکشنبه|دوشنبه/.test(ms));
-  check("match-start has ⚽ match ball", /⚽/.test(ms));
-  check("match-start has 🚀 kickoff head", /🚀/.test(ms));
+  check("match-start has ⚽️ match ball", /⚽/.test(ms));
+  check("match-start has 🚀 kickoff marker", /🚀/.test(ms));
+  check("match-start has NO countdown (v13.10 removed it)", !/دقیقه دیگر/.test(ms));
 
-  // 5) format24HourMessage — already had date; now has emojis too
+  // 5) format24HourMessage — v13.10 clean format
   const m24 = format24HourMessage(faMatch, env, "fa");
   check("24h reminder includes a date line", /📅/.test(m24) || /شنبه|یکشنبه|دوشنبه/.test(m24));
-  check("24h reminder has ⚽ match ball", /⚽/.test(m24));
-  check("24h reminder has 🏆/🎯 competition tag", /🏆|🎯/.test(m24));
+  check("24h reminder has ⚽️ match ball", /⚽/.test(m24));
+  check("24h reminder has 🎯 competition tag", /🎯/.test(m24));
+  check("24h reminder has NO countdown (v13.10 removed it)", !/دقیقه دیگر|hours to go/.test(m24));
 
-  // 6) formatBigMatchMessage — date + emojis. The big-match formatter leads
-  //    with the 🔥 big-match label (no separate ⚽ match line — the match IS
-  //    the headline), so assert 🔥 + date + 🏆 competition, not ⚽.
+  // 6) formatBigMatchMessage — v13.10 clean format + 🔥
   const mbig = formatBigMatchMessage(faMatch, env, "fa");
   check("big-match reminder includes a date line", /📅/.test(mbig) || /شنبه|یکشنبه|دوشنبه/.test(mbig));
   check("big-match reminder has 🔥 big-match fire", /🔥/.test(mbig));
-  check("big-match reminder has 🏆/🎯 competition tag", /🏆|🎯/.test(mbig));
+  check("big-match reminder has ⚽️ match ball", /⚽/.test(mbig));
+  check("big-match reminder has 🎯 competition tag", /🎯/.test(mbig));
+  check("big-match reminder has NO countdown (v13.10 removed it)", !/دقیقه دیگر|hours to go/.test(mbig));
 
   // 7) formatResultMessage — date + emojis (score, winner trophy, full-time)
   const finMatch = Object.assign({}, faMatch, { status: "FINISHED", score: { fullTime: { home: 2, away: 1 } } });

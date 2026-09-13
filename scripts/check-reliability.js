@@ -55,6 +55,12 @@ check("#4 updateCanonicalKickoffOnReschedule function exists", /async function u
 check("#7 saveNotifiedMatch has write-verify", /const verify = await env\.STATE\.get\(env\.SIM_NOTIFIED_KEY \|\| CONFIG\.KV_NOTIFIED_KEY, "json"\)/.test(src));
 check("#7 verify retries on miss", /Dedupe write verify failed.*retrying/.test(src));
 
+// v13.10-animated: sendDice (built-in animated emoji) for match-start
+check("#anim sendDice function exists", /async function sendDice\(env: Env, chatId, emoji\)/.test(src) || /async function sendDice\(env, chatId, emoji\)/.test(src));
+check("#anim sendDice calls /sendDice API", /\/sendDice/.test(src));
+check("#anim match-start sends ⚽ dice before text", /config\.type === "match-start" && !late/.test(src));
+check("#anim sendDice wired in notifications.ts", /sendDice\(scopedEnv, chatId/.test(src));
+
 // #8 Time-based result fallback (presumably finished)
 check("#8 isPresumablyFinished function exists", /function isPresumablyFinished\(match, _env\)/.test(src));
 check("#8 isPresumablyFinished checks 90min past", /minutesSince < 90/.test(src));

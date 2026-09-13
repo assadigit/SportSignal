@@ -21,16 +21,14 @@ export function format24HourMessage(match, env, lang) {
   const stage = en
     ? (enStageName(match.stage) || (match.stage ? match.stage.replace(/_/g, " ") : "Group stage"))
     : (STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : "\u0645\u0631\u062D\u0644\u0647 \u06AF\u0631\u0648\u0647\u06CC"));
-  const timeUntil = en ? getEnglishRelative(match.utcDate) : getRelativeTimeUntilMatch(match.utcDate, env);
-  let message = `\u{1F3AF} *${escapeMarkdownCharacters(competition)}*`;
-  if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
-    message += ` \\- ${escapeMarkdownCharacters(stage)}`;
-  }
-  message += `\n\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n\n`;
-  const vs = en ? " vs " : " \u{1F19A} ";
-  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
+  // v13.10-clean: date-first layout per the user's ask. No header, no countdown.
+  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
   message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `\u23F1 ${escapeMarkdownCharacters(timeUntil)}`;
+  message += `\u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
+  if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
+    message += ` \u2014 ${escapeMarkdownCharacters(stage)}`;
+  }
   return message;
 }
 export function formatBigMatchMessage(match, env, lang) {
@@ -40,18 +38,17 @@ export function formatBigMatchMessage(match, env, lang) {
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
-  const timeUntil = en ? getEnglishRelative(match.utcDate) : getRelativeTimeUntilMatch(match.utcDate, env);
   const stage = en
     ? (enStageName(match.stage) || (match.stage ? match.stage.replace(/_/g, " ") : ""))
     : (STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : ""));
-  const bigLabel = en ? "\u{1F525} *Big match:* " : "\u{1F525} *\u0628\u0627\u0632\u06CC \u0628\u0632\u0631\u06AF:* ";
-  const vs = en ? " vs " : " \u{1F19A} ";
-  let message = `${bigLabel}${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}`;
-  message += `\n\u{1F3AF} *${escapeMarkdownCharacters(competition)}*`;
+  // v13.10-clean: date-first, 🔥 on the match line. No header, no countdown.
+  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
+  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
+  message += `\u{1F525} \u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
   if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
-    message += ` \\- ${escapeMarkdownCharacters(stage)}`;
+    message += ` \u2014 ${escapeMarkdownCharacters(stage)}`;
   }
-  message += `\n\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n\u23F0 ${escapeMarkdownCharacters(timeStr)}\n\u23F1 ${escapeMarkdownCharacters(timeUntil)}`;
   return message;
 }
 export function format3HourMessage(match, env, lang) {
@@ -59,21 +56,13 @@ export function format3HourMessage(match, env, lang) {
   const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
   const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
-  // v13.8-date: always include the date (day-of-week + day-of-month) — a 3h
-  // reminder with only the time + relative-time is ambiguous (could be today,
-  // tomorrow, or any day). The date disambiguates which matchday the reminder
-  // is for.
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
-  const timeUntil = en ? getEnglishRelative(match.utcDate) : getRelativeTimeUntilMatch(match.utcDate, env);
-  const head = en ? "\u23F3 *3 hours to kickoff*" : "\u23F3 *\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F3 \u0633\u0627\u0639\u062A\u0647*";
-  const vs = en ? " vs " : " \u{1F19A} ";
-  let message = `${head}\n\n`;
-  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}\n`;
-  message += `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
+  // v13.10-clean: date-first layout per the user's ask. No header, no countdown.
+  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
   message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `\u23F1 ${escapeMarkdownCharacters(timeUntil)}`;
+  message += `\u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
   return message;
 }
 export function format1HourMessage(match, env, lang) {
@@ -81,23 +70,19 @@ export function format1HourMessage(match, env, lang) {
   const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
   const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
-  // v13.8-date: always include the date (same rationale as format3HourMessage).
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
-  const timeUntil = en ? getEnglishRelative(match.utcDate) : getRelativeTimeUntilMatch(match.utcDate, env);
-  const head = en ? "\u23F3 *1 hour to kickoff*" : "\u23F3 *\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F1 \u0633\u0627\u0639\u062A\u0647*";
-  const vs = en ? " vs " : " \u{1F19A} ";
-  let message = `${head}\n\n`;
-  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}\n`;
-  message += `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
+  // v13.10-clean: date-first layout per the user's exact example. No header,
+  // no countdown. The user asked: "Change the placement of یادآوری ۱ ساعته
+  // with match day" + "do not need to add ⏱️ ... دیگر".
+  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
   message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `\u23F1 ${escapeMarkdownCharacters(timeUntil)}`;
+  message += `\u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
   return message;
 }
 // v12.x-cron-gaps: 5-minute "kickoff now" reminder for BIG matches only.
-// v13.8-date: now includes the date too (same rationale — even a 5-min
-// reminder should state which day, for clarity in a busy matchday window).
+// v13.10-clean: date-first layout (consistent with the other reminders).
 export function format5MinMessage(match, env, lang) {
   const en = lang === "en";
   const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
@@ -105,13 +90,10 @@ export function format5MinMessage(match, env, lang) {
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
-  const head = en ? "\u23F3 *Kickoff in 5 min*" : "\u23F3 *\u06F5 \u062F\u0642\u06CC\u0642\u0647 \u062A\u0627 \u0634\u0631\u0648\u0639*";
-  const vs = en ? " vs " : " \u{1F19A} ";
-  let message = `${head}\n\n`;
-  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}\n`;
-  message += `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
-  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}`;
+  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
+  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
+  message += `\u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
   return message;
 }
 export function formatMatchStartMessage(match, env, lang) {
@@ -121,13 +103,13 @@ export function formatMatchStartMessage(match, env, lang) {
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
-  const head = en ? "\u{1F680} *Kickoff\\!*" : "\u{1F680} *\u0628\u0627\u0632\u06CC \u0634\u0631\u0648\u0639 \u0634\u062F\\!*";
-  const vs = en ? " vs " : " \u{1F19A} ";
-  let message = `${head}\n\n`;
-  message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}\n`;
-  message += `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
-  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}`;
+  // v13.10-clean: date-first, 🚀 on the match line. The animated ⚽ dice
+  // (sendDice) is sent BEFORE this text by the notification engine for an
+  // eye-catching "ball is rolling" kickoff animation.
+  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
+  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
+  message += `\u{1F680} \u26BD\uFE0F *${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}*\n`;
+  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}`;
   return message;
 }
 export async function formatResultMessage(match, env, lang?) {
