@@ -33,6 +33,8 @@ function transform(ts) {
   c = c.replace(/: any\]([)\s,;])/g, "$1");
   c = c.replace(/ as any\]/g, "");
   c = c.replace(/ as any\)/g, ")");
+  // v13.34: statement-ending cast (`... as any;`) — public-matches snapshot read
+  c = c.replace(/ as any;/g, ";");
   c = c.replace(/: any\)/g, ")");
   c = c.replace(/: any =/g, " =");
   c = c.replace(/: any\]/g, "");

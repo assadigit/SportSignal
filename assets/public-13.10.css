@@ -906,11 +906,40 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    .card-loading class is added, and removed when it's removed. The
    ::after pseudo-element is now transparent (no border spinner). */
 .card-loading{position:relative;min-height:60px;opacity:.4;transition:opacity .25s;pointer-events:none}
+/* v13.34-ux: skeletons replace the old spinner — don't dim the section when
+   a skeleton block is present (the shimmer IS the loading affordance now). */
+.card-loading:has(.skelwrap){opacity:1}
 .card-loading::after{content:"";position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px 0 0 -24px;opacity:1;z-index:10;background:transparent}
 .card-loading .loading-spin{position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px 0 0 -24px;z-index:10;opacity:1;pointer-events:none}
 .loading-spin{width:48px;height:48px;border-radius:50%;border:4px solid var(--t-neutral-soft);border-top-color:var(--t-success-ink);animation:loading-rot 1s linear infinite}
 @keyframes loading-rot{to{transform:rotate(360deg)}}
 @keyframes card-spin{to{transform:rotate(360deg)}}
+/* v13.34-ux: skeleton loaders — shape-matched ghost blocks per section
+   (rows for match lists, table lines for standings, cards for cups),
+   shimmering via a background-position sweep. aria-hidden in the DOM;
+   prefers-reduced-motion renders them as static placeholder blocks (the
+   global reduce rule kills the shimmer animation). */
+.skelwrap{display:flex;flex-direction:column;gap:8px;padding:6px 2px}
+.skelwrap.skel-rows .skel{height:64px;border-radius:14px}
+.skelwrap.skel-tbl .skel{height:22px;border-radius:8px}
+.skelwrap.skel-cards .skel{height:72px;border-radius:12px}
+.skelwrap.skel-hero .skel{height:110px;border-radius:16px}
+.skel{background:linear-gradient(100deg,var(--chip) 32%,var(--hover) 50%,var(--chip) 68%);background-size:220% 100%;animation:skel-shimmer 1.5s ease-in-out infinite;opacity:.85}
+@keyframes skel-shimmer{from{background-position:180% 0}to{background-position:-80% 0}}
+/* v13.34-ux: render-skip for long lists — offscreen .mrow rows skip layout/
+   paint until approached. contain-intrinsic-size ≈ a match row's typical
+   height so the scrollbar stays stable; `auto` lets the browser adopt the
+   real measured height after first render. */
+.mrow{content-visibility:auto;contain-intrinsic-size:auto 96px}
+/* v13.34-ux: back-to-top FAB — bottom-LEFT mirror of the Telegram FAB
+   (bottom-right). Transparent hairline pill matching the glass chrome;
+   fades/slides in past 600px; keyboard-reachable (real <button>). */
+#backTop{position:fixed;bottom:24px;left:24px;z-index:65;width:46px;height:46px;border-radius:50%;border:1px solid var(--glass-border);background:var(--glass);-webkit-backdrop-filter:blur(10px) saturate(1.3);backdrop-filter:blur(10px) saturate(1.3);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(14px);transition:opacity .25s ease,transform .25s cubic-bezier(.16,1,.3,1),border-color .15s,background .15s;box-shadow:0 4px 14px rgba(2,6,23,.25)}
+#backTop.show{opacity:1;pointer-events:auto;transform:translateY(0)}
+#backTop:hover{border-color:var(--accent);background:var(--hover)}
+#backTop:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#backTop svg{width:20px;height:20px}
+@media (max-width:600px){#backTop{bottom:18px;left:18px;width:42px;height:42px}}
 /* v12.x-loading-lottie: the .empty loading state (initial load) now
    shows the loading.lottie animation centered instead of the 'در حال
    بارگذاری...' text. The text is kept for screen readers (sr-only)

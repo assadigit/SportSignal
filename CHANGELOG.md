@@ -14,6 +14,40 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.34-ux] — 2026-09-14 (skeleton loaders + back-to-top + render-skip + PGL snapshot fallback)
+
+### Client UX (backlog §3A items: skeleton loaders, render perf, motion)
+- **Skeleton loaders replace the spinner**: every content section now shows a
+  SHAPE-MATCHED skeleton while data loads — ghost match rows (upcoming /
+  finished / live / week), ghost table lines (standings / UCL), ghost cards
+  (cups), ghost hero blocks (top-spot / UCL spot). Static skeletons are
+  server-rendered in the HTML (visible even before JS boots); the JS
+  injection stays for the auto-refresh path. Function names
+  (addLoadingLottie/removeLoadingLottie) + the .card-loading contract are
+  preserved — callers unchanged. Shimmer auto-disables under
+  prefers-reduced-motion (global rule) → static placeholder blocks.
+- **Back-to-top FAB**: glass-chrome circular button, bottom-LEFT (mirror of
+  the Telegram FAB), fades/slides in past 600px, smooth-scrolls (instant
+  under prefers-reduced-motion), real <button> with bilingual aria-label.
+- **Render-skip for long lists**: `.mrow{content-visibility:auto;
+  contain-intrinsic-size:auto 96px}` — with 38+ match rows the browser now
+  skips layout/paint for offscreen rows.
+- Existing coverage verified (no duplicates added): «آخرین به‌روزرسانی»
+  freshness stamp (v12.26) + cached-badge, focus-visible outlines,
+  prefers-reduced-motion global rule.
+
+### Server reliability (backlog §F: PGL reliability)
+- **PGL snapshot fallback**: when ALL three PGL sources fail (sportscore →
+  Wikipedia → thesportsdb), the Iran league card now falls back to the
+  7-day snapshot's PGL copy (tagged `stale` + `staleAsOf`) instead of an
+  empty «جدول هنوز در دسترس نیست» box. Zero KV cost on the happy path —
+  the snapshot is read only when PGL has no teams.
+
+### Cache/versioning
+- Assets renamed public-13.9 → public-13.10 (CSS + JS); SW cache v4→v5
+  (one-shot client cache clean sweep).
+
+---
 ## [13.33-tsdebt] — 2026-09-13 (debt #4: dedupe.js + teams.js are TypeScript)
 
 ### Migration (types only — logic byte-identical)

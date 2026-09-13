@@ -414,22 +414,36 @@ async function load(){
     loadingIds.forEach(function(id){ var el = document.getElementById(id); if(el){ el.classList.remove("card-loading"); removeLoadingLottie(el); } });
   }
 }
-// v12.x-loading-lottie: inject a <dotlottie-player> loading animation into
-// a container that has the .card-loading class. The animation (loading.lottie,
-// a 500x500 Lottie shown at 48x48px) replaces the old CSS border spinner.
-// Idempotent — if the player is already present, no-op. removeLoadingLottie
-// cleans up after the data arrives.
+// v13.34-ux: skeleton loaders replace the old rotating-border spinner.
+// Each content section gets a SHAPE-MATCHED skeleton (ghost match rows for
+// lists, ghost table rows for standings, ghost cards for cups) so the page
+// layout settles before data arrives instead of showing a lone spinner.
+// Function names (addLoadingLottie/removeLoadingLottie) and the .card-loading
+// class contract are preserved — callers are unchanged. The shimmer is a
+// background-position animation, auto-disabled by the global
+// prefers-reduced-motion rule (skeletons render as static placeholder blocks).
+function skelBlock(cls, n){
+  var w = document.createElement("div");
+  w.className = "skelwrap" + (cls ? " " + cls : "");
+  w.setAttribute("aria-hidden", "true");
+  for (var i = 0; i < n; i++) w.appendChild(document.createElement("div")).className = "skel";
+  return w;
+}
 function addLoadingLottie(el){
-  if(!el || el.querySelector(".loading-spin")) return;
-  var p = document.createElement("div");
-  p.className = "loading-spin";
-  p.setAttribute("aria-hidden","true");
-  el.appendChild(p);
+  if(!el || el.querySelector(".skelwrap")) return;
+  var old = el.querySelector(".loading-spin"); if(old) old.remove();
+  var id = el.id;
+  var w;
+  if (id === "standings" || id === "ucl") w = skelBlock("skel-tbl", 6);
+  else if (id === "cups") w = skelBlock("skel-cards", 3);
+  else if (id === "topSpot" || id === "uclSpot") w = skelBlock("skel-hero", 2);
+  else w = skelBlock("skel-rows", 4); // upcoming / finished / liveMatches / weekBox
+  el.appendChild(w);
 }
 function removeLoadingLottie(el){
   if(!el) return;
-  var p = el.querySelector(".loading-spin");
-  if(p) p.remove();
+  var w = el.querySelector(".skelwrap"); if(w) w.remove();
+  var p = el.querySelector(".loading-spin"); if(p) p.remove();
 }
 var DATA = { upcoming: [], finished: [], nextBig: null, topSpot: null, thisWeek: [], nextWeek: [], standings: null, cups: null, cached: false, cachedAt: null };
 var FLAGS = { PL: "🏴", PD: "🇪🇸", SA: "🇮🇹", FL1: "🇫🇷", BL1: "🇩🇪", PGL: "🇮🇷" };
@@ -1333,6 +1347,23 @@ var heroVideoKick = function(){
 heroVideoKick();
 setInterval(load, 60000);
 setInterval(tickBigBar, 1000);
+// v13.34-ux: back-to-top FAB — mirrors the Telegram FAB (bottom-right) on the
+// opposite corner. Hidden until 600px of scroll; smooth-scrolls except under
+// prefers-reduced-motion (jump instantly instead).
+(function(){
+  var btn = document.getElementById("backTop"); if(!btn) return;
+  var onScroll = function(){
+    var show = (window.scrollY || document.documentElement.scrollTop || 0) > 600;
+    btn.classList.toggle("show", show);
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+  btn.addEventListener("click", function(){
+    var reduce = false;
+    try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch(e){}
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  });
+})();
 // v12.21 (the user's ask): PC-wide HIERARCHY — the auto-placed 2-column grid
 // read as random (ragged shared-row offsets, holes under shorter cards, the
 // results card alone at the bottom). setWide() regroups the section cards

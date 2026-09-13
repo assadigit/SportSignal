@@ -221,6 +221,25 @@ export async function fetchPublicMatches(env: Env, req) {
     standings[c] = Object.assign({ code: c, name: COMP_EN[c] || c, faName: translateCompetition(c), emblem: LEAGUE_LOGOS[c] || null }, compact(stMap[c]));
   });
   standings.PGL = Object.assign({ code: "PGL", name: COMP_EN.PGL || "Persian Gulf Pro League", faName: translateCompetition("PGL"), emblem: LEAGUE_LOGOS.PGL || null }, compact(stPGL));
+  // v13.34-pgl-fallback (backlog §F "PGL reliability"): PGL is the site's
+  // flagship local-league card, but it depends on the weakest chain
+  // (sportscore → Wikipedia → thesportsdb). When ALL of them fail (or the
+  // season table hasn't populated yet), fall back to the 7-day snapshot's
+  // PGL copy — a few-days-stale table beats an empty «جدول هنوز در دسترس
+  // نیست» box. Zero cost on the happy path: the snapshot is read ONLY when
+  // PGL has no teams. The stale copy is tagged `stale` so the client (and
+  // admins via /api/public-matches) can tell it apart.
+  if (!(standings.PGL && Array.isArray(standings.PGL.teams) && standings.PGL.teams.length) && CONFIG.KV_PUBLIC_SNAPSHOT) {
+    try {
+      const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null) as any;
+      const pgl = snap && snap.data && snap.data.standings && snap.data.standings.PGL;
+      if (pgl && Array.isArray(pgl.teams) && pgl.teams.length) {
+        standings.PGL = Object.assign({}, pgl, { code: "PGL", stale: true, staleAsOf: snap.ts ? new Date(snap.ts).toISOString() : null });
+      }
+    } catch (e) {
+      // snapshot unavailable — keep the empty box (previous behavior)
+    }
+  }
   const tierOf = (code) => CONFIG.INTL_COMPETITIONS[code] ? "gold" : code === "CL" ? "gold" : code === "EL" ? "silver" : code === "ECL" ? "bronze" : "domestic";
   const countryOf = (code) => ({ "FA_CUP": "EN", "EFL_CUP": "EN", "CDR": "ES", "COPPA_ITALIA": "IT", "DFB_POKAL": "DE", "HAZFI_CUP": "IR" })[code] || null;
   const cupOrder = ["EL", "ECL", ...Object.keys(CONFIG.INTL_COMPETITIONS), "FA_CUP", "EFL_CUP", "CDR", "COPPA_ITALIA", "DFB_POKAL", "HAZFI_CUP"];

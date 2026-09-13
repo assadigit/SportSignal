@@ -48,7 +48,7 @@ export const PUBLIC_PAGE = `<!doctype html>
 <meta name="color-scheme" content="dark light">
 <title data-i="title">\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u0631\u0648 \u2014 \u0627\u0639\u0644\u0627\u0646\u200C\u062F\u0647\u0646\u062F\u0647 \u0645\u0633\u0627\u0628\u0642\u0627\u062A</title>
 <style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
-<link rel="stylesheet" href="/public-13.9.css">
+<link rel="stylesheet" href="/public-13.10.css">
 </head>
 <body>
 <!-- v12.24 (the user's ask): a real WEBSITE header \u2014 the uploaded SportSignal
@@ -160,11 +160,11 @@ export const PUBLIC_PAGE = `<!doctype html>
      as the match status is LIVE/IN_PLAY/PAUSED. -->
 <div class="card" id="liveCard" style="display:none">
 <h2 data-i="hLive">\u{1F534} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0632\u0646\u062F\u0647</h2>
-<div id="liveMatches"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="liveMatches"><div class="skelwrap skel-skel-rows" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <div class="card" id="topspotCard" style="display:none">
 <h2 data-i="hLgNext" id="topSpotTitle">\u{1F525} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0628\u0632\u0631\u06AF \u067E\u06CC\u0634\u200C\u0631\u0648</h2>
-<div id="topSpot"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="topSpot"><div class="skelwrap skel-skel-hero" aria-hidden="true"><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <!-- v12.2: the UCL box sits above the games list (was below it). v12.4: while
      the selected-vs-selected CL pairing is far away the box headlines the
@@ -182,7 +182,7 @@ export const PUBLIC_PAGE = `<!doctype html>
      starball on its white chip inside the navy plate. data-i moved to the
      INNER span so trText() can never clobber the logo. -->
 <h2 id="uclSpotTitle" class="uclh2"><span class="ucl-logo" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUclNext">\u{1F525} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645 \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627</span></h2>
-<div id="uclSpot"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="uclSpot"><div class="skelwrap skel-skel-hero" aria-hidden="true"><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <!-- v12.16: \xAB\u062F\u0631 \u0627\u06CC\u0646 \u0647\u0641\u062A\u0647\xBB \u2014 the CURRENT Iranian week (Saturday\u2192Friday)
      agenda: every followed/top-3 game of this week in one box, live first,
@@ -191,7 +191,7 @@ export const PUBLIC_PAGE = `<!doctype html>
      the week has no followed games. -->
 <div class="card" id="weekCard" style="display:none">
 <h2 data-i="hWeek" id="weekTitle">\u{1F4C5} \u062F\u0631 \u0627\u06CC\u0646 \u0647\u0641\u062A\u0647</h2>
-<div id="weekBox"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="weekBox"><div class="skelwrap skel-skel-rows" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <!-- v12.12: the \xAB\u{1F4C5} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\xBB list card is RETIRED \u2014 with the view
      toggle gone (always big-only) it only ever held the redundant "\u0647\u0645\u0647 \u062F\u0631
@@ -201,15 +201,15 @@ export const PUBLIC_PAGE = `<!doctype html>
 </div>
 <div class="card uclcard" id="uclCard">
 <h2 class="uclh2"><span class="ucl-logo sm" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUcl">\u{1F3C6} \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627</span></h2>
-<div id="ucl"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="ucl"><div class="skelwrap skel-skel-tbl" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <div class="card" id="standingsCard">
 <h2 data-i="hStandings">\u{1F4CA} \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627</h2>
-<div id="standings"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="standings"><div class="skelwrap skel-skel-tbl" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <div class="card" id="cupsCard">
 <h2 data-i="hCups">\u{1F3C6} \u062A\u0648\u0631\u0646\u0645\u0646\u062A\u200C\u0647\u0627</h2>
-<div id="cups"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="cups"><div class="skelwrap skel-skel-cards" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 
 </div>
@@ -217,7 +217,7 @@ export const PUBLIC_PAGE = `<!doctype html>
      standings grid above (#standings), per the user's request. -->
 <div class="card" id="finishedCard">
 <h2 data-i="hFinished">\u{1F3C1} \u0646\u062A\u0627\u06CC\u062C \u0627\u062E\u06CC\u0631</h2>
-<div id="finished"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="finished"><div class="skelwrap skel-skel-rows" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <footer id="about"><nav class="footnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="#about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="#contact" data-i="navContact">\u062A\u0645\u0627\u0633</a></nav>
 <div class="aboutbox">
@@ -252,8 +252,9 @@ export const PUBLIC_PAGE = `<!doctype html>
      FAB replaces it. The tooltip + aria-label carry the join-i18n
      string so the language toggle updates it. -->
 <a id="tgFab" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram" data-promo="\u0628\u0631\u0627\u06CC \u062F\u0633\u062A \u0646\u062F\u0627\u062F\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645\u060C \u0628\u0647 \u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645 \u0628\u067E\u06CC\u0648\u0646\u062F\u06CC\u062F \u2728"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="#fff" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg></a>
+<button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.8.js"><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.9.js"><\/script>
+<script src="/public-13.10.js"><\/script>
 </body>
 </html>`;

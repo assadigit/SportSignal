@@ -15,7 +15,7 @@
 //              any stranded/stale asset entries on client browsers; the
 //              client assets were renamed public-13.8→public-13.9 in the
 //              same release, so the bump also guarantees a clean slate.)
-const CACHE = "sportsignal-v4";
+const CACHE = "sportsignal-v5";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
