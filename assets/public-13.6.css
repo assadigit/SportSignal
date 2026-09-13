@@ -1064,6 +1064,14 @@ h2{font-size:15.5px;padding:8px 12px}
    than mobile (200px vs 240px) to avoid excessive empty space. */
 .card.bighero{min-height:200px}
 .bighero .bigbar{margin-bottom:0;padding:2px 2px 4px}
+/* v13.14-progressbar: the countdown progress bar (#bigbar / .bigbar-track)
+   was getting cut off at the bottom of the hero card on mobile — the
+   .hero-data's 80px top padding + justify-content:center pushed the bigbar
+   below the min-height:200px fold + the card's overflow:hidden hid it.
+   Move the whole hero-data stack up 10px on mobile (80px → 70px top
+   padding) so the progress bar is fully visible. */
+.hero-data{padding-top:70px}
+.bighero .bigbar{margin-top:-4px}
 /* v12.32: retired .bighero .kick{margin-top:8px} — the kick column now sits
    BETWEEN the crests (rule above: margin-top:3px centers its chip on the
    46px crest line), not on its own line below the face-off. */
