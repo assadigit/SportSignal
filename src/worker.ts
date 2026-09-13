@@ -6145,7 +6145,10 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    one line (measured: "Manchester United" \u2248114px). \u2265901px the full poster
    treatment (102px crest + 24px chip) has room again. */
 @media (min-width:601px) and (max-width:900px){
-.bighero .logo{width:56px;height:56px;font-size:25px}
+/* v12.x-hero-bigger: hero logos 72px in the mid-band (vs topspot 64px)
+   so the featured match stays bigger than the list below. Was 56px
+   (smaller than the topspot's 64px — the reverse of the hierarchy). */
+.bighero .logo{width:72px;height:72px;font-size:32px}
 .bighero .kick .countdown{font-size:20px;padding:6px 16px;border-radius:12px}
 .bighero .score{font-size:20px}
 .bighero .team{font-size:13px}
@@ -6384,6 +6387,15 @@ h2{font-size:15.5px;padding:8px 12px}
 .match>.score{order:1;flex:0 0 auto;align-self:center;height:auto;display:flex;flex-direction:row;align-items:center;justify-content:center;margin-top:0;min-width:0;white-space:nowrap}
 .bighero .match>.kick{height:auto;margin-top:3px;gap:4px}
 .logo{width:46px;height:46px;font-size:20px}
+/* v12.x-hero-bigger (the user's ask): the hero (featured single box) logos
+   must be BIGGER than the topspot list logos (54px mobile) + the regular
+   box logos (46px mobile) — the featured match is more important and
+   imminent. The hero logos are now 64px on mobile (vs 54px topspot, 46px
+   regular). Specificity (0,2,0) beats the .logo (0,1,0) base + the
+   #topspotCard .spotitem .logo (1,2,0) is a different selector so no
+   conflict. Desktop keeps the 102px hero (already bigger than the 64px
+   topspot). */
+.bighero .logo{width:64px;height:64px;font-size:28px}
 .score{font-size:15px}
 .kick .countdown{font-size:11.5px;padding:3px 9px}
 .bighero .kick .countdown{font-size:20px;padding:6px 16px;border-radius:12px}
