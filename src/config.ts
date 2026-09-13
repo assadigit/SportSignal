@@ -396,6 +396,7 @@ export const X_CONFIG = {
 };
 export const PAGE_SEC_HEADERS = {
   "content-type": "text/html; charset=utf-8",
+  "cache-control": "no-store, no-cache, must-revalidate",
   "x-content-type-options": "nosniff",
   "x-frame-options": "DENY",
   "referrer-policy": "no-referrer",
