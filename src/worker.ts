@@ -5943,15 +5943,16 @@ body.joinsticky{padding-bottom:88px}
    the inline-end (LEFT in RTL, flush to the edge), and the title text
    floats in the center between them. The margin-inline-start:auto on the
    chip is retired (space-between handles the distribution). */
-.uclh2{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.uclh2{display:flex;align-items:center;gap:10px}
 /* v12.x-ucl-title-next-to-logo: the title text sits NEXT TO the starball
-   logo (at the inline-start), NOT in the center. The matchday chip
-   (.ucl-md) stays at the far inline-end via justify-content:space-between.
-   The title span gets flex:0 1 auto (not flex:1) so it doesn't stretch
-   across the center — the logo + title group together at the start,
-   and space-between pushes the matchday chip to the far end.
-   text-align:end keeps the title text right-aligned within its span. */
-.uclh2 > span[data-i]{text-align:end;flex:0 1 auto;min-width:0}
+   logo (at the inline-start), NOT in the center. The title span gets
+   margin-inline-end:auto so ALL free space goes after the title — this
+   groups the logo + title together at the start and pushes the matchday
+   chip (.ucl-md) to the far inline-end. Removed justify-content:space-
+   between (it conflicted with the auto-margin approach — space-between
+   distributes free space between all items, keeping the title in the
+   center). flex:0 1 auto so the title doesn't stretch. */
+.uclh2 > span[data-i]{text-align:end;flex:0 1 auto;min-width:0;margin-inline-end:auto}
 .ucl-logo{flex-shrink:0;width:34px;height:34px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(2,6,23,.45),inset 0 0 0 1px rgba(14,32,88,.10)}
 .ucl-logo svg{width:29px;height:29px;display:block}
 .ucl-logo.sm{width:26px;height:26px}
