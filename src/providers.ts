@@ -299,19 +299,9 @@ export async function fetchLongView(env) {
       const data = await fetchJSON("https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=" + leagueId);
       for (const e of data && data.events || []) {
         if ((e.strSport || "").toLowerCase() !== "soccer") continue;
-        const utcDate = parseTSPDate(e.dateEvent, e.strTime, e.strTimestamp);
-        if (!utcDate) continue;
-        pushUnique({
-          id: "tsd-" + e.idEvent,
-          utcDate,
-          status: /finished|completed/i.test(e.strStatus || "") ? "FINISHED" : "SCHEDULED",
-          stage: mapStageName(e.strRound || e.intRound),
-          competition: { code },
-          venue: e.strVenue || null,
-          homeTeam: { name: e.strHomeTeam, crest: e.strHomeTeamBadge || null },
-          awayTeam: { name: e.strAwayTeam, crest: e.strAwayTeamBadge || null },
-          score: { fullTime: { home: parseInt(e.intHomeScore) || 0, away: parseInt(e.intAwayScore) || 0 } }
-        });
+        const m = tspEventToMatch(e, code);
+        if (!m.utcDate) continue;
+        pushUnique(m);
       }
     } catch (e) {
       console.error(`\u274C Long view TSP ${code} failed: ${e.message}`);
@@ -346,6 +336,23 @@ export async function fetchLongView(env) {
   }
   return allMatches;
 }
+
+// v13.2: ONE thesportsdb event → match mapper (was duplicated ×3 across
+// fetchLongView + fetchTheSportsDB's two branches). Identical field mapping.
+function tspEventToMatch(e, code) {
+  return {
+    id: "tsd-" + e.idEvent,
+    utcDate: parseTSPDate(e.dateEvent, e.strTime, e.strTimestamp),
+    status: /finished|completed/i.test(e.strStatus || "") ? "FINISHED" : "SCHEDULED",
+    stage: mapStageName(e.strRound || e.intRound),
+    competition: { code },
+    venue: e.strVenue || null,
+    homeTeam: { name: e.strHomeTeam, crest: e.strHomeTeamBadge || null },
+    awayTeam: { name: e.strAwayTeam, crest: e.strAwayTeamBadge || null },
+    score: { fullTime: { home: parseInt(e.intHomeScore) || 0, away: parseInt(e.intAwayScore) || 0 } }
+  };
+}
+
 export async function fetchTheSportsDB(env) {
   const matches = [];
   const monitored = new Set([...CONFIG.LEAGUES, "EL", "ECL", ...Object.keys(CONFIG.DOMESTIC_CUP_IDS), ...Object.keys(CONFIG.INTL_COMPETITIONS)]);
@@ -357,19 +364,9 @@ export async function fetchTheSportsDB(env) {
     const data = await fetchJSON("https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=" + leagueId);
     for (const e of data && data.events || []) {
       if ((e.strSport || "").toLowerCase() !== "soccer") continue;
-      const utcDate = parseTSPDate(e.dateEvent, e.strTime, e.strTimestamp);
-      if (!utcDate) continue;
-      matches.push({
-        id: "tsd-" + e.idEvent,
-        utcDate,
-        status: /finished|completed/i.test(e.strStatus || "") ? "FINISHED" : "SCHEDULED",
-        stage: mapStageName(e.strRound || e.intRound),
-        competition: { code },
-        venue: e.strVenue || null,
-        homeTeam: { name: e.strHomeTeam, crest: e.strHomeTeamBadge || null },
-        awayTeam: { name: e.strAwayTeam, crest: e.strAwayTeamBadge || null },
-        score: { fullTime: { home: parseInt(e.intHomeScore) || 0, away: parseInt(e.intAwayScore) || 0 } }
-      });
+      const m = tspEventToMatch(e, code);
+      if (!m.utcDate) continue;
+      matches.push(m);
     }
   }
   if (!matches.length) {
@@ -384,19 +381,9 @@ export async function fetchTheSportsDB(env) {
           const code = PROVIDER_LEAGUE_MAP[e.strLeague];
           if (!code || !monitored.has(code)) continue;
           if ((e.strSport || "").toLowerCase() !== "soccer") continue;
-          const utcDate = parseTSPDate(e.dateEvent, e.strTime, e.strTimestamp);
-          if (!utcDate) continue;
-          matches.push({
-            id: "tsd-" + e.idEvent,
-            utcDate,
-            status: /finished|completed/i.test(e.strStatus || "") ? "FINISHED" : "SCHEDULED",
-            stage: mapStageName(e.strRound || e.intRound),
-            competition: { code },
-            venue: e.strVenue || null,
-            homeTeam: { name: e.strHomeTeam, crest: e.strHomeTeamBadge || null },
-            awayTeam: { name: e.strAwayTeam, crest: e.strAwayTeamBadge || null },
-            score: { fullTime: { home: parseInt(e.intHomeScore) || 0, away: parseInt(e.intAwayScore) || 0 } }
-          });
+          const m = tspEventToMatch(e, code);
+          if (!m.utcDate) continue;
+          matches.push(m);
         }
       } catch (e) {
         console.error(`\u274C TSP day sweep ${dateStr} failed: ${e.message}`);

@@ -8,7 +8,7 @@ import { normalizeTeamName } from "./teams.js";
 import { translateTeam, translateCompetition } from "./translate";
 import { shouldNotify } from "./matches";
 import { fetchMatchesFromAPI } from "./providers";
-import { sendTelegram, sendTelegramWithKeyboard, answerCallbackQuery } from "./telegram";
+import { sendTelegram, answerCallbackQuery } from "./telegram";
 import { getRegisteredChats, getUserPrefs, setUserLang, getUserTz, masterTeamList, userFollowsMatch, botStr, resolveTimeZone } from "./users";
 import { sendLeagueTables, sendWeekAhead } from "./digest";
 import { applySettings } from "./admin";
@@ -54,7 +54,7 @@ export async function handleTelegramUpdate(env, update) {
       } catch (e) {
         console.error("callback_query handler failed: " + e.message);
       }
-      return new Response("OK");
+      return;
     }
     const message = update && update.message;
     if (!message || !message.chat || !message.chat.id) return;
@@ -95,30 +95,20 @@ export async function handleTelegramUpdate(env, update) {
       } else if (langSet && up.lang === "fa") {
         await sendTelegram(env, "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u0627\\!\n\n/next \\- \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\n/tables \\- \u062C\u062F\u0648\u0644\u200C\u0647\u0627\n/help \\- \u0631\u0627\u0647\u0646\u0645\u0627\n/stop \\- \u0627\u0646\u0635\u0631\u0627\u0641", chatId);
       } else {
-        const hasKeyboard = typeof sendTelegramWithKeyboard === "function";
         const promptText = "\u{1F310} \u0632\u0628\u0627\u0646 / Language";
         const keyboard = { inline_keyboard: [[
           { text: "\u{1F1EE}\u{1F1F7} \u0641\u0627\u0631\u0633\u06CC", callback_data: "lang:fa" },
           { text: "\u{1F1EC}\u{1F1E7} English", callback_data: "lang:en" }
         ]] };
-        if (hasKeyboard) {
-          await sendTelegramWithKeyboard(env, promptText, chatId, keyboard);
-        } else {
-          await sendTelegram(env, promptText + "\n\n/lang", chatId);
-        }
+        await sendTelegram(env, promptText, chatId, keyboard);
       }
     } else if (text === "/lang") {
-      const hasKeyboard = typeof sendTelegramWithKeyboard === "function";
       const promptText = "\u{1F310} \u0632\u0628\u0627\u0646 / Language";
       const keyboard = { inline_keyboard: [[
         { text: "\u{1F1EE}\u{1F1F7} \u0641\u0627\u0631\u0633\u06CC", callback_data: "lang:fa" },
         { text: "\u{1F1EC}\u{1F1E7} English", callback_data: "lang:en" }
       ]] };
-      if (hasKeyboard) {
-        await sendTelegramWithKeyboard(env, promptText, chatId, keyboard);
-      } else {
-        await sendTelegram(env, promptText, chatId);
-      }
+      await sendTelegram(env, promptText, chatId, keyboard);
     } else if (text === "/stop") {
       const chats = await getRegisteredChats(env);
       const newChats = chats.filter((c) => c !== chatId);
@@ -216,12 +206,15 @@ export async function handleTelegramUpdate(env, update) {
       const lang = p.lang === "en" ? "en" : "fa";
       const now = new Date();
       const upcoming = matches.filter((m) => shouldNotify(m) && userFollowsMatch(prefs, chatId, m) && new Date(m.utcDate) > now).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 5);
-      env.TEHRAN_TZ = getUserTz(prefs, chatId, env);
+      // v13.2: scoped tz — a shallow env clone feeds the time formatters
+      // instead of mutating the isolate-shared env object (the old mutation
+      // leaked this user's timezone into unrelated concurrent requests).
+      const tzEnv = { ...env, TEHRAN_TZ: getUserTz(prefs, chatId, env) };
       if (!upcoming.length) {
         await sendTelegram(env, lang === "en" ? "No upcoming matches for your followed teams right now\\." : "\u{1F4C5} \u062F\u0631 \u062D\u0627\u0644 \u062D\u0627\u0636\u0631 \u0628\u0627\u0632\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\u06CC \u0628\u0631\u0627\u06CC \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u062F\u0646\u0628\u0627\u0644\u200C\u0634\u062F\u0647 \u0634\u0645\u0627 \u0648\u062C\u0648\u062F \u0646\u062F\u0627\u0631\u062F\\.", chatId);
       } else {
         const lines = upcoming.map((m) => {
-          const time = lang === "en" ? getEnglishTime(m.utcDate, env) : getJalaliTime(m.utcDate, env);
+          const time = lang === "en" ? getEnglishTime(m.utcDate, tzEnv) : getJalaliTime(m.utcDate, tzEnv);
           const vs = lang === "en" ? " vs " : " \u{1F19A} ";
           return escapeMarkdownCharacters(translateTeam(m.homeTeam.name)) + vs + escapeMarkdownCharacters(translateTeam(m.awayTeam.name)) + "\n" + translateCompetition(m.competition.code) + " \u2014 " + time;
         });
@@ -243,7 +236,7 @@ export async function handleTelegramUpdate(env, update) {
       const lang = (prefs[String(chatId)] && prefs[String(chatId)].lang) === "en" ? "en" : "fa";
       await sendTelegram(env, lang === "en" ? "Unknown command\\. Use /help\\." : "\u{1F4DD} \u062F\u0633\u062A\u0648\u0631 \u0646\u0627\u0634\u0646\u0627\u062E\u062A\u0647 \u0627\u0633\u062A\u060C \u0627\u0632 /help \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F\\.", chatId);
     }
-    return new Response("OK");
+    return;
   } catch (error) {
     console.error("Webhook handler error:", error);
   }

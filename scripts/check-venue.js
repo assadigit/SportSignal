@@ -13,8 +13,12 @@ const check = (name, cond) => {
 
 // 1) three TSP push sites carry venue
 check(
-  "3 TSP builders set venue from strVenue",
-  (src.match(/venue: e\.strVenue \|\| null,/g) || []).length === 3
+  "TSP builder sets venue from strVenue",
+  /venue: e\.strVenue \|\| null,/.test(src)
+);
+check(
+  "3 TSP call sites use the shared mapper",
+  (src.match(/= tspEventToMatch\(e, code\);/g) || []).length === 3
 );
 // publication site: pubMatch maps m.venue
 check(
@@ -27,8 +31,7 @@ check(
   /if \(!cur\.venue && x\.venue\) cur\.venue = x\.venue;/.test(src)
 );
 // static checks: TSP object must have non-null venue values flow (strVenue may be empty)
-check("fetchLongView TSP block threads venue", /venue: e\.strVenue \|\| null,\r?\n          homeTeam/.test(src));
-check("fetchTheSportsDB per-league block threads venue", /venue: e\.strVenue \|\| null,\r?\n        homeTeam: \{ name: e\.strHomeTeam/.test(src));
+check("tspEventToMatch threads venue", /venue: e\.strVenue \|\| null,\s*homeTeam: \{ name: e\.strHomeTeam/.test(src));
 // the venue chip must be rendered in both render paths
 check(
   "render() shows venue chip",

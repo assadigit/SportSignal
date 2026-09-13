@@ -16,9 +16,9 @@ const src = require("./lib/worker-src")();
 
 // --- Extract the webhook command chain (in-memory source of truth) ---
 const start = src.indexOf('if (text === "/start") {');
-const end = src.indexOf('return new Response("OK")', start);
+const end = src.indexOf('} catch (error) {', start); // end of handleTelegramUpdate
 if (start < 0 || end < 0) {
-  console.error("FAIL: join command chain not found in worker.ts");
+  console.error("FAIL: join command chain not found in worker source");
   process.exit(1);
 }
 const chain = src.slice(start, end).replace(/\n\s*$/, "");
