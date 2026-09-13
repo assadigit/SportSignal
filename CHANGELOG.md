@@ -6,6 +6,113 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.6-wrap] — 2026-09-13 (session close: modularization complete, changelog restructured, deploy re-verified, zip backup, next-session prompt)
+
+Repository maintenance — no worker behavior change; `VERSION` stays 13.6-assets.
+
+- **Session result (v12.33 → v13.6)**: the recovered 10,002-line rollup bundle
+  was replaced by **21 real ES modules** (`src/worker.ts` is now a thin entry),
+  with zero-behavior-change gates at every stage (15 self-check scripts, live
+  verification after each deploy). Then: ONE shared client core (×3 I18N dicts
+  unified, 191 keys), senders/mappers deduped, dead code removed, domain types
+  added (**tsc noise 385 → 0**, `npm test` now gates on `tsc --noEmit` +
+  version-sync), shared-env mutations eliminated, and the client payload
+  extracted to immutable versioned assets — **public HTML 241KB → ~37KB (−85%)**,
+  CSS/JS at `max-age=31536000, immutable`.
+- **Changelog restructured**: the v13.0–v13.6 entries (previously appended at
+  the bottom of this file) moved to the top, restoring the documented
+  newest-first order.
+- **Deploy re-verified**: final HEAD re-deployed so GitHub ↔ Cloudflare stay in
+  lockstep; `npm test` exit 0 (147 assertions OK) before the wrap deploy.
+- **Backup**: `git archive` zip of the wrapped HEAD shipped for offline backup
+  (tracked files only — secrets live in wrangler, not in the repo).
+- **Next session**: handoff prompt covering (1) UI/UX tweaks, (2) Telegram-bot
+  flawless pass, (3) performance/caching, (4) fresh SWOT, (5) security review,
+  (6) remaining technical debt (documented candidates: api.ts if-chain router →
+  route table, eval-based test harness, sw.js CACHE-name bump for orphaned
+  pre-13.6 asset entries).
+
+## 13.6-assets — the payload split (2026-09-13)
+
+### v13.5-debtzero — reliability + type-safety zero pass
+- **`/api/simulate` no longer mutates shared CONFIG at runtime** (was swapping
+  `CONFIG.KV_NOTIFIED_KEY`/`KV_USER_PREFS` to test keys — a concurrent cron
+  sweep could read/write the TEST keys). The handler now passes a cloned env
+  (`SIM_NOTIFIED_KEY`/`SIM_PREFS_KEY`); `matches.ts`/`users.ts` resolve keys
+  per-request. Real notification state is isolated by construction.
+- **All `env.TEHRAN_TZ` shared-env mutations eliminated** (notifications.ts ×1,
+  digest.ts ×2 — the per-chat-group timezone now flows through scoped env
+  clones, same fix the `/next` handler got in v13.2). `admin.ts applySettings`
+  mutation kept — it is the deliberate KV→CONFIG settings refresh.
+- **8 silent duplicate object keys removed** (kept last-wins → zero behavior
+  change): `LEAGUE_LOGOS.PGL` ×2 (139.png dead entry), fa-dict ×5
+  (Espanyol, RCD Espanyol de Barcelona, Fajr Sepasi, Paykan, Shams Azar
+  Qazvin — space vs ZWNJ spelling), `FA_COMPS` PGL/HAZFI_CUP ×2.
+- **tsc errors 29 → 0** (types-only edits; eval-gate verified byte-identical).
+  `npm test` now gates on **`tsc --noEmit` + version-sync check** (package.json
+  ↔ `VERSION` core compare) before the 13 behavior checks.
+
+### v13.6-assets — client payload extracted to immutable versioned assets
+- **HTML 241KB → 36KB (−85%)**: the big `<style>` (92KB) and app `<script>`
+  (98KB + 16KB core) moved out of the template into
+  `assets/public-13.6.css`, `assets/public-13.6.js`, `assets/core-13.6.js`
+  (shared by /, /admin/login, /admin).
+- Assets served via Workers Static Assets with
+  `Cache-Control: public, max-age=31536000, immutable`; cache-bust by
+  renaming (version suffix in filename). `assets/_headers` updated.
+- Kept inline (first-paint critical): theme-init script, `@font-face` block,
+  `PAGE_TZ` line (serve-time `__PAGE_TZ__` substitution still works),
+  JSON-LD, and the full HTML body.
+- `src/pages/client-core.ts` retired — `assets/core-13.6.js` is the source of
+  truth for the shared I18N + theme/lang helpers now.
+- Admin footer version now interpolates `VERSION` (was hardcoded ۱۲.۳۱ —
+  three majors stale).
+- `check-venue.js` reads the extracted app JS from `assets/public-*.js`.
+- Extraction was generated from the EVALUATED page string (byte-exact served
+  bytes) by `scripts/extract-page-assets.mjs` (one-shot, kept for provenance).
+
+## 13.4-modular — the great modularization (2026-09-13)
+
+### v13.0-modular — 21 real ES modules replace the 10k-line bundle
+- `src/worker.ts` (10,002 lines, rollup-bundled artifact) split into 21 modules;
+  worker.ts is now a thin entry re-exporting `api.ts`.
+- Rollup noise stripped (`__name`/`__name2` decorators, CJS interop wrappers);
+  `src/teams.js` + `src/dedupe.js` imported directly again.
+- SUBREQUEST counter behind `bumpSubrequest()` (ES import bindings are read-only);
+  identical budget semantics.
+- Test infra: `scripts/lib/worker-src.js` (multi-file source loader, transformed
+  to runnable JS); all 13 self-check gates green. Zero behavior change.
+
+### v13.1-client-core — ONE shared client core
+- The ×3 I18N dictionaries (public/login/admin, ~60KB source, 2 diverged keys)
+  unified into `src/pages/client-core.ts` (191 fa/en keys) + the ×10 theme/lang
+  helpers. Template-literal form keeps the wire format byte-identical
+  (literal 2-byte Persian chars).
+- Favicon/manifest head block deduped ×3 → ×1.
+
+### v13.2-dedupe — duplication + dead code
+- `sendTelegram`/`sendTelegramWithKeyboard` merged (optional keyboard param).
+- thesportsdb event→match mapper extracted (`tspEventToMatch`, was ×3).
+- Dead `return new Response("OK")` + always-true `hasKeyboard` guards removed.
+- `/next` isolate-level `env.TEHRAN_TZ` mutation → scoped env clone.
+
+### v13.3-types — core domain types
+- `src/types.ts`: Env (LooseKV/WorkersAI/secrets), Match/TeamRef/Competition/
+  Standings/PublicCup/XPostResult interfaces; ~100 functions typed `env: Env`.
+- tsc noise 385 → 45 (37 scattered verbatim unknowns + 8 pre-existing dup keys).
+- **fix**: reverted reassociated `await …get().catch()` casts — a real
+  error-handling regression the eval-based test gate caught in CI-style.
+
+### v13.4-live-css — live badges actually visible + perf
+- **Pre-existing bug fixed**: the dotLottie CDN player was CSP-blocked
+  (`script-src 'self'`) AND was the wrong package (never registered
+  `<dotlottie-player>`) — live chips rendered EMPTY, loading states invisible.
+- Removed the render-blocking unpkg script (4 failed requests/visit gone);
+  live chips now use the CSS `live-beep` dot + text, liveCard h2 the
+  `live-breath` dot, loading states a pure-CSS spinner.
+- `assets/_headers`: 7-day cache for fonts/favicons (was `max-age=0`).
+- Page wire size: ~80KB (brotli); bundle 696KB → 628KB raw.
+
 ## [12.x-maintenance] — 2026-09-13 (comprehensive maintenance, SEO, PWA, bilingual bot, AI translation, UI polish)
 
 A massive maintenance + feature batch covering 30+ individual changes across the
@@ -900,83 +1007,3 @@ signature. fd retry attempts 3→2; TSP fallback window -2/+4 → -1/+2 days.
   tier/round filtering, EL/ECL qualifying relabel, scheduled-score hygiene
   (null `score` unless FINISHED/LIVE/PAUSED), BL1 season-freshness guard.
 
-## 13.6-assets — the payload split (2026-09-13)
-
-### v13.5-debtzero — reliability + type-safety zero pass
-- **`/api/simulate` no longer mutates shared CONFIG at runtime** (was swapping
-  `CONFIG.KV_NOTIFIED_KEY`/`KV_USER_PREFS` to test keys — a concurrent cron
-  sweep could read/write the TEST keys). The handler now passes a cloned env
-  (`SIM_NOTIFIED_KEY`/`SIM_PREFS_KEY`); `matches.ts`/`users.ts` resolve keys
-  per-request. Real notification state is isolated by construction.
-- **All `env.TEHRAN_TZ` shared-env mutations eliminated** (notifications.ts ×1,
-  digest.ts ×2 — the per-chat-group timezone now flows through scoped env
-  clones, same fix the `/next` handler got in v13.2). `admin.ts applySettings`
-  mutation kept — it is the deliberate KV→CONFIG settings refresh.
-- **8 silent duplicate object keys removed** (kept last-wins → zero behavior
-  change): `LEAGUE_LOGOS.PGL` ×2 (139.png dead entry), fa-dict ×5
-  (Espanyol, RCD Espanyol de Barcelona, Fajr Sepasi, Paykan, Shams Azar
-  Qazvin — space vs ZWNJ spelling), `FA_COMPS` PGL/HAZFI_CUP ×2.
-- **tsc errors 29 → 0** (types-only edits; eval-gate verified byte-identical).
-  `npm test` now gates on **`tsc --noEmit` + version-sync check** (package.json
-  ↔ `VERSION` core compare) before the 13 behavior checks.
-
-### v13.6-assets — client payload extracted to immutable versioned assets
-- **HTML 241KB → 36KB (−85%)**: the big `<style>` (92KB) and app `<script>`
-  (98KB + 16KB core) moved out of the template into
-  `assets/public-13.6.css`, `assets/public-13.6.js`, `assets/core-13.6.js`
-  (shared by /, /admin/login, /admin).
-- Assets served via Workers Static Assets with
-  `Cache-Control: public, max-age=31536000, immutable`; cache-bust by
-  renaming (version suffix in filename). `assets/_headers` updated.
-- Kept inline (first-paint critical): theme-init script, `@font-face` block,
-  `PAGE_TZ` line (serve-time `__PAGE_TZ__` substitution still works),
-  JSON-LD, and the full HTML body.
-- `src/pages/client-core.ts` retired — `assets/core-13.6.js` is the source of
-  truth for the shared I18N + theme/lang helpers now.
-- Admin footer version now interpolates `VERSION` (was hardcoded ۱۲.۳۱ —
-  three majors stale).
-- `check-venue.js` reads the extracted app JS from `assets/public-*.js`.
-- Extraction was generated from the EVALUATED page string (byte-exact served
-  bytes) by `scripts/extract-page-assets.mjs` (one-shot, kept for provenance).
-
-## 13.4-modular — the great modularization (2026-09-13)
-
-### v13.0-modular — 21 real ES modules replace the 10k-line bundle
-- `src/worker.ts` (10,002 lines, rollup-bundled artifact) split into 21 modules;
-  worker.ts is now a thin entry re-exporting `api.ts`.
-- Rollup noise stripped (`__name`/`__name2` decorators, CJS interop wrappers);
-  `src/teams.js` + `src/dedupe.js` imported directly again.
-- SUBREQUEST counter behind `bumpSubrequest()` (ES import bindings are read-only);
-  identical budget semantics.
-- Test infra: `scripts/lib/worker-src.js` (multi-file source loader, transformed
-  to runnable JS); all 13 self-check gates green. Zero behavior change.
-
-### v13.1-client-core — ONE shared client core
-- The ×3 I18N dictionaries (public/login/admin, ~60KB source, 2 diverged keys)
-  unified into `src/pages/client-core.ts` (191 fa/en keys) + the ×10 theme/lang
-  helpers. Template-literal form keeps the wire format byte-identical
-  (literal 2-byte Persian chars).
-- Favicon/manifest head block deduped ×3 → ×1.
-
-### v13.2-dedupe — duplication + dead code
-- `sendTelegram`/`sendTelegramWithKeyboard` merged (optional keyboard param).
-- thesportsdb event→match mapper extracted (`tspEventToMatch`, was ×3).
-- Dead `return new Response("OK")` + always-true `hasKeyboard` guards removed.
-- `/next` isolate-level `env.TEHRAN_TZ` mutation → scoped env clone.
-
-### v13.3-types — core domain types
-- `src/types.ts`: Env (LooseKV/WorkersAI/secrets), Match/TeamRef/Competition/
-  Standings/PublicCup/XPostResult interfaces; ~100 functions typed `env: Env`.
-- tsc noise 385 → 45 (37 scattered verbatim unknowns + 8 pre-existing dup keys).
-- **fix**: reverted reassociated `await …get().catch()` casts — a real
-  error-handling regression the eval-based test gate caught in CI-style.
-
-### v13.4-live-css — live badges actually visible + perf
-- **Pre-existing bug fixed**: the dotLottie CDN player was CSP-blocked
-  (`script-src 'self'`) AND was the wrong package (never registered
-  `<dotlottie-player>`) — live chips rendered EMPTY, loading states invisible.
-- Removed the render-blocking unpkg script (4 failed requests/visit gone);
-  live chips now use the CSS `live-beep` dot + text, liveCard h2 the
-  `live-breath` dot, loading states a pure-CSS spinner.
-- `assets/_headers`: 7-day cache for fonts/favicons (was `max-age=0`).
-- Page wire size: ~80KB (brotli); bundle 696KB → 628KB raw.
