@@ -5718,14 +5718,17 @@ body.joinsticky{padding-bottom:88px}
 .bighero .team{font-size:16px;font-weight:800}
 /* v12.x-hero-nowrap (the user's ask): 'In Top-big-incoming-box (single
    featured) the clubs never, whatever long they're, should never be in
-   two row, always one row.' The hero's team names are forced to a
-   SINGLE line via white-space:nowrap + overflow:hidden +
-   text-overflow:ellipsis — long names like 'Manchester United' or
-   'Atlético de Madrid' truncate with '...' instead of wrapping. This
-   overrides the mobile .match .side .team rule (line ~5662) which sets
-   word-wrap:break-word;overflow-wrap:anywhere. Specificity (0,3,1)
-   beats both .bighero .team (0,2,1) and .match .side .team (0,3,0). */
-.bighero .match .side .team{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal;word-wrap:normal;max-width:100%}
+   two row, always one row' AND 'never truncate the club's name — always
+   mention full name of club in same row'. The hero's team names are
+   forced to a SINGLE line via white-space:nowrap (no wrapping) with NO
+   truncation (no overflow:hidden, no text-overflow:ellipsis). Instead,
+   the font-size is FLUID via clamp(9px, 2.5vw, 16px) so the longest
+   names (e.g. 'Manchester United FC', ~20 chars) fit on one row even on
+   a 390px phone (each team column ~140px; at 9-10px the full name
+   fits). On desktop the clamp maxes at 16px (the normal hero size).
+   Specificity (0,3,1) beats both .bighero .team (0,2,1) and
+   .match .side .team (0,3,0). */
+.bighero .match .side .team{white-space:nowrap;overflow:visible;text-overflow:clip;overflow-wrap:normal;word-wrap:normal;min-width:0;font-size:clamp(9px,2.5vw,16px)}
 /* v12.x-no-logo-shadow (the user's ask): 'Remove the shadows behind all
    club teams logos it created noise.' All logo drop-shadows + ring
    shadows are RETIRED — the hero crests, the topspot crests, and any
