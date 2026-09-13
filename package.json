@@ -1,12 +1,12 @@
 {
   "name": "ucl-notifier",
-  "version": "13.4.0",
+  "version": "13.5.0",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "test": "node scripts/check-weekly-tables.js && node scripts/check-bl1.js && node scripts/check-cups.js && node scripts/check-dedupe.js && node scripts/check-fa-dict.js && node scripts/check-join-flow.js && node scripts/check-league-union.js && node scripts/check-venue.js && node scripts/check-notify-windows.js && node scripts/check-standings-bl1.js && node scripts/live-derby-test.js && node scripts/check-x-signature.js && node scripts/check-x-budget.js",
+    "test": "npx tsc --noEmit && node scripts/check-version-sync.js && node scripts/check-weekly-tables.js && node scripts/check-bl1.js && node scripts/check-cups.js && node scripts/check-dedupe.js && node scripts/check-fa-dict.js && node scripts/check-join-flow.js && node scripts/check-league-union.js && node scripts/check-venue.js && node scripts/check-notify-windows.js && node scripts/check-standings-bl1.js && node scripts/live-derby-test.js && node scripts/check-x-signature.js && node scripts/check-x-budget.js",
     "refactor:verify": "node scripts/refactor-extract.mjs --check || node scripts/lib/worker-src.js > /dev/null && echo source-map-ok"
   },
   "devDependencies": {
