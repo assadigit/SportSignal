@@ -4,12 +4,15 @@
 
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { toFaDigits, escapeMarkdownCharacters, getJalaliTime, getEnglishTime } from "./utils";
+import { toFaDigits, escapeMarkdownCharacters, getJalaliTime, getJalaliDate, getEnglishTime, getEnglishDate } from "./utils";
 import { normalizeTeamName } from "./teams.js";
-import { translateTeam, translateCompetition } from "./translate";
+import { translateTeam, translateCompetition, translateVenue } from "./translate";
 import { shouldNotify } from "./matches";
+import { matchKey } from "./dedupe.js";
 import { fetchMatchesFromAPI } from "./providers";
-import { sendTelegram, answerCallbackQuery } from "./telegram";
+import { sendTelegram, answerCallbackQuery, sendPhotoBinary } from "./telegram";
+import { renderCardPng } from "./card";
+import { formatBigMatchMessage, specialBanner } from "./composers";
 import { getRegisteredChats, getUserPrefs, setUserLang, getUserTz, masterTeamList, userFollowsMatch, botStr, resolveTimeZone } from "./users";
 import { sendLeagueTables, sendWeekAhead } from "./digest";
 import { applySettings } from "./admin";
@@ -18,15 +21,18 @@ import { applySettings } from "./admin";
 // chat). Users tap buttons instead of typing slash commands. The button
 // labels are Persian (fa) or English (en). When tapped, Telegram sends the
 // label as a message — handled as a command alias below.
+// v13.24-featured: added a "⭐ Featured match" button (first row, full width).
 function replyKeyboard(lang) {
   if (lang === "en") {
     return { keyboard: [
+      [{ text: "\u2B50 Featured match" }],
       [{ text: "Upcoming" }, { text: "Tables" }],
       [{ text: "Teams" }, { text: "Language" }],
       [{ text: "Help" }, { text: "Stop" }]
     ], resize_keyboard: true };
   }
   return { keyboard: [
+    [{ text: "\u2B50 \u0628\u0627\u0632\u06CC \u0628\u0631\u062A\u0631" }],
     [{ text: "\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648" }, { text: "\u062C\u062F\u0648\u0644\u200C\u0647\u0627" }],
     [{ text: "\u062A\u06CC\u0645\u200C\u0647\u0627" }, { text: "\u0632\u0628\u0627\u0646" }],
     [{ text: "\u0631\u0627\u0647\u0646\u0645\u0627" }, { text: "\u0627\u0646\u0635\u0631\u0627\u0641" }]
@@ -40,6 +46,7 @@ function normalizeCommand(text) {
   const t = text.trim();
   // Persian button labels → slash commands
   const faMap = {
+    "\u2B50 \u0628\u0627\u0632\u06CC \u0628\u0631\u062A\u0631": "/featured",
     "\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648": "/next",
     "\u062C\u062F\u0648\u0644\u200C\u0647\u0627": "/tables",
     "\u062A\u06CC\u0645\u200C\u0647\u0627": "/teams",
@@ -49,7 +56,7 @@ function normalizeCommand(text) {
   };
   if (faMap[t]) return faMap[t];
   // English button labels → slash commands
-  const enMap = { "Upcoming": "/next", "Tables": "/tables", "Teams": "/teams", "Language": "/lang", "Help": "/help", "Stop": "/stop" };
+  const enMap = { "\u2B50 Featured match": "/featured", "Upcoming": "/next", "Tables": "/tables", "Teams": "/teams", "Language": "/lang", "Help": "/help", "Stop": "/stop" };
   if (enMap[t]) return enMap[t];
   return text;
 }
@@ -236,6 +243,49 @@ export async function handleTelegramUpdate(env: Env, update) {
           const head = lang === "en" ? "Timezone set: " : "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u062A\u063A\u06CC\u06CC\u0631 \u06A9\u0631\u062F: ";
           const tail = lang === "en" ? "\nMessages will be sent in your local time\\." : "\n\u067E\u06CC\u0627\u0645\u200C\u0647\u0627 \u0627\u0632 \u0627\u06CC\u0646 \u067E\u0633 \u0628\u0631 \u0627\u0633\u0627\u0633 \u0633\u0627\u0639\u062A \u0645\u062D\u0644\u06CC \u0627\u0631\u0633\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F\\.";
           await sendTelegram(env, head + escapeMarkdownCharacters(tz) + tail, chatId);
+        }
+      }
+    } else if (text === "/featured") {
+      // v13.24-featured: show the most important + closest upcoming match
+      // (the same featured match the website's hero card shows). Sends a
+      // match card image (PNG via resvg-wasm) + the match text.
+      await applySettings(env);
+      const prefs = await getUserPrefs(env);
+      const p = prefs[String(chatId)] || {};
+      const lang = p.lang === "en" ? "en" : "fa";
+      const pool = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
+      const poolFresh = pool && pool.fetchedAt && Date.now() - new Date(pool.fetchedAt).getTime() < 10 * 6e4 && Array.isArray(pool.matches);
+      const matches = poolFresh ? pool.matches : await fetchMatchesFromAPI(env);
+      const now = new Date();
+      // Find the featured match: closest upcoming worthy match (same logic
+      // as the website's nextBig — isFeaturedMatch or isMasterPair, live
+      // first then by kickoff order). Fall back to any worthy upcoming.
+      const upcoming = matches.filter((m) => shouldNotify(m) && (m.status === "SCHEDULED" || m.status === "TIMED") && new Date(m.utcDate) > now).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
+      const live = matches.filter((m) => shouldNotify(m) && (m.status === "IN_PLAY" || m.status === "LIVE" || m.status === "PAUSED"));
+      const featured = (live.length ? live : upcoming)[0];
+      if (!featured) {
+        await sendTelegram(env, lang === "en" ? "No upcoming matches right now\\." : "\u{1F4C5} \u062F\u0631 \u062D\u0627\u0644 \u062D\u0627\u0636\u0631 \u0628\u0627\u0632\u06CC \u0645\u0647\u0645\u06CC \u0648\u062C\u0648\u062F \u0646\u062F\u0627\u0631\u062F\\.", chatId, replyKeyboard(lang));
+      } else {
+        const tzEnv = { ...env, TEHRAN_TZ: getUserTz(prefs, chatId, env) };
+        const message = specialBanner(featured, lang) + await formatBigMatchMessage(featured, tzEnv, lang) + (lang === "en"
+          ? "\n\n\\-\\-\\-\\-\\-\\-\nView league tables and the biggest upcoming matches:\nhttps://sportsignal\\.ir"
+          : "\n\n\\-\\-\\-\\-\\-\\-\n\u0645\u0634\u0627\u0647\u062F\u0647 \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627 \u0648 \u0645\u0647\u0645\u062A\u0631\u06CC\u0646 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634 \u0631\u0648:\nhttps://sportsignal\\.ir");
+        // Send as a card image + caption (like the automated notifications).
+        let cardSent = false;
+        if (featured.homeTeam.crest || featured.awayTeam.crest) {
+          try {
+            const pngBuf = await renderCardPng(tzEnv, featured, lang);
+            if (pngBuf) {
+              const caption = message.length > 1024 ? message.slice(0, 1020) + "\u2026" : message;
+              const r = await sendPhotoBinary(tzEnv, chatId, pngBuf, caption, true);
+              if (r === true) cardSent = true;
+            }
+          } catch (e) {
+            console.warn("Featured card render failed: " + e.message);
+          }
+        }
+        if (!cardSent) {
+          await sendTelegram(env, message, chatId, replyKeyboard(lang));
         }
       }
     } else if (text === "/next") {
