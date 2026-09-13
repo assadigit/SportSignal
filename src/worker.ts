@@ -5633,8 +5633,8 @@ body.joinsticky{padding-bottom:88px}
    position:absolute (the data layer is now absolute to center the content).
    240px on phones gives enough room for the match row + countdown bar.
    Desktop gets a larger min-height via the media query below. */
-.card.bighero{position:relative;overflow:hidden;border-radius:16px;margin:0;min-height:200px;border-color:#2c3440;background-image:radial-gradient(130% 100% at 50% -30%,rgba(52,211,153,.18),transparent 55%),linear-gradient(168deg,rgba(6,95,70,.34),rgba(2,6,23,.14))}
-[data-theme="light"] .card.bighero{border-color:#2c3440;background-image:radial-gradient(130% 100% at 50% -30%,rgba(16,185,129,.20),transparent 55%),linear-gradient(168deg,rgba(209,250,229,.70),rgba(255,255,255,.30))}
+.card.bighero{position:relative;overflow:hidden;border-radius:16px;margin:0;min-height:200px;border-color:#1e3a8a;border-width:2px;background-image:radial-gradient(130% 100% at 50% -30%,rgba(52,211,153,.18),transparent 55%),linear-gradient(168deg,rgba(6,95,70,.34),rgba(2,6,23,.14))}
+[data-theme="light"] .card.bighero{border-color:#1e3a8a;border-width:2px;background-image:radial-gradient(130% 100% at 50% -30%,rgba(16,185,129,.20),transparent 55%),linear-gradient(168deg,rgba(209,250,229,.70),rgba(255,255,255,.30))}
 /* v12.27 (review item 1): HERO CLIP \u2014 the card itself now clips everything to
    its own 16px radius (overflow:hidden). Before, only the inner layers clipped
    themselves at 15px \u2014 a 1px-radius mismatch at the corners, and (the real
@@ -5826,7 +5826,7 @@ body.joinsticky{padding-bottom:88px}
    the section, instead use a blue one'. Changed to the site's --accent
    blue (#2563eb/.55) for the 'soon' state. The final/live red alarm stays
    (that's the urgency escalation, not a color preference). */
-#bigHeroCard[data-urgent="soon"]{border-color:rgba(37,99,235,.55)}
+#bigHeroCard[data-urgent="soon"]{border-color:#1e3a8a;border-width:2px}
 #bigHeroCard[data-urgent="soon"]::before{box-shadow:inset 0 0 70px rgba(245,158,11,.09);animation-duration:1.7s}
 .herowrap[data-urgent="soon"]::before{box-shadow:0 0 46px rgba(245,158,11,.26);animation-duration:1.7s}
 #bigHeroCard[data-urgent="soon"] .hero-fx::after{animation-duration:4.2s}
