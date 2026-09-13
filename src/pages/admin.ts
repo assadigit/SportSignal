@@ -1,7 +1,7 @@
 // SportSignal — the /admin dashboard template (teams editor, broadcast,
 // members, AI Farsi names, X status card, diagnostics).
 
-import { CLIENT_CORE_JS } from "./client-core";
+import { VERSION } from "../config";
 
 export const ADMIN_PAGE = `<!doctype html>
 <html lang="fa" dir="rtl">
@@ -191,10 +191,10 @@ button{width:100%}
 <input id="np2" type="password" autocomplete="new-password">
 <button onclick="changePass()" data-i="btnCp">\u062A\u063A\u06CC\u06CC\u0631 \u0631\u0645\u0632 \u0639\u0628\u0648\u0631</button>
 </div>
-<div class="muted" data-i="ver">\u0646\u0633\u062E\u0647 \u06F1\u06F2.\u06F3\u06F1 \u2014 \u0646\u0642\u0637\u0647\u200C\u0647\u0627\u06CC \u0627\u0634\u062A\u0631\u0627\u06A9 \u0628\u0647 \u06AF\u0648\u0634\u0647\u0654 \u0628\u0627\u0644\u0627 \u0631\u0641\u062A\u0646\u062F\u060C \u062A\u0627\u0631\u06CC\u062E \u0628\u0627\u0632\u06CC \u062F\u0627\u062E\u0644 \u0646\u0648\u0627\u0631 \u0633\u0631\u0645\u0647\u200C\u0627\u06CC\u060C \u0646\u0634\u0627\u0646 \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u062A\u062E\u062A \u0634\u062F \u0648 \u0646\u0634\u0627\u0646 \u0631\u0633\u0645\u06CC \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0622\u0645\u062F</div>
+<div class="muted" data-i="ver">\u0646\u0633\u062E\u0647 ${VERSION} \u2014 \u0645\u0639\u0645\u0627\u0631\u06CC \u0645\u0627\u0686\u0648\u0644\u0627\u0631\u060C \u062D\u0630\u0641 \u0628\u062F\u0647\u06CC\u0627\u062A \u0642\u062F\u06CC\u0645\u06CC \u0648 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC \u0633\u0631\u06CC\u0639 \u062C\u0627\u0648\u0627 \u0633\u06CC\u0633\u062A\u0645 (\u0641\u0627\u06CC\u0644\u200C\u0647\u0627\u06CC CSS/JS \u062C\u062F\u0627 \u0648 \u0642\u0627\u0628\u0644 \u06A9\u0634 \u062F\u0627\u062F\u0646)</div>
 <div id="msg" role="status" aria-live="polite"></div>
+<script src="/core-13.6.js"><\/script>
 <script>
-${CLIENT_CORE_JS};
 // Audit fix 8: the admin client no longer reads/stores ADMIN_TOKEN in
 // localStorage \u2014 all API calls authenticate via the HttpOnly session cookie
 // (set by /admin/login). The re-login box takes the admin PASSWORD.

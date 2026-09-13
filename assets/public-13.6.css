@@ -1,0 +1,1111 @@
+/* SportSignal public styles — v13.6. Extracted from the PUBLIC_PAGE template;
+   served immutable. Cache-bust by renaming (bump the version suffix). */
+:root{color-scheme:dark;--bg:#0f172a;--card:#1e293b;--field:#0f172a;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#93c5fd;--score:#4ade80;--countdown:#93c5fd;--countdown-bg:rgba(96,165,250,.12);--danger:var(--t-danger);--chip:#334155;--hover:rgba(148,163,184,.08);--footer:#94a3b8;--glass:rgba(30,41,59,.55);--glass-border:rgba(148,163,184,.16);--glass-hi:rgba(255,255,255,.07);--glass-shadow:0 8px 32px rgba(0,0,0,.35);--glow1:rgba(37,99,235,.17);--glow2:rgba(29,78,216,.11);--scrim:rgba(2,6,23,.62);--rowsurf:rgba(15,23,42,.42);--t-primary:#2563eb;--t-success:#15803d;--t-success-ink:#4ade80;--t-success-soft:rgba(34,197,94,.14);--t-success-line:rgba(34,197,94,.35);--t-warning:#b45309;--t-highlight:#7e22ce;--t-danger:#f87171;--t-neutral:#334155;--t-neutral-soft:rgba(148,163,184,.14);--badge-top:#b45309;--badge-hot:var(--t-warning);--badge-derby:var(--t-highlight);--badge-league:var(--t-neutral);--badge-live:var(--t-success-ink);--nav-link:#cbd5e1;--nav-link-hover:#f1f5f9;--pill-primary-bg:var(--accent);--pill-primary-ink:#fff;--pill-primary-line:rgba(255,255,255,.22);--pill-hype-bg:linear-gradient(90deg,var(--badge-hot),var(--badge-derby));--pill-hype-ink:#fff;--pill-hype-line:rgba(255,255,255,.18);--pill-neutral-bg:rgba(148,163,184,.16);--pill-neutral-ink:#e2e8f0;--pill-neutral-line:rgba(148,163,184,.28)}
+[data-theme="light"]{color-scheme:light;--bg:#f8fafc;--card:#ffffff;--field:#f8fafc;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#1d4ed8;--score:#15803d;--countdown:#2563eb;--countdown-bg:rgba(37,99,235,.1);--danger:var(--t-danger);--chip:#e2e8f0;--hover:rgba(15,23,42,.045);--footer:#64748b;--glass:rgba(255,255,255,.62);--glass-border:rgba(15,23,42,.08);--glass-hi:rgba(255,255,255,.7);--glass-shadow:0 8px 32px rgba(15,23,42,.08);--glow1:rgba(37,99,235,.09);--glow2:rgba(96,165,250,.08);--scrim:rgba(248,250,252,.78);--rowsurf:rgba(241,245,249,.72);--t-primary:#2563eb;--t-success:#15803d;--t-success-ink:#15803d;--t-success-soft:rgba(21,128,61,.12);--t-success-line:rgba(21,128,61,.32);--t-warning:#b45309;--t-highlight:#7e22ce;--t-danger:#dc2626;--t-neutral:#e2e8f0;--t-neutral-soft:rgba(15,23,42,.05);--badge-top:#b45309;--badge-hot:var(--t-warning);--badge-derby:var(--t-highlight);--badge-league:var(--t-neutral);--badge-live:var(--t-success-ink);--nav-link:#334155;--nav-link-hover:#0f172a;--pill-primary-bg:var(--accent);--pill-primary-ink:#fff;--pill-primary-line:rgba(255,255,255,.22);--pill-hype-bg:linear-gradient(90deg,var(--badge-hot),var(--badge-derby));--pill-hype-ink:#fff;--pill-hype-line:rgba(255,255,255,.18);--pill-neutral-bg:rgba(15,23,42,.08);--pill-neutral-ink:#1e293b;--pill-neutral-line:rgba(15,23,42,.16)}
+html{overflow-x:hidden;scroll-behavior:smooth}/* v12.23 (the user's bug report): the floodlight sweep once rode an UNCLIPPED .card.bighero::after translating to ±140% of the card — every pass (6.5s, faster when urgent) widened the DOCUMENT's scrollable width, so a scrollbar popped in and out and the page visibly "heartbeat" every few seconds (a slide flash on phones). Every animated layer is now clipped inside its card; this root clip is the hard net so no fx can ever widen the page again. */
+body{font-family:'Vazirmatn',system-ui,sans-serif;background-color:var(--bg);color:var(--text);max-width:760px;margin:0 auto;padding:24px 20px 36px;line-height:1.6;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(900px 520px at 88% -8%,var(--glow1),transparent 60%),radial-gradient(820px 620px at -12% 32%,var(--glow2),transparent 60%),linear-gradient(var(--scrim),var(--scrim)),url('/bg.jpg') center/cover no-repeat}
+#topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;position:relative}
+#topbar button{background:var(--glass);-webkit-backdrop-filter:blur(10px) saturate(1.3);backdrop-filter:blur(10px) saturate(1.3);color:var(--text);border:1px solid var(--glass-border);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:border-color .15s,transform .15s cubic-bezier(.16,1,.3,1),background .15s}
+#topbar button:hover{border-color:var(--accent);background:var(--hover)}
+/* v12.27: the cluster's icon buttons are FLAT (transparent, borderless) — the shell is the chrome — so their hover swaps a soft fill instead of a border. */
+.tb-btns button:hover{border-color:transparent;background:var(--hover)}
+.tb-btns button:active{transform:scale(.94)}
+#topbar button:active{transform:scale(.96)}
+/* v12.24 (the user's ask): the top bar is a real WEBSITE HEADER — the
+   SportSignal logo pinned to the start corner, the settings icons + the
+   Telegram CTA grouped at the opposite end: [settings icons] [telegram
+   cta] ··· [logo]. Fixed width/height attrs on the img so the header can
+   never shift while loading; the logo png is served from the worker's
+   assets directory.
+   v12.25: the white plate was retired for the transparent png.
+   v12.26 (the user's ask): "in darkmode it turns to a white sillohuette.
+   fix this. show the given logo in both light and dark mode" — the
+   TWO-variant swap is RETIRED (the white remap logo-light.png deleted);
+   the uploaded logo.png now rides BOTH themes unchanged (its own navy +
+   white inks read on dark, its navy reads on light). PC size TRIMMED by
+   40% per the ask: 84px → 50px (phones already 50px — one size fits all). */
+.brand{display:inline-flex;align-items:center;text-decoration:none;flex-shrink:0}
+.brand img{display:block;height:50px;width:auto;transition:transform .15s cubic-bezier(.16,1,.3,1)}
+/* v12.32 (the user's ask): "increase the size of sportsignal logo by 15% in
+   pc mode" — phones keep the compact 50px header height, >=601px the logo
+   grows to 57.5px (50 x 1.15); width rides width:auto, so the mark scales
+   proportionally with its raster. */
+@media (min-width:601px){.brand img{height:57.5px}}
+.brand:hover img{transform:none}
+/* v12.27 (review items 3+7): the UTILITY CLUSTER — the settings gear, the
+   language switch and the theme toggle live in ONE visually grouped control
+   (.tb-btns: 6px internal gap, a subtle glass shell) anchored to the LOGICAL
+   inline-end of the header, opposite the logo — inset-inline-start:auto on
+   the .head-actions group (logical properties only, so an LTR flip stays
+   correct). The old margin-inline-start:auto on .tb-btns itself is retired:
+   it shoved the buttons away from the CTA with an uneven gap that read as
+   accidental. Each icon button keeps a 44×44px hit area (min-width/height,
+   icon visually unchanged) per the touch-target minimum. */
+.head-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-inline-start:auto}
+/* v12.52-mobile-header: Telegram icon button — hidden on desktop, shown
+   on mobile where the text CTA is too wide. Uses the same glass button
+   styling as the other icon buttons. */
+#tgbtn{display:none;align-items:center;justify-content:center;background:var(--glass);-webkit-backdrop-filter:blur(10px) saturate(1.3);backdrop-filter:blur(10px) saturate(1.3);color:var(--text);border:1px solid var(--glass-border);border-radius:10px;width:40px;height:40px;cursor:pointer;transition:border-color .15s,transform .15s cubic-bezier(.16,1,.3,1)}
+#tgbtn:hover{border-color:var(--accent);background:var(--hover)}
+#tgbtn:active{transform:scale(.96)}
+#topbar .cta{margin-top:0}
+#topbar .sync{flex:1 1 100%;margin:2px 0 0}
+.tb-btns{display:inline-flex;align-items:center;gap:6px;padding:3px;border-radius:14px;background:var(--hover);border:1px solid var(--glass-border)}
+.tb-btns button{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;font-size:16px;line-height:1;background:transparent;border:none}
+/* v12.19 (the user's ask): the timezone search + select were permanent topbar
+   clutter — they now hide behind ONE settings-gear button next to the theme
+   toggle. The popover is a glass card with a full-width search + select (far
+   bigger touch targets than the old 100px sliver); picking a zone, the ✕,
+   the gear again, an outside click or Esc closes it. */
+#tzpanel{display:none;position:absolute;top:calc(100% + 10px);inset-inline-end:0;z-index:60;width:min(340px,calc(100vw - 40px));flex-direction:column;gap:8px;background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.4);backdrop-filter:blur(12px) saturate(1.4);border:1px solid var(--glass-border);border-radius:14px;padding:12px;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+#tzpanel.open{display:flex}
+.tz-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700}
+#tzclose{background:none;border:none;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;padding:2px 8px;border-radius:8px;font-family:inherit;transition:color .15s,background .15s}
+#tzclose:hover{color:var(--text);background:var(--hover)}
+#sbtn[aria-expanded="true"]{transform:rotate(90deg);border-color:var(--accent)}
+#tzfilter{background:var(--field);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box;transition:border-color .15s}
+#tzsel{background:var(--field);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 11px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;width:100%;box-sizing:border-box;transition:border-color .15s}
+/* v12.x-tz-search-fix: when the select becomes a listbox (size>1 via
+   the render function), let it grow to fit the visible rows instead of
+   staying at one-line dropdown height. */
+#tzsel[size]{height:auto;max-height:280px;overflow-y:auto}
+#tzsel:hover{border-color:var(--accent)}
+#tzfilter:focus,#tzsel:focus{border-color:var(--accent);outline:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1{font-size:27px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 6px}
+.sub a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent;transition:border-bottom-color .15s}
+.sub a:hover{border-bottom-color:var(--link)}
+/* v12.20: proof for the "auto-updated" claim — the payload's fetchedAt stamp,
+   aged live ("۲ دقیقه پیش" / "2 min ago"). */
+.sync{font-size:11.5px;opacity:.9;margin:0 0 4px;font-variant-numeric:tabular-nums}
+.cta{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:var(--accent);color:#fff;font-size:13px;font-weight:600;padding:10px 18px;border-radius:999px;text-decoration:none;transition:background .15s,transform .15s cubic-bezier(.16,1,.3,1),box-shadow .15s}
+.cta:hover{background:var(--accent-strong);transform:translateY(-1px);box-shadow:0 6px 16px rgba(37,99,235,.2)}
+/* v12.20 (the user's ask): the join CTA vanishes once you scroll into the match
+   list — this sticky bottom bar brings it back (safe-area aware on phones;
+   hides again the moment the hero button is back in view). */
+#joinSticky{position:fixed;bottom:0;left:0;right:0;z-index:70;display:none;justify-content:center;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--glass);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);border-top:1px solid var(--glass-border);box-shadow:0 -8px 28px rgba(2,6,23,.45);text-decoration:none}
+#joinSticky.show{display:flex}
+/* v12.x-no-sticky-pc: hide the sliding sticky Telegram bar on PC — the
+   floating FAB (#tgFab) covers the PC CTA. Only show #joinSticky on
+   mobile (max-width:600px). */
+@media (min-width:601px){#joinSticky{display:none !important}}
+#joinSticky .js-inner{display:inline-flex;align-items:center;gap:9px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;padding:12px 22px;border-radius:999px;transition:background .15s,transform .15s cubic-bezier(.16,1,.3,1)}
+#joinSticky .js-inner:hover{background:var(--accent-strong);transform:translateY(-1px)}
+#joinSticky svg{flex-shrink:0}
+body.joinsticky{padding-bottom:88px}
+/* v12.x-tg-fab: a floating Telegram FAB for PC view — a 56px circular
+   button in Telegram brand blue (#229ED9) with the white paper-plane
+   logo. Fixed to the bottom-RIGHT corner in BOTH Farsi (RTL) and
+   English (LTR) — per the user's explicit ask (must be right for both
+   English and Farsi). Uses the physical right:24px (not the logical
+   inset-inline-start which would flip to left in LTR). Hidden on
+   mobile (the #joinSticky bottom bar covers the mobile CTA). The
+   header CTA pill (#topbar .cta) is retired on PC; this FAB replaces
+   it. The tooltip + aria-label are static Telegram in both
+   languages. A subtle pulse animation (2.6s, ease-in-out, infinite)
+   draws the eye without being annoying. The FAB has a soft drop
+   shadow (filter:drop-shadow follows the circle, unlike box-shadow
+   which can render as a square on overflow:hidden + border-radius
+   elements — same fix as the hero logos). */
+#tgFab{position:fixed;bottom:24px;right:24px;z-index:65;display:none;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#229ED9;text-decoration:none;cursor:pointer;filter:drop-shadow(0 3px 8px rgba(34,158,217,.35)) drop-shadow(0 1px 3px rgba(0,0,0,.2));transition:transform .15s cubic-bezier(.16,1,.3,1),filter .15s,opacity .3s ease;animation:tgFab-pulse 2.6s ease-in-out infinite}
+#tgFab:hover{transform:scale(1.08);filter:drop-shadow(0 5px 12px rgba(34,158,217,.5)) drop-shadow(0 2px 5px rgba(0,0,0,.25))}
+#tgFab:active{transform:scale(.96)}
+#tgFab svg{flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
+@keyframes tgFab-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+/* v12.x-fab-promo: a white promotional bubble that appears next to the
+   Telegram FAB every ~60s to promote the bot. The bubble shows a
+   bilingual message ("عضویت در ربات تلگرام، برای دنبال کردن مسابقات
+   مهم" / "Join the Telegram bot, never miss a match") in a white
+   rounded pill. The bubble fades in, holds for ~5s, then fades out.
+   The cycle repeats every 60s. The bubble sits to the LEFT of the FAB
+   (above-left, anchored to the FAB's top-left corner). A small
+   triangle points to the FAB. The bubble uses a CSS animation with a
+   60s cycle (5s visible, 55s hidden). */
+#tgFab::after{content:attr(data-promo);position:absolute;bottom:50%;right:100%;margin-right:10px;margin-bottom:0;white-space:nowrap;background:#fff;color:#0f172a;font-size:13px;font-weight:700;padding:8px 16px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.18);opacity:0;pointer-events:none;transform:translateY(50%) translateX(8px);transition:opacity .4s ease,transform .4s ease;filter:none}
+#tgFab::before{content:"";position:absolute;bottom:50%;right:100%;margin-right:-2px;margin-bottom:-6px;width:0;height:0;border-style:solid;border-width:6px 0 6px 8px;border-color:transparent transparent transparent #fff;opacity:0;pointer-events:none;transform:translateY(50%);transition:opacity .4s ease}
+#tgFab.promo-show::after{opacity:1;transform:translateY(50%) translateX(0)}
+#tgFab.promo-show::before{opacity:1}
+/* v12.x-tg-fab: hide the FAB on mobile — the #joinSticky bottom bar
+   covers the mobile CTA. Show it only on PC (min-width:601px). */
+@media (min-width:601px){#tgFab{display:inline-flex}}
+/* v12.x-tg-fab: retire the header CTA pill on PC — the FAB replaces it.
+   The #tgbtn icon (already display:none on desktop, display:flex on
+   mobile) is unaffected. Mobile keeps the #joinSticky bar. */
+@media (min-width:601px){#topbar .cta{display:none}}
+/* v12.12: the .viewtoggle block is retired (the page is always big-only) */
+.bigbar{margin:14px 0 4px;background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.4);backdrop-filter:blur(12px) saturate(1.4);border:1px solid var(--glass-border);border-radius:16px;padding:12px 16px;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+/* v12.38-hero: Fix 3 — the label + clock + percentage now group TOGETHER
+   on the same side of the row (was space-between, which parked the label
+   at the opposite edge from the values it describes). justify-content:
+   flex-end groups them at the inline-end (left in RTL, right in LTR); the
+   label sits directly adjacent to the .bb-end group with a small gap
+   matching the gap already used between the percentage and the timer. */
+.bigbar-top{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px}
+/* v12.24: the clock and the new PROGRESS PERCENT chip group at the row's
+   end — the percent makes the bar's base explicit (0% far out → 100% at
+   kickoff) instead of a mystery fill. */
+.bb-end{display:inline-flex;align-items:center;gap:8px;min-width:0}
+/* v12.32 (the user's ask): the navy bar's #bigbarDate run is RETIRED — the
+   kickoff weekday+date moved OUT of the bar, down under the hero's big time
+   chip (the .kickdate rule in the .kick block below: the time over
+   "weekday day month", the date one step smaller). The bar itself is back to
+   label + clock + percent + track, nothing else. */
+/* v12.38-hero: Fix 1+4+5: the progress bar + percentage badge now track the
+   FINAL 24 HOURS before kickoff (not the old 14-day window) so the fill and
+   the countdown clock always agree. The percentage badge also switches to
+   the NEUTRAL pill token (was blue, low-contrast) with a visible period
+   suffix "۲۴" / "24h" so the percentage is never ambiguous. Reduced to
+   11px/700 so the kickoff-time pill reads as the primary headline number. */
+.bigbar-pct{display:none !important}
+.bigbar-pct:empty{display:none}
+.bigbar-clock{font-weight:700;color:#22c55e;font-variant-numeric:tabular-nums}
+/* v12.x-green-clock (the user's ask): the hero countdown clock is now GREEN
+   (matches the .bigbar-fill progress bar gradient #22c55e → #16a34a). Was
+   var(--countdown) (light blue #93c5fd dark / #2563eb light). Green keeps
+   the clock visually unified with the progress bar that fills under it. */
+[data-theme="light"] .bigbar-clock{color:#16a34a}
+/* v12.39-minbar: the track is a THIN 4px hairline, flush at the bottom of
+   the .bigbar container — minimal, integrated into the container rather
+   than a heavy 14px rectangle. Fully rounded (border-radius:999px) so the
+   ends are pill-shaped. The heavy inset shadow is retired. */
+.bigbar-track{position:relative;height:5px;border-radius:999px;background:rgba(148,163,184,.18);overflow:hidden;margin-top:2px}
+[data-theme="light"] .bigbar-track{background:rgba(15,23,42,.08)}
+/* v12.39-minbar: the fill is the same thin 4px line, fully rounded, with a
+   subtle gradient + a soft glow. The animated stripes + the fuse-tip ::after
+   pseudo-element are retired (they added visual weight the user didn't
+   want). The fill now reads as a clean minimal progress line. */
+.bigbar-fill{position:absolute;top:0;left:0;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#22c55e,#16a34a);box-shadow:0 0 6px rgba(34,197,94,.22);transition:width .7s cubic-bezier(.16,1,.3,1)}
+.bigbar-fill.live{background:linear-gradient(90deg,#f59e0b,#ef4444);box-shadow:0 0 8px rgba(239,68,68,.28);animation:bigbar-pulse 1.2s ease-in-out infinite}
+.bigbar-fill.idle{width:12%}
+@keyframes bigbar-pulse{0%,100%{opacity:1}50%{opacity:.7}}
+/* v12.10/v12.11 HERO CARD: the countdown bar lives INSIDE the hero card,
+   flush — with its own match right below it, so the bar and the match read
+   as ONE unit. v12.11: the card is a PLAIN standard .card — no golden
+   chrome, identical to every other section (streamlined, per the user). */
+/* v12.27 (review item 1): the countdown bar gets its scrim BACK — it was
+   transparent since v12.26, so the clock + the ۸۸٪ percent chip sat directly
+   on the video/crest artwork. A soft horizontal gradient plate guarantees
+   contrast for the bar's live text ("no live text ever sits directly on the
+   high-contrast part of the crest artwork"). */
+/* v12.42-livesection: the hero's .bigbar background is now TRANSPARENT
+   (was a navy gradient scrim — the user's ask: "there is a background
+   rectangle which I don't like — it's white-ish"). The bar sits directly
+   on the hero card's own background, with no separate container. The
+   border-bottom divider is also retired — the thin 4px track is the
+   only divider. padding adjusted for the label/clock/pct row + track. */
+.bighero .bigbar{margin:0 0 12px;padding:2px 2px 8px;background:transparent;border:none;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+[data-theme="light"] .bighero .bigbar{background:transparent}
+.bighero .bigbar-clock{text-shadow:0 1px 10px rgba(2,6,23,.55)}
+[data-theme="light"] .bighero .bigbar-clock{text-shadow:0 1px 8px rgba(248,250,252,.9)}
+/* v12.38-hero: the hero's .bigbar-pct already inherits the neutral pill token
+   from the base rule above; the old blue override (rgba(96,165,250,.22)) is
+   retired. The neutral token has enough contrast on the hero's dark scrim
+   in both themes. */
+/* v12.22 (the user's ask): the countdown hero is the page's ADRENALINE box —
+   "css js effects, making it excitement, adrenalin, and evoking emotions",
+   not just a color change. It is now a STAGE, and nothing else on the page
+   behaves like it: an emerald spotlight gradient + border, a heartbeat glow
+   that lub-dubs, a floodlight sweep washing over the teams, embers rising
+   from the bottom, a white-hot FUSE TIP burning at the draining edge of the
+   bar, a per-second tick pop on the clock (now 18px/800), and the two sides
+   entering the stage from their own edges. The intensity ESCALATES toward
+   kickoff via [data-urgent] (set by updateBigBar): far = calm emerald
+   breathing; soon (≤24h) = amber + faster pulse; final (≤60min) = red alarm
+   heartbeat + pulsing label; live = the red stage around the live bar.
+   Every layer is an opacity/transform animation (compositor friendly) and
+   the global prefers-reduced-motion rule silences all of them. */
+/* v12.53: min-height so the hero card doesn't collapse when .hero-data is
+   position:absolute (the data layer is now absolute to center the content).
+   240px on phones gives enough room for the match row + countdown bar.
+   Desktop gets a larger min-height via the media query below. */
+.card.bighero{position:relative;overflow:hidden;border-radius:16px;margin:0;min-height:200px;border-color:rgba(30,58,138,.6);border-width:2px;background-image:radial-gradient(130% 100% at 50% -30%,rgba(52,211,153,.18),transparent 55%),linear-gradient(168deg,rgba(6,95,70,.34),rgba(2,6,23,.14))}
+[data-theme="light"] .card.bighero{border-color:rgba(30,58,138,.6);border-width:2px;background-image:radial-gradient(130% 100% at 50% -30%,rgba(16,185,129,.20),transparent 55%),linear-gradient(168deg,rgba(209,250,229,.70),rgba(255,255,255,.30))}
+/* v12.27 (review item 1): HERO CLIP — the card itself now clips everything to
+   its own 16px radius (overflow:hidden). Before, only the inner layers clipped
+   themselves at 15px — a 1px-radius mismatch at the corners, and (the real
+   report) WebKit renders a FILTERED child escaping border-radius+overflow
+   clipping in some versions, so the crest artwork could paint outside the
+   card's rounded corners. The card-level clip is the guarantee. Because a
+   child's outer box-shadow would also be clipped, the heartbeat AURA moved to
+   a wrapper that owns the OUTER glow (.herowrap::before) while the card's
+   ::before keeps the inner emerald wash; updateBigBar mirrors data-urgent on
+   the wrapper so the escalation ladder drives both. The crest imgs' brightness
+   filter moved onto the .hero-wm LAYER (a filtered container clips its own
+   children — the imgs themselves stay unfiltered). */
+.herowrap{position:relative;margin:14px 0}
+.card.bighero{filter:drop-shadow(0 4px 16px rgba(0,0,0,.36))}
+.herowrap::before{content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;box-shadow:0 0 40px rgba(5,150,105,.24);opacity:.4;animation:hero-heart 2.6s ease-in-out infinite}
+.card.bighero::before{content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;box-shadow:inset 0 0 64px rgba(16,185,129,.10);opacity:.4;animation:hero-heart 2.6s ease-in-out infinite}
+@keyframes hero-heart{0%,100%{opacity:.35}8%{opacity:.9}16%{opacity:.5}24%{opacity:.75}36%{opacity:.35}}
+/* v12.26 (the user's ask): the hero is a VIDEO STAGE now — the user's own
+   clip plays as the deepest layer behind the next big match, with the exact
+   layer ladder the user specified:
+     A. DEEPEST  .hero-video  — the looping muted mp4 (z:0), under a light
+        theme-aware scrim (data keeps its own plates, v12.27)
+     B.          .hero-wm    — the faded club crests (z:1)
+     C.          .hero-fx    — the css effects: sweep + embers (z:2)
+     D. SURFACE  .hero-data  — the actual data: countdown bar + the match
+        row (z:3, position:relative — above every fx layer)
+   The video (768×254 h264, 7.2s, no audio) is served from the worker's
+   [assets] directory as /hero-stage.mp4: autoplay+ muted + loop + playsinline
+   (autoplay-safe everywhere), object-fit:cover (crops to the card).
+   v12.28 (the user's report: "Video still doesnt play. (it's just a picture)
+   - on chrome"): the stage was tuned so dim (video .42 + a .58 scrim — the
+   clip's own motion is subtle, ~4% per-channel frame deltas) that a PLAYING
+   video was indistinguishable from a still, and reduced-motion users got an
+   explicit pause. Now: the video runs at .78 with only a light .38/.18 scrim
+   (the live text keeps its own plates — the bar's v12.27 gradient, the
+   rowsurf boxes), motion is actually PERCEIVABLE, and the boot kicker no
+   longer pauses the stage for prefers-reduced-motion (the user's twice-
+   repeated explicit ask: it must autoplay; the CSS fx still respect the
+   media query). */
+.hero-video{position:absolute;inset:0;z-index:0;border-radius:16px;overflow:hidden;pointer-events:none;background:transparent}
+/* v12.30 (the user's ask): "add a 30% dark navy overlay on the video of the
+   next upcoming match + some gaussian blur just a touch" — the stage was
+   competing with the data on top of it (the user's phone report: "the
+   header of upcoming match in mobile looks distracting. disorganized and
+   messy with a lot of noise"). The scrim becomes a FLAT 30% dark-navy veil
+   (rgba(2,6,23,.30) — the old .38/.18 gradient retired), and the clip
+   itself gets a TOUCH of gaussian blur (2.5px) with a 1.06 scale so the
+   blur's edge smear never paints inside the clipped card. Motion stays
+   perceivable (v12.28's autoplay work untouched — large-scale movement
+   survives a 2.5px blur easily); the stage now reads as ONE calm navy
+   backdrop the data sits on, not a rival beside it. Light theme keeps
+   its white veil (a navy fill would muddy the light card), same flat cut. */
+.hero-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.78;filter:blur(2.5px) saturate(1.18) brightness(1.02);transform:scale(1.06)}
+.hero-video::after{content:"";position:absolute;inset:0;background:rgba(2,6,23,.30)}
+[data-theme="light"] .hero-video::after{background:rgba(248,250,252,.42)}
+/* v12.50: hero-data is vertically centered — the match row + the countdown
+   bar sit in the MIDDLE of the hero card, not aligned to the top. */
+.hero-data{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:80px 18px 18px}
+/* v12.23: the sweep MOVED from .card.bighero::after (unclipped — the heartbeat-scrollbar bug) into the already-clipped .hero-fx layer, so the light band can wash over the stage but never escape the card. Same gradient, same rhythm. v12.26: the fx layer sits ABOVE the video + crests and BELOW the data (the user's ladder: video < logos < css effects < data). */
+.hero-fx::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.05) 44%,rgba(255,255,255,.13) 50%,rgba(255,255,255,.05) 56%,transparent 68%);transform:translateX(-140%);animation:hero-sweep 6.5s cubic-bezier(.55,0,.45,1) infinite}
+@keyframes hero-sweep{0%{transform:translateX(-140%)}42%,100%{transform:translateX(140%)}}
+.hero-fx{position:absolute;inset:0;z-index:2;border-radius:16px;overflow:hidden;pointer-events:none}
+.hero-fx i{position:absolute;bottom:-8px;width:5px;height:5px;border-radius:50%;background:radial-gradient(circle,rgba(110,231,183,.95),rgba(52,211,153,0) 70%);opacity:0;animation:hero-ember 7s linear infinite}
+.hero-fx i:nth-child(1){left:16%;animation-duration:6.5s}
+.hero-fx i:nth-child(2){left:46%;width:4px;height:4px;animation-delay:2.3s;animation-duration:8.2s}
+.hero-fx i:nth-child(3){left:78%;animation-delay:4.6s;animation-duration:7.4s}
+@keyframes hero-ember{0%{transform:translateY(0) translateX(0);opacity:0}12%{opacity:.75}70%{opacity:.3}100%{transform:translateY(-200px) translateX(16px);opacity:0}}
+/* v12.32 (the user's ask): "decrease the size of countdown numbers in both
+   pc and mobile" — the bar's clock (1 day 02:43:44) drops from the v12.28
+   display size (18px) back to a quiet label-class 14px PC / 12.5px phones
+   (the <=600px block below); the bar reads label, clock, track — and the
+   HERO'S OWN headline number stays the big one (the 24px time chip in the
+   match row, untouched). */
+.bighero .bigbar-clock{font-size:14px;font-weight:800;letter-spacing:.01em}
+#bigbarClock.tick{animation:hero-tick .34s cubic-bezier(.34,1.56,.64,1)}
+@keyframes hero-tick{0%{transform:scale(1)}35%{transform:scale(1.055);filter:brightness(1.4)}100%{transform:scale(1)}}
+/* v12.39-minbar: the .bigbar-fill::after fuse-tip pseudo-element is RETIRED
+   — it was the white-hot burning edge of the old 14px striped bar. The new
+   4px minimal line has no fuse tip; the fill's own gradient + soft glow are
+   the whole visual. */
+.bighero .team{font-size:16px;font-weight:800}
+/* v12.x-hero-nowrap (the user's ask): 'In Top-big-incoming-box (single
+   featured) the clubs never, whatever long they're, should never be in
+   two row, always one row' AND 'never truncate the club's name — always
+   mention full name of club in same row'. The hero's team names are
+   forced to a SINGLE line via white-space:nowrap (no wrapping) with NO
+   truncation (no overflow:hidden, no text-overflow:ellipsis). Instead,
+   the font-size is FLUID via clamp(9px, 2.5vw, 16px) so the longest
+   names (e.g. 'Manchester United FC', ~20 chars) fit on one row even on
+   a 390px phone (each team column ~140px; at 9-10px the full name
+   fits). On desktop the clamp maxes at 16px (the normal hero size).
+   Specificity (0,3,1) beats both .bighero .team (0,2,1) and
+   .match .side .team (0,3,0). */
+.bighero .match .side .team{white-space:nowrap;overflow:visible;text-overflow:clip;overflow-wrap:normal;word-wrap:normal;min-width:0;font-size:clamp(9px,2.5vw,16px)}
+/* v12.x-no-logo-shadow (the user's ask): 'Remove the shadows behind all
+   club teams logos it created noise.' All logo drop-shadows + ring
+   shadows are RETIRED — the hero crests, the topspot crests, and any
+   other .logo elements now render flat with just their circular border
+   + background plate (no filter:drop-shadow, no box-shadow ring). The
+   crest image + the navy circle plate remain; only the shadow noise
+   is gone. Dark + light mode both clean. */
+.bighero .logo{filter:none}
+[data-theme="light"] .bighero .logo{filter:none}
+#topspotCard .spotitem .logo{box-shadow:none;filter:none;width:43px;height:43px;font-size:20px}
+/* v12.x-topspot-promoted (the user's ask): the big upcoming matches box is
+   a PROMOTED section (right below the hero) — its club crests are LARGER
+   than the regular match boxes (51px desktop / 46px mobile) to mark the
+   promotion. 64px desktop / 54px mobile, between the regular 51/46 and
+   the hero's 102/46. Font-size scales for the monogram fallback (28/24).
+   The soft shadow switched from box-shadow to filter:drop-shadow() (same
+   fix as the hero — avoids the overflow:hidden + border-radius
+   square-shadow Chromium bug). The 1px ring stays as box-shadow (zero-blur
+   box-shadow respects border-radius). */
+@media (min-width:601px){#topspotCard .spotitem .logo{width:51px;height:51px;font-size:22px}}
+/* v12.24 (the user's ask): the countdown hero's team crests DOUBLE on PC
+   (51px → 102px, the monogram fallback scales with the circle) — the
+   face-off reads like a big-match poster. Phones keep their own 46px size
+   from the mobile block below. */
+@media (min-width:601px){.bighero .logo{width:102px;height:102px;font-size:44px}}
+.bighero .match .side{animation:hero-side .5s cubic-bezier(.16,1,.3,1) both}
+.bighero .match .side:first-child{--sx:34px}
+.bighero .side.away{--sx:-34px}
+[dir="ltr"] .bighero .match .side:first-child{--sx:-34px}
+[dir="ltr"] .bighero .side.away{--sx:34px}
+@keyframes hero-side{from{opacity:0;transform:translateX(var(--sx,20px))}to{opacity:1;transform:none}}
+/* v12.23: the clubs' EXPANDED crests, faded to a watermark, sit in the
+   background of the next big upcoming match — "[faded logo big on
+   background] [club logo] club name". One giant crest per club, anchored
+   behind that club's half of the row, far under the content (z:1 — below
+   the fx and the row itself, above the video), clipped inside the card and
+   pointer-transparent. The layer is STATIC markup (like the embers) so
+   re-renders never disturb it; renderHeroSpot → heroWm() swaps the two
+   crest srcs.
+   v12.24 (the user's ask): the crests went 320px at .40.
+   v12.25: reduced by 30% → .28. A soft radial SCRIM behind the card's
+   center plus a gentle text-shadow on the team names keep the countdown
+   and names fully readable (WCAG contrast preserved).
+   v12.26 (the user's ask — "reduce the opacity of background logos by 30%
+   (it's still too visible)"): .28 → .196 on BOTH themes (phones too),
+   same 320px/210px canvas — one more honest 30% cut. */
+.hero-wm{position:absolute;inset:0;z-index:1;border-radius:16px;overflow:hidden;pointer-events:none;filter:brightness(1.28) saturate(1.05)}
+/* v12.28 (the user's ask): crest watermarks another 20% fainter (.196 → .157)
+   so they read as background texture, never competition for the stage. */
+/* v12.32 (the user's ask): the crest watermarks LEFT their mid-card slots for
+   the card's BOTTOM CORNERS — the first team's badge anchors to the
+   bottom-LEFT corner, the second team's to the bottom-RIGHT. Each circle's
+   center sits 88px inward from its corner on BOTH axes (27.5% of its own
+   320px diameter), so the top + inner-facing arc stay visible while the
+   rest of the circle extends 72px past the side edge and the bottom edge;
+   the layer's overflow:hidden (above) clips those overhangs away — the
+   full circle reads as a partial crescent hugging each corner. The offsets
+   are PHYSICAL left/right (the wireframe's corners line up with the
+   screen's edges, not with text direction — checked: nothing else in this
+   container relies on overflowing it; the layer holds only these two imgs
+   + the scrim, and the card itself already clips at its 16px radius). */
+/* v12.46-herofix: the watermark images are SWAPPED to match the team
+   positions. In RTL (Persian), the first .side (home) is on the RIGHT
+   (inline-start), so the first watermark (home crest) must also be on
+   the RIGHT. Was using inset-inline-end (LEFT in RTL) → was swapped.
+   Now:
+   - img:first-child (home crest) → inset-inline-start (RIGHT in RTL, LEFT in LTR)
+   - img:last-child (away crest) → inset-inline-end (LEFT in RTL, RIGHT in LTR)
+   This matches the team logos' positions in both directions. */
+.hero-wm img{position:absolute;width:320px;height:320px;object-fit:contain;opacity:.157;transform:none}
+.hero-wm img:first-child{inset-inline-start:-72px;bottom:-72px;top:auto}
+.hero-wm img:last-child{inset-inline-end:-72px;bottom:-72px;top:auto}
+.hero-wm::after{content:"";position:absolute;inset:0;background:radial-gradient(58% 62% at 50% 58%,rgba(2,6,23,.32),transparent 72%)}
+[data-theme="light"] .hero-wm::after{background:radial-gradient(58% 62% at 50% 58%,rgba(248,250,252,.38),transparent 72%)}
+[data-theme="light"] .hero-wm img{opacity:.157}
+[data-theme="light"] .hero-wm{filter:none}
+.bighero .team{text-shadow:0 1px 12px rgba(2,6,23,.65)}
+[data-theme="light"] .bighero .team{text-shadow:0 1px 12px rgba(255,255,255,.8)}
+/* v12.30 (the user's phone report — the hero header read "distracting and
+   messy"): the crest watermarks are a PC atmosphere; on a ~350px phone
+   card the two 210px ghosts sat right behind the face-off names and the
+   big time number and fought them for attention. The whole layer is OFF
+   below 601px now (the old phone-size rule is retired with it); the flat
+   navy veil + blur is the phone stage's only backdrop. PC keeps the
+   atmospheric .157 pair untouched. */
+@media (max-width:600px){.hero-wm{display:none}}
+/* v12.23: the face-off entrance slides each side in from its own edge — the
+   ±34px overshoot once briefly widened the page on every hero re-render
+   (another heartbeat-scrollbar source); the row now clips it, and the ⋯
+   share popover (in the info line, OUTSIDE .match) is unaffected. */
+.bighero .match{overflow:hidden;gap:24px}
+/* escalation ladder: soon (≤24h) → blue; final (≤60min) & live → red alarm.
+   v12.x-blue-urgent-border (the user's ask): the 'soon' border was amber
+   (#fbbf24/.5) — the user said 'remove the yellow/green-ish border around
+   the section, instead use a blue one'. Changed to the site's --accent
+   blue (#2563eb/.55) for the 'soon' state. The final/live red alarm stays
+   (that's the urgency escalation, not a color preference). */
+#bigHeroCard[data-urgent="soon"]{border-color:rgba(30,58,138,.6);border-width:2px}
+#bigHeroCard[data-urgent="soon"]::before{box-shadow:inset 0 0 70px rgba(245,158,11,.09);animation-duration:1.7s}
+.herowrap[data-urgent="soon"]::before{box-shadow:0 0 46px rgba(245,158,11,.26);animation-duration:1.7s}
+#bigHeroCard[data-urgent="soon"] .hero-fx::after{animation-duration:4.2s}
+#bigHeroCard[data-urgent="soon"] .bigbar-clock{color:#60a5fa}
+#bigHeroCard[data-urgent="soon"] .hero-fx i{background:radial-gradient(circle,rgba(253,224,71,.95),rgba(245,158,11,0) 70%)}
+[data-theme="light"] #bigHeroCard[data-urgent="soon"] .bigbar-clock{color:#2563eb}
+#bigHeroCard[data-urgent="final"],#bigHeroCard[data-urgent="live"]{border-color:rgba(239,68,68,.55)}
+#bigHeroCard[data-urgent="final"]::before,#bigHeroCard[data-urgent="live"]::before{box-shadow:inset 0 0 84px rgba(239,68,68,.11)}
+.herowrap[data-urgent="final"]::before,.herowrap[data-urgent="live"]::before{box-shadow:0 0 52px rgba(239,68,68,.28)}
+#bigHeroCard[data-urgent="final"] .hero-fx::after{animation-duration:3s}
+#bigHeroCard[data-urgent="final"]::before{animation-duration:1.1s}
+.herowrap[data-urgent="final"]::before{animation-duration:1.1s}
+#bigHeroCard[data-urgent="live"]::before{animation-duration:.9s}
+.herowrap[data-urgent="live"]::before{animation-duration:.9s}
+#bigHeroCard[data-urgent="live"] .hero-fx::after{animation-duration:2.2s}
+#bigHeroCard[data-urgent="final"] .bigbar-clock,#bigHeroCard[data-urgent="live"] .bigbar-clock{color:#f87171}
+#bigHeroCard[data-urgent="final"] .hero-fx i,#bigHeroCard[data-urgent="live"] .hero-fx i{background:radial-gradient(circle,rgba(252,165,165,.95),rgba(239,68,68,0) 70%)}
+#bigHeroCard[data-urgent="final"] #bigbarLabel{animation:hero-label .9s ease-in-out infinite}
+@keyframes hero-label{0%,100%{opacity:1}50%{opacity:.55}}
+[data-theme="light"] #bigHeroCard[data-urgent="final"] .bigbar-clock,[data-theme="light"] #bigHeroCard[data-urgent="live"] .bigbar-clock{color:#dc2626}
+/* v12.27 (review item 10): the LIVE chip rides the SUCCESS tokens (soft fill,
+   ink text, line border) — the theme-aware pair replaces the light override. */
+.livechip{display:inline-flex;align-items:center;gap:6px;background:var(--t-success-soft);color:var(--t-success-ink);border:1px solid var(--t-success-line);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;margin:0 6px;vertical-align:middle}
+.livechip .dot{width:8px;height:8px;border-radius:50%;background:var(--badge-live);animation:live-beep 1.1s ease-in-out infinite}
+/* v13.4-live-css: the livechip's pulsing dot + LIVE text (pure CSS —
+   live-beep keyframes below; the CSP-blocked lottie CDN player was removed
+   and the #liveCard h2 heading. The <dotlottie-player> element renders
+   the .lottie file (served from /Live.lottie). Sized to match the chip:
+   40x16px in the livechip, 56x22px in the h2 heading. The autoplay +
+   loop attributes keep the animation running. The background stays
+   transparent so it blends into the chip / heading plate. */
+@keyframes live-beep{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.35);transform:scale(1)}50%{box-shadow:0 0 0 6px rgba(34,197,94,0);transform:scale(1.15)}}
+/* v12.44-livepolish: the liveCard heading carries a BREATHING GREEN LIGHT
+   — a 12px green dot that pulses softly (opacity + box-shadow + scale),
+   conveying "these games are now playing" at a glance. Uses a slower 2s
+   rhythm (vs the 1.1s livechip beep) so it reads as a calm breath, not
+   an alarm. The 🔴 emoji in the heading is replaced by this dot via JS
+   (renderLive strips the emoji and injects the .live-breath span). */
+.live-breath{display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c555;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:live-breath 2s ease-in-out infinite;vertical-align:-1px;margin-inline-end:8px;flex-shrink:0}
+@keyframes live-breath{0%,100%{opacity:.5;box-shadow:0 0 0 0 rgba(34,197,94,.4);transform:scale(.85)}50%{opacity:1;box-shadow:0 0 12px 4px rgba(34,197,94,.25);transform:scale(1.15)}}
+#liveCard h2{display:flex;align-items:center}
+/* v12.45-compact-live: compact the liveCard's spotitems ~50% — smaller logos
+   (28px vs 51px), tighter padding, hide the share button + the info line
+   (the league badge is the only context needed for live matches; the
+   share + full info line is overkill when there are 3-20 live matches
+   stacked). The score + team names are the essential data. */
+#liveCard .spotitem{padding:1px 0;border-bottom:1px solid var(--border)}
+#liveCard .spotitem:last-child{border-bottom:none}
+#liveCard .match{padding:2px 0;gap:6px}
+#liveCard .logo{width:28px;height:28px;font-size:12px;border-radius:50%}
+#liveCard .logo img{width:100%;height:100%;object-fit:contain}
+#liveCard .team{font-size:12px;font-weight:700}
+#liveCard .kick{flex:0 0 72px;gap:1px}
+#liveCard .kick .score{font-size:14px;flex:0 0 auto}
+#liveCard .uclspot-info{display:none}
+#liveCard .sharewrap{display:none}
+.bighero .sharewrap{display:none}
+.lmin{display:inline-block;background:rgba(37,99,235,.12);color:var(--accent);border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;vertical-align:middle}
+[data-theme="light"] .lmin{background:rgba(37,99,235,.1)}
+.scorers{flex:1 1 100%;margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+.scorers .srow{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+/* v12.11: the .match.derby box rule is RETIRED — derby rows (Man Utd–City,
+   Atlético–Real, Marseille–PSG …) carried an amber border + amber→violet
+   gradient while equally big non-derbies (Liverpool–Man City, Roma–Inter)
+   stayed plain. Per the user's ask every match row is now IDENTICAL: no
+   border, no gradient, no glow. The "derby" class stays in the DOM (inert)
+   and the «دربی» badge pill in the info row carries the label. */
+/* v12.38-hero: Fix 5 — semantic pill tokens. The derby badge now uses the
+   --pill-hype-* token (was a one-off gradient; formalized). The league badge
+   (.comp) and the percentage badge (.bigbar-pct) use the --pill-neutral-*
+   token. The CTA button + the hero's kickoff-time pill use --pill-primary-*.
+   A shared token system lets users learn "this color always means this kind
+   of information" instead of decoding each badge individually. */
+.derbybadge{display:inline-flex;align-items:center;gap:4px;background:var(--pill-hype-bg);color:var(--pill-hype-ink);border:1px solid var(--pill-hype-line);border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:800;margin-inline-start:6px;vertical-align:middle}
+.bigcard{border:2px solid rgba(52,211,153,.38);border-radius:16px;padding:14px 16px 6px;margin:14px 0;background:radial-gradient(120% 160% at 15% 0%,rgba(16,185,129,.20),transparent 55%),linear-gradient(135deg,#064e3b,#065f46 55%,#047857);box-shadow:0 0 10px rgba(5,150,105,.16),0 8px 26px rgba(0,0,0,.35),var(--glass-shadow),inset 0 1px 0 rgba(255,255,255,.16);color:#fff}
+.bigcard .match{border-bottom-color:rgba(255,255,255,.16)}
+.bigcard .match:hover{background:rgba(255,255,255,.08)}
+.bigcard .team,.bigcard .info{color:#ecfdf5}
+.bigcard .comp{background:rgba(255,255,255,.16);color:#fff}
+.bigcard .countdown{background:rgba(255,255,255,.2);color:#fff}
+.bigcard .venue{background:rgba(255,255,255,.14);color:#fff}
+.bigcard .logo{background:rgba(0,0,0,.28);border-color:rgba(255,255,255,.35)}
+[data-theme="light"] .bigcard{background:linear-gradient(135deg,#ecfdf5,#d1fae5 55%,#a7f3d0);border-color:rgba(5,150,105,.42);color:#064e3b;box-shadow:0 8px 24px rgba(5,150,105,.16),var(--glass-shadow),inset 0 1px 0 rgba(255,255,255,.85)}
+[data-theme="light"] .bigcard .match{border-bottom-color:rgba(5,46,22,.14)}
+[data-theme="light"] .bigcard .match:hover{background:rgba(255,255,255,.4)}
+[data-theme="light"] .bigcard .team,[data-theme="light"] .bigcard .info{color:#064e3b}
+[data-theme="light"] .bigcard .comp{background:rgba(5,46,22,.14);color:#052e16}
+[data-theme="light"] .bigcard .countdown{background:rgba(5,46,22,.16);color:#052e16}
+[data-theme="light"] .bigcard .venue{background:rgba(5,46,22,.12);color:#052e16}
+[data-theme="light"] .bigcard .logo{background:rgba(255,255,255,.55);border-color:rgba(5,46,22,.18)}
+.bigcard-head{font-size:13px;font-weight:800;color:var(--accent);margin-bottom:4px}
+.bigcard .bigcard-head{color:#a7f3d0}
+[data-theme="light"] .bigcard-head{color:var(--accent-strong)}
+[data-theme="light"] .bigcard .bigcard-head{color:#047857}
+/* v12.12: the .msec section rules are retired with renderSections (the
+   «مسابقات پیش‌رو» list card is gone; the boxes are the presentation). */
+.card{background:var(--glass);-webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);border:1px solid var(--glass-border);border-radius:16px;padding:18px;margin:14px 0;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+/* v12.11: the UCL gold chrome is RETIRED too — .uclcard (UCL list) and
+   .uclspot (next big UCL match) were the last golden boxes around matches;
+   they are plain .card sections now, uniform with everything else. The
+   container classes stay in the HTML (inert hooks + reduced-transparency
+   selector) and .uclspot-logo/info/wait below remain as layout rules. */
+.uclspot-logo{width:72px;height:72px;object-fit:contain;display:block;margin:4px auto 12px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.35))}
+.uclspot-info{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;font-size:12.5px;color:var(--muted);text-align:center}
+.uclspot-wait{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0 8px}
+/* v12.21 (the user's ask): the UCL box is DEDICATED to the Champions League —
+   it now carries the UCL brand: the starball mark on a white chip inside a
+   navy gradient header plate, a deep-navy glass body with a faint star-tile
+   watermark and a UCL-blue border, so it reads instantly as the
+   competition's own box and nothing else on the page looks like it. The UCL
+   standings card shares the plate + border + watermark on the standard glass
+   body. Light theme keeps the navy identity (light navy-tinted body).
+   Brand colors are literals, the same way .bigcard carries its greens. */
+/* v12.x-matchday-pos (the user's ask): the matchday chip ('هفته ۱') must be
+   flush to the FAR LEFT edge of the UCL header (the user drew a black
+   rectangle at the far left to show the desired position). Previously
+   margin-inline-start:auto left a ~72px gap because flex gap:10px
+   interfered with the auto-margin free-space absorption. Switched to
+   justify-content:space-between — the first DOM child (logo) sits at the
+   inline-start (RIGHT in RTL), the last DOM child (matchday chip) sits at
+   the inline-end (LEFT in RTL, flush to the edge), and the title text
+   floats in the center between them. The margin-inline-start:auto on the
+   chip is retired (space-between handles the distribution). */
+.uclh2{display:flex;align-items:center;gap:10px}
+/* v12.x-ucl-title-next-to-logo: the title text sits NEXT TO the starball
+   logo (at the inline-start), NOT in the center. The title span gets
+   margin-inline-end:auto so ALL free space goes after the title — this
+   groups the logo + title together at the start and pushes the matchday
+   chip (.ucl-md) to the far inline-end. Removed justify-content:space-
+   between (it conflicted with the auto-margin approach — space-between
+   distributes free space between all items, keeping the title in the
+   center). flex:0 1 auto so the title doesn't stretch. */
+.uclh2 > span[data-i]{text-align:end;flex:0 1 auto;min-width:0;margin-inline-end:auto}
+.ucl-logo{flex-shrink:0;width:34px;height:34px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(2,6,23,.45),inset 0 0 0 1px rgba(14,32,88,.10)}
+.ucl-logo svg{width:29px;height:29px;display:block}
+.ucl-logo.sm{width:26px;height:26px}
+.ucl-logo.sm svg{width:22px;height:22px}
+.uclspot-ball{width:64px;height:64px;margin:0 auto;filter:drop-shadow(0 4px 14px rgba(0,0,0,.45))}
+.uclspot-ball svg{width:100%;height:100%;display:block}
+#uclSpotCard h2{font-size:19px;color:#fff;background:linear-gradient(135deg,#0e2058,#1b3480);border-color:rgba(126,161,245,.30);border-inline-start-color:#7ea1f5}
+.uclcard h2{color:#fff;background:linear-gradient(135deg,#0e2058,#1b3480);border-color:rgba(126,161,245,.30);border-inline-start-color:#7ea1f5}
+#uclSpotCard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2048%2048'%3E%3Cpath fill='%23ffffff' fill-opacity='.028' d='M24%2015L26%2021.2%2032.6%2021.2%2027.3%2025.1%2029.3%2031.3%2024%2027.4%2018.7%2031.3%2020.7%2025.1%2015.4%2021.2%2022%2021.2Z'/%3E%3C/svg%3E"),linear-gradient(168deg,rgba(27,52,128,.72),rgba(13,28,71,.80));background-repeat:repeat,no-repeat;background-size:54px 54px,100% 100%;border-color:rgba(126,161,245,.26)}
+.uclcard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2048%2048'%3E%3Cpath fill='%23ffffff' fill-opacity='.028' d='M24%2015L26%2021.2%2032.6%2021.2%2027.3%2025.1%2029.3%2031.3%2024%2027.4%2018.7%2031.3%2020.7%2025.1%2015.4%2021.2%2022%2021.2Z'/%3E%3C/svg%3E");background-repeat:repeat;background-size:54px 54px;border-color:rgba(126,161,245,.22)}
+[data-theme="light"] #uclSpotCard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2048%2048'%3E%3Cpath fill='%230e2058' fill-opacity='.04' d='M24%2015L26%2021.2%2032.6%2021.2%2027.3%2025.1%2029.3%2031.3%2024%2027.4%2018.7%2031.3%2020.7%2025.1%2015.4%2021.2%2022%2021.2Z'/%3E%3C/svg%3E"),linear-gradient(168deg,rgba(226,234,255,.94),rgba(201,216,248,.90));border-color:rgba(23,42,105,.22)}
+[data-theme="light"] .uclcard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2048%2048'%3E%3Cpath fill='%230e2058' fill-opacity='.04' d='M24%2015L26%2021.2%2032.6%2021.2%2027.3%2025.1%2029.3%2031.3%2024%2027.4%2018.7%2031.3%2020.7%2025.1%2015.4%2021.2%2022%2021.2Z'/%3E%3C/svg%3E");border-color:rgba(23,42,105,.16)}
+/* v12.35-uclfix: light-mode override for the UCL h2 plates. The base
+   [data-theme="light"] h2 rule (specificity 0,1,1) was overriding .uclcard h2
+   and #uclSpotCard h2 (also 0,1,1) because it came later in the cascade —
+   replacing the navy gradient with rgba(15,23,42,.04) (near-white) while
+   keeping color:#fff, producing white-on-near-white unreadable text. These
+   rules have specificity (0,2,1) so they WIN.
+   v12.x-light-ucl (the user's ask): in LIGHT mode the dark navy
+   (#0e2058 → #1b3480) background acts as a CTA — it grabs attention from
+   the hero card. Switched to a LIGHTER blue gradient (#dbeafe → #bfdbfe,
+   blue-100 → blue-200) with dark navy TEXT (#0f172a) so the UCL headers
+   read as soft brand-tinted plates, not loud CTAs. Dark mode keeps the
+   navy gradient + white text. */
+[data-theme="light"] .uclcard h2,[data-theme="light"] #uclSpotCard h2{color:#0f172a;background:linear-gradient(135deg,#dbeafe,#bfdbfe);border-color:rgba(37,99,235,.22);border-inline-start-color:#3b82f6}
+/* v12.11: the .topspot golden box chrome is RETIRED — the hero card and the
+   big-matches box are plain .card sections now, uniform with every other
+   card on the page (the 🔥 heading carries the "big" signal; per the user
+   no match or box gets a special border). No element carries the class
+   anymore — the rules and glow keyframes below were removed with it. */
+/* v12.7/v12.8 multi-match TOP BOX: up to six TRUE big matches (strict kickoff
+   order — closest on top) stacked in the card — .spotitem wraps one entry
+   (teams row + info + share). v12.25: the entry is a boxed unit (border +
+   gap below separates it from the next entry — see the match-box rules). */
+.spotitem .match{margin:0 0 6px}
+/* v12.17: «در این هفته» expired games — kickoff passed → the entry renders
+   "turned off": dimmed + slightly desaturated (score/time still readable,
+   but clearly no longer ahead). Live entries are NEVER past. */
+.spotitem.past{opacity:.48;filter:saturate(.55)}
+.spotitem.past:hover{opacity:.72}
+.spotitem.past .match{animation:none}
+.spotitem.past .logo{filter:grayscale(.5)}
+.spotitem.past .score{opacity:.85}
+/* ⌛ expired chip (kickoff passed, score not in payload yet) — muted, flat */
+.wkdone{color:var(--muted);font-weight:700;font-size:11.5px;background:var(--t-neutral-soft);border-radius:999px;padding:3px 10px;display:inline-block;margin-left:6px}
+.ucl-head{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14.5px;margin-bottom:8px}
+.ucl-emblem{width:26px;height:26px;border-radius:6px;flex-shrink:0}
+/* v12.35-uclfix: the matchday chip now lives INSIDE the h2.uclh2 (same row as
+   the title), not in a separate .ucl-head div below. White text on the navy
+   gradient h2 plate, with a semi-transparent white pill background for
+   visual separation. */
+/* v12.50: the matchday chip sits at the END of the h2 (after the logo +
+   title), pushed to the far edge. v12.x-matchday-pos: the push is now via
+   justify-content:space-between on the .uclh2 (see above) instead of
+   margin-inline-start:auto (which left a gap). The order is: [logo]
+   [title] ... [matchday]. */
+.uclh2 .ucl-md{font-size:12px;color:rgba(255,255,255,.92);font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:2px 10px;flex-shrink:0;white-space:nowrap;margin-left:0;margin-inline-end:0}
+/* v12.x-light-ucl: the matchday chip needs dark ink + a darker pill on the
+   lighter blue h2 plate in light mode (the white-on-translucent-white pill
+   was designed for the navy plate). */
+[data-theme="light"] .uclh2 .ucl-md{color:#1e3a8a;background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.28)}
+.ucl-md{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:600}
+.ucl-stand-wrap{position:relative;margin-top:10px}
+/* v12.27 (review item 2): the star tiles sit strictly BEHIND the table now —
+   the .ucl-stand container's body is opaque enough (was rgba(30,41,59,.45))
+   that the watermark cannot read through the rows, and the tiles themselves
+   were dimmed another ~45% (.05→.028 dark, .07→.04 light). The star is
+   purely decorative (no favorite-league toggle behind it), so it stays a
+   background layer — the functional UCL brand is the small .ucl-logo chip in
+   the headings. */
+.ucl-stand{max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:6px 10px;background:rgba(15,23,42,.72)}
+[data-theme="light"] .ucl-stand{background:rgba(248,250,252,.78)}
+.ucl-stand-wrap .stnot-overlay{top:6px;left:6px;right:6px;bottom:6px;background:rgba(2,6,23,.6)}
+[data-theme="light"] .ucl-stand-wrap .stnot-overlay{background:rgba(248,250,252,.7)}
+/* v12.21 (the user's ask): the section titles were 15px plain text — easy
+   to skim past and "not clear what they are about at first glance". Every
+   card h2 is now a SECTION PLATE: bigger and bolder on its own tinted
+   background with a 4px accent edge, so each box announces itself. The two
+   flagship headers run one size larger with themed plates — hot amber for
+   the big-matches box, UCL navy + starball for the Champions League boxes
+   (rules in the UCL block above). */
+h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin:0 0 14px;padding:9px 14px;background:rgba(148,163,184,.09);border:1px solid rgba(148,163,184,.15);border-inline-start:4px solid var(--accent);border-radius:12px}
+[data-theme="light"] h2{background:rgba(15,23,42,.04);border-color:rgba(15,23,42,.09)}
+#topspotCard h2{font-size:19px;background:rgba(59,95,173,.12);border-color:rgba(59,95,173,.3);border-inline-start-color:#3b5fad}
+[data-theme="light"] #topspotCard h2{background:rgba(59,95,173,.06);border-color:rgba(59,95,173,.2)}
+/* v12.25 (the user's ask — "alignment, alignment alignment"): every
+   fixture is ONE self-contained MATCH BOX. The old hairline divider sat
+   BETWEEN a row's teams and its OWN info line — the kickoff time read
+   as if it belonged to the row BELOW (the user's exact misattribution
+   report: "sometimes you incorrectly think the game match time belong
+   to a row, but actually it belongs to upper row"). The divider is
+   retired: .mrow/.spotitem are real bordered boxes — teams row + info
+   chips live INSIDE the box, boxes are separated by a gap, and hover
+   highlights the whole unit. Nothing can leak across a row boundary
+   anymore:
+   ┌──────────────────────────────────┐
+   │ A        [ match info ]        B │
+   └──────────────────────────────────┘
+   ┌──────────────────────────────────┐
+   │ C        [ match info ]        D │
+   └──────────────────────────────────┘ */
+.mrow,.spotitem{position:relative;border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin:0 0 10px;background:var(--rowsurf);transition:background .15s,border-color .15s;display:flex;flex-direction:column;justify-content:center}
+.mrow:last-child,.spotitem:last-child{margin-bottom:0}
+.mrow:hover,.spotitem:hover{filter:brightness(1.07);border-color:rgba(37,99,235,.4)}
+/* v12.47-nospotbox: the hero's .spotitem is STRIPPED of its container styling
+   — no border, no background, no border-radius, no padding. The hero card
+   itself is the container; a bordered box inside it was "a container inside
+   a container" (visual noise, the user's ask). The match row + info line
+   + share button stay — just the box chrome is gone. */
+.bighero .spotitem{border:none;background:none;border-radius:0;padding:0;margin:0}
+.match{display:flex;align-items:center;gap:12px;padding:2px 0;border-radius:10px;animation:rise .35s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--i,0)*40ms)}
+.stable .match{animation:none}
+/* v12.23 (the user's ask — "everything must be aligned"): both sides share
+   the row EXACTLY 50/50 (flex-basis 0, was auto — content-width bases made
+   the score's x position wander per row); the score below is a FIXED
+   CENTERED SLOT, so every scored row on the page carries its result at the
+   same x line and team columns line up across rows and cards. */
+.side{display:flex;align-items:center;gap:8px;flex:1 1 0;min-width:0;flex-wrap:nowrap}
+.side .team{flex:1;min-width:0}
+.side.away .team{text-align:end}
+/* v12.18: PC crests +35% (38px → 51px, the user's ask) — the monogram
+   fallback scales with the circle. Phones keep their own 46px size below. */
+.logo{width:41px;height:41px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0}
+.logo img{width:100%;height:100%;object-fit:contain}
+.team{flex:1;font-weight:700;font-size:14.5px}
+/* v12.18: the "vs" slot is GONE for unplayed matches — first the 🆚 emoji
+   (mis-aligned noise), then the hairline divider (still noise, per the user).
+   v12.25: unplayed rows carry the KICKOFF TIME in the center slot (.kick);
+   finished/live rows keep the score element in the middle (.score). */
+.score{font-weight:800;font-size:17px;color:var(--score);flex:0 0 92px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* v12.44-livepolish: when the .score is inside .kick (column layout), the
+   92px flex-basis would apply to the HEIGHT, stretching the score to 92px
+   tall and misaligning it with the team names. Override: inside .kick, the
+   score gets flex:0 0 auto so it's only as tall as its content, and the
+   .kick's justify-content:center vertically centers it against the sides. */
+.kick .score{flex:0 0 auto}
+/* v12.27 (review item 6): the WINNER's digit is unmistakable — the winning
+   number renders as a <b> (weight 900 + a soft success glow) while the
+   losing number dims to .55; a draw keeps both plain. The pairing is now
+   READ, not inferred. */
+.score b{font-weight:900;text-shadow:0 0 12px rgba(74,222,128,.45)}
+[data-theme="light"] .score b{text-shadow:0 0 10px rgba(21,128,61,.25)}
+.score .lose{font-weight:600;opacity:.55}
+.score .sep{opacity:.5;font-weight:600}
+/* v12.25 (the user's ask): the kickoff TIME owns the CENTER slot of every
+   unplayed row — "A [match info] B" — on the exact x line the score takes
+   on live/finished rows (both slots 92px PC / 80px phones, so team columns
+   align across EVERY fixture on the page). The time can never be misread
+   as another row's: it sits between its own two teams, inside its own
+   box. */
+/* v12.40-datebelow: the .kick slot is now a COLUMN for every spotitem
+   (was horizontal row) — the time chip on top, the .kickdate below.
+   flex-direction:column + gap:4px stacks them cleanly. The hero keeps
+   its own larger gap (6px) via the .bighero .kick override below. */
+/* v12.61: the .kick column (time over date) was centered with the .side's
+   center, but the TIME (top element) appeared higher than the team name.
+   Added a margin-top of 7px (~half the kickdate height) to push the .kick
+   down so the countdown time aligns with the team name's vertical level. */
+.kick{flex:0 0 92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;margin-top:7px}
+.kick .countdown{margin:0;font-size:13px;padding:4px 12px}
+/* v12.28 (the user's ask — "<span class="countdown">🕒 ۱۹:۰۰</span> this
+   must be bigger for next big upcoming match. make it considerably
+   larger"): the hero's kickoff chip is the NEXT BIG MATCH's headline
+   number. Scoped to the hero card ONLY (every other box keeps the 13px
+   chip): the hero's center slot auto-sizes — the chip dictates its own
+   width, the two sides flex around it — and the chip jumps to DISPLAY
+   size: 24px PC / 20px phones, weight 800, tabular digits, riding its own
+   soft plate + hairline ring + drop shadow so it pops off the video stage
+   while the countdown color keeps the system hue. The hero's LIVE score
+   takes the same display treatment (one headline system per card), and
+   the hero's info line (comp logo + derby badge) runs one step larger
+   under it. v12.31: the share ⋯ to the box's top corner. v12.32: the
+   hero's date line moved AGAIN — out of the navy bar, UNDER the big time
+   chip: the .kick slot becomes a COLUMN [time chip over .kickdate
+   — "weekday day month", 12.5px PC, one step smaller per the user's
+   sketch "19 / weekday 22 month"], so the time and its date read as ONE
+   centered stack between the two clubs. */
+.bighero .kick{flex:0 0 auto;flex-direction:column;gap:6px;margin-top:20px;align-self:center}
+/* v12.32: the date line under the hero's time chip — plain rows never
+   carry it (their weekday/date stays in the info line); the hero's stack
+   is [big time / smaller date]. */
+/* v12.41-datecolor: the .kickdate now uses the same --countdown color as
+   the .countdown time chip above it (was var(--text) — black, while the
+   time was blue; the user's ask: 'must be same color'). Both the time and
+   its date now read in the same blue hue, visually unified. */
+.kickdate{font-size:11px;font-weight:700;color:var(--countdown);text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bighero .kickdate{font-size:18px;font-weight:800;text-shadow:0 1px 10px rgba(2,6,23,.55)}
+[data-theme="light"] .bighero .kickdate{text-shadow:0 1px 8px rgba(248,250,252,.9)}
+/* v12.38-hero: Fix 2 + Fix 5 — the hero's kickoff-time pill is bumped to
+   28px/900 PC (was 24px/800) so it's clearly the largest, most prominent
+   number on the card. It now uses the --pill-primary-* token (blue bg +
+   white ink) matching the CTA button, establishing a semantic color
+   system: primary = action/headline, hype = derby, neutral = info. The
+   mid-band (601-900px) scales to 20px, phones keep 18px. */
+.bighero .kick .countdown{font-size:28px;font-weight:900;padding:8px 22px;border-radius:14px;line-height:1;font-variant-numeric:tabular-nums;background:var(--pill-primary-bg);color:var(--pill-primary-ink);box-shadow:inset 0 0 0 1px var(--pill-primary-line),0 6px 24px rgba(37,99,235,.32);text-shadow:0 1px 14px rgba(2,6,23,.5);display:flex;align-items:center;justify-content:center}
+[data-theme="light"] .bighero .kick .countdown{box-shadow:inset 0 0 0 1px var(--pill-primary-line),0 6px 20px rgba(37,99,235,.22);text-shadow:0 1px 10px rgba(255,255,255,.5)}
+.bighero .score{font-size:24px;flex:0 0 auto;padding:0 8px}
+.bighero .uclspot-info{font-size:13.5px}
+.bighero .info{font-size:13.5px}
+/* v12.28: the NARROW-PC band (601–900px) — the 2x hero crests (102px) plus
+   the (now big) time chip squeezed the name columns to ~50–99px there, so
+   names like Manchester United wrapped even before this release. Mid-band
+   scale: crest 56px, chip 18px, hero names 13px → each name keeps ~125px,
+   one line (measured: "Manchester United" ≈114px). ≥901px the full poster
+   treatment (102px crest + 24px chip) has room again. */
+@media (min-width:601px) and (max-width:900px){
+/* v12.x-hero-bigger: hero logos 72px in the mid-band (vs topspot 64px)
+   so the featured match stays bigger than the list below. Was 56px
+   (smaller than the topspot's 64px — the reverse of the hierarchy). */
+.bighero .logo{width:72px;height:72px;font-size:32px}
+.bighero .kick .countdown{font-size:20px;padding:6px 16px;border-radius:12px}
+.bighero .score{font-size:20px}
+.bighero .team{font-size:13px}
+}
+/* v12.x-kick-5px-pc: move the time box 5px further down on PC (≥901px).
+   The base margin-top is 20px (applies to all viewports). On desktop
+   only, bump to 25px (+5px) per the user's ask. Mobile + mid-band
+   keep 20px. */
+@media (min-width:901px){.bighero .kick{margin-top:25px}}
+/* v12.23 (the user's ask): the finished card's info line now matches the
+   spot boxes' .uclspot-info exactly — one centered chip line under every
+   match row on the page (same flex/wrap/gap/font), so all cards read as
+   one aligned system instead of two different row styles. */
+.info{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:6px;text-align:center}
+/* v12.38-hero: Fix 5 — .comp (league badge) now uses the --pill-neutral-*
+   token, matching the percentage badge. Was var(--badge-league) (solid
+   grey); now the soft neutral bg + line + ink for a consistent system. */
+.comp{display:inline-block;background:var(--pill-neutral-bg);color:var(--pill-neutral-ink);border:1px solid var(--pill-neutral-line);border-radius:999px;padding:3px 10px;font-size:11px;margin-inline-start:6px;font-weight:600}
+.complogo{width:14px;height:14px;border-radius:3px;vertical-align:-2.5px;margin-inline-end:5px}
+.countdown{color:var(--countdown);font-weight:700;font-size:11.5px;background:var(--countdown-bg);border-radius:999px;padding:3px 10px;display:inline-block;margin-left:6px}
+.venue{display:inline-block;background:var(--t-neutral-soft);border-radius:999px;padding:3px 10px;font-size:11px;margin-left:6px;font-weight:600;color:var(--text)}
+/* v12.13: the standings grid is EXPLICIT, per the user's ask — 2 columns on
+   phones, 3 columns everywhere else (the page caps at 760px, so 3 boxes/row
+   at ~233px each, two tidy rows for the 6 leagues). The old auto-fit
+   minmax(150px,1fr) packed FOUR boxes per row on desktop. */
+.grid4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:601px){.grid4{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.stbox{position:relative;background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);border:1px solid var(--glass-border);border-radius:12px;padding:10px 12px;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi);min-width:0}
+.stbox-head{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;margin-bottom:6px;min-width:0}
+.stbox-head img{width:20px;height:20px;border-radius:3px;flex-shrink:0}
+/* v12.37-pclogo: on PC (≥1440px, the wide-rail layout) the league emblem
+   images in the standings card headers are doubled (20px → 40px = +100%,
+   the user's ask). Phones + tablets keep the 20px size. */
+@media (min-width:1440px){.stbox-head img{width:40px;height:40px;border-radius:5px}}
+.strow{display:flex;align-items:center;gap:6px;font-size:11.5px;padding:2.5px 0;border-bottom:1px dashed var(--border)}
+.strow:last-child{border-bottom:none}
+/* v12.27 (review item 4): the compact boxes carry a COLUMN HEADER for the
+   points number («امتیاز» / «Pts») — the full UCL table already labels every
+   column; the same data type is no longer unlabeled in the mini grids. The
+   header row rides the same 6px-gap flex line the rows use, so the label
+   sits exactly over the numbers column (stpts gets a fixed 34px end-aligned
+   slot to lock the pair). */
+.sthead{display:flex;align-items:center;gap:6px;padding:0 2px 3px;border-bottom:1px solid var(--border)}
+.sthead-fill{flex:1}
+.sthead-p{font-size:9.5px;font-weight:700;color:var(--muted);min-width:34px;text-align:end;flex-shrink:0}
+.stpos{width:16px;text-align:center;font-weight:800;color:var(--muted);flex-shrink:0}
+.stpos.top3{color:var(--accent)}
+/* v12.x-bold-top1: the leader (position 1) of each league is bolded —
+   the entire row (position number + team name + points) gets a heavier
+   font-weight so the table leader stands out at a glance. The font-size
+   is also 2 units larger (11.5px → 13.5px) for the leader's name. */
+.strow.top1{font-weight:800;font-size:13.5px}
+.strow.top1 .stname{font-weight:800;font-size:13.5px}
+.strow.top1 .stpts{font-weight:800}
+.strow.top1 .stpos{font-weight:800}
+.stname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* v12.18: UCL rows carry a ROUND club crest (the user's ask) — same circle
+   language as the match rows, miniaturized for the dense table. */
+.stname.haslogo{display:flex;align-items:center;gap:5px;overflow:hidden}
+.stname.haslogo .sttxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stlogo{width:19px;height:19px;border-radius:50%;background:var(--bg);border:1px solid var(--border);object-fit:contain;flex-shrink:0}
+.stpts{font-weight:800;flex-shrink:0;min-width:34px;text-align:end;font-variant-numeric:tabular-nums}
+/* v12.16: the UCL card is a COMPLETE league table — MP/W/D/L/GF/GA/GD/Pts
+   stat columns + a sticky header row; the W/D/L/GF/GA middle columns fold
+   away on phones (≤600px), leaving # | team | MP | GD | Pts. */
+.stnum{width:26px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums;color:var(--muted)}
+.strow.uclhead{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);z-index:1;font-weight:700}
+.strow.uclhead .stnum{font-size:9.5px;font-weight:700;color:var(--muted);line-height:1.3}
+.strow.uclhead .stpts{font-size:10px;color:var(--muted)}
+@media (max-width:600px){.ucl-hidem{display:none}}
+.stempty{color:var(--muted);font-size:11.5px;padding:4px 0}
+.stnot-overlay{position:absolute;top:38px;left:8px;right:8px;bottom:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(2,6,23,.52);-webkit-backdrop-filter:blur(7px) saturate(1.2);backdrop-filter:blur(7px) saturate(1.2);border-radius:10px;text-align:center;z-index:2;box-shadow:inset 0 1px 0 var(--glass-hi)}
+[data-theme="light"] .stnot-overlay{background:rgba(248,250,252,.6)}
+.stnot-ovl-label{font-size:12px;font-weight:800;color:var(--text)}
+.stnot-ovl-timer{font-size:10.5px;font-weight:700;color:var(--countdown);background:var(--countdown-bg);border-radius:999px;padding:2px 10px;font-variant-numeric:tabular-nums}
+.cupgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cupbox{background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);border:1px solid var(--glass-border);border-radius:12px;padding:10px 12px;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+.cupbox-head{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;margin-bottom:4px}
+.cupbox-head img{width:18px;height:18px;border-radius:4px}
+.cupgroup-title{margin:12px 0 6px;font-size:12.5px;font-weight:800;color:var(--muted);display:flex;align-items:center;gap:6px}
+.cupgroup-title:first-child{margin-top:0}
+.cupmatch{font-size:11.5px;line-height:1.7}
+.cupmatch .teams{font-weight:700}
+.cupdate{color:var(--muted);font-size:11px}
+.cupdate .live-tag{color:var(--t-success-ink);font-weight:700}
+/* v12.31 (the user's ask): "the '...' button caused match time and day not
+   be perfectly aligned on center, we need to relocate this '...' to
+   somewhere else like top corner (left or right) based on RTL/LTR". The ⋯
+   was a flex item INSIDE the centered info line — its 44px footprint
+   pushed the weekday/date text off the box's true center. The toggle now
+   owns the match box's TOP INLINE-END corner (position:absolute on
+   .mrow/.spotitem, which are position:relative since this release —
+   logical inset-inline-end mirrors RTL/LTR automatically: left corner on
+   the fa page, right corner on the en page). The 16px dots icon is
+   CORNER-ANCHORED (padding-block-start/inset-inline-end offsets, not
+   centered) so on PC it clears the round crest that hugs that corner —
+   a crest's square corner is empty space, the circle's ink starts
+   ~10px in along the diagonal; the centered hit area (44×44) may overlap
+   the crest's empty corner harmlessly (the crest is not interactive).
+   Phones have the corner fully free (face-off crests are centered in
+   their half-width columns). The info line centers across the FULL row
+   width again; the popover unfolds under the corner dots as before. */
+.sharewrap{position:absolute;top:0;inset-inline-end:0;z-index:6;width:44px;height:44px}
+.sharetoggle{display:inline-flex;align-items:flex-start;justify-content:flex-end;width:44px;height:44px;padding-block-start:8px;padding-inline-end:4px;border-radius:14px;background:transparent;border:none;cursor:pointer;font-family:inherit;color:#93c5fd;transition:color .15s,background .15s}
+/* v12.x-dots-color (the user's ask): the 3-dot share toggle is LIGHT BLUE
+   in dark mode (#93c5fd — matches the site's --link/--countdown) and
+   SILVER in light mode (#9ca3af — gray-400, reads as silver on white).
+   The hover state still brightens to var(--text) for feedback. */
+[data-theme="light"] .sharetoggle{color:#9ca3af}
+.sharetoggle:hover{color:var(--text);background:var(--hover)}
+.sharetoggle:active{transform:scale(.88)}
+.sharetoggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sharetoggle svg{display:block;fill:currentColor}
+.share{display:none;position:absolute;top:40px;inset-inline-end:0;align-items:center;gap:5px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;box-shadow:0 12px 32px rgba(2,6,23,.45),inset 0 1px 0 var(--glass-hi);z-index:7}
+.sharewrap.open .share{display:inline-flex}
+.share a,.share button{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:var(--chip);border:1px solid var(--border);padding:0;cursor:pointer;font-family:inherit;color:var(--muted);text-decoration:none;transition:transform .15s,background .15s}
+.share a:hover,.share button:hover{transform:translateY(-1px);background:var(--hover)}
+.share a:active,.share button:active{transform:scale(.9)}
+.share svg{display:block}
+/* v12.31 (the user's ask): "remove the 3d-gradient vibe of صدر جدول use less
+   3d effect, more 2d colors. (3d is visual noise)". The v12.29 metallic
+   trophy plate (vertical highlight→deep-gold gradient + inset sheen + amber
+   glow + engraved text-light) is RETIRED — the badge is a FLAT 2D pill now.
+   v12.34-pastel (the user's ask): the saturated amber #fbbf24 was too loud
+   — it grabbed the eye too much. Switched to a PASTEL yellow field
+   (#fef9c3 — Tailwind yellow-100) with a deeper pastel edge (#fde68a
+   — yellow-200, replaces the --badge-top dark-gold outline) and the same
+   dark engraved ink (#451a03 — reads on both themes). opacity:.92 keeps
+   the pill from screaming on glass surfaces. 🏆 stays (v12.29):
+   leading the table = lifting the cup, but quietly now. */
+.topbadge{display:inline-flex;align-items:center;background:#fef9c3;color:#451a03;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:800;margin-inline-start:6px;vertical-align:middle;border:1px solid #fde68a;opacity:.92}
+#msg{text-align:center;color:var(--muted);font-size:13px;padding:12px}
+.empty{color:var(--muted);text-align:center;padding:24px;font-size:14px}
+/* v12.56: loading animation — a subtle spinner shown while cards fetch
+   new data. The .card-loading class is added to content containers (e.g.
+   #standings, #topSpot, #finished) while load() is in progress. The
+   existing content fades to .4 opacity + a spinner appears centered.
+   v12.x-loading-lottie: the CSS spinner is RETIRED — replaced by the
+   loading.lottie animation (a 500x500 Lottie, shown at 48x48px). The
+   Lottie player is injected via JS (addLoadingLottie helper) when the
+   .card-loading class is added, and removed when it's removed. The
+   ::after pseudo-element is now transparent (no border spinner). */
+.card-loading{position:relative;min-height:60px;opacity:.4;transition:opacity .25s;pointer-events:none}
+.card-loading::after{content:"";position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px 0 0 -24px;opacity:1;z-index:10;background:transparent}
+.card-loading .loading-spin{position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px 0 0 -24px;z-index:10;opacity:1;pointer-events:none}
+.loading-spin{width:48px;height:48px;border-radius:50%;border:4px solid var(--t-neutral-soft);border-top-color:var(--t-success-ink);animation:loading-rot 1s linear infinite}
+@keyframes loading-rot{to{transform:rotate(360deg)}}
+@keyframes card-spin{to{transform:rotate(360deg)}}
+/* v12.x-loading-lottie: the .empty loading state (initial load) now
+   shows the loading.lottie animation centered instead of the 'در حال
+   بارگذاری...' text. The text is kept for screen readers (sr-only)
+   but the Lottie animation is the visual. */
+.empty.loading-empty{position:relative;min-height:80px;padding:24px;display:flex;align-items:center;justify-content:center}
+.empty.loading-empty .loading-spin{width:48px;height:48px}
+.empty.loading-empty .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* v12.32 (the user's ask): the «بیشتر» expander under the finished card's
+   first five rows — one tap shows the latest 20 (server cap), the pill
+   flips to «کمتر» to collapse. Same pill on PC and phones. */
+.finmore{display:flex;align-items:center;justify-content:center;gap:6px;width:fit-content;margin:12px auto 2px;padding:7px 20px;border-radius:999px;background:var(--chip);border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:color .15s,background .15s,transform .15s cubic-bezier(.16,1,.3,1)}
+.finmore:hover{color:var(--text);background:var(--hover);transform:translateY(-1px)}
+.finmore:active{transform:scale(.96)}
+.finmore:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* v12.26 (the user's ask): "the تماس با ما and درباره ما must be right
+   aligned. currently they're center aligned" — the footer block (and the
+   nav rows that carry درباره/تماس, header + phone footer) align to the
+   START edge now: right in the RTL fa page (left in the EN ltr mirror),
+   the natural reading edge — no longer dead-center. */
+/* v12.34-pastel: the About + Contact blocks at the foot of the page
+   (the user's ask). About carries the SportSignal origin story (fa+en);
+   Contact carries the bug-hunt / suggestion email sportsignal@atomicmail.io.
+   Both sit in the footer's #about anchor block. */
+.aboutbox,.contactbox{margin:0 0 16px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.aboutbox h3,.contactbox h3{font-size:14.5px;font-weight:800;color:var(--text);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.aboutbox p,.contactbox p{font-size:13px;line-height:1.85;color:var(--muted);margin:0 0 8px}
+.aboutbox p:last-child,.contactbox p.contact-cta{margin:0}
+.contactbox .contact-cta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px}
+.contactbox .contact-cta a{font-weight:800;color:var(--link);text-decoration:none;padding:6px 14px;border:1px solid var(--border);border-radius:999px;font-size:13px;background:var(--bg);transition:background .15s,border-color .15s}
+.contactbox .contact-cta a:hover{background:var(--hover);border-color:var(--link)}
+.contactbox .contact-email{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;color:var(--text);direction:ltr;display:inline-block}
+.aboutbox .about-tag{font-size:14.5px;font-weight:800;color:var(--text);line-height:1.6;margin:0 0 12px;padding:8px 12px;border-inline-start:3px solid var(--link);background:var(--bg);border-radius:0 8px 8px 0}
+footer{text-align:start;color:var(--footer);font-size:12px;margin-top:28px;line-height:2}
+footer a{color:var(--link);text-decoration:none}
+footer a:hover{text-decoration:underline}
+/* v12.25 (the user's ask): the «خانه درباره تماس» nav — PCs get it in the
+   header, phones get the same three links at the top of the footer. All
+   three are REAL destinations: home reloads, about anchors to the
+   footer's identity block (id="about"), contact opens the Telegram bot —
+   the site's contact channel.
+   v12.26 (the user's ask): the nav rows align to the START edge (right on
+   the RTL page) — hugging the logo on PC, right-aligned in the footer —
+   no longer centered. */
+.mainnav{display:none}
+.footnav{display:none}
+@media (min-width:601px) and (max-width:1439px){
+.mainnav{display:flex;order:3;flex:1 1 100%;justify-content:flex-start;align-items:center;gap:2px}
+}
+@media (min-width:1440px){
+.mainnav{display:flex;flex:1 1 auto;justify-content:flex-start;align-items:center;gap:2px;min-width:0}
+}
+.mainnav a{color:var(--nav-link);text-decoration:none;font-size:13.5px;font-weight:700;padding:8px 16px;border-radius:10px;transition:color .15s,background .15s;white-space:nowrap}
+.mainnav a:hover{color:var(--nav-link-hover);background:var(--hover)}
+@media (max-width:600px){
+.footnav{display:flex;justify-content:flex-start;align-items:center;gap:2px;flex-wrap:wrap;margin:0 0 8px}
+.footnav a{color:var(--link);text-decoration:none;font-size:13px;font-weight:700;padding:4px 12px;border-radius:8px}
+.footnav a:hover{text-decoration:underline}
+}
+@media (max-width:600px){
+body{padding:16px 12px 28px;background-attachment:scroll}
+h1{font-size:23px}
+.sub{font-size:12.5px}
+/* v12.26: the header CTA is a COMPACT pill now (it lives in the website
+   header, not a hero block) — the old full-width hero button rule is
+   retired; the sticky bottom join bar still covers scroll-time CTA. */
+#topbar .cta{font-size:11.5px;padding:8px 12px;gap:6px}
+.head-actions{gap:6px}
+#topbar{margin-bottom:8px}
+/* v12.52-mobile-header: on mobile, the header shows 3 icon buttons (lang,
+   theme, Telegram) grouped on the LEFT + the logo on the RIGHT. The text
+   CTA button is hidden (the Telegram icon button replaces it). The
+   timezone button (⚙️) is hidden on mobile (it's a desktop power-user
+   feature; the timezone is also in the admin panel). The 3 buttons sit
+   in the .tb-btns container with a glass background + rounded corners. */
+#topbar .cta{display:none}
+#tgbtn{display:flex}
+#sbtn{display:none}
+.tb-btns{display:inline-flex;gap:4px;padding:4px;background:var(--glass);-webkit-backdrop-filter:blur(10px) saturate(1.3);backdrop-filter:blur(10px) saturate(1.3);border:1px solid var(--glass-border);border-radius:12px}
+.card{padding:13px 9px}
+h2{font-size:15.5px;padding:8px 12px}
+#topspotCard h2,#uclSpotCard h2{font-size:17px}
+/* v12.28 (the user's ask): "find out why the place is limited in mobile
+   mode, so a club name like Manchester United, became two rows, which is
+   ugly. (i think it's because of padding and spacing.)" — diagnosis: the
+   horizontal A [time] B row inside a 314px phone box (body 2×12 + card
+   2×10 + spotitem 2×10 + match 2×6 + 2×8px gaps + the fixed 80px time
+   slot + 2×46px crests + 2×8px side gaps) left each name column ~55px —
+   even «منچستریونایتد» wrapped. Fix — the phone row becomes a FACE-OFF:
+   both sides ride one line as COLUMNS (crest above its centered name —
+   a name now gets ~half the row, never a 55px sliver), and the time/
+   score slot moves to its OWN centered line BELOW via flex order (the
+   v12.25 rule "the time sits with ITS two teams" survives vertically:
+   both teams sandwich it). Padding trimmed around the row (card 10→9,
+   match 10px 6px→6px 2px, gap 8→6) buys back more name width; the hero's
+   big 20px chip centers on that same full-width line.
+   v12.32 (the user's ask): "in mobile view, move the match time, between
+   the clubs' logos. and align with them" — the time/score slot is BACK
+   ON the crest line: order:1 slots it BETWEEN the two side columns (DOM
+   order [home][time][away] → visual home|time|away), align-self:flex-start
+   + height:46px centers the chip exactly on the crest's vertical center
+   line (the crest is 46px tall on phones), and the names stay under their
+   crests. The hero's kick COLUMN ([chip + date]) rides the same slot with
+   height:auto + a 3px top offset so its BIG chip centers on the crest
+   line (chip ≈38px, (46-38)/2 ≈4px); its .kickdate follows below into
+   the names' band, centered between the two name columns. */
+.match{flex-wrap:wrap;gap:6px;padding:6px 2px}
+.match .side{order:1;flex-direction:column;align-items:center;gap:3px}
+.match .side .team{flex:0 0 auto;width:100%;min-width:0;text-align:center;font-size:13px;word-wrap:break-word;overflow-wrap:anywhere}
+.match .side.away{flex-direction:column-reverse}
+/* v12.32: direct children only (the hero's score is NESTED inside its .kick
+   column — the old descendant selector would have re-flowed it). */
+/* v12.54: separated .match>.kick (column: time over date) from
+   .match>.score (row: "2 - 2" on one line). Was sharing one rule with
+   flex-direction:column which stacked the score digits vertically. */
+.match>.kick{order:1;flex:0 0 auto;align-self:center;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin-top:0;min-width:0}
+.match>.score{order:1;flex:0 0 auto;align-self:center;height:auto;display:flex;flex-direction:row;align-items:center;justify-content:center;margin-top:0;min-width:0;white-space:nowrap}
+.bighero .match>.kick{height:auto;margin-top:3px;gap:4px}
+.logo{width:37px;height:37px;font-size:16px}
+/* v12.x-hero-bigger (the user's ask): the hero (featured single box) logos
+   must be BIGGER than the topspot list logos (54px mobile) + the regular
+   box logos (46px mobile) — the featured match is more important and
+   imminent. The hero logos are now 64px on mobile (vs 54px topspot, 46px
+   regular). Specificity (0,2,0) beats the .logo (0,1,0) base + the
+   #topspotCard .spotitem .logo (1,2,0) is a different selector so no
+   conflict. Desktop keeps the 102px hero (already bigger than the 64px
+   topspot). */
+.bighero .logo{width:64px;height:64px;font-size:28px}
+.score{font-size:15px}
+.kick .countdown{font-size:11.5px;padding:3px 9px}
+.bighero .kick .countdown{font-size:20px;padding:6px 16px;border-radius:12px}
+.bighero .kickdate{font-size:14px}
+.bighero .bigbar-clock{font-size:12.5px}
+.bighero .score{font-size:20px}
+.bighero .uclspot-info,.bighero .info{font-size:12.5px}
+/* v12.30 (the user's phone report — "the header of upcoming match in
+   mobile looks distracting. disorganized and messy with a lot of
+   noise"): the phone hero sheds its noise layers and gains real
+   breathing room —
+     · the bar's decorative percent chip is OFF (it is aria-hidden
+       garnish; the label + clock + track carry the story, and the freed
+       ~56px stops the top row pinching on a 390px screen)
+     · every seam gets air: more space under the bar, a taller gap
+       before the big time number, room under the info chips so nothing
+       is crammed against the card's edge (the VLM review of the user's
+       screenshot flagged exactly those cramped seams)
+   With the crest ghosts gone (the .hero-wm rule above) and the navy
+   veil + blur calming the video, the phone hero is one quiet stack with
+   a single hierarchy: bar → face-off → the big time number → info. The
+   v12.28 display-size time chip (20px) and the face-off columns are
+   untouched — the ask is less noise, not a smaller headline. */
+.bighero .bigbar-pct{display:none}
+/* v12.57: min-height only on mobile — the video stage needs room on
+   phones. On PC the card sizes to its content (no excess space). */
+/* v12.57: min-height only on mobile — the video stage needs room on
+   phones. On PC the card also gets a min-height so the video/watermark
+   background is visible even when the heroSpot is empty, but smaller
+   than mobile (200px vs 240px) to avoid excessive empty space. */
+.card.bighero{min-height:200px}
+.bighero .bigbar{margin-bottom:0;padding:2px 2px 4px}
+/* v12.32: retired .bighero .kick{margin-top:8px} — the kick column now sits
+   BETWEEN the crests (rule above: margin-top:3px centers its chip on the
+   46px crest line), not on its own line below the face-off. */
+.bighero .uclspot-info{margin-top:10px;gap:6px}
+/* v12.47-nospotbox: retired the old .bighero .spotitem padding — the
+   spotitem is now borderless + backgroundless (see the v12.47 rule
+   above), so the padding that framed the old box is gone too. The
+   match row + info + share sit directly on the hero card's own
+   surface, no inner container. */
+.bighero .spotitem{padding:0}
+.mrow,.spotitem{padding:8px 10px}
+.info{font-size:11px;line-height:1.7}
+#topbar button{padding:7px 12px}
+#tzpanel{width:min(320px,calc(100vw - 24px))}
+/* v12.27: phones keep the cluster's 44×44px hit areas — the base .tb-btns button rule applies unchanged below 600px. */
+}
+/* v12.21 (the user's ask): the v12.20 auto-placed two-per-row grid read as
+   RANDOM on PC — shared grid rows dragged shorter cards down to ragged Y
+   offsets (a ~500px hole opened under the UCL box, the standings pair
+   started ~2100px below its column neighbor, and the results card sat alone
+   in the last row). The ≥1440px layout now follows a REAL grid with
+   hierarchy: full-width chrome (topbar → hero → countdown hero → footer), a
+   MAIN column (inline start) carrying every match box, and a reference RAIL
+   with the three table boxes — each column stacks flush, no shared rows, no
+   holes. setWide() (page script) regroups the cards into #wideMain/#wideSide
+   at the breakpoint and restores the exact single-column DOM order below
+   it; the hero centers above the full-width countdown, whose match row is
+   capped to a readable width. */
+@media (min-width:1440px){
+body{max-width:1400px;display:grid;grid-template-columns:minmax(0,1fr) minmax(400px,460px);column-gap:28px;row-gap:14px;align-items:start}
+/* v12.24: the WEBSITE header spans the full chrome row — logo pinned to
+   the start corner, settings + Telegram CTA at the other end (the old
+   centered-controls bar + hero title block are retired). */
+#topbar{margin-bottom:0}
+#heroSpot{max-width:880px;margin:0 auto}
+#wideMain,#wideSide{display:flex;flex-direction:column;gap:14px}
+#wideMain>*,#wideSide>*{margin:0}
+#wideSide .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
+footer{margin-top:0}
+#topbar,.herowrap,footer{grid-column:1/-1}
+}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.bigcard{box-shadow:0 0 10px rgba(5,150,105,.16),0 8px 26px rgba(0,0,0,.35),var(--glass-shadow),inset 0 1px 0 rgba(255,255,255,.16)}}
+@media (prefers-reduced-transparency:reduce){body{background:var(--bg)}.card,#topbar button,.bigbar,.stbox,.cupbox,.uclcard,.uclspot,#tzsel,#tzfilter,#tzpanel,#joinSticky{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 1px 2px rgba(15,23,42,.05)}}
+
