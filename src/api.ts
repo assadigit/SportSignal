@@ -76,23 +76,34 @@ const worker_default = {
       await env.STATE.delete(failKey).catch(() => {
       });
       const sid = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-      await env.STATE.put("admin_sess_" + sid, JSON.stringify({ created: Date.now(), ip }), { expirationTtl: 43200 }).catch(() => {
-      });
-      // v13.11-admin-fix: read-after-write verification. Cloudflare KV is
-      // eventually consistent — the session write may not be visible on the
-      // immediate read-back (location.reload() happens ~0ms after the fetch
-      // resolves). Verify the session landed; retry up to 3× (200ms apart)
-      // so the admin page doesn't bounce back to the login form.
-      for (let i = 0; i < 3; i++) {
-        const v = await env.STATE.get("admin_sess_" + sid).catch(() => null);
-        if (v) break;
-        await new Promise((r) => setTimeout(r, 200));
+      let kvWriteOk = false;
+      try {
+        await env.STATE.put("admin_sess_" + sid, JSON.stringify({ created: Date.now(), ip }), { expirationTtl: 43200 });
+        kvWriteOk = true;
+      } catch (putErr) {
+        console.error("admin session KV write failed (falling back to stateless): " + putErr.message);
+      }
+      // v13.26-session-fix: if the KV write failed (quota exhausted, network),
+      // fall back to a stateless HMAC-signed token so the admin can still
+      // log in. The token is sid.HMAC(sid, ADMIN_TOKEN) — verifiable on read
+      // without needing a KV lookup.
+      let sessionToken = sid;
+      if (!kvWriteOk) {
+        try {
+          const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(env.ADMIN_TOKEN), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+          const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(sid));
+          const sigHex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+          sessionToken = sid + "." + sigHex;
+          console.log("admin session: using stateless HMAC token (KV write failed)");
+        } catch (e2) {
+          console.error("admin session HMAC fallback failed: " + e2.message);
+        }
       }
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
         headers: {
           "content-type": "application/json",
-          "set-cookie": "admin_auth=" + sid + "; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=43200"
+          "set-cookie": "admin_auth=" + sessionToken + "; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=43200"
         }
       });
     }

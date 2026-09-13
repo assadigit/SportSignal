@@ -22,8 +22,24 @@ export function getAdminCookieToken(req) {
 }
 export async function isValidAdminSession(env: Env, req) {
   const sid = getAdminCookieToken(req);
-  if (!sid || !/^[a-f0-9]{32,80}$/i.test(sid)) return false;
-  const val = await env.STATE.get("admin_sess_" + sid).catch(() => null);
+  if (!sid || !/^[a-f0-9]{32,80}(\.[a-f0-9]{64})?$/i.test(sid)) return false;
+  // v13.26-session-fix: support stateless HMAC-signed tokens (sid.signature)
+  // as a fallback when KV writes fail (quota exhausted). The token is
+  // verifiable without a KV lookup — the signature is HMAC(sid, ADMIN_TOKEN).
+  const parts = sid.split(".");
+  if (parts.length === 2 && env.ADMIN_TOKEN) {
+    // Stateless token: verify the HMAC signature
+    try {
+      const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(env.ADMIN_TOKEN), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+      const sigBytes = new Uint8Array(parts[1].match(/.{2}/g).map((h: string) => parseInt(h, 16)));
+      const valid = await crypto.subtle.verify("HMAC", key, sigBytes, new TextEncoder().encode(parts[0]));
+      if (valid) return true;
+    } catch (e) {
+      // fall through to KV check
+    }
+  }
+  // KV-backed session (the normal path)
+  const val = await env.STATE.get("admin_sess_" + parts[0]).catch(() => null);
   return !!val;
 }
 export async function isAdminAuthed(req, env) {
