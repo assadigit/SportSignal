@@ -6163,7 +6163,7 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    white ink) matching the CTA button, establishing a semantic color
    system: primary = action/headline, hype = derby, neutral = info. The
    mid-band (601-900px) scales to 20px, phones keep 18px. */
-.bighero .kick .countdown{font-size:28px;font-weight:900;padding:8px 22px;border-radius:14px;line-height:1.25;font-variant-numeric:tabular-nums;background:var(--pill-primary-bg);color:var(--pill-primary-ink);box-shadow:inset 0 0 0 1px var(--pill-primary-line),0 6px 24px rgba(37,99,235,.32);text-shadow:0 1px 14px rgba(2,6,23,.5)}
+.bighero .kick .countdown{font-size:28px;font-weight:900;padding:8px 22px;border-radius:14px;line-height:1;font-variant-numeric:tabular-nums;background:var(--pill-primary-bg);color:var(--pill-primary-ink);box-shadow:inset 0 0 0 1px var(--pill-primary-line),0 6px 24px rgba(37,99,235,.32);text-shadow:0 1px 14px rgba(2,6,23,.5);display:flex;align-items:center;justify-content:center}
 [data-theme="light"] .bighero .kick .countdown{box-shadow:inset 0 0 0 1px var(--pill-primary-line),0 6px 20px rgba(37,99,235,.22);text-shadow:0 1px 10px rgba(255,255,255,.5)}
 .bighero .score{font-size:24px;flex:0 0 auto;padding:0 8px}
 .bighero .uclspot-info{font-size:13.5px}
