@@ -6,6 +6,48 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.8-botnotify] — 2026-09-13 (bot notifications: date in every reminder, more emojis, dedupe fix for provider-transliteration variants)
+
+The user reported a 3-hour reminder that was missing the date (only time +
+relative time) — ambiguous which matchday. Plus a duplicate Elversberg vs
+Bayern notification (two identical messages). Both fixed.
+
+### Date in every notification formatter
+- **`format3HourMessage`** (the reported one), **`format1HourMessage`**,
+  **`format5MinMessage`**, **`formatMatchStartMessage`** now include the full
+  date (Jalali weekday + day + month in fa; Gregorian in en) via
+  `getJalaliDate`/`getEnglishDate`. Previously only `format24HourMessage` +
+  `formatBigMatchMessage` + `formatResultMessage` had the date. A 3h/1h/5min
+  reminder with only the time is now disambiguated to a specific matchday.
+- Verified by the new `check-composers.js` gate (29 assertions): every
+  formatter carries a 📅 date line + the weekday + a minimum emoji set.
+
+### More emojis across all formatters
+- 🎯 competition tag, 📅 date, ⏰ time, ⏱ countdown, ⏳ reminder head, 🚀 kickoff,
+  🏆 winner trophy, 🤝 draw, 🏁 full-time, 🔥 big-match fire, ⚽ match ball.
+- The emoji floor is gated: `check-composers.js` asserts each formatter carries
+  its emoji set, so a maintainer stripping them fails `npm test`.
+
+### Duplicate-notification fix (provider transliteration fold)
+- **Root cause**: `normalizeTeamName("FC Bayern München")` → `bayernmunchen`
+  (accent ü stripped to u) ≠ `normalizeTeamName("Bayern Munich")` →
+  `bayernmunich` (English exonym). Different keys → `canonDedupe` + `matchKey`
+  both treat them as distinct matches → the SAME fixture notified twice.
+- **Fix**: added a `TRANSLIT_FOLDS` table to `src/teams.js` (applied after the
+  accent strip, before token removal): `munchen`→`munich`, `koln`→`cologne`,
+  `sanktpauli`→`stpauli`, `zenit...`→`zenit`, `sporting...`→`sportingcp`,
+  `shakhtar...`→`shakhtar`, `dinamo...`→`dynamokyiv`, `crvenazvezda`→`redstar`.
+  Each entry is a verified provider-variant pair (short + specific — over-folding
+  would merge distinct teams). Verified: `canonDedupe([Bayern-München,
+  Bayern-Munich])` now collapses to 1 (was 2).
+
+### New gate
+- **`scripts/check-composers.js`** (29 assertions): every formatter includes a
+  date line + the emoji floor + the transliteration fold. Added to `npm test`.
+- `npm test` exit 0 (223 assertions, was 195).
+
+---
+
 ## [13.7-continuation] — 2026-09-13 (continuation pass: bot flawless, perf/caching, security hardening, 3 new test gates)
 
 A continuation pass across the six focus areas from `NEXT-SESSION-CONTINUATION.md`.

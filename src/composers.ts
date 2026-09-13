@@ -22,15 +22,15 @@ export function format24HourMessage(match, env, lang) {
     ? (enStageName(match.stage) || (match.stage ? match.stage.replace(/_/g, " ") : "Group stage"))
     : (STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : "\u0645\u0631\u062D\u0644\u0647 \u06AF\u0631\u0648\u0647\u06CC"));
   const timeUntil = en ? getEnglishRelative(match.utcDate) : getRelativeTimeUntilMatch(match.utcDate, env);
-  let message = `*${escapeMarkdownCharacters(competition)}*`;
+  let message = `\u{1F3AF} *${escapeMarkdownCharacters(competition)}*`;
   if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
     message += ` \\- ${escapeMarkdownCharacters(stage)}`;
   }
-  message += `\n${escapeMarkdownCharacters(dateStr)}\n\n`;
+  message += `\n\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n\n`;
   const vs = en ? " vs " : " \u{1F19A} ";
   message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `${escapeMarkdownCharacters(timeUntil)}`;
+  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
+  message += `\u23F1 ${escapeMarkdownCharacters(timeUntil)}`;
   return message;
 }
 export function formatBigMatchMessage(match, env, lang) {
@@ -44,14 +44,14 @@ export function formatBigMatchMessage(match, env, lang) {
   const stage = en
     ? (enStageName(match.stage) || (match.stage ? match.stage.replace(/_/g, " ") : ""))
     : (STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : ""));
-  const bigLabel = en ? "*Big match:* " : "*\u0628\u0627\u0632\u06CC \u0628\u0632\u0631\u06AF:* ";
+  const bigLabel = en ? "\u{1F525} *Big match:* " : "\u{1F525} *\u0628\u0627\u0632\u06CC \u0628\u0632\u0631\u06AF:* ";
   const vs = en ? " vs " : " \u{1F19A} ";
   let message = `${bigLabel}${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}`;
-  message += `\n*${escapeMarkdownCharacters(competition)}*`;
+  message += `\n\u{1F3AF} *${escapeMarkdownCharacters(competition)}*`;
   if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
     message += ` \\- ${escapeMarkdownCharacters(stage)}`;
   }
-  message += `\n${escapeMarkdownCharacters(dateStr)}\n${escapeMarkdownCharacters(timeStr)}\n${escapeMarkdownCharacters(timeUntil)}`;
+  message += `\n\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n\u23F0 ${escapeMarkdownCharacters(timeStr)}\n\u23F1 ${escapeMarkdownCharacters(timeUntil)}`;
   return message;
 }
 export function format3HourMessage(match, env, lang) {
@@ -59,15 +59,21 @@ export function format3HourMessage(match, env, lang) {
   const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
   const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
+  // v13.8-date: always include the date (day-of-week + day-of-month) — a 3h
+  // reminder with only the time + relative-time is ambiguous (could be today,
+  // tomorrow, or any day). The date disambiguates which matchday the reminder
+  // is for.
+  const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
   const timeUntil = en ? getEnglishRelative(match.utcDate) : getRelativeTimeUntilMatch(match.utcDate, env);
-  const head = en ? "*3 hours to kickoff*" : "*\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F3 \u0633\u0627\u0639\u062A\u0647*";
+  const head = en ? "\u23F3 *3 hours to kickoff*" : "\u23F3 *\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F3 \u0633\u0627\u0639\u062A\u0647*";
   const vs = en ? " vs " : " \u{1F19A} ";
   let message = `${head}\n\n`;
   message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `${escapeMarkdownCharacters(competition)}\n`;
-  message += `${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `${escapeMarkdownCharacters(timeUntil)}`;
+  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}\n`;
+  message += `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
+  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
+  message += `\u23F1 ${escapeMarkdownCharacters(timeUntil)}`;
   return message;
 }
 export function format1HourMessage(match, env, lang) {
@@ -75,32 +81,37 @@ export function format1HourMessage(match, env, lang) {
   const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
   const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
+  // v13.8-date: always include the date (same rationale as format3HourMessage).
+  const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
   const timeUntil = en ? getEnglishRelative(match.utcDate) : getRelativeTimeUntilMatch(match.utcDate, env);
-  const head = en ? "*1 hour to kickoff*" : "*\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F1 \u0633\u0627\u0639\u062A\u0647*";
+  const head = en ? "\u23F3 *1 hour to kickoff*" : "\u23F3 *\u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u06F1 \u0633\u0627\u0639\u062A\u0647*";
   const vs = en ? " vs " : " \u{1F19A} ";
   let message = `${head}\n\n`;
   message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `${escapeMarkdownCharacters(competition)}\n`;
-  message += `${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `${escapeMarkdownCharacters(timeUntil)}`;
+  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}\n`;
+  message += `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
+  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
+  message += `\u23F1 ${escapeMarkdownCharacters(timeUntil)}`;
   return message;
 }
-// v12.x-cron-gaps: lean 5-minute reminder for BIG matches only. Lean
-// text per the user's "reduce noise" ask: one ⚽ on the match line, no
-// per-line emojis.
+// v12.x-cron-gaps: 5-minute "kickoff now" reminder for BIG matches only.
+// v13.8-date: now includes the date too (same rationale — even a 5-min
+// reminder should state which day, for clarity in a busy matchday window).
 export function format5MinMessage(match, env, lang) {
   const en = lang === "en";
   const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
   const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
+  const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
-  const head = en ? "*Kickoff in 5 min*" : "*\u06F5 \u062F\u0642\u06CC\u0642\u0647 \u062A\u0627 \u0634\u0631\u0648\u0639*";
+  const head = en ? "\u23F3 *Kickoff in 5 min*" : "\u23F3 *\u06F5 \u062F\u0642\u06CC\u0642\u0647 \u062A\u0627 \u0634\u0631\u0648\u0639*";
   const vs = en ? " vs " : " \u{1F19A} ";
   let message = `${head}\n\n`;
   message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `${escapeMarkdownCharacters(competition)}\n`;
-  message += `${escapeMarkdownCharacters(timeStr)}`;
+  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}\n`;
+  message += `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
+  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}`;
   return message;
 }
 export function formatMatchStartMessage(match, env, lang) {
@@ -108,13 +119,15 @@ export function formatMatchStartMessage(match, env, lang) {
   const homeTeam = en ? match.homeTeam.name : translateTeam(match.homeTeam.name);
   const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
+  const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
-  const head = en ? "*Kickoff*" : "*\u0628\u0627\u0632\u06CC \u0634\u0631\u0648\u0639 \u0634\u062F\\!*";
+  const head = en ? "\u{1F680} *Kickoff\\!*" : "\u{1F680} *\u0628\u0627\u0632\u06CC \u0634\u0631\u0648\u0639 \u0634\u062F\\!*";
   const vs = en ? " vs " : " \u{1F19A} ";
   let message = `${head}\n\n`;
   message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `${escapeMarkdownCharacters(competition)}\n`;
-  message += `${escapeMarkdownCharacters(timeStr)}`;
+  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}\n`;
+  message += `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
+  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}`;
   return message;
 }
 export async function formatResultMessage(match, env, lang?) {
@@ -123,28 +136,28 @@ export async function formatResultMessage(match, env, lang?) {
   const awayTeam = en ? match.awayTeam.name : translateTeam(match.awayTeam.name);
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
-  const head = en ? "*Full time*" : "*\u0646\u062A\u06CC\u062C\u0647 \u0646\u0647\u0627\u06CC\u06CC*";
+  const head = en ? "\u{1F3C8} *Full time*" : "\u{1F3C8} *\u0646\u062A\u06CC\u062C\u0647 \u0646\u0647\u0627\u06CC\u06CC*";
   const vs = en ? " vs " : " \u{1F19A} ";
   let message = `${head}\n\n`;
   message += `\u26BD *${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}*\n`;
-  message += `${escapeMarkdownCharacters(competition)}\n`;
-  message += `${escapeMarkdownCharacters(dateStr)}\n\n`;
+  message += `\u{1F3AF} ${escapeMarkdownCharacters(competition)}\n`;
+  message += `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n\n`;
   if (match.score.fullTime.home !== null && match.score.fullTime.away !== null) {
     const h = en ? match.score.fullTime.home.toString() : toFaDigits(match.score.fullTime.home.toString());
     const a = en ? match.score.fullTime.away.toString() : toFaDigits(match.score.fullTime.away.toString());
-    message += `*${h}\\-${a}*`;
+    message += `\u23F0 *${h}\\-${a}*`;
     if (match.score.fullTime.home > match.score.fullTime.away) {
-      const won = en ? `${escapeMarkdownCharacters(homeTeam)} won` : `\u2705 ${escapeMarkdownCharacters(homeTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
+      const won = en ? `\u{1F3C6} ${escapeMarkdownCharacters(homeTeam)} won` : `\u{1F3C6} ${escapeMarkdownCharacters(homeTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
       message += `\n${won}`;
     } else if (match.score.fullTime.home < match.score.fullTime.away) {
-      const won = en ? `${escapeMarkdownCharacters(awayTeam)} won` : `\u2705 ${escapeMarkdownCharacters(awayTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
+      const won = en ? `\u{1F3C6} ${escapeMarkdownCharacters(awayTeam)} won` : `\u{1F3C6} ${escapeMarkdownCharacters(awayTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
       message += `\n${won}`;
     } else {
-      const draw = en ? "Draw" : "\u0645\u0633\u0627\u0648\u06CC";
+      const draw = en ? "\u{1F91D} Draw" : "\u{1F91D} \u0645\u0633\u0627\u0648\u06CC";
       message += `\n${draw}`;
     }
   } else {
-    const noScore = en ? "Score not available" : "\u0646\u062A\u06CC\u062C\u0647 \u062F\u0631 \u062F\u0633\u062A\u0631\u0633 \u0646\u06CC\u0633\u062A";
+    const noScore = en ? "\u2754 Score not available" : "\u2754 \u0646\u062A\u06CC\u062C\u0647 \u062F\u0631 \u062F\u0633\u062A\u0631\u0633 \u0646\u06CC\u0633\u062A";
     message += `${noScore}`;
   }
   return await appendTableOrPhase(env, match, message, lang);
