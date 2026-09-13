@@ -17,12 +17,12 @@ export const PUBLIC_PAGE = `<!doctype html>
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-title" content="SportSignal">
 <meta name="application-name" content="SportSignal">
-<!-- v12.x-live-lottie: the dotLottie player web component — renders the
-     Live.lottie animation (a pulsing "LIVE" badge) used as the live-chip
-     for live-broadcasting games. Loaded from the LottieFiles CDN. The
-     <dotlottie-player> custom element is used in the livechip + the
-     #liveCard h2 heading. -->
-<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+<!-- v13.4-live-css: the dotLottie CDN player was REMOVED — it was
+     CSP-blocked (script-src 'self') AND loaded the wrong package
+     (lottie-player does not register <dotlottie-player>), so the animations
+     never rendered. Live badges / loading states are pure CSS now
+     (live-beep / live-breath / loading-spin keyframes) — zero payload,
+     zero third-party requests, actually visible. -->
 <meta name="description" content="\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\u060C \u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627\u06CC \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u0648 \u0646\u062A\u0627\u06CC\u062C \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628 \u2014 \u0628\u0647\u200C\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06CC \u062E\u0648\u062F\u06A9\u0627\u0631">
 <meta property="og:type" content="website">
 <meta property="og:title" content="SportSignal \u2014 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648">
@@ -494,9 +494,6 @@ body.joinsticky{padding-bottom:88px}
    40x16px in the livechip, 56x22px in the h2 heading. The autoplay +
    loop attributes keep the animation running. The background stays
    transparent so it blends into the chip / heading plate. */
-dotlottie-player.live-lottie{display:inline-block;width:40px;height:16px;vertical-align:middle}
-.livechip dotlottie-player.live-lottie{width:40px;height:16px}
-#liveCard h2 dotlottie-player.live-lottie{width:56px;height:22px;vertical-align:middle;margin-inline-end:4px}
 @keyframes live-beep{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.35);transform:scale(1)}50%{box-shadow:0 0 0 6px rgba(34,197,94,0);transform:scale(1.15)}}
 /* v12.44-livepolish: the liveCard heading carries a BREATHING GREEN LIGHT
    — a 12px green dot that pulses softly (opacity + box-shadow + scale),
@@ -953,14 +950,16 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    ::after pseudo-element is now transparent (no border spinner). */
 .card-loading{position:relative;min-height:60px;opacity:.4;transition:opacity .25s;pointer-events:none}
 .card-loading::after{content:"";position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px 0 0 -24px;opacity:1;z-index:10;background:transparent}
-.card-loading dotlottie-player.loading-lottie{position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px 0 0 -24px;z-index:10;opacity:1;pointer-events:none}
+.card-loading .loading-spin{position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px 0 0 -24px;z-index:10;opacity:1;pointer-events:none}
+.loading-spin{width:48px;height:48px;border-radius:50%;border:4px solid var(--t-neutral-soft);border-top-color:var(--t-success-ink);animation:loading-rot 1s linear infinite}
+@keyframes loading-rot{to{transform:rotate(360deg)}}
 @keyframes card-spin{to{transform:rotate(360deg)}}
 /* v12.x-loading-lottie: the .empty loading state (initial load) now
    shows the loading.lottie animation centered instead of the 'در حال
    بارگذاری...' text. The text is kept for screen readers (sr-only)
    but the Lottie animation is the visual. */
 .empty.loading-empty{position:relative;min-height:80px;padding:24px;display:flex;align-items:center;justify-content:center}
-.empty.loading-empty dotlottie-player.loading-lottie{width:48px;height:48px}
+.empty.loading-empty .loading-spin{width:48px;height:48px}
 .empty.loading-empty .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* v12.32 (the user's ask): the «بیشتر» expander under the finished card's
    first five rows \u2014 one tap shows the latest 20 (server cap), the pill
@@ -1270,11 +1269,11 @@ footer{margin-top:0}
      as the match status is LIVE/IN_PLAY/PAUSED. -->
 <div class="card" id="liveCard" style="display:none">
 <h2 data-i="hLive">\u{1F534} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0632\u0646\u062F\u0647</h2>
-<div id="liveMatches"><div class="empty loading-empty"><dotlottie-player class="loading-lottie" src="/loading.lottie" autoplay loop background="transparent" aria-hidden="true"></dotlottie-player><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="liveMatches"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
 </div>
 <div class="card" id="topspotCard" style="display:none">
 <h2 data-i="hLgNext" id="topSpotTitle">\u{1F525} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0628\u0632\u0631\u06AF \u067E\u06CC\u0634\u200C\u0631\u0648</h2>
-<div id="topSpot"><div class="empty loading-empty"><dotlottie-player class="loading-lottie" src="/loading.lottie" autoplay loop background="transparent" aria-hidden="true"></dotlottie-player><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="topSpot"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
 </div>
 <!-- v12.2: the UCL box sits above the games list (was below it). v12.4: while
      the selected-vs-selected CL pairing is far away the box headlines the
@@ -1292,7 +1291,7 @@ footer{margin-top:0}
      starball on its white chip inside the navy plate. data-i moved to the
      INNER span so trText() can never clobber the logo. -->
 <h2 id="uclSpotTitle" class="uclh2"><span class="ucl-logo" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUclNext">\u{1F525} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645 \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627</span></h2>
-<div id="uclSpot"><div class="empty loading-empty"><dotlottie-player class="loading-lottie" src="/loading.lottie" autoplay loop background="transparent" aria-hidden="true"></dotlottie-player><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="uclSpot"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
 </div>
 <!-- v12.16: \xAB\u062F\u0631 \u0627\u06CC\u0646 \u0647\u0641\u062A\u0647\xBB \u2014 the CURRENT Iranian week (Saturday\u2192Friday)
      agenda: every followed/top-3 game of this week in one box, live first,
@@ -1301,7 +1300,7 @@ footer{margin-top:0}
      the week has no followed games. -->
 <div class="card" id="weekCard" style="display:none">
 <h2 data-i="hWeek" id="weekTitle">\u{1F4C5} \u062F\u0631 \u0627\u06CC\u0646 \u0647\u0641\u062A\u0647</h2>
-<div id="weekBox"><div class="empty loading-empty"><dotlottie-player class="loading-lottie" src="/loading.lottie" autoplay loop background="transparent" aria-hidden="true"></dotlottie-player><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="weekBox"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
 </div>
 <!-- v12.12: the \xAB\u{1F4C5} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\xBB list card is RETIRED \u2014 with the view
      toggle gone (always big-only) it only ever held the redundant "\u0647\u0645\u0647 \u062F\u0631
@@ -1311,15 +1310,15 @@ footer{margin-top:0}
 </div>
 <div class="card uclcard" id="uclCard">
 <h2 class="uclh2"><span class="ucl-logo sm" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUcl">\u{1F3C6} \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627</span></h2>
-<div id="ucl"><div class="empty loading-empty"><dotlottie-player class="loading-lottie" src="/loading.lottie" autoplay loop background="transparent" aria-hidden="true"></dotlottie-player><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="ucl"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
 </div>
 <div class="card" id="standingsCard">
 <h2 data-i="hStandings">\u{1F4CA} \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627</h2>
-<div id="standings"><div class="empty loading-empty"><dotlottie-player class="loading-lottie" src="/loading.lottie" autoplay loop background="transparent" aria-hidden="true"></dotlottie-player><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="standings"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
 </div>
 <div class="card" id="cupsCard">
 <h2 data-i="hCups">\u{1F3C6} \u062A\u0648\u0631\u0646\u0645\u0646\u062A\u200C\u0647\u0627</h2>
-<div id="cups"><div class="empty loading-empty"><dotlottie-player class="loading-lottie" src="/loading.lottie" autoplay loop background="transparent" aria-hidden="true"></dotlottie-player><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="cups"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
 </div>
 
 </div>
@@ -1327,7 +1326,7 @@ footer{margin-top:0}
      standings grid above (#standings), per the user's request. -->
 <div class="card" id="finishedCard">
 <h2 data-i="hFinished">\u{1F3C1} \u0646\u062A\u0627\u06CC\u062C \u0627\u062E\u06CC\u0631</h2>
-<div id="finished"><div class="empty loading-empty"><dotlottie-player class="loading-lottie" src="/loading.lottie" autoplay loop background="transparent" aria-hidden="true"></dotlottie-player><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
+<div id="finished"><div class="empty loading-empty"><div class="loading-spin" aria-hidden="true"></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div></div>
 </div>
 <footer id="about"><nav class="footnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="#about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="#contact" data-i="navContact">\u062A\u0645\u0627\u0633</a></nav>
 <div class="aboutbox">
@@ -1705,8 +1704,9 @@ function render(list, el, finished){
     info.appendChild(document.createTextNode(fmtDate(m.utcDate)));
     if(live){
       var chip = document.createElement("span"); chip.className = "livechip";
-      var lottie = document.createElement("dotlottie-player"); lottie.className = "live-lottie"; lottie.setAttribute("src","/Live.lottie"); lottie.setAttribute("autoplay",""); lottie.setAttribute("loop",""); lottie.setAttribute("background","transparent");
-      chip.appendChild(lottie);
+      var dot = document.createElement("span"); dot.className = "dot";
+      chip.appendChild(dot);
+      chip.appendChild(document.createTextNode(T("live")));
       info.appendChild(chip);
       if(m.minute != null){
         var lmin = document.createElement("span"); lmin.className = "lmin"; lmin.textContent = fmtNum(m.minute) + "\u02B9";
@@ -1783,19 +1783,15 @@ async function load(){
 // Idempotent — if the player is already present, no-op. removeLoadingLottie
 // cleans up after the data arrives.
 function addLoadingLottie(el){
-  if(!el || el.querySelector("dotlottie-player.loading-lottie")) return;
-  var p = document.createElement("dotlottie-player");
-  p.className = "loading-lottie";
-  p.setAttribute("src","/loading.lottie");
-  p.setAttribute("autoplay","");
-  p.setAttribute("loop","");
-  p.setAttribute("background","transparent");
+  if(!el || el.querySelector(".loading-spin")) return;
+  var p = document.createElement("div");
+  p.className = "loading-spin";
   p.setAttribute("aria-hidden","true");
   el.appendChild(p);
 }
 function removeLoadingLottie(el){
   if(!el) return;
-  var p = el.querySelector("dotlottie-player.loading-lottie");
+  var p = el.querySelector(".loading-spin");
   if(p) p.remove();
 }
 var DATA = { upcoming: [], finished: [], nextBig: null, topSpot: null, thisWeek: [], nextWeek: [], standings: null, cups: null, cached: false, cachedAt: null };
@@ -1954,7 +1950,8 @@ function renderLive(){
   var card = document.getElementById("liveCard"), el = document.getElementById("liveMatches");
   if(!card || !el) return;
   el.innerHTML = "";
-  // v12.x-live-lottie: replace the breathing green dot with the Live.lottie
+  // v13.4-live-css: the h2 carries the breathing green dot (.live-breath CSS)
+  // — the CSP-blocked CDN lottie never rendered; this restores the visible badge.
   // animation (a pulsing "LIVE" badge). The <dotlottie-player> is injected
   // once per renderLive call (removed if already present from a previous
   // call). The h2 text node keeps the "مسابقات زنده" heading (the 🔴 emoji
@@ -1963,10 +1960,9 @@ function renderLive(){
   if(h2){
     var oldBreath = h2.querySelector(".live-breath");
     if(oldBreath) oldBreath.remove();
-    var oldLottie = h2.querySelector("dotlottie-player.live-lottie");
-    if(oldLottie) oldLottie.remove();
-    var lottie = document.createElement("dotlottie-player"); lottie.className = "live-lottie"; lottie.setAttribute("src","/Live.lottie"); lottie.setAttribute("autoplay",""); lottie.setAttribute("loop",""); lottie.setAttribute("background","transparent"); lottie.setAttribute("aria-hidden","true");
-    h2.insertBefore(lottie, h2.firstChild);
+    var breath = document.createElement("span"); breath.className = "live-breath";
+    breath.setAttribute("aria-hidden","true");
+    h2.insertBefore(breath, h2.firstChild);
     // Strip the 🔴 emoji from the text node (the data-i="hLive" i18n string starts with 🔴)
     h2.childNodes.forEach(function(n){ if(n.nodeType === 3 && n.textContent.indexOf("\u{1F534}") !== -1) n.textContent = n.textContent.replace(/\u{1F534}\s*/g, ""); });
   }
@@ -2356,8 +2352,9 @@ function spotItemNode(m, idx, opts){
     var inLiveCard = !!(opts && opts.isLiveCard);
     if(!inLiveCard){
       var chip = document.createElement("span"); chip.className = "livechip";
-      var lottie = document.createElement("dotlottie-player"); lottie.className = "live-lottie"; lottie.setAttribute("src","/Live.lottie"); lottie.setAttribute("autoplay",""); lottie.setAttribute("loop",""); lottie.setAttribute("background","transparent");
-      chip.appendChild(lottie);
+      var dot = document.createElement("span"); dot.className = "dot";
+      chip.appendChild(dot);
+      chip.appendChild(document.createTextNode(T("live")));
       info.appendChild(chip);
     }
     if(m.minute != null){ var lmin = document.createElement("span"); lmin.className = "lmin"; lmin.textContent = fmtNum(m.minute) + "\u02B9"; info.appendChild(lmin); }
