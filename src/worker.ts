@@ -5633,8 +5633,8 @@ body.joinsticky{padding-bottom:88px}
    position:absolute (the data layer is now absolute to center the content).
    240px on phones gives enough room for the match row + countdown bar.
    Desktop gets a larger min-height via the media query below. */
-.card.bighero{position:relative;overflow:hidden;border-radius:16px;margin:0;min-height:200px;border-color:rgba(52,211,153,.38);background-image:radial-gradient(130% 100% at 50% -30%,rgba(52,211,153,.18),transparent 55%),linear-gradient(168deg,rgba(6,95,70,.34),rgba(2,6,23,.14))}
-[data-theme="light"] .card.bighero{border-color:rgba(5,150,105,.38);background-image:radial-gradient(130% 100% at 50% -30%,rgba(16,185,129,.20),transparent 55%),linear-gradient(168deg,rgba(209,250,229,.70),rgba(255,255,255,.30))}
+.card.bighero{position:relative;overflow:hidden;border-radius:16px;margin:0;min-height:200px;border-color:#2c3440;background-image:radial-gradient(130% 100% at 50% -30%,rgba(52,211,153,.18),transparent 55%),linear-gradient(168deg,rgba(6,95,70,.34),rgba(2,6,23,.14))}
+[data-theme="light"] .card.bighero{border-color:#2c3440;background-image:radial-gradient(130% 100% at 50% -30%,rgba(16,185,129,.20),transparent 55%),linear-gradient(168deg,rgba(209,250,229,.70),rgba(255,255,255,.30))}
 /* v12.27 (review item 1): HERO CLIP \u2014 the card itself now clips everything to
    its own 16px radius (overflow:hidden). Before, only the inner layers clipped
    themselves at 15px \u2014 a 1px-radius mismatch at the corners, and (the real
@@ -5648,6 +5648,7 @@ body.joinsticky{padding-bottom:88px}
    filter moved onto the .hero-wm LAYER (a filtered container clips its own
    children \u2014 the imgs themselves stay unfiltered). */
 .herowrap{position:relative;margin:14px 0}
+.card.bighero{filter:drop-shadow(0 4px 16px rgba(0,0,0,.45))}
 .herowrap::before{content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;box-shadow:0 0 40px rgba(5,150,105,.24);opacity:.4;animation:hero-heart 2.6s ease-in-out infinite}
 .card.bighero::before{content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;box-shadow:inset 0 0 64px rgba(16,185,129,.10);opacity:.4;animation:hero-heart 2.6s ease-in-out infinite}
 @keyframes hero-heart{0%,100%{opacity:.35}8%{opacity:.9}16%{opacity:.5}24%{opacity:.75}36%{opacity:.35}}
