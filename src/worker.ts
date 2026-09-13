@@ -6223,10 +6223,12 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
 .stpos.top3{color:var(--accent)}
 /* v12.x-bold-top1: the leader (position 1) of each league is bolded —
    the entire row (position number + team name + points) gets a heavier
-   font-weight so the table leader stands out at a glance. */
-.strow.top1{font-weight:800}
-.strow.top1 .stname{font-weight:800}
+   font-weight so the table leader stands out at a glance. The font-size
+   is also 2 units larger (11.5px → 13.5px) for the leader's name. */
+.strow.top1{font-weight:800;font-size:13.5px}
+.strow.top1 .stname{font-weight:800;font-size:13.5px}
 .strow.top1 .stpts{font-weight:800}
+.strow.top1 .stpos{font-weight:800}
 .stname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* v12.18: UCL rows carry a ROUND club crest (the user's ask) \u2014 same circle
    language as the match rows, miniaturized for the dense table. */
@@ -7560,7 +7562,7 @@ function renderUcl(d){
     var num = function(v){ return (v == null || isNaN(v)) ? "\u2014" : fmtNum(v); };
     var gdTxt = function(t2){ if(t2.gd == null) return (t2.gf == null || t2.ga == null) ? "\u2014" : fmtNum(t2.gf - t2.ga); return (t2.gd>0?"+":"")+fmtNum(t2.gd); };
     d.teams.forEach(function(t){
-      var r = document.createElement("div"); r.className = "strow";
+      var r = document.createElement("div"); r.className = "strow" + (t.pos===1 ? " top1" : "");
       var p = document.createElement("span"); p.className = "stpos" + (t.pos<=8 ? " top3" : ""); p.textContent = fmtNum(t.pos);
       // v12.18: round club crest before the name (the user's ask) \u2014 resolved
       // server-side against the clubs catalog; rows without one render
