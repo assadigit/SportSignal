@@ -15,7 +15,7 @@ import { CONFIG, COMP_EN, LEAGUE_LOGOS } from "./config";
 import type { Env } from "./types";
 import { getJalaliDate, getJalaliTime, getEnglishDate, getEnglishTime } from "./utils";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
-import { matchKey } from "./dedupe.js";
+import { matchKey } from "./dedupe";
 import { VAZIRMATN_BOLD_TTF_B64, VAZIRMATN_EXTRABOLD_TTF_B64 } from "./card-fonts";
 
 // v13.17-cards: resvg-wasm init (lazy, once per isolate). The WASM module

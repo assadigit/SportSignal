@@ -5,7 +5,7 @@
 
 import { CONFIG, STAGE_FA } from "./config";
 import type { Env } from "./types";
-import { normTeamKey } from "./teams.js";
+import { normTeamKey } from "./teams";
 import { buildFaTeamDict } from "./fa-dict";
 
 var FA_TEAMS_DICT = null;

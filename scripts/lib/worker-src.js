@@ -18,6 +18,9 @@ function transform(ts) {
   c = c.replace(/^export const\s+/gm, "var ");
   c = c.replace(/^export let\s+/gm, "var ");
   c = c.replace(/^export var\s+/gm, "var ");
+  // v13.33: teams/dedupe are TS now — strip export from interface/type so
+  // eval'd concatenations stay parseable (types are erased, not executed).
+  c = c.replace(/^export (interface|type)\s+/gm, "$1 ");
   // export function / export async function → plain
   c = c.replace(/^export (async )?function\s+/gm, "$1function ");
   c = c.replace(/^export default\s+/gm, "");
@@ -41,7 +44,7 @@ function transform(ts) {
 function workerSrc() {
   if (cache) return cache;
   const order = [
-    "worker.ts", "config.ts", "utils.ts", "fa-dict.ts", "translate.ts", "fa-ai.ts",
+    "worker.ts", "config.ts", "utils.ts", "teams.ts", "dedupe.ts", "fa-dict.ts", "translate.ts", "fa-ai.ts",
     "matches.ts", "providers.ts", "telegram.ts", "composers.ts", "digest.ts", "x.ts",
     "notifications.ts", "users.ts", "admin.ts", "public-matches.ts", "bot.ts", "cron.ts",
     "api.ts",

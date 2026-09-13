@@ -74,12 +74,13 @@ check("pubMatch keeps venue", out.venue === "Emirates Stadium");
 const outNull = pubMatch({ homeTeam: { name: "A" }, awayTeam: { name: "B" }, utcDate: "x", competition: { code: "PL" }, status: "SCHEDULED" });
 check("pubMatch venue null when absent", outNull.venue === null);
 
-// 4) canonical-key dedupe lives in src/dedupe.js; cacheMatches wires it into the KV merge
-const dedupeSrc = fs.readFileSync("src/dedupe.js", "utf8");
+// 4) canonical-key dedupe lives in src/dedupe.ts; cacheMatches wires it into the KV merge
+const dedupeSrc = fs.readFileSync("src/dedupe.ts", "utf8");
 check(
   "cacheMatches dedupes on canonical key (module)",
   /const merged = canonDedupe\(\[\.\.\.head, \.\.\.matches\]\);/.test(src) &&
-    /const canon = \(m\) => .*normalizeTeamName/.test(dedupeSrc) &&
+    // v13.33-ts: tolerate optional param type annotations (`(m)` / `(m: MatchLike)`)
+    /const canon = \(m(?::[^)]*)?\) => .*normalizeTeamName/.test(dedupeSrc) &&
     /adopt\(m, cur\)/.test(dedupeSrc) &&
     /\[\.\.\.byKey\.values\(\)\]/.test(dedupeSrc)
 );

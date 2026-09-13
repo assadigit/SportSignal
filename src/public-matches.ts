@@ -6,7 +6,7 @@
 import { CONFIG, LEAGUE_LOGOS, COMP_EN } from "./config";
 import type { Env } from "./types";
 import { fetchJSON, getNowTehran } from "./utils";
-import { normalizeTeamName, normTeamKey } from "./teams.js";
+import { normalizeTeamName, normTeamKey } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus, isFeaturedMatch, normAlias, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby } from "./matches";
 import { fetchLongView, getCachedMatches } from "./providers";

@@ -6,7 +6,7 @@
 import { CONFIG, STAGE_FA, COMP_EN, SPORTSCORE_SLUGS } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, getRelativeTimeUntilMatch, getEnglishDate, getEnglishTime, getEnglishRelative, fetchJSON, enStageName } from "./utils";
-import { normalizeTeamName } from "./teams.js";
+import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, faStageName, isDomesticCup } from "./translate";
 import { normAlias, isMasterPair, isDerby } from "./matches";
 import { providerSuspended, clearProviderSuspension, fetchPglTableFromWikipedia } from "./providers";

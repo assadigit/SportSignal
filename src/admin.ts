@@ -6,8 +6,8 @@
 import { CONFIG, SPORTSCORE_SLUGS } from "./config";
 import type { Env } from "./types";
 import { timingSafeEqualStr, fetchJSON, bumpSubrequest } from "./utils";
-import { normalizeTeamName } from "./teams.js";
-import { matchKey } from "./dedupe.js";
+import { normalizeTeamName } from "./teams";
+import { matchKey } from "./dedupe";
 import { normAlias } from "./matches";
 
 export function isAdminRequest(req, env) {

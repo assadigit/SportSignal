@@ -6,7 +6,7 @@
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { toFaDigits } from "./utils";
-import { normalizeTeamName } from "./teams.js";
+import { normalizeTeamName } from "./teams";
 import { sendTelegram } from "./telegram";
 import { normAlias } from "./matches";
 

@@ -5,7 +5,7 @@
 
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { normTeamKey } from "./teams.js";
+import { normTeamKey } from "./teams";
 import { translateTeam, resetFaAiCache, ensureFaAiCache, ensureFaVenueCache, isValidFaName, faAiCacheSize, faVenueCacheSize } from "./translate";
 
 export function collectUnknownTeamNames(data: any) {

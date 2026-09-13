@@ -5,8 +5,8 @@
 
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { normalizeTeamName } from "./teams.js";
-import { matchKey } from "./dedupe.js";
+import { normalizeTeamName } from "./teams";
+import { matchKey } from "./dedupe";
 import { vlog, getNowUTC } from "./utils";
 import { isDomesticCup, isQuarterFinalOrLater } from "./translate";
 import { masterTeamList, masterMemo } from "./users";

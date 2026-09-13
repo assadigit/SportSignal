@@ -5,10 +5,10 @@
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliTime, getJalaliDate, getEnglishTime, getEnglishDate } from "./utils";
-import { normalizeTeamName } from "./teams.js";
+import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
 import { shouldNotify } from "./matches";
-import { matchKey } from "./dedupe.js";
+import { matchKey } from "./dedupe";
 import { fetchMatchesFromAPI } from "./providers";
 import { sendTelegram, answerCallbackQuery, sendPhotoBinary } from "./telegram";
 import { renderCardPngCached } from "./card";

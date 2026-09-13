@@ -4,8 +4,8 @@
 import { CONFIG, PROVIDER_LEAGUE_MAP, SPORTSCORE_SLUGS, TSP_LEAGUE_IDS, CUP_TSP_IDS } from "./config";
 import type { Env } from "./types";
 import { fetchJSON, fetchWithRetry } from "./utils";
-import { normalizeTeamName } from "./teams.js";
-import { canonDedupe } from "./dedupe.js";
+import { normalizeTeamName } from "./teams";
+import { canonDedupe } from "./dedupe";
 import { shouldNotify, mapStageName, parseTSPDate } from "./matches";
 import { getRegisteredChats } from "./users";
 import { sendTelegram } from "./telegram";

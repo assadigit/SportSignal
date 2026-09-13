@@ -186,7 +186,7 @@ const env = { STATE: kv, TEHRAN_TZ: "Asia/Tehran", API_TOKEN: "x" };
   //    reported duplicate-notification bug). Köln→Cologne folds too; the
   //    "1." prefix in "1. FC Köln" is a separate pre-existing edge (club
   //    ordinals), not part of this fix.
-  const { normalizeTeamName } = require("../src/teams.js");
+  const { normalizeTeamName } = require("../src/teams.ts");
   check("translit fold: FC Bayern München === Bayern Munich", normalizeTeamName("FC Bayern München") === normalizeTeamName("Bayern Munich"));
   check("translit fold: Köln → cologne (accent+exonym)", normalizeTeamName("FC Köln") === normalizeTeamName("Cologne"));
 

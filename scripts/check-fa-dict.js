@@ -8,7 +8,7 @@ const src = require("./lib/worker-src")();
 const dictSrc = src.match(/const FA_TEAMS = (\{[\s\S]*?\n  \});/)[1];
 const FA_TEAMS = eval("(" + dictSrc + ")");
 
-const { normTeamKey } = require("../src/teams.js");
+const { normTeamKey } = require("../src/teams.ts");
 
 function lookup(name) {
   if (FA_TEAMS[name]) return FA_TEAMS[name];

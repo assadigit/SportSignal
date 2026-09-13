@@ -6,8 +6,8 @@
 import type { Env } from "./types";
 import { CONFIG, X_CONFIG, VERSION, PAGE_SEC_HEADERS } from "./config";
 import { jsonResponse, resetSubrequestBudget, hashPassword, getAdminPassHash, timingSafeEqualStr, escapeMarkdownCharacters, getNowTehran } from "./utils";
-import { normalizeTeamName, normTeamKey } from "./teams.js";
-import { matchKey } from "./dedupe.js";
+import { normalizeTeamName, normTeamKey } from "./teams";
+import { matchKey } from "./dedupe";
 import { translateTeam, translateCompetition, resetFaAiCache, ensureFaAiCache, isValidFaName } from "./translate";
 import { maybeRunFaAi, collectUnknownTeamNames } from "./fa-ai";
 import { isWithin24HourWindow, isWithin3HourWindow, isWithin1HourWindow, isMatchStartingNow, shouldNotify, getNotifiedMatches } from "./matches";

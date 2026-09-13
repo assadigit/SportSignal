@@ -59,8 +59,8 @@ const translateTeam = (n) => n;
 const translateCompetition = (c) => c;
 const LEAGUE_LOGOS = {};
 
-const { normalizeTeamName, normTeamKey } = require("../src/teams.js");
-const { matchKey, canonDedupe } = require("../src/dedupe.js");
+const { normalizeTeamName, normTeamKey } = require("../src/teams.ts");
+const { matchKey, canonDedupe } = require("../src/dedupe.ts");
 // bundle-format shims: the deployed worker is a self-contained bundle — its
 // grabbed code calls (0, import_teams.X) / (0, import_dedupe.X) which must
 // resolve through this module scope.

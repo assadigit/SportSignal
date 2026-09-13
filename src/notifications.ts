@@ -6,8 +6,8 @@
 import { CONFIG, COMP_EN } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, getNowTehran, escapeMarkdownCharacters, subrequestCount } from "./utils";
-import { normalizeTeamName } from "./teams.js";
-import { matchKey } from "./dedupe.js";
+import { normalizeTeamName } from "./teams";
+import { matchKey } from "./dedupe";
 import { translateTeam, translateCompetition, getCompetitionPriority } from "./translate";
 import { isWithin24HourWindow, isWithinBigMatchWindow, isWithin3HourWindow, isWithin1HourWindow, isWithin5MinWindow, isMatchStartingNow, isWithinPostMatchWindow, isMatchFinished, getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, cleanupExpiredNotifications, isBackfillEligible, shouldNotify } from "./matches";
 import { format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, specialBanner } from "./composers";

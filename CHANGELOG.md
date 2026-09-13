@@ -14,6 +14,29 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.33-tsdebt] — 2026-09-13 (debt #4: dedupe.js + teams.js are TypeScript)
+
+### Migration (types only — logic byte-identical)
+- `src/teams.ts` + `src/dedupe.ts` replace the plain-JS modules. Typed with
+  erasable syntax only (no enums/namespaces) so **Node ≥23 `require()`s the
+  .ts directly** (type stripping) — the four CJS test consumers
+  (check-dedupe, check-fa-dict, check-composers, live-derby-test) now
+  `require("../src/teams.ts")` with no build step.
+- `MatchLike` interface documents the fields the dedupe module actually
+  touches (incl. `status`, which downstream consumers read off the same
+  pass-through rows).
+- Worker imports switch to extensionless `./teams` / `./dedupe` (esbuild +
+  tsc resolve to .ts); the modules' own relative import uses the explicit
+  `./teams.ts` form (required by Node ESM type-stripping require).
+- tsconfig: +`allowImportingTsExtensions` (noEmit already set).
+- Eval harness (`scripts/lib/worker-src.js`): teams/dedupe join the
+  concatenation order; `export interface/type` now stripped like other
+  exports. check-venue's dedupe regex tolerates parameter type annotations
+  (the exact harness brittleness debt #2 describes — the `(m)` vs
+  `(m: MatchLike)` shape).
+- Gates: tsc 0 errors + 352 assertions green; wrangler --dry-run bundles.
+
+---
 ## [13.32-router] — 2026-09-13 (debt #1: the ~45-branch fetch if-chain is a declarative route table)
 
 ### Refactor (behavior-preserving, mechanically verified)

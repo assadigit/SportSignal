@@ -5,7 +5,7 @@
 //     both funnel through canonDedupe, so duplicate rows can't reach the UI
 const fs = require("fs");
 const src = require("./lib/worker-src")();
-const { canonDedupe } = require("../src/dedupe.js");
+const { canonDedupe } = require("../src/dedupe.ts");
 
 let fails = 0;
 const check = (name, cond) => {
