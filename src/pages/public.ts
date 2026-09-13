@@ -487,8 +487,8 @@ body.joinsticky{padding-bottom:88px}
    ink text, line border) \u2014 the theme-aware pair replaces the light override. */
 .livechip{display:inline-flex;align-items:center;gap:6px;background:var(--t-success-soft);color:var(--t-success-ink);border:1px solid var(--t-success-line);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;margin:0 6px;vertical-align:middle}
 .livechip .dot{width:8px;height:8px;border-radius:50%;background:var(--badge-live);animation:live-beep 1.1s ease-in-out infinite}
-/* v12.x-live-lottie: the Live.lottie animation (a pulsing "LIVE" badge)
-   replaces the CSS-animated dot + "در حال برگزاری" text in the livechip
+/* v13.4-live-css: the livechip's pulsing dot + LIVE text (pure CSS —
+   live-beep keyframes below; the CSP-blocked lottie CDN player was removed
    and the #liveCard h2 heading. The <dotlottie-player> element renders
    the .lottie file (served from /Live.lottie). Sized to match the chip:
    40x16px in the livechip, 56x22px in the h2 heading. The autoplay +

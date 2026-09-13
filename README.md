@@ -74,14 +74,42 @@ npm test
 `npm run deploy` deploys via `wrangler` (requires `CLOUDFLARE_API_TOKEN` / account
 secrets).
 
-### 3. File Structure
+### 3. File Structure (v13 — modular)
 
-* `src/worker.ts`: The core TypeScript worker code containing all configuration, API logic, translation functions, and notification logic.
-* `src/teams.js` / `src/dedupe.js`: Shared helper modules (team-name normalization, match dedupe) imported by the worker.
+The monolithic single-file worker was split into real ES modules (v13.0). Wrangler bundles the module graph from the thin entry — no build step, same runtime.
+
+```
+src/
+  worker.ts        entry — re-exports api.ts (fetch + scheduled)
+  types.ts         Env + domain interfaces (Match/Team/Standings/X…)
+  config.ts        VERSION, CONFIG, X_CONFIG + static tables (KV keys = live-state contracts!)
+  utils.ts         digits/dates/auth-hash/subrequest budget/HTTP helpers
+  fa-dict.ts       static Farsi team dictionary (translation layer 1)
+  translate.ts     3-layer translation + competition helpers (layers 2–3: AI/admin)
+  fa-ai.ts         Workers AI Farsi-name learner
+  matches.ts       shouldNotify / windows / derby+master rules / notified-KV
+  providers.ts     football-data / sportscore / thesportsdb / Wikipedia PGL
+  telegram.ts      Bot API senders (retry / 429 pause / dead-chat)
+  composers.ts     message composers + standings pipeline
+  digest.ts        weekly tables / morning digest / coronation alerts
+  x.ts             X (Twitter) automated profile (OAuth 1.0a, budget, dedupe)
+  notifications.ts per-match notification engine + status-change detection
+  users.ts         chat registry / member profiles / prefs / master list
+  admin.ts         sessions / settings / clubs catalog / dummy fixtures
+  public-matches.ts /api/public-matches pipeline (cache+lock+enrich+shape)
+  bot.ts           Telegram webhook handler (/start /lang /follow /next …)
+  cron.ts          the */10 sweep
+  api.ts           HTTP router
+  pages/           PUBLIC / LOGIN / ADMIN templates + shared client-core.ts
+                   (ONE I18N dict + theme/lang helpers — was ×3 copies)
+```
+
+* `src/teams.js` / `src/dedupe.js`: shared helper modules (team-name normalization, match dedupe) — imported by the worker AND required by the test scripts.
 * `wrangler.toml`: Cloudflare Worker configuration, defining the cron trigger and KV namespace binding (`STATE`).
-* `assets/`: Static assets (`bg.jpg`) + self-hosted `Vazirmatn` web fonts (served by the `[assets]` binding; referenced via `@font-face`).
+* `assets/`: static assets (`bg.jpg`, hero video) + self-hosted `Vazirmatn` web fonts + `assets/_headers` cache policy.
 * `design-system/ucl-notifier/MASTER.md`: Visual design system / MASTER reference for the public page.
-* `scripts/`: Self-check regression gates (assert real `worker.ts` behavior) — run by `npm test`.
+* `scripts/`: self-check regression gates — `scripts/lib/worker-src.js` concatenates the modules into one source string (transformed to runnable JS) so the gates keep asserting REAL source behavior; run by `npm test`.
+* `scripts/refactor-*.mjs`: the documented, re-runnable extraction pipeline that produced the split (bundle kept at `scripts/worker.bundle-v12.33.ts`).
 * `CHANGELOG.md`: Per-version change history.
 * `package.json` / `tsconfig.json`: Standard Node/TypeScript dependency and compiler configuration.
 * `.dev.vars`: Local development secrets file (IGNORED by Git).

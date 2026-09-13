@@ -899,3 +899,45 @@ signature. fd retry attempts 3→2; TSP fallback window -2/+4 → -1/+2 days.
   stated): PGL reliability (sportscore primary + KV-snapshot fallback), FA Cup
   tier/round filtering, EL/ECL qualifying relabel, scheduled-score hygiene
   (null `score` unless FINISHED/LIVE/PAUSED), BL1 season-freshness guard.
+
+## 13.4-modular — the great modularization (2026-09-13)
+
+### v13.0-modular — 21 real ES modules replace the 10k-line bundle
+- `src/worker.ts` (10,002 lines, rollup-bundled artifact) split into 21 modules;
+  worker.ts is now a thin entry re-exporting `api.ts`.
+- Rollup noise stripped (`__name`/`__name2` decorators, CJS interop wrappers);
+  `src/teams.js` + `src/dedupe.js` imported directly again.
+- SUBREQUEST counter behind `bumpSubrequest()` (ES import bindings are read-only);
+  identical budget semantics.
+- Test infra: `scripts/lib/worker-src.js` (multi-file source loader, transformed
+  to runnable JS); all 13 self-check gates green. Zero behavior change.
+
+### v13.1-client-core — ONE shared client core
+- The ×3 I18N dictionaries (public/login/admin, ~60KB source, 2 diverged keys)
+  unified into `src/pages/client-core.ts` (191 fa/en keys) + the ×10 theme/lang
+  helpers. Template-literal form keeps the wire format byte-identical
+  (literal 2-byte Persian chars).
+- Favicon/manifest head block deduped ×3 → ×1.
+
+### v13.2-dedupe — duplication + dead code
+- `sendTelegram`/`sendTelegramWithKeyboard` merged (optional keyboard param).
+- thesportsdb event→match mapper extracted (`tspEventToMatch`, was ×3).
+- Dead `return new Response("OK")` + always-true `hasKeyboard` guards removed.
+- `/next` isolate-level `env.TEHRAN_TZ` mutation → scoped env clone.
+
+### v13.3-types — core domain types
+- `src/types.ts`: Env (LooseKV/WorkersAI/secrets), Match/TeamRef/Competition/
+  Standings/PublicCup/XPostResult interfaces; ~100 functions typed `env: Env`.
+- tsc noise 385 → 45 (37 scattered verbatim unknowns + 8 pre-existing dup keys).
+- **fix**: reverted reassociated `await …get().catch()` casts — a real
+  error-handling regression the eval-based test gate caught in CI-style.
+
+### v13.4-live-css — live badges actually visible + perf
+- **Pre-existing bug fixed**: the dotLottie CDN player was CSP-blocked
+  (`script-src 'self'`) AND was the wrong package (never registered
+  `<dotlottie-player>`) — live chips rendered EMPTY, loading states invisible.
+- Removed the render-blocking unpkg script (4 failed requests/visit gone);
+  live chips now use the CSS `live-beep` dot + text, liveCard h2 the
+  `live-breath` dot, loading states a pure-CSS spinner.
+- `assets/_headers`: 7-day cache for fonts/favicons (was `max-age=0`).
+- Page wire size: ~80KB (brotli); bundle 696KB → 628KB raw.
