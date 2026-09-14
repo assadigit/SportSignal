@@ -308,15 +308,16 @@ function render(list, el, finished){
   list.forEach(function(m, idx){
     var row = document.createElement("div"); row.className = "match";
     if(m.derby) row.className += " derby";
-    // v13.35-favs: gold accent on results featuring starred teams.
-    if(hasAnyFav(m)) row.className += " hasfav";
+    // v13.39-favpark: gold accent parked with the feature (favStarBtn null +
+    // hasfav gated) — no star, no rail, the row is a plain fixture again.
+    if(FAVS_UI_ENABLED && hasAnyFav(m)) row.className += " hasfav";
     row.style.setProperty("--i", idx);
     var h = logo(m.homeTeam), a = logo(m.awayTeam);
     var en = curLang()==="en";
     var hName = document.createElement("div"); hName.className = "team"; nameInto(hName, en ? m.homeTeam.name : (m.homeTeam.faName || m.homeTeam.name));
     var aName = document.createElement("div"); aName.className = "team"; nameInto(aName, en ? m.awayTeam.name : (m.awayTeam.faName || m.awayTeam.name));
-    var hs = document.createElement("div"); hs.className = "side"; hs.appendChild(h); hs.appendChild(hName); hs.appendChild(favStarBtn(m.homeTeam.name));
-    var as = document.createElement("div"); as.className = "side away"; as.appendChild(aName); as.appendChild(a); as.appendChild(favStarBtn(m.awayTeam.name));
+    var hs = document.createElement("div"); hs.className = "side"; hs.appendChild(h); hs.appendChild(hName); var hStar = favStarBtn(m.homeTeam.name); if(hStar) hs.appendChild(hStar);
+    var as = document.createElement("div"); as.className = "side away"; as.appendChild(aName); as.appendChild(a); var aStar = favStarBtn(m.awayTeam.name); if(aStar) as.appendChild(aStar);
     var live = !finished && (m.status==="LIVE"||m.status==="IN_PLAY"||m.status=="PAUSED");
     if((finished || live) && m.score && m.score.home !== null){
       var vs = scoreNode(m.score);
@@ -396,6 +397,15 @@ function render(list, el, finished){
 // stable across language switches (the FA display name is derived, not
 // stored). The bar renders above the first card; with no stars it teaches
 // the gesture instead of nagging.
+// v13.39-favpark: THE WHOLE FAVORITES UI IS PARKED. The user pulled the
+// star gesture + the favhint + the «منتخب‌ها» filter from the page but
+// wants the feature kept in the codebase for a future release. One flag
+// gates every surface: renderFavbar (bar + hint + manage popover),
+// favStarBtn (match rows, standings, UCL table, cup boxes), the .hasfav
+// gold rails, the sthead-star header spacers and the favFilter list
+// filter. Stored stars (ss_favs) are NOT wiped — flip the flag back to
+// true and returning users find their old favorites intact.
+var FAVS_UI_ENABLED = false;
 var FAVS = (function(){ try{ var a = JSON.parse(localStorage.getItem("ss_favs") || "[]"); var s = new Set(); (Array.isArray(a)?a:[]).forEach(function(n){ s.add(String(n).toLowerCase()); }); return s; }catch(e){ return new Set(); } })();
 var FAV_MODE = (function(){ try{ return localStorage.getItem("ss_favmode") === "1"; }catch(e){ return false; } })();
 // v13.36-favstand: CROSS-SOURCE matching. Stars can now be set from three
@@ -468,7 +478,14 @@ function setFavMode(on){
   try{ localStorage.setItem("ss_favmode", FAV_MODE ? "1" : "0"); }catch(e){}
   rerenderAll();
 }
-function favFilter(list){ return FAV_MODE && FAVS.size ? (list || []).filter(function(m){ return hasAnyFav(m); }) : (list || []); }
+function favFilter(list){
+  // v13.39-favpark: with the UI parked the filter MUST pass through — a
+  // returning user whose localStorage still has ss_favmode="1" would
+  // otherwise see every list silently filtered to a feature that no longer
+  // renders a toggle to turn it off.
+  if(!FAVS_UI_ENABLED) return (list || []);
+  return FAV_MODE && FAVS.size ? (list || []).filter(function(m){ return hasAnyFav(m); }) : (list || []);
+}
 function ensureFavbar(){
   var bar = document.getElementById("favbar");
   if(bar) return bar;
@@ -482,6 +499,14 @@ function ensureFavbar(){
   return bar;
 }
 function renderFavbar(){
+  // v13.39-favpark: parked — remove any bar a previous session left in the
+  // DOM (covers SPA re-renders + the popover that lives inside it) and
+  // return. Nothing favorites-related renders while FAVS_UI_ENABLED=false.
+  if(!FAVS_UI_ENABLED){
+    var stale = document.getElementById("favbar");
+    if(stale) stale.remove();
+    return;
+  }
   var bar = ensureFavbar(); if(!bar) return;
   bar.innerHTML = "";
   var en = curLang()==="en";
@@ -593,6 +618,9 @@ function renderFavPop(){
 // v13.35-favs: the per-team star toggle. Sits at the OUTER end of each
 // team side (flex order 99) so home/away mirror symmetrically in RTL+LTR.
 function favStarBtn(name){
+  // v13.39-favpark: parked — every call site guards a null return, the
+  // star button (and its 26px footprint) leaves every row it used to sit in.
+  if(!FAVS_UI_ENABLED) return null;
   var b = document.createElement("button");
   b.type = "button";
   var on = isFavTeam(name);
@@ -934,8 +962,11 @@ function renderStandings(d){
       // v13.36-favstand: every row ends with a 20px star — the header gets
       // a matching invisible spacer so «امتیاز»/Pts stays exactly over the
       // points column (same trick as sthead-p's fixed 34px slot).
-      var thst = document.createElement("span"); thst.className = "sthead-star"; thst.setAttribute("aria-hidden", "true");
-      th.appendChild(thst);
+      // v13.39-favpark: spacer only when the star column actually renders.
+      if(FAVS_UI_ENABLED){
+        var thst = document.createElement("span"); thst.className = "sthead-star"; thst.setAttribute("aria-hidden", "true");
+        th.appendChild(thst);
+      }
       box.appendChild(th);
       st.teams.forEach(function(t){
         var r = document.createElement("div"); r.className = "strow" + (t.pos===1 ? " top1" : "");
@@ -943,13 +974,14 @@ function renderStandings(d){
         // is starred (mirrors .match.hasfav) — same cross-source matching
         // as everywhere else (isFavTeam), so "Arsenal FC" here lights up a
         // star stored as "Arsenal" from a cup row and vice versa.
-        if(isFavTeam(t.name)) r.className += " hasfav";
+        // v13.39-favpark: parked with the feature.
+        if(FAVS_UI_ENABLED && isFavTeam(t.name)) r.className += " hasfav";
         var p = document.createElement("span"); p.className = "stpos" + (t.pos<=3 ? " top3" : ""); p.textContent = fmtNum(t.pos);
         var n = document.createElement("span"); n.className = "stname"; nameInto(n, curLang()==="en" ? t.name : (t.faName||t.name));
         var pl = document.createElement("span"); pl.className = "stnum ucl-hidem"; pl.textContent = (t.played == null || isNaN(t.played)) ? "—" : fmtNum(t.played);
         var pt = document.createElement("span"); pt.className = "stpts"; pt.textContent = fmtNum(t.points);
-        var sb = favStarBtn(t.name); sb.classList.add("ststar");
-        r.appendChild(p); r.appendChild(n); r.appendChild(pl); r.appendChild(pt); r.appendChild(sb);
+        var sb = favStarBtn(t.name); if(sb){ sb.classList.add("ststar"); r.appendChild(sb); }
+        r.appendChild(p); r.appendChild(n); r.appendChild(pl); r.appendChild(pt);
         box.appendChild(r);
       });
     } else {
@@ -971,15 +1003,16 @@ function cupBox(c){
   if(c.next){
     var n = c.next, en = curLang()==="en";
     var m = document.createElement("div"); m.className = "cupmatch";
-    // v13.36-favstand: stars in cup boxes too — the cup fixture list was the
-    // last match surface without the gesture. Inline 18px stars after each
-    // name (not the 26px row-end pattern: this line is a compact one-liner).
-    var teams = document.createElement("div"); teams.className = "teams";
-    var t1 = document.createElement("span"); nameInto(t1, en ? n.homeTeam.name : (n.homeTeam.faName||n.homeTeam.name)); teams.appendChild(t1);
-    var c1 = favStarBtn(n.homeTeam.name); c1.classList.add("cupstar"); teams.appendChild(c1);
-    teams.appendChild(document.createTextNode(" – "));
-    var t2 = document.createElement("span"); nameInto(t2, en ? n.awayTeam.name : (n.awayTeam.faName||n.awayTeam.name)); teams.appendChild(t2);
-    var c2 = favStarBtn(n.awayTeam.name); c2.classList.add("cupstar"); teams.appendChild(c2);
+      // v13.35-favstand: stars in cup boxes too — the cup fixture list was the
+      // last match surface without the gesture. Inline 18px stars after each
+      // name (not the 26px row-end pattern: this line is a compact one-liner).
+      // v13.39-favpark: parked — the teams line renders text-only again.
+      var teams = document.createElement("div"); teams.className = "teams";
+      var t1 = document.createElement("span"); nameInto(t1, en ? n.homeTeam.name : (n.homeTeam.faName||n.homeTeam.name)); teams.appendChild(t1);
+      var c1 = favStarBtn(n.homeTeam.name); if(c1){ c1.classList.add("cupstar"); teams.appendChild(c1); }
+      teams.appendChild(document.createTextNode(" – "));
+      var t2 = document.createElement("span"); nameInto(t2, en ? n.awayTeam.name : (n.awayTeam.faName||n.awayTeam.name)); teams.appendChild(t2);
+      var c2 = favStarBtn(n.awayTeam.name); if(c2){ c2.classList.add("cupstar"); teams.appendChild(c2); }
     m.appendChild(teams);
     // v13.35-rounds: the round label («یک‌هشتم نهایی» / "Round of 16") sits
     // between the pairing and the date — the visible half of the FA Cup /
@@ -1093,8 +1126,10 @@ function renderUcl(d){
     // v13.36-favstand: same star-spacer contract as the compact boxes — the
     // sticky header's Pts label stays over the numbers, the star column
     // (rows only) trails it.
-    var hst = document.createElement("span"); hst.className = "sthead-star"; hst.setAttribute("aria-hidden", "true");
-    hr.appendChild(hpos); hr.appendChild(hname); hr.appendChild(hmp); hr.appendChild(hw); hr.appendChild(hd); hr.appendChild(hl); hr.appendChild(hgf); hr.appendChild(hga); hr.appendChild(hgd); hr.appendChild(hpt); hr.appendChild(hst);
+    // v13.39-favpark: spacer only when the star column actually renders.
+    var hst = FAVS_UI_ENABLED ? document.createElement("span") : null;
+    if(hst){ hst.className = "sthead-star"; hst.setAttribute("aria-hidden", "true"); }
+    hr.appendChild(hpos); hr.appendChild(hname); hr.appendChild(hmp); hr.appendChild(hw); hr.appendChild(hd); hr.appendChild(hl); hr.appendChild(hgf); hr.appendChild(hga); hr.appendChild(hgd); hr.appendChild(hpt); if(hst) hr.appendChild(hst);
     st.appendChild(hr);
     var num = function(v){ return (v == null || isNaN(v)) ? "—" : fmtNum(v); };
     var gdTxt = function(t2){ if(t2.gd == null) return (t2.gf == null || t2.ga == null) ? "—" : fmtNum(t2.gf - t2.ga); return (t2.gd>0?"+":"")+fmtNum(t2.gd); };
@@ -1102,7 +1137,8 @@ function renderUcl(d){
       var r = document.createElement("div"); r.className = "strow" + (t.pos===1 ? " top1" : "");
       // v13.36-favstand: gold accent + star on starred clubs (the UCL table
       // is the deepest table on the page — the same gesture as the boxes).
-      if(isFavTeam(t.name)) r.className += " hasfav";
+      // v13.39-favpark: parked with the feature.
+      if(FAVS_UI_ENABLED && isFavTeam(t.name)) r.className += " hasfav";
       var p = document.createElement("span"); p.className = "stpos" + (t.pos<=8 ? " top3" : ""); p.textContent = fmtNum(t.pos);
       // v12.18: round club crest before the name (the user's ask) — resolved
       // server-side against the clubs catalog; rows without one render
@@ -1125,8 +1161,8 @@ function renderUcl(d){
       var ga = document.createElement("span"); ga.className = "stnum ucl-hidem"; ga.textContent = num(t.ga);
       var gd = document.createElement("span"); gd.className = "stnum"; gd.textContent = gdTxt(t);
       var pt = document.createElement("span"); pt.className = "stpts"; pt.textContent = fmtNum(t.points);
-      var sb = favStarBtn(t.name); sb.classList.add("ststar");
-      r.appendChild(p); r.appendChild(n); r.appendChild(mp); r.appendChild(w); r.appendChild(dd); r.appendChild(ll); r.appendChild(gf); r.appendChild(ga); r.appendChild(gd); r.appendChild(pt); r.appendChild(sb);
+      var sb = favStarBtn(t.name); if(sb){ sb.classList.add("ststar"); r.appendChild(sb); }
+      r.appendChild(p); r.appendChild(n); r.appendChild(mp); r.appendChild(w); r.appendChild(dd); r.appendChild(ll); r.appendChild(gf); r.appendChild(ga); r.appendChild(gd); r.appendChild(pt);
       st.appendChild(r);
     });
   } else {
@@ -1199,15 +1235,16 @@ function spotItemNode(m, idx, opts){
   // and the time chip swaps to the «پایان‌یافته» (expired) state.
   if(opts && opts.past) item.className += " past";
   // v13.35-favs: matches featuring a starred team get the gold .hasfav accent.
-  if(hasAnyFav(m)) item.className += " hasfav";
+  // v13.39-favpark: parked with the feature.
+  if(FAVS_UI_ENABLED && hasAnyFav(m)) item.className += " hasfav";
   var row = document.createElement("div"); row.className = "match";
   if(m.derby) row.className += " derby";
   row.style.setProperty("--i", idx);
   var en = curLang()==="en";
   var hName = document.createElement("div"); hName.className = "team"; nameInto(hName, en ? m.homeTeam.name : (m.homeTeam.faName || m.homeTeam.name));
   var aName = document.createElement("div"); aName.className = "team"; nameInto(aName, en ? m.awayTeam.name : (m.awayTeam.faName || m.awayTeam.name));
-  var hs = document.createElement("div"); hs.className = "side"; hs.appendChild(logo(m.homeTeam)); hs.appendChild(hName); hs.appendChild(favStarBtn(m.homeTeam.name));
-  var as = document.createElement("div"); as.className = "side away"; as.appendChild(aName); as.appendChild(logo(m.awayTeam)); as.appendChild(favStarBtn(m.awayTeam.name));
+  var hs = document.createElement("div"); hs.className = "side"; hs.appendChild(logo(m.homeTeam)); hs.appendChild(hName); var hStar = favStarBtn(m.homeTeam.name); if(hStar) hs.appendChild(hStar);
+  var as = document.createElement("div"); as.className = "side away"; as.appendChild(aName); as.appendChild(logo(m.awayTeam)); var aStar = favStarBtn(m.awayTeam.name); if(aStar) as.appendChild(aStar);
   var live = m.status==="LIVE"||m.status==="IN_PLAY"||m.status==="PAUSED";
   // v12.16: opts.finished (the «در این هفته» agenda) also shows final scores.
   // v12.25: unplayed rows carry the KICKOFF TIME in the center slot (.kick) —
@@ -1318,7 +1355,47 @@ function renderHeroSpot(){
   // v12.32: #bigbarDate is gone — spotItemNode({noDate:true}) renders the
   // date itself, under the big time chip (.kickdate in the kick column).
   if(m) el.appendChild(spotItemNode(m, 0, {noDate:true}));
+  // v13.39-herofit: after every hero render, guarantee the two club names
+  // render whole (one line, no ellipsis) — see fitHeroNames below.
+  fitHeroNames();
 }
+// v13.39-herofit (the user's ask: 'Move clubs logos a little, so there are
+// enough space for club names, so they will never truncate'). The CSS side
+// (hero-data padding 18→10, .bighero .side gap 10→6, crest 102→96) hands
+// each featured name cell ~18 extra px; this pass makes 'never truncate'
+// hold for ANY name at ANY viewport: each name is measured with clipping
+// disabled and its font steps down (from the clamp() size, floor 11px)
+// until the FULL name fits its cell. The ellipsis (kept on the cell) is
+// now a true last resort, only reachable below the 11px readability floor.
+// Runs after every hero render (data ticks, language switches) and on a
+// debounced window resize, since both the clamp() base size and the flex
+// geometry are viewport-dependent.
+function fitHeroNames(){
+  var card = document.getElementById("bigHeroCard"); if(!card) return;
+  var names = card.querySelectorAll(".match .side .team");
+  for(var i=0;i<names.length;i++){
+    var t = names[i];
+    t.style.fontSize = ""; // reset so the clamp() base re-applies before measuring
+    t.style.overflow = "visible"; t.style.textOverflow = "clip";
+    var r = document.createRange(); r.selectNodeContents(t);
+    var fits = false, guard = 0;
+    while(t.clientWidth > 10 && guard++ < 8){
+      var fs = parseFloat(getComputedStyle(t).fontSize) || 16;
+      if(r.getBoundingClientRect().width <= t.clientWidth + 0.5){ fits = true; break; }
+      if(fs <= 11) break;
+      t.style.fontSize = (fs - 1) + "px";
+    }
+    t.style.overflow = ""; t.style.textOverflow = "";
+    if(!fits) t.style.fontSize = ""; // below the floor: let the ellipsis rule handle it
+  }
+}
+// v13.39-herofit: re-fit on viewport changes — debounced 150ms (the fit
+// reads layout; a resize storm would thrash reflow).
+var heroFitTimer = null;
+window.addEventListener("resize", function(){
+  if(heroFitTimer) clearTimeout(heroFitTimer);
+  heroFitTimer = setTimeout(fitHeroNames, 150);
+});
 // v12.23 (the user's ask): the giant faded crests behind the hero stage —
 // "the expanded logo of clubs in lower opacity on the background of the
 // next big upcoming match". One watermark per club, anchored to its club's

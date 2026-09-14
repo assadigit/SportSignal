@@ -11,6 +11,12 @@
 //              caches after the v13.6 asset split. The activate handler
 //              deletes every cache !== CACHE, so the bump is a one-shot
 //              clean sweep on the next SW takeover.)
+// Cache name:  sportsignal-v9 (v13.39: bumped from v8 — one-shot evict of
+//              stranded v13.36-v13.38 entries. Those releases edited
+//              public-13.12.js/css in place WITHOUT a rename, and the
+//              cache-first asset rule below kept serving stale JS to every
+//              SW client since v13.36. The bump guarantees this release's
+//              parked-favorites + no-truncation page reaches everyone.)
 // Cache name:  sportsignal-v8 (v13.36: bumped from v7 — one-shot evict of
 //              v13.35 entries; public-13.11→13.12 renamed in the same
 //              release. cache-first-forever assets can't refresh on stale
@@ -26,7 +32,7 @@
 //              any stranded/stale asset entries on client browsers; the
 //              client assets were renamed public-13.8→public-13.9 in the
 //              same release, so the bump also guarantees a clean slate.)
-const CACHE = "sportsignal-v8";
+const CACHE = "sportsignal-v9";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

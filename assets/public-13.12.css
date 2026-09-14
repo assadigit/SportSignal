@@ -279,7 +279,11 @@ body.joinsticky{padding-bottom:88px}
 [data-theme="light"] .hero-video::after{background:rgba(248,250,252,.42)}
 /* v12.50: hero-data is vertically centered — the match row + the countdown
    bar sit in the MIDDLE of the hero card, not aligned to the top. */
-.hero-data{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:80px 18px 18px}
+/* v13.39-herofit (the user's ask — featured-section club names must never
+   truncate): the data layer's horizontal padding 18px → 10px pushes the
+   whole face-off row (and its crests) 8px closer to the card's outer edges
+   on BOTH sides; the reclaimed 16px goes straight into the two name cells. */
+.hero-data{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:80px 10px 18px}
 /* v12.23: the sweep MOVED from .card.bighero::after (unclipped — the heartbeat-scrollbar bug) into the already-clipped .hero-fx layer, so the light band can wash over the stage but never escape the card. Same gradient, same rhythm. v12.26: the fx layer sits ABOVE the video + crests and BELOW the data (the user's ladder: video < logos < css effects < data). */
 .hero-fx::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.05) 44%,rgba(255,255,255,.13) 50%,rgba(255,255,255,.05) 56%,transparent 68%);transform:translateX(-140%);animation:hero-sweep 6.5s cubic-bezier(.55,0,.45,1) infinite}
 @keyframes hero-sweep{0%{transform:translateX(-140%)}42%,100%{transform:translateX(140%)}}
@@ -343,7 +347,11 @@ body.joinsticky{padding-bottom:88px}
    (51px → 102px, the monogram fallback scales with the circle) — the
    face-off reads like a big-match poster. Phones keep their own 46px size
    from the mobile block below. */
-@media (min-width:601px){.bighero .logo{width:102px;height:102px;font-size:44px}}
+/* v13.39-herofit: hero crest 102px → 96px (still ~1.9× the topspot's 51px —
+   the hierarchy holds) — the name cell next to it gains another 6px. The
+   monogram fallback scales with the circle (44 → 42). Mid-band (601–900)
+   keeps its own 72px rule below. */
+@media (min-width:601px){.bighero .logo{width:96px;height:96px;font-size:42px}}
 .bighero .match .side{animation:hero-side .5s cubic-bezier(.16,1,.3,1) both}
 .bighero .match .side:first-child{--sx:34px}
 .bighero .side.away{--sx:-34px}
@@ -410,6 +418,13 @@ body.joinsticky{padding-bottom:88px}
    (another heartbeat-scrollbar source); the row now clips it, and the ⋯
    share popover (in the info line, OUTSIDE .match) is unaffected. */
 .bighero .match{overflow:hidden;gap:24px}
+/* v13.39-herofit (the user's ask): the crest→name gap 10px → 6px inside the
+   hero's sides only (every other card keeps the global 10px) — 4 more px
+   per name. Combined with the hero-data padding cut (−8px/side) and the
+   96px crest (−6px), each featured name cell is ~18px wider at the same
+   card width; the JS-side fitHeroNames() pass (public-13.12.js) then
+   guarantees the full name renders on one line at ANY viewport. */
+.bighero .side{gap:6px}
 /* escalation ladder: soon (≤24h) → blue; final (≤60min) & live → red alarm.
    v12.x-blue-urgent-border (the user's ask): the 'soon' border was amber
    (#fbbf24/.5) — the user said 'remove the yellow/green-ish border around
@@ -620,7 +635,7 @@ body.joinsticky{padding-bottom:88px}
    purely decorative (no favorite-league toggle behind it), so it stays a
    background layer — the functional UCL brand is the small .ucl-logo chip in
    the headings. */
-.ucl-stand{max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:6px 10px;background:rgba(15,23,42,.72)}
+.ucl-stand{max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:6px 8px;background:rgba(15,23,42,.72)}
 [data-theme="light"] .ucl-stand{background:rgba(248,250,252,.78)}
 .ucl-stand-wrap .stnot-overlay{top:6px;left:6px;right:6px;bottom:6px;background:rgba(2,6,23,.6)}
 [data-theme="light"] .ucl-stand-wrap .stnot-overlay{background:rgba(248,250,252,.7)}
@@ -667,8 +682,17 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    the score's x position wander per row); the score below is a FIXED
    CENTERED SLOT, so every scored row on the page carries its result at the
    same x line and team columns line up across rows and cards. */
-.side{display:flex;align-items:center;gap:12px;flex:1 1 0;min-width:0;flex-wrap:nowrap}
-.side .team{flex:1;min-width:0;padding-inline:4px;overflow:hidden;text-overflow:ellipsis}
+/* v13.39-notrunc (the user's ask): long club names truncated to «اینتر……» in
+   the narrow ≥1440px rail (the live rows + the UCL table — the star column
+   alone ate 26px of every row). Two-part fix, the user's own prescription:
+   the favorites UI is parked (favStarBtn → null everywhere, +28px per side)
+   and the containers WIDEN — the rail column grows 400-460px → 440-500px so
+   the two crests sit a little closer to the outer edges and the name columns
+   breathe; the row gaps slim (side 12→10, team padding 4→2) and the UCL
+   table's numeric columns densify (stnum 26→24, gaps 6→5, stand pad 10→8),
+   handing every freed pixel to the name. */
+.side{display:flex;align-items:center;gap:10px;flex:1 1 0;min-width:0;flex-wrap:nowrap}
+.side .team{flex:1;min-width:0;padding-inline:2px;overflow:hidden;text-overflow:ellipsis}
 .side.away .team{text-align:end}
 /* v12.18: PC crests +35% (38px → 51px, the user's ask) — the monogram
    fallback scales with the circle. Phones keep their own 46px size below. */
@@ -794,7 +818,10 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    images in the standings card headers are doubled (20px → 40px = +100%,
    the user's ask). Phones + tablets keep the 20px size. */
 @media (min-width:1440px){.stbox-head img{width:40px;height:40px;border-radius:5px}}
-.strow{display:flex;align-items:center;gap:6px;font-size:11.5px;padding:2.5px 0;border-bottom:1px dashed var(--border)}
+/* v13.39-notrunc: gap 6→5 + stnum 26→24 — the table gives the name column
+   ~20 more px; header (.sthead) rides the same 5px gap so the labels stay
+   exactly over their number columns. */
+.strow{display:flex;align-items:center;gap:5px;font-size:11.5px;padding:2.5px 0;border-bottom:1px dashed var(--border)}
 .strow:last-child{border-bottom:none}
 /* v12.27 (review item 4): the compact boxes carry a COLUMN HEADER for the
    points number («امتیاز» / «Pts») — the full UCL table already labels every
@@ -802,7 +829,7 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
    header row rides the same 6px-gap flex line the rows use, so the label
    sits exactly over the numbers column (stpts gets a fixed 34px end-aligned
    slot to lock the pair). */
-.sthead{display:flex;align-items:center;gap:6px;padding:0 2px 3px;border-bottom:1px solid var(--border)}
+.sthead{display:flex;align-items:center;gap:5px;padding:0 2px 3px;border-bottom:1px solid var(--border)}
 .sthead-fill{flex:1}
 .sthead-p{font-size:9.5px;font-weight:700;color:var(--muted);min-width:34px;text-align:end;flex-shrink:0}
 .stpos{width:16px;text-align:center;font-weight:800;color:var(--muted);flex-shrink:0}
@@ -825,7 +852,7 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
 /* v12.16: the UCL card is a COMPLETE league table — MP/W/D/L/GF/GA/GD/Pts
    stat columns + a sticky header row; the W/D/L/GF/GA middle columns fold
    away on phones (≤600px), leaving # | team | MP | GD | Pts. */
-.stnum{width:26px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums;color:var(--muted)}
+.stnum{width:24px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums;color:var(--muted)}
 /* v13.29-fix1: the league stboxes gain a «بازی» (played) column header —
    styled like the UCL table's numeric headers; hidden on ≤600px via ucl-hidem. */
 .sthead-num{font-size:9.5px;font-weight:700;color:var(--muted)}
@@ -1139,13 +1166,22 @@ h2{font-size:15.5px;padding:8px 12px}
    at the breakpoint and restores the exact single-column DOM order below
    it; the hero centers above the full-width countdown, whose match row is
    capped to a readable width. */
+/* v13.39-notrunc: the reference rail widens 400-460 → 440-500 (the user's
+   "increase the width of container"): the live/UCL/standings/cups cards get
+   the room their name columns were starving for; the main column keeps
+   830+px so the match boxes are untouched. */
 @media (min-width:1440px){
-body{max-width:1400px;display:grid;grid-template-columns:minmax(0,1fr) minmax(400px,460px);column-gap:28px;row-gap:14px;align-items:start}
+body{max-width:1400px;display:grid;grid-template-columns:minmax(0,1fr) minmax(440px,500px);column-gap:28px;row-gap:14px;align-items:start}
 /* v12.24: the WEBSITE header spans the full chrome row — logo pinned to
    the start corner, settings + Telegram CTA at the other end (the old
    centered-controls bar + hero title block are retired). */
 #topbar{margin-bottom:0}
-#heroSpot{max-width:880px;margin:0 auto}
+/* v13.39-notrunc: width:100% — plain `margin:0 auto` inside the column-flex
+   .hero-data made auto cross-axis margins size #heroSpot to FIT-CONTENT
+   (~536px, not the 880 cap), crushing the hero's team names to ~45px and
+   ellipsizing «اینتر میلان» → «اینتر……» (the user's screenshot). An explicit
+   width re-engages the max-width + auto-margin centering at the real 880px. */
+#heroSpot{width:100%;max-width:880px;margin:0 auto}
 #wideMain,#wideSide{display:flex;flex-direction:column;gap:14px}
 #wideMain>*,#wideSide>*{margin:0}
 #wideSide .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}

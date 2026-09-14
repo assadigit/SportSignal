@@ -6,11 +6,82 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
-# Changelog
+## [13.39-favpark] — 2026-09-14 (favorites UI parked (kept in codebase) + club-name truncation fix + SW cache evict)
 
-All notable changes to the UCL Notifier are documented here, newest first.
-Version strings follow the value exposed by the live `/api/status` endpoint
-(see `src/worker.ts` `VERSION`).
+### Changed — the star/favorites feature is OFF the page (code kept, per the user)
+- **Every favorites surface is parked behind one flag** (`FAVS_UI_ENABLED = false`
+  in `public-13.12.js`) — the user pulled the feature from the UI but wants it
+  kept in the codebase for possible future development:
+  - the «☆ برای دنبال‌کردن تیم موردعلاقه…» **favhint** (and the whole
+    `#favbar` — segmented «⭐ منتخب‌ها / همه بازی‌ها» filter + ✎ manager
+    popover) no longer renders; `renderFavbar` removes any stale bar from the
+    DOM instead.
+  - **`favStarBtn` returns null** — the 26px star leaves every row it used to
+    sit in: match rows (`.mrow`), spotitems (hero / big-matches / UCL / week /
+    live), the standings mini-boxes, the full UCL table and the cup boxes.
+    All 8 call sites guard the null.
+  - the **`.hasfav` gold rails** and the **`.sthead-star` header spacers**
+    render only when the feature is enabled (no phantom empty column).
+  - **`favFilter` passes lists through unfiltered** when parked — a returning
+    user whose localStorage still carries `ss_favmode="1"` would otherwise
+    see every list silently filtered with no toggle left to undo it.
+  - **`ss_favs` / `ss_favmode` localStorage keys are NOT wiped** — flipping
+    the flag back to `true` restores the feature with everyone's old stars
+    intact.
+
+### Fixed — long club names truncated («اینتر……» → «اینتر میلان»)
+- Diagnosis: on the ≥1440px layout the live/UCL/standings cards live in a
+  400–460px rail; the UCL table row burned ~26px on the star column alone and
+  ~318px on fixed numeric columns, squeezing the name cell to ~60px — «اینتر
+  میلان» ellipsized to «اینتر……» (exactly the user's screenshot).
+- The user's own prescription, applied: **widen the containers so the logos
+  sit a little toward the outer edges and the names get the room** —
+  - reference rail `minmax(400px,460px)` → `minmax(440px,500px)` (the main
+    match column keeps 830+px);
+  - `.side` gap 12→10px, `.side .team` padding-inline 4→2px (both crests move
+    ~4px outward, both names gain ~8px — every match row, all breakpoints);
+  - UCL table density: `.stnum` 26→24px, row/header gaps 6→5px,
+    `.ucl-stand` side padding 10→8px (header labels stay exactly over their
+    number columns — both rows share the same gap).
+- Net effect: ~+30px per name in the live card, ~+90px per row in the UCL
+  table, on top of the parked star's +26–28px.
+
+### Fixed — featured-section (hero) club names truncated («اینتر……» in the face-off row)
+- The user's follow-up screenshot: in the HERO the crests sat well inboard
+  of the card edges and «اینتر میلان» clipped to «اینتر…». Measured live:
+  the hero name cell was 137px while real FA names run to 140px+
+  («باشگاه فوتبال بارسلونا» measured 140px at the 16px hero size) — any
+  longer name (or any zoom) truncated.
+- **Logos moved outward, the user's prescription again**: `.hero-data`
+  horizontal padding 18→10px (the whole face-off row shifts 8px toward each
+  card edge), hero crest 102→96px (still ~1.9× the topspot's 51px — the
+  hierarchy holds; monogram fallback 44→42), hero-only crest→name gap
+  10→6px (`.bighero .side`; every other card keeps the global 10px).
+  Net: each hero name cell ~+18px (137 → ~155px) at the same card width.
+- **`fitHeroNames()` — the never-truncate guarantee (public-13.12.js)**:
+  after every hero render (data ticks, language switches) and on a debounced
+  (150ms) window resize, each hero name is measured with clipping disabled
+  and its font steps down from the clamp() base (floor 11px) until the FULL
+  name fits its cell — one line, no ellipsis, any name, any language, any
+  viewport/zoom. The cell's ellipsis stays as a true last resort below the
+  11px readability floor. Re-running resets the inline size first, so
+  growing the viewport restores the 16px hero size.
+
+### Fixed — returning visitors were still served v13.36 page JS
+- **`sw.js` cache bumped `sportsignal-v8` → `sportsignal-v9`.** The service
+  worker's asset rule is cache-first-forever for `.js`/`.css`, and v13.37 /
+  v13.38 edited `public-13.12.js` in place without a rename or a bump —
+  SW clients kept executing v13.36 page code regardless of deploys. The
+  activate handler evicts every non-current cache, so this one-time bump
+  delivers the parked-favorites page (and the missed 13.37/13.38 fixes) to
+  every returning client on their next visit.
+
+### Verification
+- `node --check` on the edited page script; full `npm test` gate before
+  deploy; live checks: `/healthz` version fresh, no `#favbar`/`.favstar`
+  nodes in the DOM, long FA names (e.g. «باشگاه فوتبال بارسلونا», 140px)
+  render un-truncated in the hero + live card + UCL table, hero crests sit
+  16px closer to the card edges, layout sane at 390px / 1056px / 1440px.
 
 ---
 
