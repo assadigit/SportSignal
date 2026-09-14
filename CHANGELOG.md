@@ -6,6 +6,29 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.41-uclplain] — 2026-09-14 (UCL next-matchday line: blue pill → plain text)
+
+### Changed — the «هفته بعدی مسابقات» line de-pilled (user feedback)
+- **Feedback**: "Remove blue background behind it, a simple text and emoji
+  is enough" — the v13.40 date line shipped as an accent-blue pill
+  (`--pill-primary` tokens); too loud for a quiet informational line.
+- **Now**: `.ucl-next` is plain text — NO background, NO border, NO pill
+  radius/padding, NO light-mode shadow. Muted label («هفته بعدی مسابقات:») +
+  bold date in the normal text color; the 📅 emoji is the only accent. The
+  date value (`b`) moved from `--pill-primary-ink` (white-on-blue) to
+  `var(--text)` so it reads correctly on the bare card in BOTH themes.
+- Wrap behavior, width fit, line-height and the render logic (emoji +
+  label + bold value) are unchanged; JS untouched — CSS-only restyle.
+- sw.js cache v10→v11: routine evict so returning clients get the new CSS
+  (cache-first assets cannot refresh without a bump — the v13.39 rule).
+
+### Verification
+- npm test exit 0 (tsc + version-sync + all behavioral checks).
+- Live (agent-browser, fresh session): the date line renders as plain text
+  (transparent background, no border) in dark + light mode, both languages;
+  date value legible in both themes; no layout shift of the table below;
+  no h-scroll at 390px; console clean.
+
 ## [13.40-uclnext] — 2026-09-14 (UCL next-matchday date line in the standings card)
 
 ### Added — «هفته بعدی مسابقات: …» at the top of the UCL card (the user's ask)

@@ -631,13 +631,13 @@ body.joinsticky{padding-bottom:88px}
    line at the top of the UCL standings card. UCL matchdays are weeks/months
    apart, so the card answers "WHEN is the next round" at a glance: the
    earliest strictly-future UCL kickoff as a Jalali (fa) / short (en) date +
-   local kickoff time, in the user's selected timezone. Accent-tinted pill
-   (the same --pill-primary tokens as the countdown chip — one visual system)
-   so it reads as an announcement, not table chrome; wraps to two lines on
-   narrow phones instead of clipping. */
-.ucl-next{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;font-weight:700;color:var(--muted);background:var(--pill-primary-bg);border:1px solid var(--pill-primary-line);border-radius:999px;padding:5px 12px;margin:8px 0 2px;width:fit-content;max-width:100%;line-height:1.7}
-.ucl-next b{color:var(--pill-primary-ink);font-weight:800;letter-spacing:.01em}
-[data-theme="light"] .ucl-next{box-shadow:0 1px 8px rgba(37,99,235,.10)}
+   local kickoff time, in the user's selected timezone.
+   v13.41-uclplain (user feedback): the accent-blue pill background was too
+   loud — the line is now PLAIN TEXT: no background, no border, no pill
+   chrome, no shadow. Muted label + bold date in the normal text color, the
+   📅 emoji is the only accent. Still wraps on narrow phones, never clips. */
+.ucl-next{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;font-weight:600;color:var(--muted);margin:7px 0 2px;width:fit-content;max-width:100%;line-height:1.7}
+.ucl-next b{color:var(--text);font-weight:800;letter-spacing:.01em}
 .ucl-stand-wrap{position:relative;margin-top:10px}
 /* v12.27 (review item 2): the star tiles sit strictly BEHIND the table now —
    the .ucl-stand container's body is opaque enough (was rgba(30,41,59,.45))
