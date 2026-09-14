@@ -1089,6 +1089,54 @@ function renderUcl(d){
       h2ucl.appendChild(md2);
     }
   }
+  // v13.40-uclnext (the user's ask): UCL matchdays are NOT weekly — sometimes
+  // weeks or even months apart — so the standings card now carries a special
+  // date line, «هفته بعدی مسابقات: ۲۸ شهریور ۱۴۰۵، ساعت ۲۳:۳۰» (fa) /
+  // "Next matchday: 28 Sep 2026, 23:30" (en). The anchor is the EARLIEST
+  // strictly-future kickoff in the UCL fixtures payload (d.matches — the same
+  // list the uclspot box renders), falling back to the server's projected
+  // d.firstStart while the season hasn't started. Renders Jalali via the
+  // shared fa-IR Intl formatter, in the USER'S selected timezone (curTz),
+  // Persian digits via fmtNum; re-renders with every language + timezone
+  // switch (renderUcl runs in onLang + rerenderAll). Hidden entirely when
+  // nothing is ahead (season over, payload stale) — never shows a past date.
+  (function(){
+    var best = null, bestT = 0;
+    if(d.matches && d.matches.length){
+      for(var i=0;i<d.matches.length;i++){
+        if(!d.matches[i] || !d.matches[i].utcDate) continue;
+        var t0 = new Date(d.matches[i].utcDate).getTime();
+        if(!isNaN(t0) && t0 > Date.now() && (!best || t0 < bestT)){ best = d.matches[i].utcDate; bestT = t0; }
+      }
+    }
+    if(!best && d.firstStart){
+      var ft = new Date(d.firstStart).getTime();
+      if(!isNaN(ft) && ft > Date.now()) best = d.firstStart;
+    }
+    if(!best) return;
+    var en = curLang()==="en";
+    var dateStr = "", timeStr = "";
+    var dd = new Date(best);
+    try{
+      timeStr = dd.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",hour12:false,timeZone:curTz()});
+      if(!en){ timeStr = fmtNum(timeStr); }
+    }catch(e){ timeStr = ""; }
+    try{
+      if(en){ dateStr = dd.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric",timeZone:curTz()}); }
+      else {
+        var parts = new Intl.DateTimeFormat("fa-IR",{day:"numeric",month:"long",year:"numeric",timeZone:curTz()}).formatToParts(dd);
+        var g = function(t){ var p=parts.find(function(x){return x.type===t;}); return p?p.value:""; };
+        dateStr = g("day")+" "+g("month")+" "+g("year");
+      }
+    }catch(e){ dateStr = dd.toLocaleDateString(en?"en-GB":"fa-IR",{day:"numeric",month:"short",year:"numeric",timeZone:curTz()}); }
+    var nl = document.createElement("div"); nl.className = "ucl-next";
+    nl.appendChild(document.createTextNode("📅 "));
+    var lbl = document.createElement("span"); lbl.textContent = en ? "Next matchday: " : "هفته بعدی مسابقات: ";
+    nl.appendChild(lbl);
+    var val = document.createElement("b"); val.textContent = dateStr + (timeStr ? (en ? ", " : "، ساعت ") + timeStr : "");
+    nl.appendChild(val);
+    el.appendChild(nl);
+  })();
   // v12.12: the all-fixtures list is GONE from this card (Sabah FK vs SK
   // Slavia Praha noise) — upcoming CL fixtures live in the uclspot box above
   // (≥1 selected club, up to 8). This card is standings-only now.

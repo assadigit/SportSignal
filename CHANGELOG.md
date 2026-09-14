@@ -6,6 +6,36 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.40-uclnext] — 2026-09-14 (UCL next-matchday date line in the standings card)
+
+### Added — «هفته بعدی مسابقات: …» at the top of the UCL card (the user's ask)
+- **Why**: UCL matchdays are NOT weekly — sometimes weeks or even months
+  apart — so the standings card now answers "WHEN is the next round" at a
+  glance: a special date line between the card header and the league table,
+  e.g. «📅 هفته بعدی مسابقات: ۲۸ شهریور ۱۴۰۵، ساعت ۲۳:۳۰» (fa) /
+  "📅 Next matchday: 28 Sep 2026, 23:30" (en).
+- **Anchor**: the EARLIEST strictly-future kickoff in the UCL fixtures
+  payload (`d.matches` — the same list the «🔥 مسابقات مهم» box renders),
+  falling back to the server's projected `d.firstStart` while the season
+  hasn't started. The strictly-future scan means a LIVE match or a played
+  game never anchors the line; when nothing is ahead (season over / stale
+  payload) the line simply does not render — never a past date.
+- **Locale + timezone honest**: the date renders Jalali via the page's
+  shared fa-IR Intl formatter (day month-name year — «۲۸ شهریور ۱۴۰۵»,
+  Persian digits), the time via the user's SELECTED timezone (`curTz()` —
+  the tz popover's choice, falling back to Asia/Tehran). Language switch and
+  timezone switch both re-render it (renderUcl runs in onLang +
+  rerenderAll).
+- **Styling**: `.ucl-next` — an accent-tinted pill using the same
+  `--pill-primary-*` tokens as the countdown chip (one visual system),
+  `width:fit-content; flex-wrap` so long lines wrap on narrow phones instead
+  of clipping; light mode gets a soft shadow lift. Client-only change — the
+  worker payload is untouched.
+- **sw.js cache bumped v9 → v10** (the v13.39 rule: every asset-editing
+  release bumps — cache-first assets can't refresh without it).
+
+---
+
 ## [13.39-favpark] — 2026-09-14 (favorites UI parked (kept in codebase) + club-name truncation fix + SW cache evict)
 
 ### Changed — the star/favorites feature is OFF the page (code kept, per the user)

@@ -11,6 +11,10 @@
 //              caches after the v13.6 asset split. The activate handler
 //              deletes every cache !== CACHE, so the bump is a one-shot
 //              clean sweep on the next SW takeover.)
+// Cache name:  sportsignal-v10 (v13.40: bumped from v9 — routine evict for
+//              this release's public-13.12.js/css edits (UCL next-matchday
+//              line). cache-first assets can't refresh without a rename or
+//              a bump — the v13.39 rule: every asset-editing release bumps.)
 // Cache name:  sportsignal-v9 (v13.39: bumped from v8 — one-shot evict of
 //              stranded v13.36-v13.38 entries. Those releases edited
 //              public-13.12.js/css in place WITHOUT a rename, and the
@@ -32,7 +36,7 @@
 //              any stranded/stale asset entries on client browsers; the
 //              client assets were renamed public-13.8→public-13.9 in the
 //              same release, so the bump also guarantees a clean slate.)
-const CACHE = "sportsignal-v9";
+const CACHE = "sportsignal-v10";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
