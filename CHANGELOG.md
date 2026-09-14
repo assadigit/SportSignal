@@ -6,6 +6,68 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.42-rekindle] — 2026-09-14 (match-start reminder guarantee — the Torino-Roma missed-start fix)
+
+### Fixed — the missed "match started" reminder (user bug report)
+- **Report**: the user received the pre-match reminder for Torino vs Roma
+  (Serie A, 20:00 Tehran) but NO reminder when the game actually kicked
+  off. Forensics (KV + CF analytics + cron status): every in-window cron
+  tick ran errors=0, yet NO match-start dedupe record was ever persisted
+  and no message was sent — the sweep missed the match silently (provider
+  pool without the SA fixture for the in-window ticks), the window closed,
+  and every backstop was hollow. (The result notification at FT DID fire
+  once the pool recovered — the pipeline itself was healthy.)
+
+### Root cause — the match-start backstop was dead code on BOTH layers
+- `isBackfillEligible()` had **no `"match-start"` entry** in its floors/
+  maxes tables → `floor === undefined → return false` — so once the live
+  window `[-1..+45min]` closed, `sendNotificationIfNeeded`'s gate rejected
+  the type before anything else could run.
+- The v13.9 rescue (`isMatchStartBackfillEligible`, [20-30min]) was wired
+  into `shouldSendNotification` — a layer that never executes once the
+  gate already returned. Unreachable since v13.9; its behavioral test
+  (check-no-miss) tested the function in isolation and never caught the
+  wiring, and check-reliability even asserted the dead OR-leg as correct.
+- `reconcileSchedules()` (v13.9 #1) writes per-match schedule records with
+  a `sent` map — **the fire-leg was never built** (nothing reads or
+  updates them). `sched_v1:torino|roma|...` shows `"sent":{}`.
+
+### Changed — the guarantee, now structural
+- **Real match-start backfill**: `isBackfillEligible("match-start")` — if
+  the live window was missed entirely, the start reminder fires LATE (with
+  the «این یادآوری با تاخیر ارسال شد» tag) while the match is still LIVE
+  (IN_PLAY/PAUSED/LIVE), up to 3h after kickoff. A FINISHED match never
+  fires a "match started" (the result notification covers it, 6h window +
+  24h backfill). `shouldSendNotification`'s match-start case now ORs the
+  same branch (the house pattern every other type uses).
+- **Fail-closed dedupe, made real**: `saveNotifiedMatch` returns whether
+  the record PERSISTED; the send is gated on it. v13.36's comment claimed
+  "a KV failure defers the notification (fail closed)" but the code sent
+  anyway — observed live: the Torino-Roma pre-match DELIVERED with no
+  record. Now: no record → no send → retry next tick; duplicates remain
+  impossible AND unrecorded deliveries are impossible. MEM_DEDUPE is only
+  seeded on success (the old MEM-on-failure add blocked retries for the
+  isolate's lifetime = the permanent-loss side of the same bug).
+- **Formatter guard**: the per-group `messageFormatter` call had zero
+  try/catch — one exception aborted the whole match loop (every later
+  match silently skipped that tick, invocation still errors=0). Wrapped:
+  one group's failure skips only that group.
+- **Breadcrumb diagnostics**: `sendMatchNotifications` returns
+  `{found, noChats, budgetDeferred, sent, last}` and the cron folds it
+  into `cron_status_v1` as `notify:{f,n,d,s,l}` — a missed-notification
+  investigation is now a single KV read instead of an hour of forensics.
+- Dead `isMatchStartBackfillEligible` removed; tests rewritten to the real
+  wiring: check-no-miss behavioral matrix (50min/2h/44min/30min/finished/
+  stale/postponed + end-to-end `shouldSendNotification` wiring incl. the
+  exact Torino-Roma case), check-reliability asserts the branch + the
+  persisted-gate + the summary return. 105 checks (was 96).
+
+### Verification
+- npm test exit 0 (tsc + version-sync + 105 checks).
+- Live forensics that motivated it: notified_matches_v6 had no torino
+  records pre-fix; cron ticks 16:30-17:10 UTC all errors=0; sched record
+  `sent:{}`; result fired 18:41 UTC after the pool recovered.
+
 ## [13.41-uclplain] — 2026-09-14 (UCL next-matchday line: blue pill → plain text)
 
 ### Changed — the «هفته بعدی مسابقات» line de-pilled (user feedback)

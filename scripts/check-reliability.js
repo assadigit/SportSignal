@@ -14,9 +14,17 @@ const check = (name, cond) => {
 
 // #2 Backfill now covers ALL pre-match types (5min + match-start included)
 check("#2 isBackfillEligible floors include pre-match-5min", /"pre-match-5min":\s*2\s*\/\s*60/.test(src));
-check("#2 match-start backfill function exists", /function isMatchStartBackfillEligible\(/.test(src));
+// v13.42-rekindle: match-start backfill lives INSIDE isBackfillEligible
+// (the old isMatchStartBackfillEligible hung off shouldSendNotification,
+// unreachable — the 2026-09-14 Torino-Roma missed start proved it). The
+// wiring below asserts the branch exists AND shouldSendNotification no
+// longer carries the dead OR-leg.
+check("#2 match-start backfill branch inside isBackfillEligible", /if \(type === "match-start"\) \{/.test(src));
+check("#2 match-start backfill gated on live status", /return isLiveStatus\(match\.status\);/.test(src));
 check("#2 shouldSendNotification uses backfill for pre-match-5min", /case "pre-match-5min":\s*return isWithin5MinWindow\(match, env\) \|\| isBackfillEligible/.test(src));
-check("#2 shouldSendNotification uses backfill for match-start", /case "match-start":\s*return isMatchStartingNow\(match, env\) \|\| isMatchStartBackfillEligible/.test(src));
+check("#2 shouldSendNotification match-start case ORs the new backfill branch", /case "match-start":\s*(?:\/\/[^\n]*\n\s*)*return isMatchStartingNow\(match, env\) \|\| isBackfillEligible\(match, "match-start", env\);/.test(src));
+check("#2 sendNotificationIfNeeded gates the send on persisted dedupe save", /if \(!persisted\)/.test(src));
+check("#2 sendMatchNotifications returns a breadcrumb summary", /return notifySummary;/.test(src));
 
 // #3 Dead-letter outbox
 check("#3 outboxPush function exists", /async function outboxPush\(env/.test(src));
@@ -139,7 +147,7 @@ check("#nospam7 migration: mark-before-send", migSeg.indexOf('STATE.put(dedupeKe
 check("#nospam8 lock write guarded (fail closed)", /try \{\s*await env\.STATE\.put\(CONFIG\.KV_EXECUTION_LOCK, lockOwner, \{\s*expirationTtl: Math\.ceil\(CONFIG\.LOCK_TIMEOUT \/ 1e3\)\s*\}\);\s*\} catch \(e\) \{\s*await alertPhaseError\(env, "execution-lock/.test(src));
 check("#nospam8 start-heartbeat written after lock", /START heartbeat[\s\S]{0,600}heartbeat: String\(NOW\)/.test(src));
 check("#nospam8 alertPhaseError exists + rate-limited", /async function alertPhaseError\(env, phase, err\)/.test(src) && /30 \* 6e4/.test(src));
-check("#nospam8 sendMatchNotifications phase guarded", /try \{\s*await sendMatchNotifications\(env, matches\);\s*\} catch \(e\) \{\s*await alertPhaseError\(env, "send-notifications"/.test(src));
+check("#nospam8 sendMatchNotifications phase guarded", /try \{\s*notifySummary = await sendMatchNotifications\(env, matches\);\s*\} catch \(e\) \{\s*await alertPhaseError\(env, "send-notifications"/.test(src));
 check("#nospam8 match pool/fetch phase guarded", /alertPhaseError\(env, "match-pool\/fetch"/.test(src));
 check("#nospam8 getRegisteredChats phase guarded", /alertPhaseError\(env, "get-registered-chats"/.test(src));
 check("#nospam8 applySettings phase guarded", /alertPhaseError\(env, "apply-settings"/.test(src));

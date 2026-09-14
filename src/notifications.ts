@@ -81,16 +81,21 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
   }
   const shouldSend = await shouldSendNotification(env, match, config.type, notifiedMatches);
   if (!shouldSend) return;
-  // v13.36-nospam: WRITE-FIRST dedupe. The record is persisted (KV + the
-  // in-memory Set) BEFORE any Telegram send. The old order (send → save)
-  // meant a failed KV save (quota exhausted) left the notification
-  // "unrecorded" — the next tick's fresh isolate re-sent it. That was the
-  // spam engine: 10-20 copies of the same notification. With write-first,
-  // a KV failure defers the notification to the next tick (fail closed)
-  // instead of ever risking a duplicate. A send that later hard-fails is
-  // still recovered by the outbox — delivery retries live at the Telegram
-  // layer, duplicates do not.
-  await saveNotifiedMatch(env, match, config.type, notifiedMatches);
+  // v13.36-nospam: WRITE-FIRST dedupe — and v13.42-rekindle makes that
+  // promise REAL: the send only proceeds if the record PERSISTED. The old
+  // order (send → save) was the spam engine (a failed KV save left the
+  // notification "unrecorded" → re-sent by the next isolate). v13.36 fixed
+  // the order but still sent on save failure while claiming "fail closed"
+  // — meaning an unrecorded delivery + zero retries if the send also
+  // failed (observed 2026-09-14: the Torino-Roma pre-match delivered with
+  // NO dedupe record ever persisted). Now a KV failure defers the send to
+  // the next tick: nothing sent, nothing lost, duplicates impossible. A
+  // send that later hard-fails is still recovered by the outbox.
+  const persisted = await saveNotifiedMatch(env, match, config.type, notifiedMatches);
+  if (!persisted) {
+    console.warn("\u23F8 Dedupe save failed for " + config.type + " (match " + match.id + ") — send deferred to the next tick (fail-closed anti-spam)");
+    return;
+  }
   let anySuccess = false;
   // v13.5-tz-scope: each chat-group's timezone flows through a CLONED env
   // instead of mutating the shared env object — the same isolate-safety fix
@@ -99,7 +104,18 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
   for (const g of chatGroups) {
     const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
     const lang = g.lang || "fa";
-    let message = specialBanner(match, lang) + await config.messageFormatter(match, scopedEnv, lang);
+    // v13.42-rekindle: the formatter call had ZERO guard — an exception
+    // here aborted sendNotificationIfNeeded AND the whole
+    // sendMatchNotifications match-loop (every later match silently
+    // skipped that tick, invocation still error=0). All current formatters
+    // are fail-safe, but one regression must never cost a whole matchday.
+    let message = "";
+    try {
+      message = specialBanner(match, lang) + await config.messageFormatter(match, scopedEnv, lang);
+    } catch (e) {
+      console.error("Formatter failed for " + config.type + " (match " + match.id + ", tz " + g.tz + "): " + e.message);
+      continue;
+    }
     if (late) message += "\n\n" + (lang === "en" ? "This reminder was sent late" : "\u0627\u06CC\u0646 \u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u0628\u0627 \u062A\u0623\u062E\u06CC\u0631 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F");
     // v13.22-promo: website promotion footer on every notification. The user's
     // exact format: a separator line, then the promo text + the site URL.
@@ -215,9 +231,16 @@ export async function sendMatchNotifications(env: Env, matches) {
   };
   const deadChats = [];
   let budgetDeferred = 0;
+  // v13.42-rekindle: breadcrumb summary — folded into cron_status_v1 by the
+  // caller. The 2026-09-14 Torino-Roma missed-start took an hour of
+  // forensics because the sweep's decisions were invisible after the fact
+  // (no retained logs, no counters). Now the tick blob answers: did the
+  // sweep see the match, was it skipped for no followers, what fired?
+  const notifySummary = { found: notifyMatches.length, noChats: 0, budgetDeferred: 0, sent: notificationCounts, last: null as string | null };
   for (const match of notifyMatches) {
     const matchChats = chatIds.filter((c) => userFollowsMatch(prefs, c, match));
-    if (!matchChats.length) continue;
+    if (!matchChats.length) { notifySummary.noChats++; continue; }
+    notifySummary.last = matchKey(match);
     // v13.9-reliability #6: subrequest-budget guard. If the budget is low
     // (<10 remaining under the 48 cap), stop sending THIS sweep and let the
     // next sweep pick up the rest. The dedupe KV hasn't been written for
@@ -256,6 +279,7 @@ export async function sendMatchNotifications(env: Env, matches) {
   }
   if (budgetDeferred) {
     console.log(`\u23F1 Subrequest budget guard: deferred ${budgetDeferred} matches to the next sweep (budget low)`);
+    notifySummary.budgetDeferred = budgetDeferred;
   }
   if (deadChats.length) {
     const keep = chatIds.filter((c) => !deadChats.includes(c));
@@ -272,6 +296,7 @@ export async function sendMatchNotifications(env: Env, matches) {
   console.log(`   Results: ${notificationCounts["result"]}`);
   const totalSent = Object.values(notificationCounts).reduce((a, b) => a + b, 0);
   console.log(`   Total: ${totalSent}`);
+  return notifySummary;
 }
 export async function detectStatusChanges(env: Env, matches) {
   try {

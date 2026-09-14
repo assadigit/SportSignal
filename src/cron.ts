@@ -343,8 +343,9 @@ export async function executeScheduledLogic(env: Env) {
     // v13.36-nospam: sendMatchNotifications is guarded — an exception here
     // used to kill the rest of the sweep (kickoff/FT broadcasts, digests,
     // X, heartbeat) AND the tick. Now it alerts + moves on.
+    let notifySummary: Awaited<ReturnType<typeof sendMatchNotifications>> = null;
     try {
-      await sendMatchNotifications(env, matches);
+      notifySummary = await sendMatchNotifications(env, matches);
     } catch (e) {
       await alertPhaseError(env, "send-notifications", e);
     }
@@ -435,7 +436,12 @@ export async function executeScheduledLogic(env: Env) {
         last_full_sweep: fullSweepThisTick ? String(NOW) : String(prevStatus.last_full_sweep || parseInt(await env.STATE.get("last_full_sweep").catch(() => null)) || 0),
         kv_day: kvDay,
         kv_writes_day: kvWritesDay,
-        kv_writes_last_tick: kvWritesThisTick
+        kv_writes_last_tick: kvWritesThisTick,
+        // v13.42-rekindle: notification breadcrumb — the tick blob now
+        // records what the sweep SAW and SENT (found / skipped-for-no-
+        // followers / budget-deferred / per-type counts / last match
+        // processed). A missed-start investigation is now a single KV read.
+        notify: notifySummary ? { f: notifySummary.found, n: notifySummary.noChats, d: notifySummary.budgetDeferred, s: notifySummary.sent, l: notifySummary.last } : null
       }));
     } catch (e) {
       await env.STATE.put(CONFIG.KV_HEARTBEAT, NOW.toString()).catch(() => {

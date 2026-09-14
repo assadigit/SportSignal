@@ -114,8 +114,8 @@ eval([
   grabFn("function isMatchStartingNow(match, _env)"),
   grabFn("function isWithinPostMatchWindow(match, _env)"),
   grabFn("function isBackfillEligible(match, type, _env)"),
+  grabFn("function isLiveStatus(status)"),
   grabFn("function isPresumablyFinished(match, _env)"),
-  grabFn("function isMatchStartBackfillEligible(match, _env)"),
   grabFn("function isMatchFinished(match)"),
   grabFn("function shouldSendNotification(env, match, notificationType, notifiedMatches)")
 ].join("\n"));
@@ -195,7 +195,25 @@ var MEM_DEDUPE = new Set();
   check("backfill-3h: match 2h before kickoff → backfill eligible (1.5-3.5h)", isBackfillEligible(matchAt(2), "pre-match-3h", env));
   check("backfill-1h: match 0.5h before kickoff → backfill eligible (10/60-1.5h)", isBackfillEligible(matchAt(0.5), "pre-match-1h", env));
   check("backfill-5min: match 5min before kickoff → backfill eligible (2/60-10/60h)", isBackfillEligible(matchAt(5/60), "pre-match-5min", env));
-  check("backfill-match-start: match 25min AFTER kickoff → backfill eligible (20-30min)", isMatchStartBackfillEligible(matchAt(-25/60, "IN_PLAY"), env));
+  // v13.42-rekindle: match-start backfill now lives INSIDE
+  // isBackfillEligible (the old isMatchStartBackfillEligible was wired into
+  // shouldSendNotification, a layer the window/backfill gate never lets it
+  // reach — dead code; the Torino-Roma 2026-09-14 missed start proved it).
+  // Rules: window [-1..+45min] closed → eligible while LIVE, up to 3h past
+  // kickoff; FINISHED → never (the result notification covers it).
+  check("backfill-match-start: 50min after kickoff IN_PLAY → eligible (45-180min, live)", isBackfillEligible(matchAt(-50/60, "IN_PLAY"), "match-start", env));
+  check("backfill-match-start: 2h after kickoff IN_PLAY → eligible (still live)", isBackfillEligible(matchAt(-2, "IN_PLAY"), "match-start", env));
+  check("backfill-match-start: 44min after kickoff → NOT backfill (live window still open)", !isBackfillEligible(matchAt(-44/60, "IN_PLAY"), "match-start", env));
+  check("backfill-match-start: 30min after kickoff → NOT backfill (in window)", !isBackfillEligible(matchAt(-30/60, "IN_PLAY"), "match-start", env));
+  check("backfill-match-start: 50min after kickoff FINISHED → NOT eligible (result covers it)", !isBackfillEligible(matchAt(-50/60, "FINISHED"), "match-start", env));
+  check("backfill-match-start: 3.5h after kickoff IN_PLAY → NOT eligible (info stale)", !isBackfillEligible(matchAt(-3.5, "IN_PLAY"), "match-start", env));
+  check("backfill-match-start: POSTPONED 60min after planned kickoff → NOT eligible", !isBackfillEligible(matchAt(-1, "POSTPONED"), "match-start", env));
+  // End-to-end wiring: the shouldSend chain (as sendNotificationIfNeeded
+  // gates it: window || backfill) must now return TRUE for a missed-window
+  // live match — this exact case failed in production on 2026-09-14.
+  check("wiring: match-start 50min after kickoff IN_PLAY → shouldSend=true (the Torino-Roma case)", await shouldSendNotification(env, matchAt(-50/60, "IN_PLAY"), "match-start", {}));
+  check("wiring: match-start 50min after kickoff FINISHED → shouldSend=false", !await shouldSendNotification(env, matchAt(-50/60, "FINISHED"), "match-start", {}));
+  check("wiring: match-start 2min after kickoff IN_PLAY → shouldSend=true (live window)", await shouldSendNotification(env, matchAt(-2/60, "IN_PLAY"), "match-start", {}));
 
   console.log("\n=== D. Dedupe (already notified → should NOT re-notify) ===");
   // shouldSendNotification returns false if the type is already in the KV

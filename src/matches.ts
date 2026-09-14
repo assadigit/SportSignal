@@ -33,6 +33,13 @@ export async function getNotifiedMatches(env: Env) {
     return {};
   }
 }
+// v13.42-rekindle: returns true iff the dedupe record PERSISTED. The caller
+// gates the send on this — a failed KV save defers the send to the next tick
+// (fail-closed) instead of sending unrecorded. MEM_DEDUPE is only seeded on
+// success: a failed save must leave the notification retryable, and with the
+// send now gated on the save there is nothing to double-send within the
+// isolate anyway (the old MEM-on-failure add would have blocked the retry
+// for the isolate's whole lifetime = permanent silent loss).
 export async function saveNotifiedMatch(env: Env, match, notificationType, notifiedMatches) {
   const now = Date.now();
   const matchTime = new Date(match.utcDate).getTime();
@@ -80,17 +87,20 @@ export async function saveNotifiedMatch(env: Env, match, notificationType, notif
   // (safe: the KV record is the real never-expire line, this is the
   // write-outage fallback).
   if (MEM_DEDUPE.size > 4000) MEM_DEDUPE.clear();
-  MEM_DEDUPE.add(key + ":" + notificationType);
   try {
     await env.STATE.put(
       env.SIM_NOTIFIED_KEY || CONFIG.KV_NOTIFIED_KEY,
       JSON.stringify(notifiedMatches),
       { expirationTtl: ttlSeconds > 0 ? ttlSeconds : 3600 }
     );
+    MEM_DEDUPE.add(key + ":" + notificationType);
+    return true;
   } catch (e) {
-    // KV write failed (quota exhausted, network) — the in-memory Set is the
-    // fallback. Log so the admin knows KV is failing.
-    console.error("Notification state KV save failed (in-memory dedupe active): " + e.message);
+    // KV write failed (quota exhausted, network) — the caller defers the
+    // send to the next tick (fail-closed): nothing sent, nothing lost, and
+    // the retry sees no record. Log so the admin knows KV is failing.
+    console.error("Notification state KV save failed — send deferred to next tick (fail-closed anti-spam): " + e.message);
+    return false;
   }
 }
 export async function shouldSendNotification(env: Env, match, notificationType, notifiedMatches) {
@@ -131,7 +141,12 @@ export async function shouldSendNotification(env: Env, match, notificationType, 
     case "pre-match-5min":
       return isWithin5MinWindow(match, env) || isBackfillEligible(match, "pre-match-5min", env);
     case "match-start":
-      return isMatchStartingNow(match, env) || isMatchStartBackfillEligible(match, env);
+      // v13.42-rekindle: agree with the gate above — window OR the new
+      // isBackfillEligible("match-start") branch. (The v13.9
+      // `|| isMatchStartBackfillEligible` OR-leg sat here all along but
+      // was UNREACHABLE: the sendNotificationIfNeeded gate had no
+      // match-start entry and always returned false first.)
+      return isMatchStartingNow(match, env) || isBackfillEligible(match, "match-start", env);
     case "result":
       return isMatchFinished(match) && isWithinPostMatchWindow(match, env) || isBackfillEligible(match, "result", env);
     // v13.36-nospam: the big-match broadcast types were NEVER checked here
@@ -210,6 +225,24 @@ export function isWithinPostMatchWindow(match, _env) {
 export function isBackfillEligible(match, type, _env) {
   const now = getNowUTC();
   const matchTime = new Date(match.utcDate);
+  // v13.42-rekindle: the REAL match-start backfill. The v13.9 rescue
+  // (isMatchStartBackfillEligible, [20-30min]) was wired into
+  // shouldSendNotification — a layer sendNotificationIfNeeded can never
+  // reach once its own window/backfill gate returned false, and this
+  // function had NO match-start entry (floor === undefined → always
+  // false) — dead code on BOTH layers. Observed live 2026-09-14:
+  // Torino-Roma kicked off while the SA pool missed it for every
+  // in-window tick; the [-1..+45min] window closed with zero record and
+  // every backstop hollow. Now: if the live window was missed entirely,
+  // fire the start reminder LATE while the match is still live
+  // (IN_PLAY/PAUSED/LIVE) up to 3h after kickoff; once FINISHED the
+  // result notification covers it — never a "match started" for a
+  // finished match.
+  if (type === "match-start") {
+    const minutesSince = (now.getTime() - matchTime.getTime()) / (60 * 1e3);
+    if (minutesSince < 45 || minutesSince > 180) return false;
+    return isLiveStatus(match.status);
+  }
   if (type === "result") {
     if (!isMatchFinished(match)) return false;
     const hoursSince = (now.getTime() - matchTime.getTime()) / CONFIG.ONE_HOUR_MS;
@@ -217,13 +250,11 @@ export function isBackfillEligible(match, type, _env) {
   }
   if (matchTime <= now) return false;
   const hoursUntil = (matchTime.getTime() - now.getTime()) / CONFIG.ONE_HOUR_MS;
-  // v13.9-reliability: backfill now covers ALL pre-match types, including
-  // 5min + match-start. Previously these two returned undefined floors → no
-  // backfill → a single skipped cron run lost the reminder forever. Now a
-  // missed 5min/match-start fires late on the next sweep (with the "late"
-  // tag) instead of vanishing. The floor keeps a small guard so we don't
-  // fire 5min at 0.5min (already kickoff) or match-start at kickoff+19min
-  // (near the window edge — would be a noisy late duplicate).
+  // v13.9-reliability, amended v13.42: backfill covers ALL pre-match types.
+  // (match-start moved to its own branch above — it is past-kickoff and
+  // live-status-gated, so the hoursUntil table below never applied to it
+  // correctly.) The floor keeps a small guard so we don't fire 5min at
+  // 0.5min (already kickoff).
   const floors = { "pre-match-24h": 3.5, "pre-match-3h": 1.5, "pre-match-1h": 10 / 60, "pre-match-72h": CONFIG.BIG_MATCH_NOTIFICATION_HOURS - 24, "pre-match-5min": 2 / 60 };
   const maxes = { "pre-match-24h": 24, "pre-match-3h": 3.5, "pre-match-1h": 1.5, "pre-match-72h": CONFIG.BIG_MATCH_NOTIFICATION_HOURS, "pre-match-5min": 10 / 60 };
   const floor = floors[type];
@@ -255,19 +286,8 @@ export function isPresumablyFinished(match, _env) {
   // IN_PLAY/PAUSED mean the match is actively being played (NOT finished).
   return status === "SCHEDULED" || status === "TIMED";
 }
-// v13.9-reliability #2: match-start backfill. The match-start window
-// (isMatchStartingNow) only fires within -1..+20min of kickoff. If the cron
-// missed that window, the start notification was lost. This backfill lets
-// a late sweep fire a match-start reminder up to 30min after kickoff
-// (with the "late" tag) so the user at least knows the match started.
-export function isMatchStartBackfillEligible(match, _env) {
-  const now = getNowUTC();
-  const matchTime = new Date(match.utcDate);
-  const minutesSince = (now.getTime() - matchTime.getTime()) / (60 * 1e3);
-  if (minutesSince < 20 || minutesSince > 30) return false;
-  const status = String(match.status || "").toUpperCase();
-  return status !== "FINISHED" && status !== "POSTPONED" && status !== "CANCELLED" && status !== "SUSPENDED";
-}
+// (v13.9 #2 match-start backfill retired in v13.42-rekindle — its logic lives
+// in the isBackfillEligible "match-start" branch, where it can actually run.)
 export function isMatchFinished(match) {
   return match.status === "FINISHED" || isPresumablyFinished(match, null);
 }
