@@ -68,7 +68,8 @@ const CONFIG = {
   PRE_MATCH_NOTIFICATION_HOURS: 24, BIG_MATCH_NOTIFICATION_HOURS: 72,
   POST_MATCH_NOTIFICATION_HOURS: 6, KV_NOTIFIED_KEY: "notified_matches_v6",
   KV_MATCHES_KEY: "matches_v13_tracked", KV_USERS_KEY: "telegram_users_v6",
-  KV_USER_PREFS: "user_prefs_v1", KV_PUBLIC_MATCHES: "public_matches_v1"
+  KV_USER_PREFS: "user_prefs_v1", KV_PUBLIC_MATCHES: "public_matches_v1",
+  KV_MATCH_STATUS: "match_status_v1"
 };
 function toFaDigits(s) { return String(s).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[+d]); }
 function escapeMarkdownCharacters(s) { return String(s); }
@@ -313,6 +314,66 @@ var MEM_DEDUPE = new Set();
   check("migration: broadcastBigMatchKickoff in cron", /broadcastBigMatchKickoff/.test(src));
   check("migration: /api/migrate/start exists", /\/api\/migrate\/start/.test(src));
   check("audit: /api/audit endpoint exists", /\/api\/audit/.test(src));
+
+  // ===== v13.37-nospam2: behavioral proof — detectStatusChanges is
+  // at-most-once even when the KV status-map write FAILS mid-storm. The
+  // status map is this detector's dedupe state; the v13.37 fail-closed gate
+  // must suppress POSTPONED/CANCELLED/HT sends whenever the map can't be
+  // persisted (the old swallowed-put bug re-fired the same transition every
+  // tick — a 10-20x spam vector).
+  console.log("\n=== Q. Status-change alerts: fail-closed dedupe (behavioral) ===");
+  const STATUS_SENT = [];
+  async function sendTelegram(_env, text, chatId) { STATUS_SENT.push({ text, chatId }); return true; }
+  async function getRegisteredChats() { return [555]; } // single chat → 1 send per alert
+  async function getUserPrefs() { return {}; }
+  function shouldNotify() { return true; }
+  function isMasterBigMatch() { return true; }
+  const COMP_EN = {};
+  eval([grabFn("async function detectStatusChanges(env, matches)")].join("\n"));
+  // KV mock whose put can be toggled to fail (quota exhaustion simulation).
+  function makeStatusStore() {
+    const m = new Map();
+    return {
+      async get(k, arg) { const v = m.get(k); if (arg === "json") return v ? JSON.parse(v) : null; return v === undefined ? null : v; },
+      async put(k, v) { if (putFails) throw new Error("KV write quota exhausted"); m.set(k, String(v)); }
+    };
+  }
+  let putFails = false;
+  const stEnv = { STATE: makeStatusStore() };
+  // Distinct team pairs per scenario — the status-map key is home|away|comp
+  // (no date), so scenarios must not share a pair.
+  const postMatch = (status) => Object.assign(matchAt(-2, status), { score: { fullTime: { home: null, away: null } } });
+  const htMatch = (status) => Object.assign(matchAt(-1, status, { id: "ht-1", homeTeam: { name: "Real Madrid CF" }, awayTeam: { name: "Liverpool FC" } }), { score: { fullTime: { home: 0, away: 0 } } });
+  // --- POSTPONED scenario ---
+  putFails = false;
+  await detectStatusChanges(stEnv, [postMatch("SCHEDULED")]);
+  const baseline = STATUS_SENT.length;
+  check("status: SCHEDULED baseline sends nothing", baseline === 0);
+  // Ticks 2..3: KV writes failing while the provider now reports POSTPONED —
+  // the old code re-alerted EVERY tick; now: suppressed.
+  putFails = true;
+  await detectStatusChanges(stEnv, [postMatch("POSTPONED")]);
+  await detectStatusChanges(stEnv, [postMatch("POSTPONED")]);
+  check("status: POSTPONED alert suppressed while dedupe map un-persisted (tick 1)", STATUS_SENT.length === baseline);
+  check("status: POSTPONED alert suppressed on the NEXT failing tick too (no re-fire)", STATUS_SENT.length === baseline);
+  // Tick 4: KV recovers → the alert fires EXACTLY ONCE.
+  putFails = false;
+  await detectStatusChanges(stEnv, [postMatch("POSTPONED")]);
+  check("status: alert fires exactly once once KV recovers", STATUS_SENT.length === baseline + 1);
+  await detectStatusChanges(stEnv, [postMatch("POSTPONED")]);
+  check("status: same status again → no duplicate (map transition consumed)", STATUS_SENT.length === baseline + 1);
+  // --- HT scenario: big match SCHEDULED → PAUSED ---
+  const htEnv = { STATE: makeStatusStore() };
+  await detectStatusChanges(htEnv, [htMatch("SCHEDULED")]);
+  check("status: HT baseline (SCHEDULED) sends nothing", STATUS_SENT.length === baseline + 1);
+  putFails = true;
+  await detectStatusChanges(htEnv, [htMatch("PAUSED")]);
+  check("status: HT alert suppressed while dedupe map un-persisted", STATUS_SENT.length === baseline + 1);
+  putFails = false;
+  await detectStatusChanges(htEnv, [htMatch("PAUSED")]);
+  check("status: HT alert fires exactly once when KV recovers", STATUS_SENT.length === baseline + 2);
+  await detectStatusChanges(htEnv, [htMatch("PAUSED")]);
+  check("status: HT same status → no duplicate", STATUS_SENT.length === baseline + 2);
 
   console.log("\n" + (failed ? failed + " FAILURES" : "ALL PASS") + " (" + passed + " checks)");
   process.exit(failed ? 1 : 0);

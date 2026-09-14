@@ -2,7 +2,7 @@
 // Extracted verbatim from the v12.33-xpost bundle; KV keys and semantics are
 // LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.36-nospam";
+export const VERSION = "13.37-nospam2";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -160,6 +160,8 @@ export const CONFIG: Record<string, any> = {
   // when the admin opens the members card. Keyed by chat id.
   KV_USER_PROFILES: "user_profiles_v1",
   KV_MATCH_STATUS: "match_status_v1",
+  // v13.37-nospam2: audit admin-alert rate-limit stamp (one gap alert / 6h).
+  KV_AUDIT_ALERT: "audit_alert_v1",
   KV_LIVE_DETAIL: "live_detail_",
   // v12.9: end-of-week league-tables digest. KV_WEEKLY_TABLES stores the ISO
   // week key ("2026-W37") of the last delivered digest; WEEKLY_TABLES is the

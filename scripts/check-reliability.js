@@ -148,5 +148,19 @@ check("#nospam8 applySettings phase guarded", /alertPhaseError\(env, "apply-sett
 check("#nospam9 cleanup_hour KV write removed", !/STATE\.put\("cleanup_hour"/.test(src));
 check("#nospam9 last_full_sweep folded into cron_status_v1", /last_full_sweep: fullSweepThisTick \? String\(NOW\)/.test(src));
 
+// v13.37-nospam2: the four remaining "snapshot-as-dedupe" send paths must
+// fail CLOSED — if the dedupe/snapshot state can't be persisted, the send is
+// suppressed (a missed alert beats a duplicate storm).
+check("#nospam10 status-map put is fail-closed (statusMapSaved gate)", /let statusMapSaved = false;/.test(src) && /if \(alerts\.length && statusMapSaved\) \{/.test(src) && /if \(htAlerts\.length && statusMapSaved\) \{/.test(src));
+check("#nospam10 status-map suppression logged", /suppressing status-change alerts this tick/.test(src));
+check("#nospam10 table-top snapshot put is fail-closed (snapSaved gate)", /let snapSaved = false;/.test(src) && /if \(!snapSaved\) continue;/.test(src));
+check("#nospam10 table-top suppression logged", /skipping coronation check this tick/.test(src));
+const weeklySeg = (src.match(/if \(done === week\) return null;[\s\S]{0,2000}?sendLeagueTables\(env, group/) || [""])[0];
+check("#nospam10 weekly tables: marker put BEFORE first send (write-first)", weeklySeg.indexOf("await env.STATE.put(CONFIG.KV_WEEKLY_TABLES, week);") >= 0);
+check("#nospam10 weekly tables: un-persisted marker skips the digest", /Weekly-tables marker save failed[\s\S]{0,200}return null;/.test(src));
+check("#nospam10 weekly tables: old post-send conditional marker removed", !/if \(res\.sent > 0 \|\| weekAheadAgg\.sent > 0\) await env\.STATE\.put/.test(src));
+check("#nospam10 audit admin alert rate-limited via KV stamp", /KV_AUDIT_ALERT/.test(src) && /Date\.now\(\) - lastTs > 6 \* CONFIG\.ONE_HOUR_MS/.test(src));
+check("#nospam10 KV_AUDIT_ALERT key defined in CONFIG", /KV_AUDIT_ALERT: "audit_alert_v1"/.test(src));
+
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

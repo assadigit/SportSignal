@@ -109,6 +109,20 @@ export async function maybeSendWeeklyTables(env: Env, chatIds) {
   const week = isoWeekKey(t);
   const done = await env.STATE.get(CONFIG.KV_WEEKLY_TABLES).catch(() => null);
   if (done === week) return null;
+  // v13.37-nospam2: WRITE-FIRST — the week marker is persisted BEFORE any
+  // send. The old send-then-mark order meant a failed marker write
+  // re-broadcast the full tables digest on every tick of the 4.5h Monday
+  // window (up to ~27 copies). Fail closed: if the marker can't be
+  // persisted, skip this week's digest entirely — one missed weekly digest
+  // beats a duplicate storm. (A total Telegram outage at digest time also
+  // loses that week's digest — accepted: never-spam outranks never-miss
+  // for one-shot digests. Per-event notifications keep outbox recovery.)
+  try {
+    await env.STATE.put(CONFIG.KV_WEEKLY_TABLES, week);
+  } catch (e) {
+    console.error("Weekly-tables marker save failed — skipping this week's digest (fail-closed anti-spam)");
+    return null;
+  }
   // v12.x-bilingual-bot: group chats by lang so each user gets the
   // digest + week-ahead in their own lang. Defensive: getUserPrefs may
   // be undefined in the test harness (check-weekly-tables.js).
@@ -132,8 +146,6 @@ export async function maybeSendWeeklyTables(env: Env, chatIds) {
     if (wa.text) weekAheadAgg.skipped = false;
   }
   res.weekAhead = weekAheadAgg;
-  if (res.sent > 0 || weekAheadAgg.sent > 0) await env.STATE.put(CONFIG.KV_WEEKLY_TABLES, week).catch(() => {
-  });
   return res;
 }
 // v12.x-cron-gaps: matchday morning digest. Fires ONCE per chat per day at
@@ -419,8 +431,19 @@ export async function maybeNotifyTableToppers(env: Env, matches) {
     if (!newLeader) continue;
     const snapKey = "table_top_v1:" + code;
     const prev = await env.STATE.get(snapKey, "json").catch(() => null);
-    await env.STATE.put(snapKey, JSON.stringify({ ts: Date.now(), top: sorted.slice(0, 10).map((t) => ({ name: t.name, pos: t.pos, points: t.points })) })).catch(() => {
-    });
+    // v13.37-nospam2: the snapshot is the coronation detector's dedupe
+    // state. The old code swallowed put failures — a failed write left
+    // `prev` stale, so the same coronation re-alerted on EVERY tick of the
+    // 6h post-match window (up to 36 copies). Fail closed: if the snapshot
+    // can't be persisted, skip this league this tick (no send, no re-arm).
+    let snapSaved = false;
+    try {
+      await env.STATE.put(snapKey, JSON.stringify({ ts: Date.now(), top: sorted.slice(0, 10).map((t) => ({ name: t.name, pos: t.pos, points: t.points })) }));
+      snapSaved = true;
+    } catch (e) {
+      console.error(`Table-top snapshot save failed [${code}] — skipping coronation check this tick (fail-closed anti-spam)`);
+    }
+    if (!snapSaved) continue;
     if (!prev || !Array.isArray(prev.top) || !prev.top.length) continue;
     const oldLeader = prev.top.find((t) => t.pos === 1);
     if (!oldLeader) continue;

@@ -305,9 +305,25 @@ export async function detectStatusChanges(env: Env, matches) {
         htAlerts.push({ m, status });
       }
     }
-    await env.STATE.put(CONFIG.KV_MATCH_STATUS, JSON.stringify(cur), { expirationTtl: 14 * 86400 }).catch(() => {
-    });
-    if (alerts.length) {
+    // v13.37-nospam2: the status map IS this detector's dedupe state. The
+    // old code swallowed put failures (.catch => {}) — a failed write left
+    // `prev` stale, so the SAME POSTPONED/CANCELLED/HT transition re-fired
+    // on EVERY tick for as long as KV writes kept failing (the 10-20x spam
+    // shape v13.36's broadcast fix missed — this path had no dedupe at all).
+    // Fail closed: persist the map first, and if the persist fails, send
+    // NOTHING this tick. A missed postponement/HT alert is far better than
+    // a duplicate storm.
+    let statusMapSaved = false;
+    try {
+      await env.STATE.put(CONFIG.KV_MATCH_STATUS, JSON.stringify(cur), { expirationTtl: 14 * 86400 });
+      statusMapSaved = true;
+    } catch (e) {
+      console.error("Status map KV save failed — suppressing status-change alerts this tick (fail-closed anti-spam)");
+    }
+    if (alerts.length && !statusMapSaved) {
+      console.log("\u{1F507} " + alerts.length + " status-change alert(s) deferred: dedupe map not persisted");
+    }
+    if (alerts.length && statusMapSaved) {
       const chats = await getRegisteredChats(env);
       // v12.x-bilingual-bot: send the alert in each user's lang.
       const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
@@ -336,7 +352,9 @@ export async function detectStatusChanges(env: Env, matches) {
     // v12.x-cron-gaps: HT alerts broadcast to ALL registered chats (it's a
     // big-match highlight, not a per-team-follow event). Grouped by lang so
     // each user gets the HT message in their lang.
-    if (htAlerts.length) {
+    // v13.37-nospam2: HT alerts share the same dedupe state (the status
+    // map) — same fail-closed gate as the postponement/cancellation alerts.
+    if (htAlerts.length && statusMapSaved) {
       const chats = await getRegisteredChats(env);
       const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
       const langBuckets = new Map();
@@ -367,6 +385,8 @@ export async function detectStatusChanges(env: Env, matches) {
         }
       }
       console.log(`\u{1F680} HT alerts sent for ${htAlerts.length} big matches`);
+    } else if (htAlerts.length && !statusMapSaved) {
+      console.log("\u{1F507} " + htAlerts.length + " HT alert(s) deferred: dedupe map not persisted");
     }
   } catch (e) {
     console.error("Status change detection failed: " + e.message);
@@ -448,12 +468,20 @@ export async function auditNotifications(env: Env, matches) {
     for (const g of gaps.slice(0, 5)) {
       console.log(`   ${g.match} (${g.kickoff}) — missing: ${g.missing.join(", ")}`);
     }
-    // Alert the admin if there are significant gaps (more than 2)
+    // Alert the admin if there are significant gaps (more than 2).
+    // v13.37-nospam2: RATE-LIMITED. Gaps can legitimately persist for hours
+    // (a provider drops a finished match from the pool; a type the audit
+    // expects but reality never sends) — the old code alerted the admin on
+    // EVERY tick while gaps > 2 (up to 144 alerts/day: the bot spammed its
+    // own admin). One alert / 6h max, stamped in KV.
     if (gaps.length > 2) {
       const adminChat = parseInt(env.CHAT_ID);
-      if (!isNaN(adminChat)) {
+      const stamp = await env.STATE.get(CONFIG.KV_AUDIT_ALERT, "json").catch(() => null);
+      const lastTs = stamp && stamp.ts ? stamp.ts : 0;
+      if (!isNaN(adminChat) && Date.now() - lastTs > 6 * CONFIG.ONE_HOUR_MS) {
         const summary = gaps.slice(0, 10).map((g) => `\u2022 ${g.match} \\- missing: ${g.missing.join(", ")}`).join("\n");
         await sendTelegram(env, "\u26A0\uFE0F *\u06AF\u0632\u0627\u0631\u0634 \u0628\u0627\u0632\u0628\u06CC\u0646\u06CC*\n\n" + toFaDigits(String(gaps.length)) + " \u0646\u0648\u0639\u06CC\u0641\u06CC\u06A9\u06CC\u0646 \u0646\u0627\u0642\u0635 \\(" + toFaDigits(String(worthy.length)) + " \u0645\u0633\u0627\u0628\u0642\u0627\u062A\\)\n\n" + summary, adminChat).catch(() => {});
+        await env.STATE.put(CONFIG.KV_AUDIT_ALERT, JSON.stringify({ ts: Date.now() }), { expirationTtl: 2 * 86400 }).catch(() => {});
       }
     }
   } else {

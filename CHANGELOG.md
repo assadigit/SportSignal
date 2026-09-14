@@ -14,6 +14,58 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.37-nospam2] — 2026-09-14 (anti-spam hardening round 2: every remaining send path fail-closed)
+
+### Fixed — 4 residual spam vectors found by the post-v13.36 full-path audit
+Every Telegram send path was re-audited for the "same notification more than
+once" failure mode. v13.36 fixed the 4 scheduling-layer paths (regular,
+result-big, match-start-big, morning digest, migration) with write-first
+dedupe — but 4 MORE paths used "snapshot state" as their dedupe mechanism and
+**swallowed the snapshot write failure** (`.catch(() => {})`), which re-arms
+the send on every tick for as long as KV writes keep failing:
+
+- **`detectStatusChanges` (POSTPONED / CANCELLED / HT alerts)** — the
+  `match_status_v1` map IS this detector's dedupe state. A failed map write
+  left `prev` stale → the same transition re-fired on EVERY tick. Now:
+  persist-first, and if the persist fails, send NOTHING this tick
+  (`statusMapSaved` gate) — a missed postponement/HT alert is far better
+  than a duplicate storm.
+- **`maybeNotifyTableToppers` (👑 coronation alerts)** — the
+  `table_top_v1:<code>` snapshot is the coronation dedupe state. A failed
+  snapshot write re-alerted the same coronation on every tick of the 6h
+  post-match window (up to 36 copies). Now fail-closed (`snapSaved` gate).
+- **`maybeSendWeeklyTables` (weekly tables digest)** — the week marker was
+  written only AFTER the sends (`res.sent > 0`); a failed marker write
+  re-broadcast the full digest on every tick of the 4.5h Monday window
+  (up to ~27 copies), and partial-failure runs re-sent to chats that already
+  got it. Now WRITE-FIRST: the marker is persisted before any send, and an
+  un-persistable marker skips the digest entirely. Trade-off (accepted):
+  a total Telegram outage at digest time loses that week's digest — never-
+  spam outranks never-miss for one-shot digests. Per-event notifications
+  keep outbox recovery.
+- **`auditNotifications` (admin gap report)** — gaps can legitimately
+  persist for hours (provider drops a finished match; an expected type the
+  audit wants but reality never sends), so the old code alerted the admin on
+  EVERY tick while gaps > 2 (up to 144 alerts/day — the bot spammed its own
+  admin). Now rate-limited to one alert / 6h via the new
+  `audit_alert_v1` KV stamp (new key; no existing key renamed).
+
+### Tests
+- check-no-miss.js: new **behavioral section Q** — evals the REAL
+  `detectStatusChanges` against a KV mock whose put can fail: POSTPONED and
+  HT transitions are suppressed while the map is un-persisted (2 consecutive
+  failing ticks), fire EXACTLY ONCE when KV recovers, and never duplicate
+  again afterwards.
+- check-reliability.js: +9 `#nospam10` source-order/gating checks (fail-closed
+  gates on all three snapshot paths, weekly write-first marker before the
+  first send, old post-send marker removed, audit stamp + 6h window, new KV
+  key defined).
+- check-weekly-tables.js: outage semantics updated to the write-first
+  contract — an outage run CONSUMES the week slot (anti-spam), there is NO
+  retry next tick, and a not-started week consumes the slot.
+
+---
+
 ## [13.36-nospam] — 2026-09-14 (exactly-once notifications: kills the 10-20× spam + cron-outage hardening)
 
 ### Fixed — the "bot spamming 10-20 times" bug (user-reported)

@@ -170,17 +170,23 @@ chk(!clMsg.includes("⭐"), "CL: no stars (no selected CL teams in settings)");
   NOW = new Date("2026-09-21T01:35:00Z");
   r = await maybeSendWeeklyTables(env, [555]);
   chk(r && r.sent === 0 && r.failed === 6, "all sends fail: reported");
-  chk(!kv.map.weekly_tables_v1, "all-failed run does NOT set the week flag (retry next tick)");
+  // v13.37-nospam2: write-first — the marker is set BEFORE the sends. A
+  // failed send run no longer retries next tick (the old retry loop
+  // re-broadcast up to ~27 copies across the 4.5h window when the marker
+  // write itself failed, and partial-failure chats got duplicates). Never-
+  // spam outranks never-miss for one-shot digests: an outage week loses its
+  // digest instead of risking a duplicate storm.
+  chk(kv.map.weekly_tables_v1 === "2026-W39", "write-first: outage run CONSUMES the week slot (anti-spam)");
   telegramOK = true;
   r = await maybeSendWeeklyTables(env, [555]);
-  chk(r && r.sent === 6 && kv.map.weekly_tables_v1 === "2026-W39", "retry succeeds after outage clears");
+  chk(r === null && sentLog.length === 12, "no retry next tick (write-first anti-spam)");
   telegramOK = false;
   const realPL = standings.PL;
   for (const c of Object.keys(standings)) standings[c] = { matchday: 1, started: false, teams: [{ name: "X", pos: 1, points: 0 }] };
   kv.map = {};
   r = await maybeSendWeeklyTables(env, [555]);
   chk(r && r.sent === 0, "all leagues not-started: nothing sent");
-  chk(!kv.map.weekly_tables_v1, "not-started week does not consume the slot");
+  chk(kv.map.weekly_tables_v1 === "2026-W39", "not-started week consumes the slot (write-first)");
   standings.PL = realPL;
 
   console.log(fails === 0 ? "\n✅ check-weekly-tables: ALL PASS" : `\n❌ check-weekly-tables: ${fails} FAILURE(S)`);
