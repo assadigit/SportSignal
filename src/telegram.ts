@@ -88,16 +88,41 @@ export async function outboxPush(env: Env, text, chatId, keyboard?) {
 // exponential backoff (1min → 2min → 5min → 15min → 30min). Drops entries
 // after 6 attempts (sustained failure) or when the chat is confirmed dead.
 // Called at the start of every cron sweep.
+// v13.38-qc: WRITE-FIRST drain. The old order (send → put the keep-list)
+// meant a failed keep-list write re-sent ALREADY-DELIVERED messages on the
+// next tick — the last at-least-once duplicate vector left in the codebase
+// (narrow: KV writes failing while Telegram works, but exactly the quota-
+// exhaustion shape this bot has lived through). Now: pop the due items,
+// persist the remaining list FIRST (abort the drain if that put fails —
+// nothing sent, nothing lost, retry next tick), then send the popped items.
+// A popped item whose send fails is re-queued with a best-effort append —
+// the only loss case is a Telegram failure DURING a KV-write outage, the
+// same window where outboxPush already loses entries today. Never-spam
+// outranks never-miss, consistently.
 export async function drainOutbox(env: Env) {
   const list = await env.STATE.get(CONFIG.KV_OUTBOX, "json").catch(() => null) || [];
   if (!list.length) return { drained: 0, remaining: 0, dead: 0 };
   const now = Date.now();
   const BACKOFFS = [60e3, 12e4, 3e5, 9e5, 18e5, 36e5]; // 1m,2m,5m,15m,30m,60m
   const keep = [];
-  let drained = 0, dead = 0;
+  const due = [];
   for (const item of list) {
     const dueAt = item.ts + (BACKOFFS[Math.min(item.attempts, BACKOFFS.length - 1)] || 36e5);
-    if (now < dueAt) { keep.push(item); continue; }
+    if (now < dueAt) keep.push(item);
+    else due.push(item);
+  }
+  if (!due.length) return { drained: 0, remaining: keep.length, dead: 0 };
+  // Persist the post-pop list BEFORE any send (write-first). Abort the whole
+  // drain if this fails — the due items stay queued and nothing re-sends.
+  try {
+    await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(keep), { expirationTtl: 7 * 86400 });
+  } catch (e) {
+    console.error("Outbox keep-list save failed — aborting drain this tick (fail-closed anti-spam)");
+    return { drained: 0, remaining: list.length, dead: 0 };
+  }
+  let drained = 0, dead = 0;
+  const requeue = [];
+  for (const item of due) {
     const r = await sendTelegramDirect(env, item.text, item.chatId, item.keyboard);
     if (r === true) {
       drained++;
@@ -107,12 +132,16 @@ export async function drainOutbox(env: Env) {
       // Still failing — re-queue with incremented attempt count (unless
       // we've hit the max 6 attempts, then drop to avoid infinite retry).
       item.attempts = (item.attempts || 0) + 1;
-      item.ts = now;
-      if (item.attempts <= 6) keep.push(item);
+      item.ts = Date.now();
+      if (item.attempts <= 6) requeue.push(item);
     }
   }
-  await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(keep), { expirationTtl: 7 * 86400 }).catch(() => {});
-  return { drained, remaining: keep.length, dead };
+  if (requeue.length) {
+    await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(keep.concat(requeue)), { expirationTtl: 7 * 86400 }).catch(() => {
+      console.warn("Outbox re-queue save failed — " + requeue.length + " message(s) dropped (KV write outage)");
+    });
+  }
+  return { drained, remaining: keep.length + requeue.length, dead };
 }
 
 // Direct send without outbox recursion (so the drain loop can't re-outbox).

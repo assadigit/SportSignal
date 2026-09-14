@@ -305,20 +305,22 @@ export async function detectStatusChanges(env: Env, matches) {
         htAlerts.push({ m, status });
       }
     }
-    // v13.37-nospam2: the status map IS this detector's dedupe state. The
-    // old code swallowed put failures (.catch => {}) — a failed write left
-    // `prev` stale, so the SAME POSTPONED/CANCELLED/HT transition re-fired
-    // on EVERY tick for as long as KV writes kept failing (the 10-20x spam
-    // shape v13.36's broadcast fix missed — this path had no dedupe at all).
-    // Fail closed: persist the map first, and if the persist fails, send
-    // NOTHING this tick. A missed postponement/HT alert is far better than
-    // a duplicate storm.
+    // v13.38-qc: WRITE-ONLY-WHEN-CHANGED. The status map was put EVERY tick
+    // (144 writes/day) even when the pool was the stale KV cache and cur was
+    // byte-identical to prev — quiet ticks can't produce transitions (same
+    // stale statuses), so the write was pure churn against the 1,000/day
+    // quota. The meter measured it; this kills it.
     let statusMapSaved = false;
-    try {
-      await env.STATE.put(CONFIG.KV_MATCH_STATUS, JSON.stringify(cur), { expirationTtl: 14 * 86400 });
+    const curJson = JSON.stringify(cur);
+    if (curJson === JSON.stringify(prev)) {
       statusMapSaved = true;
-    } catch (e) {
-      console.error("Status map KV save failed — suppressing status-change alerts this tick (fail-closed anti-spam)");
+    } else {
+      try {
+        await env.STATE.put(CONFIG.KV_MATCH_STATUS, curJson, { expirationTtl: 14 * 86400 });
+        statusMapSaved = true;
+      } catch (e) {
+        console.error("Status map KV save failed — suppressing status-change alerts this tick (fail-closed anti-spam)");
+      }
     }
     if (alerts.length && !statusMapSaved) {
       console.log("\u{1F507} " + alerts.length + " status-change alert(s) deferred: dedupe map not persisted");

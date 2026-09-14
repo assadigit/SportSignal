@@ -325,7 +325,16 @@ const POST_GATE_ROUTES: RouteDef[] = [
         outboxDepth = Array.isArray(ob) ? ob.length : 0;
       } catch (e) { }
       const healthy = fresh && outboxDepth < 50;
-      return new Response(JSON.stringify({ ok: healthy, heartbeat_age_min: ageMin, outbox_depth: outboxDepth, version: VERSION }), {
+      // v13.38-qc: surface the KV write budget burn (measured, not pencil
+      // math) so any monitor can watch the 1,000/day free-tier quota —
+      // quota exhaustion was the original spam trigger.
+      return new Response(JSON.stringify({
+        ok: healthy,
+        heartbeat_age_min: ageMin,
+        outbox_depth: outboxDepth,
+        kv_writes_day: parseInt(st.kv_writes_day) || 0,
+        version: VERSION
+      }), {
         status: healthy ? 200 : 503,
         headers: corsHeaders
       });

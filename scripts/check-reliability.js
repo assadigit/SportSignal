@@ -132,7 +132,7 @@ const digestSeg = (src.match(/const dedupeKey = "digest_sent_" \+ dateKey[\s\S]{
 check("#nospam6 morning digest: mark-before-send", digestSeg.indexOf('STATE.put(dedupeKey') >= 0 && digestSeg.indexOf("STATE.put(dedupeKey") < digestSeg.indexOf("buildMorningDigestMessage"));
 
 // Migration broadcast: write-first dedupe.
-const migSeg = (src.match(/mig_sent_v1[\s\S]{0,2400}?const r = await sendTelegram\(env, msg, chatId\);/) || [""])[0];
+const migSeg = (src.match(/mig_sent_v1[\s\S]{0,3200}?const r = await sendTelegram\(env, msg, chatId\);/) || [""])[0];
 check("#nospam7 migration: mark-before-send", migSeg.indexOf('STATE.put(dedupeKey, "1"') >= 0 && migSeg.indexOf('STATE.put(dedupeKey, "1"') < migSeg.indexOf("sendTelegram(env, msg, chatId)"));
 
 // Cron resilience: guarded lock (fail closed), start-heartbeat, phase alerts.
@@ -161,6 +161,20 @@ check("#nospam10 weekly tables: un-persisted marker skips the digest", /Weekly-t
 check("#nospam10 weekly tables: old post-send conditional marker removed", !/if \(res\.sent > 0 \|\| weekAheadAgg\.sent > 0\) await env\.STATE\.put/.test(src));
 check("#nospam10 audit admin alert rate-limited via KV stamp", /KV_AUDIT_ALERT/.test(src) && /Date\.now\(\) - lastTs > 6 \* CONFIG\.ONE_HOUR_MS/.test(src));
 check("#nospam10 KV_AUDIT_ALERT key defined in CONFIG", /KV_AUDIT_ALERT: "audit_alert_v1"/.test(src));
+
+// v13.38-qc: quality-control round — the last at-least-once vector + hygiene.
+const drainSeg = (src.match(/const due = \[\];[\s\S]{0,1400}?sendTelegramDirect\(env, item\.text/) || [""])[0];
+check("#qc1 outbox drain: keep-list persisted BEFORE sends (write-first)", drainSeg.indexOf("await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(keep)") >= 0 && drainSeg.indexOf("sendTelegramDirect") > drainSeg.indexOf("await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(keep)"));
+check("#qc1 outbox drain: un-persistable keep-list aborts the drain", /Outbox keep-list save failed[\s\S]{0,200}return \{ drained: 0, remaining: list\.length, dead: 0 \};/.test(src));
+check("#qc1 MEM_DEDUPE has a size cap (no unbounded isolate growth)", /if \(MEM_DEDUPE\.size > 4000\) MEM_DEDUPE\.clear\(\);/.test(src));
+check("#qc1 table-top snapshots carry a TTL (no permanent keys)", /expirationTtl: 40 \* 86400/.test(src));
+check("#qc1 migration marker put gates the send (migMarked)", /let migMarked = false;/.test(src) && /if \(!migMarked\) continue;/.test(src));
+check("#qc1 KV write meter installed in cron", /kvWritesThisTick\+\+/.test(src) && /kv_writes_day: kvWritesDay/.test(src));
+check("#qc1 healthz exposes the measured KV write burn", /kv_writes_day: parseInt\(st\.kv_writes_day\)/.test(src));
+check("#qc1 write-budget warning threshold 800/1000", /kvWritesDay > 800/.test(src));
+check("#qc1 toppers gated to full sweeps (quiet-tick quota burn killed)", /fullSweepThisTick \? await maybeNotifyTableToppers/.test(src));
+check("#qc1 status map written only when changed", /curJson === JSON\.stringify\(prev\)/.test(src));
+check("#qc1 meter logs per-key top offenders", /kvWriteKeys\[k\] = \(kvWriteKeys\[k\] \|\| 0\) \+ 1/.test(src) && /top: \$\{Object\.entries\(kvWriteKeys\)/.test(src));
 
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

@@ -438,7 +438,10 @@ export async function maybeNotifyTableToppers(env: Env, matches) {
     // can't be persisted, skip this league this tick (no send, no re-arm).
     let snapSaved = false;
     try {
-      await env.STATE.put(snapKey, JSON.stringify({ ts: Date.now(), top: sorted.slice(0, 10).map((t) => ({ name: t.name, pos: t.pos, points: t.points })) }));
+      // v13.38-qc: 40d TTL — the old snapshot put had NO expiry, so the 7
+      // league keys lived forever. Stale snapshots are harmless (prev only
+      // feeds transition detection), so a long TTL is pure hygiene.
+      await env.STATE.put(snapKey, JSON.stringify({ ts: Date.now(), top: sorted.slice(0, 10).map((t) => ({ name: t.name, pos: t.pos, points: t.points })) }), { expirationTtl: 40 * 86400 });
       snapSaved = true;
     } catch (e) {
       console.error(`Table-top snapshot save failed [${code}] — skipping coronation check this tick (fail-closed anti-spam)`);

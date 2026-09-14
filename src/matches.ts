@@ -74,6 +74,12 @@ export async function saveNotifiedMatch(env: Env, match, notificationType, notif
   // fails). This prevents re-sending within the same isolate (the same cron
   // sweep processes multiple matches — if the KV write fails for one, the
   // next sweep would re-send it). The key is matchKey + ":" + notificationType.
+  // v13.38-qc: size cap — MEM_DEDUPE lives for the isolate's lifetime and
+  // nothing removed entries; a long-lived isolate on a busy season grows it
+  // without bound. 4000 entries ≈ months of matchdays; past that, clear
+  // (safe: the KV record is the real never-expire line, this is the
+  // write-outage fallback).
+  if (MEM_DEDUPE.size > 4000) MEM_DEDUPE.clear();
   MEM_DEDUPE.add(key + ":" + notificationType);
   try {
     await env.STATE.put(

@@ -69,7 +69,7 @@ const CONFIG = {
   POST_MATCH_NOTIFICATION_HOURS: 6, KV_NOTIFIED_KEY: "notified_matches_v6",
   KV_MATCHES_KEY: "matches_v13_tracked", KV_USERS_KEY: "telegram_users_v6",
   KV_USER_PREFS: "user_prefs_v1", KV_PUBLIC_MATCHES: "public_matches_v1",
-  KV_MATCH_STATUS: "match_status_v1"
+  KV_MATCH_STATUS: "match_status_v1", KV_OUTBOX: "outbox_lst"
 };
 function toFaDigits(s) { return String(s).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[+d]); }
 function escapeMarkdownCharacters(s) { return String(s); }
@@ -374,6 +374,41 @@ var MEM_DEDUPE = new Set();
   check("status: HT alert fires exactly once when KV recovers", STATUS_SENT.length === baseline + 2);
   await detectStatusChanges(htEnv, [htMatch("PAUSED")]);
   check("status: HT same status → no duplicate", STATUS_SENT.length === baseline + 2);
+
+  // ===== v13.38-qc: behavioral proof — the outbox DRAIN is write-first and
+  // at-most-once per entry even when the KV write fails mid-drain (the last
+  // at-least-once duplicate vector: old code sent first and only then
+  // persisted the keep-list, so a failed write re-delivered messages).
+  console.log("\n=== R. Outbox drain: write-first, at-most-once (behavioral) ===");
+  const DIRECT_SENT = [];
+  async function sendTelegramDirect(_env, text, chatId) { if (!directOK) return false; DIRECT_SENT.push(text + ":" + chatId); return true; }
+  let directOK = true;
+  eval([grabFn("async function drainOutbox(env)")].join("\n"));
+  const obEnv = { STATE: makeStatusStore() }; // putFails toggle shared with section Q
+  const outItem = (text, attempts) => ({ text, chatId: 777, ts: Date.now() - 36e5, attempts: attempts || 0 });
+  // normal drain: 2 due + 1 not-due → 2 sent exactly once, keep-list correct
+  putFails = false; directOK = true;
+  await obEnv.STATE.put("outbox_lst", JSON.stringify([outItem("m1"), outItem("m2"), Object.assign(outItem("m3"), { ts: Date.now() - 5e3 })]));
+  let r = await drainOutbox(obEnv);
+  check("outbox: due items drained exactly once", r.drained === 2 && DIRECT_SENT.length === 2);
+  const keptList = JSON.parse(await obEnv.STATE.get("outbox_lst"));
+  check("outbox: not-due item kept, drained items removed", keptList.length === 1 && keptList[0].text === "m3");
+  // KV write outage mid-drain: NOTHING is sent, nothing is lost
+  putFails = false;
+  await obEnv.STATE.put("outbox_lst", JSON.stringify([outItem("x1"), outItem("x2")]));
+  putFails = true;
+  const beforeOutage = DIRECT_SENT.length;
+  r = await drainOutbox(obEnv);
+  check("outbox: KV write failure aborts the drain (no sends)", r.drained === 0 && DIRECT_SENT.length === beforeOutage);
+  check("outbox: aborted drain loses nothing (items stay queued)", (JSON.parse(await obEnv.STATE.get("outbox_lst"))).length === 2);
+  // send failure after a successful pop: re-queued with attempts+1; dropped at 6
+  putFails = false; directOK = false;
+  await obEnv.STATE.put("outbox_lst", JSON.stringify([outItem("y1", 0), outItem("y2", 6)]));
+  r = await drainOutbox(obEnv);
+  const afterFailList = JSON.parse(await obEnv.STATE.get("outbox_lst"));
+  check("outbox: failed send re-queued with attempts+1", afterFailList.some((i) => i.text === "y1" && i.attempts === 1));
+  check("outbox: entry at 6 attempts dropped (no infinite retry)", !afterFailList.some((i) => i.text === "y2"));
+  putFails = false; directOK = true;
 
   console.log("\n" + (failed ? failed + " FAILURES" : "ALL PASS") + " (" + passed + " checks)");
   process.exit(failed ? 1 : 0);

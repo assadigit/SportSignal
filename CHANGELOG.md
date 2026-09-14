@@ -14,6 +14,47 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.38-qc] — 2026-09-14 (quality-control round: the last at-least-once vector + measured write budget)
+
+### Fixed — outbox drain could re-deliver already-sent messages
+- **`drainOutbox` is now WRITE-FIRST** (the last at-least-once duplicate
+  vector in the codebase). The old order (send → persist the keep-list,
+  `.catch(()=>{})`) meant a failed keep-list write re-delivered
+  ALREADY-DELIVERED messages on the next tick. Narrow window (KV writes
+  failing while Telegram works) but exactly the quota-exhaustion shape this
+  bot has lived through. Now: pop due items → persist the remaining list
+  FIRST (abort the whole drain if that put fails — nothing sent, nothing
+  lost, retry next tick) → send → failed sends re-queued best-effort.
+- **Migration notice dedupe hardened**: the marker put's success now GATES
+  the send (`migMarked`) — the swallowed `.catch` left v13.36's write-first
+  promise hollow for this path (put fails → not marked → re-send next tick).
+- **`MEM_DEDUPE` size cap** (4000, clear-on-overflow): the in-memory dedupe
+  Set lived for the isolate's lifetime with no removal path — unbounded
+  growth on a long-lived isolate. Safe: the KV record is the real
+  never-expire line; the Set is only the write-outage fallback.
+- **`table_top_v1:<code>` snapshots got a 40-day TTL** — the 7 league keys
+  previously lived forever.
+
+### Added — measured KV write budget (was pencil-only)
+- **KV write meter in cron**: every `env.STATE.put` from tick start to end is
+  counted; the running day-total folds into `cron_status_v1`
+  (`kv_day`/`kv_writes_day`/`kv_writes_last_tick`, UTC-date-reset) and each
+  tick logs its burn. Warn at >800/1000.
+- **`/healthz` now exposes `kv_writes_day`** — any external monitor can
+  watch the free-tier quota. Quota exhaustion was the original spam trigger;
+  this turns the budget from an estimate into a live number.
+
+### Tests
+- check-no-miss.js: behavioral section R — the REAL `drainOutbox` against a
+  KV mock: due items drain exactly once; a KV write failure mid-drain sends
+  NOTHING and loses NOTHING (abort + retry next tick); failed sends
+  re-queue with attempts+1; entries at 6 attempts drop.
+- check-reliability.js: +9 `#qc1` checks (drain write-first order, abort
+  path, MEM cap, snapshot TTL, migration gate, meter wiring, healthz burn,
+  800 warning).
+
+---
+
 ## [13.37-nospam2] — 2026-09-14 (anti-spam hardening round 2: every remaining send path fail-closed)
 
 ### Fixed — 4 residual spam vectors found by the post-v13.36 full-path audit

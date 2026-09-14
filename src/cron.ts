@@ -118,15 +118,36 @@ export async function executeScheduledLogic(env: Env) {
   // healthz reported ok:false with a phantom "dead bot". Writing the
   // heartbeat right after the lock proves the cron fired; last_cron below
   // still proves the tick COMPLETED.
+  // v13.38-qc: carry the KV-write daily accumulator through this overwrite
+  // (the final blob below refreshes it with this tick's counted writes).
   try {
     await env.STATE.put("cron_status_v1", JSON.stringify({
       heartbeat: String(NOW),
       last_cron: prevStatus.last_cron || "0",
-      last_full_sweep: prevStatus.last_full_sweep || "0"
+      last_full_sweep: prevStatus.last_full_sweep || "0",
+      kv_day: prevStatus.kv_day || "",
+      kv_writes_day: prevStatus.kv_writes_day || 0
     }));
   } catch (e) {
     console.error("Start-heartbeat write failed: " + e.message);
   }
+  // v13.38-qc: KV WRITE BUDGET METER. The free tier's 1,000 writes/day was
+  // exhausted once (the original spam trigger) and the budget math was
+  // pencil-only. Count every env.STATE.put from here to tick end, fold the
+  // running day-total into the status blob, and log the burn. Constant
+  // offsets (the lock put just above) are uncounted — irrelevant for trend
+  // monitoring; +1/tick ≈ +144/day at most.
+  let kvWritesThisTick = 0;
+  const kvWriteKeys: Record<string, number> = {};
+  const origStatePut = env.STATE.put.bind(env.STATE);
+  (env.STATE as any).put = (...args: unknown[]) => {
+    kvWritesThisTick++;
+    try {
+      const k = String(args[0]).slice(0, 28);
+      kvWriteKeys[k] = (kvWriteKeys[k] || 0) + 1;
+    } catch (e) { }
+    return origStatePut(...(args as [string, string, any?]));
+  };
   try {
     let chatIds;
     // v13.36-nospam: user-list read failure previously re-threw through the
@@ -188,7 +209,17 @@ export async function executeScheduledLogic(env: Env) {
               // v13.36-nospam: write-first — mark this chat as migrated
               // BEFORE the send so a failed KV write can't re-send the
               // migration notice to the same user every 10-min tick.
-              await env.STATE.put(dedupeKey, "1", { expirationTtl: CONFIG.MIGRATION_INTERVAL_DAYS * 24 * 3600 + 3600 }).catch(() => {});
+              // v13.38-qc: the marker put's success now GATES the send —
+              // the swallowed .catch left the write-first promise hollow
+              // (put fails → not marked → re-send next tick).
+              let migMarked = false;
+              try {
+                await env.STATE.put(dedupeKey, "1", { expirationTtl: CONFIG.MIGRATION_INTERVAL_DAYS * 24 * 3600 + 3600 });
+                migMarked = true;
+              } catch (e) {
+                console.error("Migration dedupe mark failed — skipping this chat this tick (fail-closed anti-spam)");
+              }
+              if (!migMarked) continue;
               const msg = lang === "en"
                 ? "\u{1F6A8} *This bot is deprecated\\!*\n\nWe've moved to a new, faster bot with better features\\. Please join our new bot to continue receiving match notifications\\.\n\n\u2728 *New bot:* " + CONFIG.MIGRATION_NEW_BOT_HANDLE + "\n\u{1F517} " + CONFIG.MIGRATION_NEW_BOT_URL + "\n\n_Thank you for following \\- see you on the new bot\\!_"
                 : "\u{1F6A8} *\u0627\u06CC\u0646 \u0631\u0628\u0627\u062A \u0645\u0646\u0633\u0648\u062E \u0634\u062F\u0647\\!*\n\n\u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0645\u0627 \u0628\u0627 \u0627\u0645\u06A9\u0627\u0646\u0627\u062A \u0628\u0647\u062A\u0631 \u0648 \u0633\u0631\u0639\u062A \u0628\u0627\u0644\u0627\u062A\u0631 \u0631\u0627\u0647\u200C\u0627\u0646\u062F\u0627\u0632\u06CC \u0634\u062F\u0647 \u0627\u0633\u062A\\.\n\u0628\u0631\u0627\u06CC \u062F\u0631\u06CC\u0627\u0641\u062A \u0627\u0639\u0644\u0627\u0646\u200C\u0647\u0627\u060C \u0628\u0647 \u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0628\u067E\u06CC\u0648\u0646\u062F\u06CC\u062F\\.\n\n\u2728 *\u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F:* " + CONFIG.MIGRATION_NEW_BOT_HANDLE + "\n\u{1F517} " + CONFIG.MIGRATION_NEW_BOT_URL + "\n\n_\u0627\u0632 \u0647\u0645\u0631\u0627\u0647\u06CC\u200C\u062A\u0627\u0646 \u0645\u062A\u0634\u06A9\u0631\u06CC\u0645 \\- \u0645\u0646\u062A\u0638\u0631 \u0634\u0645\u0627 \u062F\u0631 \u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0647\u0633\u062A\u06CC\u0645_";
@@ -352,7 +383,14 @@ export async function executeScheduledLogic(env: Env) {
     // Telegram (X is additive — wrapped in its own try/catch below).
     let tableToppersEvents = [];
     try {
-      const tt = await maybeNotifyTableToppers(env, matches);
+      // v13.38-qc: coronation detection ONLY on full sweeps. The meter
+      // measured the old every-tick cycle at 7 snapshot writes + 7 standings
+      // reads per tick ≈ 1,000+ writes/day BY ITSELF — the single biggest
+      // quota burner (quota exhaustion was the original spam trigger). Safe:
+      // a coronation needs a finished-within-6h trigger match, which forces
+      // active-time → every such tick IS a full sweep. Quiet ticks reuse the
+      // stale KV pool where no trigger can exist, so skipping is pure win.
+      const tt = fullSweepThisTick ? await maybeNotifyTableToppers(env, matches) : { sent: 0, failed: 0, events: [] };
       if (tt && tt.events && tt.events.length) {
         tableToppersEvents = tt.events;
         console.log(`\u{1F451} Table-top alerts: ${tt.events.map((e) => e.code + ":" + e.leader).join(", ")} (sent ${tt.sent}, failed ${tt.failed})`);
@@ -386,10 +424,18 @@ export async function executeScheduledLogic(env: Env) {
     try {
       const prevBlob = await env.STATE.get("cron_status_v1", "json").catch(() => null) || {};
       const hb = Math.max(parseInt(prevBlob.heartbeat) || 0, NOW);
+      // v13.38-qc: fold the KV write meter into the blob — actual daily burn
+      // instead of pencil math. kv_writes_day resets on the UTC date change.
+      const kvDay = new Date(NOW).toISOString().slice(0, 10);
+      const kvWritesDay = kvWritesThisTick + ((prevBlob.kv_day === kvDay ? parseInt(prevBlob.kv_writes_day) : 0) || 0);
+      if (kvWritesDay > 800) console.warn("\u26A0\uFE0F KV write budget: " + kvWritesDay + "/1000 used today — investigate write churn");
       await env.STATE.put("cron_status_v1", JSON.stringify({
         heartbeat: String(hb),
         last_cron: String(NOW),
-        last_full_sweep: fullSweepThisTick ? String(NOW) : String(prevStatus.last_full_sweep || parseInt(await env.STATE.get("last_full_sweep").catch(() => null)) || 0)
+        last_full_sweep: fullSweepThisTick ? String(NOW) : String(prevStatus.last_full_sweep || parseInt(await env.STATE.get("last_full_sweep").catch(() => null)) || 0),
+        kv_day: kvDay,
+        kv_writes_day: kvWritesDay,
+        kv_writes_last_tick: kvWritesThisTick
       }));
     } catch (e) {
       await env.STATE.put(CONFIG.KV_HEARTBEAT, NOW.toString()).catch(() => {
@@ -416,7 +462,8 @@ export async function executeScheduledLogic(env: Env) {
     }
     console.log(`
 \u2705 Execution completed at ${(new Date()).toISOString()}
-\u{1F4CA} Subrequest budget: ${subrequestCount()}/48 used (${48 - subrequestCount()} headroom under the 50-ceiling)`);
+\u{1F4CA} Subrequest budget: ${subrequestCount()}/48 used (${48 - subrequestCount()} headroom under the 50-ceiling)
+\u{1F4BE} KV writes this tick: ${kvWritesThisTick} — top: ${Object.entries(kvWriteKeys).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => k + "\u00d7" + n).join(", ") || "none"}`);
   } catch (error) {
     console.error(`\u274C Fatal error in scheduled logic:`, error);
     throw error;
