@@ -398,16 +398,70 @@ function render(list, el, finished){
 // the gesture instead of nagging.
 var FAVS = (function(){ try{ var a = JSON.parse(localStorage.getItem("ss_favs") || "[]"); var s = new Set(); (Array.isArray(a)?a:[]).forEach(function(n){ s.add(String(n).toLowerCase()); }); return s; }catch(e){ return new Set(); } })();
 var FAV_MODE = (function(){ try{ return localStorage.getItem("ss_favmode") === "1"; }catch(e){ return false; } })();
+// v13.36-favstand: CROSS-SOURCE matching. Stars can now be set from three
+// surfaces (match rows, standings boxes, cup boxes) and the provider that
+// names a club differs per surface: football-data.org says "Arsenal FC",
+// sportscore says "Arsenal", thesportsdb "Arsenal". Storing raw keys (as
+// v13.35 did) means a star set on standings "Arsenal FC" never lights up a
+// sportscore cup row that calls the same club "Arsenal". Fix: every stored
+// key also indexes a NORMALIZED key (favSoft) — diacritics folded, &→and,
+// punctuation→space, trailing club suffixes (fc/afc/cf/calcio/…) and
+// leading society prefixes (us/ac/as/cd…) stripped. Lookup checks the raw
+// set first (fast path, zero behaviour change for v13.35 stars), then the
+// soft set. Existing stored keys stay untouched — pure additive.
+var FAVS_SOFT = new Set();
 function favKey(n){ return String(n || "").toLowerCase().trim(); }
-function isFavTeam(n){ return FAVS.has(favKey(n)); }
-function hasAnyFav(m){ return isFavTeam(m.homeTeam && m.homeTeam.name) || isFavTeam(m.awayTeam && m.awayTeam.name); }
-function saveFavs(){ try{ localStorage.setItem("ss_favs", JSON.stringify(Array.from(FAVS))); }catch(e){} }
-function toggleFavTeam(name){
+function favSoft(n){
+  var s = String(n || "").toLowerCase();
+  if(s.normalize) s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  s = s.replace(/&/g, " and ").replace(/[-–—_.']/g, " ").replace(/\s+/g, " ").trim();
+  s = s.replace(/\s*(fc|afc|cf|sc|ac|as|ss|ssd|cd|ud|us|calcio|club|deportivo)\b\s*$/, "").trim();
+  s = s.replace(/^(us|ud|cd|ac|as|ss|ssd|fc|cf|sc)\s+/, "").trim();
+  return s;
+}
+function rebuildFavSoft(){
+  FAVS_SOFT.clear();
+  FAVS.forEach(function(k){ var s = favSoft(k); if(s) FAVS_SOFT.add(s); });
+}
+rebuildFavSoft();
+function isFavTeam(n){
+  var k = favKey(n);
+  if(FAVS.has(k)) return true;
+  var s = favSoft(n);
+  return !!(s && FAVS_SOFT.has(s));
+}
+// The stored key that "owns" a team under soft matching — used by unstar so
+// starring "Arsenal" removes the "arsenal fc" entry (not a phantom copy).
+function favOwnerKey(name){
   var k = favKey(name);
-  if(FAVS.has(k)){ FAVS.delete(k); if(!FAVS.size) setFavMode(false); }
+  if(FAVS.has(k)) return k;
+  var s = favSoft(name);
+  if(s){ var found = null; FAVS.forEach(function(stored){ if(!found && favSoft(stored) === s) found = stored; }); if(found) return found; }
+  return k;
+}
+function hasAnyFav(m){ return isFavTeam(m.homeTeam && m.homeTeam.name) || isFavTeam(m.awayTeam && m.awayTeam.name); }
+function saveFavs(){ try{ localStorage.setItem("ss_favs", JSON.stringify(Array.from(FAVS))); }catch(e){} rebuildFavSoft(); }
+function toggleFavTeam(name){
+  var k = favOwnerKey(name);
+  if(FAVS.has(k)){ FAVS.delete(k); if(!FAVS.size){ setFavMode(false); } closeFavPop(); }
   else FAVS.add(k);
   saveFavs();
   rerenderAll();
+}
+// v13.36-favstand: favorites manager popover — a glass panel off the favbar
+// listing every starred team with a one-tap remove (and a clear-all). The
+// star gesture scatters across standings + cups + match rows; this is the
+// single place to review the collection. Stored keys are lowercased EN
+// provider names (language-stable), so rows display them title-cased.
+function favDisplayName(key){
+  var t = String(key || "").replace(/\s+/g, " ").trim();
+  return t.replace(/(^|[\s\-])(\p{L})/gu, function(_, a, ch){ return a + ch.toUpperCase(); });
+}
+function closeFavPop(){
+  var pop = document.getElementById("favpop");
+  if(pop) pop.classList.remove("open");
+  var mg = document.querySelector("#favbar .favchip.manage");
+  if(mg) mg.setAttribute("aria-expanded", "false");
 }
 function setFavMode(on){
   FAV_MODE = !!on;
@@ -450,7 +504,91 @@ function renderFavbar(){
   bAll.textContent = en ? "All matches" : "همه بازی‌ها";
   bAll.onclick = function(){ if(FAV_MODE) setFavMode(false); };
   seg.appendChild(bFav); seg.appendChild(bAll);
+  // v13.36-favstand: the manage affordance — opens the favorites popover.
   bar.appendChild(seg);
+  if(FAVS.size){
+    var mg = document.createElement("button"); mg.type = "button";
+    mg.className = "favchip manage";
+    mg.setAttribute("aria-haspopup", "dialog");
+    mg.setAttribute("aria-expanded", "false");
+    mg.setAttribute("aria-label", en ? "Manage favorite teams" : "مدیریت تیم‌های منتخب");
+    mg.title = mg.getAttribute("aria-label");
+    mg.textContent = "✎";
+    mg.onclick = function(ev){
+      ev.stopPropagation();
+      var pop = ensureFavPop();
+      if(!pop) return;
+      var willOpen = !pop.classList.contains("open");
+      if(willOpen){ renderFavPop(); pop.classList.add("open"); }
+      else pop.classList.remove("open");
+      mg.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    };
+    seg.appendChild(mg);
+    var pop = ensureFavPop();
+    if(pop) renderFavPop(); // keep the list live while the bar re-renders
+  }
+}
+function ensureFavPop(){
+  var pop = document.getElementById("favpop");
+  if(pop) return pop;
+  var bar = document.getElementById("favbar"); if(!bar) return null;
+  pop = document.createElement("div");
+  pop.id = "favpop";
+  pop.setAttribute("role", "dialog");
+  pop.setAttribute("aria-label", curLang()==="en" ? "Favorite teams" : "تیم‌های منتخب");
+  pop.addEventListener("click", function(ev){ ev.stopPropagation(); });
+  bar.appendChild(pop);
+  if(!ensureFavPop._wired){
+    ensureFavPop._wired = true;
+    document.addEventListener("click", function(ev){
+      var pop = document.getElementById("favpop");
+      if(pop && pop.classList.contains("open") && !pop.contains(ev.target)){
+        var mg = ev.target && ev.target.closest ? ev.target.closest("#favbar .favchip.manage") : null;
+        if(!mg) closeFavPop();
+      }
+    });
+    document.addEventListener("keydown", function(ev){ if(ev.key === "Escape") closeFavPop(); });
+  }
+  return pop;
+}
+function renderFavPop(){
+  var pop = document.getElementById("favpop"); if(!pop) return;
+  var en = curLang()==="en";
+  // v13.36-favstand: the popover element persists across language switches —
+  // re-stamp the label so it tracks the active language.
+  pop.setAttribute("aria-label", en ? "Favorite teams" : "تیم‌های منتخب");
+  pop.innerHTML = "";
+  var head = document.createElement("div"); head.className = "favpop-head";
+  head.textContent = en ? "⭐ Favorite teams" : "⭐ تیم‌های منتخب";
+  pop.appendChild(head);
+  var keys = Array.from(FAVS).sort();
+  if(!keys.length){
+    var empty = document.createElement("div"); empty.className = "favpop-empty";
+    empty.textContent = en ? "No favorites yet." : "هنوز منتخبی ندارید.";
+    pop.appendChild(empty);
+    return;
+  }
+  var list = document.createElement("div"); list.className = "favpop-list";
+  keys.forEach(function(k){
+    var row = document.createElement("div"); row.className = "favpop-row";
+    var nm = document.createElement("span"); nm.className = "favpop-name"; nm.textContent = favDisplayName(k);
+    var x = document.createElement("button"); x.type = "button"; x.className = "favpop-x";
+    x.setAttribute("aria-label", (en ? "Remove " : "حذف ") + favDisplayName(k));
+    x.textContent = "✕";
+    x.onclick = function(){ toggleFavTeam(k); renderFavPop(); };
+    row.appendChild(nm); row.appendChild(x);
+    list.appendChild(row);
+  });
+  pop.appendChild(list);
+  var foot = document.createElement("div"); foot.className = "favpop-foot";
+  var clr = document.createElement("button"); clr.type = "button"; clr.className = "favpop-clear";
+  clr.textContent = en ? "Clear all" : "پاک‌کردن همه";
+  clr.onclick = function(){
+    if(!confirm(en ? "Remove all favorite teams?" : "همه تیم‌های منتخب حذف شوند؟")) return;
+    FAVS.clear(); saveFavs(); closeFavPop(); setFavMode(false); renderFavbar(); rerenderAll();
+  };
+  foot.appendChild(clr);
+  pop.appendChild(foot);
 }
 // v13.35-favs: the per-team star toggle. Sits at the OUTER end of each
 // team side (flex order 99) so home/away mirror symmetrically in RTL+LTR.
@@ -792,14 +930,26 @@ function renderStandings(d){
       var thf = document.createElement("span"); thf.className = "sthead-fill";
       var thpl = document.createElement("span"); thpl.className = "stnum ucl-hidem sthead-num"; thpl.textContent = T("thP");
       var thp = document.createElement("span"); thp.className = "sthead-p"; thp.textContent = T("thPts");
-      th.appendChild(thf); th.appendChild(thpl); th.appendChild(thp); box.appendChild(th);
+      th.appendChild(thf); th.appendChild(thpl); th.appendChild(thp);
+      // v13.36-favstand: every row ends with a 20px star — the header gets
+      // a matching invisible spacer so «امتیاز»/Pts stays exactly over the
+      // points column (same trick as sthead-p's fixed 34px slot).
+      var thst = document.createElement("span"); thst.className = "sthead-star"; thst.setAttribute("aria-hidden", "true");
+      th.appendChild(thst);
+      box.appendChild(th);
       st.teams.forEach(function(t){
         var r = document.createElement("div"); r.className = "strow" + (t.pos===1 ? " top1" : "");
+        // v13.36-favstand: the gold .hasfav rail + wash on rows whose club
+        // is starred (mirrors .match.hasfav) — same cross-source matching
+        // as everywhere else (isFavTeam), so "Arsenal FC" here lights up a
+        // star stored as "Arsenal" from a cup row and vice versa.
+        if(isFavTeam(t.name)) r.className += " hasfav";
         var p = document.createElement("span"); p.className = "stpos" + (t.pos<=3 ? " top3" : ""); p.textContent = fmtNum(t.pos);
         var n = document.createElement("span"); n.className = "stname"; nameInto(n, curLang()==="en" ? t.name : (t.faName||t.name));
         var pl = document.createElement("span"); pl.className = "stnum ucl-hidem"; pl.textContent = (t.played == null || isNaN(t.played)) ? "—" : fmtNum(t.played);
         var pt = document.createElement("span"); pt.className = "stpts"; pt.textContent = fmtNum(t.points);
-        r.appendChild(p); r.appendChild(n); r.appendChild(pl); r.appendChild(pt);
+        var sb = favStarBtn(t.name); sb.classList.add("ststar");
+        r.appendChild(p); r.appendChild(n); r.appendChild(pl); r.appendChild(pt); r.appendChild(sb);
         box.appendChild(r);
       });
     } else {
@@ -821,10 +971,15 @@ function cupBox(c){
   if(c.next){
     var n = c.next, en = curLang()==="en";
     var m = document.createElement("div"); m.className = "cupmatch";
+    // v13.36-favstand: stars in cup boxes too — the cup fixture list was the
+    // last match surface without the gesture. Inline 18px stars after each
+    // name (not the 26px row-end pattern: this line is a compact one-liner).
     var teams = document.createElement("div"); teams.className = "teams";
     var t1 = document.createElement("span"); nameInto(t1, en ? n.homeTeam.name : (n.homeTeam.faName||n.homeTeam.name)); teams.appendChild(t1);
+    var c1 = favStarBtn(n.homeTeam.name); c1.classList.add("cupstar"); teams.appendChild(c1);
     teams.appendChild(document.createTextNode(" – "));
     var t2 = document.createElement("span"); nameInto(t2, en ? n.awayTeam.name : (n.awayTeam.faName||n.awayTeam.name)); teams.appendChild(t2);
+    var c2 = favStarBtn(n.awayTeam.name); c2.classList.add("cupstar"); teams.appendChild(c2);
     m.appendChild(teams);
     // v13.35-rounds: the round label («یک‌هشتم نهایی» / "Round of 16") sits
     // between the pairing and the date — the visible half of the FA Cup /
@@ -935,12 +1090,19 @@ function renderUcl(d){
     var hga = document.createElement("span"); hga.className = "stnum ucl-hidem"; hga.textContent = T("thGA");
     var hgd = document.createElement("span"); hgd.className = "stnum"; hgd.textContent = T("thGD");
     var hpt = document.createElement("span"); hpt.className = "stpts"; hpt.textContent = T("thPts");
-    hr.appendChild(hpos); hr.appendChild(hname); hr.appendChild(hmp); hr.appendChild(hw); hr.appendChild(hd); hr.appendChild(hl); hr.appendChild(hgf); hr.appendChild(hga); hr.appendChild(hgd); hr.appendChild(hpt);
+    // v13.36-favstand: same star-spacer contract as the compact boxes — the
+    // sticky header's Pts label stays over the numbers, the star column
+    // (rows only) trails it.
+    var hst = document.createElement("span"); hst.className = "sthead-star"; hst.setAttribute("aria-hidden", "true");
+    hr.appendChild(hpos); hr.appendChild(hname); hr.appendChild(hmp); hr.appendChild(hw); hr.appendChild(hd); hr.appendChild(hl); hr.appendChild(hgf); hr.appendChild(hga); hr.appendChild(hgd); hr.appendChild(hpt); hr.appendChild(hst);
     st.appendChild(hr);
     var num = function(v){ return (v == null || isNaN(v)) ? "—" : fmtNum(v); };
     var gdTxt = function(t2){ if(t2.gd == null) return (t2.gf == null || t2.ga == null) ? "—" : fmtNum(t2.gf - t2.ga); return (t2.gd>0?"+":"")+fmtNum(t2.gd); };
     d.teams.forEach(function(t){
       var r = document.createElement("div"); r.className = "strow" + (t.pos===1 ? " top1" : "");
+      // v13.36-favstand: gold accent + star on starred clubs (the UCL table
+      // is the deepest table on the page — the same gesture as the boxes).
+      if(isFavTeam(t.name)) r.className += " hasfav";
       var p = document.createElement("span"); p.className = "stpos" + (t.pos<=8 ? " top3" : ""); p.textContent = fmtNum(t.pos);
       // v12.18: round club crest before the name (the user's ask) — resolved
       // server-side against the clubs catalog; rows without one render
@@ -963,7 +1125,8 @@ function renderUcl(d){
       var ga = document.createElement("span"); ga.className = "stnum ucl-hidem"; ga.textContent = num(t.ga);
       var gd = document.createElement("span"); gd.className = "stnum"; gd.textContent = gdTxt(t);
       var pt = document.createElement("span"); pt.className = "stpts"; pt.textContent = fmtNum(t.points);
-      r.appendChild(p); r.appendChild(n); r.appendChild(mp); r.appendChild(w); r.appendChild(dd); r.appendChild(ll); r.appendChild(gf); r.appendChild(ga); r.appendChild(gd); r.appendChild(pt);
+      var sb = favStarBtn(t.name); sb.classList.add("ststar");
+      r.appendChild(p); r.appendChild(n); r.appendChild(mp); r.appendChild(w); r.appendChild(dd); r.appendChild(ll); r.appendChild(gf); r.appendChild(ga); r.appendChild(gd); r.appendChild(pt); r.appendChild(sb);
       st.appendChild(r);
     });
   } else {

@@ -242,7 +242,7 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     }
     return v;
   };
-  const top3: any = {};
+  const top3 = {};
   for (const c of standCodes) {
     const st = stMap[c];
     if (st && st.started !== false && Array.isArray(st.teams)) {
@@ -259,7 +259,7 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     if (!set) return false;
     return set.has(norm(m.homeTeam.name)) && set.has(norm(m.awayTeam.name));
   };
-  const top5: any = {};
+  const top5 = {};
   for (const c of standCodes) {
     const st = stMap[c];
     if (st && st.started !== false && Array.isArray(st.teams)) {
@@ -335,7 +335,7 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   // admins via /api/public-matches) can tell it apart.
   if (!(standings.PGL && Array.isArray(standings.PGL.teams) && standings.PGL.teams.length) && CONFIG.KV_PUBLIC_SNAPSHOT) {
     try {
-      const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null) as any;
+      const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
       const pgl = snap && snap.data && snap.data.standings && snap.data.standings.PGL;
       if (pgl && Array.isArray(pgl.teams) && pgl.teams.length) {
         standings.PGL = Object.assign({}, pgl, { code: "PGL", stale: true, staleAsOf: snap.ts ? new Date(snap.ts).toISOString() : null });

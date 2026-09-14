@@ -8,7 +8,7 @@ import type { Env } from "./types";
 import { normTeamKey } from "./teams";
 import { translateTeam, resetFaAiCache, ensureFaAiCache, ensureFaVenueCache, isValidFaName, faAiCacheSize, faVenueCacheSize } from "./translate";
 
-export function collectUnknownTeamNames(data: any) {
+export function collectUnknownTeamNames(data) {
   const out = new Set();
   const addName = (n) => {
     const s = String(n || "").trim();
@@ -18,7 +18,7 @@ export function collectUnknownTeamNames(data: any) {
     out.add(s);
   };
   if (!data) return [...out];
-  if (data.ucl && Array.isArray((data.ucl as any).teams)) data.ucl.teams.forEach((t) => addName(t && t.name));
+  if (data.ucl && Array.isArray(data.ucl.teams)) data.ucl.teams.forEach((t) => addName(t && t.name));
   if (data.standings && typeof data.standings === "object") {
     Object.values(data.standings).forEach((st: any) => {
       if (st && Array.isArray(st.teams)) st.teams.forEach((t) => addName(t && t.name));
@@ -57,7 +57,7 @@ export function collectUnknownTeamNames(data: any) {
 // v13.13-venues: collect unknown venue/stadium names from the match pool.
 // Same pattern as collectUnknownTeamNames: skip already-Persian + already-
 // translated names. Venues come from the `venue` field on each match.
-export function collectUnknownVenueNames(data: any) {
+export function collectUnknownVenueNames(data) {
   const out = new Set();
   const addVenue = (v) => {
     const s = String(v || "").trim();
@@ -149,7 +149,7 @@ export function parseAiNameMap(raw, batch) {
 }
 export async function runFaAiLearner(env: Env, names, force) {
   if (!env || !env.AI) return { ok: false, skipped: "ai-disabled", learned: 0, failed: 0, pending: (names || []).length };
-  const rec: any = await env.STATE.get(CONFIG.KV_FA_TEAMS, "json").catch(() => null) || { v: 1, learned: {}, failed: {} };
+  const rec = await env.STATE.get(CONFIG.KV_FA_TEAMS, "json").catch(() => null) || { v: 1, learned: {}, failed: {} };
   if (!rec.learned) rec.learned = {};
   if (!rec.failed) rec.failed = {};
   const now = Date.now();
@@ -227,7 +227,7 @@ export function askedAndFailed(out) {
 // runFaAiLearner but for venues — stored in KV_FA_VENUES (fa_venues_ai).
 export async function runFaVenueLearner(env: Env, venues, force) {
   if (!env || !env.AI) return { ok: false, skipped: "ai-disabled", learned: 0, failed: 0, pending: (venues || []).length };
-  const rec: any = await env.STATE.get(CONFIG.KV_FA_VENUES, "json").catch(() => null) || { v: 1, learned: {}, failed: {} };
+  const rec = await env.STATE.get(CONFIG.KV_FA_VENUES, "json").catch(() => null) || { v: 1, learned: {}, failed: {} };
   if (!rec.learned) rec.learned = {};
   if (!rec.failed) rec.failed = {};
   const now = Date.now();

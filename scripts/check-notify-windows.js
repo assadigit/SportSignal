@@ -9,7 +9,8 @@ const checks = [
   // old pre-kickoff window (45 min early) produced false "match started" alerts.
   [/minutesSinceKickoff < -1 \|\| minutesSinceKickoff > 45/, "match-start fires only after real kickoff (-1..+45 min, widened v13.15)"],
   [/status !== "FINISHED" && status !== "POSTPONED" && status !== "SUSPENDED"/, "match-start skips finished/postponed/suspended/cancelled"],
-  [/case "result":\s*expiresAt = now \+ CONFIG\.ONE_DAY_MS;/, "result dedupe 24h"],
+  // v13.36-nospam: result + result-big share the 24h record shape
+  [/case "result":\s*case "result-big":\s*expiresAt = now \+ CONFIG\.ONE_DAY_MS;/, "result dedupe 24h (result + result-big)"],
   [/default:\s*expiresAt = matchTime \+ CONFIG\.ONE_HOUR_MS;/, "72h dedupe until kickoff+1h"],
   [/function isBackfillEligible\(match, type, _env\)/, "backfill present"],
   [/hoursSince > CONFIG\.POST_MATCH_NOTIFICATION_HOURS && hoursSince <= 24/, "result backfill <=24h"],

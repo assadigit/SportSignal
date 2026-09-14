@@ -5,7 +5,7 @@
 
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { toFaDigits, resetSubrequestBudget, subrequestCount } from "./utils";
+import { toFaDigits, resetSubrequestBudget, subrequestCount, escapeMarkdownCharacters } from "./utils";
 import { translateTeam, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
@@ -27,11 +27,39 @@ export async function getCronStatus(env: Env) {
   const hb = parseInt(await env.STATE.get(CONFIG.KV_HEARTBEAT).catch(() => null)) || 0;
   const lc = parseInt(await env.STATE.get(CONFIG.KV_LAST_CRON).catch(() => null)) || 0;
   const src = await env.STATE.get(CONFIG.KV_LAST_SOURCE).catch(() => null);
-  return { heartbeat: hb ? String(hb) : "0", last_cron: lc ? String(lc) : "0", api_source: src || null };
+  const lfs = parseInt(await env.STATE.get("last_full_sweep").catch(() => null)) || 0;
+  return { heartbeat: hb ? String(hb) : "0", last_cron: lc ? String(lc) : "0", api_source: src || null, last_full_sweep: lfs ? String(lfs) : "0" };
+}
+// v13.36-nospam: rate-limited phase-error alert. The Sep 14 00:20→10:10 UTC
+// outage (CF analytics: err=1 on EVERY cron tick for ~10h) was completely
+// invisible — no log, no message, just a stale heartbeat. Now every guarded
+// phase reports its failure to the admin chat (max 1 alert / 30min per
+// isolate) so the NEXT outage is diagnosable from Telegram within minutes.
+var LAST_ERR_ALERT = 0;
+async function alertPhaseError(env: Env, phase, err) {
+  const msg = String(err && err.message || err || "unknown");
+  console.error(`Cron phase [${phase}] failed: ${msg}`);
+  const now = Date.now();
+  if (now - LAST_ERR_ALERT < 30 * 6e4) return;
+  LAST_ERR_ALERT = now;
+  try {
+    const adminChat = parseInt(env.CHAT_ID);
+    if (!isNaN(adminChat)) {
+      await sendTelegram(env, "\u26A0\uFE0F *\u062E\u0637\u0627\u06CC \u0632\u0645\u0627\u0646\u200C\u0628\u0646\u062F:* " + escapeMarkdownCharacters(phase) + "\n`" + escapeMarkdownCharacters(msg.slice(0, 160)) + "`", adminChat);
+    }
+  } catch (e) {
+  }
 }
 export async function executeScheduledLogic(env: Env) {
   resetSubrequestBudget();
-  await applySettings(env);
+  // v13.36-nospam: settings failure must not kill the tick (it previously
+  // ran unguarded BEFORE the lock — an exception here left zero diagnostics
+  // and a stale heartbeat).
+  try {
+    await applySettings(env);
+  } catch (e) {
+    await alertPhaseError(env, "apply-settings", e);
+  }
   await ensureFaAiCache(env).catch(() => {
   });
   await ensureFaVenueCache(env).catch(() => {
@@ -64,16 +92,51 @@ export async function executeScheduledLogic(env: Env) {
     }
   }
   const lockOwner = "own:" + NOW + ":" + crypto.randomUUID();
-  await env.STATE.put(CONFIG.KV_EXECUTION_LOCK, lockOwner, {
-    expirationTtl: Math.ceil(CONFIG.LOCK_TIMEOUT / 1e3)
-  });
+  // v13.36-nospam: the lock write is now guarded + fails CLOSED. It was the
+  // only unguarded KV write in the pre-flight path — a quota-exhausted tick
+  // died right here with zero diagnostics (the observed err=1/subreq=0
+  // signature from the Sep 14 outage). Without a persisted lock we cannot
+  // guarantee single-flight AND every dedupe write below would fail too —
+  // sending anyway is exactly how the duplicate-notification spam happened.
+  // Defer to the next tick instead.
+  try {
+    await env.STATE.put(CONFIG.KV_EXECUTION_LOCK, lockOwner, {
+      expirationTtl: Math.ceil(CONFIG.LOCK_TIMEOUT / 1e3)
+    });
+  } catch (e) {
+    await alertPhaseError(env, "execution-lock (KV writes failing — notifications deferred)", e);
+    return;
+  }
   const lockCheck = await env.STATE.get(CONFIG.KV_EXECUTION_LOCK).catch(() => null);
   if (lockCheck !== lockOwner) {
     console.log("\u23ED\uFE0F Lock claimed by a concurrent run, skipping");
     return;
   }
+  // v13.36-nospam: START heartbeat. The old code only wrote the heartbeat
+  // at the very END of the tick — any mid-tick crash (see the Sep 14
+  // outage: every tick err=1 for 10 hours) left the heartbeat frozen and
+  // healthz reported ok:false with a phantom "dead bot". Writing the
+  // heartbeat right after the lock proves the cron fired; last_cron below
+  // still proves the tick COMPLETED.
   try {
-    const chatIds = await getRegisteredChats(env);
+    await env.STATE.put("cron_status_v1", JSON.stringify({
+      heartbeat: String(NOW),
+      last_cron: prevStatus.last_cron || "0",
+      last_full_sweep: prevStatus.last_full_sweep || "0"
+    }));
+  } catch (e) {
+    console.error("Start-heartbeat write failed: " + e.message);
+  }
+  try {
+    let chatIds;
+    // v13.36-nospam: user-list read failure previously re-threw through the
+    // big try/catch — killing the tick with zero diagnostics.
+    try {
+      chatIds = await getRegisteredChats(env);
+    } catch (e) {
+      await alertPhaseError(env, "get-registered-chats", e);
+      return;
+    }
     console.log(`\u{1F465} Registered users: ${chatIds.length}`);
     // v13.9-reliability #3: drain the dead-letter outbox FIRST. Any send
     // that failed last sweep (Telegram 5xx/429/network) gets retried now
@@ -122,13 +185,16 @@ export async function executeScheduledLogic(env: Env) {
               if (already) continue;
               const p = prefs[String(chatId)] || {};
               const lang = p.lang === "en" ? "en" : "fa";
+              // v13.36-nospam: write-first — mark this chat as migrated
+              // BEFORE the send so a failed KV write can't re-send the
+              // migration notice to the same user every 10-min tick.
+              await env.STATE.put(dedupeKey, "1", { expirationTtl: CONFIG.MIGRATION_INTERVAL_DAYS * 24 * 3600 + 3600 }).catch(() => {});
               const msg = lang === "en"
                 ? "\u{1F6A8} *This bot is deprecated\\!*\n\nWe've moved to a new, faster bot with better features\\. Please join our new bot to continue receiving match notifications\\.\n\n\u2728 *New bot:* " + CONFIG.MIGRATION_NEW_BOT_HANDLE + "\n\u{1F517} " + CONFIG.MIGRATION_NEW_BOT_URL + "\n\n_Thank you for following \\- see you on the new bot\\!_"
                 : "\u{1F6A8} *\u0627\u06CC\u0646 \u0631\u0628\u0627\u062A \u0645\u0646\u0633\u0648\u062E \u0634\u062F\u0647\\!*\n\n\u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0645\u0627 \u0628\u0627 \u0627\u0645\u06A9\u0627\u0646\u0627\u062A \u0628\u0647\u062A\u0631 \u0648 \u0633\u0631\u0639\u062A \u0628\u0627\u0644\u0627\u062A\u0631 \u0631\u0627\u0647\u200C\u0627\u0646\u062F\u0627\u0632\u06CC \u0634\u062F\u0647 \u0627\u0633\u062A\\.\n\u0628\u0631\u0627\u06CC \u062F\u0631\u06CC\u0627\u0641\u062A \u0627\u0639\u0644\u0627\u0646\u200C\u0647\u0627\u060C \u0628\u0647 \u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0628\u067E\u06CC\u0648\u0646\u062F\u06CC\u062F\\.\n\n\u2728 *\u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F:* " + CONFIG.MIGRATION_NEW_BOT_HANDLE + "\n\u{1F517} " + CONFIG.MIGRATION_NEW_BOT_URL + "\n\n_\u0627\u0632 \u0647\u0645\u0631\u0627\u0647\u06CC\u200C\u062A\u0627\u0646 \u0645\u062A\u0634\u06A9\u0631\u06CC\u0645 \\- \u0645\u0646\u062A\u0638\u0631 \u0634\u0645\u0627 \u062F\u0631 \u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0647\u0633\u062A\u06CC\u0645_";
               const r = await sendTelegram(env, msg, chatId);
               if (r === true) {
                 sent++;
-                await env.STATE.put(dedupeKey, "1", { expirationTtl: CONFIG.MIGRATION_INTERVAL_DAYS * 24 * 3600 + 3600 }).catch(() => {});
               } else if (r === "dead") failed++;
             }
             mig.lastRound = NOW_MS;
@@ -164,25 +230,43 @@ export async function executeScheduledLogic(env: Env) {
     } catch (e) {
       console.error("Weekly tables digest failed: " + e.message);
     }
-    const cachedPool = await getCachedMatches(env);
-    const isActiveTime = cachedPool.some((m) => {
-      if (!shouldNotify(m)) return false;
-      if (isLiveStatus(m.status)) return true;
-      const ko = new Date(m.utcDate).getTime();
-      if (m.status === "FINISHED") return NOW - ko < CONFIG.ACTIVE_WINDOW_BEHIND_MS;
-      return ko > NOW && ko - NOW < CONFIG.ACTIVE_WINDOW_AHEAD_MS;
-    });
-    const lastSweep = parseInt(await env.STATE.get("last_full_sweep").catch(() => null)) || 0;
-    const sweepFresh = lastSweep && NOW - lastSweep < CONFIG.QUIET_SWEEP_MS;
+    let fullSweepThisTick = false;
+    // v13.36-nospam: the pool/fetch phase is guarded + fails to a SAFE
+    // default (an empty pool with last_full_sweep pushed forward would
+    // suppress reminders for a tick — a caught failure that bubbles up
+    // instead would kill the heartbeat AND every later phase, with zero
+    // diagnostics).
     let matches;
-    if (!isActiveTime && sweepFresh && cachedPool.length) {
-      matches = cachedPool;
-      console.log(`\u{1F50C} Quiet period \u2014 reusing KV pool (${matches.length} matches, last sweep ${Math.round((NOW - lastSweep) / 6e4)} min ago); pre-match reminders still fire from the pool`);
-    } else {
-      console.log("\n\u{1F4E1} Fetching matches from API...");
-      matches = await fetchMatchesFromAPI(env);
-      await env.STATE.put("last_full_sweep", String(NOW)).catch(() => {
+    try {
+      const cachedPool = await getCachedMatches(env);
+      const isActiveTime = cachedPool.some((m) => {
+        if (!shouldNotify(m)) return false;
+        if (isLiveStatus(m.status)) return true;
+        const ko = new Date(m.utcDate).getTime();
+        if (m.status === "FINISHED") return NOW - ko < CONFIG.ACTIVE_WINDOW_BEHIND_MS;
+        return ko > NOW && ko - NOW < CONFIG.ACTIVE_WINDOW_AHEAD_MS;
       });
+      // v13.36-nospam: last_full_sweep now lives INSIDE the cron_status_v1
+      // blob (one write/tick instead of two — ~144 writes/day saved against
+      // the 1,000/day free quota). getCronStatus falls back to the legacy
+      // standalone key for old blobs.
+      const lastSweep = parseInt(prevStatus.last_full_sweep) || 0;
+      const sweepFresh = lastSweep && NOW - lastSweep < CONFIG.QUIET_SWEEP_MS;
+      if (!isActiveTime && sweepFresh && cachedPool.length) {
+        matches = cachedPool;
+        console.log(`\u{1F50C} Quiet period \u2014 reusing KV pool (${matches.length} matches, last sweep ${Math.round((NOW - lastSweep) / 6e4)} min ago); pre-match reminders still fire from the pool`);
+      } else {
+        console.log("\n\u{1F4E1} Fetching matches from API...");
+        matches = await fetchMatchesFromAPI(env);
+        fullSweepThisTick = true;
+      }
+    } catch (e) {
+      await alertPhaseError(env, "match-pool/fetch", e);
+      matches = null;
+    }
+    if (!matches) {
+      console.log("\u26A0\uFE0F No match pool this tick \u2014 skipping notification phases (will retry next tick)");
+      return;
     }
     console.log(`\u{1F4CA} Total matches received: ${matches.length}`);
     // v13.9-reliability #5: inject the canary match into the pool. It's a
@@ -225,7 +309,14 @@ export async function executeScheduledLogic(env: Env) {
         console.log(`    ${matchTime.toLocaleString("fa-IR")} (${hoursUntil.toFixed(1)}h from now)`);
       }
     }
-    await sendMatchNotifications(env, matches);
+    // v13.36-nospam: sendMatchNotifications is guarded — an exception here
+    // used to kill the rest of the sweep (kickoff/FT broadcasts, digests,
+    // X, heartbeat) AND the tick. Now it alerts + moves on.
+    try {
+      await sendMatchNotifications(env, matches);
+    } catch (e) {
+      await alertPhaseError(env, "send-notifications", e);
+    }
     // v13.13-kickoff: ALWAYS notify when a big match starts. Fires to ALL
     // chats (not just followers) when a master big-match kicks off. Own
     // try/catch so a failure here can never break the rest of the sweep.
@@ -287,10 +378,18 @@ export async function executeScheduledLogic(env: Env) {
     } catch (e) {
       console.error("Audit step failed: " + e.message);
     }
+    // v13.36-nospam: single status blob — heartbeat (tick started/ended),
+    // last_cron (tick completed) and last_full_sweep (folded in from the
+    // old standalone key; one write/tick saved). The heartbeat is NOT
+    // overwritten with a later stamp than the start-heartbeat if the tick
+    // somehow re-enters — simple monotonic max.
     try {
+      const prevBlob = await env.STATE.get("cron_status_v1", "json").catch(() => null) || {};
+      const hb = Math.max(parseInt(prevBlob.heartbeat) || 0, NOW);
       await env.STATE.put("cron_status_v1", JSON.stringify({
-        heartbeat: String(NOW),
-        last_cron: String(NOW)
+        heartbeat: String(hb),
+        last_cron: String(NOW),
+        last_full_sweep: fullSweepThisTick ? String(NOW) : String(prevStatus.last_full_sweep || parseInt(await env.STATE.get("last_full_sweep").catch(() => null)) || 0)
       }));
     } catch (e) {
       await env.STATE.put(CONFIG.KV_HEARTBEAT, NOW.toString()).catch(() => {

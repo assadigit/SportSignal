@@ -7,7 +7,7 @@ import { CONFIG, COMP_EN } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getNowTehran, getEnglishDate } from "./utils";
 import { translateTeam, translateCompetition } from "./translate";
-import { shouldNotify, isMatchFinished, isWithinPostMatchWindow, getNotifiedMatches, saveNotifiedMatch, normAlias, isMasterPair, isDerby, isMatchStartingNow } from "./matches";
+import { shouldNotify, isMatchFinished, isWithinPostMatchWindow, getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, normAlias, isMasterPair, isDerby, isMatchStartingNow } from "./matches";
 import { fetchStandings, buildLeagueTableMessage, specialBanner, formatResultMessage, formatMatchStartMessage, isoWeekKey, weeklyTableCodes } from "./composers";
 import { sendTelegram } from "./telegram";
 import { getRegisteredChats, getUserPrefs, getUserTz, groupChatsByTz, userFollowsMatch, isMasterBigMatch } from "./users";
@@ -209,14 +209,17 @@ export async function maybeSendMorningDigest(env: Env, chatIds) {
       const already = await env.STATE.get(dedupeKey).catch(() => null);
       if (already) { out.skipped++; continue; }
       const lang = (prefs[String(c)] && prefs[String(c)].lang) === "en" ? "en" : "fa";
+      // v13.36-nospam: write-first — mark the digest as sent BEFORE the
+      // Telegram send. The old send-then-mark order meant a failed KV write
+      // re-sent the digest on every tick of the 9am hour.
+      await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
       const msg = await buildMorningDigestMessage(scopedEnv, todayBig, lang);
       const r = await sendTelegram(scopedEnv, msg, c);
       if (r === true) {
         out.sent++;
-        await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
       } else if (r === "dead") {
-        // Mark as sent too — don't retry a dead chat all 9am hour.
-        await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
+        // Already marked above — don't retry a dead chat all 9am hour.
+        out.skipped++;
       }
     }
   }
@@ -267,6 +270,14 @@ export async function broadcastBigMatchResults(env: Env, matches) {
     const deadChats = [];
     for (const match of candidates) {
       out.matches++;
+      // v13.36-nospam: THE MISSING DEDUPE CHECK. Since v12.x this broadcast
+      // loaded notifiedMatches but never consulted it — the comment claimed
+      // "deduped via result-big" while the code sent first and saved after.
+      // A finished master big-match therefore re-sent its FT to all
+      // non-followers on EVERY tick of the 6h post-match window (up to 36
+      // copies) — the reported "bot spamming 10-20 times". Now: check →
+      // write-first → send, exactly like the regular notification path.
+      if (!await shouldSendNotification(env, match, "result-big", notifiedMatches)) continue;
       // Users who follow at least one team in the match already get the
       // "result" notification via the regular path \u2014 skip them here.
       const nonFollowers = chatIds.filter((c) => {
@@ -278,6 +289,11 @@ export async function broadcastBigMatchResults(env: Env, matches) {
       let anySuccess = false;
       // v13.5-tz-scope: per-group tz through a CLONED env (no shared-env
       // mutation — isolate-safety for concurrent requests).
+      // v13.36-nospam: write-first — the dedupe record is persisted BEFORE
+      // the sends so a failed KV write can never re-arm this broadcast on
+      // the next tick (the outbox retries delivery; duplicates are
+      // impossible).
+      await saveNotifiedMatch(env, match, "result-big", notifiedMatches);
       for (const g of groups) {
         const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
         const lang = g.lang || "fa";
@@ -291,7 +307,6 @@ export async function broadcastBigMatchResults(env: Env, matches) {
         if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
       }
       if (anySuccess) {
-        await saveNotifiedMatch(env, match, "result-big", notifiedMatches);
         out.sent++;
       }
     }
@@ -328,10 +343,18 @@ export async function broadcastBigMatchKickoff(env: Env, matches) {
     const deadChats = [];
     for (const match of candidates) {
       out.matches++;
+      // v13.36-nospam: THE MISSING DEDUPE CHECK (same bug as result-big —
+      // the comment said "deduped via match-start-big" but nothing ever
+      // consulted the dedupe state before sending). The kickoff broadcast
+      // re-sent to ALL chats on every tick of the -1..+45min window. Now:
+      // check → write-first → send.
+      if (!await shouldSendNotification(env, match, "match-start-big", notifiedMatches)) continue;
       // ALL chats get the big-match kickoff (not just non-followers — the
       // user's ask: "always send notification when a big match is started").
       const groups = (typeof groupChatsByTz === "function" ? groupChatsByTz(chatIds, prefs, env) : [{ tz: env.TEHRAN_TZ, lang: "fa", chats: chatIds }]);
       let anySuccess = false;
+      // v13.36-nospam: write-first (see result-big above).
+      await saveNotifiedMatch(env, match, "match-start-big", notifiedMatches);
       for (const g of groups) {
         const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
         const lang = g.lang || "fa";
@@ -345,7 +368,6 @@ export async function broadcastBigMatchKickoff(env: Env, matches) {
         if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
       }
       if (anySuccess) {
-        await saveNotifiedMatch(env, match, "match-start-big", notifiedMatches);
         out.sent++;
       }
     }

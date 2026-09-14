@@ -81,6 +81,16 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
   }
   const shouldSend = await shouldSendNotification(env, match, config.type, notifiedMatches);
   if (!shouldSend) return;
+  // v13.36-nospam: WRITE-FIRST dedupe. The record is persisted (KV + the
+  // in-memory Set) BEFORE any Telegram send. The old order (send → save)
+  // meant a failed KV save (quota exhausted) left the notification
+  // "unrecorded" — the next tick's fresh isolate re-sent it. That was the
+  // spam engine: 10-20 copies of the same notification. With write-first,
+  // a KV failure defers the notification to the next tick (fail closed)
+  // instead of ever risking a duplicate. A send that later hard-fails is
+  // still recovered by the outbox — delivery retries live at the Telegram
+  // layer, duplicates do not.
+  await saveNotifiedMatch(env, match, config.type, notifiedMatches);
   let anySuccess = false;
   // v13.5-tz-scope: each chat-group's timezone flows through a CLONED env
   // instead of mutating the shared env object — the same isolate-safety fix
@@ -150,7 +160,6 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
     if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
   }
   if (anySuccess) {
-    await saveNotifiedMatch(env, match, config.type, notifiedMatches);
     counts[config.type]++;
     console.log(`\u{1F4E4} Sent ${config.type.toUpperCase()} notification for match ${match.id}`);
   }
@@ -162,7 +171,23 @@ export async function sendMatchNotifications(env: Env, matches) {
     return;
   }
   const prefs = await getUserPrefs(env);
-  const notifyMatches = matches.filter(shouldNotify);
+  const nowMs = Date.now();
+  // v13.36-nospam: the past/future horizon — "focus on the upcoming events,
+  // not the past". A match may only notify inside [-26h, +73h] of its
+  // kickoff: +73h covers the 72h big-match pre-window, -26h covers the
+  // widest look-back any type can still legally fire in (the result
+  // backfill ends at kickoff+24h). Everything outside is dead weight —
+  // scanning it wastes the sweep and any bug that re-opens an old window
+  // would resurrect week-old results. PAST EVENTS REMIND AT MOST ONCE
+  // (the never-expire line in shouldSendNotification does the "at most
+  // once" part; this horizon is the hard outer fence).
+  const MIN_MS = nowMs - 26 * 36e5;
+  const MAX_MS = nowMs + 73 * 36e5;
+  const notifyMatches = matches.filter((m) => {
+    if (!shouldNotify(m)) return false;
+    const t = new Date(m.utcDate).getTime();
+    return t >= MIN_MS && t <= MAX_MS;
+  });
   if (notifyMatches.length === 0) {
     console.log("\u2705 No matches meet the notification criteria");
     return;

@@ -14,6 +14,85 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.36-nospam] — 2026-09-14 (exactly-once notifications: kills the 10-20× spam + cron-outage hardening)
+
+### Fixed — the "bot spamming 10-20 times" bug (user-reported)
+- **THE LINE: one event → one reminder, never re-armed.**
+  `shouldSendNotification` now treats ANY prior record of
+  (matchKey, notificationType) as blocking — the record's `expiresAt` is
+  demoted to pure KV-size hygiene. Previously a record that expired
+  mid-window silently re-armed the send (the old default expiry was
+  kickoff+1h while "result-big" stays eligible for the whole 6h post-match
+  window). Every type's expiry is ≥ its window's end, so cleanup can never
+  purge a record whose window is still open.
+- **The missing broadcast dedupe checks (primary spam engine).**
+  `broadcastBigMatchResults` + `broadcastBigMatchKickoff` (digest.ts) loaded
+  the dedupe state but NEVER consulted it — the comments claimed "deduped
+  via result-big / match-start-big" while the code sent first and saved
+  after. A finished master big-match therefore re-sent its FT to all
+  non-followers on EVERY 10-min tick of the 6h post window (up to 36
+  copies) and the kickoff broadcast re-sent across its whole -1..+45min
+  window. Both now check → save → send like every other path; both types
+  got real cases in `shouldSendNotification`.
+- **Write-first dedupe everywhere.** All send paths now persist the
+  "already sent" record BEFORE the Telegram send: the regular notification
+  path (`sendNotificationIfNeeded`), both big-match broadcasts, the
+  morning digest, and the migration broadcast. The old send-then-save
+  ordering meant a failed KV write (free-tier quota exhaustion) left the
+  notification unrecorded — the next tick's fresh isolate re-sent it
+  (v13.27's in-memory fallback only lives within ONE isolate; cron ticks
+  run in fresh isolates). With write-first, a KV failure defers the
+  notification to the next tick (fail closed) — duplicates are now
+  structurally impossible. Hard send failures are still recovered by the
+  outbox (delivery retries live at the Telegram layer, not the dedupe
+  layer).
+- **Proper expiries for the broadcast types**: "result-big" now records
+  now+24h (was the kickoff+1h default) and "match-start-big" gets
+  matchTime+2h.
+
+### Fixed — "focus on upcoming events, not past"
+- **Notification horizon fence**: `sendMatchNotifications` only considers
+  matches inside [-26h, +73h] of kickoff (+73h covers the 72h big-match
+  pre-window; -26h covers the widest legal look-back, the result backfill
+  at +24h). Anything older is dead weight — past events can remind at
+  most once and the sweep stops wasting iterations on them.
+
+### Reliability — the invisible 10-hour cron outage (Sep 14 00:20→10:10 UTC)
+- Evidence: Cloudflare analytics showed err=1 on EVERY cron tick for ~10h
+  (dying mid-sweep first, then pinned at subreq=0), self-healed at 10:10.
+  HTTP stayed healthy; only the heartbeat went stale (healthz ok:false,
+  599min) with zero diagnostics.
+- **START heartbeat**: cron_status_v1.heartbeat is written right after the
+  lock acquisition — a mid-tick crash no longer freezes the liveness
+  signal; `last_cron` still proves a tick COMPLETED.
+- **Fail-closed lock write**: the execution-lock put (previously the only
+  unguarded KV write in the pre-flight path) is now guarded — on failure
+  the tick aborts with an admin alert instead of dying silently or, worse,
+  running without a lock.
+- **Per-phase guards + admin alerts**: applySettings, user-list read,
+  match-pool/fetch, and sendMatchNotifications no longer re-throw through
+  the big try/catch. Failures alert the admin chat (rate-limited 1/30min
+  per isolate) with the phase name + error — the next outage is
+  diagnosable from Telegram within minutes.
+- **KV write quota cut ~288/day**: `cleanup_hour` guard is isolate-local
+  (was a KV write every tick); `last_full_sweep` folded into the
+  cron_status_v1 blob (one status write/tick instead of two). New floor
+  ≈500-650 writes/day against the 1,000/day free quota.
+
+### Debt (carried from the interrupted v13.36-anytight session)
+- 8 admin-route `req.json().catch(()=>null) as any` copies → `readJson()`
+  helper; ~10 `: any` annotations tightened in api.ts (load-bearing union
+  annotated with rationale); assets public-13.11→13.12, SW cache v7→v8.
+
+### Verification
+- npm test exit 0 — 387 assertions (35 new: never-expire line behavioral
+  evals incl. expired-record blocking for both regular + broadcast types,
+  write-first source-order checks for all 4 send paths, horizon fence,
+  guarded lock, start-heartbeat, phase guards, quota cuts). wrangler
+  --dry-run bundles clean.
+
+---
+
 ## [13.35-prewarm] — 2026-09-14 (cron pre-warm kills the cold sweep + cup round chips + team favorites)
 
 ### Performance / reliability

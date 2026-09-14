@@ -26,14 +26,14 @@ export async function getNotifiedMatches(env: Env) {
   try {
     // v13.5-sim-scope: request-scoped override (set only by /api/simulate's
     // cloned env) — the shared CONFIG is never mutated at runtime.
-    const data: any = await env.STATE.get(env.SIM_NOTIFIED_KEY || CONFIG.KV_NOTIFIED_KEY, "json");
+    const data = await env.STATE.get(env.SIM_NOTIFIED_KEY || CONFIG.KV_NOTIFIED_KEY, "json");
     return data || {};
   } catch (error) {
     console.log("No notified matches found, starting fresh");
     return {};
   }
 }
-export async function saveNotifiedMatch(env: Env, match, notificationType, notifiedMatches: any) {
+export async function saveNotifiedMatch(env: Env, match, notificationType, notifiedMatches) {
   const now = Date.now();
   const matchTime = new Date(match.utcDate).getTime();
   const key = matchKey(match);
@@ -45,9 +45,11 @@ export async function saveNotifiedMatch(env: Env, match, notificationType, notif
       expiresAt = matchTime + CONFIG.ONE_HOUR_MS;
       break;
     case "match-start":
+    case "match-start-big":
       expiresAt = matchTime + CONFIG.TWO_HOURS_MS;
       break;
     case "result":
+    case "result-big":
       expiresAt = now + CONFIG.ONE_DAY_MS;
       break;
     default:
@@ -94,9 +96,16 @@ export async function shouldSendNotification(env: Env, match, notificationType, 
   if (MEM_DEDUPE.has(key + ":" + notificationType)) {
     return false;
   }
+  // v13.36-nospam THE LINE: once an event has fired, it never fires again —
+  // regardless of the record's expiresAt. Previously a record that expired
+  // mid-window (e.g. the old kickoff+1h default for "result-big" inside the
+  // 6h post-match window) silently RE-ARMED the send and the notification
+  // spammed every sweep. expiresAt is now purely KV-size hygiene: every
+  // type's expiry is >= its window's end, so cleanup can never purge a
+  // record whose window is still open.
   if (notifiedMatches[key]) {
     const existingNotification = notifiedMatches[key].find(
-      (n) => n.notificationType === notificationType && now < n.expiresAt
+      (n) => n.notificationType === notificationType
     );
     if (existingNotification) {
       const timeAgo = ((now - existingNotification.notifiedAt) / CONFIG.ONE_HOUR_MS).toFixed(1);
@@ -119,6 +128,16 @@ export async function shouldSendNotification(env: Env, match, notificationType, 
       return isMatchStartingNow(match, env) || isMatchStartBackfillEligible(match, env);
     case "result":
       return isMatchFinished(match) && isWithinPostMatchWindow(match, env) || isBackfillEligible(match, "result", env);
+    // v13.36-nospam: the big-match broadcast types were NEVER checked here
+    // (the broadcast code sent first and only saved after) — a finished
+    // master big-match re-sent its FT to all non-followers on EVERY tick of
+    // the 6h post window (up to 36 copies) and the kickoff broadcast did the
+    // same across its whole -1..+45min window. Both now dedupe like every
+    // other type.
+    case "match-start-big":
+      return isMatchStartingNow(match, env);
+    case "result-big":
+      return isMatchFinished(match) && isWithinPostMatchWindow(match, env);
     default:
       return false;
   }
@@ -247,9 +266,15 @@ export function isMatchFinished(match) {
   return match.status === "FINISHED" || isPresumablyFinished(match, null);
 }
 export async function cleanupExpiredNotifications(env: Env) {
+  // v13.36-nospam: the once-per-hour guard is now isolate-local. The old
+  // cleanup_hour KV write cost 144 writes/day (a big chunk of the 1,000/day
+  // free quota) just to remember an optimization. Cleanup is idempotent and
+  // only WRITES when it actually removed something, so running it a few
+  // extra times across isolates costs a couple of KV reads per tick — reads
+  // are 100k/day, effectively free.
   const hourStamp = Math.floor(Date.now() / 36e5);
-  const lastCleanup = parseInt(await env.STATE.get("cleanup_hour").catch(() => null)) || 0;
-  if (lastCleanup === hourStamp) return;
+  if (CLEANUP_HOUR === hourStamp) return;
+  CLEANUP_HOUR = hourStamp;
   const notifiedMatches: Record<string, any> = await getNotifiedMatches(env);
   const now = Date.now();
   let cleanedCount = 0;
@@ -280,9 +305,10 @@ export async function cleanupExpiredNotifications(env: Env) {
     }
     console.log(`\u{1F9F9} Cleaned up ${cleanedCount} expired notifications`);
   }
-  await env.STATE.put("cleanup_hour", String(hourStamp), { expirationTtl: 2 * 36e5 }).catch(() => {
-  });
 }
+// v13.36-nospam: isolate-local cleanup guard (replaced the cleanup_hour KV
+// key — see cleanupExpiredNotifications above).
+var CLEANUP_HOUR = -1;
 export function shouldNotify(match) {
   const compCode = match.competition.code;
   const normHome = normAlias(match.homeTeam.name);

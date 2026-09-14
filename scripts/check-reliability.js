@@ -92,5 +92,61 @@ check("#10 healthz exposes outbox_depth", /outbox_depth: outboxDepth/.test(src))
 check("#10 healthz exposes version", /version: VERSION/.test(src));
 check("#10 healthz unhealthy when outbox_depth >= 50", /outboxDepth < 50/.test(src));
 
+// ============ v13.36-nospam: exactly-once notifications ============
+// The reported bug: the bot spammed 10-20 copies of one notification.
+// Root causes (all fixed + regression-guarded here):
+//   (1) result-big/match-start-big broadcasts had NO dedupe check;
+//   (2) expired dedupe records re-armed mid-window sends;
+//   (3) send-then-save ordering let a failed KV write re-send every tick.
+
+// THE LINE: an expired record STILL blocks (expiresAt = KV hygiene only).
+// The blocking find must NOT contain `now < n.expiresAt` anymore.
+check("#nospam1 never-expire: blocking find has no expiresAt re-arm", /existingNotification = notifiedMatches\[key\]\.find\(\s*\(n\) => n\.notificationType === notificationType\s*\)/.test(src));
+check("#nospam1 old re-arm check removed", !/notificationType === notificationType && now < n\.expiresAt/.test(src));
+
+// Broadcast types are real dedupe cases now.
+check("#nospam2 shouldSendNotification handles match-start-big", /case "match-start-big":\s*return isMatchStartingNow/.test(src));
+check("#nospam2 shouldSendNotification handles result-big", /case "result-big":\s*return isMatchFinished\(match\) && isWithinPostMatchWindow/.test(src));
+
+// Broadcasts: check BEFORE send + write-first save (source order: the
+// shouldSendNotification call for the -big type must precede its save, and
+// the save must precede the group send loop).
+const resultBigSeg = (src.match(/result-big[\s\S]{0,2600}?(?=\/\/ v13\.13-kickoff)/) || [""])[0];
+check("#nospam3 result-big: dedupe check exists", /shouldSendNotification\(env, match, "result-big", notifiedMatches\)/.test(resultBigSeg));
+check("#nospam3 result-big: check precedes write-first save", resultBigSeg.indexOf('shouldSendNotification(env, match, "result-big"') < resultBigSeg.indexOf('saveNotifiedMatch(env, match, "result-big"'));
+const kickoffBigSeg = (src.match(/MISSING DEDUPE CHECK \(same bug[\s\S]{0,2600}?(?=\/\/ v12\.32|\/\/ after this match)/) || [""])[0];
+check("#nospam3 kickoff-big: dedupe check exists", /shouldSendNotification\(env, match, "match-start-big", notifiedMatches\)/.test(kickoffBigSeg));
+check("#nospam3 kickoff-big: check precedes write-first save", kickoffBigSeg.indexOf('shouldSendNotification(env, match, "match-start-big"') < kickoffBigSeg.indexOf('saveNotifiedMatch(env, match, "match-start-big"'));
+
+// Regular path: write-first — saveNotifiedMatch before the chatGroups loop
+// in sendNotificationIfNeeded.
+const sniSeg = (src.match(/async function sendNotificationIfNeeded[\s\S]{0,4200}?for \(const g of chatGroups\)/) || [""])[0];
+check("#nospam4 regular path: write-first save before sends", /await saveNotifiedMatch\(env, match, config\.type, notifiedMatches\);/.test(sniSeg) && sniSeg.indexOf("saveNotifiedMatch(env, match, config.type") < sniSeg.lastIndexOf("for (const g of chatGroups)"));
+check("#nospam4 regular path: save gated on shouldSend", sniSeg.indexOf("shouldSendNotification") < sniSeg.indexOf("saveNotifiedMatch"));
+
+// Past/future horizon: focus on upcoming, hard outer fence on the past.
+check("#nospam5 horizon fence in sendMatchNotifications", /MIN_MS = nowMs - 26 \* 36e5/.test(src) && /MAX_MS = nowMs \+ 73 \* 36e5/.test(src));
+
+// Morning digest: write-first dedupe (put before sendTelegram).
+const digestSeg = (src.match(/const dedupeKey = "digest_sent_" \+ dateKey[\s\S]{0,900}?buildMorningDigestMessage/) || [""])[0];
+check("#nospam6 morning digest: mark-before-send", digestSeg.indexOf('STATE.put(dedupeKey') >= 0 && digestSeg.indexOf("STATE.put(dedupeKey") < digestSeg.indexOf("buildMorningDigestMessage"));
+
+// Migration broadcast: write-first dedupe.
+const migSeg = (src.match(/mig_sent_v1[\s\S]{0,2400}?const r = await sendTelegram\(env, msg, chatId\);/) || [""])[0];
+check("#nospam7 migration: mark-before-send", migSeg.indexOf('STATE.put(dedupeKey, "1"') >= 0 && migSeg.indexOf('STATE.put(dedupeKey, "1"') < migSeg.indexOf("sendTelegram(env, msg, chatId)"));
+
+// Cron resilience: guarded lock (fail closed), start-heartbeat, phase alerts.
+check("#nospam8 lock write guarded (fail closed)", /try \{\s*await env\.STATE\.put\(CONFIG\.KV_EXECUTION_LOCK, lockOwner, \{\s*expirationTtl: Math\.ceil\(CONFIG\.LOCK_TIMEOUT \/ 1e3\)\s*\}\);\s*\} catch \(e\) \{\s*await alertPhaseError\(env, "execution-lock/.test(src));
+check("#nospam8 start-heartbeat written after lock", /START heartbeat[\s\S]{0,600}heartbeat: String\(NOW\)/.test(src));
+check("#nospam8 alertPhaseError exists + rate-limited", /async function alertPhaseError\(env, phase, err\)/.test(src) && /30 \* 6e4/.test(src));
+check("#nospam8 sendMatchNotifications phase guarded", /try \{\s*await sendMatchNotifications\(env, matches\);\s*\} catch \(e\) \{\s*await alertPhaseError\(env, "send-notifications"/.test(src));
+check("#nospam8 match pool/fetch phase guarded", /alertPhaseError\(env, "match-pool\/fetch"/.test(src));
+check("#nospam8 getRegisteredChats phase guarded", /alertPhaseError\(env, "get-registered-chats"/.test(src));
+check("#nospam8 applySettings phase guarded", /alertPhaseError\(env, "apply-settings"/.test(src));
+
+// KV write quota: cleanup_hour KV write removed (isolate-local guard now).
+check("#nospam9 cleanup_hour KV write removed", !/STATE\.put\("cleanup_hour"/.test(src));
+check("#nospam9 last_full_sweep folded into cron_status_v1", /last_full_sweep: fullSweepThisTick \? String\(NOW\)/.test(src));
+
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

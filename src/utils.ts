@@ -217,3 +217,12 @@ export function jsonResponse(data, status?) {
     }
   });
 }
+// v13.36-anytight: every admin API route used to inline the same
+// json-parse-with-null-catch cast (8 copies). One helper kills all of them
+// (the promise rejections become null, the inferred type is any, callers
+// keep their existing null-check). NOTE: the request body must only be
+// parsed AFTER validateWebhook passes — the security check enforces that
+// source order, so keep the first raw parse inside that webhook block.
+export async function readJson(req) {
+  return req.json().catch(() => null);
+}

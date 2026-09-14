@@ -1201,3 +1201,64 @@ footer{margin-top:0}
   .favstar{width:38px;height:38px;min-width:38px;min-height:38px;font-size:16px}
   .favchip{min-height:38px}
 }
+/* ===== v13.36-favstand: stars everywhere + the favorites manager ===== */
+/* Standings + UCL tables: the star column trails the Pts column. The
+   compact boxes are 11.5px-typography rows — a full 26px star would bloat
+   every row, so .ststar shrinks to 20px (glyph 12px) and the mobile
+   touch-target bump below is EXCLUDED for it: the hit area grows via a
+   ::after halo instead of layout size, keeping 8-row boxes compact. */
+.sthead-star{width:20px;flex-shrink:0}
+.sthead-star::before{content:"";display:block;width:12px;margin-inline-start:auto}
+.favstar.ststar{width:20px;height:20px;min-width:20px;min-height:20px;font-size:12px;order:0;margin-inline-start:0;position:relative}
+.favstar.ststar::after{content:"";position:absolute;inset:-7px}
+.strow.hasfav .stname{color:#fbbf24;text-shadow:0 0 10px rgba(251,191,36,.18)}
+.strow.hasfav .stpos{color:rgba(251,191,36,.85)}
+.strow.hasfav{position:relative}
+.strow.hasfav::before{content:"";position:absolute;inset-inline-start:-8px;top:15%;bottom:15%;width:2.5px;border-radius:2px;background:linear-gradient(to bottom,rgba(251,191,36,.75),rgba(251,191,36,.25))}
+[dir="rtl"] .strow.hasfav{background:linear-gradient(to left,rgba(251,191,36,.07),transparent 46%)}
+[dir="ltr"] .strow.hasfav{background:linear-gradient(to right,rgba(251,191,36,.07),transparent 46%)}
+[data-theme="light"] .strow.hasfav .stname{color:#b45309;text-shadow:none}
+[data-theme="light"] .strow.hasfav::before{background:linear-gradient(to bottom,rgba(217,119,6,.8),rgba(217,119,6,.3))}
+/* Cup boxes: inline 18px stars ride INSIDE the «TeamA – TeamB» line —
+   no row-end slot here (the line is one compact sentence). Same ::after
+   halo trick for touch. */
+.favstar.cupstar{width:18px;height:18px;min-width:18px;min-height:18px;font-size:11.5px;order:0;margin-inline-start:0;position:relative;vertical-align:middle}
+.favstar.cupstar::after{content:"";position:absolute;inset:-8px}
+.cupmatch .teams{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap}
+.cupmatch .teams > button.cupstar{flex:0 0 auto}
+/* The manage chip (✎) — quiet pencil, gold on hover, aria-expanded state. */
+.favchip.manage{padding:7px 10px;font-size:13px;color:var(--muted);letter-spacing:.5px}
+.favchip.manage:hover{color:#f59e0b;background:rgba(245,158,11,.12)}
+.favchip.manage[aria-expanded="true"]{color:#451a03;background:linear-gradient(135deg,#fbbf24,#f59e0b)}
+[data-theme="light"] .favchip.manage[aria-expanded="true"]{color:#fff}
+/* Favorites manager popover: a glass dialog anchored under the favbar,
+   centered (the favbar is centered), max-height + scroll for long lists,
+   fade/rise in — the global prefers-reduced-motion rule flattens it. */
+/* Physical left:50% (NOT inset-inline-start): translateX(-50%) is a
+   physical transform, so logical anchoring would off-center the popover
+   in RTL. left+translate centers identically in both directions. */
+#favpop{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(-4px) scale(.97);min-width:min(320px,88vw);max-width:88vw;max-height:min(340px,52vh);overflow-y:auto;border-radius:16px;background:var(--glass);border:1px solid var(--glass-border);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);box-shadow:0 12px 34px rgba(0,0,0,.38),var(--glass-shadow),inset 0 1px 0 var(--glass-hi);padding:10px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s,transform .18s,visibility .18s;z-index:60}
+#favbar{position:relative}
+#favpop.open{opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0) scale(1)}
+#favpop .favpop-head{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.3px;padding:2px 4px 8px;border-bottom:1px dashed var(--glass-border);margin-bottom:6px}
+#favpop .favpop-empty{color:var(--muted);font-size:12.5px;padding:10px 4px;text-align:center}
+#favpop .favpop-list{display:flex;flex-direction:column;max-height:200px;overflow-y:auto}
+#favpop .favpop-row{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:10px}
+#favpop .favpop-row:hover{background:rgba(245,158,11,.08)}
+#favpop .favpop-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;font-weight:700;color:var(--ink)}
+#favpop .favpop-x{appearance:none;border:0;background:transparent;color:var(--muted);width:30px;height:30px;min-width:30px;min-height:30px;border-radius:999px;cursor:pointer;font-size:13px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,color .15s,transform .15s}
+#favpop .favpop-x:hover{background:rgba(239,68,68,.14);color:#f87171}
+#favpop .favpop-x:active{transform:scale(.9)}
+#favpop .favpop-x:focus-visible{outline:2px solid #f87171;outline-offset:1px}
+#favpop .favpop-foot{border-top:1px dashed var(--glass-border);margin-top:8px;padding-top:8px;display:flex;justify-content:center}
+#favpop .favpop-clear{appearance:none;border:1px solid rgba(239,68,68,.35);background:transparent;color:#f87171;font:inherit;font-size:12px;font-weight:800;padding:6px 14px;border-radius:999px;cursor:pointer;transition:background .15s,color .15s}
+#favpop .favpop-clear:hover{background:rgba(239,68,68,.12)}
+#favpop .favpop-clear:focus-visible{outline:2px solid #f87171;outline-offset:2px}
+[data-theme="light"] #favpop{box-shadow:0 12px 34px rgba(0,0,0,.14),var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+[data-theme="light"] #favpop .favpop-clear{color:#b91c1c;border-color:rgba(185,28,28,.3)}
+/* Popover touch targets (coarse pointers): rows + remove buttons grow. */
+@media (max-width:600px), (pointer:coarse){
+  #favpop .favpop-x{width:36px;height:36px;min-width:36px;min-height:36px}
+  #favpop .favpop-clear{min-height:36px}
+  .favchip.manage{min-height:38px;min-width:38px}
+}

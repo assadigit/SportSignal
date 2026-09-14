@@ -205,6 +205,22 @@ var MEM_DEDUPE = new Set();
   check("dedupe: match already notified for 3h → shouldSend=false", !await shouldSendNotification(env, dedupeMatch, "pre-match-3h", notifiedKV));
   check("dedupe: same match for 1h (not yet sent) → shouldSend=true (1h is in window? no, 3h match)", !isWithin1HourWindow(dedupeMatch, env) || await shouldSendNotification(env, dedupeMatch, "pre-match-1h", notifiedKV));
 
+  // v13.36-nospam THE LINE: an EXPIRED dedupe record still blocks. The old
+  // behavior (expiry mid-window re-armed the send) was the spam engine —
+  // "result-big" records expired at kickoff+1h inside the 6h post window
+  // and re-sent on every tick after that. expiresAt is KV hygiene only.
+  const expiredKV = {};
+  expiredKV[key] = [{ notificationType: "pre-match-3h", notifiedAt: Date.now() - 7200000, expiresAt: Date.now() - 3600000 }];
+  check("nospam-line: EXPIRED record still blocks re-send → shouldSend=false", !await shouldSendNotification(env, dedupeMatch, "pre-match-3h", expiredKV));
+  // The same line applies to the broadcast types (their dedupe checks were
+  // missing entirely before v13.36 — up to 36 FT copies per big match).
+  const bigFin = matchAt(-2, "FINISHED", { score: { fullTime: { home: 3, away: 0 } } });
+  const bigKey = matchKey(bigFin);
+  const bigKV = {};
+  bigKV[bigKey] = [{ notificationType: "result-big", notifiedAt: Date.now() - 7.5 * 3600000, expiresAt: Date.now() - 7 * 3600000 }];
+  check("nospam-line: result-big with EXPIRED record (still in 6h window) → blocked", !await shouldSendNotification(env, bigFin, "result-big", bigKV));
+  check("nospam-line: result-big eligible for a NOT-yet-notified finished match", await shouldSendNotification(env, bigFin, "result-big", {}));
+
   console.log("\n=== E. Skipped-cron resilience (backfill covers missed ticks) ===");
   // A match that was 3h away when the cron should have fired, but the cron
   // skipped. Now it's 2h away — the 3h window (2.5-3.5h) is missed, but

@@ -5,7 +5,7 @@
 
 import type { Env } from "./types";
 import { CONFIG, X_CONFIG, VERSION, PAGE_SEC_HEADERS } from "./config";
-import { jsonResponse, resetSubrequestBudget, hashPassword, getAdminPassHash, timingSafeEqualStr, escapeMarkdownCharacters, getNowTehran } from "./utils";
+import { readJson, jsonResponse, resetSubrequestBudget, hashPassword, getAdminPassHash, timingSafeEqualStr, escapeMarkdownCharacters, getNowTehran } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams";
 import { matchKey } from "./dedupe";
 import { translateTeam, translateCompetition, resetFaAiCache, ensureFaAiCache, isValidFaName } from "./translate";
@@ -143,7 +143,7 @@ async function legacyGetAction(c: RouteCtx): Promise<Response | null> {
           await env.STATE.delete(CONFIG.KV_EXECUTION_LOCK);
           return new Response("\u2705 All cache cleared. Users need to /start again.");
         case "health":
-          const st: any = await getCronStatus(env);
+          const st = await getCronStatus(env);
           const heartbeat = st.heartbeat;
           const users = await getRegisteredChats(env);
           const now = getNowTehran(env);
@@ -278,7 +278,7 @@ const POST_GATE_ROUTES: RouteDef[] = [
         return jsonResponse(await getSettings(env));
       }
       if (req.method === "PUT") {
-        const body = await req.json().catch(() => null) as any;
+        const body = await readJson(req);
         if (!body) return jsonResponse({ error: "Invalid JSON body" }, 400);
         const saved = sanitizeSettings(body);
         let cat = null;
@@ -310,7 +310,7 @@ const POST_GATE_ROUTES: RouteDef[] = [
       if (req.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: corsHeaders });
       }
-      const st: any = await getCronStatus(env);
+      const st = await getCronStatus(env);
       const heartbeat = parseInt(st.heartbeat) || 0;
       const ageMin = heartbeat ? Math.round((Date.now() - heartbeat) / 6e4) : -1;
       const fresh = ageMin >= 0 && ageMin <= CONFIG.EXECUTION_FREQUENCY_MINUTES * 3;
@@ -393,7 +393,7 @@ const POST_GATE_ROUTES: RouteDef[] = [
     // fa_teams_ai.overrides (takes priority over AI-learned + static dict).
   { path: "/api/fa-teams/override", method: "POST", handler: async ({ req, env, url }): Promise<Response | null> => {
       if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
-      const body = await req.json().catch(() => null) as any;
+      const body = await readJson(req);
       const en = body && typeof body.en === "string" ? body.en.trim() : "";
       const fa = body && typeof body.fa === "string" ? body.fa.trim() : "";
       if (!en || !fa) return jsonResponse({ error: "en + fa required" }, 400);
@@ -423,7 +423,7 @@ const POST_GATE_ROUTES: RouteDef[] = [
     return null;
   } },
   { path: "/api/broadcast", method: "POST", handler: async ({ req, env, url }): Promise<Response | null> => {
-      const body = await req.json().catch(() => null) as any;
+      const body = await readJson(req);
       const text = body && typeof body.text === "string" && body.text.trim();
       if (!text) return jsonResponse({ error: "text is required" }, 400);
       const chats = await getRegisteredChats(env);
@@ -507,7 +507,7 @@ const POST_GATE_ROUTES: RouteDef[] = [
     return null;
   } },
   { path: "/api/status", method: undefined, handler: async ({ req, env, url }): Promise<Response | null> => {
-      const st: any = await getCronStatus(env);
+      const st = await getCronStatus(env);
       const users = await getRegisteredChats(env);
       return jsonResponse({
         version: VERSION,
@@ -602,7 +602,7 @@ const POST_GATE_ROUTES: RouteDef[] = [
     return null;
   } },
   { path: "/api/sources", method: undefined, handler: async ({ req, env, url }): Promise<Response | null> => {
-      const report: any = {};
+      const report = {};
       const sources = [
         { name: "football-data", fn: fetchFootballData },
         { name: "sportscore", fn: fetchSportScore },
@@ -672,7 +672,7 @@ const POST_GATE_ROUTES: RouteDef[] = [
   { path: "/api/x/phase", method: "PUT", handler: async ({ req, env, url }): Promise<Response | null> => {
       if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
       try {
-        const body = await req.json().catch(() => null) as any;
+        const body = await readJson(req);
         const raw = body && typeof body.phase === "string" ? body.phase : "";
         const clean = raw.split(",").map((s) => s.trim().toLowerCase()).filter((s) => ["coronation", "ft", "kickoff", "tables", "media"].indexOf(s) !== -1);
         if (!clean.length) return jsonResponse({ error: "phase must include at least one of: coronation, ft, kickoff, tables, media" }, 400);
@@ -687,7 +687,7 @@ const POST_GATE_ROUTES: RouteDef[] = [
   { path: "/api/x/dry-run", method: "PUT", handler: async ({ req, env, url }): Promise<Response | null> => {
       if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
       try {
-        const body = await req.json().catch(() => null) as any;
+        const body = await readJson(req);
         const v = body && body.dryRun ? "1" : "0";
         await env.STATE.put(X_CONFIG.KV_DRY_RUN, v).catch(() => {
         });
@@ -700,7 +700,7 @@ const POST_GATE_ROUTES: RouteDef[] = [
   { path: "/api/x/enabled", method: "PUT", handler: async ({ req, env, url }): Promise<Response | null> => {
       if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
       try {
-        const body = await req.json().catch(() => null) as any;
+        const body = await readJson(req);
         const v = body && body.enabled ? "1" : "0";
         await env.STATE.put(X_CONFIG.KV_ENABLED, v).catch(() => {
         });
@@ -763,7 +763,12 @@ const POST_GATE_ROUTES: RouteDef[] = [
       const dateTo = new Date(Date.now() + days * 864e5).toISOString().split("T")[0];
       const key = env.API_TOKEN || "";
       const u = `${CONFIG.API_URL}?competitions=${comps}&dateFrom=${dateFrom}&dateTo=${dateTo}`;
-      const res = await fetch(u, { headers: { "X-Auth-Token": key } }).catch((e) => ({ err: e.message }) as any);
+      // v13.36-anytight: res is a Response | { err: string } union on
+      // purpose — the fetch failure surfaces as a network-error JSON
+      // instead of an exception. The `: any` annotation on the
+      // declaration keeps `res.err` / `res.text()` legal on the union
+      // (load-bearing; the harness already strips this exact shape).
+      const res: any = await fetch(u, { headers: { "X-Auth-Token": key } }).catch((e) => ({ err: e.message }));
       if (res.err) return jsonResponse({ comps, error: "network: " + res.err });
       const text = await res.text();
       let count = null;
@@ -805,7 +810,7 @@ const worker_default = {
       return new Response(null, { status: 302, headers: { "location": "/admin", "cache-control": "no-store" } });
     }
     if (url.pathname === "/admin/login" && req.method === "POST") {
-      const body = await req.json().catch(() => null) as any;
+      const body = await readJson(req);
       const ip = req.headers.get("CF-Connecting-IP") || "unknown";
       const username = body && body.username || "";
       const failKey = "login_fail_" + ip + "_" + username;
@@ -888,7 +893,7 @@ const worker_default = {
     }
     if (url.pathname === "/admin/change-password" && req.method === "POST") {
       if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
-      const body = await req.json().catch(() => null) as any;
+      const body = await readJson(req);
       const np = body && body.password;
       if (!np || np.length < 8) return jsonResponse({ error: "Password too short (min 8)" }, 400);
       const salt = crypto.randomUUID();
@@ -970,10 +975,10 @@ const worker_default = {
         // v13.12-cards: look up the match in the tracked pool (KV_MATCHES_KEY,
         // 24h TTL — reliably populated by every cron sweep) first, then the
         // short-TTL public-matches cache as fallback.
-        let match: any = null;
+        let match = null;
         const tracked = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
         if (tracked && Array.isArray(tracked.matches)) {
-          match = tracked.matches.find((m: any) => {
+          match = tracked.matches.find((m) => {
             if (!m || !m.homeTeam || !m.awayTeam || !m.utcDate) return false;
             return matchKey(m) === matchKeyParam || String(m.id || "") === matchKeyParam;
           });
@@ -989,9 +994,9 @@ const worker_default = {
               cached.data.topSpot && cached.data.topSpot.matches ? cached.data.topSpot.matches : [],
               cached.data.ucl && cached.data.ucl.matches ? cached.data.ucl.matches : [],
               cached.data.nextBig ? [cached.data.nextBig] : [],
-              cached.data.cups ? cached.data.cups.map((c: any) => c.next).filter(Boolean) : []
+              cached.data.cups ? cached.data.cups.map((c) => c.next).filter(Boolean) : []
             );
-            match = pools.find((m: any) => {
+            match = pools.find((m) => {
               if (!m || !m.homeTeam || !m.awayTeam || !m.utcDate) return false;
               return matchKey(m) === matchKeyParam || String(m.id || "") === matchKeyParam;
             });
