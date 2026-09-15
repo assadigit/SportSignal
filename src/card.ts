@@ -13,7 +13,7 @@
 
 import { CONFIG, COMP_EN, LEAGUE_LOGOS } from "./config";
 import type { Env } from "./types";
-import { getJalaliDate, getJalaliTime, getEnglishDate, getEnglishTime } from "./utils";
+import { getJalaliDate, getJalaliTime, getEnglishDate, getEnglishTime, bumpSubrequest } from "./utils";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
 import { matchKey } from "./dedupe";
 import { VAZIRMATN_BOLD_TTF_B64, VAZIRMATN_EXTRABOLD_TTF_B64 } from "./card-fonts";
@@ -48,6 +48,10 @@ async function ensureResvg() {
 // back to a placeholder circle if the fetch fails.
 export async function fetchCrestDataUri(env: Env, url: string): Promise<string> {
   if (!url) return "";
+  // v13.45-sightlines (F10): crest fetches (card renders) were invisible to
+  // the counter — up to 2 per card, on the path that runs INSIDE
+  // notification sends. Budget-out falls back to the placeholder crest.
+  if (bumpSubrequest()) return "";
   try {
     const res = await fetch(url, { cf: { cacheTtl: 86400, cacheEverything: true } });
     if (!res.ok) return "";

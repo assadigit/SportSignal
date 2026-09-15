@@ -300,5 +300,35 @@ check("#quota4 FD suspension check wired at sweep entry", /providerSuspended\(en
 check("#quota4 FD suspends on rate-limit exhaustion", /suspendProvider\(env, "football-data"\)/.test(src));
 check("#quota4 fdRateLimited window helper exists", /function fdRateLimited\(\)/.test(src));
 
+// v13.45-sightlines (R1): true subrequest totals, dead man's switch, guards.
+// F10: KV ops now counted (gates keep fetch-only semantics BY DESIGN — they
+// were tuned on that counter; the sum is the sightline, not a new gate input).
+check("#f10a kvOpsCount accessor defined", /function kvOpsCount\(\)/.test(src));
+check("#f10b KV get/delete wrapped with __orig pinning", /__origGet/.test(src) && /__origDelete/.test(src));
+check("#f10c the put meter's wrapper also bumps the KV-op counter", /kvWritesThisTick\+\+;\s*\n\s*bumpKvOp\(\);/.test(src));
+check("#f10d completion blob exposes the true subrequest total", /subreq_last_tick: subrequestCount\(\) \+ kvOpsCount\(\) \+ 1/.test(src) && /kv_ops_last_tick: kvOpsCount\(\) \+ 1/.test(src));
+check("#f10e healthz exposes degraded + both sightlines", /degraded: degraded/.test(src) && /subreq_last_tick: parseInt\(st\.subreq_last_tick\)/.test(src) && /kv_ops_last_tick: parseInt\(st\.kv_ops_last_tick\)/.test(src));
+check("#f10f xPostTweet bumps before its fetch", /if \(bumpSubrequest\(\)\) return \{ ok: false, status: 0, error: "subrequest-budget" \};/.test(src));
+// card.ts is not part of the eval concat (workerSrc order) — read it directly
+// so the crest-fetch bump is locked too.
+const fs13 = require("fs");
+const path13 = require("path");
+const cardSrc13 = fs13.readFileSync(path13.join(__dirname, "..", "src", "card.ts"), "utf8");
+check("#f10g crest + standings + getChat fetches all bump", /if \(bumpSubrequest\(\)\) return "";/.test(cardSrc13) && /if \(bumpSubrequest\(\)\) return out;/.test(src) && /if \(bumpSubrequest\(\)\) break;/.test(src));
+// The dead man's switch: success ping after a resolved tick (every early
+// return is a handled outcome), /fail from the catch with the error name in
+// the POST body (verified live: path-suffix messages 400, body form works).
+check("#hc1 pingHealthcheck defined (fire-and-forget, budget-guarded, secret-gated)", /function pingHealthcheck\(env, ctx, ok, err\)/.test(src) && /HEALTHCHECK_PING_URL/.test(src) && /ctx\.waitUntil\(done\)/.test(src));
+check("#hc2 success ping after executeScheduledLogic; fail ping in the catch", /await executeScheduledLogic\(env\);\s*\/\/ v13\.45-sightlines[\s\S]{0,400}pingHealthcheck\(env, ctx, true\);/.test(src) && /pingHealthcheck\(env, ctx, false, error\);/.test(src));
+check("#hc3 fail ping posts the error name in the body", /fetch\(url \+ "\/fail", \{ method: "POST", headers: \{ "content-type": "text\/plain" \}, body: String\(err && err\.name \|\| "error"\)/.test(src));
+// W6: the 5-min counter key existed in the config type but not the init.
+check("#n1 notificationCounts initializes pre-match-5min (NaN fix)", /"pre-match-1h": 0,\s*\n\s*"pre-match-5min": 0,/.test(src));
+// W7: the fa-ai cooldown marker is written only when there is work.
+check("#fai1 fa-ai cooldown marker (the PUT) sits below the emptiness check", (() => { const seg = (src.match(/async function maybeRunFaAi[\s\S]{0,2600}/) || [""])[0]; const empty = seg.indexOf("!names.length && !venues.length"); const mark = seg.indexOf("STATE.put(CONFIG.KV_FA_LAST_RUN"); return empty > -1 && mark > -1 && mark > empty; })());
+check("#fai2 empty-verdict isolate cache keyed on the payload ts", /FA_EMPTY_PAYLOAD_TS/.test(src));
+// W8: bot commands must never trigger the provider sweep.
+const botSeg13 = (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron.ts =====")[0];
+check("#w8 bot.ts never calls fetchMatchesFromAPI (no provider sweeps from user-typed commands)", botSeg13.length > 0 && !/fetchMatchesFromAPI/.test(botSeg13));
+
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

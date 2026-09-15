@@ -5,7 +5,7 @@
 
 import type { Env } from "./types";
 import { CONFIG, X_CONFIG, VERSION, PAGE_SEC_HEADERS } from "./config";
-import { readJson, jsonResponse, resetSubrequestBudget, hashPassword, getAdminPassHash, timingSafeEqualStr, escapeMarkdownCharacters, getNowTehran } from "./utils";
+import { readJson, jsonResponse, resetSubrequestBudget, hashPassword, getAdminPassHash, timingSafeEqualStr, escapeMarkdownCharacters, getNowTehran, pingHealthcheck } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams";
 import { matchKey } from "./dedupe";
 import { translateTeam, translateCompetition, resetFaAiCache, ensureFaAiCache, isValidFaName } from "./translate";
@@ -334,6 +334,12 @@ const POST_GATE_ROUTES: RouteDef[] = [
         outboxDepth = Array.isArray(ob) ? ob.length : 0;
       } catch (e) { }
       const healthy = fresh && completing && outboxDepth < 50;
+      // v13.45-sightlines: degraded band — still ok:true (200) but trending
+      // toward a 503 line: ages past 2 periods (a normal day never exceeds
+      // ~1 period + one long match-night tick), a growing-but-small outbox,
+      // or the KV governor engaged. Additive field for dashboards/alert
+      // tuning; the 200/503 decision above is untouched.
+      const degraded = healthy && (ageMin > CONFIG.EXECUTION_FREQUENCY_MINUTES * 2 || lastCronAgeMin > CONFIG.EXECUTION_FREQUENCY_MINUTES * 2 + 5 || outboxDepth > 10 || (parseInt(st.kv_writes_day) || 0) >= CONFIG.KV_WRITES_SOFT);
       // v13.38-qc: surface the KV write budget burn (measured, not pencil
       // math) so any monitor can watch the 1,000/day free-tier quota —
       // quota exhaustion was the original spam trigger.
@@ -344,6 +350,9 @@ const POST_GATE_ROUTES: RouteDef[] = [
         outbox_depth: outboxDepth,
         kv_writes_day: parseInt(st.kv_writes_day) || 0,
         kv_budget: st.budget || null,
+        degraded: degraded,
+        subreq_last_tick: parseInt(st.subreq_last_tick) || 0,
+        kv_ops_last_tick: parseInt(st.kv_ops_last_tick) || 0,
         version: VERSION
       }), {
         status: healthy ? 200 : 503,
@@ -1073,8 +1082,18 @@ const worker_default = {
     console.log("\u23F0 Scheduled event triggered");
     try {
       await executeScheduledLogic(env);
+      // v13.45-sightlines: dead man's switch — success ping AFTER the tick
+      // resolves (every early return is a handled outcome: lock-skip,
+      // no-users, no-pool; only a cron that stops firing, a hard-down
+      // worker, or a throw leaves the check late → Telegram DOWN after the
+      // grace window).
+      pingHealthcheck(env, ctx, true);
     } catch (error) {
       console.error("Scheduled execution failed:", error);
+      // v13.45-sightlines: the tick threw — /fail pings immediately (no
+      // grace) with the error name in the POST body; the next successful
+      // tick recovers the check.
+      pingHealthcheck(env, ctx, false, error);
     }
   }
 };

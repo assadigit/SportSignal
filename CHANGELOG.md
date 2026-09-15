@@ -6,6 +6,78 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.45-sightlines] — 2026-09-15 (see everything: true subrequest totals, dead man's switch, degraded band)
+
+### The theme
+Six observability/guard fixes, zero behavior changes on the notification
+path. Everything previously invisible now has a number attached, and the
+free external monitoring stack (healthchecks.io dead man's switch +
+UptimeRobot healthz poll) goes live on the worker side.
+
+### F10 — the subrequest counter was blind to KV ops + 5 fetch sites
+- The counter only ever saw fetchJSON/fetchWithRetry/telegram/admin. Every
+  STATE.get/delete and five raw fetch sites (x.ts xPostTweet, card.ts crest
+  fetch, composers.ts standings + teams, users.ts getChat backfill) ran
+  invisible — the notify-defer guard (>38) and the prewarm gate (<30) were
+  deciding on fiction, and a busy sweep could sail past the real 50 ceiling.
+- Fix: KV ops counted via a SECOND counter (bumpKvOp/kvOpsCount), wrapped
+  with the same __orig pinning as the write meter; the five raw sites now
+  bump with graceful fallbacks (placeholder crest / no standings this tick /
+  backfill stops / X post returns budget-exhausted). The GATES keep their
+  fetch-only semantics BY DESIGN — they were tuned on that number; the true
+  total (fetches + KV ops) is the new sightline: completion-blob fields
+  subreq_last_tick / kv_ops_last_tick, the closing log line, and healthz.
+- Net effect: standings/crests/X-posts/getChats now contend for the budget
+  honestly instead of hiding outside the meter.
+
+### Dead man's switch (healthchecks.io)
+- CF has no "cron didn't fire" alerting, and URL monitors can't see hung or
+  CPU-killed ticks (the worker keeps serving 200s — the exact 2026-09-14
+  shape: 49 dead ticks while healthz said ok). pingHealthcheck: success
+  ping after every resolved tick (early returns are handled outcomes →
+  success; a HUNG tick is instead caught by healthz's last_cron staleness
+  → 503 → UptimeRobot — every failure class has exactly one watcher);
+  /fail ping from the scheduled handler's catch with the error name in the
+  POST body (verified live: path-suffix messages 400, the body form is
+  accepted and surfaces in the alert + log). Fire-and-forget via
+  ctx.waitUntil, counted against the subrequest budget (at cap it is
+  skipped — the missed success ping covers that class), and a no-op
+  without the HEALTHCHECK_PING_URL secret.
+
+### healthz degraded band (additive)
+- `degraded: true` while still HTTP 200: ages past 2 periods, outbox > 10,
+  or the KV governor engaged. The 200/503 decision is byte-identical; new
+  fields subreq_last_tick + kv_ops_last_tick join the payload.
+
+### The NaN (W6)
+- notificationCounts was missing "pre-match-5min": 0 — the config type
+  exists, so every 5-min send incremented a missing key → NaN → JSON null
+  in the tick blob's notify.s counters. One line.
+
+### fa-ai marker gating (W7)
+- KV_FA_LAST_RUN was written every 15-min cooldown even when there was
+  nothing to learn (~96 writes/day = 9.6% of the 1,000/day free quota for
+  a signal worth zero). The marker moved BELOW the emptiness check
+  (write-first fail-backoff semantics preserved for real work), and an
+  isolate-level empty-verdict cache keyed on the public payload ts keeps
+  the empty path at one KV read per tick.
+
+### Bot sweep guard (W8)
+- /featured and /next used to re-run the FULL provider sweep when the pool
+  was >10 min old — a user-typed command could burn ~100ms of CPU on a
+  FETCH invocation (the exact poison behind the 2026-09-14 CPU kills,
+  which 13.43 fixed for cron) plus unmetered KV pool writes. Bot commands
+  now serve the KV pool (at most one full sweep / 2h old — the same
+  semantics as cron's quiet period) and never sweep. fetchMatchesFromAPI
+  is gone from bot.ts entirely (test-locked to stay gone).
+
+### Tests
+- check-reliability.js: +13 asserts (#f10a-#f10g, #hc1-#hc3, #n1,
+  #fai1-#fai2, #w8) — including the file-level absence assert that bot.ts
+  can never call fetchMatchesFromAPI again.
+
+---
+
 ## [13.44.1-truemeter] — 2026-09-15 (the meter tells the truth: fold the completion blob + prewarm writes)
 
 ### The bug the live deploy exposed

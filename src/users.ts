@@ -5,7 +5,7 @@
 
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { toFaDigits } from "./utils";
+import { toFaDigits, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { sendTelegram } from "./telegram";
 import { normAlias } from "./matches";
@@ -34,6 +34,10 @@ export async function getBotMembers(env: Env) {
   const missing = members.filter((m) => !m.username && !m.first_name && !m.title);
   for (const m of missing) {
     if (backfilled >= 40) break;
+    // v13.45-sightlines (F10): the getChat backfill fetches were invisible
+    // to the subrequest counter — count them; budget-out stops the backfill
+    // (profiles fill in on a later request).
+    if (bumpSubrequest()) break;
     try {
       const res = await fetch("https://api.telegram.org/bot" + env.BOT_TOKEN + "/getChat?chat_id=" + encodeURIComponent(m.id));
       const d = await res.json() as any;

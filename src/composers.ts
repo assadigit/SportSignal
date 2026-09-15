@@ -5,7 +5,7 @@
 
 import { CONFIG, STAGE_FA, COMP_EN, SPORTSCORE_SLUGS } from "./config";
 import type { Env } from "./types";
-import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, getRelativeTimeUntilMatch, getEnglishDate, getEnglishTime, getEnglishRelative, fetchJSON, enStageName } from "./utils";
+import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, getRelativeTimeUntilMatch, getEnglishDate, getEnglishTime, getEnglishRelative, fetchJSON, enStageName, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, faStageName, isDomesticCup } from "./translate";
 import { normAlias, isMasterPair, isDerby } from "./matches";
@@ -217,6 +217,12 @@ export async function fetchStandings(env: Env, code, allowFetch = true) {
       }
     } else {
       const headers = { "X-Auth-Token": env.API_TOKEN };
+      // v13.45-sightlines (F10): this raw fetch was invisible to the
+      // subrequest counter — the notify-defer guard (>38) couldn't see
+      // standings burn and could over-send past the real 50 ceiling.
+      // Budget-out returns null (no standings this tick; the weekly digest
+      // retries next tick, same as a failed fetch today).
+      if (bumpSubrequest()) return out;
       const res = await fetch("https://api.football-data.org/v4/competitions/" + code + "/standings", { headers });
       if (res.ok) {
         const data = await res.json() as any;
@@ -225,12 +231,16 @@ export async function fetchStandings(env: Env, code, allowFetch = true) {
         const seasonEnded = season && season.endDate && new Date(season.endDate) < new Date();
         const notStarted = seasonEnded || season && season.startDate && new Date(season.startDate) > new Date();
         if (notStarted) {
-          const tRes = await fetch("https://api.football-data.org/v4/competitions/" + code + "/teams", { headers });
+          // v13.45-sightlines (F10): the roster fetch bumps too; budget-out
+          // skips it (zeroRows stays null — the standings fallback fills in).
           let zeroRows = null;
-          if (tRes.ok) {
-            const tData: any = await tRes.json();
-            const roster = (tData.teams || []).slice().sort((a, b) => a.name.localeCompare(b.name));
-            zeroRows = roster.map((t, i) => ({ name: t.name, pos: i + 1, points: 0 }));
+          if (!bumpSubrequest()) {
+            const tRes = await fetch("https://api.football-data.org/v4/competitions/" + code + "/teams", { headers });
+            if (tRes.ok) {
+              const tData: any = await tRes.json();
+              const roster = (tData.teams || []).slice().sort((a, b) => a.name.localeCompare(b.name));
+              zeroRows = roster.map((t, i) => ({ name: t.name, pos: i + 1, points: 0 }));
+            }
           }
           out = {
             matchday: 0,

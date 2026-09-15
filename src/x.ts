@@ -5,7 +5,7 @@
 
 import { CONFIG, X_CONFIG } from "./config";
 import type { Env } from "./types";
-import { toFaDigits, getNowTehran, getJalaliDate, getJalaliTime } from "./utils";
+import { toFaDigits, getNowTehran, getJalaliDate, getJalaliTime, bumpSubrequest } from "./utils";
 import { translateTeam, translateCompetition, getCompetitionPriority } from "./translate";
 import { isMatchFinished, isWithinPostMatchWindow, isWithin24HourWindow, isWithinBigMatchWindow, isWithin3HourWindow, isWithin1HourWindow, isWithin5MinWindow, isMatchStartingNow } from "./matches";
 import { fetchStandings, format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, isoWeekKey, weeklyTableCodes } from "./composers";
@@ -164,6 +164,10 @@ export async function xPostTweet(env: Env, text, inReplyTo): Promise<any> {
     let auth, res;
     try {
       auth = await xBuildAuthHeader("POST", url, env, {});
+      // v13.45-sightlines (F10): the X post fetch was invisible to the
+      // subrequest counter (only fetchJSON/fetchWithRetry/telegram/admin
+      // ever bumped) — a sweep could sail past the real 50 ceiling mid-post.
+      if (bumpSubrequest()) return { ok: false, status: 0, error: "subrequest-budget" };
       res = await fetch(url, {
         method: "POST",
         headers: { Authorization: auth, "Content-Type": "application/json" },

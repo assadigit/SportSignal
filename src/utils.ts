@@ -130,14 +130,30 @@ export function enStageName(stage) {
 }
 var SUBREQUEST_COUNT = 0;
 var SUBREQUEST_CAP = 48;
+// v13.45-sightlines (F10): KV operations on the STATE binding are real
+// subrequests the fetch-only counter above never saw (only fetchJSON /
+// fetchWithRetry / the telegram senders / admin's clubs fetch ever bumped).
+// Counted SEPARATELY so the existing gates (prewarm <30, notify-defer >38)
+// keep their tuned fetch-only semantics — the sum of both counters is the
+// tick's true total (closing log line + the completion blob's subreq_last_tick).
+var KV_OPS_COUNT = 0;
+export function bumpKvOp() {
+  KV_OPS_COUNT++;
+}
 export function resetSubrequestBudget() {
   SUBREQUEST_COUNT = 0;
+  KV_OPS_COUNT = 0;
 }
 // v13.7-perf: read-only accessor for the live subrequest counter, so the
 // cron sweep can log its headroom against the 50-subrequest ceiling without
 // exposing the mutable binding (imported bindings are read-only).
 export function subrequestCount() {
   return SUBREQUEST_COUNT;
+}
+// v13.45-sightlines (F10): read-only accessor for the KV-ops counter (same
+// imported-bindings-are-readonly reason as subrequestCount above).
+export function kvOpsCount() {
+  return KV_OPS_COUNT;
 }
 export async function fetchJSON(url, attempts?, headers?) {
   attempts = attempts || 2;
@@ -240,4 +256,38 @@ export function jsonResponse(data, status?) {
 // source order, so keep the first raw parse inside that webhook block.
 export async function readJson(req) {
   return req.json().catch(() => null);
+}
+// v13.45-sightlines: dead man's switch for the */10 cron. Cloudflare has no
+// built-in "cron didn't fire" alerting, and URL monitors cannot see a hung or
+// CPU-killed tick (the worker keeps serving 200s — the exact failure shape of
+// the 2026-09-14 outages, where 49 ticks died silently while healthz said
+// ok). healthchecks.io semantics: SUCCESS ping after a tick resolves (every
+// early return is a handled outcome — lock-skip, no-users, no-pool — so only
+// a cron that stops firing, a hard-down worker, or a thrown tick leaves the
+// check late → Telegram DOWN after the grace window). A hung tick is instead
+// caught by healthz's last_cron staleness (503 → UptimeRobot). /fail ping
+// from the scheduled handler's catch when the tick throws (immediate alert,
+// no grace) with the error name in the POST body (verified live: path-suffix
+// messages 400; the body form is accepted and surfaces in the alert + log).
+// Fire-and-forget via ctx.waitUntil, counted against the subrequest budget,
+// never blocks the tick. At budget cap it is skipped by design — that class
+// is caught by the switch itself (missed success pings). HEALTHCHECK_PING_URL
+// is a wrangler secret; absent = no-op (deploy-safe before the check exists).
+export function pingHealthcheck(env, ctx, ok, err?) {
+  try {
+    const base = env && env.HEALTHCHECK_PING_URL;
+    if (!base) return;
+    if (bumpSubrequest()) {
+      console.warn("Healthcheck ping skipped: subrequest budget exhausted (the missed success ping covers this class)");
+      return;
+    }
+    const url = String(base).replace(/\/+$/, "");
+    const p = ok
+      ? fetch(url, { method: "GET" })
+      : fetch(url + "/fail", { method: "POST", headers: { "content-type": "text/plain" }, body: String(err && err.name || "error").slice(0, 200) });
+    const done = p.catch((e) => console.warn("Healthcheck ping failed: " + e.message));
+    if (ctx && ctx.waitUntil) ctx.waitUntil(done);
+  } catch (e) {
+    console.warn("Healthcheck ping wiring failed: " + e.message);
+  }
 }

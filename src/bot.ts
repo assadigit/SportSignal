@@ -9,7 +9,6 @@ import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
 import { shouldNotify } from "./matches";
 import { matchKey } from "./dedupe";
-import { fetchMatchesFromAPI } from "./providers";
 import { sendTelegram, answerCallbackQuery, sendPhotoBinary } from "./telegram";
 import { renderCardPngCached } from "./card";
 import { formatBigMatchMessage, specialBanner } from "./composers";
@@ -254,8 +253,14 @@ export async function handleTelegramUpdate(env: Env, update) {
       const p = prefs[String(chatId)] || {};
       const lang = p.lang === "en" ? "en" : "fa";
       const pool = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
-      const poolFresh = pool && pool.fetchedAt && Date.now() - new Date(pool.fetchedAt).getTime() < 10 * 6e4 && Array.isArray(pool.matches);
-      const matches = poolFresh ? pool.matches : await fetchMatchesFromAPI(env);
+      // v13.45-sightlines (W8): bot commands never trigger the full provider
+      // sweep. /featured and /next used to re-sweep when the pool was >10min
+      // old — a user-typed command could burn ~100ms of CPU on a FETCH
+      // invocation (the exact poison behind the 2026-09-14 CPU kills, which
+      // 13.43 fixed for cron) plus unmetered KV pool writes. The KV pool is
+      // at most one full sweep old (2h) — serving it matches the cron's own
+      // quiet-period semantics. Empty pool = the no-matches reply.
+      const matches = Array.isArray(pool && pool.matches) ? pool.matches : [];
       const now = new Date();
       // Find the featured match: closest upcoming worthy match (same logic
       // as the website's nextBig — isFeaturedMatch or isMasterPair, live
@@ -291,8 +296,14 @@ export async function handleTelegramUpdate(env: Env, update) {
     } else if (text === "/next") {
       await applySettings(env);
       const pool = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
-      const poolFresh = pool && pool.fetchedAt && Date.now() - new Date(pool.fetchedAt).getTime() < 10 * 6e4 && Array.isArray(pool.matches);
-      const matches = poolFresh ? pool.matches : await fetchMatchesFromAPI(env);
+      // v13.45-sightlines (W8): bot commands never trigger the full provider
+      // sweep. /featured and /next used to re-sweep when the pool was >10min
+      // old — a user-typed command could burn ~100ms of CPU on a FETCH
+      // invocation (the exact poison behind the 2026-09-14 CPU kills, which
+      // 13.43 fixed for cron) plus unmetered KV pool writes. The KV pool is
+      // at most one full sweep old (2h) — serving it matches the cron's own
+      // quiet-period semantics. Empty pool = the no-matches reply.
+      const matches = Array.isArray(pool && pool.matches) ? pool.matches : [];
       const prefs = await getUserPrefs(env);
       const p = prefs[String(chatId)] || {};
       const lang = p.lang === "en" ? "en" : "fa";

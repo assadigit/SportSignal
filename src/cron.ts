@@ -5,7 +5,7 @@
 
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { toFaDigits, resetSubrequestBudget, subrequestCount, escapeMarkdownCharacters } from "./utils";
+import { toFaDigits, resetSubrequestBudget, subrequestCount, kvOpsCount, bumpKvOp, escapeMarkdownCharacters } from "./utils";
 import { translateTeam, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
@@ -86,11 +86,31 @@ export async function executeScheduledLogic(env: Env) {
   (env.STATE as any).__origPut = origStatePut;
   (env.STATE as any).put = (...args: unknown[]) => {
     kvWritesThisTick++;
+    bumpKvOp();
     try {
       const k = String(args[0]).slice(0, 28);
       kvWriteKeys[k] = (kvWriteKeys[k] || 0) + 1;
     } catch (e) { }
     return origStatePut(...(args as [string, string, any?]));
+  };
+  // v13.45-sightlines (F10): KV reads/deletes are subrequests too — wrapped
+  // with the same __orig pinning the put wrapper uses (STATE.list is unused
+  // across the codebase, so only get/delete are wrapped). The gates (prewarm
+  // <30, notify-defer >38) deliberately keep reading the FETCH-only counter:
+  // they were tuned on that number. The KV-ops total is a new sightline —
+  // the true per-tick load is subrequestCount() + kvOpsCount() (blob field,
+  // closing log line, healthz).
+  const origStateGet = (env.STATE as any).__origGet || env.STATE.get.bind(env.STATE);
+  (env.STATE as any).__origGet = origStateGet;
+  (env.STATE as any).get = (...args: unknown[]) => {
+    bumpKvOp();
+    return origStateGet(...(args as [string, any?]));
+  };
+  const origStateDelete = (env.STATE as any).__origDelete || env.STATE.delete.bind(env.STATE);
+  (env.STATE as any).__origDelete = origStateDelete;
+  (env.STATE as any).delete = (...args: unknown[]) => {
+    bumpKvOp();
+    return origStateDelete(...(args as [string]));
   };
   // v13.36-nospam: settings failure must not kill the tick (it previously
   // ran unguarded BEFORE the lock — an exception here left zero diagnostics
@@ -547,6 +567,14 @@ export async function executeScheduledLogic(env: Env) {
         kv_day: kvDay,
         kv_writes_day: kvWritesDay,
         kv_writes_last_tick: kvWritesThisTick + 1,
+        // v13.45-sightlines (F10): the true per-tick subrequest load —
+        // fetches (subrequestCount) + KV ops (kvOpsCount) + 1 for this
+        // blob's own put (the wrappers count ops as they run; this value is
+        // computed beforehand — same fold shape as kv_writes_last_tick).
+        // The healthcheck ping fires after the blob as one more fetch and
+        // is deliberately NOT folded in (it is post-completion, not work).
+        subreq_last_tick: subrequestCount() + kvOpsCount() + 1,
+        kv_ops_last_tick: kvOpsCount() + 1,
         // v13.44-quotaguard: which governor level was engaged when this tick
         // started (null = healthy budget) — one KV read answers "why did
         // the prewarm/pool writes stop today".
@@ -566,7 +594,8 @@ export async function executeScheduledLogic(env: Env) {
     console.log(`
 \u2705 Execution completed at ${(new Date()).toISOString()}
 \u{1F4CA} Subrequest budget: ${subrequestCount()}/48 used (${48 - subrequestCount()} headroom under the 50-ceiling)
-\u{1F4BE} KV writes this tick: ${kvWritesThisTick} — top: ${Object.entries(kvWriteKeys).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => k + "\u00d7" + n).join(", ") || "none"}`);
+\u{1F4BE} KV writes this tick: ${kvWritesThisTick} — top: ${Object.entries(kvWriteKeys).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => k + "\u00d7" + n).join(", ") || "none"}
+\u{1F50C} KV ops this tick: ${kvOpsCount() + 1} (+1 = the completion blob's own put) — true subrequest total ${subrequestCount() + kvOpsCount() + 1}/50 (fetches ${subrequestCount()} + KV ops ${kvOpsCount() + 1})`);
   } catch (error) {
     console.error(`\u274C Fatal error in scheduled logic:`, error);
     throw error;

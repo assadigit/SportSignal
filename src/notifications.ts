@@ -226,6 +226,7 @@ export async function sendMatchNotifications(env: Env, matches) {
     "pre-match-24h": 0,
     "pre-match-3h": 0,
     "pre-match-1h": 0,
+    "pre-match-5min": 0,
     "match-start": 0,
     "result": 0
   };

@@ -272,6 +272,10 @@ export async function runFaVenueLearner(env: Env, venues, force) {
   resetFaAiCache();
   return { ok: true, learned, failed, model, pending: pending.length - batch.length, asked: batch.length, totalLearned: Object.keys(rec.learned).length };
 }
+// v13.45-sightlines (W7): isolate-level "nothing to learn" verdict, keyed on
+// the public payload's ts — the empty path re-collects only when the payload
+// actually changed (a full sweep / live change), not every tick.
+var FA_EMPTY_PAYLOAD_TS = -1;
 export async function maybeRunFaAi(env: Env, force?) {
   try {
     if (!env || !env.AI) return { ok: false, skipped: "ai-disabled" };
@@ -279,15 +283,27 @@ export async function maybeRunFaAi(env: Env, force?) {
       const last = parseInt(await env.STATE.get(CONFIG.KV_FA_LAST_RUN).catch(() => null)) || 0;
       if (last && Date.now() - last < CONFIG.FA_AI_RUN_EVERY_MS) return { ok: true, skipped: "cooldown", sinceMin: Math.round((Date.now() - last) / 6e4) };
     }
-    await env.STATE.put(CONFIG.KV_FA_LAST_RUN, String(Date.now()), { expirationTtl: Math.ceil(CONFIG.FA_AI_FAIL_RETRY_MS / 1e3) }).catch(() => {
-    });
+    const cached = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null);
+    if (cached && cached.ts && cached.ts === FA_EMPTY_PAYLOAD_TS) return { ok: true, learned: 0, failed: 0, pending: 0, totalLearned: faAiCacheSize(), totalVenues: faVenueCacheSize() };
     await ensureFaAiCache(env);
     await ensureFaVenueCache(env);
-    const cached = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null);
     const data = cached && cached.data ? cached.data : null;
     const names = data ? collectUnknownTeamNames(data) : [];
     const venues = data ? collectUnknownVenueNames(data) : [];
-    if (!names.length && !venues.length) return { ok: true, learned: 0, failed: 0, pending: 0, totalLearned: faAiCacheSize(), totalVenues: faVenueCacheSize() };
+    // v13.45-sightlines (W7): the cooldown marker now sits BELOW the
+    // emptiness check. It used to be written every FA_AI_RUN_EVERY_MS (15
+    // min) even when there was nothing to learn — ~96 blind writes/day,
+    // 9.6% of the 1,000/day free quota, for a signal worth zero. With work
+    // present the write-first placement is PRESERVED (a failing learner
+    // still gets the FA_AI_FAIL_RETRY_MS backoff before its next attempt);
+    // the empty path writes nothing, and the FA_EMPTY_PAYLOAD_TS cache
+    // above keeps its re-check cost to a single KV read per tick.
+    if (!names.length && !venues.length) {
+      if (cached && cached.ts) FA_EMPTY_PAYLOAD_TS = cached.ts;
+      return { ok: true, learned: 0, failed: 0, pending: 0, totalLearned: faAiCacheSize(), totalVenues: faVenueCacheSize() };
+    }
+    await env.STATE.put(CONFIG.KV_FA_LAST_RUN, String(Date.now()), { expirationTtl: Math.ceil(CONFIG.FA_AI_FAIL_RETRY_MS / 1e3) }).catch(() => {
+    });
     let teamRes: any = { ok: true, learned: 0, failed: 0, pending: 0 };
     let venueRes: any = { ok: true, learned: 0, failed: 0, pending: 0 };
     if (names.length) {
