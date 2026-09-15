@@ -1,35 +1,30 @@
-<!-- Banner slot — generate with the prompt below, save as docs/banner.png, uncomment:
-<img src="docs/banner.png" width="100%" alt="SportSignal banner" />
-
-BANNER GENERATION PROMPT (brand-true to design-system/ucl-notifier/MASTER.md):
-"A wide GitHub repository banner, 1280×400. Dark slate background (#0f172a) with
-subtle glassmorphism panels (#1e293b at ~55% opacity) and a faint pitch-line grid.
-Left-to-right visual story: a glowing football ⚽ at the left emitting concentric
-electric-blue broadcast signal waves (#2563eb) that flow right and morph into a
-Telegram-style notification bubble containing a match card — Persian team names
-('رئال مادرید — بارسلونا'), a live green score highlight (#4ade80), and a small
-countdown chip. A few league-crest silhouettes (Champions League starball, domestic
-league shields) recede into the background. Right side: bold wordmark 'SportSignal'
-in a modern geometric sans, beneath it a smaller Persian wordmark
-'اعلان‌دهنده مسابقات فوتبال' set in Vazirmatn, and a thin muted tagline
-'Persian football match notifier · Telegram + Web · Cloudflare Workers'.
-Style: premium dark-mode-first flat vector illustration, soft neon accents, RTL-aware
-balance, generous margins, no photorealism, no clutter."
--->
+<!-- Banner: user-provided art (ChatGPT, 2026-09-15), optimized 1774×887 → 1280×640.
+     The regeneration prompt that used to live in this slot is preserved in git
+     history: `git show 759cec0:README.md` -->
+<p align="center">
+  <img src="docs/banner.png" width="100%" alt="SportSignal — football signals flowing into a Telegram notification" />
+</p>
 
 # ⚽ SportSignal — Persian Football Match Notifier
 
 **A serverless Telegram bot + web page that tells Iranian football fans about the
 matches that matter — before they start, while they're live, and the moment they end.**
 
-> **Current build:** v13.48-xtrim · [Live](https://sportsignal.ir) ·
+> **Current build:** v13.51-rivalries · [Live](https://sportsignal.ir) ·
 > **Operating it?** Read [`RUNBOOK.md`](RUNBOOK.md) first — deploy/verify/rollback,
 > monitoring semantics, incident playbooks, and the never-do list (§11).
+
+> **▶ WHERE TO CONTINUE — user note, kept verbatim (2026-09-15):**
+> *"I am not sure how reliable Telegram bot is. If you want to work, work
+> from here."*
+> → Next focus: **Telegram bot reliability** — the delivery path
+> (`src/bot.ts`, `src/telegram.ts`, `src/notifications.ts`, outbox recovery
+> in `src/cron.ts`). Expanded in the status section below.
 
 | | |
 | :--- | :--- |
 | **Live site** | https://sportsignal.ir — public match page (RTL, fa/en toggle, dark-first) |
-| **Telegram bot** | message `/start` to join; per-user teams + timezone + language |
+| **Telegram bot** | [@SportSignalAlertsBot](https://t.me/SportSignalAlertsBot) — message `/start` to join; per-user teams + timezone + language |
 | **Ops liveness** | `GET /healthz` — JSON; 503 pages external monitors |
 | **Cost to run** | **$0/month** — entirely on free tiers (see [limitations](#current-limitations-the-free-tier-honest-numbers)) |
 | **Stack** | Cloudflare Workers (TypeScript, zero framework) · KV · Workers AI · Football-Data.org + 2 fallbacks |
@@ -209,7 +204,7 @@ scripts/            the self-check suite (npm test) — eval-extracts REAL
                    source via scripts/lib/worker-src.js;
                    fa-names-from-wikipedia.js is a standalone data tool
 design-system/      visual design MASTER doc (intent; implementation wins)
-docs/history/       archived session notes
+docs/              banner.png (the GitHub banner) + history/ session notes
 ```
 
 ## Bot commands
@@ -333,6 +328,14 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
   conserved, +22 structural test locks
 - ✅ **13.48-xtrim** — the X path removed (see decision #10)
 - ✅ **RUNBOOK.md** — 12 sections of operating truth
+- ✅ **13.49-buttons** — the bot is fully tappable: persistent keyboard on
+  every reply, `/teams` inline toggle grid, `/timezone` city quick-picks
+- ✅ **13.50-cupscan + 13.50.1** — EFL/FA Cup big-team coverage via the
+  TheSportsDB team view; scan moved to quiet ticks only after the 21:40Z
+  real-subrequest-cap incident
+- ✅ **13.51-rivalries** — named rivalry tags everywhere the derby tag lived
+  (El Clásico, Der Klassiker, …); never in the UCL; fa keeps only
+  ال کلاسیکو
 
 **Deliberately deferred (documented, not forgotten):**
 
@@ -342,6 +345,22 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
   functional cost (decision #10, CHANGELOG 13.48)
 - `sched_v1:*` KV orphans (156 keys) — 7-day TTLs self-expire ~2026-09-22;
   deliberately not "cleaned up"
+
+**▶ Next up (the continuation point, user-flagged 2026-09-15):**
+
+- **Bot reliability hardening** — the user's words: *"not sure how reliable
+  the Telegram bot is — work from here."* Verify the delivery path end-to-end
+  (webhook → send retry/429 → dead-chat pruning → outbox recovery) before
+  adding features. Baseline at the time of the flag: webhook healthy
+  (`football.sportsignal.ir/webhook`, 0 pending updates, no last error),
+  outbox draining clean, same-day alert deliveries — measure it, don't
+  assume it.
+- **R6** — live-sweep sportscore fan-out (2 days × 9 slugs = 18 fetches):
+  the evening profile already sits at the real subrequest cap's edge
+  (the 21:40Z incident).
+- **R7** — cup-result sweeps via TSP `eventspast`, bounded to in-flight
+  rows (fixtures + live covered by 13.50; FT pickup leans on hot-window
+  quiet ticks today).
 
 **Never doing (anti-goals):**
 

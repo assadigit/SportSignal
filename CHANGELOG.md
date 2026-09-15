@@ -6,6 +6,58 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.51.1-banner] — 2026-09-15 (docs & banner — same worker build as 13.51)
+
+No worker-code change: `src/config.ts` stays `13.51-rivalries`, `package.json`
+stays 13.51.0. This entry records the banner, the docs catch-up, and — most
+important — the continuation note.
+
+### The continuation note (the user's own words, kept verbatim)
+> "I AM NOT SURE HOW RELIABLE TELEGRAM BOT IS. IF you want to work, work
+> from here."
+
+Recorded in the README (top-of-file callout + status section) so any future
+session knows where to pick up: the next focus is **Telegram bot
+reliability** — the delivery path (`src/bot.ts`, `src/telegram.ts`,
+`src/notifications.ts`, outbox recovery in `src/cron.ts`). Baseline
+measured at flag time: webhook `football.sportsignal.ir/webhook` healthy
+(0 pending updates, no last error), outbox draining clean, same-day alert
+deliveries. Related backlog: R6 (live-sweep sportscore fan-out — 18 fetches
+per evening tick at the real subrequest cap's edge) and R7 (TSP `eventspast`
+cup-result sweeps bounded to in-flight rows).
+
+### The banner
+- `docs/banner.png` — user-provided art (ChatGPT, 2026-09-15): dark stadium
+  night, glowing wordmark, match-card + Telegram-notification mockups.
+  Verified before shipping (vision-model review): wordmark spelled exactly
+  "SportSignal", Persian glyphs well-formed, no visual defects. Optimized
+  1774×887 → 1280×640 (~0.98 MB).
+- The README renders it full-width above the title; the regeneration prompt
+  that used to live in the banner slot is preserved in git history
+  (`git show 759cec0:README.md`).
+
+### README catch-up
+- "Current build" line: 13.48-xtrim → 13.51-rivalries (had drifted three
+  releases behind the shipped reality).
+- Status section lists 13.49-buttons / 13.50-cupscan(+.1) / 13.51-rivalries
+  with the 21:40Z real-cap incident note; next-up section = the
+  continuation note + R6/R7.
+- The bot table row links @SportSignalAlertsBot directly; the repo layout
+  lists `docs/`.
+
+### Deploy record (13.51-rivalries — the code this addendum ships beside)
+13.51-rivalries was committed in the previous session but could not deploy
+(no Cloudflare token available then). This session: `npm test` 135/135 →
+local smoke (`wrangler dev`: healthz shape + version, `/` 200, 404s
+correct, `/admin` 200) → `wrangler deploy` (Version
+`5bc68c8f-eb6a-41ff-9557-0ee5a9a91d93`, bindings STATE/AI/TEHRAN_TZ
+unchanged, cron `*/10` intact) → live-verified: healthz flipped to
+13.51-rivalries `ok:true`; the first two post-deploy ticks completed clean
+(23:10Z: +4 writes, 53 subrequests; 23:20Z: +4 writes, 69 subrequests;
+outbox 0 both, budget null); Telegram webhook 0 pending, no errors.
+
+---
+
 ## [13.51-rivalries] — 2026-09-15 (named rivalries: El Clásico, not "Derby")
 
 ### The user's ask
