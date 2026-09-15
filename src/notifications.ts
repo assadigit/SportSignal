@@ -420,36 +420,15 @@ export async function detectStatusChanges(env: Env, matches) {
   }
 }
 
-// v13.9-reliability #1: pre-scheduled notifications. At discovery time, write
-// a schedule record per match listing its notification types + whether each
-// has fired. Every sweep reconciles: for each schedule whose next-due type
-// has passed its window AND isn't marked sent, fire it (with the "late" tag
-// if past the window). This eliminates the cron-timing dependency — a
-// skipped cron no longer loses the 5min/match-start reminder; it fires
-// late on the next run. The dedupe KV (notified_matches_v6) is still the
-// primary exactly-once guard; the schedule is the catch-all backstop.
-export async function reconcileSchedules(env: Env, matches) {
-  const now = Date.now();
-  const worthy = matches.filter(shouldNotify);
-  let written = 0;
-  for (const m of worthy) {
-    const key = CONFIG.KV_SCHEDULE_PREFIX + matchKey(m);
-    const existing = await env.STATE.get(key, "json").catch(() => null);
-    // (Re)write the schedule if missing OR the kickoff time shifted (reschedule).
-    if (!existing || existing.utcDate !== m.utcDate) {
-      const schedule = {
-        utcDate: m.utcDate,
-        matchKey: matchKey(m),
-        types: ["pre-match-24h", "pre-match-3h", "pre-match-1h", "pre-match-5min", "match-start", "result"],
-        sent: existing && existing.sent ? existing.sent : {}
-      };
-      await env.STATE.put(key, JSON.stringify(schedule), { expirationTtl: 7 * 86400 }).catch(() => {});
-      written++;
-    }
-  }
-  if (written) console.log(`\u{1F4CB} Schedule: wrote ${written} records (${worthy.length} worthy matches)`);
-  return written;
-}
+// (v13.9-reliability #1's reconcileSchedules was REMOVED in v13.43-cpukeeper:
+// it wrote sched_v1:* schedule records whose `sent` map was NEVER updated and
+// which NOTHING ever read back for firing — the fire-leg was never built, so
+// the records were a pure decoy (one KV read per worthy match per tick,
+// ~174 reads/tick ≈ 35-90ms CPU the free-plan 10ms budget couldn't afford).
+// Recovery is covered for real by the isBackfillEligible legs in
+// shouldSendNotification/sendNotificationIfNeeded (every type incl.
+// match-start, v13.42) + the dead-letter outbox. Stale sched_v1:* keys expire
+// via their own 7-day TTL.)
 
 // v13.23-audit: compare sportsignal.ir match data (ground truth) with the
 // bot's notified_matches_v6 KV. For each worthy match whose kickoff has

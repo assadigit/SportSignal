@@ -292,7 +292,7 @@ var MEM_DEDUPE = new Set();
   console.log("\n=== K. Reliability infrastructure present ===");
   check("outbox: drainOutbox exists", /function drainOutbox\(/.test(src));
   check("outbox: sendTelegram pushes to outbox on fail", /await outboxPush\(/.test(src));
-  check("schedule: reconcileSchedules exists", /function reconcileSchedules\(/.test(src));
+  check("schedule: sched_v1 decoy REMOVED (v13.43 — backfill legs cover recovery)", !/function reconcileSchedules\(/.test(src) && !/KV_SCHEDULE_PREFIX \+ matchKey/.test(src));
   check("audit: auditNotifications exists", /function auditNotifications\(/.test(src));
   check("kickoff-broadcast: broadcastBigMatchKickoff exists", /function broadcastBigMatchKickoff\(/.test(src));
   check("kickoff-broadcast: wired in cron", /await broadcastBigMatchKickoff\(/.test(src));
@@ -427,6 +427,88 @@ var MEM_DEDUPE = new Set();
   check("outbox: failed send re-queued with attempts+1", afterFailList.some((i) => i.text === "y1" && i.attempts === 1));
   check("outbox: entry at 6 attempts dropped (no infinite retry)", !afterFailList.some((i) => i.text === "y2"));
   putFails = false; directOK = true;
+
+  // ===== v13.43-cpukeeper: behavioral proof — the LIVE SWEEP keeps every
+  // window live while full sweeps are throttled to 2h. Root cause it guards:
+  // full sweeps burn ~100ms CPU and 6/hour over the free-plan 10ms rolling
+  // CPU average killed every cron tick (2026-09-14 outages). The wiring that
+  // must now hold: an active tick's match data = cachedPool MERGED with the
+  // narrow live fetch (fresh statuses/scores win), pool-only fixtures keep
+  // notifying (5-min window), a match the pool never saw is DISCOVERED by
+  // the live sweep (the Torino-Roma shape → match-start backfill eligible),
+  // and the merge performs ZERO KV writes.
+  console.log("\n=== S. v13.43-cpukeeper: live sweep keeps every window live (behavioral) ===");
+  // Real fetchLiveSweep + real canonDedupe from source; providers stubbed so
+  // the scenario is deterministic. matchAt exists above.
+  let FD_RESPONSE = [], SS_RESPONSE = [], FD_OPTS_SEEN = null, SS_OPTS_SEEN = null, FD_THROWS = false;
+  async function fetchFootballData(_e, opts) { FD_OPTS_SEEN = opts; if (FD_THROWS) throw new Error("429"); return FD_RESPONSE; }
+  async function fetchSportScore(_e, opts) { SS_OPTS_SEEN = opts; return SS_RESPONSE; }
+  // Real canonDedupe from src/dedupe.ts (Node type-stripping, like
+  // check-dedupe.js); fetchLiveSweep grabbed from the transformed source.
+  const { canonDedupe } = require("../src/dedupe.ts");
+  eval([grabFn("async function fetchLiveSweep(env, cachedPool)")].join("\n"));
+  // KV mock that counts puts — the live sweep must write NOTHING.
+  let livePuts = 0;
+  const liveEnv = { STATE: { async get() { return null; }, async put() { livePuts++; } }, TEHRAN_TZ: "Asia/Tehran" };
+  // The 2h-old KV pool: A=live-but-stale-status (kickoff 30min ago, pool still
+  // SCHEDULED), B=pool-only fixture 5min before kickoff (must still notify),
+  // and NO copy of the match the providers only just discovered (C).
+  const poolA = matchAt(-0.5, "SCHEDULED", { id: "pool-a" });
+  const poolB = matchAt(5 / 60, "SCHEDULED", { id: "pool-b", homeTeam: { name: "Real Madrid CF" }, awayTeam: { name: "FC Barcelona" }, competition: { code: "PD" } });
+  const cachedPool = [poolA, poolB];
+  // The live fetch: A now IN_PLAY 1-0 (fresh status+score), B unchanged, plus
+  // C — a worthy match the pool MISSED entirely, live for 60min (the exact
+  // Torino-Roma missed-start shape the backfill must catch).
+  const fdA = matchAt(-0.5, "IN_PLAY", { id: "fd-a", score: { fullTime: { home: 1, away: 0 } } });
+  const fdC = matchAt(-1, "IN_PLAY", { id: "fd-c", homeTeam: { name: "Inter Milan" }, awayTeam: { name: "AC Milan" }, competition: { code: "SA" } });
+  FD_RESPONSE = [fdA, fdC]; SS_RESPONSE = [];
+  const merged = await fetchLiveSweep(liveEnv, cachedPool);
+  const mA = merged.find((m) => m.id === "pool-a" || m.id === "fd-a");
+  const mB = merged.find((m) => m.id === "pool-b");
+  const mC = merged.find((m) => m.id === "fd-c");
+  check("live: fresh provider status REPLACES the stale pool copy (A IN_PLAY)", mA && mA.status === "IN_PLAY" && mA.score.fullTime.home === 1);
+  check("live: fresh provider score carried into the merged row", mA && mA.score.fullTime.away === 0);
+  check("live: pool-only fixture survives the merge (B present)", !!mB);
+  check("live: pool-only 5-min window STILL evaluates on a live tick", mB && isWithin5MinWindow(mB, env));
+  check("live: pool-only match-start window still evaluates (A within -1..+45min)", mA && isMatchStartingNow(mA, env));
+  check("live: a match the pool NEVER saw is discovered by the live sweep (C)", !!mC);
+  check("live: discovered live match is match-start-BACKFILL eligible (the Torino-Roma rescue)", mC && isBackfillEligible(mC, "match-start", env));
+  check("live: narrow FD range wired (pastDays 2, futureDays 2, live)", FD_OPTS_SEEN && FD_OPTS_SEEN.pastDays === 2 && FD_OPTS_SEEN.futureDays === 2 && FD_OPTS_SEEN.live === true);
+  check("live: narrow sportscore window wired (yesterday+today)", SS_OPTS_SEEN && SS_OPTS_SEEN.fromDays === 1 && SS_OPTS_SEEN.toDays === 0);
+  check("live: ZERO KV writes during the live sweep", livePuts === 0);
+  // Total provider failure: the live sweep must not throw and must return the
+  // pool unchanged (the quiet path's data source — notifications still run).
+  FD_THROWS = true; FD_RESPONSE = []; SS_RESPONSE = [];
+  const fallback = await fetchLiveSweep(liveEnv, cachedPool);
+  check("live: total provider failure returns the cached pool unchanged", fallback.length === 2 && fallback.every((m) => cachedPool.some((p) => p.id === m.id)));
+  check("live: total provider failure still performs ZERO KV writes", livePuts === 0);
+  FD_THROWS = false;
+  // Next live tick: A goes PAUSED (HT) — the merged row must flip so
+  // detectStatusChanges sees the transition (its fail-closed dedupe is proven
+  // in section Q); then FINISHED — the result window must open.
+  FD_RESPONSE = [matchAt(-0.5, "PAUSED", { id: "fd-a2" }), fdC];
+  const mergedHT = await fetchLiveSweep(liveEnv, cachedPool);
+  const mHT = mergedHT.find((m) => m.id === "pool-a" || m.id === "fd-a2");
+  check("live: SCHEDULED→PAUSED transition reaches the merged pool (HT alert data)", mHT && mHT.status === "PAUSED" && isLiveStatus(mHT.status));
+  FD_RESPONSE = [matchAt(-2, "FINISHED", { id: "fd-a3", score: { fullTime: { home: 2, away: 1 } } })];
+  const mergedFT = await fetchLiveSweep(liveEnv, cachedPool);
+  const mFT = mergedFT.find((m) => m.id === "pool-a" || m.id === "fd-a3");
+  check("live: FINISHED reaches the merged pool and isMatchFinished opens the result path", mFT && isMatchFinished(mFT) && isWithinPostMatchWindow(mFT, env));
+
+  // The prewarm gate's fingerprint (v13.43): equal live data → equal
+  // fingerprint (prewarm skipped); a goal/status change → different; list
+  // re-ordering alone → still equal (no false "changed").
+  eval([grabFn("function liveFingerprint(list)")].join("\n"));
+  const fpPool = [matchAt(-1, "IN_PLAY", { id: "fp-1", score: { fullTime: { home: 0, away: 0 } } }), matchAt(-20, "FINISHED", { id: "fp-2", score: { fullTime: { home: 3, away: 2 } } })];
+  const fpSame = [...fpPool].reverse();
+  check("fingerprint: identical live data (reordered) → equal", liveFingerprint(fpPool) === liveFingerprint(fpSame));
+  const fpGoal = [matchAt(-1, "IN_PLAY", { id: "fp-1", score: { fullTime: { home: 1, away: 0 } } }), matchAt(-20, "FINISHED", { id: "fp-2", score: { fullTime: { home: 3, away: 2 } } })];
+  check("fingerprint: a goal changes it", liveFingerprint(fpPool) !== liveFingerprint(fpGoal));
+  const fpHT = [matchAt(-1, "PAUSED", { id: "fp-1", score: { fullTime: { home: 0, away: 0 } } }), matchAt(-20, "FINISHED", { id: "fp-2", score: { fullTime: { home: 3, away: 2 } } })];
+  check("fingerprint: an HT status change changes it", liveFingerprint(fpPool) !== liveFingerprint(fpHT));
+  const fpNew = [...fpPool, matchAt(-1.5, "IN_PLAY", { id: "fp-3", homeTeam: { name: "Inter Milan" }, awayTeam: { name: "AC Milan" }, competition: { code: "SA" } })];
+  check("fingerprint: a newly discovered live match changes it", liveFingerprint(fpPool) !== liveFingerprint(fpNew));
+  check("fingerprint: non-live rows are ignored (quiet noise can't trigger)", liveFingerprint(fpPool) === liveFingerprint([...fpPool, matchAt(48, "SCHEDULED", { id: "fp-4" })]));
 
   console.log("\n" + (failed ? failed + " FAILURES" : "ALL PASS") + " (" + passed + " checks)");
   process.exit(failed ? 1 : 0);

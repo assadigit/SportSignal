@@ -2,7 +2,7 @@
 // Extracted verbatim from the v12.33-xpost bundle; KV keys and semantics are
 // LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.42-rekindle";
+export const VERSION = "13.43-cpukeeper";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -235,10 +235,11 @@ export const CONFIG: Record<string, any> = {
   // success or the chat is dead.
   KV_OUTBOX: "pending_sends_v1",
   KV_OUTBOX_MAX: 200,
-  // #1 Pre-scheduled notifications: per-match schedule record written at
-  // discovery time, reconciled every sweep. Eliminates the cron-timing
-  // dependency — a missed cron fires the notification late on the next run
-  // instead of losing it.
+  // #1 Pre-scheduled notifications: RETIRED in v13.43-cpukeeper — the
+  // sched_v1:* records were never read back (the fire-leg was never built);
+  // the v13.42 isBackfillEligible legs + the outbox cover recovery for real.
+  // Old sched_v1:* keys expire via their 7-day TTL; the prefix constant is
+  // kept ONLY as documentation (no writer, no reader).
   KV_SCHEDULE_PREFIX: "sched_v1:",
   // #4 Canonical kickoff-time KV: kickoff:<matchKey> written at first
   // discovery, never overwritten unless the match is POSTPONED. Prevents
@@ -275,6 +276,11 @@ export const CONFIG: Record<string, any> = {
   // is live, kicks off within 1h, or ended <8h ago (result pending). Quiet
   // periods re-sweep at most every QUIET_SWEEP_MS; pre-match reminders keep
   // firing from the KV pool (fixtures are known days ahead).
+  // v13.43-cpukeeper: QUIET_SWEEP_MS is now ALSO the cap on full sweeps
+  // during ACTIVE windows (previously every active tick re-swept — ~100ms
+  // CPU × 6/hour over the free-plan 10ms rolling average = the Sep-14
+  // CPU-limit outages). Between full sweeps, active ticks run the cheap
+  // live sweep (fetchLiveSweep) instead.
   QUIET_SWEEP_MS: 2 * 60 * 60 * 1e3,
   ACTIVE_WINDOW_AHEAD_MS: 60 * 60 * 1e3,
   ACTIVE_WINDOW_BEHIND_MS: 8 * 60 * 60 * 1e3,

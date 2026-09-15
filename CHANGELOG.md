@@ -6,6 +6,76 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.43-cpukeeper] — 2026-09-14/15 (the CPU-limit outage killer + a healthz that can see it)
+
+### Root cause of BOTH Sep-14 outages — identified with hard evidence
+- Cloudflare GraphQL analytics + live `wrangler tail`: the account runs on the
+  Workers **FREE plan (10ms CPU, rolling-average enforcement)**, while a full
+  3-provider cron sweep burns **~93–124ms CPU**. During ACTIVE windows (any
+  worthy FT keeps `isActiveTime` true for 8h) the cron re-swept on EVERY
+  10-min tick — ~600ms CPU/hour dragged the rolling average over the limit and
+  CF killed every tick at exactly 10ms CPU (`status=exceededResources`,
+  `err=1`, cpu pinned at 10000μs): the **00:20→10:10Z outage (57 consecutive
+  kills; result backfill only recovered 10:50Z)** and the **22:00Z+ outage
+  (still active when 13.43 was cut — no notification since 20:11Z)**. The
+  start-heartbeat kept advancing, so `/healthz` reported `ok:true` throughout.
+
+### Fixed — sweep throttling with a live-freshness layer (the outage killer)
+- Full sweeps now run **at most once per QUIET_SWEEP_MS (2h) — always**
+  (previously: every tick during active windows, the CPU poison).
+- Between full sweeps, an active tick runs the NEW **live sweep**
+  (`fetchLiveSweep`): one narrow football-data call (±2 days — statuses +
+  scores for everything near kickoff) + the sportscore yesterday/today sweep
+  (BL1/EL/ECL/cup live data), merged OVER the cached KV pool **in memory** —
+  no KV pool writes (the pool stays the last full sweep's snapshot). HT /
+  POSTPONED / FT / match-start-backfill / 5-min windows all still evaluate at
+  full 10-minute cadence from the merged pool. The live sweep never throws —
+  a total provider failure returns the cached pool unchanged (identical to
+  the quiet path's data source). Logs `pool=X fetched=Y (fd=A spsc=B)
+  merged=Z live=N` for provider-pool miss visibility. `fetchFootballData` /
+  `fetchSportScore` gained optional range opts (defaults unchanged).
+- **The public-payload prewarm is gated** (measured live: a live tick WITH
+  the ~100ms payload rebuild = 164ms CPU): it now runs only on full sweeps
+  (2h) or when the live fingerprint (identity+status+score of every live-ish
+  row) actually changed — a goal / HT / FT / newly-discovered fixture. Quiet
+  and unchanged live ticks skip it entirely; visitors between rebuilds
+  trigger the on-demand refresh (the pre-v13.35 path).
+- **`reconcileSchedules` / the `sched_v1:` decoy is DELETED**: those records
+  were never read back (the fire-leg was never built — the v13.42 lesson),
+  and the decoy cost one KV read per worthy match per tick (174 reads/tick
+  at removal ≈ 35–90ms CPU the free-plan budget couldn't afford). Recovery
+  is covered for real by the `isBackfillEligible` legs + the outbox; old
+  `sched_v1:` keys expire via their own 7-day TTL. No KV schema change.
+
+### Fixed — healthz now requires tick COMPLETION (the monitoring hole)
+- `ok` previously = heartbeat-fresh only. During both CPU-limit outages every
+  tick wrote its start-heartbeat and died before completing — `ok:true` for
+  hours while nothing was sent. Now `ok` requires BOTH the heartbeat ≤30min
+  AND `last_cron` (written only at tick completion) ≤35min; response gains
+  `last_cron_age_min`. A half-dead bot now pages external monitors.
+
+### Kept exactly as-is (anti-spam framework untouched)
+- Dedupe/write-first/at-most-once paths unchanged — the live sweep only
+  changes WHERE match data comes from, feeding the same gated pipeline.
+- `sched_v1` decoy writes, the broadcast dedupe gating gap and the
+  football-data 429/Retry-After behavior are documented in the worklog for
+  13.44; no KV keys renamed; no assets changed (SW cache stays
+  `sportsignal-v11`); zero runtime dependencies.
+
+### Tests
+- check-reliability.js: new wiring asserts for the throttle branch, the live
+  sweep (narrow FD range + sportscore window + no-KV-write merge), the
+  prewarm gate (full sweeps OR changed live fingerprint) and the healthz
+  completion gate; the old #1 section now asserts the sched_v1 decoy is GONE.
+- check-no-miss.js: new behavioral section (CPUKEEPER) — the live merge
+  updates a pool match SCHEDULED→IN_PLAY/PAUSED/FINISHED (HT/result/backfill
+  windows still detect it), the 5-min window still evaluates on a live tick,
+  a pool-missed live match is discovered (the Torino–Roma shape), the live
+  sweep performs ZERO `STATE.put` calls, and the prewarm fingerprint is
+  order-safe + reacts only to goals/status changes/new fixtures.
+
+---
+
 ## [13.42-rekindle] — 2026-09-14 (match-start reminder guarantee — the Torino-Roma missed-start fix)
 
 ### Fixed — the missed "match started" reminder (user bug report)

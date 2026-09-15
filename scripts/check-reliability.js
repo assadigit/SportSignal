@@ -36,11 +36,15 @@ check("#3 outbox has exponential backoff", /BACKOFFS\s*=\s*\[60e3/.test(src));
 check("#3 outbox caps at KV_OUTBOX_MAX", /KV_OUTBOX_MAX: 200/.test(src));
 check("#3 drainOutbox called in cron", /await drainOutbox\(env\)/.test(src));
 
-// #1 Pre-scheduled notifications (note: eval transform strips `: Env`)
-check("#1 reconcileSchedules function exists", /async function reconcileSchedules\(env, matches\)/.test(src));
-check("#1 schedule KV prefix is sched_v1:", /KV_SCHEDULE_PREFIX: "sched_v1:"/.test(src));
-check("#1 reconcileSchedules called in cron", /await reconcileSchedules\(env, matches\)/.test(src));
-check("#1 schedule record carries all 6 types", /"pre-match-24h", "pre-match-3h", "pre-match-1h", "pre-match-5min", "match-start", "result"/.test(src));
+// #1 Pre-scheduled notifications — RETIRED in v13.43-cpukeeper: the
+// sched_v1:* decoy (never-read records, one KV read per worthy match per
+// tick ≈ 174 reads/tick) was deleted. Recovery is covered by the
+// isBackfillEligible legs (v13.42) + the outbox; these guards now assert
+// the decoy can't silently return.
+check("#1 sched decoy REMOVED: no reconcileSchedules function", !/async function reconcileSchedules\(env, matches\)/.test(src));
+check("#1 sched decoy REMOVED: no sched_v1 writes anywhere", !/KV_SCHEDULE_PREFIX \+ matchKey/.test(src));
+check("#1 sched decoy REMOVED: cron no longer calls it", !/await reconcileSchedules\(env, matches\)/.test(src));
+check("#1 sched decoy REMOVED: no schedule-record type list in source", !/types: \["pre-match-24h", "pre-match-3h"/.test(src));
 
 // #5 Canary match
 check("#5 buildCanaryMatch function exists", /function buildCanaryMatch\(\)/.test(src));
@@ -183,6 +187,62 @@ check("#qc1 write-budget warning threshold 800/1000", /kvWritesDay > 800/.test(s
 check("#qc1 toppers gated to full sweeps (quiet-tick quota burn killed)", /fullSweepThisTick \? await maybeNotifyTableToppers/.test(src));
 check("#qc1 status map written only when changed", /curJson === JSON\.stringify\(prev\)/.test(src));
 check("#qc1 meter logs per-key top offenders", /kvWriteKeys\[k\] = \(kvWriteKeys\[k\] \|\| 0\) \+ 1/.test(src) && /top: \$\{Object\.entries\(kvWriteKeys\)/.test(src));
+
+// ============ v13.43-cpukeeper: CPU-limit outage killer ============
+// Root cause (2026-09-14, both outages): free-plan 10ms rolling CPU average;
+// full sweeps burn ~100ms CPU and ran on EVERY active tick (6/hour) → CF
+// killed every cron tick at exactly 10ms CPU (status=exceededResources).
+// The fix's WIRING (not the functions in isolation — the v13.42 lesson):
+// the cron must throttle full sweeps to QUIET_SWEEP_MS and hand active
+// in-between ticks to fetchLiveSweep; healthz must gate on tick COMPLETION.
+
+// The throttle branch: sweepFresh-first (NOT !isActiveTime-first) — the old
+// shape (!isActiveTime && sweepFresh) let active ticks re-sun the full sweep.
+check("#cpu1 throttle: sweepFresh gates BEFORE the active/quiet split", /if \(sweepFresh && cachedPool\.length\) \{/.test(src));
+check("#cpu1 throttle: active branch runs the live sweep (wired in cron)", /matches = await fetchLiveSweep\(env, cachedPool\);/.test(src));
+check("#cpu1 throttle: quiet branch still reuses the KV pool", /Quiet period \\u2014 reusing KV pool/.test(src));
+check("#cpu1 throttle: full sweep only in the else branch (fullSweepThisTick=true adjacency)", /fullSweepThisTick = true;/.test(src) && !/fullSweepThisTick = true;[\s\S]{0,200}fetchLiveSweep/.test(src));
+
+// The live sweep itself: narrow FD range + sportscore yesterday/today +
+// canonDedupe merge over the pool. NO env.STATE.put inside fetchLiveSweep
+// (the KV pool stays the last full sweep's snapshot — zero writes on live
+// ticks protects the 1,000/day quota).
+const liveSeg = (src.match(/async function fetchLiveSweep\(env, cachedPool\)[\s\S]{0,2400}?return merged;/) || [""])[0];
+check("#cpu2 fetchLiveSweep exists with the cron's exact call shape", liveSeg.length > 200);
+check("#cpu2 live FD range is \\u00b12 days", /pastDays: 2, futureDays: 2, live: true/.test(liveSeg));
+check("#cpu2 live sportscore window is yesterday+today", /fromDays: 1, toDays: 0/.test(liveSeg));
+check("#cpu2 live sweep merges OVER the cached pool", /canonDedupe\(\[\.\.\.pool, \.\.\.fetched\]\)/.test(liveSeg));
+check("#cpu2 live sweep performs ZERO KV writes (no STATE.put)", !/STATE\.put/.test(liveSeg));
+check("#cpu2 live sweep never throws (provider failures swallowed)", /Live sweep football-data failed/.test(liveSeg) && /Live sweep sportscore failed/.test(liveSeg));
+check("#cpu2 live sweep logs found/merged counts (miss visibility)", /Live sweep: pool=/.test(liveSeg));
+// The transform strips import lines, so prove the wiring by section: the
+// fetchLiveSweep CALL must live inside the cron.ts slice of the bundle (not
+// just in providers.ts next to its definition).
+const cronSeg = (src.match(/\/\/ ===== src\/cron\.ts =====[\s\S]*?(?=\/\/ ===== src\/|\/\/ ===== src\/pages)/) || [""])[0];
+check("#cpu2 fetchLiveSweep wired inside cron.ts (the sweep decision)", /matches = await fetchLiveSweep\(env, cachedPool\);/.test(cronSeg));
+
+// fetchFootballData opts: live mode skips intl calls; defaults unchanged.
+check("#cpu3 FD live mode skips intl competitions", /if \(liveMode\) return allMatches;/.test(src));
+check("#cpu3 FD defaults stay DAYS_IN_PAST/DAYS_IN_FUTURE", /opts && opts\.pastDays != null \? opts\.pastDays : CONFIG\.DAYS_IN_PAST/.test(src));
+check("#cpu3 sportscore defaults stay the full-sweep window", /opts && opts\.fromDays != null \? opts\.fromDays : 1/.test(src));
+
+// healthz: completion-aware ok. The heartbeat alone LIED during both
+// outages (start-heartbeat advanced, tick died mid-flight).
+check("#cpu4 healthz exposes last_cron_age_min", /last_cron_age_min: lastCronAgeMin/.test(src));
+check("#cpu4 healthz ok requires tick completion (fresh && completing)", /const healthy = fresh && completing && outboxDepth < 50;/.test(src));
+check("#cpu4 completion threshold derived from EXECUTION_FREQUENCY_MINUTES", /CONFIG\.EXECUTION_FREQUENCY_MINUTES \* 3 \+ 5/.test(src));
+
+// v13.43 prewarm gate: the public-payload rebuild (~100ms CPU, measured live
+// 164ms total on a live tick WITH prewarm) must NOT run on every tick —
+// only on full sweeps or when the live fingerprint actually changed.
+check("#cpu5 prewarm gated to full sweeps OR changed live data", /\(fullSweepThisTick \|\| liveChanged\) && pubStale && subrequestCount\(\) < 30/.test(src));
+check("#cpu5 prewarm compares pool vs merged fingerprints", /liveFingerprint\(matches\) !== liveFingerprint\(poolRef\)/.test(src));
+check("#cpu5 liveFingerprint helper defined in cron", /function liveFingerprint\(list\)/.test(src));
+check("#cpu5 liveFingerprint covers LIVE/IN_PLAY/PAUSED/FINISHED", /st !== "LIVE" && st !== "IN_PLAY" && st !== "PAUSED" && st !== "FINISHED"/.test(src));
+check("#cpu5 liveFingerprint carries score + identity (sorted, order-safe)", /parts\.sort\(\);/.test(src) && /parts\.join\(";"\)/.test(src));
+check("#cpu5 poolRef captured from the pre-merge KV pool", /poolRef = cachedPool;/.test(src));
+// Quiet ticks reuse the pool object → identical fingerprints → no prewarm.
+check("#cpu5 quiet path assigns the pool itself (fingerprint-equal by construction)", /matches = cachedPool;/.test(cronSeg || src));
 
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

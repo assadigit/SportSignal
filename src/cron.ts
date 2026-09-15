@@ -9,9 +9,9 @@ import { toFaDigits, resetSubrequestBudget, subrequestCount, escapeMarkdownChara
 import { translateTeam, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
-import { fetchMatchesFromAPI, getCachedMatches } from "./providers";
+import { fetchMatchesFromAPI, getCachedMatches, fetchLiveSweep } from "./providers";
 import { sendTelegram, drainOutbox } from "./telegram";
-import { sendMatchNotifications, detectStatusChanges, reconcileSchedules, auditNotifications } from "./notifications";
+import { sendMatchNotifications, detectStatusChanges, auditNotifications } from "./notifications";
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, broadcastBigMatchKickoff, maybeNotifyTableToppers } from "./digest";
 import { maybePostX } from "./x";
 import { getRegisteredChats, checkUserCap, getUserPrefs } from "./users";
@@ -49,6 +49,23 @@ async function alertPhaseError(env: Env, phase, err) {
     }
   } catch (e) {
   }
+}
+// v13.43-cpukeeper: fingerprint of every live-ish match row (status +
+// score + identity). Two lists with equal fingerprints carry identical live
+// information — used to skip the ~100ms-CPU public-payload prewarm on live
+// ticks where nothing actually changed (the common case: no goal since the
+// last rebuild). Order-independent (sorted) so a merge re-ordering can't
+// produce a false "changed".
+function liveFingerprint(list) {
+  const parts = [];
+  for (const m of list || []) {
+    const st = String(m.status || "").toUpperCase();
+    if (st !== "LIVE" && st !== "IN_PLAY" && st !== "PAUSED" && st !== "FINISHED") continue;
+    const s = m.score && m.score.fullTime ? String(m.score.fullTime.home) + "-" + String(m.score.fullTime.away) : "n";
+    parts.push(String(m.homeTeam && m.homeTeam.name) + "|" + String(m.awayTeam && m.awayTeam.name) + "|" + String(m.utcDate || "").slice(0, 10) + "|" + st + "|" + s);
+  }
+  parts.sort();
+  return parts.join(";");
 }
 export async function executeScheduledLogic(env: Env) {
   resetSubrequestBudget();
@@ -268,8 +285,13 @@ export async function executeScheduledLogic(env: Env) {
     // instead would kill the heartbeat AND every later phase, with zero
     // diagnostics).
     let matches;
+    // v13.43-cpukeeper: reference to the pre-merge KV pool — the prewarm
+    // gate compares live fingerprints of pool vs merged to detect whether
+    // the live sweep actually changed anything worth republishing.
+    let poolRef = null;
     try {
       const cachedPool = await getCachedMatches(env);
+      poolRef = cachedPool;
       const isActiveTime = cachedPool.some((m) => {
         if (!shouldNotify(m)) return false;
         if (isLiveStatus(m.status)) return true;
@@ -283,9 +305,24 @@ export async function executeScheduledLogic(env: Env) {
       // standalone key for old blobs.
       const lastSweep = parseInt(prevStatus.last_full_sweep) || 0;
       const sweepFresh = lastSweep && NOW - lastSweep < CONFIG.QUIET_SWEEP_MS;
-      if (!isActiveTime && sweepFresh && cachedPool.length) {
-        matches = cachedPool;
-        console.log(`\u{1F50C} Quiet period \u2014 reusing KV pool (${matches.length} matches, last sweep ${Math.round((NOW - lastSweep) / 6e4)} min ago); pre-match reminders still fire from the pool`);
+      if (sweepFresh && cachedPool.length) {
+        if (isActiveTime) {
+          // v13.43-cpukeeper: ACTIVE windows no longer re-run the full
+          // 3-provider sweep every tick — that sweep burns ~100ms CPU and 6
+          // per hour dragged this account over the FREE-plan 10ms rolling
+          // CPU average, after which CF killed EVERY cron tick at exactly
+          // 10ms CPU (status=exceededResources: the 2026-09-14 00:20→10:10Z
+          // and 22:00Z+ outages — hours of silent notification loss). Now:
+          // full sweep at most every QUIET_SWEEP_MS (2h); between full
+          // sweeps an active tick runs the cheap LIVE sweep (narrow
+          // football-data ±2d + sportscore yesterday/today, ~15-25ms CPU)
+          // merged over this KV pool IN MEMORY — HT/FT/result/match-start-
+          // backfill windows still evaluate at full 10-min cadence.
+          matches = await fetchLiveSweep(env, cachedPool);
+        } else {
+          matches = cachedPool;
+          console.log(`\u{1F50C} Quiet period \u2014 reusing KV pool (${matches.length} matches, last sweep ${Math.round((NOW - lastSweep) / 6e4)} min ago); pre-match reminders still fire from the pool`);
+        }
       } else {
         console.log("\n\u{1F4E1} Fetching matches from API...");
         matches = await fetchMatchesFromAPI(env);
@@ -317,14 +354,14 @@ export async function executeScheduledLogic(env: Env) {
     } catch (e) {
       console.error("Canary injection failed: " + e.message);
     }
-    // v13.9-reliability #1: reconcile pre-scheduled notifications. Writes a
-    // schedule record per worthy match so a skipped cron no longer loses the
-    // 5min/match-start reminder — it fires late on the next sweep instead.
-    try {
-      await reconcileSchedules(env, matches);
-    } catch (e) {
-      console.error("Schedule reconcile failed: " + e.message);
-    }
+    // (v13.9-reliability #1's reconcileSchedules was REMOVED in v13.43: its
+    // sched_v1:* records were a decoy — the `sent` map was never updated and
+    // nothing ever read them back for firing (the fire-leg was never built;
+    // the v13.42 backfill legs inside isBackfillEligible + the outbox cover
+    // every recovery case for real). Measured cost of the decoy: one KV read
+    // per worthy match per tick — 174 reads/tick at the time of removal,
+ // ~35-90ms of CPU the free-plan budget couldn't afford. The stale sched_v1:*
+    // keys expire via their 7-day TTL on their own.)
     await detectStatusChanges(env, matches);
     const worthyMatches = matches.filter(shouldNotify);
     console.log(`\u{1F3AF} Matches meeting notification criteria: ${worthyMatches.length}`);
@@ -456,12 +493,24 @@ export async function executeScheduledLogic(env: Env) {
     // instead of paying ~4.6s for the sweep. Budget-guarded: prewarm only
     // with ≥18 subrequests of headroom (standings need ≤6; the pool ride-
     // along needs 0). KV write math documented in public-matches.ts.
+    // v13.43-cpukeeper: the payload rebuild itself is ~100ms of CPU (full
+    // shaping + ~100KB stringify) — running it EVERY tick was the other half
+    // of the poison that tripped the free-plan 10ms CPU average (measured
+    // live: a live-sweep tick WITH prewarm = 164ms CPU). It now runs ONLY on
+    // full sweeps (2h cadence) or when the live sweep actually CHANGED live
+    // data (goal / HT / FT / newly-discovered fixture). Quiet ticks skip it
+    // entirely; visitors between rebuilds trigger the on-demand refresh
+    // (the pre-v13.35 path).
     try {
       const pub = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null) as any;
       const pubStale = !pub || !pub.ts || Date.now() - pub.ts >= 555e3;
-      if (pubStale && subrequestCount() < 30) {
+      let liveChanged = false;
+      if (!fullSweepThisTick && poolRef) {
+        liveChanged = liveFingerprint(matches) !== liveFingerprint(poolRef);
+      }
+      if ((fullSweepThisTick || liveChanged) && pubStale && subrequestCount() < 30) {
         await fetchPublicMatches(env, null, { prewarm: true, pool: matches });
-        console.log("\u{1F525} Public payload pre-warmed for the next visitors");
+        console.log(`\u{1F525} Public payload pre-warmed (${fullSweepThisTick ? "full sweep" : "live data changed"}) for the next visitors`);
       }
     } catch (e) {
       console.error("Public pre-warm failed: " + e.message);

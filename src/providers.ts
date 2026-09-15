@@ -6,7 +6,7 @@ import type { Env } from "./types";
 import { fetchJSON, fetchWithRetry } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { canonDedupe } from "./dedupe";
-import { shouldNotify, mapStageName, parseTSPDate } from "./matches";
+import { shouldNotify, mapStageName, parseTSPDate, isLiveStatus } from "./matches";
 import { getRegisteredChats } from "./users";
 import { sendTelegram } from "./telegram";
 
@@ -101,7 +101,12 @@ export async function sportScoreDay(code, slug, dateStr, acc) {
   }
   return added;
 }
-export async function fetchSportScore(env: Env) {
+export async function fetchSportScore(env: Env, opts?) {
+  // v13.43-cpukeeper: opts narrows the day window for the cheap LIVE sweep
+  // (yesterday + today). Default (no opts) keeps the full-sweep window
+  // [now-24h, now+24h] exactly as before.
+  const fromDays = opts && opts.fromDays != null ? opts.fromDays : 1;
+  const toDays = opts && opts.toDays != null ? opts.toDays : 1;
   const matches = [];
   const seen = new Set();
   if (await providerSuspended(env, "sportscore")) {
@@ -118,8 +123,8 @@ export async function fetchSportScore(env: Env) {
     )
   );
   if (!Object.keys(slugs).length) return matches;
-  const from = new Date(Date.now() - 864e5);
-  const to = new Date(Date.now() + 1 * 864e5);
+  const from = new Date(Date.now() - fromDays * 864e5);
+  const to = new Date(Date.now() + toDays * 864e5);
   const acc = { list: matches, seen };
   let calls = 0, failures = 0;
   for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
@@ -171,11 +176,20 @@ export async function getCachedMatches(env: Env) {
   }
   return [];
 }
-export async function fetchFootballData(env: Env) {
-  const dateFrom = new Date(Date.now() - CONFIG.DAYS_IN_PAST * 864e5).toISOString().split("T")[0];
-  const dateTo = new Date(Date.now() + CONFIG.DAYS_IN_FUTURE * 864e5).toISOString().split("T")[0];
+export async function fetchFootballData(env: Env, opts?) {
+  // v13.43-cpukeeper: opts narrows the date range (and skips the intl
+  // calls) for the cheap LIVE sweep — ±2 days covers every live/just-
+  // finished/just-starting worthy match at a fraction of the parse CPU of
+  // the default 10-day range. Default (no opts) = the full-sweep behavior.
+  const pastDays = opts && opts.pastDays != null ? opts.pastDays : CONFIG.DAYS_IN_PAST;
+  const futureDays = opts && opts.futureDays != null ? opts.futureDays : CONFIG.DAYS_IN_FUTURE;
+  const liveMode = !!(opts && opts.live);
+  const dateFrom = new Date(Date.now() - pastDays * 864e5).toISOString().split("T")[0];
+  const dateTo = new Date(Date.now() + futureDays * 864e5).toISOString().split("T")[0];
   const fdLeagues = CONFIG.LEAGUES.filter((c) => !["EL", "ECL"].includes(c));
-  console.log(`\u{1F4C5} Date range: ${dateFrom} to ${dateTo} (${CONFIG.DATE_RANGE_DAYS} days total)`);
+  // v13.43-cpukeeper: print the ACTUAL range length (live sweeps are ±2d, not
+  // the config's 10-day total).
+  console.log(`\u{1F4C5} Date range: ${dateFrom} to ${dateTo} (${pastDays + futureDays} days${liveMode ? ", live sweep" : `, ${CONFIG.DATE_RANGE_DAYS} total`})`);
   const allMatches = [];
   const seen = new Set();
   const pushUnique = (list) => {
@@ -188,12 +202,15 @@ export async function fetchFootballData(env: Env) {
   };
   try {
     const u = `${CONFIG.API_URL}?competitions=${fdLeagues.join(",")}&dateFrom=${dateFrom}&dateTo=${dateTo}`;
-    const m = await fetchWithRetry(u, env.API_TOKEN, "Leagues+CL");
-    console.log(`\u2705 Leagues+CL: ${m.length} matches`);
+    const m = await fetchWithRetry(u, env.API_TOKEN, liveMode ? "Leagues+CL (live)" : "Leagues+CL");
+    console.log(`\u2705 Leagues+CL${liveMode ? " (live)" : ""}: ${m.length} matches`);
     pushUnique(m);
   } catch (error) {
     console.error(`\u274C Failed to fetch league matches:`, error.message);
   }
+  // Intl competitions: full sweeps only — live-worthy intl fixtures are rare
+  // and each competition costs a subrequest + parse (v13.43-cpukeeper).
+  if (liveMode) return allMatches;
   for (const [code, id] of Object.entries(CONFIG.INTL_COMPETITIONS)) {
     try {
       const u = `${CONFIG.API_URL}?competitions=${id}&dateFrom=${dateFrom}&dateTo=${dateTo}`;
@@ -397,6 +414,48 @@ export async function fetchTheSportsDB(env: Env) {
     }
   }
   return matches;
+}
+// v13.43-cpukeeper: the CHEAP live sweep. Root cause it kills: this Workers
+// account is on the FREE plan (10ms CPU rolling-average enforcement) and the
+// full 3-provider sweep burns ~100ms CPU — running it on every 10-min tick
+// during active windows (any worthy FT keeps isActiveTime true for 8h)
+// dragged the average over the limit and CF killed EVERY cron tick at
+// exactly 10ms CPU (status=exceededResources, err=1): the 2026-09-14
+// 00:20→10:10Z outage (57 consecutive kills) and the 22:00Z+ outage the same
+// day. Structure now: full sweep at most once per QUIET_SWEEP_MS (2h);
+// between full sweeps an active tick runs THIS — one narrow football-data
+// call (±2 days: statuses + scores for everything near kickoff) plus the
+// sportscore yesterday/today sweep (BL1/EL/ECL/cup live data), merged OVER
+// the cached KV pool IN MEMORY. ~15–25ms CPU per tick, no KV pool write (the
+// pool stays the last full sweep's snapshot). HT / POSTPONED / FT /
+// match-start-backfill / 5min windows all still evaluate at full 10-minute
+// cadence from the merged pool. NEVER throws — a total provider failure
+// returns the cached pool unchanged (the same data the quiet path would
+// have used, so notifications still run off it).
+export async function fetchLiveSweep(env: Env, cachedPool) {
+  const pool = Array.isArray(cachedPool) ? cachedPool : [];
+  const fetched = [];
+  let fdCount = 0, ssCount = 0;
+  try {
+    const fd = await fetchFootballData(env, { pastDays: 2, futureDays: 2, live: true });
+    fdCount = fd.length;
+    fetched.push(...fd);
+  } catch (e) {
+    console.error("Live sweep football-data failed: " + e.message);
+  }
+  if (!(await providerSuspended(env, "sportscore"))) {
+    try {
+      const ss = await fetchSportScore(env, { fromDays: 1, toDays: 0 });
+      ssCount = ss.length;
+      fetched.push(...ss);
+    } catch (e) {
+      console.error("Live sweep sportscore failed: " + e.message);
+    }
+  }
+  const merged = canonDedupe([...pool, ...fetched]);
+  const liveN = merged.filter((m) => isLiveStatus(m.status)).length;
+  console.log(`\u26A1 Live sweep: pool=${pool.length} fetched=${fetched.length} (fd=${fdCount} spsc=${ssCount}) merged=${merged.length} live=${liveN}`);
+  return merged;
 }
 export async function fetchMatchesFromAPI(env: Env) {
   const sources = [

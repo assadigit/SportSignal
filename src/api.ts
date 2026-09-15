@@ -314,6 +314,15 @@ const POST_GATE_ROUTES: RouteDef[] = [
       const heartbeat = parseInt(st.heartbeat) || 0;
       const ageMin = heartbeat ? Math.round((Date.now() - heartbeat) / 6e4) : -1;
       const fresh = ageMin >= 0 && ageMin <= CONFIG.EXECUTION_FREQUENCY_MINUTES * 3;
+      // v13.43-cpukeeper: the heartbeat only proves a tick STARTED. During
+      // the 2026-09-14 CPU-limit outages every tick wrote its start-heartbeat
+      // and was then killed (exceededResources) before completing — /healthz
+      // kept returning ok:true for hours while nothing was being sent.
+      // last_cron is only written at tick COMPLETION; requiring BOTH makes a
+      // half-dead bot page external monitors.
+      const lastCron = parseInt(st.last_cron) || 0;
+      const lastCronAgeMin = lastCron ? Math.round((Date.now() - lastCron) / 6e4) : -1;
+      const completing = lastCronAgeMin >= 0 && lastCronAgeMin <= CONFIG.EXECUTION_FREQUENCY_MINUTES * 3 + 5;
       // v13.9-reliability #10: expose the outbox depth so an external uptime
       // monitor (Uptime Robot / BetterStack / CF Healthcheck) can alert on
       // a growing backlog = sustained Telegram outage. The monitor points at
@@ -324,13 +333,14 @@ const POST_GATE_ROUTES: RouteDef[] = [
         const ob = await env.STATE.get(CONFIG.KV_OUTBOX, "json").catch(() => null);
         outboxDepth = Array.isArray(ob) ? ob.length : 0;
       } catch (e) { }
-      const healthy = fresh && outboxDepth < 50;
+      const healthy = fresh && completing && outboxDepth < 50;
       // v13.38-qc: surface the KV write budget burn (measured, not pencil
       // math) so any monitor can watch the 1,000/day free-tier quota —
       // quota exhaustion was the original spam trigger.
       return new Response(JSON.stringify({
         ok: healthy,
         heartbeat_age_min: ageMin,
+        last_cron_age_min: lastCronAgeMin,
         outbox_depth: outboxDepth,
         kv_writes_day: parseInt(st.kv_writes_day) || 0,
         version: VERSION
