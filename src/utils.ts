@@ -170,6 +170,15 @@ export async function fetchJSON(url, attempts?, headers?) {
   }
   return null;
 }
+// v13.44-quotaguard (F5): timestamp of the last 429 seen by fetchWithRetry.
+// football-data's free tier is 10 req/min; the old fixed 1-2s backoff
+// retried straight back into the SAME exhausted quota minute and burned
+// both attempts for nothing. fetchFootballData reads this to suspend the
+// football-data circuit (mirror of sportscore's) instead of hammering.
+var RATE_LIMITED_AT = 0;
+export function fdRateLimited() {
+  return Date.now() - RATE_LIMITED_AT < 6e4;
+}
 export async function fetchWithRetry(url, apiToken, label) {
   for (let attempt = 1; attempt <= CONFIG.API_RETRY_ATTEMPTS; attempt++) {
     if (bumpSubrequest()) throw new Error("Subrequest budget exhausted");
@@ -182,8 +191,14 @@ export async function fetchWithRetry(url, apiToken, label) {
       if (!res.ok) {
         const errorText = await res.text();
         if (res.status === 429) {
-          const waitTime = CONFIG.API_RETRY_DELAY * attempt;
-          console.log(`Rate limited, waiting ${waitTime}ms...`);
+          // v13.44-quotaguard (F5): honor the server's Retry-After (seconds).
+          // Cap the wait at 15s so a long Retry-After can't stall the tick —
+          // when the cap truncates a longer hint, the FD circuit suspends the
+          // provider for the rest of the sweep instead of hammering.
+          const raSec = parseInt(res.headers && res.headers.get ? res.headers.get("retry-after") : "") || 0;
+          const waitTime = Math.min(Math.max(raSec * 1e3, CONFIG.API_RETRY_DELAY * attempt), 15e3);
+          RATE_LIMITED_AT = Date.now();
+          console.log(`Rate limited, waiting ${waitTime}ms (Retry-After: ${raSec || "none"})...`);
           await new Promise((resolve) => setTimeout(resolve, waitTime));
           continue;
         }

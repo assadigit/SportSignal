@@ -309,31 +309,12 @@ export function buildDummyMatches() {
   return base;
 }
 
-// v13.9-reliability #5: canary match — a synthetic worthy match injected into
-// the pool so the full notification pipeline (discovery → window-check →
-// dedupe → Telegram send) is exercised end-to-end on every sweep. If the
-// canary's reminders don't arrive at the expected times, the pipeline is
-// broken (cron not firing, KV not writing, worker erroring, Telegram down).
-// The canary is refreshed every 6h so it always has a fresh 24h+3h+1h
-// window ahead. It's tagged `canary: true` so the public page can filter
-// it out (it's a test match, not a real fixture). The match is a PL big
-// match (Arsenal vs Chelsea) so it passes shouldNotify + isBigMatch.
-export function buildCanaryMatch() {
-  const now = Date.now();
-  // Kickoff ~25h from now so the 24h reminder fires on the next sweep.
-  const kickoff = new Date(now + 25 * 36e5).toISOString();
-  return {
-    id: "canary-" + Math.floor(now / (6 * 36e5)),
-    utcDate: kickoff,
-    status: "SCHEDULED",
-    stage: "REGULAR_SEASON",
-    competition: { code: "PL" },
-    homeTeam: { name: "Arsenal FC" },
-    awayTeam: { name: "Chelsea FC" },
-    score: { fullTime: { home: null, away: null } },
-    canary: true
-  };
-}
+// v13.9-reliability #5 canary match: REMOVED in v13.44-quotaguard (audit
+// F9). The injection ran AFTER cacheMatches, so the canary never persisted
+// in the pool — every tick minted a fresh +25h kickoff whose windows never
+// opened, while burning a canary_match_v1 KV write per tick (~144/day of
+// the 1,000/day free quota) plus notify-path reads for a phantom match.
+// buildCanaryMatch had no other callers; cron's injection block is gone.
 
 // v13.9-reliability #4: canonical kickoff-time KV. Written at first
 // discovery (when the match enters the KV pool), never overwritten unless

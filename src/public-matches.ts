@@ -176,6 +176,26 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   // keeps the 3-min SWR window. Live payloads always keep 3 min.
   const freshMs = cached && cached.data && cached.data.prewarm && !cachedHasLive ? 555e3 : 18e4;
   if (cached && cached.ts && Date.now() - cached.ts < freshMs) return cached.data;
+  // v13.44-quotaguard: web-side KV-write budget guard. The cron-side meter
+  // folds the day's TRUE burn into cron_status_v1; past the HARD threshold,
+  // visitor-driven rebuilds (refresh-lock + rate-limit + payload + live-
+  // detail writes, ~3-7 per refresh) are held and the cached payload is
+  // served instead — bounds adversarial write amplification (a rotating-IP
+  // scraper could otherwise mint a few writes every lock-expiry ~ thousands
+  // per day). The cron prewarm path is exempt (governed by the cron-side
+  // governor); a cold cache (no cached data at all) still rebuilds — the
+  // public page must never brick.
+  if (!prewarm) {
+    try {
+      const st = await env.STATE.get("cron_status_v1", "json").catch(() => null);
+      if (st && st.kv_day === new Date().toISOString().slice(0, 10) && (parseInt(st.kv_writes_day) || 0) >= CONFIG.KV_WRITES_HARD) {
+        if (cached && cached.data) {
+          console.warn("\u{1F4B0} KV write budget hold \u2014 serving the cached public payload (visitor refresh deferred)");
+          return cached.data;
+        }
+      }
+    } catch (e) { }
+  }
   await applySettings(env);
   await ensureFaAiCache(env).catch(() => {
   });

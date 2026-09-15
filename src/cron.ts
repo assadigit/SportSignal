@@ -15,7 +15,7 @@ import { sendMatchNotifications, detectStatusChanges, auditNotifications } from 
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, broadcastBigMatchKickoff, maybeNotifyTableToppers } from "./digest";
 import { maybePostX } from "./x";
 import { getRegisteredChats, checkUserCap, getUserPrefs } from "./users";
-import { applySettings, buildCanaryMatch } from "./admin";
+import { applySettings } from "./admin";
 import { fetchPublicMatches } from "./public-matches";
 
 export async function getCronStatus(env: Env) {
@@ -69,6 +69,29 @@ function liveFingerprint(list) {
 }
 export async function executeScheduledLogic(env: Env) {
   resetSubrequestBudget();
+  // v13.44-quotaguard: the KV-write meter now wraps the VERY FIRST action —
+  // the execution-lock put and every phase write below are counted, so
+  // kv_writes_day is the TRUE burn. (The v13.38 meter started after the lock
+  // and the old start-heartbeat, silently undercounting by ~288 writes/day
+  // — 29% of the free quota invisible to healthz.)
+  let kvWritesThisTick = 0;
+  const kvWriteKeys: Record<string, number> = {};
+  // v13.44-quotaguard: capture the TRUE original put once per isolate — a
+  // warm isolate re-enters this function every 10 min, and re-wrapping the
+  // previous tick's wrapper would chain wrappers (each put traversing one
+  // more layer, forever). __origPut pins the pristine binding; if the
+  // runtime hands out fresh binding objects per invocation this degrades
+  // gracefully to a plain re-bind.
+  const origStatePut = (env.STATE as any).__origPut || env.STATE.put.bind(env.STATE);
+  (env.STATE as any).__origPut = origStatePut;
+  (env.STATE as any).put = (...args: unknown[]) => {
+    kvWritesThisTick++;
+    try {
+      const k = String(args[0]).slice(0, 28);
+      kvWriteKeys[k] = (kvWriteKeys[k] || 0) + 1;
+    } catch (e) { }
+    return origStatePut(...(args as [string, string, any?]));
+  };
   // v13.36-nospam: settings failure must not kill the tick (it previously
   // ran unguarded BEFORE the lock — an exception here left zero diagnostics
   // and a stale heartbeat).
@@ -83,6 +106,38 @@ export async function executeScheduledLogic(env: Env) {
   });
   const NOW = Date.now();
   const prevStatus = await getCronStatus(env);
+  // v13.44-quotaguard: the daily KV-write budget governor (free tier =
+  // 1,000 writes/day; the binding constraint for this whole worker). The
+  // v13.38 meter MEASURED but never ACTED; now the tick sheds cosmetic
+  // writes as the day's burn crosses the thresholds:
+  //   SOFT (700): skip the public-payload prewarm + FA-AI learning writes.
+  //   HARD (850): also hold the pool-cache write, and page the admin
+  //               once/12h (write-first, KV-mark deduped).
+  // NEVER gated: the execution lock, the completion status blob, dedupe
+  // records, the outbox, match-status telemetry — the anti-spam +
+  // monitoring set. A dedupe write that fails (real quota exhaustion)
+  // already defers its send fail-closed (v13.42), so the worst case at
+  // 1,000 is deferred notifications + a paged admin, never spam, never a
+  // dead-looking bot.
+  const kvDay = new Date(NOW).toISOString().slice(0, 10);
+  const writesSoFarToday = (prevStatus.kv_day === kvDay ? parseInt(prevStatus.kv_writes_day) : 0) || 0;
+  const budgetSoft = writesSoFarToday >= CONFIG.KV_WRITES_SOFT;
+  const budgetHard = writesSoFarToday >= CONFIG.KV_WRITES_HARD;
+  if (budgetSoft) console.warn(`\u{1F4B0} KV write budget: ${writesSoFarToday}/1000 today \u2014 governor ${budgetHard ? "HARD" : "SOFT"} engaged (cosmetic writes shedding; notifications unaffected)`);
+  if (budgetHard) {
+    try {
+      const lastBudgetAlert = parseInt(await env.STATE.get("kv_budget_alert_v1").catch(() => null)) || 0;
+      if (Date.now() - lastBudgetAlert > 12 * 36e5) {
+        await env.STATE.put("kv_budget_alert_v1", String(Date.now()), { expirationTtl: 43200 });
+        const adminChat = parseInt(env.CHAT_ID);
+        if (!isNaN(adminChat)) {
+          await sendTelegram(env, "\u26A0\uFE0F *\u0633\u0642\u0641 \u0646\u0648\u0634\u062A\u0646 KV \u0646\u0632\u062F\u06CC\u06A9 \u0627\u0633\u062A* \u2014 " + toFaDigits(String(writesSoFarToday)) + " \/\u06F1\u06F0\u06F0\u06F0 \u0646\u0648\u0634\u062A\u0647 \u0627\u0645\u0631\u0648\u0632\uD83D\uDCB0 \u0635\u0631\u0641\u0647\u200C\u062C\u0648\u06CC\u06CC \u0641\u0639\u0627\u0644 \u0634\u062F\u061B \u0627\u0637\u0644\u0627\u0639\u200C\u0647\u0627\u06CC \u0627\u0635\u0644\u06CC \u0627\u062F\u0627\u0645\u0647 \u062F\u0627\u0631\u0646\u062F.", adminChat);
+        }
+      }
+    } catch (e) {
+      console.error("Budget alert failed: " + e.message);
+    }
+  }
   console.log(`
 \u{1F680} Starting scheduled execution at ${new Date(NOW).toISOString()}`);
   try {
@@ -129,42 +184,16 @@ export async function executeScheduledLogic(env: Env) {
     console.log("\u23ED\uFE0F Lock claimed by a concurrent run, skipping");
     return;
   }
-  // v13.36-nospam: START heartbeat. The old code only wrote the heartbeat
-  // at the very END of the tick — any mid-tick crash (see the Sep 14
-  // outage: every tick err=1 for 10 hours) left the heartbeat frozen and
-  // healthz reported ok:false with a phantom "dead bot". Writing the
-  // heartbeat right after the lock proves the cron fired; last_cron below
-  // still proves the tick COMPLETED.
-  // v13.38-qc: carry the KV-write daily accumulator through this overwrite
-  // (the final blob below refreshes it with this tick's counted writes).
-  try {
-    await env.STATE.put("cron_status_v1", JSON.stringify({
-      heartbeat: String(NOW),
-      last_cron: prevStatus.last_cron || "0",
-      last_full_sweep: prevStatus.last_full_sweep || "0",
-      kv_day: prevStatus.kv_day || "",
-      kv_writes_day: prevStatus.kv_writes_day || 0
-    }));
-  } catch (e) {
-    console.error("Start-heartbeat write failed: " + e.message);
-  }
-  // v13.38-qc: KV WRITE BUDGET METER. The free tier's 1,000 writes/day was
-  // exhausted once (the original spam trigger) and the budget math was
-  // pencil-only. Count every env.STATE.put from here to tick end, fold the
-  // running day-total into the status blob, and log the burn. Constant
-  // offsets (the lock put just above) are uncounted — irrelevant for trend
-  // monitoring; +1/tick ≈ +144/day at most.
-  let kvWritesThisTick = 0;
-  const kvWriteKeys: Record<string, number> = {};
-  const origStatePut = env.STATE.put.bind(env.STATE);
-  (env.STATE as any).put = (...args: unknown[]) => {
-    kvWritesThisTick++;
-    try {
-      const k = String(args[0]).slice(0, 28);
-      kvWriteKeys[k] = (kvWriteKeys[k] || 0) + 1;
-    } catch (e) { }
-    return origStatePut(...(args as [string, string, any?]));
-  };
+  // v13.44-quotaguard: the START-heartbeat put is RETIRED (−144
+  // writes/day — 14% of the free quota, for a signal the lock already
+  // persists). Its two jobs are covered for free: "the cron fired" is
+  // proven by the execution-lock put above (own:<now>:<uuid>, TTL'd), and
+  // "the tick completed" by last_cron in the completion blob below.
+  // healthz (v13.43) requires BOTH freshnesses, so a mid-tick death still
+  // flips ok:false within ~35min; the heartbeat field now only advances on
+  // completion. (The old write also re-carried the kv_writes_day
+  // accumulator mid-tick — the completion blob is now its only fold
+  // point, which removes the clobber window entirely.)
   try {
     let chatIds;
     // v13.36-nospam: user-list read failure previously re-threw through the
@@ -262,8 +291,15 @@ export async function executeScheduledLogic(env: Env) {
       console.error("Migration broadcast failed: " + e.message);
     }
     try {
-      const fa = await maybeRunFaAi(env);
-      if (fa && fa.ok && fa.learned) console.log(`\u{1F9E0} FA-AI: ${fa.learned} new Persian names learned (${fa.totalLearned} total)`);
+      // v13.44-quotaguard: FA-AI learning is a cosmetic write — skip under
+      // the SOFT governor (names re-learn on a healthier day; the existing
+      // fa_teams_ai cache keeps serving reads).
+      if (!budgetSoft) {
+        const fa = await maybeRunFaAi(env);
+        if (fa && fa.ok && fa.learned) console.log(`\u{1F9E0} FA-AI: ${fa.learned} new Persian names learned (${fa.totalLearned} total)`);
+      } else {
+        console.log("\u{1F4B0} KV write budget: FA-AI learning skipped (soft governor)");
+      }
     } catch (e) {
       console.error("FA-AI cron step failed: " + e.message);
     }
@@ -325,7 +361,11 @@ export async function executeScheduledLogic(env: Env) {
         }
       } else {
         console.log("\n\u{1F4E1} Fetching matches from API...");
-        matches = await fetchMatchesFromAPI(env);
+        // v13.44-quotaguard: HARD governor → the pool-cache write is held
+        // this tick (env-scoped flag; see cacheMatches). The sweep itself
+        // still runs — fresh match data feeds the notification pipeline
+        // either way.
+        matches = await fetchMatchesFromAPI(budgetHard ? { ...env, KV_BUDGET_HOLD: true } : env);
         fullSweepThisTick = true;
       }
     } catch (e) {
@@ -337,23 +377,14 @@ export async function executeScheduledLogic(env: Env) {
       return;
     }
     console.log(`\u{1F4CA} Total matches received: ${matches.length}`);
-    // v13.9-reliability #5: inject the canary match into the pool. It's a
-    // synthetic worthy PL big-match (Arsenal vs Chelsea) with kickoff ~25h
-    // ahead, refreshed every 6h. The full notification pipeline exercises it
-    // end-to-end; if the canary's reminders stop arriving, the pipeline is
-    // broken. It's tagged canary:true so the public page filters it out.
-    try {
-      const canaryLast = parseInt(await env.STATE.get(CONFIG.KV_CANARY).catch(() => null)) || 0;
-      let canary = matches.find((m) => m.canary);
-      if (!canary || Date.now() - canaryLast > CONFIG.CANARY_REFRESH_MS) {
-        canary = buildCanaryMatch();
-        matches.push(canary);
-        await env.STATE.put(CONFIG.KV_CANARY, String(Date.now()), { expirationTtl: 7 * 86400 }).catch(() => {});
-        console.log(`\u{1F4A1} Canary match injected: ${canary.homeTeam.name} vs ${canary.awayTeam.name} @ ${canary.utcDate}`);
-      }
-    } catch (e) {
-      console.error("Canary injection failed: " + e.message);
-    }
+    // (v13.9-reliability #5's canary injection was REMOVED in
+    // v13.44-quotaguard — audit F9: cacheMatches runs BEFORE the injection,
+    // so the canary never persisted and its 24h/3h/1h windows NEVER opened;
+    // every tick minted a fresh +25h kickoff + a canary_match_v1 write
+    // (~144 writes/day of the 1,000/day free quota for zero value, plus
+    // notify-path reads for a phantom match). Pipeline visibility lives in
+    // the notify breadcrumb (v13.42) + auditNotifications + the 6h admin
+    // heartbeat.)
     // (v13.9-reliability #1's reconcileSchedules was REMOVED in v13.43: its
     // sched_v1:* records were a decoy — the `sent` map was never updated and
     // nothing ever read them back for firing (the fire-leg was never built;
@@ -474,6 +505,10 @@ export async function executeScheduledLogic(env: Env) {
         kv_day: kvDay,
         kv_writes_day: kvWritesDay,
         kv_writes_last_tick: kvWritesThisTick,
+        // v13.44-quotaguard: which governor level was engaged when this tick
+        // started (null = healthy budget) — one KV read answers "why did
+        // the prewarm/pool writes stop today".
+        budget: budgetHard ? "hard" : budgetSoft ? "soft" : null,
         // v13.42-rekindle: notification breadcrumb — the tick blob now
         // records what the sweep SAW and SENT (found / skipped-for-no-
         // followers / budget-deferred / per-type counts / last match
@@ -508,7 +543,10 @@ export async function executeScheduledLogic(env: Env) {
       if (!fullSweepThisTick && poolRef) {
         liveChanged = liveFingerprint(matches) !== liveFingerprint(poolRef);
       }
-      if ((fullSweepThisTick || liveChanged) && pubStale && subrequestCount() < 30) {
+      // v13.44-quotaguard: prewarm is a cosmetic write too — under the SOFT
+      // governor the visitors' on-demand refresh path takes over (the
+      // pre-v13.35 behavior).
+      if ((fullSweepThisTick || liveChanged) && pubStale && subrequestCount() < 30 && !budgetSoft) {
         await fetchPublicMatches(env, null, { prewarm: true, pool: matches });
         console.log(`\u{1F525} Public payload pre-warmed (${fullSweepThisTick ? "full sweep" : "live data changed"}) for the next visitors`);
       }

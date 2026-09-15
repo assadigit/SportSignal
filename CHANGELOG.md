@@ -6,6 +6,105 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.44-quotaguard] — 2026-09-15 (the free-tier budget guarantee — never exceed the KV-write quota)
+
+### The user's ask, answered with a measured budget model
+- "Make sure this system NEVER exceeds the free tiers — we're just a Telegram
+  bot that shows a few messages a day." Audited every free-tier dimension
+  against the real code + live telemetry: **KV writes (1,000/day) is the ONLY
+  binding constraint** — requests (~1.5–3k/day incl. cron 144 + prober noise,
+  limit 100k; static assets are free and don't count), KV reads (~1.5–8k/day,
+  limit 100k), deletes/lists (~0, limit 1k each), storage (MBs, limit 1GB),
+  cron triggers (1 of 5), subrequests (0–23 of 50, hard-capped at 48 in code),
+  CPU (fixed structurally by 13.43's throttle; the remaining thin margin is
+  documented — the paid plan is the permanent ceiling-lift). The scandal the
+  audit found: on a COMPLETELY QUIET day the worker still burned **~690 real
+  writes/day (69%)** while its own meter reported only ~450 — the v13.38 meter
+  started counting AFTER the lock put and the start-heartbeat put, blind to
+  ~288 writes/day (29% of the quota). A busy matchday could have pushed the
+  true total past 1,000 with healthz still showing green numbers.
+
+### Fixed — the quiet-day floor cut ~45% (690 → ~380 true writes/day)
+- **Canary injection REMOVED (audit F9)**: `cacheMatches` ran BEFORE the
+  injection, so the canary never persisted — every tick minted a fresh +25h
+  kickoff whose 24h/3h/1h windows NEVER opened, while burning a
+  `canary_match_v1` write every tick (~144/day) plus notify-path reads for a
+  phantom match. Dead feature, live cost. `buildCanaryMatch` deleted; old
+  `canary_match_v1` keys expire via their own 7-day TTL.
+- **The START-heartbeat put is RETIRED (~−144/day)**: its two jobs are
+  covered for free — "the cron fired" is proven by the execution-lock put
+  (`own:<now>:<uuid>`, TTL'd) and "the tick completed" by `last_cron` in the
+  completion blob; healthz (13.43) requires BOTH, so a mid-tick death still
+  flips `ok:false` within ~35min. Side benefit: the kv_writes_day accumulator
+  now folds at exactly one point (the completion blob), removing the old
+  mid-tick clobber window.
+- **The KV-write meter now wraps the VERY FIRST action of the tick** — the
+  lock put and every phase write are counted, so `kv_writes_day` /
+  `kv_writes_last_tick` / healthz reflect the TRUE burn. Also fixed a latent
+  v13.38 chaining bug: a warm isolate re-wrapped `env.STATE.put` every 10
+  minutes, layering wrapper-on-wrapper forever; the meter now pins the
+  pristine binding via `__origPut` (depth stays 1, degrades gracefully if the
+  runtime hands out fresh binding objects).
+
+### Fixed — the hard guarantee: a write-budget GOVERNOR (the meter now ACTS)
+- Thresholds in CONFIG: **SOFT at 700** — the tick skips cosmetic writes
+  (public-payload prewarm, FA-AI learning); **HARD at 850** — additionally
+  holds the pool-cache write for that tick (env-scoped `KV_BUDGET_HOLD` flag;
+  the existing pool keeps serving — fixtures are static, a slightly stale
+  live score for a few ticks is worth ~150 writes of headroom) and pages the
+  admin once/12h via a write-first, KV-mark-deduped Telegram alert.
+- **NEVER gated: the anti-spam + monitoring set** — execution lock, completion
+  status blob, dedupe records, outbox, match-status telemetry. A dedupe write
+  that fails under REAL quota exhaustion already defers its send fail-closed
+  (v13.42), so the worst case at the 1,000 line is deferred notifications +
+  a paged admin — never spam, never a dead-looking bot.
+- **Web-side guard**: past the HARD threshold, visitor-driven public-payload
+  rebuilds (refresh-lock + rate-limit + payload + live-detail writes, ~3–7
+  per refresh) are held and the cached payload served — bounds adversarial
+  write amplification (a rotating-IP scraper could otherwise mint a few writes
+  per lock expiry, thousands/day). The cron prewarm path is exempt (governed
+  by the cron-side governor); a cold cache still rebuilds — the public page
+  must never brick.
+- The completion blob records which level was engaged (`budget:
+  "soft"|"hard"|null`) and `/healthz` exposes `kv_budget` — one KV read (or
+  one healthz poll) answers "why did the cosmetic writes stop today".
+
+### Fixed — two audit findings that the governor made mandatory
+- **F3 (dupe vector, closed)**: `broadcastBigMatchKickoff` /
+  `broadcastBigMatchResults` called `saveNotifiedMatch` but did NOT gate the
+  send on its return — the v13.42 fail-closed fix covered only the regular
+  path. A KV-write failure (or a governor hold) during a big-match window
+  would send unrecorded → duplicate broadcast next tick. Both now gate on
+  the persisted save exactly like `sendNotificationIfNeeded`.
+- **F5 (football-data 429)**: `fetchWithRetry` waited a fixed 1–2s and
+  retried straight back into the same exhausted quota minute (FD free tier =
+  10 req/min). It now honors the `Retry-After` header (capped at 15s so a
+  long hint can't stall the tick), and football-data gains the missing
+  provider-suspension circuit (mirror of sportscore's): a rate-limited main
+  call suspends FD for PROVIDER_SUSPEND_MS and skips the intl calls this
+  sweep — the pool + other providers cover.
+
+### Kept exactly as-is
+- Anti-spam framework untouched (dedupe/write-first/at-most-once paths only
+  gained gates, never lost any); no KV keys renamed (only additive:
+  `kv_budget_alert_v1`); no assets changed (SW cache stays
+  `sportsignal-v11`); zero runtime dependencies; Favorites gate untouched.
+
+### Tests
+- check-reliability.js: #5 canary section flipped to REMOVAL asserts; the
+  #nospam8 start-heartbeat assert flipped to RETIRED; new #quota1–#quota4
+  wiring section (single cron_status_v1 put, meter-before-lock ordering,
+  governor thresholds + soft/hard branches, web-side guard, F3 gating, F5
+  Retry-After + FD circuit).
+- check-no-miss.js: canary assert flipped; new behavioral section (QUOTA) —
+  broadcast fail-closed under a failing KV (F3), pool-cache hold honored
+  under the HARD flag, prewarm skipped under SOFT, Retry-After wait honored
+  and capped, FD suspension set on 429 exhaustion.
+
+---
+
+---
+
 ## [13.43-cpukeeper] — 2026-09-14/15 (the CPU-limit outage killer + a healthz that can see it)
 
 ### Root cause of BOTH Sep-14 outages — identified with hard evidence

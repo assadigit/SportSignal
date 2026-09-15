@@ -2,7 +2,7 @@
 // Extracted verbatim from the v12.33-xpost bundle; KV keys and semantics are
 // LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.43-cpukeeper";
+export const VERSION = "13.44-quotaguard";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -245,12 +245,22 @@ export const CONFIG: Record<string, any> = {
   // discovery, never overwritten unless the match is POSTPONED. Prevents
   // provider-time-shift from moving the notification windows.
   KV_KICKOFF_PREFIX: "kickoff_v1:",
-  // #5 Canary match: a synthetic worthy match injected into the pool so the
-  // full notification pipeline (discovery → window → dedupe → send) is
-  // exercised end-to-end. If the canary's reminders don't arrive at the
-  // expected times, the pipeline is broken.
-  KV_CANARY: "canary_match_v1",
-  CANARY_REFRESH_MS: 6 * 60 * 60 * 1e3,
+  // #5 Canary match: RETIRED in v13.44-quotaguard (audit F9). The injection
+  // could never persist — cacheMatches runs BEFORE the injection, so every
+  // tick minted a fresh +25h kickoff whose windows never opened — while
+  // burning a canary_match_v1 write EVERY tick (~144/day of the 1,000/day
+  // free quota for zero value, plus notify-path reads for a phantom match).
+  // Pipeline liveness is proven by real matches + the 6h admin heartbeat +
+  // the last_cron-completion healthz + the v13.42 notify breadcrumb. Old
+  // canary_match_v1 keys expire via their own 7-day TTL.
+  // v13.44-quotaguard: the KV-write budget governor thresholds (free tier =
+  // 1,000 writes/day). SOFT (700): shed cosmetic writes (public prewarm,
+  // FA-AI learning). HARD (850): also hold the pool-cache write + page the
+  // admin once/12h. The anti-spam set (dedupe records, outbox, execution
+  // lock, status blob) is NEVER gated — spam prevention beats budget
+  // pressure, and a send whose dedupe write fails is deferred fail-closed.
+  KV_WRITES_SOFT: 700,
+  KV_WRITES_HARD: 850,
   // #9 Heartbeat: the bot sends a "✅ alive" to the admin chat every 6h.
   // If the admin doesn't see it, something broke (cron, worker, KV, Telegram).
   KV_HEARTBEAT_LAST: "heartbeat_sent_v1",

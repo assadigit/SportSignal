@@ -343,6 +343,7 @@ const POST_GATE_ROUTES: RouteDef[] = [
         last_cron_age_min: lastCronAgeMin,
         outbox_depth: outboxDepth,
         kv_writes_day: parseInt(st.kv_writes_day) || 0,
+        kv_budget: st.budget || null,
         version: VERSION
       }), {
         status: healthy ? 200 : 503,

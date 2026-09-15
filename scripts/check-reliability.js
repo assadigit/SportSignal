@@ -1,7 +1,8 @@
 // Self-check: bot dependability / reliability invariants (#1–#10 from the
 // brainstorm). Regresses if a maintainer drops the backfill extension, the
-// outbox, the schedule reconcile, the canary, the subrequest guard, the
-// write-verify, the presumably-finished fallback, or the heartbeat.
+// outbox, the schedule reconcile, the canary's REMOVAL, the subrequest
+// guard, the write-verify, the presumably-finished fallback, or the
+// heartbeat.
 //
 // Reads the real concatenated worker source (single source of truth).
 const src = require("./lib/worker-src")();
@@ -46,11 +47,17 @@ check("#1 sched decoy REMOVED: no sched_v1 writes anywhere", !/KV_SCHEDULE_PREFI
 check("#1 sched decoy REMOVED: cron no longer calls it", !/await reconcileSchedules\(env, matches\)/.test(src));
 check("#1 sched decoy REMOVED: no schedule-record type list in source", !/types: \["pre-match-24h", "pre-match-3h"/.test(src));
 
-// #5 Canary match
-check("#5 buildCanaryMatch function exists", /function buildCanaryMatch\(\)/.test(src));
-check("#5 canary KV key is canary_match_v1", /KV_CANARY: "canary_match_v1"/.test(src));
-check("#5 canary injected in cron", /canary = buildCanaryMatch\(\)/.test(src));
-check("#5 canary tagged canary:true", /canary: true/.test(src));
+// #5 Canary match — RETIRED in v13.44-quotaguard (audit F9): the injection
+// ran AFTER cacheMatches, so the canary never persisted — every tick minted
+// a fresh +25h kickoff whose windows never opened, while burning a
+// canary_match_v1 write per tick (~144/day of the 1,000/day free KV-write
+// quota) plus notify-path reads for a phantom match. These guards keep it
+// gone (the F9 decoy pattern must not silently return).
+check("#5 buildCanaryMatch function REMOVED", !/function buildCanaryMatch\(\)/.test(src));
+check("#5 canary injection REMOVED from cron", !/canary = buildCanaryMatch\(\)/.test(src));
+check("#5 KV_CANARY config entry gone (no writer anywhere)", !/KV_CANARY/.test(src));
+check("#5 canary:true synthetic payload tag gone", !/canary: true/.test(src));
+check("#5 prewarm pool still strips canary-shaped rows (belt-and-braces kept)", /opts\.pool\.filter\(\(m\) => !m\.canary\)/.test(src));
 
 // #6 Subrequest-budget guard (the import line is stripped by the eval
 // transform, but the function definition from utils.ts is present)
@@ -123,7 +130,9 @@ check("#nospam2 shouldSendNotification handles result-big", /case "result-big":\
 // Broadcasts: check BEFORE send + write-first save (source order: the
 // shouldSendNotification call for the -big type must precede its save, and
 // the save must precede the group send loop).
-const resultBigSeg = (src.match(/result-big[\s\S]{0,2600}?(?=\/\/ v13\.13-kickoff)/) || [""])[0];
+// v13.44-quotaguard: window widened 2600->3600 — the F3 fail-closed gate
+// added ~430 chars between the dedupe check and the save inside the segment.
+const resultBigSeg = (src.match(/result-big[\s\S]{0,3600}?(?=\/\/ v13\.13-kickoff)/) || [""])[0];
 check("#nospam3 result-big: dedupe check exists", /shouldSendNotification\(env, match, "result-big", notifiedMatches\)/.test(resultBigSeg));
 check("#nospam3 result-big: check precedes write-first save", resultBigSeg.indexOf('shouldSendNotification(env, match, "result-big"') < resultBigSeg.indexOf('saveNotifiedMatch(env, match, "result-big"'));
 const kickoffBigSeg = (src.match(/MISSING DEDUPE CHECK \(same bug[\s\S]{0,2600}?(?=\/\/ v12\.32|\/\/ after this match)/) || [""])[0];
@@ -149,7 +158,7 @@ check("#nospam7 migration: mark-before-send", migSeg.indexOf('STATE.put(dedupeKe
 
 // Cron resilience: guarded lock (fail closed), start-heartbeat, phase alerts.
 check("#nospam8 lock write guarded (fail closed)", /try \{\s*await env\.STATE\.put\(CONFIG\.KV_EXECUTION_LOCK, lockOwner, \{\s*expirationTtl: Math\.ceil\(CONFIG\.LOCK_TIMEOUT \/ 1e3\)\s*\}\);\s*\} catch \(e\) \{\s*await alertPhaseError\(env, "execution-lock/.test(src));
-check("#nospam8 start-heartbeat written after lock", /START heartbeat[\s\S]{0,600}heartbeat: String\(NOW\)/.test(src));
+check("#nospam8 start-heartbeat put RETIRED (v13.44: redundant write — the lock proves firing, last_cron proves completion)", !/START heartbeat/.test(src));
 check("#nospam8 alertPhaseError exists + rate-limited", /async function alertPhaseError\(env, phase, err\)/.test(src) && /30 \* 6e4/.test(src));
 check("#nospam8 sendMatchNotifications phase guarded", /try \{\s*notifySummary = await sendMatchNotifications\(env, matches\);\s*\} catch \(e\) \{\s*await alertPhaseError\(env, "send-notifications"/.test(src));
 check("#nospam8 match pool/fetch phase guarded", /alertPhaseError\(env, "match-pool\/fetch"/.test(src));
@@ -243,6 +252,45 @@ check("#cpu5 liveFingerprint carries score + identity (sorted, order-safe)", /pa
 check("#cpu5 poolRef captured from the pre-merge KV pool", /poolRef = cachedPool;/.test(src));
 // Quiet ticks reuse the pool object → identical fingerprints → no prewarm.
 check("#cpu5 quiet path assigns the pool itself (fingerprint-equal by construction)", /matches = cachedPool;/.test(cronSeg || src));
+
+// ============ v13.44-quotaguard: free-tier quota guarantee ============
+// The user's ask: "never exceed the Cloudflare free tiers." KV writes
+// (1,000/day) are the binding constraint (requests/reads/deletes/storage/
+// cron-triggers/subrequests all have 10-100x headroom; CPU was fixed
+// structurally by 13.43). The wiring that must hold: exactly ONE
+// cron_status_v1 put per tick, the canary gone, the meter counting from
+// the tick's FIRST action, a soft/hard governor that sheds only cosmetic
+// writes, a web-side rebuild guard, both -big broadcasts fail-closed on
+// the dedupe save (F3), and fetchWithRetry honoring Retry-After + the FD
+// suspension circuit (F5).
+
+check("#quota1 single cron_status_v1 put per tick (start-heartbeat retired)", (src.match(/STATE\.put\("cron_status_v1"/g) || []).length === 1);
+check("#quota1 canary fully gone (no buildCanaryMatch call sites)", !/buildCanaryMatch\(\)/.test(src));
+check("#quota1 meter wraps BEFORE the lock put (true burn counted)", src.indexOf("kvWritesThisTick++") < src.indexOf("STATE.put(CONFIG.KV_EXECUTION_LOCK"));
+check("#quota1 meter pins the pristine put (no isolate wrapper chaining)", /__origPut/.test(src));
+
+check("#quota2 governor thresholds in CONFIG (700 soft / 850 hard)", /KV_WRITES_SOFT: 700/.test(src) && /KV_WRITES_HARD: 850/.test(src));
+check("#quota2 governor reads the day accumulator from prevStatus", /prevStatus\.kv_day === kvDay/.test(src));
+check("#quota2 soft/hard levels computed from writesSoFarToday", /const budgetSoft = writesSoFarToday >= CONFIG\.KV_WRITES_SOFT;/.test(src) && /const budgetHard = writesSoFarToday >= CONFIG\.KV_WRITES_HARD;/.test(src));
+check("#quota2 FA-AI learning gated on soft", /if \(!budgetSoft\) \{[\s\S]{0,260}maybeRunFaAi/.test(src));
+check("#quota2 prewarm gated on soft", /\(fullSweepThisTick \|\| liveChanged\) && pubStale && subrequestCount\(\) < 30 && !budgetSoft/.test(src));
+check("#quota2 hard hold plumbs the pool-cache skip (scoped env flag)", /budgetHard \? \{ \.\.\.env, KV_BUDGET_HOLD: true \} : env/.test(src));
+check("#quota2 cacheMatches honors the hold", /env && env\.KV_BUDGET_HOLD\)[\s\S]{0,220}return;/.test(src));
+check("#quota2 hard budget pages the admin once/12h (write-first mark)", /kv_budget_alert_v1/.test(src) && /12 \* 36e5/.test(src));
+check("#quota2 budget level lands in the status blob", /budget: budgetHard \? "hard" : budgetSoft \? "soft" : null/.test(src));
+check("#quota2 healthz exposes the governor level", /kv_budget: st\.budget \|\| null/.test(src));
+const webGuardSeg = (src.match(/web-side KV-write budget guard[\s\S]{0,1100}/) || [""])[0];
+check("#quota2 web-side rebuild guard honors the hard threshold", /KV_WRITES_HARD/.test(webGuardSeg) && /serving the cached public payload/.test(webGuardSeg));
+check("#quota2 web guard exempts the cron prewarm path", /if \(!prewarm\) \{/.test(webGuardSeg));
+
+check("#quota3 result-big broadcast gates the send on the persisted save (F3)", /const persistedBig = await saveNotifiedMatch\(env, match, "result-big", notifiedMatches\);[\s\n ]*if \(!persistedBig\) continue;/.test(src));
+check("#quota3 kickoff-big broadcast gates the send on the persisted save (F3)", /const persistedBig = await saveNotifiedMatch\(env, match, "match-start-big", notifiedMatches\);[\s\n ]*if \(!persistedBig\) continue;/.test(src));
+
+check("#quota4 fetchWithRetry honors Retry-After", /res\.headers\.get\("retry-after"\)/.test(src));
+check("#quota4 Retry-After wait capped at 15s (tick can't stall)", /Math\.min\(Math\.max\(raSec \* 1e3, CONFIG\.API_RETRY_DELAY \* attempt\), 15e3\)/.test(src));
+check("#quota4 FD suspension check wired at sweep entry", /providerSuspended\(env, "football-data"\)/.test(src));
+check("#quota4 FD suspends on rate-limit exhaustion", /suspendProvider\(env, "football-data"\)/.test(src));
+check("#quota4 fdRateLimited window helper exists", /function fdRateLimited\(\)/.test(src));
 
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

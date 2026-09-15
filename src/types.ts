@@ -45,6 +45,11 @@ export interface Env {
   // a concurrent cron sweep must never observe the test keys).
   SIM_NOTIFIED_KEY?: string;
   SIM_PREFS_KEY?: string;
+  // v13.44-quotaguard: cron-scoped flag — the tick governor sets it (on a
+  // CLONED env) when the day's KV-write burn crosses KV_WRITES_HARD, so
+  // cacheMatches defers the pool-cache write. Cosmetic-write shedding only;
+  // the anti-spam paths never read it.
+  KV_BUDGET_HOLD?: boolean;
 }
 
 // ---------- football domain ----------

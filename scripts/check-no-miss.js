@@ -297,7 +297,7 @@ var MEM_DEDUPE = new Set();
   check("kickoff-broadcast: broadcastBigMatchKickoff exists", /function broadcastBigMatchKickoff\(/.test(src));
   check("kickoff-broadcast: wired in cron", /await broadcastBigMatchKickoff\(/.test(src));
   check("audit: wired in cron", /await auditNotifications\(/.test(src));
-  check("canary: buildCanaryMatch exists", /function buildCanaryMatch\(/.test(src));
+  check("canary: buildCanaryMatch REMOVED (v13.44 F9 — the injection never persisted, ~144 wasted writes/day)", !/function buildCanaryMatch\(/.test(src));
   check("heartbeat: 6h interval", /HEARTBEAT_INTERVAL_MS: 6/.test(src));
 
   console.log("\n=== L. Window widths vs cron cadence (no window < 2 ticks) ===");
@@ -509,6 +509,84 @@ var MEM_DEDUPE = new Set();
   const fpNew = [...fpPool, matchAt(-1.5, "IN_PLAY", { id: "fp-3", homeTeam: { name: "Inter Milan" }, awayTeam: { name: "AC Milan" }, competition: { code: "SA" } })];
   check("fingerprint: a newly discovered live match changes it", liveFingerprint(fpPool) !== liveFingerprint(fpNew));
   check("fingerprint: non-live rows are ignored (quiet noise can't trigger)", liveFingerprint(fpPool) === liveFingerprint([...fpPool, matchAt(48, "SCHEDULED", { id: "fp-4" })]));
+
+  // ===== v13.44-quotaguard: behavioral proof — the free-tier budget
+  // guarantee. (1) The big-match kickoff broadcast is fail-closed on the
+  // dedupe save (F3): a failing KV put suppresses the send entirely (an
+  // unrecorded send would re-arm and duplicate next tick — the exact vector
+  // the KV-write governor could otherwise trip); once KV recovers, the
+  // broadcast fires exactly once and dedupes thereafter. (2) The pool-cache
+  // write honors the HARD budget hold. (3) fetchWithRetry honors
+  // Retry-After (capped at 15s) and flags the 429 for the FD circuit.
+  console.log("\n=== T. v13.44-quotaguard: budget guarantee (behavioral) ===");
+  function vlog() {}
+  function bumpSubrequest() { return false; }
+  var RATE_LIMITED_AT = 0;
+  CONFIG.API_RETRY_ATTEMPTS = 2;
+  CONFIG.API_RETRY_DELAY = 1000;
+  function specialBanner() { return "BANNER "; }
+  async function formatMatchStartMessage() { return "KICKOFF-MSG"; }
+  eval([
+    grabFn("async function getNotifiedMatches(env)"),
+    grabFn("async function saveNotifiedMatch(env, match, notificationType, notifiedMatches)"),
+    grabFn("async function broadcastBigMatchKickoff(env, matches)")
+  ].join("\n"));
+  const bigStart = matchAt(-10 / 60, "IN_PLAY", { id: "bigstart-1" });
+  putFails = true;
+  const beforeT = STATUS_SENT.length;
+  let bkOut = await broadcastBigMatchKickoff(stEnv, [bigStart]);
+  check("quota: failing dedupe save suppresses the big-match kickoff broadcast (fail-closed, F3)", STATUS_SENT.length === beforeT && bkOut.sent === 0);
+  check("quota: the un-persisted send stays retryable (no MEM_DEDUPE lock on failure)", await shouldSendNotification(stEnv, bigStart, "match-start-big", {}));
+  putFails = false;
+  bkOut = await broadcastBigMatchKickoff(stEnv, [bigStart]);
+  check("quota: recovered KV fires the broadcast exactly once", STATUS_SENT.length === beforeT + 1 && bkOut.sent === 1);
+  bkOut = await broadcastBigMatchKickoff(stEnv, [bigStart]);
+  check("quota: the next call is deduped (no re-broadcast)", STATUS_SENT.length === beforeT + 1 && bkOut.sent === 0);
+
+  eval([grabFn("async function cacheMatches(env, matches, source)")].join("\n"));
+  let poolPuts = 0;
+  const holdEnv = { STATE: { async get() { return null; }, async put() { poolPuts++; } } };
+  await cacheMatches(holdEnv, [matchAt(-1, "IN_PLAY", { id: "pool-1" })], "test");
+  check("quota: pool-cache write happens without the hold flag", poolPuts === 1);
+  const holdEnv2 = { STATE: { async get() { return null; }, async put() { poolPuts++; } }, KV_BUDGET_HOLD: true };
+  await cacheMatches(holdEnv2, [matchAt(-1, "IN_PLAY", { id: "pool-2" })], "test");
+  check("quota: HARD budget hold defers the pool-cache write (zero extra puts)", poolPuts === 1);
+
+  eval([
+    grabFn("function fdRateLimited()"),
+    grabFn("async function fetchWithRetry(url, apiToken, label)")
+  ].join("\n"));
+  const SLEEPS = [];
+  const realSetTimeout = setTimeout;
+  global.setTimeout = (fn, ms) => { SLEEPS.push(ms); return realSetTimeout(fn, 0); };
+  const realFetch = global.fetch;
+  let FETCH_SEQ = [];
+  global.fetch = async () => FETCH_SEQ.shift();
+  try {
+    FETCH_SEQ = [
+      { ok: false, status: 429, headers: { get: (h) => String(h).toLowerCase() === "retry-after" ? "7" : null }, text: async () => "" },
+      { ok: true, status: 200, json: async () => ({ matches: [{ id: "ra-1" }] }) }
+    ];
+    const out1 = await fetchWithRetry("https://fd.test/x", "tok", "ra-test");
+    check("quota: 429 then 200 returns the matches", Array.isArray(out1) && out1.length === 1 && out1[0].id === "ra-1");
+    check("quota: Retry-After=7s honored (7s sleep before the retry)", SLEEPS.length === 1 && SLEEPS[0] === 7000);
+    check("quota: the 429 is flagged for the FD suspension circuit", fdRateLimited() === true);
+    FETCH_SEQ = [
+      { ok: false, status: 429, headers: { get: (h) => String(h).toLowerCase() === "retry-after" ? "60" : null }, text: async () => "" },
+      { ok: true, status: 200, json: async () => ({ matches: [] }) }
+    ];
+    await fetchWithRetry("https://fd.test/y", "tok", "ra-cap");
+    check("quota: a 60s Retry-After is capped at 15s (the tick can't stall)", SLEEPS[SLEEPS.length - 1] === 15000);
+    FETCH_SEQ = [
+      { ok: false, status: 429, headers: { get: () => null }, text: async () => "" },
+      { ok: true, status: 200, json: async () => ({ matches: [] }) }
+    ];
+    await fetchWithRetry("https://fd.test/z", "tok", "ra-none");
+    check("quota: missing Retry-After falls back to the fixed delay", SLEEPS[SLEEPS.length - 1] === 1000);
+  } finally {
+    global.setTimeout = realSetTimeout;
+    global.fetch = realFetch;
+  }
 
   console.log("\n" + (failed ? failed + " FAILURES" : "ALL PASS") + " (" + passed + " checks)");
   process.exit(failed ? 1 : 0);

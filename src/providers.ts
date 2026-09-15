@@ -3,7 +3,7 @@
 // adoption, provider circuit breaker and the KV match cache.
 import { CONFIG, PROVIDER_LEAGUE_MAP, SPORTSCORE_SLUGS, TSP_LEAGUE_IDS, CUP_TSP_IDS } from "./config";
 import type { Env } from "./types";
-import { fetchJSON, fetchWithRetry } from "./utils";
+import { fetchJSON, fetchWithRetry, fdRateLimited } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { canonDedupe } from "./dedupe";
 import { shouldNotify, mapStageName, parseTSPDate, isLiveStatus } from "./matches";
@@ -147,6 +147,14 @@ export async function fetchSportScore(env: Env, opts?) {
 }
 export async function cacheMatches(env: Env, matches, source) {
   if (!matches || !matches.length) return;
+  // v13.44-quotaguard: hard budget hold (env-scoped flag set by the cron
+  // governor at ≥KV_WRITES_HARD). The pool write is deferred — the existing
+  // pool keeps serving (fixtures are static days ahead; a slightly stale
+  // live score for a few ticks is worth ~150 writes of quota headroom).
+  if (env && env.KV_BUDGET_HOLD) {
+    console.warn("\u{1F4B0} KV write budget hold \u2014 pool cache write deferred this tick");
+    return;
+  }
   try {
     const existing = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
     const cutoff = Date.now() - 2 * 864e5;
@@ -181,6 +189,15 @@ export async function fetchFootballData(env: Env, opts?) {
   // calls) for the cheap LIVE sweep — ±2 days covers every live/just-
   // finished/just-starting worthy match at a fraction of the parse CPU of
   // the default 10-day range. Default (no opts) = the full-sweep behavior.
+  // v13.44-quotaguard (F5): mirror of the sportscore circuit — a 429-
+  // exhausted sweep suspends FD for PROVIDER_SUSPEND_MS so the rest of this
+  // sweep and the next ticks skip straight to the other providers + the KV
+  // pool instead of burning subrequests into the same exhausted quota
+  // minute (football-data free tier: 10 req/min).
+  if (await providerSuspended(env, "football-data")) {
+    console.log("\u23F8\uFE0F football-data suspended \u2014 skipping FD calls this sweep");
+    return [];
+  }
   const pastDays = opts && opts.pastDays != null ? opts.pastDays : CONFIG.DAYS_IN_PAST;
   const futureDays = opts && opts.futureDays != null ? opts.futureDays : CONFIG.DAYS_IN_FUTURE;
   const liveMode = !!(opts && opts.live);
@@ -207,6 +224,14 @@ export async function fetchFootballData(env: Env, opts?) {
     pushUnique(m);
   } catch (error) {
     console.error(`\u274C Failed to fetch league matches:`, error.message);
+  }
+  // v13.44-quotaguard (F5): a rate-limited main call means the quota window
+  // is exhausted — suspending beats retrying the intl calls into the same
+  // window (each would 429, wait, and fail too).
+  if (fdRateLimited()) {
+    await suspendProvider(env, "football-data");
+    console.warn(`\u23F8\uFE0F football-data rate-limited \u2014 suspended ${Math.round(CONFIG.PROVIDER_SUSPEND_MS / 6e4)}min (Retry-After honored; intl calls skipped this sweep; pool + other providers cover)`);
+    return allMatches;
   }
   // Intl competitions: full sweeps only — live-worthy intl fixtures are rare
   // and each competition costs a subrequest + parse (v13.43-cpukeeper).

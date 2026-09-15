@@ -305,7 +305,13 @@ export async function broadcastBigMatchResults(env: Env, matches) {
       // the sends so a failed KV write can never re-arm this broadcast on
       // the next tick (the outbox retries delivery; duplicates are
       // impossible).
-      await saveNotifiedMatch(env, match, "result-big", notifiedMatches);
+      // v13.44-quotaguard (F3): fail-closed — gate the broadcast sends on
+      // the dedupe record PERSISTING, exactly like sendNotificationIfNeeded
+      // (v13.42). A failed/skipped save defers the send to the next tick;
+      // an unrecorded send would re-arm and duplicate (the exact vector the
+      // KV-write governor could otherwise trip under write pressure).
+      const persistedBig = await saveNotifiedMatch(env, match, "result-big", notifiedMatches);
+      if (!persistedBig) continue;
       for (const g of groups) {
         const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
         const lang = g.lang || "fa";
@@ -366,7 +372,9 @@ export async function broadcastBigMatchKickoff(env: Env, matches) {
       const groups = (typeof groupChatsByTz === "function" ? groupChatsByTz(chatIds, prefs, env) : [{ tz: env.TEHRAN_TZ, lang: "fa", chats: chatIds }]);
       let anySuccess = false;
       // v13.36-nospam: write-first (see result-big above).
-      await saveNotifiedMatch(env, match, "match-start-big", notifiedMatches);
+      // v13.44-quotaguard (F3): fail-closed — same gate as result-big above.
+      const persistedBig = await saveNotifiedMatch(env, match, "match-start-big", notifiedMatches);
+      if (!persistedBig) continue;
       for (const g of groups) {
         const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
         const lang = g.lang || "fa";

@@ -38,6 +38,13 @@ function transform(ts) {
   // TS type annotations added by v13.3 (eval-safety): env: Env, : any,
   // Promise<any>, as-any casts, index-signature types.
   c = c.replace(/env: Env/g, "env");
+  // v13.44-quotaguard: eval-safety for newly-grabbed functions — local
+  // `scopedEnv: Env =` declarations (digest.ts broadcasts, first eval'd by
+  // check-no-miss section T) and `: any[] =` array annotations (matches.ts
+  // saveNotifiedMatch). Types-only strippers like the rules above; the real
+  // source keeps its annotations (tsc remains the type gate).
+  c = c.replace(/(\w): Env =/g, "$1 =");
+  c = c.replace(/: any\[\] =/g, " =");
   c = c.replace(/\): Promise<any> \{/g, ") {");
   c = c.replace(/: any\]([)\s,;])/g, "$1");
   c = c.replace(/ as any\]/g, "");
