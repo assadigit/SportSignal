@@ -6,6 +6,35 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.44.1-truemeter] — 2026-09-15 (the meter tells the truth: fold the completion blob + prewarm writes)
+
+### The bug the live deploy exposed
+- Deployed 13.44-quotaguard at 03:05Z and watched the first ticks live:
+  the tail logged `KV writes this tick: 4` while the stored accumulator
+  advanced by only 3; the next tick logged 2 and the meter advanced by 1.
+  **The fold was structurally off by exactly one write per tick** — the
+  completion blob computes the `kv_writes_day` value it persists BEFORE its
+  own put executes (the wrapper counts the put as it runs, but the number
+  was already frozen). The prewarm block ran AFTER the blob too, so its
+  writes (~2–4 per full sweep) were counted in the log line but never folded
+  either. Net effect: the stored meter undercounted ~144–165 writes/day
+  (14–16% of quota), which silently ate the governor's safety buffer —
+  HARD@850 would only have engaged at a true ~994, six writes from the line,
+  and healthz would have reported 856/1000 at a true 1000.
+
+### Fixed
+- The completion blob is now the tick's FINAL KV write: the prewarm block
+  runs BEFORE it (so its writes fold), and the fold adds `+ 1` for the
+  blob's own put — the stored accumulator, `kv_writes_last_tick` and the
+  closing `💾 KV writes this tick` log line now agree EXACTLY, verified live
+  (log 2 = healthz +2). Anti-spam semantics untouched: the blob is still
+  one write, never gated; the prewarm move only changes WHERE in the tick
+  its writes happen (its own budget gate and failure handling unchanged;
+  a mid-prewarm hard death now honestly leaves `last_cron` stale — the tick
+  really didn't finish — instead of lying "completed").
+
+---
+
 ## [13.44-quotaguard] — 2026-09-15 (the free-tier budget guarantee — never exceed the KV-write quota)
 
 ### The user's ask, answered with a measured budget model

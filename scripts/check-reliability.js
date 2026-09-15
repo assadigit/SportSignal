@@ -268,6 +268,14 @@ check("#quota1 single cron_status_v1 put per tick (start-heartbeat retired)", (s
 check("#quota1 canary fully gone (no buildCanaryMatch call sites)", !/buildCanaryMatch\(\)/.test(src));
 check("#quota1 meter wraps BEFORE the lock put (true burn counted)", src.indexOf("kvWritesThisTick++") < src.indexOf("STATE.put(CONFIG.KV_EXECUTION_LOCK"));
 check("#quota1 meter pins the pristine put (no isolate wrapper chaining)", /__origPut/.test(src));
+// v13.44.1-truemeter: the fold must count the completion blob's own put
+// (v13.44 undercounted 1 write/tick = 144/day — the stored meter, the log
+// line and the governor's engagement point now agree exactly), and the
+// prewarm must run BEFORE the blob so its writes fold too.
+check("#quota1 truemeter: fold includes the completion blob's own put (+1)", /kvWritesDay = kvWritesThisTick \+ 1 \+ \(\(prevBlob\.kv_day === kvDay \? parseInt\(prevBlob\.kv_writes_day\) : 0\) \|\| 0\)/.test(src));
+check("#quota1 truemeter: kv_writes_last_tick carries the blob's +1", /kv_writes_last_tick: kvWritesThisTick \+ 1/.test(src));
+check("#quota1 truemeter: prewarm runs BEFORE the completion-blob fold (its writes fold)", src.indexOf("Public payload pre-warmed") >= 0 && src.indexOf("Public payload pre-warmed") < src.indexOf("kvWritesDay = kvWritesThisTick + 1"));
+check("#quota1 truemeter: no leftover prewarm code after the blob", src.lastIndexOf("Public pre-warm failed") < src.indexOf("kvWritesDay = kvWritesThisTick + 1"));
 
 check("#quota2 governor thresholds in CONFIG (700 soft / 850 hard)", /KV_WRITES_SOFT: 700/.test(src) && /KV_WRITES_HARD: 850/.test(src));
 check("#quota2 governor reads the day accumulator from prevStatus", /prevStatus\.kv_day === kvDay/.test(src));

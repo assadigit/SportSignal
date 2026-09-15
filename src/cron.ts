@@ -485,42 +485,9 @@ export async function executeScheduledLogic(env: Env) {
     } catch (e) {
       console.error("Audit step failed: " + e.message);
     }
-    // v13.36-nospam: single status blob — heartbeat (tick started/ended),
-    // last_cron (tick completed) and last_full_sweep (folded in from the
-    // old standalone key; one write/tick saved). The heartbeat is NOT
-    // overwritten with a later stamp than the start-heartbeat if the tick
-    // somehow re-enters — simple monotonic max.
-    try {
-      const prevBlob = await env.STATE.get("cron_status_v1", "json").catch(() => null) || {};
-      const hb = Math.max(parseInt(prevBlob.heartbeat) || 0, NOW);
-      // v13.38-qc: fold the KV write meter into the blob — actual daily burn
-      // instead of pencil math. kv_writes_day resets on the UTC date change.
-      const kvDay = new Date(NOW).toISOString().slice(0, 10);
-      const kvWritesDay = kvWritesThisTick + ((prevBlob.kv_day === kvDay ? parseInt(prevBlob.kv_writes_day) : 0) || 0);
-      if (kvWritesDay > 800) console.warn("\u26A0\uFE0F KV write budget: " + kvWritesDay + "/1000 used today — investigate write churn");
-      await env.STATE.put("cron_status_v1", JSON.stringify({
-        heartbeat: String(hb),
-        last_cron: String(NOW),
-        last_full_sweep: fullSweepThisTick ? String(NOW) : String(prevStatus.last_full_sweep || parseInt(await env.STATE.get("last_full_sweep").catch(() => null)) || 0),
-        kv_day: kvDay,
-        kv_writes_day: kvWritesDay,
-        kv_writes_last_tick: kvWritesThisTick,
-        // v13.44-quotaguard: which governor level was engaged when this tick
-        // started (null = healthy budget) — one KV read answers "why did
-        // the prewarm/pool writes stop today".
-        budget: budgetHard ? "hard" : budgetSoft ? "soft" : null,
-        // v13.42-rekindle: notification breadcrumb — the tick blob now
-        // records what the sweep SAW and SENT (found / skipped-for-no-
-        // followers / budget-deferred / per-type counts / last match
-        // processed). A missed-start investigation is now a single KV read.
-        notify: notifySummary ? { f: notifySummary.found, n: notifySummary.noChats, d: notifySummary.budgetDeferred, s: notifySummary.sent, l: notifySummary.last } : null
-      }));
-    } catch (e) {
-      await env.STATE.put(CONFIG.KV_HEARTBEAT, NOW.toString()).catch(() => {
-      });
-      await env.STATE.put(CONFIG.KV_LAST_CRON, NOW.toString()).catch(() => {
-      });
-    }
+    // v13.44.1-truemeter: moved BEFORE the completion blob so its writes
+    // fold into kv_writes_day — the blob is now the tick's LAST write and
+    // the meter counts everything (see the fold below).
     // v13.35-prewarm: kill the first-visitor cold sweep. If the public
     // payload is (nearly) expired, rebuild it NOW from the pool this tick
     // already fetched — the expensive provider sweep never runs twice, and
@@ -552,6 +519,49 @@ export async function executeScheduledLogic(env: Env) {
       }
     } catch (e) {
       console.error("Public pre-warm failed: " + e.message);
+    }
+    // v13.36-nospam: single status blob — heartbeat (tick started/ended),
+    // last_cron (tick completed) and last_full_sweep (folded in from the
+    // old standalone key; one write/tick saved). The heartbeat is NOT
+    // overwritten with a later stamp than the start-heartbeat if the tick
+    // somehow re-enters — simple monotonic max.
+    // v13.44.1-truemeter: this blob is the tick's FINAL KV write. The fold
+    // adds +1 for the blob's own put (the wrapper counts it as the put
+    // executes, but the value stored here is computed beforehand) — the
+    // stored accumulator, kv_writes_last_tick and the closing log line now
+    // agree EXACTLY (v13.44 undercounted 1 write/tick = 144/day, plus the
+    // prewarm writes that ran after the fold — HARD@850 was engaging at a
+    // true ~994, six writes from the quota line).
+    try {
+      const prevBlob = await env.STATE.get("cron_status_v1", "json").catch(() => null) || {};
+      const hb = Math.max(parseInt(prevBlob.heartbeat) || 0, NOW);
+      // v13.38-qc: fold the KV write meter into the blob — actual daily burn
+      // instead of pencil math. kv_writes_day resets on the UTC date change.
+      const kvDay = new Date(NOW).toISOString().slice(0, 10);
+      const kvWritesDay = kvWritesThisTick + 1 + ((prevBlob.kv_day === kvDay ? parseInt(prevBlob.kv_writes_day) : 0) || 0);
+      if (kvWritesDay > 800) console.warn("\u26A0\uFE0F KV write budget: " + kvWritesDay + "/1000 used today — investigate write churn");
+      await env.STATE.put("cron_status_v1", JSON.stringify({
+        heartbeat: String(hb),
+        last_cron: String(NOW),
+        last_full_sweep: fullSweepThisTick ? String(NOW) : String(prevStatus.last_full_sweep || parseInt(await env.STATE.get("last_full_sweep").catch(() => null)) || 0),
+        kv_day: kvDay,
+        kv_writes_day: kvWritesDay,
+        kv_writes_last_tick: kvWritesThisTick + 1,
+        // v13.44-quotaguard: which governor level was engaged when this tick
+        // started (null = healthy budget) — one KV read answers "why did
+        // the prewarm/pool writes stop today".
+        budget: budgetHard ? "hard" : budgetSoft ? "soft" : null,
+        // v13.42-rekindle: notification breadcrumb — the tick blob now
+        // records what the sweep SAW and SENT (found / skipped-for-no-
+        // followers / budget-deferred / per-type counts / last match
+        // processed). A missed-start investigation is now a single KV read.
+        notify: notifySummary ? { f: notifySummary.found, n: notifySummary.noChats, d: notifySummary.budgetDeferred, s: notifySummary.sent, l: notifySummary.last } : null
+      }));
+    } catch (e) {
+      await env.STATE.put(CONFIG.KV_HEARTBEAT, NOW.toString()).catch(() => {
+      });
+      await env.STATE.put(CONFIG.KV_LAST_CRON, NOW.toString()).catch(() => {
+      });
     }
     console.log(`
 \u2705 Execution completed at ${(new Date()).toISOString()}
