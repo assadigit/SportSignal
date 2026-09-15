@@ -75,7 +75,7 @@ export async function handleTelegramUpdate(env: Env, update) {
     // answer the callback (dismisses the loading spinner on the button),
     // then send the welcome + help in the chosen lang. The picker itself
     // is sent via the /lang command (and /start for new users) using the
-    // sendTelegramWithKeyboard helper.
+    // optional keyboard parameter of sendTelegram.
     const cbq = update && update.callback_query;
     if (cbq && cbq.id) {
       try {

@@ -6,6 +6,85 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.46-trim] — 2026-09-15 (tidy-up: dead code, landmines, and docs telling the truth)
+
+### The theme
+R2 of the reliability roadmap — a hygiene release. Zero behavior changes,
+zero KV changes, zero asset-reference changes (sw.js CACHE stays
+sportsignal-v11). Every deletion below was reference-verified (grep across
+src/scripts/docs/assets) before the axe; every test guard that protected
+dead code was flipped to an absence assert in the same commit, per the
+house style (#1 sched decoy / #5 canary).
+
+### Landmines removed
+- `npm run refactor:verify` — DESTRUCTIVE and broken: the `--check` flag
+  was never implemented, so the command re-ran the v12.33 extraction and
+  OVERWROTE src/ from the stale bundle (verified live once, restored via
+  git); its `||`/`&&` precedence was also broken. The whole extraction
+  pipeline is retired: `scripts/refactor-extract.mjs`,
+  `scripts/worker.bundle-v12.33.ts` (711KB — 2/3 of scripts/),
+  `refactor-{fix-imports,prune-imports,client-core}.mjs`,
+  `refactor-router-table.py`, and `extract-page-assets.mjs` (one-offs).
+  History lives in git and this changelog.
+- `bun.lock` — stale since v12.10 AND broken (missing @resvg/resvg-wasm, so
+  a `bun install` produces a tree that can't render cards). npm is the
+  repo's toolchain; `package-lock.json` is the canonical lockfile.
+- Dead assets: `assets/Stadium-bg-1.jpeg` (2.0MB, referenced only by an
+  X-banner intent note), `assets/Live.lottie` + `assets/loading.lottie`
+  (dotLottie was removed in v13.4; the current live-dot is pure CSS).
+
+### Dead code removed (all zero-caller, verified)
+- `getCanonicalKickoff` / `updateCanonicalKickoffOnReschedule` (admin.ts)
+  + `KV_KICKOFF_PREFIX` (config.ts) + admin.ts's now-orphaned `matchKey`
+  import — the kickoff_v1: feature never wired (detectStatusChanges never
+  called the helpers; windows always used the pool's utcDate). check-reliability
+  #4 flipped to absence.
+- `sendPhoto` (URL-based, telegram.ts — superseded by `sendPhotoBinary`
+  v13.17) and the `sendTelegramWithKeyboard` alias (v13.2 merged it into
+  sendTelegram's optional keyboard param).
+- `getUserLang` (users.ts — the fa default made it dead).
+- `UCL_BALL` (config.ts — 4KB starball variant with zero references;
+  `UCL_LOGO_CHIP`/`UCL_STARBALL_D` stay, they're live in public.ts).
+- x.ts's duplicate `NOTIFICATION_CONFIGS` table (a byte-duplicate of
+  notifications.ts's live config; the eval concat had the var declared
+  twice) + the 5 window fns and 7 formatters its imports dragged in.
+  The LIVE x.ts imports stay: `isMatchFinished`, `isWithinPostMatchWindow`,
+  `isMatchStartingNow`, `fetchStandings`, `isoWeekKey`, `weeklyTableCodes`.
+- types.ts: the 14 extraction-era domain interfaces nobody imported
+  (Match/TeamRef/StandingsTable/…). Env (+ LooseKV/WorkersAI) is the only
+  contract the modules share — and it now documents `HEALTHCHECK_PING_URL`,
+  which 13.45 reads but never declared.
+- worker.ts's unused `CONFIG/VERSION/X_CONFIG` import.
+
+### Docs now tell the truth
+- **README.md** rewritten from v11.52-era claims (wrong alert model, wrong
+  KV keys, `teams.js`/`dedupe.js` file refs, missing /healthz + governor +
+  dead-man's-switch semantics) to the v13.46 architecture.
+- **RUNBOOK.md** (new): operations — deploy/verify/rollback procedures,
+  monitor + alert semantics (healthchecks.io cron-watch + UptimeRobot
+  healthz poll + the degraded band), the healthz coverage matrix, missed/
+  duplicate notification investigation playbooks, KV key table, measured
+  profiles & budgets, and the safety invariants (write-first dedupe, no KV
+  renames, eval-harness co-evolution rule).
+- `NEXT-SESSION-X-INTEGRATION.md` (self-contradictory dates, pre-v13.0
+  architecture) → `docs/history/`. `NEXT-SESSION-CONTINUATION.md` replaced
+  by a thin pointer doc (CHANGELOG + RUNBOOK + worklog are the record now).
+- `design-system/ucl-notifier/MASTER.md` header fixed: the UI lives in
+  `src/pages/*.ts` + versioned assets, not in a monolithic worker.ts.
+
+### Kept on purpose
+- `KV_SCHEDULE_PREFIX` (config.ts) — documentation-only tripwire for the
+  sched_v1:* TTL cleanup (~Sep-22).
+- `scripts/verify-x-connection.js` (live X ops tool, standalone signing
+  impl) and `scripts/fa-names-from-wikipedia.js` (data provenance for
+  fa-dict.ts).
+
+Tests: check-reliability #4 flipped to absence (3 asserts); npm test exit 0
+(tsc clean, 135 behavioral checks, 19 scripts). No src signatures changed,
+so worker-src.js order/transforms needed no edits.
+
+---
+
 ## [13.45.1-sightlines] — 2026-09-15 (log-line truemeter: stored and logged must agree exactly)
 
 - The 13.45 closing log line printed `KV ops this tick: ${kvOpsCount() + 1}`

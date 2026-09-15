@@ -1,9 +1,10 @@
 // SportSignal — Cloudflare Worker entry point.
 //
-// The monolithic v12.33-xpost bundle was split into real ES modules
-// (see scripts/refactor-extract.mjs for the verbatim extraction map).
-// This file is now a thin re-export: wrangler's esbuild bundles the
-// module graph from here, exactly like the old single file.
+// The monolithic v12.33-xpost bundle was split into real ES modules in
+// v13.0 (the extraction pipeline was retired in v13.46-trim — history
+// lives in git and CHANGELOG). This file is a thin re-export: wrangler's
+// esbuild bundles the module graph from here, exactly like the old single
+// file.
 //
 // Module map:
 //   config.ts            VERSION, CONFIG, X_CONFIG + static tables
@@ -26,6 +27,5 @@
 //   api.ts               HTTP router (fetch + scheduled)
 //   pages/*.ts           PUBLIC / LOGIN / ADMIN page templates
 
-import { CONFIG, VERSION, X_CONFIG } from "./config";
 import worker from "./api";
 export default worker;

@@ -78,10 +78,14 @@ check("#13.35 canary stripped from prewarm pool", /opts\.pool\.filter\(\(m\) => 
 check("#13.35 cron pre-warm is budget-guarded", /pubStale && subrequestCount\(\) < 30/.test(src));
 check("#13.35 cron passes its pool to the pre-warm", /prewarm: true, pool: matches/.test(src));
 
-// #4 Canonical kickoff-time KV
-check("#4 getCanonicalKickoff function exists", /async function getCanonicalKickoff\(env, match\)/.test(src));
-check("#4 kickoff KV prefix is kickoff_v1:", /KV_KICKOFF_PREFIX: "kickoff_v1:"/.test(src));
-check("#4 updateCanonicalKickoffOnReschedule function exists", /async function updateCanonicalKickoffOnReschedule\(env, match\)/.test(src));
+// #4 Canonical kickoff-time KV — RETIRED in v13.46-trim: the helpers
+// (getCanonicalKickoff/updateCanonicalKickoffOnReschedule in admin.ts) had
+// ZERO callers — detectStatusChanges never invoked them, so kickoff_v1: was
+// never written or read. The notification windows have always used the
+// pool's own utcDate. These guards keep the dead feature from returning.
+check("#4 getCanonicalKickoff function REMOVED", !/async function getCanonicalKickoff\(env, match\)/.test(src));
+check("#4 kickoff KV prefix REMOVED", !/KV_KICKOFF_PREFIX/.test(src));
+check("#4 updateCanonicalKickoffOnReschedule function REMOVED", !/async function updateCanonicalKickoffOnReschedule\(env, match\)/.test(src));
 
 // #7 in-memory dedupe fallback (v13.27: replaced the KV write-verify with
 // an in-memory Set that survives KV write failures — quota exhaustion etc.)

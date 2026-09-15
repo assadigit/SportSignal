@@ -1,10 +1,13 @@
 # Design System — UCL & Big Match Notifier
 
 > **Source of truth:** this project has no separate component library. The
-> shipped UI lives **inside `src/worker.ts`** as three server-rendered templates:
-> `PUBLIC_PAGE` (the fan-facing match page), `LOGIN_PAGE` (admin auth), and
-> `ADMIN_PAGE` (the admin panel). Read this file for the *intent*; read the
-> templates for the *implementation*. The templates always win.
+> shipped UI lives in **`src/pages/*.ts`** (three server-rendered templates:
+> the public fan-facing match page, the admin login, and the admin panel),
+> with the client payload in the versioned asset files **`assets/core-*.js`,
+> `assets/public-*.js`, `assets/public-*.css`** (served immutable; cache-bust
+> by renaming + updating the references in `src/pages/*.ts`). Read this
+> file for the *intent*; read those files for the *implementation*. The
+> implementation always wins.
 
 **Product:** a Persian-first Telegram football match notifier. The web page
 exists to show what the Telegram bot delivers: upcoming matches, an

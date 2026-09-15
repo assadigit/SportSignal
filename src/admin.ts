@@ -7,7 +7,6 @@ import { CONFIG, SPORTSCORE_SLUGS } from "./config";
 import type { Env } from "./types";
 import { timingSafeEqualStr, fetchJSON, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams";
-import { matchKey } from "./dedupe";
 import { normAlias } from "./matches";
 
 export function isAdminRequest(req, env) {
@@ -316,26 +315,9 @@ export function buildDummyMatches() {
 // the 1,000/day free quota) plus notify-path reads for a phantom match.
 // buildCanaryMatch had no other callers; cron's injection block is gone.
 
-// v13.9-reliability #4: canonical kickoff-time KV. Written at first
-// discovery (when the match enters the KV pool), never overwritten unless
-// the match is POSTPONED (official reschedule). This prevents provider
-// time-shift (FD day-N 19:00 vs sportscore day-N+1 15:00) from moving the
-// notification windows — the 3h reminder always fires at kickoff−3h of
-// the FIRST verified time, not whichever copy survived dedupe last.
-export async function getCanonicalKickoff(env, match) {
-  const key = CONFIG.KV_KICKOFF_PREFIX + matchKey(match);
-  const stored = await env.STATE.get(key).catch(() => null);
-  if (stored) return stored;
-  // First discovery — write it.
-  const t = String(match.utcDate || "");
-  await env.STATE.put(key, t, { expirationTtl: 14 * 86400 }).catch(() => {});
-  return t;
-}
-export async function updateCanonicalKickoffOnReschedule(env, match) {
-  // Only called when a match transitions to POSTPONED (detectStatusChanges).
-  // Overwrites with the new time (if the provider supplies one) or clears.
-  const key = CONFIG.KV_KICKOFF_PREFIX + matchKey(match);
-  const t = String(match.utcDate || "");
-  await env.STATE.put(key, t, { expirationTtl: 14 * 86400 }).catch(() => {});
-  return t;
-}
+// v13.9-reliability #4: canonical kickoff-time KV — REMOVED in v13.46-trim.
+// The feature never wired: getCanonicalKickoff/updateCanonicalKickoffOnReschedule
+// had zero callers (detectStatusChanges never called them), so kickoff_v1: was
+// never written or read — the notification windows have always used the pool's
+// own utcDate. The config prefix constant went with it; guard flipped to
+// absence in check-reliability.js #4.

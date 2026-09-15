@@ -68,18 +68,9 @@ export async function getUserPrefs(env: Env) {
     return {};
   }
 }
-// v12.x-bilingual-bot: get the user's language preference. Defaults to
-// "fa" (Persian) since the existing user base is Persian. Reads from KV
-// user_prefs[chatId].lang.
-export async function getUserLang(env: Env, chatId) {
-  try {
-    const prefs = await env.STATE.get(env.SIM_PREFS_KEY || CONFIG.KV_USER_PREFS, "json");
-    const p = prefs && prefs[String(chatId)];
-    if (p && (p.lang === "fa" || p.lang === "en")) return p.lang;
-  } catch (e) {
-  }
-  return "fa";
-}
+// v12.x-bilingual-bot getUserLang — REMOVED in v13.46-trim: zero call sites
+// (the Persian-first audience made the default "fa" universal; /lang prefs are
+// read directly by the composers where needed). setUserLang below is LIVE.
 // v12.x-bilingual-bot: set the user's language preference. Writes to KV
 // user_prefs[chatId].lang. Preserves the existing teams + tz fields.
 export async function setUserLang(env: Env, chatId, lang) {

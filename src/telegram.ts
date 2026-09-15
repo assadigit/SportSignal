@@ -1,10 +1,11 @@
 // SportSignal — Telegram Bot API senders with retry / 429 pause /
 // dead-chat detection, plus callback_query answering.
 //
-// v13.2: sendTelegram and sendTelegramWithKeyboard were ~95% duplicated
+// v13.2: sendTelegram and the old keyboard variant were ~95% duplicated
 // (identical retry/429-pause/dead-chat logic) — merged into ONE sender with
-// an optional keyboard. sendTelegramWithKeyboard stays exported as an alias
-// so existing call sites keep working.
+// an optional keyboard parameter. The v12.x sendTelegramWithKeyboard alias
+// and the URL-based sendPhoto (superseded by sendPhotoBinary, v13.17) were
+// removed in v13.46-trim — zero call sites.
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { vlog, bumpSubrequest } from "./utils";
@@ -205,46 +206,10 @@ export async function sendDice(env: Env, chatId, emoji) {
   }
 }
 
-// v13.12-cards: sendPhoto — send an image by URL. Telegram fetches the URL
-// server-side. Used for match-card images: the Worker serves an SVG card at
-// /api/card/<matchKey>, and Cloudflare Image Resizing converts it to PNG on
-// the fly (if enabled on the zone). If Image Resizing isn't available, the
-// SVG URL still works as a document fallback (sendDocument). Returns true
-// on success, "dead" for dead chats, false otherwise.
-export async function sendPhoto(env: Env, chatId, photoUrl, caption?) {
-  const payload: any = { chat_id: chatId, photo: photoUrl };
-  if (caption) payload.caption = caption;
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    if (Date.now() < TELEGRAM_PAUSE_UNTIL) return false;
-    if (bumpSubrequest()) return false;
-    try {
-      const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendPhoto`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        vlog(`\u{1F4F7} Photo sent to ${chatId}`);
-        return true;
-      }
-      const error = await res.text();
-      console.error(`sendPhoto error (attempt ${attempt}):`, error);
-      if (res.status === 429) {
-        const retryAfter = parseInt(res.headers.get("retry-after") || "2");
-        TELEGRAM_PAUSE_UNTIL = Math.max(TELEGRAM_PAUSE_UNTIL, Date.now() + Math.min(Math.max(retryAfter, 1), 10) * 1e3);
-        if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
-        continue;
-      }
-      if (res.status >= 400 && res.status < 500) {
-        return /chat not found|blocked by the user|bot was kicked|deactivated/i.test(error) ? "dead" : false;
-      }
-    } catch (error) {
-      console.error(`sendPhoto network error (attempt ${attempt}):`, error.message);
-    }
-    if (attempt < 2) await new Promise((r) => setTimeout(r, 1e3 * attempt));
-  }
-  return false;
-}
+// v13.12-cards: URL-based sendPhoto — REMOVED in v13.46-trim. Telegram
+// fetched the image server-side via URL (Cloudflare Image Resizing era);
+// superseded by sendPhotoBinary (v13.17), which uploads the resvg-wasm PNG
+// buffer directly. Zero call sites remained.
 
 // v13.17-cards: sendPhotoBinary — send a PNG image as a binary upload
 // (multipart/form-data). This is how the bot sends match-card images:
@@ -283,10 +248,8 @@ export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, 
   }
 }
 
-// Compatibility alias (v12.x call sites) — delegates to the merged sender.
-export async function sendTelegramWithKeyboard(env: Env, text, chatId, keyboard) {
-  return sendTelegram(env, text, chatId, keyboard);
-}
+// v12.x compatibility alias sendTelegramWithKeyboard — REMOVED in v13.46-trim
+// (delegates to sendTelegram; zero call sites since v13.2 merged the logic).
 
 // v12.x-bilingual-bot: answer a callback_query (dismisses the loading
 // spinner on the inline button the user just tapped). Optional text shows

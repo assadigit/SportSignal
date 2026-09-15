@@ -7,8 +7,8 @@ import { CONFIG, X_CONFIG } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, getNowTehran, getJalaliDate, getJalaliTime, bumpSubrequest } from "./utils";
 import { translateTeam, translateCompetition, getCompetitionPriority } from "./translate";
-import { isMatchFinished, isWithinPostMatchWindow, isWithin24HourWindow, isWithinBigMatchWindow, isWithin3HourWindow, isWithin1HourWindow, isWithin5MinWindow, isMatchStartingNow } from "./matches";
-import { fetchStandings, format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, isoWeekKey, weeklyTableCodes } from "./composers";
+import { isMatchFinished, isWithinPostMatchWindow, isMatchStartingNow } from "./matches";
+import { fetchStandings, isoWeekKey, weeklyTableCodes } from "./composers";
 import { isMasterBigMatch } from "./users";
 
 export function xPercentEncode(s) {
@@ -576,56 +576,11 @@ ${xUrl()} #\u0641\u0648\u062A\u0628\u0627\u0644`;
   }
   return { ok: false, status: r.status, error: r.error };
 }
-var NOTIFICATION_CONFIGS = [
-  {
-    // Mode B (priority): only fires for users following BOTH teams
-    type: "pre-match-72h",
-    windowCheck: isWithinBigMatchWindow,
-    messageFormatter: formatBigMatchMessage,
-    requiresFuture: true,
-    bigMatchOnly: true
-  },
-  {
-    type: "pre-match-24h",
-    windowCheck: isWithin24HourWindow,
-    messageFormatter: format24HourMessage,
-    requiresFuture: true
-  },
-  {
-    type: "pre-match-3h",
-    windowCheck: isWithin3HourWindow,
-    messageFormatter: format3HourMessage,
-    requiresFuture: true
-  },
-  {
-    type: "pre-match-1h",
-    windowCheck: isWithin1HourWindow,
-    messageFormatter: format1HourMessage,
-    requiresFuture: true
-  },
-  {
-    // v12.x-cron-gaps: 5-minute "kickoff now" reminder. BIG matches only
-    // (both teams in master team list). Lean text per the user's "reduce
-    // noise" ask.
-    type: "pre-match-5min",
-    windowCheck: isWithin5MinWindow,
-    messageFormatter: format5MinMessage,
-    requiresFuture: true,
-    bigMatchOnly: true
-  },
-  {
-    type: "match-start",
-    windowCheck: isMatchStartingNow,
-    messageFormatter: formatMatchStartMessage,
-    // ✅ FIX Bug #2: must be false — isMatchStartingNow allows up to 5 min AFTER
-    // kick-off as a grace window. requiresFuture:true was short-circuiting the
-    // entire notification the moment the clock ticked past the scheduled start time.
-    requiresFuture: false
-  },
-  {
-    type: "result",
-    windowCheck: (match, env) => isWithinPostMatchWindow(match, env),
-    messageFormatter: formatResultMessage,
-    requiresFuture: false
-  }
-];
+// v13.x duplicate NOTIFICATION_CONFIGS table — REMOVED in v13.46-trim: this
+// was a byte-duplicate of notifications.ts's live config table (the eval-harness
+// concat even ended up with the var declared twice). Zero references — the X
+// composers take match/window helpers directly, not the notification config.
+// The 7 window fns + 7 formatters it dragged in via imports went with it;
+// isMatchFinished / isWithinPostMatchWindow / isMatchStartingNow (maybePostX)
+// and fetchStandings / isoWeekKey / weeklyTableCodes (maybePostXWeekly) stay.
+
