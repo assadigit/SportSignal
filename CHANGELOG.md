@@ -6,6 +6,72 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.51-rivalries] — 2026-09-15 (named rivalries: El Clásico, not "Derby")
+
+### The user's ask
+The system labelled Real Madrid–Barcelona as a generic "Derby". It isn't —
+in La Liga (or the Copa del Rey) it's **El Clásico**; in the Champions
+League it's *just a UCL match*. Same treatment for the other marquee
+pairings, with names shown **in English only** — Persian keeps exactly one
+translated name: ال کلاسیکو.
+
+### The rivalry table (src/matches.ts)
+`RIVALRY_PAIRS` + `rivalryName(match, lang)` — the named tag for the
+match in that language, or null:
+- Real Madrid–Barcelona → **El Clásico** (fa: ال کلاسیکو)
+- Bayern–Dortmund → Der Klassiker
+- Milan–Inter → Derby della Madonnina
+- Liverpool–Man United → North West Derby
+- Man United–Man City → Manchester Derby
+- Arsenal–Tottenham → North London Derby
+- PSG–Marseille → Le Classique
+- Roma–Lazio → Derby della Capitale
+- Juventus–Torino → Derby della Mole
+
+Three rules encoded in the one function:
+1. **Never in the UCL** (`competition.code === "CL"` → null). Applied to
+   `isDerby()` too: a derby pairing in the Champions League is just a UCL
+   match (it flows to the week-ahead "UCL duels" bucket instead of the
+   derbies bucket, and the CL-blockbuster banner still applies on its own).
+2. **fa gets only ال کلاسیکو** — every other name is English-only; fa
+   consumers (specialBanner, the card, the site badge) drop the tag
+   entirely for those pairs rather than show English text.
+3. The pairs also stay in `DERBY_PAIRS`, so derby sorting/boxing keeps
+   seeing them (Merseyside + the Madrid derby keep the generic tag).
+
+### Latent bug fixed along the way: Der Klassiker never matched
+`DERBY_NORM` normalized pair names with bare `normalizeTeamName`
+(→ `bayernmunich`) while match names go through `normAlias` (→
+`bayernmunchen` via the alias table) — Bayern–Dortmund could never be
+detected as a derby. `DERBY_NORM` now goes through `normAlias` as well.
+Also added the `sslazio → lazio` alias fold (FD's legal "SS Lazio" vs
+the short "Lazio" the rivalry table carries).
+
+### Surfaces updated
+- `specialBanner` (all Telegram notifications: 24h/big/3h/1h/5min/start/
+  result + the featured match + the X mirror): named banner replaces the
+  generic "⚔️ Derby" line; fa shows only ال کلاسیکو.
+- `pubMatch` (public-matches JSON): new `rivalry` (English name) and
+  `rivalryFa` fields; `derby` stays for row styling/boxing.
+- The match card (`src/card.ts`): the tag is now computed server-side
+  from the match itself — the card also renders for the raw tracked pool
+  (bot notification cards), which carries no `.derby` field, so the
+  "⚔️ DERBY" text never appeared there at all. Named rivalries show the
+  name (⚔️ El Clásico); fa cards show ال کلاسیکو only; UCL never tags.
+- The public site (`assets/public-13.12.js`): `derbyLabel()` drives both
+  badge spots — named badges replace the generic one (🔥 El Clásico), fa
+  drops badges for English-only names (row keeps `.derby` styling).
+- SW cache bumped v11 → v12 (the v13.39 rule: every asset-editing
+  release bumps).
+
+### Tests
+`scripts/live-derby-test.js` — A2 section: every pair name (FD and TSP
+spellings), the UCL exclusion (both `rivalryName` and `isDerby`), the
+fa-only-Clásico rule, the SS Lazio fold, and the DERBY_NORM fix.
+`check-venue` / `check-composers` got `rivalryName` stubs.
+
+---
+
 ## [13.50-cupscan] — 2026-09-15 (the EFL Cup hole: coverage via the team view)
 
 ### The incident

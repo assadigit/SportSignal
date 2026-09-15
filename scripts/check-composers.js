@@ -82,6 +82,7 @@ function translateCompetition(c) { return COMP_EN[c] || c; }
 function translateVenue(v) { return v; } // v13.13-venues stub
 function isDomesticCup() { return false; }
 function isDerby() { return false; }
+function rivalryName() { return null; } // v13.51-rivalries stub (specialBanner)
 function isMasterPair() { return false; }
 function normAlias(n) { return String(n || "").toLowerCase().replace(/\s+/g, ""); }
 // standingsLine + fetchStandings stubs (formatResultMessage appends one)

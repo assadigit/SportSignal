@@ -68,6 +68,7 @@ globalThis.LEAGUE_LOGOS = {};
 globalThis.isLiveStatus = (s) => s === "LIVE";
 globalThis.isFeaturedMatch = () => false;
 globalThis.isDerby = () => false;
+globalThis.rivalryName = () => null; // v13.51-rivalries stub (pubMatch tags)
 // v13.35-rounds: pubMatch derives round/roundFa through roundLabel — the
 // extracted body needs ROUND_FA + FA_ORDINALS + roundLabel in scope.
 const roundFaSrc = src.match(/var ROUND_FA = \{[\s\S]*?\n\};/)[0];

@@ -422,7 +422,11 @@ var TEAM_ALIASES = {
   // "Munich", so without this alias the SAME club could sit twice in a
   // selected-teams list (the reported duplicate) and never match the other
   // spelling's fixtures.
-  "bayernmunich": "bayernmunchen"
+  "bayernmunich": "bayernmunchen",
+  // v13.51-rivalries: FD's legal name "SS Lazio" folds to the short form the
+  // rivalry table carries — without this fold the two spellings ("SS Lazio"
+  // vs "Lazio") never meet in derby/rivalry matching.
+  "sslazio": "lazio"
 };
 export function normAlias(name) {
   const n = normalizeTeamName(name);
@@ -461,15 +465,73 @@ var DERBY_PAIRS = [
   // Madrid derby
   ["Atl\xE9tico Madrid", "Real Madrid CF"],
   // Le Classique
-  ["Paris Saint-Germain", "Olympique de Marseille"]
+  ["Paris Saint-Germain", "Olympique de Marseille"],
+  // v13.51-rivalries: the new named pairings join the derby machinery
+  // too (top-box selection, week-ahead ⚔ marks) — they are derbies with
+  // names, not a separate class.
+  // North West Derby
+  ["Liverpool FC", "Manchester United FC"],
+  // Derby della Capitale
+  ["AS Roma", "Lazio"],
+  // Derby della Mole
+  ["Juventus", "Torino FC"]
 ];
 var DERBY_NORM = DERBY_PAIRS.map(function(p) {
-  return [normalizeTeamName(p[0]), normalizeTeamName(p[1])];
+  // v13.51: normAlias, not bare normalizeTeamName — the alias table folds
+  // "Bayern Munich"/"FC Bayern München" onto ONE key, but the bare normalize
+  // left DERBY_NORM on the other spelling (bayernmunich vs bayernmunchen),
+  // so Der Klassiker silently never matched. Both sides now go through the
+  // same folding.
+  return [normAlias(p[0]), normAlias(p[1])];
 });
 export function isDerby(match) {
+  // v13.51-rivalries: a derby pairing inside the Champions League is NOT a
+  // derby — Real–Barça in the UCL is just a UCL match (the user's El Clásico
+  // rule, applied to every pairing). Callers without a competition field
+  // (tests) keep the pure pair-membership answer.
+  if (match.competition && match.competition.code === "CL") return false;
   const h = normAlias(match.homeTeam.name);
   const a = normAlias(match.awayTeam.name);
   return DERBY_NORM.some((p) => h === p[0] && a === p[1] || h === p[1] && a === p[0]);
+}
+// v13.51-rivalries: the marquee pairings carry their OWN names — shown
+// instead of the generic "Derby" tag wherever a derby is labelled. The pairs
+// also stay in DERBY_PAIRS so the derby machinery (the top box, the week-ahead
+// ⚔ marks) still sees them. Rules, per the product owner:
+//   - NEVER in the Champions League — a Clásico/Klassiker in the UCL is just
+//     a UCL match (any other competition — league or domestic cup — counts).
+//   - Persian carries a name only where one is natively used: ال کلاسیکو for
+//     Real–Barça. Every other rivalry name is English-only — fa consumers
+//     drop the tag entirely rather than show English text.
+var RIVALRY_PAIRS = [
+  // [team A, team B, English name, Persian name ("" = English-only)]
+  ["Real Madrid CF", "FC Barcelona", "El Clásico", "\u0627\u0644 \u06A9\u0644\u0627\u0633\u06CC\u06A9\u0648"],
+  ["FC Bayern M\xFCnchen", "Borussia Dortmund", "Der Klassiker", ""],
+  ["AC Milan", "Inter Milan", "Derby della Madonnina", ""],
+  ["Liverpool FC", "Manchester United FC", "North West Derby", ""],
+  ["Manchester City FC", "Manchester United FC", "Manchester Derby", ""],
+  ["Arsenal FC", "Tottenham Hotspur FC", "North London Derby", ""],
+  ["Paris Saint-Germain", "Olympique de Marseille", "Le Classique", ""],
+  ["AS Roma", "Lazio", "Derby della Capitale", ""],
+  ["Juventus", "Torino FC", "Derby della Mole", ""]
+];
+var RIVALRY_NORM = RIVALRY_PAIRS.map(function(p) {
+  return [normAlias(p[0]), normAlias(p[1])];
+});
+// The rivalry name for this match in this language, or null (no named
+// rivalry / a UCL meeting / an English-only name requested in fa).
+export function rivalryName(match, lang) {
+  if (match.competition && match.competition.code === "CL") return null;
+  const h = normAlias(match.homeTeam.name);
+  const a = normAlias(match.awayTeam.name);
+  for (let i = 0; i < RIVALRY_NORM.length; i++) {
+    const p = RIVALRY_NORM[i];
+    if (h === p[0] && a === p[1] || h === p[1] && a === p[0]) {
+      if (lang !== "fa") return RIVALRY_PAIRS[i][2];
+      return RIVALRY_PAIRS[i][3] || null;
+    }
+  }
+  return null;
 }
 export function mapStageName(stage) {
   const s = String(stage || "").toLowerCase();

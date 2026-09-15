@@ -9,7 +9,7 @@ import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, getRelativeTimeUntilMatch, getEnglishDate, getEnglishTime, getEnglishRelative, fetchJSON, enStageName, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, faStageName, isDomesticCup } from "./translate";
-import { normAlias, isMasterPair, isDerby } from "./matches";
+import { normAlias, isMasterPair, isDerby, rivalryName } from "./matches";
 import { providerSuspended, clearProviderSuspension, fetchPglTableFromWikipedia } from "./providers";
 
 export function format24HourMessage(match, env, lang) {
@@ -384,7 +384,15 @@ export function buildLeagueTableMessage(code, st, opts, lang) {
 export function specialBanner(match, lang) {
   const en = lang === "en";
   const parts = [];
-  if (isDerby(match)) parts.push(en ? "\u2694\uFE0F *Derby*" : "\u2694\uFE0F *\u062F\u0631\u0628\u06CC \u062D\u0633\u0627\u0633*");
+  // v13.51-rivalries: named rivalries replace the generic "Derby" tag —
+  // El Clásico, Der Klassiker, the Madonnina… never in the UCL (there the
+  // match is just a UCL match). fa carries a name only for ال کلاسیکو; the
+  // other names are English-only, so the fa banner drops for them (the
+  // match is still a derby for sorting/boxing — just unnamed in fa).
+  const label = rivalryName(match, en ? "en" : "fa");
+  const named = rivalryName(match, "en");
+  if (label) parts.push("\u2694\uFE0F *" + label + "*");
+  else if (!named && isDerby(match)) parts.push(en ? "\u2694\uFE0F *Derby*" : "\u2694\uFE0F *\u062F\u0631\u0628\u06CC \u062D\u0633\u0627\u0633*");
   if (match.competition && match.competition.code === "CL" && isMasterPair(match)) parts.push(en ? "*Champions League blockbuster*" : "*\u062F\u0648\u0626\u0644 \u0628\u0632\u0631\u06AF \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627\u0654*");
   return parts.length ? parts.join("\n") + "\n\n" : "";
 }

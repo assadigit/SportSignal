@@ -9,7 +9,7 @@ import type { Env } from "./types";
 import { fetchJSON, getNowTehran } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, ensureFaVenueCache } from "./translate";
-import { shouldNotify, isLiveStatus, isFeaturedMatch, normAlias, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby } from "./matches";
+import { shouldNotify, isLiveStatus, isFeaturedMatch, normAlias, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName } from "./matches";
 import { fetchLongView, getCachedMatches } from "./providers";
 import { applySettings } from "./admin";
 import { fetchStandings } from "./composers";
@@ -101,6 +101,13 @@ export function pubMatch(m) {
     scorers: isLiveStatus(m.status) ? (m.scorers || []).map((s) => ({ minute: s.minute, type: s.type, scorer: s.scorer, team: s.team })) : [],
     big: isFeaturedMatch(m),
     derby: isDerby(m),
+    // v13.51-rivalries: named-rivalry tags (El Clásico, Der Klassiker, …).
+    // rivalry = the English name (null when none — including UCL meetings,
+    // which are just UCL matches); rivalryFa = the Persian name — only
+    // El Clásico has one (ال کلاسیکو); the rest are English-only, so fa
+    // consumers drop the tag entirely (the row keeps its derby styling).
+    rivalry: rivalryName(m, "en") || null,
+    rivalryFa: rivalryName(m, "fa") || null,
     venue: m.venue || null,
     venueFa: m.venue ? (translateVenue(m.venue) || m.venue) : null,
     score: (isLiveStatus(m.status) || m.status === "FINISHED") && m.score && m.score.fullTime ? m.score.fullTime : null

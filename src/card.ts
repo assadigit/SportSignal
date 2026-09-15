@@ -17,6 +17,7 @@ import type { Env } from "./types";
 import { getJalaliDate, getJalaliTime, getEnglishDate, getEnglishTime, bumpSubrequest } from "./utils";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
 import { matchKey } from "./dedupe";
+import { isDerby, rivalryName } from "./matches";
 import { VAZIRMATN_BOLD_TTF_B64, VAZIRMATN_EXTRABOLD_TTF_B64 } from "./card-fonts";
 
 // v13.17-cards: resvg-wasm init (lazy, once per isolate). The WASM module
@@ -93,9 +94,19 @@ export async function buildMatchCardSvg(env: Env, match: any, lang: string): Pro
     fetchCrestDataUri(env, match.awayTeam.crest || "")
   ]);
 
-  // Derby / big-match accent.
-  const isDerby = match.derby;
-  const accent = isDerby ? "#a855f7" : "#3b82f6"; // purple for derby, blue otherwise
+  // Derby / big-match accent. v13.51-rivalries: the tag is computed from
+  // the match itself — the card renders for BOTH the public-matches cache
+  // (which carries .derby) and the raw tracked pool (which doesn't, so bot
+  // notification cards never showed it). Named rivalries (El Clásico, Der
+  // Klassiker, …) replace the generic DERBY text; Persian keeps a tag only
+  // for ال کلاسیکو (the other names are English-only — the fa card drops the
+  // tag but keeps the purple accent); and NEVER in the Champions League,
+  // where the meeting is just a UCL match.
+  const namedRivalry = rivalryName(match, "en");
+  const tagForLang = rivalryName(match, en ? "en" : "fa");
+  const isDerbyMatch = isDerby(match) || !!namedRivalry;
+  const derbyTag = tagForLang || (!namedRivalry && isDerbyMatch ? (en ? "DERBY" : "\u062F\u0631\u0628\u06CC") : null);
+  const accent = isDerbyMatch ? "#a855f7" : "#3b82f6"; // purple for derby, blue otherwise
   const stageLabel = match.stage && match.stage !== "REGULAR_SEASON" ? String(match.stage).replace(/_/g, " ") : "";
 
   // The card: dark gradient background, two crest circles, team names, VS,
@@ -128,8 +139,8 @@ export async function buildMatchCardSvg(env: Env, match: any, lang: string): Pro
   </defs>
   <rect width="800" height="420" fill="url(#bg)"/>
   <rect x="0" y="0" width="800" height="6" fill="url(#accent)"/>
-  ${isDerby ? `<text x="400" y="40" text-anchor="middle" font-family="Vazirmatn, sans-serif" font-size="18" font-weight="800" fill="#a855f7">⚔️ ${en ? "DERBY" : "دربی"}</text>` : ""}
-  <text x="400" y="${isDerby ? 70 : 50}" text-anchor="middle" font-family="Vazirmatn, sans-serif" font-size="16" font-weight="600" fill="#94a3b8">${escXml(competition)}${stageLabel ? " — " + escXml(stageLabel) : ""}</text>
+  ${derbyTag ? `<text x="400" y="40" text-anchor="middle" font-family="Vazirmatn, sans-serif" font-size="18" font-weight="800" fill="#a855f7">\u2694\uFE0F ${escXml(derbyTag)}</text>` : ""}
+  <text x="400" y="${isDerbyMatch ? 70 : 50}" text-anchor="middle" font-family="Vazirmatn, sans-serif" font-size="16" font-weight="600" fill="#94a3b8">${escXml(competition)}${stageLabel ? " — " + escXml(stageLabel) : ""}</text>
   ${leftCrestEl}
   ${rightCrestEl}
   <text x="200" y="280" text-anchor="middle" font-family="Vazirmatn, sans-serif" font-size="26" font-weight="800" fill="#e2e8f0">${escXml(fitName(left, 22))}</text>

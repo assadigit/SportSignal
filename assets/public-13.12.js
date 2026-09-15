@@ -298,6 +298,17 @@ function nameInto(el, s){
   } else { el.textContent = s; }
   return el;
 }
+// v13.51-rivalries: named rivalries (El Clásico, Der Klassiker, …) replace
+// the generic derby badge — but only in the language they exist in: fa gets
+// only ال کلاسیکو, the other names are English-only (fa drops the badge for
+// them; the row keeps its .derby styling). UCL meetings never badge — the
+// server sends rivalry:null there (a Clásico in the UCL is just a UCL match).
+function derbyLabel(m){
+  if(!m.derby) return null;
+  if(curLang()==="en") return m.rivalry ? "\uD83D\uDD25 " + m.rivalry : T("derby");
+  if(m.rivalryFa) return "\uD83D\uDD25 " + m.rivalryFa;
+  return m.rivalry ? null : T("derby");
+}
 function render(list, el, finished){
   var sig0 = listSig(list)+"|"+(finished?1:0);
   if(el.dataset.sig===sig0) return;
@@ -343,7 +354,7 @@ function render(list, el, finished){
     // competition (cups only — league rows carry no round data anyway).
     var rc = roundChip(m);
     if(rc) info.appendChild(rc);
-    if(m.derby){ var db = document.createElement("span"); db.className = "derbybadge"; db.textContent = T("derby"); info.appendChild(db); }
+    var dl = derbyLabel(m); if(dl){ var db = document.createElement("span"); db.className = "derbybadge"; db.textContent = dl; info.appendChild(db); }
     if(m.top){ var tb = document.createElement("span"); tb.className = "topbadge"; tb.textContent = "🏆 " + T("topBadge"); info.appendChild(tb); }
     info.appendChild(document.createTextNode(fmtDate(m.utcDate)));
     if(live){
@@ -1339,7 +1350,9 @@ function spotItemNode(m, idx, opts){
   }
   // v12.7 tag rule: a match can be BOTH a derby and a top-of-the-table
   // clash — each badge renders independently, never either/or.
-  if(m.derby){ var db = document.createElement("span"); db.className = "derbybadge"; db.textContent = T("derby"); info.appendChild(db); }
+  // v13.51-rivalries: the badge text comes from derbyLabel() (named
+  // rivalries replace the generic tag — English names + ال کلاسیکو only).
+  var dl = derbyLabel(m); if(dl){ var db = document.createElement("span"); db.className = "derbybadge"; db.textContent = dl; info.appendChild(db); }
   if(m.top){ var tb = document.createElement("span"); tb.className = "topbadge"; tb.textContent = "🏆 " + T("topBadge"); info.appendChild(tb); }
   // v12.31→v12.32 (the user's ask): the HERO passes opts.noDate — its date
   // rides under the big time chip inside the kick column (.kickdate, see
