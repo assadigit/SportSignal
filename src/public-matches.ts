@@ -3,7 +3,8 @@
 // standings/cups/UCL/topSpot/week shaping and the 7-day snapshot fallback.
 
 
-import { CONFIG, LEAGUE_LOGOS, COMP_EN } from "./config";
+import { CONFIG } from "./config";
+import { LEAGUE_LOGOS, COMP_EN } from "./tables";
 import type { Env } from "./types";
 import { fetchJSON, getNowTehran } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams";

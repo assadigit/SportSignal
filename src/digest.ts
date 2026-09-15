@@ -3,7 +3,8 @@
 // the 👑 table-top coronation alerts.
 
 
-import { CONFIG, COMP_EN } from "./config";
+import { CONFIG } from "./config";
+import { COMP_EN } from "./tables";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getNowTehran, getEnglishDate } from "./utils";
 import { translateTeam, translateCompetition } from "./translate";

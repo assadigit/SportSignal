@@ -56,8 +56,9 @@ public payload prewarm, and an optional X (Twitter) profile (default OFF).
 src/
   worker.ts        entry — thin re-export of api.ts (fetch + scheduled)
   types.ts         the Env contract (KV binding, secrets, AI binding)
-  config.ts        VERSION, CONFIG (KV keys = live-state contracts), X_CONFIG,
-                   static tables (teams, leagues, cups, UCL logo path)
+  config.ts        VERSION, CONFIG (KV keys = live-state contracts), X_CONFIG
+  tables.ts        static dictionaries: stages/competitions/logos, provider id
+                   maps, CSP headers, UCL starball (split in v13.47-seams)
   utils.ts         digits/dates/auth-hash/subrequest+kv-op meters/HTTP retry
   fa-dict.ts       static Farsi team dictionary (translation layer 1)
   translate.ts     3-layer translation + competition helpers (AI/admin/dict)
@@ -73,8 +74,15 @@ src/
   admin.ts         sessions / settings / clubs catalog / simulate fixtures
   public-matches.ts /api/public-matches pipeline (cache+lock+enrich+shape)
   bot.ts           Telegram webhook handler (/start /lang /follow /next …)
-  cron.ts          the */10 tick (phases; meter; governor; dead man's switch)
-  api.ts           HTTP router + healthz + admin auth + card PNG route
+  cron.ts          the */10 tick (meter; governor; lock; pool; completion blob)
+  monitoring.ts    cron status blob reader + phase-error alerts + live fingerprint
+  migration.ts    bot-migration broadcast round logic
+  auth.ts          admin login/logout/change-password (HMAC session cookie)
+  public-swr.ts    /api/public-matches stale-while-revalidate endpoint
+  card-route.ts    /api/card/:matchKey SVG/PNG rendering
+  simulate.ts      POST /api/simulate notification-path harness
+  admin-ops.ts     admin/ops API routes + legacy GET action endpoints
+  api.ts           the HTTP router (route table + healthz + dispatch)
   pages/           PUBLIC / LOGIN / ADMIN HTML templates (shell only)
 assets/            versioned client payload (core-*.js, public-*.js/css —
                    immutable, cache-bust by renaming), fonts, sw.js, icons

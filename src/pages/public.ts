@@ -1,7 +1,7 @@
 // SportSignal — the public page template (RTL Persian UI: hero countdown,
 // big-matches box, UCL card + table, standings grid, cups, live section).
 // Everything between the backticks is CLIENT-side code (a string literal).
-import { UCL_LOGO_CHIP } from "../config";
+import { UCL_LOGO_CHIP } from "../tables";
 
 export const PUBLIC_PAGE = `<!doctype html>
 <html lang="fa" dir="rtl">

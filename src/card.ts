@@ -11,7 +11,8 @@
 // cross-origin), and returns the composed SVG.
 
 
-import { CONFIG, COMP_EN, LEAGUE_LOGOS } from "./config";
+import { CONFIG } from "./config";
+import { COMP_EN, LEAGUE_LOGOS } from "./tables";
 import type { Env } from "./types";
 import { getJalaliDate, getJalaliTime, getEnglishDate, getEnglishTime, bumpSubrequest } from "./utils";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";

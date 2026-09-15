@@ -1,11 +1,13 @@
-// SportSignal — the cron sweep (*/10 * * * *): stale-run alert, execution
-// lock, quiet-period pool reuse, FA-AI learning, notification fan-out,
-// digests, coronation alerts, X mirror, heartbeat.
+// SportSignal — the cron sweep (*/10 * * * *): the KV-write meter + budget
+// governor, stale-run alert, execution lock, quiet-period pool reuse, FA-AI
+// learning, notification fan-out, digests, coronation alerts, X mirror,
+// heartbeat + completion blob. Status/phase-alerts live in monitoring.ts;
+// the migration broadcast lives in migration.ts (v13.47-seams).
 
 
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { toFaDigits, resetSubrequestBudget, subrequestCount, kvOpsCount, bumpKvOp, escapeMarkdownCharacters } from "./utils";
+import { toFaDigits, resetSubrequestBudget, subrequestCount, kvOpsCount, bumpKvOp } from "./utils";
 import { translateTeam, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
@@ -14,59 +16,12 @@ import { sendTelegram, drainOutbox } from "./telegram";
 import { sendMatchNotifications, detectStatusChanges, auditNotifications } from "./notifications";
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, broadcastBigMatchKickoff, maybeNotifyTableToppers } from "./digest";
 import { maybePostX } from "./x";
-import { getRegisteredChats, checkUserCap, getUserPrefs } from "./users";
+import { getRegisteredChats, checkUserCap } from "./users";
 import { applySettings } from "./admin";
 import { fetchPublicMatches } from "./public-matches";
+import { getCronStatus, alertPhaseError, liveFingerprint } from "./monitoring";
+import { maybeBroadcastMigration } from "./migration";
 
-export async function getCronStatus(env: Env) {
-  try {
-    const s = await env.STATE.get("cron_status_v1", "json").catch(() => null);
-    if (s && s.heartbeat) return s;
-  } catch (e) {
-  }
-  const hb = parseInt(await env.STATE.get(CONFIG.KV_HEARTBEAT).catch(() => null)) || 0;
-  const lc = parseInt(await env.STATE.get(CONFIG.KV_LAST_CRON).catch(() => null)) || 0;
-  const src = await env.STATE.get(CONFIG.KV_LAST_SOURCE).catch(() => null);
-  const lfs = parseInt(await env.STATE.get("last_full_sweep").catch(() => null)) || 0;
-  return { heartbeat: hb ? String(hb) : "0", last_cron: lc ? String(lc) : "0", api_source: src || null, last_full_sweep: lfs ? String(lfs) : "0" };
-}
-// v13.36-nospam: rate-limited phase-error alert. The Sep 14 00:20→10:10 UTC
-// outage (CF analytics: err=1 on EVERY cron tick for ~10h) was completely
-// invisible — no log, no message, just a stale heartbeat. Now every guarded
-// phase reports its failure to the admin chat (max 1 alert / 30min per
-// isolate) so the NEXT outage is diagnosable from Telegram within minutes.
-var LAST_ERR_ALERT = 0;
-async function alertPhaseError(env: Env, phase, err) {
-  const msg = String(err && err.message || err || "unknown");
-  console.error(`Cron phase [${phase}] failed: ${msg}`);
-  const now = Date.now();
-  if (now - LAST_ERR_ALERT < 30 * 6e4) return;
-  LAST_ERR_ALERT = now;
-  try {
-    const adminChat = parseInt(env.CHAT_ID);
-    if (!isNaN(adminChat)) {
-      await sendTelegram(env, "\u26A0\uFE0F *\u062E\u0637\u0627\u06CC \u0632\u0645\u0627\u0646\u200C\u0628\u0646\u062F:* " + escapeMarkdownCharacters(phase) + "\n`" + escapeMarkdownCharacters(msg.slice(0, 160)) + "`", adminChat);
-    }
-  } catch (e) {
-  }
-}
-// v13.43-cpukeeper: fingerprint of every live-ish match row (status +
-// score + identity). Two lists with equal fingerprints carry identical live
-// information — used to skip the ~100ms-CPU public-payload prewarm on live
-// ticks where nothing actually changed (the common case: no goal since the
-// last rebuild). Order-independent (sorted) so a merge re-ordering can't
-// produce a false "changed".
-function liveFingerprint(list) {
-  const parts = [];
-  for (const m of list || []) {
-    const st = String(m.status || "").toUpperCase();
-    if (st !== "LIVE" && st !== "IN_PLAY" && st !== "PAUSED" && st !== "FINISHED") continue;
-    const s = m.score && m.score.fullTime ? String(m.score.fullTime.home) + "-" + String(m.score.fullTime.away) : "n";
-    parts.push(String(m.homeTeam && m.homeTeam.name) + "|" + String(m.awayTeam && m.awayTeam.name) + "|" + String(m.utcDate || "").slice(0, 10) + "|" + st + "|" + s);
-  }
-  parts.sort();
-  return parts.join(";");
-}
 export async function executeScheduledLogic(env: Env) {
   resetSubrequestBudget();
   // v13.44-quotaguard: the KV-write meter now wraps the VERY FIRST action —
@@ -252,61 +207,9 @@ export async function executeScheduledLogic(env: Env) {
     // migration (POST /api/migrate/start), send a "this bot is deprecated,
     // join the new bot" message to all registered chats every 3 days for 2
     // weeks. Per-chat KV dedupe so each user gets it exactly once per round.
+    // v13.47-seams: the broadcast itself lives in migration.ts.
     try {
-      const mig = await env.STATE.get(CONFIG.KV_MIGRATION, "json").catch(() => null);
-      if (mig && mig.active) {
-        const NOW_MS = Date.now();
-        const started = mig.startedAt || NOW_MS;
-        const ageDays = Math.floor((NOW_MS - started) / (24 * 36e5));
-        if (ageDays <= CONFIG.MIGRATION_TOTAL_DAYS) {
-          const lastRound = mig.lastRound || 0;
-          const roundDue = lastRound === 0 || (NOW_MS - lastRound) >= CONFIG.MIGRATION_INTERVAL_DAYS * 24 * 36e5;
-          if (roundDue) {
-            const chats = await getRegisteredChats(env);
-            const roundNum = Math.floor(ageDays / CONFIG.MIGRATION_INTERVAL_DAYS) + 1;
-            const prefs = await getUserPrefs(env).catch(() => ({}));
-            let sent = 0, failed = 0;
-            for (const chatId of chats) {
-              const dedupeKey = "mig_sent_v1:" + roundNum + ":" + chatId;
-              const already = await env.STATE.get(dedupeKey).catch(() => null);
-              if (already) continue;
-              const p = prefs[String(chatId)] || {};
-              const lang = p.lang === "en" ? "en" : "fa";
-              // v13.36-nospam: write-first — mark this chat as migrated
-              // BEFORE the send so a failed KV write can't re-send the
-              // migration notice to the same user every 10-min tick.
-              // v13.38-qc: the marker put's success now GATES the send —
-              // the swallowed .catch left the write-first promise hollow
-              // (put fails → not marked → re-send next tick).
-              let migMarked = false;
-              try {
-                await env.STATE.put(dedupeKey, "1", { expirationTtl: CONFIG.MIGRATION_INTERVAL_DAYS * 24 * 3600 + 3600 });
-                migMarked = true;
-              } catch (e) {
-                console.error("Migration dedupe mark failed — skipping this chat this tick (fail-closed anti-spam)");
-              }
-              if (!migMarked) continue;
-              const msg = lang === "en"
-                ? "\u{1F6A8} *This bot is deprecated\\!*\n\nWe've moved to a new, faster bot with better features\\. Please join our new bot to continue receiving match notifications\\.\n\n\u2728 *New bot:* " + CONFIG.MIGRATION_NEW_BOT_HANDLE + "\n\u{1F517} " + CONFIG.MIGRATION_NEW_BOT_URL + "\n\n_Thank you for following \\- see you on the new bot\\!_"
-                : "\u{1F6A8} *\u0627\u06CC\u0646 \u0631\u0628\u0627\u062A \u0645\u0646\u0633\u0648\u062E \u0634\u062F\u0647\\!*\n\n\u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0645\u0627 \u0628\u0627 \u0627\u0645\u06A9\u0627\u0646\u0627\u062A \u0628\u0647\u062A\u0631 \u0648 \u0633\u0631\u0639\u062A \u0628\u0627\u0644\u0627\u062A\u0631 \u0631\u0627\u0647\u200C\u0627\u0646\u062F\u0627\u0632\u06CC \u0634\u062F\u0647 \u0627\u0633\u062A\\.\n\u0628\u0631\u0627\u06CC \u062F\u0631\u06CC\u0627\u0641\u062A \u0627\u0639\u0644\u0627\u0646\u200C\u0647\u0627\u060C \u0628\u0647 \u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0628\u067E\u06CC\u0648\u0646\u062F\u06CC\u062F\\.\n\n\u2728 *\u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F:* " + CONFIG.MIGRATION_NEW_BOT_HANDLE + "\n\u{1F517} " + CONFIG.MIGRATION_NEW_BOT_URL + "\n\n_\u0627\u0632 \u0647\u0645\u0631\u0627\u0647\u06CC\u200C\u062A\u0627\u0646 \u0645\u062A\u0634\u06A9\u0631\u06CC\u0645 \\- \u0645\u0646\u062A\u0638\u0631 \u0634\u0645\u0627 \u062F\u0631 \u0631\u0628\u0627\u062A \u062C\u062F\u06CC\u062F \u0647\u0633\u062A\u06CC\u0645_";
-              const r = await sendTelegram(env, msg, chatId);
-              if (r === true) {
-                sent++;
-              } else if (r === "dead") failed++;
-            }
-            mig.lastRound = NOW_MS;
-            mig.totalSent = (mig.totalSent || 0) + sent;
-            await env.STATE.put(CONFIG.KV_MIGRATION, JSON.stringify(mig)).catch(() => {});
-            console.log(`\u{1F6A8} Migration broadcast: sent=${sent} failed=${failed} (round ${roundNum}/${Math.ceil(CONFIG.MIGRATION_TOTAL_DAYS / CONFIG.MIGRATION_INTERVAL_DAYS)})`);
-          }
-        } else {
-          // Migration period over — deactivate.
-          mig.active = false;
-          mig.endedAt = NOW_MS;
-          await env.STATE.put(CONFIG.KV_MIGRATION, JSON.stringify(mig)).catch(() => {});
-          console.log(`\u2705 Migration period ended (total sent: ${mig.totalSent || 0})`);
-        }
-      }
+      await maybeBroadcastMigration(env);
     } catch (e) {
       console.error("Migration broadcast failed: " + e.message);
     }

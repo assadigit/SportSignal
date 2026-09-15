@@ -5,7 +5,8 @@
 // Subrequest counter lives HERE (the owning module) — imported bindings are
 // read-only, so consumers call bumpSubrequest() instead of ++SUBREQUEST_COUNT.
 
-import { CONFIG, STAGE_EN } from "./config";
+import { CONFIG } from "./config";
+import { STAGE_EN } from "./tables";
 import type { Env } from "./types";
 
 export function bumpSubrequest() {

@@ -334,5 +334,58 @@ check("#fai2 empty-verdict isolate cache keyed on the payload ts", /FA_EMPTY_PAY
 const botSeg13 = (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron.ts =====")[0];
 check("#w8 bot.ts never calls fetchMatchesFromAPI (no provider sweeps from user-typed commands)", botSeg13.length > 0 && !/fetchMatchesFromAPI/.test(botSeg13));
 
+// #seams (v13.47-seams): the modularization must not silently lose concat
+// coverage — worker-src.js silently skips missing files (fs.existsSync), so
+// a forgotten file = regexes still pass while a whole module went dark.
+// Lock the order list itself + the key structural moves.
+const fs14 = require("fs");
+const path14 = require("path");
+const harness14 = fs14.readFileSync(path14.join(__dirname, "lib", "worker-src.js"), "utf8");
+for (const f of ["tables.ts", "monitoring.ts", "migration.ts", "auth.ts", "public-swr.ts", "card-route.ts", "simulate.ts", "admin-ops.ts"]) {
+  check("#seams harness order includes " + f, new RegExp('"' + f.replace(".", "\\.") + '"').test(harness14));
+}
+check("#seams bot.ts stays immediately before cron.ts (botSeg boundary)", harness14.indexOf('"bot.ts"') < harness14.indexOf('"cron.ts"') && harness14.indexOf('"bot.ts"') > harness14.indexOf('"public-matches.ts"'));
+check("#seams POST_GATE_ROUTES spreads ADMIN_OPS_ROUTES (\u2026first)", /\.\.\.ADMIN_OPS_ROUTES,/.test(src));
+check("#seams POST_GATE_ROUTES includes SIMULATE_ROUTE", /SIMULATE_ROUTE,/.test(src));
+check("#seams the * catch-all stays in api.ts's own table", /\{ path: "\*", handler: legacyGetAction \},/.test(src));
+// slices: config keeps the contract; tables owns the moved dictionaries.
+const cfgSeg14 = (src.match(/\/\/ ===== src\/config\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+const tablesSeg14 = (src.match(/\/\/ ===== src\/tables\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+check("#seams config.ts keeps VERSION + CONFIG + X_CONFIG", /var VERSION =/.test(cfgSeg14) && /var CONFIG =/.test(cfgSeg14) && /var X_CONFIG =/.test(cfgSeg14));
+check("#seams config.ts no longer owns COMP_EN/PAGE_SEC_HEADERS", !/var COMP_EN =/.test(cfgSeg14) && !/var PAGE_SEC_HEADERS =/.test(cfgSeg14));
+check("#seams tables.ts owns COMP_EN + PAGE_SEC_HEADERS + UCL_LOGO_CHIP", /var COMP_EN =/.test(tablesSeg14) && /var PAGE_SEC_HEADERS =/.test(tablesSeg14) && /var UCL_LOGO_CHIP =/.test(tablesSeg14));
+// monitoring + migration slices
+const monSeg14 = (src.match(/\/\/ ===== src\/monitoring\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+check("#seams monitoring.ts owns getCronStatus + alertPhaseError + liveFingerprint", /async function getCronStatus\(env\)/.test(monSeg14) && /async function alertPhaseError\(env, phase, err\)/.test(monSeg14) && /function liveFingerprint\(list\)/.test(monSeg14));
+const migSlice14 = (src.match(/\/\/ ===== src\/migration\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+check("#seams migration.ts owns maybeBroadcastMigration (the mig_sent_v1 dedupe)", /async function maybeBroadcastMigration\(env\)/.test(migSlice14) && /mig_sent_v1/.test(migSlice14));
+check("#seams cronSeg no longer contains the migration broadcast", !/mig_sent_v1/.test(cronSeg));
+check("#seams cron.ts still owns the meter + completion blob (kvWritesThisTick)", /kvWritesThisTick\+\+/.test(cronSeg) && /kv_writes_last_tick: kvWritesThisTick \+ 1/.test(cronSeg));
+// auth + swr + card-route slices
+const authSeg14 = (src.match(/\/\/ ===== src\/auth\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+check("#seams auth.ts owns the admin_auth cookie writes", /admin_auth=/.test(authSeg14) && /login_fail_/.test(authSeg14));
+const swrSeg14 = (src.match(/\/\/ ===== src\/public-swr\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+check("#seams public-swr.ts owns the SWR windows (FRESH_MS/STALE_GRACE_MS)", /FRESH_MS = 3e5/.test(swrSeg14) && /STALE_GRACE_MS = 6e5/.test(swrSeg14));
+const cardSeg14 = (src.match(/\/\/ ===== src\/card-route\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+check("#seams card-route.ts owns the card lookup pools", /\/api\/card\//.test(cardSeg14) && /renderCardPngCached/.test(cardSeg14));
+const adminOpsSeg14 = (src.match(/\/\/ ===== src\/admin-ops\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+check("#seams admin-ops.ts owns the override route TOGETHER with its guards", adminOpsSeg14.indexOf('"/api/fa-teams/override"') > -1 && /isValidFaName\(fa\)/.test(adminOpsSeg14) && /isAdminAuthed\(req,\s*env\)/.test(adminOpsSeg14));
+check("#seams admin-ops.ts owns legacyGetAction", /async function legacyGetAction\(c/.test(adminOpsSeg14));
+const simSeg14 = (src.match(/\/\/ ===== src\/simulate\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+check("#seams simulate.ts owns the SIMULATE_ROUTE entry + buildDummyMatches call", /SIMULATE_ROUTE: RouteDef = \{/.test(simSeg14) && /buildDummyMatches\(\)/.test(simSeg14));
+// api.ts keeps its invariants through the split
+check("#seams scheduled() handler stays in api.ts (dead man's switch)", /await executeScheduledLogic\(env\);[\s\S]{0,500}pingHealthcheck\(env, ctx, true\);/.test(src));
+check("#seams healthz route stays in api.ts's table", (src.match(/\/\/ ===== src\/api\.ts =====[\s\S]*?(?=\/\/ ===== src\/pages)/) || [""])[0].includes('"/healthz"'));
+// #seams-hole (found live 2026-09-17T17:52Z, the 1101 incident): array
+// elisions (`,,`) from entry joins are LEGAL TypeScript and invisible to
+// every concat regex — they only explode at runtime (route === undefined
+// -> TypeError -> 1101 on every request). Ban them across the concat and
+// pin the entry/terminator counts so a join bug can never ship silently.
+check("#seams zero array elisions (,,) in the concat", !/,(\s|\n)*,/.test(src));
+const aoEntries14 = (adminOpsSeg14.match(/\{ path: "/g) || []).length;
+const aoTerms14 = (adminOpsSeg14.match(/^  \} \},$/gm) || []).length;
+check("#seams ADMIN_OPS_ROUTES: every entry has exactly one terminator (no holes)", aoEntries14 > 0 && aoTerms14 === aoEntries14);
+
+
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

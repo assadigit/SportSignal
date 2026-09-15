@@ -54,3 +54,12 @@ export interface Env {
   // the anti-spam paths never read it.
   KV_BUDGET_HOLD?: boolean;
 }
+
+// v13.47-seams: router context/route types (moved from api.ts — shared by
+// api.ts, admin-ops.ts and simulate.ts).
+export type RouteCtx = { req: Request; env: Env; url: URL };
+export type RouteDef = {
+  path: string; // exact pathname, or "*" for the legacy catch-all
+  method?: string; // undefined = any method
+  handler: (c: RouteCtx) => Promise<Response | null> | Response | null;
+};

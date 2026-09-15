@@ -6,6 +6,72 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.47-seams] — 2026-09-15 (modularization: the monolith gets seams)
+
+### The theme
+R3 of the reliability roadmap. Pure code movement — bodies moved
+byte-identical, every export signature unchanged, zero behavior changes,
+zero KV changes, zero asset changes (sw.js CACHE stays sportsignal-v11).
+The eval harness (scripts/lib/worker-src.js) file list co-evolved in the
+SAME commit (the harness silently skips missing files — a forgotten file
+would pass every regex while a whole module went dark; the new #seams
+asserts lock the order list itself).
+
+### The splits
+- `src/config.ts` (512→349) → + `src/tables.ts`: the static dictionaries
+  (STAGE_EN/FA, COMP_EN, LEAGUE_LOGOS, provider id maps, CSP headers, the
+  UCL starball) left the config module. config.ts keeps the KV-key
+  contract (CONFIG), X_CONFIG tunables and VERSION — one file owns every
+  live-state key.
+- `src/cron.ts` (603→507) → + `src/monitoring.ts` (getCronStatus,
+  alertPhaseError, liveFingerprint) + `src/migration.ts`
+  (maybeBroadcastMigration — the mig_sent_v1 round broadcast, body moved
+  verbatim). The tick keeps the meter/governor/lock/pool/completion blob:
+  the #quota1 truemeter invariants are order-locked text, and phase
+  extraction would be a rewrite of the quota guarantee (anti-goal —
+  revisit only with failure-injection tests).
+- `src/api.ts` (1101→312) → + `src/auth.ts` (admin login/logout/
+  change-password — the stateless HMAC cookie block), `src/public-swr.ts`
+  (the /api/public-matches SWR endpoint), `src/card-route.ts`
+  (/api/card/:matchKey), `src/simulate.ts` (the SIMULATE_ROUTE entry +
+  body, moved together), `src/admin-ops.ts` (ADMIN_OPS_ROUTES — 18
+  admin/ops route entries + legacyGetAction, moved WITH their bodies so
+  check-security's slice-based override guard keeps its adjacency).
+  api.ts is now the router proper: dispatch + table spread + healthz +
+  the dead man's switch scheduled handler.
+- `src/types.ts` gains RouteCtx/RouteDef (shared by api/admin-ops/simulate
+  — type-only, no runtime cycle).
+
+### Why entries moved WITH bodies
+check-security extracts the concat slice from the "/api/fa-teams/override"
+string forward and asserts isValidFaName/isAdminAuthed within it — a thin
+route entry in api.ts with the body in an earlier concat file would
+silently break that guard. Moving whole entries keeps every slice-based
+assertion self-contained.
+
+### The 1101 (found live, fixed pre-release-window-close)
+The first deploy of 13.47 threw `error 1101` on every request for ~90s
+(17:51:30–17:53:00Z) — rolled back immediately; no tick was lost (the
+17:50 tick completed pre-deploy; the 18:00 tick ran on the fixed build).
+Root cause: the ADMIN_OPS_ROUTES entries were joined with an extra comma
+on top of each entry's own trailing comma — 18 array ELISIONS
+(`} },,`), i.e. 18 `undefined` elements; the dispatch loop read
+`undefined.path` → TypeError on every request. Every gate missed it:
+elisions are legal TypeScript (tsc green), the test harness only
+regexes/evals-extracts text (holes invisible), esbuild parses elisions
+fine. Two new gates: #seams zero-elision assert + entry/terminator count
+lock in check-reliability.js, and a LOCAL SMOKE TEST step in RUNBOOK §2
+(wrangler dev + curl /healthz before every deploy) — the gate that
+would have caught it.
+
+### Tests
++22 #seams asserts in check-reliability.js (harness order list contains
+every new file; bot.ts→cron.ts marker adjacency for botSeg13; the
+spreads; per-file slice ownership for tables/monitoring/migration/auth/
+swr/card-route/admin-ops/simulate; cron.ts keeps the meter + completion
+blob; api.ts keeps scheduled() + healthz). npm test exit 0 — 135
+behavioral checks.
+
 ## [13.46-trim] — 2026-09-15 (tidy-up: dead code, landmines, and docs telling the truth)
 
 ### The theme

@@ -3,7 +3,8 @@
 // (fetch + KV cache + league-table text).
 
 
-import { CONFIG, STAGE_FA, COMP_EN, SPORTSCORE_SLUGS } from "./config";
+import { CONFIG } from "./config";
+import { STAGE_FA, COMP_EN, SPORTSCORE_SLUGS } from "./tables";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, getRelativeTimeUntilMatch, getEnglishDate, getEnglishTime, getEnglishRelative, fetchJSON, enStageName, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams";

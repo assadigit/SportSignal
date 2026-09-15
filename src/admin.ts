@@ -3,7 +3,8 @@
 // autocomplete catalog and the /api/simulate dummy fixtures.
 
 
-import { CONFIG, SPORTSCORE_SLUGS } from "./config";
+import { CONFIG } from "./config";
+import { SPORTSCORE_SLUGS } from "./tables";
 import type { Env } from "./types";
 import { timingSafeEqualStr, fetchJSON, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams";

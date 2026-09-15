@@ -1,7 +1,8 @@
 // SportSignal — upstream data providers (football-data.org, sportscore,
 // thesportsdb, Wikipedia PGL table), the multi-source merger with crest/venue
 // adoption, provider circuit breaker and the KV match cache.
-import { CONFIG, PROVIDER_LEAGUE_MAP, SPORTSCORE_SLUGS, TSP_LEAGUE_IDS, CUP_TSP_IDS } from "./config";
+import { CONFIG } from "./config";
+import { PROVIDER_LEAGUE_MAP, SPORTSCORE_SLUGS, TSP_LEAGUE_IDS, CUP_TSP_IDS } from "./tables";
 import type { Env } from "./types";
 import { fetchJSON, fetchWithRetry, fdRateLimited } from "./utils";
 import { normalizeTeamName } from "./teams";

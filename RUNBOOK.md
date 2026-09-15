@@ -35,6 +35,14 @@ is the house style.
 npm install          # node_modules is not committed
 npm test             # MUST exit 0 — tsc --noEmit + 19 check scripts + 135 behavioral
                      # checks that eval-extract the REAL source (see §9 invariants)
+npx wrangler dev --port 8787 &   # LOCAL SMOKE TEST — never skip on src changes:
+curl -s http://127.0.0.1:8787/healthz   # must return the health JSON (not 500/1101)
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8787/   # 200
+kill %1
+# Why: tsc and every test regex parse/scan text — they cannot see runtime-only
+# failures (the 2026-09-15 1101: 18 array elisions in ADMIN_OPS_ROUTES were
+# legal TS, regex-invisible, and killed every request; caught only by the
+# post-deploy healthz curl 90s after deploy + rollback).
 npx wrangler deploy
 ```
 

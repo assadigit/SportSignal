@@ -3,7 +3,8 @@
 // classification helpers. Owns the lazy dict caches + the AI-learned cache.
 
 
-import { CONFIG, STAGE_FA } from "./config";
+import { CONFIG } from "./config";
+import { STAGE_FA } from "./tables";
 import type { Env } from "./types";
 import { normTeamKey } from "./teams";
 import { buildFaTeamDict } from "./fa-dict";

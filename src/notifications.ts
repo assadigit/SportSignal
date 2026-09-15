@@ -3,7 +3,8 @@
 // pruning, and live status-change detection (kickoff/HT/FT events).
 
 
-import { CONFIG, COMP_EN } from "./config";
+import { CONFIG } from "./config";
+import { COMP_EN } from "./tables";
 import type { Env } from "./types";
 import { toFaDigits, getNowTehran, escapeMarkdownCharacters, subrequestCount } from "./utils";
 import { normalizeTeamName } from "./teams";

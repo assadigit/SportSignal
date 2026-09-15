@@ -7,7 +7,8 @@
 // file.
 //
 // Module map:
-//   config.ts            VERSION, CONFIG, X_CONFIG + static tables
+//   config.ts            VERSION, CONFIG (KV-key contract), X_CONFIG
+//   tables.ts            static dictionaries/logos/provider ids/CSP (13.47)
 //   utils.ts             digits/dates/auth-hash/subrequest/HTTP helpers
 //   fa-dict.ts           static Farsi team dictionary (layer 1)
 //   translate.ts         3-layer translation + competition helpers
@@ -23,7 +24,14 @@
 //   admin.ts             sessions, settings, clubs catalog, dummy matches
 //   public-matches.ts    /api/public-matches pipeline
 //   bot.ts               Telegram webhook handler
-//   cron.ts              the */10 sweep
+//   cron.ts              the */10 sweep (meter/governor/lock/pool/blob)
+//   monitoring.ts        status blob reader + phase alerts + fingerprint
+//   migration.ts         bot-migration broadcast (13.47)
+//   auth.ts              admin login/logout/change-password (13.47)
+//   public-swr.ts        public-matches SWR endpoint (13.47)
+//   card-route.ts        /api/card/:matchKey SVG/PNG (13.47)
+//   simulate.ts          POST /api/simulate harness (13.47)
+//   admin-ops.ts         admin/ops routes + legacy GET actions (13.47)
 //   api.ts               HTTP router (fetch + scheduled)
 //   pages/*.ts           PUBLIC / LOGIN / ADMIN page templates
 
