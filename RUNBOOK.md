@@ -180,11 +180,22 @@ version, CORS-enabled for external dashboards.
 
 | Profile | KV writes | True subrequests | CPU | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| Quiet tick | **2** (lock + completion blob) | 24–30 (mostly KV ops; 0–3 fetches) | ~50 ms | pool reuse, 173+ worthy matches scanned |
-| Full sweep (every `QUIET_SWEEP_MS` = 2h, or active window) | +8–15 (pool store) | quiet + ~10–18 fetches | ~100 ms | watch `subreq_last_tick`; ceiling is 50/invocation |
+| Quiet tick | **2** (lock + completion blob) | 25–28 (≈25 KV ops; 0–3 fetches) | ~50 ms | pool reuse, 173+ worthy matches scanned |
+| Active match-evening tick | 2–5 | **71–73** (≈46–48 KV ops + ~25 fetches) | ~50–100 ms | live sweep merged over pool; measured 2026-09-15 18:30Z |
+| Full sweep (every `QUIET_SWEEP_MS` = 2h) | +8–15 (pool store) | **94 measured** (51 KV ops + 43 fetches; 2026-09-15 18:50Z) | ~100 ms | completed clean — see the enforcement note below |
 | Match-night tick | 2–8 | varies | ~100 ms | **wall time up to 6.5+ min** (serialized via `execution_lock`) while healthz serves 200 |
 | Web request (page/API) | 0–4 | 1–10 | 0.3–6 ms (prober) / ~25–100 ms (public-matches build) | public payload TTLs 300/720s; snapshot fallback on failure |
 | Daily KV burn | — | — | — | measured 280–660/day on 2026-09-15 (matchday); free tier 1,000; governor SOFT 700 / HARD 850 |
+
+**Subrequest enforcement (measured live, 2026-09-15):** a full-sweep tick
+at a TRUE combined count of **94** (and an active-evening tick at 73) both
+ran to completion — Cloudflare's 50-subrequest limit does **NOT count KV
+operations**. The in-code gates (prewarm `<30`, notify-defer `>38`) sit on
+the FETCH-only counter on purpose: that is the number CF actually meters.
+`subreq_last_tick` in the blob/healthz is the combined SIGHTLINE (fetches +
+KV ops + 1) — watch it for anomalies, but do not "fix" numbers above 50;
+they are healthy. A tick that genuinely exceeds ~48 FETCHES is the real
+failure class (watch the closing log line's `true subrequest total` split).
 
 **Governor rules (never bypass):** SOFT (700) sheds cosmetic writes (public
 prewarm, FA-AI learning); HARD (850) also holds the pool-cache write + pages the
