@@ -6,6 +6,53 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.49-buttons] — 2026-09-15 (the bot is tappable, not slash-only)
+
+### The user report
+"Telegram bot doesn't have buttons and works with slash commands."
+Investigation: PARTIALLY TRUE — a persistent reply keyboard has existed
+since v13.23-buttons, but it was attached only to /start, /featured and the
+language callback. Every other reply sent a bare message, so the keyboard
+was easy to lose (collapse it once, or join pre-v13.23 and never re-/start
+— you never saw buttons again) and the per-user options (/teams selection,
+/timezone) were number/city-typing flows.
+
+### What changed
+- **Every bot command reply now re-attaches the persistent reply keyboard**
+  (a fresh keyboard message re-expands it if collapsed) — /stop, /help,
+  /follow ×3, /timezone ×3, /next ×2, /tables fallback, unknown-command.
+- **New keyboard button: Timezone** (fa "زمان" / en) alongside Teams,
+  Language, Help, Stop; normalizeCommand maps the label to /timezone.
+- **/teams is now a tappable inline grid**: every followable team is a
+  button (✅ when followed; 2 per row; "همه تیم‌ها" resets to all). Tap →
+  toggle → the message re-renders IN PLACE (editMessageText) so the marks
+  never go stale. The numbered text list stays for /follow 1,3,7.
+  Toggle semantics: in follow-all mode the FIRST tap starts a fresh
+  selection with that team (never all-minus-one — that would silently
+  REMOVE alerts); removing the last selected team is refused (min-one
+  guard); tf:all preserves lang+tz.
+- **/timezone is now tappable**: a quick-pick grid of 9 cities (Tehran,
+  London, Paris, Berlin, New York, Los Angeles, Dubai, Sydney, Tokyo) +
+  reset — resolved via the same TZ_ALIASES as the typed command; the
+  message re-renders in place after each pick.
+- **/help** gained the tap hint; telegram.ts gained `editMessageText`
+  (single attempt, benign-error tolerant — a failed edit is cosmetic).
+
+### Tests
+- check-bot-edges.js: +13 behavioral tests (grid shape, tf:2 all-mode
+  first-tap, in-place re-render, min-one guard, multi-select accumulate,
+  tf:all lang+tz preservation, tz:london/reset/invalid, /timezone picker,
+  real replyKeyboard/normalizeCommand extraction) — now 34 checks; the
+  REAL grid builders are sliced into the eval (not stubs).
+- check-join-flow.js: builders injected + stubs (toFaDigits,
+  replyKeyboard); the numbered-list contract still asserted.
+- check-reliability.js: +8 #buttons asserts (Timezone button + mapping,
+  builders exist, tf:/tz: handlers, editMessageText sender, ≥10 keyboard
+  attach sites, min-one guard).
+- npm test exit 0 (508 OK lines, was 482).
+
+---
+
 ## [13.48-xtrim] — 2026-09-15 (the X path is removed, not dormant)
 
 ### The decision (R4 of the reliability roadmap)

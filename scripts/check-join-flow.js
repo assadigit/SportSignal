@@ -46,6 +46,8 @@ globalThis.masterTeamList = () => STUB_TEAMS;
 globalThis.normalizeTeamName = (n) => String(n);
 globalThis.translateTeam = (n) => String(n);
 globalThis.escapeMarkdownCharacters = (s) => String(s);
+globalThis.toFaDigits = (s) => String(s);
+globalThis.replyKeyboard = (lang) => ({ keyboard: [], resize_keyboard: true });
 globalThis.sendTelegram = async (_env, msg, id) => { sent.push({ msg, id }); return true; };
 globalThis.getRegisteredChats = async (env) => {
   const raw = await env.STATE.get(CONFIG.KV_USERS_KEY);
@@ -55,7 +57,16 @@ globalThis.getRegisteredChats = async (env) => {
 };
 globalThis.getUserPrefs = async (env) => (await env.STATE.get(CONFIG.KV_USER_PREFS, "json")) || {};
 
-const handler = new Function("text", "chatId", "env", "return (async () => { " + chain + "\n })();");
+// v13.49-buttons: the /teams reply now uses the real grid builders — slice
+// them into the eval so the extraction stays faithful to shipped code.
+const bldStart = src.indexOf("// v13.49-buttons: shared message builders");
+const bldEnd = src.indexOf("async function handleTelegramUpdate");
+if (bldStart < 0 || bldEnd < 0 || bldEnd < bldStart) {
+  console.error("FAIL: builders block not found in worker source");
+  process.exit(1);
+}
+const buildersSrc = src.slice(bldStart, bldEnd);
+const handler = new Function("text", "chatId", "env", "return (async () => { " + buildersSrc + "\n" + chain + "\n })();");
 
 function freshEnv() {
   sent = [];

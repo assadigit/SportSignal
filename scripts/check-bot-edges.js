@@ -96,13 +96,26 @@ globalThis.resolveTimeZone = (input) => {
 // v13.23-buttons: stubs for the reply keyboard + command normalizer
 globalThis.replyKeyboard = (lang) => ({ keyboard: [], resize_keyboard: true });
 globalThis.normalizeCommand = (text) => text;
+// v13.49-buttons: capture editMessageText calls (in-place grid re-render)
+let edited = [];
+globalThis.editMessageText = async (_env, chatId, msgId, text, kb) => { edited.push({ chatId, msgId, text, kb }); return true; };
 
-const cbHandler = new Function("env", "update", "return (async () => { " + botStrSrc + "\n" + cbChain + "\n })();");
-const msgHandler = new Function("text", "chatId", "env", "return (async () => { " + msgChain + "\n })();");
+// v13.49-buttons: slice the REAL grid/picker builders into the eval so the
+// callback tests exercise the actual render code, not stubs.
+const bldStart = src.indexOf("// v13.49-buttons: shared message builders");
+const bldEnd = src.indexOf("async function handleTelegramUpdate");
+if (bldStart < 0 || bldEnd < 0 || bldEnd < bldStart) {
+  console.error("FAIL: builders block not found in worker source");
+  process.exit(1);
+}
+const buildersSrc = src.slice(bldStart, bldEnd);
+const cbHandler = new Function("env", "update", "return (async () => { " + botStrSrc + "\n" + buildersSrc + "\n" + cbChain + "\n })();");
+const msgHandler = new Function("text", "chatId", "env", "return (async () => { " + buildersSrc + "\n" + msgChain + "\n })();");
 
 function freshEnv() {
   sent = [];
   answered = [];
+  edited = [];
   const env = { STATE: makeStore(), BOT_TOKEN: "test", CHAT_ID: "0", TEHRAN_TZ: "Asia/Tehran" };
   envRef = env;
   return env;
@@ -203,6 +216,91 @@ const check = (name, cond) => {
   await env12.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify({ "42": { lang: "en" } }));
   await msgHandler("/start", 42, env12);
   check("/start en welcome is English", /Welcome to SportSignal/.test(sent[sent.length - 1].msg));
+
+  // 13) /teams sends the numbered list AND the inline toggle grid
+  const env13 = freshEnv();
+  await msgHandler("/teams", 42, env13);
+  const teamsMsg = sent[sent.length - 1];
+  const flatButtons = (teamsMsg.keyboard && teamsMsg.keyboard.inline_keyboard || []).flat();
+  check("/teams sends the inline grid (tf:all + numbered tf buttons)",
+    flatButtons.some((b) => b.callback_data === "tf:all") &&
+    flatButtons.some((b) => b.callback_data === "tf:1") &&
+    flatButtons.some((b) => b.callback_data === "tf:2") &&
+    flatButtons.some((b) => b.callback_data === "tf:3"));
+  check("/teams text still numbered (join-flow contract)", /1\\./.test(teamsMsg.msg) && /3\\./.test(teamsMsg.msg));
+
+  // 14) tf:2 in follow-all mode -> selection starts with exactly team 2
+  const env14 = freshEnv();
+  await cbHandler(env14, { callback_query: { id: "cb14", data: "tf:2", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 77 } } });
+  const prefs14 = await env14.STATE.get(CONFIG.KV_USER_PREFS, "json");
+  check("tf:2 in all-mode starts a fresh selection with team 2",
+    prefs14 && prefs14["42"] && JSON.stringify(prefs14["42"].teams) === JSON.stringify(["Beta SC"]));
+  check("tf:2 re-renders the grid in place (editMessageText)", edited.length === 1 && edited[0].msgId === 77);
+  check("tf:2 grid marks team 2 selected",
+    (edited[0].kb.inline_keyboard || []).flat().some((b) => b.callback_data === "tf:2" && /^\u2705/.test(b.text)));
+
+  // 15) toggling the LAST selected team off is refused (never drop to zero silently)
+  const env15 = freshEnv();
+  await env15.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify({ "42": { teams: ["Beta SC"], lang: "fa" } }));
+  await cbHandler(env15, { callback_query: { id: "cb15", data: "tf:2", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 88 } } });
+  const prefs15 = await env15.STATE.get(CONFIG.KV_USER_PREFS, "json");
+  check("tf off the last team is refused (min-one guard)", prefs15 && prefs15["42"] && prefs15["42"].teams.length === 1);
+  check("min-one guard answers the callback", answered.length === 1 && /\u062D\u062F\u0627\u0642\u0644|one team/i.test(answered[0].text));
+
+  // 16) tf:1 then tf:3 accumulates a multi-selection
+  const env16 = freshEnv();
+  await env16.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify({ "42": { teams: ["Alpha FC"], lang: "fa" } }));
+  await cbHandler(env16, { callback_query: { id: "cb16", data: "tf:3", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 99 } } });
+  const prefs16 = await env16.STATE.get(CONFIG.KV_USER_PREFS, "json");
+  check("tf:3 adds to an existing selection",
+    prefs16 && prefs16["42"] && JSON.stringify(prefs16["42"].teams) === JSON.stringify(["Alpha FC", "Gamma United"]));
+
+  // 17) tf:all returns to follow-everything (teams gone, lang/tz preserved)
+  const env17 = freshEnv();
+  await env17.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify({ "42": { teams: ["Alpha FC"], tz: "Europe/London", lang: "en" } }));
+  await cbHandler(env17, { callback_query: { id: "cb17", data: "tf:all", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 100 } } });
+  const prefs17 = await env17.STATE.get(CONFIG.KV_USER_PREFS, "json");
+  check("tf:all clears teams but preserves lang+tz",
+    prefs17 && prefs17["42"] && !prefs17["42"].teams && prefs17["42"].lang === "en" && prefs17["42"].tz === "Europe/London");
+
+  // 18) tz:london callback sets the timezone
+  const env18 = freshEnv();
+  await env18.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify({ "42": { lang: "fa" } }));
+  await cbHandler(env18, { callback_query: { id: "cb18", data: "tz:london", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 101 } } });
+  const prefs18 = await env18.STATE.get(CONFIG.KV_USER_PREFS, "json");
+  check("tz:london sets tz=Europe/London", prefs18 && prefs18["42"] && prefs18["42"].tz === "Europe/London");
+  check("tz picker re-renders in place", edited.length === 1 && /tz:tehran/.test(JSON.stringify(edited[0].kb)));
+
+  // 19) tz:reset clears it again
+  await cbHandler(env18, { callback_query: { id: "cb19", data: "tz:reset", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 102 } } });
+  const prefs19 = await env18.STATE.get(CONFIG.KV_USER_PREFS, "json");
+  check("tz:reset clears the tz", prefs19 && prefs19["42"] && !prefs19["42"].tz);
+
+  // 20) tz:<unknown> answers invalid, writes nothing
+  const env20 = freshEnv();
+  await env20.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify({ "42": { lang: "fa" } }));
+  await cbHandler(env20, { callback_query: { id: "cb20", data: "tz:atlantis", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 103 } } });
+  const prefs20 = await env20.STATE.get(CONFIG.KV_USER_PREFS, "json");
+  check("tz:atlantis writes no tz", prefs20 && prefs20["42"] && !prefs20["42"].tz);
+  check("tz:atlantis answers invalid", /\u0646\u0627\u0645\u0639\u062A\u0628\u0631|Unknown/.test(answered[0].text));
+
+  // 21) /timezone no-arg now offers the tappable quick-picks
+  const env21 = freshEnv();
+  await msgHandler("/timezone", 42, env21);
+  const tzMsg = sent[sent.length - 1];
+  check("/timezone shows current tz (regression)", /\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC|timezone/i.test(tzMsg.msg));
+  check("/timezone sends the tz quick-pick grid",
+    tzMsg.keyboard && tzMsg.keyboard.inline_keyboard &&
+    (tzMsg.keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:tehran") &&
+    (tzMsg.keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:reset"));
+
+  // 22) the real replyKeyboard carries a Timezone button and normalizeCommand maps it
+  const rkSrc = src.slice(src.indexOf("function replyKeyboard(lang)"), src.indexOf("// Normalize button labels"));
+  const ncSrc = src.slice(src.indexOf("function normalizeCommand(text)"), src.indexOf("// v13.49-buttons: shared message builders"));
+  const rkFn = eval("(function () {" + rkSrc + " return replyKeyboard; })()");
+  const ncFn = eval("(function () {" + ncSrc + " return normalizeCommand; })()");
+  check("replyKeyboard has a Timezone button (fa+en)", /Timezone/.test(JSON.stringify(rkFn("en"))) && /\u0632\u0645\u0627\u0646/.test(rkFn("fa").keyboard.map((r) => r.map((b) => b.text).join(",")).join(",")) || /\u0632\u0645\u0627\u0646/.test(JSON.stringify(rkFn("fa"))));
+  check("normalizeCommand maps the Timezone labels", ncFn("Timezone") === "/timezone" && ncFn("\u0632\u0645\u0627\u0646") === "/timezone");
 
   console.log(failed ? failed + " FAILURES" : "bot edges OK");
   process.exit(failed ? 1 : 0);

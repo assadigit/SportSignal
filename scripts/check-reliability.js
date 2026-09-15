@@ -334,6 +334,21 @@ check("#fai2 empty-verdict isolate cache keyed on the payload ts", /FA_EMPTY_PAY
 const botSeg13 = (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron.ts =====")[0];
 check("#w8 bot.ts never calls fetchMatchesFromAPI (no provider sweeps from user-typed commands)", botSeg13.length > 0 && !/fetchMatchesFromAPI/.test(botSeg13));
 
+// #buttons (v13.49-buttons): the bot is tappable, not slash-only — every
+// command reply re-attaches the persistent keyboard (it re-expands if the
+// user collapsed it), /teams carries an inline toggle grid, /timezone a
+// quick-pick grid, and the callback handlers cover tf:/tz: callbacks.
+const botBtnSeg = (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron.ts =====")[0];
+check("#buttons replyKeyboard has a Timezone button (fa+en)", /"\\u0632\\u0645\\u0627\\u0646"/.test(botBtnSeg) && /Timezone/.test(botBtnSeg));
+check("#buttons normalizeCommand maps the Timezone labels", /"\\u0632\\u0645\\u0627\\u0646": "\/timezone"/.test(botBtnSeg) && /Timezone": "\/timezone"/.test(botBtnSeg));
+check("#buttons /teams grid builders exist (text + keyboard)", /function teamsMessageText\(/.test(botBtnSeg) && /function teamsGridKeyboard\(/.test(botBtnSeg));
+check("#buttons tz picker builders exist (text + keyboard)", /function tzStatusText\(/.test(botBtnSeg) && /function tzPickerKeyboard\(/.test(botBtnSeg));
+check("#buttons callback handlers cover tf: and tz: callbacks", /tft = data\.match\(\/\^tf:\(\\d\+\|all\)\$\/\)/.test(botBtnSeg) && /tzt = data\.match\(\/\^tz:\(\[a-z0-9\\-\]\+\)\$\/\)/.test(botBtnSeg));
+check("#buttons editMessageText sender exists in telegram.ts", (src.match(/\/\/ ===== src\/telegram\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0].includes("editMessageText"));
+const kbAttaches = (botBtnSeg.match(/chatId, replyKeyboard\(lang\)/g) || []).length;
+check("#buttons every bot reply re-attaches the keyboard (>= 10 sites)", kbAttaches >= 10);
+check("#buttons min-one guard on team toggles", /Keep at least one team/.test(botBtnSeg) && /\\u062D\\u062F\\u0627\\u0642\\u0644/.test(botBtnSeg));
+
 // #seams (v13.47-seams): the modularization must not silently lose concat
 // coverage — worker-src.js silently skips missing files (fs.existsSync), so
 // a forgotten file = regexes still pass while a whole module went dark.

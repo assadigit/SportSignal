@@ -254,6 +254,37 @@ export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, 
 // v12.x-bilingual-bot: answer a callback_query (dismisses the loading
 // spinner on the inline button the user just tapped). Optional text shows
 // a small toast to the user.
+// v13.49-buttons: edit an inline-keyboard message in place (the /teams grid
+// and the timezone picker re-render on tap so the \u2705 marks never go
+// stale). Single attempt, never throws \u2014 a failed edit is cosmetic (the
+// answerCallbackQuery toast already confirmed the action to the user).
+export async function editMessageText(env: Env, chatId, messageId, text, keyboard?) {
+  try {
+    if (bumpSubrequest()) return false;
+    const payload: any = {
+      chat_id: chatId,
+      message_id: messageId,
+      text,
+      parse_mode: "MarkdownV2"
+    };
+    if (keyboard) payload.reply_markup = keyboard;
+    const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/editMessageText`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      // "message is not modified" is benign (double-tap race) — log others only
+      if (!/message is not modified/.test(err)) console.error("editMessageText failed:", err);
+    }
+    return res.ok;
+  } catch (e) {
+    console.error("editMessageText network error:", e.message);
+    return false;
+  }
+}
+
 export async function answerCallbackQuery(env: Env, callbackQueryId, text) {
   try {
     if (bumpSubrequest()) return false;

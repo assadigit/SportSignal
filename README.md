@@ -208,7 +208,11 @@ docs/history/       archived session notes
 
 ## Bot commands
 
-Persian-first (`/help` in-bot says it in Persian):
+Persian-first, and **fully tappable** — a persistent button keyboard
+(Featured / Upcoming / Tables / Teams / Timezone / Language / Help / Stop)
+re-attaches to every reply, `/teams` is an inline tap-to-toggle grid with
+✅ marks, and `/timezone` offers city quick-picks. Slash commands still work
+(`/help` in-bot says it all in Persian):
 
 | Command | Action |
 | :--- | :--- |
