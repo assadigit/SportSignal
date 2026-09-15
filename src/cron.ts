@@ -303,7 +303,14 @@ export async function executeScheduledLogic(env: Env) {
     // pool). Marker-gated inside; adds/updates flow into this tick's
     // notification view AND the persisted pool. Own try/catch \u2014 a scan
     // failure must never break the notification phases.
-    if (!fullSweepThisTick && !budgetSoft) {
+    // v13.50.1-hotfix (the 21:40Z incident): QUIET ticks only \u2014 the pool-
+    // reuse path (matches === poolRef). An active evening tick (live sweep
+    // ~20 real fetches + KV ops + notification sends) already lives at
+    // Cloudflare's REAL ~50-subrequest ceiling; the scan's 6 fetches tipped
+    // it and the cascade took out standings + card + Telegram sends (all
+    // fail-closed, outbox recovered). The scan is additive: it belongs on
+    // ticks with headroom, never on load-bearing ones.
+    if (!fullSweepThisTick && !budgetSoft && matches === poolRef) {
       try {
         const cs = await maybeScanCupFixtures(env, matches, poolRef);
         if (cs.added || cs.updated) console.log(`\u{1F3C6} Cup big-team scan: +${cs.added} added, ${cs.updated} status/score refreshed`);

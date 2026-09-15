@@ -348,7 +348,7 @@ check("#cupscan fail-marker backs off 30 min", /fail" && now - ts < 30 \* 60e3/.
 check("#cupscan hot window: [-1h, +4h] re-scan gate", /ko - now < 3600e3 && now - ko < 4 \* 3600e3/.test(provSeg15));
 check("#cupscan empty pool = skip (never a cup-only pool)", /if \(!pool\.length\) return \{ added: 0, updated: 0 \};/.test(provSeg15));
 check("#cupscan persist goes through cacheMatches (budget-hold honored)", /cacheMatches\(env, poolOut, "cupscan"\)/.test(provSeg15));
-check("#cupscan cron hook gated on non-sweep + non-SOFT ticks", /if \(!fullSweepThisTick && !budgetSoft\) \{[\s\S]{0,400}?maybeScanCupFixtures\(env, matches, poolRef\)/.test(src));
+check("#cupscan cron hook gated on QUIET ticks only (non-sweep + non-SOFT + pool-reuse — the 21:40Z incident)", /if \(!fullSweepThisTick && !budgetSoft && matches === poolRef\) \{[\s\S]{0,500}?maybeScanCupFixtures\(env, matches, poolRef\)/.test(src));
 check("#cupscan adds+updates also patch this tick's in-memory view", /for \(const a of added\) matches\.push\(a\);/.test(provSeg15));
 check("#cupscan status/score updates preserved as row overlays", /Object\.assign\(\{\}, m, \{ status: u\.status, score: u\.score \}\)/.test(provSeg15));
 

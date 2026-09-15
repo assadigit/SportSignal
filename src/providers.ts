@@ -126,7 +126,7 @@ export async function sportScoreDay(code, slug, dateStr, acc) {
 //  - empty pool = skip (wait for the first full sweep to seed it).
 export async function maybeScanCupFixtures(env: Env, matches, poolRef) {
   const now = Date.now();
-  let marker: string | null = null;
+  let marker = null;
   try { marker = await env.STATE.get(CONFIG.KV_CUP_SCAN_KEY).catch(() => null); } catch (e) { }
   if (marker) {
     const parts = String(marker).split(":");
