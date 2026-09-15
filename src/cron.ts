@@ -595,7 +595,7 @@ export async function executeScheduledLogic(env: Env) {
 \u2705 Execution completed at ${(new Date()).toISOString()}
 \u{1F4CA} Subrequest budget: ${subrequestCount()}/48 used (${48 - subrequestCount()} headroom under the 50-ceiling)
 \u{1F4BE} KV writes this tick: ${kvWritesThisTick} — top: ${Object.entries(kvWriteKeys).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => k + "\u00d7" + n).join(", ") || "none"}
-\u{1F50C} KV ops this tick: ${kvOpsCount() + 1} (+1 = the completion blob's own put) — true subrequest total ${subrequestCount() + kvOpsCount() + 1}/50 (fetches ${subrequestCount()} + KV ops ${kvOpsCount() + 1})`);
+\u{1F50C} KV ops this tick: ${kvOpsCount()} (includes the completion blob's own put) — true subrequest total ${subrequestCount() + kvOpsCount()}/50 (fetches ${subrequestCount()} + KV ops ${kvOpsCount()})`);
   } catch (error) {
     console.error(`\u274C Fatal error in scheduled logic:`, error);
     throw error;

@@ -6,6 +6,19 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.45.1-sightlines] — 2026-09-15 (log-line truemeter: stored and logged must agree exactly)
+
+- The 13.45 closing log line printed `KV ops this tick: ${kvOpsCount() + 1}`
+  — but by the time the log runs, the completion blob's own put has ALREADY
+  been counted by the wrapper, so the +1 double-counted it (live first tick:
+  stored subreq_last_tick=27, logged 28). Same discipline 13.44.1 applied to
+  the write meter: the log now prints the as-run count (blob put included,
+  no +1) and agrees exactly with the stored blob fields. The healthcheck
+  ping (post-completion, one more fetch) remains deliberately excluded, as
+  documented in 13.45.
+
+---
+
 ## [13.45-sightlines] — 2026-09-15 (see everything: true subrequest totals, dead man's switch, degraded band)
 
 ### The theme
