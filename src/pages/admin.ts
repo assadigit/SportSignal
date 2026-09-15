@@ -144,25 +144,6 @@ button{width:100%}
 <input id="broadcastText" data-p="bcPh">
 <button id="btnBroadcast" onclick="broadcast()" data-i="btnBroadcast">\u{1F4E3} \u0627\u0631\u0633\u0627\u0644 \u0628\u0631\u0627\u06CC \u0647\u0645\u0647</button>
 </div>
-<!-- v12.33-xpost: X (Twitter) automated profile — status card + test post +
-     dry-run toggle + phase config. The card is powered by /api/x/* admin
-     routes. The status line shows enabled / dry-run / paused / phase /
-     monthly+daily budget counters / last post + last error. -->
-<div class="card">
-<h2 data-i="hX">\u{1F426} \u067E\u0631\u0648\u0641\u0627\u06CC\u0644 X (\u062A\u0648\u06CC\u06CC\u062A\u0631)</h2>
-<div class="muted" data-i="xHint">\u0622\u06CC\u0646\u0647\u200C\u06CC \u062E\u0648\u062F\u06A9\u0627\u0631 \u0627\u0639\u0644\u0627\u0646\u200C\u0647\u0627\u06CC \u062A\u0644\u06AF\u0631\u0627\u0645 \u062F\u0631 X \u2014 \u0635\u062F\u0631\u0646\u0634\u06CC\u0646\u060C \u0646\u062A\u06CC\u062C\u0647 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0628\u0632\u0631\u06AF\u060C \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC \u0648 \u062C\u062F\u0648\u0644 \u0647\u0641\u062A\u06AF\u06CC \u062F\u0631 \u0633\u0631\u06CC \u067E\u0627\u0633\u062E\u200C\u0647\u0627. \u0645\u062D\u062F\u0648\u062F\u06AF\u0631 \u0628\u0648\u062F\u062C\u0647: \u06F4\u06F5\u06F0 \u067E\u0633\u062A \u0645\u0627\u0647\u0627\u0646\u0647\u060C \u06F1\u06F2 \u0631\u0648\u0632\u0627\u0646\u0647.</div>
-<div id="xStatus" style="margin-top:8px">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div>
-<div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px">
-<button id="btnXTest" onclick="xTest()" data-i="btnXTest">\u{1F9EA} \u067E\u0633\u062A \u062A\u0633\u062A</button>
-<button id="btnXRefresh" onclick="loadXStatus()" data-i="btnXRefresh">\u{1F504} \u0628\u0647\u200C\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06CC</button>
-<button id="btnXEnabled" onclick="xToggleEnabled()" data-i="btnXEnabled">\u23F8\uFE0F \u062A\u0648\u0642\u0641/\u0631\u0648\u0634\u0646</button>
-<button id="btnXDryRun" onclick="xToggleDryRun()" data-i="btnXDryRun">\u{1F50F} \u062D\u0627\u0644\u062A dry-run</button>
-<button id="btnXClearPause" onclick="xClearPause()" data-i="btnXClearPause" style="display:none">\u26A0\uFE0F \u067E\u0627\u06A9 \u062A\u0648\u0642\u0641 (429)</button>
-</div>
-<label data-i="lbXPhase" style="margin-top:8px;display:block">\u0641\u0627\u0632 \u0647\u0627\u06CC \u0641\u0639\u0627\u0644 (\u0628\u0627 \u06A9\u0627\u0645\u0627: coronation,ft,kickoff,tables,media)</label>
-<input id="xPhase" placeholder="coronation,ft" style="width:100%;box-sizing:border-box;margin-top:4px">
-<button id="btnXPhase" onclick="xSavePhase()" data-i="btnXPhase">\u{1F4BE} \u0630\u062E\u06CC\u0631\u0647 \u0641\u0627\u0632</button>
-</div>
 <div class="card">
 <h2 data-i="hMatches">\u26BD \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648</h2>
 <div id="matches">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div>
@@ -573,100 +554,6 @@ async function overrideFai(){
   if(d && d.ok){ if(msgEl) msgEl.textContent = "\u2705 " + d.en + " \u2192 " + d.fa; enEl.value = ""; faEl.value = ""; loadFai(false); }
   else { if(msgEl) msgEl.textContent = "\u274C " + (d && d.error ? d.error : "failed"); }
 }
-// v12.33-xpost: X (Twitter) admin handlers — status card + test post + dry-run
-// toggle + phase config. Mirrors the FAI / Members / Broadcast patterns
-// (api() helper + busy()/done() + msg()).
-var X_STATUS = null;
-async function loadXStatus(){
-  var d = await api("/api/x/status");
-  var el = document.getElementById("xStatus");
-  if(!d){ el.innerHTML = T("stErr"); return; }
-  X_STATUS = d;
-  var en = curLang()==="en";
-  var phase = (d.phase||[]).join(", ") || "—";
-  var lp = d.lastPost;
-  var le = d.lastError;
-  var lines = [];
-  lines.push(en ? "Enabled: " + (d.enabled ? "yes" : "no") : "فعال: " + (d.enabled ? "بله" : "خیر"));
-  lines.push(en ? "Dry-run: " + (d.dryRun ? "yes" : "no") : "حالت dry-run: " + (d.dryRun ? "بله" : "خیر"));
-  if(d.paused) lines.push(en ? "Paused (429 backoff): yes" : "\u23F8\uFE0F متوقف (429): بله");
-  lines.push(en ? "Phase: " + phase : "فاز: " + phase);
-  lines.push(en ? "Budget (monthly): " + d.monthlyUsed + "/" + d.monthlyCap : "\u{1F4B0} بودجه ماهانه: " + faNum(d.monthlyUsed) + "/" + faNum(d.monthlyCap));
-  lines.push(en ? "Budget (daily): " + d.dailyUsed + "/" + d.dailyCap : "\u{1F4B0} بودجه روزانه: " + faNum(d.dailyUsed) + "/" + faNum(d.dailyCap));
-  if(lp && lp.ts){
-    var d2 = new Date(lp.ts);
-    var snip = (lp.text||"").slice(0, 80);
-    lines.push(en ? "Last post: " + d2.toISOString() + " [" + (lp.kind||"") + "]" : "\u{1F4E4} آخرین پست: " + d2.toLocaleString("fa-IR") + " [" + (lp.kind||"") + "]");
-    lines.push(en ? "  text: " + snip + (lp.text && lp.text.length > 80 ? "…" : "") : "  متن: " + snip + (lp.text && lp.text.length > 80 ? "…" : ""));
-    if(lp.id) lines.push(en ? "  id: " + lp.id : "  شناسه: " + lp.id);
-  } else {
-    lines.push(en ? "Last post: —" : "\u{1F4E4} آخرین پست: —");
-  }
-  if(le && le.ts){
-    var d3 = new Date(le.ts);
-    lines.push(en ? "\u274C Last error: " + d3.toISOString() + " [" + le.status + "]" : "\u274C آخرین خطا: " + d3.toLocaleString("fa-IR") + " [" + le.status + "]");
-    lines.push("  " + (le.error||""));
-  }
-  el.innerHTML = lines.join("<br>");
-  // Show the "clear pause" button only when paused
-  var btnPause = document.getElementById("btnXClearPause");
-  if(btnPause) btnPause.style.display = d.paused ? "" : "none";
-  // Reflect the phase into the input
-  var ph = document.getElementById("xPhase");
-  if(ph && d.phase) ph.value = d.phase.join(",");
-  // Update the toggle button labels
-  var btnEnabled = document.getElementById("btnXEnabled");
-  if(btnEnabled) btnEnabled.textContent = d.enabled ? (en ? "Turn OFF" : "\u{1F6D1} خاموش") : (en ? "Turn ON" : "\u26A1 روشن");
-  var btnDryRun = document.getElementById("btnXDryRun");
-  if(btnDryRun) btnDryRun.textContent = d.dryRun ? (en ? "Live mode (dry-run OFF)" : "\u{1F680} حالت زنده (dry-run خاموش)") : (en ? "Dry-run ON" : "\u{1F50F} dry-run روشن");
-}
-async function xTest(){
-  if(busy("btnXTest")) return;
-  if(!confirm(curLang()==="en" ? "Send a test post to X?" : "\u0627\u0631\u0633\u0627\u0644 \u067E\u0633\u062A \u062A\u0633\u062A \u0628\u0647 X\u061F")) { done("btnXTest"); return; }
-  api("/admin/x-test","POST",{}).then(function(r){
-    done("btnXTest");
-    if(!r){ return; }
-    if(r.ok){
-      if(r.dryRun) msg(curLang()==="en" ? "\u{1F426} Dry-run test logged (no X post)" : "\u{1F426} \u062A\u0633\u062A dry-run \u062B\u0628\u062A \u0634\u062F (\u0628\u062F\u0648\u0646 \u0627\u0631\u0633\u0627\u0644)");
-      else msg(curLang()==="en" ? "\u{1F426} X posted (id=" + (r.id||"?") + ")" : "\u{1F426} \u062F\u0631 X \u0627\u0631\u0633\u0627\u0644 \u0634\u062F (id=" + (r.id||"?") + ")");
-      loadXStatus();
-    } else {
-      msg(T("mErr") + (r.error||""));
-    }
-  }).catch(function(){ done("btnXTest"); msg(T("mErr")); });
-}
-async function xToggleEnabled(){
-  if(!X_STATUS){ await loadXStatus(); }
-  var newVal = X_STATUS ? !X_STATUS.enabled : true;
-  api("/api/x/enabled","PUT",{enabled:newVal}).then(function(r){
-    if(r && r.ok){ msg(newVal ? (curLang()==="en"?"\u{1F426} X enabled":"\u{1F426} X \u0641\u0639\u0627\u0644 \u0634\u062F") : (curLang()==="en"?"\u{1F6D1} X disabled":"\u{1F6D1} X \u062E\u0627\u0645\u0648\u0634 \u0634\u062F")); loadXStatus(); }
-  }).catch(function(){ msg(T("mErr")); });
-}
-async function xToggleDryRun(){
-  if(!X_STATUS){ await loadXStatus(); }
-  var newVal = X_STATUS ? !X_STATUS.dryRun : true;
-  api("/api/x/dry-run","PUT",{dryRun:newVal}).then(function(r){
-    if(r && r.ok){ msg(newVal ? (curLang()==="en"?"\u{1F50F} Dry-run ON":"\u{1F50F} \u062D\u0627\u0644\u062A dry-run \u0631\u0648\u0634\u0646") : (curLang()==="en"?"\u{1F680} Live mode (dry-run OFF)":"\u{1F680} \u062D\u0627\u0644\u062A \u0632\u0646\u062F\u0647")); loadXStatus(); }
-  }).catch(function(){ msg(T("mErr")); });
-}
-async function xSavePhase(){
-  var inp = document.getElementById("xPhase");
-  var v = (inp && inp.value || "").trim();
-  if(!v){ msg(T("mEnterText")); return; }
-  if(busy("btnXPhase")) return;
-  api("/api/x/phase","PUT",{phase:v}).then(function(r){
-    done("btnXPhase");
-    if(r && r.ok){ msg(curLang()==="en" ? "\u{1F4BE} Phase saved: " + (r.phase||[]).join(",") : "\u{1F4BE} \u0641\u0627\u0632 \u0630\u062E\u06CC\u0631\u0647 \u0634\u062F"); loadXStatus(); }
-    else if(r && r.error) msg(T("mErr") + r.error);
-  }).catch(function(){ done("btnXPhase"); msg(T("mErr")); });
-}
-async function xClearPause(){
-  if(busy("btnXClearPause")) return;
-  api("/api/x/clear-pause","POST",{}).then(function(r){
-    done("btnXClearPause");
-    if(r && r.ok){ msg(curLang()==="en"?"\u2705 429 pause cleared":"\u2705 \u062A\u0648\u0642\u0641 429 \u067E\u0627\u06A9 \u0634\u062F"); loadXStatus(); }
-  }).catch(function(){ done("btnXClearPause"); msg(T("mErr")); });
-}
 async function loadNextMatches(){
   var d = await api("/next-matches");
   var el = document.getElementById("matches");
@@ -689,6 +576,6 @@ async function logout(){
   localStorage.removeItem("admin_token");
   location.reload();
 }
-setTheme(initTheme()); applyLang(true); load(); refreshStatus(); loadNextMatches(); loadMembers(); loadFai(); loadXStatus();
+setTheme(initTheme()); applyLang(true); load(); refreshStatus(); loadNextMatches(); loadMembers(); loadFai();
 <\/script>
 </body></html>`;

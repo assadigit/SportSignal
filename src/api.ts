@@ -6,7 +6,7 @@
 
 
 import type { Env, RouteCtx, RouteDef } from "./types";
-import { CONFIG, X_CONFIG, VERSION } from "./config";
+import { CONFIG, VERSION } from "./config";
 import { PAGE_SEC_HEADERS } from "./tables";
 import { jsonResponse, resetSubrequestBudget, pingHealthcheck } from "./utils";
 import { normalizeTeamName } from "./teams";
@@ -22,7 +22,6 @@ import { ADMIN_OPS_ROUTES, legacyGetAction } from "./admin-ops";
 import { SIMULATE_ROUTE } from "./simulate";
 import { executeScheduledLogic } from "./cron";
 import { getCronStatus } from "./monitoring";
-import { getXStatus, xTestPost } from "./x";
 import { handleTelegramUpdate } from "./bot";
 import { PUBLIC_PAGE } from "./pages/public";
 import { LOGIN_PAGE } from "./pages/login";

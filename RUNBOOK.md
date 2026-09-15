@@ -233,7 +233,7 @@ curl -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
 | `fa_teams_ai` / `fa_venues_ai` / `fa_ai_last_run` | FA-AI learner (gated ≥15 min apart, marker only when work exists since 13.45) | AI-learned Persian names |
 | `execution_lock` | tick start | overlap guard, `LOCK_TIMEOUT` 240s |
 | `bot_settings_v1`, `clubs_catalog`, `varzesh3_clubs_v1`, `standings_*`, `weekly_tables_v1`, `last_api_source`, `heartbeat_sent_v1`, `audit_alert_v1`, `migration_v1`, `upd_<id>` (bot dedupe, TTL 600s) | various | settings/catalogs/audit |
-| `x_*` (`x_enabled_v1` …) | X path (currently disabled) | profile state if X is ever enabled |
+| `x_*` (`x_enabled_v1` …) | REMOVED at 13.48-xtrim | none live (X never ran); see wrangler.toml restore note |
 
 **Orphans (self-cleaning or inert — do not "clean up" without checking TTLs):**
 `sched_v1:*` (156 keys, 7-day TTLs expire ~2026-09-22), `canary_match_v1` (TTL),

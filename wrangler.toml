@@ -36,9 +36,8 @@ TEHRAN_TZ = "Asia/Tehran"
 binding = "AI"
 # Secrets (BOT_TOKEN, CHAT_ID, API_TOKEN, ADMIN_TOKEN, ADMIN_PASS, WEBHOOK_SECRET)
 # are set via `wrangler secret put` — never in vars.
-# v12.33-xpost: X (Twitter) automated profile secrets — also via
-# `wrangler secret put`. The admin panel can override X_ENABLED /
-# X_DRY_RUN at runtime via KV (x_enabled_v1 / x_dry_run_v1) without
-# re-deploying.
-#   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET
-#   X_ENABLED (master switch — "1" enables), X_DRY_RUN (log-only — "1" enables)
+# v13.48-xtrim: the X (Twitter) path is REMOVED — no X_* secrets exist.
+# (X never ran: no secrets were ever set, x_enabled_v1 was never written.)
+# Restore path: revert the 13.48-xtrim commit, then set the X_* secrets
+# (X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET) via
+# `wrangler secret put` and x_enabled_v1=1 in KV.

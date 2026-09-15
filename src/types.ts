@@ -33,13 +33,6 @@ export interface Env {
   ADMIN_PASS?: string;
   WEBHOOK_SECRET?: string;
   HEALTHCHECK_PING_URL?: string;
-  // X (Twitter) OAuth 1.0a keys
-  X_API_KEY?: string;
-  X_API_SECRET?: string;
-  X_ACCESS_TOKEN?: string;
-  X_ACCESS_TOKEN_SECRET?: string;
-  X_ENABLED?: string;
-  X_DRY_RUN?: string;
   // vars
   TEHRAN_TZ?: string;
   // v13.5-sim-scope: request-scoped KV-key overrides. /api/simulate passes a

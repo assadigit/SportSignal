@@ -312,7 +312,7 @@ check("#f10b KV get/delete wrapped with __orig pinning", /__origGet/.test(src) &
 check("#f10c the put meter's wrapper also bumps the KV-op counter", /kvWritesThisTick\+\+;\s*\n\s*bumpKvOp\(\);/.test(src));
 check("#f10d completion blob exposes the true subrequest total", /subreq_last_tick: subrequestCount\(\) \+ kvOpsCount\(\) \+ 1/.test(src) && /kv_ops_last_tick: kvOpsCount\(\) \+ 1/.test(src));
 check("#f10e healthz exposes degraded + both sightlines", /degraded: degraded/.test(src) && /subreq_last_tick: parseInt\(st\.subreq_last_tick\)/.test(src) && /kv_ops_last_tick: parseInt\(st\.kv_ops_last_tick\)/.test(src));
-check("#f10f xPostTweet bumps before its fetch", /if \(bumpSubrequest\(\)\) return \{ ok: false, status: 0, error: "subrequest-budget" \};/.test(src));
+check("#f10f telegram send path still bumps before its fetch (x.ts site retired at 13.48-xtrim)", /if \(bumpSubrequest\(\)\) return false;/.test(src));
 // card.ts is not part of the eval concat (workerSrc order) — read it directly
 // so the crest-fetch bump is locked too.
 const fs13 = require("fs");
@@ -351,7 +351,7 @@ check("#seams the * catch-all stays in api.ts's own table", /\{ path: "\*", hand
 // slices: config keeps the contract; tables owns the moved dictionaries.
 const cfgSeg14 = (src.match(/\/\/ ===== src\/config\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
 const tablesSeg14 = (src.match(/\/\/ ===== src\/tables\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
-check("#seams config.ts keeps VERSION + CONFIG + X_CONFIG", /var VERSION =/.test(cfgSeg14) && /var CONFIG =/.test(cfgSeg14) && /var X_CONFIG =/.test(cfgSeg14));
+check("#seams config.ts keeps VERSION + CONFIG (X_CONFIG retired at 13.48-xtrim)", /var VERSION =/.test(cfgSeg14) && /var CONFIG =/.test(cfgSeg14) && !/var X_CONFIG =/.test(cfgSeg14));
 check("#seams config.ts no longer owns COMP_EN/PAGE_SEC_HEADERS", !/var COMP_EN =/.test(cfgSeg14) && !/var PAGE_SEC_HEADERS =/.test(cfgSeg14));
 check("#seams tables.ts owns COMP_EN + PAGE_SEC_HEADERS + UCL_LOGO_CHIP", /var COMP_EN =/.test(tablesSeg14) && /var PAGE_SEC_HEADERS =/.test(tablesSeg14) && /var UCL_LOGO_CHIP =/.test(tablesSeg14));
 // monitoring + migration slices
@@ -385,6 +385,19 @@ check("#seams zero array elisions (,,) in the concat", !/,(\s|\n)*,/.test(src));
 const aoEntries14 = (adminOpsSeg14.match(/\{ path: "/g) || []).length;
 const aoTerms14 = (adminOpsSeg14.match(/^  \} \},$/gm) || []).length;
 check("#seams ADMIN_OPS_ROUTES: every entry has exactly one terminator (no holes)", aoEntries14 > 0 && aoTerms14 === aoEntries14);
+
+
+// #xtrim (v13.48-xtrim): the X (Twitter) path is REMOVED, not dormant —
+// no x.ts in the bundle, no X routes, no X UI, no X harness entry. X never
+// ran in production (no X_* secrets were set, x_enabled_v1 never written);
+// the restore path is documented in src/config.ts.
+check("#xtrim concat has no src/x.ts segment", !/\/\/ ===== src\/x\.ts =====/.test(src));
+check("#xtrim no X functions anywhere (maybePostX/getXStatus/xTestPost)", !/maybePostX|maybePostXWeekly|getXStatus|xTestPost|xSendOrDryRun|xPostTweet/.test(src));
+check("#xtrim no X_CONFIG anywhere", !/var X_CONFIG =|X_CONFIG\./.test(src));
+check("#xtrim admin-ops has no /api/x/ or /admin/x-test routes", !/path: "\/api\/x\//.test(adminOpsSeg14) && !/path: "\/admin\/x-test/.test(adminOpsSeg14));
+check("#xtrim admin page has no X card (loadXStatus/btnX)", !/loadXStatus|btnXTest|btnXClearPause/.test(src));
+check("#xtrim cron has no X sweep phase", !/maybePostX|X sweep:|X post step/.test(cronSeg));
+check("#xtrim harness order no longer ships x.ts", !/"x\.ts"/.test(harness14));
 
 
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");

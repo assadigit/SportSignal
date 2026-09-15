@@ -7,7 +7,7 @@
 // file.
 //
 // Module map:
-//   config.ts            VERSION, CONFIG (KV-key contract), X_CONFIG
+//   config.ts            VERSION, CONFIG (KV-key contract)
 //   tables.ts            static dictionaries/logos/provider ids/CSP (13.47)
 //   utils.ts             digits/dates/auth-hash/subrequest/HTTP helpers
 //   fa-dict.ts           static Farsi team dictionary (layer 1)
@@ -18,7 +18,6 @@
 //   telegram.ts          Bot API senders (retry, 429 pause, dead-chat)
 //   composers.ts         message composers + standings pipeline
 //   digest.ts            weekly tables / morning digest / coronation
-//   x.ts                 X (Twitter) automated profile
 //   notifications.ts     per-match notification engine
 //   users.ts             chats, member profiles, prefs, master list
 //   admin.ts             sessions, settings, clubs catalog, dummy matches

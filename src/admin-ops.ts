@@ -1,13 +1,13 @@
 // SportSignal — admin & ops endpoints (split from api.ts in v13.47-seams):
 // the admin-scoped API routes (settings, fa-teams + overrides, broadcast,
-// migration control, clubs, X controls, diagnostics) and the legacy GET
+// migration control, clubs, diagnostics) and the legacy GET
 // action endpoints (trigger, clear-locks, debug-notifications, ...).
 // Bodies are byte-identical moves; api.ts imports ADMIN_OPS_ROUTES and
 // spreads them into POST_GATE_ROUTES (all paths are distinct — the spread
 // order is behavior-neutral; the "*" catch-all stays last in api.ts).
 
 import type { Env, RouteCtx, RouteDef } from "./types";
-import { CONFIG, X_CONFIG, VERSION } from "./config";
+import { CONFIG, VERSION } from "./config";
 import { readJson, jsonResponse, escapeMarkdownCharacters, getNowTehran } from "./utils";
 import { normTeamKey } from "./teams";
 import { translateTeam, translateCompetition, resetFaAiCache, ensureFaAiCache, isValidFaName } from "./translate";
@@ -20,7 +20,6 @@ import { getRegisteredChats, getBotMembers } from "./users";
 import { isAdminAuthed, getSettings, sanitizeSettings, syncUclSelection, canonicalizeTeams, getClubsCatalog, applySettings, clubsSearch } from "./admin";
 import { getCronStatus } from "./monitoring";
 import { executeScheduledLogic } from "./cron";
-import { getXStatus, xTestPost } from "./x";
 
 export async function legacyGetAction(c: RouteCtx): Promise<Response | null> {
   const { req, env, url } = c;
@@ -415,82 +414,6 @@ export const ADMIN_OPS_ROUTES: RouteDef[] = [
       const results = await Promise.allSettled(chats.map((id) => sendTelegram(env, msg, id)));
       const sent = results.filter((r) => r.status === "fulfilled" && r.value === true).length;
       return jsonResponse({ sent, total: chats.length });
-    return null;
-  } },
-
-    // v12.33-xpost: X (Twitter) admin routes. All require admin auth.
-    // /admin/x-test sends a manual test post (admin-token protected); the
-    // /api/x/* endpoints power the admin panel's X status card.
-  { path: "/admin/x-test", method: "POST", handler: async ({ req, env, url }): Promise<Response | null> => {
-      if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
-      try {
-        const r = await xTestPost(env);
-        return jsonResponse(r, r.ok ? 200 : 400);
-      } catch (e) {
-        return jsonResponse({ ok: false, error: e.message }, 500);
-      }
-    return null;
-  } },
-
-  { path: "/api/x/status", method: "GET", handler: async ({ req, env, url }): Promise<Response | null> => {
-      if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
-      try {
-        return jsonResponse(await getXStatus(env));
-      } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
-      }
-    return null;
-  } },
-
-  { path: "/api/x/phase", method: "PUT", handler: async ({ req, env, url }): Promise<Response | null> => {
-      if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
-      try {
-        const body = await readJson(req);
-        const raw = body && typeof body.phase === "string" ? body.phase : "";
-        const clean = raw.split(",").map((s) => s.trim().toLowerCase()).filter((s) => ["coronation", "ft", "kickoff", "tables", "media"].indexOf(s) !== -1);
-        if (!clean.length) return jsonResponse({ error: "phase must include at least one of: coronation, ft, kickoff, tables, media" }, 400);
-        await env.STATE.put(X_CONFIG.KV_PHASE, clean.join(",")).catch(() => {
-        });
-        return jsonResponse({ ok: true, phase: clean });
-      } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
-      }
-    return null;
-  } },
-
-  { path: "/api/x/dry-run", method: "PUT", handler: async ({ req, env, url }): Promise<Response | null> => {
-      if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
-      try {
-        const body = await readJson(req);
-        const v = body && body.dryRun ? "1" : "0";
-        await env.STATE.put(X_CONFIG.KV_DRY_RUN, v).catch(() => {
-        });
-        return jsonResponse({ ok: true, dryRun: v === "1" });
-      } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
-      }
-    return null;
-  } },
-
-  { path: "/api/x/enabled", method: "PUT", handler: async ({ req, env, url }): Promise<Response | null> => {
-      if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
-      try {
-        const body = await readJson(req);
-        const v = body && body.enabled ? "1" : "0";
-        await env.STATE.put(X_CONFIG.KV_ENABLED, v).catch(() => {
-        });
-        return jsonResponse({ ok: true, enabled: v === "1" });
-      } catch (e) {
-        return jsonResponse({ error: e.message }, 500);
-      }
-    return null;
-  } },
-
-  { path: "/api/x/clear-pause", method: "POST", handler: async ({ req, env, url }): Promise<Response | null> => {
-      if (!await isAdminAuthed(req, env)) return jsonResponse({ error: "Unauthorized" }, 401);
-      await env.STATE.delete(X_CONFIG.KV_PAUSE).catch(() => {
-      });
-      return jsonResponse({ ok: true });
     return null;
   } },
 

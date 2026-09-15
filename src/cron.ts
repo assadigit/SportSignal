@@ -15,7 +15,6 @@ import { fetchMatchesFromAPI, getCachedMatches, fetchLiveSweep } from "./provide
 import { sendTelegram, drainOutbox } from "./telegram";
 import { sendMatchNotifications, detectStatusChanges, auditNotifications } from "./notifications";
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, broadcastBigMatchKickoff, maybeNotifyTableToppers } from "./digest";
-import { maybePostX } from "./x";
 import { getRegisteredChats, checkUserCap } from "./users";
 import { applySettings } from "./admin";
 import { fetchPublicMatches } from "./public-matches";
@@ -371,9 +370,6 @@ export async function executeScheduledLogic(env: Env) {
     // team (2nd/3rd/4th\u2026) overtaking the leader after a fresh full-time
     // result gets its own special Telegram message. Own try/catch (a
     // failure here must never break the result/pre-match notifications).
-    // v12.33-xpost: the events list is captured so the X mirror runs AFTER
-    // Telegram (X is additive — wrapped in its own try/catch below).
-    let tableToppersEvents = [];
     try {
       // v13.38-qc: coronation detection ONLY on full sweeps. The meter
       // measured the old every-tick cycle at 7 snapshot writes + 7 standings
@@ -384,20 +380,10 @@ export async function executeScheduledLogic(env: Env) {
       // stale KV pool where no trigger can exist, so skipping is pure win.
       const tt = fullSweepThisTick ? await maybeNotifyTableToppers(env, matches) : { sent: 0, failed: 0, events: [] };
       if (tt && tt.events && tt.events.length) {
-        tableToppersEvents = tt.events;
         console.log(`\u{1F451} Table-top alerts: ${tt.events.map((e) => e.code + ":" + e.leader).join(", ")} (sent ${tt.sent}, failed ${tt.failed})`);
       }
     } catch (e) {
       console.error("Table-top detection failed: " + e.message);
-    }
-    // v12.33-xpost: X (Twitter) automated profile \u2014 Persian mirror of the
-    // Telegram composers (coronation > FT > kickoff > weekly tables). Additive:
-    // wrapped in try/catch so a failing post can NEVER fail the sweep.
-    try {
-      const xr = await maybePostX(env, matches, { topperEvents: tableToppersEvents });
-      if (xr && (xr.sent || xr.dryRun)) console.log(`\u{1F426} X sweep: sent=${xr.sent} dryRun=${xr.dryRun} skipped=${xr.skipped} errors=${xr.errors.length}`);
-    } catch (e) {
-      console.error("X post step failed: " + e.message);
     }
     // v13.23-audit: compare sportsignal.ir match data (ground truth) with the
     // bot's notified_matches_v6 KV. Reports gaps — matches that should have

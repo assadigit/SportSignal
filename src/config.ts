@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.47-seams";
+export const VERSION = "13.48-xtrim";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -310,40 +310,7 @@ export const CONFIG: Record<string, any> = {
   SEASON_STARTS: { AL: "2026-10-17T00:00:00Z" }
 };
 
-export const X_CONFIG = {
-  KV_PHASE: "x_phase_v1",
-  // comma-separated: coronation,ft,kickoff,tables,media
-  KV_BUDGET_PREFIX: "x_budget_v1:",
-  // + yyyymm — monthly automated posts counter
-  KV_DAILY_PREFIX: "x_daily_v1:",
-  // + yyyymmdd — daily automated posts counter
-  KV_TEST_PREFIX: "x_test_v1:",
-  // + yyyymmdd — admin test-post counter
-  KV_DEDUPE_PREFIX: "x_post_v1:",
-  // + <type>:<key> — exactly-once per event
-  KV_LAST_POST: "x_last_post_v1",
-  // JSON {ts, text, id, kind}
-  KV_LAST_ERROR: "x_last_error_v1",
-  // JSON {ts, status, error}
-  KV_PAUSE: "x_pause_v1",
-  // RFC-3339 timestamp until which X is paused (429 backoff)
-  KV_DRY_RUN: "x_dry_run_v1",
-  // "1" overrides secret X_DRY_RUN=0; "0" overrides secret X_DRY_RUN=1
-  KV_ENABLED: "x_enabled_v1",
-  // same override pattern for X_ENABLED
-  MONTHLY_CAP: 450,
-  // safety margin under X free-tier 500/month
-  DAILY_CAP: 12,
-  TEST_DAILY_CAP: 5,
-  DEDUPE_TTL_SEC: 7 * 86400,
-  // 7 days
-  DAILY_TTL_SEC: 36 * 3600,
-  PAUSE_TTL_SEC: 900,
-  // 15 minutes (429 backoff)
-  RETRY_5XX: 1,
-  POST_CHAR_LIMIT: 280,
-  DEFAULT_PHASE: "coronation,ft",
-  // phase B by default once live (X_DRY_RUN=0)
-  API_BASE: "https://api.x.com",
-  TWEET_PATH: "/2/tweets"
-};
+// v13.48-xtrim: the X (Twitter) path is REMOVED (X_CONFIG retired with it).
+// X never ran in production — no X_* secrets were ever set and x_enabled_v1
+// was never written. To restore: revert the 13.48-xtrim commit, re-add the
+// X_* secrets via `wrangler secret put`, then set x_enabled_v1=1 in KV.

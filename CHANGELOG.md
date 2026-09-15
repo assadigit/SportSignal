@@ -6,6 +6,73 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.48-xtrim] — 2026-09-15 (the X path is removed, not dormant)
+
+### The decision (R4 of the reliability roadmap)
+The X (Twitter) mirror was dead-in-practice: no X_* secrets were ever
+set, `x_enabled_v1` was never written, and every tick since v12.33 has
+taken the "X disabled" early return. Three options were weighed:
+
+1. **Compile-time gating** (keep src/x.ts on disk, exclude it from the
+   eval-concat bundle) — REJECTED. It breaks the no-drift test
+   discipline: check-x-* would test code that never ships, the exact
+   rot class the eval-extract harness exists to prevent. The call sites
+   (cron X phase, six admin routes, admin UI card) would still have to
+   be removed anyway.
+2. **Documented deferral** (keep shipping it disabled) — REJECTED. The
+   cost is not zero: six admin-reachable routes, OAuth 1.0a signing
+   code, and 586 lines ship in every bundle, and every future release
+   carries the coupling.
+3. **Full removal** — CHOSEN. It is the house pattern (13.46-trim
+   proved the guard-flip flow), git preserves the full history
+   (docs/history/2026-09-13-NEXT-SESSION-X-INTEGRATION.md tells the
+   story), and the restore path is documented in wrangler.toml +
+   src/config.ts: revert this commit, set the X_* secrets via
+   `wrangler secret put`, write `x_enabled_v1=1`.
+
+### Removed
+- `src/x.ts` (586 lines): OAuth 1.0a signing, budget/dedupe/pause
+  governors, the Persian post composers, maybePostX/maybePostXWeekly.
+- `scripts/check-x-signature.js` (192) + `scripts/check-x-budget.js`
+  (315): their eval subjects no longer exist; dropped from the npm test
+  chain (still 19 → 17 suites + tsc; 135 behavioral checks still pass —
+  none of them tested X, they test the notification invariants).
+- `scripts/verify-x-connection.js` (172): the standalone live-creds
+  probe, orphaned with the path.
+- The cron X phase (try/catch block after the Telegram coronation
+  alerts) and the `tableToppersEvents` capture that existed only to
+  feed it. `maybeNotifyTableToppers` (the TELEGRAM coronation feature)
+  is untouched — #qc1 still locks its full-sweep gating.
+- Six admin routes (`/admin/x-test`, `/api/x/status|phase|dry-run|
+  enabled|clear-pause`) from admin-ops.ts, plus the admin panel's X
+  status card (HTML + 7 JS handlers + boot call).
+- `X_CONFIG` from config.ts (the KV-key contract keeps every live key;
+  the x_* rows in RUNBOOK §5 now read "REMOVED at 13.48-xtrim") and the
+  X_* fields from the Env type.
+- Two dead imports api.ts had carried since 13.47 (X_CONFIG,
+  getXStatus/xTestPost — leftovers of the split, never used there).
+
+### Known dormant (deliberately untouched)
+`assets/core-13.8.js` still carries 18 i18n keys (9 fa + 9 en) and the
+stale `ver` footer string for the removed card. They are inert dict
+entries in a LIVE public minified asset — not worth the blast radius of
+editing the public bundle for zero functional gain. Same call as R2's
+sw.js CACHE: leave the public asset alone, note it here.
+
+### Tests
+- New #xtrim suite in check-reliability.js (7 asserts): the concat has
+  no x.ts segment, no X functions, no X_CONFIG, admin-ops has no X
+  routes, the admin page has no card, cron has no X phase, and the
+  harness order no longer ships x.ts.
+- #seams X_CONFIG presence assert flipped to absence; #f10f re-scoped
+  from xPostTweet's bump shape to the surviving telegram send-path
+  bump (`if (bumpSubrequest()) return false;`) — the R1 fetch-only
+  counter discipline is unchanged, minus the deleted site.
+- worker-src.js order co-evolved in the SAME commit (x.ts out at
+  position 15). npm test: exit 0, all suites green.
+
+---
+
 ## [13.47-seams] — 2026-09-15 (modularization: the monolith gets seams)
 
 ### The theme

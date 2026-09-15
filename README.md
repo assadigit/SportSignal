@@ -48,7 +48,8 @@ the web routes). Each tick:
 Auxiliary legs: FA-AI name learner (Workers AI + varzesh3 grounding,
 batched, gated), weekly league-tables digest (Monday 01:30–06:00 Tehran),
 morning digest, notification-gap audit with rate-limited admin alerts,
-public payload prewarm, and an optional X (Twitter) profile (default OFF).
+and public payload prewarm. (An X/Twitter mirror existed pre-13.48 but
+never ran — removed in 13.48-xtrim; restore path in wrangler.toml.)
 
 ## Repository layout
 
@@ -56,7 +57,7 @@ public payload prewarm, and an optional X (Twitter) profile (default OFF).
 src/
   worker.ts        entry — thin re-export of api.ts (fetch + scheduled)
   types.ts         the Env contract (KV binding, secrets, AI binding)
-  config.ts        VERSION, CONFIG (KV keys = live-state contracts), X_CONFIG
+  config.ts        VERSION, CONFIG (KV keys = live-state contracts)
   tables.ts        static dictionaries: stages/competitions/logos, provider id
                    maps, CSP headers, UCL starball (split in v13.47-seams)
   utils.ts         digits/dates/auth-hash/subrequest+kv-op meters/HTTP retry
@@ -68,7 +69,6 @@ src/
   telegram.ts      Bot API senders (retry / 429 pause / dead-chat / outbox)
   composers.ts     message + card composers, standings pipeline
   digest.ts        weekly tables / morning digest / big-match broadcasts
-  x.ts             X (Twitter) profile: OAuth 1.0a, budget, dedupe (default off)
   notifications.ts per-match notification engine + status-change detection
   users.ts         chat registry / member profiles / prefs / master list
   admin.ts         sessions / settings / clubs catalog / simulate fixtures
