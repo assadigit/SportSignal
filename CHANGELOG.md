@@ -6,6 +6,71 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.50-cupscan] — 2026-09-15 (the EFL Cup hole: coverage via the team view)
+
+### The incident
+The user missed Liverpool–Tottenham, EFL Cup R32 (2026-09-15 19:00Z).
+Forensics: the fixture existed NOWHERE in the pool. Root cause chain
+(all three providers checked live):
+- **football-data.org**: EFL Cup is not on the free tier (by design).
+- **sportscore**: the `efl-cup` competition feed returns zero matches on
+  every date probed (every slug variant tried) — their EFL Cup data is
+  simply absent in this window. (Coppa Italia, CDR etc. still flow.)
+- **TheSportsDB**: the correct league (id 4570, verified via lookupleague)
+  — but TSP's LEAGUE views silently regressed: `eventsnextleague` /
+  `eventspastleague` now return exactly ONE event per league (the Premier
+  League control returned 1 too), and `eventsseason`/`eventsround` are
+  partial. Meanwhile the TEAM view (`eventsnext.php?id=<teamId>`) is
+  complete: fixtures + live scores + strStatus. The Liverpool–Tottenham
+  tie existed ONLY there.
+
+### The fix
+A bounded, marker-gated **team scan** on non-sweep ticks:
+- `CUP_TEAM_TSP_IDS` (tables.ts): the 6 English big teams' TSP ids,
+  verified live (Arsenal 133604, Chelsea 133610, Liverpool 133602,
+  Man City 133613, Man United 133612, Tottenham 133616). These are the
+  teams that make cup matches notify-worthy (`shouldNotify`:
+  big-team-involvement for domestic cups) — so the scan covers exactly
+  the alertable surface of EFL Cup + FA Cup R3.
+- **maybeScanCupFixtures** (providers.ts): fetches each team's next
+  events (paced 1.2s), filters to EFL_CUP/FA_CUP (idLeague 4570 + name
+  map), dedupes against the pool by matchKey. ADDs append to the pool +
+  the tick's in-memory view (pre-match windows fire). UPDATEs refresh
+  status/score of existing rows (status-change detection → result alerts).
+- **Marker `cup_scan_v1`**: ok = skip 5h; fail = back off 30 min; HOT
+  window (a tracked cup match within [-1h, +4h]) = re-scan at most every
+  30 min so live scores/FT flow at near-tick cadence. Never runs on
+  full-sweep ticks (~42/48 fetch budget already spent); never runs under
+  the SOFT governor; never on an empty pool.
+- **cupEventToMatch**: the team-view mapper — tspEventToMatch plus the
+  LIVE status vocabulary (NS/1H/HT/2H/ET/FT/AET/PEN → our SCHEDULED/
+  LIVE/PAUSED/FINISHED) and score-stored-only-when-in-play (TSP shows
+  0-0 pre-kickoff — same rule as the sportscore path).
+- Cost: ~6 fetches + ~2 KV writes per scan (≤5 scans/day quiet, up to
+  hourly during a cup evening) — well inside every measured budget.
+
+### Known limits (documented, not hidden)
+- Coverage = the 6 English big teams (the alertable surface). A
+  Peterborough–Barnsley EFL Cup tie between two untracked teams is
+  invisible (it is also not alertable — by design).
+- Live scores/FT for cup matches flow through the TSP team view, which
+  updates with a few minutes of lag. If sportscore's efl-cup feed ever
+  returns, the existing near-sweep takes over with fresher data.
+- The TSP team ids are hardcoded contracts (verified live 2026-09-15) —
+  same house pattern as CUP_TSP_IDS.
+
+### Tests
+- check-cups.js: +7 behavioral checks on the real cupEventToMatch
+  (NS/2H/HT/FT/AET/empty → status vocabulary + score gating + roundRaw).
+- check-reliability.js: +11 #cupscan structural asserts (team table,
+  team-view URL, EFL/FA filter, marker TTLs, fail backoff, hot window,
+  empty-pool skip, cacheMatches persistence, cron gating, in-memory
+  patches, row overlays).
+- check-venue.js: TSP shared-mapper call-site count 3 → 4 (co-evolved).
+- npm test exit 0 (519 OK lines, was 508).
+
+---
+
 ## [13.49-buttons] — 2026-09-15 (the bot is tappable, not slash-only)
 
 ### The user report

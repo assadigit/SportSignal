@@ -17,8 +17,8 @@ check(
   /venue: e\.strVenue \|\| null,/.test(src)
 );
 check(
-  "3 TSP call sites use the shared mapper",
-  (src.match(/= tspEventToMatch\(e, code\);/g) || []).length === 3
+  "4 TSP call sites use the shared mapper (3 league views + the v13.50 cup team view)",
+  (src.match(/= tspEventToMatch\(e, code\);/g) || []).length === 4
 );
 // publication site: pubMatch maps m.venue
 check(

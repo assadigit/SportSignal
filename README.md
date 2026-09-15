@@ -103,20 +103,26 @@ dead man's switch ping
 4. **Fingerprint diff** (`liveFingerprint`) — only genuinely-changed live data
    (goals, HT/FT status changes, new live matches) proceeds to status-change
    detection. Reordered-but-identical data is invisible noise.
-5. **Fan out notifications** — 7 per-match types: `pre-match-72h` (big matches,
+5. **Cup big-team scan** (`maybeScanCupFixtures`, 13.50) — on non-sweep
+   ticks, a marker-gated scan of the 6 English big teams' TheSportsDB team
+   views keeps EFL Cup / FA Cup fixtures in the pool (the free league
+   views regressed to 1 event each and sportscore's efl-cup feed went
+   empty — the Liverpool–Tottenham miss). Adds fixtures, refreshes live
+   scores/status during match windows.
+6. **Fan out notifications** — 7 per-match types: `pre-match-72h` (big matches,
    both-teams-followed), `24h`, `3h`, `1h`, `5min` (big only), `match-start`,
    `result` — plus `match-start-big` / `result-big` broadcasts and table-top
    **coronation** alerts (a non-leader overtaking first place). Horizon
    ≈ **[-26h, +73h]** with backfill floors: ticks lost while a match was
    in-window **self-heal** on the next tick.
-6. **Auxiliary legs** — FA-AI name learner, weekly league-tables digest
+7. **Auxiliary legs** — FA-AI name learner, weekly league-tables digest
    (Mon 01:30–06:00 Tehran), morning digest, notification-gap audit,
    public payload prewarm.
-7. **Meter itself** — true KV-write count/day, true subrequest totals
+8. **Meter itself** — true KV-write count/day, true subrequest totals
    (fetches + KV ops), notify breadcrumbs (found/sent/deferred/skipped).
-8. **Completion blob** (`cron_status_v1`) — the tick's last write; what
+9. **Completion blob** (`cron_status_v1`) — the tick's last write; what
    `/healthz` reads. The blob landing = the tick finished.
-9. **Dead man's switch ping** — healthchecks.io per completed tick (see
+10. **Dead man's switch ping** — healthchecks.io per completed tick (see
    [monitoring](#monitoring-the-0-stack)).
 
 ### The anti-spam contract (read this twice)

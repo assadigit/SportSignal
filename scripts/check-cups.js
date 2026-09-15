@@ -116,5 +116,35 @@ check("EFL_CUP country", countryOf("EFL_CUP"), "EN");
 check("CDR country", countryOf("CDR"), "ES");
 check("COPPA_ITALIA country", countryOf("COPPA_ITALIA"), "IT");
 
+// --- v13.50-cupscan: the team-view cup mapper (behavioral) ---
+// cupEventToMatch wraps tspEventToMatch with the LIVE status vocabulary
+// TSP's team view carries (strStatus) — the league-view mapper only knows
+// finished|completed and would report a 2H match as SCHEDULED.
+const cemM = src.match(/function cupEventToMatch\(e, code\) \{[\s\S]*?\n\}/);
+const tspM = src.match(/function tspEventToMatch\(e, code\) \{[\s\S]*?\n\}/);
+if (!cemM || !tspM) {
+  console.error("FAIL: cupEventToMatch/tspEventToMatch not found in worker source");
+  process.exit(1);
+}
+const cemSrc = cemM[0];
+const tspSrc = tspM[0];
+globalThis.parseTSPDate = (d, t) => new Date(d + "T" + (t || "12:00:00") + "Z").toISOString();
+globalThis.mapStageName = () => "REGULAR_SEASON";
+const cemFn = eval("(function () {" + tspSrc + "\n" + cemSrc + " return cupEventToMatch; })()");
+const mkEv = (st, h, a) => ({ strSport: "Soccer", idLeague: "4570", strLeague: "EFL Cup", strStatus: st, intHomeScore: h, intAwayScore: a, dateEvent: "2026-09-15", strTime: "19:00:00", strHomeTeam: "Liverpool", strAwayTeam: "Tottenham Hotspur", strRound: "32", idEvent: "2594454" });
+const c1 = cemFn(mkEv("NS", null, null), "EFL_CUP");
+check("cupscan NS -> SCHEDULED with NO stored score", c1.status === "SCHEDULED" && c1.score === null, true);
+const c2 = cemFn(mkEv("2H", "2", "1"), "EFL_CUP");
+check("cupscan 2H -> LIVE with live score 2-1", c2.status === "LIVE" && c2.score.fullTime.home === 2 && c2.score.fullTime.away === 1, true);
+const c3 = cemFn(mkEv("HT", "0", "0"), "EFL_CUP");
+check("cupscan HT -> PAUSED", c3.status === "PAUSED", true);
+const c4 = cemFn(mkEv("FT", "4", "0"), "EFL_CUP");
+check("cupscan FT -> FINISHED with final score", c4.status === "FINISHED" && c4.score.fullTime.home === 4, true);
+const c5 = cemFn(mkEv("", "", ""), "EFL_CUP");
+check("cupscan empty strStatus -> league-view fallback (SCHEDULED, no score)", c5.status === "SCHEDULED" && c5.score === null, true);
+check("cupscan roundRaw preserved (3rd-round label)", c5.roundRaw === "32", true);
+const c6 = cemFn(mkEv("AET", "1", "1"), "EFL_CUP");
+check("cupscan AET -> FINISHED", c6.status === "FINISHED", true);
+
 console.log(failed ? failed + " failures" : "cups selection OK");
 process.exit(failed ? 1 : 0);

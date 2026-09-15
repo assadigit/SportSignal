@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.49-buttons";
+export const VERSION = "13.50-cupscan";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -303,6 +303,13 @@ export const CONFIG: Record<string, any> = {
   // Time constants
   ONE_HOUR_MS: 60 * 60 * 1e3,
   TWO_HOURS_MS: 2 * 60 * 60 * 1e3,
+  // v13.50-cupscan: the EFL/FA Cup team-scan cadence (marker cup_scan_v1
+  // TTL). A scan runs on the first NON-sweep tick after the marker ages
+  // out; during a cup match window [-1h, +4h] it re-runs at most every
+  // CUP_SCAN_HOT_TTL_MS so live scores/FT flow at near-tick cadence.
+  KV_CUP_SCAN_KEY: "cup_scan_v1",
+  CUP_SCAN_TTL_MS: 5 * 3600 * 1e3,
+  CUP_SCAN_HOT_TTL_MS: 30 * 60 * 1e3,
   ONE_DAY_MS: 24 * 60 * 60 * 1e3,
   // A-League Men season start (review each year): sportscore serves the prior
   // season's final table in pre-season, so before this date AL standings are

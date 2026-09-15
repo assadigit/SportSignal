@@ -234,6 +234,7 @@ curl -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
 | `execution_lock` | tick start | overlap guard, `LOCK_TIMEOUT` 240s |
 | `bot_settings_v1`, `clubs_catalog`, `varzesh3_clubs_v1`, `standings_*`, `weekly_tables_v1`, `last_api_source`, `heartbeat_sent_v1`, `audit_alert_v1`, `migration_v1`, `upd_<id>` (bot dedupe, TTL 600s) | various | settings/catalogs/audit |
 | `x_*` (`x_enabled_v1` …) | REMOVED at 13.48-xtrim | none live (X never ran); see wrangler.toml restore note |
+| `cup_scan_v1` | EFL/FA Cup team-scan marker (13.50) | "ok:<ts>"/"fail:<ts>"; ok = skip 5h, fail = 30-min backoff; hot window re-scans ≤30 min |
 
 **Orphans (self-cleaning or inert — do not "clean up" without checking TTLs):**
 `sched_v1:*` (156 keys, 7-day TTLs expire ~2026-09-22), `canary_match_v1` (TTL),

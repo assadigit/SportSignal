@@ -11,7 +11,7 @@ import { toFaDigits, resetSubrequestBudget, subrequestCount, kvOpsCount, bumpKvO
 import { translateTeam, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
-import { fetchMatchesFromAPI, getCachedMatches, fetchLiveSweep } from "./providers";
+import { fetchMatchesFromAPI, getCachedMatches, fetchLiveSweep, maybeScanCupFixtures } from "./providers";
 import { sendTelegram, drainOutbox } from "./telegram";
 import { sendMatchNotifications, detectStatusChanges, auditNotifications } from "./notifications";
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, broadcastBigMatchKickoff, maybeNotifyTableToppers } from "./digest";
@@ -297,6 +297,19 @@ export async function executeScheduledLogic(env: Env) {
     if (!matches) {
       console.log("\u26A0\uFE0F No match pool this tick \u2014 skipping notification phases (will retry next tick)");
       return;
+    }
+    // v13.50-cupscan: EFL/FA Cup big-team scan on NON-sweep ticks only (a
+    // full sweep already burns ~42/48 fetch budget; this tick reuses the
+    // pool). Marker-gated inside; adds/updates flow into this tick's
+    // notification view AND the persisted pool. Own try/catch \u2014 a scan
+    // failure must never break the notification phases.
+    if (!fullSweepThisTick && !budgetSoft) {
+      try {
+        const cs = await maybeScanCupFixtures(env, matches, poolRef);
+        if (cs.added || cs.updated) console.log(`\u{1F3C6} Cup big-team scan: +${cs.added} added, ${cs.updated} status/score refreshed`);
+      } catch (e) {
+        console.error("Cup scan step failed: " + e.message);
+      }
     }
     console.log(`\u{1F4CA} Total matches received: ${matches.length}`);
     // (v13.9-reliability #5's canary injection was REMOVED in

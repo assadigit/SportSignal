@@ -334,6 +334,24 @@ check("#fai2 empty-verdict isolate cache keyed on the payload ts", /FA_EMPTY_PAY
 const botSeg13 = (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron.ts =====")[0];
 check("#w8 bot.ts never calls fetchMatchesFromAPI (no provider sweeps from user-typed commands)", botSeg13.length > 0 && !/fetchMatchesFromAPI/.test(botSeg13));
 
+// #cupscan (v13.50-cupscan): EFL/FA Cup coverage via the TSP team view —
+// the league views regressed (1 event per league) and sportscore's efl-cup
+// feed is empty; without this, big-team cup ties were invisible to the pool.
+const tablesSeg15 = (src.match(/\/\/ ===== src\/tables\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+const provSeg15 = (src.match(/\/\/ ===== src\/providers\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+const cfgSeg15 = (src.match(/\/\/ ===== src\/config\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+check("#cupscan CUP_TEAM_TSP_IDS: the 6 English big teams (verified ids)", /Liverpool FC\": 133602/.test(tablesSeg15) && /Tottenham Hotspur FC\": 133616/.test(tablesSeg15) && /Arsenal FC\": 133604/.test(tablesSeg15) && /Chelsea FC\": 133610/.test(tablesSeg15) && /Manchester City FC\": 133613/.test(tablesSeg15) && /Manchester United FC\": 133612/.test(tablesSeg15));
+check("#cupscan scan uses the TSP TEAM view (eventsnext.php?id=)", /eventsnext\.php\?id=\/ \+ tspId/.test(provSeg15) || /eventsnext\.php\?id=" \+ tspId/.test(provSeg15));
+check("#cupscan accepts only EFL_CUP/FA_CUP rows (idLeague 4570 + name map)", /=== "4570" \? "EFL_CUP" : PROVIDER_LEAGUE_MAP\[e\.strLeague\]/.test(provSeg15) && /code !== "EFL_CUP" && code !== "FA_CUP"/.test(provSeg15));
+check("#cupscan marker key + TTLs in CONFIG", /KV_CUP_SCAN_KEY: "cup_scan_v1"/.test(cfgSeg15) && /CUP_SCAN_TTL_MS: 5 \* 3600 \* 1e3/.test(cfgSeg15) && /CUP_SCAN_HOT_TTL_MS: 30 \* 60 \* 1e3/.test(cfgSeg15));
+check("#cupscan fail-marker backs off 30 min", /fail" && now - ts < 30 \* 60e3/.test(provSeg15));
+check("#cupscan hot window: [-1h, +4h] re-scan gate", /ko - now < 3600e3 && now - ko < 4 \* 3600e3/.test(provSeg15));
+check("#cupscan empty pool = skip (never a cup-only pool)", /if \(!pool\.length\) return \{ added: 0, updated: 0 \};/.test(provSeg15));
+check("#cupscan persist goes through cacheMatches (budget-hold honored)", /cacheMatches\(env, poolOut, "cupscan"\)/.test(provSeg15));
+check("#cupscan cron hook gated on non-sweep + non-SOFT ticks", /if \(!fullSweepThisTick && !budgetSoft\) \{[\s\S]{0,400}?maybeScanCupFixtures\(env, matches, poolRef\)/.test(src));
+check("#cupscan adds+updates also patch this tick's in-memory view", /for \(const a of added\) matches\.push\(a\);/.test(provSeg15));
+check("#cupscan status/score updates preserved as row overlays", /Object\.assign\(\{\}, m, \{ status: u\.status, score: u\.score \}\)/.test(provSeg15));
+
 // #buttons (v13.49-buttons): the bot is tappable, not slash-only — every
 // command reply re-attaches the persistent keyboard (it re-expands if the
 // user collapsed it), /teams carries an inline toggle grid, /timezone a

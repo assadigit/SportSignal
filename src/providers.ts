@@ -2,11 +2,11 @@
 // thesportsdb, Wikipedia PGL table), the multi-source merger with crest/venue
 // adoption, provider circuit breaker and the KV match cache.
 import { CONFIG } from "./config";
-import { PROVIDER_LEAGUE_MAP, SPORTSCORE_SLUGS, TSP_LEAGUE_IDS, CUP_TSP_IDS } from "./tables";
+import { PROVIDER_LEAGUE_MAP, SPORTSCORE_SLUGS, TSP_LEAGUE_IDS, CUP_TSP_IDS, CUP_TEAM_TSP_IDS } from "./tables";
 import type { Env } from "./types";
 import { fetchJSON, fetchWithRetry, fdRateLimited } from "./utils";
 import { normalizeTeamName } from "./teams";
-import { canonDedupe } from "./dedupe";
+import { canonDedupe, matchKey } from "./dedupe";
 import { shouldNotify, mapStageName, parseTSPDate, isLiveStatus } from "./matches";
 import { getRegisteredChats } from "./users";
 import { sendTelegram } from "./telegram";
@@ -102,6 +102,123 @@ export async function sportScoreDay(code, slug, dateStr, acc) {
   }
   return added;
 }
+// v13.50-cupscan: the domestic-cup team scan. Root cause it closes:
+// TSP's LEAGUE views regressed (eventsnextleague/eventspastleague return
+// exactly ONE event per league now — the Premier League control verified
+// the same) and sportscore's efl-cup feed is empty, so big-team cup ties
+// never entered the pool (the missed Liverpool-Tottenham EFL Cup R32,
+// 2026-09-15). The TEAM view (eventsnext.php?id=<teamId>) is the reliable
+// free surface: full fixture list + live scores + strStatus.
+//
+// Semantics:
+//  - runs on NON-sweep ticks only (a full sweep already burns ~42/48 of
+//    the fetch budget); the next quiet/live tick picks it up within 10 min.
+//  - marker cup_scan_v1: "ok:<ts>" skips for CUP_SCAN_TTL_MS; "fail:<ts>"
+//    backs off 30 min. HOT window: a tracked EFL_CUP/FA_CUP match within
+//    [-1h, +4h] of kickoff re-scans at most every CUP_SCAN_HOT_TTL_MS so
+//    live score/status (and FT) flow into the pool at near-tick cadence.
+//  - ADD: fixtures not in the pool (matchKey dedupe) are merged into the
+//    pool + this tick's in-memory list -> pre-match windows fire.
+//  - UPDATE: an existing pool row whose status/score changed is refreshed
+//    (pool + in-memory) -> status-change detection -> result alerts.
+//  - scores only stored when in-play/finished (TSP shows 0-0 pre-kickoff —
+//    same rule the sportscore path applies).
+//  - empty pool = skip (wait for the first full sweep to seed it).
+export async function maybeScanCupFixtures(env: Env, matches, poolRef) {
+  const now = Date.now();
+  let marker: string | null = null;
+  try { marker = await env.STATE.get(CONFIG.KV_CUP_SCAN_KEY).catch(() => null); } catch (e) { }
+  if (marker) {
+    const parts = String(marker).split(":");
+    const ts = parseInt(parts[1]) || 0;
+    if (parts[0] === "fail" && now - ts < 30 * 60e3) return { added: 0, updated: 0 };
+    if (parts[0] === "ok" && now - ts < CONFIG.CUP_SCAN_TTL_MS) {
+      const hot = Array.isArray(poolRef) && poolRef.some((m) => {
+        const code = m && m.competition && m.competition.code;
+        if (code !== "EFL_CUP" && code !== "FA_CUP") return false;
+        const ko = m.utcDate ? new Date(m.utcDate).getTime() : 0;
+        if (!ko) return false;
+        return ko - now < 3600e3 && now - ko < 4 * 3600e3;
+      });
+      if (!hot || now - ts < CONFIG.CUP_SCAN_HOT_TTL_MS) return { added: 0, updated: 0 };
+    }
+  }
+  const pool = Array.isArray(poolRef) ? poolRef : [];
+  if (!pool.length) return { added: 0, updated: 0 };
+  const seenKeys = new Set();
+  const updateByKey = new Map();
+  const added = [];
+  let calls = 0, okCalls = 0;
+  for (const [teamName, tspId] of Object.entries(CUP_TEAM_TSP_IDS)) {
+    try {
+      if (calls) await new Promise((r) => setTimeout(r, 1200));
+      calls++;
+      const data = await fetchJSON("https://www.thesportsdb.com/api/v1/json/3/eventsnext.php?id=" + tspId);
+      okCalls++;
+      for (const e of data && data.events || []) {
+        if ((e.strSport || "").toLowerCase() !== "soccer") continue;
+        const code = String(e.idLeague) === "4570" ? "EFL_CUP" : PROVIDER_LEAGUE_MAP[e.strLeague];
+        if (code !== "EFL_CUP" && code !== "FA_CUP") continue;
+        const m = cupEventToMatch(e, code);
+        if (!m.utcDate) continue;
+        const k = matchKey(m);
+        if (!seenKeys.has(k)) {
+          seenKeys.add(k);
+          const row = pool.find((x) => matchKey(x) === k);
+          if (row) {
+            if (row.status !== m.status || JSON.stringify(row.score || null) !== JSON.stringify(m.score || null)) {
+              updateByKey.set(k, m);
+            }
+          } else {
+            added.push(m);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("\u{1F3C6} Cup scan " + teamName + " failed: " + e.message);
+    }
+  }
+  if (added.length || updateByKey.size) {
+    // persist into the POOL (never the live-sweep in-memory merge — the
+    // 13.43 invariant: quiet/live ticks don't persist live-merged views)
+    const poolOut = pool.map((m) => {
+      const u = updateByKey.get(matchKey(m));
+      return u ? Object.assign({}, m, { status: u.status, score: u.score }) : m;
+    }).concat(added);
+    await cacheMatches(env, poolOut, "cupscan");
+    // apply to this tick's in-memory view so notifications see it NOW
+    for (const a of added) matches.push(a);
+    for (const [k, u] of updateByKey) {
+      const i = matches.findIndex((m) => matchKey(m) === k);
+      if (i >= 0) matches[i] = Object.assign({}, matches[i], { status: u.status, score: u.score });
+    }
+  }
+  try {
+    await env.STATE.put(CONFIG.KV_CUP_SCAN_KEY, (okCalls > 0 ? "ok:" : "fail:") + now, { expirationTtl: Math.ceil(CONFIG.CUP_SCAN_TTL_MS / 1e3) + 600 });
+  } catch (e) {
+  }
+  return { added: added.length, updated: updateByKey.size };
+}
+
+// cupEventToMatch: the team-view event mapper. Same field mapping as
+// tspEventToMatch plus the LIVE status vocabulary TSP's team view carries
+// (strStatus: NS/1H/HT/2H/ET/FT/...) — the league-view mapper only knows
+// finished|completed and would report a 2H match as SCHEDULED.
+function cupEventToMatch(e, code) {
+  const base = tspEventToMatch(e, code);
+  const st = String(e.strStatus || "").toUpperCase();
+  if (["1H", "2H", "ET", "BT", "LIVE"].indexOf(st) !== -1) base.status = "LIVE";
+  else if (st === "HT") base.status = "PAUSED";
+  else if (["FT", "AET", "PEN"].indexOf(st) !== -1) base.status = "FINISHED";
+  else if (st === "NS") base.status = "SCHEDULED";
+  if (base.status === "LIVE" || base.status === "PAUSED" || base.status === "FINISHED") {
+    base.score = { fullTime: { home: parseInt(e.intHomeScore) || 0, away: parseInt(e.intAwayScore) || 0 } };
+  } else {
+    base.score = null;
+  }
+  return base;
+}
+
 export async function fetchSportScore(env: Env, opts?) {
   // v13.43-cpukeeper: opts narrows the day window for the cheap LIVE sweep
   // (yesterday + today). Default (no opts) keeps the full-sweep window
