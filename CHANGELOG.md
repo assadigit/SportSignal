@@ -69,6 +69,16 @@ Both halves were real, and the second half was the first half's cause.
   (was 18/tick ≈ 540-720/day); an EL Thursday: 4. Discovery stays the
   full sweep's job (every 2h, all slugs). BL1 stays eligible — when FD
   is suspended, sportscore is its only live source.
+- **Snapshot un-frozen on break weeks**: the 7-day snapshot's refresh
+  was gated on non-empty match lists — during international breaks a
+  SUCCESSFUL sweep legitimately produces empty lists, so the snapshot
+  froze at the last matchday's build and break-week visitors cycled an
+  aging snapshot forever. Live evidence: the 2026-09-28 break still
+  served the Sunday copy carrying the pre-13.53 missing-tables damage.
+  The refresh is now gated on SWEEP SUCCESS (`!liveSweepFailed &&
+  !poolEmpty`) — failure semantics preserved (a total-provider-failure
+  build never overwrites the fallback), change-only writes, one healing
+  write per break day.
 
 ### Expected daily API budget (matchday, vs before)
 - sportscore: ~800 → ~280 (live sweeps 540-720 → 60-160; full sweeps
