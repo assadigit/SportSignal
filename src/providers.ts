@@ -275,7 +275,13 @@ export async function cacheMatches(env: Env, matches, source) {
   }
   try {
     const existing = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
-    const cutoff = Date.now() - 2 * 864e5;
+    // v13.52-swrsolid: retention 2d → 7d — the public page's finished card
+    // carries a full week by design (v12.5: "the 12-hour window emptied the
+    // card every morning"), and since public rebuilds went POOL-FIRST the
+    // pool is that card's only source. Fetches still only BRING ~±2d of
+    // data; the wider cutoff just RETAINS settled rows in KV a week (no
+    // extra fetches, no extra requests — the rows are already there).
+    const cutoff = Date.now() - 7 * 864e5;
     const head = (existing && Array.isArray(existing.matches) ? existing.matches : []).filter((m) => new Date(m.utcDate || 0).getTime() > cutoff);
     const merged = canonDedupe([...head, ...matches]);
     if (existing && Array.isArray(existing.matches) && JSON.stringify(merged) === JSON.stringify(existing.matches)) {

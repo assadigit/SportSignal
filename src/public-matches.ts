@@ -153,6 +153,64 @@ export function applyLiveDetail(m, detail) {
   if (detail.scorers) m.scorers = detail.scorers;
   if (detail.scoreFullTime) m.score = { fullTime: detail.scoreFullTime };
 }
+// v13.52-swrsolid: the serve-time LIVE OVERLAY. The cron tick persists a
+// tiny {id,h,a,d,st,min,s} row per live-or-just-finished match (written the
+// moment the tick SEES a change — goal/kickoff/HT/FT — plus a 10-min top-up
+// while anything is live). This function patches those rows into ANY payload
+// being served (fresh KV cache, stale SWR serve, or the 7-day snapshot), so:
+//   - a SCHEDULED row the tick now sees IN_PLAY goes live instantly (score
+//     + minute patched in);
+//   - a LIVE row that has FINISHED is purged from `upcoming` and prepended
+//     to `finished` with its final score — the exact rule the user stated:
+//     fixtures cache, live games never go stale on the page.
+// Lookup is by match id first, then by normalized team-pair + day (providers
+// occasionally carry different ids for the same fixture between rebuilds).
+export function applyLiveOverlay(data, ov) {
+  if (!data || !ov || !Array.isArray(ov.rows) || !ov.rows.length) return data;
+  const byId = new Map();
+  const byPair = new Map();
+  for (const r of ov.rows) {
+    if (!r || !r.st) continue;
+    if (r.id != null) byId.set(String(r.id), r);
+    if (r.h && r.a && r.d) byPair.set(r.h + "|" + r.a + "|" + String(r.d).slice(0, 10), r);
+  }
+  const isLiveSt = (s) => s === "LIVE" || s === "IN_PLAY" || s === "PAUSED";
+  const find = (m) => {
+    const r = m.id != null ? byId.get(String(m.id)) : null;
+    if (r) return r;
+    const h = m.homeTeam && m.homeTeam.name, a = m.awayTeam && m.awayTeam.name;
+    if (!h || !a) return null;
+    return byPair.get(normalizeTeamName(h) + "|" + normalizeTeamName(a) + "|" + String(m.utcDate || "").slice(0, 10)) || null;
+  };
+  const patch = (m) => {
+    if (!m) return;
+    const r = find(m);
+    if (!r) return;
+    m.status = r.st;
+    m.minute = isLiveSt(r.st) && r.min != null ? r.min : null;
+    if (r.s && r.s.home != null && r.s.away != null) m.score = { fullTime: { home: r.s.home, away: r.s.away } };
+  };
+  if (Array.isArray(data.upcoming)) {
+    const justFinished = [];
+    data.upcoming.forEach((m) => {
+      patch(m);
+      if (m.status === "FINISHED") justFinished.push(m);
+    });
+    if (justFinished.length) {
+      data.upcoming = data.upcoming.filter((m) => m.status !== "FINISHED");
+      data.finished = justFinished.concat(Array.isArray(data.finished) ? data.finished : []).slice(0, 20);
+    }
+  }
+  if (data.nextBig) patch(data.nextBig);
+  if (data.topSpot) {
+    if (data.topSpot.next) patch(data.topSpot.next);
+    if (Array.isArray(data.topSpot.matches)) data.topSpot.matches.forEach(patch);
+  }
+  if (Array.isArray(data.thisWeek)) data.thisWeek.forEach(patch);
+  if (Array.isArray(data.nextWeek)) data.nextWeek.forEach(patch);
+  if (Array.isArray(data.cups)) for (const c of data.cups) if (c && c.next) patch(c.next);
+  return data;
+}
 export function projectedUclStart() {
   const now = new Date();
   const y = now.getUTCMonth() >= 9 ? now.getUTCFullYear() + 1 : now.getUTCFullYear();
@@ -235,7 +293,18 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     if (prePool) {
       matches = prePool;
     } else {
-      matches = await fetchLongView(env);
+      // v13.52-swrsolid: visitor-driven rebuilds go POOL-FIRST. The pool is
+      // refreshed by the cron full sweep every 2h (fixtures are slow-moving —
+      // a ≤2h-old list is exactly what the page wants) and the serve path
+      // patches live rows from the overlay. The 92-DAY long view (10 FD
+      // chunks with 2s sleeps + ~70 sportscore calls + TSP fan-out — tens of
+      // seconds to MINUTES with FD 429 retries) was the "site takes a few
+      // minutes to load" bug: it ran synchronously on the visitor's request
+      // whenever the payload cache expired, which with sparse traffic was
+      // nearly EVERY visit. It now runs only when the pool itself is gone
+      // (cron dead >24h) — the recovery path, in the background.
+      matches = await getCachedMatches(env);
+      if (!matches.length) matches = await fetchLongView(env);
     }
     await enrichLiveMatches(env, matches);
   } catch (e) {
@@ -460,9 +529,15 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     }
   }
   if (upcoming.length || finished.length) {
-    // Prewarm payloads need a TTL ≥ the 10-min cron tick (720s) so they never
-    // expire between ticks; visitor writes keep the short 300s TTL.
-    await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: prewarm ? 720 : 300 }).catch(() => {
+    // v13.52-swrsolid: ONE TTL for every payload write (was 720 prewarm /
+    // 300 visitor). With the snapshot + overlay serve path in place the
+    // visitor TTL no longer needs to be conservative: a 12-min KV window
+    // means the SWR stale-serve window (5–10min) actually functions for
+    // visitor-written payloads too (the old 5-min TTL deleted the key the
+    // moment it went stale — every >5min-gap visitor then paid the full
+    // synchronous rebuild), and live correctness no longer depends on the
+    // payload's age (the overlay patches it at serve time).
+    await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: 720 }).catch(() => {
     });
     // v12.x-resilience: refresh the 7-day snapshot ONLY when the live sweep
     // succeeded with real data \u2014 otherwise we'd overwrite the snapshot

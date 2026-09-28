@@ -20,6 +20,7 @@ import { applySettings } from "./admin";
 import { fetchPublicMatches } from "./public-matches";
 import { getCronStatus, alertPhaseError, liveFingerprint } from "./monitoring";
 import { maybeBroadcastMigration } from "./migration";
+import { normalizeTeamName } from "./teams";
 
 export async function executeScheduledLogic(env: Env) {
   resetSubrequestBudget();
@@ -432,13 +433,16 @@ export async function executeScheduledLogic(env: Env) {
     // data (goal / HT / FT / newly-discovered fixture). Quiet ticks skip it
     // entirely; visitors between rebuilds trigger the on-demand refresh
     // (the pre-v13.35 path).
+    // v13.52-swrsolid: liveChanged hoisted out of the prewarm try — the
+    // live-overlay writer below needs the same signal (a goal / kickoff /
+    // HT / FT changed this tick's live data vs the persisted pool).
+    let liveChanged = false;
+    if (!fullSweepThisTick && poolRef) {
+      liveChanged = liveFingerprint(matches) !== liveFingerprint(poolRef);
+    }
     try {
       const pub = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null) as any;
       const pubStale = !pub || !pub.ts || Date.now() - pub.ts >= 555e3;
-      let liveChanged = false;
-      if (!fullSweepThisTick && poolRef) {
-        liveChanged = liveFingerprint(matches) !== liveFingerprint(poolRef);
-      }
       // v13.44-quotaguard: prewarm is a cosmetic write too — under the SOFT
       // governor the visitors' on-demand refresh path takes over (the
       // pre-v13.35 behavior).
@@ -448,6 +452,51 @@ export async function executeScheduledLogic(env: Env) {
       }
     } catch (e) {
       console.error("Public pre-warm failed: " + e.message);
+    }
+    // v13.52-swrsolid: the LIVE OVERLAY write. The public serve path reads
+    // this tiny blob and patches live rows into every payload it serves —
+    // so fixtures can cache for hours while a live match is NEVER served
+    // stale (a FINISHED game is purged from the live lists immediately:
+    // the user's rule, "you can't cache a live game — it would still show
+    // as playing"). Written when:
+    //   - live data CHANGED this tick (the fingerprint gate above — goal,
+    //     kickoff, HT, FT), or
+    //   - a FULL SWEEP ran (authoritative refresh, ≤12/day), or
+    //   - anything is live and the blob is ≥10min old (minute freshness
+    //     between events — bounded ~6 writes/hour).
+    // NOT gated on budgetSoft: this is correctness, not cosmetics, and its
+    // worst case is ~40-60 writes on a busy matchday. The HARD governor
+    // still holds it (budgetHard), and the subrequest headroom rule (the
+    // 21:40Z incident lesson) keeps it off ticks that live at the real cap.
+    // 2 KV ops (1 read + 1 write) when it fires; zero on quiet days.
+    try {
+      const now = Date.now();
+      const ovWin = 6 * 36e5;
+      const liveRows = (matches || []).filter((m) => {
+        const st = String((m && m.status) || "").toUpperCase();
+        if (st !== "LIVE" && st !== "IN_PLAY" && st !== "PAUSED" && st !== "FINISHED") return false;
+        const t = new Date((m && m.utcDate) || 0).getTime();
+        if (!t || t < now - ovWin || t > now + ovWin) return false;
+        return true;
+      }).map((m) => ({
+        id: m.id != null ? String(m.id) : null,
+        h: normalizeTeamName(m.homeTeam && m.homeTeam.name),
+        a: normalizeTeamName(m.awayTeam && m.awayTeam.name),
+        d: String(m.utcDate || ""),
+        st: String(m.status || "").toUpperCase(),
+        min: m.minute != null ? m.minute : null,
+        s: m.score && m.score.fullTime ? { home: m.score.fullTime.home, away: m.score.fullTime.away } : null
+      }));
+      if (liveRows.length && !budgetHard && subrequestCount() < 40) {
+        const prevOv = await env.STATE.get(CONFIG.KV_LIVE_OVERLAY, "json").catch(() => null);
+        const ovAge = prevOv && prevOv.ts ? now - prevOv.ts : Infinity;
+        if (fullSweepThisTick || liveChanged || ovAge >= 6e5) {
+          await env.STATE.put(CONFIG.KV_LIVE_OVERLAY, JSON.stringify({ ts: now, rows: liveRows }), { expirationTtl: CONFIG.KV_LIVE_OVERLAY_TTL || 21600 }).catch(() => {
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Live overlay write failed: " + e.message);
     }
     // v13.36-nospam: single status blob — heartbeat (tick started/ended),
     // last_cron (tick completed) and last_full_sweep (folded in from the

@@ -73,7 +73,7 @@ check("#13.35 fetchPublicMatches opts param exists", /function fetchPublicMatche
 check("#13.35 PubOpts interface declared", /interface PubOpts \{ prewarm: boolean; pool: any\[\] \}/.test(src));
 check("#13.35 prewarm skips the provider sweep (pool ride-along)", /if \(prePool\) \{\s*\n\s*matches = prePool;/.test(src));
 check("#13.35 prewarm payloads stamped for the 9.25-min fresh window", /freshMs = cached && cached\.data && cached\.data\.prewarm && !cachedHasLive \? 555e3 : 18e4/.test(src));
-check("#13.35 prewarm KV TTL covers the 10-min tick", /expirationTtl: prewarm \? 720 : 300/.test(src));
+check("#13.35 prewarm KV TTL covers the 10-min tick (v13.52: one TTL — 12min — for prewarm AND visitor writes)", /JSON\.stringify\(\{ ts: Date\.now\(\), data \}\), \{ expirationTtl: 720 \}\)/.test(src));
 check("#13.35 canary stripped from prewarm pool", /opts\.pool\.filter\(\(m\) => !m\.canary\)/.test(src));
 check("#13.35 cron pre-warm is budget-guarded", /pubStale && subrequestCount\(\) < 30/.test(src));
 check("#13.35 cron passes its pool to the pre-warm", /prewarm: true, pool: matches/.test(src));
@@ -431,6 +431,42 @@ check("#xtrim admin-ops has no /api/x/ or /admin/x-test routes", !/path: "\/api\
 check("#xtrim admin page has no X card (loadXStatus/btnX)", !/loadXStatus|btnXTest|btnXClearPause/.test(src));
 check("#xtrim cron has no X sweep phase", !/maybePostX|X sweep:|X post step/.test(cronSeg));
 check("#xtrim harness order no longer ships x.ts", !/"x\.ts"/.test(harness14));
+
+
+// #swrsolid (v13.52): the public page NEVER blocks a visitor on a provider
+// sweep, and live rows are never served stale. Born from the user report
+// (2026-09-16): "when you open sportsignal.ir after a while, the APIs are
+// just fetching at that time — takes a few minutes, seems like there is no
+// caching." Root cause chain (all three links severed):
+//   1. visitor-written payloads had a 300s TTL → with sparse traffic the KV
+//      key expired BEFORE the next visitor → the 10-min SWR grace never
+//      operated → every visitor ran the SYNCHRONOUS rebuild;
+//   2. that rebuild called fetchLongView — the 92-day view: 10 FD chunks
+//      (each with a 2s sleep; FD free tier 10 req/min → 429s → Retry-After
+//      waits) + up to ~70 sportscore calls + TSP fan-out = tens of seconds
+//      to MINUTES on the visitor's request;
+//   3. the 7-day snapshot (the thing designed for exactly this) was
+//      reachable ONLY via the catch() on total failure.
+// Fix shape: fixtures cache (pool-first rebuilds, one 12-min payload TTL,
+// snapshot promoted to the primary stale source) + a live overlay the cron
+// tick writes on every live change (goal/kickoff/HT/FT) which the serve
+// path patches into EVERY response — a finished game is purged from the
+// live lists immediately ("you can't cache a live game").
+check("#swrsolid live overlay KV key + TTL declared", /KV_LIVE_OVERLAY: "live_overlay_v1"/.test(src) && /KV_LIVE_OVERLAY_TTL: 6 \* 60 \* 60/.test(src));
+check("#swrsolid visitor rebuilds go pool-first (never the 92-day long view)", /matches = await getCachedMatches\(env\);\s*\n\s*if \(!matches\.length\) matches = await fetchLongView\(env\);/.test(src));
+check("#swrsolid prewarm pool ride-along shape intact", /if \(prePool\) \{\s*\n\s*matches = prePool;/.test(src));
+const swrSlice52 = (src.match(/\/\/ ===== src\/public-swr\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+check("#swrsolid public-swr reads the overlay alongside the payload", /CONFIG\.KV_LIVE_OVERLAY, "json"/.test(swrSlice52));
+check("#swrsolid public-swr applies the overlay on the KV serve path", /applyLiveOverlay\(Object\.assign\(\{\}, kv\.data\), ov\)/.test(swrSlice52));
+check("#swrsolid the snapshot serves BEFORE any synchronous rebuild", swrSlice52.indexOf("KV_PUBLIC_SNAPSHOT") > -1 && swrSlice52.indexOf("const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT") < swrSlice52.lastIndexOf("await fetchPublicMatches(env, req)"));
+check("#swrsolid snapshot serve refreshes in the background", /Snapshot bg refresh failed/.test(swrSlice52));
+check("#swrsolid applyLiveOverlay defined (harness reachable; export stripped by the transform)", /function applyLiveOverlay\(data, ov\)/.test(src));
+const cronSeg52 = (src.match(/\/\/ ===== src\/cron\.ts =====[\s\S]*?(?=\/\/ ===== src\/|\/\/ ===== src\/pages)/) || [""])[0];
+check("#swrsolid cron writes the overlay (changed / full-sweep / 10-min gate)", /fullSweepThisTick \|\| liveChanged \|\| ovAge >= 6e5/.test(cronSeg52) && /KV_LIVE_OVERLAY, JSON\.stringify\(\{ ts: now, rows: liveRows \}\)/.test(cronSeg52));
+check("#swrsolid overlay write honors the HARD governor (budgetHard)", /liveRows\.length && !budgetHard && subrequestCount\(\) < 40/.test(cronSeg52));
+check("#swrsolid liveChanged signal hoisted (shared by prewarm + overlay)", /let liveChanged = false;[\s\S]{0,200}liveFingerprint\(matches\) !== liveFingerprint\(poolRef\)/.test(cronSeg52));
+check("#swrsolid overlay write sits BEFORE the completion blob (writes fold)", cronSeg52.indexOf("Live overlay write failed") > -1 && cronSeg52.indexOf("Live overlay write failed") < cronSeg52.indexOf("kvWritesDay = kvWritesThisTick + 1"));
+check("#swrsolid pool retains a WEEK of settled rows (7-day finished card under pool-first)", /const cutoff = Date\.now\(\) - 7 \* 864e5;/.test(src));
 
 
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");

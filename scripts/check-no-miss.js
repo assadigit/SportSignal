@@ -588,6 +588,46 @@ var MEM_DEDUPE = new Set();
     global.fetch = realFetch;
   }
 
+  // ===== v13.52-swrsolid (behavioral): the LIVE OVERLAY — fixtures cache,
+  // live matches never go stale. The serve path patches overlay rows into
+  // every payload it serves: a SCHEDULED row the tick now sees IN_PLAY goes
+  // live with score+minute; a finished game is PURGED from upcoming and
+  // prepended to finished with its final score (the user's rule: "you can't
+  // cache a live game — it would still show as playing"); lookup falls back
+  // to team-pair+day when the payload and pool carry different ids.
+  console.log("\n=== T. v13.52-swrsolid: live overlay (behavioral) ===");
+  eval([grabFn("function applyLiveOverlay(data, ov)")].join("\n"));
+  const pubRow = (id, h, a, day, status, extra) => Object.assign({ id, homeTeam: { name: h }, awayTeam: { name: a }, utcDate: day + "T19:00:00Z", status, minute: null, score: null }, extra || {});
+  const OD = "2026-09-16";
+  // FT purge: a LIVE row the overlay now reports FINISHED leaves upcoming,
+  // lands at the head of finished with the final score and no minute.
+  let data1 = { upcoming: [pubRow("ov-1", "Real Madrid", "Barcelona", OD, "LIVE")], finished: [pubRow("ov-9", "Arsenal", "Chelsea", "2026-09-15", "FINISHED", { score: { fullTime: { home: 2, away: 1 } } })], nextBig: null, topSpot: null, thisWeek: [], nextWeek: [], cups: [] };
+  applyLiveOverlay(data1, { ts: 1, rows: [{ id: "ov-1", h: "real madrid", a: "barcelona", d: OD + "T19:00:00Z", st: "FINISHED", min: 90, s: { home: 3, away: 2 } }] });
+  check("overlay: a FINISHED game is purged from upcoming (the user's rule)", data1.upcoming.length === 0);
+  check("overlay: the FT row lands on finished with the final score, minute nulled", data1.finished.length === 2 && data1.finished[0].id === "ov-1" && data1.finished[0].score.fullTime.home === 3 && data1.finished[0].score.fullTime.away === 2 && data1.finished[0].minute === null);
+  // kickoff: SCHEDULED → IN_PLAY with score + minute patched in place.
+  let data2 = { upcoming: [pubRow("ov-2", "Bayern Munich", "Borussia Dortmund", OD, "SCHEDULED")], finished: [] };
+  applyLiveOverlay(data2, { ts: 1, rows: [{ id: "ov-2", h: "bayern munich", a: "borussia dortmund", d: OD + "T18:30:00Z", st: "IN_PLAY", min: 23, s: { home: 1, away: 0 } }] });
+  check("overlay: kickoff (SCHEDULED→IN_PLAY) patches status+minute+score", data2.upcoming[0].status === "IN_PLAY" && data2.upcoming[0].minute === 23 && data2.upcoming[0].score.fullTime.home === 1 && data2.upcoming[0].score.fullTime.away === 0);
+  // byPair fallback: the payload and overlay carry different ids for the
+  // same fixture (provider switch between rebuilds) — pair+day still hits.
+  let data3 = { upcoming: [pubRow("tsd-777", "Liverpool FC", "Manchester United", OD, "SCHEDULED")], finished: [] };
+  applyLiveOverlay(data3, { ts: 1, rows: [{ id: 555001, h: "liverpoolfc", a: "manchesterunited", d: OD + "T20:00:00Z", st: "LIVE", min: 5, s: { home: 0, away: 0 } }] });
+  check("overlay: id-miss falls back to team-pair+day lookup", data3.upcoming[0].status === "LIVE" && data3.upcoming[0].minute === 5);
+  // the rest of the live-bearing surfaces: nextBig, topSpot, weeks, cups.
+  const nb = pubRow("ov-4", "Inter Milan", "AC Milan", OD, "LIVE");
+  const cupNext = pubRow("ov-5", "PSG", "Marseille", OD, "SCHEDULED");
+  let data4 = { upcoming: [], finished: [], nextBig: nb, topSpot: { next: cupNext, matches: [nb, cupNext] }, thisWeek: [cupNext], nextWeek: [], cups: [{ code: "FL1", next: cupNext }] };
+  applyLiveOverlay(data4, { ts: 1, rows: [{ id: "ov-4", h: "inter", a: "milan", d: OD + "T19:00:00Z", st: "PAUSED", min: 45, s: { home: 0, away: 0 } }, { id: "ov-5", h: "psg", a: "marseille", d: OD + "T19:00:00Z", st: "IN_PLAY", min: 12, s: { home: 2, away: 1 } }] });
+  check("overlay: nextBig patched (HT pause carries the minute)", data4.nextBig.status === "PAUSED" && data4.nextBig.minute === 45);
+  check("overlay: cups[].next + topSpot.next + thisWeek rows patched too", data4.cups[0].next.status === "IN_PLAY" && data4.topSpot.next.minute === 12 && data4.thisWeek[0].minute === 12);
+  // no overlay / unknown rows: the payload is served exactly as cached.
+  const untouched = { upcoming: [pubRow("x-1", "Torino", "Roma", OD, "SCHEDULED")], finished: [] };
+  applyLiveOverlay(untouched, null);
+  check("overlay: no overlay blob → payload served as-is", untouched.upcoming[0].status === "SCHEDULED" && untouched.upcoming.length === 1);
+  applyLiveOverlay(untouched, { ts: 1, rows: [{ id: "other-1", h: "ajax", a: "feyenoord", d: OD + "T19:00:00Z", st: "LIVE", min: 3, s: null }] });
+  check("overlay: rows the blob doesn't know stay untouched", untouched.upcoming[0].status === "SCHEDULED" && untouched.upcoming.length === 1);
+
   console.log("\n" + (failed ? failed + " FAILURES" : "ALL PASS") + " (" + passed + " checks)");
   process.exit(failed ? 1 : 0);
 })().catch((e) => { console.error("ERROR", e); process.exit(1); });

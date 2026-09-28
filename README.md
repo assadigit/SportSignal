@@ -10,7 +10,7 @@
 **A serverless Telegram bot + web page that tells Iranian football fans about the
 matches that matter — before they start, while they're live, and the moment they end.**
 
-> **Current build:** v13.51-rivalries · [Live](https://sportsignal.ir) ·
+> **Current build:** v13.52-swrsolid · [Live](https://sportsignal.ir) ·
 > **Operating it?** Read [`RUNBOOK.md`](RUNBOOK.md) first — deploy/verify/rollback,
 > monitoring semantics, incident playbooks, and the never-do list (§11).
 

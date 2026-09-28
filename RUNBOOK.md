@@ -229,7 +229,8 @@ curl -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
 | `pending_sends_v1` | telegram send failures | outbox, drained at tick start, 6 attempts max, exponential backoff |
 | `matches_v13_tracked` | provider sweeps | the match pool (600+ matches incl. long-view) |
 | `match_status_v1` | notifications | per-match status snapshots for change detection |
-| `public_matches_v1` + `cache:snapshot:v1` | public pipeline | live public payload + 7-day emergency snapshot |
+| `public_matches_v1` + `cache:snapshot:v1` | public pipeline | live public payload (12-min TTL) + 7-day stale-serve source (the snapshot serves instantly when the payload expires — v13.52) |
+| `live_overlay_v1` | cron tick (v13.52) | the live overlay: {id, teams, day, status, minute, score} rows for live/just-finished matches, written on every live change + full sweeps + ≥10-min top-ups while live (TTL 6h); the serve path patches it into every public response — a FINISHED game is purged from the live lists immediately |
 | `fa_teams_ai` / `fa_venues_ai` / `fa_ai_last_run` | FA-AI learner (gated ≥15 min apart, marker only when work exists since 13.45) | AI-learned Persian names |
 | `execution_lock` | tick start | overlap guard, `LOCK_TIMEOUT` 240s |
 | `bot_settings_v1`, `clubs_catalog`, `varzesh3_clubs_v1`, `standings_*`, `weekly_tables_v1`, `last_api_source`, `heartbeat_sent_v1`, `audit_alert_v1`, `migration_v1`, `upd_<id>` (bot dedupe, TTL 600s) | various | settings/catalogs/audit |

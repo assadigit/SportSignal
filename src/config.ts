@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.51-rivalries";
+export const VERSION = "13.52-swrsolid";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -153,6 +153,15 @@ export const CONFIG: Record<string, any> = {
   // a subtle "cached data" indicator instead of empty cards.
   KV_PUBLIC_SNAPSHOT: "cache:snapshot:v1",
   KV_PUBLIC_SNAPSHOT_TTL: 7 * 24 * 60 * 60,
+  // v13.52-swrsolid: the LIVE OVERLAY — a tiny blob the cron tick writes
+  // whenever live data changes (goal / kickoff / HT / FT) and at least every
+  // 10 min while live rows exist. The public serve path reads it (one KV
+  // read) and patches live rows into EVERY payload it serves — fixtures can
+  // cache for hours, but a LIVE match is never served stale and a FINISHED
+  // one is purged from the live lists immediately (the user's rule: "you
+  // can't cache a live game — it would still show as playing").
+  KV_LIVE_OVERLAY: "live_overlay_v1",
+  KV_LIVE_OVERLAY_TTL: 6 * 60 * 60,
   KV_USER_PREFS: "user_prefs_v1",
   // v12.16: bot-member profiles (telegram username/"slug" + first name + join
   // date), captured from every incoming message and backfilled via getChat

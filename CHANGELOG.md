@@ -6,6 +6,113 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.52-swrsolid] — 2026-09-16 (the "few minutes to load" bug: the visitor never waits, the live game never lies)
+
+### The user's report
+> "When you open sportsignal.ir after a while, it's like the APIs are just
+> fetching at that time, which takes a few minutes to load — it seems there
+> is no caching. Fixtures can easily be cached, but you can't cache a live
+> game: if the game is over and the cache is not purged, it will still
+> show as playing."
+
+Both halves were real. Root cause chain (three links, all severed):
+
+1. **Visitor-written payload TTL was 300s** — with sparse traffic (gaps
+   between visitors > 5 min, i.e. almost every visit on this site) the KV
+   key **expired before the next visitor arrived**, so the 10-min SWR
+   grace window never operated and every visitor ran the *synchronous*
+   rebuild. (Prewarm-written payloads had 720s — the grace worked only
+   for them.)
+2. **That synchronous rebuild called `fetchLongView`** — the 92-day view:
+   10 football-data chunks each followed by a hard 2s sleep (FD free tier
+   = 10 req/min → 429s → Retry-After waits), up to ~70 sportscore calls,
+   TSP fan-out with 1.2s pacing. **Tens of seconds to minutes**, on the
+   visitor's request. Its pool-reuse gate (`horizon > now+60d`) almost
+   never passed mid-season, so this ran again and again.
+3. **The 7-day snapshot** (built for exactly this) was reachable only
+   via the `catch()` on total failure — and on live evenings the SWR
+   window could serve a finished game as playing.
+
+### The fix — fixtures cache, live never lies
+- **Pool-first visitor rebuilds** (`fetchPublicMatches`): the visitor
+  path reads the KV pool (refreshed by the cron full sweep every 2h —
+  fixtures are slow-moving) and only falls back to `fetchLongView` when
+  the pool itself is gone (cron dead >24h — the recovery path). The
+  92-day long view no longer runs on any visitor's critical path.
+- **One payload TTL: 720s** (was 720 prewarm / 300 visitor). The SWR
+  stale-serve window (5–10 min) now actually functions for every write.
+- **Snapshot promoted to the primary stale source** (`public-swr.ts`):
+  payload expired/missing → serve the 7-day snapshot **instantly**
+  (tagged `cached`/`cachedAt` — the page's existing indicator) and
+  rebuild in the background. The synchronous rebuild now only happens on
+  a true cold cache (no payload AND no snapshot: first deploy / KV wipe).
+- **The live overlay** (`live_overlay_v1`, TTL 6h): the cron tick writes
+  a tiny {id, teams, day, status, minute, score} row per live-or-recent
+  match — the moment live data changes (goal / kickoff / HT / FT — the
+  same `liveFingerprint` signal the prewarm gate uses), on full sweeps,
+  and at least every 10 min while anything is live (minute freshness).
+  The serve path reads it (one KV read) and **patches every payload it
+  serves** — fresh, stale, or snapshot:
+  - SCHEDULED → IN_PLAY/LIVE/PAUSED: status, score and minute patched in;
+  - a FINISHED match is **purged from `upcoming`** and prepended to
+    `finished` with its final score — the user's rule, verbatim;
+  - `nextBig`, `topSpot`, weeks and `cups[].next` rows are patched too;
+  - lookup is by match id first, then normalized team-pair + day
+    (providers carry different ids for the same fixture between
+    rebuilds).
+- **Cost model** (the free-tier discipline): overlay writes ≤ ~12/day on
+  sweep cadence + live-change events + ≤6/hour minute top-ups ≈ 40–60 on
+  the busiest matchday, zero on quiet days; 2 KV ops per write; gated
+  `subrequestCount() < 40` (the 21:40Z incident lesson) and held under
+  the HARD budget governor (`budgetHard`); NOT gated on SOFT (correctness
+  beats cosmetics; documented in-source). Serve path adds exactly one KV
+  read per request.
+
+### Accepted narrowing (documented)
+The public payload's fixture horizon now follows the pool (~1–6 weeks
+via FD +8d + TSP next-events) instead of the 92-day long view. The page's
+own windows (thisWeek/nextWeek = 7+7 days, cups' next match) are fully
+covered; the 90-day `topSpot` window simply shows fewer far-out rows.
+Not worth the minutes-long visitor stalls it existed to prevent.
+
+### Tests
+- `check-no-miss.js` +9 behavioral (real `applyLiveOverlay` via the
+  eval harness): FT purge from upcoming → finished head with final score
+  + nulled minute; kickoff patch; by-pair fallback; nextBig/topSpot/
+  cups/weeks patching; no-blob and unknown-row no-ops.
+- `check-reliability.js` +11 `#swrsolid` wiring asserts (key + TTL
+  declared; pool-first rebuild; overlay read + apply on the serve path;
+  snapshot-before-sync ordering; cron write gate changed/full-sweep/
+  10-min; `budgetHard` + subrequest gates; liveChanged hoist shared by
+  prewarm and overlay; overlay writes fold before the completion blob).
+  The 13.35 TTL assert co-evolved to the single-720 shape.
+- `npm test` exit 0 (143 behavioral checks; also fixed a pre-existing date-drift failure in `live-derby-test.js` — the EOM-gated upcoming list dropped +3d fixtures in the last days of a month; found live 2026-09-28 on pristine 13.51 code, fixed with a month-aware `relOff` helper).
+- Pool retention 2d → 7d (`cacheMatches`): under pool-first, the pool is
+  the finished card's only source — a week of settled rows keeps the v12.5
+  "7 days of results" intent. No extra fetches; the rows were already in
+  KV. (Found while investigating: the current international break —
+  leagues last played Sept 19-20, UCL MD2 is Oct 13-14 — made the empty
+  `finished` card look like a bug; it was simply the truth, plus this
+  retention gap. FD verified healthy by taping the 13:30Z full sweep:
+  0 matches for Sept 26-Oct 6 is the correct answer for that window.)
+
+### Live verification (2026-09-28, deployed Version 2d79f5cc)
+- Local smoke first: the true-cold path (empty local KV + dead local FD
+  token) reproduced the user's bug exactly — the synchronous long view
+  burned >60s; with any cached state present: 0.83s → 0.004s.
+- Live: first request after deploy paid a one-time 5.7s pool-first rebuild
+  (the 7-day snapshot had expired in the quiet week); every request since
+  = **0.3-0.7s**. Payload-expired requests now serve the snapshot
+  instantly (tagged `cachedAt`, the page's existing cached indicator) with
+  the rebuild in the background — verified in KV: snapshot preserved on
+  empty-result days, empty payloads keep their 60s retry TTL.
+- Ticks: 13:30Z full sweep completed 13:31:51 (5 writes, sweep-band
+  subrequests); quiet ticks clean; healthz `ok:true` throughout;
+  `live_overlay_v1` correctly absent on a no-live-matches day (the overlay
+  write gate only fires when live rows exist within ±6h).
+
+---
+
 ## [13.51.1-banner] — 2026-09-15 (docs & banner — same worker build as 13.51)
 
 No worker-code change: `src/config.ts` stays `13.51-rivalries`, `package.json`

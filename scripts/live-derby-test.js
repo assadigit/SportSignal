@@ -136,6 +136,19 @@ chk(isMasterClash({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpo
 chk(isMasterClash({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "CL" } }) === false, "CL pairings are NOT domestic clashes (CL BOX territory)");
 
 // ---------- B: month-end window via real fetchPublicMatches ----------
+// v13.52 (test hygiene): the upcoming list is EOM-gated (fixtures beyond the
+// current month-end are intentionally dropped), so fixed +Nd fixtures cross
+// the boundary in the last N days of any month — found live 2026-09-28,
+// three days before EOM, on PRISTINE 13.51 code (t-rout at +3d fell into
+// October and "routine selected fixture stays in the upcoming list" failed).
+// The suite must never be date-dependent: relOff(days) returns the plain
+// day-offset when the month has room and otherwise scales it into the
+// remaining hours — strictly increasing in `days`, so every kickoff-order
+// assertion keeps holding. (Rows whose assertions are box/90-day-window
+// only — e.g. t-clash2 at relOff(5) — may scale past EOM on cramped months;
+// that is fine: the box window is 90d, only `upcoming` is month-gated.)
+const EOM_MS = (() => { const d = new Date(); d.setMonth(d.getMonth() + 1, 0); d.setHours(23, 59, 59, 999); return d.getTime(); })();
+const relOff = (days) => (EOM_MS - Date.now() > (days + 1) * 864e5) ? days * 864e5 : Math.max(6e4, Math.round((EOM_MS - Date.now()) * days / 4.2));
 const fetchPM = grabFn("async function fetchPublicMatches(env, req"); // req optional (rate-limit only); v13.35 adds opts (prewarm/pool)
 const pool = [
   { id: "m-in", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 864e5).toISOString(), status: "SCHEDULED" },
@@ -237,10 +250,10 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
     STATE: { get: async (k, type) => { const v = state3.store[k]; return v == null ? null : type === "json" ? JSON.parse(v) : v; }, put: async (k, v) => { state3.store[k] = v; } }
   };
   const pool3 = [
-    { id: "t-derby", homeTeam: { name: "Manchester United FC" }, awayTeam: { name: "Manchester City FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 2 * 864e5).toISOString(), status: "SCHEDULED" },
-    { id: "t-clash2", homeTeam: { name: "FC Barcelona" }, awayTeam: { name: "Real Madrid CF" }, competition: { code: "PD" }, utcDate: new Date(Date.now() + 5 * 864e5).toISOString(), status: "SCHEDULED" },
-    { id: "t-one", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Brentford FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 864e5).toISOString(), status: "SCHEDULED" },
-    { id: "t-none", homeTeam: { name: "Everton FC" }, awayTeam: { name: "Fulham FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 3 * 864e5).toISOString(), status: "SCHEDULED" }
+    { id: "t-derby", homeTeam: { name: "Manchester United FC" }, awayTeam: { name: "Manchester City FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + relOff(2)).toISOString(), status: "SCHEDULED" },
+    { id: "t-clash2", homeTeam: { name: "FC Barcelona" }, awayTeam: { name: "Real Madrid CF" }, competition: { code: "PD" }, utcDate: new Date(Date.now() + relOff(5)).toISOString(), status: "SCHEDULED" },
+    { id: "t-one", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Brentford FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + relOff(1)).toISOString(), status: "SCHEDULED" },
+    { id: "t-none", homeTeam: { name: "Everton FC" }, awayTeam: { name: "Fulham FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + relOff(3)).toISOString(), status: "SCHEDULED" }
   ];
   eval("const applySettings = async () => {};\nconst getCachedMatches = async () => pool3;\nconst fetchLongView = async () => pool3;\nconst enrichLiveMatches = async (e, ms) => ms;\nconst fetchStandings = async (env, code) => null;\nconst compact = (st) => (st && st.teams && st.teams.length ? st : null);\nconst COMP_EN = { PL: \"PL\", PD: \"PD\", SA: \"SA\", BL1: \"BL1\", FL1: \"FL1\", AL: \"AL\", CL: \"CL\", EL: \"EL\", ECL: \"ECL\", PGL: \"PGL\" };\nconst LEAGUE_LOGOS = {};\nconst CONFIG = { KV_PUBLIC_MATCHES: \"pm3\", INTL_COMPETITIONS: {}, DOMESTIC_CUP_IDS: { FA_CUP: 2055 }, CUP_PHASE_WINDOWS: { EURO_LL_START: \"2026-09-28T00:00:00Z\", FA_ROUND1: \"2026-11-09T00:00:00Z\" } };\n" + fetchPM);
   const d3 = await fetchPublicMatches(env3);
@@ -283,9 +296,9 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
     { pos: 5, name: "Tottenham Hotspur FC", points: 5 }
   ] } };
   const pool4 = [
-    { id: "t-fb", homeTeam: { name: "Liverpool FC" }, awayTeam: { name: "Tottenham Hotspur FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 1 * 864e5).toISOString(), status: "SCHEDULED" },
-    { id: "t-derby", homeTeam: { name: "Manchester United FC" }, awayTeam: { name: "Manchester City FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 2 * 864e5).toISOString(), status: "SCHEDULED" },
-    { id: "t-rout", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Brentford FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 3 * 864e5).toISOString(), status: "SCHEDULED" }
+    { id: "t-fb", homeTeam: { name: "Liverpool FC" }, awayTeam: { name: "Tottenham Hotspur FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + relOff(1)).toISOString(), status: "SCHEDULED" },
+    { id: "t-derby", homeTeam: { name: "Manchester United FC" }, awayTeam: { name: "Manchester City FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + relOff(2)).toISOString(), status: "SCHEDULED" },
+    { id: "t-rout", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Brentford FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + relOff(3)).toISOString(), status: "SCHEDULED" }
   ];
   eval("const applySettings = async () => {};\nconst getCachedMatches = async () => pool4;\nconst fetchLongView = async () => pool4;\nconst enrichLiveMatches = async (e, ms) => ms;\nconst fetchStandings = async (env, code) => (stand4[code] || null);\nconst compact = (st) => (st && st.teams && st.teams.length ? st : null);\nconst COMP_EN = { PL: \"PL\", PD: \"PD\", SA: \"SA\", BL1: \"BL1\", FL1: \"FL1\", AL: \"AL\", CL: \"CL\", EL: \"EL\", ECL: \"ECL\", PGL: \"PGL\" };\nconst LEAGUE_LOGOS = {};\nconst CONFIG = { KV_PUBLIC_MATCHES: \"pm4\", INTL_COMPETITIONS: {}, DOMESTIC_CUP_IDS: { FA_CUP: 2055 }, CUP_PHASE_WINDOWS: { EURO_LL_START: \"2026-09-28T00:00:00Z\", FA_ROUND1: \"2026-11-09T00:00:00Z\" } };\n" + fetchPM);
   const d4 = await fetchPublicMatches(env4);
