@@ -10,7 +10,7 @@
 **A serverless Telegram bot + web page that tells Iranian football fans about the
 matches that matter — before they start, while they're live, and the moment they end.**
 
-> **Current build:** v13.52-swrsolid · [Live](https://sportsignal.ir) ·
+> **Current build:** v13.53-standsteady · [Live](https://sportsignal.ir) ·
 > **Operating it?** Read [`RUNBOOK.md`](RUNBOOK.md) first — deploy/verify/rollback,
 > monitoring semantics, incident playbooks, and the never-do list (§11).
 
@@ -336,6 +336,14 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
 - ✅ **13.51-rivalries** — named rivalry tags everywhere the derby tag lived
   (El Clásico, Der Klassiker, …); never in the UCL; fa keeps only
   ال کلاسیکو
+- ✅ **13.52-swrsolid** — the "few minutes to load" fix: pool-first visitor
+  rebuilds, snapshot-first stale serving, and the live overlay (fixtures
+  cache; a live/finished game is never served stale)
+- ✅ **13.53-standsteady** — the missing-tables fix ("2 of 5 league tables
+  don't load / جدول هنوز در دسترس نیست") + the API-call diet: snapshot
+  fallback on every standings code + the UCL card, 6h jittered standings
+  gate (was 10-min), FD rotation removed, 24h standings TTL, R6 live-sweep
+  narrowing (~65% of the daily upstream call volume cut on matchdays)
 
 **Deliberately deferred (documented, not forgotten):**
 
@@ -355,9 +363,10 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
   (`football.sportsignal.ir/webhook`, 0 pending updates, no last error),
   outbox draining clean, same-day alert deliveries — measure it, don't
   assume it.
-- **R6** — live-sweep sportscore fan-out (2 days × 9 slugs = 18 fetches):
-  the evening profile already sits at the real subrequest cap's edge
-  (the 21:40Z incident).
+- **R6 — SHIPPED in 13.53** (live-sweep sportscore fan-out): the sweep now
+  fetches only in-window pool leagues (league evening: 0 calls, was
+  18/tick). Watch the full-sweep cadence (2h, 18 calls) if the budget
+  needs another cut someday.
 - **R7** — cup-result sweeps via TSP `eventspast`, bounded to in-flight
   rows (fixtures + live covered by 13.50; FT pickup leans on hot-window
   quiet ticks today).
