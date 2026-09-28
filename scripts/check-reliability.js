@@ -220,7 +220,7 @@ check("#cpu1 throttle: full sweep only in the else branch (fullSweepThisTick=tru
 // canonDedupe merge over the pool. NO env.STATE.put inside fetchLiveSweep
 // (the KV pool stays the last full sweep's snapshot — zero writes on live
 // ticks protects the 1,000/day quota).
-const liveSeg = (src.match(/async function fetchLiveSweep\(env, cachedPool\)[\s\S]{0,2400}?return merged;/) || [""])[0];
+const liveSeg = (src.match(/async function fetchLiveSweep\(env, cachedPool\)[\s\S]{0,4600}?return merged;/) || [""])[0];
 check("#cpu2 fetchLiveSweep exists with the cron's exact call shape", liveSeg.length > 200);
 check("#cpu2 live FD range is \\u00b12 days", /pastDays: 2, futureDays: 2, live: true/.test(liveSeg));
 check("#cpu2 live sportscore window is yesterday+today", /fromDays: 1, toDays: 0/.test(liveSeg));
@@ -467,6 +467,30 @@ check("#swrsolid overlay write honors the HARD governor (budgetHard)", /liveRows
 check("#swrsolid liveChanged signal hoisted (shared by prewarm + overlay)", /let liveChanged = false;[\s\S]{0,200}liveFingerprint\(matches\) !== liveFingerprint\(poolRef\)/.test(cronSeg52));
 check("#swrsolid overlay write sits BEFORE the completion blob (writes fold)", cronSeg52.indexOf("Live overlay write failed") > -1 && cronSeg52.indexOf("Live overlay write failed") < cronSeg52.indexOf("kvWritesDay = kvWritesThisTick + 1"));
 check("#swrsolid pool retains a WEEK of settled rows (7-day finished card under pool-first)", /const cutoff = Date\.now\(\) - 7 \* 864e5;/.test(src));
+
+// ===== v13.53-standsteady: the standings pipeline + the API-call diet =====
+// The user's report: "sometimes 2 of 5 league tables don't load / جدول هنوز
+// در دسترس نیست — the system sends too much update request while it's not
+// needed". The fix: 6h jittered freshness gate (10-min gate churned hundreds
+// of FD calls/day), FD rotation REMOVED (its 2h-aligned slot starved tables
+// of fetch opportunities), 24h KV TTL (a day-old table beats the empty box),
+// snapshot fallback generalized to EVERY standings code + the UCL card, FD
+// standings respect the 429 penalty box, live-detail enrichment prewarm-only,
+// R6 sportscore live-sweep narrowing, coronation fresh-only-with-FT.
+check("#standsteady default freshness gate is 6h (was the 10-min churn)", /STANDINGS_FRESH_MS: 6 \* 60 \* 60 \* 1e3/.test(src));
+check("#standsteady per-code jitter staggers the 6h expiries (no FD burst)", /STANDINGS_FRESH_JITTER_MS: 17 \* 60 \* 1e3/.test(src) && /STAND_CODE_ORDER\.indexOf\(code\)\) \* CONFIG\.STANDINGS_FRESH_JITTER_MS/.test(src));
+check("#standsteady explicit freshMs overrides are honored EXACTLY (no jitter)", /opts && opts\.freshMs != null \? opts\.freshMs : CONFIG\.STANDINGS_FRESH_MS \+/.test(src));
+check("#standsteady standings KV TTL raised 8h → 24h (survives a day of upstream failures)", /STANDINGS_CACHE_TTL: 24 \* 60 \* 60/.test(src) && /expirationTtl: CONFIG\.STANDINGS_CACHE_TTL/.test(src));
+check("#standsteady the FD rotation is GONE (its 2h-aligned slot starved tables)", !/FD_STAND_ROTATION/.test(src));
+check("#standsteady public rebuild fetches standings SEQUENTIALLY (never bursts FD's 10 req/min)", /for \(const c of standCodes\.concat\(\["CL", "PGL"\]\)\) \{[\s\S]{0,120}stMap\[c\] = await fetchStandings\(env, c, true\)/.test(src));
+check("#standsteady snapshot fallback covers EVERY standings code (was PGL-only)", /standMissing = standCodes\.concat\(\["PGL"\]\)\.filter/.test(src) && /for \(const c of standMissing\) \{[\s\S]{0,200}standings\[c\] = Object\.assign\(\{\}, st, \{ code: c, stale: true/.test(src));
+check("#standsteady the UCL card rides the same snapshot fallback", /const uclStarted = stCL \? stCL\.started !== false : snapUcl \? snapUcl\.started !== false : true;/.test(src) && /snapUcl && Array\.isArray\(snapUcl\.teams\) && snapUcl\.teams\.length \? snapUcl\.teams : null/.test(src));
+check("#standsteady FD standings respect the provider suspension (the 429 penalty box)", src.split("async function fetchStandings")[1] && /providerSuspended\(env, "football-data"\)/.test(src.split("async function fetchStandings")[1].slice(0, 5500)));
+check("#standsteady FD live-detail enrichment is PREWARM-only (visitor rebuilds skip it)", /if \(prewarm\) await enrichLiveMatches\(env, matches\);/.test(src));
+check("#standsteady R6: live sweep narrows sportscore to in-window pool leagues", /SS_LIVE_ELIGIBLE/.test(src) && /fetchSportScore\(env, \{ fromDays: 1, toDays: 0, slugs: \[\.\.\.need\] \}\)/.test(src));
+check("#standsteady coronation fetches fresh ONLY for leagues with a just-finished match", /codeHadFT \? \{ freshMs: 6e5 \} : undefined/.test(src));
+check("#standsteady result lines + weekly digest + admin endpoint keep the 10-min freshness", /fetchStandings\(env, code, true, \{ freshMs: 6e5 \}\)/.test(src));
+check("#standsteady STAND_CODE_ORDER carries the full standings set (jitter domain)", /"PL",\s*"PD",\s*"SA",\s*"BL1",\s*"FL1",\s*"CL",\s*"PGL",\s*"EL",\s*"ECL",\s*"AL"/.test(src));
 
 
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");

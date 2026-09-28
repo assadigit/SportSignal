@@ -155,6 +155,24 @@ export const TSP_LEAGUE_IDS = {
   "PGL": 4742
   // Iran Persian Gulf Pro League (display-only, never in fd leagues URL)
 };
+// v13.53-standsteady: the standings refresh order. Each code's default 6h
+// freshness gate (CONFIG.STANDINGS_FRESH_MS) is stretched by its index here
+// × CONFIG.STANDINGS_FRESH_JITTER_MS, so the codes' gates expire at staggered
+// times — a payload rebuild fetches at most ~1 code instead of the whole set
+// at once (football-data free tier: 10 req/min). Codes not in the list get
+// index 0 (no jitter). Pure data — the gate math lives in fetchStandings.
+export const STAND_CODE_ORDER = [
+  "PL",
+  "PD",
+  "SA",
+  "BL1",
+  "FL1",
+  "CL",
+  "PGL",
+  "EL",
+  "ECL",
+  "AL"
+];
 export const CUP_TSP_IDS = {
   "EFL_CUP": 4570,
   // English League Cup (Plymouth/Exeter etc.)

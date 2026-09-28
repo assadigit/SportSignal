@@ -4,7 +4,7 @@
 
 
 import { CONFIG } from "./config";
-import { STAGE_FA, COMP_EN, SPORTSCORE_SLUGS } from "./tables";
+import { STAGE_FA, COMP_EN, SPORTSCORE_SLUGS, STAND_CODE_ORDER } from "./tables";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, getRelativeTimeUntilMatch, getEnglishDate, getEnglishTime, getEnglishRelative, fetchJSON, enStageName, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams";
@@ -155,10 +155,22 @@ export async function formatResultMessage(match, env, lang?) {
   }
   return await appendTableOrPhase(env, match, message, lang);
 }
-export async function fetchStandings(env: Env, code, allowFetch = true) {
+export async function fetchStandings(env: Env, code, allowFetch = true, opts?) {
   const cacheKey = CONFIG.KV_STANDINGS_CACHE + code;
   const cached: any = await env.STATE.get(cacheKey, "json").catch(() => null);
-  if (cached && cached.ts && Date.now() - cached.ts < 6e5) return cached.data;
+  // v13.53-standsteady: the default freshness gate is 6h (was 10min).
+  // Standings only change around finished matches, but the 10-min gate made
+  // every payload rebuild re-hit football-data/sportscore for its rotation
+  // pair — hundreds of standings calls/day (the user's report: "our system
+  // sends too much update request while it's not needed"). Callers that NEED
+  // post-FT freshness (result lines, weekly digest, coronation, the admin
+  // endpoint) pass opts.freshMs = 6e5. The per-code jitter (STAND_CODE_ORDER
+  // index × STANDINGS_FRESH_JITTER_MS) staggers the default expiries so a
+  // single rebuild never fetches the whole set at once (FD: 10 req/min);
+  // explicit freshMs overrides are honored EXACTLY (no jitter — a result
+  // line for FL1 must not wait 68 extra minutes).
+  const freshMs = opts && opts.freshMs != null ? opts.freshMs : CONFIG.STANDINGS_FRESH_MS + Math.max(0, STAND_CODE_ORDER.indexOf(code)) * CONFIG.STANDINGS_FRESH_JITTER_MS;
+  if (cached && cached.ts && Date.now() - cached.ts < freshMs) return cached.data;
   if (!allowFetch) return cached && cached.data && Array.isArray(cached.data.teams) && cached.data.teams.length ? cached.data : null;
   let out = null;
   try {
@@ -217,6 +229,13 @@ export async function fetchStandings(env: Env, code, allowFetch = true) {
         }
       }
     } else {
+      // v13.53-standsteady: respect the FD penalty box — a 429-exhausted sweep
+      // suspended football-data for PROVIDER_SUSPEND_MS; standings calls into
+      // the same exhausted quota just fail and burn rate-limit budget. Skip to
+      // the cached copy below (the 24h KV TTL + the snapshot fallback on the
+      // public side keep the table rendered).
+      const fdSuspended = await providerSuspended(env, "football-data").catch(() => false);
+      if (!fdSuspended) {
       const headers = { "X-Auth-Token": env.API_TOKEN };
       // v13.45-sightlines (F10): this raw fetch was invisible to the
       // subrequest counter — the notify-defer guard (>38) couldn't see
@@ -277,12 +296,16 @@ export async function fetchStandings(env: Env, code, allowFetch = true) {
           out = { matchday: null, started: false, teams: table.map((r, i) => ({ name: r.team, pos: i + 1, points: 0 })) };
         }
       }
+      }
     }
   } catch (e) {
     console.error("Standings fetch failed for " + code + ": " + e.message);
   }
   if (out && out.teams.length) {
-    await env.STATE.put(cacheKey, JSON.stringify({ ts: Date.now(), data: out }), { expirationTtl: 28800 }).catch(() => {
+    // v13.53-standsteady: TTL 8h → 24h (STANDINGS_CACHE_TTL) — the
+    // serve-fresh-failure fallback below now survives a full day of upstream
+    // 429s/suspension instead of expiring the table to the empty box.
+    await env.STATE.put(cacheKey, JSON.stringify({ ts: Date.now(), data: out }), { expirationTtl: CONFIG.STANDINGS_CACHE_TTL }).catch(() => {
     });
     return out;
   }
@@ -292,7 +315,10 @@ export async function fetchStandings(env: Env, code, allowFetch = true) {
 export async function standingsLine(env: Env, match, lang) {
   const en = lang === "en";
   const code = match.competition.code;
-  const fresh = await fetchStandings(env, code);
+  // v13.53-standsteady: the result line keeps the 10-min freshness — it
+  // renders rank/points right after an FT, so it must see the post-match
+  // table (the 6h default would show pre-match points).
+  const fresh = await fetchStandings(env, code, true, { freshMs: 6e5 });
   if (!fresh || !fresh.teams.length) return null;
   const snapKey = CONFIG.KV_STANDINGS_SNAP + code;
   const old = await env.STATE.get(snapKey, "json").catch(() => null);

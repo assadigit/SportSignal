@@ -76,7 +76,11 @@ const matches = [
 ];
 let cups;
 let uclOut;
-try { const out = eval("(() => { const stPGL = null; const stCL = null; const matches = " + JSON.stringify(matches) + ";" + cupBlock.replace("const cupOrder", "var cupOrder") + "return { cups, ucl };})()"); cups = out.cups; uclOut = out.ucl; }
+// v13.53-standsteady: the UCL card slice now references snapUcl (the
+// snapshot fallback source declared above the extracted block) — stub it
+// null so the stCL-null path keeps its pre-13.53 semantics (started=true,
+// teams=null).
+try { const out = eval("(() => { const stPGL = null; const stCL = null; var snapUcl = null; const matches = " + JSON.stringify(matches) + ";" + cupBlock.replace("const cupOrder", "var cupOrder") + "return { cups, ucl };})()"); cups = out.cups; uclOut = out.ucl; }
 catch (e) { console.error("FAIL: cups block threw: " + e.message); process.exit(1); }
 
 const byCode = {};

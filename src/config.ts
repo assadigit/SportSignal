@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.52-swrsolid";
+export const VERSION = "13.53-standsteady";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -146,6 +146,24 @@ export const CONFIG: Record<string, any> = {
   KV_LAST_SOURCE: "last_api_source",
   KV_STANDINGS_SNAP: "standings_snap_",
   KV_STANDINGS_CACHE: "standings_cache_",
+  // v13.53-standsteady: standings freshness + cache tunables. The old values
+  // (10-min freshness gate / 8h KV TTL) were the "2 of 5 league tables
+  // don't load" bug's fuel: every payload rebuild re-hit football-data for
+  // the rotation pair, FD 429s left nothing cached for the other codes, and
+  // the 8h TTL expired the box to «جدول هنوز در دسترس نیست». Standings only
+  // change around finished matches, so:
+  //   STANDINGS_FRESH_MS       — default re-fetch gate (6h; callers that need
+  //                              post-FT freshness pass opts.freshMs = 6e5);
+  //   STANDINGS_FRESH_JITTER_MS— per-code stagger (see STAND_CODE_ORDER) so
+  //                              the 6h expiries NEVER coincide: no rebuild
+  //                              fetches the whole set at once (FD free tier
+  //                              is 10 req/min); worst case ~1 code/rebuild;
+  //   STANDINGS_CACHE_TTL      — KV TTL of a successful fetch (24h; a
+  //                              day-old table beats an empty box when the
+  //                              upstream is down/suspended).
+  STANDINGS_FRESH_MS: 6 * 60 * 60 * 1e3,
+  STANDINGS_FRESH_JITTER_MS: 17 * 60 * 1e3,
+  STANDINGS_CACHE_TTL: 24 * 60 * 60,
   KV_PUBLIC_MATCHES: "public_matches_v1",
   // v12.x-resilience: long-TTL (7 day) snapshot of the last successful
   // public-matches build. Read ONLY when the live fetch fails (or returns

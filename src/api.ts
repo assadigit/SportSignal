@@ -141,7 +141,9 @@ const POST_GATE_ROUTES: RouteDef[] = [
   { path: "/api/standings", method: "GET", handler: async ({ req, env, url }): Promise<Response | null> => {
       const code = String(url.searchParams.get("code") || "").toUpperCase();
       if (!code) return jsonResponse({ error: "code param required (e.g. PL, CL)" }, 400);
-      const fresh = await fetchStandings(env, code);
+      // v13.53-standsteady: the admin endpoint keeps the 10-min freshness —
+      // it's manual, rare use, and the deltas it renders are point-in-time.
+      const fresh = await fetchStandings(env, code, true, { freshMs: 6e5 });
       if (!fresh) return jsonResponse({ ok: false, error: "Standings not yet available for " + code + " (source unavailable or season not started)" }, 200);
       const snapKey = CONFIG.KV_STANDINGS_SNAP + code;
       const old = await env.STATE.get(snapKey, "json").catch(() => null);

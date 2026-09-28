@@ -25,7 +25,10 @@ export async function sendLeagueTables(env: Env, chatIds, opts, lang?) {
   for (const code of weeklyTableCodes()) {
     let st = null;
     try {
-      st = await fetchStandings(env, code, true);
+      // v13.53-standsteady: the weekly digest keeps the 10-min freshness —
+      // it renders the table once a week, so the freshest data wins (7
+      // fetches/week is nothing against the volume we just cut).
+      st = await fetchStandings(env, code, true, { freshMs: 6e5 });
     } catch (e) {
       st = null;
     }
@@ -429,7 +432,15 @@ export async function maybeNotifyTableToppers(env: Env, matches) {
   for (const code of weeklyTableCodes().filter((c) => c !== "CL")) {
     let st = null;
     try {
-      st = await fetchStandings(env, code, true);
+      // v13.53-standsteady: coronation keeps POST-FT freshness ONLY for
+      // leagues with a just-finished match in the pool — the only ones whose
+      // table can actually have changed (a leader can only be overtaken via
+      // that league's own FT). The rest serve the 6h-cached copy: identical
+      // detection semantics, ~80% fewer standings fetches (the old path
+      // re-fetched all 7 codes on EVERY full sweep ≈ 84 FD calls/day by
+      // itself — the biggest single standings consumer).
+      const codeHadFT = matches.some((m) => m && m.competition && m.competition.code === code && isMatchFinished(m) && isWithinPostMatchWindow(m, env));
+      st = await fetchStandings(env, code, true, codeHadFT ? { freshMs: 6e5 } : undefined);
     } catch (e) {
       st = null;
     }

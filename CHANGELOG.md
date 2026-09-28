@@ -6,6 +6,90 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.53-standsteady] — 2026-09-28 (the missing-tables bug + the API-call diet)
+
+### The user's report
+> "Sometimes a league table or something doesn't load — if there are 5 league
+> tables, 2 of them might not load, but the others are fully loaded
+> [«جدول هنوز در دسترس نیست»]. I have a hunch this is because API call
+> overload, so the system gets limited. I think our system sends too much
+> update request, while it's not needed. We need to reduce the update times,
+> to avoid API call per day."
+
+Both halves were real, and the second half was the first half's cause.
+
+### Why tables went missing (root chain, all links severed)
+1. **The FD standings rotation aligned with itself.** Prewarm sweeps run
+   exactly every 2h = 12 × 10-min slots, and `12 % 3 = 0` — every cron
+   prewarm landed in the SAME rotation slot, so the same 2 codes refreshed
+   every time while the other 4 (of PL/PD/SA/BL1/FL1/CL) only got fetch
+   opportunities from random visitor rebuilds. On quiet days a code could
+   go 8h+ without one.
+2. **KV TTL was 8h** (`standings_cache_*`): once the rotation starvation
+   crossed 8h, the cache EXPIRED — and the next FD 429/timeout hit the
+   null path: the box rendered «جدول هنوز در دسترس نیست».
+3. **The snapshot fallback was PGL-only** (v13.34): every other code had
+   no last-resort — which is exactly why the user saw PGL render while
+   2 of the 5 league tables sat empty.
+4. **The 10-min freshness gate churned hundreds of calls/day**: every
+   payload rebuild re-hit FD for its rotation pair (~240+ standings
+   calls/day under traffic) — the "too much update request" that gets
+   the free tier rate-limited in the first place.
+
+### The fix — tables stay, the call volume collapses
+- **All-codes snapshot fallback** (the v13.34 PGL path, generalized):
+  when ANY standings code (or the UCL card) has no live table, the 7-day
+  snapshot's copy fills the box — tagged `stale`/`staleAsOf`. Read only
+  on the miss path; zero KV cost on the happy path. `top3`/`top5` clash
+  marking deliberately still uses live tables only.
+- **Default freshness gate 10min → 6h** (`STANDINGS_FRESH_MS`), with a
+  **per-code jitter** (`STAND_CODE_ORDER` × `STANDINGS_FRESH_JITTER_MS`
+  = 17min) so the 6h expiries NEVER coincide — a rebuild fetches at most
+  ~1 code. Callers that need post-FT freshness (result lines, weekly
+  digest, coronation, `/api/standings`) pass `opts.freshMs = 6e5`
+  (honored exactly, no jitter). Coronation now fetches fresh ONLY for
+  leagues with a just-finished match (~80% fewer calls; identical
+  detection semantics — a leader can only change via that league's FT).
+- **FD rotation REMOVED, fetches SEQUENTIAL**: the alignment bug is gone
+  by construction, and no rebuild can burst FD's 10 req/min window.
+- **Standings KV TTL 8h → 24h** (`STANDINGS_CACHE_TTL`): the
+  fetch-failed → cached fallback survives a full day of upstream
+  429s/suspension. A day-old table beats an empty box.
+- **FD standings respect the 429 penalty box** (`providerSuspended`) —
+  calls into an exhausted quota-minute are wasted calls; skip to cache.
+- **Live-detail enrichment (scorers) is PREWARM-only**: the serve-time
+  overlay patches status/score/minute on every payload, and a goal fires
+  `liveChanged` → the tick's prewarm re-enriches scorers within ~10min.
+  Visitor rebuilds skip up to 4 FD calls + 5.6s of sleeps EACH (both API
+  burn and latency during live windows).
+- **R6 SHIPPED — sportscore live-sweep fan-out**: the live sweep now
+  fetches only eligible leagues with a live/imminent ([-6h,+3h])/just-
+  finished pool match (`fetchSportScore` gained `opts.slugs`). A league
+  evening with no cup/EL/PGL match in flight: **0 sportscore calls**
+  (was 18/tick ≈ 540-720/day); an EL Thursday: 4. Discovery stays the
+  full sweep's job (every 2h, all slugs). BL1 stays eligible — when FD
+  is suspended, sportscore is its only live source.
+
+### Expected daily API budget (matchday, vs before)
+- sportscore: ~800 → ~280 (live sweeps 540-720 → 60-160; full sweeps
+  unchanged at 216 — the correctness backbone)
+- football-data: ~350 → ~80 (standings ~300 → ~40-60; sweeps unchanged)
+- scorers enrichment: ~4/tick × visitor refreshes → ~4 per goal-window
+  prewarm only
+
+### Tests
+- check-reliability +14 `#standsteady` wiring asserts (gate/jitter/TTL/
+  rotation-gone/snapshot-fallback/UCL-card/suspension/prewarm-enrich/
+  R6/coronation/fresh-callers).
+- check-no-miss section S reworked: R6 behavioral (skip-with-no-eligible,
+  EL narrows to [EL], far-future fixture → no call, imminent cup arms its
+  slug) — the old "yesterday+today window" assert upgraded to assert the
+  slugs filter rides it.
+- check-cups: `snapUcl` stub for the UCL-card slice (pre-13.53 semantics
+  under stCL=null preserved).
+- `liveSeg` window 2400 → 4600 chars (fetchLiveSweep grew with R6).
+- Full suite: tsc + 17 scripts, 558 OK checks, exit 0.
+
 ## [13.52-swrsolid] — 2026-09-16 (the "few minutes to load" bug: the visitor never waits, the live game never lies)
 
 ### The user's report

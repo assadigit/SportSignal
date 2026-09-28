@@ -223,8 +223,14 @@ export async function fetchSportScore(env: Env, opts?) {
   // v13.43-cpukeeper: opts narrows the day window for the cheap LIVE sweep
   // (yesterday + today). Default (no opts) keeps the full-sweep window
   // [now-24h, now+24h] exactly as before.
+  // v13.53-standsteady (backlog R6): opts.slugs narrows the COMPETITION set
+  // too — the live sweep passes only the leagues that actually have a
+  // live/imminent/just-finished pool match (see fetchLiveSweep). The full
+  // sweep (no slugs) keeps fetching every eligible slug — fixture discovery
+  // stays its job.
   const fromDays = opts && opts.fromDays != null ? opts.fromDays : 1;
   const toDays = opts && opts.toDays != null ? opts.toDays : 1;
+  const onlySlugs = opts && Array.isArray(opts.slugs) && opts.slugs.length ? new Set(opts.slugs) : null;
   const matches = [];
   const seen = new Set();
   if (await providerSuspended(env, "sportscore")) {
@@ -237,7 +243,7 @@ export async function fetchSportScore(env: Env, opts?) {
   };
   const slugs = Object.fromEntries(
     Object.entries(SPORTSCORE_SLUGS).filter(
-      ([code]) => code === "EL" || code === "ECL" || code === "BL1" || code === "FA_CUP" || code === "EFL_CUP" || code === "CDR" || code === "COPPA_ITALIA" || code === "PGL" || code === "AL" && inSeason(code)
+      ([code]) => onlySlugs ? onlySlugs.has(code) && (code !== "AL" || inSeason(code)) : code === "EL" || code === "ECL" || code === "BL1" || code === "FA_CUP" || code === "EFL_CUP" || code === "CDR" || code === "COPPA_ITALIA" || code === "PGL" || code === "AL" && inSeason(code)
     )
   );
   if (!Object.keys(slugs).length) return matches;
@@ -594,9 +600,40 @@ export async function fetchLiveSweep(env: Env, cachedPool) {
   }
   if (!(await providerSuspended(env, "sportscore"))) {
     try {
-      const ss = await fetchSportScore(env, { fromDays: 1, toDays: 0 });
-      ssCount = ss.length;
-      fetched.push(...ss);
+      // v13.53-standsteady (backlog R6): the live sweep only needs sportscore
+      // for ELIGIBLE leagues that actually have a live / imminent /
+      // just-finished match in the pool. Before: all 9 slugs × 2 days = 18
+      // calls on EVERY active tick (~540-720 calls on a matchday — the
+      // single biggest API consumer, the user's "too much update request").
+      // A league evening with no cup/EL/PGL match in flight now burns 0
+      // sportscore calls (FD's single ±2d fixtures call covers its own
+      // leagues); an EL Thursday fetches just EL+ECL (4 calls). Fixture
+      // DISCOVERY stays the full sweep's job (every 2h, all slugs) — a live
+      // update can only apply to a match the pool already knows anyway.
+      // Window: [-6h, +3h] — the tail covers extra time + delays + just-FT
+      // capture; the pre-arm catches kickoff transitions the moment they
+      // fire. BL1 stays eligible: it's FD-covered, but when FD is suspended
+      // (the 429 penalty box) sportscore becomes its only live source.
+      const nowMs = Date.now();
+      const SS_LIVE_BACK = 6 * 36e5, SS_LIVE_FWD = 3 * 36e5;
+      const SS_LIVE_ELIGIBLE = ["EL", "ECL", "BL1", "FA_CUP", "EFL_CUP", "CDR", "COPPA_ITALIA", "PGL", "AL"];
+      const eligible = new Set(SS_LIVE_ELIGIBLE);
+      const need = new Set();
+      for (const m of pool) {
+        const code = m && m.competition && m.competition.code;
+        if (!code || !eligible.has(code)) continue;
+        const t = m.utcDate ? new Date(m.utcDate).getTime() : 0;
+        if (!t) continue;
+        const st = String((m && m.status) || "").toUpperCase();
+        if (isLiveStatus(st) || (t >= nowMs - SS_LIVE_BACK && t <= nowMs + SS_LIVE_FWD)) need.add(code);
+      }
+      if (need.size) {
+        const ss = await fetchSportScore(env, { fromDays: 1, toDays: 0, slugs: [...need] });
+        ssCount = ss.length;
+        fetched.push(...ss);
+      } else {
+        console.log("\u23ED\uFE0F sportscore live sweep: no eligible in-window pool match \u2014 0 calls (was 18)");
+      }
     } catch (e) {
       console.error("Live sweep sportscore failed: " + e.message);
     }

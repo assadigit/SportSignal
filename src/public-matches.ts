@@ -306,7 +306,14 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
       matches = await getCachedMatches(env);
       if (!matches.length) matches = await fetchLongView(env);
     }
-    await enrichLiveMatches(env, matches);
+    // v13.53-standsteady: FD live-detail enrichment (scorers) runs on PREWARM
+    // (cron) builds ONLY. The serve-time live overlay patches status/score/
+    // minute into EVERY payload served — live truth never depends on this
+    // call — and a goal fires liveChanged → the tick's prewarm re-enriches
+    // scorers within ~10min. Visitor rebuilds skip it entirely: up to 4 FD
+    // calls + 5.6s of sleeps saved on EVERY refresh during live windows
+    // (both the API burn and the rebuild latency the user reported).
+    if (prewarm) await enrichLiveMatches(env, matches);
   } catch (e) {
     console.error("Public provider sweep failed (serving stale): " + e.message);
     liveSweepFailed = true;
@@ -315,9 +322,6 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   }
   const now = Date.now();
   const standCodes = ["PL", "PD", "SA", "BL1", "FL1"];
-  const FD_STAND_ROTATION = ["PL", "PD", "SA", "BL1", "FL1", "CL"];
-  const fdSlot = Math.floor(Date.now() / 6e5) % 3;
-  const fdAllowed = new Set(FD_STAND_ROTATION.slice(fdSlot * 2, fdSlot * 2 + 2));
   const compact = (st) => st && st.teams.length ? {
     started: st.started !== false,
     // v12.16: full per-team stats ride along (played/won/draw/lost/gf/ga/gd —
@@ -326,9 +330,24 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     teams: st.teams.slice(0, 8).map((t) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), points: t.points, played: t.played, won: t.won, draw: t.draw, lost: t.lost, gf: t.gf, ga: t.ga, gd: t.gd != null ? t.gd : t.gf != null && t.ga != null ? t.gf - t.ga : null }))
   } : null;
   const stMap: Record<string, any> = {};
-  await Promise.all(standCodes.concat(["CL", "PGL"]).map((c) => fetchStandings(env, c, c === "PGL" || fdAllowed.has(c)).catch(() => null).then((v) => {
-    stMap[c] = v || null;
-  })));
+  // v13.53-standsteady: the FD standings rotation is GONE. It existed to
+  // spread the old 10-min freshness gate's fetches, but prewarm sweeps run
+  // exactly every 2h = 12 × 10-min slots and 12 % 3 = 0 — every cron prewarm
+  // landed in the SAME rotation slot, so the same 2 codes refreshed every
+  // time while the other 4 only got fetch opportunities from random visitor
+  // rebuilds. On quiet days a code could go 8h+ without one, its KV cache
+  // expired, the next FD 429/timeout hit the null path, and the box rendered
+  // «جدول هنوز در دسترس نیست» (the user's report: "2 of 5 tables don't
+  // load"). The 6h jittered gate inside fetchStandings now does the
+  // throttling (at most ~1 code actually fetches per rebuild), and the
+  // fetches are SEQUENTIAL — no rebuild can ever burst FD's 10-req/min.
+  for (const c of standCodes.concat(["CL", "PGL"])) {
+    try {
+      stMap[c] = await fetchStandings(env, c, true) || null;
+    } catch (e) {
+      stMap[c] = null;
+    }
+  }
   const stPL = stMap.PL, stPD = stMap.PD, stSA = stMap.SA, stBL = stMap.BL1, stFL = stMap.FL1, stCL = stMap.CL, stPGL = stMap.PGL;
   const normCache = new Map();
   const norm = (name) => {
@@ -422,23 +441,37 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     standings[c] = Object.assign({ code: c, name: COMP_EN[c] || c, faName: translateCompetition(c), emblem: LEAGUE_LOGOS[c] || null }, compact(stMap[c]));
   });
   standings.PGL = Object.assign({ code: "PGL", name: COMP_EN.PGL || "Persian Gulf Pro League", faName: translateCompetition("PGL"), emblem: LEAGUE_LOGOS.PGL || null }, compact(stPGL));
-  // v13.34-pgl-fallback (backlog §F "PGL reliability"): PGL is the site's
-  // flagship local-league card, but it depends on the weakest chain
-  // (sportscore → Wikipedia → thesportsdb). When ALL of them fail (or the
-  // season table hasn't populated yet), fall back to the 7-day snapshot's
-  // PGL copy — a few-days-stale table beats an empty «جدول هنوز در دسترس
-  // نیست» box. Zero cost on the happy path: the snapshot is read ONLY when
-  // PGL has no teams. The stale copy is tagged `stale` so the client (and
-  // admins via /api/public-matches) can tell it apart.
-  if (!(standings.PGL && Array.isArray(standings.PGL.teams) && standings.PGL.teams.length) && CONFIG.KV_PUBLIC_SNAPSHOT) {
+  // v13.53-standsteady: the v13.34-pgl-fallback, generalized from PGL-only
+  // to EVERY standings code + the UCL card — the user's report: "if there
+  // are 5 league tables, 2 of them might not load / جدول هنوز در دسترس
+  // نیست". Root chain: the FD rotation starved some codes of fetch
+  // opportunities, their 8h KV cache expired, and the next 429/timeout left
+  // the box empty. A days-old table beats an empty box. Zero cost on the
+  // happy path: the snapshot is read ONLY when a code has no live table.
+  // Stale copies carry `stale`/`staleAsOf` (the contract the PGL path
+  // established) so the client and admins can tell them apart.
+  // (top3/top5 marking above intentionally uses only LIVE tables — a stale
+  // table must not drive the top-team clash flags.)
+  let snapStand = null, snapUcl = null, snapAsOf = null;
+  const stHasTeams = (st) => !!(st && Array.isArray(st.teams) && st.teams.length);
+  const standMissing = standCodes.concat(["PGL"]).filter((c) => !stHasTeams(stMap[c]));
+  const clTableMissing = !stHasTeams(stCL);
+  if ((standMissing.length || clTableMissing) && CONFIG.KV_PUBLIC_SNAPSHOT) {
     try {
       const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
-      const pgl = snap && snap.data && snap.data.standings && snap.data.standings.PGL;
-      if (pgl && Array.isArray(pgl.teams) && pgl.teams.length) {
-        standings.PGL = Object.assign({}, pgl, { code: "PGL", stale: true, staleAsOf: snap.ts ? new Date(snap.ts).toISOString() : null });
+      if (snap && snap.data) {
+        if (snap.data.standings) snapStand = snap.data.standings;
+        if (snap.data.ucl) snapUcl = snap.data.ucl;
+        snapAsOf = snap.ts ? new Date(snap.ts).toISOString() : snap.data.fetchedAt || null;
       }
     } catch (e) {
       // snapshot unavailable — keep the empty box (previous behavior)
+    }
+  }
+  for (const c of standMissing) {
+    const st = snapStand && snapStand[c];
+    if (stHasTeams(st)) {
+      standings[c] = Object.assign({}, st, { code: c, stale: true, staleAsOf: snapAsOf });
     }
   }
   const tierOf = (code) => CONFIG.INTL_COMPETITIONS[code] ? "gold" : code === "CL" ? "gold" : code === "EL" ? "silver" : code === "ECL" ? "bronze" : "domestic";
@@ -469,7 +502,11 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   const cups = cupsRaw.filter((c) => !(CONFIG.INTL_COMPETITIONS[c.code] && !c.next));
   const clMatches = matches.filter((m) => m.competition.code === "CL" && m.status !== "FINISHED" && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > Date.now() && new Date(m.utcDate).getTime() <= Date.now() + 90 * 864e5)).sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
   const clBox = clMatches.filter((m) => hasSelectedTeam(m)).slice(0, 8);
-  const uclStarted = stCL ? stCL.started !== false : true;
+  // v13.53-standsteady: when the live CL table is missing, the snapshot's
+  // ucl card fills in (same stale-fallback as the league tables — the card
+  // used to render its own «جدول هنوز در دسترس نیست» twin whenever the CL
+  // standings fetch failed with an expired cache).
+  const uclStarted = stCL ? stCL.started !== false : snapUcl ? snapUcl.started !== false : true;
   const clubsCat = await env.STATE.get(CONFIG.KV_CLUBS_CATALOG, "json").catch(() => null);
   const crestMap = new Map();
   if (clubsCat && Array.isArray(clubsCat.clubs)) {
@@ -480,7 +517,7 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   const crestOf = (n) => n ? crestMap.get(normTeamKey(n)) || null : null;
   const ucl = {
     emblem: LEAGUE_LOGOS.CL || null,
-    matchday: stCL ? stCL.matchday : null,
+    matchday: stCL ? stCL.matchday : snapUcl ? snapUcl.matchday : null,
     started: uclStarted,
     // Pre-draw: count down to the projected league-phase kickoff instead of
     // showing nothing; real first fixture wins the moment it exists.
@@ -488,7 +525,8 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     // v12.16: FULL detail per team — the UCL card is a complete league table
     // now (MP / W / D / L / GD / Pts columns), not just points.
     // v12.18: + crest (the round club logo the user asked for).
-    teams: stCL ? stCL.teams.map((t) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), crest: crestOf(t.name), points: t.points, played: t.played, won: t.won, draw: t.draw, lost: t.lost, gf: t.gf, ga: t.ga, gd: t.gd != null ? t.gd : t.gf != null && t.ga != null ? t.gf - t.ga : null })) : null,
+    // v13.53-standsteady: snapshot's teams fill the card when stCL is empty.
+    teams: stCL ? stCL.teams.map((t) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), crest: crestOf(t.name), points: t.points, played: t.played, won: t.won, draw: t.draw, lost: t.lost, gf: t.gf, ga: t.ga, gd: t.gd != null ? t.gd : t.gf != null && t.ga != null ? t.gf - t.ga : null })) : snapUcl && Array.isArray(snapUcl.teams) && snapUcl.teams.length ? snapUcl.teams : null,
     matches: clBox.map(pubMatch)
   };
   const tNow = getNowTehran(env);

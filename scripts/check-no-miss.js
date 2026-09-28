@@ -474,7 +474,11 @@ var MEM_DEDUPE = new Set();
   check("live: a match the pool NEVER saw is discovered by the live sweep (C)", !!mC);
   check("live: discovered live match is match-start-BACKFILL eligible (the Torino-Roma rescue)", mC && isBackfillEligible(mC, "match-start", env));
   check("live: narrow FD range wired (pastDays 2, futureDays 2, live)", FD_OPTS_SEEN && FD_OPTS_SEEN.pastDays === 2 && FD_OPTS_SEEN.futureDays === 2 && FD_OPTS_SEEN.live === true);
-  check("live: narrow sportscore window wired (yesterday+today)", SS_OPTS_SEEN && SS_OPTS_SEEN.fromDays === 1 && SS_OPTS_SEEN.toDays === 0);
+  // v13.53-standsteady (R6): the pool above holds only PL/PD/SA matches —
+  // FD-covered leagues. The sportscore day sweep must be SKIPPED ENTIRELY
+  // (0 of the old 18 calls): no eligible league has a live/imminent/
+  // just-finished pool match, so there is nothing for it to update.
+  check("live: R6 — sportscore SKIPPED when no eligible league has an in-window pool match (0 of 18 calls)", SS_OPTS_SEEN === null);
   check("live: ZERO KV writes during the live sweep", livePuts === 0);
   // Total provider failure: the live sweep must not throw and must return the
   // pool unchanged (the quiet path's data source — notifications still run).
@@ -494,6 +498,24 @@ var MEM_DEDUPE = new Set();
   const mergedFT = await fetchLiveSweep(liveEnv, cachedPool);
   const mFT = mergedFT.find((m) => m.id === "pool-a" || m.id === "fd-a3");
   check("live: FINISHED reaches the merged pool and isMatchFinished opens the result path", mFT && isMatchFinished(mFT) && isWithinPostMatchWindow(mFT, env));
+
+  // v13.53-standsteady (R6 behavioral): an EL match in the pool's live
+  // window narrows the sportscore sweep to JUST that league's slug (2
+  // day-calls, was 9 slugs × 2 days = 18); a far-future EL fixture alone
+  // triggers NO call at all (nothing to update for hours).
+  SS_OPTS_SEEN = null;
+  const poolEL = [matchAt(-0.5, "LIVE", { id: "pool-el", competition: { code: "EL" } })];
+  const mergedEL = await fetchLiveSweep(liveEnv, poolEL);
+  check("live: R6 — EL live in the pool narrows sportscore to [EL] (2 calls, was 18)", SS_OPTS_SEEN && Array.isArray(SS_OPTS_SEEN.slugs) && SS_OPTS_SEEN.slugs.length === 1 && SS_OPTS_SEEN.slugs[0] === "EL" && SS_OPTS_SEEN.fromDays === 1 && SS_OPTS_SEEN.toDays === 0);
+  check("live: R6 — the EL pool fixture survives the merge", mergedEL.some((m) => m.id === "pool-el"));
+  SS_OPTS_SEEN = null;
+  const poolELFar = [matchAt(48, "SCHEDULED", { id: "pool-el-far", competition: { code: "EL" } })];
+  const mergedELFar = await fetchLiveSweep(liveEnv, poolELFar);
+  check("live: R6 — a far-future EL fixture (outside +3h) triggers NO sportscore call", SS_OPTS_SEEN === null && mergedELFar.some((m) => m.id === "pool-el-far"));
+  SS_OPTS_SEEN = null;
+  const poolCup = [matchAt(2, "SCHEDULED", { id: "pool-cup", competition: { code: "EFL_CUP" } })];
+  const mergedCup = await fetchLiveSweep(liveEnv, poolCup);
+  check("live: R6 — an imminent (+2h) EFL Cup pool match arms its slug (kickoff transitions)", SS_OPTS_SEEN && Array.isArray(SS_OPTS_SEEN.slugs) && SS_OPTS_SEEN.slugs.includes("EFL_CUP") && mergedCup.some((m) => m.id === "pool-cup"));
 
   // The prewarm gate's fingerprint (v13.43): equal live data → equal
   // fingerprint (prewarm skipped); a goal/status change → different; list
