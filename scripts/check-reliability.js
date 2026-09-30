@@ -493,6 +493,30 @@ check("#standsteady coronation fetches fresh ONLY for leagues with a just-finish
 check("#standsteady result lines + weekly digest + admin endpoint keep the 10-min freshness", /fetchStandings\(env, code, true, \{ freshMs: 6e5 \}\)/.test(src));
 check("#standsteady STAND_CODE_ORDER carries the full standings set (jitter domain)", /"PL",\s*"PD",\s*"SA",\s*"BL1",\s*"FL1",\s*"CL",\s*"PGL",\s*"EL",\s*"ECL",\s*"AL"/.test(src));
 
+// v13.54-livestamp: the user's report — "Last updated: Monday 15:39 · cached
+// (1407m ago)" for 41h on sportsignal.ir while healthz showed clean 2h sweeps
+// the whole time. Root chain: cacheMatches is change-only (v13.31 KV budget),
+// break-week content never changes, so the pool's fetchedAt (the header's
+// "Last updated" clock) froze at the last content change; the snapshot serve
+// then stamped EVERY >10-min-gap visitor payload cached:true with cachedAt =
+// the snapshot's (equally frozen) KV write time. The pipeline was healthy and
+// the site told users it was dead. The fix, asserted below:
+//   1. a successful re-cache with unchanged content but a >90min-old stamp
+//      still rewrites the pool (the stamp means "last sweep that verified
+//      this data" — advanced by every 2h full sweep, ≤12 writes/day);
+//   2. the "cached (Nm ago)" badge is DATA-AGE-gated (CACHED_BADGE_MS = 3h,
+//      measured from the data epoch riding in fetchedAt), so healthy quiet
+//      days render NO badge — only a real >3h data outage shows it, with the
+//      DATA's age instead of a frozen write-time age.
+check("#livestamp pool stamp-advance window is configured (90min < the 2h sweep cadence)", /POOL_STAMP_REFRESH_MS: 90 \* 60 \* 1e3/.test(src));
+check("#livestamp cacheMatches skips ONLY when both the stamp is fresh AND content is identical", /stampAge = existing && existing\.fetchedAt \? Date\.now\(\) - new Date\(existing\.fetchedAt\)\.getTime\(\) : Infinity/.test(src) && /stampAge < CONFIG\.POOL_STAMP_REFRESH_MS && JSON\.stringify\(merged\) === JSON\.stringify\(existing\.matches\)/.test(src));
+check("#livestamp the stamp-advance rewrite refreshes fetchedAt (the header's clock)", /JSON\.stringify\(\{ fetchedAt: \(new Date\(\)\)\.toISOString\(\), source, matches: merged \}\)/.test(src));
+check("#livestamp the cached badge is data-age gated (CACHED_BADGE_MS)", /CACHED_BADGE_MS: 3 \* 60 \* 60 \* 1e3/.test(src));
+check("#livestamp the snapshot serve stamps the badge from the DATA epoch (fetchedAt), not the KV write time", swrSlice52.includes("const epochMs = Date.parse(snap.data.fetchedAt || \"\") || snap.ts || 0;") && /if \(epochMs && Date\.now\(\) - epochMs > CONFIG\.CACHED_BADGE_MS\) \{[\s\S]{0,160}served\.cached = true;/.test(swrSlice52));
+check("#livestamp the snapshot serve NO LONGER unconditionally marks cached:true (the 1407m-ago lie)", !/served\.cached = true;\s*served\.cachedAt = snap\.ts \? new Date\(snap\.ts\)\.toISOString\(\) : snap\.data\.fetchedAt;/.test(swrSlice52));
+check("#livestamp the last-resort catch path stays conservative (unknown epoch ⇒ badge)", /const badge = !epochMs \|\| Date\.now\(\) - epochMs > CONFIG\.CACHED_BADGE_MS;/.test(swrSlice52));
+check("#livestamp the degraded serve keeps its badge but ages it by the data epoch", /const epochMs = Date\.parse\(snap\.data\.fetchedAt \|\| ""\) \|\| snap\.ts \|\| Date\.now\(\);/.test(src) && src.split("v13.54-livestamp: this serve IS degraded")[1] !== undefined && /cached: true, cachedAt: new Date\(epochMs\)\.toISOString\(\) \}\)/.test(src.split("v13.54-livestamp: this serve IS degraded")[1].slice(0, 600)));
+
 
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

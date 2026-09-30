@@ -558,7 +558,13 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   if ((liveSweepFailed || poolEmpty) && CONFIG.KV_PUBLIC_SNAPSHOT) {
     const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
     if (snap && snap.data && (snap.data.upcoming || snap.data.finished || snap.data.topSpot || snap.data.ucl || snap.data.standings)) {
-      const stale = Object.assign({}, snap.data, { cached: true, cachedAt: snap.ts ? new Date(snap.ts).toISOString() : snap.data.fetchedAt });
+      // v13.54-livestamp: this serve IS degraded (the sweep failed / the
+      // pool is empty) so the cached badge stays ON here — but its age is
+      // the DATA epoch (the pool stamp riding in fetchedAt), not the KV
+      // write time (the old age froze at the last content change and read
+      // "1407m ago" during healthy break weeks).
+      const epochMs = Date.parse(snap.data.fetchedAt || "") || snap.ts || Date.now();
+      const stale = Object.assign({}, snap.data, { cached: true, cachedAt: new Date(epochMs).toISOString() });
       // Re-write the short-TTL cache too so the next visitor in the next 5
       // min doesn't all hammer the failing API again \u2014 they all get the
       // stale snapshot from the short cache.

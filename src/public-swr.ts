@@ -70,14 +70,25 @@ export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promi
     // previously reachable ONLY via the catch() below; it is now the primary
     // stale source. The bg refresh re-checks the payload KV + refresh lock
     // internally, so snapshot-serves can't stampede the rebuild.
+    // v13.54-livestamp: the "cached" badge is DATA-AGE-gated, not
+    // write-time-gated. With sparse traffic (>10-min visitor gaps) EVERY
+    // request lands here while the pipeline is perfectly healthy — the old
+    // unconditional cached:true made quiet days read as an outage with an
+    // age that froze at the last content change ("cached (1407m ago)").
+    // Now the badge only appears when the data EPOCH (the pool stamp riding
+    // in fetchedAt — advanced by every ≥90min cacheMatches rewrite) is
+    // older than CACHED_BADGE_MS (3h), and the age shown is the DATA's age.
     const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
     if (snap && snap.data && (snap.data.upcoming || snap.data.finished || snap.data.topSpot || snap.data.ucl || snap.data.standings)) {
       ctx.waitUntil(fetchPublicMatches(env, req).catch((e) => console.warn("Snapshot bg refresh failed: " + e.message)));
       if (env.AI) ctx.waitUntil(maybeRunFaAi(env).catch((e) => console.warn("FA-AI bg run failed: " + e.message)));
       const served = applyLiveOverlay(Object.assign({}, snap.data), ov);
       if (ov && ov.ts) served.liveAt = new Date(ov.ts).toISOString();
-      served.cached = true;
-      served.cachedAt = snap.ts ? new Date(snap.ts).toISOString() : snap.data.fetchedAt;
+      const epochMs = Date.parse(snap.data.fetchedAt || "") || snap.ts || 0;
+      if (epochMs && Date.now() - epochMs > CONFIG.CACHED_BADGE_MS) {
+        served.cached = true;
+        served.cachedAt = new Date(epochMs).toISOString();
+      }
       return jsonResponse(served);
     }
     // True cold: no payload, no snapshot (first deploy / KV wipe). The
@@ -95,7 +106,12 @@ export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promi
     try {
       const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
       if (snap && snap.data && (snap.data.upcoming || snap.data.finished || snap.data.topSpot || snap.data.ucl || snap.data.standings)) {
-        const stale = Object.assign({}, snap.data, { cached: true, cachedAt: snap.ts ? new Date(snap.ts).toISOString() : snap.data.fetchedAt });
+        // v13.54-livestamp: same data-age badge gate as the primary snapshot
+        // serve above — this is the last-resort path, so if the epoch is
+        // somehow unknown it stays conservative and SHOWS the badge.
+        const epochMs = Date.parse(snap.data.fetchedAt || "") || snap.ts || 0;
+        const badge = !epochMs || Date.now() - epochMs > CONFIG.CACHED_BADGE_MS;
+        const stale = Object.assign({}, snap.data, badge ? { cached: true, cachedAt: new Date(epochMs || Date.now()).toISOString() } : { cached: false });
         return jsonResponse(stale);
       }
     } catch (e2) {

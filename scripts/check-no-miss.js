@@ -69,7 +69,8 @@ const CONFIG = {
   POST_MATCH_NOTIFICATION_HOURS: 6, KV_NOTIFIED_KEY: "notified_matches_v6",
   KV_MATCHES_KEY: "matches_v13_tracked", KV_USERS_KEY: "telegram_users_v6",
   KV_USER_PREFS: "user_prefs_v1", KV_PUBLIC_MATCHES: "public_matches_v1",
-  KV_MATCH_STATUS: "match_status_v1", KV_OUTBOX: "outbox_lst"
+  KV_MATCH_STATUS: "match_status_v1", KV_OUTBOX: "outbox_lst",
+  POOL_STAMP_REFRESH_MS: 90 * 60 * 1000
 };
 function toFaDigits(s) { return String(s).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[+d]); }
 function escapeMarkdownCharacters(s) { return String(s); }
@@ -573,6 +574,24 @@ var MEM_DEDUPE = new Set();
   const holdEnv2 = { STATE: { async get() { return null; }, async put() { poolPuts++; } }, KV_BUDGET_HOLD: true };
   await cacheMatches(holdEnv2, [matchAt(-1, "IN_PLAY", { id: "pool-2" })], "test");
   check("quota: HARD budget hold defers the pool-cache write (zero extra puts)", poolPuts === 1);
+
+  // v13.54-livestamp behavioral: the stamp-advance gate. The pool's
+  // fetchedAt is the site header's "Last updated" clock — on break weeks
+  // content never changes, and the old change-only gate froze that stamp
+  // for DAYS while sweeps ran clean every 2h (the 2026-09-28 report:
+  // "Monday 15:39 · cached (1407m ago)"). Unchanged content + a STALE
+  // stamp must rewrite the pool; unchanged content + a FRESH stamp must
+  // still skip (the v13.31 change-only KV budget stays intact).
+  const poolStampRows = [matchAt(24, "TIMED", { id: "pool-s1" })];
+  const stampEnv = (stampMs) => ({ STATE: {
+    async get() { return { fetchedAt: new Date(stampMs).toISOString(), matches: JSON.parse(JSON.stringify(poolStampRows)) }; },
+    async put() { poolPuts++; }
+  } });
+  let putsBefore = poolPuts;
+  await cacheMatches(stampEnv(Date.now() - 5 * 60e3), JSON.parse(JSON.stringify(poolStampRows)), "test");
+  check("livestamp: fresh stamp (<90min) + identical content → no rewrite (change-only intact)", poolPuts === putsBefore);
+  await cacheMatches(stampEnv(Date.now() - 3 * 36e5), JSON.parse(JSON.stringify(poolStampRows)), "test");
+  check("livestamp: stale stamp (>90min) + identical content → the stamp-advance rewrite fires", poolPuts === putsBefore + 1);
 
   eval([
     grabFn("function fdRateLimited()"),

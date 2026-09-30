@@ -290,7 +290,17 @@ export async function cacheMatches(env: Env, matches, source) {
     const cutoff = Date.now() - 7 * 864e5;
     const head = (existing && Array.isArray(existing.matches) ? existing.matches : []).filter((m) => new Date(m.utcDate || 0).getTime() > cutoff);
     const merged = canonDedupe([...head, ...matches]);
-    if (existing && Array.isArray(existing.matches) && JSON.stringify(merged) === JSON.stringify(existing.matches)) {
+    // v13.54-livestamp: the change-only skip now also requires the STAMP to
+    // be fresh (<POOL_STAMP_REFRESH_MS). fetchedAt is the site header's
+    // "Last updated" clock — on break weeks content never changes, the old
+    // gate skipped every write, and the stamp froze for DAYS while sweeps
+    // ran clean every 2h (the 2026-09-28 report: "Monday 15:39 · cached
+    // (1407m ago)" with a perfectly healthy pipeline). A stamp-advance
+    // rewrite costs one KV put every ≥90min (the 2h sweep cadence makes it
+    // ~12/day of the 1,000/day quota); real content changes keep their
+    // instant write, and the budget hold above still gates everything.
+    const stampAge = existing && existing.fetchedAt ? Date.now() - new Date(existing.fetchedAt).getTime() : Infinity;
+    if (existing && Array.isArray(existing.matches) && stampAge < CONFIG.POOL_STAMP_REFRESH_MS && JSON.stringify(merged) === JSON.stringify(existing.matches)) {
       return;
     }
     await env.STATE.put(

@@ -6,6 +6,68 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.54-livestamp] — 2026-09-30 (the frozen "Last updated" stamp: healthy pipeline, lying header)
+
+### The user's report
+> "Investigate why the app and sportsignal.ir doesn't update:
+> this is on header: **Last updated: Monday 15:39 · cached (1407m ago)**"
+
+The header was telling the truth about one thing: that payload was old. It
+was lying about the cause — the pipeline was perfectly healthy the whole
+time (healthz: heartbeats every 10min, full sweeps every 2h at the normal
+38-fetch band, kv budget at 80/1000). Two change-only KV gates froze every
+timestamp the site shows, so a live system read as a dead one.
+
+### Root chain (all links confirmed in source + live)
+1. **The pool stamp froze.** `cacheMatches` is change-only (v13.31 KV
+   budget) — during the international break fixtures sit `TIMED` for days,
+   so every 2h full sweep merged a byte-identical pool and skipped the
+   write. The pool's `fetchedAt` — which every public payload inherits as
+   its `fetchedAt` (the header's "Last updated" clock) — stayed at
+   2026-09-28T12:09Z = **دوشنبه ۱۵:۳۹ Tehran, to the minute**.
+2. **The snapshot stamp froze the same way.** The 7-day snapshot's write
+   is change-only too, so its `ts` sat at 2026-09-29T05:26Z while its
+   content (and its `fetchedAt`) were equally frozen.
+3. **Every quiet-gap visitor was badge-stamped degraded.** With sparse
+   traffic the 12-min payload TTL expires between visits, so the
+   snapshot-serve path — which unconditionally set `cached: true,
+   cachedAt = <snapshot write time>` — ran on essentially EVERY request.
+   The user watched "cached (1407m ago)" grow for a day and a half.
+
+### The fix — stamps mean "last verified", badges mean "actually stale"
+- **Pool stamp-advance** (`POOL_STAMP_REFRESH_MS` = 90min): a successful
+  re-cache with unchanged content still rewrites the pool when its stamp
+  is >90min old. The 2h sweep cadence makes every full sweep advance it
+  (≤12 writes/day of the 1,000/day quota; real content changes keep their
+  instant write; the HARD budget hold still gates everything). The stamp
+  now means "the last sweep that verified this data" — exactly what the
+  header claims to print.
+- **The cached badge is DATA-age-gated** (`CACHED_BADGE_MS` = 3h):
+  the snapshot-serve path (and the last-resort catch fallback) compute
+  the badge from the **data epoch** (`fetchedAt` riding in the payload),
+  not the KV write time. Healthy quiet days render **no badge**; only a
+  real >3h data outage (dead/failing sweeps) shows it — with the DATA's
+  age instead of a frozen write-time age.
+- **Degraded serves stay honest**: the `liveSweepFailed || poolEmpty`
+  path keeps its badge (that serve IS degraded) but ages it by the data
+  epoch too.
+- **Client untouched** (`public-13.12.js`): it already renders
+  `fetchedAt` + the conditional badge — the semantics were fixed entirely
+  server-side.
+
+### Verified
+- Suite: 569 OK checks (behavioral: fresh stamp + identical content → no
+  rewrite; stale stamp + identical content → the stamp-advance fires;
+  wiring: gate shape, badge threshold, epoch-based cachedAt, the removed
+  unconditional badge). `npm test` exit 0.
+- Local `wrangler dev` smoke: 13.54-livestamp, all routes real, fresh
+  build stamps `fetchedAt: now` with no badge on healthy data.
+- Live: worker `b37ccd66`; the first post-deploy requests served the old
+  snapshot with the badge now showing the truthful DATA age (2468min);
+  the stamp heals at the next full sweep (2h cadence) via the stamp
+  advance → snapshot rewrite. Subrequest budget unchanged.
+
+
 ## [13.53-standsteady] — 2026-09-28 (the missing-tables bug + the API-call diet)
 
 ### The user's report

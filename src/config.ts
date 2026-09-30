@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.53-standsteady";
+export const VERSION = "13.54-livestamp";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -138,6 +138,26 @@ export const CONFIG: Record<string, any> = {
   // 24h — cache is used only when ALL providers fail, so staleness is fine and
   // helps the bot survive a weekend API outage without missing matches
   CACHE_STALE_TTL: 86400,
+  // v13.54-livestamp: the pool's fetchedAt stamp is the "Last updated"
+  // clock the site header prints. cacheMatches is change-only (v13.31 KV
+  // budget), and on break weeks NOTHING changes — fixtures sit TIMED for
+  // days — so the stamp froze at the last content change (2026-09-28: the
+  // header said "دوشنبه ۱۵:۳۹ · cached (1407m ago)" for 41h while sweeps
+  // ran clean every 2h). Now a successful re-cache whose content is
+  // unchanged STILL rewrites the pool when the stamp is >90min old — the
+  // full sweep's 2h cadence makes every sweep advance it (≤12 writes/day
+  // of the 1,000/day quota; live content changes keep their instant
+  // write). The stamp means "last sweep that verified this data", which
+  // is exactly what the header claims to print.
+  POOL_STAMP_REFRESH_MS: 90 * 60 * 1e3,
+  // v13.54-livestamp: the "cached (Nm ago)" badge shows ONLY when the data
+  // epoch (the pool stamp riding in the served payload) is older than
+  // this. Steady state: sweep advances ≤2h + rebuild propagation ≤~10min
+  // → no badge on healthy days (it used to show on EVERY snapshot-serve,
+  // i.e. every >10-min-gap visitor, with a frozen write-time age that
+  // grew for days). A dead-sweep outage (>3h) still gets the truthful
+  // badge with the age of the DATA, not of the KV write.
+  CACHED_BADGE_MS: 3 * 60 * 60 * 1e3,
   TELEGRAM_RETRY_ATTEMPTS: 3,
   KV_USERS_KEY: "telegram_users_v6",
   KV_MATCHES_KEY: "matches_v13_tracked",

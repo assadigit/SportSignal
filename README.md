@@ -10,7 +10,7 @@
 **A serverless Telegram bot + web page that tells Iranian football fans about the
 matches that matter — before they start, while they're live, and the moment they end.**
 
-> **Current build:** v13.53-standsteady · [Live](https://sportsignal.ir) ·
+> **Current build:** v13.54-livestamp · [Live](https://sportsignal.ir) ·
 > **Operating it?** Read [`RUNBOOK.md`](RUNBOOK.md) first — deploy/verify/rollback,
 > monitoring semantics, incident playbooks, and the never-do list (§11).
 
@@ -344,6 +344,11 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
   fallback on every standings code + the UCL card, 6h jittered standings
   gate (was 10-min), FD rotation removed, 24h standings TTL, R6 live-sweep
   narrowing (~65% of the daily upstream call volume cut on matchdays)
+- ✅ **13.54-livestamp** — the frozen-stamp fix: "Last updated: Monday 15:39
+  · cached (1407m ago)" while sweeps ran clean every 2h. The pool stamp
+  now advances on every full sweep (change-only writes used to freeze it
+  for days on break weeks), and the cached badge is data-age-gated (3h)
+  instead of stamping every quiet-gap visitor as degraded
 
 **Deliberately deferred (documented, not forgotten):**
 
