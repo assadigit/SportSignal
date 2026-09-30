@@ -517,6 +517,29 @@ check("#livestamp the snapshot serve NO LONGER unconditionally marks cached:true
 check("#livestamp the last-resort catch path stays conservative (unknown epoch ⇒ badge)", /const badge = !epochMs \|\| Date\.now\(\) - epochMs > CONFIG\.CACHED_BADGE_MS;/.test(swrSlice52));
 check("#livestamp the degraded serve keeps its badge but ages it by the data epoch", /const epochMs = Date\.parse\(snap\.data\.fetchedAt \|\| ""\) \|\| snap\.ts \|\| Date\.now\(\);/.test(src) && src.split("v13.54-livestamp: this serve IS degraded")[1] !== undefined && /cached: true, cachedAt: new Date\(epochMs\)\.toISOString\(\) \}\)/.test(src.split("v13.54-livestamp: this serve IS degraded")[1].slice(0, 600)));
 
+// v13.54.1-poolbreak: the 2026-09-30 deadlock, found live via wrangler tail
+// while verifying 13.54. The pool KV key EXPIRED at its 24h TTL on
+// 2026-09-29 12:09Z (change-only writes + a break week = zero pool writes
+// = the TTL ran out), and nothing could repopulate it: every cron tick
+// then full-swept (the quiet gate needs a non-empty pool), the concurrent
+// 3-provider fan-out (FD ~17 + sportscore 27 + TSP ~10) crossed CF's real
+// ~50-subrequest ceiling mid-flight (CF rejected the rest with "Too many
+// subrequests", the local meter still read 37/48 — fetchJSON bumped once
+// per call but retried twice), TSP — the only source with future fixtures
+// when FD's 10-day window sees nothing — starved, the sweep returned 0
+// matches, and cacheMatches skipped the write. The visitor long view (the
+// only thing that ever refilled the pool, pre-13.52 on the sync path) now
+// runs in ctx.waitUntil, which dies at ~30s. Dead pool, deadlocked.
+// The fix, asserted below: an accurate meter, budget-stopped fan-outs, a
+// sequential prioritized sweep, and cron-owned pool recovery.
+check("#poolbreak fetchJSON meters EVERY attempt (the meter must not lie)", /for \(let i = 1; i <= attempts; i\+\+\) \{\s*\n\s*if \(bumpSubrequest\(\)\) throw new Error\("Subrequest budget exhausted"\);/.test(src));
+check("#poolbreak the sportscore full-sweep day-loop stops at the meter ceiling", src.split("async function fetchSportScore")[1] && /if \(subrequestCount\(\) >= 44\) \{/.test(src.split("async function fetchSportScore")[1].slice(0, 3000)));
+check("#poolbreak the sweep runs sources SEQUENTIALLY with priority gates (FD→TSP→sportscore)", /const sources = \[\s*\{ name: "football-data", fn: fetchFootballData, gate: 46 \},\s*\{ name: "thesportsdb", fn: fetchTheSportsDB, gate: 42 \},\s*\{ name: "sportscore", fn: fetchSportScore, gate: 34 \}\s*\];/.test(src) && /for \(const s of sources\) \{\s*\n\s*if \(subrequestCount\(\) > s\.gate\) \{/.test(src) && !/await Promise\.all\(sources\.map/.test(src));
+check("#poolbreak the long view fetches TSP + intl BEFORE the sportscore day-fan-out (futures first)", (provSeg15.match(/eventsnextleague\.php/g) || []).length > 0 && provSeg15.indexOf("eventsnextleague.php") < provSeg15.indexOf("sportScoreDay(cc, slug, dateStr, uefaAcc)"));
+check("#poolbreak the long view's sportscore sections are budget-gated too", /else if \(subrequestCount\(\) >= 44\) \{/.test(provSeg15) && provSeg15.split("Long view chunk")[1] !== undefined && (provSeg15.split("Long view cup").length - 1) >= 1);
+check("#poolbreak cron owns pool recovery: empty-pool or horizon-starved sweeps run the 92-day long view", /const poolBlind = !cachedPool\.length \|\| horizonMs < Date\.now\(\) \+ 5 \* 864e5;/.test(src) && /poolBlind \? fetchLongView\(budgetHard \? \{ \.\.\.env, KV_BUDGET_HOLD: true \} : env\) : fetchMatchesFromAPI/.test(src));
+check("#poolbreak the horizon trigger feeds the nextWeek card (re-enrich before starvation)", /horizonMs = cachedPool\.length \? Math\.max\(0, \.\.\.cachedPool\.map\(\(m\) => new Date\(m\.utcDate \|\| 0\)\.getTime\(\)\)\) : 0;/.test(src));
+
 
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

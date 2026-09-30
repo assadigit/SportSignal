@@ -6,6 +6,68 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.54.1-poolbreak] — 2026-09-30 (the dead-pool deadlock: the site really WAS frozen)
+
+Found live via `wrangler tail` while verifying 13.54 — the frozen stamp was
+the symptom; underneath it the whole data pipeline had been dead since
+2026-09-29 12:09Z (17h): **the pool KV key expired at its 24h TTL** and
+nothing could repopulate it.
+
+### The deadlock (every link confirmed in the live tail)
+1. **The pool expired.** `cacheMatches` is change-only + the pool KV TTL is
+   24h — during the international break nothing changed, no sweep wrote the
+   pool, and the TTL ran out. (13.54's stamp-advance prevents this going
+   forward, but it only fires on a sweep that returns ≥1 match.)
+2. **Every tick full-swept.** The quiet-reuse gate requires a non-empty
+   pool — with it empty, every 10-min tick ran the full 3-provider sweep.
+3. **The sweep could not finish.** The concurrent fan-out (FD ~17 fetches +
+   sportscore 27 day-calls + TSP ~10) crossed Cloudflare's real
+   ~50-subrequest ceiling mid-flight — CF rejected the rest with "Too many
+   subrequests" while the local meter still read 37/48 (fetchJSON bumped
+   once per call but retried twice internally). TSP — the only source with
+   FUTURE fixtures when FD's 10-day window legitimately sees nothing during
+   a break — starved.
+4. **0 matches → no pool write → repeat.** The tick's own log: FD 0
+   (correct), sportscore/TSP budget-dead, "All API sources empty, falling
+   back to cache" → cache EMPTY → 0 matches → `cacheMatches` skipped.
+5. **The visitor long view can't rescue it.** Since v13.52 the 92-day long
+   view runs only in `ctx.waitUntil`, which dies at ~30s — the multi-minute
+   view never completes there. The 595-row pool from 2026-09-28 12:09Z was
+   written by the LAST synchronous (pre-13.52) visitor long view. The site
+   has been serving that pool's frozen snapshot ever since.
+
+### The fix — budget-fit, prioritized, cron-owned recovery
+- **Accurate meter**: `fetchJSON` bumps per ATTEMPT (like `fetchWithRetry`
+  always did). The meter that every budget gate trusts no longer
+  undercounts by up to 2×.
+- **Budget-stopped fan-outs**: the sportscore full-sweep day-loop and the
+  long view's cup/EL/ECL/BL1 sections stop hard at 44 metered — a partial
+  sportscore sweep beats a dead tick (and the suspension check can't
+  misfire on budget stops).
+- **Sequential prioritized sweep**: `fetchMatchesFromAPI` runs
+  FD → thesportsdb → sportscore with per-source meter gates (46/42/34)
+  instead of `Promise.all` — FD and TSP ALWAYS complete, so the sweep
+  always has something to cache; sportscore rides the leftover budget
+  (the 10-min live sweep owns live detail on matchdays anyway).
+- **Long view reordered futures-first**: FD's 92-day chunks → TSP
+  next-event views → intl calls (~23 metered, always complete) BEFORE any
+  sportscore day-calls.
+- **Cron owns pool recovery**: an empty-pool or horizon-starved (<5 days of
+  known fixtures — the nextWeek card's fuel) sweep runs the 92-day long
+  view IN THE TICK, where it has the wall time to complete. This also
+  re-enriches the horizon on long breaks (nextWeek no longer starves).
+- With 13.54's stamp-advance the recovered pool's TTL is refreshed on
+  every sweep — the deadlock cannot reform.
+
+### Verified
+- Suite: 576 OK checks (+7 #poolbreak wiring asserts), `npm test` exit 0;
+  `tsc` clean. Local smoke: 13.54.1-poolbreak, routes real.
+- Live: worker `91305a04`; the 05:40Z tick ran the pool-recovery long
+  view end-to-end (FD chunks → TSP → intl → budget-stopped sportscore),
+  the pool was rewritten, and the public API immediately served fresh
+  fixtures with a current stamp and NO cached badge.
+
+
 ## [13.54-livestamp] — 2026-09-30 (the frozen "Last updated" stamp: healthy pipeline, lying header)
 
 ### The user's report
@@ -13,10 +75,13 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 > this is on header: **Last updated: Monday 15:39 · cached (1407m ago)**"
 
 The header was telling the truth about one thing: that payload was old. It
-was lying about the cause — the pipeline was perfectly healthy the whole
-time (healthz: heartbeats every 10min, full sweeps every 2h at the normal
-38-fetch band, kv budget at 80/1000). Two change-only KV gates froze every
-timestamp the site shows, so a live system read as a dead one.
+was lying about the cause — healthz showed heartbeats every 10min and
+sweep-sized ticks at the normal 38-fetch band, so it READ as healthy. (The
+deeper truth found an hour later: those sweeps were completing but returning
+0 matches with the pool already dead — see **13.54.1-poolbreak** above, which
+found the actual data outage underneath this stamp fix.) Two change-only KV
+gates froze every timestamp the site shows, so the break week read as a dead
+system on top of a real one.
 
 ### Root chain (all links confirmed in source + live)
 1. **The pool stamp froze.** `cacheMatches` is change-only (v13.31 KV

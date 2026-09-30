@@ -158,7 +158,14 @@ export function kvOpsCount() {
 }
 export async function fetchJSON(url, attempts?, headers?) {
   attempts = attempts || 2;
-  if (bumpSubrequest()) throw new Error("Subrequest budget exhausted");
+  // v13.54.1-poolbreak: the bump now sits INSIDE the retry loop — every
+  // fetch ATTEMPT is metered (fetchWithRetry always did this). The old
+  // once-per-call bump undercounted real subrequests by up to 2× on
+  // retried calls: the 2026-09-30 tick's meter read 37/48 while Cloudflare
+  // was already rejecting calls at its real ~50 ceiling — every budget gate
+  // downstream (the cron sweep's source gates, the sportscore day-loop
+  // stops, the prewarm <30 gate) trusted a meter that lied. Identical
+  // bump count on the happy path (1 call = 1 bump).
   const canCache = !headers && typeof caches !== "undefined" && caches.default;
   const cacheKey = canCache ? new Request(url, { method: "GET" }) : null;
   if (cacheKey) {
@@ -169,6 +176,7 @@ export async function fetchJSON(url, attempts?, headers?) {
     }
   }
   for (let i = 1; i <= attempts; i++) {
+    if (bumpSubrequest()) throw new Error("Subrequest budget exhausted");
     try {
       const res = await fetch(url, { headers: headers || {} });
       if (!res.ok) throw new Error("HTTP " + res.status);

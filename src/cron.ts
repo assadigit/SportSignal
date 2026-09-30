@@ -11,7 +11,7 @@ import { toFaDigits, resetSubrequestBudget, subrequestCount, kvOpsCount, bumpKvO
 import { translateTeam, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
-import { fetchMatchesFromAPI, getCachedMatches, fetchLiveSweep, maybeScanCupFixtures } from "./providers";
+import { fetchMatchesFromAPI, getCachedMatches, fetchLiveSweep, fetchLongView, maybeScanCupFixtures } from "./providers";
 import { sendTelegram, drainOutbox } from "./telegram";
 import { sendMatchNotifications, detectStatusChanges, auditNotifications } from "./notifications";
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, broadcastBigMatchKickoff, maybeNotifyTableToppers } from "./digest";
@@ -283,12 +283,34 @@ export async function executeScheduledLogic(env: Env) {
           console.log(`\u{1F50C} Quiet period \u2014 reusing KV pool (${matches.length} matches, last sweep ${Math.round((NOW - lastSweep) / 6e4)} min ago); pre-match reminders still fire from the pool`);
         }
       } else {
-        console.log("\n\u{1F4E1} Fetching matches from API...");
+        // v13.54.1-poolbreak: pool RECOVERY runs the 92-DAY long view. The
+        // ±10-day sweep (fetchMatchesFromAPI) can't see fixtures beyond its
+        // +8d window — during international breaks it legitimately returns
+        // 0 league matches — and TSP's regressed league views carry ~1 event
+        // each, so it could never rebuild a dead pool by itself. The long
+        // view is the only complete pool-builder, and it can ONLY complete
+        // in a cron tick: a visitor's ctx.waitUntil dies at ~30s (the v13.52
+        // lesson — moving the long view off the request path inadvertently
+        // removed the only thing that ever refilled the pool; the 595-row
+        // pool from 2026-09-28 12:09Z was the LAST sync-path long view, and
+        // it expired at its 24h TTL a day later with nothing able to
+        // rewrite it). Triggers:
+        //   - the pool is EMPTY (the 2026-09-30 deadlock: pool expired →
+        //     every tick swept → the concurrent fan-out crossed CF's real
+        //     ~50-subrequest ceiling → 0 matches → pool never rewritten);
+        //   - the pool's fixture HORIZON is <5 days out (it can no longer
+        //     feed the nextWeek card — re-enrich before it starves; the
+        //     long view's own 6h+60d gate dedupes redundant runs).
+        // fetchLongView is now sequential + budget-gated (FD chunks → TSP →
+        // intl → sportscore-on-leftover), so this always fits the ceiling.
+        const horizonMs = cachedPool.length ? Math.max(0, ...cachedPool.map((m) => new Date(m.utcDate || 0).getTime())) : 0;
+        const poolBlind = !cachedPool.length || horizonMs < Date.now() + 5 * 864e5;
+        console.log("\n\u{1F4E1} Fetching matches from API..." + (poolBlind ? " (pool recovery: 92-day long view)" : ""));
         // v13.44-quotaguard: HARD governor → the pool-cache write is held
         // this tick (env-scoped flag; see cacheMatches). The sweep itself
         // still runs — fresh match data feeds the notification pipeline
         // either way.
-        matches = await fetchMatchesFromAPI(budgetHard ? { ...env, KV_BUDGET_HOLD: true } : env);
+        matches = await (poolBlind ? fetchLongView(budgetHard ? { ...env, KV_BUDGET_HOLD: true } : env) : fetchMatchesFromAPI(budgetHard ? { ...env, KV_BUDGET_HOLD: true } : env));
         fullSweepThisTick = true;
       }
     } catch (e) {

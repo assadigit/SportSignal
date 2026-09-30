@@ -4,7 +4,7 @@
 import { CONFIG } from "./config";
 import { PROVIDER_LEAGUE_MAP, SPORTSCORE_SLUGS, TSP_LEAGUE_IDS, CUP_TSP_IDS, CUP_TEAM_TSP_IDS } from "./tables";
 import type { Env } from "./types";
-import { fetchJSON, fetchWithRetry, fdRateLimited } from "./utils";
+import { fetchJSON, fetchWithRetry, fdRateLimited, subrequestCount } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { canonDedupe, matchKey } from "./dedupe";
 import { shouldNotify, mapStageName, parseTSPDate, isLiveStatus } from "./matches";
@@ -254,6 +254,20 @@ export async function fetchSportScore(env: Env, opts?) {
   for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
     const dateStr = d.toISOString().split("T")[0];
     for (const [code, slug] of Object.entries(slugs)) {
+      // v13.54.1-poolbreak: hard budget-stop inside the day-loop. The
+      // full-sweep fan-out (9 codes × 3 days = 27 calls on top of FD+TSP)
+      // crossed Cloudflare's real ~50-subrequest ceiling mid-loop on
+      // 2026-09-30 — the remaining calls failed with CF's "Too many
+      // subrequests" (not our local throw), TSP never got budget, the
+      // sweep returned 0 matches, and the pool stayed dead. Stopping at
+      // 44 metered (now accurate — fetchJSON bumps per attempt) leaves
+      // the loop's failures < calls so the provider-suspension check
+      // below can't misfire on budget stops.
+      if (subrequestCount() >= 44) {
+        console.log(`\u23ED\uFE0F sportscore day sweep budget-stopped at ${calls}/${calls + 1} calls (${subrequestCount()}/48 metered)`);
+        calls = calls || 1; // never 0: report the stop as a partial sweep
+        return matches;
+      }
       calls++;
       try {
         await sportScoreDay(code, slug, dateStr, acc);
@@ -420,60 +434,14 @@ export async function fetchLongView(env: Env) {
     }
     await new Promise((r) => setTimeout(r, 2e3));
   }
-  const uefaAcc = { list: allMatches, seen };
-  if (await providerSuspended(env, "sportscore")) {
-    console.log("\u23ED\uFE0F sportscore suspended \u2014 skipping long-view cup/EL/ECL/BL1 sweeps");
-  } else {
-    const cupSlugs = [["FA_CUP", SPORTSCORE_SLUGS.FA_CUP], ["EFL_CUP", SPORTSCORE_SLUGS.EFL_CUP], ["CDR", SPORTSCORE_SLUGS.CDR], ["COPPA_ITALIA", SPORTSCORE_SLUGS.COPPA_ITALIA], ["HAZFI_CUP", SPORTSCORE_SLUGS.HAZFI_CUP]];
-    const cupDone = {};
-    let ssCalls = 0, ssFails = 0;
-    for (let i = 0; i < 10; i++) {
-      const dateStr = new Date(Date.now() + i * 864e5).toISOString().split("T")[0];
-      for (const [cc, slug] of cupSlugs) {
-        if (cupDone[cc]) continue;
-        ssCalls++;
-        try {
-          const n = await sportScoreDay(cc, slug, dateStr, uefaAcc);
-          if (n > 0) cupDone[cc] = true;
-        } catch (e) {
-          ssFails++;
-          console.error(`\u274C Long view cup ${cc} failed: ${e.message}`);
-        }
-      }
-    }
-    for (let i = 0; i < 7; i++) {
-      const dateStr = new Date(Date.now() + i * 864e5).toISOString().split("T")[0];
-      ssCalls++;
-      try {
-        await sportScoreDay("EL", SPORTSCORE_SLUGS.EL, dateStr, uefaAcc);
-      } catch (e) {
-        ssFails++;
-        console.error(`\u274C Long view EL failed: ${e.message}`);
-      }
-      ssCalls++;
-      try {
-        await sportScoreDay("ECL", SPORTSCORE_SLUGS.ECL, dateStr, uefaAcc);
-      } catch (e) {
-        ssFails++;
-        console.error(`\u274C Long view ECL failed: ${e.message}`);
-      }
-      ssCalls++;
-      try {
-        await sportScoreDay("BL1", SPORTSCORE_SLUGS.BL1, dateStr, uefaAcc);
-      } catch (e) {
-        ssFails++;
-        console.error(`\u274C Long view BL1 failed: ${e.message}`);
-      }
-    }
-    if (ssCalls > 0 && ssFails === ssCalls) {
-      console.error("\u26A0\uFE0F sportscore long-view: all " + ssCalls + " calls failed \u2014 suspending provider");
-      await suspendProvider(env, "sportscore");
-    }
-  }
-  if (uefaAcc.list.length !== 0) {
-    const uefaCount = uefaAcc.list.filter((m) => m.competition.code === "EL" || m.competition.code === "ECL").length;
-    console.log(`\u{1F50D} Long view EL/ECL (sportscore): ${uefaCount} matches`);
-  }
+  // v13.54.1-poolbreak: TSP now runs BEFORE the sportscore sections (was
+  // after). The long view is the pool's ONLY complete rebuild path, and
+  // future fixtures are its product: FD's 92-day chunks + TSP's next-event
+  // views + the intl calls (~23 metered total) ALWAYS complete within any
+  // budget, while the sportscore cup/EL/ECL/BL1 day-fan-out (up to 50+27
+  // calls) is the part that crossed Cloudflare's real ~50 ceiling and killed
+  // this very function's caller chain on 2026-09-30. sportscore detail now
+  // rides on whatever budget is left, stopping hard at 44 metered.
   let tsdbCalls = 0;
   const paceT = () => tsdbCalls++ > 0 ? new Promise((r) => setTimeout(r, 1200)) : Promise.resolve();
   for (const [code, leagueId] of Object.entries(Object.assign({}, TSP_LEAGUE_IDS, CUP_TSP_IDS))) {
@@ -501,6 +469,66 @@ export async function fetchLongView(env: Env) {
     } catch (e) {
       console.error(`\u274C Long view intl ${code} failed: ${e.message}`);
     }
+  }
+  const uefaAcc = { list: allMatches, seen };
+  if (await providerSuspended(env, "sportscore")) {
+    console.log("\u23ED\uFE0F sportscore suspended \u2014 skipping long-view cup/EL/ECL/BL1 sweeps");
+  } else if (subrequestCount() >= 44) {
+    console.log(`\u23ED\uFE0F sportscore long-view sections skipped \u2014 subrequest budget ${subrequestCount()}/48`);
+  } else {
+    const cupSlugs = [["FA_CUP", SPORTSCORE_SLUGS.FA_CUP], ["EFL_CUP", SPORTSCORE_SLUGS.EFL_CUP], ["CDR", SPORTSCORE_SLUGS.CDR], ["COPPA_ITALIA", SPORTSCORE_SLUGS.COPPA_ITALIA], ["HAZFI_CUP", SPORTSCORE_SLUGS.HAZFI_CUP]];
+    const cupDone = {};
+    let ssCalls = 0, ssFails = 0;
+    for (let i = 0; i < 10; i++) {
+      const dateStr = new Date(Date.now() + i * 864e5).toISOString().split("T")[0];
+      for (const [cc, slug] of cupSlugs) {
+        if (cupDone[cc]) continue;
+        if (subrequestCount() >= 44) { ssCalls = ssCalls || 1; i = 10; break; }
+        ssCalls++;
+        try {
+          const n = await sportScoreDay(cc, slug, dateStr, uefaAcc);
+          if (n > 0) cupDone[cc] = true;
+        } catch (e) {
+          ssFails++;
+          console.error(`\u274C Long view cup ${cc} failed: ${e.message}`);
+        }
+      }
+    }
+    for (let i = 0; i < 7; i++) {
+      const dateStr = new Date(Date.now() + i * 864e5).toISOString().split("T")[0];
+      if (subrequestCount() >= 44) { ssCalls = ssCalls || 1; break; }
+      ssCalls++;
+      try {
+        await sportScoreDay("EL", SPORTSCORE_SLUGS.EL, dateStr, uefaAcc);
+      } catch (e) {
+        ssFails++;
+        console.error(`\u274C Long view EL failed: ${e.message}`);
+      }
+      if (subrequestCount() >= 44) { ssCalls = ssCalls || 1; break; }
+      ssCalls++;
+      try {
+        await sportScoreDay("ECL", SPORTSCORE_SLUGS.ECL, dateStr, uefaAcc);
+      } catch (e) {
+        ssFails++;
+        console.error(`\u274C Long view ECL failed: ${e.message}`);
+      }
+      if (subrequestCount() >= 44) { ssCalls = ssCalls || 1; break; }
+      ssCalls++;
+      try {
+        await sportScoreDay("BL1", SPORTSCORE_SLUGS.BL1, dateStr, uefaAcc);
+      } catch (e) {
+        ssFails++;
+        console.error(`\u274C Long view BL1 failed: ${e.message}`);
+      }
+    }
+    if (ssCalls > 0 && ssFails === ssCalls) {
+      console.error("\u26A0\uFE0F sportscore long-view: all " + ssCalls + " calls failed \u2014 suspending provider");
+      await suspendProvider(env, "sportscore");
+    }
+  }
+  if (uefaAcc.list.length !== 0) {
+    const uefaCount = uefaAcc.list.filter((m) => m.competition.code === "EL" || m.competition.code === "ECL").length;
+    console.log(`\u{1F50D} Long view EL/ECL (sportscore): ${uefaCount} matches`);
   }
   if (allMatches.length) {
     const deduped = canonDedupe(allMatches);
@@ -654,14 +682,29 @@ export async function fetchLiveSweep(env: Env, cachedPool) {
   return merged;
 }
 export async function fetchMatchesFromAPI(env: Env) {
+  // v13.54.1-poolbreak: the sources run SEQUENTIALLY in priority order
+  // with meter gates (was Promise.all concurrency). The 2026-09-30 deadlock:
+  // the pool KV had expired (24h TTL, change-only writes, break week) → every
+  // tick full-swept → the concurrent fan-out (FD ~17 + sportscore 27 + TSP
+  // ~10) crossed Cloudflare's real ~50-subrequest ceiling mid-flight → TSP
+  // (the only source with FUTURE fixtures when FD's 10-day window sees
+  // nothing) starved → 0 matches → cacheMatches skipped → the pool could
+  // never repopulate. Sequential + gates guarantee FD and TSP ALWAYS
+  // complete (~27 metered), so the sweep always has something to cache;
+  // sportscore runs on the leftover budget only (the 10-min live sweep
+  // owns live detail on matchdays, R6-narrowed).
   const sources = [
-    { name: "football-data", fn: fetchFootballData },
-    { name: "sportscore", fn: fetchSportScore },
-    { name: "thesportsdb", fn: fetchTheSportsDB }
+    { name: "football-data", fn: fetchFootballData, gate: 46 },
+    { name: "thesportsdb", fn: fetchTheSportsDB, gate: 42 },
+    { name: "sportscore", fn: fetchSportScore, gate: 34 }
   ];
   const merged = new Map();
   const used = [];
-  await Promise.all(sources.map((s) => (async () => {
+  for (const s of sources) {
+    if (subrequestCount() > s.gate) {
+      console.log(`\u23ED\uFE0F Source ${s.name} skipped \u2014 subrequest budget ${subrequestCount()}/48 (gate ${s.gate})`);
+      continue;
+    }
     try {
       console.log("Trying API source: " + s.name);
       const m = await s.fn(env);
@@ -683,7 +726,7 @@ export async function fetchMatchesFromAPI(env: Env) {
     } catch (e) {
       console.error(`\u274C Source ${s.name} failed: ` + e.message);
     }
-  })()));
+  }
   let matches = canonDedupe([...merged.values()]);
   let usedSource = used.join("+");
   if (matches.length && !matches.some(shouldNotify)) {

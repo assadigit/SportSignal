@@ -10,7 +10,7 @@
 **A serverless Telegram bot + web page that tells Iranian football fans about the
 matches that matter — before they start, while they're live, and the moment they end.**
 
-> **Current build:** v13.54-livestamp · [Live](https://sportsignal.ir) ·
+> **Current build:** v13.54.1-poolbreak · [Live](https://sportsignal.ir) ·
 > **Operating it?** Read [`RUNBOOK.md`](RUNBOOK.md) first — deploy/verify/rollback,
 > monitoring semantics, incident playbooks, and the never-do list (§11).
 
@@ -349,6 +349,13 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
   now advances on every full sweep (change-only writes used to freeze it
   for days on break weeks), and the cached badge is data-age-gated (3h)
   instead of stamping every quiet-gap visitor as degraded
+- ✅ **13.54.1-poolbreak** — the dead-pool deadlock (found live under the
+  stamp bug): the pool KV expired at its 24h TTL and nothing could
+  repopulate it — the concurrent 3-provider sweep fan-out crossed CF's
+  ~50-subrequest ceiling (the meter undercounted retries), TSP starved,
+  0 matches every tick. Fix: accurate metering, budget-stopped fan-outs,
+  a sequential FD→TSP→sportscore sweep, and cron-owned 92-day pool
+  recovery (empty pool or <5-day fixture horizon → long view in the tick)
 
 **Deliberately deferred (documented, not forgotten):**
 
