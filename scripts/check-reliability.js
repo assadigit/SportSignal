@@ -70,12 +70,12 @@ check("#6 budgetDeferred counter logged", /Subrequest budget guard: deferred/.te
 // (regexes run against the TRANSFORMED src — eval-harness annotations are
 // stripped, e.g. `opts?: PubOpts` becomes just `opts`)
 check("#13.35 fetchPublicMatches opts param exists", /function fetchPublicMatches\(env, req, opts\) \{/.test(src));
-check("#13.35 PubOpts interface declared", /interface PubOpts \{ prewarm: boolean; pool: any\[\] \}/.test(src));
+check("#13.35 PubOpts interface declared", /interface PubOpts \{ prewarm: boolean; pool: any\[\]; skipLongView: boolean \}/.test(src));
 check("#13.35 prewarm skips the provider sweep (pool ride-along)", /if \(prePool\) \{\s*\n\s*matches = prePool;/.test(src));
 check("#13.35 prewarm payloads stamped for the 9.25-min fresh window", /freshMs = cached && cached\.data && cached\.data\.prewarm && !cachedHasLive \? 555e3 : 18e4/.test(src));
 check("#13.35 prewarm KV TTL covers the 10-min tick (v13.52: one TTL — 12min — for prewarm AND visitor writes)", /JSON\.stringify\(\{ ts: Date\.now\(\), data \}\), \{ expirationTtl: 720 \}\)/.test(src));
 check("#13.35 canary stripped from prewarm pool", /opts\.pool\.filter\(\(m\) => !m\.canary\)/.test(src));
-check("#13.35 cron pre-warm is budget-guarded", /pubStale && subrequestCount\(\) < 30/.test(src));
+check("#13.35 cron pre-warm is budget-guarded", /pubStale && !budgetSoft\) \{[\s\S]{0,700}else if \(subrequestCount\(\) < 30\) \{/.test(src));
 check("#13.35 cron passes its pool to the pre-warm", /prewarm: true, pool: matches/.test(src));
 
 // #4 Canonical kickoff-time KV — RETIRED in v13.46-trim: the helpers
@@ -248,7 +248,7 @@ check("#cpu4 completion threshold derived from EXECUTION_FREQUENCY_MINUTES", /CO
 // v13.43 prewarm gate: the public-payload rebuild (~100ms CPU, measured live
 // 164ms total on a live tick WITH prewarm) must NOT run on every tick —
 // only on full sweeps or when the live fingerprint actually changed.
-check("#cpu5 prewarm gated to full sweeps OR changed live data", /\(fullSweepThisTick \|\| liveChanged\) && pubStale && subrequestCount\(\) < 30/.test(src));
+check("#cpu5 prewarm gated to full sweeps OR changed live data", /\(fullSweepThisTick \|\| liveChanged\) && pubStale && !budgetSoft/.test(src));
 check("#cpu5 prewarm compares pool vs merged fingerprints", /liveFingerprint\(matches\) !== liveFingerprint\(poolRef\)/.test(src));
 check("#cpu5 liveFingerprint helper defined in cron", /function liveFingerprint\(list\)/.test(src));
 check("#cpu5 liveFingerprint covers LIVE/IN_PLAY/PAUSED/FINISHED", /st !== "LIVE" && st !== "IN_PLAY" && st !== "PAUSED" && st !== "FINISHED"/.test(src));
@@ -285,7 +285,7 @@ check("#quota2 governor thresholds in CONFIG (700 soft / 850 hard)", /KV_WRITES_
 check("#quota2 governor reads the day accumulator from prevStatus", /prevStatus\.kv_day === kvDay/.test(src));
 check("#quota2 soft/hard levels computed from writesSoFarToday", /const budgetSoft = writesSoFarToday >= CONFIG\.KV_WRITES_SOFT;/.test(src) && /const budgetHard = writesSoFarToday >= CONFIG\.KV_WRITES_HARD;/.test(src));
 check("#quota2 FA-AI learning gated on soft", /if \(!budgetSoft\) \{[\s\S]{0,260}maybeRunFaAi/.test(src));
-check("#quota2 prewarm gated on soft", /\(fullSweepThisTick \|\| liveChanged\) && pubStale && subrequestCount\(\) < 30 && !budgetSoft/.test(src));
+check("#quota2 prewarm gated on soft", /\(fullSweepThisTick \|\| liveChanged\) && pubStale && !budgetSoft\) \{/.test(src));
 check("#quota2 hard hold plumbs the pool-cache skip (scoped env flag)", /budgetHard \? \{ \.\.\.env, KV_BUDGET_HOLD: true \} : env/.test(src));
 check("#quota2 cacheMatches honors the hold", /env && env\.KV_BUDGET_HOLD\)[\s\S]{0,220}return;/.test(src));
 check("#quota2 hard budget pages the admin once/12h (write-first mark)", /kv_budget_alert_v1/.test(src) && /12 \* 36e5/.test(src));
@@ -453,7 +453,7 @@ check("#xtrim harness order no longer ships x.ts", !/"x\.ts"/.test(harness14));
 // path patches into EVERY response — a finished game is purged from the
 // live lists immediately ("you can't cache a live game").
 check("#swrsolid live overlay KV key + TTL declared", /KV_LIVE_OVERLAY: "live_overlay_v1"/.test(src) && /KV_LIVE_OVERLAY_TTL: 6 \* 60 \* 60/.test(src));
-check("#swrsolid visitor rebuilds go pool-first (never the 92-day long view)", /matches = await getCachedMatches\(env\);\s*\n\s*if \(!matches\.length\) matches = await fetchLongView\(env\);/.test(src));
+check("#swrsolid visitor rebuilds go pool-first (never the 92-day long view)", /matches = await getCachedMatches\(env\);[\s\S]{0,900}if \(!matches\.length && !\(opts && opts\.skipLongView\)\) matches = await fetchLongView\(env\);/.test(src));
 check("#swrsolid prewarm pool ride-along shape intact", /if \(prePool\) \{\s*\n\s*matches = prePool;/.test(src));
 const swrSlice52 = (src.match(/\/\/ ===== src\/public-swr\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
 check("#swrsolid public-swr reads the overlay alongside the payload", /CONFIG\.KV_LIVE_OVERLAY, "json"/.test(swrSlice52));
@@ -482,7 +482,7 @@ check("#standsteady per-code jitter staggers the 6h expiries (no FD burst)", /ST
 check("#standsteady explicit freshMs overrides are honored EXACTLY (no jitter)", /opts && opts\.freshMs != null \? opts\.freshMs : CONFIG\.STANDINGS_FRESH_MS \+/.test(src));
 check("#standsteady standings KV TTL raised 8h → 24h (survives a day of upstream failures)", /STANDINGS_CACHE_TTL: 24 \* 60 \* 60/.test(src) && /expirationTtl: CONFIG\.STANDINGS_CACHE_TTL/.test(src));
 check("#standsteady the FD rotation is GONE (its 2h-aligned slot starved tables)", !/FD_STAND_ROTATION/.test(src));
-check("#standsteady public rebuild fetches standings SEQUENTIALLY (never bursts FD's 10 req/min)", /for \(const c of standCodes\.concat\(\["CL", "PGL"\]\)\) \{[\s\S]{0,120}stMap\[c\] = await fetchStandings\(env, c, true\)/.test(src));
+check("#standsteady public rebuild fetches standings SEQUENTIALLY (cache-only since epochflow; cron owns fetches)", /for \(const c of standCodes\.concat\(\["CL", "PGL"\]\)\) \{[\s\S]{0,120}stMap\[c\] = await fetchStandings\(env, c, false\)/.test(src));
 check("#standsteady snapshot fallback covers EVERY standings code (was PGL-only)", /standMissing = standCodes\.concat\(\["PGL"\]\)\.filter/.test(src) && /for \(const c of standMissing\) \{[\s\S]{0,200}standings\[c\] = Object\.assign\(\{\}, st, \{ code: c, stale: true/.test(src));
 check("#standsteady the UCL card rides the same snapshot fallback", /const uclStarted = stCL \? stCL\.started !== false : snapUcl \? snapUcl\.started !== false : true;/.test(src) && /snapUcl && Array\.isArray\(snapUcl\.teams\) && snapUcl\.teams\.length \? snapUcl\.teams : null/.test(src));
 check("#standsteady snapshot refreshes on break-week (empty-list) builds — sweep-success gated, NOT list-emptiness gated", /if \(!\(liveSweepFailed \|\| poolEmpty\) && CONFIG\.KV_PUBLIC_SNAPSHOT\) \{[\s\S]{0,400}KV_PUBLIC_SNAPSHOT, JSON\.stringify\(\{ ts: Date\.now\(\), data \}\)/.test(src) && !/if \(upcoming\.length \|\| finished\.length\) \{[\s\S]{0,1500}?KV_PUBLIC_SNAPSHOT, JSON\.stringify/.test(src));
@@ -540,6 +540,35 @@ check("#poolbreak the long view's sportscore sections are budget-gated too", /el
 check("#poolbreak cron owns pool recovery: empty-pool or horizon-starved sweeps run the 92-day long view", /const poolBlind = !cachedPool\.length \|\| horizonMs < Date\.now\(\) \+ 5 \* 864e5;/.test(src) && /poolBlind \? fetchLongView\(budgetHard \? \{ \.\.\.env, KV_BUDGET_HOLD: true \} : env\) : fetchMatchesFromAPI/.test(src));
 check("#poolbreak the horizon trigger feeds the nextWeek card (re-enrich before starvation)", /horizonMs = cachedPool\.length \? Math\.max\(0, \.\.\.cachedPool\.map\(\(m\) => new Date\(m\.utcDate \|\| 0\)\.getTime\(\)\)\) : 0;/.test(src));
 
+
+// v13.55-epochflow: the user's report — "آخرین به‌روزرسانی: چهارشنبه ۰۹:۱۱
+// صبح · ذخیره‌شده (۷۴۸ دقیقه پیش)" (Last updated Wednesday 09:11 · cached
+// 748m ago). Root chain, found live via wrangler tail + KV forensics: the
+// pool stamp was FRESH (18:01) and sweeps ran clean every 2h, but the
+// SERVED epoch (the payload/snapshot fetchedAt) was frozen at 05:41 —
+// every rebuild since the 6h standings gates expired (11:43) burned
+// ~20-30 real subrequests on guaranteed-FAILING provider fetches (FD
+// standings silently non-ok — raw fetch, res.ok=false leaves no log, no
+// retry, no circuit trip; PGL's 3-provider chain with 800/1600ms retry
+// sleeps — the 6.8s "healthy" rebuild wall time), pushing the final
+// payload + snapshot puts past CF's real ~50-subrequest ceiling where
+// they died SILENTLY under .catch(() => {}). The snapshot's last write:
+// 05:43. The in-tick prewarm had the same structural hole — it ran inside
+// the sweep invocation which already sat at ~40-50 real subrequests. The
+// fix, asserted below: serve-path rebuilds are pure-KV (no provider
+// fetches, no long view), put failures are logged, the tick prewarms via
+// a SELF-FETCH (fresh invocation = fresh 50-subrequest budget), and the
+// quiet tick owns standings refresh + the pool stamp-advance.
+check("#epochflow serve-path rebuilds read standings CACHE-ONLY (allowFetch=false)", /stMap\[c\] = await fetchStandings\(env, c, false\) \|\| null;/.test(src) && !/stMap\[c\] = await fetchStandings\(env, c, true\)/.test(src));
+check("#epochflow background refreshes skip the 92-day long view (waitUntil dies at ~30s)", /fetchPublicMatches\(env, req, \{ skipLongView: true \}\)/.test(swrSlice52) && (swrSlice52.match(/skipLongView: true/g) || []).length >= 2 && /if \(!matches\.length && !\(opts && opts\.skipLongView\)\) matches = await fetchLongView\(env\);/.test(src));
+check("#epochflow ONE payload TTL (720s) — the empty-view 60s churn loop is gone", /expirationTtl: 720 \}\)\.catch\(\(e\) => console\.warn\("public payload write failed: "/.test(src) && !/prewarm \? 720 : 60/.test(src) && /expirationTtl: 720 \}\)\.catch\(\(e\) => console\.warn\("degraded payload re-cache write failed: "/.test(src));
+check("#epochflow payload + snapshot put failures are LOGGED, never swallowed", /console\.warn\("public snapshot write failed: " \+ e\.message\)/.test(src) && (src.match(/\.catch\(\(e\) => console\.warn\("(public|degraded)/g) || []).length >= 3);
+check("#epochflow the tick pre-warms via SELF-FETCH (fresh invocation budget, not the sweep's)", /SELF_PREWARM_URL: "https:\/\/sportsignal\.ir\/api\/public-matches"/.test(src) && /await fetch\(CONFIG\.SELF_PREWARM_URL \+ "\?selfprewarm=" \+ Date\.now\(\), \{ headers: \{ "x-ss-selfprewarm": "1" \} \}\)/.test(src) && /fired = r\.status === 200;/.test(src));
+check("#epochflow self-fetch fallback keeps the meter-gated in-tick rebuild", /else if \(subrequestCount\(\) < 30\) \{\s*\n\s*await fetchPublicMatches\(env, null, \{ prewarm: true, pool: matches \}\);/.test(src));
+check("#epochflow quiet tick ADVANCES the pool stamp when >90min old (header clock + TTL stay alive)", /if \(!fullSweepThisTick && matches === poolRef && poolBlob && poolBlob\.fetchedAt && Date\.now\(\) - new Date\(poolBlob\.fetchedAt\)\.getTime\(\) > CONFIG\.POOL_STAMP_REFRESH_MS/.test(src) && /await cacheMatches\(env, poolRef, poolBlob\.source \|\| "quiet-verify"\);/.test(src));
+check("#epochflow quiet tick owns the standings refresh (2h marker-gated phase)", /const marker = await env\.STATE\.get\(CONFIG\.KV_STAND_REFRESH\)\.catch\(\(\) => null\);/.test(src) && /KV_STAND_REFRESH: "stand_refresh_v1"/.test(src) && /for \(const c of \["PL", "PD", "SA", "BL1", "FL1", "CL", "PGL"\]\) \{/.test(src));
+check("#epochflow live scorer enrichment moved into the tick (self-fetch rebuilds don't fetch)", /if \(liveChanged && subrequestCount\(\) < 36\) \{/.test(src) && /await enrichLiveMatches\(env, matches\);/.test(src.split("v13.53-standsteady semantics preserved")[1] || ""));
+check("#epochflow FD standings non-ok responses are VISIBLE + 429 suspends the circuit", /console\.warn\("Standings " \+ code \+ ": FD HTTP " \+ res\.status/.test(src) && /if \(res\.status === 429\) \{\s*\n\s*await suspendProvider\(env, "football-data"\)\.catch\(\(\) => \{\}\);/.test(src));
 
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

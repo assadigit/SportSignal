@@ -231,7 +231,7 @@ export function projectedUclStart() {
 // The canary match is stripped here — it lives ONLY in cron's in-memory
 // pool and must never leak into the public payload (the comments claimed
 // a public-side filter existed; it never did — belt-and-braces now).
-export interface PubOpts { prewarm?: boolean; pool?: any[] }
+export interface PubOpts { prewarm?: boolean; pool?: any[]; skipLongView?: boolean }
 export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   const prewarm = !!(opts && opts.prewarm);
   const prePool = opts && Array.isArray(opts.pool) ? opts.pool.filter((m) => !m.canary) : null;
@@ -304,7 +304,16 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
       // nearly EVERY visit. It now runs only when the pool itself is gone
       // (cron dead >24h) — the recovery path, in the background.
       matches = await getCachedMatches(env);
-      if (!matches.length) matches = await fetchLongView(env);
+      // v13.55-epochflow: the 92-day long view is CRON-ONLY. A background
+      // rebuild (this path) runs inside ctx.waitUntil, which dies at ~30s —
+      // the long view needs 10 FD chunks × 2s sleeps and can NEVER complete
+      // there; it just burned ~25 subrequests in a dying invocation while
+      // pushing the final payload/snapshot writes past CF's real ~50 ceiling
+      // (they failed silently under .catch(() => {})). Pool recovery is the
+      // tick's job (v13.54.1); the sync TRUE-COLD call from public-swr keeps
+      // the long view (first-deploy / KV-wipe case — a fresh visitor must
+      // still see data).
+      if (!matches.length && !(opts && opts.skipLongView)) matches = await fetchLongView(env);
     }
     // v13.53-standsteady: FD live-detail enrichment (scorers) runs on PREWARM
     // (cron) builds ONLY. The serve-time live overlay patches status/score/
@@ -330,20 +339,23 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     teams: st.teams.slice(0, 8).map((t) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), points: t.points, played: t.played, won: t.won, draw: t.draw, lost: t.lost, gf: t.gf, ga: t.ga, gd: t.gd != null ? t.gd : t.gf != null && t.ga != null ? t.gf - t.ga : null }))
   } : null;
   const stMap: Record<string, any> = {};
-  // v13.53-standsteady: the FD standings rotation is GONE. It existed to
-  // spread the old 10-min freshness gate's fetches, but prewarm sweeps run
-  // exactly every 2h = 12 × 10-min slots and 12 % 3 = 0 — every cron prewarm
-  // landed in the SAME rotation slot, so the same 2 codes refreshed every
-  // time while the other 4 only got fetch opportunities from random visitor
-  // rebuilds. On quiet days a code could go 8h+ without one, its KV cache
-  // expired, the next FD 429/timeout hit the null path, and the box rendered
-  // «جدول هنوز در دسترس نیست» (the user's report: "2 of 5 tables don't
-  // load"). The 6h jittered gate inside fetchStandings now does the
-  // throttling (at most ~1 code actually fetches per rebuild), and the
-  // fetches are SEQUENTIAL — no rebuild can ever burst FD's 10-req/min.
+  // v13.55-epochflow: standings are now read CACHE-ONLY on every serve-path
+  // rebuild (allowFetch=false, unconditionally). The 2026-09-30 frozen-epoch
+  // bug: once the 6h freshness gates expired, EVERY rebuild (visitor +
+  // prewarm) re-attempted the provider chain — FD standings silently 429ing
+  // (raw fetch, non-ok = no log, no retry) + PGL's 3-provider fallback with
+  // 800/1600ms retry sleeps — ~20-30 real subrequests of guaranteed-failing
+  // fetches per rebuild, pushing the payload + snapshot puts past CF's real
+  // ~50-subrequest ceiling where they died SILENTLY (.catch(() => {})). The
+  // data epoch then froze at the last successful write ("Last updated
+  // Wednesday 09:11 · cached 748m ago" for 12.5h while the pool stamp kept
+  // advancing). Standings refresh authority now lives in the CRON tick's
+  // stand_refresh phase (cron.ts) where the 6h gates + the suspension circuit
+  // + the sequential fetches live under the meter; this path serves the KV
+  // cache (24h TTL) + the per-code snapshot fallback (v13.53) only.
   for (const c of standCodes.concat(["CL", "PGL"])) {
     try {
-      stMap[c] = await fetchStandings(env, c, true) || null;
+      stMap[c] = await fetchStandings(env, c, false) || null;
     } catch (e) {
       stMap[c] = null;
     }
@@ -568,25 +580,23 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
       // Re-write the short-TTL cache too so the next visitor in the next 5
       // min doesn't all hammer the failing API again \u2014 they all get the
       // stale snapshot from the short cache.
-      await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data: stale }), { expirationTtl: 60 }).catch(() => {});
+      // v13.55-epochflow: put failures are LOGGED now \u2014 the silent .catch
+      // here is what hid the frozen-epoch bug for 12.5h (writes dying at
+      // the subrequest ceiling were invisible in every tail). TTL 60\u2192720:
+      // one uniform payload TTL (see the write below).
+      await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data: stale }), { expirationTtl: 720 }).catch((e) => console.warn("degraded payload re-cache write failed: " + e.message));
       return stale;
     }
   }
-  if (upcoming.length || finished.length) {
-    // v13.52-swrsolid: ONE TTL for every payload write (was 720 prewarm /
-    // 300 visitor). With the snapshot + overlay serve path in place the
-    // visitor TTL no longer needs to be conservative: a 12-min KV window
-    // means the SWR stale-serve window (5–10min) actually functions for
-    // visitor-written payloads too (the old 5-min TTL deleted the key the
-    // moment it went stale — every >5min-gap visitor then paid the full
-    // synchronous rebuild), and live correctness no longer depends on the
-    // payload's age (the overlay patches it at serve time).
-    await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: 720 }).catch(() => {
-    });
-  } else {
-    await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: prewarm ? 720 : 60 }).catch(() => {
-    });
-  }
+  // v13.55-epochflow: ONE TTL for every payload write \u2014 720s, empty view
+  // included (was 60s for visitor-written empty payloads). The 60s retry
+  // TTL meant every >60s-gap poll hit the snapshot serve + a full rebuild
+  // (with the old fetching standings ≈ 25+ subrequests each) \u2014 the
+  // break-week churn that also burned FD's quota minute. With the rebuild
+  // now pure-KV (~15 ops) the retry is cheap, but there is no reason to
+  // cycle it 12× more often than a data-bearing payload. Put failures are
+  // LOGGED (see the frozen-epoch lesson above).
+  await env.STATE.put(CONFIG.KV_PUBLIC_MATCHES, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: 720 }).catch((e) => console.warn("public payload write failed: " + e.message));
   // v12.x-resilience: refresh the 7-day snapshot ONLY when the live sweep
   // succeeded with real data — otherwise we'd overwrite the snapshot
   // with empty arrays and lose the fallback.
@@ -613,8 +623,9 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     const prevSnap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
     const changed = !prevSnap || !prevSnap.data || JSON.stringify(prevSnap.data) !== JSON.stringify(data);
     if (changed) {
-      await env.STATE.put(CONFIG.KV_PUBLIC_SNAPSHOT, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: CONFIG.KV_PUBLIC_SNAPSHOT_TTL || (7 * 24 * 60 * 60) }).catch(() => {
-      });
+      // v13.55-epochflow: logged, not swallowed — a silently-failing
+      // snapshot write is what froze the served epoch at 05:41 for 12.5h.
+      await env.STATE.put(CONFIG.KV_PUBLIC_SNAPSHOT, JSON.stringify({ ts: Date.now(), data }), { expirationTtl: CONFIG.KV_PUBLIC_SNAPSHOT_TTL || (7 * 24 * 60 * 60) }).catch((e) => console.warn("public snapshot write failed: " + e.message));
     }
   }
   return data;

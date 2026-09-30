@@ -11,13 +11,14 @@ import { toFaDigits, resetSubrequestBudget, subrequestCount, kvOpsCount, bumpKvO
 import { translateTeam, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
-import { fetchMatchesFromAPI, getCachedMatches, fetchLiveSweep, fetchLongView, maybeScanCupFixtures } from "./providers";
+import { fetchMatchesFromAPI, cacheMatches, fetchLiveSweep, fetchLongView, maybeScanCupFixtures } from "./providers";
 import { sendTelegram, drainOutbox } from "./telegram";
 import { sendMatchNotifications, detectStatusChanges, auditNotifications } from "./notifications";
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, broadcastBigMatchKickoff, maybeNotifyTableToppers } from "./digest";
 import { getRegisteredChats, checkUserCap } from "./users";
 import { applySettings } from "./admin";
-import { fetchPublicMatches } from "./public-matches";
+import { fetchPublicMatches, enrichLiveMatches } from "./public-matches";
+import { fetchStandings } from "./composers";
 import { getCronStatus, alertPhaseError, liveFingerprint } from "./monitoring";
 import { maybeBroadcastMigration } from "./migration";
 import { normalizeTeamName } from "./teams";
@@ -248,8 +249,14 @@ export async function executeScheduledLogic(env: Env) {
     // gate compares live fingerprints of pool vs merged to detect whether
     // the live sweep actually changed anything worth republishing.
     let poolRef = null;
+    // v13.55-epochflow: the RAW pool blob (not just the rows) — the quiet-tick
+    // stamp-advance below needs fetchedAt + source, and reading the blob
+    // once here replaces the getCachedMatches call (same KV read).
+    let poolBlob: any = null;
     try {
-      const cachedPool = await getCachedMatches(env);
+      poolBlob = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
+      const cachedPool = poolBlob && Array.isArray(poolBlob.matches) ? poolBlob.matches : [];
+      if (cachedPool.length) console.log("Using cached matches from " + (poolBlob.source || "?") + " (" + poolBlob.fetchedAt + ")");
       poolRef = cachedPool;
       const isActiveTime = cachedPool.some((m) => {
         if (!shouldNotify(m)) return false;
@@ -339,6 +346,53 @@ export async function executeScheduledLogic(env: Env) {
         if (cs.added || cs.updated) console.log(`\u{1F3C6} Cup big-team scan: +${cs.added} added, ${cs.updated} status/score refreshed`);
       } catch (e) {
         console.error("Cup scan step failed: " + e.message);
+      }
+    }
+    // v13.55-epochflow: QUIET-TICK STAMP-ADVANCE. cacheMatches is change-only
+    // (v13.31 KV budget) and full sweeps only rewrite it when they FIND
+    // matches — on deep break weeks the sequential sweep legitimately
+    // returns 0 (fetchMatchesFromAPI falls back to the pool without calling
+    // cacheMatches) and the only other writers were the 5h cup scans, so
+    // the pool stamp (the site header's "Last updated" clock) could sit
+    // 5h+ while the TTL (24h) quietly counted down toward the 13.54.1
+    // deadlock again. A quiet tick that reuses the pool now re-caches it
+    // with a fresh stamp whenever fetchedAt is >POOL_STAMP_REFRESH_MS old:
+    // the header stays ≤~100min fresh AND the pool TTL never runs out.
+    // ≤16 writes/day of the 1,000/day quota; correctness gate is HARD only
+    // (it also prevents the deadlock — the same class as the overlay).
+    if (!fullSweepThisTick && matches === poolRef && poolBlob && poolBlob.fetchedAt && Date.now() - new Date(poolBlob.fetchedAt).getTime() > CONFIG.POOL_STAMP_REFRESH_MS && !budgetHard && !env.KV_BUDGET_HOLD) {
+      try {
+        await cacheMatches(env, poolRef, poolBlob.source || "quiet-verify");
+        console.log("\u{1F551} Pool stamp advanced (quiet tick — verified unchanged data)");
+      } catch (e) {
+        console.warn("Pool stamp-advance failed: " + e.message);
+      }
+    }
+    // v13.55-epochflow: QUIET-TICK STANDINGS-REFRESH PHASE. Standings fetch
+    // authority moved OFF the serve path (visitor rebuilds are cache-only
+    // since the frozen-epoch bug — see public-matches.ts). This phase is
+    // the refresh owner now: on quiet ticks (meter ~0, ~24 KV ops used —
+    // plenty of headroom vs the sweep's 40-50), gated by a 2h marker so it
+    // doesn't add ops to EVERY tick. The 6h per-code freshness gates + the
+    // 17-min jitter inside fetchStandings stay the real throttle (≈1
+    // expired code per pass, ≈4 fetches/code/day); a 429 now suspends the
+    // FD circuit for 45min (see composers.ts) instead of silently burning
+    // the same exhausted quota minute forever.
+    if (!fullSweepThisTick && !budgetSoft && matches === poolRef) {
+      try {
+        const marker = await env.STATE.get(CONFIG.KV_STAND_REFRESH).catch(() => null);
+        if (!marker) {
+          for (const c of ["PL", "PD", "SA", "BL1", "FL1", "CL", "PGL"]) {
+            try {
+              await fetchStandings(env, c, true);
+            } catch (e) {
+              console.warn("Standings refresh " + c + " failed: " + e.message);
+            }
+          }
+          await env.STATE.put(CONFIG.KV_STAND_REFRESH, String(Date.now()), { expirationTtl: Math.ceil(CONFIG.STAND_REFRESH_MS / 1e3) }).catch(() => {});
+        }
+      } catch (e) {
+        console.warn("Standings refresh phase failed: " + e.message);
       }
     }
     console.log(`\u{1F4CA} Total matches received: ${matches.length}`);
@@ -462,15 +516,52 @@ export async function executeScheduledLogic(env: Env) {
     if (!fullSweepThisTick && poolRef) {
       liveChanged = liveFingerprint(matches) !== liveFingerprint(poolRef);
     }
+    // v13.55-epochflow: the prewarm now runs as a SELF-FETCH (a fresh
+    // invocation with its own full 50-subrequest budget). The old in-tick
+    // rebuild ran AFTER the sequential 3-provider sweep, when the tick
+    // already sat at ~40-50 real subrequests — its final payload + snapshot
+    // puts crossed CF's real ceiling and died silently on nearly every
+    // sweep (the 2026-09-30 frozen-epoch bug: the snapshot's last
+    // successful write was 05:43 while sweeps ran clean every 2h after).
+    // One subrequest here; the fetched invocation serves from KV and its
+    // waitUntil rebuild (pool-first, cache-only standings, no long view)
+    // lands the writes in ~15-20 ops. Fallback: the in-tick rebuild, still
+    // meter-gated <30 like the old prewarm.
+    if (liveChanged && subrequestCount() < 36) {
+      // v13.53-standsteady semantics preserved: live scorers enrichment is
+      // cron-owned (a goal → the next tick's prewarm re-enriched within
+      // ~10min). The self-fetch rebuild is visitor-shaped (no fetches), so
+      // the tick enriches directly before publishing.
+      try {
+        await enrichLiveMatches(env, matches);
+      } catch (e) {
+        console.warn("Live scorer enrichment failed: " + e.message);
+      }
+    }
     try {
       const pub = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null) as any;
       const pubStale = !pub || !pub.ts || Date.now() - pub.ts >= 555e3;
       // v13.44-quotaguard: prewarm is a cosmetic write too — under the SOFT
       // governor the visitors' on-demand refresh path takes over (the
       // pre-v13.35 behavior).
-      if ((fullSweepThisTick || liveChanged) && pubStale && subrequestCount() < 30 && !budgetSoft) {
-        await fetchPublicMatches(env, null, { prewarm: true, pool: matches });
-        console.log(`\u{1F525} Public payload pre-warmed (${fullSweepThisTick ? "full sweep" : "live data changed"}) for the next visitors`);
+      if ((fullSweepThisTick || liveChanged) && pubStale && !budgetSoft) {
+        const why = fullSweepThisTick ? "full sweep" : "live data changed";
+        let fired = false;
+        if (CONFIG.SELF_PREWARM_URL) {
+          try {
+            const r = await fetch(CONFIG.SELF_PREWARM_URL + "?selfprewarm=" + Date.now(), { headers: { "x-ss-selfprewarm": "1" } });
+            await r.text().catch(() => {});
+            fired = r.status === 200;
+          } catch (e) {
+            console.warn("Self-prewarm fetch failed: " + e.message);
+          }
+        }
+        if (fired) {
+          console.log(`\u{1F525} Public payload pre-warm fired via self-fetch (${why})`);
+        } else if (subrequestCount() < 30) {
+          await fetchPublicMatches(env, null, { prewarm: true, pool: matches });
+          console.log(`\u{1F525} Public payload pre-warmed in-tick (${why}) for the next visitors`);
+        }
       }
     } catch (e) {
       console.error("Public pre-warm failed: " + e.message);

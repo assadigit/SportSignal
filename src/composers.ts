@@ -10,7 +10,7 @@ import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, get
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, faStageName, isDomesticCup } from "./translate";
 import { normAlias, isMasterPair, isDerby, rivalryName } from "./matches";
-import { providerSuspended, clearProviderSuspension, fetchPglTableFromWikipedia } from "./providers";
+import { providerSuspended, suspendProvider, clearProviderSuspension, fetchPglTableFromWikipedia } from "./providers";
 
 export function format24HourMessage(match, env, lang) {
   const en = lang === "en";
@@ -244,6 +244,22 @@ export async function fetchStandings(env: Env, code, allowFetch = true, opts?) {
       // retries next tick, same as a failed fetch today).
       if (bumpSubrequest()) return out;
       const res = await fetch("https://api.football-data.org/v4/competitions/" + code + "/standings", { headers });
+      // v13.55-epochflow: non-ok FD standings responses were SILENT — a
+      // raw fetch with res.ok=false leaves out=null with no log, no retry
+      // and no circuit trip, while the 6h gate re-attempted the same call
+      // on every rebuild. That silence is what let the 2026-09-30 frozen-
+      // epoch bug hide for 12.5h (standings_cache_* stuck at 05:43 while
+      // every tail looked clean). Now: every non-ok is visible, and a 429
+      // (quota minute exhausted) suspends the football-data circuit for
+      // PROVIDER_SUSPEND_MS so subsequent codes + sweeps skip instead of
+      // burning the same exhausted minute (mirror of fetchWithRetry F5).
+      if (!res.ok) {
+        console.warn("Standings " + code + ": FD HTTP " + res.status + (res.status === 429 ? " (rate-limited)" : ""));
+        if (res.status === 429) {
+          await suspendProvider(env, "football-data").catch(() => {});
+          console.warn("⏸️ football-data suspended " + Math.round(CONFIG.PROVIDER_SUSPEND_MS / 6e4) + "min (standings 429)");
+        }
+      }
       if (res.ok) {
         const data = await res.json() as any;
         const season = data.season;

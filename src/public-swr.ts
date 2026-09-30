@@ -52,7 +52,10 @@ export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promi
         // Serve the stale cache now; refresh in the background. The
         // refresh path (fetchPublicMatches) re-checks the KV + refresh
         // lock, so a concurrent request can't double-sweep.
-        ctx.waitUntil(fetchPublicMatches(env, req).catch((e) => console.warn("SWR bg refresh failed: " + e.message)));
+        // v13.55-epochflow: bg refreshes pass skipLongView — the 92-day
+        // long view can't finish inside ctx.waitUntil (~30s) and only
+        // burned budget in a dying invocation (see fetchPublicMatches).
+        ctx.waitUntil(fetchPublicMatches(env, req, { skipLongView: true }).catch((e) => console.warn("SWR bg refresh failed: " + e.message)));
       }
       if (env.AI) ctx.waitUntil(maybeRunFaAi(env).catch((e) => console.warn("FA-AI bg run failed: " + e.message)));
       const served = applyLiveOverlay(Object.assign({}, kv.data), ov);
@@ -80,7 +83,7 @@ export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promi
     // older than CACHED_BADGE_MS (3h), and the age shown is the DATA's age.
     const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
     if (snap && snap.data && (snap.data.upcoming || snap.data.finished || snap.data.topSpot || snap.data.ucl || snap.data.standings)) {
-      ctx.waitUntil(fetchPublicMatches(env, req).catch((e) => console.warn("Snapshot bg refresh failed: " + e.message)));
+      ctx.waitUntil(fetchPublicMatches(env, req, { skipLongView: true }).catch((e) => console.warn("Snapshot bg refresh failed: " + e.message)));
       if (env.AI) ctx.waitUntil(maybeRunFaAi(env).catch((e) => console.warn("FA-AI bg run failed: " + e.message)));
       const served = applyLiveOverlay(Object.assign({}, snap.data), ov);
       if (ov && ov.ts) served.liveAt = new Date(ov.ts).toISOString();

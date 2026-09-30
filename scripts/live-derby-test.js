@@ -148,10 +148,18 @@ chk(isMasterClash({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpo
 // only — e.g. t-clash2 at relOff(5) — may scale past EOM on cramped months;
 // that is fine: the box window is 90d, only `upcoming` is month-gated.)
 const EOM_MS = (() => { const d = new Date(); d.setMonth(d.getMonth() + 1, 0); d.setHours(23, 59, 59, 999); return d.getTime(); })();
+// v13.55: m-in's fixed +1d offset collided with m-out (next-month-1st
+// 12:00) when the suite runs on the EOM day after noon — m-in landed Oct 1
+// 19:00, AFTER m-out, flipping the box's kickoff order (found live
+// 2026-09-30 19:00Z, both slots red on pristine 13.54.1). nearOff keeps
+// m-in strictly inside the current month on cramped days (EOM −1h, floored
+// at 1min) so m-in < m-out holds every day of every month; on normal days
+// it is exactly the old +1d.
+const nearOff = Math.max(6e4, Math.min(864e5, EOM_MS - Date.now() - 36e5));
 const relOff = (days) => (EOM_MS - Date.now() > (days + 1) * 864e5) ? days * 864e5 : Math.max(6e4, Math.round((EOM_MS - Date.now()) * days / 4.2));
 const fetchPM = grabFn("async function fetchPublicMatches(env, req"); // req optional (rate-limit only); v13.35 adds opts (prewarm/pool)
 const pool = [
-  { id: "m-in", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + 864e5).toISOString(), status: "SCHEDULED" },
+  { id: "m-in", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + nearOff).toISOString(), status: "SCHEDULED" },
   (() => { const d = new Date(); d.setMonth(d.getMonth() + 1, 1); d.setHours(12, 0, 0, 0); return { id: "m-out", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" }, utcDate: d.toISOString(), status: "SCHEDULED" }; })(),
   { id: "m-live", homeTeam: { name: "Manchester City FC" }, awayTeam: { name: "Manchester United FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() - 40 * 6e4).toISOString(), status: "IN_PLAY", minute: 67, scorers: [{ minute: 23, type: "GOAL", scorer: "Haaland", team: "Manchester City FC" }], score: { fullTime: { home: 2, away: 1 } } },
   (() => { const d = new Date(); d.setMonth(d.getMonth() + 2, 15); d.setHours(19, 0, 0, 0); return { id: "m-far", homeTeam: { name: "FC Barcelona" }, awayTeam: { name: "Real Madrid CF" }, competition: { code: "PD" }, utcDate: d.toISOString(), status: "SCHEDULED" }; })(),

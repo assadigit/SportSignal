@@ -6,6 +6,73 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.55-epochflow] — 2026-09-30 (the frozen epoch: KV write quota exhausted + silently-swallowed put failures)
+
+The user's report: *"آخرین به‌روزرسانی: چهارشنبه ۰۹:۱۱ صبح · ذخیره‌شده
+(۷۴۸ دقیقه پیش)"* — last updated Wednesday 09:11, cached 748 minutes ago.
+The pipeline LOOKED healthy (healthz ok, 2h sweeps clean, pool stamp fresh
+at 18:01) but the served epoch (payload/snapshot `fetchedAt`) was frozen
+at 05:41 for 12.5h.
+
+### The root chain (exposed by the new put-failure logging)
+1. **The KV namespace exhausted its 1,000 writes/day free-tier quota**
+   (midday UTC, after a morning of browser-poll rebuild churn — the
+   empty-view payload's 60s TTL meant every >60s-gap poll ran a full
+   rebuild: lock + rate-limit + payload puts ≈ 3-4 writes per poll).
+2. **Every put started failing with "KV put() limit exceeded for the day" —
+   and every single one was swallowed by `.catch(() => {})`.** No payload
+   writes, no snapshot writes, no standings-cache writes, no pool stamp
+   writes. The cron status blob's single trickle-write still slipped
+   through the best-effort enforcement, so healthz kept reporting
+   `ok:true` — the perfect masquerade of a healthy pipeline.
+3. The serve path then cycled: payload (60s TTL) expired → snapshot serve
+   (frozen epoch 05:41) + a background rebuild that burned ~20-30 real
+   subrequests on guaranteed-failing provider fetches (FD standings
+   silently non-ok — a raw fetch with `res.ok=false` left no log; PGL's
+   3-provider fallback chain with 800/1600ms retry sleeps — the 6.8s
+   "healthy" rebuild wall time) before its writes died at the quota wall.
+4. Header semantics did the rest: the badge is data-age-gated (13.54), so
+   a >3h-old epoch shows "cached (Nm ago)" — with N growing all day.
+
+### The fix
+1. **Serve-path rebuilds are pure-KV now**: `fetchStandings(env, c, false)`
+   (cache + per-code snapshot fallback only — zero provider fetches on any
+   visitor-driven rebuild), and background refreshes pass `skipLongView`
+   (the 92-day view can't finish in `ctx.waitUntil`'s ~30s and only burned
+   budget). The 10-min cron tick owns ALL provider refreshes.
+2. **One payload TTL (720s) for every write** — the empty-view 60s retry
+   loop (the poll churn that burned the quota) is dead: a poll 61s after
+   the last one now serves the payload inline with ZERO writes; only
+   >10min gaps trigger one bounded rebuild.
+3. **Put failures are LOGGED, never swallowed** (`public payload write
+   failed: …`, `public snapshot write failed: …`, `degraded payload
+   re-cache write failed: …`) — this entire bug class was invisible for
+   12.5h because of the silence.
+4. **The cron prewarm now SELF-FETCHES** (`SELF_PREWARM_URL`): the tick
+   fires one fetch at its own public API — a fresh invocation with a full
+   50-subrequest budget of its own, whose waitUntil rebuild lands the
+   payload + snapshot writes reliably (the in-tick prewarm ran after the
+   3-provider sweep, at ~40-50 real subrequests, so its writes died at
+   CF's real ceiling). Meter-gated in-tick fallback preserved.
+5. **Quiet-tick pool stamp-advance**: a tick that reuses the pool re-caches
+   it with a fresh stamp whenever `fetchedAt` is >90min old (≤16
+   writes/day) — the header clock stays fresh on the deepest break weeks
+   and the pool TTL can never run out again (13.54.1's deadlock cannot
+   reform even when sweeps legitimately return 0 matches).
+6. **Quiet-tick standings-refresh phase** (2h marker-gated, 6h per-code
+   freshness gates + jitter preserved): standings fetch authority moved off
+   the serve path entirely.
+7. **FD standings non-ok responses are VISIBLE now** (`Standings PL: FD
+   HTTP 429`) and a 429 suspends the football-data circuit for 45min
+   (mirror of fetchWithRetry F5) — no more silent quota-minute burn.
+8. Live scorer enrichment moved into the tick (`enrichLiveMatches` on
+   `liveChanged`, meter-gated) — self-fetch rebuilds never fetch.
+
+### Expected daily KV-write budget (matchday): ~350-550 vs the 1,000 cap
+(was ~1,000-1,400 on poll-days — the quota killer).
+
+---
+
 ## [13.54.1-poolbreak] — 2026-09-30 (the dead-pool deadlock: the site really WAS frozen)
 
 Found live via `wrangler tail` while verifying 13.54 — the frozen stamp was

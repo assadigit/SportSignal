@@ -10,7 +10,7 @@
 **A serverless Telegram bot + web page that tells Iranian football fans about the
 matches that matter — before they start, while they're live, and the moment they end.**
 
-> **Current build:** v13.54.1-poolbreak · [Live](https://sportsignal.ir) ·
+> **Current build:** v13.55-epochflow · [Live](https://sportsignal.ir) ·
 > **Operating it?** Read [`RUNBOOK.md`](RUNBOOK.md) first — deploy/verify/rollback,
 > monitoring semantics, incident playbooks, and the never-do list (§11).
 
@@ -356,6 +356,17 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
   0 matches every tick. Fix: accurate metering, budget-stopped fan-outs,
   a sequential FD→TSP→sportscore sweep, and cron-owned 92-day pool
   recovery (empty pool or <5-day fixture horizon → long view in the tick)
+- ✅ **13.55-epochflow** — the frozen epoch ("cached 748m ago" for 12.5h
+  while healthz stayed green): the KV namespace exhausted its 1,000
+  writes/day free-tier quota mid-day and EVERY put failed silently under
+  `.catch(() => {})` — no payload/snapshot/standings/stamp writes landed,
+  so the served epoch froze at the last successful write. Fix: serve-path
+  rebuilds are pure-KV (standings cache-only, no long view), one 720s
+  payload TTL (the 60s empty-view poll churn that burned the quota is
+  dead), put failures are LOGGED, the cron prewarm self-fetches (fresh
+  invocation budget), the quiet tick owns standings refresh + a >90min
+  pool stamp-advance, and FD standings 429s suspend the circuit visibly.
+  Daily write budget ≈350-550 vs the 1,000 cap
 
 **Deliberately deferred (documented, not forgotten):**
 

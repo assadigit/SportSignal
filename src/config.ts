@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.54.1-poolbreak";
+export const VERSION = "13.55-epochflow";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -185,6 +185,24 @@ export const CONFIG: Record<string, any> = {
   STANDINGS_FRESH_JITTER_MS: 17 * 60 * 1e3,
   STANDINGS_CACHE_TTL: 24 * 60 * 60,
   KV_PUBLIC_MATCHES: "public_matches_v1",
+  // v13.55-epochflow: the cron tick's SELF-FETCH prewarm target. The in-tick
+  // prewarm rebuilt the public payload INSIDE the sweep invocation — after
+  // the 3-provider sequential sweep the tick already sits at ~40-50 real
+  // subrequests, so the rebuild's final payload + snapshot puts crossed CF's
+  // real ~50 ceiling and died silently (.catch(() => {})) on every sweep
+  // (the 2026-09-30 frozen-epoch bug: the snapshot last wrote 05:43 while
+  // sweeps ran clean every 2h). The tick now fires ONE fetch at this URL —
+  // a fresh invocation with a full 50-subrequest budget of its own, whose
+  // serve path + waitUntil rebuild land the writes reliably. The query
+  // string is cache-busting only; the route treats it like any visitor.
+  SELF_PREWARM_URL: "https://sportsignal.ir/api/public-matches",
+  // v13.55-epochflow: the cron standings-refresh phase marker (see cron.ts).
+  // Standings fetch authority moved OFF the serve path (visitor rebuilds are
+  // cache-only) into a dedicated quiet-tick phase gated by this 2h marker —
+  // the 6h per-code freshness gates + jitter inside fetchStandings stay the
+  // real throttle; the marker just keeps the phase off every single tick.
+  KV_STAND_REFRESH: "stand_refresh_v1",
+  STAND_REFRESH_MS: 2 * 60 * 60 * 1e3,
   // v12.x-resilience: long-TTL (7 day) snapshot of the last successful
   // public-matches build. Read ONLY when the live fetch fails (or returns
   // an empty pool) so the page can still render last week's fixtures with
