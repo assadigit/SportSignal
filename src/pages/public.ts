@@ -57,7 +57,7 @@ __SEO_JSONLD__
 <meta name="color-scheme" content="dark light">
 <title>__SEO_TITLE__</title>
 <style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
-<link rel="stylesheet" href="/public-13.12.css">
+<link rel="stylesheet" href="/public-13.13.css">
 </head>
 <body>
 <!-- v12.24 (the user's ask): a real WEBSITE header \u2014 the uploaded SportSignal
@@ -115,7 +115,7 @@ __SEO_JSONLD__
      (worker [assets]), clipped + scrimmed so the data above stays king;
      a prefers-reduced-motion user keeps autoplay too (v12.28 \u2014 the user's
      twice-repeated ask outweighs the media query for this one element). -->
-<div class="hero-video" aria-hidden="true"><video src="/hero-stage.mp4" autoplay muted loop playsinline preload="auto" tabindex="-1" disablepictureinpicture referrerpolicy="no-referrer"></video></div>
+<div class="hero-video" aria-hidden="true"><video src="/hero-stage.mp4" poster="/hero-poster.jpg" autoplay muted loop playsinline preload="auto" tabindex="-1" disablepictureinpicture referrerpolicy="no-referrer"></video></div>
 <!-- v12.22: the hero stage's ember layer \u2014 static markup OUTSIDE #heroSpot
      so it survives every re-render, clipped to the card, pointer-transparent. -->
 <div class="hero-fx" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -265,8 +265,8 @@ __SEO_JSONLD__
      string so the language toggle updates it. -->
 <a id="tgFab" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram" data-promo="\u0628\u0631\u0627\u06CC \u062F\u0633\u062A \u0646\u062F\u0627\u062F\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645\u060C \u0628\u0647 \u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645 \u0628\u067E\u06CC\u0648\u0646\u062F\u06CC\u062F \u2728"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="#fff" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg></a>
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
-<script src="/core-13.8.js"><\/script>
+<script src="/core-13.8.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.13.js"><\/script>
+<script src="/public-13.14.js" defer><\/script>
 </body>
 </html>`;

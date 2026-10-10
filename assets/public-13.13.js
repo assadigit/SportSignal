@@ -1730,7 +1730,17 @@ function tickBigBar(){ if(DATA && DATA.upcoming) updateBigBar(); renderSync(); }
 // renderWeek/renderUcl declaration above documents the v12.18 intent; the
 // full load() re-render covers those cards too.
 var onLang = function(){ initTz(); load(); };
-setTheme(initTheme()); applyLang(true); initTz(); load();
+setTheme(initTheme()); applyLang(true); initTz();
+// v14.0-seo-perf (PF-06): server HTML already carries the full first paint —
+// the first data fetch waits for idle so it never blocks LCP (was: immediate
+// load() on parse; the rebuild saturated the main thread for ~2s).
+(function firstFetch(){
+  var run = function(){ load(); };
+  try{
+    if("requestIdleCallback" in window){ requestIdleCallback(run, {timeout: 1600}); return; }
+  }catch(e){}
+  setTimeout(run, 300);
+})();
 // v12.27 (the user's ask: "the background video doesnt play it must be auto
 // play"): the autoplay+muted+playsinline attribute trio already satisfies
 // every modern autoplay policy, but some browsers still refuse (Safari Low

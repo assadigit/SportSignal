@@ -41,3 +41,12 @@
 
 /og/default.png
   Cache-Control: public, max-age=86400
+
+/public-13.14.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.13.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/hero-poster.jpg
+  Cache-Control: public, max-age=604800
