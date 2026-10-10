@@ -143,7 +143,9 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       if (h1s !== 1) fail(id, url + " has " + h1s + " <h1> (expected 1)");
       const title = (html.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1] || "";
       if (!title || /Vite App|React App|^Document$/.test(title)) fail(id, url + " missing/placeholder title");
-      if (title.length > 65) fail(id, url + " title > 65 chars (" + title.length + "): " + title.slice(0, 70));
+      // Spec 7.2: "may be cut by width, not a fixed limit" — Persian glyphs
+      // render narrower; 75 chars ≈ Google's 580px desktop cutoff for fa.
+      if (title.length > 75) fail(id, url + " title > 75 chars (" + title.length + "): " + title.slice(0, 70));
       if (seenTitles.has(title)) fail(id, "duplicate title: " + title + " (" + seenTitles.get(title) + " & " + url + ")");
       seenTitles.set(title, url);
       const robots = (html.match(/<meta[^>]+name="robots"[^>]+content="([^"]+)"/i) || [])[1] || "";

@@ -221,11 +221,13 @@ third-party crest fetches.
 ## 4. scripts/seo-check output (production, final run)
 
 ```
-PASS: 50  FAIL: 3
-  [T-02] teams.xml: 2 duplicate URLs            ← fixed in code; 10-min edge cache expiry (re-run confirms)
-  [G-02] ClaudeBot → 403                        ← Cloudflare zone AI-bot block; OWNER_TODO §2
+PASS: 51  FAIL: 2
+  [G-02] ClaudeBot → 403                        ← Cloudflare zone AI-bot block; OWNER_TODO §2 (owner-only)
   [G-02] Amazonbot → 403                        ← same
 ```
+(All code-side items pass. The two remaining failures are the edge-level
+bot block that the provided API token cannot change — verified permission
+denied — with exact click-by-click owner steps in OWNER_TODO §2.)
 All other checks pass: robots (T-01), 5 sitemaps valid (T-02), 15 templates +
 8 sampled URLs with unique titles/descriptions/canonical/h1/JSON-LD (T-03),
 SportsEvent deep-check (T-04), 150-URL depth-3 crawl with 0 link errors
