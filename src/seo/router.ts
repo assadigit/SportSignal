@@ -64,16 +64,48 @@ function heroH1(sm: SeoMatch | null): string {
   return "بازی بزرگ بعدی: " + (sm.s.homeTeam.faName || sm.s.homeTeam.name) + " – " + (sm.s.awayTeam.faName || sm.s.awayTeam.name);
 }
 
+// The client's keyOf/listSig formats (public-13.x.js) mirrored server-side:
+// when the fresh /api/public-matches payload carries the SAME lists the
+// server rendered, the client skips its rebuild entirely (PF-06/PF-08 —
+// no post-load layout churn, no CLS).
+function clientKeyOf(m: any): string {
+  if (!m) return "";
+  const st = String(m.status || "");
+  const sc = m.score ? m.score.home + "-" + m.score.away : "";
+  return (m.id || "") + "|" + (st[0] || "") + sc + m.utcDate;
+}
+function payloadSig(p: any): string {
+  const strip = (list: any) => (Array.isArray(list) ? list.map(clientKeyOf).join(";") : "");
+  const core = {
+    u: strip(p.upcoming), f: strip(p.finished), nb: clientKeyOf(p.nextBig),
+    ts: strip(p.topSpot && p.topSpot.matches), tw: strip(p.thisWeek), nw: strip(p.nextWeek),
+    st: p.standings ? Object.keys(p.standings).map((k) => k + ":" + strip(p.standings[k] && p.standings[k].teams && p.standings[k].teams.map((t: any) => t.name + t.points))).join("|") : "",
+    c: strip(p.cups && p.cups.map((c: any) => c && c.next)), ucl: p.ucl ? String(p.ucl.matchday) + strip(p.ucl.matches) + strip(p.ucl.teams && p.ucl.teams.map((t: any) => t && t.name)) : ""
+  };
+  return fnv1aHex(JSON.stringify(core));
+}
+
+function asSm(m: any): SeoMatch | null {
+  return m && m.homeTeam && m.utcDate ? { raw: m, s: m } : null;
+}
+
 export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string> {
-  const upcoming = upcomingBig(ctx).slice(0, 45);
-  const finished = finishedRecent(ctx, 7).slice(0, 5);
+  // Render from THE PAYLOAD (the exact object the client JS fetches) so the
+  // server HTML and the client's first re-render agree (and the signature
+  // below lets the client SKIP rebuilding identical content).
   const p = ctx.payload || {};
-  const nextBig = (upcoming[0] || null) as SeoMatch | null;
-  const topSpotList = upcoming.slice(1, 11);
-  const live = upcoming.filter((sm) => /IN_PLAY|LIVE|PAUSED/i.test(String(sm.raw.status)));
-  const weekEnd = Date.now() + 7 * 864e5;
-  const week = upcoming.filter((sm) => new Date(sm.s.utcDate).getTime() <= weekEnd).slice(0, 12);
-  const ucl = upcoming.filter((sm) => sm.s.competition.code === "CL").slice(0, 8);
+  const upcomingAll = (Array.isArray(p.upcoming) ? p.upcoming : []).map(asSm).filter(Boolean) as SeoMatch[];
+  const finished = (Array.isArray(p.finished) ? p.finished : []).slice(0, 5).map(asSm).filter(Boolean) as SeoMatch[];
+  const topSpotAll = (p.topSpot && Array.isArray(p.topSpot.matches) ? p.topSpot.matches : []).map(asSm).filter(Boolean) as SeoMatch[];
+  const weekAll = (Array.isArray(p.thisWeek) ? p.thisWeek : []).map(asSm).filter(Boolean) as SeoMatch[];
+  const uclAll = (p.ucl && Array.isArray(p.ucl.matches) ? p.ucl.matches : []).map(asSm).filter(Boolean) as SeoMatch[];
+  const upcoming = upcomingAll.slice(0, 45);
+  const nextBig = (asSm(p.nextBig) || upcoming[0] || null) as SeoMatch | null;
+  const topSpotList = (topSpotAll.length ? topSpotAll : upcoming).slice(1, 11);
+  const live = upcomingAll.filter((sm) => /IN_PLAY|LIVE|PAUSED/i.test(String(sm.raw.status)));
+  const week = weekAll.slice(0, 12);
+  const ucl = uclAll.slice(0, 8);
+  const sig = payloadSig(p);
 
   // --- head values ---
   const title = "برنامه بازی‌های مهم فوتبال | تاریخ و ساعت شروع | SportSignal";
@@ -110,6 +142,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
     : "";
 
   let html = PUBLIC_PAGE
+    .replace(/<body>/, '<body><script>window.__SS_SIG__=' + JSON.stringify(sig) + ";</script>")
     .replace("__PAGE_TZ__", (ctx.env && (ctx.env as any).TEHRAN_TZ) || "Asia/Tehran")
     .replace("__SEO_TITLE__", esc(title))
     .replace("__SEO_DESC__", esc(desc))
