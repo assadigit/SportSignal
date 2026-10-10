@@ -85,7 +85,9 @@ export function buildMatchPage(ctx: SeoCtx, slug: string): { html: string; notFo
   const live = M && /IN_PLAY|LIVE|PAUSED/i.test(String(sm.raw.status || ""));
 
   const h1 = faName(m.homeTeam) + " – " + faName(m.awayTeam) + " | " + compFa + "، " + faGregorianDateShort(m.utcDate);
-  const title = faName(m.homeTeam) + " – " + faName(m.awayTeam) + " | " + compFa + "، " + faGregorianDateShort(m.utcDate) + " | SportSignal";
+  // Title ≤ ~60 chars (P-04): short fa date (no year — the slug carries it)
+  const shortDate = new Intl.DateTimeFormat("fa-IR", { day: "numeric", month: "long", timeZone: "Asia/Tehran" }).format(new Date(m.utcDate));
+  const title = faName(m.homeTeam) + " – " + faName(m.awayTeam) + " | " + compFa + "، " + shortDate + " | SportSignal";
   let desc = matchAnswerSentence(sm).replace(/<[^>]+>/g, "");
   if (desc.length > 175) desc = desc.slice(0, 172) + "…";
   if (desc.length < 70) desc += " برنامه و ساعت دقیق بازی‌های مهم فوتبال در SportSignal.";
@@ -303,7 +305,7 @@ export function buildWeekendPage(ctx: SeoCtx): string {
   return buildHub(ctx, {
     path: "/matches/this-weekend",
     h1: "بازی‌های فوتبال آخر هفته",
-    title: "بازی‌های بزرگ فوتبال آخر هفته — " + faGregorianDateShort(win.start) + " و " + faGregorianDateShort(new Date(Date.parse(win.end) - 864e5 + 36e5).toISOString()) + " | SportSignal",
+    title: "بازی‌های بزرگ آخر هفته — " + faGregorianDateShort(win.start) + " | SportSignal",
     desc: "برنامه بازی‌های بزرگ شنبه و یکشنبه",
     crumb: "آخر هفته",
     filter: (sm) => {

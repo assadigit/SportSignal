@@ -194,8 +194,15 @@ export function teamsIndex(ctx: SeoCtx): TeamEntry[] {
   });
   const list = Array.from(byName.values());
   for (const e of list) e.slug = teamSlug(e.name);
-  list.sort((a, b) => (a.next && b.next ? new Date(a.next.raw.utcDate).getTime() - new Date(b.next.raw.utcDate).getTime() : 0));
-  return list;
+  // U-03 (one URL per content): distinct provider names can slug to the same
+  // team (e.g. "SS Lazio" and "Lazio"). First-by-next-kickoff wins the slug;
+  // the loser is skipped entirely (no duplicate URLs, no dupe titles).
+  const bySlug = new Map<string, TeamEntry>();
+  const sorted = list.sort((a, b) => (a.next && b.next ? new Date(a.next.raw.utcDate).getTime() - new Date(b.next.raw.utcDate).getTime() : 0));
+  for (const e of sorted) {
+    if (!bySlug.has(e.slug)) bySlug.set(e.slug, e);
+  }
+  return Array.from(bySlug.values());
 }
 
 export interface CompEntry {
