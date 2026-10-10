@@ -197,15 +197,47 @@ Legend: ✅ Done · 🟡 Partial (owner action pending) · ⛔ Skipped (reason g
 | Page | Perf | A11y | Best Practices | SEO |
 |---|---|---|---|---|
 | Home before | 65 | 98 | 88 | 100 |
-| Home after | 71 (range 63-71) | **100** | **92** | 100 |
+| Home after (v14.0.1-uifix) | 70 (range 63-71) | **100** | **92** | 100 |
 | Match page (new) | — | — | — | — |
 | Match page after | **94** | 95 | 92 | 100 |
 | Team page (new) | — | — | — | — |
 | Team page after | **95** | 95 | 92 | 100 |
 
-Core Web Vitals (home, lab): LCP 4.4-5.2 s (pre-existing hero-video design;
-poster + defer + minify improved it from 5.9 s), TBT 160-270 ms, CLS
-0.007-0.02 ✓. Match/team pages: LCP ~2.8-2.9 s, TBT 0, CLS 0.
+Core Web Vitals (home, lab, after v14.0.1-uifix): LCP 5.1 s (pre-existing
+hero-video design; poster + defer + minify improved it from 5.9 s), TBT
+290 ms, **CLS 0.006 ✓** (spec ≤ 0.1 — the always-rebuild client render
+replaces same-shape server markup, so the swap is layout-stable).
+Match/team pages: LCP ~2.8-2.9 s, TBT 0, CLS 0.
+
+### v14.0.1-uifix — the UI-regression fix (owner request, post-launch)
+
+**What the owner saw:** after the SEO launch the homepage looked "defaced,
+organization and layout messed up": raw English `LEAGUE_STAGE` chips under
+UCL rows, a new text line above the hero card, missing per-card share
+buttons, a redundant live chip inside the live card, and missing dates on
+recent-results rows.
+
+**Root cause:** Phase 6's payload-signature skip. When the fresh API payload
+matched the server-rendered one (the common, data-stable case), the client
+SKIPPED its rebuild — so visitors permanently saw the *server* markup, which
+differed from the client render in six visible ways. The defects only hid
+briefly when data changed between server render and client fetch.
+
+**Fix (all spec requirements kept):**
+- server markup now mirrors the client rules exactly (roundchip = roundFa
+  only + list rows only; livechip skipped inside the live card; lmin on any
+  live row; the bare Jalali date text on list rows; title tooltips on names)
+- the homepage `<h1>` is sr-only — P-12/R-01 still hold (one h1 in the raw
+  HTML, screen-reader announced) but it no longer adds a visible line the
+  pre-SEO design never had
+- the client always runs its full render path (skip neutralized) — users
+  always get the exact pre-SEO UI (share buttons, tooltips, monograms);
+  crawlers and no-JS visitors still get the full server HTML (R-01)
+- sw.js cache bumped to sportsignal-v15
+
+Verified: full test suite 586 OK / 0 FAIL (incl. new scripts/uifix-check.ts);
+Appendix F all pass; CLS 0.006; no LEAGUE_STAGE in any raw HTML; share
+buttons and all sections render.
 
 **Honest note on the homepage Performance score:** the spec's ≥90 target is
 not reached on `/` because of the original hero background VIDEO
