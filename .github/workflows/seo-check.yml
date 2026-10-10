@@ -1,0 +1,32 @@
+# SportSignal — SEO regression check (T-12: every deploy + daily)
+# Runs scripts/seo-check against production. Non-blocking failures are
+# reported; blocking failures exit 1 so a broken deploy is visible.
+name: seo-check
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 3 * * *" # daily 06:53 Tehran
+  workflow_dispatch: {}
+
+jobs:
+  seo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run SEO checks
+        run: node scripts/seo-check.js
+      - name: Lighthouse (optional, best effort)
+        if: always()
+        run: |
+          npm i -g lighthouse || true
+          for p in / /matches/today /teams; do
+            lighthouse "https://sportsignal.ir$p" --only-categories=performance,seo,accessibility,best-practices \
+              --chrome-flags="--headless=new --no-sandbox" --quiet --output=json --output-path="/tmp/lh$(echo $p | tr / _).json" || true
+          done
+          for f in /tmp/lh*.json; do
+            node -e "const d=require('$f');for(const [k,v] of Object.entries(d.categories)){console.log('$f', k, Math.round((v.score||0)*100))}" || true
+          done
