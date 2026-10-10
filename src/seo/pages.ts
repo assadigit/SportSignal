@@ -244,10 +244,12 @@ function buildHub(ctx: SeoCtx, def: HubDef): string {
     '<div class="answercard">' + esc(answer) + "</div>" +
     '<div class="card"><h2>' + def.h1 + "</h2>" + dateGroupedRows(all, false) + "</div>" +
     hubTiles();
+  // P-05: descriptions stay 70+ chars even on empty days (honest text).
+  const descFull = (answer + " تاریخ و ساعت هر بازی به وقت تهران و زمان جهانی نمایش داده می‌شود و هر بازی صفحه اختصاصی دارد.").slice(0, 165);
   const trail = [{ name: "خانه", href: "/" }, { name: "بازی‌ها", href: "/matches" }, { name: def.crumb }];
   return pageShell({
     head: buildHead({
-      path: def.path, title: def.title, description: answer.slice(0, 165), indexable: true,
+      path: def.path, title: def.title, description: descFull, indexable: true,
       jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(def.path, def.h1, ctx.fetchedAt), JL.itemListNode(all, def.h1), JL.breadcrumbNode(trail)]
     }),
     h1: def.h1 + " — " + faGregorianDateShort(nowIso) + " (" + jalaliDateStr(nowIso) + ")",
