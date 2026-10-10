@@ -193,6 +193,22 @@ export async function renderCardPng(env: Env, match: any, lang: string): Promise
 // v13.31-perf: decoded font buffers — module-level, one per isolate.
 let _fontBufs: { bold: Uint8Array; extraBold: Uint8Array } | null = null;
 
+// SEO layer (Phase 5, SO-04): render ANY text-only SVG to PNG with the
+// same Vazirmatn fonts + resvg init the match cards use. Re-exported init
+// so the OG-image builder shares the isolate-level wasm/font state.
+export async function initResvgOnce(): Promise<any> {
+  return ensureResvg();
+}
+export function resvgFontBuffers(): Uint8Array[] {
+  if (!_fontBufs) {
+    _fontBufs = {
+      bold: Uint8Array.from(atob(VAZIRMATN_BOLD_TTF_B64), (c) => c.charCodeAt(0)),
+      extraBold: Uint8Array.from(atob(VAZIRMATN_EXTRABOLD_TTF_B64), (c) => c.charCodeAt(0))
+    };
+  }
+  return [_fontBufs.bold, _fontBufs.extraBold];
+}
+
 // v13.31-perf: Cache API-backed PNG cache (caches.default — NOT KV, so it
 // never touches the 1,000/day KV write quota). The same card is rendered
 // repeatedly: once per language-bucket in a notification sweep, again on

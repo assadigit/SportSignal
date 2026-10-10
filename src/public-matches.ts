@@ -209,6 +209,10 @@ export function applyLiveOverlay(data, ov) {
   if (Array.isArray(data.thisWeek)) data.thisWeek.forEach(patch);
   if (Array.isArray(data.nextWeek)) data.nextWeek.forEach(patch);
   if (Array.isArray(data.cups)) for (const c of data.cups) if (c && c.next) patch(c.next);
+  // SEO layer (Phase 1): the raw pool rides in `pool` when the SEO pages
+  // read it — the same live-status/score truth must patch those rows too
+  // (same find/patch, no behavior change for the existing containers).
+  if (Array.isArray(data.pool)) data.pool.forEach(patch);
   return data;
 }
 export function projectedUclStart() {

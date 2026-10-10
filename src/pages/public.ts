@@ -22,31 +22,39 @@ export const PUBLIC_PAGE = `<!doctype html>
      never rendered. Live badges / loading states are pure CSS now
      (live-beep / live-breath / loading-spin keyframes) — zero payload,
      zero third-party requests, actually visible. -->
-<meta name="description" content="\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\u060C \u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627\u06CC \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u0648 \u0646\u062A\u0627\u06CC\u062C \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628 \u2014 \u0628\u0647\u200C\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06CC \u062E\u0648\u062F\u06A9\u0627\u0631">
+<meta name="description" content="__SEO_DESC__">
+<meta name="robots" content="__SEO_ROBOTS__">
+<meta name="color-scheme" content="dark light">
+<link rel="alternate" type="text/calendar" href="/calendar.ics" title="تقویم SportSignal">
+<link rel="alternate" type="application/atom+xml" href="/feed.xml" title="به‌روزرسانی‌های SportSignal">
 <meta property="og:type" content="website">
-<meta property="og:title" content="SportSignal \u2014 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648">
-<meta property="og:description" content="\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\u060C \u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627\u06CC \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u0648 \u0646\u062A\u0627\u06CC\u062C \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628">
-<meta property="og:url" content="https://football.sportsignal.ir/">
-<meta property="og:image" content="https://football.sportsignal.ir/android-chrome-512x512.png">
+<meta property="og:title" content="__SEO_OG_TITLE__">
+<meta property="og:description" content="__SEO_OG_DESC__">
+<meta property="og:url" content="https://sportsignal.ir/">
+<meta property="og:image" content="__SEO_OG_IMAGE__">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SportSignal — بازی‌های بزرگ فوتبال">
 <meta property="og:locale" content="fa_IR">
 <meta property="og:locale:alternate" content="en_US">
 <meta property="og:site_name" content="SportSignal">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="SportSignal \u2014 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648">
-<meta name="twitter:description" content="\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\u060C \u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627\u06CC \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u0648 \u0646\u062A\u0627\u06CC\u062C \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628">
-<meta name="twitter:image" content="https://football.sportsignal.ir/android-chrome-512x512.png">
-<link rel="canonical" href="https://football.sportsignal.ir/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="__SEO_OG_TITLE__">
+<meta name="twitter:description" content="__SEO_OG_DESC__">
+<meta name="twitter:image" content="__SEO_OG_IMAGE__">
+<meta name="twitter:image:alt" content="SportSignal — بازی‌های بزرگ فوتبال">
+<link rel="canonical" href="https://sportsignal.ir/">
 <link rel="preload" href="/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/Vazirmatn-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"SportSignal","alternateName":"\u0627\u0633\u067E\u0648\u0631\u062A \u0633\u06CC\u06AF\u0646\u0627\u0644","url":"https://football.sportsignal.ir/","description":"\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\u060C \u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627\u06CC \u0635\u062F\u0631 \u062C\u062F\u0648\u0644 \u0648 \u0646\u062A\u0627\u06CC\u062C \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0645\u0646\u062A\u062E\u0628","inLanguage":["fa","en"]}<\/script>
+__SEO_JSONLD__
 <script>try{var t=localStorage.getItem("ucl_theme")||"dark",l=localStorage.getItem("ucl_lang")||"fa",d=document.documentElement;d.setAttribute("data-theme",t);d.setAttribute("lang",l);d.setAttribute("dir",l==="en"?"ltr":"rtl");}catch(e){}<\/script>
 <!-- v12.x-force-dark: the default theme is ALWAYS dark, regardless of the
      user's system preference (prefers-color-scheme). The color-scheme meta
      tells the browser to render form controls + scrollbars in dark mode.
      The user can still toggle to light via the theme button. -->
 <meta name="color-scheme" content="dark light">
-<title data-i="title">\u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u0631\u0648 \u2014 \u0627\u0639\u0644\u0627\u0646\u200C\u062F\u0647\u0646\u062F\u0647 \u0645\u0633\u0627\u0628\u0642\u0627\u062A</title>
+<title>__SEO_TITLE__</title>
 <style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
 <link rel="stylesheet" href="/public-13.12.css">
 </head>
@@ -68,15 +76,17 @@ export const PUBLIC_PAGE = `<!doctype html>
      \xAB\u062E\u0627\u0646\u0647 \u062F\u0631\u0628\u0627\u0631\u0647 \u062A\u0645\u0627\u0633\xBB nav rides the header's start side on PC (phones get
      it in the footer) \u2014 v12.26 right-aligned with the logo, not centered. -->
 <a class="brand" href="/" aria-label="SportSignal"><img src="/logo.png" alt="SportSignal" width="146" height="50" referrerpolicy="no-referrer"></a>
-<nav class="mainnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="#about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="#contact" data-i="navContact">\u062A\u0645\u0627\u0633</a></nav>
+<nav class="mainnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="/matches">\u0628\u0627\u0632\u06CC\u200C\u0647\u0627</a><a href="/teams">\u062A\u06CC\u0645\u200C\u0647\u0627</a><a href="/competitions">\u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627</a><a href="#about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="#contact" data-i="navContact">\u062A\u0645\u0627\u0633</a></nav>
 <div class="head-actions"><a class="cta" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="join">\u0639\u0636\u0648\u06CC\u062A \u062F\u0631 \u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645</a><span class="tb-btns"><button id="sbtn" onclick="toggleTz()" aria-expanded="false" aria-controls="tzpanel" title="\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC" aria-label="\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC">\u2699\uFE0F</button><button id="lbtn" onclick="switchLang()"></button><button id="tbtn" onclick="toggleTheme()"></button><a id="tgbtn" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" class="icon-tg" aria-label="Telegram" title="Telegram"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a></span></div>
 <div id="tzpanel" role="group" aria-label="\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC"><div class="tz-head"><span data-i="tzTitle">\u{1F30D} \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC</span><button id="tzclose" onclick="toggleTz()" title="\u0628\u0633\u062A\u0646" aria-label="\u0628\u0633\u062A\u0646">\u2715</button></div><input id="tzfilter" type="search" placeholder="\u062C\u0633\u062A\u062C\u0648\u06CC \u06A9\u0634\u0648\u0631 \u06CC\u0627 \u0634\u0647\u0631\u2026" data-p="tzSearch" aria-label="\u062C\u0633\u062A\u062C\u0648\u06CC \u06A9\u0634\u0648\u0631 \u06CC\u0627 \u0634\u0647\u0631"><select id="tzsel" title="\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC" aria-label="\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC"></select></div>
 <!-- v12.20: visible PROOF for the auto-update claim. v12.26: the sync line
      prints the TRUTHFUL absolute stamp of the last real API refresh \u2014
      \xAB\u0622\u062E\u0631\u06CC\u0646 \u0628\u0647\u200C\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06CC: \u062C\u0645\u0639\u0647 \u06F2\u06F1:\u06F3\u06F0 \u0634\u0628\xBB (weekday + time + period word) \u2014
      rendered by renderSync()/fmtStamp() from the payload's fetchedAt. -->
-<p class="sub sync" id="lastSync" role="status" aria-live="polite"></p>
+<p class="sub sync" id="lastSync" role="status" aria-live="polite">__SEO_SYNC__</p>
 </header>
+<a class="skip-link" href="#main">پرش به محتوا</a>
+<main id="main">
 <!-- v12.12: the view toggle is RETIRED \u2014 the page is permanently big-only
      (\xAB\u0641\u0642\u0637 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0628\u0632\u0631\u06AF\xBB, the user's default). The hero card + the topspot
      box + the UCL box ARE the upcoming presentation. -->
@@ -122,7 +132,7 @@ export const PUBLIC_PAGE = `<!doctype html>
      (the user's ask: "move this loading to below team names"). The bigbar
      now sits BELOW the match row, not above it. A ⚽ football emoji is
      prepended to the bigbar label for visual identity. -->
-<div id="heroSpot"></div>
+<div id="heroSpot">__SEO_HERO__</div>
 <div id="bigbar" class="bigbar">
 <div class="bigbar-top"><span id="bigbarLabel" data-i="barNext">\u26A1 \u062A\u0627 \u0628\u0627\u0632\u06CC \u0628\u0632\u0631\u06AF \u0628\u0639\u062F\u06CC</span><span class="bb-end"><span id="bigbarClock" class="bigbar-clock">--:--:--</span><span id="bigbarPct" class="bigbar-pct" aria-hidden="true"></span></span></div>
 <div class="bigbar-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="bigbarFill" class="bigbar-fill"></div></div>
@@ -160,11 +170,11 @@ export const PUBLIC_PAGE = `<!doctype html>
      as the match status is LIVE/IN_PLAY/PAUSED. -->
 <div class="card" id="liveCard" style="display:none">
 <h2 data-i="hLive">\u{1F534} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0632\u0646\u062F\u0647</h2>
-<div id="liveMatches"><div class="skelwrap skel-skel-rows" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="liveMatches">__SEO_LIVE__</div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <div class="card" id="topspotCard" style="display:none">
 <h2 data-i="hLgNext" id="topSpotTitle">\u{1F525} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0628\u0632\u0631\u06AF \u067E\u06CC\u0634\u200C\u0631\u0648</h2>
-<div id="topSpot"><div class="skelwrap skel-skel-hero" aria-hidden="true"><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="topSpot">__SEO_TOPSPOT__</div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <!-- v12.2: the UCL box sits above the games list (was below it). v12.4: while
      the selected-vs-selected CL pairing is far away the box headlines the
@@ -182,7 +192,7 @@ export const PUBLIC_PAGE = `<!doctype html>
      starball on its white chip inside the navy plate. data-i moved to the
      INNER span so trText() can never clobber the logo. -->
 <h2 id="uclSpotTitle" class="uclh2"><span class="ucl-logo" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUclNext">\u{1F525} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645 \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627</span></h2>
-<div id="uclSpot"><div class="skelwrap skel-skel-hero" aria-hidden="true"><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="uclSpot">__SEO_UCLSPOT__</div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <!-- v12.16: \xAB\u062F\u0631 \u0627\u06CC\u0646 \u0647\u0641\u062A\u0647\xBB \u2014 the CURRENT Iranian week (Saturday\u2192Friday)
      agenda: every followed/top-3 game of this week in one box, live first,
@@ -191,7 +201,7 @@ export const PUBLIC_PAGE = `<!doctype html>
      the week has no followed games. -->
 <div class="card" id="weekCard" style="display:none">
 <h2 data-i="hWeek" id="weekTitle">\u{1F4C5} \u062F\u0631 \u0627\u06CC\u0646 \u0647\u0641\u062A\u0647</h2>
-<div id="weekBox"><div class="skelwrap skel-skel-rows" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="weekBox">__SEO_WEEK__</div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <!-- v12.12: the \xAB\u{1F4C5} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\xBB list card is RETIRED \u2014 with the view
      toggle gone (always big-only) it only ever held the redundant "\u0647\u0645\u0647 \u062F\u0631
@@ -201,15 +211,15 @@ export const PUBLIC_PAGE = `<!doctype html>
 </div>
 <div class="card uclcard" id="uclCard">
 <h2 class="uclh2"><span class="ucl-logo sm" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUcl">\u{1F3C6} \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627</span></h2>
-<div id="ucl"><div class="skelwrap skel-skel-tbl" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="ucl">__SEO_UCL__</div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <div class="card" id="standingsCard">
 <h2 data-i="hStandings">\u{1F4CA} \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627</h2>
-<div id="standings"><div class="skelwrap skel-skel-tbl" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="standings">__SEO_STANDINGS__</div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 <div class="card" id="cupsCard">
 <h2 data-i="hCups">\u{1F3C6} \u062A\u0648\u0631\u0646\u0645\u0646\u062A\u200C\u0647\u0627</h2>
-<div id="cups"><div class="skelwrap skel-skel-cards" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="cups">__SEO_CUPS__</div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
 
 </div>
@@ -217,9 +227,10 @@ export const PUBLIC_PAGE = `<!doctype html>
      standings grid above (#standings), per the user's request. -->
 <div class="card" id="finishedCard">
 <h2 data-i="hFinished">\u{1F3C1} \u0646\u062A\u0627\u06CC\u062C \u0627\u062E\u06CC\u0631</h2>
-<div id="finished"><div class="skelwrap skel-skel-rows" aria-hidden="true"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="finished">__SEO_FINISHED__</div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
 </div>
-<footer id="about"><nav class="footnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="#about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="#contact" data-i="navContact">\u062A\u0645\u0627\u0633</a></nav>
+</main>
+<footer id="about"><nav class="footnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="/matches">\u0628\u0627\u0632\u06CC\u200C\u0647\u0627</a><a href="/matches/today">\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0627\u0645\u0631\u0648\u0632</a><a href="/teams">\u062A\u06CC\u0645\u200C\u0647\u0627</a><a href="/competitions">\u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627</a><a href="/about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="/methodology">\u0631\u0648\u0634 \u06A9\u0627\u0631</a><a href="/contact" data-i="navContact">\u062A\u0645\u0627\u0633</a><a href="/data">\u062F\u0627\u062F\u0647\u200C\u0647\u0627</a><a href="/privacy">\u062D\u0631\u06CC\u0645 \u062E\u0635\u0648\u0635\u06CC</a><a href="/terms">\u0634\u0631\u0627\u06CC\u0637 \u0627\u0633\u062A\u0641\u0627\u062F\u0647</a><a href="/sitemap">\u0646\u0642\u0634\u0647 \u0633\u0627\u06CC\u062A</a></nav>
 <div class="aboutbox">
 <h3 data-i="hAbout">\u{1F4D8} \u062F\u0631\u0628\u0627\u0631\u0647 SportSignal</h3>
 <p data-i="aboutTag" class="about-tag">\u0642\u0631\u0627\u0631 \u0646\u06CC\u0633\u062A \u0647\u0631 \u0645\u0633\u0627\u0628\u0642\u0647\u200C\u0627\u06CC \u0631\u0627 \u0628\u0628\u06CC\u0646\u06CC\u061B \u0641\u0642\u0637 \u0646\u0628\u0627\u06CC\u062F \u0628\u0627\u0632\u06CC \u0645\u0647\u0645 \u0631\u0627 \u0627\u0632 \u062F\u0633\u062A \u0628\u062F\u0647\u06CC.</p>
@@ -255,6 +266,6 @@ export const PUBLIC_PAGE = `<!doctype html>
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.8.js"><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.12.js"><\/script>
+<script src="/public-13.13.js"><\/script>
 </body>
 </html>`;

@@ -23,6 +23,7 @@ import { SIMULATE_ROUTE } from "./simulate";
 import { executeScheduledLogic } from "./cron";
 import { getCronStatus } from "./monitoring";
 import { handleTelegramUpdate } from "./bot";
+import { handleSeoRequest } from "./seo/router";
 import { PUBLIC_PAGE } from "./pages/public";
 import { LOGIN_PAGE } from "./pages/login";
 import { ADMIN_PAGE } from "./pages/admin";
@@ -115,19 +116,6 @@ const POST_GATE_ROUTES: RouteDef[] = [
         status: healthy ? 200 : 503,
         headers: corsHeaders
       });
-    return null;
-  } },
-    // v12.x-seo: sitemap.xml + robots.txt for crawlers. Minimal: one URL for
-    // the SPA root; robots allows all + points at the sitemap. Both served
-    // with the right content-type so Google Search Console accepts them.
-  { path: "/sitemap.xml", method: undefined, handler: async ({ req, env, url }): Promise<Response | null> => {
-      const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://football.sportsignal.ir/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>\n</urlset>\n';
-      return new Response(xml, { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600" } });
-    return null;
-  } },
-  { path: "/robots.txt", method: undefined, handler: async ({ req, env, url }): Promise<Response | null> => {
-      const body = "User-agent: *\nAllow: /\n\nSitemap: https://football.sportsignal.ir/sitemap.xml\n";
-      return new Response(body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" } });
     return null;
   } },
   { path: "/api/members", method: "GET", handler: async ({ req, env, url }): Promise<Response | null> => {
@@ -226,6 +214,10 @@ const POST_GATE_ROUTES: RouteDef[] = [
   } },
   { path: "*", handler: legacyGetAction },
 ];
+// v14.0-seo: the old single-URL sitemap/robots routes are superseded by the
+// SEO router (sitemap index + children with honest lastmod, toggle-driven
+// robots.txt). They were removed from POST_GATE_ROUTES — the router serves
+// them before this table is reached.
 
 const worker_default = {
   async fetch(req, env, ctx) {
@@ -256,7 +248,16 @@ const worker_default = {
     if (url.pathname === "/admin/logout" && req.method === "POST") return await handleAdminLogout(req, env);
     if (url.pathname === "/admin/change-password" && req.method === "POST") return await handleAdminChangePassword(req, env);
     if (url.pathname === "/api/public-matches" && req.method === "GET") return await handlePublicMatchesApi(req, env, ctx);
-    if (url.pathname === "/public" || url.pathname === "/") {
+    // v14.0-seo: every public page + machine file is served by the SEO
+    // router (server-rendered HTML from KV data — R-01). It also handles
+    // host/path normalization (R-06/R-08), the custom 404 (R-10/R-11) and
+    // environment safety (R-13). Returns null for non-SEO paths so the
+    // bot/admin/card routes below are untouched.
+    const seoRes = await handleSeoRequest(req, env, ctx, url);
+    if (seoRes) return seoRes;
+    if (url.pathname === "/public") {
+      // Legacy alias — kept as a belt-and-braces fallback if the SEO router
+      // ever declines; the router itself 301s /public to / (U-03).
       return new Response(PUBLIC_PAGE.replace("__PAGE_TZ__", env.TEHRAN_TZ), { headers: PAGE_SEC_HEADERS });
     }
     // v13.12-cards: match-card SVG route. Generates a visual "team A vs
