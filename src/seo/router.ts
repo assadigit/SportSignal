@@ -74,13 +74,19 @@ function clientKeyOf(m: any): string {
   const sc = m.score ? m.score.home + "-" + m.score.away : "";
   return (m.id || "") + "|" + (st[0] || "") + sc + m.utcDate;
 }
+// Null-safe list signature (mirrored EXACTLY in public-13.x.js ssPayloadSig —
+// any difference breaks the skip-identical-rebuild handshake).
 function payloadSig(p: any): string {
-  const strip = (list: any) => (Array.isArray(list) ? list.map(clientKeyOf).join(";") : "");
+  const strip = (list: any) => (Array.isArray(list) ? list : []).filter(Boolean).map(clientKeyOf).join(";");
+  const names = (list: any) => (Array.isArray(list) ? list : []).filter(Boolean).map((t: any) => (t && t.name) || "").join(";");
+  const stTeams = (st: any) => (Array.isArray(st && st.teams) ? st.teams.filter(Boolean).map((t: any) => (t && t.name || "") + (t && t.points != null ? t.points : "")).join(";") : "");
   const core = {
-    u: strip(p.upcoming), f: strip(p.finished), nb: clientKeyOf(p.nextBig),
+    u: strip(p.upcoming), f: strip(p.finished),
+    nb: p.nextBig ? clientKeyOf(p.nextBig) : "",
     ts: strip(p.topSpot && p.topSpot.matches), tw: strip(p.thisWeek), nw: strip(p.nextWeek),
-    st: p.standings ? Object.keys(p.standings).map((k) => k + ":" + strip(p.standings[k] && p.standings[k].teams && p.standings[k].teams.map((t: any) => t.name + t.points))).join("|") : "",
-    c: strip(p.cups && p.cups.map((c: any) => c && c.next)), ucl: p.ucl ? String(p.ucl.matchday) + strip(p.ucl.matches) + strip(p.ucl.teams && p.ucl.teams.map((t: any) => t && t.name)) : ""
+    st: p.standings ? Object.keys(p.standings).map((k) => k + ":" + stTeams(p.standings[k])).join("|") : "",
+    c: strip((p.cups || []).map((c: any) => c && c.next)),
+    ucl: p.ucl ? String(p.ucl.matchday) + "|" + strip(p.ucl.matches) + "|" + names(p.ucl.teams) : ""
   };
   return fnv1aHex(JSON.stringify(core));
 }
