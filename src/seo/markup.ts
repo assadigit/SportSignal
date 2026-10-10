@@ -64,7 +64,8 @@ function scoreHtml(score: any): string {
 }
 
 function kickHtml(iso: string, extra?: string): string {
-  return '<div class="kick"><span class="countdown">🕒 ' + faTime(iso) + "</span>" + (extra || "") + "</div>";
+  // P-14: machine-readable <time datetime> + human Tehran time.
+  return '<div class="kick"><span class="countdown">🕒 <time datetime="' + esc(iso) + '">' + faTime(iso) + "</time></span>" + (extra || "") + "</div>";
 }
 
 function sideHome(t: any, teamName: string): string {
@@ -148,7 +149,7 @@ export function spotItemHtml(sm: SeoMatch, idx: number, opts?: { finished?: bool
   let item = '<div class="spotitem' + (opts && opts.past ? " past" : "") + '">';
   let row = '<a class="match' + (m.derby ? " derby" : "") + '" style="--i:' + idx + '" href="' + esc(matchHref(m)) + '">';
   const kickdate = m.utcDate && !live && !done
-    ? '<div class="kickdate">' + esc(faGregorianDateShort(m.utcDate)) + "</div>"
+    ? '<div class="kickdate"><time datetime="' + esc(m.utcDate) + '">' + esc(faGregorianDateShort(m.utcDate)) + "</time></div>"
     : "";
   row += sideHome(m.homeTeam, displayName(m.homeTeam));
   if ((live || done) && m.score && m.score.home !== null) {
@@ -229,7 +230,7 @@ export function cupsHtml(cups: any[]): string {
         out += roundChipHtml(n);
         out += '<div class="cupdate">' + (live
           ? '<span class="live-tag">🔴 ' + esc(T.live) + "</span>"
-          : esc(faGregorianDate(n.utcDate))) + "</div></div>";
+          : '<time datetime="' + esc(n.utcDate) + '">' + esc(faGregorianDate(n.utcDate)) + "</time>") + "</div></div>";
       } else {
         out += '<div class="stempty">' + esc(T.cupsNone) + "</div>";
       }
