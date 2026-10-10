@@ -6,7 +6,7 @@
 // Every match row/spotitem is a real <a href> to its match page (R-02).
 
 import { SEO, matchPath, compSlug } from "./config";
-import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, tehranDayKey, isLiveSt, faGregorianDate } from "./utils";
+import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, tehranDayKey, isLiveSt, faGregorianDate, tehranParts, toJalali } from "./utils";
 import { toFaDigits } from "../utils";
 import { translateCompetition } from "../translate";
 import type { SeoMatch } from "./data";
@@ -29,13 +29,15 @@ function compNameFa(m: any): string {
   return (m.competition && (m.competition.faName || translateCompetition(m.competition.code))) || m.competition.code;
 }
 
-// nameInto equivalent: Latin names get an isolated <bdi dir="ltr"> (A-03).
+// nameInto equivalent: Latin names get an isolated <bdi dir="ltr"> (A-03),
+// and the full name rides the title attr as a hover tooltip (v12.x-team-title-tooltip —
+// mirrored so the server markup and the client render agree).
 export function nameHtml(s: any): string {
   const str = String(s == null ? "" : s);
   if (/[A-Za-z]/.test(str) && !/[\u0600-\u06FF]/.test(str)) {
-    return '<bdi dir="ltr">' + esc(str) + "</bdi>";
+    return '<bdi dir="ltr" title="' + esc(str) + '">' + esc(str) + "</bdi>";
   }
-  return esc(str);
+  return '<span title="' + esc(str) + '">' + esc(str) + "</span>";
 }
 
 function monogram(t: any): string {
@@ -80,7 +82,11 @@ function displayName(t: any): string {
 }
 
 function roundChipHtml(m: any): string {
-  const txt = m.roundFa || m.round;
+  // v14.0.1-uifix: EXACTLY the client rule (roundChip() in public-13.x.js):
+  // FA mode shows only a translated roundFa — a raw Latin round ("LEAGUE_STAGE",
+  // "16") is NEVER shown. This is what leaked raw English chips into the UCL
+  // box before; the server must mirror the client, not "improve" on it.
+  const txt = m && m.roundFa ? m.roundFa : "";
   if (!txt) return "";
   return '<span class="roundchip">' + esc(txt) + "</span>";
 }
@@ -94,7 +100,7 @@ function derbyBadgeHtml(m: any): string {
   return '<span class="derbybadge">' + esc(label) + "</span>";
 }
 
-function infoLineHtml(m: any, opts?: { noComp?: boolean; past?: boolean }): string {
+function infoLineHtml(m: any, opts?: { noComp?: boolean; past?: boolean; noRound?: boolean; isLiveCard?: boolean; isRow?: boolean }): string {
   let info = '<div class="info">';
   if (!opts || !opts.noComp) {
     info += '<span class="comp">';
@@ -103,14 +109,27 @@ function infoLineHtml(m: any, opts?: { noComp?: boolean; past?: boolean }): stri
     }
     info += esc(compNameFa(m)) + "</span>";
   }
-  info += roundChipHtml(m);
+  // v14.0.1-uifix: roundchips ride LIST rows only (client render() —
+  // "cups only — league rows carry no round data anyway"), and only when a
+  // translated roundFa exists. Spotitems never carried them in the original
+  // design (client spotItemNode has no roundChip call at all).
+  if (!opts || !opts.noRound) info += roundChipHtml(m);
   info += derbyBadgeHtml(m);
   if (m.top) info += '<span class="topbadge">🏆 ' + esc(T.topBadge) + "</span>";
   const live = isLiveSt(m.status);
-  if (live) {
+  // v14.0.1-uifix: the bare date text node rides LIST rows right after the
+  // badges (client render(): info.appendChild(textNode(fmtDate(m.utcDate)))) —
+  // spotitems never get it (v12.40-datebelow — their date rides .kickdate).
+  if (!opts || opts.isRow) info += " " + faFullDateHtml(m.utcDate) + " ";
+  // v14.0.1-uifix: the livechip is SKIPPED inside the live card (v12.44-
+  // livepolish — the card itself is the live section; the chip is redundant).
+  const inLiveCard = !!(opts && opts.isLiveCard);
+  if (live && !inLiveCard) {
     info += '<span class="livechip"><span class="dot"></span>' + esc(T.live) + "</span>";
-    if (m.minute != null) info += '<span class="lmin">' + toFaDigits(String(m.minute)) + "ʹ</span>";
-  } else if (opts && opts.past) {
+  }
+  // lmin rides ANY live row (client renders it regardless of isLiveCard).
+  if (live && m.minute != null) info += '<span class="lmin">' + toFaDigits(String(m.minute)) + "ʹ</span>";
+  if (!live && opts && opts.past) {
     info += '<span class="wkdone">⌛ ' + esc(T.wkDone) + "</span>";
   }
   if (m.venue) info += '<span class="venue">🏟️ ' + esc(m.venueFa || m.venue) + "</span>";
@@ -135,7 +154,9 @@ export function mrowHtml(sm: SeoMatch, idx: number, finished: boolean): string {
   else row += kickHtml(m.utcDate);
   row += sideAway(m.awayTeam, displayName(m.awayTeam));
   row += "</a>";
-  return '<div class="mrow">' + row + infoLineHtml(m) + "</div>";
+  // v14.0.1-uifix: isRow → the client's list-row info (with the bare date
+  // text node + roundFa chip allowance) — matches render() exactly.
+  return '<div class="mrow">' + row + infoLineHtml(m, { isRow: true }) + "</div>";
 }
 
 // The spotitem anatomy (hero / big-matches / week / ucl boxes).
@@ -159,7 +180,9 @@ export function spotItemHtml(sm: SeoMatch, idx: number, opts?: { finished?: bool
   }
   row += sideAway(m.awayTeam, displayName(m.awayTeam));
   row += "</a>";
-  item += row + infoLineHtml(m, opts);
+  // Spotitem info: comp (unless noComp) + derby + top + livechip (unless
+  // isLiveCard) + venue — NO roundchip, NO date text (client spotItemNode).
+  item += row + infoLineHtml(m, { noComp: opts && opts.noComp, past: opts && opts.past, noRound: true, isLiveCard: opts && opts.isLiveCard });
   item += "</div>";
   return item;
 }
@@ -327,6 +350,19 @@ export function breadcrumbsHtml(trail: Crumb[]): string {
   });
   out += "</ol></nav>";
   return out;
+}
+
+// fmtDate equivalent (client public-13.x.js) — the bare date text node of
+// LIST rows: «جمعه، ۲۴ مهر ۱۴۰۵ ساعت ۲۱:۳۰» (Jalali, fa-IR, Tehran clock).
+// Mirrored server-side so finished-list rows carry the same run the client
+// renders (the server version previously omitted it entirely).
+export function faFullDateHtml(iso: string): string {
+  const t = tehranParts(iso);
+  const j = toJalali(t.y, t.m, t.d);
+  const months = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+  const weekdays = ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه"];
+  const z = (n: number) => (n < 10 ? "0" + n : "" + n);
+  return esc(weekdays[t.wd] + "، " + toFaDigits(String(j.jd)) + " " + months[j.jm - 1] + " " + toFaDigits(String(j.jy)) + " ساعت " + toFaDigits(z(t.hh) + ":" + z(t.mm)));
 }
 
 export { compNameFa };

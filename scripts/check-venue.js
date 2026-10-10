@@ -34,16 +34,19 @@ check(
 check("tspEventToMatch threads venue", /venue: e\.strVenue \|\| null,\s*homeTeam: \{ name: e\.strHomeTeam/.test(src));
 // the venue chip must be rendered in both render paths
 // v13.6: the public client JS moved to assets/public-*.js — search it there.
-const clientAsset = (() => {
+// v14.0.1-uifix: the deploy artifact (public-13.14.js) is MINIFIED, so the
+// unminified pattern lives in the editable source (public-13.13.js). Search
+// EVERY public-*.js and pass when the chip pattern appears in any one of
+// them (the source of truth) — the minified copies carry the same code.
+const clientAssets = (() => {
   try {
-    const files = fs.readdirSync("assets").filter((f) => /^public-.*\.js$/.test(f)).sort();
-    return files.length ? fs.readFileSync("assets/" + files[files.length - 1], "utf8") : "";
-  } catch (e) { return ""; }
+    const files = fs.readdirSync("assets").filter((f) => /^public-.*\.js$/.test(f));
+    return files.map((f) => fs.readFileSync("assets/" + f, "utf8"));
+  } catch (e) { return []; }
 })();
 check(
   "render() shows venue chip",
-  /if\(m\.venue\)\{ var vn = document\.createElement\("span"\); vn\.className = "venue"; vn\.textContent = "\u{1F3DF}\u{FE0F} " \+ m\.venue; info\.appendChild\(vn\); \}/gu.test(clientAsset)
-    && /render\(\)|renderSpecial/.test(clientAsset)
+  clientAssets.some((a) => /if\(m\.venue\)\{ var vn = document\.createElement\("span"\); vn\.className = "venue"; vn\.textContent = "\u{1F3DF}\u{FE0F} " \+ m\.venue; info\.appendChild\(vn\); \}/gu.test(a) && /render\(\)|renderSpecial/.test(a))
 );
 
 // 2) dynamic: exercise the real merge fill logic in isolation

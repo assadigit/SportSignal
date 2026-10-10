@@ -170,14 +170,17 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
     .replace("__SEO_CUPS__", cupsHtml)
     .replace("__SEO_FINISHED__", finishedHtml);
 
-  // h1 styling for the injected hero heading (small inline block — kept
-  // here so the shared stylesheet stays untouched).
+  // v14.0.1-uifix: the h1 is SR-ONLY — the pre-SEO design had NO heading
+  // text above the hero card, and the owner asked for the original UI back.
+  // P-12/R-01 still hold: exactly one <h1> exists in the raw HTML (grep-able,
+  // announced by screen readers); it just does not occupy visual layout.
+  // The injected styles stay inline so the shared stylesheet stays untouched.
   html = html.replace("</style>",
-    ".hero-h1{font-size:1.05rem;font-weight:800;margin:2px 0 6px;line-height:1.7}.skip-link{position:absolute;inset-inline-start:-9999px}.skip-link:focus{inset-inline-start:8px;top:8px;z-index:99;background:#0f172a;color:#fff;padding:8px 14px;border-radius:8px}a.match{color:inherit;text-decoration:none}a.match:hover .team{opacity:.85}a.match:focus-visible{outline:2px solid #5ea0ff;border-radius:8px}</style>");
+    ".hero-h1{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.skip-link{position:absolute;inset-inline-start:-9999px}.skip-link:focus{inset-inline-start:8px;top:8px;z-index:99;background:#0f172a;color:#fff;padding:8px 14px;border-radius:8px}a.match{color:inherit;text-decoration:none}a.match:hover .team{opacity:.85}a.match:focus-visible{outline:2px solid #5ea0ff;border-radius:8px}</style>");
 
-  // The ONE visible <h1> (P-12) rides above the hero content; a short
-  // sr-only page summary follows it (A-04/A-01). The client JS leaves this
-  // node alone (it lives outside every container the JS re-renders).
+  // The ONE <h1> (P-12) — sr-only (uifix, see above); a short sr-only page
+  // summary follows it (A-04/A-01). The client JS leaves these nodes alone
+  // (they live outside every container the JS re-renders).
   html = html.replace('<div id="heroSpot">',
     '<h1 class="hero-h1">' + esc(heroH1(nextBig)) + "</h1>\n" +
     '<p class="sr-only">در این صفحه: بازی بزرگ بعدی، بازی‌های زنده، بازی‌های مهم پیش‌رو، جدول لیگ‌ها و نتایج اخیر — همه به وقت تهران.</p>\n<div id="heroSpot">');
