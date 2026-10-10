@@ -142,7 +142,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
     : "";
 
   let html = PUBLIC_PAGE
-    .replace(/<body>/, '<body data-ss-generated="' + esc(ctx.fetchedAt || new Date().toISOString()) + '"><script>window.__SS_SIG__=' + JSON.stringify(sig) + ";</script>")
+    .replace(/<body>/, '<body data-ss-generated="' + esc(ctx.fetchedAt || new Date().toISOString()) + '"><script>window.__SS_SIG__=' + JSON.stringify(sig) + ";window.__SS_TS__=" + (ctx.fetchedAt ? Date.parse(ctx.fetchedAt) : Date.now()) + ";</script>")
     .replace("__PAGE_TZ__", (ctx.env && (ctx.env as any).TEHRAN_TZ) || "Asia/Tehran")
     .replace("__SEO_TITLE__", esc(title))
     .replace("__SEO_DESC__", esc(desc))
