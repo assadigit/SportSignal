@@ -142,7 +142,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
     : "";
 
   let html = PUBLIC_PAGE
-    .replace(/<body>/, '<body><script>window.__SS_SIG__=' + JSON.stringify(sig) + ";</script>")
+    .replace(/<body>/, '<body data-ss-generated="' + esc(ctx.fetchedAt || new Date().toISOString()) + '"><script>window.__SS_SIG__=' + JSON.stringify(sig) + ";</script>")
     .replace("__PAGE_TZ__", (ctx.env && (ctx.env as any).TEHRAN_TZ) || "Asia/Tehran")
     .replace("__SEO_TITLE__", esc(title))
     .replace("__SEO_DESC__", esc(desc))
@@ -192,6 +192,13 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
 function withEtag(req: Request, body: string, headers: Record<string, string>): Response {
   const tag = '"ss-' + fnv1aHex(body) + '"';
   const h = Object.assign({}, headers, { etag: tag });
+  // G-06: Last-Modified rides along when the data epoch is known via the
+  // body's generator note (set by the page builders below).
+  const gen = /data-ss-generated="([^"]+)"/.exec(body);
+  if (gen) {
+    const t = Date.parse(gen[1]);
+    if (!isNaN(t)) h["last-modified"] = new Date(t).toUTCString();
+  }
   const inm = req.headers.get("if-none-match");
   if (inm && inm.trim() === tag) {
     return new Response(null, { status: 304, headers: h });

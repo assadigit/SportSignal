@@ -304,8 +304,14 @@ export function fullWhenHtml(iso: string): string {
 
 export function lastUpdatedHtml(fetchedAt: string | null): string {
   if (!fetchedAt) return "";
-  return "آخرین به‌روزرسانی داده‌ها: " + timeEl(fetchedAt, faGregorianDate(fetchedAt) + "، ساعت " + faTime(fetchedAt)) +
-    ' · <a href="/methodology" class="srcline">منبع داده: ' + esc(SEO.DATA_SOURCE_NAME) + "</a>";
+  // EXACTLY the client's renderSync() one-line format (fmtStamp + lastUpd)
+  // so the JS handover causes zero height change (PF-08). Source attribution
+  // (G-07) lives in the footer instead.
+  const t = faTime(fetchedAt);
+  const hh = parseInt(String(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, timeZone: SEO.DISPLAY_TZ }).format(new Date(fetchedAt))), 10) || 0;
+  const per = (hh < 5 || hh >= 19) ? "شب" : (hh < 12 ? "صبح" : (hh < 16 ? "ظهر" : "عصر"));
+  const wd = new Intl.DateTimeFormat("fa-IR", { weekday: "long", timeZone: SEO.DISPLAY_TZ }).format(new Date(fetchedAt));
+  return "آخرین به‌روزرسانی: " + timeEl(fetchedAt, wd + " " + t + " " + per);
 }
 
 // Breadcrumbs (P-17) — visible trail + BreadcrumbList source of truth.

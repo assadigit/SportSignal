@@ -171,11 +171,11 @@ __SEO_JSONLD__
      as the match status is LIVE/IN_PLAY/PAUSED. -->
 <div class="card" id="liveCard" style="display:none">
 <h2 data-i="hLive">\u{1F534} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0632\u0646\u062F\u0647</h2>
-<div id="liveMatches">__SEO_LIVE__</div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="liveMatches">__SEO_LIVE__</div></div>
 </div>
 <div class="card" id="topspotCard" style="display:none">
 <h2 data-i="hLgNext" id="topSpotTitle">\u{1F525} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0628\u0632\u0631\u06AF \u067E\u06CC\u0634\u200C\u0631\u0648</h2>
-<div id="topSpot">__SEO_TOPSPOT__</div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="topSpot">__SEO_TOPSPOT__</div></div>
 </div>
 <!-- v12.2: the UCL box sits above the games list (was below it). v12.4: while
      the selected-vs-selected CL pairing is far away the box headlines the
@@ -193,7 +193,7 @@ __SEO_JSONLD__
      starball on its white chip inside the navy plate. data-i moved to the
      INNER span so trText() can never clobber the logo. -->
 <h2 id="uclSpotTitle" class="uclh2"><span class="ucl-logo" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUclNext">\u{1F525} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645 \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627</span></h2>
-<div id="uclSpot">__SEO_UCLSPOT__</div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="uclSpot">__SEO_UCLSPOT__</div></div>
 </div>
 <!-- v12.16: \xAB\u062F\u0631 \u0627\u06CC\u0646 \u0647\u0641\u062A\u0647\xBB \u2014 the CURRENT Iranian week (Saturday\u2192Friday)
      agenda: every followed/top-3 game of this week in one box, live first,
@@ -202,7 +202,7 @@ __SEO_JSONLD__
      the week has no followed games. -->
 <div class="card" id="weekCard" style="display:none">
 <h2 data-i="hWeek" id="weekTitle">\u{1F4C5} \u062F\u0631 \u0627\u06CC\u0646 \u0647\u0641\u062A\u0647</h2>
-<div id="weekBox">__SEO_WEEK__</div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="weekBox">__SEO_WEEK__</div></div>
 </div>
 <!-- v12.12: the \xAB\u{1F4C5} \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u067E\u06CC\u0634\u200C\u0631\u0648\xBB list card is RETIRED \u2014 with the view
      toggle gone (always big-only) it only ever held the redundant "\u0647\u0645\u0647 \u062F\u0631
@@ -212,15 +212,15 @@ __SEO_JSONLD__
 </div>
 <div class="card uclcard" id="uclCard">
 <h2 class="uclh2"><span class="ucl-logo sm" aria-hidden="true">${UCL_LOGO_CHIP}</span><span data-i="hUcl">\u{1F3C6} \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627</span></h2>
-<div id="ucl">__SEO_UCL__</div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="ucl">__SEO_UCL__</div></div>
 </div>
 <div class="card" id="standingsCard">
 <h2 data-i="hStandings">\u{1F4CA} \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627</h2>
-<div id="standings">__SEO_STANDINGS__</div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="standings">__SEO_STANDINGS__</div></div>
 </div>
 <div class="card" id="cupsCard">
 <h2 data-i="hCups">\u{1F3C6} \u062A\u0648\u0631\u0646\u0645\u0646\u062A\u200C\u0647\u0627</h2>
-<div id="cups">__SEO_CUPS__</div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="cups">__SEO_CUPS__</div></div>
 </div>
 
 </div>
@@ -228,7 +228,7 @@ __SEO_JSONLD__
      standings grid above (#standings), per the user's request. -->
 <div class="card" id="finishedCard">
 <h2 data-i="hFinished">\u{1F3C1} \u0646\u062A\u0627\u06CC\u062C \u0627\u062E\u06CC\u0631</h2>
-<div id="finished">__SEO_FINISHED__</div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><span class="sr-only" data-i="loading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</span></div>
+<div id="finished">__SEO_FINISHED__</div></div>
 </div>
 </main>
 <footer id="about"><nav class="footnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="/matches">\u0628\u0627\u0632\u06CC\u200C\u0647\u0627</a><a href="/matches/today">\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0627\u0645\u0631\u0648\u0632</a><a href="/teams">\u062A\u06CC\u0645\u200C\u0647\u0627</a><a href="/competitions">\u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627</a><a href="/about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="/methodology">\u0631\u0648\u0634 \u06A9\u0627\u0631</a><a href="/contact" data-i="navContact">\u062A\u0645\u0627\u0633</a><a href="/data">\u062F\u0627\u062F\u0647\u200C\u0647\u0627</a><a href="/privacy">\u062D\u0631\u06CC\u0645 \u062E\u0635\u0648\u0635\u06CC</a><a href="/terms">\u0634\u0631\u0627\u06CC\u0637 \u0627\u0633\u062A\u0641\u0627\u062F\u0647</a><a href="/sitemap">\u0646\u0642\u0634\u0647 \u0633\u0627\u06CC\u062A</a></nav>

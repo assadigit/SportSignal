@@ -68,6 +68,7 @@ export function buildHead(h: HeadInput): string {
 // The shell for new pages. navMain = the real-path nav (R-02, P-18).
 export function pageShell(opts: {
   head: string;
+  bodyDate?: string;
   h1: string;
   crumbHtml?: string;
   bodyClass?: string;
@@ -128,7 +129,7 @@ footer.pagesfoot a:hover{text-decoration:underline}
 </style>
 ${opts.head}
 </head>
-<body class="${opts.bodyClass || ""}">
+<body class="${opts.bodyClass || ""}" data-ss-generated="${opts.bodyDate || ""}">
 <header id="topbar">
 <a class="brand" href="/" aria-label="SportSignal"><img src="/logo.png" alt="SportSignal" width="146" height="50" referrerpolicy="no-referrer"></a>
 <nav class="mainnav" aria-label="ناوبری اصلی"><a href="/">خانه</a><a href="/matches">بازی‌ها</a><a href="/teams">تیم‌ها</a><a href="/competitions">رقابت‌ها</a><a href="/methodology">روش کار</a><a href="/about">درباره</a></nav>
