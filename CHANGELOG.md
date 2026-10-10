@@ -71,6 +71,45 @@ at 05:41 for 12.5h.
 ### Expected daily KV-write budget (matchday): ~350-550 vs the 1,000 cap
 (was ~1,000-1,400 on poll-days — the quota killer).
 
+### Post-reset verification — 2026-10-01, browser-verified (the bug is closed)
+- **The quota reset on schedule** (cron_status flipped to kv_day=2026-10-01
+  at the 00:00Z tick; writes landing again).
+- **The first visitor request after the reset (00:05:49Z) instantly wrote
+  BOTH KV keys**: `public_matches_v1` (fetchedAt = the 22:50:33Z pool
+  stamp) and `cache:snapshot:v1` — the first successful snapshot write in
+  18.4h (frozen since 05:43). The second request served the fresh payload
+  from KV: sub-second, no badge.
+- **Self-healing confirmed across the evening**: stamp-advances landed at
+  19:40, 21:20, and 22:50 (every ~90-100min as designed); the 19:00
+  standings phase wrote all 7 league codes fresh (PL/PD/SA/BL1/FL1/CL
+  36 teams/PGL 18 teams — FD fetches were always fine; only the writes
+  had died).
+- **Browser end-to-end (agent-browser, https://sportsignal.ir/)**: the
+  header reads "آخرین به‌روزرسانی: پنجشنبه ۰۲:۲۰ شب" (Friday 02:20
+  Tehran = the 22:50:33Z pool stamp) with **NO cached badge** (was:
+  چهارشنبه ۰۹:۱۱ · ذخیره‌شده ۷۴۸ دقیقه پیش). All sections render —
+  live/big-upcoming/UCL/next-week/جدول لیگ‌ها (7 leagues incl.
+  پرسپولیس/استقلال)/cups/recent-results; zero page/console errors; mobile
+  390px clean. Screenshots: `download/sportsignal-13.55-verified-healed.png`
+  and `-mobile.png`.
+- **Direct simulation of the self-fetch prewarm** confirmed the mechanism:
+  serve 0.87s → the bg rebuild reads the fresh pool stamp → the only
+  failure mode remaining was the exhausted quota itself (now reset).
+
+### Watch items (carried to the next session)
+1. First matchday (~Oct 9-10) under real load: self-fetch prewarm +
+   standings phase + live overlay at matchday write volume.
+2. `kv_writes_day` on a busy matchday (expect 350-550; soft-governor 700;
+   hard cap 1,000).
+3. TSP `eventsnextleague` non-iterable regression (harmless, caught by
+   the tail; unfixed).
+
+### Session close — 2026-10-10
+v13.55-epochflow is the final build of this session: committed (f0a2385),
+pushed to `assadigit/SportSignal`, deployed (worker version `a1a7a1fb`),
+and live-verified. The user's next session continues with **SEO work** on
+the public page.
+
 ---
 
 ## [13.54.1-poolbreak] — 2026-09-30 (the dead-pool deadlock: the site really WAS frozen)

@@ -14,12 +14,18 @@ matches that matter — before they start, while they're live, and the moment th
 > **Operating it?** Read [`RUNBOOK.md`](RUNBOOK.md) first — deploy/verify/rollback,
 > monitoring semantics, incident playbooks, and the never-do list (§11).
 
-> **▶ WHERE TO CONTINUE — user note, kept verbatim (2026-09-15):**
-> *"I am not sure how reliable Telegram bot is. If you want to work, work
-> from here."*
-> → Next focus: **Telegram bot reliability** — the delivery path
-> (`src/bot.ts`, `src/telegram.ts`, `src/notifications.ts`, outbox recovery
-> in `src/cron.ts`). Expanded in the status section below.
+> **▶ WHERE TO CONTINUE — user note, kept verbatim (2026-10-10):**
+> *"I will continue development working on SEO in the next session."*
+> → Next focus: **SEO for the public page** (`src/pages/public.ts`, the
+> `assets/core-*.js` renderer, meta/OG tags, structured data, sitemap/robots)
+> — the site is a Persian RTL football page; the SEO work must respect the
+> fa/en toggle and the zero-framework constraint. Expanded in the status
+> section below.
+>
+> *(Previous note, kept for the record — 2026-09-15: "I am not sure how
+> reliable Telegram bot is. If you want to work, work from here." — the
+> delivery path has since been hardened and live-verified through
+> 13.49-13.55; keep an eye on it, but it is no longer the blocker.)*
 
 | | |
 | :--- | :--- |
@@ -377,12 +383,22 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
 - `sched_v1:*` KV orphans (156 keys) — 7-day TTLs self-expire ~2026-09-22;
   deliberately not "cleaned up"
 
-**▶ Next up (the continuation point, user-flagged 2026-09-15):**
+**▶ Next up (the continuation point, user-flagged 2026-10-10):**
 
-- **Bot reliability hardening** — the user's words: *"not sure how reliable
-  the Telegram bot is — work from here."* Verify the delivery path end-to-end
-  (webhook → send retry/429 → dead-chat pruning → outbox recovery) before
-  adding features. Baseline at the time of the flag: webhook healthy
+- **SEO — the next session's work** — the user's words: *"I will continue
+  development working on SEO in the next session."* The public page is a
+  zero-framework HTML string (`src/pages/public.ts` + `assets/core-13.8.js`);
+  likely surfaces: `<title>`/meta description (fa + en), Open Graph /
+  Twitter cards, `hreflang` for the fa/en toggle, JSON-LD structured data
+  (SportsEvent for fixtures), canonical URLs, sitemap.xml + robots.txt,
+  semantic HTML landmarks, and Persian keyword coverage (e.g. «نتایج زنده
+  فوتبال», «برنامه بازی های امروز»). Constraint: no framework, no new
+  runtime deps; everything renders server-side in the Worker — which is
+  actually an SEO head start (full HTML, no client-side data fetch).
+- **Bot reliability watch** (user-flagged 2026-09-15, since hardened through
+  13.49-13.55) — verify the delivery path end-to-end (webhook → send
+  retry/429 → dead-chat pruning → outbox recovery) if delivery issues
+  surface. Baseline at the time of the flag: webhook healthy
   (`football.sportsignal.ir/webhook`, 0 pending updates, no last error),
   outbox draining clean, same-day alert deliveries — measure it, don't
   assume it.
