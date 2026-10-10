@@ -32,6 +32,7 @@ export function buildHead(h: HeadInput): string {
   s += '<meta name="robots" content="' + robots + "\">\n";
   // Icons + manifest (F-08..F-10)
   s += '<link rel="icon" href="/favicon.ico" sizes="any">\n';
+  s += '<link rel="icon" type="image/svg+xml" href="/favicon.svg">\n';
   s += '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">\n';
   s += '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">\n';
   s += '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">\n';

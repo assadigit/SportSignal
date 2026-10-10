@@ -64,7 +64,7 @@ function heroH1(sm: SeoMatch | null): string {
   return "بازی بزرگ بعدی: " + (sm.s.homeTeam.faName || sm.s.homeTeam.name) + " – " + (sm.s.awayTeam.faName || sm.s.awayTeam.name);
 }
 
-export async function buildHomePage(ctx: SeoCtx): Promise<string> {
+export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string> {
   const upcoming = upcomingBig(ctx).slice(0, 45);
   const finished = finishedRecent(ctx, 7).slice(0, 5);
   const p = ctx.payload || {};
@@ -113,7 +113,9 @@ export async function buildHomePage(ctx: SeoCtx): Promise<string> {
     .replace("__PAGE_TZ__", (ctx.env && (ctx.env as any).TEHRAN_TZ) || "Asia/Tehran")
     .replace("__SEO_TITLE__", esc(title))
     .replace("__SEO_DESC__", esc(desc))
-    .replace("__SEO_ROBOTS__", "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1")
+    .replace("__SEO_ROBOTS__", isProd
+      ? "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+      : "noindex, nofollow")
     .replace(/__SEO_OG_TITLE__/g, esc(title))
     .replace(/__SEO_OG_DESC__/g, esc(desc))
     .replace(/__SEO_OG_IMAGE__/g, esc(absUrl(SEO.OG_DEFAULT_IMAGE)))
@@ -336,7 +338,7 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   // ---------- HTML pages ----------
   const renderPage = async (): Promise<{ body: string; status: number } | null> => {
     const seoCtx = await getSeoCtx(env);
-    if (path === "/" ) return { body: await buildHomePage(seoCtx), status: 200 };
+    if (path === "/" ) return { body: await buildHomePage(seoCtx, isProd), status: 200 };
     if (path === "/matches") {
       const page = Math.max(1, parseInt(url.searchParams.get("page") || "1") || 1);
       return { body: buildMatchesPage(seoCtx, page), status: 200 };
