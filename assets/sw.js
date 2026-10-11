@@ -47,7 +47,15 @@
 //              any stranded/stale asset entries on client browsers; the
 //              client assets were renamed public-13.8→public-13.9 in the
 //              same release, so the bump also guarantees a clean slate.)
-const CACHE = "sportsignal-v15"; // v14.0.1-uifix: evict for the always-rebuild client (public-13.14.js patch)
+// Cache name:  sportsignal-v16 (v14.0.2-cachefix: the v14.0.1-uifix edited
+//              public-13.14.js in place — correct in CacheStorage (v15 evicted
+//              it) but NOT in browsers' HTTP caches, which had pinned the
+//              mid-window broken build under "immutable, max-age=31536000".
+//              A SW bump cannot evict the HTTP cache; the fixed build is now
+//              served as public-13.15.js (new URL = guaranteed miss in every
+//              cache layer). This bump also sweeps any 13.14 entry that a
+//              stale-HTML client re-cached into v15.)
+const CACHE = "sportsignal-v16"; // v14.0.2-cachefix: renamed client build → public-13.15.js
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
