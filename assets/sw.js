@@ -59,7 +59,12 @@
 //              >=1440px body grid — one grid item swallowed the hero and misplaced
 //              every section. main{display:contents} (public-13.14.css) restores
 //              the pre-SEO grid; rename-on-edit + this bump = clean slate.)
-const CACHE = "sportsignal-v17"; // v14.0.3-gridfix: main display:contents (public-13.14.css)
+// Cache name:  sportsignal-v18 (v14.0.4-sronly: the SEO sr-only elements
+//              rendered VISIBLE — the pre-SEO stylesheet scoped the .sr-only
+//              rule to .empty.loading-empty containers only, so the homepage
+//              intro paragraph showed on screen. public-13.15.css adds the
+//              GLOBAL .sr-only rule; rename-on-edit + this bump = clean slate.)
+const CACHE = "sportsignal-v18"; // v14.0.4-sronly: global .sr-only rule (public-13.15.css)
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
