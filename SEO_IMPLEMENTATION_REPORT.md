@@ -343,6 +343,51 @@ hidden-for-SEO text explicitly). Layout from v14.0.3 re-verified intact
 (unchanged owner-only zone AI-bot block). Repo suite 586 OK / 0 FAIL.
 Commit 3b4d98c.
 
+### v14.0.6-livescore — live cards showed "undefined - undefined" (owner report #6)
+
+**What the owner saw:** the card of a match being played right now
+(Lazio–Monza, 2026-10-11) rendered the score as
+`<span>undefined</span> - <span>undefined</span>`.
+
+**Root cause:** a pre-existing pipeline bug (v13.52-swrsolid, BEFORE the
+SEO work — the pre-SEO client 13.12 has the identical flat `score.home`
+read). `applyLiveOverlay()` — which patches live status/score/minute into
+every payload at serve time — wrote the INTERNAL raw-football-data score
+shape `{fullTime:{home,away}}` into PUBLIC payload rows. The public
+contract is FLAT `{home,away}` (pubMatch flattens it; the client's
+`scoreNode`/`keyOf` and the server's `scoreHtml`/`seo pages.ts` all read
+`score.home` directly). Consequences of the nested leak:
+
+- client: live cards printed "undefined - undefined"; `keyOf`'s
+  payload-change detection was blind to goals during live games
+  (`"undefined-undefined"` for every score);
+- no-JS/SEO HTML: live rows rendered an empty `.kick` (no score, no time).
+
+The finished-matches list was unaffected (flat from pubMatch), which is
+why the bug only surfaced on match days with a LIVE followed game.
+
+**Fix** (worker-side only — no client/CSS/asset changes, so no rename or
+SW bump): `patch(m, internal)` in `applyLiveOverlay` — public containers
+(upcoming, finished, nextBig, topSpot, thisWeek, nextWeek, cups[].next)
+get the FLAT `{home,away}` score; only the raw POOL rows (seo/data.ts
+re-shapes them through pubMatch, which reads `m.score.fullTime`) keep
+the nested internal shape. The `forEach(patch)` call sites were wrapped
+in arrows so the array index can never leak into the `internal` flag.
+
+Verified live (2026-10-11, Lazio–Monza IN_PLAY): `/api/public-matches`
+serves `"score":{"home":2,"away":0}` flat with **zero** nested scores
+outside the pool; the raw home HTML renders `۲ - ۰` in the live row; the
+browser live card reads «لاتزیو ۲ - ۰ مونتزا» with no "undefined" text
+anywhere on the page; the match page shows وضعیت «در جریان» + نتیجه
+«۲ – ۰». seo-check production 51 PASS / 2 FAIL (unchanged owner-only
+zone AI-bot block; a transient burst of 503s during verification retried
+as 200 — rate-limit noise, not a defect). Repo suite 587 OK / 0 FAIL
+(+8 behavioral overlay-shape checks; check-no-miss.js overlay assertions
+updated to the flat contract — they had codified the bug). Commit 51fa5e9.
+Deployed version 588c709a-1ced-4065-bda8-05a63687e12d.
+
+
+
 **Honest note on the homepage Performance score:** the spec's ≥90 target is
 not reached on `/` because of the original hero background VIDEO
 (646 KB autoplay mp4) that the spec forbids me to remove ("do not change the
