@@ -277,6 +277,45 @@ local browser cache — one hard refresh (Ctrl+Shift+R) or DevTools →
 Application → Clear storage clears it. This is expected for at most the
 first visit after this fix.
 
+### v14.0.3-gridfix — the REAL layout root cause (owner report #3)
+
+**What the owner saw:** even after the cache fix, the homepage was still
+"wrong" — the hero was squeezed into a column and the sections were
+misplaced (tables at the bottom of the page, big-games column on the wrong
+side).
+
+**Root cause (missed by both earlier fixes):** Phase 1 wrapped the homepage
+content in a semantic `<main>` element for SEO. Pre-SEO, the hero and the
+section cards were DIRECT `<body>` children — and the ≥1440px design turns
+`body` into a two-column grid. With the wrapper, `<main>` became ONE grid
+item: the hero rendered 872px wide inside column 1 instead of spanning the
+full 1400px, and every other section auto-placed into wrong cells (the
+big-games column landed on the left, the tables rail started at y≈5093 at
+the very bottom). The earlier verifications only confirmed that
+`wideMain`/`wideSide` existed and that body computed to a grid — they never
+measured the actual geometry, which is how this survived v14.0.1 and
+v14.0.2.
+
+**Fix (one CSS rule, all SEO kept):**
+- `main{display:contents}` — added as `assets/public-13.14.css` (renamed
+  from 13.13 per the immutable rename-on-edit rule). `<main>` stays in the
+  DOM for crawlers and screen readers (R-01, P-12, HTML5 semantics intact)
+  but its children participate in the body grid exactly like the pre-SEO
+  page
+- `src/pages/public.ts` + `src/seo/page-shell.ts` load 13.14.css;
+  `assets/_headers` entry added; `assets/sw.js` cache bumped v16 → v17
+
+Verified live (fresh browser, 1600px, geometry-measured): hero x=100 w=1400
+full-width at top; main column x=628 w=872 = big upcoming games / big UCL
+games / this week / latest results; rail x=100 w=500 = UCL table / league
+tables / cups, starting at y=406 — the same row as the big-games box, not
+the page bottom; 0 LEAGUE_STAGE; 0 page errors. Returning-visitor reload
+keeps the fix; 1280px and 390px single-column with no overflow; match/team
+SEO pages render clean with h1 + JSON-LD intact. VLM full-page check: hero
+full-width YES / two columns YES / tables near the top YES / no breakage
+YES. seo-check production 51 PASS / 2 FAIL (unchanged owner-only zone
+AI-bot block). Repo suite 586 OK / 0 FAIL. Commit b287e74.
+
 **Honest note on the homepage Performance score:** the spec's ≥90 target is
 not reached on `/` because of the original hero background VIDEO
 (646 KB autoplay mp4) that the spec forbids me to remove ("do not change the
