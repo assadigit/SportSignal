@@ -21,9 +21,11 @@ binding = "STATE"
 id = "432ecae8fb8c4146b6b01b91eb8f4b2a"
 preview_id = "8784e1973a984dea981010a6d644f153"
 
-# FIXED: Use only one cron trigger
+# v14.0.5-cupgap: TWO triggers — the 10-min tick (bot + pool) + the lean
+# 4-hourly far-cup probe (see probeCupFarFixtures in providers.ts + the
+# api.ts scheduled branch; minute 27 keeps it between the :20/:30 ticks).
 [triggers]
-crons = ["*/10 * * * *"]  # Run every 10 minutes ONLY
+crons = ["*/10 * * * *", "27 */4 * * *"]
 
 [vars]
 TEHRAN_TZ = "Asia/Tehran"

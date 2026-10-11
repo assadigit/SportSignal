@@ -11,7 +11,7 @@ import { toFaDigits, resetSubrequestBudget, subrequestCount, kvOpsCount, bumpKvO
 import { translateTeam, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
-import { fetchMatchesFromAPI, cacheMatches, fetchLiveSweep, fetchLongView, maybeScanCupFixtures } from "./providers";
+import { fetchMatchesFromAPI, cacheMatches, fetchLiveSweep, fetchLongView, maybeScanCupFixtures, probeCupFarFixtures } from "./providers";
 import { sendTelegram, drainOutbox } from "./telegram";
 import { sendMatchNotifications, detectStatusChanges, auditNotifications } from "./notifications";
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, broadcastBigMatchKickoff, maybeNotifyTableToppers } from "./digest";
@@ -346,6 +346,20 @@ export async function executeScheduledLogic(env: Env) {
         if (cs.added || cs.updated) console.log(`\u{1F3C6} Cup big-team scan: +${cs.added} added, ${cs.updated} status/score refreshed`);
       } catch (e) {
         console.error("Cup scan step failed: " + e.message);
+      }
+    }
+    // v14.0.5-cupgap: the FAR CUP PROBE, quiet ticks only (the same headroom
+    // rule as the cup scan above — 7 sportscore calls). Fills the ECL box
+    // between Thursday matchdays and watches the Hazfi slug for the first
+    // announced round; see probeCupFarFixtures for the whole story. Internally
+    // due-gated every CUP_FAR_SCAN_MS (4h) — the lean "27 */4" cron branch in
+    // api.ts shares the same marker, so the two entry points can't double-run.
+    if (!fullSweepThisTick && !budgetSoft && matches === poolRef) {
+      try {
+        const r = await probeCupFarFixtures(env);
+        if (r && r.added) console.log(`\u{1F50D} Far cup probe: +${r.added} fixtures added`);
+      } catch (e) {
+        console.error("Far cup probe step failed: " + e.message);
       }
     }
     // v13.55-epochflow: QUIET-TICK STAMP-ADVANCE. cacheMatches is change-only

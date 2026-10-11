@@ -277,49 +277,6 @@ export async function fetchSportScore(env: Env, opts?) {
       }
     }
   }
-  // v14.0.5-cupgap: the FAR CUP PROBE (full sweep only — the live sweep
-  // passes opts.slugs and skips this block). Two cups have schedules
-  // upstream that the ±1d day-sweep can never see between matchdays:
-  //   - ECL: matchdays are league-phase THURSDAYS (next: Oct 22 — 18 games
-  //     live-verified on the sportscore slug). No TSP id exists for the
-  //     Conference League (free-tier coverage gap; team next-event views
-  //     don't carry it either — verified via Zalgiris/Kairat). EL sees far
-  //     ahead via TSP 4481; ECL needs this probe.
-  //   - HAZFI_CUP: the slug exists in SPORTSCORE_SLUGS but was deliberately
-  //     left out of the near-scan; the cup is idle for months, but when a
-  //     round IS announced the box would stay "برنامه‌ای هنوز اعلام نشده"
-  //     forever without a probe. A coarse +3/+7/+12/+17d grid catches a
-  //     announced round within ~3 days (announcements run ≥1 week ahead).
-  // Budget: 7 calls per full sweep (ECL 3 + HAZFI 4), each checked against
-  // the same subrequest meter as the day loop; the probe silently skips on
-  // tight sweeps and retries next sweep (2h).
-  if (!onlySlugs) {
-    const nextThursday = (offsetDays) => {
-      const d = new Date(Date.now() + offsetDays * 864e5);
-      const dow = d.getUTCDay();
-      d.setUTCDate(d.getUTCDate() + ((4 - dow + 7) % 7 || 7));
-      return d.toISOString().split("T")[0];
-    };
-    const probeDates = [
-      { code: "ECL", slug: SPORTSCORE_SLUGS.ECL, dates: [nextThursday(1), nextThursday(8), nextThursday(15)] },
-      { code: "HAZFI_CUP", slug: SPORTSCORE_SLUGS.HAZFI_CUP, dates: [3, 7, 12, 17].map((n) => new Date(Date.now() + n * 864e5).toISOString().split("T")[0]) }
-    ];
-    let probed = 0;
-    for (const p of probeDates) {
-      for (const dateStr of p.dates) {
-        if (subrequestCount() >= 44) break;
-        calls++;
-        try {
-          await sportScoreDay(p.code, p.slug, dateStr, acc);
-          probed++;
-        } catch (e) {
-          failures++;
-          console.error(`\u274C sportscore far-probe ${p.code} ${dateStr} failed: ${e.message}`);
-        }
-      }
-    }
-    if (probed) console.log(`\u{1F50D} sportscore far cup probe: ${probed} dates scanned (ECL Thursdays + Hazfi grid)`);
-  }
   if (calls > 0 && failures === calls) {
     console.error("\u26A0\uFE0F sportscore: all " + calls + " day-calls failed \u2014 suspending provider");
     await suspendProvider(env, "sportscore");
@@ -380,6 +337,91 @@ export async function getCachedMatches(env: Env) {
     console.error("Match cache read failed: " + e.message);
   }
   return [];
+}
+// v14.0.5-cupgap: the FAR CUP PROBE — its OWN scheduled invocation (cron
+// trigger "27 */4 * * *", see wrangler.toml + the api.ts scheduled branch).
+// Two cups have schedules upstream that the ±1d day-sweep can never see
+// between matchdays:
+//   - ECL: league-phase matchdays are THURSDAYS (next: Oct 22 — 18 games
+//     live-verified on the sportscore slug). No TSP id exists for the
+//     Conference League on the free tier (probed 4470-4505; team
+//     next-event views don't carry ECL fixtures either — verified via
+//     Zalgiris/Kairat). EL sees far ahead via TSP 4481; ECL needs this
+//     probe.
+//   - HAZFI_CUP: the slug exists in SPORTSCORE_SLUGS but was deliberately
+//     left out of the near-scan; when a round IS announced the box would
+//     stay "برنامه‌ای هنوز اعلام نشده" forever without a probe. A coarse
+//     +3/+7/+12/+17d grid catches an announced round within ~3 days
+//     (announcements run ≥1 week ahead).
+// WHY A DEDICATED INVOCATION: the 2026-10-11T04:31Z incident — the full
+// sweep's own fan-out (FD intl + 27 sportscore day calls + KV ops, which
+// the code's fetch-only meter undercounts) already rides Cloudflare's
+// per-invocation subrequest ceiling; running the probe's 7 calls inside
+// the same invocation starved the day sweep's tail ("Too many
+// subrequests" on the last slug-days AND the first probe call). This lean
+// path uses ~10 subrequests total and never collides with a tick (minute
+// 27 — the :20 tick is done by ~:22, the :30 tick hasn't started).
+// 7 fetches × 6 runs/day = 42 unmetered-slug calls/day; the pool write
+// rides cacheMatches' change-only + canonDedupe logic.
+export async function probeCupFarFixtures(env: Env) {
+  // due-gate: shared by BOTH entry points (the quiet-tick phase in cron.ts
+  // and the lean "27 */4" cron branch in api.ts) — the KV marker means only
+  // one run per CUP_FAR_SCAN_MS window regardless of which fires first.
+  // A total fetch failure writes a short 30-min fail marker (retry sooner).
+  try {
+    const marker = await env.STATE.get(CONFIG.KV_CUP_FAR_SCAN).catch(() => null);
+    if (marker) return { added: 0, scanned: 0, skipped: true };
+  } catch (e) {
+    // KV read hiccup — proceed (worst case: an extra probe run)
+  }
+  const blob = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
+  const pool = blob && Array.isArray(blob.matches) ? blob.matches : [];
+  if (!pool.length) return { added: 0, scanned: 0 };
+  // seed the sportscore-format dedupe keys from the pool rows so the probe
+  // can't double-add a fixture the day-sweep already carries
+  const seen = new Set();
+  for (const m of pool) {
+    if (m && m.competition && m.competition.code && m.homeTeam && m.awayTeam && m.utcDate) {
+      seen.add(m.competition.code + "|" + m.homeTeam.name + "|" + m.awayTeam.name + "|" + m.utcDate.slice(0, 16));
+    }
+  }
+  const acc = { list: pool.slice(), seen };
+  const nextDow = (dow, offsetDays) => {
+    const d = new Date(Date.now() + offsetDays * 864e5);
+    const cur = d.getUTCDay();
+    d.setUTCDate(d.getUTCDate() + ((dow - cur + 7) % 7 || 7));
+    return d.toISOString().split("T")[0];
+  };
+  // ECL: league-phase matchdays are THURSDAYS. DFB_POKAL: German cup rounds
+  // are Tue/Wed midweek (R2 = Oct 27/28) — and TSP (the primary DFB source
+  // since v14.0.5) rate-limits on the shared free key for hours at a time,
+  // so the probe doubles as its backup. HAZFI_CUP: unknown cadence — a
+  // coarse ~5-day grid (announcements run ≥1 week ahead).
+  const probe = [
+    { code: "ECL", slug: SPORTSCORE_SLUGS.ECL, dates: [nextDow(4, 1), nextDow(4, 8), nextDow(4, 15)] },
+    { code: "DFB_POKAL", slug: "dfb-pokal", dates: [nextDow(2, 1), nextDow(2, 8), nextDow(2, 15), nextDow(3, 1), nextDow(3, 8), nextDow(3, 15)] },
+    { code: "HAZFI_CUP", slug: SPORTSCORE_SLUGS.HAZFI_CUP, dates: [3, 7, 12, 17].map((n) => new Date(Date.now() + n * 864e5).toISOString().split("T")[0]) }
+  ];
+  let added = 0, scanned = 0, failed = 0;
+  for (const p of probe) {
+    for (const dateStr of p.dates) {
+      try {
+        added += await sportScoreDay(p.code, p.slug, dateStr, acc);
+        scanned++;
+      } catch (e) {
+        failed++;
+        console.error(`\u274C far cup probe ${p.code} ${dateStr} failed: ${e.message}`);
+      }
+    }
+  }
+  console.log(`\u{1F50D} far cup probe: ${scanned} dates ok, ${failed} failed, ${added} fixtures added (pool ${acc.list.length})`);
+  if (added > 0) await cacheMatches(env, acc.list, "cupfarscan");
+  try {
+    const allFailed = scanned === 0 && failed > 0;
+    await env.STATE.put(CONFIG.KV_CUP_FAR_SCAN, String(Date.now()), { expirationTtl: allFailed ? 1800 : Math.ceil(CONFIG.CUP_FAR_SCAN_MS / 1e3) });
+  } catch (e) {
+  }
+  return { added, scanned };
 }
 export async function fetchFootballData(env: Env, opts?) {
   // v13.43-cpukeeper: opts narrows the date range (and skips the intl

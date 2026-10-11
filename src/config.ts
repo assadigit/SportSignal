@@ -375,6 +375,11 @@ export const CONFIG: Record<string, any> = {
   KV_CUP_SCAN_KEY: "cup_scan_v1",
   CUP_SCAN_TTL_MS: 5 * 3600 * 1e3,
   CUP_SCAN_HOT_TTL_MS: 30 * 60 * 1e3,
+  // v14.0.5-cupgap: the far-cup probe cadence (ECL Thursdays + the Hazfi
+  // grid — see probeCupFarFixtures in providers.ts). 4h: 6 runs/day max,
+  // 7 fetches each, always on quiet ticks or its own lean cron invocation.
+  KV_CUP_FAR_SCAN: "cup_far_scan_v1",
+  CUP_FAR_SCAN_MS: 4 * 3600 * 1e3,
   ONE_DAY_MS: 24 * 60 * 60 * 1e3,
   // A-League Men season start (review each year): sportscore serves the prior
   // season's final table in pre-season, so before this date AL standings are

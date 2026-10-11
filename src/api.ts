@@ -12,7 +12,7 @@ import { jsonResponse, resetSubrequestBudget, pingHealthcheck } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { fetchStandings } from "./composers";
 import { shouldNotify } from "./matches";
-import { fetchFootballData, fetchSportScore, fetchTheSportsDB } from "./providers";
+import { fetchFootballData, fetchSportScore, fetchTheSportsDB, probeCupFarFixtures } from "./providers";
 import { getRegisteredChats, getBotMembers } from "./users";
 import { validateWebhook, isAdminAuthed, getAdminCookieToken, getClubsCatalog, applySettings, clubsSearch } from "./admin";
 import { handleAdminLoginGet, handleAdminLoginPost, handleAdminLogout, handleAdminChangePassword } from "./auth";
@@ -287,6 +287,24 @@ const worker_default = {
   },
   async scheduled(event, env, ctx) {
     console.log("\u23F0 Scheduled event triggered");
+    // v14.0.5-cupgap: the lean far-cup probe trigger ("27 */4 * * *" — see
+    // wrangler.toml). Runs probeCupFarFixtures INSTEAD of the full tick:
+    // ~10 subrequests total (pool read + 7 sportscore probe calls + pool
+    // write), never touching the notify/standings machinery that already
+    // rides the invocation subrequest ceiling (the 04:31Z incident). The
+    // match is "any trigger that is NOT the 10-min tick" so temporary probe
+    // schedules (verification runs) route here automatically.
+    if (event && event.cron && event.cron !== "*/10 * * * *") {
+      try {
+        const r = await probeCupFarFixtures(env);
+        console.log(`\u{1F3AF} far-cup cron done: added ${r.added}, scanned ${r.scanned}`);
+        pingHealthcheck(env, ctx, true);
+      } catch (error) {
+        console.error("Far-cup probe failed:", error);
+        pingHealthcheck(env, ctx, false, error);
+      }
+      return;
+    }
     try {
       await executeScheduledLogic(env);
       // v13.45-sightlines: dead man's switch — success ping AFTER the tick
