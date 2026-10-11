@@ -3,71 +3,65 @@
 These are the things no code can do. Each has click-by-click steps.
 هر مورد با کلیک‌به‌کلیک توضیح داده شده. حدوداً ۶۰ دقیقه کار دارد.
 
----
-
-## ۱. ساختار DNS (فقط ۱۰ دقیقه) — مهم‌ترین کار باقی‌مانده
-
-**چرا:** آدرس `www.sportsignal.ir` الان اصلاً به هیچ‌جایی وصل نیست (NXDOMAIN).
-گوگل و کاربرانی که www می‌نویسند به سایت نمی‌رسند. ربات من دسترسی DNS ندارد.
-
-**مراحل (داشبورد Cloudflare):**
-1. به `dash.cloudflare.com` بروید و حساب `sportsignal.ir` را باز کنید.
-2. از منوی چپ **DNS → Records** را انتخاب کنید.
-3. دکمه **Add record** را بزنید:
-   - Type: `CNAME`
-   - Name: `www`
-   - Target: `sportsignal.ir`
-   - Proxy status: روشن (نارنجی)
-4. **Save** بزنید.
-5. بعد از ۵ دقیقه این را تست کنید — باید 301 بدهد:
-   در مرورگر `https://www.sportsignal.ir` را باز کنید؛ باید خودکار به `https://sportsignal.ir` برود.
-
-**موفق بودن یعنی:** `https://www.sportsignal.ir/matches` مستقیم به `https://sportsignal.ir/matches` می‌رود.
+> **وضعیت — ۲۰۲۶-۱۰-۱۱:**
+> - ✅ **۱ (DNS www):** رکورد را شما اضافه کردید؛ ربات هم Route و ریدایرکت 301 را وصل کرد — انجام شد.
+> - ❌ **۲ (بلاک ربات‌های AI):** هنوز فعال است! `ClaudeBot` و `Amazonbot` الان هم 403 می‌گیرند — لطفاً مراحل §۲ را دوباره چک کنید (۳ جای مختلف را نوشته‌ام؛ محتمل‌ترین: تنظیم Account-level AI).
+> - ✅ **۳ (Google Search Console):** رکورد TXT تأیید مالکیت در DNS دیده شد — ثبت شده. فقط ارسال سایت‌مپ و Request indexing (§۳-۵ و §۳-۶) را اگر هنوز نکرده‌اید انجام دهید.
+> - ✅ **۴ (Bing Webmaster Tools):** فایل `BingSiteAuth.xml` روی سایت فعال است (200) و ثبت را انجام دادید — انجام شد.
 
 ---
 
-## ۲. خاموش‌کردن بلاک دو ربات هوش مصنوعی (Cloudflare) — ۵ دقیقه
+## ۱. ساختار DNS — ✅ انجام شد (۲۰۲۶-۱۰-۱۱)
 
-**چرا:** تست ما نشان داد `ClaudeBot` و `Amazonbot` الان خطای 403 می‌گیرند.
-یعنی دستیار Claude نمی‌تواند صفحات شما را بخواند و در پاسخ‌ها ارجاعتان نمی‌دهد.
-طبق تنظیمات خودتان (spec) همه ربات‌های هوش مصنوعی باید مجاز باشند.
+**نتیجه:** شما رکورد DNS را اضافه کردید؛ ربات هم این دو را وصل کرد:
+- Worker Route با الگوی `www.sportsignal.ir/*` در Cloudflare تا درخواست‌های www به Worker برسند.
+- ریدایرکت 301 در کد Worker: هر آدرس www → همان آدرس بدون www.
 
-**مراحل (داشبورد Cloudflare):**
-1. در حساب `sportsignal.ir` از منوی چپ **Security → Bots** را باز کنید.
-2. اگر گزینه **AI Bot Management** یا **Block AI bots** روشن است، خاموشش کنید.
-3. اگر بخش **AI Crawl Control** دارید: حالت را روی **Allow all** بگذارید.
-4. از منوی **Security → Settings** مطمئن شوید **Browser Integrity Check** و **Bot Fight Mode** باعث بلاک‌شدن ربات‌ها نشوند (اگر فعال‌اند و مشکلی نیست، دست نزنید — فقط تست پایین را انجام دهید).
-5. تست نهایی (در ترمینال یا از یک سایت curl آنلاین):
+**تست نهایی (گذرانده شد):** `https://www.sportsignal.ir/matches` → 301 → `https://sportsignal.ir/matches` ✅
+
+اگر خواستید دوباره تست کنید: در مرورگر `https://www.sportsignal.ir` را باز کنید؛ باید خودکار به `https://sportsignal.ir` برود.
+
+---
+
+## ۲. خاموش‌کردن بلاک دو ربات هوش مصنوعی (Cloudflare) — ❌ هنوز فعال است
+
+**چرا:** تست امروز (۲۰۲۶-۱۰-۱۱) دوباره نشان داد `ClaudeBot` و `Amazonbot` هنوز 403 می‌گیرند — یعنی تغییر شما یا ذخیره نشده یا در جای دیگری فعال است. این ۳ جا را به‌ترتیب چک کنید:
+
+**مراحل (داشبورد Cloudflare) — ۳ جای ممکن:**
+1. ⭐ **سطح حساب (Account):** در صفحه اول داشبورد روی نام حساب (بالا-راست) کلیک کنید → **AI** (یا **AI Audit**) → اگر **Block AI Crawlers / AI Crawler Blocking** روشن است، خاموش کنید. جدیدترین جایی است که این تنظیم مخفی می‌شود.
+2. **سطح زون:** در حساب `sportsignal.ir` از منوی چپ **Security → Bots** → اگر **AI Scrapers and Crawlers** یا **Block AI bots** روشن است، خاموشش کنید و مطمئن شوید **Save** شده.
+3. **Security → WAF → Custom rules:** اگر قانونی با کلمات `claude`، `amazon` یا `AI` در نام یا شرطش هست، غیرفعالش کنید.
+4. تست فوری بعد از هر تغییر:
    `curl -A "ClaudeBot" https://sportsignal.ir/` — باید 200 بدهد نه 403.
+   (یا در چت به ربات بگویید «AI bot block را دوباره تست کن».)
 
 **موفق بودن یعنی:** ربات Claude و Amazon صفحه را می‌توانند بخوانند.
 
 ---
 
-## ۳. ثبت سایت در Google Search Console — ۱۵ دقیقه
+## ۳. ثبت سایت در Google Search Console — ✅ ثبت شد (۲۰۲۶-۱۰-۱۱)
 
-1. به `search.google.com/search-console` بروید و وارد شوید (اکانت گوگل خودتان).
-   **نکته:** اگر از ایران به ابزارهای گوگل دسترسی ندارید، از اتصال خارج از ایران استفاده کنید (یادداشت خنثی — خودتان تصمیم می‌گیرید).
-2. **Add property → Domain** را بزنید و `sportsignal.ir` را وارد کنید.
-3. گوگل یک رکورد TXT می‌دهد. آن را در Cloudflare اضافه کنید:
-   - DNS → Add record → Type: `TXT` → Name: `@` → Content: (مقداری گوگل داده)
-4. در Search Console دکمه **Verify** را بزنید.
-5. از منوی **Sitemaps** آدرس `https://sportsignal.ir/sitemap.xml` را Submit کنید.
-6. از **URL Inspection** (نوار بالای صفحه) این سه آدرس را یکی‌یکی وارد و **Request indexing** بزنید:
+**نتیجه:** رکورد TXT تأیید مالکیت (`google-site-verification=UU6-ueHL…`) در DNS دیده شد — یعنی مالکیت تأیید شده است.
+
+اگر این دو قدم آخر را هنوز انجام نداده‌اید، تکمیل کنید:
+1. از منوی **Sitemaps** آدرس `https://sportsignal.ir/sitemap.xml` را Submit کنید.
+2. از **URL Inspection** این سه آدرس را یکی‌یکی وارد و **Request indexing** بزنید:
    - `https://sportsignal.ir/`
    - `https://sportsignal.ir/matches/today`
    - یکی از صفحات تیم (مثلاً از `https://sportsignal.ir/teams` یک تیم را باز کنید و آدرسش را بدهید)
-7. ۳ روز بعد: **Indexing → Pages** را چک کنید (چند صفحه «Indexed» شده باشد).
-8. ۲ هفته بعد: **Performance** را ببینید.
-9. در **Settings** اگر گزینه‌ای به نام «Search generative AI» یا گزارش «Generative AI» دیدید، مطمئن شوید روشن/غیرفعال‌نبودن اشتراک در آن است (G-15).
+3. ۳ روز بعد: **Indexing → Pages** را چک کنید (چند صفحه «Indexed» شده باشد).
+4. ۲ هفته بعد: **Performance** را ببینید.
+5. در **Settings** اگر گزینه‌ای به نام «Search generative AI» یا گزارش «Generative AI» دیدید، مطمئن شوید روشن/غیرفعال‌نبودن اشتراک در آن است (G-15).
 
-## ۴. ثبت در Bing Webmaster Tools (برای ChatGPT/Copilot مهم) — ۱۰ دقیقه
+## ۴. ثبت در Bing Webmaster Tools — ✅ انجام شد (۲۰۲۶-۱۰-۱۱)
 
-1. به `bing.com/webmasters` بروید و با اکانت مایکروسافت/گوگل وارد شوید.
-2. **Import from Google Search Console** را انتخاب کنید (سریع‌ترین راه است) یا دستی verify کنید.
-3. اگر دستی verify می‌کنید: فایل تأیید مالکیت از قبل روی سایت قرار داده شده — آدرس `https://sportsignal.ir/BingSiteAuth.xml` (دقیقاً با همین حروف بزرگ و کوچک). در Bing گزینه **«Option 2: Place an XML file on my web server»** را بزنید و روی دکمه Verify کلیک کنید — کاری لازم نیست انجام دهید، فایل آماده است.
-4. از **Submit URLs** یا **Sitemaps** آدرس `https://sportsignal.ir/sitemap.xml` را ثبت کنید.
-5. بخش **IndexNow** را چک کنید: باید به‌مرور URL بفرستد (سایت شما کلید IndexNow را در `/6f1c2ab9d84e53a7c0b5e2f8a3d6c4b1.txt` سرو می‌کند و به‌طور خودکار ping می‌زند).
+فایل تأیید `https://sportsignal.ir/BingSiteAuth.xml` روی سایت فعال است (200) و شما ثبت را انجام دادید.
+
+اگر این دو قدم آخر را هنوز انجام نداده‌اید، تکمیل کنید:
+1. از **Submit URLs** یا **Sitemaps** آدرس `https://sportsignal.ir/sitemap.xml` را ثبت کنید.
+2. بخش **IndexNow** را چک کنید: باید به‌مرور URL بفرستد (سایت شما کلید IndexNow را در `/6f1c2ab9d84e53a7c0b5e2f8a3d6c4b1.txt` سرو می‌کند و به‌طور خودکار ping می‌زند).
+
+---
 
 ## ۵. اطلاعات تماس و هویت (G-09) — ۱۰ دقیقه
 

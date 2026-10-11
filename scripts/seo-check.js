@@ -10,6 +10,7 @@ const CONFIG = {
   BASE_URL: "https://sportsignal.ir",          // production origin (no www)
   ALT_HOSTS: {                                 // R-06 redirect expectations
     football: "https://football.sportsignal.ir", // must 301 to BASE_URL (public paths)
+    www: "https://www.sportsignal.ir",           // must 301 to BASE_URL (every path)
     http: "http://sportsignal.ir",               // must 301 to https
     workersDev: "https://ucl-notifier.sedanama-ir.workers.dev" // must serve noindex (R-13)
   },
@@ -302,6 +303,8 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     const cases = [
       ["http://sportsignal.ir/", "https://sportsignal.ir/"],
       ["https://football.sportsignal.ir/matches", "https://sportsignal.ir/matches"],
+      ["https://www.sportsignal.ir/", "https://sportsignal.ir/"],
+      ["https://www.sportsignal.ir/matches/today", "https://sportsignal.ir/matches/today"],
       ["https://sportsignal.ir/matches/", "https://sportsignal.ir/matches"],
       ["https://sportsignal.ir/Matches", "https://sportsignal.ir/matches"],
       ["https://sportsignal.ir/public", "https://sportsignal.ir/"]

@@ -252,6 +252,13 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   if (host === "football.sportsignal.ir" && !SEO.NO_REDIRECT_PREFIXES.some((p) => path === p || path.startsWith(p))) {
     return redirect("https://sportsignal.ir" + path + (url.search || ""));
   }
+  // www.sportsignal.ir → apex (R-06/D-08). The www hostname is attached to
+  // this worker as a custom domain ONLY so it answers with a 301 — every
+  // path, every method. Nothing was ever served on www (it was NXDOMAIN
+  // before), so no webhook/API integration can break.
+  if (host === "www.sportsignal.ir") {
+    return redirect("https://sportsignal.ir" + path + (url.search || ""));
+  }
   // http → https (production hosts only; local dev keeps http).
   if (url.protocol === "http:" && isProd) {
     return redirect("https://" + host + path + (url.search || ""));

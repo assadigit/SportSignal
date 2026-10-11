@@ -415,6 +415,31 @@ OWNER_TODO §4 updated: the owner can now pick "Option 2: XML file" in Bing
 and just click Verify. Repo suite 587 OK / 0 FAIL. Deployed version
 f99217ae-077c-4156-831c-8b5fc72b4d30.
 
+### v14.0.8-wwwfix + session wrap-up — owner task verification (2026-10-11)
+
+The owner reported completing the four OWNER_TODO items; verification
+results:
+
+| Owner task | Verified | Detail |
+|---|---|---|
+| §1 DNS `www` | ✅ (with a fix) | Record existed but returned **522** — the worker was not attached to the `www` hostname. Fixed via a Workers **route** `www.sportsignal.ir/*` → ucl-notifier (API `70e0ae56…`, the token's PUT domain-attach path is blocked by the owner's existing DNS record) + a worker-side **301 www → apex for every path** (router.ts R-06 block). Live: `https://www.sportsignal.ir/matches` → 301 → `https://sportsignal.ir/matches` (single hop). seo-check T-07 gained 2 www cases. |
+| §2 AI-bot block | ❌ still on | `ClaudeBot`/`Amazonbot` still 403 ("Your request was blocked.", zone-level). GPTBot/bingbot/Googlebot 200. Token cannot read bot settings (re-verified). OWNER_TODO §2 rewritten with the 3 places the toggle can hide (account-level AI Audit first). |
+| §3 GSC | ✅ | DNS TXT `google-site-verification=UU6-ueHL…` present — domain property verified. Remaining owner-side: sitemap submit + Request indexing. |
+| §4 Bing | ✅ | `BingSiteAuth.xml` live (direct 200); the owner completed registration. |
+
+Final production seo-check: **54 PASS / 2 FAIL** (the 2 = ClaudeBot +
+Amazonbot 403 — owner-only). One seo-check run hit a transient 503 burst
+on 5 crawl URLs + the 404 guard (parallel-load rate-limit noise, seen
+before); every affected URL re-verified 200 immediately and a clean
+re-run passed. T-09 Lighthouse skipped in CI (chrome absent); lab numbers
+unchanged from the report body.
+
+Repo suite 587 OK / 0 FAIL, tsc clean. Deployed version
+1d9ec22f-e174-445e-a5ca-404682e45ea4 (includes the www redirect).
+Cloudflare Workers route `www.sportsignal.ir/*` (id `70e0ae56ad29409a95a4f6db19077124`) —
+the only infrastructure object this repo does not deploy; documented here
+so a future re-creation is one API call.
+
 
 
 **Honest note on the homepage Performance score:** the spec's ≥90 target is
