@@ -210,13 +210,24 @@ check("stats.ts stores salt in stats_meta (not in source)", /UPDATE stats_meta S
 check("stats.ts counts in ctx.waitUntil", /ctx\.waitUntil\(/.test(statsSrc));
 check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSrc));
 
-// ---------- 5) no immutable-asset edits ----------
+// ---------- 5) immutable-asset rename done correctly (13.15 → 13.16) ----------
+// The homepage JS layout engine (WIDE_RAIL/WIDE_ORDER) needed to learn about
+// the new #statsCard (side column, below cupsCard). Editing an immutable asset
+// in place is forbidden, so the fixed build is public-13.16.{js,css}; the SW
+// cache is bumped v18 → v19 to evict the old 13.15 bundle.
 const headersSrc = read("assets/_headers");
-check("public-13.15.js still referenced (not renamed)", /\/public-13\.15\.js/.test(publicSrc));
-check("public-13.15.css still referenced (not renamed)", /\/public-13\.15\.css/.test(publicSrc));
-check("core-13.8.js still referenced (not renamed)", /\/core-13\.8\.js/.test(publicSrc));
-check("assets/_headers still pins public-13.15 immutable", /\/public-13\.15\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("no public-13.16 asset was created", !fs.existsSync(path.join(__dirname, "..", "assets", "public-13.16.js")));
+const swSrc = read("assets/sw.js");
+check("public-13.16.js referenced in homepage (renamed from 13.15)", /\/public-13\.16\.js/.test(publicSrc));
+check("public-13.16.css referenced in homepage (renamed from 13.15)", /\/public-13\.16\.css/.test(publicSrc));
+check("public-13.16.css referenced in SEO page-shell (renamed)", /\/public-13\.16\.css/.test(shellSrc));
+check("core-13.8.js still referenced (unchanged)", /\/core-13\.8\.js/.test(publicSrc));
+check("public-13.16.js exists (the renamed asset)", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.16.js")));
+check("public-13.16.css exists (the renamed asset)", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.16.css")));
+check("assets/_headers pins public-13.16 immutable", /\/public-13\.16\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.16.css immutable", /\/public-13\.16\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("SW cache bumped to sportsignal-v19", /CACHE = "sportsignal-v19"/.test(swSrc));
+check("WIDE_RAIL includes statsCard (after cupsCard)", /WIDE_RAIL=\[[^\]]*"cupsCard","statsCard"[^\]]*\]/.test(read("assets/public-13.16.js")));
+check("WIDE_ORDER includes statsCard (after cupsCard, before finishedCard)", /WIDE_ORDER=\[[^\]]*"cupsCard","statsCard","finishedCard"[^\]]*\]/.test(read("assets/public-13.16.js")));
 
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
 process.exit(failed === 0 ? 0 : 1);

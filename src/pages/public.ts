@@ -79,7 +79,7 @@ __SEO_JSONLD__
 #statsCard stable .cpct{color:var(--muted,#94a3b8);direction:ltr;text-align:left;width:3.5em}
 #statsCard .sbar{height:5px;background:rgba(94,160,255,.18);border-radius:3px;overflow:hidden;margin-top:2px}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}</style>
-<link rel="stylesheet" href="/public-13.15.css">
+<link rel="stylesheet" href="/public-13.16.css">
 </head>
 <body>
 <!-- v12.24 (the user's ask): a real WEBSITE header \u2014 the uploaded SportSignal
@@ -244,12 +244,14 @@ __SEO_JSONLD__
 <h2 data-i="hCups">\u{1F3C6} \u062A\u0648\u0631\u0646\u0645\u0646\u062A\u200C\u0647\u0627</h2>
 <div id="cups">__SEO_CUPS__</div>
 </div>
-<!-- v13.57-uniqueregions: live visitor-stats box \u2014 a separate card directly
-     below the cups card, at the end of the main column. Filled client-side by
-     the single /api/visit beacon (one fetch per page load fills BOTH this box
-     and the footer counter). Shows online-now, today's views + unique visitors,
-     total views, and today's top countries with percentages. Cookieless; the
-     unique dedup uses a salted one-way hash (IP never stored) \u2014 see /privacy. -->
+<!-- v13.57-uniqueregions: live visitor-stats box \u2014 a separate card in the
+     side column, directly below the cups card. The JS layout engine (WIDE_RAIL
+     in public-13.16.js) places #statsCard in #wideSide right after #cupsCard.
+     Filled client-side by the single /api/visit beacon (one fetch per page
+     load fills BOTH this box and the footer counter). Shows online-now,
+     today's views + unique visitors, total views, and today's top countries
+     with percentages. Cookieless; the unique dedup uses a salted one-way hash
+     (IP never stored) \u2014 see /privacy. -->
 <div class="card" id="statsCard">
 <h2>\u{1F4CA} \u0622\u0645\u0627\u0631 \u0628\u0627\u0632\u062F\u06CC\u062F \u0632\u0646\u062F\u0647</h2>
 <div class="sbox" id="statsBox"><span class="slbl">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC…</span></div>
@@ -300,7 +302,7 @@ __SEO_JSONLD__
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.8.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.15.js" defer><\/script>
+<script src="/public-13.16.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

@@ -64,7 +64,7 @@
 //              rule to .empty.loading-empty containers only, so the homepage
 //              intro paragraph showed on screen. public-13.15.css adds the
 //              GLOBAL .sr-only rule; rename-on-edit + this bump = clean slate.)
-const CACHE = "sportsignal-v18"; // v14.0.4-sronly: global .sr-only rule (public-13.15.css)
+const CACHE = "sportsignal-v19"; // v13.57-uniqueregions: public-13.15→13.16 rename (stats card added to WIDE_RAIL)
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
