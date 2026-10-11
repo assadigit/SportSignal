@@ -55,7 +55,11 @@
 //              served as public-13.15.js (new URL = guaranteed miss in every
 //              cache layer). This bump also sweeps any 13.14 entry that a
 //              stale-HTML client re-cached into v15.)
-const CACHE = "sportsignal-v16"; // v14.0.2-cachefix: renamed client build → public-13.15.js
+// Cache name:  sportsignal-v17 (v14.0.3-gridfix: the SEO <main> wrapper broke the
+//              >=1440px body grid — one grid item swallowed the hero and misplaced
+//              every section. main{display:contents} (public-13.14.css) restores
+//              the pre-SEO grid; rename-on-edit + this bump = clean slate.)
+const CACHE = "sportsignal-v17"; // v14.0.3-gridfix: main display:contents (public-13.14.css)
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
