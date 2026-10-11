@@ -316,6 +316,33 @@ full-width YES / two columns YES / tables near the top YES / no breakage
 YES. seo-check production 51 PASS / 2 FAIL (unchanged owner-only zone
 AI-bot block). Repo suite 586 OK / 0 FAIL. Commit b287e74.
 
+### v14.0.4-sronly — the visible SEO intro paragraph (owner report #4)
+
+**What the owner saw:** a Persian sentence rendered on the page above the
+hero card — the SEO intro paragraph `<p class="sr-only">در این صفحه: …`
+was supposed to be screen-reader-only but was fully visible.
+
+**Root cause:** the pre-SEO stylesheet scoped its only `.sr-only` rule to
+`.empty .loading-empty` containers (loading boxes). There was never a
+GLOBAL `.sr-only` rule, so the class hid nothing at page level — the
+computed style was `position: static`, 1376×26 px, fully in-flow.
+
+**Fix:** `assets/public-13.15.css` (renamed from 13.14 per the
+rename-on-edit rule) adds the global `.sr-only` rule with the same
+declarations as the scoped one; `src/pages/public.ts` +
+`src/seo/page-shell.ts` load it; `_headers` entry added; `sw.js` cache
+bumped v17 → v18. This also fixes the "no live matches" sr-only note
+(router.ts:164).
+
+Verified live: the paragraph computes `position: absolute, 1px × 1px,
+clipped` — invisible on screen, while the text **remains in the raw HTML**
+for crawlers and AI assistants (the GEO value is kept; the owner approved
+hidden-for-SEO text explicitly). Layout from v14.0.3 re-verified intact
+(hero full-width 1400px, two-column grid). Match pages render clean with
+13.15.css (h1 + JSON-LD). seo-check production 51 PASS / 2 FAIL
+(unchanged owner-only zone AI-bot block). Repo suite 586 OK / 0 FAIL.
+Commit 3b4d98c.
+
 **Honest note on the homepage Performance score:** the spec's ≥90 target is
 not reached on `/` because of the original hero background VIDEO
 (646 KB autoplay mp4) that the spec forbids me to remove ("do not change the
