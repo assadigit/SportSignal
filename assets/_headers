@@ -53,6 +53,15 @@
 # in the side column below cupsCard); editing an immutable asset in place is
 # forbidden, so the fixed build is public-13.16.{js,css}. SW cache bumped
 # v18 → v19 to evict.
+# v13.58-herofix: 13.16 → 13.17 rename. Hero countdown made non-clickable
+# (noLink option in spotItemNode) + timezone label added below the kickoff
+# time + WIDE_ORDER stats moved to end (mobile last section). SW v19 → v20.
+/public-13.17.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.17.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.16.js
   Cache-Control: public, max-age=31536000, immutable
 

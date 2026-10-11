@@ -210,24 +210,31 @@ check("stats.ts stores salt in stats_meta (not in source)", /UPDATE stats_meta S
 check("stats.ts counts in ctx.waitUntil", /ctx\.waitUntil\(/.test(statsSrc));
 check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSrc));
 
-// ---------- 5) immutable-asset rename done correctly (13.15 → 13.16) ----------
-// The homepage JS layout engine (WIDE_RAIL/WIDE_ORDER) needed to learn about
-// the new #statsCard (side column, below cupsCard). Editing an immutable asset
-// in place is forbidden, so the fixed build is public-13.16.{js,css}; the SW
-// cache is bumped v18 → v19 to evict the old 13.15 bundle.
+// ---------- 5) immutable-asset rename done correctly (13.16 → 13.17) ----------
+// v13.58-herofix: hero countdown made non-clickable (noLink in spotItemNode),
+// timezone label added below the kickoff time, and WIDE_ORDER stats moved to
+// the end (mobile: stats is the last section before footer). The JS layout
+// engine + spotItemNode live in the immutable public-13.16.js → renamed to
+// public-13.17.{js,css}. SW cache v19 → v20.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-check("public-13.16.js referenced in homepage (renamed from 13.15)", /\/public-13\.16\.js/.test(publicSrc));
-check("public-13.16.css referenced in homepage (renamed from 13.15)", /\/public-13\.16\.css/.test(publicSrc));
-check("public-13.16.css referenced in SEO page-shell (renamed)", /\/public-13\.16\.css/.test(shellSrc));
+const js17 = read("assets/public-13.17.js");
+check("public-13.17.js referenced in homepage (renamed from 13.16)", /\/public-13\.17\.js/.test(publicSrc));
+check("public-13.17.css referenced in homepage (renamed from 13.16)", /\/public-13\.17\.css/.test(publicSrc));
+check("public-13.17.css referenced in SEO page-shell (renamed)", /\/public-13\.17\.css/.test(shellSrc));
 check("core-13.8.js still referenced (unchanged)", /\/core-13\.8\.js/.test(publicSrc));
-check("public-13.16.js exists (the renamed asset)", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.16.js")));
-check("public-13.16.css exists (the renamed asset)", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.16.css")));
-check("assets/_headers pins public-13.16 immutable", /\/public-13\.16\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("assets/_headers pins public-13.16.css immutable", /\/public-13\.16\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("SW cache bumped to sportsignal-v19", /CACHE = "sportsignal-v19"/.test(swSrc));
-check("WIDE_RAIL includes statsCard (after cupsCard)", /WIDE_RAIL=\[[^\]]*"cupsCard","statsCard"[^\]]*\]/.test(read("assets/public-13.16.js")));
-check("WIDE_ORDER includes statsCard (after cupsCard, before finishedCard)", /WIDE_ORDER=\[[^\]]*"cupsCard","statsCard","finishedCard"[^\]]*\]/.test(read("assets/public-13.16.js")));
+check("public-13.17.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.17.js")));
+check("public-13.17.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.17.css")));
+check("assets/_headers pins public-13.17 immutable", /\/public-13\.17\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.17.css immutable", /\/public-13\.17\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("SW cache bumped to sportsignal-v20", /CACHE = "sportsignal-v20"/.test(swSrc));
+check("WIDE_RAIL includes statsCard (after cupsCard)", /WIDE_RAIL=\[[^\]]*"cupsCard","statsCard"[^\]]*\]/.test(js17));
+check("WIDE_ORDER has statsCard LAST (after finishedCard)", /WIDE_ORDER=\[[^\]]*"finishedCard","statsCard"[^\]]*\]/.test(js17));
+check("renderHeroSpot passes noLink:true (hero non-clickable)", /spotItemNode\(t,0,\{noDate:!0,noLink:!0\}\)/.test(js17));
+check("spotItemNode creates div (not a) when noLink", /var n=document\.createElement\(t&&t\.noLink\?"div":"a"\)/.test(js17));
+check("spotItemNode adds kicktz label when noLink", /t&&t\.noLink\)\{var tzL=document\.createElement\("span"\);tzL\.className="kicktz"/.test(js17));
+check("tzLabelFa() helper exists", /function tzLabelFa\(\)/.test(js17));
+check("homepage inline CSS has .kicktz rule", /\.kicktz\{/.test(publicSrc));
 
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
 process.exit(failed === 0 ? 0 : 1);
