@@ -62,7 +62,23 @@ __SEO_JSONLD__
 .visitcount{font-size:.78rem;color:var(--muted,#94a3b8);margin-top:10px;line-height:1.9;direction:rtl}
 .visitcount .vc-n{display:inline-block;min-width:3.4em;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:var(--text,#e2e8f0)}
 .visitcount .vc-sep{margin:0 6px;opacity:.5}
-.visitcount .vc-l{opacity:.85}</style>
+.visitcount .vc-l{opacity:.85}
+/* v13.57-uniqueregions: live visitor-stats box (below the cups card). */
+#statsCard .sbox{font-size:.9rem;line-height:1.9}
+#statsCard .srow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(148,163,184,.16)}
+#statsCard .srow:last-child{border-bottom:none}
+#statsCard .slbl{color:var(--muted,#94a3b8)}
+#statsCard .sval{font-weight:700;font-variant-numeric:tabular-nums;direction:ltr}
+#statsCard .sval.live{color:#22c55e}
+#statsCard .scap{margin:10px 0 2px;font-size:.78rem;color:var(--muted,#94a3b8);font-weight:600}
+#statsCard stable{width:100%;border-collapse:collapse;font-size:.84rem}
+#statsCard stable th,#statsCard stable td{padding:5px 6px;text-align:start;border-bottom:1px solid rgba(148,163,184,.12)}
+#statsCard stable th{color:var(--muted,#94a3b8);font-weight:600;font-size:.74rem}
+#statsCard stable .cflag{font-size:1rem}
+#statsCard stable .cnum{font-variant-numeric:tabular-nums;font-weight:700;direction:ltr;text-align:left}
+#statsCard stable .cpct{color:var(--muted,#94a3b8);direction:ltr;text-align:left;width:3.5em}
+#statsCard .sbar{height:5px;background:rgba(94,160,255,.18);border-radius:3px;overflow:hidden;margin-top:2px}
+#statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}</style>
 <link rel="stylesheet" href="/public-13.15.css">
 </head>
 <body>
@@ -228,6 +244,16 @@ __SEO_JSONLD__
 <h2 data-i="hCups">\u{1F3C6} \u062A\u0648\u0631\u0646\u0645\u0646\u062A\u200C\u0647\u0627</h2>
 <div id="cups">__SEO_CUPS__</div>
 </div>
+<!-- v13.57-uniqueregions: live visitor-stats box \u2014 a separate card directly
+     below the cups card, at the end of the main column. Filled client-side by
+     the single /api/visit beacon (one fetch per page load fills BOTH this box
+     and the footer counter). Shows online-now, today's views + unique visitors,
+     total views, and today's top countries with percentages. Cookieless; the
+     unique dedup uses a salted one-way hash (IP never stored) \u2014 see /privacy. -->
+<div class="card" id="statsCard">
+<h2>\u{1F4CA} \u0622\u0645\u0627\u0631 \u0628\u0627\u0632\u062F\u06CC\u062F \u0632\u0646\u062F\u0647</h2>
+<div class="sbox" id="statsBox"><span class="slbl">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC…</span></div>
+</div>
 
 </div>
 <!-- v12.5: the Iran card is gone \u2014 the PGL table lives inside the league
@@ -275,14 +301,38 @@ __SEO_JSONLD__
 <script src="/core-13.8.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
 <script src="/public-13.15.js" defer><\/script>
-<script>/* v13.56-visitcount: cookieless page-view beacon. Fires one same-origin
+<script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
-     in the background (ctx.waitUntil) and returns today+total for the footer.
-     No cookies, no IP, no fingerprint — see /privacy. */
+     in the background (ctx.waitUntil: page view + daily unique dedup via a
+     salted one-way hash + country code + online-now). The JSON response fills
+     BOTH the footer counter and the live stats box. No cookies, no IP storage
+     — see /privacy. */
 (function(){if(document.visibilityState==='prerender')return;
 function faNum(n){try{return Number(n).toLocaleString('fa-IR')}catch(e){return String(n)}}
 function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
-try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(!d)return;set('vcToday',faNum(d.today||0));set('vcTotal',faNum(d.total||0));}).catch(function(){});}catch(e){}
+function renderStatsBox(d){
+  var box=document.getElementById('statsBox');if(!box)return;
+  var h='';
+  h+='<div class="srow"><span class="slbl">\u{1F534} \u0622\u0646\u0644\u0627\u06CC\u0646 \u0627\u06A9\u0646\u0648\u0646</span><span class="sval live">'+faNum(d.online||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F \u0627\u0645\u0631\u0648\u0632</span><span class="sval">'+faNum(d.today_views||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u0627\u0645\u0631\u0648\u0632</span><span class="sval">'+faNum(d.today_visitors||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F \u06A9\u0644</span><span class="sval">'+faNum(d.total_views||0)+'</span></div>';
+  var cs=d.countries||[];
+  if(cs.length){
+    h+='<div class="scap">\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647\u0627\u06CC \u0627\u0645\u0631\u0648\u0632 \u0628\u0647 \u06A9\u0634\u0648\u0631</div>';
+    h+='<table><thead><tr><th>\u06A9\u0634\u0648\u0631</th><th>\u062A\u0639\u062F\u0627\u062F</th><th>\u062F\u0631\u0635\u062F</th></tr></thead><tbody>';
+    cs.forEach(function(c){
+      h+='<tr><td><span class="cflag">'+c.flag+'</span> '+c.name+'</td><td class="cnum">'+faNum(c.visitors)+'</td><td class="cpct">'+faNum(c.pct)+'\u066A</td></tr>';
+    });
+    h+='</tbody></table>';
+  }
+  box.innerHTML=h;
+}
+try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
+  if(!d)return;
+  set('vcToday',faNum(d.today_views||0));set('vcTotal',faNum(d.total_views||0));
+  renderStatsBox(d);
+}).catch(function(){});}catch(e){}
 })();<\/script>
 </body>
 </html>`;

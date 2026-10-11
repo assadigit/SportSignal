@@ -1,44 +1,40 @@
-// SportSignal — v13.56-visitcount: a tiny, cookieless, IP-free page-view
-// counter backed by a dedicated D1 database (binding STATS_DB).
+// SportSignal — v13.57-uniqueregions: visitor stats with unique-visitor dedup,
+// per-country breakdown, and live "online now" tracking. Backed by a dedicated
+// D1 database (binding STATS_DB), isolated from the STATE KV namespace's write
+// quota (the chronic 13.55-epochflow pain point). D1's free tier allows 100k
+// writes/day + atomic SQLite upserts (KV has no atomic increment).
 //
-// WHY D1 (not the STATE KV namespace): the site chronically brushes the KV
-// free-tier 1,000-writes/day quota (the 13.55-epochflow frozen-epoch bug was
-// caused by exactly that). A per-visit counter would burn hundreds-to-
-// thousands of KV writes/day on top of an already-tight budget. D1's free
-// tier allows 100k writes/day in an isolated quota, and SQLite gives atomic
-// `pageviews = pageviews + 1` upserts (KV has no atomic increment — naive
-// read-modify-write loses updates under concurrency).
+// PRIVACY (honest, matches /privacy):
+//   - NO cookies. NO IP storage. NO fingerprint storage.
+//   - For DAILY UNIQUE-VISITOR dedup only, a one-way SHA-256 hash of
+//     (salt + IP + User-Agent + day) is computed and the HASH (not the IP) is
+//     stored for the day, then pruned to ~30 days. The salt is auto-generated
+//     once (crypto.getRandomValues) and stored in the D1 stats_meta table —
+//     never in source, never a secret the owner must set. The hash cannot be
+//     reversed to recover the IP without the salt + brute force, and the data
+//     is daily-aggregate + pruned.
+//   - Country is captured from Cloudflare's CF-IPCountry / req.cf.country (an
+//     ISO-3166 alpha-2 CODE like "IR"/"GB"/"AU") — a country code is aggregate,
+//     not personal data. No IP is needed or stored for this.
+//   - Bots are filtered by User-Agent (Googlebot/bingbot/GPTBot/ClaudeBot/etc.)
+//     and never counted. Counting runs in ctx.waitUntil so it never slows the
+//     beacon response.
 //
-// PRIVACY (honest, matches /privacy): NO cookies, NO IP, NO fingerprint, NO
-// personal data of any kind is read or stored. Each beacon from a real
-// (non-bot) browser increments one aggregate integer for the Tehran-calendar
-// day. Bots are filtered by user-agent (the site is intentionally heavily
-// crawled — Googlebot/bingbot/GPTBot/ClaudeBot/etc. — a counter that
-// included them would be meaningless). Counting happens inside ctx.waitUntil
-// so it never slows the beacon response.
-//
-// The HTML pages are edge-cached (s-maxage=60), so counting inside the HTML
-// path would undercount. The reliable real-visitor signal is this beacon —
-// a tiny same-origin GET fired by an inline script on every page (homepage +
-// SEO pages). It only fires from a browser that actually executes JS, so
-// crawlers that never run JS are naturally excluded on top of the UA filter.
+// The HTML pages are edge-cached (s-maxage=60), so the reliable real-visitor
+// signal is the client beacon — a tiny same-origin GET fired by an inline
+// script on every page. It only fires from a browser that runs JS, so non-JS
+// crawlers are excluded on top of the UA filter.
 
 import type { Env } from "./types";
 import { toFaDigits } from "./utils";
 
 // Bots/crawlers/automation we must NOT count. The site is heavily crawled on
-// purpose (SEO); a counter that includes Googlebot et al. is meaningless.
-// Case-insensitive substring match on the User-Agent. Kept broad: catches
-// Googlebot/bingbot/GPTBot/ClaudeBot/Bytespider/Applebot/Yandex/Baidu/Semrush/
-// Ahrefs/DotBot/PetalBot + generic crawl/spider/slurp + HTTP libraries
-// (curl/wget/python-requests) + monitors (uptime/lighthouse). A real browser
-// UA (Chrome/Safari/Firefox/Edge) never contains these tokens.
+// purpose (SEO); a counter that included Googlebot et al. is meaningless.
+// Case-insensitive substring match on the User-Agent.
 export const BOT_REGEX =
   /bot|crawl|spider|slurp|bing|facebookexternalhit|preview|headless|python-requests|curl|wget|monitor|uptime|lighthouse|anthropic|bytespider|applebot|yandex|baidu|semrush|ahrefs|dotbot|petalbot|dataprovider|duckduckbot|sogou|exabot|facebot|ia_archiver|linkedinbot|telegrambot|discordbot|whatsapp/i;
 
-// Tehran-calendar day key: YYYY-MM-DD in Asia/Tehran. en-CA yields the
-// ISO-style YYYY-MM-DD order (vs en-GB's DD/MM/YYYY), perfect for a PK +
-// lexicographic day ordering. Mirrors getNowTehran's timezone source.
+// Tehran-calendar day key: YYYY-MM-DD in Asia/Tehran. en-CA yields ISO order.
 export function tehranDay(env: Env, date?: Date): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: (env && env.TEHRAN_TZ) || "Asia/Tehran",
@@ -57,196 +53,336 @@ export function isBotUserAgent(ua: string): boolean {
   return BOT_REGEX.test(ua);
 }
 
-// In-memory cache of the public counts (today + total) so the beacon response
-// path is a pure memory read — zero D1 latency on the hot path. Workers module
-// state is per-isolate and ephemeral; each isolate refreshes independently
-// after STATS_CACHE_TTL_MS. The counter is approximate by design (a public
-// footer counter), so ≤30s staleness across isolates is perfectly fine.
-const STATS_CACHE_TTL_MS = 30 * 1000;
-interface PublicCounts {
-  today: number;
-  total: number;
-  ts: number;
-}
-let publicCountsCache: PublicCounts | null = null;
+// "Online now" window: a visitor counts as online if active in the last 5 min.
+export const ONLINE_WINDOW_SECONDS = 300;
 
-async function readPublicCounts(env: Env): Promise<{ today: number; total: number }> {
-  const today = tehranDay(env);
+// ---------- salt (auto-generated, stored in D1, never in source) ----------
+// CRITICAL for unique-visitor accuracy: the salt MUST be identical across all
+// isolates, otherwise the same IP+UA hashes to different fingerprints → over-
+// counting uniques. Two failure modes guarded against:
+//   (1) RACE on first generation: two isolates read an empty salt row
+//       simultaneously, each generates a different candidate. Guarded by an
+//       atomic UPDATE … WHERE v='' (only one wins) + a RE-READ so every
+//       isolate converges on the canonical winning salt.
+//   (2) STALE module cache: an isolate that cached a salt before the canonical
+//       one was persisted would keep hashing with the wrong salt for its whole
+//       lifetime. Guarded by NOT caching in module memory — the salt is read
+//       fresh from D1 on every recordVisit. This adds one ~5ms indexed-PK read
+//       per visit, but recordVisit runs in ctx.waitUntil (background), so it
+//       is invisible to the user. Accuracy > micro-optimization.
+// The salt is pre-seeded at deploy time (see db/stats-schema-v2.sql + the
+// wrangler one-time UPDATE), so the generate path is a rare fallback.
+async function getStatsSalt(env: Env): Promise<string> {
   try {
-    const res = await env.STATS_DB.prepare(
-      "SELECT (SELECT pageviews FROM daily_stats WHERE day = ?1) AS today, " +
-        "(SELECT COALESCE(SUM(pageviews), 0) FROM daily_stats) AS total"
-    )
-      .bind(today)
-      .first();
+    const readSalt = () => env.STATS_DB.prepare("SELECT v FROM stats_meta WHERE k = 'salt'").first();
+    let row: any = await readSalt();
+    let s = row && row.v ? row.v : "";
+    if (!s) {
+      // Empty (first-ever deploy, or replica lag). Generate a candidate and try
+      // to claim the slot atomically; then RE-READ to converge on the winner.
+      const bytes = crypto.getRandomValues(new Uint8Array(32));
+      const candidate = Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+      await env.STATS_DB.prepare("UPDATE stats_meta SET v = ?1 WHERE k = 'salt' AND (v = '' OR v IS NULL)").bind(candidate).run();
+      row = await readSalt();
+      s = (row && row.v) ? row.v : candidate;
+    }
+    return s;
+  } catch (e) {
+    console.warn("stats getStatsSalt failed: " + (e && e.message));
+    return "fallback-salt-" + (env.TEHRAN_TZ || "x"); // degrades but still functional
+  }
+}
+
+async function sha256Hex(text: string): Promise<string> {
+  const data = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// One-way visitor fingerprint for daily unique dedup. Includes the day so a
+// returning visitor on a new day is a new unique (matching the reference
+// design: "someone who visits on three different days counts as three
+// visitors"). The IP is read from CF-Connecting-IP, hashed, and NEVER stored.
+async function visitorFingerprint(env: Env, req: Request, salt: string, day: string): Promise<string> {
+  const ip = req.headers.get("CF-Connecting-IP") || req.headers.get("X-Forwarded-For") || "0.0.0.0";
+  const ua = req.headers.get("user-agent") || "";
+  return sha256Hex(salt + "|" + ip + "|" + ua + "|" + day);
+}
+
+// ---------- public stats block (served to the beacon) ----------
+export interface CountryStat {
+  code: string;
+  name: string;
+  flag: string;
+  visitors: number;
+  pct: number;
+}
+export interface PublicStatsBlock {
+  online: number;
+  today_views: number;
+  today_visitors: number;
+  total_views: number;
+  countries: CountryStat[]; // top 5 today
+}
+
+const STATS_CACHE_TTL_MS = 30 * 1000;
+let publicCache: { data: PublicStatsBlock; ts: number } | null = null;
+
+// ISO-3166 alpha-2 → Persian name (common countries; fallback to the code).
+const COUNTRY_FA: Record<string, string> = {
+  IR: "ایران", GB: "انگلستان", US: "آمریکا", DE: "آلمان", FR: "فرانسه", ES: "اسپانیا",
+  IT: "ایتالیا", NL: "هلند", AU: "استرالیا", CA: "کانادا", AE: "امارات", TR: "ترکیه",
+  RU: "روسیه", CN: "چین", IN: "هند", BR: "برزیل", AR: "آرژانتین", MX: "مکزیک",
+  SE: "سوئد", NO: "نروژ", FI: "فنلاند", DK: "دانمارک", BE: "بلژیک", CH: "سوئیس",
+  AT: "اتریش", PT: "پرتغال", PL: "لهستان", UA: "اوکراین", SA: "عربستان", IQ: "عراق",
+  AF: "افغانستان", PK: "پاکستان", JP: "ژاپن", KR: "کره جنوبی", ID: "اندونزی",
+  MY: "مالزی", SG: "سنگاپور", EG: "مصر", ZA: "آفریقای جنوبی", NZ: "نیوزیلند",
+  IE: "ایرلند", GR: "یونان", CZ: "چک", RO: "رومانیا", HU: "مجارستان", RS: "صربستان",
+  HR: "کرواسی", CO: "کلمبیا", CL: "شیلی", PE: "پرو", EC: "اکوادور", VE: "ونزوئلا",
+  MA: "مراکش", DZ: "الجزایر", TN: "تونس", JO: "اردن", LB: "لبنان", SY: "سوریه",
+  QA: "قطر", KW: "کویت", BH: "بحرین", OM: "عمان", YE: "یمن", KZ: "قزاقستان",
+  UZ: "ازبکستان", AZ: "آذربایجان", GE: "گرجستان", AM: "ارمنستان", TM: "ترکمنستان"
+};
+
+// Convert ISO-3166 alpha-2 → flag emoji via regional indicator symbols.
+export function countryFlag(code: string): string {
+  if (!code || code.length !== 2 || !/^[A-Za-z]{2}$/.test(code)) return "\u{1F3F4}";
+  const A = 0x1f1e6, base = 65;
+  return String.fromCodePoint(A + (code.toUpperCase().charCodeAt(0) - base)) +
+         String.fromCodePoint(A + (code.toUpperCase().charCodeAt(1) - base));
+}
+
+export function countryNameFa(code: string): string {
+  const c = String(code || "").toUpperCase();
+  return COUNTRY_FA[c] || c || "—";
+}
+
+async function readPublicStatsBlock(env: Env): Promise<PublicStatsBlock> {
+  const today = tehranDay(env);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const res = await env.STATS_DB.batch([
+      env.STATS_DB.prepare("SELECT COALESCE(pageviews,0) AS v, COALESCE(visitors,0) AS u FROM daily_stats WHERE day = ?1").bind(today),
+      env.STATS_DB.prepare("SELECT COALESCE(SUM(pageviews),0) AS v FROM daily_stats"),
+      env.STATS_DB.prepare("SELECT COUNT(*) AS n FROM visitor_online WHERE last_seen >= ?1").bind(now - ONLINE_WINDOW_SECONDS),
+      env.STATS_DB.prepare("SELECT country, visitors FROM country_stats WHERE day = ?1 AND country <> 'XX' ORDER BY visitors DESC LIMIT 5").bind(today)
+    ]);
+    const todayRow = (res[0].results && res[0].results[0]) || {};
+    const totalViews = (res[1].results && res[1].results[0] && Number(res[1].results[0].v)) || 0;
+    const online = (res[2].results && res[2].results[0] && Number(res[2].results[0].n)) || 0;
+    const todayVisitors = Number(todayRow.u) || 0;
+    const cr = (res[3].results || []) as any[];
+    const sumCountry = cr.reduce((a, r) => a + (Number(r.visitors) || 0), 0) || 1;
+    const countries: CountryStat[] = cr.map((r) => ({
+      code: String(r.country).toUpperCase(),
+      name: countryNameFa(r.country),
+      flag: countryFlag(r.country),
+      visitors: Number(r.visitors) || 0,
+      pct: Math.round(((Number(r.visitors) || 0) / sumCountry) * 100)
+    }));
     return {
-      today: (res && Number(res.today)) || 0,
-      total: (res && Number(res.total)) || 0
+      online,
+      today_views: Number(todayRow.v) || 0,
+      today_visitors: todayVisitors,
+      total_views: totalViews,
+      countries
     };
   } catch (e) {
-    console.warn("stats readPublicCounts failed: " + (e && e.message));
-    return { today: 0, total: 0 };
+    console.warn("stats readPublicStatsBlock failed: " + (e && e.message));
+    return { online: 0, today_views: 0, today_visitors: 0, total_views: 0, countries: [] };
   }
 }
 
-// Refresh the in-memory cache from D1 (background, via ctx.waitUntil).
-async function refreshPublicCountsCache(env: Env): Promise<void> {
-  const fresh = await readPublicCounts(env);
-  publicCountsCache = { today: fresh.today, total: fresh.total, ts: Date.now() };
+async function refreshPublicCache(env: Env): Promise<void> {
+  const data = await readPublicStatsBlock(env);
+  publicCache = { data, ts: Date.now() };
 }
 
-// The beacon endpoint: counts one page view (background, ctx.waitUntil) and
-// returns the public counts (today + total) for the footer. The response is
-// instant — it serves from the in-memory cache and only triggers a background
-// D1 refresh when the cache is stale. The counting write is also backgrounded.
+// ---------- the beacon endpoint ----------
 export async function handleVisitBeacon(req: Request, env: Env, ctx: any): Promise<Response> {
-  // No STATS_DB binding? Fail open: return zeroes (the feature degrades
-  // gracefully rather than 500ing the page). The admin sees a clear "not
-  // configured" state from /api/stats.
   if (!env.STATS_DB) {
-    return jsonResponseCounts({ today: 0, total: 0 });
+    return jsonResponseBlock({ online: 0, today_views: 0, today_visitors: 0, total_views: 0, countries: [] });
   }
   const ua = req.headers.get("user-agent") || "";
-  // Bot filter — never count crawlers. A 204 is the cheapest non-count signal.
   if (isBotUserAgent(ua)) {
     return new Response(null, { status: 204, headers: COUNT_HEADERS });
   }
-  const today = tehranDay(env);
+  const day = tehranDay(env);
+  // Background: count the visit (unique dedup + country + online) via ctx.waitUntil.
+  ctx.waitUntil(recordVisit(env, req, ua, day).catch((e: any) => console.warn("stats recordVisit failed: " + (e && e.message))));
 
-  // Counting: background write so the response never waits on D1. The upsert
-  // is atomic in SQLite (no lost updates under concurrency). Occasionally
-  // stamp tracking_since on the first ever record (INSERT … WHERE NOT EXISTS
-  // style: a separate cheap idempotent write).
-  ctx.waitUntil(
-    (async () => {
-      try {
-        await env.STATS_DB.batch([
-          env.STATS_DB.prepare(
-            "INSERT INTO daily_stats (day, pageviews) VALUES (?1, 1) " +
-              "ON CONFLICT(day) DO UPDATE SET pageviews = pageviews + 1, updated_at = datetime('now')"
-          ).bind(today),
-          // Stamp tracking_since once (idempotent: only sets when empty).
-          env.STATS_DB.prepare(
-            "UPDATE stats_meta SET v = ?1 WHERE k = 'tracking_since' AND (v = '' OR v IS NULL)"
-          ).bind(today)
-        ]);
-        // Refresh the in-memory cache so this isolate serves the bumped count
-        // to the next visitor without waiting for the TTL.
-        await refreshPublicCountsCache(env).catch(() => {});
-      } catch (e) {
-        console.warn("stats recordVisit failed: " + (e && e.message));
-      }
-    })()
-  );
-
-  // Serve public counts from the in-memory cache (instant). If the cache is
-  // stale or missing, refresh it in the background AND fall back to a direct
-  // read only if there's no cached value at all (first request on a cold
-  // isolate). This keeps the hot path free of D1 latency.
-  let counts = publicCountsCache && Date.now() - publicCountsCache.ts < STATS_CACHE_TTL_MS
-    ? { today: publicCountsCache.today, total: publicCountsCache.total }
+  // Serve the public block from the in-memory cache (instant). Refresh in the
+  // background when stale; on a cold isolate, do one direct read to seed it.
+  let block: PublicStatsBlock | null = publicCache && Date.now() - publicCache.ts < STATS_CACHE_TTL_MS
+    ? publicCache.data
     : null;
-  if (!counts) {
-    if (publicCountsCache) {
-      // Stale cache: serve it instantly, refresh in the background.
-      counts = { today: publicCountsCache.today, total: publicCountsCache.total };
-      ctx.waitUntil(refreshPublicCountsCache(env).catch(() => {}));
+  if (!block) {
+    if (publicCache) {
+      block = publicCache.data;
+      ctx.waitUntil(refreshPublicCache(env).catch(() => {}));
     } else {
-      // Cold isolate (no cache yet): one direct read to seed the cache. This
-      // is a single ~10ms D1 query on the first request per isolate only.
-      counts = await readPublicCounts(env);
-      publicCountsCache = { today: counts.today, total: counts.total, ts: Date.now() };
+      block = await readPublicStatsBlock(env);
+      publicCache = { data: block, ts: Date.now() };
     }
   }
-
-  return jsonResponseCounts(counts);
+  return jsonResponseBlock(block);
 }
 
 const COUNT_HEADERS = {
   "content-type": "application/json",
-  // Never cache the beacon — every page load must re-count.
   "cache-control": "no-store, max-age=0",
   "x-content-type-options": "nosniff",
   "x-frame-options": "DENY",
   "referrer-policy": "no-referrer"
 };
 
-function jsonResponseCounts(c: { today: number; total: number }): Response {
-  return new Response(JSON.stringify({ today: c.today, total: c.total }), {
-    status: 200,
-    headers: COUNT_HEADERS
-  });
+function jsonResponseBlock(b: PublicStatsBlock): Response {
+  return new Response(JSON.stringify(b), { status: 200, headers: COUNT_HEADERS });
 }
 
-// ---------- Admin stats ----------
+// ---------- the counting write (background) ----------
+async function recordVisit(env: Env, req: Request, ua: string, day: string): Promise<void> {
+  const salt = await getStatsSalt(env);
+  const visitor = await visitorFingerprint(env, req, salt, day);
+  const now = Math.floor(Date.now() / 1000);
+  // Country from Cloudflare (req.cf.country is set by the edge; CF-IPCountry
+  // header is the same value). A country CODE is aggregate, not personal data.
+  const cf: any = (req as any).cf || {};
+  const country = (cf.country || req.headers.get("CF-IPCountry") || "XX").toUpperCase().slice(0, 2);
 
-export interface DayStat {
-  day: string;
-  pageviews: number;
+  // 1) unique-visitor dedup: INSERT OR IGNORE → changes>0 means new today.
+  const ins = await env.STATS_DB.prepare("INSERT OR IGNORE INTO daily_visitors (day, visitor) VALUES (?1, ?2)").bind(day, visitor).run();
+  const isNew = ins && ins.meta && ins.meta.changes > 0 ? 1 : 0;
+
+  // 2) daily_stats (pageviews + visitors), 3) country_stats, 4) visitor_online,
+  //    5) tracking_since stamp — one batch (atomic, one round-trip).
+  await env.STATS_DB.batch([
+    env.STATS_DB.prepare(
+      "INSERT INTO daily_stats (day, pageviews, visitors) VALUES (?1, 1, ?2) " +
+        "ON CONFLICT(day) DO UPDATE SET pageviews = pageviews + 1, visitors = visitors + ?2, updated_at = datetime('now')"
+    ).bind(day, isNew),
+    env.STATS_DB.prepare(
+      "INSERT INTO country_stats (day, country, visitors, pageviews) VALUES (?1, ?2, ?3, 1) " +
+        "ON CONFLICT(day, country) DO UPDATE SET visitors = visitors + ?3, pageviews = pageviews + 1"
+    ).bind(day, country, isNew),
+    env.STATS_DB.prepare(
+      "INSERT INTO visitor_online (visitor, last_seen) VALUES (?1, ?2) " +
+        "ON CONFLICT(visitor) DO UPDATE SET last_seen = excluded.last_seen"
+    ).bind(visitor, now),
+    env.STATS_DB.prepare(
+      "UPDATE stats_meta SET v = ?1 WHERE k = 'tracking_since' AND (v = '' OR v IS NULL)"
+    ).bind(day)
+  ]);
+
+  // Occasional tidy-up so the DB stays tiny forever (~2% of visits).
+  if (Math.random() < 0.02) {
+    try {
+      const cutoff30 = daysAgoDay(env, 30);
+      const cutoff90 = daysAgoDay(env, 90);
+      await env.STATS_DB.batch([
+        env.STATS_DB.prepare("DELETE FROM daily_visitors WHERE day < ?1").bind(cutoff30),
+        env.STATS_DB.prepare("DELETE FROM country_stats WHERE day < ?1").bind(cutoff90),
+        env.STATS_DB.prepare("DELETE FROM visitor_online WHERE last_seen < ?1").bind(now - 3600)
+      ]);
+    } catch (e) {
+      /* best-effort cleanup */
+    }
+  }
+
+  // Refresh the in-memory cache so this isolate serves the bumped counts.
+  await refreshPublicCache(env).catch(() => {});
 }
+
+// ---------- admin stats ----------
+export interface DayStat { day: string; pageviews: number; visitors: number; }
+export interface AdminCountryStat { code: string; name: string; flag: string; visitors: number; pageviews: number; pct: number; }
 export interface AdminStats {
-  today: number;
-  yesterday: number;
-  last_7_days: number;
-  last_30_days: number;
-  all_time: number;
+  online: number;
+  today_views: number; today_visitors: number;
+  yesterday_views: number; yesterday_visitors: number;
+  last_7_views: number; last_7_visitors: number;
+  last_30_views: number; last_30_visitors: number;
+  all_time_views: number; all_time_visitors: number;
   tracking_since: string | null;
-  days: DayStat[]; // per-day, newest first, up to 90
+  days: DayStat[];
+  countries_today: AdminCountryStat[];
+  countries_30d: AdminCountryStat[];
   configured: boolean;
 }
 
 export async function collectAdminStats(env: Env): Promise<AdminStats> {
   if (!env.STATS_DB) {
     return {
-      today: 0, yesterday: 0, last_7_days: 0, last_30_days: 0, all_time: 0,
-      tracking_since: null, days: [], configured: false
+      online: 0, today_views: 0, today_visitors: 0, yesterday_views: 0, yesterday_visitors: 0,
+      last_7_views: 0, last_7_visitors: 0, last_30_views: 0, last_30_visitors: 0,
+      all_time_views: 0, all_time_visitors: 0, tracking_since: null, days: [],
+      countries_today: [], countries_30d: [], configured: false
     };
   }
   const today = tehranDay(env);
   const yesterday = daysAgoDay(env, 1);
   const weekStart = daysAgoDay(env, 6);
   const monthStart = daysAgoDay(env, 29);
+  const now = Math.floor(Date.now() / 1000);
   try {
-    const results = await env.STATS_DB.batch([
-      env.STATS_DB.prepare("SELECT COALESCE(pageviews,0) AS v FROM daily_stats WHERE day = ?1").bind(today),
-      env.STATS_DB.prepare("SELECT COALESCE(pageviews,0) AS v FROM daily_stats WHERE day = ?1").bind(yesterday),
-      env.STATS_DB.prepare("SELECT COALESCE(SUM(pageviews),0) AS v FROM daily_stats WHERE day >= ?1").bind(weekStart),
-      env.STATS_DB.prepare("SELECT COALESCE(SUM(pageviews),0) AS v FROM daily_stats WHERE day >= ?1").bind(monthStart),
-      env.STATS_DB.prepare("SELECT COALESCE(SUM(pageviews),0) AS v FROM daily_stats"),
+    const r = await env.STATS_DB.batch([
+      env.STATS_DB.prepare("SELECT COALESCE(pageviews,0) AS v, COALESCE(visitors,0) AS u FROM daily_stats WHERE day = ?1").bind(today),
+      env.STATS_DB.prepare("SELECT COALESCE(pageviews,0) AS v, COALESCE(visitors,0) AS u FROM daily_stats WHERE day = ?1").bind(yesterday),
+      env.STATS_DB.prepare("SELECT COALESCE(SUM(pageviews),0) AS v, COALESCE(SUM(visitors),0) AS u FROM daily_stats WHERE day >= ?1").bind(weekStart),
+      env.STATS_DB.prepare("SELECT COALESCE(SUM(pageviews),0) AS v, COALESCE(SUM(visitors),0) AS u FROM daily_stats WHERE day >= ?1").bind(monthStart),
+      env.STATS_DB.prepare("SELECT COALESCE(SUM(pageviews),0) AS v, COALESCE(SUM(visitors),0) AS u FROM daily_stats"),
       env.STATS_DB.prepare("SELECT v FROM stats_meta WHERE k = 'tracking_since'"),
-      env.STATS_DB.prepare("SELECT day, pageviews FROM daily_stats ORDER BY day DESC LIMIT 90").all()
+      env.STATS_DB.prepare("SELECT COUNT(*) AS n FROM visitor_online WHERE last_seen >= ?1").bind(now - ONLINE_WINDOW_SECONDS),
+      env.STATS_DB.prepare("SELECT day, pageviews, visitors FROM daily_stats ORDER BY day DESC LIMIT 90").all(),
+      env.STATS_DB.prepare("SELECT country, SUM(visitors) AS visitors, SUM(pageviews) AS pageviews FROM country_stats WHERE day = ?1 AND country <> 'XX' GROUP BY country ORDER BY visitors DESC LIMIT 12").bind(today),
+      env.STATS_DB.prepare("SELECT country, SUM(visitors) AS visitors, SUM(pageviews) AS pageviews FROM country_stats WHERE day >= ?1 AND country <> 'XX' GROUP BY country ORDER BY visitors DESC LIMIT 12").bind(monthStart)
     ]);
-    const val = (i: number): number => {
-      const r = results[i].results && results[i].results[0];
-      return r ? Number(r.v) || 0 : 0;
+    const pair = (i: number) => {
+      const x = r[i].results && r[i].results[0];
+      return { v: Number(x && x.v) || 0, u: Number(x && x.u) || 0 };
     };
-    const sinceRow = results[5].results && results[5].results[0];
-    const days: DayStat[] = (results[6].results || []).map((r: any) => ({
-      day: r.day,
-      pageviews: Number(r.pageviews) || 0
+    const sinceRow = r[5].results && r[5].results[0];
+    const online = (r[6].results && r[6].results[0] && Number(r[6].results[0].n)) || 0;
+    const days: DayStat[] = (r[7].results || []).map((x: any) => ({
+      day: x.day, pageviews: Number(x.pageviews) || 0, visitors: Number(x.visitors) || 0
     }));
+    const mkCountries = (i: number): AdminCountryStat[] => {
+      const rows = (r[i].results || []) as any[];
+      const sum = rows.reduce((a, x) => a + (Number(x.visitors) || 0), 0) || 1;
+      return rows.map((x) => ({
+        code: String(x.country).toUpperCase(),
+        name: countryNameFa(x.country),
+        flag: countryFlag(x.country),
+        visitors: Number(x.visitors) || 0,
+        pageviews: Number(x.pageviews) || 0,
+        pct: Math.round(((Number(x.visitors) || 0) / sum) * 100)
+      }));
+    };
     return {
-      today: val(0),
-      yesterday: val(1),
-      last_7_days: val(2),
-      last_30_days: val(3),
-      all_time: val(4),
+      online,
+      today_views: pair(0).v, today_visitors: pair(0).u,
+      yesterday_views: pair(1).v, yesterday_visitors: pair(1).u,
+      last_7_views: pair(2).v, last_7_visitors: pair(2).u,
+      last_30_views: pair(3).v, last_30_visitors: pair(3).u,
+      all_time_views: pair(4).v, all_time_visitors: pair(4).u,
       tracking_since: sinceRow ? sinceRow.v || null : null,
       days,
+      countries_today: mkCountries(8),
+      countries_30d: mkCountries(9),
       configured: true
     };
   } catch (e) {
     console.warn("stats collectAdminStats failed: " + (e && e.message));
     return {
-      today: 0, yesterday: 0, last_7_days: 0, last_30_days: 0, all_time: 0,
-      tracking_since: null, days: [], configured: true
+      online: 0, today_views: 0, today_visitors: 0, yesterday_views: 0, yesterday_visitors: 0,
+      last_7_views: 0, last_7_visitors: 0, last_30_views: 0, last_30_visitors: 0,
+      all_time_views: 0, all_time_visitors: 0, tracking_since: null, days: [],
+      countries_today: [], countries_30d: [], configured: true
     };
   }
 }
 
-// Format an integer with thousands separators in Persian digits (for the
-// admin dashboard + footer). 12345 -> "۱۲٬۳۴۵" (fa-IR grouping + the Persian
-// thousands separator U+066C). 0 -> "۰".
+// Format an integer with thousands separators in Persian digits (footer + box).
 export function faNum(n: number): string {
   try {
     return toFaDigits(Number(n || 0).toLocaleString("en-US").replace(/,/g, "\u066C"));

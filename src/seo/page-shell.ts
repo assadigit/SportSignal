@@ -152,14 +152,15 @@ ${opts.mainHtml}
 <p>© SportSignal — <span id="footYear">۱۴۰۵</span> · ساخته‌شده با ❤️</p>
 <div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div>
 </footer>
-<script>/* v13.56-visitcount: cookieless page-view beacon. One same-origin GET
+<script>/* v13.57-uniqueregions: cookieless page-view beacon. One same-origin GET
 /api/visit per page load (never from prerender); the worker counts it in the
-background (ctx.waitUntil) and returns today+total for the footer. No cookies,
-no IP, no fingerprint — see /privacy. */
+background (ctx.waitUntil: page view + daily unique dedup + country + online)
+and returns the public stats block for the footer counter. No cookies, no IP
+storage — see /privacy. */
 (function(){if(document.visibilityState==='prerender')return;
 function faNum(n){try{return Number(n).toLocaleString('fa-IR')}catch(e){return String(n)}}
 function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
-try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(!d)return;set('vcToday',faNum(d.today||0));set('vcTotal',faNum(d.total||0));}).catch(function(){});}catch(e){}
+try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(!d)return;set('vcToday',faNum(d.today_views||0));set('vcTotal',faNum(d.total_views||0));}).catch(function(){});}catch(e){}
 })();
 </script>
 </body>

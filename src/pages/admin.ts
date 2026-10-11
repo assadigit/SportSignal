@@ -74,18 +74,30 @@ label{display:block;font-size:13px;color:var(--muted);margin:10px 0 2px}
 .fairow:hover{background:var(--hover)}
 .fairow .fen{color:var(--muted);direction:ltr;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fairow .ffa{font-weight:700;white-space:nowrap}
-/* v13.56-visitcount: admin visitor-stats card (today/yesterday/7d/30d/
-   all-time chips + a 90-day per-day bar breakdown). */
+/* v13.57-uniqueregions: admin visitor-stats card \u2014 online now +
+   views/unique chips (today/yesterday/7d/30d/all-time) + a 90-day per-day
+   bar breakdown + today + 30-day country tables. */
 .statcards{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}
 .statcard{background:var(--field);border:1px solid var(--border);border-radius:10px;padding:8px 12px;min-width:92px;text-align:center}
 .statnum{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;direction:ltr}
+.statnum.live{color:var(--badge-live)}
 .statlbl{font-size:11px;color:var(--muted);margin-top:2px}
+.statsec{margin:10px 0 2px;font-size:12px;color:var(--muted);font-weight:600}
 .statbox{max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin:2px 0 8px;background:var(--field)}
-.statrow{display:grid;grid-template-columns:90px 1fr 58px;gap:8px;align-items:center;padding:6px 10px;font-size:12px;border-bottom:1px solid var(--border)}
+.statrow{display:grid;grid-template-columns:90px 1fr 1fr 58px;gap:8px;align-items:center;padding:6px 10px;font-size:12px;border-bottom:1px solid var(--border)}
 .statrow:last-child{border-bottom:none}
 .statrow .sday{direction:ltr;text-align:left;color:var(--muted)}
-.statrow .sbar{height:8px;background:var(--accent);border-radius:4px;min-width:2px;opacity:.85}
+.statrow .sbar{height:7px;background:var(--accent);border-radius:4px;min-width:2px;opacity:.8}
+.statrow .sbar2{height:7px;background:var(--badge-live);border-radius:4px;min-width:2px;opacity:.7}
 .statrow .sval{font-variant-numeric:tabular-nums;font-weight:700;text-align:left;direction:ltr}
+.statrow .sval2{font-variant-numeric:tabular-nums;font-weight:600;text-align:left;direction:ltr;color:var(--muted);font-size:11px}
+.ccountry{display:flex;align-items:center;gap:6px}
+.ccountry .cflag{font-size:1.05em}
+.ctbl{width:100%;border-collapse:collapse;font-size:12px;margin:2px 0 8px}
+.ctbl th,.ctbl td{padding:5px 8px;text-align:start;border-bottom:1px solid var(--border)}
+.ctbl th{color:var(--muted);font-weight:600;font-size:11px}
+.ctbl .cnum{font-variant-numeric:tabular-nums;font-weight:700;direction:ltr;text-align:left}
+.ctbl .cpct{color:var(--muted);direction:ltr;text-align:left;width:3.5em}
 @media (max-width:600px){
 body{padding:16px 12px 28px;background-attachment:scroll}
 h1{font-size:23px}
@@ -621,29 +633,49 @@ function renderStats(){
     el.innerHTML = '<div class="muted">\u26A0\uFE0F STATS_DB '+(en?"not configured":"\u067E\u06CC\u06A9\u0631\u0628\u0646\u062F\u06CC \u0646\u0634\u062F\u0647")+'</div>';
     return;
   }
-  var chip = function(label, val){ return '<div class="statcard"><div class="statnum">'+faNum(val)+'</div><div class="statlbl">'+label+'</div></div>'; };
+  var chip = function(label, val, cls){ return '<div class="statcard"><div class="statnum'+(cls?' '+cls:'')+'">'+faNum(val)+'</div><div class="statlbl">'+label+'</div></div>'; };
   var html = '<div class="statcards">';
-  html += chip(en?"Today":"\u0627\u0645\u0631\u0648\u0632", d.today);
-  html += chip(en?"Yesterday":"\u062F\u06CC\u0631\u0648\u0632", d.yesterday);
-  html += chip(en?"Last 7 days":"\u06F7 \u0631\u0648\u0632 \u0627\u062E\u06CC\u0631", d.last_7_days);
-  html += chip(en?"Last 30 days":"\u06F3\u06F0 \u0631\u0648\u0632 \u0627\u062E\u06CC\u0631", d.last_30_days);
-  html += chip(en?"All-time":"\u06A9\u0644 \u0628\u0627\u0632\u062F\u06CC\u062F", d.all_time);
+  html += chip(en?"Online now":"\u0622\u0646\u0644\u0627\u06CC\u0646 \u0627\u06A9\u0646\u0648\u0646", d.online, "live");
+  html += chip(en?"Today (views)":"\u0627\u0645\u0631\u0648\u0632 (\u0628\u0627\u0632\u062F\u06CC\u062F)", d.today_views);
+  html += chip(en?"Today (unique)":"\u0627\u0645\u0631\u0648\u0632 (\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647)", d.today_visitors);
+  html += chip(en?"Yesterday (views)":"\u062F\u06CC\u0631\u0648\u0632 (\u0628\u0627\u0632\u062F\u06CC\u062F)", d.yesterday_views);
+  html += chip(en?"Yesterday (unique)":"\u062F\u06CC\u0631\u0648\u0632 (\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647)", d.yesterday_visitors);
+  html += chip(en?"7d (views)":"\u06F7 \u0631\u0648\u0632 (\u0628\u0627\u0632\u062F\u06CC\u062F)", d.last_7_views);
+  html += chip(en?"7d (unique)":"\u06F7 \u0631\u0648\u0632 (\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647)", d.last_7_visitors);
+  html += chip(en?"30d (views)":"\u06F3\u06F0 \u0631\u0648\u0632 (\u0628\u0627\u0632\u062F\u06CC\u062F)", d.last_30_views);
+  html += chip(en?"30d (unique)":"\u06F3\u06F0 \u0631\u0648\u0632 (\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647)", d.last_30_visitors);
+  html += chip(en?"All-time (views)":"\u06A9\u0644 (\u0628\u0627\u0632\u062F\u06CC\u062F)", d.all_time_views);
+  html += chip(en?"All-time (unique)":"\u06A9\u0644 (\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647)", d.all_time_visitors);
   html += '</div>';
   if(d.tracking_since){
     html += '<div class="muted" style="margin:4px 0 8px;font-size:12px">'+(en?"Counting since: ":"\u0634\u0645\u0627\u0631\u0634 \u0627\u0632: ")+faNum(d.tracking_since)+'</div>';
   }
+  // 90-day per-day breakdown (views bar + unique bar).
   if(d.days && d.days.length){
     var max = 1;
     for(var i=0;i<d.days.length;i++){ if(d.days[i].pageviews>max) max=d.days[i].pageviews; }
+    html += '<div class="statsec">'+(en?"Per day (last 90 days) \u2014 bar: views / unique":"\u0631\u0648\u0632\u0627\u0646\u0647 (\u06F9\u06F0 \u0631\u0648\u0632 \u0627\u062E\u06CC\u0631) \u2014 \u0646\u0648\u0627\u0631: \u0628\u0627\u0632\u062F\u06CC\u062F / \u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647")+'</div>';
     html += '<div class="statbox">';
     d.days.forEach(function(r){
       var pct = Math.max(2, Math.round((r.pageviews/max)*100));
-      html += '<div class="statrow"><span class="sday">'+faNum(r.day)+'</span><span class="sbar" style="width:'+pct+'%"></span><span class="sval">'+faNum(r.pageviews)+'</span></div>';
+      var upct = max ? Math.max(2, Math.round((r.visitors/max)*100)) : 0;
+      html += '<div class="statrow"><span class="sday">'+faNum(r.day)+'</span><span class="sbar" style="width:'+pct+'%"></span><span class="sbar2" style="width:'+upct+'%"></span><span class="sval">'+faNum(r.pageviews)+'</span></div>';
     });
     html += '</div>';
-  } else {
-    html += '<div class="muted" style="margin:4px 0">'+(en?"No data yet":"\u0647\u0646\u0648\u0632 \u062F\u0627\u062F\u0647\u200C\u0627\u06CC \u062B\u0628\u062A \u0646\u0634\u062F\u0647")+'</div>';
   }
+  // Country tables.
+  function countryTable(rows, title){
+    if(!rows || !rows.length) return '';
+    var h = '<div class="statsec">'+title+'</div>';
+    h += '<table class="ctbl"><thead><tr><th>'+(en?"Country":"\u06A9\u0634\u0648\u0631")+'</th><th>'+(en?"Unique":"\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647")+'</th><th>'+(en?"Views":"\u0628\u0627\u0632\u062F\u06CC\u062F")+'</th><th>%</th></tr></thead><tbody>';
+    rows.forEach(function(c){
+      h += '<tr><td><span class="ccountry"><span class="cflag">'+c.flag+'</span>'+c.name+'</span></td><td class="cnum">'+faNum(c.visitors)+'</td><td class="cnum">'+faNum(c.pageviews)+'</td><td class="cpct">'+faNum(c.pct)+'\u066A</td></tr>';
+    });
+    h += '</tbody></table>';
+    return h;
+  }
+  html += countryTable(d.countries_today, en?"Top countries today":"\u06A9\u0634\u0648\u0631\u0647\u0627\u06CC \u0628\u0631\u062A\u0631 \u0627\u0645\u0631\u0648\u0632");
+  html += countryTable(d.countries_30d, en?"Top countries (last 30 days)":"\u06A9\u0634\u0648\u0631\u0647\u0627\u06CC \u0628\u0631\u062A\u0631 (\u06F3\u06F0 \u0631\u0648\u0632 \u0627\u062E\u06CC\u0631)");
   el.innerHTML = html;
 }
 setTheme(initTheme()); applyLang(true); load(); refreshStatus(); loadNextMatches(); loadMembers(); loadFai(); loadStats();
