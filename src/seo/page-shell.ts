@@ -126,6 +126,12 @@ footer.pagesfoot a{color:inherit;text-decoration:none}
 footer.pagesfoot a:hover{text-decoration:underline}
 .pagenotfound{padding:30px 6px}
 .pagenotfound h1{font-size:1.5rem}
+/* v13.56-visitcount: footer page-view counter. Fixed min-width on the number
+   span so the arriving digits never cause layout shift. */
+.visitcount{font-size:.8rem;color:var(--muted,#9aa4b2);margin-top:10px;line-height:1.9;direction:rtl}
+.visitcount .vc-n{display:inline-block;min-width:3.4em;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:var(--fg,#e8eefc)}
+.visitcount .vc-sep{margin:0 6px;opacity:.5}
+.visitcount .vc-l{opacity:.85}
 </style>
 ${opts.head}
 </head>
@@ -144,7 +150,18 @@ ${opts.mainHtml}
 <footer class="pagesfoot" id="about">
 <nav aria-label="ناوبری پابرگ"><a href="/">خانه</a><a href="/matches">بازی‌ها</a><a href="/matches/today">بازی‌های امروز</a><a href="/matches/this-week">بازی‌های این هفته</a><a href="/teams">تیم‌ها</a><a href="/competitions">رقابت‌ها</a><a href="/about">درباره</a><a href="/methodology">روش انتخاب بازی‌ها</a><a href="/contact">تماس</a><a href="/data">داده‌ها</a><a href="/privacy">حریم خصوصی</a><a href="/terms">شرایط استفاده</a><a href="/sitemap">نقشه سایت</a></nav>
 <p>© SportSignal — <span id="footYear">۱۴۰۵</span> · ساخته‌شده با ❤️</p>
+<div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div>
 </footer>
+<script>/* v13.56-visitcount: cookieless page-view beacon. One same-origin GET
+/api/visit per page load (never from prerender); the worker counts it in the
+background (ctx.waitUntil) and returns today+total for the footer. No cookies,
+no IP, no fingerprint — see /privacy. */
+(function(){if(document.visibilityState==='prerender')return;
+function faNum(n){try{return Number(n).toLocaleString('fa-IR')}catch(e){return String(n)}}
+function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(!d)return;set('vcToday',faNum(d.today||0));set('vcTotal',faNum(d.total||0));}).catch(function(){});}catch(e){}
+})();
+</script>
 </body>
 </html>`;
 }

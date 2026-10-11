@@ -21,6 +21,18 @@ binding = "STATE"
 id = "432ecae8fb8c4146b6b01b91eb8f4b2a"
 preview_id = "8784e1973a984dea981010a6d644f153"
 
+# v13.56-visitcount: dedicated D1 database for the cookieless page-view
+# counter. Isolated from the STATE KV namespace's 1,000-writes/day free-tier
+# quota (the chronic 13.55-epochflow pain point); D1's free tier allows
+# 100k writes/day. SQLite also gives atomic `pageviews = pageviews + 1`
+# upserts (KV has no atomic increment — read-modify-write loses updates under
+# concurrency). See src/stats.ts. Optional binding: the worker still boots if
+# absent (beacon/admin degrade to zeroes + a "not configured" flag).
+[[d1_databases]]
+binding = "STATS_DB"
+database_name = "sportsignal-stats"
+database_id = "dcbea85b-6e71-40a0-974b-4f58d12d15e7"
+
 # v14.0.5-cupgap: TWO triggers — the 10-min tick (bot + pool) + the lean
 # 4-hourly far-cup probe (see probeCupFarFixtures in providers.ts + the
 # api.ts scheduled branch; minute 27 keeps it between the :20/:30 ticks).

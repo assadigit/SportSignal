@@ -57,6 +57,12 @@ __SEO_JSONLD__
 <meta name="color-scheme" content="dark light">
 <title>__SEO_TITLE__</title>
 <style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
+<style>/* v13.56-visitcount: footer page-view counter. The number span has a
+     fixed min-width so the arriving digits never cause layout shift. */
+.visitcount{font-size:.78rem;color:var(--muted,#94a3b8);margin-top:10px;line-height:1.9;direction:rtl}
+.visitcount .vc-n{display:inline-block;min-width:3.4em;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:var(--text,#e2e8f0)}
+.visitcount .vc-sep{margin:0 6px;opacity:.5}
+.visitcount .vc-l{opacity:.85}</style>
 <link rel="stylesheet" href="/public-13.15.css">
 </head>
 <body>
@@ -250,7 +256,8 @@ __SEO_JSONLD__
 <div class="contact-cta"><a href="mailto:sportsignal@atomicmail.io" class="contact-email">sportsignal@atomicmail.io</a></div>
 </div>
 </div>
-<div><span data-i="madeWith">\u0633\u0627\u062E\u062A\u0647\u200C\u0634\u062F\u0647 \u0628\u0627 \u2764\uFE0F</span> \u2014 <a href="/admin" data-i="adminLink">\u0648\u0631\u0648\u062F \u0645\u062F\u06CC\u0631\u06CC\u062A</a> \u2014 <a href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="botLink">\u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645</a></div></footer>
+<div><span data-i="madeWith">\u0633\u0627\u062E\u062A\u0647\u200C\u0634\u062F\u0647 \u0628\u0627 \u2764\uFE0F</span> \u2014 <a href="/admin" data-i="adminLink">\u0648\u0631\u0648\u062F \u0645\u062F\u06CC\u0631\u06CC\u062A</a> \u2014 <a href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="botLink">\u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645</a></div>
+<div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div></footer>
 <!-- v12.20 (the user's ask): sticky Telegram join CTA \u2014 the hero button
      scrolls away with the header; once the user is past it, this bottom bar
      keeps the primary call-to-action one tap away (safe-area padded). -->
@@ -268,5 +275,14 @@ __SEO_JSONLD__
 <script src="/core-13.8.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
 <script src="/public-13.15.js" defer><\/script>
+<script>/* v13.56-visitcount: cookieless page-view beacon. Fires one same-origin
+     GET /api/visit per page load (never from prerender); the worker counts it
+     in the background (ctx.waitUntil) and returns today+total for the footer.
+     No cookies, no IP, no fingerprint — see /privacy. */
+(function(){if(document.visibilityState==='prerender')return;
+function faNum(n){try{return Number(n).toLocaleString('fa-IR')}catch(e){return String(n)}}
+function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(!d)return;set('vcToday',faNum(d.today||0));set('vcTotal',faNum(d.total||0));}).catch(function(){});}catch(e){}
+})();<\/script>
 </body>
 </html>`;

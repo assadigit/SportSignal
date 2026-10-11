@@ -74,6 +74,18 @@ label{display:block;font-size:13px;color:var(--muted);margin:10px 0 2px}
 .fairow:hover{background:var(--hover)}
 .fairow .fen{color:var(--muted);direction:ltr;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fairow .ffa{font-weight:700;white-space:nowrap}
+/* v13.56-visitcount: admin visitor-stats card (today/yesterday/7d/30d/
+   all-time chips + a 90-day per-day bar breakdown). */
+.statcards{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}
+.statcard{background:var(--field);border:1px solid var(--border);border-radius:10px;padding:8px 12px;min-width:92px;text-align:center}
+.statnum{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;direction:ltr}
+.statlbl{font-size:11px;color:var(--muted);margin-top:2px}
+.statbox{max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin:2px 0 8px;background:var(--field)}
+.statrow{display:grid;grid-template-columns:90px 1fr 58px;gap:8px;align-items:center;padding:6px 10px;font-size:12px;border-bottom:1px solid var(--border)}
+.statrow:last-child{border-bottom:none}
+.statrow .sday{direction:ltr;text-align:left;color:var(--muted)}
+.statrow .sbar{height:8px;background:var(--accent);border-radius:4px;min-width:2px;opacity:.85}
+.statrow .sval{font-variant-numeric:tabular-nums;font-weight:700;text-align:left;direction:ltr}
 @media (max-width:600px){
 body{padding:16px 12px 28px;background-attachment:scroll}
 h1{font-size:23px}
@@ -106,6 +118,15 @@ button{width:100%}
 <button id="btnSim" onclick="simulate()" data-i="btnSim">\u{1F9EA} \u0634\u0628\u06CC\u0647\u200C\u0633\u0627\u0632\u06CC \u06F5 \u0627\u0639\u0644\u0627\u0646</button>
 <button onclick="checkSources()" data-i="btnSources">\u{1F4E1} \u0628\u0631\u0631\u0633\u06CC \u0645\u0646\u0627\u0628\u0639 API</button>
 <button onclick="logout()" data-i="btnLogout">\u{1F6AA} \u062E\u0631\u0648\u062C</button>
+</div>
+<!-- v13.56-visitcount: visitor stats \u2014 today/yesterday/7d/30d/all-time page
+     views + a 90-day per-day bar breakdown. Backed by the dedicated STATS_DB
+     D1 database (isolated from the STATE KV write quota). Cookieless, IP-free,
+     bot-filtered \u2014 see /privacy. -->
+<div class="card">
+<h2 data-i="hStats">\u{1F4CA} \u0622\u0645\u0627\u0631 \u0628\u0627\u0632\u062F\u06CC\u062F</h2>
+<div id="stats">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC...</div>
+<button id="btnStats" onclick="loadStats(true)" data-i="btnStats">\u{1F504} \u0628\u0647\u200C\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06CC \u0622\u0645\u0627\u0631</button>
 </div>
 <!-- v12.16: bot members directory \u2014 every chat that /start-ed the bot with
      its Telegram id, @username ("slug"), display name and join date (the
@@ -478,7 +499,7 @@ function renderMembers(){
   cnt.textContent = fmt("memCount", faNum(d.count));
   el.appendChild(cnt);
 }
-var onLang = function(){ refreshStatus(); loadNextMatches(); renderMembers(); loadFai(); };
+var onLang = function(){ refreshStatus(); loadNextMatches(); renderMembers(); loadFai(); renderStats(); };
 // v12.17: \u{1F9E0} smart Farsi club names \u2014 stats + sample of the AI-learned
 // dictionary; ?run=1 (the \u{1F504} button) forces one learning round now.
 var FAI_BUSY = false;
@@ -576,6 +597,55 @@ async function logout(){
   localStorage.removeItem("admin_token");
   location.reload();
 }
-setTheme(initTheme()); applyLang(true); load(); refreshStatus(); loadNextMatches(); loadMembers(); loadFai();
+// v13.56-visitcount: visitor stats card \u2014 /api/stats (admin-gated) feeds
+// today/yesterday/7d/30d/all-time pageviews + a 90-day per-day bar chart.
+// Cookieless, IP-free, bot-filtered (see src/stats.ts + /privacy).
+var STATS = null;
+async function loadStats(force){
+  var el = document.getElementById("stats");
+  if(!el) return;
+  if(!force && STATS){ renderStats(); return; }
+  if(force && busy("btnStats")) return;
+  el.textContent = T("stLoading");
+  var d = await api("/api/stats");
+  if(force) done("btnStats");
+  if(!d){ el.textContent = "\u2014"; return; }
+  STATS = d;
+  renderStats();
+}
+function renderStats(){
+  var el = document.getElementById("stats");
+  if(!el || !STATS) return;
+  var d = STATS, en = curLang()==="en";
+  if(!d.configured){
+    el.innerHTML = '<div class="muted">\u26A0\uFE0F STATS_DB '+(en?"not configured":"\u067E\u06CC\u06A9\u0631\u0628\u0646\u062F\u06CC \u0646\u0634\u062F\u0647")+'</div>';
+    return;
+  }
+  var chip = function(label, val){ return '<div class="statcard"><div class="statnum">'+faNum(val)+'</div><div class="statlbl">'+label+'</div></div>'; };
+  var html = '<div class="statcards">';
+  html += chip(en?"Today":"\u0627\u0645\u0631\u0648\u0632", d.today);
+  html += chip(en?"Yesterday":"\u062F\u06CC\u0631\u0648\u0632", d.yesterday);
+  html += chip(en?"Last 7 days":"\u06F7 \u0631\u0648\u0632 \u0627\u062E\u06CC\u0631", d.last_7_days);
+  html += chip(en?"Last 30 days":"\u06F3\u06F0 \u0631\u0648\u0632 \u0627\u062E\u06CC\u0631", d.last_30_days);
+  html += chip(en?"All-time":"\u06A9\u0644 \u0628\u0627\u0632\u062F\u06CC\u062F", d.all_time);
+  html += '</div>';
+  if(d.tracking_since){
+    html += '<div class="muted" style="margin:4px 0 8px;font-size:12px">'+(en?"Counting since: ":"\u0634\u0645\u0627\u0631\u0634 \u0627\u0632: ")+faNum(d.tracking_since)+'</div>';
+  }
+  if(d.days && d.days.length){
+    var max = 1;
+    for(var i=0;i<d.days.length;i++){ if(d.days[i].pageviews>max) max=d.days[i].pageviews; }
+    html += '<div class="statbox">';
+    d.days.forEach(function(r){
+      var pct = Math.max(2, Math.round((r.pageviews/max)*100));
+      html += '<div class="statrow"><span class="sday">'+faNum(r.day)+'</span><span class="sbar" style="width:'+pct+'%"></span><span class="sval">'+faNum(r.pageviews)+'</span></div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="muted" style="margin:4px 0">'+(en?"No data yet":"\u0647\u0646\u0648\u0632 \u062F\u0627\u062F\u0647\u200C\u0627\u06CC \u062B\u0628\u062A \u0646\u0634\u062F\u0647")+'</div>';
+  }
+  el.innerHTML = html;
+}
+setTheme(initTheme()); applyLang(true); load(); refreshStatus(); loadNextMatches(); loadMembers(); loadFai(); loadStats();
 <\/script>
 </body></html>`;

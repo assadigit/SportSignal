@@ -18,6 +18,7 @@ import { validateWebhook, isAdminAuthed, getAdminCookieToken, getClubsCatalog, a
 import { handleAdminLoginGet, handleAdminLoginPost, handleAdminLogout, handleAdminChangePassword } from "./auth";
 import { handlePublicMatchesApi } from "./public-swr";
 import { handleCardRoute } from "./card-route";
+import { handleVisitBeacon, collectAdminStats } from "./stats";
 import { ADMIN_OPS_ROUTES, legacyGetAction } from "./admin-ops";
 import { SIMULATE_ROUTE } from "./simulate";
 import { executeScheduledLogic } from "./cron";
@@ -165,6 +166,14 @@ const POST_GATE_ROUTES: RouteDef[] = [
       });
     return null;
   } },
+    // v13.56-visitcount: admin visitor-stats endpoint. Lives inside
+    // POST_GATE_ROUTES so it inherits the existing admin auth (session cookie
+    // / ADMIN_TOKEN) — no separate key. Returns today/yesterday/7d/30d/
+    // all-time pageviews + a 90-day per-day breakdown for the /admin card.
+  { path: "/api/stats", method: "GET", handler: async ({ req, env, url }): Promise<Response | null> => {
+      return jsonResponse(await collectAdminStats(env));
+    return null;
+  } },
   { path: "/api/sources", method: undefined, handler: async ({ req, env, url }): Promise<Response | null> => {
       const report = {};
       const sources = [
@@ -248,6 +257,11 @@ const worker_default = {
     if (url.pathname === "/admin/logout" && req.method === "POST") return await handleAdminLogout(req, env);
     if (url.pathname === "/admin/change-password" && req.method === "POST") return await handleAdminChangePassword(req, env);
     if (url.pathname === "/api/public-matches" && req.method === "GET") return await handlePublicMatchesApi(req, env, ctx);
+    // v13.56-visitcount: the public page-view beacon. MUST sit before the
+    // admin auth gate (it's a public, cookieless, bot-filtered counter — see
+    // src/stats.ts). Counting runs in ctx.waitUntil so it never slows the
+    // response; the JSON body carries today+total for the footer counter.
+    if (url.pathname === "/api/visit" && req.method === "GET") return await handleVisitBeacon(req, env, ctx);
     // v14.0-seo: every public page + machine file is served by the SEO
     // router (server-rendered HTML from KV data — R-01). It also handles
     // host/path normalization (R-06/R-08), the custom 404 (R-10/R-11) and

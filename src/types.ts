@@ -25,6 +25,11 @@ export interface WorkersAI {
 export interface Env {
   STATE: LooseKV;
   AI?: WorkersAI;
+  // v13.56-visitcount: dedicated D1 database for the cookieless page-view
+  // counter (isolated from the STATE KV namespace's write quota — see
+  // src/stats.ts). Optional so the worker still boots if the binding is
+  // absent (the beacon/admin degrade to zeroes + a "not configured" flag).
+  STATS_DB?: any;
   // secrets (wrangler secret put …)
   BOT_TOKEN?: string;
   CHAT_ID?: string;
