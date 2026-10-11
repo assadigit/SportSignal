@@ -27,7 +27,7 @@ export const LEAGUE_LOGOS = {
   "EFL_CUP": "https://media.api-sports.io/football/leagues/41.png",
   "CDR": "https://media.api-sports.io/football/leagues/143.png",
   "COPPA_ITALIA": "https://media.api-sports.io/football/leagues/137.png",
-  "DFB_POKAL": "https://media.api-sports.io/football/leagues/4540.png",
+  "DFB_POKAL": "https://media.api-sports.io/football/leagues/81.png",
   "PGL": "https://media.api-sports.io/football/leagues/290.png",
   "HAZFI_CUP": "https://media.api-sports.io/football/leagues/719.png",
   "WC": "https://media.api-sports.io/football/leagues/1.png",
@@ -178,8 +178,15 @@ export const CUP_TSP_IDS = {
   // English League Cup (Plymouth/Exeter etc.)
   "CDR": 4483,
   // Copa del Rey (R1 not published before ~Nov → honest empty until then)
-  "COPPA_ITALIA": 4506
+  "COPPA_ITALIA": 4506,
   // Coppa Italia (Parma/Catania R64 ...)
+  "DFB_POKAL": 4485
+  // v14.0.5-cupgap: DFB-Pokal (verified live 2026-10-11 via lookupleague +
+  // eventsnextleague — next event: Bayern Munich vs Magdeburg, 2026-10-27).
+  // The German Cup had NO source at all before (not in TSP maps, no
+  // sportscore slug in the near-scan, not in the FD leagues URL), so the
+  // جام حذفی آلمان box said "برنامه‌ای هنوز اعلام نشده" while Round 2 was
+  // fully scheduled upstream — a pipeline gap, not reality.
 };
 // v13.50-cupscan: the English big teams' TheSportsDB team ids (verified
 // live 2026-09-15 via searchteams + league check). The hole this closes:

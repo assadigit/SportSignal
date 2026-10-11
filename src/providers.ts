@@ -277,6 +277,49 @@ export async function fetchSportScore(env: Env, opts?) {
       }
     }
   }
+  // v14.0.5-cupgap: the FAR CUP PROBE (full sweep only — the live sweep
+  // passes opts.slugs and skips this block). Two cups have schedules
+  // upstream that the ±1d day-sweep can never see between matchdays:
+  //   - ECL: matchdays are league-phase THURSDAYS (next: Oct 22 — 18 games
+  //     live-verified on the sportscore slug). No TSP id exists for the
+  //     Conference League (free-tier coverage gap; team next-event views
+  //     don't carry it either — verified via Zalgiris/Kairat). EL sees far
+  //     ahead via TSP 4481; ECL needs this probe.
+  //   - HAZFI_CUP: the slug exists in SPORTSCORE_SLUGS but was deliberately
+  //     left out of the near-scan; the cup is idle for months, but when a
+  //     round IS announced the box would stay "برنامه‌ای هنوز اعلام نشده"
+  //     forever without a probe. A coarse +3/+7/+12/+17d grid catches a
+  //     announced round within ~3 days (announcements run ≥1 week ahead).
+  // Budget: 7 calls per full sweep (ECL 3 + HAZFI 4), each checked against
+  // the same subrequest meter as the day loop; the probe silently skips on
+  // tight sweeps and retries next sweep (2h).
+  if (!onlySlugs) {
+    const nextThursday = (offsetDays) => {
+      const d = new Date(Date.now() + offsetDays * 864e5);
+      const dow = d.getUTCDay();
+      d.setUTCDate(d.getUTCDate() + ((4 - dow + 7) % 7 || 7));
+      return d.toISOString().split("T")[0];
+    };
+    const probeDates = [
+      { code: "ECL", slug: SPORTSCORE_SLUGS.ECL, dates: [nextThursday(1), nextThursday(8), nextThursday(15)] },
+      { code: "HAZFI_CUP", slug: SPORTSCORE_SLUGS.HAZFI_CUP, dates: [3, 7, 12, 17].map((n) => new Date(Date.now() + n * 864e5).toISOString().split("T")[0]) }
+    ];
+    let probed = 0;
+    for (const p of probeDates) {
+      for (const dateStr of p.dates) {
+        if (subrequestCount() >= 44) break;
+        calls++;
+        try {
+          await sportScoreDay(p.code, p.slug, dateStr, acc);
+          probed++;
+        } catch (e) {
+          failures++;
+          console.error(`\u274C sportscore far-probe ${p.code} ${dateStr} failed: ${e.message}`);
+        }
+      }
+    }
+    if (probed) console.log(`\u{1F50D} sportscore far cup probe: ${probed} dates scanned (ECL Thursdays + Hazfi grid)`);
+  }
   if (calls > 0 && failures === calls) {
     console.error("\u26A0\uFE0F sportscore: all " + calls + " day-calls failed \u2014 suspending provider");
     await suspendProvider(env, "sportscore");
