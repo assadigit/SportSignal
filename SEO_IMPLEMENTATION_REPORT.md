@@ -239,6 +239,44 @@ Verified: full test suite 586 OK / 0 FAIL (incl. new scripts/uifix-check.ts);
 Appendix F all pass; CLS 0.006; no LEAGUE_STAGE in any raw HTML; share
 buttons and all sections render.
 
+### v14.0.2-cachefix — the "still messed up" follow-up (owner report #2)
+
+**What the owner saw:** the correct fix was deployed, yet their browser
+kept showing the broken UI (old two-column homepage layout missing).
+
+**Root cause:** the v14.0.1-uifix edited `public-13.14.js` **in place**
+while the file was served with `Cache-Control: public, max-age=31536000,
+immutable`. Browsers that loaded the page during the broken window pinned
+the **pre-fix** 13.14 build in their HTTP cache for a year. The SW bump
+(v15) wipes the SW's CacheStorage but **cannot evict the browser's HTTP
+cache** — and the SW's cache-first asset handler falls through to
+`fetch()`, which returns the pinned broken file. Result: those visitors
+(including the owner) kept the defaced UI on every visit.
+
+**Fix (no content change, pure cache eviction):**
+- the fixed build is now served as **`/public-13.15.js`** — a new URL is a
+  guaranteed miss in every cache layer (HTTP cache, SW CacheStorage,
+  Cloudflare edge)
+- `assets/_headers`: 13.15 gets the immutable header (with the
+  rename-on-edit convention now enforced); 13.14 is downgraded to
+  `max-age=0, must-revalidate` and kept only for stale-HTML references
+- `assets/sw.js`: cache bumped **v15 → v16** (sweeps any 13.14 entry that a
+  stale-HTML client re-cached into v15)
+
+Verified live: HTML references 13.15; 13.15 = 200 immutable; 13.14 = 200
+must-revalidate; sw.js carries v16; a browser reload that had 13.14 pinned
+in its HTTP cache (the owner's exact situation, reproduced) now loads
+13.15 and renders the pre-SEO two-column homepage (wideMain topspot/uclspot/
+week/finished + wideSide live/ucl/standings/cups, body grid 872px+500px,
+0 LEAGUE_STAGE); mobile 390px single column, no overflow; seo-check
+production 51 PASS / 2 FAIL (the unchanged owner-only zone AI-bot block);
+repo suite 586 OK / 0 FAIL, tsc clean. Commit 7ba61fc.
+
+**If the owner STILL sees the old broken page** after this deploy: it is a
+local browser cache — one hard refresh (Ctrl+Shift+R) or DevTools →
+Application → Clear storage clears it. This is expected for at most the
+first visit after this fix.
+
 **Honest note on the homepage Performance score:** the spec's ≥90 target is
 not reached on `/` because of the original hero background VIDEO
 (646 KB autoplay mp4) that the spec forbids me to remove ("do not change the
