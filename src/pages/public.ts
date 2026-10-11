@@ -81,7 +81,17 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.17.css">
+<link rel="stylesheet" href="/public-13.18.css">
+<style>/* v13.59-featured: highlight matches between two desired teams (El
+     Clásico, Der Klassiker, …). Activated only when BOTH teams are in the
+     big/desired pool (the existing .big flag). Capped at 2 per list. RTL:
+     the accent edge sits on inline-start (the right side, where the eye
+     starts). One-time shimmer, respects prefers-reduced-motion. */
+.match-featured{position:relative;border-color:color-mix(in srgb,var(--accent,#2563eb) 65%,transparent);background-image:linear-gradient(to left,color-mix(in srgb,var(--accent,#2563eb) 14%,transparent),transparent 55%);box-shadow:inset -3px 0 0 var(--accent,#2563eb),0 0 18px color-mix(in srgb,var(--accent,#2563eb) 26%,transparent)}
+.match-featured::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.10) 50%,transparent 60%);background-size:250% 100%;background-position:150% 0;animation:feat-sweep 1.4s ease-out .6s 1 forwards}
+@keyframes feat-sweep{to{background-position:-50% 0}}
+.match-featured::after{content:"بازی مهم";position:absolute;top:-9px;inset-inline-start:96px;padding:1px 10px;font-size:11px;font-weight:700;line-height:1.6;border-radius:999px;background:var(--accent,#2563eb);color:#0b1230}
+@media (prefers-reduced-motion:reduce){.match-featured::before{display:none}}</style>
 </head>
 <body>
 <!-- v12.24 (the user's ask): a real WEBSITE header \u2014 the uploaded SportSignal
@@ -305,7 +315,7 @@ __SEO_JSONLD__
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.8.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.17.js" defer><\/script>
+<script src="/public-13.18.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

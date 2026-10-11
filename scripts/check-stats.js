@@ -210,31 +210,40 @@ check("stats.ts stores salt in stats_meta (not in source)", /UPDATE stats_meta S
 check("stats.ts counts in ctx.waitUntil", /ctx\.waitUntil\(/.test(statsSrc));
 check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSrc));
 
-// ---------- 5) immutable-asset rename done correctly (13.16 → 13.17) ----------
-// v13.58-herofix: hero countdown made non-clickable (noLink in spotItemNode),
-// timezone label added below the kickoff time, and WIDE_ORDER stats moved to
-// the end (mobile: stats is the last section before footer). The JS layout
-// engine + spotItemNode live in the immutable public-13.16.js → renamed to
-// public-13.17.{js,css}. SW cache v19 → v20.
+// ---------- 5) immutable-asset rename done correctly (13.17 → 13.18) ----------
+// v13.59-featured: featured-match highlight (.match-featured class) for matches
+// between two desired teams (the existing .big flag = both teams in the big
+// pool). Capped at 2 per list via featKeys(). The JS edits (featKeys helper +
+// spotItemNode feat option + render/renderTopSpot/renderWeek/renderLive/
+// renderUcl/renderHeroSpot wiring) live in the immutable public-13.17.js →
+// renamed to public-13.18.{js,css}. The .match-featured CSS is inline in
+// public.ts (after the stylesheet link, so it overrides). SW cache v20 → v21.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js17 = read("assets/public-13.17.js");
-check("public-13.17.js referenced in homepage (renamed from 13.16)", /\/public-13\.17\.js/.test(publicSrc));
-check("public-13.17.css referenced in homepage (renamed from 13.16)", /\/public-13\.17\.css/.test(publicSrc));
-check("public-13.17.css referenced in SEO page-shell (renamed)", /\/public-13\.17\.css/.test(shellSrc));
+const js18 = read("assets/public-13.18.js");
+check("public-13.18.js referenced in homepage (renamed from 13.17)", /\/public-13\.18\.js/.test(publicSrc));
+check("public-13.18.css referenced in homepage (renamed from 13.17)", /\/public-13\.18\.css/.test(publicSrc));
+check("public-13.18.css referenced in SEO page-shell (renamed)", /\/public-13\.18\.css/.test(shellSrc));
 check("core-13.8.js still referenced (unchanged)", /\/core-13\.8\.js/.test(publicSrc));
-check("public-13.17.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.17.js")));
-check("public-13.17.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.17.css")));
-check("assets/_headers pins public-13.17 immutable", /\/public-13\.17\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("assets/_headers pins public-13.17.css immutable", /\/public-13\.17\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("SW cache bumped to sportsignal-v20", /CACHE = "sportsignal-v20"/.test(swSrc));
-check("WIDE_RAIL includes statsCard (after cupsCard)", /WIDE_RAIL=\[[^\]]*"cupsCard","statsCard"[^\]]*\]/.test(js17));
-check("WIDE_ORDER has statsCard LAST (after finishedCard)", /WIDE_ORDER=\[[^\]]*"finishedCard","statsCard"[^\]]*\]/.test(js17));
-check("renderHeroSpot passes noLink:true (hero non-clickable)", /spotItemNode\(t,0,\{noDate:!0,noLink:!0\}\)/.test(js17));
-check("spotItemNode creates div (not a) when noLink", /var n=document\.createElement\(t&&t\.noLink\?"div":"a"\)/.test(js17));
-check("spotItemNode adds kicktz label when noLink", /t&&t\.noLink\)\{var tzL=document\.createElement\("span"\);tzL\.className="kicktz"/.test(js17));
-check("tzLabelFa() helper exists", /function tzLabelFa\(\)/.test(js17));
-check("homepage inline CSS has .kicktz rule", /\.kicktz\{/.test(publicSrc));
+check("public-13.18.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.18.js")));
+check("public-13.18.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.18.css")));
+check("assets/_headers pins public-13.18 immutable", /\/public-13\.18\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.18.css immutable", /\/public-13\.18\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("SW cache bumped to sportsignal-v21", /CACHE = "sportsignal-v21"/.test(swSrc));
+check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js18));
+check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js18));
+check("featKeys caps at 2", /featKeys\(e,2\)/.test(js18));
+check("spotItemNode adds match-featured class when t.feat", /t&&t\.feat\)n\.className\+=" match-featured"/.test(js18));
+check("render() computes featKeys + adds match-featured", /var fk=featKeys\(e,2\)/.test(js18) && /fk\.has\(keyOf\(n\)\)&&\(o\.className\+=" match-featured"\)/.test(js18));
+check("renderTopSpot passes feat option", /feat:fk\.has\(keyOf\(i\)\)/.test(js18));
+check("renderWeek passes feat option", /feat:wfk\.has\(keyOf\(d\)\)/.test(js18));
+check("renderLive passes feat option", /feat:lfk\.has\(keyOf\(o\)\)/.test(js18));
+check("renderUcl passes feat option", /feat:ufk\.has\(keyOf\(c\)\)/.test(js18));
+check("renderHeroSpot passes feat:!!t.big", /feat:!!t\.big/.test(js18));
+check("homepage inline CSS has .match-featured rule", /\.match-featured\{/.test(publicSrc));
+check("featured CSS has reduced-motion guard", /prefers-reduced-motion:reduce\)\{\.match-featured::before\{display:none\}\}/.test(publicSrc));
+check("featured CSS has بازی مهم badge", /content:"بازی مهم"/.test(publicSrc));
+check("public countries capped at 5 (SQL LIMIT 5)", /LIMIT 5/.test(statsSrc));
 
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
 process.exit(failed === 0 ? 0 : 1);
