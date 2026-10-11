@@ -386,6 +386,35 @@ as 200 — rate-limit noise, not a defect). Repo suite 587 OK / 0 FAIL
 updated to the flat contract — they had codified the bug). Commit 51fa5e9.
 Deployed version 588c709a-1ced-4065-bda8-05a63687e12d.
 
+### v14.0.7-bingauth — BingSiteAuth.xml at the site root (owner request #7)
+
+**What the owner asked:** upload the Bing Webmaster Tools verification file
+(`BingSiteAuth.xml`, key `231A90C9…09F1`) to the root of
+https://sportsignal.ir/ so the site can be verified in Bing Webmaster Tools.
+
+**The one trap:** Bing fetches `/BingSiteAuth.xml` VERBATIM — mixed case —
+and expects a direct 200. This worker's R-08 path normalization 301-redirects
+every mixed-case URL to its lowercase form (`/bingsiteauth.xml`), which can
+fail Bing's verification.
+
+**Fix (belt and braces):**
+1. `assets/BingSiteAuth.xml` — the file is served by Workers **Static
+   Assets**, which runs BEFORE the worker, so the R-08 redirect never
+   touches it. `_headers` pins `Cache-Control: public, max-age=86400`.
+2. Code-side fallback with the same bytes: `buildBingSiteAuth()`
+   (files.ts) + a router route that is **exempted from the R-08 lowercase
+   redirect** (config: `BING_AUTH_FILE`/`BING_AUTH_KEY`). If Static Assets
+   ever stops matching the file, the worker still serves the exact URL.
+
+Verified live: `GET https://sportsignal.ir/BingSiteAuth.xml` → **direct
+HTTP 200** (no redirect), `content-type: application/xml`, body carries the
+ownership key; HEAD 200. seo-check gains check **B-01** (direct 200 at the
+exact mixed-case URL + key present + xml content-type) — production now
+**52 PASS / 2 FAIL** (the 2 remain the owner-only zone AI-bot block).
+OWNER_TODO §4 updated: the owner can now pick "Option 2: XML file" in Bing
+and just click Verify. Repo suite 587 OK / 0 FAIL. Deployed version
+f99217ae-077c-4156-831c-8b5fc72b4d30.
+
 
 
 **Honest note on the homepage Performance score:** the spec's ≥90 target is
@@ -402,7 +431,7 @@ third-party crest fetches.
 ## 4. scripts/seo-check output (production, final run)
 
 ```
-PASS: 51  FAIL: 2
+PASS: 52  FAIL: 2
   [G-02] ClaudeBot → 403                        ← Cloudflare zone AI-bot block; OWNER_TODO §2 (owner-only)
   [G-02] Amazonbot → 403                        ← same
 ```

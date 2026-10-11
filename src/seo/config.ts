@@ -36,6 +36,15 @@ export const SEO = {
   // Public IndexNow key (served at /{key}.txt — it is not a secret).
   INDEXNOW_KEY: "6f1c2ab9d84e53a7c0b5e2f8a3d6c4b1",
   INDEXNOW_ENDPOINT: "https://api.indexnow.org/indexnow",
+  // Bing Webmaster Tools XML site-auth (ownership verification, B-01). Bing
+  // fetches /BingSiteAuth.xml VERBATIM (mixed case — must answer 200, never
+  // a 301 to the lowercased path). Primary serving path is the Static
+  // Assets file (assets/BingSiteAuth.xml — served before this worker);
+  // files.ts + router.ts keep a code-side fallback with the same bytes,
+  // exempted from the R-08 lowercase redirect. Keep the two copies in sync
+  // when rotating the key.
+  BING_AUTH_FILE: "BingSiteAuth.xml",
+  BING_AUTH_KEY: "231A90C90F293E3FAAD90B3CB81009F1",
   // Match lifecycle policy (spec).
   FINISHED_MATCH_ARCHIVE_DAYS: 365,
   MIN_UPCOMING_FOR_INDEX: 1,

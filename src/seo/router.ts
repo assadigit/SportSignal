@@ -259,7 +259,13 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
 
   // ---------- R-08: path normalization (public paths only) ----------
   const isBotPath = SEO.NO_REDIRECT_PREFIXES.some((p) => path === p || path.startsWith(p));
-  if (!isBotPath) {
+  // B-01: Bing's site-auth file must stay at its EXACT mixed-case URL —
+  // Bing fetches /BingSiteAuth.xml verbatim and needs a direct 200 (a 301
+  // to the lowercased path can fail verification). Static Assets normally
+  // serves it before this worker runs; this exemption keeps the code
+  // path (below) safe too.
+  const isBingAuth = path === "/" + SEO.BING_AUTH_FILE;
+  if (!isBotPath && !isBingAuth) {
     if (path === "/public") return redirect("https://sportsignal.ir/");
     if (path !== "/" && path.endsWith("/")) {
       return redirect("https://sportsignal.ir" + path.replace(/\/+$/, "") + (url.search || ""));
@@ -304,6 +310,17 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   }
   if (path === "/.well-known/security.txt") {
     return new Response(F.buildSecurityTxt(), { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" } });
+  }
+  // Bing site-auth file (B-01) — code-side fallback serving the SAME bytes
+  // as the Static-Assets file that normally wins (exempted from R-08 above).
+  if (isBingAuth) {
+    return new Response(F.buildBingSiteAuth(), {
+      headers: {
+        "content-type": "text/xml; charset=utf-8",
+        "cache-control": "public, max-age=86400",
+        ...(isProd ? {} : { "x-robots-tag": "noindex, nofollow" })
+      }
+    });
   }
   // IndexNow key file (F-16): served from code — always 200.
   if (path === "/" + SEO.INDEXNOW_KEY + ".txt") {

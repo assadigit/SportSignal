@@ -68,3 +68,10 @@
 
 /hero-poster.jpg
   Cache-Control: public, max-age=604800
+
+# v14.0.7-bingauth: Bing Webmaster Tools site-auth file (B-01). Bing fetches
+# the EXACT mixed-case URL /BingSiteAuth.xml verbatim — Static Assets serves
+# it before the worker runs, so the R-08 lowercase redirect never touches it.
+# (A code-side fallback with the same bytes lives in src/seo/files.ts.)
+/BingSiteAuth.xml
+  Cache-Control: public, max-age=86400

@@ -403,6 +403,16 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     const kb = await body(kr);
     if (kr.status !== 200 || kb.trim() !== key) fail("T-11", "IndexNow key file missing/incorrect");
     else pass("T-11", "IndexNow key file served (F-16)");
+    // Bing site-auth file (B-01): exact mixed-case URL must answer 200
+    // DIRECTLY (Bing fetches it verbatim; a 301 to the lowercased path can
+    // fail verification) and carry the ownership key.
+    const bingKey = "231A90C90F293E3FAAD90B3CB81009F1";
+    const br = await fetchRaw(B + "/BingSiteAuth.xml");
+    const bb = await body(br);
+    if (br.status !== 200) fail("B-01", "/BingSiteAuth.xml HTTP " + br.status + " — must be a direct 200 at the exact mixed-case URL (no redirect)");
+    else if (br.status === 200 && !new RegExp("<user>\\s*" + bingKey + "\\s*</user>").test(bb)) fail("B-01", "BingSiteAuth.xml content does not contain the ownership key " + bingKey);
+    else if (!/xml/i.test(br.headers.get("content-type") || "")) fail("B-01", "BingSiteAuth.xml content-type is not xml (" + (br.headers.get("content-type") || "none") + ")");
+    else pass("B-01", "BingSiteAuth.xml served: direct 200, key present, xml content-type");
   }
 
   // ---------------- T-12 summary ----------------

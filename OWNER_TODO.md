@@ -65,8 +65,9 @@ These are the things no code can do. Each has click-by-click steps.
 
 1. به `bing.com/webmasters` بروید و با اکانت مایکروسافت/گوگل وارد شوید.
 2. **Import from Google Search Console** را انتخاب کنید (سریع‌ترین راه است) یا دستی verify کنید.
-3. از **Submit URLs** یا **Sitemaps** آدرس `https://sportsignal.ir/sitemap.xml` را ثبت کنید.
-4. بخش **IndexNow** را چک کنید: باید به‌مرور URL بفرستد (سایت شما کلید IndexNow را در `/6f1c2ab9d84e53a7c0b5e2f8a3d6c4b1.txt` سرو می‌کند و به‌طور خودکار ping می‌زند).
+3. اگر دستی verify می‌کنید: فایل تأیید مالکیت از قبل روی سایت قرار داده شده — آدرس `https://sportsignal.ir/BingSiteAuth.xml` (دقیقاً با همین حروف بزرگ و کوچک). در Bing گزینه **«Option 2: Place an XML file on my web server»** را بزنید و روی دکمه Verify کلیک کنید — کاری لازم نیست انجام دهید، فایل آماده است.
+4. از **Submit URLs** یا **Sitemaps** آدرس `https://sportsignal.ir/sitemap.xml` را ثبت کنید.
+5. بخش **IndexNow** را چک کنید: باید به‌مرور URL بفرستد (سایت شما کلید IndexNow را در `/6f1c2ab9d84e53a7c0b5e2f8a3d6c4b1.txt` سرو می‌کند و به‌طور خودکار ping می‌زند).
 
 ## ۵. اطلاعات تماس و هویت (G-09) — ۱۰ دقیقه
 

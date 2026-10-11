@@ -352,6 +352,17 @@ Canonical: https://sportsignal.ir/.well-known/security.txt
 `;
 }
 
+// ------------------------------------------------- BingSiteAuth.xml (B-01)
+// Bing Webmaster Tools XML ownership verification. Bing fetches the EXACT
+// mixed-case URL /BingSiteAuth.xml verbatim — normally the Static Assets
+// file (assets/BingSiteAuth.xml) wins because it is served BEFORE this
+// worker runs; this builder is the code-side fallback (router.ts serves it
+// and exempts the path from the R-08 lowercase redirect). Keep the bytes in
+// sync with the asset file when rotating the key.
+export function buildBingSiteAuth(): string {
+  return '<?xml version="1.0"?>\n<users>\n        <user>' + SEO.BING_AUTH_KEY + "</user>\n</users>\n";
+}
+
 // ------------------------------------------------------- OG images (SO-03/SO-04)
 
 // Text-only 1200x630 match card (no crests — licence-safe default). Uses
