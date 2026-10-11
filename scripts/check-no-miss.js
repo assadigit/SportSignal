@@ -642,14 +642,16 @@ var MEM_DEDUPE = new Set();
   const OD = "2026-09-16";
   // FT purge: a LIVE row the overlay now reports FINISHED leaves upcoming,
   // lands at the head of finished with the final score and no minute.
-  let data1 = { upcoming: [pubRow("ov-1", "Real Madrid", "Barcelona", OD, "LIVE")], finished: [pubRow("ov-9", "Arsenal", "Chelsea", "2026-09-15", "FINISHED", { score: { fullTime: { home: 2, away: 1 } } })], nextBig: null, topSpot: null, thisWeek: [], nextWeek: [], cups: [] };
+  // v14.0.6-livescore: scores on PUBLIC rows are FLAT {home,away} — the
+  // nested {fullTime} write was the "undefined - undefined" live-card bug.
+  let data1 = { upcoming: [pubRow("ov-1", "Real Madrid", "Barcelona", OD, "LIVE")], finished: [pubRow("ov-9", "Arsenal", "Chelsea", "2026-09-15", "FINISHED", { score: { home: 2, away: 1 } })], nextBig: null, topSpot: null, thisWeek: [], nextWeek: [], cups: [] };
   applyLiveOverlay(data1, { ts: 1, rows: [{ id: "ov-1", h: "real madrid", a: "barcelona", d: OD + "T19:00:00Z", st: "FINISHED", min: 90, s: { home: 3, away: 2 } }] });
   check("overlay: a FINISHED game is purged from upcoming (the user's rule)", data1.upcoming.length === 0);
-  check("overlay: the FT row lands on finished with the final score, minute nulled", data1.finished.length === 2 && data1.finished[0].id === "ov-1" && data1.finished[0].score.fullTime.home === 3 && data1.finished[0].score.fullTime.away === 2 && data1.finished[0].minute === null);
+  check("overlay: the FT row lands on finished with the final score, minute nulled", data1.finished.length === 2 && data1.finished[0].id === "ov-1" && data1.finished[0].score.home === 3 && data1.finished[0].score.away === 2 && data1.finished[0].minute === null);
   // kickoff: SCHEDULED → IN_PLAY with score + minute patched in place.
   let data2 = { upcoming: [pubRow("ov-2", "Bayern Munich", "Borussia Dortmund", OD, "SCHEDULED")], finished: [] };
   applyLiveOverlay(data2, { ts: 1, rows: [{ id: "ov-2", h: "bayern munich", a: "borussia dortmund", d: OD + "T18:30:00Z", st: "IN_PLAY", min: 23, s: { home: 1, away: 0 } }] });
-  check("overlay: kickoff (SCHEDULED→IN_PLAY) patches status+minute+score", data2.upcoming[0].status === "IN_PLAY" && data2.upcoming[0].minute === 23 && data2.upcoming[0].score.fullTime.home === 1 && data2.upcoming[0].score.fullTime.away === 0);
+  check("overlay: kickoff (SCHEDULED→IN_PLAY) patches status+minute+score (FLAT)", data2.upcoming[0].status === "IN_PLAY" && data2.upcoming[0].minute === 23 && data2.upcoming[0].score.home === 1 && data2.upcoming[0].score.away === 0);
   // byPair fallback: the payload and overlay carry different ids for the
   // same fixture (provider switch between rebuilds) — pair+day still hits.
   let data3 = { upcoming: [pubRow("tsd-777", "Liverpool FC", "Manchester United", OD, "SCHEDULED")], finished: [] };

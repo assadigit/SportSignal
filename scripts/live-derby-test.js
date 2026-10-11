@@ -348,6 +348,37 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   const leagueRow = [].concat(d5.upcoming, d5.finished).find((m) => m.competition && m.competition.code === "PL");
   if (leagueRow) chk(leagueRow.round == null && leagueRow.roundFa == null, "prewarm: league fixtures carry NO round chip");
 
+  // ---------- v14.0.6-livescore: the overlay score SHAPE ----------
+  // Owner report: live card showed "undefined - undefined". Root cause:
+  // applyLiveOverlay wrote the INTERNAL raw-FD {fullTime:{home,away}} shape
+  // into PUBLIC payload rows whose contract (pubMatch) is flat {home,away} —
+  // the client's scoreNode/keyOf and the server's scoreHtml read score.home
+  // directly. Public rows must stay flat; only the raw POOL rows (re-shaped
+  // through pubMatch, which reads m.score.fullTime) keep the nested shape.
+  const alo = grabFn("function applyLiveOverlay");
+  eval(alo);
+  const mkPub = (id, h, a) => ({ id, homeTeam: { name: h }, awayTeam: { name: a }, utcDate: "2026-10-11T13:00:00Z", status: "TIMED", score: null, minute: null });
+  const ov14 = { rows: [
+    // h/a are NORMALIZED names — exactly what the cron tick writes (cron.ts
+    // stores normalizeTeamName() of each side; the byPair key is built from
+    // them raw and looked up normalized).
+    { id: 558583, h: normalizeTeamName("SS Lazio"), a: normalizeTeamName("AC Monza"), d: "2026-10-11T13:00:00Z", st: "IN_PLAY", min: 63, s: { home: 2, away: 1 } },
+    { id: null, h: normalizeTeamName("SS Lazio"), a: normalizeTeamName("Parma Calcio 1913"), d: "2026-10-11T13:00:00Z", st: "FINISHED", min: null, s: { home: 3, away: 0 } } // pair-lookup row (no id)
+  ] };
+  const pub = mkPub(558583, "SS Lazio", "AC Monza");
+  const pubPair = mkPub(null, "SS Lazio", "Parma Calcio 1913"); // found via team-pair + day, not id
+  const pubUntouched = mkPub(991199, "AS Roma", "Bologna FC"); // not in the overlay
+  const poolRow14 = { id: 558583, homeTeam: { name: "SS Lazio" }, awayTeam: { name: "AC Monza" }, utcDate: "2026-10-11T13:00:00Z", status: "TIMED", score: null };
+  const served14 = applyLiveOverlay({ upcoming: [pub, pubPair, pubUntouched], thisWeek: [mkPub(558583, "SS Lazio", "AC Monza")], finished: [], pool: [poolRow14] }, ov14);
+  chk(served14.upcoming[0].status === "IN_PLAY" && served14.upcoming[0].minute === 63, "livescore: overlay patches status + minute on public rows");
+  chk(served14.upcoming[0].score && served14.upcoming[0].score.home === 2 && served14.upcoming[0].score.away === 1, "livescore: PUBLIC rows carry the FLAT {home,away} score (client reads score.home — was \"undefined - undefined\")");
+  chk(!(served14.upcoming[0].score && served14.upcoming[0].score.fullTime), "livescore: no nested fullTime on public rows (keyOf's change detection sees goals again)");
+  chk(served14.finished.length === 1 && served14.finished[0].status === "FINISHED" && served14.finished[0].score && served14.finished[0].score.home === 3 && served14.finished[0].score.away === 0, "livescore: pair-lookup row (no id) FINISHED → purged from upcoming, prepended to finished with a FLAT score");
+  chk(!served14.finished[0].score.fullTime, "livescore: justFinished prepend rows are flat too");
+  chk(served14.upcoming.length === 2 && served14.upcoming[1].status === "TIMED" && served14.upcoming[1].score === null, "livescore: rows outside the overlay untouched");
+  chk(served14.thisWeek[0].score && served14.thisWeek[0].score.home === 2 && !served14.thisWeek[0].score.fullTime, "livescore: thisWeek rows (forEach index-arg trap) stay flat");
+  chk(served14.pool[0].score && served14.pool[0].score.fullTime && served14.pool[0].score.fullTime.home === 2 && served14.pool[0].score.fullTime.away === 1, "livescore: RAW POOL rows keep the internal {fullTime:{home,away}} shape for pubMatch");
+
   console.log(fails === 0 ? "worker logic OK ✓" : fails + " FAILURES");
   process.exit(fails ? 1 : 0);
 })();

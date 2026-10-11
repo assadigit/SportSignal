@@ -182,13 +182,23 @@ export function applyLiveOverlay(data, ov) {
     if (!h || !a) return null;
     return byPair.get(normalizeTeamName(h) + "|" + normalizeTeamName(a) + "|" + String(m.utcDate || "").slice(0, 10)) || null;
   };
-  const patch = (m) => {
+  // v14.0.6-livescore: overlay rows r.s are FLAT {home,away}, and the PUBLIC
+  // payload's score contract is FLAT too (pubMatch flattens m.score.fullTime
+  // → {home,away}; the client's scoreNode/keyOf and the server's scoreHtml /
+  // seo pages.ts all read score.home directly). The old unconditional
+  // {fullTime:{...}} write here was the INTERNAL raw-football-data shape —
+  // public rows patched with it carried score.home === undefined, which the
+  // client printed as "undefined - undefined" on live cards (and keyOf's
+  // change detection went blind to goals), while the no-JS HTML rendered an
+  // empty .kick. Only the RAW POOL rows keep the nested shape — seo/data.ts
+  // re-shapes them through pubMatch, which reads m.score.fullTime.
+  const patch = (m, internal?) => {
     if (!m) return;
     const r = find(m);
     if (!r) return;
     m.status = r.st;
     m.minute = isLiveSt(r.st) && r.min != null ? r.min : null;
-    if (r.s && r.s.home != null && r.s.away != null) m.score = { fullTime: { home: r.s.home, away: r.s.away } };
+    if (r.s && r.s.home != null && r.s.away != null) m.score = internal ? { fullTime: { home: r.s.home, away: r.s.away } } : { home: r.s.home, away: r.s.away };
   };
   if (Array.isArray(data.upcoming)) {
     const justFinished = [];
@@ -204,15 +214,18 @@ export function applyLiveOverlay(data, ov) {
   if (data.nextBig) patch(data.nextBig);
   if (data.topSpot) {
     if (data.topSpot.next) patch(data.topSpot.next);
-    if (Array.isArray(data.topSpot.matches)) data.topSpot.matches.forEach(patch);
+    if (Array.isArray(data.topSpot.matches)) data.topSpot.matches.forEach((m) => patch(m));
   }
-  if (Array.isArray(data.thisWeek)) data.thisWeek.forEach(patch);
-  if (Array.isArray(data.nextWeek)) data.nextWeek.forEach(patch);
+  // (arrow wrappers: bare forEach(patch) would pass the array INDEX as the
+  // second arg — a truthy index on the nested flag would re-break the shape.)
+  if (Array.isArray(data.thisWeek)) data.thisWeek.forEach((m) => patch(m));
+  if (Array.isArray(data.nextWeek)) data.nextWeek.forEach((m) => patch(m));
   if (Array.isArray(data.cups)) for (const c of data.cups) if (c && c.next) patch(c.next);
   // SEO layer (Phase 1): the raw pool rides in `pool` when the SEO pages
   // read it — the same live-status/score truth must patch those rows too
   // (same find/patch, no behavior change for the existing containers).
-  if (Array.isArray(data.pool)) data.pool.forEach(patch);
+  // Pool rows are INTERNAL-shape → patch(m, true) keeps {fullTime:{home,away}}.
+  if (Array.isArray(data.pool)) data.pool.forEach((m) => patch(m, true));
   return data;
 }
 export function projectedUclStart() {
