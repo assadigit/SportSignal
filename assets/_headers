@@ -60,6 +60,14 @@
 # class) for matches between two desired teams, capped at 2 per list. SW v20 → v21.
 # v13.60-goldfeat: 13.18 → 13.19 rename. Gold accent (#F2B84B) replaces blue;
 # badge chip removed; sr-only "بازی مهم" span added. SW v21 → v22.
+# v13.61-goldglow: 13.19 → 13.20 rename. Featured class on spotitem wrapper
+# (fills full container); animated glitter + pulsing glow; more prominent. SW v22 → v23.
+/public-13.20.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.20.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.19.js
   Cache-Control: public, max-age=31536000, immutable
 

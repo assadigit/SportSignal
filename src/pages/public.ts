@@ -81,18 +81,19 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.19.css">
-<style>/* v13.60-goldfeat: featured-match highlight in amber-gold (#F2B84B).
-     Gold is complementary to the navy/blue palette (~220° vs ~39° on the
-     wheel) — it stands out without being loud, and carries the meaning of
-     trophy/prestige (CL, derbies). No badge chip — the edge bar (shape) +
-     glow + sr-only text carry the signal. Tint 10%, glow 18% (warm colors
-     weigh more than cool, so kept quiet). One-time shimmer, reduced-motion. */
-:root{--feat-accent:#F2B84B;--feat-glow:18%;--feat-tint:10%;--feat-shimmer-delay:.6s}
-.match-featured{position:relative;border-color:color-mix(in srgb,var(--feat-accent) 45%,transparent);background-image:linear-gradient(to left,color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent),transparent 55%);box-shadow:inset -3px 0 0 var(--feat-accent),0 0 16px color-mix(in srgb,var(--feat-accent) var(--feat-glow),transparent)}
-.match-featured::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 40%,rgba(255,236,200,.10) 50%,transparent 60%);background-size:250% 100%;background-position:150% 0;animation:feat-sweep 1.4s ease-out var(--feat-shimmer-delay) 1 forwards}
-@keyframes feat-sweep{to{background-position:-50% 0}}
-@media (prefers-reduced-motion:reduce){.match-featured::before{display:none}}
+<link rel="stylesheet" href="/public-13.20.css">
+<style>/* v13.61-goldglow: prominent gold featured-match with animated glitter.
+     Fills the FULL card container (not just an inner rectangle). Uses a
+     continuous gold shimmer animation + pulsing glow — not a static color.
+     Gold (#F2B84B) is complementary to navy, carries trophy/prestige meaning. */
+:root{--feat-accent:#F2B84B;--feat-glow:28%;--feat-tint:16%}
+.match-featured{position:relative;border-color:color-mix(in srgb,var(--feat-accent) 55%,transparent)!important;background-image:linear-gradient(to left,color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent),transparent 60%)!important;box-shadow:inset -4px 0 0 var(--feat-accent),0 0 20px color-mix(in srgb,var(--feat-accent) var(--feat-glow),transparent)!important;animation:feat-pulse 3s ease-in-out infinite}
+@keyframes feat-pulse{0%,100%{box-shadow:inset -4px 0 0 var(--feat-accent),0 0 16px color-mix(in srgb,var(--feat-accent) 20%,transparent)}50%{box-shadow:inset -4px 0 0 var(--feat-accent),0 0 28px color-mix(in srgb,var(--feat-accent) 36%,transparent)}}
+.match-featured::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(110deg,transparent 35%,rgba(255,236,200,.18) 45%,rgba(255,236,200,.06) 55%,transparent 65%);background-size:250% 100%;animation:feat-shimmer 2.5s linear infinite}
+@keyframes feat-shimmer{0%{background-position:200% 0}100%{background-position:-150% 0}}
+.match-featured::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse at 70% 0%,color-mix(in srgb,var(--feat-accent) 12%,transparent),transparent 60%);animation:feat-glow-shift 4s ease-in-out infinite alternate}
+@keyframes feat-glow-shift{0%{opacity:.5}100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.match-featured{animation:none}.match-featured::before{display:none}.match-featured::after{animation:none;opacity:.7}}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
 </head>
 <body>
@@ -317,7 +318,7 @@ __SEO_JSONLD__
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.8.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.19.js" defer><\/script>
+<script src="/public-13.20.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

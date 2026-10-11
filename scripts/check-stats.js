@@ -210,38 +210,38 @@ check("stats.ts stores salt in stats_meta (not in source)", /UPDATE stats_meta S
 check("stats.ts counts in ctx.waitUntil", /ctx\.waitUntil\(/.test(statsSrc));
 check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSrc));
 
-// ---------- 5) immutable-asset rename done correctly (13.18 → 13.19) ----------
-// v13.60-goldfeat: gold accent (#F2B84B) replaces blue; badge chip removed;
-// sr-only "بازی مهم" span added inside featured cards. The JS edits (sr-only
-// span in spotItemNode + render) live in the immutable public-13.18.js →
-// renamed to public-13.19.{js,css}. The .match-featured CSS is inline in
-// public.ts (gold accent, no badge, sr-only class). SW cache v21 → v22.
+// ---------- 5) immutable-asset rename done correctly (13.19 → 13.20) ----------
+// v13.61-goldglow: featured class moved to spotitem wrapper (fills full
+// container); animated glitter shimmer + pulsing glow + radial glow shift;
+// more prominent (tint 16%, glow 28%, !important overrides). SW v22 → v23.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js19 = read("assets/public-13.19.js");
-check("public-13.19.js referenced in homepage (renamed from 13.18)", /\/public-13\.19\.js/.test(publicSrc));
-check("public-13.19.css referenced in homepage (renamed from 13.18)", /\/public-13\.19\.css/.test(publicSrc));
-check("public-13.19.css referenced in SEO page-shell (renamed)", /\/public-13\.19\.css/.test(shellSrc));
+const js20 = read("assets/public-13.20.js");
+check("public-13.20.js referenced in homepage (renamed from 13.19)", /\/public-13\.20\.js/.test(publicSrc));
+check("public-13.20.css referenced in homepage (renamed from 13.19)", /\/public-13\.20\.css/.test(publicSrc));
+check("public-13.20.css referenced in SEO page-shell (renamed)", /\/public-13\.20\.css/.test(shellSrc));
 check("core-13.8.js still referenced (unchanged)", /\/core-13\.8\.js/.test(publicSrc));
-check("public-13.19.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.19.js")));
-check("public-13.19.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.19.css")));
-check("assets/_headers pins public-13.19 immutable", /\/public-13\.19\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("assets/_headers pins public-13.19.css immutable", /\/public-13\.19\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("SW cache bumped to sportsignal-v22", /CACHE = "sportsignal-v22"/.test(swSrc));
-check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js19));
-check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js19));
-check("featKeys caps at 2", /featKeys\(e,2\)/.test(js19));
-check("spotItemNode adds match-featured + sr-only when t.feat", /t&&t\.feat\)\{n\.className\+=" match-featured";var sr=document\.createElement\("span"\);sr\.className="sr-only"/.test(js19));
-check("render() adds match-featured + sr-only", /fk\.has\(keyOf\(n\)\)&&\(o\.className\+=" match-featured",function\(\)\{var sr=/.test(js19));
-check("renderTopSpot passes feat option", /feat:fk\.has\(keyOf\(i\)\)/.test(js19));
-check("renderWeek passes feat option", /feat:wfk\.has\(keyOf\(d\)\)/.test(js19));
-check("renderLive passes feat option", /feat:lfk\.has\(keyOf\(o\)\)/.test(js19));
-check("renderUcl passes feat option", /feat:ufk\.has\(keyOf\(c\)\)/.test(js19));
-check("renderHeroSpot passes feat:!!t.big", /feat:!!t\.big/.test(js19));
+check("public-13.20.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.20.js")));
+check("public-13.20.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.20.css")));
+check("assets/_headers pins public-13.20 immutable", /\/public-13\.20\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.20.css immutable", /\/public-13\.20\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("SW cache bumped to sportsignal-v23", /CACHE = "sportsignal-v23"/.test(swSrc));
+check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js20));
+check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js20));
+check("featKeys caps at 2", /featKeys\(e,2\)/.test(js20));
+check("spotItemNode adds match-featured to spotitem wrapper when t.feat", /t&&t\.feat&&\(r\.className\+=" match-featured"\)/.test(js20));
+check("spotItemNode adds sr-only span when t.feat", /t&&t\.feat\)\{n\.className\+=" match-featured";var sr=document\.createElement\("span"\);sr\.className="sr-only"/.test(js20));
+check("renderTopSpot passes feat option", /feat:fk\.has\(keyOf\(i\)\)/.test(js20));
+check("renderWeek passes feat option", /feat:wfk\.has\(keyOf\(d\)\)/.test(js20));
+check("renderLive passes feat option", /feat:lfk\.has\(keyOf\(o\)\)/.test(js20));
+check("renderUcl passes feat option", /feat:ufk\.has\(keyOf\(c\)\)/.test(js20));
+check("renderHeroSpot passes feat:!!t.big", /feat:!!t\.big/.test(js20));
 check("homepage inline CSS uses gold accent #F2B84B", /#F2B84B/.test(publicSrc));
-check("homepage inline CSS has .match-featured rule", /\.match-featured\{/.test(publicSrc));
-check("featured CSS has reduced-motion guard", /prefers-reduced-motion:reduce\)\{\.match-featured::before\{display:none\}\}/.test(publicSrc));
-check("featured CSS has NO badge (::after content)", !/match-featured::after/.test(publicSrc));
+check("homepage inline CSS has .match-featured with !important", /\.match-featured\{.*!important/.test(publicSrc));
+check("featured CSS has feat-pulse animation", /feat-pulse/.test(publicSrc));
+check("featured CSS has feat-shimmer animation (continuous)", /feat-shimmer/.test(publicSrc) && /infinite/.test(publicSrc));
+check("featured CSS has feat-glow-shift animation", /feat-glow-shift/.test(publicSrc));
+check("featured CSS has reduced-motion guard", /prefers-reduced-motion:reduce\)\{\.match-featured\{animation:none\}/.test(publicSrc));
 check("homepage inline CSS has .sr-only class", /\.sr-only\{/.test(publicSrc));
 check("public countries capped at 5 (SQL LIMIT 5)", /LIMIT 5/.test(statsSrc));
 
