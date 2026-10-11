@@ -58,6 +58,14 @@
 # time + WIDE_ORDER stats moved to end (mobile last section). SW v19 → v20.
 # v13.59-featured: 13.17 → 13.18 rename. Featured-match highlight (match-featured
 # class) for matches between two desired teams, capped at 2 per list. SW v20 → v21.
+# v13.60-goldfeat: 13.18 → 13.19 rename. Gold accent (#F2B84B) replaces blue;
+# badge chip removed; sr-only "بازی مهم" span added. SW v21 → v22.
+/public-13.19.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.19.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.18.js
   Cache-Control: public, max-age=31536000, immutable
 

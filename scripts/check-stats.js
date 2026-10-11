@@ -210,39 +210,39 @@ check("stats.ts stores salt in stats_meta (not in source)", /UPDATE stats_meta S
 check("stats.ts counts in ctx.waitUntil", /ctx\.waitUntil\(/.test(statsSrc));
 check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSrc));
 
-// ---------- 5) immutable-asset rename done correctly (13.17 → 13.18) ----------
-// v13.59-featured: featured-match highlight (.match-featured class) for matches
-// between two desired teams (the existing .big flag = both teams in the big
-// pool). Capped at 2 per list via featKeys(). The JS edits (featKeys helper +
-// spotItemNode feat option + render/renderTopSpot/renderWeek/renderLive/
-// renderUcl/renderHeroSpot wiring) live in the immutable public-13.17.js →
-// renamed to public-13.18.{js,css}. The .match-featured CSS is inline in
-// public.ts (after the stylesheet link, so it overrides). SW cache v20 → v21.
+// ---------- 5) immutable-asset rename done correctly (13.18 → 13.19) ----------
+// v13.60-goldfeat: gold accent (#F2B84B) replaces blue; badge chip removed;
+// sr-only "بازی مهم" span added inside featured cards. The JS edits (sr-only
+// span in spotItemNode + render) live in the immutable public-13.18.js →
+// renamed to public-13.19.{js,css}. The .match-featured CSS is inline in
+// public.ts (gold accent, no badge, sr-only class). SW cache v21 → v22.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js18 = read("assets/public-13.18.js");
-check("public-13.18.js referenced in homepage (renamed from 13.17)", /\/public-13\.18\.js/.test(publicSrc));
-check("public-13.18.css referenced in homepage (renamed from 13.17)", /\/public-13\.18\.css/.test(publicSrc));
-check("public-13.18.css referenced in SEO page-shell (renamed)", /\/public-13\.18\.css/.test(shellSrc));
+const js19 = read("assets/public-13.19.js");
+check("public-13.19.js referenced in homepage (renamed from 13.18)", /\/public-13\.19\.js/.test(publicSrc));
+check("public-13.19.css referenced in homepage (renamed from 13.18)", /\/public-13\.19\.css/.test(publicSrc));
+check("public-13.19.css referenced in SEO page-shell (renamed)", /\/public-13\.19\.css/.test(shellSrc));
 check("core-13.8.js still referenced (unchanged)", /\/core-13\.8\.js/.test(publicSrc));
-check("public-13.18.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.18.js")));
-check("public-13.18.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.18.css")));
-check("assets/_headers pins public-13.18 immutable", /\/public-13\.18\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("assets/_headers pins public-13.18.css immutable", /\/public-13\.18\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("SW cache bumped to sportsignal-v21", /CACHE = "sportsignal-v21"/.test(swSrc));
-check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js18));
-check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js18));
-check("featKeys caps at 2", /featKeys\(e,2\)/.test(js18));
-check("spotItemNode adds match-featured class when t.feat", /t&&t\.feat\)n\.className\+=" match-featured"/.test(js18));
-check("render() computes featKeys + adds match-featured", /var fk=featKeys\(e,2\)/.test(js18) && /fk\.has\(keyOf\(n\)\)&&\(o\.className\+=" match-featured"\)/.test(js18));
-check("renderTopSpot passes feat option", /feat:fk\.has\(keyOf\(i\)\)/.test(js18));
-check("renderWeek passes feat option", /feat:wfk\.has\(keyOf\(d\)\)/.test(js18));
-check("renderLive passes feat option", /feat:lfk\.has\(keyOf\(o\)\)/.test(js18));
-check("renderUcl passes feat option", /feat:ufk\.has\(keyOf\(c\)\)/.test(js18));
-check("renderHeroSpot passes feat:!!t.big", /feat:!!t\.big/.test(js18));
+check("public-13.19.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.19.js")));
+check("public-13.19.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.19.css")));
+check("assets/_headers pins public-13.19 immutable", /\/public-13\.19\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.19.css immutable", /\/public-13\.19\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("SW cache bumped to sportsignal-v22", /CACHE = "sportsignal-v22"/.test(swSrc));
+check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js19));
+check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js19));
+check("featKeys caps at 2", /featKeys\(e,2\)/.test(js19));
+check("spotItemNode adds match-featured + sr-only when t.feat", /t&&t\.feat\)\{n\.className\+=" match-featured";var sr=document\.createElement\("span"\);sr\.className="sr-only"/.test(js19));
+check("render() adds match-featured + sr-only", /fk\.has\(keyOf\(n\)\)&&\(o\.className\+=" match-featured",function\(\)\{var sr=/.test(js19));
+check("renderTopSpot passes feat option", /feat:fk\.has\(keyOf\(i\)\)/.test(js19));
+check("renderWeek passes feat option", /feat:wfk\.has\(keyOf\(d\)\)/.test(js19));
+check("renderLive passes feat option", /feat:lfk\.has\(keyOf\(o\)\)/.test(js19));
+check("renderUcl passes feat option", /feat:ufk\.has\(keyOf\(c\)\)/.test(js19));
+check("renderHeroSpot passes feat:!!t.big", /feat:!!t\.big/.test(js19));
+check("homepage inline CSS uses gold accent #F2B84B", /#F2B84B/.test(publicSrc));
 check("homepage inline CSS has .match-featured rule", /\.match-featured\{/.test(publicSrc));
 check("featured CSS has reduced-motion guard", /prefers-reduced-motion:reduce\)\{\.match-featured::before\{display:none\}\}/.test(publicSrc));
-check("featured CSS has بازی مهم badge", /content:"بازی مهم"/.test(publicSrc));
+check("featured CSS has NO badge (::after content)", !/match-featured::after/.test(publicSrc));
+check("homepage inline CSS has .sr-only class", /\.sr-only\{/.test(publicSrc));
 check("public countries capped at 5 (SQL LIMIT 5)", /LIMIT 5/.test(statsSrc));
 
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));

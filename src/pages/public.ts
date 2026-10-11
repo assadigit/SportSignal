@@ -81,17 +81,19 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.18.css">
-<style>/* v13.59-featured: highlight matches between two desired teams (El
-     Clásico, Der Klassiker, …). Activated only when BOTH teams are in the
-     big/desired pool (the existing .big flag). Capped at 2 per list. RTL:
-     the accent edge sits on inline-start (the right side, where the eye
-     starts). One-time shimmer, respects prefers-reduced-motion. */
-.match-featured{position:relative;border-color:color-mix(in srgb,var(--accent,#2563eb) 65%,transparent);background-image:linear-gradient(to left,color-mix(in srgb,var(--accent,#2563eb) 14%,transparent),transparent 55%);box-shadow:inset -3px 0 0 var(--accent,#2563eb),0 0 18px color-mix(in srgb,var(--accent,#2563eb) 26%,transparent)}
-.match-featured::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.10) 50%,transparent 60%);background-size:250% 100%;background-position:150% 0;animation:feat-sweep 1.4s ease-out .6s 1 forwards}
+<link rel="stylesheet" href="/public-13.19.css">
+<style>/* v13.60-goldfeat: featured-match highlight in amber-gold (#F2B84B).
+     Gold is complementary to the navy/blue palette (~220° vs ~39° on the
+     wheel) — it stands out without being loud, and carries the meaning of
+     trophy/prestige (CL, derbies). No badge chip — the edge bar (shape) +
+     glow + sr-only text carry the signal. Tint 10%, glow 18% (warm colors
+     weigh more than cool, so kept quiet). One-time shimmer, reduced-motion. */
+:root{--feat-accent:#F2B84B;--feat-glow:18%;--feat-tint:10%;--feat-shimmer-delay:.6s}
+.match-featured{position:relative;border-color:color-mix(in srgb,var(--feat-accent) 45%,transparent);background-image:linear-gradient(to left,color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent),transparent 55%);box-shadow:inset -3px 0 0 var(--feat-accent),0 0 16px color-mix(in srgb,var(--feat-accent) var(--feat-glow),transparent)}
+.match-featured::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 40%,rgba(255,236,200,.10) 50%,transparent 60%);background-size:250% 100%;background-position:150% 0;animation:feat-sweep 1.4s ease-out var(--feat-shimmer-delay) 1 forwards}
 @keyframes feat-sweep{to{background-position:-50% 0}}
-.match-featured::after{content:"بازی مهم";position:absolute;top:-9px;inset-inline-start:96px;padding:1px 10px;font-size:11px;font-weight:700;line-height:1.6;border-radius:999px;background:var(--accent,#2563eb);color:#0b1230}
-@media (prefers-reduced-motion:reduce){.match-featured::before{display:none}}</style>
+@media (prefers-reduced-motion:reduce){.match-featured::before{display:none}}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
 </head>
 <body>
 <!-- v12.24 (the user's ask): a real WEBSITE header \u2014 the uploaded SportSignal
@@ -315,7 +317,7 @@ __SEO_JSONLD__
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.8.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.18.js" defer><\/script>
+<script src="/public-13.19.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a
