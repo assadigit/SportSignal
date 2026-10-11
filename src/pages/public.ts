@@ -82,18 +82,20 @@ __SEO_JSONLD__
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
 <link rel="stylesheet" href="/public-13.20.css">
-<style>/* v13.61-goldglow: prominent gold featured-match with animated glitter.
-     Fills the FULL card container (not just an inner rectangle). Uses a
-     continuous gold shimmer animation + pulsing glow — not a static color.
-     Gold (#F2B84B) is complementary to navy, carries trophy/prestige meaning. */
-:root{--feat-accent:#F2B84B;--feat-glow:28%;--feat-tint:16%}
-.match-featured{position:relative;border-color:color-mix(in srgb,var(--feat-accent) 55%,transparent)!important;background-image:linear-gradient(to left,color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent),transparent 60%)!important;box-shadow:inset -4px 0 0 var(--feat-accent),0 0 20px color-mix(in srgb,var(--feat-accent) var(--feat-glow),transparent)!important;animation:feat-pulse 3s ease-in-out infinite}
-@keyframes feat-pulse{0%,100%{box-shadow:inset -4px 0 0 var(--feat-accent),0 0 16px color-mix(in srgb,var(--feat-accent) 20%,transparent)}50%{box-shadow:inset -4px 0 0 var(--feat-accent),0 0 28px color-mix(in srgb,var(--feat-accent) 36%,transparent)}}
-.match-featured::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(110deg,transparent 35%,rgba(255,236,200,.18) 45%,rgba(255,236,200,.06) 55%,transparent 65%);background-size:250% 100%;animation:feat-shimmer 2.5s linear infinite}
+<style>/* v13.62-grassglow: grass-green (#4CBB17) featured-match highlight.
+     Fills the FULL container — inner .match panel made transparent, overflow
+     fixed so glow isn't clipped. Layered box-shadow: soft outer glow + faint
+     inset. Continuous shimmer + pulsing glow animations. */
+:root{--feat-accent:#4CBB17;--feat-glow:22%;--feat-tint:14%}
+.match-featured{position:relative;border-color:color-mix(in srgb,var(--feat-accent) 50%,transparent)!important;background-image:linear-gradient(to left,color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent),transparent 60%)!important;box-shadow:0 0 20px color-mix(in srgb,var(--feat-accent) var(--feat-glow),transparent),inset 0 0 12px color-mix(in srgb,var(--feat-accent) 8%,transparent)!important;animation:feat-pulse 3s ease-in-out infinite}
+@keyframes feat-pulse{0%,100%{box-shadow:0 0 16px color-mix(in srgb,var(--feat-accent) 16%,transparent),inset 0 0 10px color-mix(in srgb,var(--feat-accent) 6%,transparent)}50%{box-shadow:0 0 26px color-mix(in srgb,var(--feat-accent) 30%,transparent),inset 0 0 14px color-mix(in srgb,var(--feat-accent) 10%,transparent)}}
+.match-featured::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(110deg,transparent 35%,rgba(180,255,120,.14) 45%,rgba(180,255,120,.04) 55%,transparent 65%);background-size:250% 100%;animation:feat-shimmer 2.5s linear infinite}
 @keyframes feat-shimmer{0%{background-position:200% 0}100%{background-position:-150% 0}}
-.match-featured::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse at 70% 0%,color-mix(in srgb,var(--feat-accent) 12%,transparent),transparent 60%);animation:feat-glow-shift 4s ease-in-out infinite alternate}
-@keyframes feat-glow-shift{0%{opacity:.5}100%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.match-featured{animation:none}.match-featured::before{display:none}.match-featured::after{animation:none;opacity:.7}}
+.match-featured::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse at 70% 0%,color-mix(in srgb,var(--feat-accent) 10%,transparent),transparent 60%);animation:feat-glow-shift 4s ease-in-out infinite alternate}
+@keyframes feat-glow-shift{0%{opacity:.4}100%{opacity:.9}}
+/* Make inner .match panel transparent so the container glow shows through */
+.match-featured .match{background:transparent!important;border:none!important;overflow:visible!important}
+@media (prefers-reduced-motion:reduce){.match-featured{animation:none}.match-featured::before{display:none}.match-featured::after{animation:none;opacity:.6}}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
 </head>
 <body>

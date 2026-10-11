@@ -236,11 +236,14 @@ check("renderWeek passes feat option", /feat:wfk\.has\(keyOf\(d\)\)/.test(js20))
 check("renderLive passes feat option", /feat:lfk\.has\(keyOf\(o\)\)/.test(js20));
 check("renderUcl passes feat option", /feat:ufk\.has\(keyOf\(c\)\)/.test(js20));
 check("renderHeroSpot passes feat:!!t.big", /feat:!!t\.big/.test(js20));
-check("homepage inline CSS uses gold accent #F2B84B", /#F2B84B/.test(publicSrc));
+check("homepage inline CSS uses grass green accent #4CBB17", /#4CBB17/.test(publicSrc));
 check("homepage inline CSS has .match-featured with !important", /\.match-featured\{.*!important/.test(publicSrc));
 check("featured CSS has feat-pulse animation", /feat-pulse/.test(publicSrc));
 check("featured CSS has feat-shimmer animation (continuous)", /feat-shimmer/.test(publicSrc) && /infinite/.test(publicSrc));
 check("featured CSS has feat-glow-shift animation", /feat-glow-shift/.test(publicSrc));
+check("featured CSS makes inner .match panel transparent", /match-featured \.match\{background:transparent!important/.test(publicSrc));
+check("featured CSS fixes inner .match overflow", /match-featured \.match\{.*overflow:visible!important/.test(publicSrc));
+check("featured CSS has layered box-shadow (outer + inset)", /box-shadow:0 0 20px.*inset/.test(publicSrc));
 check("featured CSS has reduced-motion guard", /prefers-reduced-motion:reduce\)\{\.match-featured\{animation:none\}/.test(publicSrc));
 check("homepage inline CSS has .sr-only class", /\.sr-only\{/.test(publicSrc));
 check("public countries capped at 5 (SQL LIMIT 5)", /LIMIT 5/.test(statsSrc));
