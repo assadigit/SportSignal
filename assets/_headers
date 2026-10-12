@@ -64,6 +64,15 @@
 # (fills full container); animated glitter + pulsing glow; more prominent. SW v22 → v23.
 # v13.63-herofix: 13.20 → 13.21 rename. barTarget() picks nearest big match
 # across ALL competitions (was domestic-league-only topSpot priority). SW v23 → v24.
+# v13.64-noglowlift: 13.21 → 13.22 rename. featKeys() excludes the hero match
+# (barTarget().m) so the green glow is NOT applied to the hero match in any list
+# below (the hero position itself is the highlight — no double glow). SW v24 → v25.
+/public-13.22.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.22.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.21.js
   Cache-Control: public, max-age=31536000, immutable
 

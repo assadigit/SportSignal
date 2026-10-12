@@ -64,7 +64,7 @@
 //              rule to .empty.loading-empty containers only, so the homepage
 //              intro paragraph showed on screen. public-13.15.css adds the
 //              GLOBAL .sr-only rule; rename-on-edit + this bump = clean slate.)
-const CACHE = "sportsignal-v24"; // v13.63-herofix: public-13.20→13.21 rename (barTarget picks nearest big match across ALL competitions)
+const CACHE = "sportsignal-v25"; // v13.64-noglowlift: public-13.21→13.22 rename (featKeys excludes hero match so no double glow in lists)
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
