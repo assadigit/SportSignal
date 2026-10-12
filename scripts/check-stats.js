@@ -216,16 +216,17 @@ check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSr
 // more prominent (tint 16%, glow 28%, !important overrides). SW v22 → v23.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js20 = read("assets/public-13.20.js");
-check("public-13.20.js referenced in homepage (renamed from 13.19)", /\/public-13\.20\.js/.test(publicSrc));
-check("public-13.20.css referenced in homepage (renamed from 13.19)", /\/public-13\.20\.css/.test(publicSrc));
-check("public-13.20.css referenced in SEO page-shell (renamed)", /\/public-13\.20\.css/.test(shellSrc));
+const js20 = read("assets/public-13.21.js");
+check("public-13.21.js referenced in homepage (renamed from 13.20)", /\/public-13\.21\.js/.test(publicSrc));
+check("public-13.21.css referenced in homepage (renamed from 13.20)", /\/public-13\.21\.css/.test(publicSrc));
+check("public-13.21.css referenced in SEO page-shell (renamed)", /\/public-13\.21\.css/.test(shellSrc));
 check("core-13.8.js still referenced (unchanged)", /\/core-13\.8\.js/.test(publicSrc));
-check("public-13.20.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.20.js")));
-check("public-13.20.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.20.css")));
-check("assets/_headers pins public-13.20 immutable", /\/public-13\.20\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("assets/_headers pins public-13.20.css immutable", /\/public-13\.20\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("SW cache bumped to sportsignal-v23", /CACHE = "sportsignal-v23"/.test(swSrc));
+check("public-13.21.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.21.js")));
+check("public-13.21.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.21.css")));
+check("assets/_headers pins public-13.21 immutable", /\/public-13\.21\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.21.css immutable", /\/public-13\.21\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("SW cache bumped to sportsignal-v24", /CACHE = "sportsignal-v24"/.test(swSrc));
+check("barTarget checks nextBig before topSpot (all competitions)", /t=DATA\.nextBig\|\|null.*if\(!t\)\{t=a\}/.test(js20));
 check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js20));
 check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js20));
 check("featKeys caps at 2", /featKeys\(e,2\)/.test(js20));

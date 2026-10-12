@@ -84,7 +84,7 @@ export function pageShell(opts: {
 ${themeInit}
 <link rel="preload" href="/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/public-13.20.css">
+<link rel="stylesheet" href="/public-13.21.css">
 <style>
 /* Page-specific components for server-rendered SEO pages (breadcrumbs,
    answer-first block, facts table, prose). Reuses the site's CSS vars. */

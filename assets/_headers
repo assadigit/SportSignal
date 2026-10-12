@@ -62,6 +62,14 @@
 # badge chip removed; sr-only "بازی مهم" span added. SW v21 → v22.
 # v13.61-goldglow: 13.19 → 13.20 rename. Featured class on spotitem wrapper
 # (fills full container); animated glitter + pulsing glow; more prominent. SW v22 → v23.
+# v13.63-herofix: 13.20 → 13.21 rename. barTarget() picks nearest big match
+# across ALL competitions (was domestic-league-only topSpot priority). SW v23 → v24.
+/public-13.21.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.21.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.20.js
   Cache-Control: public, max-age=31536000, immutable
 
