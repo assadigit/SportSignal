@@ -8,7 +8,7 @@ import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliTime, getJalaliDate, getEnglishTime, getEnglishDate } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
-import { shouldNotify } from "./matches";
+import { shouldNotify, isFeaturedMatch, isMasterPair } from "./matches";
 import { matchKey } from "./dedupe";
 import { sendTelegram, answerCallbackQuery, sendPhotoBinary, editMessageText } from "./telegram";
 import { renderCardPngCached } from "./card";
@@ -254,14 +254,23 @@ export async function handleTelegramUpdate(env: Env, update) {
     }
     if (text === "/start") {
       const chats = await getRegisteredChats(env);
-      if (!chats.includes(chatId)) {
+      const alreadyJoined = chats.includes(chatId);
+      if (!alreadyJoined) {
         chats.push(chatId);
         await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(chats));
       }
       const prefs = await getUserPrefs(env);
       const up = prefs[String(chatId)] || {};
       const langSet = up.lang === "en" || up.lang === "fa";
-      if (langSet && up.lang === "en") {
+      if (alreadyJoined && langSet) {
+        // v13.68-alreadyjoined: a returning user who taps /start again gets a
+        // reassuring acknowledgment (not a silent duplicate-welcome). They are
+        // already on the roster — tell them the next big-match alert is coming.
+        const msg = up.lang === "en"
+          ? "\u2705 You\u2019re already joined\\! You\u2019ll get notified of the next big match\\."
+          : "\u2705 \u0634\u0645\u0627 \u0642\u0628\u0644\u0627\u064B \u0639\u0636\u0648 \u0634\u062F\u0647\u200C\u0627\u06CC\u062F\\! \u062A\u0627 \u0628\u0627\u0632\u06CC \u0645\u0647\u0645 \u0628\u0639\u062F\u060C \u0627\u0639\u0644\u0627\u0646 \u0622\u0646 \u0631\u0627 \u062F\u0631\u06CC\u0627\u0641\u062A \u062E\u0648\u0627\u0647\u06CC\u062F \u06A9\u0631\u062F\\.";
+        await sendTelegram(env, msg, chatId, replyKeyboard(up.lang));
+      } else if (langSet && up.lang === "en") {
         await sendTelegram(env, "Welcome to SportSignal\\!\nNever miss the big matches\\.\n\nUse the buttons below to navigate\\.", chatId, replyKeyboard("en"));
       } else if (langSet && up.lang === "fa") {
         await sendTelegram(env, "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\\!\n\u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u067E\u0627\u06CC\u06CC\u0646 \u0628\u0631\u0627\u06CC \u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F\\.", chatId, replyKeyboard("fa"));
@@ -383,11 +392,15 @@ export async function handleTelegramUpdate(env: Env, update) {
       // quiet-period semantics. Empty pool = the no-matches reply.
       const matches = Array.isArray(pool && pool.matches) ? pool.matches : [];
       const now = new Date();
-      // Find the featured match: closest upcoming worthy match (same logic
-      // as the website's nextBig — isFeaturedMatch or isMasterPair, live
-      // first then by kickoff order). Fall back to any worthy upcoming.
-      const upcoming = matches.filter((m) => shouldNotify(m) && (m.status === "SCHEDULED" || m.status === "TIMED") && new Date(m.utcDate) > now).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
-      const live = matches.filter((m) => shouldNotify(m) && (m.status === "IN_PLAY" || m.status === "LIVE" || m.status === "PAUSED"));
+      // v13.68-website-truth: the bot's /featured now follows the website's
+      // nextBig EXACTLY — isFeaturedMatch(m) || isMasterPair(m) (BOTH teams
+      // big), live-first then by nearest kickoff. Was shouldNotify(m) which
+      // only requires ONE big team — that picked Arsenal vs Lille (Arsenal
+      // big, Lille not) over the website's Man United vs Atlético (both big).
+      // The website is the ground source of truth.
+      const isHeroWorthy = (m) => isFeaturedMatch(m) || isMasterPair(m);
+      const upcoming = matches.filter((m) => isHeroWorthy(m) && (m.status === "SCHEDULED" || m.status === "TIMED") && new Date(m.utcDate) > now).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
+      const live = matches.filter((m) => isHeroWorthy(m) && (m.status === "IN_PLAY" || m.status === "LIVE" || m.status === "PAUSED"));
       const featured = (live.length ? live : upcoming)[0];
       if (!featured) {
         await sendTelegram(env, lang === "en" ? "No upcoming matches right now\\." : "\u{1F4C5} \u062F\u0631 \u062D\u0627\u0644 \u062D\u0627\u0636\u0631 \u0628\u0627\u0632\u06CC \u0645\u0647\u0645\u06CC \u0648\u062C\u0648\u062F \u0646\u062F\u0627\u0631\u062F\\.", chatId, replyKeyboard(lang));
@@ -438,9 +451,13 @@ export async function handleTelegramUpdate(env: Env, update) {
         await sendTelegram(env, lang === "en" ? "No upcoming matches for your followed teams right now\\." : "\u{1F4C5} \u062F\u0631 \u062D\u0627\u0644 \u062D\u0627\u0636\u0631 \u0628\u0627\u0632\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\u06CC \u0628\u0631\u0627\u06CC \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u062F\u0646\u0628\u0627\u0644\u200C\u0634\u062F\u0647 \u0634\u0645\u0627 \u0648\u062C\u0648\u062F \u0646\u062F\u0627\u0631\u062F\\.", chatId, replyKeyboard(lang));
       } else {
         const lines = upcoming.map((m) => {
+          // v13.68-fulldate: /next now shows the full date (weekday + day +
+          // month) alongside the time — was time-only, so users couldn't tell
+          // which day a match was on.
+          const date = lang === "en" ? getEnglishDate(m.utcDate, tzEnv) : getJalaliDate(m.utcDate, tzEnv);
           const time = lang === "en" ? getEnglishTime(m.utcDate, tzEnv) : getJalaliTime(m.utcDate, tzEnv);
           const vs = lang === "en" ? " vs " : " \u{1F19A} ";
-          return escapeMarkdownCharacters(translateTeam(m.homeTeam.name)) + vs + escapeMarkdownCharacters(translateTeam(m.awayTeam.name)) + "\n" + translateCompetition(m.competition.code) + " \u2014 " + time;
+          return escapeMarkdownCharacters(translateTeam(m.homeTeam.name)) + vs + escapeMarkdownCharacters(translateTeam(m.awayTeam.name)) + "\n" + escapeMarkdownCharacters(translateCompetition(m.competition.code)) + " \u2014 " + escapeMarkdownCharacters(date) + " \u2014 " + time;
         });
         const header = lang === "en" ? "*Upcoming matches:*\n\n" : "*\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648:*\n\n";
         await sendTelegram(env, header + lines.join("\n\n"), chatId, replyKeyboard(lang));
