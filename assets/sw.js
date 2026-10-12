@@ -64,7 +64,7 @@
 //              rule to .empty.loading-empty containers only, so the homepage
 //              intro paragraph showed on screen. public-13.15.css adds the
 //              GLOBAL .sr-only rule; rename-on-edit + this bump = clean slate.)
-const CACHE = "sportsignal-v26"; // v13.65-lgtitle: core-13.8→13.9 rename (hLgNext retitled to دیدارهای جذاب لیگ‌ها / Exciting League Fixtures)
+const CACHE = "sportsignal-v27"; // v13.67-heroglow: public-13.22→13.23 rename (flat glow list + hero glow on outer card + masked sweep + pulse + hover)
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

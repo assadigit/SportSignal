@@ -81,21 +81,27 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.22.css">
-<style>/* v13.62-grassglow: grass-green (#4CBB17) featured-match highlight.
-     Fills the FULL container — inner .match panel made transparent, overflow
-     fixed so glow isn't clipped. Layered box-shadow: soft outer glow + faint
-     inset. Continuous shimmer + pulsing glow animations. */
-:root{--feat-accent:#4CBB17;--feat-glow:22%;--feat-tint:14%}
-.match-featured{position:relative;border-color:color-mix(in srgb,var(--feat-accent) 50%,transparent)!important;background-image:linear-gradient(to left,color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent),transparent 60%)!important;box-shadow:0 0 20px color-mix(in srgb,var(--feat-accent) var(--feat-glow),transparent),inset 0 0 12px color-mix(in srgb,var(--feat-accent) 8%,transparent)!important;animation:feat-pulse 3s ease-in-out infinite}
-@keyframes feat-pulse{0%,100%{box-shadow:0 0 16px color-mix(in srgb,var(--feat-accent) 16%,transparent),inset 0 0 10px color-mix(in srgb,var(--feat-accent) 6%,transparent)}50%{box-shadow:0 0 26px color-mix(in srgb,var(--feat-accent) 30%,transparent),inset 0 0 14px color-mix(in srgb,var(--feat-accent) 10%,transparent)}}
+<link rel="stylesheet" href="/public-13.23.css">
+<style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border.
+     v13.67-heroglow: glow on the OUTER hero card (#bigHeroCard), not inner.
+     Mask fades tint+shimmer at L/R edges so the faded club crests stay clear.
+     Infinite reflection sweep (7s, 20% sweep, R→L) + slow glow pulse (5s)
+     + hover lift (desktop). Reduced-motion disables all animations. */
+:root{--feat-accent:#4CBB17;--feat-blur:22px;--feat-glow:22%;--feat-tint:6%;--feat-border:55%}
+.match-featured{position:relative;border-color:color-mix(in srgb,var(--feat-accent) var(--feat-border),transparent)!important;background-image:linear-gradient(color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent),color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent))!important;box-shadow:0 0 var(--feat-blur) color-mix(in srgb,var(--feat-accent) var(--feat-glow),transparent)!important}
 .match-featured::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(110deg,transparent 35%,rgba(180,255,120,.14) 45%,rgba(180,255,120,.04) 55%,transparent 65%);background-size:250% 100%;animation:feat-shimmer 2.5s linear infinite}
 @keyframes feat-shimmer{0%{background-position:200% 0}100%{background-position:-150% 0}}
 .match-featured::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse at 70% 0%,color-mix(in srgb,var(--feat-accent) 10%,transparent),transparent 60%);animation:feat-glow-shift 4s ease-in-out infinite alternate}
 @keyframes feat-glow-shift{0%{opacity:.4}100%{opacity:.9}}
-/* Make inner .match panel transparent so the container glow shows through */
 .match-featured .match{background:transparent!important;border:none!important;overflow:visible!important}
-@media (prefers-reduced-motion:reduce){.match-featured{animation:none}.match-featured::before{display:none}.match-featured::after{animation:none;opacity:.6}}
+/* === HERO: glow on the outer card, masked tint+sweep, pulse, hover === */
+#bigHeroCard.match-featured{background-image:none!important;animation:feat-hero-pulse 5s ease-in-out infinite}
+#bigHeroCard.match-featured::before{background:linear-gradient(110deg,transparent 38%,rgba(180,255,120,.22) 50%,transparent 62%);background-size:300% 100%;-webkit-mask-image:linear-gradient(to right,transparent 0%,black 13%,black 87%,transparent 100%);mask-image:linear-gradient(to right,transparent 0%,black 13%,black 87%,transparent 100%);animation:feat-hero-sweep 7s ease-in-out infinite}
+@keyframes feat-hero-sweep{0%{background-position:150% 0}20%{background-position:-50% 0}100%{background-position:-50% 0}}
+#bigHeroCard.match-featured::after{background:color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent);-webkit-mask-image:linear-gradient(to right,transparent 0%,black 14%,black 86%,transparent 100%);mask-image:linear-gradient(to right,transparent 0%,black 14%,black 86%,transparent 100%);animation:none;opacity:1}
+@keyframes feat-hero-pulse{0%,100%{box-shadow:0 0 var(--feat-blur) color-mix(in srgb,var(--feat-accent) 17%,transparent)!important}50%{box-shadow:0 0 26px color-mix(in srgb,var(--feat-accent) 27%,transparent)!important}}
+@media(hover:hover){#bigHeroCard.match-featured{transition:transform .2s ease,box-shadow .2s ease;cursor:pointer}#bigHeroCard.match-featured:hover{transform:translateY(-3px);box-shadow:0 0 29px color-mix(in srgb,var(--feat-accent) 30%,transparent)!important}}
+@media(prefers-reduced-motion:reduce){.match-featured{animation:none}.match-featured::before{display:none}.match-featured::after{animation:none;opacity:.6}#bigHeroCard.match-featured{animation:none}#bigHeroCard.match-featured::before{display:none}}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
 </head>
 <body>
@@ -320,7 +326,7 @@ __SEO_JSONLD__
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.9.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.22.js" defer><\/script>
+<script src="/public-13.23.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

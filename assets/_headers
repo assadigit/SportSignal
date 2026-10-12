@@ -73,6 +73,16 @@
 # v13.64-noglowlift: 13.21 → 13.22 rename. featKeys() excludes the hero match
 # (barTarget().m) so the green glow is NOT applied to the hero match in any list
 # below (the hero position itself is the highlight — no double glow). SW v24 → v25.
+# v13.67-heroglow: 13.22 → 13.23 rename. Flat outer glow (no inset bevel) for
+# list cards. Hero glow moves to the OUTER #bigHeroCard (was inner spotitem).
+# Mask fades tint+sweep at L/R edges (crests stay clear). Infinite reflection
+# sweep (7s, 20%, R→L) + slow pulse (5s) + hover lift. SW v25 → v26.
+/public-13.23.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.23.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.22.js
   Cache-Control: public, max-age=31536000, immutable
 
