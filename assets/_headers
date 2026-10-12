@@ -24,6 +24,12 @@
 
 # v13.6 extracted page assets — filename-versioned, safe to cache immutably
 # for a year (bump the filename on change).
+# v13.65-lgtitle: core-13.8 → 13.9 rename. hLgNext retitled
+# ("دیدارهای جذاب لیگ‌ها" / "Exciting League Fixtures") — this section covers
+# domestic leagues + domestic cups only (UCL has its own section). SW v25 → v26.
+/core-13.9.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /core-13.8.js
   Cache-Control: public, max-age=31536000, immutable
 

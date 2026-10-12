@@ -220,12 +220,12 @@ const js20 = read("assets/public-13.22.js");
 check("public-13.22.js referenced in homepage (renamed from 13.21)", /\/public-13\.22\.js/.test(publicSrc));
 check("public-13.22.css referenced in homepage (renamed from 13.21)", /\/public-13\.22\.css/.test(publicSrc));
 check("public-13.22.css referenced in SEO page-shell (renamed)", /\/public-13\.22\.css/.test(shellSrc));
-check("core-13.8.js still referenced (unchanged)", /\/core-13\.8\.js/.test(publicSrc));
+check("core-13.9.js referenced in homepage (renamed from 13.8)", /\/core-13\.9\.js/.test(publicSrc));
 check("public-13.22.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.22.js")));
 check("public-13.22.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.22.css")));
 check("assets/_headers pins public-13.22 immutable", /\/public-13\.22\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 check("assets/_headers pins public-13.22.css immutable", /\/public-13\.22\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("SW cache bumped to sportsignal-v25", /CACHE = "sportsignal-v25"/.test(swSrc));
+check("SW cache bumped to sportsignal-v26 (replaces v25)", /CACHE = "sportsignal-v26"/.test(swSrc));
 check("barTarget checks nextBig before topSpot (all competitions)", /t=DATA\.nextBig\|\|null.*if\(!t\)\{t=a\}/.test(js20));
 check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js20));
 check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js20));
@@ -249,6 +249,16 @@ check("featured CSS has layered box-shadow (outer + inset)", /box-shadow:0 0 20p
 check("featured CSS has reduced-motion guard", /prefers-reduced-motion:reduce\)\{\.match-featured\{animation:none\}/.test(publicSrc));
 check("homepage inline CSS has .sr-only class", /\.sr-only\{/.test(publicSrc));
 check("public countries capped at 5 (SQL LIMIT 5)", /LIMIT 5/.test(statsSrc));
+
+// v13.65-lgtitle: hLgNext retitled (domestic leagues + cups only; UCL has its own section)
+const coreSrc = read("assets/core-13.9.js");
+check("core-13.9.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "core-13.9.js")));
+check("core-13.9.js fa hLgNext retitled to دیدارهای جذاب لیگ‌ها", /hLgNext:"دیدارهای جذاب لیگ‌ها"/.test(coreSrc));
+check("core-13.9.js en hLgNext retitled to Exciting League Fixtures", /hLgNext:"Exciting League Fixtures"/.test(coreSrc));
+check("core-13.9.js referenced in admin page", /\/core-13\.9\.js/.test(read("src/pages/admin.ts")));
+check("core-13.9.js referenced in login page", /\/core-13\.9\.js/.test(read("src/pages/login.ts")));
+check("assets/_headers pins core-13.9 immutable", /\/core-13\.9\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("homepage server fallback h2 retitled (no old text)", /<h2 data-i="hLgNext" id="topSpotTitle">دیدارهای جذاب لیگ‌ها<\/h2>/.test(publicSrc) && !/مسابقات بزرگ پیش‌رو/.test(publicSrc));
 
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
 process.exit(failed === 0 ? 0 : 1);
