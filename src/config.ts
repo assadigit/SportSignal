@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.68-bottruth";
+export const VERSION = "13.70-adminpulse";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -159,6 +159,16 @@ export const CONFIG: Record<string, any> = {
   // badge with the age of the DATA, not of the KV write.
   CACHED_BADGE_MS: 3 * 60 * 60 * 1e3,
   TELEGRAM_RETRY_ATTEMPTS: 3,
+  // v13.69-pacenotify: proactive Telegram pacing + bounded 429-pause waits.
+  // Telegram's global bot limit is ~30 messages/sec; broadcast fan-outs fire
+  // every send in parallel, so ≥30 chats = a guaranteed 429 cascade. A 40ms
+  // floor between Telegram API calls (~25/sec) paces the fan-out under the
+  // limit (a wall-clock sleep — zero CPU against the free plan's 10ms
+  // rolling average; a cron tick has minutes of wall-time headroom). When a
+  // 429 pause IS active, senders wait it out (bounded below) instead of
+  // dropping the send — Telegram's global-limit retry_after is 1-5s.
+  TELEGRAM_MIN_SEND_GAP_MS: 40,
+  TELEGRAM_PAUSE_WAIT_MAX_MS: 8000,
   KV_USERS_KEY: "telegram_users_v6",
   KV_MATCHES_KEY: "matches_v13_tracked",
   KV_NOTIFIED_KEY: "notified_matches_v6",

@@ -37,6 +37,38 @@ check("#3 outbox has exponential backoff", /BACKOFFS\s*=\s*\[60e3/.test(src));
 check("#3 outbox caps at KV_OUTBOX_MAX", /KV_OUTBOX_MAX: 200/.test(src));
 check("#3 drainOutbox called in cron", /await drainOutbox\(env\)/.test(src));
 
+// v13.69-pacenotify: the 429-pause silent drop is CLOSED. The old
+// `if (Date.now() < TELEGRAM_PAUSE_UNTIL) return false;` bypassed the
+// outbox entirely — with the write-first dedupe persisted upstream, every
+// send arriving during a pause was lost FOREVER (the burst-429 broadcast
+// casualty: ≥30 parallel sends, first 429 sets the pause, every other
+// send drops dead un-recorded by the outbox).
+check("#3 v13.69 no bare pause-return in senders (silent drop REMOVED)", !/if \(Date\.now\(\) < TELEGRAM_PAUSE_UNTIL\) return false;/.test(src));
+check("#3 v13.69 bounded pause-wait helper exists", /async function waitTelegramPause\(\)/.test(src));
+check("#3 v13.69 sendTelegram defers via outbox when the pause outlives the bound", /if \(Date\.now\(\) < TELEGRAM_PAUSE_UNTIL && !\(await waitTelegramPause\(\)\)\)/.test(src));
+check("#3 v13.69 subrequest-budget exhaustion defers via outbox (was silent false)", /bumpSubrequest\(\)\) \{\s*\n\s*\/\/ v13\.69[\s\S]{0,320}?await outboxPush\(env, text, chatId, keyboard\)/.test(src));
+// Proactive pacing: Telegram's global bot limit is ~30 msg/s; the fan-out
+// fires every send in parallel. A 40ms floor (~25/s) keeps it under.
+check("#3 v13.69 proactive pacing helper exists", /async function paceTelegram\(\)/.test(src));
+check("#3 v13.69 pacing applied before sends", /await paceTelegram\(\);/.test(src));
+check("#3 v13.69 pacing gap config (40ms floor, ~25/s)", /TELEGRAM_MIN_SEND_GAP_MS: 40/.test(src));
+check("#3 v13.69 pause-wait bound config (8s)", /TELEGRAM_PAUSE_WAIT_MAX_MS: 8000/.test(src));
+check("#3 v13.69 photo sends retry (was single-attempt)", /sendPhotoBinary error \(attempt \$\{attempt\}\/2\)/.test(src));
+check("#3 v13.69 photo 429 sets the shared pause", /sendPhotoBinary[\s\S]{0,900}?res\.status === 429[\s\S]{0,200}?TELEGRAM_PAUSE_UNTIL = Math\.max/.test(src));
+check("#3 v13.69 outbox pushes serialized (read-modify-write race closed)", /var OUTBOX_CHAIN/.test(src) && /OUTBOX_CHAIN\.then\(async \(\)/.test(src));
+// healthz pool freshness — the 13.55 frozen-epoch class (healthy pipeline,
+// frozen data) becomes visible to external monitors.
+check("#10 v13.69 healthz exposes pool_age_min", /pool_age_min: poolAgeMin/.test(src));
+check("#10 v13.69 healthz exposes pool_matches", /pool_matches: poolMatches/.test(src));
+check("#10 v13.69 healthz degraded on missing/stale pool (>180min or -1)", /poolAgeMin < 0 \|\| poolAgeMin > 180/.test(src));
+// v13.70-adminpulse: the admin-paging layer's armed-state is OBSERVABLE. An
+// unparseable CHAT_ID silently killed every admin alert (heartbeat,
+// phase-error pages, budget/audit/cap alerts) while healthz stayed green —
+// proven live by the never-written heartbeat_sent_v1/audit_alert_v1 stamps.
+check("#10 v13.70 healthz exposes admin_alerts_ok", /admin_alerts_ok: adminAlertsOk/.test(src));
+check("#10 v13.70 healthz degraded when the paging layer is dead", /\|\| !adminAlertsOk\)/.test(src));
+check("#10 v13.70 unparseable CHAT_ID logs LOUDLY (was silent)", /CHAT_ID secret is missing\/unparseable/.test(src));
+
 // #1 Pre-scheduled notifications — RETIRED in v13.43-cpukeeper: the
 // sched_v1:* decoy (never-read records, one KV read per worthy match per
 // tick ≈ 174 reads/tick) was deleted. Recovery is covered by the

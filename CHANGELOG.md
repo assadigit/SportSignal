@@ -6,6 +6,79 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.70-adminpulse] — 2026-10-13 (the dead admin-paging layer: every admin alert silently disabled)
+
+During the v13.69 verification, the `heartbeat_sent_v1` KV stamp turned out
+to have **never existed** — nor `audit_alert_v1`. Those are the only two
+stamps written INSIDE the `if (!isNaN(parseInt(env.CHAT_ID)))` guard; every
+stamp written OUTSIDE the guard (`stale_alert_at`, `degradation_alert_at`,
+the cron status blob) existed. The fingerprint: **the deployed `CHAT_ID`
+secret does not parse as a number**, so every admin-facing alert path —
+the 6h "ربات سالم است" heartbeat, `alertPhaseError` pages, KV-budget pages,
+audit gap reports, user-cap warnings — has been silently disabled, with
+healthz green throughout.
+
+### The fix
+1. **`/healthz` exposes `admin_alerts_ok`** (true iff `parseInt(env.CHAT_ID)`
+   is a number) and flips the `degraded` band when false — a dead paging
+   layer is now visible to external monitors.
+2. **The heartbeat block logs LOUDLY** when CHAT_ID is unparseable (was
+   silent — the exact "silently-swallowed failure" class from 13.55).
+3. The `CHAT_ID` secret was re-set to the owner's numeric chat id
+   (92788333 — the sole surviving member of the original single-chat
+   registry `REGISTERED_CHATS_LIST`, first-joined user, only tz-customized
+   prefs). Verification: the next tick wrote `heartbeat_sent_v1` for the
+   first time and delivered the first real heartbeat message.
+
+## [13.69-pacenotify] — 2026-10-13 (the burst-429 silent drop + the per-chat card fallback)
+
+A reliability audit against the delivery guarantees found three concrete
+missed-alert vectors in the send path, all sharing one shape: **the write-first
+dedupe record persists BEFORE the send, so any send that dies outside the
+retry/outbox machinery is lost forever.**
+
+### The gaps
+1. **429-pause silent drop** — `sendTelegram`/`sendTelegramDirect` opened the
+   attempt loop with `if (Date.now() < TELEGRAM_PAUSE_UNTIL) return false;`
+   That return bypassed the outbox push entirely. Trigger shape: the broadcast
+   fan-out (`Promise.allSettled` over every chat) fires all sends in parallel;
+   at ≥30 chats that's a guaranteed hit on Telegram's ~30 msg/s global limit →
+   the first 429 sets the pause (1-10s) → every other in-flight send returns
+   false on its next attempt with NO outbox entry → dedupe already recorded →
+   those chats never get the alert.
+2. **Partial card failure dropped users** — the card path marked the whole
+   tz-group served when ONE chat's photo landed (`cardSent = some(true)`);
+   chats whose photo failed got no text fallback and no retry. Compounded by
+   `sendPhotoBinary` having ZERO retries (single attempt, no 429 handling).
+3. **Outbox read-modify-write race** — several fan-out sends failing at once
+   each ran `outboxPush` concurrently (read list → push → write list); the
+   concurrent writes silently dropped each other's entries.
+
+### The fix (v13.69-pacenotify)
+1. **Bounded pause wait** (`waitTelegramPause`) — a live 429 pause is waited
+   out (≤8s, Telegram's global-limit retry_after is 1-5s; pure wall-clock
+   sleep, zero CPU). Only a pause that outlives the bound defers via the
+   outbox — never a silent `return false` again. `sendTelegramDirect` returns
+   false for the drain to re-queue (no outbox recursion). Subrequest-budget
+   exhaustion now defers via the outbox too.
+2. **Proactive pacing** (`paceTelegram`) — a 40ms floor between Telegram API
+   calls (~25/s) in `sendTelegram`, `sendTelegramDirect`, `sendPhotoBinary`
+   and `sendDice`, keeping every fan-out under the 30 msg/s global limit
+   instead of tripping it reactively.
+3. **Per-chat card fallback** — `cardResults` is judged per chat; every chat
+   that did not CONFIRMEDLY receive the card (or is dead) gets its own text
+   fallback send. A confirmed card delivery now also counts into the
+   breadcrumb `notify.s` counts (card-only notifications were invisible).
+4. **`sendPhotoBinary` retries** — 2 attempts with the same 429-pause/pacing
+   semantics as the text senders.
+5. **Serialized outbox pushes** — a per-isolate promise chain serializes
+   `outboxPush` read-modify-write cycles (cross-isolate races stay bounded by
+   KV last-write-wins, as before).
+6. **`/healthz` pool freshness** — new `pool_age_min` + `pool_matches`
+   fields; a missing pool or >180min age flips the `degraded` band (the
+   13.55-epochflow "healthy pipeline, frozen data" class is now visible to
+   external monitors).
+
 ## [13.55-epochflow] — 2026-09-30 (the frozen epoch: KV write quota exhausted + silently-swallowed put failures)
 
 The user's report: *"آخرین به‌روزرسانی: چهارشنبه ۰۹:۱۱ صبح · ذخیره‌شده

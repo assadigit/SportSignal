@@ -199,6 +199,15 @@ export async function executeScheduledLogic(env: Env) {
         if (!isNaN(adminChat)) {
           await sendTelegram(env, "\u2705 *\u0631\u0628\u0627\u062A \u0633\u0627\u0644\u0645 \u0627\u0633\u062A* \u2014 \u062A\u0645\u0627\u0645 \u0633\u06CC\u0633\u062A\u0645 \u0647\u0627\u06CC \u0627\u0639\u0644\u0627\u0646\\-\u0631\u0633\u0627\u0646\u06CC \u0641\u0639\u0627\u0644 \u0627\u0633\u062A\u0646\\.", adminChat);
           await env.STATE.put(CONFIG.KV_HEARTBEAT_LAST, String(Date.now())).catch(() => {});
+        } else {
+          // v13.70-adminpulse: this was SILENT — with an unparseable CHAT_ID
+          // the entire admin-paging layer (this heartbeat, alertPhaseError
+          // pages, budget pages, audit gap reports, cap warnings) sat dead
+          // while healthz showed green (observed live: heartbeat_sent_v1 and
+          // audit_alert_v1 — the only stamps written INSIDE the guard —
+          // never existed). Loud now; /healthz carries admin_alerts_ok so
+          // external monitors can page on it. Fix: wrangler secret put CHAT_ID.
+          console.error("\u26A0\uFE0F CHAT_ID secret is missing/unparseable \u2014 every admin alert path (heartbeat, phase-error pages, budget/audit/cap alerts) is DISABLED. Fix: npx wrangler secret put CHAT_ID (numeric Telegram chat id)");
         }
       }
     } catch (e) {

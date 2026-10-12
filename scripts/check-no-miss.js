@@ -317,7 +317,13 @@ var MEM_DEDUPE = new Set();
   check("card: fires for ALL types (no type restriction in the card block)", /if \(match\.homeTeam\.crest \|\| match\.awayTeam\.crest\)/.test(src));
   check("card: caption uses full message text", /const caption = message/.test(src));
   check("card: caption truncated to 1024", /message\.length > 1024/.test(src));
-  check("card: text fallback when card fails", /if \(!cardSent\)/.test(src));
+  // v13.69-cardfallback: the group-level cardSent gate is GONE — one
+  // successful photo used to mark the whole tz-group served, so chats whose
+  // card failed got no text fallback AND no retry (dedupe already persisted).
+  check("card: per-chat fallback filter (needText) replaces the group gate", /const needText = g\.chats\.filter/.test(src));
+  check("card: fallback sent only to chats the card did not reach (true/dead excluded)", /r\.value === true \|\| r\.value === "dead"/.test(src));
+  check("card: group-level cardSent gate REMOVED from the broadcast path", !/let cardSent = false;[\s\S]{0,600}?g\.chats\.map/.test(src));
+  check("card: confirmed card delivery counts as success (breadcrumb visibility)", /if \(cardResults\.some\(\(r\) => r\.status === "fulfilled" && r\.value === true\)\) anySuccess = true/.test(src));
 
   console.log("\n=== N. Promo footer on every notification ===");
   check("promo: sportsignal.ir URL in footer", /sportsignal/.test(src) && /https:\/\/sportsignal/.test(src));
@@ -670,6 +676,79 @@ var MEM_DEDUPE = new Set();
   check("overlay: no overlay blob → payload served as-is", untouched.upcoming[0].status === "SCHEDULED" && untouched.upcoming.length === 1);
   applyLiveOverlay(untouched, { ts: 1, rows: [{ id: "other-1", h: "ajax", a: "feyenoord", d: OD + "T19:00:00Z", st: "LIVE", min: 3, s: null }] });
   check("overlay: rows the blob doesn't know stay untouched", untouched.upcoming[0].status === "SCHEDULED" && untouched.upcoming.length === 1);
+
+  // ===== v13.69-cardfallback (behavioral): per-chat card verdicts. The old
+  // group gate (cardSent = cardResults.some(true)) marked the whole tz-group
+  // served when ONE chat's photo landed — the other chats got NO text
+  // fallback and NO retry (the write-first dedupe was already persisted =
+  // a silently missed alert). Proofs below run the REAL
+  // sendNotificationIfNeeded with stubbed senders.
+  console.log("\n=== V. v13.69-cardfallback: per-chat card verdicts (behavioral) ===");
+  await (async () => {
+    const SENT_CARD = [], SENT_TEXT = [];
+    let deadHit = null;
+    const cardVerdict = new Map(); // chatId -> true | false | "dead"
+    async function sendTelegram(_e, _t, chatId) { SENT_TEXT.push(chatId); return true; }
+    async function sendPhotoBinary(_e, chatId) {
+      const v = cardVerdict.get(chatId);
+      if (v === "dead") { deadHit = chatId; return "dead"; }
+      if (v !== true) return false;
+      SENT_CARD.push(chatId);
+      return true;
+    }
+    async function sendDice() { return 3; }
+    async function renderCardPngCached() { return new ArrayBuffer(8); }
+    async function shouldSendNotification() { return true; }
+    async function saveNotifiedMatch() { return true; }
+    function isBackfillEligible() { return false; }
+    function isMatchFinished() { return false; }
+    function specialBanner() { return ""; }
+    eval([grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, nowTehran, counts, notifiedMatches, deadChats)")].join("\n"));
+    const mkMatch = (crests) => ({
+      id: "cf-1",
+      utcDate: new Date(Date.now() + 30 * 60e3).toISOString(),
+      status: "SCHEDULED",
+      competition: { code: "PL" },
+      homeTeam: { name: "Arsenal FC", crest: crests ? "https://x/1.png" : undefined },
+      awayTeam: { name: "Chelsea FC", crest: crests ? "https://x/2.png" : undefined }
+    });
+    const cfg = { type: "pre-match-1h", windowCheck: () => true, messageFormatter: async () => "MSG", requiresFuture: true };
+    const run = (match, chats) => {
+      const counts = { "pre-match-1h": 0 };
+      const deadChats = [];
+      const p = sendNotificationIfNeeded(match, cfg, [{ tz: "Asia/Tehran", lang: "fa", chats }], {}, new Date(), counts, {}, deadChats);
+      return { p, counts, deadChats };
+    };
+    // 1. card OK for chat A, FAILS for chat B → B gets the text fallback.
+    cardVerdict.set(101, true); cardVerdict.set(102, false);
+    SENT_CARD.length = 0; SENT_TEXT.length = 0;
+    const r1 = run(mkMatch(true), [101, 102]);
+    await r1.p;
+    check("cardfallback: card OK for A, fail for B → card lands ONLY for A", SENT_CARD.length === 1 && SENT_CARD[0] === 101);
+    check("cardfallback: B still gets the TEXT fallback (no silent loss)", SENT_TEXT.length === 1 && SENT_TEXT[0] === 102);
+    check("cardfallback: the type still counts as sent (card success counts)", r1.counts["pre-match-1h"] === 1);
+    // 2. card dead for chat C → no text to C, C lands in deadChats (pruned).
+    cardVerdict.set(103, "dead");
+    SENT_CARD.length = 0; SENT_TEXT.length = 0;
+    const r2 = run(mkMatch(true), [103]);
+    await r2.p;
+    check("cardfallback: dead chat gets NO card retry and NO text", deadHit === 103 && SENT_TEXT.length === 0);
+    check("cardfallback: dead chat lands in deadChats for pruning", r2.deadChats.length === 1 && r2.deadChats[0] === 103);
+    // 3. no crests → no card attempted → text for EVERYONE.
+    cardVerdict.clear();
+    SENT_CARD.length = 0; SENT_TEXT.length = 0;
+    const r3 = run(mkMatch(false), [201, 202]);
+    await r3.p;
+    check("cardfallback: no card attempted → text fallback for every chat", SENT_TEXT.length === 2 && SENT_CARD.length === 0);
+    // 4. all cards land → zero redundant text sends (the card caption
+    //    already carries the text — the old skip behavior is preserved).
+    cardVerdict.set(301, true); cardVerdict.set(302, true);
+    SENT_CARD.length = 0; SENT_TEXT.length = 0;
+    const r4 = run(mkMatch(true), [301, 302]);
+    await r4.p;
+    check("cardfallback: all cards land → no redundant text sends", SENT_CARD.length === 2 && SENT_TEXT.length === 0);
+    check("cardfallback: all-cards success still counts (breadcrumb)", r4.counts["pre-match-1h"] === 1);
+  })();
 
   console.log("\n" + (failed ? failed + " FAILURES" : "ALL PASS") + " (" + passed + " checks)");
   process.exit(failed ? 1 : 0);

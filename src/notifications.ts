@@ -134,25 +134,30 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
     // v13.19-every-card: send a visual match CARD for EVERY notification type
     // (72h, 24h, 3h, 1h, 5min, match-start, result) — including late
     // backfills. The card image carries the crests + layout; the caption
-    // carries the full date/time/teams/competition text. If the card sends
-    // successfully, the separate text message is SKIPPED (the card already
-    // has the text). If the card render or send fails, fall back to the
-    // separate text message so the notification is never lost.
-    let cardSent = false;
+    // carries the full match text. If the card send fails for a chat, the
+    // text fallback below covers THAT chat so the notification is never lost.
+    // v13.69-cardfallback: PER-CHAT verdicts. The old group-level gate
+    // (cardSent = cardResults.some(true)) marked the whole tz-group served
+    // when ONE chat's photo landed — every chat whose card send failed
+    // (transient 5xx/429, upload blip) got NOTHING: the group text fallback
+    // was skipped AND the write-first dedupe record was already persisted,
+    // so that user silently missed the alert with no retry path. Now each
+    // chat that did not CONFIRMEDLY receive the card (true) or is confirmed
+    // dead gets its own text fallback send.
+    let cardResults: any[] = [];
+    let cardsAttempted = false;
     if (match.homeTeam.crest || match.awayTeam.crest) {
       try {
         const pngBuf = await renderCardPngCached(scopedEnv, match, lang);
         if (pngBuf) {
+          cardsAttempted = true;
           // The caption is the full match text (specialBanner + formatter +
           // late tag if applicable). Truncate to 1024 (Telegram caption
           // limit) — the result formatter's standings line can push it long.
           const caption = message.length > 1024 ? message.slice(0, 1020) + "…" : message;
-          const cardResults = await Promise.allSettled(
+          cardResults = await Promise.allSettled(
             g.chats.map((chatId) => sendPhotoBinary(scopedEnv, chatId, pngBuf, caption, true))
           );
-          if (cardResults.some((r) => r.status === "fulfilled" && r.value === true)) {
-            cardSent = true;
-          }
           // Track dead chats from the card send too.
           cardResults.forEach((r, i) => {
             if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
@@ -162,19 +167,27 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, n
         console.warn("Card render/send failed, falling back to text: " + e.message);
       }
     }
-    // If the card sent successfully, skip the separate text message (the
-    // card's caption already carries the full text). Otherwise, send the
-    // text as the fallback.
-    let sendResults: any[] = [];
-    if (!cardSent) {
-      sendResults = await Promise.allSettled(
-        g.chats.map((chatId) => sendTelegram(scopedEnv, message, chatId))
+    // Text fallback for EXACTLY the chats the card did not reach (no card
+    // attempted, send failed, or send rejected). Dead chats are excluded —
+    // they are pruned below.
+    const needText = g.chats.filter((_chatId, i) => {
+      if (!cardsAttempted) return true;
+      const r = cardResults[i];
+      return !(r.status === "fulfilled" && (r.value === true || r.value === "dead"));
+    });
+    if (needText.length) {
+      const textResults = await Promise.allSettled(
+        needText.map((chatId) => sendTelegram(scopedEnv, message, chatId))
       );
-      sendResults.forEach((r, i) => {
-        if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
+      textResults.forEach((r, i) => {
+        if (r.status === "fulfilled" && r.value === "dead") deadChats.push(needText[i]);
       });
+      if (textResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
     }
-    if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
+    // A confirmed card delivery counts as success too — the old code only
+    // counted text sends, so card-only notifications were invisible to the
+    // breadcrumb summary (notify.s) and the tick logs.
+    if (cardResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
   }
   if (anySuccess) {
     counts[config.type]++;

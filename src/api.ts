@@ -92,13 +92,38 @@ const POST_GATE_ROUTES: RouteDef[] = [
         const ob = await env.STATE.get(CONFIG.KV_OUTBOX, "json").catch(() => null);
         outboxDepth = Array.isArray(ob) ? ob.length : 0;
       } catch (e) { }
+      // v13.69-poolage: the pool's OWN freshness — the one signal the
+      // 13.55-epochflow outage class hides (ticks healthy, heartbeat fresh,
+      // while the served data froze for 12.5h). Quiet-tick stamp-advances
+      // keep a healthy pool ≤~100min old; the 2h full-sweep cadence bounds
+      // the normal worst case. A missing pool (-1) or >180min flips the
+      // degraded band so monitors can trend it BEFORE reminders go stale.
+      let poolAgeMin = -1;
+      let poolMatches = 0;
+      try {
+        const pool = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
+        if (pool && pool.fetchedAt) {
+          const t = new Date(pool.fetchedAt).getTime();
+          if (!isNaN(t)) poolAgeMin = Math.round((Date.now() - t) / 6e4);
+          poolMatches = Array.isArray(pool.matches) ? pool.matches.length : 0;
+        }
+      } catch (e) { }
+      // v13.70-adminpulse: is the admin-paging layer ARMED? Every admin
+      // alert path (6h heartbeat, alertPhaseError pages, budget pages,
+      // audit gap reports, cap warnings) is gated on parseInt(env.CHAT_ID)
+      // — an unparseable secret silently kills ALL of them. Observed live:
+      // the heartbeat_sent_v1 / audit_alert_v1 stamps (both written INSIDE
+      // the guard) never existed, while every stamp written OUTSIDE the
+      // guard did — the entire observability layer was dead with healthz
+      // green. Surfaced here so a monitor sees a dead paging layer.
+      const adminAlertsOk = !isNaN(parseInt(env.CHAT_ID));
       const healthy = fresh && completing && outboxDepth < 50;
       // v13.45-sightlines: degraded band — still ok:true (200) but trending
       // toward a 503 line: ages past 2 periods (a normal day never exceeds
       // ~1 period + one long match-night tick), a growing-but-small outbox,
       // or the KV governor engaged. Additive field for dashboards/alert
       // tuning; the 200/503 decision above is untouched.
-      const degraded = healthy && (ageMin > CONFIG.EXECUTION_FREQUENCY_MINUTES * 2 || lastCronAgeMin > CONFIG.EXECUTION_FREQUENCY_MINUTES * 2 + 5 || outboxDepth > 10 || (parseInt(st.kv_writes_day) || 0) >= CONFIG.KV_WRITES_SOFT);
+      const degraded = healthy && (ageMin > CONFIG.EXECUTION_FREQUENCY_MINUTES * 2 || lastCronAgeMin > CONFIG.EXECUTION_FREQUENCY_MINUTES * 2 + 5 || outboxDepth > 10 || (parseInt(st.kv_writes_day) || 0) >= CONFIG.KV_WRITES_SOFT || poolAgeMin < 0 || poolAgeMin > 180 || !adminAlertsOk);
       // v13.38-qc: surface the KV write budget burn (measured, not pencil
       // math) so any monitor can watch the 1,000/day free-tier quota —
       // quota exhaustion was the original spam trigger.
@@ -107,6 +132,9 @@ const POST_GATE_ROUTES: RouteDef[] = [
         heartbeat_age_min: ageMin,
         last_cron_age_min: lastCronAgeMin,
         outbox_depth: outboxDepth,
+        pool_age_min: poolAgeMin,
+        pool_matches: poolMatches,
+        admin_alerts_ok: adminAlertsOk,
         kv_writes_day: parseInt(st.kv_writes_day) || 0,
         kv_budget: st.budget || null,
         degraded: degraded,

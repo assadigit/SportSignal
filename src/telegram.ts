@@ -12,6 +12,38 @@ import { vlog, bumpSubrequest } from "./utils";
 
 var TELEGRAM_PAUSE_UNTIL = 0;
 
+// v13.69-pacenotify: proactive global pacing. Telegram's bot-level limit is
+// ~30 messages/sec; the broadcast fan-outs (Promise.allSettled over every
+// chat) fire all sends in parallel, so ≥30 chats is a guaranteed 429
+// cascade. A 40ms floor between Telegram API calls (~25/sec) keeps every
+// fan-out under the limit. The wait is pure wall-clock sleep (zero CPU
+// against the free plan's 10ms rolling average; a cron tick has minutes of
+// wall-time headroom). Per-isolate like TELEGRAM_PAUSE_UNTIL — the cron's
+// broadcast fan-out lives in ONE invocation, which is exactly the burst
+// that needs pacing; webhook isolates send 1-2 messages each.
+var TG_LAST_API_AT = 0;
+async function paceTelegram() {
+  const gap = CONFIG.TELEGRAM_MIN_SEND_GAP_MS || 40;
+  const waitMs = TG_LAST_API_AT + gap - Date.now();
+  if (waitMs > 0) await new Promise((r) => setTimeout(r, waitMs));
+  TG_LAST_API_AT = Date.now();
+}
+
+// v13.69-pacenotify: wait OUT a live 429 pause instead of dropping the
+// send. Returns true once the pause has lifted (the caller proceeds with
+// the send), false when the pause outlives the bound (the caller defers
+// via the outbox / re-queue — never a silent drop). Telegram's
+// global-limit retry_after is 1-5s; the bound is 8s so a normal pause
+// always clears.
+async function waitTelegramPause() {
+  const start = Date.now();
+  while (Date.now() < TELEGRAM_PAUSE_UNTIL) {
+    if (Date.now() - start >= (CONFIG.TELEGRAM_PAUSE_WAIT_MAX_MS || 8000)) return false;
+    await new Promise((r) => setTimeout(r, Math.min(TELEGRAM_PAUSE_UNTIL - Date.now(), 250)));
+  }
+  return true;
+}
+
 // Send a MarkdownV2 message. Returns true on success, "dead" when the chat
 // is gone (not found / blocked / kicked / deactivated), false otherwise.
 // `keyboard` (optional) is a Telegram InlineKeyboardMarkup object:
@@ -28,8 +60,26 @@ export async function sendTelegram(env: Env, text, chatId, keyboard?) {
   };
   if (keyboard) payload.reply_markup = keyboard;
   for (let attempt = 1; attempt <= CONFIG.TELEGRAM_RETRY_ATTEMPTS; attempt++) {
-    if (Date.now() < TELEGRAM_PAUSE_UNTIL) return false;
-    if (bumpSubrequest()) return false;
+    // v13.69-pacenotify: a live 429 pause no longer kills the send on
+    // arrival. The old `if (paused) return false;` was the silent-loss
+    // hole: callers persist the write-first dedupe record BEFORE sending,
+    // so a paused send was never retried — the exact shape of a burst-429
+    // broadcast casualty (30+ parallel sends, the first 429 sets the pause,
+    // every other send drops dead with no outbox entry). Now the sender
+    // WAITS OUT the pause (bounded); only a pause that outlives the bound
+    // defers via the outbox.
+    if (Date.now() < TELEGRAM_PAUSE_UNTIL && !(await waitTelegramPause())) {
+      await outboxPush(env, text, chatId, keyboard).catch((e) => console.warn("Outbox push failed: " + e.message));
+      return false;
+    }
+    await paceTelegram();
+    if (bumpSubrequest()) {
+      // v13.69: subrequest-budget exhaustion defers via the outbox too
+      // (was another silent `return false` — a message the next tick's
+      // drain can and should recover).
+      await outboxPush(env, text, chatId, keyboard).catch((e) => console.warn("Outbox push failed: " + e.message));
+      return false;
+    }
     try {
       const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
         method: "POST",
@@ -73,16 +123,28 @@ export async function sendTelegram(env: Env, text, chatId, keyboard?) {
 // v13.9-reliability #3: push a failed send to the outbox KV list. Capped at
 // KV_OUTBOX_MAX entries (oldest dropped) so a sustained outage doesn't
 // bloat KV. Each entry carries an attempt count for exponential backoff.
+// v13.69-pacenotify: serialized per isolate. The pause/budget deferral
+// paths in sendTelegram can now reach the outbox from several concurrent
+// fan-out promises — concurrent read-modify-write cycles on the same KV key
+// silently DROP entries (each push read the list before the other's write
+// landed). A promise chain serializes the pushes; cross-isolate races stay
+// bounded by KV last-write-wins (pre-existing, the same window drainOutbox
+// documents — never-spam outranks never-miss).
+var OUTBOX_CHAIN: Promise<void> = Promise.resolve();
 export async function outboxPush(env: Env, text, chatId, keyboard?) {
-  try {
-    const list = await env.STATE.get(CONFIG.KV_OUTBOX, "json").catch(() => null) || [];
-    list.push({ text, chatId, keyboard: keyboard || null, ts: Date.now(), attempts: 0 });
-    // Cap: drop oldest entries beyond the max.
-    while (list.length > (CONFIG.KV_OUTBOX_MAX || 200)) list.shift();
-    await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(list), { expirationTtl: 7 * 86400 }).catch(() => {});
-  } catch (e) {
-    console.warn("Outbox push failed: " + e.message);
-  }
+  const run = OUTBOX_CHAIN.then(async () => {
+    try {
+      const list = await env.STATE.get(CONFIG.KV_OUTBOX, "json").catch(() => null) || [];
+      list.push({ text, chatId, keyboard: keyboard || null, ts: Date.now(), attempts: 0 });
+      // Cap: drop oldest entries beyond the max.
+      while (list.length > (CONFIG.KV_OUTBOX_MAX || 200)) list.shift();
+      await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(list), { expirationTtl: 7 * 86400 }).catch(() => {});
+    } catch (e) {
+      console.warn("Outbox push failed: " + e.message);
+    }
+  });
+  OUTBOX_CHAIN = run.then(() => undefined, () => undefined);
+  await run;
 }
 
 // v13.9-reliability #3: drain the outbox. Retries each pending send with
@@ -151,7 +213,12 @@ export async function sendTelegramDirect(env: Env, text, chatId, keyboard?) {
   const payload: any = { chat_id: chatId, text, parse_mode: "MarkdownV2" };
   if (keyboard) payload.reply_markup = keyboard;
   for (let attempt = 1; attempt <= CONFIG.TELEGRAM_RETRY_ATTEMPTS; attempt++) {
-    if (Date.now() < TELEGRAM_PAUSE_UNTIL) return false;
+    // v13.69-pacenotify: same pause semantics as sendTelegram, except a
+    // pause that outlives the bound returns false WITHOUT an outbox push —
+    // the caller here is drainOutbox, which re-queues failures itself
+    // (outboxing from the drain would recurse).
+    if (Date.now() < TELEGRAM_PAUSE_UNTIL && !(await waitTelegramPause())) return false;
+    await paceTelegram();
     if (bumpSubrequest()) return false;
     try {
       const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
@@ -188,6 +255,7 @@ export async function sendTelegramDirect(env: Env, text, chatId, keyboard?) {
 // on failure. Sent as a SEPARATE message (can't be inline with text).
 export async function sendDice(env: Env, chatId, emoji) {
   try {
+    await paceTelegram();
     if (bumpSubrequest()) return null;
     const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendDice`, {
       method: "POST",
@@ -218,34 +286,50 @@ export async function sendDice(env: Env, chatId, emoji) {
 // v13.18: if `parseMode` is true, the caption is sent as MarkdownV2
 // (so bold/team names render in the caption).
 // Returns true on success, "dead" for dead chats, false otherwise.
+// v13.69-pacenotify: the photo path had ZERO retries — a single 429/5xx
+// silently lost the card (the per-chat text fallback in notifications.ts
+// catches the residue, but a retry keeps the rich card on transient
+// blips). Same pause/pacing semantics as the text senders; 2 attempts —
+// the photo upload is the heaviest call, and the text fallback is the
+// safety net behind it.
 export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, caption?, parseMode?: boolean) {
-  try {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    if (Date.now() < TELEGRAM_PAUSE_UNTIL && !(await waitTelegramPause())) return false;
+    await paceTelegram();
     if (bumpSubrequest()) return false;
-    const formData = new FormData();
-    formData.append("chat_id", String(chatId));
-    formData.append("photo", new Blob([pngBuffer], { type: "image/png" }), "match-card.png");
-    if (caption) {
-      formData.append("caption", caption);
-      if (parseMode) formData.append("parse_mode", "MarkdownV2");
+    try {
+      const formData = new FormData();
+      formData.append("chat_id", String(chatId));
+      formData.append("photo", new Blob([pngBuffer], { type: "image/png" }), "match-card.png");
+      if (caption) {
+        formData.append("caption", caption);
+        if (parseMode) formData.append("parse_mode", "MarkdownV2");
+      }
+      const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendPhoto`, {
+        method: "POST",
+        body: formData
+      });
+      if (res.ok) {
+        vlog(`\u{1F4F7} Photo (binary) sent to ${chatId}`);
+        return true;
+      }
+      const error = await res.text();
+      console.error(`sendPhotoBinary error (attempt ${attempt}/2): ${error}`);
+      if (res.status === 429) {
+        const retryAfter = parseInt(res.headers.get("retry-after") || "2");
+        TELEGRAM_PAUSE_UNTIL = Math.max(TELEGRAM_PAUSE_UNTIL, Date.now() + Math.min(Math.max(retryAfter, 1), 10) * 1e3);
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+      if (res.status >= 400 && res.status < 500) {
+        return /chat not found|blocked by the user|bot was kicked|deactivated/i.test(error) ? "dead" : false;
+      }
+    } catch (e) {
+      console.error(`sendPhotoBinary network error (attempt ${attempt}/2): ` + e.message);
     }
-    const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendPhoto`, {
-      method: "POST",
-      body: formData
-    });
-    if (res.ok) {
-      vlog(`\u{1F4F7} Photo (binary) sent to ${chatId}`);
-      return true;
-    }
-    const error = await res.text();
-    console.error(`sendPhotoBinary error: ${error}`);
-    if (res.status >= 400 && res.status < 500) {
-      return /chat not found|blocked by the user|bot was kicked|deactivated/i.test(error) ? "dead" : false;
-    }
-    return false;
-  } catch (e) {
-    console.error("sendPhotoBinary network error: " + e.message);
-    return false;
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 1e3 * attempt));
   }
+  return false;
 }
 
 // v12.x compatibility alias sendTelegramWithKeyboard — REMOVED in v13.46-trim
