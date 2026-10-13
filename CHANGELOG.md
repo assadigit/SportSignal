@@ -6,6 +6,29 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.79-docs] — 2026-10-13 (ARCHITECTURE.md + ADR-001..006 + README/RUNBOOK refresh)
+
+Seventh hygiene phase (worklog Task 44 — the documentation deliverable).
+
+- **ARCHITECTURE.md** (new): the full module map in 8 layers (leaves →
+  match model → providers → composers → digest/notify products →
+  user-facing state → surfaces → the cron shell + phases), the dependency
+  rules (acyclic layer-down, no re-export shims, groups move together in
+  the harness order, KV keys live in CONFIG), and "where to add things"
+  for the five most common change types.
+- **docs/adr/ADR-001..006** (new): the six decisions the mission named —
+  website-as-truth (001), write-first dedupe (002), fail-closed KV (003),
+  no-sweep-on-commands (004), eval-harness co-evolution (005, incl. why
+  handleTelegramUpdate stays whole), versioned assets rename-on-edit (006).
+- **README.md**: the module map now reflects the v13.74–v13.78 groups; the
+  "deliberately deferred" list updated (cron split DONE; admin.ts source
+  split + ~2 KB inline-CSS dedupe deferred with measurements — needs a
+  visual-parity harness first; public-matches justified-as-is).
+- **RUNBOOK.md**: saveNotifiedMatch pointer updated (matches.ts →
+  match-dedupe.ts).
+
+No code changes; suite unchanged.
+
 ## [13.78-botui] — 2026-10-13 (bot.ts 536 → bot-ui.ts 107 + the whole router)
 
 Sixth hygiene phase (worklog Task 42). The tappable-UI layer

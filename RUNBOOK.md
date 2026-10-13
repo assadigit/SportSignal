@@ -291,7 +291,7 @@ only on successful KV put + outbox write-first). If one is reported:
 3. Read `notified_matches_v6` for that match — two records with the SAME type
    and timestamps seconds apart = real duplicate → suspect an isolate boundary
    (MEM_DEDUPE is per-isolate) + a KV read miss; escalate to code inspection of
-   `saveNotifiedMatch` (matches.ts) before touching anything.
+   `saveNotifiedMatch` (match-dedupe.ts) before touching anything.
 
 ---
 

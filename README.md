@@ -83,7 +83,7 @@ repo: **it is better to miss one notification than to spam.** (See
 ### The tick (the heart)
 
 One Worker, one cron trigger: `*/10 * * * *` UTC. Each tick runs the same ordered
-pipeline (full source of truth: `src/cron.ts`):
+pipeline (the shell + phase modules: `src/cron.ts` + `src/cron-*.ts`, split in v13.75):
 
 ```
 execution_lock ─► drain outbox ─► refresh pool ─► fingerprint diff ─►
@@ -184,17 +184,24 @@ src/
   fa-dict.ts        static Farsi team dictionary (translation layer 1)
   translate.ts      3-layer translation + competition helpers (AI/admin/dict)
   fa-ai.ts          Workers AI Farsi-name learner (layer 2, KV-cached)
-  matches.ts        windows, eligibility, notified-record KV (write-first)
-  providers.ts       football-data / sportscore / thesportsdb chain + circuits
+  match-model/windows/dedupe/classify   the match rules (v13.76: status
+                   vocabulary, time windows, the notified-record KV with the
+                   write-first send gate, eligibility + pickHeroMatch)
+  provider-breaker/-wikipedia/-sportscore/-tsp/-fd, match-pool,
+  provider-cups     the provider clients (v13.74); providers.ts is the
+                   orchestrator layer (long view / live sweep / merge)
   telegram.ts       Bot API senders (retry / 429 pause / dead-chat / outbox)
   composers.ts      message + card composers, standings pipeline
-  digest.ts         weekly tables / morning digest / big-match broadcasts
-  notifications.ts  per-match notification engine + status-change detection
+  digest-weekly/-morning/-bigmatch/-coronation  the digest products (v13.77)
+  notify-engine/-status/-audit  the notification engine split (v13.77)
   users.ts          chat registry / member profiles / prefs / master list
   admin.ts          sessions / settings / clubs catalog / simulate fixtures
+  admin-bot.ts      the owner toolbelt (/admin /members /status /broadcast)
   public-matches.ts /api/public-matches pipeline (cache+lock+enrich+shape)
-  bot.ts            Telegram webhook handler (/start /lang /follow /next …)
-  cron.ts           the */10 tick (meter; governor; lock; pool; completion blob)
+  bot-ui.ts         reply keyboard + normalizer + grids/pickers (v13.78)
+  bot.ts            Telegram webhook router — handleTelegramUpdate (kept whole)
+  cron-preflight/-users/-pool/-maintenance/-notify/-public + cron.ts (the
+                   shell)    the */10 tick split into phases (v13.75)
   monitoring.ts     cron status blob reader + phase-error alerts + live fingerprint
   migration.ts      bot-migration broadcast round logic
   auth.ts           admin login/logout/change-password (HMAC session cookie)
@@ -376,8 +383,16 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
 
 **Deliberately deferred (documented, not forgotten):**
 
-- `cron.ts` phase extraction / `kv-meter.ts` split — revisit only with
-  failure-injection tests (decision #11)
+- ~~`cron.ts` phase extraction~~ — DONE in v13.75-cronsplit (shell + six
+  phase modules, meter + completion blob stay in the shell by design; see
+  ARCHITECTURE.md and ADR-005)
+- `pages/admin.ts` source split + inline-CSS dedupe (~2 KB measured:
+  @font-face ×4 and the theme-init snippet are byte-identical across
+  admin/login/public) — deferred: template-literal surgery on live pages
+  with byte-identical-output requirements; needs a visual-parity harness
+  (hero + list screenshots) first
+- `public-matches.ts` (649) — justified-as-is: cohesive around the public
+  payload contract (audit finding, reaffirmed)
 - `assets/core-13.8.js` dormant X i18n keys — live public asset, zero
   functional cost (decision #10, CHANGELOG 13.48)
 - `sched_v1:*` KV orphans (156 keys) — 7-day TTLs self-expire ~2026-09-22;
