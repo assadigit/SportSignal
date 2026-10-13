@@ -18,7 +18,7 @@ import { shouldNotify } from "./match-classify";
 import { fetchLongView, fetchMatchesFromAPI } from "./providers";
 import { getCachedMatches } from "./match-pool";
 import { sendTelegram } from "./telegram";
-import { sendLeagueTables, sendWeekAhead } from "./digest";
+import { sendLeagueTables, sendWeekAhead } from "./digest-weekly";
 import { getRegisteredChats, getBotMembers } from "./users";
 import { isAdminAuthed, getSettings, sanitizeSettings, syncUclSelection, canonicalizeTeams, getClubsCatalog, applySettings, clubsSearch } from "./admin";
 import { getCronStatus } from "./monitoring";
@@ -427,7 +427,7 @@ export const ADMIN_OPS_ROUTES: RouteDef[] = [
       try {
         const tracked = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
         const matches = tracked && Array.isArray(tracked.matches) ? tracked.matches : [];
-        const { auditNotifications } = await import("./notifications");
+        const { auditNotifications } = await import("./notify-audit");
         const result = await auditNotifications(env, matches);
         return jsonResponse(result);
       } catch (e) {

@@ -8,8 +8,12 @@ import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { shouldNotify } from "./match-classify";
 import { translateTeam } from "./translate";
-import { sendMatchNotifications, detectStatusChanges, auditNotifications } from "./notifications";
-import { broadcastBigMatchResults, broadcastBigMatchKickoff, maybeSendMorningDigest, maybeNotifyTableToppers } from "./digest";
+import { sendMatchNotifications } from "./notify-engine";
+import { detectStatusChanges } from "./notify-status";
+import { auditNotifications } from "./notify-audit";
+import { broadcastBigMatchResults, broadcastBigMatchKickoff } from "./digest-bigmatch";
+import { maybeSendMorningDigest } from "./digest-morning";
+import { maybeNotifyTableToppers } from "./digest-coronation";
 import { alertPhaseError } from "./monitoring";
 
 export async function runNotifyPhase(env: Env, ctx) {

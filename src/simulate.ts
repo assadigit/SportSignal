@@ -7,7 +7,7 @@
 import type { Env, RouteDef } from "./types";
 import { jsonResponse } from "./utils";
 import { formatResultMessage } from "./composers";
-import { sendMatchNotifications } from "./notifications";
+import { sendMatchNotifications } from "./notify-engine";
 import { getRegisteredChats } from "./users";
 import { buildDummyMatches } from "./admin";
 import { matchKey } from "./dedupe";

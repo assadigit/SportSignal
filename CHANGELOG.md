@@ -6,6 +6,34 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.77-digestnotify] — 2026-10-13 (digest.ts 559 + notifications.ts 516 → 7 modules)
+
+Fifth hygiene phase (worklog Task 41). Two more god modules became groups
+(byte-identical bodies — moves, not rewrites):
+
+| Module | Lines | Owns |
+| :--- | ---: | :--- |
+| `digest-weekly.ts` | 153 | Monday league tables + week-ahead fixtures |
+| `digest-morning.ts` | 125 | the 9am matchday digest (digest_sent_* dedupe) |
+| `digest-bigmatch.ts` | 161 | big-match FT + kickoff broadcasts |
+| `digest-coronation.ts` | 159 | table-top coronation alerts |
+| `notify-engine.ts` | 318 | NOTIFICATION_CONFIGS + sendNotificationIfNeeded + the fan-out |
+| `notify-status.ts` | 148 | detectStatusChanges (kickoff/HT/FT, fail-closed map) |
+| `notify-audit.ts` | 81 | the notified-match gap audit |
+
+- All importers rewritten to the specific module (cron, cron-notify, bot,
+  admin-ops, simulate) — including the DYNAMIC import in admin-ops
+  (/api/audit's `await import("./notifications")` → "./notify-audit").
+- Harness co-evolution: worker-src.js order carries both groups where the
+  two files sat; every dependency is grab-based (position-independent) or
+  a content-span regex (#nospam6 spans within digest-morning.ts), so no
+  segment re-anchors were needed. +4 #digestnotify locks on the real files.
+- The write-first dedupe chain is untouched: notify-engine's
+  saveNotifiedMatch gate, digest-bigmatch's persisted-before-send, and the
+  mark-before-send morning digest all byte-identical.
+
+Suite: 815 checks green (811 + 4 #digestnotify locks).
+
 ## [13.76-matchsplit] — 2026-10-13 (matches.ts 573 lines → 4 modules + normAlias→teams; the import cycle is dead)
 
 Fourth hygiene phase (worklog Task 40). matches.ts carried four products:

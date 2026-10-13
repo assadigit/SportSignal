@@ -11,7 +11,7 @@
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { resetSubrequestBudget, subrequestCount, kvOpsCount, bumpKvOp } from "./utils";
-import { maybeSendWeeklyTables } from "./digest";
+import { maybeSendWeeklyTables } from "./digest-weekly";
 import { alertPhaseError } from "./monitoring";
 import { runPreflight } from "./cron-preflight";
 import { runUserPhase } from "./cron-users";

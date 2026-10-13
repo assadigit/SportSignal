@@ -14,7 +14,7 @@ import { sendTelegram, answerCallbackQuery, sendPhotoBinary, editMessageText } f
 import { renderCardPngCached } from "./card";
 import { formatBigMatchMessage, specialBanner } from "./composers";
 import { getRegisteredChats, getUserPrefs, setUserLang, getUserTz, masterTeamList, userFollowsMatch, botStr, resolveTimeZone } from "./users";
-import { sendLeagueTables, sendWeekAhead } from "./digest";
+import { sendLeagueTables, sendWeekAhead } from "./digest-weekly";
 import { applySettings } from "./admin";
 import { isAdminChat, notifyAdminUserJoined, notifyAdminUserLeft, adminPanelText, adminPanelKeyboard, adminMembersMessage, adminStatusMessage, adminBroadcast } from "./admin-bot";
 

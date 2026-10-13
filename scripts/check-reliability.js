@@ -457,6 +457,14 @@ check("#matchsplit normAlias + TEAM_ALIASES live in teams.ts (with normalizeTeam
 check("#matchsplit the users↔matches cycle is dead (users imports no match-* module)", !/from "\.\/match-/.test(usersSrc76));
 check("#matchsplit matches.ts is gone (no shim, no re-export layer)", !fs14.existsSync(path14.join(__dirname, "..", "src", "matches.ts")));
 check("#matchsplit the match group is wired contiguously in the harness order", /"match-model\.ts", "match-windows\.ts", "match-dedupe\.ts", "match-classify\.ts",/.test(harness14));
+// #digestnotify (v13.77-digestnotify): digest.ts + notifications.ts became
+// GROUPS — weekly/morning/bigmatch/coronation + engine/status/audit. All
+// harness deps are grab-based or content-span regexes, so the structural
+// pins read the real files.
+check("#digestnotify digest.ts + notifications.ts are gone (no shims, no re-export layers)", !fs14.existsSync(path14.join(__dirname, "..", "src", "digest.ts")) && !fs14.existsSync(path14.join(__dirname, "..", "src", "notifications.ts")));
+check("#digestnotify the digest group is wired contiguously in the harness order", /"digest-weekly\.ts", "digest-morning\.ts", "digest-bigmatch\.ts", "digest-coronation\.ts",/.test(harness14));
+check("#digestnotify the notify group is wired contiguously in the harness order", /"notify-engine\.ts", "notify-status\.ts", "notify-audit\.ts",/.test(harness14));
+check("#digestnotify the audit dynamic import (admin-ops /api/audit) points at notify-audit", /await import\("\.\/notify-audit"\)/.test(fs14.readFileSync(path14.join(__dirname, "..", "src", "admin-ops.ts"), "utf8")));
 // auth + swr + card-route slices
 const authSeg14 = (src.match(/\/\/ ===== src\/auth\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
 check("#seams auth.ts owns the admin_auth cookie writes", /admin_auth=/.test(authSeg14) && /login_fail_/.test(authSeg14));

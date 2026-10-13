@@ -76,8 +76,14 @@ function workerSrc() {
     // the flat-eval dependency direction acyclic (function decls hoist, but
     // keep it obvious). provSeg15 in check-reliability spans breaker→telegram.
     "provider-breaker.ts", "provider-wikipedia.ts", "provider-sportscore.ts", "provider-tsp.ts", "provider-fd.ts", "match-pool.ts", "provider-cups.ts", "providers.ts",
-    "telegram.ts", "composers.ts", "digest.ts",
-    "notifications.ts", "users.ts", "admin.ts", "admin-bot.ts", "public-matches.ts", "bot.ts",
+    "telegram.ts", "composers.ts",
+    // v13.77-digestnotify: digest.ts + notifications.ts became GROUPS —
+    // weekly/morning/bigmatch/coronation digests + engine/status/audit
+    // notify modules. All harness deps are grab-based (position-independent)
+    // or content-span regexes (#nospam6 spans within digest-morning).
+    "digest-weekly.ts", "digest-morning.ts", "digest-bigmatch.ts", "digest-coronation.ts",
+    "notify-engine.ts", "notify-status.ts", "notify-audit.ts",
+    "users.ts", "admin.ts", "admin-bot.ts", "public-matches.ts", "bot.ts",
     // v13.75-cronsplit: the cron group — the six phase modules run BEFORE the
     // shell (cron.ts LAST) so the flat concat mirrors runtime order: the
     // prewarm/overlay logs land before the shell's completion-blob meter fold
