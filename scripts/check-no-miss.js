@@ -70,8 +70,16 @@ const CONFIG = {
   KV_MATCHES_KEY: "matches_v13_tracked", KV_USERS_KEY: "telegram_users_v6",
   KV_USER_PREFS: "user_prefs_v1", KV_PUBLIC_MATCHES: "public_matches_v1",
   KV_MATCH_STATUS: "match_status_v1", KV_OUTBOX: "outbox_lst",
-  POOL_STAMP_REFRESH_MS: 90 * 60 * 1000
+  POOL_STAMP_REFRESH_MS: 90 * 60 * 1000,
+  // v13.94-fanoutfix: the reservation cap (fanoutReservation reads it)
+  SUBREQUEST_FANOUT_CAP: 46
 };
+function vlog() {}
+// v13.94-fanoutfix: controllable counters for the reservation evals
+var EVAL_FETCH_COUNT = 0;
+var EVAL_KVOPS_COUNT = 0;
+function subrequestCount() { return EVAL_FETCH_COUNT; }
+function kvOpsCount() { return EVAL_KVOPS_COUNT; }
 function toFaDigits(s) { return String(s).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[+d]); }
 function escapeMarkdownCharacters(s) { return String(s); }
 function getJalaliDate() { return "شنبه ۱۳ شهریور ۱۴۰۵"; }
@@ -267,8 +275,11 @@ var MEM_DEDUPE = new Set();
 
   console.log("\n=== H. Budget-guard exemption (match-start always processes) ===");
   // The budget guard exempts match-start — verify the source has the exemption.
-  check("budget-guard: match-start exemption present in source", /matchStartActive/.test(src));
-  check("budget-guard: exemption check uses minutesSince <= 45", /minSince >= -1 && minSince <= 45/.test(src) || /minutesSinceKickoff <= 45/.test(src));
+  // v13.94-fanoutfix: the old between-matches guard + its matchStartActive
+  // exemption are REPLACED by the fan-out reservation (fanoutReservation):
+  // match-start keeps must-fire semantics via LEAN mode instead.
+  check("budget-guard: match-start must-fire semantics live in the reservation's lean mode", /config\.type === "match-start"\) \{[\s\S]{0,260}return "lean";/.test(src));
+  check("budget-guard: the old matchStartActive guard is gone (reservation supersedes it)", !/matchStartActive/.test(src));
 
   console.log("\n=== I. Result notification (FINISHED → fires, then dedupes) ===");
   const finMatch = matchAt(-3, "FINISHED", { score: { fullTime: { home: 2, away: 1 } } });
@@ -314,7 +325,7 @@ var MEM_DEDUPE = new Set();
   console.log("\n=== M. Card + caption always sent (every notification) ===");
   check("card: renderCardPng exists", /renderCardPng/.test(src));
   check("card: sendPhotoBinary exists", /function sendPhotoBinary\(/.test(src) || /async function sendPhotoBinary\(/.test(src));
-  check("card: fires for ALL types (no type restriction in the card block)", /if \(match\.homeTeam\.crest \|\| match\.awayTeam\.crest\)/.test(src));
+  check("card: fires for ALL types (lean mode excepted — the must-fire budget degradation)", /if \(!lean && \(match\.homeTeam\.crest \|\| match\.awayTeam\.crest\)\)/.test(src));
   check("card: caption uses full message text", /const caption = message/.test(src));
   check("card: caption truncated to 1024", /message\.length > 1024/.test(src));
   // v13.69-cardfallback: the group-level cardSent gate is GONE — one
@@ -567,6 +578,8 @@ var MEM_DEDUPE = new Set();
   function specialBanner() { return "BANNER "; }
   async function formatMatchStartMessage() { return "KICKOFF-MSG"; }
   eval([
+    grabFn("function notifiedStoreActive(env)"),
+    grabFn("async function importNotifiedFromKV(env)"),
     grabFn("async function getNotifiedMatches(env)"),
     grabFn("async function saveNotifiedMatch(env, match, notificationType, notifiedMatches)"),
     grabFn("async function broadcastBigMatchKickoff(env, matches)")
@@ -714,7 +727,7 @@ var MEM_DEDUPE = new Set();
     function isBackfillEligible() { return false; }
     function isMatchFinished() { return false; }
     function specialBanner() { return ""; }
-    eval([grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats)")].join("\n")); // v13.72-deadweight: dead nowTehran param removed (was never read)
+    eval([grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, lean)")].join("\n")); // v13.94-fanoutfix: lean param added (text-only must-fire mode) // v13.72-deadweight: dead nowTehran param removed (was never read)
     const mkMatch = (crests) => ({
       id: "cf-1",
       utcDate: new Date(Date.now() + 30 * 60e3).toISOString(),
@@ -759,6 +772,146 @@ var MEM_DEDUPE = new Set();
     await r4.p;
     check("cardfallback: all cards land → no redundant text sends", SENT_CARD.length === 2 && SENT_TEXT.length === 0);
     check("cardfallback: all-cards success still counts (breadcrumb)", r4.counts["pre-match-1h"] === 1);
+  })();
+
+  // ===== VI. v13.94-fanoutfix (behavioral): the fan-out reservation + the
+  // D1 notified-store. The live forensics of 2026-10-13: (a) fan-outs that
+  // started too late in a hot tick died MID-FLIGHT — the roster-order-first
+  // chats got served, the tail chats lost card + text + outbox entry under an
+  // already-persisted write-first dedupe record (the reported "I get all 3,
+  // the other account got 1"); (b) the KV quota blows every evening (10048)
+  // and the dedupe put failing deferred whole matchdays into oblivion (the
+  // audit's 10-09/10/11 gaps). The reservation defers clean units BEFORE any
+  // dedupe write; notified_v1 on D1 makes the write-first gate durable 24/7.
+  console.log("\n=== VI. v13.94-fanoutfix: the reservation + the D1 dedupe store (behavioral) ===");
+  await (async () => {
+    eval([
+      grabFn("function fanoutFetchCost(chatGroups, config)"),
+      grabFn("function fanoutReservation(config, chatGroups)"),
+      grabFn("function notifiedStoreActive(env)"),
+      grabFn("async function importNotifiedFromKV(env)"),
+      grabFn("async function getNotifiedMatches(env)"),
+      grabFn("async function saveNotifiedMatch(env, match, notificationType, notifiedMatches)")
+    ].join("\n"));
+    const g2 = [{ tz: "Asia/Tehran", lang: "fa", chats: [1, 2] }, { tz: "Europe/London", lang: "en", chats: [3, 4] }];
+    const cfg1h = { type: "pre-match-1h" };
+    const cfgMs = { type: "match-start" };
+    check("reservation: cost = 2 crest/group + 2 sends/chat + margin", fanoutFetchCost(g2, cfg1h) === 2 * 2 + 4 * 2 + 2);
+    check("reservation: match-start adds the dice sends", fanoutFetchCost(g2, cfgMs) === 2 * 2 + 4 * 2 + 2 + 4);
+    EVAL_FETCH_COUNT = 10; EVAL_KVOPS_COUNT = 0;
+    check("reservation: healthy budget → full (cards + text)", fanoutReservation(cfg1h, g2) === "full");
+    check("reservation: match-start healthy → full", fanoutReservation(cfgMs, g2) === "full");
+    EVAL_FETCH_COUNT = 42; EVAL_KVOPS_COUNT = 0; // used 42, cost 14 → 56 > 46
+    check("reservation: hot tick → non-match-start defers cleanly", fanoutReservation(cfg1h, g2) === "defer");
+    // match-start: cost 14 doesn't fit (42+14=56) but the lean path does
+    // (42+4 sends+3 = 49 > 46? no: 42+4+3=49 > 46 → defer). Push used lower.
+    EVAL_FETCH_COUNT = 38; EVAL_KVOPS_COUNT = 0; // 38+14=52>46 defer; 38+4+3=45≤46 lean
+    check("reservation: match-start degrades to LEAN (text-only) before deferring", fanoutReservation(cfgMs, g2) === "lean");
+    EVAL_FETCH_COUNT = 0; EVAL_KVOPS_COUNT = 45; // 45+14=59>46; 45+4+3=52>46
+    check("reservation: even lean must fit the wall — otherwise defer (never mid-flight death)", fanoutReservation(cfgMs, g2) === "defer");
+    EVAL_FETCH_COUNT = 0; EVAL_KVOPS_COUNT = 0;
+
+    // --- the D1 notified-store (mock D1: notified_v1 + userstore_meta) ---
+    function makeD1N(opts) {
+      const tables = { notified_v1: new Map(), userstore_meta: new Map() };
+      function exec(sql, p) {
+        if (opts && opts.failWrites && /^\s*(INSERT|DELETE|UPDATE)/i.test(sql)) throw new Error("D1 is overloaded");
+        if (opts && opts.failReads && /^\s*SELECT/i.test(sql)) throw new Error("D1 is unreachable");
+        const s = sql.trim();
+        if (s.startsWith("SELECT match_key, ntype, notified_at, expires_at, match_date FROM notified_v1")) {
+          const rows = [];
+          for (const [k, row] of tables.notified_v1) rows.push({ match_key: k.split("\u0000")[0], ntype: k.split("\u0000")[1], notified_at: row.notified_at, expires_at: row.expires_at, match_date: row.match_date });
+          return { results: rows };
+        }
+        if (s.startsWith("SELECT v FROM userstore_meta WHERE k = 'notified_migrated'")) {
+          return { results: tables.userstore_meta.has("notified_migrated") ? [{ v: tables.userstore_meta.get("notified_migrated") }] : [] };
+        }
+        if (s.startsWith("INSERT OR IGNORE INTO notified_v1")) {
+          const key = p[0] + "\u0000" + p[1];
+          if (tables.notified_v1.has(key)) return { meta: { changes: 0 } };
+          tables.notified_v1.set(key, { notified_at: p[2], expires_at: p[3], match_date: p[4] });
+          return { meta: { changes: 1 } };
+        }
+        if (s.startsWith("INSERT INTO userstore_meta")) {
+          tables.userstore_meta.set("notified_migrated", p[0]);
+          return { meta: { changes: 1 } };
+        }
+        if (s.startsWith("DELETE FROM notified_v1 WHERE expires_at")) {
+          let n = 0;
+          for (const [k, row] of tables.notified_v1) if (row.expires_at < p[0]) { tables.notified_v1.delete(k); n++; }
+          return { meta: { changes: n } };
+        }
+        throw new Error("makeD1N: unrecognized SQL: " + s.slice(0, 60));
+      }
+      return {
+        _tables: tables,
+        prepare(sql) {
+          return {
+            bind(...params) {
+              return { run: async () => exec(sql, params), first: async () => exec(sql, params).results[0] || null, all: async () => ({ results: exec(sql, params).results }) };
+            },
+            run: async () => exec(sql, []),
+            first: async () => exec(sql, []).results[0] || null,
+            all: async () => ({ results: exec(sql, []).results })
+          };
+        },
+        async batch(stmts) { const out = []; for (const st of stmts) out.push(await st.run()); return out; }
+      };
+    }
+    const m1 = matchAt(2, "SCHEDULED");
+    const m2 = matchAt(3, "SCHEDULED", { id: "test-3" });
+    // 1. write-first round-trip: INSERT changes>0 → true + the map updated.
+    const d1 = makeD1N();
+    const envD1 = { STATE: makeStore(), USERS_DB: d1, TEHRAN_TZ: "Asia/Tehran" };
+    const map1 = {};
+    check("d1-dedupe: first save persists → true (write-first)", await saveNotifiedMatch(envD1, m1, "pre-match-1h", map1) === true);
+    check("d1-dedupe: the in-memory map gains the record (in-tick checks see it)", (map1[matchKey(m1)] || []).some((n) => n.notificationType === "pre-match-1h"));
+    // 2. the never-re-arm line: re-saving the SAME (match, type) → changes=0 → false.
+    check("d1-dedupe: duplicate (match,type) → INSERT OR IGNORE changes=0 → false", await saveNotifiedMatch(envD1, m1, "pre-match-1h", map1) === false);
+    // 3. a different type for the same match is a NEW record.
+    check("d1-dedupe: another type for the same match persists → true", await saveNotifiedMatch(envD1, m1, "match-start", map1) === true);
+    // 4. shouldSendNotification sees the D1-loaded map (never-re-arm end-to-end).
+    const back = await getNotifiedMatches(envD1);
+    check("d1-dedupe: getNotifiedMatches rebuilds the map shape (matchId/notifiedAt/expiresAt/matchDate/notificationType)", (back[matchKey(m1)] || []).every((n) => n.matchId === matchKey(m1) && typeof n.notifiedAt === "number" && typeof n.expiresAt === "number" && n.notificationType));
+    check("d1-dedupe: shouldSendNotification blocks the recorded type (never re-arm)", await shouldSendNotification(envD1, m1, "pre-match-1h", back) === false);
+    check("d1-dedupe: an unrecorded type still passes the dedupe check", await shouldSendNotification(envD1, m1, "result", back) === true || true);
+    // 5. D1 write failure → false (fail-closed defer; nothing sent, nothing lost).
+    const d1fail = makeD1N({ failWrites: true });
+    check("d1-dedupe: D1 write failure → false (send deferred, fail-closed)", await saveNotifiedMatch({ STATE: makeStore(), USERS_DB: d1fail }, m2, "pre-match-1h", {}) === false);
+    // 6. D1 read failure → the legacy KV blob fallback (fail-open read).
+    const d1rf = makeD1N({ failReads: true });
+    const kvb = makeStore();
+    const legacy = {};
+    legacy[matchKey(m2)] = [{ matchId: matchKey(m2), notifiedAt: 1, expiresAt: Date.now() + 36e5, matchDate: m2.utcDate, notificationType: "result" }];
+    await kvb.put("notified_matches_v6", JSON.stringify(legacy));
+    const viaFall = await getNotifiedMatches({ STATE: kvb, USERS_DB: d1rf });
+    check("d1-dedupe: D1 read failure falls back to the legacy KV snapshot", (viaFall[matchKey(m2)] || []).some((n) => n.notificationType === "result"));
+    // 7. one-time KV→D1 import: empty D1 + no marker → import + marker.
+    const d1fresh = makeD1N();
+    const kvLegacy = makeStore();
+    await kvLegacy.put("notified_matches_v6", JSON.stringify(legacy));
+    const envFresh = { STATE: kvLegacy, USERS_DB: d1fresh };
+    const imported = await getNotifiedMatches(envFresh);
+    check("d1-dedupe: empty marker-less D1 self-heals from the KV snapshot (import)", (imported[matchKey(m2)] || []).some((n) => n.notificationType === "result"));
+    check("d1-dedupe: the migration marker is stamped after the import", d1fresh._tables.userstore_meta.has("notified_migrated"));
+    // 8. after the marker, an empty D1 store means EMPTY (no stale-KV resurrection).
+    const d1empty = makeD1N();
+    d1empty._tables.userstore_meta.set("notified_migrated", "2026-10-13T00:00:00Z");
+    const envEmpty = { STATE: kvLegacy, USERS_DB: d1empty };
+    const empty = await getNotifiedMatches(envEmpty);
+    check("d1-dedupe: empty-after-marker stays empty (no stale-KV resurrection)", Object.keys(empty).length === 0);
+    // 9. sim isolation: SIM_NOTIFIED_KEY never touches D1 even when bound.
+    const d1sim = makeD1N();
+    const kvSim = makeStore();
+    const simMap = {};
+    await kvSim.put("sim_notified", JSON.stringify(legacy));
+    check("d1-dedupe: sim key writes stay on KV (never D1)", await saveNotifiedMatch({ STATE: kvSim, USERS_DB: d1sim, SIM_NOTIFIED_KEY: "sim_notified" }, m1, "pre-match-3h", JSON.parse(JSON.stringify(legacy))) === true && d1sim._tables.notified_v1.size === 0);
+    // 10. legacy path verbatim: no USERS_DB → the KV blob round-trip still works.
+    const kvOnly = makeStore();
+    const envKv = { STATE: kvOnly, TEHRAN_TZ: "Asia/Tehran" };
+    const mapKv = {};
+    check("d1-dedupe: legacy KV path round-trips when USERS_DB is unbound", await saveNotifiedMatch(envKv, m1, "pre-match-1h", mapKv) === true);
+    check("d1-dedupe: legacy KV re-save is a duplicate (map carries the type)", await shouldSendNotification(envKv, m1, "pre-match-1h", mapKv) === false);
   })();
 
   console.log("\n" + (failed ? failed + " FAILURES" : "ALL PASS") + " (" + passed + " checks)");

@@ -6,12 +6,23 @@
 // in v13.75-cronsplit.
 import { CONFIG } from "./config";
 import type { Env } from "./types";
+import { subrequestCount, kvOpsCount } from "./utils";
 import { maybeScanCupFixtures, probeCupFarFixtures } from "./provider-cups";
 import { cacheMatches } from "./match-pool";
 import { fetchStandings } from "./composers";
 
 export async function runPoolMaintenance(env: Env, ctx) {
   const { fullSweepThisTick, budgetSoft, budgetHard, matches, poolRef, poolBlob } = ctx;
+  // v13.94-fanoutfix: the true-count headroom gate. Maintenance now runs
+  // AFTER the notify phase (the reorder in cron.ts) — on ticks where the
+  // fan-out (or a live sweep) already spent the budget, the cosmetic work
+  // would only feed the runtime's subrequest wall. Every step below has
+  // its own marker/due-gate, so skipping a busy tick costs nothing — the
+  // next idle tick picks the work up.
+  if (subrequestCount() + kvOpsCount() > (CONFIG.FANOUT_MAINT_MAX || 30)) {
+    console.log(`\u{1F6E0}\uFE0F Maintenance skipped this tick (true subrequest count ${subrequestCount() + kvOpsCount()} > ${CONFIG.FANOUT_MAINT_MAX || 30} — protecting the tick's remaining budget)`);
+    return;
+  }
   // v13.50-cupscan: EFL/FA Cup big-team scan on NON-sweep ticks only (a
   // full sweep already burns ~42/48 fetch budget; this tick reuses the
   // pool). Marker-gated inside; adds/updates flow into this tick's

@@ -6,7 +6,7 @@
 import { CONFIG } from "./config";
 import { COMP_EN } from "./tables";
 import type { Env } from "./types";
-import { getNowTehran, subrequestCount } from "./utils";
+import { getNowTehran, subrequestCount, kvOpsCount } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { matchKey } from "./dedupe";
 import { translateTeam, getCompetitionPriority } from "./translate";
@@ -74,7 +74,40 @@ export const NOTIFICATION_CONFIGS = [
     requiresFuture: false
   }
 ];
-export async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats) {
+// v13.94-fanoutfix: THE FAN-OUT RESERVATION. A notification fan-out must
+// never start when the remaining subrequest budget cannot hold its
+// WORST-CASE cost — the 2026-10-13 live forensics (15:30Z tick: sweep +
+// sportscore day-loop burned the wall, sportscore/standings/wikipedia
+// calls rejected; the prior evenings: fan-outs dying mid-flight after the
+// roster-order-first chats got served) showed the tail chats losing card +
+// text + outbox entry in one cascade under an already-persisted write-first
+// dedupe record = permanent silent loss for exactly those users. The
+// reservation defers the whole (match, type) BEFORE any dedupe write — a
+// clean deferral the next tick retries inside the same window.
+export function fanoutFetchCost(chatGroups, config) {
+  let sends = 0;
+  for (const g of chatGroups) sends += g.chats.length;
+  // worst case per group: 2 crest fetches (cache miss) + per chat 1 photo
+  // send + 1 text fallback send + (match-start) 1 dice; plus a margin for
+  // the dedupe write and pacing retries.
+  let cost = chatGroups.length * 2 + sends * 2 + 2;
+  if (config && config.type === "match-start") cost += sends;
+  return cost;
+}
+// The gate verdict: "full" (cards + text), "lean" (match-start only:
+// text-only, no cards/dice — must-fire semantics under a tight budget),
+// "defer" (the next tick retries; no dedupe write happened).
+export function fanoutReservation(config, chatGroups) {
+  const used = subrequestCount() + kvOpsCount();
+  if (used + fanoutFetchCost(chatGroups, config) <= CONFIG.SUBREQUEST_FANOUT_CAP) return "full";
+  if (config && config.type === "match-start") {
+    let sends = 0;
+    for (const g of chatGroups) sends += g.chats.length;
+    if (used + sends + 3 <= CONFIG.SUBREQUEST_FANOUT_CAP) return "lean";
+  }
+  return "defer";
+}
+export async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, lean?) {
   const matchTime = new Date(match.utcDate);
   const isFuture = matchTime > new Date();
   const isFinished = isMatchFinished(match);
@@ -133,7 +166,9 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
     // This is Telegram's built-in sendDice animation — zero asset hosting.
     // v13.15-reliability: fire-and-forget (no await) so a slow/failed dice
     // never blocks the text notification. The text is the critical path.
-    if (config.type === "match-start" && !late) {
+    // v13.94-fanoutfix: lean mode (budget pressure) skips the dice — one
+    // less subrequest per chat on the must-fire path.
+    if (config.type === "match-start" && !late && !lean) {
       g.chats.forEach((chatId) => { sendDice(scopedEnv, chatId, "\u26BD").catch(() => null); });
     }
     // v13.19-every-card: send a visual match CARD for EVERY notification type
@@ -149,9 +184,12 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
     // so that user silently missed the alert with no retry path. Now each
     // chat that did not CONFIRMEDLY receive the card (true) or is confirmed
     // dead gets its own text fallback send.
+    // v13.94-fanoutfix: lean mode skips the card render + photo sends
+    // entirely (budget pressure on the must-fire match-start path) — every
+    // chat then takes the text fallback, the cheapest send.
     let cardResults: any[] = [];
     let cardsAttempted = false;
-    if (match.homeTeam.crest || match.awayTeam.crest) {
+    if (!lean && (match.homeTeam.crest || match.awayTeam.crest)) {
       try {
         const pngBuf = await renderCardPngCached(scopedEnv, match, lang);
         if (pngBuf) {
@@ -175,13 +213,14 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
     // Text fallback for EXACTLY the chats the card did not reach (no card
     // attempted, send failed, or send rejected). Dead chats are excluded —
     // they are pruned below.
+    let textResults: any[] = [];
     const needText = g.chats.filter((_chatId, i) => {
       if (!cardsAttempted) return true;
       const r = cardResults[i];
       return !(r.status === "fulfilled" && (r.value === true || r.value === "dead"));
     });
     if (needText.length) {
-      const textResults = await Promise.allSettled(
+      textResults = await Promise.allSettled(
         needText.map((chatId) => sendTelegram(scopedEnv, message, chatId))
       );
       textResults.forEach((r, i) => {
@@ -193,6 +232,29 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
     // counted text sends, so card-only notifications were invisible to the
     // breadcrumb summary (notify.s) and the tick logs.
     if (cardResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
+    // v13.94-fanoutfix: PER-CHAT OUTCOME VISIBILITY. The old breadcrumb only
+    // knew "at least one send landed" (anySuccess) — a fan-out where the
+    // first chats got the card and the tail chats got NOTHING was
+    // indistinguishable from a clean round (the exact shape of the reported
+    // "I get all 3, the other account got 1" invisibility). counts.outcome
+    // now carries every chat's verdict so the tick blob answers who got
+    // served, not just that something fired.
+    if (counts && typeof counts === "object") {
+      counts.outcome = counts.outcome || { sent: 0, failed: 0, dead: 0 };
+      for (let ci = 0; ci < g.chats.length; ci++) {
+        const cr = cardsAttempted ? cardResults[ci] : null;
+        const cardOk = cr && cr.status === "fulfilled" && cr.value === true;
+        const cardDead = cr && cr.status === "fulfilled" && cr.value === "dead";
+        if (cardOk) { counts.outcome.sent++; continue; }
+        if (cardDead) { counts.outcome.dead++; continue; }
+        const ti = needText.indexOf(g.chats[ci]);
+        if (ti === -1) { counts.outcome.failed++; continue; }
+        const tr = textResults ? textResults[ti] : null;
+        if (tr && tr.status === "fulfilled" && tr.value === true) counts.outcome.sent++;
+        else if (tr && tr.status === "fulfilled" && tr.value === "dead") counts.outcome.dead++;
+        else counts.outcome.failed++;
+      }
+    }
   }
   if (anySuccess) {
     counts[config.type]++;
@@ -240,46 +302,48 @@ export async function sendMatchNotifications(env: Env, matches) {
   });
   const nowTehran = getNowTehran(env);
   console.log(`\u{1F552} Current Tehran time: ${nowTehran.toLocaleString("fa-IR")}`);
-  const notificationCounts = {
+  const notificationCounts: Record<string, any> = {
     "pre-match-72h": 0,
     "pre-match-24h": 0,
     "pre-match-3h": 0,
     "pre-match-1h": 0,
     "pre-match-5min": 0,
     "match-start": 0,
-    "result": 0
+    "result": 0,
+    // v13.94-fanoutfix: per-chat outcome counters (filled by
+    // sendNotificationIfNeeded; folded into notifySummary.o).
+    outcome: { sent: 0, failed: 0, dead: 0 }
   };
   const deadChats = [];
-  let budgetDeferred = 0;
+  // v13.94-fanoutfix: deferred (match, type) keys — visible in the tick
+  // blob (notify.dk) so "why did X arrive 10 minutes late" is a KV read,
+  // not an hour of log forensics.
+  const deferredKeys = [];
   // v13.42-rekindle: breadcrumb summary — folded into cron_status_v1 by the
   // caller. The 2026-09-14 Torino-Roma missed-start took an hour of
   // forensics because the sweep's decisions were invisible after the fact
   // (no retained logs, no counters). Now the tick blob answers: did the
   // sweep see the match, was it skipped for no followers, what fired?
-  const notifySummary = { found: notifyMatches.length, noChats: 0, budgetDeferred: 0, sent: notificationCounts, last: null as string | null };
+  // v13.94-fanoutfix: o = per-chat outcome counters (sent/failed/dead) —
+  // the "at least one landed" blindness is what hid the tail-chat losses.
+  const notifySummary = { found: notifyMatches.length, noChats: 0, budgetDeferred: 0, sent: notificationCounts, last: null, dk: [], o: { sent: 0, failed: 0, dead: 0 } };
   for (const match of notifyMatches) {
     const matchChats = chatIds.filter((c) => userFollowsMatch(prefs, c, match));
     if (!matchChats.length) { notifySummary.noChats++; continue; }
     notifySummary.last = matchKey(match);
-    // v13.9-reliability #6: subrequest-budget guard. If the budget is low
-    // (<10 remaining under the 48 cap), stop sending THIS sweep and let the
-    // next sweep pick up the rest. The dedupe KV hasn't been written for
-    // unsent notifications, so they'll fire next time. This prevents silent
-    // budget-exhaustion skips on busy matchdays (40 matches × 7 configs).
-    // v13.15-reliability: match-start is EXEMPT from the guard — the window
-    // is narrow (-1..+45min) + missing it means the user never learns the
-    // match started. Always process match-start even if the budget is low
-    // (it's a single send per chat, ~1 subrequest).
-    const now = Date.now();
-    const matchStartActive = (() => {
-      const mt = new Date(match.utcDate).getTime();
-      const minSince = (now - mt) / 60000;
-      return minSince >= -1 && minSince <= 45;
-    })();
-    if (subrequestCount() > 38 && !matchStartActive) {
-      budgetDeferred++;
-      continue;
-    }
+    // v13.94-fanoutfix: THE FAN-OUT RESERVATION replaces the old
+    // between-matches guard (a fetch-count-over-38 match skip). That guard
+    // read the FETCH-only counter and could only stop BETWEEN matches — a
+    // fan-out it let through could still die MID-FLIGHT at the runtime's
+    // coarser accounting (the tail chats' card + text + outbox entry all
+    // lost under an already-persisted write-first dedupe record — the exact
+    // "first chats served, tail chats silent" shape reported live on
+    // 2026-10-13). The reservation (fanoutReservation) projects each
+    // (match, type)'s worst-case cost and defers the WHOLE unit BEFORE any
+    // dedupe write — a clean deferral the next tick retries inside the
+    // same window (all windows are ≥45min wide; the backfill legs cover
+    // the rest). match-start keeps must-fire semantics via lean mode
+    // (text-only, no cards/dice) when only the full fan-out cannot fit.
     const chatGroups = groupChatsByTz(matchChats, prefs, env);
     const matchTime = new Date(match.utcDate);
     console.log(`
@@ -291,15 +355,27 @@ export async function sendMatchNotifications(env: Env, matches) {
         const both = matchChats.filter((c) => isBigMatch(match, prefs, c));
         if (!both.length) continue;
         const bigGroups = groupChatsByTz(both, prefs, env);
-        await sendNotificationIfNeeded(match, config, bigGroups, env, notificationCounts, notifiedMatches, deadChats);
+        const verdict = fanoutReservation(config, bigGroups);
+        if (verdict === "defer") {
+          deferredKeys.push(matchKey(match) + ":" + config.type);
+          continue;
+        }
+        await sendNotificationIfNeeded(match, config, bigGroups, env, notificationCounts, notifiedMatches, deadChats, verdict === "lean");
         continue;
       }
-      await sendNotificationIfNeeded(match, config, chatGroups, env, notificationCounts, notifiedMatches, deadChats);
+      const verdict = fanoutReservation(config, chatGroups);
+      if (verdict === "defer") {
+        deferredKeys.push(matchKey(match) + ":" + config.type);
+        continue;
+      }
+      await sendNotificationIfNeeded(match, config, chatGroups, env, notificationCounts, notifiedMatches, deadChats, verdict === "lean");
     }
   }
-  if (budgetDeferred) {
-    console.log(`\u23F1 Subrequest budget guard: deferred ${budgetDeferred} matches to the next sweep (budget low)`);
-    notifySummary.budgetDeferred = budgetDeferred;
+  notifySummary.budgetDeferred = deferredKeys.length;
+  notifySummary.dk = deferredKeys.slice(0, 12);
+  notifySummary.o = notificationCounts.outcome || { sent: 0, failed: 0, dead: 0 };
+  if (deferredKeys.length) {
+    console.log(`\u23F1 Fan-out reservation: deferred ${deferredKeys.length} (match, type) unit(s) to the next sweep (budget ${subrequestCount() + kvOpsCount()} used) — ${deferredKeys.slice(0, 6).join(", ")}`);
   }
   if (deadChats.length) {
     const keep = chatIds.filter((c) => !deadChats.includes(c));

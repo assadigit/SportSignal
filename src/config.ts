@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.93-fullrec";
+export const VERSION = "13.94-fanoutfix";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -212,6 +212,27 @@ export const CONFIG: Record<string, any> = {
   // 429 pause IS active, senders wait it out (bounded below) instead of
   // dropping the send — Telegram's global-limit retry_after is 1-5s.
   TELEGRAM_MIN_SEND_GAP_MS: 40,
+  // v13.94-fanoutfix: THE FAN-OUT RESERVATION. The runtime's ~50-subrequest
+  // ceiling is per-invocation and Cloudflare's accounting is coarser than
+  // our fetch-only meter (the 2026-10-13 15:30Z tick: meter claimed
+  // "50/48" while sportscore/standings/wikipedia calls were already being
+  // rejected; the 15:40Z tick ran 30 fetches + 30 KV ops = 60 "true" and
+  // survived — the accounting includes per-colo variance we cannot see).
+  // A notification fan-out that starts too late in a hot tick dies
+  // MID-FLIGHT: the earliest chats (the admin is first in roster order)
+  // get their cards, the tail chats lose card + text + outbox entry in one
+  // cascade — under a write-first dedupe record that means PERMANENT
+  // silent loss for exactly those users (the reported "I get all 3, the
+  // other account got 1"). The reservation gate below defers a whole
+  // (match, type) instead: no dedupe write happened, the next tick
+  // retries inside the same window (every window is ≥45 min wide and
+  // the backfill legs cover the rest).
+  SUBREQUEST_FANOUT_CAP: 46,
+  // v13.94-fanoutfix: maintenance (cup scans / far probe / standings
+  // refresh / stamp-advance) is cosmetic — it must never take the budget
+  // a pending fan-out needs. Skipped on ticks whose true count is already
+  // high (the notify phase just spent it, or a live sweep did).
+  FANOUT_MAINT_MAX: 30,
   TELEGRAM_PAUSE_WAIT_MAX_MS: 8000,
   KV_USERS_KEY: "telegram_users_v6",
   KV_MATCHES_KEY: "matches_v13_tracked",

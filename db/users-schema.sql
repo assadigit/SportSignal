@@ -49,3 +49,25 @@ CREATE TABLE IF NOT EXISTS userstore_meta (
   k TEXT PRIMARY KEY,
   v TEXT NOT NULL
 );
+
+-- v13.94-fanoutfix — the notified-match DEDUPE store. ROOT CAUSE (live
+-- forensics 2026-10-13): the KV daily write quota is ACCOUNT-level and
+-- exhausts every afternoon/evening (error 10048; measured again today via
+-- the REST probe). The write-first dedupe put is THE critical write of the
+-- notification pipeline — while it fails, every send defers; when the
+-- failure outlives the notification windows, whole matchdays vanish for
+-- every user (the audit's 2026-10-09/10/11 gaps: Dortmund-Werder,
+-- Liverpool-ManCity, Barca-Getafe, ManUtd-Tottenham... zero records).
+-- D1's separate 100k-writes/day free tier makes the write-first gate
+-- durable 24/7. PK (match_key, ntype) = the "never-re-arm" line: a row
+-- exists ⟺ the (match, type) fired; INSERT OR IGNORE makes the check+write
+-- ATOMIC (the KV blob needed a whole-key read-modify-write).
+CREATE TABLE IF NOT EXISTS notified_v1 (
+  match_key TEXT NOT NULL,
+  ntype TEXT NOT NULL,
+  notified_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  match_date TEXT,
+  PRIMARY KEY (match_key, ntype)
+);
+CREATE INDEX IF NOT EXISTS idx_notified_exp ON notified_v1(expires_at);

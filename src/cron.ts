@@ -121,9 +121,18 @@ export async function executeScheduledLogic(env: Env) {
     const pool = await runPoolPhase(env, prevStatus, budgetHard, NOW);
     if (!pool || !pool.matches) return;
     const { matches, poolRef, poolBlob, fullSweepThisTick } = pool;
-    await runPoolMaintenance(env, { fullSweepThisTick, budgetSoft, budgetHard, matches, poolRef, poolBlob });
+    // v13.94-fanoutfix: NOTIFY RUNS BEFORE MAINTENANCE now. The old order
+    // (maintenance → notify) let the cosmetic phases (cup scans ≈ 12 fetches
+    // when 429ing, far probe, standings refresh) spend the budget a pending
+    // fan-out needed — on the 2026-10-13 15:30Z tick that composition hit the
+    // runtime's subrequest wall and the whole notify phase deferred; on prior
+    // evenings fan-outs died mid-flight (tail chats lost everything under
+    // persisted dedupe records). Notifications are the product; maintenance
+    // is cosmetic and its own headroom gate (runPoolMaintenance) skips it on
+    // ticks that are already busy.
     console.log(`\u{1F4CA} Total matches received: ${matches.length}`);
     const notifySummary = await runNotifyPhase(env, { chatIds, matches, fullSweepThisTick });
+    await runPoolMaintenance(env, { fullSweepThisTick, budgetSoft, budgetHard, matches, poolRef, poolBlob });
     await runPublicPhase(env, { fullSweepThisTick, budgetSoft, budgetHard, matches, poolRef });
     // v13.36-nospam: single status blob — heartbeat (tick started/ended),
     // last_cron (tick completed) and last_full_sweep (folded in from the

@@ -94,8 +94,45 @@ check("#5 prewarm pool still strips canary-shaped rows (belt-and-braces kept)", 
 // #6 Subrequest-budget guard (the import line is stripped by the eval
 // transform, but the function definition from utils.ts is present)
 check("#6 subrequestCount function defined", /function subrequestCount\(\)/.test(src));
-check("#6 budget guard defers when >38", /subrequestCount\(\) > 38/.test(src));
-check("#6 budgetDeferred counter logged", /Subrequest budget guard: deferred/.test(src));
+// v13.94-fanoutfix: the old between-matches guard (subrequestCount() > 38,
+// fetch-only counter) is REPLACED by the per-(match, type) FAN-OUT
+// RESERVATION — the old guard could let a fan-out through that then died
+// MID-FLIGHT at the runtime's coarser accounting (tail chats lost card +
+// text + outbox under an already-persisted write-first dedupe record — the
+// live-reported "first chats served, tail chats silent" shape). The old
+// guard must stay GONE; the reservation must stay wired.
+check("#6 old between-matches fetch-only guard REMOVED", !/subrequestCount\(\) > 38/.test(src));
+check("#6 fan-out reservation gate present (fanoutReservation)", /function fanoutReservation\(config, chatGroups\) \{/.test(src));
+check("#6 reservation reads the TRUE count (fetch + KV ops)", /const used = subrequestCount\(\) \+ kvOpsCount\(\);/.test(src));
+check("#6 reservation verdict full/lean/defer", /return "full";/.test(src) && /return "lean";/.test(src) && /return "defer";/.test(src));
+check("#6 match-start keeps must-fire semantics via lean mode", /if \(config && config\.type === "match-start"\) \{[\s\S]{0,260}return "lean";/.test(src));
+check("#6 fanoutFetchCost projects 2 crest + 2 sends/chat + margin", /chatGroups\.length \* 2 \+ sends \* 2 \+ 2/.test(src));
+check("#6 reservation defers BEFORE the dedupe write (no record on defer)", /const verdict = fanoutReservation\(config, chatGroups\);[\s\S]{0,200}?if \(verdict === "defer"\) \{[\s\S]{0,200}?continue;/.test(src));
+check("#6 lean mode skips cards + dice (cheapest must-fire path)", /if \(!lean && \(match\.homeTeam\.crest \|\| match\.awayTeam\.crest\)\)/.test(src) && /config\.type === "match-start" && !late && !lean/.test(src));
+check("#6 deferred (match,type) keys land in the breadcrumb (notify.dk)", /notifySummary\.dk = deferredKeys\.slice\(0, 12\);/.test(src));
+check("#6 budgetDeferred counter logged", /Fan-out reservation: deferred \$\{deferredKeys\.length\}/.test(src));
+check("#6 per-chat outcome counters (sent/failed/dead) in the summary", /notifySummary\.o = notificationCounts\.outcome/.test(src) && /counts\.outcome = counts\.outcome \|\| \{ sent: 0, failed: 0, dead: 0 \};/.test(src));
+
+// v13.94-fanoutfix: THE D1 DEDUPE STORE. The write-first dedupe put was the
+// single critical KV write of the notify path — under the account-level
+// quota exhaustion (error 10048 every evening) it failed → every send
+// deferred → when the failure outlived the windows, whole matchdays
+// vanished for every user (the audit's 2026-10-09/10/11 gaps). notified_v1
+// on D1 (separate 100k/day tier) with an ATOMIC INSERT OR IGNORE against
+// the (match_key, ntype) PK.
+check("#6 notified-store: D1 INSERT OR IGNORE against the (match_key, ntype) PK", /INSERT OR IGNORE INTO notified_v1 \(match_key, ntype, notified_at, expires_at, match_date\)/.test(src));
+check("#6 notified-store: changes>0 = persisted (write-first semantics)", /r\.meta\.changes > 0\)/.test(src) && /notified-store: D1 read failed \(legacy KV fallback\)/.test(src));
+check("#6 notified-store: sim path stays on the KV sim key (isolation)", /!env\.SIM_NOTIFIED_KEY && notifiedStoreActive\(env\)/.test(src));
+check("#6 notified-store: one-time KV→D1 import behind the migration marker", /'notified_migrated'/.test(src) && /importNotifiedFromKV/.test(src));
+check("#6 notified-store: D1 cleanup is probabilistic (2%) with a 14d grace", /DELETE FROM notified_v1 WHERE expires_at < \?1/.test(src) && /Date\.now\(\) - 14 \* 864e5/.test(src));
+check("#6 notified-store: KV blob path intact for the legacy/sim case", /KV save failed — send deferred to next tick/.test(src));
+
+// v13.94-fanoutfix: MAINTENANCE DEMOTION — the cosmetic phases must never
+// take the budget a pending fan-out needs. Notify now runs BEFORE
+// maintenance; maintenance additionally skips busy ticks by true count.
+check("#6 cron order: notify BEFORE maintenance", /runNotifyPhase\(env, \{ chatIds, matches, fullSweepThisTick \}\);[\s\S]{0,300}?runPoolMaintenance\(/.test(src));
+check("#6 maintenance true-count gate (FANOUT_MAINT_MAX)", /subrequestCount\(\) \+ kvOpsCount\(\) > \(CONFIG\.FANOUT_MAINT_MAX \|\| 30\)/.test(src));
+check("#6 the fan-out reservation cap is configured", /SUBREQUEST_FANOUT_CAP: 46/.test(src));
 
 // v13.35-prewarm: cron pre-warms the public payload from its own pool so the
 // first visitor after a quiet gap never pays the ~4.6s provider sweep.
