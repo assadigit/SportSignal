@@ -216,18 +216,18 @@ check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSr
 // more prominent (tint 16%, glow 28%, !important overrides). SW v22 → v23.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js20 = read("assets/public-13.24.js");
+const js20 = read("assets/public-13.25.js");
 const slugsSrc = read("src/slugs.ts");
 const seoCfgSrc = read("src/seo/config.ts");
-check("public-13.24.js referenced in homepage (renamed from 13.23)", /\/public-13\.24\.js/.test(publicSrc));
+check("public-13.25.js referenced in homepage (renamed from 13.24)", /\/public-13\.25\.js/.test(publicSrc));
 check("public-13.23.css referenced in homepage (renamed from 13.22)", /\/public-13\.23\.css/.test(publicSrc));
 check("public-13.23.css referenced in SEO page-shell (renamed)", /\/public-13\.23\.css/.test(shellSrc));
 check("core-13.9.js referenced in homepage (renamed from 13.8)", /\/core-13\.9\.js/.test(publicSrc));
-check("public-13.24.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.24.js")));
+check("public-13.25.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.25.js")));
 check("public-13.23.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.23.css")));
-check("assets/_headers pins public-13.24 immutable", /\/public-13\.24\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.25 immutable", /\/public-13\.25\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 check("assets/_headers pins public-13.23.css immutable", /\/public-13\.23\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("SW cache bumped to sportsignal-v28 (replaces v27)", /CACHE = "sportsignal-v28"/.test(swSrc));
+check("SW cache bumped to sportsignal-v29 (replaces v28)", /CACHE = "sportsignal-v29"/.test(swSrc));
 check("barTarget checks nextBig before topSpot (all competitions)", /t=DATA\.nextBig\|\|null.*if\(!t\)\{t=a\}/.test(js20));
 check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js20));
 check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js20));
@@ -330,6 +330,26 @@ const wsrc = require("./lib/worker-src")();
   const out2 = pubMatch({ homeTeam: { name: "FC Bayern M\u00FCnchen" }, awayTeam: { name: "Borussia Dortmund" }, utcDate: "2026-10-31T19:30:00Z", competition: { code: "BL1" }, status: "SCHEDULED" });
   check("pubMatch row carries the canonical path (Bayern transliteration)", out2.path === "/matches/bayern-munich-vs-borussia-dortmund-2026-10-31");
 }
+
+// ---------- 10) v13.81-matchpage: the match destination + growth loop ----------
+const pagesSrc = read("src/seo/pages.ts");
+const shellSrc81 = read("src/seo/page-shell.ts");
+check("match page carries the scoreboard head (matchhead section)", /<section class="matchhead" aria-label="خلاصه بازی">/.test(pagesSrc));
+check("matchhead renders both crests + monogram fallback", /function crestHtml\(t: any\)/.test(pagesSrc) && /class="mcrest"/.test(pagesSrc) && /mcrest-mono/.test(pagesSrc));
+check("match page countdown element only for upcoming (data-kickoff)", /class="mcount" data-kickoff="/.test(pagesSrc));
+check("match page countdown script ticks + Persian digits + kickoff stop", /querySelector\('\.mcount'\)/.test(pagesSrc) && /setTimeout\(tick,30000\)/.test(pagesSrc) && /\\u06F0\\u06F1/.test(pagesSrc));
+check("match page actions: calendar + whatsapp + telegram + copy", /mact-cal/.test(pagesSrc) && /wa\.me\/\?text=/.test(pagesSrc) && /t\.me\/share\/url\?url=/.test(pagesSrc) && /copyMatchLink/.test(pagesSrc));
+check("calendar link built from kickoff +2h basic format", /gcalBasic\(m\.utcDate, 0\) \+ "\/" \+ gcalBasic\(m\.utcDate, 2\)/.test(pagesSrc));
+check("match page styles present in page-shell (matchhead/mactions/mact)", /\.matchhead\{/.test(shellSrc81) && /\.mactions\{/.test(shellSrc81) && /\.mact\{/.test(shellSrc81));
+check("matchhead mobile stacking breakpoint (560px)", /@media \(max-width:560px\)\{\.matchhead/.test(shellSrc81));
+check("matchhead live dot pulse guarded by prefers-reduced-motion", /@media \(prefers-reduced-motion:reduce\)\{\.mdot\{animation:none\}\}/.test(shellSrc81));
+check("hero row is a link now (noLink dropped from the hero spotItemNode call)", /spotItemNode\(t,0,\{noDate:!0,feat:!!t\.big,featOuter:!!t\.big\}\)/.test(js20) && !/spotItemNode\(t,0,\{noDate:!0,noLink:!0/.test(js20));
+check("heroH1Sync exists and runs inside renderHeroSpot (EN H1 fix)", /function heroH1Sync\(\)/.test(js20) && /heroH1Sync\(\),fitHeroNames\(\)\}\}/.test(js20));
+check("heroH1Sync writes the EN sentence (Next big match:)", /"Next big match: "\+r\+" \\u2013 "\+n/.test(js20));
+check("shareUrl helper prefers the payload path", /function shareUrl\(e\)\{return e&&e\.path\?location\.origin\+e\.path:null\}/.test(js20));
+check("share texts append the canonical URL (wa.me + copy)", /var su=shareUrl\(e\),txt=shareText\(e,a\),wtxt=su\?txt\+"\\n\\n"\+su:txt/.test(js20));
+check("telegram share targets the match URL when present", /encodeURIComponent\(su\|\|location\.origin\+location\.pathname\)/.test(js20));
+check("calendar event title stays plain (details carry the URL)", /&text="\+plain\+"&dates="/.test(js20) && /"&details="\+t/.test(js20));
 
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
 process.exit(failed === 0 ? 0 : 1);

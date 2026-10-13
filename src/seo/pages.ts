@@ -75,6 +75,95 @@ function statusFaOf(sm: SeoMatch): string {
   return statusLabelFa(sm.raw.status || sm.s.status);
 }
 
+// ---- v13.81-matchpage: the scoreboard head + actions row ----
+// The match page is where every homepage/list row now lands (v13.80 made
+// those links canonical), so the destination gets a proper "big match"
+// treatment: crests facing each other, kickoff + live countdown, and the
+// growth loop (calendar / WhatsApp / Telegram / copy — all carrying the
+// canonical URL). Server-rendered HTML + ONE tiny inline script; no new
+// asset, no client fetch.
+
+function crestHtml(t: any): string {
+  if (t && t.crest) {
+    return '<img class="mcrest" src="' + esc(t.crest) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="64" height="64" onerror="this.remove()">';
+  }
+  const mono = String((t && (t.faName || t.name)) || "?").trim().charAt(0) || "?";
+  return '<span class="mcrest mcrest-mono" aria-hidden="true">' + esc(mono) + "</span>";
+}
+
+function gcalBasic(iso: string, plusHours: number): string {
+  const d = new Date(Date.parse(iso) + plusHours * 3600 * 1000);
+  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+
+function matchHeadHtml(sm: SeoMatch): string {
+  const m = sm.s;
+  const compFa = M.compNameFa(m);
+  const compHref = "/competitions/" + compSlug(m.competition.code);
+  const emblem = m.competition && m.competition.emblem;
+  const live = /IN_PLAY|LIVE|PAUSED/i.test(String(sm.raw.status || ""));
+  const finished = String(sm.raw.status || "").toUpperCase() === "FINISHED";
+  const scored = (live || finished) && m.score && m.score.home != null;
+  const roundTxt = m.roundFa || "";
+
+  // center column: comp chip → big time / score → date (+ jalali) → countdown
+  let center = '<span class="mchip">' + (emblem ? '<img class="mcomplogo" src="' + esc(emblem) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' : "") + '<a href="' + compHref + '">' + esc(compFa) + "</a>" + (roundTxt ? " · " + esc(roundTxt) : "") + "</span>";
+  if (scored) {
+    center += '<div class="mscore"' + (live ? ' aria-label="در جریان"' : "") + ">" + scoreStr(m.score) + "</div>";
+    if (live) center += '<div class="mlive"><span class="mdot" aria-hidden="true"></span>' + esc(statusFaOf(sm)) + (m.minute != null ? " (" + toFaDigits(String(m.minute)) + "ʹ)" : "") + "</div>";
+    else center += '<div class="mkicksub">' + esc(statusFaOf(sm)) + "</div>";
+  } else {
+    center += '<div class="mkick"><time datetime="' + esc(m.utcDate) + '">' + toFaDigits(faTime(m.utcDate)) + "</time></div>";
+  }
+  center += '<div class="mkickdate">' + esc(faGregorianDateShort(m.utcDate)) + ' <span class="jdate">(' + esc(jalaliDateStr(m.utcDate)) + ")</span></div>";
+  // countdown only for upcoming matches (JS fills .mcount; hidden until then)
+  if (!live && !finished) {
+    center += '<div class="mcount" data-kickoff="' + esc(m.utcDate) + '" hidden></div>';
+  }
+  if (m.venue) center += '<div class="mvenue">🏟️ ' + esc(m.venueFa || m.venue) + "</div>";
+
+  return '<section class="matchhead" aria-label="خلاصه بازی">' +
+    '<div class="mteam">' + crestHtml(m.homeTeam) + '<div class="mname">' + M.nameHtml(faName(m.homeTeam)) + '</div><div class="mside-lbl">میزبان</div></div>' +
+    '<div class="mcenter">' + center + "</div>" +
+    '<div class="mteam away"><div class="mside-lbl">میهمان</div><div class="mname">' + M.nameHtml(faName(m.awayTeam)) + "</div>" + crestHtml(m.awayTeam) + "</div>" +
+    "</section>";
+}
+
+function matchActionsHtml(sm: SeoMatch, path: string): string {
+  const m = sm.s;
+  const finished = String(sm.raw.status || "").toUpperCase() === "FINISHED";
+  const url = absUrl(path);
+  const shareTxt = faName(m.homeTeam) + " – " + faName(m.awayTeam) + " | " + M.compNameFa(m);
+  const waHref = "https://wa.me/?text=" + encodeURIComponent(shareTxt + "\n\n" + url);
+  const tgHref = "https://t.me/share/url?url=" + encodeURIComponent(url) + "&text=" + encodeURIComponent(shareTxt);
+  let out = '<div class="mactions">';
+  if (!finished) {
+    const gcalHref = "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+      "&text=" + encodeURIComponent(shareTxt) +
+      "&dates=" + gcalBasic(m.utcDate, 0) + "/" + gcalBasic(m.utcDate, 2) +
+      "&details=" + encodeURIComponent(shareTxt + "\n" + url);
+    out += '<a class="mact mact-cal" href="' + esc(gcalHref) + '" target="_blank" rel="noopener">📅 افزودن به تقویم گوگل</a>';
+  }
+  out += '<a class="mact" href="' + esc(waHref) + '" target="_blank" rel="noopener">💬 واتساپ</a>';
+  out += '<a class="mact" href="' + esc(tgHref) + '" target="_blank" rel="noopener">✈️ تلگرام</a>';
+  out += '<button class="mact" type="button" id="copyMatchLink" data-url="' + esc(url) + '">🔗 کپی لینک</button>';
+  out += "</div>";
+  return out;
+}
+
+// The countdown + copy-link script (inline, ~15 lines, CSP-legal: the page
+// shell already carries inline scripts). Ticks every 30s; Persian digits;
+// stops at kickoff and swaps to a "started" state. Copy uses the clipboard
+// API with a execCommand fallback (same pattern as public-13.x.js).
+function matchHeadScript(): string {
+  return "<script>\n" +
+    "(function(){var el=document.querySelector('.mcount');if(el){var ko=Date.parse(el.getAttribute('data-kickoff'));if(ko){var FA=function(n){return String(n).replace(/\\d/g,function(d){return '\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9'[d]})};var tick=function(){var now=Date.now();if(now>=ko){el.hidden=false;el.textContent='\u26BD \u0628\u0627\u0632\u06CC \u0634\u0631\u0648\u0639 \u0634\u062F\u0647 \u0627\u0633\u062A';return}var s=Math.floor((ko-now)/1000),d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),mm=Math.floor((s%3600)/60);el.hidden=false;el.textContent='\u23F3 '+(d>0?FA(d)+' \u0631\u0648\u0632 \u0648 ':'')+FA(h)+' \u0633\u0627\u0639\u062A \u0648 '+FA(mm)+' \u062F\u0642\u06CC\u0642\u0647 \u062A\u0627 \u0634\u0631\u0648\u0639';setTimeout(tick,30000)};tick()}}\n" +
+    "var cb=document.getElementById('copyMatchLink');if(cb){cb.addEventListener('click',function(){var u=cb.getAttribute('data-url');var done=function(){var t=cb.textContent;cb.textContent='\u2713 \u06A9\u067E\u06CC \u0634\u062F';setTimeout(function(){cb.textContent=t},1600)};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(u).then(done,done)}else{var i=document.createElement('input');i.value=u;document.body.appendChild(i);i.select();try{document.execCommand('copy')}catch(e){}i.remove();done()}})}\n" +
+    "})();" +
+    "<\/script>";
+}
+
+
 // ================= MATCH PAGE =================
 export function buildMatchPage(ctx: SeoCtx, slug: string): { html: string; notFound: boolean } {
   const sm = findMatchBySlug(ctx, slug);
@@ -122,7 +211,7 @@ export function buildMatchPage(ctx: SeoCtx, slug: string): { html: string; notFo
     { name: "بازی‌ها", href: "/matches" },
     { name: faName(m.homeTeam) + " – " + faName(m.awayTeam) }
   ];
-  const main = whyBigHtml(sm, ctx) + facts + resultBlock + related;
+  const main = matchHeadHtml(sm) + matchActionsHtml(sm, path) + matchHeadScript() + whyBigHtml(sm, ctx) + facts + resultBlock + related;
   const html = pageShell({
     head: buildHead({
       path,

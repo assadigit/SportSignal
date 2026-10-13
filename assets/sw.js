@@ -69,7 +69,10 @@
 //              `path` (built server-side through TEAM_SLUGS) over the local
 //              fallback slugifier, fixing 404 match links. cache-first assets
 //              can't refresh without a rename or a bump — the v13.39 rule.)
-const CACHE = "sportsignal-v28";
+// Cache name:  sportsignal-v29 (v13.81-matchpage: public-13.24.js→13.25 rename
+//              — hero row links to the match page, shares carry the canonical
+//              match URL, sr-only H1 follows the language. The v13.39 rule.)
+const CACHE = "sportsignal-v29";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

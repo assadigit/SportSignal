@@ -130,6 +130,35 @@ footer.pagesfoot a:hover{text-decoration:underline}
 .visitcount .vc-n{display:inline-block;min-width:3.4em;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:var(--fg,#e8eefc)}
 .visitcount .vc-sep{margin:0 6px;opacity:.5}
 .visitcount .vc-l{opacity:.85}
+/* ---- v13.81-matchpage: the scoreboard head + actions row ---- */
+.matchhead{display:grid;grid-template-columns:1fr minmax(150px,auto) 1fr;align-items:center;gap:10px;background:linear-gradient(160deg,rgba(56,132,255,.10),rgba(56,132,255,.03) 55%,rgba(148,163,184,.05));border:1px solid rgba(94,160,255,.28);border-radius:18px;padding:18px 14px;margin:12px 0 10px}
+.mteam{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.mteam .mname{font-weight:800;font-size:clamp(.95rem,2.4vw,1.18rem);text-align:center;line-height:1.6;overflow-wrap:anywhere}
+.mteam .mside-lbl{font-size:.68rem;color:var(--muted,#9aa4b2);letter-spacing:.4px}
+.mcrest{width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(2,8,23,.35))}
+.mcrest-mono{display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#5ea0ff;background:rgba(94,160,255,.12);border:1px solid rgba(94,160,255,.3);border-radius:14px}
+.mcenter{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;min-width:0}
+.mchip{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted,#9aa4b2);background:rgba(148,163,184,.10);border:1px solid rgba(148,163,184,.22);border-radius:999px;padding:3px 11px;white-space:nowrap;max-width:100%;overflow:hidden}
+.mchip a{color:inherit;text-decoration:none}
+.mchip a:hover{text-decoration:underline}
+.mcomplogo{width:15px;height:15px;object-fit:contain}
+.mkick{font-size:clamp(1.7rem,5vw,2.35rem);font-weight:800;font-variant-numeric:tabular-nums;line-height:1.25}
+.mscore{font-size:clamp(1.8rem,5vw,2.5rem);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:2px}
+.mkicksub{font-size:.8rem;color:var(--muted,#9aa4b2)}
+.mkickdate{font-size:.82rem;color:var(--muted,#9aa4b2)}
+.mkickdate .jdate{opacity:.85}
+.mcount{font-size:.86rem;font-weight:700;color:#7dd3fc;background:rgba(125,211,252,.10);border:1px solid rgba(125,211,252,.28);border-radius:999px;padding:3px 12px;font-variant-numeric:tabular-nums}
+.mlive{display:inline-flex;align-items:center;gap:7px;font-size:.84rem;font-weight:700;color:#fca5a5}
+.mdot{width:8px;height:8px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 0 rgba(239,68,68,.5);animation:mdot-pulse 1.6s infinite}
+@keyframes mdot-pulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}70%{box-shadow:0 0 0 7px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+.mvenue{font-size:.76rem;color:var(--muted,#9aa4b2)}
+.mactions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:2px 0 14px}
+.mact{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:var(--fg,#e8eefc);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.28);border-radius:11px;padding:8px 14px;text-decoration:none;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s,transform .15s}
+.mact:hover{border-color:rgba(94,160,255,.55);background:rgba(94,160,255,.12)}
+.mact:active{transform:scale(.97)}
+.mact-cal{background:rgba(94,160,255,.13);border-color:rgba(94,160,255,.4)}
+@media (max-width:560px){.matchhead{grid-template-columns:1fr 1fr;grid-template-areas:"home away" "center center";padding:14px 8px}.mteam{grid-area:home}.mteam.away{grid-area:away}.mcenter{grid-area:center;margin-top:8px}.mcrest{width:48px;height:48px}}
+@media (prefers-reduced-motion:reduce){.mdot{animation:none}}
 </style>
 ${opts.head}
 </head>

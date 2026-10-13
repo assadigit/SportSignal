@@ -36,7 +36,7 @@
 /core-13.9.js
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.24.js
+/public-13.25.js
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.23.css

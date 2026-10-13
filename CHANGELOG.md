@@ -6,6 +6,43 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.81-matchpage] — 2026-10-13 (the match destination + growth loop)
+
+Feature/styling round (worklog Task 47) — now that v13.80 made every match
+link canonical, the destination they land on gets the "big match" treatment.
+
+- **Match page scoreboard head** (server, `src/seo/pages.ts`): crests facing
+  each other (64px, monogram fallback when a club has none), competition
+  chip with emblem + round, big tabular-numeral kickoff time (or live score
+  with a pulsing dot, or final score), Gregorian + Jalali date, venue, and
+  a live Persian-digit countdown ("۳ روز و ۷ ساعت و ۱۲ دقیقه تا شروع")
+  ticking every 30s via one tiny inline script — stops at kickoff.
+- **Actions row** (growth loop): Google Calendar (kickoff +2h basic-format
+  dates), WhatsApp, Telegram, and copy-link — every share carries the
+  canonical match URL (`absUrl(path)`).
+- **Styles** (page-shell inline block, no asset rename): `.matchhead`
+  gradient card, `.mactions` pill buttons with hover/active states, live
+  560px mobile stacking (grid-areas), `prefers-reduced-motion` guard on
+  the live dot.
+- **Homepage hero row is now a link** to the match page (public-13.25.js:
+  `noLink` dropped from the hero `spotItemNode` call — share buttons stay
+  siblings, so no nested interactives).
+- **Shares from the homepage carry the match URL**: `shareUrl(e)` prefers
+  the payload `path` (v13.80) — WhatsApp text, copy text and the Telegram
+  `url` param all point at the match page; the calendar event title stays
+  plain (URL rides in details).
+- **EN-mode hero H1 fixed** (QA finding #2): `heroH1Sync()` rewrites the
+  sr-only H1 from the live hero payload on every render — "Next big match:
+  X – Y" in EN, Persian in FA (runs inside `renderHeroSpot`, so boot,
+  language toggle and payload refresh all stay in sync).
+- Asset ritual: public-13.24.js → **public-13.25.js** (rename-on-edit),
+  `_headers` pin renamed, SW cache v28 → **v29**.
+- Checks: 833 → 849 (16 new in check-stats §10: matchhead markup, countdown
+  script, actions, calendar format, styles, mobile/reduced-motion guards,
+  hero link, heroH1Sync, shareUrl wiring).
+
+---
+
 ## [13.80-canonical-hrefs] — 2026-10-13 (one true match URL — fixes 404 links)
 
 QA-driven bugfix (worklog Task 46; found by the agent-browser sweep in Task 45).
