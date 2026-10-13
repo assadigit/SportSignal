@@ -152,6 +152,18 @@ footer.pagesfoot a:hover{text-decoration:underline}
 .mdot{width:8px;height:8px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 0 rgba(239,68,68,.5);animation:mdot-pulse 1.6s infinite}
 @keyframes mdot-pulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}70%{box-shadow:0 0 0 7px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
 .mvenue{font-size:.76rem;color:var(--muted,#9aa4b2)}
+/* v13.82-matchday: the venue is a place — a Maps search link now. Pill
+   treatment consistent with .mcount, hover lift + underline; the ↗ arrow
+   signals off-site. Also used by the facts-table row (inherits link
+   colors there via .mvenue-map alone). */
+a.mvenue-map{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:600;color:#7dd3fc;background:rgba(125,211,252,.08);border:1px solid rgba(125,211,252,.22);border-radius:999px;padding:3px 12px;text-decoration:none;transition:border-color .15s,background .15s,transform .15s}
+a.mvenue-map:hover{border-color:rgba(125,211,252,.55);background:rgba(125,211,252,.14);text-decoration:underline}
+a.mvenue-map:active{transform:scale(.97)}
+.mven-arrow{font-size:.72em;opacity:.75}
+/* the sibling-fixtures card: rows reuse the site-wide .mrow/.match styles;
+   the h2 count chip matches the site's pill vocabulary */
+.simcard{margin-top:14px}
+.simcount{display:inline-block;font-size:.72rem;font-weight:600;color:var(--muted,#9aa4b2);background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.24);border-radius:999px;padding:1px 9px;margin-inline-start:8px;vertical-align:middle}
 .mactions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:2px 0 14px}
 .mact{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:var(--fg,#e8eefc);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.28);border-radius:11px;padding:8px 14px;text-decoration:none;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s,transform .15s}
 .mact:hover{border-color:rgba(94,160,255,.55);background:rgba(94,160,255,.12)}

@@ -422,7 +422,9 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
     if (path === "/matches/this-weekend") return { body: buildWeekendPage(seoCtx), status: 200 };
     const mm = /^\/matches\/([a-z0-9-]+)$/.exec(path);
     if (mm) {
-      const r = buildMatchPage(seoCtx, mm[1]);
+      // v13.82-matchday: async — the render may hydrate the venue (one
+      // KV-cached FD detail call on first visit per match; fail-closed).
+      const r = await buildMatchPage(seoCtx, mm[1]);
       if (r.notFound) return null;
       return { body: r.html, status: 200 };
     }

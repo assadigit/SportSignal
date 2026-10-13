@@ -6,6 +6,60 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.82-matchday] — 2026-10-13 (venue hydration + map links + sibling fixtures)
+
+Feature/fix round (worklog Task 48). QA found the v13.81 `.mvenue` element
+was dead code — no provider supplies venue for SCHEDULED matches (FD's list
+endpoint returns none; verified live: venue null on every upcoming row incl.
+Emirates-hosted fixtures). This round makes the venue real, turns it into a
+place (Maps), and adds the sibling-fixtures card.
+
+- **Venue hydration** (`src/seo/data.ts` `hydrateMatchVenue`): the match-page
+  render now hydrates the venue from the FD DETAIL endpoint (`/v4/matches/{id}`)
+  — the one reliable source — before any venue consumer runs (answer sentence
+  G-03, facts table, `.mvenue`, meta description all read `sm.s.venue`).
+  Budget discipline: numeric-FD-id gate (tsd-/spsc- rows skip), ONE attempt,
+  5s race guard (a slow FD can never hang the render), fail-closed on any
+  error (page renders exactly as before), KV-cached 24h positive AND negative
+  (`venue_v1_{id}` — a venue-less match re-checks at most once a day), and
+  the page HTML cache means repeat views never re-fetch.
+- **Venue → Maps link** (`src/seo/pages.ts` `venueMapLink`): the scoreboard
+  `.mvenue` and the facts-table venue row are now Google-Maps search links
+  (`maps/search/?api=1&query=<venue> stadium`, no API key) — pill styling
+  consistent with `.mcount`, ↗ off-site indicator, sr-only label, hover/active
+  states. Query uses the Latin venue name (Maps' index), link text stays
+  Persian (`venueFa`).
+- **Sibling-fixtures card** (`src/seo/data.ts` `similarMatches` + match page):
+  "بازی‌های مرتبط" — same competition+stage (matchday number, round-string
+  fallback for TSP/sportscore rows) first, then the competition's next
+  fixtures, then same-UTC-day matches from other competitions; upcoming-only,
+  self-excluded, deduped by pairing, kickoff-ordered, capped at 6; count chip
+  in Persian digits. Every row links to its own match page canonically — the
+  internal-linking loop the hub pages always had, now on every match
+  destination.
+- **Live-detail venue adoption** (`src/public-matches.ts`): `enrichLiveMatches`
+  extracts `det.venue` from the detail fetch it already makes (zero extra
+  subrequests — free data) and `applyLiveDetail` fills (never overwrites)
+  `m.venue` → pubMatch maps it → live rows carry the stadium chip.
+- `buildMatchPage` is now `async` (the hydration); the seo router awaits it.
+- New KV key `venue_v1_{id}` (additive; RUNBOOK table updated).
+- **Home-ground table** (`CONFIG.TEAM_STADIUMS`, 18 followed clubs → 16
+  grounds, en + fa): FD's endpoints return no venue for regular matches
+  (verified live on three CL fixtures — the docs' only venue example is a
+  2018 final), so the deterministic source comes first: for league/group
+  fixtures the venue IS the home team's stadium. Followed-team match pages
+  get their venue instantly with zero subrequests; the FD-detail fetch now
+  only covers long-tail home teams. One-off NEUTRAL stages (FINAL /
+  THIRD_PLACE; roundRaw "Final" but never semi/quarter — those are
+  two-legged) skip the table; a real provider venue always wins regardless.
+  Shared grounds mapped per club (San Siro × Inter+Milan, AAMI Park × the
+  Melbourne clubs).
+- Harness: check-stats §11 — 22 new checks (hydration gates, map-link
+  markup, facts-row link, similarMatches structure + async buildMatchPage,
+  live-detail venue extraction + behavioral applyLiveDetail adoption eval,
+  page-shell styles, stadium-table + neutral-gate + source-order locks).
+  Suite 849 → 871 green.
+
 ## [13.81-matchpage] — 2026-10-13 (the match destination + growth loop)
 
 Feature/styling round (worklog Task 47) — now that v13.80 made every match

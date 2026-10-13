@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.81-matchpage";
+export const VERSION = "13.82-matchday";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -75,6 +75,38 @@ export const CONFIG: Record<string, any> = {
       "AC Milan",
       "Paris Saint-Germain"
     ]
+  },
+  // v13.82-matchday: HOME-GROUND table for the followed clubs. For league
+  // and group-stage fixtures the venue IS the home team's stadium — a
+  // stable mapping no provider needs to confirm (FD's list endpoint returns
+  // no venue at all; its detail endpoint returns null for regular matches —
+  // verified 2026-10-13 on three CL fixtures). hydrateMatchVenue consults
+  // this table BEFORE any FD detail call: followed-team match pages get
+  // their venue instantly (zero subrequests), and the FD fetch only runs
+  // for long-tail home teams. One-off NEUTRAL stages (FINAL / third-place;
+  // roundRaw "Final" but never "semi"/"quarter") skip the table — the
+  // administrative home team doesn't host there, and a real provider venue
+  // (when one exists) always wins anyway. Persian names are the ones
+  // Persian football media actually use (ورزشگاه امارات، سن سیرو، …).
+  TEAM_STADIUMS: {
+    "Arsenal FC": { en: "Emirates Stadium", fa: "ورزشگاه امارات" },
+    "Chelsea FC": { en: "Stamford Bridge", fa: "ورزشگاه استمفورد بریج" },
+    "Manchester United FC": { en: "Old Trafford", fa: "ورزشگاه اولد ترافورد" },
+    "Manchester City FC": { en: "Etihad Stadium", fa: "ورزشگاه اتیهاد" },
+    "Liverpool FC": { en: "Anfield", fa: "ورزشگاه آنفیلد" },
+    "FC Barcelona": { en: "Camp Nou", fa: "ورزشگاه کمپ نو" },
+    "Real Madrid CF": { en: "Santiago Bernab\u00E9u", fa: "ورزشگاه سانتیاگو برنابئو" },
+    "Atl\xE9tico de Madrid": { en: "Riyadh Air Metropolitano", fa: "ورزشگاه متروپولیتانو" },
+    "Inter Milan": { en: "San Siro", fa: "ورزشگاه سن سیرو" },
+    "AC Milan": { en: "San Siro", fa: "ورزشگاه سن سیرو" },
+    "Paris Saint-Germain": { en: "Parc des Princes", fa: "ورزشگاه پارک ده پرنس" },
+    "FC Bayern M\xFCnchen": { en: "Allianz Arena", fa: "ورزشگاه آلیانز آرنا" },
+    "Borussia Dortmund": { en: "Signal Iduna Park", fa: "ورزشگاه سیگنال ایدونا پارک" },
+    "Melbourne Victory": { en: "AAMI Park", fa: "ورزشگاه آمی پارک" },
+    "Melbourne City": { en: "AAMI Park", fa: "ورزشگاه آمی پارک" },
+    "Sydney FC": { en: "Allianz Stadium Sydney", fa: "ورزشگاه آلیانز سیدنی" },
+    "Adelaide United": { en: "Hindmarsh Stadium", fa: "ورزشگاه هیندمارش" },
+    "Western Sydney Wanderers": { en: "CommBank Stadium", fa: "ورزشگاه کم\u200cبنک" }
   },
   DOMESTIC_CUP_IDS: {
     "FA_CUP": 2055,
@@ -237,6 +269,12 @@ export const CONFIG: Record<string, any> = {
   // v13.37-nospam2: audit admin-alert rate-limit stamp (one gap alert / 6h).
   KV_AUDIT_ALERT: "audit_alert_v1",
   KV_LIVE_DETAIL: "live_detail_",
+  // v13.82-matchday: per-match venue cache for the match-page hydration
+  // (hydrateMatchVenue in seo/data.ts) — {v: "Stadium Name"|null} per FD
+  // numeric id, 24h TTL, positive AND negative (a venue-less match is
+  // re-checked at most once a day; the page HTML cache keeps real fetch
+  // rates far below that). Written only from the match-page render path.
+  KV_VENUE_CACHE: "venue_v1_",
   // v12.9: end-of-week league-tables digest. KV_WEEKLY_TABLES stores the ISO
   // week key ("2026-W37") of the last delivered digest; WEEKLY_TABLES is the
   // delivery window — Monday 01:30–06:00 Tehran, i.e. after the LAST European

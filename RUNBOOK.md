@@ -229,6 +229,7 @@ curl -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
 | `pending_sends_v1` | telegram send failures | outbox, drained at tick start, 6 attempts max, exponential backoff |
 | `matches_v13_tracked` | provider sweeps | the match pool (600+ matches incl. long-view) |
 | `match_status_v1` | notifications | per-match status snapshots for change detection |
+| `live_detail_` + `venue_v1_` | live enrichment (cron prewarm) + match-page renders | `live_detail_{fdId}`: scorer/minute/venue detail for live matches (TTL 90s, refetch-guarded); `venue_v1_{fdId}` (13.82): `{v:name\|null}` venue cache, 24h TTL positive AND negative, written ONLY from the match-page render path (fail-closed — any error renders the page without venue) |
 | `public_matches_v1` + `cache:snapshot:v1` | public pipeline | live public payload (12-min TTL) + 7-day stale-serve source (the snapshot serves instantly when the payload expires — v13.52) |
 | `live_overlay_v1` | cron tick (v13.52) | the live overlay: {id, teams, day, status, minute, score} rows for live/just-finished matches, written on every live change + full sweeps + ≥10-min top-ups while live (TTL 6h); the serve path patches it into every public response — a FINISHED game is purged from the live lists immediately |
 | `fa_teams_ai` / `fa_venues_ai` / `fa_ai_last_run` | FA-AI learner (gated ≥15 min apart, marker only when work exists since 13.45) | AI-learned Persian names |

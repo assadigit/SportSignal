@@ -7,10 +7,11 @@ import type { Env } from "../types";
 import { CONFIG } from "../config";
 import { getCachedMatches } from "../match-pool";
 import { applyLiveOverlay, pubMatch } from "../public-matches";
-import { ensureFaAiCache, ensureFaVenueCache } from "../translate";
+import { ensureFaAiCache, ensureFaVenueCache, translateVenue } from "../translate";
 import { normalizeTeamName } from "../teams";
 import { isLiveStatus } from "../match-model";
 import { shouldNotify } from "../match-classify";
+import { fetchJSON } from "../utils";
 import { SEO } from "./config";
 import { teamSlug, compSlug } from "../slugs";
 import { isLiveSt } from "./utils";
@@ -272,4 +273,130 @@ export function findTeamBySlug(ctx: SeoCtx, slug: string): TeamEntry | null {
     }
   });
   return found as TeamEntry | null;
+}
+
+// ---- v13.82-matchday: venue hydration + similar matches ----
+//
+// QA finding (2026-10-13): the match page's .mvenue element was dead code —
+// no provider supplies venue for SCHEDULED matches (FD's list endpoint
+// returns none — verified live: venue null on every upcoming row incl.
+// Emirates-hosted fixtures; sportscore doesn't map it; TSP's strVenue is
+// rarely populated in the free tier). The FD DETAIL endpoint
+// (/v4/matches/{id}) is the one reliable source. This helper runs on the
+// match-page render path ONLY (the page HTML is cache-API-cached 5 min, so
+// the real fetch rate is ≤1 per match per cache window, KV-cached 24h —
+// positive AND negative — so a match without venue is re-checked at most
+// once a day). Budget discipline: numeric-FD-id gate (tsd-/spsc- rows skip
+// straight out), ONE attempt, a 5s race guard so a slow FD can never hang
+// the page render, and fail-closed semantics — any error leaves the page
+// exactly as it was (no venue element, no answer-sentence mention).
+export async function hydrateMatchVenue(env: Env, sm: SeoMatch | null): Promise<SeoMatch | null> {
+  if (!sm) return sm;
+  if (sm.s && sm.s.venue) return sm;             // already carries one (TSP/live-detail row)
+  // v13.82: the deterministic source first — the HOME team's ground. For
+  // league/group fixtures the venue IS the home stadium (a stable mapping;
+  // see CONFIG.TEAM_STADIUMS). This lights up followed-team match pages
+  // with ZERO subrequests and skips the FD fetch entirely. One-off NEUTRAL
+  // stages (finals / third-place games — including roundRaw "Final" but
+  // never "semi"/"quarter", which are two-legged home-and-away) are
+  // excluded: the administrative home team doesn't host there.
+  const stageRaw = String(sm.raw.stage || "");
+  const roundRaw = String(sm.raw.roundRaw || "");
+  const oneOffNeutral = stageRaw === "FINAL" || stageRaw === "THIRD_PLACE" ||
+    (/final/i.test(roundRaw) && !/semi|quarter|qualif/i.test(roundRaw));
+  const homeName = sm.raw.homeTeam && sm.raw.homeTeam.name;
+  if (homeName && !oneOffNeutral) {
+    let tab = CONFIG.__stadiumNorm;
+    if (!tab || tab.sig !== CONFIG.TEAM_STADIUMS) {
+      tab = { sig: CONFIG.TEAM_STADIUMS, map: new Map() };
+      for (const [name, v] of Object.entries(CONFIG.TEAM_STADIUMS)) {
+        tab.map.set(normalizeTeamName(name), v);
+      }
+      CONFIG.__stadiumNorm = tab;
+    }
+    const st = tab.map.get(normalizeTeamName(homeName));
+    if (st) {
+      sm.raw.venue = st.en;
+      sm.s.venue = st.en;
+      sm.s.venueFa = st.fa;
+      return sm;
+    }
+  }
+  const id = sm.raw && sm.raw.id;
+  if (!id || !/^\d+$/.test(String(id))) return sm; // FD rows only — providers with string ids have no detail endpoint
+  const key = CONFIG.KV_VENUE_CACHE + id;
+  let rec: any = null;
+  try {
+    rec = await env.STATE.get(key, "json");
+  } catch (e) { rec = null; }
+  if (rec == null) {
+    try {
+      // one attempt, never blocks the render longer than 5s (venue is a
+      // nice-to-have; the page must not wait on a slow upstream)
+      const d: any = await Promise.race([
+        fetchJSON("https://api.football-data.org/v4/matches/" + id, 1, { "X-Auth-Token": env.API_TOKEN }),
+        new Promise((r) => setTimeout(() => r(null), 5000))
+      ]);
+      const det = d && d.match ? d.match : d;
+      const venue = det && typeof det.venue === "string" && det.venue.trim() ? det.venue.trim() : null;
+      rec = { v: venue };
+      await env.STATE.put(key, JSON.stringify(rec), { expirationTtl: 86400 }).catch(() => { });
+    } catch (e) {
+      return sm; // fail-closed: transient failure ≠ "no venue" (no negative cache)
+    }
+  }
+  if (rec && rec.v) {
+    sm.raw.venue = rec.v;
+    sm.s.venue = rec.v;
+    sm.s.venueFa = translateVenue(rec.v) || rec.v;
+  }
+  return sm;
+}
+
+// Sibling matches for the match page's "بازی‌های مرتبط" card: same
+// competition AND same stage (matchday number, falling back to the round
+// string for TSP/sportscore rows) first, then the rest of the same
+// competition, then same-UTC-day matches from other competitions. Upcoming
+// only (the card sells the next fixtures, not history), the match itself
+// excluded, deduped by pairing, kickoff-ordered, capped.
+export function similarMatches(ctx: SeoCtx, sm: SeoMatch, max = 6): SeoMatch[] {
+  if (!sm || !sm.raw) return [];
+  const selfDay = String(sm.raw.utcDate || "").slice(0, 10);
+  const selfHome = sm.raw.homeTeam && sm.raw.homeTeam.name;
+  const selfAway = sm.raw.awayTeam && sm.raw.awayTeam.name;
+  const selfComp = sm.raw.competition && sm.raw.competition.code;
+  const selfMD = sm.raw.matchday != null ? sm.raw.matchday : null;
+  const selfRound = sm.raw.roundRaw != null && String(sm.raw.roundRaw).trim() ? String(sm.raw.roundRaw).trim() : (sm.raw.round != null && sm.raw.round !== "LEAGUE_STAGE" ? sm.raw.round : null);
+  const now = Date.now();
+  const cands: { s: any; raw: any; stage: number; t: number }[] = [];
+  ctx.shaped.forEach((s, i) => {
+    const raw = ctx.pool[i];
+    if (!raw || !raw.utcDate || !raw.homeTeam || !raw.awayTeam || !raw.competition) return;
+    const t = new Date(raw.utcDate).getTime();
+    if (!(t > now) || isLiveSt(raw.status)) return; // upcoming only
+    if (raw.homeTeam.name === selfHome && raw.awayTeam.name === selfAway && String(raw.utcDate).slice(0, 10) === selfDay) return; // self
+    const comp = raw.competition.code;
+    let stage = -1;
+    if (comp === selfComp) {
+      const md = raw.matchday != null ? raw.matchday : null;
+      const round = raw.roundRaw != null && String(raw.roundRaw).trim() ? String(raw.roundRaw).trim() : (raw.round != null && raw.round !== "LEAGUE_STAGE" ? raw.round : null);
+      if ((selfMD != null && md === selfMD) || (selfRound != null && round === selfRound)) stage = 0;
+      else stage = 1;
+    } else if (String(raw.utcDate).slice(0, 10) === selfDay) {
+      stage = 2;
+    }
+    if (stage < 0) return;
+    cands.push({ s, raw, stage, t });
+  });
+  cands.sort((a, b) => a.stage - b.stage || a.t - b.t);
+  const seen = new Set<string>();
+  const out: SeoMatch[] = [];
+  for (const c of cands) {
+    const k = c.raw.homeTeam.name + "|" + c.raw.awayTeam.name;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({ raw: c.raw, s: c.s });
+    if (out.length >= max) break;
+  }
+  return out;
 }

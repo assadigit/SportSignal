@@ -351,5 +351,59 @@ check("share texts append the canonical URL (wa.me + copy)", /var su=shareUrl\(e
 check("telegram share targets the match URL when present", /encodeURIComponent\(su\|\|location\.origin\+location\.pathname\)/.test(js20));
 check("calendar event title stays plain (details carry the URL)", /&text="\+plain\+"&dates="/.test(js20) && /"&details="\+t/.test(js20));
 
+// ---------- 11) v13.82-matchday: venue hydration + map links + sibling fixtures ----------
+const dataSrc82 = read("src/seo/data.ts");
+const pubSrc82 = read("src/public-matches.ts");
+const routerSrc82 = read("src/seo/router.ts");
+// venue hydration: the gates (QA finding — .mvenue was dead code because no
+// provider supplies venue for scheduled matches)
+check("hydrateMatchVenue exists with the numeric-FD-id gate", /export async function hydrateMatchVenue\(env: Env, sm: SeoMatch \| null\)/.test(dataSrc82) && /\/\^\\d\+\$\/\.test\(String\(id\)\)\) return sm;/.test(dataSrc82));
+check("hydrateMatchVenue is fail-closed (error returns sm unchanged, no negative cache)", /return sm; \/\/ fail-closed: transient failure/.test(dataSrc82));
+check("hydrateMatchVenue caches positive AND negative in venue_v1_ (24h TTL)", /CONFIG\.KV_VENUE_CACHE \+ id/.test(dataSrc82) && /expirationTtl: 86400/.test(dataSrc82) && read("src/config.ts").includes('KV_VENUE_CACHE: "venue_v1_"'));
+check("hydrateMatchVenue races a 5s guard so the render can never hang", /Promise\.race\(\[\s*\n\s*fetchJSON\("https:\/\/api\.football-data\.org\/v4\/matches\/" \+ id, 1, \{ "X-Auth-Token": env\.API_TOKEN \}\)/.test(dataSrc82) && /setTimeout\(\(\) => r\(null\), 5000\)/.test(dataSrc82));
+check("hydrateMatchVenue patches sm.s.venue + venueFa via translateVenue", /sm\.s\.venue = rec\.v;/.test(dataSrc82) && /sm\.s\.venueFa = translateVenue\(rec\.v\) \|\| rec\.v;/.test(dataSrc82));
+// map link: the venue becomes a place
+check("venueMapLink targets Google Maps search (api=1, no key)", /https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/.test(pagesSrc) && /encodeURIComponent\(m\.venue \+ " stadium"\)/.test(pagesSrc));
+check("mvenue in the scoreboard head is the map link (not a dead div)", /if \(m\.venue\) center \+= venueMapLink\(m, "🏟/.test(pagesSrc));
+check("facts-table venue row is the map link too", /rows\.push\(\["ورزشگاه", venueMapLink\(m, ""\)\]\)/.test(pagesSrc));
+check("venue map link is off-site safe (target _blank + noopener) with sr-only label", /target="_blank" rel="noopener" href="https:\/\/www\.google\.com\/maps/.test(pagesSrc) && /class="sr-only"> — نمایش روی نقشه<\/span>/.test(pagesSrc));
+// similar matches card
+check("similarMatches exists with the three-stage priority (stage→comp→day)", /export function similarMatches\(ctx: SeoCtx, sm: SeoMatch, max = 6\)/.test(dataSrc82) && /stage = 0/.test(dataSrc82) && /stage = 1/.test(dataSrc82) && /stage = 2/.test(dataSrc82));
+check("similarMatches is upcoming-only + self-excluded + pairing-deduped + capped", /if \(!\(t > now\) \|\| isLiveSt\(raw\.status\)\) return; \/\/ upcoming only/.test(dataSrc82) && /\/\/ self/.test(dataSrc82) && /if \(seen\.has\(k\)\) continue;/.test(dataSrc82) && /if \(out\.length >= max\) break;/.test(dataSrc82));
+check("match page renders the sibling card (h2 + count chip + mrow rows)", /'<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">'/.test(pagesSrc) && /sims\.map\(\(x, i\) => M\.mrowHtml\(x, i, false\)\)/.test(pagesSrc));
+check("buildMatchPage is async + awaits the hydration before rendering", /export async function buildMatchPage\(ctx: SeoCtx, slug: string\): Promise<\{ html: string; notFound: boolean \}>/.test(pagesSrc) && /sm = await hydrateMatchVenue\(ctx\.env, sm\);/.test(pagesSrc));
+check("seo router awaits the async buildMatchPage", /const r = await buildMatchPage\(seoCtx, mm\[1\]\);/.test(routerSrc82));
+// live-detail venue adoption (free data — the fetch is already paid for)
+check("enrichLiveMatches extracts det.venue from the already-made detail fetch", /venue: typeof det\.venue === "string" && det\.venue\.trim\(\) \? det\.venue\.trim\(\) : null,/.test(pubSrc82));
+check("mvenue-map + simcard + simcount styles present in page-shell", /a\.mvenue-map\{/.test(shellSrc81) && /a\.mvenue-map:hover\{/.test(shellSrc81) && /\.simcard\{/.test(shellSrc81) && /\.simcount\{/.test(shellSrc81));
+// behavioral: applyLiveDetail adopts venue (fills, never overwrites)
+{
+  const src82 = read("src/public-matches.ts");
+  const fnSrc = src82.match(/export function applyLiveDetail\(m, detail\) \{[\s\S]*?\n\}/)[0].replace(/^export /, "");
+  const applyLiveDetail = new Function(fnSrc + "; return applyLiveDetail;")();
+  const m1 = { minute: null, scorers: [], venue: null };
+  applyLiveDetail(m1, { minute: 63, scorers: [{ minute: 12, type: "GOAL", scorer: "X", team: "Y" }], venue: "Emirates Stadium", scoreFullTime: null });
+  const adopted = m1.venue === "Emirates Stadium" && m1.minute === 63;
+  const m2 = { venue: "Old Trafford (provider)" };
+  applyLiveDetail(m2, { venue: "Some Other Ground" });
+  const neverOverwrites = m2.venue === "Old Trafford (provider)";
+  const m3 = { venue: null };
+  applyLiveDetail(m3, { minute: 5 });
+  const nullVenueStays = m3.venue == null;
+  check("applyLiveDetail adopts venue, fills-only (behavioral)", adopted && neverOverwrites && nullVenueStays);
+}
+
+// v13.82 addendum: the HOME-GROUND table — the deterministic venue source.
+// FD's endpoints return no venue for regular matches (verified live on
+// three CL fixtures), so the followed clubs' stadiums light the venue up
+// with zero subrequests; the FD-detail fetch remains only for long-tail
+// home teams + neutral finals.
+const cfgSrc82 = read("src/config.ts");
+check("TEAM_STADIUMS table exists for the followed clubs (en + fa)", /TEAM_STADIUMS: \{/.test(cfgSrc82) && /"Arsenal FC": \{ en: "Emirates Stadium", fa: "ورزشگاه امارات" \}/.test(cfgSrc82) && /"Western Sydney Wanderers"/.test(cfgSrc82));
+check("shared grounds mapped per club (San Siro × Inter+Milan, AAMI × Melbourne)", /"Inter Milan": \{ en: "San Siro"[^\n]*\n\s*"AC Milan": \{ en: "San Siro"/.test(cfgSrc82) && /"Melbourne Victory": \{ en: "AAMI Park"[^\n]*\n\s*"Melbourne City": \{ en: "AAMI Park"/.test(cfgSrc82));
+check("hydrate consults the home-ground table BEFORE the FD fetch", dataSrc82.indexOf("CONFIG.__stadiumNorm") < dataSrc82.indexOf('fetchJSON("https://api.football-data.org/v4/matches/" + id') && /tab\.map\.get\(normalizeTeamName\(homeName\)\)/.test(dataSrc82));
+check("one-off neutral stages skip the table (FINAL/THIRD_PLACE; roundRaw final-but-not-semi)", /stageRaw === "FINAL" \|\| stageRaw === "THIRD_PLACE" \|\|/.test(dataSrc82) && /\/final\/i\.test\(roundRaw\) && !\/semi\|quarter\|qualif\/i\.test\(roundRaw\)/.test(dataSrc82));
+check("table venue sets en + fa (no FD round-trip)", /sm\.raw\.venue = st\.en;/.test(dataSrc82) && /sm\.s\.venueFa = st\.fa;/.test(dataSrc82));
+
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
 process.exit(failed === 0 ? 0 : 1);

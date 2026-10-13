@@ -138,6 +138,10 @@ export async function enrichLiveMatches(env: Env, matches) {
       if (!det) continue;
       const detail: any = {
         minute: det.minute != null ? det.minute : null,
+        // v13.82-matchday: the detail fetch is ALREADY paid for — adopt the
+        // venue when the endpoint carries one (pubMatch maps it; the live
+        // rows on home/lists then show the stadium chip for free).
+        venue: typeof det.venue === "string" && det.venue.trim() ? det.venue.trim() : null,
         scorers: (det.scorers || []).map((s) => ({
           minute: s.minute != null ? s.minute : null,
           type: s.type || "GOAL",
@@ -161,6 +165,9 @@ export async function enrichLiveMatches(env: Env, matches) {
 export function applyLiveDetail(m, detail) {
   if (detail.minute != null) m.minute = detail.minute;
   if (detail.scorers) m.scorers = detail.scorers;
+  // v13.82-matchday: venue adoption (only fills — never overwrites an
+  // existing provider venue).
+  if (detail.venue != null && !m.venue) m.venue = detail.venue;
   if (detail.scoreFullTime) m.score = { fullTime: detail.scoreFullTime };
 }
 // v13.52-swrsolid: the serve-time LIVE OVERLAY. The cron tick persists a

@@ -10,7 +10,7 @@ import { esc, faTime, faGregorianDate, faGregorianDateShort, jalaliDateStr, tehr
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3 } from "./data";
+import { upcomingBig, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -96,6 +96,17 @@ function gcalBasic(iso: string, plusHours: number): string {
   return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
 
+// v13.82-matchday: the venue becomes a place — link it to a Google Maps
+// search (api=1 universal URL, no key). The QUERY uses the English venue
+// name (m.venue — Maps' index is Latin-script) while the LINK TEXT stays
+// Persian (venueFa). Sits in both the scoreboard head (.mvenue) and the
+// facts table row.
+function venueMapLink(m: any, labelPrefix: string): string {
+  const shown = m.venueFa || m.venue;
+  const q = encodeURIComponent(m.venue + " stadium");
+  return '<a class="mvenue mvenue-map" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=' + q + '">' + labelPrefix + esc(shown) + ' <span class="mven-arrow" aria-hidden="true">↗</span><span class="sr-only"> — نمایش روی نقشه</span></a>';
+}
+
 function matchHeadHtml(sm: SeoMatch): string {
   const m = sm.s;
   const compFa = M.compNameFa(m);
@@ -120,7 +131,7 @@ function matchHeadHtml(sm: SeoMatch): string {
   if (!live && !finished) {
     center += '<div class="mcount" data-kickoff="' + esc(m.utcDate) + '" hidden></div>';
   }
-  if (m.venue) center += '<div class="mvenue">🏟️ ' + esc(m.venueFa || m.venue) + "</div>";
+  if (m.venue) center += venueMapLink(m, "🏟\uFE0F ");
 
   return '<section class="matchhead" aria-label="خلاصه بازی">' +
     '<div class="mteam">' + crestHtml(m.homeTeam) + '<div class="mname">' + M.nameHtml(faName(m.homeTeam)) + '</div><div class="mside-lbl">میزبان</div></div>' +
@@ -165,9 +176,17 @@ function matchHeadScript(): string {
 
 
 // ================= MATCH PAGE =================
-export function buildMatchPage(ctx: SeoCtx, slug: string): { html: string; notFound: boolean } {
-  const sm = findMatchBySlug(ctx, slug);
+// v13.82-matchday: now async — the render hydrates the venue (FD detail,
+// KV-cached 24h, fail-closed, 5s race guard — see hydrateMatchVenue) before
+// any of the venue consumers run: the answer sentence (G-03), the facts
+// table, the .mvenue scoreboard element and the meta description all read
+// sm.s.venue, so ONE hydration feeds every surface. The only await on the
+// slow path is a first-visit-per-match KV miss; the page HTML is cache-API
+// cached (wantCached) so repeat views never re-fetch.
+export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
+  let sm = findMatchBySlug(ctx, slug);
   if (!sm) return { html: "", notFound: true };
+  sm = await hydrateMatchVenue(ctx.env, sm);
   const m = sm.s;
   const path = matchPath(m.homeTeam.name, m.awayTeam.name, m.utcDate);
   const compFa = M.compNameFa(m);
@@ -187,7 +206,7 @@ export function buildMatchPage(ctx: SeoCtx, slug: string): { html: string; notFo
   rows.push(["رقابت", '<a href="/competitions/' + compSlug(m.competition.code) + '">' + esc(compFa) + "</a>"]);
   if (m.roundFa || m.round) rows.push(["مرحله", esc(m.roundFa || m.round)]);
   rows.push(["تاریخ", M.fullWhenHtml(m.utcDate)]);
-  if (m.venue) rows.push(["ورزشگاه", esc(m.venueFa || m.venue)]);
+  if (m.venue) rows.push(["ورزشگاه", venueMapLink(m, "")]);
   rows.push(["وضعیت", statusFaOf(sm) + (live && m.minute != null ? " (" + toFaDigits(String(m.minute)) + "ʹ)" : "")]);
   if ((finished || live) && m.score && m.score.home != null) rows.push(["نتیجه", scoreStr(m.score)]);
   const facts = '<table class="facts"><caption>مشخصات بازی</caption><tbody>' +
@@ -206,12 +225,24 @@ export function buildMatchPage(ctx: SeoCtx, slug: string): { html: string; notFo
     '<li>📅 <a href="/matches/today">بازی‌های امروز</a> · <a href="/matches/this-week">بازی‌های این هفته</a> · <a href="/matches">همه بازی‌های بزرگ</a></li>' +
     "</ul></div>";
 
+  // v13.82-matchday: the sibling fixtures card — same stage first (the rest
+  // of this matchday/round), then the competition's next fixtures, then
+  // same-day matches from other competitions. Every row links to its own
+  // match page (matchHref/matchPath — canonical), so each match page
+  // cross-links its siblings: the internal-linking loop the hub pages have
+  // always had, now on every match destination.
+  const sims = similarMatches(ctx, sm);
+  const similarCard = sims.length
+    ? '<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">' + toFaDigits(String(sims.length)) + " بازی</span></h2>" +
+      sims.map((x, i) => M.mrowHtml(x, i, false)).join("") + "</div>"
+    : "";
+
   const trail = [
     { name: "خانه", href: "/" },
     { name: "بازی‌ها", href: "/matches" },
     { name: faName(m.homeTeam) + " – " + faName(m.awayTeam) }
   ];
-  const main = matchHeadHtml(sm) + matchActionsHtml(sm, path) + matchHeadScript() + whyBigHtml(sm, ctx) + facts + resultBlock + related;
+  const main = matchHeadHtml(sm) + matchActionsHtml(sm, path) + matchHeadScript() + whyBigHtml(sm, ctx) + facts + similarCard + resultBlock + related;
   const html = pageShell({
     head: buildHead({
       path,
