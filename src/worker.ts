@@ -37,7 +37,8 @@
 //   users.ts             chats, member profiles, prefs, master list
 //   admin.ts             sessions, settings, clubs catalog, dummy matches
 //   public-matches.ts    /api/public-matches pipeline
-//   bot.ts               Telegram webhook handler
+//   bot-ui.ts            reply keyboard, command normalizer, grids/pickers
+//   bot.ts               Telegram webhook router (handleTelegramUpdate)
 //   cron-preflight.ts    settings/caches/status/budget + stale alert
 //   cron-users.ts         outbox drain, heartbeat, migration, FA-AI, cap
 //   cron-pool.ts          the sweep decision (quiet/live/full/long-view)

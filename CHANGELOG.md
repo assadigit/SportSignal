@@ -6,6 +6,26 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.78-botui] — 2026-10-13 (bot.ts 536 → bot-ui.ts 107 + the whole router)
+
+Sixth hygiene phase (worklog Task 42). The tappable-UI layer
+(replyKeyboard, normalizeCommand, the v13.49 grid/picker builders) moved
+to `bot-ui.ts`; `handleTelegramUpdate` (the 416-line webhook router with
+the command + callback chains) stays WHOLE in `bot.ts` — the
+check-bot-edges eval slices span the builders→router boundary by content
+markers (`// v13.49-buttons: shared message builders` →
+`async function handleTelegramUpdate`), so splitting the chains inside
+the handler would break the eval harness' contiguity assumptions. That
+boundary is now documented and locked (#botui) instead of ignored.
+
+- Harness co-evolution: bot-ui.ts sits immediately before bot.ts in the
+  worker-src order; botBtnSeg re-anchored to span the whole bot group
+  (bot-ui → cron-preflight) — the first run without this failed exactly
+  the 4 #buttons checks, proving the segment was doing its job. +2 #botui
+  locks (UI builders in bot-ui, router whole in bot.ts, order pinned).
+
+Suite: 817 checks green (815 + 2 #botui locks).
+
 ## [13.77-digestnotify] — 2026-10-13 (digest.ts 559 + notifications.ts 516 → 7 modules)
 
 Fifth hygiene phase (worklog Task 41). Two more god modules became groups

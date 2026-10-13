@@ -83,7 +83,7 @@ function workerSrc() {
     // or content-span regexes (#nospam6 spans within digest-morning).
     "digest-weekly.ts", "digest-morning.ts", "digest-bigmatch.ts", "digest-coronation.ts",
     "notify-engine.ts", "notify-status.ts", "notify-audit.ts",
-    "users.ts", "admin.ts", "admin-bot.ts", "public-matches.ts", "bot.ts",
+    "users.ts", "admin.ts", "admin-bot.ts", "public-matches.ts", "bot-ui.ts", "bot.ts",
     // v13.75-cronsplit: the cron group — the six phase modules run BEFORE the
     // shell (cron.ts LAST) so the flat concat mirrors runtime order: the
     // prewarm/overlay logs land before the shell's completion-blob meter fold

@@ -398,7 +398,10 @@ check("#cupscan status/score updates preserved as row overlays", /Object\.assign
 // command reply re-attaches the persistent keyboard (it re-expands if the
 // user collapsed it), /teams carries an inline toggle grid, /timezone a
 // quick-pick grid, and the callback handlers cover tf:/tz: callbacks.
-const botBtnSeg = (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron-preflight.ts =====")[0];
+// v13.78-botui: the UI builders (replyKeyboard/normalizeCommand/grids/pickers)
+// moved to bot-ui.ts, which sits immediately before bot.ts in the worker-src
+// order. The segment spans the whole bot group (bot-ui → cron-preflight).
+const botBtnSeg = (src.split("// ===== src/bot-ui.ts =====")[1] || "").split("// ===== src/cron-preflight.ts =====")[0];
 check("#buttons replyKeyboard has a Timezone button (fa+en)", /"\\u0632\\u0645\\u0627\\u0646"/.test(botBtnSeg) && /Timezone/.test(botBtnSeg));
 check("#buttons normalizeCommand maps the Timezone labels", /"\\u0632\\u0645\\u0627\\u0646": "\/timezone"/.test(botBtnSeg) && /Timezone": "\/timezone"/.test(botBtnSeg));
 check("#buttons /teams grid builders exist (text + keyboard)", /function teamsMessageText\(/.test(botBtnSeg) && /function teamsGridKeyboard\(/.test(botBtnSeg));
@@ -465,6 +468,13 @@ check("#digestnotify digest.ts + notifications.ts are gone (no shims, no re-expo
 check("#digestnotify the digest group is wired contiguously in the harness order", /"digest-weekly\.ts", "digest-morning\.ts", "digest-bigmatch\.ts", "digest-coronation\.ts",/.test(harness14));
 check("#digestnotify the notify group is wired contiguously in the harness order", /"notify-engine\.ts", "notify-status\.ts", "notify-audit\.ts",/.test(harness14));
 check("#digestnotify the audit dynamic import (admin-ops /api/audit) points at notify-audit", /await import\("\.\/notify-audit"\)/.test(fs14.readFileSync(path14.join(__dirname, "..", "src", "admin-ops.ts"), "utf8")));
+// #botui (v13.78-botui): the tappable-UI builders (keyboard, normalizer,
+// grids, pickers) live in bot-ui.ts; handleTelegramUpdate (the router) stays
+// WHOLE in bot.ts — the check-bot-edges content slices span the
+// builders→router boundary, so splitting the command/callback chains inside
+// the handler is off-limits (documented).
+check("#botui bot-ui.ts owns the UI builders; bot.ts owns the whole router", /export function replyKeyboard\(lang\)/.test(fs14.readFileSync(path14.join(__dirname, "..", "src", "bot-ui.ts"), "utf8")) && /export async function handleTelegramUpdate/.test(fs14.readFileSync(path14.join(__dirname, "..", "src", "bot.ts"), "utf8")));
+check("#botui bot-ui.ts sits immediately before bot.ts in the harness order (botBtnSeg spans both)", harness14.indexOf('"bot-ui.ts"') < harness14.indexOf('"bot.ts"'));
 // auth + swr + card-route slices
 const authSeg14 = (src.match(/\/\/ ===== src\/auth\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
 check("#seams auth.ts owns the admin_auth cookie writes", /admin_auth=/.test(authSeg14) && /login_fail_/.test(authSeg14));
