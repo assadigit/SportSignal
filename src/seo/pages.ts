@@ -10,11 +10,12 @@ import { esc, faTime, faGregorianDate, faGregorianDateShort, jalaliDateStr, tehr
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches } from "./data";
+import { upcomingBig, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
 import { normalizeTeamName } from "../teams";
+import { loadArchive } from "./files";
 
 const PER_PAGE = 50;
 
@@ -183,6 +184,35 @@ function matchHeadScript(): string {
 // sm.s.venue, so ONE hydration feeds every surface. The only await on the
 // slow path is a first-visit-per-match KV miss; the page HTML is cache-API
 // cached (wantCached) so repeat views never re-fetch.
+// v13.87-formtable: «فرم اخیر» — both sides' last-5 results as colored
+// W/D/L dots (ب/م/ش) with hover titles carrying the opponent + score +
+// date, plus a W·D·L count summary per side. Returns "" when NEITHER side
+// has enough finished history (the card drops silently — fail-closed).
+function formStripHtml(ctx: SeoCtx, sm: SeoMatch, archive: any[]): string {
+  const sides = [
+    { name: sm.raw.homeTeam && sm.raw.homeTeam.name, fa: faName(sm.s.homeTeam) },
+    { name: sm.raw.awayTeam && sm.raw.awayTeam.name, fa: faName(sm.s.awayTeam) }
+  ];
+  const forms = sides.map((x) => ({ ...x, dots: teamForm(ctx, x.name || "", archive) }));
+  if (!forms.some((f) => f.dots)) return "";
+  const W_FA: Record<string, string> = { W: "\u0628", D: "\u0645", L: "\u0634" }; // برد/مساوی/شکست
+  const label: Record<string, string> = { W: "\u0628\u0631\u062f", D: "\u0645\u0633\u0627\u0648\u06cc", L: "\u0634\u06a9\u0633\u062a" };
+  let out = '<div class="card formstrip"><h2>\u0641\u0631\u0645 \u0627\u062e\u06cc\u0631</h2>';
+  for (const f of forms) {
+    if (!f.dots) continue; // one-sided: render the side that has history
+    const cnt = { W: 0, D: 0, L: 0 };
+    let dots = '<span class="formdots">';
+    for (const d of f.dots) {
+      cnt[d.r]++;
+      dots += '<i class="fdot f' + d.r.toLowerCase() + '" title="' + esc(label[d.r] + " " + toFaDigits(d.score.replace("-", " \u2013 ")) + " \u062f\u0631 \u0628\u0631\u0627\u0628\u0631 " + d.oppFa + " (" + d.date + ")") + '">' + W_FA[d.r] + "</i>";
+    }
+    dots += "</span>";
+    out += '<div class="formrow"><span class="formteam">' + esc(f.fa) + "</span>" + dots +
+      '<span class="formsum">' + toFaDigits(String(cnt.W)) + " \u0628\u0631\u062f \u00b7 " + toFaDigits(String(cnt.D)) + " \u0645\u0633\u0627\u0648\u06cc \u00b7 " + toFaDigits(String(cnt.L)) + " \u0634\u06a9\u0633\u062a</span></div>";
+  }
+  return out + "</div>";
+}
+
 export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
   let sm = findMatchBySlug(ctx, slug);
   if (!sm) return { html: "", notFound: true };
@@ -231,6 +261,15 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // match page (matchHref/matchPath — canonical), so each match page
   // cross-links its siblings: the internal-linking loop the hub pages have
   // always had, now on every match destination.
+  // v13.87-formtable: the recent-form strip — each side's last-5 W/D/L
+  // from the pool's FINISHED rows (zero subrequests). Skipped for a side
+  // with fewer than 3 finished rows in the 30-day window (fail-closed:
+  // a 2-dot "form" reads as noise).
+  // v13.87: the archive load is one bounded KV read per match-page render
+  // (fail-closed on error \u2014 the strip drops, the page never breaks).
+  const archive = await loadArchive(ctx.env).catch(() => [] as any[]);
+  const formCard = formStripHtml(ctx, sm, archive);
+
   const sims = similarMatches(ctx, sm);
   const similarCard = sims.length
     ? '<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">' + toFaDigits(String(sims.length)) + " بازی</span></h2>" +
@@ -242,7 +281,7 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
     { name: "بازی‌ها", href: "/matches" },
     { name: faName(m.homeTeam) + " – " + faName(m.awayTeam) }
   ];
-  const main = matchHeadHtml(sm) + matchActionsHtml(sm, path) + matchHeadScript() + whyBigHtml(sm, ctx) + facts + similarCard + resultBlock + related;
+  const main = matchHeadHtml(sm) + matchActionsHtml(sm, path) + matchHeadScript() + whyBigHtml(sm, ctx) + facts + formCard + similarCard + resultBlock + related;
   const html = pageShell({
     head: buildHead({
       path,
@@ -470,6 +509,24 @@ export function buildTeamsIndexPage(ctx: SeoCtx): string {
   });
 }
 
+// v13.87-formtable: the 5-row standings window markup. Reuses the site's
+// .stbox/.strow/.stpos/.stname/.stpts vocabulary (the competition tables
+// already render those) + .strow-me highlight + a .stmore "full table"
+// link into the competition page.
+function buildStandingsWindowHtml(stw: { code: string; compFa: string; emblem: string | null; rows: any[]; meIdx: number }): string {
+  let tbl = '<div class="stbox stwin">';
+  tbl += '<div class="stbox-head">' + (stw.emblem ? '<img src="' + esc(stw.emblem) + '" alt="" loading="lazy">' : "") + esc(String(stw.compFa)) + "</div>";
+  tbl += '<div class="sthead"><span class="sthead-fill"></span><span class="stnum ucl-hidem sthead-num">بازی</span><span class="sthead-p">امتیاز</span></div>';
+  stw.rows.forEach((t, i) => {
+    tbl += '<div class="strow' + (i === stw.meIdx ? " strow-me" : "") + (t.pos === 1 ? " top1" : "") + '"><span class="stpos' + (t.pos <= 3 ? " top3" : "") + '">' +
+      toFaDigits(String(t.pos == null ? "—" : t.pos)) + '</span><span class="stname">' + M.nameHtml(t.faName || t.name) +
+      '</span><span class="stnum ucl-hidem">' + (t.played == null ? "—" : toFaDigits(String(t.played))) +
+      '</span><span class="stpts">' + (t.points == null ? "—" : toFaDigits(String(t.points))) + "</span></div>";
+  });
+  tbl += '<a class="stmore" href="/competitions/' + compSlug(stw.code) + '">جدول کامل ' + esc(String(stw.compFa)) + ' <span aria-hidden="true">↗</span><span class="sr-only">صفحه جدول کامل</span></a>';
+  return tbl + "</div>";
+}
+
 export function buildTeamPage(ctx: SeoCtx, slug: string): { html: string; notFound: boolean } {
   const entry = findTeamBySlug(ctx, slug);
   if (!entry) return { html: "", notFound: true };
@@ -483,6 +540,12 @@ export function buildTeamPage(ctx: SeoCtx, slug: string): { html: string; notFou
   // "بازی‌های مرتبط" for the team's NEXT match (same matchday card as the
   // match pages; internal-linking: every team page cross-links siblings).
   const sims = next ? similarMatches(ctx, next, 6) : [];
+  // v13.87-formtable: the league-table window — the team's neighborhood in
+  // its competition's standings (5 rows, the team highlighted, a link to the
+  // full competition table). Drops silently when the payload has no table
+  // covering the team (A-League, off-cup pages).
+  const stw = teamStandingsWindow(ctx, entry.name, next);
+  const stWinCard = stw ? buildStandingsWindowHtml(stw) : "";
   const simCard = sims.length
     ? '<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">' + toFaDigits(String(sims.length)) + " بازی</span></h2>" +
       sims.map((x, i) => M.mrowHtml(x, i, false)).join("") + "</div>"
@@ -498,6 +561,7 @@ export function buildTeamPage(ctx: SeoCtx, slug: string): { html: string; notFou
   const main =
     '<div class="answercard">' + esc(answer) + "</div>" +
     '<div class="card"><div class="listhead"><h2>بازی‌های پیش‌روی ' + esc(name) + "</h2></div>" + dateGroupedRows(upcoming, false) + "</div>" +
+    stWinCard +
     (finished.length
       ? '<div class="card"><h2>نتایج اخیر</h2>' + dateGroupedRows(finished, true) + "</div>"
       : "") + simCard;

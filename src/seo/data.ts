@@ -7,6 +7,7 @@ import type { Env } from "../types";
 import { CONFIG } from "../config";
 import { getCachedMatches } from "../match-pool";
 import { applyLiveOverlay, pubMatch } from "../public-matches";
+import { COMP_EN } from "../tables";
 import { ensureFaAiCache, ensureFaVenueCache, translateVenue } from "../translate";
 import { normalizeTeamName } from "../teams";
 // v13.85-stadiumchip: the home-ground table + one-off-neutral gate moved to
@@ -356,6 +357,99 @@ export async function hydrateMatchVenue(env: Env, sm: SeoMatch | null): Promise<
 // competition, then same-UTC-day matches from other competitions. Upcoming
 // only (the card sells the next fixtures, not history), the match itself
 // excluded, deduped by pairing, kickoff-ordered, capped.
+// v13.87-formtable: the team page's league-table window. Picks the
+// competition of the team's NEXT match (falling back to any standings
+// competition the team appears in), then returns a 5-row neighborhood
+// around the team (2 above, the team, 2 below; clamped at the table top
+// when the team is top-3). Null when the payload carries no standings for
+// a competition the team plays in — the caller drops the card (fail-closed,
+// same rule as every seo data card).
+export function teamStandingsWindow(ctx: SeoCtx, teamName: string, next: SeoMatch | null): { code: string; compFa: string; emblem: string | null; rows: any[]; meIdx: number } | null {
+  const stAll = ctx.payload && ctx.payload.standings;
+  if (!stAll || typeof stAll !== "object") return null;
+  const norm = normalizeTeamName(teamName);
+  const find = (comp: string): { st: any; me: any } | null => {
+    const st = stAll[comp];
+    if (!st || !Array.isArray(st.teams)) return null;
+    const me = st.teams.find((t: any) => t && normalizeTeamName(t.name) === norm);
+    return me ? { st, me } : null;
+  };
+  // prefer the next fixture's competition (that's the table the user is
+  // about to see played); fall back to ANY standings comp containing the
+  // team (covers pages whose next fixture is a cup game with no table).
+  let code: string | null = next && next.s.competition && next.s.competition.code;
+  let hit = (code && find(code)) || null;
+  if (!hit) {
+    for (const c of Object.keys(stAll)) {
+      const h2 = find(c);
+      if (h2) { code = c; hit = h2; break; }
+    }
+  }
+  if (!hit || !code) return null;
+  const { st, me } = hit;
+  const idx = st.teams.indexOf(me);
+  if (idx < 0) return null;
+  const start = Math.max(0, Math.min(idx - 2, Math.max(0, st.teams.length - 5)));
+  const rows = st.teams.slice(start, start + 5);
+  const meIdx = rows.indexOf(me);
+  return { code, compFa: st.faName || COMP_EN[code] || code, emblem: st.emblem || null, rows, meIdx };
+}
+
+// v13.87-formtable: a team's last-N finished results as W/D/L relative to
+// the team. TWO sources merged: the pool's FINISHED rows (the bot retains
+// finished matches only ~7 days) and the long-lived seo archive (365-day
+// retention, pubMatch-shaped). Same fixture from both sources dedupes on
+// the sorted-pair+day key. The minimum-3 gate keeps the strip honest (a
+// 2-dot "form" reads as noise) — until the archive accumulates, the card
+// simply doesn't render (fail-closed). DOM order is oldest\u2192newest so RTL
+// renders the newest dot leftmost. The archive rows are passed IN by the
+// caller (pages.ts loads them once per render; data.ts cannot import
+// files.ts \u2014 that would close a cycle).
+export function teamForm(ctx: SeoCtx, teamName: string, archiveRows: any[] = [], limit = 5, min = 3): { r: string; oppFa: string; score: string; date: string }[] | null {
+  const norm = normalizeTeamName(teamName);
+  const seen = new Set<string>();
+  const unif: { ts: number; nh: string; homeFa: string; awayFa: string; gh: number; ga: number }[] = [];
+  const addRow = (home: string, away: string, homeFa: string, awayFa: string, utcDate: string, gh: any, ga: any) => {
+    if (gh == null || ga == null) return;
+    const nh = normalizeTeamName(home), na = normalizeTeamName(away);
+    if (nh !== norm && na !== norm) return;
+    const key = [nh, na].sort().join("|") + "|" + String(utcDate || "").slice(0, 10);
+    if (seen.has(key)) return;
+    seen.add(key);
+    unif.push({ ts: new Date(utcDate).getTime() || 0, nh, homeFa: homeFa || home, awayFa: awayFa || away, gh: Number(gh), ga: Number(ga) });
+  };
+  // pool rows (raw shape: score.fullTime; fa names from the shaped twin)
+  ctx.shaped.forEach((s: any, i: number) => {
+    const raw = ctx.pool[i];
+    if (!raw || raw.status !== "FINISHED" || !raw.utcDate || !raw.homeTeam || !raw.awayTeam) return;
+    const ft = (raw.score || {}).fullTime;
+    if (!ft) return;
+    addRow(raw.homeTeam.name, raw.awayTeam.name, s.homeTeam && s.homeTeam.faName, s.awayTeam && s.awayTeam.faName, raw.utcDate, ft.home, ft.away);
+  });
+  // archive rows (pubMatch shape: flat score; s.homeTeam/s.awayTeam)
+  for (const rec of archiveRows || []) {
+    const m = rec && rec.m;
+    if (!m || !m.utcDate || !m.homeTeam || !m.awayTeam) continue;
+    const ft = m.score || {};
+    addRow(m.homeTeam.name, m.awayTeam.name, m.homeTeam.faName, m.awayTeam.faName, m.utcDate, ft.home, ft.away);
+  }
+  unif.sort((a, b) => b.ts - a.ts);
+  const rows = unif.slice(0, limit);
+  if (rows.length < min) return null;
+  const dots = rows.map((r) => {
+    const home = r.nh === norm;
+    const diff = home ? r.gh - r.ga : r.ga - r.gh;
+    return {
+      r: diff > 0 ? "W" : diff === 0 ? "D" : "L",
+      oppFa: home ? r.awayFa : r.homeFa,
+      score: String(r.gh) + "-" + String(r.ga),
+      date: new Date(r.ts).toISOString().slice(0, 10)
+    };
+  });
+  dots.reverse();
+  return dots;
+}
+
 export function similarMatches(ctx: SeoCtx, sm: SeoMatch, max = 6): SeoMatch[] {
   if (!sm || !sm.raw) return [];
   const selfDay = String(sm.raw.utcDate || "").slice(0, 10);

@@ -474,5 +474,88 @@ check("one-off neutral stages skip the table (FINAL/THIRD_PLACE; roundRaw final-
 })());
 check("table venue sets en + fa (no FD round-trip)", /sm\.raw\.venue = g\.en;/.test(dataSrc82) && /sm\.s\.venueFa = g\.fa;/.test(dataSrc82));
 
+
+// ---- v13.87-formtable: the standings window + the form strip ----
+check("v13.87: teamStandingsWindow exists + wired into buildTeamPage", (() => {
+  const d = read("src/seo/data.ts");
+  const p2 = read("src/seo/pages.ts");
+  return /export function teamStandingsWindow\(ctx: SeoCtx, teamName: string, next: SeoMatch \| null\)/.test(d) && /const stw = teamStandingsWindow\(ctx, entry\.name, next\);/.test(p2) && /stWinCard \+/.test(p2);
+})());
+check("v13.87: teamForm exists + the match page renders the form strip", (() => {
+  const d = read("src/seo/data.ts");
+  const p2 = read("src/seo/pages.ts");
+  return /export function teamForm\(ctx: SeoCtx, teamName: string, archiveRows: any\[\] = \[\], limit = 5, min = 3\)/.test(d) && /const formCard = formStripHtml\(ctx, sm, archive\);/.test(p2) && /facts \+ formCard \+ similarCard/.test(p2) && /const archive = await loadArchive\(ctx\.env\)\.catch/.test(p2);
+})());
+check("v13.87: teamForm is fail-closed (min-3 gate; null when short)", (() => {
+  const d = read("src/seo/data.ts");
+  return /if \(rows\.length < min\) return null;/.test(d) && /min = 3/.test(d);
+})());
+check("v13.87: teamStandingsWindow picks next-comp then falls back + 5-row window", (() => {
+  const d = read("src/seo/data.ts");
+  return /next\.s\.competition && next\.s\.competition\.code/.test(d) && /Math\.min\(idx - 2, Math\.max\(0, st\.teams\.length - 5\)\)/.test(d) && /st\.teams\.slice\(start, start \+ 5\)/.test(d);
+})());
+check("v13.87: the standings window highlights the team row + links the full table", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /strow-me/.test(p2) && /<a class="stmore" href="\/competitions\/' \+ compSlug\(stw\.code\)/.test(p2);
+})());
+check("v13.87: form dots render ب/م/ش with hover titles + count summary", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /fdot f' \+ d\.r\.toLowerCase\(\)/.test(p2) && /<i class="fdot f/.test(p2) && /class="formsum"/.test(p2);
+})());
+check("v13.87: the new styles ship in the page-shell block", (() => {
+  const ps = read("src/seo/page-shell.ts");
+  return [".strow-me", ".stmore", ".formstrip .formrow", ".fdot", ".fw{", ".fd{", ".fl{", ".formsum"].every((cls) => ps.includes(cls));
+})());
+check("v13.87: formstrip merges pool FINISHED + archive rows (no provider fetches)", (() => {
+  const d = read("src/seo/data.ts");
+  const i = d.indexOf("export function teamForm");
+  const j = d.indexOf("export function similarMatches", i);
+  const seg = d.slice(i, j > 0 ? j : i + 4000);
+  return /raw\.status !== "FINISHED"/.test(seg) && /archiveRows/.test(seg) && /\.sort\(\)\.join\("\|"\) \+ "\|" \+ String\(utcDate/.test(seg) && !/fetchJSON|fetch\(/.test(seg);
+})());
+// v13.87 behavioral: eval the REAL teamForm (brace-matched extraction from
+// src/seo/data.ts, TS annotations stripped by EXACT-string replacement --
+// the replacements are themselves locks: drift breaks loudly here, not
+// silently in prod) with the REAL normalizeTeamName and a stub ctx. Three
+// finished rows (pool + archive, one DUPLICATE across sources) must yield
+// W/D/L dots in oldest-to-newest order; two rows must yield null (min-3).
+check("v13.87 behavioral: teamForm dedupes pool+archive, W/D/L math, min-3 fail-closed", (() => {
+  const fs = require("fs");
+  const d = fs.readFileSync("src/seo/data.ts", "utf8");
+  const i = d.indexOf("export function teamForm");
+  if (i < 0) return false;
+  const open = d.indexOf("| null {", i) + 7;  // body-open anchored past the return-type braces
+  let depth = 0, j = open;
+  for (; j < d.length; j++) {
+    if (d[j] === "{") depth++;
+    else if (d[j] === "}") { depth--; if (depth === 0) break; }
+  }
+  let seg = d.slice(i, j + 1);
+  const sigOld = "function teamForm(ctx: SeoCtx, teamName: string, archiveRows: any[] = [], limit = 5, min = 3): { r: string; oppFa: string; score: string; date: string }[] | null {";
+  const sigNew = "function teamForm(ctx, teamName, archiveRows, limit, min) {";
+  const unifOld = "const unif: { ts: number; nh: string; homeFa: string; awayFa: string; gh: number; ga: number }[] = [];";
+  const addOld = "const addRow = (home: string, away: string, homeFa: string, awayFa: string, utcDate: string, gh: any, ga: any) => {";
+  const feOld = "ctx.shaped.forEach((s: any, i: number) => {";
+  if (seg.indexOf(sigOld) < 0 || seg.indexOf(unifOld) < 0 || seg.indexOf(addOld) < 0 || seg.indexOf(feOld) < 0) return false;
+  seg = seg
+    .replace(sigOld, sigNew)
+    .replace(/new Set<string>\(\)/g, "new Set()")
+    .replace(unifOld, "const unif = [];")
+    .replace(addOld, "const addRow = (home, away, homeFa, awayFa, utcDate, gh, ga) => {")
+    .replace(feOld, "ctx.shaped.forEach((s, i) => {")
+    .replace(/^export /, "");
+  const { normalizeTeamName } = require("../src/teams.ts");
+  const teamForm = new Function("normalizeTeamName", seg + "\n; return teamForm;")(normalizeTeamName);
+  const mk = (h, a, d2, gh, ga) => ({ status: "FINISHED", utcDate: d2, score: { fullTime: { home: gh, away: ga } }, homeTeam: { name: h }, awayTeam: { name: a } });
+  const pool = [mk("Arsenal FC", "Leeds United FC", "2026-10-10T18:00:00Z", 2, 1), mk("Arsenal FC", "Chelsea FC", "2026-10-03T16:30:00Z", 1, 1), mk("Everton FC", "Arsenal FC", "2026-09-26T16:30:00Z", 0, 3)];
+  const shaped = pool.map((m) => ({ homeTeam: { faName: "\u0622\u0631\u0633\u0627\u0644" }, awayTeam: { faName: "x" } }));
+  const archive = [{ m: { utcDate: "2026-10-10T18:00:00Z", homeTeam: { name: "Arsenal FC", faName: "\u0622\u0631\u0633\u0627\u0644" }, awayTeam: { name: "Leeds United FC", faName: "y" }, score: { home: 2, away: 1 } } }];
+  const dots = teamForm({ shaped, pool }, "Arsenal FC", archive, 5, 3);
+  const ok3 = dots && dots.length === 3 && dots[0].r === "W" && dots[1].r === "D" && dots[2].r === "W" && dots[2].oppFa === "x" && dots[2].date === "2026-10-10";
+  const two = teamForm({ shaped: [shaped[0]], pool: [pool[0]] }, "Arsenal FC", [], 5, 3);
+  return ok3 && two === null;
+})());
+
+
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
 process.exit(failed === 0 ? 0 : 1);

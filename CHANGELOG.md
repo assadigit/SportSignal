@@ -6,6 +6,15 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.87-formtable] — 2026-10-13 (the league-table window + the recent-form strip)
+
+Both cards ride data the pages ALREADY hold (zero subrequests, fail-closed: no data \u2192 no card):
+
+- Team pages (/teams/{slug}): the \u00ab\u062c\u062f\u0648\u0644\u00bb window \u2014 a 5-row standings neighborhood (2 above, the team highlighted via .strow-me, 2 below; clamped at the top when the team is top-3) from the payload's standings snapshots, with a \u00ab\u062c\u062f\u0648\u0644 \u06a9\u0627\u0645\u0644\u00bb link into the competition page (internal-linking + engagement). Picks the NEXT fixture's competition, falling back to any table containing the team (covers cup-next pages).
+- Match pages: \u00ab\u0641\u0631\u0645 \u0627\u062e\u06cc\u0631\u00bb \u2014 both sides' last-5 W/D/L as \u0628/\u0645/\u0634 dots (green/gray/red, hover title with opponent + score + date) + a W\u00b7D\u00b7L count summary. From the pool's 30-day FINISHED rows; a side with <3 results drops out, both sides short \u2192 no card.
+- Styling: .strow-me sky-accent highlight (the .mcount/.mvenue-map family), .stmore footer link, .formstrip/.formrow/.formdot .fw/.fd/.fl with tabular digits + reduced footprint on mobile.
+- New data helpers: teamStandingsWindow + teamForm (seo/data.ts \u2014 content-additive; seo/* is NOT in the eval harness, so no worker-src changes; new static locks in check-stats).
+
 ## [13.86-groundsfix] — 2026-10-13 (QA-found name-form bugs: the hero match gains its venue)
 
 **The QA finding that closed itself:** the live hero match page (Club Atlético de Madrid vs Manchester United) rendered with NO venue while the home-ground table held the Metropolitano — FD sends the full club-prefixed name, the v13.85 table keyed the short form, and `normalizeTeamName` never strips club prefixes. Inter home fixtures missed for the same reason (FD: "FC Internazionale Milano" vs key "Inter Milan").
