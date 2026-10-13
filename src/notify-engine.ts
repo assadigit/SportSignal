@@ -107,7 +107,7 @@ export function fanoutReservation(config, chatGroups) {
   }
   return "defer";
 }
-export async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, lean?) {
+export async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, deferred?) {
   const matchTime = new Date(match.utcDate);
   const isFuture = matchTime > new Date();
   const isFinished = isMatchFinished(match);
@@ -120,6 +120,21 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
   }
   const shouldSend = await shouldSendNotification(env, match, config.type, notifiedMatches);
   if (!shouldSend) return;
+  // v13.94-fanoutfix: THE FAN-OUT RESERVATION — checked HERE, after the
+  // window + dedupe gates say "this unit would fire" but BEFORE any
+  // dedupe write. A defer at this point is a CLEAN deferral: nothing sent,
+  // nothing recorded, the next tick retries inside the same window (all
+  // windows ≥45min wide; backfill legs cover the rest). A mid-flight
+  // fan-out death (first chats served, tail chats silently lost under a
+  // persisted record — the live-reported differential) is impossible by
+  // construction. match-start keeps must-fire semantics: lean mode
+  // (text-only, no cards/dice) when only the full fan-out cannot fit.
+  const verdict = fanoutReservation(config, chatGroups);
+  if (verdict === "defer") {
+    if (deferred) deferred.push(matchKey(match) + ":" + config.type);
+    return;
+  }
+  const lean = verdict === "lean";
   // v13.36-nospam: WRITE-FIRST dedupe — and v13.42-rekindle makes that
   // promise REAL: the send only proceeds if the record PERSISTED. The old
   // order (send → save) was the spam engine (a failed KV save left the
@@ -355,27 +370,17 @@ export async function sendMatchNotifications(env: Env, matches) {
         const both = matchChats.filter((c) => isBigMatch(match, prefs, c));
         if (!both.length) continue;
         const bigGroups = groupChatsByTz(both, prefs, env);
-        const verdict = fanoutReservation(config, bigGroups);
-        if (verdict === "defer") {
-          deferredKeys.push(matchKey(match) + ":" + config.type);
-          continue;
-        }
-        await sendNotificationIfNeeded(match, config, bigGroups, env, notificationCounts, notifiedMatches, deadChats, verdict === "lean");
+        await sendNotificationIfNeeded(match, config, bigGroups, env, notificationCounts, notifiedMatches, deadChats, deferredKeys);
         continue;
       }
-      const verdict = fanoutReservation(config, chatGroups);
-      if (verdict === "defer") {
-        deferredKeys.push(matchKey(match) + ":" + config.type);
-        continue;
-      }
-      await sendNotificationIfNeeded(match, config, chatGroups, env, notificationCounts, notifiedMatches, deadChats, verdict === "lean");
+      await sendNotificationIfNeeded(match, config, chatGroups, env, notificationCounts, notifiedMatches, deadChats, deferredKeys);
     }
   }
   notifySummary.budgetDeferred = deferredKeys.length;
   notifySummary.dk = deferredKeys.slice(0, 12);
   notifySummary.o = notificationCounts.outcome || { sent: 0, failed: 0, dead: 0 };
   if (deferredKeys.length) {
-    console.log(`\u23F1 Fan-out reservation: deferred ${deferredKeys.length} (match, type) unit(s) to the next sweep (budget ${subrequestCount() + kvOpsCount()} used) — ${deferredKeys.slice(0, 6).join(", ")}`);
+    console.log(`\u23F1 Fan-out reservation: deferred ${deferredKeys.length} in-window (match, type) unit(s) to the next sweep (budget ${subrequestCount() + kvOpsCount()} used) — ${deferredKeys.slice(0, 6).join(", ")}`);
   }
   if (deadChats.length) {
     const keep = chatIds.filter((c) => !deadChats.includes(c));
@@ -392,7 +397,7 @@ export async function sendMatchNotifications(env: Env, matches) {
   console.log(`   1-hour: ${notificationCounts["pre-match-1h"]}`);
   console.log(`   Match-start: ${notificationCounts["match-start"]}`);
   console.log(`   Results: ${notificationCounts["result"]}`);
-  const totalSent = Object.values(notificationCounts).reduce((a, b) => a + b, 0);
+  const totalSent = Object.values(notificationCounts).filter((v) => typeof v === "number").reduce((a, b) => a + b, 0);
   console.log(`   Total: ${totalSent}`);
   return notifySummary;
 }

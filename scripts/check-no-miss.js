@@ -724,10 +724,12 @@ var MEM_DEDUPE = new Set();
     async function renderCardPngCached() { return new ArrayBuffer(8); }
     async function shouldSendNotification() { return true; }
     async function saveNotifiedMatch() { return true; }
+    function fanoutFetchCost() { return 1; }
+    function fanoutReservation() { return "full"; }
     function isBackfillEligible() { return false; }
     function isMatchFinished() { return false; }
     function specialBanner() { return ""; }
-    eval([grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, lean)")].join("\n")); // v13.94-fanoutfix: lean param added (text-only must-fire mode) // v13.72-deadweight: dead nowTehran param removed (was never read)
+    eval([grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, deferred)")].join("\n")); // v13.94-fanoutfix: 8th param now the deferred-keys tracker; the lean verdict is computed inside (after the window+dedupe gates, before the dedupe write) // v13.72-deadweight: dead nowTehran param removed (was never read)
     const mkMatch = (crests) => ({
       id: "cf-1",
       utcDate: new Date(Date.now() + 30 * 60e3).toISOString(),

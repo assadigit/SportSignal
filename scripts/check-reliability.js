@@ -107,10 +107,11 @@ check("#6 reservation reads the TRUE count (fetch + KV ops)", /const used = subr
 check("#6 reservation verdict full/lean/defer", /return "full";/.test(src) && /return "lean";/.test(src) && /return "defer";/.test(src));
 check("#6 match-start keeps must-fire semantics via lean mode", /if \(config && config\.type === "match-start"\) \{[\s\S]{0,260}return "lean";/.test(src));
 check("#6 fanoutFetchCost projects 2 crest + 2 sends/chat + margin", /chatGroups\.length \* 2 \+ sends \* 2 \+ 2/.test(src));
-check("#6 reservation defers BEFORE the dedupe write (no record on defer)", /const verdict = fanoutReservation\(config, chatGroups\);[\s\S]{0,200}?if \(verdict === "defer"\) \{[\s\S]{0,200}?continue;/.test(src));
+check("#6 reservation runs INSIDE the send gate (after shouldSend, before the dedupe write)", /if \(!shouldSend\) return;[\s\S]{0,900}?const verdict = fanoutReservation\(config, chatGroups\);[\s\S]{0,1100}?saveNotifiedMatch/.test(src));
+check("#6 the caller passes the deferred-keys tracker (8th param)", /sendNotificationIfNeeded\(match, config, chatGroups, env, notificationCounts, notifiedMatches, deadChats, deferredKeys\);/.test(src));
 check("#6 lean mode skips cards + dice (cheapest must-fire path)", /if \(!lean && \(match\.homeTeam\.crest \|\| match\.awayTeam\.crest\)\)/.test(src) && /config\.type === "match-start" && !late && !lean/.test(src));
 check("#6 deferred (match,type) keys land in the breadcrumb (notify.dk)", /notifySummary\.dk = deferredKeys\.slice\(0, 12\);/.test(src));
-check("#6 budgetDeferred counter logged", /Fan-out reservation: deferred \$\{deferredKeys\.length\}/.test(src));
+check("#6 budgetDeferred counter logged", /Fan-out reservation: deferred \$\{deferredKeys\.length\} in-window/.test(src));
 check("#6 per-chat outcome counters (sent/failed/dead) in the summary", /notifySummary\.o = notificationCounts\.outcome/.test(src) && /counts\.outcome = counts\.outcome \|\| \{ sent: 0, failed: 0, dead: 0 \};/.test(src));
 
 // v13.94-fanoutfix: THE D1 DEDUPE STORE. The write-first dedupe put was the
