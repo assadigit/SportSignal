@@ -177,7 +177,10 @@ export async function executeScheduledLogic(env: Env) {
         // records what the sweep SAW and SENT (found / skipped-for-no-
         // followers / budget-deferred / per-type counts / last match
         // processed). A missed-start investigation is now a single KV read.
-        notify: notifySummary ? { f: notifySummary.found, n: notifySummary.noChats, d: notifySummary.budgetDeferred, s: notifySummary.sent, l: notifySummary.last } : null
+        // v13.94-fanoutfix: o = per-chat outcome counters (sent/failed/dead),
+        // dk = the deferred (match, type) keys — the tail-chat losses and
+        // clean deferrals are now readable from the tick blob directly.
+        notify: notifySummary ? { f: notifySummary.found, n: notifySummary.noChats, d: notifySummary.budgetDeferred, s: notifySummary.sent, l: notifySummary.last, o: notifySummary.o, dk: notifySummary.dk } : null
       }));
     } catch (e) {
       await env.STATE.put(CONFIG.KV_HEARTBEAT, NOW.toString()).catch(() => {

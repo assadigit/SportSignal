@@ -114,6 +114,7 @@ check("#6 lean mode skips cards + dice (cheapest must-fire path)", /if \(!lean &
 check("#6 deferred (match,type) keys land in the breadcrumb (notify.dk)", /notifySummary\.dk = deferredKeys\.slice\(0, 12\);/.test(src));
 check("#6 budgetDeferred counter logged", /Fan-out reservation: deferred \$\{deferredKeys\.length\} in-window/.test(src));
 check("#6 per-chat outcome counters (sent/failed/dead) in the summary", /notifySummary\.o = notificationCounts\.outcome/.test(src) && /counts\.outcome = counts\.outcome \|\| \{ sent: 0, failed: 0, dead: 0 \};/.test(src));
+check("#6 the completion blob folds o + dk into notify (visibility)", /o: notifySummary\.o, dk: notifySummary\.dk \} : null/.test(src));
 
 // v13.94-fanoutfix: THE D1 DEDUPE STORE. The write-first dedupe put was the
 // single critical KV write of the notify path — under the account-level
