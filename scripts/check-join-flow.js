@@ -41,6 +41,10 @@ const CONFIG = { KV_USERS_KEY: "telegram_users_v6", KV_USER_PREFS: "user_prefs_v
 const STUB_TEAMS = ["Alpha FC", "Beta SC", "Gamma United"];
 
 let sent = [];
+// v13.71-admintools: the command chain now pages the owner on join/leave —
+// capture stubs keep `sent` user-facing only (the existing count assertions
+// stay meaningful) while recording the page calls for the new assertions.
+let adminPages = [];
 globalThis.CONFIG = CONFIG;
 globalThis.masterTeamList = () => STUB_TEAMS;
 globalThis.normalizeTeamName = (n) => String(n);
@@ -56,6 +60,8 @@ globalThis.getRegisteredChats = async (env) => {
   return Array.isArray(p) ? p : [];
 };
 globalThis.getUserPrefs = async (env) => (await env.STATE.get(CONFIG.KV_USER_PREFS, "json")) || {};
+globalThis.notifyAdminUserJoined = async (env, chatId, total) => { adminPages.push({ type: "join", chatId, total }); };
+globalThis.notifyAdminUserLeft = async (env, chatId, total) => { adminPages.push({ type: "left", chatId, total }); };
 
 // v13.49-buttons: the /teams reply now uses the real grid builders — slice
 // them into the eval so the extraction stays faithful to shipped code.
@@ -70,6 +76,7 @@ const handler = new Function("text", "chatId", "env", "return (async () => { " +
 
 function freshEnv() {
   sent = [];
+  adminPages = [];
   return { STATE: makeStore(), BOT_TOKEN: "test", CHAT_ID: "0", TEHRAN_TZ: "Asia/Tehran" };
 }
 
@@ -85,12 +92,15 @@ const check = (name, cond) => {
   await handler("/start", 42, env);
   let users = await env.STATE.get(CONFIG.KV_USERS_KEY);
   check("/start registers a fresh chatId", users && users.includes(42) && JSON.parse(users).length === 1);
+  // v13.71-admintools: the owner is paged exactly once for the NEW join
+  check("/start (new join) pages the owner once", adminPages.length === 1 && adminPages[0].type === "join" && adminPages[0].chatId === 42 && adminPages[0].total === 1);
 
   // 2) /start is idempotent — re-starting must not duplicate the user
   await handler("/start", 42, env);
   users = await env.STATE.get(CONFIG.KV_USERS_KEY);
   check("/start is idempotent (no duplicate on re-start)", JSON.parse(users).filter((c) => c === 42).length === 1);
   check("/start sends a welcome message", sent.length === 2 && sent.every((s) => s.id === 42));
+  check("re-start does NOT re-page the owner (already joined)", adminPages.length === 1);
 
   // 3) /teams sends a numbered selection list
   await handler("/teams", 42, env);
@@ -118,6 +128,16 @@ const check = (name, cond) => {
   await handler("/stop", 42, env);
   users = await env.STATE.get(CONFIG.KV_USERS_KEY);
   check("/stop removes the chatId", users && JSON.parse(users).length === 0);
+  // v13.71-admintools: a member's /stop pages the owner (leave signal)
+  const leftEnv = freshEnv();
+  await handler("/start", 42, leftEnv);
+  adminPages = [];
+  await handler("/stop", 42, leftEnv);
+  check("/stop (member) pages the owner with the leave signal", adminPages.length === 1 && adminPages[0].type === "left" && adminPages[0].chatId === 42);
+  const strangerEnv = freshEnv();
+  adminPages = [];
+  await handler("/stop", 555, strangerEnv);
+  check("/stop (stranger, never a member) does NOT page the owner", adminPages.length === 0);
 
   // 8) unknown command gets a friendly reply
   await handler("/wibble", 42, freshEnv());

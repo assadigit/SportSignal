@@ -16,6 +16,7 @@ import { formatBigMatchMessage, specialBanner } from "./composers";
 import { getRegisteredChats, getUserPrefs, setUserLang, getUserTz, masterTeamList, userFollowsMatch, botStr, resolveTimeZone } from "./users";
 import { sendLeagueTables, sendWeekAhead } from "./digest";
 import { applySettings } from "./admin";
+import { isAdminChat, notifyAdminUserJoined, notifyAdminUserLeft, adminPanelText, adminPanelKeyboard, adminMembersMessage, adminStatusMessage, adminBroadcast } from "./admin-bot";
 
 // v13.23-buttons: persistent reply keyboard (buttons at the bottom of the
 // chat). Users tap buttons instead of typing slash commands. The button
@@ -147,6 +148,10 @@ export async function handleTelegramUpdate(env: Env, update) {
             if (!chats.includes(cbChatId2)) {
               chats.push(cbChatId2);
               await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(chats));
+              // v13.71-admintools: a registration through the language picker
+              // (a returning user tapping an old picker after /stop) pages the
+              // admin too — same join signal as /start.
+              await notifyAdminUserJoined(env, cbChatId2, chats.length);
             }
             await setUserLang(env, cbChatId2, lang);
             await answerCallbackQuery(env, cbq.id, lang === "en" ? "English" : "\u0641\u0627\u0631\u0633\u06CC");
@@ -220,6 +225,19 @@ export async function handleTelegramUpdate(env: Env, update) {
           }
           await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzStatusText(lang, prefs[key] ? prefs[key].tz || (env.TEHRAN_TZ || "Asia/Tehran") : (env.TEHRAN_TZ || "Asia/Tehran")), tzPickerKeyboard(lang));
         }
+        // v13.71-admintools: the /admin panel's quick buttons — members roster
+        // and live status. Strictly gated to the owner chat (a non-admin tap
+        // gets a denial toast and nothing else).
+        const admt = data.match(/^adm:(members|status)$/);
+        if (admt) {
+          if (!isAdminChat(env, cbChatId2)) {
+            await answerCallbackQuery(env, cbq.id, "\u26D4 \u0645\u062E\u0635\u0648\u0635 \u0645\u062F\u06CC\u0631 \u0631\u0628\u0627\u062A \u0627\u0633\u062A");
+          } else {
+            const body = admt[1] === "members" ? await adminMembersMessage(env) : await adminStatusMessage(env);
+            await answerCallbackQuery(env, cbq.id, "\u2713");
+            await sendTelegram(env, body, cbChatId2);
+          }
+        }
         }
       } catch (e) {
         console.error("callback_query handler failed: " + e.message);
@@ -258,6 +276,11 @@ export async function handleTelegramUpdate(env: Env, update) {
       if (!alreadyJoined) {
         chats.push(chatId);
         await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(chats));
+        // v13.71-admintools: page the owner the moment a NEW member joins
+        // (name/username come from the just-written profile — the per-message
+        // upsert above already stored them). Re-starts don't re-page (the
+        // alreadyJoined branch below is a returning member, not a join).
+        await notifyAdminUserJoined(env, chatId, chats.length);
       }
       const prefs = await getUserPrefs(env);
       const up = prefs[String(chatId)] || {};
@@ -291,8 +314,14 @@ export async function handleTelegramUpdate(env: Env, update) {
       await sendTelegram(env, promptText, chatId, keyboard);
     } else if (text === "/stop") {
       const chats = await getRegisteredChats(env);
+      const wasMember = chats.includes(chatId);
       const newChats = chats.filter((c) => c !== chatId);
       await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(newChats));
+      if (wasMember) {
+        // v13.71-admintools: a real leave (was on the roster) pages the
+        // owner; a /stop from a stranger is not a leave.
+        await notifyAdminUserLeft(env, chatId, newChats.length);
+      }
       const prefs = await getUserPrefs(env);
       const lang = (prefs[String(chatId)] && prefs[String(chatId)].lang) === "en" ? "en" : "fa";
       await sendTelegram(env, lang === "en" ? "You have been unsubscribed\\. Use /start to return\\." : "\u274C \u0627\u0632 \u062F\u0631\u06CC\u0627\u0641\u062A \u067E\u06CC\u0627\u0645 \u062E\u0627\u0631\u062C \u0634\u062F\u06CC\u062F\\.", chatId, replyKeyboard(lang));
@@ -471,6 +500,32 @@ export async function handleTelegramUpdate(env: Env, update) {
       const wa = await sendWeekAhead(env, [chatId], lang);
       if (res.sent === 0 && wa.sent === 0) {
         await sendTelegram(env, lang === "en" ? "Tables are not available right now\\. Please try again in a few minutes\\." : "\u26A0\uFE0F \u062C\u062F\u0648\u0644\u200C\u0647\u0627 \u0641\u0639\u0644\u0627\u064B \u062F\u0631 \u062F\u0633\u062A\u0631\u0633 \u0646\u06CC\u0633\u062A \\- \u0644\u0637\u0641\u0627\u064B \u062F\u0642\u0627\u06CC\u0642\u06CC \u0628\u0639\u062F \u062F\u0648\u0628\u0627\u0631\u0647 \u062A\u0644\u0627\u0634 \u06A9\u0646\u06CC\u062F\\.", chatId, replyKeyboard(lang));
+      }
+    } else if (text === "/admin" || text === "/members" || text === "/status" || (text && /^\/broadcast($|[@\s])/.test(text))) {
+      // v13.71-admintools: the owner's toolbelt (see src/admin-bot.ts).
+      // Gated to the admin chat id (env.CHAT_ID) BEFORE anything else — a
+      // non-owner probing these gets a plain denial, no data, no fan-out.
+      if (!isAdminChat(env, chatId)) {
+        console.warn("\u26D4 Non-admin " + chatId + " probed an admin command: " + String(text).slice(0, 40));
+        const prefs = await getUserPrefs(env);
+        const lang = (prefs[String(chatId)] && prefs[String(chatId)].lang) === "en" ? "en" : "fa";
+        await sendTelegram(env, lang === "en" ? "\u26D4 Owner\-only command\." : "\u26D4 \u0627\u06CC\u0646 \u062F\u0633\u062A\u0648\u0631 \u0645\u062E\u0635\u0648\u0635 \u0645\u062F\u06CC\u0631 \u0631\u0628\u0627\u062A \u0627\u0633\u062A\.", chatId, replyKeyboard(lang));
+      } else if (text === "/admin") {
+        await sendTelegram(env, adminPanelText(), chatId, adminPanelKeyboard());
+      } else if (text === "/members") {
+        await sendTelegram(env, await adminMembersMessage(env), chatId);
+      } else if (text === "/status") {
+        await sendTelegram(env, await adminStatusMessage(env), chatId);
+      } else {
+        // /broadcast <text> — strip the command (+ any @bot suffix Telegram
+        // appends in groups) and fan out to every registered chat.
+        const body = text.replace(/^\/broadcast(@\S+)?\s*/, "");
+        if (!body) {
+          await sendTelegram(env, "\u{1F4E2} \u0627\u0633\u062A\u0641\u0627\u062F\u0647: /broadcast <\u0645\u062A\u0646 \u067E\u06CC\u0627\u0645>", chatId);
+        } else {
+          await sendTelegram(env, "\u23F3 \u062F\u0631 \u062D\u0627\u0644 \u0627\u0631\u0633\u0627\u0644 \u06AF\u0631\u0648\u0647\u06CC\u2026", chatId);
+          await sendTelegram(env, await adminBroadcast(env, body), chatId);
+        }
       }
     } else if (text && text.startsWith("/")) {
       const prefs = await getUserPrefs(env);

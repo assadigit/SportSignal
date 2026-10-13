@@ -76,6 +76,12 @@ globalThis.getRegisteredChats = async (env) => {
   return Array.isArray(p) ? p : [];
 };
 globalThis.getUserPrefs = async (env) => (await env.STATE.get(CONFIG.KV_USER_PREFS, "json")) || {};
+// v13.71-admintools: the command/callback chains now page the owner on
+// join/leave — no-op capture stubs keep this harness's send-count
+// assertions about USER-facing messages only.
+let adminPages = [];
+globalThis.notifyAdminUserJoined = async () => {};
+globalThis.notifyAdminUserLeft = async () => {};
 globalThis.setUserLang = async (env, chatId, lang) => {
   const prefs = await globalThis.getUserPrefs(env);
   const key = String(chatId);

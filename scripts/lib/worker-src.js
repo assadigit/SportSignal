@@ -64,7 +64,7 @@ function workerSrc() {
   const order = [
     "worker.ts", "config.ts", "tables.ts", "utils.ts", "teams.ts", "dedupe.ts", "fa-dict.ts", "translate.ts", "fa-ai.ts",
     "matches.ts", "providers.ts", "telegram.ts", "composers.ts", "digest.ts",
-    "notifications.ts", "users.ts", "admin.ts", "public-matches.ts", "bot.ts", "cron.ts",
+    "notifications.ts", "users.ts", "admin.ts", "admin-bot.ts", "public-matches.ts", "bot.ts", "cron.ts",
     "monitoring.ts", "migration.ts",
     "auth.ts", "public-swr.ts", "card-route.ts",
     "simulate.ts", "admin-ops.ts",

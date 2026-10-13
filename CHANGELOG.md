@@ -6,6 +6,51 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.71-admintools] — 2026-10-13 (owner toolbelt inside Telegram)
+
+The bot's owner (Alitagram, `env.CHAT_ID` — the identity 13.70-adminpulse
+armed for the heartbeat/pages) previously had zero Telegram-side control:
+member visibility lived only in the web admin card, and join/leave events
+were invisible. The owner now gets:
+
+### Owner-only commands (gated to `parseInt(env.CHAT_ID)`)
+- **`/admin`** — the admin panel: command card + quick-tap inline buttons
+  (`adm:members` / `adm:status` callbacks, same gating).
+- **`/members`** — the member roster: names, @usernames, chat ids, Jalali
+  join dates, language, team-follows — the same `getBotMembers()` data the
+  web admin shows (KV profiles + the budget-gated getChat backfill),
+  newest member first, truncated at 3600 chars so any roster size fits one
+  message.
+- **`/status`** — the live health card: the exact `/healthz` numbers
+  (heartbeat age, last-completed-cron age, pool age + match count, outbox
+  depth, KV write burn, admin-alerts layer) with a 🟢/🟡/🔴 verdict.
+- **`/broadcast <text>`** — send a message to every registered chat. The
+  body is MarkdownV2-escaped (renders verbatim — the admin's punctuation
+  can't break the parse), capped at 3500 raw chars, and fanned out
+  SEQUENTIALLY through the v13.69 paced/retried/outbox-backed sender. The
+  owner gets a sent/queued/dead summary.
+
+### Membership signals
+- **Join pages**: the owner is paged the moment a NEW member joins — via
+  `/start` or the language-picker registration path — with the member's
+  name/@username (from the just-written KV profile), chat id, and the new
+  total. Re-starts don't re-page; the owner joining himself doesn't page.
+- **Leave pages**: a member's `/stop` pages the owner (a stranger's /stop
+  is not a leave).
+
+### Safety
+- Gate-first: every admin branch checks `isAdminChat` before any send; a
+  non-owner probe gets a plain denial and a console.warn (visibility into
+  probing).
+- Fail-closed: an unparseable `CHAT_ID` (the 13.70 dead-paging shape)
+  disables every tool and every page — the same rule the alert paths
+  follow; `/healthz admin_alerts_ok:false` already surfaces it.
+- New gate `scripts/check-admin.js` (source + behavioral: the REAL
+  admin-bot module and command/callback chains eval'd against a fake KV —
+  denial, roster, status, broadcast fan-out/escape/accounting, join/leave
+  pages, fail-closed). `check-join-flow.js` extended with join/leave-page
+  assertions; both harnesses updated for the new chain calls.
+
 ## [13.70-adminpulse] — 2026-10-13 (the dead admin-paging layer: every admin alert silently disabled)
 
 During the v13.69 verification, the `heartbeat_sent_v1` KV stamp turned out
