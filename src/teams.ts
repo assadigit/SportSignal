@@ -69,4 +69,29 @@ function normTeamKey(name: string): string {
   return normTeamName(name, "afc|rcd|rc|deportivo|athletic|racing|club");
 }
 
-export { NORM_BASE_TOKENS, TRANSLIT_FOLDS, normTeamName, normalizeTeamName, normTeamKey };
+export { NORM_BASE_TOKENS, TRANSLIT_FOLDS, normTeamName, normalizeTeamName, normTeamKey, TEAM_ALIASES, normAlias };
+// v13.76-matchsplit: TEAM_ALIASES + normAlias moved here from matches.ts —
+// team-name alias folding belongs with normalizeTeamName/normTeamKey, and
+// the move kills the users↔matches import cycle (the only cycle in the
+// graph). Consumers: match-classify (shouldNotify/isMasterPair/isDerby/...),
+// users, composers, admin, digest, public-matches.
+var TEAM_ALIASES = {
+  "clubatleticodemadrid": "atleticomadrid",
+  "atleticodemadrid": "atleticomadrid",
+  "internazionale": "intermilan",
+  "internazionalemilano": "intermilan",
+  // v12.15: the English exonym "Bayern Munich" folds to the German legal
+  // name — NFD diacritics-folding turns München into "Munchen", not
+  // "Munich", so without this alias the SAME club could sit twice in a
+  // selected-teams list (the reported duplicate) and never match the other
+  // spelling's fixtures.
+  "bayernmunich": "bayernmunchen",
+  // v13.51-rivalries: FD's legal name "SS Lazio" folds to the short form the
+  // rivalry table carries — without this fold the two spellings ("SS Lazio"
+  // vs "Lazio") never meet in derby/rivalry matching.
+  "sslazio": "lazio"
+};
+function normAlias(name) {
+  const n = normalizeTeamName(name);
+  return TEAM_ALIASES[n] || n;
+}

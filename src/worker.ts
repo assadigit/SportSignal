@@ -13,8 +13,10 @@
 //   fa-dict.ts           static Farsi team dictionary (layer 1)
 //   translate.ts         3-layer translation + competition helpers
 //   fa-ai.ts             Workers AI Farsi-name learner (layer 2)
-//   matches.ts           eligibility rules, windows, notified-match KV,
-//                       pickHeroMatch (the shared hero expression)
+//   match-model.ts        the status vocabulary + event→match format helpers
+//   match-windows.ts      notification time windows + backfill eligibility
+//   match-dedupe.ts       notified-match KV store + the write-first send gate
+//   match-classify.ts     eligibility, big-match/derby sets, pickHeroMatch
 //   provider-breaker.ts  per-provider suspension circuit (prov_down_*)
 //   provider-wikipedia.ts PGL standings fallback (Wikipedia scrape)
 //   provider-sportscore.ts sportscore day fetch + day-window sweep

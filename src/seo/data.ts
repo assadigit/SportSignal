@@ -9,7 +9,8 @@ import { getCachedMatches } from "../match-pool";
 import { applyLiveOverlay, pubMatch } from "../public-matches";
 import { ensureFaAiCache, ensureFaVenueCache } from "../translate";
 import { normalizeTeamName } from "../teams";
-import { shouldNotify, isLiveStatus } from "../matches";
+import { isLiveStatus } from "../match-model";
+import { shouldNotify } from "../match-classify";
 import { SEO, teamSlug, compSlug } from "./config";
 import { isLiveSt } from "./utils";
 

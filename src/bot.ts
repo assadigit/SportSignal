@@ -8,7 +8,7 @@ import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliTime, getJalaliDate, getEnglishTime, getEnglishDate } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
-import { shouldNotify, isFeaturedMatch, isMasterPair, pickHeroMatch } from "./matches";
+import { shouldNotify, isFeaturedMatch, isMasterPair, pickHeroMatch } from "./match-classify";
 import { matchKey } from "./dedupe";
 import { sendTelegram, answerCallbackQuery, sendPhotoBinary, editMessageText } from "./telegram";
 import { renderCardPngCached } from "./card";

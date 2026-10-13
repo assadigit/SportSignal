@@ -6,7 +6,8 @@
 // Extracted from cron.ts in v13.75-cronsplit.
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { shouldNotify, isLiveStatus } from "./matches";
+import { isLiveStatus } from "./match-model";
+import { shouldNotify } from "./match-classify";
 import { fetchMatchesFromAPI, fetchLiveSweep, fetchLongView } from "./providers";
 import { alertPhaseError } from "./monitoring";
 

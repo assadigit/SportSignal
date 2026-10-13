@@ -6,7 +6,7 @@
 // v13.75-cronsplit.
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { shouldNotify } from "./matches";
+import { shouldNotify } from "./match-classify";
 import { translateTeam } from "./translate";
 import { sendMatchNotifications, detectStatusChanges, auditNotifications } from "./notifications";
 import { broadcastBigMatchResults, broadcastBigMatchKickoff, maybeSendMorningDigest, maybeNotifyTableToppers } from "./digest";

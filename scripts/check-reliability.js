@@ -446,6 +446,17 @@ check("#cronsplit shell sequences all six phases (runtime order)", /await runPre
 check("#cronsplit no-users early return stays in the shell", /if \(chatIds\.length === 0\) \{[\s\S]{0,120}No users, skipping/.test(cronShellSeg));
 check("#cronsplit pool failure early-returns (shell guards the null pool)", /if \(!pool \|\| !pool\.matches\) return;/.test(cronShellSeg));
 check("#cronsplit lock stays in the shell after the meter (single-flight)", /kvWritesThisTick\+\+/.test(cronShellSeg) && cronShellSeg.indexOf("kvWritesThisTick++") < cronShellSeg.indexOf("STATE.put(CONFIG.KV_EXECUTION_LOCK"));
+// #matchsplit (v13.76-matchsplit): matches.ts became a GROUP (model/windows/
+// dedupe/classify) and normAlias+TEAM_ALIASES moved to teams.ts — the
+// users↔matches import cycle (the only cycle in the graph) is dead. These
+// read the REAL files, not the flat concat, because import cycles only
+// exist in real-module space.
+const teamsSrc76 = fs14.readFileSync(path14.join(__dirname, "..", "src", "teams.ts"), "utf8");
+const usersSrc76 = fs14.readFileSync(path14.join(__dirname, "..", "src", "users.ts"), "utf8");
+check("#matchsplit normAlias + TEAM_ALIASES live in teams.ts (with normalizeTeamName)", /var TEAM_ALIASES = \{/.test(teamsSrc76) && /function normAlias\(name\)/.test(teamsSrc76) && /export \{ NORM_BASE_TOKENS[^}]*normAlias \};/.test(teamsSrc76));
+check("#matchsplit the users↔matches cycle is dead (users imports no match-* module)", !/from "\.\/match-/.test(usersSrc76));
+check("#matchsplit matches.ts is gone (no shim, no re-export layer)", !fs14.existsSync(path14.join(__dirname, "..", "src", "matches.ts")));
+check("#matchsplit the match group is wired contiguously in the harness order", /"match-model\.ts", "match-windows\.ts", "match-dedupe\.ts", "match-classify\.ts",/.test(harness14));
 // auth + swr + card-route slices
 const authSeg14 = (src.match(/\/\/ ===== src\/auth\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
 check("#seams auth.ts owns the admin_auth cookie writes", /admin_auth=/.test(authSeg14) && /login_fail_/.test(authSeg14));

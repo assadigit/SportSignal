@@ -63,7 +63,13 @@ function workerSrc() {
   if (cache) return cache;
   const order = [
     "worker.ts", "config.ts", "tables.ts", "utils.ts", "teams.ts", "dedupe.ts", "fa-dict.ts", "translate.ts", "fa-ai.ts",
-    "matches.ts",
+    // v13.76-matchsplit: matches.ts became a GROUP — match-model (status
+    // vocabulary + format helpers) → match-windows (time windows + backfill)
+    // → match-dedupe (notified-match store + send gate) → match-classify
+    // (eligibility + big-match/derby sets + pickHeroMatch). normAlias +
+    // TEAM_ALIASES moved into teams.ts (kills the users↔matches cycle).
+    // All harness grabs on these are position-independent (grabFn).
+    "match-model.ts", "match-windows.ts", "match-dedupe.ts", "match-classify.ts",
     // v13.74-providersplit: the provider group — breaker/wikipedia/sportscore/
     // tsp/fd/match-pool/cups are the clients+pool; providers.ts (LAST) is the
     // orchestrator layer that imports them all. Order within the group keeps

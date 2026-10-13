@@ -8,7 +8,7 @@ import type { Env } from "./types";
 import { toFaDigits, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { sendTelegram } from "./telegram";
-import { normAlias } from "./matches";
+import { normAlias } from "./teams";
 
 export async function getRegisteredChats(env: Env) {
   try {

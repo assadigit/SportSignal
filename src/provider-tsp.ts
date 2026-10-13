@@ -7,7 +7,7 @@ import { CONFIG } from "./config";
 import { PROVIDER_LEAGUE_MAP, TSP_LEAGUE_IDS, CUP_TSP_IDS } from "./tables";
 import type { Env } from "./types";
 import { fetchJSON } from "./utils";
-import { mapStageName, parseTSPDate } from "./matches";
+import { mapStageName, parseTSPDate } from "./match-model";
 
 // v13.2: ONE thesportsdb event → match mapper (was duplicated ×3 across
 // fetchLongView + fetchTheSportsDB's two branches). Identical field mapping.

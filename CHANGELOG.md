@@ -6,6 +6,41 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.76-matchsplit] — 2026-10-13 (matches.ts 573 lines → 4 modules + normAlias→teams; the import cycle is dead)
+
+Fourth hygiene phase (worklog Task 40). matches.ts carried four products:
+the notified-match dedupe store, the notification time windows, the
+classification/league sets, and the provider format helpers. Now a GROUP
+(byte-identical bodies — moves, not rewrites):
+
+| Module | Lines | Owns |
+| :--- | ---: | :--- |
+| `match-model.ts` | 57 | isLiveStatus/isMatchFinished/isPresumablyFinished + mapStageName/parseTSPDate |
+| `match-windows.ts` | 108 | 24h/3h/1h/5min/match-start/post-match windows + isBackfillEligible |
+| `match-dedupe.ts` | 209 | MEM_DEDUPE, getNotifiedMatches/saveNotifiedMatch, shouldSendNotification, cleanup |
+| `match-classify.ts` | 208 | shouldNotify, BIG_MATCH_TEAMS/UEFA, isMasterPair, pickHeroMatch, derbies |
+| `teams.ts` (existing) | +30 | TEAM_ALIASES + normAlias (joined normalizeTeamName/normTeamKey) |
+
+- **The users↔matches import cycle — the only cycle in the graph — is
+  dead**: users.ts now imports normAlias from teams.ts (a leaf); the match
+  group imports users one-directionally (masterTeamList). teams.ts keeps
+  its erasable-syntax-only discipline (check-dedupe/fa-dict/composers/
+  live-derby require it directly via Node type-stripping).
+- All 16 import statements rewritten to the specific module each consumer
+  uses (no shim, no re-export layer; matches.ts deleted).
+- Harness co-evolution: worker-src.js order array carries the match group
+  where matches.ts sat (model → windows → dedupe → classify); every grab
+  on these functions is position-independent (grabFn), so no segment
+  re-anchors were needed. Added 4 #matchsplit locks reading the REAL
+  files (import cycles only exist in real-module space): normAlias lives
+  in teams.ts, users imports no match-* module, matches.ts is gone, the
+  group is contiguous in the harness order.
+- pickHeroMatch (the v13.73 shared hero expression) now lives in
+  match-classify.ts — the existing #herotruth checks keep covering it
+  (whole-src regexes).
+
+Suite: 811 checks green (807 + 4 #matchsplit locks).
+
 ## [13.75-cronsplit] — 2026-10-13 (cron.ts 697 lines → shell + 6 phase modules)
 
 Third hygiene phase (worklog Task 39). `executeScheduledLogic` was ONE

@@ -12,7 +12,9 @@ import { readJson, jsonResponse, escapeMarkdownCharacters, getNowTehran } from "
 import { normTeamKey } from "./teams";
 import { translateTeam, translateCompetition, resetFaAiCache, ensureFaAiCache, isValidFaName } from "./translate";
 import { maybeRunFaAi, collectUnknownTeamNames } from "./fa-ai";
-import { isWithin24HourWindow, isWithin3HourWindow, isWithin1HourWindow, isMatchStartingNow, shouldNotify, getNotifiedMatches } from "./matches";
+import { isWithin24HourWindow, isWithin3HourWindow, isWithin1HourWindow, isMatchStartingNow } from "./match-windows";
+import { getNotifiedMatches } from "./match-dedupe";
+import { shouldNotify } from "./match-classify";
 import { fetchLongView, fetchMatchesFromAPI } from "./providers";
 import { getCachedMatches } from "./match-pool";
 import { sendTelegram } from "./telegram";

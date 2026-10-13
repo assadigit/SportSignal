@@ -8,7 +8,7 @@ import { SPORTSCORE_SLUGS } from "./tables";
 import type { Env } from "./types";
 import { timingSafeEqualStr, fetchJSON, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams";
-import { normAlias } from "./matches";
+import { normAlias } from "./teams";
 
 export function isAdminRequest(req, env) {
   if (!env.ADMIN_TOKEN) return false;

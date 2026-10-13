@@ -9,7 +9,8 @@ import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, getRelativeTimeUntilMatch, getEnglishDate, getEnglishTime, getEnglishRelative, fetchJSON, enStageName, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, faStageName, isDomesticCup } from "./translate";
-import { normAlias, isMasterPair, isDerby, rivalryName } from "./matches";
+import { normAlias } from "./teams";
+import { isMasterPair, isDerby, rivalryName } from "./match-classify";
 import { providerSuspended, suspendProvider, clearProviderSuspension } from "./provider-breaker";
 import { fetchPglTableFromWikipedia } from "./provider-wikipedia";
 

@@ -7,7 +7,7 @@ import { CONFIG } from "./config";
 import { SPORTSCORE_SLUGS } from "./tables";
 import type { Env } from "./types";
 import { fetchJSON, subrequestCount } from "./utils";
-import { mapStageName } from "./matches";
+import { mapStageName } from "./match-model";
 import { providerSuspended, suspendProvider } from "./provider-breaker";
 
 // v13.74-providersplit: exported again — provider-cups (the far probe) and

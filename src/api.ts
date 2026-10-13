@@ -11,7 +11,7 @@ import { PAGE_SEC_HEADERS } from "./tables";
 import { jsonResponse, resetSubrequestBudget, pingHealthcheck } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { fetchStandings } from "./composers";
-import { shouldNotify } from "./matches";
+import { shouldNotify } from "./match-classify";
 import { fetchFootballData } from "./provider-fd";
 import { fetchSportScore } from "./provider-sportscore";
 import { fetchTheSportsDB } from "./provider-tsp";
