@@ -25,7 +25,6 @@ import { executeScheduledLogic } from "./cron";
 import { getCronStatus } from "./monitoring";
 import { handleTelegramUpdate } from "./bot";
 import { handleSeoRequest } from "./seo/router";
-import { PUBLIC_PAGE } from "./pages/public";
 import { LOGIN_PAGE } from "./pages/login";
 import { ADMIN_PAGE } from "./pages/admin";
 
@@ -297,11 +296,11 @@ const worker_default = {
     // bot/admin/card routes below are untouched.
     const seoRes = await handleSeoRequest(req, env, ctx, url);
     if (seoRes) return seoRes;
-    if (url.pathname === "/public") {
-      // Legacy alias — kept as a belt-and-braces fallback if the SEO router
-      // ever declines; the router itself 301s /public to / (U-03).
-      return new Response(PUBLIC_PAGE.replace("__PAGE_TZ__", env.TEHRAN_TZ), { headers: PAGE_SEC_HEADERS });
-    }
+    // v13.72-deadweight: the /public belt-and-braces fallback branch is
+    // REMOVED — the SEO router owns /public entirely and 301s it to /
+    // (U-03, verified for GET and POST in the local smoke). The fallback
+    // could only fire if the router ever declined, and it served the raw
+    // template with 19 unreplaced __SEO_*__ placeholders (placeholder soup).
     // v13.12-cards: match-card SVG route. Generates a visual "team A vs
     // team B" card with the two crests + names + kickoff time + competition.
     // The SVG is self-contained (crests base64-inlined server-side). Used

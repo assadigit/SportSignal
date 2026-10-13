@@ -1,8 +1,10 @@
 // SportSignal — the cron sweep (*/10 * * * *): the KV-write meter + budget
 // governor, stale-run alert, execution lock, quiet-period pool reuse, FA-AI
-// learning, notification fan-out, digests, coronation alerts, X mirror,
+// learning, notification fan-out, digests, coronation alerts,
 // heartbeat + completion blob. Status/phase-alerts live in monitoring.ts;
 // the migration broadcast lives in migration.ts (v13.47-seams).
+// (v13.72-deadweight: stale "X mirror" mention removed — the X path was
+// removed at 13.48-xtrim; only comments referenced it.)
 
 
 import { CONFIG } from "./config";
@@ -452,7 +454,7 @@ export async function executeScheduledLogic(env: Env) {
     }
     // v13.36-nospam: sendMatchNotifications is guarded — an exception here
     // used to kill the rest of the sweep (kickoff/FT broadcasts, digests,
-    // X, heartbeat) AND the tick. Now it alerts + moves on.
+    // heartbeat) AND the tick. Now it alerts + moves on.
     let notifySummary: Awaited<ReturnType<typeof sendMatchNotifications>> = null;
     try {
       notifySummary = await sendMatchNotifications(env, matches);

@@ -17,15 +17,11 @@ export const PUBLIC_PAGE = `<!doctype html>
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-title" content="SportSignal">
 <meta name="application-name" content="SportSignal">
-<!-- v13.4-live-css: the dotLottie CDN player was REMOVED — it was
-     CSP-blocked (script-src 'self') AND loaded the wrong package
-     (lottie-player does not register <dotlottie-player>), so the animations
-     never rendered. Live badges / loading states are pure CSS now
+<!-- v13.4-live-css: live badges / loading states are pure CSS
      (live-beep / live-breath / loading-spin keyframes) — zero payload,
-     zero third-party requests, actually visible. -->
+     zero third-party requests. (The dotLottie CDN player was removed.) -->
 <meta name="description" content="__SEO_DESC__">
 <meta name="robots" content="__SEO_ROBOTS__">
-<meta name="color-scheme" content="dark light">
 <link rel="alternate" type="text/calendar" href="/calendar.ics" title="تقویم SportSignal">
 <link rel="alternate" type="application/atom+xml" href="/feed.xml" title="به‌روزرسانی‌های SportSignal">
 <meta property="og:type" content="website">

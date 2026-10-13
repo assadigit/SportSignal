@@ -1,5 +1,5 @@
 // SportSignal — the /admin dashboard template (teams editor, broadcast,
-// members, AI Farsi names, X status card, diagnostics).
+// members, AI Farsi names, diagnostics).
 
 import { VERSION } from "../config";
 
@@ -12,8 +12,8 @@ export const ADMIN_PAGE = `<!doctype html>
 <title data-i="titleA">\u062A\u0646\u0638\u06CC\u0645\u0627\u062A \u0631\u0628\u0627\u062A \u0627\u0639\u0644\u0627\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A</title>
 <style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
 <style>
-:root{color-scheme:dark;--bg:#0f172a;--card:#1e293b;--field:#0f172a;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#93c5fd;--score:#4ade80;--countdown:#93c5fd;--countdown-bg:rgba(96,165,250,.12);--danger:#f87171;--chip:#334155;--hover:rgba(148,163,184,.08);--footer:#94a3b8;--glass:rgba(30,41,59,.55);--glass-border:rgba(148,163,184,.16);--glass-hi:rgba(255,255,255,.07);--glass-shadow:0 8px 32px rgba(0,0,0,.35);--glow1:rgba(37,99,235,.17);--glow2:rgba(29,78,216,.11);--scrim:rgba(2,6,23,.62);--badge-top:#15803d;--badge-hot:#b45309;--badge-derby:#7e22ce;--badge-league:#334155;--badge-live:#22c55e}
-[data-theme="light"]{color-scheme:light;--bg:#f8fafc;--card:#ffffff;--field:#f8fafc;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#1d4ed8;--score:#15803d;--countdown:#2563eb;--countdown-bg:rgba(37,99,235,.1);--danger:#dc2626;--chip:#e2e8f0;--hover:rgba(15,23,42,.045);--footer:#64748b;--glass:rgba(255,255,255,.62);--glass-border:rgba(15,23,42,.08);--glass-hi:rgba(255,255,255,.7);--glass-shadow:0 8px 32px rgba(15,23,42,.08);--glow1:rgba(37,99,235,.09);--glow2:rgba(96,165,250,.08);--scrim:rgba(248,250,252,.78);--badge-top:#15803d;--badge-hot:#b45309;--badge-derby:#7e22ce;--badge-league:#e2e8f0;--badge-live:#22c55e}
+:root{color-scheme:dark;--bg:#0f172a;--card:#1e293b;--field:#0f172a;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#93c5fd;--score:#4ade80;--danger:#f87171;--chip:#334155;--hover:rgba(148,163,184,.08);--glass:rgba(30,41,59,.55);--glass-border:rgba(148,163,184,.16);--glass-hi:rgba(255,255,255,.07);--glass-shadow:0 8px 32px rgba(0,0,0,.35);--glow1:rgba(37,99,235,.17);--glow2:rgba(29,78,216,.11);--scrim:rgba(2,6,23,.62);--badge-live:#22c55e}
+[data-theme="light"]{color-scheme:light;--bg:#f8fafc;--card:#ffffff;--field:#f8fafc;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#1d4ed8;--score:#15803d;--danger:#dc2626;--chip:#e2e8f0;--hover:rgba(15,23,42,.045);--glass:rgba(255,255,255,.62);--glass-border:rgba(15,23,42,.08);--glass-hi:rgba(255,255,255,.7);--glass-shadow:0 8px 32px rgba(15,23,42,.08);--glow1:rgba(37,99,235,.09);--glow2:rgba(96,165,250,.08);--scrim:rgba(248,250,252,.78);--badge-live:#22c55e}
 body{font-family:'Vazirmatn',system-ui,sans-serif;background-color:var(--bg);color:var(--text);max-width:760px;margin:0 auto;padding:24px 20px 36px;line-height:1.6;transition:background .25s,color .25s}body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(900px 520px at 88% -8%,var(--glow1),transparent 60%),radial-gradient(820px 620px at -12% 32%,var(--glow2),transparent 60%),linear-gradient(var(--scrim),var(--scrim)),url('/bg.jpg') center/cover no-repeat}
 #topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:22px}
 #topbar button{background:var(--glass);-webkit-backdrop-filter:blur(10px) saturate(1.3);backdrop-filter:blur(10px) saturate(1.3);color:var(--text);border:1px solid var(--glass-border);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:border-color .15s,transform .15s cubic-bezier(.16,1,.3,1),background .15s}
@@ -112,7 +112,7 @@ button{width:100%}
 #msg{left:12px;right:12px;transform:none;text-align:center}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-@media (prefers-reduced-transparency:reduce){body{background:var(--bg)}.card,#topbar button,.bigbar,.viewtoggle,.msec,.stbox,.cupbox,.uclcard,.uclspot,#tzsel,#tzfilter{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 1px 2px rgba(15,23,42,.05)}}
+@media (prefers-reduced-transparency:reduce){body{background:var(--bg)}.card,#topbar button{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 1px 2px rgba(15,23,42,.05)}}
 </style>
 </head>
 <body>
@@ -205,14 +205,11 @@ button{width:100%}
 <input id="np2" type="password" autocomplete="new-password">
 <button onclick="changePass()" data-i="btnCp">\u062A\u063A\u06CC\u06CC\u0631 \u0631\u0645\u0632 \u0639\u0628\u0648\u0631</button>
 </div>
-<div class="muted" data-i="ver">\u0646\u0633\u062E\u0647 ${VERSION} \u2014 \u0645\u0639\u0645\u0627\u0631\u06CC \u0645\u0627\u0686\u0648\u0644\u0627\u0631\u060C \u062D\u0630\u0641 \u0628\u062F\u0647\u06CC\u0627\u062A \u0642\u062F\u06CC\u0645\u06CC \u0648 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC \u0633\u0631\u06CC\u0639 \u062C\u0627\u0648\u0627 \u0633\u06CC\u0633\u062A\u0645 (\u0641\u0627\u06CC\u0644\u200C\u0647\u0627\u06CC CSS/JS \u062C\u062F\u0627 \u0648 \u0642\u0627\u0628\u0644 \u06A9\u0634 \u062F\u0627\u062F\u0646)</div>
+<div class="muted">\u0646\u0633\u062E\u0647 ${VERSION} \u2014 \u0645\u0639\u0645\u0627\u0631\u06CC \u0645\u0627\u0686\u0648\u0644\u0627\u0631\u060C \u062D\u0630\u0641 \u0628\u062F\u0647\u06CC\u0627\u062A \u0642\u062F\u06CC\u0645\u06CC \u0648 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC \u0633\u0631\u06CC\u0639 \u062C\u0627\u0648\u0627 \u0633\u06CC\u0633\u062A\u0645 (\u0641\u0627\u06CC\u0644\u200C\u0647\u0627\u06CC CSS/JS \u062C\u062F\u0627 \u0648 \u0642\u0627\u0628\u0644 \u06A9\u0634 \u062F\u0627\u062F\u0646)</div>
 <div id="msg" role="status" aria-live="polite"></div>
 <script src="/core-13.9.js"><\/script>
 <script>
-// Audit fix 8: the admin client no longer reads/stores ADMIN_TOKEN in
-// localStorage \u2014 all API calls authenticate via the HttpOnly session cookie
-// (set by /admin/login). The re-login box takes the admin PASSWORD.
-var TOKEN = "";
+// (Audit fix 8: auth is the HttpOnly session cookie — no token in JS.)
 var STATE = null;
 var lastUsers = null;
 var LNAMES = {CL:"\u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627",PL:"\u0644\u06CC\u06AF \u0628\u0631\u062A\u0631 \u0627\u0646\u06AF\u0644\u0633\u062A\u0627\u0646",PD:"\u0644\u0627\u0644\u06CC\u06AF\u0627",SA:"\u0633\u0631\u06CC \u0622",FL1:"\u0644\u06CC\u06AF \u06CC\u06A9 \u0641\u0631\u0627\u0646\u0633\u0647",BL1:"\u0628\u0648\u0646\u062F\u0633\u200C\u0644\u06CC\u06AF\u0627",EL:"\u0644\u06CC\u06AF \u0627\u0631\u0648\u067E\u0627",ECL:"\u0644\u06CC\u06AF \u06A9\u0646\u0641\u0631\u0627\u0646\u0633",FA_CUP:"\u062C\u0627\u0645 \u062D\u0630\u0641\u06CC \u0627\u0646\u06AF\u0644\u0633\u062A\u0627\u0646",EFL_CUP:"\u062C\u0627\u0645 \u0627\u062A\u062D\u0627\u062F\u06CC\u0647 \u0627\u0646\u06AF\u0644\u0633\u062A\u0627\u0646",CDR:"\u062C\u0627\u0645 \u062D\u0630\u0641\u06CC \u0627\u0633\u067E\u0627\u0646\u06CC\u0627",COPPA_ITALIA:"\u062C\u0627\u0645 \u062D\u0630\u0641\u06CC \u0627\u06CC\u062A\u0627\u0644\u06CC\u0627"};
@@ -257,7 +254,7 @@ function renderTeams(){
     box.appendChild(label);
     // v12.15: the CL box is auto-populated from every league \u2014 say so.
     if(l==="CL"){
-      var uh = document.createElement("div"); uh.className = "muted uclsync";
+      var uh = document.createElement("div"); uh.className = "muted";
       uh.textContent = T("uclSync");
       box.appendChild(uh);
     }

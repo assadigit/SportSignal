@@ -13,7 +13,7 @@ import { normTeamKey } from "./teams";
 import { translateTeam, translateCompetition, resetFaAiCache, ensureFaAiCache, isValidFaName } from "./translate";
 import { maybeRunFaAi, collectUnknownTeamNames } from "./fa-ai";
 import { isWithin24HourWindow, isWithin3HourWindow, isWithin1HourWindow, isMatchStartingNow, shouldNotify, getNotifiedMatches } from "./matches";
-import { fetchFootballData, fetchSportScore, fetchTheSportsDB, fetchLongView, fetchMatchesFromAPI, getCachedMatches } from "./providers";
+import { fetchLongView, fetchMatchesFromAPI, getCachedMatches } from "./providers"; // v13.72-deadweight: fetchFootballData/fetchSportScore/fetchTheSportsDB were dead imports (never called)
 import { sendTelegram } from "./telegram";
 import { sendLeagueTables, sendWeekAhead } from "./digest";
 import { getRegisteredChats, getBotMembers } from "./users";

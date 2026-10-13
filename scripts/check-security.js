@@ -56,7 +56,9 @@ check("fa-teams override requires admin auth", /isAdminAuthed\(req,\s*env\)/.tes
 
 // 5) Webhook secret enforced: /webhook returns 403 when validateWebhook fails
 //    (no secret header or wrong secret).
-const webhookBlock = src.slice(src.indexOf('if (url.pathname === "/webhook")'), src.indexOf('if (url.pathname === "/public"'));
+// v13.72-deadweight: end boundary was the /public fallback branch (removed);
+// the card route marker is the next stable anchor after the webhook block.
+const webhookBlock = src.slice(src.indexOf('if (url.pathname === "/webhook")'), src.indexOf('if (url.pathname.startsWith("/api/card/"))'));
 check("webhook route exists", webhookBlock.length > 0);
 check("webhook returns 403 on invalid secret", /return new Response\("Unauthorized",\s*\{\s*status:\s*403\s*\}\)/.test(webhookBlock));
 check("webhook handler validates secret before parsing body", src.indexOf("validateWebhook(req, env)") < src.indexOf("await req.json()"));

@@ -1,6 +1,6 @@
 // SportSignal — <head> builder (P-01..P-11) + the HTML shell shared by every
 // NEW public page (match/team/competition/hubs/trust). The shell reuses the
-// site's existing stylesheet (/public-13.15.css) so the design language
+// site's versioned stylesheet (currently /public-13.23.css) so the design
 // (cards, rows, tables, fonts, themes) is identical to the homepage, plus a
 // small inline block for page-specific components (breadcrumbs, facts,
 // prose). No home-page JS is loaded — these pages are complete server HTML.
@@ -105,8 +105,6 @@ ${themeInit}
 .prose a{color:#5ea0ff}
 .pageh1{font-size:clamp(1.15rem,2.6vw,1.6rem);font-weight:800;margin:6px 0 2px;line-height:1.6}
 .pagesub{color:var(--muted,#9aa4b2);font-size:.9rem;margin:2px 0 10px}
-.updatedline{font-size:.8rem;color:var(--muted,#9aa4b2);padding:8px 0 2px}
-.updatedline a{color:inherit}
 .srcline a{color:inherit}
 .hubgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;padding:6px 0}
 .hubtile{display:block;text-decoration:none;color:inherit;background:rgba(148,163,184,.07);border:1px solid rgba(148,184,214,.18);border-radius:12px;padding:12px 14px;transition:border-color .15s}

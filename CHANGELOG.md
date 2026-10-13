@@ -6,6 +6,76 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.72-deadweight] — 2026-10-13 (dead assets, dead code, dead branches — the hygiene sweep)
+
+First phase of the code-hygiene/modularization session (mission brief:
+docs/history/2026-10-13-NEXT-SESSION-CODE-HYGIENE.md; audit in the session
+worklog Task 35). No behavior changes — every removal is grep-proven dead,
+visual output identical.
+
+### Dead assets (~1.1 MB pruned)
+- Removed `assets/core-13.8.js` (replaced by core-13.9 at v13.65; three SW
+  cache generations since) and every retired `public-13.12…13.22` js/css
+  pair — referenced by no served HTML, only by `_headers` pins and comments.
+  Precedent: v13.29 already did the same prune once.
+- `_headers` rewritten to pin only the LIVE versions (core-13.9.js,
+  public-13.23.js/css). Also dropped the dead `/public-13.8.js`,
+  `/public-13.8.css` pins — those files didn't even exist.
+- `sw.js` CACHE stays v27 (no client-referenced asset changed — removals
+  need no bump, per the RUNBOOK §2 rule).
+
+### Dead code in src/
+- `users.ts`: `BOT_STRINGS` slimmed from ~108 lines / ~55 keys to the only
+  4 keys ever read (`fa_/en_start_welcome`, `fa_/en_lang_set` — the bot's
+  welcome path). The v12.x keys (help_body, teams_*, follow_*, tz_*) had
+  zero readers since the composers began hardcoding their own strings.
+- `api.ts`: the `/public` belt-and-braces fallback branch REMOVED — the SEO
+  router 301s /public to / before that line ever runs, and the fallback
+  served the raw template with 19 unreplaced `__SEO_*__` placeholders
+  (placeholder soup) for non-GET requests. POST /public now gets the honest
+  405. `PUBLIC_PAGE` import dropped with it.
+- `admin-ops.ts`: three dead imports removed (fetchFootballData /
+  fetchSportScore / fetchTheSportsDB — never called in the file).
+- `notifications.ts`: dead `nowTehran` parameter removed from
+  `sendNotificationIfNeeded` (never read in the body).
+- `providers.ts`: dead `export` dropped from internal-only `sportScoreDay`.
+- `pages/admin.ts`: dead `var TOKEN` (audit fix 8 leftover), 9 phantom
+  selectors in the reduced-transparency rule (homepage-only classes copied
+  from public CSS — only `.card,#topbar button` ever matched), 7 unused
+  `:root` tokens, the stale X-status-card header mention, the unused
+  `.uclsync` class marker.
+- **Admin version-line fix (visible)**: the footer version line carried
+  `data-i="ver"`, so `applyLang()` clobbered the live server-rendered
+  `نسخه 13.71…` with the STALE v12.33 I18N string — the admin panel has
+  been displaying "نسخه ۱۲.۳۳-xpost" for months. Hook removed; the line
+  now shows the real VERSION.
+- `pages/login.ts`: 11 unused `:root`/light tokens removed.
+- `pages/public.ts`: duplicate `<meta name="color-scheme">` (emitted
+  twice) collapsed to one; stale dotLottie tombstone comment condensed.
+- `seo/page-shell.ts`: dead `.updatedline` rules removed (no element uses
+  the class); stale comment claiming `/public-13.15.css` fixed.
+- `seo/markup.ts`: dead `T.noMatches` / `T.more` dictionary keys removed.
+- `cron.ts`: stale "X mirror" comment mentions removed (the X path died
+  at 13.48-xtrim; only comments referenced it).
+
+### Test-harness co-evolution (the §11 rule)
+- `check-no-miss.js`: grab signature + call updated for the nowTehran
+  param removal.
+- `check-security.js`: the webhook-block slice boundary was the removed
+  `/public` branch — re-anchored on the card-route marker.
+- `check-venue.js`: the "render() shows venue chip" check matched the
+  UNMINIFIED pattern that by now only existed in the retired asset files —
+  it was testing dead files instead of the live artifact. Rewritten
+  minification-agnostic (semantic chain: span → className "venue" →
+  textContent built from `<match>.venue`, emoji as char or escape).
+- Justified-kept: `CONFIG.KV_SCHEDULE_PREFIX` (documented tombstone), the
+  10 `typeof X === "function"` guards in digest/notifications (they
+  protect eval'd partial slices in check-weekly-tables/check-admin from
+  ReferenceError — load-bearing for the harness, not noise), `.visitcount`
+  inline CSS delta between public.ts and page-shell.ts (deliberate).
+
+Suite: 796 checks green (tsc + 19 scripts) — count unchanged.
+
 ## [13.71-admintools] — 2026-10-13 (owner toolbelt inside Telegram)
 
 The bot's owner (Alitagram, `env.CHAT_ID` — the identity 13.70-adminpulse

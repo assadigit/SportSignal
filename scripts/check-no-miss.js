@@ -703,7 +703,7 @@ var MEM_DEDUPE = new Set();
     function isBackfillEligible() { return false; }
     function isMatchFinished() { return false; }
     function specialBanner() { return ""; }
-    eval([grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, nowTehran, counts, notifiedMatches, deadChats)")].join("\n"));
+    eval([grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats)")].join("\n")); // v13.72-deadweight: dead nowTehran param removed (was never read)
     const mkMatch = (crests) => ({
       id: "cf-1",
       utcDate: new Date(Date.now() + 30 * 60e3).toISOString(),
@@ -716,7 +716,7 @@ var MEM_DEDUPE = new Set();
     const run = (match, chats) => {
       const counts = { "pre-match-1h": 0 };
       const deadChats = [];
-      const p = sendNotificationIfNeeded(match, cfg, [{ tz: "Asia/Tehran", lang: "fa", chats }], {}, new Date(), counts, {}, deadChats);
+      const p = sendNotificationIfNeeded(match, cfg, [{ tz: "Asia/Tehran", lang: "fa", chats }], {}, counts, {}, deadChats);
       return { p, counts, deadChats };
     };
     // 1. card OK for chat A, FAILS for chat B → B gets the text fallback.

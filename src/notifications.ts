@@ -69,7 +69,7 @@ export const NOTIFICATION_CONFIGS = [
     requiresFuture: false
   }
 ];
-export async function sendNotificationIfNeeded(match, config, chatGroups, env, nowTehran, counts, notifiedMatches, deadChats) {
+export async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats) {
   const matchTime = new Date(match.utcDate);
   const isFuture = matchTime > new Date();
   const isFinished = isMatchFinished(match);
@@ -286,10 +286,10 @@ export async function sendMatchNotifications(env: Env, matches) {
         const both = matchChats.filter((c) => isBigMatch(match, prefs, c));
         if (!both.length) continue;
         const bigGroups = groupChatsByTz(both, prefs, env);
-        await sendNotificationIfNeeded(match, config, bigGroups, env, nowTehran, notificationCounts, notifiedMatches, deadChats);
+        await sendNotificationIfNeeded(match, config, bigGroups, env, notificationCounts, notifiedMatches, deadChats);
         continue;
       }
-      await sendNotificationIfNeeded(match, config, chatGroups, env, nowTehran, notificationCounts, notifiedMatches, deadChats);
+      await sendNotificationIfNeeded(match, config, chatGroups, env, notificationCounts, notifiedMatches, deadChats);
     }
   }
   if (budgetDeferred) {

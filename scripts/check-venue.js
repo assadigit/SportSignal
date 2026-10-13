@@ -34,10 +34,13 @@ check(
 check("tspEventToMatch threads venue", /venue: e\.strVenue \|\| null,\s*homeTeam: \{ name: e\.strHomeTeam/.test(src));
 // the venue chip must be rendered in both render paths
 // v13.6: the public client JS moved to assets/public-*.js — search it there.
-// v14.0.1-uifix: the deploy artifact (public-13.14.js) is MINIFIED, so the
-// unminified pattern lives in the editable source (public-13.13.js). Search
-// EVERY public-*.js and pass when the chip pattern appears in any one of
-// them (the source of truth) — the minified copies carry the same code.
+// v13.72-deadweight: the old check matched the UNMINIFIED pattern
+// (`if(m.venue){ var vn = ... }`) which by then only existed in retired
+// asset versions kept in the tree — it tested dead files instead of the
+// live artifact. The pattern below is minification-agnostic: it anchors on
+// the semantic chain (span createElement → className "venue" → textContent
+// built from <match>.venue) and requires the stadium emoji (as either the
+// literal char or the \u{...} escape the minifier emits).
 const clientAssets = (() => {
   try {
     const files = fs.readdirSync("assets").filter((f) => /^public-.*\.js$/.test(f));
@@ -46,7 +49,10 @@ const clientAssets = (() => {
 })();
 check(
   "render() shows venue chip",
-  clientAssets.some((a) => /if\(m\.venue\)\{ var vn = document\.createElement\("span"\); vn\.className = "venue"; vn\.textContent = "\u{1F3DF}\u{FE0F} " \+ m\.venue; info\.appendChild\(vn\); \}/gu.test(a) && /render\(\)|renderSpecial/.test(a))
+  clientAssets.some((a) =>
+    /createElement\("span"\)[\s\S]{0,80}?className ?= ?"venue"[\s\S]{0,40}?textContent ?= ?[\s\S]{0,30}?\+ ?\w+\.venue/.test(a) &&
+    (/\u{1F3DF}/.test(a) || /\\u\{1F3DF\}/.test(a)) &&
+    /render\(|renderSpecial/.test(a))
 );
 
 // 2) dynamic: exercise the real merge fill logic in isolation

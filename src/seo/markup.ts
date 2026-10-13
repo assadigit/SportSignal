@@ -19,10 +19,8 @@ const T = {
   stEmpty: "جدول هنوز در دسترس نیست",
   stNot: "شروع نشده",
   cupsNone: "برنامه‌ای هنوز اعلام نشده",
-  noMatches: "مسابقه‌ای در راه نیست",
   thP: "بازی", thW: "برد", thD: "مساوی", thL: "باخت",
-  thGF: "گل زده", thGA: "گل خورده", thGD: "تفاضل", thPts: "امتیاز",
-  more: "بیشتر"
+  thGF: "گل زده", thGA: "گل خورده", thGD: "تفاضل", thPts: "امتیاز"
 };
 
 function compNameFa(m: any): string {

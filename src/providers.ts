@@ -74,7 +74,7 @@ export async function fetchPglTableFromWikipedia(env: Env) {
     return null;
   }
 }
-export async function sportScoreDay(code, slug, dateStr, acc) {
+async function sportScoreDay(code, slug, dateStr, acc) { // v13.72-deadweight: `export` dropped — internal to the provider modules only
   const data = await fetchJSON("https://sportscore.com/api/v1/fixtures/?sport=football&date=" + dateStr + "&competition=" + slug + "&limit=200");
   let added = 0;
   for (const e of data && data.matches || []) {
