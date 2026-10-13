@@ -26,6 +26,7 @@ other contract (all keys versioned IN the key name; see ADR-004).
 | `config.ts` | VERSION + CONFIG — every KV key name (the live-state contract) |
 | `types.ts` | the `Env` binding shape |
 | `utils.ts` | digits/dates/auth-hash, the subrequest + KV-op meters, HTTP retry |
+| `slugs.ts` | the URL vocabulary: COMP_SLUGS/TEAM_SLUGS + `compSlug`/`teamSlug`/`matchPath` — ONE home for canonical paths (v13.80); `pubMatch` stamps `path` on every payload row so the client never guesses hrefs |
 | `fa-dict.ts` | static Farsi team dictionary (translation layer 1) |
 | `tables.ts` | static dictionaries: competitions/logos, provider id maps, CSP headers + `normAlias`/`TEAM_ALIASES` (team-name folding — v13.76) |
 | `dedupe.ts` | `matchKey` + `canonDedupe` (row-level identity) |

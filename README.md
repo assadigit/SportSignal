@@ -187,6 +187,9 @@ src/
   match-model/windows/dedupe/classify   the match rules (v13.76: status
                    vocabulary, time windows, the notified-record KV with the
                    write-first send gate, eligibility + pickHeroMatch)
+  slugs.ts         the URL vocabulary (v13.80): TEAM_SLUGS + teamSlug +
+                   matchPath — pubMatch stamps the canonical `path` on every
+                   payload row; client hrefs never guess again
   provider-breaker/-wikipedia/-sportscore/-tsp/-fd, match-pool,
   provider-cups     the provider clients (v13.74); providers.ts is the
                    orchestrator layer (long view / live sweep / merge)
