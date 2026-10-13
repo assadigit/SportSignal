@@ -8,7 +8,7 @@ import { LEAGUE_LOGOS, COMP_EN } from "./tables";
 import type { Env } from "./types";
 import { fetchJSON, getNowTehran } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams";
-import { homeGround } from "./grounds";
+import { homeGround, curatedVenueFa } from "./grounds";
 import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { normAlias } from "./teams";
 import { isLiveStatus } from "./match-model";
@@ -96,11 +96,12 @@ export function pubMatch(m) {
   // v13.85-stadiumchip: provider venue first (TSP/live-detail), then the
   // home-ground table — the SAME table + one-off-neutral gate the match
   // pages hydrate with (one source of truth: grounds.ts). Fills only; a
-  // provider venue always wins. venueFa prefers the table's curated
-  // Persian name over the venue dictionary.
+  // provider venue always wins. venueFa prefers the CURATED table name
+  // (v13.86-groundsfix: one Persian name per ground — live rows and
+  // scheduled rows agree), then the AI-learned dictionary, then the string.
   const ground = !m.venue ? homeGround(m.homeTeam && m.homeTeam.name, m.stage, m.round) : null;
   const venue = m.venue || (ground ? ground.en : null);
-  const venueFa = m.venue ? (translateVenue(m.venue) || m.venue) : (ground ? ground.fa : null);
+  const venueFa = m.venue ? (curatedVenueFa(m.venue) || translateVenue(m.venue) || m.venue) : (ground ? ground.fa : null);
   return {
     id: m.id || null,
     homeTeam: { name: m.homeTeam.name, faName: translateTeam(m.homeTeam.name), crest: m.homeTeam.crest || null },

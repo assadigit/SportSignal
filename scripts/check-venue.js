@@ -76,16 +76,25 @@ globalThis.translateVenue = (v) => v; // v13.13-venues stub
 // v13.85-stadiumchip: pubMatch's home-ground fallback resolves through the
 // REAL grounds.ts (grabbed from the concat — dependency-first like slugs).
 // grounds.ts declares `let cache = null` + table() + isOneOffNeutral +
-// homeGround; the eval block also needs CONFIG.TEAM_STADIUMS (injected as a
-// param) and normalizeTeamName (identity stub — the table keys and the
-// lookups both route through it, so the eval is self-consistent; the REAL
-// normalizer is covered elsewhere; here the table+gate wiring is the
-// behavior under test).
-globalThis.normalizeTeamName = (n) => n;
+// homeGround (+ the v13.86 `let vCache` + curatedVenueFa tail); the eval
+// block also needs CONFIG.TEAM_STADIUMS (injected as a param) and the team
+// normalizers. v13.86-groundsfix: the REAL normTeamKey/normalizeTeamName
+// from src/teams.ts (required directly, like check-composers does) — the
+// club-prefix FOLDING is the behavior under test ("Club Atlético de
+// Madrid" must fold onto the "Atlético de Madrid" table key), so identity
+// stubs would defeat the point.
+const { normalizeTeamName: realNtn, normTeamKey: realNtk } = require("../src/teams.ts");
+globalThis.normalizeTeamName = realNtn;
+globalThis.normTeamKey = realNtk;
 const groundsSeg = src.match(/let cache = null;[\s\S]*?return cache\.map;\n\}/)[0] + "\n" +
   src.match(/function isOneOffNeutral\([^)]*\) \{[\s\S]*?\n\}/)[0] + "\n" +
-  src.match(/function homeGround\([^)]*\) \{[\s\S]*?\n\}/)[0];
-new Function("CONFIG", groundsSeg + "\nglobalThis.homeGround = homeGround; globalThis.isOneOffNeutral = isOneOffNeutral;")({ TEAM_STADIUMS: { "Arsenal FC": { en: "Emirates Stadium", fa: "ورزشگاه امارات" }, "Chelsea FC": { en: "Stamford Bridge", fa: "ورزشگاه استمفورد بریج" }, "AC Milan": { en: "San Siro", fa: "ورزشگاه سن سیرو" } } });
+  src.match(/function homeGround\([^)]*\) \{[\s\S]*?\n\}/)[0] + "\n" +
+  // v13.86-groundsfix: the curated reverse-lookup rides along (pubMatch
+  // calls it before translateVenue). Anchor: `let vCache` through the
+  // first `\n}` — curatedVenueFa's body has no inner line-leading brace,
+  // so the first newline+`}` IS the function's closing brace.
+  src.match(/let vCache = null;[\s\S]*?\n\}/)[0];
+new Function("CONFIG", groundsSeg + "\nglobalThis.homeGround = homeGround; globalThis.isOneOffNeutral = isOneOffNeutral; globalThis.curatedVenueFa = curatedVenueFa;")({ TEAM_STADIUMS: { "Arsenal FC": { en: "Emirates Stadium", fa: "ورزشگاه امارات" }, "Chelsea FC": { en: "Stamford Bridge", fa: "ورزشگاه استمفورد بریج" }, "AC Milan": { en: "San Siro", fa: "ورزشگاه سن سیرو" }, "Atlético de Madrid": { en: "Riyadh Air Metropolitano", fa: "ورزشگاه متروپولیتانو" }, "Atlético Madrid": { en: "Riyadh Air Metropolitano", fa: "ورزشگاه متروپولیتانو" }, "Inter Milan": { en: "San Siro", fa: "ورزشگاه سن سیرو" }, "FC Internazionale Milano": { en: "San Siro", fa: "ورزشگاه سن سیرو" } } });
 globalThis.LEAGUE_LOGOS = {};
 globalThis.isLiveStatus = (s) => s === "LIVE";
 globalThis.isFeaturedMatch = () => false;
@@ -112,6 +121,24 @@ const outFinal = pubMatch({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: 
 check("pubMatch one-off-neutral (FINAL) skips the table", outFinal.venue === null && outFinal.venueFa === null);
 const outProv = pubMatch({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "PL" }, status: "SCHEDULED", venue: "Ashburton Grove" });
 check("pubMatch provider venue wins over the table (fills-only)", outProv.venue === "Ashburton Grove" && outProv.venueFa === "Ashburton Grove");
+// v13.86-groundsfix behavioral: a provider venue that IS a table ground
+// (the live-detail fetch returns "Emirates Stadium") gets the CURATED fa —
+// one Persian name per ground, live rows and scheduled rows agree. The
+// translateVenue stub echoes its argument, so a curated hit proves the
+// curated path ran FIRST.
+const outCur = pubMatch({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "PL" }, status: "LIVE", venue: "Emirates Stadium" });
+check("pubMatch provider venue maps to the CURATED fa (v13.86)", outCur.venueFa === "ورزشگاه امارات");
+const outCurCase = pubMatch({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "PL" }, status: "LIVE", venue: "emirates stadium" });
+check("curated lookup is case-insensitive on the English ground name", outCurCase.venueFa === "ورزشگاه امارات");
+// v13.86-groundsfix behavioral: the club-prefix fold. FD sends "Club
+// Atlético de Madrid"; the table key is "Atlético de Madrid". With the
+// v13.85 bare normalizer these produced different keys (the live hero
+// match page had NO venue); normTeamKey folds both sides.
+check("homeGround folds Club Atlético de Madrid onto the table key (FD form)", homeGround("Club Atlético de Madrid", "LEAGUE_STAGE", "LEAGUE PHASE") != null && homeGround("Club Atlético de Madrid", "LEAGUE_STAGE", "LEAGUE PHASE").en === "Riyadh Air Metropolitano");
+check("homeGround folds FC Internazionale Milano onto the table (FD form)", homeGround("FC Internazionale Milano", null, null) != null && homeGround("FC Internazionale Milano", null, null).fa === "ورزشگاه سن سیرو");
+check("homeGround still hits the short forms (Atlético Madrid / Inter Milan)", homeGround("Atlético Madrid", null, null) != null && homeGround("Inter Milan", null, null) != null);
+check("curatedVenueFa resolves San Siro for a provider venue (live Inter)", curatedVenueFa("San Siro") === "ورزشگاه سن سیرو");
+check("curatedVenueFa returns null for a non-table ground (falls through)", curatedVenueFa("Europa-Park Stadion") === null);
 const outNull = pubMatch({ homeTeam: { name: "A" }, awayTeam: { name: "B" }, utcDate: "x", competition: { code: "PL" }, status: "SCHEDULED" });
 check("pubMatch venue null when absent", outNull.venue === null);
 // v13.35-rounds: league fixture carries NO round chip; a cup fixture with a

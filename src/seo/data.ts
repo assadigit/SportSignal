@@ -11,7 +11,7 @@ import { ensureFaAiCache, ensureFaVenueCache, translateVenue } from "../translat
 import { normalizeTeamName } from "../teams";
 // v13.85-stadiumchip: the home-ground table + one-off-neutral gate moved to
 // the root module grounds.ts (shared with pubMatch — one source of truth).
-import { homeGround } from "../grounds";
+import { homeGround, curatedVenueFa } from "../grounds";
 import { isLiveStatus } from "../match-model";
 import { shouldNotify } from "../match-classify";
 import { fetchJSON } from "../utils";
@@ -343,7 +343,9 @@ export async function hydrateMatchVenue(env: Env, sm: SeoMatch | null): Promise<
   if (rec && rec.v) {
     sm.raw.venue = rec.v;
     sm.s.venue = rec.v;
-    sm.s.venueFa = translateVenue(rec.v) || rec.v;
+    // v13.86-groundsfix: the curated Persian name first (one name per
+    // ground), then the AI-learned dictionary, then the raw string.
+    sm.s.venueFa = curatedVenueFa(rec.v) || translateVenue(rec.v) || rec.v;
   }
   return sm;
 }

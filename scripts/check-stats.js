@@ -351,8 +351,9 @@ const wsrc = require("./lib/worker-src")();
   globalThis.rivalryName = () => null;
   // v13.85-stadiumchip: pubMatch's home-ground fallback (the path checks
   // here don't assert venue; the table wiring has its own behavioral checks
-  // in check-venue).
+  // in check-venue). v13.86-groundsfix: curatedVenueFa rides the same rule.
   globalThis.homeGround = () => null;
+  globalThis.curatedVenueFa = () => null;
   const roundFaSrc = src.match(/var ROUND_FA = \{[\s\S]*?\n\};/)[0];
   const faOrdSrc = src.match(/var FA_ORDINALS = \[[\s\S]*?\];/)[0];
   const roundLabelSrc = src.match(/function roundLabel\(m\) \{[\s\S]*?\n\}/)[0];
@@ -395,7 +396,7 @@ check("hydrateMatchVenue exists with the numeric-FD-id gate", /export async func
 check("hydrateMatchVenue is fail-closed (error returns sm unchanged, no negative cache)", /return sm; \/\/ fail-closed: transient failure/.test(dataSrc82));
 check("hydrateMatchVenue caches positive AND negative in venue_v1_ (24h TTL)", /CONFIG\.KV_VENUE_CACHE \+ id/.test(dataSrc82) && /expirationTtl: 86400/.test(dataSrc82) && read("src/config.ts").includes('KV_VENUE_CACHE: "venue_v1_"'));
 check("hydrateMatchVenue races a 5s guard so the render can never hang", /Promise\.race\(\[\s*\n\s*fetchJSON\("https:\/\/api\.football-data\.org\/v4\/matches\/" \+ id, 1, \{ "X-Auth-Token": env\.API_TOKEN \}\)/.test(dataSrc82) && /setTimeout\(\(\) => r\(null\), 5000\)/.test(dataSrc82));
-check("hydrateMatchVenue patches sm.s.venue + venueFa via translateVenue", /sm\.s\.venue = rec\.v;/.test(dataSrc82) && /sm\.s\.venueFa = translateVenue\(rec\.v\) \|\| rec\.v;/.test(dataSrc82));
+check("hydrateMatchVenue patches sm.s.venue + venueFa (v13.86: curated first, then translateVenue)", /sm\.s\.venue = rec\.v;/.test(dataSrc82) && /sm\.s\.venueFa = curatedVenueFa\(rec\.v\) \|\| translateVenue\(rec\.v\) \|\| rec\.v;/.test(dataSrc82));
 // map link: the venue becomes a place
 check("venueMapLink targets Google Maps search (api=1, no key)", /https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/.test(pagesSrc) && /encodeURIComponent\(m\.venue \+ " stadium"\)/.test(pagesSrc));
 check("mvenue in the scoreboard head is the map link (not a dead div)", /if \(m\.venue\) center \+= venueMapLink\(m, "🏟/.test(pagesSrc));
@@ -435,6 +436,24 @@ check("mvenue-map + simcard + simcount styles present in page-shell", /a\.mvenue
 const cfgSrc82 = read("src/config.ts");
 check("TEAM_STADIUMS table exists for the followed clubs (en + fa)", /TEAM_STADIUMS: \{/.test(cfgSrc82) && /"Arsenal FC": \{ en: "Emirates Stadium", fa: "ورزشگاه امارات" \}/.test(cfgSrc82) && /"Western Sydney Wanderers"/.test(cfgSrc82));
 check("shared grounds mapped per club (San Siro × Inter+Milan, AAMI × Melbourne)", /"Inter Milan": \{ en: "San Siro"[^\n]*\n\s*"AC Milan": \{ en: "San Siro"/.test(cfgSrc82) && /"Melbourne Victory": \{ en: "AAMI Park"[^\n]*\n\s*"Melbourne City": \{ en: "AAMI Park"/.test(cfgSrc82));
+// v13.86-groundsfix: the live QA finding — FD sends "Club Atl\u00E9tico de
+// Madrid" / "FC Internazionale Milano", the v13.85 table keyed the short
+// forms, and normalizeTeamName doesn't strip club prefixes → the HERO
+// match page + every Inter home fixture rendered venue-less. The table now
+// carries BOTH provider forms, and the folding happens in grounds.ts.
+check("v13.86-groundsfix: grounds.ts folds club-prefix forms (normTeamKey on map + lookup)", (() => {
+  const g = read("src/grounds.ts");
+  return /cache\.map\.set\(normTeamKey\(name\)/.test(g) && /table\(\)\.get\(normTeamKey\(homeName\)\)/.test(g);
+})());
+check("v13.86-groundsfix: TEAM_STADIUMS carries the provider variant keys + the missing followed clubs", (() => {
+  return /"Atl\\xE9tico Madrid": \{ en: "Riyadh Air Metropolitano"/.test(cfgSrc82) && /"FC Internazionale Milano": \{ en: "San Siro"/.test(cfgSrc82) && /"Tottenham Hotspur FC": \{ en: "Tottenham Hotspur Stadium"/.test(cfgSrc82) && /"Juventus FC": \{ en: "Allianz Stadium"/.test(cfgSrc82) && /"AS Roma": \{ en: "Stadio Olimpico"/.test(cfgSrc82);
+})());
+check("v13.86-groundsfix: curated fa for provider venues (one Persian name per ground)", (() => {
+  const p = read("src/public-matches.ts");
+  const d = read("src/seo/data.ts");
+  const g = read("src/grounds.ts");
+  return /curatedVenueFa\(m\.venue\) \|\| translateVenue\(m\.venue\)/.test(p) && /sm\.s\.venueFa = curatedVenueFa\(rec\.v\) \|\| translateVenue\(rec\.v\) \|\| rec\.v;/.test(d) && /export function curatedVenueFa\(/.test(g);
+})());
 check("hydrate consults the home-ground table BEFORE the FD fetch", dataSrc82.indexOf("homeGround(") < dataSrc82.indexOf('fetchJSON("https://api.football-data.org/v4/matches/" + id') && /homeGround\(\s*$|homeGround\(\n/.test(dataSrc82));
 check("v13.85-stadiumchip: grounds.ts is the one table+gate (root module)", (() => {
   const g = read("src/grounds.ts");

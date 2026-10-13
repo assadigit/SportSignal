@@ -6,6 +6,16 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.86-groundsfix] — 2026-10-13 (QA-found name-form bugs: the hero match gains its venue)
+
+**The QA finding that closed itself:** the live hero match page (Club Atlético de Madrid vs Manchester United) rendered with NO venue while the home-ground table held the Metropolitano — FD sends the full club-prefixed name, the v13.85 table keyed the short form, and `normalizeTeamName` never strips club prefixes. Inter home fixtures missed for the same reason (FD: "FC Internazionale Milano" vs key "Inter Milan").
+
+- `grounds.ts`: map keys + lookups now fold through `normTeamKey` (strips club/afc/rcd/rc/deportivo/athletic/racing prefixes on BOTH sides) — the FD full form, the short form and the table key collapse to one key. Harness co-evolved in the same commit (check-venue evals the REAL normalizers now — the folding is the behavior under test; live-derby's grounds slice extends through curatedVenueFa).
+- `TEAM_STADIUMS`: provider variant keys added ("Atlético Madrid", "FC Internazionale Milano"); the three followed clubs missing from v13.85 added — Tottenham (Tottenham Hotspur Stadium / ورزشگاه تاتنهام), Juventus (Allianz Stadium / ورزشگاه آلیانز تورین — distinct from Bayern's Arena), AS Roma (Stadio Olimpico / ورزشگاه المپیکو).
+- `curatedVenueFa(venueEn)` (grounds.ts): reverse lookup for PROVIDER venues — a live-detail venue arriving as the English ground name ("Anfield") resolves to the curated Persian name, so one ground shows ONE Persian name everywhere. Before: live rows carried the AI-learned transliteration ("انفیلد", "ولد ترافورد") while scheduled rows of the same fixture showed the curated ("ورزشگاه آنفیلد"). Exact case-insensitive match, no suffix stripping — "Allianz Stadium" ≠ "Allianz Arena".
+- pubMatch + the seo hydrate FD-detail path prefer `curatedVenueFa` → the dictionary → the raw string.
+- Suite: 895 → 905 checks.
+
 ## [13.85-stadiumchip] — 2026-10-13 (venue chips everywhere + the sibling loop reaches team pages)
 
 The v13.82 venue architecture had one blind spot: the home-ground table only

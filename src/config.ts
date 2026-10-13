@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.85-stadiumchip";
+export const VERSION = "13.86-groundsfix";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -94,11 +94,23 @@ export const CONFIG: Record<string, any> = {
     "Manchester United FC": { en: "Old Trafford", fa: "ورزشگاه اولد ترافورد" },
     "Manchester City FC": { en: "Etihad Stadium", fa: "ورزشگاه اتیهاد" },
     "Liverpool FC": { en: "Anfield", fa: "ورزشگاه آنفیلد" },
+    "Tottenham Hotspur FC": { en: "Tottenham Hotspur Stadium", fa: "ورزشگاه تاتنهام" },
     "FC Barcelona": { en: "Camp Nou", fa: "ورزشگاه کمپ نو" },
     "Real Madrid CF": { en: "Santiago Bernab\u00E9u", fa: "ورزشگاه سانتیاگو برنابئو" },
     "Atl\xE9tico de Madrid": { en: "Riyadh Air Metropolitano", fa: "ورزشگاه متروپولیتانو" },
+    // v13.86-groundsfix: providers disagree on the name form - FD sends
+    // "Club Atl\xE9tico de Madrid" (normTeamKey folds the Club prefix onto
+    // the key above), sportscore/TSP send the short form below. Two keys,
+    // one ground.
+    "Atl\xE9tico Madrid": { en: "Riyadh Air Metropolitano", fa: "ورزشگاه متروپولیتانو" },
+    // v13.86-groundsfix: FD's form for Inter is "FC Internazionale Milano";
+    // "Inter Milan" covers the sportscore/TSP form. Both key the same ground.
+    "FC Internazionale Milano": { en: "San Siro", fa: "ورزشگاه سن سیرو" },
     "Inter Milan": { en: "San Siro", fa: "ورزشگاه سن سیرو" },
     "AC Milan": { en: "San Siro", fa: "ورزشگاه سن سیرو" },
+    // v13.86-groundsfix: the followed Serie A clubs missing from the v13.85 table.
+    "Juventus FC": { en: "Allianz Stadium", fa: "ورزشگاه آلیانز تورین" },
+    "AS Roma": { en: "Stadio Olimpico", fa: "ورزشگاه المپیکو" },
     "Paris Saint-Germain": { en: "Parc des Princes", fa: "ورزشگاه پارک ده پرنس" },
     "FC Bayern M\xFCnchen": { en: "Allianz Arena", fa: "ورزشگاه آلیانز آرنا" },
     "Borussia Dortmund": { en: "Signal Iduna Park", fa: "ورزشگاه سیگنال ایدونا پارک" },

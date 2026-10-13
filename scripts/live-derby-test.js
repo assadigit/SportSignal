@@ -95,9 +95,12 @@ const roundSrc = grabVar("ROUND_FA") + "\n" + grabVar("FA_ORDINALS") + "\n" + gr
 // v13.85-stadiumchip: pubMatch's home-ground fallback — the REAL grounds
 // functions ride along (identity normalizeTeamName stub + minimal CONFIG
 // table; the venue values aren't under test here — pubMatch must not throw).
+// v13.86-groundsfix: the slice extends through curatedVenueFa (pubMatch
+// now calls it before translateVenue); normTeamKey is already in this
+// module scope (line above, required from src/teams.ts).
 const groundsSrc = (function () {
   const i = src.indexOf("let cache = null;");
-  const j = src.indexOf("function homeGround");
+  const j = src.indexOf("function curatedVenueFa");
   const end = src.indexOf("\n}", j);
   return i >= 0 && j > i ? src.slice(i, end + 3) : "";
 })();
