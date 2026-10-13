@@ -64,7 +64,12 @@
 //              rule to .empty.loading-empty containers only, so the homepage
 //              intro paragraph showed on screen. public-13.15.css adds the
 //              GLOBAL .sr-only rule; rename-on-edit + this bump = clean slate.)
-const CACHE = "sportsignal-v27"; // v13.67-heroglow: public-13.22→13.23 rename (flat glow list + hero glow on outer card + masked sweep + pulse + hover)
+// Cache name:  sportsignal-v28 (v13.80-canonical-hrefs: public-13.23.js→13.24
+//              rename — matchHref now prefers the payload-carried canonical
+//              `path` (built server-side through TEAM_SLUGS) over the local
+//              fallback slugifier, fixing 404 match links. cache-first assets
+//              can't refresh without a rename or a bump — the v13.39 rule.)
+const CACHE = "sportsignal-v28";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

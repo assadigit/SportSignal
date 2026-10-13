@@ -4,7 +4,8 @@
 // dates + Tehran time + Jalali (G-04), breadcrumbs (P-17), internal links
 // (P-18), honest data only. Static trust pages live in pages-static.ts.
 
-import { SEO, absUrl, matchPath, compSlug, teamSlug } from "./config";
+import { SEO, absUrl } from "./config";
+import { matchPath, compSlug, teamSlug } from "../slugs";
 import { esc, faTime, faGregorianDate, faGregorianDateShort, jalaliDateStr, tehranDayKey, utcTime, statusLabelFa, weekendWindowTehran, enDate } from "./utils";
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";

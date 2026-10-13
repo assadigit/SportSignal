@@ -6,6 +6,44 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.80-canonical-hrefs] — 2026-10-13 (one true match URL — fixes 404 links)
+
+QA-driven bugfix (worklog Task 46; found by the agent-browser sweep in Task 45).
+
+**The bug:** the server-rendered homepage linked matches with the canonical
+`matchPath` (TEAM_SLUGS included: `chelsea-vs-tottenham-2026-10-24`), but the
+client's re-render replaced every row's href with its own slugifier — which
+had NO TEAM_SLUGS table — producing `chelsea-vs-tottenham-hotspur-…`,
+`bayern-munchen-…`, `milan-vs-…`: dead links (404) on click, and dead hrefs
+for any crawler that executes JS.
+
+**The fix — one URL vocabulary, served instead of guessed:**
+
+- `src/slugs.ts` (new root leaf): COMP_SLUGS, TEAM_SLUGS, STRICT_STRIP,
+  compSlug, teamSlug, matchPath — MOVED out of `src/seo/config.ts` so the
+  payload shaper can import them. seo/{data,files,jsonld,markup,pages}.ts
+  now import from `../slugs`; seo/config keeps SEO + absUrl only (no
+  re-export shim — ARCHITECTURE rule).
+- `pubMatch` stamps `path: matchPath(...)` on every payload row (upcoming,
+  finished, hero nextBig, topSpot, thisWeek, nextWeek, UCL, cups): the
+  client receives the SAME URL the server pages, sitemap, JSON-LD and
+  matches.json build.
+- `public-13.24.js` (renamed from 13.23): `matchHref(e)` returns
+  `e.path ||` (fallback slugifier kept ONLY for stale pre-13.80 cached
+  payloads). SW cache bumped v27 → v28; `_headers` pin renamed.
+- Harness co-evolution (same commit — ADR-005): worker-src.js order carries
+  `slugs.ts` before `public-matches.ts`; check-venue + live-derby evals
+  ride the slug block alongside pubMatch; check-stats gained a
+  v13.80 section (16 new checks incl. behavioral: Tottenham/Bayern/AC-Milan
+  slugs, matchHref path-preference, pubMatch path output).
+- KV/payload contract: `path` is ADDITIVE (old clients ignore it; new
+  clients fall back gracefully on old cached rows); payloadSig and the
+  skip-rebuild handshake are untouched (id|status|score|utcDate only).
+
+Checks: 817 → 833, all green; tsc clean.
+
+---
+
 ## [13.79-docs] — 2026-10-13 (ARCHITECTURE.md + ADR-001..006 + README/RUNBOOK refresh)
 
 Seventh hygiene phase (worklog Task 44 — the documentation deliverable).

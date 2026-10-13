@@ -60,95 +60,15 @@ export const SEO = {
   KV_SEO_INDEXNOW: "seo_indexnow_v1"
 };
 
-// Stable competition slugs (U-02: lowercase Latin, never change).
-export const COMP_SLUGS: Record<string, string> = {
-  CL: "champions-league",
-  EL: "europa-league",
-  ECL: "conference-league",
-  PL: "premier-league",
-  PD: "la-liga",
-  SA: "serie-a",
-  FL1: "ligue-1",
-  BL1: "bundesliga",
-  FA_CUP: "fa-cup",
-  EFL_CUP: "efl-cup",
-  CDR: "copa-del-rey",
-  COPPA_ITALIA: "coppa-italia",
-  DFB_POKAL: "dfb-pokal",
-  HAZFI_CUP: "hazfi-cup",
-  AL: "a-league",
-  WC: "world-cup",
-  EC: "euro",
-  COPA: "copa-america",
-  AFCON: "afcon",
-  AFC: "afc-asian-cup",
-  PGL: "persian-gulf-pro-league"
-};
-
-// Stable team slugs for the followed ("master") clubs — the teams that get
-// pages ~99% of the time. Pool teams without an entry derive dynamically.
-export const TEAM_SLUGS: Record<string, string> = {
-  "Arsenal FC": "arsenal",
-  "Chelsea FC": "chelsea",
-  "Manchester United FC": "manchester-united",
-  "Manchester City FC": "manchester-city",
-  "Liverpool FC": "liverpool",
-  "FC Barcelona": "barcelona",
-  "Real Madrid CF": "real-madrid",
-  "Atl\u00E9tico Madrid": "atletico-madrid",
-  "Inter Milan": "inter-milan",
-  "AC Milan": "ac-milan",
-  "Paris Saint-Germain": "paris-saint-germain",
-  "FC Bayern M\u00FCnchen": "bayern-munich",
-  "Borussia Dortmund": "borussia-dortmund",
-  "Tottenham Hotspur FC": "tottenham",
-  "Everton FC": "everton",
-  "Juventus": "juventus",
-  "AS Roma": "roma",
-  "Lazio": "lazio",
-  "SS Lazio": "lazio",
-  "Torino FC": "torino",
-  "Olympique de Marseille": "marseille",
-  "Melbourne Victory": "melbourne-victory",
-  "Melbourne City": "melbourne-city",
-  "Sydney FC": "sydney-fc",
-  "Adelaide United": "adelaide-united",
-  "Western Sydney Wanderers": "western-sydney-wanderers"
-};
-
-export function compSlug(code: string): string {
-  if (COMP_SLUGS[code]) return COMP_SLUGS[code];
-  // Unknown codes derive a stable slug from their code.
-  return String(code || "c").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "c";
-}
-
-// Tiny legal-form tokens stripped from team slugs (U-02 readability).
-// Meaningful words (united, city, wanderers) are KEPT — only legal bits go.
-const STRICT_STRIP = new Set(["fc", "cf", "afc", "ac", "sc", "if", "sk", "fk", "bk", "ss", "us", "ud", "cd", "as", "calcio"]);
-
-export function teamSlug(name: string): string {
-  const fixed = TEAM_SLUGS[name];
-  if (fixed) return fixed;
-  let s = String(name || "");
-  try { s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); } catch (e) { /* older runtimes */ }
-  s = s.toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-  const words = s.split(/\s+/).filter(Boolean);
-  const kept = words.filter((w) => !(STRICT_STRIP.has(w) && words.length > 1) && !/^\d{3,4}$/.test(w));
-  const out = (kept.length ? kept : words).join("-");
-  return (out || "team").slice(0, 60);
-}
+// v13.80-canonical-hrefs: COMP_SLUGS/TEAM_SLUGS/compSlug/teamSlug/matchPath
+// MOVED to src/slugs.ts (a root leaf the eval harness orders before its
+// consumers) so pubMatch — the payload shaper — can stamp the canonical
+// `path` on every match row. The client used to guess hrefs with its own
+// slugifier (no TEAM_SLUGS) and produced 404 links; now it reads the path.
 
 // Full public URL builders (always absolute https + canonical host).
 export function absUrl(path: string): string {
   if (!path) path = "/";
   if (path.startsWith("http")) return path;
   return SEO.SITE_URL + (path.startsWith("/") ? path : "/" + path);
-}
-
-export function matchPath(homeName: string, awayName: string, utcDate: string): string {
-  const d = String(utcDate || "").slice(0, 10);
-  return `/matches/${teamSlug(homeName)}-vs-${teamSlug(awayName)}-${d}`;
 }

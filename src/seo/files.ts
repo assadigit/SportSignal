@@ -13,7 +13,8 @@
 
 import type { Env } from "../types";
 import { CONFIG } from "../config";
-import { SEO, absUrl, matchPath, compSlug, teamSlug } from "./config";
+import { SEO, absUrl } from "./config";
+import { matchPath, compSlug, teamSlug } from "../slugs";
 import { esc, tehranDayKey } from "./utils";
 import { COMP_EN } from "../tables";
 import { translateCompetition } from "../translate";

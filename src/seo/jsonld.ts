@@ -4,7 +4,8 @@
 // kickoff + the venue/tehran timezone context. No SearchAction (retired),
 // no fake offers/ratings/authors.
 
-import { SEO, absUrl, matchPath, teamSlug, compSlug } from "./config";
+import { SEO, absUrl } from "./config";
+import { matchPath, teamSlug, compSlug } from "../slugs";
 import { tehranParts } from "./utils";
 import { COMP_EN } from "../tables";
 import { translateCompetition } from "../translate";

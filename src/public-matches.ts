@@ -11,6 +11,7 @@ import { normalizeTeamName, normTeamKey } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { normAlias } from "./teams";
 import { isLiveStatus } from "./match-model";
+import { matchPath } from "./slugs"; // v13.80-canonical-hrefs: payload rows carry the server-canonical URL
 import { shouldNotify, isFeaturedMatch, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName, pickHeroMatch } from "./match-classify";
 import { fetchLongView } from "./providers";
 import { getCachedMatches } from "./match-pool";
@@ -96,6 +97,12 @@ export function pubMatch(m) {
     homeTeam: { name: m.homeTeam.name, faName: translateTeam(m.homeTeam.name), crest: m.homeTeam.crest || null },
     awayTeam: { name: m.awayTeam.name, faName: translateTeam(m.awayTeam.name), crest: m.awayTeam.crest || null },
     utcDate: m.utcDate,
+    // v13.80-canonical-hrefs: the ONE true URL for this match, built by the
+    // same matchPath/TEAM_SLUGS the server pages, sitemap, JSON-LD and
+    // matches.json use. The client's matchHref() prefers this field; its
+    // private slugifier stays only as a fallback for cached stale payloads
+    // (pre-13.80 SWR rows without `path`) — never the primary.
+    path: matchPath(m.homeTeam.name, m.awayTeam.name, m.utcDate),
     competition: { code: m.competition.code, faName: translateCompetition(m.competition.code), emblem: m.competition.emblem || LEAGUE_LOGOS[m.competition.code] || null },
     status: m.status,
     round: rl.round,

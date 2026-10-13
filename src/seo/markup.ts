@@ -5,7 +5,8 @@
 // Language: fa (server default). Time: Asia/Tehran. Digits: Persian.
 // Every match row/spotitem is a real <a href> to its match page (R-02).
 
-import { SEO, matchPath, compSlug } from "./config";
+import { SEO } from "./config";
+import { matchPath, compSlug } from "../slugs";
 import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, tehranDayKey, isLiveSt, faGregorianDate, tehranParts, toJalali } from "./utils";
 import { toFaDigits } from "../utils";
 import { translateCompetition } from "../translate";

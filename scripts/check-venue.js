@@ -80,10 +80,14 @@ globalThis.isDerby = () => false;
 globalThis.rivalryName = () => null; // v13.51-rivalries stub (pubMatch tags)
 // v13.35-rounds: pubMatch derives round/roundFa through roundLabel — the
 // extracted body needs ROUND_FA + FA_ORDINALS + roundLabel in scope.
+// v13.80-canonical-hrefs: pubMatch also stamps `path` via matchPath — the
+// extracted body needs the slug block (TEAM_SLUGS + STRICT_STRIP + teamSlug
+// + matchPath from src/slugs.ts, in harness order before public-matches.ts).
 const roundFaSrc = src.match(/var ROUND_FA = \{[\s\S]*?\n\};/)[0];
 const faOrdSrc = src.match(/var FA_ORDINALS = \[[\s\S]*?\];/)[0];
 const roundLabelSrc = src.match(/function roundLabel\(m\) \{[\s\S]*?\n\}/)[0];
-new Function(roundFaSrc + "\n" + faOrdSrc + "\n" + roundLabelSrc + "\nglobalThis.ROUND_FA = ROUND_FA; globalThis.FA_ORDINALS = FA_ORDINALS; globalThis.roundLabel = roundLabel;")();
+const slugBlockSrc = src.match(/var TEAM_SLUGS = \{[\s\S]*?\n\};/)[0] + "\n" + src.match(/const STRICT_STRIP = new Set\(\[[\s\S]*?\]\);/)[0] + "\n" + src.match(/function teamSlug\(name\) \{[\s\S]*?\n\}/)[0] + "\n" + src.match(/function matchPath\(homeName, awayName, utcDate\) \{[\s\S]*?\n\}/)[0];
+new Function(roundFaSrc + "\n" + faOrdSrc + "\n" + roundLabelSrc + "\n" + slugBlockSrc + "\nglobalThis.ROUND_FA = ROUND_FA; globalThis.FA_ORDINALS = FA_ORDINALS; globalThis.roundLabel = roundLabel; globalThis.matchPath = matchPath;")();
 const pubMatch = new Function("m", pubSrc + "; return pubMatch(m);");
 const out = pubMatch({ homeTeam: { name: "Arsenal" }, awayTeam: { name: "Chelsea" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "PL" }, status: "SCHEDULED", venue: "Emirates Stadium" });
 check("pubMatch keeps venue", out.venue === "Emirates Stadium");

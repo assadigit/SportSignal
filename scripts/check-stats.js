@@ -216,16 +216,18 @@ check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSr
 // more prominent (tint 16%, glow 28%, !important overrides). SW v22 → v23.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js20 = read("assets/public-13.23.js");
-check("public-13.23.js referenced in homepage (renamed from 13.22)", /\/public-13\.23\.js/.test(publicSrc));
+const js20 = read("assets/public-13.24.js");
+const slugsSrc = read("src/slugs.ts");
+const seoCfgSrc = read("src/seo/config.ts");
+check("public-13.24.js referenced in homepage (renamed from 13.23)", /\/public-13\.24\.js/.test(publicSrc));
 check("public-13.23.css referenced in homepage (renamed from 13.22)", /\/public-13\.23\.css/.test(publicSrc));
 check("public-13.23.css referenced in SEO page-shell (renamed)", /\/public-13\.23\.css/.test(shellSrc));
 check("core-13.9.js referenced in homepage (renamed from 13.8)", /\/core-13\.9\.js/.test(publicSrc));
-check("public-13.23.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.23.js")));
+check("public-13.24.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.24.js")));
 check("public-13.23.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.23.css")));
-check("assets/_headers pins public-13.23 immutable", /\/public-13\.23\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.24 immutable", /\/public-13\.24\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 check("assets/_headers pins public-13.23.css immutable", /\/public-13\.23\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("SW cache bumped to sportsignal-v27 (replaces v26)", /CACHE = "sportsignal-v27"/.test(swSrc));
+check("SW cache bumped to sportsignal-v28 (replaces v27)", /CACHE = "sportsignal-v28"/.test(swSrc));
 check("barTarget checks nextBig before topSpot (all competitions)", /t=DATA\.nextBig\|\|null.*if\(!t\)\{t=a\}/.test(js20));
 check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js20));
 check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js20));
@@ -265,6 +267,69 @@ check("core-13.9.js referenced in admin page", /\/core-13\.9\.js/.test(read("src
 check("core-13.9.js referenced in login page", /\/core-13\.9\.js/.test(read("src/pages/login.ts")));
 check("assets/_headers pins core-13.9 immutable", /\/core-13\.9\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 check("homepage server fallback h2 retitled (no old text)", /<h2 data-i="hLgNext" id="topSpotTitle">دیدارهای جذاب لیگ‌ها<\/h2>/.test(publicSrc) && !/مسابقات بزرگ پیش‌رو/.test(publicSrc));
+
+// ---------- 9) v13.80-canonical-hrefs: payload-carried match paths ----------
+// The bug this locks out: public-13.23.js re-rendered every match row with a
+// PRIVATE slugifier (no TEAM_SLUGS table) → chelsea-vs-tottenham-hotspur-…,
+// bayern-munchen-…, milan-vs-… — 404s. The fix: ONE slug module (src/slugs.ts,
+// moved out of seo/config.ts so the payload shaper can import it), pubMatch
+// stamps `path` on every row, and the client's matchHref prefers that field.
+check("slugs.ts module exists (moved out of seo/config.ts)", fs.existsSync(path.join(__dirname, "..", "src", "slugs.ts")));
+check("slugs.ts carries TEAM_SLUGS + teamSlug + matchPath (no shim re-exports)",
+  /export const TEAM_SLUGS/.test(slugsSrc) && /export function teamSlug\(/.test(slugsSrc) && /export function matchPath\(/.test(slugsSrc));
+check("seo/config.ts no longer exports slug fns (single home, no re-export shim)",
+  !/export function teamSlug/.test(seoCfgSrc) && !/export function matchPath/.test(seoCfgSrc) && !/export const TEAM_SLUGS/.test(seoCfgSrc));
+check("pubMatch stamps the canonical path on every payload row",
+  /path: matchPath\(m\.homeTeam\.name, m\.awayTeam\.name, m\.utcDate\)/.test(read("src/public-matches.ts")));
+check("public-matches.ts imports matchPath from ./slugs", /from "\.\/slugs"/.test(read("src/public-matches.ts")));
+check("client matchHref prefers the payload path (fallback only for stale caches)",
+  /function matchHref\(e\)\{var a=String\(e\.utcDate\|\|""\)\.slice\(0,10\);return e\.path\|\|/.test(js20));
+check("worker-src harness orders slugs.ts before public-matches.ts",
+  (() => { const o = read("scripts/lib/worker-src.js"); const iS = o.indexOf('"slugs.ts"'); const iP = o.indexOf('"public-matches.ts"'); return iS !== -1 && iP !== -1 && iS < iP; })());
+// behavioral: the slug block from the REAL harness concat (post-transform)
+const wsrc = require("./lib/worker-src")();
+{
+  const src = wsrc;
+  const grabVar = (name) => { const m = wsrc.match(new RegExp("var " + name + " = \\{[\\s\\S]*?\\n\\};")); if (!m) throw new Error("grabVar miss " + name); return m[0]; };
+  const grabFn = (sig) => { const i = src.indexOf(sig); if (i < 0) throw new Error("grabFn miss " + sig); const j = src.indexOf("\n}", i); return src.slice(i, j + 2); };
+  const grabSet = (name) => { const m = src.match(new RegExp("const " + name + " = new Set\\(\\[[\\s\\S]*?\\]\\);")); if (!m) throw new Error("grabSet miss " + name); return m[0]; };
+  const slugBlock = grabVar("TEAM_SLUGS") + "\n" + grabSet("STRICT_STRIP") + "\n" + grabFn("function teamSlug(name)") + "\n" + grabFn("function matchPath(homeName, awayName, utcDate)");
+  eval(slugBlock);
+  check("teamSlug honors the fixed table (Tottenham Hotspur FC → tottenham)", teamSlug("Tottenham Hotspur FC") === "tottenham");
+  check("teamSlug transliterates the fixed table (FC Bayern München → bayern-munich)", teamSlug("FC Bayern M\u00FCnchen") === "bayern-munich");
+  check("teamSlug strips legal tokens dynamically (Lille OSC → lille-osc)", teamSlug("Lille OSC") === "lille-osc");
+  check("matchPath builds the canonical form", matchPath("Chelsea FC", "Tottenham Hotspur FC", "2026-10-24T16:30:00Z") === "/matches/chelsea-vs-tottenham-2026-10-24");
+  check("matchPath matches the API/sitemap/JSON-LD form (Club Atlético de Madrid)", matchPath("Club Atl\u00E9tico de Madrid", "Manchester United FC", "2026-10-13T19:00:00Z") === "/matches/club-atletico-de-madrid-vs-manchester-united-2026-10-13");
+  // client side: matchHref must return e.path verbatim when present
+  const mhSrc = js20.match(/function matchHref\(e\)\{[\s\S]*?\}function nameInto/)[0].replace(/function nameInto[\s\S]*$/, "");
+  globalThis.seoTeamSlug = (n) => String(n || "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const matchHref = new Function("return " + mhSrc.replace("function matchHref(e)", "function mh(e)"))();
+  check("matchHref returns the payload path when present (no guessing)", matchHref({ utcDate: "2026-10-24T16:30:00Z", homeTeam: { name: "Chelsea FC" }, awayTeam: { name: "Tottenham Hotspur FC" }, path: "/matches/chelsea-vs-tottenham-2026-10-24" }) === "/matches/chelsea-vs-tottenham-2026-10-24");
+  check("matchHref still works on stale rows without path (fallback)", matchHref({ utcDate: "2026-10-24T16:30:00Z", homeTeam: { name: "Chelsea FC" }, awayTeam: { name: "Tottenham Hotspur FC" } }) === "/matches/chelsea-fc-vs-tottenham-hotspur-fc-2026-10-24");
+}
+// pubMatch behavioral: the payload row carries the same canonical path
+{
+  const src = wsrc;
+  const pubSrc = src.match(/function pubMatch\(m\) \{[\s\S]*?\n\}/)[0].replace(/^function pubMatch\(m\) \{/, "").replace(/\n\}$/, "");
+  globalThis.translateTeam = (n) => n;
+  globalThis.translateCompetition = () => "x";
+  globalThis.translateVenue = (v) => v;
+  globalThis.LEAGUE_LOGOS = {};
+  globalThis.isLiveStatus = (s) => s === "LIVE";
+  globalThis.isFeaturedMatch = () => false;
+  globalThis.isDerby = () => false;
+  globalThis.rivalryName = () => null;
+  const roundFaSrc = src.match(/var ROUND_FA = \{[\s\S]*?\n\};/)[0];
+  const faOrdSrc = src.match(/var FA_ORDINALS = \[[\s\S]*?\];/)[0];
+  const roundLabelSrc = src.match(/function roundLabel\(m\) \{[\s\S]*?\n\}/)[0];
+  const slugBlock = src.match(/var TEAM_SLUGS = \{[\s\S]*?\n\};/)[0] + "\n" + src.match(/const STRICT_STRIP = new Set\(\[[\s\S]*?\]\);/)[0] + "\n" + src.match(/function teamSlug\(name\) \{[\s\S]*?\n\}/)[0] + "\n" + src.match(/function matchPath\(homeName, awayName, utcDate\) \{[\s\S]*?\n\}/)[0];
+  new Function(roundFaSrc + "\n" + faOrdSrc + "\n" + roundLabelSrc + "\n" + slugBlock + "\nglobalThis.ROUND_FA = ROUND_FA; globalThis.FA_ORDINALS = FA_ORDINALS; globalThis.roundLabel = roundLabel; globalThis.matchPath = matchPath;")();
+  const pubMatch = new Function("m", pubSrc + "; return pubMatch(m);");
+  const out = pubMatch({ homeTeam: { name: "Chelsea FC" }, awayTeam: { name: "Tottenham Hotspur FC" }, utcDate: "2026-10-24T16:30:00Z", competition: { code: "PL" }, status: "SCHEDULED" });
+  check("pubMatch row carries the canonical path (Tottenham via TEAM_SLUGS)", out.path === "/matches/chelsea-vs-tottenham-2026-10-24");
+  const out2 = pubMatch({ homeTeam: { name: "FC Bayern M\u00FCnchen" }, awayTeam: { name: "Borussia Dortmund" }, utcDate: "2026-10-31T19:30:00Z", competition: { code: "BL1" }, status: "SCHEDULED" });
+  check("pubMatch row carries the canonical path (Bayern transliteration)", out2.path === "/matches/bayern-munich-vs-borussia-dortmund-2026-10-31");
+}
 
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
 process.exit(failed === 0 ? 0 : 1);

@@ -87,7 +87,10 @@ const livesSrc = grabFn("function isLiveStatus(status)") + "\n" + grabFn("functi
 const pubSrc = grabFn("function pubMatch(m)");
 // v13.35-rounds: pubMatch now derives round/roundFa through roundLabel — the
 // grabbed pubMatch body needs roundLabel + its two consts in eval scope.
-const roundSrc = grabVar("ROUND_FA") + "\n" + grabVar("FA_ORDINALS") + "\n" + grabFn("function roundLabel(m)");
+// v13.80-canonical-hrefs: pubMatch also stamps `path` via matchPath — the
+// slug block (TEAM_SLUGS/STRICT_STRIP/teamSlug/matchPath from src/slugs.ts)
+// must ride along in the eval.
+const roundSrc = grabVar("ROUND_FA") + "\n" + grabVar("FA_ORDINALS") + "\n" + grabFn("function roundLabel(m)") + "\n" + grabVar("TEAM_SLUGS") + "\n" + (function(){ const i = src.indexOf("const STRICT_STRIP = new Set("); const j = src.indexOf(");", i); return src.slice(i, j + 2); })() + "\n" + grabFn("function teamSlug(name)") + "\n" + grabFn("function matchPath(homeName, awayName, utcDate)");
 
 eval(domCupSrc + "\n" + aliasSrc + "\n" + shouldNotifySrc + "\n" + featSrc + "\n" + derbyBlockSrc + "\n" + livesSrc + "\n" + roundSrc + "\n" + pubSrc);
 

@@ -63,6 +63,12 @@ function workerSrc() {
   if (cache) return cache;
   const order = [
     "worker.ts", "config.ts", "tables.ts", "utils.ts", "teams.ts", "dedupe.ts", "fa-dict.ts", "translate.ts", "fa-ai.ts",
+    // v13.80-canonical-hrefs: slugs.ts is a ROOT leaf (moved out of
+    // seo/config.ts so the payload shaper can import it). pubMatch stamps
+    // `path` through matchPath — the checks that eval pubMatch (check-venue,
+    // live-derby) grab the slug block alongside it; here it just needs to
+    // sit before public-matches.ts in the concat.
+    "slugs.ts",
     // v13.76-matchsplit: matches.ts became a GROUP — match-model (status
     // vocabulary + format helpers) → match-windows (time windows + backfill)
     // → match-dedupe (notified-match store + send gate) → match-classify
