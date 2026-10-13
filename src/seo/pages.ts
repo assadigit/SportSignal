@@ -203,7 +203,7 @@ const W_LABEL: Record<string, string> = { W: "برد", D: "مساوی", L: "شک
 // One side's row: dots when available, else the season chip. Shared by the
 // match page's strip and the team page's card (v13.88 — one renderer, one
 // vocabulary).
-function formRowHtml(fa: string, dots: { r: string; oppFa: string; score: string; date: string }[] | null, rec: { won: number | null; draw: number | null; lost: number | null; played: number | null; compFa?: string | null } | null): string {
+function formRowHtml(fa: string, dots: { r: string; oppFa: string; score: string; date: string }[] | null, rec: { won: number | null; draw: number | null; lost: number | null; played: number | null; pos?: number | null; compFa?: string | null } | null): string {
   let mid = "";
   if (dots && dots.length) {
     const cnt = { W: 0, D: 0, L: 0 };
@@ -217,8 +217,11 @@ function formRowHtml(fa: string, dots: { r: string; oppFa: string; score: string
       '<span class="formsum">' + toFaDigits(String(cnt.W)) + " برد · " + toFaDigits(String(cnt.D)) + " مساوی · " + toFaDigits(String(cnt.L)) + " شکست</span>";
   } else if (rec && rec.won != null && rec.draw != null && rec.lost != null) {
     // season aggregate — visually distinct from dots (no fake per-match
-    // granularity): three tabular count segments in the win/draw/loss hues
-    mid = '<span class="fseason"><b class="fsw">' + toFaDigits(String(rec.won)) + "</b>" + W_FA.W +
+    // granularity): three tabular count segments in the win/draw/loss hues.
+    // v13.93-fullrec: the position badge rides first («ردیف ۲») — the
+    // standings-rank context makes the W/D/L counts meaningful at a glance.
+    mid = '<span class="fseason">' + (rec.pos != null ? '<b class="fspos">ردیف ' + toFaDigits(String(rec.pos)) + "</b>" : "") +
+      '<b class="fsw">' + toFaDigits(String(rec.won)) + "</b>" + W_FA.W +
       ' <b class="fsd">' + toFaDigits(String(rec.draw)) + "</b>" + W_FA.D +
       ' <b class="fsl">' + toFaDigits(String(rec.lost)) + "</b>" + W_FA.L +
       (rec.played != null ? '<i class="fsplayed">از ' + toFaDigits(String(rec.played)) + " بازی" + (rec.compFa ? " " + esc(String(rec.compFa)) : "") + "</i>" : rec.compFa ? '<i class="fsplayed">' + esc(String(rec.compFa)) + "</i>" : "") + "</span>";
@@ -232,12 +235,12 @@ function formLegendHtml(): string {
   return '<p class="formlegend"><i class="fdot fw">' + W_FA.W + "</i>" + W_LABEL.W + " · <i class=\"fdot fd\">" + W_FA.D + "</i>" + W_LABEL.D + " · <i class=\"fdot fl\">" + W_FA.L + "</i>" + W_LABEL.L + "</p>";
 }
 
-function formStripHtml(ctx: SeoCtx, sm: SeoMatch, archive: any[]): string {
+function formStripHtml(ctx: SeoCtx, sm: SeoMatch, archive: any[], fullByCode?: Record<string, any>): string {
   const sides = [
     { name: sm.raw.homeTeam && sm.raw.homeTeam.name, fa: faName(sm.s.homeTeam) },
     { name: sm.raw.awayTeam && sm.raw.awayTeam.name, fa: faName(sm.s.awayTeam) }
   ];
-  const forms = sides.map((x) => ({ ...x, dots: teamForm(ctx, x.name || "", archive), rec: teamSeasonRecord(ctx, x.name || "") }));
+  const forms = sides.map((x) => ({ ...x, dots: teamForm(ctx, x.name || "", archive), rec: teamSeasonRecord(ctx, x.name || "", fullByCode) }));
   if (!forms.some((f) => f.dots || (f.rec && f.rec.won != null && f.rec.draw != null && f.rec.lost != null))) return "";
   const anyDots = forms.some((f) => f.dots);
   let out = '<div class="card formstrip"><h2>' + (anyDots ? "فرم اخیر" : "وضعیت فصل") + "</h2>" + (anyDots ? formLegendHtml() : "");
@@ -302,7 +305,12 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // v13.87: the archive load is one bounded KV read per match-page render
   // (fail-closed on error \u2014 the strip drops, the page never breaks).
   const archive = await loadArchive(ctx.env).catch(() => [] as any[]);
-  const formCard = formStripHtml(ctx, sm, archive);
+  // v13.93-fullrec: the match's competition FULL cached table — every side
+  // gets its season chip (bottom-half league sides were invisible to the
+  // top-8 payload compacts). ONE bounded cache-only KV read, fail-closed
+  // (null → the payload path, exactly v13.88 behavior).
+  const fullByCode = await fullByCodeFor(ctx, [sm.s.competition && sm.s.competition.code]);
+  const formCard = formStripHtml(ctx, sm, archive, fullByCode);
 
   const sims = similarMatches(ctx, sm);
   const similarCard = sims.length
@@ -579,9 +587,11 @@ function buildStandingsWindowHtml(stw: { code: string; compFa: string; emblem: s
 // record chip). Same fail-closed rule: neither → "" (no card). The
 // archive load is one bounded KV read per render, same contract as the
 // match pages (fail-closed on error).
-function teamFormCardHtml(ctx: SeoCtx, entryName: string, fa: string, archive: any[]): string {
+// v13.93-fullrec: fullByCode widens the chip to every league side (see
+// teamSeasonRecord).
+function teamFormCardHtml(ctx: SeoCtx, entryName: string, fa: string, archive: any[], fullByCode?: Record<string, any>): string {
   const dots = teamForm(ctx, entryName, archive);
-  const rec = dots ? null : teamSeasonRecord(ctx, entryName);
+  const rec = dots ? null : teamSeasonRecord(ctx, entryName, fullByCode);
   const row = formRowHtml(fa, dots, rec);
   if (!row) return "";
   const title = dots ? "فرم اخیر " + esc(fa) : "وضعیت فصل " + esc(fa);
@@ -601,17 +611,33 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
   // "بازی‌های مرتبط" for the team's NEXT match (same matchday card as the
   // match pages; internal-linking: every team page cross-links siblings).
   const sims = next ? similarMatches(ctx, next, 6) : [];
+  // v13.93-fullrec: load the FULL cached tables for the competitions the
+  // team's OWN fixtures name (≤ 2 codes: usually league, or league + cup —
+  // the next fixture first so the window's preferred table is freshest).
+  // LIVE-QA lesson: the payload's top-8 compacts CANNOT be the code source —
+  // a rank-9+ team is invisible there by definition, and its league chip
+  // silently fell back to a 1-game UCL record. The league ALWAYS appears in
+  // the team's fixtures, so this derivation closes that gap. Fail-closed per
+  // code (no cache → absent from the map → the payload path).
+  const recCodes: string[] = [];
+  for (const m of upcoming.slice(0, 12)) {
+    const c = m.s.competition && m.s.competition.code;
+    if (c && !recCodes.includes(c)) recCodes.push(c);
+    if (recCodes.length >= 2) break;
+  }
+  const fullByCode = await fullByCodeFor(ctx, recCodes);
   // v13.87-formtable: the league-table window — the team's neighborhood in
   // its competition's standings (5 rows, the team highlighted, a link to the
-  // full competition table). Drops silently when the payload has no table
-  // covering the team (A-League, off-cup pages).
-  const stw = teamStandingsWindow(ctx, entry.name, next);
+  // full competition table). v13.93: the full cached table widens it beyond
+  // the top-8 compacts (rank-9+ teams get their window too). Drops silently
+  // when neither source covers the team (A-League, off-cup pages).
+  const stw = teamStandingsWindow(ctx, entry.name, next, fullByCode);
   const stWinCard = stw ? buildStandingsWindowHtml(stw) : "";
   // v13.88-formagg: the team's own form card (dots or season record) —
   // one bounded archive read, fail-closed (error → dots path stays dark,
   // the season chip still lights from the payload).
   const archive = await loadArchive(ctx.env).catch(() => [] as any[]);
-  const formCard = teamFormCardHtml(ctx, entry.name, name, archive);
+  const formCard = teamFormCardHtml(ctx, entry.name, name, archive, fullByCode);
   // v13.88-formagg: the standings position rides the answer sentence when
   // the window found the team's row (pos/points from the SAME snapshot the
   // window renders — one source of truth, no extra reads).
@@ -711,6 +737,25 @@ async function fullStandings(env: any, code: string): Promise<any[] | null> {
     }
   } catch (e) { /* fail-closed to the compact */ }
   return null;
+}
+
+// v13.93-fullrec: the shared full-table loader for the season chips and the
+// standings window — fullStandings per code (cache-only, fail-closed), the
+// payload shell's faName/emblem riding along so the window renders exactly
+// like the competition page's table. Callers pass ≤ 2 codes (match pages 1:
+// the match's comp; team pages 2: next-fixture's comp + the payload comp
+// containing the team). Null tables are simply absent from the map.
+async function fullByCodeFor(ctx: SeoCtx, codes: (string | null | undefined)[]): Promise<Record<string, any>> {
+  const out: Record<string, any> = {};
+  for (const code of codes) {
+    if (!code || out[code]) continue;
+    const full = await fullStandings(ctx.env, code).catch(() => null);
+    if (full && full.length) {
+      const shell = (ctx.payload && ctx.payload.standings && ctx.payload.standings[code]) || {};
+      out[code] = { teams: full, faName: shell.faName || undefined, emblem: shell.emblem || null };
+    }
+  }
+  return out;
 }
 
 export async function buildCompetitionPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean; code?: string }> {

@@ -6,6 +6,19 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.93-fullrec] — 2026-10-13 (full-table season chips + windows for every team)
+
+The v13.88 handover item closed: bottom-half league sides (rank 9+) were invisible to the payload's top-8 standings compacts — their match-page season chip silently dropped and their team page had no standings window. Both now read the FULL cached tables (the same source the competition pages render since v13.89).
+
+- `fullByCodeFor` (pages.ts): the shared cache-only loader — fullStandings per competition code, the payload shell's faName/emblem riding along. Match pages load ONE code (the match's comp); team pages ≤ 2 (derived from the team's OWN fixtures — the league always appears there; see the LIVE-QA lesson below). Fail-closed per code: a missing/stale cache → the payload path, exactly v13.88 behavior.
+- `teamSeasonRecord`/`teamStandingsWindow` gain the optional `fullByCode` param (searched BEFORE the payload compacts — fresher + complete; the payload stays the fallback). Every league side gets its chip; every ranked team gets its window; the window's next-comp preference and top-3 clamping are unchanged (locked behaviorally).
+- The season chip gains the standings-rank badge «ردیف ۲» (fspos) — the context that makes W/D/L counts readable at a glance; absent when pos is null (cup/UCL shells without pos).
+- Styling polish: .strow-me gains an inline-start sky accent bar + hover lift; .fdot hover scale (1.14, 120ms); all disarmed under prefers-reduced-motion.
+- Harness (same commit): 3 updated locks (the new signatures/wiring), 6+1 new v13.93 locks + 2 behavioral evals of the REAL functions (rank-14 chip from the full table; full-table-beats-stale-payload; both-miss fail-closed null; rank-12 window 10-14 with meIdx 2; cup-next fallback still finds the league; top-3 clamp from the full table; the richest-record regression). Suite 995 → 1002 green, tsc clean.
+- TWO LIVE-QA iterations (found on the deployed pages, fixed same version): (1) the fullByCode code source for team pages was initially the payload comps — but a rank-9+ team is invisible in the top-8 compacts BY DEFINITION, so its league chip silently fell back to a 1-game UCL record; the codes now derive from the team's OWN fixtures (the league always appears there). (2) a standings_cache_CL exists (the 36-team UCL table) and recCodes ordered the next-fixture cup FIRST — the 1-game UCL record drowned the 9-game league season; teamSeasonRecord now collects candidates from all three sources and the RICHEST wins (most played; ties keep source order full → payload → ucl). LIVE-VERIFIED after both fixes: /teams/liverpool «ردیف ۹ ۲ب ۳م ۱ش از ۶ بازی لیگ برتر انگلیس» and /teams/manchester-united «ردیف ۱۳ ۱ب ۳م ۲ش از ۶ بازی لیگ برتر انگلیس» — both rank-9+ sides previously invisible. Match pages keep their 1-read budget (the match's comp only — a UCL match honestly shows the UCL record; the side's league record lives on its team page).
+
+---
+
 ## [13.92-d1userstore] — 2026-10-13 (user data on D1 — quota-proof user writes)
 
 Root cause measured live (GraphQL KV analytics + REST probes): the Workers free-plan KV write quota is ACCOUNT-level, and this account also hosts the sibling currena workers — by 14:00 UTC the two apps had written 631 (STATE) + 658 (RATES) = 1,289 keys, so every `put` fails with error 10048 until the midnight-UTC reset. That is Tehran prime time: every /timezone, /follow, /lang and /start tap failed (honestly surfaced since v13.91, but still failing). The v13.91 handover's candidate (a) is now shipped, following the v13.56 pageviews precedent.

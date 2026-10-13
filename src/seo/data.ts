@@ -361,15 +361,22 @@ export async function hydrateMatchVenue(env: Env, sm: SeoMatch | null): Promise<
 // competition of the team's NEXT match (falling back to any standings
 // competition the team appears in), then returns a 5-row neighborhood
 // around the team (2 above, the team, 2 below; clamped at the table top
-// when the team is top-3). Null when the payload carries no standings for
-// a competition the team plays in — the caller drops the card (fail-closed,
-// same rule as every seo data card).
-export function teamStandingsWindow(ctx: SeoCtx, teamName: string, next: SeoMatch | null): { code: string; compFa: string; emblem: string | null; rows: any[]; meIdx: number } | null {
+// when the team is top-3). Null when neither source covers the team —
+// the caller drops the card (fail-closed, same rule as every seo data card).
+// v13.93-fullrec: fullByCode — OPTIONAL full cached tables per competition
+// code (loaded cache-only by pages.ts; {teams, faName?, emblem?}). Searched
+// BEFORE the payload compact for the same code (fresher + complete — the
+// same truth the competition pages render). Result: teams ranked 9+ now
+// get their window (the payload compact only carries the top-8).
+export function teamStandingsWindow(ctx: SeoCtx, teamName: string, next: SeoMatch | null, fullByCode?: Record<string, any>): { code: string; compFa: string; emblem: string | null; rows: any[]; meIdx: number } | null {
   const stAll = ctx.payload && ctx.payload.standings;
-  if (!stAll || typeof stAll !== "object") return null;
+  if ((!stAll || typeof stAll !== "object") && !fullByCode) return null;
   const norm = normalizeTeamName(teamName);
   const find = (comp: string): { st: any; me: any } | null => {
-    const st = stAll[comp];
+    // v13.93: the full cached table first (complete standings); the payload
+    // compact second (fallback when the cache missed or is ≤8 rows).
+    const full = fullByCode && fullByCode[comp];
+    const st = (full && Array.isArray(full.teams) ? full : null) || (stAll && stAll[comp]);
     if (!st || !Array.isArray(st.teams)) return null;
     const me = st.teams.find((t: any) => t && normalizeTeamName(t.name) === norm);
     return me ? { st, me } : null;
@@ -380,7 +387,7 @@ export function teamStandingsWindow(ctx: SeoCtx, teamName: string, next: SeoMatc
   let code: string | null = next && next.s.competition && next.s.competition.code;
   let hit = (code && find(code)) || null;
   if (!hit) {
-    for (const c of Object.keys(stAll)) {
+    for (const c of Object.keys(stAll || {})) {
       const h2 = find(c);
       if (h2) { code = c; hit = h2; break; }
     }
@@ -394,7 +401,6 @@ export function teamStandingsWindow(ctx: SeoCtx, teamName: string, next: SeoMatc
   const meIdx = rows.indexOf(me);
   return { code, compFa: st.faName || COMP_EN[code] || code, emblem: st.emblem || null, rows, meIdx };
 }
-
 // v13.88-formagg: a team's SEASON record (won/draw/lost/pos) from the
 // payload's standings snapshots — pure KV-payload read, zero subrequests,
 // fail-closed (team not in any table → null). This is the fallback that
@@ -402,7 +408,17 @@ export function teamStandingsWindow(ctx: SeoCtx, teamName: string, next: SeoMatc
 // (v13.87's teamForm stays dark until ~2-3 weeks of finished rows
 // accumulate; the aggregate is honest TODAY). Searches the 5 league
 // tables + PGL (top-8 compacts) AND the full UCL table (payload.ucl).
-export function teamSeasonRecord(ctx: SeoCtx, teamName: string): { code: string; compFa: string; pos: number | null; played: number | null; won: number | null; draw: number | null; lost: number | null; points: number | null } | null {
+// v13.93-fullrec: fullByCode — OPTIONAL full cached tables per competition
+// code ({teams, faName?}, loaded cache-only by pages.ts). Candidates are
+// collected from all three sources, then the RICHEST wins: the record with
+// the MOST played matches (a 9-game league season beats a 1-game UCL start
+// — LIVE-QA lesson: recCodes ordered the next-fixture cup FIRST, and the
+// 1-game UCL record was drowning the league season). Ties keep source
+// order (full tables → payload compacts → ucl). Result: EVERY league side
+// gets its season chip (bottom-half teams were invisible to the top-8
+// compacts — the v13.88 handover item). Still fail-closed when no source
+// has the team.
+export function teamSeasonRecord(ctx: SeoCtx, teamName: string, fullByCode?: Record<string, any>): { code: string; compFa: string; pos: number | null; played: number | null; won: number | null; draw: number | null; lost: number | null; points: number | null } | null {
   const stAll = ctx.payload && ctx.payload.standings;
   const norm = normalizeTeamName(teamName);
   if (!norm) return null;
@@ -413,22 +429,38 @@ export function teamSeasonRecord(ctx: SeoCtx, teamName: string): { code: string;
     const num = (v: any) => (typeof v === "number" && isFinite(v)) || /^\d+$/.test(String(v)) ? Number(v) : null;
     return { code, compFa, pos: num(t.pos), played: num(t.played), won: num(t.won), draw: num(t.draw), lost: num(t.lost), points: num(t.points) };
   };
+  const cand: any[] = [];
+  // v13.93: the full cached tables — the freshest, complete source
+  // (the same truth the competition pages render).
+  if (fullByCode && typeof fullByCode === "object") {
+    for (const code of Object.keys(fullByCode)) {
+      const st = fullByCode[code];
+      if (!st || !Array.isArray(st.teams)) continue;
+      cand.push(fromTeams(st.teams, code, st.faName || COMP_EN[code] || code));
+    }
+  }
   if (stAll && typeof stAll === "object") {
     for (const code of Object.keys(stAll)) {
       const st = stAll[code];
       if (!st || !Array.isArray(st.teams)) continue;
-      const hit = fromTeams(st.teams, code, st.faName || COMP_EN[code] || code);
-      if (hit) return hit;
+      cand.push(fromTeams(st.teams, code, st.faName || COMP_EN[code] || code));
     }
   }
   const ucl = ctx.payload && ctx.payload.ucl;
   if (ucl && Array.isArray(ucl.teams)) {
     // v13.89: the payload's ucl shell carries no faName — translateCompetition
     // owns the Persian name (same dictionary the whole site uses).
-    const hit = fromTeams(ucl.teams, "CL", ucl.faName || translateCompetition("CL"));
-    if (hit) return hit;
+    cand.push(fromTeams(ucl.teams, "CL", ucl.faName || translateCompetition("CL")));
   }
-  return null;
+  const hits = cand.filter((c) => c != null);
+  if (!hits.length) return null;
+  // v13.93: the RICHEST record wins — most played matches; ties keep the
+  // source order above.
+  let best = hits[0];
+  for (const c of hits) {
+    if ((c.played == null ? -1 : c.played) > (best.played == null ? -1 : best.played)) best = c;
+  }
+  return best;
 }
 
 // v13.87-formtable: a team's last-N finished results as W/D/L relative to

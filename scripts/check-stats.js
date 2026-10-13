@@ -479,12 +479,12 @@ check("table venue sets en + fa (no FD round-trip)", /sm\.raw\.venue = g\.en;/.t
 check("v13.87: teamStandingsWindow exists + wired into buildTeamPage", (() => {
   const d = read("src/seo/data.ts");
   const p2 = read("src/seo/pages.ts");
-  return /export function teamStandingsWindow\(ctx: SeoCtx, teamName: string, next: SeoMatch \| null\)/.test(d) && /const stw = teamStandingsWindow\(ctx, entry\.name, next\);/.test(p2) && /stWinCard \+/.test(p2);
+  return /export function teamStandingsWindow\(ctx: SeoCtx, teamName: string, next: SeoMatch \| null, fullByCode\?: Record<string, any>\)/.test(d) && /const stw = teamStandingsWindow\(ctx, entry\.name, next, fullByCode\);/.test(p2) && /stWinCard \+/.test(p2);
 })());
 check("v13.87: teamForm exists + the match page renders the form strip", (() => {
   const d = read("src/seo/data.ts");
   const p2 = read("src/seo/pages.ts");
-  return /export function teamForm\(ctx: SeoCtx, teamName: string, archiveRows: any\[\] = \[\], limit = 5, min = 3\)/.test(d) && /const formCard = formStripHtml\(ctx, sm, archive\);/.test(p2) && /facts \+ formCard \+ similarCard/.test(p2) && /const archive = await loadArchive\(ctx\.env\)\.catch/.test(p2);
+  return /export function teamForm\(ctx: SeoCtx, teamName: string, archiveRows: any\[\] = \[\], limit = 5, min = 3\)/.test(d) && /const formCard = formStripHtml\(ctx, sm, archive, fullByCode\);/.test(p2) && /facts \+ formCard \+ similarCard/.test(p2) && /const archive = await loadArchive\(ctx\.env\)\.catch/.test(p2);
 })());
 check("v13.87: teamForm is fail-closed (min-3 gate; null when short)", (() => {
   const d = read("src/seo/data.ts");
@@ -560,9 +560,9 @@ check("v13.87 behavioral: teamForm dedupes pool+archive, W/D/L math, min-3 fail-
 check("v13.88: teamSeasonRecord exists + wired into both pages", (() => {
   const d = read("src/seo/data.ts");
   const p2 = read("src/seo/pages.ts");
-  return /export function teamSeasonRecord\(ctx: SeoCtx, teamName: string\)/.test(d) && /const rec = dots \? null : teamSeasonRecord\(ctx, entryName\);/.test(p2) && /rec: teamSeasonRecord\(ctx, x\.name \|\| ""\)/.test(p2);
+  return /export function teamSeasonRecord\(ctx: SeoCtx, teamName: string, fullByCode\?: Record<string, any>\)/.test(d) && /const rec = dots \? null : teamSeasonRecord\(ctx, entryName, fullByCode\);/.test(p2) && /rec: teamSeasonRecord\(ctx, x\.name \|\| "", fullByCode\)/.test(p2);
 })());
-check("v13.88: teamSeasonRecord is payload-only fail-closed (no fetches)", (() => {
+check("v13.88: teamSeasonRecord is read-only fail-closed (no fetches)", (() => {
   const d = read("src/seo/data.ts");
   const i = d.indexOf("export function teamSeasonRecord");
   const j = d.indexOf("export function teamForm", i);
@@ -576,7 +576,7 @@ check("v13.88: the match strip falls back to the season chip («وضعیت فص�
 check("v13.88: team page gains the form card (async build + router await + archive load)", (() => {
   const p2 = read("src/seo/pages.ts");
   const r = read("src/seo/router.ts");
-  return /function teamFormCardHtml/.test(p2) && /const formCard = teamFormCardHtml\(ctx, entry\.name, name, archive\);/.test(p2) && /stWinCard \+\n    formCard \+/.test(p2) && /await buildTeamPage\(seoCtx, tm\[1\]\)/.test(r) && /export async function buildTeamPage/.test(p2);
+  return /function teamFormCardHtml/.test(p2) && /const formCard = teamFormCardHtml\(ctx, entry\.name, name, archive, fullByCode\);/.test(p2) && /stWinCard \+\n    formCard \+/.test(p2) && /await buildTeamPage\(seoCtx, tm\[1\]\)/.test(r) && /export async function buildTeamPage/.test(p2);
 })());
 check("v13.88: the standings position rides the team answer sentence", (() => {
   const p2 = read("src/seo/pages.ts");
@@ -603,22 +603,23 @@ check("v13.88 behavioral: teamSeasonRecord finds league + ucl rows, null when ab
     else if (d[j] === "}") { depth--; if (depth === 0) break; }
   }
   let seg = d.slice(i, j + 1);
-  const sigOld = "function teamSeasonRecord(ctx: SeoCtx, teamName: string): { code: string; compFa: string; pos: number | null; played: number | null; won: number | null; draw: number | null; lost: number | null; points: number | null } | null {";
+  const sigOld = "function teamSeasonRecord(ctx: SeoCtx, teamName: string, fullByCode?: Record<string, any>): { code: string; compFa: string; pos: number | null; played: number | null; won: number | null; draw: number | null; lost: number | null; points: number | null } | null {";
   const ftOld = "const fromTeams = (teams: any[], code: string, compFa: string) => {";
   const findOld = "teams.find((x: any) => x && normalizeTeamName(x.name) === norm)";
   const numOld = "const num = (v: any) =>";
   if (seg.indexOf(sigOld) < 0 || seg.indexOf(ftOld) < 0 || seg.indexOf(findOld) < 0 || seg.indexOf(numOld) < 0) return false;
   seg = seg
-    .replace(sigOld, "function teamSeasonRecord(ctx, teamName) {")
+    .replace(sigOld, "function teamSeasonRecord(ctx, teamName, fullByCode) {")
     .replace(ftOld, "const fromTeams = (teams, code, compFa) => {")
     .replace(findOld, "teams.find((x) => x && normalizeTeamName(x.name) === norm)")
     .replace(numOld, "const num = (v) =>")
+    .replace("const cand: any[] = [];", "const cand = [];")
     .replace(/^export /, "");
   const { normalizeTeamName } = require("../src/teams.ts");
   // translateCompetition is passed as a STUB (the real dictionary is locked
   // by check-fa-dict); the function under test only needs the CL mapping.
   const faComp = (c) => (c === "CL" ? "لیگ قهرمانان اروپا" : c);
-  const fn = new Function("normalizeTeamName", "translateCompetition", seg + "\n; return teamSeasonRecord;")(normalizeTeamName, faComp);
+  const fn = new Function("normalizeTeamName", "translateCompetition", "COMP_EN", seg + "\n; return teamSeasonRecord;")(normalizeTeamName, faComp, { PL: "لیگ برتر انگلیس", CL: "لیگ قهرمانان اروپا" });
   const payload = {
     standings: {
       PL: { faName: "لیگ برتر انگلیس", teams: [{ pos: 2, name: "Arsenal FC", played: 9, won: 6, draw: 2, lost: 1, points: 20 }] },
@@ -633,7 +634,74 @@ check("v13.88 behavioral: teamSeasonRecord finds league + ucl rows, null when ab
   const uclFa = fn({ payload: { standings: {}, ucl: { teams: [{ pos: 1, name: "Manchester United FC", won: 1, draw: 0, lost: 0, points: 3 }] } } }, "Manchester United");
   const okUclFa = uclFa && uclFa.compFa === "لیگ قهرمانان اروپا"; // v13.89: the faName fallback via translateCompetition
   const none = fn({ payload }, "No Such FC");
-  return okPl && okUcl && okUclFa && none === null;
+  // v13.93-fullrec: fullByCode — a rank-14 side INVISIBLE to the top-8
+  // payload compacts gets its record from the full cached table; a full
+  // table also WINS over a stale payload row (fresher numbers); both
+  // missing stays fail-closed null.
+  const fullTab = [];
+  for (let p = 1; p <= 20; p++) fullTab.push({ pos: p, name: "Team " + p + " FC", played: 11, won: 12 - p, draw: 2, lost: p - 1, points: 38 - p });
+  const bottom = fn({ payload }, "Team 14 FC", { PL: { teams: fullTab, faName: "لیگ برتر انگلیس" } });
+  const okBottom = bottom && bottom.code === "PL" && bottom.pos === 14 && bottom.played === 11 && bottom.lost === 13;
+  const freshFull = fn({ payload }, "Arsenal FC", { PL: { teams: [{ pos: 3, name: "Arsenal FC", played: 10, won: 7, draw: 2, lost: 1, points: 23 }], faName: "لیگ برتر انگلیس" } });
+  const okFresh = freshFull && freshFull.pos === 3 && freshFull.won === 7 && freshFull.points === 23;
+  const bothMiss = fn({ payload }, "No Such FC", { PL: { teams: fullTab } });
+  // v13.93 LIVE-QA regression: recCodes ordered the next-fixture CUP first —
+  // the 1-game UCL record must NOT drown the 9-game league season (the
+  // RICHEST record wins on played count, regardless of insertion order).
+  const uclTab = [{ pos: 13, name: "Liverpool FC", played: 1, won: 1, draw: 0, lost: 0, points: 3 }];
+  const plTab = []; for (let p = 1; p <= 20; p++) plTab.push({ pos: p, name: p === 9 ? "Liverpool FC" : "Team " + p + " FC", played: 9, won: 19 - p, draw: 2, lost: p - 1, points: 59 - p });
+  const richest = fn({ payload: { ucl: { teams: uclTab } } }, "Liverpool FC", { CL: { teams: uclTab }, PL: { teams: plTab, faName: "لیگ برتر انگلیس" } });
+  const okRichest = richest && richest.code === "PL" && richest.pos === 9 && richest.played === 9;
+  return okPl && okUcl && okUclFa && none === null && okBottom && okFresh && bothMiss === null && okRichest;
+})());
+
+// v13.93-fullrec behavioral: the REAL teamStandingsWindow with a full cached
+// table — a rank-12 team (OUTSIDE the payload's top-8 compact) gets its
+// 5-row window from the full table with meIdx correct + the entry's faName;
+// the window still prefers the next fixture's competition.
+check("v13.93 behavioral: teamStandingsWindow serves rank-9+ teams from the full table", (() => {
+  const fs = require("fs");
+  const d = fs.readFileSync("src/seo/data.ts", "utf8");
+  const i = d.indexOf("export function teamStandingsWindow");
+  if (i < 0) return false;
+  // body-open anchored PAST the return-type braces (the v13.88 lesson)
+  const open = d.indexOf("| null {", i) + 7;
+  let depth = 0, j = open;
+  for (; j < d.length; j++) {
+    if (d[j] === "{") depth++;
+    else if (d[j] === "}") { depth--; if (depth === 0) break; }
+  }
+  let seg = d.slice(i, j + 1);
+  const sigOld = "function teamStandingsWindow(ctx: SeoCtx, teamName: string, next: SeoMatch | null, fullByCode?: Record<string, any>): { code: string; compFa: string; emblem: string | null; rows: any[]; meIdx: number } | null {";
+  const findOld = "teams.find((t: any) => t && normalizeTeamName(t.name) === norm)";
+  const findSigOld = "const find = (comp: string): { st: any; me: any } | null => {";
+  const codeOld = "let code: string | null = next && next.s.competition && next.s.competition.code;";
+  if (seg.indexOf(sigOld) < 0 || seg.indexOf(findOld) < 0 || seg.indexOf(findSigOld) < 0 || seg.indexOf(codeOld) < 0) return false;
+  seg = seg
+    .replace(sigOld, "function teamStandingsWindow(ctx, teamName, next, fullByCode) {")
+    .replace(findOld, "teams.find((t) => t && normalizeTeamName(t.name) === norm)")
+    .replace(findSigOld, "const find = (comp) => {")
+    .replace(codeOld, "let code = next && next.s.competition && next.s.competition.code;")
+    .replace(/^export /, "");
+  const { normalizeTeamName } = require("../src/teams.ts");
+  const fn = new Function("normalizeTeamName", "COMP_EN", seg + "\n; return teamStandingsWindow;")(normalizeTeamName, { PL: "لیگ برتر انگلیس", CL: "لیگ قهرمانان اروپا" });
+  const mk = (p) => ({ pos: p, name: "Team " + p + " FC", played: 11, won: 12 - p, draw: 2, lost: p - 1, points: 38 - p });
+  const full20 = []; for (let p = 1; p <= 20; p++) full20.push(mk(p));
+  const ctx = { payload: { standings: { PL: { faName: "لیگ برتر انگلیس", emblem: "pl.png", teams: full20.slice(0, 8) } } } };
+  const nextPL = { s: { competition: { code: "PL" } } };
+  // rank-12: NOT in the top-8 payload — the full table serves the window
+  const w12 = fn(ctx, "Team 12 FC", nextPL, { PL: { teams: full20, faName: "لیگ برتر انگلیس" } });
+  const ok12 = w12 && w12.rows.length === 5 && w12.rows.map((r) => r.pos).join(",") === "10,11,12,13,14" && w12.meIdx === 2 && w12.compFa === "لیگ برتر انگلیس" && w12.code === "PL";
+  // without the full table: same team → null (the v13.87 fail-closed behavior)
+  const wNull = fn(ctx, "Team 12 FC", nextPL, null);
+  // next-comp preference: a CUP next fixture falls back to the payload comp
+  // WITH its full table (the fallback loop consults fullByCode too)
+  const wCup = fn(ctx, "Team 12 FC", { s: { competition: { code: "FAC" } } }, { PL: { teams: full20, faName: "لیگ برتر انگلیس" } });
+  const okCup = wCup && wCup.code === "PL" && wCup.meIdx === 2;
+  // top-3 clamping still works from the full table
+  const w1 = fn(ctx, "Team 1 FC", nextPL, { PL: { teams: full20, faName: "لیگ برتر انگلیس" } });
+  const ok1 = w1 && w1.rows.map((r) => r.pos).join(",") === "1,2,3,4,5" && w1.meIdx === 0;
+  return ok12 && wNull === null && okCup && ok1;
 })());
 
 
@@ -662,6 +730,33 @@ check("v13.89: the season chip carries its competition name", (() => {
 check("v13.89: the new styles + a11y polish ship in the page-shell block", (() => {
   const ps = read("src/seo/page-shell.ts");
   return [".stwdl", ".stwdl .stw-w", ".sthead-wdl", "a:focus-visible", ".hubtile:hover{border-color:rgba(94,160,255,.5);transform:translateY(-1px)}", ".pagination a:hover", "@media (prefers-reduced-motion:reduce){.hubtile,.hubtile:hover{transform:none}"].every((s) => ps.includes(s)) && /@media \(max-width:600px\)\{\.stwdl,\.sthead-wdl\{display:none\}\}/.test(ps);
+})());
+
+// ---- v13.93-fullrec: the full-table-backed chips + windows (every side gets
+// a record; every ranked team gets a window) + the rank badge + polish ----
+check("v13.93: fullByCodeFor loader exists, cache-only, ≤2 codes on team pages", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /async function fullByCodeFor\(ctx: SeoCtx, codes: \(string \| null \| undefined\)\[\]\)/.test(p2) && /await fullStandings\(ctx\.env, code\)\.catch\(\(\) => null\)/.test(p2) && /const fullByCode = await fullByCodeFor\(ctx, recCodes\);/.test(p2) && /const fullByCode = await fullByCodeFor\(ctx, \[sm\.s\.competition && sm\.s\.competition\.code\]\);/.test(p2);
+})());
+check("v13.93: the team page derives the codes from its OWN fixtures (the LIVE-QA lesson: the payload top-8 cannot be the source for a rank-9+ team)", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /const recCodes: string\[\] = \[\];/.test(p2) && /for \(const m of upcoming\.slice\(0, 12\)\)/.test(p2) && /if \(c && !recCodes\.includes\(c\)\) recCodes\.push\(c\);/.test(p2) && /if \(recCodes\.length >= 2\) break;/.test(p2) && !/fallbackCode/.test(p2);
+})());
+check("v13.93: the season chip renders the rank badge (fspos) only when pos exists", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /rec\.pos != null \? '<b class="fspos">/.test(p2) && /'<b class="fspos">ردیف ' \+ toFaDigits\(String\(rec\.pos\)\)/.test(p2);
+})());
+check("v13.93: formRowHtml's record type carries pos (the badge source)", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /pos\?: number \| null; compFa\?: string \| null \} \| null\): string \{/.test(p2);
+})());
+check("v13.93: the new styles ship in the page-shell block (badge + polish + reduced-motion)", (() => {
+  const ps = read("src/seo/page-shell.ts");
+  return [".fseason .fspos", "border-inline-start:3px solid rgba(125,211,252,.55)", ".fdot{", "transition:transform .12s}", ".fdot:hover{transform:scale(1.14)}", ".strow-me:hover{background:rgba(125,211,252,.16)}", ".fdot,.fdot:hover{transform:none}.strow-me{transition:none}"].every((s) => ps.includes(s));
+})());
+check("v13.93: the full-table path stays reads-only (no fetch with allowFetch=true in the seo layer)", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /fetchStandings\(env, code, false\)/.test(p2) && !/fetchStandings\(ctx\.env, code, true\)/.test(p2);
 })());
 
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));

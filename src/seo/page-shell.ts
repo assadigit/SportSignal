@@ -168,7 +168,8 @@ a.mvenue-map:active{transform:scale(.97)}
    site's sky accent (same family as .mcount/.mvenue-map); .stmore is the
    "full table" footer link. */
 .stwin{margin:0}
-.strow-me{background:rgba(125,211,252,.10);border:1px solid rgba(125,211,252,.32);border-radius:8px;padding:4px 6px;font-weight:700}
+.strow-me{background:rgba(125,211,252,.10);border:1px solid rgba(125,211,252,.32);border-inline-start:3px solid rgba(125,211,252,.55);border-radius:8px;padding:4px 6px;font-weight:700;transition:background .15s}
+.strow-me:hover{background:rgba(125,211,252,.16)}
 .stmore{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:#7dd3fc;text-decoration:none;padding:8px 2px 2px;margin-top:5px;border-top:1px dashed var(--border,#334155)}
 .stmore:hover{text-decoration:underline}
 /* v13.87-formtable: the match page's recent-form strip — one row per side,
@@ -178,7 +179,8 @@ a.mvenue-map:active{transform:scale(.97)}
 .formstrip .formrow:last-child{border-bottom:none}
 .formteam{font-size:.85rem;font-weight:700;min-width:86px}
 .formdots{display:inline-flex;gap:4px;align-items:center}
-.fdot{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;font-size:.72rem;font-weight:800;font-style:normal;font-variant-numeric:tabular-nums}
+.fdot{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;font-size:.72rem;font-weight:800;font-style:normal;font-variant-numeric:tabular-nums;transition:transform .12s}
+.fdot:hover{transform:scale(1.14)}
 .fw{color:#4ade80;background:rgba(74,222,128,.14);border:1px solid rgba(74,222,128,.35)}
 .fd{color:#cbd5e1;background:rgba(148,163,184,.14);border:1px solid rgba(148,163,184,.30)}
 .fl{color:#f87171;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.32)}
@@ -193,6 +195,10 @@ a.mvenue-map:active{transform:scale(.97)}
 .fseason .fsw{color:#4ade80}
 .fseason .fsd{color:#cbd5e1}
 .fseason .fsl{color:#f87171}
+/* v13.93-fullrec: the standings-position badge («ردیف ۲») — the rank context
+   that makes the W/D/L counts readable at a glance. Sky accent (the
+   .strow-me/.mcount family) so the eye tracks rank → counts → comp. */
+.fseason .fspos{color:#7dd3fc;background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.30);border-radius:7px;padding:1px 7px;font-size:.68rem;font-weight:800}
 .fseason .fsplayed{font-style:normal;font-size:.68rem;font-weight:600;color:var(--muted,#9aa4b2);border-inline-start:1px dashed rgba(148,163,184,.35);padding-inline-start:7px;margin-inline-start:2px}
 /* v13.88-formagg: the dot legend — muted microcopy that decodes ب/م/ش for
    first-time visitors; the dots reuse .fdot sizing at reduced footprint. */
@@ -221,7 +227,7 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
 .stmore:hover{color:#a5e3fc}
 .pagination a{transition:border-color .15s,background .15s}
 .pagination a:hover{border-color:rgba(94,160,255,.5);background:rgba(94,160,255,.08)}
-@media (prefers-reduced-motion:reduce){.hubtile,.hubtile:hover{transform:none}.mact:active{transform:none}}
+@media (prefers-reduced-motion:reduce){.hubtile,.hubtile:hover{transform:none}.mact:active{transform:none}.fdot,.fdot:hover{transform:none}.strow-me{transition:none}}
 .simcount{display:inline-block;font-size:.72rem;font-weight:600;color:var(--muted,#9aa4b2);background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.24);border-radius:999px;padding:1px 9px;margin-inline-start:8px;vertical-align:middle}
 .mactions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:2px 0 14px}
 .mact{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:var(--fg,#e8eefc);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.28);border-radius:11px;padding:8px 14px;text-decoration:none;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s,transform .15s}
