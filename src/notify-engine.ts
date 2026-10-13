@@ -18,7 +18,7 @@ import { shouldNotify } from "./match-classify";
 import { pruneChats } from "./user-store";
 import { format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, specialBanner } from "./composers";
 import { sendTelegram, sendDice, sendPhotoBinary } from "./telegram";
-import { renderCardPngCached } from "./card";
+import { renderCardPngCached, cachedCardPng } from "./card";
 import { getRegisteredChats, getUserPrefs, groupChatsByTz, userFollowsMatch, isBigMatch, isMasterBigMatch } from "./users";
 
 export const NOTIFICATION_CONFIGS = [
@@ -202,11 +202,18 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
     // v13.94-fanoutfix: lean mode skips the card render + photo sends
     // entirely (budget pressure on the must-fire match-start path) — every
     // chat then takes the text fallback, the cheapest send.
+    // v13.94.1-cpukeeper: the TIMING-CRITICAL types (match-start, 5min) read
+    // the card from CACHE ONLY — a fresh resvg render on these paths is what
+    // fed the 2026-10-13 19:00Z CPU-kill spiral (each retry re-rendered and
+    // died again). A cache miss degrades to text; the 3h/1h rounds prewarm
+    // the cache (TTL 4h) so the normal flow still shows the card.
     let cardResults: any[] = [];
     let cardsAttempted = false;
     if (!lean && (match.homeTeam.crest || match.awayTeam.crest)) {
       try {
-        const pngBuf = await renderCardPngCached(scopedEnv, match, lang);
+        const pngBuf = config.type === "match-start" || config.type === "pre-match-5min"
+          ? await cachedCardPng(scopedEnv, match, lang)
+          : await renderCardPngCached(scopedEnv, match, lang);
         if (pngBuf) {
           cardsAttempted = true;
           // The caption is the full match text (specialBanner + formatter +

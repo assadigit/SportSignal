@@ -5,6 +5,7 @@
 // heartbeat.
 //
 // Reads the real concatenated worker source (single source of truth).
+const fs = require("fs");
 const src = require("./lib/worker-src")();
 
 let failed = 0;
@@ -134,6 +135,19 @@ check("#6 notified-store: KV blob path intact for the legacy/sim case", /KV save
 check("#6 cron order: notify BEFORE maintenance", /runNotifyPhase\(env, \{ chatIds, matches, fullSweepThisTick \}\);[\s\S]{0,300}?runPoolMaintenance\(/.test(src));
 check("#6 maintenance true-count gate (FANOUT_MAINT_MAX)", /subrequestCount\(\) \+ kvOpsCount\(\) > \(CONFIG\.FANOUT_MAINT_MAX \|\| 30\)/.test(src));
 check("#6 the fan-out reservation cap is configured", /SUBREQUEST_FANOUT_CAP: 46/.test(src));
+
+// v13.94.1-cpukeeper: the 2026-10-13 19:00Z CPU-kill spiral (outcome
+// exceededCpu twice in a row; every retry re-rendered cards and died) — the
+// timing-critical types must NEVER render a fresh card (cache-only read; a
+// miss degrades to text), and the card cache TTL 1h → 4h lets the 3h/1h
+// rounds prewarm what the match-start round serves from cache.
+check("#6 cpukeeper: match-start + 5min read the card CACHE ONLY (never render)", /config\.type === "match-start" \|\| config\.type === "pre-match-5min"[\s\S]{0,120}?cachedCardPng\(/.test(src));
+// card.ts is not part of the eval concat — read the real module for the
+// cache-only contract.
+const cardSrc = fs.readFileSync(__dirname + "/../src/card.ts", "utf8");
+check("#6 cpukeeper: cachedCardPng never falls through to a render", /export async function cachedCardPng[\s\S]{0,700}?return null;[\s\S]{0,60}?\}/.test(cardSrc) && !/cachedCardPng[\s\S]{0,900}?renderCardPng\(/.test(cardSrc.slice(cardSrc.indexOf("async function cachedCardPng"))));
+check("#6 cpukeeper: card cache TTL is 4h (prewarm survives to kickoff)", /max-age=14400/.test(cardSrc));
+check("#6 cpukeeper: the TTL-3600 era is gone", !/max-age=3600"/.test(cardSrc));
 
 // v13.35-prewarm: cron pre-warms the public payload from its own pool so the
 // first visitor after a quiet gap never pays the ~4.6s provider sweep.

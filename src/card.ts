@@ -215,9 +215,16 @@ export function resvgFontBuffers(): Uint8Array[] {
 // backfill retries, again on the bot's featured button, again on every
 // /api/card/<key>.png request. Rendering costs the wasm rasterize + two
 // crest fetches — the cache turns those into a single per-colo render per
-// hour. Key: synthetic URL keyed by (matchKey, lang). Card content (teams,
+// window. Key: synthetic URL keyed by (matchKey, lang). Card content (teams,
 // kickoff, competition) is stable per matchKey; a late FA-name improvement
-// within the 1h TTL is accepted (translateTeam results improve asynchronously).
+// within the TTL is accepted (translateTeam results improve asynchronously).
+// v13.94.1-cpukeeper: TTL 1h → 4h. Live 2026-10-13 19:00Z: the match-start
+// fan-out re-rendered cards the 1h round had rendered 90min earlier (the 1h
+// TTL had lapsed) — 4 fresh resvg renders in one tick pushed the account
+// over the free-plan 10ms rolling CPU average and CF killed the tick
+// MID-FLIGHT (outcome exceededCpu, twice in a row; the retry ticks re-
+// rendered and died again — the spiral). With 4h, the 3h/1h rounds prewarm
+// the cards the match-start round then serves from CACHE (zero render CPU).
 export async function renderCardPngCached(env: Env, match: any, lang: string): Promise<ArrayBuffer | null> {
   let cacheReq: Request | null = null;
   try {
@@ -233,11 +240,30 @@ export async function renderCardPngCached(env: Env, match: any, lang: string): P
   const png = await renderCardPng(env, match, lang);
   if (png && cacheReq) {
     try {
-      const resp = new Response(png, { headers: { "content-type": "image/png", "cache-control": "public, max-age=3600" } });
+      const resp = new Response(png, { headers: { "content-type": "image/png", "cache-control": "public, max-age=14400" } });
       await caches.default.put(cacheReq, resp.clone());
     } catch (e) {
       // Cache API unavailable (e.g. some runtimes) — render still succeeds.
     }
   }
   return png;
+}
+
+// v13.94.1-cpukeeper: the CACHE-ONLY read for the timing-critical types
+// (match-start, pre-match-5min). A fresh resvg render costs ~100-250ms CPU —
+// the 2026-10-13 19:00Z CPU-kill spiral was retries re-rendering exactly
+// here. These types NEVER render: a cache hit serves the card (the 3h/1h
+// rounds prewarmed it; TTL 4h), a miss degrades to the text fallback (the
+// existing sendNotificationIfNeeded structure handles a null png).
+export async function cachedCardPng(env: Env, match: any, lang: string): Promise<ArrayBuffer | null> {
+  try {
+    const cacheReq = new Request("https://cards.internal/" + encodeURIComponent(matchKey(match)) + "/" + lang + ".png");
+    const hit = await caches.default.match(cacheReq);
+    if (hit) {
+      const buf = await hit.arrayBuffer();
+      if (buf && buf.byteLength) return buf;
+    }
+  } catch (e) {
+  }
+  return null;
 }

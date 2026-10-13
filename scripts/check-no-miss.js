@@ -726,6 +726,7 @@ var MEM_DEDUPE = new Set();
     async function saveNotifiedMatch() { return true; }
     function fanoutFetchCost() { return 1; }
     function fanoutReservation() { return "full"; }
+    async function cachedCardPng() { return new ArrayBuffer(8); }
     function isBackfillEligible() { return false; }
     function isMatchFinished() { return false; }
     function specialBanner() { return ""; }
