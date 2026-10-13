@@ -25,6 +25,16 @@ Harness co-evolved in the same commit: check-reliability's #6 section rewritten 
 
 ---
 
+## [13.94.1-cpukeeper + 13.94.2-foldfix] — 2026-10-13 (the CPU-kill spiral, found and fixed LIVE during the match-start rounds)
+
+Twenty minutes after v13.94 shipped, the 19:00Z match-start round provided the next live lesson: the tick was killed MID-FLIGHT by Cloudflare (`outcome: exceededCpu` — twice in a row; the 19:10 retry died even earlier). Root cause: the match-start fan-out re-rendered cards the 1h round had rendered 90 minutes earlier (the card cache TTL was 1h — lapsed) — 4 fresh resvg renders in one tick pushed the account over the free-plan 10ms rolling CPU average, and every retry re-rendered and died again (the spiral). The match-start windows (-1..+45min) were burning away with zero records.
+
+- **13.94.1-cpukeeper**: the timing-critical types (`match-start`, `pre-match-5min`) now read the card from CACHE ONLY — `cachedCardPng` never falls through to a render; a cache miss degrades to the text fallback (the existing per-chat fallback structure). The card cache TTL went 1h → 4h so the 3h/1h rounds prewarm exactly what the match-start round serves from cache (zero render CPU on the timing-critical path). 
+- **13.94.2-foldfix**: the completion blob folds `o` (per-chat outcomes) + `dk` (deferred keys) into the notify breadcrumb at the top level.
+- LIVE-VERIFIED (the 19:20Z retry, first tick on the new code): all 3 match-starts + City-PSG's 24h fired, `outcome: {"sent": 16, "failed": 0, "dead": 0}` — all 4 chats × all 4 notifications, zero failures, tick outcome `ok`, and exactly ONE clean in-window deferral (Bodo-Dortmund's 24h, retried next tick) logged with its key. The D1 dedupe records for every unit persisted. Suite 1043 → 1048 green.
+
+---
+
 ## [13.93-fullrec] — 2026-10-13 (full-table season chips + windows for every team)
 
 The v13.88 handover item closed: bottom-half league sides (rank 9+) were invisible to the payload's top-8 standings compacts — their match-page season chip silently dropped and their team page had no standings window. Both now read the FULL cached tables (the same source the competition pages render since v13.89).
