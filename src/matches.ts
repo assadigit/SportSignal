@@ -441,6 +441,23 @@ export function isMasterPair(match) {
   const nset = masterMemo.normSet;
   return nset.has(normAlias(match.homeTeam.name)) && nset.has(normAlias(match.awayTeam.name));
 }
+// v13.73-herotruth: THE single hero-selection expression (ADR-001,
+// website-as-truth). The site's hero (public-matches.ts nextBig) and the
+// bot's /featured MUST both call this — neither may re-implement the
+// filter/sort. Semantics (unchanged from the site's v13.68 filter):
+//   - hero-worthy = isFeaturedMatch(m) || isMasterPair(m) (BOTH teams big)
+//   - exclude FINISHED
+//   - live matches first (isLiveStatus), then by nearest kickoff
+//     (live matches sort by their original kickoff time)
+// The bot's pre-13.73 copy diverged in 3 ways (unsorted live[0] pick,
+// SCHEDULED|TIMED-only upcoming, inline live status set); this function
+// ends that — one expression, two consumers, zero drift.
+export function pickHeroMatch(matches) {
+  const hero = (matches || [])
+    .filter((m) => m.status !== "FINISHED" && (isFeaturedMatch(m) || isMasterPair(m)) && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > Date.now()))
+    .sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
+  return hero.length ? hero[0] : null;
+}
 export function hasSelectedTeam(match) {
   masterTeamList();
   const nset = masterMemo.normSet;

@@ -9,7 +9,7 @@ import type { Env } from "./types";
 import { fetchJSON, getNowTehran } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, ensureFaVenueCache } from "./translate";
-import { shouldNotify, isLiveStatus, isFeaturedMatch, normAlias, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName } from "./matches";
+import { shouldNotify, isLiveStatus, isFeaturedMatch, normAlias, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName, pickHeroMatch } from "./matches";
 import { fetchLongView, getCachedMatches } from "./providers";
 import { applySettings } from "./admin";
 import { fetchStandings } from "./composers";
@@ -463,8 +463,11 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   lgRest.forEach(addBox);
   const topSpotList = topSpotPicked.sort(byKick);
   const topSpotNext = topSpotList[0] || null;
-  const featured = matches.filter((m) => m.status !== "FINISHED" && (isFeaturedMatch(m) || isMasterPair(m)) && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > Date.now())).sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
-  const nextBig = featured.length ? pubMatch(featured[0]) : null;
+  // v13.73-herotruth: the hero pick is the SHARED pickHeroMatch expression
+  // (matches.ts) — the same one the bot's /featured uses. Website-as-truth
+  // (v13.68) now holds by construction, not by coincidence.
+  const heroMatch = pickHeroMatch(matches);
+  const nextBig = heroMatch ? pubMatch(heroMatch) : null;
   const standings: Record<string, any> = {};
   standCodes.forEach((c) => {
     standings[c] = Object.assign({ code: c, name: COMP_EN[c] || c, faName: translateCompetition(c), emblem: LEAGUE_LOGOS[c] || null }, compact(stMap[c]));

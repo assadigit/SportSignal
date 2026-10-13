@@ -6,6 +6,37 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.73-herotruth] — 2026-10-13 (the hero pick is ONE expression — v13.68 enforced by construction)
+
+The audit found the v13.68 "website-as-truth" constraint was aspirational:
+the bot's /featured re-implemented the site's hero selection and the two
+copies had drifted in three ways — the bot picked an UNSORTED `live[0]`
+when ≥2 hero matches were live (the site sorts live-first by nearest
+kickoff), the bot restricted upcoming picks to SCHEDULED|TIMED (the site
+only excludes FINISHED), and the bot inlined its own live status set
+instead of `isLiveStatus()`. Two matches live at once = the bot and the
+site could disagree about the hero — exactly what v13.68 forbids.
+
+### The fix
+- **`pickHeroMatch(matches)`** now lives in `matches.ts` as THE single
+  shared hero-selection expression (featured-or-masterPair, not-FINISHED,
+  live-first, nearest kickoff — byte-identical semantics to the site's
+  v13.68 filter). Both consumers call it and neither may re-implement it:
+  - `public-matches.ts` → `const heroMatch = pickHeroMatch(matches)`
+    (feeds `nextBig`, the site hero).
+  - `bot.ts` `/featured` → `const featured = pickHeroMatch(matches)`.
+- Six new `#herotruth` checks in check-no-miss.js lock the contract:
+  defined exactly once, both consumers use it, no private re-implementation
+  survives, and the semantics regex pins the filter/sort expression.
+- live-derby-test.js eval chain extended with the new grab (the harness
+  co-evolution rule).
+
+Edge-behavior note: /featured now matches the site in the rare cases
+where the old copies disagreed (multiple simultaneous live hero matches;
+non-SCHEDULED future hero picks) — that alignment IS the constraint.
+
+Suite: 802 checks green (796 + 6 new).
+
 ## [13.72-deadweight] — 2026-10-13 (dead assets, dead code, dead branches — the hygiene sweep)
 
 First phase of the code-hygiene/modularization session (mission brief:

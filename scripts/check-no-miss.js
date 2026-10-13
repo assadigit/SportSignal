@@ -334,6 +334,15 @@ var MEM_DEDUPE = new Set();
   check("buttons: normalizeCommand function exists", /function normalizeCommand\(/.test(src));
   check("buttons: featured button label exists", /\\u2B50/.test(src) || /⭐/.test(src));
   check("featured: /featured handler exists", /text === "\/featured"/.test(src));
+  // v13.73-herotruth: the hero pick is ONE shared expression (ADR-001).
+  check("herotruth: pickHeroMatch defined exactly once", (src.match(/function pickHeroMatch\(/g) || []).length === 1);
+  check("herotruth: bot /featured uses the shared pickHeroMatch", /const featured = pickHeroMatch\(matches\);/.test(src));
+  check("herotruth: site hero uses the shared pickHeroMatch (public-matches)", /const heroMatch = pickHeroMatch\(matches\);/.test(src));
+  check("herotruth: no private hero re-implementation left (isHeroWorthy gone)", !/isHeroWorthy/.test(src));
+  check("herotruth: shared expression semantics — featured||masterPair, not-FINISHED, live-first, nearest kickoff",
+    /function pickHeroMatch\(matches\) \{[\s\S]{0,700}?isFeaturedMatch\(m\) \|\| isMasterPair\(m\)[\s\S]{0,300}?isLiveStatus\(m\.status\) \|\| new Date\(m\.utcDate\)\.getTime\(\) > Date\.now\(\)[\s\S]{0,400}?\(isLiveStatus\(a\.status\) \? 0 : 1\) - \(isLiveStatus\(b\.status\) \? 0 : 1\) \|\| new Date\(a\.utcDate\)\.getTime\(\) - new Date\(b\.utcDate\)\.getTime\(\)/.test(src));
+  check("herotruth: both /featured and the site read the pool only (no sweeps from commands)",
+    (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron.ts =====")[0].indexOf("pickHeroMatch(matches)") > -1);
 
   console.log("\n=== P. Migration + admin tools ===");
   check("migration: broadcastBigMatchKickoff in cron", /broadcastBigMatchKickoff/.test(src));

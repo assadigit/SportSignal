@@ -8,7 +8,7 @@ import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliTime, getJalaliDate, getEnglishTime, getEnglishDate } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
-import { shouldNotify, isFeaturedMatch, isMasterPair } from "./matches";
+import { shouldNotify, isFeaturedMatch, isMasterPair, pickHeroMatch } from "./matches";
 import { matchKey } from "./dedupe";
 import { sendTelegram, answerCallbackQuery, sendPhotoBinary, editMessageText } from "./telegram";
 import { renderCardPngCached } from "./card";
@@ -420,17 +420,14 @@ export async function handleTelegramUpdate(env: Env, update) {
       // at most one full sweep old (2h) — serving it matches the cron's own
       // quiet-period semantics. Empty pool = the no-matches reply.
       const matches = Array.isArray(pool && pool.matches) ? pool.matches : [];
-      const now = new Date();
-      // v13.68-website-truth: the bot's /featured now follows the website's
-      // nextBig EXACTLY — isFeaturedMatch(m) || isMasterPair(m) (BOTH teams
-      // big), live-first then by nearest kickoff. Was shouldNotify(m) which
-      // only requires ONE big team — that picked Arsenal vs Lille (Arsenal
-      // big, Lille not) over the website's Man United vs Atlético (both big).
-      // The website is the ground source of truth.
-      const isHeroWorthy = (m) => isFeaturedMatch(m) || isMasterPair(m);
-      const upcoming = matches.filter((m) => isHeroWorthy(m) && (m.status === "SCHEDULED" || m.status === "TIMED") && new Date(m.utcDate) > now).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
-      const live = matches.filter((m) => isHeroWorthy(m) && (m.status === "IN_PLAY" || m.status === "LIVE" || m.status === "PAUSED"));
-      const featured = (live.length ? live : upcoming)[0];
+      // v13.73-herotruth: /featured calls the SHARED pickHeroMatch (matches.ts)
+      // — the exact expression the website hero uses (isFeaturedMatch ||
+      // isMasterPair, live-first, nearest kickoff). v13.68 made the website
+      // the ground truth; until here the bot carried a hand-copied filter that
+      // had already drifted (unsorted live pick). One expression, two
+      // consumers (ADR-001). Was shouldNotify(m) before v13.68 — that only
+      // required ONE big team.
+      const featured = pickHeroMatch(matches);
       if (!featured) {
         await sendTelegram(env, lang === "en" ? "No upcoming matches right now\\." : "\u{1F4C5} \u062F\u0631 \u062D\u0627\u0644 \u062D\u0627\u0636\u0631 \u0628\u0627\u0632\u06CC \u0645\u0647\u0645\u06CC \u0648\u062C\u0648\u062F \u0646\u062F\u0627\u0631\u062F\\.", chatId, replyKeyboard(lang));
       } else {
