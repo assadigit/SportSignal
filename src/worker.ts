@@ -36,6 +36,8 @@
 //   notify-audit.ts      notified-match gap audit
 //   users.ts             chats, member profiles, prefs, master list
 //   admin.ts             sessions, settings, clubs catalog, dummy matches
+//   (pages/*: page templates — admin.ts is now a thin composer over
+//   pages/admin-css/-html/-js + styles-shared; byte-parity-guarded)
 //   public-matches.ts    /api/public-matches pipeline
 //   bot-ui.ts            reply keyboard, command normalizer, grids/pickers
 //   bot.ts               Telegram webhook router (handleTelegramUpdate)

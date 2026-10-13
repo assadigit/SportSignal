@@ -6,6 +6,44 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.83-admintplsplit] — 2026-10-13 (admin template split + shared styles + the parity harness)
+
+Closes the last item from the hygiene session's "deliberately deferred"
+list: the 683-line `pages/admin.ts` monolith and the ~2KB of byte-identical
+inline CSS/JS triplicated across admin/login/public. The precondition was a
+parity harness — this version ships it FIRST and proves the refactor under
+it (RUNBOOK risk discipline: template surgery needs a byte guard).
+
+- **Byte-parity harness** (`scripts/check-admin-parity.js` + frozen baselines
+  in `scripts/fixtures/`): renders ADMIN_PAGE / LOGIN_PAGE / PUBLIC_PAGE from
+  the pages blob (fixed stubs for VERSION/UCL_LOGO_CHIP so version bumps
+  never invalidate the baseline) and byte-compares against the fixtures;
+  `--update` is the deliberate, reviewed re-baseline path. Already caught a
+  real trap on its first run: alphabetical eval put styles-shared.ts AFTER
+  its consumers — template literals evaluate at declaration time, so the
+  interpolation read `undefined`. The harness now orders dependency-first
+  (ESM semantics), the same principle as the worker-src concat.
+- **The split**: `admin.ts` 683 → 28-line composer over `admin-css.ts` (107),
+  `admin-html.ts` (96, carries the `${VERSION}` footer), `admin-js.ts` (471)
+  — output byte-identical (39942B = baseline 39942B).
+- **Source-level dedupe** (`styles-shared.ts`): THEME_INIT_SCRIPT + FONT_FACES_STYLE,
+  previously byte-identical inline in admin/login/public (~2KB of source),
+  now authored once and interpolated at the same byte positions — output
+  unchanged (login 6362B = 6362B, public 30051B = 30051B).
+- **Visual parity pass** (agent-browser, wrangler dev seeded from the live KV
+  snapshot): admin dashboard fa/dark desktop fingerprint (13 selectors × 10
+  computed-style props) IDENTICAL before/after; light theme + mobile 390px
+  identical (no overflow, members grid 96px/1fr/70px); homepage fingerprint
+  identical; zero console errors on every pass.
+- **Co-evolution** (same commit): check-stats.js retargets the stats-wiring
+  regexes to admin-html/admin-js + new locks (thin composer ≤40 lines,
+  styles-shared consumed by all three, split modules exist, harness in the
+  test chain); test chain grows to 883 checks (871+12); worker.ts layer-map
+  comment updated; README deferred list closed. worker-src.js concat needed
+  no change (pages/*.ts ride readdirSync; harness keeps its own order).
+
+---
+
 ## [13.82-matchday] — 2026-10-13 (venue hydration + map links + sibling fixtures)
 
 Feature/fix round (worklog Task 48). QA found the v13.81 `.mvenue` element

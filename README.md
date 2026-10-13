@@ -389,11 +389,12 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
 - ~~`cron.ts` phase extraction~~ — DONE in v13.75-cronsplit (shell + six
   phase modules, meter + completion blob stay in the shell by design; see
   ARCHITECTURE.md and ADR-005)
-- `pages/admin.ts` source split + inline-CSS dedupe (~2 KB measured:
-  @font-face ×4 and the theme-init snippet are byte-identical across
-  admin/login/public) — deferred: template-literal surgery on live pages
-  with byte-identical-output requirements; needs a visual-parity harness
-  (hero + list screenshots) first
+- ~~`pages/admin.ts` source split + inline-CSS dedupe~~ — DONE in v13.83-admintplsplit:
+  admin.ts 683 → thin composer (28 lines) + admin-css/-html/-js +
+  styles-shared.ts (theme-init + @font-face, previously triplicated ~2KB);
+  output byte-identical — guarded by the new parity harness
+  `scripts/check-admin-parity.js` (+ frozen fixtures in `scripts/fixtures/`)
+  which is exactly the visual-parity precondition this deferral demanded
 - `public-matches.ts` (649) — justified-as-is: cohesive around the public
   payload contract (audit finding, reaffirmed)
 - `assets/core-13.8.js` dormant X i18n keys — live public asset, zero

@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-title" content="SportSignal">
+<meta name="application-name" content="SportSignal">
+<!-- v13.4-live-css: live badges / loading states are pure CSS
+     (live-beep / live-breath / loading-spin keyframes) — zero payload,
+     zero third-party requests. (The dotLottie CDN player was removed.) -->
+<meta name="description" content="__SEO_DESC__">
+<meta name="robots" content="__SEO_ROBOTS__">
+<link rel="alternate" type="text/calendar" href="/calendar.ics" title="تقویم SportSignal">
+<link rel="alternate" type="application/atom+xml" href="/feed.xml" title="به‌روزرسانی‌های SportSignal">
+<meta property="og:type" content="website">
+<meta property="og:title" content="__SEO_OG_TITLE__">
+<meta property="og:description" content="__SEO_OG_DESC__">
+<meta property="og:url" content="https://sportsignal.ir/">
+<meta property="og:image" content="__SEO_OG_IMAGE__">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SportSignal — بازی‌های بزرگ فوتبال">
+<meta property="og:locale" content="fa_IR">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:site_name" content="SportSignal">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="__SEO_OG_TITLE__">
+<meta name="twitter:description" content="__SEO_OG_DESC__">
+<meta name="twitter:image" content="__SEO_OG_IMAGE__">
+<meta name="twitter:image:alt" content="SportSignal — بازی‌های بزرگ فوتبال">
+<link rel="canonical" href="https://sportsignal.ir/">
+<link rel="preload" href="/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Vazirmatn-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+__SEO_JSONLD__
+<script>try{var t=localStorage.getItem("ucl_theme")||"dark",l=localStorage.getItem("ucl_lang")||"fa",d=document.documentElement;d.setAttribute("data-theme",t);d.setAttribute("lang",l);d.setAttribute("dir",l==="en"?"ltr":"rtl");}catch(e){}</script>
+<!-- v12.x-force-dark: the default theme is ALWAYS dark, regardless of the
+     user's system preference (prefers-color-scheme). The color-scheme meta
+     tells the browser to render form controls + scrollbars in dark mode.
+     The user can still toggle to light via the theme button. -->
+<meta name="color-scheme" content="dark light">
+<title>__SEO_TITLE__</title>
+<style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
+<style>/* v13.56-visitcount: footer page-view counter. The number span has a
+     fixed min-width so the arriving digits never cause layout shift. */
+.visitcount{font-size:.78rem;color:var(--muted,#94a3b8);margin-top:10px;line-height:1.9;direction:rtl}
+.visitcount .vc-n{display:inline-block;min-width:3.4em;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:var(--text,#e2e8f0)}
+.visitcount .vc-sep{margin:0 6px;opacity:.5}
+.visitcount .vc-l{opacity:.85}
+/* v13.57-uniqueregions: live visitor-stats box (below the cups card). */
+#statsCard .sbox{font-size:.9rem;line-height:1.9}
+#statsCard .srow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(148,163,184,.16)}
+#statsCard .srow:last-child{border-bottom:none}
+#statsCard .slbl{color:var(--muted,#94a3b8)}
+#statsCard .sval{font-weight:700;font-variant-numeric:tabular-nums;direction:ltr}
+#statsCard .sval.live{color:#22c55e}
+#statsCard .scap{margin:10px 0 2px;font-size:.78rem;color:var(--muted,#94a3b8);font-weight:600}
+#statsCard stable{width:100%;border-collapse:collapse;font-size:.84rem}
+#statsCard stable th,#statsCard stable td{padding:5px 6px;text-align:start;border-bottom:1px solid rgba(148,163,184,.12)}
+#statsCard stable th{color:var(--muted,#94a3b8);font-weight:600;font-size:.74rem}
+#statsCard stable .cflag{font-size:1rem}
+#statsCard stable .cnum{font-variant-numeric:tabular-nums;font-weight:700;direction:ltr;text-align:left}
+#statsCard stable .cpct{color:var(--muted,#94a3b8);direction:ltr;text-align:left;width:3.5em}
+#statsCard .sbar{height:5px;background:rgba(94,160,255,.18);border-radius:3px;overflow:hidden;margin-top:2px}
+#statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
+/* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
+.kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
+<link rel="stylesheet" href="/public-13.23.css">
+<style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border.
+     v13.67-heroglow: glow on the OUTER hero card (#bigHeroCard), not inner.
+     Mask fades tint+shimmer at L/R edges so the faded club crests stay clear.
+     Infinite reflection sweep (7s, 20% sweep, R→L) + slow glow pulse (5s)
+     + hover lift (desktop). Reduced-motion disables all animations. */
+:root{--feat-accent:#4CBB17;--feat-blur:22px;--feat-glow:22%;--feat-tint:6%;--feat-border:55%}
+.match-featured{position:relative;border-color:color-mix(in srgb,var(--feat-accent) var(--feat-border),transparent)!important;background-image:linear-gradient(color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent),color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent))!important;box-shadow:0 0 var(--feat-blur) color-mix(in srgb,var(--feat-accent) var(--feat-glow),transparent)!important}
+.match-featured::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(110deg,transparent 35%,rgba(180,255,120,.14) 45%,rgba(180,255,120,.04) 55%,transparent 65%);background-size:250% 100%;animation:feat-shimmer 2.5s linear infinite}
+@keyframes feat-shimmer{0%{background-position:200% 0}100%{background-position:-150% 0}}
+.match-featured::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse at 70% 0%,color-mix(in srgb,var(--feat-accent) 10%,transparent),transparent 60%);animation:feat-glow-shift 4s ease-in-out infinite alternate}
+@keyframes feat-glow-shift{0%{opacity:.4}100%{opacity:.9}}
+.match-featured .match{background:transparent!important;border:none!important;overflow:visible!important}
+/* === HERO: glow on the outer card, masked tint+sweep, pulse, hover === */
+#bigHeroCard.match-featured{background-image:none!important;animation:feat-hero-pulse 5s ease-in-out infinite}
+#bigHeroCard.match-featured::before{background:linear-gradient(110deg,transparent 38%,rgba(180,255,120,.22) 50%,transparent 62%);background-size:300% 100%;-webkit-mask-image:linear-gradient(to right,transparent 0%,black 13%,black 87%,transparent 100%);mask-image:linear-gradient(to right,transparent 0%,black 13%,black 87%,transparent 100%);animation:feat-hero-sweep 7s ease-in-out infinite}
+@keyframes feat-hero-sweep{0%{background-position:150% 0}20%{background-position:-50% 0}100%{background-position:-50% 0}}
+#bigHeroCard.match-featured::after{background:color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent);-webkit-mask-image:linear-gradient(to right,transparent 0%,black 14%,black 86%,transparent 100%);mask-image:linear-gradient(to right,transparent 0%,black 14%,black 86%,transparent 100%);animation:none;opacity:1}
+@keyframes feat-hero-pulse{0%,100%{box-shadow:0 0 var(--feat-blur) color-mix(in srgb,var(--feat-accent) 17%,transparent)!important}50%{box-shadow:0 0 26px color-mix(in srgb,var(--feat-accent) 27%,transparent)!important}}
+@media(hover:hover){#bigHeroCard.match-featured{transition:transform .2s ease,box-shadow .2s ease;cursor:pointer}#bigHeroCard.match-featured:hover{transform:translateY(-3px);box-shadow:0 0 29px color-mix(in srgb,var(--feat-accent) 30%,transparent)!important}}
+@media(prefers-reduced-motion:reduce){.match-featured{animation:none}.match-featured::before{display:none}.match-featured::after{animation:none;opacity:.6}#bigHeroCard.match-featured{animation:none}#bigHeroCard.match-featured::before{display:none}}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
+</head>
+<body>
+<!-- v12.24 (the user's ask): a real WEBSITE header — the uploaded SportSignal
+     logo rides the start corner ("Like websites logo"), the settings icons
+     and the Telegram CTA group on the opposite end:
+     [settings icons etc] [telegram cta button] ···· [logo].
+     The old «⚽ اعلان‌دهنده مسابقات» h1 and its subtitle are RETIRED per the
+     ask; the v12.20 sync stamp becomes the header's quiet second row. The
+     tz popover still anchors to this bar (same ids, same wiring — only the
+     chrome around them changed). -->
+<header id="topbar">
+<!-- v12.26 (the user's ask): "in darkmode it turns to a white sillohuette.
+     fix this. show the given logo in both light and dark mode" — the white
+     remap variant is RETIRED; the uploaded transparent png rides BOTH themes
+     (its navy + white inks read on dark, its navy on light), 40% SMALLER on
+     PC per the ask (84px → 50px, phones already 50px); the classic
+     «خانه درباره تماس» nav rides the header's start side on PC (phones get
+     it in the footer) — v12.26 right-aligned with the logo, not centered. -->
+<a class="brand" href="/" aria-label="SportSignal"><img src="/logo.png" alt="SportSignal" width="146" height="50" referrerpolicy="no-referrer"></a>
+<nav class="mainnav" aria-label="ناوبری اصلی"><a href="/" data-i="navHome">خانه</a><a href="#about" data-i="navAbout">درباره</a><a href="#contact" data-i="navContact">تماس</a></nav>
+<div class="head-actions"><a class="cta" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="join">عضویت در ربات تلگرام</a><span class="tb-btns"><button id="sbtn" onclick="toggleTz()" aria-expanded="false" aria-controls="tzpanel" title="منطقه زمانی" aria-label="منطقه زمانی">⚙️</button><button id="lbtn" onclick="switchLang()"></button><button id="tbtn" onclick="toggleTheme()"></button><a id="tgbtn" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" class="icon-tg" aria-label="Telegram" title="Telegram"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a></span></div>
+<div id="tzpanel" role="group" aria-label="منطقه زمانی"><div class="tz-head"><span data-i="tzTitle">🌍 منطقه زمانی</span><button id="tzclose" onclick="toggleTz()" title="بستن" aria-label="بستن">✕</button></div><input id="tzfilter" type="search" placeholder="جستجوی کشور یا شهر…" data-p="tzSearch" aria-label="جستجوی کشور یا شهر"><select id="tzsel" title="منطقه زمانی" aria-label="منطقه زمانی"></select></div>
+<!-- v12.20: visible PROOF for the auto-update claim. v12.26: the sync line
+     prints the TRUTHFUL absolute stamp of the last real API refresh —
+     «آخرین به‌روزرسانی: جمعه ۲۱:۳۰ شب» (weekday + time + period word) —
+     rendered by renderSync()/fmtStamp() from the payload's fetchedAt. -->
+<p class="sub sync" id="lastSync" role="status" aria-live="polite">__SEO_SYNC__</p>
+</header>
+<a class="skip-link" href="#main">پرش به محتوا</a>
+<main id="main">
+<!-- v12.12: the view toggle is RETIRED — the page is permanently big-only
+     («فقط بازی‌های بزرگ», the user's default). The hero card + the topspot
+     box + the UCL box ARE the upcoming presentation. -->
+<!-- v12.10/v12.11 HERO CARD: the countdown bar and ITS match are ONE card at
+     the very top — the closest upcoming big match (the big-matches box's
+     slot 1, the match the countdown tracks) sits STUCK to the bar, separated
+     from the other big matches in the box below (user ask: the next big
+     match must be stuck to its countdown). v12.11: the card is a PLAIN
+     standard card — same glass/border as every other section — and its match
+     row is styled like any other match row (no special box; streamlined).
+     #bigbar keeps its id — updateBigBar drives label/clock/fill every
+     second; #heroSpot is filled by renderHeroSpot from the SAME barTarget()
+     pick, so the card under the countdown is always exactly the match being
+     counted down to. -->
+<!-- v12.27 (review item 1): .herowrap — the clip host's shell. The card
+     inside carries overflow:hidden (clips the video/crest/fx layers to its
+     16px radius), while this wrapper's ::before owns the OUTER heartbeat
+     aura (a child's outer box-shadow would be clipped by the card). updateBigBar
+     mirrors data-urgent here so the escalation ladder keeps driving both. -->
+<div class="herowrap">
+<div class="card bighero" id="bigHeroCard" style="display:none">
+<!-- v12.26 (the user's ask): layer A — the VIDEO STAGE, deepest of the four:
+     video › background logos › css effects › actual data. The user's own
+     7.2s clip loops muted+autoplay+playsinline from /hero-stage.mp4
+     (worker [assets]), clipped + scrimmed so the data above stays king;
+     a prefers-reduced-motion user keeps autoplay too (v12.28 — the user's
+     twice-repeated ask outweighs the media query for this one element). -->
+<div class="hero-video" aria-hidden="true"><video src="/hero-stage.mp4" poster="/hero-poster.jpg" autoplay muted loop playsinline preload="auto" tabindex="-1" disablepictureinpicture referrerpolicy="no-referrer"></video></div>
+<!-- v12.22: the hero stage's ember layer — static markup OUTSIDE #heroSpot
+     so it survives every re-render, clipped to the card, pointer-transparent. -->
+<div class="hero-fx" aria-hidden="true"><i></i><i></i><i></i></div>
+<!-- v12.23 (the user's ask): the clubs' EXPANDED, faded crests behind the
+     stage — "[faded logo big on background] [club logo] club name". Static
+     layer OUTSIDE #heroSpot (like the ember layer) so re-renders never
+     disturb it; renderHeroSpot → heroWm() swaps the two crest srcs per
+     match; a club without a crest hides its watermark. -->
+<div class="hero-wm" aria-hidden="true"><img alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'"><img alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'"></div>
+<!-- v12.26: layer D — the DATA SURFACE. The countdown bar and its match row
+     ride ONE positioned layer (z:3) above the video (z:0), the crests (z:1)
+     and the css fx (z:2) — exactly the user's ladder. -->
+<div class="hero-data">
+<!-- v12.46-herofix: the match row (heroSpot) rides ABOVE the countdown bar
+     (the user's ask: "move this loading to below team names"). The bigbar
+     now sits BELOW the match row, not above it. A ⚽ football emoji is
+     prepended to the bigbar label for visual identity. -->
+<div id="heroSpot">__SEO_HERO__</div>
+<div id="bigbar" class="bigbar">
+<div class="bigbar-top"><span id="bigbarLabel" data-i="barNext">⚡ تا بازی بزرگ بعدی</span><span class="bb-end"><span id="bigbarClock" class="bigbar-clock">--:--:--</span><span id="bigbarPct" class="bigbar-pct" aria-hidden="true"></span></span></div>
+<div class="bigbar-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="bigbarFill" class="bigbar-fill"></div></div>
+</div>
+</div>
+</div>
+</div>
+<!-- v12.3/v12.4/v12.7/v12.8 TOP BOX (league), per the user's rules: TOP CL GAME (two
+     selected teams in the Champions League) → the UCL BOX below; big DOMESTIC
+     matches (derbies like the Madrid derby, top-of-the-table clashes and
+     selected-vs-selected clashes like the Manchester derby) → THIS box,
+     heading the games list so a derby can never sit 3rd/4th in kickoff order.
+     v12.7: the card consolidates the big upcoming matches (user's ask —
+     Atlético–Real Madrid and the Manchester derby in the SAME box); a match
+     that is BOTH a derby and a top-of-the-table clash shows BOTH tags.
+     v12.8: only TRUE big matches qualify (A: two selected teams / B: both
+     sides top-3 / C: derby; fallback when A/B/C run short: a selected team
+     vs a TOP-5 side of that league — never a routine selected fixture like
+     Liverpool–Fulham) and the order is STRICTLY kickoff — closest upcoming
+     on top, live first.
+     v12.10: slot 1 — the countdown's own match — now lives in the HERO CARD
+     at the very top (bar + match stuck together, per the user's ask); THIS
+     box presents the REMAINING big matches. Box fixtures are
+     excluded from the upcoming list below — this box IS their presentation.
+     Hidden when nothing qualifies — or when the hero took the only entry.
+     v12.11: plain .card — no golden chrome; entries are uniform match rows.
+     v12.12: capacity raised — up to TEN entries (11 picked server-side,
+     slot 1 = the hero; the user's ask).
+     v12.13: THIS box now sits BETWEEN the hero and the UCL box (user's ask —
+     order: [next big match countdown and teams] → [big upcoming matches] →
+     [big upcoming UCL matches]). -->
+<!-- v12.42-livesection: the LIVE section — matches currently playing/broadcasting
+     (whether 1 or 20), with a special LIVE badge. The card auto-hides when no
+     matches are live (display:none via renderLive). Matches stay here as long
+     as the match status is LIVE/IN_PLAY/PAUSED. -->
+<div class="card" id="liveCard" style="display:none">
+<h2 data-i="hLive">🔴 مسابقات زنده</h2>
+<div id="liveMatches">__SEO_LIVE__</div>
+</div>
+<div class="card" id="topspotCard" style="display:none">
+<h2 data-i="hLgNext" id="topSpotTitle">دیدارهای جذاب لیگ‌ها</h2>
+<div id="topSpot">__SEO_TOPSPOT__</div>
+</div>
+<!-- v12.2: the UCL box sits above the games list (was below it). v12.4: while
+     the selected-vs-selected CL pairing is far away the box headlines the
+     nearest CL match with ≥1 selected team (live scores too).
+     v12.12: the box is GENERALIZED (the user's ask) — up to EIGHT upcoming
+     CL fixtures in kickoff order (live first; "two today, two tomorrow"),
+     and ONLY matches with ≥1 SELECTED club (Sabah FK vs SK Slavia Praha is
+     noise). Same spotitem rows as every other box (v12.11 uniform). Hidden
+     when nothing qualifies; the pre-draw wait state counts to the projected
+     first kickoff.
+     v12.13: moved BELOW the big-matches box (user's ask — the domestic big
+     matches outrank the UCL ones in reading order; hero → topspot → uclspot). -->
+<div class="card uclspot" id="uclSpotCard">
+<!-- v12.21 (the user's ask): the UCL-dedicated box carries the brand — the
+     starball on its white chip inside the navy plate. data-i moved to the
+     INNER span so trText() can never clobber the logo. -->
+<h2 id="uclSpotTitle" class="uclh2"><span class="ucl-logo" aria-hidden="true">PARITY-STUB-CHIP</span><span data-i="hUclNext">🔥 مسابقات مهم لیگ قهرمانان اروپا</span></h2>
+<div id="uclSpot">__SEO_UCLSPOT__</div>
+</div>
+<!-- v12.16: «در این هفته» — the CURRENT Iranian week (Saturday→Friday)
+     agenda: every followed/top-3 game of this week in one box, live first,
+     then kickoff order; games already played this week keep their final
+     score. Zero extra API calls (same pool as the big boxes); hidden when
+     the week has no followed games. -->
+<div class="card" id="weekCard" style="display:none">
+<h2 data-i="hWeek" id="weekTitle">📅 در این هفته</h2>
+<div id="weekBox">__SEO_WEEK__</div>
+</div>
+<!-- v12.12: the «📅 مسابقات پیش‌رو» list card is RETIRED — with the view
+     toggle gone (always big-only) it only ever held the redundant "همه در
+     جعبه بالا هستند" note; the hero card + the topspot box + the UCL box
+     ARE the upcoming presentation (the user's ask). -->
+
+</div>
+<div class="card uclcard" id="uclCard">
+<h2 class="uclh2"><span class="ucl-logo sm" aria-hidden="true">PARITY-STUB-CHIP</span><span data-i="hUcl">🏆 لیگ قهرمانان اروپا</span></h2>
+<div id="ucl">__SEO_UCL__</div>
+</div>
+<div class="card" id="standingsCard">
+<h2 data-i="hStandings">📊 جدول لیگ‌ها</h2>
+<div id="standings">__SEO_STANDINGS__</div>
+</div>
+<div class="card" id="cupsCard">
+<h2 data-i="hCups">🏆 تورنمنت‌ها</h2>
+<div id="cups">__SEO_CUPS__</div>
+</div>
+
+</div>
+<!-- v12.5: the Iran card is gone — the PGL table lives inside the league
+     standings grid above (#standings), per the user's request. -->
+<div class="card" id="finishedCard">
+<h2 data-i="hFinished">🏁 نتایج اخیر</h2>
+<div id="finished">__SEO_FINISHED__</div>
+</div>
+<!-- v13.58-herofix: live visitor-stats box — the LAST section before the
+     footer. On desktop the JS layout engine (WIDE_RAIL in public-13.17.js)
+     relocates #statsCard into #wideSide, directly below #cupsCard. On mobile
+     (no JS relocation) the DOM order keeps it last, after #finishedCard.
+     Filled client-side by the single /api/visit beacon (one fetch per page
+     load fills BOTH this box and the footer counter). Shows online-now,
+     today's views + unique visitors, total views, and today's top countries
+     with percentages. Cookieless; the unique dedup uses a salted one-way hash
+     (IP never stored) — see /privacy. -->
+<div class="card" id="statsCard">
+<h2>📊 آمار بازدید زنده</h2>
+<div class="sbox" id="statsBox"><span class="slbl">در حال بارگذاری…</span></div>
+</div>
+</main>
+<footer id="about"><nav class="footnav" aria-label="ناوبری اصلی"><a href="/" data-i="navHome">خانه</a><a href="/matches">بازی‌ها</a><a href="/matches/today">بازی‌های امروز</a><a href="/teams">تیم‌ها</a><a href="/competitions">رقابت‌ها</a><a href="/about" data-i="navAbout">درباره</a><a href="/methodology">روش کار</a><a href="/contact" data-i="navContact">تماس</a><a href="/data">داده‌ها</a><a href="/privacy">حریم خصوصی</a><a href="/terms">شرایط استفاده</a><a href="/sitemap">نقشه سایت</a></nav>
+<div class="aboutbox">
+<h3 data-i="hAbout">📘 درباره SportSignal</h3>
+<p data-i="aboutTag" class="about-tag">قرار نیست هر مسابقه‌ای را ببینی؛ فقط نباید بازی مهم را از دست بدهی.</p>
+<p data-i="aboutP1">من همیشه فوتبال را دوست داشتم، اما نه آن‌قدر که تک‌تک مسابقات را دنبال کنم یا هر هفته بازی‌های لیگ داخلی را ببینم. چیزی که همیشه برایم مهم بود، پیدا کردن بازی‌های بزرگ بود؛ ال‌کلاسیکو، دربی‌های حساس لیگ برتر انگلیس، شب‌های بزرگ لیگ قهرمانان اروپا و هر مسابقه‌ای که ارزش وقت گذاشتن داشته باشد.</p>
+<p data-i="aboutP2">مشکل این بود که راه ساده‌ای برای پیدا کردن این بازی‌ها وجود نداشت. یا باید اپلیکیشن‌هایی نصب می‌کردم که پر از اعلان، خبر و حاشیه بودند، یا ساعت‌ها در سایت‌های ورزشی می‌گشتم تا بفهمم بازی مهم بعدی کی و کجاست.</p>
+<p data-i="aboutP3">SportSignal از همین‌جا شروع شد.</p>
+<p data-i="aboutP4">یک پلتفرم ساده و منتخب برای پیدا کردن مسابقات مهم؛ بدون غرق شدن در اخبار و حاشیه‌ها. فقط بازی‌هایی که واقعاً ارزش دیدن دارند.</p>
+<p data-i="aboutP5">چون بازی‌های بزرگ فوتبال فقط ۹۰ دقیقه مسابقه نیستند؛ لحظه‌هایی هستند که میلیون‌ها نفر را، فارغ از اینکه کجا زندگی می‌کنند، به هم وصل می‌کنند.</p>
+<p data-i="aboutP6">فرقی نمی‌کند از ایران باشی، استرالیا یا ژاپن. وقتی رئال مادرید و بارسلونا به مصاف هم می‌روند، همه می‌دانیم که یک بازی مهم در راه است.</p>
+<p data-i="aboutP7">SportSignal ساخته شد تا کمک کند آن لحظه‌ها را از دست ندهی.</p>
+</div>
+<div class="contactbox" id="contact">
+<h3 data-i="hContact">📧 تماس با ما</h3>
+<p data-i="contactP1">اگر پیشنهادی، انتقادی، گزارش باگ (Bug Hunt) یا هر نوع بازخوردی دارید، خوشحال می‌شوم آن را با من در میان بگذارید.</p>
+<p data-i="contactP2">هر پیام را می‌توانید به این آدرس ایمیل ارسال کنید:</p>
+<div class="contact-cta"><a href="mailto:sportsignal@atomicmail.io" class="contact-email">sportsignal@atomicmail.io</a></div>
+</div>
+</div>
+<div><span data-i="madeWith">ساخته‌شده با ❤️</span> — <a href="/admin" data-i="adminLink">ورود مدیریت</a> — <a href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="botLink">ربات تلگرام</a></div>
+<div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div></footer>
+<!-- v12.20 (the user's ask): sticky Telegram join CTA — the hero button
+     scrolls away with the header; once the user is past it, this bottom bar
+     keeps the primary call-to-action one tap away (safe-area padded). -->
+<a id="joinSticky" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" aria-label="تلگرام"><span class="js-inner"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="#fff" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg><span data-i="join">عضویت در ربات تلگرام</span></span></a>
+<!-- v12.x-tg-fab: a floating Telegram FAB for PC view — a circular
+     Telegram-brand-blue button with the paper-plane logo, fixed to
+     the bottom-RIGHT corner in Farsi (RTL) and bottom-LEFT in English
+     (LTR). Encourages users to follow the bot. Hidden on mobile (the
+     #joinSticky bottom bar covers mobile CTA). The header CTA pill is
+     retired on PC (see the #topbar .cta{display:none} rule below); this
+     FAB replaces it. The tooltip + aria-label carry the join-i18n
+     string so the language toggle updates it. -->
+<a id="tgFab" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram" data-promo="برای دست ندادن مسابقات مهم، به ربات تلگرام بپیوندید ✨"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="#fff" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg></a>
+<button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
+<script src="/core-13.9.js" defer></script>
+<script>var PAGE_TZ = "__PAGE_TZ__";</script>
+<script src="/public-13.25.js" defer></script>
+<script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
+     GET /api/visit per page load (never from prerender); the worker counts it
+     in the background (ctx.waitUntil: page view + daily unique dedup via a
+     salted one-way hash + country code + online-now). The JSON response fills
+     BOTH the footer counter and the live stats box. No cookies, no IP storage
+     — see /privacy. */
+(function(){if(document.visibilityState==='prerender')return;
+function faNum(n){try{return Number(n).toLocaleString('fa-IR')}catch(e){return String(n)}}
+function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+function renderStatsBox(d){
+  var box=document.getElementById('statsBox');if(!box)return;
+  var h='';
+  h+='<div class="srow"><span class="slbl">🔴 آنلاین اکنون</span><span class="sval live">'+faNum(d.online||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">بازدید امروز</span><span class="sval">'+faNum(d.today_views||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">بازدیدکننده امروز</span><span class="sval">'+faNum(d.today_visitors||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">بازدید کل</span><span class="sval">'+faNum(d.total_views||0)+'</span></div>';
+  var cs=d.countries||[];
+  if(cs.length){
+    h+='<div class="scap">بازدیدکندهای امروز به کشور</div>';
+    h+='<table><thead><tr><th>کشور</th><th>تعداد</th><th>درصد</th></tr></thead><tbody>';
+    cs.forEach(function(c){
+      h+='<tr><td><span class="cflag">'+c.flag+'</span> '+c.name+'</td><td class="cnum">'+faNum(c.visitors)+'</td><td class="cpct">'+faNum(c.pct)+'٪</td></tr>';
+    });
+    h+='</tbody></table>';
+  }
+  box.innerHTML=h;
+}
+try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
+  if(!d)return;
+  set('vcToday',faNum(d.today_views||0));set('vcTotal',faNum(d.total_views||0));
+  renderStatsBox(d);
+}).catch(function(){});}catch(e){}
+})();</script>
+</body>
+</html>

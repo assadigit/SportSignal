@@ -30,6 +30,11 @@ const apiSrc = read("src/api.ts");
 const publicSrc = read("src/pages/public.ts");
 const shellSrc = read("src/seo/page-shell.ts");
 const adminSrc = read("src/pages/admin.ts");
+// v13.83 split: the stats wiring moved with the template body/JS into
+// admin-html.ts / admin-js.ts; the composer admin.ts still pins the
+// core-13.9.js script tag + ${VERSION} footer.
+const adminHtmlSrc = read("src/pages/admin-html.ts");
+const adminJsSrc = read("src/pages/admin-js.ts");
 const privacySrc = read("src/seo/pages-static.ts");
 const wranglerSrc = read("wrangler.toml");
 const schemaV1 = read("db/stats-schema.sql");
@@ -184,12 +189,16 @@ check("SEO page-shell fires /api/visit beacon", /fetch\('\/api\/visit'/.test(she
 check("SEO page-shell beacon uses today_views/total_views (v2 field names)", /d\.today_views/.test(shellSrc) && /d\.total_views/.test(shellSrc));
 
 // ---------- 2d) WIRING: admin card ----------
-check("admin page has stats card (#stats container)", /id="stats"/.test(adminSrc));
-check("admin renderStats shows online now (d.online)", /d\.online/.test(adminSrc));
-check("admin renderStats shows unique visitors (today_visitors)", /d\.today_visitors/.test(adminSrc) && /d\.yesterday_visitors/.test(adminSrc) && /d\.last_7_visitors/.test(adminSrc) && /d\.last_30_visitors/.test(adminSrc) && /d\.all_time_visitors/.test(adminSrc));
-check("admin renderStats shows views (today_views etc.)", /d\.today_views/.test(adminSrc) && /d\.all_time_views/.test(adminSrc));
-check("admin renderStats shows country tables (countries_today + countries_30d)", /d\.countries_today/.test(adminSrc) && /d\.countries_30d/.test(adminSrc));
-check("admin renderStats called on init + language toggle", /loadStats\(\)/.test(adminSrc) && /renderStats\(\)/.test(adminSrc));
+check("admin page has stats card (#stats container)", /id="stats"/.test(adminHtmlSrc));
+check("admin renderStats shows online now (d.online)", /d\.online/.test(adminJsSrc));
+check("admin renderStats shows unique visitors (today_visitors)", /d\.today_visitors/.test(adminJsSrc) && /d\.yesterday_visitors/.test(adminJsSrc) && /d\.last_7_visitors/.test(adminJsSrc) && /d\.last_30_visitors/.test(adminJsSrc) && /d\.all_time_visitors/.test(adminJsSrc));
+check("admin renderStats shows views (today_views etc.)", /d\.today_views/.test(adminJsSrc) && /d\.all_time_views/.test(adminJsSrc));
+check("admin renderStats shows country tables (countries_today + countries_30d)", /d\.countries_today/.test(adminJsSrc) && /d\.countries_30d/.test(adminJsSrc));
+check("admin renderStats called on init + language toggle", /loadStats\(\)/.test(adminJsSrc) && /renderStats\(\)/.test(adminJsSrc));
+check("admin composer stays thin (≤40 lines)", adminSrc.split("\n").length <= 40);
+check("styles-shared consumed by all three templates", [adminSrc, read("src/pages/login.ts"), read("src/pages/public.ts")].every((s) => /\.\/styles-shared/.test(s)));
+check("admin split modules exist (css/html/js)", ["admin-css.ts", "admin-html.ts", "admin-js.ts"].every((f) => fs.existsSync(path.join(__dirname, "..", "src", "pages", f))));
+check("byte-parity harness is in the test chain", /check-admin-parity\.js/.test(read("package.json")));
 
 // ---------- 3) HONESTY: privacy page ----------
 check("privacy describes unique visitors + salted hash (no IP storage)", /درهم‌شده یک‌طرفه|hash نمک‌دار|SHA-256/.test(privacySrc) && /نشانی IP واقعی هرگز ذخیره نمی‌شود/.test(privacySrc));
@@ -265,6 +274,7 @@ check("core-13.9.js fa hLgNext retitled to دیدارهای جذاب لیگ‌ه
 check("core-13.9.js en hLgNext retitled to Exciting League Fixtures", /hLgNext:"Exciting League Fixtures"/.test(coreSrc));
 check("core-13.9.js referenced in admin page", /\/core-13\.9\.js/.test(read("src/pages/admin.ts")));
 check("core-13.9.js referenced in login page", /\/core-13\.9\.js/.test(read("src/pages/login.ts")));
+check("core-13.9.js referenced in public page", /\/core-13\.9\.js/.test(read("src/pages/public.ts")));
 check("assets/_headers pins core-13.9 immutable", /\/core-13\.9\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 check("homepage server fallback h2 retitled (no old text)", /<h2 data-i="hLgNext" id="topSpotTitle">دیدارهای جذاب لیگ‌ها<\/h2>/.test(publicSrc) && !/مسابقات بزرگ پیش‌رو/.test(publicSrc));
 

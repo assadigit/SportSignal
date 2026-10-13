@@ -2,6 +2,7 @@
 // big-matches box, UCL card + table, standings grid, cups, live section).
 // Everything between the backticks is CLIENT-side code (a string literal).
 import { UCL_LOGO_CHIP } from "../tables";
+import { THEME_INIT_SCRIPT, FONT_FACES_STYLE } from "./styles-shared";
 
 export const PUBLIC_PAGE = `<!doctype html>
 <html lang="fa" dir="rtl">
@@ -45,14 +46,14 @@ export const PUBLIC_PAGE = `<!doctype html>
 <link rel="preload" href="/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/Vazirmatn-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
 __SEO_JSONLD__
-<script>try{var t=localStorage.getItem("ucl_theme")||"dark",l=localStorage.getItem("ucl_lang")||"fa",d=document.documentElement;d.setAttribute("data-theme",t);d.setAttribute("lang",l);d.setAttribute("dir",l==="en"?"ltr":"rtl");}catch(e){}<\/script>
+${THEME_INIT_SCRIPT}
 <!-- v12.x-force-dark: the default theme is ALWAYS dark, regardless of the
      user's system preference (prefers-color-scheme). The color-scheme meta
      tells the browser to render form controls + scrollbars in dark mode.
      The user can still toggle to light via the theme button. -->
 <meta name="color-scheme" content="dark light">
 <title>__SEO_TITLE__</title>
-<style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
+${FONT_FACES_STYLE}
 <style>/* v13.56-visitcount: footer page-view counter. The number span has a
      fixed min-width so the arriving digits never cause layout shift. */
 .visitcount{font-size:.78rem;color:var(--muted,#94a3b8);margin-top:10px;line-height:1.9;direction:rtl}
