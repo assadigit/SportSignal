@@ -16,6 +16,10 @@ import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
 import { normalizeTeamName } from "../teams";
 import { loadArchive } from "./files";
+// v13.89-stdetail: full-table sources for the competition pages — both
+// cache-only/reads-only (the seo layer never triggers a provider sweep).
+import { fetchStandings } from "../composers";
+import { translateTeam } from "../translate";
 
 const PER_PAGE = 50;
 
@@ -199,7 +203,7 @@ const W_LABEL: Record<string, string> = { W: "برد", D: "مساوی", L: "شک
 // One side's row: dots when available, else the season chip. Shared by the
 // match page's strip and the team page's card (v13.88 — one renderer, one
 // vocabulary).
-function formRowHtml(fa: string, dots: { r: string; oppFa: string; score: string; date: string }[] | null, rec: { won: number | null; draw: number | null; lost: number | null; played: number | null } | null): string {
+function formRowHtml(fa: string, dots: { r: string; oppFa: string; score: string; date: string }[] | null, rec: { won: number | null; draw: number | null; lost: number | null; played: number | null; compFa?: string | null } | null): string {
   let mid = "";
   if (dots && dots.length) {
     const cnt = { W: 0, D: 0, L: 0 };
@@ -217,7 +221,7 @@ function formRowHtml(fa: string, dots: { r: string; oppFa: string; score: string
     mid = '<span class="fseason"><b class="fsw">' + toFaDigits(String(rec.won)) + "</b>" + W_FA.W +
       ' <b class="fsd">' + toFaDigits(String(rec.draw)) + "</b>" + W_FA.D +
       ' <b class="fsl">' + toFaDigits(String(rec.lost)) + "</b>" + W_FA.L +
-      (rec.played != null ? '<i class="fsplayed">از ' + toFaDigits(String(rec.played)) + " بازی</i>" : "") + "</span>";
+      (rec.played != null ? '<i class="fsplayed">از ' + toFaDigits(String(rec.played)) + " بازی" + (rec.compFa ? " " + esc(String(rec.compFa)) : "") + "</i>" : rec.compFa ? '<i class="fsplayed">' + esc(String(rec.compFa)) + "</i>" : "") + "</span>";
   } else return "";
   return '<div class="formrow"><span class="formteam">' + esc(fa) + "</span>" + mid + "</div>";
 }
@@ -539,19 +543,32 @@ export function buildTeamsIndexPage(ctx: SeoCtx): string {
   });
 }
 
+// v13.89-stdetail: the compact W·D·L cell — «۶-۲-۱» with each count in
+// its win/draw/loss hue (the .fdot family), one cell per standings row.
+// Rendered "—" when the snapshot row carries no stats (fail-closed cell,
+// the row itself still shows pos/pts). Hidden ≤600px via .stwdl.
+function stWdlHtml(t: any): string {
+  if (t == null || (t.won == null && t.draw == null && t.lost == null)) return '<span class="stwdl">—</span>';
+  const seg = (v: any, cls: string) => '<b class="' + cls + '">' + (v == null ? "—" : toFaDigits(String(v))) + "</b>";
+  return '<span class="stwdl" title="برد-مساوی-شکست">' + seg(t.won, "stw-w") + "<i>–</i>" + seg(t.draw, "stw-d") + "<i>–</i>" + seg(t.lost, "stw-l") + "</span>";
+}
+
 // v13.87-formtable: the 5-row standings window markup. Reuses the site's
 // .stbox/.strow/.stpos/.stname/.stpts vocabulary (the competition tables
 // already render those) + .strow-me highlight + a .stmore "full table"
 // link into the competition page.
+// v13.89-stdetail: + the compact W·D·L column (payload rows carry
+// won/draw/lost; desktop-only via .stwdl).
 function buildStandingsWindowHtml(stw: { code: string; compFa: string; emblem: string | null; rows: any[]; meIdx: number }): string {
   let tbl = '<div class="stbox stwin">';
   tbl += '<div class="stbox-head">' + (stw.emblem ? '<img src="' + esc(stw.emblem) + '" alt="" loading="lazy">' : "") + esc(String(stw.compFa)) + "</div>";
-  tbl += '<div class="sthead"><span class="sthead-fill"></span><span class="stnum ucl-hidem sthead-num">بازی</span><span class="sthead-p">امتیاز</span></div>';
+  tbl += '<div class="sthead"><span class="sthead-fill"></span><span class="stnum ucl-hidem sthead-num">بازی</span><span class="sthead-wdl stwdl">ب-م-ش</span><span class="sthead-p">امتیاز</span></div>';
   stw.rows.forEach((t, i) => {
     tbl += '<div class="strow' + (i === stw.meIdx ? " strow-me" : "") + (t.pos === 1 ? " top1" : "") + '"><span class="stpos' + (t.pos <= 3 ? " top3" : "") + '">' +
       toFaDigits(String(t.pos == null ? "—" : t.pos)) + '</span><span class="stname">' + M.nameHtml(t.faName || t.name) +
       '</span><span class="stnum ucl-hidem">' + (t.played == null ? "—" : toFaDigits(String(t.played))) +
-      '</span><span class="stpts">' + (t.points == null ? "—" : toFaDigits(String(t.points))) + "</span></div>";
+      "</span>" + stWdlHtml(t) +
+      '<span class="stpts">' + (t.points == null ? "—" : toFaDigits(String(t.points))) + "</span></div>";
   });
   tbl += '<a class="stmore" href="/competitions/' + compSlug(stw.code) + '">جدول کامل ' + esc(String(stw.compFa)) + ' <span aria-hidden="true">↗</span><span class="sr-only">صفحه جدول کامل</span></a>';
   return tbl + "</div>";
@@ -679,7 +696,24 @@ export function buildCompetitionsIndexPage(ctx: SeoCtx): string {
   });
 }
 
-export function buildCompetitionPage(ctx: SeoCtx, slug: string): { html: string; notFound: boolean; code?: string } {
+// v13.89-stdetail: the FULL standings table for competition pages. The
+// payload only carries the top-8 compact (public-matches compact()) —
+// «جدول کامل» deserves the whole table. fetchStandings(env, code, false)
+// is ONE cache-only KV read (allowFetch=false never touches a provider —
+// the seo layer's reads-only-KV contract holds). Fail-closed: a missing/
+// stale cache falls back to the payload's compact rows. Rows gain faName
+// via the isolate-cached translateTeam (same mapping the payload uses).
+async function fullStandings(env: any, code: string): Promise<any[] | null> {
+  try {
+    const st = await fetchStandings(env, code, false);
+    if (st && Array.isArray(st.teams) && st.teams.length > 8) {
+      return st.teams.map((t: any) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), played: t.played, won: t.won, draw: t.draw, lost: t.lost, points: t.points }));
+    }
+  } catch (e) { /* fail-closed to the compact */ }
+  return null;
+}
+
+export async function buildCompetitionPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean; code?: string }> {
   const entries = compsIndex(ctx);
   const entry = entries.find((e) => e.slug === slug);
   if (!entry) return { html: "", notFound: true };
@@ -699,17 +733,22 @@ export function buildCompetitionPage(ctx: SeoCtx, slug: string): { html: string;
   const title = cNameFa + " — برنامه بازی‌های بزرگ پیش‌رو | SportSignal";
   const desc = (answer + " تاریخ و ساعت دقیق هر بازی در ادامه آمده است.").slice(0, 165);
   let standingsBlock = "";
-  const st = ctx.payload && ctx.payload.standings && ctx.payload.standings[code];
+  let st: any = ctx.payload && ctx.payload.standings && ctx.payload.standings[code];
+  // v13.89-stdetail: prefer the FULL cached table (one KV read, cache-only)
+  // over the payload's top-8 compact; emblem/faName ride the payload shell.
+  const full = await fullStandings(ctx.env, code);
+  if (full) st = { ...st, teams: full };
   if (st && Array.isArray(st.teams) && st.teams.length) {
     let tbl = '<div class="stbox"><div class="stbox-head">';
     if (st.emblem) tbl += '<img src="' + esc(st.emblem) + '" alt="" loading="lazy">';
     tbl += esc(cNameFa) + "</div>";
-    tbl += '<div class="sthead"><span class="sthead-fill"></span><span class="stnum ucl-hidem sthead-num">بازی</span><span class="sthead-p">امتیاز</span></div>';
+    tbl += '<div class="sthead"><span class="sthead-fill"></span><span class="stnum ucl-hidem sthead-num">بازی</span><span class="sthead-wdl stwdl">ب-م-ش</span><span class="sthead-p">امتیاز</span></div>';
     for (const t of st.teams) {
       tbl += '<div class="strow' + (t.pos === 1 ? " top1" : "") + '"><span class="stpos' + (t.pos <= 3 ? " top3" : "") + '">' +
         toFaDigits(String(t.pos == null ? "—" : t.pos)) + '</span><span class="stname">' + M.nameHtml(t.faName || t.name) +
         '</span><span class="stnum ucl-hidem">' + (t.played == null ? "—" : toFaDigits(String(t.played))) +
-        '</span><span class="stpts">' + (t.points == null ? "—" : toFaDigits(String(t.points))) + "</span></div>";
+        "</span>" + stWdlHtml(t) +
+        '<span class="stpts">' + (t.points == null ? "—" : toFaDigits(String(t.points))) + "</span></div>";
     }
     tbl += "</div>";
     standingsBlock = '<div class="card"><h2>جدول ' + esc(String(cNameFa)) + '</h2><div class="grid4" style="grid-template-columns:1fr">' + tbl + "</div></div>";

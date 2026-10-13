@@ -615,7 +615,10 @@ check("v13.88 behavioral: teamSeasonRecord finds league + ucl rows, null when ab
     .replace(numOld, "const num = (v) =>")
     .replace(/^export /, "");
   const { normalizeTeamName } = require("../src/teams.ts");
-  const fn = new Function("normalizeTeamName", seg + "\n; return teamSeasonRecord;")(normalizeTeamName);
+  // translateCompetition is passed as a STUB (the real dictionary is locked
+  // by check-fa-dict); the function under test only needs the CL mapping.
+  const faComp = (c) => (c === "CL" ? "لیگ قهرمانان اروپا" : c);
+  const fn = new Function("normalizeTeamName", "translateCompetition", seg + "\n; return teamSeasonRecord;")(normalizeTeamName, faComp);
   const payload = {
     standings: {
       PL: { faName: "لیگ برتر انگلیس", teams: [{ pos: 2, name: "Arsenal FC", played: 9, won: 6, draw: 2, lost: 1, points: 20 }] },
@@ -627,10 +630,39 @@ check("v13.88 behavioral: teamSeasonRecord finds league + ucl rows, null when ab
   const okPl = pl && pl.code === "PL" && pl.won === 6 && pl.draw === 2 && pl.lost === 1 && pl.points === 20 && pl.pos === 2;
   const ucl = fn({ payload }, "Manchester United"); // normalizeTeamName folds club-prefix tokens ("FC")
   const okUcl = ucl && ucl.code === "CL" && ucl.won === 2;
+  const uclFa = fn({ payload: { standings: {}, ucl: { teams: [{ pos: 1, name: "Manchester United FC", won: 1, draw: 0, lost: 0, points: 3 }] } } }, "Manchester United");
+  const okUclFa = uclFa && uclFa.compFa === "لیگ قهرمانان اروپا"; // v13.89: the faName fallback via translateCompetition
   const none = fn({ payload }, "No Such FC");
-  return okPl && okUcl && none === null;
+  return okPl && okUcl && okUclFa && none === null;
 })());
 
+
+// ---- v13.89-stdetail: the W/D/L column + the full competition table ----
+check("v13.89: stWdlHtml renders the compact W·D·L cell in both tables", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /function stWdlHtml/.test(p2) && p2.includes('<span class="stwdl" title="برد-مساوی-شکست">') && /stw-w/.test(p2) && /stw-d/.test(p2) && /stw-l/.test(p2) && (p2.match(/stWdlHtml\(t\)/g) || []).length === 2;
+})());
+check("v13.89: the W·D·L column header ships in both sthead rows", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return (p2.match(/<span class="sthead-wdl stwdl">ب-م-ش<\/span>/g) || []).length === 2;
+})());
+check("v13.89: competition pages read the FULL cached table (cache-only, fail-closed)", (() => {
+  const p2 = read("src/seo/pages.ts");
+  const r = read("src/seo/router.ts");
+  return /async function fullStandings/.test(p2) && /await fetchStandings\(env, code, false\)/.test(p2) && /st\.teams\.length > 8/.test(p2) && /await buildCompetitionPage\(seoCtx, cm\[1\]\)/.test(r) && /export async function buildCompetitionPage/.test(p2);
+})());
+check("v13.89: fullStandings maps faName via translateTeam + keeps wdl fields", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /faName: translateTeam\(t\.name\)/.test(p2) && /won: t\.won, draw: t\.draw, lost: t\.lost/.test(p2);
+})());
+check("v13.89: the season chip carries its competition name", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /rec\.compFa \? " " \+ esc\(String\(rec\.compFa\)\) : ""/.test(p2);
+})());
+check("v13.89: the new styles + a11y polish ship in the page-shell block", (() => {
+  const ps = read("src/seo/page-shell.ts");
+  return [".stwdl", ".stwdl .stw-w", ".sthead-wdl", "a:focus-visible", ".hubtile:hover{border-color:rgba(94,160,255,.5);transform:translateY(-1px)}", ".pagination a:hover", "@media (prefers-reduced-motion:reduce){.hubtile,.hubtile:hover{transform:none}"].every((s) => ps.includes(s)) && /@media \(max-width:600px\)\{\.stwdl,\.sthead-wdl\{display:none\}\}/.test(ps);
+})());
 
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
 process.exit(failed === 0 ? 0 : 1);

@@ -8,7 +8,7 @@ import { CONFIG } from "../config";
 import { getCachedMatches } from "../match-pool";
 import { applyLiveOverlay, pubMatch } from "../public-matches";
 import { COMP_EN } from "../tables";
-import { ensureFaAiCache, ensureFaVenueCache, translateVenue } from "../translate";
+import { ensureFaAiCache, ensureFaVenueCache, translateVenue, translateCompetition } from "../translate";
 import { normalizeTeamName } from "../teams";
 // v13.85-stadiumchip: the home-ground table + one-off-neutral gate moved to
 // the root module grounds.ts (shared with pubMatch — one source of truth).
@@ -423,7 +423,9 @@ export function teamSeasonRecord(ctx: SeoCtx, teamName: string): { code: string;
   }
   const ucl = ctx.payload && ctx.payload.ucl;
   if (ucl && Array.isArray(ucl.teams)) {
-    const hit = fromTeams(ucl.teams, "CL", ucl.faName || COMP_EN.CL || "CL");
+    // v13.89: the payload's ucl shell carries no faName — translateCompetition
+    // owns the Persian name (same dictionary the whole site uses).
+    const hit = fromTeams(ucl.teams, "CL", ucl.faName || translateCompetition("CL"));
     if (hit) return hit;
   }
   return null;

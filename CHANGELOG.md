@@ -6,6 +6,15 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.89-stdetail] — 2026-10-13 (W·D·L columns, the honest full table, interaction polish)
+
+- Standings tables gain the compact W·D·L column «ب-م-ش» («۶-۲-۱» per row, each count in its win/draw/loss hue, tabular digits, hover title «برد-مساوی-شکست») — BOTH the team-page window and the competition full table. Desktop-visible, hidden ≤600px (mobile keeps pos/name/pts). Fail-closed cell: rows without stats render «—».
+- «جدول کامل» is now honest: competition pages read the FULL cached standings table (`fetchStandings(env, code, false)` — ONE cache-only KV read, allowFetch=false never touches a provider, the seo layer's reads-only-KV contract holds; fail-closed to the payload's top-8 compact when the cache is missing). The team window's «جدول کامل» link used to lead to a top-8 table.
+- Full-table rows gain faName via the isolate-cached translateTeam (same mapping the payload uses); emblem/fa shell still rides the payload.
+- Season chip clarity: «از ۸ بازی لالیگا» — the competition name rides the chip (mixed-source records like a UCL match with one side's La Liga record and the other's UCL record now read unambiguously).
+- Interaction polish (a11y + detail): `:focus-visible` rings on every interactive surface; .hubtile hover lift (-1px); .stmore/.pagination hover states; prefers-reduced-motion disarms the lifts (the live-pulse rule already existed).
+- Harness: 6 new checks (stWdlHtml in both tables, header count, full-table cache-only + async wiring, translateTeam mapping, chip comp name, styles + a11y + reduced-motion). 921 → 927.
+
 ## [13.88-formagg] — 2026-10-13 (the season-record fallback + form reaches team pages)
 
 Closes the v13.87 handover item "the form strip is fail-closed-dark TODAY": the seo archive is still young, so match pages rendered NO form card at all. The standings snapshots the payload already carries (played/won/draw/lost per team) light the card honestly TODAY — zero new subrequests.

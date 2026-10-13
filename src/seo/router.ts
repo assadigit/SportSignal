@@ -440,7 +440,9 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
     if (path === "/competitions") return { body: buildCompetitionsIndexPage(seoCtx), status: 200 };
     const cm = /^\/competitions\/([a-z0-9-]+)$/.exec(path);
     if (cm) {
-      const r = buildCompetitionPage(seoCtx, cm[1]);
+      // v13.89-stdetail: async — the full standings table reads the
+      // cache-only KV copy (one bounded read, fail-closed to compact).
+      const r = await buildCompetitionPage(seoCtx, cm[1]);
       if (r.notFound) return null;
       return { body: r.html, status: 200 };
     }

@@ -198,6 +198,30 @@ a.mvenue-map:active{transform:scale(.97)}
    first-time visitors; the dots reuse .fdot sizing at reduced footprint. */
 .formlegend{display:flex;align-items:center;gap:6px;margin:2px 0 6px;font-size:.72rem;color:var(--muted,#9aa4b2)}
 .formlegend .fdot{width:16px;height:16px;font-size:.62rem;border-radius:5px}
+/* v13.89-stdetail: the compact W·D·L standings column — «۶-۲-۱» per row,
+   each count in its win/draw/loss hue (fw/fd/fl family), tabular digits,
+   en-dash separators. Desktop-visible; hidden ≤600px (the .ucl-hidem
+   pattern) so mobile keeps pos/name/pts only. .strow-me keeps its
+   highlight through the extra cell (no border on the segments). */
+.stwdl{display:inline-flex;align-items:center;gap:2px;min-width:52px;justify-content:center;flex-shrink:0;font-variant-numeric:tabular-nums;font-weight:700;font-size:10.5px}
+.stwdl i{font-style:normal;opacity:.4;font-weight:400}
+.stwdl .stw-w{color:#4ade80}
+.stwdl .stw-d{color:#cbd5e1}
+.stwdl .stw-l{color:#f87171}
+.sthead-wdl{font-size:9.5px;font-weight:700;color:var(--muted,#94a3b8)}
+@media (max-width:600px){.stwdl,.sthead-wdl{display:none}}
+/* v13.89-stdetail: interaction polish — keyboard-visible focus rings on
+   every interactive surface (a11y), a subtle lift on hover for the
+   stand-alone tiles/links, and prefers-reduced-motion disarm (the .mdot
+   rule above covers the live pulse). */
+a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3fc;outline-offset:2px;border-radius:8px}
+.hubtile{transition:border-color .15s,transform .15s}
+.hubtile:hover{border-color:rgba(94,160,255,.5);transform:translateY(-1px)}
+.stmore{transition:color .15s}
+.stmore:hover{color:#a5e3fc}
+.pagination a{transition:border-color .15s,background .15s}
+.pagination a:hover{border-color:rgba(94,160,255,.5);background:rgba(94,160,255,.08)}
+@media (prefers-reduced-motion:reduce){.hubtile,.hubtile:hover{transform:none}.mact:active{transform:none}}
 .simcount{display:inline-block;font-size:.72rem;font-weight:600;color:var(--muted,#9aa4b2);background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.24);border-radius:999px;padding:1px 9px;margin-inline-start:8px;vertical-align:middle}
 .mactions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:2px 0 14px}
 .mact{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:var(--fg,#e8eefc);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.28);border-radius:11px;padding:8px 14px;text-decoration:none;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s,transform .15s}
