@@ -9,6 +9,9 @@ import { getCachedMatches } from "../match-pool";
 import { applyLiveOverlay, pubMatch } from "../public-matches";
 import { ensureFaAiCache, ensureFaVenueCache, translateVenue } from "../translate";
 import { normalizeTeamName } from "../teams";
+// v13.85-stadiumchip: the home-ground table + one-off-neutral gate moved to
+// the root module grounds.ts (shared with pubMatch — one source of truth).
+import { homeGround } from "../grounds";
 import { isLiveStatus } from "../match-model";
 import { shouldNotify } from "../match-classify";
 import { fetchJSON } from "../utils";
@@ -300,27 +303,19 @@ export async function hydrateMatchVenue(env: Env, sm: SeoMatch | null): Promise<
   // stages (finals / third-place games — including roundRaw "Final" but
   // never "semi"/"quarter", which are two-legged home-and-away) are
   // excluded: the administrative home team doesn't host there.
-  const stageRaw = String(sm.raw.stage || "");
-  const roundRaw = String(sm.raw.roundRaw || "");
-  const oneOffNeutral = stageRaw === "FINAL" || stageRaw === "THIRD_PLACE" ||
-    (/final/i.test(roundRaw) && !/semi|quarter|qualif/i.test(roundRaw));
-  const homeName = sm.raw.homeTeam && sm.raw.homeTeam.name;
-  if (homeName && !oneOffNeutral) {
-    let tab = CONFIG.__stadiumNorm;
-    if (!tab || tab.sig !== CONFIG.TEAM_STADIUMS) {
-      tab = { sig: CONFIG.TEAM_STADIUMS, map: new Map() };
-      for (const [name, v] of Object.entries(CONFIG.TEAM_STADIUMS)) {
-        tab.map.set(normalizeTeamName(name), v);
-      }
-      CONFIG.__stadiumNorm = tab;
-    }
-    const st = tab.map.get(normalizeTeamName(homeName));
-    if (st) {
-      sm.raw.venue = st.en;
-      sm.s.venue = st.en;
-      sm.s.venueFa = st.fa;
-      return sm;
-    }
+  // v13.85-stadiumchip: the table + gate moved to src/grounds.ts — shared
+  // with pubMatch (the public payload) so the homepage chips and the match
+  // pages agree on ONE source of truth.
+  const g = homeGround(
+    sm.raw.homeTeam && sm.raw.homeTeam.name,
+    sm.raw.stage,
+    sm.raw.roundRaw
+  );
+  if (g) {
+    sm.raw.venue = g.en;
+    sm.s.venue = g.en;
+    sm.s.venueFa = g.fa;
+    return sm;
   }
   const id = sm.raw && sm.raw.id;
   if (!id || !/^\d+$/.test(String(id))) return sm; // FD rows only — providers with string ids have no detail endpoint

@@ -479,6 +479,14 @@ export function buildTeamPage(ctx: SeoCtx, slug: string): { html: string; notFou
   const path = "/teams/" + slug;
   const trail = [{ name: "خانه", href: "/" }, { name: "تیم‌ها", href: "/teams" }, { name }];
   const next = upcoming[0];
+  // v13.85-stadiumchip: the sibling-fixtures loop reaches TEAM pages —
+  // "بازی‌های مرتبط" for the team's NEXT match (same matchday card as the
+  // match pages; internal-linking: every team page cross-links siblings).
+  const sims = next ? similarMatches(ctx, next, 6) : [];
+  const simCard = sims.length
+    ? '<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">' + toFaDigits(String(sims.length)) + " بازی</span></h2>" +
+      sims.map((x, i) => M.mrowHtml(x, i, false)).join("") + "</div>"
+    : "";
   let answer = "برنامه بازی‌های " + name + " در SportSignal — به وقت تهران.";
   if (next) {
     answer = "بازی بعدی " + name + ": " + faName(next.s.homeTeam) + " – " + faName(next.s.awayTeam) + " در " +
@@ -492,7 +500,7 @@ export function buildTeamPage(ctx: SeoCtx, slug: string): { html: string; notFou
     '<div class="card"><div class="listhead"><h2>بازی‌های پیش‌روی ' + esc(name) + "</h2></div>" + dateGroupedRows(upcoming, false) + "</div>" +
     (finished.length
       ? '<div class="card"><h2>نتایج اخیر</h2>' + dateGroupedRows(finished, true) + "</div>"
-      : "");
+      : "") + simCard;
   return {
     html: pageShell({
       head: buildHead({

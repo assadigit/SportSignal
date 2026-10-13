@@ -8,6 +8,7 @@ import { LEAGUE_LOGOS, COMP_EN } from "./tables";
 import type { Env } from "./types";
 import { fetchJSON, getNowTehran } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams";
+import { homeGround } from "./grounds";
 import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { normAlias } from "./teams";
 import { isLiveStatus } from "./match-model";
@@ -92,6 +93,14 @@ export function roundLabel(m) {
 }
 export function pubMatch(m) {
   const rl = roundLabel(m);
+  // v13.85-stadiumchip: provider venue first (TSP/live-detail), then the
+  // home-ground table — the SAME table + one-off-neutral gate the match
+  // pages hydrate with (one source of truth: grounds.ts). Fills only; a
+  // provider venue always wins. venueFa prefers the table's curated
+  // Persian name over the venue dictionary.
+  const ground = !m.venue ? homeGround(m.homeTeam && m.homeTeam.name, m.stage, m.round) : null;
+  const venue = m.venue || (ground ? ground.en : null);
+  const venueFa = m.venue ? (translateVenue(m.venue) || m.venue) : (ground ? ground.fa : null);
   return {
     id: m.id || null,
     homeTeam: { name: m.homeTeam.name, faName: translateTeam(m.homeTeam.name), crest: m.homeTeam.crest || null },
@@ -118,8 +127,8 @@ export function pubMatch(m) {
     // consumers drop the tag entirely (the row keeps its derby styling).
     rivalry: rivalryName(m, "en") || null,
     rivalryFa: rivalryName(m, "fa") || null,
-    venue: m.venue || null,
-    venueFa: m.venue ? (translateVenue(m.venue) || m.venue) : null,
+    venue,
+    venueFa,
     score: (isLiveStatus(m.status) || m.status === "FINISHED") && m.score && m.score.fullTime ? m.score.fullTime : null
   };
 }

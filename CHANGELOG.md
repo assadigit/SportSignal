@@ -6,6 +6,44 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.85-stadiumchip] — 2026-10-13 (venue chips everywhere + the sibling loop reaches team pages)
+
+The v13.82 venue architecture had one blind spot: the home-ground table only
+lit up the seo MATCH pages — the public payload rows (homepage lists, live
+section, this-week) had no venue for scheduled matches, so the already-built
+client venue chips stayed dark. This round routes the SAME table + gate into
+pubMatch and extends the sibling-fixtures loop to team pages.
+
+- **grounds.ts (new root module)**: the home-ground table lookup + the
+  one-off-neutral gate, extracted from seo/data.ts's hydrateMatchVenue
+  stage-0 — ONE source of truth consumed by BOTH the seo match pages
+  (hydration) and pubMatch (the public payload). Bare-param style on purpose
+  (harness module; strict:false — RUNBOOK §11: no new transform rules).
+- **pubMatch adoption**: provider venue first (TSP/live-detail), then the
+  home-ground table — fills-only, never overwrites. venueFa prefers the
+  table's curated Persian name over the venue dictionary. One-off-neutral
+  stages (FINAL/THIRD_PLACE; round "Final" but never semi/quarter/qualif)
+  skip the table.
+- **Client chips go bilingual**: public-13.25.js → public-13.26.js
+  (rename-on-edit) — both venue-chip render paths (live rows + this-week)
+  now show the curated Persian ground name in fa mode (venueFa || venue
+  fallback) instead of English-only.
+- **Team pages join the sibling loop**: /teams/{slug} gains the
+  "بازی‌های مرتبط" card (similarMatches of the team's NEXT match, cap 6,
+  canonical links, same simcard/simcount styles as match pages) — every
+  team page now cross-links its matchday siblings (internal-linking loop).
+- **Co-evolution**: worker-src order +grounds.ts (before public-matches,
+  after config/teams); check-venue retargets (pubMatch fills-only pattern,
+  chip fa-mode pattern, REAL-grounds eval with identity normalize stub) +
+  3 new behavioral checks (table fills, FINAL skips, provider wins);
+  live-derby prepends the grounds block; check-stats: homeGround stub for
+  the path evals, gate checks retarget to grounds.ts, team-page simCard
+  lock, public-13.26 pins (incl. the escaped-regex trap both 13.25 forms);
+  parity fixtures re-baselined (public page script-src only).
+- Suite 888 → 895.
+
+---
+
 ## [13.84-admi18n] — 2026-10-13 (the orphan data-i keys: hStats/btnStats + core-13.10 rename)
 
 QA finding from the v13.83 session, fixed as its own reviewed version: the

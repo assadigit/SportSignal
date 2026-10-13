@@ -225,16 +225,16 @@ check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSr
 // more prominent (tint 16%, glow 28%, !important overrides). SW v22 → v23.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js20 = read("assets/public-13.25.js");
+const js20 = read("assets/public-13.26.js");
 const slugsSrc = read("src/slugs.ts");
 const seoCfgSrc = read("src/seo/config.ts");
-check("public-13.25.js referenced in homepage (renamed from 13.24)", /\/public-13\.25\.js/.test(publicSrc));
+check("public-13.26.js referenced in homepage (renamed from 13.24)", /\/public-13\.26\.js/.test(publicSrc));
 check("public-13.23.css referenced in homepage (renamed from 13.22)", /\/public-13\.23\.css/.test(publicSrc));
 check("public-13.23.css referenced in SEO page-shell (renamed)", /\/public-13\.23\.css/.test(shellSrc));
 check("core-13.10.js referenced in homepage (public page script tag)", /\/core-13\.10\.js/.test(publicSrc));
-check("public-13.25.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.25.js")));
+check("public-13.26.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.26.js")));
 check("public-13.23.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.23.css")));
-check("assets/_headers pins public-13.25 immutable", /\/public-13\.25\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.26 immutable", /\/public-13\.26\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 check("assets/_headers pins public-13.23.css immutable", /\/public-13\.23\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 check("SW cache bumped to sportsignal-v29 (replaces v28)", /CACHE = "sportsignal-v29"/.test(swSrc));
 check("barTarget checks nextBig before topSpot (all competitions)", /t=DATA\.nextBig\|\|null.*if\(!t\)\{t=a\}/.test(js20));
@@ -349,6 +349,10 @@ const wsrc = require("./lib/worker-src")();
   globalThis.isFeaturedMatch = () => false;
   globalThis.isDerby = () => false;
   globalThis.rivalryName = () => null;
+  // v13.85-stadiumchip: pubMatch's home-ground fallback (the path checks
+  // here don't assert venue; the table wiring has its own behavioral checks
+  // in check-venue).
+  globalThis.homeGround = () => null;
   const roundFaSrc = src.match(/var ROUND_FA = \{[\s\S]*?\n\};/)[0];
   const faOrdSrc = src.match(/var FA_ORDINALS = \[[\s\S]*?\];/)[0];
   const roundLabelSrc = src.match(/function roundLabel\(m\) \{[\s\S]*?\n\}/)[0];
@@ -431,9 +435,25 @@ check("mvenue-map + simcard + simcount styles present in page-shell", /a\.mvenue
 const cfgSrc82 = read("src/config.ts");
 check("TEAM_STADIUMS table exists for the followed clubs (en + fa)", /TEAM_STADIUMS: \{/.test(cfgSrc82) && /"Arsenal FC": \{ en: "Emirates Stadium", fa: "ورزشگاه امارات" \}/.test(cfgSrc82) && /"Western Sydney Wanderers"/.test(cfgSrc82));
 check("shared grounds mapped per club (San Siro × Inter+Milan, AAMI × Melbourne)", /"Inter Milan": \{ en: "San Siro"[^\n]*\n\s*"AC Milan": \{ en: "San Siro"/.test(cfgSrc82) && /"Melbourne Victory": \{ en: "AAMI Park"[^\n]*\n\s*"Melbourne City": \{ en: "AAMI Park"/.test(cfgSrc82));
-check("hydrate consults the home-ground table BEFORE the FD fetch", dataSrc82.indexOf("CONFIG.__stadiumNorm") < dataSrc82.indexOf('fetchJSON("https://api.football-data.org/v4/matches/" + id') && /tab\.map\.get\(normalizeTeamName\(homeName\)\)/.test(dataSrc82));
-check("one-off neutral stages skip the table (FINAL/THIRD_PLACE; roundRaw final-but-not-semi)", /stageRaw === "FINAL" \|\| stageRaw === "THIRD_PLACE" \|\|/.test(dataSrc82) && /\/final\/i\.test\(roundRaw\) && !\/semi\|quarter\|qualif\/i\.test\(roundRaw\)/.test(dataSrc82));
-check("table venue sets en + fa (no FD round-trip)", /sm\.raw\.venue = st\.en;/.test(dataSrc82) && /sm\.s\.venueFa = st\.fa;/.test(dataSrc82));
+check("hydrate consults the home-ground table BEFORE the FD fetch", dataSrc82.indexOf("homeGround(") < dataSrc82.indexOf('fetchJSON("https://api.football-data.org/v4/matches/" + id') && /homeGround\(\s*$|homeGround\(\n/.test(dataSrc82));
+check("v13.85-stadiumchip: grounds.ts is the one table+gate (root module)", (() => {
+  const g = read("src/grounds.ts");
+  return /export function homeGround\(/.test(g) && /export function isOneOffNeutral\(/.test(g) && /TEAM_STADIUMS/.test(g) && /semi\|quarter\|qualif/.test(g);
+})());
+check("team pages carry the similar-matches strip (sibling loop)", (() => {
+  const p = read("src/seo/pages.ts");
+  return /const sims = next \? similarMatches\(ctx, next, 6\) : \[\];/.test(p) && /simCard;/m.test(p) && /بازی‌های مرتبط /.test(p);
+})());
+check("pubMatch adopts the home-ground table (fills-only, provider wins)", (() => {
+  const p = read("src/public-matches.ts");
+  return /!m\.venue \? homeGround\(m\.homeTeam && m\.homeTeam\.name, m\.stage, m\.round\)/.test(p) && /m\.venue \|\| \(ground \? ground\.en : null\)/.test(p) && /ground \? ground\.fa : null/.test(p);
+})());
+check("seo hydrate + pubMatch share grounds.ts (no duplicated table logic)", !/TEAM_STADIUMS\) \{/.test(dataSrc82) && !/stadiumNorm/.test(dataSrc82));
+check("one-off neutral stages skip the table (FINAL/THIRD_PLACE; roundRaw final-but-not-semi)", (() => {
+  const g = read("src/grounds.ts"); // v13.85: the gate moved here from seo/data.ts
+  return /=== "FINAL" \|\| s === "THIRD_PLACE"/.test(g) && /\/final\/i\.test\(r\) && !\/semi\|quarter\|qualif\/i\.test\(r\)/.test(g);
+})());
+check("table venue sets en + fa (no FD round-trip)", /sm\.raw\.venue = g\.en;/.test(dataSrc82) && /sm\.s\.venueFa = g\.fa;/.test(dataSrc82));
 
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
 process.exit(failed === 0 ? 0 : 1);

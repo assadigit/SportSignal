@@ -62,7 +62,11 @@ function transform(ts) {
 function workerSrc() {
   if (cache) return cache;
   const order = [
-    "worker.ts", "config.ts", "tables.ts", "utils.ts", "teams.ts", "dedupe.ts", "fa-dict.ts", "translate.ts", "fa-ai.ts",
+    "worker.ts", "config.ts", "tables.ts", "utils.ts", "teams.ts",
+    // v13.85-stadiumchip: home-ground table+gate (needs config + teams;
+    // consumed by public-matches.ts pubMatch — sits before it like slugs.ts).
+    "grounds.ts",
+    "dedupe.ts", "fa-dict.ts", "translate.ts", "fa-ai.ts",
     // v13.80-canonical-hrefs: slugs.ts is a ROOT leaf (moved out of
     // seo/config.ts so the payload shaper can import it). pubMatch stamps
     // `path` through matchPath — the checks that eval pubMatch (check-venue,

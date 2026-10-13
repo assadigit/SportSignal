@@ -92,7 +92,19 @@ const pubSrc = grabFn("function pubMatch(m)");
 // must ride along in the eval.
 const roundSrc = grabVar("ROUND_FA") + "\n" + grabVar("FA_ORDINALS") + "\n" + grabFn("function roundLabel(m)") + "\n" + grabVar("TEAM_SLUGS") + "\n" + (function(){ const i = src.indexOf("const STRICT_STRIP = new Set("); const j = src.indexOf(");", i); return src.slice(i, j + 2); })() + "\n" + grabFn("function teamSlug(name)") + "\n" + grabFn("function matchPath(homeName, awayName, utcDate)");
 
-eval(domCupSrc + "\n" + aliasSrc + "\n" + shouldNotifySrc + "\n" + featSrc + "\n" + derbyBlockSrc + "\n" + livesSrc + "\n" + roundSrc + "\n" + pubSrc);
+// v13.85-stadiumchip: pubMatch's home-ground fallback — the REAL grounds
+// functions ride along (identity normalizeTeamName stub + minimal CONFIG
+// table; the venue values aren't under test here — pubMatch must not throw).
+const groundsSrc = (function () {
+  const i = src.indexOf("let cache = null;");
+  const j = src.indexOf("function homeGround");
+  const end = src.indexOf("\n}", j);
+  return i >= 0 && j > i ? src.slice(i, end + 3) : "";
+})();
+// CONFIG + normalizeTeamName are both already in the eval scope (grabbed
+// slices carry them) — only the grounds block itself is prepended.
+const groundsPrelude = "";
+eval(domCupSrc + "\n" + aliasSrc + "\n" + shouldNotifySrc + "\n" + featSrc + "\n" + derbyBlockSrc + "\n" + livesSrc + "\n" + roundSrc + "\n" + pubSrc + "\n" + groundsPrelude + groundsSrc);
 
 // ---------- A: derby detection ----------
 chk(isDerby({ homeTeam: { name: "Real Madrid CF" }, awayTeam: { name: "FC Barcelona" } }) === true, "El Clasico");

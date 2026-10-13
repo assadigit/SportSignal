@@ -22,8 +22,8 @@ check(
 );
 // publication site: pubMatch maps m.venue
 check(
-  "pubMatch exposes venue",
-  /venue: m\.venue \|\| null,/.test(src)
+  "pubMatch exposes venue (v13.85: provider first, home-ground fills-only)",
+  /m\.venue \|\| \(ground \? ground\.en : null\)/.test(src) && /ground \? ground\.fa : null/.test(src)
 );
 // merge enriches venue from a later provider
 check(
@@ -50,7 +50,7 @@ const clientAssets = (() => {
 check(
   "render() shows venue chip",
   clientAssets.some((a) =>
-    /createElement\("span"\)[\s\S]{0,80}?className ?= ?"venue"[\s\S]{0,40}?textContent ?= ?[\s\S]{0,30}?\+ ?\w+\.venue/.test(a) &&
+    /createElement\("span"\)[\s\S]{0,80}?className ?= ?"venue"[\s\S]{0,60}?curLang\(\) ?=== ?"fa" ?\? ?\(\w+\.venueFa ?\|\| ?\w+\.venue\) ?: ?\w+\.venue/.test(a) &&
     (/\u{1F3DF}/.test(a) || /\\u\{1F3DF\}/.test(a)) &&
     /render\(|renderSpecial/.test(a))
 );
@@ -73,6 +73,19 @@ let pubSrc = src.match(/function pubMatch\(m\) \{[\s\S]*?\n\}/)[0]
 globalThis.translateTeam = (n) => n;
 globalThis.translateCompetition = () => "x";
 globalThis.translateVenue = (v) => v; // v13.13-venues stub
+// v13.85-stadiumchip: pubMatch's home-ground fallback resolves through the
+// REAL grounds.ts (grabbed from the concat — dependency-first like slugs).
+// grounds.ts declares `let cache = null` + table() + isOneOffNeutral +
+// homeGround; the eval block also needs CONFIG.TEAM_STADIUMS (injected as a
+// param) and normalizeTeamName (identity stub — the table keys and the
+// lookups both route through it, so the eval is self-consistent; the REAL
+// normalizer is covered elsewhere; here the table+gate wiring is the
+// behavior under test).
+globalThis.normalizeTeamName = (n) => n;
+const groundsSeg = src.match(/let cache = null;[\s\S]*?return cache\.map;\n\}/)[0] + "\n" +
+  src.match(/function isOneOffNeutral\([^)]*\) \{[\s\S]*?\n\}/)[0] + "\n" +
+  src.match(/function homeGround\([^)]*\) \{[\s\S]*?\n\}/)[0];
+new Function("CONFIG", groundsSeg + "\nglobalThis.homeGround = homeGround; globalThis.isOneOffNeutral = isOneOffNeutral;")({ TEAM_STADIUMS: { "Arsenal FC": { en: "Emirates Stadium", fa: "ورزشگاه امارات" }, "Chelsea FC": { en: "Stamford Bridge", fa: "ورزشگاه استمفورد بریج" }, "AC Milan": { en: "San Siro", fa: "ورزشگاه سن سیرو" } } });
 globalThis.LEAGUE_LOGOS = {};
 globalThis.isLiveStatus = (s) => s === "LIVE";
 globalThis.isFeaturedMatch = () => false;
@@ -91,6 +104,14 @@ new Function(roundFaSrc + "\n" + faOrdSrc + "\n" + roundLabelSrc + "\n" + slugBl
 const pubMatch = new Function("m", pubSrc + "; return pubMatch(m);");
 const out = pubMatch({ homeTeam: { name: "Arsenal" }, awayTeam: { name: "Chelsea" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "PL" }, status: "SCHEDULED", venue: "Emirates Stadium" });
 check("pubMatch keeps venue", out.venue === "Emirates Stadium");
+// v13.85-stadiumchip behavioral: the home-ground table fills venue/venueFa
+// for table clubs with no provider venue (league fixture — not neutral).
+const outGround = pubMatch({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "PL" }, status: "SCHEDULED" });
+check("pubMatch home-ground fills venue + curated fa (no provider venue)", outGround.venue === "Emirates Stadium" && outGround.venueFa === "ورزشگاه امارات");
+const outFinal = pubMatch({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" }, utcDate: "2026-05-30T19:00:00Z", competition: { code: "CL" }, status: "SCHEDULED", stage: "FINAL" });
+check("pubMatch one-off-neutral (FINAL) skips the table", outFinal.venue === null && outFinal.venueFa === null);
+const outProv = pubMatch({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" }, utcDate: "2026-09-06T19:00:00Z", competition: { code: "PL" }, status: "SCHEDULED", venue: "Ashburton Grove" });
+check("pubMatch provider venue wins over the table (fills-only)", outProv.venue === "Ashburton Grove" && outProv.venueFa === "Ashburton Grove");
 const outNull = pubMatch({ homeTeam: { name: "A" }, awayTeam: { name: "B" }, utcDate: "x", competition: { code: "PL" }, status: "SCHEDULED" });
 check("pubMatch venue null when absent", outNull.venue === null);
 // v13.35-rounds: league fixture carries NO round chip; a cup fixture with a
