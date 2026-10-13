@@ -28,6 +28,8 @@ import { CONFIG, VERSION } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate } from "./utils";
 import { getBotMembers, getRegisteredChats, getUserPrefs } from "./users";
+// v13.92-d1userstore: single-row profile read (D1 primary / legacy blob).
+import { chatProfileGet } from "./user-store";
 import { getCronStatus } from "./monitoring";
 import { sendTelegram } from "./telegram";
 
@@ -45,13 +47,13 @@ export function isAdminChat(env: Env, chatId) {
   return !isNaN(admin) && Number(chatId) === admin;
 }
 
-// The freshest profile for a chat (KV user_profiles_v1 — written by the
-// bot.ts per-message upsert BEFORE any command branch runs, so a joining
-// user's name/username is already stored when the join page fires).
+// The freshest profile for a chat (written by the bot.ts per-message upsert
+// BEFORE any command branch runs, so a joining user's name/username is
+// already stored when the join page fires).
 async function chatProfile(env: Env, chatId) {
   try {
-    const profiles = await env.STATE.get(CONFIG.KV_USER_PROFILES, "json").catch(() => null) || {};
-    return profiles[String(chatId)] || {};
+    // v13.92-d1userstore: single-row read through the seam.
+    return (await chatProfileGet(env, chatId)) || {};
   } catch (e) {
     return {};
   }

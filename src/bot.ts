@@ -14,6 +14,11 @@ import { sendTelegram, answerCallbackQuery, sendPhotoBinary, editMessageText } f
 import { renderCardPngCached } from "./card";
 import { formatBigMatchMessage, specialBanner } from "./composers";
 import { getRegisteredChats, getUserPrefs, setUserLang, getUserTz, masterTeamList, userFollowsMatch, botStr, resolveTimeZone } from "./users";
+// v13.92-d1userstore: the user-write seam — every user-action write goes
+// through it (D1 row upserts when USERS_DB is bound — quota-proof during the
+// account-level KV 10048 evenings — or the verbatim legacy KV paths when
+// not). Boolean returns drive the v13.91 honest-failure UX.
+import { registerChat, removeChat, saveUserPref, deleteUserPref, saveChatProfile, chatProfileGet, updSeen } from "./user-store";
 import { sendLeagueTables, sendWeekAhead } from "./digest-weekly";
 import { replyKeyboard, normalizeCommand, teamsMessageText, teamsGridKeyboard, tzStatusText, tzPickerKeyboard, tzRegionText, tzRegionKeyboard, tzOnboardText, tzConfirmText, tzConfirmKeyboard, tzDoneText, TZ_REGIONS } from "./bot-ui";
 import { applySettings } from "./admin";
@@ -21,12 +26,7 @@ import { isAdminChat, notifyAdminUserJoined, notifyAdminUserLeft, adminPanelText
 export async function handleTelegramUpdate(env: Env, update) {
   try {
     const updId = update && update.update_id;
-    if (updId != null) {
-      const seen = await env.STATE.get("upd_" + updId).catch(() => null);
-      if (seen) return;
-      await env.STATE.put("upd_" + updId, "1", { expirationTtl: 600 }).catch(() => {
-      });
-    }
+    if (updId != null && (await updSeen(env, updId))) return;
     // v12.x-bilingual-bot: callback_query handler (language picker). Runs
     // BEFORE the message handlers. The callback_data is "lang:fa" or
     // "lang:en". On tap: register the chat if needed, persist the lang,
@@ -45,14 +45,16 @@ export async function handleTelegramUpdate(env: Env, update) {
           const m = data.match(/^lang:(fa|en)$/);
           if (m) {
             const lang = m[1];
-            const chats = await getRegisteredChats(env);
-            if (!chats.includes(cbChatId2)) {
-              chats.push(cbChatId2);
-              await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(chats));
+            // v13.92-d1userstore: registerChat (INSERT OR IGNORE / legacy
+            // blob append). ok=false (write failed) → no admin page, but the
+            // user flow CONTINUES — registration retries on their next
+            // interaction (the old path threw and dead-ended the welcome).
+            const reg = await registerChat(env, cbChatId2);
+            if (reg.ok && reg.added) {
               // v13.71-admintools: a registration through the language picker
               // (a returning user tapping an old picker after /stop) pages the
               // admin too — same join signal as /start.
-              await notifyAdminUserJoined(env, cbChatId2, chats.length);
+              await notifyAdminUserJoined(env, cbChatId2, reg.count);
             }
             await setUserLang(env, cbChatId2, lang);
             await answerCallbackQuery(env, cbq.id, lang === "en" ? "English" : "\u0641\u0627\u0631\u0633\u06CC");
@@ -83,8 +85,7 @@ export async function handleTelegramUpdate(env: Env, update) {
           const p = prefs[key] || {};
           const lang = p.lang === "en" ? "en" : "fa";
           if (tft[1] === "all") {
-            prefs[key] = { tz: p.tz || null, lang: p.lang || "fa" };
-            await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+            await saveUserPref(env, cbChatId2, { tz: p.tz || null, lang: p.lang || "fa" });
             await answerCallbackQuery(env, cbq.id, lang === "en" ? "Following all teams" : "\u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627 \u062F\u0646\u0628\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F");
             await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, teamsMessageText(lang, null, master), teamsGridKeyboard(null, master));
           } else {
@@ -105,7 +106,7 @@ export async function handleTelegramUpdate(env: Env, update) {
                 sel = p.teams.concat([name]);
               }
               prefs[key] = { teams: sel, tz: p.tz || null, lang: p.lang || "fa" };
-              await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+              await saveUserPref(env, cbChatId2, prefs[key]);
               await answerCallbackQuery(env, cbq.id, (wasSel && Array.isArray(p.teams) ? (lang === "en" ? "Removed: " : "\u062D\u0630\u0641 \u0634\u062F: ") : (lang === "en" ? "Added: " : "\u0627\u0641\u0632\u0648\u062F\u0647 \u0634\u062F: ")) + translateTeam(name));
               await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, teamsMessageText(lang, sel, master), teamsGridKeyboard(sel, master));
             }
@@ -120,8 +121,8 @@ export async function handleTelegramUpdate(env: Env, update) {
           const p = prefs[key] || {};
           const lang = p.lang === "en" ? "en" : "fa";
           if (tzt[1] === "reset") {
-            if (prefs[key]) delete prefs[key].tz;
-            await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+            // tz removed, teams+lang preserved (historic delete-.tz semantics)
+            await saveUserPref(env, cbChatId2, { teams: p.teams || null, tz: null, lang: p.lang || null });
             await answerCallbackQuery(env, cbq.id, lang === "en" ? "Timezone reset" : "\u0628\u0627\u0632\u06AF\u0634\u062A \u0628\u0647 \u067E\u06CC\u0634\u200C\u0641\u0631\u0636");
             await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzStatusText(lang, env.TEHRAN_TZ || "Asia/Tehran"), tzPickerKeyboard(lang));
           } else {
@@ -131,16 +132,11 @@ export async function handleTelegramUpdate(env: Env, update) {
               prefs[key].tz = tz;
               if (!prefs[key].lang) prefs[key].lang = "fa";
               // v13.91-tzquota: a failed prefs save (KV daily-quota
-              // exhaustion is the observed live cause) gets an honest
-              // retry-later toast — never a silent hanging spinner, and
-              // never a confirm view for a tz that was NOT persisted.
-              let tzSaved = true;
-              try {
-                await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
-              } catch (e) {
-                tzSaved = false;
-                console.error("tz save failed (KV quota?): " + e.message);
-              }
+              // exhaustion was the observed live cause; with v13.92 the D1
+              // path makes this rare) gets an honest retry-later toast —
+              // never a silent hanging spinner, and never a confirm view
+              // for a tz that was NOT persisted.
+              const tzSaved = await saveUserPref(env, cbChatId2, { teams: prefs[key].teams || null, tz: tz, lang: prefs[key].lang || "fa" });
               if (!tzSaved) {
                 await answerCallbackQuery(env, cbq.id, lang === "en" ? "\u26A0\uFE0F Could not save right now \u2014 try again later" : "\u26A0\uFE0F \u0641\u0639\u0644\u0627\u064B \u0630\u062E\u06CC\u0631\u0647 \u0646\u0634\u062F \u2014 \u0628\u0639\u062F\u0627\u064B \u062F\u0648\u0628\u0627\u0631\u0647 \u0627\u0645\u062A\u062D\u0627\u0646 \u06A9\u0646\u06CC\u062F");
                 return;
@@ -212,9 +208,9 @@ export async function handleTelegramUpdate(env: Env, update) {
       const from = message.from || {};
       const chat = message.chat || {};
       if (from.id || chat.title) {
-        const profiles = await env.STATE.get(CONFIG.KV_USER_PROFILES, "json").catch(() => null) || {};
-        const key = String(chatId);
-        const cur = profiles[key] || {};
+        // v13.92-d1userstore: single-row profile read + per-row upsert (was
+        // the whole-profiles-blob read-modify-write on every message).
+        const cur = await chatProfileGet(env, chatId);
         const next = {
           username: from.username || cur.username || null,
           first_name: from.first_name || cur.first_name || (chat.title ? null : cur.first_name) || null,
@@ -222,24 +218,24 @@ export async function handleTelegramUpdate(env: Env, update) {
           joined: cur.joined || (new Date()).toISOString()
         };
         if (JSON.stringify(next) !== JSON.stringify(cur)) {
-          profiles[key] = next;
-          await env.STATE.put(CONFIG.KV_USER_PROFILES, JSON.stringify(profiles)).catch(() => {
-          });
+          await saveChatProfile(env, chatId, next);
         }
       }
     } catch (e) {
     }
     if (text === "/start") {
-      const chats = await getRegisteredChats(env);
-      const alreadyJoined = chats.includes(chatId);
-      if (!alreadyJoined) {
-        chats.push(chatId);
-        await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(chats));
+      // v13.92-d1userstore: registerChat (idempotent INSERT OR IGNORE /
+      // legacy append). ok=false (write failed) → no admin page and the
+      // welcome flow still runs — the registration retries on the user's
+      // next interaction (the old path threw and lost the welcome entirely).
+      const reg = await registerChat(env, chatId);
+      const alreadyJoined = !reg.added;
+      if (reg.ok && reg.added) {
         // v13.71-admintools: page the owner the moment a NEW member joins
         // (name/username come from the just-written profile — the per-message
         // upsert above already stored them). Re-starts don't re-page (the
         // alreadyJoined branch below is a returning member, not a join).
-        await notifyAdminUserJoined(env, chatId, chats.length);
+        await notifyAdminUserJoined(env, chatId, reg.count);
       }
       const prefs = await getUserPrefs(env);
       const up = prefs[String(chatId)] || {};
@@ -280,14 +276,13 @@ export async function handleTelegramUpdate(env: Env, update) {
       ]] };
       await sendTelegram(env, promptText, chatId, keyboard);
     } else if (text === "/stop") {
-      const chats = await getRegisteredChats(env);
-      const wasMember = chats.includes(chatId);
-      const newChats = chats.filter((c) => c !== chatId);
-      await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(newChats));
-      if (wasMember) {
+      // v13.92-d1userstore: removeChat (registry row delete / legacy blob
+      // filter); wasMember drives the owner page exactly as before.
+      const res = await removeChat(env, chatId);
+      if (res.wasMember) {
         // v13.71-admintools: a real leave (was on the roster) pages the
         // owner; a /stop from a stranger is not a leave.
-        await notifyAdminUserLeft(env, chatId, newChats.length);
+        await notifyAdminUserLeft(env, chatId, res.count);
       }
       const prefs = await getUserPrefs(env);
       const lang = (prefs[String(chatId)] && prefs[String(chatId)].lang) === "en" ? "en" : "fa";
@@ -322,8 +317,9 @@ export async function handleTelegramUpdate(env: Env, update) {
       const p = prefs[String(chatId)] || {};
       const lang = p.lang === "en" ? "en" : "fa";
       if (!arg || arg === "all") {
-        if (prefs[String(chatId)]) delete prefs[String(chatId)];
-        await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+        // /follow all wipes the row entirely (historic semantics: lang+tz
+        // go too — a returning /start re-prompts the language).
+        await deleteUserPref(env, chatId);
         await sendTelegram(env, lang === "en" ? "Following all teams\\." : "\u2705 \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627 \u062F\u0646\u0628\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F\\.", chatId, replyKeyboard(lang));
       } else {
         const nums = arg.split(/[\s,\u060C]+/).map((n) => parseInt(String(n), 10)).filter((n) => !isNaN(n) && n >= 1 && n <= master.length);
@@ -332,7 +328,7 @@ export async function handleTelegramUpdate(env: Env, update) {
         } else {
           const picked = [...new Set(nums)].map((n: any) => master[n - 1]);
           prefs[String(chatId)] = { teams: picked, tz: p.tz || null, lang: p.lang || "fa" };
-          await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+          await saveUserPref(env, chatId, prefs[String(chatId)]);
           const sep = lang === "en" ? ", " : "\u060C ";
           const names = picked.map((t) => escapeMarkdownCharacters(translateTeam(t))).join(sep);
           const head = lang === "en" ? "Your selected teams:\n" : "\u2705 \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0627\u0646\u062A\u062E\u0627\u0628\u06CC \u0634\u0645\u0627:\n";
@@ -350,8 +346,8 @@ export async function handleTelegramUpdate(env: Env, update) {
         // v13.49-buttons: /timezone now offers tappable city quick-picks
         await sendTelegram(env, tzStatusText(lang, tz), chatId, tzPickerKeyboard(lang));
       } else if (arg === "reset") {
-        if (prefs[String(chatId)]) delete prefs[String(chatId)].tz;
-        await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+        // tz removed, teams+lang preserved (historic delete-.tz semantics)
+        await saveUserPref(env, chatId, { teams: p.teams || null, tz: null, lang: p.lang || null });
         const head = lang === "en" ? "Timezone reset to default: " : "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u0628\u0647 \u067E\u06CC\u0634\u200C\u0641\u0631\u0636 \u0628\u0627\u0632\u06AF\u0634\u062A: ";
         await sendTelegram(env, head + escapeMarkdownCharacters(env.TEHRAN_TZ || ""), chatId, replyKeyboard(lang));
       } else {
@@ -364,14 +360,10 @@ export async function handleTelegramUpdate(env: Env, update) {
           if (!prefs[String(chatId)]) prefs[String(chatId)] = {};
           prefs[String(chatId)].tz = tz;
           if (!prefs[String(chatId)].lang) prefs[String(chatId)].lang = "fa";
-          // v13.91-tzquota: honest failure (see the tz: callback twin).
-          let tzSaved = true;
-          try {
-            await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
-          } catch (e) {
-            tzSaved = false;
-            console.error("tz save failed (KV quota?): " + e.message);
-          }
+          const entry = prefs[String(chatId)] || {};
+          // v13.91-tzquota: honest failure (see the tz: callback twin) —
+          // saveUserPref returns false on a D1/KV write failure (never throws).
+          const tzSaved = await saveUserPref(env, chatId, { teams: entry.teams || null, tz: tz, lang: entry.lang || "fa" });
           if (!tzSaved) {
             await sendTelegram(env, lang === "en" ? "\u26A0\uFE0F Could not save your timezone right now \u2014 please try again in a few hours\\." : "\u26A0\uFE0F \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u0641\u0639\u0644\u0627\u064B \u0630\u062E\u06CC\u0631\u0647 \u0646\u0634\u062F \u2014 \u0644\u0637\u0641\u0627\u064B \u0686\u0646\u062F \u0633\u0627\u0639\u062A \u062F\u06CC\u06AF\u0631 \u062F\u0648\u0628\u0627\u0631\u0647 \u0627\u0645\u062A\u062D\u0627\u0646 \u06A9\u0646\u06CC\u062F\\.", chatId, replyKeyboard(lang));
             return;

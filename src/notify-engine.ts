@@ -14,6 +14,8 @@ import { isMatchFinished } from "./match-model";
 import { isWithin24HourWindow, isWithinBigMatchWindow, isWithin3HourWindow, isWithin1HourWindow, isWithin5MinWindow, isMatchStartingNow, isWithinPostMatchWindow, isBackfillEligible } from "./match-windows";
 import { getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, cleanupExpiredNotifications } from "./match-dedupe";
 import { shouldNotify } from "./match-classify";
+// v13.92-d1userstore: the dead-chat registry prune goes through the seam.
+import { pruneChats } from "./user-store";
 import { format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, specialBanner } from "./composers";
 import { sendTelegram, sendDice, sendPhotoBinary } from "./telegram";
 import { renderCardPngCached } from "./card";
@@ -302,8 +304,10 @@ export async function sendMatchNotifications(env: Env, matches) {
   if (deadChats.length) {
     const keep = chatIds.filter((c) => !deadChats.includes(c));
     console.log(`\u{1F5D1}\uFE0F Pruning dead chats: ${deadChats.join(", ")}`);
-    await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(keep)).catch(() => {
-    });
+    // v13.92-d1userstore: the registry prune goes through the seam (D1
+    // DELETE WHERE NOT IN / legacy blob put); prefs rows stay orphaned by
+    // design (historic semantics).
+    await pruneChats(env, keep);
   }
   console.log(`
 \u{1F4CA} Notification Summary:`);

@@ -30,6 +30,13 @@ export interface Env {
   // src/stats.ts). Optional so the worker still boots if the binding is
   // absent (the beacon/admin degrade to zeroes + a "not configured" flag).
   STATS_DB?: any;
+  // v13.92-d1userstore: dedicated D1 database for user data (prefs / chat
+  // registry / profiles / update dedupe). The KV daily write quota is
+  // ACCOUNT-level on the free plan and exhausts every afternoon (error
+  // 10048 — the sibling currena workers share it), exactly when users tap
+  // /timezone or /follow. Optional: when absent, src/user-store.ts serves
+  // the EXACT legacy KV paths (byte-identical key contracts).
+  USERS_DB?: any;
   // secrets (wrangler secret put …)
   BOT_TOKEN?: string;
   CHAT_ID?: string;

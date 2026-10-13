@@ -14,6 +14,8 @@ import { translateTeam, translateCompetition, resetFaAiCache, ensureFaAiCache, i
 import { maybeRunFaAi, collectUnknownTeamNames } from "./fa-ai";
 import { isWithin24HourWindow, isWithin3HourWindow, isWithin1HourWindow, isMatchStartingNow } from "./match-windows";
 import { getNotifiedMatches } from "./match-dedupe";
+// v13.92-d1userstore: clear-locks wipes the chat registry through the seam.
+import { resetChatRegistry } from "./user-store";
 import { shouldNotify } from "./match-classify";
 import { fetchLongView, fetchMatchesFromAPI } from "./providers";
 import { getCachedMatches } from "./match-pool";
@@ -111,7 +113,10 @@ export async function legacyGetAction(c: RouteCtx): Promise<Response | null> {
           return new Response("\u2705 Notification tracking cleared. Next run will send all notifications again.");
         case "clear-locks":
           await env.STATE.delete(CONFIG.KV_MATCHES_KEY);
-          await env.STATE.delete(CONFIG.KV_USERS_KEY);
+          // v13.92-d1userstore: the registry wipe goes through the seam (D1
+          // table + legacy key); prefs/profiles survive (historic behavior —
+          // "Users need to /start again").
+          await resetChatRegistry(env);
           await env.STATE.delete(CONFIG.KV_HEARTBEAT);
           await env.STATE.delete(CONFIG.KV_LAST_CRON);
           await env.STATE.delete("cron_status_v1");

@@ -40,6 +40,18 @@ if (msgStart < 0 || msgEnd < 0) {
 }
 const msgChain = src.slice(msgStart, msgEnd).replace(/\n\s*$/, "");
 
+// v13.92-d1userstore: the command/callback chains now write through the
+// REAL user-data seam — slice the whole module in so the tests exercise the
+// actual save/register/dedupe code paths (legacy KV mode: the mock envs
+// carry no USERS_DB binding).
+const usStart = src.indexOf("// ===== src/user-store.ts =====");
+const usEnd = src.indexOf("// ===== src/users.ts =====");
+if (usStart < 0 || usEnd < 0 || usEnd < usStart) {
+  console.error("FAIL: user-store module not found in worker source");
+  process.exit(1);
+}
+const userStoreSrc = src.slice(usStart, usEnd);
+
 // --- Fake KV + harness ---
 function makeStore() {
   const m = new Map();
@@ -54,7 +66,7 @@ function makeStore() {
   };
 }
 
-const CONFIG = { KV_USERS_KEY: "telegram_users_v6", KV_USER_PREFS: "user_prefs_v1" };
+const CONFIG = { KV_USERS_KEY: "telegram_users_v6", KV_USER_PREFS: "user_prefs_v1", KV_USER_PROFILES: "user_profiles_v1" };
 const STUB_TEAMS = ["Alpha FC", "Beta SC", "Gamma United"];
 
 let sent = [];
@@ -117,8 +129,8 @@ if (bldStart < 0 || bldEnd < 0 || bldEnd < bldStart) {
   process.exit(1);
 }
 const buildersSrc = src.slice(bldStart, bldEnd);
-const cbHandler = new Function("env", "update", "return (async () => { " + botStrSrc + "\n" + buildersSrc + "\n" + cbChain + "\n })();");
-const msgHandler = new Function("text", "chatId", "env", "return (async () => { " + buildersSrc + "\n" + msgChain + "\n })();");
+const cbHandler = new Function("env", "update", "return (async () => { " + botStrSrc + "\n" + buildersSrc + "\n" + userStoreSrc + "\n" + cbChain + "\n })();");
+const msgHandler = new Function("text", "chatId", "env", "return (async () => { " + buildersSrc + "\n" + userStoreSrc + "\n" + msgChain + "\n })();");
 
 function freshEnv() {
   sent = [];

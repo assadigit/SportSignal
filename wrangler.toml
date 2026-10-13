@@ -33,6 +33,24 @@ binding = "STATS_DB"
 database_name = "sportsignal-stats"
 database_id = "dcbea85b-6e71-40a0-974b-4f58d12d15e7"
 
+# v13.92-d1userstore: user data (prefs / chat registry / profiles / update
+# dedupe) on D1. ROOT CAUSE: the KV daily write quota is ACCOUNT-level on the
+# free plan — measured 2026-10-13: 631 writes on STATE + 658 on the sibling
+# currena RATES namespace = 1289 before 14:00 UTC → error 10048 EVERY
+# afternoon/evening, exactly when Tehran prime-time users tap /timezone or
+# /follow. Moving the USER-ACTION write path to D1 (separate 100k/day free
+# quota, per-row atomic upserts — no more whole-blob read-modify-write races)
+# makes tz/teams/lang/join/leave writes work 24/7. Reads fall back to the
+# legacy KV snapshot (fail-open, data as of cutover); writes fail honestly
+# (the v13.91 guards keep their UX). Optional binding: when absent
+# (local dev / harness) behavior is EXACTLY the legacy KV path — byte-
+# identical key contracts (user_prefs_v1 / telegram_users_v6 /
+# user_profiles_v1 / upd_<id>).
+[[d1_databases]]
+binding = "USERS_DB"
+database_name = "sportsignal-users"
+database_id = "0b52a5d0-6068-4d58-b656-d6f768415a9c"
+
 # v14.0.5-cupgap: TWO triggers — the 10-min tick (bot + pool) + the lean
 # 4-hourly far-cup probe (see probeCupFarFixtures in providers.ts + the
 # api.ts scheduled branch; minute 27 keeps it between the :20/:30 ticks).

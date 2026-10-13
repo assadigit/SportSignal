@@ -23,6 +23,18 @@ if (start < 0 || end < 0) {
 }
 const chain = src.slice(start, end).replace(/\n\s*$/, "");
 
+// v13.92-d1userstore: the join commands now write through the REAL
+// user-data seam — slice the module in so these tests exercise the actual
+// register/remove/save code (legacy KV mode: the mock env carries no
+// USERS_DB binding).
+const usStart = src.indexOf("// ===== src/user-store.ts =====");
+const usEnd = src.indexOf("// ===== src/users.ts =====");
+if (usStart < 0 || usEnd < 0 || usEnd < usStart) {
+  console.error("FAIL: user-store module not found in worker source");
+  process.exit(1);
+}
+const userStoreSrc = src.slice(usStart, usEnd);
+
 // --- Fake KV + harness ---
 function makeStore() {
   const m = new Map();
@@ -37,7 +49,7 @@ function makeStore() {
   };
 }
 
-const CONFIG = { KV_USERS_KEY: "telegram_users_v6", KV_USER_PREFS: "user_prefs_v1" };
+const CONFIG = { KV_USERS_KEY: "telegram_users_v6", KV_USER_PREFS: "user_prefs_v1", KV_USER_PROFILES: "user_profiles_v1" };
 const STUB_TEAMS = ["Alpha FC", "Beta SC", "Gamma United"];
 
 let sent = [];
@@ -72,7 +84,7 @@ if (bldStart < 0 || bldEnd < 0 || bldEnd < bldStart) {
   process.exit(1);
 }
 const buildersSrc = src.slice(bldStart, bldEnd);
-const handler = new Function("text", "chatId", "env", "return (async () => { " + buildersSrc + "\n" + chain + "\n })();");
+const handler = new Function("text", "chatId", "env", "return (async () => { " + buildersSrc + "\n" + userStoreSrc + "\n" + chain + "\n })();");
 
 function freshEnv() {
   sent = [];
@@ -87,13 +99,16 @@ const check = (name, cond) => {
 };
 
 (async () => {
-  // 1) /start registers a brand-new user (chatId 42, not the owner)
+  // 1) /start registers a brand-new user (chatId 42, not the owner).
+  // v13.92-d1userstore: the real seam runs now (was a stub) — a fresh
+  // registry SEEDS with the [CHAT_ID] admin exactly like the old
+  // getRegisteredChats fallback did, so the roster is [0, 42].
   const env = freshEnv();
   await handler("/start", 42, env);
   let users = await env.STATE.get(CONFIG.KV_USERS_KEY);
-  check("/start registers a fresh chatId", users && users.includes(42) && JSON.parse(users).length === 1);
+  check("/start registers a fresh chatId (with the [CHAT_ID] seed)", users && users.includes(42) && JSON.parse(users).length === 2 && JSON.parse(users)[0] === 0);
   // v13.71-admintools: the owner is paged exactly once for the NEW join
-  check("/start (new join) pages the owner once", adminPages.length === 1 && adminPages[0].type === "join" && adminPages[0].chatId === 42 && adminPages[0].total === 1);
+  check("/start (new join) pages the owner once", adminPages.length === 1 && adminPages[0].type === "join" && adminPages[0].chatId === 42 && adminPages[0].total === 2);
 
   // 2) /start is idempotent — re-starting must not duplicate the user
   await handler("/start", 42, env);
@@ -124,10 +139,11 @@ const check = (name, cond) => {
   check("/follow <invalid> writes no prefs", (!prefs || !prefs["42"] || prefs["42"].teams.length === 2));
   check("/follow <invalid> sends a warning", /نا‌معتبر|نامعتبر/.test(sent[sent.length - 1].msg));
 
-  // 7) /stop removes the chatId from registered users
+  // 7) /stop removes the chatId from registered users (the [CHAT_ID] seed
+  // member survives — the admin was never removable by a user's /stop).
   await handler("/stop", 42, env);
   users = await env.STATE.get(CONFIG.KV_USERS_KEY);
-  check("/stop removes the chatId", users && JSON.parse(users).length === 0);
+  check("/stop removes the chatId (seed member survives)", users && JSON.parse(users).length === 1 && JSON.parse(users)[0] === 0);
   // v13.71-admintools: a member's /stop pages the owner (leave signal)
   const leftEnv = freshEnv();
   await handler("/start", 42, leftEnv);

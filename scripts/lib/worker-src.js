@@ -93,6 +93,11 @@ function workerSrc() {
     // or content-span regexes (#nospam6 spans within digest-morning).
     "digest-weekly.ts", "digest-morning.ts", "digest-bigmatch.ts", "digest-coronation.ts",
     "notify-engine.ts", "notify-status.ts", "notify-audit.ts",
+    // v13.92-d1userstore: the user-data seam (D1 primary / legacy KV
+    // fallback) — sits before users.ts (its top-level delegate) and every
+    // consumer below (bot/admin-bot/notify prunes). All harness grabs on
+    // it are position-independent (grabFn).
+    "user-store.ts",
     "users.ts", "admin.ts", "admin-bot.ts", "public-matches.ts", "bot-ui.ts", "bot.ts",
     // v13.75-cronsplit: the cron group — the six phase modules run BEFORE the
     // shell (cron.ts LAST) so the flat concat mirrors runtime order: the

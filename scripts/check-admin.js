@@ -150,7 +150,17 @@ if (chainStart < 0 || chainEnd < 0) {
   process.exit(1);
 }
 const chain = src.slice(chainStart, chainEnd).replace(/\n\s*$/, "");
-const handler = new Function("text", "chatId", "env", "return (async () => { " + buildersSrc + "\n" + chain + "\n })();");
+
+// v13.92-d1userstore: the chains write through the REAL seam now — slice
+// the module in (legacy KV mode: mock envs carry no USERS_DB binding).
+const usStart = src.indexOf("// ===== src/user-store.ts =====");
+const usEnd = src.indexOf("// ===== src/users.ts =====");
+if (usStart < 0 || usEnd < 0 || usEnd < usStart) {
+  console.error("FAIL: user-store module not found");
+  process.exit(1);
+}
+const userStoreSrc = src.slice(usStart, usEnd);
+const handler = new Function("text", "chatId", "env", "return (async () => { " + buildersSrc + "\n" + userStoreSrc + "\n" + chain + "\n })();");
 
 // the callback_query chain (lang / tf / tz / adm)
 const cbStart = src.indexOf("const cbq = update && update.callback_query;");
@@ -160,7 +170,7 @@ if (cbStart < 0 || cbEnd < 0 || cbEnd < cbStart) {
   process.exit(1);
 }
 const cbChain = src.slice(cbStart, cbEnd).replace(/\n\s*$/, "");
-const cbHandler = new Function("env", "update", "return (async () => { " + botStrSrc + "\n" + buildersSrc + "\n" + cbChain + "\n })();");
+const cbHandler = new Function("env", "update", "return (async () => { " + botStrSrc + "\n" + buildersSrc + "\n" + userStoreSrc + "\n" + cbChain + "\n })();");
 
 function freshEnv(chatId) {
   sent = [];

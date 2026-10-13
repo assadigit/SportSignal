@@ -9,14 +9,18 @@ import { toFaDigits, bumpSubrequest } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { sendTelegram } from "./telegram";
 import { normAlias } from "./teams";
+// v13.92-d1userstore: the storage seam — D1 primary (quota-proof user
+// writes), legacy KV paths verbatim when USERS_DB is unbound (local dev,
+// eval harness), legacy snapshot on D1 read failure.
+import { registeredChats, userPrefsAll, saveUserPref, chatProfilesAll, saveChatProfilesBulk } from "./user-store";
 
 export async function getRegisteredChats(env: Env) {
   try {
-    const chats = await env.STATE.get(CONFIG.KV_USERS_KEY);
-    if (chats) {
-      const parsed = JSON.parse(chats);
-      if (Array.isArray(parsed)) return parsed;
-    }
+    // v13.92-d1userstore: registeredChats returns number[] (EMPTY [] is a
+    // real answer once the migration marker exists) or null when storage is
+    // absent/unreadable — the [CHAT_ID] seed fallback below is unchanged.
+    const ids = await registeredChats(env);
+    if (Array.isArray(ids)) return ids;
   } catch (error) {
     console.error("Invalid users KV data:", error.message);
   }
@@ -25,7 +29,10 @@ export async function getRegisteredChats(env: Env) {
 }
 export async function getBotMembers(env: Env) {
   const chats = await getRegisteredChats(env);
-  const profiles = await env.STATE.get(CONFIG.KV_USER_PROFILES, "json").catch(() => null) || {};
+  // v13.92-d1userstore: profiles via the seam (D1 primary / KV fallback);
+  // the getChat backfill write goes through saveChatProfilesBulk (per-row
+  // D1 upserts — no more whole-blob rewrite).
+  const profiles = await chatProfilesAll(env);
   const members = chats.map((id) => {
     const p = profiles[String(id)] || {};
     return { id, username: p.username || null, first_name: p.first_name || null, title: p.title || null, joined: p.joined || null };
@@ -53,8 +60,7 @@ export async function getBotMembers(env: Env) {
     }
   }
   if (backfilled > 0) {
-    await env.STATE.put(CONFIG.KV_USER_PROFILES, JSON.stringify(profiles)).catch(() => {
-    });
+    await saveChatProfilesBulk(env, profiles);
   }
   members.sort((a, b) => String(a.id).localeCompare(String(b.id)));
   return { count: members.length, backfilled, members };
@@ -63,7 +69,10 @@ export async function getUserPrefs(env: Env) {
   try {
     // v13.5-sim-scope: request-scoped override (set only by /api/simulate's
     // cloned env) — the shared CONFIG is never mutated at runtime.
-    return await env.STATE.get(env.SIM_PREFS_KEY || CONFIG.KV_USER_PREFS, "json") || {};
+    // v13.92-d1userstore: the seam reads D1 first (SIM key short-circuits
+    // inside userPrefsAll; D1 failure falls back to the legacy KV snapshot).
+    // Same {chatId: {teams, tz, lang}} shape every consumer reads.
+    return await userPrefsAll(env);
   } catch (e) {
     return {};
   }
@@ -71,17 +80,16 @@ export async function getUserPrefs(env: Env) {
 // v12.x-bilingual-bot getUserLang — REMOVED in v13.46-trim: zero call sites
 // (the Persian-first audience made the default "fa" universal; /lang prefs are
 // read directly by the composers where needed). setUserLang below is LIVE.
-// v12.x-bilingual-bot: set the user's language preference. Writes to KV
+// v12.x-bilingual-bot: set the user's language preference. Writes
 // user_prefs[chatId].lang. Preserves the existing teams + tz fields.
+// v13.92-d1userstore: through the seam — saveUserPref (D1 row upsert, or
+// the sim-key blob when simulating; boolean success preserved).
 export async function setUserLang(env: Env, chatId, lang) {
   const clean = lang === "en" ? "en" : "fa";
   try {
     const prefs = await getUserPrefs(env);
-    const key = String(chatId);
-    const cur = prefs[key] || {};
-    prefs[key] = { teams: cur.teams || [], tz: cur.tz || null, lang: clean };
-    await env.STATE.put(env.SIM_PREFS_KEY || CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
-    return true;
+    const cur = prefs[String(chatId)] || {};
+    return await saveUserPref(env, chatId, { teams: cur.teams || [], tz: cur.tz || null, lang: clean });
   } catch (e) {
     console.error("setUserLang failed: " + e.message);
     return false;

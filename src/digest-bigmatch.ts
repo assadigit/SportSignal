@@ -9,6 +9,8 @@ import { formatResultMessage, formatMatchStartMessage, specialBanner } from "./c
 import { isMatchFinished } from "./match-model";
 import { isWithinPostMatchWindow, isMatchStartingNow } from "./match-windows";
 import { getNotifiedMatches, saveNotifiedMatch, shouldSendNotification } from "./match-dedupe";
+// v13.92-d1userstore: the dead-chat registry prune goes through the seam.
+import { pruneChats } from "./user-store";
 import { sendTelegram } from "./telegram";
 import { getRegisteredChats, getUserPrefs, groupChatsByTz, userFollowsMatch, isMasterBigMatch } from "./users";
 
@@ -82,7 +84,8 @@ export async function broadcastBigMatchResults(env: Env, matches) {
     }
     if (deadChats.length) {
       const keep = chatIds.filter((c) => !deadChats.includes(c));
-      await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(keep)).catch(() => {});
+      // v13.92-d1userstore: prune via the seam (D1 / legacy blob).
+      await pruneChats(env, keep);
       out.dead = deadChats.length;
     }
     if (out.sent) console.log(`\u{1F4E4} result-big broadcast: ${out.sent} big-match FTs to non-followers`);
@@ -145,7 +148,8 @@ export async function broadcastBigMatchKickoff(env: Env, matches) {
     }
     if (deadChats.length) {
       const keep = chatIds.filter((c) => !deadChats.includes(c));
-      await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify(keep)).catch(() => {});
+      // v13.92-d1userstore: prune via the seam (D1 / legacy blob).
+      await pruneChats(env, keep);
       out.dead = deadChats.length;
     }
     if (out.sent) console.log(`\u{1F680} match-start-big broadcast: ${out.sent} big-match kickoffs to all chats`);
