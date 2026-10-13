@@ -6,6 +6,16 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.91-tzquota] — 2026-10-13 (honest tz saves under KV quota pressure)
+
+Live-E2E finding: the STATE namespace hits the free tier's 1,000-writes/day ceiling late in the day (healthz's kv_writes_day counter tracks only ~28% of real puts — a monitoring blind spot). When the quota is exhausted, every prefs write (timezone, teams, language) failed with a hanging spinner and nothing told the user why.
+
+- tz save paths (the tz: callback AND /timezone <city>) now guard the prefs put: on failure the user gets an honest «⚠️ فعلاً ذخیره نشد — بعداً دوباره امتحان کنید» toast/message, and NO confirm view is ever rendered for a tz that was not persisted (write-first honesty extended to the failure branch).
+- Harness: +2 behavioral checks (throwing-put env: the callback answers retry-later + sends no edit; the command warns + never claims success). 961 → 963.
+- Known-issue documentation (worklog): the structural fix candidates are (a) migrating user_prefs_v1 to D1 (the v13.56 pageviews precedent — D1 free tier allows 100k writes/day), (b) instrumenting the uncounted put sites into kv_writes_day, or (c) reducing heartbeat cadence. Not addressed in this version.
+
+---
+
 ## [13.90-tzonboard] — 2026-10-13 (timezone onboarding + the region picker with live local times)
 
 The big one users asked for: a member in Sydney and a member in New York get their alerts at THEIR local hours. The timing engine was already per-tz (morning digest at 9am local, per-tz render groups) — but nobody was ever ASKED their tz, so everyone silently ran on Tehran time.

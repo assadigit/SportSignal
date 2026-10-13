@@ -447,6 +447,25 @@ const check = (name, cond) => {
     }
   }
 
+  // ---- v13.91-tzquota: honest failure when the prefs save throws (the
+  // observed live cause: KV daily-quota exhaustion). Never a confirm view
+  // for a tz that was NOT persisted; never a silent hanging spinner. ----
+  // 30) tz:<city> callback with a throwing put -> retry-later toast, no edit
+  const env30 = freshEnv();
+  await env30.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify({ "42": { lang: "fa" } }));
+  env30.STATE.put = async () => { throw new Error("KV put() limit exceeded for the day."); };
+  await cbHandler(env30, { callback_query: { id: "cb30", data: "tz:sydney", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 300 } } });
+  check("tz:sydney quota-failure answers retry-later (fa)", answered.length === 1 && /\u0630\u062E\u06CC\u0631\u0647 \u0646\u0634\u062F/.test(answered[0].text));
+  check("tz:sydney quota-failure sends NO confirm edit", edited.length === 0);
+
+  // 31) /timezone <city> with a throwing put -> honest warning message
+  const env31 = freshEnv();
+  await env31.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify({ "42": { lang: "fa" } }));
+  env31.STATE.put = async () => { throw new Error("KV put() limit exceeded for the day."); };
+  await msgHandler("/timezone sydney", 42, env31);
+  check("/timezone sydney quota-failure warns the user", /\u0630\u062E\u06CC\u0631\u0647 \u0646\u0634\u062F/.test(sent[sent.length - 1].msg));
+  check("/timezone sydney quota-failure does NOT claim success", !/\u062A\u063A\u06CC\u06CC\u0631 \u06A9\u0631\u062F|Timezone set/.test(sent[sent.length - 1].msg));
+
   console.log(failed ? failed + " FAILURES" : "bot edges OK");
   process.exit(failed ? 1 : 0);
 })();

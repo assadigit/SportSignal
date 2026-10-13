@@ -130,7 +130,21 @@ export async function handleTelegramUpdate(env: Env, update) {
               if (!prefs[key]) prefs[key] = {};
               prefs[key].tz = tz;
               if (!prefs[key].lang) prefs[key].lang = "fa";
-              await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+              // v13.91-tzquota: a failed prefs save (KV daily-quota
+              // exhaustion is the observed live cause) gets an honest
+              // retry-later toast — never a silent hanging spinner, and
+              // never a confirm view for a tz that was NOT persisted.
+              let tzSaved = true;
+              try {
+                await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+              } catch (e) {
+                tzSaved = false;
+                console.error("tz save failed (KV quota?): " + e.message);
+              }
+              if (!tzSaved) {
+                await answerCallbackQuery(env, cbq.id, lang === "en" ? "\u26A0\uFE0F Could not save right now \u2014 try again later" : "\u26A0\uFE0F \u0641\u0639\u0644\u0627\u064B \u0630\u062E\u06CC\u0631\u0647 \u0646\u0634\u062F \u2014 \u0628\u0639\u062F\u0627\u064B \u062F\u0648\u0628\u0627\u0631\u0647 \u0627\u0645\u062A\u062D\u0627\u0646 \u06A9\u0646\u06CC\u062F");
+                return;
+              }
               await answerCallbackQuery(env, cbq.id, lang === "en" ? "Timezone: " + tz : "\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC: " + tz);
               // v13.90-tzonboard: the select\+confirm step \u2014 the tz is
               // already SAVED (write-first); the confirm view shows the
@@ -350,7 +364,18 @@ export async function handleTelegramUpdate(env: Env, update) {
           if (!prefs[String(chatId)]) prefs[String(chatId)] = {};
           prefs[String(chatId)].tz = tz;
           if (!prefs[String(chatId)].lang) prefs[String(chatId)].lang = "fa";
-          await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+          // v13.91-tzquota: honest failure (see the tz: callback twin).
+          let tzSaved = true;
+          try {
+            await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
+          } catch (e) {
+            tzSaved = false;
+            console.error("tz save failed (KV quota?): " + e.message);
+          }
+          if (!tzSaved) {
+            await sendTelegram(env, lang === "en" ? "\u26A0\uFE0F Could not save your timezone right now \u2014 please try again in a few hours\\." : "\u26A0\uFE0F \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u0641\u0639\u0644\u0627\u064B \u0630\u062E\u06CC\u0631\u0647 \u0646\u0634\u062F \u2014 \u0644\u0637\u0641\u0627\u064B \u0686\u0646\u062F \u0633\u0627\u0639\u062A \u062F\u06CC\u06AF\u0631 \u062F\u0648\u0628\u0627\u0631\u0647 \u0627\u0645\u062A\u062D\u0627\u0646 \u06A9\u0646\u06CC\u062F\\.", chatId, replyKeyboard(lang));
+            return;
+          }
           const head = lang === "en" ? "Timezone set: " : "\u2705 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u062A\u063A\u06CC\u06CC\u0631 \u06A9\u0631\u062F: ";
           const tail = lang === "en" ? "\nMessages will be sent in your local time\\." : "\n\u067E\u06CC\u0627\u0645\u200C\u0647\u0627 \u0627\u0632 \u0627\u06CC\u0646 \u067E\u0633 \u0628\u0631 \u0627\u0633\u0627\u0633 \u0633\u0627\u0639\u062A \u0645\u062D\u0644\u06CC \u0627\u0631\u0633\u0627\u0644 \u0645\u06CC\u200C\u0634\u0648\u0646\u062F\\.";
           await sendTelegram(env, head + escapeMarkdownCharacters(tz) + tail, chatId, replyKeyboard(lang));
