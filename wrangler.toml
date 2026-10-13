@@ -16,10 +16,14 @@ directory = "./assets"
 not_found_handling = "none"
 
 # KV Namespace Binding
+# v13.95-accountmigration: SportSignal now lives on its DEDICATED Cloudflare
+# account (was: shared with currena — the account-level KV write quota was
+# the root cause of the daily error-10048 lockouts). All state was migrated
+# from the old namespace (121 keys, expirations preserved) on 2026-10-13.
 [[kv_namespaces]]
 binding = "STATE"
-id = "432ecae8fb8c4146b6b01b91eb8f4b2a"
-preview_id = "8784e1973a984dea981010a6d644f153"
+id = "c63588df02ae4bf1bfdc18d19c5b3631"
+preview_id = "3d0548d6a5ef48679bb85d90db8dcfce"
 
 # v13.56-visitcount: dedicated D1 database for the cookieless page-view
 # counter. Isolated from the STATE KV namespace's 1,000-writes/day free-tier
@@ -31,7 +35,7 @@ preview_id = "8784e1973a984dea981010a6d644f153"
 [[d1_databases]]
 binding = "STATS_DB"
 database_name = "sportsignal-stats"
-database_id = "dcbea85b-6e71-40a0-974b-4f58d12d15e7"
+database_id = "b371048b-4ae0-4ea5-9519-1d308390b700"
 
 # v13.92-d1userstore: user data (prefs / chat registry / profiles / update
 # dedupe) on D1. ROOT CAUSE: the KV daily write quota is ACCOUNT-level on the
@@ -49,11 +53,13 @@ database_id = "dcbea85b-6e71-40a0-974b-4f58d12d15e7"
 [[d1_databases]]
 binding = "USERS_DB"
 database_name = "sportsignal-users"
-database_id = "0b52a5d0-6068-4d58-b656-d6f768415a9c"
+database_id = "c64064ff-aa78-4c73-80cd-e2805d550a5b"
 
 # v14.0.5-cupgap: TWO triggers — the 10-min tick (bot + pool) + the lean
 # 4-hourly far-cup probe (see probeCupFarFixtures in providers.ts + the
 # api.ts scheduled branch; minute 27 keeps it between the :20/:30 ticks).
+# v13.95-accountmigration: triggers were re-armed by deploy #2 after the
+# secret set + state re-sync (the two-phase cutover is complete).
 [triggers]
 crons = ["*/10 * * * *", "27 */4 * * *"]
 

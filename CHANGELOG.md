@@ -6,6 +6,31 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.95-accountmigration] — 2026-10-13 (dedicated Cloudflare account — the KV-quota divorce from currena)
+
+The whole deployment moved from the shared account (where the account-level
+KV write quota collided with currena's RATES namespace — the root cause
+behind the daily error-10048 lockouts documented in v13.92) to a dedicated
+account. The zone sportsignal.ir moved with it (NS now hera/rob.ns.cloudflare.com).
+
+- KV STATE: 121/121 keys migrated byte-identical (expirations preserved via
+  multipart metadata), then re-synced after the last old-worker tick.
+- D1 sportsignal-users (6 tables, 46 rows) and sportsignal-stats (5 tables,
+  89 rows): schema + rows recreated on the new account, counts verified.
+- Secrets: BOT_TOKEN / CHAT_ID carried over; WEBHOOK_SECRET, ADMIN_TOKEN and
+  ADMIN_PASS REGENERATED (secret values are write-only by design — the old
+  ones are unrecoverable through any API). The Telegram webhook was re-registered
+  against the new WEBHOOK_SECRET. API_TOKEN (football-data.org) must be re-set
+  by the operator (see RUNBOOK §1).
+- Two-phase deploy: worker created WITHOUT cron schedules → secrets set →
+  state re-sync → schedules re-armed → OLD worker's schedules deleted — this
+  ordering guarantees no tick ever fires without BOT_TOKEN (write-first dedupe
+  would otherwise burn dedupe keys without sending) and no double-send window.
+- Custom domains re-attached on the new zone: football.sportsignal.ir +
+  sportsignal.ir (worker domains), www.sportsignal.ir/* (route).
+
+---
+
 ## [13.94-fanoutfix] — 2026-10-13 (the notification fan-out made wall-proof + quota-proof — "I get all 3, other users get 1")
 
 User-reported, live-diagnosed with a retained `wrangler tail` (13:41Z→) + KV/D1 readbacks: the admin receives every notification flawlessly while other registered users receive none or only some ("another user received one of tonight's 3 matches, I received full 3"). All 4 chats probed alive via getChat — not a blocked/dead-chat problem. The live forensics found THREE interlocking root causes:

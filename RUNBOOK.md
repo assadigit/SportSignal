@@ -5,7 +5,20 @@
 > before deploying, before debugging, and before touching `src/`.
 
 Live: **https://sportsignal.ir** · Worker `ucl-notifier` · KV namespace `STATE`
-(id `432ecae8fb8c4146b6b01b91eb8f4b2a`) · cron `*/10 * * * *` UTC · repo `main` only.
+(id `c63588df02ae4bf1bfdc18d19c5b3631`) · cron `*/10 * * * *` UTC · repo `main` only.
+
+> **v13.95-accountmigration:** the deployment moved to a DEDICATED Cloudflare
+> account on 2026-10-13 (was: shared with currena — the account-level KV write
+> quota collision behind the error-10048 lockouts). New resource IDs:
+> account `a796fdfe71819812119b8a494d3d39c1` · KV `STATE`
+> `c63588df02ae4bf1bfdc18d19c5b3631` (preview `3d0548d6a5ef48679bb85d90db8dcfce`)
+> · D1 stats `b371048b-4ae0-4ea5-9519-1d308390b700` · D1 users
+> `c64064ff-aa78-4c73-80cd-e2805d550a5b` · workers.dev subdomain `sportsignal`
+> (https://ucl-notifier.sportsignal.workers.dev). Secrets `WEBHOOK_SECRET`,
+> `ADMIN_TOKEN`, `ADMIN_PASS` were REGENERATED during the move (secret values
+> are write-only — the old ones were never recoverable). `API_TOKEN`
+> (football-data.org) must be re-set by the operator if not yet done:
+> `CLOUDFLARE_API_TOKEN=<token> CLOUDFLARE_ACCOUNT_ID=a796fdfe71819812119b8a494d3d39c1 npx wrangler secret put API_TOKEN`.
 
 ---
 
@@ -216,7 +229,7 @@ sandbox — "Value not found" for existing keys):
 
 ```sh
 curl -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-  "https://api.cloudflare.com/client/v4/accounts/{account_id}/storage/kv/namespaces/432ecae8fb8c4146b6b01b91eb8f4b2a/values/<KEY>"
+  "https://api.cloudflare.com/client/v4/accounts/{account_id}/storage/kv/namespaces/c63588df02ae4bf1bfdc18d19c5b3631/values/<KEY>"
 ```
 
 **Live keys (the contracts that matter):**
