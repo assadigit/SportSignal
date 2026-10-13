@@ -260,7 +260,10 @@ function freshEnv(chatId) {
   env = freshEnv(ADMIN);
   await handler("/start", ADMIN, env);
   check("owner's /start (already a member) does not page himself", !sent.some((s) => s.msg.includes("عضو جدید")));
-  check("owner gets the already-joined ack (v13.68 no-regression)", sent.length === 1 && sent[0].id === ADMIN && /قبلاً|already/i.test(sent[0].msg));
+  // v13.90-tzonboard: a tz-less owner ALSO gets the onboarding prompt after
+  // the ack (lang set, tz not) — the ack is still message #1.
+  check("owner gets the already-joined ack (v13.68 no-regression)", sent.length === 2 && sent[0].id === ADMIN && /قبلاً|already/i.test(sent[0].msg));
+  check("owner (no tz) also gets the v13.90 tz onboarding prompt", sent[1].keyboard && (sent[1].keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:tehran"));
 
   // B12) direct pager semantics: skip the admin himself, page for others
   env = freshEnv(ADMIN);

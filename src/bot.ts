@@ -15,7 +15,7 @@ import { renderCardPngCached } from "./card";
 import { formatBigMatchMessage, specialBanner } from "./composers";
 import { getRegisteredChats, getUserPrefs, setUserLang, getUserTz, masterTeamList, userFollowsMatch, botStr, resolveTimeZone } from "./users";
 import { sendLeagueTables, sendWeekAhead } from "./digest-weekly";
-import { replyKeyboard, normalizeCommand, teamsMessageText, teamsGridKeyboard, tzStatusText, tzPickerKeyboard } from "./bot-ui";
+import { replyKeyboard, normalizeCommand, teamsMessageText, teamsGridKeyboard, tzStatusText, tzPickerKeyboard, tzRegionText, tzRegionKeyboard, tzOnboardText, tzConfirmText, tzConfirmKeyboard, tzDoneText, TZ_REGIONS } from "./bot-ui";
 import { applySettings } from "./admin";
 import { isAdminChat, notifyAdminUserJoined, notifyAdminUserLeft, adminPanelText, adminPanelKeyboard, adminMembersMessage, adminStatusMessage, adminBroadcast } from "./admin-bot";
 export async function handleTelegramUpdate(env: Env, update) {
@@ -58,6 +58,17 @@ export async function handleTelegramUpdate(env: Env, update) {
             await answerCallbackQuery(env, cbq.id, lang === "en" ? "English" : "\u0641\u0627\u0631\u0633\u06CC");
             const welcomeText = botStr(lang, "lang_set") + "\n\n" + botStr(lang, "start_welcome") + "\n\n" + (lang === "en" ? "Use the buttons below to navigate\\." : "\u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u067E\u0627\u06CC\u06CC\u0646 \u0628\u0631\u0627\u06CC \u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F\\.");
             await sendTelegram(env, welcomeText, cbChatId2, replyKeyboard(lang));
+            // v13.90-tzonboard: right after the language welcome, a user
+            // with NO timezone set gets the region picker \u2014 new joiners
+            // (this is their first /start moment) AND returning users
+            // re-tapping an old picker. Users with a tz are never nagged.
+            // Without this a Sydney member's alerts silently ran on
+            // Tehran time forever.
+            const pnow = await getUserPrefs(env);
+            const pnowTz = pnow[String(cbChatId2)] && pnow[String(cbChatId2)].tz;
+            if (!pnowTz) {
+              await sendTelegram(env, tzOnboardText(lang), cbChatId2, tzPickerKeyboard(lang));
+            }
           }
         // v13.49-buttons: team-grid callbacks (tf:<n> / tf:all) from the
         // /teams inline grid. Tap toggles follow-status; the message is
@@ -112,6 +123,7 @@ export async function handleTelegramUpdate(env: Env, update) {
             if (prefs[key]) delete prefs[key].tz;
             await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
             await answerCallbackQuery(env, cbq.id, lang === "en" ? "Timezone reset" : "\u0628\u0627\u0632\u06AF\u0634\u062A \u0628\u0647 \u067E\u06CC\u0634\u200C\u0641\u0631\u0636");
+            await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzStatusText(lang, env.TEHRAN_TZ || "Asia/Tehran"), tzPickerKeyboard(lang));
           } else {
             const tz = resolveTimeZone(tzt[1]);
             if (tz) {
@@ -120,11 +132,43 @@ export async function handleTelegramUpdate(env: Env, update) {
               if (!prefs[key].lang) prefs[key].lang = "fa";
               await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(prefs));
               await answerCallbackQuery(env, cbq.id, lang === "en" ? "Timezone: " + tz : "\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC: " + tz);
+              // v13.90-tzonboard: the select\+confirm step \u2014 the tz is
+              // already SAVED (write-first); the confirm view shows the
+              // live local time + offset so the user can verify it against
+              // their wall clock, then \u2705-dismiss or re-open the picker.
+              await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzConfirmText(lang, tz), tzConfirmKeyboard(lang));
             } else {
               await answerCallbackQuery(env, cbq.id, lang === "en" ? "Unknown timezone" : "\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0646\u0627\u0645\u0639\u062A\u0628\u0631 \u0627\u0633\u062A");
+              await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzStatusText(lang, prefs[key] && prefs[key].tz ? prefs[key].tz : env.TEHRAN_TZ || "Asia/Tehran"), tzPickerKeyboard(lang));
             }
           }
-          await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzStatusText(lang, prefs[key] ? prefs[key].tz || (env.TEHRAN_TZ || "Asia/Tehran") : (env.TEHRAN_TZ || "Asia/Tehran")), tzPickerKeyboard(lang));
+        }
+        // v13.90-tzonboard: region navigation \u2014 tzr:<region> renders that
+        // region's city buttons (each with its live local time, the current
+        // zone \u2705-marked); tzr:hub (or an unknown region, fail-closed)
+        // returns to the status + hub.
+        const tzreg = data.match(/^tzr:([a-z]+)$/);
+        if (tzreg) {
+          const prefs = await getUserPrefs(env);
+          const key = String(cbChatId2);
+          const p = prefs[key] || {};
+          const lang = p.lang === "en" ? "en" : "fa";
+          await answerCallbackQuery(env, cbq.id, "\u2713");
+          if (tzreg[1] === "hub" || !TZ_REGIONS[tzreg[1]]) {
+            await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzStatusText(lang, p.tz || env.TEHRAN_TZ || "Asia/Tehran"), tzPickerKeyboard(lang));
+          } else {
+            await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzRegionText(lang), tzRegionKeyboard(lang, tzreg[1], p.tz || null));
+          }
+        }
+        // v13.90-tzonboard: the \u2705 "Yes, correct" tap \u2014 finalizes the
+        // onboarding exchange (edits to the done text, buttons removed).
+        if (data === "tzok") {
+          const prefs = await getUserPrefs(env);
+          const key = String(cbChatId2);
+          const p = prefs[key] || {};
+          const lang = p.lang === "en" ? "en" : "fa";
+          await answerCallbackQuery(env, cbq.id, lang === "en" ? "Timezone confirmed" : "\u2705 \u062B\u0628\u062A \u0634\u062F");
+          await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzDoneText(lang, p.tz || env.TEHRAN_TZ || "Asia/Tehran"), { inline_keyboard: [] });
         }
         // v13.71-admintools: the /admin panel's quick buttons — members roster
         // and live status. Strictly gated to the owner chat (a non-admin tap
@@ -206,6 +250,14 @@ export async function handleTelegramUpdate(env: Env, update) {
         ]] };
         await sendTelegram(env, promptText, chatId, keyboard);
       }
+      // v13.90-tzonboard: any /starter whose language is set but whose tz
+      // is not gets the picker here \u2014 covers EXISTING members who joined
+      // before the onboarding existed (they see it on their next /start,
+      // once; a set tz never re-prompts). The lang tap itself sends the
+      // picker for brand-new joiners (see the lang: callback above).
+      if (langSet && !up.tz) {
+        await sendTelegram(env, tzOnboardText(up.lang === "en" ? "en" : "fa"), chatId, tzPickerKeyboard(up.lang === "en" ? "en" : "fa"));
+      }
     } else if (text === "/lang") {
       const promptText = "\u{1F310} \u0632\u0628\u0627\u0646 / Language";
       const keyboard = { inline_keyboard: [[
@@ -230,8 +282,8 @@ export async function handleTelegramUpdate(env: Env, update) {
       const prefs = await getUserPrefs(env);
       const lang = (prefs[String(chatId)] && prefs[String(chatId)].lang) === "en" ? "en" : "fa";
       const body = lang === "en"
-        ? "/start \\- Join\n/teams \\- List teams\n/follow 1,3,7 \\- Pick teams\n/follow all \\- All teams\n/next \\- Upcoming matches\n/tables \\- League tables\n/timezone london \\- Set timezone\n/lang \\- Change language\n/stop \\- Unsubscribe"
-        : "/start \\- \u0639\u0636\u0648\u06CC\u062A\n/teams \\- \u0644\u06CC\u0633\u062A \u062A\u06CC\u0645\u200C\u0647\u0627\n/follow 1,3,7 \\- \u0627\u0646\u062A\u062E\u0627\u0628 \u062A\u06CC\u0645\n/follow all \\- \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627\n/next \\- \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\n/tables \\- \u062C\u062F\u0648\u0644\u200C\u0647\u0627\n/timezone london \\- \u062A\u0646\u0638\u06CC\u0645 \u0632\u0645\u0627\u0646\n/lang \\- \u062A\u063A\u06CC\u06CC\u0631 \u0632\u0628\u0627\u0646\n/stop \\- \u0627\u0646\u0635\u0631\u0627\u0641";
+        ? "/start \\- Join\n/teams \\- List teams\n/follow 1,3,7 \\- Pick teams\n/follow all \\- All teams\n/next \\- Upcoming matches\n/tables \\- League tables\n/timezone \\- Pick your timezone (region buttons, live local times)\n/lang \\- Change language\n/stop \\- Unsubscribe"
+        : "/start \\- \u0639\u0636\u0648\u06CC\u062A\n/teams \\- \u0644\u06CC\u0633\u062A \u062A\u06CC\u0645\u200C\u0647\u0627\n/follow 1,3,7 \\- \u0627\u0646\u062A\u062E\u0627\u0628 \u062A\u06CC\u0645\n/follow all \\- \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627\n/next \\- \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\n/tables \\- \u062C\u062F\u0648\u0644\u200C\u0647\u0627\n/timezone \\- \u062A\u0646\u0638\u06CC\u0645 \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC\n/lang \\- \u062A\u063A\u06CC\u06CC\u0631 \u0632\u0628\u0627\u0646\n/stop \\- \u0627\u0646\u0635\u0631\u0627\u0641";
       const header = lang === "en" ? "\u26BD *Help*\n\n" : "\u26BD *\u0631\u0627\u0647\u0646\u0645\u0627*\n\n";
       const tip = "\n\n" + (lang === "en" ? "Tip: tap the buttons below \uD83D\uDC47" : "\u0631\u0627\u0647\u0646\u0645\u0627: \u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u067E\u0627\u06CC\u06CC\u0646 \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646 \uD83D\uDC47");
       await sendTelegram(env, header + body + tip, chatId, replyKeyboard(lang));

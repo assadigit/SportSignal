@@ -407,6 +407,13 @@ check("#buttons normalizeCommand maps the Timezone labels", /"\\u0632\\u0645\\u0
 check("#buttons /teams grid builders exist (text + keyboard)", /function teamsMessageText\(/.test(botBtnSeg) && /function teamsGridKeyboard\(/.test(botBtnSeg));
 check("#buttons tz picker builders exist (text + keyboard)", /function tzStatusText\(/.test(botBtnSeg) && /function tzPickerKeyboard\(/.test(botBtnSeg));
 check("#buttons callback handlers cover tf: and tz: callbacks", /tft = data\.match\(\/\^tf:\(\\d\+\|all\)\$\/\)/.test(botBtnSeg) && /tzt = data\.match\(\/\^tz:\(\[a-z0-9\\-\]\+\)\$\/\)/.test(botBtnSeg));
+// v13.90-tzonboard: the region picker + the confirm step — tzr:<region>/tzr:hub
+// navigation and the tzok dismiss must exist alongside the legacy tz: handler
+// (which stays for the Tehran quick-pick + reset + city slugs).
+check("#buttons v13.90 tz region navigation callback (tzr:)", /tzreg = data\.match\(\/\^tzr:\(\[a-z\]\+\)\$\/\)/.test(botBtnSeg) && /TZ_REGIONS\[tzreg\[1\]\]/.test(botBtnSeg));
+check("#buttons v13.90 tz confirm callback (tzok) exists", /data === "tzok"/.test(botBtnSeg));
+check("#buttons v13.90 onboarding prompt after the language welcome", /tzOnboardText\(lang\), cbChatId2, tzPickerKeyboard\(lang\)/.test(botBtnSeg));
+check("#buttons v13.90 /start re-prompts tz-less returning members", /if \(langSet && !up\.tz\)/.test(botBtnSeg));
 check("#buttons editMessageText sender exists in telegram.ts", (src.match(/\/\/ ===== src\/telegram\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0].includes("editMessageText"));
 const kbAttaches = (botBtnSeg.match(/chatId, replyKeyboard\(lang\)/g) || []).length;
 check("#buttons every bot reply re-attaches the keyboard (>= 10 sites)", kbAttaches >= 10);

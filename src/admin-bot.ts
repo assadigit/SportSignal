@@ -141,7 +141,10 @@ export async function adminMembersMessage(env: Env) {
       : "\u0647\u0645\u0647";
     const line = toFaDigits(String(i + 1)) + "\\. " + label
       + "\n\u{1F194} `" + String(m.id) + "` \u00B7 \u0639\u0636\u0648\u06CC\u062A: " + escapeMarkdownCharacters(joined)
-      + " \u00B7 " + (p.lang === "en" ? "EN" : "FA") + " \u00B7 \u062A\u06CC\u0645\u200C\u0647\u0627: " + teams;
+      + " \u00B7 " + (p.lang === "en" ? "EN" : "FA") + " \u00B7 \u062A\u06CC\u0645\u200C\u0647\u0627: " + teams
+      // v13.90-tzonboard: the owner sees each member's timezone (or the
+      // Tehran default) \u2014 makes the tz onboarding rollout observable.
+      + " \u00B7 \u23F0 " + (p.tz ? escapeMarkdownCharacters(p.tz) : "\u062A\u0647\u0631\u0627\u0646 (\u067E\u06CC\u0634\u0654\u0641\u0631\u0636)");
     if (lines.join("\n\n").length + line.length > 3600) {
       truncated = list.length - i;
       break;

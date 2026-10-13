@@ -6,6 +6,21 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.90-tzonboard] — 2026-10-13 (timezone onboarding + the region picker with live local times)
+
+The big one users asked for: a member in Sydney and a member in New York get their alerts at THEIR local hours. The timing engine was already per-tz (morning digest at 9am local, per-tz render groups) — but nobody was ever ASKED their tz, so everyone silently ran on Tehran time.
+
+- Onboarding: the language tap on /start now follows the welcome with the timezone prompt (region picker) for every user with no tz set. Returning members get it on their next /start (once; a set tz never re-prompts — the lang: tap path and the /start path both check). Users who ignore it keep the Tehran default (fail-closed, zero behavior change for lurkers).
+- The region picker: hub (🇮🇷 Tehran one-tap quick-pick with live time · 6 regions · reset) → region pages (43 cities across Europe/Middle East/East Asia/North+South America/Oceania). Every city button carries its LIVE local time (HH:mm, Persian digits for fa) — the self-confirming signal: tap the button whose clock matches yours. The current zone is ✅-marked.
+- Select + confirm: tapping a city SAVES the tz immediately (write-first) and edits to the confirm view — zone + your local time + UTC offset, «✅ بله، درست است / Yes, correct» (finalizes, buttons removed) or «🔀 تغییر منطقه» (re-opens). tzok → the done text with the /timezone reminder.
+- /timezone (the «زمان» reply-keyboard button) now opens the same hub; /timezone <city> and /timezone reset unchanged (35 new TZ_ALIASES: vienna/athens/riyadh/kuwait/seoul/shanghai/jakarta/chicago/denver/vancouver/mexico-city/sao-paulo/buenos-aires/lima/bogota/santiago/caracas/auckland/wellington + popular European inputs).
+- The tz status now reads «منطقهٔ زمانی شما: Europe/London — ساعتِ شما: 14:32 (UTC+1)» — offset + live time always visible.
+- Admin: the /members roster shows each member's zone (⏰ tz or «تهران (پیش‌فرض)») — the rollout is observable.
+- FIXED two latent MarkdownV2 delivery bugs found by live-API QA: (1) BOT_STRINGS' single-escaped \! and \. produced no backslash at runtime → the post-language-tap welcome 400'd and NEVER DELIVERED (every new member's first welcome was silently lost since v13.72's slim-down); (2) the /timezone status tail carried raw «>» in «/timezone <city>» → 400 (no-arg /timezone never delivered since v13.49). Both double-escaped now; the new harness check locks the FULL reserved set (_*[]()~`>#+-=|{}.!) over every new tz text.
+- Harness: +34 checks (69 in bot-edges: onboarding no-nag rules, region rendering, ✅ marks, live-time labels, back/fail-closed navigation, write-first confirm, tzok dismiss, real toFaDigits/escapeMarkdownCharacters slices, TZ_REGIONS 43-slug integrity + Telegram charset safety, offset correctness incl. the quarter-hour Kathmandu zone, MarkdownV2 cleanliness) + 4 reliability locks (tzr/tzok handlers, both prompt sites) + admin B11 updated for the prompt. 927 → 961.
+
+---
+
 ## [13.89-stdetail] — 2026-10-13 (W·D·L columns, the honest full table, interaction polish)
 
 - Standings tables gain the compact W·D·L column «ب-م-ش» («۶-۲-۱» per row, each count in its win/draw/loss hue, tabular digits, hover title «برد-مساوی-شکست») — BOTH the team-page window and the competition full table. Desktop-visible, hidden ≤600px (mobile keeps pos/name/pts). Fail-closed cell: rows without stats render «—».

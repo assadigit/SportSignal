@@ -92,11 +92,16 @@ export async function setUserLang(env: Env, chatId, lang) {
 // The ~100 v12.x keys (help_body, teams_*, follow_*, tz_*) were orphaned
 // when the composers began hardcoding their own bilingual strings; they
 // had zero readers. Kept: the two the welcome path reads.
+// v13.90-tzonboard: these four strings carried SINGLE-escaped \! and \. —
+// in a JS string literal that produces no backslash at all, so the
+// post-language-tap welcome failed Telegram's MarkdownV2 parse with 400
+// ("'.' is reserved") and NEVER DELIVERED (verified live against the bot
+// API). Double-escaped like every other literal in the bot now.
 var BOT_STRINGS = {
-  "fa_start_welcome": "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\!\n\u0627\u0639\u0644\u0627\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645 \u0631\u0627 \u0627\u0632 \u062F\u0633\u062A \u0646\u062F\u0647\u06CC\u062F\.",
-  "en_start_welcome": "Welcome to SportSignal\!\nNever miss the big matches\.",
-  "fa_lang_set": "\u2705 \u0632\u0628\u0627\u0646 \u0631\u0628\u0627\u062A \u0641\u0627\u0631\u0633\u06CC \u0634\u062F\.",
-  "en_lang_set": "Bot language set to English\.",
+  "fa_start_welcome": "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\\!\n\u0627\u0639\u0644\u0627\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645 \u0631\u0627 \u0627\u0632 \u062F\u0633\u062A \u0646\u062F\u0647\u06CC\u062F\\.",
+  "en_start_welcome": "Welcome to SportSignal\\!\nNever miss the big matches\\.",
+  "fa_lang_set": "\u2705 \u0632\u0628\u0627\u0646 \u0631\u0628\u0627\u062A \u0641\u0627\u0631\u0633\u06CC \u0634\u062F\\.",
+  "en_lang_set": "Bot language set to English\\.",
 };
 export function botStr(lang, key) {
   const k = (lang === "en" ? "en_" : "fa_") + key;
@@ -171,7 +176,42 @@ var TZ_ALIASES = {
   "kuala-lumpur": "Asia/Kuala_Lumpur",
   singapore: "Asia/Singapore",
   "hong-kong": "Asia/Hong_Kong",
-  tokyo: "Asia/Tokyo"
+  tokyo: "Asia/Tokyo",
+  // v13.90-tzonboard: the region-picker city slugs (every city button's
+  // callback_data resolves through this table) + the popular text-input
+  // candidates. All hyphenated — the tz: callback regex is [a-z0-9-]+.
+  vienna: "Europe/Vienna",
+  athens: "Europe/Athens",
+  zurich: "Europe/Zurich",
+  stockholm: "Europe/Stockholm",
+  oslo: "Europe/Oslo",
+  copenhagen: "Europe/Copenhagen",
+  dublin: "Europe/Dublin",
+  lisbon: "Europe/Lisbon",
+  warsaw: "Europe/Warsaw",
+  prague: "Europe/Prague",
+  budapest: "Europe/Budapest",
+  helsinki: "Europe/Helsinki",
+  riyadh: "Asia/Riyadh",
+  kuwait: "Asia/Kuwait",
+  manama: "Asia/Bahrain",
+  muscat: "Asia/Muscat",
+  seoul: "Asia/Seoul",
+  shanghai: "Asia/Shanghai",
+  jakarta: "Asia/Jakarta",
+  chicago: "America/Chicago",
+  denver: "America/Denver",
+  houston: "America/Chicago",
+  vancouver: "America/Vancouver",
+  "mexico-city": "America/Mexico_City",
+  "sao-paulo": "America/Sao_Paulo",
+  "buenos-aires": "America/Argentina/Buenos_Aires",
+  lima: "America/Lima",
+  bogota: "America/Bogota",
+  santiago: "America/Santiago",
+  caracas: "America/Caracas",
+  auckland: "Pacific/Auckland",
+  wellington: "Pacific/Wellington"
 };
 export function resolveTimeZone(input) {
   const raw = String(input || "").trim().toLowerCase().replace(/\s+/g, "-");
