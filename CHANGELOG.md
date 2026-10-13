@@ -6,6 +6,40 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.74-providersplit] — 2026-10-13 (providers.ts 853 lines → 8 cohesive modules)
+
+Second hygiene phase (worklog Task 38). `providers.ts` mixed two provider
+clients, normalization, the circuit breaker and the pool merge with the
+three sweep orchestrators. It is now a GROUP of single-responsibility
+modules (byte-identical function bodies — moves, not rewrites):
+
+| Module | Lines | Owns |
+| :--- | ---: | :--- |
+| `provider-breaker.ts` | 21 | the prov_down_* suspension circuit |
+| `provider-wikipedia.ts` | 56 | the PGL standings fallback |
+| `provider-sportscore.ts` | 107 | sportScoreDay + the day sweep (budget-stop, suspension) |
+| `provider-tsp.ts` | 70 | the TSP event mapper + league-views sweep |
+| `provider-fd.ts` | 73 | football-data range fetch + 429 suspension |
+| `match-pool.ts` | 64 | the matches_v13_tracked pool read/write |
+| `provider-cups.ts` | 214 | big-team cup scan + far-cup probe |
+| `providers.ts` (orchestrators) | 322 | fetchLongView / fetchLiveSweep / fetchMatchesFromAPI |
+
+- Dependency direction is acyclic and obvious: clients → breaker/pool;
+  cups → tsp+sportscore+pool; orchestrators (providers.ts) → everything.
+  Every importer updated to the specific module it uses (cron, api,
+  composers, digest, public-matches, admin-ops, seo/data).
+- `sportScoreDay` + `tspEventToMatch` gained exports (real cross-module
+  importers now: cups + orchestrators).
+- Harness co-evolution (same commit): worker-src.js order array carries
+  the provider group contiguously before telegram.ts; check-reliability's
+  `provSeg15` segment re-anchored to span the whole group
+  (breaker → telegram) so the #cupscan/#poolbreak checks keep covering
+  the split code. No signature changes — grabFn signatures untouched.
+- KV key contracts untouched (prov_down_*, cup_scan_v1, cup_far_scan_v1,
+  matches_v13_tracked, last_api_source, degradation_alert_at all intact).
+
+Suite: 802 checks green on the first post-split run.
+
 ## [13.73-herotruth] — 2026-10-13 (the hero pick is ONE expression — v13.68 enforced by construction)
 
 The audit found the v13.68 "website-as-truth" constraint was aspirational:

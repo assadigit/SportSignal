@@ -63,7 +63,14 @@ function workerSrc() {
   if (cache) return cache;
   const order = [
     "worker.ts", "config.ts", "tables.ts", "utils.ts", "teams.ts", "dedupe.ts", "fa-dict.ts", "translate.ts", "fa-ai.ts",
-    "matches.ts", "providers.ts", "telegram.ts", "composers.ts", "digest.ts",
+    "matches.ts",
+    // v13.74-providersplit: the provider group — breaker/wikipedia/sportscore/
+    // tsp/fd/match-pool/cups are the clients+pool; providers.ts (LAST) is the
+    // orchestrator layer that imports them all. Order within the group keeps
+    // the flat-eval dependency direction acyclic (function decls hoist, but
+    // keep it obvious). provSeg15 in check-reliability spans breaker→telegram.
+    "provider-breaker.ts", "provider-wikipedia.ts", "provider-sportscore.ts", "provider-tsp.ts", "provider-fd.ts", "match-pool.ts", "provider-cups.ts", "providers.ts",
+    "telegram.ts", "composers.ts", "digest.ts",
     "notifications.ts", "users.ts", "admin.ts", "admin-bot.ts", "public-matches.ts", "bot.ts", "cron.ts",
     "monitoring.ts", "migration.ts",
     "auth.ts", "public-swr.ts", "card-route.ts",

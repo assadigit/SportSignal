@@ -370,7 +370,12 @@ check("#w8 bot.ts never calls fetchMatchesFromAPI (no provider sweeps from user-
 // the league views regressed (1 event per league) and sportscore's efl-cup
 // feed is empty; without this, big-team cup ties were invisible to the pool.
 const tablesSeg15 = (src.match(/\/\/ ===== src\/tables\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
-const provSeg15 = (src.match(/\/\/ ===== src\/providers\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
+// v13.74-providersplit: providers.ts became a GROUP — provider-breaker →
+// provider-wikipedia → provider-sportscore → provider-tsp → provider-fd →
+// match-pool → provider-cups → providers (the orchestrators), contiguous in
+// the worker-src order right before telegram.ts. The segment spans the whole
+// group so the #cupscan / #poolbreak checks keep covering the split code.
+const provSeg15 = (src.match(/\/\/ ===== src\/provider-breaker\.ts =====[\s\S]*?(?=\/\/ ===== src\/telegram\.ts =====)/) || [""])[0];
 const cfgSeg15 = (src.match(/\/\/ ===== src\/config\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
 check("#cupscan CUP_TEAM_TSP_IDS: the 6 English big teams (verified ids)", /Liverpool FC\": 133602/.test(tablesSeg15) && /Tottenham Hotspur FC\": 133616/.test(tablesSeg15) && /Arsenal FC\": 133604/.test(tablesSeg15) && /Chelsea FC\": 133610/.test(tablesSeg15) && /Manchester City FC\": 133613/.test(tablesSeg15) && /Manchester United FC\": 133612/.test(tablesSeg15));
 check("#cupscan scan uses the TSP TEAM view (eventsnext.php?id=)", /eventsnext\.php\?id=\/ \+ tspId/.test(provSeg15) || /eventsnext\.php\?id=" \+ tspId/.test(provSeg15));

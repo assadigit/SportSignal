@@ -13,7 +13,9 @@ import { toFaDigits, resetSubrequestBudget, subrequestCount, kvOpsCount, bumpKvO
 import { translateTeam, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { shouldNotify, isLiveStatus } from "./matches";
 import { maybeRunFaAi } from "./fa-ai";
-import { fetchMatchesFromAPI, cacheMatches, fetchLiveSweep, fetchLongView, maybeScanCupFixtures, probeCupFarFixtures } from "./providers";
+import { fetchMatchesFromAPI, fetchLiveSweep, fetchLongView } from "./providers";
+import { cacheMatches } from "./match-pool";
+import { maybeScanCupFixtures, probeCupFarFixtures } from "./provider-cups";
 import { sendTelegram, drainOutbox } from "./telegram";
 import { sendMatchNotifications, detectStatusChanges, auditNotifications } from "./notifications";
 import { maybeSendWeeklyTables, maybeSendMorningDigest, broadcastBigMatchResults, broadcastBigMatchKickoff, maybeNotifyTableToppers } from "./digest";

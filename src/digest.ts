@@ -12,7 +12,7 @@ import { shouldNotify, isMatchFinished, isWithinPostMatchWindow, getNotifiedMatc
 import { fetchStandings, buildLeagueTableMessage, specialBanner, formatResultMessage, formatMatchStartMessage, isoWeekKey, weeklyTableCodes } from "./composers";
 import { sendTelegram } from "./telegram";
 import { getRegisteredChats, getUserPrefs, getUserTz, groupChatsByTz, userFollowsMatch, isMasterBigMatch } from "./users";
-import { getCachedMatches } from "./providers";
+import { getCachedMatches } from "./match-pool";
 
 export async function sendLeagueTables(env: Env, chatIds, opts, lang?) {
   const lng = lang === "en" ? "en" : "fa";

@@ -13,8 +13,16 @@
 //   fa-dict.ts           static Farsi team dictionary (layer 1)
 //   translate.ts         3-layer translation + competition helpers
 //   fa-ai.ts             Workers AI Farsi-name learner (layer 2)
-//   matches.ts           eligibility rules, windows, notified-match KV
-//   providers.ts         football-data / sportscore / thesportsdb / wiki
+//   matches.ts           eligibility rules, windows, notified-match KV,
+//                       pickHeroMatch (the shared hero expression)
+//   provider-breaker.ts  per-provider suspension circuit (prov_down_*)
+//   provider-wikipedia.ts PGL standings fallback (Wikipedia scrape)
+//   provider-sportscore.ts sportscore day fetch + day-window sweep
+//   provider-tsp.ts      thesportsdb mapper + league-views sweep
+//   provider-fd.ts       football-data range fetch + 429 suspension
+//   match-pool.ts        the KV pool (matches_v13_tracked) read/write
+//   provider-cups.ts     domestic-cup scans (big-team + far probe)
+//   providers.ts         sweep orchestrators (long view, live sweep, merge)
 //   telegram.ts          Bot API senders (retry, 429 pause, dead-chat)
 //   composers.ts         message composers + standings pipeline
 //   digest.ts            weekly tables / morning digest / coronation

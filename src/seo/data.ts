@@ -5,7 +5,7 @@
 
 import type { Env } from "../types";
 import { CONFIG } from "../config";
-import { getCachedMatches } from "../providers";
+import { getCachedMatches } from "../match-pool";
 import { applyLiveOverlay, pubMatch } from "../public-matches";
 import { ensureFaAiCache, ensureFaVenueCache } from "../translate";
 import { normalizeTeamName } from "../teams";

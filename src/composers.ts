@@ -10,7 +10,8 @@ import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, get
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, faStageName, isDomesticCup } from "./translate";
 import { normAlias, isMasterPair, isDerby, rivalryName } from "./matches";
-import { providerSuspended, suspendProvider, clearProviderSuspension, fetchPglTableFromWikipedia } from "./providers";
+import { providerSuspended, suspendProvider, clearProviderSuspension } from "./provider-breaker";
+import { fetchPglTableFromWikipedia } from "./provider-wikipedia";
 
 export function format24HourMessage(match, env, lang) {
   const en = lang === "en";
