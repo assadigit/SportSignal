@@ -231,7 +231,7 @@ const seoCfgSrc = read("src/seo/config.ts");
 check("public-13.25.js referenced in homepage (renamed from 13.24)", /\/public-13\.25\.js/.test(publicSrc));
 check("public-13.23.css referenced in homepage (renamed from 13.22)", /\/public-13\.23\.css/.test(publicSrc));
 check("public-13.23.css referenced in SEO page-shell (renamed)", /\/public-13\.23\.css/.test(shellSrc));
-check("core-13.9.js referenced in homepage (renamed from 13.8)", /\/core-13\.9\.js/.test(publicSrc));
+check("core-13.10.js referenced in homepage (public page script tag)", /\/core-13\.10\.js/.test(publicSrc));
 check("public-13.25.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.25.js")));
 check("public-13.23.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.23.css")));
 check("assets/_headers pins public-13.25 immutable", /\/public-13\.25\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
@@ -268,14 +268,34 @@ check("homepage inline CSS has .sr-only class", /\.sr-only\{/.test(publicSrc));
 check("public countries capped at 5 (SQL LIMIT 5)", /LIMIT 5/.test(statsSrc));
 
 // v13.65-lgtitle: hLgNext retitled (domestic leagues + cups only; UCL has its own section)
-const coreSrc = read("assets/core-13.9.js");
-check("core-13.9.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "core-13.9.js")));
-check("core-13.9.js fa hLgNext retitled to دیدارهای جذاب لیگ‌ها", /hLgNext:"دیدارهای جذاب لیگ‌ها"/.test(coreSrc));
-check("core-13.9.js en hLgNext retitled to Exciting League Fixtures", /hLgNext:"Exciting League Fixtures"/.test(coreSrc));
-check("core-13.9.js referenced in admin page", /\/core-13\.9\.js/.test(read("src/pages/admin.ts")));
-check("core-13.9.js referenced in login page", /\/core-13\.9\.js/.test(read("src/pages/login.ts")));
-check("core-13.9.js referenced in public page", /\/core-13\.9\.js/.test(read("src/pages/public.ts")));
-check("assets/_headers pins core-13.9 immutable", /\/core-13\.9\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+const coreSrc = read("assets/core-13.10.js");
+check("core-13.10.js exists (renamed from 13.9 in v13.84, rename-on-edit rule)", fs.existsSync(path.join(__dirname, "..", "assets", "core-13.10.js")) && !fs.existsSync(path.join(__dirname, "..", "assets", "core-13.9.js")));
+check("core-13.10.js fa hLgNext retitled to دیدارهای جذاب لیگ‌ها", /hLgNext:"دیدارهای جذاب لیگ‌ها"/.test(coreSrc));
+check("core-13.10.js en hLgNext retitled to Exciting League Fixtures", /hLgNext:"Exciting League Fixtures"/.test(coreSrc));
+check("core-13.10.js referenced in admin page", /\/core-13\.10\.js/.test(read("src/pages/admin.ts")));
+check("core-13.10.js referenced in login page", /\/core-13\.10\.js/.test(read("src/pages/login.ts")));
+check("core-13.10.js referenced in public page", /\/core-13\.10\.js/.test(read("src/pages/public.ts")));
+check("assets/_headers pins core-13.10 immutable", /\/core-13\.10\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+// v13.84: the orphan data-i keys found by the QA sweep — hStats/btnStats had
+// no dict entries, so the live admin showed raw "hStats"/"btnStats" text in
+// BOTH languages. Locked so a future key typo can't resurrect silently.
+check("core-13.10.js fa dict covers hStats (visit-stats heading)", /hStats:"📊 آمار بازدید"/.test(coreSrc));
+check("core-13.10.js fa dict covers btnStats (refresh-stats button)", /btnStats:"🔄 به‌روزرسانی آمار"/.test(coreSrc));
+check("core-13.10.js en dict covers hStats + btnStats", /hStats:"📊 Visit Stats"/.test(coreSrc) && /btnStats:"🔄 Refresh stats"/.test(coreSrc));
+check("core-13.10.js dead ver keys (stale v12.33 text) removed", !/ver:"(نسخه ۱۲|v12\.33)/.test(coreSrc));
+check("every admin data-i/data-p key has a dict entry (orphan sweep)", (() => {
+  const used = new Set();
+  for (const m of read("src/pages/admin.ts").matchAll(/data-(?:i|p)="(\w+)"/g)) used.add(m[1]); // composer carries titleA
+  for (const m of read("src/pages/admin-html.ts").matchAll(/data-(?:i|p)="(\w+)"/g)) used.add(m[1]);
+  for (const m of read("src/pages/admin-js.ts").matchAll(/T\("(\w+)"/g)) used.add(m[1]);
+  const login = read("src/pages/login.ts");
+  for (const m of login.matchAll(/data-(?:i|p)="(\w+)"/g)) used.add(m[1]);
+  for (const m of (login.match(/<script>([\s\S]*?)<\/script>/) || [,""])[1].matchAll(/T\("(\w+)"/g)) used.add(m[1]);
+  const dicts = coreSrc.slice(coreSrc.indexOf("var I18N="), coreSrc.indexOf("aboutP2"));
+  const missing = [...used].filter((k) => !dicts.includes(k + ':"'));
+  if (missing.length) console.log("     orphan keys:", missing.join(", "));
+  return missing.length === 0;
+})());
 check("homepage server fallback h2 retitled (no old text)", /<h2 data-i="hLgNext" id="topSpotTitle">دیدارهای جذاب لیگ‌ها<\/h2>/.test(publicSrc) && !/مسابقات بزرگ پیش‌رو/.test(publicSrc));
 
 // ---------- 9) v13.80-canonical-hrefs: payload-carried match paths ----------

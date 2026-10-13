@@ -6,6 +6,32 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.84-admi18n] — 2026-10-13 (the orphan data-i keys: hStats/btnStats + core-13.10 rename)
+
+QA finding from the v13.83 session, fixed as its own reviewed version: the
+admin visit-stats card heading (`data-i="hStats"`) and its refresh button
+(`data-i="btnStats"`) had NO I18N entries in the core asset — the LIVE admin
+dashboard rendered the raw key strings "hStats"/"btnStats" in BOTH fa and en.
+A template-side sweep proved these were the only orphans (data-i/data-p/T()
+vs the dict); the sweep is now a permanent lock in check-stats so a future
+key typo can't resurrect silently.
+
+- **core-13.9.js → core-13.10.js** (rename-on-edit rule for immutable
+  versioned assets): adds hStats/btnStats fa+en (fa wording matches the
+  original template text: «📊 آمار بازدید» / «🔄 به‌روزرسانی آمار»; en:
+  "📊 Visit Stats" / "🔄 Refresh stats"), and drops the dead `ver` fa/en
+  dict keys — stale v12.33-xpost text, unread since the footer moved to the
+  live `${VERSION}` interpolation.
+- References updated in the same commit: admin composer, login.ts,
+  public.ts, assets/_headers immutable pin; check-stats core pins retargeted
+  (including the old "renamed from 13.8" homepage check) + the orphan sweep
+  lock added.
+- Parity fixtures re-baselined (--update, reviewed): the only diff per page
+  is the script-src line core-13.9→core-13.10 (+1 byte); harness diff
+  output attached to the worklog entry. Template bodies untouched.
+
+---
+
 ## [13.83-admintplsplit] — 2026-10-13 (admin template split + shared styles + the parity harness)
 
 Closes the last item from the hygiene session's "deliberately deferred"

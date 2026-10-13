@@ -33,7 +33,7 @@
 # hold such HTML, and the same prune was already done once before (v13.29
 # removed core-13.6/public-13.6/public-13.8.css). Only the LIVE versions
 # are pinned now; the rename history lives in CHANGELOG.md + git.
-/core-13.9.js
+/core-13.10.js
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.25.js
