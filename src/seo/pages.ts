@@ -10,7 +10,7 @@ import { esc, faTime, faGregorianDate, faGregorianDateShort, jalaliDateStr, tehr
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm } from "./data";
+import { upcomingBig, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm, teamSeasonRecord } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -188,27 +188,57 @@ function matchHeadScript(): string {
 // W/D/L dots (ب/م/ش) with hover titles carrying the opponent + score +
 // date, plus a W·D·L count summary per side. Returns "" when NEITHER side
 // has enough finished history (the card drops silently — fail-closed).
+// v13.88-formagg: a side with no per-match history falls back to its
+// SEASON record chip («فصل: ۶ برد · ۲ مساوی · ۱ شکست» from the standings
+// snapshots — zero subrequests) so the card lights up while the archive
+// is young; the card title honestly switches to «وضعیت فصل» when no side
+// has dots. Still fail-closed: no dots AND no record → no card.
+const W_FA: Record<string, string> = { W: "ب", D: "م", L: "ش" }; // برد/مساوی/شکست
+const W_LABEL: Record<string, string> = { W: "برد", D: "مساوی", L: "شکست" };
+
+// One side's row: dots when available, else the season chip. Shared by the
+// match page's strip and the team page's card (v13.88 — one renderer, one
+// vocabulary).
+function formRowHtml(fa: string, dots: { r: string; oppFa: string; score: string; date: string }[] | null, rec: { won: number | null; draw: number | null; lost: number | null; played: number | null } | null): string {
+  let mid = "";
+  if (dots && dots.length) {
+    const cnt = { W: 0, D: 0, L: 0 };
+    let ds = '<span class="formdots">';
+    for (const d of dots) {
+      cnt[d.r]++;
+      ds += '<i class="fdot f' + d.r.toLowerCase() + '" title="' + esc(W_LABEL[d.r] + " " + toFaDigits(d.score.replace("-", " – ")) + " در برابر " + d.oppFa + " (" + d.date + ")") + '">' + W_FA[d.r] + "</i>";
+    }
+    ds += "</span>";
+    mid = ds +
+      '<span class="formsum">' + toFaDigits(String(cnt.W)) + " برد · " + toFaDigits(String(cnt.D)) + " مساوی · " + toFaDigits(String(cnt.L)) + " شکست</span>";
+  } else if (rec && rec.won != null && rec.draw != null && rec.lost != null) {
+    // season aggregate — visually distinct from dots (no fake per-match
+    // granularity): three tabular count segments in the win/draw/loss hues
+    mid = '<span class="fseason"><b class="fsw">' + toFaDigits(String(rec.won)) + "</b>" + W_FA.W +
+      ' <b class="fsd">' + toFaDigits(String(rec.draw)) + "</b>" + W_FA.D +
+      ' <b class="fsl">' + toFaDigits(String(rec.lost)) + "</b>" + W_FA.L +
+      (rec.played != null ? '<i class="fsplayed">از ' + toFaDigits(String(rec.played)) + " بازی</i>" : "") + "</span>";
+  } else return "";
+  return '<div class="formrow"><span class="formteam">' + esc(fa) + "</span>" + mid + "</div>";
+}
+
+// The legend decodes the dots (ب=برد م=مساوی ش=شکست) for first-time
+// visitors — muted microcopy under the card title (v13.88).
+function formLegendHtml(): string {
+  return '<p class="formlegend"><i class="fdot fw">' + W_FA.W + "</i>" + W_LABEL.W + " · <i class=\"fdot fd\">" + W_FA.D + "</i>" + W_LABEL.D + " · <i class=\"fdot fl\">" + W_FA.L + "</i>" + W_LABEL.L + "</p>";
+}
+
 function formStripHtml(ctx: SeoCtx, sm: SeoMatch, archive: any[]): string {
   const sides = [
     { name: sm.raw.homeTeam && sm.raw.homeTeam.name, fa: faName(sm.s.homeTeam) },
     { name: sm.raw.awayTeam && sm.raw.awayTeam.name, fa: faName(sm.s.awayTeam) }
   ];
-  const forms = sides.map((x) => ({ ...x, dots: teamForm(ctx, x.name || "", archive) }));
-  if (!forms.some((f) => f.dots)) return "";
-  const W_FA: Record<string, string> = { W: "\u0628", D: "\u0645", L: "\u0634" }; // برد/مساوی/شکست
-  const label: Record<string, string> = { W: "\u0628\u0631\u062f", D: "\u0645\u0633\u0627\u0648\u06cc", L: "\u0634\u06a9\u0633\u062a" };
-  let out = '<div class="card formstrip"><h2>\u0641\u0631\u0645 \u0627\u062e\u06cc\u0631</h2>';
+  const forms = sides.map((x) => ({ ...x, dots: teamForm(ctx, x.name || "", archive), rec: teamSeasonRecord(ctx, x.name || "") }));
+  if (!forms.some((f) => f.dots || (f.rec && f.rec.won != null && f.rec.draw != null && f.rec.lost != null))) return "";
+  const anyDots = forms.some((f) => f.dots);
+  let out = '<div class="card formstrip"><h2>' + (anyDots ? "فرم اخیر" : "وضعیت فصل") + "</h2>" + (anyDots ? formLegendHtml() : "");
   for (const f of forms) {
-    if (!f.dots) continue; // one-sided: render the side that has history
-    const cnt = { W: 0, D: 0, L: 0 };
-    let dots = '<span class="formdots">';
-    for (const d of f.dots) {
-      cnt[d.r]++;
-      dots += '<i class="fdot f' + d.r.toLowerCase() + '" title="' + esc(label[d.r] + " " + toFaDigits(d.score.replace("-", " \u2013 ")) + " \u062f\u0631 \u0628\u0631\u0627\u0628\u0631 " + d.oppFa + " (" + d.date + ")") + '">' + W_FA[d.r] + "</i>";
-    }
-    dots += "</span>";
-    out += '<div class="formrow"><span class="formteam">' + esc(f.fa) + "</span>" + dots +
-      '<span class="formsum">' + toFaDigits(String(cnt.W)) + " \u0628\u0631\u062f \u00b7 " + toFaDigits(String(cnt.D)) + " \u0645\u0633\u0627\u0648\u06cc \u00b7 " + toFaDigits(String(cnt.L)) + " \u0634\u06a9\u0633\u062a</span></div>";
+    out += formRowHtml(f.fa, f.dots, f.rec); // one-sided: render the side that has data
   }
   return out + "</div>";
 }
@@ -527,7 +557,21 @@ function buildStandingsWindowHtml(stw: { code: string; compFa: string; emblem: s
   return tbl + "</div>";
 }
 
-export function buildTeamPage(ctx: SeoCtx, slug: string): { html: string; notFound: boolean } {
+// v13.88-formagg: the team page's own form card — the shared renderer
+// (dots when the archive+pool yield ≥3 finished rows, else the season
+// record chip). Same fail-closed rule: neither → "" (no card). The
+// archive load is one bounded KV read per render, same contract as the
+// match pages (fail-closed on error).
+function teamFormCardHtml(ctx: SeoCtx, entryName: string, fa: string, archive: any[]): string {
+  const dots = teamForm(ctx, entryName, archive);
+  const rec = dots ? null : teamSeasonRecord(ctx, entryName);
+  const row = formRowHtml(fa, dots, rec);
+  if (!row) return "";
+  const title = dots ? "فرم اخیر " + esc(fa) : "وضعیت فصل " + esc(fa);
+  return '<div class="card formstrip"><h2>' + title + "</h2>" + (dots ? formLegendHtml() : "") + row + "</div>";
+}
+
+export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
   const entry = findTeamBySlug(ctx, slug);
   if (!entry) return { html: "", notFound: true };
   const name = entry.faName || entry.name;
@@ -546,6 +590,17 @@ export function buildTeamPage(ctx: SeoCtx, slug: string): { html: string; notFou
   // covering the team (A-League, off-cup pages).
   const stw = teamStandingsWindow(ctx, entry.name, next);
   const stWinCard = stw ? buildStandingsWindowHtml(stw) : "";
+  // v13.88-formagg: the team's own form card (dots or season record) —
+  // one bounded archive read, fail-closed (error → dots path stays dark,
+  // the season chip still lights from the payload).
+  const archive = await loadArchive(ctx.env).catch(() => [] as any[]);
+  const formCard = teamFormCardHtml(ctx, entry.name, name, archive);
+  // v13.88-formagg: the standings position rides the answer sentence when
+  // the window found the team's row (pos/points from the SAME snapshot the
+  // window renders — one source of truth, no extra reads).
+  const meRow = stw && stw.meIdx >= 0 ? stw.rows[stw.meIdx] : null;
+  const posFa = meRow && meRow.pos != null ? toFaDigits(String(meRow.pos)) : null;
+  const ptsFa = meRow && meRow.points != null ? toFaDigits(String(meRow.points)) : null;
   const simCard = sims.length
     ? '<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">' + toFaDigits(String(sims.length)) + " بازی</span></h2>" +
       sims.map((x, i) => M.mrowHtml(x, i, false)).join("") + "</div>"
@@ -556,12 +611,19 @@ export function buildTeamPage(ctx: SeoCtx, slug: string): { html: string; notFou
       M.compNameFa(next.s) + "، " + faGregorianDate(next.s.utcDate) + " (" + jalaliDateStr(next.s.utcDate) + ") ساعت " +
       faTime(next.s.utcDate) + " به وقت تهران.";
   }
+  // v13.88-formagg: append the standings position to the answer (feeds the
+  // answercard AND the meta description — honest data from the window's own
+  // snapshot row; «ردهٔ» is the natural Persian ordinal intro).
+  if (posFa) {
+    answer += " " + name + (ptsFa ? " با " + ptsFa + " امتیاز" : "") + " در ردهٔ " + posFa + " " + esc(String(stw.compFa)) + " قرار دارد.";
+  }
   const title = name + " — برنامه بازی بعدی و ساعت شروع | SportSignal";
   const desc = (answer + (next ? " لینک صفحه هر بازی در ادامه است." : " به‌محض اعلام برنامه به‌روزرسانی می‌شود.")).slice(0, 165);
   const main =
     '<div class="answercard">' + esc(answer) + "</div>" +
     '<div class="card"><div class="listhead"><h2>بازی‌های پیش‌روی ' + esc(name) + "</h2></div>" + dateGroupedRows(upcoming, false) + "</div>" +
     stWinCard +
+    formCard +
     (finished.length
       ? '<div class="card"><h2>نتایج اخیر</h2>' + dateGroupedRows(finished, true) + "</div>"
       : "") + simCard;

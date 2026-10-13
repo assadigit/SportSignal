@@ -556,6 +556,81 @@ check("v13.87 behavioral: teamForm dedupes pool+archive, W/D/L math, min-3 fail-
   return ok3 && two === null;
 })());
 
+// ---- v13.88-formagg: the season-record fallback + the team form card ----
+check("v13.88: teamSeasonRecord exists + wired into both pages", (() => {
+  const d = read("src/seo/data.ts");
+  const p2 = read("src/seo/pages.ts");
+  return /export function teamSeasonRecord\(ctx: SeoCtx, teamName: string\)/.test(d) && /const rec = dots \? null : teamSeasonRecord\(ctx, entryName\);/.test(p2) && /rec: teamSeasonRecord\(ctx, x\.name \|\| ""\)/.test(p2);
+})());
+check("v13.88: teamSeasonRecord is payload-only fail-closed (no fetches)", (() => {
+  const d = read("src/seo/data.ts");
+  const i = d.indexOf("export function teamSeasonRecord");
+  const j = d.indexOf("export function teamForm", i);
+  const seg = d.slice(i, j > 0 ? j : i + 3500);
+  return /ctx\.payload && ctx\.payload\.standings/.test(seg) && /ctx\.payload && ctx\.payload\.ucl/.test(seg) && !/fetchJSON|fetch\(|env\.STATE/.test(seg);
+})());
+check("v13.88: the match strip falls back to the season chip («وضعیت فصل» title when no dots)", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /anyDots \? "فرم اخیر" : "وضعیت فصل"/.test(p2) && /class=\\"fseason\\"/.test(p2.replace(/'/g, '"')) === false && p2.includes('<span class="fseason">') && /f\.rec && f\.rec\.won != null/.test(p2);
+})());
+check("v13.88: team page gains the form card (async build + router await + archive load)", (() => {
+  const p2 = read("src/seo/pages.ts");
+  const r = read("src/seo/router.ts");
+  return /function teamFormCardHtml/.test(p2) && /const formCard = teamFormCardHtml\(ctx, entry\.name, name, archive\);/.test(p2) && /stWinCard \+\n    formCard \+/.test(p2) && /await buildTeamPage\(seoCtx, tm\[1\]\)/.test(r) && /export async function buildTeamPage/.test(p2);
+})());
+check("v13.88: the standings position rides the team answer sentence", (() => {
+  const p2 = read("src/seo/pages.ts");
+  return /const meRow = stw && stw\.meIdx >= 0 \? stw\.rows\[stw\.meIdx\] : null;/.test(p2) && /در ردهٔ " \+ posFa/.test(p2);
+})());
+check("v13.88: the new styles ship in the page-shell block", (() => {
+  const ps = read("src/seo/page-shell.ts");
+  return [".fseason", ".fseason .fsw", ".fseason .fsplayed", ".formlegend", ".formlegend .fdot"].every((cls) => ps.includes(cls));
+})());
+// v13.88 behavioral: eval the REAL teamSeasonRecord (brace-matched
+// extraction, TS annotations stripped by exact-string replacement — the
+// replacements double as drift locks) with a stub payload: a PL team is
+// found with its numbers; a missing team falls through to ucl.teams; an
+// unknown team yields null (fail-closed).
+check("v13.88 behavioral: teamSeasonRecord finds league + ucl rows, null when absent", (() => {
+  const fs = require("fs");
+  const d = fs.readFileSync("src/seo/data.ts", "utf8");
+  const i = d.indexOf("export function teamSeasonRecord");
+  if (i < 0) return false;
+  const open = d.indexOf("| null {", i) + 7; // past the return-type braces
+  let depth = 0, j = open;
+  for (; j < d.length; j++) {
+    if (d[j] === "{") depth++;
+    else if (d[j] === "}") { depth--; if (depth === 0) break; }
+  }
+  let seg = d.slice(i, j + 1);
+  const sigOld = "function teamSeasonRecord(ctx: SeoCtx, teamName: string): { code: string; compFa: string; pos: number | null; played: number | null; won: number | null; draw: number | null; lost: number | null; points: number | null } | null {";
+  const ftOld = "const fromTeams = (teams: any[], code: string, compFa: string) => {";
+  const findOld = "teams.find((x: any) => x && normalizeTeamName(x.name) === norm)";
+  const numOld = "const num = (v: any) =>";
+  if (seg.indexOf(sigOld) < 0 || seg.indexOf(ftOld) < 0 || seg.indexOf(findOld) < 0 || seg.indexOf(numOld) < 0) return false;
+  seg = seg
+    .replace(sigOld, "function teamSeasonRecord(ctx, teamName) {")
+    .replace(ftOld, "const fromTeams = (teams, code, compFa) => {")
+    .replace(findOld, "teams.find((x) => x && normalizeTeamName(x.name) === norm)")
+    .replace(numOld, "const num = (v) =>")
+    .replace(/^export /, "");
+  const { normalizeTeamName } = require("../src/teams.ts");
+  const fn = new Function("normalizeTeamName", seg + "\n; return teamSeasonRecord;")(normalizeTeamName);
+  const payload = {
+    standings: {
+      PL: { faName: "لیگ برتر انگلیس", teams: [{ pos: 2, name: "Arsenal FC", played: 9, won: 6, draw: 2, lost: 1, points: 20 }] },
+      PD: { faName: "لالیگا", teams: [{ pos: 1, name: "Real Madrid CF", played: 9, won: 7, draw: 2, lost: 0, points: 23 }] }
+    },
+    ucl: { faName: "لیگ قهرمانان اروپا", teams: [{ pos: 4, name: "Manchester United FC", played: 3, won: 2, draw: 1, lost: 0, points: 7 }] }
+  };
+  const pl = fn({ payload }, "Arsenal FC");
+  const okPl = pl && pl.code === "PL" && pl.won === 6 && pl.draw === 2 && pl.lost === 1 && pl.points === 20 && pl.pos === 2;
+  const ucl = fn({ payload }, "Manchester United"); // normalizeTeamName folds club-prefix tokens ("FC")
+  const okUcl = ucl && ucl.code === "CL" && ucl.won === 2;
+  const none = fn({ payload }, "No Such FC");
+  return okPl && okUcl && none === null;
+})());
+
 
 console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
 process.exit(failed === 0 ? 0 : 1);

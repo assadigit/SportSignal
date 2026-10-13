@@ -395,6 +395,40 @@ export function teamStandingsWindow(ctx: SeoCtx, teamName: string, next: SeoMatc
   return { code, compFa: st.faName || COMP_EN[code] || code, emblem: st.emblem || null, rows, meIdx };
 }
 
+// v13.88-formagg: a team's SEASON record (won/draw/lost/pos) from the
+// payload's standings snapshots — pure KV-payload read, zero subrequests,
+// fail-closed (team not in any table → null). This is the fallback that
+// keeps the form card lit while the per-match archive is still young
+// (v13.87's teamForm stays dark until ~2-3 weeks of finished rows
+// accumulate; the aggregate is honest TODAY). Searches the 5 league
+// tables + PGL (top-8 compacts) AND the full UCL table (payload.ucl).
+export function teamSeasonRecord(ctx: SeoCtx, teamName: string): { code: string; compFa: string; pos: number | null; played: number | null; won: number | null; draw: number | null; lost: number | null; points: number | null } | null {
+  const stAll = ctx.payload && ctx.payload.standings;
+  const norm = normalizeTeamName(teamName);
+  if (!norm) return null;
+  const fromTeams = (teams: any[], code: string, compFa: string) => {
+    if (!Array.isArray(teams)) return null;
+    const t = teams.find((x: any) => x && normalizeTeamName(x.name) === norm);
+    if (!t) return null;
+    const num = (v: any) => (typeof v === "number" && isFinite(v)) || /^\d+$/.test(String(v)) ? Number(v) : null;
+    return { code, compFa, pos: num(t.pos), played: num(t.played), won: num(t.won), draw: num(t.draw), lost: num(t.lost), points: num(t.points) };
+  };
+  if (stAll && typeof stAll === "object") {
+    for (const code of Object.keys(stAll)) {
+      const st = stAll[code];
+      if (!st || !Array.isArray(st.teams)) continue;
+      const hit = fromTeams(st.teams, code, st.faName || COMP_EN[code] || code);
+      if (hit) return hit;
+    }
+  }
+  const ucl = ctx.payload && ctx.payload.ucl;
+  if (ucl && Array.isArray(ucl.teams)) {
+    const hit = fromTeams(ucl.teams, "CL", ucl.faName || COMP_EN.CL || "CL");
+    if (hit) return hit;
+  }
+  return null;
+}
+
 // v13.87-formtable: a team's last-N finished results as W/D/L relative to
 // the team. TWO sources merged: the pool's FINISHED rows (the bot retains
 // finished matches only ~7 days) and the long-lived seo archive (365-day

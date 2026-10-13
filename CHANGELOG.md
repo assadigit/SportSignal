@@ -6,6 +6,18 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.88-formagg] — 2026-10-13 (the season-record fallback + form reaches team pages)
+
+Closes the v13.87 handover item "the form strip is fail-closed-dark TODAY": the seo archive is still young, so match pages rendered NO form card at all. The standings snapshots the payload already carries (played/won/draw/lost per team) light the card honestly TODAY — zero new subrequests.
+
+- `teamSeasonRecord(ctx, teamName)` (seo/data.ts): payload-only lookup (5 league compacts + PGL + the full UCL table), returns won/draw/lost/played/pos/points + comp identity, null when the team is in no table (fail-closed). No fetches, no KV — the data rides the payload the page already loaded.
+- Match pages «فرم اخیر»: a side with no per-match dots falls back to its season chip («۶ برد · ۲ مساوی · ۱ شکست از ۹ بازی») — visually distinct from dots (flat pill, three count segments in the win/draw/loss hues, no fake per-match granularity). The card title honestly switches to «وضعیت فصل» when neither side has dots. Still fail-closed: no dots AND no record → no card.
+- Team pages: the form card reaches them (the v13.87 deferred item) — «فرم اخیر {team}» with dots when ≥3 finished rows exist, else «وضعیت فصل {team}» with the season chip. buildTeamPage is async now (one bounded archive KV read per render, fail-closed — same contract as the match pages).
+- Team answer sentences (and meta descriptions) now carry the standings position from the window's own snapshot row: «…با ۱۵ امتیاز در ردهٔ ۲ لیگ برتر انگلیس قرار دارد.» One source of truth (teamStandingsWindow's me-row), no extra reads.
+- Shared renderer `formRowHtml` (one row = dots + summary OR season chip) for both pages; dot legend microcopy («ب برد · م مساوی · ش شکست») under any card that shows dots.
+- Styling (inline page-shell block — no asset rename, ADR-006 respected): `.fseason` chip family (.fsw/.fsd/.fsl/.fsplayed, tabular digits), `.formlegend` with reduced-footprint dots.
+- Harness: 7 new checks in check-stats (wiring, payload-only fail-closed, title switch, async team build + router await, answer position, styles) + a BEHAVIORAL eval of the real teamSeasonRecord (brace-matched extraction, TS stripped by exact-string drift locks): finds a PL row with its numbers, falls through to ucl.teams via normalizeTeamName's club-prefix folding, null for an unknown team.
+
 ## [13.87-formtable] — 2026-10-13 (the league-table window + the recent-form strip)
 
 Both cards ride data the pages ALREADY hold (zero subrequests, fail-closed: no data \u2192 no card):

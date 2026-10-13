@@ -431,7 +431,9 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
     if (path === "/teams") return { body: buildTeamsIndexPage(seoCtx), status: 200 };
     const tm = /^\/teams\/([a-z0-9-]+)$/.exec(path);
     if (tm) {
-      const r = buildTeamPage(seoCtx, tm[1]);
+      // v13.88-formagg: async — the team form card loads the seo archive
+      // (one bounded KV read, fail-closed) before rendering.
+      const r = await buildTeamPage(seoCtx, tm[1]);
       if (r.notFound) return null;
       return { body: r.html, status: 200 };
     }

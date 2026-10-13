@@ -183,6 +183,21 @@ a.mvenue-map:active{transform:scale(.97)}
 .fd{color:#cbd5e1;background:rgba(148,163,184,.14);border:1px solid rgba(148,163,184,.30)}
 .fl{color:#f87171;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.32)}
 .formsum{font-size:.72rem;color:var(--muted,#9aa4b2);margin-inline-start:auto;white-space:nowrap}
+/* v13.88-formagg: the season-record chip — the aggregate fallback when the
+   per-match dots are still dark. Three count segments in the same
+   win/draw/loss hues as the dots (fw/fd/fl families) but flat pills, no
+   per-match granularity implied; tabular digits; the played suffix is
+   muted italic. */
+.fseason{display:inline-flex;align-items:center;gap:7px;background:rgba(148,163,184,.07);border:1px solid rgba(148,184,214,.20);border-radius:10px;padding:4px 10px;font-size:.78rem;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fseason b{font-weight:800}
+.fseason .fsw{color:#4ade80}
+.fseason .fsd{color:#cbd5e1}
+.fseason .fsl{color:#f87171}
+.fseason .fsplayed{font-style:normal;font-size:.68rem;font-weight:600;color:var(--muted,#9aa4b2);border-inline-start:1px dashed rgba(148,163,184,.35);padding-inline-start:7px;margin-inline-start:2px}
+/* v13.88-formagg: the dot legend — muted microcopy that decodes ب/م/ش for
+   first-time visitors; the dots reuse .fdot sizing at reduced footprint. */
+.formlegend{display:flex;align-items:center;gap:6px;margin:2px 0 6px;font-size:.72rem;color:var(--muted,#9aa4b2)}
+.formlegend .fdot{width:16px;height:16px;font-size:.62rem;border-radius:5px}
 .simcount{display:inline-block;font-size:.72rem;font-weight:600;color:var(--muted,#9aa4b2);background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.24);border-radius:999px;padding:1px 9px;margin-inline-start:8px;vertical-align:middle}
 .mactions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:2px 0 14px}
 .mact{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:var(--fg,#e8eefc);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.28);border-radius:11px;padding:8px 14px;text-decoration:none;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s,transform .15s}
