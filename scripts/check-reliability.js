@@ -261,10 +261,13 @@ check("#cpu2 live sweep performs ZERO KV writes (no STATE.put)", !/STATE\.put/.t
 check("#cpu2 live sweep never throws (provider failures swallowed)", /Live sweep football-data failed/.test(liveSeg) && /Live sweep sportscore failed/.test(liveSeg));
 check("#cpu2 live sweep logs found/merged counts (miss visibility)", /Live sweep: pool=/.test(liveSeg));
 // The transform strips import lines, so prove the wiring by section: the
-// fetchLiveSweep CALL must live inside the cron.ts slice of the bundle (not
-// just in providers.ts next to its definition).
-const cronSeg = (src.match(/\/\/ ===== src\/cron\.ts =====[\s\S]*?(?=\/\/ ===== src\/|\/\/ ===== src\/pages)/) || [""])[0];
-check("#cpu2 fetchLiveSweep wired inside cron.ts (the sweep decision)", /matches = await fetchLiveSweep\(env, cachedPool\);/.test(cronSeg));
+// fetchLiveSweep CALL must live inside the cron GROUP slice of the bundle
+// (not just in providers.ts next to its definition). v13.75-cronsplit: the
+// group is cron-preflight → cron-users → cron-pool → cron-maintenance →
+// cron-notify → cron-public → cron.ts (the shell), contiguous between bot.ts
+// and monitoring.ts in the worker-src order.
+const cronSeg = (src.match(/\/\/ ===== src\/cron-preflight\.ts =====[\s\S]*?(?=\/\/ ===== src\/monitoring\.ts =====)/) || [""])[0];
+check("#cpu2 fetchLiveSweep wired inside the cron group (the sweep decision)", /matches = await fetchLiveSweep\(env, cachedPool\);/.test(cronSeg));
 
 // fetchFootballData opts: live mode skips intl calls; defaults unchanged.
 check("#cpu3 FD live mode skips intl competitions", /if \(liveMode\) return allMatches;/.test(src));
@@ -363,7 +366,9 @@ check("#n1 notificationCounts initializes pre-match-5min (NaN fix)", /"pre-match
 check("#fai1 fa-ai cooldown marker (the PUT) sits below the emptiness check", (() => { const seg = (src.match(/async function maybeRunFaAi[\s\S]{0,2600}/) || [""])[0]; const empty = seg.indexOf("!names.length && !venues.length"); const mark = seg.indexOf("STATE.put(CONFIG.KV_FA_LAST_RUN"); return empty > -1 && mark > -1 && mark > empty; })());
 check("#fai2 empty-verdict isolate cache keyed on the payload ts", /FA_EMPTY_PAYLOAD_TS/.test(src));
 // W8: bot commands must never trigger the provider sweep.
-const botSeg13 = (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron.ts =====")[0];
+// v13.75-cronsplit: the boundary is the FIRST cron file (cron-preflight.ts)
+// so the segment stays bot.ts-only as the cron group grew.
+const botSeg13 = (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron-preflight.ts =====")[0];
 check("#w8 bot.ts never calls fetchMatchesFromAPI (no provider sweeps from user-typed commands)", botSeg13.length > 0 && !/fetchMatchesFromAPI/.test(botSeg13));
 
 // #cupscan (v13.50-cupscan): EFL/FA Cup coverage via the TSP team view —
@@ -393,7 +398,7 @@ check("#cupscan status/score updates preserved as row overlays", /Object\.assign
 // command reply re-attaches the persistent keyboard (it re-expands if the
 // user collapsed it), /teams carries an inline toggle grid, /timezone a
 // quick-pick grid, and the callback handlers cover tf:/tz: callbacks.
-const botBtnSeg = (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron.ts =====")[0];
+const botBtnSeg = (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron-preflight.ts =====")[0];
 check("#buttons replyKeyboard has a Timezone button (fa+en)", /"\\u0632\\u0645\\u0627\\u0646"/.test(botBtnSeg) && /Timezone/.test(botBtnSeg));
 check("#buttons normalizeCommand maps the Timezone labels", /"\\u0632\\u0645\\u0627\\u0646": "\/timezone"/.test(botBtnSeg) && /Timezone": "\/timezone"/.test(botBtnSeg));
 check("#buttons /teams grid builders exist (text + keyboard)", /function teamsMessageText\(/.test(botBtnSeg) && /function teamsGridKeyboard\(/.test(botBtnSeg));
@@ -414,7 +419,7 @@ const harness14 = fs14.readFileSync(path14.join(__dirname, "lib", "worker-src.js
 for (const f of ["tables.ts", "monitoring.ts", "migration.ts", "auth.ts", "public-swr.ts", "card-route.ts", "simulate.ts", "admin-ops.ts"]) {
   check("#seams harness order includes " + f, new RegExp('"' + f.replace(".", "\\.") + '"').test(harness14));
 }
-check("#seams bot.ts stays immediately before cron.ts (botSeg boundary)", harness14.indexOf('"bot.ts"') < harness14.indexOf('"cron.ts"') && harness14.indexOf('"bot.ts"') > harness14.indexOf('"public-matches.ts"'));
+check("#seams bot.ts stays before the cron group (botSeg boundary = cron-preflight.ts)", harness14.indexOf('"bot.ts"') < harness14.indexOf('"cron.ts"') && harness14.indexOf('"bot.ts"') > harness14.indexOf('"public-matches.ts"'));
 check("#seams POST_GATE_ROUTES spreads ADMIN_OPS_ROUTES (\u2026first)", /\.\.\.ADMIN_OPS_ROUTES,/.test(src));
 check("#seams POST_GATE_ROUTES includes SIMULATE_ROUTE", /SIMULATE_ROUTE,/.test(src));
 check("#seams the * catch-all stays in api.ts's own table", /\{ path: "\*", handler: legacyGetAction \},/.test(src));
@@ -431,6 +436,16 @@ const migSlice14 = (src.match(/\/\/ ===== src\/migration\.ts =====[\s\S]*?(?=\/\
 check("#seams migration.ts owns maybeBroadcastMigration (the mig_sent_v1 dedupe)", /async function maybeBroadcastMigration\(env\)/.test(migSlice14) && /mig_sent_v1/.test(migSlice14));
 check("#seams cronSeg no longer contains the migration broadcast", !/mig_sent_v1/.test(cronSeg));
 check("#seams cron.ts still owns the meter + completion blob (kvWritesThisTick)", /kvWritesThisTick\+\+/.test(cronSeg) && /kv_writes_last_tick: kvWritesThisTick \+ 1/.test(cronSeg));
+// #cronsplit (v13.75-cronsplit): cron.ts (one 672-line function) became a
+// SHELL + six phase modules. The shell segment here is cron.ts ALONE (the
+// next concat marker is monitoring.ts) so these pins can't be satisfied by
+// phase-module content.
+const cronShellSeg = (src.match(/\/\/ ===== src\/cron\.ts =====[\s\S]*?(?=\/\/ ===== src\/monitoring\.ts =====)/) || [""])[0];
+check("#cronsplit shell owns the meter + the blob fold (tight, shell-only)", /kvWritesThisTick\+\+/.test(cronShellSeg) && /kvWritesDay = kvWritesThisTick \+ 1/.test(cronShellSeg));
+check("#cronsplit shell sequences all six phases (runtime order)", /await runPreflight\(env\)/.test(cronShellSeg) && /await runUserPhase\(env, budgetSoft\)/.test(cronShellSeg) && /await runPoolPhase\(env, prevStatus, budgetHard, NOW\)/.test(cronShellSeg) && /await runPoolMaintenance\(env, \{ fullSweepThisTick, budgetSoft, budgetHard, matches, poolRef, poolBlob \}\)/.test(cronShellSeg) && /await runNotifyPhase\(env, \{ chatIds, matches, fullSweepThisTick \}\)/.test(cronShellSeg) && /await runPublicPhase\(env, \{ fullSweepThisTick, budgetSoft, budgetHard, matches, poolRef \}\)/.test(cronShellSeg));
+check("#cronsplit no-users early return stays in the shell", /if \(chatIds\.length === 0\) \{[\s\S]{0,120}No users, skipping/.test(cronShellSeg));
+check("#cronsplit pool failure early-returns (shell guards the null pool)", /if \(!pool \|\| !pool\.matches\) return;/.test(cronShellSeg));
+check("#cronsplit lock stays in the shell after the meter (single-flight)", /kvWritesThisTick\+\+/.test(cronShellSeg) && cronShellSeg.indexOf("kvWritesThisTick++") < cronShellSeg.indexOf("STATE.put(CONFIG.KV_EXECUTION_LOCK"));
 // auth + swr + card-route slices
 const authSeg14 = (src.match(/\/\/ ===== src\/auth\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0];
 check("#seams auth.ts owns the admin_auth cookie writes", /admin_auth=/.test(authSeg14) && /login_fail_/.test(authSeg14));
@@ -498,7 +513,10 @@ check("#swrsolid public-swr applies the overlay on the KV serve path", /applyLiv
 check("#swrsolid the snapshot serves BEFORE any synchronous rebuild", swrSlice52.indexOf("KV_PUBLIC_SNAPSHOT") > -1 && swrSlice52.indexOf("const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT") < swrSlice52.lastIndexOf("await fetchPublicMatches(env, req)"));
 check("#swrsolid snapshot serve refreshes in the background", /Snapshot bg refresh failed/.test(swrSlice52));
 check("#swrsolid applyLiveOverlay defined (harness reachable; export stripped by the transform)", /function applyLiveOverlay\(data, ov\)/.test(src));
-const cronSeg52 = (src.match(/\/\/ ===== src\/cron\.ts =====[\s\S]*?(?=\/\/ ===== src\/|\/\/ ===== src\/pages)/) || [""])[0];
+// v13.75-cronsplit: spans the whole cron group (cron-preflight → monitoring)
+// so the prewarm/overlay checks keep covering cron-public.ts and the
+// completion-blob checks keep covering cron.ts (the shell).
+const cronSeg52 = (src.match(/\/\/ ===== src\/cron-preflight\.ts =====[\s\S]*?(?=\/\/ ===== src\/monitoring\.ts =====)/) || [""])[0];
 check("#swrsolid cron writes the overlay (changed / full-sweep / 10-min gate)", /fullSweepThisTick \|\| liveChanged \|\| ovAge >= 6e5/.test(cronSeg52) && /KV_LIVE_OVERLAY, JSON\.stringify\(\{ ts: now, rows: liveRows \}\)/.test(cronSeg52));
 check("#swrsolid overlay write honors the HARD governor (budgetHard)", /liveRows\.length && !budgetHard && subrequestCount\(\) < 40/.test(cronSeg52));
 check("#swrsolid liveChanged signal hoisted (shared by prewarm + overlay)", /let liveChanged = false;[\s\S]{0,200}liveFingerprint\(matches\) !== liveFingerprint\(poolRef\)/.test(cronSeg52));

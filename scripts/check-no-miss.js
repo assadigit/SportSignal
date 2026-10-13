@@ -342,7 +342,9 @@ var MEM_DEDUPE = new Set();
   check("herotruth: shared expression semantics — featured||masterPair, not-FINISHED, live-first, nearest kickoff",
     /function pickHeroMatch\(matches\) \{[\s\S]{0,700}?isFeaturedMatch\(m\) \|\| isMasterPair\(m\)[\s\S]{0,300}?isLiveStatus\(m\.status\) \|\| new Date\(m\.utcDate\)\.getTime\(\) > Date\.now\(\)[\s\S]{0,400}?\(isLiveStatus\(a\.status\) \? 0 : 1\) - \(isLiveStatus\(b\.status\) \? 0 : 1\) \|\| new Date\(a\.utcDate\)\.getTime\(\) - new Date\(b\.utcDate\)\.getTime\(\)/.test(src));
   check("herotruth: both /featured and the site read the pool only (no sweeps from commands)",
-    (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron.ts =====")[0].indexOf("pickHeroMatch(matches)") > -1);
+    // v13.75-cronsplit: boundary re-anchored to the first cron file so the
+    // segment stays bot.ts-only as the cron group grew.
+    (src.split("// ===== src/bot.ts =====")[1] || "").split("// ===== src/cron-preflight.ts =====")[0].indexOf("pickHeroMatch(matches)") > -1);
 
   console.log("\n=== P. Migration + admin tools ===");
   check("migration: broadcastBigMatchKickoff in cron", /broadcastBigMatchKickoff/.test(src));

@@ -31,7 +31,13 @@
 //   admin.ts             sessions, settings, clubs catalog, dummy matches
 //   public-matches.ts    /api/public-matches pipeline
 //   bot.ts               Telegram webhook handler
-//   cron.ts              the */10 sweep (meter/governor/lock/pool/blob)
+//   cron-preflight.ts    settings/caches/status/budget + stale alert
+//   cron-users.ts         outbox drain, heartbeat, migration, FA-AI, cap
+//   cron-pool.ts          the sweep decision (quiet/live/full/long-view)
+//   cron-maintenance.ts   cup scans, pool stamp-advance, standings
+//   cron-notify.ts        fan-out, big-match broadcasts, digests, audit
+//   cron-public.ts        prewarm + the live overlay write
+//   cron.ts               the */10 sweep SHELL (meter/lock/blob fold)
 //   monitoring.ts        status blob reader + phase alerts + fingerprint
 //   migration.ts         bot-migration broadcast (13.47)
 //   auth.ts              admin login/logout/change-password (13.47)

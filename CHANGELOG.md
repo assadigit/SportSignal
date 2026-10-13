@@ -6,6 +6,46 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.75-cronsplit] — 2026-10-13 (cron.ts 697 lines → shell + 6 phase modules)
+
+Third hygiene phase (worklog Task 39). `executeScheduledLogic` was ONE
+672-line function with ~12 interleaved phases; the sweep decision, the
+notify fan-out and the public prewarm lived in the same closure as the
+KV-write meter. Now a SHELL + six phase modules (byte-identical bodies —
+moves, not rewrites; phase outputs cross the seam via returns + a ctx
+object, destructured so every pinned identifier keeps its name):
+
+| Module | Lines | Owns |
+| :--- | ---: | :--- |
+| `cron-preflight.ts` | 80 | settings, FA caches, status read, budget governor + page, stale alert |
+| `cron-users.ts` | 83 | outbox drain, 6h heartbeat, migration, FA-AI learning, cap |
+| `cron-pool.ts` | 105 | the sweep decision (quiet reuse / live sweep / full / 92-day recovery) |
+| `cron-maintenance.ts` | 96 | cup scans, far probe, pool stamp-advance, standings refresh |
+| `cron-notify.ts` | 113 | fan-out, kickoff/FT broadcasts, morning digest, coronation, audit |
+| `cron-public.ts` | 137 | liveChanged fingerprint, enrichment, prewarm, live overlay |
+| `cron.ts` (shell) | 188 | the meter, the execution lock, phase sequencing, completion blob |
+
+- The meter + completion blob STAY in the shell — the #seams check from
+  v13.47 codified that boundary ("cron.ts still owns the meter + blob"),
+  and the blob must be the tick's LAST write to fold `kvWritesThisTick`.
+  The cron_status_v1 reader staying in monitoring.ts is the same locked
+  seam, not a split brain (both sides pinned by checks).
+- Phase order = runtime order; the eval-harness concat places the six
+  modules BEFORE the shell so the #quota1/#swrsolid order checks (prewarm
+  and overlay logs before the blob fold) keep holding on positions.
+- Harness co-evolution (same commit): worker-src.js order array carries
+  the cron group between bot.ts and monitoring.ts; check-reliability
+  `cronSeg`/`cronSeg52` re-anchored to span the whole group
+  (cron-preflight → monitoring); the bot-segment boundaries (botSeg13,
+  botBtnSeg, the #herotruth bot check in check-no-miss) re-anchored from
+  cron.ts to cron-preflight.ts so they stay bot.ts-only. Added 5 new
+  #cronsplit structural locks (shell-only meter+blob fold, six-phase
+  sequencing, both early-returns, lock-after-meter).
+- KV write ordering, the env.STATE monkey-patch metering and every
+  fail-closed guard are byte-identical. KV key contracts untouched.
+
+Suite: 807 checks green (802 + 5 #cronsplit locks).
+
 ## [13.74-providersplit] — 2026-10-13 (providers.ts 853 lines → 8 cohesive modules)
 
 Second hygiene phase (worklog Task 38). `providers.ts` mixed two provider

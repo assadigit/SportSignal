@@ -71,7 +71,15 @@ function workerSrc() {
     // keep it obvious). provSeg15 in check-reliability spans breaker→telegram.
     "provider-breaker.ts", "provider-wikipedia.ts", "provider-sportscore.ts", "provider-tsp.ts", "provider-fd.ts", "match-pool.ts", "provider-cups.ts", "providers.ts",
     "telegram.ts", "composers.ts", "digest.ts",
-    "notifications.ts", "users.ts", "admin.ts", "admin-bot.ts", "public-matches.ts", "bot.ts", "cron.ts",
+    "notifications.ts", "users.ts", "admin.ts", "admin-bot.ts", "public-matches.ts", "bot.ts",
+    // v13.75-cronsplit: the cron group — the six phase modules run BEFORE the
+    // shell (cron.ts LAST) so the flat concat mirrors runtime order: the
+    // prewarm/overlay logs land before the shell's completion-blob meter fold
+    // (the #quota1/#swrsolid order checks in check-reliability compare
+    // positions in this concat). cronSeg/cronSeg52 span the whole group
+    // (cron-preflight → monitoring); the bot segment boundaries are anchored
+    // at cron-preflight.ts so botSeg stays bot.ts-only.
+    "cron-preflight.ts", "cron-users.ts", "cron-pool.ts", "cron-maintenance.ts", "cron-notify.ts", "cron-public.ts", "cron.ts",
     "monitoring.ts", "migration.ts",
     "auth.ts", "public-swr.ts", "card-route.ts",
     "simulate.ts", "admin-ops.ts",
