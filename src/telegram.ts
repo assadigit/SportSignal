@@ -6,7 +6,7 @@
 // an optional keyboard parameter. The v12.x sendTelegramWithKeyboard alias
 // and the URL-based sendPhoto (superseded by sendPhotoBinary, v13.17) were
 // removed in v13.46-trim — zero call sites.
-import { CONFIG } from "./config";
+import { CONFIG, VERSION } from "./config";
 import type { Env } from "./types";
 import { vlog, bumpSubrequest } from "./utils";
 
@@ -483,9 +483,9 @@ export async function setMyCommands(env: Env, commands, scope?, languageCode?) {
 // notifications are not). scripts/set-bot-commands.js is the manual re-run.
 var MENU_ENSURED: any = null;
 export async function ensureBotMenu(env: Env) {
-  if (MENU_ENSURED === CONFIG.VERSION) return;
+  if (MENU_ENSURED === VERSION) return;
   const flag = await env.STATE.get(CONFIG.KV_BOT_MENU_FLAG).catch(() => null);
-  if (flag === CONFIG.VERSION) {
+  if (flag === VERSION) {
     MENU_ENSURED = flag;
     return;
   }
@@ -498,8 +498,8 @@ export async function ensureBotMenu(env: Env) {
     ok4 = await setMyCommands(env, BOT_MENU_ADMIN_EN, { type: "chat", chat_id: adminChat }, "en");
   }
   if (ok1 && ok2 && ok3 && ok4) {
-    await env.STATE.put(CONFIG.KV_BOT_MENU_FLAG, CONFIG.VERSION).catch(() => {});
-    MENU_ENSURED = CONFIG.VERSION;
+    await env.STATE.put(CONFIG.KV_BOT_MENU_FLAG, VERSION).catch(() => {});
+    MENU_ENSURED = VERSION;
     console.log(`\u{1F916} Bot menu registered (setMyCommands, ${BOT_MENU_FA.length} user + ${BOT_MENU_ADMIN_FA.length} admin commands)`);
   }
 }

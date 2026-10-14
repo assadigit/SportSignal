@@ -96,7 +96,8 @@ check("banner: no outbox push (a missed GIF must never queue a retry)", !/outbox
 
 // 9) the menu.
 check("menu: fa default + en language + admin chat scope registration", /await setMyCommands\(env, BOT_MENU_FA\)/.test(tgSrc) && /await setMyCommands\(env, BOT_MENU_EN, \{ type: "default" \}, "en"\)/.test(tgSrc) && /\{ type: "chat", chat_id: adminChat \}/.test(tgSrc));
-check("menu: once per VERSION (KV flag)", /env\.STATE\.get\(CONFIG\.KV_BOT_MENU_FLAG\)/.test(tgSrc) && /env\.STATE\.put\(CONFIG\.KV_BOT_MENU_FLAG, CONFIG\.VERSION\)/.test(tgSrc));
+check("menu: once per VERSION (KV flag, the VERSION export — NOT CONFIG.VERSION)", /env\.STATE\.get\(CONFIG\.KV_BOT_MENU_FLAG\)/.test(tgSrc) && /env\.STATE\.put\(CONFIG\.KV_BOT_MENU_FLAG, VERSION\)/.test(tgSrc) && !/CONFIG\.VERSION/.test(tgSrc));
+check("menu: telegram.ts imports the VERSION export", /import \{ CONFIG, VERSION \} from "\.\/config"/.test(tgSrc));
 const menuLists = eval("(() => { " + [
   (src.match(/var BOT_MENU_FA = \[[\s\S]*?\];/) || [""])[0],
   (src.match(/var BOT_MENU_EN = \[[\s\S]*?\];/) || [""])[0],
