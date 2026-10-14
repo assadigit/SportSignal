@@ -6,7 +6,7 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
-## [13.101-trueduels] — 2026-10-15 (true big duels are curated; derbies promote their code names)
+## [13.101-trueduels] — 2026-10-14 (true big duels are curated; derbies promote their code names)
 
 The user's follow-up report from the 2026-10-14 UCL night: **"psg vs
 manchester city and real vs rome are both called as big duels of UCL"** —
