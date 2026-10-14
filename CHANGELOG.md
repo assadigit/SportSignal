@@ -6,6 +6,26 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.97.1-release] — 2026-10-14 (session close: dedicated-account deployment verified, tagged, released)
+
+The 2026-10-13→14 migration wrap. No behavior changes — this version is the
+live marker that the first tagged GitHub release landed on the dedicated
+account and that the release deploy is exactly this commit.
+
+- End-to-end verification on the dedicated account (a796fdfe) is COMPLETE:
+  site (sportsignal.ir + www + workers.dev), Telegram production webhook
+  (a real message flow observed), cron (*/10 notify + */4h refresh landing
+  on schedule), KV STATE (211 keys, expirations preserved), D1 (users +
+  stats), all six secrets, admin panels, SEO suite 56/56; 1069 static
+  checks green at the release commit.
+- The old account holds NO SportSignal worker (deleted during 13.95); only
+  an inert "moved" zone record remains there (cosmetic).
+- Known residuals (documented in RUNBOOK §7b/§8): HEALTHCHECK_PING_URL is
+  not yet re-armed on the new account (operator action, needs the
+  healthchecks.io ping URL), and the free plan's first-render-per-colo CPU
+  dice on fresh URLs (accepted; self-heals as render holds populate;
+  Workers Paid is the structural fix).
+
 ## [13.97-seocpu] — 2026-10-14 (the SEO cold-render CPU kills — found live on the fresh zone)
 
 The 2026-10-14 post-migration verification caught `GET /teams/villarreal`
