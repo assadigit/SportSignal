@@ -17,8 +17,10 @@ Live: **https://sportsignal.ir** · Worker `ucl-notifier` · KV namespace `STATE
 > (https://ucl-notifier.sportsignal.workers.dev). Secrets `WEBHOOK_SECRET`,
 > `ADMIN_TOKEN`, `ADMIN_PASS` were REGENERATED during the move (secret values
 > are write-only — the old ones were never recoverable). `API_TOKEN`
-> (football-data.org) must be re-set by the operator if not yet done:
-> `CLOUDFLARE_API_TOKEN=<token> CLOUDFLARE_ACCOUNT_ID=a796fdfe71819812119b8a494d3d39c1 npx wrangler secret put API_TOKEN`.
+> (football-data.org) was re-set by the operator on 2026-10-13 and verified
+> via `/api/diag-fd` (200, matches returned). The Telegram webhook rides
+> `https://football.sportsignal.ir/webhook` (flipped from the workers.dev
+> URL once DNS propagated to Telegram resolvers).
 
 ---
 
