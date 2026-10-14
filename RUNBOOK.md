@@ -224,6 +224,38 @@ find which tick class is hot FIRST (tail + analytics), then fix that class.
 
 ---
 
+## 7b. SEO page render economics (v13.97-seocpu)
+
+The free plan's 10ms rolling CPU average + the fresh zone's cold caches made
+SEO page renders the last CPU-kill class (live-caught 2026-10-14:
+`GET /teams/villarreal Exceeded CPU Limit`, then a scanner burst on `/bin/.env`
+style probes). Two structural fixes shipped:
+
+1. **Real Cache-API render holds.** `wantCached`'s ttl param was dead code —
+   `caches.default.put` derives its TTL from the RESPONSE headers, and every
+   HTML page ships `s-maxage=60` (PF-01), so every page re-rendered EVERY
+   MINUTE per colo (verified empirically: slow responses at `age:0` every
+   ~67s). Now the stored copy is a header-rewritten clone (`s-maxage=<hold>`
+   + the original public policy in `x-ss-cc`, restored on the hit). Public
+   edge/browser semantics are byte-identical; only the render cadence
+   changed. Holds: default 900s; homepage 300s; `/matches` + `/matches/today`
+   300s while any pool match is live; a live match page 120s; an upcoming
+   match page lapses just after kickoff (secs+120); finished pages 900s.
+2. **Cheap 404 for unknown paths.** Scanner garbage (`/bin/.env`, `/.git/…`,
+   invented paths outside the known route families) gets a static ~0-cost 404
+   (404 + link home + noindex — T-06 semantics preserved) instead of the full
+   `getSeoCtx` render (5 KV reads + the 700-match map). Known families keep
+   the pretty ctx-built 404.
+
+**Residual (accepted):** the FIRST render of a URL per colo still rolls the
+10ms dice (isolate cold start + JSON.parse of the pool + the render). Crawler
+bursts on a fresh deploy can still produce intermittent 1102s that self-heal
+as the per-colo holds populate (15x fewer renders than the old every-minute
+cadence). The structural fix is the $5/mo paid plan (30s CPU). Never "fix"
+this by raising the gates or skipping the dedupe writes.
+
+---
+
 ## 8. KV operations
 
 Read/write state via the REST API (the `wrangler kv key get` CLI is broken in the
