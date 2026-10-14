@@ -6,6 +6,49 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.101-trueduels] — 2026-10-15 (true big duels are curated; derbies promote their code names)
+
+The user's follow-up report from the 2026-10-14 UCL night: **"psg vs
+manchester city and real vs rome are both called as big duels of UCL"** —
+and the companion ask: **"bot must promote derbies (already in the code)
+with their code names such as el classico."**
+
+Root cause (the false "big duel"): `specialBanner` gated the
+`دوئل بزرگ لیگ قهرمانان اروپا` line on `isMasterPair` — the SETTINGS-driven
+master list. The saved admin settings add AS Roma, so Real–Roma qualified
+exactly like City–PSG. The master list is followers' business; the big-duel
+banner is a curatorial statement.
+
+The fix — a curated list, plus the code names the user asked for:
+
+- **`TRUE_DUEL_ELITE`** (match-classify.ts) — the hand-tuned European
+  aristocracy: Real Madrid, Barcelona, Arsenal, Chelsea, Liverpool, Man
+  City, Man United, Bayern, PSG, AC Milan, Inter, Juventus.
+  `isTrueBigDuel(match)` = BOTH sides in the list (normAlias-folded,
+  memoized; settings-proof — the admin panel can no longer mint big
+  duels). City–PSG and Barça–Real keep the banner; **Real–Roma plays as a
+  normal UCL match** ("leave the rest as they are"). Derby pairings that are
+  not both-elite (Der Klassiker, the Madonnina…) are out on purpose — their
+  promotion is their code name, not the big-duel line.
+- **Derby code names promote in the Champions League too** — `rivalryName`
+  gains an `allowUcl` third parameter; `specialBanner` and the notification
+  card opt in, so a Clásico in a UCL shirt is still **El Clásico**. The site's
+  default callers keep the v13.51 suppression (in the UCL the site's
+  boxing/badges treat a pairing as a UCL match).
+- **Every marquee pairing carries a Persian code name now** — ال کلاسیکو
+  (as before), کلاسیکر آلمان, دربی میلان, دربی منچستر, دربی شمال لندن,
+  دربی شمال غرب انگلیس, لو کلاسیک, دربی رم, دربی تورین — the fa banner,
+  fa cards and the site's fa badges promote the native name instead of
+  dropping the tag.
+- **Three named pairings that never reached the label**: the Madrid derby
+  (**El Derbi Madrileño / دربی مادرید**) and the Merseyside derby
+  (**دربی مرسی‌ساید**) were in the derby machinery but showed the generic
+  tag; the **Derby d'Italia (دربی ایتالیا)** joins both tables.
+- Tests: new `scripts/check-trueduels.js` (42 checks — the curated matrix,
+  the 2026-10-14 night replayed banner-by-banner, settings-poisoning
+  proof, MarkdownV2 lint, wiring pins); `live-derby-test` extended for
+  allowUcl + the new names. Suite: **1208 green** (was 1166).
+
 ## [13.100-priority] — 2026-10-14 (desired-team priority: the marquee game leads everywhere)
 
 Two live reports from the first full UCL night of the season, one root cause:

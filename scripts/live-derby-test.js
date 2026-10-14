@@ -82,7 +82,7 @@ const domCupSrc = grabFn("function isDomesticCup(code)");
 const aliasSrc = grabVarBalanced("TEAM_ALIASES") + "\n" + grabFn("function normAlias(name)") + "\n" + grabFn("function isDomesticLeagueCode(code)") + "\n" + grabVar("masterMemo") + "\n" + grabFn("function masterTeamList()") + "\n" + grabFn("function isMasterPair(match)") + "\n" + grabFn("function hasSelectedTeam(match)") + "\n" + grabFn("function isMasterClash(match)");
 const shouldNotifySrc = grabFn("function shouldNotify(match)");
 const featSrc = grabVar("BIG_MATCH_TEAMS") + "\n" + grabVar("BIG_MATCH_UEFA") + "\n" + grabFn("function isFeaturedMatch(match)") + "\n" + grabFn("function pickHeroMatch(matches)"); // v13.73-herotruth: the shared hero expression fetchPublicMatches now calls
-const derbyBlockSrc = grabVarBalanced("DERBY_PAIRS") + "\n" + grabVarBalanced("DERBY_NORM") + "\n" + grabFn("function isDerby(match)") + "\n" + grabVarBalanced("RIVALRY_PAIRS") + "\n" + grabVarBalanced("RIVALRY_NORM") + "\n" + grabFn("function rivalryName(match, lang)");
+const derbyBlockSrc = grabVarBalanced("DERBY_PAIRS") + "\n" + grabVarBalanced("DERBY_NORM") + "\n" + grabFn("function isDerby(match)") + "\n" + grabVarBalanced("RIVALRY_PAIRS") + "\n" + grabVarBalanced("RIVALRY_NORM") + "\n" + grabFn("function rivalryName(match, lang, allowUcl)");
 const livesSrc = grabFn("function isLiveStatus(status)") + "\n" + grabFn("function applyLiveDetail(m, detail)") + "\n" + grabFn("async function enrichLiveMatches(env, matches)");
 const pubSrc = grabFn("function pubMatch(m)");
 // v13.35-rounds: pubMatch now derives round/roundFa through roundLabel — the
@@ -123,20 +123,25 @@ chk(isDerby({ homeTeam: { name: "Club Atlético de Madrid" }, awayTeam: { name: 
 chk(isDerby({ homeTeam: { name: "AC Milan" }, awayTeam: { name: "FC Internazionale Milano" } }) === true, "Madonnina (FD legal names)");
 chk(isDerby({ homeTeam: { name: "FC Bayern München" }, awayTeam: { name: "Borussia Dortmund" }, competition: { code: "BL1" } }) === true, "Der Klassiker (v13.51 DERBY_NORM alias fix — was silently broken)");
 
-// ---------- A2: named rivalries (v13.51) ----------
-// rivalryName(match, lang): the named tag for this match in this language,
-// or null. Rules: never in the UCL; fa keeps only ال کلاسیکو (the other
-// names are English-only → null in fa); generic derbies keep the old tag.
-const rv = (h, a, comp, lang) => rivalryName({ homeTeam: { name: h }, awayTeam: { name: a }, competition: comp }, lang);
+// ---------- A2: named rivalries (v13.51 / v13.101-trueduels) ----------
+// rivalryName(match, lang, allowUcl?): the named tag for this match in
+// this language, or null. Default callers: never in the UCL. v13.101: every
+// pairing carries a Persian code name (دربی میلان، کلاسیکر آلمان…) and
+// the BOT opt-in (allowUcl=true) lifts the UCL suppression — a Clásico in
+// a UCL shirt is still El Clásico. Generic derbies keep the old tag.
+const rv = (h, a, comp, lang, allowUcl) => rivalryName({ homeTeam: { name: h }, awayTeam: { name: a }, competition: comp }, lang, allowUcl);
 chk(rv("Real Madrid CF", "FC Barcelona", { code: "PD" }, "en") === "El Clásico", "rivalry: El Clásico (La Liga)");
-chk(rv("Barcelona", "Real Madrid", { code: "PD" }, "fa") === "\u0627\u0644 \u06A9\u0644\u0627\u0633\u06CC\u06A9\u0648", "rivalry: fa gets only ال کلاسیکو");
+chk(rv("Barcelona", "Real Madrid", { code: "PD" }, "fa") === "\u0627\u0644 \u06A9\u0644\u0627\u0633\u06CC\u06A9\u0648", "rivalry: fa El Clásico keeps its spelling");
 chk(rv("Real Madrid CF", "FC Barcelona", { code: "CDR" }, "en") === "El Clásico", "rivalry: El Clásico counts in the Copa del Rey too (domestic cups OK)");
-chk(rv("Real Madrid CF", "FC Barcelona", { code: "CL" }, "en") === null, "rivalry: NO name when they meet in the UCL (just a UCL match)");
-chk(isDerby({ homeTeam: { name: "Real Madrid CF" }, awayTeam: { name: "FC Barcelona" }, competition: { code: "CL" } }) === false, "UCL Clásico is not a derby either");
+chk(rv("Real Madrid CF", "FC Barcelona", { code: "CL" }, "en") === null, "rivalry: DEFAULT callers get NO name in the UCL (site boxing stays v13.51)");
+chk(rv("Real Madrid CF", "FC Barcelona", { code: "CL" }, "en", true) === "El Clásico", "rivalry: allowUcl lifts the UCL suppression (the bot's code-name promotion)");
+chk(rv("Barcelona", "Real Madrid", { code: "CL" }, "fa", true) === "\u0627\u0644 \u06A9\u0644\u0627\u0633\u06CC\u06A9\u0648", "rivalry: allowUcl fa Clásico");
+chk(isDerby({ homeTeam: { name: "Real Madrid CF" }, awayTeam: { name: "FC Barcelona" }, competition: { code: "CL" } }) === false, "UCL Clásico is not a derby either (isDerby keeps the suppression)");
 chk(rv("FC Bayern München", "Borussia Dortmund", { code: "BL1" }, "en") === "Der Klassiker", "rivalry: Der Klassiker (FD spelling)");
 chk(rv("Bayern Munich", "Borussia Dortmund", { code: "BL1" }, "en") === "Der Klassiker", "rivalry: Der Klassiker (TSP spelling)");
-chk(rv("Bayern Munich", "Borussia Dortmund", { code: "BL1" }, "fa") === null, "rivalry: Klassiker is English-only (null in fa)");
+chk(rv("Bayern Munich", "Borussia Dortmund", { code: "BL1" }, "fa") === "\u06A9\u0644\u0627\u0633\u06CC\u06A9\u0631 \u0622\u0644\u0645\u0627\u0646", "rivalry: fa Klassiker code name (v13.101 — was English-only/null)");
 chk(rv("AC Milan", "FC Internazionale Milano", { code: "SA" }, "en") === "Derby della Madonnina", "rivalry: Derby della Madonnina (FD legal names)");
+chk(rv("AC Milan", "FC Internazionale Milano", { code: "SA" }, "fa") === "\u062F\u0631\u0628\u06CC \u0645\u06CC\u0644\u0627\u0646", "rivalry: fa Madonnina = دربی میلان");
 chk(rv("Liverpool FC", "Manchester United FC", { code: "PL" }, "en") === "North West Derby", "rivalry: North West Derby");
 chk(rv("Manchester United FC", "Manchester City FC", { code: "PL" }, "en") === "Manchester Derby", "rivalry: Manchester Derby (reversed pair order)");
 chk(rv("Arsenal FC", "Tottenham Hotspur FC", { code: "PL" }, "en") === "North London Derby", "rivalry: North London Derby");
@@ -144,6 +149,14 @@ chk(rv("Paris Saint-Germain", "Olympique de Marseille", { code: "FL1" }, "en") =
 chk(rv("AS Roma", "SS Lazio", { code: "SA" }, "en") === "Derby della Capitale", "rivalry: Derby della Capitale (SS Lazio alias fold)");
 chk(rv("Juventus FC", "Torino FC", { code: "SA" }, "en") === "Derby della Mole", "rivalry: Derby della Mole");
 chk(rv("Arsenal FC", "Chelsea FC", { code: "PL" }, "en") === null, "rivalry: none for a non-rivalry pair");
+// v13.101-trueduels: the three NEW named pairings
+chk(rv("Club Atlético de Madrid", "Real Madrid CF", { code: "PD" }, "en") === "El Derbi Madrileño", "rivalry: El Derbi Madrileño (FD legal names — was generic-only)");
+chk(rv("Club Atlético de Madrid", "Real Madrid CF", { code: "PD" }, "fa") === "\u062F\u0631\u0628\u06CC \u0645\u0627\u062F\u0631\u06CC\u062F", "rivalry: fa Madrid derby = دربی مادرید");
+chk(rv("Everton FC", "Liverpool FC", { code: "PL" }, "en") === "Merseyside Derby", "rivalry: Merseyside Derby (was generic-only)");
+chk(rv("Everton FC", "Liverpool FC", { code: "PL" }, "fa") === "\u062F\u0631\u0628\u06CC \u0645\u0631\u0633\u06CC\u200C\u0633\u0627\u06CC\u062F", "rivalry: fa Merseyside = دربی مرسی\u200Cساید");
+chk(rv("Juventus FC", "FC Internazionale Milano", { code: "SA" }, "en") === "Derby d'Italia", "rivalry: Derby d'Italia (new pairing)");
+chk(rv("Juventus FC", "FC Internazionale Milano", { code: "SA" }, "fa") === "\u062F\u0631\u0628\u06CC \u0627\u06CC\u062A\u0627\u0644\u06CC\u0627", "rivalry: fa Derby d'Italia = دربی ایتالیا");
+chk(isDerby({ homeTeam: { name: "Juventus FC" }, awayTeam: { name: "FC Internazionale Milano" }, competition: { code: "SA" } }) === true, "Derby d'Italia pair is a derby (boxing/sorting)");
 chk(isDerby({ homeTeam: { name: "Everton FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" } }) === true, "generic derbies keep the tag (Merseyside — named list doesn't swallow it)");
 chk(isDerby({ homeTeam: { name: "Juventus FC" }, awayTeam: { name: "Torino FC" }, competition: { code: "SA" } }) === true, "della Mole pair is also a derby (boxing/sorting)");
 chk(shouldNotify({ homeTeam: { name: "Club Atlético de Madrid" }, awayTeam: { name: "Real Betis Balompié" }, competition: { code: "PD" } }) === true, "Atlético (FD legal name) notifies via PD selection");

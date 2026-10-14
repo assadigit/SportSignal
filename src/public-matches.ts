@@ -123,9 +123,11 @@ export function pubMatch(m) {
     derby: isDerby(m),
     // v13.51-rivalries: named-rivalry tags (El Clásico, Der Klassiker, …).
     // rivalry = the English name (null when none — including UCL meetings,
-    // which are just UCL matches); rivalryFa = the Persian name — only
-    // El Clásico has one (ال کلاسیکو); the rest are English-only, so fa
-    // consumers drop the tag entirely (the row keeps its derby styling).
+    // which are just UCL matches on the site); rivalryFa = the Persian name
+    // — v13.101-trueduels: every marquee pairing carries one now (ال
+    // کلاسیکو، دربی میلان، کلاسیکر آلمان…), so fa consumers promote the
+    // native code name instead of dropping the tag. The row keeps its derby
+    // styling either way.
     rivalry: rivalryName(m, "en") || null,
     rivalryFa: rivalryName(m, "fa") || null,
     venue,

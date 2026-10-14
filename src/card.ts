@@ -98,12 +98,14 @@ export async function buildMatchCardSvg(env: Env, match: any, lang: string): Pro
   // the match itself — the card renders for BOTH the public-matches cache
   // (which carries .derby) and the raw tracked pool (which doesn't, so bot
   // notification cards never showed it). Named rivalries (El Clásico, Der
-  // Klassiker, …) replace the generic DERBY text; Persian keeps a tag only
-  // for ال کلاسیکو (the other names are English-only — the fa card drops the
-  // tag but keeps the purple accent); and NEVER in the Champions League,
-  // where the meeting is just a UCL match.
-  const namedRivalry = rivalryName(match, "en");
-  const tagForLang = rivalryName(match, en ? "en" : "fa");
+  // Klassiker, …) replace the generic DERBY text.
+  // v13.101-trueduels: (a) every marquee pairing carries a Persian code
+  // name now (ال کلاسیکو، دربی میلان، کلاسیکر آلمان…) — the fa card shows
+  // it instead of dropping the tag; (b) allowUcl — the BOT's card promotes
+  // the code name even in the Champions League (a UCL Clásico is still El
+  // Clásico), matching specialBanner.
+  const namedRivalry = rivalryName(match, "en", true);
+  const tagForLang = rivalryName(match, en ? "en" : "fa", true);
   const isDerbyMatch = isDerby(match) || !!namedRivalry;
   const derbyTag = tagForLang || (!namedRivalry && isDerbyMatch ? (en ? "DERBY" : "\u062F\u0631\u0628\u06CC") : null);
   const accent = isDerbyMatch ? "#a855f7" : "#3b82f6"; // purple for derby, blue otherwise

@@ -158,6 +158,45 @@ export function hasSelectedTeam(match) {
 export function isMasterClash(match) {
   return isDomesticLeagueCode(match.competition.code) && isMasterPair(match);
 }
+// v13.101-trueduels: the CURATED true-big-duel list — the user's rule: a
+// "دوئل بزرگ لیگ قهرمانان اروپا" is the EUROPEAN ARISTOCRACY meeting ITSELF
+// (Barcelona–Real Madrid, City–PSG…), never a marquee-vs-second-grade
+// fixture (Real Madrid–Roma: Roma is second grade compared to Real). The
+// master list is FOLLOWERS' business — it grows with every /follow and with
+// the admin panel's saved teams (a settings-added AS Roma is exactly what
+// made Real–Roma a "big duel" on 2026-10-14); THIS list is hand-tuned and
+// settings-proof. Derby pairings that are not both-elite (Der Klassiker,
+// the Madonnina, Le Classique…) stay out on purpose — their promotion is
+// their CODE NAME, not the big-duel banner. Edit the list to tune the
+// banner; nothing else changes when a club is added or removed here.
+var TRUE_DUEL_ELITE = [
+  // Spain
+  "Real Madrid CF",
+  "FC Barcelona",
+  // England
+  "Arsenal FC",
+  "Chelsea FC",
+  "Liverpool FC",
+  "Manchester City FC",
+  "Manchester United FC",
+  // Germany
+  "FC Bayern M\xFCnchen",
+  // France
+  "Paris Saint-Germain",
+  "PSG",
+  // Italy
+  "AC Milan",
+  "Inter Milan",
+  "Juventus"
+];
+// Both sides in the curated elite list (normAlias-folded, memoized once —
+// the BIG_MATCH_UEFA __normSet pattern). Deliberately NOT settings-driven.
+export function isTrueBigDuel(match) {
+  const pool: any = TRUE_DUEL_ELITE;
+  if (!pool.__normSet) pool.__normSet = new Set(TRUE_DUEL_ELITE.map(normAlias));
+  const s = pool.__normSet;
+  return s.has(normAlias(match.homeTeam.name)) && s.has(normAlias(match.awayTeam.name));
+}
 var DERBY_PAIRS = [
   // El Clásico
   ["Real Madrid CF", "FC Barcelona"],
@@ -183,7 +222,11 @@ var DERBY_PAIRS = [
   // Derby della Capitale
   ["AS Roma", "Lazio"],
   // Derby della Mole
-  ["Juventus", "Torino FC"]
+  ["Juventus", "Torino FC"],
+  // v13.101-trueduels: the Derby d'Italia joins the derby machinery (it
+  // is a named rivalry like the rest — the boxing/⚔ marks must see it).
+  // Derby d'Italia
+  ["Juventus", "Inter Milan"]
 ];
 var DERBY_NORM = DERBY_PAIRS.map(function(p) {
   // v13.51: normAlias, not bare normalizeTeamName — the alias table folds
@@ -207,30 +250,47 @@ export function isDerby(match) {
 // instead of the generic "Derby" tag wherever a derby is labelled. The pairs
 // also stay in DERBY_PAIRS so the derby machinery (the top box, the week-ahead
 // ⚔ marks) still sees them. Rules, per the product owner:
-//   - NEVER in the Champions League — a Clásico/Klassiker in the UCL is just
-//     a UCL match (any other competition — league or domestic cup — counts).
-//   - Persian carries a name only where one is natively used: ال کلاسیکو for
-//     Real–Barça. Every other rivalry name is English-only — fa consumers
-//     drop the tag entirely rather than show English text.
+//   - the BOT promotes the code name even when they meet in the Champions
+//     League (v13.101-trueduels, the user's ask: "bot must promote derbies
+//     with their code names such as el classico") — that opt-in lives in
+//     rivalryName's third parameter (allowUcl); the DEFAULT callers (the
+//     site's boxing/badges) keep the v13.51 suppression: in the UCL a
+//     pairing competes as a UCL match on the site.
+//   - every pairing carries a Persian code name now (دربی میلان، کلاسیکر
+//     آلمان…) — fa consumers promote the native name instead of dropping
+//     the tag (ال کلاسیکو keeps its existing spelling).
 var RIVALRY_PAIRS = [
-  // [team A, team B, English name, Persian name ("" = English-only)]
+  // [team A, team B, English name, Persian name]
   ["Real Madrid CF", "FC Barcelona", "El Clásico", "\u0627\u0644 \u06A9\u0644\u0627\u0633\u06CC\u06A9\u0648"],
-  ["FC Bayern M\xFCnchen", "Borussia Dortmund", "Der Klassiker", ""],
-  ["AC Milan", "Inter Milan", "Derby della Madonnina", ""],
-  ["Liverpool FC", "Manchester United FC", "North West Derby", ""],
-  ["Manchester City FC", "Manchester United FC", "Manchester Derby", ""],
-  ["Arsenal FC", "Tottenham Hotspur FC", "North London Derby", ""],
-  ["Paris Saint-Germain", "Olympique de Marseille", "Le Classique", ""],
-  ["AS Roma", "Lazio", "Derby della Capitale", ""],
-  ["Juventus", "Torino FC", "Derby della Mole", ""]
+  ["FC Bayern M\xFCnchen", "Borussia Dortmund", "Der Klassiker", "\u06A9\u0644\u0627\u0633\u06CC\u06A9\u0631 \u0622\u0644\u0645\u0627\u0646"],
+  ["AC Milan", "Inter Milan", "Derby della Madonnina", "\u062F\u0631\u0628\u06CC \u0645\u06CC\u0644\u0627\u0646"],
+  ["Liverpool FC", "Manchester United FC", "North West Derby", "\u062F\u0631\u0628\u06CC \u0634\u0645\u0627\u0644 \u063A\u0631\u0628 \u0627\u0646\u06AF\u0644\u06CC\u0633"],
+  ["Manchester City FC", "Manchester United FC", "Manchester Derby", "\u062F\u0631\u0628\u06CC \u0645\u0646\u0686\u0633\u062A\u0631"],
+  ["Arsenal FC", "Tottenham Hotspur FC", "North London Derby", "\u062F\u0631\u0628\u06CC \u0634\u0645\u0627\u0644 \u0644\u0646\u062F\u0646"],
+  ["Paris Saint-Germain", "Olympique de Marseille", "Le Classique", "\u0644\u0648 \u06A9\u0644\u0627\u0633\u06CC\u06A9"],
+  ["AS Roma", "Lazio", "Derby della Capitale", "\u062F\u0631\u0628\u06CC \u0631\u0645"],
+  ["Juventus", "Torino FC", "Derby della Mole", "\u062F\u0631\u0628\u06CC \u062A\u0648\u0631\u06CC\u0646"],
+  // v13.101-trueduels: the three pairings whose code names existed but
+  // never reached the label — the Madrid derby and the Merseyside derby
+  // showed the generic "Derby" tag (they were in DERBY_PAIRS, not here),
+  // and the Derby d'Italia was nowhere at all.
+  ["Atl\xE9tico Madrid", "Real Madrid CF", "El Derbi Madrile\u00F1o", "\u062F\u0631\u0628\u06CC \u0645\u0627\u062F\u0631\u06CC\u062F"],
+  ["Liverpool FC", "Everton FC", "Merseyside Derby", "\u062F\u0631\u0628\u06CC \u0645\u0631\u0633\u06CC\u200C\u0633\u0627\u06CC\u062F"],
+  ["Juventus", "Inter Milan", "Derby d'Italia", "\u062F\u0631\u0628\u06CC \u0627\u06CC\u062A\u0627\u0644\u06CC\u0627"]
 ];
 var RIVALRY_NORM = RIVALRY_PAIRS.map(function(p) {
   return [normAlias(p[0]), normAlias(p[1])];
 });
 // The rivalry name for this match in this language, or null (no named
-// rivalry / a UCL meeting / an English-only name requested in fa).
-export function rivalryName(match, lang) {
-  if (match.competition && match.competition.code === "CL") return null;
+// rivalry / a UCL meeting for a default caller).
+// v13.101-trueduels: the third parameter (allowUcl) lifts the Champions
+// League suppression for the BOT's promotion surfaces — the user's rule:
+// "bot must promote derbies with their code names such as el classico"; a
+// Clásico in a UCL shirt is still El Clásico. The DEFAULT stays suppressed:
+// the site's boxing/badges keep the v13.51 product decision (in the UCL a
+// pairing competes as a UCL match on the site).
+export function rivalryName(match, lang, allowUcl?) {
+  if (match.competition && match.competition.code === "CL" && !allowUcl) return null;
   const h = normAlias(match.homeTeam.name);
   const a = normAlias(match.awayTeam.name);
   for (let i = 0; i < RIVALRY_NORM.length; i++) {
