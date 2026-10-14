@@ -92,6 +92,11 @@ function workerSrc() {
     // notify modules. All harness deps are grab-based (position-independent)
     // or content-span regexes (#nospam6 spans within digest-morning).
     "digest-weekly.ts", "digest-morning.ts", "digest-night.ts", "digest-bigmatch.ts", "digest-coronation.ts",
+    // v13.99-uclgif: the UCL night preview (GIF + fixture times). Sits after
+    // the digest group (imports tzOffsetMs/dateKeyOf/matchesOfLocalDate FROM
+    // digest-night — one-directional, no cycle) so the flat concat's
+    // dependency direction stays acyclic.
+    "digest-uclnight.ts",
     "notify-engine.ts", "notify-status.ts", "notify-audit.ts",
     // v13.92-d1userstore: the user-data seam (D1 primary / legacy KV
     // fallback) — sits before users.ts (its top-level delegate) and every

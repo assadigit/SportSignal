@@ -56,14 +56,18 @@ function makeD1(opts) {
       return {
         _sql: sql,
         bind(...params) {
-          const run = () => exec(sql, params);
+          // run() returns a Promise (real-D1 semantics) — updSeen's 2%
+          // cleanup calls .run().catch(); a sync mock object made that
+          // throw ~4% of runs (the pre-existing "replayed update is a dup"
+          // flake, found while re-running the suite for v13.99-uclgif).
+          const run = async () => exec(sql, params);
           return {
             run,
             first: async () => exec(sql, params).results[0] || null,
             all: async () => ({ results: exec(sql, params).results })
           };
         },
-        run: () => exec(sql, []),
+        run: async () => exec(sql, []),
         first: async () => exec(sql, []).results[0] || null,
         all: async () => ({ results: exec(sql, []).results })
       };

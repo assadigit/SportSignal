@@ -29,7 +29,7 @@ import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, subrequestCount, jalaliDateFa, englishDateYmd } from "./utils";
 import { translateTeam, translateCompetition } from "./translate";
 import { fetchStandings } from "./composers";
-import { sendTelegram } from "./telegram";
+import { sendTelegram, sendUclGifBanner } from "./telegram";
 import { getUserPrefs, getUserTz, userFollowsMatch, userFollowsSides } from "./users";
 import { normalizeTeamName } from "./teams";
 
@@ -43,7 +43,9 @@ const DONE_STATUSES = ["FINISHED", "POSTPONED", "CANCELLED", "AWARDED", "SUSPEND
 // arithmetic per match (the offset is stable across a night; a DST edge
 // shifts a boundary match by one hour at worst, which the per-date dedupe
 // absorbs into the neighboring night).
-function tzOffsetMs(tz: string) {
+// v13.99-uclgif: exported for digest-uclnight.ts (the UCL preview's twin —
+// same tz-date arithmetic; one-directional import, no cycle).
+export function tzOffsetMs(tz: string) {
   try {
     const now = new Date();
     const parts = new Intl.DateTimeFormat("en-GB", ({
@@ -60,13 +62,13 @@ function tzOffsetMs(tz: string) {
   }
 }
 
-function dateKeyOf(y: number, m: number, d: number) {
+export function dateKeyOf(y: number, m: number, d: number) {
   return y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
 }
 
 // The local calendar date of a UTC instant under a known offset: read the
 // UTC getters of (ms + offset) — zero formatter work.
-function localDateKeyOf(ms: number, offsetMs: number) {
+export function localDateKeyOf(ms: number, offsetMs: number) {
   const d = new Date(ms + offsetMs);
   return dateKeyOf(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
 }
@@ -74,7 +76,7 @@ function localDateKeyOf(ms: number, offsetMs: number) {
 // The night's matches for a tz-local date: kickoff's LOCAL calendar date
 // equals dateKey. A match kicked off 22:30 Oct-14 (local) belongs to the
 // Oct-14 night even though it finishes Oct-15 00:30.
-function matchesOfLocalDate(matches, offsetMs: number, y: number, m: number, d: number) {
+export function matchesOfLocalDate(matches, offsetMs: number, y: number, m: number, d: number) {
   const key = dateKeyOf(y, m, d);
   const out = [];
   for (const m0 of matches) {
@@ -184,6 +186,13 @@ export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
     const dateKey = dateKeyOf(y, m, d);
     const nightMatches = matchesOfLocalDate(pool, offset, y, m, d);
     if (!nightMatches.length) continue;
+    // v13.99-uclgif: UCL nights (>=1 CL match in the night's set) open with
+    // the UCL.gif banner — the results half of the user's ask:
+    //   GIF
+    //   [result 1] [result 2] ...
+    // The banner is cosmetic: budget-guarded (< 42), wrapped so a failure
+    // can never touch the digest text behind it.
+    const nightHasUcl = nightMatches.some((mm) => mm && mm.competition && mm.competition.code === "CL");
     const verdict = nightIsOver(nightMatches, nowMs);
     if (!verdict.over) { out.notOver++; continue; }
     if (verdict.finished < 1) continue; // nothing actually resolved — no digest
@@ -216,11 +225,24 @@ export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
         console.error("night digest build failed: " + e.message);
         continue;
       }
+      // v13.99-uclgif: the banner goes FIRST (GIF, then the results text —
+      // the user's exact layout). A dead chat / wall-hit / any failure here
+      // only skips the GIF: the digest text below still sends.
+      if (nightHasUcl && subrequestCount() < 42) {
+        try {
+          const cap = lang === "en"
+            ? "\u{1F3C6} Champions League \u2014 night results"
+            : "\u{1F3C6} \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627 \u2014 \u0646\u062A\u0627\u06CC\u062C \u0634\u0628";
+          await sendUclGifBanner({ ...env, TEHRAN_TZ: tz }, c, cap);
+        } catch (e) {
+          console.warn("UCL night banner failed: " + e.message);
+        }
+      }
       const r = await sendTelegram({ ...env, TEHRAN_TZ: tz }, msg, c);
       if (r === true) out.sent++;
       else out.skipped++; // dead or failed — already marked, don't retry this night
     }
-    if (out.sent) console.log(`\u{1F319} Night results digest (${tz}): sent=${out.sent} skipped=${out.skipped}`);
+    if (out.sent) console.log(`\u{1F319} Night results digest (${tz}): sent=${out.sent} skipped=${out.skipped}` + (nightHasUcl ? " (+UCL banner)" : ""));
   }
   return out;
 }

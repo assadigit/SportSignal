@@ -6,6 +6,60 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.99-uclgif] — 2026-10-14 (the "/" command menu + the UCL night GIF)
+
+Two user reports, one feature each:
+
+- **Typing "/" in Telegram showed no commands.** The bot never called
+  `setMyCommands`, so the command menu was empty. Now registered: fa is the
+  DEFAULT scope (start/help/teams/follow/next/featured/tables/timezone/lang/
+  stop), `language_code="en"` carries the English set, and the owner's chat
+  (env.CHAT_ID) additionally gets the toolbelt (/status /members /admin
+  /broadcast) via `BotCommandScope { type: "chat" }` — non-owners never see
+  the admin commands. `ensureBotMenu` re-registers once per VERSION
+  (KV `bot_menu_v1` flag, per-isolate memo — ~4 Telegram calls once, then
+  zero per tick); `scripts/set-bot-commands.js` is the manual operator
+  re-run and re-uses the SAME lists from `src/telegram.ts` via the harness
+  transform (one source of truth). The live menu was registered the same
+  hour via the operator script (no deploy needed). `/help` now lists
+  `/featured` too (it was a real handler the help body never mentioned).
+- **The UCL night GIF** (user-supplied `UCL.gif`, moved to
+  `assets/bot/ucl-night.gif` — a TELEGRAM BOT ASSET, marked in
+  `assets/_headers` with its cache policy, served at
+  `https://sportsignal.ir/bot/ucl-night.gif` by Workers Static Assets).
+  On a UCL day (data-driven: the tz-local date has >=1 `CL` match — not
+  weekday guessing) every chat gets the GIF twice:
+  - **Preview** (`src/digest-uclnight.ts`): the evening's CL fixture list
+    with kickoff times — GIF banner (plain-text caption with the full
+    Jalali/Gregorian date), then the MarkdownV2 text (`⚽ آرسنال 🆚 شاختار —
+    ۲۰:۱۵`). Fires on the first tick inside [first kickoff − 6h, − 10min];
+    once per chat per date (`uclnight_<dateKey>_<chatId>`, write-first,
+    TTL 36h); wall-guarded (>= 40 skip, banner < 42); body built once per
+    language per tz (the v13.96.1 Intl discipline).
+  - **Results** (`digest-night.ts`): UCL nights (>=1 CL match in the
+    night's set) open with the same GIF (caption "🏆 لیگ قهرمانان اروپا —
+    نتایج شب") right before the night digest text — the user's exact
+    layout. A failed/missed banner can never block the digest behind it.
+  - Telegram uploads the GIF once, caches it as a `file_id` (KV
+    `ucl_gif_fileid_v1`, 90-day TTL — instant sends, independent of the
+    site); a 400 clears the cache and re-uploads from the URL. No outbox
+    for banners (a missed GIF must never queue a retry that could double
+    it).
+- House-keeping found on the way: `check-userstore.js`'s mock D1 returned a
+  sync object from `.run()` — real D1 returns a Promise — so `updSeen`'s 2%
+  random cleanup `.run().catch()` threw ~4% of suite runs and masked the
+  dup verdict (the pre-existing "replayed update is a dup" flake,
+  1-in-~25). Mock fixed to async `run()` (30/30 green, forced-branch
+  verified).
+- Harness: `scripts/check-uclnight.js` (48 checks — window semantics
+  behavioral, MarkdownV2 lint on the built preview, menu legality +
+  handler-existence pins, asset/wiring/order pins); suite 1130 green.
+  `digest-uclnight.ts` sits after the digest group in the harness order
+  (imports tzOffsetMs/dateKeyOf/matchesOfLocalDate FROM digest-night —
+  one-directional, no cycle; the pinned digest-group contiguity holds).
+
+---
+
 ## [13.98-jalalinight] — 2026-10-14 (the Gregorian night header + the one-game digest)
 
 Two live reports from the first post-migration night (2026-10-14):

@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.98-jalalinight";
+export const VERSION = "13.99-uclgif";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -239,6 +239,25 @@ export const CONFIG: Record<string, any> = {
   KV_NOTIFIED_KEY: "notified_matches_v6",
   KV_SETTINGS_KEY: "bot_settings_v1",
   KV_LAST_SOURCE: "last_api_source",
+  // v13.99-uclgif: the UCL night GIF banner. The asset lives at
+  // assets/bot/ucl-night.gif (TELEGRAM BOT ASSET — see assets/_headers;
+  // Workers Static Assets serves it at https://sportsignal.ir/bot/ucl-night.gif
+  // before the worker runs). Telegram fetches that URL ONCE, caches the
+  // upload as a file_id under KV_UCL_GIF_FILEID (90-day TTL) and every later
+  // send rides the file_id — instant + independent of our site. Replacing
+  // the GIF in place needs a KV key clear to re-upload immediately.
+  UCL_GIF_URL: "https://sportsignal.ir/bot/ucl-night.gif",
+  KV_UCL_GIF_FILEID: "ucl_gif_fileid_v1",
+  // v13.99-botmenu: the "/" command menu flag (setMyCommands) — value = the
+  // VERSION that last registered the menu, so every version bump re-registers
+  // (idempotent) and the harness pins the command lists in telegram.ts.
+  KV_BOT_MENU_FLAG: "bot_menu_v1",
+  // v13.99-uclgif: the UCL night preview window — fires on the first tick
+  // inside [firstCLKickoff − 6h, firstCLKickoff − 10min]. 6h catches the
+  // evening's games while the day is still "ahead" (16:45Z UCL games =
+  // 20:15 Tehran); the 10min tail stops previews for a ball already rolling.
+  UCL_PREVIEW_LEAD_MS: 6 * 60 * 60 * 1e3,
+  UCL_PREVIEW_TAIL_MS: 10 * 60 * 1e3,
   KV_STANDINGS_SNAP: "standings_snap_",
   KV_STANDINGS_CACHE: "standings_cache_",
   // v13.53-standsteady: standings freshness + cache tunables. The old values

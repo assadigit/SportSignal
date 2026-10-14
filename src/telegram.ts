@@ -335,6 +335,175 @@ export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, 
 // v12.x compatibility alias sendTelegramWithKeyboard — REMOVED in v13.46-trim
 // (delegates to sendTelegram; zero call sites since v13.2 merged the logic).
 
+// v13.99-uclgif: sendAnimation — the UCL night GIF (assets/bot/ucl-night.gif).
+// `animation` is either a Telegram file_id (the cached fast path) or a public
+// URL (Telegram fetches it server-side). The caption is PLAIN TEXT (no
+// parse_mode) — banner captions are emoji + words, never markdown, so no
+// MarkdownV2 escaping belongs here (the v13.96.1 "can't parse entities"
+// lesson). Same pacing / 429-pause / dead-chat semantics as the other
+// senders, 2 attempts (the GIF is a cosmetic banner — the text message
+// behind it is the real payload; NO outbox: a missed GIF must never queue a
+// retry that could double the banner).
+// Returns the animation object (with file_id) on success, "dead" for dead
+// chats, false otherwise.
+export async function sendAnimation(env: Env, chatId, animation, caption?) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    if (Date.now() < TELEGRAM_PAUSE_UNTIL && !(await waitTelegramPause())) return false;
+    await paceTelegram();
+    if (bumpSubrequest()) return false;
+    try {
+      const payload: any = { chat_id: chatId, animation };
+      if (caption) payload.caption = caption;
+      const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendAnimation`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const data = await res.json() as any;
+        vlog(`\u{1F39E} Animation sent to ${chatId}`);
+        return (data && data.result && (data.result.animation || data.result.document)) || true;
+      }
+      const error = await res.text();
+      console.error(`sendAnimation error (attempt ${attempt}/2): ${error}`);
+      if (res.status === 429) {
+        const retryAfter = parseInt(res.headers.get("retry-after") || "2");
+        TELEGRAM_PAUSE_UNTIL = Math.max(TELEGRAM_PAUSE_UNTIL, Date.now() + Math.min(Math.max(retryAfter, 1), 10) * 1e3);
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+      if (res.status >= 400 && res.status < 500) {
+        return /chat not found|blocked by the user|bot was kicked|deactivated/i.test(error) ? "dead" : false;
+      }
+    } catch (e) {
+      console.error(`sendAnimation network error (attempt ${attempt}/2): ` + e.message);
+    }
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 1e3 * attempt));
+  }
+  return false;
+}
+
+// v13.99-uclgif: the UCL night banner — file_id-first. The first send (or the
+// first after the 90-day TTL lapses / a 400 cleared a stale file_id) goes by
+// URL (Telegram uploads from https://sportsignal.ir/bot/ucl-night.gif) and
+// re-stores the returned file_id; every later send is a cached file_id —
+// instant and independent of our site. Returns sendAnimation's verdict.
+export async function sendUclGifBanner(env: Env, chatId, caption?) {
+  const fileId = await env.STATE.get(CONFIG.KV_UCL_GIF_FILEID).catch(() => null);
+  if (fileId) {
+    const r = await sendAnimation(env, chatId, fileId, caption);
+    if (r && r !== "dead" && r !== false) return r;
+    if (r === "dead") return "dead";
+    // false — most likely "wrong file_id" (Telegram purged it / a token
+    // regeneration): clear the cache and fall through to the URL upload.
+    await env.STATE.delete(CONFIG.KV_UCL_GIF_FILEID).catch(() => {});
+  }
+  const r2 = await sendAnimation(env, chatId, CONFIG.UCL_GIF_URL, caption);
+  if (r2 && r2 !== "dead" && r2 !== false && r2.file_id) {
+    await env.STATE.put(CONFIG.KV_UCL_GIF_FILEID, r2.file_id, { expirationTtl: 90 * 86400 }).catch(() => {});
+  }
+  return r2;
+}
+
+// v13.99-botmenu: the "/" command menu — the user's report: typing "/" in
+// Telegram showed NO commands because setMyCommands was never called. These
+// lists are the SOURCE OF TRUTH (scripts/set-bot-commands.js re-uses them
+// for operator re-runs via the harness transform). fa is the DEFAULT scope
+// (the bot's audience is Persian-first); en rides language_code="en". The
+// owner's chat additionally gets the admin toolbelt (BotCommandScope chat).
+// /featured is a real handler (bot.ts) that /help never listed — the menu
+// now surfaces it.
+export const BOT_MENU_FA = [
+  { command: "start", description: "\u0634\u0631\u0648\u0639 \u0631\u0628\u0627\u062A \u0648 \u0639\u0636\u0648\u06CC\u062A" },
+  { command: "help", description: "\u0631\u0627\u0647\u0646\u0645\u0627\u06CC \u062F\u0633\u062A\u0648\u0631\u0647\u0627" },
+  { command: "teams", description: "\u0641\u0647\u0631\u0633\u062A \u062A\u06CC\u0645\u200C\u0647\u0627 \u0628\u0631\u0627\u06CC \u0627\u0646\u062A\u062E\u0627\u0628" },
+  { command: "follow", description: "\u0627\u0646\u062A\u062E\u0627\u0628 \u062A\u06CC\u0645\u200C\u0647\u0627: /follow 1,3,7" },
+  { command: "next", description: "\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\u06CC \u062A\u06CC\u0645\u200C\u0647\u0627\u06CC \u0634\u0645\u0627" },
+  { command: "featured", description: "\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0634\u0627\u062E\u0635" },
+  { command: "tables", description: "\u062C\u062F\u0648\u0644\u200C\u0647\u0627\u06CC \u0644\u06CC\u06AF \u0648 \u0647\u0641\u062A\u0647 \u067E\u06CC\u0634\u200C\u0631\u0648" },
+  { command: "timezone", description: "\u062A\u0646\u0638\u06CC\u0645 \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC" },
+  { command: "lang", description: "\u062A\u063A\u06CC\u06CC\u0631 \u0632\u0628\u0627\u0646 \u0641\u0627\u0631\u0633\u06CC/English" },
+  { command: "stop", description: "\u0644\u063A\u0648 \u0639\u0636\u0648\u06CC\u062A" }
+];
+export const BOT_MENU_EN = [
+  { command: "start", description: "join & set up the bot" },
+  { command: "help", description: "command guide" },
+  { command: "teams", description: "list teams to follow" },
+  { command: "follow", description: "pick teams: /follow 1,3,7" },
+  { command: "next", description: "your teams' upcoming matches" },
+  { command: "featured", description: "featured matches" },
+  { command: "tables", description: "league tables + week ahead" },
+  { command: "timezone", description: "set your timezone" },
+  { command: "lang", description: "switch language \u0641\u0627\u0631\u0633\u06CC/English" },
+  { command: "stop", description: "unsubscribe" }
+];
+// The owner's chat ALSO sees the toolbelt (scope "chat" = env.CHAT_ID).
+export const BOT_MENU_ADMIN_FA = BOT_MENU_FA.concat([
+  { command: "status", description: "\u0648\u0636\u0639\u06CC\u062A \u0631\u0628\u0627\u062A \u0648 \u062A\u06CC\u06A9\u200C\u0647\u0627" },
+  { command: "members", description: "\u0627\u0639\u0636\u0627\u06CC \u0631\u0628\u0627\u062A" },
+  { command: "admin", description: "\u067E\u0646\u0644 \u0645\u062F\u06CC\u0631\u06CC\u062A" },
+  { command: "broadcast", description: "\u067E\u06CC\u0627\u0645 \u0647\u0645\u06AF\u0627\u0646\u06CC: /broadcast \u0645\u062A\u0646" }
+]);
+export const BOT_MENU_ADMIN_EN = BOT_MENU_EN.concat([
+  { command: "status", description: "bot status & ticks" },
+  { command: "members", description: "bot members" },
+  { command: "admin", description: "admin panel" },
+  { command: "broadcast", description: "broadcast: /broadcast text" }
+]);
+
+// v13.99-botmenu: setMyCommands — register (a slice of) the "/" menu.
+// `scope` is a Telegram BotCommandScope (default / chat); `languageCode`
+// selects the per-language command set. Idempotent by design.
+export async function setMyCommands(env: Env, commands, scope?, languageCode?) {
+  try {
+    await paceTelegram();
+    if (bumpSubrequest()) return false;
+    const payload: any = { commands };
+    if (scope) payload.scope = scope;
+    if (languageCode) payload.language_code = languageCode;
+    const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/setMyCommands`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      console.error("setMyCommands failed: " + (await res.text()));
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("setMyCommands network error: " + e.message);
+    return false;
+  }
+}
+
+// v13.99-botmenu: register the menu once per VERSION (KV-flagged, per-isolate
+// memoized — a read per cold isolate, then nothing). Called at the top of
+// the notify phase; a failure logs and moves on (the menu is cosmetic, the
+// notifications are not). scripts/set-bot-commands.js is the manual re-run.
+var MENU_ENSURED: any = null;
+export async function ensureBotMenu(env: Env) {
+  if (MENU_ENSURED === CONFIG.VERSION) return;
+  const flag = await env.STATE.get(CONFIG.KV_BOT_MENU_FLAG).catch(() => null);
+  if (flag === CONFIG.VERSION) {
+    MENU_ENSURED = flag;
+    return;
+  }
+  const ok1 = await setMyCommands(env, BOT_MENU_FA);
+  const ok2 = await setMyCommands(env, BOT_MENU_EN, { type: "default" }, "en");
+  const adminChat = env.CHAT_ID ? Number(env.CHAT_ID) : null;
+  let ok3 = true, ok4 = true;
+  if (adminChat) {
+    ok3 = await setMyCommands(env, BOT_MENU_ADMIN_FA, { type: "chat", chat_id: adminChat });
+    ok4 = await setMyCommands(env, BOT_MENU_ADMIN_EN, { type: "chat", chat_id: adminChat }, "en");
+  }
+  if (ok1 && ok2 && ok3 && ok4) {
+    await env.STATE.put(CONFIG.KV_BOT_MENU_FLAG, CONFIG.VERSION).catch(() => {});
+    MENU_ENSURED = CONFIG.VERSION;
+    console.log(`\u{1F916} Bot menu registered (setMyCommands, ${BOT_MENU_FA.length} user + ${BOT_MENU_ADMIN_FA.length} admin commands)`);
+  }
+}
+
 // v12.x-bilingual-bot: answer a callback_query (dismisses the loading
 // spinner on the inline button the user just tapped). Optional text shows
 // a small toast to the user.

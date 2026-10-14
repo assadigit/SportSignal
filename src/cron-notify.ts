@@ -14,11 +14,21 @@ import { auditNotifications } from "./notify-audit";
 import { broadcastBigMatchResults, broadcastBigMatchKickoff } from "./digest-bigmatch";
 import { maybeSendMorningDigest } from "./digest-morning";
 import { maybeSendNightDigest } from "./digest-night";
+import { maybeSendUclNightPreview } from "./digest-uclnight";
 import { maybeNotifyTableToppers } from "./digest-coronation";
+import { ensureBotMenu } from "./telegram";
 import { alertPhaseError } from "./monitoring";
 
 export async function runNotifyPhase(env: Env, ctx) {
   const { chatIds, matches, fullSweepThisTick } = ctx;
+  // v13.99-botmenu: the "/" command menu (setMyCommands) — once per VERSION
+  // (KV-flagged; ~4 Telegram calls, then nothing per tick). Own try/catch:
+  // a menu hiccup must never touch the notify path.
+  try {
+    await ensureBotMenu(env);
+  } catch (e) {
+    console.error("Bot menu registration step failed: " + e.message);
+  }
   // (v13.9-reliability #5's canary injection was REMOVED in
   // v13.44-quotaguard — audit F9: cacheMatches runs BEFORE the injection,
   // so the canary never persisted and its 24h/3h/1h windows NEVER opened;
@@ -77,6 +87,15 @@ export async function runNotifyPhase(env: Env, ctx) {
     if (bb && bb.sent) console.log(`\u{1F4E4} Big-match FT broadcast: ${bb.sent}/${bb.matches} (dead=${bb.dead})`);
   } catch (e) {
     console.error("Big-match FT broadcast step failed: " + e.message);
+  }
+  // v13.99-uclgif: the UCL night preview — the UCL.gif banner + the evening's
+  // CL fixture list with kickoff times, once per chat per UCL day (first
+  // tick inside [T-6h, T-10min]). Own try/catch; wall-guarded inside.
+  try {
+    const up = await maybeSendUclNightPreview(env, chatIds, matches);
+    if (up && up.sent) console.log(`\u{1F3AF} UCL night preview: sent=${up.sent} skipped=${up.skipped}`);
+  } catch (e) {
+    console.error("UCL preview step failed: " + e.message);
   }
   // v12.x-cron-gaps: matchday morning digest at 9am local tz. Fires once
   // per chat per day; per-chat KV dedupe. Own try/catch.

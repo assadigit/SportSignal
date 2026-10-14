@@ -229,7 +229,17 @@ Persian-first, and **fully tappable** — a persistent button keyboard
 (Featured / Upcoming / Tables / Teams / Timezone / Language / Help / Stop)
 re-attaches to every reply, `/teams` is an inline tap-to-toggle grid with
 ✅ marks, and `/timezone` offers city quick-picks. Slash commands still work
-(`/help` in-bot says it all in Persian):
+(`/help` in-bot says it all in Persian). The **"/" command menu** (what
+Telegram clients show when you type `/`) is registered via `setMyCommands`
+— fa descriptions by default, English via `language_code="en"`, and the
+owner's chat also gets the admin toolbelt (/status /members /admin
+/broadcast). The lists live in `src/telegram.ts` (`BOT_MENU_*`); the worker
+re-registers them once per version, and `scripts/set-bot-commands.js` is the
+manual operator re-run:
+
+```sh
+BOT_TOKEN=<token> [CHAT_ID=<admin chat id>] node scripts/set-bot-commands.js
+```
 
 | Command | Action |
 | :--- | :--- |
@@ -241,6 +251,25 @@ re-attaches to every reply, `/teams` is an inline tap-to-toggle grid with
 | `/featured` | Today's big matches |
 | `/timezone london` / `reset` | Set / reset your timezone |
 | `/lang` | fa/en picker (persists to `user_prefs_v1`) |
+
+### UCL nights — the GIF (v13.99-uclgif)
+
+On a day that has Champions League matches (data-driven: the tz-local date
+with ≥1 `CL` fixture), every chat gets
+[`assets/bot/ucl-night.gif`](assets/bot/ucl-night.gif) **twice**:
+
+1. **The preview** — the UCL.gif banner, then the evening's fixture list
+   with kickoff times (`⚽ آرسنال 🆚 شاختار — ۲۰:۱۵`), on the first tick
+   inside [first CL kickoff − 6h, − 10min] (`src/digest-uclnight.ts`).
+2. **The results** — the same GIF (caption "🏆 لیگ قهرمانان اروپا — نتایج
+   شب") right before the night results digest (`src/digest-night.ts`).
+
+The asset is served by Workers Static Assets at
+`https://sportsignal.ir/bot/ucl-night.gif`; Telegram uploads it once and
+the bot reuses the cached `file_id` (KV `ucl_gif_fileid_v1`). **This file
+is a live bot asset — do not delete or rename it** (marked in
+`assets/_headers`); replacing it in place is fine — clear the KV key to
+force an immediate re-upload.
 
 ---
 
