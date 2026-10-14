@@ -68,8 +68,13 @@ const SETTINGS_TEAMS = {
 const ctx = eval("(() => { " + pieces.join("\n") + "; var BIG_TEAMS_BY_LEAGUE = " + JSON.stringify(SETTINGS_TEAMS) + "; var CONFIG = { BIG_TEAMS_BY_LEAGUE: BIG_TEAMS_BY_LEAGUE, __teamNorm: null, LATE_STAGES: [\"QUARTER_FINALS\",\"QUARTER_FINAL\",\"SEMI_FINALS\",\"SEMI_FINAL\",\"FINAL\",\"THIRD_PLACE\"], DOMESTIC_CUP_IDS: { FA_CUP: 1, EFL_CUP: 1, CDR: 1, COPPA_ITALIA: 1, DFB_POKAL: 1 } }; return { priorityTier, pickHeroMatch, uclPreviewOrder, isFeaturedMatch, isMasterPair, masterTeamList }; })()");
 
 const mk = (h, a, ko, status) => ({ homeTeam: { name: h }, awayTeam: { name: a }, utcDate: ko, status: status || "TIMED", competition: { code: "CL" } });
-const KO1 = "2026-10-14T16:45:00Z";
-const KO2 = "2026-10-14T19:00:00Z";
+// v13.102: DYNAMIC kickoffs (now-anchored) — the original fixed 2026-10-14
+// dates were a time bomb: the suite's "future" fixtures stopped being future
+// the moment the real clock crossed 19:00Z on 2026-10-14 and the hero checks
+// flipped red with zero code changes. Ordering logic is date-independent.
+const isoIn = (h) => new Date(Date.now() + h * 36e5).toISOString();
+const KO1 = isoIn(1.5);
+const KO2 = isoIn(3);
 
 // ===== 1) priorityTier — the ONE expression =====
 console.log("\n=== 1. priorityTier (master level, production-shaped settings) ===");
@@ -95,7 +100,7 @@ console.log("\n=== 3. pickHeroMatch (the 2026-10-14 hero lesson) ===");
   const cityPsg = mk("Manchester City FC", "Paris Saint-Germain FC", KO2);
   check("hero: same kickoff — featured City–PSG beats master-only Roma–Real (pool order Roma first)", ctx.pickHeroMatch([romaReal, cityPsg]) === cityPsg);
   check("hero: same kickoff — order-independent (City first input too)", ctx.pickHeroMatch([cityPsg, romaReal]) === cityPsg);
-  const cityPsgLater = mk("Manchester City FC", "Paris Saint-Germain FC", "2026-10-14T21:00:00Z");
+  const cityPsgLater = mk("Manchester City FC", "Paris Saint-Germain FC", isoIn(5));
   check("hero: kickoff still dominates (earlier master pair beats later featured)", ctx.pickHeroMatch([romaReal, cityPsgLater]) === romaReal);
   const romaRealLive = mk("AS Roma", "Real Madrid CF", KO2, "IN_PLAY");
   check("hero: LIVE leads everything (rolling ball)", ctx.pickHeroMatch([cityPsg, romaRealLive]) === romaRealLive);

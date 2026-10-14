@@ -221,10 +221,12 @@ check("#nospam2 shouldSendNotification handles result-big", /case "result-big":\
 // the save must precede the group send loop).
 // v13.44-quotaguard: window widened 2600->3600 — the F3 fail-closed gate
 // added ~430 chars between the dedupe check and the save inside the segment.
-const resultBigSeg = (src.match(/result-big[\s\S]{0,3600}?(?=\/\/ v13\.13-kickoff)/) || [""])[0];
+// v13.102-perchat: widened again 3600->5200 — the delivery-ledger recording
+// (recordDeliveries rows) sits between the dedupe check and the save.
+const resultBigSeg = (src.match(/result-big[\s\S]{0,5200}?(?=\/\/ v13\.13-kickoff)/) || [""])[0];
 check("#nospam3 result-big: dedupe check exists", /shouldSendNotification\(env, match, "result-big", notifiedMatches\)/.test(resultBigSeg));
 check("#nospam3 result-big: check precedes write-first save", resultBigSeg.indexOf('shouldSendNotification(env, match, "result-big"') < resultBigSeg.indexOf('saveNotifiedMatch(env, match, "result-big"'));
-const kickoffBigSeg = (src.match(/MISSING DEDUPE CHECK \(same bug[\s\S]{0,2600}?(?=\/\/ v12\.32|\/\/ after this match)/) || [""])[0];
+const kickoffBigSeg = (src.match(/MISSING DEDUPE CHECK \(same bug[\s\S]{0,4200}?(?=\/\/ v12\.32|\/\/ after this match)/) || [""])[0];
 check("#nospam3 kickoff-big: dedupe check exists", /shouldSendNotification\(env, match, "match-start-big", notifiedMatches\)/.test(kickoffBigSeg));
 check("#nospam3 kickoff-big: check precedes write-first save", kickoffBigSeg.indexOf('shouldSendNotification(env, match, "match-start-big"') < kickoffBigSeg.indexOf('saveNotifiedMatch(env, match, "match-start-big"'));
 

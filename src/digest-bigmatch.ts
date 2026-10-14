@@ -8,7 +8,7 @@ import type { Env } from "./types";
 import { formatResultMessage, formatMatchStartMessage, specialBanner } from "./composers";
 import { isMatchFinished } from "./match-model";
 import { isWithinPostMatchWindow, isMatchStartingNow } from "./match-windows";
-import { getNotifiedMatches, saveNotifiedMatch, shouldSendNotification } from "./match-dedupe";
+import { getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, recordDeliveries } from "./match-dedupe";
 // v13.92-d1userstore: the dead-chat registry prune goes through the seam.
 import { pruneChats } from "./user-store";
 import { sendTelegram } from "./telegram";
@@ -66,6 +66,7 @@ export async function broadcastBigMatchResults(env: Env, matches) {
       // KV-write governor could otherwise trip under write pressure).
       const persistedBig = await saveNotifiedMatch(env, match, "result-big", notifiedMatches);
       if (!persistedBig) continue;
+      const bigDeliveries: any[] = []; // {chatId, verdict}
       for (const g of groups) {
         const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
         const lang = g.lang || "fa";
@@ -77,7 +78,16 @@ export async function broadcastBigMatchResults(env: Env, matches) {
           if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
         });
         if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
+        // v13.102-perchat: the broadcast's per-chat verdicts → the delivery
+        // ledger (the audit checks result/result-big as one equivalence
+        // group over the whole registry).
+        for (let i = 0; i < g.chats.length; i++) {
+          const r = sendResults[i];
+          const verdict = r && r.status === "fulfilled" ? (r.value === true ? "sent" : r.value === "dead" ? "dead" : "failed") : "failed";
+          bigDeliveries.push({ chatId: g.chats[i], verdict });
+        }
       }
+      if (bigDeliveries.length) await recordDeliveries(env, match, "result-big", bigDeliveries);
       if (anySuccess) {
         out.sent++;
       }
@@ -130,6 +140,7 @@ export async function broadcastBigMatchKickoff(env: Env, matches) {
       // v13.44-quotaguard (F3): fail-closed — same gate as result-big above.
       const persistedBig = await saveNotifiedMatch(env, match, "match-start-big", notifiedMatches);
       if (!persistedBig) continue;
+      const koDeliveries: any[] = []; // {chatId, verdict}
       for (const g of groups) {
         const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
         const lang = g.lang || "fa";
@@ -141,7 +152,15 @@ export async function broadcastBigMatchKickoff(env: Env, matches) {
           if (r.status === "fulfilled" && r.value === "dead") deadChats.push(g.chats[i]);
         });
         if (sendResults.some((r) => r.status === "fulfilled" && r.value === true)) anySuccess = true;
+        // v13.102-perchat: same ledger discipline as result-big (the audit
+        // checks match-start/match-start-big as one group over the registry).
+        for (let i = 0; i < g.chats.length; i++) {
+          const r = sendResults[i];
+          const verdict = r && r.status === "fulfilled" ? (r.value === true ? "sent" : r.value === "dead" ? "dead" : "failed") : "failed";
+          koDeliveries.push({ chatId: g.chats[i], verdict });
+        }
       }
+      if (koDeliveries.length) await recordDeliveries(env, match, "match-start-big", koDeliveries);
       if (anySuccess) {
         out.sent++;
       }

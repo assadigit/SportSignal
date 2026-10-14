@@ -105,9 +105,16 @@ export async function setUserLang(env: Env, chatId, lang) {
 // post-language-tap welcome failed Telegram's MarkdownV2 parse with 400
 // ("'.' is reserved") and NEVER DELIVERED (verified live against the bot
 // API). Double-escaped like every other literal in the bot now.
+// v13.102-referral: the welcome ALSO urges the new member to recommend the
+// bot AND the website (football.sportsignal.ir) to their football-loving
+// friends — the user's ask. MarkdownV2-safe: every '.', '-' and '!' escaped
+// (the join flow's history of parse-400s); the URLs stay bare-text links
+// (Telegram auto-links them after the parser strips the escapes — the same
+// discipline as the v13.22-promo footer riding every notification). No
+// entity markup in the copy, so there is nothing to balance either.
 var BOT_STRINGS = {
-  "fa_start_welcome": "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\\!\n\u0627\u0639\u0644\u0627\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645 \u0631\u0627 \u0627\u0632 \u062F\u0633\u062A \u0646\u062F\u0647\u06CC\u062F\\.",
-  "en_start_welcome": "Welcome to SportSignal\\!\nNever miss the big matches\\.",
+  "fa_start_welcome": "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\\!\n\u0627\u0639\u0644\u0627\u0645 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645 \u0631\u0627 \u0627\u0632 \u062F\u0633\u062A \u0646\u062F\u0647\u06CC\u062F\\.\n\n\uD83D\uDC65 \u0627\u06AF\u0631 \u062F\u0648\u0633\u062A\u0627\u0646\u06CC \u062F\u0627\u0631\u06CC\u062F \u06A9\u0647 \u0639\u0627\u0634\u0642 \u0641\u0648\u062A\u0628\u0627\u0644 \u0647\u0633\u062A\u0646\u062F\u060C \u0627\u06CC\u0646 \u0631\u0628\u0627\u062A \u0648 \u0633\u0627\u06CC\u062A \u0645\u0627 \u0631\u0627 \u0628\u0647 \u0622\u0646\u200C\u0647\u0627 \u067E\u06CC\u0634\u0646\u0647\u0627\u062F \u06A9\u0646\u06CC\u062F:\n\uD83E\uDD16 https://t\\.me/SportSignalAlertsBot\n\uD83C\uDF10 football\\.sportsignal\\.ir",
+  "en_start_welcome": "Welcome to SportSignal\\!\nNever miss the big matches\\.\n\n\uD83D\uDC65 If you have football\\-loving friends, recommend this bot and our website to them:\n\uD83E\uDD16 https://t\\.me/SportSignalAlertsBot\n\uD83C\uDF10 football\\.sportsignal\\.ir",
   "fa_lang_set": "\u2705 \u0632\u0628\u0627\u0646 \u0631\u0628\u0627\u062A \u0641\u0627\u0631\u0633\u06CC \u0634\u062F\\.",
   "en_lang_set": "Bot language set to English\\.",
 };

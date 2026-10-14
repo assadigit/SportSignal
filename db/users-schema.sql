@@ -71,3 +71,31 @@ CREATE TABLE IF NOT EXISTS notified_v1 (
   PRIMARY KEY (match_key, ntype)
 );
 CREATE INDEX IF NOT EXISTS idx_notified_exp ON notified_v1(expires_at);
+
+-- v13.102-perchat — PER-CHAT DELIVERY ledger. ROOT CAUSE (the reliability
+-- audit's residual hole): the notified_v1 dedupe record is per (match, type)
+-- GLOBAL, so a CPU-kill mid fan-out persists the record while the tail chats
+-- got nothing — no outbox entry (their sends never ran), no retry (the record
+-- blocks re-send), no trace (the tick blob died with the isolate). The audit
+-- (notify-audit.ts) could see "match X notified" while chat Y silently missed
+-- it. This ledger closes detection + enables the bounded in-window repair:
+--   verdict 'sent'   — confirmed delivery (card photo OR text send ok)
+--   verdict 'dead'   — confirmed dead chat (pruned; not a delivery gap)
+--   verdict 'failed' — send failed after retries; the DEAD-LETTER OUTBOX
+--                      owns recovery (a row exists precisely so the repair
+--                      leg does NOT double-send behind the outbox)
+--   verdict 'repair' — write-first marker of one repair attempt (at most one
+--                      re-send per (match, type, chat), ever)
+-- The audit pages the admin ONLY on NO-ROW gaps (the CPU-kill shape); rows
+-- with failed/repair/dead are visible via /api/audit. Rows older than 48h
+-- are irrelevant (the widest repair window — result backfill — ends at 24h)
+-- and pruned opportunistically.
+CREATE TABLE IF NOT EXISTS notify_deliveries_v1 (
+  match_key TEXT NOT NULL,
+  ntype TEXT NOT NULL,
+  chat_id INTEGER NOT NULL,
+  verdict TEXT NOT NULL,
+  sent_at INTEGER NOT NULL,
+  PRIMARY KEY (match_key, ntype, chat_id)
+);
+CREATE INDEX IF NOT EXISTS idx_deliveries_sent ON notify_deliveries_v1(sent_at);

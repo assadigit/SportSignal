@@ -6,6 +6,118 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.102-perchat] — 2026-10-14 (per-chat delivery ledger + repair; the end-to-end lifecycle harness; the bayern normalization bug)
+
+The reliability agenda, answered with proofs instead of assumptions:
+**"never misses a match" is now a 63-check simulated-timeline test that
+found a real, live, silent-miss bug on its first run.**
+
+### THE BUG THE HARNESS FOUND (live-impact): Bayern matches never notified
+`check-lifecycle.js` replayed a full matchday through the REAL tick code and
+its Bayern–LASK fixture came out **unworthy** — `shouldNotify` returned
+false. Root cause: the v12.15 `TEAM_ALIASES` entry
+`"bayernmunich"→"bayernmunchen"` predates the v13.8 `TRANSLIT_FOLDS`
+(`munchen→munich`, applied INSIDE `normalizeTeamName`) and now CONFLICTS
+with it: every set (the master normSet, shouldNotify's `c.all`,
+isFeaturedMatch, userFollowsMatch) is built with bare `normalizeTeamName`
+(→ `bayernmunich`), while every LOOKUP goes through `normAlias` (→
+`bayernmunchen`). Result: **both spellings of Bayern failed the master-team
+match — Bayern fixtures vs non-master opponents (Leverkusen, LASK,
+Hoffenheim…) silently never notified. Verified live: `notified_v1` has ZERO
+bayern rows, ever.** Fix: the alias entry is removed (the translit fold
+already unifies both spellings inside `normalizeTeamName`); the admin
+page's client-side `AC_ALIAS` fold direction flipped to match; the
+set-lookup invariant (every master/variant name lands IN the
+normalizeTeamName-built sets) is now a permanent regression check.
+
+### The per-chat delivery ledger (D1 `notify_deliveries_v1`)
+The v13.94 fan-out reservation closed the quota-death hole, but a CPU kill
+MID fan-out still left the tail chats with nothing: the write-first dedupe
+record was persisted, their sends never ran (so no outbox entry), and the
+audit was per-MATCH — "match X fired" while chat Y silently missed it. Now:
+- Every (match, type) fan-out records per-chat verdicts (`sent` / `dead` /
+  `failed` — the outbox owns `failed` recovery — one D1 batch per unit).
+- `auditNotifications` runs a PER-CHAT completeness pass: every fired stage
+  must cover its audience (followers + the -big equivalence groups; chats
+  that joined after the stage are not expected; rows of any verdict count
+  as covered). No-row gaps page the admin (own 6h rate-limit) and are
+  visible via `/api/audit` (`perChatGaps`).
+- THE REPAIR LEG: while the stage is still timely (the same window/backfill
+  gates a fresh send would pass), the missing chats get the message
+  re-sent, late-tagged — write-first marker (`verdict='repair'`): at most
+  ONE attempt per (match, type, chat), ever. Out-of-window gaps are
+  reported only, never re-sent. Capped at 24 sends/tick, text-only.
+- The big-match broadcasts (match-start-big / result-big) record rows too.
+
+### `scripts/check-lifecycle.js` — the end-to-end simulated timeline
+The REAL tick code (`executeScheduledLogic` — the whole phase graph) run
+every 10 minutes over a 3.25-day mock world (7 heterogeneous chats: the
+admin, 4 fa/Tehran, an en/London, an en/Sydney + a Liverpool-only
+non-follower; two full match lifecycles) with only the world mocked: a
+controllable clock (a Date subclass), in-memory KV/D1 (the exact SQL
+surface), and a fetch dispatcher. Four hostilities, each targeting a
+documented failure class:
+- **DEPLOY WINDOW** (every tick of the 24h pre-match window skipped): the
+  stage fires LATE via the backfill leg with the "sent late" tag. (M3's
+  match-start, whose window AND backfill leg fall entirely inside the
+  outage, is the documented loss — reported by the audit, result still
+  delivered.)
+- **PROVIDER OUTAGE** (football-data 429 through a full sweep): the breaker
+  suspends FD, the pool falls back to cache, the degradation alert pages,
+  and no in-window stage is missed.
+- **TRANSIENT 500** (one chat's Telegram send during the 3h fan-out):
+  3 retries fail → the dead-letter outbox → delivered by the next tick's
+  drain. At-least-once, never silent.
+- **CPU KILL MID FAN-OUT** (every fetch/KV/D1 op after the first chat's
+  card send rejects — the dedupe record already persisted): the NEXT tick's
+  per-chat audit detects the no-row chats, pages the admin, and the repair
+  leg re-sends the kickoff to exactly those chats (the admin's card+repair
+  pair is the one documented duplicate window).
+Then it asserts EVERY chat receives EVERY stage it is owed at its own local
+time: 72h/24h/3h/1h/5min/match-start/result (+ -big broadcasts), UCL
+preview + GIF, night/morning/weekly digests with per-chat dedupe keys
+(Sydney's far-tz timing differs by a day — correctly), HT alerts, and the
+admin parity — the admin receives the same public surfaces as ordinary
+users, and the heartbeat pages ONLY the admin. 63 checks; the normalizer
+consistency gate (the bayernfix) closes it.
+
+### The welcome referral push (the user's ask)
+The `/start` welcome (fa + en) now also urges new members to recommend the
+bot AND the website to their football-loving friends — both links
+(`https://t.me/SportSignalAlertsBot`, `football.sportsignal.ir`),
+MarkdownV2-safe (every `.` `-` `!` escaped; no entity markup — the join
+flow's parse-400 history). The `/start` langSet branches now compose
+through `botStr` (ONE source of welcome truth). `check-join-flow.js`
+extended (+17 checks): real-string content tests, MarkdownV2
+parse-safety validation, the REAL language-tap join block (welcome +
+referral + tz onboarding + the admin join page), and the tz-set re-tap
+never re-nagging.
+
+### Other
+- `scripts/check-sameflow.js` (+21 checks): the static send-site audit —
+  every Telegram-send site is either a fan-out/command-reply or on the
+  audited admin-only allowlist (heartbeat, budget/stale/cap/audit/per-chat
+  pages, phase errors, the admin toolbelt). A public surface can never
+  silently become admin-only again.
+- `scripts/check-pervchat.js` (+27 checks): the ledger/audit/repair unit
+  matrix (marker idempotence, audience scoping, joined-later chats, the
+  epoch guard, the -big equivalence groups, the repair windows truth
+  table, out-of-window never re-sent).
+- `scripts/lib/full-worker.js` + `mock-env.js`: the reusable full-worker
+  eval harness (TypeScript-transpiled flat body, controllable clock, the
+  exact D1 statement surface, Telegram capture incl. FormData sends).
+- check-no-miss/check-bot-edges/check-reliability harness updates for the
+  new code paths; check-priority's fixed 2026-10-14 kickoffs made dynamic
+  (they were a time bomb — the suite flipped red the moment the real clock
+  crossed 19:00Z today with zero code changes).
+- The 48h ledger read now carries 1h of slack over the audit window (the
+  exactly-48h boundary paged falsely — caught by the lifecycle run).
+- db/users-schema.sql: the `notify_deliveries_v1` table (+ indexes).
+
+Suite: 1344 checks green (was 1208).
+
+---
+
 ## [13.101-trueduels] — 2026-10-14 (true big duels are curated; derbies promote their code names)
 
 The user's follow-up report from the 2026-10-14 UCL night: **"psg vs

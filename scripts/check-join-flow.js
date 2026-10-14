@@ -159,6 +159,145 @@ const check = (name, cond) => {
   await handler("/wibble", 42, freshEnv());
   check("<unknown command> replies (not silent)", /ناشناخته/.test(sent[sent.length - 1].msg));
 
+  // =====================================================================
+  // v13.102-referral: the WELCOME content + the full language-tap join
+  // path, through the REAL users.ts strings and the REAL bot.ts callback
+  // block (both sliced verbatim from the concat).
+  // =====================================================================
+
+  // --- MarkdownV2 parse-safety: outside code entities every reserved
+  // char must be escaped (the join flow's history of parse-400s: a single
+  // unescaped '.' rejected the whole welcome). Our welcome copy carries no
+  // entity markup, so "no unreserved reserved char" is also complete.
+  function mdv2Safe(text) {
+    const reserved = new Set([..."_*[]()~`>#+-=|{}.!"]);
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] === "\\") { i++; continue; } // escape: next char is consumed
+      if (reserved.has(text[i])) return false;
+    }
+    return true;
+  }
+
+  // 9) the REAL BOT_STRINGS + botStr (sliced from users.ts)
+  const bsStart = src.indexOf("var BOT_STRINGS = {");
+  const bsEnd = src.indexOf("function userFollowsMatch", bsStart);
+  if (bsStart < 0 || bsEnd < 0) {
+    console.error("FAIL: BOT_STRINGS block not found in worker source");
+    process.exit(1);
+  }
+  const botStrApi = new Function("stubs", src.slice(bsStart, bsEnd) + "\n; return { botStr, BOT_STRINGS };")({});
+  const faWelcome = botStrApi.botStr("fa", "start_welcome");
+  const enWelcome = botStrApi.botStr("en", "start_welcome");
+  check("fa welcome keeps the original greeting", faWelcome.includes("به SportSignal خوش آمدید") && faWelcome.includes("اعلام مسابقات مهم را از دست ندهید"));
+  check("en welcome keeps the original greeting", enWelcome.includes("Welcome to SportSignal") && enWelcome.includes("Never miss the big matches"));
+  // the referral push: urge + BOTH links (bot + website), fa
+  check("fa welcome urges recommending to friends", faWelcome.includes("دوستانی دارید که عاشق فوتبال") && faWelcome.includes("پیشنهاد کنید"));
+  check("fa welcome links the BOT (t.me, escaped)", faWelcome.includes("https://t\\.me/SportSignalAlertsBot"));
+  check("fa welcome links the WEBSITE (escaped)", faWelcome.includes("football\\.sportsignal\\.ir"));
+  // the referral push: en
+  check("en welcome urges recommending to friends", enWelcome.includes("football\\-loving friends") && enWelcome.includes("recommend this bot"));
+  check("en welcome links the BOT (t.me, escaped)", enWelcome.includes("https://t\\.me/SportSignalAlertsBot"));
+  check("en welcome links the WEBSITE (escaped)", enWelcome.includes("football\\.sportsignal\\.ir"));
+  // MarkdownV2 safety of every string the join path can send
+  check("fa welcome is MarkdownV2-safe (parse-400 guard)", mdv2Safe(faWelcome));
+  check("en welcome is MarkdownV2-safe (parse-400 guard)", mdv2Safe(enWelcome));
+  check("fa lang_set is MarkdownV2-safe", mdv2Safe(botStrApi.botStr("fa", "lang_set")));
+  check("en lang_set is MarkdownV2-safe", mdv2Safe(botStrApi.botStr("en", "lang_set")));
+  check("fa welcome mentions BOTH the bot and the site (not just one)", faWelcome.includes("t\\.me/SportSignalAlertsBot") && faWelcome.includes("sportsignal\\.ir"));
+
+  // 10) the REAL language-tap join flow (bot.ts callback block, verbatim)
+  const ltStart = src.indexOf('const data = String(cbq.data || "");');
+  const ltEnd = src.indexOf("// v13.49-buttons: team-grid callbacks", ltStart);
+  if (ltStart < 0 || ltEnd < 0) {
+    console.error("FAIL: language-tap callback block not found in worker source");
+    process.exit(1);
+  }
+  // the real builders (replyKeyboard / tzOnboardText / tzPickerKeyboard)
+  const buildersApi = new Function(
+    "CONFIG", "toFaDigits", "escapeMarkdownCharacters", "normalizeTeamName", "translateTeam",
+    buildersSrc + "\n; return { replyKeyboard, tzOnboardText, tzPickerKeyboard };"
+  )(CONFIG, (s) => String(s), (s) => String(s), (n) => String(n), (n) => String(n));
+
+  // real registerChat / saveUserPref via the seam eval (same pattern as the
+  // command chain above)
+  const seamFns = new Function("CONFIG", userStoreSrc + "\n; return { registerChat, saveUserPref };")(CONFIG);
+  // setUserLang — mirrors users.ts setUserLang exactly (real saveUserPref
+  // through the seam, same field preservation)
+  const setUserLangReal = async (env, chatId, lang) => {
+    const clean = lang === "en" ? "en" : "fa";
+    const cur = (await globalThis.getUserPrefs(env))[String(chatId)] || {};
+    return await seamFns.saveUserPref(env, chatId, { teams: cur.teams || [], tz: cur.tz || null, lang: clean });
+  };
+
+  // The language-tap runner: REAL botStr + REAL seam (registerChat inside
+  // the sliced user-store module) + the REAL bot.ts callback block. String
+  // concatenation (not template interpolation) so the slices stay inert
+  // data — and no name shadowing between the stubs and the sliced
+  // declarations (registerChat comes from the slice, everything else is
+  // stubbed because it lives in modules we did not slice).
+  const tapSrc = "const CONFIG = stubs.CONFIG;\n"
+    + "const setUserLang = stubs.setUserLang;\n"
+    + "const answerCallbackQuery = stubs.answerCallbackQuery;\n"
+    + "const notifyAdminUserJoined = stubs.notifyAdminUserJoined;\n"
+    + "const sendTelegram = stubs.sendTelegram;\n"
+    + "const getUserPrefs = stubs.getUserPrefs;\n"
+    + "const replyKeyboard = stubs.replyKeyboard;\n"
+    + "const tzOnboardText = stubs.tzOnboardText;\n"
+    + "const tzPickerKeyboard = stubs.tzPickerKeyboard;\n"
+    + src.slice(bsStart, bsEnd) + "\n"
+    + userStoreSrc + "\n"
+    + "return async function (env, update) {\n"
+    + "  const cbq = update && update.callback_query;\n"
+    + "  const cbChatId = cbq && cbq.message && cbq.message.chat && cbq.message.chat.id;\n"
+    + "  const cbUserId = cbq && cbq.from && cbq.from.id;\n"
+    + "  const cbChatId2 = cbChatId || cbUserId;\n"
+    + src.slice(ltStart, ltEnd) + "\n"
+    + "};\n";
+  let tapSent = [];
+  let tapAnswers = [];
+  let tapAdminPages = [];
+  const makeTapEnv = () => ({ STATE: makeStore(), BOT_TOKEN: "test", CHAT_ID: "0", TEHRAN_TZ: "Asia/Tehran" });
+  const tap = new Function("stubs", tapSrc)({
+    CONFIG,
+    setUserLang: setUserLangReal,
+    answerCallbackQuery: async (env, id, text) => { tapAnswers.push({ id, text }); },
+    notifyAdminUserJoined: async (env, chatId, total) => { tapAdminPages.push({ chatId, total }); },
+    sendTelegram: async (env, msg, id, kb) => { tapSent.push({ msg, id, kb }); return true; },
+    getUserPrefs: async (env) => (await env.STATE.get(CONFIG.KV_USER_PREFS, "json")) || {},
+    replyKeyboard: buildersApi.replyKeyboard,
+    tzOnboardText: buildersApi.tzOnboardText,
+    tzPickerKeyboard: buildersApi.tzPickerKeyboard,
+  });
+
+  const langEnv = makeTapEnv();
+  const upd42 = (lang) => ({ update_id: 1, callback_query: { id: "cb1", from: { id: 42 }, data: "lang:" + lang, message: { chat: { id: 42 } } } });
+  await tap(langEnv, upd42("fa"));
+  check("lang:fa tap sends exactly welcome + tz onboarding (2 messages)", tapSent.length === 2 && tapSent.every((s) => s.id === 42));
+  const tapWelcome = tapSent[0].msg;
+  check("lang-tap welcome greets in Persian", tapWelcome.includes("زبان ربات فارسی شد"));
+  check("lang-tap welcome carries the referral push (fa)", tapWelcome.includes("پیشنهاد کنید") && tapWelcome.includes("https://t\\.me/SportSignalAlertsBot") && tapWelcome.includes("football\\.sportsignal\\.ir"));
+  check("lang-tap welcome is MarkdownV2-safe (fa)", mdv2Safe(tapWelcome));
+  check("lang-tap welcome attaches the reply keyboard", !!tapSent[0].kb);
+  check("lang:fa tap registers the chat (real seam)", (await langEnv.STATE.get(CONFIG.KV_USERS_KEY)).includes(42));
+  check("lang:fa tap pages the owner once (join signal)", tapAdminPages.length === 1 && tapAdminPages[0].chatId === 42 && tapAdminPages[0].total === 2);
+  check("tz onboarding fires for a tz-less joiner (v13.90 intact)", tapSent[1].msg.includes("منطقه") && !!tapSent[1].kb);
+  // the tap answered the callback (dismisses the spinner)
+  check("callback_query answered", tapAnswers.length === 1);
+
+  // 11) a user WITH a tz set is never re-nagged by the picker
+  const tzEnv = makeTapEnv();
+  await tap(tzEnv, upd42("fa"));
+  // set the tz directly (the tz: callback path is covered by check-bot-edges;
+  // here we only need the prefs state "tz set")
+  const p = (await tzEnv.STATE.get(CONFIG.KV_USER_PREFS, "json")) || {};
+  p["42"] = { teams: [], tz: "Europe/London", lang: "fa" };
+  await tzEnv.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify(p));
+  tapSent = []; tapAnswers = []; tapAdminPages = [];
+  await tap(tzEnv, upd42("en"));
+  check("tz-set user re-taps lang: NO tz onboarding again", tapSent.length === 1);
+  check("tz-set user re-tap welcome carries the referral push (en)", tapSent[0].msg.includes("recommend this bot") && tapSent[0].msg.includes("https://t\\.me/SportSignalAlertsBot"));
+  check("re-tap (already registered) does NOT re-page the owner", tapAdminPages.length === 0);
+
   console.log(failed ? failed + " FAILURES" : "join flow OK");
   process.exit(failed ? 1 : 0);
 })();

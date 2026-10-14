@@ -12,7 +12,7 @@ import { matchKey } from "./dedupe";
 import { translateTeam, getCompetitionPriority } from "./translate";
 import { isMatchFinished } from "./match-model";
 import { isWithin24HourWindow, isWithinBigMatchWindow, isWithin3HourWindow, isWithin1HourWindow, isWithin5MinWindow, isMatchStartingNow, isWithinPostMatchWindow, isBackfillEligible } from "./match-windows";
-import { getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, cleanupExpiredNotifications } from "./match-dedupe";
+import { getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, cleanupExpiredNotifications, recordDeliveries, markDeliveryRepair, tidyDeliveryLedger } from "./match-dedupe";
 import { shouldNotify } from "./match-classify";
 // v13.92-d1userstore: the dead-chat registry prune goes through the seam.
 import { pruneChats } from "./user-store";
@@ -151,6 +151,10 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
     return;
   }
   let anySuccess = false;
+  // v13.102-perchat: the per-chat verdict ledger for THIS (match, type)
+  // unit — recorded after the group loop (one D1 batch). Mirrors
+  // counts.outcome per CHAT, the granularity the audit + repair legs read.
+  const deliveries: any[] = []; // {chatId, verdict}
   // v13.5-tz-scope: each chat-group's timezone flows through a CLONED env
   // instead of mutating the shared env object — the same isolate-safety fix
   // the /next handler got in v13.2 (concurrent requests can no longer observe
@@ -277,7 +281,23 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
         else counts.outcome.failed++;
       }
     }
+    // v13.102-perchat: this group's per-chat verdicts → the ledger rows.
+    for (let ci = 0; ci < g.chats.length; ci++) {
+      const cr = cardsAttempted ? cardResults[ci] : null;
+      const cardOk = cr && cr.status === "fulfilled" && cr.value === true;
+      const cardDead = cr && cr.status === "fulfilled" && cr.value === "dead";
+      if (cardOk) { deliveries.push({ chatId: g.chats[ci], verdict: "sent" }); continue; }
+      if (cardDead) { deliveries.push({ chatId: g.chats[ci], verdict: "dead" }); continue; }
+      const ti = needText.indexOf(g.chats[ci]);
+      const tr = ti !== -1 && textResults ? textResults[ti] : null;
+      if (tr && tr.status === "fulfilled" && tr.value === true) deliveries.push({ chatId: g.chats[ci], verdict: "sent" });
+      else if (tr && tr.status === "fulfilled" && tr.value === "dead") deliveries.push({ chatId: g.chats[ci], verdict: "dead" });
+      else deliveries.push({ chatId: g.chats[ci], verdict: "failed" });
+    }
   }
+  // v13.102-perchat: persist the unit's per-chat verdicts (one D1 batch,
+  // win-or-log — telemetry must never break the send path it describes).
+  if (deliveries.length) await recordDeliveries(env, match, config.type, deliveries);
   if (anySuccess) {
     counts[config.type]++;
     console.log(`\u{1F4E4} Sent ${config.type.toUpperCase()} notification for match ${match.id}`);
@@ -312,6 +332,9 @@ export async function sendMatchNotifications(env: Env, matches) {
     return;
   }
   await cleanupExpiredNotifications(env);
+  // v13.102-perchat: opportunistic 14d prune of the delivery ledger (2% of
+  // ticks — same discipline as the notified_v1 tidy).
+  await tidyDeliveryLedger(env).catch(() => {});
   const notifiedMatches = await getNotifiedMatches(env);
   console.log(`\u{1F4E8} Found ${notifyMatches.length} matches to potentially notify`);
   notifyMatches.sort((a, b) => {
@@ -407,4 +430,113 @@ export async function sendMatchNotifications(env: Env, matches) {
   const totalSent = Object.values(notificationCounts).filter((v) => typeof v === "number").reduce((a, b) => a + b, 0);
   console.log(`   Total: ${totalSent}`);
   return notifySummary;
+}
+
+// ============================================================================
+// v13.102-perchat: THE PER-CHAT REPAIR LEG — the bounded backstop for the
+// one residual hole of the v13.94 fan-out reservation. When an isolate dies
+// MID fan-out (CPU kill), the write-first dedupe record for (match, type) is
+// already persisted while the tail chats got nothing: their sends never ran
+// (so no outbox entry), and the record blocks the regular re-send forever.
+// The audit (notify-audit.ts) reports those no-row chats; THIS leg re-sends
+// to exactly the missing chats while the stage is still TIMELY:
+//
+//   eligibility — the same would-fire gates a fresh send would pass:
+//     pre-match types: kickoff still ahead AND hoursUntil <= the type's
+//       backfill max (a "24h before" after kickoff is nonsense → no repair,
+//       the gap is reported but not re-sent);
+//     match-start: still inside [-1min, +45min] OR the live backfill leg
+//       (45-180min while IN_PLAY/PAUSED);
+//     result: inside the 6h post window OR the ≤24h backfill leg.
+//   anti-spam — write-first repair marker (markDeliveryRepair): at most ONE
+//     repair attempt per (match, type, chat) EVER; the marker row (verdict
+//     'repair') doubles as the audit's "attempted" state. A chat that
+//     actually received the original but died before the row write is the
+//     only duplicate window — one tagged "sent late" copy, the same
+//     trade-off the v13.42 backfill already made everywhere.
+//   composition — specialBanner + the type's own formatter + the late tag +
+//     the standard promo footer: byte-identical to a late backfill send.
+//   budget — text-only (no cards/dice) and capped at 24 sends per tick.
+// ============================================================================
+const REPAIR_PREMATCH_MAX = {
+  "pre-match-72h": null, // CONFIG.BIG_MATCH_NOTIFICATION_HOURS at runtime
+  "pre-match-24h": 24,
+  "pre-match-3h": 3.5,
+  "pre-match-1h": 1.5
+};
+export function repairWindowOpen(match, ntype, env) {
+  const now = Date.now();
+  const ko = new Date(match.utcDate).getTime();
+  if (isNaN(ko)) return false;
+  const base = ntype === "match-start-big" ? "match-start" : ntype === "result-big" ? "result" : ntype;
+  if (base === "match-start") {
+    return isMatchStartingNow(match, env) || isBackfillEligible(match, "match-start", env);
+  }
+  if (base === "result") {
+    return isMatchFinished(match) && (isWithinPostMatchWindow(match, env) || isBackfillEligible(match, "result", env));
+  }
+  const max = base === "pre-match-72h" ? CONFIG.BIG_MATCH_NOTIFICATION_HOURS : REPAIR_PREMATCH_MAX[base];
+  if (max == null) return false;
+  const hoursUntil = (ko - now) / CONFIG.ONE_HOUR_MS;
+  return hoursUntil > 0 && hoursUntil <= max;
+}
+
+export async function repairPerChatGaps(env: Env, matches, gaps) {
+  const out = { repaired: 0, marked: 0, ineligible: 0, noMatch: 0 };
+  if (!Array.isArray(gaps) || !gaps.length) return out;
+  const chatIds = await getRegisteredChats(env);
+  if (!chatIds.length) return out;
+  const prefs = await getUserPrefs(env);
+  let sendBudget = 24;
+  for (const gap of gaps) {
+    if (sendBudget <= 0) break;
+    const match = (matches || []).find((m) => matchKey(m) === gap.matchKey);
+    if (!match) { out.noMatch++; continue; }
+    if (!repairWindowOpen(match, gap.ntype, env)) { out.ineligible++; continue; }
+    const config = NOTIFICATION_CONFIGS.find((c) => c.type === gap.ntype);
+    if (!config) { out.ineligible++; continue; }
+    const missingChats = (gap.missing || []).filter((c) => chatIds.includes(c));
+    if (!missingChats.length) continue;
+    const groups = groupChatsByTz(missingChats, prefs, env);
+    const firedTypes = gap.fired || [gap.ntype];
+    for (const g of groups) {
+      if (sendBudget <= 0) break;
+      const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
+      const lang = g.lang || "fa";
+      let message = "";
+      try {
+        message = specialBanner(match, lang) + await config.messageFormatter(match, scopedEnv, lang);
+      } catch (e) {
+        console.warn("repair formatter failed (" + gap.ntype + "): " + e.message);
+        continue;
+      }
+      message += "\n\n" + (lang === "en" ? "This reminder was sent late" : "\u0627\u06CC\u0646 \u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u0628\u0627 \u062A\u0623\u062E\u06CC\u0631 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F");
+      message += lang === "en"
+        ? "\n\n\\-\\-\\-\\-\\-\\-\nView league tables and the biggest upcoming matches:\nhttps://sportsignal\\.ir"
+        : "\n\n\\-\\-\\-\\-\\-\\-\n\u0645\u0634\u0627\u0647\u062F\u0647 \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627 \u0648 \u0645\u0647\u0645\u062A\u0631\u06CC\u0646 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634 \u0631\u0648:\nhttps://sportsignal\\.ir";
+      for (const chatId of g.chats) {
+        if (sendBudget <= 0) break;
+        // The ledger bucket the chat would have been served through: the
+        // regular type for followers, the -big broadcast for non-followers
+        // (same equivalence group the audit checked).
+        const follows = userFollowsMatch(prefs, chatId, match);
+        const ledgerType = follows && firedTypes.includes(gap.ntype)
+          ? gap.ntype
+          : (firedTypes.find((t) => t.endsWith("-big")) || gap.ntype);
+        const marked = await markDeliveryRepair(env, match, ledgerType, chatId);
+        if (!marked) continue; // attempted before, or marker write failed (fail-closed)
+        out.marked++;
+        sendBudget--;
+        const r = await sendTelegram(scopedEnv, message, chatId);
+        if (r === true) {
+          out.repaired++;
+          await recordDeliveries(env, match, ledgerType, [{ chatId, verdict: "sent" }]);
+        }
+      }
+    }
+  }
+  if (out.repaired || out.marked) {
+    console.log(`\u{1FA79} Per-chat repair: ${out.repaired} recovered, ${out.marked} attempted, ${out.ineligible} past-window (reported only)`);
+  }
+  return out;
 }

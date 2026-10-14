@@ -248,10 +248,14 @@ export async function handleTelegramUpdate(env: Env, update) {
           ? "\u2705 You\u2019re already joined\\! You\u2019ll get notified of the next big match\\."
           : "\u2705 \u0634\u0645\u0627 \u0642\u0628\u0644\u0627\u064B \u0639\u0636\u0648 \u0634\u062F\u0647\u200C\u0627\u06CC\u062F\\! \u062A\u0627 \u0628\u0627\u0632\u06CC \u0645\u0647\u0645 \u0628\u0639\u062F\u060C \u0627\u0639\u0644\u0627\u0646 \u0622\u0646 \u0631\u0627 \u062F\u0631\u06CC\u0627\u0641\u062A \u062E\u0648\u0627\u0647\u06CC\u062F \u06A9\u0631\u062F\\.";
         await sendTelegram(env, msg, chatId, replyKeyboard(up.lang));
-      } else if (langSet && up.lang === "en") {
-        await sendTelegram(env, "Welcome to SportSignal\\!\nNever miss the big matches\\.\n\nUse the buttons below to navigate\\.", chatId, replyKeyboard("en"));
-      } else if (langSet && up.lang === "fa") {
-        await sendTelegram(env, "\u2705 \u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\\!\n\u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u067E\u0627\u06CC\u06CC\u0646 \u0628\u0631\u0627\u06CC \u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F\\.", chatId, replyKeyboard("fa"));
+      } else if (langSet) {
+        // v13.102-referral: every welcome now flows through botStr — ONE
+        // source of welcome truth (the referral push below rides every
+        // path: the lang-tap join, and this prefs-exist-but-unregistered
+        // edge). Same composition as the language-picker tap: welcome +
+        // the navigation hint.
+        const wl = up.lang === "en" ? "en" : "fa";
+        await sendTelegram(env, botStr(wl, "start_welcome") + "\n\n" + (wl === "en" ? "Use the buttons below to navigate\\." : "\u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u067E\u0627\u06CC\u06CC\u0646 \u0628\u0631\u0627\u06CC \u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F\\."), chatId, replyKeyboard(wl));
       } else {
         const promptText = "\u{1F310} \u0632\u0628\u0627\u0646 / Language";
         const keyboard = { inline_keyboard: [[

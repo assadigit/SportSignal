@@ -130,7 +130,9 @@ if (bldStart < 0 || bldEnd < 0 || bldEnd < bldStart) {
 }
 const buildersSrc = src.slice(bldStart, bldEnd);
 const cbHandler = new Function("env", "update", "return (async () => { " + botStrSrc + "\n" + buildersSrc + "\n" + userStoreSrc + "\n" + cbChain + "\n })();");
-const msgHandler = new Function("text", "chatId", "env", "return (async () => { " + buildersSrc + "\n" + userStoreSrc + "\n" + msgChain + "\n })();");
+// v13.102-referral: the /start langSet branch now composes the welcome
+// through botStr (ONE source of welcome truth) — slice the REAL strings in.
+const msgHandler = new Function("text", "chatId", "env", "return (async () => { " + botStrSrc + "\n" + buildersSrc + "\n" + userStoreSrc + "\n" + msgChain + "\n })();");
 
 function freshEnv() {
   sent = [];

@@ -321,3 +321,85 @@ export async function cleanupExpiredNotifications(env: Env) {
 // v13.36-nospam: isolate-local cleanup guard (replaced the cleanup_hour KV
 // key — see cleanupExpiredNotifications above).
 var CLEANUP_HOUR = -1;
+
+// ============================================================================
+// v13.102-perchat: the PER-CHAT DELIVERY LEDGER (D1 USERS_DB,
+// notify_deliveries_v1). The notified_v1 record answers "did (match, type)
+// fire?" — this answers "did CHAT X actually receive it?", the visibility
+// the 2026-10-14 reliability audit was missing: a CPU-kill mid fan-out
+// persists the global dedupe record while the tail chats get nothing (no
+// outbox entry, no retry, no trace). Rows are written AFTER the send loop of
+// each (match, type) unit with the per-chat verdicts:
+//   'sent' confirmed | 'dead' pruned | 'failed' outbox-owned | 'repair'
+//   write-first marker of the single repair attempt.
+// No USERS_DB binding (local dev / legacy harness) → every function is a
+// no-op/empty read: the tick behaves exactly as before.
+// ============================================================================
+export function deliveriesActive(env: Env) {
+  return !!(env && (env as any).USERS_DB && !env.SIM_NOTIFIED_KEY);
+}
+
+// One D1 batch per (match, type) unit — a single subrequest, win-or-log
+// (telemetry must never break or defer the send it describes).
+export async function recordDeliveries(env: Env, match, ntype, rows) {
+  if (!deliveriesActive(env) || !Array.isArray(rows) || !rows.length) return false;
+  try {
+    const key = matchKey(match);
+    const stmts = rows.map((r) => (env as any).USERS_DB.prepare(
+      "INSERT OR REPLACE INTO notify_deliveries_v1 (match_key, ntype, chat_id, verdict, sent_at) VALUES (?1, ?2, ?3, ?4, ?5)"
+    ).bind(key, ntype, Number(r.chatId), r.verdict, Date.now()));
+    await (env as any).USERS_DB.batch(stmts);
+    return true;
+  } catch (e: any) {
+    console.warn("delivery-ledger write failed (telemetry only): " + e.message);
+    return false;
+  }
+}
+
+// Recent rows (default 48h — the widest repair window ends at 24h, so 2×
+// margin) as { "<matchKey>|<ntype>": Map<chatId, verdict> }.
+export async function fetchDeliveryLedger(env: Env, sinceMs) {
+  const out: Record<string, Map<number, string>> = {};
+  if (!deliveriesActive(env)) return out;
+  try {
+    const since = sinceMs != null ? sinceMs : Date.now() - 48 * 36e5;
+    const rows = await (env as any).USERS_DB.prepare(
+      "SELECT match_key, ntype, chat_id, verdict FROM notify_deliveries_v1 WHERE sent_at > ?1"
+    ).bind(since).all();
+    for (const r of (rows && rows.results) || []) {
+      const k = r.match_key + "|" + r.ntype;
+      if (!out[k]) out[k] = new Map();
+      out[k].set(Number(r.chat_id), String(r.verdict || ""));
+    }
+  } catch (e: any) {
+    console.warn("delivery-ledger read failed: " + e.message);
+  }
+  return out;
+}
+
+// The repair write-first marker: at most ONE repair attempt per
+// (match, type, chat) — ever. Returns true when the marker PERSISTED (the
+// caller may send); false on an existing marker (any verdict — a 'repair'
+// row means an earlier attempt owns recovery) or a failed write
+// (fail-closed: no marker, no send).
+export async function markDeliveryRepair(env: Env, match, ntype, chatId) {
+  if (!deliveriesActive(env)) return false;
+  try {
+    const r = await (env as any).USERS_DB.prepare(
+      "INSERT INTO notify_deliveries_v1 (match_key, ntype, chat_id, verdict, sent_at) VALUES (?1, ?2, ?3, 'repair', ?4) ON CONFLICT(match_key, ntype, chat_id) DO NOTHING"
+    ).bind(matchKey(match), ntype, Number(chatId), Date.now()).run();
+    return !!(r && r.meta && r.meta.changes > 0);
+  } catch (e: any) {
+    console.warn("delivery-repair marker failed (fail-closed): " + e.message);
+    return false;
+  }
+}
+
+// Opportunistic prune (probabilistic, like the notified_v1 tidy): rows past
+// 14d are long irrelevant — the audit window is 48h, the repair horizon 24h.
+export async function tidyDeliveryLedger(env: Env) {
+  if (!deliveriesActive(env)) return;
+  if (Math.random() < 0.02) {
+    await (env as any).USERS_DB.prepare("DELETE FROM notify_deliveries_v1 WHERE sent_at < ?1").bind(Date.now() - 14 * 864e5).run().catch(() => {});
+  }
+}

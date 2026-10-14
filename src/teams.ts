@@ -80,12 +80,19 @@ var TEAM_ALIASES = {
   "atleticodemadrid": "atleticomadrid",
   "internazionale": "intermilan",
   "internazionalemilano": "intermilan",
-  // v12.15: the English exonym "Bayern Munich" folds to the German legal
-  // name — NFD diacritics-folding turns München into "Munchen", not
-  // "Munich", so without this alias the SAME club could sit twice in a
-  // selected-teams list (the reported duplicate) and never match the other
-  // spelling's fixtures.
-  "bayernmunich": "bayernmunchen",
+  // v13.102-bayernfix: the "bayernmunich"→"bayernmunchen" alias is REMOVED.
+  // It predates the v13.8 TRANSLIT_FOLDS and now CONFLICTS with them: the
+  // folds (inside normalizeTeamName) unify both spellings onto
+  // "bayernmunich", but this alias then flipped every normAlias() consumer
+  // back to "bayernmunchen" — while every set (master normSet, shouldNotify's
+  // c.all, isFeaturedMatch, userFollowsMatch) is built with BARE
+  // normalizeTeamName. Result: shouldNotify("FC Bayern München")=false for
+  // BOTH spellings → Bayern fixtures vs non-master opponents silently never
+  // notified (verified live: notified_v1 has ZERO bayern rows ever; found by
+  // the v13.102 check-lifecycle harness when its Bayern–LASK fixture came
+  // out unworthy). The v12.15 duplicate-chip purpose is already covered by
+  // the fold: normalizeTeamName("Bayern Munich") ===
+  // normalizeTeamName("FC Bayern München") === "bayernmunich".
   // v13.51-rivalries: FD's legal name "SS Lazio" folds to the short form the
   // rivalry table carries — without this fold the two spellings ("SS Lazio"
   // vs "Lazio") never meet in derby/rivalry matching.

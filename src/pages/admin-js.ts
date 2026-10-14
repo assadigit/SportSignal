@@ -82,8 +82,12 @@ function renderTeams(){
 // diacritics / punctuation / club-prefix tokens), so "Bayern Munich" and
 // "FC Bayern M\xFCnchen" are recognized as the SAME club \u2014 one chip per
 // club, and the duplicate toast names the EXISTING entry.
+// v13.102-bayernfix: the bayern fold direction FLIPPED to match the worker's
+// TRANSLIT_FOLDS (munchen\u2192munich, applied inside normalizeTeamName). The
+// old bayernmunich\u2192bayernmunchen entry mirrored the pre-v13.8 server alias
+// and left the two spellings on OPPOSITE keys client-side vs server-side.
 var AC_TOKENS = /^(fc|cf|sc|ac|as|ssc|bc|ud|cd|kv|jc|fk|nk|gnk|msk|sk|sl|rsc|bsc|jk|tc|pfc|sv|tsg)$/;
-var AC_ALIAS = { clubatleticodemadrid:"atleticomadrid", atleticodemadrid:"atleticomadrid", internazionale:"intermilan", internazionalemilano:"intermilan", bayernmunich:"bayernmunchen" };
+var AC_ALIAS = { clubatleticodemadrid:"atleticomadrid", atleticodemadrid:"atleticomadrid", internazionale:"intermilan", internazionalemilano:"intermilan", bayernmunchen:"bayernmunich" };
 function anorm(s){
   var n = String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036F]/g,"");
   var parts = n.split(/[^a-z0-9]+/).filter(function(p){ return p && !AC_TOKENS.test(p); });

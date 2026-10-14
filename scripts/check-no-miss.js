@@ -587,6 +587,10 @@ var MEM_DEDUPE = new Set();
     grabFn("async function importNotifiedFromKV(env)"),
     grabFn("async function getNotifiedMatches(env)"),
     grabFn("async function saveNotifiedMatch(env, match, notificationType, notifiedMatches)"),
+    // v13.102-perchat: the broadcasts record per-chat verdicts through the
+    // ledger seam (recordDeliveries) — grab it + its active gate.
+    grabFn("function deliveriesActive(env)"),
+    grabFn("async function recordDeliveries(env, match, ntype, rows)"),
     grabFn("async function broadcastBigMatchKickoff(env, matches)")
   ].join("\n"));
   const bigStart = matchAt(-10 / 60, "IN_PLAY", { id: "bigstart-1" });

@@ -8,7 +8,7 @@ import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { shouldNotify } from "./match-classify";
 import { translateTeam } from "./translate";
-import { sendMatchNotifications } from "./notify-engine";
+import { sendMatchNotifications, repairPerChatGaps } from "./notify-engine";
 import { detectStatusChanges } from "./notify-status";
 import { auditNotifications } from "./notify-audit";
 import { broadcastBigMatchResults, broadcastBigMatchKickoff } from "./digest-bigmatch";
@@ -142,6 +142,19 @@ export async function runNotifyPhase(env: Env, ctx) {
   try {
     const audit = await auditNotifications(env, matches);
     if (audit.gaps) console.log(`\u{1F50D} Audit: ${audit.gaps}/${audit.total} gaps`);
+    // v13.102-perchat: the PER-CHAT REPAIR — every stage the audit found
+    // missing delivery rows for (the CPU-kill mid-fan-out shape) is re-sent
+    // to exactly the no-row chats while its window is still open (write-first
+    // repair marker: one attempt per match+type+chat, ever). Own try/catch —
+    // a repair failure must never touch the sweep.
+    if (audit.perChatGaps && audit.perChatGaps.length) {
+      try {
+        const rep = await repairPerChatGaps(env, matches, audit.perChatGaps);
+        if (rep && rep.repaired) console.log(`\u{1FA79} Per-chat repair: ${rep.repaired} send(s) recovered this tick`);
+      } catch (e) {
+        console.error("Per-chat repair step failed: " + e.message);
+      }
+    }
   } catch (e) {
     console.error("Audit step failed: " + e.message);
   }
