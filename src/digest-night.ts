@@ -26,7 +26,7 @@
 // cards own the budget first.
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { toFaDigits, escapeMarkdownCharacters, subrequestCount } from "./utils";
+import { toFaDigits, escapeMarkdownCharacters, subrequestCount, jalaliDateFa, englishDateYmd } from "./utils";
 import { translateTeam, translateCompetition } from "./translate";
 import { fetchStandings } from "./composers";
 import { sendTelegram } from "./telegram";
@@ -89,17 +89,22 @@ function matchesOfLocalDate(matches, offsetMs: number, y: number, m: number, d: 
 // The night is over when every match of that local date is resolved
 // (FINISHED / POSTPONED / CANCELLED / AWARDED / SUSPENDED) or is so far
 // past kickoff that a stuck status can only be stale data (the 4h defense).
+// v13.98-jalalinight: `defended` counts the matches resolved ONLY by that
+// defense — the caller's completeness guard uses it to refuse a digest
+// built off a stale pool (the 2026-10-14 01:11Z incident: the migration
+// night's first digest fired on a pool whose UCL chunk hadn't refreshed,
+// sending 1 game of a 12-game night).
 function nightIsOver(nightMatches, nowMs: number) {
-  let finished = 0;
+  let finished = 0, defended = 0;
   for (const m of nightMatches) {
     const st = String((m && m.status) || "").toUpperCase();
     if (st === "FINISHED") { finished++; continue; }
     if (DONE_STATUSES.includes(st)) continue;
     const ko = m && m.utcDate ? new Date(m.utcDate).getTime() : 0;
-    if (ko && nowMs - ko > 4 * 60 * 60 * 1e3) continue; // stuck/unresolved — treat as done
-    return { over: false, finished };
+    if (ko && nowMs - ko > 4 * 60 * 60 * 1e3) { defended++; continue; } // stuck/unresolved — treat as done
+    return { over: false, finished, defended };
   }
-  return { over: true, finished };
+  return { over: true, finished, defended };
 }
 
 function ftScore(m) {
@@ -182,6 +187,20 @@ export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
     const verdict = nightIsOver(nightMatches, nowMs);
     if (!verdict.over) { out.notOver++; continue; }
     if (verdict.finished < 1) continue; // nothing actually resolved — no digest
+    // v13.98-jalalinight: the STALE-POOL completeness guard. When the 4h
+    // defense is what "resolved" half or more of the night, the pool is
+    // almost certainly stale (a failed/partial sweep — the migration-night
+    // shape: 1 FINISHED + 11 stale IN_PLAY), not a genuinely frozen match.
+    // Defer to a later tick in the window so a fresh sweep can complete the
+    // night; at the window's last hour (local 23h or 5h) send anyway — the
+    // 2026-10-13 lesson (a frozen pool must not block the digest forever)
+    // still holds.
+    const lastChance = hour >= 23 || hour >= 5; // window is [20,24) ∪ [0,6)
+    if (verdict.defended > 0 && verdict.finished * 2 < nightMatches.length && !lastChance) {
+      console.log(`\u{1F319} Night digest deferred (stale pool: ${verdict.finished} finished, ${verdict.defended} defended of ${nightMatches.length}) — waiting for a fresh sweep`);
+      out.notOver++;
+      continue;
+    }
     for (const c of tzChats) {
       const dedupeKey = "nightdigest_" + dateKey + "_" + c;
       const already = await env.STATE.get(dedupeKey).catch(() => null);
@@ -192,7 +211,7 @@ export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
       await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
       let msg: string;
       try {
-        msg = await buildNightDigestMessage({ ...env, TEHRAN_TZ: tz }, nightMatches, lang, prefs, c, rankCache);
+        msg = await buildNightDigestMessage({ ...env, TEHRAN_TZ: tz }, nightMatches, lang, prefs, c, rankCache, { y, m, d });
       } catch (e) {
         console.error("night digest build failed: " + e.message);
         continue;
@@ -206,12 +225,23 @@ export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
   return out;
 }
 
-export async function buildNightDigestMessage(env: Env, nightMatches, lang, prefs, chatId, rankCache) {
+export async function buildNightDigestMessage(env: Env, nightMatches, lang, prefs, chatId, rankCache, nightYmd?) {
   const en = lang === "en";
-  const faDate = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", timeZone: env.TEHRAN_TZ || "Asia/Tehran" }).format(new Date(nightMatches[0].utcDate));
+  // v13.98-jalalinight: the header renders the night's LOCAL date fully in
+  // the user's calendar — Jalali (Hijri-Shamsi) for fa mode ("سه‌شنبه ۲۱ مهر
+  // ۱۴۰۵"), Gregorian long-form for en. The y/m/d comes from the caller's
+  // tz-local dateKey (the fallback re-derives it from the first match under
+  // the chat's tz, as the pre-13.98 code did).
+  let ny = nightYmd && nightYmd.y, nm = nightYmd && nightYmd.m, nd = nightYmd && nightYmd.d;
+  if (!ny || !nm || !nd) {
+    const p: any = {};
+    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: env.TEHRAN_TZ || "Asia/Tehran", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(nightMatches[0].utcDate));
+    for (const x of parts) p[x.type] = x.value;
+    ny = parseInt(p.year, 10); nm = parseInt(p.month, 10); nd = parseInt(p.day, 10);
+  }
   const head = en
-    ? "*\u{1F319} Night results \u2014 " + faDate + "*\n\n"
-    : "*\u{1F319} \u062E\u0644\u0627\u0635\u0647 \u0646\u062A\u0627\u06CC\u062C \u0634\u0628 \u2014 " + toFaDigits(faDate) + "*\n\n";
+    ? "*\u{1F319} Night results \u2014 " + englishDateYmd(ny, nm, nd) + "*\n\n"
+    : "*\u{1F319} \u062E\u0644\u0627\u0635\u0647 \u0646\u062A\u0627\u06CC\u062C \u0634\u0628 \u2014 " + jalaliDateFa(ny, nm, nd) + "*\n\n";
   // Split: the user's followed-team matches vs the rest.
   const mine = [], others = [];
   for (const m of nightMatches) {

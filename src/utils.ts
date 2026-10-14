@@ -20,6 +20,59 @@ export function toFaDigits(str) {
 export function escapeMarkdownCharacters(text) {
   return text.replace(/([\[\]\(\)~`>#\+\-=|{}\.!_])/g, "\\$1");
 }
+// v13.98-jalalinight: pure-math Jalali (Hijri-Shamsi) conversion — the same
+// Borkowski algorithm as seo/utils.toJalali, duplicated here because ROOT
+// src cannot import from src/seo/* (the eval harness concatenates root
+// files only; see RUNBOOK §11). fa bot surfaces format calendar dates in
+// Jalali (the night digest header was the last Gregorian holdout).
+// NOTE: no TS param annotations here (or anywhere in this span) —
+// check-admin.js slices `function toFaDigits` … `var LOG_VERBOSE` out of the
+// harness concatenation and evals it as plain JS.
+export function toJalaliParts(gy, gm, gd) {
+  const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+  let jy = gy <= 1600 ? 0 : 979;
+  gy -= gy <= 1600 ? 621 : 1600;
+  const gy2 = gm > 2 ? gy + 1 : gy;
+  let days =
+    365 * gy +
+    Math.floor((gy2 + 3) / 4) -
+    Math.floor((gy2 + 99) / 100) +
+    Math.floor((gy2 + 399) / 400) -
+    80 +
+    gd +
+    g_d_m[gm - 1];
+  jy += 33 * Math.floor(days / 12053);
+  days %= 12053;
+  jy += 4 * Math.floor(days / 1461);
+  days %= 1461;
+  if (days > 365) {
+    jy += Math.floor((days - 1) / 365);
+    days = (days - 1) % 365;
+  }
+  const jm = days < 186 ? 1 + Math.floor(days / 31) : 7 + Math.floor((days - 186) / 30);
+  const jd = 1 + (days < 186 ? days % 31 : (days - 186) % 30);
+  return { jy, jm, jd };
+}
+export const JALALI_MONTHS_FA = [
+  "\u0641\u0631\u0648\u0631\u062F\u06CC\u0646", "\u0627\u0631\u062F\u06CC\u0628\u0647\u0634\u062A", "\u062E\u0631\u062F\u0627\u062F", "\u062A\u06CC\u0631", "\u0645\u0631\u062F\u0627\u062F", "\u0634\u0647\u0631\u06CC\u0648\u0631",
+  "\u0645\u0647\u0631", "\u0622\u0628\u0627\u0646", "\u0622\u0630\u0631", "\u062F\u06CC", "\u0628\u0647\u0645\u0646", "\u0627\u0633\u0641\u0646\u062F"
+];
+export const WEEKDAYS_FA = ["\u06CC\u06A9\u0634\u0646\u0628\u0647", "\u062F\u0648\u0634\u0646\u0628\u0647", "\u0633\u0647\u200C\u0634\u0646\u0628\u0647", "\u0686\u0647\u0627\u0631\u0634\u0646\u0628\u0647", "\u067E\u0646\u062C\u0634\u0646\u0628\u0647", "\u062C\u0645\u0639\u0647", "\u0634\u0646\u0628\u0647"];
+export const WEEKDAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+// The LOCAL calendar date (y, m, d) as a full Jalali string:
+// "سه‌شنبه ۲۱ مهر ۱۴۰۵". Pure math + arrays — zero Intl formatters (the
+// v13.96.1 CPU discipline: no formatter construction in digest paths).
+export function jalaliDateFa(y, m, d) {
+  const j = toJalaliParts(y, m, d);
+  const wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return WEEKDAYS_FA[wd] + " " + toFaDigits(String(j.jd)) + " " + JALALI_MONTHS_FA[j.jm - 1] + " " + toFaDigits(String(j.jy));
+}
+// The same local date as a full Gregorian string: "Tuesday, 13 October 2026".
+export function englishDateYmd(y, m, d) {
+  const wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return WEEKDAYS_EN[wd] + ", " + d + " " + MONTHS_EN[m - 1] + " " + y;
+}
 var LOG_VERBOSE = false;
 export function vlog(...args) {
   if (LOG_VERBOSE) console.log(...args);

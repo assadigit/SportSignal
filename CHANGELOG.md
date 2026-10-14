@@ -6,6 +6,50 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.98-jalalinight] — 2026-10-14 (the Gregorian night header + the one-game digest)
+
+Two live reports from the first post-migration night (2026-10-14):
+
+- **fa mode must be fully Hijri-Shamsi (Jalali).** The night digest header
+  rendered a GREGORIAN `DD/MM` in Persian digits ("خلاصه نتایج شب — ۱۳/۱۰")
+  — every other fa surface (match cards, coronation, the site) already
+  renders Jalali; the new digest code was the holdout. The header is now
+  the full local date in the user's calendar: "خلاصه نتایج شب — سه‌شنبه ۲۱
+  مهر ۱۴۰۵" (fa / Jalali) or "Night results — Tuesday, 13 October 2026"
+  (en / long-form Gregorian, no more ambiguous 13/10).
+- `utils.ts` gains the pure-math Jalali conversion (`toJalaliParts` +
+  `jalaliDateFa` + `englishDateYmd` + Persian month/weekday arrays) — the
+  same Borkowski algorithm as seo/utils, duplicated because root src can't
+  import from src/seo/* (eval harness; RUNBOOK §11). Zero Intl
+  constructions (the v13.96.1 CPU discipline).
+- The builder now receives the night's tz-local `{ y, m, d }` from the
+  caller (the same numbers that form the dedupe key) — the header date and
+  the dedupe date can no longer disagree; the old Intl re-derivation stays
+  as a fallback for direct callers.
+
+- **The 4:43 AM digest mentioned one game of a twelve-game night.** Root
+  cause: the digest fired on the migration night's very first stable deploy
+  (01:11Z — the v13.96.1 hotfix landed at 01:04Z mid-night) from a pool
+  whose evening chunk was stale (matches finished ~20:50Z; statuses still
+  IN_PLAY in the snapshot the merge started from). The 4h stuck-status
+  defense correctly unblocked the night — but it also let a HALF-EMPTY
+  night through: every stale-IN_PLAY match counted as "resolved" while
+  only the actually-FINISHED ones made the message.
+- Fix: `nightIsOver` now reports `defended` (matches resolved ONLY by the
+  4h defense). The sender defers the digest when the defense carried half
+  or more of the night and the window still has hours left (before local
+  23h / 5h) — a fresh sweep then completes the night. At the window's last
+  hour it sends anyway, so the 2026-10-13 lesson (a frozen pool must not
+  block the digest forever) still holds. A deferred night logs
+  "Night digest deferred (stale pool: …)" for the tail.
+- Timing note (verified from the window logic): a normal matchday digest
+  lands within 10–40 min of the last FT (the first hour<6 tick after the
+  games end — ~00:30 Tehran for 21:00 CET kickoffs). The 4:41 AM arrival
+  was a one-off: the feature's first working deploy landed mid-night
+  mid-hotfix during the account migration.
+
+---
+
 ## [13.97.1-release] — 2026-10-14 (session close: dedicated-account deployment verified, tagged, released)
 
 The 2026-10-13→14 migration wrap. No behavior changes — this version is the

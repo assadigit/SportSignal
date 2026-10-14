@@ -75,6 +75,48 @@ check("build failures are per-chat (try/catch inside the chat loop)", /catch \(e
 check("cron-notify calls maybeSendNightDigest with the merged pool", /maybeSendNightDigest\(env, chatIds, matches\)/.test(notifySrc));
 check("night digest step owns its try/catch (never breaks notify)", /Night digest step failed/.test(notifySrc));
 
+// 11) v13.98-jalalinight — the fa header is FULL Hijri-Shamsi (Jalali), the
+// en header is long-form Gregorian, and the night's tz-local y/m/d is
+// passed into the builder (no Gregorian DD/MM rendered with Persian digits).
+check("fa header renders Jalali (jalaliDateFa), not Gregorian-in-Persian-digits", /jalaliDateFa\(ny, nm, nd\)/.test(nightSrc) && !/toFaDigits\(faDate\)/.test(nightSrc));
+check("en header renders long-form Gregorian (englishDateYmd)", /englishDateYmd\(ny, nm, nd\)/.test(nightSrc));
+check("the caller passes the night's tz-local y/m/d into the builder", /buildNightDigestMessage\(\{ \.\.\.env, TEHRAN_TZ: tz \}, nightMatches, lang, prefs, c, rankCache, \{ y, m, d \}\)/.test(nightSrc));
+
+// 12) v13.98-jalalinight — the stale-pool completeness guard: when the 4h
+// defense "resolved" half or more of the night, the pool is stale — defer
+// for a fresh sweep instead of sending a partial digest (the 2026-10-14
+// 01:11Z one-game-digest incident); never blocks past the window's end.
+check("stale-pool guard: defended majority defers the digest", /verdict\.defended > 0 && verdict\.finished \* 2 < nightMatches\.length && !lastChance/.test(nightSrc));
+check("guard never blocks forever (lastChance at window end: 23h/5h)", /const lastChance = hour >= 23 \|\| hour >= 5/.test(nightSrc));
+
+// Behavioral: jalaliDateFa + englishDateYmd on the REAL harness source (the
+// pure-math Borkowski conversion + Persian arrays, eval'd together with
+// their dependencies; exports already stripped by the worker-src transform).
+const grabU = (re) => { const m = src.match(re); return m ? untype(m[0]) : null; };
+const uPieces = [
+  grabU(/function toFaDigits\([^)]*\) \{[\s\S]*?\n\}/),
+  grabU(/var JALALI_MONTHS_FA = \[[\s\S]*?\];/),
+  grabU(/var WEEKDAYS_FA = \[[^\]]*\];/),
+  grabU(/var WEEKDAYS_EN = \[[^\]]*\];/),
+  grabU(/(?:var|const) MONTHS_EN = \[[^\]]*\];/),
+  grabU(/function toJalaliParts\([^)]*\) \{[\s\S]*?\n\}/),
+  grabU(/function jalaliDateFa\([^)]*\) \{[\s\S]*?\n\}/),
+  grabU(/function englishDateYmd\([^)]*\) \{[\s\S]*?\n\}/)
+];
+if (uPieces.every(Boolean)) {
+  const u = eval("(() => { " + uPieces.join("\n") + "; return { jalaliDateFa, englishDateYmd, toJalaliParts }; })()");
+  // 2026-10-13 (the incident night) = سه‌شنبه ۲۱ مهر ۱۴۰۵.
+  check("behavioral: jalaliDateFa(2026,10,13) = \"سه‌شنبه ۲۱ مهر ۱۴۰۵\"", u.jalaliDateFa(2026, 10, 13) === "\u0633\u0647\u200C\u0634\u0646\u0628\u0647 \u06F2\u06F1 \u0645\u0647\u0631 \u06F1\u06F4\u06F0\u06F5");
+  // Nowruz edge: 2026-03-21 = شنبه ۱ فروردین ۱۴۰۵.
+  check("behavioral: jalaliDateFa(2026,3,21) = \"شنبه ۱ فروردین ۱۴۰۵\" (Nowruz edge)", u.jalaliDateFa(2026, 3, 21) === "\u0634\u0646\u0628\u0647 \u06F1 \u0641\u0631\u0648\u0631\u062F\u06CC\u0646 \u06F1\u06F4\u06F0\u06F5");
+  // Year edge: 2026-01-01 is still 1404 (۱۱ دی).
+  check("behavioral: jalaliDateFa(2026,1,1) = \"پنجشنبه ۱۱ دی ۱۴۰۴\" (year edge)", u.jalaliDateFa(2026, 1, 1) === "\u067E\u0646\u062C\u0634\u0646\u0628\u0647 \u06F1\u06F1 \u062F\u06CC \u06F1\u06F4\u06F0\u06F4");
+  check("behavioral: englishDateYmd(2026,10,13) = \"Tuesday, 13 October 2026\"", u.englishDateYmd(2026, 10, 13) === "Tuesday, 13 October 2026");
+  check("behavioral: toJalaliParts(2026,10,14) = 1405/7/22", JSON.stringify(u.toJalaliParts(2026, 10, 14)) === JSON.stringify({ jy: 1405, jm: 7, jd: 22 }));
+} else {
+  check("jalali helpers found in utils.ts source", false);
+}
+
 // Behavioral: nightIsOver on the REAL eval'd source (with its module-level
 // DONE_STATUSES pulled from the same transformed concatenation).
 const doneArr = src.match(/const DONE_STATUSES = \[[^\]]*\];/);
@@ -84,9 +126,9 @@ const nightIsOver = doneArr
 if (nightIsOver) {
   const now = Date.parse("2026-10-14T01:00:00Z");
   const ko = "2026-10-13T19:00:00Z";
-  check("behavioral: all FINISHED → over, finished counted", JSON.stringify(nightIsOver([{ utcDate: ko, status: "FINISHED" }, { utcDate: ko, status: "FINISHED" }], now)) === JSON.stringify({ over: true, finished: 2 }));
+  check("behavioral: all FINISHED → over, finished counted", JSON.stringify(nightIsOver([{ utcDate: ko, status: "FINISHED" }, { utcDate: ko, status: "FINISHED" }], now)) === JSON.stringify({ over: true, finished: 2, defended: 0 }));
   check("behavioral: one TIMED future-ish match blocks the night", nightIsOver([{ utcDate: ko, status: "FINISHED" }, { utcDate: "2026-10-13T22:00:00Z", status: "TIMED" }], now).over === false);
-  check("behavioral: stuck IN_PLAY >4h past kickoff counts as done", nightIsOver([{ utcDate: ko, status: "IN_PLAY" }], now).over === true);
+  check("behavioral: stuck IN_PLAY >4h past kickoff counts as done AND defended", nightIsOver([{ utcDate: ko, status: "IN_PLAY" }], now).over === true && nightIsOver([{ utcDate: ko, status: "IN_PLAY" }], now).defended === 1);
   check("behavioral: fresh IN_PLAY (<4h) blocks", nightIsOver([{ utcDate: "2026-10-13T23:00:00Z", status: "IN_PLAY" }], now).over === false);
   check("behavioral: POSTPONED counts as resolved but not finished", nightIsOver([{ utcDate: ko, status: "POSTPONED" }], now).finished === 0);
 } else {
