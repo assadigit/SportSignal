@@ -1,12 +1,12 @@
 {
   "name": "ucl-notifier",
-  "version": "13.95.0.0",
+  "version": "13.96.0.0",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "test": "npx tsc --noEmit && node scripts/check-version-sync.js && node scripts/check-weekly-tables.js && node scripts/check-bl1.js && node scripts/check-cups.js && node scripts/check-dedupe.js && node scripts/check-fa-dict.js && node scripts/check-join-flow.js && node scripts/check-userstore.js && node scripts/check-admin.js && node scripts/check-league-union.js && node scripts/check-venue.js && node scripts/check-notify-windows.js && node scripts/check-standings-bl1.js && node scripts/live-derby-test.js && node scripts/check-bot-edges.js && node scripts/check-security.js && node scripts/check-composers.js && node scripts/check-reliability.js && node scripts/check-no-miss.js && node scripts/check-stats.js && node scripts/check-admin-parity.js",
+    "test": "npx tsc --noEmit && node scripts/check-version-sync.js && node scripts/check-weekly-tables.js && node scripts/check-bl1.js && node scripts/check-cups.js && node scripts/check-dedupe.js && node scripts/check-fa-dict.js && node scripts/check-join-flow.js && node scripts/check-userstore.js && node scripts/check-admin.js && node scripts/check-league-union.js && node scripts/check-venue.js && node scripts/check-notify-windows.js && node scripts/check-standings-bl1.js && node scripts/live-derby-test.js && node scripts/check-bot-edges.js && node scripts/check-security.js && node scripts/check-composers.js && node scripts/check-reliability.js && node scripts/check-no-miss.js && node scripts/check-stats.js && node scripts/check-admin-parity.js && node scripts/check-nightdigest.js",
     "seo:check": "node scripts/seo-check.js",
     "seo:check:local": "node scripts/seo-check.js --local http://localhost:8787",
     "deploy:seo": "wrangler deploy && sleep 10 && node scripts/seo-check.js"

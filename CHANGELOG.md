@@ -6,6 +6,39 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.96-nightdigest] — 2026-10-14 (the end-of-night consolidated results digest — "آرسنال در مقابل برنده شد. رتبه فعلی:")
+
+The user's ask: CL nights have a handful of games — at the end of the night
+they want ONE consolidated message with every result, their followed team's
+result as a won/lost/draw sentence, and its current table rank.
+
+- New `src/digest-night.ts` (`maybeSendNightDigest`): fires per chat per its
+  OWN timezone when the local matchday is over — every match of that local
+  date is FINISHED (POSTPONED/CANCELLED/AWARDED/SUSPENDED count as resolved),
+  with a 4h-past-kickoff defense so a frozen IN_PLAY pool (the 2026-10-13
+  lesson) can't block the digest forever. Early morning (hour < 6) summarizes
+  YESTERDAY's evening; hour 20–24 summarizes today; daytime never sends.
+  Requires ≥ 1 FINISHED (a no-football night is silent).
+- Message: followed-team section (up to 6) — "⚽ آرسنال در مقابل لیل برنده شد — ۳-۰"
+  + "📊 رتبه فعلی: ۳ | ۶ امتیاز" (rank via fetchStandings 10-min freshness,
+  stale-cache fallback, cups skipped) — then every other result of the night
+  grouped by competition (Farsi names + digits, MD-escaped), capped at 20
+  lines with "+N بازی دیگر".
+- Side-aware perspective: `userFollowsSides` added to users.ts — the verdict
+  sentence reads from the followed side (an away-followed Lille-home fixture
+  no longer reads backwards; master-list fallback included).
+- Discipline: write-first per-chat dedupe `nightdigest_<date>_<chatId>`
+  (TTL 36h); per-chat try/catch (one dead chat can't kill the loop); the
+  whole digest skips ticks at subrequest ≥ 44 (v13.94 wall-proofing); rides
+  the tick's MERGED LIVE pool via ctx so tonight's statuses are final minutes
+  before the KV pool persists them.
+- Harness: scripts/check-nightdigest.js — 19 checks (write-first order, key
+  format, rollover, daytime gate, stuck-defense, wall guard, rank line,
+  wiring, + behavioral evals of nightIsOver/dateKeyOf on the real source).
+  worker-src.js order updated in the same commit.
+
+---
+
 ## [13.95-accountmigration] — 2026-10-13 (dedicated Cloudflare account — the KV-quota divorce from currena)
 
 The whole deployment moved from the shared account (where the account-level

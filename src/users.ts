@@ -130,6 +130,24 @@ export function userFollowsMatch(prefs, chatId, match) {
   }
   return home && away ? "both" : home || away ? "one" : null;
 }
+// v13.96-nightdigest: the SIDE-aware variant — the night digest needs to
+// know WHICH side a chat follows (its verdict sentence reads
+// "آرسنال در مقابل لیل برنده شد" from the followed team's perspective; with
+// only "one" a Lille-home fixture would read from the wrong side). Same
+// resolution order as userFollowsMatch (explicit teams → master fallback).
+export function userFollowsSides(prefs, chatId, match) {
+  const p = prefs[String(chatId)];
+  const nh = normAlias(match.homeTeam.name);
+  const na = normAlias(match.awayTeam.name);
+  if (p && Array.isArray(p.teams) && p.teams.length) {
+    return {
+      home: p.teams.some((t) => normalizeTeamName(t) === nh),
+      away: p.teams.some((t) => normalizeTeamName(t) === na)
+    };
+  }
+  masterTeamList();
+  return { home: masterMemo.normSet.has(nh), away: masterMemo.normSet.has(na) };
+}
 export function isBigMatch(match, prefs, chatId) {
   return userFollowsMatch(prefs, chatId, match) === "both";
 }

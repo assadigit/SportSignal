@@ -91,7 +91,7 @@ function workerSrc() {
     // weekly/morning/bigmatch/coronation digests + engine/status/audit
     // notify modules. All harness deps are grab-based (position-independent)
     // or content-span regexes (#nospam6 spans within digest-morning).
-    "digest-weekly.ts", "digest-morning.ts", "digest-bigmatch.ts", "digest-coronation.ts",
+    "digest-weekly.ts", "digest-morning.ts", "digest-night.ts", "digest-bigmatch.ts", "digest-coronation.ts",
     "notify-engine.ts", "notify-status.ts", "notify-audit.ts",
     // v13.92-d1userstore: the user-data seam (D1 primary / legacy KV
     // fallback) — sits before users.ts (its top-level delegate) and every

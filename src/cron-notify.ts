@@ -13,6 +13,7 @@ import { detectStatusChanges } from "./notify-status";
 import { auditNotifications } from "./notify-audit";
 import { broadcastBigMatchResults, broadcastBigMatchKickoff } from "./digest-bigmatch";
 import { maybeSendMorningDigest } from "./digest-morning";
+import { maybeSendNightDigest } from "./digest-night";
 import { maybeNotifyTableToppers } from "./digest-coronation";
 import { alertPhaseError } from "./monitoring";
 
@@ -84,6 +85,18 @@ export async function runNotifyPhase(env: Env, ctx) {
     if (md && md.sent) console.log(`\u{1F4C5} Morning digest: sent=${md.sent} skipped=${md.skipped}`);
   } catch (e) {
     console.error("Morning digest step failed: " + e.message);
+  }
+  // v13.96-nightdigest: the end-of-night consolidated results digest — one
+  // message per chat with every result of the night, followed-team
+  // sentences + current table rank. Fires when the tz-local matchday is
+  // over (all FINISHED / resolved); the merged live pool rides in via ctx
+  // so tonight's statuses are final minutes before the KV pool persists
+  // them. Own try/catch; subrequest-wall-guarded inside.
+  try {
+    const nd = await maybeSendNightDigest(env, chatIds, matches);
+    if (nd && (nd.sent || nd.notOver)) console.log(`\u{1F319} Night digest: sent=${nd.sent} skipped=${nd.skipped} notOver=${nd.notOver}`);
+  } catch (e) {
+    console.error("Night digest step failed: " + e.message);
   }
   // v12.32 (the user's ask): table-top coronation alerts \u2014 a non-first
   // team (2nd/3rd/4th\u2026) overtaking the leader after a fresh full-time

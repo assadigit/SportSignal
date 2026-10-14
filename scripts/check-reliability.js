@@ -525,7 +525,7 @@ check("#matchsplit the match group is wired contiguously in the harness order", 
 // harness deps are grab-based or content-span regexes, so the structural
 // pins read the real files.
 check("#digestnotify digest.ts + notifications.ts are gone (no shims, no re-export layers)", !fs14.existsSync(path14.join(__dirname, "..", "src", "digest.ts")) && !fs14.existsSync(path14.join(__dirname, "..", "src", "notifications.ts")));
-check("#digestnotify the digest group is wired contiguously in the harness order", /"digest-weekly\.ts", "digest-morning\.ts", "digest-bigmatch\.ts", "digest-coronation\.ts",/.test(harness14));
+check("#digestnotify the digest group is wired contiguously in the harness order", /"digest-weekly\.ts", "digest-morning\.ts", "digest-night\.ts", "digest-bigmatch\.ts", "digest-coronation\.ts",/.test(harness14));
 check("#digestnotify the notify group is wired contiguously in the harness order", /"notify-engine\.ts", "notify-status\.ts", "notify-audit\.ts",/.test(harness14));
 check("#digestnotify the audit dynamic import (admin-ops /api/audit) points at notify-audit", /await import\("\.\/notify-audit"\)/.test(fs14.readFileSync(path14.join(__dirname, "..", "src", "admin-ops.ts"), "utf8")));
 // #botui (v13.78-botui): the tappable-UI builders (keyboard, normalizer,
