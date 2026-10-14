@@ -13,7 +13,7 @@ import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, e
 import { normAlias } from "./teams";
 import { isLiveStatus } from "./match-model";
 import { matchPath } from "./slugs"; // v13.80-canonical-hrefs: payload rows carry the server-canonical URL
-import { shouldNotify, isFeaturedMatch, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName, pickHeroMatch } from "./match-classify";
+import { shouldNotify, isFeaturedMatch, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName, pickHeroMatch, priorityTier } from "./match-classify";
 import { fetchLongView } from "./providers";
 import { getCachedMatches } from "./match-pool";
 import { applySettings } from "./admin";
@@ -560,7 +560,13 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   });
   const cups = cupsRaw.filter((c) => !(CONFIG.INTL_COMPETITIONS[c.code] && !c.next));
   const clMatches = matches.filter((m) => m.competition.code === "CL" && m.status !== "FINISHED" && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > Date.now() && new Date(m.utcDate).getTime() <= Date.now() + 90 * 864e5)).sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
-  const clBox = clMatches.filter((m) => hasSelectedTeam(m)).slice(0, 8);
+  // v13.100-priority: the site's UCL card follows the user's rule too —
+  // both-sides followed (+featured bonus) lead «مسابقات مهم لیگ قهرمانان
+  // اروپا», one-side follow next, kickoff inside each tier; LIVE matches
+  // still lead everything (a rolling ball outranks any fixture). The
+  // 2026-10-14 case: the card read LASK–Liverpool → Roma–Real → Bodø–Dortmund
+  // → City–PSG (chronological); now City–PSG opens the card.
+  const clBox = clMatches.filter((m) => hasSelectedTeam(m)).sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || priorityTier(b) - priorityTier(a) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 8);
   // v13.53-standsteady: when the live CL table is missing, the snapshot's
   // ucl card fills in (same stale-fallback as the league tables — the card
   // used to render its own «جدول هنوز در دسترس نیست» twin whenever the CL

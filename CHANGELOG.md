@@ -6,6 +6,55 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.100-priority] — 2026-10-14 (desired-team priority: the marquee game leads everywhere)
+
+Two live reports from the first full UCL night of the season, one root cause:
+
+- **"The site doesn't at all report Manchester City vs PSG — the most
+  important game of the month."** Forensics: the match was present in every
+  list (upcoming, /matches/today, the UCL card, its own match page) but the
+  site's HERO — `nextBig`, the `بازی بزرگ بعدی` H1 + meta description + OG
+  tags + countdown — showed Roma–Real instead. Root cause chain: the saved
+  admin settings add **AS Roma** to the master list, so Roma–Real was a
+  master pair; City–PSG (a curated `BIG_MATCH_UEFA` clash AND a master pair)
+  was equally hero-worthy at the SAME 19:00Z kickoff; `pickHeroMatch`'s sort
+  had no importance key, so the stable sort fell to pool order — Roma–Real
+  sat ahead of City–PSG and the marquee game never led the site.
+- **"First show matches where BOTH sides are desired teams, then one side —
+  currently the most important match of tonight is at the last item."** The
+  UCL night preview listed the night's fixtures by kickoff alone; inside the
+  22:30 slot, pool order again left City–PSG last.
+
+The fix — ONE shared tier, applied to every report surface:
+
+- `priorityTier(match, prefs?, chatId?)` (match-classify.ts): 2 when BOTH
+  sides are desired (followed — per-chat for the bot, master/settings level
+  for the site), 1 when one side is, 0 otherwise, **+1 when
+  `isFeaturedMatch`** (the curated big-vs-big list) — the tie-break INSIDE a
+  tier, so two both-followed pairs at the same kickoff resolve to the
+  marquee clash first.
+- `pickHeroMatch`: same-kickoff ties now break by `priorityTier` — live
+  matches still lead, kickoff still dominates (the hero stays the NEXT big
+  match, not the biggest one far away); the tier only orders the
+  simultaneous. Site + bot `/featured` share it as before (ADR-001).
+- UCL night preview: the fixture list is now **per-chat** (each chat's own
+  desired teams lead), with the v13.96.1 CPU discipline intact — the
+  expensive part (the Intl time string) is built ONCE per match per language
+  in the fan-out's `lineFor` memo and joined per chat (`uclPreviewOrder` +
+  `uclPreviewLine` + a `lineBuilder` injection on `buildUclPreviewMessage`).
+- Night digest: the `بازی‌های شما` section sorts by the same per-chat tier
+  before kickoff — City–PSG's result opens the digest, LASK–Liverpool no
+  longer does.
+- Site UCL card (`مسابقات مهم لیگ قهرمانان اروپا`): live-first, then
+  `priorityTier`, then kickoff — City–PSG opens the card, and (via the hero
+  fix) the homepage, the meta description and the OG preview.
+- Suite: new `scripts/check-priority.js` (28 behavioral + wiring checks —
+  the 2026-10-14 slate replayed with production-shaped settings), extended
+  `check-uclnight.js` (lineBuilder memoization) and `check-no-miss.js`
+  (tie-break pins). 1166 checks green (was 1130).
+
+---
+
 ## [13.99-uclgif] — 2026-10-14 (the "/" command menu + the UCL night GIF)
 
 Two user reports, one feature each:

@@ -351,7 +351,12 @@ var MEM_DEDUPE = new Set();
   check("herotruth: site hero uses the shared pickHeroMatch (public-matches)", /const heroMatch = pickHeroMatch\(matches\);/.test(src));
   check("herotruth: no private hero re-implementation left (isHeroWorthy gone)", !/isHeroWorthy/.test(src));
   check("herotruth: shared expression semantics — featured||masterPair, not-FINISHED, live-first, nearest kickoff",
-    /function pickHeroMatch\(matches\) \{[\s\S]{0,700}?isFeaturedMatch\(m\) \|\| isMasterPair\(m\)[\s\S]{0,300}?isLiveStatus\(m\.status\) \|\| new Date\(m\.utcDate\)\.getTime\(\) > Date\.now\(\)[\s\S]{0,400}?\(isLiveStatus\(a\.status\) \? 0 : 1\) - \(isLiveStatus\(b\.status\) \? 0 : 1\) \|\| new Date\(a\.utcDate\)\.getTime\(\) - new Date\(b\.utcDate\)\.getTime\(\)/.test(src));
+    /function pickHeroMatch\(matches\) \{[\s\S]{0,700}?isFeaturedMatch\(m\) \|\| isMasterPair\(m\)[\s\S]{0,300}?isLiveStatus\(m\.status\) \|\| new Date\(m\.utcDate\)\.getTime\(\) > Date\.now\(\)[\s\S]{0,400}?\(isLiveStatus\(a\.status\) \? 0 : 1\) - \(isLiveStatus\(b\.status\) \? 0 : 1\) \|\| new Date\(a\.utcDate\)\.getTime\(\) - new Date\(b\.utcDate\)\.getTime\(\) \|\| priorityTier\(b\) - priorityTier\(a\)/.test(src));
+  // v13.100-priority: same-kickoff ties break by the desired-team tier —
+  // the curated featured clash leads the simultaneous (City–PSG over
+  // Roma–Real on the 2026-10-14 UCL night).
+  check("priority: pickHeroMatch tie-breaks equal kickoffs by priorityTier", /priorityTier\(b\) - priorityTier\(a\)/.test(src));
+  check("priority: priorityTier defined exactly once", (src.match(/function priorityTier\(/g) || []).length === 1);
   check("herotruth: both /featured and the site read the pool only (no sweeps from commands)",
     // v13.75-cronsplit: boundary re-anchored to the first cron file so the
     // segment stays bot.ts-only as the cron group grew.

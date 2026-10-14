@@ -8,7 +8,7 @@
 import { CONFIG } from "./config";
 import { normalizeTeamName, normAlias } from "./teams";
 import { isDomesticCup, isQuarterFinalOrLater } from "./translate";
-import { masterTeamList, masterMemo } from "./users";
+import { masterTeamList, masterMemo, userFollowsSides } from "./users";
 import { isLiveStatus } from "./match-model";
 
 export function shouldNotify(match) {
@@ -97,6 +97,34 @@ export function isMasterPair(match) {
   const nset = masterMemo.normSet;
   return nset.has(normAlias(match.homeTeam.name)) && nset.has(normAlias(match.awayTeam.name));
 }
+// v13.100-priority: the DESIRED-TEAM PRIORITY TIER — the user's rule, one
+// expression for every report surface (the bot's UCL night preview, the
+// night digest's "your teams" section, the site's UCL card, the hero pick):
+//   - BOTH sides desired (followed) ⇒ 2 — a clash of two followed clubs is
+//     the night's headline (منچسترسیتی 🆚 پاری سن ژرمن leads, not trails)
+//   - ONE side desired ⇒ 1
+//   - neither ⇒ 0
+//   - +1 when isFeaturedMatch (the curated big-vs-big list — PSG rides the
+//     UEFA pool) — the tie-break INSIDE a tier: two both-followed pairs at
+//     the same kickoff resolve to the curated marquee clash first (the
+//     2026-10-14 lesson: City–PSG vs Roma–Real both 19:00Z, pool order put
+//     Roma–Real first and the "most important game of the month" was last).
+// Per-chat when (prefs, chatId) are given (the bot surfaces — each chat's
+// own desired teams); master-level otherwise (the site surfaces — the
+// settings-augmented list applySettings installs).
+export function priorityTier(match, prefs?, chatId?) {
+  let h = false, a = false;
+  if (prefs && chatId != null) {
+    const s = userFollowsSides(prefs, chatId, match);
+    h = s.home; a = s.away;
+  } else {
+    masterTeamList();
+    const nset = masterMemo.normSet;
+    h = nset.has(normAlias(match.homeTeam.name));
+    a = nset.has(normAlias(match.awayTeam.name));
+  }
+  return (h && a ? 2 : h || a ? 1 : 0) + (isFeaturedMatch(match) ? 1 : 0);
+}
 // v13.73-herotruth: THE single hero-selection expression (ADR-001,
 // website-as-truth). The site's hero (public-matches.ts nextBig) and the
 // bot's /featured MUST both call this — neither may re-implement the
@@ -105,13 +133,21 @@ export function isMasterPair(match) {
 //   - exclude FINISHED
 //   - live matches first (isLiveStatus), then by nearest kickoff
 //     (live matches sort by their original kickoff time)
+// v13.100-priority: SAME-KICKOFF ties (every UCL league-phase slot) now
+// break by priorityTier — a curated big-vs-big clash (featured) outranks a
+// followed-vs-followed pair, which outranks the rest of the tie. The
+// 2026-10-14 case: Roma–Real and City–PSG both 19:00Z, both master pairs;
+// stable pool order handed the hero to Roma–Real and the month's marquee
+// game never led the site. Kickoff still dominates (the hero stays the
+// NEXT big match, not the biggest one far away); the tier only orders the
+// simultaneous.
 // The bot's pre-13.73 copy diverged in 3 ways (unsorted live[0] pick,
 // SCHEDULED|TIMED-only upcoming, inline live status set); this function
 // ends that — one expression, two consumers, zero drift.
 export function pickHeroMatch(matches) {
   const hero = (matches || [])
     .filter((m) => m.status !== "FINISHED" && (isFeaturedMatch(m) || isMasterPair(m)) && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > Date.now()))
-    .sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
+    .sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime() || priorityTier(b) - priorityTier(a));
   return hero.length ? hero[0] : null;
 }
 export function hasSelectedTeam(match) {

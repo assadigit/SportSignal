@@ -39,6 +39,7 @@ import { toFaDigits, escapeMarkdownCharacters, jalaliDateFa, englishDateYmd, sub
 import { translateTeam } from "./translate";
 import { sendTelegram, sendUclGifBanner } from "./telegram";
 import { getUserPrefs, getUserTz } from "./users";
+import { priorityTier } from "./match-classify";
 import { tzOffsetMs, dateKeyOf, matchesOfLocalDate } from "./digest-night";
 
 // football-data.org: the Champions League proper. (Qualifiers are "CLQ",
@@ -91,8 +92,26 @@ export async function maybeSendUclNightPreview(env: Env, chatIds, matches?) {
     const firstKo = new Date(ucl[0].utcDate).getTime();
     const state = previewWindowState(firstKo, nowMs);
     if (state !== "fire") { out.notInWindow++; continue; }
-    // Build the body ONCE per language (per tz) — see the header comment.
-    const msgByLang = new Map();
+    // v13.100-priority: the fixture list is PER-CHAT now (each chat's desired
+    // teams lead — the user's rule: both-sides followed first, then one side,
+    // then the rest; the curated featured clash breaks the both-sides ties).
+    // The v13.96.1 CPU discipline SURVIVES the split: the expensive part (the
+    // Intl time string per match per language) is built ONCE per match per
+    // lang in lineFor's cache — never per chat. Per chat the build is pure
+    // set-lookups + sort + string joins.
+    const envTz = { ...env, TEHRAN_TZ: tz };
+    const lineCache = new Map(); // lang -> Map(matchKey -> line)
+    const lineFor = (mt, lang) => {
+      if (!lineCache.has(lang)) lineCache.set(lang, new Map());
+      const cache = lineCache.get(lang);
+      const k = String(mt.id || "") + "|" + mt.utcDate;
+      let line = cache.get(k);
+      if (line === undefined) {
+        line = uclPreviewLine(envTz, mt, lang);
+        cache.set(k, line);
+      }
+      return line;
+    };
     for (const c of tzChats) {
       const dedupeKey = "uclnight_" + dateKey + "_" + c;
       const already = await env.STATE.get(dedupeKey).catch(() => null);
@@ -108,22 +127,19 @@ export async function maybeSendUclNightPreview(env: Env, chatIds, matches?) {
           const cap = lang === "en"
             ? "\u{1F3C6} Champions League \u2014 " + englishDateYmd(y, m, d)
             : "\u{1F3C6} \u0634\u0628 \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627 \u2014 " + jalaliDateFa(y, m, d);
-          await sendUclGifBanner({ ...env, TEHRAN_TZ: tz }, c, cap);
+          await sendUclGifBanner(envTz, c, cap);
         } catch (e) {
           console.warn("UCL preview banner failed: " + e.message);
         }
       }
-      let msg = msgByLang.get(lang);
-      if (!msg) {
-        try {
-          msg = buildUclPreviewMessage({ ...env, TEHRAN_TZ: tz }, ucl, lang, y, m, d);
-          msgByLang.set(lang, msg);
-        } catch (e) {
-          console.error("UCL preview build failed: " + e.message);
-          continue;
-        }
+      let msg;
+      try {
+        msg = buildUclPreviewMessage(envTz, uclPreviewOrder(ucl, prefs, c), lang, y, m, d, (mt) => lineFor(mt, lang));
+      } catch (e) {
+        console.error("UCL preview build failed: " + e.message);
+        continue;
       }
-      const r = await sendTelegram({ ...env, TEHRAN_TZ: tz }, msg, c);
+      const r = await sendTelegram(envTz, msg, c);
       if (r === true) out.sent++;
       else out.skipped++; // dead or failed — already marked, this night is done
     }
@@ -132,10 +148,38 @@ export async function maybeSendUclNightPreview(env: Env, chatIds, matches?) {
   return out;
 }
 
+// v13.100-priority: the per-chat ORDERING — pure and harness-testable.
+// Sort key: priorityTier DESC (both-sides-followed + featured-bonus first —
+// see match-classify.ts), then kickoff ASC inside each tier (the 20:15
+// games stay ahead of the 22:30 ones inside their tier). Returns a NEW
+// array (the caller's ucl array is shared across chats — never mutated).
+export function uclPreviewOrder(ucl, prefs, chatId) {
+  const ko = (m) => {
+    const t = new Date(m.utcDate).getTime();
+    return isNaN(t) ? 0 : t;
+  };
+  return ucl.slice().sort((a, b) => priorityTier(b, prefs, chatId) - priorityTier(a, prefs, chatId) || ko(a) - ko(b));
+}
+
+// v13.100-priority: ONE fixture line (team names + local time). Extracted so
+// the per-chat path can memoize lines once per match per language while the
+// ordering varies per chat. Same escape discipline as before.
+export function uclPreviewLine(env: Env, mt, lang) {
+  const en = lang === "en";
+  const home = en ? mt.homeTeam.name : translateTeam(mt.homeTeam.name);
+  const away = en ? mt.awayTeam.name : translateTeam(mt.awayTeam.name);
+  const t = en ? getEnglishTime(mt.utcDate, env) : getJalaliTime(mt.utcDate, env);
+  return "\u26BD " + escapeMarkdownCharacters(home) + " \u{1F19A} " + escapeMarkdownCharacters(away) + " \u2014 " + escapeMarkdownCharacters(t);
+}
+
 // The fixture-list text (the message under the GIF). MarkdownV2, same escape
 // discipline as the night digest: team names escaped (the v13.96.1 '-'/'|'
 // lesson), times are pure digits+colon (escape is a no-op, applied anyway).
-export function buildUclPreviewMessage(env: Env, uclMatches, lang, y, m, d) {
+// v13.100-priority: renders the array AS GIVEN — the per-chat ordering is
+// uclPreviewOrder's job (the caller passes it pre-sorted). lineBuilder lets
+// the fan-out loop inject its memoized lines (once per match per lang); a
+// direct call builds each line itself (harness path — same output).
+export function buildUclPreviewMessage(env: Env, uclMatches, lang, y, m, d, lineBuilder?) {
   const en = lang === "en";
   const head = en
     ? "*\u{1F3C6} Champions League night \u2014 " + englishDateYmd(y, m, d) + "*\n\n"
@@ -143,10 +187,7 @@ export function buildUclPreviewMessage(env: Env, uclMatches, lang, y, m, d) {
   const lines = [];
   const LIMIT = 16; // the league-phase max is 18 simultaneous; 16 + "+N more" keeps it readable
   for (const mt of uclMatches.slice(0, LIMIT)) {
-    const home = en ? mt.homeTeam.name : translateTeam(mt.homeTeam.name);
-    const away = en ? mt.awayTeam.name : translateTeam(mt.awayTeam.name);
-    const t = en ? getEnglishTime(mt.utcDate, env) : getJalaliTime(mt.utcDate, env);
-    lines.push("\u26BD " + escapeMarkdownCharacters(home) + " \u{1F19A} " + escapeMarkdownCharacters(away) + " \u2014 " + escapeMarkdownCharacters(t));
+    lines.push(lineBuilder ? lineBuilder(mt) : uclPreviewLine(env, mt, lang));
   }
   if (uclMatches.length > LIMIT) {
     const extra = en

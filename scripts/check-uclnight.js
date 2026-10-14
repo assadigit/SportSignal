@@ -143,6 +143,8 @@ const uPieces = [
   grabU(/function englishDateYmd\([^)]*\) \{[\s\S]*?\n\}/),
   grabU(/function getJalaliTime\([^)]*\) \{[\s\S]*?\n\}/),
   grabU(/function getEnglishTime\([^)]*\) \{[\s\S]*?\n\}/),
+  // v13.100-priority: the builder delegates each line to uclPreviewLine
+  grabU(/function uclPreviewLine\([^)]*\) \{[\s\S]*?\n\}/),
   grabU(/function buildUclPreviewMessage\([^)]*\) \{[\s\S]*?\n\}/)
 ];
 if (uPieces.every(Boolean)) {
@@ -166,6 +168,20 @@ if (uPieces.every(Boolean)) {
   for (let i = 0; i < 18; i++) many.push(mk("Team" + i, "Opp" + i, "2026-10-14T19:00:00Z"));
   const faMany = ctx.buildUclPreviewMessage(envT, many, "fa", 2026, 10, 14);
   check("behavioral: >16 games cap to the LIMIT + Persian-digit '+N more'", faMany.includes("\u2026 \u0648 \u06F2") && (faMany.match(/\u26BD/g) || []).length === 16);
+  // v13.100-priority: the lineBuilder injection — the fan-out loop passes
+  // memoized lines (once per match per lang); the builder must use them
+  // VERBATIM and call once per rendered match (never twice, never zero).
+  {
+    const calls = new Map();
+    const viaBuilder = ctx.buildUclPreviewMessage(envT, fixtures, "fa", 2026, 10, 14, (mt) => {
+      const k = mt.homeTeam.name;
+      calls.set(k, (calls.get(k) || 0) + 1);
+      return "LINE(" + k + ")";
+    });
+    check("behavioral: lineBuilder lines render verbatim in order", viaBuilder.includes("LINE(Arsenal)") && viaBuilder.indexOf("LINE(Arsenal)") < viaBuilder.indexOf("LINE(Inter)") && viaBuilder.indexOf("LINE(Inter)") < viaBuilder.indexOf("LINE(Real Madrid)"));
+    check("behavioral: lineBuilder called exactly once per fixture", [...calls.values()].every((n) => n === 1) && calls.size === 3);
+    check("behavioral: header identical with the lineBuilder path", viaBuilder.startsWith(fa.slice(0, fa.indexOf("\u26BD"))));
+  }
 } else {
   check("buildUclPreviewMessage + utils pieces found in harness source", false);
 }

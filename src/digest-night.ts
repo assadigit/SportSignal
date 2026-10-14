@@ -32,6 +32,7 @@ import { fetchStandings } from "./composers";
 import { sendTelegram, sendUclGifBanner } from "./telegram";
 import { getUserPrefs, getUserTz, userFollowsMatch, userFollowsSides } from "./users";
 import { normalizeTeamName } from "./teams";
+import { priorityTier } from "./match-classify";
 
 const DONE_STATUSES = ["FINISHED", "POSTPONED", "CANCELLED", "AWARDED", "SUSPENDED"];
 
@@ -271,7 +272,12 @@ export async function buildNightDigestMessage(env: Env, nightMatches, lang, pref
     const follow = userFollowsMatch(prefs, chatId, m);
     if (follow) mine.push(m); else others.push(m);
   }
-  mine.sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
+  // v13.100-priority: the user's rule inside "بازی‌های شما" too — both-sides
+  // followed (+featured bonus) lead the section, one-side follow, then by
+  // kickoff inside each tier. The 2026-10-14 shape: LASK–Liverpool (one side,
+  // 20:15) used to open the digest while City–PSG (both sides, 22:30) sat
+  // last — now the marquee clash reads first.
+  mine.sort((a, b) => priorityTier(b, prefs, chatId) - priorityTier(a, prefs, chatId) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
   const sections: string[] = [];
   // Section 1 — followed teams: result sentence + current rank.
   if (mine.length) {
