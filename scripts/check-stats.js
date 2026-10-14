@@ -759,5 +759,165 @@ check("v13.93: the full-table path stays reads-only (no fetch with allowFetch=tr
   return /fetchStandings\(env, code, false\)/.test(p2) && !/fetchStandings\(ctx\.env, code, true\)/.test(p2);
 })());
 
-console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
-process.exit(failed === 0 ? 0 : 1);
+// ---------- 12) v13.103-monthstats: yesterday + current-month visitors ----------
+// Pure helper: tehranMonthStart (first day of the CURRENT Tehran month).
+const monthStartFnSrc = extractFn(statsJs, "tehranMonthStart");
+const tehranMonthStart = eval("(function(){\n" + tehranDaySrc + "\n" + monthStartFnSrc + "\nreturn tehranMonthStart;\n})()");
+check("tehranMonthStart mid-month (2026-10-15) → 2026-10-01", tehranMonthStart({ TEHRAN_TZ: "Asia/Tehran" }, new Date("2026-10-15T09:30:00Z")) === "2026-10-01");
+check("tehranMonthStart on the 1st (2026-11-01) → 2026-11-01", tehranMonthStart({ TEHRAN_TZ: "Asia/Tehran" }, new Date("2026-11-01T09:30:00Z")) === "2026-11-01");
+check("tehranMonthStart Sept-30 20:30Z → 2026-10-01 (Tehran midnight crossing flips the MONTH)", tehranMonthStart({ TEHRAN_TZ: "Asia/Tehran" }, new Date("2026-09-30T20:30:00Z")) === "2026-10-01");
+check("tehranMonthStart Dec-31 23:00Z → 2027-01-01 (cross-year, Tehran is already Jan 1)", tehranMonthStart({ TEHRAN_TZ: "Asia/Tehran" }, new Date("2026-12-31T23:00:00Z")) === "2027-01-01");
+
+check("PublicStatsBlock interface carries yesterday_visitors + month_visitors", (() => {
+  const reg = statsSrc.slice(statsSrc.indexOf("export interface PublicStatsBlock"), statsSrc.indexOf("const STATS_CACHE_TTL_MS"));
+  return /yesterday_visitors: number/.test(reg) && /month_visitors: number/.test(reg);
+})());
+check("readPublicStatsBlock serves yesterday (day =) + month (day >= the 1st) visitors", (() => {
+  const reg = statsSrc.slice(statsSrc.indexOf("async function readPublicStatsBlock"), statsSrc.indexOf("async function refreshPublicCache"));
+  return /COALESCE\(visitors,0\) AS u FROM daily_stats WHERE day = \?1"\)\.bind\(yesterday\)/.test(reg) &&
+         /COALESCE\(SUM\(visitors\),0\) AS u FROM daily_stats WHERE day >= \?1"\)\.bind\(monthStart\)/.test(reg);
+})());
+check("beacon no-DB + read-error fallbacks carry the new fields as 0",
+  /jsonResponseBlock\(\{ online: 0, today_views: 0, today_visitors: 0, yesterday_visitors: 0, month_visitors: 0, total_views: 0, countries: \[\] \}\)/.test(statsSrc) &&
+  /return \{ online: 0, today_views: 0, today_visitors: 0, yesterday_visitors: 0, month_visitors: 0, total_views: 0, countries: \[\] \};/.test(statsSrc));
+check("homepage stats box renders \u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u062F\u06CC\u0631\u0648\u0632 + \u0627\u06CC\u0646 \u0645\u0627\u0647 rows",
+  /d\.yesterday_visitors/.test(publicSrc) && /d\.month_visitors/.test(publicSrc) &&
+  publicSrc.includes("\\u0628\\u0627\\u0632\\u062F\\u06CC\\u062F\\u06A9\\u0646\\u0646\\u062F\\u0647 \\u062F\\u06CC\\u0631\\u0648\\u0632") &&
+  publicSrc.includes("\\u0628\\u0627\\u0632\\u062F\\u06CC\\u062F\\u06A9\\u0646\\u0646\\u062F\\u0647 \\u0627\\u06CC\\u0646 \\u0645\\u0627\\u0647"));
+check("both footers carry vcYesterday + vcMonth spans (homepage + SEO shell)",
+  /id="vcYesterday"/.test(publicSrc) && /id="vcMonth"/.test(publicSrc) &&
+  /id="vcYesterday"/.test(shellSrc) && /id="vcMonth"/.test(shellSrc));
+check("both beacons set vcYesterday + vcMonth from the served block",
+  /set\('vcYesterday',faNum\(d\.yesterday_visitors\|\|0\)\)/.test(publicSrc) && /set\('vcMonth',faNum\(d\.month_visitors\|\|0\)\)/.test(publicSrc) &&
+  /set\('vcYesterday',faNum\(d\.yesterday_visitors\|\|0\)\)/.test(shellSrc) && /set\('vcMonth',faNum\(d\.month_visitors\|\|0\)\)/.test(shellSrc));
+check("footer labels say \u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647 (VISITORS) for the new counters, not \u0628\u0627\u0632\u062F\u06CC\u062F (views)",
+  publicSrc.includes("\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u062F\u06CC\u0631\u0648\u0632:") && publicSrc.includes("\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u0627\u06CC\u0646 \u0645\u0627\u0647:") &&
+  shellSrc.includes("\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u062F\u06CC\u0631\u0648\u0632:") && shellSrc.includes("\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u0627\u06CC\u0646 \u0645\u0627\u0647:"));
+check("admin card shows this-month chips (views + unique)", /d\.month_views/.test(adminJsSrc) && /d\.month_visitors/.test(adminJsSrc));
+check("collectAdminStats feeds month_views/month_visitors (calendar month via tehranMonthStart, batch index 10)",
+  /const calMonthStart = tehranMonthStart\(env\)/.test(statsSrc) &&
+  /month_views: pair\(10\)\.v, month_visitors: pair\(10\)\.u/.test(statsSrc));
+check("privacy lists the new counter labels + the honesty note (aggregates only, no new data collected)",
+  /\u00AB\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647\u200C\u0647\u0627\u06CC \u062F\u06CC\u0631\u0648\u0632\u00BB/.test(privacySrc) &&
+  /\u00AB\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647\u200C\u0647\u0627\u06CC \u0627\u06CC\u0646 \u0645\u0627\u0647\u00BB/.test(privacySrc) &&
+  privacySrc.includes("\u0647\u06CC\u0686 \u062F\u0627\u062F\u0647 \u062C\u062F\u06CC\u062F\u06CC \u062C\u0645\u0639\u200C\u0622\u0648\u0631\u06CC \u0646\u0645\u06CC\u200C\u06A9\u0646\u0646\u062F"));
+
+// ---------- 12b) BEHAVIORAL: the REAL readPublicStatsBlock against an in-memory
+// D1, under a FIXED clock (the check-priority lesson: never anchor a test to
+// the real wall clock). Exercises the exact SQL the beacon serves, including
+// the calendar-month semantics (a previous-month row never leaks into the
+// month sum) and the month-rollover shape (yesterday can be last month).
+const daysAgoSrc = extractFn(statsJs, "daysAgoDay");
+const CLOCK = { ms: 0 };
+let readBlockFn = null;
+try {
+  const readBlockSrc = ("async " + extractFn(statsJs, "readPublicStatsBlock"))
+    .replace(/\): Promise<PublicStatsBlock> \{/, ") {") // return type
+    .replace(/\) as any\[\];/, ");")                     // (… || []) as any[]
+    .replace(/const countries: CountryStat\[\] =/, "const countries =");
+  readBlockFn = eval("(function(__CLOCKHOLDER){\n" + tehranDaySrc + "\n" + daysAgoSrc + "\n" + monthStartFnSrc + "\n" + onlineWinSrc + "\n" + countryFaSrc + "\n" + flagSrc + "\n" + nameSrc + "\n" +
+    "var __RealDate = globalThis.Date; var __Clock = __CLOCKHOLDER;\n" +
+    "function __FixedDate(a){ if(this instanceof __FixedDate){ return arguments.length ? new __RealDate(a) : new __RealDate(__Clock.ms); } return new __FixedDate().toString(); }\n" +
+    "__FixedDate.now = function(){ return __Clock.ms; };\n" +
+    "__FixedDate.parse = __RealDate.parse; __FixedDate.UTC = __RealDate.UTC;\n" +
+    "var Date = __FixedDate;\n" +
+    readBlockSrc + "\nreturn readPublicStatsBlock;\n})")(CLOCK);
+} catch (e) {
+  console.log("     readPublicStatsBlock eval failed: " + (e && e.message));
+}
+// In-memory STATS_DB implementing the exact statement surface readPublicStatsBlock
+// uses (unrecognized SQL throws — the mock-env pattern).
+function mockStatsDb(seed) {
+  function normSql(s) { return s.replace(/\s+/g, " ").trim(); }
+  function execOne(sql, args) {
+    const s = normSql(sql);
+    if (s === "SELECT COALESCE(pageviews,0) AS v, COALESCE(visitors,0) AS u FROM daily_stats WHERE day = ?1") {
+      const r = seed.daily[args[0]];
+      return [{ v: r ? r.pv : 0, u: r ? r.vis : 0 }];
+    }
+    if (s === "SELECT COALESCE(SUM(pageviews),0) AS v FROM daily_stats") {
+      return [{ v: Object.values(seed.daily).reduce((a, r) => a + r.pv, 0) }];
+    }
+    if (s === "SELECT COUNT(*) AS n FROM visitor_online WHERE last_seen >= ?1") {
+      return [{ n: seed.online.filter((o) => o.last_seen >= args[0]).length }];
+    }
+    if (s === "SELECT country, visitors FROM country_stats WHERE day = ?1 AND country <> 'XX' ORDER BY visitors DESC LIMIT 5") {
+      return Object.entries(seed.country[args[0]] || {})
+        .filter(([c]) => c !== "XX")
+        .sort((a, b) => b[1] - a[1]).slice(0, 5)
+        .map(([country, visitors]) => ({ country, visitors }));
+    }
+    if (s === "SELECT COALESCE(visitors,0) AS u FROM daily_stats WHERE day = ?1") {
+      const r = seed.daily[args[0]];
+      return [{ u: r ? r.vis : 0 }];
+    }
+    if (s === "SELECT COALESCE(SUM(visitors),0) AS u FROM daily_stats WHERE day >= ?1") {
+      return [{ u: Object.entries(seed.daily).filter(([d]) => d >= args[0]).reduce((a, [, r]) => a + r.vis, 0) }];
+    }
+    throw new Error("mock stats D1: unrecognized SQL: " + s);
+  }
+  function stmt(sql) {
+    const st = { __sql: sql, __args: [] };
+    st.bind = function () { st.__args = Array.prototype.slice.call(arguments); return st; };
+    st.run = async () => ({ meta: { changes: 0 } });
+    st.first = async () => execOne(sql, st.__args)[0] || null;
+    st.all = async () => ({ results: execOne(sql, st.__args) });
+    return st;
+  }
+  return {
+    prepare(sql) { return stmt(sql); },
+    async batch(stmts) { return stmts.map((st) => ({ results: execOne(st.__sql, st.__args) })); }
+  };
+}
+const mkEnv = (seed) => ({ STATS_DB: mockStatsDb(seed), TEHRAN_TZ: "Asia/Tehran" });
+
+(async () => {
+  check("readPublicStatsBlock evals from the real source (transformed for Node)", typeof readBlockFn === "function");
+
+  // Scenario 1: mid-October — yesterday inside the same month + a Sept row
+  // that must NOT leak into the month sum.
+  CLOCK.ms = Date.parse("2026-10-15T09:30:00Z"); // Tehran 13:00, Oct 15
+  const nowS = Math.floor(CLOCK.ms / 1000);
+  const b1 = await readBlockFn(mkEnv({
+    daily: {
+      "2026-10-15": { pv: 10, vis: 6 },
+      "2026-10-14": { pv: 8, vis: 5 },
+      "2026-10-02": { pv: 30, vis: 20 },
+      "2026-10-01": { pv: 12, vis: 9 },
+      "2026-09-30": { pv: 99, vis: 50 }
+    },
+    online: [{ visitor: "a", last_seen: nowS - 100 }, { visitor: "b", last_seen: nowS - 200 }, { visitor: "c", last_seen: nowS - 3600 }],
+    country: { "2026-10-15": { IR: 4, DE: 2, XX: 7 } }
+  }));
+  check("S1: online counts only the 5-min window (2)", b1.online === 2);
+  check("S1: today views/visitors unchanged (10/6)", b1.today_views === 10 && b1.today_visitors === 6);
+  check("S1: yesterday_visitors = 5 (the 2026-10-14 row)", b1.yesterday_visitors === 5);
+  check("S1: month_visitors = 40 (today+yesterday+Oct2+Oct1; Sept-30's 50 excluded)", b1.month_visitors === 40);
+  check("S1: total_views still all-time (159)", b1.total_views === 159);
+  check("S1: countries top-5 sorted, XX dropped, pct rounded", b1.countries.length === 2 && b1.countries[0].code === "IR" && b1.countries[0].visitors === 4 && b1.countries[0].pct === 67 && b1.countries[1].code === "DE");
+
+  // Scenario 2: month rollover — Nov 1. Yesterday (Oct 31) is LAST month:
+  // still reported as yesterday, but excluded from the month sum.
+  CLOCK.ms = Date.parse("2026-11-01T05:00:00Z"); // Tehran 08:30, Nov 1
+  const b2 = await readBlockFn(mkEnv({
+    daily: { "2026-11-01": { pv: 3, vis: 2 }, "2026-10-31": { pv: 7, vis: 4 } },
+    online: [], country: {}
+  }));
+  check("S2: month boundary resets — month_visitors = 2 (Nov 1 only)", b2.month_visitors === 2 && b2.today_visitors === 2);
+  check("S2: yesterday_visitors = 4 (yesterday can be a previous-month day)", b2.yesterday_visitors === 4 && b2.today_views === 3);
+
+  // Scenario 3: no traffic yesterday → 0 (COALESCE, no row).
+  CLOCK.ms = Date.parse("2026-10-15T09:30:00Z");
+  const b3 = await readBlockFn(mkEnv({
+    daily: { "2026-10-15": { pv: 10, vis: 6 }, "2026-10-02": { pv: 30, vis: 20 }, "2026-10-01": { pv: 12, vis: 9 } },
+    online: [], country: {}
+  }));
+  check("S3: missing yesterday row → yesterday_visitors = 0", b3.yesterday_visitors === 0);
+  check("S3: month still sums the month (35)", b3.month_visitors === 35);
+
+  console.log("\n" + (failed === 0 ? "✅ all stats checks passed" : "❌ " + failed + " check(s) failed"));
+  process.exit(failed === 0 ? 0 : 1);
+})().catch((e) => {
+  console.error("FAIL behavioral section crashed: " + (e && e.stack ? e.stack : e));
+  process.exit(1);
+});

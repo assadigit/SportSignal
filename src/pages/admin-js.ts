@@ -438,6 +438,8 @@ function renderStats(){
   html += chip(en?"7d (unique)":"\u06F7 \u0631\u0648\u0632 (\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647)", d.last_7_visitors);
   html += chip(en?"30d (views)":"\u06F3\u06F0 \u0631\u0648\u0632 (\u0628\u0627\u0632\u062F\u06CC\u062F)", d.last_30_views);
   html += chip(en?"30d (unique)":"\u06F3\u06F0 \u0631\u0648\u0632 (\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647)", d.last_30_visitors);
+  html += chip(en?"This month (views)":"\u0627\u06CC\u0646 \u0645\u0627\u0647 (\u0628\u0627\u0632\u062F\u06CC\u062F)", d.month_views);
+  html += chip(en?"This month (unique)":"\u0627\u06CC\u0646 \u0645\u0627\u0647 (\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647)", d.month_visitors);
   html += chip(en?"All-time (views)":"\u06A9\u0644 (\u0628\u0627\u0632\u062F\u06CC\u062F)", d.all_time_views);
   html += chip(en?"All-time (unique)":"\u06A9\u0644 (\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647)", d.all_time_visitors);
   html += '</div>';

@@ -1,5 +1,9 @@
-// SportSignal — v13.57-uniqueregions: visitor stats with unique-visitor dedup,
-// per-country breakdown, and live "online now" tracking. Backed by a dedicated
+// SportSignal — v13.103-monthstats: the public counter additionally reports
+// YESTERDAY's unique visitors and the CURRENT Tehran-calendar month's
+// visitors (sum of daily uniques) everywhere it renders (homepage live stats
+// box, footer on every page, admin card). Built on the v13.57-uniqueregions
+// core: visitor stats with unique-visitor dedup, per-country breakdown, and
+// live "online now" tracking. Backed by a dedicated
 // D1 database (binding STATS_DB), isolated from the STATE KV namespace's write
 // quota (the chronic 13.55-epochflow pain point). D1's free tier allows 100k
 // writes/day + atomic SQLite upserts (KV has no atomic increment).
@@ -46,6 +50,17 @@ export function tehranDay(env: Env, date?: Date): string {
 
 export function daysAgoDay(env: Env, n: number): string {
   return tehranDay(env, new Date(Date.now() - n * 86400000));
+}
+
+// v13.103-monthstats: first day of the CURRENT Tehran-calendar month
+// (YYYY-MM-01) — the boundary for the public "visitors this month" counter.
+// A CALENDAR month (not a rolling 30d window): on Oct 31 it sums Oct 1-31,
+// and on Nov 1 it resets to Nov 1 alone. "Visitors" keeps the site-wide
+// semantics — the sum of DAILY unique visitors (a person returning on three
+// different days counts three times, same as the admin 7d/30d cards and the
+// daily-dedup design documented in this file + /privacy).
+export function tehranMonthStart(env: Env, date?: Date): string {
+  return tehranDay(env, date).slice(0, 8) + "01";
 }
 
 export function isBotUserAgent(ua: string): boolean {
@@ -121,6 +136,8 @@ export interface PublicStatsBlock {
   online: number;
   today_views: number;
   today_visitors: number;
+  yesterday_visitors: number; // v13.103-monthstats: unique visitors yesterday (Tehran day)
+  month_visitors: number; // v13.103-monthstats: current Tehran-calendar month (sum of daily uniques)
   total_views: number;
   countries: CountryStat[]; // top 5 today
 }
@@ -159,13 +176,20 @@ export function countryNameFa(code: string): string {
 
 async function readPublicStatsBlock(env: Env): Promise<PublicStatsBlock> {
   const today = tehranDay(env);
+  const yesterday = daysAgoDay(env, 1);
+  const monthStart = tehranMonthStart(env);
   const now = Math.floor(Date.now() / 1000);
   try {
     const res = await env.STATS_DB.batch([
       env.STATS_DB.prepare("SELECT COALESCE(pageviews,0) AS v, COALESCE(visitors,0) AS u FROM daily_stats WHERE day = ?1").bind(today),
       env.STATS_DB.prepare("SELECT COALESCE(SUM(pageviews),0) AS v FROM daily_stats"),
       env.STATS_DB.prepare("SELECT COUNT(*) AS n FROM visitor_online WHERE last_seen >= ?1").bind(now - ONLINE_WINDOW_SECONDS),
-      env.STATS_DB.prepare("SELECT country, visitors FROM country_stats WHERE day = ?1 AND country <> 'XX' ORDER BY visitors DESC LIMIT 5").bind(today)
+      env.STATS_DB.prepare("SELECT country, visitors FROM country_stats WHERE day = ?1 AND country <> 'XX' ORDER BY visitors DESC LIMIT 5").bind(today),
+      // v13.103-monthstats: yesterday's unique visitors (0 when no row yet).
+      env.STATS_DB.prepare("SELECT COALESCE(visitors,0) AS u FROM daily_stats WHERE day = ?1").bind(yesterday),
+      // v13.103-monthstats: current-calendar-month unique visitors (>= month
+      // start, so today counts; rows from the previous month are excluded).
+      env.STATS_DB.prepare("SELECT COALESCE(SUM(visitors),0) AS u FROM daily_stats WHERE day >= ?1").bind(monthStart)
     ]);
     const todayRow = (res[0].results && res[0].results[0]) || {};
     const totalViews = (res[1].results && res[1].results[0] && Number(res[1].results[0].v)) || 0;
@@ -180,16 +204,20 @@ async function readPublicStatsBlock(env: Env): Promise<PublicStatsBlock> {
       visitors: Number(r.visitors) || 0,
       pct: Math.round(((Number(r.visitors) || 0) / sumCountry) * 100)
     }));
+    const yesterdayVisitors = (res[4].results && res[4].results[0] && Number(res[4].results[0].u)) || 0;
+    const monthVisitors = (res[5].results && res[5].results[0] && Number(res[5].results[0].u)) || 0;
     return {
       online,
       today_views: Number(todayRow.v) || 0,
       today_visitors: todayVisitors,
+      yesterday_visitors: yesterdayVisitors,
+      month_visitors: monthVisitors,
       total_views: totalViews,
       countries
     };
   } catch (e) {
     console.warn("stats readPublicStatsBlock failed: " + (e && e.message));
-    return { online: 0, today_views: 0, today_visitors: 0, total_views: 0, countries: [] };
+    return { online: 0, today_views: 0, today_visitors: 0, yesterday_visitors: 0, month_visitors: 0, total_views: 0, countries: [] };
   }
 }
 
@@ -201,7 +229,7 @@ async function refreshPublicCache(env: Env): Promise<void> {
 // ---------- the beacon endpoint ----------
 export async function handleVisitBeacon(req: Request, env: Env, ctx: any): Promise<Response> {
   if (!env.STATS_DB) {
-    return jsonResponseBlock({ online: 0, today_views: 0, today_visitors: 0, total_views: 0, countries: [] });
+    return jsonResponseBlock({ online: 0, today_views: 0, today_visitors: 0, yesterday_visitors: 0, month_visitors: 0, total_views: 0, countries: [] });
   }
   const ua = req.headers.get("user-agent") || "";
   if (isBotUserAgent(ua)) {
@@ -302,6 +330,7 @@ export interface AdminStats {
   yesterday_views: number; yesterday_visitors: number;
   last_7_views: number; last_7_visitors: number;
   last_30_views: number; last_30_visitors: number;
+  month_views: number; month_visitors: number; // v13.103-monthstats: current Tehran-calendar month
   all_time_views: number; all_time_visitors: number;
   tracking_since: string | null;
   days: DayStat[];
@@ -315,6 +344,7 @@ export async function collectAdminStats(env: Env): Promise<AdminStats> {
     return {
       online: 0, today_views: 0, today_visitors: 0, yesterday_views: 0, yesterday_visitors: 0,
       last_7_views: 0, last_7_visitors: 0, last_30_views: 0, last_30_visitors: 0,
+      month_views: 0, month_visitors: 0,
       all_time_views: 0, all_time_visitors: 0, tracking_since: null, days: [],
       countries_today: [], countries_30d: [], configured: false
     };
@@ -323,6 +353,7 @@ export async function collectAdminStats(env: Env): Promise<AdminStats> {
   const yesterday = daysAgoDay(env, 1);
   const weekStart = daysAgoDay(env, 6);
   const monthStart = daysAgoDay(env, 29);
+  const calMonthStart = tehranMonthStart(env);
   const now = Math.floor(Date.now() / 1000);
   try {
     const r = await env.STATS_DB.batch([
@@ -335,7 +366,10 @@ export async function collectAdminStats(env: Env): Promise<AdminStats> {
       env.STATS_DB.prepare("SELECT COUNT(*) AS n FROM visitor_online WHERE last_seen >= ?1").bind(now - ONLINE_WINDOW_SECONDS),
       env.STATS_DB.prepare("SELECT day, pageviews, visitors FROM daily_stats ORDER BY day DESC LIMIT 90").all(),
       env.STATS_DB.prepare("SELECT country, SUM(visitors) AS visitors, SUM(pageviews) AS pageviews FROM country_stats WHERE day = ?1 AND country <> 'XX' GROUP BY country ORDER BY visitors DESC LIMIT 12").bind(today),
-      env.STATS_DB.prepare("SELECT country, SUM(visitors) AS visitors, SUM(pageviews) AS pageviews FROM country_stats WHERE day >= ?1 AND country <> 'XX' GROUP BY country ORDER BY visitors DESC LIMIT 12").bind(monthStart)
+      env.STATS_DB.prepare("SELECT country, SUM(visitors) AS visitors, SUM(pageviews) AS pageviews FROM country_stats WHERE day >= ?1 AND country <> 'XX' GROUP BY country ORDER BY visitors DESC LIMIT 12").bind(monthStart),
+      // v13.103-monthstats: the CURRENT calendar month (>= the 1st), so the
+      // owner sees month-to-date alongside the rolling 30d window above.
+      env.STATS_DB.prepare("SELECT COALESCE(SUM(pageviews),0) AS v, COALESCE(SUM(visitors),0) AS u FROM daily_stats WHERE day >= ?1").bind(calMonthStart)
     ]);
     const pair = (i: number) => {
       const x = r[i].results && r[i].results[0];
@@ -364,6 +398,7 @@ export async function collectAdminStats(env: Env): Promise<AdminStats> {
       yesterday_views: pair(1).v, yesterday_visitors: pair(1).u,
       last_7_views: pair(2).v, last_7_visitors: pair(2).u,
       last_30_views: pair(3).v, last_30_visitors: pair(3).u,
+      month_views: pair(10).v, month_visitors: pair(10).u,
       all_time_views: pair(4).v, all_time_visitors: pair(4).u,
       tracking_since: sinceRow ? sinceRow.v || null : null,
       days,
@@ -376,6 +411,7 @@ export async function collectAdminStats(env: Env): Promise<AdminStats> {
     return {
       online: 0, today_views: 0, today_visitors: 0, yesterday_views: 0, yesterday_visitors: 0,
       last_7_views: 0, last_7_visitors: 0, last_30_views: 0, last_30_visitors: 0,
+      month_views: 0, month_visitors: 0,
       all_time_views: 0, all_time_visitors: 0, tracking_since: null, days: [],
       countries_today: [], countries_30d: [], configured: true
     };

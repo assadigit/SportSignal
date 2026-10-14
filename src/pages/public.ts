@@ -306,7 +306,7 @@ ${FONT_FACES_STYLE}
 </div>
 </div>
 <div><span data-i="madeWith">\u0633\u0627\u062E\u062A\u0647\u200C\u0634\u062F\u0647 \u0628\u0627 \u2764\uFE0F</span> \u2014 <a href="/admin" data-i="adminLink">\u0648\u0631\u0648\u062F \u0645\u062F\u06CC\u0631\u06CC\u062A</a> \u2014 <a href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="botLink">\u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645</a></div>
-<div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div></footer>
+<div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده دیروز:</span> <span class="vc-n" id="vcYesterday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده این ماه:</span> <span class="vc-n" id="vcMonth">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div></footer>
 <!-- v12.20 (the user's ask): sticky Telegram join CTA \u2014 the hero button
      scrolls away with the header; once the user is past it, this bottom bar
      keeps the primary call-to-action one tap away (safe-area padded). -->
@@ -339,6 +339,8 @@ function renderStatsBox(d){
   h+='<div class="srow"><span class="slbl">\u{1F534} \u0622\u0646\u0644\u0627\u06CC\u0646 \u0627\u06A9\u0646\u0648\u0646</span><span class="sval live">'+faNum(d.online||0)+'</span></div>';
   h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F \u0627\u0645\u0631\u0648\u0632</span><span class="sval">'+faNum(d.today_views||0)+'</span></div>';
   h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u0627\u0645\u0631\u0648\u0632</span><span class="sval">'+faNum(d.today_visitors||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u062F\u06CC\u0631\u0648\u0632</span><span class="sval">'+faNum(d.yesterday_visitors||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u0627\u06CC\u0646 \u0645\u0627\u0647</span><span class="sval">'+faNum(d.month_visitors||0)+'</span></div>';
   h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F \u06A9\u0644</span><span class="sval">'+faNum(d.total_views||0)+'</span></div>';
   var cs=d.countries||[];
   if(cs.length){
@@ -353,7 +355,7 @@ function renderStatsBox(d){
 }
 try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
   if(!d)return;
-  set('vcToday',faNum(d.today_views||0));set('vcTotal',faNum(d.total_views||0));
+  set('vcToday',faNum(d.today_views||0));set('vcYesterday',faNum(d.yesterday_visitors||0));set('vcMonth',faNum(d.month_visitors||0));set('vcTotal',faNum(d.total_views||0));
   renderStatsBox(d);
 }).catch(function(){});}catch(e){}
 })();<\/script>

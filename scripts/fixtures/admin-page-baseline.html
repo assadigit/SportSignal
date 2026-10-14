@@ -126,7 +126,7 @@ button{width:100%}
 <button onclick="checkSources()" data-i="btnSources">📡 بررسی منابع API</button>
 <button onclick="logout()" data-i="btnLogout">🚪 خروج</button>
 </div>
-<!-- v13.56-visitcount: visitor stats — today/yesterday/7d/30d/all-time page
+<!-- v13.56-visitcount: visitor stats — today/yesterday/7d/30d/this-month/all-time page
      views + a 90-day per-day bar breakdown. Backed by the dedicated STATS_DB
      D1 database (isolated from the STATE KV write quota). Cookieless, IP-free,
      bot-filtered — see /privacy. -->
@@ -640,6 +640,8 @@ function renderStats(){
   html += chip(en?"7d (unique)":"۷ روز (بازدیدکنده)", d.last_7_visitors);
   html += chip(en?"30d (views)":"۳۰ روز (بازدید)", d.last_30_views);
   html += chip(en?"30d (unique)":"۳۰ روز (بازدیدکنده)", d.last_30_visitors);
+  html += chip(en?"This month (views)":"این ماه (بازدید)", d.month_views);
+  html += chip(en?"This month (unique)":"این ماه (بازدیدکنده)", d.month_visitors);
   html += chip(en?"All-time (views)":"کل (بازدید)", d.all_time_views);
   html += chip(en?"All-time (unique)":"کل (بازدیدکنده)", d.all_time_visitors);
   html += '</div>';

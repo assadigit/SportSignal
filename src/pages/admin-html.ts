@@ -18,7 +18,7 @@ export const ADMIN_BODY = `<div id="topbar"><button id="lbtn" onclick="switchLan
 <button onclick="checkSources()" data-i="btnSources">\u{1F4E1} \u0628\u0631\u0631\u0633\u06CC \u0645\u0646\u0627\u0628\u0639 API</button>
 <button onclick="logout()" data-i="btnLogout">\u{1F6AA} \u062E\u0631\u0648\u062C</button>
 </div>
-<!-- v13.56-visitcount: visitor stats \u2014 today/yesterday/7d/30d/all-time page
+<!-- v13.56-visitcount: visitor stats \u2014 today/yesterday/7d/30d/this-month/all-time page
      views + a 90-day per-day bar breakdown. Backed by the dedicated STATS_DB
      D1 database (isolated from the STATE KV write quota). Cookieless, IP-free,
      bot-filtered \u2014 see /privacy. -->

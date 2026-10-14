@@ -6,6 +6,33 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.103-monthstats] — 2026-10-15 (the counter also reports yesterday's visitors + the current month's visitors)
+
+The public stat counter now shows **بازدیدکننده دیروز (yesterday's unique
+visitors)** and **بازدیدکننده این ماه (this month's visitors)** everywhere it
+renders: the homepage live stats box, the footer on every page (homepage + all
+SEO pages), and the admin card gains a this-month pair (views + unique).
+
+- `tehranMonthStart` (stats.ts): first day of the CURRENT Tehran-calendar
+  month — a calendar month, not a rolling 30d window (on Nov 1 the sum resets
+  to Nov 1 alone). "Visitors" keeps the site-wide semantics: the sum of DAILY
+  unique visitors, so a person returning on three days counts three times
+  (same as the admin 7d/30d cards and the daily-dedup design in /privacy).
+- `readPublicStatsBlock` (the /api/visit beacon JSON) serves
+  `yesterday_visitors` + `month_visitors`; every fallback path (no STATS_DB,
+  read error) returns them as 0. `collectAdminStats` adds
+  `month_views`/`month_visitors` (calendar month) alongside the rolling 30d.
+- No new data is collected — both numbers are aggregates of the existing
+  daily rows; /privacy updated to list the new labels and say exactly that.
+- check-stats.js +25 checks: tehranMonthStart truth table (mid-month, the
+  1st, the Sept-30 midnight month flip, cross-year) and a BEHAVIORAL test —
+  the real `readPublicStatsBlock` eval'd from source, run against an
+  in-memory D1 under a FIXED clock (mid-October with a Sept row that must
+  not leak into the month sum; the Nov-1 rollover where yesterday is last
+  month; the missing-yesterday-row → 0 shape).
+
+---
+
 ## [13.102-perchat] — 2026-10-14 (per-chat delivery ledger + repair; the end-to-end lifecycle harness; the bayern normalization bug)
 
 The reliability agenda, answered with proofs instead of assumptions:

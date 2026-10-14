@@ -300,7 +300,7 @@ __SEO_JSONLD__
 </div>
 </div>
 <div><span data-i="madeWith">ساخته‌شده با ❤️</span> — <a href="/admin" data-i="adminLink">ورود مدیریت</a> — <a href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="botLink">ربات تلگرام</a></div>
-<div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div></footer>
+<div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده دیروز:</span> <span class="vc-n" id="vcYesterday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده این ماه:</span> <span class="vc-n" id="vcMonth">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div></footer>
 <!-- v12.20 (the user's ask): sticky Telegram join CTA — the hero button
      scrolls away with the header; once the user is past it, this bottom bar
      keeps the primary call-to-action one tap away (safe-area padded). -->
@@ -333,6 +333,8 @@ function renderStatsBox(d){
   h+='<div class="srow"><span class="slbl">🔴 آنلاین اکنون</span><span class="sval live">'+faNum(d.online||0)+'</span></div>';
   h+='<div class="srow"><span class="slbl">بازدید امروز</span><span class="sval">'+faNum(d.today_views||0)+'</span></div>';
   h+='<div class="srow"><span class="slbl">بازدیدکننده امروز</span><span class="sval">'+faNum(d.today_visitors||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">بازدیدکننده دیروز</span><span class="sval">'+faNum(d.yesterday_visitors||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">بازدیدکننده این ماه</span><span class="sval">'+faNum(d.month_visitors||0)+'</span></div>';
   h+='<div class="srow"><span class="slbl">بازدید کل</span><span class="sval">'+faNum(d.total_views||0)+'</span></div>';
   var cs=d.countries||[];
   if(cs.length){
@@ -347,7 +349,7 @@ function renderStatsBox(d){
 }
 try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
   if(!d)return;
-  set('vcToday',faNum(d.today_views||0));set('vcTotal',faNum(d.total_views||0));
+  set('vcToday',faNum(d.today_views||0));set('vcYesterday',faNum(d.yesterday_visitors||0));set('vcMonth',faNum(d.month_visitors||0));set('vcTotal',faNum(d.total_views||0));
   renderStatsBox(d);
 }).catch(function(){});}catch(e){}
 })();</script>
