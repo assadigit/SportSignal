@@ -6,6 +6,38 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.97-seocpu] — 2026-10-14 (the SEO cold-render CPU kills — found live on the fresh zone)
+
+The 2026-10-14 post-migration verification caught `GET /teams/villarreal`
+dying to `Exceeded CPU Limit` in a live tail. Empirical probe: every SEO page
+was FULLY RE-RENDERED every ~60s per colo (slow 0.9–1.1s responses at
+`age:0` every minute, cache hits between) — with zero content change.
+
+- Root cause: `wantCached` accepted a `ttl` param that never reached the
+  cache — `caches.default.put` derives its TTL from the RESPONSE headers,
+  and every HTML page ships `s-maxage=60` (PF-01). The Cache API copy
+  expired with the edge: renders every minute per colo per page; on the
+  free plan's 10ms rolling CPU average, fresh isolates + crawlers on the
+  fresh zone kept rolling the kill dice.
+- `wantCached` (seo/router.ts): the ttl is now REAL — the stored copy is a
+  header-rewritten clone (`cache-control: public, s-maxage=<ttl>` + the
+  original public policy carried in `x-ss-cc`); on a hit the public header
+  is restored before serving. Public edge/browser freshness semantics are
+  byte-identical (max-age=0 + s-maxage=60 + SWR=300); only the RENDER
+  cadence changes.
+- Per-page render holds (`SEO_PAGE_TTL` 900s default): the homepage holds
+  300s; `/matches` + `/matches/today` drop to 300s while any pool match is
+  live; a match page holds `LIVE_PAGE_TTL` 120s while IN_PLAY/PAUSED, an
+  upcoming match's hold lapses just after kickoff (secs+120, ≤900), and
+  finished match pages hold the full window (history is immutable).
+- The wantCached ttl param also accepts a getter (evaluated AFTER render —
+  the page knows its own liveness only then).
+- scripts/seo-check.js: the R-13 workers.dev probe pointed at the OLD
+  account's subdomain (sedanama-ir) — now the dedicated account's
+  (sportsignal.workers.dev).
+
+---
+
 ## [13.96-nightdigest] — 2026-10-14 (the end-of-night consolidated results digest — "آرسنال در مقابل برنده شد. رتبه فعلی:")
 
 The user's ask: CL nights have a handful of games — at the end of the night

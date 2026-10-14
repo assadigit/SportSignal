@@ -53,6 +53,18 @@ export const SEO = {
   CONTENT_VERSION: "2026-10-11T00:00:00Z",
   // Edge cache for rendered HTML (R-04: at least every 5 minutes).
   HTML_CACHE_TTL: 300,
+  // v13.97-seocpu: the per-colo RENDER hold — the Cache API copy's TTL.
+  // Public edge freshness stays s-maxage=60 (PF-01 unchanged: browsers
+  // always revalidate, the edge refreshes every minute); only the RENDER
+  // cadence stretches. The old code passed a ttl to wantCached that never
+  // reached the cache (caches.default.put honors the RESPONSE headers, and
+  // s-maxage=60 made every colo re-render every page EVERY minute — the
+  // cold-render CPU-kill class observed live on the fresh zone, 2026-10-14:
+  // GET /teams/villarreal Exceeded CPU Limit).
+  SEO_PAGE_TTL: 900,
+  // v13.97-seocpu: live surfaces hold their render briefly so a running
+  // score never freezes on a match page.
+  LIVE_PAGE_TTL: 120,
   // Sitemap edge cache.
   SITEMAP_CACHE_TTL: 600,
   // KV: per-URL honest lastmod map (F-05/G-06).

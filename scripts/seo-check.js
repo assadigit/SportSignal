@@ -12,7 +12,7 @@ const CONFIG = {
     football: "https://football.sportsignal.ir", // must 301 to BASE_URL (public paths)
     www: "https://www.sportsignal.ir",           // must 301 to BASE_URL (every path)
     http: "http://sportsignal.ir",               // must 301 to https
-    workersDev: "https://ucl-notifier.sedanama-ir.workers.dev" // must serve noindex (R-13)
+    workersDev: "https://ucl-notifier.sportsignal.workers.dev" // must serve noindex (R-13) — v13.95-accountmigration: the dedicated account's subdomain
   },
   SITEMAP_INDEX: "/sitemap.xml",
   CHILD_SITEMAPS: ["pages", "competitions", "teams", "matches-upcoming", "matches-archive"],

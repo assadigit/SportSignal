@@ -8,7 +8,7 @@
 import type { Env } from "../types";
 import { SEO, absUrl } from "./config";
 import { fnv1a, esc } from "./utils";
-import { getSeoCtx, upcomingBig, finishedRecent, type SeoCtx, type SeoMatch } from "./data";
+import { getSeoCtx, upcomingBig, finishedRecent, findMatchBySlug, type SeoCtx, type SeoMatch } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { PUBLIC_PAGE } from "../pages/public";
@@ -334,16 +334,39 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
     return new Response(SEO.INDEXNOW_KEY, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=86400" } });
   }
 
-  const wantCached = async (key: string, ttl: number, render: () => Promise<Response>): Promise<Response> => {
+  const wantCached = async (key: string, ttl: number | (() => number), render: () => Promise<Response>): Promise<Response> => {
     let cacheKey: Request | null = null;
     try {
       cacheKey = new Request("https://edge-internal.sportsignal.ir" + key);
       const hit = await caches.default.match(cacheKey);
-      if (hit) return hit;
+      if (hit) {
+        // v13.97-seocpu: the stored copy carries the long render-hold TTL in
+        // s-maxage plus the original public cache-control in x-ss-cc — restore
+        // the public header before serving so edge/browser freshness
+        // semantics never leak (PF-01 stays: max-age=0 + s-maxage=60).
+        const h = new Headers(hit.headers);
+        const orig = h.get("x-ss-cc");
+        if (orig != null) {
+          h.set("cache-control", orig);
+          h.delete("x-ss-cc");
+        }
+        return new Response(hit.body, { status: hit.status, headers: h });
+      }
     } catch (e) { cacheKey = null; }
     const res = await render();
-    if (cacheKey && res.status === 200) {
-      try { ctx.waitUntil(caches.default.put(cacheKey, res.clone())); } catch (e) { }
+    // v13.97-seocpu: the ttl is now REAL — caches.default.put derives its
+    // TTL from the stored response's cache-control, so the copy we put
+    // carries the intended hold (a plain put would inherit s-maxage=60 and
+    // re-render the page every minute per colo).
+    const holdTtl = typeof ttl === "function" ? ttl() : ttl;
+    if (cacheKey && res.status === 200 && holdTtl > 0) {
+      try {
+        const store = res.clone();
+        const h = new Headers(store.headers);
+        h.set("x-ss-cc", h.get("cache-control") || "public, max-age=0");
+        h.set("cache-control", "public, s-maxage=" + Math.max(60, Math.floor(holdTtl)));
+        ctx.waitUntil(caches.default.put(cacheKey, new Response(store.body, { status: store.status, headers: h })));
+      } catch (e) { }
     }
     return res;
   };
@@ -409,14 +432,29 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   }
 
   // ---------- HTML pages ----------
+  // v13.97-seocpu: per-colo render hold, decided per render (the page knows
+  // its own liveness). Default 15 min; live/upcoming match pages, live
+  // listings and the homepage hold shorter (a running score must not
+  // freeze). Public edge freshness is unchanged — only the render cadence.
+  const pageHold = { v: SEO.SEO_PAGE_TTL };
   const renderPage = async (): Promise<{ body: string; status: number } | null> => {
+    pageHold.v = SEO.SEO_PAGE_TTL;
     const seoCtx = await getSeoCtx(env);
-    if (path === "/" ) return { body: await buildHomePage(seoCtx, isProd), status: 200 };
+    if (path === "/") {
+      // the landing page stays the freshest surface (the hero may be live).
+      pageHold.v = Math.min(pageHold.v, 300);
+      return { body: await buildHomePage(seoCtx, isProd), status: 200 };
+    }
     if (path === "/matches") {
       const page = Math.max(1, parseInt(url.searchParams.get("page") || "1") || 1);
+      // the listing can carry today's live rows — keep a live listing fresh.
+      if (seoCtx.pool.some((x: any) => x && /IN_PLAY|LIVE|PAUSED/i.test(String(x.status || "")))) pageHold.v = Math.min(pageHold.v, 300);
       return { body: buildMatchesPage(seoCtx, page), status: 200 };
     }
-    if (path === "/matches/today") return { body: buildTodayPage(seoCtx), status: 200 };
+    if (path === "/matches/today") {
+      if (seoCtx.pool.some((x: any) => x && /IN_PLAY|LIVE|PAUSED/i.test(String(x.status || "")))) pageHold.v = Math.min(pageHold.v, 300);
+      return { body: buildTodayPage(seoCtx), status: 200 };
+    }
     if (path === "/matches/tomorrow") return { body: buildTomorrowPage(seoCtx), status: 200 };
     if (path === "/matches/this-week") return { body: buildThisWeekPage(seoCtx), status: 200 };
     if (path === "/matches/this-weekend") return { body: buildWeekendPage(seoCtx), status: 200 };
@@ -426,6 +464,17 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
       // KV-cached FD detail call on first visit per match; fail-closed).
       const r = await buildMatchPage(seoCtx, mm[1]);
       if (r.notFound) return null;
+      // v13.97-seocpu: live → short hold (the score moves every minute);
+      // upcoming → the hold lapses just after kickoff (the next hit re-renders
+      // into the live branch); finished → the full window (history is
+      // immutable).
+      const sm = findMatchBySlug(seoCtx, mm[1]);
+      const st = sm ? String(sm.raw.status || "").toUpperCase() : "";
+      if (/IN_PLAY|LIVE|PAUSED/.test(st)) pageHold.v = SEO.LIVE_PAGE_TTL;
+      else if (sm && sm.raw.utcDate) {
+        const secs = Math.ceil((new Date(sm.raw.utcDate).getTime() - Date.now()) / 1000);
+        pageHold.v = Math.max(60, Math.min(SEO.SEO_PAGE_TTL, secs + 120));
+      }
       return { body: r.html, status: 200 };
     }
     if (path === "/teams") return { body: buildTeamsIndexPage(seoCtx), status: 200 };
@@ -461,8 +510,29 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   const isHtmlish = !/\.(svg|png|jpg|jpeg|gif|webp|ico|mp4|woff2?|ttf|map|txt|xml|json|js|css)$/i.test(path) || path === "/" || /^\/(matches|teams|competitions|about|methodology|contact|privacy|terms|data|sitemap)/.test(path);
   if (!isHtmlish) return null; // let unknown extensions fall to the legacy flow (405/404)
 
+  // v13.97-seocpu: scanner garbage must not pay the full 404 render. The
+  // live tail caught vulnerability probes (/bin/.env, /node/.env, /.git/…)
+  // dying to `Exceeded CPU Limit` — every one paid getSeoCtx (5 KV reads
+  // + the 700-match map) to build a pretty 404, and 404s are never cached
+  // so every probe re-rendered. Only the KNOWN route families reach the
+  // expensive flow now; everything else gets the static cheap 404 (T-06
+  // semantics preserved: 404 + link home + noindex).
+  if (!/^\/($|matches(\/[a-z0-9-]*)?$|teams(\/[a-z0-9-]*)?$|competitions(\/[a-z0-9-]*)?$|about$|methodology$|contact$|privacy$|terms$|data$|sitemap$)/.test(path)) {
+    return new Response("<!doctype html><html lang=\"fa\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex, nofollow\"><title>صفحه پیدا نشد | SportSignal</title></head><body style=\"font-family:system-ui,-apple-system,sans-serif;background:#0b1220;color:#e2e8f0;text-align:center;padding:3rem 1rem\"><h1 style=\"font-size:1.5rem\">صفحه پیدا نشد</h1><p style=\"margin-top:1rem\"><a href=\"/\" style=\"color:#f59e0b\">بازگشت به خانه</a></p></body></html>", {
+      status: 404,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        "x-robots-tag": "noindex, nofollow",
+        "x-content-type-options": "nosniff"
+      }
+    });
+  }
+
   const key = path + (url.searchParams.get("page") ? "?page=" + url.searchParams.get("page") : "");
-  const page = await wantCached("/html" + key, SEO.HTML_CACHE_TTL, async () => {
+  // v13.97-seocpu: the ttl is evaluated AFTER the render (the getter reads
+  // what renderPage decided) — cache hits never evaluate it.
+  const page = await wantCached("/html" + key, () => pageHold.v, async () => {
     const r = await renderPage();
     if (!r) {
       const seoCtx = await getSeoCtx(env);
