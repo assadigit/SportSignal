@@ -4,10 +4,14 @@
 // armed for the heartbeat/pages) gets owner-only tools INSIDE Telegram:
 //
 //   /admin              → the admin panel (quick buttons)
-//   /members            → the member roster: names, @usernames, ids, join
-//                         dates, language — the same getBotMembers() data
+//   /members            → the member roster — the same getBotMembers() data
 //                         the web admin card shows (KV profiles + getChat
-//                         backfill), newest member first
+//                         backfill), newest member first, capped at the
+//                         LAST 10 JOINED once the base outgrows 10
+//   /members <query>    → the membership lookup — "is THIS id joined?"
+//                         (exact chat-id, @username, or a name/title
+//                         fragment; Persian digits fold to ASCII; exact-id
+//                         hits get an explicit verdict line)
 //   /status             → the bot's live health (the /healthz numbers as a
 //                         Telegram message: heartbeat, cron, pool age,
 //                         outbox, KV budget, admin-alerts layer)
@@ -59,12 +63,15 @@ async function chatProfile(env: Env, chatId) {
   }
 }
 
-// "علی (@alitagram)" / "علی" / "@alitagram" / "چت ۱۲۳" — the best display
-// label for a member from their profile, MarkdownV2-escaped.
+// "علی (@alitagram)" / "علی" / "@alitagram" / "Tehran United" (a group
+// chat's title — v13.105-membersearch: the title is searchable now, so it
+// is also the label when a chat has no name/username) / "چت ۱۲۳" — the
+// best display label for a member from their profile, MarkdownV2-escaped.
 function memberLabel(p, chatId) {
   const name = p && p.first_name ? String(p.first_name) : "";
   const uname = p && p.username ? "@" + String(p.username) : "";
-  const label = [name, uname].filter(Boolean).join(" ");
+  const title = p && p.title ? String(p.title) : "";
+  const label = [name, uname].filter(Boolean).join(" ") || title;
   return escapeMarkdownCharacters(label || ("چت " + chatId));
 }
 
@@ -111,7 +118,8 @@ export function adminPanelText() {
   // the owner's /admin did nothing. Guillemets are reserved-free AND
   // typographically correct for Persian copy.
   return "\u{1F6E0} *\u067E\u0646\u0644 \u0645\u062F\u06CC\u0631\u06CC\u062A SportSignal*\n\n"
-    + "/members \u2014 \u0644\u06CC\u0633\u062A \u0627\u0639\u0636\u0627 \u0648 \u0627\u0637\u0644\u0627\u0639\u0627\u062A \u0622\u0646\u200C\u0647\u0627\n"
+    + "/members \u2014 \u0644\u06CC\u0633\u062A \u06F1\u06F0 \u0639\u0636\u0648 \u0622\u062E\u0631\n"
+    + "/members \u00AB\u0622\u06CC\u062F\u06CC \u06CC\u0627 \u0646\u0627\u0645\u00BB \u2014 \u062C\u0633\u062A\u062C\u0648\u06CC \u0639\u0636\u0648 \u062E\u0627\u0635\n"
     + "/status \u2014 \u0648\u0636\u0639\u06CC\u062A \u0632\u0646\u062F\u0647 \u0631\u0628\u0627\u062A\n"
     + "/broadcast \u00AB\u0645\u062A\u0646\u00BB \u2014 \u0627\u0631\u0633\u0627\u0644 \u067E\u06CC\u0627\u0645 \u0628\u0647 \u0647\u0645\u0647 \u0627\u0639\u0636\u0627\n\n"
     + "\u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u0632\u06CC\u0631 \u0647\u0645 \u0645\u06CC\u200C\u062A\u0648\u0627\u0646\u06CC\u062F \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F:";
@@ -132,11 +140,41 @@ export function adminPanelKeyboard() {
 // time; check-admin's mdv2Safe gate keeps every admin message parse-safe.
 const DEFAULT_TZ_FA = escapeMarkdownCharacters("\u062A\u0647\u0631\u0627\u0646 (\u067E\u06CC\u0634\u0654\u0641\u0631\u0636)");
 
+// v13.105-membersearch: when the member base outgrows a readable list the
+// roster shows only the LAST 10 JOINED (join-date desc; members with no
+// known join date sink to the bottom), and "/members <query>" answers the
+// owner's "is THIS id joined?" question.
+const MEMBERS_LIST_CAP = 10;
+const MEMBERS_SEARCH_CAP = 10;
+
+// Fold Persian (۰-۹) and Arabic-Indic (٠-٩) digits to ASCII — a fa-keyboard
+// admin pastes ids as ۴۲ just as naturally as 42. Backslashes are stripped
+// (they can never be meaningful search input, and a stray one would break
+// the MarkdownV2 echo).
+function foldQueryDigits(s) {
+  const FA = "\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9";
+  const AR = "\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669";
+  let out = "";
+  for (const ch of String(s)) {
+    const fd = FA.indexOf(ch);
+    const ad = AR.indexOf(ch);
+    if (fd >= 0) out += String(fd);
+    else if (ad >= 0) out += String(ad);
+    else if (ch !== "\\") out += ch;
+  }
+  return out;
+}
+
 // The /members roster — getBotMembers() (registry + KV profiles + the
 // budget-gated getChat backfill), newest join first, with lang + team
-// follows from the prefs blob. Truncated at ~3600 chars so a large roster
-// still fits one Telegram message (4096 max, escape-safe margin).
-export async function adminMembersMessage(env: Env) {
+// follows from the prefs blob. ROSTER MODE (no query): everyone, capped at
+// the LAST 10 JOINED when the base is larger, plus the search-syntax hint.
+// SEARCH MODE ("/members <id | @username | name fragment>"): an exact
+// chat-id match gets an explicit membership verdict; otherwise id
+// fragments, usernames, names and group titles are matched
+// (case-insensitive). Every render is still guarded by the ~3600-char
+// ceiling (4096 Telegram max, escape-safe margin).
+export async function adminMembersMessage(env: Env, query) {
   const { count, members } = await getBotMembers(env);
   const prefs = await getUserPrefs(env);
   const list = [...members].sort((a, b) => {
@@ -144,33 +182,74 @@ export async function adminMembersMessage(env: Env) {
     const jb = b.joined ? new Date(b.joined).getTime() : 0;
     return jb - ja;
   });
-  const lines = [];
-  let truncated = 0;
-  for (let i = 0; i < list.length; i++) {
-    const m = list[i];
+  // one member card — the v13.104 parse-safety rules preserved: joined date
+  // + tz escaped, id RAW inside a code span (escape-inside-code is a
+  // literal-backslash double-escape), DEFAULT_TZ_FA pre-escaped.
+  const renderLine = (m, i) => {
     const p = prefs[String(m.id)] || {};
     const label = memberLabel(m, m.id);
     const joined = m.joined ? getJalaliDate(m.joined, env) : "\u0646\u0627\u0645\u0634\u062E\u0635";
     const teams = Array.isArray(p.teams) && p.teams.length
       ? toFaDigits(String(p.teams.length)) + " \u062A\u06CC\u0645"
       : "\u0647\u0645\u0647";
-    const line = toFaDigits(String(i + 1)) + "\\. " + label
+    return toFaDigits(String(i + 1)) + "\\. " + label
       + "\n\u{1F194} `" + String(m.id) + "` \u00B7 \u0639\u0636\u0648\u06CC\u062A: " + escapeMarkdownCharacters(joined)
       + " \u00B7 " + (p.lang === "en" ? "EN" : "FA") + " \u00B7 \u062A\u06CC\u0645\u200C\u0647\u0627: " + teams
       // v13.90-tzonboard: the owner sees each member's timezone (or the
-      // Tehran default) \u2014 makes the tz onboarding rollout observable.
+      // Tehran default) — makes the tz onboarding rollout observable.
       + " \u00B7 \u23F0 " + (p.tz ? escapeMarkdownCharacters(p.tz) : DEFAULT_TZ_FA);
-    if (lines.join("\n\n").length + line.length > 3600) {
-      truncated = list.length - i;
-      break;
+  };
+  // the shared renderer: numbered cards until the 3600-char ceiling
+  const renderLines = (items) => {
+    const out = [];
+    for (let i = 0; i < items.length; i++) {
+      const line = renderLine(items[i], i);
+      if (out.join("\n\n").length + line.length > 3600) break;
+      out.push(line);
     }
-    lines.push(line);
+    return out;
+  };
+  // ---- search mode: the membership lookup ----
+  const rawQuery = String(query || "").trim().slice(0, 64).replace(/\\/g, "");
+  const q = foldQueryDigits(rawQuery).toLowerCase();
+  if (q) {
+    const exact = list.filter((m) => String(m.id) === q);
+    const uq = q.startsWith("@") ? q.slice(1) : q;
+    const hits = exact.length ? exact : list.filter((m) =>
+      String(m.id).includes(q)
+      || (m.username && String(m.username).toLowerCase().includes(uq))
+      || (m.first_name && String(m.first_name).toLowerCase().includes(uq))
+      || (m.title && String(m.title).toLowerCase().includes(uq)));
+    if (!hits.length) {
+      // a digit query IS the "is this id joined?" question — answer it
+      // explicitly instead of a generic no-match line.
+      return "\uD83D\uDD0D *\u062C\u0633\u062A\u062C\u0648\u06CC \u0627\u0639\u0636\u0627* \u2014 \u00AB" + escapeMarkdownCharacters(rawQuery) + "\u00BB\n\n"
+        + (/^\d+$/.test(q)
+          ? "\u274C \u0627\u06CC\u0646 \u0622\u06CC\u062F\u06CC \u0639\u0636\u0648 \u0631\u0628\u0627\u062A \u0646\u06CC\u0633\u062A\\."
+          : "\u274C \u0647\u06CC\u0686 \u0639\u0636\u0648\u06CC\u06CC \u0628\u0627 \u0627\u06CC\u0646 \u0645\u0634\u062E\u0635\u0627\u062A \u067E\u06CC\u062F\u0627 \u0646\u0634\u062F\\.");
+    }
+    const shown = renderLines(hits.slice(0, MEMBERS_SEARCH_CAP));
+    const rest = hits.length - shown.length;
+    let msg = "\uD83D\uDD0D *\u062C\u0633\u062A\u062C\u0648\u06CC \u0627\u0639\u0636\u0627* \u2014 \u00AB" + escapeMarkdownCharacters(rawQuery) + "\u00BB\n"
+      + (exact.length
+        ? "\u2705 \u0627\u06CC\u0646 \u0622\u06CC\u062F\u06CC \u0639\u0636\u0648 \u0631\u0628\u0627\u062A \u0627\u0633\u062A:"
+        : toFaDigits(String(hits.length)) + " \u0646\u062A\u06CC\u062C\u0647:")
+      + "\n\n" + shown.join("\n\n");
+    if (rest > 0) msg += "\n\n\u2026 \u0648 " + toFaDigits(String(rest)) + " \u0646\u062A\u06CC\u062C\u0647 \u062F\u06CC\u06AF\u0631";
+    return msg;
   }
+  // ---- roster mode: everyone, or the last 10 joined when too many ----
+  const cappedList = count > MEMBERS_LIST_CAP ? list.slice(0, MEMBERS_LIST_CAP) : list;
+  const lines = renderLines(cappedList);
+  const rest = count - lines.length;
   // v13.104-admfix: ربات was typo'd ربت (missing the alef) — one header,
   // every /members render since v13.71.
-  let msg = "\u{1F465} *\u0627\u0639\u0636\u0627\u06CC \u0631\u0628\u0627\u062A* \u2014 " + toFaDigits(String(count)) + " \u0646\u0641\u0631\n\n"
-    + (lines.length ? lines.join("\n\n") : "\u0647\u06CC\u0686 \u0639\u0636\u0648\u06CC \u062B\u0628\u062A \u0646\u0634\u062F\u0647 \u0627\u0633\u062A\u064E");
-  if (truncated > 0) msg += "\n\n\u2026 \u0648 " + toFaDigits(String(truncated)) + " \u0639\u0636\u0648 \u062F\u06CC\u06AF\u0631";
+  let msg = "\u{1F465} *\u0627\u0639\u0636\u0627\u06CC \u0631\u0628\u0627\u062A* \u2014 " + toFaDigits(String(count)) + " \u0646\u0641\u0631"
+    + (count > MEMBERS_LIST_CAP ? " \u00B7 \u0646\u0645\u0627\u06CC\u0634 " + toFaDigits(String(lines.length)) + " \u0639\u0636\u0648 \u0622\u062E\u0631" : "")
+    + "\n\n" + (lines.length ? lines.join("\n\n") : "\u0647\u06CC\u0686 \u0639\u0636\u0648\u06CC \u062B\u0628\u062A \u0646\u0634\u062F\u0647 \u0627\u0633\u062A\u064E");
+  if (rest > 0) msg += "\n\n\u2026 \u0648 " + toFaDigits(String(rest)) + " \u0639\u0636\u0648 \u062F\u06CC\u06AF\u0631";
+  // the discovery line for the search capability — on every roster render.
+  msg += "\n\n\uD83D\uDD0D \u062C\u0633\u062A\u062C\u0648\u06CC \u0639\u0636\u0648: /members \u00AB\u0622\u06CC\u062F\u06CC \u06CC\u0627 \u0646\u0627\u0645\u00BB";
   return msg;
 }
 

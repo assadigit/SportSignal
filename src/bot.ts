@@ -188,7 +188,7 @@ export async function handleTelegramUpdate(env: Env, update) {
           if (!isAdminChat(env, cbChatId2)) {
             await answerCallbackQuery(env, cbq.id, "\u26D4 \u0645\u062E\u0635\u0648\u0635 \u0645\u062F\u06CC\u0631 \u0631\u0628\u0627\u062A \u0627\u0633\u062A");
           } else {
-            const body = admt[1] === "members" ? await adminMembersMessage(env) : await adminStatusMessage(env);
+            const body = admt[1] === "members" ? await adminMembersMessage(env, "") : await adminStatusMessage(env);
             await answerCallbackQuery(env, cbq.id, "\u2713");
             await sendTelegram(env, body, cbChatId2);
           }
@@ -472,7 +472,7 @@ export async function handleTelegramUpdate(env: Env, update) {
       if (res.sent === 0 && wa.sent === 0) {
         await sendTelegram(env, lang === "en" ? "Tables are not available right now\\. Please try again in a few minutes\\." : "\u26A0\uFE0F \u062C\u062F\u0648\u0644\u200C\u0647\u0627 \u0641\u0639\u0644\u0627\u064B \u062F\u0631 \u062F\u0633\u062A\u0631\u0633 \u0646\u06CC\u0633\u062A \\- \u0644\u0637\u0641\u0627\u064B \u062F\u0642\u0627\u06CC\u0642\u06CC \u0628\u0639\u062F \u062F\u0648\u0628\u0627\u0631\u0647 \u062A\u0644\u0627\u0634 \u06A9\u0646\u06CC\u062F\\.", chatId, replyKeyboard(lang));
       }
-    } else if (text === "/admin" || text === "/members" || text === "/status" || (text && /^\/broadcast($|[@\s])/.test(text))) {
+    } else if (text === "/admin" || text === "/status" || (text && (/^\/members($|[@\s])/.test(text) || /^\/broadcast($|[@\s])/.test(text)))) {
       // v13.71-admintools: the owner's toolbelt (see src/admin-bot.ts).
       // Gated to the admin chat id (env.CHAT_ID) BEFORE anything else — a
       // non-owner probing these gets a plain denial, no data, no fan-out.
@@ -483,8 +483,14 @@ export async function handleTelegramUpdate(env: Env, update) {
         await sendTelegram(env, lang === "en" ? "\u26D4 Owner\-only command\." : "\u26D4 \u0627\u06CC\u0646 \u062F\u0633\u062A\u0648\u0631 \u0645\u062E\u0635\u0648\u0635 \u0645\u062F\u06CC\u0631 \u0631\u0628\u0627\u062A \u0627\u0633\u062A\.", chatId, replyKeyboard(lang));
       } else if (text === "/admin") {
         await sendTelegram(env, adminPanelText(), chatId, adminPanelKeyboard());
-      } else if (text === "/members") {
-        await sendTelegram(env, await adminMembersMessage(env), chatId);
+      } else if (/^\/members($|[@\s])/.test(text)) {
+        // v13.105-membersearch: bare "/members" → the roster (capped at
+        // the LAST 10 JOINED when the base is large); "/members <id |
+        // @username | name>" → the membership lookup — the owner's "is
+        // THIS id joined?" question. The optional @bot suffix Telegram
+        // appends in groups is stripped first.
+        const query = text.replace(/^\/members(@\S+)?\s*/, "").trim();
+        await sendTelegram(env, await adminMembersMessage(env, query), chatId);
       } else if (text === "/status") {
         await sendTelegram(env, await adminStatusMessage(env), chatId);
       } else {

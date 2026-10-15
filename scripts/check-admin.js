@@ -50,15 +50,17 @@ function mdv2Safe(text) {
 }
 
 // ---------- 1) source-level assertions ----------
-const adminBranch = src.indexOf('text === "/admin" || text === "/members"');
+const adminBranch = src.indexOf('text === "/admin" || text === "/status"');
 const unknownBranch = src.indexOf('text && text.startsWith("/")');
 check("admin commands exist in the command chain", adminBranch > 0);
 check("admin commands precede the generic unknown-command fallback", adminBranch > 0 && unknownBranch > adminBranch);
 
 const adminBranchSrc = src.slice(adminBranch, unknownBranch);
 check("isAdminChat gate precedes any send in the admin branch", adminBranchSrc.indexOf("if (!isAdminChat(env, chatId))") >= 0 && adminBranchSrc.indexOf("if (!isAdminChat(env, chatId))") < adminBranchSrc.indexOf("await sendTelegram"));
-check("admin branch exposes the panel, roster, status and broadcast", ["/admin", "/members", "/status"].every((c) => adminBranchSrc.indexOf('"' + c + '"') >= 0) && adminBranchSrc.includes("^\\/broadcast"));
+check("admin branch exposes the panel, roster, status and broadcast", ["/admin", "/status"].every((c) => adminBranchSrc.indexOf('"' + c + '"') >= 0) && adminBranchSrc.includes("^\\/members") && adminBranchSrc.includes("^\\/broadcast"));
 check("broadcast strips the optional @bot suffix", /\/\^\\\/broadcast\(@\\S\+\)\?\\s\*\//.test(adminBranchSrc));
+check("members strips the optional @bot suffix before the search query (v13.105)", /\/\^\\\/members\(@\\S\+\)\?\\s\*\//.test(adminBranchSrc));
+check("members command passes its query into the roster builder (v13.105)", adminBranchSrc.indexOf("adminMembersMessage(env, query)") >= 0);
 
 const admb = src.indexOf("const admt = data.match(/^adm:(members|status)$/)");
 check("adm: callback handler exists", admb > 0);
@@ -74,6 +76,8 @@ check("broadcast escapes the body (renders verbatim under MarkdownV2)", modSrc.i
 check("broadcast caps the raw body (Telegram 4096 limit, escape-safe margin)", modSrc.indexOf(".slice(0, 3500)") >= 0);
 check("broadcast fan-out is sequential (paced), not parallel", modSrc.indexOf("for (const c of chats)") >= 0 && modSrc.indexOf("Promise.all") < 0);
 check("roster truncates before the Telegram message limit", modSrc.indexOf("3600") >= 0);
+check("roster caps the list at the LAST 10 JOINED (v13.105-membersearch)", modSrc.indexOf("MEMBERS_LIST_CAP = 10") >= 0 && modSrc.indexOf("MEMBERS_LIST_CAP ? list.slice(0, MEMBERS_LIST_CAP) : list") >= 0);
+check("members search folds Persian/Arabic digits and caps results", modSrc.indexOf("foldQueryDigits") >= 0 && modSrc.indexOf("MEMBERS_SEARCH_CAP") >= 0);
 check("status card carries the admin-alerts layer verdict", modSrc.indexOf("adminOk") >= 0);
 
 // ---------- 2) behavioral harness ----------
@@ -408,6 +412,96 @@ function freshEnv(chatId) {
   await cbHandler(env, { callback_query: { id: "cb5", data: "adm:members", from: { id: ADMIN }, message: { chat: { id: ADMIN }, message_id: 9 } } });
   const cbRoster = sent.filter((s) => s.id === ADMIN).map((s) => s.msg).find((m) => m.includes("اعضای ربات"));
   check("C8 adm:members button roster is MarkdownV2-safe", !!cbRoster && mdv2Safe(cbRoster));
+
+  // =====================================================================
+  // D) v13.105-membersearch: the last-10 roster cap + the membership
+  //    lookup ("/members <id | @username | name>") — the owner's "is
+  //    THIS id joined?" question.
+  // =====================================================================
+
+  // D1) a 12-member base → only the LAST 10 JOINED are listed
+  const ORIG_GBM = globalThis.getBotMembers;
+  const BIG = [{ id: ADMIN, username: "alitagram", first_name: "Alitagram", title: null, joined: "2025-12-01T00:00:00Z" }];
+  for (let i = 1; i <= 11; i++) BIG.push({ id: 1000 + i, username: "u" + i, first_name: "M" + i, title: null, joined: "2026-01-" + String(i + 1).padStart(2, "0") + "T00:00:00Z" });
+  globalThis.getBotMembers = async () => ({ count: BIG.length, backfilled: 0, members: BIG.slice() });
+  env = freshEnv(ADMIN);
+  await handler("/members", ADMIN, env);
+  const bigRoster = sent[sent.length - 1].msg;
+  check("D1 big roster renders exactly the last 10 cards", (bigRoster.match(/عضویت:/g) || []).length === 10);
+  check("D1b header shows the total + the last-10 notice", bigRoster.includes("۱۲") && bigRoster.includes("۱۰ عضو آخر"));
+  check("D1c the footer counts the unlisted members", bigRoster.includes("۲ عضو دیگر"));
+  check("D1d the two OLDEST members are not listed", !bigRoster.includes("`777`") && !bigRoster.includes("`1001`"));
+  check("D1e the NEWEST member is listed", bigRoster.includes("`1011`"));
+  check("D1f the roster teaches the search syntax", bigRoster.includes("/members"));
+  check("D1g big roster is MarkdownV2-safe", mdv2Safe(bigRoster));
+  globalThis.getBotMembers = ORIG_GBM;
+
+  // D2) exact chat-id lookup — the verdict line + ONLY that member's card
+  env = freshEnv(ADMIN);
+  await handler("/members 42", ADMIN, env);
+  check("D2 /members 42 → the exact member with an explicit verdict", sent.length === 1 && sent[0].id === ADMIN
+    && sent[0].msg.includes("این آیدی عضو ربات است") && sent[0].msg.includes("`42`") && !sent[0].msg.includes("`777`"));
+  check("D2b search-found message is MarkdownV2-safe", mdv2Safe(sent[0].msg));
+
+  // D3) Persian-digit query (۴۲) folds to the same member
+  await handler("/members \u06F4\u06F2", ADMIN, env);
+  check("D3 Persian-digit query folds to the same member", sent[sent.length - 1].msg.includes("عضو ربات است") && sent[sent.length - 1].msg.includes("`42`"));
+
+  // D4) @username search
+  env = freshEnv(ADMIN);
+  await handler("/members @alix", ADMIN, env);
+  check("D4 @username search finds the member", sent[sent.length - 1].msg.includes("`42`") && sent[sent.length - 1].msg.includes("نتیجه"));
+
+  // D5) name fragment, case-insensitive
+  await handler("/members alit", ADMIN, env);
+  check("D5 name-fragment search is case-insensitive", sent[sent.length - 1].msg.includes("`777`") && sent[sent.length - 1].msg.includes("۱ نتیجه"));
+
+  // D6) an unknown id gets the explicit not-a-member answer
+  await handler("/members 9999", ADMIN, env);
+  const nf = sent[sent.length - 1].msg;
+  check("D6 unknown id → the explicit not-a-member verdict + the echoed query", nf.includes("این آیدی عضو ربات نیست") && nf.includes("«9999»") && mdv2Safe(nf));
+  await handler("/members zzz", ADMIN, env);
+  check("D6b a non-matching name gets the generic no-match line", sent[sent.length - 1].msg.includes("هیچ عضویی با این مشخصات پیدا نشد"));
+
+  // D7) a search query does not bypass the admin gate
+  env = freshEnv(ADMIN);
+  await handler("/members 42", MEMBER, env);
+  check("D7 non-admin /members <query> is denied (no data leak)", sent.length === 1 && sent[0].id === MEMBER && /مخصوص مدیر/.test(sent[0].msg));
+
+  // D8) the @bot-suffixed group form renders the plain roster (no query)
+  env = freshEnv(ADMIN);
+  await handler("/members@SportSignalAlertsBot", ADMIN, env);
+  const grp = sent[sent.length - 1].msg;
+  check("D8 the @bot-suffixed group form renders the roster, not a search", grp.includes("اعضای ربات") && !grp.includes("جستجوی اعضا"));
+
+  // D9) a glued "/membersx" is NOT members (word boundary) — unknown command
+  env = freshEnv(ADMIN);
+  await handler("/membersx", ADMIN, env);
+  check("D9 glued /membersx is not a members command", /ناشناخته|Unknown/.test(sent[sent.length - 1].msg));
+
+  // D10) adversarial query echo is escaped + parse-safe (the C-series rule
+  // applied to the new user-controlled echo surface)
+  const sMsg = await adminBot.adminMembersMessage(freshEnv(ADMIN), "ali (x).");
+  check("D10 adversarial query echo is escaped + parse-safe", mdv2Safe(sMsg) && sMsg.includes("«ali \\(x\\)\\.»"));
+
+  // D11) small roster: everyone listed, no cap footer, search hint present
+  env = freshEnv(ADMIN);
+  await handler("/members", ADMIN, env);
+  const smallRoster = sent[sent.length - 1].msg;
+  check("D11 small roster lists everyone with no cap footer", smallRoster.includes("`777`") && smallRoster.includes("`42`") && !smallRoster.includes("عضو دیگر"));
+  check("D11b small roster carries the search hint", smallRoster.includes("جستجوی عضو"));
+
+  // D12) group-title search: the title is both searchable and the label
+  globalThis.getBotMembers = async () => ({ count: 1, backfilled: 0, members: [
+    { id: 555, username: null, first_name: null, title: "Tehran United", joined: "2026-05-01T00:00:00Z" }
+  ] });
+  const tMsg = await adminBot.adminMembersMessage(freshEnv(ADMIN), "tehran");
+  check("D12 group-title search finds the chat and labels it by title", tMsg.includes("`555`") && tMsg.includes("Tehran United") && mdv2Safe(tMsg));
+  globalThis.getBotMembers = ORIG_GBM;
+
+  // D13) id-fragment search matches substring ids
+  const fMsg = await adminBot.adminMembersMessage(freshEnv(ADMIN), "7");
+  check("D13 id-fragment search matches substring ids (777, not 42)", fMsg.includes("`777`") && !fMsg.includes("`42`") && fMsg.includes("۱ نتیجه"));
 
   console.log(failed ? failed + " FAILURES" : "admin toolbelt OK");
   process.exit(failed ? 1 : 0);

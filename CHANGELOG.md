@@ -6,6 +6,40 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.105-membersearch] — 2026-10-15 (the roster caps at the last 10 joined + "/members <query>" — the membership lookup)
+
+The owner's ask: "if users were too much, it must show the last 10 joined,
+with a search capability, just in case admin wanted to check whether a
+certain id is joined or not."
+
+- **The roster caps at the LAST 10 JOINED** when the member base outgrows
+  10 (`MEMBERS_LIST_CAP`): header gains "نمایش ۱۰ عضو آخر" + the total,
+  footer counts the unlisted ("… و N عضو دیگر"), and every roster render
+  ends with the search-syntax hint ("🔍 جستجوی عضو: /members «آیدی یا نام»").
+  At ≤ 10 members the roster still lists everyone.
+- **`/members <query>` — the membership lookup**: an exact chat-id match
+  gets the explicit verdict line ("✅ این آیدی عضو ربات است" / "❌ این آیدی
+  عضو ربات نیست" — the digit-query miss answers the "is this id joined?"
+  question directly); otherwise id fragments, @usernames, first names and
+  group titles are matched case-insensitively (capped at 10 results).
+  Persian (۰-۹) and Arabic-Indic (٠-٩) digits fold to ASCII — the fa
+  keyboard's ۴۲ finds id 42. The @bot suffix Telegram appends in groups is
+  stripped first ("/members@Bot" is still the plain roster); "/membersx"
+  remains an unknown command.
+- Group chats whose only identity is a `title` are now labeled by that
+  title (previously "چت <id>") — the title is searchable, so it must also
+  be the display label.
+- Routing: the admin branch matches `/^\/members($|[@\s])/` (the same
+  word-boundary shape `/broadcast` uses) — the query rides the SAME
+  admin gate (a non-owner probing `/members 42` gets the plain denial).
+- Every new surface is gated: check-admin D-series (21 behavioral + 4 source checks) — the
+  12-member cap render, exact-id verdict, Persian digits, @username,
+  name fragment, unknown-id verdict, gate bypass attempt, group form,
+  glued command, adversarial query echo parse-safety (mdv2Safe), title
+  search, id-fragment search. Suite: 1409 OK / 0 FAIL.
+
+---
+
 ## [13.104-admfix] — 2026-10-15 (the /members + /admin Telegram outage — every admin surface parse-safe, live-verified)
 
 The owner's report: "/members does nothing in the bot." Live repro through the
