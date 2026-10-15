@@ -6,6 +6,46 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.104-admfix] — 2026-10-15 (the /members + /admin Telegram outage — every admin surface parse-safe, live-verified)
+
+The owner's report: "/members does nothing in the bot." Live repro through the
+production webhook (wrangler tail): Telegram **parse-400** — and that is the
+whole symptom: a deterministic 400 is retried 3×, returns false, and never
+outboxes (non-dead 4xx is a permanent failure), so the owner sees NOTHING.
+No error surfaces anywhere else.
+
+Three real bugs, one pre-existing typo, and a systematic gate:
+
+- **`/members` (and the adm:members panel button) were dead since v13.90** —
+  the default tz label `"تهران (پیش‌فرض)"` in the roster carried RAW parens;
+  MarkdownV2 reserves `(` and `)`, so the ENTIRE roster was rejected whenever
+  ANY member had no tz set — and 4 of 7 live members had none. Fixed: the
+  label is escaped at build (`DEFAULT_TZ_FA`).
+- **`/admin` was dead since v13.71** — the panel's usage hint
+  `/broadcast <متن>` carried a RAW `>` (reserved — blockquote). Fixed with
+  Persian guillemets: `/broadcast «متن»` (reserved-free AND typographically
+  correct for Persian). Same fix for the body-less `/broadcast` usage reply
+  in bot.ts (`/broadcast «متن پیام»`) — that message was equally broken.
+- **`/status` rendered `13\.103\-monthstats`** — escape-inside-code-span is a
+  literal backslash; version/budget/api_source now render RAW inside their
+  code spans (code spans need no escaping).
+- The roster header said "اعضای **ربت**" (missing the alef) since v13.71 —
+  now "اعضای **ربات**".
+- **check-admin.js grew an entity-aware MarkdownV2 parse-safety gate** (the
+  join-flow validator is too strict for markup-carrying messages — it would
+  reject the intentional `*bold*`/`` `code` ``): 14 behavioral checks run the
+  REAL message builders — the exact live repro (tz-less roster), tz-set
+  rosters, adversarial member identities (parens/dots/dashes in names),
+  /status (budget + api_source populated), the panel, join/leave pages,
+  broadcast ack/body/summary, and the adm: button paths. Suite: 1383 OK,
+  0 FAIL (was 1369).
+
+Post-deploy live verification (real webhook POSTs + wrangler tail): /members,
+/admin, /status, /broadcast and both adm: panel buttons all delivered — every
+send ok, outbox stayed 0.
+
+---
+
 ## [13.103-monthstats] — 2026-10-15 (the counter also reports yesterday's visitors + the current month's visitors)
 
 The public stat counter now shows **بازدیدکننده دیروز (yesterday's unique

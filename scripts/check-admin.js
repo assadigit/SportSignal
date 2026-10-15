@@ -20,6 +20,35 @@ const check = (name, cond) => {
   if (!cond) failed++;
 };
 
+// ---------- 0) MarkdownV2 parse-safety validator ----------
+// v13.104-admfix: the live /members outage (2026-10-15) — the default tz
+// label "تهران (پیش‌فرض)" carried RAW parens; Telegram rejects the WHOLE
+// roster with parse-400, sendTelegram retries 3× on a deterministic error,
+// returns false with NO outbox entry (non-dead 4xx never outboxes) — the
+// owner saw NOTHING whenever any member had no tz set (4 of 7 live members
+// were tz-less). Unlike the join-flow validator (markup-free strings),
+// admin messages carry INTENTIONAL entities — this validator models the
+// exact MarkdownV2 subset they use: *bold*, `code`, and backslash escapes.
+// Outside code spans every reserved char must be escaped; bold must be
+// balanced; code spans must be closed. The escape-markup correctness is
+// behavioral: entity-stripping the output must yield the intended text.
+function mdv2Safe(text) {
+  let i = 0, bold = false;
+  while (i < text.length) {
+    const c = text[i];
+    if (c === "`") { // code span: raw until the closing backtick
+      const close = text.indexOf("`", i + 1);
+      if (close < 0) return false;
+      i = close + 1; continue;
+    }
+    if (c === "\\") { i += 2; continue; } // backslash escape (outside code)
+    if (c === "*") { bold = !bold; i++; continue; }
+    if ("_*[]()~`>#+-=|{}.!".includes(c)) return false; // unescaped reserved
+    i++;
+  }
+  return !bold; // unbalanced bold
+}
+
 // ---------- 1) source-level assertions ----------
 const adminBranch = src.indexOf('text === "/admin" || text === "/members"');
 const unknownBranch = src.indexOf('text && text.startsWith("/")');
@@ -205,7 +234,7 @@ function freshEnv(chatId) {
   env = freshEnv(ADMIN);
   await handler("/status", ADMIN, env);
   check("admin /status sends the health card to the owner", sent.length === 1 && sent[0].id === ADMIN);
-  check("status card carries the escaped version + heartbeat line", sent[0].msg.includes("13\\.71\\-admintools") && sent[0].msg.includes("ضربان"));
+  check("status card carries the raw version in a code span + heartbeat line", sent[0].msg.includes("`13.71-admintools`") && sent[0].msg.includes("ضربان"));
   check("status verdict is degraded without a pool (pool_age -1)", sent[0].msg.includes("نیازمند بررسی"));
   env = freshEnv(ADMIN);
   await env.STATE.put(CONFIG.KV_MATCHES_KEY, JSON.stringify({ fetchedAt: new Date().toISOString(), matches: [1, 2, 3] }));
@@ -313,6 +342,72 @@ function freshEnv(chatId) {
   await env.STATE.put(CONFIG.KV_USERS_KEY, JSON.stringify([ADMIN])); // MEMBER not registered yet
   await cbHandler(env, { callback_query: { id: "cb4", data: "lang:fa", from: { id: MEMBER, first_name: "Ali" }, message: { chat: { id: MEMBER }, message_id: 8 } } });
   check("lang-picker registration pages the owner with the join signal", sent.some((s) => s.id === ADMIN && s.msg.includes("عضو جدید")));
+
+  // =====================================================================
+  // C) MarkdownV2 parse-safety gate (v13.104-admfix) — the live /members
+  // outage repro: an unescaped "(" in the default tz label rejected the
+  // whole roster; the owner saw nothing. Every admin surface is now
+  // behaviorally validated with the REAL message builders.
+  // =====================================================================
+
+  // C1) THE live repro: roster with tz-less members (the exact live shape
+  // — 4 of 7 members had no tz) must be parse-safe. The fixture prefs
+  // carry no tz for anyone, so every roster line hits the default label.
+  env = freshEnv(ADMIN);
+  await handler("/members", ADMIN, env);
+  check("C1 roster with tz-LESS members is MarkdownV2-safe (the live parse-400 repro)", sent.length === 1 && mdv2Safe(sent[0].msg));
+  check("C1b the default tz label still reads تهران with escaped parens", sent[0].msg.includes("\\(\u067E\u06CC\u0634\u0654\u0641\u0631\u0636\\)"));
+
+  // C2) roster with a tz-carrying member (the escaped-tz path)
+  env = freshEnv(ADMIN);
+  await env.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify({ [String(MEMBER)]: { lang: "fa", tz: "Australia/Sydney" }, [String(ADMIN)]: { lang: "fa", tz: "Asia/Tehran" } }));
+  await handler("/members", ADMIN, env);
+  check("C2 roster with tz-set members is MarkdownV2-safe", sent.length === 1 && mdv2Safe(sent[0].msg));
+
+  // C3) adversarial member identity (parens/dots/dashes in the name,
+  // underscore/bang in the username) — memberLabel must escape it all
+  const ORIG_MEMBERS = globalThis.getBotMembers;
+  globalThis.getBotMembers = async () => ({ count: 1, backfilled: 0, members: [
+    { id: ADMIN, username: "we!rd_name", first_name: "Ali (X).", title: null, joined: "2026-01-01T00:00:00Z" }
+  ] });
+  const rosterMsg = await adminBot.adminMembersMessage(freshEnv(ADMIN));
+  check("C3 roster with adversarial name/username is MarkdownV2-safe", mdv2Safe(rosterMsg));
+  check("C3b adversarial name renders escaped (verbatim, no entity break)", rosterMsg.includes("Ali \\(X\\)\\."));
+  globalThis.getBotMembers = ORIG_MEMBERS;
+
+  // C4) /status card parse-safety (with budget + api_source populated)
+  env = freshEnv(ADMIN);
+  await env.STATE.put("cron_status_v1", JSON.stringify({ heartbeat: String(Date.now()), last_cron: String(Date.now()), kv_writes_day: "100", budget: "13.104-admfix", api_source: "football-data (v4)" }));
+  await handler("/status", ADMIN, env);
+  check("C4 /status card is MarkdownV2-safe (budget + api_source set)", sent.length === 1 && mdv2Safe(sent[0].msg));
+  check("C4b /status shows the RAW version + budget inside code spans (escape-inside-code is a literal backslash — the old double-escape rendered `13\\.103\\-…`)", sent[0].msg.includes("`13.71-admintools`") && sent[0].msg.includes("`13.104-admfix`"));
+
+  // C5) /admin panel text parse-safety
+  check("C5 /admin panel text is MarkdownV2-safe", mdv2Safe(adminBot.adminPanelText()));
+
+  // C6) join/leave pager parse-safety with an adversarial profile
+  globalThis.chatProfileGet = async () => ({ username: "we!rd_name", first_name: "Ali (X).", title: null, joined: "2026-01-01T00:00:00Z" });
+  env = freshEnv(ADMIN);
+  sent = [];
+  await adminBot.notifyAdminUserJoined(env, MEMBER, 2);
+  check("C6 join page with adversarial profile is MarkdownV2-safe", sent.length === 1 && mdv2Safe(sent[0].msg));
+  sent = [];
+  await adminBot.notifyAdminUserLeft(env, MEMBER, 1);
+  check("C6b leave page with adversarial profile is MarkdownV2-safe", sent.length === 1 && mdv2Safe(sent[0].msg));
+  delete globalThis.chatProfileGet;
+
+  // C7) broadcast: ack, escaped body and summary all parse-safe
+  env = freshEnv(ADMIN);
+  await handler("/broadcast سلام (تست).", ADMIN, env);
+  check("C7 broadcast ack is MarkdownV2-safe", mdv2Safe(sent[0].msg));
+  check("C7b broadcast escaped body is MarkdownV2-safe", sent.slice(1, 3).every((s) => mdv2Safe(s.msg)));
+  check("C7c broadcast summary is MarkdownV2-safe", mdv2Safe(sent[sent.length - 1].msg));
+
+  // C8) adm: callback roster (the /admin panel button path) parse-safe
+  env = freshEnv(ADMIN);
+  await cbHandler(env, { callback_query: { id: "cb5", data: "adm:members", from: { id: ADMIN }, message: { chat: { id: ADMIN }, message_id: 9 } } });
+  const cbRoster = sent.filter((s) => s.id === ADMIN).map((s) => s.msg).find((m) => m.includes("اعضای ربات"));
+  check("C8 adm:members button roster is MarkdownV2-safe", !!cbRoster && mdv2Safe(cbRoster));
 
   console.log(failed ? failed + " FAILURES" : "admin toolbelt OK");
   process.exit(failed ? 1 : 0);

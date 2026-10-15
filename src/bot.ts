@@ -492,7 +492,11 @@ export async function handleTelegramUpdate(env: Env, update) {
         // appends in groups) and fan out to every registered chat.
         const body = text.replace(/^\/broadcast(@\S+)?\s*/, "");
         if (!body) {
-          await sendTelegram(env, "\u{1F4E2} \u0627\u0633\u062A\u0641\u0627\u062F\u0647: /broadcast <\u0645\u062A\u0646 \u067E\u06CC\u0627\u0645>", chatId);
+          // v13.104-admfix: Persian guillemets — the old "/broadcast <متن
+          // پیام>" carried a RAW ">" (MarkdownV2 reserves it) and Telegram
+          // rejected the usage message with parse-400 — a body-less
+          // /broadcast did nothing instead of showing usage.
+          await sendTelegram(env, "\u{1F4E2} \u0627\u0633\u062A\u0641\u0627\u062F\u0647: /broadcast \u00AB\u0645\u062A\u0646 \u067E\u06CC\u0627\u0645\u00BB", chatId);
         } else {
           await sendTelegram(env, "\u23F3 \u062F\u0631 \u062D\u0627\u0644 \u0627\u0631\u0633\u0627\u0644 \u06AF\u0631\u0648\u0647\u06CC\u2026", chatId);
           await sendTelegram(env, await adminBroadcast(env, body), chatId);

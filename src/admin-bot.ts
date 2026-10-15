@@ -105,10 +105,15 @@ export async function notifyAdminUserLeft(env: Env, chatId, totalMembers) {
 // The /admin panel: a short command card + quick-tap buttons (the same
 // adm:* callbacks the callback_query handler serves).
 export function adminPanelText() {
+  // v13.104-admfix: the usage hint uses Persian guillemets «متن» — the old
+  // "/broadcast <متن>" carried a RAW ">" (MarkdownV2 reserves it for
+  // blockquotes) and Telegram rejected the WHOLE panel with parse-400 —
+  // the owner's /admin did nothing. Guillemets are reserved-free AND
+  // typographically correct for Persian copy.
   return "\u{1F6E0} *\u067E\u0646\u0644 \u0645\u062F\u06CC\u0631\u06CC\u062A SportSignal*\n\n"
     + "/members \u2014 \u0644\u06CC\u0633\u062A \u0627\u0639\u0636\u0627 \u0648 \u0627\u0637\u0644\u0627\u0639\u0627\u062A \u0622\u0646\u200C\u0647\u0627\n"
     + "/status \u2014 \u0648\u0636\u0639\u06CC\u062A \u0632\u0646\u062F\u0647 \u0631\u0628\u0627\u062A\n"
-    + "/broadcast <\u0645\u062A\u0646> \u2014 \u0627\u0631\u0633\u0627\u0644 \u067E\u06CC\u0627\u0645 \u0628\u0647 \u0647\u0645\u0647 \u0627\u0639\u0636\u0627\n\n"
+    + "/broadcast \u00AB\u0645\u062A\u0646\u00BB \u2014 \u0627\u0631\u0633\u0627\u0644 \u067E\u06CC\u0627\u0645 \u0628\u0647 \u0647\u0645\u0647 \u0627\u0639\u0636\u0627\n\n"
     + "\u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u0632\u06CC\u0631 \u0647\u0645 \u0645\u06CC\u200C\u062A\u0648\u0627\u0646\u06CC\u062F \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F:";
 }
 
@@ -118,6 +123,14 @@ export function adminPanelKeyboard() {
     { text: "\u{1F4CA} \u0648\u0636\u0639\u06CC\u062A", callback_data: "adm:status" }
   ]] };
 }
+
+// v13.104-admfix: the default tz label "تهران (پیش‌فرض)" carries PARENS —
+// MarkdownV2 reserves them, and the unescaped "(" made Telegram reject
+// the ENTIRE /members roster with parse-400 (3 retries on a deterministic
+// error → false, no outbox entry — the owner saw NOTHING while any member
+// had no tz set; 4 of 7 live members were tz-less). Escaped at build
+// time; check-admin's mdv2Safe gate keeps every admin message parse-safe.
+const DEFAULT_TZ_FA = escapeMarkdownCharacters("\u062A\u0647\u0631\u0627\u0646 (\u067E\u06CC\u0634\u0654\u0641\u0631\u0636)");
 
 // The /members roster — getBotMembers() (registry + KV profiles + the
 // budget-gated getChat backfill), newest join first, with lang + team
@@ -146,14 +159,16 @@ export async function adminMembersMessage(env: Env) {
       + " \u00B7 " + (p.lang === "en" ? "EN" : "FA") + " \u00B7 \u062A\u06CC\u0645\u200C\u0647\u0627: " + teams
       // v13.90-tzonboard: the owner sees each member's timezone (or the
       // Tehran default) \u2014 makes the tz onboarding rollout observable.
-      + " \u00B7 \u23F0 " + (p.tz ? escapeMarkdownCharacters(p.tz) : "\u062A\u0647\u0631\u0627\u0646 (\u067E\u06CC\u0634\u0654\u0641\u0631\u0636)");
+      + " \u00B7 \u23F0 " + (p.tz ? escapeMarkdownCharacters(p.tz) : DEFAULT_TZ_FA);
     if (lines.join("\n\n").length + line.length > 3600) {
       truncated = list.length - i;
       break;
     }
     lines.push(line);
   }
-  let msg = "\u{1F465} *\u0627\u0639\u0636\u0627\u06CC \u0631\u0628\u062A* \u2014 " + toFaDigits(String(count)) + " \u0646\u0641\u0631\n\n"
+  // v13.104-admfix: ربات was typo'd ربت (missing the alef) — one header,
+  // every /members render since v13.71.
+  let msg = "\u{1F465} *\u0627\u0639\u0636\u0627\u06CC \u0631\u0628\u0627\u062A* \u2014 " + toFaDigits(String(count)) + " \u0646\u0641\u0631\n\n"
     + (lines.length ? lines.join("\n\n") : "\u0647\u06CC\u0686 \u0639\u0636\u0648\u06CC \u062B\u0628\u062A \u0646\u0634\u062F\u0647 \u0627\u0633\u062A\u064E");
   if (truncated > 0) msg += "\n\n\u2026 \u0648 " + toFaDigits(String(truncated)) + " \u0639\u0636\u0648 \u062F\u06CC\u06AF\u0631";
   return msg;
@@ -189,16 +204,20 @@ export async function adminStatusMessage(env: Env) {
     ? "\u{1F7E2} \u0633\u0627\u0644\u0645"
     : (hbAge >= 0 && hbAge <= 90 ? "\u{1F7E1} \u0646\u06CC\u0627\u0632\u0645\u0646\u062F \u0628\u0631\u0631\u0633\u06CC" : "\u{1F534} \u0645\u0634\u06A9\u0644");
   const age = (v) => v < 0 ? "\u0646\u0627\u0645\u0639\u0644\u0648\u0645" : toFaDigits(String(v)) + " \u062F\u0642\u06CC\u0642\u0647 \u067E\u06CC\u0634";
-  return "\u{1F4CA} *\u0648\u0636\u0639\u06CC\u062A SportSignal* \u2014 \u0646\u0633\u062E\u0647 `" + escapeMarkdownCharacters(VERSION) + "`\n\n"
+  // v13.104-admfix: version / budget / api_source are rendered RAW inside
+  // code spans — code-span content needs no escaping (only the backtick
+  // is special), so the old escapeMarkdownCharacters here was a DOUBLE
+  // escape that rendered literal backslashes (`13\.103\-…`) in the card.
+  return "\u{1F4CA} *\u0648\u0636\u0639\u06CC\u062A SportSignal* \u2014 \u0646\u0633\u062E\u0647 `" + VERSION + "`\n\n"
     + "\u062D\u0627\u0644 \u06A9\u0644\u06CC: " + verdict + "\n"
     + "\u23F1 \u0622\u062E\u0631\u06CC\u0646 \u062A\u06CC\u06A9 \u06A9\u0627\u0645\u0644: " + age(cronAge) + "\n"
     + "\u2764\uFE0F \u0636\u0631\u0628\u0627\u0646: " + age(hbAge) + "\n"
     + "\u26BD \u0627\u0633\u062A\u062E\u0631 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627: " + toFaDigits(String(poolMatches)) + " \u0645\u0633\u0627\u0628\u0642\u0647 \u00B7 " + age(poolAgeMin) + "\n"
     + "\u{1F4EE} \u0635\u0641 \u0627\u0631\u0633\u0627\u0644 \u0645\u0646\u062A\u0638\u0631: " + toFaDigits(String(outboxDepth)) + "\n"
     + "\u{1F4BE} \u0646\u0648\u0634\u062A\u0627\u0631 KV \u0627\u0645\u0631\u0648\u0632: " + toFaDigits(String(kvWrites))
-    + (st.budget ? " \u00B7 \u0628\u0648\u062F\u062C\u0647: `" + escapeMarkdownCharacters(String(st.budget)) + "`" : "") + "\n"
+    + (st.budget ? " \u00B7 \u0628\u0648\u062F\u062C\u0647: `" + String(st.budget) + "`" : "") + "\n"
     + "\u{1F6A8} \u0644\u0627\u06CC\u0647 \u0647\u0634\u062F\u0627\u0631 \u0645\u062F\u06CC\u0631: " + (adminOk ? "\u2713 \u0641\u0639\u0627\u0644" : "\u2717 \u063A\u06CC\u0631\u0641\u0639\u0627\u0644")
-    + (st.api_source ? "\n\U0001F4E1 \u0645\u0646\u0628\u0639 \u062F\u0627\u062F\u0647: `" + escapeMarkdownCharacters(String(st.api_source)) + "`" : "");
+    + (st.api_source ? "\n\U0001F4E1 \u0645\u0646\u0628\u0639 \u062F\u0627\u062F\u0647: `" + String(st.api_source) + "`" : "");
 }
 
 // /broadcast <text> — send a message to every registered chat. The body is
