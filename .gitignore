@@ -40,3 +40,4 @@ Thumbs.db
 .zscripts/
 dist-check/
 SportSignal-v*.zip
+.webhook-secret-*.txt
