@@ -14,7 +14,7 @@ import { normalizeTeamName } from "../teams";
 // the root module grounds.ts (shared with pubMatch — one source of truth).
 import { homeGround, curatedVenueFa } from "../grounds";
 import { isLiveStatus } from "../match-model";
-import { shouldNotify } from "../match-classify";
+import { shouldReport } from "../match-classify";
 import { fetchJSON } from "../utils";
 import { SEO } from "./config";
 import { teamSlug, compSlug } from "../slugs";
@@ -93,7 +93,9 @@ export function payloadTop3(payload: any): Record<string, Set<string>> {
 
 export function isBigForSeo(m: any, top3: Record<string, Set<string>>): boolean {
   if (!m || !m.competition) return false;
-  if (shouldNotify(m)) return true;
+  // v13.109-consolidated: the consolidated tier — SEO pages are website
+  // (consolidated) surfaces; one-desired fixtures stay listed.
+  if (shouldReport(m)) return true;
   const set = top3[m.competition.code];
   if (!set) return false;
   return set.has(normalizeTeamName(m.homeTeam.name)) || set.has(normalizeTeamName(m.awayTeam.name));

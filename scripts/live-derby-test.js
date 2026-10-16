@@ -80,7 +80,13 @@ const domCupSrc = grabFn("function isDomesticCup(code)");
 // leak set (the TOP BOX pick calls it; it was missing and only survived
 // because the old code path never reached it with these pools).
 const aliasSrc = grabVarBalanced("TEAM_ALIASES") + "\n" + grabFn("function normAlias(name)") + "\n" + grabFn("function isDomesticLeagueCode(code)") + "\n" + grabVar("masterMemo") + "\n" + grabFn("function masterTeamList()") + "\n" + grabFn("function isMasterPair(match)") + "\n" + grabFn("function hasSelectedTeam(match)") + "\n" + grabFn("function isMasterClash(match)");
-const shouldNotifySrc = grabFn("function shouldNotify(match)");
+// v13.109-consolidated: the strict tier's machinery must ride in the eval —
+// shouldNotify now calls teamNormCache/isUclParticipant/isDerby, and the
+// consolidated-tier twin shouldReport joins the leak set (fetchPublicMatches
+// re-evals below resolve it through this module scope too).
+const uclSrc = grabVar("UCL_PARTICIPANTS") + "\n" + grabFn("function setUclParticipants(names)") + "\n" + grabFn("function clearUclParticipants()") + "\n" + grabFn("function isUclParticipant(name)");
+const teamNormSrc = grabFn("function teamNormCache()");
+const shouldNotifySrc = grabFn("function shouldNotify(match)") + "\n" + grabFn("function shouldReport(match)");
 const featSrc = grabVar("BIG_MATCH_TEAMS") + "\n" + grabVar("BIG_MATCH_UEFA") + "\n" + grabFn("function isFeaturedMatch(match)") + "\n" + grabFn("function pickHeroMatch(matches)"); // v13.73-herotruth: the shared hero expression fetchPublicMatches now calls
 const derbyBlockSrc = grabVarBalanced("DERBY_PAIRS") + "\n" + grabVarBalanced("DERBY_NORM") + "\n" + grabFn("function isDerby(match)") + "\n" + grabVarBalanced("RIVALRY_PAIRS") + "\n" + grabVarBalanced("RIVALRY_NORM") + "\n" + grabFn("function rivalryName(match, lang, allowUcl)");
 const livesSrc = grabFn("function isLiveStatus(status)") + "\n" + grabFn("function applyLiveDetail(m, detail)") + "\n" + grabFn("async function enrichLiveMatches(env, matches)");
@@ -107,7 +113,7 @@ const groundsSrc = (function () {
 // CONFIG + normalizeTeamName are both already in the eval scope (grabbed
 // slices carry them) — only the grounds block itself is prepended.
 const groundsPrelude = "";
-eval(domCupSrc + "\n" + aliasSrc + "\n" + shouldNotifySrc + "\n" + featSrc + "\n" + derbyBlockSrc + "\n" + livesSrc + "\n" + roundSrc + "\n" + pubSrc + "\n" + groundsPrelude + groundsSrc);
+eval(domCupSrc + "\n" + aliasSrc + "\n" + uclSrc + "\n" + teamNormSrc + "\n" + shouldNotifySrc + "\n" + featSrc + "\n" + derbyBlockSrc + "\n" + livesSrc + "\n" + roundSrc + "\n" + pubSrc + "\n" + groundsPrelude + groundsSrc);
 
 // ---------- A: derby detection ----------
 chk(isDerby({ homeTeam: { name: "Real Madrid CF" }, awayTeam: { name: "FC Barcelona" } }) === true, "El Clasico");
@@ -159,8 +165,20 @@ chk(rv("Juventus FC", "FC Internazionale Milano", { code: "SA" }, "fa") === "\u0
 chk(isDerby({ homeTeam: { name: "Juventus FC" }, awayTeam: { name: "FC Internazionale Milano" }, competition: { code: "SA" } }) === true, "Derby d'Italia pair is a derby (boxing/sorting)");
 chk(isDerby({ homeTeam: { name: "Everton FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" } }) === true, "generic derbies keep the tag (Merseyside — named list doesn't swallow it)");
 chk(isDerby({ homeTeam: { name: "Juventus FC" }, awayTeam: { name: "Torino FC" }, competition: { code: "SA" } }) === true, "della Mole pair is also a derby (boxing/sorting)");
-chk(shouldNotify({ homeTeam: { name: "Club Atlético de Madrid" }, awayTeam: { name: "Real Betis Balompié" }, competition: { code: "PD" } }) === true, "Atlético (FD legal name) notifies via PD selection");
-chk(shouldNotify({ homeTeam: { name: "FC Internazionale Milano" }, awayTeam: { name: "Udinese Calcio" }, competition: { code: "SA" } }) === true, "Inter (FD legal name) notifies via SA selection");
+// v13.109-consolidated: the FD-legal-name resolution proof moves to the
+// CONSOLIDATED tier (same either-desired semantics the asserts pinned since
+// v12.x), and the STRICT tier gets its own pins: one-desired league fixtures
+// are digest-only with the eval'd UCL set UNPRIMED, the Merseyside derby
+// keeps its individual fixture (the derby clause), and priming Betis flips
+// the Atlético verdict (the UCL-participant exception).
+chk(shouldReport({ homeTeam: { name: "Club Atlético de Madrid" }, awayTeam: { name: "Real Betis Balompié" }, competition: { code: "PD" } }) === true, "Atlético (FD legal name) is REPORTED via PD selection");
+chk(shouldReport({ homeTeam: { name: "FC Internazionale Milano" }, awayTeam: { name: "Udinese Calcio" }, competition: { code: "SA" } }) === true, "Inter (FD legal name) is REPORTED via SA selection");
+chk(shouldNotify({ homeTeam: { name: "Club Atlético de Madrid" }, awayTeam: { name: "Real Betis Balompié" }, competition: { code: "PD" } }) === false, "v13.109: Atlético–Betis (one desired) is digest-only — strict tier, unprimed set");
+chk(shouldNotify({ homeTeam: { name: "FC Internazionale Milano" }, awayTeam: { name: "Udinese Calcio" }, competition: { code: "SA" } }) === false, "v13.109: Inter–Udinese (one desired) is digest-only — strict tier, unprimed set");
+chk(shouldNotify({ homeTeam: { name: "Liverpool FC" }, awayTeam: { name: "Everton FC" }, competition: { code: "PL" } }) === true, "v13.109: the Merseyside derby keeps its individual fixture (derby clause)");
+setUclParticipants(["Real Betis Balompié"]);
+chk(shouldNotify({ homeTeam: { name: "Club Atlético de Madrid" }, awayTeam: { name: "Real Betis Balompié" }, competition: { code: "PD" } }) === true, "v13.109: Atlético–Betis pushes once Betis is a UCL participant (the exception)");
+clearUclParticipants();
 chk(isFeaturedMatch({ homeTeam: { name: "Club Atlético de Madrid" }, awayTeam: { name: "Real Madrid CF" }, competition: { code: "PD" } }) === true, "Madrid derby is a featured pairing (FD legal names)");
 chk(isMasterPair({ homeTeam: { name: "FC Internazionale Milano" }, awayTeam: { name: "AC Milan" }, competition: { code: "SA" } }) === true, "Madonnina is a master pair (FD legal names)");
 chk(isMasterClash({ homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" } }) === true, "Arsenal-Liverpool is a domestic master clash");

@@ -296,6 +296,13 @@ export function dummyForType(type) {
 export function buildDummyMatches() {
   const base = ["pre-match-24h", "pre-match-3h", "pre-match-1h", "match-start", "result"].map(dummyForType);
   base.push({ ...dummyForType("pre-match-1h"), id: "sim-probe-mixed", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Brentford FC" } });
+  // v13.109-consolidated: the strict tier's live probes. uclgate: PSG (the
+  // FL1 desired club) vs a CURRENT UCL participant — the "champions of
+  // their leagues" exception, powered by simulate.ts's deterministic set.
+  // derby: the Merseyside — a NAMED derby with a desired side keeps its
+  // individual fixture (the v13.51/v13.101 derby-promotion line).
+  base.push({ ...dummyForType("pre-match-1h"), id: "sim-probe-uclgate", competition: { code: "FL1" }, homeTeam: { name: "Paris Saint-Germain" }, awayTeam: { name: "AS Monaco FC" } });
+  base.push({ ...dummyForType("pre-match-1h"), id: "sim-probe-derby", homeTeam: { name: "Liverpool FC" }, awayTeam: { name: "Everton FC" } });
   base.push({ ...dummyForType("pre-match-3h"), id: "sim-probe-none", homeTeam: { name: "Bournemouth FC" }, awayTeam: { name: "Wolves FC" } });
   base.push({ ...dummyForType("pre-match-1h"), id: "sim-probe-el", competition: { code: "EL" }, homeTeam: { name: "Manchester United FC" }, awayTeam: { name: "FCSB" } });
   base.push({ ...dummyForType("pre-match-1h"), id: "sim-probe-ecl", competition: { code: "ECL" }, homeTeam: { name: "Chelsea FC" }, awayTeam: { name: "Panathinaikos FC" } });

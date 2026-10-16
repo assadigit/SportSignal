@@ -16,10 +16,12 @@ import { translateTeam, getCompetitionPriority } from "./translate";
 import { isMatchFinished } from "./match-model";
 import { isWithin24HourWindow, isWithinBigMatchWindow, isWithin3HourWindow, isWithin1HourWindow, isWithin5MinWindow, isMatchStartingNow, isWithinPostMatchWindow, isBackfillEligible } from "./match-windows";
 import { getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, cleanupExpiredNotifications, recordDeliveries, markDeliveryRepair, tidyDeliveryLedger } from "./match-dedupe";
-import { shouldNotify } from "./match-classify";
+// v13.109-consolidated: the strict shouldNotify tier's UCL-participant
+// machinery (set/prime helpers) + the standings loader for the prime.
+import { shouldNotify, setUclParticipants, uclPrimed, uclParticipantCount } from "./match-classify";
 // v13.92-d1userstore: the dead-chat registry prune goes through the seam.
 import { pruneChats } from "./user-store";
-import { format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, specialBanner } from "./composers";
+import { format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, specialBanner, fetchStandings } from "./composers";
 import { sendTelegram, sendDice, sendPhotoBinary } from "./telegram";
 import { renderCardPngCached, cachedCardPng } from "./card";
 import { getRegisteredChats, getUserPrefs, groupChatsByTz, userFollowsMatch, isBigMatch, isMasterBigMatch } from "./users";
@@ -306,7 +308,59 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
     console.log(`\u{1F4E4} Sent ${config.type.toUpperCase()} notification for match ${match.id}`);
   }
 }
+// v13.109-consolidated: THE UCL-PARTICIPANT PRIME — the season's
+// Champions-League roster behind the strict tier's exception ("one desired
+// + a current UCL opponent IS worth an individual push — they're the
+// champions of their leagues": Liverpool–Porto, PSG–Monaco,
+// Bayern–Leverkusen). Sources, unioned:
+//   1. the CL standings KV cache (fetchStandings allowFetch=false — a pure
+//      KV read, never a provider call; the 36-team league-phase table is
+//      the authoritative roster), and
+//   2. the pool's own CL fixtures (the exact spellings the classifier will
+//      compare against — zero aliasing risk; covers a cold standings
+//      cache).
+// Primed ONCE per cold isolate (null set = unprimed): runNotifyPhase calls
+// this BEFORE detectStatusChanges (the tick's first strict-tier consumer);
+// sendMatchNotifications + the audit call it defensively (no-op once
+// primed); simulate.ts REPLACES the set deterministically
+// (clearUclParticipants + setUclParticipants around its controlled run,
+// clear again after — the live prime re-arms on the next tick). A total
+// failure primes an EMPTY set: the exception goes INERT (affected fixtures
+// fall to digest-only — fail toward fewer notifications, never extra) and
+// the next cold isolate recovers.
+export async function primeUclParticipants(env: Env, matches?) {
+  if (uclPrimed()) return uclParticipantCount();
+  let names: any[] = [];
+  try {
+    const st = await fetchStandings(env, "CL", false).catch(() => null);
+    if (st && Array.isArray(st.teams)) names = st.teams.map((t: any) => t && t.name).filter(Boolean);
+  } catch (e) {
+    console.warn("UCL-participant standings read failed: " + e.message);
+  }
+  const union = new Set(names);
+  if (Array.isArray(matches)) {
+    for (const m of matches) {
+      if (m && m.competition && m.competition.code === "CL" && m.homeTeam && m.awayTeam) {
+        if (m.homeTeam.name) union.add(m.homeTeam.name);
+        if (m.awayTeam.name) union.add(m.awayTeam.name);
+      }
+    }
+  }
+  setUclParticipants(Array.from(union));
+  if (!union.size) console.warn("\u26A0\uFE0F UCL-participant prime found ZERO sources (no CL standings cache, no CL pool fixtures) — the Liverpool\u2013Porto exception is inert this isolate");
+  return union.size;
+}
+
 export async function sendMatchNotifications(env: Env, matches) {
+  // v13.109-consolidated: the strict tier consults the UCL-participant
+  // set — prime it before the filter (no-op on a warm isolate; one KV
+  // read per cold one). Own catch: a failed prime leaves the set inert
+  // (digest-only verdicts), never broken.
+  try {
+    await primeUclParticipants(env, matches);
+  } catch (e) {
+    console.warn("UCL-participant prime failed at engine entry: " + e.message);
+  }
   const chatIds = await getRegisteredChats(env);
   if (chatIds.length === 0) {
     console.log("\u274C No users to notify");

@@ -38,7 +38,10 @@ globalThis.getNowTehran = () => new Date();
 globalThis.env = { STATE: { get: async () => null } };
 // the block also builds thisWeek/nextWeek lists (not under test) — their
 // filters need these three helpers
+// v13.109-consolidated: the block's filters read the consolidated tier
+// (shouldReport) now — stub it the same way the old shouldNotify stub did.
 globalThis.shouldNotify = () => false;
+globalThis.shouldReport = () => false;
 globalThis.isTopTeamInvolved = () => false;
 globalThis.liveRank = () => 0;
 globalThis.compact = (st) => (st && st.teams && st.teams.length ? st : null);

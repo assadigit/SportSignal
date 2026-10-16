@@ -13,7 +13,7 @@ import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, e
 import { normAlias } from "./teams";
 import { isLiveStatus } from "./match-model";
 import { matchPath } from "./slugs"; // v13.80-canonical-hrefs: payload rows carry the server-canonical URL
-import { shouldNotify, isFeaturedMatch, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName, pickHeroMatch, priorityTier } from "./match-classify";
+import { shouldReport, isFeaturedMatch, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName, pickHeroMatch, priorityTier } from "./match-classify";
 import { fetchLongView } from "./providers";
 import { getCachedMatches } from "./match-pool";
 import { applySettings } from "./admin";
@@ -471,14 +471,18 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   eom.setHours(23, 59, 59, 999);
   const liveRank = (m) => isLiveStatus(m.status) ? 0 : 1;
   const select = (pool) => ({
-    upcoming: pool.filter((m) => (shouldNotify(m) || isTopTeamInvolved(m)) && m.status !== "FINISHED" && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > now) && new Date(m.utcDate).getTime() <= eom.getTime()).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 50),
+    // v13.109-consolidated: the CONSOLIDATED tier — the website IS the
+    // consolidated surface ("games this week" lists): one-desired fixtures
+    // stay listed exactly as before; only the bot's individual pushes went
+    // strict. (Was shouldNotify pre-v13.109 — same semantics as shouldReport.)
+    upcoming: pool.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && m.status !== "FINISHED" && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > now) && new Date(m.utcDate).getTime() <= eom.getTime()).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 50),
     // v12.5: "نتایج اخیر" must carry the whole week — the old 12-hour window
     // emptied the card every morning after a matchday, so this week's CL
     // results (the exact ones the bot notified on Telegram) never showed.
     // 7 days covers the weekend league round + midweek continental rounds;
     // newest first. v12.32: cap raised 12 \u2192 20 \u2014 the client's \xAB\u0628\u06CC\u0634\u062A\u0631\xBB
     // expander shows the latest 20 (5 by default; PC and phones alike).
-    finished: pool.filter((m) => (shouldNotify(m) || isTopTeamInvolved(m)) && m.status === "FINISHED" && now - new Date(m.utcDate).getTime() < 7 * 864e5).sort((a, b) => new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime()).slice(0, 20)
+    finished: pool.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && m.status === "FINISHED" && now - new Date(m.utcDate).getTime() < 7 * 864e5).sort((a, b) => new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime()).slice(0, 20)
   });
   let { upcoming, finished } = select(matches);
   const BOX_NEAR_MS = 7 * 864e5;
@@ -612,8 +616,8 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   // days of the Persian week, not a full 7-day lookahead.
   const weekStart = Date.now();
   const weekEnd = weekStart + 7 * 864e5;
-  const thisWeek = matches.filter((m) => (shouldNotify(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekStart && new Date(m.utcDate).getTime() < weekEnd).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
-  const nextWeek = matches.filter((m) => (shouldNotify(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekEnd && new Date(m.utcDate).getTime() < weekEnd + 7 * 864e5).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
+  const thisWeek = matches.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekStart && new Date(m.utcDate).getTime() < weekEnd).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
+  const nextWeek = matches.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekEnd && new Date(m.utcDate).getTime() < weekEnd + 7 * 864e5).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
   const data: any = { upcoming: upcoming.filter((m) => !topSpotKeys.has(String(m.id || "") + "|" + m.utcDate)).map(withTop), finished: finished.map(withTop), nextBig, topSpot: { next: topSpotNext ? withTop(topSpotNext) : null, matches: topSpotList.map(withTop) }, thisWeek: thisWeek.map(withTop), nextWeek: nextWeek.map(withTop), standings, cups, ucl, fetchedAt: null };
   if (prewarm) data.prewarm = true;
   const poolMeta = matches ? await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null) : null;

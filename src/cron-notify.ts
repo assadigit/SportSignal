@@ -8,7 +8,7 @@ import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { shouldNotify } from "./match-classify";
 import { translateTeam } from "./translate";
-import { sendMatchNotifications, repairPerChatGaps } from "./notify-engine";
+import { sendMatchNotifications, repairPerChatGaps, primeUclParticipants } from "./notify-engine";
 import { detectStatusChanges } from "./notify-status";
 import { auditNotifications } from "./notify-audit";
 import { broadcastBigMatchResults, broadcastBigMatchKickoff } from "./digest-bigmatch";
@@ -21,6 +21,16 @@ import { alertPhaseError } from "./monitoring";
 
 export async function runNotifyPhase(env: Env, ctx) {
   const { chatIds, matches, fullSweepThisTick } = ctx;
+  // v13.109-consolidated: prime the UCL-participant set BEFORE the tick's
+  // first strict-tier consumer (detectStatusChanges) — the strict
+  // shouldNotify tier's Liverpool–Porto exception reads it. One KV read
+  // per cold isolate, a no-op when warm. Own catch: a failed prime leaves
+  // the exception INERT (digest-only verdicts) — never extra notifications.
+  try {
+    await primeUclParticipants(env, matches);
+  } catch (e) {
+    console.warn("UCL-participant prime failed (notify phase): " + e.message);
+  }
   // v13.99-botmenu: the "/" command menu (setMyCommands) — once per VERSION
   // (KV-flagged; ~4 Telegram calls, then nothing per tick). Own try/catch:
   // a menu hiccup must never touch the notify path.

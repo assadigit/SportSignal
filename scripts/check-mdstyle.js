@@ -299,6 +299,7 @@ const advMatch = Object.assign({}, faMatch, {
   const waEnv = { STATE: { async get(k, arg) { if (arg === "json") return waPool; return JSON.stringify(waPool); }, async put() { } }, TEHRAN_TZ: "Asia/Tehran" };
   globalThis.CONFIG = Object.assign(globalThis.CONFIG || {}, { KV_MATCHES_KEY: "matches_v13_tracked", WEEK_AHEAD_DAYS: 7 });
   globalThis.shouldNotify = () => true;
+  globalThis.shouldReport = () => true; // v13.109: buildWeekAheadMessage reads the consolidated tier
   globalThis.isDerby = () => false;
   globalThis.isMasterPair = () => false;
   globalThis.getCachedMatches = async () => [];
@@ -407,6 +408,7 @@ const advMatch = Object.assign({}, faMatch, {
   globalThis.getRegisteredChats = async (e) => { const raw = await e.STATE.get(globalThis.CONFIG.KV_USERS_KEY); return raw ? JSON.parse(raw) : []; };
   globalThis.applySettings = async () => ({});
   globalThis.shouldNotify = () => true;
+  globalThis.shouldReport = () => true; // v13.109: the /next filter reads the consolidated tier
   globalThis.userFollowsMatch = () => "both";
   globalThis.getUserTz = (p, c, e) => (p[String(c)] && p[String(c)].tz) || e.TEHRAN_TZ;
   globalThis.getJalaliDate = getJalaliDate;

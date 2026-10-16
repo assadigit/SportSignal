@@ -16,7 +16,11 @@ import { isWithin24HourWindow, isWithin3HourWindow, isWithin1HourWindow, isMatch
 import { getNotifiedMatches } from "./match-dedupe";
 // v13.92-d1userstore: clear-locks wipes the chat registry through the seam.
 import { resetChatRegistry } from "./user-store";
-import { shouldNotify } from "./match-classify";
+import { shouldNotify, shouldReport } from "./match-classify";
+// v13.109-consolidated: the diag's WORTHY verdicts read the UCL-participant
+// set — prime it (no-op on warm isolates) so the strict tier's exception
+// shows truthfully.
+import { primeUclParticipants } from "./notify-engine";
 import { fetchLongView, fetchMatchesFromAPI } from "./providers";
 import { getCachedMatches } from "./match-pool";
 import { sendTelegram } from "./telegram";
@@ -446,6 +450,8 @@ export const ADMIN_OPS_ROUTES: RouteDef[] = [
       await applySettings(env);
       const live = await fetchMatchesFromAPI(env);
       const pool = await getCachedMatches(env);
+      // v13.109-consolidated: prime before the verdicts (KV-only read).
+      await primeUclParticipants(env, live.concat(pool)).catch(() => null);
       const now = Date.now();
       const codeOf = (list) => list.reduce((a, m) => {
         const c = m.competition.code;
@@ -455,9 +461,14 @@ export const ADMIN_OPS_ROUTES: RouteDef[] = [
       return jsonResponse({
         live_len: live.length,
         live_worthy: live.filter(shouldNotify).length,
+        // v13.109-consolidated: the two tiers side by side — worthy (strict,
+        // individual pushes) vs reportable (consolidated tier: digests,
+        // website, pool retention).
+        live_reportable: live.filter(shouldReport).length,
         live_codes: codeOf(live),
         cache_len: pool.length,
         cache_worthy: pool.filter(shouldNotify).length,
+        cache_reportable: pool.filter(shouldReport).length,
         cache_codes: codeOf(pool),
         live_sample: live.slice(0, 6).map((m) => `${m.competition.code}: ${m.homeTeam.name} vs ${m.awayTeam.name} [${m.status}] ${shouldNotify(m) ? "WORTHY" : "no"}`),
         cache_sample: pool.slice(0, 6).map((m) => `${m.competition.code}: ${m.homeTeam.name} vs ${m.awayTeam.name} [${m.status}] ${shouldNotify(m) ? "WORTHY" : "no"}`)

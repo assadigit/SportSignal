@@ -1,8 +1,10 @@
 // SportSignal — the match CLASSIFICATION: notification eligibility
-// (shouldNotify — the followed-team set), the big-match/featured/master-pair
+// (shouldNotify — the strict individual tier; shouldReport — the
+// consolidated tier; v13.109-consolidated), the big-match/featured/master-pair
 // sets (BIG_MATCH_TEAMS/UEFA, masterTeamList-driven), THE shared hero
 // expression (pickHeroMatch — ADR-001 website-as-truth, v13.73-herotruth),
-// and the derby/rivalry tables. normAlias/TEAM_ALIASES live in teams.ts
+// the UCL-participant set (the Liverpool–Porto exception), and the
+// derby/rivalry tables. normAlias/TEAM_ALIASES live in teams.ts
 // (v13.76 — the users↔matches import cycle is dead). Extracted from
 // matches.ts in v13.76-matchsplit.
 import { CONFIG } from "./config";
@@ -11,10 +13,60 @@ import { isDomesticCup, isQuarterFinalOrLater } from "./translate";
 import { masterTeamList, masterMemo, userFollowsSides } from "./users";
 import { isLiveStatus } from "./match-model";
 
-export function shouldNotify(match) {
-  const compCode = match.competition.code;
-  const normHome = normAlias(match.homeTeam.name);
-  const normAway = normAlias(match.awayTeam.name);
+// v13.109-consolidated: THE TWO ELIGIBILITY TIERS.
+//
+// The user's rule (2026-10-16): one-big-club league fixtures — Strasbourg–PSG,
+// Brentford–Liverpool, Man City–Ipswich — are NOT worth an individual
+// picture notification; they belong ONLY in the consolidated "بازی‌های هفته
+// آینده" week-ahead digest. Individual notifications are for:
+//   1. BOTH clubs in the desired per-league lists (big-vs-big), OR
+//   2. one desired + the opponent is a CURRENT UCL participant (the
+//      "champions of their leagues" exception — Liverpool–Porto when Porto
+//      rides the UCL; in-league shape: PSG–Monaco, Bayern–Leverkusen), OR
+//   3. a NAMED derby with at least one desired side (El Clásico, North
+//      London, Le Classique… — the bot's own v13.51/v13.101 derby-promotion
+//      product line keeps its individual fixtures), OR
+//   4. the cup tier, unchanged: CL + domestic cups (FA Cup…) and EL/ECL
+//      KNOCKOUT rounds (QF+) stay either-desired — an elimination tie with
+//      a desired side is worth watching however small the opponent
+//      (the user's FA-Cup Liverpool–Ipswich example).
+// shouldReport keeps the OLD either-desired semantics for every CONSOLIDATED
+// surface (week-ahead digest, pool retention, website lists, /next, SEO)
+// so those matches stay listed — just never pushed one-by-one.
+//
+// The UCL-participant set: primed once per cold isolate by
+// primeUclParticipants (notify-engine.ts) from the CL standings KV cache
+// (the 36-team league-phase table — authoritative) ∪ the pool's CL fixtures
+// (same spellings as the matches being classified — zero aliasing risk).
+// Unprimed/null = the exception is inert (fail toward digest-only, never
+// toward extra notifications).
+var UCL_PARTICIPANTS = null;
+export function setUclParticipants(names) {
+  const set = new Set();
+  for (const n of Array.isArray(names) ? names : []) {
+    if (!n) continue;
+    // BOTH foldings per name: normAlias folds the 4 legal-name aliases
+    // (SS Lazio→lazio…) while bare normalizeTeamName keeps the unfolded
+    // key — a standings "Lazio" and a pool "SS Lazio" meet either way.
+    set.add(normAlias(n));
+    set.add(normalizeTeamName(n));
+  }
+  UCL_PARTICIPANTS = set;
+}
+export function clearUclParticipants() {
+  UCL_PARTICIPANTS = null;
+}
+export function uclPrimed() {
+  return UCL_PARTICIPANTS !== null;
+}
+export function uclParticipantCount() {
+  return UCL_PARTICIPANTS ? UCL_PARTICIPANTS.size : 0;
+}
+export function isUclParticipant(name) {
+  return !!(UCL_PARTICIPANTS && UCL_PARTICIPANTS.has(normAlias(name)));
+}
+
+function teamNormCache() {
   let c = CONFIG.__teamNorm;
   if (!c || c.sig !== CONFIG.BIG_TEAMS_BY_LEAGUE) {
     const all = new Set();
@@ -31,13 +83,63 @@ export function shouldNotify(match) {
     c = { sig: CONFIG.BIG_TEAMS_BY_LEAGUE, all, byLeague };
     CONFIG.__teamNorm = c;
   }
+  return c;
+}
+
+// THE INDIVIDUAL-notification tier (the engine's per-match picture
+// messages, HT/postponement alerts, the audit universe). Strict per
+// v13.109 — see the tier table above.
+export function shouldNotify(match) {
+  const compCode = match.competition.code;
+  const normHome = normAlias(match.homeTeam.name);
+  const normAway = normAlias(match.awayTeam.name);
+  const c = teamNormCache();
   if (compCode === "CL" || isDomesticCup(compCode)) {
-    if (c.all.has(normHome) || c.all.has(normAway)) {
-      return true;
-    }
-    if (isQuarterFinalOrLater(match.stage)) {
-      return true;
-    }
+    // The cup tier, UNCHANGED: any desired side, or a QF+ stage (an
+    // elimination tie stands on its own drama — FA Cup Liverpool–Ipswich).
+    if (c.all.has(normHome) || c.all.has(normAway)) return true;
+    if (isQuarterFinalOrLater(match.stage)) return true;
+    return false;
+  }
+  if ((compCode === "EL" || compCode === "ECL") && isQuarterFinalOrLater(match.stage)) {
+    // v13.109: EL/ECL KNOCKOUT rounds keep the old either-desired rule
+    // (their league PHASE falls to the strict league tier below — a
+    // marquee-vs-minnow group game is exactly the noise this change
+    // removes). Parity with the pre-v13.109 verdict by construction.
+    const lt = c.byLeague[compCode];
+    return !!(lt && (lt.has(normHome) || lt.has(normAway)));
+  }
+  // The strict LEAGUE tier (domestic leagues + EL/ECL league phase).
+  const leagueTeams = c.byLeague[compCode];
+  if (!leagueTeams) return false;
+  const homeDesired = leagueTeams.has(normHome);
+  const awayDesired = leagueTeams.has(normAway);
+  if (homeDesired && awayDesired) return true; // big-vs-big
+  // One desired + the opponent a CURRENT UCL participant (champions-of-
+  // their-leagues class: Monaco, Leverkusen, Atalanta…).
+  if (homeDesired && isUclParticipant(match.awayTeam.name)) return true;
+  if (awayDesired && isUclParticipant(match.homeTeam.name)) return true;
+  // A NAMED derby with a desired side — the bot promotes these by code
+  // name (v13.51/v13.101); demoting them to a digest line would contradict
+  // that product line. Neither-side-desired derbies (Roma–Lazio) stay
+  // digest-only — parity with the old either-desired verdict.
+  if ((homeDesired || awayDesired) && isDerby(match)) return true;
+  return false;
+}
+
+// THE CONSOLIDATED tier — the exact pre-v13.109 either-desired semantics.
+// Consumers: the week-ahead digest ("بازی‌های هفته آینده"), pool retention
+// (cron-pool's active-window cadence), the website's upcoming/finished/
+// this-week/next-week lists, the bot's /next, SEO pages. One-desired
+// fixtures live HERE — listed everywhere, pushed nowhere.
+export function shouldReport(match) {
+  const compCode = match.competition.code;
+  const normHome = normAlias(match.homeTeam.name);
+  const normAway = normAlias(match.awayTeam.name);
+  const c = teamNormCache();
+  if (compCode === "CL" || isDomesticCup(compCode)) {
+    if (c.all.has(normHome) || c.all.has(normAway)) return true;
+    if (isQuarterFinalOrLater(match.stage)) return true;
     return false;
   }
   const leagueTeams = c.byLeague[compCode];

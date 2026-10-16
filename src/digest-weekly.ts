@@ -14,7 +14,7 @@ import { toFaDigits, escapeMarkdownCharacters, getNowTehran } from "./utils";
 // (mdEscape) — the user's readability ask (was a monospace code span).
 import { mdBold, mdItalic, mdEscape } from "./md";
 import { translateTeam, translateCompetition } from "./translate";
-import { shouldNotify, isMasterPair, isDerby } from "./match-classify";
+import { shouldReport, isMasterPair, isDerby } from "./match-classify";
 import { fetchStandings, buildLeagueTableMessage, isoWeekKey, weeklyTableCodes } from "./composers";
 import { sendTelegram } from "./telegram";
 import { getUserPrefs } from "./users";
@@ -64,7 +64,10 @@ export async function buildWeekAheadMessage(env: Env, lang) {
   if (!matches.length) matches = await getCachedMatches(env);
   const now = Date.now();
   const to = now + CONFIG.WEEK_AHEAD_DAYS * 864e5;
-  const worthy = matches.filter((m) => shouldNotify(m) && new Date(m.utcDate).getTime() >= now - 36e5 && new Date(m.utcDate).getTime() < to);
+  // v13.109-consolidated: the CONSOLIDATED tier — one-desired fixtures
+  // (Brentford–Liverpool, Strasbourg–PSG) live HERE, exactly what the
+  // user's rule asks: listed in the weekly message, never pushed one-by-one.
+  const worthy = matches.filter((m) => shouldReport(m) && new Date(m.utcDate).getTime() >= now - 36e5 && new Date(m.utcDate).getTime() < to);
   if (!worthy.length) return null;
   const byKick = (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime();
   const derbies = worthy.filter((m) => isDerby(m)).sort(byKick);

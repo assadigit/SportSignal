@@ -494,8 +494,19 @@ const check = (name, cond) => {
   check("normalizer: every Bayern spelling folds to ONE key (bayernmunich)", bayernVariants);
   const bayernLask = { id: 502, utcDate: "2026-10-20T16:45:00Z", status: "IN_PLAY", competition: { code: "CL" }, homeTeam: { name: "FC Bayern München" }, awayTeam: { name: "LASK Linz" }, score: null };
   check("normalizer: shouldNotify(Bayern–LASK) is TRUE (the bug that never notified)", shouldNotify(bayernLask) === true);
+  // v13.109-consolidated: the strict league tier — Bayern–Leverkusen stays
+  // notifiable ONLY through the UCL-participant exception (Leverkusen is a
+  // current UCL club), and Bayern–Bochum is digest-only (Bochum is neither
+  // desired nor UCL). The lifecycle harness runs UNPRIMED (inert set), so
+  // prime Leverkusen explicitly — the same set/clear discipline simulate.ts
+  // uses; the full behavioral matrix lives in check-consolidated.js.
+  clearUclParticipants();
+  setUclParticipants(["Bayer 04 Leverkusen"]);
   const bayernLeverkusen = { ...bayernLask, awayTeam: { name: "Bayer 04 Leverkusen" }, competition: { code: "BL1" } };
-  check("normalizer: shouldNotify(Bayern–Leverkusen) is TRUE (BL1, non-master opponent)", shouldNotify(bayernLeverkusen) === true);
+  check("normalizer: shouldNotify(Bayern–Leverkusen) is TRUE (BL1, UCL-participant opponent)", shouldNotify(bayernLeverkusen) === true);
+  const bayernBochum = { ...bayernLask, awayTeam: { name: "VfL Bochum 1848" }, competition: { code: "BL1" } };
+  check("normalizer: shouldNotify(Bayern–Bochum) is FALSE (BL1, non-UCL opponent — digest-only)", shouldNotify(bayernBochum) === false);
+  clearUclParticipants();
 
   h.restore();
   console.log(failed ? failed + " FAILURES" : "lifecycle OK — every chat received every stage through every failure class");

@@ -7,7 +7,7 @@
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { isLiveStatus } from "./match-model";
-import { shouldNotify } from "./match-classify";
+import { shouldReport } from "./match-classify";
 import { fetchMatchesFromAPI, fetchLiveSweep, fetchLongView } from "./providers";
 import { alertPhaseError } from "./monitoring";
 
@@ -33,7 +33,10 @@ export async function runPoolPhase(env: Env, prevStatus, budgetHard: boolean, NO
     if (cachedPool.length) console.log("Using cached matches from " + (poolBlob.source || "?") + " (" + poolBlob.fetchedAt + ")");
     poolRef = cachedPool;
     const isActiveTime = cachedPool.some((m) => {
-      if (!shouldNotify(m)) return false;
+      // v13.109-consolidated: the CONSOLIDATED tier drives pool cadence —
+      // one-desired fixtures stay live-tracked (website lists, digests,
+      // results), so the sweep cadence is unchanged from pre-v13.109.
+      if (!shouldReport(m)) return false;
       if (isLiveStatus(m.status)) return true;
       const ko = new Date(m.utcDate).getTime();
       if (m.status === "FINISHED") return NOW - ko < CONFIG.ACTIVE_WINDOW_BEHIND_MS;

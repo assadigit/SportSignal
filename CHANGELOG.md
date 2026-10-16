@@ -6,6 +6,94 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.109-consolidated] — 2026-10-16 (two-tier eligibility: one-desired fixtures are digest-only)
+
+The owner's report: the bot was sending INDIVIDUAL picture notifications for
+استراتسبورگ–پاری سن ژرمن، برنتفورد–لیورپول، منچسترسیتی–ایپسویچ — each as its
+own message. The rule, in the owner's words: "this kind of games should only
+be reported in a consolidated message like 'Games in this week' ... because
+Brentford, Ipswich or Strasbourg aren't big clubs. Our rule is that only send
+notification for important games and clubs, which both clubs are in the
+desired clubs lists." Plus two exceptions the owner spelled out:
+a small club that is a CURRENT UCL participant is worth watching
+("Liverpool–Porto if Porto is in UCL — champions of their leagues"), and
+ELIMINATION cups are worth it however small the opponent
+("FA Cup of England, Liverpool vs Ipswich").
+
+### The split — `shouldNotify` (strict) vs `shouldReport` (consolidated)
+
+`match-classify.ts` now carries TWO tiers where one either-desired function
+used to serve everyone:
+
+- **`shouldNotify` — the INDIVIDUAL tier** (notify-engine's per-match picture
+  pushes, HT/postponement alerts, the audit universe). Domestic league +
+  EL/ECL league-phase fixtures now require BOTH clubs desired, OR one desired
+  + the opponent in the UCL-participant set, OR a NAMED derby with a desired
+  side. The cup tier is unchanged: CL + domestic cups (FA Cup, Copa del Rey,
+  DFB Pokal...) keep either-desired + QF+, and EL/ECL KNOCKOUT rounds (QF+)
+  keep either-desired (parity with the pre-v13.109 verdict by construction).
+- **`shouldReport` — the CONSOLIDATED tier**, the exact pre-v13.109
+  either-desired semantics. Consumers: the week-ahead digest
+  ("بازی‌های هفته آینده" — the consolidated home the owner asked for),
+  cron-pool's active-window cadence (one-desired fixtures stay live-tracked),
+  the website's upcoming/finished/this-week/next-week lists, the bot's
+  `/next`, and the SEO pages. One-desired fixtures are listed everywhere,
+  pushed nowhere.
+
+Design notes: the derby clause preserves the bot's own v13.51/v13.101
+derby-promotion product line (Le Classique is Ligue 1's ONLY possible
+individual fixture — PSG is the sole FL1 desired club; the North London and
+Merseyside derbies keep their code-named fixtures). Neither-side-desired
+derbies (Roma–Lazio) stay digest-only, exactly as before.
+
+### The UCL-participant set (the Liverpool–Porto exception)
+
+`primeUclParticipants` (notify-engine.ts) builds the season's Champions-League
+roster once per cold isolate from the CL standings KV cache (a pure KV read —
+the 36-team league-phase table) ∪ the pool's own CL fixtures (the exact
+spellings the classifier compares — zero aliasing risk). Dual-folded keys
+(`normAlias` + `normalizeTeamName`) so a standings "SS Lazio" answers a pool
+"Lazio" lookup and vice versa. Primed BEFORE `detectStatusChanges` in
+`runNotifyPhase` (the tick's first strict-tier consumer); the engine, the
+audit and the admin pool-diag prime defensively (no-op when warm). A total
+failure primes an EMPTY set — the exception goes INERT (fixtures fall to
+digest-only): the failure direction is fewer notifications, never extra.
+`/api/simulate` replaces the set deterministically (clear → set → run →
+clear) so its probe matrix can't be polluted by a warm isolate's live prime
+— and the live prime re-arms on the next tick after the sim.
+
+### Surfaces (all verified by the new gate + the co-evolved harness)
+
+- `/api/simulate` probe matrix: Arsenal–Brentford (the owner's exact shape)
+  flipped to SILENT; ManUtd–FCSB / Chelsea–Panathinaikos / ManUtd–Roma EL/ECL
+  league-phase probes flipped to SILENT; NEW probes: PSG–Monaco (UCL
+  participant, fires) and Liverpool–Everton (named derby, fires).
+- `/api/diag-public` now reports BOTH tiers (`live_worthy`/`cache_worthy`
+  strict vs `live_reportable`/`cache_reportable` consolidated).
+- Dedupe records from before the deploy simply age out: the shouldNotify gate
+  runs BEFORE the window checks, so in-flight one-desired fixtures stop at
+  their last already-sent stage (no match-start/result pushes) and the night
+  + weekly digests still report their results.
+
+### Gates
+
+- NEW `scripts/check-consolidated.js` (54 checks, full-worker harness): the
+  strict/consolidated truth table (the owner's three reported fixtures
+  digest-only; both-desired, derby, UCL-exception, FA-Cup, CL, EL-QF+,
+  A-League pins), the exception lifecycle (unprimed/primed/cleared/empty),
+  the prime's behavioral contract (standings source, pool fallback, union,
+  once-per-cold-isolate no-op, KV-failure inertness, dual-fold aliasing),
+  source wiring for all 8 consumer surfaces, and the week-ahead digest
+  actually LISTING Brentford–Liverpool end-to-end.
+- Co-evolved: check-lifecycle (Bayern–Leverkusen now proves the UCL exception
+  with a primed set; Bayern–Bochum pins digest-only), live-derby-test (the
+  FD-legal-name proofs moved to shouldReport; strict-tier pins added incl.
+  the Betis prime flip), check-cups + check-mdstyle (shouldReport stubs in
+  the eval'd week-ahead/cups chains).
+- Suite: **1591 OK / 0 FAIL** (was 1536).
+
+---
+
 ## [13.108-fasync] — 2026-10-16 (one Farsi glossary for bot & website — the cold-isolate English leaks)
 
 The owner's report: "there are still a number of clubs without Farsi

@@ -13,7 +13,7 @@ import { toFaDigits, escapeMarkdownCharacters, getJalaliTime, getJalaliDate, get
 import { mdBold, mdItalic, mdEscape } from "./md";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache } from "./translate";
-import { shouldNotify, isFeaturedMatch, isMasterPair, pickHeroMatch } from "./match-classify";
+import { shouldReport, isFeaturedMatch, isMasterPair, pickHeroMatch } from "./match-classify";
 import { matchKey } from "./dedupe";
 import { sendTelegram, answerCallbackQuery, sendPhotoBinary, editMessageText } from "./telegram";
 import { renderCardPngCached } from "./card";
@@ -457,7 +457,12 @@ export async function handleTelegramUpdate(env: Env, update) {
       const p = prefs[String(chatId)] || {};
       const lang = p.lang === "en" ? "en" : "fa";
       const now = new Date();
-      const upcoming = matches.filter((m) => shouldNotify(m) && userFollowsMatch(prefs, chatId, m) && new Date(m.utcDate) > now).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 5);
+      // v13.109-consolidated: /next is a CONSOLIDATED on-demand listing —
+      // a Liverpool follower asking "what's next" still sees
+      // Brentford–Liverpool here (the weekly digest lists it too); only the
+      // individual picture pushes went strict. (Was shouldNotify — same
+      // semantics as shouldReport.)
+      const upcoming = matches.filter((m) => shouldReport(m) && userFollowsMatch(prefs, chatId, m) && new Date(m.utcDate) > now).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 5);
       // v13.2: scoped tz — a shallow env clone feeds the time formatters
       // instead of mutating the isolate-shared env object (the old mutation
       // leaked this user's timezone into unrelated concurrent requests).

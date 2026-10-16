@@ -20,6 +20,10 @@ import { translateTeam } from "./translate";
 import { isMatchFinished } from "./match-model";
 import { getNotifiedMatches, fetchDeliveryLedger, deliveriesActive } from "./match-dedupe";
 import { shouldNotify } from "./match-classify";
+// v13.109-consolidated: the audit's worthy universe must derive from the
+// SAME primed UCL-participant set the engine used (the /api/audit path
+// arrives without the cron phase's prime).
+import { primeUclParticipants } from "./notify-engine";
 import { sendTelegram } from "./telegram";
 import { getRegisteredChats, getUserPrefs, userFollowsMatch } from "./users";
 // v13.92-d1userstore: profiles (join dates) via the seam — a chat that
@@ -121,6 +125,11 @@ async function auditPerChat(env: Env, worthy, notified, now) {
 // /api/audit (admin endpoint) for on-demand checks.
 export async function auditNotifications(env: Env, matches) {
   const now = Date.now();
+  // v13.109-consolidated: same primed UCL-participant set as the engine —
+  // the /api/audit path arrives without the cron phase's prime (no-op on
+  // warm isolates). A failed prime only SHRINKS the worthy universe (fewer
+  // gap checks), never inflates it.
+  await primeUclParticipants(env, matches).catch(() => null);
   const notified = await getNotifiedMatches(env);
   const worthy = (matches || []).filter(shouldNotify);
   const gaps = [];
