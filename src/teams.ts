@@ -58,7 +58,17 @@ function normTeamName(name: string, extraTokens?: string): string {
   }
   return s
     .replace(new RegExp("\\b(" + tokens + ")\\b", "g"), " ")
-    .replace(/[^a-z0-9]/g, "");
+    // v13.110-digitfold: club-name digits are founding years / ordinals
+    // ("1. FC Köln", "Bayer 04 Leverkusen", "TSG 1899 Hoffenheim",
+    // "Schalke 04", "Parma Calcio 1913") — NEVER identity-bearing. The old
+    // [^a-z0-9] strip kept them, so FD's legal "1. FC Köln" keyed as
+    // "1cologne" while sportscore's "FC Köln" keyed as "cologne": the same
+    // fixture survived canonDedupe as TWO rows (live 2026-10-16: the night
+    // digest printed Eintracht Frankfurt 1-0 Köln twice) and sportscore
+    // rows of digit-named clubs failed follow-matching. No two distinct
+    // clubs in the tracked universe differ only by digits — the strip is
+    // a pure fold.
+    .replace(/[^a-z]/g, "");
 }
 
 function normalizeTeamName(name: string): string {

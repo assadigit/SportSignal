@@ -120,6 +120,27 @@ function ftScore(m) {
   return h != null && a != null ? { home: h, away: a } : null;
 }
 
+// v13.110-dupcollapse: display-level insurance for the exact 2026-10-16
+// regression (the user's digest printed "آینتراشت فرانکفورت ۱ - ۰ کلن"
+// twice). The pool-level fold (teams.ts digitfold + canonDedupe) is the
+// root fix, but ANY future provider-name variant that normalization
+// misses would still reach this surface — a night can not legitimately
+// contain the same ordered pairing twice (leagues are one meeting per
+// matchday; a cup + league double-header of the same pairing on one
+// calendar night does not exist), so collapse by competition+pairing and
+// keep the row that actually carries a result (later copy wins ties —
+// the fresher provider view, canonDedupe's own watch-order rule).
+function collapsePairings(list) {
+  const byPair = new Map();
+  for (const m of list) {
+    if (!m || !m.homeTeam || !m.awayTeam) continue;
+    const k = ((m.competition && m.competition.code) || "?") + "|" + normalizeTeamName(m.homeTeam.name) + "|" + normalizeTeamName(m.awayTeam.name);
+    const cur = byPair.get(k);
+    if (!cur || ftScore(m)) byPair.set(k, m);
+  }
+  return [...byPair.values()];
+}
+
 // Current rank of a team in its competition table (post-FT freshness).
 async function teamRank(env: Env, code: string, teamName: string, rankCache: Map<string, any>) {
   if (!code || !teamName) return null;
@@ -253,6 +274,9 @@ export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
 
 export async function buildNightDigestMessage(env: Env, nightMatches, lang, prefs, chatId, rankCache, nightYmd?) {
   const en = lang === "en";
+  // v13.110-dupcollapse: the same fixture reaching the night's set through
+  // two provider spellings renders ONCE (the 2026-10-16 double line).
+  nightMatches = collapsePairings(nightMatches);
   // v13.98-jalalinight: the header renders the night's LOCAL date fully in
   // the user's calendar — Jalali (Hijri-Shamsi) for fa mode ("سه‌شنبه ۲۱ مهر
   // ۱۴۰۵"), Gregorian long-form for en. The y/m/d comes from the caller's

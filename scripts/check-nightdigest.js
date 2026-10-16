@@ -143,5 +143,80 @@ if (dateKeyOf) {
   check("dateKeyOf found in harness source", false);
 }
 
-console.log(fails ? `\n${fails} FAIL` : "\nAll night-digest checks passed");
-process.exit(fails ? 1 : 0);
+// 13) v13.110-dupcollapse — the 2026-10-16 regression: the SAME fixture
+// reached the night's set through two provider spellings (FD's legal
+// "1. FC Köln" + sportscore's "FC Köln" — the digitfold root fix lives in
+// teams.ts/canonDedupe, gated by check-dedupe) and the digest printed
+// "آینتراشت فرانکفورت ۱ - ۰ کلن" twice. The builder now collapses the
+// night's rows by competition + normalized pairing BEFORE rendering, so
+// even a future provider-variant gap can never double a line here.
+check("builder collapses same-pairing duplicates before rendering", /nightMatches = collapsePairings\(nightMatches\);/.test(nightSrc));
+check("collapsePairings keys on competition + normalized pairing", /function collapsePairings\(list\) \{/.test(nightSrc) && nightSrc.includes('normalizeTeamName(m.homeTeam.name) + "|" + normalizeTeamName(m.awayTeam.name)'));
+
+// Behavioral: render the REAL builder with the EXACT live-pool rows from
+// that night (FD id 565828 + spsc-2026-10-16-BL1-36, identical 1-0) plus a
+// distinct second match — the Frankfurt line must appear ONCE while the
+// other match still renders. Async wrap (the mdstyle pattern — CJS has no
+// top-level await); the summary print moves inside the promise tail.
+(async () => {
+  const { mdv2Safe } = require("./lib/mdv2");
+  const { normalizeTeamName } = require("../src/teams.ts");
+  // Stubs keep this a pure render (no follows, no standings fetches);
+  // normalizeTeamName is the REAL module so the pairing key exercises the
+  // production fold (direct eval resolves it through this scope).
+  globalThis.normalizeTeamName = normalizeTeamName;
+  globalThis.translateTeam = (n) => n;
+  globalThis.translateCompetition = (c) => c;
+  globalThis.userFollowsMatch = () => null;
+  globalThis.userFollowsSides = () => ({ home: false, away: false });
+  globalThis.priorityTier = () => 0;
+  globalThis.fetchStandings = async () => null;
+  const grabSrc = (re) => {
+    const m = src.match(re);
+    return m ? untype(m[0]) : null;
+  };
+  const nightPieces = [
+    // SYNC wrapper: the eval returns the (async) builder itself, not a
+    // promise of it — "use strict" eval scopes stay inside the IIFE.
+    "(() => {",
+    uPieces.join("\n"),
+    grabSrc(/function escapeMarkdownCharacters\([^)]*\) \{[\s\S]*?\n\}/),
+    (src.match(/var MDV2_RESERVED = "[^"]*";/) || [])[0],
+    (src.match(/var MDV2_ESCAPE_SRC = [^\n]*;/) || [])[0],
+    (src.match(/var MDV2_ESCAPE_RE = [^\n]*;/) || [])[0],
+    grabSrc(/function mdEscape\([^)]*\) \{[\s\S]*?\n\}/),
+    grabSrc(/function mdBold\([^)]*\) \{[\s\S]*?\n\}/),
+    grabSrc(/function mdItalic\([^)]*\) \{[\s\S]*?\n\}/),
+    grabSrc(/function ftScore\([^)]*\) \{[\s\S]*?\n\}/),
+    grabSrc(/function collapsePairings\([^)]*\) \{[\s\S]*?\n\}/),
+    grabSrc(/async function teamRank\([^)]*\) \{[\s\S]*?\n\}/),
+    grabSrc(/function findTeamRow\([^)]*\) \{[\s\S]*?\n\}/),
+    grabSrc(/async function buildNightDigestMessage\([^)]*\) \{[\s\S]*?\n\}/),
+    "return buildNightDigestMessage;",
+    "})()"
+  ];
+  const buildNight = nightPieces.every(Boolean) ? eval(nightPieces.join("\n")) : null;
+  if (buildNight) {
+    const fdRow = { id: 565828, competition: { code: "BL1" }, homeTeam: { name: "Eintracht Frankfurt" }, awayTeam: { name: "1. FC Köln" }, utcDate: "2026-10-16T18:30:00Z", status: "FINISHED", score: { fullTime: { home: 1, away: 0 } } };
+    const ssRow = { id: "spsc-2026-10-16-BL1-36", competition: { code: "BL1" }, homeTeam: { name: "Eintracht Frankfurt" }, awayTeam: { name: "FC Köln" }, utcDate: "2026-10-16T18:30:00.000Z", status: "FINISHED", score: { fullTime: { home: 1, away: 0 } } };
+    const frosi = { id: 561112, competition: { code: "SA" }, homeTeam: { name: "Frosinone" }, awayTeam: { name: "US Sassuolo Calcio" }, utcDate: "2026-10-16T19:00:00Z", status: "FINISHED", score: { fullTime: { home: 4, away: 2 } } };
+    const nightMsg = await buildNight({ TEHRAN_TZ: "Europe/Berlin" }, [fdRow, ssRow, frosi], "fa", { "9": {} }, 9, new Map(), { y: 2026, m: 10, d: 16 });
+    check("behavioral: duplicated Frankfurt–Köln renders the pairing ONCE", (nightMsg.match(/Frankfurt/g) || []).length === 1 && (nightMsg.match(/Köln/g) || []).length === 1);
+    check("behavioral: the ۱-۰ score line appears exactly once", (nightMsg.match(/۱ \\- ۰/g) || []).length === 1);
+    check("behavioral: the distinct night match still renders (Frosinone 4-2)", nightMsg.includes("Frosinone") && (nightMsg.match(/۴ \\- ۲/g) || []).length === 1);
+    check("behavioral: the collapsed night digest still parses (MarkdownV2)", mdv2Safe(nightMsg));
+    // The collapse must also hold when the two copies disagree on
+    // completeness (one provider stale): the row WITH the score survives —
+    // a scoreless twin never blanks the line.
+    const noScoreTwin = { id: "spsc-late", competition: { code: "BL1" }, homeTeam: { name: "Eintracht Frankfurt" }, awayTeam: { name: "FC Köln" }, utcDate: "2026-10-16T18:30:00.000Z", status: "FINISHED", score: null };
+    const nightMsg2 = await buildNight({ TEHRAN_TZ: "Europe/Berlin" }, [noScoreTwin, fdRow], "fa", { "9": {} }, 9, new Map(), { y: 2026, m: 10, d: 16 });
+    check("behavioral: scoreless twin collapses onto the scored copy (score kept)", (nightMsg2.match(/Frankfurt/g) || []).length === 1 && (nightMsg2.match(/۱ \\- ۰/g) || []).length === 1);
+  } else {
+    check("buildNightDigestMessage found in harness source", false);
+  }
+  console.log(fails ? `\n${fails} FAIL` : "\nAll night-digest checks passed");
+  process.exit(fails ? 1 : 0);
+})().catch((e) => {
+  console.error("ERROR", e);
+  process.exit(1);
+});

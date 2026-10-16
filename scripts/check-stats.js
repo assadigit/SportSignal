@@ -638,9 +638,14 @@ check("v13.88 behavioral: teamSeasonRecord finds league + ucl rows, null when ab
   // payload compacts gets its record from the full cached table; a full
   // table also WINS over a stale payload row (fresher numbers); both
   // missing stays fail-closed null.
+  // v13.110-digitfold: fixture names are LETTER-indexed ("Team N FC"),
+  // not digit-indexed — normalizeTeamName now folds club-name digits
+  // (founding years/ordinals), so "Team 14 FC"/"Team 9 FC" would all
+  // collapse to the single key "team" and the find() would hit the wrong
+  // row. Synthetic fixtures must differ by letters, like real clubs do.
   const fullTab = [];
-  for (let p = 1; p <= 20; p++) fullTab.push({ pos: p, name: "Team " + p + " FC", played: 11, won: 12 - p, draw: 2, lost: p - 1, points: 38 - p });
-  const bottom = fn({ payload }, "Team 14 FC", { PL: { teams: fullTab, faName: "لیگ برتر انگلیس" } });
+  for (let p = 1; p <= 20; p++) fullTab.push({ pos: p, name: "Team " + String.fromCharCode(64 + p) + " FC", played: 11, won: 12 - p, draw: 2, lost: p - 1, points: 38 - p });
+  const bottom = fn({ payload }, "Team N FC", { PL: { teams: fullTab, faName: "لیگ برتر انگلیس" } });
   const okBottom = bottom && bottom.code === "PL" && bottom.pos === 14 && bottom.played === 11 && bottom.lost === 13;
   const freshFull = fn({ payload }, "Arsenal FC", { PL: { teams: [{ pos: 3, name: "Arsenal FC", played: 10, won: 7, draw: 2, lost: 1, points: 23 }], faName: "لیگ برتر انگلیس" } });
   const okFresh = freshFull && freshFull.pos === 3 && freshFull.won === 7 && freshFull.points === 23;
@@ -649,7 +654,7 @@ check("v13.88 behavioral: teamSeasonRecord finds league + ucl rows, null when ab
   // the 1-game UCL record must NOT drown the 9-game league season (the
   // RICHEST record wins on played count, regardless of insertion order).
   const uclTab = [{ pos: 13, name: "Liverpool FC", played: 1, won: 1, draw: 0, lost: 0, points: 3 }];
-  const plTab = []; for (let p = 1; p <= 20; p++) plTab.push({ pos: p, name: p === 9 ? "Liverpool FC" : "Team " + p + " FC", played: 9, won: 19 - p, draw: 2, lost: p - 1, points: 59 - p });
+  const plTab = []; for (let p = 1; p <= 20; p++) plTab.push({ pos: p, name: p === 9 ? "Liverpool FC" : "Team " + String.fromCharCode(64 + p) + " FC", played: 9, won: 19 - p, draw: 2, lost: p - 1, points: 59 - p });
   const richest = fn({ payload: { ucl: { teams: uclTab } } }, "Liverpool FC", { CL: { teams: uclTab }, PL: { teams: plTab, faName: "لیگ برتر انگلیس" } });
   const okRichest = richest && richest.code === "PL" && richest.pos === 9 && richest.played === 9;
   return okPl && okUcl && okUclFa && none === null && okBottom && okFresh && bothMiss === null && okRichest;
@@ -685,21 +690,23 @@ check("v13.93 behavioral: teamStandingsWindow serves rank-9+ teams from the full
     .replace(/^export /, "");
   const { normalizeTeamName } = require("../src/teams.ts");
   const fn = new Function("normalizeTeamName", "COMP_EN", seg + "\n; return teamStandingsWindow;")(normalizeTeamName, { PL: "لیگ برتر انگلیس", CL: "لیگ قهرمانان اروپا" });
-  const mk = (p) => ({ pos: p, name: "Team " + p + " FC", played: 11, won: 12 - p, draw: 2, lost: p - 1, points: 38 - p });
+  // v13.110-digitfold: letter-indexed fixture names (digits fold — see the
+  // teamSeasonRecord behavioral above).
+  const mk = (p) => ({ pos: p, name: "Team " + String.fromCharCode(64 + p) + " FC", played: 11, won: 12 - p, draw: 2, lost: p - 1, points: 38 - p });
   const full20 = []; for (let p = 1; p <= 20; p++) full20.push(mk(p));
   const ctx = { payload: { standings: { PL: { faName: "لیگ برتر انگلیس", emblem: "pl.png", teams: full20.slice(0, 8) } } } };
   const nextPL = { s: { competition: { code: "PL" } } };
   // rank-12: NOT in the top-8 payload — the full table serves the window
-  const w12 = fn(ctx, "Team 12 FC", nextPL, { PL: { teams: full20, faName: "لیگ برتر انگلیس" } });
+  const w12 = fn(ctx, "Team L FC", nextPL, { PL: { teams: full20, faName: "لیگ برتر انگلیس" } });
   const ok12 = w12 && w12.rows.length === 5 && w12.rows.map((r) => r.pos).join(",") === "10,11,12,13,14" && w12.meIdx === 2 && w12.compFa === "لیگ برتر انگلیس" && w12.code === "PL";
   // without the full table: same team → null (the v13.87 fail-closed behavior)
-  const wNull = fn(ctx, "Team 12 FC", nextPL, null);
+  const wNull = fn(ctx, "Team L FC", nextPL, null);
   // next-comp preference: a CUP next fixture falls back to the payload comp
   // WITH its full table (the fallback loop consults fullByCode too)
-  const wCup = fn(ctx, "Team 12 FC", { s: { competition: { code: "FAC" } } }, { PL: { teams: full20, faName: "لیگ برتر انگلیس" } });
+  const wCup = fn(ctx, "Team L FC", { s: { competition: { code: "FAC" } } }, { PL: { teams: full20, faName: "لیگ برتر انگلیس" } });
   const okCup = wCup && wCup.code === "PL" && wCup.meIdx === 2;
   // top-3 clamping still works from the full table
-  const w1 = fn(ctx, "Team 1 FC", nextPL, { PL: { teams: full20, faName: "لیگ برتر انگلیس" } });
+  const w1 = fn(ctx, "Team A FC", nextPL, { PL: { teams: full20, faName: "لیگ برتر انگلیس" } });
   const ok1 = w1 && w1.rows.map((r) => r.pos).join(",") === "1,2,3,4,5" && w1.meIdx === 0;
   return ok12 && wNull === null && okCup && ok1;
 })());

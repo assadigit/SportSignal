@@ -69,4 +69,48 @@ check("same-id drifted copy merges even beyond 48h", driftOut.length === 1);
 check("same-id merge: later (fresher) entry wins the row", driftOut[0].utcDate === "2026-10-12T19:00:00Z");
 check("same-id merge adopts dropped copy's venue + crests", driftOut[0].venue === "Coventry Building Society Arena" && driftOut[0].homeTeam.crest === "https://crests.football-data.org/56.png" && driftOut[0].awayTeam.crest === "https://crests.football-data.org/35.png");
 
+// v13.110-digitfold: club-name digits (ordinals + founding years) are NEVER
+// identity-bearing. LIVE 2026-10-16 incident: FD's legal "1. FC Köln" keyed
+// as "1cologne" while sportscore's "FC Köln" keyed as "cologne" — the same
+// fixture (FD id 565828 vs spsc-2026-10-16-BL1-36, both 18:30Z, both 1-0)
+// survived canonDedupe as TWO pool rows and the night digest printed
+// "آینتراشت فرانکفورت ۱ - ۰ کلن" twice. The digits must fold.
+const { normalizeTeamName } = require("../src/teams.ts");
+check(
+  "digitfold: 1. FC Köln ≡ FC Köln ≡ Köln ≡ Cologne (the live pair)",
+  normalizeTeamName("1. FC Köln") === normalizeTeamName("FC Köln") &&
+  normalizeTeamName("FC Köln") === normalizeTeamName("Köln") &&
+  normalizeTeamName("FC Köln") === normalizeTeamName("Cologne")
+);
+check("digitfold: Bayer 04 Leverkusen ≡ Bayer Leverkusen", normalizeTeamName("Bayer 04 Leverkusen") === normalizeTeamName("Bayer Leverkusen"));
+check("digitfold: TSG 1899 Hoffenheim ≡ Hoffenheim", normalizeTeamName("TSG 1899 Hoffenheim") === normalizeTeamName("Hoffenheim"));
+check("digitfold: FC Schalke 04 ≡ Schalke 04 ≡ Schalke", normalizeTeamName("FC Schalke 04") === normalizeTeamName("Schalke 04") && normalizeTeamName("FC Schalke 04") === normalizeTeamName("Schalke"));
+check("digitfold: 1. FSV Mainz 05 ≡ FSV Mainz 05 (digits only — prefix tokens stay conservative)", normalizeTeamName("1. FSV Mainz 05") === normalizeTeamName("FSV Mainz 05"));
+check("digitfold: 1. FC Union Berlin ≡ Union Berlin", normalizeTeamName("1. FC Union Berlin") === normalizeTeamName("Union Berlin"));
+check("digitfold: Parma Calcio 1913 ≡ Parma Calcio (digits only)", normalizeTeamName("Parma Calcio 1913") === normalizeTeamName("Parma Calcio"));
+check("digitfold: SC Paderborn 07 ≡ Paderborn", normalizeTeamName("SC Paderborn 07") === normalizeTeamName("Paderborn"));
+check(
+  "digitfold never over-merges: Köln ≠ Union Berlin ≠ Copenhagen ≠ Bologna",
+  normalizeTeamName("1. FC Köln") !== normalizeTeamName("1. FC Union Berlin") &&
+  normalizeTeamName("FC Köln") !== normalizeTeamName("FC Copenhagen") &&
+  normalizeTeamName("FC Köln") !== normalizeTeamName("Bologna FC")
+);
+// The EXACT live-pool regression pair (rows verbatim from the production KV
+// that night — FD legal names + sportscore raw names, identical score):
+const fdBl1 = { id: 565828, competition: { code: "BL1" }, homeTeam: { name: "Eintracht Frankfurt", crest: "https://crests.football-data.org/10.png" }, awayTeam: { name: "1. FC Köln", crest: null }, utcDate: "2026-10-16T18:30:00Z", status: "FINISHED", score: { fullTime: { home: 1, away: 0 } }, venue: null };
+const spBl1 = { id: "spsc-2026-10-16-BL1-36", competition: { code: "BL1" }, homeTeam: { name: "Eintracht Frankfurt", crest: null }, awayTeam: { name: "FC Köln", crest: "https://sportscore.example/koln.png" }, utcDate: "2026-10-16T18:30:00.000Z", status: "FINISHED", score: { fullTime: { home: 1, away: 0 } }, venue: "Deutsche Bank Park" };
+const kolnOne = canonDedupe([fdBl1, spBl1]);
+check("LIVE 2026-10-16 pair: FD '1. FC Köln' + sportscore 'FC Köln' collapse to ONE", kolnOne.length === 1);
+check(
+  "the collapsed row keeps the score and adopts the other copy's crest/venue",
+  kolnOne[0] && kolnOne[0].score && kolnOne[0].score.fullTime.home === 1 && kolnOne[0].score.fullTime.away === 0 &&
+  kolnOne[0].homeTeam.crest === "https://crests.football-data.org/10.png" &&
+  kolnOne[0].awayTeam.crest === "https://sportscore.example/koln.png" &&
+  kolnOne[0].venue === "Deutsche Bank Park"
+);
+// The 2026-10-11 matchday shape (Köln HOME + the Mönchengladbach umlaut fold):
+const fdKo = { id: 565814, competition: { code: "BL1" }, homeTeam: { name: "1. FC Köln" }, awayTeam: { name: "Borussia Mönchengladbach" }, utcDate: "2026-10-11T13:30:00Z", status: "FINISHED" };
+const spKo = { id: "spsc-2026-10-11-BL1-0", competition: { code: "BL1" }, homeTeam: { name: "FC Köln" }, awayTeam: { name: "Borussia Monchengladbach" }, utcDate: "2026-10-11T13:30:00.000Z", status: "FINISHED" };
+check("LIVE 2026-10-11 pair: Köln home + Monchengladbach umlaut fold collapses to ONE", canonDedupe([fdKo, spKo]).length === 1);
+
 process.exit(fails ? 1 : 0);

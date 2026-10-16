@@ -266,6 +266,14 @@ const advMatch = Object.assign({}, faMatch, {
     untype(grabFn("function ftScore(m)")),
     untype(grabFn("async function teamRank(env, code")),
     untype(grabFn("function findTeamRow(data")),
+    // v13.110-digitfold: the builder now collapses same-pairing duplicates
+    // (the 2026-10-16 double Frankfurt–Köln line). collapsePairings calls
+    // normalizeTeamName — injected as the REAL module fold under a UNIQUE
+    // scoped name so the later globalThis.normalizeTeamName stubs (the
+    // notify-status + bot sections) stay authoritative for their own
+    // direct-eval consumers.
+    "var __nightCollapseNorm = require('../src/teams.ts').normalizeTeamName;",
+    untype(grabFn("function collapsePairings(list)")).replace(/normalizeTeamName/g, "__nightCollapseNorm"),
     untype(grabFn("async function buildNightDigestMessage(env, nightMatches, lang, prefs, chatId, rankCache, nightYmd)"))
   ].join("\n"));
   const prefs = { "42": { lang: "fa", teams: ["Arsenal FC"] } };

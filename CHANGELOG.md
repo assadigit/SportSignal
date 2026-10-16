@@ -6,6 +6,87 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.110-digitfold] — 2026-10-16 (the duplicate night-digest line: club-name digits fold)
+
+The owner's report — the Farsi night results digest printed the SAME match
+twice:
+
+> 🌙 خلاصه نتایج شب — جمعه ۲۴ مهر ۱۴۰۵
+> 🏆 بوندسلیگا
+> آینتراخت فرانکفورت ۱ - ۰ کلن
+> آینتراشت فرانکفورت ۱ - ۰ کلن
+
+### Root cause — the digit gap in `normalizeTeamName`
+
+The production KV pool carried the fixture as TWO rows with different
+identities (rows verbatim from the live `matches_v13_tracked` that night):
+
+- football-data (id `565828`): `"Eintracht Frankfurt" vs "1. FC Köln"` —
+  FD's legal name normalizes to `eintrachtfrankfurt|1cologne|…` (the
+  leading ordinal `1.` survives the non-alphanumeric strip)
+- sportscore (id `spsc-2026-10-16-BL1-36`): `"Eintracht Frankfurt" vs
+  "FC Köln"` — normalizes to `eintrachtfrankfurt|cologne|…`
+
+`canonDedupe`'s canon key AND pairing key both run through
+`normalizeTeamName`, so the two spellings keyed differently, both rows
+survived every merge (`fetchLiveSweep`, `cacheMatches`, the long view),
+and the night digest rendered the pairing twice. The same gap silently
+broke FOLLOW-matching: a user following "1. FC Köln" never matched
+sportscore-sourced "FC Köln" rows (and vice versa), and the pool's
+2026-10-11 Köln–Mönchengladbach pair had already survived as duplicates
+the same way.
+
+**Fix (`src/teams.ts`)**: the final normalization stage strips digits —
+club-name digits are ordinals/founding years ("1." FC, "Bayer **04**",
+"TSG **1899**", "Schalke **04**", "Parma Calcio **1913**"), never
+identity-bearing. No two distinct clubs in the tracked universe differ
+only by digits, so the strip is a pure fold: `1. FC Köln ≡ FC Köln ≡
+Köln ≡ Cologne`. Every digit-bearing club folds across providers
+(Bayer 04 Leverkusen ≡ Bayer Leverkusen, TSG 1899 Hoffenheim ≡
+Hoffenheim, Schalke 04, Mainz 05, Union Berlin, Paderborn 07…), healing
+canonDedupe, `matchKey`, follow-matching and the master-set lookups with
+one change. Prefix tokens stay conservative (`FSV Mainz` ≠ `Mainz`,
+`Parma Calcio` ≠ `Parma`) — only the digit dimension folds.
+
+### Defense — `collapsePairings` in the night digest
+
+`digest-night.ts`'s `buildNightDigestMessage` now collapses the night's
+rows by `competition | normalized home | normalized away` BEFORE
+rendering, keeping the row that carries a score (later copy wins ties —
+canonDedupe's own watch-order rule). A single night can not legitimately
+contain the same ordered pairing twice, so even a future provider-variant
+gap that normalization misses can never double a line on this surface.
+The pool-level fold is the root fix; this is display-level insurance for
+the exact reported regression.
+
+### Safety analysis of the key-format change
+
+`matchKey` output changes for digit-bearing club names only
+(`…|1cologne|…` → `…|cologne|…`). Old `notified_v1` / delivery-ledger
+rows become dead weight (TTL-pruned as before); re-firing is impossible
+because every notification window is kickoff/FT-relative — all windows of
+matches notified under the old keys have closed. The KV pool self-heals:
+the next full sweep's `canonDedupe` merge rewrites the blob with the
+duplicates collapsed (change-only write fires because the content
+changes).
+
+### Gates
+
+- `check-dedupe.js`: +13 checks — the digitfold equivalence table (incl.
+  over-merge negatives: Köln ≠ Union Berlin ≠ Copenhagen ≠ Bologna) and
+  the EXACT live-pool regression pairs (FD `565828` + `spsc-…-BL1-36`
+  2026-10-16, FD `565814` + `spsc-…-BL1-0` 2026-10-11) collapsing to ONE
+  row with score kept and crest/venue adopted.
+- `check-nightdigest.js`: +8 — wiring pins (the builder calls
+  `collapsePairings`; the key is comp+normHome+normAway) and BEHAVIORAL
+  renders of the real builder with the live rows: Frankfurt–Köln renders
+  ONCE, the ۱-۰ score line exactly once, the distinct night match
+  (Frosinone 4-2) still renders, the collapsed digest still parses under
+  the MarkdownV2 validator, and a scoreless twin collapses onto the
+  scored copy instead of blanking the line.
+
+---
+
 ## [13.109-consolidated] — 2026-10-16 (two-tier eligibility: one-desired fixtures are digest-only)
 
 The owner's report: the bot was sending INDIVIDUAL picture notifications for
