@@ -4,6 +4,8 @@
 // (the webhook router) stays in bot.ts. Extracted from bot.ts in
 // v13.78-botui.
 import { toFaDigits, escapeMarkdownCharacters } from "./utils";
+// v13.106-mdstyle: entity builders (bold team rows, monospace local times).
+import { mdBold, mdCode } from "./md";
 import { normalizeTeamName } from "./teams";
 import { translateTeam } from "./translate";
 
@@ -61,7 +63,7 @@ export function normalizeCommand(text) {
 export function teamsMessageText(lang, selected, master) {
   const lines = master.map((t, i) => {
     const isSel = selected && selected.some((s) => normalizeTeamName(s) === normalizeTeamName(t));
-    return (isSel ? "\u2705 " : "") + String(i + 1) + "\\. " + escapeMarkdownCharacters(translateTeam(t));
+    return (isSel ? "\u2705 " : "") + String(i + 1) + "\\. " + mdBold(translateTeam(t));
   });
   const status = selected
     ? (lang === "en" ? "Selected teams: " + selected.length : "\u062A\u0639\u062F\u0627\u062F \u062A\u06CC\u0645 \u0627\u0646\u062A\u062E\u0627\u0628\u06CC: " + toFaDigits(String(selected.length)))
@@ -93,7 +95,7 @@ export function teamsGridKeyboard(selected, master) {
 export function tzStatusText(lang, tz) {
   const local = tzLocalTime(tz, lang);
   const off = tzUtcOffset(tz);
-  const timePart = local ? " \u2014 " + (lang === "en" ? "your time: " : "\u0633\u0627\u0639\u062A\u0650 \u0634\u0645\u0627: ") + local + (off ? " \\(" + escapeMarkdownCharacters(off) + "\\)" : "") : "";
+  const timePart = local ? " \u2014 " + (lang === "en" ? "your time: " : "\u0633\u0627\u0639\u062A\u0650 \u0634\u0645\u0627: ") + mdCode(local) + (off ? " \\(" + escapeMarkdownCharacters(off) + "\\)" : "") : "";
   const head = lang === "en" ? "\u23F0 Your timezone: " : "\u23F0 \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627: ";
   const tail = lang === "en" ? "\nPick your region below or /timezone \\<city\\>" : "\n\u0645\u0646\u0637\u0642\u0647\u0654 \u062E\u0648\u062F \u0631\u0627 \u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u0632\u06CC\u0631 \u0627\u0646\u062A\u062E\u0627\u0628 \u06A9\u0646\u06CC\u062F \u06CC\u0627 /timezone \\<\u0634\u0647\u0631\\>";
   return head + escapeMarkdownCharacters(tz) + timePart + tail;
@@ -255,7 +257,7 @@ export function tzOnboardText(lang) {
 export function tzConfirmText(lang, tz) {
   const local = tzLocalTime(tz, lang);
   const off = tzUtcOffset(tz);
-  const t = local + (off ? " \\(" + escapeMarkdownCharacters(off) + "\\)" : "");
+  const t = (local ? mdCode(local) : "") + (off ? " \\(" + escapeMarkdownCharacters(off) + "\\)" : "");
   return lang === "en"
     ? "\u2705 Timezone set: " + escapeMarkdownCharacters(tz) + (local ? "\n\uD83D\uDD50 Your local time: " + t : "") + "\nMatch alerts will arrive at your local time from now on \u2014 is this right\\?"
     : "\u2705 \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u062B\u0628\u062A \u0634\u062F: " + escapeMarkdownCharacters(tz) + (local ? "\n\uD83D\uDD50 \u0633\u0627\u0639\u062A\u0650 \u0634\u0645\u0627: " + t : "") + "\n\u0627\u0639\u0644\u0627\u0646\u200C\u0647\u0627\u06CC \u0628\u0627\u0632\u06CC \u0627\u0632 \u0627\u06CC\u0646 \u067E\u0633 \u0628\u0647 \u0648\u0642\u062A\u0650 \u0634\u0645\u0627 \u0645\u06CC\u200C\u0631\u0633\u062F \u2014 \u062F\u0631\u0633\u062A \u0627\u0633\u062A\\?";

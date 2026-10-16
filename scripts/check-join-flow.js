@@ -13,6 +13,18 @@
 // changes the join logic, this gate fails until the assertions are updated too.
 const fs = require("fs");
 const src = require("./lib/worker-src")();
+// v13.106-mdstyle: the REAL entity builders (src/md.ts), sliced from the
+// concat and installed as GLOBALS — the eval'd builders/command chains below
+// compose bold/italic/code spans through them, and their free identifiers
+// resolve through the global object.
+const mdModStart = src.indexOf("// ===== src/md.ts =====");
+const mdModEnd = src.indexOf("// ===== src/", mdModStart + 10);
+if (mdModStart < 0 || mdModEnd < 0) {
+  console.error("FAIL: src/md.ts module not found in worker source");
+  process.exit(1);
+}
+Object.assign(globalThis, new Function(src.slice(mdModStart, mdModEnd) + "\n; return { mdEscape, mdBold, mdItalic, mdCode };")());
+
 
 // --- Extract the webhook command chain (in-memory source of truth) ---
 const start = src.indexOf('if (text === "/start") {');
@@ -165,18 +177,12 @@ const check = (name, cond) => {
   // block (both sliced verbatim from the concat).
   // =====================================================================
 
-  // --- MarkdownV2 parse-safety: outside code entities every reserved
-  // char must be escaped (the join flow's history of parse-400s: a single
-  // unescaped '.' rejected the whole welcome). Our welcome copy carries no
-  // entity markup, so "no unreserved reserved char" is also complete.
-  function mdv2Safe(text) {
-    const reserved = new Set([..."_*[]()~`>#+-=|{}.!"]);
-    for (let i = 0; i < text.length; i++) {
-      if (text[i] === "\\") { i++; continue; } // escape: next char is consumed
-      if (reserved.has(text[i])) return false;
-    }
-    return true;
-  }
+  // --- MarkdownV2 parse-safety (v13.106-mdstyle): the SHARED entity-aware
+  // validator. The old blanket no-markup rule was complete only while the
+  // welcome carried zero entities; the welcome title is BOLD now, so the
+  // gate models the entity set instead (same discipline as check-admin /
+  // check-mdstyle: outside code spans every reserved char must be escaped).
+  const { mdv2Safe, mdv2Entities } = require("./lib/mdv2");
 
   // 9) the REAL BOT_STRINGS + botStr (sliced from users.ts)
   const bsStart = src.indexOf("var BOT_STRINGS = {");
@@ -190,6 +196,9 @@ const check = (name, cond) => {
   const enWelcome = botStrApi.botStr("en", "start_welcome");
   check("fa welcome keeps the original greeting", faWelcome.includes("به SportSignal خوش آمدید") && faWelcome.includes("اعلام مسابقات مهم را از دست ندهید"));
   check("en welcome keeps the original greeting", enWelcome.includes("Welcome to SportSignal") && enWelcome.includes("Never miss the big matches"));
+  // v13.106-mdstyle: the greeting line is the message TITLE - BOLD
+  check("fa welcome title is a BOLD entity", mdv2Entities(faWelcome).bold.some((b) => b.includes("\u0628\u0647 SportSignal \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F")));
+  check("en welcome title is a BOLD entity", mdv2Entities(enWelcome).bold.some((b) => b.includes("Welcome to SportSignal")));
   // the referral push: urge + BOTH links (bot + website), fa
   check("fa welcome urges recommending to friends", faWelcome.includes("دوستانی دارید که عاشق فوتبال") && faWelcome.includes("پیشنهاد کنید"));
   check("fa welcome links the BOT (t.me, escaped)", faWelcome.includes("https://t\\.me/SportSignalAlertsBot"));

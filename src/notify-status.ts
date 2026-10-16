@@ -6,6 +6,8 @@ import { CONFIG } from "./config";
 import { COMP_EN } from "./tables";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters } from "./utils";
+// v13.106-mdstyle: entity builders (bold match header, italic competition).
+import { mdBold, mdItalic } from "./md";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition } from "./translate";
 import { isBackfillEligible } from "./match-windows";
@@ -84,7 +86,7 @@ export async function detectStatusChanges(env: Env, matches) {
           const away = en ? a.m.awayTeam.name : translateTeam(a.m.awayTeam.name);
           const comp = en ? (COMP_EN[a.m.competition.code] || a.m.competition.code) : translateCompetition(a.m.competition.code);
           const vs = en ? " vs " : " \u{1F19A} ";
-          const teams = escapeMarkdownCharacters(home) + vs + escapeMarkdownCharacters(away) + " (" + escapeMarkdownCharacters(comp) + ")";
+          const teams = mdBold(home) + vs + mdBold(away) + " \u2014 " + mdItalic(comp);
           const msg = a.status === "CANCELLED"
             ? (en ? "\u274C *Match cancelled:* " + teams : "\u274C *\u0628\u0627\u0632\u06CC \u0644\u063A\u0648 \u0634\u062F:* " + teams)
             : (en ? "*Match postponed:* " + teams : "\u{1F550} *\u0628\u0627\u0632\u06CC \u0628\u0647 \u062A\u0639\u0648\u06CC\u0642 \u0627\u0641\u062A\u0627\u062F:* " + teams);
@@ -123,7 +125,7 @@ export async function detectStatusChanges(env: Env, matches) {
           const aStr = sA == null ? "?" : (en ? String(sA) : toFaDigits(String(sA)));
           const head = en ? "*Half time*" : "*\u0627\u0633\u062A\u0631\u0627\u062D\u062A*";
           const vs = en ? " - " : " \u2014 ";
-          const msg = head + "\n\n\u26BD *" + escapeMarkdownCharacters(hName) + vs + escapeMarkdownCharacters(aName) + "*\n" + escapeMarkdownCharacters(compName) + "\n*" + hStr + "\\-" + aStr + "*";
+          const msg = head + "\n\n\u26BD *" + escapeMarkdownCharacters(hName) + vs + escapeMarkdownCharacters(aName) + "*\n" + mdItalic(compName) + "\n*" + hStr + "\\-" + aStr + "*";
           await Promise.allSettled(bucket.map((c) => sendTelegram(env, msg, c)));
         }
       }

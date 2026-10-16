@@ -381,7 +381,19 @@ var MEM_DEDUPE = new Set();
   function shouldNotify() { return true; }
   function isMasterBigMatch() { return true; }
   const COMP_EN = {};
-  eval([grabFn("async function detectStatusChanges(env, matches)")].join("\n"));
+  // v13.106-mdstyle: detectStatusChanges builds entity-styled messages —
+  // slice the REAL md builders in alongside it (same grab discipline).
+  eval([
+    // the md module's escape-regex vars (the grabbed functions close over them)
+    (src.match(/var MDV2_RESERVED = "[^"]*";/) || ["FAIL-MDV2-RESERVED"])[0],
+    (src.match(/var MDV2_ESCAPE_SRC = [^\n]*;/) || ["FAIL-MDV2-SRC"])[0],
+    (src.match(/var MDV2_ESCAPE_RE = [^\n]*;/) || ["FAIL-MDV2-RE"])[0],
+    grabFn("function mdEscape(text)"),
+    grabFn("function mdBold(text)"),
+    grabFn("function mdItalic(text)"),
+    grabFn("function mdCode(text)"),
+    grabFn("async function detectStatusChanges(env, matches)")
+  ].join("\n"));
   // KV mock whose put can be toggled to fail (quota exhaustion simulation).
   function makeStatusStore() {
     const m = new Map();

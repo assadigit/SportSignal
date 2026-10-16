@@ -6,6 +6,12 @@ import { CONFIG } from "./config";
 import { COMP_EN } from "./tables";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getNowTehran } from "./utils";
+// v13.106-mdstyle: entity builders (bold teams, monospace time, italic
+// competition). No entity NESTING: the derby/UCL lines keep their emoji
+// anchors instead of the old whole-line bold (a bold wrapper around a
+// line that now contains bold/code/italic spans would nest entities —
+// MarkdownV2 cannot).
+import { mdBold, mdItalic, mdCode } from "./md";
 import { translateTeam, translateCompetition } from "./translate";
 import { shouldNotify, isMasterPair, isDerby } from "./match-classify";
 import { fetchStandings, buildLeagueTableMessage, isoWeekKey, weeklyTableCodes } from "./composers";
@@ -72,11 +78,11 @@ export async function buildWeekAheadMessage(env: Env, lang) {
     const away = en ? m.awayTeam.name : translateTeam(m.awayTeam.name);
     const comp = en ? (COMP_EN[m.competition.code] || m.competition.code) : translateCompetition(m.competition.code);
     const vs = en ? " vs " : " \u{1F19A} ";
-    return mark + escapeMarkdownCharacters(home) + vs + escapeMarkdownCharacters(away) + " \u2014 " + weekday + " " + timeStr + " \u2014 " + escapeMarkdownCharacters(comp);
+    return mark + mdBold(home) + vs + mdBold(away) + " \u2014 " + weekday + " " + mdCode(timeStr) + " \u2014 " + mdItalic(comp);
   };
   const lines = [];
-  for (const m of derbies) lines.push("*" + fmtLine(m, "\u2694\uFE0F ") + "*");
-  for (const m of uclDuels) lines.push("*" + fmtLine(m, "") + "*");
+  for (const m of derbies) lines.push(fmtLine(m, "\u2694\uFE0F "));
+  for (const m of uclDuels) lines.push(fmtLine(m, "\u{1F525} "));
   for (const m of rest) lines.push(fmtLine(m, ""));
   const extraCount = worthy.length - derbies.length - uclDuels.length - rest.length;
   const head = en ? "*Matches this week*\n\n" : "*\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0647\u0641\u062A\u0647 \u0622\u06CC\u0646\u062F\u0647*\n\n";

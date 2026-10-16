@@ -6,6 +6,9 @@ import { CONFIG } from "./config";
 import { COMP_EN } from "./tables";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters } from "./utils";
+// v13.106-mdstyle: entity builders (bold match header / monospace time /
+// italic competition label).
+import { mdBold, mdItalic, mdCode } from "./md";
 import { translateTeam, translateCompetition } from "./translate";
 import { sendTelegram } from "./telegram";
 import { getUserPrefs, getUserTz, isMasterBigMatch } from "./users";
@@ -112,7 +115,7 @@ export async function buildMorningDigestMessage(env: Env, matches, lang) {
     const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: env.TEHRAN_TZ || "Asia/Tehran" }).format(new Date(m.utcDate));
     const timeStr = en ? time : toFaDigits(time);
     const vs = en ? " vs " : " \u{1F19A} ";
-    lines.push("\u26BD " + escapeMarkdownCharacters(home) + vs + escapeMarkdownCharacters(away) + " \u2014 " + timeStr + " \u2014 " + escapeMarkdownCharacters(comp));
+    lines.push("\u26BD " + mdBold(home) + vs + mdBold(away) + " \u2014 " + mdCode(timeStr) + " \u2014 " + mdItalic(comp));
   }
   let msg = head + lines.join("\n");
   if (matches.length > 8) {

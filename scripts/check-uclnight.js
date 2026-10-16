@@ -109,7 +109,7 @@ check("menu: command names are Telegram-legal (lowercase, 1-32)", menuLists.BOT_
 check("menu: descriptions within 1-256 chars", menuLists.BOT_MENU_ADMIN_FA.concat(menuLists.BOT_MENU_EN).every((c) => c.description && c.description.length >= 1 && c.description.length <= 256));
 check("menu: every user command has a REAL bot.ts handler", menuLists.BOT_MENU_FA.every((c) => new RegExp('"/' + c.command + '"').test(botSrc)));
 check("menu: admin commands are the user set + the toolbelt", menuLists.BOT_MENU_ADMIN_EN.slice(0, menuLists.BOT_MENU_EN.length).every((c, i) => c.command === menuLists.BOT_MENU_EN[i].command) && menuLists.BOT_MENU_ADMIN_EN.length === menuLists.BOT_MENU_EN.length + 4);
-check("help body now lists /featured too (menu/help consistency)", /\/featured \\\\-/.test(botSrc));
+check("help body now lists /featured too (code-span form, menu/help consistency)", /`\/featured` \\\\-/.test(botSrc));
 
 // 10) the asset.
 check("asset: assets/bot/ucl-night.gif exists", fs.existsSync(path.join(__dirname, "..", "assets", "bot", "ucl-night.gif")));
@@ -132,6 +132,14 @@ check("harness order: digest group stays contiguous, uclnight after it", /"diges
 // the test is deterministic; then a strict MarkdownV2 lint on the output).
 const grabU = (re) => { const m = src.match(re); return m ? untype(m[0]) : null; };
 const uPieces = [
+  // v13.106-mdstyle: the real entity builders (uclPreviewLine composes
+  // mdBold/mdCode now) + the escape-regex vars they close over
+  grabU(/var MDV2_RESERVED = "[^"]*";/),
+  grabU(/var MDV2_ESCAPE_SRC = [^\n]*;/),
+  grabU(/var MDV2_ESCAPE_RE = [^\n]*;/),
+  grabU(/function mdEscape\([^)]*\) \{[\s\S]*?\n\}/),
+  grabU(/function mdBold\([^)]*\) \{[\s\S]*?\n\}/),
+  grabU(/function mdCode\([^)]*\) \{[\s\S]*?\n\}/),
   grabU(/function toFaDigits\([^)]*\) \{[\s\S]*?\n\}/),
   grabU(/function escapeMarkdownCharacters\([^)]*\) \{[\s\S]*?\n\}/),
   grabU(/var JALALI_MONTHS_FA = \[[\s\S]*?\];/),
@@ -155,15 +163,17 @@ if (uPieces.every(Boolean)) {
   const fa = ctx.buildUclPreviewMessage(envT, fixtures, "fa", 2026, 10, 14);
   const en = ctx.buildUclPreviewMessage(envT, fixtures, "en", 2026, 10, 14);
   check("behavioral fa: FULL Jalali header (چهارشنبه ۲۲ مهر ۱۴۰۵)", fa.includes("\u0634\u0628 \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627 \u2014 \u0686\u0647\u0627\u0631\u0634\u0646\u0628\u0647 \u06F2\u06F2 \u0645\u0647\u0631 \u06F1\u06F4\u06F0\u06F5"));
-  check("behavioral fa: Tehran kickoff times in Persian digits (۲۰:۱۵)", fa.includes("\u2014 \u06F2\u06F0:\u06F1\u06F5") && fa.includes("\u2014 \u06F2\u06F2:\u06F3\u06F0"));
+  check("behavioral fa: Tehran kickoff times in Persian digits, MONOSPACE (v13.106)", fa.includes("\u2014 `\u06F2\u06F0:\u06F1\u06F5`") && fa.includes("\u2014 `\u06F2\u06F2:\u06F3\u06F0`"));
   check("behavioral fa: all three fixtures listed with translated names", fa.includes("Arsenal") && fa.includes("Shakhtar Utd") && fa.includes("Bayern M\u00FCnchen") && fa.includes("Real Madrid"));
   check("behavioral en: long-form Gregorian header", en.includes("Champions League night \u2014 Wednesday, 14 October 2026"));
-  check("behavioral en: 24h times", en.includes("\u2014 20:15") && en.includes("\u2014 22:30"));
-  // Strict MarkdownV2 lint: strip escaped pairs, then NO reserved char may
-  // survive unescaped (the v13.96.1 '-' lesson + the user's ZWNJ names).
-  const lint = (s) => { const t = s.replace(/\\(.)/g, ""); return !/[\[\]()~`>#+\-=|{}.!_]/.test(t); };
-  check("behavioral: fa message passes the strict MarkdownV2 lint", lint(fa));
-  check("behavioral: en message passes the strict MarkdownV2 lint", lint(en));
+  check("behavioral en: 24h times, MONOSPACE (v13.106)", en.includes("\u2014 `20:15`") && en.includes("\u2014 `22:30`"));
+  // v13.106-mdstyle: the shared ENTITY-AWARE validator (bold/code/italic
+  // modeled; outside code spans every reserved char still must be escaped —
+  // the v13.96.1 '-' lesson + the user's ZWNJ names, unchanged in spirit).
+  const { mdv2Safe, mdv2Entities } = require("./lib/mdv2");
+  check("behavioral: fa message passes the entity-aware MarkdownV2 gate", mdv2Safe(fa));
+  check("behavioral: en message passes the entity-aware MarkdownV2 gate", mdv2Safe(en));
+  check("behavioral: fa fixture lines are BOLD match headers", mdv2Entities(fa).bold.some((b) => b.includes("Arsenal")) && mdv2Entities(fa).bold.some((b) => b.includes("Bayern M\u00FCnchen")));
   const many = [];
   for (let i = 0; i < 18; i++) many.push(mk("Team" + i, "Opp" + i, "2026-10-14T19:00:00Z"));
   const faMany = ctx.buildUclPreviewMessage(envT, many, "fa", 2026, 10, 14);

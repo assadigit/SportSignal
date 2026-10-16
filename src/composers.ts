@@ -7,6 +7,11 @@ import { CONFIG } from "./config";
 import { STAGE_FA, COMP_EN, SPORTSCORE_SLUGS, STAND_CODE_ORDER } from "./tables";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, getRelativeTimeUntilMatch, getEnglishDate, getEnglishTime, getEnglishRelative, fetchJSON, enStageName, bumpSubrequest } from "./utils";
+// v13.106-mdstyle: the MarkdownV2 entity builder - every styled span in the
+// notification formatters composes through mdBold/mdItalic/mdCode so the
+// parse-safety discipline is structural (entity delimiters only ever wrap
+// ESCAPED inner text; code spans take raw digit/time strings only).
+import { mdBold, mdItalic, mdCode } from "./md";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, faStageName, isDomesticCup } from "./translate";
 import { normAlias } from "./teams";
@@ -25,12 +30,12 @@ export function format24HourMessage(match, env, lang) {
     ? (enStageName(match.stage) || (match.stage ? match.stage.replace(/_/g, " ") : "Group stage"))
     : (STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : "\u0645\u0631\u062D\u0644\u0647 \u06AF\u0631\u0648\u0647\u06CC"));
   // v13.10-clean: date-first layout per the user's ask. No header, no countdown.
-  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
-  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
-  message += `${escapeMarkdownCharacters(competition)}`;
+  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
+  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  message += `${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
+  message += `${mdItalic(competition)}`;
   if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
-    message += ` \u2014 ${escapeMarkdownCharacters(stage)}`;
+    message += ` \u2014 ${mdItalic(stage)}`;
   }
   return message;
 }
@@ -45,12 +50,12 @@ export function formatBigMatchMessage(match, env, lang) {
     ? (enStageName(match.stage) || (match.stage ? match.stage.replace(/_/g, " ") : ""))
     : (STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : ""));
   // v13.10-clean: date-first, 🔥 on the match line. No header, no countdown.
-  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
-  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `\u{1F525} ${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
-  message += `${escapeMarkdownCharacters(competition)}`;
+  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
+  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  message += `\u{1F525} ${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
+  message += `${mdItalic(competition)}`;
   if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
-    message += ` \u2014 ${escapeMarkdownCharacters(stage)}`;
+    message += ` \u2014 ${mdItalic(stage)}`;
   }
   return message;
 }
@@ -62,10 +67,10 @@ export function format3HourMessage(match, env, lang) {
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
   // v13.10-clean: date-first layout per the user's ask. No header, no countdown.
-  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
-  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
-  message += `${escapeMarkdownCharacters(competition)}`;
+  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
+  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  message += `${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
+  message += `${mdItalic(competition)}`;
   return message;
 }
 export function format1HourMessage(match, env, lang) {
@@ -78,10 +83,10 @@ export function format1HourMessage(match, env, lang) {
   // v13.10-clean: date-first layout per the user's exact example. No header,
   // no countdown. The user asked: "Change the placement of یادآوری ۱ ساعته
   // with match day" + "do not need to add ⏱️ ... دیگر".
-  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
-  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
-  message += `${escapeMarkdownCharacters(competition)}`;
+  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
+  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  message += `${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
+  message += `${mdItalic(competition)}`;
   return message;
 }
 // v12.x-cron-gaps: 5-minute "kickoff now" reminder for BIG matches only.
@@ -93,10 +98,10 @@ export function format5MinMessage(match, env, lang) {
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
-  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
-  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
-  message += `${escapeMarkdownCharacters(competition)}`;
+  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
+  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  message += `${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
+  message += `${mdItalic(competition)}`;
   return message;
 }
 export function formatMatchStartMessage(match, env, lang) {
@@ -109,14 +114,14 @@ export function formatMatchStartMessage(match, env, lang) {
   // v13.10-clean: date-first, 🚀 on the match line. The animated ⚽ dice
   // (sendDice) is sent BEFORE this text by the notification engine for an
   // eye-catching "ball is rolling" kickoff animation.
-  let message = `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n`;
-  message += `\u23F0 ${escapeMarkdownCharacters(timeStr)}\n`;
-  message += `\u{1F680} ${escapeMarkdownCharacters(homeTeam)} \u{1F19A} ${escapeMarkdownCharacters(awayTeam)}\n`;
-  message += `${escapeMarkdownCharacters(competition)}`;
+  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
+  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  message += `\u{1F680} ${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
+  message += `${mdItalic(competition)}`;
   // v13.13-venues: show the stadium (AI-translated) on kickoff.
   if (match.venue) {
     const venue = en ? match.venue : (translateVenue(match.venue) || match.venue);
-    message += `\n\u0627\u0633\u062A\u0627\u062F\u06CC\u0645 ${escapeMarkdownCharacters(venue)}`;
+    message += `\n${escapeMarkdownCharacters(en ? "Stadium: " + venue : "\u0627\u0633\u062A\u0627\u062F\u06CC\u0645 " + venue)}`;
   }
   return message;
 }
@@ -129,18 +134,18 @@ export async function formatResultMessage(match, env, lang?) {
   const head = en ? "\u{1F6A9} *Full time*" : "\u{1F6A9} *\u0646\u062A\u06CC\u062C\u0647 \u0646\u0647\u0627\u06CC\u06CC*";
   const vs = en ? " vs " : " \u{1F19A} ";
   let message = `${head}\n\n`;
-  message += `${escapeMarkdownCharacters(homeTeam)}${vs}${escapeMarkdownCharacters(awayTeam)}\n`;
-  message += `${escapeMarkdownCharacters(competition)}\n`;
+  message += `${mdBold(homeTeam)}${vs}${mdBold(awayTeam)}\n`;
+  message += `${mdItalic(competition)}\n`;
   // v13.13-venues: show the stadium name (AI-translated) if available.
   if (match.venue) {
     const venue = en ? match.venue : (translateVenue(match.venue) || match.venue);
     message += `\u{1F4CD} ${escapeMarkdownCharacters(venue)}\n`;
   }
-  message += `\u{1F4C5} ${escapeMarkdownCharacters(dateStr)}\n\n`;
+  message += `\u{1F4C5} ${mdItalic(dateStr)}\n\n`;
   if (match.score.fullTime.home !== null && match.score.fullTime.away !== null) {
     const h = en ? match.score.fullTime.home.toString() : toFaDigits(match.score.fullTime.home.toString());
     const a = en ? match.score.fullTime.away.toString() : toFaDigits(match.score.fullTime.away.toString());
-    message += `\u0646\u062A\u06CC\u062C\u0647 ${h}\\-${a}`;
+    message += `\u0646\u062A\u06CC\u062C\u0647 ${mdBold(h + "-" + a)}`;
     if (match.score.fullTime.home > match.score.fullTime.away) {
       const won = en ? `\u2734\uFE0F ${escapeMarkdownCharacters(homeTeam)} won` : `\u2734\uFE0F ${escapeMarkdownCharacters(homeTeam)} \u0628\u0631\u0646\u062F\u0647 \u0634\u062F`;
       message += `\n${won}`;
@@ -413,7 +418,7 @@ export function buildLeagueTableMessage(code, st, opts, lang) {
     const row = numStr + "\\. " + escapeMarkdownCharacters(teamName) + (sel.has(normAlias(t.name)) ? " \u2B50" : "") + " \u2014 " + ptsStr + ptsWord;
     return i === 0 ? "*" + row + "*" : row;
   });
-  let head = (en ? "" : "\u062C\u062F\u0648\u0644 ") + escapeMarkdownCharacters(compName) + (en ? ":" : ":");
+  let head = en ? mdBold(compName) + ":" : mdBold("\u062C\u062F\u0648\u0644 " + compName) + ":";
   if (st.matchday) head += en ? " \u2014 Matchday " + String(st.matchday) : " \u2014 \u0647\u0641\u062A\u0647 " + toFaDigits(String(st.matchday));
   if (opts && opts.label) head += " \u2014 " + opts.label;
   let msg = head + "\n\n" + lines.join("\n");

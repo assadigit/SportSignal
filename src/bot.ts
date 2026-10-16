@@ -6,6 +6,9 @@
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliTime, getJalaliDate, getEnglishTime, getEnglishDate } from "./utils";
+// v13.106-mdstyle: entity builders for the command replies (bold match
+// headers in /next, monospace kickoff times, code-span commands in /help).
+import { mdBold, mdItalic, mdCode } from "./md";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
 import { shouldNotify, isFeaturedMatch, isMasterPair, pickHeroMatch } from "./match-classify";
@@ -295,8 +298,8 @@ export async function handleTelegramUpdate(env: Env, update) {
       const prefs = await getUserPrefs(env);
       const lang = (prefs[String(chatId)] && prefs[String(chatId)].lang) === "en" ? "en" : "fa";
       const body = lang === "en"
-        ? "/start \\- Join\n/teams \\- List teams\n/follow 1,3,7 \\- Pick teams\n/follow all \\- All teams\n/next \\- Upcoming matches\n/featured \\- Featured matches\n/tables \\- League tables\n/timezone \\- Pick your timezone (region buttons, live local times)\n/lang \\- Change language\n/stop \\- Unsubscribe"
-        : "/start \\- \u0639\u0636\u0648\u06CC\u062A\n/teams \\- \u0644\u06CC\u0633\u062A \u062A\u06CC\u0645\u200C\u0647\u0627\n/follow 1,3,7 \\- \u0627\u0646\u062A\u062E\u0627\u0628 \u062A\u06CC\u0645\n/follow all \\- \u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627\n/next \\- \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\n/featured \\- \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0634\u0627\u062E\u0635\n/tables \\- \u062C\u062F\u0648\u0644\u200C\u0647\u0627\n/timezone \\- \u062A\u0646\u0638\u06CC\u0645 \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC\n/lang \\- \u062A\u063A\u06CC\u06CC\u0631 \u0632\u0628\u0627\u0646\n/stop \\- \u0627\u0646\u0635\u0631\u0627\u0641";
+        ? "`/start` \\- Join\n`/teams` \\- List teams\n`/follow 1,3,7` \\- Pick teams\n`/follow all` \\- All teams\n`/next` \\- Upcoming matches\n`/featured` \\- Featured matches\n`/tables` \\- League tables\n`/timezone` \\- Pick your timezone \\(region buttons, live local times\\)\n`/lang` \\- Change language\n`/stop` \\- Unsubscribe"
+        : "`/start` \\-\u0639\u0636\u0648\u06CC\u062A\n`/teams` \\-\u0644\u06CC\u0633\u062A \u062A\u06CC\u0645\u200C\u0647\u0627\n`/follow 1,3,7` \\-\u0627\u0646\u062A\u062E\u0627\u0628 \u062A\u06CC\u0645\n`/follow all` \\-\u0647\u0645\u0647 \u062A\u06CC\u0645\u200C\u0647\u0627\n`/next` \\-\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648\n`/featured` \\-\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0634\u0627\u062E\u0635\n`/tables` \\-\u062C\u062F\u0648\u0644\u200C\u0647\u0627\n`/timezone` \\-\u062A\u0646\u0638\u06CC\u0645 \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC\n`/lang` \\-\u062A\u063A\u06CC\u06CC\u0631 \u0632\u0628\u0627\u0646\n`/stop` \\-\u0627\u0646\u0635\u0631\u0627\u0641";
       const header = lang === "en" ? "\u26BD *Help*\n\n" : "\u26BD *\u0631\u0627\u0647\u0646\u0645\u0627*\n\n";
       const tip = "\n\n" + (lang === "en" ? "Tip: tap the buttons below \uD83D\uDC47" : "\u0631\u0627\u0647\u0646\u0645\u0627: \u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u067E\u0627\u06CC\u06CC\u0646 \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646 \uD83D\uDC47");
       await sendTelegram(env, header + body + tip, chatId, replyKeyboard(lang));
@@ -457,7 +460,7 @@ export async function handleTelegramUpdate(env: Env, update) {
           const date = lang === "en" ? getEnglishDate(m.utcDate, tzEnv) : getJalaliDate(m.utcDate, tzEnv);
           const time = lang === "en" ? getEnglishTime(m.utcDate, tzEnv) : getJalaliTime(m.utcDate, tzEnv);
           const vs = lang === "en" ? " vs " : " \u{1F19A} ";
-          return escapeMarkdownCharacters(translateTeam(m.homeTeam.name)) + vs + escapeMarkdownCharacters(translateTeam(m.awayTeam.name)) + "\n" + escapeMarkdownCharacters(translateCompetition(m.competition.code)) + " \u2014 " + escapeMarkdownCharacters(date) + " \u2014 " + time;
+          return mdBold(translateTeam(m.homeTeam.name)) + vs + mdBold(translateTeam(m.awayTeam.name)) + "\n" + mdItalic(translateCompetition(m.competition.code)) + " \u2014 " + escapeMarkdownCharacters(date) + " \u2014 " + mdCode(time);
         });
         const header = lang === "en" ? "*Upcoming matches:*\n\n" : "*\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648:*\n\n";
         await sendTelegram(env, header + lines.join("\n\n"), chatId, replyKeyboard(lang));

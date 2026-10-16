@@ -27,6 +27,9 @@
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, subrequestCount, jalaliDateFa, englishDateYmd } from "./utils";
+// v13.106-mdstyle: entity builders (bold followed team + score, italic
+// competition group labels).
+import { mdBold, mdItalic } from "./md";
 import { translateTeam, translateCompetition } from "./translate";
 import { fetchStandings } from "./composers";
 import { sendTelegram, sendUclGifBanner } from "./telegram";
@@ -297,14 +300,14 @@ export async function buildNightDigestMessage(env: Env, nightMatches, lang, pref
         const my = followHome ? sc.home : sc.away;
         const their = followHome ? sc.away : sc.home;
         const verdict = my > their ? (en ? "won" : "\u0628\u0631\u0646\u062F\u0647 \u0634\u062F") : my < their ? (en ? "lost" : "\u0628\u0627\u062E\u062A") : (en ? "drew" : "\u0645\u0633\u0627\u0648\u06CC \u06A9\u0631\u062F");
-        // v13.96.1: score/rank strings pass through escapeMarkdownCharacters —
-        // MarkdownV2 reserves '-' and '|' (the 01:00Z tick's "can't parse
-        // entities" rejection burned all four sends of the first digest).
-        const scoreStr = escapeMarkdownCharacters(en ? (sc.home + " - " + sc.away) : toFaDigits(String(sc.home) + " - " + String(sc.away)));
+        // v13.96.1 lesson preserved: the score passes through mdBold, which
+        // escapes '-' and every other reserved char INSIDE the entity (the
+        // 01:00Z tick's "can't parse entities" rejection burned all four
+        // sends of the first digest). v13.106: the score is BOLD now.
         if (en) {
-          line = "\u26BD " + escapeMarkdownCharacters((followHome ? homeName : awayName)) + " " + verdict + " against " + escapeMarkdownCharacters(followHome ? awayName : homeName) + " \u2014 " + scoreStr;
+          line = "\u26BD " + mdBold(followHome ? homeName : awayName) + " " + verdict + " against " + escapeMarkdownCharacters(followHome ? awayName : homeName) + " \u2014 " + mdBold(en ? (sc.home + " - " + sc.away) : toFaDigits(String(sc.home) + " - " + String(sc.away)));
         } else {
-          line = "\u26BD " + escapeMarkdownCharacters(followHome ? homeName : awayName) + " \u062F\u0631 \u0645\u0642\u0627\u0628\u0644 " + escapeMarkdownCharacters(followHome ? awayName : homeName) + " " + verdict + " \u2014 " + scoreStr;
+          line = "\u26BD " + mdBold(followHome ? homeName : awayName) + " \u062F\u0631 \u0645\u0642\u0627\u0628\u0644 " + escapeMarkdownCharacters(followHome ? awayName : homeName) + " " + verdict + " \u2014 " + mdBold(en ? (sc.home + " - " + sc.away) : toFaDigits(String(sc.home) + " - " + String(sc.away)));
         }
       } else {
         const noScore = en ? "Score not available" : "\u0646\u062A\u06CC\u062C\u0647 \u062F\u0631 \u062F\u0633\u062A\u0631\u0633 \u0646\u06CC\u0633\u062A";
@@ -345,13 +348,13 @@ export async function buildNightDigestMessage(env: Env, nightMatches, lang, pref
     const LIMIT = 20;
     for (const [code, list] of byComp) {
       const comp = en ? code : translateCompetition(code);
-      lines.push("\u{1F3C6} " + escapeMarkdownCharacters(comp));
+      lines.push("\u{1F3C6} " + mdItalic(comp));
       for (const m of list) {
         if (shown >= LIMIT) break;
         const homeName = en ? m.homeTeam.name : translateTeam(m.homeTeam.name);
         const awayName = en ? m.awayTeam.name : translateTeam(m.awayTeam.name);
         const sc = ftScore(m);
-        const scoreStr = sc ? escapeMarkdownCharacters(en ? (sc.home + " - " + sc.away) : toFaDigits(String(sc.home) + " - " + String(sc.away))) : (en ? "n/a" : "\u061F");
+        const scoreStr = sc ? mdBold(en ? (sc.home + " - " + sc.away) : toFaDigits(String(sc.home) + " - " + String(sc.away))) : (en ? "n/a" : "\u061F");
         lines.push(escapeMarkdownCharacters(homeName) + " " + scoreStr + " " + escapeMarkdownCharacters(awayName));
         shown++;
       }

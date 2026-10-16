@@ -100,6 +100,16 @@ const kv = {
 
 // Expose the grabbed functions
 eval([
+  // v13.106-mdstyle: the real entity builders — every formatter composes
+  // its styled spans through them
+  // the md module's escape-regex vars (the grabbed functions close over them)
+  (src.match(/var MDV2_RESERVED = "[^"]*";/) || ["FAIL-MDV2-RESERVED"])[0],
+  (src.match(/var MDV2_ESCAPE_SRC = [^\n]*;/) || ["FAIL-MDV2-SRC"])[0],
+  (src.match(/var MDV2_ESCAPE_RE = [^\n]*;/) || ["FAIL-MDV2-RE"])[0],
+  grabFn("function mdEscape(text)"),
+  grabFn("function mdBold(text)"),
+  grabFn("function mdItalic(text)"),
+  grabFn("function mdCode(text)"),
   grabFn("function format24HourMessage(match, env, lang)"),
   grabFn("function formatBigMatchMessage(match, env, lang)"),
   grabFn("function format3HourMessage(match, env, lang)"),

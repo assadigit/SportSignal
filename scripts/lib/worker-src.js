@@ -62,7 +62,14 @@ function transform(ts) {
 function workerSrc() {
   if (cache) return cache;
   const order = [
-    "worker.ts", "config.ts", "tables.ts", "utils.ts", "teams.ts",
+    "worker.ts", "config.ts", "tables.ts", "utils.ts",
+    // v13.106-mdstyle: the MarkdownV2 entity builder — a PURE leaf (no
+    // imports) consumed by composers/digests/notify-status/bot-ui/bot. Sits
+    // right after utils.ts so every grabbed-function eval below it can slice
+    // mdEscape/mdBold/mdItalic/mdCode alongside the formatters that call
+    // them (check-composers, check-mdstyle, check-uclnight, check-weekly).
+    "md.ts",
+    "teams.ts",
     // v13.85-stadiumchip: home-ground table+gate (needs config + teams;
     // consumed by public-matches.ts pubMatch — sits before it like slugs.ts).
     "grounds.ts",

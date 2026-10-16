@@ -89,6 +89,14 @@ function getNowTehran() { return new Date(NOW.getTime()); }
 eval([
   grabFn("function toFaDigits(str)"),
   grabFn("function escapeMarkdownCharacters(text)"),
+  // v13.106-mdstyle: the real entity builders (the table title is BOLD)
+  (src.match(/var MDV2_RESERVED = "[^"]*";/) || ["FAIL-MDV2-RESERVED"])[0],
+  (src.match(/var MDV2_ESCAPE_SRC = [^\n]*;/) || ["FAIL-MDV2-SRC"])[0],
+  (src.match(/var MDV2_ESCAPE_RE = [^\n]*;/) || ["FAIL-MDV2-RE"])[0],
+  grabFn("function mdEscape(text)"),
+  grabFn("function mdBold(text)"),
+  grabFn("function mdItalic(text)"),
+  grabFn("function mdCode(text)"),
   grabFn("function isoWeekKey(d)"),
   grabFn("function weeklyTableCodes()"),
   grabFn("function buildLeagueTableMessage(code"),
@@ -112,7 +120,7 @@ CONFIG.LEAGUES = ["CL", "PL", "PD", "SA", "FL1"];
 
 // ---------- C: message building ----------
 const plMsg = buildLeagueTableMessage("PL", standings.PL, { label: "پایان هفته" });
-chk(plMsg.startsWith("جدول لیگ برتر انگلیس: — هفته ۴ — پایان هفته"), "PL header: league + matchday + label (v13.21 no 📊 emoji)");
+chk(plMsg.startsWith("*جدول لیگ برتر انگلیس*: — هفته ۴ — پایان هفته"), "PL header: BOLD league title + matchday + label (v13.106 styled)");
 chk(plMsg.includes("*۱\\. Manchester City FC — ۹ امتیاز*"), "leader row bold, Persian digits");
 chk(plMsg.includes("۲\\. Arsenal FC ⭐ — ۹ امتیاز"), "selected team starred");
 chk(plMsg.includes("۴\\. Liverpool FC ⭐"), "duplicate provider pos 6 renumbered to 4 (starred: selected)");

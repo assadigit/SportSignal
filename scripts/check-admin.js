@@ -13,6 +13,18 @@
 //      unparseable-CHAT_ID shape.
 const fs = require("fs");
 const src = require("./lib/worker-src")();
+// v13.106-mdstyle: the REAL entity builders (src/md.ts), sliced from the
+// concat and installed as GLOBALS — the eval'd builders/command chains below
+// compose bold/italic/code spans through them, and their free identifiers
+// resolve through the global object.
+const mdModStart = src.indexOf("// ===== src/md.ts =====");
+const mdModEnd = src.indexOf("// ===== src/", mdModStart + 10);
+if (mdModStart < 0 || mdModEnd < 0) {
+  console.error("FAIL: src/md.ts module not found in worker source");
+  process.exit(1);
+}
+Object.assign(globalThis, new Function(src.slice(mdModStart, mdModEnd) + "\n; return { mdEscape, mdBold, mdItalic, mdCode };")());
+
 
 let failed = 0;
 const check = (name, cond) => {
@@ -32,22 +44,11 @@ const check = (name, cond) => {
 // Outside code spans every reserved char must be escaped; bold must be
 // balanced; code spans must be closed. The escape-markup correctness is
 // behavioral: entity-stripping the output must yield the intended text.
-function mdv2Safe(text) {
-  let i = 0, bold = false;
-  while (i < text.length) {
-    const c = text[i];
-    if (c === "`") { // code span: raw until the closing backtick
-      const close = text.indexOf("`", i + 1);
-      if (close < 0) return false;
-      i = close + 1; continue;
-    }
-    if (c === "\\") { i += 2; continue; } // backslash escape (outside code)
-    if (c === "*") { bold = !bold; i++; continue; }
-    if ("_*[]()~`>#+-=|{}.!".includes(c)) return false; // unescaped reserved
-    i++;
-  }
-  return !bold; // unbalanced bold
-}
+// v13.106-mdstyle: the shared entity-aware validator (scripts/lib/mdv2.js)
+// — a SUPERSET of the v13.104 model (adds _italic_, __underline__, ~strike~,
+// ||spoiler||, [links](url), blockquotes, and the trailing-backslash rule).
+// Same contract: outside code spans every reserved char must be escaped.
+const { mdv2Safe } = require("./lib/mdv2");
 
 // ---------- 1) source-level assertions ----------
 const adminBranch = src.indexOf('text === "/admin" || text === "/status"');
@@ -388,6 +389,8 @@ function freshEnv(chatId) {
 
   // C5) /admin panel text parse-safety
   check("C5 /admin panel text is MarkdownV2-safe", mdv2Safe(adminBot.adminPanelText()));
+  // C5b) v13.106-mdstyle: the panel's command hints render as code spans
+  check("C5b /admin panel hints are monospace code spans", adminBot.adminPanelText().includes("`/members`") && adminBot.adminPanelText().includes("`/status`") && adminBot.adminPanelText().includes("`/broadcast`"));
 
   // C6) join/leave pager parse-safety with an adversarial profile
   globalThis.chatProfileGet = async () => ({ username: "we!rd_name", first_name: "Ali (X).", title: null, joined: "2026-01-01T00:00:00Z" });

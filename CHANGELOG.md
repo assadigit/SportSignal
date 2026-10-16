@@ -6,6 +6,105 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.106-mdstyle] — 2026-10-16 (MarkdownV2 rich formatting across every bot message surface — the entity system)
+
+The owner's ask: the bot's messages are parse-safe but visually PLAIN —
+"implement proper MarkdownV2 rich formatting so they look polished": bold
+match headers, monospace kickoff times, italic competition/round labels,
+consistent rhythm. This is the styling session, gated like a reliability
+change (the parse-400 graveyard is the constraint that shaped everything).
+
+### The entity system (one home, structural safety)
+
+- **`src/md.ts`** — the MarkdownV2 entity builder, a Layer-0 pure leaf:
+  `mdEscape` (escapes ALL 18 reserved chars + the backslash — three more
+  than the legacy `escapeMarkdownCharacters`: `*`, `` ` `` and `\`),
+  `mdBold`/`mdItalic` (wrap ESCAPED inner text — an adversarial team name
+  can never break the span), `mdCode` (content stays RAW — code spans have
+  no inner escaping; used for digits/times/ids/commands only). The escape
+  regex is built from a string (not a literal): its char class contains a
+  backtick, which the eval harness's function slicer would misread as a
+  template-literal opener.
+- **`scripts/lib/mdv2.js`** — the SHARED entity-aware parse-safety
+  validator (a superset of check-admin's v13.104 model): *bold*, _italic_,
+  __underline__, ~strike~, ||spoiler||, `code`, ```pre```, [links](url),
+  line-start blockquotes, backslash escapes, the trailing-backslash rule.
+  FAIL-FORM by construction: unescaped reserved char anywhere outside
+  entities, unclosed entity, malformed link = red build. Plus
+  `mdv2Entities()` — the entity extractor the behavioral gates assert with.
+- **`scripts/check-mdstyle.js`** (+100 checks, wired into `npm test`):
+  every styled surface built from the REAL source, parse-gated AND
+  entity-asserted — the six pre-match cards + result (fa+en+adversarial
+  identities "Ali (X). United 🆚 B-Team_FC"), the four digest builders,
+  the HT/postponement alerts, the welcome strings, /help + /next through
+  the REAL command chain, and the strategy contracts (parse_mode pinned,
+  GIF captions stay plain, harness order). The validator's FAIL-FORM
+  proofs replay the v13.71 `>`, v13.90 `(`, v13.90 `.` graveyard shapes.
+
+### The styling (per the design spec)
+
+- **Pre-match cards (24h/72h/3h/1h/5min/match-start)**: `📅 _date_` /
+  `⏰ \`۲۱:۰۰\`` / `*home 🆚 away*` / `_comp — stage_` — one bold match
+  header, monospace kickoff, italic labels; the venue line stays plain
+  (selective emphasis).
+- **Result card**: bold team names, italic comp+date, the scoreline BOLD
+  (`نتیجه *۲\-۱*`), winner line plain.
+- **Night digest**: followed-team verdict carries the BOLD team + BOLD
+  score; "نتایج شب" group labels italic; other-result scores bold between
+  plain names (the markdown-instructions template).
+- **Morning digest / UCL preview / week-ahead**: bold fixture lines,
+  monospace times, italic competitions. Week-ahead: the derby/UCL lines
+  keep their ⚔️/🔥 emoji anchors instead of the old whole-line bold —
+  MarkdownV2 cannot nest entities, and the lines now contain spans.
+- **League tables**: the fa title is ONE bold span including «جدول»
+  (`*جدول لیگ برتر انگلیس*:`); rows unchanged.
+- **HT / postponed / cancelled alerts**: bold teams + bold score, italic
+  competition (the parenthesized comp label became an em-dash + italic).
+- **Welcome (fa/en)**: the greeting line is a BOLD title; referral links
+  unchanged (bare-text auto-links).
+- **/help**: every command a monospace code span (both languages);
+  **/next**: bold match lines + italic comp + monospace time; **/teams**:
+  bold team names; tz picker texts: the live local time renders monospace.
+- **Admin surfaces**: the /admin panel hints and the roster search hint
+  render `/members` etc. as code spans (join/leave pages, roster, status
+  card were already entity-styled in v13.104/105).
+- **Late tags** (backfill + repair legs): italic — a meta-note, visually
+  secondary. Composition contract between the two legs preserved.
+
+### A LIVE BUG THE GATE CAUGHT (fixed)
+
+- **The en /help body carried RAW parens** — `(region buttons, live local
+  times)` unescaped since the line was written: every English /help send
+  was a parse-400 dying silently (the v13.71/v13.90 shape; the fa audience
+  never exercised it). Fixed with `\(…\)` — and the single-vs-double
+  backslash trap that produced it is now fenced by check-mdstyle's /help
+  parse gate (a JS string literal drops a lone `\(` — the escape must be
+  `\\(` in source).
+
+### Harness co-evolution
+
+- `worker-src.js`: md.ts registered after utils.ts (the concat order).
+- check-join-flow + check-bot-edges: the blanket no-markup validators
+  became the shared entity-aware one (the welcome/tz texts carry
+  intentional entities now).
+- check-admin: inline validator → shared superset; new panel code-span
+  assertions (C5b).
+- check-composers / check-no-miss / check-weekly-tables / check-uclnight:
+  the REAL md builders (+ their escape-regex vars) sliced into every eval
+  that now calls them; the uclnight behavioral assertions moved to the
+  code-span time form; the weekly-tables header assertion to the bold
+  title form.
+- The three chain harnesses (admin/join-flow/bot-edges) install the real
+  md builders as globals — the eval'd builders/chains resolve them through
+  the global object.
+- Deliberately UNCHANGED: `sendAnimation` GIF captions (plain, no
+  parse_mode — the v13.96.1 lesson), `standingsLine` bullets, promo
+  footers, all logic/windows/dedupe/keyboards/callbacks.
+
+Suite: 1509 OK / 0 FAIL (was 1409 — +100 mdstyle checks).
+
+---
+
 ## [13.105-membersearch] — 2026-10-15 (the roster caps at the last 10 joined + "/members <query>" — the membership lookup)
 
 The owner's ask: "if users were too much, it must show the last 10 joined,

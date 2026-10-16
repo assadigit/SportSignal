@@ -31,6 +31,8 @@
 import { CONFIG, VERSION } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate } from "./utils";
+// v13.106-mdstyle: panel command hints render as monospace code spans.
+import { mdCode } from "./md";
 import { getBotMembers, getRegisteredChats, getUserPrefs } from "./users";
 // v13.92-d1userstore: single-row profile read (D1 primary / legacy blob).
 import { chatProfileGet } from "./user-store";
@@ -118,10 +120,10 @@ export function adminPanelText() {
   // the owner's /admin did nothing. Guillemets are reserved-free AND
   // typographically correct for Persian copy.
   return "\u{1F6E0} *\u067E\u0646\u0644 \u0645\u062F\u06CC\u0631\u06CC\u062A SportSignal*\n\n"
-    + "/members \u2014 \u0644\u06CC\u0633\u062A \u06F1\u06F0 \u0639\u0636\u0648 \u0622\u062E\u0631\n"
-    + "/members \u00AB\u0622\u06CC\u062F\u06CC \u06CC\u0627 \u0646\u0627\u0645\u00BB \u2014 \u062C\u0633\u062A\u062C\u0648\u06CC \u0639\u0636\u0648 \u062E\u0627\u0635\n"
-    + "/status \u2014 \u0648\u0636\u0639\u06CC\u062A \u0632\u0646\u062F\u0647 \u0631\u0628\u0627\u062A\n"
-    + "/broadcast \u00AB\u0645\u062A\u0646\u00BB \u2014 \u0627\u0631\u0633\u0627\u0644 \u067E\u06CC\u0627\u0645 \u0628\u0647 \u0647\u0645\u0647 \u0627\u0639\u0636\u0627\n\n"
+    + mdCode("/members") + " \u2014 \u0644\u06CC\u0633\u062A \u06F1\u06F0 \u0639\u0636\u0648 \u0622\u062E\u0631\n"
+    + mdCode("/members") + " \u00AB\u0622\u06CC\u062F\u06CC \u06CC\u0627 \u0646\u0627\u0645\u00BB \u2014 \u062C\u0633\u062A\u062C\u0648\u06CC \u0639\u0636\u0648 \u062E\u0627\u0635\n"
+    + mdCode("/status") + " \u2014 \u0648\u0636\u0639\u06CC\u062A \u0632\u0646\u062F\u0647 \u0631\u0628\u0627\u062A\n"
+    + mdCode("/broadcast") + " \u00AB\u0645\u062A\u0646\u00BB \u2014 \u0627\u0631\u0633\u0627\u0644 \u067E\u06CC\u0627\u0645 \u0628\u0647 \u0647\u0645\u0647 \u0627\u0639\u0636\u0627\n\n"
     + "\u0627\u0632 \u062F\u06A9\u0645\u0647\u200C\u0647\u0627\u06CC \u0632\u06CC\u0631 \u0647\u0645 \u0645\u06CC\u200C\u062A\u0648\u0627\u0646\u06CC\u062F \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06A9\u0646\u06CC\u062F:";
 }
 
@@ -249,7 +251,7 @@ export async function adminMembersMessage(env: Env, query) {
     + "\n\n" + (lines.length ? lines.join("\n\n") : "\u0647\u06CC\u0686 \u0639\u0636\u0648\u06CC \u062B\u0628\u062A \u0646\u0634\u062F\u0647 \u0627\u0633\u062A\u064E");
   if (rest > 0) msg += "\n\n\u2026 \u0648 " + toFaDigits(String(rest)) + " \u0639\u0636\u0648 \u062F\u06CC\u06AF\u0631";
   // the discovery line for the search capability — on every roster render.
-  msg += "\n\n\uD83D\uDD0D \u062C\u0633\u062A\u062C\u0648\u06CC \u0639\u0636\u0648: /members \u00AB\u0622\u06CC\u062F\u06CC \u06CC\u0627 \u0646\u0627\u0645\u00BB";
+  msg += "\n\n\uD83D\uDD0D \u062C\u0633\u062A\u062C\u0648\u06CC \u0639\u0636\u0648: " + mdCode("/members") + " \u00AB\u0622\u06CC\u062F\u06CC \u06CC\u0627 \u0646\u0627\u0645\u00BB";
   return msg;
 }
 

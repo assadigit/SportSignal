@@ -11,6 +11,18 @@
 // fails until the assertions are updated too.
 const fs = require("fs");
 const src = require("./lib/worker-src")();
+// v13.106-mdstyle: the REAL entity builders (src/md.ts), sliced from the
+// concat and installed as GLOBALS — the eval'd builders/command chains below
+// compose bold/italic/code spans through them, and their free identifiers
+// resolve through the global object.
+const mdModStart = src.indexOf("// ===== src/md.ts =====");
+const mdModEnd = src.indexOf("// ===== src/", mdModStart + 10);
+if (mdModStart < 0 || mdModEnd < 0) {
+  console.error("FAIL: src/md.ts module not found in worker source");
+  process.exit(1);
+}
+Object.assign(globalThis, new Function(src.slice(mdModStart, mdModEnd) + "\n; return { mdEscape, mdBold, mdItalic, mdCode };")());
+
 
 // --- Extract BOT_STRINGS + botStr (real definitions, so the callback test
 //     exercises the actual welcome strings — catches typos in BOT_STRINGS) ---
@@ -450,12 +462,17 @@ const check = (name, cond) => {
       }
       check("TZ_REGIONS: every slug resolves to its canonical tz (" + cities + " cities)", badSlugs.length === 0);
       check("TZ_REGIONS: every slug is Telegram callback-safe ([a-z0-9-])", badCharsets.length === 0);
-      // MarkdownV2 discipline on the new literals (no unescaped ASCII
-      // punctuation in any of the picker texts)
+      // MarkdownV2 discipline on the new literals — v13.106 entity-aware:
+      // the tz texts now carry INTENTIONAL code spans (the live local time
+      // renders monospace), so "clean" means "parses under the shared
+      // entity-aware validator" (outside code spans every reserved char
+      // must still be escaped — the v13.90 rule, unchanged in spirit).
+      const { mdv2Safe, mdv2Entities: mdv2Ent } = require("./lib/mdv2");
       const mdTexts = [tzApi.tzOnboardText("fa"), tzApi.tzOnboardText("en"), tzApi.tzRegionText("fa"), tzApi.tzRegionText("en"), tzApi.tzConfirmText("fa", "Europe/London"), tzApi.tzConfirmText("en", "Europe/London"), tzApi.tzDoneText("fa", "Europe/London"), tzApi.tzDoneText("en", "Europe/London"), tzApi.tzStatusText("fa", "Europe/London"), tzApi.tzStatusText("en", "Europe/London"), tzApi.tzConfirmText("fa", "Asia/Tehran"), tzApi.tzConfirmText("en", "Australia/Sydney")];
-      // the FULL MarkdownV2 reserved set (minus backslash): _ * [ ] ( ) ~ ` > # + - = | { } . !
-      const mdClean = mdTexts.every((t) => !/(^|[^\\])[_*\[\]()~`>#+\-=|{}.!]/.test(t));
+      const mdClean = mdTexts.every((t) => mdv2Safe(t));
       check("v13.90 tz texts are MarkdownV2-clean (escaped punctuation)", mdClean);
+      // v13.106-mdstyle: the local time renders as a MONOSPACE code span
+      check("tz texts carry the live local time as a code span (v13.106)", mdv2Ent(tzApi.tzStatusText("fa", "Asia/Tehran")).code.length === 1 && mdv2Ent(tzApi.tzConfirmText("en", "Europe/London")).code.length === 1);
       globalThis.toFaDigits = prevFa;
       globalThis.escapeMarkdownCharacters = prevEsc;
     }
