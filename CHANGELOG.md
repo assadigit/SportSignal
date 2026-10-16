@@ -70,9 +70,28 @@ the next full sweep's `canonDedupe` merge rewrites the blob with the
 duplicates collapsed (change-only write fires because the content
 changes).
 
+### Follow-up — the provider-prefix token gaps (same disease, 7 more live pairs)
+
+A whole-pool scan after the digit fold found SEVEN residual same-fixture
+pairs — the same duplicate-line disease through PREFIX/SUFFIX word gaps:
+FD legal names vs TSP/sportscore short names (`AFC Bournemouth` vs
+`Bournemouth`, `Genoa CFC` vs `Genoa`, `1. FSV Mainz 05` vs `Mainz`,
+`Cagliari Calcio` vs `Cagliari`, `Frosinone Calcio` vs `Frosinone`,
+`US Sassuolo Calcio` vs `Sassuolo`, `Bournemouth AFC` vs `Bournemouth`).
+The Frosinone pair's TSP twin was `SCHEDULED` (stale), so it slipped past
+every FINISHED-filtered surface that night — but any future surface where
+both copies render would print the game twice.
+
+**Fix**: `NORM_BASE_TOKENS` gains `afc|cfc|fsv|us|calcio` — each a
+verified provider-variant pair from production pool data; every one is a
+generic club suffix (Unione Sportiva, Calcio, the English/Italian prefix
+acronyms) that can never distinguish two clubs in the tracked universe.
+`normTeamKey` (the FA-dictionary layer) already carried `afc`; the dedupe
+layer now matches it.
+
 ### Gates
 
-- `check-dedupe.js`: +13 checks — the digitfold equivalence table (incl.
+- `check-dedupe.js`: +24 checks — the digitfold + prefixfold equivalence table (incl.
   over-merge negatives: Köln ≠ Union Berlin ≠ Copenhagen ≠ Bologna) and
   the EXACT live-pool regression pairs (FD `565828` + `spsc-…-BL1-36`
   2026-10-16, FD `565814` + `spsc-…-BL1-0` 2026-10-11) collapsing to ONE

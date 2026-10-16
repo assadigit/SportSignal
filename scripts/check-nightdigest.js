@@ -199,10 +199,16 @@ check("collapsePairings keys on competition + normalized pairing", /function col
   if (buildNight) {
     const fdRow = { id: 565828, competition: { code: "BL1" }, homeTeam: { name: "Eintracht Frankfurt" }, awayTeam: { name: "1. FC Köln" }, utcDate: "2026-10-16T18:30:00Z", status: "FINISHED", score: { fullTime: { home: 1, away: 0 } } };
     const ssRow = { id: "spsc-2026-10-16-BL1-36", competition: { code: "BL1" }, homeTeam: { name: "Eintracht Frankfurt" }, awayTeam: { name: "FC Köln" }, utcDate: "2026-10-16T18:30:00.000Z", status: "FINISHED", score: { fullTime: { home: 1, away: 0 } } };
-    const frosi = { id: 561112, competition: { code: "SA" }, homeTeam: { name: "Frosinone" }, awayTeam: { name: "US Sassuolo Calcio" }, utcDate: "2026-10-16T19:00:00Z", status: "FINISHED", score: { fullTime: { home: 4, away: 2 } } };
-    const nightMsg = await buildNight({ TEHRAN_TZ: "Europe/Berlin" }, [fdRow, ssRow, frosi], "fa", { "9": {} }, 9, new Map(), { y: 2026, m: 10, d: 16 });
+    // v13.110 follow-up: the SECOND live duplicate class — FD legal names
+    // ("Frosinone Calcio" vs "US Sassuolo Calcio") vs TSP short names
+    // ("Frosinone" vs "Sassuolo"), the residual pairs the prefix-token
+    // fold (teams.ts) + collapsePairings must also render once.
+    const frosiFd = { id: 558573, competition: { code: "SA" }, homeTeam: { name: "Frosinone Calcio" }, awayTeam: { name: "US Sassuolo Calcio" }, utcDate: "2026-10-16T18:45:00Z", status: "FINISHED", score: { fullTime: { home: 4, away: 2 } } };
+    const frosiTs = { id: "tsd-2482204", competition: { code: "SA" }, homeTeam: { name: "Frosinone" }, awayTeam: { name: "Sassuolo" }, utcDate: "2026-10-16T18:45:00.000Z", status: "FINISHED", score: { fullTime: { home: 4, away: 2 } } };
+    const nightMsg = await buildNight({ TEHRAN_TZ: "Europe/Berlin" }, [fdRow, ssRow, frosiFd, frosiTs], "fa", { "9": {} }, 9, new Map(), { y: 2026, m: 10, d: 16 });
     check("behavioral: duplicated Frankfurt–Köln renders the pairing ONCE", (nightMsg.match(/Frankfurt/g) || []).length === 1 && (nightMsg.match(/Köln/g) || []).length === 1);
     check("behavioral: the ۱-۰ score line appears exactly once", (nightMsg.match(/۱ \\- ۰/g) || []).length === 1);
+    check("behavioral: duplicated Frosinone–Sassuolo (prefix-token variant) renders ONCE", (nightMsg.match(/Frosinone/g) || []).length === 1 && (nightMsg.match(/Sassuolo/g) || []).length === 1);
     check("behavioral: the distinct night match still renders (Frosinone 4-2)", nightMsg.includes("Frosinone") && (nightMsg.match(/۴ \\- ۲/g) || []).length === 1);
     check("behavioral: the collapsed night digest still parses (MarkdownV2)", mdv2Safe(nightMsg));
     // The collapse must also hold when the two copies disagree on

@@ -113,4 +113,30 @@ const fdKo = { id: 565814, competition: { code: "BL1" }, homeTeam: { name: "1. F
 const spKo = { id: "spsc-2026-10-11-BL1-0", competition: { code: "BL1" }, homeTeam: { name: "FC Köln" }, awayTeam: { name: "Borussia Monchengladbach" }, utcDate: "2026-10-11T13:30:00.000Z", status: "FINISHED" };
 check("LIVE 2026-10-11 pair: Köln home + Monchengladbach umlaut fold collapses to ONE", canonDedupe([fdKo, spKo]).length === 1);
 
+// v13.110 follow-up: the provider-PREFIX token gaps the live pool still
+// carried after the digit fold (7 residual same-fixture pairs on
+// 2026-10-16, all FD legal name vs TSP/sportscore short name):
+check("prefixfold: AFC Bournemouth ≡ Bournemouth ≡ Bournemouth AFC", normalizeTeamName("AFC Bournemouth") === normalizeTeamName("Bournemouth") && normalizeTeamName("Bournemouth AFC") === normalizeTeamName("Bournemouth"));
+check("prefixfold: Genoa CFC ≡ Genoa", normalizeTeamName("Genoa CFC") === normalizeTeamName("Genoa"));
+check("prefixfold: 1. FSV Mainz 05 ≡ Mainz", normalizeTeamName("1. FSV Mainz 05") === normalizeTeamName("Mainz"));
+check("prefixfold: Cagliari Calcio ≡ Cagliari", normalizeTeamName("Cagliari Calcio") === normalizeTeamName("Cagliari"));
+check("prefixfold: Frosinone Calcio ≡ Frosinone", normalizeTeamName("Frosinone Calcio") === normalizeTeamName("Frosinone"));
+check("prefixfold: US Sassuolo Calcio ≡ Sassuolo", normalizeTeamName("US Sassuolo Calcio") === normalizeTeamName("Sassuolo"));
+check("prefixfold: US Lecce ≡ Lecce", normalizeTeamName("US Lecce") === normalizeTeamName("Lecce"));
+check(
+  "prefixfold never over-merges distinct clubs",
+  normalizeTeamName("Cagliari Calcio") !== normalizeTeamName("Calcio Como") &&
+  normalizeTeamName("AFC Bournemouth") !== normalizeTeamName("AFC Ajax") &&
+  normalizeTeamName("US Sassuolo Calcio") !== normalizeTeamName("Cagliari Calcio")
+);
+// The EXACT residual live pairs, canonDedupe end-to-end (FD id 560595 +
+// tsd-2494053; FD id 558573 + tsd-2482204 — the Frosinone pair whose TSP
+// twin was SCHEDULED and slipped past every FINISHED-filtered surface):
+const fdCh = { id: 560595, competition: { code: "PL" }, homeTeam: { name: "Chelsea FC" }, awayTeam: { name: "AFC Bournemouth" }, utcDate: "2026-10-10T14:00:00Z", status: "FINISHED", score: { fullTime: { home: 1, away: 0 } } };
+const tsCh = { id: "tsd-2494053", competition: { code: "PL" }, homeTeam: { name: "Chelsea" }, awayTeam: { name: "Bournemouth" }, utcDate: "2026-10-10T14:00:00.000Z", status: "SCHEDULED", venue: "Stamford Bridge" };
+check("LIVE Chelsea pair: 'AFC Bournemouth' FD + 'Bournemouth' TSP collapse to ONE", canonDedupe([fdCh, tsCh]).length === 1);
+const fdFr = { id: 558573, competition: { code: "SA" }, homeTeam: { name: "Frosinone Calcio" }, awayTeam: { name: "US Sassuolo Calcio" }, utcDate: "2026-10-16T18:45:00Z", status: "FINISHED", score: { fullTime: { home: 4, away: 2 } } };
+const tsFr = { id: "tsd-2482204", competition: { code: "SA" }, homeTeam: { name: "Frosinone" }, awayTeam: { name: "Sassuolo" }, utcDate: "2026-10-16T18:45:00.000Z", status: "SCHEDULED" };
+check("LIVE Frosinone pair: 'Calcio' suffix FD + short TSP collapse to ONE", canonDedupe([fdFr, tsFr]).length === 1);
+
 process.exit(fails ? 1 : 0);
