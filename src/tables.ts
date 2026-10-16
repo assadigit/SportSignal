@@ -60,6 +60,12 @@ export const COMP_EN = {
   "AFC": "AFC Asian Cup"
 };
 export const STAGE_FA = {
+  // v13.108-fasync: the new UCL format's league stage — the live pool sends
+  // stage "LEAGUE_STAGE" (FD) / "LEAGUE_PHASE" (api-sports) and without
+  // these keys every Farsi pre-match card rendered the italic ENGLISH label
+  // "_LEAGUE STAGE_" (same glossary-sync class as the club-name leaks)
+  "LEAGUE_STAGE": "\u0645\u0631\u062D\u0644\u0647 \u0644\u06CC\u06AF",
+  "LEAGUE_PHASE": "\u0645\u0631\u062D\u0644\u0647 \u0644\u06CC\u06AF",
   "PLAYOFF_ROUND": "\u067E\u0644\u06CC\u200C\u0622\u0641 \u0645\u0631\u062D\u0644\u0647 \u062D\u0630\u0641\u06CC",
   "ROUND_OF_16": "\u06CC\u06A9\u200C\u0647\u0634\u062A\u0645 \u0646\u0647\u0627\u06CC\u06CC",
   "QUARTER_FINALS": "\u06CC\u06A9\u200C\u0686\u0647\u0627\u0631\u0645 \u0646\u0647\u0627\u06CC\u06CC",

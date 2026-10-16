@@ -170,6 +170,28 @@ const LIVE_SET = [
     // 4f) the website builder still loads the glossary (unchanged surface).
     const pubSeg = src.slice(src.indexOf("// ===== src/public-matches.ts ====="), src.indexOf("// ===== src/bot-ui.ts ====="));
     check("source: public-matches builder still calls ensureFaAiCache (website side)", /ensureFaAiCache\(env\)/.test(pubSeg));
+    // 4g) the UCL league-stage label carries the SAME Persian value on both
+    // surfaces (bot STAGE_FA / website ROUND_FA) — the label sibling of the
+    // glossary-sync contract (v13.108 follow-up: the new UCL format's
+    // LEAGUE_STAGE rendered English on BOTH surfaces before this).
+    const tablesSeg = src.slice(src.indexOf("// ===== src/tables.ts ====="), src.indexOf("// ===== src/grounds.ts ====="));
+    const leagueStageFa = /"LEAGUE_STAGE":\s*"((?:[^"\\]|\\.)*)"/.exec(tablesSeg);
+    const leagueStageRoundFa = /"LEAGUE_STAGE":\s*"((?:[^"\\]|\\.)*)"/.exec(pubSeg);
+    // decode both (tables.ts writes \u escapes, public-matches.ts raw Persian)
+    const decode = (s) => { try { return JSON.parse('"' + s + '"'); } catch (e) { return s; } };
+    check("source: LEAGUE_STAGE mapped in the bot's STAGE_FA", !!leagueStageFa);
+    check("source: LEAGUE_STAGE mapped in the website's ROUND_FA", !!leagueStageRoundFa);
+    check("source: LEAGUE_STAGE value identical on both surfaces", !!leagueStageFa && !!leagueStageRoundFa && decode(leagueStageFa[1]) === decode(leagueStageRoundFa[1]), leagueStageFa && leagueStageRoundFa ? decode(leagueStageFa[1]) + " vs " + decode(leagueStageRoundFa[1]) : "missing");
+    // 4h) behavioral: the Farsi featured card renders the Persian stage label
+    // for a LEAGUE_STAGE match (was italic English "_LEAGUE STAGE_").
+    const stageCard = formatBigMatchMessage({
+      homeTeam: { name: "Paris Saint-Germain FC" },
+      awayTeam: { name: "FC Barcelona" },
+      competition: { code: "CL" },
+      utcDate: "2026-10-20T19:00:00Z",
+      stage: "LEAGUE_STAGE"
+    }, { STATE: { get: async () => null } }, "fa");
+    check("behavioral: featured card stage label is Persian for LEAGUE_STAGE", stageCard.indexOf("\u0645\u0631\u062D\u0644\u0647 \u0644\u06CC\u06AF") >= 0 && !/LEAGUE ?STAGE/.test(stageCard), stageCard.replace(/\n/g, " | "));
   } finally {
     h.restore();
   }

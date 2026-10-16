@@ -28,6 +28,13 @@ import { masterTeamList, masterMemo } from "./users";
 // The map covers FD stage enums AND the free-text labels sportscore uses —
 // unknown labels pass through untranslated (better a Latin chip than none).
 export const ROUND_FA: Record<string, string> = {
+  // v13.108-fasync: the new UCL format's league stage — same Persian value as
+  // the bot's STAGE_FA (tables.ts): one label, both surfaces (the website's
+  // roundFa chip was null for every LEAGUE_STAGE match and the bot card
+  // showed the English "LEAGUE STAGE" label before this). Keep comments in
+  // grabbed var blocks free of semicolons (grabVar slices at the first one)
+  "LEAGUE_STAGE": "مرحله لیگ",
+  "LEAGUE_PHASE": "مرحله لیگ",
   "FINAL": "فینال",
   "SEMI_FINALS": "نیمه‌نهایی",
   "SEMI_FINAL": "نیمه‌نهایی",

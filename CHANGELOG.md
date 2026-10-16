@@ -66,17 +66,25 @@ Three stacked defects:
   (FK Shakhtar Donetsk + Gol Gohar FC need no entry — the normalized layer
   already resolves them; two deliberate website renderings upgrade to the
   curated dict values: شاختار → شاختار دونتسک, گل گهر → گل‌گهر سیرجان.)
+- **The label sibling of the same gap**: the new UCL format's
+  `LEAGUE_STAGE`/`LEAGUE_PHASE` was missing from BOTH label maps — every
+  Farsi pre-match card rendered the italic ENGLISH `_LEAGUE STAGE_` and the
+  website's `roundFa` chip was null. Both maps now carry مرحله لیگ (same
+  Persian value, both surfaces — pinned by the gate): `STAGE_FA`
+  (src/tables.ts, bot cards) + `ROUND_FA` (src/public-matches.ts, website
+  chips).
 
 ### Gate co-evolution
 
-- **`scripts/check-fasync.js` (NEW, 24 checks)**: drives the REAL translate
+- **`scripts/check-fasync.js` (NEW, 28 checks)**: drives the REAL translate
   stack through the full-worker harness — 34 live-feed names must resolve
   identically COLD (0 leaks, 0 mismatches vs the website glossary) and WARM
   (no drift; override-owned PSG excepted); precedence proofs (override
   sentinel outranks dict; learned never shadows dict; learned fills gaps);
   reset restores cold; source asserts pin the wiring (bot loads the glossary,
-  norm layer before learned, override set built + cleared). Negative control
-  included (unknown club stays English — the checks can fail).
+  norm layer before learned, override set built + cleared, LEAGUE_STAGE
+  label identical on both surfaces, the featured card renders the Persian
+  stage). Negative control included (unknown club stays English).
 - **`scripts/check-fa-dict.js`**: +26 live-feed legal-name variants (280
   names checked, 0 failures).
 
