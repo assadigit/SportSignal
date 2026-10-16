@@ -1,6 +1,22 @@
-// SportSignal — team/competition translation (3-layer Farsi stack:
-// admin override → AI-learned → static dict → fuzzy stem) and competition
-// classification helpers. Owns the lazy dict caches + the AI-learned cache.
+// SportSignal — team/competition translation (4-layer Farsi stack:
+// admin override → static dict (exact + normalized key) → AI-learned →
+// fuzzy stem) and competition classification helpers. Owns the lazy dict
+// caches + the AI-learned cache.
+//
+// v13.108-fasync: the bot and the website must share ONE glossary. Three
+// fixes landed together:
+//   1) FA_TEAMS_NORM was built but NEVER consulted — provider legal-name
+//      variants ("Paris Saint-Germain FC" vs dict "Paris Saint-Germain")
+//      missed the exact match and then died in the ambiguous stem fallback
+//      (both "paris" and "parissaintgermain" stems match) → ENGLISH leaked
+//      in the bot's Farsi mode while the cache-loaded website showed
+//      Persian. The normalized lookup now runs BEFORE the AI cache.
+//   2) Admin overrides are split from AI-learned entries and checked FIRST
+//      (the documented v12.x "highest priority" contract, now real even
+//      over exact dict hits); learned entries stay subordinate to the
+//      curated static dict.
+//   3) The bot webhook path now calls ensureFaAiCache (see bot.ts) — both
+//      surfaces load the same KV fa_teams_ai glossary.
 
 
 import { CONFIG } from "./config";
@@ -13,6 +29,10 @@ var FA_TEAMS_DICT = null;
 var FA_TEAMS_NORM = null;
 var FA_TEAMS_STEM = null;
 var FA_AI_CACHE = null;
+// v13.108-fasync: keys of FA_AI_CACHE that came from the admin overrides
+// (fa_teams_ai.overrides) — they outrank the static dict; learned keys do
+// not. One Set, loaded in ensureFaAiCache alongside the cache itself.
+var FA_AI_OVERRIDE_KEYS = null;
 export function translateTeam(englishName) {
   if (!FA_TEAMS_DICT) {
     FA_TEAMS_DICT = buildFaTeamDict();
@@ -23,12 +43,24 @@ export function translateTeam(englishName) {
       FA_TEAMS_STEM.push([normTeamKey(en).replace(/\d+/g, ""), fa]);
     }
   }
-  if (FA_TEAMS_DICT[englishName]) return FA_TEAMS_DICT[englishName];
+  // v13.108-fasync: admin overrides take HIGHEST priority (the v12.x
+  // contract, now honored over exact dict hits too — the owner can correct
+  // any name, any provider variant, from POST /api/fa-teams/override).
   const key = normTeamKey(englishName);
+  if (FA_AI_CACHE && FA_AI_CACHE.size && FA_AI_OVERRIDE_KEYS && FA_AI_OVERRIDE_KEYS.has(key)) {
+    return FA_AI_CACHE.get(key);
+  }
+  if (FA_TEAMS_DICT[englishName]) return FA_TEAMS_DICT[englishName];
   if (!key) return englishName;
-  // v12.x-admin-override: admin manual overrides take HIGHEST priority —
-  // checked before the AI cache + the static dictionary + fuzzy matching.
-  // Stored in fa_teams_ai.overrides (set via POST /api/fa-teams/override).
+  // v13.108-fasync: THE normalized-dict lookup (was built, never consulted).
+  // Suffix/punctuation variants ("Paris Saint-Germain FC", "FK Shakhtar
+  // Donetsk", "Gol Gohar FC") resolve deterministically here — before the
+  // AI cache, so the curated dictionary stays the shared source of truth
+  // for every name it covers (bot cold isolate ≡ bot warm ≡ website).
+  const normHit = FA_TEAMS_NORM.get(key);
+  if (normHit) return normHit;
+  // v13.108-fasync: AI-learned names fill the gaps the dict does NOT cover
+  // — the same KV glossary the website bakes into payload faName fields.
   if (FA_AI_CACHE && FA_AI_CACHE.size) {
     const aiHit = FA_AI_CACHE.get(key);
     if (aiHit) return aiHit;
@@ -49,17 +81,23 @@ export function translateTeam(englishName) {
 export async function ensureFaAiCache(env: Env) {
   if (FA_AI_CACHE) return FA_AI_CACHE;
   FA_AI_CACHE = new Map();
+  FA_AI_OVERRIDE_KEYS = new Set();
   const rec = await env.STATE.get(CONFIG.KV_FA_TEAMS, "json").catch(() => null);
   // v12.x-admin-override: load admin manual overrides FIRST (they take
-  // priority over AI-learned names — both stored in the same KV record).
+  // priority over AI-learned names AND the static dictionary — both stored
+  // in the same KV record). v13.108-fasync: their keys are ALSO recorded in
+  // FA_AI_OVERRIDE_KEYS so translateTeam can rank them above dict hits.
   if (rec && rec.overrides && typeof rec.overrides === "object") {
     for (const [k, v] of Object.entries(rec.overrides)) {
-      if (typeof v === "string" && v) FA_AI_CACHE.set(k, v);
+      if (typeof v === "string" && v) {
+        FA_AI_CACHE.set(k, v);
+        FA_AI_OVERRIDE_KEYS.add(k);
+      }
     }
   }
   if (rec && rec.learned && typeof rec.learned === "object") {
     for (const [k, v] of Object.entries(rec.learned)) {
-      if (typeof v === "string" && v) FA_AI_CACHE.set(k, v);
+      if (typeof v === "string" && v && !FA_AI_CACHE.has(k)) FA_AI_CACHE.set(k, v);
     }
   }
   return FA_AI_CACHE;
@@ -69,6 +107,7 @@ export function faAiCacheSize() {
 }
 export function resetFaAiCache() {
   FA_AI_CACHE = null;
+  FA_AI_OVERRIDE_KEYS = null;
   FA_VENUE_CACHE = null;
 }
 // v13.13-venues: AI-learned Persian stadium/venue names. Loaded from

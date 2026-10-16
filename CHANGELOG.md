@@ -6,6 +6,90 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.108-fasync] — 2026-10-16 (one Farsi glossary for bot & website — the cold-isolate English leaks)
+
+The owner's report: "there are still a number of clubs without Farsi
+translation or equivalents ... Paris Saint-Germain! which appeared English in
+Farsi mode of the bot, or Sporting Lisbon. Please make sure the website is
+synced with the Telegram bot and they share the same glossary and dictionary
+between them for AI-translated club names."
+
+### Root cause (measured live, not guessed)
+
+A diff of the live `/api/public-matches` payload (108 team names) against the
+REAL `translateTeam` run cold (no AI cache) found **17 live-feed names that
+translated ONLY through the AI-learned KV glossary** — PSG's full legal form
+(`Paris Saint-Germain FC`), `Sporting Clube de Portugal`, `FK Bodø/Glimt`,
+`LASK Linz`, `SK Slavia Praha`, `FC Kairat Almaty`, `Viking FK`, `Sabah FK`,
+`PAE AEK`, `FC Lorient`, `Le Mans FC`, `RC Deportivo La Coruña`, `Magdeburg`,
+`Cuarte`, `SG Sonnenhof Grossaspach`, `FK Shakhtar Donetsk`, `Gol Gohar FC`.
+Three stacked defects:
+
+1. **`FA_TEAMS_NORM` was built but never consulted.** `translateTeam` had an
+   exact-dict hit → AI-cache → fuzzy-stem pipeline; the normalized-key map
+   (which check-fa-dict.js's own `lookup()` always assumed!) was dead code.
+   Suffix/punctuation variants (`... FC` vs the dict's bare form) missed the
+   exact match and fell to the stem matcher.
+2. **Stem ambiguity killed the survivors.** With `Paris FC` in the dict, both
+   `paris` and `parissaintgermain` stems match `Paris Saint-Germain FC` →
+   ambiguous → English. Same class for every suffixed legal name.
+3. **The bot never loaded the AI glossary.** The website payload builder,
+   SEO renderer and cron preflight all call `ensureFaAiCache`; the webhook
+   bot path did NOT — a cold isolate serving `/featured`, `/next`, `/tables`
+   or a digest composed with `FA_AI_CACHE = null`, so every AI-learned name
+   leaked English in the bot's Farsi mode while the website showed Persian.
+   (Cron notify was already covered via `runPreflight`.)
+
+### The fix — one shared 4-layer glossary, both surfaces
+
+- **`src/translate.ts`**: new precedence **admin override → static dict
+  (exact + normalized key) → AI-learned → fuzzy stem**.
+  - The normalized-dict lookup (`FA_TEAMS_NORM.get(key)`) now actually runs —
+    suffix variants resolve deterministically before any cache.
+  - Overrides are split from learned entries (`FA_AI_OVERRIDE_KEYS`) and
+    ranked FIRST — the documented v12.x "admin override takes highest
+    priority" contract is now real even over exact dict hits (sentinel-proven
+    in the gate). Learned entries stay subordinate to the curated dict.
+- **`src/bot.ts`**: `handleTelegramUpdate` now calls
+  `ensureFaAiCache(env).catch(()=>{})` before composing anything — one
+  best-effort KV read per cold isolate, the same record/loader the website
+  uses. Bot ≡ website, literally the same glossary.
+- **`src/fa-dict.ts`**: 23 live-feed forms + the PSG value update baked into
+  the static dict (values match the live AI glossary the website already
+  renders): `Sporting Clube de Portugal` → اسپورتینگ لیسبون, `Paris
+  Saint-Germain`/`PSG` → پاری سن ژرمن (the owner's override form; the old
+  ZWNJ-heavy پاری‌سن‌ژرمن retired), plus Lorient, Le Mans, Racing Club de
+  Lens, Sabah FK, PAE AEK, RC Deportivo La Coruña, Real Betis Balompié, SS
+  Lazio, ACF Fiorentina, US Sassuolo Calcio, Como, Cremonese, Feyenoord
+  Rotterdam, Bodø/Glimt, LASK Linz, SK Slavia Praha, FC Kairat Almaty,
+  Viking FK, Magdeburg, Cuarte, SG Sonnenhof Grossaspach, Esteghlal Tehran.
+  (FK Shakhtar Donetsk + Gol Gohar FC need no entry — the normalized layer
+  already resolves them; two deliberate website renderings upgrade to the
+  curated dict values: شاختار → شاختار دونتسک, گل گهر → گل‌گهر سیرجان.)
+
+### Gate co-evolution
+
+- **`scripts/check-fasync.js` (NEW, 24 checks)**: drives the REAL translate
+  stack through the full-worker harness — 34 live-feed names must resolve
+  identically COLD (0 leaks, 0 mismatches vs the website glossary) and WARM
+  (no drift; override-owned PSG excepted); precedence proofs (override
+  sentinel outranks dict; learned never shadows dict; learned fills gaps);
+  reset restores cold; source asserts pin the wiring (bot loads the glossary,
+  norm layer before learned, override set built + cleared). Negative control
+  included (unknown club stays English — the checks can fail).
+- **`scripts/check-fa-dict.js`**: +26 live-feed legal-name variants (280
+  names checked, 0 failures).
+
+### Live verification
+
+Crafted webhook updates (admin chat, updSeen-safe): `/start`, `/featured`,
+`/tables`, `/next` — the styled Farsi surfaces render the previously-leaking
+names in Persian; zero Telegram send errors / parse-400s under `wrangler
+tail`; the live payload re-baked with the new precedence (website faName ≡
+bot output for every covered name).
+
+---
+
 ## [13.107-plaintimes] — 2026-10-16 (match-day times & dates render as plain regular text)
 
 The owner's ask: "Write the Time and date of Match days in normal and

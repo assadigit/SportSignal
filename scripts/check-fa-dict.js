@@ -62,6 +62,11 @@ const ROSTERS = {
 // Provider variants: bare short names / alternate spellings that arrive in live
 // API payloads (football-data vs TheSportsDB vs common feeds). Each must resolve
 // to a Farsi name, not fall through as the English string.
+// v13.108-fasync: + the LIVE legal-name forms observed in the production match
+// pool / UCL feed (they previously translated only via the AI-learned KV
+// glossary — the bot's cold isolates rendered them in ENGLISH while the
+// cache-loaded website showed Persian; now baked into the dict + resolvable
+// through the normalized-key layer of translateTeam).
 const VARIANTS = ["Kobenhavn", "Malmo", "Malmö", "Basaksehir",
   "Red Star Belgrade", "Crvena Zvezda", "Young Boys", "Benfica", "Anderlecht",
   "Beşiktaş JK", "Beşiktaş", "Besiktas", "Dinamo Zagreb", "Partizan", "Sturm Graz",
@@ -79,7 +84,14 @@ const VARIANTS = ["Kobenhavn", "Malmo", "Malmö", "Basaksehir",
   "FC Rubin Kazan", "Rubin Kazan", "FC Rostov", "Rostov", "FC Krasnodar", "Krasnodar",
   "SK Rapid Wien", "Rapid Wien", "FK Austria Wien", "Grasshopper", "Aalborg BK",
   "FC Nordsjælland", "FC Unirea Urziceni", "Oțelul Galați", "AEL Limassol",
-  "Anorthosis Famagusta", "Malmö FF"];
+  "Anorthosis Famagusta", "Malmö FF",
+  // v13.108-fasync — live-feed legal names (the cold-bot English leaks):
+  "Paris Saint-Germain FC", "Sporting Clube de Portugal", "FK Bodø/Glimt",
+  "LASK Linz", "SK Slavia Praha", "FC Kairat Almaty", "Viking FK", "Sabah FK",
+  "PAE AEK", "FC Lorient", "Le Mans FC", "RC Deportivo La Coruña", "Magdeburg",
+  "Cuarte", "SG Sonnenhof Grossaspach", "Gol Gohar FC", "FK Shakhtar Donetsk",
+  "SS Lazio", "ACF Fiorentina", "Real Betis Balompié", "US Sassuolo Calcio",
+  "Racing Club de Lens", "Feyenoord Rotterdam", "Como", "Cremonese", "Esteghlal Tehran"];
 
 let failed = 0;
 for (const t of VARIANTS) {

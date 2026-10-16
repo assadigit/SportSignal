@@ -12,7 +12,7 @@ import { toFaDigits, escapeMarkdownCharacters, getJalaliTime, getJalaliDate, get
 // — the user's readability ask; teams stay BOLD, comp label stays ITALIC.
 import { mdBold, mdItalic, mdEscape } from "./md";
 import { normalizeTeamName } from "./teams";
-import { translateTeam, translateCompetition, translateVenue } from "./translate";
+import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache } from "./translate";
 import { shouldNotify, isFeaturedMatch, isMasterPair, pickHeroMatch } from "./match-classify";
 import { matchKey } from "./dedupe";
 import { sendTelegram, answerCallbackQuery, sendPhotoBinary, editMessageText } from "./telegram";
@@ -32,6 +32,16 @@ export async function handleTelegramUpdate(env: Env, update) {
   try {
     const updId = update && update.update_id;
     if (updId != null && (await updSeen(env, updId))) return;
+    // v13.108-fasync: load the SHARED Farsi glossary (KV fa_teams_ai:
+    // admin overrides + AI-learned names) before composing ANY message.
+    // The website's payload builder already did this (public-matches.ts) —
+    // but the webhook path could land on a COLD isolate where FA_AI_CACHE
+    // stayed null, so AI-translated club names (PSG's full legal form,
+    // Sporting Clube de Portugal, LASK, Slavia, Kairat...) leaked ENGLISH
+    // in the bot's Farsi mode while the website showed Persian. One
+    // best-effort KV read per cold isolate; module-cached afterwards
+    // (same record, same loader — one glossary for both surfaces).
+    await ensureFaAiCache(env).catch(() => { });
     // v12.x-bilingual-bot: callback_query handler (language picker). Runs
     // BEFORE the message handlers. The callback_data is "lang:fa" or
     // "lang:en". On tap: register the chat if needed, persist the lang,

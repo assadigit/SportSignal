@@ -65,6 +65,8 @@ export function buildFaTeamDict() {
     "Athletic Bilbao": "\u0627\u062A\u0644\u062A\u06CC\u06A9 \u0628\u06CC\u0644\u0628\u0627\u0626\u0648",
     "Real Sociedad": "\u0631\u0626\u0627\u0644 \u0633\u0648\u0633\u06CC\u062F\u0627\u062F",
     "Real Betis": "\u0631\u0626\u0627\u0644 \u0628\u062A\u06CC\u0633",
+    "Real Betis Balompi\u00E9": "\u0631\u0626\u0627\u0644 \u0628\u062A\u06CC\u0633",
+    "RC Deportivo La Coru\u00F1a": "\u062F\u067E\u0648\u0631\u062A\u06CC\u0648\u0648 \u0644\u0627\u06A9\u0631\u0648\u0646\u06CC\u0627",
     "Villarreal CF": "\u0648\u06CC\u0627\u0631\u0626\u0627\u0644",
     "Sevilla FC": "\u0633\u0648\u06CC\u0627",
     "Valencia CF": "\u0648\u0627\u0644\u0646\u0633\u06CC\u0627",
@@ -99,8 +101,10 @@ export function buildFaTeamDict() {
     "SSC Napoli": "\u0646\u0627\u067E\u0648\u0644\u06CC",
     "AS Roma": "\u0631\u0645",
     "Lazio": "\u0644\u0627\u062A\u0632\u06CC\u0648",
+    "SS Lazio": "\u0644\u0627\u062A\u0632\u06CC\u0648",
     "Atalanta BC": "\u0622\u062A\u0627\u0644\u0627\u0646\u062A\u0627",
     "Fiorentina": "\u0641\u06CC\u0648\u0631\u0646\u062A\u06CC\u0646\u0627",
+    "ACF Fiorentina": "\u0641\u06CC\u0648\u0631\u0646\u062A\u06CC\u0646\u0627",
     "Bologna FC 1909": "\u0628\u0648\u0644\u0648\u0646\u06CC\u0627",
     "Torino FC": "\u062A\u0648\u0631\u06CC\u0646\u0648",
     "AS Monaco FC": "\u0645\u0648\u0646\u0627\u06A9\u0648",
@@ -108,19 +112,32 @@ export function buildFaTeamDict() {
     "Genoa CFC": "\u062C\u0646\u0648\u0627",
     "Parma Calcio 1913": "\u067E\u0627\u0631\u0645\u0627",
     "Como 1907": "\u06A9\u0648\u0645\u0648",
+    "Como": "\u06A9\u0648\u0645\u0648",
     "US Lecce": "\u0644\u0686\u0647",
     "Cagliari Calcio": "\u06A9\u0627\u0644\u06CC\u0627\u0631\u06CC",
     "Hellas Verona": "\u0647\u0644\u0627\u0633 \u0648\u0631\u0648\u0646\u0627",
     "Pisa SC": "\u067E\u06CC\u0632\u0627",
     "Sassuolo Calcio": "\u0633\u0627\u0633\u0648\u0644\u0648",
+    "US Sassuolo Calcio": "\u0633\u0627\u0633\u0648\u0644\u0648",
     "Empoli FC": "\u0627\u0645\u067E\u0648\u0644\u06CC",
     "AC Monza": "\u0645\u0648\u0646\u062A\u0632\u0627",
     "Venezia FC": "\u0648\u0646\u06CC\u0632",
     "Spezia Calcio": "\u0627\u0633\u067E\u062A\u0632\u06CC\u0627",
     "US Cremonese": "\u06A9\u0631\u0645\u0648\u0646\u0632\u0647",
+    "Cremonese": "\u06A9\u0631\u0645\u0648\u0646\u0632\u0647",
     // Ligue 1 2025-26
-    "Paris Saint-Germain": "\u067E\u0627\u0631\u06CC\u200C\u0633\u0646\u200C\u0698\u0631\u0645\u0646",
-    "PSG": "\u067E\u0627\u0631\u06CC\u200C\u0633\u0646\u200C\u0698\u0631\u0645\u0646",
+    // v13.108-fasync: value adopts the owner's admin override (پاری سن ژرمن)
+    // so the exact form, the "... FC" legal variant and the website all
+    // render ONE spelling; the old ZWNJ-heavy form is retired.
+    "Paris Saint-Germain": "\u067E\u0627\u0631\u06CC \u0633\u0646 \u0698\u0631\u0645\u0646",
+    "PSG": "\u067E\u0627\u0631\u06CC \u0633\u0646 \u0698\u0631\u0645\u0646",
+    // v13.108-fasync: live-feed legal-name forms (observed in the match
+    // pool / UCL feed) that previously relied on the AI-learned KV glossary
+    // — baked into the static dict so a COLD bot isolate (no cache yet)
+    // renders the same Persian the website does.
+    "FC Lorient": "\u0644\u0648\u0631\u06CC\u0646\u062A",
+    "Le Mans FC": "\u0644\u0648\u0645\u0627\u0646",
+    "Racing Club de Lens": "\u0644\u0627\u0646\u0633",
     // v12.8 (audit backlog "Paris FC name fix"): the stem fallback folded
     // "Paris FC" (normKey "paris") onto "parissaintgermain" — the promoted
     // club rendered as PSG in Persian. Exact entry wins before any fallback.
@@ -187,8 +204,14 @@ export function buildFaTeamDict() {
     "Sporting CP": "\u0627\u0633\u067E\u0648\u0631\u062A\u06CC\u0646\u06AF",
     "Sporting Lisbon": "\u0627\u0633\u067E\u0648\u0631\u062A\u06CC\u0646\u06AF",
     "Sporting Lisboa": "\u0627\u0633\u067E\u0648\u0631\u062A\u06CC\u0646\u06AF",
+    // v13.108-fasync: the legal-name form the live UCL feed sends — it
+    // previously translated ONLY via the AI-learned KV entry (the website
+    // showed Persian, the cold bot showed ENGLISH). Baked + matching the
+    // AI/varzesh3 form.
+    "Sporting Clube de Portugal": "\u0627\u0633\u067E\u0648\u0631\u062A\u06CC\u0646\u06AF \u0644\u06CC\u0633\u0628\u0648\u0646",
     "PSV": "\u067E\u06CC\u200C\u0627\u0633\u200C\u0648\u06CC",
     "Feyenoord": "\u0641\u0627\u06CC\u0646\u0648\u0631\u062F",
+    "Feyenoord Rotterdam": "\u0641\u0627\u06CC\u0646\u0648\u0631\u062F",
     "Club Brugge KV": "\u0628\u0631\u0648\u0698",
     "Celtic FC": "\u0633\u0644\u062A\u06CC\u06A9",
     "Rangers FC": "\u0631\u0646\u062C\u0631\u0632",
@@ -204,6 +227,18 @@ export function buildFaTeamDict() {
     "FC Shakhtar Donetsk": "\u0634\u0627\u062E\u062A\u0627\u0631 \u062F\u0648\u0646\u062A\u0633\u06A9",
     "Shakhtar Donetsk": "\u0634\u0627\u062E\u062A\u0627\u0631 \u062F\u0648\u0646\u062A\u0633\u06A9",
     "Shakhtar": "\u0634\u0627\u062E\u062A\u0627\u0631 \u062F\u0648\u0646\u062A\u0633\u06A9",
+    // v13.108-fasync: live-feed forms previously AI-cache-only (the bot's
+    // cold-isolate English leaks): Bod\u00F8/Glimt, LASK, Slavia Praha,
+    // Kairat, Viking, Sabah, Magdeburg, Cuarte, Sonnenhof Grossaspach.
+    "FK Bod\u00F8/Glimt": "\u0628\u0648\u062F\u0648/\u06AF\u0644\u06CC\u0645\u062A",
+    "LASK Linz": "\u0644\u0627\u0633\u06A9 \u0644\u06CC\u0646\u062A\u0633",
+    "SK Slavia Praha": "\u0627\u0633\u0644\u0627\u0648\u06CC\u0627 \u067E\u0631\u0627\u06AF",
+    "FC Kairat Almaty": "\u06A9\u0627\u06CC\u0631\u0627\u062A \u0622\u0644\u0645\u0627\u062A\u06CC",
+    "Viking FK": "\u0648\u06CC\u06A9\u06CC\u0646\u06AF",
+    "Sabah FK": "\u0635\u0628\u0627\u062D",
+    "Magdeburg": "\u0645\u0627\u06AF\u062F\u0628\u0648\u0631\u06AF",
+    "Cuarte": "\u06A9\u0648\u0622\u0631\u062A\u0647",
+    "SG Sonnenhof Grossaspach": "\u0627\u0633 \u062C\u06CC \u0632\u0648\u0646\u0646\u0647\u0648\u0641 \u06AF\u0631\u0648\u0633\u0622\u0633\u067E\u0627\u062E",
     "FC Red Bull Salzburg": "\u0633\u0627\u0644\u0632\u0628\u0648\u0631\u06AF",
     "Red Bull Salzburg": "\u0633\u0627\u0644\u0632\u0628\u0648\u0631\u06AF",
     "Salzburg": "\u0633\u0627\u0644\u0632\u0628\u0648\u0631\u06AF",
@@ -283,6 +318,7 @@ export function buildFaTeamDict() {
     "Gent": "\u062E\u0646\u062A",
     "AEK Athens": "\u0622\u0626\u06A9 \u0622\u062A\u0646",
     "AEK": "\u0622\u0626\u06A9 \u0622\u062A\u0646",
+    "PAE AEK": "\u0622\u06CC\u06A9 \u0622\u062A\u0646",
     "PFC CSKA Moscow": "\u0632\u0633\u06A9\u0627 \u0645\u0633\u06A9\u0648",
     "CSKA Moscow": "\u0632\u0633\u06A9\u0627 \u0645\u0633\u06A9\u0648",
     "FC Zenit Saint Petersburg": "\u0632\u0646\u06CC\u062A \u0633\u0646\u200C\u067E\u062A\u0631\u0632\u0628\u0648\u0631\u06AF",
@@ -365,6 +401,7 @@ export function buildFaTeamDict() {
     // Iran — Persian Gulf Pro League (TheSportsDB names)
     "Persepolis": "\u067E\u0631\u0633\u067E\u0648\u0644\u06CC\u0633",
     "Esteghlal": "\u0627\u0633\u062A\u0642\u0644\u0627\u0644",
+    "Esteghlal Tehran": "\u0627\u0633\u062A\u0642\u0644\u0627\u0644",
     "Sepahan": "\u0633\u067E\u0627\u0647\u0627\u0646",
     "Tractor": "\u062A\u0631\u0627\u06A9\u062A\u0648\u0631",
     "Foolad Khuzestan": "\u0641\u0648\u0644\u0627\u062F \u062E\u0648\u0632\u0633\u062A\u0627\u0646",
