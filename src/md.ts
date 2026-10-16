@@ -6,7 +6,13 @@
 //   mdEscape(text) — escape EVERY reserved char (plain-text segments)
 //   mdBold(text)   — *text*        (match headers, section titles)
 //   mdItalic(text) — _text_        (competition / round labels)
-//   mdCode(text)   — `text`        (kickoff times, ids, versions, commands)
+//   mdCode(text)   — `text`        (ids, versions, commands, tz clocks)
+//
+// v13.107-plaintimes: match-day DATES and KICKOFF TIMES render as PLAIN
+// regular text — mdEscape, NOT an entity (the user's readability ask: the
+// monospace `19:00` / italic date styling of v13.106 read as technical,
+// not conversational). mdCode stays for identifiers/commands/settings
+// clocks; mdBold/mdItalic keep the match header + competition label.
 //
 // THE RULES (the v13.71/v13.90/v13.104 parse-400 graveyard, distilled):
 //   1. OUTSIDE entity spans, every reserved char MUST be escaped. Telegram
@@ -63,7 +69,9 @@ export function mdItalic(text) {
   return "_" + mdEscape(text) + "_";
 }
 
-// `code` — monospace for kickoff times, chat ids, versions, slash commands.
+// `code` — monospace for chat ids, versions, slash commands and the tz
+// settings clocks. NOT for match-day kickoff times since v13.107-plaintimes
+// (those render plain — see the header note).
 // Content stays RAW (rule 2): code spans have no inner escaping, so callers
 // pass digit/identifier strings only — never team names or free text.
 export function mdCode(text) {

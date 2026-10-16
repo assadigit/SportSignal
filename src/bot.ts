@@ -7,8 +7,10 @@ import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliTime, getJalaliDate, getEnglishTime, getEnglishDate } from "./utils";
 // v13.106-mdstyle: entity builders for the command replies (bold match
-// headers in /next, monospace kickoff times, code-span commands in /help).
-import { mdBold, mdItalic, mdCode } from "./md";
+// headers in /next, code-span commands in /help).
+// v13.107-plaintimes: the /next date + kickoff time render PLAIN (mdEscape)
+// — the user's readability ask; teams stay BOLD, comp label stays ITALIC.
+import { mdBold, mdItalic, mdEscape } from "./md";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue } from "./translate";
 import { shouldNotify, isFeaturedMatch, isMasterPair, pickHeroMatch } from "./match-classify";
@@ -460,7 +462,7 @@ export async function handleTelegramUpdate(env: Env, update) {
           const date = lang === "en" ? getEnglishDate(m.utcDate, tzEnv) : getJalaliDate(m.utcDate, tzEnv);
           const time = lang === "en" ? getEnglishTime(m.utcDate, tzEnv) : getJalaliTime(m.utcDate, tzEnv);
           const vs = lang === "en" ? " vs " : " \u{1F19A} ";
-          return mdBold(translateTeam(m.homeTeam.name)) + vs + mdBold(translateTeam(m.awayTeam.name)) + "\n" + mdItalic(translateCompetition(m.competition.code)) + " \u2014 " + escapeMarkdownCharacters(date) + " \u2014 " + mdCode(time);
+          return mdBold(translateTeam(m.homeTeam.name)) + vs + mdBold(translateTeam(m.awayTeam.name)) + "\n" + mdItalic(translateCompetition(m.competition.code)) + " \u2014 " + mdEscape(date) + " \u2014 " + mdEscape(time);
         });
         const header = lang === "en" ? "*Upcoming matches:*\n\n" : "*\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634\u200C\u0631\u0648:*\n\n";
         await sendTelegram(env, header + lines.join("\n\n"), chatId, replyKeyboard(lang));

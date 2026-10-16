@@ -163,10 +163,10 @@ if (uPieces.every(Boolean)) {
   const fa = ctx.buildUclPreviewMessage(envT, fixtures, "fa", 2026, 10, 14);
   const en = ctx.buildUclPreviewMessage(envT, fixtures, "en", 2026, 10, 14);
   check("behavioral fa: FULL Jalali header (چهارشنبه ۲۲ مهر ۱۴۰۵)", fa.includes("\u0634\u0628 \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627 \u2014 \u0686\u0647\u0627\u0631\u0634\u0646\u0628\u0647 \u06F2\u06F2 \u0645\u0647\u0631 \u06F1\u06F4\u06F0\u06F5"));
-  check("behavioral fa: Tehran kickoff times in Persian digits, MONOSPACE (v13.106)", fa.includes("\u2014 `\u06F2\u06F0:\u06F1\u06F5`") && fa.includes("\u2014 `\u06F2\u06F2:\u06F3\u06F0`"));
+  check("behavioral fa: Tehran kickoff times PLAIN, Persian digits (v13.107)", fa.includes("\u2014 \u06F2\u06F0:\u06F1\u06F5") && fa.includes("\u2014 \u06F2\u06F2:\u06F3\u06F0"));
   check("behavioral fa: all three fixtures listed with translated names", fa.includes("Arsenal") && fa.includes("Shakhtar Utd") && fa.includes("Bayern M\u00FCnchen") && fa.includes("Real Madrid"));
   check("behavioral en: long-form Gregorian header", en.includes("Champions League night \u2014 Wednesday, 14 October 2026"));
-  check("behavioral en: 24h times, MONOSPACE (v13.106)", en.includes("\u2014 `20:15`") && en.includes("\u2014 `22:30`"));
+  check("behavioral en: 24h times PLAIN (v13.107)", en.includes("\u2014 20:15") && en.includes("\u2014 22:30"));
   // v13.106-mdstyle: the shared ENTITY-AWARE validator (bold/code/italic
   // modeled; outside code spans every reserved char still must be escaped —
   // the v13.96.1 '-' lesson + the user's ZWNJ names, unchanged in spirit).

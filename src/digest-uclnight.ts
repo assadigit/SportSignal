@@ -36,8 +36,10 @@
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, jalaliDateFa, englishDateYmd, subrequestCount, getJalaliTime, getEnglishTime } from "./utils";
-// v13.106-mdstyle: entity builders (bold fixture line, monospace time).
-import { mdBold, mdCode } from "./md";
+// v13.106-mdstyle: entity builders (bold fixture line).
+// v13.107-plaintimes: the kickoff TIME renders PLAIN (mdEscape) — the
+// user's readability ask (was a monospace code span in v13.106).
+import { mdBold, mdEscape } from "./md";
 import { translateTeam } from "./translate";
 import { sendTelegram, sendUclGifBanner } from "./telegram";
 import { getUserPrefs, getUserTz } from "./users";
@@ -171,7 +173,7 @@ export function uclPreviewLine(env: Env, mt, lang) {
   const home = en ? mt.homeTeam.name : translateTeam(mt.homeTeam.name);
   const away = en ? mt.awayTeam.name : translateTeam(mt.awayTeam.name);
   const t = en ? getEnglishTime(mt.utcDate, env) : getJalaliTime(mt.utcDate, env);
-  return "\u26BD " + mdBold(home) + " \u{1F19A} " + mdBold(away) + " \u2014 " + mdCode(t);
+  return "\u26BD " + mdBold(home) + " \u{1F19A} " + mdBold(away) + " \u2014 " + mdEscape(t);
 }
 
 // The fixture-list text (the message under the GIF). MarkdownV2, same escape

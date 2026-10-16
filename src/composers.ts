@@ -8,10 +8,14 @@ import { STAGE_FA, COMP_EN, SPORTSCORE_SLUGS, STAND_CODE_ORDER } from "./tables"
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getJalaliDate, getJalaliTime, getRelativeTimeUntilMatch, getEnglishDate, getEnglishTime, getEnglishRelative, fetchJSON, enStageName, bumpSubrequest } from "./utils";
 // v13.106-mdstyle: the MarkdownV2 entity builder - every styled span in the
-// notification formatters composes through mdBold/mdItalic/mdCode so the
+// notification formatters composes through mdBold/mdItalic/mdEscape so the
 // parse-safety discipline is structural (entity delimiters only ever wrap
-// ESCAPED inner text; code spans take raw digit/time strings only).
-import { mdBold, mdItalic, mdCode } from "./md";
+// ESCAPED inner text).
+// v13.107-plaintimes: match-day DATES and KICKOFF TIMES render as PLAIN
+// regular text (mdEscape) per the user's readability ask - the cards keep
+// only the BOLD match header + ITALIC competition/stage labels. mdCode is
+// reserved for ids/commands/tz clocks (never match-day times).
+import { mdBold, mdItalic, mdEscape } from "./md";
 import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition, translateVenue, faStageName, isDomesticCup } from "./translate";
 import { normAlias } from "./teams";
@@ -30,8 +34,8 @@ export function format24HourMessage(match, env, lang) {
     ? (enStageName(match.stage) || (match.stage ? match.stage.replace(/_/g, " ") : "Group stage"))
     : (STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : "\u0645\u0631\u062D\u0644\u0647 \u06AF\u0631\u0648\u0647\u06CC"));
   // v13.10-clean: date-first layout per the user's ask. No header, no countdown.
-  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
-  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  let message = `\u{1F4C5} ${mdEscape(dateStr)}\n`;
+  message += `\u23F0 ${mdEscape(timeStr)}\n`;
   message += `${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
   message += `${mdItalic(competition)}`;
   if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
@@ -50,8 +54,8 @@ export function formatBigMatchMessage(match, env, lang) {
     ? (enStageName(match.stage) || (match.stage ? match.stage.replace(/_/g, " ") : ""))
     : (STAGE_FA[String(match.stage || "").toUpperCase()] || (match.stage ? match.stage.replace(/_/g, " ") : ""));
   // v13.10-clean: date-first, 🔥 on the match line. No header, no countdown.
-  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
-  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  let message = `\u{1F4C5} ${mdEscape(dateStr)}\n`;
+  message += `\u23F0 ${mdEscape(timeStr)}\n`;
   message += `\u{1F525} ${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
   message += `${mdItalic(competition)}`;
   if (match.competition.code === "CL" || isDomesticCup(match.competition.code) || match.stage !== "REGULAR_SEASON") {
@@ -67,8 +71,8 @@ export function format3HourMessage(match, env, lang) {
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
   // v13.10-clean: date-first layout per the user's ask. No header, no countdown.
-  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
-  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  let message = `\u{1F4C5} ${mdEscape(dateStr)}\n`;
+  message += `\u23F0 ${mdEscape(timeStr)}\n`;
   message += `${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
   message += `${mdItalic(competition)}`;
   return message;
@@ -83,8 +87,8 @@ export function format1HourMessage(match, env, lang) {
   // v13.10-clean: date-first layout per the user's exact example. No header,
   // no countdown. The user asked: "Change the placement of یادآوری ۱ ساعته
   // with match day" + "do not need to add ⏱️ ... دیگر".
-  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
-  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  let message = `\u{1F4C5} ${mdEscape(dateStr)}\n`;
+  message += `\u23F0 ${mdEscape(timeStr)}\n`;
   message += `${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
   message += `${mdItalic(competition)}`;
   return message;
@@ -98,8 +102,8 @@ export function format5MinMessage(match, env, lang) {
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
-  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
-  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  let message = `\u{1F4C5} ${mdEscape(dateStr)}\n`;
+  message += `\u23F0 ${mdEscape(timeStr)}\n`;
   message += `${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
   message += `${mdItalic(competition)}`;
   return message;
@@ -114,8 +118,8 @@ export function formatMatchStartMessage(match, env, lang) {
   // v13.10-clean: date-first, 🚀 on the match line. The animated ⚽ dice
   // (sendDice) is sent BEFORE this text by the notification engine for an
   // eye-catching "ball is rolling" kickoff animation.
-  let message = `\u{1F4C5} ${mdItalic(dateStr)}\n`;
-  message += `\u23F0 ${mdCode(timeStr)}\n`;
+  let message = `\u{1F4C5} ${mdEscape(dateStr)}\n`;
+  message += `\u23F0 ${mdEscape(timeStr)}\n`;
   message += `\u{1F680} ${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
   message += `${mdItalic(competition)}`;
   // v13.13-venues: show the stadium (AI-translated) on kickoff.
@@ -141,7 +145,7 @@ export async function formatResultMessage(match, env, lang?) {
     const venue = en ? match.venue : (translateVenue(match.venue) || match.venue);
     message += `\u{1F4CD} ${escapeMarkdownCharacters(venue)}\n`;
   }
-  message += `\u{1F4C5} ${mdItalic(dateStr)}\n\n`;
+  message += `\u{1F4C5} ${mdEscape(dateStr)}\n\n`;
   if (match.score.fullTime.home !== null && match.score.fullTime.away !== null) {
     const h = en ? match.score.fullTime.home.toString() : toFaDigits(match.score.fullTime.home.toString());
     const a = en ? match.score.fullTime.away.toString() : toFaDigits(match.score.fullTime.away.toString());

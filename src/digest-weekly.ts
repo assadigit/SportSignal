@@ -6,12 +6,13 @@ import { CONFIG } from "./config";
 import { COMP_EN } from "./tables";
 import type { Env } from "./types";
 import { toFaDigits, escapeMarkdownCharacters, getNowTehran } from "./utils";
-// v13.106-mdstyle: entity builders (bold teams, monospace time, italic
-// competition). No entity NESTING: the derby/UCL lines keep their emoji
-// anchors instead of the old whole-line bold (a bold wrapper around a
-// line that now contains bold/code/italic spans would nest entities —
-// MarkdownV2 cannot).
-import { mdBold, mdItalic, mdCode } from "./md";
+// v13.106-mdstyle: entity builders (bold teams, italic competition). No
+// entity NESTING: the derby/UCL lines keep their emoji anchors instead of
+// the old whole-line bold (a bold wrapper around a line that now contains
+// bold/italic spans would nest entities — MarkdownV2 cannot).
+// v13.107-plaintimes: the fixture TIME (and the weekday) render PLAIN
+// (mdEscape) — the user's readability ask (was a monospace code span).
+import { mdBold, mdItalic, mdEscape } from "./md";
 import { translateTeam, translateCompetition } from "./translate";
 import { shouldNotify, isMasterPair, isDerby } from "./match-classify";
 import { fetchStandings, buildLeagueTableMessage, isoWeekKey, weeklyTableCodes } from "./composers";
@@ -78,7 +79,7 @@ export async function buildWeekAheadMessage(env: Env, lang) {
     const away = en ? m.awayTeam.name : translateTeam(m.awayTeam.name);
     const comp = en ? (COMP_EN[m.competition.code] || m.competition.code) : translateCompetition(m.competition.code);
     const vs = en ? " vs " : " \u{1F19A} ";
-    return mark + mdBold(home) + vs + mdBold(away) + " \u2014 " + weekday + " " + mdCode(timeStr) + " \u2014 " + mdItalic(comp);
+    return mark + mdBold(home) + vs + mdBold(away) + " \u2014 " + mdEscape(weekday) + " " + mdEscape(timeStr) + " \u2014 " + mdItalic(comp);
   };
   const lines = [];
   for (const m of derbies) lines.push(fmtLine(m, "\u2694\uFE0F "));

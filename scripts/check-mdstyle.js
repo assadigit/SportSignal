@@ -1,10 +1,12 @@
-// check-mdstyle.js — v13.106-mdstyle: the MarkdownV2 rich-formatting gate.
+// check-mdstyle.js — v13.106-mdstyle / v13.107-plaintimes: the MarkdownV2
+// rich-formatting gate.
 //
 // Every styled message surface, BEHAVIORALLY: build the REAL message from
 // the concatenated worker source, prove it parses under the shared
 // entity-aware validator (scripts/lib/mdv2.js), and assert the intended
-// entity is present (bold match header / monospace time / italic
-// competition label). FAIL-FORM by construction:
+// entity is present (bold match header / italic competition label) while
+// match-day TIMES and DATES render PLAIN (v13.107: no code span, no italic
+// — the user's readability ask). FAIL-FORM by construction:
 //   - an unescaped reserved char anywhere outside code spans = red build
 //   - a missing entity (a "styled" surface that lost its styling) = red build
 //   - an adversarial team name breaking an entity span = red build
@@ -17,8 +19,8 @@
 //   3. digest-morning / digest-night / digest-uclnight / digest-weekly
 //   4. notify-status: HT alert + postponement/cancellation alert
 //   5. users.ts BOT_STRINGS welcome (fa + en) — bold title, referral links
-//   6. bot.ts /help (code-span commands) + /next (bold/italic/code lines)
-//      through the REAL message command chain
+//   6. bot.ts /help (code-span commands) + /next (bold teams, italic comp,
+//      PLAIN date+time) through the REAL message command chain
 //   7. source contracts: every sender still pins parse_mode MarkdownV2;
 //      the UCL GIF caption stays plain (the v13.96.1 lesson); md.ts is
 //      registered in the harness concat after utils.ts
@@ -204,13 +206,13 @@ const advMatch = Object.assign({}, faMatch, {
     const ent = mdv2Entities(msg);
     check(name + " (fa) parses under the entity-aware gate", mdv2Safe(msg));
     check(name + " (fa) match header is ONE BOLD span with both teams", ent.bold.length >= 1 && ent.bold.some((b) => b.includes("Arsenal FC") && b.includes("FC Barcelona")));
-    check(name + " (fa) kickoff time is a MONOSPACE code span", ent.code.length >= 1 && ent.code.some((c) => c === "۲۱:۰۰"));
+    check(name + " (fa) kickoff time is PLAIN text — no code span (v13.107)", msg.includes("⏰ ۲۱:۰۰") && ent.code.length === 0);
     check(name + " (fa) competition label is ITALIC", ent.italic.length >= 1 && ent.italic.some((c) => c.includes("Premier League")));
-    check(name + " (fa) date line is italic + first", msg.startsWith("📅 _") && ent.italic.some((c) => c.includes("سه‌شنبه ۲۱ مهر ۱۴۰۵")));
+    check(name + " (fa) date line is PLAIN + first — no italic (v13.107)", msg.startsWith("📅 سه‌شنبه ۲۱ مهر ۱۴۰۵") && !ent.italic.some((c) => c.includes("مهر")));
   }
   // en mirror (one surface deep — the rhythm is lang-independent)
   const en24 = format24HourMessage(faMatch, env, "en");
-  check("24h (en) parses + entities (bold/code/italic)", mdv2Safe(en24) && mdv2Entities(en24).bold.some((b) => b.includes("Arsenal FC")) && mdv2Entities(en24).code.some((c) => c === "21:00") && mdv2Entities(en24).italic.some((c) => c.includes("Premier League")));
+  check("24h (en) parses + entities (bold/italic) + PLAIN time (v13.107)", mdv2Safe(en24) && mdv2Entities(en24).bold.some((b) => b.includes("Arsenal FC")) && en24.includes("⏰ 21:00") && mdv2Entities(en24).code.length === 0 && mdv2Entities(en24).italic.some((c) => c.includes("Premier League")));
   // the adversarial identity: entities must wrap the ESCAPED name
   const adv = formatBigMatchMessage(advMatch, env, "fa");
   const advEnt = mdv2Entities(adv);
@@ -227,7 +229,7 @@ const advMatch = Object.assign({}, faMatch, {
   check("result head is BOLD", res.includes("*نتیجه نهایی*"));
   check("result team names are BOLD", resEnt.bold.some((b) => b.includes("Arsenal FC")) && resEnt.bold.some((b) => b.includes("FC Barcelona")));
   check("result score is a BOLD span (۲\\-۱)", resEnt.bold.some((b) => b === "۲\\-۱"));
-  check("result competition + date are italic", resEnt.italic.some((c) => c.includes("Premier League")) && resEnt.italic.some((c) => c.includes("سه‌شنبه ۲۱ مهر ۱۴۰۵")));
+  check("result competition is ITALIC, date is PLAIN (v13.107)", resEnt.italic.some((c) => c.includes("Premier League")) && res.includes("📅 سه‌شنبه ۲۱ مهر ۱۴۰۵") && !resEnt.italic.some((c) => c.includes("مهر")));
   const resEn = await formatResultMessage(finMatch, env, "en");
   check("result (en) parses + bold score", mdv2Safe(resEn) && mdv2Entities(resEn).bold.some((b) => b === "2\\-1"));
 
@@ -242,7 +244,7 @@ const advMatch = Object.assign({}, faMatch, {
   const mEnt = mdv2Entities(morning);
   check("morning digest (fa) parses", mdv2Safe(morning));
   check("morning digest header is BOLD", morning.includes("*بازی‌های بزرگ امروز:*"));
-  check("morning digest lines: bold teams + code time + italic comp", mEnt.bold.some((b) => b.includes("Arsenal FC")) && mEnt.code.some((c) => c === "۲۱:۰۰") && mEnt.italic.some((c) => c.includes("Premier League")));
+  check("morning digest lines: bold teams + PLAIN time + italic comp (v13.107)", mEnt.bold.some((b) => b.includes("Arsenal FC")) && morning.includes("۲۱:۰۰") && mEnt.code.length === 0 && mEnt.italic.some((c) => c.includes("Premier League")));
 
   // --- night digest (rankCache prefilled -> zero standings fetches) ---
   // untype strips the inner TS annotations (let msg: string) the plain
@@ -290,7 +292,7 @@ const advMatch = Object.assign({}, faMatch, {
   const uEnt = mdv2Entities(uclFa);
   check("UCL preview (fa) parses", mdv2Safe(uclFa));
   check("UCL preview header is BOLD", uEnt.bold.some((b) => b.includes("شب لیگ قهرمانان اروپا")));
-  check("UCL preview fixture lines: BOLD teams + MONOSPACE time", uEnt.bold.some((b) => b.includes("Arsenal FC")) && uEnt.bold.some((b) => b.includes("Shakhtar Donetsk")) && uEnt.code.some((c) => c === "۲۰:۱۵"));
+  check("UCL preview fixture lines: BOLD teams + PLAIN time (v13.107)", uEnt.bold.some((b) => b.includes("Arsenal FC")) && uEnt.bold.some((b) => b.includes("Shakhtar Donetsk")) && uclFa.includes("۲۰:۱۵") && uEnt.code.length === 0);
 
   // --- week ahead ---
   const waPool = { fetchedAt: new Date().toISOString(), matches: [faMatch] };
@@ -305,13 +307,13 @@ const advMatch = Object.assign({}, faMatch, {
   globalThis.toFaDigits = toFaDigits;
   globalThis.COMP_EN = COMP_EN;
   globalThis.escapeMarkdownCharacters = escapeMarkdownCharacters;
-  globalThis.mdBold = mdBold; globalThis.mdItalic = mdItalic; globalThis.mdCode = mdCode;
+  globalThis.mdBold = mdBold; globalThis.mdItalic = mdItalic; globalThis.mdCode = mdCode; globalThis.mdEscape = mdEscape; // v13.107: /next's plain date+time resolve mdEscape through the new-Function chain scope
   eval([grabFn("async function buildWeekAheadMessage(env, lang)")].join("\n"));
   const wa = await buildWeekAheadMessage(waEnv, "fa");
   const wEnt = mdv2Entities(wa);
   check("week-ahead (fa) parses", mdv2Safe(wa));
   check("week-ahead header is BOLD", wa.includes("*بازی‌های هفته آینده*"));
-  check("week-ahead lines: bold teams + code time + italic comp", wEnt.bold.some((b) => b.includes("Arsenal FC")) && wEnt.code.some((c) => c === "۲۱:۰۰") && wEnt.italic.some((c) => c.includes("Premier League")));
+  check("week-ahead lines: bold teams + PLAIN time + italic comp (v13.107)", wEnt.bold.some((b) => b.includes("Arsenal FC")) && wa.includes("۲۱:۰۰") && wEnt.code.length === 0 && wEnt.italic.some((c) => c.includes("Premier League")));
 
   // =====================================================================
   // 3) notify-status: HT + postponement (entity-styled alerts)
@@ -442,7 +444,7 @@ const advMatch = Object.assign({}, faMatch, {
   const nfEnt = mdv2Entities(nextFa);
   check("/next (fa) parses under the entity-aware gate", !!nextFa && mdv2Safe(nextFa));
   check("/next (fa) header is BOLD", nextFa.includes("*بازی‌های پیش‌رو:*"));
-  check("/next (fa) lines: bold teams + italic comp + code time", nfEnt.bold.some((b) => b.includes("Arsenal FC")) && nfEnt.italic.some((c) => c.includes("PL")) && nfEnt.code.some((c) => c === "۲۱:۰۰"));
+  check("/next (fa) lines: bold teams + italic comp + PLAIN time (v13.107)", nfEnt.bold.some((b) => b.includes("Arsenal FC")) && nfEnt.italic.some((c) => c.includes("PL")) && nextFa.includes("۲۱:۰۰") && nfEnt.code.length === 0);
 
   // =====================================================================
   // 6) source contracts (the formatting strategy, pinned)
@@ -454,7 +456,7 @@ const advMatch = Object.assign({}, faMatch, {
   check("sendAnimation caption stays PLAIN (no parse_mode — the v13.96.1 lesson)", !/parse_mode/.test(animSeg));
   const harnessSrc = fs.readFileSync("scripts/lib/worker-src.js", "utf8");
   check("md.ts registered in the harness concat after utils.ts", harnessSrc.indexOf('"md.ts"') > harnessSrc.indexOf('"utils.ts"') && harnessSrc.indexOf('"md.ts"') < harnessSrc.indexOf('"teams.ts"'));
-  check("every composer formatter imports the md builders", /import \{ mdBold, mdItalic, mdCode \} from "\.\/md";/.test(fs.readFileSync("src/composers.ts", "utf8")));
+  check("every composer formatter imports the md builders (v13.107: mdEscape for plain times/dates)", /import \{ mdBold, mdItalic, mdEscape \} from "\.\/md";/.test(fs.readFileSync("src/composers.ts", "utf8")));
 
   console.log(failed ? failed + " FAILURES" : "mdstyle OK");
   process.exit(failed ? 1 : 0);

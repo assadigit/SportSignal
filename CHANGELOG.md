@@ -6,6 +6,54 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.107-plaintimes] — 2026-10-16 (match-day times & dates render as plain regular text)
+
+The owner's ask: "Write the Time and date of Match days in normal and
+regular text because of more readability" — v13.106's monospace `` `19:00` ``
+kickoff times and *italic* date lines read as technical, not conversational.
+Plain text everywhere a match day is announced; the bold match headers and
+italic competition labels stay (the readability ask was specifically about
+times and dates).
+
+### What changed (and what deliberately didn't)
+
+- **The six pre-match cards** (24h / big-match / 3h / 1h / 5min / kickoff):
+  `📅 date` + `⏰ time` lines render PLAIN (`mdEscape`) — was `_italic_` date
+  + `` `code` `` time. The BOLD match header and ITALIC competition/stage
+  label keep their v13.106 styling.
+- **Result card**: the `📅 date` line renders plain (was italic); bold teams,
+  bold score, italic competition unchanged.
+- **Fixture lists** — morning digest, week-ahead, UCL night preview: the
+  kickoff time (and the week-ahead weekday) render plain escaped text, no
+  code span. `/next`: plain date + plain time (the date was already plain;
+  the time was a code span).
+- **Deliberately unchanged**: digest/section TITLES (bold headers that embed
+  the night's date), `/help` command code spans, admin panel hints, the tz
+  settings clocks (a precision signal, not a match-day time), the SVG photo
+  card (image-rendered, not MarkdownV2), the UCL GIF caption (plain by
+  design — the v13.96.1 lesson).
+- **`src/md.ts`**: doc contract refreshed — `mdCode` is for ids/commands/tz
+  clocks, NEVER match-day kickoff times; plain segments go through
+  `mdEscape` so the parse-safety discipline stays structural (an unescaped
+  reserved char in a date/time string can never reach Telegram).
+
+### Gate co-evolution
+
+- `check-mdstyle.js`: the time/date assertions flipped from
+  entity-presence to entity-ABSENCE — every card asserts `⏰ <time>` in
+  plain text AND `code.length === 0`, the date line asserts
+  plain-first + no italic span; same flip for the result date, the three
+  digest builders and `/next` (through the real command chain —
+  `globalThis.mdEscape` now installed for the new-Function chain scope).
+  The import contract pins `{ mdBold, mdItalic, mdEscape }` in composers.
+- `check-uclnight.js`: fa/en kickoff-time assertions flipped from
+  backticked to plain (`— ۲۰:۱۵` / `— 20:15`).
+
+Suite: 1509 OK / 0 FAIL. Deployed + live-verified (crafted webhook updates,
+zero Telegram parse-400s).
+
+---
+
 ## [13.106-mdstyle] — 2026-10-16 (MarkdownV2 rich formatting across every bot message surface — the entity system)
 
 The owner's ask: the bot's messages are parse-safe but visually PLAIN —
