@@ -40,11 +40,23 @@ export async function runPreflight(env: Env) {
   // already defers its send fail-closed (v13.42), so the worst case at
   // 1,000 is deferred notifications + a paged admin, never spam, never a
   // dead-looking bot.
+  // v13.111-quotaslim: the burn now includes the WEB side (kv_writes_web_v1
+  // — visitor rebuilds, venue caches, webhook writes, CI-crawl bursts; see
+  // kv-webmeter.ts). The cron accumulator alone under-reported by the whole
+  // web share (2026-10-17 03:22Z: 136 real vs 87 metered — 36% invisible),
+  // so the governor could never engage against web-side bursts.
   const kvDay = new Date(NOW).toISOString().slice(0, 10);
-  const writesSoFarToday = (prevStatus.kv_day === kvDay ? parseInt(prevStatus.kv_writes_day) : 0) || 0;
+  const cronWritesSoFar = (prevStatus.kv_day === kvDay ? parseInt(prevStatus.kv_writes_day) : 0) || 0;
+  let webWritesSoFar = 0;
+  try {
+    const w = await env.STATE.get("kv_writes_web_v1", "json").catch(() => null);
+    if (w && w.d === kvDay) webWritesSoFar = parseInt(w.n) || 0;
+  } catch (e) {
+  }
+  const writesSoFarToday = cronWritesSoFar + webWritesSoFar;
   const budgetSoft = writesSoFarToday >= CONFIG.KV_WRITES_SOFT;
   const budgetHard = writesSoFarToday >= CONFIG.KV_WRITES_HARD;
-  if (budgetSoft) console.warn(`\u{1F4B0} KV write budget: ${writesSoFarToday}/1000 today \u2014 governor ${budgetHard ? "HARD" : "SOFT"} engaged (cosmetic writes shedding; notifications unaffected)`);
+  if (budgetSoft) console.warn(`\u{1F4B0} KV write budget: ${writesSoFarToday}/1000 today (cron ${cronWritesSoFar} + web ${webWritesSoFar}) \u2014 governor ${budgetHard ? "HARD" : "SOFT"} engaged (cosmetic writes shedding; notifications unaffected)`);
   if (budgetHard) {
     try {
       const lastBudgetAlert = parseInt(await env.STATE.get("kv_budget_alert_v1").catch(() => null)) || 0;

@@ -20,6 +20,41 @@ import { fetchPublicMatches, applyLiveOverlay } from "./public-matches";
 import { maybeRunFaAi } from "./fa-ai";
 
 export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promise<Response> {
+  // v13.111-quotaslim: the EDGE CACHE layer. The public page's JS polls
+  // this route every 60s per open tab, and every poll previously ran the
+  // full serve path — 2 KV reads + the ~100KB payload parse + overlay
+  // patch + re-serialize per poll, per tab. On the free plan that is pure
+  // invocation-CPU burn (the exceededResources kills on 2026-10-14's
+  // traffic), and it re-served byte-identical bodies most of the time.
+  // Now the FIRST poll after a 60s window fills caches.default (and the
+  // browser, via the same max-age) and the rest are served from the edge
+  // with ZERO worker-side KV reads or parse work. Correctness: the live
+  // overlay itself is only refreshed by cron ticks (~10min cadence while
+  // live), so a 60s edge TTL adds at most one poll's worth of staleness
+  // to data whose real update granularity is 10 minutes. Query-string
+  // URLs (the cron self-prewarm's ?selfprewarm=<ts> cache-buster) key
+  // separately and always run the full path — the prewarm NEEDS to hit
+  // KV. Failure responses (the degraded catch tail below) are never
+  // stored. The site's own crawler (CI seo-check) hits the bare URL and
+  // now rides the same edge entry — its crawl read-amplification drops
+  // with it.
+  const cacheApi = typeof caches !== "undefined" && caches && caches.default ? caches.default : null;
+  const edgeCacheable = req.method === "GET" && !!cacheApi;
+  if (edgeCacheable) {
+    try {
+      const hit = await cacheApi.match(req);
+      if (hit) return hit;
+    } catch (e) { }
+  }
+  const edgeJson = (data) => {
+    const res = jsonResponse(data, undefined, { "cache-control": "public, max-age=60" });
+    if (edgeCacheable) {
+      try {
+        ctx.waitUntil(cacheApi.put(req, res.clone()).catch(() => { }));
+      } catch (e) { }
+    }
+    return res;
+  };
   // v13.7-perf: stale-while-revalidate on the public-matches endpoint.
   // The KV cache (CONFIG.KV_PUBLIC_MATCHES, 12-min TTL since v13.52) is the
   // fast path. When it is FRESH (<5min) we serve it inline. When it is
@@ -64,7 +99,7 @@ export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promi
         served.swr = true;
         served.cachedAt = new Date(kv.ts).toISOString();
       }
-      return jsonResponse(served);
+      return edgeJson(served);
     }
     // v13.52-swrsolid: payload expired/missing → the 7-day snapshot serves
     // INSTANTLY (fixtures/standings are slow-moving; the live overlay keeps
@@ -92,14 +127,14 @@ export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promi
         served.cached = true;
         served.cachedAt = new Date(epochMs).toISOString();
       }
-      return jsonResponse(served);
+      return edgeJson(served);
     }
     // True cold: no payload, no snapshot (first deploy / KV wipe). The
     // rebuild is now pool-first (see fetchPublicMatches) so even this path
     // is fast unless the pool is gone too.
     const data = await fetchPublicMatches(env, req);
     if (env.AI) ctx.waitUntil(maybeRunFaAi(env).catch((e) => console.warn("FA-AI bg run failed: " + e.message)));
-    return jsonResponse(data);
+    return edgeJson(data);
   } catch (e) {
     console.error("public-matches route failed: " + e.message);
     // v12.x-resilience: try the long-TTL snapshot before giving up

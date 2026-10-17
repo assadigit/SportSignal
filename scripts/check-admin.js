@@ -130,6 +130,16 @@ globalThis.getCronStatus = async (env) => {
   const s = await env.STATE.get("cron_status_v1", "json").catch(() => null);
   return s || { heartbeat: "0", last_cron: "0" };
 };
+// v13.111-quotaslim: the REAL text-scan pool-meta reader from monitoring.ts
+// (the /status card's pool freshness + row count go through it now — its
+// semantics are asserted on, so the real implementation, not a stub).
+const pmStart = src.indexOf("async function getPoolMetaCheap");
+const pmEnd = src.indexOf("async function getDailyWrites");
+if (pmStart < 0 || pmEnd < 0 || pmEnd < pmStart) {
+  console.error("FAIL: getPoolMetaCheap block not found in worker-src");
+  process.exit(1);
+}
+globalThis.getPoolMetaCheap = new Function(src.slice(pmStart, pmEnd) + "\nreturn getPoolMetaCheap;")();
 let sent = [];
 let sendResults = {}; // chatId -> true | "dead" | false (default true)
 globalThis.sendTelegram = async (env, msg, id, keyboard) => {
@@ -242,7 +252,10 @@ function freshEnv(chatId) {
   check("status card carries the raw version in a code span + heartbeat line", sent[0].msg.includes("`13.71-admintools`") && sent[0].msg.includes("ضربان"));
   check("status verdict is degraded without a pool (pool_age -1)", sent[0].msg.includes("نیازمند بررسی"));
   env = freshEnv(ADMIN);
-  await env.STATE.put(CONFIG.KV_MATCHES_KEY, JSON.stringify({ fetchedAt: new Date().toISOString(), matches: [1, 2, 3] }));
+  // v13.111-quotaslim: the card's pool meta is a TEXT SCAN now (one
+  // "utcDate" per row — the live blob's contract); the mock rows carry the
+  // field like every real provider row does.
+  await env.STATE.put(CONFIG.KV_MATCHES_KEY, JSON.stringify({ fetchedAt: new Date().toISOString(), matches: [{ utcDate: "2026-10-17T16:00:00Z" }, { utcDate: "2026-10-17T18:00:00Z" }, { utcDate: "2026-10-18T20:00:00Z" }] }));
   await handler("/status", ADMIN, env);
   check("status verdict is healthy with a fresh pool + counts matches", sent[0].msg.includes("سالم") && sent[0].msg.includes("۳"));
 

@@ -306,8 +306,18 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   // public page must never brick.
   if (!prewarm) {
     try {
+      // v13.111-quotaslim: the guard now sums BOTH meters — the cron
+      // accumulator + the web counter (kv-webmeter.ts). A CI/dev burst
+      // burning the quota through web invocations used to be invisible
+      // here (cron-only check), so visitor rebuilds kept minting writes
+      // past the HARD line.
       const st = await env.STATE.get("cron_status_v1", "json").catch(() => null);
-      if (st && st.kv_day === new Date().toISOString().slice(0, 10) && (parseInt(st.kv_writes_day) || 0) >= CONFIG.KV_WRITES_HARD) {
+      const day = new Date().toISOString().slice(0, 10);
+      const cronN = st && st.kv_day === day ? (parseInt(st.kv_writes_day) || 0) : 0;
+      let webN = 0;
+      const w = await env.STATE.get("kv_writes_web_v1", "json").catch(() => null);
+      if (w && w.d === day) webN = parseInt(w.n) || 0;
+      if (cronN + webN >= CONFIG.KV_WRITES_HARD) {
         if (cached && cached.data) {
           console.warn("\u{1F4B0} KV write budget hold \u2014 serving the cached public payload (visitor refresh deferred)");
           return cached.data;

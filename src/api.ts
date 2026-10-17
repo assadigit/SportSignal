@@ -25,7 +25,8 @@ import { handleVisitBeacon, collectAdminStats } from "./stats";
 import { ADMIN_OPS_ROUTES, legacyGetAction } from "./admin-ops";
 import { SIMULATE_ROUTE } from "./simulate";
 import { executeScheduledLogic } from "./cron";
-import { getCronStatus } from "./monitoring";
+import { getCronStatus, getPoolMetaCheap } from "./monitoring";
+import { installWebKvMeter, maybeFlushWebKvWrites } from "./kv-webmeter";
 import { handleTelegramUpdate } from "./bot";
 import { handleSeoRequest } from "./seo/router";
 import { LOGIN_PAGE } from "./pages/login";
@@ -100,15 +101,27 @@ const POST_GATE_ROUTES: RouteDef[] = [
       // keep a healthy pool ≤~100min old; the 2h full-sweep cadence bounds
       // the normal worst case. A missing pool (-1) or >180min flips the
       // degraded band so monitors can trend it BEFORE reminders go stale.
+      // v13.111-quotaslim: a TEXT SCAN, not a JSON.parse — healthz used to
+      // parse the whole 617KB pool per poll (the single heaviest CPU sink
+      // on this route; uptime monitors polling every few minutes made it a
+      // standing free-plan CPU-limit killer). The blob shape is a contract
+      // (one "utcDate" per row, one "fetchedAt") — see monitoring.ts.
       let poolAgeMin = -1;
       let poolMatches = 0;
       try {
-        const pool = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
-        if (pool && pool.fetchedAt) {
-          const t = new Date(pool.fetchedAt).getTime();
-          if (!isNaN(t)) poolAgeMin = Math.round((Date.now() - t) / 6e4);
-          poolMatches = Array.isArray(pool.matches) ? pool.matches.length : 0;
-        }
+        const meta = await getPoolMetaCheap(env);
+        poolAgeMin = meta.ageMin;
+        poolMatches = meta.matches;
+      } catch (e) { }
+      // v13.111-quotaslim: the web-side share of the day's write burn
+      // (visitor rebuilds, venue caches, webhook writes, CI-crawl bursts —
+      // counted by kv-webmeter.ts). healthz's kv_writes_day is now the
+      // HONEST total: cron + web.
+      let webWrites = 0;
+      try {
+        const w = await env.STATE.get("kv_writes_web_v1", "json").catch(() => null);
+        const day = new Date().toISOString().slice(0, 10);
+        if (w && w.d === day) webWrites = parseInt(w.n) || 0;
       } catch (e) { }
       // v13.70-adminpulse: is the admin-paging layer ARMED? Every admin
       // alert path (6h heartbeat, alertPhaseError pages, budget pages,
@@ -125,10 +138,15 @@ const POST_GATE_ROUTES: RouteDef[] = [
       // ~1 period + one long match-night tick), a growing-but-small outbox,
       // or the KV governor engaged. Additive field for dashboards/alert
       // tuning; the 200/503 decision above is untouched.
-      const degraded = healthy && (ageMin > CONFIG.EXECUTION_FREQUENCY_MINUTES * 2 || lastCronAgeMin > CONFIG.EXECUTION_FREQUENCY_MINUTES * 2 + 5 || outboxDepth > 10 || (parseInt(st.kv_writes_day) || 0) >= CONFIG.KV_WRITES_SOFT || poolAgeMin < 0 || poolAgeMin > 180 || !adminAlertsOk);
+      const degraded = healthy && (ageMin > CONFIG.EXECUTION_FREQUENCY_MINUTES * 2 || lastCronAgeMin > CONFIG.EXECUTION_FREQUENCY_MINUTES * 2 + 5 || outboxDepth > 10 || (parseInt(st.kv_writes_day) || 0) + webWrites >= CONFIG.KV_WRITES_SOFT || poolAgeMin < 0 || poolAgeMin > 180 || !adminAlertsOk);
       // v13.38-qc: surface the KV write budget burn (measured, not pencil
       // math) so any monitor can watch the 1,000/day free-tier quota —
       // quota exhaustion was the original spam trigger.
+      // v13.111-quotaslim: the number is now the HONEST total (cron + web);
+      // kv_writes_web carries the web share alone (the `|| kvWritesTotal`
+      // tail only fires in the legacy no-status-blob fallback, where NaN
+      // would otherwise print as null).
+      const kvWritesTotal = (parseInt(st.kv_writes_day) || 0) + webWrites;
       return new Response(JSON.stringify({
         ok: healthy,
         heartbeat_age_min: ageMin,
@@ -137,7 +155,8 @@ const POST_GATE_ROUTES: RouteDef[] = [
         pool_age_min: poolAgeMin,
         pool_matches: poolMatches,
         admin_alerts_ok: adminAlertsOk,
-        kv_writes_day: parseInt(st.kv_writes_day) || 0,
+        kv_writes_day: parseInt(st.kv_writes_day) + webWrites || kvWritesTotal,
+        kv_writes_web: webWrites,
         kv_budget: st.budget || null,
         degraded: degraded,
         subreq_last_tick: parseInt(st.subreq_last_tick) || 0,
@@ -258,12 +277,13 @@ const POST_GATE_ROUTES: RouteDef[] = [
 // robots.txt). They were removed from POST_GATE_ROUTES — the router serves
 // them before this table is reached.
 
-const worker_default = {
-  async fetch(req, env, ctx) {
-    resetSubrequestBudget();
-    const url = new URL(req.url);
-    if (url.pathname === "/webhook") {
-      if (!validateWebhook(req, env)) {
+// v13.111-quotaslim: the fetch body (route semantics unchanged) extracted
+// from the worker object so the KV meter wrapper below can install before
+// and flush after EVERY return path without touching a single route.
+async function handleFetchRequest(req, env, ctx) {
+  const url = new URL(req.url);
+  if (url.pathname === "/webhook") {
+    if (!validateWebhook(req, env)) {
         console.warn("\u26A0\uFE0F Invalid webhook secret");
         return new Response("Unauthorized", { status: 403 });
       }
@@ -274,7 +294,10 @@ const worker_default = {
         update = null;
       }
       if (update) {
-        ctx.waitUntil(handleTelegramUpdate(env, update).catch((e) => console.error("Webhook background error:", e)));
+        // v13.111-quotaslim: the .finally chains the meter flush AFTER the
+        // update's writes land (the webhook runs in waitUntil, past the
+        // fetch wrapper's own finally) — follow/prefs/profile writes count.
+        ctx.waitUntil(handleTelegramUpdate(env, update).catch((e) => console.error("Webhook background error:", e)).finally(() => maybeFlushWebKvWrites(env, ctx)));
       }
       return new Response("OK");
     }
@@ -328,6 +351,22 @@ const worker_default = {
       return res;
     }
     return new Response("Method not allowed", { status: 405 });
+}
+
+const worker_default = {
+  async fetch(req, env, ctx) {
+    resetSubrequestBudget();
+    // v13.111-quotaslim: the WEB-SIDE KV meter — every STATE.put/delete this
+    // invocation makes is counted and (throttled) flushed into the day's
+    // web counter kv_writes_web_v1, so the budget governor + healthz see
+    // the TRUE burn, not just the cron share (see kv-webmeter.ts). The
+    // flush rides ctx.waitUntil and is a no-op on read-only invocations.
+    installWebKvMeter(env);
+    try {
+      return await handleFetchRequest(req, env, ctx);
+    } finally {
+      maybeFlushWebKvWrites(env, ctx);
+    }
   },
   async scheduled(event, env, ctx) {
     console.log("\u23F0 Scheduled event triggered");

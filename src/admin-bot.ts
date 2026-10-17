@@ -36,7 +36,7 @@ import { mdCode } from "./md";
 import { getBotMembers, getRegisteredChats, getUserPrefs } from "./users";
 // v13.92-d1userstore: single-row profile read (D1 primary / legacy blob).
 import { chatProfileGet } from "./user-store";
-import { getCronStatus } from "./monitoring";
+import { getCronStatus, getPoolMetaCheap } from "./monitoring";
 import { sendTelegram } from "./telegram";
 
 // The owner chat id (NaN when CHAT_ID is unset/unparseable — then nothing
@@ -271,15 +271,26 @@ export async function adminStatusMessage(env: Env) {
   } catch (e) { }
   let poolAgeMin = -1, poolMatches = 0;
   try {
-    const pool = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
-    if (pool && pool.fetchedAt) {
-      const t = new Date(pool.fetchedAt).getTime();
-      if (!isNaN(t)) poolAgeMin = Math.round((Date.now() - t) / 6e4);
-      poolMatches = Array.isArray(pool.matches) ? pool.matches.length : 0;
-    }
+    // v13.111-quotaslim: text scan, not a 617KB JSON.parse (see
+    // monitoring.ts getPoolMetaCheap) — the /status card is a bot command
+    // but the same CPU discipline applies on every surface.
+    const meta = await getPoolMetaCheap(env);
+    poolAgeMin = meta.ageMin;
+    poolMatches = meta.matches;
   } catch (e) { }
   const adminOk = !isNaN(adminChatId(env));
-  const kvWrites = parseInt(st.kv_writes_day) || 0;
+  // v13.111-quotaslim: the honest daily burn — cron accumulator + the web
+  // counter (kv_writes_web_v1). The card's «نوشتار KV امروز» used to print
+  // the cron-only share while web-side writes (visitor rebuilds, venue
+  // caches, webhook writes) burned invisibly (2026-10-17 03:22Z: card said
+  // 87 while the account was at 136).
+  let webKvWrites = 0;
+  try {
+    const w = await env.STATE.get("kv_writes_web_v1", "json").catch(() => null);
+    const day = new Date().toISOString().slice(0, 10);
+    if (w && w.d === day) webKvWrites = parseInt(w.n) || 0;
+  } catch (e) { }
+  const kvWrites = (parseInt(st.kv_writes_day) || 0) + webKvWrites;
   const healthy = hbAge >= 0 && hbAge <= 30 && cronAge >= 0 && cronAge <= 35 && outboxDepth < 50 && poolAgeMin >= 0 && poolAgeMin <= 180 && adminOk;
   const verdict = healthy
     ? "\u{1F7E2} \u0633\u0627\u0644\u0645"

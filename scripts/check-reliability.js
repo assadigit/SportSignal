@@ -381,7 +381,7 @@ check("#quota2 cacheMatches honors the hold", /env && env\.KV_BUDGET_HOLD\)[\s\S
 check("#quota2 hard budget pages the admin once/12h (write-first mark)", /kv_budget_alert_v1/.test(src) && /12 \* 36e5/.test(src));
 check("#quota2 budget level lands in the status blob", /budget: budgetHard \? "hard" : budgetSoft \? "soft" : null/.test(src));
 check("#quota2 healthz exposes the governor level", /kv_budget: st\.budget \|\| null/.test(src));
-const webGuardSeg = (src.match(/web-side KV-write budget guard[\s\S]{0,1100}/) || [""])[0];
+const webGuardSeg = (src.match(/web-side KV-write budget guard[\s\S]{0,1600}/) || [""])[0];
 check("#quota2 web-side rebuild guard honors the hard threshold", /KV_WRITES_HARD/.test(webGuardSeg) && /serving the cached public payload/.test(webGuardSeg));
 check("#quota2 web guard exempts the cron prewarm path", /if \(!prewarm\) \{/.test(webGuardSeg));
 
@@ -655,8 +655,8 @@ check("#standsteady STAND_CODE_ORDER carries the full standings set (jitter doma
 //      days render NO badge — only a real >3h data outage shows it, with the
 //      DATA's age instead of a frozen write-time age.
 check("#livestamp pool stamp-advance window is configured (90min < the 2h sweep cadence)", /POOL_STAMP_REFRESH_MS: 90 \* 60 \* 1e3/.test(src));
-check("#livestamp cacheMatches skips ONLY when both the stamp is fresh AND content is identical", /stampAge = existing && existing\.fetchedAt \? Date\.now\(\) - new Date\(existing\.fetchedAt\)\.getTime\(\) : Infinity/.test(src) && /stampAge < CONFIG\.POOL_STAMP_REFRESH_MS && JSON\.stringify\(merged\) === JSON\.stringify\(existing\.matches\)/.test(src));
-check("#livestamp the stamp-advance rewrite refreshes fetchedAt (the header's clock)", /JSON\.stringify\(\{ fetchedAt: \(new Date\(\)\)\.toISOString\(\), source, matches: merged \}\)/.test(src));
+check("#livestamp cacheMatches skips ONLY when both the stamp is fresh AND content is identical", /stampAge = existing && existing\.fetchedAt \? Date\.now\(\) - new Date\(existing\.fetchedAt\)\.getTime\(\) : Infinity/.test(src) && /stampAge < CONFIG\.POOL_STAMP_REFRESH_MS && JSON\.stringify\(mergedSlim\) === JSON\.stringify\(existing\.matches\.map\(slim\)\)/.test(src));
+check("#livestamp the stamp-advance rewrite refreshes fetchedAt (the header's clock)", /JSON\.stringify\(\{ fetchedAt: \(new Date\(\)\)\.toISOString\(\), source, matches: mergedSlim \}\)/.test(src));
 check("#livestamp the cached badge is data-age gated (CACHED_BADGE_MS)", /CACHED_BADGE_MS: 3 \* 60 \* 60 \* 1e3/.test(src));
 check("#livestamp the snapshot serve stamps the badge from the DATA epoch (fetchedAt), not the KV write time", swrSlice52.includes("const epochMs = Date.parse(snap.data.fetchedAt || \"\") || snap.ts || 0;") && /if \(epochMs && Date\.now\(\) - epochMs > CONFIG\.CACHED_BADGE_MS\) \{[\s\S]{0,160}served\.cached = true;/.test(swrSlice52));
 check("#livestamp the snapshot serve NO LONGER unconditionally marks cached:true (the 1407m-ago lie)", !/served\.cached = true;\s*served\.cachedAt = snap\.ts \? new Date\(snap\.ts\)\.toISOString\(\) : snap\.data\.fetchedAt;/.test(swrSlice52));

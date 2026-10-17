@@ -6,6 +6,103 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.111-quotaslim] — 2026-10-17 (free-tier quota hardening: the two Cloudflare alert emails)
+
+The two alert emails of 2026-10-16/17, investigated with the account's own
+GraphQL analytics:
+
+- **Email 1** (KV operations at 50% of the daily free quota) = **WRITES**:
+  Oct 14 burned 1,273/1,000 (a hard breach — 13 CI runs + dev-session
+  traffic), Oct 15: 704, Oct 16: 869 (87%, the trigger).
+- **Email 2** (Workers CPU limit exceeded 1,000+ times in 24h) = Oct 14's
+  1,007 `exceededResources` kills — and the kills CONTINUED in steady
+  state (64 in the 00:00Z hour and 25 in the 02:00Z hour of Oct 17 alone,
+  sweep/digest hours).
+
+Verdict: ~60-70% of the peak-day excess was dev-session + CI artifact
+(temporary, per the owner), but FOUR structural defects remained and are
+fixed here — no feature cut, only how the quota is spent:
+
+### 1. The pool blob slim (the CPU structural fix) — `match-pool.ts`
+
+`matches_v13_tracked` was **617KB / 707 rows**, and every consumer
+(all 144 cron ticks, every serve path, every digest) JSON.parses it. A
+field audit of the whole codebase found **~46% of the bytes were fields
+NOTHING reads**: football-data's nested `odds` / `referees` / `area` /
+`season` / `group` / `lastUpdated`, team `shortName`/`tla`/`id`, score
+`winner`/`duration`/`halfTime`, competition `name`/`id`/`type`.
+`cacheMatches` now persists a whitelist exactly matching consumption
+(`id, utcDate, status, venue, stage, matchday, round, roundRaw, roundFa,
+minute, scorers, homeTeam.{name,crest,faName},
+awayTeam.{name,crest,faName}, competition.{code,faName,emblem},
+score.fullTime`) → **~331KB, −46% parse CPU on every pool read**. The
+slim applies to BOTH sides of the change-only comparison, so an
+already-fat pool converges on the first stamp-advance (≤90min) and
+identical-content skips stay exact. In-memory lists keep whatever the
+providers bring — only the persisted blob is slim.
+
+### 2. healthz / admin /status stop parsing the pool — `monitoring.ts`, `api.ts`, `admin-bot.ts`
+
+`/healthz` (and the bot's `/status` card) JSON.parsed the FULL pool per
+poll just to read `fetchedAt` + row count — with an uptime monitor
+polling every few minutes this was a standing CPU-limit killer.
+`getPoolMetaCheap()` answers both by text-scanning the blob (one
+`"fetchedAt"`, one `"utcDate"` per row — the blob's live contract) in
+~1-3ms instead of a 20-40ms parse.
+
+### 3. The edge-cache layer on `/api/public-matches` — `public-swr.ts`
+
+The public page's JS polls every 60s per open tab; every poll ran the
+full serve path (2 KV reads + ~100KB parse + overlay patch). The route
+now sits behind `caches.default` with `Cache-Control: public, max-age=60`
+(edge + browser): repeated polls within the window are served from the
+edge with ZERO worker-side work. Correctness is unchanged in practice —
+the live overlay itself only refreshes at cron-tick cadence (~10min), so
+a 60s TTL adds at most one poll of staleness to 10-minute-granularity
+data. The cron self-prewarm's `?selfprewarm=<ts>` cache-buster keys
+separately and always runs the full path; degraded responses are never
+stored; the CI crawler's bare-URL reads ride the same edge entry.
+
+### 4. The coronation write diet — `digest-coronation.ts`
+
+`table_top_v1:<code>` snapshots were rewritten on EVERY full sweep for
+EVERY league — 6-7 codes × 12 sweeps = **72-84 writes/day** re-writing
+byte-identical top-10s. Now write-only-when-changed (the v13.38
+status-map pattern): an unchanged table needs no new dedupe state, the
+detection semantics are untouched, and the 40d TTL + silent re-seed on
+expiry behave exactly as before.
+
+### 5. The honest write meter — `kv-webmeter.ts` (new), `cron-preflight.ts`, `api.ts`, `admin-bot.ts`, `public-matches.ts`
+
+The cron-side meter counted ONLY tick writes — web-invocation writes
+(visitor rebuilds, SEO venue caches, Telegram-webhook follow/prefs,
+CI-crawl bursts) were invisible: Oct 17 03:22Z had 136 real writes while
+the meter said 87 (36% blind), so the SOFT/HARD governor could never see
+web-side bursts coming. New `kv-webmeter.ts` wraps `STATE.put/delete` on
+every web invocation (sharing cron.ts's `__origPut` pristine pin — one
+wrapper, no double-count) and flushes the count into a day-keyed
+`kv_writes_web_v1` counter, **throttled** (flush at ≥8 pending or ≥5min
+gap) so the metering itself costs ~zero extra writes on quiet days and
+~12% on burst days. The governor (preflight), healthz
+(`kv_writes_day` is now cron+web; new `kv_writes_web` field), the admin
+card and the public rebuild guard all decide on the SUM.
+
+### Steady-state projection after the fix
+
+~288 lock+status floor + ~12 stamp-advances + ~12 prewarm writes + a few
+event writes + web share (bounded by the edge cache + refresh locks)
+≈ **mid-40s% of the 1,000/day cap on a no-dev day** (was ~60%+), with
+the governor now able to see and shed the remaining web-side bursts.
+Dev days remain bursty by choice (the owner: development is temporary).
+
+Gates co-evolved: check-reliability livestamp regexes pin the slim
+comparison; webGuardSeg window widened for the new comment; check-admin
+slices the REAL `getPoolMetaCheap` and its pool mock now carries
+`utcDate` rows (the blob contract). Suite **1622 green** (baseline
+preserved exactly).
+
+---
+
 ## [13.110-digitfold] — 2026-10-16 (the duplicate night-digest line: club-name digits fold)
 
 The owner's report — the Farsi night results digest printed the SAME match

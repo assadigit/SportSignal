@@ -299,15 +299,22 @@ export async function fetchWithRetry(url, apiToken, label) {
   }
   return [];
 }
-export function jsonResponse(data, status?) {
+export function jsonResponse(data, status?, extraHeaders?) {
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "referrer-policy": "no-referrer"
+  };
+  // v13.111-quotaslim: optional extra headers (the public-matches edge-cache
+  // layer passes cache-control) — additive, every existing call site is
+  // byte-identical in behavior.
+  if (extraHeaders) {
+    for (const k of Object.keys(extraHeaders)) headers[k] = String(extraHeaders[k]);
+  }
   return new Response(JSON.stringify(data, null, 2), {
     status: status || 200,
-    headers: {
-      "content-type": "application/json",
-      "x-content-type-options": "nosniff",
-      "x-frame-options": "DENY",
-      "referrer-policy": "no-referrer"
-    }
+    headers
   });
 }
 // v13.36-anytight: every admin API route used to inline the same

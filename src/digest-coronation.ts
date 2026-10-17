@@ -61,14 +61,30 @@ export async function maybeNotifyTableToppers(env: Env, matches) {
     // 6h post-match window (up to 36 copies). Fail closed: if the snapshot
     // can't be persisted, skip this league this tick (no send, no re-arm).
     let snapSaved = false;
-    try {
-      // v13.38-qc: 40d TTL — the old snapshot put had NO expiry, so the 7
-      // league keys lived forever. Stale snapshots are harmless (prev only
-      // feeds transition detection), so a long TTL is pure hygiene.
-      await env.STATE.put(snapKey, JSON.stringify({ ts: Date.now(), top: sorted.slice(0, 10).map((t) => ({ name: t.name, pos: t.pos, points: t.points })) }), { expirationTtl: 40 * 86400 });
+    // v13.111-quotaslim: WRITE-ONLY-WHEN-CHANGED (the v13.38 status-map
+    // pattern). The snapshot used to be put on EVERY full sweep for EVERY
+    // league — 6-7 codes × 12 sweeps = ~72-84 writes/day of the 1,000/day
+    // quota, all re-writing byte-identical top-10s on the ~99% of sweeps
+    // where no table changed. An unchanged table needs NO new dedupe state
+    // (prev already IS that state), so the put is skipped and the detection
+    // semantics below are untouched. The 40d TTL still applies to real
+    // changes; a league whose key expires after 40 quiet days re-seeds
+    // here (prev=null → not unchanged → one write, silent — same as the
+    // old first-run behavior).
+    const newTop = sorted.slice(0, 10).map((t) => ({ name: t.name, pos: t.pos, points: t.points }));
+    const tableUnchanged = !!(prev && Array.isArray(prev.top) && prev.top.length === newTop.length && JSON.stringify(prev.top) === JSON.stringify(newTop));
+    if (tableUnchanged) {
       snapSaved = true;
-    } catch (e) {
-      console.error(`Table-top snapshot save failed [${code}] — skipping coronation check this tick (fail-closed anti-spam)`);
+    } else {
+      try {
+        // v13.38-qc: 40d TTL — the old snapshot put had NO expiry, so the 7
+        // league keys lived forever. Stale snapshots are harmless (prev only
+        // feeds transition detection), so a long TTL is pure hygiene.
+        await env.STATE.put(snapKey, JSON.stringify({ ts: Date.now(), top: newTop }), { expirationTtl: 40 * 86400 });
+        snapSaved = true;
+      } catch (e) {
+        console.error(`Table-top snapshot save failed [${code}] — skipping coronation check this tick (fail-closed anti-spam)`);
+      }
     }
     if (!snapSaved) continue;
     if (!prev || !Array.isArray(prev.top) || !prev.top.length) continue;
