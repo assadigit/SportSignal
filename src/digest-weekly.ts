@@ -16,7 +16,8 @@ import { mdBold, mdItalic, mdEscape } from "./md";
 import { translateTeam, translateCompetition } from "./translate";
 import { shouldReport, isMasterPair, isDerby, isBotSilentLeague } from "./match-classify";
 import { fetchStandings, buildLeagueTableMessage, isoWeekKey, weeklyTableCodes } from "./composers";
-import { sendTelegram } from "./telegram";
+import { sendTelegram, sendSticker } from "./telegram";
+import { getLeagueStickers } from "./stickers";
 import { getUserPrefs } from "./users";
 import { getCachedMatches } from "./match-pool";
 
@@ -27,6 +28,11 @@ export async function sendLeagueTables(env: Env, chatIds, opts, lang?) {
     out.error = "no chats";
     return out;
   }
+  // v13.114-stickers: the league logo ahead of its table — the owner's
+  // [laliga sticker][laliga table] layout. One KV read per burst (memoized
+  // in stickers.ts); file_ids were harvested at pack-creation time. A
+  // league without a sticker (PGL, CL) just skips the logo — fail-open.
+  const stickers = await getLeagueStickers(env);
   const messages = [];
   for (const code of weeklyTableCodes()) {
     let st = null;
@@ -51,6 +57,13 @@ export async function sendLeagueTables(env: Env, chatIds, opts, lang?) {
   }
   for (const chatId of chatIds) {
     for (const m of messages) {
+      const fid = stickers ? stickers[m.code] : null;
+      if (fid) {
+        // Decorative: a failed/"dead" sticker NEVER blocks the table
+        // behind it (no outbox either — a retry could double the logo).
+        const r = await sendSticker(env, chatId, fid);
+        if (r === true) out.stickers = (out.stickers || 0) + 1;
+      }
       if (await sendTelegram(env, m.text, chatId)) out.sent++;
       else out.failed++;
     }

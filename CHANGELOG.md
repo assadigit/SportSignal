@@ -6,6 +6,86 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.114-stickers] — 2026-10-17 (league-logo stickers: pictures ride Telegram's own infrastructure)
+
+The owner's idea, verbatim: *"lets create a sticker pack for telegram. so
+when we need pictures, instead of using worker's ability, use the
+infrastructure of the telegram it self. for starter, I uploaded 5 PNG for
+the leagues logo. for weekly briefing use those."* — with the example
+layout `[laliga logo sticker][laliga table]`.
+
+### The pack
+
+**`t.me/addstickers/sportsignal_leagues_by_SportSignalAlertsBot`** —
+"SportSignal League Logos", 5 static stickers (512×512, transparent,
+111–197KB each), created ONCE from the owner's uploaded
+`football_league_clean_square_pngs` zip. The zip was unpacked into
+**`assets/stickers/`** (`pl.png`, `pd.png`, `sa.png`, `bl1.png`, `fl1.png`
+— the repo's league codes; normalized: edge flood-fill → transparent
+background, 6% margin, pad-to-square, LANCZOS to 512; the raw zip left the
+repo root) and is now the source of truth for re-builds. Pack order =
+`PL, PD, SA, BL1, FL1` (the `weeklyTableCodes` order); emoji + search
+keywords per league (⚽ + 🦁/🇪🇸/🇮🇹/🇩🇪/🇫🇷).
+
+Telegram quirk hit on creation: a bot CANNOT own a sticker set
+(`USER_IS_BOT`) — the pack is owned by the human owner (the bot's admin
+chat, who had interacted with the bot), which is the only supported shape
+for bot-created packs.
+
+### The plumbing (zero worker picture work, by design)
+
+- **KV `stickers_v1`** = `{ PL: "<file_id>", … }` — the per-league file_ids
+  harvested from `getStickerSet` at creation time (position-mapped).
+  file_ids are stable and bot-scoped; the worker NEVER carries the PNG
+  bytes, never renders (no resvg/WASM), never uploads — a send is ONE
+  `sendSticker` subrequest carrying a chat_id + file_id: Telegram's CDN
+  does everything. The same "telegram-infra" direction as v13.99's
+  UCL-GIF file_id cache, now for the weekly briefing.
+- **`src/stickers.ts`** (NEW): `getLeagueStickers` (one KV read per burst,
+  10-min per-isolate memo, never rejects — a KV hiccup = a sticker-less
+  digest, never a missed table) + `parseStickerMap` (pure: whitelist of
+  `CONFIG.STICKER_LEAGUE_CODES`, ≥20-char ids; garbage/short/non-league
+  codes — including an "AL" someone might hand-add — degrade to `{}`).
+- **`sendSticker`** (telegram.ts): the sendAnimation cosmetic class — 2
+  attempts, pacing + 429-pause + dead-chat detection shared with every
+  sender, NO outbox (a missed logo must never queue a retry that could
+  double the flourish; the table behind it is the payload).
+- **`sendLeagueTables`** (digest-weekly.ts): per chat, per league —
+  `[league logo sticker][league table]`, exactly the owner's layout. A
+  league without a sticker (PGL, CL today) just skips the logo —
+  fail-open. `out.stickers` counts successes. ONE integration point, so
+  the Monday digest, the owner's `/tables` command and the admin panel's
+  manual send all got the stickers at once.
+- **`scripts/make-sticker-pack.js`** (NEW, operator tool — the
+  set-bot-commands.js convention): create-or-refresh the pack from
+  `assets/stickers/*.png`, harvest file_ids by position, write KV via the
+  CF REST API (or print for a manual `wrangler kv:key put`). `--recreate`
+  deletes + rebuilds (file_ids are position-mapped, so ANY pack content
+  change needs it). Future leagues = add the PNG + one STICKER_MAP row +
+  `--recreate`.
+
+### Quota direction
+
+Strictly POSITIVE-side: the weekly digest gained 5 sticker sends/week/chat
+(one subrequest each, already paced) and ONE extra KV read per burst; no
+new KV writes anywhere (stickers_v1 was written once, by the script). The
+worker's picture path (WASM-rendered match cards, the bundled 943KB GIF)
+is untouched — this release is the STARTER of the telegram-infra picture
+direction, not the migration of the dynamic cards (those carry real-time
+content a static pack cannot; the UCL GIF is a candidate for a later
+pack slot).
+
+### Tests
+
+check-weekly-tables: `parseStickerMap` unit table (null/garbage/short-id/
+non-league drops) + the behavioral block — sticker-before-table ORDER via
+a combined action log (`[PL logo][PL table][PD logo][PD table]`), logo
+counting, failed-logo-never-blocks-the-table, empty-map = no sticker field
++ the 6-table regression guards. Suite: 1683 OK / 0 FAIL (baseline
+preserved); tsc clean.
+
+---
+
 ## [13.113-nightgate] — 2026-10-17 (AL bot-silence + the valuable-night digest gate + always-covered cup eliminations)
 
 The owner's three rules, same message:

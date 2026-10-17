@@ -69,3 +69,13 @@
 /bot/ucl-night.gif
   Cache-Control: public, max-age=86400
 
+# v13.114-stickers: TELEGRAM BOT ASSETS — the league-logo sticker sources
+# (512×512 transparent PNGs, ≤512KB each). The Telegram pack
+# (t.me/addstickers/sportsignal_leagues_by_SportSignalAlertsBot) was built
+# from these ONCE by scripts/make-sticker-pack.js; the worker sends by
+# cached file_id and never touches these files. Served so the pack can be
+# re-built/re-fetched at any time (not immutable: the owner may replace a
+# logo in place — re-run make-sticker-pack.js --recreate to rebuild).
+/stickers/*
+  Cache-Control: public, max-age=86400
+

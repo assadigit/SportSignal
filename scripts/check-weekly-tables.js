@@ -29,6 +29,9 @@ const CONFIG = {
   LEAGUES: ["CL", "PL", "PD", "SA", "FL1"],
   KV_WEEKLY_TABLES: "weekly_tables_v1",
   WEEKLY_TABLES: { day: 1, fromMin: 90, toMin: 360 },
+  // v13.114-stickers: parseStickerMap's league whitelist (the real one is
+  // config.ts STICKER_LEAGUE_CODES — mirror it here).
+  STICKER_LEAGUE_CODES: ["PL", "PD", "SA", "BL1", "FL1"],
   BIG_TEAMS_BY_LEAGUE: {
     PL: ["Arsenal FC", "Liverpool FC"],
     PD: ["FC Barcelona", "Real Madrid CF"],
@@ -47,7 +50,17 @@ const kv = { map: {}, async get(k) { return k in this.map ? this.map[k] : null; 
 const env = { STATE: kv };
 const sentLog = [];
 let telegramOK = true;
-async function sendTelegram(_env, text, chatId) { if (!telegramOK) return false; sentLog.push({ text, chatId }); return true; }
+// v13.114-stickers: getLeagueStickers + sendSticker are free variables of
+// the eval'd sendLeagueTables — stubbed like sendTelegram. stickerMap flips
+// the available logos, stickerOK flips the send verdict, actionLog records
+// the COMBINED order (the sticker-before-table proof).
+let stickerMap = {};
+let stickerOK = true;
+const stickerLog = [];
+const actionLog = [];
+async function getLeagueStickers(_env) { return stickerMap; }
+async function sendSticker(_env, chatId, fileId) { stickerLog.push({ chatId, fileId }); actionLog.push({ kind: "sticker", chatId, fileId }); return stickerOK; }
+async function sendTelegram(_env, text, chatId) { if (!telegramOK) return false; sentLog.push({ text, chatId }); actionLog.push({ kind: "text", chatId, text }); return true; }
 // bundle-format shims: the deployed worker is a self-contained bundle whose
 // grabbed functions resolve (0, import_teams.normalizeTeamName) through this
 // scope, and maybeSendWeeklyTables calls sendWeekAhead (not under test here).
@@ -101,7 +114,9 @@ eval([
   grabFn("function weeklyTableCodes()"),
   grabFn("function buildLeagueTableMessage(code"),
   grabFn("async function sendLeagueTables(env"),
-  grabFn("async function maybeSendWeeklyTables(env")
+  grabFn("async function maybeSendWeeklyTables(env"),
+  // v13.114-stickers: the pure KV-shape parser (src/stickers.ts)
+  grabFn("function parseStickerMap(raw)")
 ].join("\n"));
 
 // ---------- A: ISO week keys (ground truth: Python datetime.isocalendar) ----------
@@ -140,6 +155,14 @@ chk(!clMsg.includes("⭐"), "CL: no stars (no selected CL teams in settings)");
 
 // ---------- D: sendLeagueTables ----------
 (async () => {
+  // ---------- D0: parseStickerMap (v13.114-stickers) ----------
+  chk(JSON.stringify(parseStickerMap(null)) === "{}", "parseStickerMap: null → {}");
+  chk(JSON.stringify(parseStickerMap("garbage{")) === "{}", "parseStickerMap: garbage → {}");
+  const longId = "FID_" + "x".repeat(30);
+  const pm = parseStickerMap(JSON.stringify({ PL: longId, PD: "short", AL: "y".repeat(40), XX: "z".repeat(40) }));
+  chk(pm.PL === longId, "parseStickerMap: well-formed PL kept");
+  chk(!pm.PD && !pm.AL && !pm.XX, "parseStickerMap: short id + non-league codes (AL!) dropped");
+
   sentLog.length = 0;
   const res = await sendLeagueTables(env, [555], { label: "پایان هفته" });
   chk(res.sent === 6 && res.failed === 0, "sendLeagueTables: 6 leagues sent");
@@ -149,6 +172,31 @@ chk(!clMsg.includes("⭐"), "CL: no stars (no selected CL teams in settings)");
   chk(sentLog[0].text.includes("لیگ برتر انگلیس") && sentLog[5].text.includes("قهرمانان"), "league order PL→…→CL");
   const empty = await sendLeagueTables(env, [], null);
   chk(empty.error === "no chats" && empty.sent === 0, "no chats guard");
+
+  // ---------- D2: v13.114-stickers — [logo sticker][league table] ----------
+  sentLog.length = 0; stickerLog.length = 0; actionLog.length = 0;
+  stickerMap = { PL: "FID_PL", PD: "FID_PD" };
+  stickerOK = true;
+  const res2 = await sendLeagueTables(env, [777], { label: "پایان هفته" });
+  chk(res2.sent === 6 && res2.failed === 0, "stickers: all 6 tables still sent");
+  chk(res2.stickers === 2, "stickers: 2 logos counted (PL, PD)");
+  chk(stickerLog.length === 2 && stickerLog[0].fileId === "FID_PL" && stickerLog[1].fileId === "FID_PD", "stickers: PL+PD file_ids in league order");
+  chk(stickerLog.every((s) => s.chatId === 777), "stickers: sent to the chat");
+  const codeOf = (a) => a.kind === "sticker" ? a.fileId : (a.text.includes("لیگ برتر انگلیس") ? "PL" : a.text.includes("لالیگا") ? "PD" : "other");
+  chk(actionLog.slice(0, 4).map((a) => a.kind + ":" + codeOf(a)).join("|") === "sticker:FID_PL|text:PL|sticker:FID_PD|text:PD", "stickers: [PL logo][PL table][PD logo][PD table] — the owner's layout");
+  chk(actionLog.filter((a) => a.kind === "sticker").length === 2, "stickers: SA/FL1/PGL/CL have no logo — no extra sends");
+  // sticker failure never blocks the table behind it
+  stickerOK = false;
+  sentLog.length = 0; stickerLog.length = 0; actionLog.length = 0;
+  const res3 = await sendLeagueTables(env, [777], null);
+  chk(res3.sent === 6 && res3.failed === 0 && !res3.stickers, "stickers: failed logo → uncounted, tables unaffected");
+  stickerOK = true;
+  // empty map → no sticker field at all
+  stickerMap = {};
+  sentLog.length = 0;
+  const res4 = await sendLeagueTables(env, [777], null);
+  chk(res4.sent === 6 && !("stickers" in res4), "stickers: empty map → no sticker field, tables flow");
+  stickerMap = {};
 
   // ---------- E: weekly window + once-per-week + retry ----------
   kv.map = {};

@@ -102,6 +102,10 @@ function workerSrc() {
     // right before the digest group — its only consumer is digest-night.ts;
     // grab-based, position-independent.
     "cup-elim.ts",
+    // v13.114-stickers: the league-logo pack accessor (KV stickers_v1 →
+    // file_id map) — consumed by digest-weekly's sendLeagueTables. A ROOT
+    // leaf like cup-elim; grab-based, position-independent.
+    "stickers.ts",
     "digest-weekly.ts", "digest-morning.ts", "digest-night.ts", "digest-bigmatch.ts", "digest-coronation.ts",
     // v13.99-uclgif: the UCL night preview (GIF + fixture times). Sits after
     // the digest group (imports tzOffsetMs/dateKeyOf/matchesOfLocalDate FROM

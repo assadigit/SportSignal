@@ -405,6 +405,48 @@ export async function sendUclGifBanner(env: Env, chatId, caption?) {
   return r2;
 }
 
+// v13.114-stickers: send a league-logo STICKER by cached file_id — pure
+// Telegram-side picture infrastructure. The pack lives on Telegram's CDN
+// (created once by scripts/make-sticker-pack.js from assets/stickers/*.png);
+// this call carries only a chat_id + file_id: no bytes of ours, no WASM
+// render, no bundled asset. Cosmetic semantics like sendAnimation (the GIF
+// banner's class): 2 attempts, NO outbox — a missed sticker must never
+// queue a retry that could double the flourish; the table message behind
+// it is the real payload. Returns true / "dead" / false like the others.
+export async function sendSticker(env: Env, chatId, sticker) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    if (Date.now() < TELEGRAM_PAUSE_UNTIL && !(await waitTelegramPause())) return false;
+    await paceTelegram();
+    if (bumpSubrequest()) return false;
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendSticker`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, sticker })
+      });
+      if (res.ok) {
+        vlog(`🏷 Sticker sent to ${chatId}`);
+        return true;
+      }
+      const error = await res.text();
+      console.error(`sendSticker error (attempt ${attempt}/2): ${error}`);
+      if (res.status === 429) {
+        const retryAfter = parseInt(res.headers.get("retry-after") || "2");
+        TELEGRAM_PAUSE_UNTIL = Math.max(TELEGRAM_PAUSE_UNTIL, Date.now() + Math.min(Math.max(retryAfter, 1), 10) * 1e3);
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+      if (res.status >= 400 && res.status < 500) {
+        return /chat not found|blocked by the user|bot was kicked|deactivated/i.test(error) ? "dead" : false;
+      }
+    } catch (e) {
+      console.error(`sendSticker network error (attempt ${attempt}/2): ` + e.message);
+    }
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 1e3 * attempt));
+  }
+  return false;
+}
+
 // v13.99-botmenu: the "/" command menu — the user's report: typing "/" in
 // Telegram showed NO commands because setMyCommands was never called. These
 // lists are the SOURCE OF TRUTH (scripts/set-bot-commands.js re-uses them

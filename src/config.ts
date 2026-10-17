@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.113-nightgate";
+export const VERSION = "13.114-stickers";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -258,6 +258,17 @@ export const CONFIG: Record<string, any> = {
   // the GIF in place needs a KV key clear to re-upload immediately.
   UCL_GIF_URL: "https://sportsignal.ir/bot/ucl-night.gif",
   KV_UCL_GIF_FILEID: "ucl_gif_fileid_v1",
+  // v13.114-stickers: the league-logo sticker pack — Telegram-side picture
+  // infrastructure (the owner's rule: pictures ride Telegram's CDN, never
+  // the worker's render/upload path). The pack was created ONCE by
+  // scripts/make-sticker-pack.js from assets/stickers/*.png (512×512,
+  // transparent); KV stickers_v1 holds the per-league file_ids harvested
+  // from getStickerSet (set position order = STICKER_LEAGUE_CODES). The
+  // weekly digest (and /tables) sends the league's sticker right before
+  // its table message.
+  KV_STICKERS: "stickers_v1",
+  STICKER_SET_URL: "https://t.me/addstickers/sportsignal_leagues_by_SportSignalAlertsBot",
+  STICKER_LEAGUE_CODES: ["PL", "PD", "SA", "BL1", "FL1"],
   // v13.99-botmenu: the "/" command menu flag (setMyCommands) — value = the
   // VERSION that last registered the menu, so every version bump re-registers
   // (idempotent) and the harness pins the command lists in telegram.ts.
