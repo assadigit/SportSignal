@@ -6,6 +6,116 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.117-kickoff] — 2026-10-17 (the two simultaneous-kickoff reports: «مسابقه شروع شد» + same-minute delivery)
+
+The owner's report, verbatim: *"Two match starting at 20 Pm, one is mentioned
+7:57. one 8.03 why the should been notified at 8 both. When match starts the
+text must show مسابقه شروع شد with a nice emoji."*
+
+### The forensics (D1 ground truth for the reported evening)
+
+The 2026-10-17 20:00 Tehran pair — Real Betis–Barcelona and Bayern–Leipzig,
+both `2026-10-17T16:30Z` kickoffs — produced exactly the reported asymmetry:
+
+- **Betis–Barcelona**: match-start fired at **20:00:36 Tehran** (kickoff
+  +36s) with the full treatment — ⚽ dice, card photo, caption. This is the
+  "at 8" behavior the owner expects.
+- **Bayern–Leipzig**: match-start fired at **20:10:25 Tehran** (kickoff
+  **+10.4 minutes**) and landed **lean** — text-only, no dice, no card. The
+  20:00 tick's fan-out reservation (v13.94, correct under the free plan's
+  ~50-subrequests-per-invocation wall) had consumed the budget on the first
+  match's fan-out and deferred the second match's unit cleanly to the NEXT
+  10-minute tick, where only lean mode fit. Nothing was lost — but the
+  second match's "match started" arrived 10 minutes late and degraded.
+- The evening also lost every `pre-match-1h` reminder (the 18:30–19:15
+  window ticks deferred under the same pressure and never recovered) —
+  the drain below recovers that class too.
+
+### Fix 1 — «⚽️ مسابقه شروع شد» (the explicit ask)
+
+`formatMatchStartMessage` now opens with a bold headline mirroring the FT
+message's `🏁 *نتیجه نهایی*` shape: **`⚽️ *مسابقه شروع شد*`** (fa) /
+**`⚽️ *The match has started*`** (en), blank line, then the existing
+📅/⏰/🚀 body untouched. The ⚽ rides the same theme as the animated ⚽ dice
+the engine sends immediately before the text (ball rolls → match started).
+`mdBold` builds the span, so the headline is MarkdownV2-safe by
+construction. Surfaces that compose through the same formatter (the
+per-chat match-start, the big-match kickoff broadcast, the per-chat repair
+leg, late backfills) all inherit it.
+
+### Fix 2 — the deferred-fan-out drain chain (same-minute delivery)
+
+Two simultaneous full fan-outs (~20 subrequests each + tick overhead)
+mathematically cannot fit one invocation's ~50-subrequest ceiling — so a
+deferred unit used to wait for the next cron tick. Now it doesn't:
+
+- **The transport discovery (probed live with a throwaway worker before
+  this design shipped):** a plain `fetch()` from a Worker to its OWN
+  workers.dev origin is REFUSED by Cloudflare with **error 1042
+  ("recursive fetch", 404)** — the naive self-chain is impossible. The
+  working mechanism is the **self-referencing SERVICE BINDING**
+  (`wrangler.toml [[services]] binding="DRAIN_SELF" service="ucl-notifier"`):
+  a direct `env.DRAIN_SELF.fetch()` invocation of this same worker that
+  bypasses the public edge. The probe also proved the budget semantics that
+  make the whole fix work: an outer invocation that burned **45**
+  subrequests chained a bound invocation that completed **12 more** — the
+  bound invocation has its OWN fresh ~50-subrequest budget (a shared
+  budget would have refused them).
+- **`src/kickoff-drain.ts` (NEW)** — `runKickoffDrain` re-runs the deferred
+  `(match, type)` units through the REAL `sendNotificationIfNeeded` gates
+  (window re-checked → expired units no-op; write-first dedupe → races
+  impossible; the reservation against fresh counters) against the KV pool,
+  after `applySettings` so the audience is the LIVE desired-team list.
+  `handleKickoffDrainRoute` guards `POST /api/kickoff-drain`
+  (WEBHOOK_SECRET-token, pre-admin-gate — the caller is the worker itself).
+  `chainKickoffDrain` performs the binding invocation (stub URL
+  `https://drain.internal/api/kickoff-drain` — the path is what routes;
+  the hostname is irrelevant to a binding call).
+- **The chain**: `executeScheduledLogic` now returns the tick's deferred
+  units (`notifySummary.du` — drainUnitPriority-sorted, capped at
+  `KICKOFF_DRAIN_MAX_UNITS=10`); api.ts's scheduled handler hands them to
+  `chainKickoffDrain` via `ctx.waitUntil` — ONE binding invocation, a NEW
+  request context with a FRESH subrequest budget, so the deferred unit's
+  full dice+card+text fan-out lands **~40-60s after kickoff — same-minute
+  as the first match**. A drain that defers again (3+ simultaneous
+  kickoffs) chains once more, bounded by `KICKOFF_DRAIN_MAX_DEPTH=2`.
+- **Fail-open by construction**: any chain failure (binding missing — e.g.
+  local dev, non-200, network) logs and returns null — the units keep the
+  old next-tick retry path. Dead chats are reported, never pruned (the
+  sweep stays the single registry mutator). Quota-neutral on the happy path
+  (the drain's writes are D1 — dedupe + delivery ledger; zero new KV
+  writes; one extra invocation only on ticks that actually deferred).
+
+### Fix 3 — imminence-first sweep ordering
+
+`sendMatchNotifications` now sorts by `kickoffUrgency` before the legacy
+big/competition/kickoff keys: a match inside its match-start window ([-1,
++45min]) processes before everything else, the 5min window next, the
+near-hour band after. The 20:00-pair failure mode (a less-urgent unit
+burning the budget in front of a just-kicked-off match) is structurally
+gone; `drainUnitPriority` applies the same criticality to the drain
+payload's ordering.
+
+### Harness
+
+- **`scripts/check-kickoff.js` (NEW, 66 checks)**: static wiring (route
+  pre-gate, scheduled chain, cron return, du payload, ordering, caps,
+  token guard, fail-open, no-prune contract, config trio, the verbatim
+  headline source) + behavioral — the REAL `kickoffUrgency` bucket table,
+  `drainUnitPriority` incl. the HH:MM-colon split, `runKickoffDrain`
+  (happy/ghost/ordering/noPool/empty/re-deferral), the route (403 paths,
+  400, depth clamps, unit cap, non-string drops), `chainKickoffDrain`
+  (self-fetch shape, depth bound, empty guard, fail-open shapes), the
+  route's re-chain at depth+1 + the stop at MAX_DEPTH, and the headline on
+  the real formatter (fa+en).
+- check-composers: +6 (the exact first-line headline fa/en, the body
+  preserved); check-mdstyle: the match-start surface's date-first
+  assertion moved to the date-below-headline form (every other surface
+  keeps date-first); worker-src concat order +kickoff-drain.ts.
+- Suite ALL green; tsc clean; version triplet 13.117-kickoff.
+
+---
+
 ## [13.116-tzproof] — 2026-10-17 (the timezone picker's three bugs: one root cause on Cloudflare's mixed edge fleet)
 
 The owner's report, verbatim: *"There are some bugs, for example منطقه

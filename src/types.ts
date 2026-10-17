@@ -58,6 +58,18 @@ export interface Env {
   // cacheMatches defers the pool-cache write. Cosmetic-write shedding only;
   // the anti-spam paths never read it.
   KV_BUDGET_HOLD?: boolean;
+  // v13.117-kickoff: the self-referencing SERVICE BINDING (wrangler.toml
+  // [[services]] binding="DRAIN_SELF" service="ucl-notifier"). The kickoff
+  // drain chain invokes THIS SAME worker through it — a direct invocation
+  // that BYPASSES the public edge (a plain fetch to the worker's own
+  // workers.dev origin is refused by Cloudflare with error 1042 "recursive
+  // fetch", probed live 2026-10-17) and starts a NEW invocation with its
+  // OWN ~50-subrequest budget (also probed live: an outer invocation that
+  // burned 45 subrequests chained a bound invocation that completed 12
+  // more — a shared budget would have refused them). Optional: when the
+  // binding is absent (local dev / harness), chainKickoffDrain returns
+  // null and the deferred units ride the old next-tick retry path.
+  DRAIN_SELF?: any;
 }
 
 // v13.47-seams: router context/route types (moved from api.ts — shared by

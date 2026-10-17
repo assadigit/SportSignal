@@ -130,6 +130,10 @@ function workerSrc() {
     "monitoring.ts", "migration.ts",
     "auth.ts", "public-swr.ts", "card-route.ts",
     "simulate.ts", "admin-ops.ts",
+    // v13.117-kickoff: the deferred-fan-out drain chain (route + runner +
+    // self-fetch). Sits with the route modules (grab-based, position-
+    // independent) right before api.ts which wires it.
+    "kickoff-drain.ts",
     "api.ts",
   ];
   const parts = [];

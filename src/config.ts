@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.116-tzproof";
+export const VERSION = "13.117-kickoff";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -238,6 +238,23 @@ export const CONFIG: Record<string, any> = {
   // retries inside the same window (every window is ≥45 min wide and
   // the backfill legs cover the rest).
   SUBREQUEST_FANOUT_CAP: 46,
+  // v13.117-kickoff: THE DEFERRED-FAN-OUT DRAIN CHAIN (kickoff-drain.ts).
+  // When the reservation above defers in-window units (the classic: two
+  // simultaneous kickoffs — the second's full dice+card+text fan-out cannot
+  // fit ONE invocation's ~50-subrequest ceiling), the tick chains the
+  // deferred keys to a NEW invocation of THIS SAME WORKER through the
+  // self-referencing service binding env.DRAIN_SELF (wrangler.toml
+  // [[services]]) — the bound invocation has its OWN fresh subrequest
+  // budget, so the deferred unit's full fan-out lands ~40-60s after kickoff
+  // — same-minute as the first match — instead of at the next 10-minute
+  // tick, lean and card-less. (A plain fetch to the worker's own public
+  // origin is NOT usable here: Cloudflare refuses it with error 1042
+  // "recursive fetch" — probed live 2026-10-17.) Caps: MAX_UNITS bounds the
+  // payload per chained invocation (excess rides the old next-tick path);
+  // MAX_DEPTH bounds the recursion (a drain that defers again — 3+
+  // simultaneous kickoffs — chains once more, never unboundedly).
+  KICKOFF_DRAIN_MAX_UNITS: 10,
+  KICKOFF_DRAIN_MAX_DEPTH: 2,
   // v13.94-fanoutfix: maintenance (cup scans / far probe / standings
   // refresh / stamp-advance) is cosmetic — it must never take the budget
   // a pending fan-out needs. Skipped on ticks whose true count is already

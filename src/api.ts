@@ -24,6 +24,7 @@ import { handleCardRoute } from "./card-route";
 import { handleVisitBeacon, collectAdminStats } from "./stats";
 import { ADMIN_OPS_ROUTES, legacyGetAction } from "./admin-ops";
 import { SIMULATE_ROUTE } from "./simulate";
+import { handleKickoffDrainRoute, chainKickoffDrain } from "./kickoff-drain";
 import { executeScheduledLogic } from "./cron";
 import { getCronStatus, getPoolMetaCheap } from "./monitoring";
 import { installWebKvMeter, maybeFlushWebKvWrites } from "./kv-webmeter";
@@ -315,6 +316,18 @@ async function handleFetchRequest(req, env, ctx) {
     // src/stats.ts). Counting runs in ctx.waitUntil so it never slows the
     // response; the JSON body carries today+total for the footer counter.
     if (url.pathname === "/api/visit" && req.method === "GET") return await handleVisitBeacon(req, env, ctx);
+    // v13.117-kickoff: the deferred-fan-out drain — the tick chains THIS
+    // endpoint through the self-referencing service binding (env.DRAIN_SELF)
+    // when the fan-out reservation deferred in-window units (two simultaneous
+    // kickoffs: the second's full fan-out cannot fit one invocation's
+    // ~50-subrequest ceiling, so it used to wait for the NEXT 10-min tick and
+    // land lean text-only). The bound request is a fresh invocation of this
+    // same worker with a fresh budget, so the deferred unit's dice + card +
+    // text land ~40-60s after kickoff — same-minute as the first match.
+    // Pre-gate + WEBHOOK_SECRET-guarded (the caller is the worker itself,
+    // not an admin session); depth/unit-capped, and every failure mode
+    // falls back to the old next-tick retry path.
+    if (url.pathname === "/api/kickoff-drain" && req.method === "POST") return await handleKickoffDrainRoute(req, env);
     // v14.0-seo: every public page + machine file is served by the SEO
     // router (server-rendered HTML from KV data — R-01). It also handles
     // host/path normalization (R-06/R-08), the custom 404 (R-10/R-11) and
@@ -389,13 +402,31 @@ const worker_default = {
       return;
     }
     try {
-      await executeScheduledLogic(env);
+      const tick = await executeScheduledLogic(env);
       // v13.45-sightlines: dead man's switch — success ping AFTER the tick
       // resolves (every early return is a handled outcome: lock-skip,
       // no-users, no-pool; only a cron that stops firing, a hard-down
       // worker, or a throw leaves the check late → Telegram DOWN after the
       // grace window).
       pingHealthcheck(env, ctx, true);
+      // v13.117-kickoff: THE DRAIN CHAIN. The tick ended with in-window
+      // notification units the fan-out reservation had to defer (budget
+      // pressure — the classic shape: two simultaneous kickoffs, the second
+      // one's full fan-out cannot fit the invocation's ~50-subrequest
+      // ceiling). Instead of waiting for the NEXT 10-minute tick, hand the
+      // deferred keys to a fresh invocation of THIS SAME WORKER through the
+      // self-referencing service binding (env.DRAIN_SELF → POST
+      // /api/kickoff-drain) — the bound invocation's own subrequest budget
+      // delivers the FULL fan-out (dice + card + text) within ~40-60s of
+      // kickoff, same-minute as the first match. waitUntil: the tick has
+      // already written its completion blob; the chain is strictly additive
+      // latency recovery, and any failure inside it degrades to the old
+      // next-tick retry path (kickoff-drain.ts fail-open contract).
+      const deferredUnits = tick && Array.isArray((tick as any).deferredUnits) ? (tick as any).deferredUnits : [];
+      if (deferredUnits.length) {
+        console.log(`\u26A1 Chaining the kickoff drain for ${deferredUnits.length} deferred unit(s): ${deferredUnits.slice(0, 4).join(", ")}`);
+        ctx.waitUntil(chainKickoffDrain(env, deferredUnits, 0).catch((e) => console.warn("kickoff drain chain failed (units ride the next-tick path): " + e.message)));
+      }
     } catch (error) {
       console.error("Scheduled execution failed:", error);
       // v13.45-sightlines: the tick threw — /fail pings immediately (no

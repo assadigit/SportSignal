@@ -115,10 +115,18 @@ export function formatMatchStartMessage(match, env, lang) {
   const competition = en ? (COMP_EN[match.competition.code] || match.competition.code) : translateCompetition(match.competition.code);
   const dateStr = en ? getEnglishDate(match.utcDate, env) : getJalaliDate(match.utcDate, env);
   const timeStr = en ? getEnglishTime(match.utcDate, env) : getJalaliTime(match.utcDate, env);
+  // v13.117-kickoff: the owner's ask — the match-start message must SAY the
+  // match started («مسابقه شروع شد») with a nice emoji, as a bold headline
+  // mirroring the FT message's «🏁 *نتیجه نهایی*» shape. The ⚽ rides the
+  // same theme as the animated ⚽ dice the engine sends right before this
+  // text (ball rolls → match started). mdBold escapes the inner text, so
+  // the headline is MarkdownV2-safe by construction.
+  const started = en ? "\u26BD\uFE0F " + mdBold("The match has started") : "\u26BD\uFE0F " + mdBold("\u0645\u0633\u0627\u0628\u0642\u0647 \u0634\u0631\u0648\u0639 \u0634\u062F");
   // v13.10-clean: date-first, 🚀 on the match line. The animated ⚽ dice
   // (sendDice) is sent BEFORE this text by the notification engine for an
   // eye-catching "ball is rolling" kickoff animation.
-  let message = `\u{1F4C5} ${mdEscape(dateStr)}\n`;
+  let message = started + "\n\n";
+  message += `\u{1F4C5} ${mdEscape(dateStr)}\n`;
   message += `\u23F0 ${mdEscape(timeStr)}\n`;
   message += `\u{1F680} ${mdBold(homeTeam + " \u{1F19A} " + awayTeam)}\n`;
   message += `${mdItalic(competition)}`;

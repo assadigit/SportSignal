@@ -63,6 +63,22 @@ database_id = "c64064ff-aa78-4c73-80cd-e2805d550a5b"
 [triggers]
 crons = ["*/10 * * * *", "27 */4 * * *"]
 
+# v13.117-kickoff: the self-referencing service binding — the kickoff drain
+# chain's transport. When a tick's fan-out reservation defers in-window
+# notification units (two simultaneous kickoffs: the second's full fan-out
+# cannot fit one invocation's ~50-subrequest ceiling), the scheduled handler
+# invokes THIS SAME WORKER through DRAIN_SELF (a direct binding call, NOT a
+# public fetch — Cloudflare refuses worker→own-origin fetches with error
+# 1042 "recursive fetch", probed live 2026-10-17). The bound request lands
+# in the worker's own fetch handler at /api/kickoff-drain with a FRESH
+# subrequest budget (probed live: outer burn 45 → bound invocation completed
+# 12 more), so the deferred unit's full dice+card+text fan-out lands ~40-60s
+# after kickoff instead of at the next 10-minute tick. Optional by design:
+# without the binding the chain fails open to the old next-tick retry path.
+[[services]]
+binding = "DRAIN_SELF"
+service = "ucl-notifier"
+
 [vars]
 TEHRAN_TZ = "Asia/Tehran"
 

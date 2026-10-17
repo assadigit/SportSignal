@@ -242,7 +242,15 @@ const advMatch = Object.assign({}, faMatch, {
     check(name + " (fa) match header is ONE BOLD span with both teams", ent.bold.length >= 1 && ent.bold.some((b) => b.includes("Arsenal FC") && b.includes("FC Barcelona")));
     check(name + " (fa) kickoff time is PLAIN text — no code span (v13.107)", msg.includes("⏰ ۲۱:۰۰") && ent.code.length === 0);
     check(name + " (fa) competition label is ITALIC", ent.italic.length >= 1 && ent.italic.some((c) => c.includes("Premier League")));
-    check(name + " (fa) date line is PLAIN + first — no italic (v13.107)", msg.startsWith("📅 سه‌شنبه ۲۱ مهر ۱۴۰۵") && !ent.italic.some((c) => c.includes("مهر")));
+    // v13.117-kickoff: the match-start surface carries the «⚽️ مسابقه شروع
+    // شد» headline ABOVE the date line (the owner's ask — the message must
+    // SAY the match started); every other surface keeps date-first.
+    if (name === "match-start") {
+      check("match-start (fa) opens with the BOLD started headline (v13.117)", msg.startsWith("⚽️ *مسابقه شروع شد*\n\n📅") && ent.bold.some((b) => b === "مسابقه شروع شد"));
+      check("match-start (fa) date line stays PLAIN below the headline", msg.includes("📅 سه‌شنبه ۲۱ مهر ۱۴۰۵") && !ent.italic.some((c) => c.includes("مهر")));
+    } else {
+      check(name + " (fa) date line is PLAIN + first — no italic (v13.107)", msg.startsWith("📅 سه‌شنبه ۲۱ مهر ۱۴۰۵") && !ent.italic.some((c) => c.includes("مهر")));
+    }
   }
   // en mirror (one surface deep — the rhythm is lang-independent)
   const en24 = format24HourMessage(faMatch, env, "en");

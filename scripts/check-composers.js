@@ -159,12 +159,20 @@ const env = { STATE: kv, TEHRAN_TZ: "Asia/Tehran", API_TOKEN: "x" };
   check("5min reminder has VS emoji", /🆚/.test(m5));
   check("5min reminder has NO countdown (v13.10 removed it)", !/دقیقه دیگر/.test(m5));
 
-  // 4) formatMatchStartMessage — v13.10 clean format + 🚀
+  // 4) formatMatchStartMessage — v13.10 clean format + 🚀 + the v13.117-kickoff
+  //    started headline (the owner's ask: "When match starts the text must show
+  //    مسابقه شروع شد with a nice emoji")
   const ms = formatMatchStartMessage(faMatch, env, "fa");
   check("match-start includes a date line", /📅/.test(ms) || /شنبه|یکشنبه|دوشنبه/.test(ms));
   check("match-start has VS emoji", /🆚/.test(ms));
   check("match-start has 🚀 kickoff marker", /🚀/.test(ms));
   check("match-start has NO countdown (v13.10 removed it)", !/دقیقه دیگر/.test(ms));
+  check("match-start opens with ⚽️ + the bold «مسابقه شروع شد» headline (v13.117)", ms.startsWith("⚽️ *مسابقه شروع شد*\n\n"));
+  check("match-start headline is exactly the owner's phrase — no extra punctuation", ms.split("\n")[0] === "⚽️ *مسابقه شروع شد*");
+  check("match-start keeps the 📅/⏰/🚀 body after the headline", /📅/.test(ms) && /⏰/.test(ms) && /🚀/.test(ms));
+  const msEn = formatMatchStartMessage(faMatch, env, "en");
+  check("match-start (en) opens with the started headline", msEn.startsWith("⚽️ *The match has started*\n\n"));
+  check("match-start (en) keeps date + VS + body", /📅|Saturday/.test(msEn) && /🆚/.test(msEn));
 
   // 5) format24HourMessage — v13.10 clean format
   const m24 = format24HourMessage(faMatch, env, "fa");

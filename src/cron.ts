@@ -22,6 +22,13 @@ import { runPublicPhase } from "./cron-public";
 
 export async function executeScheduledLogic(env: Env) {
   resetSubrequestBudget();
+  // v13.117-kickoff: the tick's return value — the deferred notification
+  // units handed to the kickoff-drain chain by api.ts's scheduled handler
+  // (a NEW invocation of this same worker through the self-referencing
+  // service binding env.DRAIN_SELF — fresh subrequest budget, so deferred
+  // match-start units land ~40-60s after kickoff instead of at the next
+  // 10-minute tick). Populated from the notify phase's summary
+  // (notifySummary.du); every early return below yields an empty list.
   // v13.44-quotaguard: the KV-write meter now wraps the VERY FIRST action —
   // the execution-lock put and every phase write below are counted, so
   // kv_writes_day is the TRUE burn. (The v13.38 meter started after the lock
@@ -134,6 +141,15 @@ export async function executeScheduledLogic(env: Env) {
     const notifySummary = await runNotifyPhase(env, { chatIds, matches, fullSweepThisTick });
     await runPoolMaintenance(env, { fullSweepThisTick, budgetSoft, budgetHard, matches, poolRef, poolBlob });
     await runPublicPhase(env, { fullSweepThisTick, budgetSoft, budgetHard, matches, poolRef });
+    // v13.117-kickoff: the drain payload — the deferred notification units the
+    // tick hands to api.ts's scheduled handler (a NEW invocation of this same
+    // worker through the self-referencing service binding env.DRAIN_SELF —
+    // fresh subrequest budget, so deferred match-start units land ~40-60s
+    // after kickoff instead of at the next 10-minute tick). Only the units
+    // the fan-out reservation actually deferred this tick,
+    // time-criticality-sorted and capped; every early return above yields an
+    // empty/undefined list.
+    const deferredUnits = (notifySummary && Array.isArray((notifySummary as any).du) ? (notifySummary as any).du : []).filter((u: unknown) => typeof u === "string");
     // v13.36-nospam: single status blob — heartbeat (tick started/ended),
     // last_cron (tick completed) and last_full_sweep (folded in from the
     // old standalone key; one write/tick saved). The heartbeat is NOT
@@ -193,6 +209,11 @@ export async function executeScheduledLogic(env: Env) {
 \u{1F4CA} Subrequest budget: ${subrequestCount()}/48 used (${48 - subrequestCount()} headroom under the 50-ceiling)
 \u{1F4BE} KV writes this tick: ${kvWritesThisTick} — top: ${Object.entries(kvWriteKeys).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => k + "\u00d7" + n).join(", ") || "none"}
 \u{1F50C} KV ops this tick: ${kvOpsCount()} (includes the completion blob's own put) — true subrequest total ${subrequestCount() + kvOpsCount()}/50 (fetches ${subrequestCount()} + KV ops ${kvOpsCount()})`);
+    // v13.117-kickoff: the drain payload — api.ts's scheduled handler chains
+    // these units through /api/kickoff-drain (fresh invocation, fresh
+    // subrequest budget). Empty/undefined on every early-return path above
+    // (the api.ts caller treats a missing list as empty).
+    return { deferredUnits };
   } catch (error) {
     console.error(`\u274C Fatal error in scheduled logic:`, error);
     throw error;

@@ -351,6 +351,42 @@ export async function primeUclParticipants(env: Env, matches?) {
   return union.size;
 }
 
+// v13.117-kickoff: the drain-order priority for deferred unit keys
+// ("matchKey:type" strings). match-start first (the timing product), then
+// the 5min reminder, then the 1h reminder, then everything else — the same
+// time-criticality kickoffUrgency applies to matches, applied to the TYPE
+// side of a deferred unit. Split at the LAST ":" (matchKey itself contains
+// a colon inside its HH:MM tail, so first/indexOf splits are wrong).
+// Exported for kickoff-drain.ts + check-kickoff.js.
+export function drainUnitPriority(unitKey) {
+  const i = String(unitKey || "").lastIndexOf(":");
+  const t = i >= 0 ? String(unitKey).slice(i + 1) : "";
+  if (t === "match-start" || t === "match-start-big") return 0;
+  if (t === "pre-match-5min") return 1;
+  if (t === "pre-match-1h") return 2;
+  return 3;
+}
+
+// v13.117-kickoff: the time-criticality bucket for the sweep's processing
+// order (sendMatchNotifications's sort). Pure function of utcDate vs now:
+//   0 = inside the [-1, +45min] match-start window (isMatchStartingNow's
+//       span) — the product's most timing-sensitive unit;
+//   1 = inside the 1-10min 5min window;
+//   2 = the near-hour band (the 1h window + backfill, ≤90min out);
+//   3 = everything else (3h/24h/72h/result — wide windows, backfills).
+// Exported for check-kickoff.js's unit table.
+export function kickoffUrgency(match, nowMs?) {
+  const t = new Date(match.utcDate).getTime();
+  if (isNaN(t)) return 9;
+  const now = nowMs != null ? nowMs : Date.now();
+  const sinceMin = (now - t) / 6e4;
+  if (sinceMin >= -1 && sinceMin <= 45) return 0;
+  const untilMin = (t - now) / 6e4;
+  if (untilMin > 0 && untilMin <= 10) return 1;
+  if (untilMin > 10 && untilMin <= 90) return 2;
+  return 3;
+}
+
 export async function sendMatchNotifications(env: Env, matches) {
   // v13.109-consolidated: the strict tier consults the UCL-participant
   // set — prime it before the filter (no-op on a warm isolate; one KV
@@ -395,6 +431,16 @@ export async function sendMatchNotifications(env: Env, matches) {
   const notifiedMatches = await getNotifiedMatches(env);
   console.log(`\u{1F4E8} Found ${notifyMatches.length} matches to potentially notify`);
   notifyMatches.sort((a, b) => {
+    // v13.117-kickoff: TIME-CRITICAL UNITS JUMP THE QUEUE. The old order
+    // (big → competition priority → kickoff) let a 3h/24h fan-out burn the
+    // subrequest budget in front of a match that had JUST kicked off — the
+    // 2026-10-17 20:00 Tehran pair: Bayern–Leipzig's match-start deferred to
+    // the NEXT tick (20:10, lean text-only) while Betis–Barcelona's had
+    // already consumed the invocation. A unit inside its match-start window
+    // now sorts before everything; the 5min window next; then the near-hour
+    // band; the pre-match long-range units last.
+    const urgDiff = kickoffUrgency(a) - kickoffUrgency(b);
+    if (urgDiff !== 0) return urgDiff;
     const bigA = isMasterBigMatch(a) ? 1 : 0;
     const bigB = isMasterBigMatch(b) ? 1 : 0;
     if (bigA !== bigB) return bigB - bigA;
@@ -428,7 +474,7 @@ export async function sendMatchNotifications(env: Env, matches) {
   // sweep see the match, was it skipped for no followers, what fired?
   // v13.94-fanoutfix: o = per-chat outcome counters (sent/failed/dead) —
   // the "at least one landed" blindness is what hid the tail-chat losses.
-  const notifySummary = { found: notifyMatches.length, noChats: 0, budgetDeferred: 0, sent: notificationCounts, last: null, dk: [], o: { sent: 0, failed: 0, dead: 0 } };
+  const notifySummary = { found: notifyMatches.length, noChats: 0, budgetDeferred: 0, sent: notificationCounts, last: null, dk: [], du: [], o: { sent: 0, failed: 0, dead: 0 } };
   for (const match of notifyMatches) {
     const matchChats = chatIds.filter((c) => userFollowsMatch(prefs, c, match));
     if (!matchChats.length) { notifySummary.noChats++; continue; }
@@ -465,9 +511,20 @@ export async function sendMatchNotifications(env: Env, matches) {
   }
   notifySummary.budgetDeferred = deferredKeys.length;
   notifySummary.dk = deferredKeys.slice(0, 12);
+  // v13.117-kickoff: du = the DRAIN PAYLOAD — the deferred units the tick
+  // hands to the kickoff-drain chain (api.ts scheduled → POST
+  // /api/kickoff-drain). Capped at CONFIG.KICKOFF_DRAIN_MAX_UNITS; anything
+  // past the cap stays on the old next-tick retry path. Sorted by the same
+  // time-criticality the sweep uses (match-start units first) so a capped
+  // drain still spends its fresh budget on the most timing-sensitive units.
+  notifySummary.du = deferredKeys
+    .slice()
+    .sort((a, b) => drainUnitPriority(a) - drainUnitPriority(b))
+    .slice(0, CONFIG.KICKOFF_DRAIN_MAX_UNITS || 10);
   notifySummary.o = notificationCounts.outcome || { sent: 0, failed: 0, dead: 0 };
   if (deferredKeys.length) {
     console.log(`\u23F1 Fan-out reservation: deferred ${deferredKeys.length} in-window (match, type) unit(s) to the next sweep (budget ${subrequestCount() + kvOpsCount()} used) — ${deferredKeys.slice(0, 6).join(", ")}`);
+    if (notifySummary.du.length) console.log(`\u26A1 Kickoff drain: chaining ${notifySummary.du.length} deferred unit(s) through a fresh invocation (~45s after this tick, not the next 10-min tick)`);
   }
   if (deadChats.length) {
     const keep = chatIds.filter((c) => !deadChats.includes(c));
