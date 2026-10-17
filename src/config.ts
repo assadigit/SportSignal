@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.111-quotaslim";
+export const VERSION = "13.112-estgate";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -458,7 +458,27 @@ export const CONFIG: Record<string, any> = {
   // live sweep (fetchLiveSweep) instead.
   QUIET_SWEEP_MS: 2 * 60 * 60 * 1e3,
   ACTIVE_WINDOW_AHEAD_MS: 60 * 60 * 1e3,
-  ACTIVE_WINDOW_BEHIND_MS: 8 * 60 * 60 * 1e3,
+  // v13.112-estgate: the active tail is now ESTIMATE-GATED (the owner's rule:
+  // "game starts at 17 → 17 + 90 + extra ≈ end of match — poll by the
+  // schedule, not around the clock"). Was 8h: every tracked kickoff kept the
+  // live sweep running for 9 hours (1h ahead + 8h behind) when a match
+  // resolves in ~1h45 — measured on the Oct-16 pool: 64% of ticks
+  // live-sweeping, mostly long-dead fixtures; the 8h tail was pure quota
+  // burn. The 195min (3h15) tail is the estimate + full feature margin:
+  //   - league FT lands at ko+~105min (90 + 15 HT break + stoppage) ✓
+  //   - cup KO with extra time + penalties lands at ko+~150min ✓
+  //   - the match-start backfill leg needs live statuses to ko+180min ✓
+  //   - delays/suspensions beyond 195min self-heal: isLiveStatus(cached)
+  //     keeps the tick active the moment a full sweep catches the row still
+  //     IN_PLAY, and the every-2h full sweep re-syncs FINISHED + final score
+  //     regardless (the result notification window is 6h — the cached pool
+  //     serves it; worst case a pathological-delay result fires at full-sweep
+  //     cadence instead of 10-min cadence).
+  // Features unchanged: HT alerts (real half-time score), result
+  // notifications (real final score), postponement/cancellation detection,
+  // pre-match reminders (always fired from the KV pool). Measured effect:
+  // ~−37% live sweeps on a matchday (75→47 ticks), quiet days unchanged.
+  ACTIVE_WINDOW_BEHIND_MS: 195 * 60 * 1e3,
   // v12.16: week-ahead fixtures section of the weekly digest — days covered.
   WEEK_AHEAD_DAYS: 7,
   // v12.16: provider circuit breaker — when a provider fails across a whole

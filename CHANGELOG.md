@@ -6,6 +6,55 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.112-estgate] — 2026-10-17 (estimate-gated live polling — the owner's "poll by the schedule" rule)
+
+The owner's read on the quota curve: *"a huge part of resources is consumed
+by checking what games are playing now and when it ends — instead of
+pinging for it, show the estimate: game starts at 17 → 17 + 90 (+10 extra)
+= end of match."* Verified against the live pool + account analytics — the
+diagnosis was right about the waste, but the waste is the WINDOW, not the
+per-tick check (already one narrow football-data call since v13.43/v13.53):
+
+- `ACTIVE_WINDOW_BEHIND_MS` was **8 hours**: every tracked kickoff kept the
+  whole tick engine in live-sweep mode for **9 hours** (1h ahead + 8h
+  behind) when a match resolves in ~1h45. Simulated on the actual Oct-16
+  pool: **64% of the day's ticks were live-sweeping**, most of it polling
+  long-dead fixtures — the evening tail of finished matches.
+- Full estimate-only (never checking) would cut features — the HT alert
+  carries the real half-time score, the result notification the real final
+  score, postponement detection the real status flip. An estimate gives
+  WHEN, never WHAT.
+
+### 1. The estimate-gated tail — `config.ts` (one constant, full reasoning inline)
+
+`ACTIVE_WINDOW_BEHIND_MS: 8h → 195min` (3h15). The owner's formula plus the
+complete feature margin:
+
+- league FT lands at ko+~105min (90 + 15 HT + stoppage) ✓
+- cup extra-time/penalties land at ko+~150min ✓
+- the match-start backfill leg needs live statuses to ko+180min ✓
+- beyond 195min, self-healing: `isLiveStatus(cached)` keeps the tick active
+  once a full sweep catches a genuinely-still-playing row, and the every-2h
+  full sweep re-syncs FINISHED + final score regardless — the 6h result
+  window is served from the cached pool either way.
+
+Measured effect: **matchday live sweeps −37%** (Oct-16-class day: 75→47
+active ticks; ~110 fewer provider fetches + merges), quiet days unchanged.
+Features unchanged: HT/result/postponement/pre-match reminders all fire on
+the same data they always did — a normal FT (~ko+105) still lands inside
+the tail and is caught within 10min.
+
+### 2. The estimate on the live cards — `assets/public-13.26.js`
+
+The display half of the owner's idea, verbatim: when a live card has NO
+live minute (no enrichment data), it now shows **`≈67′`** (elapsed,
+computed from kickoff — zero requests) with an **"ends ≈ 18:55"** tooltip
+(kickoff + 105min, +150min for CL/domestic-cup codes; Farsi: `پایان ≈`).
+When a real live minute exists it always wins. Two render sites (the LIVE
+section card + the upcoming-row chip) + the `estLive` helper; caps at
+100′/130′ elapsed so dead-stale rows render clean. Zero backend/payload
+contract change — the estimate is computed client-side from `utcDate`.
+
 ## [13.111-quotaslim] — 2026-10-17 (free-tier quota hardening: the two Cloudflare alert emails)
 
 The two alert emails of 2026-10-16/17, investigated with the account's own
