@@ -5,7 +5,7 @@
 
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { toFaDigits, bumpSubrequest } from "./utils";
+import { toFaDigits, bumpSubrequest, tzOffsetMinutes } from "./utils";
 // v13.106-mdstyle: the welcome greeting line is the message title - BOLD.
 import { mdBold } from "./md";
 import { normalizeTeamName } from "./teams";
@@ -251,8 +251,17 @@ var TZ_ALIASES = {
 export function resolveTimeZone(input) {
   const raw = String(input || "").trim().toLowerCase().replace(/\s+/g, "-");
   const candidate = TZ_ALIASES[raw] || raw.replace(/(^|[\/_])[a-z]/g, (m) => m.toUpperCase());
+  // v13.116-tzproof \u2014 THE DEAD-BUTTON FIX. The old validator was a
+  // fields-less DateTimeFormat constructor \u2014 exactly the class some
+  // Cloudflare edge colos get wrong (the 2026-10-17 morning: the owner's
+  // tap on the Iran button did NOTHING \u2014 no save, no confirm view, the
+  // D1 row never moved \u2014 because this threw/failed on a broken colo and
+  // the handler re-rendered the same status). Validation now runs through
+  // the offset probe (shortOffset \u2014 verified correct even on the broken
+  // colos) with a date-bearing constructor as the fallback.
+  if (tzOffsetMinutes(candidate) != null) return candidate;
   try {
-    new Intl.DateTimeFormat("en-US", { timeZone: candidate });
+    new Intl.DateTimeFormat("en-US", { timeZone: candidate, year: "numeric" });
     return candidate;
   } catch (e) {
     return null;

@@ -26,7 +26,7 @@
 // cards own the budget first.
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { toFaDigits, escapeMarkdownCharacters, subrequestCount, jalaliDateFa, englishDateYmd } from "./utils";
+import { toFaDigits, escapeMarkdownCharacters, subrequestCount, jalaliDateFa, englishDateYmd, tzOffsetMinutes, zonedYmDHm } from "./utils";
 // v13.106-mdstyle: entity builders (bold followed team + score, italic
 // competition group labels).
 import { mdBold, mdItalic } from "./md";
@@ -53,20 +53,12 @@ const DONE_STATUSES = ["FINISHED", "POSTPONED", "CANCELLED", "AWARDED", "SUSPEND
 // v13.99-uclgif: exported for digest-uclnight.ts (the UCL preview's twin —
 // same tz-date arithmetic; one-directional import, no cycle).
 export function tzOffsetMs(tz: string) {
-  try {
-    const now = new Date();
-    const parts = new Intl.DateTimeFormat("en-GB", ({
-      timeZone: tz, hour12: false,
-      year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit"
-    } as any)).formatToParts(now);
-    const p: any = {};
-    for (const x of parts) p[x.type] = x.value;
-    const hh = p.hour === "24" ? "00" : p.hour;
-    const asUTC = Date.UTC(parseInt(p.year, 10), parseInt(p.month, 10) - 1, parseInt(p.day, 10), parseInt(hh, 10), parseInt(p.minute, 10));
-    return asUTC - Math.floor(now.getTime() / 60000) * 60000;
-  } catch (e) {
-    return null;
-  }
+  // v13.116-tzproof: routed through the shared layered offset probe
+  // (shortOffset first \u2014 verified correct even on the broken edge
+  // colos; the date-bearing fields diff stays as Layer 2 inside it).
+  // Same return contract: ms offset or null.
+  const m = tzOffsetMinutes(tz);
+  return m == null ? null : m * 60000;
 }
 
 export function dateKeyOf(y: number, m: number, d: number) {
@@ -334,10 +326,17 @@ export async function buildNightDigestMessage(env: Env, nightMatches, lang, pref
   // the chat's tz, as the pre-13.98 code did).
   let ny = nightYmd && nightYmd.y, nm = nightYmd && nightYmd.m, nd = nightYmd && nightYmd.d;
   if (!ny || !nm || !nd) {
-    const p: any = {};
-    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: env.TEHRAN_TZ || "Asia/Tehran", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(nightMatches[0].utcDate));
-    for (const x of parts) p[x.type] = x.value;
-    ny = parseInt(p.year, 10); nm = parseInt(p.month, 10); nd = parseInt(p.day, 10);
+    // v13.116-tzproof: arithmetic wall date (the ymd-only Intl shape is
+    // unverified on the broken colos — the offset math is).
+    const wall = zonedYmDHm(env.TEHRAN_TZ || "Asia/Tehran", new Date(nightMatches[0].utcDate));
+    if (wall) {
+      ny = wall.y; nm = wall.m; nd = wall.d;
+    } else {
+      const p: any = {};
+      const parts = new Intl.DateTimeFormat("en-GB", { timeZone: env.TEHRAN_TZ || "Asia/Tehran", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(nightMatches[0].utcDate));
+      for (const x of parts) p[x.type] = x.value;
+      ny = parseInt(p.year, 10); nm = parseInt(p.month, 10); nd = parseInt(p.day, 10);
+    }
   }
   const head = en
     ? "*\u{1F319} Night results \u2014 " + englishDateYmd(ny, nm, nd) + "*\n\n"

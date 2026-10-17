@@ -5,7 +5,7 @@
 import { CONFIG } from "./config";
 import { COMP_EN } from "./tables";
 import type { Env } from "./types";
-import { toFaDigits, escapeMarkdownCharacters, getNowTehran } from "./utils";
+import { toFaDigits, escapeMarkdownCharacters, getNowTehran, zonedHm, zonedYmDHm } from "./utils";
 // v13.106-mdstyle: entity builders (bold teams, italic competition). No
 // entity NESTING: the derby/UCL lines keep their emoji anchors instead of
 // the old whole-line bold (a bold wrapper around a line that now contains
@@ -90,9 +90,26 @@ export async function buildWeekAheadMessage(env: Env, lang) {
   const uclDuels = worthy.filter((m) => !isDerby(m) && m.competition && m.competition.code === "CL" && isMasterPair(m)).sort(byKick);
   const rest = worthy.filter((m) => !derbies.includes(m) && !uclDuels.includes(m)).sort(byKick).slice(0, 10);
   const fmtLine = (m, mark) => {
-    const locale = en ? "en-GB" : "fa-IR";
-    const weekday = new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: env.TEHRAN_TZ || "Asia/Tehran" }).format(new Date(m.utcDate));
-    const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: env.TEHRAN_TZ || "Asia/Tehran" }).format(new Date(m.utcDate));
+    // v13.116-tzproof: the weekday label came from a weekday-ONLY Intl
+    // format and the time from a TIME-ONLY one — both in the broken-colo
+    // class (some Cloudflare edge colos render them UTC / wrong-era).
+    // Arithmetic now: wall-clock parts once, static weekday names, fa
+    // digits for the time. Fallback keeps the old Intl shapes for the
+    // exotic case where the offset probe fails entirely.
+    const wall = zonedYmDHm(env.TEHRAN_TZ || "Asia/Tehran", new Date(m.utcDate));
+    let weekday, time;
+    if (wall) {
+      const WD_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const WD_FA = ["\u06CC\u06A9\u0634\u0646\u0628\u0647", "\u062F\u0648\u0634\u0646\u0628\u0647", "\u0633\u0647\u200C\u0634\u0646\u0628\u0647", "\u0686\u0647\u0627\u0631\u0634\u0646\u0628\u0647", "\u067E\u0646\u062C\u200C\u0634\u0646\u0628\u0647", "\u062C\u0645\u0639\u0647", "\u0634\u0646\u0628\u0647"];
+      weekday = en ? WD_EN[wall.dow] : WD_FA[wall.dow];
+      time = wall.hm;
+    } else {
+      // Fail-open (the tzLocalTime "" contract): NO time-only Intl fallback
+      // — that is exactly the broken-colo class this fix removes. A row
+      // without its time beats a row with a WRONG time.
+      weekday = "";
+      time = "";
+    }
     const timeStr = en ? time : toFaDigits(time);
     const home = en ? m.homeTeam.name : translateTeam(m.homeTeam.name);
     const away = en ? m.awayTeam.name : translateTeam(m.awayTeam.name);

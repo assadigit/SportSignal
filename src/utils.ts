@@ -98,9 +98,101 @@ export function timingSafeEqualStr(a, b) {
 export function getNowUTC() {
   return new Date();
 }
+// v13.116-tzproof: THE EDGE-ICU BROKEN-COLO DEFENSE. 2026-10-17 live
+// evidence: Cloudflare's edge fleet is MIXED — some colos' ICU render
+// TIME-ONLY Intl formats (hour+minute, no date fields) WRONG: Asia/Tehran
+// came back as raw UTC (−3:30) on one colo, Asia/Dubai as its pre-1912
+// LMT-era offset (+3:49 instead of +4), and the fields-less
+// DateTimeFormat constructor (resolveTimeZone's validator) failed the
+// same class — the owner's tap on the Tehran button did NOTHING (no
+// save, no confirm; the D1 row never moved) and every wall-clock the
+// picker rendered ran on the broken offset. Date-BEARING formats
+// (dateStyle/timeStyle, y/m/d+H/M/S fields) and the timeZoneName-only
+// "shortOffset" format rendered CORRECTLY on the very same colos — so
+// those are the trusted sources. Everything below computes wall-clock
+// time by PURE ARITHMETIC from a verified offset; no code path may ever
+// trust a time-only Intl format on the edge again (the harness pins that
+// structurally — check-reliability's tzproof guard).
+
+// The zone's UTC offset RIGHT NOW, in minutes (Tehran=210, London=60 in
+// summer, Kathmandu=345). Layer 1: the shortOffset zone-name format —
+// verified correct even on the broken colos. Layer 2: the date-bearing
+// fields diff (the v13.96.1 digest-night pattern). Sanity gate on both:
+// real-world offsets are multiples of 15 min within ±14h — a broken
+// render (UTC for a +3:30 zone, LMT-era +3:49…) falls outside the
+// zone's own parse or the sanity and is REJECTED, never displayed.
+// 10-minute per-tz memo: the offset only moves at DST edges and the
+// picker renders ~10 zones per keyboard (formatter construction is the
+// v13.43 CPU-burn class — one per tz per burst, not one per button).
+var TZOFF_MEMO: any = {};
+var TZOFF_MEMO_AT = 0;
+export function tzOffsetMinutes(tz) {
+  if (!tz || typeof tz !== "string") return null;
+  const sane = (m) => m != null && !isNaN(m) && Math.abs(m) <= 840 && m % 15 === 0 ? m : null;
+  const now = Date.now();
+  if (now - TZOFF_MEMO_AT > 6e5) { TZOFF_MEMO = {}; TZOFF_MEMO_AT = now; }
+  if (tz in TZOFF_MEMO) return TZOFF_MEMO[tz];
+  let out: any = null;
+  // Layer 1: "GMT+3:30" / "GMT+4" / "GMT-5:45" from the zone-name format.
+  // Probed at NOW — the epoch (t=0) would answer with HISTORIC offsets
+  // (Nepal was +5:30 until 1986; the picker would have shown Kathmandu
+  // half an hour wrong — caught by the harness's Kathmandu pin).
+  try {
+    const p = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" }).formatToParts(new Date()).find((x) => x.type === "timeZoneName");
+    const m = p && p.value ? String(p.value).match(/^GMT([+-])(\d{1,2})(?::(\d{2}))?$/) : null;
+    if (m) out = sane((m[1] === "-" ? -1 : 1) * (parseInt(m[2], 10) * 60 + (m[3] ? parseInt(m[3], 10) : 0)));
+  } catch (e) { /* fall through */ }
+  // Layer 2: date-bearing fields diff (date fields render zoned even on
+  // the colos where time-only formats break).
+  if (out == null) {
+    try {
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: tz, hour12: false,
+        year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit"
+      }).formatToParts(new Date());
+      const p: any = {};
+      for (const x of parts) p[x.type] = x.value;
+      const hh = p.hour === "24" ? "00" : p.hour;
+      const asUTC = Date.UTC(parseInt(p.year, 10), parseInt(p.month, 10) - 1, parseInt(p.day, 10), parseInt(hh, 10), parseInt(p.minute, 10));
+      out = sane(Math.round((asUTC - Math.floor(Date.now() / 6e4) * 6e4) / 6e4));
+    } catch (e) { /* fall through */ }
+  }
+  TZOFF_MEMO[tz] = out;
+  return out;
+}
+
+// Wall-clock parts in the zone, by arithmetic (NEVER a time-only Intl
+// format — see the header). Returns {y,m,d,dow,hh,mm,hm} or null.
+export function zonedYmDHm(tz, date?) {
+  const off = tzOffsetMinutes(tz);
+  if (off == null) return null;
+  const d = new Date((date ? date.getTime() : Date.now()) + off * 6e4);
+  const y = d.getUTCFullYear(), mo = d.getUTCMonth() + 1, da = d.getUTCDate();
+  const hh = d.getUTCHours(), mi = d.getUTCMinutes();
+  const p2 = (n) => (n < 10 ? "0" + n : "" + n);
+  return { y, m: mo, d: da, dow: d.getUTCDay(), hh, mm: mi, hm: p2(hh) + ":" + p2(mi) };
+}
+
+// "HH:mm" in the zone (Persian digits for fa) — the tzLocalTime /
+// getJalaliTime / getEnglishTime replacement. "" on failure (cosmetic
+// fail-open: the picker still works, just without the time hint).
+export function zonedHm(tz, date?, lang?) {
+  const w = zonedYmDHm(tz, date);
+  if (!w) return "";
+  return lang === "fa" ? toFaDigits(w.hm) : w.hm;
+}
 export function getNowTehran(env: Env) {
+  // v13.116-tzproof: arithmetic first (shortOffset + math — immune to the
+  // broken-colos); the date-bearing fields shape stays as the fallback.
+  // Contract preserved: a Date whose UTC fields ARE Tehran wall digits.
+  const tz = env.TEHRAN_TZ || "Asia/Tehran";
+  const w = zonedYmDHm(tz);
+  if (w) {
+    const p2 = (n) => (n < 10 ? "0" + n : "" + n);
+    return new Date(`${w.y}-${p2(w.m)}-${p2(w.d)}T${w.hm}:${p2(new Date().getUTCSeconds())}Z`);
+  }
   const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: env.TEHRAN_TZ || "Asia/Tehran",
+    timeZone: tz,
     hour12: false,
     year: "numeric",
     month: "2-digit",
@@ -125,15 +217,11 @@ export function getJalaliDate(utcDateStr, env) {
   return `${get("weekday")} ${get("day")} ${get("month")} ${get("year")}`;
 }
 export function getJalaliTime(utcDateStr, env) {
-  const date = new Date(utcDateStr);
-  const timeOpt: any = {
-    timeZone: env.TEHRAN_TZ,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
-  };
-  const time = new Intl.DateTimeFormat("fa-IR", timeOpt).format(date);
-  return toFaDigits(time);
+  // v13.116-tzproof: was a time-only fa-IR Intl format — the exact shape
+  // the broken edge colos render as UTC/LMT (every match-card and /next
+  // fa time was at the caller's mercy of which colo served the webhook).
+  // Arithmetic now: same "HH:mm" Persian-digit output, colo-independent.
+  return zonedHm(env.TEHRAN_TZ || "Asia/Tehran", new Date(utcDateStr), "fa");
 }
 export function getRelativeTimeUntilMatch(matchUtcDate, _env) {
   const now = getNowUTC();
@@ -161,9 +249,9 @@ export function getEnglishDate(utcDateStr, env) {
   return new Intl.DateTimeFormat("en-GB", opts).format(date);
 }
 export function getEnglishTime(utcDateStr, env) {
-  const date = new Date(utcDateStr);
-  const opts: any = { timeZone: env.TEHRAN_TZ, hour: "2-digit", minute: "2-digit", hour12: false };
-  return new Intl.DateTimeFormat("en-GB", opts).format(date);
+  // v13.116-tzproof: was a time-only en-GB Intl format (the broken-colo
+  // UTC/LMT class). Arithmetic now — same "HH:mm" latin output.
+  return zonedHm(env.TEHRAN_TZ || "Asia/Tehran", new Date(utcDateStr), "en");
 }
 export function getEnglishRelative(matchUtcDate) {
   const now = getNowUTC();

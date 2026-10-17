@@ -23,6 +23,37 @@ const fs = require("fs");
 const path = require("path");
 const src = require("./lib/worker-src")();
 
+// v13.116-tzproof: the REAL wall-clock primitives installed as GLOBALS for
+// the eval'd digest builders (the check-bot-edges md.ts precedent).
+(function installTzproof() {
+  const grab = (sig) => {
+    const i = src.indexOf(sig);
+    if (i < 0) return null;
+    let depth = 0, j = src.indexOf("{", i);
+    for (; j < src.length; j++) {
+      if (src[j] === "{") depth++;
+      else if (src[j] === "}") { depth--; if (depth === 0) break; }
+    }
+    return src.slice(i, j + 1);
+  };
+  const zy = grab("function zonedYmDHm(tz");
+  const zh = grab("function zonedHm(tz");
+  const to = grab("function tzOffsetMinutes(tz)");
+  if (!zy || !zh || !to) {
+    console.error("FAIL: tzproof helpers not found in worker source");
+    process.exit(1);
+  }
+  globalThis.zonedYmDHm = eval("(" + zy + ")");
+  globalThis.zonedHm = eval("(" + zh + ")");
+  globalThis.tzOffsetMinutes = eval("(" + to + ")");
+  globalThis.TZOFF_MEMO = {};
+  globalThis.TZOFF_MEMO_AT = 0;
+  // zonedHm's toFaDigits resolves through globalThis — seed the REAL one
+  // (grabbed from the concat) so it exists before any test swaps it.
+  const tfd = grab("function toFaDigits(str)");
+  if (tfd && !globalThis.toFaDigits) globalThis.toFaDigits = eval("(" + tfd + ")");
+})();
+
 let fails = 0;
 const check = (name, cond) => {
   console.log((cond ? "OK   " : "FAIL ") + name);

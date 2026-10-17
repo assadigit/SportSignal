@@ -6,6 +6,75 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.116-tzproof] — 2026-10-17 (the timezone picker's three bugs: one root cause on Cloudflare's mixed edge fleet)
+
+The owner's report, verbatim: *"There are some bugs, for example منطقه
+زمانی it must write منطقه زمانی (ایران) but it's written تهران; also when
+clicked it does nothing like confirmed; also the hour is wrong for example
+real time is 10 am it shows 11 am."*
+
+### The root cause: some Cloudflare edge colos render time-only Intl formats wrong
+
+Reproduced live with a throwaway probe worker: one colo returned
+`Asia/Tehran` hour+minute formats as **raw UTC** (−3:30) and `Asia/Dubai`
+as its **pre-1912 LMT-era offset** (+3:49 instead of +4) — while
+date-bearing formats (dateStyle/timeStyle, y/m/d fields) and the
+`timeZoneName: "shortOffset"` format rendered **correctly on the very same
+colo**. The fleet is mixed: requests (webhooks included) land on good or
+broken colos at random. Three user-visible symptoms, one cause:
+
+- **The wrong hour** — every wall-clock rendered via a time-only Intl
+  format (the picker's button/status/confirm times, match times in the
+  morning/weekly digests, the match cards' and /next's
+  getJalaliTime/getEnglishTime) was at the mercy of the serving colo.
+- **The dead button** — `resolveTimeZone` validated zones with a
+  **fields-less** `Intl.DateTimeFormat` constructor — the same broken
+  class. On a bad colo it failed, the tap fell into the "unknown
+  timezone" branch, the message re-rendered the SAME status (no save, no
+  confirm view). Forensics: the owner's D1 `user_prefs.updated_at` never
+  moved that morning.
+- The label complaint was cosmetic (fixed too).
+
+### The fix: wall clocks by arithmetic, offsets from verified sources
+
+- **`tzOffsetMinutes(tz)`** (utils.ts, NEW): the zone's offset in minutes
+  — Layer 1 parses the `shortOffset` zone-name format (verified correct
+  even on broken colos), Layer 2 is the v13.96.1 date-bearing fields
+  diff; both pass a sanity gate (multiple of 15 min, |off| ≤ 14h — a
+  UTC-for-Tehran or LMT-era render is rejected, never displayed). Probed
+  at **now**, never the epoch (Nepal was +5:30 until 1986 — the harness's
+  Kathmandu pin caught the epoch-probe draft). 10-min per-tz memo.
+- **`zonedYmDHm` / `zonedHm`** (utils.ts, NEW): wall-clock parts and
+  "HH:mm" by pure arithmetic (`now + offset` → `getUTCHours`). Every
+  rewrites site: `tzLocalTime` (picker times), `getJalaliTime` /
+  `getEnglishTime` (cards + /next), `getNowTehran` (arithmetic-first,
+  contract preserved), the morning digest's 9am gate AND per-line times,
+  the week-ahead weekday+time (static weekday tables now), digest-night's
+  `tzOffsetMs` (routed through the layered probe) and its date header.
+  A row without its time beats a row with a wrong time — fail-open `""`.
+- **`resolveTimeZone`** (users.ts): validates through the offset probe;
+  the fields-less constructor is demoted to last-resort fallback — **the
+  dead-button fix**.
+- **The label**: the quick-pick reads **«🇮🇷 منطقه زمانی (ایران)»**
+  ("Timezone (Iran)") — the zone is the country, not the city; the reset
+  follows («ریست (پیش‌فرض: ایران)» / "Reset (Iran default)").
+- The picker's time and its offset label now come from the SAME parsed
+  offset — they can never disagree (the broken colo rendered a UTC hour
+  next to a "+3:30" label).
+
+### Verification
+
+Suite green (+~25 tzproof checks: the **structural guard** — zero
+time-only Intl formats with a timeZone may ever return to the worker
+source; the layered helper's shape; the now-probe; the resolveTimeZone
+rewiring; the arithmetic delegations; the offset+time consistency law;
+the owner's exact label). tsc clean. LIVE: the corrected picker delivered
+to the owner's chat through the real senders with the time verified as
+UTC+3:30 exactly, and the tap flow (save → confirm view) re-verified
+end-to-end in simulation with the real modules.
+
+---
+
 ## [13.115-trialfoot] — 2026-10-17 (white-background stickers restored + «نسخه آزمایشی» on every message)
 
 The owner's two corrections, verbatim: *"You tried to remove white

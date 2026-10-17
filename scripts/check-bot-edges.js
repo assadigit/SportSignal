@@ -23,6 +23,41 @@ if (mdModStart < 0 || mdModEnd < 0) {
 }
 Object.assign(globalThis, new Function(src.slice(mdModStart, mdModEnd) + "\n; return { mdEscape, mdBold, mdItalic, mdCode };")());
 
+// v13.116-tzproof: the REAL wall-clock primitives (src/utils.ts), sliced
+// from the concat and installed as GLOBALS — every eval'd segment below
+// (bot-ui's tzLocalTime, users' resolveTimeZone, the digest builders)
+// resolves zonedHm / tzOffsetMinutes / zonedYmDHm through the global
+// object, exactly like the md.ts precedent above.
+(function installTzproof() {
+  const grab = (sig) => {
+    const i = src.indexOf(sig);
+    if (i < 0) return null;
+    let depth = 0, j = src.indexOf("{", i);
+    for (; j < src.length; j++) {
+      if (src[j] === "{") depth++;
+      else if (src[j] === "}") { depth--; if (depth === 0) break; }
+    }
+    return src.slice(i, j + 1);
+  };
+  const zy = grab("function zonedYmDHm(tz");
+  const zh = grab("function zonedHm(tz");
+  const to = grab("function tzOffsetMinutes(tz)");
+  if (!zy || !zh || !to) {
+    console.error("FAIL: tzproof helpers not found in worker source");
+    process.exit(1);
+  }
+  globalThis.zonedYmDHm = eval("(" + zy + ")");
+  globalThis.zonedHm = eval("(" + zh + ")");
+  globalThis.tzOffsetMinutes = eval("(" + to + ")");
+  // the offset memo the helper's free vars resolve to (sloppy-mode globals)
+  globalThis.TZOFF_MEMO = {};
+  globalThis.TZOFF_MEMO_AT = 0;
+  // zonedHm's toFaDigits resolves through globalThis — seed the REAL one
+  // (grabbed from the concat) so it exists before any test swaps it.
+  const tfd = grab("function toFaDigits(str)");
+  if (tfd && !globalThis.toFaDigits) globalThis.toFaDigits = eval("(" + tfd + ")");
+})();
+
 
 // --- Extract BOT_STRINGS + botStr (real definitions, so the callback test
 //     exercises the actual welcome strings — catches typos in BOT_STRINGS) ---
@@ -438,13 +473,55 @@ const check = (name, cond) => {
       const prevEsc = globalThis.escapeMarkdownCharacters;
       globalThis.toFaDigits = realFaFn;
       globalThis.escapeMarkdownCharacters = eval("(" + realEsc + ")");
-      const tzApi = eval("(function () { " + src.slice(tzSegStart, tzSegEnd) + " return { TZ_REGIONS, tzLocalTime, tzUtcOffset, tzOnboardText, tzConfirmText, tzDoneText, tzRegionText, tzStatusText }; })()");
+      // v13.116-tzproof: the bot-ui segment's tzLocalTime/tzUtcOffset now
+      // call the utils primitives (zonedHm / tzOffsetMinutes) as free vars —
+      // install the REAL ones (grabbed from the concat source, the
+      // toFaDigits precedent) so the eval tests the production resolution.
+      const realZonedHm = src.match(/function zonedHm\(tz[^)]*\) \{[\s\S]*?\n\}/);
+      const realTzOff = src.match(/function tzOffsetMinutes\(tz\) \{[\s\S]*?\n\}/);
+      const realZonedYmDHm = src.match(/function zonedYmDHm\(tz[^)]*\) \{[\s\S]*?\n\}/);
+      check("tzproof helpers present in the concat source", !!(realZonedHm && realTzOff && realZonedYmDHm));
+      const prevZH = globalThis.zonedHm;
+      const prevTO = globalThis.tzOffsetMinutes;
+      const prevZY = globalThis.zonedYmDHm;
+      const prevTZM = globalThis.TZOFF_MEMO;
+      const prevTZMA = globalThis.TZOFF_MEMO_AT;
+      if (realZonedHm && realTzOff && realZonedYmDHm) {
+        globalThis.zonedHm = eval("(" + realZonedHm[0] + ")");
+        globalThis.tzOffsetMinutes = eval("(" + realTzOff[0] + ")");
+        globalThis.zonedYmDHm = eval("(" + realZonedYmDHm[0] + ")");
+      }
+      const tzApi = eval("(function () { " + src.slice(tzSegStart, tzSegEnd) + " return { TZ_REGIONS, tzLocalTime, tzUtcOffset, tzOnboardText, tzConfirmText, tzDoneText, tzRegionText, tzStatusText, tzPickerKeyboard }; })()");
       check("tzUtcOffset Tehran = UTC+3:30 (stable, no DST)", tzApi.tzUtcOffset("Asia/Tehran") === "UTC+3:30");
       check("tzUtcOffset Tokyo = UTC+9", tzApi.tzUtcOffset("Asia/Tokyo") === "UTC+9");
       check("tzUtcOffset Kathmandu = UTC+5:45 (quarter-hour zone)", tzApi.tzUtcOffset("Asia/Kathmandu") === "UTC+5:45");
       check("tzUtcOffset invalid tz fails closed to empty", tzApi.tzUtcOffset("Not/AZone") === "");
       check("tzLocalTime fa renders Persian digits", /^[\u06F0-\u06F9]{2}:[\u06F0-\u06F9]{2}$/.test(tzApi.tzLocalTime("Asia/Tehran", "fa")));
       check("tzLocalTime en renders latin digits", /^\d\d:\d\d$/.test(tzApi.tzLocalTime("Asia/Tehran", "en")));
+      // v13.116-tzproof: the offset and the wall time can NEVER disagree
+      // (the broken-colo pathology: UTC hour next to a +3:30 label).
+      (function tzproofConsistency() {
+        const off = tzApi.tzUtcOffset("Asia/Tehran");
+        const hm = tzApi.tzLocalTime("Asia/Tehran", "en");
+        if (!off || !hm) { check("tzproof: offset+time consistency computable", false); return; }
+        const m = off.match(/^UTC([+-])(\d{1,2})(?::(\d{2}))?$/);
+        const offMin = (m[1] === "-" ? -1 : 1) * (parseInt(m[2], 10) * 60 + (m[3] ? parseInt(m[3], 10) : 0));
+        const now = new Date();
+        const utcMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+        let wallMin = ((parseInt(hm.slice(0, 2), 10) * 60 + parseInt(hm.slice(3, 5), 10)) - utcMin + 1440) % 1440;
+        if (wallMin > 720) wallMin -= 1440;
+        check("tzproof: Tehran wall time == UTC + the displayed offset (never a UTC hour)", Math.abs(wallMin - offMin) <= 1);
+      })();
+      // v13.116-tzproof: the owner's label — «منطقه زمانی (ایران)», not «تهران»
+      const hubFa = tzApi.tzPickerKeyboard("fa");
+      const hubEn = tzApi.tzPickerKeyboard("en");
+      const faBtn = (hubFa.inline_keyboard || []).flat().find((b) => b.callback_data === "tz:tehran");
+      const enBtn = (hubEn.inline_keyboard || []).flat().find((b) => b.callback_data === "tz:tehran");
+      const faReset = (hubFa.inline_keyboard || []).flat().find((b) => b.callback_data === "tz:reset");
+      check("tzproof: Iran quick-pick reads \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC (\u0627\u06CC\u0631\u0627\u0646) (fa)", !!faBtn && /\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \(\u0627\u06CC\u0631\u0627\u0646\)/.test(faBtn.text) && !/^\uD83C\uDDEE\uD83C\uDDF7 \u062A\u0647\u0631\u0627\u0646/.test(faBtn.text));
+      check("tzproof: Iran quick-pick reads Timezone (Iran) (en)", !!enBtn && /Timezone \(Iran\)/.test(enBtn.text));
+      check("tzproof: Iran quick-pick still carries the live time", !!faBtn && /\u00B7 \u06F0?[\u06F0-\u06F9]{1,2}:/.test(faBtn.text));
+      check("tzproof: reset default says \u0627\u06CC\u0631\u0627\u0646 not \u062A\u0647\u0631\u0627\u0646", !!faReset && /\u0627\u06CC\u0631\u0627\u0646\)/.test(faReset.text));
       // TZ_REGIONS integrity: every city slug resolves (via the REAL
       // resolveTimeZone + TZ_ALIASES) to the canonical tz stored in the row
       const aliasStart = src.indexOf("var TZ_ALIASES = {");
@@ -475,6 +552,10 @@ const check = (name, cond) => {
       check("tz texts carry the live local time as a code span (v13.106)", mdv2Ent(tzApi.tzStatusText("fa", "Asia/Tehran")).code.length === 1 && mdv2Ent(tzApi.tzConfirmText("en", "Europe/London")).code.length === 1);
       globalThis.toFaDigits = prevFa;
       globalThis.escapeMarkdownCharacters = prevEsc;
+      // v13.116-tzproof: restore the helper globals too
+      globalThis.zonedHm = prevZH;
+      globalThis.tzOffsetMinutes = prevTO;
+      globalThis.zonedYmDHm = prevZY;
     }
   }
 

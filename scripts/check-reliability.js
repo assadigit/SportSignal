@@ -775,5 +775,68 @@ check("#trialfoot the footer string carries NO MarkdownV2 reserved characters", 
   t("wiring: the drain delivers through sendTelegramDirect (the footered idempotent path)", drainSeg.indexOf("sendTelegramDirect(env, item.text") >= 0);
 })();
 
+// ---------------------------------------------------------------------------
+// v13.116-tzproof: the edge-ICU broken-colo defense, pinned structurally.
+// 2026-10-17 live evidence: some Cloudflare edge colos render TIME-ONLY
+// Intl formats (hour+minute + timeZone, no date fields) as raw UTC or a
+// wrong-era offset (Asia/Tehran→UTC, Asia/Dubai→+3:49 LMT), and the
+// fields-less DateTimeFormat constructor (the old resolveTimeZone
+// validator) fails the same class — the owner's dead Iran button + wrong
+// picker hours. The trusted sources: shortOffset + date-BEARING formats.
+// Every wall-clock in the worker is now ARITHMETIC off tzOffsetMinutes.
+(function tzproofStructural() {
+  // 1) ZERO time-only Intl formats with a timeZone may remain anywhere in
+  //    the worker source (the broken-colo class — a regression guard).
+  let bad = [];
+  let idx = 0;
+  while ((idx = src.indexOf("new Intl.DateTimeFormat(", idx)) >= 0) {
+    let i = idx + 24, depth = 0, j = i;
+    while (j < src.length && j < i + 800) {
+      if (src[j] === "(") depth++;
+      else if (src[j] === ")") { if (depth === 0) break; depth--; }
+      j++;
+    }
+    const args = src.slice(i, j);
+    if (/hour:\s*"2-digit"/.test(args) && /timeZone/.test(args) && !/year:\s*"/.test(args)) {
+      bad.push(args.slice(0, 70).replace(/\n/g, " "));
+    }
+    idx = j;
+  }
+  check("#tzproof ZERO time-only Intl formats with timeZone (the broken-colo class)", bad.length === 0);
+  if (bad.length) console.log("   offending:", JSON.stringify(bad.slice(0, 5)));
+  // 2) the layered offset helper exists with BOTH layers + the sanity gate
+  check("#tzproof tzOffsetMinutes helper (shortOffset layer + fields fallback + sanity)",
+    /function tzOffsetMinutes\(tz\) \{/.test(src) &&
+    /timeZoneName: "shortOffset"/.test(src) &&
+    src.indexOf("function tzOffsetMinutes") < src.indexOf('timeZoneName: "shortOffset"') &&
+    /Math\.abs\(m\) <= 840 && m % 15 === 0/.test(src));
+  // 3) probed at NOW, never the epoch (Nepal was +5:30 until 1986)
+  const tzm = src.match(/function tzOffsetMinutes\(tz\) \{[\s\S]{0,2500}?\n\}/);
+  check("#tzproof offset probe uses a current instant (epoch answers with historic offsets)",
+    !!tzm && /formatToParts\(new Date\(\)\)/.test(tzm[0]) && !/formatToParts\(0\)/.test(tzm[0]));
+  // 4) resolveTimeZone validates through the offset probe (the dead-button fix)
+  const rtz = src.match(/function resolveTimeZone\(input\) \{[\s\S]{0,1200}?\n\}/);
+  check("#tzproof resolveTimeZone validates via tzOffsetMinutes (fields-less ctor demoted)",
+    !!rtz && /tzOffsetMinutes\(candidate\) != null\) return candidate;/.test(rtz[0]));
+  // 5) the pickers/digests/cards render through the arithmetic helpers
+  check("#tzproof tzLocalTime is pure arithmetic (delegates to zonedHm)",
+    /function tzLocalTime\(tz, lang\) \{\s*\n\s*return zonedHm\(tz, null, lang\);/.test(src));
+  check("#tzproof getJalaliTime/getEnglishTime delegate to zonedHm (cards + /next + digests)",
+    /return zonedHm\(env\.TEHRAN_TZ \|\| "Asia\/Tehran", new Date\(utcDateStr\), "fa"\)/.test(src) &&
+    /return zonedHm\(env\.TEHRAN_TZ \|\| "Asia\/Tehran", new Date\(utcDateStr\), "en"\)/.test(src));
+  check("#tzproof getNowTehran is arithmetic-first (fields fallback kept)",
+    /const w = zonedYmDHm\(tz\);\s*\n\s*if \(w\) \{/.test(src));
+  check("#tzproof the morning 9am gate reads the arithmetic wall clock",
+    /const wall = zonedYmDHm\(tz\);\s*\n\s*if \(wall\) \{\s*\n\s*hour = wall\.hh;/.test(src));
+  check("#tzproof week-ahead weekday+time are arithmetic (static tables, no weekday-only Intl)",
+    /const wall = zonedYmDHm\(env\.TEHRAN_TZ \|\| "Asia\/Tehran", new Date\(m\.utcDate\)\);/.test(src) &&
+    /WD_EN\[wall\.dow\]/.test(src) &&
+    !/weekday: "long", timeZone: env\.TEHRAN_TZ/.test(src));
+  check("#tzproof digest-night tzOffsetMs routes through the layered probe",
+    /const m = tzOffsetMinutes\(tz\);\s*\n\s*return m == null \? null : m \* 60000;/.test(src));
+  // 6) the owner's label correction: the quick-pick says the ZONE, not the city
+  check("#tzproof Iran quick-pick label is the owner's phrasing", src.indexOf("Timezone (Iran)") >= 0 && src.indexOf(String.raw`\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC (\u0627\u06CC\u0631\u0627\u0646)`) >= 0 && src.indexOf(String.raw`\u0627\u06CC\u0631\u0627\u0646)`) >= 0);
+})();
+
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

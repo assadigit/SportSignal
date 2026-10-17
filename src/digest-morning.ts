@@ -5,7 +5,7 @@
 import { CONFIG } from "./config";
 import { COMP_EN } from "./tables";
 import type { Env } from "./types";
-import { toFaDigits, escapeMarkdownCharacters } from "./utils";
+import { toFaDigits, escapeMarkdownCharacters, zonedHm, zonedYmDHm } from "./utils";
 // v13.106-mdstyle: entity builders (bold match header / italic competition
 // label). v13.107-plaintimes: the fixture TIME renders PLAIN (mdEscape) —
 // the user's readability ask (was a monospace code span in v13.106).
@@ -37,19 +37,30 @@ export async function maybeSendMorningDigest(env: Env, chatIds) {
     byTz.get(tz).push(c);
   }
   for (const [tz, tzChats] of byTz) {
+    // v13.116-tzproof: the 9am gate reads the wall clock by ARITHMETIC
+    // (verified shortOffset + math) — the date-bearing Intl shape stays
+    // as the fallback. A broken colo rendering the old gate as UTC would
+    // fire the digest at 12:30 Tehran instead of 9:00.
     let hour = -1, dateKey = null;
-    try {
-      const parts = new Intl.DateTimeFormat("en-GB", ({
-        timeZone: tz, hour12: false,
-        year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit"
-      } as any)).formatToParts(new Date());
-      const p: any = {};
+    const wall = zonedYmDHm(tz);
+    if (wall) {
+      hour = wall.hh;
+      const p2 = (n) => (n < 10 ? "0" + n : "" + n);
+      dateKey = wall.y + "-" + p2(wall.m) + "-" + p2(wall.d);
+    } else {
+      try {
+        const parts = new Intl.DateTimeFormat("en-GB", ({
+          timeZone: tz, hour12: false,
+          year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit"
+        } as any)).formatToParts(new Date());
+        const p: any = {};
   for (const x of parts) p[x.type] = x.value;
-      const hh = p.hour === "24" ? "00" : p.hour;
-      hour = parseInt(hh, 10);
-      dateKey = p.year + "-" + p.month + "-" + p.day;
-    } catch (e) {
-      continue;
+        const hh = p.hour === "24" ? "00" : p.hour;
+        hour = parseInt(hh, 10);
+        dateKey = p.year + "-" + p.month + "-" + p.day;
+      } catch (e) {
+        continue;
+      }
     }
     if (hour !== 9) continue;
     if (!dateKey) continue;
@@ -117,7 +128,9 @@ export async function buildMorningDigestMessage(env: Env, matches, lang) {
     const home = en ? m.homeTeam.name : translateTeam(m.homeTeam.name);
     const away = en ? m.awayTeam.name : translateTeam(m.awayTeam.name);
     const comp = en ? (COMP_EN[m.competition.code] || m.competition.code) : translateCompetition(m.competition.code);
-    const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: env.TEHRAN_TZ || "Asia/Tehran" }).format(new Date(m.utcDate));
+    // v13.116-tzproof: was a TIME-ONLY Intl format (the broken-colo UTC/LMT
+    // class) — arithmetic now.
+    const time = zonedHm(env.TEHRAN_TZ || "Asia/Tehran", new Date(m.utcDate));
     const timeStr = en ? time : toFaDigits(time);
     const vs = en ? " vs " : " \u{1F19A} ";
     lines.push("\u26BD " + mdBold(home) + vs + mdBold(away) + " \u2014 " + mdEscape(timeStr) + " \u2014 " + mdItalic(comp));

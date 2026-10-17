@@ -3,7 +3,7 @@
 // v13.49 shared message builders (teams grid + tz picker). handleTelegramUpdate
 // (the webhook router) stays in bot.ts. Extracted from bot.ts in
 // v13.78-botui.
-import { toFaDigits, escapeMarkdownCharacters } from "./utils";
+import { toFaDigits, escapeMarkdownCharacters, zonedHm, tzOffsetMinutes } from "./utils";
 // v13.106-mdstyle: entity builders (bold team rows, monospace local times).
 import { mdBold, mdCode } from "./md";
 import { normalizeTeamName } from "./teams";
@@ -101,7 +101,11 @@ export function tzStatusText(lang, tz) {
   return head + escapeMarkdownCharacters(tz) + timePart + tail;
 }
 
-// tzPickerKeyboard (v13.90-tzonboard): the picker HUB \u2014 the Tehran one-tap
+// v13.116-tzproof: the owner's label correction (2026-10-17): the
+// quick-pick reads \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC (\u0627\u06CC\u0631\u0627\u0646) ("Timezone (Iran)"), NOT
+// \u062A\u0647\u0631\u0627\u0646 \u2014 the zone is the country, not the city; the reset's
+// default follows the same rule.
+// tzPickerKeyboard (v13.90-tzonboard): the picker HUB \u2014 the Iran one-tap
 // quick-pick (the majority audience) with its live local time, the six
 // region pages (tzr: callbacks), and the reset. City buttons live on the
 // region pages (tzRegionKeyboard); this hub stays one message deep.
@@ -109,7 +113,7 @@ export function tzPickerKeyboard(lang) {
   const en = lang === "en";
   const rows = [];
   const tehranT = tzLocalTime("Asia/Tehran", lang);
-  rows.push([{ text: "\uD83C\uDDEE\uD83C\uDDF7 " + (en ? "Tehran" : "\u062A\u0647\u0631\u0627\u0646") + (tehranT ? " \u00B7 " + tehranT : ""), callback_data: "tz:tehran" }]);
+  rows.push([{ text: "\uD83C\uDDEE\uD83C\uDDF7 " + (en ? "Timezone (Iran)" : "\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC (\u0627\u06CC\u0631\u0627\u0646)") + (tehranT ? " \u00B7 " + tehranT : ""), callback_data: "tz:tehran" }]);
   const regions = [
     ["eu", "\uD83C\uDDEA\uD83C\uDDFA", "\u0627\u0631\u0648\u067E\u0627", "Europe"],
     ["mideast", "\uD83C\uDF0D", "\u062E\u0627\u0648\u0631\u0645\u06CC\u0627\u0646\u0647", "Middle East"],
@@ -125,7 +129,7 @@ export function tzPickerKeyboard(lang) {
     }
     rows.push(row);
   }
-  rows.push([{ text: "\uD83D\uDD04 " + (en ? "Reset (Tehran default)" : "\u0631\u06CC\u0633\u062A (\u067E\u06CC\u0634\u0654\u0641\u0631\u0636 \u062A\u0647\u0631\u0627\u0646)"), callback_data: "tz:reset" }]);
+  rows.push([{ text: "\uD83D\uDD04 " + (en ? "Reset (Iran default)" : "\u0631\u06CC\u0633\u062A (\u067E\u06CC\u0634\u0654\u0641\u0631\u0636: \u0627\u06CC\u0631\u0627\u0646)"), callback_data: "tz:reset" }]);
   return { inline_keyboard: rows };
 }
 
@@ -193,25 +197,28 @@ export var TZ_REGIONS = {
 
 // tzLocalTime: "HH:mm" in the zone, Persian digits for fa. Fails closed to
 // "" (cosmetic only \u2014 the picker still works, just without the time hint).
+// v13.116-tzproof: was a TIME-ONLY Intl format \u2014 the exact shape some
+// Cloudflare edge colos render as raw UTC or a wrong-era offset (the
+// owner's "real 10am shows 11am" + dead-button morning). Arithmetic via
+// the verified shortOffset now \u2014 colo-independent by construction.
 export function tzLocalTime(tz, lang) {
-  try {
-    const t = new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
-    return lang === "fa" ? toFaDigits(t) : t;
-  } catch (e) {
-    return "";
-  }
+  return zonedHm(tz, null, lang);
 }
 
 // tzUtcOffset: "UTC+3:30" / "UTC+9" / "UTC-5" for the zone (DST-aware \u2014
 // computed from "now", the same instant the user is picking in).
+// v13.116-tzproof: routes through the shared tzOffsetMinutes (shortOffset
+// parse + sanity gate) so the picker's time and its offset label can
+// NEVER disagree \u2014 on the broken colos the old path rendered a UTC hour
+// next to a "+3:30" label.
 export function tzUtcOffset(tz) {
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" }).formatToParts(new Date());
-    const p = parts.find(function (x) { return x.type === "timeZoneName"; });
-    return p && p.value ? p.value.replace("GMT", "UTC") : "";
-  } catch (e) {
-    return "";
-  }
+  const m = tzOffsetMinutes(tz);
+  if (m == null) return "";
+  const sign = m < 0 ? "-" : "+";
+  const a = Math.abs(m);
+  const h = Math.floor(a / 60);
+  const mm = a % 60;
+  return "UTC" + sign + h + (mm ? ":" + (mm < 10 ? "0" + mm : "" + mm) : "");
 }
 
 // tzRegionKeyboard: one region's cities, two per row, each button carrying
