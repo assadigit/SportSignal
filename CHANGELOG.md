@@ -114,6 +114,45 @@ payload's ordering.
   keeps date-first); worker-src concat order +kickoff-drain.ts.
 - Suite ALL green; tsc clean; version triplet 13.117-kickoff.
 
+### Session close — 2026-10-17 (the wrap-up audit, re-run from a clean clone)
+
+The day's close, re-verified from a FRESH CLONE after the development
+sandbox was reset (the local tree was lost; every claim below was
+re-checked against GitHub `225cd21` + the LIVE worker, not memory):
+
+- **Deploy parity confirmed**: the LIVE worker's script (fetched through
+  the Cloudflare API, 3.75MB module bundle) carries
+  `VERSION = "13.117-kickoff"` with the kickoff-drain module wired in —
+  the deployed code IS the repo HEAD. Worker `modified_on`
+  2026-10-17T17:42:57Z, seconds after the push of `225cd21`
+  (17:42:50Z). Both public origins answer (`ucl-notifier.
+  sportsignal.workers.dev`, `football.sportsignal.ir`); healthz answers
+  with the admin-auth challenge (as designed).
+- **Suite re-run from the clean clone**: `tsc --noEmit` clean; all 34
+  check scripts green — **1796 OK checks**, exactly the number pinned in
+  the 13.117-kickoff commit message. Nothing drifted between the last
+  session's green run and the pushed tree.
+- **The session's two authorized streams — both shipped earlier in the
+  day, re-confirmed closed**:
+  - *Stream A (quota posture)*: v13.111-quotaslim — the response to the
+    two Cloudflare free-tier alert emails (KV daily-write quota at the
+    50% warning line; Workers CPU 24h over-limit at 1000+ occurrences):
+    pool blob 617KB→~331KB, text-scan healthz/admin, the 60s edge cache
+    on `/api/public-matches`, write-only-on-change coronation snapshots,
+    and the honest web-side write meter (kv-webmeter → kv_writes_web_v1,
+    cron+web combined). The KV daily quota reset at 2026-10-17 00:00
+    UTC — the slimmed write path is the posture carrying forward from
+    that reset.
+  - *Stream B (curation)*: v13.113-nightgate — the A-League left the bot
+    (`BOT_SILENT_LEAGUES: ["AL"]`; website lists/standings/SEO
+    untouched), خلاصه شب now gates on a UCL night OR ≥1 desired-team
+    match that evening (valuable-night gate), and cup eliminations stay
+    always-covered.
+- Docs-only close (the v13.110-digitfold session-close precedent): no
+  code change, version triplet untouched; the accompanying
+  `wrangler deploy` re-ships the byte-identical 13.117-kickoff bundle so
+  the deployment of record is pinned to the pushed commit.
+
 ---
 
 ## [13.116-tzproof] — 2026-10-17 (the timezone picker's three bugs: one root cause on Cloudflare's mixed edge fleet)
