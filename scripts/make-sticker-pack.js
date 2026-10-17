@@ -1,6 +1,8 @@
 // Operator tool: (re)build the league-logo sticker pack — the owner's
 // "pictures ride Telegram's own infrastructure" rule. Reads the 512×512
-// transparent PNGs from assets/stickers/ (THE source of truth in the repo),
+// PNGs from assets/stickers/ (THE source of truth in the repo — WHITE
+// background kept as the owner uploaded it, v13.115: the first pass
+// wrongly flood-filled it away; only the LANCZOS 512 resize is applied),
 // creates the pack once via createNewStickerSet, harvests the per-league
 // file_ids from getStickerSet (set position order = STICKER_MAP below) and
 // writes them to KV stickers_v1 (the key the worker's getLeagueStickers

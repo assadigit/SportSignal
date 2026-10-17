@@ -1,12 +1,15 @@
-// SportSignal — v13.114-stickers: the league-logo sticker pack.
+// SportSignal — v13.114-stickers: the league-logo sticker pack
+// (v13.115: rebuilt from the owner's ORIGINAL white-background PNGs —
+// the backgrounds were intentional, the first pass wrongly stripped them).
 //
 // The owner's rule: pictures ride TELEGRAM's own infrastructure, not the
 // worker's. The pack (t.me/addstickers/sportsignal_leagues_by_...)
 // lives on Telegram's CDN — created ONCE by scripts/make-sticker-pack.js
-// from assets/stickers/*.png (512×512, transparent, ≤512KB each). The
-// worker NEVER carries the PNG bytes, never renders, never uploads:
-// sending is one sendSticker call with a cached file_id — a single
-// subrequest, zero bytes of ours, zero CPU.
+// from assets/stickers/*.png (512×512, WHITE background — v13.115: the
+// owner's logos are intentional white-background recreations, kept as
+// uploaded; ≤512KB each). The worker NEVER carries the PNG bytes, never
+// renders, never uploads: sending is one sendSticker call with a cached
+// file_id — a single subrequest, zero bytes of ours, zero CPU.
 //
 // KV stickers_v1 = { "PL": "<file_id>", "PD": … } — the file_id map
 // harvested from getStickerSet at pack-creation time (set position order =

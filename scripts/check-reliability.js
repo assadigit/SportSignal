@@ -716,5 +716,64 @@ check("#epochflow quiet tick owns the standings refresh (2h marker-gated phase)"
 check("#epochflow live scorer enrichment moved into the tick (self-fetch rebuilds don't fetch)", /if \(liveChanged && subrequestCount\(\) < 36\) \{/.test(src) && /await enrichLiveMatches\(env, matches\);/.test(src.split("v13.53-standsteady semantics preserved")[1] || ""));
 check("#epochflow FD standings non-ok responses are VISIBLE + 429 suspends the circuit", /console\.warn\("Standings " \+ code \+ ": FD HTTP " \+ res\.status/.test(src) && /if \(res\.status === 429\) \{\s*\n\s*await suspendProvider\(env, "football-data"\)\.catch\(\(\) => \{\}\);/.test(src));
 
+// ---------------------------------------------------------------------------
+// v13.115-trialfoot: the owner's trial marker — «نسخه آزمایشی» rides the
+// footer of EVERY text-bearing message the bot delivers. The wiring lives
+// at the SENDER layer in telegram.ts (one choke point; composers stay
+// footer-free), so every surface is covered by construction: notifications,
+// all four digests, /tables, bot menus, admin pages, photo captions and the
+// UCL GIF banner. sendSticker / sendDice carry no text at all — the footer
+// is physically impossible there (asserted below: zero call sites in the
+// sticker/dice senders).
+check("#trialfoot footer helper exists (idempotent, fail-open, config-gated)", /function withTrialFooter\(text, cap\) \{/.test(src) && /const f = CONFIG\.TRIAL_FOOTER;/.test(src) && /text\.indexOf\(f\) >= 0\) return text;/.test(src) && /text\.length \+ 1 \+ f\.length > limit\) return text;/.test(src));
+check("#trialfoot config key present with the owner's exact Persian string", /TRIAL_FOOTER: "نسخه آزمایشی"/.test(src));
+check("#trialfoot applied at ALL THREE text paths (send + direct + menu edit)", (src.match(/text = withTrialFooter\(text\);/g) || []).length === 3);
+check("#trialfoot applied at BOTH caption paths (photo 1024 + animation 1024)", (src.match(/caption = withTrialFooter\(caption, 1024\);/g) || []).length === 2);
+check("#trialfoot exactly FIVE call sites (no footer inside sendSticker/sendDice — no text to foot)", (src.match(/withTrialFooter\(/g) || []).length === 6); // 5 calls + 1 declaration
+check("#trialfoot the footer string carries NO MarkdownV2 reserved characters", !/[_*[\]()~`>#+\-=|{}.!]/.test("نسخه آزمایشی"));
+
+// Behavioral unit table for withTrialFooter — the real function, eval'd
+// from the concatenated source (the parseStickerMap convention).
+(function trialFooterUnit() {
+  function grabFn(sig) {
+    const i = src.indexOf(sig);
+    if (i < 0) throw new Error("missing " + sig);
+    const open = src.indexOf("{", i);
+    let depth = 0, j = open;
+    for (; j < src.length; j++) {
+      const ch = src[j];
+      if (ch === "{") depth++;
+      else if (ch === "}") { depth--; if (depth === 0) break; }
+    }
+    return src.slice(i, j + 1);
+  }
+  const CONFIG = { TRIAL_FOOTER: "نسخه آزمایشی" };
+  eval(grabFn("function withTrialFooter(text, cap)"));
+  const F = "نسخه آزمایشی";
+  const t = (name, cond) => check("#trialfoot-unit " + name, cond);
+  t("plain append: newline + footer", withTrialFooter("hello") === "hello\n" + F);
+  t("idempotent: already-footered text unchanged (no doubling on drain/re-send)", withTrialFooter("hello\n" + F) === "hello\n" + F);
+  t("idempotent: marker ANYWHERE in text suppresses the append", withTrialFooter("see " + F + " notes") === "see " + F + " notes");
+  t("empty text passthrough", withTrialFooter("") === "");
+  t("null passthrough (no crash on missing caption)", withTrialFooter(null) === null);
+  t("undefined passthrough", withTrialFooter(undefined) === undefined);
+  const fit = 4096 - 1 - F.length;
+  t("exact 4096 fit: boundary message still gets the footer", withTrialFooter("x".repeat(fit)).length === 4096 && withTrialFooter("x".repeat(fit)).endsWith(F));
+  t("one char over 4096: footer skipped (fail-open — the message outranks the marker)", withTrialFooter("x".repeat(fit + 1)) === "x".repeat(fit + 1));
+  t("caption cap 1024: over → skipped", withTrialFooter("y".repeat(1024 - F.length), 1024) === "y".repeat(1024 - F.length));
+  t("caption cap 1024: under → appended", withTrialFooter("y".repeat(1000), 1024).endsWith(F));
+  const savedFooter = CONFIG.TRIAL_FOOTER;
+  CONFIG.TRIAL_FOOTER = "";
+  t("kill switch: empty config string disables the footer everywhere", withTrialFooter("hello") === "hello");
+  CONFIG.TRIAL_FOOTER = savedFooter;
+  // Wiring proof on the REAL sendTelegram body (brace-balanced grab): the
+  // footer reassignment sits ABOVE every outboxPush(env, text, …) — the
+  // outbox stores the ALREADY-FOOTERED text, so the drain can't double it.
+  const sendTg = grabFn("function sendTelegram(env, text, chatId, keyboard)");
+  t("wiring: sendTelegram footers BEFORE every outboxPush (outbox stores footered text)", sendTg.indexOf("text = withTrialFooter(text);") >= 0 && sendTg.indexOf("text = withTrialFooter(text);") < sendTg.indexOf("outboxPush(env, text"));
+  const drainSeg = grabFn("function drainOutbox(env)");
+  t("wiring: the drain delivers through sendTelegramDirect (the footered idempotent path)", drainSeg.indexOf("sendTelegramDirect(env, item.text") >= 0);
+})();
+
 console.log(failed ? failed + " FAILURES" : "reliability invariants OK");
 process.exit(failed ? 1 : 0);

@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.114-stickers";
+export const VERSION = "13.115-trialfoot";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -244,6 +244,16 @@ export const CONFIG: Record<string, any> = {
   // high (the notify phase just spent it, or a live sweep did).
   FANOUT_MAINT_MAX: 30,
   TELEGRAM_PAUSE_WAIT_MAX_MS: 8000,
+  // v13.115-trialfoot: the owner's trial marker (2026-10-17): «نسخه آزمایشی»
+  // rides the FOOTER of every text-bearing message the bot delivers —
+  // sendMessage texts (all three sender paths + menu edits) AND photo/GIF
+  // captions. Applied in telegram.ts's withTrialFooter at the SENDER layer
+  // (one choke point, composers stay footer-free). The string is deliberately
+  // plain: no MarkdownV2 reserved characters (Persian letters + space only),
+  // so it is safe to append raw under every parse mode we use. sendSticker /
+  // sendDice carry no text at all — physically beyond the footer's reach.
+  // Empty string disables the footer everywhere (config-only kill switch).
+  TRIAL_FOOTER: "نسخه آزمایشی",
   KV_USERS_KEY: "telegram_users_v6",
   KV_MATCHES_KEY: "matches_v13_tracked",
   KV_NOTIFIED_KEY: "notified_matches_v6",
@@ -262,7 +272,9 @@ export const CONFIG: Record<string, any> = {
   // infrastructure (the owner's rule: pictures ride Telegram's CDN, never
   // the worker's render/upload path). The pack was created ONCE by
   // scripts/make-sticker-pack.js from assets/stickers/*.png (512×512,
-  // transparent); KV stickers_v1 holds the per-league file_ids harvested
+  // WHITE background — v13.115: the owner's logos are intentional
+  // white-background recreations; the first pass wrongly stripped it);
+  // KV stickers_v1 holds the per-league file_ids harvested
   // from getStickerSet (set position order = STICKER_LEAGUE_CODES). The
   // weekly digest (and /tables) sends the league's sticker right before
   // its table message.

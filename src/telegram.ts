@@ -44,6 +44,28 @@ async function waitTelegramPause() {
   return true;
 }
 
+// v13.115-trialfoot: the owner's trial marker — every text-bearing
+// message the bot delivers ends with the «نسخه آزمایشی» footer line.
+// ONE choke point at the SENDER layer: sendTelegram (whose outbox entries
+// store the ALREADY-FOOTERED text), sendTelegramDirect (the drain path —
+// idempotent, so an outboxed footer never doubles), editMessageText (menu
+// edits re-compose fresh text, so the footer survives every tap) and the
+// photo/animation captions (cap 1024 — Telegram's caption limit).
+// Fail-open by design (the sticker philosophy): a text at the 4096/1024
+// ceiling ships WITHOUT the footer rather than crossing the limit and
+// losing the message itself; idempotent (includes-guard) so re-sends,
+// drains and edits never stack two footers. The string carries no
+// MarkdownV2 reserved characters (config comment) — raw append is safe
+// under every parse mode the bot uses. Stickers and dice carry no text:
+// the footer is physically impossible there, by design.
+export function withTrialFooter(text, cap?) {
+  const f = CONFIG.TRIAL_FOOTER;
+  if (!f || typeof text !== "string" || !text || text.indexOf(f) >= 0) return text;
+  const limit = cap || 4096;
+  if (text.length + 1 + f.length > limit) return text;
+  return text + "\n" + f;
+}
+
 // Send a MarkdownV2 message. Returns true on success, "dead" when the chat
 // is gone (not found / blocked / kicked / deactivated), false otherwise.
 // `keyboard` (optional) is a Telegram InlineKeyboardMarkup object:
@@ -53,6 +75,10 @@ async function waitTelegramPause() {
 // cron sweep can retry it with exponential backoff. A message is NEVER
 // silently lost — only dropped when the chat is confirmed dead.
 export async function sendTelegram(env: Env, text, chatId, keyboard?) {
+  // v13.115-trialfoot: footer BEFORE the payload AND before every outbox
+  // push below — the outbox stores the footered text, so the drain's
+  // sendTelegramDirect re-append is a no-op (idempotent guard).
+  text = withTrialFooter(text);
   const payload: any = {
     chat_id: chatId,
     text,
@@ -210,6 +236,10 @@ export async function drainOutbox(env: Env) {
 // Direct send without outbox recursion (so the drain loop can't re-outbox).
 // Same retry/429/dead-chat logic as sendTelegram but no outbox push on fail.
 export async function sendTelegramDirect(env: Env, text, chatId, keyboard?) {
+  // v13.115-trialfoot: the drain path — outbox entries written by THIS
+  // version already carry the footer (idempotent no-op); entries queued
+  // by an older deploy get their footer here, at delivery time.
+  text = withTrialFooter(text);
   const payload: any = { chat_id: chatId, text, parse_mode: "MarkdownV2" };
   if (keyboard) payload.reply_markup = keyboard;
   for (let attempt = 1; attempt <= CONFIG.TELEGRAM_RETRY_ATTEMPTS; attempt++) {
@@ -293,6 +323,9 @@ export async function sendDice(env: Env, chatId, emoji) {
 // the photo upload is the heaviest call, and the text fallback is the
 // safety net behind it.
 export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, caption?, parseMode?: boolean) {
+  // v13.115-trialfoot: the match-card caption is a message footer too
+  // (1024 = Telegram's caption ceiling).
+  if (caption) caption = withTrialFooter(caption, 1024);
   for (let attempt = 1; attempt <= 2; attempt++) {
     if (Date.now() < TELEGRAM_PAUSE_UNTIL && !(await waitTelegramPause())) return false;
     await paceTelegram();
@@ -347,6 +380,10 @@ export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, 
 // Returns the animation object (with file_id) on success, "dead" for dead
 // chats, false otherwise.
 export async function sendAnimation(env: Env, chatId, animation, caption?) {
+  // v13.115-trialfoot: the GIF banner caption is a message footer too
+  // (1024 = Telegram's caption ceiling; caption is plain text here — the
+  // footer string is plain by construction, parse-mode-safe either way).
+  if (caption) caption = withTrialFooter(caption, 1024);
   for (let attempt = 1; attempt <= 2; attempt++) {
     if (Date.now() < TELEGRAM_PAUSE_UNTIL && !(await waitTelegramPause())) return false;
     await paceTelegram();
@@ -556,6 +593,11 @@ export async function ensureBotMenu(env: Env) {
 export async function editMessageText(env: Env, chatId, messageId, text, keyboard?) {
   try {
     if (bumpSubrequest()) return false;
+    // v13.115-trialfoot: menu edits re-compose FRESH text on every tap, so
+    // the footer is (re)applied here too — without this, the first send
+    // would carry «نسخه آزمایشی» and every subsequent tap would drop it.
+    // Idempotent: an edit that echoes already-footered text never doubles.
+    text = withTrialFooter(text);
     const payload: any = {
       chat_id: chatId,
       message_id: messageId,

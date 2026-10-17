@@ -6,6 +6,65 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.115-trialfoot] — 2026-10-17 (white-background stickers restored + «نسخه آزمایشی» on every message)
+
+The owner's two corrections, verbatim: *"You tried to remove white
+background of those stickers, but those were intentional. keep those png
+as they're. just convert to sticker."* and *"also add this in footer of
+each message: نسخه آزمایشی"*.
+
+### The stickers: the white background was the point
+
+The v13.114 normalization wrongly treated the logos' white background as
+noise (edge flood-fill → transparent). The owner's 1024×1024 PNGs are
+intentional white-background recreations. Re-done with exactly ONE
+transform: LANCZOS 1024→512 (Telegram's static-sticker side requirement) —
+no flood-fill, no crop, no padding; `assets/stickers/*.png` replaced
+(127–174KB, RGB, pure-white corners + border ring verified pixel-wise).
+The pack was rebuilt via `make-sticker-pack.js --recreate` (delete +
+createNewStickerSet + position-mapped file_id re-harvest) and
+**KV `stickers_v1` rewritten with the new file_ids** — every send rides
+the fresh map. All 5 stickers re-verified ON Telegram's CDN (`getFile` +
+corner/border pixel probe: pure white on every side).
+
+### The trial footer: one choke point, five surfaces
+
+**«نسخه آزمایشی»** now ends every text-bearing message the bot delivers.
+Implemented at the SENDER layer in `telegram.ts` — `withTrialFooter(text,
+cap)` — applied in exactly five places: `sendTelegram` (before payload AND
+before every outbox push — the outbox stores the already-footered text),
+`sendTelegramDirect` (the drain path; idempotent), `editMessageText`
+(menu edits re-compose fresh text — without this the footer would vanish
+on the first tap), and the `sendPhotoBinary` / `sendAnimation` captions
+(cap 1024 = Telegram's caption ceiling). By construction that covers
+notifications, all four digests, /tables, bot menus, admin pages, match
+cards and the UCL GIF banner. `sendSticker` / `sendDice` carry no text at
+all — the footer is physically impossible there.
+
+Safety properties (all unit-pinned in `check-reliability.js`):
+- **MarkdownV2-clean** — the string is Persian letters + space only, zero
+  reserved characters, safe to append raw under every parse mode we use
+  (the live send proof would 400 otherwise).
+- **Idempotent** — an `indexOf` guard means re-sends, outbox drains and
+  menu re-edits never stack two footers.
+- **Fail-open** — a text already at the 4096/1024 ceiling ships WITHOUT
+  the footer rather than crossing the limit and losing the message (the
+  sticker philosophy: the payload outranks the flourish).
+- **Config-gated** — `CONFIG.TRIAL_FOOTER = ""` disables it everywhere;
+  composers stay footer-free (one choke point, not forty).
+
+### Verification
+
+Suite 1702 green (baseline preserved; +19 trialfoot checks: wiring counts,
+five-surface coverage, the pure unit table — append / idempotency /
+boundary fit at exactly 4096 / one-over skip / caption caps / kill
+switch), tsc clean. LIVE end-to-end through the real `sendTelegram` +
+real Bot API: the footered message and the idempotent (single-footer)
+message both DELIVERED to the owner chat, and the rebuilt white-background
+LaLiga sticker delivered via the fresh KV map.
+
+---
+
 ## [13.114-stickers] — 2026-10-17 (league-logo stickers: pictures ride Telegram's own infrastructure)
 
 The owner's idea, verbatim: *"lets create a sticker pack for telegram. so
