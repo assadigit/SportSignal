@@ -104,6 +104,43 @@ layer now matches it.
   the MarkdownV2 validator, and a scoreless twin collapses onto the
   scored copy instead of blanking the line.
 
+### Follow-up 2 — the row-quality ranking in `collapsePairings` (the LIVE Frosinone twin)
+
+The first cut of `collapsePairings` kept "the row that carries a score
+(later wins)". The LIVE pool's Frosinone pairing exposed the hole the
+same night: the TSP twin was `SCHEDULED` carrying a pre-kickoff default
+0-0 — under plain later-wins that twin would have DISPLACED the real
+FINISHED 4-2 row, and the FINISHED render filter would then have dropped
+the pairing entirely (a MISSING digest line instead of a doubled one —
+the same user-visible defect with the sign flipped).
+
+**Fix (`src/digest-night.ts`)**: collapse now ranks row quality —
+`rank = FINISHED(2) + scored(1)`; equal rank keeps the later copy
+(canonDedupe's own watch-order rule). A stale pre-kickoff twin can never
+evict a real result again, whatever its arrival order.
+
+- `scripts/live-nightrender.js` — the live verification harness: the REAL
+  builder + REAL FA dict over the LIVE KV pool; tonight's digest renders
+  each pairing ONCE with real scores — the user's report, minus the
+  duplicate, proven against production data before shipping.
+- `src/fa-dict.ts` +فروزینونه (`Frosinone Calcio` / `Frosinone` — the
+  Serie A side in tonight's digest, a cold-isolate English leak of the
+  v13.108-fasync class; fa-dict VARIANTS gate extended).
+- `check-nightdigest.js` behavioral flipped to the verbatim live twin
+  shape (`SCHEDULED` + 0-0) and now asserts the REAL 4-2 survives
+  (suite 1620).
+
+### Follow-up 3 — the `acf` token (the last fuzzy-scan residual)
+
+Whole-pool scan round three found ONE more live pair: `Genoa CFC` (FD)
+vs `Genoa` (TSP), with `A.C. Fiorentina` live the same night (ids
+`558588` / `tsd-2482192`). `acf` is a generic Italian club prefix
+(Associazione Calcio Fiorentina / Genoa's own legal forms) that never
+distinguishes two clubs in the tracked universe — same class as the
+other five tokens. `NORM_BASE_TOKENS` is now
+`afc|acf|cfc|fsv|us|calcio` — 8 live provider-variant pairs folded.
+Gate: +3 prefixfold checks incl. the Genoa pair end-to-end (suite 1622).
+
 ---
 
 ## [13.109-consolidated] — 2026-10-16 (two-tier eligibility: one-desired fixtures are digest-only)
