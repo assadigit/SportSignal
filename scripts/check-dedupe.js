@@ -123,12 +123,19 @@ check("prefixfold: Cagliari Calcio ≡ Cagliari", normalizeTeamName("Cagliari Ca
 check("prefixfold: Frosinone Calcio ≡ Frosinone", normalizeTeamName("Frosinone Calcio") === normalizeTeamName("Frosinone"));
 check("prefixfold: US Sassuolo Calcio ≡ Sassuolo", normalizeTeamName("US Sassuolo Calcio") === normalizeTeamName("Sassuolo"));
 check("prefixfold: US Lecce ≡ Lecce", normalizeTeamName("US Lecce") === normalizeTeamName("Lecce"));
+check("prefixfold: ACF Fiorentina ≡ Fiorentina (the Genoa-pair away side)", normalizeTeamName("ACF Fiorentina") === normalizeTeamName("Fiorentina"));
 check(
   "prefixfold never over-merges distinct clubs",
   normalizeTeamName("Cagliari Calcio") !== normalizeTeamName("Calcio Como") &&
   normalizeTeamName("AFC Bournemouth") !== normalizeTeamName("AFC Ajax") &&
-  normalizeTeamName("US Sassuolo Calcio") !== normalizeTeamName("Cagliari Calcio")
+  normalizeTeamName("US Sassuolo Calcio") !== normalizeTeamName("Cagliari Calcio") &&
+  normalizeTeamName("ACF Fiorentina") !== normalizeTeamName("AC Milan")
 );
+// The Genoa residual pair (the last fuzzy-scan survivor after the first
+// token pass): FD "Genoa CFC vs ACF Fiorentina" + TSP "Genoa vs Fiorentina".
+const fdGe = { id: 558588, competition: { code: "SA" }, homeTeam: { name: "Genoa CFC" }, awayTeam: { name: "ACF Fiorentina" }, utcDate: "2026-10-10T13:00:00Z", status: "FINISHED" };
+const tsGe = { id: "tsd-2482192", competition: { code: "SA" }, homeTeam: { name: "Genoa" }, awayTeam: { name: "Fiorentina" }, utcDate: "2026-10-10T13:00:00.000Z", status: "SCHEDULED" };
+check("LIVE Genoa pair: CFC + ACF prefix fold collapses to ONE", canonDedupe([fdGe, tsGe]).length === 1);
 // The EXACT residual live pairs, canonDedupe end-to-end (FD id 560595 +
 // tsd-2494053; FD id 558573 + tsd-2482204 — the Frosinone pair whose TSP
 // twin was SCHEDULED and slipped past every FINISHED-filtered surface):

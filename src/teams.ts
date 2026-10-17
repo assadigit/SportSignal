@@ -15,17 +15,18 @@
 // that reintroduces the drift M7 removed. If you touch the token lists here,
 // run `npm test` (all consumers are exercised).
 
-// v13.110-digitfold (follow-up): +afc|cfc|fsv|us|calcio — the SAME live
+// v13.110-digitfold (follow-up): +afc|acf|cfc|fsv|us|calcio — the SAME live
 // duplicate-line disease through provider-prefix gaps the live pool still
 // carried after the digit fold: FD "AFC Bournemouth"/"Genoa CFC"/
-// "1. FSV Mainz 05"/"Cagliari Calcio"/"US Sassuolo Calcio" vs TSP/
-// sportscore "Bournemouth"/"Genoa"/"Mainz"/"Cagliari"/"Sassuolo" (7
-// residual same-fixture pairs in matches_v13_tracked on 2026-10-16).
-// Each token is a verified provider-variant pair from production data —
-// no two distinct clubs in the tracked universe differ by one of these
-// standalone words (they are generic club suffixes: "Unione Sportiva",
-// "Calcio" = football, the English/Italian prefix acronyms).
-const NORM_BASE_TOKENS: string = "fc|cf|sc|ac|as|ssc|bc|ud|cd|kv|jc|fk|nk|gnk|msk|sk|sl|rsc|bsc|jk|tc|pfc|sv|tsg|afc|cfc|fsv|us|calcio";
+// "1. FSV Mainz 05"/"Cagliari Calcio"/"US Sassuolo Calcio"/"ACF Fiorentina"
+// vs TSP/sportscore "Bournemouth"/"Genoa"/"Mainz"/"Cagliari"/"Sassuolo"/
+// "Fiorentina" (8 residual same-fixture pairs in matches_v13_tracked on
+// 2026-10-16/17). Each token is a verified provider-variant pair from
+// production data — no two distinct clubs in the tracked universe differ
+// by one of these standalone words (they are generic club suffixes:
+// "Unione Sportiva", "Calcio" = football, the English/Italian prefix
+// acronyms).
+const NORM_BASE_TOKENS: string = "fc|cf|sc|ac|as|ssc|bc|ud|cd|kv|jc|fk|nk|gnk|msk|sk|sl|rsc|bsc|jk|tc|pfc|sv|tsg|afc|acf|cfc|fsv|us|calcio";
 
 // v13.8-dedupe: provider-transliteration fold. Some providers return the
 // native spelling (München, Köln, Zenit), others the English exonym
