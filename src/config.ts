@@ -1,13 +1,23 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.112-estgate";
+export const VERSION = "13.113-nightgate";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
   API_RETRY_ATTEMPTS: 2,
   API_RETRY_DELAY: 1e3,
   LEAGUES: ["CL", "PL", "PD", "SA", "FL1", "BL1"],
+  // v13.113-alquiet: leagues the BOT must never push — the owner's rule
+  // (2026-10-17): "Do not notify Australia league in the robot." The rows
+  // keep flowing into the pool (the WEBSITE keeps its A-League lists,
+  // finished rows and standings boxes — shouldReport is untouched); every
+  // BOT push surface checks this list first: the individual notification
+  // tier (shouldNotify — covers the engine's cards, HT/postponement alerts
+  // and the audit universe), the big-match kickoff/FT broadcasts, the
+  // morning/week-ahead/night digests. An AL-following user keeps the site
+  // and loses the push — the explicit product trade the owner asked for.
+  BOT_SILENT_LEAGUES: ["AL"],
   // Season-dependent cup phase windows (review/update each August): EL/ECL are
   // in the qualifying phase until their league phase starts (late Sep); the FA
   // Cup's big clubs enter at the First Round Proper (~early Nov). sportscore's

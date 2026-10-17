@@ -10,6 +10,14 @@
 //  8) followed-team line carries the رتبه فعلی rank line
 //  9) fan-out isolation: a build failure is per-chat, never fatal
 // 10) cron-notify passes the merged live pool (ctx.matches)
+// 11) v13.113-nightgate: the valuable-night gate — a random-results night
+//     (the owner's example: Frankfurt–Köln / Frosinone–Sassuolo / Le Mans–
+//     Toulouse / Deportivo–La Coruña) sends NOTHING; UCL nights,
+//     elimination events, and per-chat desired-team nights still send;
+//     bot-silent leagues (AL) leave the night's set entirely.
+// 12) v13.113-cupcover: the elimination detector (stageTok / cupTieShape /
+//     eliminationOf / collectEliminations) + the "X eliminated against Y"
+//     digest section — behavioral on the REAL harness source.
 "use strict";
 const fs = require("fs");
 const src = require("./lib/worker-src")();
@@ -80,7 +88,7 @@ check("night digest step owns its try/catch (never breaks notify)", /Night diges
 // passed into the builder (no Gregorian DD/MM rendered with Persian digits).
 check("fa header renders Jalali (jalaliDateFa), not Gregorian-in-Persian-digits", /jalaliDateFa\(ny, nm, nd\)/.test(nightSrc) && !/toFaDigits\(faDate\)/.test(nightSrc));
 check("en header renders long-form Gregorian (englishDateYmd)", /englishDateYmd\(ny, nm, nd\)/.test(nightSrc));
-check("the caller passes the night's tz-local y/m/d into the builder", /buildNightDigestMessage\(\{ \.\.\.env, TEHRAN_TZ: tz \}, nightMatches, lang, prefs, c, rankCache, \{ y, m, d \}\)/.test(nightSrc));
+check("the caller passes the night's tz-local y/m/d into the builder", /buildNightDigestMessage\(\{ \.\.\.env, TEHRAN_TZ: tz \}, nightMatches, lang, prefs, c, rankCache, \{ y, m, d \}, eliminations\)/.test(nightSrc));
 
 // 12) v13.98-jalalinight — the stale-pool completeness guard: when the 4h
 // defense "resolved" half or more of the night, the pool is stale — defer
@@ -153,6 +161,18 @@ if (dateKeyOf) {
 check("builder collapses same-pairing duplicates before rendering", /nightMatches = collapsePairings\(nightMatches\);/.test(nightSrc));
 check("collapsePairings keys on competition + normalized pairing", /function collapsePairings\(list\) \{/.test(nightSrc) && nightSrc.includes('normalizeTeamName(m.homeTeam.name) + "|" + normalizeTeamName(m.awayTeam.name)'));
 
+// 14) v13.113-nightgate — the valuable-night gate (the owner's rule):
+// bot-silent leagues leave the night's set entirely; a chat with no UCL,
+// no elimination and no desired team that night is QUIET — skipped BEFORE
+// the dedupe read+write (a quiet night costs ZERO KV ops); the elimination
+// events are computed over the FULL pool (two-leg twins included).
+check("nightgate: bot-silent leagues leave the night's set (AL filter)", nightSrc.includes("nightMatches.filter((mm) => mm && !isBotSilentLeague(mm.competition && mm.competition.code))"));
+check("nightgate: every chat passes nightIsValuable before the dedupe read", /if \(!nightIsValuable\(nightMatches, eliminations, prefs, c\)\) \{ out\.quiet\+\+; continue; \}/.test(nightSrc));
+check("nightgate: the gate precedes the dedupe read (quiet = zero KV ops)", nightSrc.indexOf("if (!nightIsValuable(") < nightSrc.indexOf("await env.STATE.get(dedupeKey)"));
+check("nightgate: eliminations are computed over the full pool", /const eliminations = collectEliminations\(nightMatches, pool\);/.test(nightSrc));
+check("nightgate: the out counters carry quiet", /notOver: 0, quiet: 0 \}/.test(nightSrc));
+check("nightgate: the builder takes the eliminations param", /nightYmd\?, eliminations\?\) \{/.test(nightSrc));
+
 // Behavioral: render the REAL builder with the EXACT live-pool rows from
 // that night (FD id 565828 + spsc-2026-10-16-BL1-36, identical 1-0) plus a
 // distinct second match — the Frankfurt line must appear ONCE while the
@@ -191,6 +211,9 @@ check("collapsePairings keys on competition + normalized pairing", /function col
     grabSrc(/function collapsePairings\([^)]*\) \{[\s\S]*?\n\}/),
     grabSrc(/async function teamRank\([^)]*\) \{[\s\S]*?\n\}/),
     grabSrc(/function findTeamRow\([^)]*\) \{[\s\S]*?\n\}/),
+    // v13.113-cupcover: the elimination section renderer rides the same
+    // eval scope as the builder that calls it.
+    grabSrc(/function renderEliminationSection\([^)]*\) \{[\s\S]*?\n\}/),
     grabSrc(/async function buildNightDigestMessage\([^)]*\) \{[\s\S]*?\n\}/),
     "return buildNightDigestMessage;",
     "})()"
@@ -220,8 +243,121 @@ check("collapsePairings keys on competition + normalized pairing", /function col
     const noScoreTwin = { id: "spsc-late", competition: { code: "BL1" }, homeTeam: { name: "Eintracht Frankfurt" }, awayTeam: { name: "FC Köln" }, utcDate: "2026-10-16T18:30:00.000Z", status: "FINISHED", score: null };
     const nightMsg2 = await buildNight({ TEHRAN_TZ: "Europe/Berlin" }, [noScoreTwin, fdRow], "fa", { "9": {} }, 9, new Map(), { y: 2026, m: 10, d: 16 });
     check("behavioral: scoreless twin collapses onto the scored copy (score kept)", (nightMsg2.match(/Frankfurt/g) || []).length === 1 && (nightMsg2.match(/۱ \\- ۰/g) || []).length === 1);
+
+    // =============================================================
+    // v13.113-cupcover behavioral: the elimination section — the owner's
+    // "always cover elimination cups: Club X eliminated against Y". The
+    // completing row renders in the ELIMINATION section (grouped by
+    // competition, loser named first), never a second time as a plain
+    // "نتایج شب" line, and the whole message still parses MarkdownV2.
+    // =============================================================
+    const cupRow = { id: 700001, competition: { code: "FA_CUP" }, homeTeam: { name: "Liverpool FC" }, awayTeam: { name: "Ipswich Town FC" }, utcDate: "2026-11-07T15:00:00Z", status: "FINISHED", stage: "3RD_ROUND", score: { fullTime: { home: 2, away: 0 } } };
+    const elimEv = { code: "FA_CUP", home: "Liverpool FC", away: "Ipswich Town FC", loser: "Ipswich Town FC", winner: "Liverpool FC", final: false, agg: null };
+    const nightMsg3 = await buildNight({ TEHRAN_TZ: "Europe/Berlin" }, [cupRow, fdRow], "fa", { "9": {} }, 9, new Map(), { y: 2026, m: 11, d: 7 }, [elimEv]);
+    check("cupcover: the elimination line renders (Ipswich eliminated by Liverpool)", nightMsg3.includes("حذف شد") && nightMsg3.includes("Ipswich Town FC") && nightMsg3.includes("مقابل"));
+    check("cupcover: the elimination section is grouped by competition (FA_CUP label, mdItalic-escaped)", nightMsg3.includes("FA\\_CUP"));
+    check("cupcover: the eliminated pairing leaves the plain-results section (one line only)", (nightMsg3.match(/Ipswich Town FC/g) || []).length === 1 && (nightMsg3.match(/Liverpool FC/g) || []).length === 1);
+    check("cupcover: the non-cup row still renders in نتایج شب", (nightMsg3.match(/Frankfurt/g) || []).length === 1);
+    check("cupcover: the elimination digest parses (MarkdownV2)", mdv2Safe(nightMsg3));
+    // a two-leg aggregate elimination renders the مجموع suffix (fa digits,
+    // escaped hyphen); the final flag renders در فینال.
+    const elimEv2 = { code: "CL", home: "Arsenal FC", away: "FC Porto", loser: "FC Porto", winner: "Arsenal FC", final: false, agg: { w: 3, l: 1 } };
+    const nightMsg4 = await buildNight({ TEHRAN_TZ: "Europe/Berlin" }, [fdRow], "fa", { "9": {} }, 9, new Map(), { y: 2026, m: 3, d: 18 }, [elimEv2]);
+    check("cupcover: the aggregate suffix renders (مجموع ۳ \\- ۱)", nightMsg4.includes("مجموع") && nightMsg4.includes("۳ \\- ۱"));
+    check("cupcover: the aggregate digest parses (MarkdownV2)", mdv2Safe(nightMsg4));
+    const elimFinal = { code: "CL", home: "Paris Saint-Germain", away: "Inter Milan", loser: "Inter Milan", winner: "Paris Saint-Germain", final: true, agg: null };
+    const nightMsg5 = await buildNight({ TEHRAN_TZ: "Europe/Berlin" }, [fdRow], "en", { "9": {} }, 9, new Map(), { y: 2026, m: 5, d: 30 }, [elimFinal]);
+    check("cupcover: the final flag renders (en: 'in the final')", nightMsg5.includes("in the final") && nightMsg5.includes("eliminated by"));
+    check("cupcover: the en elimination digest parses (MarkdownV2)", mdv2Safe(nightMsg5));
   } else {
     check("buildNightDigestMessage found in harness source", false);
+  }
+
+  // =============================================================
+  // v13.113-nightgate behavioral: nightIsValuable on the REAL source —
+  // the owner's rule, all three triggers + the per-chat resolution.
+  // =============================================================
+  const gatePiece = grabSrc(/function nightIsValuable\([^)]*\) \{[\s\S]*?\n\}/);
+  if (gatePiece) {
+    const follows = (prefs, chatId, m) => {
+      const teams = ((prefs || {})[String(chatId)] || {}).teams || [];
+      return teams.some((t) => t === (m.homeTeam && m.homeTeam.name) || t === (m.awayTeam && m.awayTeam.name)) ? "one" : null;
+    };
+    globalThis.userFollowsMatch = follows;
+    const nightIsValuable = eval("(() => { " + gatePiece + "; return nightIsValuable; })()");
+    const rndBL1 = { competition: { code: "BL1" }, homeTeam: { name: "Eintracht Frankfurt" }, awayTeam: { name: "1. FC Köln" }, status: "FINISHED" };
+    const rndSA = { competition: { code: "SA" }, homeTeam: { name: "Frosinone Calcio" }, awayTeam: { name: "US Sassuolo Calcio" }, status: "FINISHED" };
+    const rndFL1 = { competition: { code: "FL1" }, homeTeam: { name: "Le Mans" }, awayTeam: { name: "Toulouse" }, status: "FINISHED" };
+    const rndPD = { competition: { code: "PD" }, homeTeam: { name: "Deportivo La Coruña" }, awayTeam: { name: "Levante" }, status: "FINISHED" };
+    const uclRow = { competition: { code: "CL" }, homeTeam: { name: "PSV Eindhoven" }, awayTeam: { name: "Girona FC" }, status: "FINISHED" };
+    const livRow = { competition: { code: "PL" }, homeTeam: { name: "Liverpool FC" }, awayTeam: { name: "Everton FC" }, status: "FINISHED" };
+    // THE OWNER'S EXAMPLE — the exact 2026-10-17 noise report: a digest of
+    // random league results nobody asked for. Now quiet: no send, no
+    // dedupe write, nothing.
+    check("gate: the owner's example night is QUIET (random league results only)", nightIsValuable([rndBL1, rndSA, rndFL1, rndPD], [], {}, 9) === false);
+    check("gate: a UCL night is valuable (even with no desired side)", nightIsValuable([rndBL1, uclRow], [], {}, 9) === true);
+    check("gate: an elimination event is ALWAYS valuable", nightIsValuable([rndBL1], [{ code: "FA_CUP", loser: "x", winner: "y" }], {}, 9) === true);
+    const prefs9 = { "9": { teams: ["Liverpool FC"] }, "8": { teams: ["Arsenal FC"] } };
+    check("gate: a desired-team night is valuable for THE follower (chat 9)", nightIsValuable([rndBL1, livRow], [], prefs9, 9) === true);
+    check("gate: another chat's desired team does not open chat 8's gate (per-chat)", nightIsValuable([rndBL1, livRow], [], prefs9, 8) === false);
+    check("gate: UCL outranks the per-chat resolution (both chats)", nightIsValuable([livRow, uclRow], [], prefs9, 8) === true);
+    globalThis.userFollowsMatch = () => null; // restore the earlier stub
+  } else {
+    check("nightIsValuable found in harness source", false);
+  }
+
+  // =============================================================
+  // v13.113-cupcover behavioral: the elimination detector on the REAL
+  // source (stageTok / cupTieShape / eliminationOf / collectEliminations)
+  // — the tie-shape table, the failure direction (toward silence), the
+  // two-leg aggregate, and the dedupe.
+  // =============================================================
+  globalThis.CONFIG = { INTL_COMPETITIONS: { WC: 2000, EC: 2018, COPA: 2029, AFCON: 2088, AFC: 2092 } };
+  globalThis.isDomesticCup = (c) => ["FA_CUP", "EFL_CUP", "CDR", "COPPA_ITALIA", "DFB_POKAL"].includes(c);
+  const cePieces = [
+    grabSrc(/function stageTok\(m\) \{[\s\S]*?\n\}/),
+    grabSrc(/function cupTieShape\([^)]*\) \{[\s\S]*?\n\}/),
+    grabSrc(/function ftFullTime\(m\) \{[\s\S]*?\n\}/),
+    grabSrc(/function findTwinLeg\([^)]*\) \{[\s\S]*?\n\}/),
+    grabSrc(/function eliminationOf\([^)]*\) \{[\s\S]*?\n\}/),
+    grabSrc(/function collectEliminations\([^)]*\) \{[\s\S]*?\n\}/)
+  ];
+  if (cePieces.every(Boolean)) {
+    const ce = eval("(() => { " + cePieces.join("\n") + "; return { stageTok, cupTieShape, eliminationOf, collectEliminations }; })()");
+    // stageTok — FD enums + sportscore free-text + the trap orders.
+    check("cupelim: stageTok FD enums (rounds, semis, final, league)", ce.stageTok({ stage: "3RD_ROUND" }) === "RD3" && ce.stageTok({ stage: "SEMI_FINALS" }) === "SEMI" && ce.stageTok({ stage: "FINAL" }) === "FINAL" && ce.stageTok({ stage: "LEAGUE_STAGE" }) === "LEAGUE" && ce.stageTok({ stage: "PLAYOFF_ROUND" }) === "PLAYOFF" && ce.stageTok({ stage: "1ST_ROUND" }) === "RD1");
+    check("cupelim: stageTok sportscore free-text (Round of 16, QF, 3rd place…)", ce.stageTok({ roundRaw: "Round of 16" }) === "R16" && ce.stageTok({ roundRaw: "Quarter-finals" }) === "QF" && ce.stageTok({ roundRaw: "Semi Final" }) === "SEMI" && ce.stageTok({ roundRaw: "Final" }) === "FINAL" && ce.stageTok({ roundRaw: "3rd place" }) === "THIRD" && ce.stageTok({ roundRaw: "First Round" }) === "RD1");
+    check("cupelim: 'Third Round'/'3rd Round' are RD3 — never the third-place playoff", ce.stageTok({ roundRaw: "Third Round" }) === "RD3" && ce.stageTok({ roundRaw: "3rd Round" }) === "RD3");
+    check("cupelim: roundRaw outranks stage; REGULAR_SEASON means no round", ce.stageTok({ roundRaw: "Round 3", stage: "REGULAR_SEASON" }) === "RD3" && ce.stageTok({ stage: "REGULAR_SEASON" }) === null && ce.stageTok({}) === null);
+    // cupTieShape — the tie-shape table.
+    check("cupelim: CL league phase has NO elimination semantics", ce.cupTieShape("CL", "LEAGUE") === null);
+    check("cupelim: CL knockout two-leg, final single (EL/ECL playoff too)", ce.cupTieShape("CL", "R16") === "two-leg" && ce.cupTieShape("CL", "QF") === "two-leg" && ce.cupTieShape("CL", "SEMI") === "two-leg" && ce.cupTieShape("CL", "FINAL") === "single" && ce.cupTieShape("EL", "PLAYOFF") === "two-leg");
+    check("cupelim: domestic cups are single-leg knockout football", ce.cupTieShape("FA_CUP", "RD3") === "single" && ce.cupTieShape("CDR", "R16") === "single" && ce.cupTieShape("DFB_POKAL", "RD2") === "single" && ce.cupTieShape("HAZFI_CUP", "RD2") === "single");
+    check("cupelim: two-legged domestic semis (EFL/CDR/Coppa) vs single (FA/DFB)", ce.cupTieShape("EFL_CUP", "SEMI") === "two-leg" && ce.cupTieShape("CDR", "SEMI") === "two-leg" && ce.cupTieShape("COPPA_ITALIA", "SEMI") === "two-leg" && ce.cupTieShape("FA_CUP", "SEMI") === "single" && ce.cupTieShape("DFB_POKAL", "SEMI") === "single");
+    check("cupelim: leagues / groups / third-place / qualifiers never claim", ce.cupTieShape("PL", "R16") === null && ce.cupTieShape("WC", "LEAGUE") === null && ce.cupTieShape("FA_CUP", "THIRD") === null && ce.cupTieShape("CL", "QUAL") === null);
+    check("cupelim: World Cup knockouts are single-leg", ce.cupTieShape("WC", "QF") === "single" && ce.cupTieShape("WC", "FINAL") === "single" && ce.cupTieShape("WC", "PLAYOFF") === null);
+    // eliminationOf — single-leg, draws, leagues, finals.
+    const faCupRow = (h, a, hs, as, stage) => ({ competition: { code: "FA_CUP" }, homeTeam: { name: h }, awayTeam: { name: a }, utcDate: "2026-11-07T15:00:00Z", status: "FINISHED", stage, score: { fullTime: { home: hs, away: as } } });
+    check("cupelim: single-leg FT loser is eliminated (Ipswich out)", (() => { const ev = ce.eliminationOf(faCupRow("Liverpool FC", "Ipswich Town FC", 2, 0, "3RD_ROUND"), []); return !!ev && ev.loser === "Ipswich Town FC" && ev.winner === "Liverpool FC" && ev.final === false && ev.agg === null; })());
+    check("cupelim: a draw eliminates nobody (replay/ET-unknown)", ce.eliminationOf(faCupRow("Liverpool FC", "Ipswich Town FC", 1, 1, "3RD_ROUND"), []) === null);
+    check("cupelim: a non-FINISHED cup match claims nothing", ce.eliminationOf(Object.assign(faCupRow("Liverpool FC", "Ipswich Town FC", 2, 0, "3RD_ROUND"), { status: "IN_PLAY" }), []) === null);
+    check("cupelim: a league FINISHED match never claims", ce.eliminationOf({ competition: { code: "PL" }, homeTeam: { name: "A FC" }, awayTeam: { name: "B FC" }, utcDate: "2026-11-07T15:00:00Z", status: "FINISHED", stage: "REGULAR_SEASON", score: { fullTime: { home: 3, away: 1 } } }, []) === null);
+    check("cupelim: CL league phase never claims", ce.eliminationOf({ competition: { code: "CL" }, homeTeam: { name: "A FC" }, awayTeam: { name: "B FC" }, utcDate: "2026-11-07T15:00:00Z", status: "FINISHED", stage: "LEAGUE_STAGE", score: { fullTime: { home: 3, away: 1 } } }, []) === null);
+    check("cupelim: the FINAL carries the final flag (loser named)", (() => { const ev = ce.eliminationOf(faCupRow("Paris Saint-Germain", "Inter Milan", 1, 0, "FINAL"), []); return !!ev && ev.final === true && ev.loser === "Inter Milan"; })());
+    // eliminationOf — the two-leg aggregate.
+    const leg1 = { id: "l1", competition: { code: "CL" }, homeTeam: { name: "FC Porto" }, awayTeam: { name: "Arsenal FC" }, utcDate: "2026-02-10T20:00:00Z", status: "FINISHED", stage: "ROUND_OF_16", score: { fullTime: { home: 1, away: 1 } } };
+    const leg2 = { id: "l2", competition: { code: "CL" }, homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "FC Porto" }, utcDate: "2026-03-18T20:00:00Z", status: "FINISHED", stage: "ROUND_OF_16", score: { fullTime: { home: 2, away: 0 } } };
+    check("cupelim: a completed two-leg tie aggregates (Porto out 1-3)", (() => { const ev = ce.eliminationOf(leg2, [leg1, leg2]); return !!ev && ev.loser === "FC Porto" && ev.winner === "Arsenal FC" && ev.agg && ev.agg.w === 3 && ev.agg.l === 1; })());
+    check("cupelim: leg 1 alone claims nothing (the twin is still TIMED)", (() => { const leg2up = Object.assign({}, leg2, { status: "TIMED" }); return ce.eliminationOf(leg1, [leg1, leg2up]) === null; })());
+    check("cupelim: a level aggregate stays silent (pens unknown post-slim)", (() => { const leg1x = Object.assign({}, leg1, { score: { fullTime: { home: 2, away: 0 } } }); return ce.eliminationOf(leg2, [leg1x, leg2]) === null; })());
+    check("cupelim: a same-day twin is a dup row, not a leg (48h fence)", (() => { const twin = Object.assign({}, leg1, { id: "dup", utcDate: "2026-03-18T18:00:00Z" }); return ce.eliminationOf(leg2, [twin, leg2]) === null; })());
+    check("cupelim: a different-stage same-pairing row is no twin", (() => { const other = Object.assign({}, leg1, { id: "qf", stage: "QUARTER_FINALS" }); return ce.eliminationOf(leg2, [other, leg2]) === null; })());
+    // collectEliminations — the pairing dedupe.
+    check("cupelim: collectEliminations dedupes a provider-duplicated tie", (() => { const dup = Object.assign({}, leg2, { id: "spsc-dup" }); const evs = ce.collectEliminations([leg2, dup], [leg1, leg2, dup]); return evs.length === 1 && evs[0].loser === "FC Porto"; })());
+    check("cupelim: collectEliminations over a quiet league night is empty", ce.collectEliminations([rndBL1Quiet()], []).length === 0);
+    function rndBL1Quiet() { return { competition: { code: "BL1" }, homeTeam: { name: "Eintracht Frankfurt" }, awayTeam: { name: "1. FC Köln" }, utcDate: "2026-10-16T18:30:00Z", status: "FINISHED", score: { fullTime: { home: 1, away: 0 } } }; }
+  } else {
+    check("cup-elim functions found in harness source", false);
   }
   console.log(fails ? `\n${fails} FAIL` : "\nAll night-digest checks passed");
   process.exit(fails ? 1 : 0);

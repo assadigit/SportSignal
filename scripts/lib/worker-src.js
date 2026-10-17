@@ -98,6 +98,10 @@ function workerSrc() {
     // weekly/morning/bigmatch/coronation digests + engine/status/audit
     // notify modules. All harness deps are grab-based (position-independent)
     // or content-span regexes (#nospam6 spans within digest-morning).
+    // v13.113-nightgate: cup-elim.ts (the elimination-event detector) sits
+    // right before the digest group — its only consumer is digest-night.ts;
+    // grab-based, position-independent.
+    "cup-elim.ts",
     "digest-weekly.ts", "digest-morning.ts", "digest-night.ts", "digest-bigmatch.ts", "digest-coronation.ts",
     // v13.99-uclgif: the UCL night preview (GIF + fixture times). Sits after
     // the digest group (imports tzOffsetMs/dateKeyOf/matchesOfLocalDate FROM

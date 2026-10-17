@@ -274,8 +274,18 @@ const advMatch = Object.assign({}, faMatch, {
     // direct-eval consumers.
     "var __nightCollapseNorm = require('../src/teams.ts').normalizeTeamName;",
     untype(grabFn("function collapsePairings(list)")).replace(/normalizeTeamName/g, "__nightCollapseNorm"),
-    untype(grabFn("async function buildNightDigestMessage(env, nightMatches, lang, prefs, chatId, rankCache, nightYmd)"))
+    // v13.113-cupcover: the elimination section renderer rides the same
+    // eval scope (its free refs — translateTeam/translateCompetition/
+    // toFaDigits/escapeMarkdownCharacters/mdItalic — resolve through this
+    // module scope at call time).
+    untype(grabFn("function renderEliminationSection(eliminations, en)")),
+    untype(grabFn("async function buildNightDigestMessage(env, nightMatches, lang, prefs, chatId, rankCache, nightYmd, eliminations)"))
   ].join("\n"));
+  // v13.113-cupcover: the builder's elimKeys computation (which rows the
+  // elimination section owns) reads normalizeTeamName — resolved at CALL
+  // time through this stub (the REAL fold rides collapsePairings as
+  // __nightCollapseNorm; identical to the notify-status section's stub).
+  globalThis.normalizeTeamName = (n) => String(n || "").toLowerCase();
   const prefs = { "42": { lang: "fa", teams: ["Arsenal FC"] } };
   const rankCache = new Map([["PL", null]]);
   const nightMatches = [finMatch, Object.assign({}, faMatch, { id: 561003, homeTeam: { name: "Newcastle United FC" }, awayTeam: { name: "Everton FC" }, status: "FINISHED", score: { fullTime: { home: 0, away: 3 } } })];
@@ -286,6 +296,23 @@ const advMatch = Object.assign({}, faMatch, {
   check("night digest followed-team verdict carries a BOLD team + BOLD score", nEnt.bold.some((b) => b.includes("Arsenal FC")) && nEnt.bold.some((b) => b === "۲ \\- ۱"));
   check("night digest 'نتایج شب' group label is ITALIC", nEnt.italic.some((c) => c.includes("Premier League")));
   check("night digest other-result score is BOLD", nEnt.bold.some((b) => b === "۰ \\- ۳"));
+
+  // --- v13.113-cupcover: the elimination section through the REAL builder ---
+  // the "always cover elimination cups" surface: the loser line renders
+  // (❌ + ADVERSARIAL names escaped, the aggregate PLAIN-escaped fa digits),
+  // the competition label is ITALIC like the results groups, the eliminated
+  // pairing stays OUT of نتایج شب (one line only), and it all still parses.
+  const elimMatch = Object.assign({}, advMatch, { id: 700002, competition: { code: "FA_CUP" }, stage: "3RD_ROUND", status: "FINISHED", score: { fullTime: { home: 2, away: 0 } } });
+  const elimEv = { code: "FA_CUP", home: "Ali (X). United", away: "B-Team_FC", loser: "B-Team_FC", winner: "Ali (X). United", final: false, agg: { w: 3, l: 1 } };
+  const rndRow = Object.assign({}, faMatch, { id: 700004, homeTeam: { name: "Newcastle United FC" }, awayTeam: { name: "Everton FC" }, status: "FINISHED", score: { fullTime: { home: 0, away: 3 } } });
+  const nightElim = await buildNightDigestMessage(env, [elimMatch, rndRow], "fa", prefs, 42, rankCache, { y: 2026, m: 11, d: 7 }, [elimEv]);
+  const neEnt = mdv2Entities(nightElim);
+  check("night digest elimination section (fa, adversarial) parses", mdv2Safe(nightElim));
+  check("night digest elimination line names the loser (حذف شد + مقابل)", nightElim.includes("حذف شد") && nightElim.includes("مقابل"));
+  check("night digest elimination comp label is ITALIC with escaped content (_FA\\_CUP_)", nightElim.includes("_FA\\_CUP_"));
+  check("night digest elimination aggregate renders PLAIN + fa digits (مجموع)", nightElim.includes("مجموع") && nightElim.includes("۳ \\- ۱"));
+  check("night digest eliminated pairing leaves نتایج شب (the loser appears ONCE)", (nightElim.match(/B\\-Team\\_FC/g) || []).length === 1);
+  check("night digest the un-followed league row still rides نتایج شب", nightElim.includes("Newcastle United FC"));
 
   // --- UCL night preview ---
   eval([
@@ -308,6 +335,9 @@ const advMatch = Object.assign({}, faMatch, {
   globalThis.CONFIG = Object.assign(globalThis.CONFIG || {}, { KV_MATCHES_KEY: "matches_v13_tracked", WEEK_AHEAD_DAYS: 7 });
   globalThis.shouldNotify = () => true;
   globalThis.shouldReport = () => true; // v13.109: buildWeekAheadMessage reads the consolidated tier
+  // v13.113-alquiet: the week-ahead builder also reads the bot-silent gate
+  // (AL rows never ride the robot's weekly message).
+  globalThis.isBotSilentLeague = () => false;
   globalThis.isDerby = () => false;
   globalThis.isMasterPair = () => false;
   globalThis.getCachedMatches = async () => [];

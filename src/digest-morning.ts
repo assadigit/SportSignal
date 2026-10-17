@@ -13,6 +13,9 @@ import { mdBold, mdItalic, mdEscape } from "./md";
 import { translateTeam, translateCompetition } from "./translate";
 import { sendTelegram } from "./telegram";
 import { getUserPrefs, getUserTz, isMasterBigMatch } from "./users";
+// v13.113-alquiet: the bot-silent league gate — the morning digest lists no
+// AL big-vs-big either (the owner's rule).
+import { isBotSilentLeague } from "./match-classify";
 import { getCachedMatches } from "./match-pool";
 
 // v12.x-cron-gaps: matchday morning digest. Fires ONCE per chat per day at
@@ -72,6 +75,7 @@ export async function maybeSendMorningDigest(env: Env, chatIds) {
     }
     const todayBig = matches.filter((m) =>
       m && m.competition && m.competition.code &&
+      !isBotSilentLeague(m.competition.code) &&
       isMasterBigMatch(m) &&
       m.status !== "FINISHED" &&
       (function () { const tt = new Date(m.utcDate).getTime(); return tt >= dayStart && tt < dayEnd; })()

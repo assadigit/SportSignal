@@ -120,10 +120,12 @@ export async function runNotifyPhase(env: Env, ctx) {
   // sentences + current table rank. Fires when the tz-local matchday is
   // over (all FINISHED / resolved); the merged live pool rides in via ctx
   // so tonight's statuses are final minutes before the KV pool persists
-  // them. Own try/catch; subrequest-wall-guarded inside.
+  // them. v13.113-nightgate: only VALUABLE nights send — UCL nights, nights
+  // with an elimination event, or nights this chat's desired teams played.
+  // Own try/catch; subrequest-wall-guarded inside.
   try {
     const nd = await maybeSendNightDigest(env, chatIds, matches);
-    if (nd && (nd.sent || nd.notOver)) console.log(`\u{1F319} Night digest: sent=${nd.sent} skipped=${nd.skipped} notOver=${nd.notOver}`);
+    if (nd && (nd.sent || nd.notOver || nd.quiet)) console.log(`\u{1F319} Night digest: sent=${nd.sent} skipped=${nd.skipped} notOver=${nd.notOver} quiet=${nd.quiet}`);
   } catch (e) {
     console.error("Night digest step failed: " + e.message);
   }

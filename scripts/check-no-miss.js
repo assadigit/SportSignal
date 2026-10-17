@@ -380,6 +380,9 @@ var MEM_DEDUPE = new Set();
   async function getUserPrefs() { return {}; }
   function shouldNotify() { return true; }
   function isMasterBigMatch() { return true; }
+  // v13.113-alquiet: the big-match broadcasts filter bot-silent leagues
+  // (AL) — identity-false here (this harness's fixtures are PL/CL).
+  function isBotSilentLeague() { return false; }
   const COMP_EN = {};
   // v13.106-mdstyle: detectStatusChanges builds entity-styled messages —
   // slice the REAL md builders in alongside it (same grab discipline).

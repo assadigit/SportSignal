@@ -52,7 +52,10 @@ const CONFIG = {
     SA: ["Inter Milan", "AC Milan"],
     FL1: ["Paris Saint-Germain"]
   },
-  DOMESTIC_CUP_IDS: { FA_CUP: 2055 }
+  DOMESTIC_CUP_IDS: { FA_CUP: 2055 },
+  // v13.113-alquiet: mirror the production bot-silent gate (AL) — the
+  // grabbed shouldNotify reads it through this CONFIG.
+  BOT_SILENT_LEAGUES: ["AL"]
 };
 const isQuarterFinalOrLater = () => false;
 const translateTeam = (n) => n;
@@ -86,7 +89,11 @@ const aliasSrc = grabVarBalanced("TEAM_ALIASES") + "\n" + grabFn("function normA
 // re-evals below resolve it through this module scope too).
 const uclSrc = grabVar("UCL_PARTICIPANTS") + "\n" + grabFn("function setUclParticipants(names)") + "\n" + grabFn("function clearUclParticipants()") + "\n" + grabFn("function isUclParticipant(name)");
 const teamNormSrc = grabFn("function teamNormCache()");
-const shouldNotifySrc = grabFn("function shouldNotify(match)") + "\n" + grabFn("function shouldReport(match)");
+// v13.113-alquiet: shouldNotify's first verdict reads the bot-silent gate
+// (isBotSilentLeague — AL never pushes; CONFIG.BOT_SILENT_LEAGUES rides
+// the CONFIG already in this eval scope).
+const botSilentSrc = grabFn("function isBotSilentLeague(code)");
+const shouldNotifySrc = botSilentSrc + "\n" + grabFn("function shouldNotify(match)") + "\n" + grabFn("function shouldReport(match)");
 const featSrc = grabVar("BIG_MATCH_TEAMS") + "\n" + grabVar("BIG_MATCH_UEFA") + "\n" + grabFn("function isFeaturedMatch(match)") + "\n" + grabFn("function pickHeroMatch(matches)"); // v13.73-herotruth: the shared hero expression fetchPublicMatches now calls
 const derbyBlockSrc = grabVarBalanced("DERBY_PAIRS") + "\n" + grabVarBalanced("DERBY_NORM") + "\n" + grabFn("function isDerby(match)") + "\n" + grabVarBalanced("RIVALRY_PAIRS") + "\n" + grabVarBalanced("RIVALRY_NORM") + "\n" + grabFn("function rivalryName(match, lang, allowUcl)");
 const livesSrc = grabFn("function isLiveStatus(status)") + "\n" + grabFn("function applyLiveDetail(m, detail)") + "\n" + grabFn("async function enrichLiveMatches(env, matches)");

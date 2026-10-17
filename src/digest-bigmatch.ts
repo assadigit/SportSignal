@@ -13,6 +13,9 @@ import { getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, recordDe
 import { pruneChats } from "./user-store";
 import { sendTelegram } from "./telegram";
 import { getRegisteredChats, getUserPrefs, groupChatsByTz, userFollowsMatch, isMasterBigMatch } from "./users";
+// v13.113-alquiet: the bot-silent league gate — AL big-vs-big clashes are
+// site content, not broadcasts (the owner's rule).
+import { isBotSilentLeague } from "./match-classify";
 
 // only fires for users following at least one team in the match \u2014 so a
 // UCL blockbuster (Real Madrid vs Man City) only notifies users who
@@ -27,6 +30,7 @@ export async function broadcastBigMatchResults(env: Env, matches) {
     if (!Array.isArray(matches) || !matches.length) return out;
     const candidates = matches.filter((m) =>
       m && isMatchFinished(m) && isWithinPostMatchWindow(m, env) && isMasterBigMatch(m)
+      && !isBotSilentLeague(m.competition && m.competition.code)
     );
     if (!candidates.length) return out;
     const chatIds = await getRegisteredChats(env);
@@ -117,6 +121,7 @@ export async function broadcastBigMatchKickoff(env: Env, matches) {
     if (!Array.isArray(matches) || !matches.length) return out;
     const candidates = matches.filter((m) =>
       m && isMatchStartingNow(m, env) && isMasterBigMatch(m)
+      && !isBotSilentLeague(m.competition && m.competition.code)
     );
     if (!candidates.length) return out;
     const chatIds = await getRegisteredChats(env);

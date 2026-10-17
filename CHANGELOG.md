@@ -6,6 +6,110 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.113-nightgate] — 2026-10-17 (AL bot-silence + the valuable-night digest gate + always-covered cup eliminations)
+
+The owner's three rules, same message:
+
+1. *"Do not notify Australia league in the robot."*
+2. *"Do not always show خلاصه شب — keep it only for the UCL nights leagues,
+   or the nights when at least 1 of the desired teams had a match that
+   night/day"* (with a pasted example of the noise: a digest whose entire
+   body was Frankfurt–Köln / Frosinone–Sassuolo / Le Mans–Toulouse /
+   Deportivo–La Coruña — *"none of those worth watching or mentioning"*).
+3. *"But always cover elimination cups. for example Club x eliminated
+   against…"*
+
+### 1. v13.113-alquiet — the A-League leaves the BOT, keeps the WEBSITE
+
+`CONFIG.BOT_SILENT_LEAGUES: ["AL"]` + one predicate (`isBotSilentLeague`,
+match-classify.ts) consulted by every bot push surface:
+
+- `shouldNotify` returns false FIRST for silent leagues — covers the
+  engine's individual cards, the HT/postponement alerts (notify-status)
+  and the audit universe (no false gap alerts for AL) in one gate.
+- Big-match kickoff/FT broadcasts (digest-bigmatch) — a Melbourne
+  Victory–Sydney FC both-desired clash is site content, not an
+  all-chats broadcast.
+- Morning digest, week-ahead digest, night digest — no AL line, ever.
+- **Untouched on purpose**: `shouldReport` (pool retention, the website's
+  A-League lists/finished rows/standings boxes), `/next`, SEO. The league
+  loses its robot life only — the exact scope the owner asked for.
+
+### 2. v13.113-nightgate — the valuable-night gate
+
+`nightIsValuable(nightMatches, eliminations, prefs, chatId)` (digest-night,
+pure + exported): a night digest exists ONLY for (a) a UCL night (≥1 CL
+match — the digest's founding product), (b) an elimination event, or (c)
+THIS chat's desired teams playing that night — the same resolution the
+"your teams" section uses (explicit follows → master fallback), so the
+gate is per-chat. Quiet nights skip BEFORE the dedupe read+write — a
+quiet night now costs ZERO KV ops (the gate is also a quota cut). Bot-silent
+leagues leave the night's set entirely (they can't gate, render, or block
+the completeness check). New `quiet` counter in the tick log.
+
+### 3. v13.113-cupcover — "Club X eliminated against Y", always covered
+
+New `src/cup-elim.ts` — the elimination detector:
+
+- **stageTok**: canonical round tokens from `roundRaw || stage` (FD enums +
+  sportscore free-text), with the round-pattern-before-third/semi/final
+  ordering the site's roundLabel already documents ("3rd Round" is a cup
+  early round, never the third-place playoff).
+- **cupTieShape**: CL/EL/ECL league phase = no elimination semantics;
+  their knockout playoff/R16/QF/SF = two-legged, FINAL single; domestic
+  cups (FA/EFL/CDR/Coppa/DFB + Hazfi) = single-leg knockout, EXCEPT the
+  EFL/CDR/Coppa/Hazfi semis (two-leg) — FA Cup (Wembley semis, no
+  replays) and DFB Pokal stay single; WC/EC/COPA/AFCON/AFC knockouts
+  single-leg, groups/qualifying never claim.
+- **eliminationOf**: single-leg FT loser (draws claim nothing — replay/
+  ET-unknown), two-leg ties aggregate over the twin leg found in the pool
+  (≥48h apart, same round token + pairing, both FINISHED; a level
+  aggregate stays silent — pens are unknown post-v13.111 slim). Failure
+  direction is always toward silence: a false "X eliminated" is worse
+  than a missed phrasing.
+- **The digest renders a new section** between "your teams" and
+  "نتایج شب": `حذف‌شدگان جام‌های حذفی` / `Cup eliminations` — grouped by
+  competition (🏆 italic labels like the results groups), each line
+  "❌ X مقابل Y حذف شد" (+ "در فینال" for finals, "(مجموع ۳ \- ۱)" for
+  aggregates; en: "❌ X eliminated by Y (agg. 3-1)"). The eliminated
+  pairing leaves the plain-results section — one line per tie. The
+  elimination gate is GLOBAL: an elimination night sends to every chat
+  even when nobody's desired team played.
+- **Documented limit**: the pool retains settled rows 7 days back, so a
+  two-leg tie whose first leg is older aggregates nothing — leg 2 reports
+  as a plain result (the individual cup tier still pushes it when a
+  desired side plays). Extending retention was rejected: the audit's
+  unbounded `hoursSince` gap checks treat pool recency as their upper
+  fence, and resurrecting 3-week-old rows would re-open false-page risk
+  for a phrasing upgrade.
+
+### Tests (1,683 OK / 0 FAIL — the baseline grew by ~60 checks, all green)
+
+- check-consolidated: the AL flip (both-desired AL clash NO LONGER pushes;
+  shouldReport keeps it) + wiring asserts for all five bot-silent surfaces
+  + the nightIsValuable/eliminations wiring.
+- check-nightdigest: the gate behavioral (the owner's exact example night
+  is QUIET; UCL/elimination/desired-team nights pass; per-chat
+  resolution proven) + the full cup-elim unit table (stageTok traps,
+  tie-shape table, single-leg/draw/non-cup/league-phase, two-leg
+  aggregate + 48h fence + stage-mismatch, collectEliminations dedupe) +
+  the elimination-section rendering (fa/en, aggregate, final flag,
+  MarkdownV2-safe, no double line).
+- check-mdstyle: the elimination section through the REAL builder with
+  ADVERSARIAL team names — parses, loser named, comp label italic,
+  aggregate plain-escaped; the raw-paren class caught during development
+  (the aggregate suffix's literal parens are now `\( \)` — the v13.90
+  parse-400 graveyard rule).
+- live-derby-test/check-no-miss: the grabbed `shouldNotify`/broadcast
+  slices carry the new `isBotSilentLeague` dependency (grab/stub).
+
+### Quota effect (the free-tier mission continues)
+
+The quiet-night gate REMOVES KV ops (skips the per-chat dedupe read+write
+on nights that would have sent noise), AL rows stop generating any
+notification fan-out, and the elimination detector is pure CPU on rows
+already in memory. No new KV reads/writes anywhere.
+
 ## [13.112-estgate] — 2026-10-17 (estimate-gated live polling — the owner's "poll by the schedule" rule)
 
 The owner's read on the quota curve: *"a huge part of resources is consumed

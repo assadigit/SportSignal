@@ -85,9 +85,14 @@ const m = (home, away, code, stage) => ({
     check("Chelsea\u2013Panathinaikos (ECL league phase): NO individual push", shouldNotify(m("Chelsea FC", "Panathinaikos FC", "ECL")) === false);
     // 2e) non-covered league fixtures: neither tier (parity with before).
     check("Bournemouth\u2013Wolves (PL): neither tier", shouldNotify(m("Bournemouth FC", "Wolves FC", "PL")) === false && shouldReport(m("Bournemouth FC", "Wolves FC", "PL")) === false);
-    // 2f) the A-League desired list rides the same two tiers.
-    check("Melbourne Victory\u2013Sydney FC (AL): BOTH desired \u2192 pushes", shouldNotify(m("Melbourne Victory", "Sydney FC", "AL")) === true);
+    // 2f) v13.113-alquiet: the A-League is BOT-SILENT now — the owner's
+    // 2026-10-17 rule ("Do not notify Australia league in the robot"): no
+    // individual push even for BOTH-desired AL clashes; the CONSOLIDATED
+    // tier keeps listing them (the website keeps its A-League life —
+    // pool retention, site lists, /next, SEO).
+    check("Melbourne Victory\u2013Sydney FC (AL): BOTH desired \u2192 NO push (bot-silent league)", shouldNotify(m("Melbourne Victory", "Sydney FC", "AL")) === false);
     check("Melbourne Victory\u2013Wellington (AL): one desired \u2192 digest-only", shouldNotify(m("Melbourne Victory", "Wellington Phoenix FC", "AL")) === false && shouldReport(m("Melbourne Victory", "Wellington Phoenix FC", "AL")) === true);
+    check("Melbourne Victory\u2013Wellington (AL): still REPORTED (the website life is intact)", shouldReport(m("Melbourne Victory", "Wellington Phoenix FC", "AL")) === true);
 
     // ============ 3) THE UCL-PARTICIPANT EXCEPTION (lifecycle) ============
     // 3a) unprimed (cold isolate before the prime, or a failed prime):
@@ -187,6 +192,26 @@ const m = (home, away, code, stage) => ({
     const wa = await buildWeekAheadMessage(waEnv, "fa");
     check("behavioral: week-ahead digest LISTS Brentford\u2013Liverpool (consolidated home)", !!wa && wa.indexOf("\u0628\u0631\u0646\u062A\u0641\u0648\u0631\u062F") >= 0 && wa.indexOf("\u0644\u06CC\u0648\u0631\u067E\u0648\u0644") >= 0, (wa || "null").replace(/\n/g, " | ").slice(0, 160));
     check("behavioral: week-ahead digest LISTS Arsenal\u2013Chelsea too", !!wa && wa.indexOf("\u0622\u0631\u0633\u0646\u0627\u0644") >= 0);
+
+    // 5h) v13.113-alquiet wiring: EVERY bot push surface consults the
+    // bot-silent gate (the harness concat is the deployed truth).
+    const bigSeg = src.slice(src.indexOf("// ===== src/digest-bigmatch.ts ====="), src.indexOf("// ===== src/digest-coronation.ts ====="));
+    check("source: big-match kickoff/FT broadcasts exclude bot-silent leagues (2 filters)", (bigSeg.match(/!isBotSilentLeague\(m\.competition && m\.competition\.code\)/g) || []).length >= 2);
+    const morningSeg = src.slice(src.indexOf("// ===== src/digest-morning.ts ====="), src.indexOf("// ===== src/digest-night.ts ====="));
+    check("source: morning digest excludes bot-silent leagues", /!isBotSilentLeague\(m\.competition\.code\)/.test(morningSeg));
+    const weeklySeg113 = src.slice(src.indexOf("// ===== src/digest-weekly.ts ====="), src.indexOf("// ===== src/digest-morning.ts ====="));
+    check("source: week-ahead digest excludes bot-silent leagues", /shouldReport\(m\) && !isBotSilentLeague/.test(weeklySeg113));
+    const nightSeg113 = src.slice(src.indexOf("// ===== src/digest-night.ts ====="), src.indexOf("// ===== src/digest-bigmatch.ts ====="));
+    check("source: night digest filters bot-silent leagues out of the night's set", nightSeg113.includes("nightMatches.filter((mm) => mm && !isBotSilentLeague(mm.competition && mm.competition.code))"));
+    const classifySeg113 = src.slice(src.indexOf("// ===== src/match-classify.ts ====="), src.indexOf("// ===== src/provider-breaker.ts ====="));
+    check("source: shouldNotify's first verdict is the bot-silent gate", /if \(isBotSilentLeague\(compCode\)\) return false;/.test(classifySeg113));
+    check("source: BOT_SILENT_LEAGUES is configured with AL", /BOT_SILENT_LEAGUES: \["AL"\]/.test(src));
+    // 5i) v13.113-nightgate wiring: the valuable-night gate + the
+    // always-covered eliminations.
+    check("source: night digest gates every chat through nightIsValuable", /if \(!nightIsValuable\(nightMatches, eliminations, prefs, c\)\) \{ out\.quiet\+\+; continue; \}/.test(nightSeg113));
+    check("source: nightIsValuable = UCL night || eliminations || per-chat desired teams", /function nightIsValuable\(nightMatches, eliminations, prefs, chatId\) \{/.test(nightSeg113) && /competition\.code === "CL"\)\) return true;/.test(nightSeg113) && /eliminations\.length\) return true;/.test(nightSeg113) && /userFollowsMatch\(prefs, chatId, mm\)/.test(nightSeg113));
+    check("source: night digest computes eliminations over the FULL pool", /const eliminations = collectEliminations\(nightMatches, pool\);/.test(nightSeg113));
+    check("source: the digest builder renders the elimination section", /sections\.push\(renderEliminationSection\(elimList, en\)\)/.test(nightSeg113));
   } finally {
     h.restore();
   }

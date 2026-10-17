@@ -66,6 +66,16 @@ export function isUclParticipant(name) {
   return !!(UCL_PARTICIPANTS && UCL_PARTICIPANTS.has(normAlias(name)));
 }
 
+// v13.113-alquiet: the BOT-SILENT league gate — the owner's rule
+// (2026-10-17): "Do not notify Australia league in the robot." One
+// predicate, every bot push surface (shouldNotify here + the big-match
+// broadcasts + the morning/week-ahead/night digests). The league keeps
+// its WEBSITE life untouched: shouldReport (pool retention, site lists,
+// /next) never consults this list.
+export function isBotSilentLeague(code) {
+  return !!(code && Array.isArray(CONFIG.BOT_SILENT_LEAGUES) && CONFIG.BOT_SILENT_LEAGUES.includes(code));
+}
+
 function teamNormCache() {
   let c = CONFIG.__teamNorm;
   if (!c || c.sig !== CONFIG.BIG_TEAMS_BY_LEAGUE) {
@@ -91,6 +101,11 @@ function teamNormCache() {
 // v13.109 — see the tier table above.
 export function shouldNotify(match) {
   const compCode = match.competition.code;
+  // v13.113-alquiet: the bot-silent leagues never push — an AL big-vs-big
+  // clash is site content, not a robot message (the owner's rule). This
+  // one gate covers the engine's cards, the HT/postponement alerts and
+  // the audit universe (they all read this tier).
+  if (isBotSilentLeague(compCode)) return false;
   const normHome = normAlias(match.homeTeam.name);
   const normAway = normAlias(match.awayTeam.name);
   const c = teamNormCache();

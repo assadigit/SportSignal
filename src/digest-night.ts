@@ -35,7 +35,10 @@ import { fetchStandings } from "./composers";
 import { sendTelegram, sendUclGifBanner } from "./telegram";
 import { getUserPrefs, getUserTz, userFollowsMatch, userFollowsSides } from "./users";
 import { normalizeTeamName } from "./teams";
-import { priorityTier } from "./match-classify";
+import { priorityTier, isBotSilentLeague } from "./match-classify";
+// v13.113-cupcover: the always-covered elimination events ("Club X
+// eliminated against Y" — the owner's rule).
+import { collectEliminations } from "./cup-elim";
 
 const DONE_STATUSES = ["FINISHED", "POSTPONED", "CANCELLED", "AWARDED", "SUSPENDED"];
 
@@ -113,6 +116,27 @@ function nightIsOver(nightMatches, nowMs: number) {
   return { over: true, finished, defended };
 }
 
+// v13.113-nightgate: THE VALUABLE-NIGHT predicate — the owner's rule
+// (2026-10-17): "do not always show خلاصه شب — keep it only for the UCL
+// nights, or the nights when at least 1 of the desired teams had a match
+// that night/day … because none of those [random league results] are
+// worth watching or mentioning." A digest exists ONLY when:
+//   (a) it's a UCL night (>=1 CL match in the night's set — the digest's
+//       founding product, v13.96), OR
+//   (b) an elimination event happened (cup ties are ALWAYS covered — the
+//       same owner message), OR
+//   (c) THIS chat's desired teams played — per-chat, the exact
+//       resolution userFollowsMatch uses for the "your teams" section
+//       (explicit follows first, master fallback).
+// Exported pure (time-independent) so the harness can drive the gate
+// directly; the caller pairs it with the quiet counter + a skipped
+// dedupe read/write (a quiet night costs ZERO KV ops now).
+export function nightIsValuable(nightMatches, eliminations, prefs, chatId) {
+  if (nightMatches.some((mm) => mm && mm.competition && mm.competition.code === "CL")) return true;
+  if (Array.isArray(eliminations) && eliminations.length) return true;
+  return nightMatches.some((mm) => userFollowsMatch(prefs, chatId, mm));
+}
+
 function ftScore(m) {
   const ft = m && m.score && m.score.fullTime;
   const h = ft && ft.home != null ? ft.home : null;
@@ -180,7 +204,7 @@ function findTeamRow(data: any, teamName: string) {
 }
 
 export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
-  const out = { sent: 0, skipped: 0, noMatches: 0, notOver: 0 };
+  const out = { sent: 0, skipped: 0, noMatches: 0, notOver: 0, quiet: 0 };
   if (!Array.isArray(chatIds) || !chatIds.length) return out;
   // The tick's merged live pool beats the KV snapshot (tonight's statuses
   // live there minutes before the next full sweep persists them).
@@ -218,7 +242,13 @@ export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
       continue; // daytime — the night hasn't started ending yet
     }
     const dateKey = dateKeyOf(y, m, d);
-    const nightMatches = matchesOfLocalDate(pool, offset, y, m, d);
+    let nightMatches = matchesOfLocalDate(pool, offset, y, m, d);
+    // v13.113-alquiet: the bot-silent leagues leave the night's set
+    // ENTIRELY (the owner's rule: "Do not notify Australia league in the
+    // robot") — AL rows never gate the digest, never render a line, and
+    // never block the completeness check either. An AL-only night is a
+    // no-op from here down.
+    nightMatches = nightMatches.filter((mm) => mm && !isBotSilentLeague(mm.competition && mm.competition.code));
     if (!nightMatches.length) continue;
     // v13.99-uclgif: UCL nights (>=1 CL match in the night's set) open with
     // the UCL.gif banner — the results half of the user's ask:
@@ -244,7 +274,14 @@ export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
       out.notOver++;
       continue;
     }
+    // v13.113-cupcover: the ALWAYS-COVERED events — a cup tie whose loser
+    // is decided tonight (single-leg knockout, or a two-leg tie the pool
+    // still holds both legs of). Computed over the FULL pool: the first
+    // leg of a two-leg tie lives in an earlier night's rows.
+    const eliminations = collectEliminations(nightMatches, pool);
     for (const c of tzChats) {
+      // v13.113-nightgate: THE VALUABLE-NIGHT GATE — see nightIsValuable.
+      if (!nightIsValuable(nightMatches, eliminations, prefs, c)) { out.quiet++; continue; }
       const dedupeKey = "nightdigest_" + dateKey + "_" + c;
       const already = await env.STATE.get(dedupeKey).catch(() => null);
       if (already) { out.skipped++; continue; }
@@ -254,7 +291,7 @@ export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
       await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
       let msg: string;
       try {
-        msg = await buildNightDigestMessage({ ...env, TEHRAN_TZ: tz }, nightMatches, lang, prefs, c, rankCache, { y, m, d });
+        msg = await buildNightDigestMessage({ ...env, TEHRAN_TZ: tz }, nightMatches, lang, prefs, c, rankCache, { y, m, d }, eliminations);
       } catch (e) {
         console.error("night digest build failed: " + e.message);
         continue;
@@ -277,15 +314,19 @@ export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
       else out.skipped++; // dead or failed — already marked, don't retry this night
     }
     if (out.sent) console.log(`\u{1F319} Night results digest (${tz}): sent=${out.sent} skipped=${out.skipped}` + (nightHasUcl ? " (+UCL banner)" : ""));
+    else if (out.quiet) console.log(`\u{1F319} Night digest (${tz}): quiet night — ${out.quiet} chat(s) skipped the valuable-night gate (no UCL, no desired team, no elimination)`);
   }
   return out;
 }
 
-export async function buildNightDigestMessage(env: Env, nightMatches, lang, prefs, chatId, rankCache, nightYmd?) {
+export async function buildNightDigestMessage(env: Env, nightMatches, lang, prefs, chatId, rankCache, nightYmd?, eliminations?) {
   const en = lang === "en";
   // v13.110-dupcollapse: the same fixture reaching the night's set through
   // two provider spellings renders ONCE (the 2026-10-16 double line).
   nightMatches = collapsePairings(nightMatches);
+  // v13.113-cupcover: the always-covered elimination events (already
+  // computed by the caller over the FULL pool — twin legs included).
+  const elimList = Array.isArray(eliminations) ? eliminations : [];
   // v13.98-jalalinight: the header renders the night's LOCAL date fully in
   // the user's calendar — Jalali (Hijri-Shamsi) for fa mode ("سه‌شنبه ۲۱ مهر
   // ۱۴۰۵"), Gregorian long-form for en. The y/m/d comes from the caller's
@@ -301,12 +342,20 @@ export async function buildNightDigestMessage(env: Env, nightMatches, lang, pref
   const head = en
     ? "*\u{1F319} Night results \u2014 " + englishDateYmd(ny, nm, nd) + "*\n\n"
     : "*\u{1F319} \u062E\u0644\u0627\u0635\u0647 \u0646\u062A\u0627\u06CC\u062C \u0634\u0628 \u2014 " + jalaliDateFa(ny, nm, nd) + "*\n\n";
-  // Split: the user's followed-team matches vs the rest.
+  // Split: the user's followed-team matches vs the rest. v13.113-cupcover:
+  // a pairing that produced an elimination event renders in the
+  // elimination section (or "your teams", when followed — the personal
+  // verdict outranks the league-wide line), never as a THIRD plain line.
+  const elimKeys = new Set();
+  for (const ev of elimList) elimKeys.add(ev.code + "|" + normalizeTeamName(ev.home) + "|" + normalizeTeamName(ev.away));
   const mine = [], others = [];
   for (const m of nightMatches) {
     if (String((m && m.status) || "").toUpperCase() !== "FINISHED") continue;
     const follow = userFollowsMatch(prefs, chatId, m);
-    if (follow) mine.push(m); else others.push(m);
+    if (follow) { mine.push(m); continue; }
+    const k = ((m.competition && m.competition.code) || "?") + "|" + normalizeTeamName(m.homeTeam.name) + "|" + normalizeTeamName(m.awayTeam.name);
+    if (elimKeys.has(k)) continue; // the eliminations section owns this row
+    others.push(m);
   }
   // v13.100-priority: the user's rule inside "بازی‌های شما" too — both-sides
   // followed (+featured bonus) lead the section, one-side follow, then by
@@ -367,7 +416,13 @@ export async function buildNightDigestMessage(env: Env, nightMatches, lang, pref
     }
     sections.push(title + lines.join("\n"));
   }
-  // Section 2 — every other result of the night, grouped by competition.
+  // Section 2 — v13.113-cupcover: the elimination events (the owner's
+  // "always cover elimination cups" rule — the one content class the
+  // valuable-night gate can never silence).
+  if (elimList.length) {
+    sections.push(renderEliminationSection(elimList, en));
+  }
+  // Section 3 — every other result of the night, grouped by competition.
   if (others.length) {
     const title = en ? "*All results of the night:*\n" : "*\u0646\u062A\u0627\u06CC\u062C \u0634\u0628:*\n";
     const byComp = new Map();
@@ -404,4 +459,40 @@ export async function buildNightDigestMessage(env: Env, nightMatches, lang, pref
     return en ? "*\u{1F319} Night results*" : "*\u{1F319} \u062E\u0644\u0627\u0635\u0647 \u0646\u062A\u0627\u06CC\u062C \u0634\u0628*";
   }
   return head + sections.join("\n");
+}
+
+// v13.113-cupcover: the "Club X eliminated against Y" section — grouped by
+// competition (the same \u{1F3C6} italic labels as the results section); each
+// line names the LOSER (the digest's job: what changed, who is OUT).
+// MarkdownV2-safe: names via escapeMarkdownCharacters, the aggregate via
+// toFaDigits + escape (the '-' is a reserved char — the v13.96.1 lesson).
+function renderEliminationSection(eliminations, en) {
+  const byComp = new Map();
+  for (const ev of eliminations) {
+    if (!ev || !ev.code) continue;
+    if (!byComp.has(ev.code)) byComp.set(ev.code, []);
+    byComp.get(ev.code).push(ev);
+  }
+  const lines = [];
+  for (const [code, list] of byComp) {
+    const comp = en ? code : translateCompetition(code);
+    lines.push("\u{1F3C6} " + mdItalic(comp));
+    for (const ev of list) {
+      const loser = en ? ev.loser : translateTeam(ev.loser);
+      const winner = en ? ev.winner : translateTeam(ev.winner);
+      // The paren/dot literals are ESCAPED inline (\( \) \.) — reserved
+      // chars in MarkdownV2, the v13.90 parse-400 graveyard class; the
+      // names/scores/aggregate ride escapeMarkdownCharacters as usual.
+      if (en) {
+        lines.push("\u274C " + escapeMarkdownCharacters(loser) + " eliminated by " + escapeMarkdownCharacters(winner)
+          + (ev.final ? " in the final" : "")
+          + (ev.agg ? " \\(agg\\. " + escapeMarkdownCharacters(ev.agg.w + " - " + ev.agg.l) + "\\)" : ""));
+      } else {
+        lines.push("\u274C " + escapeMarkdownCharacters(loser) + (ev.final ? " \u062F\u0631 \u0641\u06CC\u0646\u0627\u0644" : "") + " \u0645\u0642\u0627\u0628\u0644 " + escapeMarkdownCharacters(winner) + " \u062D\u0630\u0641 \u0634\u062F"
+          + (ev.agg ? " \\(\u0645\u062C\u0645\u0648\u0639 " + escapeMarkdownCharacters(toFaDigits(ev.agg.w + " - " + ev.agg.l)) + "\\)" : ""));
+      }
+    }
+  }
+  const title = en ? "*Cup eliminations:*\n" : "*\u062D\u0630\u0641\u200C\u0634\u062F\u06AF\u0627\u0646 \u062C\u0627\u0645\u200C\u0647\u0627\u06CC \u062D\u0630\u0641\u06CC:*\n";
+  return title + lines.join("\n");
 }
