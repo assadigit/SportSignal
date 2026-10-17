@@ -119,6 +119,12 @@ export function buildFaTeamDict() {
     "Pisa SC": "\u067E\u06CC\u0632\u0627",
     "Sassuolo Calcio": "\u0633\u0627\u0633\u0648\u0644\u0648",
     "US Sassuolo Calcio": "\u0633\u0627\u0633\u0648\u0644\u0648",
+    // v13.110-digitfold: Serie A sides observed LIVE in the 2026-10-16 pool
+    // with no dict coverage — cold isolates rendered "Frosinone Calcio" in
+    // English inside the night digest (the warm AI-KV glossary covered it,
+    // the cold path did not — the v13.108-fasync leak class).
+    "Frosinone Calcio": "\u0641\u0631\u0648\u0632\u06CC\u0646\u0648\u0646\u0647",
+    "Frosinone": "\u0641\u0631\u0648\u0632\u06CC\u0646\u0648\u0646\u0647",
     "Empoli FC": "\u0627\u0645\u067E\u0648\u0644\u06CC",
     "AC Monza": "\u0645\u0648\u0646\u062A\u0632\u0627",
     "Venezia FC": "\u0648\u0646\u06CC\u0632",

@@ -127,16 +127,25 @@ function ftScore(m) {
 // misses would still reach this surface — a night can not legitimately
 // contain the same ordered pairing twice (leagues are one meeting per
 // matchday; a cup + league double-header of the same pairing on one
-// calendar night does not exist), so collapse by competition+pairing and
-// keep the row that actually carries a result (later copy wins ties —
-// the fresher provider view, canonDedupe's own watch-order rule).
+// calendar night does not exist), so collapse by competition+pairing.
+// Row-quality ranking: a FINISHED copy beats a stale/live twin — the LIVE
+// 2026-10-16 pool's TSP Frosinone twin carried a pre-kickoff default 0-0
+// score with status SCHEDULED; a plain "later copy wins" would have let
+// it displace the real FINISHED 4-2 row (and the FINISHED render filter
+// would then drop the pairing entirely). FINISHED+score > FINISHED >
+// scored non-FINISHED > the rest; equal rank keeps the later (fresher)
+// copy — canonDedupe's own watch-order rule.
 function collapsePairings(list) {
+  const rank = (m) => {
+    const fin = String((m && m.status) || "").toUpperCase() === "FINISHED";
+    return (fin ? 2 : 0) + (ftScore(m) ? 1 : 0);
+  };
   const byPair = new Map();
   for (const m of list) {
     if (!m || !m.homeTeam || !m.awayTeam) continue;
     const k = ((m.competition && m.competition.code) || "?") + "|" + normalizeTeamName(m.homeTeam.name) + "|" + normalizeTeamName(m.awayTeam.name);
     const cur = byPair.get(k);
-    if (!cur || ftScore(m)) byPair.set(k, m);
+    if (!cur || rank(m) >= rank(cur)) byPair.set(k, m);
   }
   return [...byPair.values()];
 }
