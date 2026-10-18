@@ -1,8 +1,11 @@
 // normalize.js — produce the final published portraits and the provenance
-// manifest (uefa-player-portraits.spec.md §8/§9).
+// manifest.
 //
-// Reads discovery.json + fetch-log.json + cached originals; writes
-// assets/players/uefa/<filename>.webp and assets/players/uefa/manifest.json.
+// Reads <collection>/discovery.json + <collection>/fetch-log.json + cached
+// originals; writes assets/players/uefa/<filename>.webp and the collection's
+// manifest (default manifest.json; hero collections use manifest-heroes.json
+// and additionally emit assets/players/uefa/hero-clubs.json — the club →
+// player-portrait map the hero frontend consumes).
 // Identity evidence from the UEFA profile plus the recorded external
 // corroboration (scripts/uefa-player-portraits/identity-evidence.json) is
 // merged into every manifest entry, including failures.
@@ -22,8 +25,8 @@ async function readJson(file, fallback) {
   try { return JSON.parse(await fsp.readFile(file, "utf8")); } catch { return fallback; }
 }
 
-// Optional documented per-player framing overrides (spec §8: contact-sheet
-// review adjustments). File is created empty by default; entries:
+// Optional documented per-player framing overrides (contact-sheet review
+// adjustments). File is created empty by default; entries:
 //   { "<filename-base>": { "scale": 0.9, "y_offset_px": -10, "x_offset_px": 0 } }
 async function loadFramingOverrides() {
   const file = path.join(config.script_dir, "framing-overrides.json");
@@ -38,7 +41,7 @@ async function loadFramingOverrides() {
   return out;
 }
 
-async function run({ roster, discovery, fetchLog }) {
+async function run({ roster, discovery, fetchLog, paths }) {
   ensure_dirs();
 
   const evidence = await readJson(config.identity_evidence_file, {});
@@ -47,6 +50,7 @@ async function run({ roster, discovery, fetchLog }) {
   const manifest = {
     schema_version: 1,
     generated_at: new Date().toISOString(),
+    collection: roster.collection && roster.collection.name ? roster.collection.name : "default",
     output_format: "webp-lossless-alpha",
     target_width: config.target_width,
     target_height: config.target_height,
@@ -61,15 +65,26 @@ async function run({ roster, discovery, fetchLog }) {
   };
 
   for (const player of roster.players) {
-    const key = player.filename.replace(/\.webp$/, "");
+    const key = player.state_key || player.filename.replace(/\.webp$/, "");
     const disc = discovery.players.find((p) => p.key === key);
     const fetched = fetchLog[key];
+
+    // hero entries publish under the CHOSEN candidate's name (the primary
+    // pick may have been replaced by a fallback with an existing cutout);
+    // plain rosters always publish under the roster filename
+    let publishedName = player.requested_name_display || player.requested_name;
+    let publishedFilename = player.filename;
+    if (player.hero && disc && disc.hero && disc.hero.chosen_candidate) {
+      publishedName = disc.hero.chosen_candidate;
+      publishedFilename = parse.nameToSlug(publishedName) + ".webp";
+    }
 
     const entry = {
       roster_index: player.roster_index,
       requested_name: player.requested_name_display || player.requested_name,
       requested_club_label: player.requested_club_label,
-      filename: player.filename,
+      filename: publishedFilename,
+      chosen_player: publishedName !== (player.requested_name_display || player.requested_name) ? publishedName : null,
       status: "missing",
       uefa_player_id: disc && disc.uefa_player_id ? disc.uefa_player_id : null,
       canonical_profile_url: disc && disc.canonical_profile_url ? disc.canonical_profile_url : null,
@@ -98,6 +113,18 @@ async function run({ roster, discovery, fetchLog }) {
       warnings: [],
     };
 
+    // hero collection fields (club mapping for the frontend)
+    if (player.hero) {
+      entry.hero = {
+        club_slug: player.hero.club_slug || null,
+        club_display: player.hero.club_display || player.requested_club_label,
+        league: player.hero.league || null,
+        selection_basis: player.hero.selection_basis || null,
+        chosen_candidate: (disc && disc.hero && disc.hero.chosen_candidate) || null,
+        candidates_considered: (disc && disc.hero && disc.hero.candidates_considered) || [],
+      };
+    }
+
     // assemble the disambiguation explanation from discovery verification
     if (disc && disc.verification) {
       const expl = [...disc.verification.notes, ...disc.verification.problems];
@@ -123,7 +150,12 @@ async function run({ roster, discovery, fetchLog }) {
       continue;
     }
     if (!fetched || fetched.status !== "complete") {
-      entry.status = fetched && fetched.status === "blocked" ? "blocked" : "missing";
+      if (player.no_asset) {
+        entry.status = "no_asset";
+        entry.no_asset = player.no_asset;
+      } else {
+        entry.status = fetched && fetched.status === "blocked" ? "blocked" : "missing";
+      }
       entry.warnings.push(fetched && fetched.reason ? fetched.reason : "no verified original in cache");
       if (fetched && Array.isArray(fetched.warnings)) entry.warnings.push(...fetched.warnings);
       manifest.entries.push(entry);
@@ -137,7 +169,7 @@ async function run({ roster, discovery, fetchLog }) {
     }
 
     // normalize
-    const srcPath = path.join(config.originals_dir, `${key}.webp`);
+    const srcPath = path.join(paths.originals_dir, `${key}.webp`);
     let buf;
     try {
       buf = await fsp.readFile(srcPath);
@@ -158,7 +190,7 @@ async function run({ roster, discovery, fetchLog }) {
     const ov = overrides[key] || null;
     try {
       const result = await images.normalizePortrait(buf, { framing_override: ov });
-      const outPath = path.join(config.asset_dir, player.filename);
+      const outPath = path.join(config.asset_dir, publishedFilename);
       await images.writeFileAtomic(outPath, result.buffer);
       entry.status = "complete";
       entry.output_width = config.target_width;
@@ -168,7 +200,7 @@ async function run({ roster, discovery, fetchLog }) {
       entry.warnings.push(...result.warnings);
       if (ov) entry.warnings.push(`framing override applied (${ov.reason})`);
       log(
-        `#${player.roster_index} ${player.requested_name}: ${player.filename} ` +
+        `#${player.roster_index} ${publishedName}: ${publishedFilename} ` +
         `${fetched.source_width}x${fetched.source_height} -> ${config.target_width}x${config.target_height} ` +
         `scale=${result.normalization.applied_scale}`
       );
@@ -179,11 +211,39 @@ async function run({ roster, discovery, fetchLog }) {
     manifest.entries.push(entry);
   }
 
-  const manifestPath = path.join(config.asset_dir, "manifest.json");
-  await images.writeFileAtomic(manifestPath, Buffer.from(JSON.stringify(manifest, null, 2)));
+  await images.writeFileAtomic(paths.manifest_file, Buffer.from(JSON.stringify(manifest, null, 2)));
   const counts = {};
   for (const e of manifest.entries) counts[e.status] = (counts[e.status] || 0) + 1;
-  log("manifest written:", manifestPath, JSON.stringify(counts));
+  log("manifest written:", paths.manifest_file, JSON.stringify(counts));
+
+  // hero-clubs.json — the club → portrait map for the hero frontend.
+  // Every roster club appears (complete or not) so the frontend can
+  // distinguish "no asset" from "not covered".
+  if (paths.hero_output) {
+    const heroMap = {
+      schema_version: 1,
+      generated_at: new Date().toISOString(),
+      description: "Club → hero MVP portrait map (UEFA official cutouts). Keys are football-data.org team-name slugs. status 'complete' entries carry the portrait URL; the hero layer renders without artwork for any other status.",
+      public_url_prefix: config.public_url_prefix,
+      rights: manifest.rights,
+      clubs: {},
+    };
+    for (const e of manifest.entries) {
+      if (!e.hero || !e.hero.club_slug) continue;
+      heroMap.clubs[e.hero.club_slug] = {
+        club: e.hero.club_display,
+        league: e.hero.league,
+        player: e.chosen_player || e.hero.chosen_candidate || e.requested_name,
+        status: e.status,
+        portrait_url: e.status === "complete" ? config.public_url_prefix + e.filename : null,
+        uefa_player_id: e.uefa_player_id,
+        canonical_profile_url: e.canonical_profile_url,
+      };
+    }
+    await images.writeFileAtomic(paths.hero_map_file, Buffer.from(JSON.stringify(heroMap, null, 2)));
+    log("hero map written:", paths.hero_map_file, `(${Object.keys(heroMap.clubs).length} clubs)`);
+  }
+
   return manifest;
 }
 

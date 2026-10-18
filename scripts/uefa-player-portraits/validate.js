@@ -1,9 +1,19 @@
-// validate.js — verify the roster, files, image properties and provenance
-// (uefa-player-portraits.spec.md §10/§13). Exits non-zero when any entry is
-// unresolved or any acceptance criterion fails. The one documented exception:
-// entries with status "deferred" — an explicit owner decision, recorded in the
-// manifest with a deferral record (decided_at + reason) — are accepted as a
-// known-incomplete outcome and reported as a note, not a failure.
+// validate.js — verify the roster, files, image properties and provenance.
+// Exits non-zero when any entry is unresolved or any acceptance criterion
+// fails. The one documented exception: entries with status "deferred" — an
+// explicit owner decision, recorded in the manifest with a deferral record
+// (decided_at + reason) — are accepted as a known-incomplete outcome and
+// reported as a note, not a failure.
+//
+// v2 (multi-collection library):
+//   - roster counts are taken from the roster file, not hardcoded;
+//   - the published asset directory is a LIBRARY shared by all collections:
+//     a portrait file is expected when it belongs to THIS roster (complete
+//     entry) or to a complete entry of any other manifest present in the
+//     directory; any other file is flagged as unexpected;
+//   - hero collections additionally validate hero-clubs.json against the
+//     manifest (one club key per hero entry, coherent statuses, portrait
+//     URLs only for complete entries).
 "use strict";
 
 const fsp = require("fs/promises");
@@ -16,7 +26,30 @@ function log(...args) {
   console.log("[validate]", ...args);
 }
 
-async function run({ roster, manifest }) {
+// Union of filenames that other manifests in the asset dir have published.
+async function libraryFilenames(excludeManifestFile) {
+  const names = new Set();
+  let dirEntries = [];
+  try { dirEntries = await fsp.readdir(config.asset_dir); } catch { return names; }
+  for (const f of dirEntries.filter((x) => /^manifest.*\.json$/.test(x))) {
+    const full = path.join(config.asset_dir, f);
+    if (path.resolve(full) === path.resolve(excludeManifestFile)) continue;
+    try {
+      const m = JSON.parse(await fsp.readFile(full, "utf8"));
+      for (const e of m.entries || []) {
+        if (e.status === "complete" || e.status === "deferred") names.add(e.filename);
+      }
+    } catch { /* unreadable manifest — ignore, files checked per-roster */ }
+  }
+  return names;
+}
+
+async function run({ roster, manifest, paths }) {
+  paths = paths || {
+    manifest_file: path.join(config.asset_dir, "manifest.json"),
+    hero_output: false,
+    hero_map_file: path.join(config.asset_dir, "hero-clubs.json"),
+  };
   const failures = [];
   const notes = [];
   const ok = (cond, msg) => {
@@ -26,7 +59,7 @@ async function run({ roster, manifest }) {
 
   // --- roster integrity ---
   const players = roster.players;
-  ok(players.length === 36, `roster must have exactly 36 entries (found ${players.length})`);
+  ok(players.length >= 1, `roster must have at least one entry (found ${players.length})`);
   const filenames = players.map((p) => p.filename);
   ok(new Set(filenames).size === filenames.length, "roster filenames must be unique");
   ok(
@@ -34,20 +67,29 @@ async function run({ roster, manifest }) {
     "roster filenames must be stable ASCII kebab-case .webp"
   );
   const indexes = players.map((p) => p.roster_index);
-  ok(indexes.every((n, i) => n === i + 1), "roster order must be preserved (1..36 in order)");
+  ok(indexes.every((n, i) => n === i + 1), "roster order must be preserved (1..N in order)");
 
   // --- manifest integrity ---
-  ok(manifest.entries.length === 36, `manifest must contain one entry per requested player (found ${manifest.entries.length})`);
+  ok(manifest.entries.length === players.length, `manifest must contain one entry per requested player (found ${manifest.entries.length}, roster has ${players.length})`);
   const mIdx = manifest.entries.map((e) => e.roster_index);
   ok(mIdx.every((n, i) => n === i + 1), "manifest must preserve roster order");
+  // hero fallbacks publish under the chosen candidate's name, so manifest
+  // filenames can differ from roster filenames — entries are matched by
+  // roster_index (order-preserving) and filenames must still be unique
+  const mFilenames = manifest.entries.map((e) => e.filename);
+  ok(new Set(mFilenames).size === mFilenames.length, "manifest filenames must be unique within the collection");
+  ok(
+    mFilenames.every((f) => /^[a-z0-9-]+\.webp$/.test(f)),
+    "manifest filenames must be stable ASCII kebab-case .webp"
+  );
   for (const p of players) {
-    const e = manifest.entries.find((x) => x.filename === p.filename);
+    const e = manifest.entries[p.roster_index - 1];
     ok(!!e, `manifest entry missing for ${p.filename}`);
     if (e) {
       ok(e.requested_name === (p.requested_name_display || p.requested_name), `manifest requested_name must match roster for ${p.filename}`);
       ok(e.requested_club_label === p.requested_club_label, `manifest club label must match roster for ${p.filename} (labels are never rewritten)`);
       ok(
-        ["complete", "missing", "ambiguous", "blocked", "quality_review", "deferred"].includes(e.status),
+        ["complete", "missing", "ambiguous", "blocked", "quality_review", "deferred", "no_asset"].includes(e.status),
         `invalid status on ${p.filename}`
       );
       if (e.status === "deferred") {
@@ -57,10 +99,21 @@ async function run({ roster, manifest }) {
           `${p.filename}: deferred entries must carry a deferral record (decided_at + reason)`
         );
       }
+      if (e.status === "no_asset") {
+        ok(
+          e.no_asset && typeof e.no_asset.verified_at === "string" && typeof e.no_asset.evidence === "string" &&
+            e.no_asset.evidence.length > 0,
+          `${p.filename}: no_asset entries must carry a verification record (verified_at + evidence)`
+        );
+      }
+      // hero entries must carry their club mapping
+      if (p.hero) {
+        ok(e.hero && e.hero.club_slug === (p.hero.club_slug || null), `${p.filename}: hero entry must record the club slug`);
+      }
     }
   }
 
-  // --- identity uniqueness ---
+  // --- identity uniqueness (within this collection) ---
   const ids = manifest.entries.filter((e) => e.uefa_player_id).map((e) => e.uefa_player_id);
   ok(new Set(ids).size === ids.length, "different players must not map to the same UEFA player id");
   const hashes = manifest.entries.filter((e) => e.source_sha256).map((e) => e.source_sha256);
@@ -77,12 +130,13 @@ async function run({ roster, manifest }) {
     }
   }
 
-  // --- files and image properties ---
+  // --- files and image properties (library-aware) ---
   const present = new Set();
+  const library = await libraryFilenames(paths.manifest_file);
   const dirEntries = await fsp.readdir(config.asset_dir).catch(() => []);
   const webpFiles = dirEntries.filter((f) => f.endsWith(".webp"));
   for (const f of webpFiles) {
-    ok(filenames.includes(f), `unexpected portrait file in the asset dir: ${f}`);
+    ok(filenames.includes(f) || mFilenames.includes(f) || library.has(f), `unexpected portrait file in the asset dir: ${f}`);
   }
   for (const e of manifest.entries) {
     if (e.status !== "complete") {
@@ -90,7 +144,8 @@ async function run({ roster, manifest }) {
       ok(e.output_sha256 == null && e.output_width == null, `unresolved entry ${e.filename} must not carry output metadata`);
       const stray = path.join(config.asset_dir, e.filename);
       const strayExists = await fsp.stat(stray).then(() => true).catch(() => false);
-      ok(!strayExists, `unresolved entry ${e.filename} must not have a published portrait file`);
+      const fromOtherCollection = library.has(e.filename);
+      ok(!strayExists || fromOtherCollection, `unresolved entry ${e.filename} must not have a published portrait file`);
       continue;
     }
     // required provenance
@@ -129,6 +184,31 @@ async function run({ roster, manifest }) {
     }
   }
 
+  // --- hero-clubs.json consistency (hero collections) ---
+  if (paths.hero_output) {
+    let heroMap = null;
+    try {
+      heroMap = JSON.parse(await fsp.readFile(paths.hero_map_file, "utf8"));
+    } catch {
+      failures.push("hero-clubs.json missing — run `normalize` for the hero roster");
+    }
+    if (heroMap) {
+      const heroEntries = manifest.entries.filter((e) => e.hero && e.hero.club_slug);
+      const keys = Object.keys(heroMap.clubs || {});
+      ok(keys.length === heroEntries.length, `hero-clubs.json must have one club per hero entry (${keys.length} keys vs ${heroEntries.length} entries)`);
+      for (const e of heroEntries) {
+        const c = heroMap.clubs[e.hero.club_slug];
+        if (!ok(!!c, `hero-clubs.json missing club ${e.hero.club_slug}`)) continue;
+        ok(c.status === e.status, `hero-clubs.json status mismatch for ${e.hero.club_slug} (${c.status} vs ${e.status})`);
+        if (e.status === "complete") {
+          ok(c.portrait_url === config.public_url_prefix + e.filename, `hero-clubs.json portrait_url mismatch for ${e.hero.club_slug}`);
+        } else {
+          ok(c.portrait_url == null, `hero-clubs.json must not carry a portrait_url for incomplete club ${e.hero.club_slug}`);
+        }
+      }
+    }
+  }
+
   // --- resolution adequacy warnings (subject must fill the content box) ---
   for (const e of manifest.entries) {
     if (e.status === "complete" && e.normalization && e.normalization.scale_capped_at_one) {
@@ -143,13 +223,16 @@ async function run({ roster, manifest }) {
   const counts = {};
   for (const e of manifest.entries) counts[e.status] = (counts[e.status] || 0) + 1;
   const complete = counts.complete || 0;
-  const undocumented = manifest.entries.filter((e) => e.status !== "complete" && e.status !== "deferred");
+  const undocumented = manifest.entries.filter((e) => e.status !== "complete" && e.status !== "deferred" && e.status !== "no_asset");
+  if (counts.no_asset) {
+    notes.push(`${counts.no_asset} clubs verified to have no official UEFA cutoff in the target club's kit (probe evidence per entry) — hero renders without artwork for these`);
+  }
   if (undocumented.length > 0) {
-    failures.push(`collection is incomplete: ${complete}/36 complete (${JSON.stringify(counts)})`);
+    failures.push(`collection is incomplete: ${complete}/${players.length} complete (${JSON.stringify(counts)})`);
   } else if (counts.deferred) {
     // owner-accepted deferrals: honest incompleteness, documented per entry
     notes.push(
-      `collection incomplete by owner decision: ${complete}/36 complete, ${counts.deferred} deferred ` +
+      `collection incomplete by owner decision: ${complete}/${players.length} complete, ${counts.deferred} deferred ` +
         `(deferral records with reasons are in the manifest; re-run \`npm run portraits:fetch --refresh\` to retry)`
     );
   }

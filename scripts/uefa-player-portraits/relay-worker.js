@@ -23,6 +23,9 @@ const ALLOWED = [
   { host: "www.uefa.com", prefix: "/uefachampionsleague/clubs/" },
   { host: "www.uefa.com", prefix: "/uefaeuropaleague/clubs/" },
   { host: "www.uefa.com", prefix: "/uefaconferenceleague/clubs/" },
+  // legacy player-profile URLs still published in Wikipedia external-links
+  // sections; UEFA redirects them to the canonical competition-context profile
+  { host: "www.uefa.com", prefix: "/teamsandplayers/players/player=" },
 ];
 
 export default {
@@ -50,6 +53,10 @@ export default {
     headers.set("content-type", upstream.headers.get("content-type") || "application/octet-stream");
     headers.set("x-upstream-status", String(upstream.status));
     headers.set("cache-control", "no-store");
+    // forward redirect targets so the pipeline can follow them with its own
+    // allowlist validation (manual redirects on both hops)
+    const loc = upstream.headers.get("location");
+    if (loc) headers.set("location", loc);
     return new Response(body, { status: upstream.status, headers });
   },
 };

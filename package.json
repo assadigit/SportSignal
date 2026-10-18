@@ -15,7 +15,11 @@
     "portraits:fetch": "node scripts/uefa-player-portraits/cli.js fetch",
     "portraits:normalize": "node scripts/uefa-player-portraits/cli.js normalize",
     "portraits:validate": "node scripts/uefa-player-portraits/cli.js validate",
-    "portraits:contact-sheet": "node scripts/uefa-player-portraits/cli.js contact-sheet"
+    "portraits:contact-sheet": "node scripts/uefa-player-portraits/cli.js contact-sheet",
+    "portraits:heroes": "node scripts/uefa-player-portraits/cli.js all --roster roster-heroes.json",
+    "portraits:heroes:discover": "node scripts/uefa-player-portraits/cli.js discover --roster roster-heroes.json",
+    "portraits:heroes:fetch": "node scripts/uefa-player-portraits/cli.js fetch --roster roster-heroes.json",
+    "portraits:heroes:validate": "node scripts/uefa-player-portraits/cli.js validate --roster roster-heroes.json"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230419.0",

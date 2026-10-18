@@ -1,0 +1,3581 @@
+{
+  "schema_version": 1,
+  "description": "Hero MVP roster - one star player per club of the big-5 leagues 2026/27 (96 clubs). MVP selection policy: the most popular superstar of each club; when in doubt one of the top 3-4 players (researched 2026-10-18 via squad lists, league tables, EA FC 27 top ratings, top-scorer lists and season previews). Candidates are ordered: the first that resolves WITH a transparent UEFA cutoff in the target club kit wins; every attempt is documented in the manifest.",
+  "source_spec": "docs/scrapping/uefa-players/SPEC.md",
+  "collection": {
+    "name": "hero-mvps-big5-2026-27",
+    "manifest_filename": "manifest-heroes.json",
+    "cache_subdir": "heroes",
+    "contact_sheet_file": "docs/assets/uefa-player-portraits-hero-contact-sheet.png",
+    "hero_output": true,
+    "deep_season_probe": true
+  },
+  "players": [
+    {
+      "roster_index": 1,
+      "requested_name": "Erling Haaland",
+      "requested_club_label": "Manchester City FC",
+      "filename": "erling-haaland.webp",
+      "state_key": "manchester-city-fc",
+      "search_name": "erling haaland",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52919--man-city"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "manchester-city-fc",
+        "club_display": "Manchester City FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 1,
+        "selection_basis": "superstar striker, club talisman (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Erling Haaland"
+          },
+          {
+            "name": "Rayan Cherki"
+          },
+          {
+            "name": "Iliman Ndiaye"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Erling Haaland",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 2,
+      "requested_name": "Bukayo Saka",
+      "requested_club_label": "Arsenal FC",
+      "filename": "bukayo-saka.webp",
+      "state_key": "arsenal-fc",
+      "search_name": "bukayo saka",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52280--arsenal"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "arsenal-fc",
+        "club_display": "Arsenal FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 2,
+        "selection_basis": "academy superstar, club face (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Bukayo Saka"
+          },
+          {
+            "name": "Martin Ødegaard"
+          },
+          {
+            "name": "Declan Rice"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Bukayo Saka",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 3,
+      "requested_name": "Kaoru Mitoma",
+      "requested_club_label": "Brighton & Hove Albion FC",
+      "filename": "kaoru-mitoma.webp",
+      "state_key": "brighton-hove-albion-fc",
+      "search_name": "kaoru mitoma",
+      "club_hint": {
+        "competition": "uefaconferenceleague",
+        "club_path": "2601105--brighton"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "brighton-hove-albion-fc",
+        "club_display": "Brighton & Hove Albion FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 3,
+        "selection_basis": "fan pick top scorer / record signing; squad-registered fallbacks",
+        "candidates": [
+          {
+            "name": "Kaoru Mitoma"
+          },
+          {
+            "name": "Georginio Rutter"
+          },
+          {
+            "name": "Bart Verbruggen"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Kaoru Mitoma",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Verbruggen/Rutter: Brighton UEL 25/26 (14/2026) 404; adjacent 14/2025+14/2024 404; Brighton has no other UEFA seasons — no Brighton-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 4,
+      "requested_name": "João Pedro",
+      "requested_club_label": "Chelsea FC",
+      "filename": "joao-pedro.webp",
+      "state_key": "chelsea-fc",
+      "search_name": "joao pedro",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250117513--joao-pedro/",
+      "hero": {
+        "club_slug": "chelsea-fc",
+        "club_display": "Chelsea FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 4,
+        "selection_basis": "top scorer (5); PL best-player nominee Rogers; EA top-3",
+        "candidates": [
+          {
+            "name": "João Pedro"
+          },
+          {
+            "name": "Morgan Rogers"
+          },
+          {
+            "name": "Moisés Caicedo"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Morgan Rogers",
+        "date_of_birth": null,
+        "profile_url_source": "wikipedia-player-page",
+        "source": "profile URL from the wikipedia page of candidate \"Morgan Rogers\" (fallback candidate), fetched 2026-10-18",
+        "confidence": "medium"
+      },
+      "probe_hint": {
+        "segment": "2019",
+        "season": "2025",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Chelsea UECL 2024/25 winners (Joao Pedro registered)"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Joao Pedro: Chelsea UECL 24/25 (2019/2025) 404; adjacent 2019/2024+2019/2026 404 + avatar location 14/2027 404 — no Chelsea-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 5,
+      "requested_name": "Florian Wirtz",
+      "requested_club_label": "Liverpool FC",
+      "filename": "florian-wirtz.webp",
+      "state_key": "liverpool-fc",
+      "search_name": "florian wirtz",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "7889--liverpool"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "liverpool-fc",
+        "club_display": "Liverpool FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 5,
+        "selection_basis": "record signing playmaker; marquee striker; captain",
+        "candidates": [
+          {
+            "name": "Florian Wirtz"
+          },
+          {
+            "name": "Alexander Isak"
+          },
+          {
+            "name": "Virgil van Dijk"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Florian Wirtz",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 6,
+      "requested_name": "Igor Thiago",
+      "requested_club_label": "Brentford FC",
+      "filename": "igor-thiago.webp",
+      "state_key": "brentford-fc",
+      "search_name": "igor thiago",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250173680--igor-thiago/",
+      "hero": {
+        "club_slug": "brentford-fc",
+        "club_display": "Brentford FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 6,
+        "selection_basis": "EA highest-rated; breakout winger",
+        "candidates": [
+          {
+            "name": "Igor Thiago"
+          },
+          {
+            "name": "Kevin Schade"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Igor Thiago",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium",
+        "profile_url_source": "wikipedia-player-page"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Igor Thiago: only UEFA registration is Club Brugge (wrong kit for Brentford); current-season probes 404 — no Brentford-kit asset possible (club never in UEFA competition)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 7,
+      "requested_name": "Harry Wilson",
+      "requested_club_label": "Leeds United FC",
+      "filename": "harry-wilson.webp",
+      "state_key": "leeds-united-fc",
+      "search_name": "harry wilson",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250111030--harry-wilson/",
+      "hero": {
+        "club_slug": "leeds-united-fc",
+        "club_display": "Leeds United FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 7,
+        "selection_basis": "EA top-rated; top scorer; midfield anchor",
+        "candidates": [
+          {
+            "name": "Harry Wilson"
+          },
+          {
+            "name": "Dominic Calvert-Lewin"
+          },
+          {
+            "name": "Anton Stach"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Dominic Calvert-Lewin",
+        "date_of_birth": null,
+        "profile_url_source": "wikipedia-player-page",
+        "source": "profile URL from the wikipedia page of candidate \"Dominic Calvert-Lewin\" (fallback candidate), fetched 2026-10-18",
+        "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Harry Wilson: no UEFA club registration (Wales NT only); Leeds never in UEFA competition — no asset possible",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 8,
+      "requested_name": "Jordan Pickford",
+      "requested_club_label": "Everton FC",
+      "filename": "jordan-pickford.webp",
+      "state_key": "everton-fc",
+      "search_name": "jordan pickford",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250024791--jordan-pickford/",
+      "hero": {
+        "club_slug": "everton-fc",
+        "club_display": "Everton FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 8,
+        "selection_basis": "England #1, club icon; top scorer",
+        "candidates": [
+          {
+            "name": "Jordan Pickford"
+          },
+          {
+            "name": "Thierno Barry"
+          },
+          {
+            "name": "James Garner"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Jordan Pickford",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium",
+        "profile_url_source": "wikipedia-player-page"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Pickford: no UEFA club registration (England NT only); Everton not in UEFA competition since 2017 — no asset possible",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 9,
+      "requested_name": "Mohamed Belloumi",
+      "requested_club_label": "Hull City AFC",
+      "filename": "mohamed-belloumi.webp",
+      "state_key": "hull-city-afc",
+      "search_name": "mohamed belloumi",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "hull-city-afc",
+        "club_display": "Hull City AFC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 9,
+        "selection_basis": "top scorer; EA top-rated; midfield leader",
+        "candidates": [
+          {
+            "name": "Mohamed Belloumi"
+          },
+          {
+            "name": "Konstantinos Tzolakis"
+          },
+          {
+            "name": "Hidemasa Morita"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Mohamed Belloumi",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 10,
+      "requested_name": "Daizen Maeda",
+      "requested_club_label": "Ipswich Town FC",
+      "filename": "daizen-maeda.webp",
+      "state_key": "ipswich-town-fc",
+      "search_name": "daizen maeda",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250055209--daizen-maeda/",
+      "hero": {
+        "club_slug": "ipswich-town-fc",
+        "club_display": "Ipswich Town FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 10,
+        "selection_basis": "Japan international star; permanent fan-favorite signing; EA top-3",
+        "candidates": [
+          {
+            "name": "Daizen Maeda"
+          },
+          {
+            "name": "Omari Hutchinson"
+          },
+          {
+            "name": "Saša Lukić"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Saša Lukić",
+        "date_of_birth": null,
+        "profile_url_source": "wikipedia-player-page",
+        "source": "profile URL from the wikipedia page of candidate \"Saša Lukić\" (fallback candidate), fetched 2026-10-18",
+        "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Maeda: only UEFA registrations are Celtic (wrong kit); current-season probes 404 — no Ipswich-kit asset possible",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 11,
+      "requested_name": "Tino Livramento",
+      "requested_club_label": "Newcastle United FC",
+      "filename": "tino-livramento.webp",
+      "state_key": "newcastle-united-fc",
+      "search_name": "tino livramento",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250117508--tino-livramento/",
+      "hero": {
+        "club_slug": "newcastle-united-fc",
+        "club_display": "Newcastle United FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 11,
+        "selection_basis": "£32m star-in-the-making; EA top-2; club POTY tradition",
+        "candidates": [
+          {
+            "name": "Tino Livramento"
+          },
+          {
+            "name": "Lewis Hall"
+          },
+          {
+            "name": "Joelinton"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Tino Livramento",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium",
+        "profile_url_source": "wikipedia-player-page"
+      },
+      "probe_hint": {
+        "segment": "1",
+        "season": "2024",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Newcastle UCL 2023/24 (Livramento registered)"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Livramento: Newcastle UCL 23/24 (1/2024) 404; adjacent 1/2023+1/2025+1/2022 404 — no Newcastle-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 12,
+      "requested_name": "Alejandro Garnacho",
+      "requested_club_label": "Aston Villa FC",
+      "filename": "alejandro-garnacho.webp",
+      "state_key": "aston-villa-fc",
+      "search_name": "alejandro garnacho",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52683--aston-villa"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "aston-villa-fc",
+        "club_display": "Aston Villa FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 12,
+        "selection_basis": "marquee young star; established international; breakout scorer",
+        "candidates": [
+          {
+            "name": "Alejandro Garnacho"
+          },
+          {
+            "name": "Leon Goretzka"
+          },
+          {
+            "name": "Johan Manzambi"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Alejandro Garnacho",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 13,
+      "requested_name": "Bruno Fernandes",
+      "requested_club_label": "Manchester United FC",
+      "filename": "bruno-fernandes.webp",
+      "state_key": "manchester-united-fc",
+      "search_name": "bruno fernandes",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52682--man-utd"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "manchester-united-fc",
+        "club_display": "Manchester United FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 13,
+        "selection_basis": "captain and superstar (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Bruno Fernandes"
+          },
+          {
+            "name": "Matheus Cunha"
+          },
+          {
+            "name": "Bryan Mbeumo"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Bruno Fernandes",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 14,
+      "requested_name": "Jean-Philippe Mateta",
+      "requested_club_label": "Crystal Palace FC",
+      "filename": "jean-philippe-mateta.webp",
+      "state_key": "crystal-palace-fc",
+      "search_name": "jean-philippe mateta",
+      "club_hint": {
+        "competition": "uefaeuropaleague",
+        "club_path": "52916--crystal-palace"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "crystal-palace-fc",
+        "club_display": "Crystal Palace FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 14,
+        "selection_basis": "star striker; England international; established winger",
+        "candidates": [
+          {
+            "name": "Jean-Philippe Mateta"
+          },
+          {
+            "name": "Adam Wharton"
+          },
+          {
+            "name": "Ismaïla Sarr"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Jean-Philippe Mateta",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      },
+      "probe_hint": {
+        "segment": "14",
+        "season": "2026",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Crystal Palace UEL 2025/26 (Mateta registered)"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Mateta: Palace UEL 25/26 (14/2026) 404; adjacent 14/2025+14/2024 404 — no Palace-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 15,
+      "requested_name": "Alex Scott",
+      "requested_club_label": "AFC Bournemouth",
+      "filename": "alex-scott.webp",
+      "state_key": "afc-bournemouth",
+      "search_name": "alex scott",
+      "club_hint": {
+        "competition": "uefaeuropaleague",
+        "club_path": "2601124--bournemouth"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "afc-bournemouth",
+        "club_display": "AFC Bournemouth",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 15,
+        "selection_basis": "PL best-player nominee + England cap; record striker; EA top-3",
+        "candidates": [
+          {
+            "name": "Alex Scott"
+          },
+          {
+            "name": "Evanilson"
+          },
+          {
+            "name": "Justin Kluivert"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Alex Scott",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Alex Scott/Evanilson/Kluivert: none has any UEFA club registration; Bournemouth has never played UEFA competition — no asset possible",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 16,
+      "requested_name": "Gustavo Hamer",
+      "requested_club_label": "Coventry City FC",
+      "filename": "gustavo-hamer.webp",
+      "state_key": "coventry-city-fc",
+      "search_name": "gustavo hamer",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250081219--gustavo-hamer/",
+      "hero": {
+        "club_slug": "coventry-city-fc",
+        "club_display": "Coventry City FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 16,
+        "selection_basis": "EA top-rated returning hero; club captain; fan pick",
+        "candidates": [
+          {
+            "name": "Gustavo Hamer"
+          },
+          {
+            "name": "Matt Grimes"
+          },
+          {
+            "name": "Victor Torp"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Gustavo Hamer",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium",
+        "profile_url_source": "wikipedia-player-page"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Hamer: no UEFA club registration; Coventry never in UEFA competition — no asset possible",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 17,
+      "requested_name": "Antonee Robinson",
+      "requested_club_label": "Fulham FC",
+      "filename": "antonee-robinson.webp",
+      "state_key": "fulham-fc",
+      "search_name": "antonee robinson",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250064351--antonee-robinson/",
+      "hero": {
+        "club_slug": "fulham-fc",
+        "club_display": "Fulham FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 17,
+        "selection_basis": "USA international, EA top-rated; senior winger",
+        "candidates": [
+          {
+            "name": "Antonee Robinson"
+          },
+          {
+            "name": "Alex Iwobi"
+          },
+          {
+            "name": "Bernd Leno"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Alex Iwobi",
+        "date_of_birth": null,
+        "profile_url_source": "wikipedia-player-page",
+        "source": "profile URL from the wikipedia page of candidate \"Alex Iwobi\" (fallback candidate), fetched 2026-10-18",
+        "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Robinson: no UEFA club registration; Fulham not in UEFA competition since 2011 — no asset possible",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 18,
+      "requested_name": "Morgan Gibbs-White",
+      "requested_club_label": "Nottingham Forest FC",
+      "filename": "morgan-gibbs-white.webp",
+      "state_key": "nottingham-forest-fc",
+      "search_name": "morgan gibbs-white",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250104087--morgan-gibbs-white/",
+      "hero": {
+        "club_slug": "nottingham-forest-fc",
+        "club_display": "Nottingham Forest FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 18,
+        "selection_basis": "EA top-rated playmaker; defensive cornerstone; veteran scorer",
+        "candidates": [
+          {
+            "name": "Morgan Gibbs-White"
+          },
+          {
+            "name": "Murillo"
+          },
+          {
+            "name": "Chris Wood"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Morgan Gibbs-White",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium",
+        "profile_url_source": "wikipedia-player-page"
+      },
+      "probe_hint": {
+        "segment": "2019",
+        "season": "2026",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Forest UECL 2025/26 (Gibbs-White registered)"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Gibbs-White: Forest UECL 25/26 (2019/2026) 404; adjacent 2019/2025 404 — no Forest-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 19,
+      "requested_name": "Granit Xhaka",
+      "requested_club_label": "Sunderland AFC",
+      "filename": "granit-xhaka.webp",
+      "state_key": "sunderland-afc",
+      "search_name": "granit xhaka",
+      "club_hint": {
+        "competition": "uefaeuropaleague",
+        "club_path": "53360--sunderland"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "sunderland-afc",
+        "club_display": "Sunderland AFC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 19,
+        "selection_basis": "EA top-rated, biggest name; academy jewel; marquee striker",
+        "candidates": [
+          {
+            "name": "Granit Xhaka"
+          },
+          {
+            "name": "Chris Rigg"
+          },
+          {
+            "name": "Brian Brobbey"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Granit Xhaka",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Xhaka: no Sunderland UEFA registration (club not in Europe since 1973); his Leverkusen/Fenerbahce cutoffs would show wrong kits — not publishable for Sunderland",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 20,
+      "requested_name": "James Maddison",
+      "requested_club_label": "Tottenham Hotspur FC",
+      "filename": "james-maddison.webp",
+      "state_key": "tottenham-hotspur-fc",
+      "search_name": "james maddison",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250128451--xavi-simons/",
+      "hero": {
+        "club_slug": "tottenham-hotspur-fc",
+        "club_display": "Tottenham Hotspur FC",
+        "league": "Premier League",
+        "league_code": "PL",
+        "league_position": 20,
+        "selection_basis": "marquee flair signing; EA top-rated; established creator",
+        "candidates": [
+          {
+            "name": "James Maddison"
+          },
+          {
+            "name": "Xavi Simons"
+          },
+          {
+            "name": "Sandro Tonali"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Xavi Simons",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium",
+        "profile_url_source": "wikipedia-player-page"
+      },
+      "probe_hint": {
+        "segment": "14",
+        "season": "2025",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Spurs UEL 2024/25 winners (Maddison registered)"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Maddison: Spurs UEL 24/25 winners (14/2025) 404; adjacent 14/2024+14/2026 404; Xavi Simons/Tonali last registered elsewhere (wrong kits) — no Spurs-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 21,
+      "requested_name": "Lamine Yamal",
+      "requested_club_label": "FC Barcelona",
+      "filename": "lamine-yamal.webp",
+      "state_key": "fc-barcelona",
+      "search_name": "lamine yamal",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50080--barcelona"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "fc-barcelona",
+        "club_display": "FC Barcelona",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 1,
+        "selection_basis": "global superstar (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Lamine Yamal"
+          },
+          {
+            "name": "Raphinha"
+          },
+          {
+            "name": "Pedri"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Lamine Yamal",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 22,
+      "requested_name": "Julián Álvarez",
+      "requested_club_label": "Club Atlético de Madrid",
+      "filename": "julian-alvarez.webp",
+      "state_key": "club-atletico-de-madrid",
+      "search_name": "julian alvarez",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50124--atleti"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "club-atletico-de-madrid",
+        "club_display": "Club Atlético de Madrid",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 2,
+        "selection_basis": "superstar striker (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Julián Álvarez"
+          },
+          {
+            "name": "Ademola Lookman"
+          },
+          {
+            "name": "Álex Baena"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Ademola Lookman",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 23,
+      "requested_name": "Antony",
+      "requested_club_label": "Real Betis Balompié",
+      "filename": "antony.webp",
+      "state_key": "real-betis-balompie",
+      "search_name": "antony",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52265--real-betis"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "real-betis-balompie",
+        "club_display": "Real Betis Balompié",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 3,
+        "selection_basis": "star winger (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Antony"
+          },
+          {
+            "name": "Isco"
+          },
+          {
+            "name": "Giovani Lo Celso"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Antony",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 24,
+      "requested_name": "Kylian Mbappé",
+      "requested_club_label": "Real Madrid CF",
+      "filename": "kylian-mbappe.webp",
+      "state_key": "real-madrid-cf",
+      "search_name": "kylian mbappe",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50051--real-madrid"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "real-madrid-cf",
+        "club_display": "Real Madrid CF",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 4,
+        "selection_basis": "superstar (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Kylian Mbappé"
+          },
+          {
+            "name": "Vinícius Júnior"
+          },
+          {
+            "name": "Jude Bellingham"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Kylian Mbappé",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 25,
+      "requested_name": "Mikel Oyarzabal",
+      "requested_club_label": "Real Sociedad de Fútbol",
+      "filename": "mikel-oyarzabal.webp",
+      "state_key": "real-sociedad-de-futbol",
+      "search_name": "mikel oyarzabal",
+      "club_hint": {
+        "competition": "uefaeuropaleague",
+        "club_path": "50123--real-sociedad"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "real-sociedad-de-futbol",
+        "club_display": "Real Sociedad de Fútbol",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 5,
+        "selection_basis": "club captain and icon; star winger",
+        "candidates": [
+          {
+            "name": "Mikel Oyarzabal"
+          },
+          {
+            "name": "Takefusa Kubo"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Mikel Oyarzabal",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      },
+      "probe_hint": {
+        "segment": "14",
+        "season": "2024",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Real Sociedad UEL 2023/24 (Oyarzabal registered)"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Oyarzabal: Sociedad UEL 23/24 (14/2024) 404; adjacent 14/2023+14/2022 404 — no Sociedad-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 26,
+      "requested_name": "Rubén Vargas",
+      "requested_club_label": "Sevilla FC",
+      "filename": "ruben-vargas.webp",
+      "state_key": "sevilla-fc",
+      "search_name": "ruben vargas",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250110397--ruben-vargas/",
+      "hero": {
+        "club_slug": "sevilla-fc",
+        "club_display": "Sevilla FC",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 6,
+        "selection_basis": "EA top-rated outfield; academy fullback",
+        "candidates": [
+          {
+            "name": "Rubén Vargas"
+          },
+          {
+            "name": "José Ángel Carmona"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Rubén Vargas",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium",
+        "profile_url_source": "wikipedia-player-page"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Vargas: Sevilla UEL registrations (14/2024, 14/2025, 14/2026) all 404 — no Sevilla-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 27,
+      "requested_name": "Lucas Boyé",
+      "requested_club_label": "Deportivo Alavés",
+      "filename": "lucas-boye.webp",
+      "state_key": "deportivo-alaves",
+      "search_name": "lucas boye",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "deportivo-alaves",
+        "club_display": "Deportivo Alavés",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 7,
+        "selection_basis": "leading scorer (Pichichi list); veteran striker",
+        "candidates": [
+          {
+            "name": "Lucas Boyé"
+          },
+          {
+            "name": "Kike García"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Lucas Boyé",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 28,
+      "requested_name": "Iago Aspas",
+      "requested_club_label": "RC Celta de Vigo",
+      "filename": "iago-aspas.webp",
+      "state_key": "rc-celta-de-vigo",
+      "search_name": "iago aspas",
+      "club_hint": {
+        "competition": "uefaeuropaleague",
+        "club_path": "53043--celta"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "rc-celta-de-vigo",
+        "club_display": "RC Celta de Vigo",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 8,
+        "selection_basis": "club legend and all-time top scorer",
+        "candidates": [
+          {
+            "name": "Iago Aspas"
+          },
+          {
+            "name": "Borja Iglesias"
+          },
+          {
+            "name": "Pablo Durán"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Iago Aspas",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      },
+      "probe_hint": {
+        "segment": "2019",
+        "season": "2026",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Celta UECL 2025/26 (Aspas registered)"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Aspas: Celta UECL (2019/2026 + 2019/2025 + 2019/2024) all 404 — no Celta-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 29,
+      "requested_name": "Pierre-Emerick Aubameyang",
+      "requested_club_label": "RC Deportivo La Coruña",
+      "filename": "pierre-emerick-aubameyang.webp",
+      "state_key": "rc-deportivo-la-coruna",
+      "search_name": "pierre-emerick aubameyang",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250011037--pierre-emerick-aubameyang/",
+      "hero": {
+        "club_slug": "rc-deportivo-la-coruna",
+        "club_display": "RC Deportivo La Coruña",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 9,
+        "selection_basis": "biggest star of the promoted side",
+        "candidates": [
+          {
+            "name": "Pierre-Emerick Aubameyang"
+          },
+          {
+            "name": "Adama Traoré"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Pierre-Emerick Aubameyang",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium",
+        "profile_url_source": "wikipedia-player-page"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Aubameyang: UEFA cutoffs exist only in Barcelona/Marseille/Chelsea kits (wrong club); Depor not in UEFA competition since 2017 — no Depor-kit asset possible",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 30,
+      "requested_name": "Ante Budimir",
+      "requested_club_label": "CA Osasuna",
+      "filename": "ante-budimir.webp",
+      "state_key": "ca-osasuna",
+      "search_name": "ante budimir",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "ca-osasuna",
+        "club_display": "CA Osasuna",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 10,
+        "selection_basis": "talisman striker (Pichichi list)",
+        "candidates": [
+          {
+            "name": "Ante Budimir"
+          },
+          {
+            "name": "Jon Moncayola"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Ante Budimir",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 31,
+      "requested_name": "Nico Williams",
+      "requested_club_label": "Athletic Club",
+      "filename": "nico-williams.webp",
+      "state_key": "athletic-club",
+      "search_name": "nico williams",
+      "club_hint": null,
+      "uefa_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250163185--nico-williams/",
+      "hero": {
+        "club_slug": "athletic-club",
+        "club_display": "Athletic Club",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 11,
+        "selection_basis": "star winger, EA top-rated outfield",
+        "candidates": [
+          {
+            "name": "Nico Williams"
+          },
+          {
+            "name": "Unai Simón"
+          },
+          {
+            "name": "Aymeric Laporte"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Nico Williams",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium",
+        "profile_url_source": "wikipedia-player-page"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Nico Williams: Athletic UEL (14/2025, 14/2026) 404; Athletic UCL 23/24 (1/2024) persistently edge-throttled (403) — RETRY on refresh; 1/2025 404",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 32,
+      "requested_name": "Georges Mikautadze",
+      "requested_club_label": "Villarreal CF",
+      "filename": "georges-mikautadze.webp",
+      "state_key": "villarreal-cf",
+      "search_name": "georges mikautadze",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "70691--villarreal"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "villarreal-cf",
+        "club_display": "Villarreal CF",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 12,
+        "selection_basis": "top scorer (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Georges Mikautadze"
+          },
+          {
+            "name": "Alberto Moleiro"
+          },
+          {
+            "name": "Ayoze Pérez"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Georges Mikautadze",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 33,
+      "requested_name": "Roberto Fernández",
+      "requested_club_label": "RCD Espanyol de Barcelona",
+      "filename": "roberto-fernandez.webp",
+      "state_key": "rcd-espanyol-de-barcelona",
+      "search_name": "roberto fernandez",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "rcd-espanyol-de-barcelona",
+        "club_display": "RCD Espanyol de Barcelona",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 13,
+        "selection_basis": "in-form top scorer, SI power-ranking mention",
+        "candidates": [
+          {
+            "name": "Roberto Fernández"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Roberto Fernández",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 34,
+      "requested_name": "Sergio Camello",
+      "requested_club_label": "Rayo Vallecano de Madrid",
+      "filename": "sergio-camello.webp",
+      "state_key": "rayo-vallecano-de-madrid",
+      "search_name": "sergio camello",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "rayo-vallecano-de-madrid",
+        "club_display": "Rayo Vallecano de Madrid",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 14,
+        "selection_basis": "joint-top La Liga scorer (7)",
+        "candidates": [
+          {
+            "name": "Sergio Camello"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Sergio Camello",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 35,
+      "requested_name": "Borja Mayoral",
+      "requested_club_label": "Getafe CF",
+      "filename": "borja-mayoral.webp",
+      "state_key": "getafe-cf",
+      "search_name": "borja mayoral",
+      "club_hint": {
+        "competition": "uefaconferenceleague",
+        "club_path": "87960--getafe"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "getafe-cf",
+        "club_display": "Getafe CF",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 15,
+        "selection_basis": "first-choice striker",
+        "candidates": [
+          {
+            "name": "Borja Mayoral"
+          },
+          {
+            "name": "Enes Ünal"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Borja Mayoral",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Mayoral: current UECL 26/27 (2019/2027) 404 (profile exposes no cutoff); his Roma years (14/2021) are wrong-kit — no Getafe-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 36,
+      "requested_name": "Sergio Canales",
+      "requested_club_label": "Real Racing Club de Santander",
+      "filename": "sergio-canales.webp",
+      "state_key": "real-racing-club-de-santander",
+      "search_name": "sergio canales",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "real-racing-club-de-santander",
+        "club_display": "Real Racing Club de Santander",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 16,
+        "selection_basis": "biggest name; promotion top scorer",
+        "candidates": [
+          {
+            "name": "Sergio Canales"
+          },
+          {
+            "name": "Andrés Martín"
+          },
+          {
+            "name": "Asier Villalibre"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Sergio Canales",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 37,
+      "requested_name": "Carlos Álvarez",
+      "requested_club_label": "Levante UD",
+      "filename": "carlos-alvarez.webp",
+      "state_key": "levante-ud",
+      "search_name": "carlos alvarez",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "levante-ud",
+        "club_display": "Levante UD",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 17,
+        "selection_basis": "EA top-rated outfield; Algeria international",
+        "candidates": [
+          {
+            "name": "Carlos Álvarez"
+          },
+          {
+            "name": "Aïssa Mandi"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Carlos Álvarez",
+        "date_of_birth": null,
+        "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
+        "confidence": "medium"
+      }
+    },
+    {
+      "roster_index": 38,
+      "requested_name": "Fer Niño",
+      "requested_club_label": "Elche CF",
+      "filename": "fer-nino.webp",
+      "state_key": "elche-cf",
+      "search_name": "fer nino",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "elche-cf",
+        "club_display": "Elche CF",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 18,
+        "selection_basis": "top scorer (5, Pichichi list)",
+        "candidates": [
+          {
+            "name": "Fer Niño"
+          },
+          {
+            "name": "Germán Valera"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Fer Niño",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 39,
+      "requested_name": "Javi Guerra",
+      "requested_club_label": "Valencia CF",
+      "filename": "javi-guerra.webp",
+      "state_key": "valencia-cf",
+      "search_name": "javi guerra",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "valencia-cf",
+        "club_display": "Valencia CF",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 19,
+        "selection_basis": "homegrown Spain international star; captain",
+        "candidates": [
+          {
+            "name": "Javi Guerra"
+          },
+          {
+            "name": "José Gayà"
+          },
+          {
+            "name": "Guido Rodríguez"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Javi Guerra",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 40,
+      "requested_name": "Pablo Martínez",
+      "requested_club_label": "Málaga CF",
+      "filename": "pablo-martinez.webp",
+      "state_key": "malaga-cf",
+      "search_name": "pablo martinez",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "malaga-cf",
+        "club_display": "Málaga CF",
+        "league": "La Liga",
+        "league_code": "PD",
+        "league_position": 20,
+        "selection_basis": "EA top-rated; fan-favorite striker",
+        "candidates": [
+          {
+            "name": "Pablo Martínez"
+          },
+          {
+            "name": "Chupe"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Pablo Martínez",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 41,
+      "requested_name": "Lautaro Martínez",
+      "requested_club_label": "FC Internazionale Milano",
+      "filename": "lautaro-martinez.webp",
+      "state_key": "fc-internazionale-milano",
+      "search_name": "lautaro martinez",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50138--inter"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "fc-internazionale-milano",
+        "club_display": "FC Internazionale Milano",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 1,
+        "selection_basis": "captain and superstar (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Lautaro Martínez"
+          },
+          {
+            "name": "Nicolò Barella"
+          },
+          {
+            "name": "Federico Dimarco"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Lautaro Martínez",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 42,
+      "requested_name": "Paulo Dybala",
+      "requested_club_label": "AS Roma",
+      "filename": "paulo-dybala.webp",
+      "state_key": "as-roma",
+      "search_name": "paulo dybala",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50137--roma"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "as-roma",
+        "club_display": "AS Roma",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 2,
+        "selection_basis": "superstar (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Paulo Dybala"
+          },
+          {
+            "name": "Matías Soulé"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Paulo Dybala",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 43,
+      "requested_name": "Mattia Zaccagni",
+      "requested_club_label": "SS Lazio",
+      "filename": "mattia-zaccagni.webp",
+      "state_key": "ss-lazio",
+      "search_name": "mattia zaccagni",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "ss-lazio",
+        "club_display": "SS Lazio",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 3,
+        "selection_basis": "Italy international talisman",
+        "candidates": [
+          {
+            "name": "Mattia Zaccagni"
+          },
+          {
+            "name": "Ivan Provedel"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Mattia Zaccagni",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 44,
+      "requested_name": "Christian Pulisic",
+      "requested_club_label": "AC Milan",
+      "filename": "christian-pulisic.webp",
+      "state_key": "ac-milan",
+      "search_name": "christian pulisic",
+      "club_hint": {
+        "competition": "uefaeuropaleague",
+        "club_path": "50058--milan"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "ac-milan",
+        "club_display": "AC Milan",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 4,
+        "selection_basis": "star winger; Ballon d'Or legend; EA top-rated GK",
+        "candidates": [
+          {
+            "name": "Christian Pulisic"
+          },
+          {
+            "name": "Luka Modrić"
+          },
+          {
+            "name": "Mike Maignan"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Christian Pulisic",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      },
+      "probe_hint": {
+        "segment": "1",
+        "season": "2026",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Milan UCL 2025/26 (Pulisic registered)"
+      }
+    },
+    {
+      "roster_index": 45,
+      "requested_name": "Nico Paz",
+      "requested_club_label": "Como 1907",
+      "filename": "nico-paz.webp",
+      "state_key": "como-1907",
+      "search_name": "nico paz",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "79946--como"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "como-1907",
+        "club_display": "Como 1907",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 5,
+        "selection_basis": "wonderkid jewel (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Nico Paz"
+          },
+          {
+            "name": "Moise Kean"
+          },
+          {
+            "name": "Martín Baturina"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Nico Paz",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 46,
+      "requested_name": "Romano Schmid",
+      "requested_club_label": "Frosinone Calcio",
+      "filename": "romano-schmid.webp",
+      "state_key": "frosinone-calcio",
+      "search_name": "romano schmid",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "frosinone-calcio",
+        "club_display": "Frosinone Calcio",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 6,
+        "selection_basis": "EA top-rated; Austria international pair",
+        "candidates": [
+          {
+            "name": "Romano Schmid"
+          },
+          {
+            "name": "Florian Grillitsch"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Romano Schmid",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 47,
+      "requested_name": "Marco Palestra",
+      "requested_club_label": "Cagliari Calcio",
+      "filename": "marco-palestra.webp",
+      "state_key": "cagliari-calcio",
+      "search_name": "marco palestra",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "cagliari-calcio",
+        "club_display": "Cagliari Calcio",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 7,
+        "selection_basis": "Serie A breakthrough star (May 2026); EA top-rated GK",
+        "candidates": [
+          {
+            "name": "Marco Palestra"
+          },
+          {
+            "name": "Elia Caprile"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Marco Palestra",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 48,
+      "requested_name": "Kenan Yıldız",
+      "requested_club_label": "Juventus FC",
+      "filename": "kenan-yildiz.webp",
+      "state_key": "juventus-fc",
+      "search_name": "kenan yildiz",
+      "club_hint": {
+        "competition": "uefaeuropaleague",
+        "club_path": "50139--juventus"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "juventus-fc",
+        "club_display": "Juventus FC",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 8,
+        "selection_basis": "most valuable Serie A player (Sep 2026)",
+        "candidates": [
+          {
+            "name": "Kenan Yıldız"
+          },
+          {
+            "name": "Bremer"
+          },
+          {
+            "name": "Manuel Locatelli"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Kenan Yıldız",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      },
+      "probe_hint": {
+        "segment": "1",
+        "season": "2026",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Juventus UCL 2025/26 (Yildiz registered) — URL verified 200 manually"
+      }
+    },
+    {
+      "roster_index": 49,
+      "requested_name": "Kevin De Bruyne",
+      "requested_club_label": "SSC Napoli",
+      "filename": "kevin-de-bruyne.webp",
+      "state_key": "ssc-napoli",
+      "search_name": "kevin de bruyne",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50136--napoli"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "ssc-napoli",
+        "club_display": "SSC Napoli",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 9,
+        "selection_basis": "marquee superstar signing; club POTY (36-collection verified)",
+        "candidates": [
+          {
+            "name": "Kevin De Bruyne"
+          },
+          {
+            "name": "Scott McTominay"
+          },
+          {
+            "name": "Stanislav Lobotka"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Kevin De Bruyne",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 50,
+      "requested_name": "Charles De Ketelaere",
+      "requested_club_label": "Atalanta BC",
+      "filename": "charles-de-ketelaere.webp",
+      "state_key": "atalanta-bc",
+      "search_name": "charles de ketelaere",
+      "club_hint": {
+        "competition": "uefaconferenceleague",
+        "club_path": "52816--atalanta"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "atalanta-bc",
+        "club_display": "Atalanta BC",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 10,
+        "selection_basis": "first-choice playmaker",
+        "candidates": [
+          {
+            "name": "Charles De Ketelaere"
+          },
+          {
+            "name": "Giacomo Raspadori"
+          },
+          {
+            "name": "Gianluca Scamacca"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Charles De Ketelaere",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      },
+      "probe_hint": {
+        "segment": "1",
+        "season": "2026",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Atalanta UCL 2025/26 (De Ketelaere registered)"
+      }
+    },
+    {
+      "roster_index": 51,
+      "requested_name": "Antonino Gallo",
+      "requested_club_label": "US Lecce",
+      "filename": "antonino-gallo.webp",
+      "state_key": "us-lecce",
+      "search_name": "antonino gallo",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "us-lecce",
+        "club_display": "US Lecce",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 11,
+        "selection_basis": "EA top-rated outfield; club icon GK",
+        "candidates": [
+          {
+            "name": "Antonino Gallo"
+          },
+          {
+            "name": "Wladimiro Falcone"
+          },
+          {
+            "name": "Lassana Coulibaly"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Antonino Gallo",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 52,
+      "requested_name": "Domenico Berardi",
+      "requested_club_label": "US Sassuolo Calcio",
+      "filename": "domenico-berardi.webp",
+      "state_key": "us-sassuolo-calcio",
+      "search_name": "domenico berardi",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "us-sassuolo-calcio",
+        "club_display": "US Sassuolo Calcio",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 12,
+        "selection_basis": "club legend and all-time top scorer",
+        "candidates": [
+          {
+            "name": "Domenico Berardi"
+          },
+          {
+            "name": "Armand Laurienté"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Domenico Berardi",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 53,
+      "requested_name": "Ché Adams",
+      "requested_club_label": "Torino FC",
+      "filename": "che-adams.webp",
+      "state_key": "torino-fc",
+      "search_name": "che adams",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "torino-fc",
+        "club_display": "Torino FC",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 13,
+        "selection_basis": "top scorer; captain",
+        "candidates": [
+          {
+            "name": "Ché Adams"
+          },
+          {
+            "name": "Rolando Mandragora"
+          },
+          {
+            "name": "Pietro Comuzzo"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Ché Adams",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 54,
+      "requested_name": "Riccardo Orsolini",
+      "requested_club_label": "Bologna FC 1909",
+      "filename": "riccardo-orsolini.webp",
+      "state_key": "bologna-fc-1909",
+      "search_name": "riccardo orsolini",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "bologna-fc-1909",
+        "club_display": "Bologna FC 1909",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 14,
+        "selection_basis": "EA top-rated star winger",
+        "candidates": [
+          {
+            "name": "Riccardo Orsolini"
+          },
+          {
+            "name": "Artem Dovbyk"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Riccardo Orsolini",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 55,
+      "requested_name": "Gustavo Varela",
+      "requested_club_label": "AC Monza",
+      "filename": "gustavo-varela.webp",
+      "state_key": "ac-monza",
+      "search_name": "gustavo varela",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "ac-monza",
+        "club_display": "AC Monza",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 15,
+        "selection_basis": "top scorer (4)",
+        "candidates": [
+          {
+            "name": "Gustavo Varela"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Gustavo Varela",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 56,
+      "requested_name": "Adrián Bernabé",
+      "requested_club_label": "Parma Calcio 1913",
+      "filename": "adrian-bernabe.webp",
+      "state_key": "parma-calcio-1913",
+      "search_name": "adrian bernabe",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "parma-calcio-1913",
+        "club_display": "Parma Calcio 1913",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 16,
+        "selection_basis": "EA top-rated playmaker, Spain international",
+        "candidates": [
+          {
+            "name": "Adrián Bernabé"
+          },
+          {
+            "name": "Emanuele Valeri"
+          },
+          {
+            "name": "Mandela Keita"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Adrián Bernabé",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 57,
+      "requested_name": "Nicolò Zaniolo",
+      "requested_club_label": "Udinese Calcio",
+      "filename": "nicolo-zaniolo.webp",
+      "state_key": "udinese-calcio",
+      "search_name": "nicolo zaniolo",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "udinese-calcio",
+        "club_display": "Udinese Calcio",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 17,
+        "selection_basis": "most famous name; EA top-rated defender",
+        "candidates": [
+          {
+            "name": "Nicolò Zaniolo"
+          },
+          {
+            "name": "Oumar Solet"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Nicolò Zaniolo",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 58,
+      "requested_name": "Milutin Osmajić",
+      "requested_club_label": "Genoa CFC",
+      "filename": "milutin-osmajic.webp",
+      "state_key": "genoa-cfc",
+      "search_name": "milutin osmajic",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "genoa-cfc",
+        "club_display": "Genoa CFC",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 18,
+        "selection_basis": "top scorer",
+        "candidates": [
+          {
+            "name": "Milutin Osmajić"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Milutin Osmajić",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 59,
+      "requested_name": "Franco Mastantuono",
+      "requested_club_label": "ACF Fiorentina",
+      "filename": "franco-mastantuono.webp",
+      "state_key": "acf-fiorentina",
+      "search_name": "franco mastantuono",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "acf-fiorentina",
+        "club_display": "ACF Fiorentina",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 19,
+        "selection_basis": "marquee wonderkid signing; EA top-rated GK",
+        "candidates": [
+          {
+            "name": "Franco Mastantuono"
+          },
+          {
+            "name": "David de Gea"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Franco Mastantuono",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 60,
+      "requested_name": "Gianluca Busio",
+      "requested_club_label": "Venezia FC",
+      "filename": "gianluca-busio.webp",
+      "state_key": "venezia-fc",
+      "search_name": "gianluca busio",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "venezia-fc",
+        "club_display": "Venezia FC",
+        "league": "Serie A",
+        "league_code": "SA",
+        "league_position": 20,
+        "selection_basis": "honored USA international; promotion key man",
+        "candidates": [
+          {
+            "name": "Gianluca Busio"
+          },
+          {
+            "name": "Tanner Tessmann"
+          },
+          {
+            "name": "Albion Rrahmani"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Gianluca Busio",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 61,
+      "requested_name": "Harry Kane",
+      "requested_club_label": "FC Bayern München",
+      "filename": "harry-kane.webp",
+      "state_key": "fc-bayern-munchen",
+      "search_name": "harry kane",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50037--bayern-munchen"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "fc-bayern-munchen",
+        "club_display": "FC Bayern München",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 1,
+        "selection_basis": "superstar (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Harry Kane"
+          },
+          {
+            "name": "Michael Olise"
+          },
+          {
+            "name": "Jamal Musiala"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Harry Kane",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 62,
+      "requested_name": "Serhou Guirassy",
+      "requested_club_label": "Borussia Dortmund",
+      "filename": "serhou-guirassy.webp",
+      "state_key": "borussia-dortmund",
+      "search_name": "serhou guirassy",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52758--b-dortmund"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "borussia-dortmund",
+        "club_display": "Borussia Dortmund",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 2,
+        "selection_basis": "top scorer (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Serhou Guirassy"
+          },
+          {
+            "name": "Jobe Bellingham"
+          },
+          {
+            "name": "Maximilian Beier"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Serhou Guirassy",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 63,
+      "requested_name": "Vincenzo Grifo",
+      "requested_club_label": "SC Freiburg",
+      "filename": "vincenzo-grifo.webp",
+      "state_key": "sc-freiburg",
+      "search_name": "vincenzo grifo",
+      "club_hint": {
+        "competition": "uefaconferenceleague",
+        "club_path": "59880--freiburg"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "sc-freiburg",
+        "club_display": "SC Freiburg",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 3,
+        "selection_basis": "star playmaker, EA top-rated outfield",
+        "candidates": [
+          {
+            "name": "Vincenzo Grifo"
+          },
+          {
+            "name": "Matthias Ginter"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Vincenzo Grifo",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      },
+      "probe_hint": {
+        "segment": "14",
+        "season": "2026",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Freiburg UEL 2025/26 (Grifo registered)"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Grifo: Freiburg UEL 25/26 (14/2026) 404; adjacent 14/2025+14/2024 404 — no Freiburg-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 64,
+      "requested_name": "Patrik Schick",
+      "requested_club_label": "Bayer 04 Leverkusen",
+      "filename": "patrik-schick.webp",
+      "state_key": "bayer-04-leverkusen",
+      "search_name": "patrik schick",
+      "club_hint": {
+        "competition": "uefaeuropaleague",
+        "club_path": "50109--leverkusen"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "bayer-04-leverkusen",
+        "club_display": "Bayer 04 Leverkusen",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 4,
+        "selection_basis": "top scorer (5)",
+        "candidates": [
+          {
+            "name": "Patrik Schick"
+          },
+          {
+            "name": "Malik Tillman"
+          },
+          {
+            "name": "Moussa Diaby"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Patrik Schick",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      },
+      "probe_hint": {
+        "segment": "1",
+        "season": "2026",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Leverkusen UCL 2025/26 (Schick registered)"
+      }
+    },
+    {
+      "roster_index": 65,
+      "requested_name": "Nadiem Amiri",
+      "requested_club_label": "1. FSV Mainz 05",
+      "filename": "nadiem-amiri.webp",
+      "state_key": "1-fsv-mainz-05",
+      "search_name": "nadiem amiri",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "1-fsv-mainz-05",
+        "club_display": "1. FSV Mainz 05",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 5,
+        "selection_basis": "club POTY 25/26, leading scorer; EA top-rated",
+        "candidates": [
+          {
+            "name": "Nadiem Amiri"
+          },
+          {
+            "name": "Kaishū Sano"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Nadiem Amiri",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 66,
+      "requested_name": "Lukas Petkov",
+      "requested_club_label": "SV 07 Elversberg",
+      "filename": "lukas-petkov.webp",
+      "state_key": "sv-07-elversberg",
+      "search_name": "lukas petkov",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "sv-07-elversberg",
+        "club_display": "SV 07 Elversberg",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 6,
+        "selection_basis": "promotion-campaign key player",
+        "candidates": [
+          {
+            "name": "Lukas Petkov"
+          },
+          {
+            "name": "Krattenmacher"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Lukas Petkov",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 67,
+      "requested_name": "Christoph Baumgartner",
+      "requested_club_label": "RB Leipzig",
+      "filename": "christoph-baumgartner.webp",
+      "state_key": "rb-leipzig",
+      "search_name": "christoph baumgartner",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "2603790--leipzig"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "rb-leipzig",
+        "club_display": "RB Leipzig",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 7,
+        "selection_basis": "(already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Christoph Baumgartner"
+          },
+          {
+            "name": "David Raum"
+          },
+          {
+            "name": "Christopher Nkunku"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Christoph Baumgartner",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 68,
+      "requested_name": "Niclas Füllkrug",
+      "requested_club_label": "SV Werder Bremen",
+      "filename": "niclas-fullkrug.webp",
+      "state_key": "sv-werder-bremen",
+      "search_name": "niclas fullkrug",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "sv-werder-bremen",
+        "club_display": "SV Werder Bremen",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 8,
+        "selection_basis": "Bundesliga top scorer (6)",
+        "candidates": [
+          {
+            "name": "Niclas Füllkrug"
+          },
+          {
+            "name": "Marco Grüll"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Niclas Füllkrug",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 69,
+      "requested_name": "Ransford Königsdörffer",
+      "requested_club_label": "Hamburger SV",
+      "filename": "ransford-konigsdorffer.webp",
+      "state_key": "hamburger-sv",
+      "search_name": "ransford konigsdorffer",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "hamburger-sv",
+        "club_display": "Hamburger SV",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 9,
+        "selection_basis": "homegrown striker hero",
+        "candidates": [
+          {
+            "name": "Ransford Königsdörffer"
+          },
+          {
+            "name": "Jean-Luc Dompé"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Ransford Königsdörffer",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 70,
+      "requested_name": "Alexis Claude-Maurice",
+      "requested_club_label": "FC Augsburg",
+      "filename": "alexis-claude-maurice.webp",
+      "state_key": "fc-augsburg",
+      "search_name": "alexis claude-maurice",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "fc-augsburg",
+        "club_display": "FC Augsburg",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 10,
+        "selection_basis": "EA top-rated",
+        "candidates": [
+          {
+            "name": "Alexis Claude-Maurice"
+          },
+          {
+            "name": "Michael Gregoritsch"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Alexis Claude-Maurice",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 71,
+      "requested_name": "Jonathan Burkardt",
+      "requested_club_label": "Eintracht Frankfurt",
+      "filename": "jonathan-burkardt.webp",
+      "state_key": "eintracht-frankfurt",
+      "search_name": "jonathan burkardt",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "eintracht-frankfurt",
+        "club_display": "Eintracht Frankfurt",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 11,
+        "selection_basis": "pre-season star, 9 goals; EA top-2",
+        "candidates": [
+          {
+            "name": "Jonathan Burkardt"
+          },
+          {
+            "name": "Ritsu Doan"
+          },
+          {
+            "name": "Robin Koch"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Jonathan Burkardt",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 72,
+      "requested_name": "Ellyes Skhiri",
+      "requested_club_label": "1. FC Köln",
+      "filename": "ellyes-skhiri.webp",
+      "state_key": "1-fc-koln",
+      "search_name": "ellyes skhiri",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "1-fc-koln",
+        "club_display": "1. FC Köln",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 12,
+        "selection_basis": "established international; EA top-rated",
+        "candidates": [
+          {
+            "name": "Ellyes Skhiri"
+          },
+          {
+            "name": "Saïd El Mala"
+          },
+          {
+            "name": "Marius Bülter"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Ellyes Skhiri",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 73,
+      "requested_name": "Bilal El Khannouss",
+      "requested_club_label": "VfB Stuttgart",
+      "filename": "bilal-el-khannouss.webp",
+      "state_key": "vfb-stuttgart",
+      "search_name": "bilal el khannouss",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50107--stuttgart"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "vfb-stuttgart",
+        "club_display": "VfB Stuttgart",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 13,
+        "selection_basis": "marquee signing; proven scorer",
+        "candidates": [
+          {
+            "name": "Bilal El Khannouss"
+          },
+          {
+            "name": "Deniz Undav"
+          },
+          {
+            "name": "Ermedin Demirović"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Bilal El Khannouss",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 74,
+      "requested_name": "Andrej Kramarić",
+      "requested_club_label": "TSG 1899 Hoffenheim",
+      "filename": "andrej-kramaric.webp",
+      "state_key": "tsg-1899-hoffenheim",
+      "search_name": "andrej kramaric",
+      "club_hint": {
+        "competition": "uefaeuropaleague",
+        "club_path": "2600431--hoffenheim"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "tsg-1899-hoffenheim",
+        "club_display": "TSG 1899 Hoffenheim",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 14,
+        "selection_basis": "club legend, all-time top scorer",
+        "candidates": [
+          {
+            "name": "Andrej Kramarić"
+          },
+          {
+            "name": "Adam Hložek"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Andrej Kramarić",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      },
+      "probe_hint": {
+        "segment": "2019",
+        "season": "2025",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Hoffenheim UECL 2024/25 (Kramaric registered)"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Kramaric: Hoffenheim UECL 24/25 (2019/2025) 404; 2019/2024 + 1/2025 404 — no Hoffenheim-kit UEFA cutoff exists",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+      }
+    },
+    {
+      "roster_index": 75,
+      "requested_name": "Edin Džeko",
+      "requested_club_label": "FC Schalke 04",
+      "filename": "edin-dzeko.webp",
+      "state_key": "fc-schalke-04",
+      "search_name": "edin dzeko",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "fc-schalke-04",
+        "club_display": "FC Schalke 04",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 15,
+        "selection_basis": "legend striker; EA top-2",
+        "candidates": [
+          {
+            "name": "Edin Džeko"
+          },
+          {
+            "name": "Robin Gosens"
+          },
+          {
+            "name": "Adil Aouchiche"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Edin Džeko",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 76,
+      "requested_name": "Laurin Curda",
+      "requested_club_label": "SC Paderborn 07",
+      "filename": "laurin-curda.webp",
+      "state_key": "sc-paderborn-07",
+      "search_name": "laurin curda",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "sc-paderborn-07",
+        "club_display": "SC Paderborn 07",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 16,
+        "selection_basis": "EA top-rated trio",
+        "candidates": [
+          {
+            "name": "Laurin Curda"
+          },
+          {
+            "name": "Raphael Obermair"
+          },
+          {
+            "name": "Felix Götze"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Laurin Curda",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 77,
+      "requested_name": "Frederik Rønnow",
+      "requested_club_label": "1. FC Union Berlin",
+      "filename": "frederik-ronnow.webp",
+      "state_key": "1-fc-union-berlin",
+      "search_name": "frederik rønnow",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "1-fc-union-berlin",
+        "club_display": "1. FC Union Berlin",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 17,
+        "selection_basis": "EA top-rated; top scorer",
+        "candidates": [
+          {
+            "name": "Frederik Rønnow"
+          },
+          {
+            "name": "Josip Juranović"
+          },
+          {
+            "name": "Rani Khedira"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Frederik Rønnow",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 78,
+      "requested_name": "Isac Lidberg",
+      "requested_club_label": "Borussia Mönchengladbach",
+      "filename": "isac-lidberg.webp",
+      "state_key": "borussia-monchengladbach",
+      "search_name": "isac lidberg",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "borussia-monchengladbach",
+        "club_display": "Borussia Mönchengladbach",
+        "league": "Bundesliga",
+        "league_code": "BL1",
+        "league_position": 18,
+        "selection_basis": "headline striker signing (31 goals in 2. Bundesliga)",
+        "candidates": [
+          {
+            "name": "Isac Lidberg"
+          },
+          {
+            "name": "Hugo Bolin"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Isac Lidberg",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 79,
+      "requested_name": "Ousmane Dembélé",
+      "requested_club_label": "Paris Saint-Germain FC",
+      "filename": "ousmane-dembele.webp",
+      "state_key": "paris-saint-germain-fc",
+      "search_name": "ousmane dembele",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52747--paris"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "paris-saint-germain-fc",
+        "club_display": "Paris Saint-Germain FC",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 1,
+        "selection_basis": "Ballon d'Or-tier superstar (already verified in the 36-player collection)",
+        "candidates": [
+          {
+            "name": "Ousmane Dembélé"
+          },
+          {
+            "name": "Khvicha Kvaratskhelia"
+          },
+          {
+            "name": "Vitinha"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Ousmane Dembélé",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 80,
+      "requested_name": "Kevin Trapp",
+      "requested_club_label": "Paris FC",
+      "filename": "kevin-trapp.webp",
+      "state_key": "paris-fc",
+      "search_name": "kevin trapp",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "paris-fc",
+        "club_display": "Paris FC",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 2,
+        "selection_basis": "biggest name; top scorer; EA top-3",
+        "candidates": [
+          {
+            "name": "Kevin Trapp"
+          },
+          {
+            "name": "Lassine Sinayoko"
+          },
+          {
+            "name": "Pierre Lees-Melou"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Kevin Trapp",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 81,
+      "requested_name": "Olivier Giroud",
+      "requested_club_label": "Lille OSC",
+      "filename": "olivier-giroud.webp",
+      "state_key": "lille-osc",
+      "search_name": "olivier giroud",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "75797--lille"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "lille-osc",
+        "club_display": "Lille OSC",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 3,
+        "selection_basis": "World Cup winner superstar; EA top-rated wonderkid",
+        "candidates": [
+          {
+            "name": "Olivier Giroud"
+          },
+          {
+            "name": "Ayyoub Bouaddi"
+          },
+          {
+            "name": "Dilane Bakwa"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Olivier Giroud",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 82,
+      "requested_name": "Denis Zakaria",
+      "requested_club_label": "AS Monaco FC",
+      "filename": "denis-zakaria.webp",
+      "state_key": "as-monaco-fc",
+      "search_name": "denis zakaria",
+      "club_hint": {
+        "competition": "uefaconferenceleague",
+        "club_path": "50023--monaco"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "as-monaco-fc",
+        "club_display": "AS Monaco FC",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 4,
+        "selection_basis": "captain, EA top-rated; established star; global name",
+        "candidates": [
+          {
+            "name": "Denis Zakaria"
+          },
+          {
+            "name": "Aleksandr Golovin"
+          },
+          {
+            "name": "Ansu Fati"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Denis Zakaria",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      },
+      "probe_hint": {
+        "segment": "1",
+        "season": "2026",
+        "source": "agent career knowledge + club UEFA participation records, verified against squad lists 2026-10-18",
+        "reason": "Monaco UCL 2025/26 (Zakaria registered)"
+      }
+    },
+    {
+      "roster_index": 83,
+      "requested_name": "Adrien Thomasson",
+      "requested_club_label": "Stade Rennais FC 1901",
+      "filename": "adrien-thomasson.webp",
+      "state_key": "stade-rennais-fc-1901",
+      "search_name": "adrien thomasson",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "stade-rennais-fc-1901",
+        "club_display": "Stade Rennais FC 1901",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 5,
+        "selection_basis": "EA top-rated outfield; France international GK",
+        "candidates": [
+          {
+            "name": "Adrien Thomasson"
+          },
+          {
+            "name": "Brice Samba"
+          },
+          {
+            "name": "Estéban Lepaul"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Adrien Thomasson",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 84,
+      "requested_name": "Loïs Openda",
+      "requested_club_label": "Olympique Lyonnais",
+      "filename": "lois-openda.webp",
+      "state_key": "olympique-lyonnais",
+      "search_name": "lois openda",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "5312--lyon"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "olympique-lyonnais",
+        "club_display": "Olympique Lyonnais",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 6,
+        "selection_basis": "star striker; top scorer (5); wonderkid",
+        "candidates": [
+          {
+            "name": "Loïs Openda"
+          },
+          {
+            "name": "Ernest Nuamah"
+          },
+          {
+            "name": "Malick Fofana"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Loïs Openda",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-18",
+        "evidence": "Openda: current-season cutoff absent (profile exposes none); the only existing cutoff (1/2026, UCL 2025/26) shows his RB Leipzig kit — he was at Leipzig that season while Lyon played UECL. Wrong-club kit: not publishable. Fallbacks (Nuamah, Fofana) have the same gap. RETRY when UEFA shoots Lyon cutoffs (refresh) or pick a newly-registered candidate.",
+        "method": "kit-timing analysis of asset season vs club participation records"
+      }
+    },
+    {
+      "roster_index": 85,
+      "requested_name": "Jean-Victor Makengo",
+      "requested_club_label": "FC Lorient",
+      "filename": "jean-victor-makengo.webp",
+      "state_key": "fc-lorient",
+      "search_name": "jean-victor makengo",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "fc-lorient",
+        "club_display": "FC Lorient",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 7,
+        "selection_basis": "top scorers",
+        "candidates": [
+          {
+            "name": "Jean-Victor Makengo"
+          },
+          {
+            "name": "Gabin Bernardeau"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Jean-Victor Makengo",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 86,
+      "requested_name": "Florian Thauvin",
+      "requested_club_label": "Racing Club de Lens",
+      "filename": "florian-thauvin.webp",
+      "state_key": "racing-club-de-lens",
+      "search_name": "florian thauvin",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52277--lens"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "racing-club-de-lens",
+        "club_display": "Racing Club de Lens",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 8,
+        "selection_basis": "club star (36-collection entry: no UEFA cutout exists); marquee defender; club icon",
+        "candidates": [
+          {
+            "name": "Florian Thauvin"
+          },
+          {
+            "name": "Jean-Clair Todibo"
+          },
+          {
+            "name": "Florian Sotoca"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Florian Thauvin",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 87,
+      "requested_name": "Amine Gouiri",
+      "requested_club_label": "Olympique de Marseille",
+      "filename": "amine-gouiri.webp",
+      "state_key": "olympique-de-marseille",
+      "search_name": "amine gouiri",
+      "club_hint": {
+        "competition": "uefaeuropaleague",
+        "club_path": "52748--marseille"
+      },
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "olympique-de-marseille",
+        "club_display": "Olympique de Marseille",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 9,
+        "selection_basis": "Ligue 1 top scorer (4)",
+        "candidates": [
+          {
+            "name": "Amine Gouiri"
+          },
+          {
+            "name": "Igor Paixão"
+          },
+          {
+            "name": "Pierre-Emile Højbjerg"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Amine Gouiri",
+        "date_of_birth": null,
+        "source": "squad-page context anchors identity; UEFA DOB recorded during discovery",
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 88,
+      "requested_name": "Romain Del Castillo",
+      "requested_club_label": "Stade Brestois 29",
+      "filename": "romain-del-castillo.webp",
+      "state_key": "stade-brestois-29",
+      "search_name": "romain del castillo",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "stade-brestois-29",
+        "club_display": "Stade Brestois 29",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 10,
+        "selection_basis": "EA top-rated pair with 24/25 UCL history at the club",
+        "candidates": [
+          {
+            "name": "Romain Del Castillo"
+          },
+          {
+            "name": "Ludovic Ajorque"
+          },
+          {
+            "name": "Mama Baldé"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Romain Del Castillo",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 89,
+      "requested_name": "Casper Tengstedt",
+      "requested_club_label": "Toulouse FC",
+      "filename": "casper-tengstedt.webp",
+      "state_key": "toulouse-fc",
+      "search_name": "casper tengstedt",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "toulouse-fc",
+        "club_display": "Toulouse FC",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 11,
+        "selection_basis": "top scorer; long-serving Venezuela international",
+        "candidates": [
+          {
+            "name": "Casper Tengstedt"
+          },
+          {
+            "name": "Cristian Cásseres Jr."
+          },
+          {
+            "name": "Guillaume Restes"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Casper Tengstedt",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 90,
+      "requested_name": "Josué Casimir",
+      "requested_club_label": "AJ Auxerre",
+      "filename": "josue-casimir.webp",
+      "state_key": "aj-auxerre",
+      "search_name": "josue casimir",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "aj-auxerre",
+        "club_display": "AJ Auxerre",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 12,
+        "selection_basis": "wing duo",
+        "candidates": [
+          {
+            "name": "Josué Casimir"
+          },
+          {
+            "name": "Ibrahim Osman"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Josué Casimir",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 91,
+      "requested_name": "Jonathan Clauss",
+      "requested_club_label": "OGC Nice",
+      "filename": "jonathan-clauss.webp",
+      "state_key": "ogc-nice",
+      "search_name": "jonathan clauss",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "ogc-nice",
+        "club_display": "OGC Nice",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 13,
+        "selection_basis": "France international, EA top-rated; top scorer",
+        "candidates": [
+          {
+            "name": "Jonathan Clauss"
+          },
+          {
+            "name": "Sofiane Diop"
+          },
+          {
+            "name": "Gauthier Hein"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Jonathan Clauss",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 92,
+      "requested_name": "Joaquín Panichelli",
+      "requested_club_label": "RC Strasbourg Alsace",
+      "filename": "joaquin-panichelli.webp",
+      "state_key": "rc-strasbourg-alsace",
+      "search_name": "joaquin panichelli",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "rc-strasbourg-alsace",
+        "club_display": "RC Strasbourg Alsace",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 14,
+        "selection_basis": "EA top-rated striker",
+        "candidates": [
+          {
+            "name": "Joaquín Panichelli"
+          },
+          {
+            "name": "Guéla Doué"
+          },
+          {
+            "name": "Filip Jörgensen"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Joaquín Panichelli",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 93,
+      "requested_name": "Anthony Lopes",
+      "requested_club_label": "Angers SCO",
+      "filename": "anthony-lopes.webp",
+      "state_key": "angers-sco",
+      "search_name": "anthony lopes",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "angers-sco",
+        "club_display": "Angers SCO",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 15,
+        "selection_basis": "ex-Lyon legend GK; EA top-rated",
+        "candidates": [
+          {
+            "name": "Anthony Lopes"
+          },
+          {
+            "name": "Haris Belkebla"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Anthony Lopes",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 94,
+      "requested_name": "Djibril Sidibé",
+      "requested_club_label": "Le Mans FC",
+      "filename": "djibril-sidibe.webp",
+      "state_key": "le-mans-fc",
+      "search_name": "djibril sidibe",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "le-mans-fc",
+        "club_display": "Le Mans FC",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 16,
+        "selection_basis": "France international, EA top-rated",
+        "candidates": [
+          {
+            "name": "Djibril Sidibé"
+          },
+          {
+            "name": "Billal Brahimi"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Djibril Sidibé",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 95,
+      "requested_name": "Umut Bozok",
+      "requested_club_label": "ES Troyes AC",
+      "filename": "umut-bozok.webp",
+      "state_key": "es-troyes-ac",
+      "search_name": "umut bozok",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "es-troyes-ac",
+        "club_display": "ES Troyes AC",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 17,
+        "selection_basis": "promotion top scorers",
+        "candidates": [
+          {
+            "name": "Umut Bozok"
+          },
+          {
+            "name": "Lucas Painter"
+          },
+          {
+            "name": "Thibault Dingome"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Umut Bozok",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    },
+    {
+      "roster_index": 96,
+      "requested_name": "Mbwana Samatta",
+      "requested_club_label": "Le Havre AC",
+      "filename": "mbwana-samatta.webp",
+      "state_key": "le-havre-ac",
+      "search_name": "mbwana samatta",
+      "club_hint": null,
+      "uefa_profile_url": null,
+      "hero": {
+        "club_slug": "le-havre-ac",
+        "club_display": "Le Havre AC",
+        "league": "Ligue 1",
+        "league_code": "FL1",
+        "league_position": 18,
+        "selection_basis": "Tanzania captain; top scorer",
+        "candidates": [
+          {
+            "name": "Mbwana Samatta"
+          },
+          {
+            "name": "Rayan Fofana"
+          }
+        ]
+      },
+      "identity_hint": {
+        "full_name": "Mbwana Samatta",
+        "date_of_birth": null,
+        "source": null,
+        "confidence": "low"
+      }
+    }
+  ]
+}

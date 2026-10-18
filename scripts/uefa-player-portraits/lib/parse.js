@@ -10,6 +10,12 @@
 // Used ONLY for matching; display names are never rewritten (spec §4).
 function normalizeName(s) {
   return (s || "")
+    // letters that NFD does not decompose but UEFA slugs transliterate
+    .replace(/ı/g, "i").replace(/İ/g, "i") // Turkish dotless/dotted I
+    .replace(/ß/g, "ss")
+    .replace(/ø/g, "o").replace(/Ø/g, "o")
+    .replace(/æ/g, "ae").replace(/œ/g, "oe")
+    .replace(/đ/g, "d").replace(/ł/g, "l")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // strip combining marks (accents)
     .replace(/[’'`´]/g, "") // apostrophes: N’Golo -> ngolo
@@ -158,13 +164,27 @@ function parsePlayerProfile(html, canonicalUrl) {
     cutoff_alt_text: null,
   };
 
-  // <title>Ousmane Dembélé | Paris | UEFA Champions League 2026/27 | UEFA.com</title>
+  // Title variants observed on live pages:
+  //   UCL-style:  "Ousmane Dembélé | Paris | UEFA Champions League 2026/27 | UEFA.com"
+  //   UEL/UECL:   "Bart Verbruggen | UEFA Conference League 2026/27 | UEFA.com"
+  //               (no club part — the club is recovered from the page's club
+  //               link /clubs/{id}--{slug}/ instead)
   const title = (html.match(/<title>([^<]*)<\/title>/) || [])[1] || "";
   const titleParts = title.split("|").map((s) => decodeEntities(s).trim());
+  const looksLikeCompetition = (s) => /^UEFA\b/i.test(s) && /(League|Champions|Cup|Euro)/i.test(s);
   if (titleParts.length >= 3) {
     out.full_name = titleParts[0] || null;
-    out.uefa_observed_club = titleParts[1] || null;
-    const comp = titleParts[2] || "";
+    let comp;
+    if (looksLikeCompetition(titleParts[1] || "")) {
+      comp = titleParts[1] || "";
+      const clubLink = html.match(
+        /href="\/(?:uefachampionsleague|uefaeuropaleague|uefaconferenceleague)\/clubs\/(\d+--[a-z0-9-]+)\/"/
+      );
+      out.uefa_observed_club = clubLink ? clubLink[1].split("--")[1] : null;
+    } else {
+      out.uefa_observed_club = titleParts[1] || null;
+      comp = titleParts[2] || "";
+    }
     out.competition = comp || null;
     const seasonMatch = comp.match(/(\d{4}\/\d{2})/);
     if (seasonMatch) out.season = seasonMatch[1];
@@ -184,13 +204,15 @@ function parsePlayerProfile(html, canonicalUrl) {
   if (fields["Weight"]) out.weight = fields["Weight"];
 
   // Transparent cutout portrait: <img class="player-header__cutoff-image ..."
-  // data-src="https://img.uefa.com/imgml/TP/players/1/{season}/cutoff/{id}.webp"
-  const cutRe = /class="player-header__cutoff-image[^"]*"[^>]*?(?:data-src|src)="(https:\/\/img\.uefa\.com\/imgml\/TP\/players\/1\/(\d{4})\/cutoff\/(\d+)\.webp)"/;
+  // data-src="https://img.uefa.com/imgml/TP/players/{segment}/{season}/cutoff/{id}.webp"
+  // The segment maps to the competition context (observed: UCL=1, UEL=14,
+  // UECL=2019).
+  const cutRe = /class="player-header__cutoff-image[^"]*"[^>]*?(?:data-src|src)="(https:\/\/img\.uefa\.com\/imgml\/TP\/players\/(\d+)\/(\d{4})\/cutoff\/(\d+)\.webp)"/;
   const cut = html.match(cutRe);
   if (cut) {
     out.cutoff_image_url = cut[1];
-    out.cutoff_asset_season = cut[2];
-    out.cutoff_player_id = cut[3];
+    out.cutoff_asset_season = cut[3];
+    out.cutoff_player_id = cut[4];
     const alt = html.match(/class="player-header__cutoff-image[^"]*"[^>]*?alt="([^"]*)"/);
     if (alt) out.cutoff_alt_text = decodeEntities(alt[1]);
   }
@@ -198,7 +220,7 @@ function parsePlayerProfile(html, canonicalUrl) {
   // Opaque fallback portrait (324x324 jpg) — recorded as a non-preferred
   // candidate, never accepted as the final asset (spec §8: do not silently
   // mix opaque photos with transparent cutouts).
-  const fb = html.match(/https:\/\/img\.uefa\.com\/imgml\/TP\/players\/1\/(\d{4})\/324x324\/(\d+)\.jpg/);
+  const fb = html.match(/https:\/\/img\.uefa\.com\/imgml\/TP\/players\/(\d+)\/(\d{4})\/324x324\/(\d+)\.jpg/);
   if (fb) out.fallback_image_url = fb[0];
 
   return out;

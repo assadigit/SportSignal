@@ -193,6 +193,17 @@ the next run.
 - The manifest records profile URL, image URL, retrieval date and SHA-256
   per portrait for full provenance.
 
+## 7b. The hero MVP collection (roster-heroes.json)
+
+A second collection shares this asset library: one star player per club of
+the big-5 leagues 2026/27 (96 clubs, `scripts/uefa-player-portraits/roster-heroes.json`),
+published as `manifest-heroes.json` plus the club → portrait map
+`hero-clubs.json` (the contract for the hero frontend). Its full
+specification, runbook and the recorded failure catalogue live in
+**`docs/scrapping/uefa-players/`** (README + SPEC v2 + INSTRUCTIONS).
+Status (2026-10-18): 26 complete, 23 verified no-asset (documented probe
+evidence), 47 research-pending; `npm run portraits:heroes` re-runs it.
+
 ## 8. Repository layout
 
 ```

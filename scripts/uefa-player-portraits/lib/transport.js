@@ -83,7 +83,7 @@ function relayConfigured() {
 // Single GET attempt through one transport mode. Redirects are followed
 // manually with every hop re-validated. Returns the 200 response, throws
 // HttpError(404), marks+throws access denials, or surfaces transient errors.
-async function rawGetOnce(url, mode) {
+async function rawGetOnce(url, mode, opts = {}) {
   assertUrlAllowed(url);
   const host = new URL(url).hostname;
   if (blocked[mode].has(host)) {
@@ -152,10 +152,18 @@ async function rawGetOnce(url, mode) {
 
     if (res.status === 404) throw new HttpError(404, url, "missing candidate");
     if (looksLikeAccessDenied(res.status, body.slice(0, 400).toString("utf8"))) {
+      // Transient throttles happen during bounded 404-probe sweeps. Back off
+      // for a minute and retry ONCE before declaring the host blocked (a
+      // genuine block repeats and then stops all automated requests, per
+      // spec §7).
+      if (!opts || !opts.deniedRetried) {
+        await new Promise((r) => setTimeout(r, 65000));
+        return rawGetOnce(url, mode, { deniedRetried: true });
+      }
       blocked[mode].add(host);
       throw new BlockedHostError(
         host,
-        `access-denied response over ${mode} transport (HTTP ${res.status})`
+        `access-denied response over ${mode} transport (HTTP ${res.status}, persisted after a 65 s backoff)`
       );
     }
     if (res.status === 429 || res.status >= 500) {
@@ -216,12 +224,25 @@ function blockedHostList() {
   };
 }
 
+// Clear the in-process access-denied state (used by long batch runs that
+// PAUSE and retry after UEFA's edge throttles a transport — the throttle
+// windows observed in practice are minutes, not permanent blocks).
+function clearBlocked(mode) {
+  if (mode === "direct") blocked.direct.clear();
+  else if (mode === "relay") blocked.relay.clear();
+  else {
+    blocked.direct.clear();
+    blocked.relay.clear();
+  }
+}
+
 module.exports = {
   get,
   assertUrlAllowed,
   BlockedHostError,
   HttpError,
   blockedHostList,
+  clearBlocked,
   // test seams
   _internal: { politeWait, looksLikeAccessDenied, jitter, lastRequestAt, blocked, rawGetOnce },
 };

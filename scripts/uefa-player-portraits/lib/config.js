@@ -69,6 +69,9 @@ const config = {
         "/uefachampionsleague/clubs/",
         "/uefaeuropaleague/clubs/",
         "/uefaconferenceleague/clubs/",
+        // legacy player-profile URLs (Wikipedia external links); UEFA
+        // redirects them to the canonical competition-context profile
+        "/teamsandplayers/players/player=",
       ],
       "img.uefa.com": ["/imgml/TP/players/"],
     },
