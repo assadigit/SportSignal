@@ -36,12 +36,12 @@ GitHub token:  REDACTED-GITHUB-TOKEN
 Clone to:      /home/z/sportsignal   (clone URL with token:
                https://assadigit:<token>@github.com/assadigit/SportSignal.git)
 
-Cloudflare API token:  REDACTED-CLOUDFLARE-TOKEN
-Cloudflare account:    REDACTED-CLOUDFLARE-ACCOUNT-ID
+Cloudflare API token:  [REDACTED:cf_api_token — rotate via the Cloudflare dashboard; a later-session token was live here 2026-10-13 → 2026-10-18]
+Cloudflare account:    [REDACTED:cf_account_id — recoverable from the dashboard or any session handoff]
 Deploy:                CLOUDFLARE_API_TOKEN=<cf token> CLOUDFLARE_ACCOUNT_ID=<acc id> npm run deploy
 
 Telegram bot:  @SportSignalAlertsBot
-Bot token:     REDACTED-TELEGRAM-BOT-TOKEN
+Bot token:     [REDACTED:bot_token — 2026-10-18 session found this 2026-10-13 handoff still carrying the LIVE token in a public repo; rotate via @BotFather /revoke, then set the new BOT_TOKEN via wrangler secret put]
 Webhook:       https://football.sportsignal.ir/webhook
 Admin/owner:   Alitagram, Telegram chat id 92788333 (secret CHAT_ID on the worker)
 ```
