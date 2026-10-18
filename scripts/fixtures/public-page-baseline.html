@@ -156,7 +156,8 @@ __SEO_JSONLD__
 <!-- v13.120-hero: FUTURE player-artwork slots (decorative flanks). EMPTY in
      this phase — heroArt() resolves them through the HERO_ART mapping and
      the layer only renders when a mapped asset exists (no reserved blank
-     space, no broken <img>). -->
+     space, no broken img element; spelled out because seo-check's T-03
+     regex scans raw HTML and would trip on a literal img tag here). -->
 <div class="hero-art" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"></div>
 <!-- v12.22: the hero stage's ember layer — static markup OUTSIDE #heroSpot
      so it survives every re-render, clipped to the card, pointer-transparent. -->
