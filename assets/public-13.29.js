@@ -7,12 +7,65 @@ function shareRow(e,a){/* v13.81-shareloop: shares carry the canonical match URL
    with secondary chips (competition/derby/venue) under the grid. The
    countdown strip (#bigbar → .hero-count) is STATIC chrome driven by
    updateBigBar() every second — only the digit nodes change, never the
-   layout. Player artwork is a FUTURE phase: HERO_ART maps a provider
-   team name to {src, alt, poseId} (1024×1536 transparent PNGs under
-   /assets/hero/players/). It ships EMPTY — no fabricated images; when a
-   team has no mapping the artwork layer simply never renders (no empty
-   slot, no broken img). */
-var HERO_ART={};
+   layout. v13.121-portraits: HERO_ART maps the exact football-data.org
+   provider team name to {src, alt} — the official UEFA cutoff portraits
+   (512×512 lossless webp, alpha) served from /players/uefa/ (provenance:
+   assets/players/uefa/manifest.json; contract:
+   assets/hero/players/README.md). An unmapped team simply never renders
+   the artwork layer (no empty slot, no broken img) — the crest-only look
+   is the designed fallback, so HERO_ART can ship empty at any time. */
+var HERO_ART={
+/* v13.121-portraits — 33 official UEFA cutoff portraits, one representative
+   player per club (the 2026/27 UCL 36-club roster minus the two deferred
+   players: Nicolas Jackson/Aston Villa + Florian Thauvin/Lens — UEFA
+   publishes no transparent cutout for either; owner decision 2026-10-18,
+   re-check mid-season — and minus the ONE kit-mismatch portrait: Ayase
+   Ueda/Lille OSC, whose UEFA cutoff still photographs him in a Feyenoord
+   kit; EXCLUDED per owner decision 2026-10-18 "no kit mismatch allowed".
+   Every shipped portrait was visually kit-verified 2026-10-18; the Šporar
+   warning was a false alarm — his cutoff is a genuine Slovan kit (manifest
+   corrected). Keys are EXACT football-data.org provider names
+   (FD is the first-priority provider in the pool merge, so followed-club
+   rows carry these spellings; faName is the heroArtFor fallback). Entries
+   in roster order (manifest roster_index) for audit against the manifest. */
+"Paris Saint-Germain FC":{src:"/players/uefa/ousmane-dembele.webp",alt:""},         /* #1  Dembélé */
+"FC Barcelona":{src:"/players/uefa/lamine-yamal.webp",alt:""},                      /* #2  Yamal */
+"VfB Stuttgart":{src:"/players/uefa/deniz-undav.webp",alt:""},                      /* #4  Undav */
+"Liverpool FC":{src:"/players/uefa/bradley-barcola.webp",alt:""},                   /* #5  Barcola */
+"Sporting Clube de Portugal":{src:"/players/uefa/luis-suarez-colombia.webp",alt:""},/* #6  Luis Suárez (COL) */
+"Arsenal FC":{src:"/players/uefa/bukayo-saka.webp",alt:""},                         /* #7  Saka */
+"Real Madrid CF":{src:"/players/uefa/kylian-mbappe.webp",alt:""},                    /* #8  Mbappé */
+"Real Betis Balompi\u00E9":{src:"/players/uefa/antony.webp",alt:""},                 /* #9  Antony */
+"FC Bayern M\u00FCnchen":{src:"/players/uefa/harry-kane.webp",alt:""},               /* #10 Kane */
+"FK Shakhtar Donetsk":{src:"/players/uefa/pedrinho.webp",alt:""},                    /* #11 Pedrinho */
+"Como 1907":{src:"/players/uefa/nico-paz.webp",alt:""},                              /* #12 Nico Paz */
+"Manchester United FC":{src:"/players/uefa/bruno-fernandes.webp",alt:""},            /* #13 Bruno Fernandes */
+"Villarreal CF":{src:"/players/uefa/georges-mikautadze.webp",alt:""},                /* #14 Mikautadze */
+"Club Atl\u00E9tico de Madrid":{src:"/players/uefa/julian-alvarez.webp",alt:""},     /* #15 Julián Álvarez */
+"Club Brugge KV":{src:"/players/uefa/nicolo-tresoldi.webp",alt:""},                  /* #16 Tresoldi */
+"Manchester City FC":{src:"/players/uefa/erling-haaland.webp",alt:""},               /* #17 Haaland */
+"Borussia Dortmund":{src:"/players/uefa/serhou-guirassy.webp",alt:""},               /* #18 Guirassy */
+"PAE AEK":{src:"/players/uefa/luka-jovic.webp",alt:""},                              /* #20 Jović */
+"RB Leipzig":{src:"/players/uefa/christoph-baumgartner.webp",alt:""},                /* #21 Baumgartner */
+"Sabah FK":{src:"/players/uefa/veljko-simic.webp",alt:""},                           /* #22 Simić */
+"Feyenoord Rotterdam":{src:"/players/uefa/luciano-valente.webp",alt:""},             /* #23 Valente */
+"FK Bod\u00F8/Glimt":{src:"/players/uefa/patrick-berg.webp",alt:""},                 /* #24 Berg */
+"AS Roma":{src:"/players/uefa/paulo-dybala.webp",alt:""},                            /* #25 Dybala */
+"PSV":{src:"/players/uefa/ricardo-pepi.webp",alt:""},                                /* #26 Pepi */
+"Viking FK":{src:"/players/uefa/zlatko-tripic.webp",alt:""},                         /* #27 Tripić */
+"Fenerbah\u00E7e SK":{src:"/players/uefa/ngolo-kante.webp",alt:""},                  /* #28 Kanté */
+"FC Internazionale Milano":{src:"/players/uefa/lautaro-martinez.webp",alt:""},       /* #29 Lautaro */
+"FC Porto":{src:"/players/uefa/diogo-costa.webp",alt:""},                            /* #30 Diogo Costa */
+"SK Slavia Praha":{src:"/players/uefa/lukas-provod.webp",alt:""},                    /* #31 Provod */
+"SSC Napoli":{src:"/players/uefa/scott-mctominay.webp",alt:""},                      /* #32 McTominay */
+"LASK Linz":{src:"/players/uefa/samuel-adeniran.webp",alt:""},                       /* #33 Adeniran — LASK kit verified */
+"Galatasaray SK":{src:"/players/uefa/victor-osimhen.webp",alt:""},                   /* #35 Osimhen — GS kit verified */
+"\u0160K Slovan Bratislava":{src:"/players/uefa/andraz-sporar.webp",alt:""}          /* #36 Šporar — Slovan kit VERIFIED 2026-10-18 (false alarm resolved) */
+};
+/* #34 Ueda/Lille OSC EXCLUDED — his cutoff photographs him in a Feyenoord
+   kit (the ONE kit mismatch among the 34; owner decision 2026-10-18: no kit
+   mismatch allowed). All 33 shipped portraits kit-verified visually. Re-add
+   when UEFA reshots him in a Lille kit (cli.js fetch --refresh + kit check). */
 function heroArtFor(e){if(!e)return null;var a=HERO_ART[e.name]||HERO_ART[e.faName];return a&&a.src?a:null}
 function heroArt(e,a){var t=e.querySelector(".hero-art");if(!t)return;var n=t.querySelectorAll("img"),r=a&&heroArtFor(a.homeTeam),i=a&&heroArtFor(a.awayTeam),o=function(l,c){var d=n[c];d&&(l?(d.src=l.src,d.alt=l.alt||"",d.style.display=""):(d.removeAttribute("src"),d.style.display="none"))};o(r,0),o(i,1),t.classList.toggle("has",!!(r||i))}
 function heroTeamNode(e,a,t){var r=document.createElement("div");r.className="hero-side"+(t?" away":"");var n=document.createElement("span");n.className="hero-role",n.textContent=a;var i=logo(e);var o=document.createElement("span");o.className="hero-name",nameInto(o,curLang()==="en"?e.name:e.faName||e.name);return r.appendChild(n),r.appendChild(i),r.appendChild(o),r}

@@ -35,13 +35,15 @@
 # are pinned now; the rename history lives in CHANGELOG.md + git.
 # v13.120-hero: core-13.10→13.11, public-13.27→13.28, public-13.23→13.24
 # (the Stadium-Pulse hero redesign — the v13.39 rename-on-edit rule).
+# v13.121-portraits: public-13.28→13.29 (the HERO_ART portrait mapping),
+# public-13.24→13.25 (square-source flank retune) — same rule.
 /core-13.11.js
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.28.js
+/public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.24.css
+/public-13.25.css
   Cache-Control: public, max-age=31536000, immutable
 
 /favicon.svg
@@ -79,5 +81,14 @@
 # re-built/re-fetched at any time (not immutable: the owner may replace a
 # logo in place — re-run make-sticker-pack.js --recreate to rebuild).
 /stickers/*
+  Cache-Control: public, max-age=86400
+
+# v13.121-portraits: the UEFA cutoff portrait collection (34 webp, 512×512
+# lossless, alpha) — the hero's HERO_ART flank artwork (src /players/uefa/*).
+# NOT immutable on purpose: the pipeline may re-shoot a portrait mid-season
+# under the SAME filename (re-run portraits:fetch --refresh + normalize);
+# a day of freshness + etag revalidation keeps the hero art fresh without
+# burning a rename cycle the collection doesn't need.
+/players/uefa/*
   Cache-Control: public, max-age=86400
 

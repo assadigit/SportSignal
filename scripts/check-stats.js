@@ -225,18 +225,19 @@ check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSr
 // more prominent (tint 16%, glow 28%, !important overrides). SW v22 → v23.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js20 = read("assets/public-13.28.js");
+const js20 = read("assets/public-13.29.js");
 const slugsSrc = read("src/slugs.ts");
 const seoCfgSrc = read("src/seo/config.ts");
-check("public-13.28.js referenced in homepage (13.28 since v13.120-hero — the Stadium-Pulse redesign; was 13.27)", /\/public-13\.28\.js/.test(publicSrc));
-check("public-13.24.css referenced in homepage (renamed from 13.23 in v13.120-hero)", /\/public-13\.24\.css/.test(publicSrc));
-check("public-13.24.css referenced in SEO page-shell (renamed)", /\/public-13\.24\.css/.test(shellSrc));
+check("public-13.29.js referenced in homepage (13.29 since v13.121-portraits — the UEFA portrait wiring; was 13.28)", /\/public-13\.29\.js/.test(publicSrc));
+check("public-13.25.css referenced in homepage (renamed from 13.24 in v13.121-portraits)", /\/public-13\.25\.css/.test(publicSrc));
+check("public-13.25.css referenced in SEO page-shell (renamed)", /\/public-13\.25\.css/.test(shellSrc));
 check("core-13.11.js referenced in homepage (public page script tag)", /\/core-13\.11\.js/.test(publicSrc));
-check("public-13.28.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.28.js")));
-check("public-13.24.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.24.css")));
-check("assets/_headers pins public-13.28 immutable", /\/public-13\.28\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("assets/_headers pins public-13.24.css immutable", /\/public-13\.24\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("SW cache bumped to sportsignal-v30 (replaces v29 — the v13.120-hero asset renames)", /CACHE = "sportsignal-v30"/.test(swSrc));
+check("public-13.29.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.29.js")));
+check("public-13.25.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.25.css")));
+check("assets/_headers pins public-13.29 immutable", /\/public-13\.29\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.25.css immutable", /\/public-13\.25\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers serves /players/uefa/* day-fresh (owner-replaceable, not immutable)", /\/players\/uefa\/\*\s*\n\s*Cache-Control: public, max-age=86400/.test(headersSrc));
+check("SW cache bumped to sportsignal-v31 (replaces v30 — the v13.121-portraits asset renames)", /CACHE = "sportsignal-v31"/.test(swSrc));
 check("barTarget checks nextBig before topSpot (all competitions)", /t=DATA\.nextBig\|\|null.*if\(!t\)\{t=a\}/.test(js20));
 check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js20));
 check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js20));
@@ -383,7 +384,7 @@ check("heroH1Sync exists and runs inside renderHeroSpot (EN H1 fix)", /function 
 check("heroH1Sync writes the EN sentence (Next big match:)", /"Next big match: "\+r\+" \\u2013 "\+n/.test(js20));
 
 // ---------- 11) v13.120-hero: the Stadium Pulse + Match Protocol redesign ----------
-const cssHero = read("assets/public-13.24.css");
+const cssHero = read("assets/public-13.25.css");
 check("hero CSS: three-zone grid areas (home | mid | away)", /grid-template-areas:"home mid away"/.test(cssHero));
 check("hero CSS: mobile two-row composition (teams side-by-side, panel below)", /grid-template-areas:"home away" "mid mid"/.test(cssHero));
 check("hero CSS: blue kickoff panel with bright border", /\.hero-mid\{grid-area:mid;[^}]*background:linear-gradient\(172deg,rgba\(47,107,255,\.96\)/.test(cssHero));
@@ -392,19 +393,29 @@ check("hero CSS: light theme icy surface (#DCEBFA card base)", /\[data-theme=lig
 check("hero CSS: tabular digits on clock + countdown", /\.hero-clock\{[^}]*font-variant-numeric:tabular-nums/.test(cssHero) && /\.hc-v\{[^}]*font-variant-numeric:tabular-nums/.test(cssHero));
 check("hero CSS: seconds-only tick pulse (hero-tick reused, scoped to #hcS)", /#hcS\.tick\{animation:hero-tick \.34s/.test(cssHero));
 check("hero CSS: artwork layer hidden by default + never below 900px", /\.hero-art\{display:none;position:absolute/.test(cssHero) && /@media\(max-width:900px\)\{\.hero-art\{display:none!important\}\}/.test(cssHero));
+check("hero CSS: artwork flanks retuned for square 1:1 sources (66% height, 340px cap — was 82%/400px for the retired 2:3 contract) + soft bottom fade", /\.hero-art img\{position:absolute;bottom:0;height:66%;max-height:340px;width:auto;object-fit:contain/.test(cssHero) && /-webkit-mask-image:linear-gradient\(to top,transparent 0,#000 15%\)/.test(cssHero) && /(?<!-webkit-)mask-image:linear-gradient\(to top,transparent 0,#000 15%\)/.test(cssHero));
 check("hero CSS: reduced-motion kills ambient layers + countdown pulse", /@media\(prefers-reduced-motion:reduce\)\{\n\.bighero \.match,\.hero-side \.logo,\.hero-mid,\.hero-count,\.hero-fx:before,\.hero-fx:after,\.hero-fx i,\.herowrap:before,\.bigbar-fill,#hcS\.tick\{animation:none!important\}/.test(cssHero));
 check("hero CSS: urgency ladder kept (soon/final/live borders)", /#bigHeroCard\[data-urgent=soon\]/.test(cssHero) && /#bigHeroCard\[data-urgent=final\],#bigHeroCard\[data-urgent=live\]/.test(cssHero));
 check("updateBigBar drives the four unit digits (hcD/hcH/hcM/hcS)", /getElementById\("hcD"\)/.test(js20) && /setNum\(dEl,dd\),setNum\(hEl,hh\),setNum\(mEl,mm\),setNum\(sEl,ss\)/.test(js20));
 check("updateBigBar hides the strip for live/postponed (no fake countdown)", /post\)\{n&&\(n\.style\.display="none"\)/.test(js20) && /if\(live\)\{n&&\(n\.style\.display="none"\)/.test(js20));
 check("updateBigBar never renders a negative countdown (clamped zeros + T(soon))", /if\(ms<=0\)\{setNum\(dEl,0\),setNum\(hEl,0\),setNum\(mEl,0\),setNum\(sEl,0\)/.test(js20) && /t&&\(t\.textContent=T\("soon"\)\)/.test(js20));
-check("HERO_ART mapping ships EMPTY (future artwork contract, no fabricated images)", /var HERO_ART=\{\};/.test(js20) && /function heroArtFor\(e\)\{if\(!e\)return null;var a=HERO_ART\[e\.name\]\|\|HERO_ART\[e\.faName\]/.test(js20));
+check("HERO_ART ships the real mapping — the official UEFA cutoff portraits (heroArtFor name-then-faName lookup unchanged)", /var HERO_ART=\{\s*\/\*/.test(js20) && /function heroArtFor\(e\)\{if\(!e\)return null;var a=HERO_ART\[e\.name\]\|\|HERO_ART\[e\.faName\]/.test(js20));
 check("heroArt renders the layer ONLY when a mapping resolves", /t\.classList\.toggle\("has",!!\(r\|\|i\)\)/.test(js20));
 check("server mirror: heroCardHtml exists in seo/markup.ts", /export function heroCardHtml\(sm: SeoMatch\): string/.test(read("src/seo/markup.ts")));
 check("router serves heroCardHtml into __SEO_HERO__", /const heroHtml = nextBig \? M\.heroCardHtml\(nextBig\) : ""/.test(read("src/seo/router.ts")));
 check("router fills the server-side countdown digits (upcoming only, else hides the strip)", /__SEO_HCD__/.test(read("src/seo/router.ts")) && /hcUpcoming/.test(read("src/seo/router.ts")));
 check("template: countdown strip with 4 units + data-i labels + sr summary", /id="hcD">__SEO_HCD__<\/b><i data-i="uDay">/.test(publicSrc) && /id="hcSr" class="sr-only" aria-live="polite"/.test(publicSrc));
 check("template: hero-art slot present but empty (no src, aria-hidden)", /<div class="hero-art" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"><\/div>/.test(publicSrc));
-check("player artwork contract documented (assets/hero/players/README.md)", fs.existsSync(path.join(__dirname, "..", "assets", "hero", "players", "README.md")) && /1024 × 1536/.test(read("assets/hero/players/README.md")));
+// ---------- v13.121-portraits: the HERO_ART mapping pins ----------
+const heroArtBlock = js20.slice(js20.indexOf("var HERO_ART={"), js20.indexOf("function heroArtFor"));
+const heroArtSrcs = [...heroArtBlock.matchAll(/src:"(\/players\/uefa\/[a-z0-9-]+\.webp)"/g)].map((m) => m[1]);
+const heroArtKeys = [...heroArtBlock.matchAll(/^"((?:[^"\\]|\\.)+)":\{src/gm)].map((m) => m[1].replace(/\\u([0-9A-F]{4})/g, (h, c) => String.fromCharCode(parseInt(c, 16))));
+check("HERO_ART: every src resolves to a file in assets/players/uefa/ (same-count guard)", heroArtSrcs.length === heroArtKeys.length && heroArtSrcs.every((s) => fs.existsSync(path.join(__dirname, "..", "assets", s.slice(1)))));
+check("HERO_ART: 33 entries — one representative player per club; deferred players' teams absent (Jackson/Aston Villa + Thauvin/Lens) AND the kit-mismatch team absent (Ueda shows his Feyenoord kit at Lille — excluded, owner decision 2026-10-18: no kit mismatch allowed)", heroArtKeys.length === 33 && !heroArtKeys.includes("Aston Villa FC") && !heroArtKeys.includes("Racing Club de Lens") && !heroArtKeys.includes("Lille OSC"));
+check("HERO_ART: keys are EXACT football-data.org provider names (FD is the first-priority pool source), incl. the cross-competition legal spellings", heroArtKeys.includes("Paris Saint-Germain FC") && heroArtKeys.includes("Club Atlético de Madrid") && heroArtKeys.includes("FC Internazionale Milano") && heroArtKeys.includes("PAE AEK") && heroArtKeys.includes("ŠK Slovan Bratislava") && heroArtKeys.includes("FK Bodø/Glimt"));
+check("HERO_ART: alt empty on every entry (decorative aria-hidden layer) + poseId dropped", (heroArtBlock.match(/,alt:""\}/g) || []).length === 33 && !/poseId/.test(js20));
+check("HERO_ART: the ONE kit-mismatch portrait EXCLUDED (Ueda→Lille in a Feyenoord kit; file retained in the collection for re-check) — Šporar KEPT: portrait visually verified a genuine Slovan 26/27 kit (adidas, niké 'je tipovanie', double-cross-on-hills crest; the manifest's Olimpija-kit claim corrected 2026-10-18 — Olimpija wear green/white Puma)", !heroArtKeys.includes("Lille OSC") && heroArtKeys.includes("ŠK Slovan Bratislava") && !/KIT MISMATCH/.test(heroArtBlock) && fs.existsSync(path.join(__dirname, "..", "assets", "players", "uefa", "ayase-ueda.webp")));
+check("player artwork contract documented (assets/hero/players/README.md) — the REAL UEFA-portrait contract, old 2:3 contract explicitly retired", (() => { const r = read("assets/hero/players/README.md"); return fs.existsSync(path.join(__dirname, "..", "assets", "hero", "players", "README.md")) && /512 × 512/.test(r) && /\/players\/uefa\//.test(r) && /manifest\.json/.test(r) && /Superseded/.test(r); })());
 check("shareUrl helper prefers the payload path", /function shareUrl\(e\)\{return e&&e\.path\?location\.origin\+e\.path:null\}/.test(js20));
 check("share texts append the canonical URL (wa.me + copy)", /var su=shareUrl\(e\),txt=shareText\(e,a\),wtxt=su\?txt\+"\\n\\n"\+su:txt/.test(js20));
 check("telegram share targets the match URL when present", /encodeURIComponent\(su\|\|location\.origin\+location\.pathname\)/.test(js20));

@@ -132,7 +132,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
 
   // --- section fills (server-rendered, same classes as the client) ---
   // v13.120-hero: the hero is the Stadium-Pulse card (M.heroCardHtml — the
-  // server mirror of renderHeroSpot in public-13.28.js).
+  // server mirror of renderHeroSpot in public-13.29.js).
   const heroHtml = nextBig ? M.heroCardHtml(nextBig) : "";
   const liveHtml = live.length
     ? live.slice(0, 10).map((sm, i) => M.spotItemHtml(sm, i, { finished: true, isLiveCard: true })).join("")

@@ -1,58 +1,85 @@
-# Future Hero Player Artwork Directory
+# Hero Player Artwork — the real contract (v13.121-portraits)
 
-This directory is reserved for future generated player cutouts. **Do not add
-or generate player images during the current Hero implementation task.**
+> **Superseded contract (v13.120-hero era, obsolete):** this directory was
+> reserved for *generated* player cutouts — one 1024 × 1536 (2:3) transparent
+> PNG per team from a shared `poseId` pose library. **No such images were ever
+> created.** The hero phase shipped with `HERO_ART` empty by design, and the
+> generated-PNG contract is retired. This README now documents the contract
+> that actually shipped.
 
-When the artwork phase is approved, create one canonical transparent PNG for
-each supported team, depicting one approved representative player from that
-team. The selected player should face the camera, with a clearly visible
-face and a mostly front-facing upper body. Each team's artwork may use a
-different confident, natural pose from the shared pose library below.
+## 1. Where the artwork comes from
 
-- Source canvas: **1024 × 1536 px** (portrait 2:3)
-- Format: PNG with true alpha transparency
-- One player, no background, no UI, no watermark, and no invented readable
-  badge/sponsor text
-- Same cinematic art direction, lighting family, subject scale, and crop
-  across the catalog
-- Different `poseId` values across teams when practical; avoid identical
-  poses for both teams in a featured matchup where possible
-- **Do not create left-facing/right-facing variants and do not mirror the
-  image in CSS.** The same front-facing artwork can be placed on either
-  side of the Hero.
+The hero's player artwork is the **official UEFA cutoff portrait collection**
+landed in commit `44e9906` (2026-10-18):
 
-## Pose library (`poseId`)
+- Assets: `assets/players/uefa/<player-slug>.webp` · served at
+  `/players/uefa/<player-slug>.webp` (worker `[assets]`).
+- Pipeline + provenance: `scripts/uefa-player-portraits/` —
+  `assets/players/uefa/manifest.json` records per portrait: canonical UEFA
+  profile URL, image URL, retrieval date, SHA-256, normalization record.
+  Full docs: `docs/assets/uefa-player-portraits.md`.
+- Collection status: **34 of 36 complete** (the 2026/27 UCL 36-club roster,
+  one representative player each). Two deferred by owner decision
+  2026-10-18 — Nicolas Jackson (Aston Villa) and Florian Thauvin (Lens):
+  UEFA publishes no transparent cutout for either. Re-check mid-season:
+  `node scripts/uefa-player-portraits/cli.js fetch --refresh` then
+  `npm run portraits:normalize && npm run portraits:validate`.
+- Hero coverage: **`HERO_ART` ships 33 of the 34** — the one kit-mismatch
+  portrait is excluded (owner decision 2026-10-18: no kit mismatch allowed;
+  see §3). Every shipped portrait was visually kit-verified 2026-10-18.
 
-| `poseId` | Description |
+| Property | Value |
 |---|---|
-| `arms-crossed` | confident, calm |
-| `hand-on-chest` | subtle badge-area gesture (no real crest needed) |
-| `one-hand-raised` | restrained greeting |
-| `hands-on-hips` | assertive stance |
-| `fist-near-chest` | subtle celebration |
-| `relaxed-ready` | arms relaxed, focused expression |
+| Format | WebP, **lossless**, alpha transparency |
+| Canvas | **512 × 512 px** (square — NOT the retired 2:3 portrait canvas) |
+| Background | fully transparent |
+| Framing | shared content box, horizontally centred, bottom baseline |
+| Filenames | stable ASCII kebab-case **player** slugs (`ousmane-dembele.webp`) — never derived from club names |
 
-## Naming + integration contract
+## 2. Runtime integration (`HERO_ART` in `assets/public-*.js`)
 
-- Stable filename based on the provider team name slug,
-  e.g. `fc-barcelona.png`, `fc-bayern-munchen.png` (sanitized, never a
-  localized display name).
-- Runtime integration: the homepage's client script (`assets/public-*.js`)
-  exposes the `HERO_ART` lookup at the top of the hero builders —
+The homepage's client script exposes the `HERO_ART` lookup at the top of the
+hero builders — `heroArtFor()` resolves a team, `heroArt()` fills the two
+flank `<img>` slots of the static `.hero-art` layer and toggles `.has`.
 
-  ```js
-  var HERO_ART = {
-    // "FC Barcelona": { src: "/assets/hero/players/fc-barcelona.png",
-    //                   alt: "", poseId: "arms-crossed" },
-  };
-  ```
+- **Keys are the exact football-data.org provider team names** as they arrive
+  on the match rows (`e.name`; `e.faName` is the lookup fallback) — e.g.
+  `"Paris Saint-Germain FC"`, `"FC Barcelona"`, `"Club Atlético de Madrid"`.
+  FD is the first-priority provider in the pool merge, so a followed-club
+  fixture carries the FD spelling. Cross-check names against
+  `CONFIG.BIG_TEAMS_BY_LEAGUE` / `src/match-classify.ts`.
+- Entry shape: `{ src, alt }` — `src` points at `/players/uefa/<slug>.webp`,
+  `alt` is `""` (the layer is decorative, `aria-hidden="true"`).
+- `poseId` is **dropped** — a pose catalog is meaningless for real
+  photographs; no runtime code ever read it.
+- An EMPTY mapping is a valid state: the `.hero-art` layer only renders when
+  one/both sides resolve. Unmapped teams keep the crest-only look (no
+  reserved blank space, no broken `<img>` element, no CLS — the layer is
+  absolutely positioned and reserves nothing).
+- Artwork is anchored to the outer edges of the hero on desktop (>900px),
+  hidden on narrower viewports, and **never horizontally mirrored** (same
+  photo can sit on either flank).
 
-  A team is looked up by its exact provider name (or `faName` fallback).
-  An EMPTY mapping is the valid default: the `.hero-art` layer only
-  renders when both/one side resolves (no reserved blank space, no broken
-  `<img>`, and the Hero is visually complete without any artwork).
-- `poseId` lives in this mapping only (catalog metadata for auditing pose
-  variety); the runtime never depends on it.
-- Artwork is decorative (`aria-hidden`), anchored to the outer edges of the
-  Hero on desktop (>900px), hidden on narrower viewports, and never
-  horizontally mirrored.
+## 3. Kit verification (2026-10-18, owner rule: no kit mismatch allowed)
+
+All 34 portraits were visually audited against the 2026/27 kits of their
+`HERO_ART` club keys (crest, manufacturer, shirt sponsor, colours —
+ cross-checked against kit archives/club announcements). Result: **exactly
+one kit mismatch**.
+
+| Team (FD name) | Portrait | Finding |
+|---|---|---|
+| `"Lille OSC"` | `ayase-ueda.webp` | **EXCLUDED** — shows his **Feyenoord** kit (30–31 Aug 2026 transfer to Lille confirmed; UEFA had not reshot him). Crest-only fallback for Lille until UEFA publishes a Lille cutoff |
+| `"ŠK Slovan Bratislava"` | `andraz-sporar.webp` | **KEPT** — the manifest's earlier "Olimpija kit" warning was a false alarm: the portrait is a genuine Slovan kit (royal blue, adidas, `niké je tipovanie`, double-cross-on-three-hills crest; Olimpija wear green/white Puma). His July 2026 Olimpija transfer is real, but his UCL registration and this cutoff remain Slovan. Manifest + identity-evidence corrected 2026-10-18 |
+
+Re-add Lille when UEFA reshots Ueda: `cli.js fetch --refresh` + kit
+re-verification, then restore the one-line `HERO_ART` entry (33→34) and
+update the pin count in `scripts/check-stats.js`.
+
+## 4. Rights (the standing constraint)
+
+`docs/assets/uefa-player-portraits.md` §7: **redistribution permission is NOT
+established** — UEFA is the source, the manifest carries full provenance, and
+the repository's source-code licence does NOT apply to these images. Any
+change to how prominently they are displayed needs an explicit owner decision;
+the empty-mapping fallback is always available and is a designed, tested state.

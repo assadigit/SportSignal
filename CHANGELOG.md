@@ -6,6 +6,87 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.121-portraits] — 2026-10-18 (the hero artwork wired to the official UEFA cutoff portraits — 33 real player photos flank the featured match; the artwork contract reconciled to what actually exists)
+
+### What changed — the hero now shows the players
+
+The hero's artwork layer (`.hero-art`, shipped empty + tested in v13.120-hero)
+is wired to the **official UEFA cutoff portrait collection** that landed in
+`44e9906`: 34 lossless WebP portraits with alpha, 512×512, one representative
+player per club, served from `/players/uefa/` (provenance:
+`assets/players/uefa/manifest.json`).
+
+- **`HERO_ART` is filled** in `assets/public-13.29.js`: 33 entries keyed by
+  the EXACT football-data.org provider team names (verified live against the
+  FD API — the cross-competition legal spellings: `"Paris Saint-Germain FC"`,
+  `"Club Atlético de Madrid"`, `"FC Internazionale Milano"`, `"PAE AEK"`,
+  `"Racing Club de Lens"`, `"ŠK Slovan Bratislava"`, `"FK Bodø/Glimt"`, …);
+  FD is the first-priority pool source, so followed-club rows carry these
+  spellings; `faName` stays the `heroArtFor` fallback.
+- Entries are `{src, alt}` with `alt:""` (decorative, `aria-hidden`); the
+  `poseId` catalog concept is DROPPED (meaningless for real photographs).
+- Deferred players' teams are absent by design (owner decision 2026-10-18,
+  records in the manifest): Nicolas Jackson (Aston Villa) + Florian Thauvin
+  (Lens) — UEFA publishes no transparent cutout for either; re-check
+  mid-season (`cli.js fetch --refresh` + normalize + validate).
+- **Kit verification (owner rule: no kit mismatch allowed)** — all 34
+  portraits visually audited against their club's 2026/27 kit (crest,
+  manufacturer, sponsor, colours; kit archives cross-checked). Result:
+  **exactly one kit mismatch** — Ueda (`Lille OSC` key) still photographed
+  in his Feyenoord kit (30–31 Aug 2026 transfer confirmed) → **excluded**;
+  Lille keeps the crest-only fallback until UEFA reshots him. The Šporar
+  warning was a **false alarm**: his portrait is a genuine Slovan Bratislava
+  kit (royal blue, adidas, `niké je tipovanie`, double-cross crest —
+  Olimpija wear green/white Puma) → kept; the manifest + identity-evidence
+  records corrected 2026-10-18.
+- **Flank sizing retuned for square sources**: the 82%-height rule was tuned
+  for the retired 2:3 generated-PNG contract; at 1:1 that width crowded the
+  outer zones. Now `height:66%; max-height:340px` plus a soft bottom fade
+  (`mask-image`, first 15% of the box — the figure dissolves into the stage
+  instead of ending in a hard crop line), public-13.25.css — verified
+  visually at 1920/1440/1024. Kept unchanged: hidden ≤900px, never
+  mirrored, behind the z:3 data surface, zero CLS (the layer reserves
+  nothing — an unmapped team keeps the crest-only look, no blank slots).
+
+### The contract reconciliation (docs)
+
+- `assets/hero/players/README.md` rewritten to the REAL contract (the
+  1024×1536 generated-PNG pose-library contract is explicitly retired —
+  no such images were ever created): source = the UEFA collection,
+  512×512 square webp, manifest provenance, FD-name keying, the empty
+  mapping as a designed fallback state.
+- `docs/assets/uefa-player-portraits.md` §7 unchanged: redistribution
+  permission is NOT established — the owner's go/no-go on the public hero
+  display is recorded in the session worklog/handoff.
+
+### The engineering (rename-on-edit rule)
+
+- `assets/public-13.28.js → public-13.29.js` — the `HERO_ART` mapping +
+  header comment; `heroArtFor`/`heroArt` untouched (the v13.120-hero
+  integration point, as designed).
+- `assets/public-13.24.css → public-13.25.css` — the `.hero-art img` square
+  retune only.
+- `src/pages/public.ts` — asset refs 13.29/13.25 + the two hero comments
+  (bighero header, artwork slot) updated off the "FUTURE phase" wording;
+  baselines re-frozen via `check-admin-parity.js --update`.
+- `src/seo/page-shell.ts` (CSS ref + two comments), `src/seo/router.ts` +
+  `src/seo/markup.ts` (comment refs) — same rename choreography.
+- `assets/_headers` — 13.29/13.25 immutable pins; NEW `/players/uefa/*`
+  policy: `max-age=86400` (not immutable — the pipeline may re-shoot a
+  portrait under the same filename mid-season).
+- `assets/sw.js` CACHE v30 → v31; `package.json` 13.121.0.0 +
+  `src/config.ts` `13.121-portraits`.
+- `scripts/check-stats.js` — the `HERO_ART ships EMPTY` pin FLIPPED to the
+  real-mapping pin set (every src resolves on disk, 33 entries, FD-name
+  keys incl. the non-ASCII legal spellings, `alt:""`, poseId dropped,
+  deferred teams absent, the kit-mismatch team excluded + the Šporar
+  keep verified); the README pin now asserts
+  the real contract; the square-retune CSS pin added.
+  `scripts/check-scheduler.js` — pubJs path.
+- `package-lock.json` brought back in sync (the portraits session bumped
+  `sharp` in package.json without regenerating the lock — fresh clones'
+  `npm ci` failed; fixed by `npm install`).
+
 ## [13.120-hero] — 2026-10-18 (the Stadium Pulse + Match Protocol homepage hero — a cinematic, responsive, two-theme redesign of the featured-match card, per the approved sportsignal-hero-spec)
 
 ### What changed — the user-facing redesign

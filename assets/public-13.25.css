@@ -386,10 +386,18 @@ main{display:contents}
 .hero-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.9;filter:blur(3px) saturate(1.18) brightness(.94)}
 .hero-video:after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(3,10,22,.92) 0%,rgba(3,10,22,.42) 34%,rgba(3,10,22,.16) 55%,rgba(3,10,22,.5) 100%),radial-gradient(95% 75% at 50% 40%,transparent 42%,rgba(3,10,22,.55) 100%)}
 [data-theme=light] .hero-video:after{background:linear-gradient(to top,rgba(224,238,252,.95) 0%,rgba(224,238,252,.55) 34%,rgba(224,238,252,.28) 55%,rgba(214,232,250,.6) 100%),radial-gradient(95% 75% at 50% 40%,transparent 42%,rgba(214,232,250,.6) 100%)}
-/* --- future player artwork (renders ONLY when a mapping exists) --- */
+/* --- player artwork (renders ONLY when a mapping exists). v13.121-portraits:
+      the sources are the UEFA cutoff portraits — 512×512 square webp — so the
+      flank sizing is retuned for 1:1: height 66% (was 82%, tuned for the
+      retired 2:3 contract; at 1:1 that width crowded the center panel and
+      the outer zones), cap 340px, and a soft bottom fade (mask-image, first
+      15% of the box) so the figure dissolves into the stage instead of
+      ending in a hard crop line at the card edge. Anchored to the outer
+      edges, bottom 0, never mirrored, hidden ≤900px, behind the z:3 data
+      surface. --- */
 .hero-art{display:none;position:absolute;inset:0;z-index:1;pointer-events:none}
 .hero-art.has{display:block}
-.hero-art img{position:absolute;bottom:0;height:82%;max-height:400px;width:auto;object-fit:contain;filter:drop-shadow(0 18px 34px rgba(2,6,23,.5))}
+.hero-art img{position:absolute;bottom:0;height:66%;max-height:340px;width:auto;object-fit:contain;filter:drop-shadow(0 18px 34px rgba(2,6,23,.5));-webkit-mask-image:linear-gradient(to top,transparent 0,#000 15%);mask-image:linear-gradient(to top,transparent 0,#000 15%)}
 .hero-art img:first-child{inset-inline-start:2%}
 .hero-art img:last-child{inset-inline-end:2%}
 @media(max-width:900px){.hero-art{display:none!important}}

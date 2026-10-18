@@ -162,7 +162,7 @@ export function mrowHtml(sm: SeoMatch, idx: number, finished: boolean): string {
 }
 
 // v13.120-hero: the SERVER mirror of the client hero card (renderHeroSpot/
-// heroTeamNode/heroMidNode in public-13.28.js) — class-for-class so the
+// heroTeamNode/heroMidNode in public-13.29.js) — class-for-class so the
 // no-JS first paint looks native and the client re-render is seamless.
 // One real <a> to the match page wraps the grid + chips (R-02, A-01/A-02).
 export function heroCardHtml(sm: SeoMatch): string {
