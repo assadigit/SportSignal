@@ -229,19 +229,20 @@ const js20 = read("assets/public-13.31.js");
 const slugsSrc = read("src/slugs.ts");
 const seoCfgSrc = read("src/seo/config.ts");
 check("public-13.31.js referenced in homepage (13.31 since v13.123-fadepill — heroArt renders the per-portrait data-fade tier; was 13.30)", /\/public-13\.31\.js/.test(publicSrc));
-check("public-13.27.css referenced in homepage (renamed from 13.26 in v13.123-fadepill — the eased jersey crossfade + the compact countdown pill)", /\/public-13\.27\.css/.test(publicSrc));
-check("public-13.27.css referenced in SEO page-shell (renamed)", /\/public-13\.27\.css/.test(shellSrc));
+check("public-13.28.css referenced in homepage (13.27→13.28 same-day: the hi fade tier retuned; the eased jersey crossfade + the compact countdown pill)", /\/public-13\.28\.css/.test(publicSrc));
+check("public-13.28.css referenced in SEO page-shell (renamed)", /\/public-13\.28\.css/.test(shellSrc));
 check("core-13.11.js referenced in homepage (public page script tag)", /\/core-13\.11\.js/.test(publicSrc));
 check("public-13.31.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.31.js")));
-check("public-13.27.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.27.css")));
+check("public-13.28.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.28.css")));
 check("assets/_headers pins public-13.31 immutable", /\/public-13\.31\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 check("assets/_headers keeps public-13.30.js served through one SEO TTL (the post-rename 404 window)", /\/public-13\.30\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.30.js")));
 check("assets/_headers keeps public-13.29.js served through one SEO TTL (the post-rename 404 window)", /\/public-13\.29\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.29.js")));
-check("assets/_headers pins public-13.27.css immutable", /\/public-13\.27\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.28.css immutable", /\/public-13\.28\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers keeps public-13.27.css served through one SEO TTL (the same-day 13.28 rename)", /\/public-13\.27\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.27.css")));
 check("assets/_headers keeps public-13.26.css served through one SEO TTL (the post-rename 404 window, per the v13.121 ops note)", /\/public-13\.26\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.26.css")));
 check("assets/_headers keeps public-13.25.css served through one SEO TTL (the post-rename 404 window, per the v13.121 ops note)", /\/public-13\.25\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.25.css")));
 check("assets/_headers serves /players/uefa/* day-fresh (owner-replaceable, not immutable)", /\/players\/uefa\/\*\s*\n\s*Cache-Control: public, max-age=86400/.test(headersSrc));
-check("SW cache bumped to sportsignal-v33 (replaces v32 — the v13.123-fadepill js+css renames)", /CACHE = "sportsignal-v33"/.test(swSrc));
+check("SW cache bumped to sportsignal-v34 (replaces v33 — the same-day 13.27→13.28 hi-tier retune)", /CACHE = "sportsignal-v34"/.test(swSrc));
 check("barTarget checks nextBig before topSpot (all competitions)", /t=DATA\.nextBig\|\|null.*if\(!t\)\{t=a\}/.test(js20));
 check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js20));
 check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js20));
@@ -388,7 +389,7 @@ check("heroH1Sync exists and runs inside renderHeroSpot (EN H1 fix)", /function 
 check("heroH1Sync writes the EN sentence (Next big match:)", /"Next big match: "\+r\+" \\u2013 "\+n/.test(js20));
 
 // ---------- 11) v13.120-hero: the Stadium Pulse + Match Protocol redesign ----------
-const cssHero = read("assets/public-13.27.css");
+const cssHero = read("assets/public-13.28.css");
 check("hero CSS: three-zone grid areas (home | mid | away)", /grid-template-areas:"home mid away"/.test(cssHero));
 check("hero CSS: mobile two-row composition (teams side-by-side, panel below)", /grid-template-areas:"home away" "mid mid"/.test(cssHero));
 check("hero CSS: blue kickoff panel with bright border", /\.hero-mid\{grid-area:mid;[^}]*background:linear-gradient\(172deg,rgba\(47,107,255,\.96\)/.test(cssHero));
@@ -407,7 +408,7 @@ check("hero CSS v13.123-fadepill: the DEFAULT eased bottom crossfade (owner ask:
   /-webkit-mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.34\) 7%,rgba\(0,0,0,\.7\) 15%,#000 26%\)/.test(cssHero) &&
   /(?<!-webkit-)mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.34\) 7%,rgba\(0,0,0,\.7\) 15%,#000 26%\)/.test(cssHero));
 check("hero CSS v13.123-fadepill: the hi/deep fade tiers (Yamal's shorts-over-dark-legs / Šimić's near-invisible lower body)",
-  /\.hero-art img\[data-fade=hi\]\{-webkit-mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.18\) 5%,rgba\(0,0,0,\.38\) 12%,rgba\(0,0,0,\.72\) 21%,#000 31%\)/.test(cssHero) &&
+  /\.hero-art img\[data-fade=hi\]\{-webkit-mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.06\) 5%,rgba\(0,0,0,\.16\) 11%,rgba\(0,0,0,\.8\) 17%,#000 27%\)/.test(cssHero) &&
   /\.hero-art img\[data-fade=deep\]\{-webkit-mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.12\) 10%,rgba\(0,0,0,\.26\) 20%,rgba\(0,0,0,\.4\) 30%,#000 40%\)/.test(cssHero));
 check("hero CSS v13.123-fadepill: the COMPACT COUNTDOWN PILL (the owner's yellow-rect area estimate — centered, content-fit, ≥901px; was the 920px full-width strip)",
   /@media\(min-width:901px\)\{\n\.hero-count\{align-self:center;width:auto;max-width:100%;justify-content:center;gap:12px;padding:9px 20px 12px;border-radius:999px\}/.test(cssHero) &&

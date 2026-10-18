@@ -83,7 +83,11 @@
 //              (per-portrait fade tiers via data-fade) + the compact
 //              countdown pill. Same rule: cache-first assets can't refresh
 //              without a rename or a bump.)
-const CACHE = "sportsignal-v33";
+// Cache name:  sportsignal-v34 (v13.123-fadepill, same-day follow-up:
+//              public-13.27.css→13.28 — the hi fade tier retuned so
+//              Yamal's white shorts fade over their own height; the first
+//              live review measured a still-visible edge. Same rule.)
+const CACHE = "sportsignal-v34";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

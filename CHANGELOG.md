@@ -32,10 +32,13 @@ compact centered countdown.
   Portraits now carry an optional `fade` tier (`public-13.30.js →
   public-13.31.js`: `heroArt()` renders it as `data-fade`, removed again
   on hide so re-renders never leak a stale tier):
-  - `fade:"hi"` (Yamal): slower early ramp `0 → .18@5% → .38@12% →
-    .72@21% → 1@31%` — his shorts' own edge lands at ≤ ~35% mask
-    strength, no visible crop line, the dark legs continue the silhouette
-    to the floor.
+  - `fade:"hi"` (Yamal): the shorts fade out over their OWN height
+    (`0 → .06@5% → .16@11% → .8@17% → 1@27%` — top of the shorts at
+    80% strength, mid at ~48%, their bottom edge at 16%: a ≤20-lum step)
+    so the white dims away before the portrait's own edge; the dark legs
+    below stay invisible to the floor. (First cut shipped `.18/.38/.72`
+    stops; the live VLM + pixel review measured a still-visible ‑64-lum
+    edge at the shorts' hem — retuned same-day in `public-13.28.css`.)
   - `fade:"deep"` (Šimić — bright kit ends ~70%, everything below
     near-invisible against the dark stage): the ramp completes by 40% up
     so the visible torso sinks into shadow instead of cropping at the
@@ -56,10 +59,10 @@ compact centered countdown.
 
 ### Release wiring
 
-`public-13.30.js → public-13.31.js`, `public-13.26.css → public-13.27.css`;
-the retired `public-13.30.js` + `public-13.26.css` stay pinned one more
-TTL-window (the v13.121 ops note); SW cache
-`v32 → v33`; `_headers` pins 13.31/13.27; `check-stats` pins flipped and
+`public-13.30.js → public-13.31.js`, `public-13.26.css → public-13.27.css
+→ public-13.28.css` (same-day hi-tier retune); every retired file stays
+pinned one more TTL-window (the v13.121 ops note); SW cache
+`v32 → v33 → v34`; `_headers` pins 13.31/13.28; `check-stats` pins flipped and
 extended (fade-tier pins: CSS hi/deep ramps, the two keyed HERO_ART
 entries, the data-fade render/remove contract, the pill block);
 `check-scheduler` cache-bust pin 13.31; baselines re-frozen;

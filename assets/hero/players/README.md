@@ -79,8 +79,10 @@ flank `<img>` slots of the static `.hero-art` layer and toggles `.has`.
     melts through its last ~60px into the stage floor.
   - *`fade:"hi"`* (`lamine-yamal` — his white shorts end ~89% of the box
     with only dark legs below; the owner flagged him looking "stray"):
-    slower early ramp `0 → .18@5% → .38@12% → .72@21% → 1@31%` keeps the
-    shorts' own edge at ≤ ~35% mask strength — no visible crop line.
+    the shorts fade out over their OWN height `0 → .06@5% → .16@11% →
+    .8@17% → 1@27%` — top of the shorts at 80% strength, mid at ~48%,
+    their bottom edge at 16% (a ≤20-lum step vs the card) — the white
+    dims away before the portrait's own edge, no crop line.
   - *`fade:"deep"`* (`veljko-simic` — bright kit ends ~70%, everything
     below is near-invisible against the dark stage): ramp completes by
     40% up so the visible torso sinks into shadow instead of cropping at

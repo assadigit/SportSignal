@@ -45,8 +45,10 @@
 # renamed-away file — keeping the old file served (404→200) closes it.
 # v13.123-fadepill: public-13.30→13.31 (heroArt data-fade rendering + the
 # Yamal/Šimić fade tiers), public-13.26→13.27 (the eased jersey crossfade
-# + the compact countdown pill) — same retention rule: 13.30/13.26 stay
-# pinned through one 900s edge-HTML window.
+# + the compact countdown pill), 13.27→13.28 same-day (live VLM review
+# measured a still-visible -64-lum edge on Yamal's white shorts — the hi
+# tier retuned so the shorts fade over their own height) — retention rule:
+# every retired file stays pinned through one 900s edge-HTML window.
 /core-13.11.js
   Cache-Control: public, max-age=31536000, immutable
 
@@ -57,6 +59,9 @@
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.29.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.28.css
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.27.css

@@ -78,7 +78,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.27.css">
+<link rel="stylesheet" href="/public-13.28.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -200,7 +200,7 @@ ${FONT_FACES_STYLE}
      (the owner's yellow-rect area estimate on his bb.jpg mockup — a
      centered band at ~45% of the card width in the card's bottom band):
      content-fit width, radius 999px, label + units centered. The markup
-     is unchanged — the compaction is pure CSS (public-13.27.css); the
+     is unchanged — the compaction is pure CSS (public-13.28.css); the
      3px progress track keeps riding the pill's bottom edge. -->
 <div class="hc-row"><span id="bigbarLabel" class="hc-label" data-i="barNext">\u26A1 \u062A\u0627 \u0628\u0627\u0632\u06CC \u0628\u0632\u0631\u06AF \u0628\u0639\u062F\u06CC</span><span class="hc-units" dir="ltr"><span class="hc-u"><b class="hc-v" id="hcD">__SEO_HCD__</b><i data-i="uDay">\u0631\u0648\u0632</i></span><span class="hc-c" aria-hidden="true">:</span><span class="hc-u"><b class="hc-v" id="hcH">__SEO_HCH__</b><i data-i="uHour">\u0633\u0627\u0639\u062A</i></span><span class="hc-c" aria-hidden="true">:</span><span class="hc-u"><b class="hc-v" id="hcM">__SEO_HCM__</b><i data-i="uMin">\u062F\u0642\u06CC\u0642\u0647</i></span><span class="hc-c" aria-hidden="true">:</span><span class="hc-u"><b class="hc-v" id="hcS">__SEO_HCS__</b><i data-i="uSec">\u062B\u0627\u0646\u06CC\u0647</i></span></span></div>
 <span id="hcSr" class="sr-only" aria-live="polite"></span>
@@ -223,7 +223,7 @@ ${FONT_FACES_STYLE}
      into the card (the owner's premium-melt ask) — heroArt() renders a
      per-portrait data-fade tier from the HERO_ART entry's optional fade
      field (Yamal hi / Simic deep; default eased ramp otherwise; removed
-     on hide). Geometry + fade tiers live in public-13.27.css. -->
+     on hide). Geometry + fade tiers live in public-13.28.css. -->
 <div class="hero-art" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"></div>
 </div>
 <!-- v12.3/v12.4/v12.7/v12.8 TOP BOX (league), per the user's rules: TOP CL GAME (two
