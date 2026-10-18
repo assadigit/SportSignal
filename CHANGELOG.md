@@ -6,6 +6,75 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.122-heroart] — 2026-10-19 (the breakout flanks — per the owner's reference mockup: much larger figures in front of the card, heads slightly above its top edge for a 3D look)
+
+### What changed — the figures break out of the card
+
+The hero artwork geometry was retuned to the owner's reference mockup
+(uploaded 2026-10-19, `369.jpg`): the flanks go from small inset images to
+**full-height figures riding in front of the card, heads popping slightly
+above its top edge** — the 3D breakout look.
+
+- **The layer moved out of the card**: `.hero-art` was a child of
+  `.card.bighero`, whose `overflow:hidden` clipped everything to the
+  rounded rect — the breakout is impossible from inside. It now rides as
+  the LAST child of `.herowrap` (DOM-after the card), painted at
+  `z-index:2`: in front of the card shell/fx/hud, still below the `z:3`
+  data surface (crest/name/panel text always reads). `public-13.29.js →
+  public-13.30.js`: `heroArt()`'s layer query resolves the card scope
+  first, then falls back to `.herowrap .hero-art` (the moved layer).
+- **Full-height figures** (`public-13.25.css → public-13.26.css`):
+  `height:112%` of the card on 901–1439px, `122%` at ≥1440px (was 66%
+  with a 340px cap — the figures grow ~86% linearly, ~3.4× in area),
+  bottom anchored at the card's bottom edge, 1% inset from the outer
+  edges, drop-shadow retuned. The 512-square portraits carry 5% top
+  headroom, so each head pops ~16% of the card height above its top edge
+  (measured 52px on the 327px card at 1920; the mockup's own pop is
+  10–14% — same "slightly out" read).
+- **Grid-item margin trap fixed**: at ≥1440px the body grid makes
+  `.herowrap` an independent formatting context, so the card's own 14px
+  margins were contained INSIDE the wrapper — the artwork layer
+  (`inset:0`) spanned the card's MARGIN box and hung 14px below the card.
+  `.herowrap>.card.bighero{margin:0}` — the wrapper's box now IS the
+  card's box at every breakpoint.
+- **Breakout clearance**: `.herowrap` gains `margin-top:46px` on ≥901px —
+  the stock 14px gap put the home-side head straight through the sync
+  line (RTL: the home figure rises where the stamp text starts); the
+  mockup keeps clear air between the stamp and the heads (8px measured).
+- **Bottom fade retuned**: mask over the first 16% of the box. The
+  portraits' opaque pixels end at 94.5%, so the v13.121 15%-of-214px ramp
+  and an initial 8% attempt both landed mostly inside that built-in
+  transparent margin, leaving the figure's own waist cutoff floating
+  ~22px above the card floor; 16% of the 398px flank puts the visible
+  dissolve right at the card's bottom edge (matches the mockup's crisp
+  cut at the floor).
+- Hidden ≤900px, never mirrored, pointer-transparent, zero CLS
+  (absolute; measured 0 on mapped/unmapped/single states) — unchanged.
+
+### Verification
+
+Full suite exit 0 (1950 OK, portraits gate 37/37, tsc clean);
+`seo:check --local` 56/0. Browser-verified on the seeded dev fixture
+(Barcelona–Bayern, both sides mapped): 1920/1440/1024 dark fa-RTL, light
+fa + light en-LTR (logical insets flip the flanks with the language);
+heads 52px above the card top at 1920, 39px at 1024 (112% tier);
+clearance to the sync line 8px @1920 / 71px @1024; ≤900px hidden
+(860px: `display:none`); unmapped = crest-only with no blank slot, no
+broken img; single-side renders one figure; CLS 0; no console errors.
+VLM design review: strong match to the mockup (bottom treatment
+side-by-side: same hard-cut-at-the-floor read; head pop + in-front
+layering confirmed on zoomed crops).
+
+### Asset renames (the v13.39 rule) + the 404 window closed
+
+`public-13.29.js → 13.30.js`, `public-13.25.css → 13.26.css`; SW CACHE
+`v31 → v32` (one-shot evict). **The old files stay served + immutable-pinned
+in `_headers`** — the v13.121 ops note documented the ~10-minute post-deploy
+window where `caches.default` (SEO_PAGE_TTL 900s) serves old HTML
+referencing renamed-away assets (404); keeping `13.29.js`/`13.25.css` on
+disk closes it (old HTML → old assets → old-but-working look; new HTML →
+new assets).
+
 ## [13.121-portraits] — 2026-10-18 (the hero artwork wired to the official UEFA cutoff portraits — 33 real player photos flank the featured match; the artwork contract reconciled to what actually exists)
 
 ### What changed — the hero now shows the players

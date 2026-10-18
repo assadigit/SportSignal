@@ -78,7 +78,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.25.css">
+<link rel="stylesheet" href="/public-13.26.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -146,7 +146,11 @@ ${FONT_FACES_STYLE}
      v13.121-portraits: player artwork is LIVE — heroArt() resolves the
      flanks through the HERO_ART mapping (official UEFA cutoff portraits;
      contract: /assets/hero/players/README.md). Unmapped teams keep the
-     crest-only look — the card is complete either way. -->
+     crest-only look — the card is complete either way.
+     v13.122-heroart: the figures BREAK OUT of the card — full-height
+     flanks in front of the card edges, heads slightly above its top edge
+     (the owner's reference mockup, 2026-10-19); the layer moved from
+     inside the card to a .herowrap sibling (see the v13.122 note below). -->
 <!-- v12.27 (review item 1): .herowrap — the clip host's shell. The card
      inside carries overflow:hidden (clips the video/crest/fx layers to its
      radius), while this wrapper's ::before owns the OUTER heartbeat
@@ -161,12 +165,6 @@ ${FONT_FACES_STYLE}
      a prefers-reduced-motion user keeps autoplay too (v12.28 — the user's
      twice-repeated ask outweighs the media query for this one element). -->
 <div class="hero-video" aria-hidden="true"><video src="/hero-stage.mp4" poster="/hero-poster.jpg" autoplay muted loop playsinline preload="auto" tabindex="-1" disablepictureinpicture referrerpolicy="no-referrer"></video></div>
-<!-- v13.121-portraits: player-artwork slots (decorative flanks), filled
-     by heroArt() through the HERO_ART mapping when a side resolves; the
-     layer only renders for a mapped team (no reserved blank space, no
-     broken img element; spelled out because seo-check's T-03 regex scans
-     raw HTML and would trip on a literal img tag here). -->
-<div class="hero-art" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"></div>
 <!-- v12.22: the hero stage's ember layer — static markup OUTSIDE #heroSpot
      so it survives every re-render, clipped to the card, pointer-transparent. -->
 <div class="hero-fx" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -181,7 +179,10 @@ ${FONT_FACES_STYLE}
 <div class="hero-hud" aria-hidden="true"><i></i><i></i></div>
 <!-- v12.26: layer D \u2014 the DATA SURFACE. The countdown bar and its match row
      ride ONE positioned layer (z:3) above the video (z:0), the crests (z:1)
-     and the css fx (z:2) \u2014 exactly the user's ladder. -->
+     and the css fx (z:2) \u2014 exactly the user's ladder. v13.122-heroart:
+     the player artwork (now a .herowrap sibling, z:2) also reads BELOW
+     this surface \u2014 text stays on top even where a figure overlaps a
+     crest/name zone at narrow widths. -->
 <div class="hero-data">
 <!-- v12.46-herofix (kept): the match row (heroSpot) rides ABOVE the
      countdown strip. renderHeroSpot paints the three-zone grid here. -->
@@ -201,6 +202,19 @@ ${FONT_FACES_STYLE}
 </div>
 </div>
 </div>
+<!-- v13.122-heroart: player-artwork slots (decorative flanks), filled
+     by heroArt() through the HERO_ART mapping when a side resolves; the
+     layer only renders for a mapped team (no reserved blank space, no
+     broken img element; spelled out because seo-check's T-03 regex scans
+     raw HTML and would trip on a literal img tag here). MOVED out of the
+     card (was a sibling of .hero-video through v13.121): the card's
+     overflow:hidden clipped the figures to the rounded rect, but the
+     owner's reference mockup (2026-10-19) wants the heads to POP ABOVE
+     the card's top edge for a 3D breakout — so the layer now rides as the
+     LAST child of .herowrap (DOM-after the card ⇒ paints in front of the
+     card shell at its z:2; the z:3 data surface inside the card still
+     reads above the figures). Geometry lives in public-13.26.css. -->
+<div class="hero-art" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"></div>
 </div>
 <!-- v12.3/v12.4/v12.7/v12.8 TOP BOX (league), per the user's rules: TOP CL GAME (two
      selected teams in the Champions League) \u2192 the UCL BOX below; big DOMESTIC
@@ -342,7 +356,7 @@ ${FONT_FACES_STYLE}
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.11.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.29.js" defer><\/script>
+<script src="/public-13.30.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

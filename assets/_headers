@@ -37,10 +37,22 @@
 # (the Stadium-Pulse hero redesign — the v13.39 rename-on-edit rule).
 # v13.121-portraits: public-13.28→13.29 (the HERO_ART portrait mapping),
 # public-13.24→13.25 (square-source flank retune) — same rule.
+# v13.122-heroart: public-13.25→13.26 (the breakout flank retune from the
+# owner's reference mockup — full-height figures in front of the card, heads
+# slightly above its top edge). 13.25 stays pinned on disk through one
+# caches.default SEO TTL (900s): the last release documented the ~10-min
+# post-deploy window where the edge serves old HTML that references the
+# renamed-away file — keeping the old file served (404→200) closes it.
 /core-13.11.js
   Cache-Control: public, max-age=31536000, immutable
 
+/public-13.30.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.29.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.26.css
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.25.css

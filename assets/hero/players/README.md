@@ -59,6 +59,17 @@ flank `<img>` slots of the static `.hero-art` layer and toggles `.has`.
 - Artwork is anchored to the outer edges of the hero on desktop (>900px),
   hidden on narrower viewports, and **never horizontally mirrored** (same
   photo can sit on either flank).
+- **v13.122-heroart geometry (the owner's reference mockup, 2026-10-19):**
+  the `.hero-art` layer is a **`.herowrap` sibling of the card** (not a
+  child — the card's `overflow:hidden` would clip the breakout), painted at
+  `z-index:2`: in front of the card shell, below the `z:3` data surface.
+  Figures are **full-height flanks** — `height:112%` of the card
+  (901–1439px) / `122%` (≥1440px), bottom anchored at the card's bottom
+  edge, 1% inset from the outer edges — so each head pops **slightly above
+  the card's top edge** (the 3D breakout; `herowrap` carries a 46px top
+  margin ≥901px so the pop clears the sync line). Bottom fade: mask over
+  the first 16% of the box. `heroArt()`'s layer query resolves the card
+  scope first, then falls back to `.herowrap .hero-art` (the moved layer).
 
 ## 3. Kit verification (2026-10-18, owner rule: no kit mismatch allowed)
 

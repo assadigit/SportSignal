@@ -131,7 +131,7 @@ const mpoolSrc = readSrc("match-pool.ts");
 const provSrc = readSrc("providers.ts");
 const apiSrc = readSrc("api.ts");
 const wsSrc = fs.readFileSync(path.join(__dirname, "lib", "worker-src.js"), "utf8");
-const pubJs = fs.readFileSync(path.join(__dirname, "..", "assets", "public-13.29.js"), "utf8");
+const pubJs = fs.readFileSync(path.join(__dirname, "..", "assets", "public-13.30.js"), "utf8");
 const pubPage = readSrc(path.join("pages", "public.ts"));
 const headersSrc = fs.readFileSync(path.join(__dirname, "..", "assets", "_headers"), "utf8");
 
@@ -173,8 +173,8 @@ check("worker-src concat carries scheduler.ts (the harness order)",
   /"scheduler\.ts",/.test(wsSrc));
 check("the client polls adaptively (5s master tick + pollHint; no fixed 60s hammer; local stale-live guard)",
   pubJs.indexOf("setInterval(__pollTick,5e3)") >= 0 && pubJs.indexOf("setInterval(load,6e4)") < 0 && pubJs.indexOf("__pollHintSec") >= 0 && pubJs.indexOf("__sanitizeData") >= 0);
-check("the public page + _headers reference the bumped asset (cache-bust: 13.28 → 13.29, v13.121-portraits)",
-  /public-13\.29\.js/.test(pubPage) && /public-13\.29\.js/.test(headersSrc));
+check("the public page + _headers reference the bumped asset (cache-bust: 13.29 → 13.30, v13.122-heroart)",
+  /public-13\.30\.js/.test(pubPage) && /public-13\.30\.js/.test(headersSrc));
 check("scenario 16 (IDLE keeps the site alive): the quiet branch serves the KV pool and the shell never early-returns on IDLE",
   /matches = cachedPool;/.test(poolSrc) && !/if \(act\.mode === "IDLE"\) return;/.test(poolSrc));
 check("scenario 15 (no duplicated upstream calls): the SWR refresh lock + edge-cache layer stay intact",

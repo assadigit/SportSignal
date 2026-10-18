@@ -225,19 +225,21 @@ check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSr
 // more prominent (tint 16%, glow 28%, !important overrides). SW v22 → v23.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js20 = read("assets/public-13.29.js");
+const js20 = read("assets/public-13.30.js");
 const slugsSrc = read("src/slugs.ts");
 const seoCfgSrc = read("src/seo/config.ts");
-check("public-13.29.js referenced in homepage (13.29 since v13.121-portraits — the UEFA portrait wiring; was 13.28)", /\/public-13\.29\.js/.test(publicSrc));
-check("public-13.25.css referenced in homepage (renamed from 13.24 in v13.121-portraits)", /\/public-13\.25\.css/.test(publicSrc));
-check("public-13.25.css referenced in SEO page-shell (renamed)", /\/public-13\.25\.css/.test(shellSrc));
+check("public-13.30.js referenced in homepage (13.30 since v13.122-heroart — the heroArt query follows the moved layer; was 13.29)", /\/public-13\.30\.js/.test(publicSrc));
+check("public-13.26.css referenced in homepage (renamed from 13.25 in v13.122-heroart — the breakout flank retune)", /\/public-13\.26\.css/.test(publicSrc));
+check("public-13.26.css referenced in SEO page-shell (renamed)", /\/public-13\.26\.css/.test(shellSrc));
 check("core-13.11.js referenced in homepage (public page script tag)", /\/core-13\.11\.js/.test(publicSrc));
-check("public-13.29.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.29.js")));
-check("public-13.25.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.25.css")));
-check("assets/_headers pins public-13.29 immutable", /\/public-13\.29\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("assets/_headers pins public-13.25.css immutable", /\/public-13\.25\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("public-13.30.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.30.js")));
+check("public-13.26.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.26.css")));
+check("assets/_headers pins public-13.30 immutable", /\/public-13\.30\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers keeps public-13.29.js served through one SEO TTL (the post-rename 404 window)", /\/public-13\.29\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.29.js")));
+check("assets/_headers pins public-13.26.css immutable", /\/public-13\.26\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers keeps public-13.25.css served through one SEO TTL (the post-rename 404 window, per the v13.121 ops note)", /\/public-13\.25\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.25.css")));
 check("assets/_headers serves /players/uefa/* day-fresh (owner-replaceable, not immutable)", /\/players\/uefa\/\*\s*\n\s*Cache-Control: public, max-age=86400/.test(headersSrc));
-check("SW cache bumped to sportsignal-v31 (replaces v30 — the v13.121-portraits asset renames)", /CACHE = "sportsignal-v31"/.test(swSrc));
+check("SW cache bumped to sportsignal-v32 (replaces v31 — the v13.122-heroart js+css renames)", /CACHE = "sportsignal-v32"/.test(swSrc));
 check("barTarget checks nextBig before topSpot (all competitions)", /t=DATA\.nextBig\|\|null.*if\(!t\)\{t=a\}/.test(js20));
 check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js20));
 check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js20));
@@ -384,7 +386,7 @@ check("heroH1Sync exists and runs inside renderHeroSpot (EN H1 fix)", /function 
 check("heroH1Sync writes the EN sentence (Next big match:)", /"Next big match: "\+r\+" \\u2013 "\+n/.test(js20));
 
 // ---------- 11) v13.120-hero: the Stadium Pulse + Match Protocol redesign ----------
-const cssHero = read("assets/public-13.25.css");
+const cssHero = read("assets/public-13.26.css");
 check("hero CSS: three-zone grid areas (home | mid | away)", /grid-template-areas:"home mid away"/.test(cssHero));
 check("hero CSS: mobile two-row composition (teams side-by-side, panel below)", /grid-template-areas:"home away" "mid mid"/.test(cssHero));
 check("hero CSS: blue kickoff panel with bright border", /\.hero-mid\{grid-area:mid;[^}]*background:linear-gradient\(172deg,rgba\(47,107,255,\.96\)/.test(cssHero));
@@ -393,7 +395,7 @@ check("hero CSS: light theme icy surface (#DCEBFA card base)", /\[data-theme=lig
 check("hero CSS: tabular digits on clock + countdown", /\.hero-clock\{[^}]*font-variant-numeric:tabular-nums/.test(cssHero) && /\.hc-v\{[^}]*font-variant-numeric:tabular-nums/.test(cssHero));
 check("hero CSS: seconds-only tick pulse (hero-tick reused, scoped to #hcS)", /#hcS\.tick\{animation:hero-tick \.34s/.test(cssHero));
 check("hero CSS: artwork layer hidden by default + never below 900px", /\.hero-art\{display:none;position:absolute/.test(cssHero) && /@media\(max-width:900px\)\{\.hero-art\{display:none!important\}\}/.test(cssHero));
-check("hero CSS: artwork flanks retuned for square 1:1 sources (66% height, 340px cap — was 82%/400px for the retired 2:3 contract) + soft bottom fade", /\.hero-art img\{position:absolute;bottom:0;height:66%;max-height:340px;width:auto;object-fit:contain/.test(cssHero) && /-webkit-mask-image:linear-gradient\(to top,transparent 0,#000 15%\)/.test(cssHero) && /(?<!-webkit-)mask-image:linear-gradient\(to top,transparent 0,#000 15%\)/.test(cssHero));
+check("hero CSS: BREAKOUT flanks per the owner's reference mockup (2026-10-19) — full-height figures (112% of card, 122% at ≥1440px — was 66%/340px), head pops above the card top, in front of the card (z:2 layer), 16% bottom fade (dissolves the figure into the card floor), 1% edge inset", /\.hero-art\{display:none;position:absolute;inset:0;z-index:2;pointer-events:none\}/.test(cssHero) && /\.hero-art img\{position:absolute;bottom:0;height:112%;max-height:420px;width:auto;object-fit:contain/.test(cssHero) && /@media\(min-width:1440px\)\{\.hero-art img\{height:122%;max-height:480px\}\}/.test(cssHero) && /-webkit-mask-image:linear-gradient\(to top,transparent 0,#000 16%\)/.test(cssHero) && /(?<!-webkit-)mask-image:linear-gradient\(to top,transparent 0,#000 16%\)/.test(cssHero) && /\.hero-art img:first-child\{inset-inline-start:1%\}/.test(cssHero) && /\.hero-art img:last-child\{inset-inline-end:1%\}/.test(cssHero));
 check("hero CSS: reduced-motion kills ambient layers + countdown pulse", /@media\(prefers-reduced-motion:reduce\)\{\n\.bighero \.match,\.hero-side \.logo,\.hero-mid,\.hero-count,\.hero-fx:before,\.hero-fx:after,\.hero-fx i,\.herowrap:before,\.bigbar-fill,#hcS\.tick\{animation:none!important\}/.test(cssHero));
 check("hero CSS: urgency ladder kept (soon/final/live borders)", /#bigHeroCard\[data-urgent=soon\]/.test(cssHero) && /#bigHeroCard\[data-urgent=final\],#bigHeroCard\[data-urgent=live\]/.test(cssHero));
 check("updateBigBar drives the four unit digits (hcD/hcH/hcM/hcS)", /getElementById\("hcD"\)/.test(js20) && /setNum\(dEl,dd\),setNum\(hEl,hh\),setNum\(mEl,mm\),setNum\(sEl,ss\)/.test(js20));
@@ -401,11 +403,13 @@ check("updateBigBar hides the strip for live/postponed (no fake countdown)", /po
 check("updateBigBar never renders a negative countdown (clamped zeros + T(soon))", /if\(ms<=0\)\{setNum\(dEl,0\),setNum\(hEl,0\),setNum\(mEl,0\),setNum\(sEl,0\)/.test(js20) && /t&&\(t\.textContent=T\("soon"\)\)/.test(js20));
 check("HERO_ART ships the real mapping — the official UEFA cutoff portraits (heroArtFor name-then-faName lookup unchanged)", /var HERO_ART=\{\s*\/\*/.test(js20) && /function heroArtFor\(e\)\{if\(!e\)return null;var a=HERO_ART\[e\.name\]\|\|HERO_ART\[e\.faName\]/.test(js20));
 check("heroArt renders the layer ONLY when a mapping resolves", /t\.classList\.toggle\("has",!!\(r\|\|i\)\)/.test(js20));
+check("heroArt v13.122: the layer query survives the move out of the card (card scope first, .herowrap fallback)", /function heroArt\(e,a\)\{var t=e\.querySelector\("\.hero-art"\)\|\|document\.querySelector\("\.herowrap \.hero-art"\);if\(!t\)return;/.test(js20));
 check("server mirror: heroCardHtml exists in seo/markup.ts", /export function heroCardHtml\(sm: SeoMatch\): string/.test(read("src/seo/markup.ts")));
 check("router serves heroCardHtml into __SEO_HERO__", /const heroHtml = nextBig \? M\.heroCardHtml\(nextBig\) : ""/.test(read("src/seo/router.ts")));
 check("router fills the server-side countdown digits (upcoming only, else hides the strip)", /__SEO_HCD__/.test(read("src/seo/router.ts")) && /hcUpcoming/.test(read("src/seo/router.ts")));
 check("template: countdown strip with 4 units + data-i labels + sr summary", /id="hcD">__SEO_HCD__<\/b><i data-i="uDay">/.test(publicSrc) && /id="hcSr" class="sr-only" aria-live="polite"/.test(publicSrc));
 check("template: hero-art slot present but empty (no src, aria-hidden)", /<div class="hero-art" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"><\/div>/.test(publicSrc));
+check("template v13.122-heroart: the hero-art layer rides OUTSIDE .card.bighero as the LAST child of .herowrap (the card's overflow:hidden would clip the head pop-out; DOM-after the card ⇒ paints in front of the shell)", (function(){const t=publicSrc, cardEnd=t.indexOf("v13.122-heroart: player-artwork slots"), art=t.indexOf('<div class="hero-art"'), heroData=t.indexOf('<div class="hero-data">'), wrap=t.indexOf('<div class="herowrap">'); return wrap>-1 && heroData>wrap && cardEnd>heroData && art>cardEnd && /v13\.122-heroart: player-artwork slots[\s\S]*?<\/div>\n<\/div>\n<!-- v12\.3\//.test(t);})());
 // ---------- v13.121-portraits: the HERO_ART mapping pins ----------
 const heroArtBlock = js20.slice(js20.indexOf("var HERO_ART={"), js20.indexOf("function heroArtFor"));
 const heroArtSrcs = [...heroArtBlock.matchAll(/src:"(\/players\/uefa\/[a-z0-9-]+\.webp)"/g)].map((m) => m[1]);

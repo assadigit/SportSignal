@@ -73,12 +73,12 @@
 //              public-13.23.css→13.24, core-13.10.js→13.11 — the
 //              Stadium-Pulse hero redesign. cache-first assets can't refresh
 //              without a rename or a bump — the v13.39 rule.)
-// Cache name:  sportsignal-v31 (v13.121-portraits: public-13.28.js→13.29
-//              — HERO_ART wired to the official UEFA cutoff portraits —
-//              and public-13.24.css→13.25, the square-source flank retune.
-//              Same rule: cache-first assets can't refresh without a
-//              rename or a bump.)
-const CACHE = "sportsignal-v31";
+// Cache name:  sportsignal-v32 (v13.122-heroart: public-13.29.js→13.30
+//              + public-13.25.css→13.26 — the breakout flank retune from
+//              the owner's reference mockup: full-height figures in front
+//              of the card, heads slightly above its top edge. Same rule:
+//              cache-first assets can't refresh without a rename or a bump.)
+const CACHE = "sportsignal-v32";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

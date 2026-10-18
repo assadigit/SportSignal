@@ -1,6 +1,6 @@
 // SportSignal — <head> builder (P-01..P-11) + the HTML shell shared by every
 // NEW public page (match/team/competition/hubs/trust). The shell reuses the
-// site's versioned stylesheet (currently /public-13.25.css) so the design
+// site's versioned stylesheet (currently /public-13.26.css) so the design
 // (cards, rows, tables, fonts, themes) is identical to the homepage, plus a
 // small inline block for page-specific components (breadcrumbs, facts,
 // prose). No home-page JS is loaded — these pages are complete server HTML.
@@ -84,7 +84,7 @@ export function pageShell(opts: {
 ${themeInit}
 <link rel="preload" href="/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/public-13.25.css">
+<link rel="stylesheet" href="/public-13.26.css">
 <style>
 /* Page-specific components for server-rendered SEO pages (breadcrumbs,
    answer-first block, facts table, prose). Reuses the site's CSS vars. */
@@ -164,7 +164,7 @@ a.mvenue-map:active{transform:scale(.97)}
    the h2 count chip matches the site's pill vocabulary */
 .simcard{margin-top:14px}
 /* v13.87-formtable: the team page's standings window — reuses .stbox/.strow
-   (public-13.25.css); .strow-me highlights the team's own row with the
+   (public-13.26.css); .strow-me highlights the team's own row with the
    site's sky accent (same family as .mcount/.mvenue-map); .stmore is the
    "full table" footer link. */
 .stwin{margin:0}
