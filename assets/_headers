@@ -33,13 +33,15 @@
 # hold such HTML, and the same prune was already done once before (v13.29
 # removed core-13.6/public-13.6/public-13.8.css). Only the LIVE versions
 # are pinned now; the rename history lives in CHANGELOG.md + git.
-/core-13.10.js
+# v13.120-hero: core-13.10→13.11, public-13.27→13.28, public-13.23→13.24
+# (the Stadium-Pulse hero redesign — the v13.39 rename-on-edit rule).
+/core-13.11.js
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.27.js
+/public-13.28.js
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.23.css
+/public-13.24.css
   Cache-Control: public, max-age=31536000, immutable
 
 /favicon.svg

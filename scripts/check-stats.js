@@ -225,18 +225,18 @@ check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSr
 // more prominent (tint 16%, glow 28%, !important overrides). SW v22 → v23.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js20 = read("assets/public-13.27.js");
+const js20 = read("assets/public-13.28.js");
 const slugsSrc = read("src/slugs.ts");
 const seoCfgSrc = read("src/seo/config.ts");
-check("public-13.27.js referenced in homepage (13.27 since v13.118-fixsched — the adaptive-polling patch; was 13.26)", /\/public-13\.27\.js/.test(publicSrc));
-check("public-13.23.css referenced in homepage (renamed from 13.22)", /\/public-13\.23\.css/.test(publicSrc));
-check("public-13.23.css referenced in SEO page-shell (renamed)", /\/public-13\.23\.css/.test(shellSrc));
-check("core-13.10.js referenced in homepage (public page script tag)", /\/core-13\.10\.js/.test(publicSrc));
-check("public-13.27.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.27.js")));
-check("public-13.23.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.23.css")));
-check("assets/_headers pins public-13.27 immutable", /\/public-13\.27\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("assets/_headers pins public-13.23.css immutable", /\/public-13\.23\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
-check("SW cache bumped to sportsignal-v29 (replaces v28)", /CACHE = "sportsignal-v29"/.test(swSrc));
+check("public-13.28.js referenced in homepage (13.28 since v13.120-hero — the Stadium-Pulse redesign; was 13.27)", /\/public-13\.28\.js/.test(publicSrc));
+check("public-13.24.css referenced in homepage (renamed from 13.23 in v13.120-hero)", /\/public-13\.24\.css/.test(publicSrc));
+check("public-13.24.css referenced in SEO page-shell (renamed)", /\/public-13\.24\.css/.test(shellSrc));
+check("core-13.11.js referenced in homepage (public page script tag)", /\/core-13\.11\.js/.test(publicSrc));
+check("public-13.28.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.28.js")));
+check("public-13.24.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.24.css")));
+check("assets/_headers pins public-13.28 immutable", /\/public-13\.28\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.24.css immutable", /\/public-13\.24\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("SW cache bumped to sportsignal-v30 (replaces v29 — the v13.120-hero asset renames)", /CACHE = "sportsignal-v30"/.test(swSrc));
 check("barTarget checks nextBig before topSpot (all competitions)", /t=DATA\.nextBig\|\|null.*if\(!t\)\{t=a\}/.test(js20));
 check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js20));
 check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js20));
@@ -249,8 +249,8 @@ check("renderTopSpot passes feat option", /feat:fk\.has\(keyOf\(i\)\)/.test(js20
 check("renderWeek passes feat option", /feat:wfk\.has\(keyOf\(d\)\)/.test(js20));
 check("renderLive passes feat option", /feat:lfk\.has\(keyOf\(o\)\)/.test(js20));
 check("renderUcl passes feat option", /feat:ufk\.has\(keyOf\(c\)\)/.test(js20));
-check("renderHeroSpot passes feat:!!t.big + featOuter:!!t.big", /feat:!!t\.big,featOuter:!!t\.big/.test(js20));
-check("renderHeroSpot adds match-featured to #bigHeroCard when t.big", /t&&t\.big&&\(e\.className\+=" match-featured"\)/.test(js20));
+check("renderHeroSpot builds the Stadium-Pulse grid (heroTeamNode/heroMidNode/hero-grid)", /g\.className="hero-grid",g\.appendChild\(heroTeamNode\(t\.homeTeam,T\("heroHome"\),!1\)\),g\.appendChild\(heroMidNode\(t\)\),g\.appendChild\(heroTeamNode\(t\.awayTeam,T\("heroAway"\),!0\)\)/.test(js20));
+check("renderHeroSpot adds match-featured to #bigHeroCard when t.big", /t\.big&&\(e\.className\+=" match-featured"\)/.test(js20));
 check("homepage inline CSS uses grass green accent #4CBB17", /#4CBB17/.test(publicSrc));
 check("homepage inline CSS has .match-featured with flat outer glow (no inset)", /\.match-featured\{.*box-shadow:0 0 var\(--feat-blur\).*!important/.test(publicSrc) && !/inset/.test(publicSrc.match(/\.match-featured\{[^}]+\}/)?.[0]||''));
 check("featured CSS has feat-shimmer animation (list cards)", /feat-shimmer/.test(publicSrc) && /infinite/.test(publicSrc));
@@ -258,8 +258,8 @@ check("featured CSS has feat-glow-shift animation", /feat-glow-shift/.test(publi
 check("featured CSS makes inner .match panel transparent", /match-featured \.match\{background:transparent!important/.test(publicSrc));
 check("featured CSS fixes inner .match overflow", /match-featured \.match\{.*overflow:visible!important/.test(publicSrc));
 check("hero CSS: glow on #bigHeroCard.match-featured", /#bigHeroCard\.match-featured\{/.test(publicSrc));
-check("hero CSS: feat-hero-sweep (7s infinite, R→L)", /feat-hero-sweep 7s/.test(publicSrc) && /@keyframes feat-hero-sweep/.test(publicSrc));
-check("hero CSS: feat-hero-pulse (5s infinite)", /feat-hero-pulse 5s/.test(publicSrc) && /@keyframes feat-hero-pulse/.test(publicSrc));
+check("hero CSS: hero-sheen (9s infinite, masked R→L sweep)", /hero-sheen 9s/.test(publicSrc) && /@keyframes hero-sheen/.test(publicSrc));
+check("hero CSS: hero-pulse (5s infinite dual blue/green glow)", /hero-pulse 5s/.test(publicSrc) && /@keyframes hero-pulse/.test(publicSrc) && /rgba\(40,104,255/.test(publicSrc));
 check("hero CSS: mask-image fades tint+sweep at L/R edges", /-webkit-mask-image:linear-gradient\(to right,transparent 0%,black 1[34]%,black 8[67]%,transparent 100%\)/.test(publicSrc) && /mask-image:linear-gradient\(to right,transparent 0%,black 1[34]%,black 8[67]%,transparent 100%\)/.test(publicSrc));
 check("hero CSS: hover lift (translateY)", /#bigHeroCard\.match-featured:hover\{transform:translateY/.test(publicSrc));
 check("hero CSS: no inset in .match-featured rule (flat)", !/inset/.test(publicSrc.match(/\.match-featured\{[^}]+\}/)?.[0]||''));
@@ -268,21 +268,21 @@ check("homepage inline CSS has .sr-only class", /\.sr-only\{/.test(publicSrc));
 check("public countries capped at 5 (SQL LIMIT 5)", /LIMIT 5/.test(statsSrc));
 
 // v13.65-lgtitle: hLgNext retitled (domestic leagues + cups only; UCL has its own section)
-const coreSrc = read("assets/core-13.10.js");
-check("core-13.10.js exists (renamed from 13.9 in v13.84, rename-on-edit rule)", fs.existsSync(path.join(__dirname, "..", "assets", "core-13.10.js")) && !fs.existsSync(path.join(__dirname, "..", "assets", "core-13.9.js")));
-check("core-13.10.js fa hLgNext retitled to دیدارهای جذاب لیگ‌ها", /hLgNext:"دیدارهای جذاب لیگ‌ها"/.test(coreSrc));
-check("core-13.10.js en hLgNext retitled to Exciting League Fixtures", /hLgNext:"Exciting League Fixtures"/.test(coreSrc));
-check("core-13.10.js referenced in admin page", /\/core-13\.10\.js/.test(read("src/pages/admin.ts")));
-check("core-13.10.js referenced in login page", /\/core-13\.10\.js/.test(read("src/pages/login.ts")));
-check("core-13.10.js referenced in public page", /\/core-13\.10\.js/.test(read("src/pages/public.ts")));
-check("assets/_headers pins core-13.10 immutable", /\/core-13\.10\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+const coreSrc = read("assets/core-13.11.js");
+check("core-13.11.js exists (renamed from 13.10 in v13.120-hero, rename-on-edit rule)", fs.existsSync(path.join(__dirname, "..", "assets", "core-13.11.js")) && !fs.existsSync(path.join(__dirname, "..", "assets", "core-13.10.js")));
+check("core-13.11.js fa hLgNext retitled to دیدارهای جذاب لیگ‌ها", /hLgNext:"دیدارهای جذاب لیگ‌ها"/.test(coreSrc));
+check("core-13.11.js en hLgNext retitled to Exciting League Fixtures", /hLgNext:"Exciting League Fixtures"/.test(coreSrc));
+check("core-13.11.js referenced in admin page", /\/core-13\.11\.js/.test(read("src/pages/admin.ts")));
+check("core-13.11.js referenced in login page", /\/core-13\.11\.js/.test(read("src/pages/login.ts")));
+check("core-13.11.js referenced in public page", /\/core-13\.11\.js/.test(read("src/pages/public.ts")));
+check("assets/_headers pins core-13.11 immutable", /\/core-13\.11\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 // v13.84: the orphan data-i keys found by the QA sweep — hStats/btnStats had
 // no dict entries, so the live admin showed raw "hStats"/"btnStats" text in
 // BOTH languages. Locked so a future key typo can't resurrect silently.
-check("core-13.10.js fa dict covers hStats (visit-stats heading)", /hStats:"📊 آمار بازدید"/.test(coreSrc));
-check("core-13.10.js fa dict covers btnStats (refresh-stats button)", /btnStats:"🔄 به‌روزرسانی آمار"/.test(coreSrc));
-check("core-13.10.js en dict covers hStats + btnStats", /hStats:"📊 Visit Stats"/.test(coreSrc) && /btnStats:"🔄 Refresh stats"/.test(coreSrc));
-check("core-13.10.js dead ver keys (stale v12.33 text) removed", !/ver:"(نسخه ۱۲|v12\.33)/.test(coreSrc));
+check("core-13.11.js fa dict covers hStats (visit-stats heading)", /hStats:"📊 آمار بازدید"/.test(coreSrc));
+check("core-13.11.js fa dict covers btnStats (refresh-stats button)", /btnStats:"🔄 به‌روزرسانی آمار"/.test(coreSrc));
+check("core-13.11.js en dict covers hStats + btnStats", /hStats:"📊 Visit Stats"/.test(coreSrc) && /btnStats:"🔄 Refresh stats"/.test(coreSrc));
+check("core-13.11.js dead ver keys (stale v12.33 text) removed", !/ver:"(نسخه ۱۲|v12\.33)/.test(coreSrc));
 check("every admin data-i/data-p key has a dict entry (orphan sweep)", (() => {
   const used = new Set();
   for (const m of read("src/pages/admin.ts").matchAll(/data-(?:i|p)="(\w+)"/g)) used.add(m[1]); // composer carries titleA
@@ -378,9 +378,33 @@ check("calendar link built from kickoff +2h basic format", /gcalBasic\(m\.utcDat
 check("match page styles present in page-shell (matchhead/mactions/mact)", /\.matchhead\{/.test(shellSrc81) && /\.mactions\{/.test(shellSrc81) && /\.mact\{/.test(shellSrc81));
 check("matchhead mobile stacking breakpoint (560px)", /@media \(max-width:560px\)\{\.matchhead/.test(shellSrc81));
 check("matchhead live dot pulse guarded by prefers-reduced-motion", /@media \(prefers-reduced-motion:reduce\)\{\.mdot\{animation:none\}\}/.test(shellSrc81));
-check("hero row is a link now (noLink dropped from the hero spotItemNode call)", /spotItemNode\(t,0,\{noDate:!0,feat:!!t\.big,featOuter:!!t\.big\}\)/.test(js20) && !/spotItemNode\(t,0,\{noDate:!0,noLink:!0/.test(js20));
+check("hero row is a real link to the match page (v13.120-hero builds it directly)", /var n=document\.createElement\("a"\);n\.className="match";try\{n\.href=matchHref\(t\)\}/.test(js20));
 check("heroH1Sync exists and runs inside renderHeroSpot (EN H1 fix)", /function heroH1Sync\(\)/.test(js20) && /heroH1Sync\(\),fitHeroNames\(\)\}\}/.test(js20));
 check("heroH1Sync writes the EN sentence (Next big match:)", /"Next big match: "\+r\+" \\u2013 "\+n/.test(js20));
+
+// ---------- 11) v13.120-hero: the Stadium Pulse + Match Protocol redesign ----------
+const cssHero = read("assets/public-13.24.css");
+check("hero CSS: three-zone grid areas (home | mid | away)", /grid-template-areas:"home mid away"/.test(cssHero));
+check("hero CSS: mobile two-row composition (teams side-by-side, panel below)", /grid-template-areas:"home away" "mid mid"/.test(cssHero));
+check("hero CSS: blue kickoff panel with bright border", /\.hero-mid\{grid-area:mid;[^}]*background:linear-gradient\(172deg,rgba\(47,107,255,\.96\)/.test(cssHero));
+check("hero CSS: countdown digits green on dark, accessible green on light", /--hero-green:#48EF9B/.test(cssHero) && /--hero-green:#0A8F55/.test(cssHero));
+check("hero CSS: light theme icy surface (#DCEBFA card base)", /\[data-theme=light\] \.card\.bighero\{[^}]*background:#DCEBFA/.test(cssHero));
+check("hero CSS: tabular digits on clock + countdown", /\.hero-clock\{[^}]*font-variant-numeric:tabular-nums/.test(cssHero) && /\.hc-v\{[^}]*font-variant-numeric:tabular-nums/.test(cssHero));
+check("hero CSS: seconds-only tick pulse (hero-tick reused, scoped to #hcS)", /#hcS\.tick\{animation:hero-tick \.34s/.test(cssHero));
+check("hero CSS: artwork layer hidden by default + never below 900px", /\.hero-art\{display:none;position:absolute/.test(cssHero) && /@media\(max-width:900px\)\{\.hero-art\{display:none!important\}\}/.test(cssHero));
+check("hero CSS: reduced-motion kills ambient layers + countdown pulse", /@media\(prefers-reduced-motion:reduce\)\{\n\.bighero \.match,\.hero-side \.logo,\.hero-mid,\.hero-count,\.hero-fx:before,\.hero-fx:after,\.hero-fx i,\.herowrap:before,\.bigbar-fill,#hcS\.tick\{animation:none!important\}/.test(cssHero));
+check("hero CSS: urgency ladder kept (soon/final/live borders)", /#bigHeroCard\[data-urgent=soon\]/.test(cssHero) && /#bigHeroCard\[data-urgent=final\],#bigHeroCard\[data-urgent=live\]/.test(cssHero));
+check("updateBigBar drives the four unit digits (hcD/hcH/hcM/hcS)", /getElementById\("hcD"\)/.test(js20) && /setNum\(dEl,dd\),setNum\(hEl,hh\),setNum\(mEl,mm\),setNum\(sEl,ss\)/.test(js20));
+check("updateBigBar hides the strip for live/postponed (no fake countdown)", /post\)\{n&&\(n\.style\.display="none"\)/.test(js20) && /if\(live\)\{n&&\(n\.style\.display="none"\)/.test(js20));
+check("updateBigBar never renders a negative countdown (clamped zeros + T(soon))", /if\(ms<=0\)\{setNum\(dEl,0\),setNum\(hEl,0\),setNum\(mEl,0\),setNum\(sEl,0\)/.test(js20) && /t&&\(t\.textContent=T\("soon"\)\)/.test(js20));
+check("HERO_ART mapping ships EMPTY (future artwork contract, no fabricated images)", /var HERO_ART=\{\};/.test(js20) && /function heroArtFor\(e\)\{if\(!e\)return null;var a=HERO_ART\[e\.name\]\|\|HERO_ART\[e\.faName\]/.test(js20));
+check("heroArt renders the layer ONLY when a mapping resolves", /t\.classList\.toggle\("has",!!\(r\|\|i\)\)/.test(js20));
+check("server mirror: heroCardHtml exists in seo/markup.ts", /export function heroCardHtml\(sm: SeoMatch\): string/.test(read("src/seo/markup.ts")));
+check("router serves heroCardHtml into __SEO_HERO__", /const heroHtml = nextBig \? M\.heroCardHtml\(nextBig\) : ""/.test(read("src/seo/router.ts")));
+check("router fills the server-side countdown digits (upcoming only, else hides the strip)", /__SEO_HCD__/.test(read("src/seo/router.ts")) && /hcUpcoming/.test(read("src/seo/router.ts")));
+check("template: countdown strip with 4 units + data-i labels + sr summary", /id="hcD">__SEO_HCD__<\/b><i data-i="uDay">/.test(publicSrc) && /id="hcSr" class="sr-only" aria-live="polite"/.test(publicSrc));
+check("template: hero-art slot present but empty (no src, aria-hidden)", /<div class="hero-art" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"><\/div>/.test(publicSrc));
+check("player artwork contract documented (assets/hero/players/README.md)", fs.existsSync(path.join(__dirname, "..", "assets", "hero", "players", "README.md")) && /1024 × 1536/.test(read("assets/hero/players/README.md")));
 check("shareUrl helper prefers the payload path", /function shareUrl\(e\)\{return e&&e\.path\?location\.origin\+e\.path:null\}/.test(js20));
 check("share texts append the canonical URL (wa.me + copy)", /var su=shareUrl\(e\),txt=shareText\(e,a\),wtxt=su\?txt\+"\\n\\n"\+su:txt/.test(js20));
 check("telegram share targets the match URL when present", /encodeURIComponent\(su\|\|location\.origin\+location\.pathname\)/.test(js20));

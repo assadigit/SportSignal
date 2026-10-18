@@ -7,7 +7,7 @@
 
 import { SEO } from "./config";
 import { matchPath, compSlug } from "../slugs";
-import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, tehranDayKey, isLiveSt, faGregorianDate, tehranParts, toJalali } from "./utils";
+import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, tehranDayKey, isLiveSt, faGregorianDate, faHeroDate, tehranParts, toJalali } from "./utils";
 import { toFaDigits } from "../utils";
 import { translateCompetition } from "../translate";
 import type { SeoMatch } from "./data";
@@ -21,7 +21,10 @@ const T = {
   stNot: "شروع نشده",
   cupsNone: "برنامه‌ای هنوز اعلام نشده",
   thP: "بازی", thW: "برد", thD: "مساوی", thL: "باخت",
-  thGF: "گل زده", thGA: "گل خورده", thGD: "تفاضل", thPts: "امتیاز"
+  thGF: "گل زده", thGA: "گل خورده", thGD: "تفاضل", thPts: "امتیاز",
+  // v13.120-hero: the Stadium-Pulse hero strings (fa; the client carries
+  // the en twins in core-13.11.js I18N)
+  heroHome: "میزبان", heroAway: "میهمان", heroKickoff: "ساعت شروع"
 };
 
 function compNameFa(m: any): string {
@@ -56,12 +59,12 @@ export function logoHtml(t: any): string {
   return '<span class="logo">' + esc(monogram(t)) + "</span>";
 }
 
-function scoreHtml(score: any): string {
+function scoreHtml(score: any, extraClass?: string): string {
   if (!score || score.home == null) return "";
   const h = score.home == null ? 0 : score.home, a = score.away == null ? 0 : score.away;
   const hEl = h > a ? "<b>" + toFaDigits(String(score.home)) + "</b>" : '<span class="lose">' + toFaDigits(String(score.home)) + "</span>";
   const aEl = a > h ? "<b>" + toFaDigits(String(score.away)) + "</b>" : '<span class="lose">' + toFaDigits(String(score.away)) + "</span>";
-  return '<div class="score">' + hEl + '<span class="sep"> - </span>' + aEl + "</div>";
+  return '<div class="score' + (extraClass ? " " + extraClass : "") + '">' + hEl + '<span class="sep"> - </span>' + aEl + "</div>";
 }
 
 function kickHtml(iso: string, extra?: string): string {
@@ -156,6 +159,58 @@ export function mrowHtml(sm: SeoMatch, idx: number, finished: boolean): string {
   // v14.0.1-uifix: isRow → the client's list-row info (with the bare date
   // text node + roundFa chip allowance) — matches render() exactly.
   return '<div class="mrow">' + row + infoLineHtml(m, { isRow: true }) + "</div>";
+}
+
+// v13.120-hero: the SERVER mirror of the client hero card (renderHeroSpot/
+// heroTeamNode/heroMidNode in public-13.28.js) — class-for-class so the
+// no-JS first paint looks native and the client re-render is seamless.
+// One real <a> to the match page wraps the grid + chips (R-02, A-01/A-02).
+export function heroCardHtml(sm: SeoMatch): string {
+  const m = sm.s;
+  const live = isLiveSt(m.status);
+  const post = /POSTPON|CANCEL|SUSPEND/i.test(String(m.status || ""));
+  const scored = (live || m.status === "FINISHED") && m.score && m.score.home !== null;
+  let row = '<a class="match" href="' + esc(matchHref(m)) + '">';
+  if (m.big) row += '<span class="sr-only">بازی مهم</span>';
+  row += '<div class="hero-grid">';
+  row += heroSideHtml(m.homeTeam, T.heroHome, false);
+  let mid = '<div class="hero-mid' + (live ? " live" : "") + '">';
+  if (live) {
+    mid += '<span class="livechip hero-chip"><span class="dot"></span>' + esc(T.live) + "</span>";
+  } else if (m.status === "FINISHED") {
+    mid += '<span class="wkdone hero-chip">⌛ ' + esc(T.wkDone) + "</span>";
+  } else if (post) {
+    mid += '<span class="hero-stchip hero-chip">' + esc(/CANCEL/i.test(String(m.status)) ? "لغوشده" : "معلق") + "</span>";
+  }
+  if (scored) {
+    mid += scoreHtml(m.score, "hero-score");
+    if (live && m.minute != null) mid += '<span class="lmin hero-min">' + toFaDigits(String(m.minute)) + "ʹ</span>";
+  } else if (m.utcDate && !post) {
+    mid += '<span class="hero-kick-label">' + esc(T.heroKickoff) + '</span>';
+    mid += '<span class="hero-clock" dir="ltr"><time datetime="' + esc(m.utcDate) + '">' + esc(faTime(m.utcDate)) + "</time></span>";
+    mid += '<span class="hero-date">' + esc(faHeroDate(m.utcDate)) + "</span>";
+    mid += '<span class="kicktz">به وقت تهران</span>';
+  }
+  mid += "</div>";
+  row += mid;
+  row += heroSideHtml(m.awayTeam, T.heroAway, true);
+  row += "</div>";
+  row += '<div class="hero-chips">';
+  row += '<span class="comp">';
+  if (m.competition && m.competition.emblem) {
+    row += '<img class="complogo" src="' + esc(m.competition.emblem) + '" alt="" loading="lazy" decoding="async">';
+  }
+  row += esc(compNameFa(m)) + "</span>";
+  row += derbyBadgeHtml(m);
+  if (m.top) row += '<span class="topbadge">🏆 ' + esc(T.topBadge) + "</span>";
+  if (m.venue) row += '<span class="venue">🏟️ ' + esc(m.venueFa || m.venue) + "</span>";
+  row += "</div>";
+  row += "</a>";
+  return row;
+}
+
+function heroSideHtml(t: any, role: string, away: boolean): string {
+  return '<div class="hero-side' + (away ? " away" : "") + '"><span class="hero-role">' + esc(role) + "</span>" + logoHtml(t) + '<div class="hero-name">' + nameHtml(displayName(t)) + "</div></div>";
 }
 
 // The spotitem anatomy (hero / big-matches / week / ucl boxes).

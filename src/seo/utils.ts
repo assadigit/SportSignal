@@ -96,6 +96,14 @@ export function faGregorianDate(iso: string): string {
   return FA_WEEKDAYS[t.wd] + " " + toFaDigits(String(t.d)) + " " + FA_MONTHS[t.m - 1] + " " + toFaDigits(String(t.y));
 }
 
+// v13.120-hero: the HERO date line — weekday + day + month (no year),
+// the exact shape of the client's fmtHeroDate() so the server-rendered
+// kickoff panel and the client re-render agree byte-for-byte.
+export function faHeroDate(iso: string): string {
+  const t = tehranParts(iso);
+  return FA_WEEKDAYS[t.wd] + " " + toFaDigits(String(t.d)) + " " + FA_MONTHS[t.m - 1];
+}
+
 export function faGregorianDateShort(iso: string): string {
   const t = tehranParts(iso);
   return toFaDigits(String(t.d)) + " " + FA_MONTHS[t.m - 1] + " " + toFaDigits(String(t.y));

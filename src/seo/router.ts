@@ -131,7 +131,9 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   ]);
 
   // --- section fills (server-rendered, same classes as the client) ---
-  const heroHtml = nextBig ? M.spotItemHtml(nextBig, 0, { noDate: true }) : "";
+  // v13.120-hero: the hero is the Stadium-Pulse card (M.heroCardHtml — the
+  // server mirror of renderHeroSpot in public-13.28.js).
+  const heroHtml = nextBig ? M.heroCardHtml(nextBig) : "";
   const liveHtml = live.length
     ? live.slice(0, 10).map((sm, i) => M.spotItemHtml(sm, i, { finished: true, isLiveCard: true })).join("")
     : "";
@@ -191,6 +193,41 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   if (liveHtml) html = html.replace('<div class="card" id="liveCard" style="display:none">', '<div class="card" id="liveCard">');
   if (topspotHtml) html = html.replace('<div class="card" id="topspotCard" style="display:none">', '<div class="card" id="topspotCard">');
   if (weekHtml) html = html.replace('<div class="card" id="weekCard" style="display:none">', '<div class="card" id="weekCard">');
+
+  // v13.120-hero: the countdown strip's server-rendered digits — the
+  // remaining time from the hero kickoff AS OF the payload epoch (the page
+  // is edge-cached ≤5min; updateBigBar corrects the values on load). Only
+  // an UPCOMING hero gets digits: live/finished/postponed/missing ⇒ the
+  // strip ships hidden (the client keeps the same rule every tick).
+  {
+    const z = (n: number) => (n < 10 ? "0" + n : "" + n);
+    let hcD = "--", hcH = "--", hcM = "--", hcS = "--", hcPct = "0", hcUpcoming = false;
+    if (nextBig && nextBig.s.utcDate) {
+      const st = String(nextBig.s.status || "").toUpperCase();
+      const liveHero = /IN_PLAY|LIVE|PAUSED/.test(st);
+      const postHero = /POSTPON|CANCEL|SUSPEND/.test(st);
+      const koMs = Date.parse(nextBig.s.utcDate);
+      const ms = koMs - (ctx.fetchedAt ? Date.parse(ctx.fetchedAt) : Date.now());
+      if (!liveHero && !postHero && !isNaN(koMs) && ms > 0) {
+        hcUpcoming = true;
+        hcD = toFaDigits(z(Math.floor(ms / 864e5)));
+        hcH = toFaDigits(z(Math.floor(ms % 864e5 / 36e5)));
+        hcM = toFaDigits(z(Math.floor(ms % 36e5 / 6e4)));
+        hcS = toFaDigits(z(Math.floor(ms % 6e4 / 1e3)));
+        let g = 1 - ms / 864e5; if (g < 0) g = 0; if (g > 1) g = 1;
+        hcPct = String(Math.max(2, Math.round(g * 100)));
+      }
+    }
+    if (hcUpcoming) {
+      html = html
+        .replace("__SEO_HCD__", hcD).replace("__SEO_HCH__", hcH)
+        .replace("__SEO_HCM__", hcM).replace("__SEO_HCS__", hcS)
+        .replace("__SEO_HCPCT__", hcPct);
+    } else {
+      html = html.replace('<div id="bigbar" class="hero-count">', '<div id="bigbar" class="hero-count" style="display:none">');
+      html = html.replace(/__SEO_HC[DHMS]__/g, "--").replace("__SEO_HCPCT__", "0");
+    }
+  }
 
   return html;
 }

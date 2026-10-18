@@ -6,6 +6,69 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.120-hero] — 2026-10-18 (the Stadium Pulse + Match Protocol homepage hero — a cinematic, responsive, two-theme redesign of the featured-match card, per the approved sportsignal-hero-spec)
+
+### What changed — the user-facing redesign
+
+The homepage hero (the featured-match card at the very top) was rebuilt as
+**Stadium Pulse + Match Protocol**: a broadcast-style three-zone card —
+home team (crest + name + «میزبان» role) | a strong blue kickoff panel
+(large tabular-digit time, localized date, tz label) | away team — over the
+cinematic video stage, with a four-unit digital countdown strip
+(روز/ساعت/دقیقه/ثانیه) under it and restrained cyan HUD chrome (corner
+brackets + top light line).
+
+- **Mobile is a real second composition** (≤640px): teams side-by-side in
+  two columns, the kickoff panel full-width beneath, the countdown as a
+  compact four-unit grid, watermarks/embers/HUD hidden, everything from
+  320px up with zero horizontal overflow.
+- **Light mode has its own identity**: icy `#DCEBFA` card base over a
+  frosted video overlay, navy ink, an accessible dark green
+  (`#0A8F55`) for the countdown digits (the neon `#48EF9B` stays
+  dark-theme-only), while the blue kickoff panel stays strong in both.
+- **Countdown hygiene** (the spec's rules, enforced): digits-only updates
+  each second (no card pulse/reflow — the seconds value alone gets a
+  340ms micro-tick), clamped zeros + «به‌زودی» when the local clock passes
+  kickoff (never negative, never a fabricated LIVE), the strip hidden for
+  live/finished/postponed/cancelled matches, and a polite sr-only
+  summary refreshed only when the remaining MINUTE changes.
+- **States**: upcoming (time + date + countdown), live (chip + score +
+  minute/estimated minute), finished (chip + score), postponed/cancelled
+  (chip only, countdown hidden) — all driven by the SAME payload
+  (`barTarget()` pick untouched).
+- **Player artwork is prepared, not faked**: a `.hero-art` layer + the
+  `HERO_ART` name→{src,alt,poseId} lookup ship EMPTY; the layer renders
+  only when a mapping resolves (never below 900px, never mirrored), and
+  `assets/hero/players/README.md` documents the future 1024×1536
+  transparent-PNG contract + pose library. NO images were generated.
+
+### The engineering (rename-on-edit rule, all four assets)
+
+- `assets/public-13.27.js → public-13.28.js` — `renderHeroSpot()` rebuilt
+  (heroTeamNode/heroMidNode builders + `heroArt()`), `updateBigBar()`
+  rewritten for the four-unit strip (HERO_PRIMED keeps the server-rendered
+  hero visible until real payload data arrives — no flash-hide during
+  load), `fitHeroNames()` retargeted to `.hero-name`.
+- `assets/public-13.23.css → public-13.24.css` — 109 legacy hero rules
+  dropped; the new token-driven section (`--hero-*`, dark + light) added.
+- `assets/core-13.10.js → core-13.11.js` — five new i18n keys
+  (heroHome/heroAway/heroKickoff/stPostp/stCancel, fa + en).
+- `src/pages/public.ts` — the hero markup region (artwork slot, HUD layer,
+  countdown strip with `__SEO_HC*__` placeholders) + the featured-hero
+  inline CSS (blue/green Stadium-Pulse lighting; the LIST
+  `.match-featured` green treatment is untouched).
+- `src/seo/` — `markup.ts` gains `heroCardHtml()` (the server mirror of
+  the client builders, class-for-class), `router.ts` serves it into
+  `__SEO_HERO__` and fills the server-side countdown digits from the
+  payload epoch (upcoming only; the strip ships hidden otherwise),
+  `utils.ts` gains `faHeroDate()` (weekday + day + month — the exact
+  client `fmtHeroDate` shape), `page-shell.ts` bumps the CSS ref.
+- `assets/_headers` (three immutable pins), `assets/sw.js`
+  (CACHE v29 → v30), `package.json` + `src/config.ts` (13.120.0.0 /
+  13.120-hero), `check-stats.js`/`check-scheduler.js` pins updated for the
+  intended design, page baselines re-frozen via
+  `check-admin-parity.js --update` (the documented intended-change path).
+
 ## [13.119-hbfix] — 2026-10-18 (the owner's two punctuation asks: the 6h heartbeat sentence rewritten verbatim, and the «نسخه آزمایشی» trial footer now ends with a period — a MarkdownV2 minefield defused at the sender layer)
 
 The owner's report, verbatim:
