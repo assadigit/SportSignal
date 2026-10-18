@@ -1,10 +1,11 @@
 # SportSignal — Hero Artwork Session Handoff (v13.121-portraits)
 
-> **Status 2026-10-18 (late evening): ALL OWNER GATES ANSWERED — GO.** The
-> release is final in this tree and ships **33 portraits** (see §A). The
-> remaining mechanical steps are §C (push → deploy → verify live). After
-> verification this document is retired — it describes a completed piece of
-> work; the README + CHANGELOG + manifest carry the durable contract.
+> **Status 2026-10-18 (late evening): SHIPPED, DEPLOYED, VERIFIED LIVE.**
+> Owner gates answered (§B); release pushed (`bb3c791` + security redact
+> `60a1a4a`), deployed to Cloudflare (worker version
+> `69775023-8dd2-4cea-8c4f-2ab682cb23be`), and verified on production
+> (§C — all green). **This document is retired**; the durable contract lives
+> in `assets/hero/players/README.md`, the CHANGELOG, and the manifest.
 
 ---
 
@@ -90,19 +91,36 @@ mismatch among the 34 players**:
    re-check mid-season via `cli.js fetch --refresh` then
    `npm run portraits:normalize && npm run portraits:validate`.
 
-## C. Remaining mechanical steps
+## C. Deploy + live verification — DONE 2026-10-18 (all green)
 
-1. `git fetch origin` (the owner uploads directly to main) — rebase if new
-   commits; never force-push. *(Checked at session start: origin unchanged.)*
-2. Push (release + security-redact commits).
-3. `npx wrangler deploy` (session CF token + account id; never in the repo).
-4. Verify live: homepage 200 + version 13.121-portraits (HTML is edge-cached
-   `s-maxage=60, SWR=300` — wait ~2 min before declaring an HTML change
-   missing), `/public-13.29.js` + `/public-13.25.css` + portrait URLs 200,
-   `npm run seo:check` → 56/0, real-match hero renders the artwork on both
-   themes.
-5. Retire this handoff (final status + live-verification results) and append
-   the session worklog; report honestly (verified live vs not).
+1. `git fetch origin` (owner uploads directly to main; no divergence) →
+   pushed `d45e2d8 → bb3c791` (redact `60a1a4a` + release `bb3c791`).
+2. `npx wrangler deploy` — 5 changed assets uploaded (13.29/13.25/sw/manifest/
+   README), worker version `69775023-…`, both cron triggers intact.
+3. **Live verification results** (https://sportsignal.ir):
+   - Homepage 200, version **13.121-portraits** in the served HTML;
+     script/css refs = `/public-13.29.js` + `/public-13.25.css` (both 200).
+   - Portrait URLs 200 (spot-checked Dembélé/Yamal/Šporar/Ueda webp).
+   - `npm run seo:check` (live) → **56/0 PASS**.
+   - **Hero renders on real match data**: the featured fixture is
+     PSG–Barcelona (2026-10-20) — BOTH sides mapped. Verified in a real
+     browser: `.hero-art.has` with both figures 214×214 @1920px dark/fa-RTL
+     (Dembélé home/right, Yamal away/left — sides follow logical
+     properties), 211px @1024px; `display:none` @860px (≤900px rule);
+     light theme + en/LTR verified (both figures, no console errors);
+     VLM review confirms likenesses/kits/soft-fade, no glitches.
+   - Live `public-13.29.js` carries exactly 33 `/players/uefa/` entries;
+     no `Lille OSC` key, no mismatch notes.
+4. **Ops observation (self-healed, ~10 min window):** the homepage HTML is
+   held in the worker's `caches.default` (internal key, query-independent,
+   `SEO_PAGE_TTL` 900s hold) which **survives redeploys** — so for ~10 min
+   post-deploy the edge served the old HTML referencing the now-404ing
+   `public-13.28.js`/`public-13.24.css` (fresh visitors saw an unstyled
+   page; it self-healed when the hold expired). Future rename-releases
+   should either upload one-TTL alias copies of the old asset names or
+   accept/document the window. (Zone purge via API was attempted with the
+   session token — it lacks the purge permission.)
+5. Handoff retired (this document); session worklog appended.
 
 ## D. Development environment notes (carried from the sessions)
 
