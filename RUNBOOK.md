@@ -91,6 +91,12 @@ require a cache bump.
    | `degraded` | `false` | the early-warning band (200 stays green): ages > 2 periods, or outbox > 10, or writes ≥ 700 |
    | `subreq_last_tick` | 24–32 quiet | true subrequest total of the last tick (fetches + KV ops) — see §7 profiles |
    | `kv_ops_last_tick` | ≈ `subreq` | the KV-binding share of that total |
+   | `sched_mode` | `LIVE`/`PRE_MATCH`/`POST_MATCH`/`UPCOMING`/`IDLE`/`DEGRADED` | the fixture-aware scheduler's verdict (v13.118 — `docs/SCHEDULER.md`): what the backend is doing and WHY |
+   | `sched_reason` | mode-specific | the fixture counts behind the verdict (`live:2`, `soon:1`, `no-upcoming-fixtures`…) |
+   | `sched_next_ko` / `sched_next_wake` | ISO or null | the next relevant kickoff + the next scheduled state change (informational — the tick recomputes every 10min regardless) |
+   | `sched_stale_live` | 0 | stuck live-status rows (zombies + unconfirmed) — nonzero for hours = a provider never confirming FT (the guards keep display correct; see `docs/SCHEDULER.md` §3) |
+   | `sched_feed_ok` | `true` | `false` = the feed-fail marker is armed (DEGRADED mode — a failed sweep is never read as "no football") |
+   | `sched_live_sweep` / `sched_poll_hint_sec` | mode-consistent | the live-sweep policy (`tick`/`slot`/`none`) and the client poll hint the payload carries |
    | `version` | = deployed | |
 
 2. **Watch ≥2 full ticks complete.** Ticks run at `:00 :10 :20 :30 :40 :50` UTC.

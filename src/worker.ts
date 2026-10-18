@@ -14,6 +14,7 @@
 //   translate.ts         3-layer translation + competition helpers
 //   fa-ai.ts             Workers AI Farsi-name learner (layer 2)
 //   match-model.ts        the status vocabulary + event→match format helpers
+//   scheduler.ts          fixture-aware activity modes + stale-live guards (13.118)
 //   match-windows.ts      notification time windows + backfill eligibility
 //   match-dedupe.ts       notified-match KV store + the write-first send gate
 //   match-classify.ts     eligibility, big-match/derby sets, pickHeroMatch

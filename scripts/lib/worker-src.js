@@ -87,6 +87,12 @@ function workerSrc() {
     // TEAM_ALIASES moved into teams.ts (kills the users↔matches cycle).
     // All harness grabs on these are position-independent (grabFn).
     "match-model.ts", "match-windows.ts", "match-dedupe.ts", "match-classify.ts",
+    // v13.118-fixsched: the fixture-aware scheduler — pure decision layer
+    // (modes + stale-live reconcile + the Baku fallback window). Sits right
+    // after the match model/classify group it reasons about; consumed by
+    // cron-pool (the sweep decision), public-matches (pollHint) and the
+    // check-scheduler harness (grab-based, position-independent).
+    "scheduler.ts",
     // v13.74-providersplit: the provider group — breaker/wikipedia/sportscore/
     // tsp/fd/match-pool/cups are the clients+pool; providers.ts (LAST) is the
     // orchestrator layer that imports them all. Order within the group keeps

@@ -12,6 +12,7 @@ import { homeGround, curatedVenueFa } from "./grounds";
 import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, ensureFaVenueCache } from "./translate";
 import { normAlias } from "./teams";
 import { isLiveStatus } from "./match-model";
+import { computeFixtureSignal, decideActivity, reconcileStaleLive } from "./scheduler";
 import { matchPath } from "./slugs"; // v13.80-canonical-hrefs: payload rows carry the server-canonical URL
 import { shouldReport, isFeaturedMatch, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName, pickHeroMatch, priorityTier } from "./match-classify";
 import { fetchLongView } from "./providers";
@@ -100,6 +101,18 @@ export function roundLabel(m) {
 }
 export function pubMatch(m) {
   const rl = roundLabel(m);
+  // v13.118-fixsched: the STALE-LIVE GUARD (the 4 AM screenshot bug —
+  // matches rendered as "playing" 6-7h after they finished). A live
+  // status whose kickoff is older than CONFIG.SCHED_MAX_LIVE_SPAN_MS
+  // (195min — kickoff+90+HT+stoppage+ET/pens margin, the same estimate
+  // ACTIVE_WINDOW_BEHIND_MS pins) is not plausible: serve FINISHED with
+  // the last-known score (the "preserve the last known score and match
+  // state" rule). Self-contained on purpose (literal span, isLiveStatus
+  // only) so the narrow harness evals keep working; check-scheduler pins
+  // the literal against CONFIG.
+  const koMs = m.utcDate ? Date.parse(String(m.utcDate)) : NaN;
+  const staleLive = isLiveStatus(m.status) && !isNaN(koMs) && Date.now() - koMs > 195 * 6e4;
+  const statusOut = staleLive ? "FINISHED" : m.status;
   // v13.85-stadiumchip: provider venue first (TSP/live-detail), then the
   // home-ground table — the SAME table + one-off-neutral gate the match
   // pages hydrate with (one source of truth: grounds.ts). Fills only; a
@@ -121,11 +134,11 @@ export function pubMatch(m) {
     // (pre-13.80 SWR rows without `path`) — never the primary.
     path: matchPath(m.homeTeam.name, m.awayTeam.name, m.utcDate),
     competition: { code: m.competition.code, faName: translateCompetition(m.competition.code), emblem: m.competition.emblem || LEAGUE_LOGOS[m.competition.code] || null },
-    status: m.status,
+    status: statusOut,
     round: rl.round,
     roundFa: rl.roundFa,
-    minute: isLiveStatus(m.status) && m.minute != null ? m.minute : null,
-    scorers: isLiveStatus(m.status) ? (m.scorers || []).map((s) => ({ minute: s.minute, type: s.type, scorer: s.scorer, team: s.team })) : [],
+    minute: !staleLive && isLiveStatus(m.status) && m.minute != null ? m.minute : null,
+    scorers: !staleLive && isLiveStatus(m.status) ? (m.scorers || []).map((s) => ({ minute: s.minute, type: s.type, scorer: s.scorer, team: s.team })) : [],
     big: isFeaturedMatch(m),
     derby: isDerby(m),
     // v13.51-rivalries: named-rivalry tags (El Clásico, Der Klassiker, …).
@@ -202,15 +215,47 @@ export function applyLiveDetail(m, detail) {
 // Lookup is by match id first, then by normalized team-pair + day (providers
 // occasionally carry different ids for the same fixture between rebuilds).
 export function applyLiveOverlay(data, ov) {
-  if (!data || !ov || !Array.isArray(ov.rows) || !ov.rows.length) return data;
+  if (!data) return data;
+  // v13.118-fixsched: the STALE-LIVE SANITIZE pass (the 4 AM screenshot
+  // bug). Every serve path (fresh KV cache, stale SWR serve, 7-day
+  // snapshot) walks its rows: a live status whose kickoff is older than
+  // CONFIG.SCHED_MAX_LIVE_SPAN_MS (195min — the same estimate
+  // ACTIVE_WINDOW_BEHIND_MS pins; literal here so narrow harness evals of
+  // this function stay self-contained, check-scheduler pins the pairing)
+  // is downgraded to FINISHED with the last-known score, then flows
+  // through the existing justFinished purge (out of upcoming, head of
+  // finished). A match that genuinely runs long (ET/pens ≤ ~150min) never
+  // trips this; a provider row stuck IN_PLAY for hours can never render
+  // as "playing" again. Self-contained: isLiveSt + Date only.
+  const nowMs = Date.now();
+  const staleSpanMs = 195 * 6e4;
+  const isLiveSt = (s) => s === "LIVE" || s === "IN_PLAY" || s === "PAUSED";
+  const rowKickMs = (m) => (m && m.utcDate ? Date.parse(String(m.utcDate)) : NaN);
+  const staleLiveRow = (m) => isLiveSt(String((m && m.status) || "").toUpperCase()) && !isNaN(rowKickMs(m)) && nowMs - rowKickMs(m) > staleSpanMs;
+  // Overlay rows get the same healing: a blob written before this fix (or
+  // in a window the tick never corrected) may carry a stale IN_PLAY — it
+  // is converted to a FINISHED row so the patch PURGES the stale-live
+  // payload row instead of re-marking it live (the overlay used to win
+  // over fresher pool data and re-animate finished matches all night).
+  const rows = [];
+  if (ov && Array.isArray(ov.rows)) {
+    for (const r of ov.rows) {
+      if (!r || !r.st) continue;
+      const rk = r.d ? Date.parse(String(r.d)) : NaN;
+      if (isLiveSt(String(r.st).toUpperCase()) && !isNaN(rk) && nowMs - rk > staleSpanMs) {
+        rows.push({ id: r.id != null ? String(r.id) : null, h: r.h, a: r.a, d: r.d, st: "FINISHED", min: null, s: r.s || null });
+      } else {
+        rows.push(r);
+      }
+    }
+  }
   const byId = new Map();
   const byPair = new Map();
-  for (const r of ov.rows) {
+  for (const r of rows) {
     if (!r || !r.st) continue;
     if (r.id != null) byId.set(String(r.id), r);
     if (r.h && r.a && r.d) byPair.set(r.h + "|" + r.a + "|" + String(r.d).slice(0, 10), r);
   }
-  const isLiveSt = (s) => s === "LIVE" || s === "IN_PLAY" || s === "PAUSED";
   const find = (m) => {
     const r = m.id != null ? byId.get(String(m.id)) : null;
     if (r) return r;
@@ -231,10 +276,20 @@ export function applyLiveOverlay(data, ov) {
   const patch = (m, internal?) => {
     if (!m) return;
     const r = find(m);
-    if (!r) return;
-    m.status = r.st;
-    m.minute = isLiveSt(r.st) && r.min != null ? r.min : null;
-    if (r.s && r.s.home != null && r.s.away != null) m.score = internal ? { fullTime: { home: r.s.home, away: r.s.away } } : { home: r.s.home, away: r.s.away };
+    if (r) {
+      m.status = r.st;
+      m.minute = isLiveSt(r.st) && r.min != null ? r.min : null;
+      if (r.s && r.s.home != null && r.s.away != null) m.score = internal ? { fullTime: { home: r.s.home, away: r.s.away } } : { home: r.s.home, away: r.s.away };
+    }
+    // v13.118-fixsched: post-patch stale-live downgrade — the payload row
+    // itself may carry a stuck live status (pool/snapshot built before the
+    // guard, or an overlay row that just healed it to FINISHED above). A
+    // row that is STILL live after patching and whose kickoff is beyond
+    // the span can never be plausible: finish it (last-known score kept).
+    if (staleLiveRow(m)) {
+      m.status = "FINISHED";
+      if (m.minute != null) m.minute = null;
+    }
   };
   if (Array.isArray(data.upcoming)) {
     const justFinished = [];
@@ -393,6 +448,18 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     matches = await getCachedMatches(env);
   }
   const now = Date.now();
+  // v13.118-fixsched: the pool-level stale-live reconcile — the same
+  // doctrine as pubMatch/applyLiveOverlay but applied to the RAW rows
+  // BEFORE every consumer shapes them (upcoming/finished filters, hero
+  // pick, topSpot, cups, UCL card, week lists all see converged statuses;
+  // a stuck IN_PLAY row can no longer ride the upcoming list with a frozen
+  // 67th minute). Span only (the 195min plausibility estimate); the pool
+  // WRITE (cacheMatches) additionally waits out the confirmation grace
+  // before persisting the downgrade.
+  try {
+    const staleFixed = reconcileStaleLive(matches, now);
+    if (staleFixed) console.log("\u{1F9F9} Stale-live reconcile: " + staleFixed + " implausible live row(s) served as FINISHED (last-known score kept)");
+  } catch (e) { }
   const standCodes = ["PL", "PD", "SA", "BL1", "FL1"];
   const compact = (st) => st && st.teams.length ? {
     started: st.started !== false,
@@ -476,6 +543,21 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     p.sel = hasSelectedTeam(m);
     return p;
   };
+  // v13.118-fixsched: the fixture-aware POLL HINT (section 7) — the payload
+  // tells the client how fast to poll: live/pre-match keep the legacy 60s
+  // cadence, idle slows to 15min. Computed from the same scheduler decision
+  // the cron tick uses (fixture-first, never a fixed clock window), over the
+  // public display tier (shouldReport OR top-table involvement) — defined
+  // AFTER isTopTeamInvolved on purpose (no TDZ).
+  let pollHintSec = 60;
+  let schedMode = "LIVE";
+  try {
+    const pubTier = matches.filter((m) => shouldReport(m) || isTopTeamInvolved(m));
+    const sigPub = computeFixtureSignal(pubTier, now);
+    const actPub = decideActivity(sigPub, { nowMs: now, feedOk: true });
+    pollHintSec = actPub.pollHintSec;
+    schedMode = actPub.mode;
+  } catch (e) { }
   const eom = new Date(now);
   eom.setMonth(eom.getMonth() + 1, 0);
   eom.setHours(23, 59, 59, 999);
@@ -628,7 +710,7 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   const weekEnd = weekStart + 7 * 864e5;
   const thisWeek = matches.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekStart && new Date(m.utcDate).getTime() < weekEnd).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
   const nextWeek = matches.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekEnd && new Date(m.utcDate).getTime() < weekEnd + 7 * 864e5).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
-  const data: any = { upcoming: upcoming.filter((m) => !topSpotKeys.has(String(m.id || "") + "|" + m.utcDate)).map(withTop), finished: finished.map(withTop), nextBig, topSpot: { next: topSpotNext ? withTop(topSpotNext) : null, matches: topSpotList.map(withTop) }, thisWeek: thisWeek.map(withTop), nextWeek: nextWeek.map(withTop), standings, cups, ucl, fetchedAt: null };
+  const data: any = { upcoming: upcoming.filter((m) => !topSpotKeys.has(String(m.id || "") + "|" + m.utcDate)).map(withTop), finished: finished.map(withTop), nextBig, topSpot: { next: topSpotNext ? withTop(topSpotNext) : null, matches: topSpotList.map(withTop) }, thisWeek: thisWeek.map(withTop), nextWeek: nextWeek.map(withTop), standings, cups, ucl, fetchedAt: null, pollHint: pollHintSec, schedMode };
   if (prewarm) data.prewarm = true;
   const poolMeta = matches ? await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null) : null;
   data.fetchedAt = poolMeta && poolMeta.fetchedAt || (new Date()).toISOString();

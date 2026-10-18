@@ -114,15 +114,27 @@ export async function runPublicPhase(env: Env, ctx) {
       const t = new Date((m && m.utcDate) || 0).getTime();
       if (!t || t < now - ovWin || t > now + ovWin) return false;
       return true;
-    }).map((m) => ({
-      id: m.id != null ? String(m.id) : null,
-      h: normalizeTeamName(m.homeTeam && m.homeTeam.name),
-      a: normalizeTeamName(m.awayTeam && m.awayTeam.name),
-      d: String(m.utcDate || ""),
-      st: String(m.status || "").toUpperCase(),
-      min: m.minute != null ? m.minute : null,
-      s: m.score && m.score.fullTime ? { home: m.score.fullTime.home, away: m.score.fullTime.away } : null
-    }));
+    }).map((m) => {
+      // v13.118-fixsched: the overlay write HEALS stale-live rows — a row
+      // still carrying LIVE/IN_PLAY/PAUSED whose kickoff is older than
+      // SCHED_MAX_LIVE_SPAN_MS (195min) is persisted into the overlay as
+      // FINISHED (last-known score kept) so every serve path purges it
+      // from the live lists. Before this, a stuck provider row kept being
+      // re-written as IN_PLAY every 10 minutes and re-animated finished
+      // matches on the site all night (the 4 AM screenshot bug).
+      const rawSt = String(m.status || "").toUpperCase();
+      const ko = new Date((m && m.utcDate) || 0).getTime();
+      const staleLive = (rawSt === "LIVE" || rawSt === "IN_PLAY" || rawSt === "PAUSED") && ko && now - ko > CONFIG.SCHED_MAX_LIVE_SPAN_MS;
+      return {
+        id: m.id != null ? String(m.id) : null,
+        h: normalizeTeamName(m.homeTeam && m.homeTeam.name),
+        a: normalizeTeamName(m.awayTeam && m.awayTeam.name),
+        d: String(m.utcDate || ""),
+        st: staleLive ? "FINISHED" : rawSt,
+        min: !staleLive && m.minute != null ? m.minute : null,
+        s: m.score && m.score.fullTime ? { home: m.score.fullTime.home, away: m.score.fullTime.away } : null
+      };
+    });
     if (liveRows.length && !budgetHard && subrequestCount() < 40) {
       const prevOv = await env.STATE.get(CONFIG.KV_LIVE_OVERLAY, "json").catch(() => null);
       const ovAge = prevOv && prevOv.ts ? now - prevOv.ts : Infinity;

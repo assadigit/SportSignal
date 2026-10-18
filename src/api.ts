@@ -162,6 +162,19 @@ const POST_GATE_ROUTES: RouteDef[] = [
         degraded: degraded,
         subreq_last_tick: parseInt(st.subreq_last_tick) || 0,
         kv_ops_last_tick: parseInt(st.kv_ops_last_tick) || 0,
+        // v13.118-fixsched: the scheduler verdict (from cron_status_v1's
+        // sched blob — zero extra KV reads, st is already read): what mode
+        // the backend is in, why, the next relevant kickoff and the next
+        // scheduled wake. The operator contract lives in docs/SCHEDULER.md.
+        sched_mode: st.sched && st.sched.m || null,
+        sched_reason: st.sched && st.sched.r || null,
+        sched_live_sweep: st.sched && st.sched.ls || null,
+        sched_poll_hint_sec: st.sched && st.sched.ph || null,
+        sched_live_now: st.sched && st.sched.lv || 0,
+        sched_stale_live: st.sched && st.sched.sn || 0,
+        sched_feed_ok: st.sched ? st.sched.fo !== 0 : null,
+        sched_next_ko: st.sched && st.sched.nk ? new Date(parseInt(st.sched.nk)).toISOString() : null,
+        sched_next_wake: st.sched && st.sched.wa ? new Date(parseInt(st.sched.wa)).toISOString() : null,
         version: VERSION
       }), {
         status: healthy ? 200 : 503,

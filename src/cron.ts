@@ -127,7 +127,7 @@ export async function executeScheduledLogic(env: Env) {
     }
     const pool = await runPoolPhase(env, prevStatus, budgetHard, NOW);
     if (!pool || !pool.matches) return;
-    const { matches, poolRef, poolBlob, fullSweepThisTick } = pool;
+    const { matches, poolRef, poolBlob, fullSweepThisTick, sched } = pool;
     // v13.94-fanoutfix: NOTIFY RUNS BEFORE MAINTENANCE now. The old order
     // (maintenance → notify) let the cosmetic phases (cup scans ≈ 12 fetches
     // when 429ing, far probe, standings refresh) spend the budget a pending
@@ -165,6 +165,25 @@ export async function executeScheduledLogic(env: Env) {
     try {
       const prevBlob = await env.STATE.get("cron_status_v1", "json").catch(() => null) || {};
       const hb = Math.max(parseInt(prevBlob.heartbeat) || 0, NOW);
+      // v13.118-fixsched: the scheduler verdict rides the completion blob —
+      // one KV read answers "what mode, why, next kickoff, next wake" (the
+      // observability contract in docs/SCHEDULER.md; healthz surfaces the
+      // same fields). Compact keys per the blob convention.
+      const prevMode = prevBlob && prevBlob.sched ? prevBlob.sched.m : null;
+      const schedBlob = sched ? {
+        m: sched.mode,
+        r: sched.reason,
+        ls: sched.liveSweep,
+        ph: sched.pollHintSec,
+        nk: sched.nextKoMs != null ? String(sched.nextKoMs) : null,
+        wa: sched.wakeAtMs != null ? String(sched.wakeAtMs) : null,
+        lv: sched.liveN || 0,
+        sn: sched.staleN || 0,
+        fo: sched.feedOk === false ? 0 : 1
+      } : null;
+      if (sched && schedBlob && prevMode !== sched.mode) {
+        console.log(`\u{1F501} Scheduler: ${prevMode || "(boot)"} \u2192 ${sched.mode} (${sched.reason})${sched.nextKoMs ? " — next kickoff " + new Date(sched.nextKoMs).toISOString() : ""}${sched.wakeAtMs ? ", next wake " + new Date(sched.wakeAtMs).toISOString() : ""}${sched.staleN ? ", stale-live rows: " + sched.staleN : ""}`);
+      }
       // v13.38-qc: fold the KV write meter into the blob — actual daily burn
       // instead of pencil math. kv_writes_day resets on the UTC date change.
       const kvDay = new Date(NOW).toISOString().slice(0, 10);
@@ -196,7 +215,8 @@ export async function executeScheduledLogic(env: Env) {
         // v13.94-fanoutfix: o = per-chat outcome counters (sent/failed/dead),
         // dk = the deferred (match, type) keys — the tail-chat losses and
         // clean deferrals are now readable from the tick blob directly.
-        notify: notifySummary ? { f: notifySummary.found, n: notifySummary.noChats, d: notifySummary.budgetDeferred, s: notifySummary.sent, l: notifySummary.last, o: notifySummary.o, dk: notifySummary.dk } : null
+        notify: notifySummary ? { f: notifySummary.found, n: notifySummary.noChats, d: notifySummary.budgetDeferred, s: notifySummary.sent, l: notifySummary.last, o: notifySummary.o, dk: notifySummary.dk } : null,
+        sched: schedBlob
       }));
     } catch (e) {
       await env.STATE.put(CONFIG.KV_HEARTBEAT, NOW.toString()).catch(() => {

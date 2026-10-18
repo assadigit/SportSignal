@@ -155,5 +155,5 @@ export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promi
     } catch (e2) {
       console.error("public-matches snapshot fallback failed: " + e2.message);
     }
-    return jsonResponse({ upcoming: [], finished: [], nextBig: null, standings: null, cups: null, ucl: null, degraded: true });
+    return jsonResponse({ upcoming: [], finished: [], nextBig: null, standings: null, cups: null, ucl: null, degraded: true, pollHint: 300, schedMode: "DEGRADED" });
   }}

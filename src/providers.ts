@@ -294,6 +294,16 @@ export async function fetchMatchesFromAPI(env: Env) {
   }
   if (!matches.length) {
     console.error("\u274C All API sources empty, falling back to cache");
+    // v13.118-fixsched: the FEED-FAIL marker — a FAILED sweep must never be
+    // mistaken for an empty schedule ("do not interpret an API failure as
+    // proof that no football matches are scheduled"). feed_fail_v1 (TTL
+    // SCHED_FEED_FAIL_MS) arms the scheduler's DEGRADED mode: the Baku
+    // fallback window (13:00–02:00) sets a conservative 2h sweep cadence
+    // inside the window, 4h outside, with slotted live sweeps — never
+    // unbounded high-frequency requests, never a silent "no football"
+    // verdict. A successful sweep below deletes the marker.
+    await env.STATE.put(CONFIG.KV_FEED_FAIL, String(Date.now()), { expirationTtl: Math.ceil(((CONFIG && CONFIG.SCHED_FEED_FAIL_MS) || 12 * 36e5) / 1e3) }).catch(() => {
+    });
     matches = await getCachedMatches(env);
     if (matches.length) usedSource = "cache";
     try {
@@ -309,6 +319,16 @@ export async function fetchMatchesFromAPI(env: Env) {
       console.error("Degradation alert failed: " + alertErr.message);
     }
   } else {
+    // v13.118-fixsched: a SUCCESSFUL non-empty sweep clears the feed-fail
+    // marker (change-guarded: one read, one delete only on the transition)
+    // — DEGRADED is reserved for genuine feed trouble, a healthy calendar
+    // returns to fixture-driven scheduling immediately.
+    try {
+      const failMark = await env.STATE.get(CONFIG.KV_FEED_FAIL).catch(() => null);
+      if (failMark) await env.STATE.delete(CONFIG.KV_FEED_FAIL).catch(() => {
+      });
+    } catch (e) {
+    }
     await cacheMatches(env, matches, usedSource);
   }
   if (usedSource) {

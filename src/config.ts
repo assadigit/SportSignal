@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.117-kickoff";
+export const VERSION = "13.118-fixsched";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -529,6 +529,52 @@ export const CONFIG: Record<string, any> = {
   // pre-match reminders (always fired from the KV pool). Measured effect:
   // ~−37% live sweeps on a matchday (75→47 ticks), quiet days unchanged.
   ACTIVE_WINDOW_BEHIND_MS: 195 * 60 * 1e3,
+  // v13.118-fixsched: the FIXTURE-AWARE SCHEDULER (src/scheduler.ts) — the
+  // mode layer that decides how much work each 10-min tick does from the
+  // ACTUAL fixture calendar (never a fixed clock window alone). Flat keys,
+  // scheduler.ts reads them through schedCfg with these exact defaults so
+  // narrow harness evals (stub CONFIG objects) stay runnable.
+  //   SCHED_MAX_LIVE_SPAN_MS  — a live status whose kickoff is older than
+  //                             this is NOT plausible (ko+90+HT+stoppage,
+  //                             ET/pens margin — the same 195min estimate
+  //                             ACTIVE_WINDOW_BEHIND_MS pins). The serve
+  //                             path downgrades such rows to FINISHED with
+  //                             the last-known score (the 4 AM stale-live
+  //                             screenshot bug); the pool write converges
+  //                             them after the confirmation grace.
+  //   SCHED_CONFIRM_GRACE_MS  — how long an unconfirmed finish (stale-live)
+  //                             keeps POST_MATCH confirmation sweeps running
+  //                             before the row is reconciled away.
+  //   SCHED_UPCOMING_SOON_MS  — the "match within N hours" tier: refresh
+  //                             schedule/status on the ~20min slot cadence
+  //                             (the 10-min tick grid's closest step to the
+  //                             task's 15min guidance).
+  //   SCHED_IDLE_HORIZON_MS   — a known next fixture beyond this keeps the
+  //                             historical 2h maintenance cadence (UPCOMING);
+  //                             nothing within it → IDLE.
+  //   SCHED_IDLE_DISCOVERY_MS — IDLE fixture-discovery cadence (the task's
+  //                             "no relevant matches → discovery ~6h"). The
+  //                             far-cup probe keeps its own 4h cron.
+  //   SCHED_DEGRADED_IN_MS / _OUT_MS — the feed-fail fallback cadences:
+  //                             inside the Baku window 2h (conservative),
+  //                             outside 4h. A FAILED sweep is never read as
+  //                             "no football" (feed_fail_v1 marker).
+  //   SCHED_FEED_FAIL_MS      — how long a feed failure keeps DEGRADED armed.
+  //   BAKU_WINDOW_OPEN_MIN/_CLOSE_MIN — the 13:00–02:00 Asia/Baku fallback
+  //                             coverage window (UTC+4 fixed, pure
+  //                             arithmetic — docs/spec-pack/…). FALLBACK
+  //                             only: real fixtures always override it.
+  SCHED_MAX_LIVE_SPAN_MS: 195 * 60 * 1e3,
+  SCHED_CONFIRM_GRACE_MS: 45 * 60 * 1e3,
+  SCHED_UPCOMING_SOON_MS: 6 * 60 * 60 * 1e3,
+  SCHED_IDLE_HORIZON_MS: 48 * 60 * 60 * 1e3,
+  SCHED_IDLE_DISCOVERY_MS: 6 * 60 * 60 * 1e3,
+  SCHED_DEGRADED_IN_MS: 2 * 60 * 60 * 1e3,
+  SCHED_DEGRADED_OUT_MS: 4 * 60 * 60 * 1e3,
+  SCHED_FEED_FAIL_MS: 12 * 60 * 60 * 1e3,
+  BAKU_WINDOW_OPEN_MIN: 13 * 60,
+  BAKU_WINDOW_CLOSE_MIN: 2 * 60,
+  KV_FEED_FAIL: "feed_fail_v1",
   // v12.16: week-ahead fixtures section of the weekly digest — days covered.
   WEEK_AHEAD_DAYS: 7,
   // v12.16: provider circuit breaker — when a provider fails across a whole

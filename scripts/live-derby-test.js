@@ -213,7 +213,13 @@ const EOM_MS = (() => { const d = new Date(); d.setMonth(d.getMonth() + 1, 0); d
 // it is exactly the old +1d.
 const nearOff = Math.max(6e4, Math.min(864e5, EOM_MS - Date.now() - 36e5));
 const relOff = (days) => (EOM_MS - Date.now() > (days + 1) * 864e5) ? days * 864e5 : Math.max(6e4, Math.round((EOM_MS - Date.now()) * days / 4.2));
-const fetchPM = grabFn("async function fetchPublicMatches(env, req"); // req optional (rate-limit only); v13.35 adds opts (prewarm/pool)
+// v13.118-fixsched: fetchPublicMatches now calls the scheduler (reconcileStaleLive
+// + computeFixtureSignal/decideActivity for the pollHint) — the grabbed
+// scheduler functions ride along so the narrow eval below stays runnable
+// (function declarations hoist within the same eval string; schedCfg's
+// CONFIG lookup falls back to the pinned defaults against the stub CONFIG).
+const SCHED_SRC = ["function schedCfg(key, def)", "function kickoffMsOf(m)", "function staleLiveAgeMs(m, nowMs)", "function reconcileStaleLive(rows, nowMs, spanMs)", "function bakuMinuteOfDay(nowMs)", "function bakuFallbackOpen(nowMs, openMin, closeMin)", "function computeFixtureSignal(rows, nowMs, opts)", "function decideActivity(sig, ctx)", "function liveSweepSlotOpen(nowMs)"].map(grabFn).join("\n");
+const fetchPM = grabFn("async function fetchPublicMatches(env, req") + "\n" + SCHED_SRC; // req optional (rate-limit only); v13.35 adds opts (prewarm/pool)
 const pool = [
   { id: "m-in", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" }, utcDate: new Date(Date.now() + nearOff).toISOString(), status: "SCHEDULED" },
   (() => { const d = new Date(); d.setMonth(d.getMonth() + 1, 1); d.setHours(12, 0, 0, 0); return { id: "m-out", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" }, utcDate: d.toISOString(), status: "SCHEDULED" }; })(),
@@ -413,18 +419,23 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   // through pubMatch, which reads m.score.fullTime) keep the nested shape.
   const alo = grabFn("function applyLiveOverlay");
   eval(alo);
-  const mkPub = (id, h, a) => ({ id, homeTeam: { name: h }, awayTeam: { name: a }, utcDate: "2026-10-11T13:00:00Z", status: "TIMED", score: null, minute: null });
+  // v13.118-fixsched: now-relative kickoff — applyLiveOverlay carries the
+  // stale-live sanitize pass (>195min past kickoff downgrades to FINISHED),
+  // so the old fixed 2026-10-11 date (a week old) would flip every live-patch
+  // assertion below onto the stale branch.
+  const KO14 = new Date(Date.now() - 30 * 6e4).toISOString();
+  const mkPub = (id, h, a) => ({ id, homeTeam: { name: h }, awayTeam: { name: a }, utcDate: KO14, status: "TIMED", score: null, minute: null });
   const ov14 = { rows: [
     // h/a are NORMALIZED names — exactly what the cron tick writes (cron.ts
     // stores normalizeTeamName() of each side; the byPair key is built from
     // them raw and looked up normalized).
-    { id: 558583, h: normalizeTeamName("SS Lazio"), a: normalizeTeamName("AC Monza"), d: "2026-10-11T13:00:00Z", st: "IN_PLAY", min: 63, s: { home: 2, away: 1 } },
-    { id: null, h: normalizeTeamName("SS Lazio"), a: normalizeTeamName("Parma Calcio 1913"), d: "2026-10-11T13:00:00Z", st: "FINISHED", min: null, s: { home: 3, away: 0 } } // pair-lookup row (no id)
+    { id: 558583, h: normalizeTeamName("SS Lazio"), a: normalizeTeamName("AC Monza"), d: KO14, st: "IN_PLAY", min: 63, s: { home: 2, away: 1 } },
+    { id: null, h: normalizeTeamName("SS Lazio"), a: normalizeTeamName("Parma Calcio 1913"), d: KO14, st: "FINISHED", min: null, s: { home: 3, away: 0 } } // pair-lookup row (no id)
   ] };
   const pub = mkPub(558583, "SS Lazio", "AC Monza");
   const pubPair = mkPub(null, "SS Lazio", "Parma Calcio 1913"); // found via team-pair + day, not id
   const pubUntouched = mkPub(991199, "AS Roma", "Bologna FC"); // not in the overlay
-  const poolRow14 = { id: 558583, homeTeam: { name: "SS Lazio" }, awayTeam: { name: "AC Monza" }, utcDate: "2026-10-11T13:00:00Z", status: "TIMED", score: null };
+  const poolRow14 = { id: 558583, homeTeam: { name: "SS Lazio" }, awayTeam: { name: "AC Monza" }, utcDate: KO14, status: "TIMED", score: null };
   const served14 = applyLiveOverlay({ upcoming: [pub, pubPair, pubUntouched], thisWeek: [mkPub(558583, "SS Lazio", "AC Monza")], finished: [], pool: [poolRow14] }, ov14);
   chk(served14.upcoming[0].status === "IN_PLAY" && served14.upcoming[0].minute === 63, "livescore: overlay patches status + minute on public rows");
   chk(served14.upcoming[0].score && served14.upcoming[0].score.home === 2 && served14.upcoming[0].score.away === 1, "livescore: PUBLIC rows carry the FLAT {home,away} score (client reads score.home — was \"undefined - undefined\")");

@@ -225,16 +225,16 @@ check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSr
 // more prominent (tint 16%, glow 28%, !important overrides). SW v22 → v23.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js20 = read("assets/public-13.26.js");
+const js20 = read("assets/public-13.27.js");
 const slugsSrc = read("src/slugs.ts");
 const seoCfgSrc = read("src/seo/config.ts");
-check("public-13.26.js referenced in homepage (renamed from 13.24)", /\/public-13\.26\.js/.test(publicSrc));
+check("public-13.27.js referenced in homepage (13.27 since v13.118-fixsched — the adaptive-polling patch; was 13.26)", /\/public-13\.27\.js/.test(publicSrc));
 check("public-13.23.css referenced in homepage (renamed from 13.22)", /\/public-13\.23\.css/.test(publicSrc));
 check("public-13.23.css referenced in SEO page-shell (renamed)", /\/public-13\.23\.css/.test(shellSrc));
 check("core-13.10.js referenced in homepage (public page script tag)", /\/core-13\.10\.js/.test(publicSrc));
-check("public-13.26.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.26.js")));
+check("public-13.27.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.27.js")));
 check("public-13.23.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.23.css")));
-check("assets/_headers pins public-13.26 immutable", /\/public-13\.26\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.27 immutable", /\/public-13\.27\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 check("assets/_headers pins public-13.23.css immutable", /\/public-13\.23\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 check("SW cache bumped to sportsignal-v29 (replaces v28)", /CACHE = "sportsignal-v29"/.test(swSrc));
 check("barTarget checks nextBig before topSpot (all competitions)", /t=DATA\.nextBig\|\|null.*if\(!t\)\{t=a\}/.test(js20));

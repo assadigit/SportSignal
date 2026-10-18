@@ -28,6 +28,35 @@ export async function cacheMatches(env: Env, matches, source) {
     const cutoff = Date.now() - 7 * 864e5;
     const head = (existing && Array.isArray(existing.matches) ? existing.matches : []).filter((m) => new Date(m.utcDate || 0).getTime() > cutoff);
     const merged = canonDedupe([...head, ...matches]);
+    // v13.118-fixsched: POOL RECONCILIATION — a live status whose kickoff is
+    // older than SCHED_MAX_LIVE_SPAN_MS + SCHED_CONFIRM_GRACE_MS (195min +
+    // 45min — the plausibility span plus the POST_MATCH confirmation grace)
+    // is persisted as FINISHED with the last-known score. This is the
+    // durable convergence for the stale-live class: the serve path guards
+    // display instantly, the confirmation sweeps keep running through the
+    // grace, and only then does the pool itself settle (after which the
+    // stuck row can no longer keep isActiveTime/sweeps armed 24/7, and the
+    // result-notification windows see it exactly like the
+    // isPresumablyFinished time-based fallback for SCHEDULED rows).
+    // Self-contained on purpose (literal fallbacks; no new symbols — the
+    // narrow harness evals of cacheMatches keep working).
+    const recSpan = ((CONFIG && CONFIG.SCHED_MAX_LIVE_SPAN_MS) || 195 * 6e4) + ((CONFIG && CONFIG.SCHED_CONFIRM_GRACE_MS) || 45 * 6e4);
+    let reconciled = 0;
+    // (erasable-typing pattern: `: any[] =` is stripped by the harness
+    // transform; an `as any[]` cast is NOT and would break narrow evals)
+    const mergedRows: any[] = merged;
+    for (const m of mergedRows) {
+      if (!m || !m.utcDate) continue;
+      const s = String(m.status || "").toUpperCase();
+      if (s !== "LIVE" && s !== "IN_PLAY" && s !== "PAUSED") continue;
+      const age = Date.now() - new Date(m.utcDate).getTime();
+      if (age > recSpan) {
+        m.status = "FINISHED";
+        if (m.minute != null) m.minute = null;
+        reconciled++;
+      }
+    }
+    if (reconciled) console.log("\u{1F9F9} Pool reconcile: " + reconciled + " stale-live row(s) persisted as FINISHED (last-known score kept)");
     // v13.111-quotaslim: ROW SLIMMING at the write point. The live pool was
     // 617KB/707 rows — every consumer of the pool (all 144 cron ticks/day,
     // every serve path, every digest) JSON.parses it, and ~46% of the bytes

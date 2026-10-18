@@ -30,6 +30,7 @@ other contract (all keys versioned IN the key name; see ADR-004).
 | `fa-dict.ts` | static Farsi team dictionary (translation layer 1) |
 | `tables.ts` | static dictionaries: competitions/logos, provider id maps, CSP headers + `normAlias`/`TEAM_ALIASES` (team-name folding — v13.76) |
 | `dedupe.ts` | `matchKey` + `canonDedupe` (row-level identity) |
+| `scheduler.ts` | the fixture-aware activity modes (v13.118): pure `computeFixtureSignal`/`decideActivity` + the Baku fallback window + the stale-live reconcile helpers — the decision layer `cron-pool` obeys and `public-matches` derives its pollHint from |
 
 ### Layer 1 — match model (v13.76-matchsplit)
 
@@ -114,7 +115,7 @@ debug routes).
 | :--- | :--- |
 | `cron-preflight.ts` | settings/caches/status read + budget governor + stale alert |
 | `cron-users.ts` | outbox drain, 6h heartbeat, migration, FA-AI, cap |
-| `cron-pool.ts` | the sweep decision (quiet/live/full/92-day recovery) |
+| `cron-pool.ts` | the sweep decision — fixture-aware since v13.118: the scheduler's mode sets the sweep cadence + live-sweep gating (IDLE stretches discovery, zombies never re-arm) |
 | `cron-maintenance.ts` | cup scans, far probe, pool stamp-advance, standings |
 | `cron-notify.ts` | fan-out + broadcasts + digest + coronation + audit |
 | `cron-public.ts` | liveChanged fingerprint, enrichment, prewarm, live overlay |

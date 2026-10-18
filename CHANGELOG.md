@@ -6,6 +6,106 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.118-fixsched] — 2026-10-18 (the fixture-aware scheduler: the backend now works when football justifies it, and sleeps when it doesn't — plus the 4 AM stale-live screenshot bug, fixed at four layers)
+
+The owner's report, verbatim: *"in 4 am, it's stale cache, still shows matchs
+are being played (which are finished 6-7 hours ago)"* — with a screenshot of
+the site showing Barcelona–Betis 4-1 at 67' LIVE, Ajax–Utrecht and
+Bayern–Heidenheim in the "matches in progress" panel, hours after they ended.
+
+### The forensics — one root cause, two symptoms
+
+The backend's activity was **decoupled from the actual fixture calendar**:
+
+- **The workload half.** The full 3-provider sweep ran every 2h
+  (`QUIET_SWEEP_MS`) around the clock — international breaks included —
+  because `sweepFresh` had no notion of "is there even a relevant fixture
+  soon?". Worse: `isActiveTime` returned true for ANY pool row with a live
+  status, so a provider that never confirmed FT (the sportscore day-window
+  rolls at UTC midnight for EL/ECL/cups/PGL; provider outages leave `IN_PLAY`
+  behind) kept the live sweep running **24/7** for a match that ended hours
+  ago — the stuck row was both the quota burn AND the bug's engine.
+- **The display half.** The pool kept the stale `IN_PLAY` row; the live
+  overlay (6h TTL, ±6h write window) re-patched it into every served payload
+  — including over FRESHER pool data (the overlay always won); and nothing
+  (`pubMatch`, the `upcoming` filter, the hero pick, the client's `estLive`)
+  ever compared the row's kickoff against the clock. `estLive` capped only
+  the *estimated* minute; a row with a server-supplied minute (67') rendered
+  as live forever.
+
+### The scheduler (`src/scheduler.ts` NEW — pure, harness-grabbable)
+
+`computeFixtureSignal` + `decideActivity` turn the consolidated tier
+(`shouldReport` — the important-match definition, UNCHANGED) into the mode
+set the task specified: **IDLE / UPCOMING / PRE_MATCH / LIVE / POST_MATCH /
+DEGRADED**, each with a work policy:
+
+| Mode | Trigger (fixture-first) | Full sweep | Live sweep | pollHint |
+| :--- | :--- | :--- | :--- | :--- |
+| LIVE | plausible live (ko within 195min) **or** kickoff-passed-but-unconfirmed (the Mode-D fixture fallback) | 2h | every tick | 60s |
+| POST_MATCH | FINISHED < 195min, or unconfirmed finish within the 45min grace | 2h | every tick | 90s |
+| PRE_MATCH | ko within 60min (`ACTIVE_WINDOW_AHEAD_MS`) | 2h | every tick | 60s |
+| UPCOMING soon | ko within 6h | 2h | ~20min slots | 120s |
+| UPCOMING far | ko within 48h | 2h | none | 300s |
+| IDLE | nothing within 48h + trusted feed | **6h discovery** | none | **900s** |
+| DEGRADED | feed-fail marker (`feed_fail_v1`, 12h TTL) | 2h in / 4h out of the Baku window | slots in-window | 120s/300s |
+
+**Zombies** (live status, ko > 195+45min past) never re-arm sweeps — the
+24/7 runaway killer. **A failed sweep is never an empty schedule**:
+`fetchMatchesFromAPI`'s all-sources-empty path writes `feed_fail_v1`
+(a successful non-empty sweep deletes it) → DEGRADED rides the Baku fallback
+window (13:00–02:00 Asia/Baku — UTC+4 fixed, pure-arithmetic per the
+v13.116-tzproof doctrine and the spec pack now in
+`docs/spec-pack/european-football-time-coverage-spec-pack/`). Real fixtures
+always override the window (a valid 09:00-Baku kickoff processes normally);
+European DST shifts the UTC instant, never the arithmetic.
+
+### The stale-live guards — four independent layers
+
+1. `fetchPublicMatches` reconciles the pool (`reconcileStaleLive`) BEFORE
+   every consumer shapes it — the `upcoming` filter, hero pick, topSpot,
+   cups, UCL card and week lists all see converged statuses.
+2. `pubMatch` serves stale-live rows as FINISHED — minute nulled, scorers
+   dropped, **last-known score kept** (the state-preservation rule).
+3. `applyLiveOverlay` sanitizes every served payload (fresh KV / stale SWR /
+   7-day snapshot) AND heals the overlay's own stale rows — the pre-fix blob
+   can no longer re-animate a finished match over fresher data.
+4. `cacheMatches` persists the downgrade after the confirmation grace
+   (span+grace = 240min); the overlay WRITE (`cron-public.ts`) heals rows at
+   the source. ET/pens (~150min of football) never trip the 195min span.
+
+### The polling split (backend vs frontend)
+
+The payload now carries `pollHint` + `schedMode`; `assets/public-13.27.js`
+(cache-bust from 13.26) swaps the fixed `setInterval(load,6e4)` for a 5s
+master tick that fetches at the backend's cadence — a quiet-day tab drops
+1440 polls/day → ~96 — plus a client-side twin of the stale-live guard. The
+SWR refresh lock + 60s edge cache (the dedup layer) are untouched.
+
+### Observability
+
+`/healthz` gains `sched_mode/reason/live_sweep/poll_hint_sec/live_now/
+stale_live/feed_ok/next_ko/next_wake` (zero extra KV reads — the verdict
+rides `cron_status_v1.sched`); every mode TRANSITION logs `🔄 Scheduler:
+A → B (reason) — next kickoff …`; the reconcile guards log when they act.
+
+### Harness
+
+`scripts/check-scheduler.js` NEW (~110 checks — static wiring + behavioral
+with deterministic clocks): the task's 16 required scenarios — IDLE, next-
+activation, pre-match arm, live enablement, simultaneous matches (ONE
+decision), confirmed-FT stop, ET-no-premature-deactivation, reschedule/
+postponement recalculation, failure≠empty, DST (CET vs CEST instants),
+Baku year-round, midnight-wrap boundaries, out-of-window fixtures still
+processed, restart determinism, request dedup, IDLE-keeps-site-alive — plus
+the screenshot bug at every guard layer and the CONFIG-literal pairing
+guards. The overlay fixtures in check-no-miss/live-derby moved to
+now-relative kickoffs (the old fixed past dates now legitimately trip the
+sanitize pass — the tests would otherwise pin the BUG). `check-stats.js` +
+the baseline follow the 13.27 asset rename. Suite **1907 green** (was 1796);
+tsc clean; local smoke: healthz fields + `pollHint: 900, schedMode: IDLE`
+served over HTTP. Version triplet 13.118-fixsched.
+
 ## [13.117-kickoff] — 2026-10-17 (the two simultaneous-kickoff reports: «مسابقه شروع شد» + same-minute delivery)
 
 The owner's report, verbatim: *"Two match starting at 20 Pm, one is mentioned
