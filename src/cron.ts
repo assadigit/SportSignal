@@ -121,7 +121,7 @@ export async function executeScheduledLogic(env: Env) {
     }
     try {
       const wt = await maybeSendWeeklyTables(env, chatIds);
-      if (wt) console.log(`\u{1F4CA} Weekly tables digest: leagues=${wt.leagues.filter((l) => l.ok).length} sent=${wt.sent} failed=${wt.failed}`);
+      if (wt) console.log(`\u{1F4CA} Weekly tables digest: served=${wt.served} sent=${wt.sent} failed=${wt.failed}${wt.stickers ? " stickers=" + wt.stickers : ""} pending=${wt.pending}${wt.deferred ? " (resuming next tick — budget reservation)" : ""}`);
     } catch (e) {
       console.error("Weekly tables digest failed: " + e.message);
     }

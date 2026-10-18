@@ -24,7 +24,7 @@ import { primeUclParticipants } from "./notify-engine";
 import { fetchLongView, fetchMatchesFromAPI } from "./providers";
 import { getCachedMatches } from "./match-pool";
 import { sendTelegram } from "./telegram";
-import { sendLeagueTables, sendWeekAhead } from "./digest-weekly";
+import { startManualWeeklyDigest } from "./digest-weekly";
 import { getRegisteredChats, getBotMembers } from "./users";
 import { isAdminAuthed, getSettings, sanitizeSettings, syncUclSelection, canonicalizeTeams, getClubsCatalog, applySettings, clubsSearch } from "./admin";
 import { getCronStatus } from "./monitoring";
@@ -211,15 +211,24 @@ export async function legacyGetAction(c: RouteCtx): Promise<Response | null> {
           try {
             await applySettings(env);
             const tchats = await getRegisteredChats(env);
-            const tres = await sendLeagueTables(env, tchats, { label: "\u067E\u0627\u06CC\u0627\u0646 \u0647\u0641\u062A\u0647 \u2014 \u0627\u0631\u0633\u0627\u0644 \u062F\u0633\u062A\u06CC" });
-            const twa = await sendWeekAhead(env, tchats);
+            // v13.124-weeklyfanout: the manual send ENQUEUES the chunked
+            // digest (cursor + payload) instead of firing the whole
+            // fan-out inside this one invocation — 10+ chats × ~12 sends
+            // cannot fit an invocation's ~50-subrequest ceiling (the
+            // 2026-10-19 lesson: the synchronous path outbox-stormed the
+            // KV write quota and silently lost the tail chats). This
+            // invocation serves what fits its own budget; the cron ticks
+            // drain the rest (~1-2 chats per 10-min tick).
+            const tres = await startManualWeeklyDigest(env, tchats);
             return new Response(JSON.stringify({
               success: true,
-              message: "League tables + week-ahead sent to " + tchats.length + " chat(s)",
+              message: "Weekly digest queued for " + tres.queued + " chat(s) — " + tres.served + " served now, " + tres.pending + " delivering over the next cron ticks (budget-paced)",
               chats: tchats,
-              sent: tres.sent,
-              failed: tres.failed,
-              week_ahead: { sent: twa.sent, failed: twa.failed, skipped: !twa.text },
+              queued: tres.queued,
+              served: tres.served,
+              pending: tres.pending,
+              sent: tres.sent || 0,
+              failed: tres.failed || 0,
               leagues: tres.leagues,
               version: VERSION,
               timestamp: (new Date()).toISOString()

@@ -6,6 +6,74 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.124-weeklyfanout] — 2026-10-19 (the weekly digest reached only the admin — the chunked fan-out)
+
+### The incident (live, this Monday's 01:30 Tehran digest)
+
+The owner reported: only the admin chat received the weekly briefing +
+league tables (with stickers); the other users got nothing. Root cause
+confirmed against the live system (KV state + `wrangler tail` during the
+following ticks) — THREE compounding failures:
+
+1. **The fan-out cannot fit one invocation.** 10 registered chats × ~12
+   sends each (5 stickers + 6-7 tables + week-ahead) ≈ 120 subrequests
+   against a cron invocation's ~50-subrequest ceiling (fetches + KV ops
+   — the same accounting `fanoutReservation` has used since v13.94). The
+   sequential loop died mid-roster after the first ~2 chats; the tail
+   chats' sends were pushed to the outbox. This is the EXACT disease the
+   notify engine was cured of in v13.94 — but the reservation treatment
+   was never applied to the weekly digest.
+2. **The outbox recovery storm blew the KV write quota.** ~84 outbox
+   pushes are KV puts; the account's 1000/day limit (error 10048 —
+   "KV put() limit exceeded for the day", caught live in the tail) died
+   MID-LOOP, and every subsequent push was silently swallowed by its
+   `.catch(() => {})`. Nothing was queued; nothing retried.
+3. **The write-first week marker had already consumed the week** (the
+   v13.37 anti-spam doctrine), so the lost users had no retry path.
+   Permanent silent loss for 8 of 10 users.
+
+### The fix — the v13.94 discipline, applied to the weekly digest
+
+- **Payload snapshot** (`weekly_tables_payload_v1`, TTL 8d): the digest
+  renders ONCE per week — standings fetched a single time, per-language
+  table texts + week-ahead + sticker file_ids stored in KV. Continuation
+  ticks read the snapshot (zero standings fetches; a per-isolate memo
+  bridges KV-write outages without re-fetching).
+- **Budget-checked bursts** (`WEEKLY_FANOUT_CAP: 44` true subrequests,
+  worst-case burst cost projected per chat): a chat's burst only starts
+  when it fits the remaining budget — never a mid-flight death where the
+  tail chats lose everything. ~1-2 chats per 10-min tick.
+- **The resumable cursor** (`weekly_tables_cursor_v1`: `{week, ts,
+  pending: {fa, en}}`): persisted remove-before-send (the marker's
+  never-spam precedence — an unrecorded serve is never attempted). The
+  digest completes across ticks and may finish past the 06:00 window
+  edge (a cursor is valid 12h; the window only gates STARTING).
+- **Quota-death self-heal**: when the cursor put fails (the 10048
+  window), the burst is restored and the digest pauses for the tick —
+  no sends without persisted state, no outbox storm. It resumes when
+  writes return.
+- **The admin manual send-tables** now ENQUEUES the chunked digest
+  (cursor + payload) instead of firing the whole fan-out inside one
+  invocation; the response reports queued/served/pending honestly.
+- `/tables` (single chat, ~13 sends in a fresh webhook isolate) is
+  unchanged — `sendLeagueTables` remains its primitive.
+- Remediation for the incident week: the cursor was seeded for the 8
+  unserved chats after the quota reset (00:00 UTC), and the cron
+  drained the digest to every user.
+
+### Harness
+
+`check-weekly-tables.js` grew the F-section: chunked multi-tick
+delivery with exact per-chat send counts, cursor persistence +
+completion deletion, the reservation deferral, the quota-death
+fail-closed pause + recovery drain, marker-only vs full bootstrap
+failures, stale-cursor dropping, out-of-window completion, the manual
+enqueue (sync + deferred), English-group rendering, payload
+rebuild/memo, and the empty-roster guard. `check-reliability.js` pins
+the new write-first shape + the reservation + the fail-closed pause.
+
+---
+
 ## [13.123-fadepill] — 2026-10-19 (the jersey crossfade + the compact countdown pill — owner asks on the bb.jpg mockup)
 
 ### What changed — three hero refinements from the owner's annotated mockup

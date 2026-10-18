@@ -288,6 +288,7 @@ curl -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
 | `fa_teams_ai` / `fa_venues_ai` / `fa_ai_last_run` | FA-AI learner (gated ≥15 min apart, marker only when work exists since 13.45) | AI-learned Persian names |
 | `execution_lock` | tick start | overlap guard, `LOCK_TIMEOUT` 240s |
 | `bot_settings_v1`, `clubs_catalog`, `varzesh3_clubs_v1`, `standings_*`, `weekly_tables_v1`, `last_api_source`, `heartbeat_sent_v1`, `audit_alert_v1`, `migration_v1`, `upd_<id>` (bot dedupe, TTL 600s) | various | settings/catalogs/audit |
+| `weekly_tables_cursor_v1` / `weekly_tables_payload_v1` | weekly digest (13.124) | the chunked Monday digest's resumable state: CURSOR `{week, ts, pending:{fa,en}}` (remove-before-send per burst; TTL 8d; a >12h-old cursor is stale → dropped; ABSENT = idle — the digest only holds a cursor while delivering) and PAYLOAD (the week's rendered snapshot: per-lang tables + stickers + week-ahead; standings fetched once/week). A live cursor at rest = a digest mid-drain or paused on the KV-write quota (self-heals next tick) |
 | `x_*` (`x_enabled_v1` …) | REMOVED at 13.48-xtrim | none live (X never ran); see wrangler.toml restore note |
 | `cup_scan_v1` | EFL/FA Cup team-scan marker (13.50) | "ok:<ts>"/"fail:<ts>"; ok = skip 5h, fail = 30-min backoff; hot window re-scans ≤30 min |
 

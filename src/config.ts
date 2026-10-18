@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.123-fadepill";
+export const VERSION = "13.124-weeklyfanout";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -238,6 +238,21 @@ export const CONFIG: Record<string, any> = {
   // retries inside the same window (every window is ≥45 min wide and
   // the backfill legs cover the rest).
   SUBREQUEST_FANOUT_CAP: 46,
+  // v13.124-weeklyfanout: the WEEKLY digest's own reservation ceiling (true
+  // subrequests = fetches + KV ops, the fanoutReservation accounting). The
+  // Monday digest fans out ~12 sends per chat (5 stickers + 6 tables +
+  // week-ahead) × the whole roster — 10 chats ≈ 120 subrequests against one
+  // invocation's ~50: it MUST run in budget-checked bursts resumed across
+  // the 10-minute ticks via the KV cursor (weekly_tables_cursor_v1). A
+  // burst only starts when its worst-case cost (WEEKLY_BURST_RESERVE)
+  // fits under this cap. Slightly under the notify cap (46): Monday 01:30
+  // Tehran has no live matches, but the tick's tail phases keep headroom.
+  WEEKLY_FANOUT_CAP: 44,
+  // Worst-case cost of ONE chat's digest burst: 5 stickers + 7 tables +
+  // week-ahead + retry margin + the cursor put. The reservation projects
+  // the WORST case (the v13.94 doctrine) — a burst that starts always
+  // finishes inside the budget envelope.
+  WEEKLY_BURST_RESERVE: 15,
   // v13.117-kickoff: THE DEFERRED-FAN-OUT DRAIN CHAIN (kickoff-drain.ts).
   // When the reservation above defers in-window units (the classic: two
   // simultaneous kickoffs — the second's full dice+card+text fan-out cannot
@@ -389,6 +404,17 @@ export const CONFIG: Record<string, any> = {
   // Sunday kickoff wraps (La Liga's late slot ends ~01:20 Tehran) and before
   // the morning — the "end of the week's work" for football.
   KV_WEEKLY_TABLES: "weekly_tables_v1",
+  // v13.124-weeklyfanout: the chunked digest's resumable state.
+  // CURSOR: {week, ts, pending: {fa: [chatIds], en: [...]}} — the
+  // still-pending chats, persisted BEFORE each burst (remove-before-send,
+  // the marker's never-spam precedence). Deleted on completion; TTL 8d;
+  // a cursor older than 12h is stale and dropped (never resumed into a
+  // wrong week). PAYLOAD: the week's rendered snapshot (per-lang table
+  // texts + sticker file_ids + week-ahead) — standings fetched ONCE per
+  // week; continuation ticks read it from KV (zero fetches) and bursts
+  // are pure Telegram sends.
+  KV_WEEKLY_CURSOR: "weekly_tables_cursor_v1",
+  KV_WEEKLY_PAYLOAD: "weekly_tables_payload_v1",
   WEEKLY_TABLES: { day: 1, fromMin: 90, toMin: 360 },
   // Fallback API providers (used only when the primary API fails)
   FALLBACK_DAYS_PAST: 1,

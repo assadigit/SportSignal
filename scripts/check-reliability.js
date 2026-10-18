@@ -278,10 +278,22 @@ check("#nospam10 status-map put is fail-closed (statusMapSaved gate)", /let stat
 check("#nospam10 status-map suppression logged", /suppressing status-change alerts this tick/.test(src));
 check("#nospam10 table-top snapshot put is fail-closed (snapSaved gate)", /let snapSaved = false;/.test(src) && /if \(!snapSaved\) continue;/.test(src));
 check("#nospam10 table-top suppression logged", /skipping coronation check this tick/.test(src));
-const weeklySeg = (src.match(/if \(done === week\) return null;[\s\S]{0,2000}?sendLeagueTables\(env, group/) || [""])[0];
+// v13.124-weeklyfanout: the START path's bootstrap — payload + cursor +
+// marker all persisted BEFORE the first send (the v13.37 write-first
+// doctrine extended to the chunked fan-out; the first burst runs inside
+// continueWeeklyDigest AFTER the marker put).
+const weeklySeg = (src.match(/const done = await env\.STATE\.get\(CONFIG\.KV_WEEKLY_TABLES\)[\s\S]{0,2600}?return await continueWeeklyDigest\(env, \{ week, ts: Date\.now\(\), pending: payload\.pending \}, payload\);/) || [""])[0];
 check("#nospam10 weekly tables: marker put BEFORE first send (write-first)", weeklySeg.indexOf("await env.STATE.put(CONFIG.KV_WEEKLY_TABLES, week);") >= 0);
-check("#nospam10 weekly tables: un-persisted marker skips the digest", /Weekly-tables marker save failed[\s\S]{0,200}return null;/.test(src));
+check("#nospam10 weekly tables: un-persisted bootstrap skips the digest", /Weekly-tables digest bootstrap failed[\s\S]{0,200}return null;/.test(src));
 check("#nospam10 weekly tables: old post-send conditional marker removed", !/if \(res\.sent > 0 \|\| weekAheadAgg\.sent > 0\) await env\.STATE\.put/.test(src));
+// v13.124-weeklyfanout: the chunked digest's never-spam + never-starve
+// disciplines — remove-before-send persistence per burst, the reservation
+// gate before each burst (fetches + KV ops, the fanoutReservation
+// accounting), and the fail-closed pause when the cursor put dies (the
+// 2026-10-19 quota-death self-heal).
+check("#weeklyfanout cursor remove-before-send (never-spam)", /pending\.shift\(\);[\s\S]{0,500}?await env\.STATE\.put\(CONFIG\.KV_WEEKLY_CURSOR, JSON\.stringify\(cursor\)/.test(src));
+check("#weeklyfanout reservation gates each burst (fetches + KV ops)", /subrequestCount\(\) \+ kvOpsCount\(\) \+ weeklyBurstCost\(group\) > \(CONFIG\.WEEKLY_FANOUT_CAP \|\| 44\)/.test(src));
+check("#weeklyfanout cursor-put failure restores + pauses (fail-closed)", /Weekly-digest cursor save failed[\s\S]{0,300}?out\.deferred \+= pending\.length;[\s\S]{0,120}?break;/.test(src));
 check("#nospam10 audit admin alert rate-limited via KV stamp", /KV_AUDIT_ALERT/.test(src) && /Date\.now\(\) - lastTs > 6 \* CONFIG\.ONE_HOUR_MS/.test(src));
 check("#nospam10 KV_AUDIT_ALERT key defined in CONFIG", /KV_AUDIT_ALERT: "audit_alert_v1"/.test(src));
 
