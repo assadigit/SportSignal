@@ -6,6 +6,74 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.119-hbfix] — 2026-10-18 (the owner's two punctuation asks: the 6h heartbeat sentence rewritten verbatim, and the «نسخه آزمایشی» trial footer now ends with a period — a MarkdownV2 minefield defused at the sender layer)
+
+The owner's report, verbatim:
+
+> ربات سالم است — تمام سیستم های اعلان-رسانی فعال استن.
+> نسخه آزمایشی
+>
+> it must be:
+> ربات سالم است. تمام سیستم های اعلان رسانی فعال است.
+> نسخه آزمایشی.
+
+### Fix 1 — the heartbeat sentence (three faults in one line)
+
+`src/cron-users.ts` had shipped the 6h admin heartbeat with an em-dash
+standing in for a full stop, a hyphen welded into the اعلان‌رسانی compound,
+and the استن typo (a stray ن on the verb است). The line is now the owner's
+verbatim target — «ربات سالم است. تمام سیستم های اعلان رسانی فعال است.» —
+with the bold headline kept and the period moved OUTSIDE the MarkdownV2
+entity (`*…*\.`, parse-safe by construction). Five new source-level harness
+checks pin the corrected sentence in AND the three old faults OUT
+(`#hbfix*` in check-reliability).
+
+### Fix 2 — the trial footer's period (the harder half)
+
+`TRIAL_FOOTER` gains its trailing period — and a period is a **MarkdownV2
+reserved character**: appended raw, Telegram rejects the WHOLE message with
+`can't parse entities` (the v13.104-admfix lesson — one unescaped character
+kills the entire send). The fix lives at the ONE choke point every message
+already flows through:
+
+- `withTrialFooter(text, cap?, md?)` — the `md` flag selects the append
+  form: the three MarkdownV2 paths (`sendTelegram`, `sendTelegramDirect`,
+  `editMessageText` — all hardcoded `parse_mode: "MarkdownV2"`) append
+  `escapeMarkdownCharacters(f)` so the period rides as `\.`; the plain-text
+  caption paths (`sendAnimation`'s GIF banner, a `parseMode`-less
+  `sendPhotoBinary` caption) append the raw display string — no visible
+  backslash in banners. `sendPhotoBinary` passes its own `parseMode`
+  parameter as the flag.
+- The fail-open ceiling is now computed against the APPENDED form
+  (`app.length`) — the escaped footer is one backslash longer, and the
+  4096/1024 boundaries stay exact rather than off-by-one.
+- The idempotency guard now matches the marker **with or without its
+  trailing period**: the period-less form is a prefix of the raw footer, of
+  the escaped footer (the backslash sits after it), and — the migration
+  case — of every outbox entry queued by a pre-13.119 deploy (whose footer
+  had no period yet). The drain can never double the footer across the
+  deploy boundary.
+- The heartbeat's composed payload, exactly as Telegram receives it:
+  `✅ *ربات سالم است*\. تمام سیستم های اعلان رسانی فعال است\.` + newline +
+  `نسخه آزمایشی\.` — rendering verbatim as the owner's two lines.
+
+The `#trialfoot` harness block grew with the behavior: md-path escaping,
+escaped-form idempotency, the pre-13.119 outbox migration case, and the
+md-aware 4096 boundary (±1 char) — 10 static + 18 unit checks where there
+were 6 + 13. No other surface changed: composers stay footer-free, stickers
+and dice still carry no text, the kill switch still works, and every other
+bot message simply gains a period on its last line.
+
+### Not touched (deliberately)
+
+The /status card's short verdict («🟢 سالم»), all digest/notification copy,
+and the site's Persian strings — the owner's ask was these two lines only.
+Version triplet 13.119-hbfix; additive change (one config string +period,
+one function signature +param, call sites) — `npx wrangler rollback` is the
+whole recovery story.
+
+---
+
 ## [13.118-fixsched] — 2026-10-18 (the fixture-aware scheduler: the backend now works when football justifies it, and sleeps when it doesn't — plus the 4 AM stale-live screenshot bug, fixed at four layers)
 
 The owner's report, verbatim: *"in 4 am, it's stale cache, still shows matchs

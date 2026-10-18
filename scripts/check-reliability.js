@@ -194,6 +194,17 @@ check("#8 isMatchFinished includes presumably-finished", /return match\.status =
 check("#9 heartbeat KV key is heartbeat_sent_v1", /KV_HEARTBEAT_LAST: "heartbeat_sent_v1"/.test(src));
 check("#9 heartbeat interval is 6h", /HEARTBEAT_INTERVAL_MS: 6 \* 60 \* 60 \* 1e3/.test(src));
 check("#9 heartbeat sends to admin chat in cron", /ر\u0628\u0627\u062A \u0633\u0627\u0644\u0645|Bot is alive/.test(src) || /heartbeat_sent_v1/.test(src));
+// v13.119-hbfix: the owner's corrected heartbeat copy (2026-10-18). The old
+// line carried three faults: the em-dash after the bold headline, the
+// hyphen welded into the اعلان‌رسانی compound, and the استن typo (a stray
+// ن on the verb). These assert the NEW sentence at the source level (the
+// worker stores Persian as \uXXXX escapes, so the regexes match the escaped
+// sequences literally) and pin the old faults OUT.
+check("#hbfix the heartbeat sentence opens with the owner's corrected period form (escaped)", /\\u0631\\u0628\\u0627\\u062A \\u0633\\u0627\\u0644\\u0645 \\u0627\\u0633\\u062A\*\\\\\. \\u062A\\u0645\\u0627\\u0645/.test(src));
+check("#hbfix the compound is a plain space now (اعلان رسانی, no escaped hyphen)", /\\u0627\\u0639\\u0644\\u0627\\u0646 \\u0631\\u0633\\u0627\\u0646\\u06CC/.test(src) && !/\\u0627\\u0639\\u0644\\u0627\\u0646\\\\-\\u0631\\u0633\\u0627\\u0646\\u06CC/.test(src));
+check("#hbfix the استن typo is gone (verb spelled است)", !/\\u0627\\u0633\\u062A\\u0646\\\\\./.test(src));
+check("#hbfix the em-dash heartbeat opener is gone (period after the bold entity)", !/\\u0631\\u0628\\u0627\\u062A \\u0633\\u0627\\u0644\\u0645 \\u0627\\u0633\\u062A\* \\u2014/.test(src));
+check("#hbfix the sentence still closes with an escaped period (MarkdownV2-safe)", /\\u0641\\u0639\\u0627\\u0644 \\u0627\\u0633\\u062A\\\\\./.test(src));
 
 // #10 /healthz exposes outbox_depth + version
 check("#10 healthz exposes outbox_depth", /outbox_depth: outboxDepth/.test(src));
@@ -717,20 +728,31 @@ check("#epochflow live scorer enrichment moved into the tick (self-fetch rebuild
 check("#epochflow FD standings non-ok responses are VISIBLE + 429 suspends the circuit", /console\.warn\("Standings " \+ code \+ ": FD HTTP " \+ res\.status/.test(src) && /if \(res\.status === 429\) \{\s*\n\s*await suspendProvider\(env, "football-data"\)\.catch\(\(\) => \{\}\);/.test(src));
 
 // ---------------------------------------------------------------------------
-// v13.115-trialfoot: the owner's trial marker — «نسخه آزمایشی» rides the
-// footer of EVERY text-bearing message the bot delivers. The wiring lives
-// at the SENDER layer in telegram.ts (one choke point; composers stay
-// footer-free), so every surface is covered by construction: notifications,
-// all four digests, /tables, bot menus, admin pages, photo captions and the
-// UCL GIF banner. sendSticker / sendDice carry no text at all — the footer
-// is physically impossible there (asserted below: zero call sites in the
-// sticker/dice senders).
-check("#trialfoot footer helper exists (idempotent, fail-open, config-gated)", /function withTrialFooter\(text, cap\) \{/.test(src) && /const f = CONFIG\.TRIAL_FOOTER;/.test(src) && /text\.indexOf\(f\) >= 0\) return text;/.test(src) && /text\.length \+ 1 \+ f\.length > limit\) return text;/.test(src));
-check("#trialfoot config key present with the owner's exact Persian string", /TRIAL_FOOTER: "نسخه آزمایشی"/.test(src));
-check("#trialfoot applied at ALL THREE text paths (send + direct + menu edit)", (src.match(/text = withTrialFooter\(text\);/g) || []).length === 3);
-check("#trialfoot applied at BOTH caption paths (photo 1024 + animation 1024)", (src.match(/caption = withTrialFooter\(caption, 1024\);/g) || []).length === 2);
+// v13.115-trialfoot → v13.119-hbfix: the owner's trial marker — «نسخه
+// آزمایشی.» rides the footer of EVERY text-bearing message the bot
+// delivers. The wiring lives at the SENDER layer in telegram.ts (one choke
+// point; composers stay footer-free), so every surface is covered by
+// construction: notifications, all four digests, /tables, bot menus, admin
+// pages, photo captions and the UCL GIF banner. The 2026-10-18 owner ask
+// added the trailing PERIOD — a MarkdownV2 reserved character — so the
+// md-flagged paths append the ESCAPED footer (sendMessage texts, menu
+// edits, MarkdownV2 photo captions) while the plain-text caption paths
+// (the GIF banner, a parseMode-less photo caption) append the raw display
+// string (no visible backslash). sendSticker / sendDice carry no text at
+// all — the footer is physically impossible there (asserted below: zero
+// call sites in the sticker/dice senders).
+check("#trialfoot footer helper exists (idempotent, fail-open, config-gated, md-escaping)",
+  /function withTrialFooter\(text, cap, md\) \{/.test(src)
+  && /const f = CONFIG\.TRIAL_FOOTER;/.test(src)
+  && /text\.indexOf\(f\.replace\(\/\[\.!\]\$\/, ""\)\) >= 0\) return text;/.test(src)
+  && /const app = md \? escapeMarkdownCharacters\(f\) : f;/.test(src)
+  && /text\.length \+ 1 \+ app\.length > limit\) return text;/.test(src));
+check("#trialfoot config key present with the owner's exact Persian string + the period", /TRIAL_FOOTER: "نسخه آزمایشی\."/.test(src));
+check("#trialfoot applied at ALL THREE MarkdownV2 text paths (md=true)", (src.match(/text = withTrialFooter\(text, 4096, true\);/g) || []).length === 3);
+check("#trialfoot photo caption path passes parseMode as the md flag (escaped iff MarkdownV2)", /caption = withTrialFooter\(caption, 1024, parseMode\);/.test(src));
+check("#trialfoot the plain-text GIF caption path stays raw (no parse_mode → no backslash)", (src.match(/caption = withTrialFooter\(caption, 1024\);/g) || []).length === 1);
 check("#trialfoot exactly FIVE call sites (no footer inside sendSticker/sendDice — no text to foot)", (src.match(/withTrialFooter\(/g) || []).length === 6); // 5 calls + 1 declaration
-check("#trialfoot the footer string carries NO MarkdownV2 reserved characters", !/[_*[\]()~`>#+\-=|{}.!]/.test("نسخه آزمایشی"));
+check("#hbfix the footer's period rides ESCAPED on md paths only (raw display string elsewhere)", /md \? escapeMarkdownCharacters\(f\) : f/.test(src) && (src.match(/escapeMarkdownCharacters\(f\)/g) || []).length === 1);
 
 // Behavioral unit table for withTrialFooter — the real function, eval'd
 // from the concatenated source (the parseStickerMap convention).
@@ -747,12 +769,19 @@ check("#trialfoot the footer string carries NO MarkdownV2 reserved characters", 
     }
     return src.slice(i, j + 1);
   }
-  const CONFIG = { TRIAL_FOOTER: "نسخه آزمایشی" };
-  eval(grabFn("function withTrialFooter(text, cap)"));
-  const F = "نسخه آزمایشی";
+  const CONFIG = { TRIAL_FOOTER: "نسخه آزمایشی." };
+  // v13.119-hbfix: the helper now escapes via escapeMarkdownCharacters —
+  // grabbed alongside it (position-independent, the scheduler convention).
+  eval(grabFn("function escapeMarkdownCharacters(text)"));
+  eval(grabFn("function withTrialFooter(text, cap, md)"));
+  const F = "نسخه آزمایشی.";
+  const FE = "نسخه آزمایشی\\."; // the MarkdownV2-escaped form (period → \.)
   const t = (name, cond) => check("#trialfoot-unit " + name, cond);
-  t("plain append: newline + footer", withTrialFooter("hello") === "hello\n" + F);
+  t("plain append: newline + raw footer (the plain-text caption paths)", withTrialFooter("hello") === "hello\n" + F);
+  t("md append: newline + ESCAPED footer (the period is MarkdownV2-reserved)", withTrialFooter("hello", undefined, true) === "hello\n" + FE);
   t("idempotent: already-footered text unchanged (no doubling on drain/re-send)", withTrialFooter("hello\n" + F) === "hello\n" + F);
+  t("idempotent on the md path: the escaped footer present → unchanged", withTrialFooter("hello\n" + FE, undefined, true) === "hello\n" + FE);
+  t("migration: a pre-13.119 outbox entry (period-less footer) never doubles", withTrialFooter("hello\nنسخه آزمایشی") === "hello\nنسخه آزمایشی");
   t("idempotent: marker ANYWHERE in text suppresses the append", withTrialFooter("see " + F + " notes") === "see " + F + " notes");
   t("empty text passthrough", withTrialFooter("") === "");
   t("null passthrough (no crash on missing caption)", withTrialFooter(null) === null);
@@ -760,6 +789,8 @@ check("#trialfoot the footer string carries NO MarkdownV2 reserved characters", 
   const fit = 4096 - 1 - F.length;
   t("exact 4096 fit: boundary message still gets the footer", withTrialFooter("x".repeat(fit)).length === 4096 && withTrialFooter("x".repeat(fit)).endsWith(F));
   t("one char over 4096: footer skipped (fail-open — the message outranks the marker)", withTrialFooter("x".repeat(fit + 1)) === "x".repeat(fit + 1));
+  t("md boundary honors the ESCAPED length (the backslash counts against 4096)", withTrialFooter("x".repeat(4096 - 1 - FE.length), undefined, true).length === 4096 && withTrialFooter("x".repeat(4096 - 1 - FE.length), undefined, true).endsWith(FE));
+  t("md boundary one char over: footer skipped (fail-open stays exact under escaping)", withTrialFooter("x".repeat(4096 - 1 - FE.length + 1), undefined, true) === "x".repeat(4096 - 1 - FE.length + 1));
   t("caption cap 1024: over → skipped", withTrialFooter("y".repeat(1024 - F.length), 1024) === "y".repeat(1024 - F.length));
   t("caption cap 1024: under → appended", withTrialFooter("y".repeat(1000), 1024).endsWith(F));
   const savedFooter = CONFIG.TRIAL_FOOTER;
@@ -770,7 +801,7 @@ check("#trialfoot the footer string carries NO MarkdownV2 reserved characters", 
   // footer reassignment sits ABOVE every outboxPush(env, text, …) — the
   // outbox stores the ALREADY-FOOTERED text, so the drain can't double it.
   const sendTg = grabFn("function sendTelegram(env, text, chatId, keyboard)");
-  t("wiring: sendTelegram footers BEFORE every outboxPush (outbox stores footered text)", sendTg.indexOf("text = withTrialFooter(text);") >= 0 && sendTg.indexOf("text = withTrialFooter(text);") < sendTg.indexOf("outboxPush(env, text"));
+  t("wiring: sendTelegram footers (md) BEFORE every outboxPush (outbox stores footered text)", sendTg.indexOf("text = withTrialFooter(text, 4096, true);") >= 0 && sendTg.indexOf("text = withTrialFooter(text, 4096, true);") < sendTg.indexOf("outboxPush(env, text"));
   const drainSeg = grabFn("function drainOutbox(env)");
   t("wiring: the drain delivers through sendTelegramDirect (the footered idempotent path)", drainSeg.indexOf("sendTelegramDirect(env, item.text") >= 0);
 })();

@@ -8,7 +8,7 @@
 // removed in v13.46-trim — zero call sites.
 import { CONFIG, VERSION } from "./config";
 import type { Env } from "./types";
-import { vlog, bumpSubrequest } from "./utils";
+import { vlog, bumpSubrequest, escapeMarkdownCharacters } from "./utils";
 
 var TELEGRAM_PAUSE_UNTIL = 0;
 
@@ -45,7 +45,7 @@ async function waitTelegramPause() {
 }
 
 // v13.115-trialfoot: the owner's trial marker — every text-bearing
-// message the bot delivers ends with the «نسخه آزمایشی» footer line.
+// message the bot delivers ends with the «نسخه آزمایشی.» footer line.
 // ONE choke point at the SENDER layer: sendTelegram (whose outbox entries
 // store the ALREADY-FOOTERED text), sendTelegramDirect (the drain path —
 // idempotent, so an outboxed footer never doubles), editMessageText (menu
@@ -54,16 +54,30 @@ async function waitTelegramPause() {
 // Fail-open by design (the sticker philosophy): a text at the 4096/1024
 // ceiling ships WITHOUT the footer rather than crossing the limit and
 // losing the message itself; idempotent (includes-guard) so re-sends,
-// drains and edits never stack two footers. The string carries no
-// MarkdownV2 reserved characters (config comment) — raw append is safe
-// under every parse mode the bot uses. Stickers and dice carry no text:
-// the footer is physically impossible there, by design.
-export function withTrialFooter(text, cap?) {
+// drains and edits never stack two footers.
+// v13.119-hbfix: the footer now ends with a PERIOD (the owner's ask) — a
+// MarkdownV2 reserved character. The md flag therefore selects the append
+// form: MarkdownV2 paths get the escaped footer (the period rides as «\.»
+// — parse-safe), plain-text caption paths (sendAnimation's banner, a
+// parseMode-less sendPhotoBinary) get the raw display string (no visible
+// backslash). The idempotency guard matches the marker WITHOUT its
+// trailing period too — a prefix of every historical form (raw, escaped,
+// and the pre-13.119 outbox entries whose footer had no period yet), so
+// the drain can never double it. Stickers and dice carry no text: the
+// footer is physically impossible there, by design.
+export function withTrialFooter(text, cap?, md?) {
   const f = CONFIG.TRIAL_FOOTER;
-  if (!f || typeof text !== "string" || !text || text.indexOf(f) >= 0) return text;
+  if (!f || typeof text !== "string" || !text) return text;
+  // Idempotency: the marker with OR without its trailing period — the
+  // period-less form is a PREFIX of the raw footer, of the escaped footer
+  // (the backslash sits after it), and of the pre-13.119 outbox entries.
+  if (text.indexOf(f.replace(/[.!]$/, "")) >= 0) return text;
   const limit = cap || 4096;
-  if (text.length + 1 + f.length > limit) return text;
-  return text + "\n" + f;
+  // The appended form's length governs the ceiling (the escaped footer is
+  // one backslash longer — the fail-open boundary must stay exact).
+  const app = md ? escapeMarkdownCharacters(f) : f;
+  if (text.length + 1 + app.length > limit) return text;
+  return text + "\n" + app;
 }
 
 // Send a MarkdownV2 message. Returns true on success, "dead" when the chat
@@ -78,7 +92,9 @@ export async function sendTelegram(env: Env, text, chatId, keyboard?) {
   // v13.115-trialfoot: footer BEFORE the payload AND before every outbox
   // push below — the outbox stores the footered text, so the drain's
   // sendTelegramDirect re-append is a no-op (idempotent guard).
-  text = withTrialFooter(text);
+  // v13.119-hbfix: md=true — sendMessage rides MarkdownV2, so the footer's
+  // period is appended in its escaped form.
+  text = withTrialFooter(text, 4096, true);
   const payload: any = {
     chat_id: chatId,
     text,
@@ -239,7 +255,9 @@ export async function sendTelegramDirect(env: Env, text, chatId, keyboard?) {
   // v13.115-trialfoot: the drain path — outbox entries written by THIS
   // version already carry the footer (idempotent no-op); entries queued
   // by an older deploy get their footer here, at delivery time.
-  text = withTrialFooter(text);
+  // v13.119-hbfix: md=true — MarkdownV2 path; the pre-13.119 outbox
+  // entries (period-less footer) are still recognized by the guard.
+  text = withTrialFooter(text, 4096, true);
   const payload: any = { chat_id: chatId, text, parse_mode: "MarkdownV2" };
   if (keyboard) payload.reply_markup = keyboard;
   for (let attempt = 1; attempt <= CONFIG.TELEGRAM_RETRY_ATTEMPTS; attempt++) {
@@ -324,8 +342,10 @@ export async function sendDice(env: Env, chatId, emoji) {
 // safety net behind it.
 export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, caption?, parseMode?: boolean) {
   // v13.115-trialfoot: the match-card caption is a message footer too
-  // (1024 = Telegram's caption ceiling).
-  if (caption) caption = withTrialFooter(caption, 1024);
+  // (1024 = Telegram's caption ceiling). v13.119-hbfix: parseMode is the
+  // md flag — MarkdownV2 captions get the escaped footer, plain-text
+  // captions the raw one.
+  if (caption) caption = withTrialFooter(caption, 1024, parseMode);
   for (let attempt = 1; attempt <= 2; attempt++) {
     if (Date.now() < TELEGRAM_PAUSE_UNTIL && !(await waitTelegramPause())) return false;
     await paceTelegram();
@@ -381,8 +401,10 @@ export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, 
 // chats, false otherwise.
 export async function sendAnimation(env: Env, chatId, animation, caption?) {
   // v13.115-trialfoot: the GIF banner caption is a message footer too
-  // (1024 = Telegram's caption ceiling; caption is plain text here — the
-  // footer string is plain by construction, parse-mode-safe either way).
+  // (1024 = Telegram's caption ceiling). v13.119-hbfix: this path sends
+  // with NO parse-mode — the caption is plain text, so the footer rides
+  // RAW (its period renders as-is; no MarkdownV2 escaping belongs on a
+  // plain-text caption, the v13.96.1 lesson).
   if (caption) caption = withTrialFooter(caption, 1024);
   for (let attempt = 1; attempt <= 2; attempt++) {
     if (Date.now() < TELEGRAM_PAUSE_UNTIL && !(await waitTelegramPause())) return false;
@@ -595,9 +617,10 @@ export async function editMessageText(env: Env, chatId, messageId, text, keyboar
     if (bumpSubrequest()) return false;
     // v13.115-trialfoot: menu edits re-compose FRESH text on every tap, so
     // the footer is (re)applied here too — without this, the first send
-    // would carry «نسخه آزمایشی» and every subsequent tap would drop it.
+    // would carry «نسخه آزمایشی.» and every subsequent tap would drop it.
     // Idempotent: an edit that echoes already-footered text never doubles.
-    text = withTrialFooter(text);
+    // v13.119-hbfix: md=true — editMessageText rides MarkdownV2.
+    text = withTrialFooter(text, 4096, true);
     const payload: any = {
       chat_id: chatId,
       message_id: messageId,

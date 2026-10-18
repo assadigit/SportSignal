@@ -39,7 +39,17 @@ export async function runUserPhase(env: Env, budgetSoft: boolean) {
     if (Date.now() - lastHb > CONFIG.HEARTBEAT_INTERVAL_MS) {
       const adminChat = parseInt(env.CHAT_ID);
       if (!isNaN(adminChat)) {
-        await sendTelegram(env, "\u2705 *\u0631\u0628\u0627\u062A \u0633\u0627\u0644\u0645 \u0627\u0633\u062A* \u2014 \u062A\u0645\u0627\u0645 \u0633\u06CC\u0633\u062A\u0645 \u0647\u0627\u06CC \u0627\u0639\u0644\u0627\u0646\\-\u0631\u0633\u0627\u0646\u06CC \u0641\u0639\u0627\u0644 \u0627\u0633\u062A\u0646\\.", adminChat);
+        // v13.119-hbfix: the owner's corrected copy (2026-10-18). The old
+        // line read «ربات سالم است — تمام سیستم های اعلان-رسانی فعال استن.»
+        // — three faults in one sentence: the em-dash standing in for a
+        // full stop, the hyphen welded into the compound, and the استن typo
+        // (a stray ن on the verb). The owner's verbatim target: «ربات سالم
+        // است. تمام سیستم های اعلان رسانی فعال است.» — bold headline kept,
+        // the period moved OUTSIDE the entity (MarkdownV2-escaped), the
+        // compound opened into a plain space, the verb spelled right. The
+        // trial footer rides the same send (sender layer), now ending in
+        // its own period.
+        await sendTelegram(env, "\u2705 *\u0631\u0628\u0627\u062A \u0633\u0627\u0644\u0645 \u0627\u0633\u062A*\\. \u062A\u0645\u0627\u0645 \u0633\u06CC\u0633\u062A\u0645 \u0647\u0627\u06CC \u0627\u0639\u0644\u0627\u0646 \u0631\u0633\u0627\u0646\u06CC \u0641\u0639\u0627\u0644 \u0627\u0633\u062A\\.", adminChat);
         await env.STATE.put(CONFIG.KV_HEARTBEAT_LAST, String(Date.now())).catch(() => {});
       } else {
         // v13.70-adminpulse: this was SILENT — with an unparseable CHAT_ID

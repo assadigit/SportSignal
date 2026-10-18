@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.118-fixsched";
+export const VERSION = "13.119-hbfix";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -261,16 +261,22 @@ export const CONFIG: Record<string, any> = {
   // high (the notify phase just spent it, or a live sweep did).
   FANOUT_MAINT_MAX: 30,
   TELEGRAM_PAUSE_WAIT_MAX_MS: 8000,
-  // v13.115-trialfoot: the owner's trial marker (2026-10-17): «نسخه آزمایشی»
-  // rides the FOOTER of every text-bearing message the bot delivers —
-  // sendMessage texts (all three sender paths + menu edits) AND photo/GIF
-  // captions. Applied in telegram.ts's withTrialFooter at the SENDER layer
-  // (one choke point, composers stay footer-free). The string is deliberately
-  // plain: no MarkdownV2 reserved characters (Persian letters + space only),
-  // so it is safe to append raw under every parse mode we use. sendSticker /
-  // sendDice carry no text at all — physically beyond the footer's reach.
-  // Empty string disables the footer everywhere (config-only kill switch).
-  TRIAL_FOOTER: "نسخه آزمایشی",
+  // v13.115-trialfoot → v13.119-hbfix: the owner's trial marker (2026-10-17):
+  // «نسخه آزمایشی.» rides the FOOTER of every text-bearing message the
+  // bot delivers — sendMessage texts (all three sender paths + menu edits)
+  // AND photo/GIF captions. Applied in telegram.ts's withTrialFooter at the
+  // SENDER layer (one choke point, composers stay footer-free). The
+  // 2026-10-18 owner ask added the trailing period — a MarkdownV2 RESERVED
+  // character — so the sender escapes the footer on the MarkdownV2 paths
+  // (the md flag: sendMessage texts, menu edits, MarkdownV2 photo captions)
+  // while the plain-text caption paths (the UCL GIF banner, a
+  // parseMode-less photo caption) append the raw display string (no visible
+  // backslash). The idempotency guard matches the marker with OR without
+  // the trailing period, so outbox entries queued by an older deploy are
+  // recognized on the drain and never double. sendSticker / sendDice carry
+  // no text at all — physically beyond the footer's reach. Empty string
+  // disables the footer everywhere (config-only kill switch).
+  TRIAL_FOOTER: "نسخه آزمایشی.",
   KV_USERS_KEY: "telegram_users_v6",
   KV_MATCHES_KEY: "matches_v13_tracked",
   KV_NOTIFIED_KEY: "notified_matches_v6",
