@@ -43,13 +43,23 @@
 # caches.default SEO TTL (900s): the last release documented the ~10-min
 # post-deploy window where the edge serves old HTML that references the
 # renamed-away file — keeping the old file served (404→200) closes it.
+# v13.123-fadepill: public-13.30→13.31 (heroArt data-fade rendering + the
+# Yamal/Šimić fade tiers), public-13.26→13.27 (the eased jersey crossfade
+# + the compact countdown pill) — same retention rule: 13.30/13.26 stay
+# pinned through one 900s edge-HTML window.
 /core-13.11.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.31.js
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.30.js
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.29.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.27.css
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.26.css

@@ -6,6 +6,68 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.123-fadepill] — 2026-10-19 (the jersey crossfade + the compact countdown pill — owner asks on the bb.jpg mockup)
+
+### What changed — three hero refinements from the owner's annotated mockup
+
+The owner's `bb.jpg` reference (annotated with a yellow-rectangle area
+estimate) drove three changes: a softer premium bottom fade on the player
+figures, a fix for the "stray" read on bright-shorts portraits, and a
+compact centered countdown.
+
+- **The bottom crossfade (owner ask 1: "fade the ending of the jersey so
+  they crossfade to the card — premium feel")**: the v13.122 linear 16%
+  mask ramp read as a hard-cut sticker edge (VLM review: "floating torso
+  effect… lazy crop"). The default mask is now a longer EASED ramp
+  (`0 → .34@7% → .7@15% → 1@26%` up from the box bottom,
+  `public-13.26.css → public-13.27.css`) — bright kit melts through its
+  last ~60px into the stage floor instead of popping off.
+- **The stray-portrait fix (owner ask 2: "yamal is not correctly
+  positioned and seems stray")**: root cause measured, not guessed — an
+  alpha/luminance scan of all 34 portraits found the figures' opaque
+  pixels uniformly end at 94.7% of the box, but Yamal's bright WHITE
+  SHORTS end at ~89% with only dark legs below: under the old ramp his
+  last bright pixels rendered at ~70% mask strength and cut off mid-card
+  (a 106-lum step), leaving ~50px of empty card under a floating torso.
+  Portraits now carry an optional `fade` tier (`public-13.30.js →
+  public-13.31.js`: `heroArt()` renders it as `data-fade`, removed again
+  on hide so re-renders never leak a stale tier):
+  - `fade:"hi"` (Yamal): slower early ramp `0 → .18@5% → .38@12% →
+    .72@21% → 1@31%` — his shorts' own edge lands at ≤ ~35% mask
+    strength, no visible crop line, the dark legs continue the silhouette
+    to the floor.
+  - `fade:"deep"` (Šimić — bright kit ends ~70%, everything below
+    near-invisible against the dark stage): the ramp completes by 40% up
+    so the visible torso sinks into shadow instead of cropping at the
+    shirt hem.
+  - Everyone else (31 of 33, incl. Baumgartner's mild 75-lum step at
+    93%, already dissolved by the default ramp) ships the default tier.
+- **The compact countdown pill (owner ask 3: "compact the countdown to
+  the area estimated in the yellow rectangle")**: measured against the
+  mockup — the yellow rect is a centered band at 45.1% of the card width
+  in the card's bottom band (rel-y .71–.93), exactly where the strip
+  already rides. The v13.120 full-width strip (920px at the ≥1440 tier =
+  66% of the card) is now a **content-fit centered pill** (~420px, well
+  inside the estimate) on ≥901px: `align-self:center; width:auto;
+  border-radius:999px`, label + units centered with a tight gap; the 3px
+  final-24h progress track keeps riding the pill's bottom edge. ≤640px
+  keeps the stacked mobile composition; 641–900px keeps the legacy
+  full-width row.
+
+### Release wiring
+
+`public-13.30.js → public-13.31.js`, `public-13.26.css → public-13.27.css`;
+the retired `public-13.30.js` + `public-13.26.css` stay pinned one more
+TTL-window (the v13.121 ops note); SW cache
+`v32 → v33`; `_headers` pins 13.31/13.27; `check-stats` pins flipped and
+extended (fade-tier pins: CSS hi/deep ramps, the two keyed HERO_ART
+entries, the data-fade render/remove contract, the pill block);
+`check-scheduler` cache-bust pin 13.31; baselines re-frozen;
+`assets/hero/players/README.md` §2 documents the tier contract + how to
+scan a new portrait before assigning one.
+
+---
+
 ## [13.122-heroart] — 2026-10-19 (the breakout flanks — per the owner's reference mockup: much larger figures in front of the card, heads slightly above its top edge for a 3D look)
 
 ### What changed — the figures break out of the card

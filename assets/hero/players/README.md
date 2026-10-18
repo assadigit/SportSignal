@@ -67,9 +67,30 @@ flank `<img>` slots of the static `.hero-art` layer and toggles `.has`.
   (901–1439px) / `122%` (≥1440px), bottom anchored at the card's bottom
   edge, 1% inset from the outer edges — so each head pops **slightly above
   the card's top edge** (the 3D breakout; `herowrap` carries a 46px top
-  margin ≥901px so the pop clears the sync line). Bottom fade: mask over
-  the first 16% of the box. `heroArt()`'s layer query resolves the card
-  scope first, then falls back to `.herowrap .hero-art` (the moved layer).
+  margin ≥901px so the pop clears the sync line). `heroArt()`'s layer query
+  resolves the card scope first, then falls back to `.herowrap .hero-art`
+  (the moved layer).
+- **v13.123-fadepill bottom crossfade (owner ask, 2026-10-19):** the jersey
+  end **crossfades into the card** (premium melt) via a per-portrait
+  `data-fade` tier rendered from an optional `fade` field on the `HERO_ART`
+  entry:
+  - *default* (31 entries + the uniform-bottom ones): eased mask
+    `0 → .34@7% → .7@15% → 1@26%` up from the box bottom — bright kit
+    melts through its last ~60px into the stage floor.
+  - *`fade:"hi"`* (`lamine-yamal` — his white shorts end ~89% of the box
+    with only dark legs below; the owner flagged him looking "stray"):
+    slower early ramp `0 → .18@5% → .38@12% → .72@21% → 1@31%` keeps the
+    shorts' own edge at ≤ ~35% mask strength — no visible crop line.
+  - *`fade:"deep"`* (`veljko-simic` — bright kit ends ~70%, everything
+    below is near-invisible against the dark stage): ramp completes by
+    40% up so the visible torso sinks into shadow instead of cropping at
+    the shirt hem.
+  Tier assignment is measured, not guessed: bottom-region luminance scan
+  of all 34 portraits (scripts/…/alpha analysis, 2026-10-19) — only Yamal
+  (step 106 @ 88%) and Šimić (bright ends 69.5%) needed custom tiers;
+  Baumgartner's mild step (75 @ 93%) already dissolves under the default
+  ramp. Adding a portrait: run the same scan; a uniform bright-to-bottom
+  figure needs no `fade` field.
 
 ## 3. Kit verification (2026-10-18, owner rule: no kit mismatch allowed)
 

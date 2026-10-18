@@ -225,21 +225,23 @@ check("stats.ts beacon returns no-store", /cache-control.*no-store/.test(statsSr
 // more prominent (tint 16%, glow 28%, !important overrides). SW v22 → v23.
 const headersSrc = read("assets/_headers");
 const swSrc = read("assets/sw.js");
-const js20 = read("assets/public-13.30.js");
+const js20 = read("assets/public-13.31.js");
 const slugsSrc = read("src/slugs.ts");
 const seoCfgSrc = read("src/seo/config.ts");
-check("public-13.30.js referenced in homepage (13.30 since v13.122-heroart — the heroArt query follows the moved layer; was 13.29)", /\/public-13\.30\.js/.test(publicSrc));
-check("public-13.26.css referenced in homepage (renamed from 13.25 in v13.122-heroart — the breakout flank retune)", /\/public-13\.26\.css/.test(publicSrc));
-check("public-13.26.css referenced in SEO page-shell (renamed)", /\/public-13\.26\.css/.test(shellSrc));
+check("public-13.31.js referenced in homepage (13.31 since v13.123-fadepill — heroArt renders the per-portrait data-fade tier; was 13.30)", /\/public-13\.31\.js/.test(publicSrc));
+check("public-13.27.css referenced in homepage (renamed from 13.26 in v13.123-fadepill — the eased jersey crossfade + the compact countdown pill)", /\/public-13\.27\.css/.test(publicSrc));
+check("public-13.27.css referenced in SEO page-shell (renamed)", /\/public-13\.27\.css/.test(shellSrc));
 check("core-13.11.js referenced in homepage (public page script tag)", /\/core-13\.11\.js/.test(publicSrc));
-check("public-13.30.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.30.js")));
-check("public-13.26.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.26.css")));
-check("assets/_headers pins public-13.30 immutable", /\/public-13\.30\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("public-13.31.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.31.js")));
+check("public-13.27.css exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.27.css")));
+check("assets/_headers pins public-13.31 immutable", /\/public-13\.31\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers keeps public-13.30.js served through one SEO TTL (the post-rename 404 window)", /\/public-13\.30\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.30.js")));
 check("assets/_headers keeps public-13.29.js served through one SEO TTL (the post-rename 404 window)", /\/public-13\.29\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.29.js")));
-check("assets/_headers pins public-13.26.css immutable", /\/public-13\.26\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers pins public-13.27.css immutable", /\/public-13\.27\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+check("assets/_headers keeps public-13.26.css served through one SEO TTL (the post-rename 404 window, per the v13.121 ops note)", /\/public-13\.26\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.26.css")));
 check("assets/_headers keeps public-13.25.css served through one SEO TTL (the post-rename 404 window, per the v13.121 ops note)", /\/public-13\.25\.css\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.25.css")));
 check("assets/_headers serves /players/uefa/* day-fresh (owner-replaceable, not immutable)", /\/players\/uefa\/\*\s*\n\s*Cache-Control: public, max-age=86400/.test(headersSrc));
-check("SW cache bumped to sportsignal-v32 (replaces v31 — the v13.122-heroart js+css renames)", /CACHE = "sportsignal-v32"/.test(swSrc));
+check("SW cache bumped to sportsignal-v33 (replaces v32 — the v13.123-fadepill js+css renames)", /CACHE = "sportsignal-v33"/.test(swSrc));
 check("barTarget checks nextBig before topSpot (all competitions)", /t=DATA\.nextBig\|\|null.*if\(!t\)\{t=a\}/.test(js20));
 check("featKeys() helper exists (cap at N per list)", /function featKeys\(arr,cap\)/.test(js20));
 check("featKeys filters on .big (both teams desired)", /m&&m\.big/.test(js20));
@@ -386,7 +388,7 @@ check("heroH1Sync exists and runs inside renderHeroSpot (EN H1 fix)", /function 
 check("heroH1Sync writes the EN sentence (Next big match:)", /"Next big match: "\+r\+" \\u2013 "\+n/.test(js20));
 
 // ---------- 11) v13.120-hero: the Stadium Pulse + Match Protocol redesign ----------
-const cssHero = read("assets/public-13.26.css");
+const cssHero = read("assets/public-13.27.css");
 check("hero CSS: three-zone grid areas (home | mid | away)", /grid-template-areas:"home mid away"/.test(cssHero));
 check("hero CSS: mobile two-row composition (teams side-by-side, panel below)", /grid-template-areas:"home away" "mid mid"/.test(cssHero));
 check("hero CSS: blue kickoff panel with bright border", /\.hero-mid\{grid-area:mid;[^}]*background:linear-gradient\(172deg,rgba\(47,107,255,\.96\)/.test(cssHero));
@@ -395,7 +397,21 @@ check("hero CSS: light theme icy surface (#DCEBFA card base)", /\[data-theme=lig
 check("hero CSS: tabular digits on clock + countdown", /\.hero-clock\{[^}]*font-variant-numeric:tabular-nums/.test(cssHero) && /\.hc-v\{[^}]*font-variant-numeric:tabular-nums/.test(cssHero));
 check("hero CSS: seconds-only tick pulse (hero-tick reused, scoped to #hcS)", /#hcS\.tick\{animation:hero-tick \.34s/.test(cssHero));
 check("hero CSS: artwork layer hidden by default + never below 900px", /\.hero-art\{display:none;position:absolute/.test(cssHero) && /@media\(max-width:900px\)\{\.hero-art\{display:none!important\}\}/.test(cssHero));
-check("hero CSS: BREAKOUT flanks per the owner's reference mockup (2026-10-19) — full-height figures (112% of card, 122% at ≥1440px — was 66%/340px), head pops above the card top, in front of the card (z:2 layer), 16% bottom fade (dissolves the figure into the card floor), 1% edge inset", /\.hero-art\{display:none;position:absolute;inset:0;z-index:2;pointer-events:none\}/.test(cssHero) && /\.hero-art img\{position:absolute;bottom:0;height:112%;max-height:420px;width:auto;object-fit:contain/.test(cssHero) && /@media\(min-width:1440px\)\{\.hero-art img\{height:122%;max-height:480px\}\}/.test(cssHero) && /-webkit-mask-image:linear-gradient\(to top,transparent 0,#000 16%\)/.test(cssHero) && /(?<!-webkit-)mask-image:linear-gradient\(to top,transparent 0,#000 16%\)/.test(cssHero) && /\.hero-art img:first-child\{inset-inline-start:1%\}/.test(cssHero) && /\.hero-art img:last-child\{inset-inline-end:1%\}/.test(cssHero));
+check("hero CSS: BREAKOUT flanks per the owner's reference mockup (2026-10-19) — full-height figures (112% of card, 122% at ≥1440px — was 66%/340px), head pops above the card top, in front of the card (z:2 layer), 1% edge inset",
+  /\.hero-art\{display:none;position:absolute;inset:0;z-index:2;pointer-events:none\}/.test(cssHero) &&
+  /\.hero-art img\{position:absolute;bottom:0;height:112%;max-height:420px;width:auto;object-fit:contain/.test(cssHero) &&
+  /@media\(min-width:1440px\)\{\.hero-art img\{height:122%;max-height:480px\}\}/.test(cssHero) &&
+  /\.hero-art img:first-child\{inset-inline-start:1%\}/.test(cssHero) &&
+  /\.hero-art img:last-child\{inset-inline-end:1%\}/.test(cssHero));
+check("hero CSS v13.123-fadepill: the DEFAULT eased bottom crossfade (owner ask: the jersey melts into the card — premium feel; was the hard 16% linear ramp that cropped Yamal's bright shorts mid-card)",
+  /-webkit-mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.34\) 7%,rgba\(0,0,0,\.7\) 15%,#000 26%\)/.test(cssHero) &&
+  /(?<!-webkit-)mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.34\) 7%,rgba\(0,0,0,\.7\) 15%,#000 26%\)/.test(cssHero));
+check("hero CSS v13.123-fadepill: the hi/deep fade tiers (Yamal's shorts-over-dark-legs / Šimić's near-invisible lower body)",
+  /\.hero-art img\[data-fade=hi\]\{-webkit-mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.18\) 5%,rgba\(0,0,0,\.38\) 12%,rgba\(0,0,0,\.72\) 21%,#000 31%\)/.test(cssHero) &&
+  /\.hero-art img\[data-fade=deep\]\{-webkit-mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.12\) 10%,rgba\(0,0,0,\.26\) 20%,rgba\(0,0,0,\.4\) 30%,#000 40%\)/.test(cssHero));
+check("hero CSS v13.123-fadepill: the COMPACT COUNTDOWN PILL (the owner's yellow-rect area estimate — centered, content-fit, ≥901px; was the 920px full-width strip)",
+  /@media\(min-width:901px\)\{\n\.hero-count\{align-self:center;width:auto;max-width:100%;justify-content:center;gap:12px;padding:9px 20px 12px;border-radius:999px\}/.test(cssHero) &&
+  /\.hc-row\{justify-content:center;gap:12px;width:auto\}/.test(cssHero));
 check("hero CSS: reduced-motion kills ambient layers + countdown pulse", /@media\(prefers-reduced-motion:reduce\)\{\n\.bighero \.match,\.hero-side \.logo,\.hero-mid,\.hero-count,\.hero-fx:before,\.hero-fx:after,\.hero-fx i,\.herowrap:before,\.bigbar-fill,#hcS\.tick\{animation:none!important\}/.test(cssHero));
 check("hero CSS: urgency ladder kept (soon/final/live borders)", /#bigHeroCard\[data-urgent=soon\]/.test(cssHero) && /#bigHeroCard\[data-urgent=final\],#bigHeroCard\[data-urgent=live\]/.test(cssHero));
 check("updateBigBar drives the four unit digits (hcD/hcH/hcM/hcS)", /getElementById\("hcD"\)/.test(js20) && /setNum\(dEl,dd\),setNum\(hEl,hh\),setNum\(mEl,mm\),setNum\(sEl,ss\)/.test(js20));
@@ -417,7 +433,9 @@ const heroArtKeys = [...heroArtBlock.matchAll(/^"((?:[^"\\]|\\.)+)":\{src/gm)].m
 check("HERO_ART: every src resolves to a file in assets/players/uefa/ (same-count guard)", heroArtSrcs.length === heroArtKeys.length && heroArtSrcs.every((s) => fs.existsSync(path.join(__dirname, "..", "assets", s.slice(1)))));
 check("HERO_ART: 33 entries — one representative player per club; deferred players' teams absent (Jackson/Aston Villa + Thauvin/Lens) AND the kit-mismatch team absent (Ueda shows his Feyenoord kit at Lille — excluded, owner decision 2026-10-18: no kit mismatch allowed)", heroArtKeys.length === 33 && !heroArtKeys.includes("Aston Villa FC") && !heroArtKeys.includes("Racing Club de Lens") && !heroArtKeys.includes("Lille OSC"));
 check("HERO_ART: keys are EXACT football-data.org provider names (FD is the first-priority pool source), incl. the cross-competition legal spellings", heroArtKeys.includes("Paris Saint-Germain FC") && heroArtKeys.includes("Club Atlético de Madrid") && heroArtKeys.includes("FC Internazionale Milano") && heroArtKeys.includes("PAE AEK") && heroArtKeys.includes("ŠK Slovan Bratislava") && heroArtKeys.includes("FK Bodø/Glimt"));
-check("HERO_ART: alt empty on every entry (decorative aria-hidden layer) + poseId dropped", (heroArtBlock.match(/,alt:""\}/g) || []).length === 33 && !/poseId/.test(js20));
+check("HERO_ART: alt empty on every entry (decorative aria-hidden layer) + poseId dropped; v13.123 fade fields allowed on the tier entries", (heroArtBlock.match(/,alt:\"\"[,}]/g) || []).length === 33 && !/poseId/.test(js20));
+check("HERO_ART v13.123-fadepill: the two fade tiers keyed to their portraits (Yamal hi — bright shorts end ~89% over dark legs; Šimić deep — bright kit ends ~70%, near-invisible below)", /"FC Barcelona":\{src:"\/players\/uefa\/lamine-yamal\.webp",alt:"",fade:"hi"\}/.test(heroArtBlock) && /"Sabah FK":\{src:"\/players\/uefa\/veljko-simic\.webp",alt:"",fade:"deep"\}/.test(heroArtBlock));
+check("heroArt v13.123-fadepill: renders the entry's fade tier as data-fade and REMOVES it on hide (no stale tier leaks across re-renders)", /l\.fade\?d\.setAttribute\("data-fade",l\.fade\):d\.removeAttribute\("data-fade"\)/.test(js20) && /d\.removeAttribute\("src"\),d\.removeAttribute\("data-fade"\),d\.style\.display="none"/.test(js20));
 check("HERO_ART: the ONE kit-mismatch portrait EXCLUDED (Ueda→Lille in a Feyenoord kit; file retained in the collection for re-check) — Šporar KEPT: portrait visually verified a genuine Slovan 26/27 kit (adidas, niké 'je tipovanie', double-cross-on-hills crest; the manifest's Olimpija-kit claim corrected 2026-10-18 — Olimpija wear green/white Puma)", !heroArtKeys.includes("Lille OSC") && heroArtKeys.includes("ŠK Slovan Bratislava") && !/KIT MISMATCH/.test(heroArtBlock) && fs.existsSync(path.join(__dirname, "..", "assets", "players", "uefa", "ayase-ueda.webp")));
 check("player artwork contract documented (assets/hero/players/README.md) — the REAL UEFA-portrait contract, old 2:3 contract explicitly retired", (() => { const r = read("assets/hero/players/README.md"); return fs.existsSync(path.join(__dirname, "..", "assets", "hero", "players", "README.md")) && /512 × 512/.test(r) && /\/players\/uefa\//.test(r) && /manifest\.json/.test(r) && /Superseded/.test(r); })());
 check("shareUrl helper prefers the payload path", /function shareUrl\(e\)\{return e&&e\.path\?location\.origin\+e\.path:null\}/.test(js20));

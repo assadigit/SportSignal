@@ -78,7 +78,12 @@
 //              the owner's reference mockup: full-height figures in front
 //              of the card, heads slightly above its top edge. Same rule:
 //              cache-first assets can't refresh without a rename or a bump.)
-const CACHE = "sportsignal-v32";
+// Cache name:  sportsignal-v33 (v13.123-fadepill: public-13.30.js→13.31
+//              + public-13.26.css→13.27 — the eased jersey crossfade
+//              (per-portrait fade tiers via data-fade) + the compact
+//              countdown pill. Same rule: cache-first assets can't refresh
+//              without a rename or a bump.)
+const CACHE = "sportsignal-v33";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
