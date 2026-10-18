@@ -41,3 +41,7 @@ Thumbs.db
 dist-check/
 SportSignal-v*.zip
 .webhook-secret-*.txt
+
+# UEFA player portrait pipeline working cache (originals + discovery state)
+# (scripts/uefa-player-portraits/ holds the reproducible inputs instead)
+.cache/uefa-player-portraits/

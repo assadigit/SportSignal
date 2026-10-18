@@ -1,0 +1,2238 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-18T17:09:57.106Z",
+  "output_format": "webp-lossless-alpha",
+  "target_width": 512,
+  "target_height": 512,
+  "source": "UEFA (official uefa.com player profiles; img.uefa.com cutoff portraits)",
+  "rights": {
+    "copyright": "© UEFA. Images remain the property of UEFA; public availability does not establish redistribution permission.",
+    "terms_reference": "https://www.uefa.com/terms-of-use/ (Use of UEFA.com signifies agreement to the Terms and Conditions and Privacy Policy; the UEFA word, logo and competition marks are protected trademarks — no commercial use)",
+    "reuse_permission_established": false,
+    "reuse_status": "unverified — see docs/assets/uefa-player-portraits.md §Rights before any redistribution"
+  },
+  "entries": [
+    {
+      "roster_index": 1,
+      "requested_name": "Ousmane Dembélé",
+      "requested_club_label": "Paris Saint-Germain FC",
+      "filename": "ousmane-dembele.webp",
+      "status": "complete",
+      "uefa_player_id": "250066886",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250066886--ousmane-dembele/",
+      "identity_evidence": {
+        "uefa_full_name": "Ousmane Dembélé",
+        "nationality": "France",
+        "date_of_birth": "1997-05-15",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1997-05-15); nationality matches identity hint (France); found on the uefachampionsleague squad page of 52747--paris",
+        "external_corroboration": {
+          "queried": "UEFA profile verification (pilot)",
+          "finding": "UEFA profile 250066886: Ousmane Dembélé, Paris, France, DOB 15/5/1997 — matches the known person exactly (1997-05-15).",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Paris",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250066886.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:48:23.872Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "dd1cec37c09e7cf1844e094198ea151b3041cb3ef9d59f5f6a02924a1ab90121",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "7b7cc02108836545ac59afefe6dfd178216902705f860def248390fecee37a57",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 179,
+          "y": 38,
+          "w": 710,
+          "h": 1042
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.441459,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 313,
+          "h": 460
+        },
+        "placement": {
+          "left": 100,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 2,
+      "requested_name": "Lamine Yamal",
+      "requested_club_label": "FC Barcelona",
+      "filename": "lamine-yamal.webp",
+      "status": "complete",
+      "uefa_player_id": "250176450",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250176450--lamine-yamal/",
+      "identity_evidence": {
+        "uefa_full_name": "Lamine Yamal",
+        "nationality": null,
+        "date_of_birth": "2007-07-13",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (2007-07-13); UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 50080--barcelona",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Barcelona",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250176450.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:56:54.174Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "2c0588f38dd528626b1f57fd25ea8c14473cfac6efb976a2d4dc16e01b58d2d9",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "77fe0d659981c10f76611ccc9659a45763ff669471288141a85b55224af1cb98",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 296,
+          "y": 63,
+          "w": 567,
+          "h": 1017
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.452311,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 256,
+          "h": 460
+        },
+        "placement": {
+          "left": 128,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 3,
+      "requested_name": "Nicolas Jackson",
+      "requested_club_label": "Aston Villa FC",
+      "filename": "nicolas-jackson.webp",
+      "status": "deferred",
+      "uefa_player_id": "250163689",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250163689--nicolas-jackson/",
+      "identity_evidence": {
+        "uefa_full_name": "Nicolas Jackson",
+        "nationality": "Senegal",
+        "date_of_birth": "2001-06-20",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (2001-06-20); nationality matches identity hint (Senegal); found on the uefachampionsleague squad page of 52683--aston-villa",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Aston Villa",
+      "source_image_url": null,
+      "source_asset_season": null,
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": null,
+      "source_width": null,
+      "source_height": null,
+      "source_has_alpha": null,
+      "source_sha256": null,
+      "download_transport": null,
+      "output_width": null,
+      "output_height": null,
+      "output_sha256": null,
+      "normalization": null,
+      "warnings": [
+        "no acceptable transparent cutout after 3 documented candidates",
+        "constructed cutoff season 2027 (profile has no cutoff image): 404 (missing candidate)",
+        "constructed cutoff season 2026 (profile has no cutoff image): 404 (missing candidate)",
+        "constructed cutoff season 2025 (profile has no cutoff image): 404 (missing candidate)"
+      ],
+      "deferral": {
+        "decided_at": "2026-10-18",
+        "decided_by": "repository owner (chat decision)",
+        "reason": "UEFA publishes no transparent cutout for this player (probe history in warnings; seasons 2021-2027 + observed competition segments all 404). Owner chose to defer rather than substitute the player, mix in the opaque 324x324 photo, or perform background removal (spec §8). Retry later: npm run portraits:fetch --refresh"
+      }
+    },
+    {
+      "roster_index": 4,
+      "requested_name": "Deniz Undav",
+      "requested_club_label": "VfB Stuttgart",
+      "filename": "deniz-undav.webp",
+      "status": "complete",
+      "uefa_player_id": "250194673",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250194673--deniz-undav/",
+      "identity_evidence": {
+        "uefa_full_name": "Deniz Undav",
+        "nationality": null,
+        "date_of_birth": "1996-07-19",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1996-07-19); UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 50107--stuttgart",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Stuttgart",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250194673.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:56:58.466Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "16d2b2a3f84f4dc4baceb0e380f0c61540f1851f9e6aa2d4b4ee3000e33ca548",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "ae95ebb4ff035a209fe9c154f8d5bca36ab97d1aee6d786875f6c782f95d9897",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 288,
+          "y": 110,
+          "w": 615,
+          "h": 970
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.474227,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 292,
+          "h": 460
+        },
+        "placement": {
+          "left": 110,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 5,
+      "requested_name": "Bradley Barcola",
+      "requested_club_label": "Liverpool FC",
+      "filename": "bradley-barcola.webp",
+      "status": "complete",
+      "uefa_player_id": "250134138",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250134138--bradley-barcola/",
+      "identity_evidence": {
+        "uefa_full_name": "Bradley Barcola",
+        "nationality": null,
+        "date_of_birth": "2002-09-02",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (2002-09-02); UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 7889--liverpool",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Liverpool",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250134138.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:56:59.628Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "480f18fba5770d276009b8fe1dac8aa93b67dc553812a59f3bbdce04b66efdeb",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "15fc4d09003084d4927280dfe57302e35c08a66f3cd912859402da61c744ca57",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 209,
+          "y": 72,
+          "w": 686,
+          "h": 1008
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.456349,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 313,
+          "h": 460
+        },
+        "placement": {
+          "left": 100,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 6,
+      "requested_name": "Luis Suárez",
+      "requested_club_label": "Sporting Clube de Portugal",
+      "filename": "luis-suarez-colombia.webp",
+      "status": "complete",
+      "uefa_player_id": "250147458",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250147458--luis-suarez/",
+      "identity_evidence": {
+        "uefa_full_name": "Luis Suárez",
+        "nationality": "Colombia",
+        "date_of_birth": "1997-12-02",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1997-12-02); nationality matches identity hint (Colombia); found on the uefachampionsleague squad page of 50149--sporting-cp; disambiguation note: The COLOMBIAN forward (b. 1997-12-02), NOT the Uruguayan Luis Alberto Suárez Díaz (b. 1987-01-24). Nationality + DOB on the UEFA profile must separate them.",
+        "external_corroboration": {
+          "queried": "namesake disambiguation: Luis Suárez Sporting CP",
+          "finding": "UEFA profile 250147458 on Sporting CP's squad: DOB 2/12/1997, Colombia — the Colombian forward Luis Javier Suárez (b. 1997-12-02), NOT the Uruguayan Luis Alberto Suárez Díaz (b. 1987-01-24). Kit photographed: Sporting CP green/white hoops.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Sporting CP",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250147458.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:48:26.036Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "1fff06cd5e1062f71d21d68b7ee8dad4e8cf797a550553bd2aefb82b38f37832",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "7db9c3ac7ef79162a9db8b5954edc2061c18f1100b2f0efabaf6271212445d40",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 327,
+          "y": 20,
+          "w": 524,
+          "h": 1060
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.433962,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 227,
+          "h": 460
+        },
+        "placement": {
+          "left": 143,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 7,
+      "requested_name": "Bukayo Saka",
+      "requested_club_label": "Arsenal FC",
+      "filename": "bukayo-saka.webp",
+      "status": "complete",
+      "uefa_player_id": "250106939",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250106939--bukayo-saka/",
+      "identity_evidence": {
+        "uefa_full_name": "Bukayo Saka",
+        "nationality": "England",
+        "date_of_birth": "2001-09-05",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (2001-09-05); nationality matches identity hint (England); found on the uefachampionsleague squad page of 52280--arsenal",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Arsenal",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250106939.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:00.609Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "7bdb9842a55449309dad9e75c00934348f54f8dd6f4a51e974b9b9a9923a10a9",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "5f694f4833a22058dc1a5fde814e5b90b9220c251b0c57c3c0378e2cea472d2d",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 126,
+          "y": 125,
+          "w": 844,
+          "h": 955
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.481675,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 407,
+          "h": 460
+        },
+        "placement": {
+          "left": 53,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 8,
+      "requested_name": "Kylian Mbappé",
+      "requested_club_label": "Real Madrid CF",
+      "filename": "kylian-mbappe.webp",
+      "status": "complete",
+      "uefa_player_id": "250076574",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250076574--kylian-mbappe/",
+      "identity_evidence": {
+        "uefa_full_name": "Kylian Mbappé",
+        "nationality": null,
+        "date_of_birth": "1998-12-20",
+        "position": "Forward",
+        "disambiguation": "WARNING: DOB variance of 1 days (UEFA: 1998-12-20, hint: 1998-12-19) — treated as data-entry variance; identity corroborated by unique name on the labelled club's squad; UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 50051--real-madrid",
+        "external_corroboration": {
+          "queried": "Kylian Mbappé born 19 December 1998 date of birth",
+          "finding": "DOB variance resolved IN UEFA's favour: Mbappé was born 20 December 1998 (Wikipedia, Transfermarkt). UEFA profile DOB 20/12/1998 is correct; the roster hint (1998-12-19) was wrong. Identity beyond doubt: Real Madrid context + unique name.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Real Madrid",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250076574.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:01.772Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "00012e7059ed0bd282465c02e8073b4c00e8afbc0d7684bb26390235c9895c78",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "cc8116fbd29e0ef1b7b7db0bee7454141fd2e2126ce7a13d8d30e7a7596e5382",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 268,
+          "y": 102,
+          "w": 571,
+          "h": 978
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.470348,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 269,
+          "h": 460
+        },
+        "placement": {
+          "left": 122,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 9,
+      "requested_name": "Antony",
+      "requested_club_label": "Real Betis Balompié",
+      "filename": "antony.webp",
+      "status": "complete",
+      "uefa_player_id": "250144211",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250144211--antony/",
+      "identity_evidence": {
+        "uefa_full_name": "Antony",
+        "nationality": "Brazil",
+        "date_of_birth": "2000-02-24",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (2000-02-24); nationality matches identity hint (Brazil); found on the uefachampionsleague squad page of 52265--real-betis",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Real Betis",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250144211.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:02.797Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "ebe9524b929e8087c1adb6ad525294ff829d23e91b2d41fbd0754269ff5cd2c5",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "fb4736e595937cf10ad478fb6e49a8260210f8a7608ec15f4f0790e58581834a",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 252,
+          "y": 88,
+          "w": 620,
+          "h": 992
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.46371,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 288,
+          "h": 460
+        },
+        "placement": {
+          "left": 112,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 10,
+      "requested_name": "Harry Kane",
+      "requested_club_label": "FC Bayern München",
+      "filename": "harry-kane.webp",
+      "status": "complete",
+      "uefa_player_id": "250016833",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250016833--harry-kane/",
+      "identity_evidence": {
+        "uefa_full_name": "Harry Kane",
+        "nationality": "England",
+        "date_of_birth": "1993-07-28",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1993-07-28); nationality matches identity hint (England); found on the uefachampionsleague squad page of 50037--bayern-munchen",
+        "external_corroboration": {
+          "queried": "UEFA profile verification (pilot)",
+          "finding": "UEFA profile 250016833: Harry Kane, Bayern München, England, DOB 28/7/1993 — matches the known person exactly.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Bayern München",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250016833.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:48:24.908Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "49b58e1f1c3c2d2623cf8a12e1bae058590ecd3d94e7028c71a3da48c8267349",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "91b2c04338607788f23124d1bf9fbfc9915aa64e9e7ab500f567750ead674561",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 254,
+          "y": 53,
+          "w": 519,
+          "h": 1027
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.447907,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 232,
+          "h": 460
+        },
+        "placement": {
+          "left": 140,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 11,
+      "requested_name": "Pedrinho",
+      "requested_club_label": "FK Shakhtar Donetsk",
+      "filename": "pedrinho.webp",
+      "status": "complete",
+      "uefa_player_id": "250144964",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250144964--pedrinho/",
+      "identity_evidence": {
+        "uefa_full_name": "Pedrinho",
+        "nationality": "Brazil",
+        "date_of_birth": "1998-04-13",
+        "position": null,
+        "disambiguation": "UEFA DOB recorded (1998-04-13); roster hint had none (low/medium confidence case); nationality matches identity hint (Brazil); found on the uefachampionsleague squad page of 52707--shakhtar; disambiguation note: SPEC-FLAGED case: must be resolved from the Shakhtar squad page UEFA profile (full name, DOB, nationality) plus recorded external evidence. Do not accept any other Pedrinho.",
+        "external_corroboration": {
+          "queried": "Pedrinho Shakhtar Donetsk Brazilian player full name date of birth",
+          "finding": "SPEC-FLAGGED disambiguation resolved: Shakhtar's Pedrinho = Pedro Victor Delmino da Silva, born 13 April 1998 in Maceió, Brazil (Wikipedia 'Pedrinho (footballer, born April 1998)', Transfermarkt, shakhtar.com announcement 2021). UEFA profile 250144964 on Shakhtar's squad shows DOB 13/4/1998 — exact match. Shakhtar context + DOB + nationality identify one person reliably.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Shakhtar",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250144964.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:03.908Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "6678c724f3b457ff57c8f46fa790d8b18b1512cbb031a8deb8cbf68595629fb1",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "33932c63795f4fba591676b2c1e0f56dd3a07936c890037dd1a8833c5abb1221",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 270,
+          "y": 57,
+          "w": 628,
+          "h": 1023
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.449658,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 282,
+          "h": 460
+        },
+        "placement": {
+          "left": 115,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 12,
+      "requested_name": "Nico Paz",
+      "requested_club_label": "Como 1907",
+      "filename": "nico-paz.webp",
+      "status": "complete",
+      "uefa_player_id": "250153621",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250153621--nicolas-paz/",
+      "identity_evidence": {
+        "uefa_full_name": "Nicolás Paz",
+        "nationality": "Argentina",
+        "date_of_birth": "2004-09-08",
+        "position": "Midfielder",
+        "disambiguation": "DOB matches identity hint (2004-09-08); nationality matches identity hint (Argentina); found on the uefachampionsleague squad page of 79946--como",
+        "external_corroboration": {
+          "queried": "Nico Paz Como 2026/27 kit sponsor royal blue",
+          "finding": "Identity confirmed (DOB 8/9/2004 exact match, Como squad context). Kit check: Como's 2025/26 and 2026/27 shirts are royal blue with white details — the royal-blue kit in the portrait is consistent with Como (an early VLM guess of 'FC Copenhagen' was a crest misread).",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Como",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250153621.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:05.022Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "92cebcc3e07fc5192144ab2388b84bee6bb5ac4b13210dbc3d4f5fd392d5730b",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "655e091fe490eb1607e19ac647276cdaa19e387b1e005db0e62be1aebb3ddf04",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 204,
+          "y": 18,
+          "w": 565,
+          "h": 1062
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.433145,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 245,
+          "h": 460
+        },
+        "placement": {
+          "left": 134,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 13,
+      "requested_name": "Bruno Fernandes",
+      "requested_club_label": "Manchester United FC",
+      "filename": "bruno-fernandes.webp",
+      "status": "complete",
+      "uefa_player_id": "250078886",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250078886--bruno-fernandes/",
+      "identity_evidence": {
+        "uefa_full_name": "Bruno Fernandes",
+        "nationality": null,
+        "date_of_birth": "1994-09-08",
+        "position": "Midfielder",
+        "disambiguation": "DOB matches identity hint (1994-09-08); UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 52682--man-utd",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Man Utd",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250078886.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:06.106Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "8f2bcb2c66b8bb226fdd281b5e2cabb1dc6bdeba910bd565a6072b6e92a5bd94",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "3a0c7ec05157db8d6a32834044847796da8fc2a026941955264f03dbe1b81183",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 105,
+          "y": 53,
+          "w": 913,
+          "h": 1027
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.447907,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 409,
+          "h": 460
+        },
+        "placement": {
+          "left": 52,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 14,
+      "requested_name": "Georges Mikautadze",
+      "requested_club_label": "Villarreal CF",
+      "filename": "georges-mikautadze.webp",
+      "status": "complete",
+      "uefa_player_id": "250155025",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250155025--georges-mikautadze/",
+      "identity_evidence": {
+        "uefa_full_name": "Georges Mikautadze",
+        "nationality": null,
+        "date_of_birth": "2000-10-31",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (2000-10-31); UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 70691--villarreal",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Villarreal",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250155025.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:07.322Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "d9d5ba8cc91163e19f0cac716713ab77066a927cc980619bf1e842f4deabc58a",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "af7f7b14536aadeb1a328a9b90b3bb813bf76b64ea78d0d37000224306a27374",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 370,
+          "y": 61,
+          "w": 443,
+          "h": 1019
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.451423,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 200,
+          "h": 460
+        },
+        "placement": {
+          "left": 156,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 15,
+      "requested_name": "Julián Álvarez",
+      "requested_club_label": "Club Atlético de Madrid",
+      "filename": "julian-alvarez.webp",
+      "status": "complete",
+      "uefa_player_id": "250172668",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250172668--julian-alvarez/",
+      "identity_evidence": {
+        "uefa_full_name": "Julián Alvarez",
+        "nationality": "Argentina",
+        "date_of_birth": "2000-01-31",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (2000-01-31); nationality matches identity hint (Argentina); found on the uefachampionsleague squad page of 50124--atleti",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Atleti",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250172668.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:08.298Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "8f600dcd42610cd2b49048f2f6065f7339e805bf9bc93b9a2c5b0496cb3f091d",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "fd5ba8cb0200751f1f495b09bf88bbe28dea32017e8ea98c26dd51fab68bc1a1",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 231,
+          "y": 53,
+          "w": 631,
+          "h": 1027
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.447907,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 283,
+          "h": 460
+        },
+        "placement": {
+          "left": 115,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 16,
+      "requested_name": "Nicolò Tresoldi",
+      "requested_club_label": "Club Brugge KV",
+      "filename": "nicolo-tresoldi.webp",
+      "status": "complete",
+      "uefa_player_id": "250181849",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250181849--nicolo-tresoldi/",
+      "identity_evidence": {
+        "uefa_full_name": "Nicolò Tresoldi",
+        "nationality": "Germany",
+        "date_of_birth": "2004-08-20",
+        "position": "Forward",
+        "disambiguation": "UEFA DOB recorded (2004-08-20); roster hint had none (low/medium confidence case); WARNING: nationality \"Germany\" differs from hint \"Italy\" (may be birth country vs international nation) — review; found on the uefachampionsleague squad page of 50043--club-brugge; disambiguation note: DOB not pre-known; verify via UEFA profile plus recorded external evidence.",
+        "external_corroboration": {
+          "queried": "Nicolò Tresoldi Club Brugge 2026 transfer Italian forward",
+          "finding": "Nicolò Tresoldi, born 20 August 2004 in Cagliari, Italy; striker at Club Brugge since 2025; represents Germany at international youth level (Transfermarkt, Wikipedia, goal.com). UEFA profile 250181849 DOB 20/8/2004 — exact match. Kit photographed: Club Brugge blue/black stripes.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Club Brugge",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250181849.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:09.411Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "c352b04664191938190faf667830bd65e8d4176c48691eedd1490563b532a248",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "1c237259ccfe23a8705eaf3276c821df361ae302d000b00d974a3900e3ce07f6",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 128,
+          "y": 169,
+          "w": 773,
+          "h": 911
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.50494,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 390,
+          "h": 460
+        },
+        "placement": {
+          "left": 61,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 17,
+      "requested_name": "Erling Haaland",
+      "requested_club_label": "Manchester City FC",
+      "filename": "erling-haaland.webp",
+      "status": "complete",
+      "uefa_player_id": "250103758",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250103758--erling-haaland/",
+      "identity_evidence": {
+        "uefa_full_name": "Erling Haaland",
+        "nationality": null,
+        "date_of_birth": "2000-07-21",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (2000-07-21); UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 52919--man-city",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Man City",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250103758.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:10.498Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "e94e9533b3bbf4b7db55ca7680856cbb91a4732c129c1a6967f7658d137eaf93",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "11d71bf8e51f610b2a25aa1d51480a8e024775f61013ff9cb4a4d1198eb9260c",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 71,
+          "y": 102,
+          "w": 903,
+          "h": 978
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.470348,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 425,
+          "h": 460
+        },
+        "placement": {
+          "left": 44,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 18,
+      "requested_name": "Serhou Guirassy",
+      "requested_club_label": "Borussia Dortmund",
+      "filename": "serhou-guirassy.webp",
+      "status": "complete",
+      "uefa_player_id": "250080553",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250080553--serhou-guirassy/",
+      "identity_evidence": {
+        "uefa_full_name": "Serhou Guirassy",
+        "nationality": "Rep of Guinea",
+        "date_of_birth": "1996-03-12",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1996-03-12); WARNING: nationality \"Rep of Guinea\" differs from hint \"Guinea\" (may be birth country vs international nation) — review; found on the uefachampionsleague squad page of 52758--b-dortmund",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "B. Dortmund",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250080553.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:11.595Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "98f26aa67101eecb19c2fee8bbf2eb0728ad55113baa5d7eb4918a99786fbdf1",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "2f78293d5421a0776333c7dd1564241203bbb7fcd1a2e01011983ce481f820b1",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 310,
+          "y": 68,
+          "w": 488,
+          "h": 1012
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.454545,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 222,
+          "h": 460
+        },
+        "placement": {
+          "left": 145,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 19,
+      "requested_name": "Florian Thauvin",
+      "requested_club_label": "Racing Club de Lens",
+      "filename": "florian-thauvin.webp",
+      "status": "deferred",
+      "uefa_player_id": "250050319",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250050319--florian-thauvin/",
+      "identity_evidence": {
+        "uefa_full_name": "Florian Thauvin",
+        "nationality": "France",
+        "date_of_birth": "1993-01-26",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1993-01-26); nationality matches identity hint (France); found on the uefachampionsleague squad page of 52277--lens",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Lens",
+      "source_image_url": null,
+      "source_asset_season": null,
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": null,
+      "source_width": null,
+      "source_height": null,
+      "source_has_alpha": null,
+      "source_sha256": null,
+      "download_transport": null,
+      "output_width": null,
+      "output_height": null,
+      "output_sha256": null,
+      "normalization": null,
+      "warnings": [
+        "no acceptable transparent cutout after 3 documented candidates",
+        "constructed cutoff season 2027 (profile has no cutoff image): 404 (missing candidate)",
+        "constructed cutoff season 2026 (profile has no cutoff image): 404 (missing candidate)",
+        "constructed cutoff season 2025 (profile has no cutoff image): 404 (missing candidate)"
+      ],
+      "deferral": {
+        "decided_at": "2026-10-18",
+        "decided_by": "repository owner (chat decision)",
+        "reason": "UEFA publishes no transparent cutout for this player (probe history in warnings; seasons 2021-2027 + observed competition segments all 404). Owner chose to defer rather than substitute the player, mix in the opaque 324x324 photo, or perform background removal (spec §8). Retry later: npm run portraits:fetch --refresh"
+      }
+    },
+    {
+      "roster_index": 20,
+      "requested_name": "Luka Jović",
+      "requested_club_label": "AEK Athens",
+      "filename": "luka-jovic.webp",
+      "status": "complete",
+      "uefa_player_id": "250058244",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250058244--luka-jovic/",
+      "identity_evidence": {
+        "uefa_full_name": "Luka Jović",
+        "nationality": null,
+        "date_of_birth": "1997-12-23",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1997-12-23); UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 50129--aek-athens",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "AEK Athens",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250058244.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:16.167Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "a3ddad4ae4a6d1a3c9f606ff4ee52c232383a0b8aae7e27a0ef375daddabfae1",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "9359a1daecdc433250307876e69809fb838d10fe25b44e398c112aae6436e509",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 97,
+          "y": 170,
+          "w": 732,
+          "h": 910
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.505495,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 370,
+          "h": 460
+        },
+        "placement": {
+          "left": 71,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 21,
+      "requested_name": "Christoph Baumgartner",
+      "requested_club_label": "RB Leipzig",
+      "filename": "christoph-baumgartner.webp",
+      "status": "complete",
+      "uefa_player_id": "250089289",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250089289--christoph-baumgartner/",
+      "identity_evidence": {
+        "uefa_full_name": "Christoph Baumgartner",
+        "nationality": null,
+        "date_of_birth": "1999-08-01",
+        "position": "Midfielder",
+        "disambiguation": "WARNING: DOB variance of 366 days (UEFA: 1999-08-01, hint: 2000-08-01) — treated as data-entry variance; identity corroborated by unique name on the labelled club's squad; UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 2603790--leipzig",
+        "external_corroboration": {
+          "queried": "Christoph Baumgartner RB Leipzig born August 2000",
+          "finding": "DOB variance resolved IN UEFA's favour: Baumgartner was born 1 August 1999 (ESPN '1/8/1999', Transfermarkt '01/08/1999'). UEFA profile DOB 1/8/1999 is correct; the roster hint (2000-08-01) was wrong.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Leipzig",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250089289.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:17.093Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "a9fa047fee8399ea8ccfd5eb7fc5d7c16b68cbf1cbf207886b8673fecdf5bbeb",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "1e0672cb557e078f472ae394d9dc9917b19186d5991a6b07e9f1cbeb9f469e76",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 305,
+          "y": 148,
+          "w": 550,
+          "h": 932
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.493562,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 271,
+          "h": 460
+        },
+        "placement": {
+          "left": 121,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 22,
+      "requested_name": "Veljko Simić",
+      "requested_club_label": "Sabah FK",
+      "filename": "veljko-simic.webp",
+      "status": "complete",
+      "uefa_player_id": "250042209",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250042209--veljko-simic/",
+      "identity_evidence": {
+        "uefa_full_name": "Veljko Simić",
+        "nationality": "Serbia",
+        "date_of_birth": "1995-02-17",
+        "position": null,
+        "disambiguation": "UEFA DOB recorded (1995-02-17); roster hint had none (low/medium confidence case); nationality matches identity hint (Serbia); found on the uefachampionsleague squad page of 2609356--sabah; disambiguation note: DOB not pre-known; verify via UEFA profile plus recorded external evidence.",
+        "external_corroboration": {
+          "queried": "Veljko Simić Sabah FK Serbian forward date of birth",
+          "finding": "Veljko Simić, born 17 February 1995, Serbian winger, Sabah FK (Wikipedia; uefa.com profile snippet 'Date of birth 17/2/1995'). UEFA profile 250042209 DOB 17/2/1995 — exact match.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Sabah",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250042209.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:18.211Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "8b8d1ec6cccfd34d45d520aa445b47143d7aa3565831305632302895879ab0ba",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "3658fcf34ecfed7ef382ae29310348db5be1f6dcb8b57ee1a69492c4e082b4a2",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 242,
+          "y": 93,
+          "w": 590,
+          "h": 987
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.466059,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 275,
+          "h": 460
+        },
+        "placement": {
+          "left": 119,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 23,
+      "requested_name": "Luciano Valente",
+      "requested_club_label": "Feyenoord Rotterdam",
+      "filename": "luciano-valente.webp",
+      "status": "complete",
+      "uefa_player_id": "250208803",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250208803--luciano-valente/",
+      "identity_evidence": {
+        "uefa_full_name": "Luciano Valente",
+        "nationality": "Netherlands",
+        "date_of_birth": "2003-10-04",
+        "position": "Midfielder",
+        "disambiguation": "UEFA DOB recorded (2003-10-04); roster hint had none (low/medium confidence case); found on the uefachampionsleague squad page of 52749--feynenoord; disambiguation note: Identity not pre-known; resolve from Feyenoord squad page UEFA profile (full name, DOB, nationality) plus recorded external evidence.",
+        "external_corroboration": {
+          "queried": "Luciano Valente Feyenoord midfielder date of birth",
+          "finding": "Luciano Valente, born 4 October 2003 in Groningen, Netherlands; attacking midfielder, Feyenoord (Wikipedia, ESPN, Transfermarkt). UEFA profile 250208803 DOB 04/10/2003 — exact match.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Feyenoord",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250208803.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:19.375Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "921075aa099e4653dc966a2e833aeb04902facbe1e068f9b054e713d69b4c94e",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "0a0a1380a186a6dc5403898d660c1b4afe48096d34a5d060ea30854d0373f283",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 130,
+          "y": 48,
+          "w": 843,
+          "h": 1032
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.445736,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 376,
+          "h": 460
+        },
+        "placement": {
+          "left": 68,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 24,
+      "requested_name": "Patrick Berg",
+      "requested_club_label": "FK Bodø/Glimt",
+      "filename": "patrick-berg.webp",
+      "status": "complete",
+      "uefa_player_id": "250065292",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250065292--patrick-berg/",
+      "identity_evidence": {
+        "uefa_full_name": "Patrick Berg",
+        "nationality": "Norway",
+        "date_of_birth": "1997-11-24",
+        "position": "Midfielder",
+        "disambiguation": "WARNING: DOB variance of 304 days (UEFA: 1997-11-24, hint: 1997-01-24) — treated as data-entry variance; identity corroborated by unique name on the labelled club's squad; nationality matches identity hint (Norway); found on the uefachampionsleague squad page of 59333--bodo-glimt",
+        "external_corroboration": {
+          "queried": "Patrick Berg Bodø/Glimt midfielder born 24 January 1997",
+          "finding": "DOB variance resolved IN UEFA's favour: Berg was born 24 November 1997 (Wikipedia '24 November 1997', ESPN '11/24/1997'). UEFA profile DOB 24/11/1997 is correct; the roster hint (1997-01-24) was wrong.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Bodø/Glimt",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250065292.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:20.414Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "58cde3bd1806d752d4e3f1e6c7ba38bb594d3e794ca331a91a176fe4ac2fe223",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "d1dc6230c5e4cb5fe89e54509e2fb69a7dd4d81c3e086f5a856b40463a7f8197",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 109,
+          "y": 68,
+          "w": 758,
+          "h": 1012
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.454545,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 345,
+          "h": 460
+        },
+        "placement": {
+          "left": 84,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 25,
+      "requested_name": "Paulo Dybala",
+      "requested_club_label": "AS Roma",
+      "filename": "paulo-dybala.webp",
+      "status": "complete",
+      "uefa_player_id": "250086333",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250086333--paulo-dybala/",
+      "identity_evidence": {
+        "uefa_full_name": "Paulo Dybala",
+        "nationality": null,
+        "date_of_birth": "1993-11-15",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1993-11-15); UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 50137--roma",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Roma",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250086333.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:21.489Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "50b0a94c2caf32cdba47f6e441ed8fd54230874b6b46c30c0b2bdc7fcb64b0b1",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "73c8b38794f536babb31a1eba46267a11eebb03fcba9538a918b983c0197db1f",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 219,
+          "y": 55,
+          "w": 576,
+          "h": 1025
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.44878,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 258,
+          "h": 460
+        },
+        "placement": {
+          "left": 127,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 26,
+      "requested_name": "Ricardo Pepi",
+      "requested_club_label": "PSV Eindhoven",
+      "filename": "ricardo-pepi.webp",
+      "status": "complete",
+      "uefa_player_id": "250187620",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250187620--ricardo-pepi/",
+      "identity_evidence": {
+        "uefa_full_name": "Ricardo Pepi",
+        "nationality": "USA",
+        "date_of_birth": "2003-01-09",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (2003-01-09); WARNING: nationality \"USA\" differs from hint \"United States\" (may be birth country vs international nation) — review; found on the uefachampionsleague squad page of 50062--psv",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "PSV",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250187620.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:22.620Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "b1588c75c2267c2bd89faa4aedbdfbda52f2b6c7fb0352a42720a060686eb495",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "dec3de8e94f25cb3476cdd0f34446ef804ec52a7ba092056bb1f155f83a3de80",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 166,
+          "y": 118,
+          "w": 707,
+          "h": 962
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.47817,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 338,
+          "h": 460
+        },
+        "placement": {
+          "left": 87,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 27,
+      "requested_name": "Zlatko Tripić",
+      "requested_club_label": "Viking FK",
+      "filename": "zlatko-tripic.webp",
+      "status": "complete",
+      "uefa_player_id": "250051338",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250051338--zlatko-tripic/",
+      "identity_evidence": {
+        "uefa_full_name": "Zlatko Tripić",
+        "nationality": "Norway",
+        "date_of_birth": "1992-12-02",
+        "position": "Midfielder",
+        "disambiguation": "UEFA DOB recorded (1992-12-02); roster hint had none (low/medium confidence case); nationality matches identity hint (Norway); found on the uefachampionsleague squad page of 52319--viking; disambiguation note: Exact DOB to be confirmed from the UEFA profile.",
+        "external_corroboration": {
+          "queried": "Zlatko Tripić Viking FK winger date of birth 1992",
+          "finding": "Zlatko Tripić, born 2 December 1992 in Rijeka, Croatia; Norwegian winger, Viking FK (Wikipedia, Transfermarkt, ESPN). UEFA profile 250051338 DOB 2/12/1992 — exact match.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Viking",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250051338.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:23.714Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "2e5617c0bd7e697604ed2f610d0f85a7fb7f6ca04cc8a77c83b0f075fb4e671a",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "a3e61764f7edaad0fa3aec282fcc2e56de8e23aca73024abe588695eedd95c77",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 109,
+          "y": 73,
+          "w": 788,
+          "h": 1007
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.456802,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 360,
+          "h": 460
+        },
+        "placement": {
+          "left": 76,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 28,
+      "requested_name": "N’Golo Kanté",
+      "requested_club_label": "Fenerbahçe SK",
+      "filename": "ngolo-kante.webp",
+      "status": "complete",
+      "uefa_player_id": "250097248",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250097248--n-golo-kante/",
+      "identity_evidence": {
+        "uefa_full_name": "N'Golo Kanté",
+        "nationality": null,
+        "date_of_birth": "1991-03-29",
+        "position": "Midfielder",
+        "disambiguation": "DOB matches identity hint (1991-03-29); UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 52692--fenerbahce",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Fenerbahçe",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250097248.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:24.797Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "9908e3a9d2ee1097fc61f653cf9c977c12d071bd002e9d1a5c0b9a53256d27a9",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "34139689eb523346e50c7cc9188ac31505304d8681cdfdedf7dac6678b6e20c2",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 127,
+          "y": 101,
+          "w": 719,
+          "h": 979
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.469867,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 338,
+          "h": 460
+        },
+        "placement": {
+          "left": 87,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 29,
+      "requested_name": "Lautaro Martínez",
+      "requested_club_label": "FC Internazionale Milano",
+      "filename": "lautaro-martinez.webp",
+      "status": "complete",
+      "uefa_player_id": "250118281",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250118281--lautaro-martinez/",
+      "identity_evidence": {
+        "uefa_full_name": "Lautaro Martínez",
+        "nationality": "Argentina",
+        "date_of_birth": "1997-08-22",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1997-08-22); nationality matches identity hint (Argentina); found on the uefachampionsleague squad page of 50138--inter",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Inter",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250118281.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:25.896Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "bc3e95ac6d7c6fc746a551a22ee64b479c5564ee7204691539439ae19ade536a",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "e5b68d7f80ee55f39223c58a115262f6c00d4dcb85bc9dca90e68a77a60af737",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 261,
+          "y": 95,
+          "w": 526,
+          "h": 985
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.467005,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 246,
+          "h": 460
+        },
+        "placement": {
+          "left": 133,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 30,
+      "requested_name": "Diogo Costa",
+      "requested_club_label": "FC Porto",
+      "filename": "diogo-costa.webp",
+      "status": "complete",
+      "uefa_player_id": "250076675",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250076675--diogo-costa/",
+      "identity_evidence": {
+        "uefa_full_name": "Diogo Costa",
+        "nationality": null,
+        "date_of_birth": "1999-09-19",
+        "position": "Goalkeeper",
+        "disambiguation": "DOB matches identity hint (1999-09-19); UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 50064--porto",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Porto",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250076675.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:27.001Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "c5866c0f31531c0640f057c4081b4bb7e7a99e71b784341bc957a5a4b9a0a667",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "8ab899d830199d8c30eb94fd64a04e43fe001021335e6079b612c0da28f296b7",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 136,
+          "y": 127,
+          "w": 810,
+          "h": 953
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.482686,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 391,
+          "h": 460
+        },
+        "placement": {
+          "left": 61,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 31,
+      "requested_name": "Lukáš Provod",
+      "requested_club_label": "SK Slavia Praha",
+      "filename": "lukas-provod.webp",
+      "status": "complete",
+      "uefa_player_id": "250064811",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250064811--lukas-provod/",
+      "identity_evidence": {
+        "uefa_full_name": "Lukáš Provod",
+        "nationality": null,
+        "date_of_birth": "1996-10-23",
+        "position": "Midfielder",
+        "disambiguation": "DOB matches identity hint (1996-10-23); UEFA profile displays no country/nationality text field (flag-only or absent) — identity rests on DOB + squad context; found on the uefachampionsleague squad page of 52498--slavia-praha",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Slavia Praha",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250064811.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:28.094Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "6b93fc0dd5d5027a2752ba505eeb5d4af9fa52fe68434dbb9e4305057bc61429",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "e90b78cf1e5ee15fa4b33a5518815a9f6c5dfe413c01cf4cd6ee7e1554bbc982",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 241,
+          "y": 54,
+          "w": 668,
+          "h": 1026
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.448343,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 299,
+          "h": 460
+        },
+        "placement": {
+          "left": 107,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 32,
+      "requested_name": "Scott McTominay",
+      "requested_club_label": "SSC Napoli",
+      "filename": "scott-mctominay.webp",
+      "status": "complete",
+      "uefa_player_id": "250088240",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250088240--scott-mctominay/",
+      "identity_evidence": {
+        "uefa_full_name": "Scott McTominay",
+        "nationality": "Scotland",
+        "date_of_birth": "1996-12-08",
+        "position": null,
+        "disambiguation": "DOB matches identity hint (1996-12-08); nationality matches identity hint (Scotland); found on the uefachampionsleague squad page of 50136--napoli",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Napoli",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250088240.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:29.197Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "3c8ec86a832be9dfe93e1ccd56a91702f47ce9d41b9e047ff91b0a8d938455c9",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "7c86306745055022dd7b89a570d30d1bca7522287846cd663aaa5de2d901d009",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 272,
+          "y": 105,
+          "w": 525,
+          "h": 975
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.471795,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 248,
+          "h": 460
+        },
+        "placement": {
+          "left": 132,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 33,
+      "requested_name": "Samuel Adeniran",
+      "requested_club_label": "LASK Linz",
+      "filename": "samuel-adeniran.webp",
+      "status": "complete",
+      "uefa_player_id": "250223201",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250223201--samuel-adeniran/",
+      "identity_evidence": {
+        "uefa_full_name": "Samuel Adeniran",
+        "nationality": "USA",
+        "date_of_birth": "1998-09-30",
+        "position": "Forward",
+        "disambiguation": "UEFA DOB recorded (1998-09-30); roster hint had none (low/medium confidence case); found on the uefachampionsleague squad page of 63405--lask; disambiguation note: Identity not pre-known; resolve from LASK squad page UEFA profile (full name, DOB, nationality) plus recorded external evidence.",
+        "external_corroboration": {
+          "queried": "Samuel Adeniran LASK Linz striker American date of birth",
+          "finding": "Samuel Adeniran, born 30 September 1998, United States, centre-forward, LASK (Transfermarkt, worldfootball.com). UEFA profile 250223201 DOB 30/9/1998 — exact match.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "LASK",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250223201.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:30.300Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "13091c87e00d8763b6ea7c5904a22033e92d3f50b6fbac0df958fd15eacf7578",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "2f10090983dff14308f0a71c0a45243ab70abbe8659b986543e4357a852d417e",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 258,
+          "y": 35,
+          "w": 560,
+          "h": 1045
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.440191,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 247,
+          "h": 460
+        },
+        "placement": {
+          "left": 133,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 34,
+      "requested_name": "Ayase Ueda",
+      "requested_club_label": "Lille OSC",
+      "filename": "ayase-ueda.webp",
+      "status": "complete",
+      "uefa_player_id": "250181460",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250181460--ayase-ueda/",
+      "identity_evidence": {
+        "uefa_full_name": "Ayase Ueda",
+        "nationality": "Japan",
+        "date_of_birth": "1998-08-28",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1998-08-28); nationality matches identity hint (Japan); found on the uefachampionsleague squad page of 75797--lille",
+        "external_corroboration": {
+          "queried": "Ayase Ueda Lille OSC 2026 transfer Japan striker",
+          "finding": "Identity confirmed: Ayase Ueda (b. 28 August 1998, Japan) transferred from Feyenoord to Lille on 30-31 August 2026 (~€15m, L'Équipe/flashscore). KIT WARNING: his 2027 UEFA cutoff still photographs him in a FEYENOORD kit (red/white split, Feyenoord crest) — UEFA had not reshot him in a Lille kit at retrieval time. The person is verified (DOB exact match, Lille UCL squad context); only the kit is from his previous club.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "Lille",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250181460.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:31.501Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "e2d511e7722f6dc5856fa37e9b86f287b7af34afc2b7be4751237205e207db26",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "dd10bd64db39993739e73ce35aa086d1932d02755bc62c0f9873e23722744139",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 281,
+          "y": 48,
+          "w": 480,
+          "h": 1032
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.445736,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 214,
+          "h": 460
+        },
+        "placement": {
+          "left": 149,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": [
+        "unexpected kit (external evidence): his 2027 UEFA cutoff still photographs him in a FEYENOORD kit (red/white split, Feyenoord crest) — UEFA had not reshot him in a Lille kit at retrieval time."
+      ]
+    },
+    {
+      "roster_index": 35,
+      "requested_name": "Victor Osimhen",
+      "requested_club_label": "Galatasaray SK",
+      "filename": "victor-osimhen.webp",
+      "status": "complete",
+      "uefa_player_id": "250132987",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250132987--victor-osimhen/",
+      "identity_evidence": {
+        "uefa_full_name": "Victor Osimhen",
+        "nationality": "Nigeria",
+        "date_of_birth": "1998-12-29",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1998-12-29); nationality matches identity hint (Nigeria); found on the uefachampionsleague squad page of 50067--galatasaray",
+        "external_corroboration": null
+      },
+      "observed_uefa_club": "Galatasaray",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250132987.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:32.505Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "4d155e424f15ce9d657f3f59b516bed2dabc1470208448be5479e0c0a836baf3",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "41768cf36b89ba865632f05d80c94a726877013f2da70c9e064b646d5997f15c",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 222,
+          "y": 86,
+          "w": 583,
+          "h": 994
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.462777,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 270,
+          "h": 460
+        },
+        "placement": {
+          "left": 121,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": []
+    },
+    {
+      "roster_index": 36,
+      "requested_name": "Andraž Šporar",
+      "requested_club_label": "ŠK Slovan Bratislava",
+      "filename": "andraz-sporar.webp",
+      "status": "complete",
+      "uefa_player_id": "250050391",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250050391--andraz-sporar/",
+      "identity_evidence": {
+        "uefa_full_name": "Andraž Šporar",
+        "nationality": "Slovenia",
+        "date_of_birth": "1994-02-27",
+        "position": "Forward",
+        "disambiguation": "DOB matches identity hint (1994-02-27); nationality matches identity hint (Slovenia); found on the uefachampionsleague squad page of 52797--s-bratislava",
+        "external_corroboration": {
+          "queried": "Andraž Šporar Slovan Bratislava Olimpija Ljubljana 2026 transfer striker",
+          "finding": "Identity confirmed: Andraž Šporar (b. 27 February 1994, Slovenia), forward (Wikipedia: Slovan Bratislava; UEFA DOB 27/2/1994 exact match). KIT WARNING: fotmob shows a July 2026 free transfer to NK Olimpija Ljubljana, and his 2027 UEFA cutoff photographs him in an OLIMPIJA LJUBLJANA kit (royal blue, 'je tipanje' sponsor, tree crest) while his UEFA Champions League squad registration and profile still show ŠK Slovan Bratislava. The person is verified; the kit reflects his most recent club move, not the supplied label.",
+          "resolved_at": "2026-10-18"
+        }
+      },
+      "observed_uefa_club": "S. Bratislava",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250050391.webp",
+      "source_asset_season": "2027",
+      "source_competition": "UEFA Champions League 2026/27",
+      "fetched_at": "2026-10-18T16:57:33.604Z",
+      "source_width": 1080,
+      "source_height": 1080,
+      "source_has_alpha": true,
+      "source_sha256": "871302ee93af6fad0116e2024a92c9db90bc931df3377777fe829f5863897597",
+      "download_transport": "relay",
+      "output_width": 512,
+      "output_height": 512,
+      "output_sha256": "53a7da75bd018beec1651e0741d729a985479be9bf1e848e8c3bb2dcba74144f",
+      "normalization": {
+        "source_width": 1080,
+        "source_height": 1080,
+        "source_subject_bounds": {
+          "x": 265,
+          "y": 120,
+          "w": 570,
+          "h": 960
+        },
+        "alpha_threshold": 8,
+        "applied_scale": 0.479167,
+        "scale_capped_at_one": false,
+        "output_subject_size": {
+          "w": 273,
+          "h": 460
+        },
+        "placement": {
+          "left": 120,
+          "top": 26
+        },
+        "content_box": {
+          "x": 26,
+          "y": 26,
+          "w": 460,
+          "h": 460
+        },
+        "framing_override": null,
+        "encoder": "sharp webp lossless (lanczos3 downscale)",
+        "warnings": []
+      },
+      "warnings": [
+        "unexpected kit (external evidence): fotmob shows a July 2026 free transfer to NK Olimpija Ljubljana, and his 2027 UEFA cutoff photographs him in an OLIMPIJA LJUBLJANA kit (royal blue, 'je tipanje' sponsor, tree crest) while his UEFA Champions League squad registration and profile still show ŠK Slovan Bratislava."
+      ]
+    }
+  ]
+}

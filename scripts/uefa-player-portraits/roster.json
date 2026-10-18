@@ -1,0 +1,669 @@
+{
+  "schema_version": 1,
+  "description": "Requested roster for the UEFA player portrait collection. Order and club labels are authoritative inputs from uefa-player-portraits.spec.md and MUST NOT be rewritten. identity_hint fields are pre-collection knowledge used only to verify the UEFA profile resolves to the requested PERSON (never to rewrite names/labels); null values mark cases where UEFA profile data plus club context plus recorded external evidence must carry the verification.",
+  "source_spec": "uefa-player-portraits.spec.md",
+  "players": [
+    {
+      "roster_index": 1,
+      "requested_name": "Ousmane Dembélé",
+      "requested_club_label": "Paris Saint-Germain FC",
+      "filename": "ousmane-dembele.webp",
+      "search_name": "ousmane dembele",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52747--paris"
+      },
+      "identity_hint": {
+        "full_name": "Ousmane Dembélé",
+        "nationality": "France",
+        "date_of_birth": "1997-05-15",
+        "career": "Stade Rennais, Borussia Dortmund, FC Barcelona, Paris Saint-Germain",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 2,
+      "requested_name": "Lamine Yamal",
+      "requested_club_label": "FC Barcelona",
+      "filename": "lamine-yamal.webp",
+      "search_name": "lamine yamal",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50080--barcelona"
+      },
+      "identity_hint": {
+        "full_name": "Lamine Yamal",
+        "nationality": "Spain",
+        "date_of_birth": "2007-07-13",
+        "career": "FC Barcelona",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 3,
+      "requested_name": "Nicolas Jackson",
+      "requested_club_label": "Aston Villa FC",
+      "filename": "nicolas-jackson.webp",
+      "search_name": "nicolas jackson",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52683--aston-villa"
+      },
+      "identity_hint": {
+        "full_name": "Nicolas Jackson",
+        "nationality": "Senegal",
+        "date_of_birth": "2001-06-20",
+        "career": "Casa Sports, Villarreal, Chelsea",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 4,
+      "requested_name": "Deniz Undav",
+      "requested_club_label": "VfB Stuttgart",
+      "filename": "deniz-undav.webp",
+      "search_name": "deniz undav",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50107--stuttgart"
+      },
+      "identity_hint": {
+        "full_name": "Deniz Undav",
+        "nationality": "Germany",
+        "date_of_birth": "1996-07-19",
+        "career": "Union Saint-Gilloise, Brighton & Hove Albion, VfB Stuttgart",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 5,
+      "requested_name": "Bradley Barcola",
+      "requested_club_label": "Liverpool FC",
+      "filename": "bradley-barcola.webp",
+      "search_name": "bradley barcola",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "7889--liverpool"
+      },
+      "identity_hint": {
+        "full_name": "Bradley Barcola",
+        "nationality": "France",
+        "date_of_birth": "2002-09-02",
+        "career": "Olympique Lyonnais, Paris Saint-Germain",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 6,
+      "requested_name": "Luis Suárez 🇨🇴",
+      "requested_name_display": "Luis Suárez",
+      "requested_club_label": "Sporting Clube de Portugal",
+      "filename": "luis-suarez-colombia.webp",
+      "search_name": "luis suarez",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50149--sporting-cp"
+      },
+      "identity_hint": {
+        "full_name": "Luis Javier Suárez Charris",
+        "nationality": "Colombia",
+        "date_of_birth": "1997-12-02",
+        "career": "Junior de Barranquilla, Watford, Real Valladolid, Granada, Olympique de Marseille, Sporting CP",
+        "confidence": "high",
+        "disambiguation": "The COLOMBIAN forward (b. 1997-12-02), NOT the Uruguayan Luis Alberto Suárez Díaz (b. 1987-01-24). Nationality + DOB on the UEFA profile must separate them."
+      }
+    },
+    {
+      "roster_index": 7,
+      "requested_name": "Bukayo Saka",
+      "requested_club_label": "Arsenal FC",
+      "filename": "bukayo-saka.webp",
+      "search_name": "bukayo saka",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52280--arsenal"
+      },
+      "identity_hint": {
+        "full_name": "Bukayo Ayoyinka Temidayo Saka",
+        "nationality": "England",
+        "date_of_birth": "2001-09-05",
+        "career": "Arsenal",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 8,
+      "requested_name": "Kylian Mbappé",
+      "requested_club_label": "Real Madrid CF",
+      "filename": "kylian-mbappe.webp",
+      "search_name": "kylian mbappe",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50051--real-madrid"
+      },
+      "identity_hint": {
+        "full_name": "Kylian Mbappé Lottin",
+        "nationality": "France",
+        "date_of_birth": "1998-12-19",
+        "career": "AS Monaco, Paris Saint-Germain, Real Madrid",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 9,
+      "requested_name": "Antony",
+      "requested_club_label": "Real Betis Balompié",
+      "filename": "antony.webp",
+      "search_name": "antony",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52265--real-betis"
+      },
+      "identity_hint": {
+        "full_name": "Antony Matheus dos Santos",
+        "nationality": "Brazil",
+        "date_of_birth": "2000-02-24",
+        "career": "São Paulo, Ajax, Manchester United",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 10,
+      "requested_name": "Harry Kane",
+      "requested_club_label": "FC Bayern München",
+      "filename": "harry-kane.webp",
+      "search_name": "harry kane",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50037--bayern-munchen"
+      },
+      "identity_hint": {
+        "full_name": "Harry Kane",
+        "nationality": "England",
+        "date_of_birth": "1993-07-28",
+        "career": "Tottenham Hotspur, FC Bayern München",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 11,
+      "requested_name": "Pedrinho",
+      "requested_club_label": "FK Shakhtar Donetsk",
+      "filename": "pedrinho.webp",
+      "search_name": "pedrinho",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52707--shakhtar"
+      },
+      "identity_hint": {
+        "full_name": null,
+        "nationality": "Brazil",
+        "date_of_birth": null,
+        "career": "Shakhtar Donetsk (Brazilian forward/midfielder; several Brazilians are called Pedrinho)",
+        "confidence": "low",
+        "disambiguation": "SPEC-FLAGED case: must be resolved from the Shakhtar squad page UEFA profile (full name, DOB, nationality) plus recorded external evidence. Do not accept any other Pedrinho."
+      }
+    },
+    {
+      "roster_index": 12,
+      "requested_name": "Nico Paz",
+      "requested_club_label": "Como 1907",
+      "filename": "nico-paz.webp",
+      "search_name": "nico paz",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "79946--como"
+      },
+      "identity_hint": {
+        "full_name": "Nicolás Paz",
+        "nationality": "Argentina",
+        "date_of_birth": "2004-09-08",
+        "career": "Real Madrid, Como 1907",
+        "confidence": "high"
+      },
+      "search_aliases": [
+        "nicolas paz"
+      ]
+    },
+    {
+      "roster_index": 13,
+      "requested_name": "Bruno Fernandes",
+      "requested_club_label": "Manchester United FC",
+      "filename": "bruno-fernandes.webp",
+      "search_name": "bruno fernandes",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52682--man-utd"
+      },
+      "identity_hint": {
+        "full_name": "Bruno Miguel Borges Fernandes",
+        "nationality": "Portugal",
+        "date_of_birth": "1994-09-08",
+        "career": "Novara, Udinese, Sampdoria, Sporting CP, Manchester United",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 14,
+      "requested_name": "Georges Mikautadze",
+      "requested_club_label": "Villarreal CF",
+      "filename": "georges-mikautadze.webp",
+      "search_name": "georges mikautadze",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "70691--villarreal"
+      },
+      "identity_hint": {
+        "full_name": "Georges Mikautadze",
+        "nationality": "Georgia",
+        "date_of_birth": "2000-10-31",
+        "career": "Metz, Fulham, Olympique Lyonnais",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 15,
+      "requested_name": "Julián Álvarez",
+      "requested_club_label": "Club Atlético de Madrid",
+      "filename": "julian-alvarez.webp",
+      "search_name": "julian alvarez",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50124--atleti"
+      },
+      "identity_hint": {
+        "full_name": "Julián Álvarez",
+        "nationality": "Argentina",
+        "date_of_birth": "2000-01-31",
+        "career": "River Plate, Manchester City, Atlético de Madrid",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 16,
+      "requested_name": "Nicolò Tresoldi",
+      "requested_club_label": "Club Brugge KV",
+      "filename": "nicolo-tresoldi.webp",
+      "search_name": "nicolo tresoldi",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50043--club-brugge"
+      },
+      "identity_hint": {
+        "full_name": "Nicolò Tresoldi",
+        "nationality": "Italy",
+        "date_of_birth": null,
+        "career": "Italian forward (youth: Cagliari area); exact DOB to be confirmed from the UEFA profile",
+        "confidence": "medium",
+        "disambiguation": "DOB not pre-known; verify via UEFA profile plus recorded external evidence."
+      }
+    },
+    {
+      "roster_index": 17,
+      "requested_name": "Erling Haaland",
+      "requested_club_label": "Manchester City FC",
+      "filename": "erling-haaland.webp",
+      "search_name": "erling haaland",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52919--man-city"
+      },
+      "identity_hint": {
+        "full_name": "Erling Braut Haaland",
+        "nationality": "Norway",
+        "date_of_birth": "2000-07-21",
+        "career": "Bryne, Molde, RB Salzburg, Borussia Dortmund, Manchester City",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 18,
+      "requested_name": "Serhou Guirassy",
+      "requested_club_label": "Borussia Dortmund",
+      "filename": "serhou-guirassy.webp",
+      "search_name": "serhou guirassy",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52758--b-dortmund"
+      },
+      "identity_hint": {
+        "full_name": "Serhou Yadaly Guirassy",
+        "nationality": "Guinea",
+        "date_of_birth": "1996-03-12",
+        "career": "Lille, 1. FC Köln, Amiens, Rennes, VfB Stuttgart, Borussia Dortmund",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 19,
+      "requested_name": "Florian Thauvin",
+      "requested_club_label": "Racing Club de Lens",
+      "filename": "florian-thauvin.webp",
+      "search_name": "florian thauvin",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52277--lens"
+      },
+      "identity_hint": {
+        "full_name": "Florian Thauvin",
+        "nationality": "France",
+        "date_of_birth": "1993-01-26",
+        "career": "Bastia, Marseille, Newcastle United, Tigres UANL, Udinese",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 20,
+      "requested_name": "Luka Jović",
+      "requested_club_label": "AEK Athens",
+      "filename": "luka-jovic.webp",
+      "search_name": "luka jovic",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50129--aek-athens"
+      },
+      "identity_hint": {
+        "full_name": "Luka Jović",
+        "nationality": "Serbia",
+        "date_of_birth": "1997-12-23",
+        "career": "Red Star Belgrade, Benfica, Eintracht Frankfurt, Real Madrid, Fiorentina, AC Milan",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 21,
+      "requested_name": "Christoph Baumgartner",
+      "requested_club_label": "RB Leipzig",
+      "filename": "christoph-baumgartner.webp",
+      "search_name": "christoph baumgartner",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "2603790--leipzig"
+      },
+      "identity_hint": {
+        "full_name": "Christoph Baumgartner",
+        "nationality": "Austria",
+        "date_of_birth": "2000-08-01",
+        "career": "SK St. Pölten, TSG Hoffenheim, RB Leipzig",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 22,
+      "requested_name": "Veljko Simić",
+      "requested_club_label": "Sabah FK",
+      "filename": "veljko-simic.webp",
+      "search_name": "veljko simic",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "2609356--sabah"
+      },
+      "identity_hint": {
+        "full_name": "Veljko Simić",
+        "nationality": "Serbia",
+        "date_of_birth": null,
+        "career": "Serbian forward; exact DOB to be confirmed from the UEFA profile",
+        "confidence": "low",
+        "disambiguation": "DOB not pre-known; verify via UEFA profile plus recorded external evidence."
+      }
+    },
+    {
+      "roster_index": 23,
+      "requested_name": "Luciano Valente",
+      "requested_club_label": "Feyenoord Rotterdam",
+      "filename": "luciano-valente.webp",
+      "search_name": "luciano valente",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52749--feynenoord"
+      },
+      "identity_hint": {
+        "full_name": "Luciano Valente",
+        "nationality": null,
+        "date_of_birth": null,
+        "career": null,
+        "confidence": "low",
+        "disambiguation": "Identity not pre-known; resolve from Feyenoord squad page UEFA profile (full name, DOB, nationality) plus recorded external evidence."
+      }
+    },
+    {
+      "roster_index": 24,
+      "requested_name": "Patrick Berg",
+      "requested_club_label": "FK Bodø/Glimt",
+      "filename": "patrick-berg.webp",
+      "search_name": "patrick berg",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "59333--bodo-glimt"
+      },
+      "identity_hint": {
+        "full_name": "Patrick Berg",
+        "nationality": "Norway",
+        "date_of_birth": "1997-01-24",
+        "career": "FK Bodø/Glimt, RC Lens",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 25,
+      "requested_name": "Paulo Dybala",
+      "requested_club_label": "AS Roma",
+      "filename": "paulo-dybala.webp",
+      "search_name": "paulo dybala",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50137--roma"
+      },
+      "identity_hint": {
+        "full_name": "Paulo Exequiel Dybala",
+        "nationality": "Argentina",
+        "date_of_birth": "1993-11-15",
+        "career": "Instituto, Palermo, Juventus, AS Roma",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 26,
+      "requested_name": "Ricardo Pepi",
+      "requested_club_label": "PSV Eindhoven",
+      "filename": "ricardo-pepi.webp",
+      "search_name": "ricardo pepi",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50062--psv"
+      },
+      "identity_hint": {
+        "full_name": "Ricardo Daniel Pepi",
+        "nationality": "United States",
+        "date_of_birth": "2003-01-09",
+        "career": "FC Dallas, FC Augsburg, FC Groningen (loan), PSV",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 27,
+      "requested_name": "Zlatko Tripić",
+      "requested_club_label": "Viking FK",
+      "filename": "zlatko-tripic.webp",
+      "search_name": "zlatko tripic",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52319--viking"
+      },
+      "identity_hint": {
+        "full_name": "Zlatko Tripić",
+        "nationality": "Norway",
+        "date_of_birth": null,
+        "career": "Molde FK, Viking FK (Norwegian winger of Croatian descent)",
+        "confidence": "medium",
+        "disambiguation": "Exact DOB to be confirmed from the UEFA profile."
+      }
+    },
+    {
+      "roster_index": 28,
+      "requested_name": "N’Golo Kanté",
+      "requested_club_label": "Fenerbahçe SK",
+      "filename": "ngolo-kante.webp",
+      "search_name": "ngolo kante",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52692--fenerbahce"
+      },
+      "identity_hint": {
+        "full_name": "N'Golo Kanté",
+        "nationality": "France",
+        "date_of_birth": "1991-03-29",
+        "career": "Caen, Leicester City, Chelsea, Al-Ittihad",
+        "confidence": "high"
+      },
+      "search_aliases": [
+        "n golo kante"
+      ]
+    },
+    {
+      "roster_index": 29,
+      "requested_name": "Lautaro Martínez",
+      "requested_club_label": "FC Internazionale Milano",
+      "filename": "lautaro-martinez.webp",
+      "search_name": "lautaro martinez",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50138--inter"
+      },
+      "identity_hint": {
+        "full_name": "Lautaro Javier Martínez",
+        "nationality": "Argentina",
+        "date_of_birth": "1997-08-22",
+        "career": "Racing Club, Inter",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 30,
+      "requested_name": "Diogo Costa",
+      "requested_club_label": "FC Porto",
+      "filename": "diogo-costa.webp",
+      "search_name": "diogo costa",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50064--porto"
+      },
+      "identity_hint": {
+        "full_name": "Diogo Meireles da Costa",
+        "nationality": "Portugal",
+        "date_of_birth": "1999-09-19",
+        "career": "FC Porto",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 31,
+      "requested_name": "Lukáš Provod",
+      "requested_club_label": "SK Slavia Praha",
+      "filename": "lukas-provod.webp",
+      "search_name": "lukas provod",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52498--slavia-praha"
+      },
+      "identity_hint": {
+        "full_name": "Lukáš Provod",
+        "nationality": "Czechia",
+        "date_of_birth": "1996-10-23",
+        "career": "Slavia Praha, Viktoria Plzeň (loan)",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 32,
+      "requested_name": "Scott McTominay",
+      "requested_club_label": "SSC Napoli",
+      "filename": "scott-mctominay.webp",
+      "search_name": "scott mctominay",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50136--napoli"
+      },
+      "identity_hint": {
+        "full_name": "Scott Francis McTominay",
+        "nationality": "Scotland",
+        "date_of_birth": "1996-12-08",
+        "career": "Manchester United, SSC Napoli",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 33,
+      "requested_name": "Samuel Adeniran",
+      "requested_club_label": "LASK Linz",
+      "filename": "samuel-adeniran.webp",
+      "search_name": "samuel adeniran",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "63405--lask"
+      },
+      "identity_hint": {
+        "full_name": "Samuel Adeniran",
+        "nationality": null,
+        "date_of_birth": null,
+        "career": null,
+        "confidence": "low",
+        "disambiguation": "Identity not pre-known; resolve from LASK squad page UEFA profile (full name, DOB, nationality) plus recorded external evidence."
+      }
+    },
+    {
+      "roster_index": 34,
+      "requested_name": "Ayase Ueda",
+      "requested_club_label": "Lille OSC",
+      "filename": "ayase-ueda.webp",
+      "search_name": "ayase ueda",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "75797--lille"
+      },
+      "identity_hint": {
+        "full_name": "Ayase Ueda",
+        "nationality": "Japan",
+        "date_of_birth": "1998-08-28",
+        "career": "Kashima Antlers, Cercle Brugge, Feyenoord",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 35,
+      "requested_name": "Victor Osimhen",
+      "requested_club_label": "Galatasaray SK",
+      "filename": "victor-osimhen.webp",
+      "search_name": "victor osimhen",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "50067--galatasaray"
+      },
+      "identity_hint": {
+        "full_name": "Victor James Osimhen",
+        "nationality": "Nigeria",
+        "date_of_birth": "1998-12-29",
+        "career": "Wolfsburg, Charleroi, Lille, Napoli, Galatasaray",
+        "confidence": "high"
+      }
+    },
+    {
+      "roster_index": 36,
+      "requested_name": "Andraž Šporar",
+      "requested_club_label": "ŠK Slovan Bratislava",
+      "filename": "andraz-sporar.webp",
+      "search_name": "andraz sporar",
+      "club_hint": {
+        "competition": "uefachampionsleague",
+        "club_path": "52797--s-bratislava"
+      },
+      "identity_hint": {
+        "full_name": "Andraž Šporar",
+        "nationality": "Slovenia",
+        "date_of_birth": "1994-02-27",
+        "career": "Olimpija Ljubljana, FC Basel, Spezia, Slovan Bratislava",
+        "confidence": "high"
+      }
+    }
+  ]
+}

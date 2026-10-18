@@ -1,0 +1,78 @@
+{
+  "_description": "External corroboration gathered during the initial collection run (2026-10-18) to resolve low-confidence identities, namesake risks and DOB variances. Sources: public web search results (Wikipedia, Transfermarkt, ESPN, uefa.com search results, club announcements). Reproducible via the queries recorded in each entry. Merged into manifest identity_evidence.external_corroboration by normalize.js.",
+  "ousmane-dembele": {
+    "queried": "UEFA profile verification (pilot)",
+    "finding": "UEFA profile 250066886: Ousmane Dembélé, Paris, France, DOB 15/5/1997 — matches the known person exactly (1997-05-15).",
+    "resolved_at": "2026-10-18"
+  },
+  "luis-suarez-colombia": {
+    "queried": "namesake disambiguation: Luis Suárez Sporting CP",
+    "finding": "UEFA profile 250147458 on Sporting CP's squad: DOB 2/12/1997, Colombia — the Colombian forward Luis Javier Suárez (b. 1997-12-02), NOT the Uruguayan Luis Alberto Suárez Díaz (b. 1987-01-24). Kit photographed: Sporting CP green/white hoops.",
+    "resolved_at": "2026-10-18"
+  },
+  "pedrinho": {
+    "queried": "Pedrinho Shakhtar Donetsk Brazilian player full name date of birth",
+    "finding": "SPEC-FLAGGED disambiguation resolved: Shakhtar's Pedrinho = Pedro Victor Delmino da Silva, born 13 April 1998 in Maceió, Brazil (Wikipedia 'Pedrinho (footballer, born April 1998)', Transfermarkt, shakhtar.com announcement 2021). UEFA profile 250144964 on Shakhtar's squad shows DOB 13/4/1998 — exact match. Shakhtar context + DOB + nationality identify one person reliably.",
+    "resolved_at": "2026-10-18"
+  },
+  "luciano-valente": {
+    "queried": "Luciano Valente Feyenoord midfielder date of birth",
+    "finding": "Luciano Valente, born 4 October 2003 in Groningen, Netherlands; attacking midfielder, Feyenoord (Wikipedia, ESPN, Transfermarkt). UEFA profile 250208803 DOB 04/10/2003 — exact match.",
+    "resolved_at": "2026-10-18"
+  },
+  "samuel-adeniran": {
+    "queried": "Samuel Adeniran LASK Linz striker American date of birth",
+    "finding": "Samuel Adeniran, born 30 September 1998, United States, centre-forward, LASK (Transfermarkt, worldfootball.com). UEFA profile 250223201 DOB 30/9/1998 — exact match.",
+    "resolved_at": "2026-10-18"
+  },
+  "veljko-simic": {
+    "queried": "Veljko Simić Sabah FK Serbian forward date of birth",
+    "finding": "Veljko Simić, born 17 February 1995, Serbian winger, Sabah FK (Wikipedia; uefa.com profile snippet 'Date of birth 17/2/1995'). UEFA profile 250042209 DOB 17/2/1995 — exact match.",
+    "resolved_at": "2026-10-18"
+  },
+  "nicolo-tresoldi": {
+    "queried": "Nicolò Tresoldi Club Brugge 2026 transfer Italian forward",
+    "finding": "Nicolò Tresoldi, born 20 August 2004 in Cagliari, Italy; striker at Club Brugge since 2025; represents Germany at international youth level (Transfermarkt, Wikipedia, goal.com). UEFA profile 250181849 DOB 20/8/2004 — exact match. Kit photographed: Club Brugge blue/black stripes.",
+    "resolved_at": "2026-10-18"
+  },
+  "zlatko-tripic": {
+    "queried": "Zlatko Tripić Viking FK winger date of birth 1992",
+    "finding": "Zlatko Tripić, born 2 December 1992 in Rijeka, Croatia; Norwegian winger, Viking FK (Wikipedia, Transfermarkt, ESPN). UEFA profile 250051338 DOB 2/12/1992 — exact match.",
+    "resolved_at": "2026-10-18"
+  },
+  "kylian-mbappe": {
+    "queried": "Kylian Mbappé born 19 December 1998 date of birth",
+    "finding": "DOB variance resolved IN UEFA's favour: Mbappé was born 20 December 1998 (Wikipedia, Transfermarkt). UEFA profile DOB 20/12/1998 is correct; the roster hint (1998-12-19) was wrong. Identity beyond doubt: Real Madrid context + unique name.",
+    "resolved_at": "2026-10-18"
+  },
+  "christoph-baumgartner": {
+    "queried": "Christoph Baumgartner RB Leipzig born August 2000",
+    "finding": "DOB variance resolved IN UEFA's favour: Baumgartner was born 1 August 1999 (ESPN '1/8/1999', Transfermarkt '01/08/1999'). UEFA profile DOB 1/8/1999 is correct; the roster hint (2000-08-01) was wrong.",
+    "resolved_at": "2026-10-18"
+  },
+  "patrick-berg": {
+    "queried": "Patrick Berg Bodø/Glimt midfielder born 24 January 1997",
+    "finding": "DOB variance resolved IN UEFA's favour: Berg was born 24 November 1997 (Wikipedia '24 November 1997', ESPN '11/24/1997'). UEFA profile DOB 24/11/1997 is correct; the roster hint (1997-01-24) was wrong.",
+    "resolved_at": "2026-10-18"
+  },
+  "ayase-ueda": {
+    "queried": "Ayase Ueda Lille OSC 2026 transfer Japan striker",
+    "finding": "Identity confirmed: Ayase Ueda (b. 28 August 1998, Japan) transferred from Feyenoord to Lille on 30-31 August 2026 (~€15m, L'Équipe/flashscore). KIT WARNING: his 2027 UEFA cutoff still photographs him in a FEYENOORD kit (red/white split, Feyenoord crest) — UEFA had not reshot him in a Lille kit at retrieval time. The person is verified (DOB exact match, Lille UCL squad context); only the kit is from his previous club.",
+    "resolved_at": "2026-10-18"
+  },
+  "andraz-sporar": {
+    "queried": "Andraž Šporar Slovan Bratislava Olimpija Ljubljana 2026 transfer striker",
+    "finding": "Identity confirmed: Andraž Šporar (b. 27 February 1994, Slovenia), forward (Wikipedia: Slovan Bratislava; UEFA DOB 27/2/1994 exact match). KIT WARNING: fotmob shows a July 2026 free transfer to NK Olimpija Ljubljana, and his 2027 UEFA cutoff photographs him in an OLIMPIJA LJUBLJANA kit (royal blue, 'je tipanje' sponsor, tree crest) while his UEFA Champions League squad registration and profile still show ŠK Slovan Bratislava. The person is verified; the kit reflects his most recent club move, not the supplied label.",
+    "resolved_at": "2026-10-18"
+  },
+  "nico-paz": {
+    "queried": "Nico Paz Como 2026/27 kit sponsor royal blue",
+    "finding": "Identity confirmed (DOB 8/9/2004 exact match, Como squad context). Kit check: Como's 2025/26 and 2026/27 shirts are royal blue with white details — the royal-blue kit in the portrait is consistent with Como (an early VLM guess of 'FC Copenhagen' was a crest misread).",
+    "resolved_at": "2026-10-18"
+  },
+  "harry-kane": {
+    "queried": "UEFA profile verification (pilot)",
+    "finding": "UEFA profile 250016833: Harry Kane, Bayern München, England, DOB 28/7/1993 — matches the known person exactly.",
+    "resolved_at": "2026-10-18"
+  }
+}
