@@ -201,12 +201,14 @@ published as `manifest-heroes.json` plus the club → portrait map
 `hero-clubs.json` (the contract for the hero frontend). Its full
 specification, runbook and the recorded failure catalogue live in
 **`docs/scrapping/uefa-players/`** (README + SPEC v2 + INSTRUCTIONS).
-Status (2026-10-19): **96/96 complete** — 31 UEFA official cutoffs (5
-added 2026-10-19: Zaniolo/Udinese, Orsolini/Bologna, Koch/Frankfurt,
-Gouiri/Marseille, Del Castillo/Brest) + 65 league-official portraits
-under spec §8b (premierleague.com, laliga.com, legaseriea.it,
-bundesliga.com, ligue1.fr official media; per-entry `alt_source`
-provenance, documented crop/upscale directives). The UEFA coverage audit
+Status (2026-10-19, v2.2 framing fix): **96/96 complete** — 13 UEFA
+official cutoffs + 83 league-official portraits under spec §8b
+(premierleague.com, laliga.com, legaseriea.it, bundesliga.com,
+ligue1.fr official media; per-entry `alt_source` provenance, documented
+crop/upscale directives). The v2.2 framing audit replaced 18 jersey-cut
+UEFA assets, re-cropped the 12 Serie A busts, and moved Brest's hero to
+Ajorque (Del Castillo → Osasuna) — every portrait now shows the body to
+at least the jersey (INSTRUCTIONS §9b). The UEFA coverage audit
 that preceded it re-verified all 70 unresolved clubs — evidence per club
 in the roster `no_asset` records. `npm run portraits:heroes` re-runs the
 UEFA pipeline; `node scripts/uefa-player-portraits/alt-fetch.js` re-runs

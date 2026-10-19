@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-19T12:14:07.600Z",
+  "generated_at": "2026-10-19T14:31:31.243Z",
   "description": "Club → hero MVP portrait map (UEFA official cutouts). Keys are football-data.org team-name slugs. status 'complete' entries carry the portrait URL; the hero layer renders without artwork for any other status.",
   "public_url_prefix": "/players/uefa/",
   "rights": {
@@ -796,11 +796,11 @@
     "stade-brestois-29": {
       "club": "Stade Brestois 29",
       "league": "Ligue 1",
-      "player": "Romain Del Castillo",
+      "player": "Ludovic Ajorque",
       "status": "complete",
-      "portrait_url": "/players/uefa/romain-del-castillo.webp",
-      "uefa_player_id": "250074010",
-      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250074010--romain-del-castillo/"
+      "portrait_url": "/players/uefa/ludovic-ajorque.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "toulouse-fc": {
       "club": "Toulouse FC",

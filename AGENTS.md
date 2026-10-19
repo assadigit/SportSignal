@@ -26,12 +26,13 @@ Route by task:
 | Workspace lost / fresh clone rules | INSTRUCTIONS.md §10 |
 | Every pipeline script and when to run it | INSTRUCTIONS.md §12 |
 
-Current state (2026-10-19): **96/96 hero clubs complete** — 31 UEFA official
-cutoffs + 65 league-official portraits (PL 15 / LaLiga 15 / Serie A 11 /
-Bundesliga 12 / Ligue 1 12), every entry with full provenance. The UEFA
-coverage ceiling is conclusively documented with per-URL probe evidence;
-re-probing UEFA for the 65 no_asset clubs wastes a session — extend via
-league platforms instead.
+Current state (2026-10-19, v2.2 framing fix): **96/96 hero clubs complete —
+13 UEFA official cutoffs + 83 league-official portraits** (PL 19 / LaLiga 18 /
+Serie A 17 / Bundesliga 13 / Ligue 1 16), every entry with full provenance,
+every portrait showing the body to at least the jersey (owner directive;
+INSTRUCTIONS §9b). The UEFA coverage ceiling is conclusively documented with
+per-URL probe evidence; re-probing UEFA for the no_asset clubs wastes a
+session — extend via league platforms instead.
 
 ## The portrait invariants (30 seconds)
 

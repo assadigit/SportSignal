@@ -3469,11 +3469,11 @@
     },
     {
       "roster_index": 88,
-      "requested_name": "Romain Del Castillo",
+      "requested_name": "Ludovic Ajorque",
       "requested_club_label": "Stade Brestois 29",
-      "filename": "romain-del-castillo.webp",
+      "filename": "ludovic-ajorque.webp",
       "state_key": "stade-brestois-29",
-      "search_name": "romain del castillo",
+      "search_name": "ludovic ajorque",
       "club_hint": null,
       "uefa_profile_url": null,
       "hero": {
@@ -3482,11 +3482,8 @@
         "league": "Ligue 1",
         "league_code": "FL1",
         "league_position": 10,
-        "selection_basis": "EA top-rated pair with 24/25 UCL history at the club",
+        "selection_basis": "EA top-rated pair fallback: Del Castillo left for Osasuna (2026-10-19 Wikipedia club status + absent from the official Ligue 1 2026/27 squad API) — Ajorque is the next candidate",
         "candidates": [
-          {
-            "name": "Romain Del Castillo"
-          },
           {
             "name": "Ludovic Ajorque"
           },
@@ -3496,10 +3493,15 @@
         ]
       },
       "identity_hint": {
-        "full_name": "Romain Del Castillo",
+        "full_name": "Ludovic Ajorque",
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Ajorque: Stade Brestois 29 is not in a 2026/27 UEFA competition — no current-season squad page exists, so no club-context asset is possible (discover run 2026-10-19: player not found on any squad page of the labelled club, no researched profile URL). Assets from earlier clubs (Mainz 05, Strasbourg) would show wrong-club kits and are excluded by the kit-consistency rule",
+        "method": "discover --player stade-brestois-29 (squad-page enumeration; club not in current UEFA competitions) — extend via the league-official platform per spec §8b"
       }
     },
     {

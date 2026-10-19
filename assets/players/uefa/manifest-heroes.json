@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-19T12:12:39.926Z",
+  "generated_at": "2026-10-19T14:30:04.347Z",
   "collection": "hero-mvps-big5-2026-27",
   "output_format": "webp-lossless-alpha",
   "target_width": 512,
@@ -27,41 +27,47 @@
         "nationality": null,
         "date_of_birth": "2000-07-21",
         "position": "Forward",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Premier League platform match: player \"Erling Haaland\" on Manchester City FC's official premierleague.com data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Man City",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250103758.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:06.240Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/223094.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "Premier League (league-official media)",
+      "alt_source": {
+        "platform": "premierleague.com",
+        "platform_player_ref": "fpl photo id 223094 (Erling Haaland, Man City)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "220x280 official PL headshot card (transparent PNG) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)"
+      },
+      "fetched_at": "2026-10-19T14:21:07.139Z",
+      "source_width": 220,
+      "source_height": 280,
       "source_has_alpha": true,
-      "source_sha256": "e94e9533b3bbf4b7db55ca7680856cbb91a4732c129c1a6967f7658d137eaf93",
-      "download_transport": "relay",
+      "source_sha256": "cd82f7ff76d89a1864484678f663b933439d71e5a79bcb04e28f1c7ddb1828f4",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "11d71bf8e51f610b2a25aa1d51480a8e024775f61013ff9cb4a4d1198eb9260c",
+      "output_sha256": "8042698440f2ef3c4b6251cb58db08bdab9275a4250929e9eb2a04ea3bf6c04d",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 220,
+        "source_height": 280,
         "source_subject_bounds": {
-          "x": 71,
-          "y": 102,
-          "w": 903,
-          "h": 978
+          "x": 1,
+          "y": 4,
+          "w": 217,
+          "h": 276
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.470348,
+        "applied_scale": 1.666667,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 425,
+          "w": 362,
           "h": 460
         },
         "placement": {
-          "left": 44,
+          "left": 75,
           "top": 26
         },
         "content_box": {
@@ -75,7 +81,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from premierleague.com (fpl photo id 223094 (Erling Haaland, Man City)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "manchester-city-fc",
@@ -104,41 +112,47 @@
         "nationality": "England",
         "date_of_birth": "2001-09-05",
         "position": "Forward",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Premier League platform match: player \"Bukayo Saka\" on Arsenal FC's official premierleague.com data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Arsenal",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250106939.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:07.165Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/223340.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "Premier League (league-official media)",
+      "alt_source": {
+        "platform": "premierleague.com",
+        "platform_player_ref": "fpl photo id 223340 (Bukayo Saka, Arsenal)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "220x280 official PL headshot card (transparent PNG) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)"
+      },
+      "fetched_at": "2026-10-19T14:21:07.367Z",
+      "source_width": 220,
+      "source_height": 280,
       "source_has_alpha": true,
-      "source_sha256": "7bdb9842a55449309dad9e75c00934348f54f8dd6f4a51e974b9b9a9923a10a9",
-      "download_transport": "relay",
+      "source_sha256": "0002d5120946a30858f20fa5df94730ee4f9d52cd9b2162b63b8a2d0828b4596",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "5f694f4833a22058dc1a5fde814e5b90b9220c251b0c57c3c0378e2cea472d2d",
+      "output_sha256": "e99a62d54c60fc2c6da248bed6184bae76300702bd716c55e2c85921401487bc",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 220,
+        "source_height": 280,
         "source_subject_bounds": {
-          "x": 126,
-          "y": 125,
-          "w": 844,
-          "h": 955
+          "x": 1,
+          "y": 5,
+          "w": 219,
+          "h": 275
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.481675,
+        "applied_scale": 1.672727,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 407,
+          "w": 366,
           "h": 460
         },
         "placement": {
-          "left": 53,
+          "left": 73,
           "top": 26
         },
         "content_box": {
@@ -152,7 +166,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from premierleague.com (fpl photo id 223340 (Bukayo Saka, Arsenal)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "arsenal-fc",
@@ -347,41 +363,47 @@
         "nationality": null,
         "date_of_birth": "2003-05-03",
         "position": "Midfielder",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Premier League platform match: player \"Florian Wirtz\" on Liverpool FC's official premierleague.com data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Liverpool",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250139445.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:08.284Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/494595.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "Premier League (league-official media)",
+      "alt_source": {
+        "platform": "premierleague.com",
+        "platform_player_ref": "fpl photo id 494595 (Florian Wirtz, Liverpool)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "220x280 official PL headshot card (transparent PNG) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)"
+      },
+      "fetched_at": "2026-10-19T14:21:07.619Z",
+      "source_width": 220,
+      "source_height": 280,
       "source_has_alpha": true,
-      "source_sha256": "a584ef9cae30ab9b79c96f59288f9ba2db655ab86a3206e29d81c4367a4a302f",
-      "download_transport": "relay",
+      "source_sha256": "0b9f8045bf39ecdd59b01843f753ebc54fb5d71f16b209f247309547650974f3",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "64dee2cd601413ea75685b53c15d349eaf82eda4a39c62245e3c4fc067a0f0e3",
+      "output_sha256": "7b428ff7b9b9d28782a95dbdd33c5631d6e1ee63b4e7b8e19407fc2f5ed14995",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 220,
+        "source_height": 280,
         "source_subject_bounds": {
-          "x": 196,
-          "y": 58,
-          "w": 667,
-          "h": 1022
+          "x": 2,
+          "y": 5,
+          "w": 216,
+          "h": 275
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.450098,
+        "applied_scale": 1.672727,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 300,
+          "w": 361,
           "h": 460
         },
         "placement": {
-          "left": 106,
+          "left": 76,
           "top": 26
         },
         "content_box": {
@@ -395,7 +417,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from premierleague.com (fpl photo id 494595 (Florian Wirtz, Liverpool)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "liverpool-fc",
@@ -998,41 +1022,47 @@
         "nationality": null,
         "date_of_birth": "1994-09-08",
         "position": "Midfielder",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Premier League platform match: player \"Bruno Borges Fernandes\" on Manchester United FC's official premierleague.com data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Man Utd",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250078886.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:10.475Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/141746.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "Premier League (league-official media)",
+      "alt_source": {
+        "platform": "premierleague.com",
+        "platform_player_ref": "fpl photo id 141746 (Bruno Borges Fernandes, Man Utd)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "220x280 official PL headshot card (transparent PNG) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)"
+      },
+      "fetched_at": "2026-10-19T14:21:23.468Z",
+      "source_width": 220,
+      "source_height": 280,
       "source_has_alpha": true,
-      "source_sha256": "8f2bcb2c66b8bb226fdd281b5e2cabb1dc6bdeba910bd565a6072b6e92a5bd94",
-      "download_transport": "relay",
+      "source_sha256": "4fb5bdaa255f26be50e070b920a044ff4f928bd53b11bb32af92984803ca37d4",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "3a0c7ec05157db8d6a32834044847796da8fc2a026941955264f03dbe1b81183",
+      "output_sha256": "8eb2a8ad1bb5fd781e0ce33fee898589e804b481b7e29f0509c76989a0216a8c",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 220,
+        "source_height": 280,
         "source_subject_bounds": {
-          "x": 105,
-          "y": 53,
-          "w": 913,
-          "h": 1027
+          "x": 4,
+          "y": 5,
+          "w": 213,
+          "h": 275
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.447907,
+        "applied_scale": 1.672727,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 409,
+          "w": 356,
           "h": 460
         },
         "placement": {
-          "left": 52,
+          "left": 78,
           "top": 26
         },
         "content_box": {
@@ -1046,7 +1076,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from premierleague.com (fpl photo id 141746 (Bruno Borges Fernandes, Man Utd)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "manchester-united-fc",
@@ -1656,41 +1688,47 @@
         "nationality": null,
         "date_of_birth": "2007-07-13",
         "position": "Forward",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the La Liga platform match: player \"Lamine Yamal Nasraoui Ebana\" on FC Barcelona's official laliga.com data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Barcelona",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250176450.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:11.582Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://assets.laliga.com/squad/2026/t178/p593109/2048x2048/p593109_t178_2026_0_004_000.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "La Liga (league-official media)",
+      "alt_source": {
+        "platform": "laliga.com",
+        "platform_player_ref": "laliga player id 84334 (Lamine Yamal Nasraoui Ebana)",
+        "crop_top_fraction": 0,
+        "allow_upscale": false,
+        "note": "official LaLiga squad portrait, transparent PNG up to 2048x2048"
+      },
+      "fetched_at": "2026-10-19T14:29:32.361Z",
+      "source_width": 2048,
+      "source_height": 2048,
       "source_has_alpha": true,
-      "source_sha256": "2c0588f38dd528626b1f57fd25ea8c14473cfac6efb976a2d4dc16e01b58d2d9",
-      "download_transport": "relay",
+      "source_sha256": "4c054d86872ce2a96d5388afb960c322ddf1f6a97b4beb2041b6c620a86c575e",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "77fe0d659981c10f76611ccc9659a45763ff669471288141a85b55224af1cb98",
+      "output_sha256": "f9727176504ddbef7b21793ec369b35a9e9113cf04fadd9cba81a77f583952da",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 2048,
+        "source_height": 2048,
         "source_subject_bounds": {
-          "x": 296,
-          "y": 63,
-          "w": 567,
-          "h": 1017
+          "x": 380,
+          "y": 129,
+          "w": 1288,
+          "h": 1788
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.452311,
+        "applied_scale": 0.257271,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 256,
+          "w": 331,
           "h": 460
         },
         "placement": {
-          "left": 128,
+          "left": 91,
           "top": 26
         },
         "content_box": {
@@ -1704,7 +1742,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from laliga.com (laliga player id 84334 (Lamine Yamal Nasraoui Ebana)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "fc-barcelona",
@@ -1810,41 +1850,47 @@
         "nationality": "Brazil",
         "date_of_birth": "2000-02-24",
         "position": "Forward",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the La Liga platform match: player \"Antony Matheus dos Santos\" on Real Betis Balompié's official laliga.com data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Real Betis",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250144211.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:13.739Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://assets.laliga.com/squad/2026/t185/p467169/2048x2048/p467169_t185_2026_0_004_000.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "La Liga (league-official media)",
+      "alt_source": {
+        "platform": "laliga.com",
+        "platform_player_ref": "laliga player id 84719 (Antony Matheus dos Santos)",
+        "crop_top_fraction": 0,
+        "allow_upscale": false,
+        "note": "official LaLiga squad portrait, transparent PNG up to 2048x2048"
+      },
+      "fetched_at": "2026-10-19T14:29:43.989Z",
+      "source_width": 2048,
+      "source_height": 2048,
       "source_has_alpha": true,
-      "source_sha256": "ebe9524b929e8087c1adb6ad525294ff829d23e91b2d41fbd0754269ff5cd2c5",
-      "download_transport": "relay",
+      "source_sha256": "d2c91e88891c155cd7f6feaf4b7461eb62fa60342e83312ccb4c4af3fa3c9bb6",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "fb4736e595937cf10ad478fb6e49a8260210f8a7608ec15f4f0790e58581834a",
+      "output_sha256": "735f120ed09b42082182078f8f0d513cc3f3035f3c6f2c35ea95ededf3747d14",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 2048,
+        "source_height": 2048,
         "source_subject_bounds": {
-          "x": 252,
-          "y": 88,
-          "w": 620,
-          "h": 992
+          "x": 380,
+          "y": 129,
+          "w": 1288,
+          "h": 1788
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.46371,
+        "applied_scale": 0.257271,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 288,
+          "w": 331,
           "h": 460
         },
         "placement": {
-          "left": 112,
+          "left": 91,
           "top": 26
         },
         "content_box": {
@@ -1858,7 +1904,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from laliga.com (laliga player id 84719 (Antony Matheus dos Santos)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "real-betis-balompie",
@@ -2540,41 +2588,47 @@
         "nationality": null,
         "date_of_birth": "2000-10-31",
         "position": "Forward",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the La Liga platform match: player \"Georges Mikautadze\" on Villarreal CF's official laliga.com data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Villarreal",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250155025.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:15.963Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://assets.laliga.com/squad/2026/t449/p499209/2048x2048/p499209_t449_2026_0_004_000.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "La Liga (league-official media)",
+      "alt_source": {
+        "platform": "laliga.com",
+        "platform_player_ref": "laliga player id 84926 (Georges Mikautadze)",
+        "crop_top_fraction": 0,
+        "allow_upscale": false,
+        "note": "official LaLiga squad portrait, transparent PNG up to 2048x2048"
+      },
+      "fetched_at": "2026-10-19T14:29:56.617Z",
+      "source_width": 2048,
+      "source_height": 2048,
       "source_has_alpha": true,
-      "source_sha256": "d9d5ba8cc91163e19f0cac716713ab77066a927cc980619bf1e842f4deabc58a",
-      "download_transport": "relay",
+      "source_sha256": "e37e3fae2bc8f88f9bb419224520e3dfb4803ecef3bac2642bd8b4afe7aee5a4",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "af7f7b14536aadeb1a328a9b90b3bb813bf76b64ea78d0d37000224306a27374",
+      "output_sha256": "48f2f7d40d4e3f286cc643eaba6ce7fa8bf5ce600b7371d36a487472791c2610",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 2048,
+        "source_height": 2048,
         "source_subject_bounds": {
-          "x": 370,
-          "y": 61,
-          "w": 443,
-          "h": 1019
+          "x": 380,
+          "y": 129,
+          "w": 1288,
+          "h": 1788
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.451423,
+        "applied_scale": 0.257271,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 200,
+          "w": 331,
           "h": 460
         },
         "placement": {
-          "left": 156,
+          "left": 91,
           "top": 26
         },
         "content_box": {
@@ -2588,7 +2642,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from laliga.com (laliga player id 84926 (Georges Mikautadze)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "villarreal-cf",
@@ -3273,41 +3329,47 @@
         "nationality": "Argentina",
         "date_of_birth": "1997-08-22",
         "position": "Forward",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Serie A platform match: player \"Lautaro Javier Martinez\" on FC Internazionale Milano's official legaseriea.it data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Inter",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250118281.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:17.042Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://media-sdp.legaseriea.it/playerImages/ec93b94f74294dc98ab5bcfd67fc0d88/ed7fdc2a3e7b408b942ec177b7b956b5/b7421caff23448c49134fa4f9095ee09/home/1b183c6c48ae4d08b1cec88dfe4641c6_left.webp",
+      "source_asset_season": "2026/27",
+      "source_competition": "Serie A (league-official media)",
+      "alt_source": {
+        "platform": "legaseriea.it",
+        "platform_player_ref": "serie-a player 1b183c6c48ae4d08b1cec88dfe4641c6 (Lautaro Javier Martinez)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp bust, head+shoulders+chest) — published as-is"
+      },
+      "fetched_at": "2026-10-19T14:27:44.360Z",
+      "source_width": 1024,
+      "source_height": 1024,
       "source_has_alpha": true,
-      "source_sha256": "bc3e95ac6d7c6fc746a551a22ee64b479c5564ee7204691539439ae19ade536a",
-      "download_transport": "relay",
+      "source_sha256": "5866037b23c392b8a56a25861f7bb9dab1f42b57a37e2de3fd3ecbf5f3643db9",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "e5b68d7f80ee55f39223c58a115262f6c00d4dcb85bc9dca90e68a77a60af737",
+      "output_sha256": "a7d0f100b0f18b37ec5b9478a66391b29fff708ece504303d0a35ea927f199b4",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 1024,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 261,
-          "y": 95,
-          "w": 526,
-          "h": 985
+          "x": 217,
+          "y": 48,
+          "w": 562,
+          "h": 976
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.467005,
+        "applied_scale": 0.471311,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 246,
+          "w": 265,
           "h": 460
         },
         "placement": {
-          "left": 133,
+          "left": 124,
           "top": 26
         },
         "content_box": {
@@ -3321,7 +3383,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from legaseriea.it (serie-a player 1b183c6c48ae4d08b1cec88dfe4641c6 (Lautaro Javier Martinez)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "fc-internazionale-milano",
@@ -3436,7 +3500,7 @@
       "alt_source": {
         "platform": "legaseriea.it",
         "platform_player_ref": "serie-a player 5d188308b5a14e13bd61d64f792ecb69 (Mattia Zaccagni)",
-        "crop_top_fraction": 0.45,
+        "crop_top_fraction": 0,
         "allow_upscale": true,
         "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency"
       },
@@ -3448,25 +3512,25 @@
       "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "0e6ae4ba1d9755dc747b9b2e0bc4bce90638b33bd49c9a5a1e40aeb85818a90d",
+      "output_sha256": "5352da3f9a78f09dda3f1e123ddf18458c5dbec9f2d9f2be003570726ac34af5",
       "normalization": {
         "source_width": 1024,
-        "source_height": 461,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 382,
+          "x": 133,
           "y": 45,
-          "w": 293,
-          "h": 416
+          "w": 681,
+          "h": 979
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.105769,
+        "applied_scale": 0.469867,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 324,
+          "w": 320,
           "h": 460
         },
         "placement": {
-          "left": 94,
+          "left": 96,
           "top": 26
         },
         "content_box": {
@@ -3508,41 +3572,47 @@
         "nationality": null,
         "date_of_birth": "1998-09-18",
         "position": null,
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Serie A platform match: player \"Christian Mate Pulisic\" on AC Milan's official legaseriea.it data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "milan",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2025/cutoff/250096698.webp",
-      "source_asset_season": "2025",
-      "source_competition": "UEFA Europa League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:19.282Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://media-sdp.legaseriea.it/playerImages/ec93b94f74294dc98ab5bcfd67fc0d88/ed7fdc2a3e7b408b942ec177b7b956b5/d0867ddf777c41789ca282b8276002b0/home/10630f13a65e42e6893e1ece750fa2ad_left.webp",
+      "source_asset_season": "2026/27",
+      "source_competition": "Serie A (league-official media)",
+      "alt_source": {
+        "platform": "legaseriea.it",
+        "platform_player_ref": "serie-a player 10630f13a65e42e6893e1ece750fa2ad (Christian Mate Pulisic)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp bust, head+shoulders+chest) — published as-is"
+      },
+      "fetched_at": "2026-10-19T14:28:04.312Z",
+      "source_width": 364,
+      "source_height": 364,
       "source_has_alpha": true,
-      "source_sha256": "13ee43cbd635b42f2de182554e624088bc3f2945f596b3f503bde4349115d3e2",
-      "download_transport": "relay",
+      "source_sha256": "b4cb749a4025578c77b85a926fcc528c49063bb2c4963f10ec2e8b24e6524e4b",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "c20f5f6bfa7aced34fbf1e60b5b30b6473fd2a29af22ee25ea674f811bbdb88d",
+      "output_sha256": "6df1f9d63846fa93c959692a41d56656b63395f48606bc9ede8cd07ae7ba6566",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 364,
+        "source_height": 364,
         "source_subject_bounds": {
-          "x": 187,
-          "y": 75,
-          "w": 641,
-          "h": 1005
+          "x": 69,
+          "y": 10,
+          "w": 224,
+          "h": 354
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.457711,
+        "applied_scale": 1.299435,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 293,
+          "w": 291,
           "h": 460
         },
         "placement": {
-          "left": 110,
+          "left": 111,
           "top": 26
         },
         "content_box": {
@@ -3556,7 +3626,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from legaseriea.it (serie-a player 10630f13a65e42e6893e1ece750fa2ad (Christian Mate Pulisic)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "ac-milan",
@@ -3672,7 +3744,7 @@
       "alt_source": {
         "platform": "legaseriea.it",
         "platform_player_ref": "serie-a player 28f725a351bc4da2ba6c6a690359cd86 (Romano Christian Schmid)",
-        "crop_top_fraction": 0.45,
+        "crop_top_fraction": 0,
         "allow_upscale": true,
         "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency"
       },
@@ -3684,25 +3756,25 @@
       "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "1b853ea42621ebf1375885729b901ac57a1feb573d2b429c048f548123981a31",
+      "output_sha256": "bdced6dd32602df97a0de59e08225b9aee8bbf669d52035a0a5536767f888709",
       "normalization": {
         "source_width": 1024,
-        "source_height": 461,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 302,
+          "x": 195,
           "y": 19,
-          "w": 402,
-          "h": 442
+          "w": 607,
+          "h": 1005
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.040724,
+        "applied_scale": 0.457711,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 418,
+          "w": 278,
           "h": 460
         },
         "placement": {
-          "left": 47,
+          "left": 117,
           "top": 26
         },
         "content_box": {
@@ -3754,7 +3826,7 @@
       "alt_source": {
         "platform": "legaseriea.it",
         "platform_player_ref": "serie-a player f67db0ff9c994cc2892588aa52ab1786 (Elia Caprile)",
-        "crop_top_fraction": 0.45,
+        "crop_top_fraction": 0,
         "allow_upscale": true,
         "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency"
       },
@@ -3766,25 +3838,25 @@
       "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "1931f8068bfb5066d8d8d1b7ed0b648e96c300ebad318359f99de70c44ca33c4",
+      "output_sha256": "ef6ee4b0654f5efb653ffcc9ac2ca0f2479bc317b0ede1927e7722e82ce9ade9",
       "normalization": {
         "source_width": 1024,
-        "source_height": 461,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 366,
+          "x": 177,
           "y": 45,
-          "w": 296,
-          "h": 416
+          "w": 670,
+          "h": 979
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.105769,
+        "applied_scale": 0.469867,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 327,
+          "w": 315,
           "h": 460
         },
         "placement": {
-          "left": 93,
+          "left": 99,
           "top": 26
         },
         "content_box": {
@@ -3826,41 +3898,47 @@
         "nationality": "Türkiye",
         "date_of_birth": "2005-05-04",
         "position": "Forward",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Serie A platform match: player \"Kenan Yildiz\" on Juventus FC's official legaseriea.it data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "juventus",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2026/cutoff/250171055.webp",
-      "source_asset_season": "2026",
-      "source_competition": "UEFA Europa League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:21.456Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://media-sdp.legaseriea.it/playerImages/ec93b94f74294dc98ab5bcfd67fc0d88/ed7fdc2a3e7b408b942ec177b7b956b5/0ae9210dce6f4f9b9d50aeeb19b0d371/home/2355805d93e04684aa6fdcba93a37b7d_left.webp",
+      "source_asset_season": "2026/27",
+      "source_competition": "Serie A (league-official media)",
+      "alt_source": {
+        "platform": "legaseriea.it",
+        "platform_player_ref": "serie-a player 2355805d93e04684aa6fdcba93a37b7d (Kenan Yildiz)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp bust, head+shoulders+chest) — published as-is"
+      },
+      "fetched_at": "2026-10-19T14:29:19.578Z",
+      "source_width": 1024,
+      "source_height": 1024,
       "source_has_alpha": true,
-      "source_sha256": "db499edfe84923c7a051f554774d8b7e7d1cc51e437d1d5e2603002c4ade3310",
-      "download_transport": "relay",
+      "source_sha256": "d05fbb985f84bb5c7edee839c785bc57d7ffc9f53e7876697b10e73e5425a9d8",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "a8c50e6aafad57f60e82804c569a907ebddbdaa98834ad9740d1abd34cf43cdd",
+      "output_sha256": "c24b9d42e6e9990c045e9e604e78d12ef8b3d9ca4ef02b01db5b9a613165955b",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 1024,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 225,
-          "y": 79,
-          "w": 625,
-          "h": 1001
+          "x": 222,
+          "y": 46,
+          "w": 579,
+          "h": 978
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.45954,
+        "applied_scale": 0.470348,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 287,
+          "w": 272,
           "h": 460
         },
         "placement": {
-          "left": 113,
+          "left": 120,
           "top": 26
         },
         "content_box": {
@@ -3874,7 +3952,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from legaseriea.it (serie-a player 2355805d93e04684aa6fdcba93a37b7d (Kenan Yildiz)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "juventus-fc",
@@ -3980,41 +4060,47 @@
         "nationality": "Belgium",
         "date_of_birth": "2001-03-10",
         "position": "Forward",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Serie A platform match: player \"Charles De Ketelaere\" on Atalanta BC's official legaseriea.it data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "atalanta",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2026/cutoff/250117705.webp",
-      "source_asset_season": "2026",
-      "source_competition": "UEFA Conference League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:23.700Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://media-sdp.legaseriea.it/playerImages/ec93b94f74294dc98ab5bcfd67fc0d88/ed7fdc2a3e7b408b942ec177b7b956b5/b5846a2413804c2e8cab8b773b18370a/home/8e7d5be26c3d42ff9e36fd4aacf9f7ae_left.webp",
+      "source_asset_season": "2026/27",
+      "source_competition": "Serie A (league-official media)",
+      "alt_source": {
+        "platform": "legaseriea.it",
+        "platform_player_ref": "serie-a player 8e7d5be26c3d42ff9e36fd4aacf9f7ae (Charles De Ketelaere)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp bust, head+shoulders+chest) — published as-is"
+      },
+      "fetched_at": "2026-10-19T14:27:50.647Z",
+      "source_width": 1024,
+      "source_height": 1024,
       "source_has_alpha": true,
-      "source_sha256": "f789e09d90ac5de6b2be42c7c0be5f2f12f400bca4435e6c701a9bb6b90f4095",
-      "download_transport": "relay",
+      "source_sha256": "1890a4025afb67caa642844087e56702e7422743bb55f56d336d123f65cdcd19",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "8fc4c0592da83335fb4ff50ee9bf03ddd8b345403188a64e0f83c6aab8780974",
+      "output_sha256": "29e499666b2505e6455eac097f4031f0dbeda5ef71616138c0f35b5a111e66b1",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 1024,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 105,
-          "y": 42,
-          "w": 747,
-          "h": 1038
+          "x": 167,
+          "y": 26,
+          "w": 667,
+          "h": 998
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.44316,
+        "applied_scale": 0.460922,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 331,
+          "w": 307,
           "h": 460
         },
         "placement": {
-          "left": 91,
+          "left": 103,
           "top": 26
         },
         "content_box": {
@@ -4028,7 +4114,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from legaseriea.it (serie-a player 8e7d5be26c3d42ff9e36fd4aacf9f7ae (Charles De Ketelaere)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "atalanta-bc",
@@ -4067,7 +4155,7 @@
       "alt_source": {
         "platform": "legaseriea.it",
         "platform_player_ref": "serie-a player 386bc75089ad468196b1372d6a4e85af (Antonino Gallo)",
-        "crop_top_fraction": 0.45,
+        "crop_top_fraction": 0,
         "allow_upscale": true,
         "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency"
       },
@@ -4079,25 +4167,25 @@
       "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "bcddde14adb7ba8707583c984e276a9fa916d8af340b317590354d2766bee650",
+      "output_sha256": "7071624c603549e43edbd7392f16b2c25dbac7141ddb602cdd976fe3e7dbda14",
       "normalization": {
         "source_width": 1024,
-        "source_height": 461,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 356,
+          "x": 215,
           "y": 46,
-          "w": 322,
-          "h": 415
+          "w": 556,
+          "h": 978
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.108434,
+        "applied_scale": 0.470348,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 357,
+          "w": 262,
           "h": 460
         },
         "placement": {
-          "left": 78,
+          "left": 125,
           "top": 26
         },
         "content_box": {
@@ -4150,7 +4238,7 @@
       "alt_source": {
         "platform": "legaseriea.it",
         "platform_player_ref": "serie-a player 797109e26eb346e3a6de69944030f6ea (Armand Gaetan Laurienté)",
-        "crop_top_fraction": 0.45,
+        "crop_top_fraction": 0,
         "allow_upscale": true,
         "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency"
       },
@@ -4162,25 +4250,25 @@
       "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "9cf7bcb9bb55e46ae12ce7446d4f16e0a196e7eca4f8690befd0c8374854ad04",
+      "output_sha256": "6dccfb4a21cf42bb65490ef34dbea03186f2d25d80c11f33ee7f963f8110b8ac",
       "normalization": {
         "source_width": 1024,
-        "source_height": 461,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 318,
+          "x": 164,
           "y": 48,
-          "w": 359,
-          "h": 413
+          "w": 685,
+          "h": 976
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.113801,
+        "applied_scale": 0.471311,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 400,
+          "w": 323,
           "h": 460
         },
         "placement": {
-          "left": 56,
+          "left": 95,
           "top": 26
         },
         "content_box": {
@@ -4232,7 +4320,7 @@
       "alt_source": {
         "platform": "legaseriea.it",
         "platform_player_ref": "serie-a player 836a85d7389346eea6090c05cc237c81 (Che Zach Everton Adams)",
-        "crop_top_fraction": 0.45,
+        "crop_top_fraction": 0,
         "allow_upscale": true,
         "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency"
       },
@@ -4244,25 +4332,25 @@
       "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "608ebab512a41052984bcb251905f3416727536e373626bbb4ca8a9734cce2ec",
+      "output_sha256": "bce380bf2f4584b4858d8bd87f2312ce72067e9afd332488fa6aec88e08df150",
       "normalization": {
         "source_width": 1024,
-        "source_height": 461,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 381,
+          "x": 192,
           "y": 26,
-          "w": 319,
-          "h": 435
+          "w": 638,
+          "h": 998
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.057471,
+        "applied_scale": 0.460922,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 337,
+          "w": 294,
           "h": 460
         },
         "placement": {
-          "left": 88,
+          "left": 109,
           "top": 26
         },
         "content_box": {
@@ -4305,41 +4393,47 @@
         "nationality": "Italy",
         "date_of_birth": "1997-01-24",
         "position": "Forward",
-        "disambiguation": "kit timing verified: Orsolini at Bologna since 2019 (one-club man in Serie A); the asset season 2025 (UCL 2024/25) is his Bologna registration — right-club kit; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: Orsolini at Bologna since 2019 (one-club man in Serie A); the asset season 2025 (UCL 2024/25) is his Bologna registration — right-club kit; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Serie A platform match: player \"Riccardo Orsolini\" on Bologna FC 1909's official legaseriea.it data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Bologna",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2025/cutoff/250112400.webp",
-      "source_asset_season": "2025",
-      "source_competition": "UEFA Champions League 2024/25",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:35.740Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://media-sdp.legaseriea.it/playerImages/ec93b94f74294dc98ab5bcfd67fc0d88/ed7fdc2a3e7b408b942ec177b7b956b5/4af71b35aab34ad5a7d06148abe66ad6/home/786e682f8b01402d891dbc2e4f7f1029_left.webp",
+      "source_asset_season": "2026/27",
+      "source_competition": "Serie A (league-official media)",
+      "alt_source": {
+        "platform": "legaseriea.it",
+        "platform_player_ref": "serie-a player 786e682f8b01402d891dbc2e4f7f1029 (Riccardo Orsolini)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp bust, head+shoulders+chest) — published as-is"
+      },
+      "fetched_at": "2026-10-19T14:27:56.294Z",
+      "source_width": 1024,
+      "source_height": 1024,
       "source_has_alpha": true,
-      "source_sha256": "22e94ba886c79b62e3cecd04ff3308a4741e74f7ec84795eff98303025368fdd",
-      "download_transport": "relay",
+      "source_sha256": "7808624ade18795b4a8a483c41066f991b15a71596dc57510d04c736f13126c0",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "e5b1ee6c4c812182d7ffe582784deb90b3061bef76511b2957a57e0da06468be",
+      "output_sha256": "a12a21a0ade407b35ad7bce67e2831ac232fe616081849a3a281537229e72123",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 1024,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 155,
-          "y": 70,
-          "w": 665,
-          "h": 1010
+          "x": 157,
+          "y": 36,
+          "w": 709,
+          "h": 988
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.455446,
+        "applied_scale": 0.465587,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 303,
+          "w": 330,
           "h": 460
         },
         "placement": {
-          "left": 105,
+          "left": 91,
           "top": 26
         },
         "content_box": {
@@ -4353,7 +4447,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from legaseriea.it (serie-a player 786e682f8b01402d891dbc2e4f7f1029 (Riccardo Orsolini)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "bologna-fc-1909",
@@ -4391,7 +4487,7 @@
       "alt_source": {
         "platform": "legaseriea.it",
         "platform_player_ref": "serie-a player 4c35cd67ad9c4354a7d01c62abacd4f2 (Gustavo Miguel Pereira De Sousa Varela)",
-        "crop_top_fraction": 0.45,
+        "crop_top_fraction": 0,
         "allow_upscale": true,
         "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency"
       },
@@ -4403,25 +4499,25 @@
       "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "e152a74df47985b7a274e13015c62bbd5eeb3c99d86de52f008704df54355bed",
+      "output_sha256": "97f3720904247be0da62bff724f7f248e3019a99b0023fde043f6b91c0d0b015",
       "normalization": {
         "source_width": 1024,
-        "source_height": 461,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 361,
+          "x": 121,
           "y": 49,
-          "w": 332,
-          "h": 412
+          "w": 713,
+          "h": 975
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.116505,
+        "applied_scale": 0.471795,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 371,
+          "w": 336,
           "h": 460
         },
         "placement": {
-          "left": 71,
+          "left": 88,
           "top": 26
         },
         "content_box": {
@@ -4472,7 +4568,7 @@
       "alt_source": {
         "platform": "legaseriea.it",
         "platform_player_ref": "serie-a player bfe627dce98446ed9ce53fa9afaf479b (Adrian Bernabe' Garcia)",
-        "crop_top_fraction": 0.45,
+        "crop_top_fraction": 0,
         "allow_upscale": true,
         "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency"
       },
@@ -4484,25 +4580,25 @@
       "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "4621385c9d420802082238011f148831272cf15890e5199b7917a272ad83ca06",
+      "output_sha256": "03234c59dba5e3d3302c54825190b6e2ef7f6b587d4ac20c0f927559d6a89d61",
       "normalization": {
         "source_width": 1024,
-        "source_height": 461,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 394,
+          "x": 180,
           "y": 36,
-          "w": 336,
-          "h": 425
+          "w": 664,
+          "h": 988
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.082353,
+        "applied_scale": 0.465587,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 364,
+          "w": 309,
           "h": 460
         },
         "placement": {
-          "left": 74,
+          "left": 102,
           "top": 26
         },
         "content_box": {
@@ -4545,41 +4641,47 @@
         "nationality": "Italy",
         "date_of_birth": "1999-07-02",
         "position": "Midfielder",
-        "disambiguation": "kit timing verified: Zaniolo joined Udinese on loan 2025 (made permanent 2026); the asset season 2026 (UCL 2025/26) is his Udinese registration — right-club kit (Wikipedia career table fetched 2026-10-19); cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: Zaniolo joined Udinese on loan 2025 (made permanent 2026); the asset season 2026 (UCL 2025/26) is his Udinese registration — right-club kit (Wikipedia career table fetched 2026-10-19); cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Serie A platform match: player \"Nicolò Zaniolo\" on Udinese Calcio's official legaseriea.it data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Udinese",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2026/cutoff/250107324.webp",
-      "source_asset_season": "2026",
-      "source_competition": "UEFA Champions League 2025/26",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:34.662Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://media-sdp.legaseriea.it/playerImages/ec93b94f74294dc98ab5bcfd67fc0d88/ed7fdc2a3e7b408b942ec177b7b956b5/630b1e3631db42498d1b7bc94595c5e0/home/f7bce030bb504b87b9411db54d75480f_left.webp",
+      "source_asset_season": "2026/27",
+      "source_competition": "Serie A (league-official media)",
+      "alt_source": {
+        "platform": "legaseriea.it",
+        "platform_player_ref": "serie-a player f7bce030bb504b87b9411db54d75480f (Nicolò Zaniolo)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp bust, head+shoulders+chest) — published as-is"
+      },
+      "fetched_at": "2026-10-19T14:28:13.391Z",
+      "source_width": 1024,
+      "source_height": 1024,
       "source_has_alpha": true,
-      "source_sha256": "f42c6b956c94e10a08ac9395addc162904635cd08c85d2263c0ad3521ee1f705",
-      "download_transport": "relay",
+      "source_sha256": "320e0301e2fe7b9a3762d672ec1deebb621efa7637590a71eba8a4ba8615ebbf",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "e52d25784cf28ed5a6d4bd06a298af53529039a96f4234d51f70965af3471099",
+      "output_sha256": "c13d39b634200139c643153e3f06e4b58573a90ca70e376841fc3a0365cb3a87",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 1024,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 184,
-          "y": 75,
-          "w": 716,
-          "h": 1005
+          "x": 128,
+          "y": 39,
+          "w": 692,
+          "h": 985
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.457711,
+        "applied_scale": 0.467005,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 328,
+          "w": 323,
           "h": 460
         },
         "placement": {
-          "left": 92,
+          "left": 95,
           "top": 26
         },
         "content_box": {
@@ -4593,7 +4695,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from legaseriea.it (serie-a player f7bce030bb504b87b9411db54d75480f (Nicolò Zaniolo)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "udinese-calcio",
@@ -4631,7 +4735,7 @@
       "alt_source": {
         "platform": "legaseriea.it",
         "platform_player_ref": "serie-a player 0d3e96b700e94463b4c9e84ea3d17bb8 (Milutin Osmajić)",
-        "crop_top_fraction": 0.45,
+        "crop_top_fraction": 0,
         "allow_upscale": true,
         "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency"
       },
@@ -4643,25 +4747,25 @@
       "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "82289725210221ecd42e09458bcb650f3270872dfb288b0ed07864f9083510c4",
+      "output_sha256": "1993d06e95d04af5e9f2ad96ea7f8df02dc06671aaac788c9c6c151f13f5bbb8",
       "normalization": {
         "source_width": 1024,
-        "source_height": 461,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 370,
+          "x": 184,
           "y": 82,
-          "w": 280,
-          "h": 379
+          "w": 649,
+          "h": 942
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.21372,
+        "applied_scale": 0.488323,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 340,
+          "w": 317,
           "h": 460
         },
         "placement": {
-          "left": 86,
+          "left": 98,
           "top": 26
         },
         "content_box": {
@@ -4712,7 +4816,7 @@
       "alt_source": {
         "platform": "legaseriea.it",
         "platform_player_ref": "serie-a player 538bf99b0c2e4927aee5bddfa650cce5 (Franco Mastantuono)",
-        "crop_top_fraction": 0.45,
+        "crop_top_fraction": 0,
         "allow_upscale": true,
         "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency"
       },
@@ -4724,25 +4828,25 @@
       "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "a28bd5027b3f607ccf4eff515799397385e1f512e5f0af4306f9d21882d8c720",
+      "output_sha256": "1519dd307985763fef793dbfe9f5a1d0121f98b0407a93330ad63ca6b04be065",
       "normalization": {
         "source_width": 1024,
-        "source_height": 461,
+        "source_height": 1024,
         "source_subject_bounds": {
-          "x": 321,
+          "x": 176,
           "y": 22,
-          "w": 315,
-          "h": 439
+          "w": 658,
+          "h": 1002
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.047836,
+        "applied_scale": 0.459082,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 330,
+          "w": 302,
           "h": 460
         },
         "placement": {
-          "left": 91,
+          "left": 105,
           "top": 26
         },
         "content_box": {
@@ -4794,7 +4898,7 @@
       "alt_source": {
         "platform": "legaseriea.it",
         "platform_player_ref": "serie-a player 2696f7e05fea46fdb91b6b94df2c81b2 (Gianluca Cristiano Busio)",
-        "crop_top_fraction": 0.45,
+        "crop_top_fraction": 0,
         "allow_upscale": true,
         "note": "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency"
       },
@@ -4806,26 +4910,26 @@
       "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "633da81a9853964fdbf4f1c5b29fb2e7ee83632e8902907524920e4d4142a1dc",
+      "output_sha256": "bfc7c569140051ca718ba25b6ef26f6ca3fdbd8c2213b0ad32d22b9dd1bdff8f",
       "normalization": {
         "source_width": 1920,
-        "source_height": 864,
+        "source_height": 1920,
         "source_subject_bounds": {
-          "x": 618,
+          "x": 248,
           "y": 86,
-          "w": 829,
-          "h": 778
+          "w": 1358,
+          "h": 1834
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.554885,
+        "applied_scale": 0.250818,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 460,
-          "h": 432
+          "w": 341,
+          "h": 460
         },
         "placement": {
-          "left": 26,
-          "top": 54
+          "left": 86,
+          "top": 26
         },
         "content_box": {
           "x": 26,
@@ -5344,42 +5448,48 @@
         "nationality": null,
         "date_of_birth": "1999-08-01",
         "position": "Midfielder",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Bundesliga platform match: player \"Christoph Baumgartner\" on RB Leipzig's official bundesliga.com data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Leipzig",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250089289.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:28.038Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://assets.bundesliga.com/player/dfl-obj-0028kn-dfl-clu-000017-dfl-sea-0001ka-body.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "Bundesliga (league-official media)",
+      "alt_source": {
+        "platform": "bundesliga.com",
+        "platform_player_ref": "dfl-obj-0028kn-dfl-clu-000017-dfl-sea-0001ka (Christoph Baumgartner; club verified via page title)",
+        "crop_top_fraction": 0.42,
+        "allow_upscale": true,
+        "note": "official Bundesliga player body image (780x960 transparent PNG, full body) — top-cropped to head-and-shoulders for collection consistency"
+      },
+      "fetched_at": "2026-10-19T14:29:57.540Z",
+      "source_width": 780,
+      "source_height": 960,
       "source_has_alpha": true,
-      "source_sha256": "a9fa047fee8399ea8ccfd5eb7fc5d7c16b68cbf1cbf207886b8673fecdf5bbeb",
-      "download_transport": "relay",
+      "source_sha256": "99be81b0f2a6d91f06261ddae96aedcec43e5b7f39996b87a3197046e80ed4b3",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "1e0672cb557e078f472ae394d9dc9917b19186d5991a6b07e9f1cbeb9f469e76",
+      "output_sha256": "e85e372508a753758dad9cf3f4d40bc18c4c6e0ee468fac6a4e10dc82d9e626e",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 780,
+        "source_height": 403,
         "source_subject_bounds": {
-          "x": 305,
-          "y": 148,
-          "w": 550,
-          "h": 932
+          "x": 179,
+          "y": 4,
+          "w": 405,
+          "h": 399
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.493562,
+        "applied_scale": 1.135802,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 271,
-          "h": 460
+          "w": 460,
+          "h": 453
         },
         "placement": {
-          "left": 121,
-          "top": 26
+          "left": 26,
+          "top": 33
         },
         "content_box": {
           "x": 26,
@@ -5392,7 +5502,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from bundesliga.com (dfl-obj-0028kn-dfl-clu-000017-dfl-sea-0001ka (Christoph Baumgartner; club verified via page title)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "rb-leipzig",
@@ -6317,41 +6429,47 @@
         "nationality": "France",
         "date_of_birth": "1997-05-15",
         "position": "Forward",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Ligue 1 platform match: player \"Ousmane Dembele\" on Paris Saint-Germain FC's official ligue1.fr data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Paris",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250066886.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:30.244Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://s3.eu-west-3.amazonaws.com/ligue1.image/players/2026/all/player_official_2026_149_219438-400x300.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "Ligue 1 (league-official media)",
+      "alt_source": {
+        "platform": "ligue1.fr",
+        "platform_player_ref": "ligue1 player (Ousmane Dembele)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "official Ligue 1 bust picture (transparent PNG, ~400x300) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)"
+      },
+      "fetched_at": "2026-10-19T14:21:29.555Z",
+      "source_width": 800,
+      "source_height": 600,
       "source_has_alpha": true,
-      "source_sha256": "dd1cec37c09e7cf1844e094198ea151b3041cb3ef9d59f5f6a02924a1ab90121",
-      "download_transport": "relay",
+      "source_sha256": "c0a287e6855d9f08d087d0b417c72a84d5b837f2cec69f36490797541e7b0b81",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "7b7cc02108836545ac59afefe6dfd178216902705f860def248390fecee37a57",
+      "output_sha256": "6d00ae4b1f2d805e65a2b58db1c2fb7e6a339a9422441d6fc072ac8764ff03b3",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 800,
+        "source_height": 600,
         "source_subject_bounds": {
-          "x": 179,
-          "y": 38,
-          "w": 710,
-          "h": 1042
+          "x": 239,
+          "y": 54,
+          "w": 319,
+          "h": 546
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.441459,
+        "applied_scale": 0.842491,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 313,
+          "w": 269,
           "h": 460
         },
         "placement": {
-          "left": 100,
+          "left": 122,
           "top": 26
         },
         "content_box": {
@@ -6365,7 +6483,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from ligue1.fr (ligue1 player (Ousmane Dembele)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "paris-saint-germain-fc",
@@ -6477,41 +6597,47 @@
         "nationality": null,
         "date_of_birth": "1986-09-30",
         "position": "Forward",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Ligue 1 platform match: player \"Olivier Giroud\" on Lille OSC's official ligue1.fr data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Lille",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250020851.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:31.381Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://s3.eu-west-3.amazonaws.com/ligue1.image/players/2026/all/player_official_2026_429_44346-400x300.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "Ligue 1 (league-official media)",
+      "alt_source": {
+        "platform": "ligue1.fr",
+        "platform_player_ref": "ligue1 player (Olivier Giroud)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "official Ligue 1 bust picture (transparent PNG, ~400x300) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)"
+      },
+      "fetched_at": "2026-10-19T14:21:30.085Z",
+      "source_width": 800,
+      "source_height": 600,
       "source_has_alpha": true,
-      "source_sha256": "2db29baf28cf7e14979cc6149a8ab2ed61b86143eba925bbe824ca8549447b6c",
-      "download_transport": "relay",
+      "source_sha256": "36b69c5ca0a1bcd476297091ca119f4b4dc27a8a6e967999797175eac664e0a7",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "d267ccf6c9a6102b6ff5f8d9b7c90b8a8dc2e4d3071a6b6f3faf2835b2705487",
+      "output_sha256": "22df2ef128f3ff96cf168aaa330bd6f8d905aeeee6c1578af931c8b81adbd8a4",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 800,
+        "source_height": 600,
         "source_subject_bounds": {
-          "x": 49,
-          "y": 71,
-          "w": 986,
-          "h": 1009
+          "x": 236,
+          "y": 36,
+          "w": 346,
+          "h": 564
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.455897,
+        "applied_scale": 0.815603,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 450,
+          "w": 282,
           "h": 460
         },
         "placement": {
-          "left": 31,
+          "left": 115,
           "top": 26
         },
         "content_box": {
@@ -6525,7 +6651,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from ligue1.fr (ligue1 player (Olivier Giroud)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "lille-osc",
@@ -6879,41 +7007,47 @@
         "nationality": "France",
         "date_of_birth": "1990-10-25",
         "position": "Forward",
-        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "disambiguation": "kit timing verified: previously published complete entry (git 012f941); source URL re-verified live during the 2026-10-19 recovery fetch; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset; identity anchored by the Ligue 1 platform match: player \"Florian Sotoca\" on Racing Club de Lens's official ligue1.fr data (2026-10-19)",
         "external_corroboration": null
       },
       "observed_uefa_club": "Lens",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2027/cutoff/250186121.webp",
-      "source_asset_season": "2027",
-      "source_competition": "UEFA Champions League 2026/27",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:33.551Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "source_image_url": "https://s3.eu-west-3.amazonaws.com/ligue1.image/players/2026/all/player_official_2026_142_204188-400x300.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "Ligue 1 (league-official media)",
+      "alt_source": {
+        "platform": "ligue1.fr",
+        "platform_player_ref": "ligue1 player (Florian Sotoca)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "official Ligue 1 bust picture (transparent PNG, ~400x300) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)"
+      },
+      "fetched_at": "2026-10-19T14:22:21.419Z",
+      "source_width": 800,
+      "source_height": 600,
       "source_has_alpha": true,
-      "source_sha256": "53ba0210537d64a8e590609b4f70eafe70e7eca448481fe26d12540ff6cc103b",
-      "download_transport": "relay",
+      "source_sha256": "961f88dd988f3349285cb50c5fc32aefa3c1c24d65f9cd22379d11b57da586cf",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "32e718b47b77beb88c4f7edc09a3007e8e9497a25999520d4c63e86660fa5584",
+      "output_sha256": "41787531371bf43b65202a8521e57e955108dc8c41194785c2aad6490f7dfd1b",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 800,
+        "source_height": 600,
         "source_subject_bounds": {
-          "x": 239,
-          "y": 34,
-          "w": 665,
-          "h": 1046
+          "x": 222,
+          "y": 53,
+          "w": 335,
+          "h": 547
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.439771,
+        "applied_scale": 0.840951,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 292,
+          "w": 282,
           "h": 460
         },
         "placement": {
-          "left": 110,
+          "left": 115,
           "top": 26
         },
         "content_box": {
@@ -6927,7 +7061,9 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from ligue1.fr (ligue1 player (Florian Sotoca)), official league media — provenance in fetch log alt_source",
+        "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media"
       ],
       "hero": {
         "club_slug": "racing-club-de-lens",
@@ -7021,53 +7157,59 @@
     },
     {
       "roster_index": 88,
-      "requested_name": "Romain Del Castillo",
+      "requested_name": "Ludovic Ajorque",
       "requested_club_label": "Stade Brestois 29",
-      "filename": "romain-del-castillo.webp",
+      "filename": "ludovic-ajorque.webp",
       "chosen_player": null,
       "status": "complete",
-      "uefa_player_id": "250074010",
-      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250074010--romain-del-castillo/",
+      "uefa_player_id": null,
+      "canonical_profile_url": null,
       "identity_evidence": {
-        "uefa_full_name": "Romain Del Castillo",
-        "nationality": "France",
-        "date_of_birth": "1996-03-29",
-        "position": "Forward",
-        "disambiguation": "kit timing verified: Del Castillo at Brest since 2022; the asset season 2025 (UCL 2024/25) is his Brest registration — right-club kit; cutoff URL verified live via the scoped relay on 2026-10-19 (HTTP 200 image/webp); 2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset",
+        "uefa_full_name": null,
+        "nationality": null,
+        "date_of_birth": null,
+        "position": null,
+        "disambiguation": "identity anchored by the Ligue 1 platform match: player \"Ludovic Ajorque\" on Stade Brestois 29's official ligue1.fr data (2026-10-19)",
         "external_corroboration": null
       },
-      "observed_uefa_club": "Brest",
-      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2025/cutoff/250074010.webp",
-      "source_asset_season": "2025",
-      "source_competition": "UEFA Champions League 2024/25",
-      "alt_source": null,
-      "fetched_at": "2026-10-19T12:03:39.049Z",
-      "source_width": 1080,
-      "source_height": 1080,
+      "observed_uefa_club": null,
+      "source_image_url": "https://s3.eu-west-3.amazonaws.com/ligue1.image/players/2026/all/player_official_2026_862_168539-400x300.png",
+      "source_asset_season": "2026/27",
+      "source_competition": "Ligue 1 (league-official media)",
+      "alt_source": {
+        "platform": "ligue1.fr",
+        "platform_player_ref": "ligue1 player (Ludovic Ajorque)",
+        "crop_top_fraction": 0,
+        "allow_upscale": true,
+        "note": "official Ligue 1 bust picture (transparent PNG, ~400x300) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)"
+      },
+      "fetched_at": "2026-10-19T14:25:58.987Z",
+      "source_width": 800,
+      "source_height": 600,
       "source_has_alpha": true,
-      "source_sha256": "19002f0d1fc909e699a10dcee865728d2f448ea575b2677b3a770c1418deef20",
-      "download_transport": "relay",
+      "source_sha256": "891b8e70430d8042ae360f4c22497a94888983bd0762cb7c7c4ab95f12a3f11d",
+      "download_transport": "direct (league-official platform)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "8959c18b52b69304f85cb0115debf37547c0c5cda091fb06563fb6388d642691",
+      "output_sha256": "0db610acfd391c5aadc3a2e1e0836d058dcc38d5f98e964eca6e0bca714ceb65",
       "normalization": {
-        "source_width": 1080,
-        "source_height": 1080,
+        "source_width": 800,
+        "source_height": 600,
         "source_subject_bounds": {
-          "x": 305,
-          "y": 56,
-          "w": 536,
-          "h": 1024
+          "x": 219,
+          "y": 55,
+          "w": 345,
+          "h": 545
         },
         "alpha_threshold": 8,
-        "applied_scale": 0.449219,
+        "applied_scale": 0.844037,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 241,
+          "w": 291,
           "h": 460
         },
         "placement": {
-          "left": 136,
+          "left": 111,
           "top": 26
         },
         "content_box": {
@@ -7081,16 +7223,17 @@
         "warnings": []
       },
       "warnings": [
-        "2026-10-19 session recovery: discovery state rebuilt from documented probe evidence after a sandbox reset"
+        "candidate \"Ludovic Ajorque\" not usable (missing): player not found on any squad page of the labelled club and no researched profile URL provided (club not in a current UEFA competition)",
+        "candidate \"Mama Baldé\" not usable (missing): player not found on any squad page of the labelled club and no researched profile URL provided (club not in a current UEFA competition)",
+        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from ligue1.fr (ligue1 player (Ludovic Ajorque)), official league media — provenance in fetch log alt_source"
       ],
       "hero": {
         "club_slug": "stade-brestois-29",
         "club_display": "Stade Brestois 29",
         "league": "Ligue 1",
-        "selection_basis": "EA top-rated pair with 24/25 UCL history at the club",
-        "chosen_candidate": "Romain Del Castillo",
+        "selection_basis": "EA top-rated pair fallback: Del Castillo left for Osasuna (2026-10-19 Wikipedia club status + absent from the official Ligue 1 2026/27 squad API) — Ajorque is the next candidate",
+        "chosen_candidate": "Ludovic Ajorque",
         "candidates_considered": [
-          "Romain Del Castillo",
           "Ludovic Ajorque",
           "Mama Baldé"
         ]

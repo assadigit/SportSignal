@@ -5,6 +5,14 @@
 > quality, official platforms only). Records the completed coverage audit:
 > national-team asset family found (segment 3 = EURO 2024), club-context
 > surface fully probed, 96/96 hero clubs published (31 UEFA + 65 alt).
+>
+> **v2.2 (2026-10-19, later the same day).** Adds the FRAMING rule to §8b
+> (owner directive: “body visible to at least the jersey”): 18 jersey-cut
+> UEFA assets were replaced with league-official media via the new
+`--refill` framing-upgrade path, the 12 Serie A busts were re-cropped
+> (the 0.45 top-crop was calibrated for full-body sources — the sources
+> are busts), and Brest's hero moved Del Castillo → Ajorque (Osasuna
+> transfer). Published state: 13 UEFA + 83 alt, 96/96, 0 head-only.
 
 > **What this is.** The complete, battle-tested specification for collecting
 > official UEFA player cutout portraits — written *after* two full production
@@ -248,7 +256,7 @@ all verified live 2026-10-19):
 |---|---|---|---|
 | premierleague.com | FPL bootstrap → photo id → resources CDN | 220×280 PNG | head-and-shoulders; **upscale exception** (no larger variant is served) |
 | laliga.com | apim.laliga.com squad-manager → assets.laliga.com | up to 2048×2048 PNG | squad media-day portraits |
-| legaseriea.it | api-sdp standings → matches → lineups → media-sdp | 1024×1024 WebP | full-body pose; **top-cropped 45%** to head-and-shoulders |
+| legaseriea.it | api-sdp standings → matches → lineups → media-sdp | 1024×1024 WebP | **bust** (head ≈ 40–45% of canvas, jersey below) — published as-is (v2.2; the old 0.45 top-crop assumed a full-body pose and cut at the collarbone) |
 | bundesliga.com | player page → assets.bundesliga.com `{dfl-obj}-body.png` | 780×960 PNG | full body; **top-cropped 42%**; page title carries the club (identity anchor) |
 | ligue1.fr | ma-api.ligue1.fr championship-club-summary → S3 bustPictures | 400–800px PNG | club-scoped media-day busts |
 
@@ -267,7 +275,12 @@ all verified live 2026-10-19):
 4. Candidate fallback: a broken CDN asset for the primary candidate (e.g.
    FPL photo 403) falls through to the next researched candidate — the
    downloaded player is the one recorded.
-5. Same acceptance pipeline: originals cached lossless, normalized to the
+5. **Framing (v2.2)**: the body must be visible to at least the jersey —
+   a portrait that ends at the neck/collarbone is not publishable, whoever
+   the source is. UEFA assets that fail this are replaced via the
+   `--refill` framing-upgrade path (hero unchanged, `refill_reason`
+   recorded). Check with `analyze-framing.js` + `ascii-viz.js`.
+6. Same acceptance pipeline: originals cached lossless, normalized to the
    shared 512 canvas, contact sheet, honest manifest.
 
 **What is NOT acceptable:** backgrounds (must be transparent cutouts),

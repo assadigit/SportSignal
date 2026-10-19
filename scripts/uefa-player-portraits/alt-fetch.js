@@ -38,6 +38,13 @@
 //   node scripts/uefa-player-portraits/alt-fetch.js
 //   node scripts/uefa-player-portraits/alt-fetch.js --player brighton-hove-albion-fc
 //   (--player takes the roster state_key — the exact club slug)
+//   node scripts/uefa-player-portraits/alt-fetch.js \
+//     --refill manchester-city-fc,juventus-fc,…
+//   (--refill re-fills the listed state_keys regardless of manifest status —
+//    used for FRAMING UPGRADES: replacing a UEFA asset whose framing ends
+//    above the jersey with league-official media per the 2026-10-19 owner
+//    directive "body visible to at least the jersey". The reason is
+//    recorded in the fetch-log entry as refill_reason.)
 "use strict";
 
 const fs = require("fs");
@@ -59,7 +66,11 @@ function log(...args) { console.log("[alt-fetch]", ...args); }
 function normName(s) {
   return (s || "")
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    .toLowerCase()
+    // Turkish dotless ı has no NFD decomposition — fold it to i so
+    // "Kenan Yıldız" and "Kenan Yildiz" normalize identically
+    .replace(/ı/g, "i")
+    .replace(/[^a-z0-9]+/g, " ").trim();
 }
 
 async function httpGet(url, { accept = "*/*", timeoutMs = 30000 } = {}) {
@@ -316,9 +327,14 @@ const seriea = {
     return {
       platform: "legaseriea.it",
       platform_player_ref: `serie-a player ${m.playerId.split("::").pop()} (${m.name})`,
-      crop_top_fraction: 0.45,
+      // v2.2 framing fix: these sources are BUSTS (head ≈ 40-45% of the
+      // canvas, shoulders + chest below), NOT full-body poses — the original
+      // 0.45 top-crop cut exactly at the collarbone and produced face-filling
+      // portraits (the 2026-10-19 "only their head" complaint). The bust is
+      // published as-is (crop 0), matching the other bust platforms.
+      crop_top_fraction: 0,
       allow_upscale: true,
-      note: "official Serie A lineup/squad imagery (1024x1024 transparent webp, full-body pose) — top-cropped to head-and-shoulders for collection consistency",
+      note: "official Serie A lineup/squad imagery (1024x1024 transparent webp bust, head+shoulders+chest) — published as-is",
     };
   },
 };
@@ -496,7 +512,23 @@ const PLATFORMS = {
 async function main() {
   const argv = process.argv.slice(2);
   const dry = argv.includes("--dry");
-  const playerFilter = (argv[argv.indexOf("--player") + 1] || "").replace(/\.webp$/, "") || null;
+  // NB: argv.indexOf returns -1 when the flag is absent — guard with
+  // includes() so argv[0] (another flag) is never misread as the value
+  const playerFilter = argv.includes("--player")
+    ? ((argv[argv.indexOf("--player") + 1] || "").replace(/\.webp$/, "") || null)
+    : null;
+  // --refill key1,key2,… — framing-upgrade re-fill of specific entries
+  // regardless of manifest status (see header). Mutually exclusive with
+  // --player for sanity.
+  const refillArg = argv.includes("--refill") ? (argv[argv.indexOf("--refill") + 1] || "") : "";
+  const refillKeys = refillArg ? refillArg.split(",").map((s) => s.trim()).filter(Boolean) : null;
+  if (refillKeys && playerFilter) {
+    console.error("--refill and --player are mutually exclusive");
+    process.exit(2);
+  }
+  const REFILL_REASON =
+    "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): " +
+    "the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media";
 
   const rosterFile = path.join(config.script_dir, "roster-heroes.json");
   const manifestFile = path.join(config.asset_dir, "manifest-heroes.json");
@@ -509,17 +541,23 @@ async function main() {
   const fetchLog = JSON.parse(fs.readFileSync(fetchLogFile, "utf8"));
   const discovery = JSON.parse(fs.readFileSync(discoveryFile, "utf8"));
 
-  // targets: UEFA-unresolved entries (missing/no_asset), optionally one club
+  // targets: UEFA-unresolved entries (missing/no_asset), or explicit refill
+  // keys (framing upgrades), optionally one club
   const statusByKey = {};
   for (const e of manifest.entries) statusByKey[e.hero ? e.hero.club_slug : e.filename.replace(/\.webp$/, "")] = e.status;
   const targets = roster.players.filter((p) => {
     const key = p.state_key || p.filename.replace(/\.webp$/, "");
     if (playerFilter && key !== playerFilter) return false;
+    if (refillKeys) return refillKeys.includes(key);
     const st = statusByKey[key];
     return st === "missing" || st === "no_asset";
   });
 
-  log(`${targets.length} hero entries to fill from league-official sources`);
+  log(
+    refillKeys
+      ? `${targets.length} framing-upgrade refills requested (${refillKeys.length} keys)`
+      : `${targets.length} hero entries to fill from league-official sources`
+  );
 
   const results = [];
   for (const p of targets) {
@@ -527,6 +565,7 @@ async function main() {
     const league = (p.hero && p.hero.league) || null;
     const platform = PLATFORMS[league];
     const rec = { key, club: p.requested_club_label, league, status: "not_found", platform: league };
+    if (refillKeys) rec.refill = true;
     results.push(rec);
 
     if (!platform) { log(`# ${p.requested_club_label}: no alt platform for league "${league}"`); continue; }
@@ -538,7 +577,35 @@ async function main() {
       if (n && !candidates.includes(n)) candidates.push(n);
     }
 
-    const matches = await findMatches(platform, p.requested_club_label, candidates);
+    const matches0 = await findMatches(platform, p.requested_club_label, candidates);
+    let matches = matches0;
+    // refill safety: a framing upgrade must NEVER change the club's hero —
+    // only the platform match equal to the already-chosen candidate is
+    // accepted (fallback candidates are for original fills, not upgrades)
+    if (refillKeys && matches.length) {
+      const discRec = discovery.players.find((d) => d.key === key);
+      const chosen = (discRec && discRec.hero && discRec.hero.chosen_candidate) || p.requested_name;
+      const compact = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/ı/g, "i").replace(/[^a-z0-9]+/g, " ").trim();
+      // subsequence match: the chosen hero's name tokens appear in order in
+      // the platform name ("Bruno Fernandes" ⊆ "Bruno Borges Fernandes",
+      // "Kenan Yıldız" ⊆ "Kenan Yildiz"). Club-scoped matching + this gate
+      // keeps identity safe while tolerating legal-name forms.
+      const isSameIdentity = (platformName) => {
+        const want = compact(chosen).split(" ").filter(Boolean);
+        const have = compact(platformName).split(" ").filter(Boolean);
+        let i = 0;
+        for (const tok of have) if (i < want.length && tok === want[i]) i++;
+        return i === want.length;
+      };
+      const exact = matches.filter((x) => isSameIdentity(x.name));
+      if (!exact.length) {
+        log(`# ${p.requested_club_label}: refill — platform match(es) [${matches.map((m) => m.name).join(", ")}] do not equal the chosen hero "${chosen}" — skipping`);
+        rec.status = "not_found";
+        rec.error = `no platform match for the chosen hero "${chosen}"`;
+        continue;
+      }
+      matches = exact;
+    }
     if (!matches.length) { log(`# ${p.requested_club_label}: no candidate matched on ${league}`); continue; }
 
     rec.status = "matched";
@@ -580,7 +647,8 @@ async function main() {
         bytes: webp.length,
         download_transport: "direct (league-official platform)",
         alt_source: alt,
-        warnings: [],
+        ...(refillKeys ? { refill_reason: REFILL_REASON, refilled_at: new Date().toISOString() } : {}),
+        warnings: refillKeys ? [REFILL_REASON] : [],
       };
 
       // discovery: mark resolved with the platform match as chosen candidate
@@ -621,11 +689,16 @@ async function main() {
       }
       disc.status = "resolved";
       disc.hero = disc.hero || {};
-      disc.hero.chosen_candidate = match.name;
+      // refill upgrades keep the established hero name form (diacritics);
+      // the platform's own name form is preserved in platform_player_ref
+      if (!refillKeys || !disc.hero.chosen_candidate) disc.hero.chosen_candidate = match.name;
       if (!disc.warnings) disc.warnings = [];
       disc.warnings.push(
         `alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from ${alt.platform} (${alt.platform_player_ref}), official league media — provenance in fetch log alt_source`
       );
+      if (refillKeys) {
+        disc.warnings.push(REFILL_REASON);
+      }
       disc.verification = disc.verification || { ok: true, notes: [], problems: [] };
       disc.verification.notes.push(
         `identity anchored by the ${league} platform match: player "${match.name}" on ${p.requested_club_label}'s official ${alt.platform} data (${FETCH_DATE})`

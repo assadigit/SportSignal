@@ -10,7 +10,7 @@ record):
 | Collection | Roster | Result (latest run) |
 |---|---|---|
 | `roster.json` — 36 fixed players | `uefa-player-portraits.spec.md` (v1) | **34 complete, 2 deferred** (Jackson, Thauvin — no UEFA cutoff exists) |
-| `roster-heroes.json` — 96 big-5-league hero MVPs | this spec | **96/96 complete (2026-10-19): 31 UEFA official cutoffs + 65 league-official portraits** (spec §8b — every entry carries full UEFA provenance or an `alt_source` platform block). The preceding coverage audit (§9) proved the UEFA ceiling: the 65 alt-source clubs have recorded per-URL evidence that no club-kit UEFA cutoff exists |
+| `roster-heroes.json` — 96 big-5-league hero MVPs | this spec | **96/96 complete (2026-10-19, framing-fixed v2.2): 13 UEFA official cutoffs + 83 league-official portraits** (spec §8b — every entry carries full UEFA provenance or an `alt_source` platform block). The preceding coverage audit (§9) proved the UEFA ceiling: the 65 alt-source clubs have recorded per-URL evidence that no club-kit UEFA cutoff exists. The framing audit (§9b) then replaced 18 jersey-cut UEFA assets and re-cropped the 12 Serie A busts — every portrait now shows the body to at least the jersey (owner directive); Brest’s hero moved Del Castillo → Ajorque (§8 case 9) after his Osasuna transfer surfaced |
 
 The dominant finding of the hero pre-seed: **UEFA's transparent cutoffs exist
 reliably for current-season UCL players, sparsely for past UCL seasons, and
@@ -140,8 +140,9 @@ ma-api.ligue1.fr club summaries), downloads the first transparent
 candidate image that validates (broken CDN assets fall through to the
 next candidate), caches the pristine original, and records an
 `alt_source` provenance block. Normalization applies the platform's
-documented crop/upscale directives (Serie A 45% / Bundesliga 42%
-top-crops; PL + Ligue 1 upscale exceptions — recorded per entry).
+documented crop/upscale directives (Bundesliga 42% top-crop of the
+true full-body 780×960 PNGs; Serie A busts publish as-is after the
+§9b fix; PL + Ligue 1 upscale exceptions — recorded per entry).
 
 Verification notes from the 2026-10-19 run:
 - Ligue 1 bust URLs embed a club segment — cross-checked against each
@@ -186,7 +187,14 @@ a different MVP.
    orphaned files in `assets/players/uefa/`. If he moved to another club
    in the set, the file stays and only the `hero-clubs.json` mapping
    changes (filenames are player-derived).
-7. Contact-sheet review + the §7 checklist (commit, push, deploy).
+7. **Framing upgrades keep the hero**: to replace a badly-framed (but
+   otherwise valid) portrait — e.g. a UEFA cutoff that ends above the
+   jersey (§9b) — do NOT walk the full purge above; use
+   `alt-fetch.js --refill <state-key>` instead: it re-fills the entry,
+   refuses any platform match that is not the chosen hero, and records
+   `refill_reason`. Cached-source recrops need no fetch at all —
+   `recrop-alt-sources.js --keys … --crop F --reason …`.
+8. Contact-sheet review + the §7 checklist (commit, push, deploy).
 
 ## 2d. The season-turnover refresh (each summer, plus January windows)
 
@@ -407,7 +415,7 @@ while VLM was quota-dead):**
 | Koch → Frankfurt | `1/2026` | Frankfurt since 2024 | kept |
 | Gouiri → Marseille | `1/2026` | OM since Jan 2025 | kept |
 | Orsolini → Bologna | `1/2025` | Bologna since 2019 | kept |
-| Del Castillo → Brest | `1/2025` | Brest since 2022 | kept |
+| Del Castillo → Brest | `1/2025` | Brest 2022–2026, **Osasuna 2026–** (re-checked later the same day during the framing audit) | withdrawn — hero replaced by Ajorque, portrait re-sourced from ligue1.fr (§9b); the morning check had read “Brest since 2022” — transfers can surface mid-day, re-verify before any hero decision |
 
 A wrong-club kit is never published: withdraw, then take the next
 candidate or the §8b alt source. The same rule bans national-team kits
@@ -471,6 +479,70 @@ session — the one open follow-up when quota recovers). Normalize →
 contact sheet regenerated; committed, deployed, live-verified (96/96
 portraits HTTP 200, manifest shas match, all five platforms
 spot-checked).
+
+## 9b. Annotated war story #3 — the 2026-10-19 framing audit ("only their head")
+
+Owner ask: *"Some players pictures are only their head, can't you find players
+with their body (at least until their jersey) is in the view?"* — a
+FRAMING requirement on top of the coverage/identity rules: every published
+portrait must show the body down to at least the jersey.
+
+**Diagnosis (VLM was 429 again — deterministic tools carried it):**
+
+- `analyze-framing.js` (NEW): per-portrait row-width profile of the visible
+  subject. Head-only cutouts are widest at the cheek line and taper to the
+  jaw/neck; jersey-visible portraits stay wide at the bottom. Metrics:
+  `tMax` (widest-row position), `bottom` (width at t=0.80–0.92 relative to
+  max), `neck` (narrowest width across t=0.45–0.80). Calibrated against
+  known-good (Kane 0.87) and known-bad anchors, cross-checked cell-by-cell
+  with `ascii-viz.js` (NEW — renders any webp as a
+  transparent/skin/kit/dark ASCII grid; the closest thing to eyes without a
+  VLM).
+- Root cause #1 — **the Serie A crop was simply wrong**: the
+  `media-sdp.legaseriea.it` playerImages are BUSTS (head ≈ 40–45% of the
+  canvas, shoulders + jersey below), not the "full-body pose" the 0.45
+  top-crop assumed — 0.45 cut exactly at the collarbone and produced
+  face-filling portraits (9–11 entries, the literal "only their head").
+  Fix: `recrop-alt-sources.js` (NEW) set `crop_top_fraction` 0.45 → 0 on
+  the cached originals — no re-fetch needed.
+- Root cause #2 — **UEFA cutoffs with a jersey-cut composition**: 18 UEFA
+  assets show head + brief shoulder flare + a narrow chest strip (Haaland
+  bottom 0.44, Saka 0.46, Giroud 0.43 … vs Kane 0.87). The UEFA asset is
+  what it is — the fix is REPLACEMENT via the league platforms:
+  `alt-fetch.js --refill <keys>` (NEW) re-fills specific entries regardless
+  of manifest status, refuses to change the club's chosen hero
+  (token-subsequence identity gate), and records `refill_reason` in the
+  fetch-log for the manifest.
+- **Brest became a hero change**: Del Castillo is absent from Brest's
+  official Ligue 1 2026/27 squad API and Wikipedia now says Osasuna — a
+  stale-kit hero. Full §2c flow: roster edit (Ajorque), state purge,
+  discover (Brest not in a current UEFA competition → honest no_asset
+  evidence), `alt-fetch --player stade-brestois-29`, orphan
+  `romain-del-castillo.webp` deleted.
+- Swaps executed (18): PL cards — Haaland, Saka, Bruno Fernandes, Wirtz
+  (220×280, same documented upscale exception as the other 19 PL entries);
+  Ligue 1 busts — Giroud, Dembélé, Thauvin, Ajorque; Serie A busts —
+  Lautaro, De Ketelaere, Orsolini, Zaniolo, Pulisic, Yıldız; Bundesliga
+  body — Baumgartner; LaLiga squad — Yamal, Antony, Mikautadze.
+- En-route bugs fixed: `--player` misparsed `argv[0]` when the flag was
+  absent (indexOf −1 + 1 trap); the Turkish dotless ı folds to `i` in
+  normName/compact now — "Kenan Yıldız" ≠ "kenan y ld z" vs the API's
+  ASCII "Kenan Yildiz" (he also appeared in only 1 of the last 6 Juventus
+  lineups, so the lineup walk needs several matches to find him).
+- A color-based "skin at the bottom?" classifier was written and DISCARDED:
+  white kits (Real Sociedad, Rayo) and yellow kits (Villarreal) pass
+  skin-hue gates — false head-only verdicts. Geometry (bottom/neck) +
+  ASCII eyeballing is the reliable combo; LaLiga's odd "widest row at the
+  top" silhouette is the hands-behind-head squad pose (elbows in sleeves
+  flare at head level), not a framing problem.
+- Result: analyzer reports **0 head-only / 96 jersey-ok**; normalize →
+  96/96; validate + `npm test` green; contact sheet regenerated.
+
+**The rule going forward (SPEC §8b):** a hero portrait is acceptable only
+if the body is visible to at least the jersey — check with
+`analyze-framing.js` (bottom ≥ ~0.7 and no neck pinch for classic busts;
+the LaLiga pose is fine by shape) and eyeball anything borderline with
+`ascii-viz.js` before publishing.
 
 ## 10. Disaster recovery (when the workspace is lost)
 
@@ -562,7 +634,7 @@ trust the stale tracking ref.
 | `lib/parse.js` | Name normalization: accents, compact forms, aliases, the Turkish dotless ı | — |
 | `lib/images.js` | `normalizePortrait` (512 canvas, subject bounds, `crop_top_fraction`, `allow_upscale`), contact sheet, sha256 | — |
 | `lib/collection.js` | Per-roster paths: manifest filename, cache subdir, hero map | — |
-| `alt-fetch.js` | §8b league-official fill (`--dry`; `--player <state-key>` = exact club slug). Only fills manifest entries whose status is `missing`/`no_asset` | After a no_asset conclusion; season turnover (§2d) |
+| `alt-fetch.js` | §8b league-official fill (`--dry`; `--player <state-key>` = exact club slug; `--refill k1,k2,…` re-fills specific keys regardless of status — framing upgrades that refuse hero changes and record `refill_reason`) | After a no_asset conclusion; season turnover (§2d); framing upgrades (§9b) |
 | `update-no-asset-evidence.js` | Writes/updates the roster's `no_asset` evidence records (`--dry`) | After audit passes |
 | `nt-segment-sweep.js` | National-team segment probe (relay only; `NT_SWEEP_SEGMENTS` chunks) | Only if UEFA ships a new NT family |
 | `build-recovery-discovery.js` | Rebuilds heroes discovery from the committed manifest; resets the fetch-log | Only after workspace loss (§10) |
@@ -570,6 +642,9 @@ trust the stale tracking ref.
 | `roster.json` / `roster-heroes.json` | The collections' reproducible inputs (committed) | Edit per §2 / §2c / §2d |
 | `identity-evidence.json` | Namesake disambiguation records | When a namesake appears |
 | `framing-overrides.json` | Per-entry framing overrides (currently empty) | Rare framing fixes |
+| `analyze-framing.js` | QA: per-portrait row-width profile (tMax/bottom/neck) — head-only vs jersey-visible classifier, calibrated §9b | After any portrait change |
+| `ascii-viz.js` | QA: renders any webp as transparent/skin/kit/dark ASCII grid — deterministic eyeballing without a VLM | Borderline cases; new platforms |
+| `recrop-alt-sources.js` | Rewrites the fetch-log crop directive for cached alt entries (`--keys k1,k2 --crop F --reason …`) | Framing fixes without re-fetching |
 | `check-uefa-portraits.js` | Offline test gate (part of `npm test`) | Every change |
 
 Related: the `npm run portraits*` aliases in `package.json`; the
