@@ -114,7 +114,14 @@
 //              overlay; the dark/light toggle retired (always dark). Routine
 //              evict — stale HTML may still reference the retired pair, which
 //              stays served per the retention rule.)
-const CACHE = "sportsignal-v41";
+// Cache name:  sportsignal-v42 (v13.135-zoomlight: public-13.36.css→13.37.css
+//              — CSS-only release, public-13.36.js carries over unchanged.
+//              The hero players become full-lane cover boxes (uniform zoomed
+//              framing), the stadium-lights overlay brightens .35→.5, the
+//              mobile HUD veil deepens .26→.4. Routine evict — stale HTML
+//              may still reference 13.36.css, which stays served per the
+//              retention rule.)
+const CACHE = "sportsignal-v42";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -6,6 +6,43 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.135-zoomlight] — 2026-10-20 (zoom round: zoomed+raised players, brighter floodlights, dimmer mobile HUD)
+
+The owner's three asks: the hero player pictures "more zoomed — 10–20cm
+upper and more zoomed"; the new stadium lights' opacity increased; and the
+mobile blue HUD's opacity reduced ~20%.
+
+- **Players (the zoom)**: `.hero-player img` switches from a letterboxed
+  `contain` box (78% of the section height, anchored `bottom 4%` with a 4px
+  inner standoff) to a full-lane **cover** box — `width:100%;
+  object-fit:cover; object-position:center top; height:108%;
+  bottom:-24%` (production calibration; the sandbox reference uses -22%
+  for its shorter header band). Every build now fills the lane edge-to-edge
+  with uniform framing: slim builds gain ~+38% height, wide builds that
+  used to letterbox at the lane width gain up to ~+75%. The head pops above
+  the card top (measured live @1522: box top y89 vs card top y116) while
+  staying just below the topbar band (bar bottom y92). The mask fade
+  (18% → 26%) completes ~22px above the wrapper's section-bottom clip, so
+  the deeper overhang melts on screen and the crop line never reads as a
+  hard edge; the jersey stays fully visible. The per-side `inset-inline`
+  anchors collapse to `0` — the cover crop keeps the silhouette inside the
+  lane on its own, and the box can never overflow the lane (no horizontal
+  overflow at any breakpoint).
+- **Stadium lights**: the `.bg-lights` overlay rises `.35 → .5` (screen
+  blend, cover, pointer-transparent, still inside `.hero-bg` z1 — below the
+  card/players/header). The PNG's transparent centre keeps the HUD zone
+  readable; the outer floodlight beams read clearly stronger.
+- **Mobile blue HUD**: the 9-slice card can't take a layer opacity, so the
+  dark veil over the painted frame deepens `rgba(1,9,24,.26) → .4` — the
+  mobile HUD artwork's effective visibility drops `.74 → .59` (≈ the
+  requested 20% reduction), matching the desktop's dimmed neon one step
+  further.
+- Housekeeping: `public-13.36.css → public-13.37.css` (CSS-only release —
+  `public-13.36.js` carries over unchanged), `_headers` pins the new pair
+  and re-files 13.36.css under the retention rule, SW cache `v41 → v42`,
+  package `13.135.0.0`, `VERSION 13.135-zoomlight`, check-stats pins
+  re-frozen, parity fixtures re-frozen.
+
 ## [13.134-typelight] — 2026-10-20 (type round 2: bigger club names + Peyda numerics + the stadium-lights overlay + always-dark)
 
 The owner's six asks (2026-10-20): bigger featured club names (mobile and
