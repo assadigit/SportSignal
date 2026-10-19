@@ -8,6 +8,8 @@ production runs (2026-10-18).
 |---|---|
 | [SPEC.md](SPEC.md) | The rules: sources, identity verification, MVP selection, transport, manifests, acceptance criteria (v2 — supersedes the original `uefa-player-portraits.spec.md` at the repository root, which is preserved as the v1 historical task spec) |
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) | The practice: exact commands, the on-demand "new club appears in the hero" flow, the relay deploy runbook, the failure catalogue (what didn't work and why), the post-run checklist |
+| [INSTRUCTIONS.md](INSTRUCTIONS.md) §2c–§2d | Updating players: transfers, kit changes, better picks, and the season-turnover refresh |
+| [INSTRUCTIONS.md](INSTRUCTIONS.md) §8–§12 | Kit-timing verification (method + precedent cases), the 2026-10-19 audit + alt-source run, disaster recovery, the sandbox survival guide, tooling reference |
 | `scripts/uefa-player-portraits/` | The pipeline itself (`cli.js`, rosters, relay worker, fixtures) |
 | `docs/assets/uefa-player-portraits.md` | The original 36-player collection's detailed method + review findings |
 | `assets/players/uefa/` | The published library: portraits, per-collection manifests, `hero-clubs.json` (club → MVP portrait map) |
@@ -42,5 +44,7 @@ pre-seeded; everything else is one runbook execution away
 
 All portraits are © UEFA, collected from official uefa.com sources with
 full provenance (profile URL, image URL, retrieval date, sha256 per
-entry). Public availability does not establish redistribution permission;
-see SPEC.md §13 before any public use.
+entry) — or, for the 65 league-filled clubs, © their league's official
+media with per-entry `alt_source` provenance. Public availability does
+not establish redistribution permission; see SPEC.md §13 before any
+public use.

@@ -36,7 +36,8 @@
 // Usage:
 //   node scripts/uefa-player-portraits/alt-fetch.js --dry
 //   node scripts/uefa-player-portraits/alt-fetch.js
-//   node scripts/uefa-player-portraits/alt-fetch.js --player brighton
+//   node scripts/uefa-player-portraits/alt-fetch.js --player brighton-hove-albion-fc
+//   (--player takes the roster state_key — the exact club slug)
 "use strict";
 
 const fs = require("fs");

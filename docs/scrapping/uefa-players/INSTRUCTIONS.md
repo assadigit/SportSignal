@@ -7,10 +7,10 @@ together with [SPEC.md](SPEC.md) (the rules) — this file is the practice.
 **Current production state** (see the manifests for the authoritative
 record):
 
-| Collection | Roster | Result (2026-10-18) |
+| Collection | Roster | Result (latest run) |
 |---|---|---|
 | `roster.json` — 36 fixed players | `uefa-player-portraits.spec.md` (v1) | **34 complete, 2 deferred** (Jackson, Thauvin — no UEFA cutoff exists) |
-| `roster-heroes.json` — 96 big-5-league hero MVPs | this spec | **26 complete, 23 verified no-asset** (documented probe evidence: UEFA publishes no transparent cutoff in the target club's kit), **47 research-pending** (profile-URL research incomplete — the external search services were rate-limit-exhausted during the run; continue via §2) |
+| `roster-heroes.json` — 96 big-5-league hero MVPs | this spec | **96/96 complete (2026-10-19): 31 UEFA official cutoffs + 65 league-official portraits** (spec §8b — every entry carries full UEFA provenance or an `alt_source` platform block). The preceding coverage audit (§9) proved the UEFA ceiling: the 65 alt-source clubs have recorded per-URL evidence that no club-kit UEFA cutoff exists |
 
 The dominant finding of the hero pre-seed: **UEFA's transparent cutoffs exist
 reliably for current-season UCL players, sparsely for past UCL seasons, and
@@ -44,6 +44,11 @@ node scripts/uefa-player-portraits/cli.js fetch --roster roster-heroes.json --re
 # offline test gate (no network; part of npm test)
 node scripts/check-uefa-portraits.js
 ```
+
+> **Fresh-clone warning:** `.cache/` is gitignored — `normalize`
+> regenerates the manifests FROM the cache state, so on a fresh clone with
+> an empty cache it would rewrite them as all-missing. Rebuild the cache
+> first (§10) or run the `discover → fetch` chain before any `normalize`.
 
 Transport env vars (only needed from blocked networks — see §3):
 
@@ -144,6 +149,75 @@ Verification notes from the 2026-10-19 run:
 - Bundesliga pages carry the club in the title (identity anchor);
 - VLM was quota-exhausted during the run — deterministic checks carried
   the review; re-run a VLM spot pass when the service recovers.
+
+## 2c. Updating an existing hero (transfers, kit changes, better picks)
+
+A published portrait is valid only **while its player is still at the
+club** (the kit rule, §8). Run this flow when the player transferred away
+or retired, when a kit/club mismatch surfaces, or when the owner asks for
+a different MVP.
+
+1. **Confirm the change** with a kit-timing check (§8) — the Wikipedia
+   career table against the manifest's `source_asset_season`. Never trust
+   memory for transfer-window state.
+2. **Edit the roster entry** in `roster-heroes.json` (find it by
+   `state_key` = club slug): new `requested_name`, new `filename`
+   (kebab-case from the new player's name), refreshed `hero.candidates`
+   order + `selection_basis`. Club/league fields stay.
+3. **Drop the stale pipeline state** for that key so nothing is reused:
+   remove the entry from `.cache/uefa-player-portraits/heroes/discovery.json`
+   and `fetch-log.json` (the heroes collection's cache subdir — originals
+   are shared and keyed by filename base, see `lib/collection.js`), or run
+   the stages with `--refresh`.
+4. **Re-run the stages for the one club**:
+   `cli.js discover --roster roster-heroes.json --player <state-key>` →
+   `fetch --player <state-key>` → `normalize` (whole roster — it rewrites
+   the manifest, which is derived state and always safe to regenerate) →
+   `validate`. No UEFA asset for the new pick → record the no_asset
+   evidence honestly, then `alt-fetch.js --player <state-key>` (§2b).
+5. **To REPLACE an existing alt-source portrait** (better asset, platform
+   refresh): delete the club's record from the heroes `fetch-log.json` and
+   `discovery.json`, run `normalize` (the manifest entry flips to
+   `missing`), then `alt-fetch.js --player <state-key>`, then `normalize`
+   + `validate` again — alt-fetch only fills entries whose manifest status
+   is `missing`/`no_asset`.
+6. **Mind the old file**: if the previous player's `.webp` is referenced
+   by no other collection, delete it — the validate gate fails on
+   orphaned files in `assets/players/uefa/`. If he moved to another club
+   in the set, the file stays and only the `hero-clubs.json` mapping
+   changes (filenames are player-derived).
+7. Contact-sheet review + the §7 checklist (commit, push, deploy).
+
+## 2d. The season-turnover refresh (each summer, plus January windows)
+
+Three things in the library are season-coupled: club memberships, UEFA
+asset families, and league-platform URL constants.
+
+1. **Club set** (promotion/relegation): re-derive the big-5 memberships
+   from football-data.org (token in the operator vault — never the repo;
+   the 2026/27 pre-seed's Hull/Coventry/Paris FC/Elversberg/Racing
+   Santander/Málaga surprises invalidated every remembered assumption).
+   Diff against `roster-heroes.json`: new clubs → §2; relegated clubs →
+   remove the entry + its `hero-clubs.json` mapping, and the asset file if
+   nothing else references it.
+2. **UEFA asset families**: a new season means new cutoff locations
+   (`1/2028` = UCL 2027/28). Clubs newly in UCL/UEL/UECL become
+   squad-path discoverable — prefer a fresh UEFA cutoff over their
+   alt-source portrait (swap the roster entry back to the UEFA flow, §2c).
+   Existing UEFA-sourced heroes may gain newer-season assets: `fetch
+   --refresh`, then review. Check the probe season-set defaults rolled
+   over (SPEC §5.5).
+3. **League-platform constants** baked into `alt-fetch.js` that embed the
+   season: the PL photo bucket path (`premierleague25/…`), LaLiga's
+   `seasonYear=2026` param + `assets.laliga.com/squad/2026/`, Ligue 1's
+   `player_official_2026_` filename + `{season}-{clubseg}` S3 bucket
+   segment, and Serie A's `SA_COMP`/`SA_SEASON` ids (re-derive from
+   api-sdp.legaseriea.it each season — they change).
+4. **Kit re-checks** for every hero whose player moved in the window
+   (§2c), plus a contact-sheet pass; VLM spot-review when quota allows.
+5. Update the status tables (this file's header and
+   `docs/scrapping/uefa-players/README.md`), run `validate` + `npm test`,
+   commit, push, deploy, live spot-check.
 
 ## 3. When UEFA blocks you (the transport story)
 
@@ -295,3 +369,210 @@ Traps we hit, all fixed in code — know them when debugging:
    honest 404).
 6. Never commit credentials; the relay worker contains none; tokens live
    only in the operator's password vault.
+
+---
+
+## 8. Kit-timing verification (the transfer-window defence)
+
+**Rule.** A portrait may be published as a club's hero only while it
+shows the player in THAT club's kit. UEFA asset URLs encode the
+competition season (`{segment}/{season}`), so every accepted cutoff must
+be checked against the player's club **at that season** — not against
+today's squad alone, because past-competition assets linger on the CDN
+(SPEC §5.2) and players move.
+
+**Method (cheap, deterministic — it carried the whole 2026-10-19 audit
+while VLM was quota-dead):**
+
+1. Fetch the player's Wikipedia page **fresh** (never cached; transfer
+   windows move people). Honest UA:
+   `SportSignalPortraitPipeline/1.0 (kit-timing verification; contact:
+   sportsignal@atomicmail.io)`. Space API bursts ~30 s — the Wikipedia API
+   429s on bursts from this egress.
+2. Read the *Senior career* table; build season → club.
+3. Compare with the asset season: asset `1/2026` (UCL 2025/26) needs the
+   player at the target club during 2025/26.
+4. Record the verdict: withdrawals go into the roster entry's `no_asset`
+   evidence; keeps get a `kit_timing` note in the discovery/manifest
+   provenance.
+
+**Precedents (2026-10-19 — the case law so far):**
+
+| Case | Asset | Career table said | Verdict |
+|---|---|---|---|
+| Openda → Lyon | `1/2026` | RB Leipzig until 2026 | withdrawn (Leipzig kit) |
+| Tzolakis → Hull City | `1/2026` | Olympiacos 2019–2026, Hull 2026– | withdrawn (Olympiacos kit) |
+| Mandi → Levante | `1/2025` | Lille 2024–2026, Levante 2026– | withdrawn (Lille kit) |
+| Zaniolo → Udinese | `1/2026` | Udinese loan 2025, permanent 2026 | kept |
+| Koch → Frankfurt | `1/2026` | Frankfurt since 2024 | kept |
+| Gouiri → Marseille | `1/2026` | OM since Jan 2025 | kept |
+| Orsolini → Bologna | `1/2025` | Bologna since 2019 | kept |
+| Del Castillo → Brest | `1/2025` | Brest since 2022 | kept |
+
+A wrong-club kit is never published: withdraw, then take the next
+candidate or the §8b alt source. The same rule bans national-team kits
+(segment 3, §9) as club heroes.
+
+## 9. Annotated war story #2 — the 2026-10-19 coverage audit + alt-source run
+
+Owner asks, in order: *"make sure UEFA doesn't cover that at all"*
+(Task A) and *"find alternatives for the remaining clubs, same style and
+quality"* (Task B).
+
+**Task A — proving the UEFA ceiling (all 70 then-unresolved clubs):**
+
+1. **Research resolution** for the 47 research-pending clubs: Wikidata
+   P2276 (UEFA player id) + Wikipedia external links → profile URLs.
+   Finding: most researched profiles are **generic shells** — a profile
+   page existing does NOT mean a cutoff asset exists. 13 clubs'
+   candidates had no UEFA registration at all.
+2. **Bounded club-context probe sets** per club (researched hints +
+   adjacent seasons, SPEC §5.5), documented per URL in the sweep logs.
+3. **Current-registration fallback locations** (the UEL/UECL 26/27 squad
+   registrations, e.g. `14/2027`, `2019/2027`) — every one 404.
+   Bournemouth's two European seasons (UEL 26/27 + UECL 25/26) both 404.
+4. **Right-kit participation targets** (each club's actual UEFA seasons)
+   — all 404.
+5. **The NT sweep** (`nt-segment-sweep.js`, relay-only, 15 s pacing +
+   90 s breathers): UEFA's national-team family = **segment 3 = EURO
+   2024** (confirmed on a no-club-career subject + Pickford; 7 of 12
+   no_asset internationals have assets there — all national kits,
+   unusable for clubs). Segment 2 (Super Cup hypothesis) negative even
+   for a confirmed 2025 participant. Re-run only if UEFA ships a new NT
+   family.
+6. **Kit-timing withdrawals** (§8): 2 downloaded cutoffs withdrawn, 5
+   kept and published.
+
+Outcome: **31 UEFA-complete, 65 conclusively no_asset** — written into
+the roster by `update-no-asset-evidence.js` (23 records updated, 42
+created; `--dry` supported). Mid-run the sandbox was reset (§10); the
+session survived on the git remote, the deployed worker and this
+documentation.
+
+**Task B — the alt-source fill (spec §8b):** PL 15 (FPL 220×280
+headshots, documented upscale exception), LaLiga 15 (2048×2048 squad
+portraits), Serie A 11 (1024×1024, 45 % top-crop), Bundesliga 12
+(780×960 body PNGs, 42 % top-crop), Ligue 1 12 (busts). Quirks fixed en
+route:
+
+- LaLiga club-slug ambiguity ("RCD Espanyol de Barcelona" vs
+  `fc-barcelona`) — multi-slug candidate lists disambiguated by the
+  PLAYER match, never the club name alone.
+- Ligue 1 bust URLs embed a club segment — cross-checked against each
+  squad's dominant segment; all 7 risky summer transfers carried their
+  current club's photo.
+- Broken CDN assets fall through to the next candidate (Coventry's FPL
+  photo 403); Auxerre/Troyes needed re-researched picks (Faivre, Le
+  Douaron — the original candidates had left).
+
+Kit consistency was verified deterministically (VLM stayed 429 all
+session — the one open follow-up when quota recovers). Normalize →
+**96/96**; `validate` + `npm test` green (37/37 portrait checks);
+contact sheet regenerated; committed, deployed, live-verified (96/96
+portraits HTTP 200, manifest shas match, all five platforms
+spot-checked).
+
+## 10. Disaster recovery (when the workspace is lost)
+
+Happened 2026-10-19, mid-run: the dev sandbox was reset — repo directory,
+gitignored `.cache/` (originals, discovery, fetch-log) and uncommitted
+roster research all gone. What survived: the GitHub remote, the deployed
+worker (assets + manifests serving 200), the relay worker.
+
+**The recovery procedure (generalised):**
+
+1. Re-clone with the re-supplied token, then immediately strip it:
+   `git remote set-url origin https://github.com/assadigit/SportSignal.git`.
+2. `npm install` (sharp is a devDependency; the pipeline needs it).
+3. Mirror the published portraits from the live worker
+   (`https://ucl-notifier.sportsignal.workers.dev/players/uefa/{file}`)
+   and verify each decodes 512×512 with alpha and sha-matches the
+   committed manifest.
+4. Rebuild the pipeline state:
+   `node scripts/uefa-player-portraits/build-recovery-discovery.js`
+   reconstructs the heroes discovery from
+   `git show HEAD:assets/players/uefa/manifest-heroes.json` (its
+   provenance carries the source URLs + identity evidence) and resets
+   the fetch-log; then the normal `fetch → normalize → validate` chain
+   re-downloads from the documented URLs. Proof of determinism:
+   re-fetched originals re-normalized **bit-identical** (sha-verified)
+   during the real recovery. `alt-fetch.js` re-creates alt entries'
+   discovery records on the fly (it needs the manifest + cache files to
+   exist).
+5. Anything never committed had to be re-derived from documentation —
+   which is why the roster and manifests are committed after EVERY
+   meaningful stage, not at the end.
+
+**The fresh-clone rule (the same footgun, quieter):** `.cache/` is
+gitignored by design. `normalize` regenerates the manifests FROM the
+cache state — on a fresh clone with an empty cache it would rewrite them
+as all-missing. Never run `normalize` before the cache exists: run
+`discover → fetch` first, or §10 step 4.
+
+**Verify pushes the right way.** Pushing to a one-shot URL does NOT
+update the local `origin/main` tracking ref — after the 2026-10-19
+portrait push, `git status -sb` kept showing `[ahead 1]` even though the
+push had landed fine (the follow-up documentation session initially
+misread this as a lost push). And remotes MOVE: that same session's next
+push was rejected non-fast-forward because the owner had uploaded files
+via the GitHub web UI and a sibling session had pushed a feature in
+between. The rule: `git fetch <url> main` BEFORE pushing (rebase if the
+remote moved), push, then verify with `git ls-remote <url> main` — never
+trust the stale tracking ref.
+
+## 11. The sandbox survival guide (environment lessons, hard-won)
+
+- **Detached background processes die** the moment a tool invocation ends
+  (setsid/nohup do not survive). Long jobs must run as **chunked
+  foreground invocations** (~9 min budget per chunk). The pipeline stages
+  are idempotent and write per-entry state, so re-running continues
+  where the chunk stopped; `nt-segment-sweep.js` takes
+  `NT_SWEEP_SEGMENTS` for chunked segment sets.
+- **img.uefa.com pacing** (through the relay): 15 s between probes, 90 s
+  breather every 5. Roughly 6–7 cutoff probes inside a rolling minute
+  trip the edge into minutes-long 403s, and the penalty window outlasts
+  a 4-minute pause. A single manual curl usually passes even while the
+  pipeline is hot.
+- **404 vs 403**: 404 = the asset does not exist (record it); 403 =
+  throttling — NEVER record a 403 as "asset missing". Cool down, retry.
+- **z-ai service buckets** (web_search / page_reader / VLM): ~80–100
+  rapid calls drain them; 429 for 10–15 min; never cache a 429 as an
+  empty result. VLM is reliable for KITS, unreliable for FACES.
+- **Wikipedia**: the raw API 429s on bursts — space calls ~30 s or read
+  article URLs instead; always with the honest pipeline UA.
+- **Credentials** live in the operator's chat/vault, NEVER in the repo,
+  logs, worklog or commit messages (a live bot token was once found in a
+  public repo — rotate + purge history). Push one-shot:
+  `git push https://x-access-token:<token>@github.com/assadigit/SportSignal.git main`
+  and never persist a token in `.git/config` (no `remote set-url` with
+  tokens, no on-disk credential helpers).
+- **Commit early, push often, deploy after asset changes** — the remote
+  and the deployed worker are the only durable state (§10).
+- Keep the session worklog OUTSIDE the repo (dev-sandbox convention:
+  `/home/z/my-project/worklog.md`) and this documentation INSIDE it —
+  together they are the project's memory across sessions.
+
+## 12. Tooling reference (`scripts/uefa-player-portraits/`)
+
+| File | What it does | Run when |
+|---|---|---|
+| `cli.js` | Stage runner: `discover` → `fetch` → `normalize` → `validate` → `contact-sheet` (`all` = the chain). Flags: `--player <key>` (one entry), `--refresh` (ignore cache), `--roster <file>` | Every collection run (§1) |
+| `lib/config.js` | Paths, normalization constants, HTTP politeness, host allowlist, transport env (`UEFA_FETCH_TRANSPORT`, `UEFA_RELAY_BASE`) | Read before changing behaviour |
+| `lib/transport.js` | direct / relay / auto fetching with block detection + backoff | — |
+| `lib/parse.js` | Name normalization: accents, compact forms, aliases, the Turkish dotless ı | — |
+| `lib/images.js` | `normalizePortrait` (512 canvas, subject bounds, `crop_top_fraction`, `allow_upscale`), contact sheet, sha256 | — |
+| `lib/collection.js` | Per-roster paths: manifest filename, cache subdir, hero map | — |
+| `alt-fetch.js` | §8b league-official fill (`--dry`; `--player <state-key>` = exact club slug). Only fills manifest entries whose status is `missing`/`no_asset` | After a no_asset conclusion; season turnover (§2d) |
+| `update-no-asset-evidence.js` | Writes/updates the roster's `no_asset` evidence records (`--dry`) | After audit passes |
+| `nt-segment-sweep.js` | National-team segment probe (relay only; `NT_SWEEP_SEGMENTS` chunks) | Only if UEFA ships a new NT family |
+| `build-recovery-discovery.js` | Rebuilds heroes discovery from the committed manifest; resets the fetch-log | Only after workspace loss (§10) |
+| `relay-worker.js` | The scoped relay source (deployed as `uefa-image-relay-temp`) | §3 |
+| `roster.json` / `roster-heroes.json` | The collections' reproducible inputs (committed) | Edit per §2 / §2c / §2d |
+| `identity-evidence.json` | Namesake disambiguation records | When a namesake appears |
+| `framing-overrides.json` | Per-entry framing overrides (currently empty) | Rare framing fixes |
+| `check-uefa-portraits.js` | Offline test gate (part of `npm test`) | Every change |
+
+Related: the `npm run portraits*` aliases in `package.json`; the
+published contracts are `assets/players/uefa/manifest.json` (36-player
+collection) and `manifest-heroes.json` + `hero-clubs.json` (hero
+collection).
