@@ -6,6 +6,39 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.137-enlarge] — 2026-10-20 (enlarge round: players +15%, growth rides downward)
+
+The owner's follow-up on the de-zoom figures: "Enlarge the players
+picture by 15%."
+
+- **+15%**: `.hero-player img` height `76% → 87.4%` (76 × 1.15 exactly).
+  Measured in the sandbox reference @1522: box height 405px → 470px
+  (+15.2%). Everything else from the approved de-zoom round is preserved:
+  contain (full figure, unzoomed), inner-edge anchors (0px gap to the
+  card), feet-only melt (fade 20%).
+- **The growth rides DOWNWARD**: `bottom: 0 → -11.4%` (a small floor
+  overhang). This keeps the head at its approved height (~0.24×S from the
+  section top — clear of the topbar band by ~57px @1522); a naive
+  bottom-0 +15% would have pushed the head 65px higher, into the header.
+  The excess below the section bottom is clipped by the wrapper's
+  bottom:0 clip, and the 20% fade completes ~35px above that clip line so
+  the cut never reads. Side effect: MORE of the figure shows above the
+  melt — the visible window gains ~60px of torso/legs at the same head
+  height.
+- Wide builds still clamp at the lane width (`max-width:100%`) and land
+  slightly under +15% — unzoomed (no crop) wins over exact size, same
+  trade-off the owner approved in the de-zoom round.
+- VLM ship-check (1522fa): A-D all PASS (figures notably larger and
+  prominent, full figure visible with readable jersey, hugging the HUD
+  card, heads clear of the top bar, no crop lines, no overflow).
+- Housekeeping: `public-13.38.css → public-13.39.css` (CSS-only release —
+  public-13.36.js carries over); `_headers` pins 13.39.css immutable and
+  re-files 13.38.css under the retention rule; `sw.js` CACHE v43 → v44;
+  `VERSION 13.137-enlarge`; package 13.137.0.0; check-stats pins updated
+  (bottom -11.4% + height 87.4% player rule, SW v44, cssHero reads
+  13.39.css); admin-parity baseline re-frozen (--update — the template's
+  stylesheet href changed).
+
 ## [13.136-dezoom] — 2026-10-20 (de-zoom round: unzoomed ~30% smaller players, hugging the big blue HUD)
 
 The owner's review of the zoom round: "They're too zoomed now, make them

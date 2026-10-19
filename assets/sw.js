@@ -129,7 +129,16 @@
 //              the big blue HUD card, feet-only melt (fade 26%→20%).
 //              Routine evict — stale HTML may still reference 13.37.css,
 //              which stays served per the retention rule.)
-const CACHE = "sportsignal-v43";
+// Cache name:  sportsignal-v44 (v13.137-enlarge: public-13.38.css→13.39.css
+//              — CSS-only release, public-13.36.js carries over unchanged.
+//              The de-zoom figures grow 15%: height 76%→87.4% (76 x 1.15),
+//              riding DOWNWARD on a small floor overhang (bottom 0→-11.4%)
+//              so the head keeps its approved height clear of the topbar;
+//              the excess below the section bottom is clipped by the
+//              wrapper, the 20% fade hides the clip line. Routine evict —
+//              stale HTML may still reference 13.38.css, which stays
+//              served per the retention rule.)
+const CACHE = "sportsignal-v44";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
