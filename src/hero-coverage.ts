@@ -11,7 +11,7 @@
 //   published portrait that is not displayed (wiring = owner decision).
 
 export const HERO_COVERAGE_RAW = {
-  generated_at: "2026-10-19T18:19:35.929Z",
+  generated_at: "2026-10-19T19:16:01.071Z",
   bundle: "public-13.34.js",
   wired: [
     { name: "Arsenal FC", src: "/players/hero/bukayo-saka.webp", fade: null, slug: "arsenal-fc", player: "Bukayo Saka", league: "Premier League" },
@@ -75,7 +75,7 @@ export const HERO_COVERAGE_RAW = {
     { slug: "deportivo-alaves", club: "Deportivo Alavés", player: "Lucas Boyé", src: "/players/uefa/lucas-boye.webp", league: "La Liga" },
     { slug: "eintracht-frankfurt", club: "Eintracht Frankfurt", player: "Robin Koch", src: "/players/uefa/robin-koch.webp", league: "Bundesliga" },
     { slug: "elche-cf", club: "Elche CF", player: "Fer Niño", src: "/players/uefa/fer-nino.webp", league: "La Liga" },
-    { slug: "es-troyes-ac", club: "ES Troyes AC", player: "Jérémy Le Douaron", src: "/players/uefa/jeremy-le-douaron.webp", league: "Ligue 1" },
+    { slug: "es-troyes-ac", club: "ES Troyes AC", player: "Iron Gomis", src: "/players/uefa/iron-gomis.webp", league: "Ligue 1" },
     { slug: "everton-fc", club: "Everton FC", player: "Jordan Pickford", src: "/players/uefa/jordan-pickford.webp", league: "Premier League" },
     { slug: "fc-augsburg", club: "FC Augsburg", player: "Alexis Claude-Maurice", src: "/players/uefa/alexis-claude-maurice.webp", league: "Bundesliga" },
     { slug: "fc-lorient", club: "FC Lorient", player: "Jean-Victor Makengo", src: "/players/uefa/jean-victor-makengo.webp", league: "Ligue 1" },

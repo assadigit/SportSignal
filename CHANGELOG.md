@@ -6,6 +6,77 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.132-styleloop] — 2026-10-20 (the VLM style loop: jersey priority, card-render gate, star fallback)
+
+(Rebased onto 13.131-playerpresence — a sibling session wired the new
+player-presence hero layer from a fresh assets/players/hero/ copy set
+concurrently; this entry keeps the style loop under 13.132.)
+
+The owner's asks (2026-10-20): *"rename the pictures, using VLM, that have
+FULL jersey — they're priority to be shown; a FIFA card must never stand in
+for the player"* and *"if a player for any reason can't be found — for
+example you couldn't find Dembélé of PSG — find another STAR of that club,
+be flexible."* This release makes both rules systematic, and closes the
+root cause behind the Yamal FIFA-card sighting.
+
+### What actually happened (the war story)
+
+The v2.2 framing refill for Lamine Yamal had drawn LaLiga's "004" squad
+variant — an EA-FC-style CARD RENDER (gold shield, rating 89, badges) —
+which shipped to the site ("out of nowhere, instead of Yamal a picture of
+a FIFA card is showing"). The 13.129-hudframe sibling session reverted the
+9 affected portraits to the initial UEFA cutoffs (owner directive) but
+left manifest-heroes provenance pointing at the v2.2 league sources
+(9 sha mismatches — caught by `cli.js validate`, invisible to `npm test`,
+which gates manifest.json only). This session:
+
+- **Audited all 116 published files with the vision model** (two-pass:
+  fast sweep + detailed pixel-level verification of every failing verdict
+  — the fast pass produced 4 false-positive "cards" among 12; 8 confirmed).
+- **Replaced the 8 confirmed card renders**: 7 LaLiga clubs re-fetched
+  from the "_1_" PHOTO series (Aspas/Celta, Guerra/Valencia, Mayoral/
+  Getafe, Oyarzabal/Sociedad, R. Fernández/Espanyol, Vargas/Sevilla,
+  Camello/Rayo) and Troyes — whose ENTIRE Ligue 1 media set is card art —
+  via the new **style-exhaustion star fallback** to Iron Gomis
+  (fullBodyPictures, the jersey-priority asset nobody was using).
+- **Repaired the 9 stale provenance records** from the pre-v2.2 manifest
+  (a75e1d5), sha-verified; `cli.js validate` passes 96/96 again.
+
+### The system (spec v2.3 §8c — the durable rules)
+
+- **Style tiers on every manifest entry**: `jersey_photo` (priority) >
+  `bust_photo` (acceptable) > `head_photo`/`card_render` (never publish).
+  `hero-clubs.json` carries the tier for the owner's wiring decisions.
+- **Fill-time VLM gate** (`lib/vlm.js` in alt-fetch): every candidate
+  asset is classified before acceptance — card renders and head-onlys are
+  rejected and the next variant/candidate/star is tried. Degrades loudly
+  (recorded warning), never blocks (`--no-vlm-gate` to disable).
+- **Variant intelligence**: LaLiga photo ("_1_") series before the
+  stylized ("_0_") card series; Ligue 1 fullBodyPictures before busts;
+  white-studio backgrounds keyed via border-connected flood fill
+  (`keyStudioBackground`, 3–92% safety envelope).
+- **Star fallback** ("be flexible"): squad ranked by shirt number,
+  position, FPL price/points/ownership, recent lineup presence; triggers
+  when the requested player matches nothing OR when every asset of the
+  matched hero fails the gate. Substitutions documented end-to-end
+  (`alt_source.star_fallback` with `of`/`star`/`basis`/`reason`).
+- **`npm run heroes:style-audit`**: the batch auditor (resume-aware
+  across z-ai 429 storms; `--apply` records styles into both manifests;
+  `--wired`/`--only` scoping) — INSTRUCTIONS §13.5 makes it a loop step.
+- **`normalize --player` merge-mode**: single-club runs no longer
+  truncate the manifest (the pre-v2.3 footgun); orphaned old files are
+  flagged loudly. `rebuild-cache-state.js` generalizes sandbox-reset
+  recovery from the CURRENT committed manifest.
+- **`npm test` now enforces the display rule**: no wired portrait may be
+  a card render/head-only (check-uefa-portraits.js style gates).
+
+Published state: 96/96 hero clubs — 22 UEFA cutoffs + 74 league-official
+(PL 16 / Serie A 16 / LaLiga 15 / Ligue 1 15 / Bundesliga 12); every file
+VLM-classified: 84 jersey photos + 12 busts, **zero card renders**; all
+33 wired portraits pass the style gate.
+
+---
+
 ## [13.130-herogaploop] — 2026-10-19 (the hero gap loop: detect → log → agentic backfill)
 
 (Rebased onto 13.129-hudframe — a sibling session deployed 13.129-hudframe

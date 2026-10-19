@@ -117,7 +117,112 @@ async function subjectBounds(imgInput) {
   };
 }
 
-// --- normalization ----------------------------------------------------------
+// --- studio-background keying (spec v2.3) -----------------------------------
+//
+// Some league platforms serve their PHOTO variants on a plain white studio
+// background (LaLiga's "_1_" series, 2048x2225) instead of transparent. The
+// collection contract requires alpha, so those photos get keyed here:
+// border-connected flood-fill of near-white pixels (only regions REACHABLE
+// from the canvas edge are removed — white shorts inside the figure stay),
+// then a 2px near-white erosion of the cut edge to kill the halo.
+function isNearWhite(r, g, b, threshold) {
+  return r >= threshold && g >= threshold && b >= threshold;
+}
+
+// Does this buffer look like a white-background studio shot? Samples the
+// border ring: when >=85% of border pixels are near-white and opaque, the
+// image is a keying candidate.
+async function studioBackgroundLikely(buf, { threshold = 240, coverage = 0.85 } = {}) {
+  const { data, info } = await sharp(buf).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  let white = 0, total = 0;
+  const test = (x, y) => {
+    const i = (y * width + x) * channels;
+    const a = data[i + channels - 1];
+    if (a < 16) return; // already transparent — not a studio shot pixel
+    total++;
+    if (isNearWhite(data[i], data[i + 1], data[i + 2], threshold)) white++;
+  };
+  for (let x = 0; x < width; x++) { test(x, 0); test(x, height - 1); }
+  for (let y = 0; y < height; y++) { test(0, y); test(width - 1, y); }
+  return total > 0 && white / total >= coverage;
+}
+
+// Key the white studio background. Returns { buffer, keyed_fraction, method }
+// or throws when the safety envelope is violated (the flood reached <3% or
+// >92% of the canvas — the source was probably not a studio shot, or the
+// subject itself is white; refusing is safer than mangling the player).
+async function keyStudioBackground(buf, { threshold = 240, erodePx = 2 } = {}) {
+  const { data, info } = await sharp(buf).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  const W = width, H = height, C = channels;
+  const keyed = new Uint8Array(W * H); // 1 = remove
+  const queue = new Int32Array(W * H);
+  let qh = 0, qt = 0, keyedCount = 0;
+
+  const nearWhiteAt = (idx) => isNearWhite(data[idx], data[idx + 1], data[idx + 2], threshold);
+
+  const push = (x, y) => {
+    const p = y * W + x;
+    if (keyed[p]) return;
+    const i = p * C;
+    const a = data[i + C - 1];
+    const bgish = a < 16 || nearWhiteAt(i);
+    if (!bgish) return;
+    keyed[p] = 1;
+    keyedCount++;
+    queue[qt++] = p;
+  };
+
+  for (let x = 0; x < W; x++) { push(x, 0); push(x, H - 1); }
+  for (let y = 0; y < H; y++) { push(0, y); push(W - 1, y); }
+
+  while (qh < qt) {
+    const p = queue[qh++];
+    const x = p % W, y = (p - x) / W;
+    if (x > 0) push(x - 1, y);
+    if (x < W - 1) push(x + 1, y);
+    if (y > 0) push(x, y - 1);
+    if (y < H - 1) push(x, y + 1);
+  }
+
+  const fraction = keyedCount / (W * H);
+  if (fraction < 0.03 || fraction > 0.92) {
+    throw new Error(`keyStudioBackground: flood-fill reached ${(fraction * 100).toFixed(1)}% of the canvas (expected 3-92%) — refusing to key`);
+  }
+
+  // 2px erosion of the cut edge: near-white opaque pixels adjacent to the
+  // keyed region are removed too (kills the white halo without touching
+  // white kit INSIDE the figure, which the flood never reached).
+  for (let pass = 0; pass < erodePx; pass++) {
+    const grow = new Uint8Array(keyed); // copy
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const p = y * W + x;
+        if (keyed[p]) continue;
+        const nb = (x > 0 && keyed[p - 1]) || (x < W - 1 && keyed[p + 1]) ||
+          (y > 0 && keyed[p - W]) || (y < H - 1 && keyed[p + W]);
+        if (!nb) continue;
+        const i = p * C;
+        if (data[i + C - 1] >= 16 && nearWhiteAt(i)) { grow[p] = 1; keyedCount++; }
+      }
+    }
+    keyed.set(grow);
+  }
+
+  // apply
+  for (let p = 0; p < W * H; p++) {
+    if (keyed[p]) data[p * C + C - 1] = 0;
+  }
+
+  const out = await sharp(data, { raw: { width: W, height: H, channels: C } }).png().toBuffer();
+  return {
+    buffer: out,
+    keyed_fraction: Number(fraction.toFixed(4)),
+    method: `border-connected flood-fill near-white (>=${threshold}), ${erodePx}px edge erosion`,
+  };
+}
+
 
 // Normalize a source cutout to the shared target canvas.
 // Returns { buffer, normalization } or throws with an actionable error.
@@ -311,6 +416,8 @@ module.exports = {
   sha256,
   validateImageBuffer,
   subjectBounds,
+  studioBackgroundLikely,
+  keyStudioBackground,
   normalizePortrait,
   writeFileAtomic,
   buildContactSheet,

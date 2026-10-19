@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-19T14:31:31.243Z",
+  "generated_at": "2026-10-19T19:08:19.809Z",
   "description": "Club → hero MVP portrait map (UEFA official cutouts). Keys are football-data.org team-name slugs. status 'complete' entries carry the portrait URL; the hero layer renders without artwork for any other status.",
   "public_url_prefix": "/players/uefa/",
   "rights": {
@@ -16,6 +16,7 @@
       "player": "Erling Haaland",
       "status": "complete",
       "portrait_url": "/players/uefa/erling-haaland.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250103758",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250103758--erling-haaland/"
     },
@@ -25,6 +26,7 @@
       "player": "Bukayo Saka",
       "status": "complete",
       "portrait_url": "/players/uefa/bukayo-saka.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250106939",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250106939--bukayo-saka/"
     },
@@ -34,6 +36,7 @@
       "player": "Mitoma Kaoru",
       "status": "complete",
       "portrait_url": "/players/uefa/mitoma-kaoru.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -43,6 +46,7 @@
       "player": "João Pedro Junqueira de Jesus",
       "status": "complete",
       "portrait_url": "/players/uefa/joao-pedro-junqueira-de-jesus.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -52,6 +56,7 @@
       "player": "Florian Wirtz",
       "status": "complete",
       "portrait_url": "/players/uefa/florian-wirtz.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250139445",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250139445--florian-wirtz/"
     },
@@ -61,6 +66,7 @@
       "player": "Igor Thiago Nascimento Rodrigues",
       "status": "complete",
       "portrait_url": "/players/uefa/igor-thiago-nascimento-rodrigues.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -70,6 +76,7 @@
       "player": "Harry Wilson",
       "status": "complete",
       "portrait_url": "/players/uefa/harry-wilson.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -79,6 +86,7 @@
       "player": "Jordan Pickford",
       "status": "complete",
       "portrait_url": "/players/uefa/jordan-pickford.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -88,6 +96,7 @@
       "player": "Mohamed Belloumi",
       "status": "complete",
       "portrait_url": "/players/uefa/mohamed-belloumi.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -97,6 +106,7 @@
       "player": "Daizen Maeda",
       "status": "complete",
       "portrait_url": "/players/uefa/daizen-maeda.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -106,6 +116,7 @@
       "player": "Tino Livramento",
       "status": "complete",
       "portrait_url": "/players/uefa/tino-livramento.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -115,6 +126,7 @@
       "player": "Alejandro Garnacho",
       "status": "complete",
       "portrait_url": "/players/uefa/alejandro-garnacho.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250135496",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250135496--alejandro-garnacho/"
     },
@@ -124,6 +136,7 @@
       "player": "Bruno Fernandes",
       "status": "complete",
       "portrait_url": "/players/uefa/bruno-fernandes.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250078886",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250078886--bruno-fernandes/"
     },
@@ -133,6 +146,7 @@
       "player": "Jean-Philippe Mateta",
       "status": "complete",
       "portrait_url": "/players/uefa/jean-philippe-mateta.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -142,6 +156,7 @@
       "player": "Alex Scott",
       "status": "complete",
       "portrait_url": "/players/uefa/alex-scott.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -151,6 +166,7 @@
       "player": "Matt Grimes",
       "status": "complete",
       "portrait_url": "/players/uefa/matt-grimes.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -160,6 +176,7 @@
       "player": "Antonee Robinson",
       "status": "complete",
       "portrait_url": "/players/uefa/antonee-robinson.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -169,6 +186,7 @@
       "player": "Morgan Gibbs-White",
       "status": "complete",
       "portrait_url": "/players/uefa/morgan-gibbs-white.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -178,6 +196,7 @@
       "player": "Granit Xhaka",
       "status": "complete",
       "portrait_url": "/players/uefa/granit-xhaka.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -187,6 +206,7 @@
       "player": "James Maddison",
       "status": "complete",
       "portrait_url": "/players/uefa/james-maddison.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -196,6 +216,7 @@
       "player": "Lamine Yamal",
       "status": "complete",
       "portrait_url": "/players/uefa/lamine-yamal.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250176450",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250176450--lamine-yamal/"
     },
@@ -205,6 +226,7 @@
       "player": "Julián Álvarez",
       "status": "complete",
       "portrait_url": "/players/uefa/julian-alvarez.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250172668",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250172668--julian-alvarez/"
     },
@@ -214,6 +236,7 @@
       "player": "Antony",
       "status": "complete",
       "portrait_url": "/players/uefa/antony.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250144211",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250144211--antony/"
     },
@@ -223,6 +246,7 @@
       "player": "Kylian Mbappé",
       "status": "complete",
       "portrait_url": "/players/uefa/kylian-mbappe.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250076574",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250076574--kylian-mbappe/"
     },
@@ -232,6 +256,7 @@
       "player": "Mikel Oyarzabal",
       "status": "complete",
       "portrait_url": "/players/uefa/mikel-oyarzabal.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -241,6 +266,7 @@
       "player": "Rubén Vargas",
       "status": "complete",
       "portrait_url": "/players/uefa/ruben-vargas.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -250,6 +276,7 @@
       "player": "Lucas Boyé",
       "status": "complete",
       "portrait_url": "/players/uefa/lucas-boye.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -259,6 +286,7 @@
       "player": "Iago Aspas",
       "status": "complete",
       "portrait_url": "/players/uefa/iago-aspas.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -268,6 +296,7 @@
       "player": "Pierre-Emerick Aubameyang",
       "status": "complete",
       "portrait_url": "/players/uefa/pierre-emerick-aubameyang.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -277,6 +306,7 @@
       "player": "Ante Budimir",
       "status": "complete",
       "portrait_url": "/players/uefa/ante-budimir.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -286,6 +316,7 @@
       "player": "Nico Williams",
       "status": "complete",
       "portrait_url": "/players/uefa/nico-williams.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -295,6 +326,7 @@
       "player": "Georges Mikautadze",
       "status": "complete",
       "portrait_url": "/players/uefa/georges-mikautadze.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250155025",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250155025--georges-mikautadze/"
     },
@@ -304,6 +336,7 @@
       "player": "Roberto Fernández",
       "status": "complete",
       "portrait_url": "/players/uefa/roberto-fernandez.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -313,6 +346,7 @@
       "player": "Sergio Camello",
       "status": "complete",
       "portrait_url": "/players/uefa/sergio-camello.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -322,6 +356,7 @@
       "player": "Borja Mayoral",
       "status": "complete",
       "portrait_url": "/players/uefa/borja-mayoral.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -331,6 +366,7 @@
       "player": "Sergio Canales",
       "status": "complete",
       "portrait_url": "/players/uefa/sergio-canales.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -340,6 +376,7 @@
       "player": "Aïssa Mandi",
       "status": "complete",
       "portrait_url": "/players/uefa/aissa-mandi.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -349,6 +386,7 @@
       "player": "Fer Niño",
       "status": "complete",
       "portrait_url": "/players/uefa/fer-nino.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -358,6 +396,7 @@
       "player": "Javi Guerra",
       "status": "complete",
       "portrait_url": "/players/uefa/javi-guerra.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -367,6 +406,7 @@
       "player": "Pablo Martínez",
       "status": "complete",
       "portrait_url": "/players/uefa/pablo-martinez.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -376,6 +416,7 @@
       "player": "Lautaro Martínez",
       "status": "complete",
       "portrait_url": "/players/uefa/lautaro-martinez.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250118281",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250118281--lautaro-martinez/"
     },
@@ -385,6 +426,7 @@
       "player": "Paulo Dybala",
       "status": "complete",
       "portrait_url": "/players/uefa/paulo-dybala.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250086333",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250086333--paulo-dybala/"
     },
@@ -394,6 +436,7 @@
       "player": "Mattia Zaccagni",
       "status": "complete",
       "portrait_url": "/players/uefa/mattia-zaccagni.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -403,6 +446,7 @@
       "player": "Christian Pulisic",
       "status": "complete",
       "portrait_url": "/players/uefa/christian-pulisic.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250096698",
       "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250096698--christian-pulisic/"
     },
@@ -412,6 +456,7 @@
       "player": "Moise Kean",
       "status": "complete",
       "portrait_url": "/players/uefa/moise-kean.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250087919",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250087919--moise-kean/"
     },
@@ -421,6 +466,7 @@
       "player": "Romano Christian Schmid",
       "status": "complete",
       "portrait_url": "/players/uefa/romano-christian-schmid.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -430,6 +476,7 @@
       "player": "Elia Caprile",
       "status": "complete",
       "portrait_url": "/players/uefa/elia-caprile.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -439,6 +486,7 @@
       "player": "Kenan Yıldız",
       "status": "complete",
       "portrait_url": "/players/uefa/kenan-yildiz.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250171055",
       "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250171055--kenan-yildiz/"
     },
@@ -448,6 +496,7 @@
       "player": "Kevin De Bruyne",
       "status": "complete",
       "portrait_url": "/players/uefa/kevin-de-bruyne.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250008901",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250008901--kevin-de-bruyne/"
     },
@@ -457,6 +506,7 @@
       "player": "Charles De Ketelaere",
       "status": "complete",
       "portrait_url": "/players/uefa/charles-de-ketelaere.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250117705",
       "canonical_profile_url": "https://www.uefa.com/uefaconferenceleague/clubs/players/250117705--charles-de-ketelaere/"
     },
@@ -466,6 +516,7 @@
       "player": "Antonino Gallo",
       "status": "complete",
       "portrait_url": "/players/uefa/antonino-gallo.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -475,6 +526,7 @@
       "player": "Armand Gaetan Laurienté",
       "status": "complete",
       "portrait_url": "/players/uefa/armand-gaetan-lauriente.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -484,6 +536,7 @@
       "player": "Che Zach Everton Adams",
       "status": "complete",
       "portrait_url": "/players/uefa/che-zach-everton-adams.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -493,6 +546,7 @@
       "player": "Riccardo Orsolini",
       "status": "complete",
       "portrait_url": "/players/uefa/riccardo-orsolini.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250112400",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250112400--riccardo-orsolini/"
     },
@@ -502,6 +556,7 @@
       "player": "Gustavo Miguel Pereira De Sousa Varela",
       "status": "complete",
       "portrait_url": "/players/uefa/gustavo-miguel-pereira-de-sousa-varela.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -511,6 +566,7 @@
       "player": "Adrian Bernabe' Garcia",
       "status": "complete",
       "portrait_url": "/players/uefa/adrian-bernabe-garcia.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -520,6 +576,7 @@
       "player": "Nicolò Zaniolo",
       "status": "complete",
       "portrait_url": "/players/uefa/nicolo-zaniolo.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250107324",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250107324--nicolo-zaniolo/"
     },
@@ -529,6 +586,7 @@
       "player": "Milutin Osmajić",
       "status": "complete",
       "portrait_url": "/players/uefa/milutin-osmajic.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -538,6 +596,7 @@
       "player": "Franco Mastantuono",
       "status": "complete",
       "portrait_url": "/players/uefa/franco-mastantuono.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -547,6 +606,7 @@
       "player": "Gianluca Cristiano Busio",
       "status": "complete",
       "portrait_url": "/players/uefa/gianluca-cristiano-busio.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -556,6 +616,7 @@
       "player": "Harry Kane",
       "status": "complete",
       "portrait_url": "/players/uefa/harry-kane.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250016833",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250016833--harry-kane/"
     },
@@ -565,6 +626,7 @@
       "player": "Serhou Guirassy",
       "status": "complete",
       "portrait_url": "/players/uefa/serhou-guirassy.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250080553",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250080553--serhou-guirassy/"
     },
@@ -574,6 +636,7 @@
       "player": "Vincenzo Grifo",
       "status": "complete",
       "portrait_url": "/players/uefa/vincenzo-grifo.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -583,6 +646,7 @@
       "player": "Patrik Schick",
       "status": "complete",
       "portrait_url": "/players/uefa/patrik-schick.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250055110",
       "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250055110--patrik-schick/"
     },
@@ -592,6 +656,7 @@
       "player": "Nadiem Amiri",
       "status": "complete",
       "portrait_url": "/players/uefa/nadiem-amiri.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -601,6 +666,7 @@
       "player": "Lukas Petkov",
       "status": "complete",
       "portrait_url": "/players/uefa/lukas-petkov.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -610,6 +676,7 @@
       "player": "Christoph Baumgartner",
       "status": "complete",
       "portrait_url": "/players/uefa/christoph-baumgartner.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250089289",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250089289--christoph-baumgartner/"
     },
@@ -619,6 +686,7 @@
       "player": "Niclas Füllkrug",
       "status": "complete",
       "portrait_url": "/players/uefa/niclas-fullkrug.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -628,6 +696,7 @@
       "player": "Jean-Luc Dompé",
       "status": "complete",
       "portrait_url": "/players/uefa/jean-luc-dompe.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -637,6 +706,7 @@
       "player": "Alexis Claude-Maurice",
       "status": "complete",
       "portrait_url": "/players/uefa/alexis-claude-maurice.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -646,6 +716,7 @@
       "player": "Robin Koch",
       "status": "complete",
       "portrait_url": "/players/uefa/robin-koch.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250126501",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250126501--robin-koch/"
     },
@@ -655,6 +726,7 @@
       "player": "Ellyes Skhiri",
       "status": "complete",
       "portrait_url": "/players/uefa/ellyes-skhiri.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -664,6 +736,7 @@
       "player": "Bilal El Khannouss",
       "status": "complete",
       "portrait_url": "/players/uefa/bilal-el-khannouss.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250154129",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250154129--bilal-el-khannouss/"
     },
@@ -673,6 +746,7 @@
       "player": "Andrej Kramarić",
       "status": "complete",
       "portrait_url": "/players/uefa/andrej-kramaric.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -682,6 +756,7 @@
       "player": "Edin Džeko",
       "status": "complete",
       "portrait_url": "/players/uefa/edin-dzeko.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -691,6 +766,7 @@
       "player": "Laurin Curda",
       "status": "complete",
       "portrait_url": "/players/uefa/laurin-curda.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -700,6 +776,7 @@
       "player": "Josip Juranović",
       "status": "complete",
       "portrait_url": "/players/uefa/josip-juranovic.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -709,6 +786,7 @@
       "player": "Isac Lidberg",
       "status": "complete",
       "portrait_url": "/players/uefa/isac-lidberg.webp",
+      "style": "bust_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -718,6 +796,7 @@
       "player": "Ousmane Dembélé",
       "status": "complete",
       "portrait_url": "/players/uefa/ousmane-dembele.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250066886",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250066886--ousmane-dembele/"
     },
@@ -727,6 +806,7 @@
       "player": "Kevin Trapp",
       "status": "complete",
       "portrait_url": "/players/uefa/kevin-trapp.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -736,6 +816,7 @@
       "player": "Olivier Giroud",
       "status": "complete",
       "portrait_url": "/players/uefa/olivier-giroud.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250020851",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250020851--olivier-giroud/"
     },
@@ -745,6 +826,7 @@
       "player": "Denis Zakaria",
       "status": "complete",
       "portrait_url": "/players/uefa/denis-zakaria.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250079677",
       "canonical_profile_url": "https://www.uefa.com/uefaconferenceleague/clubs/players/250079677--denis-zakaria/"
     },
@@ -754,6 +836,7 @@
       "player": "Adrien Thomasson",
       "status": "complete",
       "portrait_url": "/players/uefa/adrien-thomasson.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -763,6 +846,7 @@
       "player": "Loïs Openda",
       "status": "complete",
       "portrait_url": "/players/uefa/lois-openda.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -772,6 +856,7 @@
       "player": "Jean-Victor Makengo",
       "status": "complete",
       "portrait_url": "/players/uefa/jean-victor-makengo.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -781,6 +866,7 @@
       "player": "Florian Sotoca",
       "status": "complete",
       "portrait_url": "/players/uefa/florian-sotoca.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250186121",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250186121--florian-sotoca/"
     },
@@ -790,6 +876,7 @@
       "player": "Amine Gouiri",
       "status": "complete",
       "portrait_url": "/players/uefa/amine-gouiri.webp",
+      "style": "jersey_photo",
       "uefa_player_id": "250101129",
       "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250101129--amine-gouiri/"
     },
@@ -799,6 +886,7 @@
       "player": "Ludovic Ajorque",
       "status": "complete",
       "portrait_url": "/players/uefa/ludovic-ajorque.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -808,6 +896,7 @@
       "player": "Casper Tengstedt",
       "status": "complete",
       "portrait_url": "/players/uefa/casper-tengstedt.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -817,6 +906,7 @@
       "player": "Romain Faivre",
       "status": "complete",
       "portrait_url": "/players/uefa/romain-faivre.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -826,6 +916,7 @@
       "player": "Jonathan Clauss",
       "status": "complete",
       "portrait_url": "/players/uefa/jonathan-clauss.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -835,6 +926,7 @@
       "player": "Joaquin Panichelli",
       "status": "complete",
       "portrait_url": "/players/uefa/joaquin-panichelli.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -844,6 +936,7 @@
       "player": "Anthony Lopes",
       "status": "complete",
       "portrait_url": "/players/uefa/anthony-lopes.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -853,15 +946,17 @@
       "player": "Djibril Sidibe",
       "status": "complete",
       "portrait_url": "/players/uefa/djibril-sidibe.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "es-troyes-ac": {
       "club": "ES Troyes AC",
       "league": "Ligue 1",
-      "player": "Jérémy Le Douaron",
+      "player": "Iron Gomis",
       "status": "complete",
-      "portrait_url": "/players/uefa/jeremy-le-douaron.webp",
+      "portrait_url": "/players/uefa/iron-gomis.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -871,6 +966,7 @@
       "player": "Ally Samatta",
       "status": "complete",
       "portrait_url": "/players/uefa/ally-samatta.webp",
+      "style": "jersey_photo",
       "uefa_player_id": null,
       "canonical_profile_url": null
     }

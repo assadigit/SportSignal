@@ -1,4 +1,4 @@
-# UEFA Player Portrait Scraping — Specification v2.1
+# UEFA Player Portrait Scraping — Specification v2.3
 
 > **v2.1 (2026-10-19).** Adds §8b — league-official alternative sources for
 > clubs UEFA verifiably does not cover (owner directive: same style, same
@@ -13,6 +13,18 @@
 > (the 0.45 top-crop was calibrated for full-body sources — the sources
 > are busts), and Brest's hero moved Del Castillo → Ajorque (Osasuna
 > transfer). Published state: 13 UEFA + 83 alt, 96/96, 0 head-only.
+>
+> **v2.3 (2026-10-20).** Adds §8c — the STYLE priority + VLM gate + star
+> fallback (owner directives: “rename the pictures, using VLM, that have
+> FULL jersey — they're priority to be shown; a FIFA card must never stand
+> in for the player” and “if a player for any reason can't be found — for
+> example you couldn't find Dembélé of PSG — find another STAR of that
+> club, be flexible”). The 2026-10-20 audit classified all 116 published
+> files (96 jersey photos + 12 busts after repair); 8 confirmed platform
+> card renders were replaced, LaLiga's photo (“_1_”) series now outranks
+> its stylized (“_0_”) series, Ligue 1 fullBodyPictures now outranks busts,
+> and every fill runs through a VLM style gate. The display priority is
+> carried by the manifest `style` field + the §11 acceptance gate.
 
 > **What this is.** The complete, battle-tested specification for collecting
 > official UEFA player cutout portraits — written *after* two full production
@@ -286,6 +298,69 @@ all verified live 2026-10-19):
 **What is NOT acceptable:** backgrounds (must be transparent cutouts),
 fan renders, watermarked media, player photos in another club's or a
 national team's kit.
+
+## 8c. Style priority, the VLM gate & the star fallback (v2.3)
+
+**The style tiers** (display priority, carried on every manifest entry as
+`style` after `npm run heroes:style-audit -- --apply`):
+
+| Tier | `style` | Meaning |
+|---|---|---|
+| 1 | `jersey_photo` | real photograph, jersey visible on the torso — **the priority look** |
+| 2 | `bust_photo` | real photograph, head+shoulders+chest — acceptable, upgradeable |
+| 3 | `head_photo` | head only — fails §8b framing, never publish |
+| ✗ | `card_render` | stylized/game-card artwork (FIFA/EA-FC card, illustration, vector) — **never display** |
+| ? | `unclear` / `null` | not (yet) verified |
+
+**The incident that created this rule** (2026-10-19/20): the v2.2 refill
+for Lamine Yamal drew LaLiga's “004” squad variant — an EA-FC-style CARD
+RENDER (gold shield, rating 89, badges) — and it shipped to the site. The
+owner: “out of nowhere, instead of Yamal a picture of a FIFA card is
+showing.” Deterministic framing analysis cannot tell a card render from a
+photo (the silhouette geometry passes either way); only a vision model
+can. LaLiga serves TWO asset series and the pipeline now prefers the
+photo series:
+
+| LaLiga variant | URL marker | Content | Priority |
+|---|---|---|---|
+| 001 | `…_1_001_000.png` (2048×2225) | waist-up studio PHOTO, transparent | **1st** |
+| 003 | `…_1_003_000.png` | square studio photo | 2nd |
+| 002 | `…_1_002_000.jpg` | match photo (JPG — needs keying) | 3rd |
+| 004 | `…_0_004_000.png` | **stylized CARD/render series** | last — and the gate rejects it anyway |
+
+Ligue 1 similarly serves `fullBodyPictures` (≈800×1200 full-kit pose,
+the jersey-priority look) which now outranks `bustPictures`.
+
+**The VLM gate** (`lib/vlm.js`, wired into alt-fetch): every candidate
+asset is classified BEFORE it is accepted — `jersey_photo`/`bust_photo`
+pass; `card_render`/`head_photo` are rejected and the next
+variant/candidate/star is tried. Photos that arrive on a white studio
+background are keyed via `keyStudioBackground` (border-connected
+flood-fill + 2px edge erosion, 3–92% safety envelope). The gate DEGRADES
+LOUDLY, never blocks: without the z-ai SDK the fill proceeds on
+deterministic QA with a recorded warning (`--no-vlm-gate` disables it
+explicitly).
+
+**The star fallback** (owner directive “be flexible”): when the requested
+player matches nothing on the platform — or when EVERY asset of the
+matched hero fails the style gate (style-exhaustion, e.g. Troyes 2026,
+whose entire Ligue 1 media set is card art) — the club's squad is ranked
+for star-ness (shirt number, position, FPL price/points/ownership, recent
+lineup presence) and the top stars are tried in order. The substitution
+is documented end-to-end: fetch-log `alt_source.star_fallback`
+(`of`/`star`/`basis`/`reason`), discovery warnings, and the manifest's
+`chosen_player`/filename (the old file becomes an orphan and is deleted
+per §2c). On refills the identity gate still forbids ACCIDENTAL hero
+changes; a style-forced substitution is deliberate, marked
+`reason: "style_exhausted"`, and recorded.
+
+**Two-pass verification** (calibrated 2026-10-20): the fast audit pass is
+NOISY — four of five non-LaLiga card verdicts on the first full sweep
+were false positives (Šporar/Wirtz/Xhaka/Yıldız are genuine photos).
+Every failing verdict is therefore re-examined with a detailed
+pixel-level prompt before it is recorded or acted on
+(`vlm-style-audit.js --verify`); an unverified failure is recorded as
+`unclear`, never as a rejection.
 
 ## 9. Download validation & caching
 

@@ -458,7 +458,12 @@ check("HERO_ART: alt empty on every entry (decorative aria-hidden layer) + poseI
 // The owner: "USE official webp uefa pictures… you've changed the yamal and
 // dembele picture — use the previous ones (the initial uefa scraped one)".
 // v2.2's framing fix had replaced these 9 roster portraits with
-// league-platform photos; these pins freeze the INITIAL 44e9906 cutoff bytes.
+// league-platform media; these pins freeze the INITIAL 44e9906 cutoff bytes.
+// v2.3 (13.131-styleloop) note: the bytes stay (owner-verified cutoffs,
+// VLM-classified jersey/bust photos); the manifest provenance for these 9
+// was repaired from a75e1d5 — see repair-reverted-provenance.js. The reason
+// the owner wanted them back: the v2.2 replacements included platform CARD
+// ART (the Yamal FIFA-card incident), now impossible via the style gate.
 const UEFA_INITIAL_REVERT = {
   "ousmane-dembele": "7b7cc0210883", "lamine-yamal": "77fe0d659981", "antony": "fb4736e59593",
   "bruno-fernandes": "3a0c7ec05157", "bukayo-saka": "5f694f4833a2", "christoph-baumgartner": "1e0672cb557e",

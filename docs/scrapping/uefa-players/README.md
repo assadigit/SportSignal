@@ -11,6 +11,7 @@ production runs (2026-10-18).
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) §2c–§2d | Updating players: transfers, kit changes, better picks, and the season-turnover refresh |
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) §8–§12 | Kit-timing verification (method + precedent cases), the 2026-10-19 audit + alt-source run, disaster recovery, the sandbox survival guide, tooling reference |
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) §13 | The hero gap loop: what the runtime logs when a team renders without artwork, and the agentic backfill procedure (`npm run heroes:report` → `backfill-hero-gaps.js`) |
+| [INSTRUCTIONS.md](INSTRUCTIONS.md) §13.5 + [SPEC.md](SPEC.md) §8c | The v2.3 style system: VLM jersey-priority audit (`npm run heroes:style-audit`), the fill-time card-render gate, and the star fallback ("find another STAR of that club — be flexible") |
 | `scripts/uefa-player-portraits/` | The pipeline itself (`cli.js`, rosters, relay worker, fixtures) |
 | `docs/assets/uefa-player-portraits.md` | The original 36-player collection's detailed method + review findings |
 | `assets/players/uefa/` | The published library: portraits, per-collection manifests, `hero-clubs.json` (club → MVP portrait map) |
@@ -33,10 +34,14 @@ pre-seeded; everything else is one runbook execution away
 - **36-player fixed roster** — 34 complete, 2 deferred (owner decision:
   no UEFA cutoff exists for Jackson/Thauvin).
 - **Hero MVP library, big-5 leagues 2026/27 (96 clubs)** — **96/96 complete
-  (2026-10-19, v2.2 framing fix)**: 13 UEFA official cutoffs + 83
-  league-official portraits (spec §8b: PL/LaLiga/Serie A/Bundesliga/Ligue 1
-  official media, full provenance per entry, body visible to at least the
-  jersey — the §9b framing audit). The preceding UEFA coverage audit re-verified all
+  and style-clean (2026-10-20, v2.3 style audit)**: 22 UEFA official cutoffs
+  + 74 league-official portraits, every file VLM-classified — 84
+  `jersey_photo` + 12 `bust_photo`, **zero card renders** (spec §8c). The
+  2026-10-20 audit replaced the 8 confirmed platform card renders (7 ×
+  LaLiga "004" stylized series + Troyes' Ligue 1 media set — Troyes' hero
+  is Iron Gomis via the style-exhaustion star fallback) and repaired the 9
+  provenance records the 13.129-hudframe revert had left stale. The
+  preceding v2.2 framing audit re-verified
   70 unresolved clubs (probe sets, fallback locations, right-kit targets,
   the EURO-2024 national-team family, kit-timing withdrawals) — evidence
   recorded per club in the roster. See

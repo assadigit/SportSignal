@@ -21,19 +21,25 @@ Route by task:
 | Update a player (transfer, kit change, better pick) | INSTRUCTIONS.md §2c |
 | Season-turnover refresh (annual) | INSTRUCTIONS.md §2d |
 | A team renders crest-only / fill hero gaps (the loop) | INSTRUCTIONS.md §13 — `npm run heroes:report` first |
+| A portrait looks like a FIFA card / jersey-priority verification | INSTRUCTIONS.md §13.5 + SPEC.md §8c — `npm run heroes:style-audit` |
+| A player can't be found on any platform (star fallback) | SPEC.md §8c + INSTRUCTIONS.md §13.5 |
 | Kit & club verification (kit-timing method + precedent cases) | INSTRUCTIONS.md §8 |
 | What is already covered — do NOT re-probe | `assets/players/uefa/manifest-heroes.json`, `hero-clubs.json`, INSTRUCTIONS.md header |
 | What failed and why (transport, rate limits, traps) | INSTRUCTIONS.md §3–§6, §9, §11 |
-| Workspace lost / fresh clone rules | INSTRUCTIONS.md §10 |
+| Workspace lost / fresh clone rules | INSTRUCTIONS.md §10 — `rebuild-cache-state.js` |
 | Every pipeline script and when to run it | INSTRUCTIONS.md §12 |
 
-Current state (2026-10-19, v2.2 framing fix): **96/96 hero clubs complete —
-13 UEFA official cutoffs + 83 league-official portraits** (PL 19 / LaLiga 18 /
-Serie A 17 / Bundesliga 13 / Ligue 1 16), every entry with full provenance,
-every portrait showing the body to at least the jersey (owner directive;
-INSTRUCTIONS §9b). The UEFA coverage ceiling is conclusively documented with
-per-URL probe evidence; re-probing UEFA for the no_asset clubs wastes a
-session — extend via league platforms instead.
+Current state (2026-10-20, v2.3 style audit): **96/96 hero clubs complete
+and style-clean — 22 UEFA official cutoffs + 74 league-official (PL 16 /
+Serie A 16 / LaLiga 15 / Ligue 1 15 / Bundesliga 12), every file
+VLM-classified: 84 `jersey_photo` + 12 `bust_photo`, ZERO card renders**
+(spec §8c; the 2026-10-20 audit replaced the 8 confirmed platform card
+renders — LaLiga's "004" series is card art, its "_1_" photo series is
+fetched first now, Ligue 1 fullBodyPictures outrank busts, and Troyes'
+hero is Iron Gomis via the style-exhaustion star fallback). The UEFA
+coverage ceiling is conclusively documented with per-URL probe evidence;
+re-probing UEFA for the no_asset clubs wastes a session — extend via
+league platforms instead.
 
 Since v13.129-herogaploop the runtime closes the visibility gap: the cron
 tick logs every fixture team without wired HERO_ART artwork into KV
@@ -74,8 +80,9 @@ backlog gated on the owner's display decision, not a scraping gap).
 ```bash
 npm run portraits:heroes        # discover → fetch → normalize → validate → contact sheet
 npm run portraits:alt           # league-official fill for UEFA-uncovered clubs
+npm run heroes:style-audit      # VLM style audit (--apply records styles into the manifests)
 node scripts/uefa-player-portraits/cli.js validate --roster roster-heroes.json
-npm test                        # offline gates, incl. the portrait check
+npm test                        # offline gates, incl. the portrait + style checks
 npx wrangler deploy             # assets + worker go live
 ```
 

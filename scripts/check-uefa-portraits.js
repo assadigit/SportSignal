@@ -325,6 +325,62 @@ async function main() {
     });
   }
 
+  // ---- v2.3 style gate (spec §8c): no card render / head-only is wired ----
+  // Offline repo-state check (no VLM calls): the styles recorded by
+  // vlm-style-audit --apply (and by normalize from the fill-time gate) must
+  // keep every DISPLAYED (wired) portrait in the publishable set, and no
+  // published entry anywhere may claim a confirmed card_render/head_photo
+  // while it is wired.
+  console.log("uefa-portraits: v2.3 style gate (jersey-priority display rule)");
+  await test("style vocabulary: every recorded style is a known tier", () => {
+    const KNOWN = new Set(["jersey_photo", "bust_photo", "head_photo", "card_render", "unclear", null]);
+    for (const mf of ["manifest-heroes.json", "manifest.json"]) {
+      const m = JSON.parse(fs.readFileSync(path.join(ROOT, "assets", "players", "uefa", mf), "utf8"));
+      for (const e of m.entries || []) {
+        assert.ok(KNOWN.has(e.style === undefined ? null : e.style), `${mf}: ${e.filename} carries unknown style ${JSON.stringify(e.style)}`);
+      }
+    }
+  });
+  await test("no WIRED portrait is a card render or head-only (the FIFA-card rule)", () => {
+    const assetsDir = path.join(ROOT, "assets");
+    const bundles = fs.readdirSync(assetsDir).filter((f) => /^public-\d+\.\d+\.js$/.test(f)).sort((a, b) => {
+      const na = a.match(/(\d+)\.(\d+)/), nb = b.match(/(\d+)\.(\d+)/);
+      return (parseInt(nb[1] + nb[2], 10)) - (parseInt(na[1] + na[2], 10));
+    });
+    assert.ok(bundles.length, "no public-*.js bundle found");
+    const src = fs.readFileSync(path.join(assetsDir, bundles[0]), "utf8");
+    const block = src.match(/var HERO_ART=\{[\s\S]*?\n\};/);
+    assert.ok(block, "HERO_ART block not found in " + bundles[0]);
+    const wiredFiles = [...block[0].matchAll(/src:"(\/players\/uefa\/[a-z0-9-]+\.webp)"/g)].map((m) => path.basename(m[1]));
+    const styleOf = {};
+    for (const mf of ["manifest-heroes.json", "manifest.json"]) {
+      const m = JSON.parse(fs.readFileSync(path.join(ROOT, "assets", "players", "uefa", mf), "utf8"));
+      for (const e of m.entries || []) {
+        if (e.filename && !(e.filename in styleOf)) styleOf[e.filename] = e.style === undefined ? null : e.style;
+      }
+    }
+    for (const f of wiredFiles) {
+      const st = styleOf[f];
+      assert.ok(
+        st === "jersey_photo" || st === "bust_photo" || st === null,
+        `${f} is WIRED but its recorded style is ${JSON.stringify(st)} — a card render/head-only must never be displayed (spec v2.3 §8c; replace via alt-fetch --refill)`
+      );
+    }
+  });
+  await test("confirmed card renders carry the never-wire warning", () => {
+    for (const mf of ["manifest-heroes.json", "manifest.json"]) {
+      const m = JSON.parse(fs.readFileSync(path.join(ROOT, "assets", "players", "uefa", mf), "utf8"));
+      for (const e of m.entries || []) {
+        if (e.style === "card_render" || e.style === "head_photo") {
+          assert.ok(
+            (e.warnings || []).some((w) => /^style gate:/.test(w)),
+            `${mf}: ${e.filename} is ${e.style} but carries no style-gate warning (run npm run heroes:style-audit -- --apply)`
+          );
+        }
+      }
+    }
+  });
+
   fs.rmSync(TMP, { recursive: true, force: true });
   console.log(`\nuefa-portraits: ${passed} passed, ${failures.length} failed`);
   if (failures.length) {

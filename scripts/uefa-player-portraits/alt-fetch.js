@@ -3,6 +3,28 @@
 // the remaining clubs, same style and quality — FIFA, the leagues' own
 // websites, or club websites").
 //
+// v2.3 STYLE GATE + STAR FALLBACK (owner directive 2026-10-20: "rename the
+// pictures, using VLM, that have FULL jersey — they're priority to be
+// shown; a FIFA card must never stand in for the player" + "if a player
+// for any reason can't be found, find another STAR of that club — be
+// flexible"):
+//   - every downloaded candidate is VLM-classified before it is accepted
+//     (lib/vlm.js): photo + jersey/bust passes, card renders / head-onlys
+//     are rejected and the next variant/candidate/star is tried
+//   - LaLiga variant preference: the "_1_" photo series (001/003/002) is
+//     fetched BEFORE the "_0_" stylized series (004 = EA-FC card art —
+//     the Yamal incident, INSTRUCTIONS §9b/§13); photo variants arrive on
+//     a white studio background and are keyed via keyStudioBackground
+//   - Ligue 1 now prefers fullBodyPictures (full jersey, owner priority)
+//     over the bust fallback
+//   - STAR FALLBACK: when the requested player matches nothing on the
+//     platform, the club's squad is ranked for star-ness (shirt number,
+//     position, FPL price/points) and the top stars are tried in order —
+//     the substitution is fully documented in the fetch-log alt_source
+//     (star_fallback.of/star/basis) and the manifest's chosen_player
+//   - the gate degrades LOUDLY, never blocks: without the z-ai SDK the
+//     fill proceeds with deterministic QA + a recorded warning
+//
 // Scope: big-5 league clubs whose hero MVP has no UEFA transparent cutoff
 // (manifest status no_asset/missing — every such club now carries verified
 // no_asset evidence). UEFA stays the preferred source — this stage only
@@ -53,6 +75,7 @@ const path = require("path");
 const sharp = require("sharp");
 const { config } = require("./lib/config");
 const images = require("./lib/images");
+const vlm = require("./lib/vlm");
 
 const UA = "SportSignalPortraitPipeline/1.0 (league-official hero portrait collection for sportsignal.ir; contact: sportsignal@atomicmail.io)";
 const FETCH_DATE = new Date().toISOString().slice(0, 10);
@@ -108,15 +131,30 @@ const pl = {
     const data = JSON.parse(buf.toString("utf8"));
     const teams = {};
     for (const t of data.teams || []) teams[t.id] = t.name;
+    const POS = { 1: "Goalkeeper", 2: "Defender", 3: "Midfielder", 4: "Forward" };
     const players = (data.elements || []).map((e) => ({
       name: `${e.first_name} ${e.second_name}`,
       web_name: e.web_name,
       team: teams[e.team] || null,
       team_id: e.team,
       photo_id: String(e.photo || "").replace(/\.(png|jpg)$/i, ""),
+      // v2.3 star-fallback inputs (FPL is the market's star opinion)
+      position: POS[e.element_type] || null,
+      price: e.now_cost != null ? e.now_cost / 10 : null,       // £m
+      points: e.total_points != null ? e.total_points : null,
+      selected: e.selected_by_percent != null ? parseFloat(e.selected_by_percent) : null,
     }));
     this.cache = { players, teams };
     return this.cache;
+  },
+  clubPlayers(clubDisplay) {
+    // sync-safe accessor used by the star fallback (load() must have run)
+    const players = (this.cache && this.cache.players) || [];
+    const clubN = normName(clubDisplay);
+    return players.filter((p) => {
+      const tn = normName(p.team || "");
+      return tn && (tn.includes(clubN.split(" ")[0]) || clubN.includes(tn.split(" ")[0]));
+    });
   },
   async findPlayer(clubDisplay, candidateNames) {
     const { players } = await this.load();
@@ -204,6 +242,9 @@ const laliga = {
         slug: s.person.slug,
         id: s.id,
         photos: s.photos || {},
+        // v2.3 star-fallback inputs
+        shirt: s.shirt_number != null ? s.shirt_number : null,
+        position: (s.position && s.position.name) || null,
       }));
     this.clubSquads[slug] = players;
     await sleep(1200);
@@ -230,17 +271,60 @@ const laliga = {
     }
     return null;
   },
-  imageUrl(m) {
-    const photos = m.photos["004"] || m.photos["001"] || Object.values(m.photos)[0] || {};
-    return photos["2048x2048"] || photos["1024x1024"] || Object.values(photos)[0];
+  // v2.3 variant table (the Yamal incident): LaLiga serves TWO asset
+  // series — "_1_" photos (001 waist-up studio, 002 match jpg, 003 square
+  // studio) and "_0_" stylized renders (004 = EA-FC-style CARD ART).
+  // Photos are ALWAYS preferred; the card series is last-resort only (and
+  // the VLM gate rejects it even then). Photos arrive on a white studio
+  // background — keying happens in the download loop.
+  variantUrls(m) {
+    const photos = m.photos || {};
+    const order = ["001", "003", "002", "004"];
+    const out = [];
+    const pickLargest = (v) => {
+      const keys = Object.keys(v || {}).sort((a, b) => {
+        const pa = parseInt(String(a).split("x")[0], 10) || 0;
+        const pb = parseInt(String(b).split("x")[0], 10) || 0;
+        return pb - pa;
+      });
+      return keys.length ? v[keys[0]] : null;
+    };
+    for (const k of order) {
+      if (!photos[k]) continue;
+      const url = pickLargest(photos[k]);
+      if (url && !out.some((x) => x.url === url)) {
+        out.push({ url, variant: k, series: /_0_/.test(url) ? "stylized" : "photo" });
+      }
+    }
+    for (const [k, v] of Object.entries(photos)) {
+      if (order.includes(k)) continue;
+      const url = pickLargest(v);
+      if (url && !out.some((x) => x.url === url)) {
+        out.push({ url, variant: k, series: /_0_/.test(url) ? "stylized" : "photo" });
+      }
+    }
+    return out;
   },
-  altSource(m) {
+  imageUrl(m) {
+    const vs = this.variantUrls(m);
+    return vs.length ? vs[0].url : null;
+  },
+  imageUrls(m) {
+    return this.variantUrls(m).map((v) => v.url);
+  },
+  imageUrlVariant(m) {
+    const vs = this.variantUrls(m);
+    return vs.length ? vs[0] : null;
+  },
+  altSource(m, variantInfo) {
+    const v = variantInfo || this.imageUrlVariant(m) || {};
     return {
       platform: "laliga.com",
       platform_player_ref: `laliga player id ${m.id} (${m.name})`,
+      laliga_variant: v.variant ? String(v.variant) + " (" + (v.series || "photo") + " series)" : null,
       crop_top_fraction: 0,
       allow_upscale: false,
-      note: "official LaLiga squad portrait, transparent PNG up to 2048x2048",
+      note: "official LaLiga squad media — photo series preferred over the stylized/card series per the v2.3 style gate (the Yamal incident)",
     };
   },
 };
@@ -296,6 +380,10 @@ const seriea = {
               display: p.displayName,
               playerId: p.playerId,
               imagery: p.imagery || {},
+              // v2.3 star-fallback inputs (defensive — field names vary)
+              shirt: p.shirtNumber != null ? p.shirtNumber : (p.number != null ? p.number : null),
+              position: (p.role && (p.role.name || p.role)) || (p.position && (p.position.name || p.position)) || null,
+              apps: 1,
             });
           }
         }
@@ -441,6 +529,8 @@ const ligue1 = {
       name: `${p.firstName || ""} ${p.lastName || ""}`.trim(),
       last: p.lastName,
       assets: p.assets || {},
+      // v2.3 star-fallback input
+      shirt: p.jerseyNumber != null ? p.jerseyNumber : null,
     }));
     this.summaries[club.id] = { players, clubName: club.name };
     return this.summaries[club.id];
@@ -460,17 +550,40 @@ const ligue1 = {
     }
     return null;
   },
-  imageUrl(m) {
-    const bust = m.assets.bustPictures || {};
-    return bust.large || bust.medium || bust.small || (m.assets.facePictures || {}).large;
+  // v2.3 jersey priority (owner directive "FULL jersey = priority"): the
+  // platform serves fullBodyPictures (official ~800x1200 full-kit pose) —
+  // preferred over the bust fallback (400x300 head+chest)
+  variantUrls(m) {
+    const a = m.assets || {};
+    const pick = (v) => {
+      const keys = Object.keys(v || {});
+      return keys.length ? v[keys[0]] : null;
+    };
+    const out = [];
+    for (const kind of ["fullBodyPictures", "bustPictures", "facePictures"]) {
+      const url = pick(a[kind]);
+      if (url && !out.some((x) => x.url === url)) out.push({ url, kind });
+    }
+    return out;
   },
-  altSource(m) {
+  imageUrl(m) {
+    const vs = this.variantUrls(m);
+    return vs.length ? vs[0].url : null;
+  },
+  imageUrls(m) {
+    return this.variantUrls(m).map((v) => v.url);
+  },
+  altSource(m, variantInfo) {
+    const v = variantInfo || this.variantUrls(m)[0] || {};
     return {
       platform: "ligue1.fr",
       platform_player_ref: `ligue1 player (${m.name})`,
+      ligue1_asset: v.kind || null,
       crop_top_fraction: 0,
       allow_upscale: true,
-      note: "official Ligue 1 bust picture (transparent PNG, ~400x300) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)",
+      note: v.kind === "fullBodyPictures"
+        ? "official Ligue 1 full-body kit pose (transparent PNG ~800x1200) — fullBody preferred per the v2.3 jersey-priority directive, published as-is (full figure)"
+        : "official Ligue 1 bust picture (transparent PNG) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)",
     };
   },
 };
@@ -493,6 +606,77 @@ async function findMatches(platform, clubDisplay, candidateNames) {
     }
   }
   return matches;
+}
+
+// ---------------------------------------------------------------------------
+// v2.3 STAR FALLBACK (owner directive 2026-10-20: "if a player for any
+// reason didn't find — for example you couldn't find Dembélé of PSG — find
+// another STAR of that club, be flexible")
+//
+// Ranks the club's platform squad by star-ness and returns candidate names,
+// best first. Every substitution is documented end-to-end (rec.star_fallback
+// → fetch-log alt_source.star_fallback → discovery/manifest chosen_player) —
+// the AGENTS.md "no player substitution without documentation" rule.
+// ---------------------------------------------------------------------------
+const STAR_FALLBACK_MAX = 5;
+
+function starScore(p) {
+  const pos = String(p.position || "").toLowerCase();
+  let s = /forward|striker|winger|attack/.test(pos) ? 40
+    : /midfield/.test(pos) ? 25
+    : /defen|back/.test(pos) ? 12
+    : /goalkeep|keeper|gk/.test(pos) ? 4
+    : 15;
+  if (p.price != null) s += p.price * 2;                       // FPL £m — the market's star opinion
+  if (p.points != null) s += Math.min(30, p.points / 10);      // FPL total points
+  if (p.selected != null) s += Math.min(25, p.selected / 2);   // FPL ownership %
+  if (typeof p.shirt === "number" && p.shirt >= 1 && p.shirt <= 11) s += 8;
+  if ([7, 9, 10, 11].includes(p.shirt)) s += 10;               // classic star shirts
+  if (p.apps != null) s += Math.min(15, p.apps * 3);           // seriea: recent-lineup presence
+  return s;
+}
+
+async function starFallbackCandidates(platform, clubDisplay, excludeNames) {
+  const ex = new Set(excludeNames.map(normName));
+  let squad = [];
+  try {
+    if (platform === pl) {
+      await pl.load();
+      squad = pl.clubPlayers(clubDisplay);
+    } else if (platform === laliga) {
+      for (const slug of laliga.slugsForClub(clubDisplay)) {
+        const s = await laliga.loadSquad(slug);
+        if (s && s.length) { squad = s; break; }
+      }
+    } else if (platform === seriea) {
+      const s = await seriea.loadClubPlayers(clubDisplay);
+      squad = (s && s.players) || [];
+    } else if (platform === ligue1) {
+      const s = await ligue1.loadSquad(clubDisplay);
+      squad = (s && s.players) || [];
+    } else {
+      // bundesliga: player-page slugs only — no squad enumeration exists on
+      // that platform, so the star fallback is honestly unavailable there
+      return [];
+    }
+  } catch { return []; }
+  return squad
+    .filter((p) => p && p.name && !ex.has(normName(p.name)) && !(p.nickname && ex.has(normName(p.nickname))))
+    .filter((p) => !!platform.imageUrl(p)) // only players the platform can serve
+    .map((p) => ({
+      name: p.name,
+      score: starScore(p),
+      basis: `star fallback (v2.3 owner directive "be flexible"): shirt ${p.shirt != null ? p.shirt : "?"}` +
+        `${p.position ? ", " + p.position : ""}${p.price != null ? ", FPL £" + p.price.toFixed(1) + "m" : ""}`,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, STAR_FALLBACK_MAX);
+}
+
+// variant info lookup for provenance (photo/card series, asset kind)
+function variantInfoFor(platform, m, url) {
+  if (!platform.variantUrls) return null;
+  return platform.variantUrls(m).find((v) => v.url === url) || null;
 }
 
 // ---------------------------------------------------------------------------
@@ -529,6 +713,17 @@ async function main() {
   const REFILL_REASON =
     "framing upgrade (2026-10-19 owner directive: body visible to at least the jersey): " +
     "the previous UEFA cutoff ends above the jersey (narrow neck/chest strip) — replaced with league-official media";
+
+  // v2.3 style gate: ON by default (the Yamal FIFA-card incident); disable
+  // only explicitly — and the disable is recorded per entry either way
+  const vlmGateOn = !argv.includes("--no-vlm-gate");
+  let vlmGateAvailable = false;
+  if (vlmGateOn) {
+    vlmGateAvailable = !!(await vlm.zai());
+    if (!vlmGateAvailable) log("! z-ai SDK unavailable — the VLM style gate is OFF for this run (deterministic QA only; recorded per entry)");
+  }
+  const gateDir = path.join(config.cache_dir, "vlm-gate");
+  if (vlmGateOn && vlmGateAvailable) fs.mkdirSync(gateDir, { recursive: true });
 
   const rosterFile = path.join(config.script_dir, "roster-heroes.json");
   const manifestFile = path.join(config.asset_dir, "manifest-heroes.json");
@@ -606,6 +801,25 @@ async function main() {
       }
       matches = exact;
     }
+    if (!matches.length && !refillKeys) {
+      // v2.3 star fallback — the owner's "find another STAR of that club,
+      // be flexible" directive. Never on refills (a refill must never
+      // change the club's hero — see the identity gate above).
+      const stars = await starFallbackCandidates(platform, p.requested_club_label, candidates);
+      if (stars.length) {
+        log(`# ${p.requested_club_label}: no candidate matched on ${league} — v2.3 star fallback trying: ${stars.map((s) => s.name).join(", ")}`);
+        for (const star of stars) {
+          const m = await findMatches(platform, p.requested_club_label, [star.name]);
+          if (m.length) {
+            matches = m;
+            rec.star_fallback = { of: p.requested_name, star: m[0].name, basis: star.basis };
+            break;
+          }
+        }
+      } else if (platform === bundesliga) {
+        log(`# ${p.requested_club_label}: star fallback unavailable on bundesliga (platform exposes no squad enumeration)`);
+      }
+    }
     if (!matches.length) { log(`# ${p.requested_club_label}: no candidate matched on ${league}`); continue; }
 
     rec.status = "matched";
@@ -615,18 +829,73 @@ async function main() {
 
     if (dry) { log(`# ${p.requested_club_label}: ${rec.player} → ${matches[0].url.slice(0, 90)}… (dry)`); continue; }
 
-    let done = false;
-    let lastErr = null;
-    for (const match of matches) {
+    // v2.3: the fill attempt as a local function — it is re-run when the
+    // style-exhaustion star fallback swaps in another player of the club
+    const attemptFill = async (matchList) => {
+      let done = false;
+      let lastErr = null;
+      for (const match of matchList) {
+        if (done) break;
+    // v2.3: each player match is tried across its platform VARIANT URLs
+    // (photo series before stylized series on LaLiga; fullBody before bust
+    // on Ligue 1) — a card-render variant no longer sinks the player, the
+    // gate just moves to the next variant
+    const variantList = [];
+    if (match.url) variantList.push(match.url);
+    for (const u of (platform.imageUrls ? platform.imageUrls(match.m) : [])) {
+      if (!variantList.includes(u)) variantList.push(u);
+    }
+    for (const imageUrl of variantList) {
       if (done) break;
     try {
       const m = match.m;
-      const imageUrl = match.url;
-      const buf = await httpGet(imageUrl, { accept: "image/*" });
-      const meta = await validateImage(buf);
-      const alt = platform.altSource(m);
+      let buf = await httpGet(imageUrl, { accept: "image/*" });
+      // basic sanity first (format/dimensions); alpha may arrive via keying
+      let meta = await validateImage(buf, { expectAlpha: false });
+      // v2.3: white-studio photos (LaLiga "_1_" series, JPGs) → keyed to
+      // transparent alpha before the collection contract is enforced
+      let bgKey = null;
+      const needsKey = !meta.hasAlpha || (await images.studioBackgroundLikely(buf));
+      if (needsKey) {
+        const keyed = await images.keyStudioBackground(buf);
+        bgKey = { keyed_fraction: keyed.keyed_fraction, method: keyed.method };
+        buf = keyed.buffer;
+        meta = await validateImage(buf); // now enforces real alpha usage
+      }
       // pristine original → lossless WebP at native size
       const webp = await sharp(buf).webp({ lossless: true, effort: 6 }).toBuffer();
+
+      // v2.3 VLM STYLE GATE — the owner's "a FIFA card must never stand in
+      // for the player" rule. Classifies a 512px preview; card renders and
+      // head-onlys are REJECTED (next variant/candidate/star is tried).
+      let vlmStyle = null;
+      let vlmNotes = null;
+      let vlmGateWarning = null;
+      if (vlmGateOn && vlmGateAvailable) {
+        const gateFile = path.join(gateDir, `${key}-${Date.now()}.webp`);
+        const preview = await sharp(webp).resize(512, 512, { fit: "inside", withoutEnlargement: true }).webp({ lossless: true }).toBuffer();
+        await images.writeFileAtomic(gateFile, preview);
+        const cls = await vlm.classifyPortrait(gateFile);
+        try { fs.unlinkSync(gateFile); } catch { /* temp */ }
+        if (cls.ok) {
+          vlmStyle = cls.style;
+          vlmNotes = cls.notes;
+          if (!vlm.stylePublishable(cls.style)) {
+            throw new Error(`style gate REJECTED this asset (${cls.style}${cls.notes ? ": " + cls.notes.slice(0, 90) : ""})`);
+          }
+        } else {
+          vlmGateWarning = `vlm style gate unavailable (${cls.error}) — accepted on deterministic QA alone (spec v2.3 §8c degrade rule)`;
+          log(`  ! ${p.requested_club_label}: ${vlmGateWarning}`);
+        }
+      } else if (vlmGateOn && !vlmGateAvailable) {
+        vlmGateWarning = "vlm style gate unavailable this run (no z-ai SDK) — accepted on deterministic QA alone (spec v2.3 §8c degrade rule)";
+      }
+
+      const vInfo = variantInfoFor(platform, m, imageUrl);
+      const alt = platform.altSource(m, vInfo);
+      if (bgKey) alt.bg_key = bgKey;
+      if (vlmStyle) alt.vlm_style = vlmStyle;
+      if (rec.star_fallback) alt.star_fallback = rec.star_fallback;
       const dest = path.join(config.originals_dir, `${key}.webp`);
       await images.writeFileAtomic(dest, webp);
 
@@ -647,8 +916,14 @@ async function main() {
         bytes: webp.length,
         download_transport: "direct (league-official platform)",
         alt_source: alt,
+        ...(vlmStyle ? { vlm_style: vlmStyle, vlm_verified_at: new Date().toISOString() } : {}),
+        ...(bgKey ? { bg_key: bgKey } : {}),
+        ...(rec.star_fallback ? { star_fallback: rec.star_fallback } : {}),
         ...(refillKeys ? { refill_reason: REFILL_REASON, refilled_at: new Date().toISOString() } : {}),
-        warnings: refillKeys ? [REFILL_REASON] : [],
+        warnings: [
+          ...(refillKeys ? [REFILL_REASON] : []),
+          ...(vlmGateWarning ? [vlmGateWarning] : []),
+        ],
       };
 
       // discovery: mark resolved with the platform match as chosen candidate
@@ -689,15 +964,30 @@ async function main() {
       }
       disc.status = "resolved";
       disc.hero = disc.hero || {};
-      // refill upgrades keep the established hero name form (diacritics);
-      // the platform's own name form is preserved in platform_player_ref
-      if (!refillKeys || !disc.hero.chosen_candidate) disc.hero.chosen_candidate = match.name;
+      // a style-exhausted substitution REPLACES the hero on refills too (the
+      // star_fallback provenance documents the change); ordinary refills
+      // keep the established hero name form (diacritics)
+      if (!refillKeys || !disc.hero.chosen_candidate ||
+          (rec.star_fallback && rec.star_fallback.reason === "style_exhausted" && rec.star_fallback.star === match.name)) {
+        disc.hero.chosen_candidate = match.name;
+      }
       if (!disc.warnings) disc.warnings = [];
       disc.warnings.push(
         `alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from ${alt.platform} (${alt.platform_player_ref}), official league media — provenance in fetch log alt_source`
       );
       if (refillKeys) {
         disc.warnings.push(REFILL_REASON);
+      }
+      if (rec.star_fallback) {
+        disc.warnings.push(
+          `star fallback (v2.3): the requested hero "${rec.star_fallback.of}" matched nothing on the platform — ${match.name} substituted (${rec.star_fallback.basis})`
+        );
+      }
+      if (vlmStyle) {
+        disc.verification = disc.verification || { ok: true, notes: [], problems: [] };
+        disc.verification.notes.push(
+          `v2.3 style gate: VLM classified the published portrait as ${vlmStyle}${vlmNotes ? " (" + vlmNotes.slice(0, 120) + ")" : ""} (${FETCH_DATE})`
+        );
       }
       disc.verification = disc.verification || { ok: true, notes: [], problems: [] };
       disc.verification.notes.push(
@@ -706,15 +996,53 @@ async function main() {
       rec.status = "complete";
       rec.player = match.name;
       rec.url = imageUrl;
-      log(`# ${p.requested_club_label}: ${match.name} ${meta.width}x${meta.height} alpha=${meta.hasAlpha} → ${key}.webp`);
+      rec.variant = vInfo ? (vInfo.variant || vInfo.kind) : undefined;
+      rec.vlm_style = vlmStyle || undefined;
+      log(`# ${p.requested_club_label}: ${match.name} ${meta.width}x${meta.height} alpha=${meta.hasAlpha}${bgKey ? " (bg keyed " + (bgKey.keyed_fraction * 100).toFixed(0) + "%)" : ""}${vlmStyle ? " vlm=" + vlmStyle : ""} → ${key}.webp`);
       await fsp.writeFile(fetchLogFile, JSON.stringify(fetchLog, null, 2));
       await fsp.writeFile(discoveryFile, JSON.stringify(discovery, null, 2));
       done = true;
     } catch (err) {
       lastErr = err;
-      log(`# ${p.requested_club_label}: ${match.name} download/validate failed (${err.message.slice(0, 60)}) — trying next candidate`);
+      log(`# ${p.requested_club_label}: ${match.name} variant failed (${err.message.slice(0, 80)}) — trying next variant/candidate`);
     }
     }
+      }
+      return { done, lastErr };
+    };
+
+    let fill = await attemptFill(matches);
+    let done = fill.done;
+    let lastErr = fill.lastErr;
+
+    if (!done) {
+      // v2.3 "be flexible" EXHAUSTION path (owner directive 2026-10-20):
+      // the candidate MATCHED but every asset failed the style gate (all
+      // card renders — e.g. Troyes' entire 2026 Ligue 1 media set) or the
+      // downloads. Try another STAR of the same club. On a refill this is a
+      // deliberate, fully documented hero substitution (the identity gate
+      // above protects refills from ACCIDENTAL changes; a style-forced one
+      // is exactly what "be flexible" asks for).
+      const failedNames = matches.map((x) => x.name).concat(candidates);
+      const stars = await starFallbackCandidates(platform, p.requested_club_label, failedNames);
+      for (const star of stars) {
+        const m = await findMatches(platform, p.requested_club_label, [star.name]);
+        if (!m.length) continue;
+        log(`# ${p.requested_club_label}: style-exhaustion star fallback → ${star.name}`);
+        rec.star_fallback = {
+          of: rec.star_fallback ? rec.star_fallback.of : p.requested_name,
+          star: m[0].name,
+          basis: star.basis + "; reason: every platform asset of the previous hero failed the v2.3 style gate (card render / head-only)",
+          ...(refillKeys ? { reason: "style_exhausted" } : {}),
+        };
+        matches = m;
+        fill = await attemptFill(matches);
+        done = fill.done;
+        lastErr = fill.lastErr;
+        if (done) break;
+      }
+    }
+
     if (!done && !dry) {
       rec.status = "error";
       rec.error = lastErr ? lastErr.message : "no downloadable candidate";

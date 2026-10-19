@@ -11,6 +11,7 @@
 // merged into every manifest entry, including failures.
 "use strict";
 
+const fs = require("fs");
 const fsp = require("fs/promises");
 const path = require("path");
 const { config, ensure_dirs } = require("./lib/config");
@@ -112,6 +113,10 @@ async function run({ roster, discovery, fetchLog, paths }) {
       output_height: null,
       output_sha256: null,
       normalization: null,
+      // v2.3 style gate (spec §8c): the fill's VLM verdict rides the entry
+      // (jersey_photo | bust_photo | …); null = not yet audited
+      style: fetched && fetched.vlm_style ? fetched.vlm_style : null,
+      style_verified_at: fetched && fetched.vlm_verified_at ? fetched.vlm_verified_at : null,
       warnings: [],
     };
 
@@ -230,6 +235,42 @@ async function run({ roster, discovery, fetchLog, paths }) {
     manifest.entries.push(entry);
   }
 
+  // v2.3 merge-mode: `normalize --player <key>` runs on a FILTERED roster —
+  // merge the fresh entries into the existing manifest by roster_index so a
+  // single-club run never truncates the collection (the pre-v2.3 footgun:
+  // the whole library went "missing" because normalize rebuilt the manifest
+  // from one player). Whole-roster runs cover every index, so the merge is a
+  // no-op there. This also keeps hero-clubs.json complete (it is derived
+  // from manifest.entries AFTER the merge).
+  try {
+    const prev = JSON.parse(await fsp.readFile(paths.manifest_file, "utf8"));
+    if (prev && Array.isArray(prev.entries) && prev.entries.length) {
+      const freshIdx = new Set(manifest.entries.map((e) => e.roster_index));
+      const prevByIdx = new Map(prev.entries.map((e) => [e.roster_index, e]));
+      const kept = prev.entries.filter((e) => !freshIdx.has(e.roster_index));
+      if (kept.length) {
+        for (const old of kept) manifest.entries.push(old);
+        manifest.entries.sort((a, b) => (a.roster_index || 0) - (b.roster_index || 0));
+        log(`merge-mode: kept ${kept.length} untouched entr(ies) from the existing manifest (filtered --player run)`);
+      }
+      // orphan-file guard (§2c): a replaced entry that published under a
+      // DIFFERENT filename (e.g. a star-fallback substitution) leaves the
+      // old file on disk — flag it loudly. The comparison is against the
+      // PREVIOUS entry at the same roster_index (the one this run replaced),
+      // which is exactly the entry merge-mode filtered out of `kept`.
+      for (const fresh of manifest.entries) {
+        if (!fresh.filename || fresh.status !== "complete" || !fresh.hero) continue;
+        const old = prevByIdx.get(fresh.roster_index);
+        if (old && old.filename && old.filename !== fresh.filename && old.status === "complete") {
+          const orphan = path.join(config.asset_dir, old.filename);
+          if (fs.existsSync(orphan)) {
+            log(`WARNING: hero changed — ${old.filename} is now an ORPHAN (fresh: ${fresh.filename}); delete it per §2c unless another club references it`);
+          }
+        }
+      }
+    }
+  } catch { /* no existing manifest — first run, full write */ }
+
   await images.writeFileAtomic(paths.manifest_file, Buffer.from(JSON.stringify(manifest, null, 2)));
   const counts = {};
   for (const e of manifest.entries) counts[e.status] = (counts[e.status] || 0) + 1;
@@ -255,6 +296,9 @@ async function run({ roster, discovery, fetchLog, paths }) {
         player: e.chosen_player || e.hero.chosen_candidate || e.requested_name,
         status: e.status,
         portrait_url: e.status === "complete" ? config.public_url_prefix + e.filename : null,
+        // v2.3 style tier (jersey_photo > bust_photo; card_render is never
+        // wired) — informational for the owner's wiring decisions
+        style: e.status === "complete" ? (e.style || null) : null,
         uefa_player_id: e.uefa_player_id,
         canonical_profile_url: e.canonical_profile_url,
       };

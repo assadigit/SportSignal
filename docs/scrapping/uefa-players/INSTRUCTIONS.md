@@ -10,7 +10,7 @@ record):
 | Collection | Roster | Result (latest run) |
 |---|---|---|
 | `roster.json` — 36 fixed players | `uefa-player-portraits.spec.md` (v1) | **34 complete, 2 deferred** (Jackson, Thauvin — no UEFA cutoff exists) |
-| `roster-heroes.json` — 96 big-5-league hero MVPs | this spec | **96/96 complete (2026-10-19, framing-fixed v2.2): 13 UEFA official cutoffs + 83 league-official portraits** (spec §8b — every entry carries full UEFA provenance or an `alt_source` platform block). The preceding coverage audit (§9) proved the UEFA ceiling: the 65 alt-source clubs have recorded per-URL evidence that no club-kit UEFA cutoff exists. The framing audit (§9b) then replaced 18 jersey-cut UEFA assets and re-cropped the 12 Serie A busts — every portrait now shows the body to at least the jersey (owner directive); Brest’s hero moved Del Castillo → Ajorque (§8 case 9) after his Osasuna transfer surfaced |
+| `roster-heroes.json` — 96 big-5-league hero MVPs | this spec | **96/96 complete (2026-10-20, style-audited v2.3): 22 UEFA official cutoffs + 74 league-official portraits (PL 16 / Serie A 16 / LaLiga 15 / Ligue 1 15 / Bundesliga 12), every file VLM-classified — 84 `jersey_photo` + 12 `bust_photo`, ZERO card renders.** The 2026-10-20 style audit (§13.5) replaced the 8 confirmed platform card renders (7 × LaLiga “004” series + Troyes' entire Ligue 1 media set — Troyes' hero is now Iron Gomis via the star fallback), repaired the 9 provenance records the 13.129-hudframe revert had left stale, and every fill now runs through the VLM style gate (spec §8c). Prior state (v2.2): framing-fixed, body visible to at least the jersey; Brest’s hero moved Del Castillo → Ajorque (§8 case 9) |
 
 The dominant finding of the hero pre-seed: **UEFA's transparent cutoffs exist
 reliably for current-season UCL players, sparsely for past UCL seasons, and
@@ -632,12 +632,16 @@ trust the stale tracking ref.
 | `lib/config.js` | Paths, normalization constants, HTTP politeness, host allowlist, transport env (`UEFA_FETCH_TRANSPORT`, `UEFA_RELAY_BASE`) | Read before changing behaviour |
 | `lib/transport.js` | direct / relay / auto fetching with block detection + backoff | — |
 | `lib/parse.js` | Name normalization: accents, compact forms, aliases, the Turkish dotless ı | — |
-| `lib/images.js` | `normalizePortrait` (512 canvas, subject bounds, `crop_top_fraction`, `allow_upscale`), contact sheet, sha256 | — |
+| `lib/images.js` | `normalizePortrait` (512 canvas, subject bounds, `crop_top_fraction`, `allow_upscale`), `keyStudioBackground` (white-studio flood-fill key, v2.3), contact sheet, sha256 | — |
+| `lib/vlm.js` | **v2.3 style gate**: z-ai vision classification (`classifyPortrait`) with 429-aware backoff; resolves the SDK from `Z_AI_SDK_PATH` / local / the dev sandbox | Every fill/audit |
 | `lib/collection.js` | Per-roster paths: manifest filename, cache subdir, hero map | — |
-| `alt-fetch.js` | §8b league-official fill (`--dry`; `--player <state-key>` = exact club slug; `--refill k1,k2,…` re-fills specific keys regardless of status — framing upgrades that refuse hero changes and record `refill_reason`) | After a no_asset conclusion; season turnover (§2d); framing upgrades (§9b) |
+| `alt-fetch.js` | §8b league-official fill (`--dry`; `--player <state-key>` = exact club slug; `--refill k1,k2,…` re-fills specific keys regardless of status — framing upgrades that refuse hero changes and record `refill_reason`). **v2.3**: VLM style gate on every candidate (card renders/head-onlys rejected → next variant/candidate/STAR tried — `--no-vlm-gate` to disable), LaLiga photo-series-first variant order, Ligue 1 fullBody-first, white-studio bg keying, and the STAR FALLBACK (squad ranked by shirt/position/FPL price; substitutions documented in `alt_source.star_fallback`) | After a no_asset conclusion; season turnover (§2d); framing upgrades (§9b); **card-render replacement (§13.5)** |
 | `update-no-asset-evidence.js` | Writes/updates the roster's `no_asset` evidence records (`--dry`) | After audit passes |
 | `nt-segment-sweep.js` | National-team segment probe (relay only; `NT_SWEEP_SEGMENTS` chunks) | Only if UEFA ships a new NT family |
-| `build-recovery-discovery.js` | Rebuilds heroes discovery from the committed manifest; resets the fetch-log | Only after workspace loss (§10) |
+| `build-recovery-discovery.js` | Rebuilds heroes discovery from the committed manifest; resets the fetch-log (2026-10-19 one-shot, hardcoded entries) | Only after workspace loss (§10) — prefer `rebuild-cache-state.js` |
+| `rebuild-cache-state.js` | **v2.3 generalized recovery**: discovery from the CURRENT committed manifest (96 entries, no hardcoded lists), fetch-log initialized `{}`; safe with `normalize --player` merge-mode | After every workspace loss (§10) |
+| `vlm-style-audit.js` | **v2.3 style audit** (`npm run heroes:style-audit`): classifies every published file (fast pass + detailed verification of every failing verdict — the fast pass is noisy, 4/5 false positives on the first sweep); `--apply` records `style` into both manifests; `--wired` / `--only a,b` scoping; resume-aware across 429 storms | After any portrait change; the §13.5 loop step |
+| `repair-reverted-provenance.js` | One-off (2026-10-20): restored the 9 sha-verified UEFA provenance records the 13.129-hudframe revert had left pointing at v2.2 league sources | Kept as the precedent pattern |
 | `relay-worker.js` | The scoped relay source (deployed as `uefa-image-relay-temp`) | §3 |
 | `roster.json` / `roster-heroes.json` | The collections' reproducible inputs (committed) | Edit per §2 / §2c / §2d |
 | `identity-evidence.json` | Namesake disambiguation records | When a namesake appears |
@@ -714,12 +718,16 @@ rejected in §9b — so the runtime never downloads portraits, by design.
 4. **Fill** (the mechanical parts are orchestrated):
    - new portrait: `npm run backfill-heroes -- --add --club <state_key>
      --player "<MVP>"` (roster edit + stale-state purge + discover → fetch
-     → normalize → validate), then `--alt <state_key>` if UEFA has no
-     honest asset (§2b);
+     → normalize → validate; **v2.3: continues automatically into the alt
+     path when UEFA has no asset** — pass `--no-alt` to stop after UEFA);
    - wire an existing library portrait: `--wire <state_key>` (creates the
      next `public-XX.YY.js` with the HERO_ART entry, moves the public.ts /
      `_headers` pins, bumps the SW cache — then `npm test` enumerates the
      remaining version pins to fix).
+   The fills carry the **v2.3 style gate + star fallback** (spec §8c): card
+   renders are rejected automatically, the requested player's photo variants
+   are tried photo-series-first, and when nothing publishable exists for him
+   another STAR of the club is substituted — fully documented.
 5. **The gates that stay manual** (the orchestrator prints them too): MVP
    curation, kit-timing check (§8), framing QA (`analyze-framing.js`),
    fade-tier scan, contact-sheet review, and the owner's display decision.
@@ -728,14 +736,44 @@ rejected in §9b — so the runtime never downloads portraits, by design.
    teams drop out of the scan, and the registry marks them `resolved_at`
    (visible for 7 days as loop health, then pruned).
 
-### 13.4 Current backlog context (2026-10-19, at loop launch)
+### 13.4 Current backlog context (2026-10-20, post-style-audit)
 
-The 96-club big-5 library is complete (§ header), but the site's HERO_ART
-map wires only 33 teams (the UCL-era set + big-5 overlap) — **78 published
-portraits sit unwired**, so most big-5 clubs render crest-only today. They
-now appear as `library_ready` gaps the moment they surface in fixtures.
-Wiring them is ONE owner display decision away (batch `--wire` runs); the
-registry's hero_picks field tells you which clubs actually lead the
-featured match and deserve wiring first. Non-big-5 clubs (FA Cup qualifying
-sides, A-League, …) log as `no portrait` demand evidence — most will never
-be worth a portrait; the 30-day prune cycles them automatically.
+The 96-club big-5 library is complete AND style-clean (§ header: 84 jersey
+photos + 12 busts, zero cards), but the site's HERO_ART map wires only 33
+teams (the UCL-era set + big-5 overlap) — **78 published portraits sit
+unwired**, so most big-5 clubs render crest-only today. They now appear as
+`library_ready` gaps the moment they surface in fixtures, and
+`hero-clubs.json` carries each portrait's `style` tier (v2.3) to inform the
+owner's wiring decision (jersey_photo first). Non-big-5 clubs (FA Cup
+qualifying sides, A-League, …) log as `no portrait` demand evidence — most
+will never be worth a portrait; the 30-day prune cycles them automatically.
+
+### 13.5 The style audit step (v2.3 — the loop's QA half)
+
+The owner's directive (2026-10-20): *"rename the pictures, using VLM, that
+have FULL jersey — they're priority to be shown; a FIFA card must never
+stand in for the player."* The runtime cannot see image CONTENT (only the
+agentic side can), so the style loop runs per session and gates every fill:
+
+1. **Audit**: `npm run heroes:style-audit` — classifies every published
+   file (fast pass; every FAILING verdict is re-verified with the detailed
+   pixel-level prompt — the fast pass produced 4 false-positive "cards" on
+   the first full sweep). Resume-aware across z-ai 429 storms.
+2. **Record**: `npm run heroes:style-audit -- --apply` — writes `style` +
+   `style_verified_at` into both manifests (+ never-wire warnings on
+   confirmed card/head entries).
+3. **Replace failures**: `node scripts/uefa-player-portraits/alt-fetch.js
+   --refill <club-slug>,…` — the refill re-fetches the same hero from the
+   platform with the PHOTO variants first; when every asset of the hero is
+   card art (style-exhaustion), the STAR FALLBACK substitutes another star
+   of the club (documented; delete the orphaned old file per §2c).
+4. **Re-audit the changed files** (step 1 — the sha change reclassifies
+   them) and only then `--apply` again.
+5. `npm test` enforces the display rule: **no wired portrait may be a
+   card_render/head_photo** (`check-uefa-portraits.js`, spec §8c).
+
+The 2026-10-20 run of this procedure: 116 files audited → 12 fast-pass
+"cards" → 8 confirmed after verification → 8 replaced (7 LaLiga photo-series
++ Troyes → Iron Gomis fullBody via style-exhaustion star fallback) → 0 cards
+remain; all 33 wired portraits pass. The fill-time gate (spec §8c) keeps it
+that way going forward.

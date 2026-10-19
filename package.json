@@ -1,6 +1,6 @@
 {
   "name": "ucl-notifier",
-  "version": "13.131.0.0",
+  "version": "13.132.0.0",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
@@ -23,7 +23,8 @@
     "portraits:alt": "node scripts/uefa-player-portraits/alt-fetch.js",
     "heroes:sync": "node scripts/sync-hero-coverage.js",
     "heroes:report": "node scripts/hero-gap-report.js",
-    "backfill-heroes": "node scripts/backfill-hero-gaps.js"
+    "backfill-heroes": "node scripts/backfill-hero-gaps.js",
+    "heroes:style-audit": "node scripts/uefa-player-portraits/vlm-style-audit.js"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230419.0",

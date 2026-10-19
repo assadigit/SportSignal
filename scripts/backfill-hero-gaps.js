@@ -14,10 +14,17 @@
 // Usage:
 //   node scripts/backfill-hero-gaps.js --plan [--top 5]     # worklist → per-gap plans
 //   node scripts/backfill-hero-gaps.js --add --club everton-fc --player "Jordan Pickford" \
-//        [--basis "England #1, club icon"] [--league PL] [--roster roster-heroes.json]
+//        [--basis "England #1, club icon"] [--league PL] [--roster roster-heroes.json] [--no-alt]
 //   node scripts/backfill-hero-gaps.js --alt everton-fc      # UEFA no_asset → alt-fetch path
 //   node scripts/backfill-hero-gaps.js --wire everton-fc     # library portrait → HERO_ART (owner gate)
 //   node scripts/backfill-hero-gaps.js --sync                # regenerate the coverage mirror + gate
+//
+// v2.3 flow notes (spec §8c): --add now CONTINUES automatically into --alt
+// when UEFA has no asset (one-shot agentic fill); alt-fetch carries the VLM
+// style gate (card renders are rejected, next candidate/variant tried) and
+// the STAR FALLBACK (another star of the same club when the requested
+// player matches nothing — "be flexible", fully documented substitution).
+// After any sandbox reset run rebuild-cache-state.js first (§10).
 //
 // A report is REQUIRED for --plan (--add/--alt/--wire work straight from
 // repo state): run `npm run heroes:report` first.
@@ -99,14 +106,14 @@ function cmdPlan(top) {
       note("  c. npm run backfill-heroes -- --wire " + g.slug);
       note("  d. npm test → fix the bundle-version pins it lists → deploy");
     } else {
-      note("no portrait — full §2 flow:");
+      note("no portrait — full §2 flow (v2.3: one-shot, style-gated, star-fallback):");
       note("  a. pick the MVP (curation: club icon / top scorer CURRENTLY at the club)");
       note("  b. kit-timing check vs Wikipedia career table (§8) — never trust memory");
       note('  c. npm run backfill-heroes -- --add --club ' + g.slug + ' --player "<MVP>"');
-      note("  d. if UEFA has no asset (likely for non-UEFA clubs): --alt " + g.slug +
-        " (" + (g.suggested_source || "league platform") + ")");
-      note("  e. framing QA (analyze-framing.js) + contact sheet + validate");
-      note("  f. wiring decision + deploy; the gap then resolves in the registry");
+      note("     (UEFA first; no asset → continues automatically to the league platforms;");
+      note("      player not on the platform → another STAR of the club is tried — documented)");
+      note("  d. framing QA (analyze-framing.js) + style audit + contact sheet + validate");
+      note("  e. wiring decision + deploy; the gap then resolves in the registry");
     }
     console.log("");
   });
@@ -188,13 +195,15 @@ function cmdAdd(club, player, opts) {
   run("node", [path.join(PIPE, "cli.js"), "discover", "--roster", rosterArg, "--player", club]);
   console.log("     stage 2/4: UEFA fetch…");
   run("node", [path.join(PIPE, "cli.js"), "fetch", "--roster", rosterArg, "--player", club]);
-  console.log("     stage 3/4: normalize (whole roster — the manifest is derived state)…");
-  run("node", [path.join(PIPE, "cli.js"), "normalize", "--roster", rosterArg]);
+  console.log("     stage 3/4: normalize (merge-mode, this club only — a whole-roster run on a cold cache would mark every untouched entry missing)…");
+  run("node", [path.join(PIPE, "cli.js"), "normalize", "--roster", rosterArg, "--player", club]);
   console.log("     stage 4/4: validate…");
   run("node", [path.join(PIPE, "cli.js"), "validate", "--roster", rosterArg]);
 
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "assets", "players", "uefa", collection.manifest_filename || "manifest.json"), "utf8"));
-  const me = (manifest.players || []).find((p) => (p.state_key || p.key || (p.filename || "").replace(/\.webp$/, "")) === club);
+  // manifests carry `entries` (never `players` — pre-v2.3 this read nothing,
+  // so the UEFA status check below always fell through to "unknown")
+  const me = (manifest.entries || manifest.players || []).find((p) => ((p.hero && p.hero.club_slug) || (p.filename || "").replace(/\.webp$/, "") || p.key) === club);
   const status = me && me.status;
   console.log("");
   if (status === "complete") {
@@ -206,9 +215,14 @@ function cmdAdd(club, player, opts) {
     note("wiring (owner display decision): npm run backfill-heroes -- --wire " + club);
     note("then: npm run backfill-heroes -- --sync && npm test && deploy (RUNBOOK §2)");
   } else {
-    console.log("UEFA status: " + (status || "unknown") + " — if no_asset, record the evidence honestly and run the alt path:");
-    note("npm run backfill-heroes -- --alt " + club);
-    note("(alt-fetch only fills entries whose manifest status is missing/no_asset — §2b)");
+    console.log("UEFA status: " + (status || "unknown") + " — honest record; the v2.3 one-shot flow continues to the league platforms");
+    if (opts.noAlt) {
+      note("--no-alt given — skipping the automatic alt path; run it manually:");
+      note("npm run backfill-heroes -- --alt " + club);
+    } else {
+      note("continuing: alt-fetch (style gate + star fallback) for " + club + "…");
+      cmdAlt(club, opts);
+    }
   }
 }
 
@@ -217,14 +231,15 @@ function cmdAdd(club, player, opts) {
 function cmdAlt(club, opts) {
   if (!club) die("--alt needs a club state_key");
   const rosterArg = opts.roster || "roster-heroes.json";
-  console.log("alt-fetch for " + club + " (league-official platforms)…");
+  console.log("alt-fetch for " + club + " (league-official platforms; VLM style gate + star fallback active)…");
   run("node", [path.join(PIPE, "alt-fetch.js"), "--player", club]);
-  console.log("normalize + validate…");
-  run("node", [path.join(PIPE, "cli.js"), "normalize", "--roster", rosterArg]);
+  console.log("normalize (merge-mode, this club only — never the whole roster on a cold cache) + validate…");
+  run("node", [path.join(PIPE, "cli.js"), "normalize", "--roster", rosterArg, "--player", club]);
   run("node", [path.join(PIPE, "cli.js"), "validate", "--roster", rosterArg]);
   console.log("");
-  console.log("NEXT (agentic gates): framing QA (analyze-framing.js — §9b's head-only lesson),");
-  note("contact sheet review, kit check (§8), wiring decision (--wire), sync, npm test, deploy.");
+  console.log("NEXT (agentic gates): style audit spot-check (npm run heroes:style-audit -- --only <slug>),");
+  note("framing QA (analyze-framing.js — §9b's head-only lesson), contact sheet review, kit check (§8),");
+  note("wiring decision (--wire), sync, npm test, deploy.");
 }
 
 // ---- --wire ------------------------------------------------------------------
@@ -308,11 +323,12 @@ function cmdSync() {
 
 function main() {
   const argv = process.argv.slice(2);
-  const opts = { roster: null, clubLabel: null, league: null, basis: null };
+  const opts = { roster: null, clubLabel: null, league: null, basis: null, noAlt: false };
   if (argv.includes("--roster")) opts.roster = argv[argv.indexOf("--roster") + 1] || null;
   if (argv.includes("--club-label")) opts.clubLabel = argv[argv.indexOf("--club-label") + 1] || null;
   if (argv.includes("--league")) opts.league = argv[argv.indexOf("--league") + 1] || null;
   if (argv.includes("--basis")) opts.basis = argv[argv.indexOf("--basis") + 1] || null;
+  if (argv.includes("--no-alt")) opts.noAlt = true;
 
   if (argv.includes("--plan")) {
     let top = 10;
