@@ -85,19 +85,26 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.137-enlarge: the current pair (13.39.css + 13.36.js — CSS-only
+# v13.138-polish: the current pair (13.40.css + 13.36.js — CSS-only
 # release, the JS carries over) — immutable under the rename-on-edit rule;
 # retired versions stay pinned below per the retention rule (stale edge
 # HTML <=900s may still reference them).
-# v13.137-enlarge (owner, enlarge round): the de-zoom figures grow 15% —
-# height 76% -> 87.4% (76 x 1.15). The growth rides DOWNWARD on a small
-# floor overhang (bottom 0 -> -11.4%) so the head keeps its approved
-# height clear of the topbar band; the excess below the section bottom is
-# clipped by the wrapper and the 20% fade hides the clip line.
-/public-13.39.css
+# v13.138-polish (owner, polish round): the players grow 5% (87.4% ->
+# 91.77% box height, growth split half up/half down), lean 16px closer to
+# the blue HUD (negative-inset anchors + clip allowance doubling as width
+# budget via max-width calc(100% + 16px)), the mask now dissolves to ZERO
+# exactly at the section floor (transparent hold to 14.8% = the floor
+# fraction, black at 26%), the top colour grade eases over 0-27% (the
+# "suddenly dark" band retired), crest watermarks +10% (.18 -> .198,
+# mobile .16 -> .176), floodlights .5 -> .6.
+/public-13.40.css
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.36.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.137-enlarge (retired pair — kept per the retention rule)
+/public-13.39.css
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.136-dezoom (retired pair — kept per the retention rule)

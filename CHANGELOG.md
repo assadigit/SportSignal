@@ -6,6 +6,55 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.138-polish] — 2026-10-20 (polish round: +5% players hugging the HUD, floor-dissolve melt, smoother sky, brighter lights + crests)
+
+The owner's five refinements: "Make the logo behind player 10% more
+opacity. Slightly make two players closer to the BLUE HUD. Make the
+players 5% larger. Try to fade the upper part of hero better with
+background, more smoothly, it's suddenly dark. Make the new stadium
+lights more opacity."
+
+- **Crest watermarks +10%**: `.bg-wm` opacity `.18 → .198` (desktop) and
+  `.16 → .176` (mobile countdown-flank placement) — the club-crest
+  logos behind each player gain a tenth more presence.
+- **16px closer to the blue HUD**: the img anchors step 16px PAST the
+  lane's inner edge (`inset-inline-end: -16px` / `inset-inline-start:
+  -16px`) so both figures lean slightly ONTO the card (players z3 over
+  the card z2 — 3D layering, exactly what the layer order was built
+  for); the wrapper clip-path opens the same 16px inward on the
+  matching physical side per direction. 16px stays inside the card's
+  outer padding (~55px free in the team lanes) and the HUD artwork's
+  safe-area.
+- **+5% larger**: height `87.4% → 91.77%` (× 1.05 exactly). The growth
+  SPLITS half up / half down (`bottom: -11.4% → -13.585%`): the head
+  lifts only ~12px (measured y125 → y113 sandbox, still 27px+ clear of
+  the topbar band) and the floor overhang grows only ~11px.
+- **Both players really grow**: `max-width: 100% → calc(100% + 16px)` —
+  the overlap allowance doubles as width budget, so a lane-clamped wide
+  canvas (e.g. the 317×464 Dembélé build @1522) scales (lane+16)/lane =
+  +5.07% with the height-driven builds' +5%. A pure height bump left
+  clamped figures at 0% growth.
+- **Floor-dissolve melt**: the mask now holds TRANSPARENT to 14.8% of
+  the box (= overhang/height = 13.585/91.77 — exactly the section-floor
+  line at every breakpoint) and completes at 26%: the figure
+  materialises out of the floor with zero opacity at the wrapper's
+  clip instead of being chopped through 0.65-0.88-opaque shins (the
+  enlarge round's 0→20% ramp; VLM read that as a hard cut-off, and the
+  first +5% attempt at 0.88 was worse). Measured: the shin contributes
+  ≤ +12 luminance 4px above the floor, 0 at the line.
+- **Smoother sky**: the top colour grade now eases from the very top
+  (`.85 → .80 → .64 → .44 → .26` across 0–27%) instead of holding .85
+  to 12% and dropping straight to .26 by 22% — the "suddenly dark" wall
+  is retired; the darkness behind the transparent header band (0–16%)
+  is preserved (≥ .62 at the bar's bottom edge, same as before).
+- **Floodlights up again**: `.bg-lights` opacity `.5 → .6` (screen
+  blend unchanged; .35 → .5 zoom round → .6 now).
+- CSS-only release: `public-13.39.css → public-13.40.css` (JS carries
+  over), `_headers` pin + retention re-file, `sw.js` CACHE
+  `sportsignal-v44 → v45`.
+
+---
+
 ## [13.137-enlarge] — 2026-10-20 (enlarge round: players +15%, growth rides downward)
 
 The owner's follow-up on the de-zoom figures: "Enlarge the players

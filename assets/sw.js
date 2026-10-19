@@ -129,16 +129,19 @@
 //              the big blue HUD card, feet-only melt (fade 26%→20%).
 //              Routine evict — stale HTML may still reference 13.37.css,
 //              which stays served per the retention rule.)
-// Cache name:  sportsignal-v44 (v13.137-enlarge: public-13.38.css→13.39.css
+// Cache name:  sportsignal-v45 (v13.138-polish: public-13.39.css→13.40.css
 //              — CSS-only release, public-13.36.js carries over unchanged.
-//              The de-zoom figures grow 15%: height 76%→87.4% (76 x 1.15),
-//              riding DOWNWARD on a small floor overhang (bottom 0→-11.4%)
-//              so the head keeps its approved height clear of the topbar;
-//              the excess below the section bottom is clipped by the
-//              wrapper, the 20% fade hides the clip line. Routine evict —
-//              stale HTML may still reference 13.38.css, which stays
-//              served per the retention rule.)
-const CACHE = "sportsignal-v44";
+//              The owner's polish round: players +5% (height 87.4%→91.77%,
+//              growth split up/down so the melt stays graceful), 16px
+//              closer to the blue HUD (overlap onto the card + the same
+//              allowance spent as width budget via max-width), the mask
+//              dissolves to ZERO at the section floor (transparent hold
+//              14.8%, black 26%), the top grade ramp eases over 0-27%
+//              (no more sudden dark band), crest watermarks +10%
+//              (.18→.198), floodlights .5→.6. Routine evict — stale
+//              HTML may still reference 13.39.css, which stays served
+//              per the retention rule.)
+const CACHE = "sportsignal-v45";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
