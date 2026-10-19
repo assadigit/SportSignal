@@ -109,7 +109,12 @@
 //              for the <900px card) + the mobile layout round. Same rule:
 //              cache-first assets can't refresh in place, so every client
 //              cache generation turns over on install.)
-const CACHE = "sportsignal-v40";
+// Cache name:  sportsignal-v41 (v13.134-typelight: public-13.34.css→13.36.css
+//              + public-13.35.js→13.36.js + the /stadium-lights-hero.png hero
+//              overlay; the dark/light toggle retired (always dark). Routine
+//              evict — stale HTML may still reference the retired pair, which
+//              stays served per the retention rule.)
+const CACHE = "sportsignal-v41";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

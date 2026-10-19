@@ -85,9 +85,25 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.133-persiantype: the current pair (13.34.css + 13.35.js) — immutable
+# v13.134-typelight: the current pair (13.36.css + 13.36.js) — immutable
 # under the rename-on-edit rule; retired versions stay pinned below per the
 # retention rule (stale edge HTML <=900s may still reference them).
+# v13.134-typelight (owner, type round 2 + lighting): the featured club
+# names enlarge (clamp cap 20px -> 29px, mobile 15px -> 17.5px, + a
+# client-side 2-line auto-fit in the bundle), the numeric/meta surfaces
+# (kickoff clock / stadium name / countdown) move to Peyda at lighter
+# weights, the stadium-lights overlay joins the hero scene, and the
+# dark/light toggle retires (always dark). The overlay PNG is immutable.
+/public-13.36.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.36.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/stadium-lights-hero.png
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.133-persiantype (retired pair — kept per the retention rule)
 # v13.133-persiantype: the Morabba+Peyda Persian typography system (the
 # owner's font pack) + the dedicated mobile HUD artwork + the mobile layout
 # round (logo clearance, flush in-hero sync line, countdown-flank crest

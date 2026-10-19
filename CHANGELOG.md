@@ -6,6 +6,46 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.134-typelight] — 2026-10-20 (type round 2: bigger club names + Peyda numerics + the stadium-lights overlay + always-dark)
+
+The owner's six asks (2026-10-20): bigger featured club names (mobile and
+especially PC); the kickoff time on Peyda at a slightly lighter weight; the
+stadium-lights transparent PNG integrated as a subtle atmospheric hero
+overlay (never a second stadium); the stadium name on Peyda lighter; the
+countdown on Peyda lighter; and the dark/light toggle hidden temporarily —
+the app stays its default dark.
+
+- `.hero-name` (the featured club names): desktop clamp(15px,1.35vw,20px)
+  → clamp(19px,2.1vw,29px) (cap +45%, "especially PC"); mobile 15px →
+  17.5px. A new client-side `fitHeroNames()` (public-13.36.js) walks a name
+  down in 1.5px steps (12px floor) whenever the enlarged size would need a
+  third line the 2-line clamp would clip — the long-standing "2 lines max,
+  shrink before anything touches" contract now survives any name length;
+  it runs after every `renderHeroSpot()`, on resize, and once webfonts are
+  ready. Real club names never trigger it.
+- The numeric/meta surfaces move OFF the Morabba display list onto a new
+  Peyda group in public-13.36.css: `.time-digits` 800→600, `.venue-pill`
+  (the stadium name) 600→500, `.count-num` 800→600, `.count-label` 600→500
+  — the digits read as quiet UI, not display.
+- The stadium-lights overlay: the owner-supplied /stadium-lights-hero.png
+  (1400×467, cyan beams near the top/outer edges, transparent centre) rides
+  as the LAST child of .hero-bg — `mix-blend-mode:screen`, `opacity:.35`,
+  `object-fit:cover`, pointer-transparent. It composites above the whole
+  composed scene but the entire .hero-bg stays z1, below the card (z2),
+  players (z3) and header (z20): the light lands in the stands at the
+  outer edges and the centre behind the HUD stays dark and readable.
+- The dark/light toggle is TEMPORARILY RETIRED: no #tbtn in the public
+  template, the pre-paint THEME_INIT pins `var t="dark"` (stored ucl_theme
+  ignored), and the bundle init calls `setTheme("dark")` (was
+  `setTheme(initTheme())`). The login/admin backstage pages keep their
+  toggles (operator tools, not the owner-facing app); core JS
+  toggleTheme()/setTheme() stay null-guarded. The dead
+  `[data-theme=dark] .tb-btns #tbtn svg` rule is removed.
+- Assets: public-13.34.css→13.36.css, public-13.35.js→13.36.js (both
+  rename-on-edit); /stadium-lights-hero.png pinned immutable; SW
+  sportsignal-v40→v41. The retired 13.34.css/13.35.js pair stays served per
+  the retention rule.
+
 ## [13.132-styleloop] — 2026-10-20 (the VLM style loop: jersey priority, card-render gate, star fallback)
 
 (Rebased onto 13.131-playerpresence — a sibling session wired the new
