@@ -5,6 +5,26 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
 ---
+## [13.144-lights] — 2026-10-20 (lights round: floodlights +10% again + the sync caption "instantly after" the countdown box)
+
+- Owner: "Increase light stadium lights opacity by 10%, it can be
+  brighter. Add آخرین به‌روزرسانی instantly after this box." The quoted
+  countdown DOM matched a stale tab (the cinematic round had already
+  moved the caption below the box) — read as: floodlights +10% again
+  (.726 -> .799) + the caption tightening to read as INSTANTLY after
+  the chamfered box (gap 6px -> 4px; still a sibling of #bigbar, NOT
+  part of the box, per the cinematic-round directive).
+- `.hero-bg .bg-lights` opacity `.726 -> .799` (chain .35 -> .5 -> .6
+  -> .66 -> .726 -> .799; screen blend, centre-transparent PNG keeps
+  the HUD zone readable — VLM-verified no blowout).
+- `#lastSyncM` margin `6px 0 0 -> 4px 0 0` (all viewports).
+- Release: `public-13.44.css -> public-13.45.css` (rename-on-edit,
+  immutable pin, 13.44 retained), `sw.js` cache `v49 -> v50`,
+  `VERSION 13.144-lights`, package `13.144.0.0`.
+- Rebased on top of `13.143-clubalt` (the pipeline's club-alternates round
+  landed mid-flight and had taken 13.143) — re-versioned
+  13.143-lights -> 13.144-lights; no clubalt file touched by this round.
+
 ## [13.143-clubalt] — 2026-10-21 (the club alternates library + transfer watch)
 
 The owner's ask: *"gather 3-4 pictures per club and folder them in the

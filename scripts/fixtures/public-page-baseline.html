@@ -75,7 +75,7 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.44.css">
+<link rel="stylesheet" href="/public-13.45.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -149,8 +149,8 @@ __SEO_JSONLD__
 <div class="bg-scrim"></div>
 <!-- v13.134-typelight (owner, lighting round): the stadium-lights overlay — the supplied
      transparent PNG (/stadium-lights-hero.png, 1400x467) as a subtle atmospheric
-     light layer over the composed scene (screen blend, .5 opacity in
-     public-13.44.css since v13.135-zoomlight raised it from .35). LAST child of .hero-bg: above photo/grade/swooshes/watermarks/
+     light layer over the composed scene (screen blend, .799 opacity in
+     public-13.45.css; the raise chain .35 -> .5 -> .6 -> .66 -> .726 -> .799). LAST child of .hero-bg: above photo/grade/swooshes/watermarks/
      vignette/scrim, below the card, players and header. Decorative only. -->
 <img class="bg-lights" src="/stadium-lights-hero.png" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
 </div>
@@ -197,8 +197,11 @@ __SEO_JSONLD__
 <!-- v13.142-cinematic (owner): the "آخرین به‌روزرسانی" line sits BELOW the
      countdown panel — a SIBLING of #bigbar, NOT part of the chamfered box —
      on ALL viewports (the refine round had it inside the panel; the owner
-     moved it back out; public-13.44.css; renderSync in public-13.36.js
-     keeps mirroring #lastSync into it). -->
+     moved it back out; public-13.45.css; renderSync in public-13.36.js
+     keeps mirroring #lastSync into it).
+     v13.144-lights (owner): "add آخرین به‌روزرسانی INSTANTLY after this
+     box" — the gap tightens 6px -> 4px (#lastSyncM margin, CSS); still
+     a sibling below the chamfered box, NOT part of it). -->
 <p class="hero-sync-m" id="lastSyncM" aria-hidden="true">__SEO_SYNC__</p>
 <!-- v13.131-playerpresence: BOTH corner pills are RETIRED (the carousel in
      v13.129, the bell now — owner directive); heroPills() in public-13.36.js

@@ -129,6 +129,15 @@
 //              the big blue HUD card, feet-only melt (fade 26%→20%).
 //              Routine evict — stale HTML may still reference 13.37.css,
 //              which stays served per the retention rule.)
+// Cache name:  sportsignal-v50 (v13.144-lights: public-13.44.css→13.45.css
+//              — CSS-only release, public-13.36.js carries over unchanged.
+//              The owner's lights round: stadium floodlights +10% again
+//              ("it can be brighter": .726→.799) + the "آخرین به‌روزرسانی"
+//              caption tightens to 4px below the chamfered countdown box
+//              ("instantly after this box" — still a sibling of #bigbar,
+//              NOT part of it). Routine evict — stale HTML may still
+//              reference 13.44.css, which stays served per the retention
+//              rule.)
 // Cache name:  sportsignal-v49 (v13.142-cinematic: public-13.43.css→13.44.css
 //              — CSS+template release, public-13.36.js carries over
 //              unchanged (+ the #lastSyncM template move in public.ts: it
@@ -180,7 +189,7 @@
 //              (.18→.198), floodlights .5→.6. Routine evict — stale
 //              HTML may still reference 13.39.css, which stays served
 //              per the retention rule.)
-const CACHE = "sportsignal-v49";
+const CACHE = "sportsignal-v50";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
