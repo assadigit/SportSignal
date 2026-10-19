@@ -6,6 +6,41 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.140-refine] — 2026-10-20 (refine round: brighter crests + floodlights, dimmer HUD frame, Peyda tournament name, sync line into the countdown panel)
+
+The owner's five refinements: "(1) Increase the opacity of clubs logo by
+10%. (2) Increase the stadium layer headlights by 10%. (3) Stick the
+'آخرین به‌روزرسانی' line exactly below the count-inner block. (4) Reduce
+the big HUD of matches by 10% opacity. (5) Write the match tournament
+name such as لیگ قهرمانان اروپا with Peyda font, and a lighter weight."
+
+- **Crest watermarks +10%**: `.bg-wm` `.198 → .218` (desktop) and
+  `.202 → .222` (mobile) — both × 1.1, the third consecutive presence
+  bump.
+- **Floodlights +10%**: `.bg-lights` (screen blend) `.6 → .66` — the
+  beams brighten again without washing out the HUD zone (transparent
+  centre in the PNG).
+- **Big match HUD −10%**: the desktop `.card-hud` frame layer
+  `.74 → .666` (× 0.9) — one more step into the stadium scene; the
+  mobile 9-slice veil (.5, tuned last round) is untouched.
+- **Tournament name → Peyda 500**: `.league-title` (e.g. لیگ قهرمانان
+  اروپا) left the Morabba heading group (`h1-h6, .hero-name` keep it) —
+  `font-family: var(--font-body)` (Peyda) + `font-weight: 500`, was
+  Morabba 800. A visibly lighter typographic voice against the bold
+  club names.
+- **Sync line into the panel**: `#lastSyncM` moved into `#bigbar`,
+  right after `.count-inner` — the "آخرین به‌روزرسانی: …" line now
+  sticks exactly below the countdown block inside the chamfered panel
+  on ALL viewports (base-layer rule `#lastSyncM{display:block;margin:
+  4px 2px 2px;…}`); the `<=899px`-only rule and the `.page-col`
+  desktop copy (`#lastSync`, kept in the DOM for renderSync) are both
+  retired — `.hero-sync{display:none}` everywhere.
+- CSS + template release: `public-13.41.css → public-13.42.css` (JS
+  carries over), `_headers` pin + retention re-file, `sw.js` CACHE
+  `sportsignal-v46 → v47`.
+
+---
+
 ## [13.139-hud] — 2026-10-20 (hud round: mobile HUD −15% opacity, mobile crest watermarks +15%)
 
 The owner's two mobile refinements: "Reduce the opacity of Blue hud in

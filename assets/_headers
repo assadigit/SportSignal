@@ -85,19 +85,25 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.139-hud: the current pair (13.41.css + 13.36.js — CSS-only
+# v13.140-refine: the current pair (13.42.css + 13.36.js — CSS-only
 # release, the JS carries over) — immutable under the rename-on-edit rule;
 # retired versions stay pinned below per the retention rule (stale edge
 # HTML <=900s may still reference them).
-# v13.139-hud (owner, hud round): a mobile-only pair of opacity steps —
-# the mobile HUD veil .4 -> .5 (the blue HUD frame reads 15% less opaque,
-# artwork visibility .59 -> .50) and the mobile crest watermarks
-# .176 -> .202 (+15% presence, .176 x 1.15); the desktop rules
-# (HUD layer .74, crests .198) are untouched this round.
-/public-13.41.css
+# v13.140-refine (owner, refine round): (1) crest watermarks +10% again
+# (.198 -> .218 desktop, .202 -> .222 mobile); (2) stadium floodlights
+# +10% (.6 -> .66); (3) the big match HUD card frame -10% (.74 -> .666);
+# (4) the tournament name (.league-title, e.g. لیگ قهرمانان اروپا) moved
+# from Morabba 800 to Peyda 500; (5) the "آخرین به‌روزرسانی" line sticks
+# exactly below .count-inner — inside the chamfered panel on ALL viewports
+# (template moved #lastSyncM into #bigbar; the .page-col copy retires).
+/public-13.42.css
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.36.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.139-hud (retired pair — kept per the retention rule)
+/public-13.41.css
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.138-polish (retired pair — kept per the retention rule)

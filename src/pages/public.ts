@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.41.css">
+<link rel="stylesheet" href="/public-13.42.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -156,7 +156,7 @@ ${FONT_FACES_STYLE}
 <!-- v13.134-typelight (owner, lighting round): the stadium-lights overlay — the supplied
      transparent PNG (/stadium-lights-hero.png, 1400x467) as a subtle atmospheric
      light layer over the composed scene (screen blend, .5 opacity in
-     public-13.41.css since v13.135-zoomlight raised it from .35). LAST child of .hero-bg: above photo/grade/swooshes/watermarks/
+     public-13.42.css since v13.135-zoomlight raised it from .35). LAST child of .hero-bg: above photo/grade/swooshes/watermarks/
      vignette/scrim, below the card, players and header. Decorative only. -->
 <img class="bg-lights" src="/stadium-lights-hero.png" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
 </div>
@@ -199,15 +199,16 @@ ${FONT_FACES_STYLE}
 <span id="hcSr" class="sr-only" aria-live="polite"></span>
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 </div>
+<!-- v13.140-refine (owner): the "آخرین به‌روزرسانی" line sticks EXACTLY
+     BELOW the countdown's .count-inner block — inside the chamfered panel,
+     on ALL viewports (public-13.42.css; the <=899px-only rule and the
+     .page-col desktop copy are both retired; renderSync in public-13.36.js
+     keeps mirroring #lastSync into it). -->
+<p class="hero-sync-m" id="lastSyncM" aria-hidden="true">__SEO_SYNC__</p>
 </div>
 <!-- v13.131-playerpresence: BOTH corner pills are RETIRED (the carousel in
      v13.129, the bell now — owner directive); heroPills() in public-13.36.js
      null-guards their absence. -->
-<!-- v13.133-persiantype (owner, mobile round): the in-hero mobile copy of
-     the "last updated" line — a tiny flush caption under the countdown
-     (public-13.41.css shows it only below 900px and retires the .page-col
-     copy there; renderSync in public-13.36.js mirrors #lastSync into it). -->
-<p class="hero-sync-m" id="lastSyncM" aria-hidden="true">__SEO_SYNC__</p>
 </div>
 <!-- v13.126-herolook: the sync line moved out of the header, under the hero
      (P1.3) — renderSync() keeps filling #lastSync (same id, same wiring).

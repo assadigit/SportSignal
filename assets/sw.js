@@ -129,6 +129,17 @@
 //              the big blue HUD card, feet-only melt (fade 26%→20%).
 //              Routine evict — stale HTML may still reference 13.37.css,
 //              which stays served per the retention rule.)
+// Cache name:  sportsignal-v47 (v13.140-refine: public-13.41.css→13.42.css
+//              — CSS-only release, public-13.36.js carries over unchanged
+//              (+ one template move in public.ts: #lastSyncM rides inside
+//              #bigbar, right after .count-inner). The owner's refine
+//              round: crest watermarks +10% (.218/.222), floodlights
+//              +10% (.66), the big match HUD frame -10% (.74→.666), the
+//              tournament name to Peyda 500 (was Morabba 800), and the
+//              "آخرین به‌روزرسانی" line sticks exactly below .count-inner
+//              on ALL viewports. Routine evict — stale HTML may still
+//              reference 13.41.css, which stays served per the
+//              retention rule.)
 // Cache name:  sportsignal-v46 (v13.139-hud: public-13.40.css→13.41.css
 //              — CSS-only release, public-13.36.js carries over unchanged.
 //              The owner's hud round: a mobile-only opacity pair — the
@@ -150,7 +161,7 @@
 //              (.18→.198), floodlights .5→.6. Routine evict — stale
 //              HTML may still reference 13.39.css, which stays served
 //              per the retention rule.)
-const CACHE = "sportsignal-v46";
+const CACHE = "sportsignal-v47";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
