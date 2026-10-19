@@ -121,7 +121,15 @@
 //              mobile HUD veil deepens .26→.4. Routine evict — stale HTML
 //              may still reference 13.36.css, which stays served per the
 //              retention rule.)
-const CACHE = "sportsignal-v42";
+// Cache name:  sportsignal-v43 (v13.136-dezoom: public-13.37.css→13.38.css
+//              — CSS-only release, public-13.36.js carries over unchanged.
+//              The hero players return to natural framing: contain (full
+//              figure head-to-feet, nothing cropped), height 108%→76%
+//              (~30% smaller), anchored at the wrapper's inner edge beside
+//              the big blue HUD card, feet-only melt (fade 26%→20%).
+//              Routine evict — stale HTML may still reference 13.37.css,
+//              which stays served per the retention rule.)
+const CACHE = "sportsignal-v43";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

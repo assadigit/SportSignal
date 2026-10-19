@@ -85,20 +85,23 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.135-zoomlight: the current pair (13.37.css + 13.36.js — CSS-only
+# v13.136-dezoom: the current pair (13.38.css + 13.36.js — CSS-only
 # release, the JS carries over) — immutable under the rename-on-edit rule;
 # retired versions stay pinned below per the retention rule (stale edge
 # HTML <=900s may still reference them).
-# v13.135-zoomlight (owner, zoom round): the hero player figures become
-# full-lane cover boxes (uniform zoomed framing at ~108% of the section
-# height, heads popping above the card top, soft mask melt at the section
-# floor), the stadium-lights overlay brightens (.35 -> .5), and the mobile
-# blue HUD veil deepens (.26 -> .4 — the painted frame reads ~20% less
-# opaque).
-/public-13.37.css
+# v13.136-dezoom (owner, de-zoom round): the hero player figures return to
+# natural framing — contain (the FULL figure head-to-feet visible, nothing
+# cropped), box height 108% -> 76% (~30% smaller), each figure anchored at
+# its wrapper's INNER edge so it hugs the big blue HUD card, standing on
+# the section floor with only the feet melting (fade 26% -> 20%).
+/public-13.38.css
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.36.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.135-zoomlight (retired pair — kept per the retention rule)
+/public-13.37.css
   Cache-Control: public, max-age=31536000, immutable
 
 /stadium-lights-hero.png

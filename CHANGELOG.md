@@ -6,6 +6,41 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.136-dezoom] — 2026-10-20 (de-zoom round: unzoomed ~30% smaller players, hugging the big blue HUD)
+
+The owner's review of the zoom round: "They're too zoomed now, make them
+30% smaller and unzoomed. also make them slightly more near the Bigger HUD
+blue. the picture must continue at least until their torso."
+
+- **Unzoomed**: `.hero-player img` returns from the full-lane **cover** box
+  to natural framing — `object-fit:contain` renders the FULL figure
+  head-to-feet at its natural build proportions (the alpha-trimmed canvas
+  IS the figure), nothing cropped: the zoom round's heavy side-crop on
+  wide builds (up to 44% of the figure's width thrown away) is gone.
+- **~30% smaller**: box height `108% → 76%` (108 × 0.7). Slim builds
+  render exactly 76% of the section height; wide builds render as tall as
+  the lane width allows with the full figure visible (unzoomed wins over
+  exact height — the box is `width:auto`, aspect-true, `max-width:100%`).
+  Measured in the sandbox reference @1522: box height 575px → 405px
+  (= 0.704×, on the nose).
+- **Nearer the big blue HUD**: each figure anchors at its wrapper's INNER
+  edge (the card's side) — `inset-inline-end:0` home / `inset-inline-start:0`
+  away (the zoom round's mid-lane centred crop read as "too far from the
+  card"). Measured @1522: gap figure↔card 0px both sides.
+- **At least to the torso**: the figure stands ON the section floor
+  (`bottom:-24% → 0`, no overhang) and only the feet melt — mask fade
+  `26% → 20%` of the box (~80px): the shins dissolve into the dark floor,
+  the torso and the club jersey stay fully visible. VLM ship-check
+  (1522fa): A-D all PASS (full figure at natural proportions, hugging the
+  card, jersey readable, no crop edges / no overlap / no cut-off heads).
+- Housekeeping: `public-13.37.css → public-13.38.css` (CSS-only release —
+  public-13.36.js carries over); `_headers` pins 13.38.css immutable and
+  re-files 13.37.css under the retention rule; `sw.js` CACHE v42 → v43;
+  `VERSION 13.136-dezoom`; package 13.136.0.0; check-stats pins updated
+  (contain player rule, inner-edge anchors, fade 20%, SW v43, cssHero
+  reads 13.38.css); admin-parity baseline re-frozen (--update — the
+  template's stylesheet href changed).
+
 ## [13.135-zoomlight] — 2026-10-20 (zoom round: zoomed+raised players, brighter floodlights, dimmer mobile HUD)
 
 The owner's three asks: the hero player pictures "more zoomed — 10–20cm
