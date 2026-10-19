@@ -183,13 +183,13 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   // The ONE <h1> (P-12) — sr-only (uifix, see above); a short sr-only page
   // summary follows it (A-04/A-01). The client JS leaves these nodes alone
   // (they live outside every container the JS re-renders).
-  html = html.replace('<div id="heroSpot">',
+  html = html.replace('<a class="hero-card" id="bigHeroCard"',
     '<h1 class="hero-h1">' + esc(heroH1(nextBig)) + "</h1>\n" +
-    '<p class="sr-only">در این صفحه: بازی بزرگ بعدی، بازی‌های زنده، بازی‌های مهم پیش‌رو، جدول لیگ‌ها و نتایج اخیر — همه به وقت تهران.</p>\n<div id="heroSpot">');
+    '<p class="sr-only">در این صفحه: بازی بزرگ بعدی، بازی‌های زنده، بازی‌های مهم پیش‌رو، جدول لیگ‌ها و نتایج اخیر — همه به وقت تهران.</p>\n<a class="hero-card" id="bigHeroCard"');
 
   // Cards hidden by default must SHOW their server content for no-JS
   // visitors; the client JS re-manages display on load (same rules).
-  if (heroHtml) html = html.replace('<div class="card bighero" id="bigHeroCard" style="display:none">', '<div class="card bighero" id="bigHeroCard">');
+  if (heroHtml) html = html.replace('<a class="hero-card" id="bigHeroCard" style="display:none" href="#">', '<a class="hero-card" id="bigHeroCard" href="#">');
   if (liveHtml) html = html.replace('<div class="card" id="liveCard" style="display:none">', '<div class="card" id="liveCard">');
   if (topspotHtml) html = html.replace('<div class="card" id="topspotCard" style="display:none">', '<div class="card" id="topspotCard">');
   if (weekHtml) html = html.replace('<div class="card" id="weekCard" style="display:none">', '<div class="card" id="weekCard">');

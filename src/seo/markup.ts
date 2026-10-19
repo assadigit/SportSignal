@@ -7,6 +7,7 @@
 
 import { SEO } from "./config";
 import { matchPath, compSlug } from "../slugs";
+import { UCL_LOGO_CHIP } from "../tables";
 import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, tehranDayKey, isLiveSt, faGregorianDate, faHeroDate, tehranParts, toJalali } from "./utils";
 import { toFaDigits } from "../utils";
 import { translateCompetition } from "../translate";
@@ -161,56 +162,71 @@ export function mrowHtml(sm: SeoMatch, idx: number, finished: boolean): string {
   return '<div class="mrow">' + row + infoLineHtml(m, { isRow: true }) + "</div>";
 }
 
-// v13.120-hero: the SERVER mirror of the client hero card (renderHeroSpot/
-// heroTeamNode/heroMidNode in public-13.29.js) — class-for-class so the
-// no-JS first paint looks native and the client re-render is seamless.
-// One real <a> to the match page wraps the grid + chips (R-02, A-01/A-02).
+// v13.126-herolook: the SERVER mirror of the client hero card (renderHeroSpot/
+// heroTeamNode/heroCentreNode in public-13.32.js) — class-for-class so the
+// no-JS first paint looks native and the client re-render is seamless. The
+// output fills #heroSpot INSIDE the static card anchor (public.ts) — that
+// anchor is the ONE real link to the match page (R-02, A-01/A-02).
+const HERO_CLOCK_SVG = '<svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true" focusable="false"><circle cx="14" cy="14" r="11" fill="#FFFFFF" stroke="var(--ss-cyan)" stroke-width="2.4"/><path d="M14 8.2v6l4 2.4" fill="none" stroke="#02266D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const HERO_STADIUM_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><ellipse cx="12" cy="7.5" rx="8" ry="3"/><path d="M4 7.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/><path d="M4 10.6c0 1.6 3.6 2.9 8 2.9s8-1.3 8-2.9"/></svg>';
+
+// the hero date line: the CLIENT format (fa-IR Intl => Jalali months, e.g.
+// "سه‌شنبه ۲۸ مهر") — the legacy faHeroDate (Gregorian months) stays for the
+// other pages; the hero must agree with the client re-render byte-for-byte.
+function faHeroDateJalali(iso: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat("fa-IR", { day: "numeric", month: "long", weekday: "long", timeZone: "Asia/Tehran" }).formatToParts(new Date(iso));
+    const get = (t: string) => parts.find((p) => p.type === t)?.value || "";
+    return get("weekday") + " " + get("day") + " " + get("month");
+  } catch { return faHeroDate(iso); }
+}
+
+function statePill(txt: string, dot = false): string {
+  return '<span class="time-state">' + (dot ? '<span class="dot"></span>' : "") + esc(txt) + "</span>";
+}
+
 export function heroCardHtml(sm: SeoMatch): string {
   const m = sm.s;
   const live = isLiveSt(m.status);
   const post = /POSTPON|CANCEL|SUSPEND/i.test(String(m.status || ""));
   const scored = (live || m.status === "FINISHED") && m.score && m.score.home !== null;
-  let row = '<a class="match" href="' + esc(matchHref(m)) + '">';
-  if (m.big) row += '<span class="sr-only">بازی مهم</span>';
-  row += '<div class="hero-grid">';
-  row += heroSideHtml(m.homeTeam, T.heroHome, false);
-  let mid = '<div class="hero-mid' + (live ? " live" : "") + '">';
-  if (live) {
-    mid += '<span class="livechip hero-chip"><span class="dot"></span>' + esc(T.live) + "</span>";
-  } else if (m.status === "FINISHED") {
-    mid += '<span class="wkdone hero-chip">⌛ ' + esc(T.wkDone) + "</span>";
-  } else if (post) {
-    mid += '<span class="hero-stchip hero-chip">' + esc(/CANCEL/i.test(String(m.status)) ? "لغوشده" : "معلق") + "</span>";
-  }
+  const kk = m.utcDate ? Date.parse(m.utcDate) : NaN;
+  const started = !isNaN(kk) && kk <= Date.now();
+  let out = "";
+  if (m.big) out += '<span class="sr-only">\u0628\u0627\u0632\u06CC \u0645\u0647\u0645</span>';
+  out += '<div class="hero-grid">';
+  out += heroTeamHtml(m.homeTeam, T.heroHome, false);
+  // row 1 — league
+  out += '<div class="hero-league"><span class="league-icon">';
+  out += (m.competition && m.competition.emblem)
+    ? '<img src="' + esc(m.competition.emblem) + '" alt="" loading="lazy" decoding="async">'
+    : UCL_LOGO_CHIP;
+  out += '</span><span class="league-title">' + esc(compNameFa(m)) + "</span></div>";
+  // row 2 — time / state / score
+  let time = '<div class="hero-time">';
+  if (live) time += statePill(T.live, true);
+  else if (m.status === "FINISHED") time += statePill(T.wkDone);
+  else if (post) time += statePill(/CANCEL/i.test(String(m.status)) ? "لغوشده" : "معلق");
   if (scored) {
-    mid += scoreHtml(m.score, "hero-score");
-    if (live && m.minute != null) mid += '<span class="lmin hero-min">' + toFaDigits(String(m.minute)) + "ʹ</span>";
+    time += scoreHtml(m.score, "hero-score");
+    if (live && m.minute != null) time += '<span class="lmin hero-min">' + toFaDigits(String(m.minute)) + "\u02B9</span>";
   } else if (m.utcDate && !post) {
-    mid += '<span class="hero-kick-label">' + esc(T.heroKickoff) + '</span>';
-    mid += '<span class="hero-clock" dir="ltr"><time datetime="' + esc(m.utcDate) + '">' + esc(faTime(m.utcDate)) + "</time></span>";
-    mid += '<span class="hero-date">' + esc(faHeroDate(m.utcDate)) + "</span>";
-    mid += '<span class="kicktz">به وقت تهران</span>';
+    if (started) time += statePill("به‌زودی", true);
+    else time += '<span class="time-glow"><span class="time-chip"><span class="time-fill">' + HERO_CLOCK_SVG + '<span class="time-digits" dir="ltr">' + esc(faTime(m.utcDate)) + "</span></span></span></span>";
   }
-  mid += "</div>";
-  row += mid;
-  row += heroSideHtml(m.awayTeam, T.heroAway, true);
-  row += "</div>";
-  row += '<div class="hero-chips">';
-  row += '<span class="comp">';
-  if (m.competition && m.competition.emblem) {
-    row += '<img class="complogo" src="' + esc(m.competition.emblem) + '" alt="" loading="lazy" decoding="async">';
-  }
-  row += esc(compNameFa(m)) + "</span>";
-  row += derbyBadgeHtml(m);
-  if (m.top) row += '<span class="topbadge">🏆 ' + esc(T.topBadge) + "</span>";
-  if (m.venue) row += '<span class="venue">🏟️ ' + esc(m.venueFa || m.venue) + "</span>";
-  row += "</div>";
-  row += "</a>";
-  return row;
+  time += "</div>";
+  out += time;
+  // row 3 — date (Jalali, mirroring the client fmtHeroDate)
+  if (m.utcDate) out += '<div class="hero-date"><span class="date-main">' + esc(faHeroDateJalali(m.utcDate)) + '</span><span class="date-tz">به وقت تهران</span></div>';
+  // row 4 — venue
+  if (m.venue) out += '<div class="hero-venue"><span class="venue-pill">' + HERO_STADIUM_SVG + "<span>" + esc(m.venueFa || m.venue) + "</span></span></div>";
+  out += heroTeamHtml(m.awayTeam, T.heroAway, true);
+  out += "</div>";
+  return out;
 }
 
-function heroSideHtml(t: any, role: string, away: boolean): string {
-  return '<div class="hero-side' + (away ? " away" : "") + '"><span class="hero-role">' + esc(role) + "</span>" + logoHtml(t) + '<div class="hero-name">' + nameHtml(displayName(t)) + "</div></div>";
+function heroTeamHtml(t: any, role: string, away: boolean): string {
+  return '<div class="hero-team ' + (away ? "team-away" : "team-home") + '"><span class="team-crest">' + logoHtml(t) + '</span><div class="hero-name">' + nameHtml(displayName(t)) + '</div><span class="hero-role">' + esc(role) + '</span></div>';
 }
 
 // The spotitem anatomy (hero / big-matches / week / ucl boxes).

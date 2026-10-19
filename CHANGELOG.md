@@ -6,6 +6,71 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+---
+
+## [13.126-herolook] — 2026-10-19 (the desired-look hero)
+
+The owner shipped a reference mockup (`desired-look.jpg`, 1522×463 fa/dark)
+and asked for the featured-match hero to match it. The design was built and
+verified in a sandbox port first (1522/1445/375 × fa/en × dark/light), then
+ported back into the Worker stack class-for-class.
+
+### The hero (visual layer only — every state, string and datum preserved)
+
+- **Scene**: the old video stage is RETIRED. A full-bleed graded night photo
+  (the existing `/hero-poster.jpg` + CSS grade/vignette/scrim + swooshes)
+  now runs behind the whole section; the transparent header floats over it
+  (the header band is part of the dark hero island in BOTH themes — the
+  light theme only turns the page below the hero).
+- **Card**: a centred glass card (`a.hero-card`, ≈58.5% × ~280px @1522) with
+  the 3-lane grid [team | centre stack | team]: league chip + title, the
+  chamfered time chip (cyan rim, `#124693→#02266D` fill, 38px tabular
+  digits, clock icon), the date line (Jalali, matching the client
+  `fmtHeroDate`) + tz label, and the venue pill.
+- **Countdown**: moved BELOW the card as a chamfered cyan→aqua panel with
+  four tiles; the label lost its lightning glyph (a timer icon rides the
+  head row, green). The `#bigbar` contract is intact — `updateBigBar` drives
+  the same ids every second; the 24h progress track stays in the DOM as a
+  polite sr-only progressbar (no visible bar in the reference).
+- **Players**: the UEFA portraits now ride as section-level `.hero-player`
+  zones flanking the card — heads pop above the card top, bodies cross its
+  side edges (3D, clip-pathed per physical side), figures graded
+  (`brightness .88 / contrast 1.08`) and bottom-faded into the scene. One
+  CSS rule covers all 34 portraits (they share a uniform 460px alpha band
+  in their 512² canvases — measured; `height:104.5%` reproduces the
+  reference figure height exactly).
+- **Pills**: a static carousel (inline-start, decorative) + the bell
+  ("see upcoming matches" → `#topspotCard`, new I18N key `seeUpcoming`).
+- **Header**: no Telegram CTA in the header (per the reference) — the join
+  link lives on in `#tgFab` / `#joinSticky` / footer. Vector gear/moon/sun
+  icons (the dark-mode moon is gold `#F6C513`); `setTheme` renders SVGs now.
+  The sync line moved under the hero (P1.3); `#lastSync` wiring unchanged.
+
+### States kept, restyled
+
+LIVE (dot pill + score + minute/est), FINISHED, POSTPONED/CANCEL,
+started→"به‌زودی" — all render through the new `heroCentreNode` (client) and
+`heroCardHtml` (server mirror, class-for-class; Jalali date so server and
+client agree byte-for-byte).
+
+### Dropped (visual layer only, documented)
+
+The video stage, the amber/red urgency ladder (`data-urgent` is still set
+by `updateBigBar` — nothing consumes it now), and the visible progress
+track. `fitHeroNames`/`heroVideoKick` retired with their layers (the
+2-line clamp CSS and the poster image cover them).
+
+### Assets + plumbing
+
+`public-13.29.css` (tokens inlined once + the hero block; the old
+Stadium-Pulse hero CSS removed), `public-13.32.js`, `core-13.12.js`
+(barNext sans bolt, +seeUpcoming, SVG theme toggle). SW v34→v35;
+CORE_URLS drops `/hero-stage.mp4` (~645KB saved per install; the file stays
+served for stale-HTML clients). `_headers`: 13.32/13.29/core-13.12 pinned
+immutable; the retired trio stays pinned through one 900s edge-HTML window.
+`check-stats.js` hero pins rewritten for the new contracts; baselines
+re-frozen (`check-admin-parity --update`).
+
 ## [13.125-stickeroutbox] — 2026-10-19 (recovered tables arrived without their stickers — the outbox learns to carry a logo)
 
 ### The incident (the digest's second life, live evidence from `wrangler tail`)
@@ -61,7 +126,6 @@ outboxing, drain ordering, sticker-clearing on requeue, dead-chat skip,
 legacy text-only entries) alongside the full `npm test` chain.
 
 ---
-
 ## [13.124-weeklyfanout] — 2026-10-19 (the weekly digest reached only the admin — the chunked fan-out)
 
 ### The incident (live, this Monday's 01:30 Tehran digest)

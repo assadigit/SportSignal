@@ -72,14 +72,14 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.28.css">
+<link rel="stylesheet" href="/public-13.29.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
-     v13.120-hero: the HERO card (#bigHeroCard.match-featured) gets the new
-     Stadium-Pulse lighting — controlled blue + green instead of green-only,
-     a slower masked sheen (9s), a soft dual glow pulse (5s) and the hover
-     lift (desktop). Reduced-motion disables every animation. */
+     v13.126-herolook: the hero card left the featured system entirely
+     (the desired-look hero is its own design language, public-13.29.css);
+     these rules now style ONLY the LIST variant. Reduced-motion disables
+     every animation. */
 :root{--feat-accent:#4CBB17;--feat-blur:22px;--feat-glow:22%;--feat-tint:6%;--feat-border:55%}
 .match-featured{position:relative;border-color:color-mix(in srgb,var(--feat-accent) var(--feat-border),transparent)!important;background-image:linear-gradient(color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent),color-mix(in srgb,var(--feat-accent) var(--feat-tint),transparent))!important;box-shadow:0 0 var(--feat-blur) color-mix(in srgb,var(--feat-accent) var(--feat-glow),transparent)!important}
 .match-featured::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(110deg,transparent 35%,rgba(180,255,120,.14) 45%,rgba(180,255,120,.04) 55%,transparent 65%);background-size:250% 100%;animation:feat-shimmer 2.5s linear infinite}
@@ -87,14 +87,7 @@ __SEO_JSONLD__
 .match-featured::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse at 70% 0%,color-mix(in srgb,var(--feat-accent) 10%,transparent),transparent 60%);animation:feat-glow-shift 4s ease-in-out infinite alternate}
 @keyframes feat-glow-shift{0%{opacity:.4}100%{opacity:.9}}
 .match-featured .match{background:transparent!important;border:none!important;overflow:visible!important}
-/* === v13.120-hero: Stadium-Pulse featured lighting on the hero card === */
-#bigHeroCard.match-featured{background-image:none!important;animation:hero-pulse 5s ease-in-out infinite}
-#bigHeroCard.match-featured::before{background:linear-gradient(110deg,transparent 38%,rgba(39,194,255,.17) 50%,rgba(72,239,155,.07) 56%,transparent 62%);background-size:300% 100%;-webkit-mask-image:linear-gradient(to right,transparent 0%,black 13%,black 87%,transparent 100%);mask-image:linear-gradient(to right,transparent 0%,black 13%,black 87%,transparent 100%);animation:hero-sheen 9s ease-in-out infinite}
-@keyframes hero-sheen{0%{background-position:150% 0}30%{background-position:-50% 0}100%{background-position:-50% 0}}
-#bigHeroCard.match-featured::after{background:linear-gradient(to top,rgba(72,239,155,.05),transparent 55%);-webkit-mask-image:linear-gradient(to right,transparent 0%,black 14%,black 86%,transparent 100%);mask-image:linear-gradient(to right,transparent 0%,black 14%,black 86%,transparent 100%);animation:none;opacity:1}
-@keyframes hero-pulse{0%,100%{box-shadow:0 0 22px rgba(40,104,255,.22),0 0 44px rgba(72,239,155,.07)!important}50%{box-shadow:0 0 26px rgba(40,104,255,.32),0 0 56px rgba(72,239,155,.12)!important}}
-@media(hover:hover){#bigHeroCard.match-featured{transition:transform .2s ease,box-shadow .2s ease;cursor:pointer}#bigHeroCard.match-featured:hover{transform:translateY(-3px);box-shadow:0 0 29px rgba(40,104,255,.34),0 0 60px rgba(72,239,155,.14)!important}}
-@media(prefers-reduced-motion:reduce){.match-featured{animation:none}.match-featured::before{display:none}.match-featured::after{animation:none;opacity:.6}#bigHeroCard.match-featured{animation:none}#bigHeroCard.match-featured::before{display:none}}
+@media(prefers-reduced-motion:reduce){.match-featured{animation:none}.match-featured::before{display:none}.match-featured::after{animation:none;opacity:.6}}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
 </head>
 <body>
@@ -116,110 +109,89 @@ __SEO_JSONLD__
      it in the footer) — v12.26 right-aligned with the logo, not centered. -->
 <a class="brand" href="/" aria-label="SportSignal"><img src="/logo.png" alt="SportSignal" width="146" height="50" referrerpolicy="no-referrer"></a>
 <nav class="mainnav" aria-label="ناوبری اصلی"><a href="/" data-i="navHome">خانه</a><a href="#about" data-i="navAbout">درباره</a><a href="#contact" data-i="navContact">تماس</a></nav>
-<div class="head-actions"><a class="cta" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="join">عضویت در ربات تلگرام</a><span class="tb-btns"><button id="sbtn" onclick="toggleTz()" aria-expanded="false" aria-controls="tzpanel" title="منطقه زمانی" aria-label="منطقه زمانی">⚙️</button><button id="lbtn" onclick="switchLang()"></button><button id="tbtn" onclick="toggleTheme()"></button><a id="tgbtn" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" class="icon-tg" aria-label="Telegram" title="Telegram"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a></span></div>
+<div class="head-actions"><span class="tb-btns"><button id="sbtn" onclick="toggleTz()" aria-expanded="false" aria-controls="tzpanel" title="منطقه زمانی" aria-label="منطقه زمانی"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button><button id="lbtn" onclick="switchLang()"></button><button id="tbtn" onclick="toggleTheme()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button></span></div>
 <div id="tzpanel" role="group" aria-label="منطقه زمانی"><div class="tz-head"><span data-i="tzTitle">🌍 منطقه زمانی</span><button id="tzclose" onclick="toggleTz()" title="بستن" aria-label="بستن">✕</button></div><input id="tzfilter" type="search" placeholder="جستجوی کشور یا شهر…" data-p="tzSearch" aria-label="جستجوی کشور یا شهر"><select id="tzsel" title="منطقه زمانی" aria-label="منطقه زمانی"></select></div>
 <!-- v12.20: visible PROOF for the auto-update claim. v12.26: the sync line
      prints the TRUTHFUL absolute stamp of the last real API refresh —
      «آخرین به‌روزرسانی: جمعه ۲۱:۳۰ شب» (weekday + time + period word) —
      rendered by renderSync()/fmtStamp() from the payload's fetchedAt. -->
-<p class="sub sync" id="lastSync" role="status" aria-live="polite">__SEO_SYNC__</p>
 </header>
 <a class="skip-link" href="#main">پرش به محتوا</a>
 <main id="main">
 <!-- v12.12: the view toggle is RETIRED — the page is permanently big-only
      («فقط بازی‌های بزرگ», the user's default). The hero card + the topspot
      box + the UCL box ARE the upcoming presentation. -->
-<!-- v13.120-hero: Stadium Pulse + Match Protocol — the featured-match HERO.
-     Same product skeleton as v12.10 (the countdown and ITS match are ONE
-     card at the very top; #heroSpot is filled by renderHeroSpot from the
-     SAME barTarget() pick; #bigbar keeps its id — updateBigBar drives the
-     label/digits/fill every second), rebuilt as a three-zone broadcast
-     card: home team | blue kickoff panel | away team, over the cinematic
-     video stage. The countdown strip is a four-unit digital clock
-     (روز/ساعت/دقیقه/ثانیه) — ONLY the digit nodes change each second.
-     v13.121-portraits: player artwork is LIVE — heroArt() resolves the
-     flanks through the HERO_ART mapping (official UEFA cutoff portraits;
-     contract: /assets/hero/players/README.md). Unmapped teams keep the
-     crest-only look — the card is complete either way.
-     v13.122-heroart: the figures BREAK OUT of the card — full-height
-     flanks in front of the card edges, heads slightly above its top edge
-     (the owner's reference mockup, 2026-10-19); the layer moved from
-     inside the card to a .herowrap sibling (see the v13.122 note below). -->
-<!-- v12.27 (review item 1): .herowrap — the clip host's shell. The card
-     inside carries overflow:hidden (clips the video/crest/fx layers to its
-     radius), while this wrapper's ::before owns the OUTER heartbeat
-     aura (a child's outer box-shadow would be clipped by the card). updateBigBar
-     mirrors data-urgent here so the escalation ladder keeps driving both. -->
+<!-- v13.126-herolook: the featured-match HERO, "Stadium Night" —
+     restyled to the owner's desired-look.jpg reference. The scene is a
+     FULL-BLEED graded night photo behind the whole section (the transparent
+     header floats over it — see the header note above); the match info lives
+     on a centred GLASS card (a.hero-card) painted into #heroSpot by
+     renderHeroSpot (server mirror: heroCardHtml fills the hero spot for
+     no-JS); the countdown panel sits BELOW the card as a chamfered
+     cyan->aqua wrapper; the players flank the card popping out of it (3D);
+     corner pills: the static carousel (inline-start) + the bell
+     (inline-end, -> #topspotCard). Same data, states and countdown contract
+     (#bigbar ids driven by updateBigBar every second), fa/en + dark/light
+     preserved — the full note lives in public-13.29.css. -->
 <div class="herowrap">
-<div class="card bighero" id="bigHeroCard" style="display:none">
-<!-- v12.26 (the user's ask): layer A — the VIDEO STAGE, deepest of the four:
-     video › background logos › css effects › actual data. The user's own
-     7.2s clip loops muted+autoplay+playsinline from /hero-stage.mp4
-     (worker [assets]), clipped + scrimmed so the data above stays king;
-     a prefers-reduced-motion user keeps autoplay too (v12.28 — the user's
-     twice-repeated ask outweighs the media query for this one element). -->
-<div class="hero-video" aria-hidden="true"><video src="/hero-stage.mp4" poster="/hero-poster.jpg" autoplay muted loop playsinline preload="auto" tabindex="-1" disablepictureinpicture referrerpolicy="no-referrer"></video></div>
-<!-- v12.22: the hero stage's ember layer — static markup OUTSIDE #heroSpot
-     so it survives every re-render, clipped to the card, pointer-transparent. -->
-<div class="hero-fx" aria-hidden="true"><i></i><i></i><i></i></div>
-<!-- v12.23 (the user's ask): the clubs' EXPANDED, faded crests behind the
-     stage — "[faded logo big on background] [club logo] club name". Static
-     layer OUTSIDE #heroSpot (like the ember layer) so re-renders never
-     disturb it; renderHeroSpot → heroWm() swaps the two crest srcs per
-     match; a club without a crest hides its watermark. -->
-<div class="hero-wm" aria-hidden="true"><img alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'"><img alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'"></div>
-<!-- v13.120-hero: Match-Protocol HUD chrome — two restrained cyan corner
-     brackets + a top light line, pointer-transparent, decorative only. -->
-<div class="hero-hud" aria-hidden="true"><i></i><i></i></div>
-<!-- v12.26: layer D — the DATA SURFACE. The countdown bar and its match row
-     ride ONE positioned layer (z:3) above the video (z:0), the crests (z:1)
-     and the css fx (z:2) — exactly the user's ladder. v13.122-heroart:
-     the player artwork (now a .herowrap sibling, z:2) also reads BELOW
-     this surface — text stays on top even where a figure overlaps a
-     crest/name zone at narrow widths. -->
-<div class="hero-data">
-<!-- v12.46-herofix (kept): the match row (heroSpot) rides ABOVE the
-     countdown strip. renderHeroSpot paints the three-zone grid here. -->
+<div class="hero-bg" aria-hidden="true">
+<img class="bg-photo" src="/hero-poster.jpg" alt="" decoding="async" referrerpolicy="no-referrer">
+<div class="bg-grade"></div>
+<div class="bg-flood"></div>
+<svg class="bg-swoosh sw-left" viewBox="0 0 560 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false"><defs><linearGradient id="swLg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#0087FA" stop-opacity="0.95"/><stop offset="0.7" stop-color="#00D3FF" stop-opacity="0.45"/><stop offset="1" stop-color="#00D3FF" stop-opacity="0"/></linearGradient><filter id="swLglow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g fill="none" stroke-linecap="round" filter="url(#swLglow)"><path class="band-primary" d="M-20 236 C 130 196, 300 252, 470 116" stroke="url(#swLg)" stroke-width="14" opacity="0.8"/><path class="band-secondary" d="M-20 268 C 150 238, 320 286, 520 168" stroke="url(#swLg)" stroke-width="8" opacity="0.85"/><path class="band-secondary" d="M-20 252 C 140 217, 310 268, 495 142" stroke="#CBEFFF" stroke-width="2.2" opacity="0.9"/></g></svg>
+<svg class="bg-swoosh sw-right" viewBox="0 0 560 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false"><defs><linearGradient id="swRg" x1="1" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#06F9C3" stop-opacity="0.95"/><stop offset="0.55" stop-color="#00D3FF" stop-opacity="0.5"/><stop offset="1" stop-color="#0087FA" stop-opacity="0"/></linearGradient><filter id="swRglow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g fill="none" stroke-linecap="round" filter="url(#swRglow)"><path class="band-primary" d="M580 236 C 430 196, 260 252, 90 116" stroke="url(#swRg)" stroke-width="14" opacity="0.8"/><path class="band-secondary" d="M580 268 C 410 238, 240 286, 40 168" stroke="url(#swRg)" stroke-width="8" opacity="0.85"/><path class="band-secondary" d="M580 252 C 420 217, 250 268, 65 142" stroke="#D8FFF4" stroke-width="2.2" opacity="0.9"/></g></svg>
+<img class="bg-wm wm-home" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'">
+<img class="bg-wm wm-away" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'">
+<div class="bg-vignette"></div>
+<div class="bg-scrim"></div>
+</div>
+<!-- the players: absolute at section level, flanking the glass card; filled
+     by heroArt() through the HERO_ART mapping (no src here — the layer
+     renders only for a mapped team; spelled out because seo-check's T-03
+     regex scans raw HTML). -->
+<div class="hero-player player-home" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"></div>
+<div class="hero-player player-away" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"></div>
+<!-- the glass card: ONE real link to the match page wraps the grid;
+     renderHeroSpot paints #heroSpot (class-for-class with the server
+     mirror so the client re-render is seamless). -->
+<a class="hero-card" id="bigHeroCard" style="display:none" href="#">
 <div id="heroSpot">__SEO_HERO__</div>
+</a>
+<!-- the countdown panel — a four-unit digital clock driven by updateBigBar
+     every second. Only the digit nodes change; the unit labels ride data-i
+     (translated on language switch). The __SEO_HC*__ placeholders are
+     filled server-side from the hero kickoff at render time (honest for
+     no-JS visitors; the client corrects them on load). #hcSr is the
+     screen-reader summary — polite, refreshed only when the remaining
+     MINUTE changes. The 24h progress track stays in the contract as a
+     polite sr-only progressbar (no visible bar in the reference design). -->
 <div id="bigbar" class="hero-count">
-<!-- v13.120-hero: the COUNTDOWN STRIP — a four-unit digital clock driven by
-     updateBigBar() every second. Only the <b> digit nodes change; the unit
-     labels ride data-i (translated on language switch). The __SEO_HC*__
-     placeholders are filled server-side from the hero kickoff at render
-     time (honest for no-JS visitors; the client corrects them on load).
-     #hcSr is the screen-reader summary — polite, refreshed only when the
-     remaining MINUTE changes (never announced per second). The bottom
-     3px fill is the final-24h progress (same contract as the old bar).
-     v13.123-fadepill: on ≥901px the strip is a COMPACT CENTERED PILL
-     (the owner's yellow-rect area estimate on his bb.jpg mockup — a
-     centered band at ~45% of the card width in the card's bottom band):
-     content-fit width, radius 999px, label + units centered. The markup
-     is unchanged — the compaction is pure CSS (public-13.28.css); the
-     3px progress track keeps riding the pill's bottom edge. -->
-<div class="hc-row"><span id="bigbarLabel" class="hc-label" data-i="barNext">⚡ تا بازی بزرگ بعدی</span><span class="hc-units" dir="ltr"><span class="hc-u"><b class="hc-v" id="hcD">__SEO_HCD__</b><i data-i="uDay">روز</i></span><span class="hc-c" aria-hidden="true">:</span><span class="hc-u"><b class="hc-v" id="hcH">__SEO_HCH__</b><i data-i="uHour">ساعت</i></span><span class="hc-c" aria-hidden="true">:</span><span class="hc-u"><b class="hc-v" id="hcM">__SEO_HCM__</b><i data-i="uMin">دقیقه</i></span><span class="hc-c" aria-hidden="true">:</span><span class="hc-u"><b class="hc-v" id="hcS">__SEO_HCS__</b><i data-i="uSec">ثانیه</i></span></span></div>
+<div class="count-inner">
+<div class="count-head"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="14"/><line x1="15" x2="15" y1="11" y2="18"/><path d="M8.5 4.5a8.5 8.5 0 1 0 12.6 5.8"/></svg><span id="bigbarLabel" class="count-label" data-i="barNext">تا بازی بزرگ بعدی</span></div>
+<div class="count-tiles" role="timer" dir="ltr">
+<span class="count-tile"><b class="count-num" id="hcD">__SEO_HCD__</b><i class="count-unit" data-i="uDay">روز</i></span>
+<span class="count-tile"><b class="count-num" id="hcH">__SEO_HCH__</b><i class="count-unit" data-i="uHour">ساعت</i></span>
+<span class="count-tile"><b class="count-num" id="hcM">__SEO_HCM__</b><i class="count-unit" data-i="uMin">دقیقه</i></span>
+<span class="count-tile"><b class="count-num" id="hcS">__SEO_HCS__</b><i class="count-unit" data-i="uSec">ثانیه</i></span>
+</div>
 <span id="hcSr" class="sr-only" aria-live="polite"></span>
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 </div>
 </div>
+<!-- the corner pills: the static carousel (one featured match — decorative
+     only; heroPills() swaps the two crests per match) + the bell (the
+     "see upcoming matches" shortcut into the boxes below). -->
+<div class="hero-carousel" aria-hidden="true">
+<span class="car-crest"></span><span class="car-crest"></span>
+<span class="car-dots"><i class="on"></i><i></i></span>
+<button class="car-btn" type="button" tabindex="-1" disabled aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+<button class="car-btn" type="button" tabindex="-1" disabled aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
 </div>
-<!-- v13.122-heroart: player-artwork slots (decorative flanks), filled
-     by heroArt() through the HERO_ART mapping when a side resolves; the
-     layer only renders for a mapped team (no reserved blank space, no
-     broken img element; spelled out because seo-check's T-03 regex scans
-     raw HTML and would trip on a literal img tag here). MOVED out of the
-     card (was a sibling of .hero-video through v13.121): the card's
-     overflow:hidden clipped the figures to the rounded rect, but the
-     owner's reference mockup (2026-10-19) wants the heads to POP ABOVE
-     the card's top edge for a 3D breakout — so the layer now rides as the
-     LAST child of .herowrap (DOM-after the card ⇒ paints in front of the
-     card shell at its z:2; the z:3 data surface inside the card still
-     reads above the figures). v13.123-fadepill: the bottoms CROSSFADE
-     into the card (the owner's premium-melt ask) — heroArt() renders a
-     per-portrait data-fade tier from the HERO_ART entry's optional fade
-     field (Yamal hi / Simic deep; default eased ramp otherwise; removed
-     on hide). Geometry + fade tiers live in public-13.28.css. -->
-<div class="hero-art" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"></div>
+<a class="hero-bell" href="#topspotCard" id="heroBell"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span data-i="seeUpcoming">بازی‌های آینده را ببینید</span></a>
 </div>
+<!-- v13.126-herolook: the sync line moved out of the header, under the hero
+     (P1.3) — renderSync() keeps filling #lastSync (same id, same wiring). -->
+<p class="sub sync hero-sync" id="lastSync" role="status" aria-live="polite">__SEO_SYNC__</p>
 <!-- v12.3/v12.4/v12.7/v12.8 TOP BOX (league), per the user's rules: TOP CL GAME (two
      selected teams in the Champions League) → the UCL BOX below; big DOMESTIC
      matches (derbies like the Madrid derby, top-of-the-table clashes and
@@ -358,9 +330,9 @@ __SEO_JSONLD__
      string so the language toggle updates it. -->
 <a id="tgFab" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram" data-promo="برای دست ندادن مسابقات مهم، به ربات تلگرام بپیوندید ✨"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="#fff" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg></a>
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
-<script src="/core-13.11.js" defer></script>
+<script src="/core-13.12.js" defer></script>
 <script>var PAGE_TZ = "__PAGE_TZ__";</script>
-<script src="/public-13.31.js" defer></script>
+<script src="/public-13.32.js" defer></script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

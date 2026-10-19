@@ -117,3 +117,15 @@ established** — UEFA is the source, the manifest carries full provenance, and
 the repository's source-code licence does NOT apply to these images. Any
 change to how prominently they are displayed needs an explicit owner decision;
 the empty-mapping fallback is always available and is a designed, tested state.
+
+
+## v13.126-herolook addendum (2026-10-19)
+
+The rendering geometry changed with the desired-look hero: the figures now
+ride as section-level `.hero-player` zones flanking the glass card (heads
+above its top edge, bodies crossing its side edges; one CSS rule covers the
+whole collection — every portrait shares the uniform 460px alpha band, see
+public-13.29.css). The COLLECTION contract above is unchanged: same files,
+same manifest, same kit-audit rules. `heroArt()` still applies the optional
+per-portrait `data-fade` tier from HERO_ART (the new design uses a single
+bottom-fade mask, so the tiers ride as data only).

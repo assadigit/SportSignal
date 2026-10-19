@@ -83,16 +83,18 @@
 //              (per-portrait fade tiers via data-fade) + the compact
 //              countdown pill. Same rule: cache-first assets can't refresh
 //              without a rename or a bump.)
-// Cache name:  sportsignal-v34 (v13.123-fadepill, same-day follow-up:
-//              public-13.27.css→13.28 — the hi fade tier retuned so
-//              Yamal's white shorts fade over their own height; the first
-//              live review measured a still-visible edge. Same rule.)
-const CACHE = "sportsignal-v34";
+// Cache name:  sportsignal-v35 (v13.126-herolook: public-13.31.js→13.32,
+//              public-13.28.css→13.29, core-13.11.js→13.12 — the desired-look
+//              hero restyle. Same rule: cache-first assets can't refresh
+//              without a rename or a bump.
+//              CORE_URLS drops /hero-stage.mp4 (the new hero has no video
+//              layer — saves ~645KB per SW install); the fetch handler below
+//              still caches it on demand for stale-HTML clients.)
+const CACHE = "sportsignal-v35";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
-  "/logo.png",
-  "/hero-stage.mp4"
+  "/logo.png"
 ];
 
 self.addEventListener("install", (event) => {
