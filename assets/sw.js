@@ -5,6 +5,11 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v39 (v13.130: bumped from v38 — routine evict;
+//              this release renamed the asset pair public-13.32.css→13.33.css
+//              + public-13.33.js→13.34.js and added /players/hero/*; stale
+//              HTML may still reference the retired pair, which stays served
+//              per the retention rule).
 // Cache name:  sportsignal-v2 (v13.7: bumped from v1 to evict orphaned
 //              pre-13.6 asset entries — public-13.5.js/css and the old
 //              inline-payload HTML — that were stranded in clients' SW
@@ -96,7 +101,7 @@
 //              CORE_URLS drops /hero-stage.mp4 (the new hero has no video
 //              layer — saves ~645KB per SW install); the fetch handler below
 //              still caches it on demand for stale-HTML clients.)
-const CACHE = "sportsignal-v38";
+const CACHE = "sportsignal-v39";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

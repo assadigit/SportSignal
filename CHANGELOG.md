@@ -68,6 +68,66 @@ HERO_ART map (33 teams render artwork today) — a wiring backlog gated
 on the owner's display decision (README §4), now visible as
 library-ready gaps the moment those clubs surface in fixtures.
 
+
+---
+
+## [13.131-playerpresence] — 2026-10-20 (player presence + HUD dimming + compact countdown)
+
+(Rides on top of 13.130-herogaploop — the sibling session's hero gap loop;
+renumbered from 13.130 to avoid the collision. The two releases share no
+browser assets: the gap loop ships runtime modules only, this one renames
+the css/js pair.)
+
+The owner's seven-point round on the live hero: the top UCL players must
+show their UEFA cutoff portraits WITH the jersey clearly visible (e.g.
+Yamal), the big blue neon HUD background was too bright, the bell pill
+goes, the players double in size, the mobile time artwork was too tight,
+the countdown panel compacts by at least 60%, and the mobile card order
+becomes [league] [club logos] [time] [date] [stadium].
+
+### The changes
+
+- **Player presence (jersey + size)**: `HERO_ART` now serves
+  **alpha-trimmed** canvases from the new `/players/hero/` directory
+  (bbox-crops of the manifest-pinned `/players/uefa/` originals — same
+  players, same initial-UEFA bytes, no reframing): the 512×512 canvases
+  wasted up to half of the narrow player lane on transparent margins, so
+  even a "tall" img box rendered a small figure. With the trim + the new
+  sizing (height 63% → **78%**, bottom 12% → **4%**, bottom mask fade
+  36% → **18%**), the rendered figures are ~2.2–2.5× the previous area,
+  the club jersey reads clearly, and the head still clears the
+  SportSignal logo band (card margin-top 100 → 118px, section floor
+  padding 14 → 34px).
+- **HUD dimming**: the `.card-hud` layer renders at **opacity .74** (the
+  stadium scene bleeds through the deep-navy interior — the neon frame
+  sits IN the scene instead of on top of it); the mobile 9-slice card
+  gets an equivalent dark veil (`.hero-card::after`) since border-image
+  fill can't take an opacity.
+- **Bell pill retired**: the `#heroBell` anchor + CSS + the
+  reduced-transparency selector entry are gone; `heroPills()` already
+  null-guards (no JS contract change beyond the asset bump).
+- **Compact countdown**: `--ss-countdown-w` 480 → **200px**, panel
+  chamfer 18 → 12px, padding 12×16 → 7×10, gaps 8/10/4 → 5/6/3, digits
+  24 → 19px, units 11 → 9.5px, head label 13 → 11.5px — the panel
+  footprint drops ~66% (484×108 → 212×84) with the tick contract
+  (`updateBigBar`, `#hcS.tick`) untouched.
+- **Mobile time artwork**: `--ss-time-w` 210 → **242px** under 900px
+  (the 500:202 aspect derives the height — the digits get their
+  breathing room back).
+- **Mobile order**: explicit grid rows put the club crests row directly
+  under the league title (league → logos → time → date → stadium); the
+  desktop -26px team lift is zeroed on mobile so the logos don't ride
+  over the league row.
+
+### Plumbing
+
+- `public-13.32.css → public-13.33.css`, `public-13.33.js →
+  public-13.34.js` (rename-on-edit rule); `_headers` pins the new pair
+  + `/players/hero/*` (retention rule keeps the retired pair served);
+  `sw.js` CACHE v38 → v39; `config.ts`/`package.json` → 13.131.0.0;
+  `check-stats.js` pins rewritten for the new contracts; parity
+  baseline re-frozen.
+
 ---
 
 ## [13.129-hudframe] — 2026-10-19 (the HUD match card + UEFA portrait revert)

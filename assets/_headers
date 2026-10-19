@@ -85,9 +85,16 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.129-hudframe: the current pair (13.32.css + 13.33.js) — immutable under
-# the rename-on-edit rule; retired versions stay pinned below per the
+# v13.131-playerpresence: the current pair (13.33.css + 13.34.js) — immutable
+# under the rename-on-edit rule; retired versions stay pinned below per the
 # retention rule (stale edge HTML <=900s may still reference them).
+/public-13.33.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.34.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.129 (retired pair — kept per the retention rule)
 /public-13.32.css
   Cache-Control: public, max-age=31536000, immutable
 
@@ -168,5 +175,12 @@
 # a day of freshness + etag revalidation keeps the hero art fresh without
 # burning a rename cycle the collection doesn't need.
 /players/uefa/*
+  Cache-Control: public, max-age=86400
+
+# v13.131-playerpresence: the alpha-TRIMMED hero flank canvases (bbox-crops
+# of the /players/uefa/* originals — HERO_ART in public-13.34.js points
+# here). Same freshness policy as the originals: a re-shot portrait may
+# land under the same filename mid-season.
+/players/hero/*
   Cache-Control: public, max-age=86400
 

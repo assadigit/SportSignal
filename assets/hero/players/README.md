@@ -1,4 +1,18 @@
-# Hero Player Artwork — the real contract (v13.121-portraits)
+# Hero Player Artwork — the real contract (v13.121-portraits, updated v13.130)
+
+> **v13.131-playerpresence update:** `HERO_ART` now serves **alpha-trimmed
+> canvases** from the NEW directory `assets/players/hero/<slug>.webp`
+> (served at `/players/hero/<slug>.webp`). These are bbox-crops of the
+> manifest-pinned `assets/players/uefa/<slug>.webp` originals (same
+> players, same initial-UEFA bytes — the sha256 freeze in
+> `scripts/check-stats.js` still pins the `/players/uefa/` files).
+> Rationale: the 512×512 square canvases wasted up to half of the narrow
+> player lane on transparent margins; the trimmed canvases let the figure
+> fill the lane at the v13.130 size (78% height) so the club jersey reads
+> clearly. Regeneration: re-crop from the uefa originals after any
+> `portraits:normalize` run (alpha-bbox + 2px pad, lossless webp).
+> The `/players/uefa/` collection below remains the provenance source
+> of truth.
 
 > **Superseded contract (v13.120-hero era, obsolete):** this directory was
 > reserved for *generated* player cutouts — one 1024 × 1536 (2:3) transparent

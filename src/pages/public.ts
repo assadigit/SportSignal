@@ -78,7 +78,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.32.css">
+<link rel="stylesheet" href="/public-13.33.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -191,10 +191,9 @@ ${FONT_FACES_STYLE}
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 </div>
 </div>
-<!-- v13.129-hudframe: the static corner carousel pill is RETIRED (owner
-     directive — the hero shows ONE featured match); heroPills() in
-     public-13.33.js null-guards its absence. Only the bell pill remains. -->
-<a class="hero-bell" href="#topspotCard" id="heroBell"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span data-i="seeUpcoming">بازی‌های آینده را ببینید</span></a>
+<!-- v13.131-playerpresence: BOTH corner pills are RETIRED (the carousel in
+     v13.129, the bell now — owner directive); heroPills() in public-13.34.js
+     null-guards their absence. -->
 </div>
 <!-- v13.126-herolook: the sync line moved out of the header, under the hero
      (P1.3) — renderSync() keeps filling #lastSync (same id, same wiring).
@@ -349,7 +348,7 @@ ${FONT_FACES_STYLE}
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.12.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.33.js" defer><\/script>
+<script src="/public-13.34.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a
