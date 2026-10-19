@@ -95,7 +95,7 @@
 //              CORE_URLS drops /hero-stage.mp4 (the new hero has no video
 //              layer — saves ~645KB per SW install); the fetch handler below
 //              still caches it on demand for stale-HTML clients.)
-const CACHE = "sportsignal-v36";
+const CACHE = "sportsignal-v37";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

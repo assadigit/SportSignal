@@ -6,6 +6,73 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.128-layoutrefine] — 2026-10-19 (the owner's six reported layout fixes)
+
+The owner reported six problems against the live site (reference mockup
+47.png, RTL/fa). All six are fixed in this release; the same fixes were
+first verified against the reference in the sandbox port of the homepage.
+
+### The six fixes
+
+1. **Match-time artwork slightly enlarged** (`--ss-time-w`
+   `clamp(196px,15.3vw,233px)` → `clamp(210px,16.4vw,250px)`, +7.3%): the
+   digits were too tight inside the supplied artwork's borders. The card's
+   centre lane widens `minmax(240px,…)` → `minmax(252px,…)` so the wider
+   chip keeps its track. The artwork still renders at its exact 500:202
+   aspect (undistorted), digits unchanged at 38px.
+2. **Player figures clear of the logo**: `.hero-player img` shrinks
+   `104.5%` → `82%` of the section and lifts off the bottom
+   (`bottom: 0` → `11%`) — the 47.png geometry (figure ends above the
+   section bottom, head well clear of the header logo/nav).
+3. **Nothing outside the viewport anymore**: the `width:100vw +
+   margin-inline:calc(50% - 50vw)` breakout trick is RETIRED. On
+   classic-scrollbar browsers 100vw is wider than the visible area, and
+   inside the ≥1440px body grid the percentage margins resolved against
+   the 1400px track — the live header band rendered 44px shifted with the
+   moon/EN/gear pill out of the viewport (measured). `<body>` is now the
+   full-width page shell (no max-width, no horizontal padding); the
+   content column constraint (760px / 1400px) moved to `.page-col` (the
+   new wrapper around everything below the hero) and the footer;
+   `html{overflow-x:clip}` + `body{overflow-x:clip}`.
+4. **The reference two-column layout**: `[side bar | most important games
+   of leagues + the containers below it]`, tables in the side bar. The
+   wide layout engine (setWide) now relocates the cards INSIDE `.page-col`
+   and the grid is placed EXPLICITLY — `#wideMain` (topspot/uclspot/week/
+   finished — the important games + containers) in the wide inline-START
+   column (right in fa), `#wideSide` (live/ucl/standings/cups/stats — the
+   tables) in the narrow inline-END rail (left in fa). Previously grid
+   auto-placement dropped #wideMain into the narrow 440-500px track (the
+   owner's "the main container has moved to side bar"). Threshold drops
+   1440px → 1080px so laptops get the reference layout; the grid is gated
+   by a `.wide` class the JS toggles with the relocation (no-JS clients
+   keep the clean single column; the old code put unrelocated cards into
+   the body grid).
+5. **میزبان / میهمان (hero-role)**: regular text in a softer color —
+   `font-weight 700 → 500`, `color var(--ss-aqua) → var(--ss-text-muted)`
+   (#9FD8EC soft blue-grey), `13px → 12.5px`.
+6. **No player figures on mobile**: ≤899px now hides `.hero-player`
+   entirely (the old scaled-down corner players broke the stacked mobile
+   layout; the sandbox port verified the stacked composition without
+   them).
+
+### Plumbing
+
+- `public-13.30.css → public-13.31.css`, `public-13.32.js →
+  public-13.33.js` (the .page-col wrapper + setWide host/threshold; the
+  retired pair stays pinned in `_headers` through one 900s edge-HTML
+  window per the retention rule).
+- `src/pages/public.ts`: `<div class="page-col">` wraps the sync line +
+  all nine cards inside `#main`; CSS/JS version refs bumped.
+  `src/seo/page-shell.ts`: CSS ref bumped.
+- `assets/sw.js`: cache `sportsignal-v36` → `v37` (evicts the old CSS/JS
+  on install).
+- `scripts/check-stats.js`: the herolook pins rewritten for the new rules
+  + new v13.128 pins (page shell, .page-col.wide grid, setWide contract).
+- Parity baselines re-frozen (check-admin-parity --update) for the
+  intentional public-page HTML change.
+
+---
+
 ## [13.127-matchtimeart] — 2026-10-19 (the supplied kickoff-time artwork)
 
 The owner supplied the official kickoff-time panel artwork

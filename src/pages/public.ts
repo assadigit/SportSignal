@@ -78,12 +78,12 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.30.css">
+<link rel="stylesheet" href="/public-13.31.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
      v13.126-herolook: the hero card left the featured system entirely
-     (the desired-look hero is its own design language, public-13.30.css);
+     (the desired-look hero is its own design language, public-13.31.css);
      these rules now style ONLY the LIST variant. Reduced-motion disables
      every animation. */
 :root{--feat-accent:#4CBB17;--feat-blur:22px;--feat-glow:22%;--feat-tint:6%;--feat-border:55%}
@@ -138,7 +138,7 @@ ${FONT_FACES_STYLE}
      corner pills: the static carousel (inline-start) + the bell
      (inline-end, -> #topspotCard). Same data, states and countdown contract
      (#bigbar ids driven by updateBigBar every second), fa/en + dark/light
-     preserved — the full note lives in public-13.30.css. -->
+     preserved — the full note lives in public-13.31.css. -->
 <div class="herowrap">
 <div class="hero-bg" aria-hidden="true">
 <img class="bg-photo" src="/hero-poster.jpg" alt="" decoding="async" referrerpolicy="no-referrer">
@@ -196,7 +196,16 @@ ${FONT_FACES_STYLE}
 <a class="hero-bell" href="#topspotCard" id="heroBell"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span data-i="seeUpcoming">بازی‌های آینده را ببینید</span></a>
 </div>
 <!-- v13.126-herolook: the sync line moved out of the header, under the hero
-     (P1.3) — renderSync() keeps filling #lastSync (same id, same wiring). -->
+     (P1.3) — renderSync() keeps filling #lastSync (same id, same wiring).
+     v13.128-layoutrefine: .page-col — the centered content column wrapping
+     EVERYTHING below the hero (the sync line + all the boxes). <body> is the
+     full-width page shell now (the old 760px body column + the 100vw breakout
+     trick are gone — 100vw pushed the header controls out of the viewport);
+     at >=1080px the JS layout engine (setWide in public-13.33.js) adds .wide
+     and this becomes the two-column grid: #wideMain (the important games +
+     the containers, inline-START) | #wideSide (the tables sidebar,
+     inline-END) — the 47.png reference layout. -->
+<div class="page-col">
 <p class="sub sync hero-sync" id="lastSync" role="status" aria-live="polite">__SEO_SYNC__</p>
 <!-- v12.3/v12.4/v12.7/v12.8 TOP BOX (league), per the user's rules: TOP CL GAME (two
      selected teams in the Champions League) \u2192 the UCL BOX below; big DOMESTIC
@@ -300,6 +309,7 @@ ${FONT_FACES_STYLE}
 <h2>\u{1F4CA} \u0622\u0645\u0627\u0631 \u0628\u0627\u0632\u062F\u06CC\u062F \u0632\u0646\u062F\u0647</h2>
 <div class="sbox" id="statsBox"><span class="slbl">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC…</span></div>
 </div>
+</div>
 </main>
 <footer id="about"><nav class="footnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="/matches">\u0628\u0627\u0632\u06CC\u200C\u0647\u0627</a><a href="/matches/today">\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0627\u0645\u0631\u0648\u0632</a><a href="/teams">\u062A\u06CC\u0645\u200C\u0647\u0627</a><a href="/competitions">\u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627</a><a href="/about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="/methodology">\u0631\u0648\u0634 \u06A9\u0627\u0631</a><a href="/contact" data-i="navContact">\u062A\u0645\u0627\u0633</a><a href="/data">\u062F\u0627\u062F\u0647\u200C\u0647\u0627</a><a href="/privacy">\u062D\u0631\u06CC\u0645 \u062E\u0635\u0648\u0635\u06CC</a><a href="/terms">\u0634\u0631\u0627\u06CC\u0637 \u0627\u0633\u062A\u0641\u0627\u062F\u0647</a><a href="/sitemap">\u0646\u0642\u0634\u0647 \u0633\u0627\u06CC\u062A</a></nav>
 <div class="aboutbox">
@@ -338,7 +348,7 @@ ${FONT_FACES_STYLE}
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.12.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.32.js" defer><\/script>
+<script src="/public-13.33.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

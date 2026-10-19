@@ -57,10 +57,20 @@
 # rule: 13.29.css stays pinned through one 900s edge-HTML window. The PNG is
 # content-addressed by name only — if the artwork is ever replaced, rename
 # the file (the immutable rule below assumes byte-stability).
+# v13.128-layoutrefine: public-13.30→13.31.css + public-13.32→13.33.js (the
+# six owner-reported fixes: slightly larger time artwork, player figures
+# shrunk clear of the logo, the 100vw breakout retired — full-width body +
+# .page-col column, the two-column reference layout at >=1080px with the
+# tables in the side bar, softer میزبان/میهمان, no players on mobile) — same
+# retention rule: the retired pair stays pinned through one 900s edge-HTML
+# window.
 /core-13.12.js
   Cache-Control: public, max-age=31536000, immutable
 
 /core-13.11.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.33.js
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.32.js
@@ -73,6 +83,9 @@
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.29.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.31.css
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.30.css
