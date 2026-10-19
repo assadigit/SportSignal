@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.42.css">
+<link rel="stylesheet" href="/public-13.43.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -156,7 +156,7 @@ ${FONT_FACES_STYLE}
 <!-- v13.134-typelight (owner, lighting round): the stadium-lights overlay — the supplied
      transparent PNG (/stadium-lights-hero.png, 1400x467) as a subtle atmospheric
      light layer over the composed scene (screen blend, .5 opacity in
-     public-13.42.css since v13.135-zoomlight raised it from .35). LAST child of .hero-bg: above photo/grade/swooshes/watermarks/
+     public-13.43.css since v13.135-zoomlight raised it from .35). LAST child of .hero-bg: above photo/grade/swooshes/watermarks/
      vignette/scrim, below the card, players and header. Decorative only. -->
 <img class="bg-lights" src="/stadium-lights-hero.png" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
 </div>
@@ -201,7 +201,7 @@ ${FONT_FACES_STYLE}
 </div>
 <!-- v13.140-refine (owner): the "آخرین به‌روزرسانی" line sticks EXACTLY
      BELOW the countdown's .count-inner block — inside the chamfered panel,
-     on ALL viewports (public-13.42.css; the <=899px-only rule and the
+     on ALL viewports (public-13.43.css; the <=899px-only rule and the
      .page-col desktop copy are both retired; renderSync in public-13.36.js
      keeps mirroring #lastSync into it). -->
 <p class="hero-sync-m" id="lastSyncM" aria-hidden="true">__SEO_SYNC__</p>

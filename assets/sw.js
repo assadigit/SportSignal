@@ -129,6 +129,14 @@
 //              the big blue HUD card, feet-only melt (fade 26%→20%).
 //              Routine evict — stale HTML may still reference 13.37.css,
 //              which stays served per the retention rule.)
+// Cache name:  sportsignal-v48 (v13.141-wm: public-13.42.css→13.43.css
+//              — CSS-only release, public-13.36.js carries over unchanged.
+//              The owner's wm round: the hero's club-crest watermarks
+//              +10% presence again (.218→.240 desktop, .222→.244 mobile,
+//              both × 1.1) — the fourth consecutive crest bump; nothing
+//              else changes this round. Routine evict — stale HTML may
+//              still reference 13.42.css, which stays served per the
+//              retention rule.)
 // Cache name:  sportsignal-v47 (v13.140-refine: public-13.41.css→13.42.css
 //              — CSS-only release, public-13.36.js carries over unchanged
 //              (+ one template move in public.ts: #lastSyncM rides inside
@@ -161,7 +169,7 @@
 //              (.18→.198), floodlights .5→.6. Routine evict — stale
 //              HTML may still reference 13.39.css, which stays served
 //              per the retention rule.)
-const CACHE = "sportsignal-v47";
+const CACHE = "sportsignal-v48";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

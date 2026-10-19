@@ -6,6 +6,21 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.141-wm] — 2026-10-20 (wm round: the hero's club-crest watermarks +10% again)
+
+The owner's ask: "Make the hero's club logos on the bg 10% brighter
+(more opacity)."
+
+- **Crest watermarks +10% (again)**: `.bg-wm` `.218 → .240` (desktop)
+  and `.222 → .244` (mobile) — both × 1.1, the fourth consecutive
+  presence bump (0.18/0.16 → .198/.176 → .218/.202* → .218/.222 →
+  .240/.244). The crests read clearly against the dark grade while the
+  HUD text zone keeps its contrast (VLM-verified at 1522/375).
+  (*mobile took an extra ×1.15 step in the hud round.)
+- CSS-only release: `public-13.42.css → public-13.43.css` (rename-on-edit,
+  immutable pin, 13.42 retained per the retention rule), `sw.js` cache
+  `v47 → v48`, `VERSION 13.141-wm`, package `13.141.0.0`.
+
 ## [13.140-refine] — 2026-10-20 (refine round: brighter crests + floodlights, dimmer HUD frame, Peyda tournament name, sync line into the countdown panel)
 
 The owner's five refinements: "(1) Increase the opacity of clubs logo by
