@@ -84,13 +84,18 @@
 //              countdown pill. Same rule: cache-first assets can't refresh
 //              without a rename or a bump.)
 // Cache name:  sportsignal-v35 (v13.126-herolook: public-13.31.js→13.32,
+// Cache name:  sportsignal-v36 (v13.127-matchtimeart: public-13.29.css→13.30
+//              + the new /ui/sportsignal-match-time-bg.png artwork — the
+//              kickoff-time chip background. Same rule: cache-first assets
+//              can't refresh in place, so every client cache generation
+//              turns over on install.)
 //              public-13.28.css→13.29, core-13.11.js→13.12 — the desired-look
 //              hero restyle. Same rule: cache-first assets can't refresh
 //              without a rename or a bump.
 //              CORE_URLS drops /hero-stage.mp4 (the new hero has no video
 //              layer — saves ~645KB per SW install); the fetch handler below
 //              still caches it on demand for stale-HTML clients.)
-const CACHE = "sportsignal-v35";
+const CACHE = "sportsignal-v36";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

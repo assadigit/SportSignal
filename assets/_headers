@@ -52,6 +52,11 @@
 # v13.126-herolook: public-13.31→13.32 + public-13.28→13.29 + core-13.11→13.12
 # (the desired-look hero restyle) — same retention rule: the retired trio
 # stays pinned through one 900s edge-HTML window.
+# v13.127-matchtimeart: public-13.29→13.30 (the kickoff-time chip now rides
+# the supplied artwork /ui/sportsignal-match-time-bg.png) — same retention
+# rule: 13.29.css stays pinned through one 900s edge-HTML window. The PNG is
+# content-addressed by name only — if the artwork is ever replaced, rename
+# the file (the immutable rule below assumes byte-stability).
 /core-13.12.js
   Cache-Control: public, max-age=31536000, immutable
 
@@ -70,6 +75,9 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
+/public-13.30.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.29.css
   Cache-Control: public, max-age=31536000, immutable
 
@@ -83,6 +91,12 @@
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.25.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.127-matchtimeart: the supplied kickoff-time panel artwork (500x202
+# PNG, transparent halo) — the chip background in public-13.30.css. Immutable
+# under the rename-on-edit rule (same as the versioned js/css above).
+/ui/sportsignal-match-time-bg.png
   Cache-Control: public, max-age=31536000, immutable
 
 /favicon.svg

@@ -6,6 +6,45 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.127-matchtimeart] — 2026-10-19 (the supplied kickoff-time artwork)
+
+The owner supplied the official kickoff-time panel artwork
+(`sportsignal-match-time-bg.png`, 500×202, chamfered octagon with cyan
+glowing borders and a transparent halo) and asked for it to replace the
+CSS-drawn chip behind the live kickoff time — the artwork preserved exactly
+as shipped, no regeneration, no competing CSS glow.
+
+### The chip
+
+- **Artwork**: served at `/ui/sportsignal-match-time-bg.png` (assets/ui/),
+  rendered as the chip background at the artwork's exact 500:202 aspect —
+  `background-size: 100% 100%` is an undistorted fit by construction. The
+  width keeps the herolook measurement (233px @1522, clamped to ≥196px on
+  narrow viewports); the height now derives from the artwork itself.
+- **Layering preserved**: the clock icon and the kickoff digits stay real
+  HTML elements above the artwork (same `time-glow > time-chip >
+  time-fill > svg + .time-digits` contract the renderer already emits —
+  no JS change). Content is centred in the artwork's usable interior
+  (its glowing borders + chamfered corners measure x 53–444 of 500 → 11%
+  side padding; the interior's vertical centre sits at 49.5%).
+- **Glow hygiene**: the CSS-drawn cyan rim, gradient fill, hexagon
+  clip-path, drop-shadow and the 3s `chip-pulse` animation are RETIRED —
+  the artwork ships its own glow; nothing competes with it.
+- **Scope**: the artwork backs the kickoff time only. LIVE / FINISHED /
+  POSTPONED keep their glass state pills; the countdown panel, date row
+  and venue pill are untouched. Works in both themes (the hero island is
+  dark in both) and both directions (fa/RTL + en/LTR), verified at
+  1522/1445 + 375 stacked.
+
+### Plumbing
+
+- `public-13.29.css → public-13.30.css` (rename-on-edit rule; homepage +
+  SEO page-shell updated). `_headers` pins 13.30 immutable + the artwork
+  immutable; 13.29 stays served through one 900s edge-HTML window.
+- `sw.js` cache `sportsignal-v35 → v36` (cache-first assets can't refresh
+  in place). `VERSION 13.127-matchtimeart`, package.json `13.127.0.0`,
+  check-stats pins rewritten for the new asset/chip contract.
+
 ---
 
 ## [13.126-herolook] — 2026-10-19 (the desired-look hero)
