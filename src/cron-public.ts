@@ -11,6 +11,10 @@ import { subrequestCount } from "./utils";
 import { normalizeTeamName } from "./teams";
 import { fetchPublicMatches, enrichLiveMatches } from "./public-matches";
 import { liveFingerprint } from "./monitoring";
+// v13.129-herogaploop: the hero-portrait gap scan (detection + KV registry
+// write — src/hero-gaps.ts). Runs from THIS tick's in-memory pool: zero
+// extra fetches; the registry write is merge-disciplined (1/day + new teams).
+import { noteHeroGaps } from "./hero-gaps";
 
 export async function runPublicPhase(env: Env, ctx) {
   const { fullSweepThisTick, budgetSoft, budgetHard, matches, poolRef } = ctx;
@@ -145,5 +149,22 @@ export async function runPublicPhase(env: Env, ctx) {
     }
   } catch (e) {
     console.error("Live overlay write failed: " + e.message);
+  }
+  // v13.129-herogaploop: the HERO GAP scan — which teams on this tick's
+  // pool (live/upcoming 7-day window + the featured hero match) render
+  // crest-only because no HERO_ART portrait is wired for them. Detection
+  // is free (the pool is already in memory); the registry merge costs one
+  // KV read and AT MOST one write (new gap team or the day's first bump —
+  // mergeHeroGapRegistry's discipline). Gated like the overlay: never on
+  // hard-budget ticks, never when the fetch budget is nearly spent — a
+  // deferred scan simply rides the next 10-minute tick. Fail-silent by
+  // contract (noteHeroGaps catches its own errors): the gap loop must
+  // never cost a notification.
+  try {
+    if (!budgetHard && subrequestCount() < 42) {
+      await noteHeroGaps(env, matches);
+    }
+  } catch (e) {
+    console.warn("hero gap scan failed: " + e.message);
   }
 }

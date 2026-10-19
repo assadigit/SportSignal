@@ -6,6 +6,70 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.130-herogaploop] — 2026-10-19 (the hero gap loop: detect → log → agentic backfill)
+
+(Rebased onto 13.129-hudframe — a sibling session deployed 13.129-hudframe
+concurrently; this entry keeps the loop under 13.130. The registry seeded
+live under the first 13.129-herogaploop deploy at 17:00:31Z and survives
+in KV `hero_gaps_v1`.)
+
+The owner's ask: whenever the app shows a team without a hero portrait,
+it should try to fill it automatically — and where Cloudflare cannot do
+that, log the gap so the next agentic development session can. This
+release ships the loop's runtime half plus its agentic tooling.
+
+### The two-tier split (why the runtime does not scrape)
+
+The Worker detects, logs, prioritizes and exposes; the dev session
+scrapes, processes, wires and deploys. The split is physical: the MVP
+choice is curation, the portrait spec (512×512 crop/framing/fade tiers)
+needs the local sharp pipeline, and display changes are owner-gated.
+Serving unprocessed league busts from the runtime would regress the
+v2.2 framing fix — documented in INSTRUCTIONS §13.1.
+
+### Runtime tier
+
+- `src/hero-coverage.ts` (GENERATED, `npm run heroes:sync`): the
+  server-side mirror of the two coverage truths — the live bundle's
+  `HERO_ART` (what renders) and `hero-clubs.json` (the 96-club library).
+  Drift-gated by the new `check-hero-coverage.js` in `npm test`.
+- `src/hero-gaps.ts` + a `cron-public.ts` hook (gated `!budgetHard &&
+  subrequestCount() < 42`, fail-silent): every tick scans its in-memory
+  pool — live/upcoming rows (7-day window) and the featured hero match —
+  for teams without wired artwork, and merges into KV `hero_gaps_v1`
+  with a strict write discipline: one write per new gap team + one daily
+  bump per team (seen_days / hero_picks count distinct UTC days),
+  resolution marks when a portrait lands (7-day retention), 30-day
+  unseen prunes, a 300-team cap. Typical added burn ~1 write/day.
+- `GET /api/hero-gaps` (admin-gated, `?reset=1` to clear): the
+  prioritized report — hero-pick frequency first, each gap annotated
+  library-ready (portrait exists, needs WIRING not scraping) or
+  no-portrait, with a suggested league platform per competition mix.
+- Tail visibility: `🖼️ herogap: new team(s) without artwork: …` warns
+  on first sight.
+
+### Agentic tooling (the fill side, INSTRUCTIONS §13)
+
+- `npm run heroes:report` (`scripts/hero-gap-report.js`): pulls the live
+  worklist, prints it prioritized, caches it for the orchestrator.
+- `npm run backfill-heroes` (`scripts/backfill-hero-gaps.js`): `--plan`
+  (per-gap §2/§2b execution plans), `--add --club … --player …` (roster
+  edit + stale-state purge + the discover→fetch→normalize→validate
+  chain), `--alt <key>` (the league-platform path), `--wire <key>`
+  (creates the next versioned bundle with the HERO_ART entry + moves the
+  public.ts/_headers/SW pins), `--sync` (coverage regen + gate). The
+  genuinely agentic gates — MVP curation, kit-timing (§8), framing QA,
+  fade-tier scan, the owner's display decision — stay explicit.
+
+### What the loop found at launch
+
+78 published big-5 library portraits are not wired into the site's
+HERO_ART map (33 teams render artwork today) — a wiring backlog gated
+on the owner's display decision (README §4), now visible as
+library-ready gaps the moment those clubs surface in fixtures.
+
+---
+
 ## [13.129-hudframe] — 2026-10-19 (the HUD match card + UEFA portrait revert)
 
 The owner supplied `sportsignal-hud-matches-hero.png` (1000×325 RGBA —

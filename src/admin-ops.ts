@@ -29,6 +29,8 @@ import { getRegisteredChats, getBotMembers } from "./users";
 import { isAdminAuthed, getSettings, sanitizeSettings, syncUclSelection, canonicalizeTeams, getClubsCatalog, applySettings, clubsSearch } from "./admin";
 import { getCronStatus } from "./monitoring";
 import { executeScheduledLogic } from "./cron";
+// v13.129-herogaploop: the hero-portrait gap report (src/hero-gaps.ts).
+import { heroGapReport } from "./hero-gaps";
 
 export async function legacyGetAction(c: RouteCtx): Promise<Response | null> {
   const { req, env, url } = c;
@@ -441,6 +443,22 @@ export const ADMIN_OPS_ROUTES: RouteDef[] = [
     // v13.23-audit: on-demand audit. Compares sportsignal.ir match data (ground
     // truth from the tracked pool) with the bot's notified_matches_v6 KV.
     // Reports which matches are missing expected notifications.
+  { path: "/api/hero-gaps", method: "GET", handler: async ({ req, env, url }): Promise<Response | null> => {
+    // v13.129-herogaploop: the hero gap worklist — teams the cron tick sees
+    // on live/upcoming rows (featured hero match above all) that render
+    // crest-only because no HERO_ART portrait is wired. Admin-gated by the
+    // /api/ prefix gate upstream; the explicit check keeps parity with the
+    // diag routes (fall through when unauthed instead of a bare 401).
+    // ?reset=1 clears the registry (the next tick re-seeds it from the live
+    // pool — useful after a wiring deploy to drop stale demand history).
+    if (!(await isAdminAuthed(req, env))) return null;
+    try {
+      const reset = url.searchParams.get("reset") === "1";
+      return jsonResponse(await heroGapReport(env, reset));
+    } catch (e) {
+      return jsonResponse({ ok: false, error: "hero gap report failed: " + e.message }, 200);
+    }
+  } },
   { path: "/api/audit", method: "GET", handler: async ({ req, env, url }): Promise<Response | null> => {
       try {
         const tracked = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);

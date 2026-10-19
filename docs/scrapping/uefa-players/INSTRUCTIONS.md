@@ -651,3 +651,91 @@ Related: the `npm run portraits*` aliases in `package.json`; the
 published contracts are `assets/players/uefa/manifest.json` (36-player
 collection) and `manifest-heroes.json` + `hero-clubs.json` (hero
 collection).
+
+## 13. The hero gap loop (v13.129-herogaploop — detect → log → agentic backfill)
+
+The owner's standing ask (2026-10-19): *"every time the app finds a new team
+that doesn't have a hero picture, automatically try to download and scrape
+from sites (agentic); if Cloudflare itself cannot do it, log the empty
+pictures, then the next agentic run fills those players and teams."*
+This section is that procedure, as shipped.
+
+### 13.1 The two-tier split (and WHY the runtime does not scrape)
+
+The WORKER detects, logs, prioritizes and exposes. The DEV SESSION (you, the
+agent) scrapes, processes, wires and deploys. The split is not laziness —
+each side is physically constrained to its half:
+
+| Constraint | Runtime (Workers) | Agentic session |
+|---|---|---|
+| Choosing the hero MVP | ❌ curation (owner taste + §2 rules) | ✅ research + §8 kit-timing |
+| Image crop/normalize to the 512 spec | ❌ no sharp on Workers; the framing contract (§9b, SPEC v2.2 §8b) is unmeetable there | ✅ the local pipeline |
+| Fade-tier measurement (v13.123) | ❌ needs the luminance scan | ✅ documented method |
+| League-platform clients | ❌ brittle to bundle into the tick; subrequest budget is the notification product's | ✅ `alt-fetch.js` with pacing (§11) |
+| Display/rights changes | ❌ owner decision (README §4) | ✅ surfaced as an explicit gate |
+| Seeing what's missing | ✅ it holds the live pool every tick | ❌ no live fixture visibility |
+
+Serving an UNPROCESSED portrait from the runtime (KV-stored league busts)
+would regress the collection to exactly the head-only framing the owner
+rejected in §9b — so the runtime never downloads portraits, by design.
+
+### 13.2 The runtime tier (what the worker does now)
+
+- `src/hero-coverage.ts` — GENERATED mirror (`npm run heroes:sync`) of the
+  two truths: the live bundle's `HERO_ART` (what renders) and
+  `hero-clubs.json` (what exists). Drift-gated by `check-hero-coverage.js`
+  in `npm test`.
+- `src/hero-gaps.ts` — every cron tick (`cron-public.ts`, gated
+  `!budgetHard && subrequestCount() < 42`, fail-silent): scans the tick's
+  in-memory pool for teams on live/upcoming rows (7-day window) and on the
+  FEATURED hero match that have no wired artwork → merges into KV
+  `hero_gaps_v1` with a strict write discipline: **one write per new gap
+  team + one daily bump per team** (seen_days / hero_picks count DISTINCT
+  UTC days, never per tick), resolution marks when a portrait lands
+  (7-day retention), 30-day unseen prunes, 300-team cap. Typical added KV
+  burn: ~1 write/day (budget: 700/day).
+- `GET /api/hero-gaps` (admin-gated; `?reset=1` clears) — the report JSON:
+  coverage stats + prioritized gaps (hero-pick frequency first) with
+  library-ready annotations and suggested sources.
+- Tail visibility: `🖼️ herogap: new team(s) without artwork: …` warns on
+  first sight (`wrangler tail`).
+
+### 13.3 The agentic backfill (the loop's fill side — a session runbook)
+
+1. **Pull the worklist**: `npm run heroes:report` (needs `SS_ADMIN_TOKEN`
+   env; `--local` for wrangler dev). Caches
+   `.cache/uefa-player-portraits/hero-gap-report.json`.
+2. **Read the priorities**: gaps sort by `hero_picks` (times the team rode
+   the FEATURED match — what visitors actually saw) then `seen_days`.
+   `library_ready: true` means the portrait already exists in
+   `hero-clubs.json` — that is a WIRING decision, not scraping.
+3. **Plan**: `npm run backfill-heroes -- --plan [--top N]` prints per-gap
+   plans (§2 flow vs wiring flow).
+4. **Fill** (the mechanical parts are orchestrated):
+   - new portrait: `npm run backfill-heroes -- --add --club <state_key>
+     --player "<MVP>"` (roster edit + stale-state purge + discover → fetch
+     → normalize → validate), then `--alt <state_key>` if UEFA has no
+     honest asset (§2b);
+   - wire an existing library portrait: `--wire <state_key>` (creates the
+     next `public-XX.YY.js` with the HERO_ART entry, moves the public.ts /
+     `_headers` pins, bumps the SW cache — then `npm test` enumerates the
+     remaining version pins to fix).
+5. **The gates that stay manual** (the orchestrator prints them too): MVP
+   curation, kit-timing check (§8), framing QA (`analyze-framing.js`),
+   fade-tier scan, contact-sheet review, and the owner's display decision.
+6. **Close the loop**: `npm run backfill-heroes -- --sync` → `npm test` →
+   commit + deploy (RUNBOOK §2). After deploy the tick re-scans, the filled
+   teams drop out of the scan, and the registry marks them `resolved_at`
+   (visible for 7 days as loop health, then pruned).
+
+### 13.4 Current backlog context (2026-10-19, at loop launch)
+
+The 96-club big-5 library is complete (§ header), but the site's HERO_ART
+map wires only 33 teams (the UCL-era set + big-5 overlap) — **78 published
+portraits sit unwired**, so most big-5 clubs render crest-only today. They
+now appear as `library_ready` gaps the moment they surface in fixtures.
+Wiring them is ONE owner display decision away (batch `--wire` runs); the
+registry's hero_picks field tells you which clubs actually lead the
+featured match and deserve wiring first. Non-big-5 clubs (FA Cup qualifying
+sides, A-League, …) log as `no portrait` demand evidence — most will never
+be worth a portrait; the 30-day prune cycles them automatically.

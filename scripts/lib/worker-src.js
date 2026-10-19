@@ -87,6 +87,12 @@ function workerSrc() {
     // TEAM_ALIASES moved into teams.ts (kills the users↔matches cycle).
     // All harness grabs on these are position-independent (grabFn).
     "match-model.ts", "match-windows.ts", "match-dedupe.ts", "match-classify.ts",
+    // v13.129-herogaploop: the hero-portrait gap loop — hero-coverage.ts is
+    // the GENERATED coverage mirror (sync-hero-coverage.js), hero-gaps.ts the
+    // runtime detector/registry/report. Sits after match-classify (whose
+    // pickHeroMatch noteHeroGaps calls at runtime) and before the scheduler;
+    // check-hero-coverage grabs slugify/index/scan/merge from this pair.
+    "hero-coverage.ts", "hero-gaps.ts",
     // v13.118-fixsched: the fixture-aware scheduler — pure decision layer
     // (modes + stale-live reconcile + the Baku fallback window). Sits right
     // after the match model/classify group it reasons about; consumed by

@@ -20,6 +20,7 @@ Route by task:
 | Fill a club UEFA verifiably doesn't cover (league-official art) | INSTRUCTIONS.md §2b + SPEC.md §8b |
 | Update a player (transfer, kit change, better pick) | INSTRUCTIONS.md §2c |
 | Season-turnover refresh (annual) | INSTRUCTIONS.md §2d |
+| A team renders crest-only / fill hero gaps (the loop) | INSTRUCTIONS.md §13 — `npm run heroes:report` first |
 | Kit & club verification (kit-timing method + precedent cases) | INSTRUCTIONS.md §8 |
 | What is already covered — do NOT re-probe | `assets/players/uefa/manifest-heroes.json`, `hero-clubs.json`, INSTRUCTIONS.md header |
 | What failed and why (transport, rate limits, traps) | INSTRUCTIONS.md §3–§6, §9, §11 |
@@ -33,6 +34,14 @@ every portrait showing the body to at least the jersey (owner directive;
 INSTRUCTIONS §9b). The UEFA coverage ceiling is conclusively documented with
 per-URL probe evidence; re-probing UEFA for the no_asset clubs wastes a
 session — extend via league platforms instead.
+
+Since v13.129-herogaploop the runtime closes the visibility gap: the cron
+tick logs every fixture team without wired HERO_ART artwork into KV
+`hero_gaps_v1` (write-disciplined, ~1 write/day) and `GET /api/hero-gaps`
+(+ `npm run heroes:report`) returns the prioritized worklist — see
+INSTRUCTIONS §13. Notable backlog it surfaced at launch: 78 published
+big-5 portraits are NOT yet wired into the site's HERO_ART map (a wiring
+backlog gated on the owner's display decision, not a scraping gap).
 
 ## The portrait invariants (30 seconds)
 

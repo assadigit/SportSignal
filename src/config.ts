@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.129-hudframe";
+export const VERSION = "13.130-herogaploop";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -293,6 +293,11 @@ export const CONFIG: Record<string, any> = {
   // disables the footer everywhere (config-only kill switch).
   TRIAL_FOOTER: "نسخه آزمایشی.",
   KV_USERS_KEY: "telegram_users_v6",
+  // v13.129-herogaploop: the hero-portrait gap registry (src/hero-gaps.ts) —
+  // teams the tick sees on live/upcoming rows (and on the featured hero
+  // match) that have no wired HERO_ART artwork. Write-disciplined: one write
+  // per new gap team + one daily bump per team (see mergeHeroGapRegistry).
+  KV_HERO_GAPS: "hero_gaps_v1",
   KV_MATCHES_KEY: "matches_v13_tracked",
   KV_NOTIFIED_KEY: "notified_matches_v6",
   KV_SETTINGS_KEY: "bot_settings_v1",

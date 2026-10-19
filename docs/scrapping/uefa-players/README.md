@@ -10,6 +10,7 @@ production runs (2026-10-18).
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) | The practice: exact commands, the on-demand "new club appears in the hero" flow, the relay deploy runbook, the failure catalogue (what didn't work and why), the post-run checklist |
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) §2c–§2d | Updating players: transfers, kit changes, better picks, and the season-turnover refresh |
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) §8–§12 | Kit-timing verification (method + precedent cases), the 2026-10-19 audit + alt-source run, disaster recovery, the sandbox survival guide, tooling reference |
+| [INSTRUCTIONS.md](INSTRUCTIONS.md) §13 | The hero gap loop: what the runtime logs when a team renders without artwork, and the agentic backfill procedure (`npm run heroes:report` → `backfill-hero-gaps.js`) |
 | `scripts/uefa-player-portraits/` | The pipeline itself (`cli.js`, rosters, relay worker, fixtures) |
 | `docs/assets/uefa-player-portraits.md` | The original 36-player collection's detailed method + review findings |
 | `assets/players/uefa/` | The published library: portraits, per-collection manifests, `hero-clubs.json` (club → MVP portrait map) |
