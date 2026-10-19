@@ -85,6 +85,12 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.129-hudframe: the current pair (13.32.css + 13.33.js) — immutable under
+# the rename-on-edit rule; retired versions stay pinned below per the
+# retention rule (stale edge HTML <=900s may still reference them).
+/public-13.32.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.31.css
   Cache-Control: public, max-age=31536000, immutable
 
@@ -110,6 +116,12 @@
 # PNG, transparent halo) — the chip background in public-13.30.css. Immutable
 # under the rename-on-edit rule (same as the versioned js/css above).
 /ui/sportsignal-match-time-bg.png
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.129-hudframe: the supplied futuristic HUD frame artwork (1000x325
+# RGBA PNG) — the match-card visual layer in public-13.32.css. Immutable
+# under the rename-on-edit rule.
+/ui/sportsignal-hud-matches-hero.png
   Cache-Control: public, max-age=31536000, immutable
 
 /favicon.svg

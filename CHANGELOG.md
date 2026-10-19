@@ -6,6 +6,81 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.129-hudframe] — 2026-10-19 (the HUD match card + UEFA portrait revert)
+
+The owner supplied `sportsignal-hud-matches-hero.png` (1000×325 RGBA —
+angular beveled neon-blue/cyan frame, deep-navy interior, exterior glow
+baked into the canvas' transparent margins) and directed: replace the
+central match card's rectangular glass background with this futuristic
+HUD artwork, retire the static corner carousel pill, give the player
+figures more breathing room under the SportSignal logo (asked twice),
+and clip the club-crest watermarks at the container edge. All verified
+in the sandbox port first, then ported here.
+
+### The changes
+
+1. **The HUD frame replaces the glass card**: `a.hero-card` keeps its
+   position/content contract but drops the radius/border/backdrop/
+   shadow (they would fight the PNG's own chrome). The artwork rides as
+   an absolute `img.card-hud` layer (pointer-events:none) behind the
+   content, placed in the template INSIDE the card anchor BEFORE
+   `#heroSpot` so the client-side `renderHeroSpot` rebuild (which only
+   rewrites `#heroSpot`'s innerHTML) never removes it. Content sits
+   above via z-index; safe-area padding (`--ss-hud-pad-x/y`) keeps every
+   text/crest/timer off the frame's rim, bevels and side circuitry.
+   Nothing clips the exterior glow.
+2. **Aspect floor**: `--ss-card-w: min(58.5%,900px)` →
+   `min(900px, max(760px, 58.5%))` — below 760px wide the card's content
+   height stretched the 1000:325 artwork past ~25% (a 585px-wide card
+   @1000 measured 56% vertical stretch = visibly broken); the floor
+   keeps the fill-fit ≤ ~20% at every desktop width.
+3. **Mobile 9-slice**: ≤899px the stacked card (aspect ~0.8) switches
+   from the full-artwork layer to CSS `border-image` 9-slice rendering
+   (slices 85/110/80/100, widths 24/31/22/28 — uniform ~0.28 scale):
+   corners stay undistorted, straight edges stretch invisibly, `fill`
+   paints the navy interior; `.card-hud` turns off there.
+4. **Player/logo breathing room (asked twice)**: `.hero-player img`
+   `82%/bottom 11%` → `63%/bottom 12%`; the card drops to `margin-top:
+   100px` and gains `box-sizing:border-box` (this site has NO global
+   border-box — without it the HUD padding rendered outside the width
+   var and the card came out 96px wider than the player lanes, which
+   size from the same var). The figures ride fully below the taller
+   production header band (94px: body padding 24 + bar 68) — head ≈46px
+   clear of the logo bottom @1522 (measured); the head-pop above the
+   card is retired in favour of the clearance. ≤1019px the figures
+   retire entirely (the 760px card floor leaves <130px flanks —
+   thumbnail-sized figures).
+5. **Watermarks clip at the container edge**: `.hero-bg` gains
+   `overflow:hidden` — the 420px crest watermarks (`bottom:-80px`) and
+   the swoosh overhangs end AT the section bounds, never spilling past
+   the container (the owner's report). The HUD card's glow lives on a
+   sibling layer above and is unaffected.
+6. **The static corner carousel pill is RETIRED** (owner directive —
+   the hero shows ONE featured match): markup + CSS removed;
+   `heroPills()` in public-13.33.js null-guards the missing node (no JS
+   bump needed). Only the bell pill remains.
+7. **UEFA portraits — the initial cutoffs restored**: v2.2's
+   framing-fix had replaced 9 of the 36-roster official UEFA cutoff
+   portraits with league-platform photos (owner: "USE official webp uefa
+   pictures… you've changed the yamal and dembele picture — use the
+   previous ones, the initial uefa scraped one"). Reverted to the
+   initial 44e9906 versions: ousmane-dembele, lamine-yamal, antony,
+   bruno-fernandes, bukayo-saka, christoph-baumgartner, erling-haaland,
+   georges-mikautadze, lautaro-martinez. The other 24 roster portraits
+   were never touched.
+
+### Plumbing
+
+- `public-13.32.css` (renamed from 13.31 + the changes above; retired
+  pair stays served per the retention rule); JS stays `public-13.33.js`.
+- `_headers` pins `/public-13.32.css` + `/ui/sportsignal-hud-matches-hero.png`
+  immutable; `sw.js` CACHE v37 → v38; `config.ts`/`package.json` →
+  `13.129.0.0` "13.129-hudframe"; check-stats pins rewritten for the new
+  contract (HUD card layer, aspect floor, 9-slice mobile, carousel
+  retirement, watermark clip, template chain, portrait revert).
+
+---
+
 ## [13.128-layoutrefine] — 2026-10-19 (the owner's six reported layout fixes)
 
 The owner reported six problems against the live site (reference mockup

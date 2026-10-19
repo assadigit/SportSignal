@@ -72,7 +72,7 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.31.css">
+<link rel="stylesheet" href="/public-13.32.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -155,6 +155,13 @@ __SEO_JSONLD__
      renderHeroSpot paints #heroSpot (class-for-class with the server
      mirror so the client re-render is seamless). -->
 <a class="hero-card" id="bigHeroCard" style="display:none" href="#">
+<!-- v13.129-hudframe: the supplied futuristic HUD PNG — absolute visual
+     layer BEHIND all content (pointer-events:none, decorative only; its RGBA
+     glow halo must not be clipped, so nothing here may clip the card). It
+     rides as a static sibling BEFORE #heroSpot so the client-side
+     renderHeroSpot rebuild (which rewrites only #heroSpot's innerHTML)
+     never removes it. -->
+<img class="card-hud" src="/ui/sportsignal-hud-matches-hero.png" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
 <div id="heroSpot">__SEO_HERO__</div>
 </a>
 <!-- the countdown panel — a four-unit digital clock driven by updateBigBar
@@ -178,15 +185,9 @@ __SEO_JSONLD__
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 </div>
 </div>
-<!-- the corner pills: the static carousel (one featured match — decorative
-     only; heroPills() swaps the two crests per match) + the bell (the
-     "see upcoming matches" shortcut into the boxes below). -->
-<div class="hero-carousel" aria-hidden="true">
-<span class="car-crest"></span><span class="car-crest"></span>
-<span class="car-dots"><i class="on"></i><i></i></span>
-<button class="car-btn" type="button" tabindex="-1" disabled aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
-<button class="car-btn" type="button" tabindex="-1" disabled aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
-</div>
+<!-- v13.129-hudframe: the static corner carousel pill is RETIRED (owner
+     directive — the hero shows ONE featured match); heroPills() in
+     public-13.33.js null-guards its absence. Only the bell pill remains. -->
 <a class="hero-bell" href="#topspotCard" id="heroBell"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span data-i="seeUpcoming">بازی‌های آینده را ببینید</span></a>
 </div>
 <!-- v13.126-herolook: the sync line moved out of the header, under the hero
