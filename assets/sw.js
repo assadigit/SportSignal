@@ -129,6 +129,15 @@
 //              the big blue HUD card, feet-only melt (fade 26%→20%).
 //              Routine evict — stale HTML may still reference 13.37.css,
 //              which stays served per the retention rule.)
+// Cache name:  sportsignal-v46 (v13.139-hud: public-13.40.css→13.41.css
+//              — CSS-only release, public-13.36.js carries over unchanged.
+//              The owner's hud round: a mobile-only opacity pair — the
+//              mobile HUD veil .4→.5 (the blue frame reads 15% less
+//              opaque, visibility .59→.50) and the mobile crest
+//              watermarks .176→.202 (+15% presence); the desktop rules
+//              are untouched this round. Routine evict — stale HTML may
+//              still reference 13.40.css, which stays served per the
+//              retention rule.)
 // Cache name:  sportsignal-v45 (v13.138-polish: public-13.39.css→13.40.css
 //              — CSS-only release, public-13.36.js carries over unchanged.
 //              The owner's polish round: players +5% (height 87.4%→91.77%,
@@ -141,7 +150,7 @@
 //              (.18→.198), floodlights .5→.6. Routine evict — stale
 //              HTML may still reference 13.39.css, which stays served
 //              per the retention rule.)
-const CACHE = "sportsignal-v45";
+const CACHE = "sportsignal-v46";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

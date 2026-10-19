@@ -6,6 +6,30 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.139-hud] — 2026-10-20 (hud round: mobile HUD −15% opacity, mobile crest watermarks +15%)
+
+The owner's two mobile refinements: "Reduce the opacity of Blue hud in
+the mobile by 15%. Make logos more opacity in mobile like 15%."
+
+- **Mobile blue HUD −15%**: the dark veil over the 9-slice mobile HUD
+  artwork (`.hero-card::after`, the border-image fill can't take an
+  opacity) rises `.40 → .50` — the frame's artwork visibility drops
+  `.59 → .50` (× .85 exactly; the veil is 1 − .5015 rounded to the
+  step), one step further toward the desktop's dimmed-neon look while
+  every text surface stays readable (VLM legibility PASS @375).
+- **Mobile crest watermarks +15%**: `.bg-wm` (mobile countdown-flank
+  placement) `.176 → .202` (× 1.15) — subtly more present without
+  overpowering the countdown strip; the desktop `.198` is untouched
+  this round.
+- Mobile-only release: desktop computed styles verified unchanged
+  @1522 (veil ::after absent, wm .198, HUD layer .74); no horizontal
+  overflow @375; VLM A/B/C all PASS.
+- CSS-only release: `public-13.40.css → public-13.41.css` (JS carries
+  over), `_headers` pin + retention re-file, `sw.js` CACHE
+  `sportsignal-v45 → v46`.
+
+---
+
 ## [13.138-polish] — 2026-10-20 (polish round: +5% players hugging the HUD, floor-dissolve melt, smoother sky, brighter lights + crests)
 
 The owner's five refinements: "Make the logo behind player 10% more
