@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-18T23:12:32.231Z",
+  "generated_at": "2026-10-19T12:14:07.600Z",
   "description": "Club → hero MVP portrait map (UEFA official cutouts). Keys are football-data.org team-name slugs. status 'complete' entries carry the portrait URL; the hero layer renders without artwork for any other status.",
   "public_url_prefix": "/players/uefa/",
   "rights": {
@@ -31,20 +31,20 @@
     "brighton-hove-albion-fc": {
       "club": "Brighton & Hove Albion FC",
       "league": "Premier League",
-      "player": "Georginio Rutter",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250118966",
-      "canonical_profile_url": "https://www.uefa.com/uefaconferenceleague/clubs/players/250118966--georginio-rutter/"
+      "player": "Mitoma Kaoru",
+      "status": "complete",
+      "portrait_url": "/players/uefa/mitoma-kaoru.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "chelsea-fc": {
       "club": "Chelsea FC",
       "league": "Premier League",
-      "player": "João Pedro",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250117513",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250117513--joao-pedro/"
+      "player": "João Pedro Junqueira de Jesus",
+      "status": "complete",
+      "portrait_url": "/players/uefa/joao-pedro-junqueira-de-jesus.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "liverpool-fc": {
       "club": "Liverpool FC",
@@ -58,36 +58,36 @@
     "brentford-fc": {
       "club": "Brentford FC",
       "league": "Premier League",
-      "player": "Igor Thiago",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250173680",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250173680--igor-thiago/"
+      "player": "Igor Thiago Nascimento Rodrigues",
+      "status": "complete",
+      "portrait_url": "/players/uefa/igor-thiago-nascimento-rodrigues.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "leeds-united-fc": {
       "club": "Leeds United FC",
       "league": "Premier League",
       "player": "Harry Wilson",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250111030",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250111030--harry-wilson/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/harry-wilson.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "everton-fc": {
       "club": "Everton FC",
       "league": "Premier League",
       "player": "Jordan Pickford",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250024791",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250024791--jordan-pickford/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/jordan-pickford.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "hull-city-afc": {
       "club": "Hull City AFC",
       "league": "Premier League",
       "player": "Mohamed Belloumi",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/mohamed-belloumi.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -95,19 +95,19 @@
       "club": "Ipswich Town FC",
       "league": "Premier League",
       "player": "Daizen Maeda",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250055209",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250055209--daizen-maeda/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/daizen-maeda.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "newcastle-united-fc": {
       "club": "Newcastle United FC",
       "league": "Premier League",
       "player": "Tino Livramento",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250117508",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250117508--tino-livramento/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/tino-livramento.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "aston-villa-fc": {
       "club": "Aston Villa FC",
@@ -131,64 +131,64 @@
       "club": "Crystal Palace FC",
       "league": "Premier League",
       "player": "Jean-Philippe Mateta",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250106635",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250106635--jean-philippe-mateta/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/jean-philippe-mateta.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "afc-bournemouth": {
       "club": "AFC Bournemouth",
       "league": "Premier League",
       "player": "Alex Scott",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250169277",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250169277--alex-scott/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/alex-scott.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "coventry-city-fc": {
       "club": "Coventry City FC",
       "league": "Premier League",
-      "player": "Gustavo Hamer",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250081219",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250081219--gustavo-hamer/"
+      "player": "Matt Grimes",
+      "status": "complete",
+      "portrait_url": "/players/uefa/matt-grimes.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "fulham-fc": {
       "club": "Fulham FC",
       "league": "Premier League",
       "player": "Antonee Robinson",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250064351",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250064351--antonee-robinson/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/antonee-robinson.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "nottingham-forest-fc": {
       "club": "Nottingham Forest FC",
       "league": "Premier League",
       "player": "Morgan Gibbs-White",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250104087",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250104087--morgan-gibbs-white/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/morgan-gibbs-white.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "sunderland-afc": {
       "club": "Sunderland AFC",
       "league": "Premier League",
       "player": "Granit Xhaka",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250004721",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250004721--granit-xhaka/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/granit-xhaka.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "tottenham-hotspur-fc": {
       "club": "Tottenham Hotspur FC",
       "league": "Premier League",
       "player": "James Maddison",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250128451",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250128451--xavi-simons/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/james-maddison.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "fc-barcelona": {
       "club": "FC Barcelona",
@@ -230,26 +230,26 @@
       "club": "Real Sociedad de Fútbol",
       "league": "La Liga",
       "player": "Mikel Oyarzabal",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250097180",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250097180--mikel-oyarzabal/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/mikel-oyarzabal.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "sevilla-fc": {
       "club": "Sevilla FC",
       "league": "La Liga",
       "player": "Rubén Vargas",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250110397",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250110397--ruben-vargas/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/ruben-vargas.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "deportivo-alaves": {
       "club": "Deportivo Alavés",
       "league": "La Liga",
       "player": "Lucas Boyé",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/lucas-boye.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -257,26 +257,26 @@
       "club": "RC Celta de Vigo",
       "league": "La Liga",
       "player": "Iago Aspas",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "109132",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/109132--iago-aspas/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/iago-aspas.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "rc-deportivo-la-coruna": {
       "club": "RC Deportivo La Coruña",
       "league": "La Liga",
       "player": "Pierre-Emerick Aubameyang",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250011037",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250011037--pierre-emerick-aubameyang/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/pierre-emerick-aubameyang.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "ca-osasuna": {
       "club": "CA Osasuna",
       "league": "La Liga",
       "player": "Ante Budimir",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/ante-budimir.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -284,10 +284,10 @@
       "club": "Athletic Club",
       "league": "La Liga",
       "player": "Nico Williams",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250163185",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250163185--nico-williams/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/nico-williams.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "villarreal-cf": {
       "club": "Villarreal CF",
@@ -302,8 +302,8 @@
       "club": "RCD Espanyol de Barcelona",
       "league": "La Liga",
       "player": "Roberto Fernández",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/roberto-fernandez.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -311,8 +311,8 @@
       "club": "Rayo Vallecano de Madrid",
       "league": "La Liga",
       "player": "Sergio Camello",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/sergio-camello.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -320,26 +320,26 @@
       "club": "Getafe CF",
       "league": "La Liga",
       "player": "Borja Mayoral",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250076701",
-      "canonical_profile_url": "https://www.uefa.com/uefaconferenceleague/clubs/players/250076701--borja-mayoral/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/borja-mayoral.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "real-racing-club-de-santander": {
       "club": "Real Racing Club de Santander",
       "league": "La Liga",
       "player": "Sergio Canales",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/sergio-canales.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "levante-ud": {
       "club": "Levante UD",
       "league": "La Liga",
-      "player": "Carlos Álvarez",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Aïssa Mandi",
+      "status": "complete",
+      "portrait_url": "/players/uefa/aissa-mandi.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -347,8 +347,8 @@
       "club": "Elche CF",
       "league": "La Liga",
       "player": "Fer Niño",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/fer-nino.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -356,8 +356,8 @@
       "club": "Valencia CF",
       "league": "La Liga",
       "player": "Javi Guerra",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/javi-guerra.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -365,8 +365,8 @@
       "club": "Málaga CF",
       "league": "La Liga",
       "player": "Pablo Martínez",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/pablo-martinez.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -392,8 +392,8 @@
       "club": "SS Lazio",
       "league": "Serie A",
       "player": "Mattia Zaccagni",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/mattia-zaccagni.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -418,18 +418,18 @@
     "frosinone-calcio": {
       "club": "Frosinone Calcio",
       "league": "Serie A",
-      "player": "Romano Schmid",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Romano Christian Schmid",
+      "status": "complete",
+      "portrait_url": "/players/uefa/romano-christian-schmid.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "cagliari-calcio": {
       "club": "Cagliari Calcio",
       "league": "Serie A",
-      "player": "Marco Palestra",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Elia Caprile",
+      "status": "complete",
+      "portrait_url": "/players/uefa/elia-caprile.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -464,26 +464,26 @@
       "club": "US Lecce",
       "league": "Serie A",
       "player": "Antonino Gallo",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/antonino-gallo.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "us-sassuolo-calcio": {
       "club": "US Sassuolo Calcio",
       "league": "Serie A",
-      "player": "Domenico Berardi",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Armand Gaetan Laurienté",
+      "status": "complete",
+      "portrait_url": "/players/uefa/armand-gaetan-lauriente.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "torino-fc": {
       "club": "Torino FC",
       "league": "Serie A",
-      "player": "Ché Adams",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Che Zach Everton Adams",
+      "status": "complete",
+      "portrait_url": "/players/uefa/che-zach-everton-adams.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -491,26 +491,26 @@
       "club": "Bologna FC 1909",
       "league": "Serie A",
       "player": "Riccardo Orsolini",
-      "status": "missing",
-      "portrait_url": null,
-      "uefa_player_id": null,
-      "canonical_profile_url": null
+      "status": "complete",
+      "portrait_url": "/players/uefa/riccardo-orsolini.webp",
+      "uefa_player_id": "250112400",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250112400--riccardo-orsolini/"
     },
     "ac-monza": {
       "club": "AC Monza",
       "league": "Serie A",
-      "player": "Gustavo Varela",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Gustavo Miguel Pereira De Sousa Varela",
+      "status": "complete",
+      "portrait_url": "/players/uefa/gustavo-miguel-pereira-de-sousa-varela.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "parma-calcio-1913": {
       "club": "Parma Calcio 1913",
       "league": "Serie A",
-      "player": "Adrián Bernabé",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Adrian Bernabe' Garcia",
+      "status": "complete",
+      "portrait_url": "/players/uefa/adrian-bernabe-garcia.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -518,17 +518,17 @@
       "club": "Udinese Calcio",
       "league": "Serie A",
       "player": "Nicolò Zaniolo",
-      "status": "missing",
-      "portrait_url": null,
-      "uefa_player_id": null,
-      "canonical_profile_url": null
+      "status": "complete",
+      "portrait_url": "/players/uefa/nicolo-zaniolo.webp",
+      "uefa_player_id": "250107324",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250107324--nicolo-zaniolo/"
     },
     "genoa-cfc": {
       "club": "Genoa CFC",
       "league": "Serie A",
       "player": "Milutin Osmajić",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/milutin-osmajic.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -536,17 +536,17 @@
       "club": "ACF Fiorentina",
       "league": "Serie A",
       "player": "Franco Mastantuono",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/franco-mastantuono.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "venezia-fc": {
       "club": "Venezia FC",
       "league": "Serie A",
-      "player": "Gianluca Busio",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Gianluca Cristiano Busio",
+      "status": "complete",
+      "portrait_url": "/players/uefa/gianluca-cristiano-busio.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -572,10 +572,10 @@
       "club": "SC Freiburg",
       "league": "Bundesliga",
       "player": "Vincenzo Grifo",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250066467",
-      "canonical_profile_url": "https://www.uefa.com/uefaconferenceleague/clubs/players/250066467--vincenzo-grifo/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/vincenzo-grifo.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "bayer-04-leverkusen": {
       "club": "Bayer 04 Leverkusen",
@@ -590,8 +590,8 @@
       "club": "1. FSV Mainz 05",
       "league": "Bundesliga",
       "player": "Nadiem Amiri",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/nadiem-amiri.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -599,8 +599,8 @@
       "club": "SV 07 Elversberg",
       "league": "Bundesliga",
       "player": "Lukas Petkov",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/lukas-petkov.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -617,17 +617,17 @@
       "club": "SV Werder Bremen",
       "league": "Bundesliga",
       "player": "Niclas Füllkrug",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/niclas-fullkrug.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "hamburger-sv": {
       "club": "Hamburger SV",
       "league": "Bundesliga",
-      "player": "Ransford Königsdörffer",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Jean-Luc Dompé",
+      "status": "complete",
+      "portrait_url": "/players/uefa/jean-luc-dompe.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -635,26 +635,26 @@
       "club": "FC Augsburg",
       "league": "Bundesliga",
       "player": "Alexis Claude-Maurice",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/alexis-claude-maurice.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "eintracht-frankfurt": {
       "club": "Eintracht Frankfurt",
       "league": "Bundesliga",
-      "player": "Jonathan Burkardt",
-      "status": "missing",
-      "portrait_url": null,
-      "uefa_player_id": null,
-      "canonical_profile_url": null
+      "player": "Robin Koch",
+      "status": "complete",
+      "portrait_url": "/players/uefa/robin-koch.webp",
+      "uefa_player_id": "250126501",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250126501--robin-koch/"
     },
     "1-fc-koln": {
       "club": "1. FC Köln",
       "league": "Bundesliga",
       "player": "Ellyes Skhiri",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/ellyes-skhiri.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -671,17 +671,17 @@
       "club": "TSG 1899 Hoffenheim",
       "league": "Bundesliga",
       "player": "Andrej Kramarić",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "1906416",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/1906416--andrej-kramaric/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/andrej-kramaric.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "fc-schalke-04": {
       "club": "FC Schalke 04",
       "league": "Bundesliga",
       "player": "Edin Džeko",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/edin-dzeko.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -689,17 +689,17 @@
       "club": "SC Paderborn 07",
       "league": "Bundesliga",
       "player": "Laurin Curda",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/laurin-curda.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "1-fc-union-berlin": {
       "club": "1. FC Union Berlin",
       "league": "Bundesliga",
-      "player": "Frederik Rønnow",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Josip Juranović",
+      "status": "complete",
+      "portrait_url": "/players/uefa/josip-juranovic.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -707,8 +707,8 @@
       "club": "Borussia Mönchengladbach",
       "league": "Bundesliga",
       "player": "Isac Lidberg",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/isac-lidberg.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -725,8 +725,8 @@
       "club": "Paris FC",
       "league": "Ligue 1",
       "player": "Kevin Trapp",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/kevin-trapp.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -752,8 +752,8 @@
       "club": "Stade Rennais FC 1901",
       "league": "Ligue 1",
       "player": "Adrien Thomasson",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/adrien-thomasson.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -761,17 +761,17 @@
       "club": "Olympique Lyonnais",
       "league": "Ligue 1",
       "player": "Loïs Openda",
-      "status": "no_asset",
-      "portrait_url": null,
-      "uefa_player_id": "250096954",
-      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250096954--lois-openda/"
+      "status": "complete",
+      "portrait_url": "/players/uefa/lois-openda.webp",
+      "uefa_player_id": null,
+      "canonical_profile_url": null
     },
     "fc-lorient": {
       "club": "FC Lorient",
       "league": "Ligue 1",
       "player": "Jean-Victor Makengo",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/jean-victor-makengo.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -788,35 +788,35 @@
       "club": "Olympique de Marseille",
       "league": "Ligue 1",
       "player": "Amine Gouiri",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/amine-gouiri.webp",
       "uefa_player_id": "250101129",
-      "canonical_profile_url": "https://www.uefa.com/uefaeuropaleague/clubs/players/250101129--amine-gouiri/"
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250101129--amine-gouiri/"
     },
     "stade-brestois-29": {
       "club": "Stade Brestois 29",
       "league": "Ligue 1",
       "player": "Romain Del Castillo",
-      "status": "missing",
-      "portrait_url": null,
-      "uefa_player_id": null,
-      "canonical_profile_url": null
+      "status": "complete",
+      "portrait_url": "/players/uefa/romain-del-castillo.webp",
+      "uefa_player_id": "250074010",
+      "canonical_profile_url": "https://www.uefa.com/uefachampionsleague/clubs/players/250074010--romain-del-castillo/"
     },
     "toulouse-fc": {
       "club": "Toulouse FC",
       "league": "Ligue 1",
       "player": "Casper Tengstedt",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/casper-tengstedt.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "aj-auxerre": {
       "club": "AJ Auxerre",
       "league": "Ligue 1",
-      "player": "Josué Casimir",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Romain Faivre",
+      "status": "complete",
+      "portrait_url": "/players/uefa/romain-faivre.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -824,17 +824,17 @@
       "club": "OGC Nice",
       "league": "Ligue 1",
       "player": "Jonathan Clauss",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/jonathan-clauss.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "rc-strasbourg-alsace": {
       "club": "RC Strasbourg Alsace",
       "league": "Ligue 1",
-      "player": "Joaquín Panichelli",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Joaquin Panichelli",
+      "status": "complete",
+      "portrait_url": "/players/uefa/joaquin-panichelli.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
@@ -842,35 +842,35 @@
       "club": "Angers SCO",
       "league": "Ligue 1",
       "player": "Anthony Lopes",
-      "status": "missing",
-      "portrait_url": null,
+      "status": "complete",
+      "portrait_url": "/players/uefa/anthony-lopes.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "le-mans-fc": {
       "club": "Le Mans FC",
       "league": "Ligue 1",
-      "player": "Djibril Sidibé",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Djibril Sidibe",
+      "status": "complete",
+      "portrait_url": "/players/uefa/djibril-sidibe.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "es-troyes-ac": {
       "club": "ES Troyes AC",
       "league": "Ligue 1",
-      "player": "Umut Bozok",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Jérémy Le Douaron",
+      "status": "complete",
+      "portrait_url": "/players/uefa/jeremy-le-douaron.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     },
     "le-havre-ac": {
       "club": "Le Havre AC",
       "league": "Ligue 1",
-      "player": "Mbwana Samatta",
-      "status": "missing",
-      "portrait_url": null,
+      "player": "Ally Samatta",
+      "status": "complete",
+      "portrait_url": "/players/uefa/ally-samatta.webp",
       "uefa_player_id": null,
       "canonical_profile_url": null
     }

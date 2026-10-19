@@ -99,7 +99,9 @@ async function run({ roster, discovery, fetchLog, paths }) {
       observed_uefa_club: disc && disc.observed_uefa_club ? disc.observed_uefa_club : null,
       source_image_url: fetched && fetched.source_image_url ? fetched.source_image_url : null,
       source_asset_season: fetched && fetched.source_asset_season ? fetched.source_asset_season : null,
-      source_competition: disc && disc.observed_competition ? disc.observed_competition : null,
+      source_competition: fetched && fetched.source_competition ? fetched.source_competition
+        : (disc && disc.observed_competition ? disc.observed_competition : null),
+      alt_source: fetched && fetched.alt_source ? fetched.alt_source : null,
       fetched_at: fetched && fetched.fetched_at ? fetched.fetched_at : null,
       source_width: fetched && fetched.source_width ? fetched.source_width : null,
       source_height: fetched && fetched.source_height ? fetched.source_height : null,
@@ -139,7 +141,16 @@ async function run({ roster, discovery, fetchLog, paths }) {
     }
 
     if (!disc) {
-      entry.warnings.push("no discovery record");
+      // no discovery record (e.g. research-resolved no_asset clubs whose
+      // evidence lives in the roster, not in a squad-page crawl) — the
+      // roster no_asset evidence still decides the status honestly
+      if (player.no_asset) {
+        entry.status = "no_asset";
+        entry.no_asset = player.no_asset;
+        entry.warnings.push("no discovery record; roster no_asset evidence applied");
+      } else {
+        entry.warnings.push("no discovery record");
+      }
       manifest.entries.push(entry);
       continue;
     }
@@ -188,8 +199,16 @@ async function run({ roster, discovery, fetchLog, paths }) {
     }
 
     const ov = overrides[key] || null;
+    // alt-source entries carry normalization directives in the fetch-log
+    // alt_source block (full-body crop fraction, upscale exception)
+    const altOpts = fetched && fetched.alt_source
+      ? {
+          allow_upscale: Boolean(fetched.alt_source.allow_upscale),
+          crop_top_fraction: fetched.alt_source.crop_top_fraction || 0,
+        }
+      : {};
     try {
-      const result = await images.normalizePortrait(buf, { framing_override: ov });
+      const result = await images.normalizePortrait(buf, { framing_override: ov, ...altOpts });
       const outPath = path.join(config.asset_dir, publishedFilename);
       await images.writeFileAtomic(outPath, result.buffer);
       entry.status = "complete";

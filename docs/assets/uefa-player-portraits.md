@@ -201,8 +201,16 @@ published as `manifest-heroes.json` plus the club → portrait map
 `hero-clubs.json` (the contract for the hero frontend). Its full
 specification, runbook and the recorded failure catalogue live in
 **`docs/scrapping/uefa-players/`** (README + SPEC v2 + INSTRUCTIONS).
-Status (2026-10-18): 26 complete, 23 verified no-asset (documented probe
-evidence), 47 research-pending; `npm run portraits:heroes` re-runs it.
+Status (2026-10-19): **96/96 complete** — 31 UEFA official cutoffs (5
+added 2026-10-19: Zaniolo/Udinese, Orsolini/Bologna, Koch/Frankfurt,
+Gouiri/Marseille, Del Castillo/Brest) + 65 league-official portraits
+under spec §8b (premierleague.com, laliga.com, legaseriea.it,
+bundesliga.com, ligue1.fr official media; per-entry `alt_source`
+provenance, documented crop/upscale directives). The UEFA coverage audit
+that preceded it re-verified all 70 unresolved clubs — evidence per club
+in the roster `no_asset` records. `npm run portraits:heroes` re-runs the
+UEFA pipeline; `node scripts/uefa-player-portraits/alt-fetch.js` re-runs
+the alt-source stage.
 
 ## 8. Repository layout
 

@@ -282,16 +282,40 @@ async function main() {
         }
       }
     });
-    await test("complete entries have full provenance from official UEFA hosts", () => {
+    await test("complete entries have full provenance (UEFA hosts or recorded alt_source)", () => {
       for (const e of manifest.entries) {
         if (e.status === "complete") {
-          assert.ok(/^https:\/\/img\.uefa\.com\/imgml\/TP\/players\//.test(e.source_image_url));
-          assert.ok(/^https:\/\/www\.uefa\.com\//.test(e.canonical_profile_url));
           assert.strictEqual(e.source_has_alpha, true);
           assert.ok(e.source_sha256 && e.fetched_at && e.output_sha256);
           assert.strictEqual(e.output_width, 512);
           assert.strictEqual(e.output_height, 512);
-          assert.ok(e.normalization.applied_scale <= 1);
+          if (e.alt_source) {
+            // league-official alternative (spec v2.1 §8b): platform named,
+            // platform player reference recorded, source URL on that
+            // platform's CDN, upscale only with the explicit flag
+            assert.ok(typeof e.alt_source.platform === "string" && e.alt_source.platform.length > 0);
+            assert.ok(typeof e.alt_source.platform_player_ref === "string" && e.alt_source.platform_player_ref.length > 0);
+            const ALT_PREFIXES = {
+              "premierleague.com": "https://resources.premierleague.com/",
+              "laliga.com": "https://assets.laliga.com/",
+              "legaseriea.it": "https://media-sdp.legaseriea.it/",
+              "bundesliga.com": "https://assets.bundesliga.com/",
+            };
+            if (ALT_PREFIXES[e.alt_source.platform]) {
+              assert.ok(e.source_image_url.startsWith(ALT_PREFIXES[e.alt_source.platform]));
+            } else if (e.alt_source.platform === "ligue1.fr") {
+              assert.ok(/\.ligue1\.fr|^https:\/\/s3\.[^/]*\.amazonaws\.com\/(ligue1\.image|image\.mpg)\//.test(e.source_image_url));
+            } else {
+              throw new Error(`${e.filename}: unknown alt_source.platform ${e.alt_source.platform}`);
+            }
+            if (e.normalization.applied_scale > 1) {
+              assert.strictEqual(e.alt_source.allow_upscale, true);
+            }
+          } else {
+            assert.ok(/^https:\/\/img\.uefa\.com\/imgml\/TP\/players\//.test(e.source_image_url));
+            assert.ok(/^https:\/\/www\.uefa\.com\//.test(e.canonical_profile_url));
+            assert.ok(e.normalization.applied_scale <= 1);
+          }
         }
       }
     });

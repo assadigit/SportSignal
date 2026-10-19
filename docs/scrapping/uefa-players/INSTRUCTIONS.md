@@ -109,6 +109,42 @@ When a club appears in the hero section and has no portrait:
 7. **Commit, push, deploy** — the hero map and portraits are static assets
    served by the worker; they only go live on deploy.
 
+## 2b. Filling UEFA-uncovered clubs from league-official platforms (spec §8b)
+
+When the coverage audit says UEFA has nothing for a club (status
+`no_asset` with recorded evidence), the same style/quality portrait can
+come from the club's league:
+
+```bash
+# 1. see what would be matched (no downloads)
+node scripts/uefa-player-portraits/alt-fetch.js --dry
+
+# 2. fetch + cache originals + record provenance (idempotent; per club
+#    with --player <state-key>)
+node scripts/uefa-player-portraits/alt-fetch.js
+
+# 3. re-normalize + re-validate the collection
+node scripts/uefa-player-portraits/cli.js normalize --roster roster-heroes.json
+node scripts/uefa-player-portraits/cli.js validate  --roster roster-heroes.json
+```
+
+What it does per club: walks the researched hero candidates on the
+league's official platform (FPL bootstrap, apim.laliga.com squad-manager,
+api-sdp.legaseriea.it lineups, bundesliga.com player pages,
+ma-api.ligue1.fr club summaries), downloads the first transparent
+candidate image that validates (broken CDN assets fall through to the
+next candidate), caches the pristine original, and records an
+`alt_source` provenance block. Normalization applies the platform's
+documented crop/upscale directives (Serie A 45% / Bundesliga 42%
+top-crops; PL + Ligue 1 upscale exceptions — recorded per entry).
+
+Verification notes from the 2026-10-19 run:
+- Ligue 1 bust URLs embed a club segment — cross-checked against each
+  squad's dominant segment (kit consistency, incl. 7 summer transfers);
+- Bundesliga pages carry the club in the title (identity anchor);
+- VLM was quota-exhausted during the run — deterministic checks carried
+  the review; re-run a VLM spot pass when the service recovers.
+
 ## 3. When UEFA blocks you (the transport story)
 
 **What didn't work (measured 2026-10-18):**

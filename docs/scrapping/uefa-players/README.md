@@ -29,9 +29,13 @@ pre-seeded; everything else is one runbook execution away
 
 - **36-player fixed roster** — 34 complete, 2 deferred (owner decision:
   no UEFA cutoff exists for Jackson/Thauvin).
-- **Hero MVP library, big-5 leagues 2026/27 (96 clubs)** — 26 complete,
-  23 verified no-asset (documented probe evidence), 47 research-pending
-  (run [INSTRUCTIONS.md](INSTRUCTIONS.md) §2 to continue). See
+- **Hero MVP library, big-5 leagues 2026/27 (96 clubs)** — **96/96 complete
+  (2026-10-19)**: 31 UEFA official cutoffs + 65 league-official portraits
+  (spec §8b: PL/LaLiga/Serie A/Bundesliga/Ligue 1 official media, full
+  provenance per entry). The preceding UEFA coverage audit re-verified all
+  70 unresolved clubs (probe sets, fallback locations, right-kit targets,
+  the EURO-2024 national-team family, kit-timing withdrawals) — evidence
+  recorded per club in the roster. See
   `assets/players/uefa/manifest-heroes.json` and `hero-clubs.json`.
 
 ## Rights

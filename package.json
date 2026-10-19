@@ -19,7 +19,8 @@
     "portraits:heroes": "node scripts/uefa-player-portraits/cli.js all --roster roster-heroes.json",
     "portraits:heroes:discover": "node scripts/uefa-player-portraits/cli.js discover --roster roster-heroes.json",
     "portraits:heroes:fetch": "node scripts/uefa-player-portraits/cli.js fetch --roster roster-heroes.json",
-    "portraits:heroes:validate": "node scripts/uefa-player-portraits/cli.js validate --roster roster-heroes.json"
+    "portraits:heroes:validate": "node scripts/uefa-player-portraits/cli.js validate --roster roster-heroes.json",
+    "portraits:alt": "node scripts/uefa-player-portraits/alt-fetch.js"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230419.0",

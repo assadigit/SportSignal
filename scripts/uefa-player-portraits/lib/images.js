@@ -123,6 +123,11 @@ async function subjectBounds(imgInput) {
 // Returns { buffer, normalization } or throws with an actionable error.
 // opts.framing_override: optional { scale?: <=1, y_offset_px?, x_offset_px? }
 // documented per-player override (spec §8 framing review).
+// opts.crop_top_fraction: alt-source full-body images are cropped to their
+//   top fraction (head-and-shoulders region) before bounding — recorded in
+//   the fetch-log alt_source block.
+// opts.allow_upscale: alt-source exception (spec §8 no-upscale applies to UEFA
+//   originals; some league platforms serve no larger variant).
 async function normalizePortrait(sourceBuf, opts = {}) {
   const W = config.target_width;
   const H = config.target_height;
@@ -131,6 +136,14 @@ async function normalizePortrait(sourceBuf, opts = {}) {
   const contentY = pad;
   const contentW = W - 2 * pad;
   const contentH = H - 2 * pad;
+
+  if (opts.crop_top_fraction && opts.crop_top_fraction > 0 && opts.crop_top_fraction < 1) {
+    const meta = await sharp(sourceBuf).metadata();
+    const cropH = Math.max(1, Math.round(meta.height * opts.crop_top_fraction));
+    sourceBuf = await sharp(sourceBuf)
+      .extract({ left: 0, top: 0, width: meta.width, height: cropH })
+      .toBuffer();
+  }
 
   const bounds = await subjectBounds(sourceBuf);
   if (bounds.empty) throw new Error("source has no visible subject (all alpha below threshold)");
@@ -142,8 +155,13 @@ async function normalizePortrait(sourceBuf, opts = {}) {
   let scale = Math.min(contentW / bounds.subjectWidth, contentH / bounds.subjectHeight);
   let scaleCapped = false;
   if (scale > 1) {
-    scale = 1; // never upscale
-    scaleCapped = true;
+    // Never upscale UEFA originals (spec §8). Alt-source collections may
+    // explicitly allow it (e.g. the PL's 220x280 headshots have no larger
+    // official variant) — the exception is recorded per entry.
+    if (!opts.allow_upscale) {
+      scale = 1;
+      scaleCapped = true;
+    }
   }
   const ov = opts.framing_override || {};
   if (typeof ov.scale === "number") {

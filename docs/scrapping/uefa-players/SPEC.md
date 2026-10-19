@@ -1,4 +1,10 @@
-# UEFA Player Portrait Scraping — Specification v2
+# UEFA Player Portrait Scraping — Specification v2.1
+
+> **v2.1 (2026-10-19).** Adds §8b — league-official alternative sources for
+> clubs UEFA verifiably does not cover (owner directive: same style, same
+> quality, official platforms only). Records the completed coverage audit:
+> national-team asset family found (segment 3 = EURO 2024), club-context
+> surface fully probed, 96/96 hero clubs published (31 UEFA + 65 alt).
 
 > **What this is.** The complete, battle-tested specification for collecting
 > official UEFA player cutout portraits — written *after* two full production
@@ -28,12 +34,14 @@ Build and maintain a local library of official UEFA player cutout portraits:
    assets, and serve it from the assets from then on. Never limited to a
    fixed set of clubs.
 
-Non-negotiables (unchanged from v1):
+Non-negotiables (v2.1):
 
-- UEFA official sources only. No substitutions from other websites.
+- Official sources only: UEFA first; for clubs UEFA verifiably does not
+  cover, the five league-official platforms of §8b — never fansites,
+  wikis or aggregators.
 - Identity verified before acceptance. No fabricated assets, no placeholders.
 - Honest manifests including failures. Partial results are never presented
-  as complete.
+  as complete. Every alt-source file records its platform provenance.
 
 ## 2. Glossary
 
@@ -227,6 +235,45 @@ Deploy/runbook in [INSTRUCTIONS.md](INSTRUCTIONS.md) §3.
   image decode, expected alpha, plausible dimensions, non-placeholder
   content; atomic writes; sha256-logged for idempotent reruns.
 
+## 8b. Alternative league-official sources (v2.1)
+
+**When.** Only after the UEFA coverage audit (§5 + the full probe surface)
+concluded `no_asset` for the club's candidates with recorded evidence. UEFA
+stays the preferred source; §8b fills documented gaps.
+
+**Which platforms** (all official league media, all transparent-background,
+all verified live 2026-10-19):
+
+| Platform | Source of the image | Native size | Notes |
+|---|---|---|---|
+| premierleague.com | FPL bootstrap → photo id → resources CDN | 220×280 PNG | head-and-shoulders; **upscale exception** (no larger variant is served) |
+| laliga.com | apim.laliga.com squad-manager → assets.laliga.com | up to 2048×2048 PNG | squad media-day portraits |
+| legaseriea.it | api-sdp standings → matches → lineups → media-sdp | 1024×1024 WebP | full-body pose; **top-cropped 45%** to head-and-shoulders |
+| bundesliga.com | player page → assets.bundesliga.com `{dfl-obj}-body.png` | 780×960 PNG | full body; **top-cropped 42%**; page title carries the club (identity anchor) |
+| ligue1.fr | ma-api.ligue1.fr championship-club-summary → S3 bustPictures | 400–800px PNG | club-scoped media-day busts |
+
+**Hard rules.**
+1. Provenance: every published file carries an `alt_source` block
+   (platform, platform_player_ref, crop/upscale directives, note) in the
+   fetch log AND the manifest. Validators enforce platform-CDN URL
+   prefixes and reject upscales without the explicit `allow_upscale` flag.
+2. The no-upscale rule (§4) may be lifted ONLY per-entry with the flag and
+   a note explaining why no larger official variant exists.
+3. Kit consistency: the platform asset must be the player's CURRENT club
+   photo. Verified deterministically where possible — the Ligue 1 S3 URLs
+   embed a club id segment that must match the player's squad-mates' seg;
+   LaLiga/Serie A/Bundesliga/PL serve current-season club-scoped squad
+   APIs. VLM spot-review when the service is available.
+4. Candidate fallback: a broken CDN asset for the primary candidate (e.g.
+   FPL photo 403) falls through to the next researched candidate — the
+   downloaded player is the one recorded.
+5. Same acceptance pipeline: originals cached lossless, normalized to the
+   shared 512 canvas, contact sheet, honest manifest.
+
+**What is NOT acceptable:** backgrounds (must be transparent cutouts),
+fan renders, watermarked media, player photos in another club's or a
+national team's kit.
+
 ## 9. Download validation & caching
 
 - Accepted: the transparent cutoff of the player's own profile (any
@@ -336,6 +383,12 @@ clubs UEFA will never have assets for.
 | `www.uefa.com/{comp}/clubs/{id}--{slug}/squad/` | current (or last-participation, §5.2) squad |
 | `www.uefa.com/{comp}/clubs/players/{id}--{slug}/` | canonical player profile; also reachable un-slugged (`/players/{id}/`) via redirect |
 | `www.uefa.com/teamsandplayers/…` | legacy profile URL form found in Wikipedia links — normalizes via redirect, not in the relay scope |
+| `img.uefa.com/imgml/TP/players/3/{season}/cutoff/{id}.webp` | **national-team family (found 2026-10-19): segment 3 = EURO 2024.** Confirmed on a no-club-career subject (Ché Adams/Scotland 200, Pickford/England 200) and 7 internationals — all national kits, NOT usable as club hero portraits. Segment 2 (Super Cup hypothesis) negative even for a confirmed 2025 participant (Dembélé). Other segments probed 404. |
+| `resources.premierleague.com/premierleague25/photos/players/110x140/{fpl-photo}.png` | §8b PL headshot (220×280 RGBA; some ids 403 — candidate fallback applies) |
+| `assets.laliga.com/squad/2026/…` | §8b LaLiga squad portrait |
+| `media-sdp.legaseriea.it/playerImages/…` | §8b Serie A lineup imagery |
+| `assets.bundesliga.com/player/{dfl-obj}-body.png` | §8b Bundesliga body PNG |
+| `s3.eu-west-3.amazonaws.com/ligue1.image/players/2026/all/player_official_2026_{clubseg}_{player}-400x300.png` | §8b Ligue 1 bust; `{clubseg}` must match the squad's dominant segment (kit-consistency check); second bucket `s3.eu-west-1.amazonaws.com/image.mpg/{season}-{clubseg}-…` |
 
 ## Appendix B — failure catalogue (what didn't work)
 
@@ -345,3 +398,16 @@ reading (blocked/JS-only), VLM face identification (unreliable), roster
 DOB hints (three were wrong, UEFA was right), segment-1-only assumptions
 (broke UEL/UECL), fast probe sweeps (edge throttle), Jackson/Thauvin
 (no cutoff exists at all).
+
+**2026-10-19 coverage audit (Task A) — UEFA has no asset for 65 of 96
+hero clubs.** Every one of the 70 originally-unresolved clubs was
+re-verified: research-pending resolution (Wikidata P2276 + Wikipedia
+extlinks), bounded club-context probe sets, current-registration
+fallback-avatar locations (UEL/UECL 26/27 — all 404), right-kit
+participation targets (all 404), the NT sweep (segment 3 = EURO 2024,
+national kits only), and kit-timing withdrawals (Tzolakis 1/2026 =
+Olympiacos kit, Mandi 1/2025 = Lille kit — downloaded then withdrawn,
+Lyon/Openda precedent). Two session finds were publishable right-club
+cutoffs (5 total: Zaniolo/Udinese, Orsolini/Bologna, Koch/Frankfurt,
+Gouiri/OM, Del Castillo/Brest). The remaining 65 clubs were filled from
+the §8b league-official platforms (2026-10-19, 96/96 complete).

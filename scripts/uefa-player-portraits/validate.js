@@ -1,9 +1,14 @@
 // validate.js — verify the roster, files, image properties and provenance.
 // Exits non-zero when any entry is unresolved or any acceptance criterion
-// fails. The one documented exception: entries with status "deferred" — an
-// explicit owner decision, recorded in the manifest with a deferral record
-// (decided_at + reason) — are accepted as a known-incomplete outcome and
-// reported as a note, not a failure.
+// fails. Documented exceptions:
+//   - status "deferred": an explicit owner decision, recorded in the
+//     manifest with a deferral record (decided_at + reason) — accepted as a
+//     known-incomplete outcome and reported as a note, not a failure;
+//   - alt_source entries (spec v2.1 §8b): UEFA carries no asset for the
+//     club's candidates; the portrait comes from a league-official platform
+//     instead. Provenance must name the platform and its player reference,
+//     the source URL must match that platform's CDN, and the no-upscale
+//     rule may be lifted ONLY by the per-entry allow_upscale flag.
 //
 // v2 (multi-collection library):
 //   - roster counts are taken from the roster file, not hardcoded;
@@ -149,15 +154,44 @@ async function run({ roster, manifest, paths }) {
       continue;
     }
     // required provenance
-    ok(e.uefa_player_id != null, `${e.filename}: missing uefa_player_id`);
-    ok(e.canonical_profile_url && /^https:\/\/www\.uefa\.com\//.test(e.canonical_profile_url), `${e.filename}: missing/invalid canonical profile URL`);
-    ok(e.source_image_url && /^https:\/\/img\.uefa\.com\/imgml\/TP\/players\//.test(e.source_image_url), `${e.filename}: source image must come from img.uefa.com`);
+    if (e.alt_source) {
+      // league-official alternative source (spec v2.1 §8b)
+      const PLATFORM_URL_PREFIXES = {
+        "premierleague.com": ["https://resources.premierleague.com/"],
+        "laliga.com": ["https://assets.laliga.com/"],
+        "legaseriea.it": ["https://media-sdp.legaseriea.it/"],
+        "bundesliga.com": ["https://assets.bundesliga.com/"],
+        "ligue1.fr": [], // S3 bucket URLs vary — host suffix checked below
+      };
+      ok(e.alt_source.platform && PLATFORM_URL_PREFIXES.hasOwnProperty(e.alt_source.platform),
+        `${e.filename}: alt_source.platform must be a supported league-official platform`);
+      ok(typeof e.alt_source.platform_player_ref === "string" && e.alt_source.platform_player_ref.length > 0,
+        `${e.filename}: alt_source must carry the platform player reference`);
+      const prefixes = PLATFORM_URL_PREFIXES[e.alt_source.platform] || [];
+      const urlOk = e.source_image_url &&
+        (prefixes.some((p) => e.source_image_url.startsWith(p)) ||
+          (e.alt_source.platform === "ligue1.fr" && /\.ligue1\.fr|^https:\/\/s3\.[^/]*\.amazonaws\.com\/(ligue1\.image|image\.mpg)\//.test(e.source_image_url)));
+      ok(urlOk, `${e.filename}: source image must come from the ${e.alt_source.platform} platform CDN`);
+      // UEFA ids are optional for players never registered in UEFA comps —
+      // but when present must look sane
+      if (e.uefa_player_id != null) {
+        ok(/^\d+$/.test(String(e.uefa_player_id)), `${e.filename}: uefa_player_id must be numeric`);
+      }
+      if (e.normalization && e.normalization.applied_scale > 1) {
+        ok(e.alt_source.allow_upscale === true,
+          `${e.filename}: upscale only allowed with the per-entry alt_source.allow_upscale flag`);
+      }
+    } else {
+      ok(e.uefa_player_id != null, `${e.filename}: missing uefa_player_id`);
+      ok(e.canonical_profile_url && /^https:\/\/www\.uefa\.com\//.test(e.canonical_profile_url), `${e.filename}: missing/invalid canonical profile URL`);
+      ok(e.source_image_url && /^https:\/\/img\.uefa\.com\/imgml\/TP\/players\//.test(e.source_image_url), `${e.filename}: source image must come from img.uefa.com`);
+      ok(e.normalization && e.normalization.applied_scale <= 1, `${e.filename}: portrait must not be upscaled (scale > 1)`);
+    }
     ok(e.source_sha256 != null, `${e.filename}: missing source_sha256`);
     ok(e.fetched_at != null, `${e.filename}: missing fetched_at`);
     ok(e.identity_evidence && (e.identity_evidence.date_of_birth || e.identity_evidence.disambiguation), `${e.filename}: identity evidence must include DOB or a disambiguation explanation`);
     ok(e.source_has_alpha === true, `${e.filename}: source must have alpha transparency`);
     ok(e.normalization != null, `${e.filename}: missing normalization record`);
-    ok(e.normalization && e.normalization.applied_scale <= 1, `${e.filename}: portrait must not be upscaled (scale > 1)`);
     ok(e.output_width === config.target_width && e.output_height === config.target_height, `${e.filename}: output must be ${config.target_width}x${config.target_height}`);
 
     const file = path.join(config.asset_dir, e.filename);

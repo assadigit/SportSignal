@@ -126,8 +126,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Verbruggen/Rutter: Brighton UEL 25/26 (14/2026) 404; adjacent 14/2025+14/2024 404; Brighton has no other UEFA seasons — no Brighton-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Verbruggen/Rutter: Brighton UEL 25/26 (14/2026) 404; adjacent 14/2025+14/2024 404; Brighton has no other UEFA seasons — no Brighton-kit UEFA cutoff exists; current-registration fallback 2019/2027 (UECL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 2019/2027 (UECL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -173,8 +174,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Joao Pedro: Chelsea UECL 24/25 (2019/2025) 404; adjacent 2019/2024+2019/2026 404 + avatar location 14/2027 404 — no Chelsea-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Joao Pedro: Chelsea UECL 24/25 (2019/2025) 404; adjacent 2019/2024+2019/2026 404 + avatar location 14/2027 404 — no Chelsea-kit UEFA cutoff exists; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -249,8 +251,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Igor Thiago: only UEFA registration is Club Brugge (wrong kit for Brentford); current-season probes 404 — no Brentford-kit asset possible (club never in UEFA competition)",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Igor Thiago: only UEFA registration is Club Brugge (wrong kit for Brentford); current-season probes 404 — no Brentford-kit asset possible (club never in UEFA competition); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -290,8 +293,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Harry Wilson: no UEFA club registration (Wales NT only); Leeds never in UEFA competition — no asset possible",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Harry Wilson: no UEFA club registration (Wales NT only); Leeds never in UEFA competition — no asset possible; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -331,8 +335,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Pickford: no UEFA club registration (England NT only); Everton not in UEFA competition since 2017 — no asset possible",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Pickford: no UEFA club registration (England NT only); Everton not in UEFA competition since 2017 — no asset possible; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; EURO 2024 national-team cutoff exists (England kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; EURO 2024 national-team cutoff exists (England kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -368,6 +373,11 @@
         "date_of_birth": null,
         "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
         "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Tzolakis: the only existing cutoff is 1/2026 (UCL 25/26) = Olympiacos kit (Olympiacos 2019–2026, Hull 2026–; Wikipedia career table fetched 2026-10-19) — downloaded then WITHDRAWN (wrong-club kit); current UECL 26/27 registration fallback (2019/2027) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "kit-timing withdrawal + bounded probe set + manual paced probes via the scoped relay; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -407,8 +417,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Maeda: only UEFA registrations are Celtic (wrong kit); current-season probes 404 — no Ipswich-kit asset possible",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Maeda: only UEFA registrations are Celtic (wrong kit); current-season probes 404 — no Ipswich-kit asset possible; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -454,8 +465,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Livramento: Newcastle UCL 23/24 (1/2024) 404; adjacent 1/2023+1/2025+1/2022 404 — no Newcastle-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Livramento: Newcastle UCL 23/24 (1/2024) 404; adjacent 1/2023+1/2025+1/2022 404 — no Newcastle-kit UEFA cutoff exists; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -579,8 +591,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Mateta: Palace UEL 25/26 (14/2026) 404; adjacent 14/2025+14/2024 404 — no Palace-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Mateta: Palace UEL 25/26 (14/2026) 404; adjacent 14/2025+14/2024 404 — no Palace-kit UEFA cutoff exists; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; no EURO 2024 asset. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; no EURO 2024 asset. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -622,8 +635,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Alex Scott/Evanilson/Kluivert: none has any UEFA club registration; Bournemouth has never played UEFA competition — no asset possible",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Alex Scott/Evanilson/Kluivert: none has any UEFA club registration; Bournemouth has never played UEFA competition — no asset possible; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404 + UECL 25/26 (2019/2026) probed 404 — Bournemouth's two European seasons both lack cutoffs. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404 + UECL 25/26 (2019/2026) probed 404 — Bournemouth's two European seasons both lack cutoffs. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -663,8 +677,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Hamer: no UEFA club registration; Coventry never in UEFA competition — no asset possible",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Hamer: no UEFA club registration; Coventry never in UEFA competition — no asset possible; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -704,8 +719,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Robinson: no UEFA club registration; Fulham not in UEFA competition since 2011 — no asset possible",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Robinson: no UEFA club registration; Fulham not in UEFA competition since 2011 — no asset possible; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -751,8 +767,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Gibbs-White: Forest UECL 25/26 (2019/2026) 404; adjacent 2019/2025 404 — no Forest-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Gibbs-White: Forest UECL 25/26 (2019/2026) 404; adjacent 2019/2025 404 — no Forest-kit UEFA cutoff exists; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; no EURO 2024 asset. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; no EURO 2024 asset. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -794,8 +811,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Xhaka: no Sunderland UEFA registration (club not in Europe since 1973); his Leverkusen/Fenerbahce cutoffs would show wrong kits — not publishable for Sunderland",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Xhaka: no Sunderland UEFA registration (club not in Europe since 1973); his Leverkusen/Fenerbahce cutoffs would show wrong kits — not publishable for Sunderland; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; EURO 2024 national-team cutoff exists (Switzerland kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; EURO 2024 national-team cutoff exists (Switzerland kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -841,8 +859,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Maddison: Spurs UEL 24/25 winners (14/2025) 404; adjacent 14/2024+14/2026 404; Xavi Simons/Tonali last registered elsewhere (wrong kits) — no Spurs-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Maddison: Spurs UEL 24/25 winners (14/2025) 404; adjacent 14/2024+14/2026 404; Xavi Simons/Tonali last registered elsewhere (wrong kits) — no Spurs-kit UEFA cutoff exists; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; EURO 2024 national-team cutoff exists (England kit — not a club asset); Super Cup segment (2/2025) probed 404 for the UEL-winning squad's playmaker. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; EURO 2024 national-team cutoff exists (England kit — not a club asset); Super Cup segment (2/2025) probed 404 for the UEL-winning squad's playmaker. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -1039,8 +1058,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Oyarzabal: Sociedad UEL 23/24 (14/2024) 404; adjacent 14/2023+14/2022 404 — no Sociedad-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Oyarzabal: Sociedad UEL 23/24 (14/2024) 404; adjacent 14/2023+14/2022 404 — no Sociedad-kit UEFA cutoff exists; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; UCL 23/24 (1/2024) probed 404; UEL 20/21 (14/2021) + adjacent UEL seasons (14/2023, 14/2025) probed 404; EURO 2024 national-team cutoff exists (Spain kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; UCL 23/24 (1/2024) probed 404; UEL 20/21 (14/2021) + adjacent UEL seasons (14/2023, 14/2025) probed 404; EURO 2024 national-team cutoff exists (Spain kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -1077,8 +1097,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Vargas: Sevilla UEL registrations (14/2024, 14/2025, 14/2026) all 404 — no Sevilla-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Vargas: Sevilla UEL registrations (14/2024, 14/2025, 14/2026) all 404 — no Sevilla-kit UEFA cutoff exists; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; EURO 2024 national-team cutoff exists (Switzerland kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; EURO 2024 national-team cutoff exists (Switzerland kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -1111,6 +1132,11 @@
         "date_of_birth": null,
         "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
         "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Boyé: UEFA profile exists (id 250121868) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -1158,8 +1184,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Aspas: Celta UECL (2019/2026 + 2019/2025 + 2019/2024) all 404 — no Celta-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Aspas: Celta UECL (2019/2026 + 2019/2025 + 2019/2024) all 404 — no Celta-kit UEFA cutoff exists; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; UECL 22/23 (2019/2023) probed 404; no EURO 2024 asset. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; UECL 22/23 (2019/2023) probed 404; no EURO 2024 asset. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -1196,8 +1223,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Aubameyang: UEFA cutoffs exist only in Barcelona/Marseille/Chelsea kits (wrong club); Depor not in UEFA competition since 2017 — no Depor-kit asset possible",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Aubameyang: UEFA cutoffs exist only in Barcelona/Marseille/Chelsea kits (wrong club); Depor not in UEFA competition since 2017 — no Depor-kit asset possible; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -1230,6 +1258,11 @@
         "date_of_birth": null,
         "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
         "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Budimir: UEFA profile exists (id 250053837) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -1269,8 +1302,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Nico Williams: Athletic UEL (14/2025, 14/2026) 404; Athletic UCL 23/24 (1/2024) persistently edge-throttled (403) — RETRY on refresh; 1/2025 404",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Nico Williams: Athletic UEL (14/2025, 14/2026) 404; Athletic UCL 23/24 (1/2024) persistently edge-throttled (403) — RETRY on refresh; 1/2025 404; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; EURO 2024 national-team cutoff exists (Spain kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; EURO 2024 national-team cutoff exists (Spain kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + career registration records; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -1338,6 +1372,11 @@
         "date_of_birth": null,
         "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
         "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -1367,6 +1406,11 @@
         "date_of_birth": null,
         "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
         "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -1405,8 +1449,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Mayoral: current UECL 26/27 (2019/2027) 404 (profile exposes no cutoff); his Roma years (14/2021) are wrong-kit — no Getafe-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Mayoral: current UECL 26/27 (2019/2027) 404 (profile exposes no cutoff); his Roma years (14/2021) are wrong-kit — no Getafe-kit UEFA cutoff exists; current-registration fallback 2019/2027 (UECL 26/27 squad) re-verified 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 2019/2027 (UECL 26/27 squad) re-verified 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -1442,6 +1487,11 @@
         "date_of_birth": null,
         "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
         "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Canales: UEFA profile exists (id 1906765) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -1474,6 +1524,11 @@
         "date_of_birth": null,
         "source": "wikipedia player page (fetched 2026-10-18); DOB pending re-extraction — identity anchored by squad context or profile club check",
         "confidence": "medium"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Mandi: the only existing cutoff is 1/2025 (UCL 24/25) = Lille kit (Villarreal 2021–2024, Lille 2024–2026, Levante 2026–; Wikipedia career table fetched 2026-10-19) — downloaded then WITHDRAWN (wrong-club kit); current UEL 26/27 registration fallback (14/2027) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "kit-timing withdrawal + bounded probe set + manual paced probes via the scoped relay; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -1506,6 +1561,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -1541,6 +1601,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Gayà: UEFA profile exists (id 250047086) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -1573,6 +1638,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -1678,6 +1748,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Zaccagni: UEFA profile exists (id 250150875) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404; bounded set: researched hint 1/2024 (Lazio UCL 23/24) + adjacent 1/2023, 1/2025, 1/2022 all 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -1792,6 +1867,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Schmid: UEFA profile exists (id 250097378) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -1824,6 +1904,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -1985,6 +2070,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -2017,6 +2107,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Berardi: UEFA profile exists (id 250058759) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -2052,6 +2147,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Adams: UEFA profile exists (id 250155055) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -2113,6 +2213,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -2148,6 +2253,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -2209,6 +2319,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Osmajić: UEFA profile exists (id 250113827) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -2241,6 +2356,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "de Gea: UEFA profile exists (id 1901746) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404; bounded set: researched hint 2019/2025 (Fiorentina UECL 24/25) + adjacent 2019/2024, 2019/2026, 2019/2023 all 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -2276,6 +2396,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -2396,8 +2521,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Grifo: Freiburg UEL 25/26 (14/2026) 404; adjacent 14/2025+14/2024 404 — no Freiburg-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Grifo: Freiburg UEL 25/26 (14/2026) 404; adjacent 14/2025+14/2024 404 — no Freiburg-kit UEFA cutoff exists; current-registration fallback 2019/2027 (UECL 26/27 squad) probed 404; UEL 22/23 (14/2023) + UEL 23/24 (14/2024) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 2019/2027 (UECL 26/27 squad) probed 404; UEL 22/23 (14/2023) + UEL 23/24 (14/2024) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -2474,6 +2600,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Amiri: UEFA profile exists (id 250078643) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -2506,6 +2637,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -2576,6 +2712,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Füllkrug: UEFA profile exists (id 250041844) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -2608,6 +2749,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -2640,6 +2786,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Gregoritsch: UEFA profile exists (id 250023832) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -2710,6 +2861,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Skhiri: UEFA profile exists (id 250119519) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -2792,8 +2948,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Kramaric: Hoffenheim UECL 24/25 (2019/2025) 404; 2019/2024 + 1/2025 404 — no Hoffenheim-kit UEFA cutoff exists",
-        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets"
+        "evidence": "Kramaric: Hoffenheim UECL 24/25 (2019/2025) 404; 2019/2024 + 1/2025 404 — no Hoffenheim-kit UEFA cutoff exists; current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; UEL 20/21 (14/2021) probed 404; EURO 2024 national-team cutoff exists (Croatia kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current-registration fallback 14/2027 (UEL 26/27 squad) probed 404; UEL 20/21 (14/2021) probed 404; EURO 2024 national-team cutoff exists (Croatia kit — not a club asset). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "bounded probe set verified manually via the scoped relay (documented per-URL results) + pipeline sweep logs; retry with --refresh if UEFA publishes new assets",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -2829,6 +2986,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Džeko: UEFA profile exists (id 72048) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -2864,6 +3026,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "F. Götze: UEFA profile exists (id 250087141) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -2899,6 +3066,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Rønnow: UEFA profile exists (id 250023709) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404; bounded set: researched hint 1/2024 (Union Berlin UCL 23/24) + adjacent seasons all 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -2931,6 +3103,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -3004,6 +3181,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Trapp: UEFA profile exists (id 1902188) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -3121,6 +3303,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Thomasson: UEFA profile exists (id 250132409) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -3162,8 +3349,9 @@
       },
       "no_asset": {
         "verified_at": "2026-10-18",
-        "evidence": "Openda: current-season cutoff absent (profile exposes none); the only existing cutoff (1/2026, UCL 2025/26) shows his RB Leipzig kit — he was at Leipzig that season while Lyon played UECL. Wrong-club kit: not publishable. Fallbacks (Nuamah, Fofana) have the same gap. RETRY when UEFA shoots Lyon cutoffs (refresh) or pick a newly-registered candidate.",
-        "method": "kit-timing analysis of asset season vs club participation records"
+        "evidence": "Openda: current-season cutoff absent (profile exposes none); the only existing cutoff (1/2026, UCL 2025/26) shows his RB Leipzig kit — he was at Leipzig that season while Lyon played UECL. Wrong-club kit: not publishable. Fallbacks (Nuamah, Fofana) have the same gap. RETRY when UEFA shoots Lyon cutoffs (refresh) or pick a newly-registered candidate.; current UCL 26/27 registration (1/2027) probed 404 — no Lyon-kit UEFA cutoff exists at any probed location. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule); current UCL 26/27 registration (1/2027) probed 404 — no Lyon-kit UEFA cutoff exists at any probed location. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "kit-timing analysis of asset season vs club participation records",
+        "reverified_at": "2026-10-19"
       }
     },
     {
@@ -3196,6 +3384,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Bernardeau: UEFA profile exists (id 250210897) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -3342,6 +3535,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Tengstedt: UEFA profile exists (id 250101874) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -3362,6 +3560,10 @@
         "selection_basis": "wing duo",
         "candidates": [
           {
+            "name": "Romain Faivre",
+            "note": "alt-source re-research 2026-10-19: the original candidates are no longer on the club's official league squad list (verified against the 2026/27 registry); replacement candidate picked from the current official squad"
+          },
+          {
             "name": "Josué Casimir"
           },
           {
@@ -3374,6 +3576,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -3409,6 +3616,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Clauss: UEFA profile exists (id 250171228) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -3444,6 +3656,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Doué: UEFA profile exists (id 250136355) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404; Panichelli fallback probed: his only existing cutoff is 1/2026 (Leverkusen UCL 25/26) — wrong-club kit by kit timing (Leverkusen 2025–2026, Strasbourg 2026–). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -3476,6 +3693,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Lopes: UEFA profile exists (id 1901643) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -3508,6 +3730,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Brahimi: UEFA profile exists (id 250175693) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     },
     {
@@ -3528,6 +3755,10 @@
         "selection_basis": "promotion top scorers",
         "candidates": [
           {
+            "name": "Jérémy Le Douaron",
+            "note": "alt-source re-research 2026-10-19: the original candidates are no longer on the club's official league squad list (verified against the 2026/27 registry); replacement candidate picked from the current official squad"
+          },
+          {
             "name": "Umut Bozok"
           },
           {
@@ -3543,6 +3774,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "no UEFA player profile exists for any hero candidate (research-pending resolution 2026-10-19: no Wikidata P2276 id and no Wikipedia external UEFA link — the candidates have never been registered in UEFA competition, and the club is not in a current UEFA competition). NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links); no probe surface exists without a player id; retry with --refresh if the club qualifies for a UEFA competition"
       }
     },
     {
@@ -3575,6 +3811,11 @@
         "date_of_birth": null,
         "source": null,
         "confidence": "low"
+      },
+      "no_asset": {
+        "verified_at": "2026-10-19",
+        "evidence": "Samatta: UEFA profile exists (id 250099055) but the page is a generic shell (no name/DOB fields, no cutoff image); current-registration fallback location (UEL/UECL 26/27) probed 404. NT sweep: UEFA's national-team asset family lives at competition segment 3 (EURO 2024); full candidate-segment space swept on a no-club-career subject — national-kit assets are not usable as club hero portraits (kit-consistency rule)",
+        "method": "research-pending resolution (Wikidata P2276 + Wikipedia external links) + bounded probe sets + manual paced probes via the scoped relay, documented per-URL; retry with --refresh if UEFA publishes new assets"
       }
     }
   ]
