@@ -27,6 +27,16 @@
 // Under a KV-write outage the cursor put fails BEFORE any send → the
 // burst is restored and the digest retries next tick (fail-closed, the
 // quota-death self-heal the old outbox storm could never do).
+//
+// v13.125-stickeroutbox (2026-10-19): the digest's SECOND life exposed the
+// last gap — the outbox could not carry a logo, so any table TEXT that
+// recovered through it arrived bare (the 23:10 UTC drain of this very
+// digest delivered the tail chats' tables without their stickers — the
+// owner's report on the test account). Table entries now queue as
+// [sticker][table] PAIRS (see serveWeeklyBurst + outboxPush/drainOutbox in
+// telegram.ts): a transiently failed sticker defers the WHOLE pair, the
+// drain re-attempts the layout in one go, and a landed sticker is cleared
+// before any requeue so a retry can never duplicate the logo.
 import { CONFIG } from "./config";
 import { COMP_EN } from "./tables";
 import type { Env } from "./types";
@@ -41,7 +51,7 @@ import { mdBold, mdItalic, mdEscape } from "./md";
 import { translateTeam, translateCompetition } from "./translate";
 import { shouldReport, isMasterPair, isDerby, isBotSilentLeague } from "./match-classify";
 import { fetchStandings, buildLeagueTableMessage, isoWeekKey, weeklyTableCodes } from "./composers";
-import { sendTelegram, sendSticker } from "./telegram";
+import { sendTelegram, sendSticker, outboxPush, withTrialFooter } from "./telegram";
 import { getLeagueStickers } from "./stickers";
 import { getUserPrefs } from "./users";
 import { getCachedMatches } from "./match-pool";
@@ -84,10 +94,22 @@ export async function sendLeagueTables(env: Env, chatIds, opts, lang?) {
     for (const m of messages) {
       const fid = stickers ? stickers[m.code] : null;
       if (fid) {
-        // Decorative: a failed/"dead" sticker NEVER blocks the table
-        // behind it (no outbox either — a retry could double the logo).
+        // v13.114-stickers: the league logo ahead of its table. v13.125:
+        // a FAILED sticker must never let the table go out BARE either —
+        // the 23:10 UTC drain of this digest's outbox delivered the tail
+        // chats' tables without their logos. A transient sticker failure
+        // (budget wall / 429 pause / 5xx) now queues the [sticker][table]
+        // PAIR to the outbox; the drain re-attempts the layout in one go.
+        // A dead chat falls through — the text send's own dead handling
+        // reports it.
         const r = await sendSticker(env, chatId, fid);
         if (r === true) out.stickers = (out.stickers || 0) + 1;
+        else if (r !== "dead") {
+          const pushed = await outboxPush(env, withTrialFooter(m.text, 4096, true), chatId, null, fid);
+          if (pushed) { out.pairs = (out.pairs || 0) + 1; continue; }
+          // The outbox itself is down (the 10048 quota-death class): the
+          // table must not die with the flourish — bare send, as before.
+        }
       }
       if (await sendTelegram(env, m.text, chatId)) out.sent++;
       else out.failed++;
@@ -249,14 +271,23 @@ export async function buildWeeklyPayload(env: Env, chatIds) {
 
 // One chat's digest burst: [logo sticker][league table] per league, then
 // the week-ahead — the exact per-chat sequence the old loop produced.
+// v13.125-stickeroutbox: a table whose sticker fails transiently NEVER
+// goes out bare — the [sticker][table] pair is queued to the outbox as
+// ONE entry and the drain re-attempts the layout. The pair-push failing
+// entirely (KV quota death) falls back to the bare direct send (the
+// payload rule: the table is the payload, the sticker the flourish).
 async function serveWeeklyBurst(env: Env, chatId, group) {
-  const out = { sent: 0, failed: 0, stickers: 0 };
+  const out = { sent: 0, failed: 0, stickers: 0, pairs: 0 };
   if (!group) return out;
   for (const m of group.tables || []) {
     if (m && m.sticker) {
-      // Decorative: a failed sticker NEVER blocks the table behind it.
       const r = await sendSticker(env, chatId, m.sticker);
-      if (r === true) out.stickers++;
+      if (r === true) { out.stickers++; }
+      else if (r !== "dead") {
+        const pushed = await outboxPush(env, withTrialFooter(m.text, 4096, true), chatId, null, m.sticker);
+        if (pushed) { out.pairs++; continue; }
+        // Outbox down (quota-death class) — bare send, as before.
+      }
     }
     if (await sendTelegram(env, m.text, chatId)) out.sent++;
     else out.failed++;

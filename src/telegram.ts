@@ -173,20 +173,36 @@ export async function sendTelegram(env: Env, text, chatId, keyboard?) {
 // bounded by KV last-write-wins (pre-existing, the same window drainOutbox
 // documents — never-spam outranks never-miss).
 var OUTBOX_CHAIN: Promise<void> = Promise.resolve();
-export async function outboxPush(env: Env, text, chatId, keyboard?) {
+// v13.125-stickeroutbox: entries may carry an optional `sticker` — a
+// [sticker][text] PAIR queued as ONE unit. Born from the 2026-10-19 01:30
+// Tehran digest's second life: the 23:10 UTC outbox drain delivered the
+// tail chats' league tables as BARE texts (the outbox could not carry the
+// logo, so the recovered tables arrived without their [laliga sticker]
+// prefix — the owner's report). The pair travels together now; the drain
+// re-attempts the layout in one go. Returns TRUE when the entry actually
+// persisted — the old `.catch(() => {})` on the put SWALLOWED the 10048
+// quota-death, so a caller could never tell a queued pair from a lost one
+// (the digest senders fall back to the bare direct send on a failed push —
+// the payload rule: a table must not die with its flourish).
+// `sticker` is backwards-compatible: entries written before v13.125 have
+// no field and drain text-only, exactly as before.
+export async function outboxPush(env: Env, text, chatId, keyboard?, sticker?): Promise<boolean> {
+  let ok = false;
   const run = OUTBOX_CHAIN.then(async () => {
     try {
       const list = await env.STATE.get(CONFIG.KV_OUTBOX, "json").catch(() => null) || [];
-      list.push({ text, chatId, keyboard: keyboard || null, ts: Date.now(), attempts: 0 });
+      list.push({ text, chatId, keyboard: keyboard || null, sticker: sticker || null, ts: Date.now(), attempts: 0 });
       // Cap: drop oldest entries beyond the max.
       while (list.length > (CONFIG.KV_OUTBOX_MAX || 200)) list.shift();
-      await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(list), { expirationTtl: 7 * 86400 }).catch(() => {});
+      await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(list), { expirationTtl: 7 * 86400 });
+      ok = true;
     } catch (e) {
       console.warn("Outbox push failed: " + e.message);
     }
   });
   OUTBOX_CHAIN = run.then(() => undefined, () => undefined);
   await run;
+  return ok;
 }
 
 // v13.9-reliability #3: drain the outbox. Retries each pending send with
@@ -228,6 +244,20 @@ export async function drainOutbox(env: Env) {
   let drained = 0, dead = 0;
   const requeue = [];
   for (const item of due) {
+    // v13.125-stickeroutbox: an entry that still carries a sticker is an
+    // unfinished [sticker][text] pair — the logo goes FIRST (the owner's
+    // [laliga sticker][laliga table] layout), in THIS invocation's fresh
+    // budget. A sticker that lands is CLEARED from the item BEFORE any
+    // requeue decision, so a text retry can never duplicate the logo. A
+    // sticker that fails again NEVER blocks the table behind it (the
+    // payload rule) — the text still goes out bare; two failed sticker
+    // attempts (burst + drain, each with its own 429 retry) is where the
+    // flourish yields to the payload.
+    if (item.sticker) {
+      const sr = await sendSticker(env, item.chatId, item.sticker);
+      if (sr === "dead") { dead++; continue; }
+      if (sr === true) item.sticker = null;
+    }
     const r = await sendTelegramDirect(env, item.text, item.chatId, item.keyboard);
     if (r === true) {
       drained++;

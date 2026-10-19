@@ -87,6 +87,13 @@ const stickerLog = [];
 const actionLog = [];
 async function getLeagueStickers(_env) { return stickerMap; }
 async function sendSticker(_env, chatId, fileId) { tickFetches++; stickerLog.push({ chatId, fileId }); actionLog.push({ kind: "sticker", chatId, fileId }); return stickerOK; }
+// v13.125-stickeroutbox: the pair-outbox path (outboxPush + withTrialFooter
+// are free variables of the eval'd sendLeagueTables now). pushOK flips the
+// 10048 quota-death fallback; outboxPairs records the deferred pairs.
+let outboxPushOK = true;
+const outboxPairs = [];
+async function outboxPush(_env, text, chatId, _kb, sticker) { if (!outboxPushOK) return false; outboxPairs.push({ text, chatId, sticker: sticker || null }); actionLog.push({ kind: "pair-outbox", chatId, sticker: sticker || null }); return true; }
+function withTrialFooter(text) { return text; }
 async function sendTelegram(_env, text, chatId) { tickFetches++; if (!telegramOK) return false; sentLog.push({ text, chatId }); actionLog.push({ kind: "text", chatId, text }); return true; }
 // v13.124-weeklyfanout: the true-subrequest counters the reservation reads.
 // tickBase models the tick's pre-digest burn (preflight/lock/user-phase KV
@@ -234,11 +241,20 @@ chk(!clMsg.includes("⭐"), "CL: no stars (no selected CL teams in settings)");
   const codeOf = (a) => a.kind === "sticker" ? a.fileId : (a.text.includes("لیگ برتر انگلیس") ? "PL" : a.text.includes("لالیگا") ? "PD" : "other");
   chk(actionLog.slice(0, 4).map((a) => a.kind + ":" + codeOf(a)).join("|") === "sticker:FID_PL|text:PL|sticker:FID_PD|text:PD", "stickers: [PL logo][PL table][PD logo][PD table] — the owner's layout");
   chk(actionLog.filter((a) => a.kind === "sticker").length === 2, "stickers: SA/FL1/PGL/CL have no logo — no extra sends");
-  // sticker failure never blocks the table behind it
+  // sticker failure defers the [logo][table] PAIR — the table never goes out bare
   stickerOK = false;
-  sentLog.length = 0; stickerLog.length = 0; actionLog.length = 0;
+  sentLog.length = 0; stickerLog.length = 0; actionLog.length = 0; outboxPairs.length = 0;
   const res3 = await sendLeagueTables(env, [777], null);
-  chk(res3.sent === 6 && res3.failed === 0 && !res3.stickers, "stickers: failed logo → uncounted, tables unaffected");
+  chk(res3.sent === 4 && res3.failed === 0 && !res3.stickers, "stickers: failed logo → uncounted, non-stickered tables unaffected (4 direct)");
+  chk(res3.pairs === 2, "stickers: the 2 failed logos deferred their tables as PAIRS (v13.125)");
+  chk(outboxPairs.length === 2 && outboxPairs[0].sticker === "FID_PL" && outboxPairs[1].sticker === "FID_PD", "stickers: the pairs carry the file_ids");
+  chk(!sentLog.some((s) => s.text.includes("لیگ برتر انگلیس")) && !sentLog.some((s) => s.text.includes("لالیگا")), "stickers: PL/PD tables NOT sent bare (outbox owns them now)");
+  // the outbox itself down (quota-death) → fall back to the bare send
+  outboxPushOK = false;
+  sentLog.length = 0; outboxPairs.length = 0;
+  const res3b = await sendLeagueTables(env, [777], null);
+  chk(res3b.sent === 6 && !res3b.pairs, "stickers: outbox down (10048) → tables go out bare (payload beats flourish)");
+  outboxPushOK = true;
   stickerOK = true;
   // empty map → no sticker field at all
   stickerMap = {};

@@ -6,6 +6,62 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.125-stickeroutbox] — 2026-10-19 (recovered tables arrived without their stickers — the outbox learns to carry a logo)
+
+### The incident (the digest's second life, live evidence from `wrangler tail`)
+
+After v13.124's chunked fan-out was deployed, the owner verified with a
+test normal user account: "I've received the briefings and tables … but
+app didn't send stickers for each table like [la liga sticker][la liga
+weekly table]". The tail log (479 invocations, 22:25→01:30 UTC) holds
+the exact sequence:
+
+- 22:00 UTC — the digest bootstrapped under the PRE-v13.124 deployment
+  (the fix landed 36 minutes later, at 22:36). The old live loop's
+  mid-roster death outboxed the tail chats' table TEXTS.
+- **23:10:16 UTC — `📩 Outbox drained: 10 sent, 0 dead, 0 pending`** —
+  those texts were delivered to the tail chats as BARE tables. The
+  outbox could not carry the logo: `outboxPush` had no sticker field,
+  `drainOutbox` is text-only by construction, and `sendSticker`'s
+  failures were "decorative" — silently dropped, never queued, never
+  retried. That 23:10 drain is exactly what the owner saw on the test
+  account (checked between the two deliveries).
+- 00:00:30 UTC (quota reset) — the remediation seeded the weekly cursor
+  with the 8 unserved chats; the chunked fan-out then delivered the FULL
+  digest (7 tables + week-ahead, `stickers=5`, zero failures per tick)
+  completing at 01:30 UTC.
+
+Net: every path that recovers a table through the outbox strips its
+sticker. The same gap would resurface on ANY future transient failure
+(budget wall, 429 pause, KV quota window) — the text recovers, the
+flourish never does.
+
+### The fix — the pair travels as ONE unit
+
+1. `outboxPush(env, text, chatId, keyboard?, sticker?)` — entries may
+   carry an optional `sticker`. Backwards-compatible: pre-13.125 entries
+   have no field and drain text-only, exactly as before. The put's old
+   `.catch(() => {})` is gone — a 10048 quota-death now returns `false`
+   so the caller can tell a queued pair from a lost one.
+2. `drainOutbox` — an entry that still carries a sticker attempts the
+   logo FIRST (fresh invocation budget), in the owner's
+   `[laliga sticker][laliga table]` order. A sticker that lands is
+   CLEARED from the item before any requeue decision — a retry can
+   never duplicate the logo. A sticker that fails again never blocks
+   the table behind it (the payload rule); two failed attempts across
+   two paths (burst + drain) is where the flourish yields.
+3. `serveWeeklyBurst` + `sendLeagueTables` (the /tables command path) —
+   a transiently failed sticker now defers the WHOLE `[sticker][table]`
+   pair to the outbox instead of sending the bare text; if the outbox
+   itself is down (quota-death class) the code falls back to the bare
+   direct send — the table is the payload, the sticker the flourish.
+
+Verified by the new `scripts/check-sticker-outbox.js` harness (pair
+outboxing, drain ordering, sticker-clearing on requeue, dead-chat skip,
+legacy text-only entries) alongside the full `npm test` chain.
+
+---
+
 ## [13.124-weeklyfanout] — 2026-10-19 (the weekly digest reached only the admin — the chunked fan-out)
 
 ### The incident (live, this Monday's 01:30 Tehran digest)

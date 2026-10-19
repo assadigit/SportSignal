@@ -298,7 +298,8 @@ check("#nospam10 audit admin alert rate-limited via KV stamp", /KV_AUDIT_ALERT/.
 check("#nospam10 KV_AUDIT_ALERT key defined in CONFIG", /KV_AUDIT_ALERT: "audit_alert_v1"/.test(src));
 
 // v13.38-qc: quality-control round — the last at-least-once vector + hygiene.
-const drainSeg = (src.match(/const due = \[\];[\s\S]{0,1400}?sendTelegramDirect\(env, item\.text/) || [""])[0];
+const drainSeg = (src.match(/const due = \[\];[\s\S]{0,2400}?sendTelegramDirect\(env, item\.text/) || [""])[0];
+// v13.125-stickeroutbox: the window widened 1400→2400 — the drain's due-loop now carries the [sticker][text] pair block (the logo-first attempt) between the keep-list put and the text send; the write-first invariant is unchanged.
 check("#qc1 outbox drain: keep-list persisted BEFORE sends (write-first)", drainSeg.indexOf("await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(keep)") >= 0 && drainSeg.indexOf("sendTelegramDirect") > drainSeg.indexOf("await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(keep)"));
 check("#qc1 outbox drain: un-persistable keep-list aborts the drain", /Outbox keep-list save failed[\s\S]{0,200}return \{ drained: 0, remaining: list\.length, dead: 0 \};/.test(src));
 check("#qc1 MEM_DEDUPE has a size cap (no unbounded isolate growth)", /if \(MEM_DEDUPE\.size > 4000\) MEM_DEDUPE\.clear\(\);/.test(src));
@@ -763,7 +764,7 @@ check("#trialfoot config key present with the owner's exact Persian string + the
 check("#trialfoot applied at ALL THREE MarkdownV2 text paths (md=true)", (src.match(/text = withTrialFooter\(text, 4096, true\);/g) || []).length === 3);
 check("#trialfoot photo caption path passes parseMode as the md flag (escaped iff MarkdownV2)", /caption = withTrialFooter\(caption, 1024, parseMode\);/.test(src));
 check("#trialfoot the plain-text GIF caption path stays raw (no parse_mode → no backslash)", (src.match(/caption = withTrialFooter\(caption, 1024\);/g) || []).length === 1);
-check("#trialfoot exactly FIVE call sites (no footer inside sendSticker/sendDice — no text to foot)", (src.match(/withTrialFooter\(/g) || []).length === 6); // 5 calls + 1 declaration
+check("#trialfoot exactly SEVEN call sites (no footer inside sendSticker/sendDice — no text to foot)", (src.match(/withTrialFooter\(/g) || []).length === 8); // 7 calls + 1 declaration — v13.125 adds the two pair-push sites (digest-weekly outboxes the FOOTERED text, same contract as sendTelegram's outbox)
 check("#hbfix the footer's period rides ESCAPED on md paths only (raw display string elsewhere)", /md \? escapeMarkdownCharacters\(f\) : f/.test(src) && (src.match(/escapeMarkdownCharacters\(f\)/g) || []).length === 1);
 
 // Behavioral unit table for withTrialFooter — the real function, eval'd
