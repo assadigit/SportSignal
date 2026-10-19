@@ -12,9 +12,11 @@ production runs (2026-10-18).
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) §8–§12 | Kit-timing verification (method + precedent cases), the 2026-10-19 audit + alt-source run, disaster recovery, the sandbox survival guide, tooling reference |
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) §13 | The hero gap loop: what the runtime logs when a team renders without artwork, and the agentic backfill procedure (`npm run heroes:report` → `backfill-hero-gaps.js`) |
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) §13.5 + [SPEC.md](SPEC.md) §8c | The v2.3 style system: VLM jersey-priority audit (`npm run heroes:style-audit`), the fill-time card-render gate, and the star fallback ("find another STAR of that club — be flexible") |
+| [INSTRUCTIONS.md](INSTRUCTIONS.md) §14 | The club alternates library (3-4 pictures per club, `LaLiga > Real-Madrid` foldering), the runtime transfer watch (`/api/hero-rotation`), and the rotation procedure (`npm run heroes:rotate`) |
 | `scripts/uefa-player-portraits/` | The pipeline itself (`cli.js`, rosters, relay worker, fixtures) |
 | `docs/assets/uefa-player-portraits.md` | The original 36-player collection's detailed method + review findings |
 | `assets/players/uefa/` | The published library: portraits, per-collection manifests, `hero-clubs.json` (club → MVP portrait map) |
+| `assets/players/clubs/` | The club alternates library: league > club folders, 3-4 VLM-style-gated candidates per big-5 club, `manifest.json` (the club jersey database — rotation order + FD team ids) |
 
 ## The system in one paragraph
 

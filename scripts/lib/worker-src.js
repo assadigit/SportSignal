@@ -93,6 +93,11 @@ function workerSrc() {
     // pickHeroMatch noteHeroGaps calls at runtime) and before the scheduler;
     // check-hero-coverage grabs slugify/index/scan/merge from this pair.
     "hero-coverage.ts", "hero-gaps.ts",
+    // v13.133-clubalt: the transfer watch — hero-club-alternates.ts is the
+    // GENERATED bench index (sync-hero-clubs.js), hero-rotation.ts the
+    // watcher/registry/report. Index first (rotation's eval'd grabs close
+    // over its RAW var); check-hero-clubs grabs the watch primitives here.
+    "hero-club-alternates.ts", "hero-rotation.ts",
     // v13.118-fixsched: the fixture-aware scheduler — pure decision layer
     // (modes + stale-live reconcile + the Baku fallback window). Sits right
     // after the match model/classify group it reasons about; consumed by

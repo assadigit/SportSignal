@@ -5,6 +5,69 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
 ---
+## [13.143-clubalt] — 2026-10-21 (the club alternates library + transfer watch)
+
+The owner's ask: *"gather 3-4 pictures per club and folder them in the
+github, like LaLiga > Real-Madrid. Players retire, so their picture must
+alternate. Players go to other clubs, so their picture must alternate …
+track the transfers market and just in case that player retire/move to
+another club, remove it (for that club jersey) database and use another
+alternative."* Three layers ship:
+
+### The library (assets/players/clubs/)
+
+- **384 portraits — every big-5 club now carries a BENCH**: the published
+  hero (byte-copied from uefa/) + 3 star-ranked alternates, foldered
+  `<league>/<club-slug>/` (premier-league, laliga, serie-a, bundesliga,
+  ligue-1) with `manifest.json` (the club jersey database: rotation order,
+  per-candidate provenance + VLM style, FD team ids).
+- Candidates fetched through the v2.3 contract (variant tables, studio
+  keying, VLM style gate at fill; two-pass verification in the audit);
+  ordered jersey_photo before bust_photo, then star score. Bundesliga
+  ranking via FD.org squads (bundesliga.com has no enumeration).
+- **Club binding is hero-anchored** — the madrid-derby trap (token match
+  ranked Atlético's squad for Real Madrid) and FPL's short names ("Man
+  Utd", "Spurs") are resolved by "the squad that CONTAINS the hero wins".
+- Tools: `npm run clubs:alt` (+ `--fd-ids`, `--publish-only`,
+  `--audit-gaps`), state checkpointed per candidate (survives z-ai 429
+  storms mid-run; platform squad enumerations cached to disk — Serie A's
+  lineup crawl runs once, ever).
+
+### The runtime watch (src/hero-rotation.ts)
+
+- Staggered FD.org squad checks on quiet ticks (≤5 clubs, round-robin,
+  84h/club normally — 12h inside transfer windows, ≥25min between sweeps;
+  shares the football-data circuit, suspends on 429). A departure opens an
+  event in KV `hero_rotation_v1` with the suggested next candidate chosen
+  from the club's bench BY THE LIVE SQUAD; events resolve when the player
+  returns or a rotation deploy lands.
+- `GET /api/hero-rotation` (admin): the departure worklist + watch state.
+  `heroClubActive(env, name)`: the event-aware effective hero for
+  server-side consumers. KV write discipline: ≤ ~6 writes/day normal,
+  ≤ ~48/day in windows.
+
+### The rotation (scripts/rotate-hero.js — `npm run heroes:rotate`)
+
+Promoting a bench candidate is a LOCAL manifest promotion — no network, no
+research, no VLM wait: the cached original bridges into the hero pipeline
+(`normalize --player` merge-mode), the departed player's uefa/ orphan and
+club-folder file are REMOVED (status "departed" + rotation_log keep the
+audit), hero-clubs.json + the generated runtime index re-sync, and the
+open watch event resolves on the next deploy. Wired clubs additionally
+need the `--wire` step (owner-gated display decision, unchanged).
+
+### Docs + gates
+
+INSTRUCTIONS §14 (the library, the watch, the rotation, honest limits —
+the 15 wired non-big-5 clubs have no bench yet), AGENTS.md routing rows,
+RUNBOOK KV table, scrapping README. `check-hero-clubs.js` in `npm test`:
+library integrity (96 clubs, ≥3 live candidates, styles, files, fd ids,
+hero parity), the hero-club-alternates.ts drift gate, and unit tests for
+every watch primitive (identity matching, window cadence, batch pick,
+event merge). Header/_headers freshness row for `/players/clubs/*`.
+
+
+---
 
 ## [13.142-cinematic] — 2026-10-20 (cinematic round: reusable player treatment, brighter floodlights + crests, sync line out of the countdown box)
 
@@ -303,6 +366,10 @@ the app stays its default dark.
   rename-on-edit); /stadium-lights-hero.png pinned immutable; SW
   sportsignal-v40→v41. The retired 13.34.css/13.35.js pair stays served per
   the retention rule.
+
+---
+
+---
 
 ## [13.132-styleloop] — 2026-10-20 (the VLM style loop: jersey priority, card-render gate, star fallback)
 

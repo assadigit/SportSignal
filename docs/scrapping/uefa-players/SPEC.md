@@ -499,3 +499,34 @@ Lyon/Openda precedent). Two session finds were publishable right-club
 cutoffs (5 total: Zaniolo/Udinese, Orsolini/Bologna, Koch/Frankfurt,
 Gouiri/OM, Del Castillo/Brest). The remaining 65 clubs were filled from
 the §8b league-official platforms (2026-10-19, 96/96 complete).
+
+## 15. The club alternates library (v3 — 13.133-clubalt)
+
+The library is the club jersey database (owner directive 2026-10-21):
+3-4 pictures per big-5 club, foldered `<league>/<club>/` under
+`assets/players/clubs/`, so a hero who retires or transfers is replaced by
+a LOCAL rotation (`npm run heroes:rotate`) instead of a scraping session.
+
+Rules (extending §8b/§8c to the bench):
+
+- **Every candidate obeys the full portrait contract** of this spec: official
+  platform media only, 512×512 lossless-alpha WebP, per-candidate provenance
+  (source URL, sha256, crop config, star basis), VLM style gate at fill
+  (jersey_photo | bust_photo; card renders never sit on a bench), two-pass
+  verification before any audit drop.
+- **Candidate order is the rotation order**: hero first (active_index 0),
+  then style tier (jersey before bust — the §8c display priority), then
+  star score (shirt/position/FPL where served; Bundesliga ranks via FD.org
+  squads — bundesliga.com exposes no enumeration).
+- **The hero is excluded from his own bench by IDENTITY, not exact string**
+  (the Roma lesson: "Paulo Dybala" vs "Paulo Exequiel Dybala" — the
+  ordered-token subsequence gate of §8c).
+- **A departed player's file is REMOVED from the club folder** on rotation
+  (status "departed" + rotation_log keep the audit trail); the uefa/ hero
+  file swaps to the promoted candidate per the §2c orphan rule.
+- **The runtime transfer watch** (worker-side, INSTRUCTIONS §14.2) checks
+  FD.org squads; it DETECTS and LOGS only — display changes remain
+  owner-gated (README §4). `manifest.json.fd_team_id` is the watch's hook.
+- Coverage honesty: the bench covers the 96 big-5 clubs (the five league
+  platforms' reach). Wired non-big-5 clubs have no bench yet — documented
+  limitation, not silent behavior.

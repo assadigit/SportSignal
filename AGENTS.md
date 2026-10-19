@@ -23,6 +23,8 @@ Route by task:
 | A team renders crest-only / fill hero gaps (the loop) | INSTRUCTIONS.md §13 — `npm run heroes:report` first |
 | A portrait looks like a FIFA card / jersey-priority verification | INSTRUCTIONS.md §13.5 + SPEC.md §8c — `npm run heroes:style-audit` |
 | A player can't be found on any platform (star fallback) | SPEC.md §8c + INSTRUCTIONS.md §13.5 |
+| A hero left his club (transfer/retirement) — rotate to a bench star | INSTRUCTIONS.md §14 — `npm run heroes:rotate -- --club <slug>` (check `/api/hero-rotation` for the worklist) |
+| Fill/extend a club's alternates bench (3-4 pictures per club) | INSTRUCTIONS.md §14.1 — `npm run clubs:alt` |
 | Kit & club verification (kit-timing method + precedent cases) | INSTRUCTIONS.md §8 |
 | What is already covered — do NOT re-probe | `assets/players/uefa/manifest-heroes.json`, `hero-clubs.json`, INSTRUCTIONS.md header |
 | What failed and why (transport, rate limits, traps) | INSTRUCTIONS.md §3–§6, §9, §11 |
@@ -48,6 +50,14 @@ tick logs every fixture team without wired HERO_ART artwork into KV
 INSTRUCTIONS §13. Notable backlog it surfaced at launch: 78 published
 big-5 portraits are NOT yet wired into the site's HERO_ART map (a wiring
 backlog gated on the owner's display decision, not a scraping gap).
+
+Since v13.133-clubalt every club also carries a BENCH: 3 star alternates
+pre-fetched, VLM-style-gated and deployed under
+`assets/players/clubs/<league>/<club>/` (the club jersey database,
+INSTRUCTIONS §14), and the runtime TRANSFER WATCH (FD.org squad checks →
+KV `hero_rotation_v1` → `GET /api/hero-rotation`) detects when a hero
+leaves. The rotation is then a local, network-free manifest promotion:
+`npm run heroes:rotate -- --club <slug>`.
 
 ## The portrait invariants (30 seconds)
 

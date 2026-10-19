@@ -255,3 +255,10 @@
 /players/hero/*
   Cache-Control: public, max-age=86400
 
+# v13.133-clubalt: the CLUB ALTERNATES LIBRARY (the club jersey database —
+# 3-4 pre-fetched, VLM-style-gated star candidates per big-5 club, foldered
+# league > club). Same freshness policy as the hero portraits: candidates
+# may be re-shot or rotated (file removed) mid-season.
+/players/clubs/*
+  Cache-Control: public, max-age=86400
+

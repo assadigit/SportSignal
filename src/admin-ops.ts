@@ -31,6 +31,8 @@ import { getCronStatus } from "./monitoring";
 import { executeScheduledLogic } from "./cron";
 // v13.129-herogaploop: the hero-portrait gap report (src/hero-gaps.ts).
 import { heroGapReport } from "./hero-gaps";
+// v13.133-clubalt: the transfer-watch report (src/hero-rotation.ts).
+import { heroRotationReport } from "./hero-rotation";
 
 export async function legacyGetAction(c: RouteCtx): Promise<Response | null> {
   const { req, env, url } = c;
@@ -457,6 +459,21 @@ export const ADMIN_OPS_ROUTES: RouteDef[] = [
       return jsonResponse(await heroGapReport(env, reset));
     } catch (e) {
       return jsonResponse({ ok: false, error: "hero gap report failed: " + e.message }, 200);
+    }
+  } },
+  { path: "/api/hero-rotation", method: "GET", handler: async ({ req, env, url }): Promise<Response | null> => {
+    // v13.133-clubalt: the TRANSFER WATCH report — departure events for
+    // clubs whose active hero left (detected by the staggered FD.org squad
+    // checks), each with the suggested next candidate from the club's
+    // pre-fetched bench (assets/players/clubs/) and the one-command
+    // rotation procedure. Admin-gated like /api/hero-gaps; ?reset=1 clears
+    // the registry (the watch cursor restarts its due-cycle cleanly).
+    if (!(await isAdminAuthed(req, env))) return null;
+    try {
+      const reset = url.searchParams.get("reset") === "1";
+      return jsonResponse(await heroRotationReport(env, reset));
+    } catch (e) {
+      return jsonResponse({ ok: false, error: "hero rotation report failed: " + e.message }, 200);
     }
   } },
   { path: "/api/audit", method: "GET", handler: async ({ req, env, url }): Promise<Response | null> => {

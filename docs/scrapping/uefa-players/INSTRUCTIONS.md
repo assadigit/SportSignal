@@ -777,3 +777,110 @@ The 2026-10-20 run of this procedure: 116 files audited → 12 fast-pass
 + Troyes → Iron Gomis fullBody via style-exhaustion star fallback) → 0 cards
 remain; all 33 wired portraits pass. The fill-time gate (spec §8c) keeps it
 that way going forward.
+
+## 14. The club alternates library + transfer watch (v13.133-clubalt)
+
+The owner's directive (2026-10-21): *"gather 3-4 pictures per club and folder
+them in the github, like LaLiga > Real-Madrid. Players retire, so their
+picture must alternate. Players go to other clubs, so their picture must
+alternate. Track the transfers market and just in case that player
+retires/moves to another club, remove it (for that club jersey) database and
+use another alternative."*
+
+Three layers, same split as §13 (runtime detects, agentic rotates):
+
+### 14.1 The library (assets/players/clubs/)
+
+```
+assets/players/clubs/
+  manifest.json                        ← the club jersey database
+  premier-league/<club-slug>/*.webp    ← 4 files per club:
+  laliga/<club-slug>/*.webp              candidate 0 = the published hero
+  serie-a/<club-slug>/*.webp             (byte-copy of uefa/<hero>.webp),
+  bundesliga/<club-slug>/*.webp          candidates 1-3 = star-ranked
+  ligue-1/<club-slug>/*.webp            alternates (VLM style-gated)
+```
+
+- **Selection**: the platform squad is star-ranked (the §13.2 starScore —
+  shirt/position/FPL price-points-ownership), the hero excluded
+  (identity-tolerant: "Paulo Dybala" vs "Paulo Exequiel Dybala" — the Roma
+  lesson), the top stars fetched through the SAME contract as alt-fetch
+  v2.3 (variant tables, studio keying, VLM style gate). Bundesliga has no
+  squad enumeration on bundesliga.com — its ranking comes from
+  Football-Data.org `/v4/teams/{id}` squads.
+- **Club binding is HERO-ANCHORED**: FPL's short team names ("Man City",
+  "Man Utd", "Spurs") and LaLiga's shared tokens (the madrid derby) make
+  token matching ambiguous — the squad that CONTAINS the club's hero wins.
+- **Order**: hero first, then alternates by style tier (jersey_photo before
+  bust_photo — the owner's full-jersey priority) then star score.
+  `active_index` (0) points at the current hero.
+- **fd_team_id** on every club — the runtime watch's FD.org hook.
+- **Provenance** per candidate: platform, source URL, sha256, star basis,
+  alt_source block (crop config, variant info, keying) — same shape as the
+  hero manifest's.
+
+Tools: `npm run clubs:alt` (fetch; `--club`, `--platform`, `--limit`,
+`--dry`, `--no-vlm-gate`), `--fd-ids` (build the club→FD id map, 5 calls),
+`--publish-only` (regenerate folders + manifest from state — deterministic),
+`--audit-gaps` (re-classify unclassified candidates, two-pass, drops
+confirmed cards). State checkpoints to
+`.cache/uefa-player-portraits/clubs-alternates/` after EVERY candidate
+(§11 chunked-run survival); platform squad enumerations persist to disk
+(Serie A's lineup crawl runs once, ever).
+
+### 14.2 The runtime watch (src/hero-rotation.ts)
+
+- Every quiet cron tick (`!budgetHard && subreq < 38`, ≥25min between
+  sweeps): ≤5 clubs round-robin get `/v4/teams/{fd_team_id}` — is the
+  ACTIVE hero still on the squad? Per-club cadence 84h normally, 12h
+  inside transfer windows (Jan 1–31, Jun 1–Sep 10). Shares the
+  football-data circuit (429 → suspendProvider, like the main sweep).
+- A departure opens an EVENT in KV `hero_rotation_v1`:
+  `{ player, first_detected, suggested_next }` — the suggested next is the
+  first bench candidate still ON the live squad (verified), or the first
+  unverified when the squad data is unavailable. Events resolve when the
+  player returns or the active player changed (the rotation deploy
+  landed — the generated index re-syncs per deploy). 30d prune.
+- `GET /api/hero-rotation` (admin): the departure worklist + watch state.
+  `heroClubActive(env, name)`: the event-aware effective hero for any
+  server-side consumer (reports now, cards/bot later).
+- Write discipline: one write per sweep tick that checked clubs — ≤ ~6/day
+  normal, ≤ ~48/day in windows (700/day budget holds).
+
+### 14.3 The rotation (scripts/rotate-hero.js — the "use another alternative")
+
+```
+npm run heroes:rotate -- --club psg            # next candidate
+npm run heroes:rotate -- --club psg --to 2     # explicit index
+npm run heroes:rotate -- --club psg --player "Vitinha"
+```
+
+What it does (NO network, NO VLM — the bench is pre-fetched):
+
+1. Copies the candidate's pristine original into the hero collection's
+   originals slot (`originals/{state_key}.webp` — keyed by CLUB, the
+   normalize contract) and points fetch-log + discovery + roster at him
+   (provenance records the rotation: `alt_source.rotation.{of,to,reason}`).
+2. `cli.js normalize --player <slug>` — publishes `uefa/<player>.webp`,
+   rebuilds manifest-heroes + hero-clubs (merge-mode keeps the other 95).
+3. Deletes the departed hero's orphaned `uefa/<old>.webp` (§2c rule).
+4. Clubs manifest: departed candidate → `status: "departed"` + file REMOVED
+   from the club folder (the owner's "remove it" rule; the manifest record
+   stays as audit), pointer advanced, `rotation_log` appended.
+5. Re-syncs `src/hero-club-alternates.ts`; `npm test`; deploy (RUNBOOK §2).
+   For a WIRED club also run the `--wire` step (backfill-hero-gaps) — the
+   client bundle's HERO_ART follows the owner-gated display decision.
+
+After deploy the watch sees the new active player and resolves the open
+event automatically. Fresh alternates for the shrunken bench:
+`npm run clubs:alt -- --club <slug>` (state-aware, fills only the gap).
+
+### 14.4 Known limits (honest scoping)
+
+- The library covers the 96 big-5 clubs (the five league platforms' reach).
+  The 15 wired non-big-5 clubs (Porto, Galatasaray, Bodø/Glimt, …) have NO
+  bench yet — their rotation needs UEFA-discovery research per club (a
+  future session; the gap loop §13 still covers their total-loss case).
+- FD.org squad names are the identity truth for the watch; a hero whose
+  display name diverges badly from FD's legal form needs the subsequence
+  matcher to hold (`squadHasPlayer` — unit-tested in check-hero-clubs).

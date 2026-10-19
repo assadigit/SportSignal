@@ -15,6 +15,8 @@ import { liveFingerprint } from "./monitoring";
 // write — src/hero-gaps.ts). Runs from THIS tick's in-memory pool: zero
 // extra fetches; the registry write is merge-disciplined (1/day + new teams).
 import { noteHeroGaps } from "./hero-gaps";
+// v13.133-clubalt: the transfer watch (FD.org squad checks — src/hero-rotation.ts).
+import { watchHeroTransfers } from "./hero-rotation";
 
 export async function runPublicPhase(env: Env, ctx) {
   const { fullSweepThisTick, budgetSoft, budgetHard, matches, poolRef } = ctx;
@@ -166,5 +168,21 @@ export async function runPublicPhase(env: Env, ctx) {
     }
   } catch (e) {
     console.warn("hero gap scan failed: " + e.message);
+  }
+  // v13.133-clubalt: the TRANSFER WATCH — is each club's active hero still
+  // on his squad (FD.org /v4/teams/{id})? Staggered: ≤5 clubs per quiet
+  // tick, round-robin cursor, per-club interval 84h / 12h in transfer
+  // windows, ≥25min between sweeps (src/hero-rotation.ts). Departures are
+  // logged to KV hero_rotation_v1 and surfaced by /api/hero-rotation; the
+  // rotation itself is the agentic heroes:rotate command (INSTRUCTIONS
+  // §14). Gated tighter than the gap scan (we ADD subrequests); shares the
+  // football-data circuit (suspends on 429 like the main sweep). Fail-silent
+  // by contract — the watch must never cost a notification.
+  try {
+    if (!budgetHard && subrequestCount() < 38) {
+      await watchHeroTransfers(env);
+    }
+  } catch (e) {
+    console.warn("hero transfer watch failed: " + e.message);
   }
 }

@@ -45,6 +45,16 @@ async function fetchLive(base) {
   if (!res.ok) throw new Error("HTTP " + res.status + " from " + url);
   const body = await res.json();
   if (!body || body.ok !== true) throw new Error("endpoint returned ok:false: " + JSON.stringify(body).slice(0, 200));
+  // v13.133-clubalt: the transfer-watch report rides along (non-fatal — an
+  // older worker without /api/hero-rotation must not break the gap report)
+  try {
+    const rurl = base.replace(/\/$/, "") + "/api/hero-rotation";
+    const rres = await fetch(rurl, { headers: { authorization: "Bearer " + token } }).catch(() => null);
+    if (rres && rres.ok) {
+      const rbody = await rres.json();
+      if (rbody && rbody.ok === true) body.rotation = rbody;
+    }
+  } catch { /* optional section */ }
   return body;
 }
 
@@ -100,6 +110,34 @@ function printReport(rep) {
     console.log("");
     console.log("RECENTLY RESOLVED (loop health — portraits landed): " +
       resolved.map((r) => r.name).join(", "));
+  }
+
+  // v13.133-clubalt: the TRANSFER WATCH section — heroes who left their
+  // club (detected by the runtime FD.org squad checks), each with the
+  // suggested bench promotion (INSTRUCTIONS §14)
+  const rot = rep.rotation;
+  if (rot) {
+    const w = rot.watch || {};
+    const evs = (rot.events || []).filter((e) => e.status === "open");
+    console.log("");
+    console.log("=== Transfer watch (hero departures) ===");
+    console.log("cadence:   every " + (w.interval_hours ?? "?") + "h per club" + (w.transfer_window ? " [TRANSFER WINDOW]" : "") +
+      " · " + (w.clubs_checked ?? 0) + " clubs checked so far");
+    if (!evs.length) {
+      console.log("No open departures — every watched hero is still on his squad. 🎉");
+    } else {
+      console.log("OPEN DEPARTURES (rotate — the bench is pre-fetched, this is a local command): ");
+      for (const e of evs) {
+        console.log("  " + e.club + "  [" + e.slug + "]");
+        console.log("    departed: " + e.player + " (detected " + (e.first_detected || "?").slice(0, 10) + ")");
+        if (e.suggested_next) {
+          console.log("    suggest:  " + e.suggested_next.player + " (" + e.suggested_next.style + (e.suggested_next.verified_in_squad ? ", in-squad ✓" : ", UNVERIFIED") + ")");
+        } else {
+          console.log("    suggest:  no bench candidate on the live squad — research a new hero (§2c)");
+        }
+        console.log("    action:   npm run heroes:rotate -- --club " + e.slug);
+      }
+    }
   }
 
   // the local wiring backlog (from the repo's own truths — not the worker)

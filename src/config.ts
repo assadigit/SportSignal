@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.142-cinematic";
+export const VERSION = "13.143-clubalt";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -298,6 +298,12 @@ export const CONFIG: Record<string, any> = {
   // match) that have no wired HERO_ART artwork. Write-disciplined: one write
   // per new gap team + one daily bump per team (see mergeHeroGapRegistry).
   KV_HERO_GAPS: "hero_gaps_v1",
+  // v13.133-clubalt: the TRANSFER WATCH registry (src/hero-rotation.ts) —
+  // departure events for clubs whose active hero left (FD.org squad
+  // checks), plus the watch cursor. Write-disciplined: one write per sweep
+  // tick that checked clubs (≤ ~6/day normal, ≤ ~48/day inside transfer
+  // windows — the 700/day budget holds).
+  KV_HERO_ROTATION: "hero_rotation_v1",
   KV_MATCHES_KEY: "matches_v13_tracked",
   KV_NOTIFIED_KEY: "notified_matches_v6",
   KV_SETTINGS_KEY: "bot_settings_v1",
