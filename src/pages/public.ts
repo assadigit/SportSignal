@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.43.css">
+<link rel="stylesheet" href="/public-13.44.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -156,7 +156,7 @@ ${FONT_FACES_STYLE}
 <!-- v13.134-typelight (owner, lighting round): the stadium-lights overlay — the supplied
      transparent PNG (/stadium-lights-hero.png, 1400x467) as a subtle atmospheric
      light layer over the composed scene (screen blend, .5 opacity in
-     public-13.43.css since v13.135-zoomlight raised it from .35). LAST child of .hero-bg: above photo/grade/swooshes/watermarks/
+     public-13.44.css since v13.135-zoomlight raised it from .35). LAST child of .hero-bg: above photo/grade/swooshes/watermarks/
      vignette/scrim, below the card, players and header. Decorative only. -->
 <img class="bg-lights" src="/stadium-lights-hero.png" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
 </div>
@@ -164,8 +164,8 @@ ${FONT_FACES_STYLE}
      by heroArt() through the HERO_ART mapping (no src here — the layer
      renders only for a mapped team; spelled out because seo-check's T-03
      regex scans raw HTML). -->
-<div class="hero-player player-home" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"></div>
-<div class="hero-player player-away" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"></div>
+<div class="hero-player hero-player--cinematic player-home" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"></div>
+<div class="hero-player hero-player--cinematic player-away" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"></div>
 <!-- the glass card: ONE real link to the match page wraps the grid;
      renderHeroSpot paints #heroSpot (class-for-class with the server
      mirror so the client re-render is seamless). -->
@@ -199,13 +199,13 @@ ${FONT_FACES_STYLE}
 <span id="hcSr" class="sr-only" aria-live="polite"></span>
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 </div>
-<!-- v13.140-refine (owner): the "آخرین به‌روزرسانی" line sticks EXACTLY
-     BELOW the countdown's .count-inner block — inside the chamfered panel,
-     on ALL viewports (public-13.43.css; the <=899px-only rule and the
-     .page-col desktop copy are both retired; renderSync in public-13.36.js
+</div>
+<!-- v13.142-cinematic (owner): the "آخرین به‌روزرسانی" line sits BELOW the
+     countdown panel — a SIBLING of #bigbar, NOT part of the chamfered box —
+     on ALL viewports (the refine round had it inside the panel; the owner
+     moved it back out; public-13.44.css; renderSync in public-13.36.js
      keeps mirroring #lastSync into it). -->
 <p class="hero-sync-m" id="lastSyncM" aria-hidden="true">__SEO_SYNC__</p>
-</div>
 <!-- v13.131-playerpresence: BOTH corner pills are RETIRED (the carousel in
      v13.129, the bell now — owner directive); heroPills() in public-13.36.js
      null-guards their absence. -->

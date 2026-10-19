@@ -85,18 +85,26 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.141-wm: the current pair (13.43.css + 13.36.js — CSS-only
+# v13.142-cinematic: the current pair (13.44.css + 13.36.js — CSS+template
 # release, the JS carries over) — immutable under the rename-on-edit rule;
 # retired versions stay pinned below per the retention rule (stale edge
 # HTML <=900s may still reference them).
-# v13.141-wm (owner, wm round): the hero's club-crest watermarks +10%
-# presence again (.218 -> .240 desktop, .222 -> .244 mobile — both x 1.1,
-# the fourth consecutive crest bump); everything else carries over from
-# v13.140-refine.
-/public-13.43.css
+# v13.142-cinematic (owner): (1) the hero players get a reusable cinematic
+# treatment (.hero-player--cinematic — grade brightness .97 / contrast
+# 1.12 / saturate 1.08 + a soft dark drop-shadow + a very subtle blue
+# halo; params centralized as --ss-player-* tokens); (2) stadium
+# floodlights +10% (.66 -> .726); (3) crest watermarks +10% (.240 ->
+# .264 desktop, .244 -> .268 mobile); (4) the "آخرین به‌روزرسانی" line
+# moves OUT of the chamfered countdown panel — a sibling of #bigbar,
+# directly below the box, on all viewports.
+/public-13.44.css
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.36.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.141-wm (retired pair — kept per the retention rule)
+/public-13.43.css
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.140-refine (retired pair — kept per the retention rule)

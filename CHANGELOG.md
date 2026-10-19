@@ -6,6 +6,36 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.142-cinematic] — 2026-10-20 (cinematic round: reusable player treatment, brighter floodlights + crests, sync line out of the countdown box)
+
+The owner's asks: "(1) Make the stadium light 10% brighter. (2) Make the
+club's logo 10% brighter. (3) Remove the آخرین به‌روزرسانی line from the
+countdown box — it must be below, not part of it." Plus a full cinematic
+treatment spec for the hero players (grading + subtle blue halo +
+controlled shadow).
+
+- **Cinematic player treatment**: both hero figures carry the reusable
+  `.hero-player--cinematic` class — `brightness(.97) contrast(1.12)
+  saturate(1.08)` + `drop-shadow(0 12px 22px rgba(0,8,25,.38))` (depth)
+  + `drop-shadow(0 0 14px rgba(0,155,255,.14))` (a very subtle cool-blue
+  halo matching the floodlights). Params centralized as
+  `--ss-player-grade/shadow/halo` tokens (light theme swaps the halo for
+  navy). The assets are alpha-trimmed lossless webp cutouts, so the
+  shadows follow the silhouette — no rectangles; the feet-fade mask
+  applies after the filter chain, so the shadows dissolve at the floor.
+  Before/after VLM comparison: richer jerseys, natural skin tones,
+  subtle halo, clean edges — PASS on all six criteria.
+- **Floodlights +10%**: `.bg-lights` `.66 → .726` (× 1.1).
+- **Crest watermarks +10% (fifth bump)**: `.bg-wm` `.240 → .264`
+  (desktop) and `.244 → .268` (mobile).
+- **Sync line below the box**: `#lastSyncM` moved out of `#bigbar` —
+  a sibling directly below the chamfered panel on all viewports
+  (`margin: 6px 0 0`); renderSync keeps mirroring `#lastSync` into
+  it by id.
+- Release: `public-13.43.css → public-13.44.css` (rename-on-edit,
+  immutable pin, 13.43 retained), `sw.js` cache `v48 → v49`,
+  `VERSION 13.142-cinematic`, package `13.142.0.0`.
+
 ## [13.141-wm] — 2026-10-20 (wm round: the hero's club-crest watermarks +10% again)
 
 The owner's ask: "Make the hero's club logos on the bg 10% brighter

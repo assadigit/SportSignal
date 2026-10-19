@@ -129,6 +129,17 @@
 //              the big blue HUD card, feet-only melt (fade 26%→20%).
 //              Routine evict — stale HTML may still reference 13.37.css,
 //              which stays served per the retention rule.)
+// Cache name:  sportsignal-v49 (v13.142-cinematic: public-13.43.css→13.44.css
+//              — CSS+template release, public-13.36.js carries over
+//              unchanged (+ the #lastSyncM template move in public.ts: it
+//              now sits BELOW #bigbar, a sibling of the chamfered panel).
+//              The owner's cinematic round: a reusable player treatment
+//              (.hero-player--cinematic: grade .97/1.12/1.08 + soft dark
+//              shadow + subtle blue halo, --ss-player-* tokens), stadium
+//              floodlights +10% (.66→.726), crest watermarks +10%
+//              (.240→.264 desktop, .244→.268 mobile). Routine evict —
+//              stale HTML may still reference 13.43.css, which stays
+//              served per the retention rule.)
 // Cache name:  sportsignal-v48 (v13.141-wm: public-13.42.css→13.43.css
 //              — CSS-only release, public-13.36.js carries over unchanged.
 //              The owner's wm round: the hero's club-crest watermarks
@@ -169,7 +180,7 @@
 //              (.18→.198), floodlights .5→.6. Routine evict — stale
 //              HTML may still reference 13.39.css, which stays served
 //              per the retention rule.)
-const CACHE = "sportsignal-v48";
+const CACHE = "sportsignal-v49";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
