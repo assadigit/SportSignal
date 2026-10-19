@@ -3,7 +3,13 @@
 // templates (~2KB of source); they now live once and are interpolated into
 // each template at the exact same byte position. Output is unchanged
 // (byte-parity harness: scripts/check-admin-parity.js).
+// v13.133-persiantype: the font stack is the owner's Persian design system —
+// Morabba (headings, ONE variable file wght 250–900) + Peyda (body/UI,
+// static 400–900, FaNum editions with Persian-default digits). Both
+// self-hosted under /fonts/ (immutable, week-fresh per _headers). The
+// family↔weight map is the typography contract; public-13.34.css assigns
+// them (body=Peyda; h1-h6 + display classes=Morabba via --font-heading).
 
 export const THEME_INIT_SCRIPT = `<script>try{var t=localStorage.getItem("ucl_theme")||"dark",l=localStorage.getItem("ucl_lang")||"fa",d=document.documentElement;d.setAttribute("data-theme",t);d.setAttribute("lang",l);d.setAttribute("dir",l==="en"?"ltr":"rtl");}catch(e){}<\/script>`;
 
-export const FONT_FACES_STYLE = `<style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>`;
+export const FONT_FACES_STYLE = `<style>@font-face{font-family:'Morabba';src:url('/fonts/MorabbaVF.woff2') format('woff2');font-weight:250 900;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-ExtraBold.woff2') format('woff2');font-weight:800;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Black.woff2') format('woff2');font-weight:900;font-style:normal;font-display:swap}</style>`;

@@ -57,11 +57,27 @@ dot ping, the derby amber, the UCL gold, the green big-match progress bar.
 Keep alphas low (≤ ~0.3) and blurs tight; the page should read *premium dark*,
 not neon.
 
-## Typography
+## Typography (v13.133-persiantype — the owner's font pack)
 
-- **Family:** Vazirmatn (variable-capable Persian face), **self-hosted** in
-  `assets/fonts/` as woff2 for weights 400/500/600/700/800 — do not revert to
-  the CDN `<link>`.
+- **Two families, self-hosted** in `assets/fonts/` (never a CDN `<link>`):
+  - **Morabba** — ALL headings & display text (h1–h6, the hero league
+    title, team names, kickoff digits, countdown digits). ONE variable
+    font: `MorabbaVF.woff2`, **wght 250–900** (fvar-verified), 38 KB.
+  - **Peyda** — ALL regular text (body, forms, inputs, buttons, nav,
+    tables, labels, meta). Static `Peyda-{Regular,Medium,SemiBold,Bold,
+    ExtraBold,Black}.woff2` = weights **400/500/600/700/800/900** (FaNum
+    editions: Persian digits are the default figures), ~29 KB each.
+- **Registration:** `FONT_FACES_STYLE` (src/pages/styles-shared.ts), inlined
+  by every page template with `font-display:swap`. **Assignment:** the
+  typography block at the tail of the live public CSS (`--font-heading` /
+  `--font-body` tokens; body=Peyda; the display selector list=Morabba).
+  Add new display classes to that list — never a local font-family override.
+- **Fallbacks:** `Peyda → 'Segoe UI' → Tahoma → system-ui` (Persian-capable);
+  letter-spacing stays 0 (Persian script is never tracked); line-heights on
+  Morabba elements are ≥1.35 (the face has tall ascenders that clip tighter).
+- **Retired:** the Vazirmatn woff2 files stay on disk only so retired CSS
+  generations keep rendering for stale caches (the retention rule); the live
+  CSS no longer references them.
 - **Scale (public page):** ~10.5–15px for meta/labels/info, 17px scores,
   27px display heads. Weights do hierarchy: 600 meta, 700 team names, 800
   display/score.
@@ -124,7 +140,8 @@ per-pixel runtime lookups).
 ## File Ownership
 
 - `src/worker.ts` — the three UI templates (also the bot + API bundle).
-- `assets/bg.jpg`, `assets/fonts/Vazirmatn-*.woff2` — page assets served by the
+- `assets/bg.jpg`, `assets/fonts/*.woff2` (MorabbaVF + Peyda 400–900; the
+  retired Vazirmatn set rides along for the cache-retention rule) — page assets served by the
   worker.
 - `scripts/check-*.js` — regression scripts that regex-extract logic from
   `src/worker.ts` (canonical normalizer `normTeamName`, `canonDedupe`, FA

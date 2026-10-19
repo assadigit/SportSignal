@@ -36,9 +36,12 @@
 <meta name="twitter:image" content="__SEO_OG_IMAGE__">
 <meta name="twitter:image:alt" content="SportSignal — بازی‌های بزرگ فوتبال">
 <link rel="canonical" href="https://sportsignal.ir/">
-<link rel="preload" href="/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/Vazirmatn-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+<!-- v13.133-persiantype: preloads follow the new stack — the body face
+     (Peyda 400/800) + the heading variable font (MorabbaVF, one file for
+     every heading weight). SemiBold/Bold arrive lazily with the tables. -->
+<link rel="preload" href="/fonts/Peyda-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Peyda-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/MorabbaVF.woff2" as="font" type="font/woff2" crossorigin>
 __SEO_JSONLD__
 <script>try{var t=localStorage.getItem("ucl_theme")||"dark",l=localStorage.getItem("ucl_lang")||"fa",d=document.documentElement;d.setAttribute("data-theme",t);d.setAttribute("lang",l);d.setAttribute("dir",l==="en"?"ltr":"rtl");}catch(e){}</script>
 <!-- v12.x-force-dark: the default theme is ALWAYS dark, regardless of the
@@ -47,7 +50,7 @@ __SEO_JSONLD__
      The user can still toggle to light via the theme button. -->
 <meta name="color-scheme" content="dark light">
 <title>__SEO_TITLE__</title>
-<style>@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Bold.woff2') format('woff2');font-weight:700;font-display:swap}@font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}</style>
+<style>@font-face{font-family:'Morabba';src:url('/fonts/MorabbaVF.woff2') format('woff2');font-weight:250 900;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-ExtraBold.woff2') format('woff2');font-weight:800;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Black.woff2') format('woff2');font-weight:900;font-style:normal;font-display:swap}</style>
 <style>/* v13.56-visitcount: footer page-view counter. The number span has a
      fixed min-width so the arriving digits never cause layout shift. */
 .visitcount{font-size:.78rem;color:var(--muted,#94a3b8);margin-top:10px;line-height:1.9;direction:rtl}
@@ -72,7 +75,7 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.33.css">
+<link rel="stylesheet" href="/public-13.34.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -186,8 +189,13 @@ __SEO_JSONLD__
 </div>
 </div>
 <!-- v13.131-playerpresence: BOTH corner pills are RETIRED (the carousel in
-     v13.129, the bell now — owner directive); heroPills() in public-13.34.js
+     v13.129, the bell now — owner directive); heroPills() in public-13.35.js
      null-guards their absence. -->
+<!-- v13.133-persiantype (owner, mobile round): the in-hero mobile copy of
+     the "last updated" line — a tiny flush caption under the countdown
+     (public-13.34.css shows it only below 900px and retires the .page-col
+     copy there; renderSync in public-13.35.js mirrors #lastSync into it). -->
+<p class="hero-sync-m" id="lastSyncM" aria-hidden="true">__SEO_SYNC__</p>
 </div>
 <!-- v13.126-herolook: the sync line moved out of the header, under the hero
      (P1.3) — renderSync() keeps filling #lastSync (same id, same wiring).
@@ -195,10 +203,12 @@ __SEO_JSONLD__
      EVERYTHING below the hero (the sync line + all the boxes). <body> is the
      full-width page shell now (the old 760px body column + the 100vw breakout
      trick are gone — 100vw pushed the header controls out of the viewport);
-     at >=1080px the JS layout engine (setWide in public-13.33.js) adds .wide
+     at >=1080px the JS layout engine (setWide in public-13.35.js) adds .wide
      and this becomes the two-column grid: #wideMain (the important games +
      the containers, inline-START) | #wideSide (the tables sidebar,
-     inline-END) — the 47.png reference layout. -->
+     inline-END) — the 47.png reference layout.
+     v13.133-persiantype: on phones (<900px) the CSS hides THIS copy — the
+     in-hero #lastSyncM above owns the slot there. -->
 <div class="page-col">
 <p class="sub sync hero-sync" id="lastSync" role="status" aria-live="polite">__SEO_SYNC__</p>
 <!-- v12.3/v12.4/v12.7/v12.8 TOP BOX (league), per the user's rules: TOP CL GAME (two
@@ -342,7 +352,7 @@ __SEO_JSONLD__
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.12.js" defer></script>
 <script>var PAGE_TZ = "__PAGE_TZ__";</script>
-<script src="/public-13.34.js" defer></script>
+<script src="/public-13.35.js" defer></script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

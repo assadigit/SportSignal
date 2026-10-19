@@ -101,7 +101,15 @@
 //              CORE_URLS drops /hero-stage.mp4 (the new hero has no video
 //              layer — saves ~645KB per SW install); the fetch handler below
 //              still caches it on demand for stale-HTML clients.)
-const CACHE = "sportsignal-v39";
+// Cache name:  sportsignal-v40 (v13.133-persiantype: public-13.33.css→13.34
+//              + public-13.34.js→13.35 — the Morabba+Peyda Persian
+//              typography system (new /fonts/MorabbaVF.woff2 +
+//              /fonts/Peyda-*.woff2) + the dedicated mobile HUD artwork
+//              (/ui/sportsignal-hud-matches-hero-mobile.png, 9-slice source
+//              for the <900px card) + the mobile layout round. Same rule:
+//              cache-first assets can't refresh in place, so every client
+//              cache generation turns over on install.)
+const CACHE = "sportsignal-v40";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

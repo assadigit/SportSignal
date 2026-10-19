@@ -62,7 +62,7 @@ SportSignal is a **curated filter for football noise**. It doesn't try to cover 
 match in every league — it covers **UCL plus Europe's big leagues**, and it only
 speaks up for what a fan would actually regret missing: countdowns into the big
 matches, kickoff and result alerts for the teams you follow, weekly league tables,
-and a morning digest on matchdays. Everything is **Persian-first** (Vazirmatn,
+and a morning digest on matchdays. Everything is **Persian-first** (Morabba for headings + Peyda for body since v13.133-persiantype,
 fa-IR dates, Persian digits) with a full English toggle.
 
 Two surfaces, one Worker:
@@ -357,7 +357,7 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
 | 11 | **Cron phase-extraction deferred** | Splitting the tick into named phases would rewrite the quota guarantee. Only revisit *with failure-injection tests first*. |
 | 12 | **Modularization by seams, bodies byte-identical** (13.47) | api.ts 1101→312 lines via pure movement, route table conservation asserts, zero behavior change. The safe way to refactor a system with live users. |
 | 13 | **Local smoke test before every deploy** | Born from the 1101 incident (legal TypeScript that only explodes at runtime). RUNBOOK §2 law. |
-| 14 | **Persian-first, dark-first design** | The audience. Vazirmatn, fa-IR dates, Persian digits, RTL. See `design-system/ucl-notifier/MASTER.md`. |
+| 14 | **Persian-first, dark-first design** | The audience. Morabba (headings) + Peyda (body) — v13.133-persiantype, fa-IR dates, Persian digits, RTL. See `design-system/ucl-notifier/MASTER.md`. |
 
 ---
 

@@ -142,6 +142,79 @@ library-ready gaps the moment those clubs surface in fixtures.
 
 ---
 
+## [13.133-persiantype] — 2026-10-20 (the Persian typography design system + the mobile HUD round)
+
+(Rebased onto 13.132-styleloop — a sibling session's VLM style loop took the
+13.132 number; this release renumbered 13.132 → 13.133. No file overlap: the
+style loop ships portrait pipeline + runtime modules, this release renames
+the css/js pair and ships the font pack.)
+
+The owner supplied a font pack ("Fonts for farsi.zip", now extracted and
+retired from the repo) and a DEDICATED mobile HUD artwork, plus a mobile
+layout round. The site's whole typographic voice moves from Vazirmatn to
+the two-family system the owner specified.
+
+### The typography system (Morabba + Peyda)
+
+- **Morabba** — every heading and display text: h1–h6 (all section cards),
+  the hero league title, team names, the kickoff digits, the countdown
+  digits and its head label. Shipped as ONE variable font —
+  `/fonts/MorabbaVF.woff2`, wght 250–900 (fvar-verified), 38 KB — so every
+  heading weight rides a single request.
+- **Peyda** — every regular text: body, descriptions, forms, inputs,
+  buttons, navigation, tables, labels, chips, meta lines. Static weights
+  400/500/600/700/800/900 (FaNum editions — Persian digits are the default
+  figures; usWeightClass verified per file before converting), ~29 KB each
+  after a lossless fonttools TTF→WOFF2 conversion.
+- Registration lives in `FONT_FACES_STYLE` (src/pages/styles-shared.ts) —
+  inlined by all three page templates (public/login/admin) with
+  `font-display:swap`; assignment lives at the tail of public-13.34.css
+  (`--font-heading` / `--font-body` tokens; body=Peyda, the display
+  selector list=Morabba). The body font stack drops Vazirmatn; the
+  Vazirmatn woff2 files stay on disk only so retired stylesheet
+  generations keep rendering for stale caches (the retention rule).
+- Persian-safe line-heights retuned on the elements that moved to Morabba
+  (league-title 1.2→1.35, hero-name 1.35→1.45, count-num 1→1.2,
+  time-digits 1→1.15 — no clipped ascenders/descenders).
+- Preloads follow the stack: Peyda-Regular + Peyda-ExtraBold + MorabbaVF.
+- Total above-fold font weight is LOWER than the Vazirmatn set it replaces
+  (209 KB vs 255 KB — the variable Morabba file covers eight weights).
+
+### The mobile HUD + layout round (all <900px)
+
+- **Dedicated mobile HUD artwork**: the card now renders
+  `/ui/sportsignal-hud-matches-hero-mobile.png` (portrait-native
+  500×719) as a 9-slice (rim bands measured from the artwork: 66/69/59/65
+  source px; border widths 33/35/29/33) instead of downscaling the desktop
+  PNG's rim.
+- **Logo/HUD clearance**: card margin-top 44→100px — the frame used to
+  start ABOVE the header logo's bottom edge (collided at 375px: card y36
+  vs logo bottom y75); it now clears by ~17px.
+- **No dead band before the first section**: herowrap padding-bottom
+  64→0 and the "آخرین به‌روزرسانی" line rides INSIDE the hero —
+  #lastSyncM, a tiny (11px) flush caption right under the countdown;
+  renderSync (public-13.35.js) mirrors #lastSync into it on every path.
+  The .page-col copy retires below 900px. Gap from the hero block to the
+  دیدارهای جذاب لیگ‌ها heading: 131px → ~25px.
+- **Crest watermarks return on mobile**: the two club-crest roundels
+  (opacity .16, blur 1.2px) flank the countdown strip at the hero's foot,
+  clipped at the section edge exactly like the desktop's bottom:-80px
+  crop (the card spans the full phone width, so the desktop side
+  placement would hide them).
+- The time artwork shrinks with the viewport on narrow phones
+  (min(242px, 100vw−118px)) so the chip always fits the new frame.
+
+### Plumbing
+
+- public-13.33.css→13.34.css + public-13.34.js→13.35.js (rename-on-edit);
+  _headers pins the new pair + the mobile HUD PNG immutable (retention:
+  13.33.css/13.34.js stay served through one 900s edge window); sw.js
+  CACHE v39→v40; check-scheduler/check-stats pins updated; parity
+  baselines re-frozen; design-system MASTER.md Typography section
+  rewritten; the hero-coverage bundle pointer follows the JS rename.
+- `Fonts for farsi.zip` deleted from the repo root after extraction and
+  verification (the woff2 assets + provenance comments carry forward).
+
 ## [13.131-playerpresence] — 2026-10-20 (player presence + HUD dimming + compact countdown)
 
 (Rides on top of 13.130-herogaploop — the sibling session's hero gap loop;
