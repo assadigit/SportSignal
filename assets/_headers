@@ -85,8 +85,27 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.144-lights: the current pair (13.45.css + 13.36.js — CSS-only
+# v13.145-countdown: the current pair (13.46.css + 13.36.js — CSS+template
 # release, the JS carries over) — immutable under the rename-on-edit rule;
+# retired versions stay pinned below per the retention rule (stale edge
+# HTML <=900s may still reference them).
+# v13.145-countdown (owner): the countdown panel rides the SUPPLIED HUD
+# artwork /ui/sportsignal-countdown-bg.png (474×204 stadium capsule, kept
+# exactly as shipped) — the four cells are rebuilt inside its measured
+# glass interior (deep-navy translucent pockets, thin cyan outlines,
+# chamfered corners, lime top ticks, cqi-scaled type); the old CSS chamfer
+# panel + .count-inner retire; #bigbar keeps its ids/contract (template
+# restructure: count-head/count-tiles/hcSr/hc-track are direct children).
+/public-13.46.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# the supplied countdown HUD artwork — immutable (referenced by exact URL
+# from 13.46.css; it never changes in place).
+/ui/sportsignal-countdown-bg.png
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.144-lights (retired under v13.145-countdown): the pair (13.45.css + 13.36.js — CSS-only
+# release, the JS carried over) — immutable under the rename-on-edit rule;
 # retired versions stay pinned below per the retention rule (stale edge
 # HTML <=900s may still reference them).
 # v13.144-lights (owner): (1) stadium floodlights +10% again ("it can be

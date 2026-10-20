@@ -5,6 +5,37 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
 ---
+
+## [13.145-countdown] — 2026-10-20 (countdown round: the supplied HUD artwork becomes the panel; four cells rebuilt inside it)
+
+- Owner: "Build a Responsive Four-Cell Countdown UI Using the New HUD
+  Background (countdown-bg.png, 474×204, uploaded to the repo)." The
+  artwork is the visual foundation now — cyan/electric neon edges, lime
+  centre notches, teal glass, outer halo preserved exactly as shipped (no
+  CSS/SVG/gradient re-creation, no extra card, glow never cropped).
+- .hero-count becomes the artwork canvas: aspect 474/204 exact-fit
+  background (the .time-chip pattern), container queries scale the cell
+  type with the artwork; --ss-countdown-w reopens 200px → clamp(324px,
+  31vw, 460px) (the compact box was too small for four legible cells
+  inside the artwork's interior; height derives from the aspect).
+- The four cells are real UI elements in the MEASURED glass interior
+  (x63..404/y60..136 → left 13.7% / right 15.2% / top 29.9% / bottom
+  33.8%): deep-navy translucent pockets (skin-inset 1px cyan gradient
+  outline + chamfered corners via clip-path — a plain border would lose
+  the diagonals), electric-blue top glow, lime 2px top ticks echoing the
+  artwork's notches, white tabular numerals clamp(15px,6.6cqi,30px),
+  bright-cyan labels clamp(8.5px,2.7cqi,11.5px).
+- The head row (timer + تا بازی بزرگ بعدی) floats in the artwork's top
+  halo; the sync caption stays 4px below the box (sibling, all viewports).
+- Template: .count-inner retires (count-head/count-tiles/hcSr/hc-track
+  are direct children of #bigbar — the ids and the updateBigBar contract
+  are untouched; dir=ltr keeps the shipped روز→ثانیه order, values never
+  mirrored; the 24h track stays sr-only).
+- CSS+template release: 13.45.css → 13.46.css, SW v50 → v51, the artwork
+  pinned immutable in _headers. Verified at 320/375/430/768/1522
+  (agent-browser + VLM: cells inside the glass, no overflow/clipping,
+  order correct, premium look).
+
 ## [13.144-lights] — 2026-10-20 (lights round: floodlights +10% again + the sync caption "instantly after" the countdown box)
 
 - Owner: "Increase light stadium lights opacity by 10%, it can be

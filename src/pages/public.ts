@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.45.css">
+<link rel="stylesheet" href="/public-13.46.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -186,9 +186,14 @@ ${FONT_FACES_STYLE}
      no-JS visitors; the client corrects them on load). #hcSr is the
      screen-reader summary — polite, refreshed only when the remaining
      MINUTE changes. The 24h progress track stays in the contract as a
-     polite sr-only progressbar (no visible bar in the reference design). -->
+     polite sr-only progressbar (no visible bar in the reference design).
+     v13.145-countdown (owner): the panel rides the SUPPLIED HUD artwork
+     /ui/sportsignal-countdown-bg.png (474×204 stadium capsule, exactly as
+     shipped — no CSS recreation of the frame). .count-inner retires with
+     the old CSS panel: the head row, the tiles, #hcSr and the sr-only
+     track are now DIRECT children of #bigbar (the updateBigBar contract —
+     ids, dir=ltr order, data-i labels — is untouched). -->
 <div id="bigbar" class="hero-count">
-<div class="count-inner">
 <div class="count-head"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="14"/><line x1="15" x2="15" y1="11" y2="18"/><path d="M8.5 4.5a8.5 8.5 0 1 0 12.6 5.8"/></svg><span id="bigbarLabel" class="count-label" data-i="barNext">تا بازی بزرگ بعدی</span></div>
 <div class="count-tiles" role="timer" dir="ltr">
 <span class="count-tile"><b class="count-num" id="hcD">__SEO_HCD__</b><i class="count-unit" data-i="uDay">روز</i></span>
@@ -199,7 +204,6 @@ ${FONT_FACES_STYLE}
 <span id="hcSr" class="sr-only" aria-live="polite"></span>
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 </div>
-</div>
 <!-- v13.142-cinematic (owner): the "آخرین به‌روزرسانی" line sits BELOW the
      countdown panel — a SIBLING of #bigbar, NOT part of the chamfered box —
      on ALL viewports (the refine round had it inside the panel; the owner
@@ -207,7 +211,10 @@ ${FONT_FACES_STYLE}
      keeps mirroring #lastSync into it).
      v13.144-lights (owner): "add آخرین به‌روزرسانی INSTANTLY after this
      box" — the gap tightens 6px -> 4px (#lastSyncM margin, CSS); still
-     a sibling below the chamfered box, NOT part of it). -->
+     a sibling below the chamfered box, NOT part of it).
+     v13.145-countdown: the box is the artwork canvas now (the supplied
+     HUD artwork, 474/204 aspect) — the caption still reads as instantly
+     after it, 4px below the canvas's glow. -->
 <p class="hero-sync-m" id="lastSyncM" aria-hidden="true">__SEO_SYNC__</p>
 <!-- v13.131-playerpresence: BOTH corner pills are RETIRED (the carousel in
      v13.129, the bell now — owner directive); heroPills() in public-13.36.js
