@@ -189,6 +189,16 @@
 //              (.18→.198), floodlights .5→.6. Routine evict — stale
 //              HTML may still reference 13.39.css, which stays served
 //              per the retention rule.)
+// Cache name:  sportsignal-v54 (v13.148-head12: public-13.48.css→13.49.css
+//              — CSS-only release, core-13.13.js carries over unchanged.
+//              The owner's head12 round: the countdown head caption
+//              «تا بازی بزرگ بعدی» moves to a flat 12px on every
+//              viewport (the ×1.2 syncdate scaling capped it at 7.8px,
+//              under the owner's at-least-12px floor); the head icon
+//              scales to 13px and the head gap to 5.5px, keeping the
+//              row's shipped proportions. Routine evict — stale HTML
+//              may still reference 13.48.css, which stays served per
+//              the retention rule.)
 // Cache name:  sportsignal-v53 (v13.147-syncdate: public-13.47.css→13.48.css
 //              + core-13.12.js→core-13.13.js — the countdown grows 20%
 //              (clamp 162/230 → 194.4/276, every fixed-px value ×1.2),
@@ -197,7 +207,7 @@
 //              (i18n lastUpd relabel). Routine evict — stale HTML may
 //              still reference 13.47.css / core-13.12.js, which stay
 //              served per the retention rule.)
-const CACHE = "sportsignal-v53";
+const CACHE = "sportsignal-v54";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

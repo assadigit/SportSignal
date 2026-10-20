@@ -91,7 +91,20 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.147-syncdate: the current pair (13.48.css + 13.36.js + core-13.13.js
+# v13.148-head12: the current pair (13.49.css + 13.36.js + core-13.13.js
+# — CSS-only release, the JS carries over) — immutable under the
+# rename-on-edit rule; retired versions stay pinned below per the
+# retention rule (stale edge HTML <=900s may still reference them).
+# v13.148-head12 (owner): the countdown head caption «تا بازی بزرگ بعدی»
+# moves to a FLAT 12px on every viewport (the ×1.2 syncdate scaling
+# capped it at 7.8px, under the owner's at-least-12px floor); the head
+# icon scales to 13px and the head gap to 5.5px, keeping the row's
+# shipped proportions. The panel size, .64 artwork opacity, digits and
+# the تاریخ به‌روزرسانی caption below are untouched.
+/public-13.49.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.147-syncdate (retired under v13.148-head12): the pair (13.48.css + 13.36.js + core-13.13.js
 # — CSS + core-dict release) — immutable under the rename-on-edit rule;
 # retired versions stay pinned below per the retention rule (stale edge
 # HTML <=900s may still reference them).

@@ -1,0 +1,920 @@
+:root{color-scheme:dark;--bg:#0f172a;--card:#1e293b;--field:#0f172a;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#93c5fd;--score:#4ade80;--countdown:#93c5fd;--countdown-bg:rgba(96,165,250,.12);--danger:var(--t-danger);--chip:#334155;--hover:rgba(148,163,184,.08);--footer:#94a3b8;--glass:rgba(30,41,59,.55);--glass-border:rgba(148,163,184,.16);--glass-hi:rgba(255,255,255,.07);--glass-shadow:0 8px 32px rgba(0,0,0,.35);--glow1:rgba(37,99,235,.17);--glow2:rgba(29,78,216,.11);--scrim:rgba(2,6,23,.62);--rowsurf:rgba(15,23,42,.42);--t-primary:#2563eb;--t-success:#15803d;--t-success-ink:#4ade80;--t-success-soft:rgba(34,197,94,.14);--t-success-line:rgba(34,197,94,.35);--t-warning:#b45309;--t-highlight:#7e22ce;--t-danger:#f87171;--t-neutral:#334155;--t-neutral-soft:rgba(148,163,184,.14);--badge-top:#b45309;--badge-hot:var(--t-warning);--badge-derby:var(--t-highlight);--badge-league:var(--t-neutral);--badge-live:var(--t-success-ink);--nav-link:#cbd5e1;--nav-link-hover:#f1f5f9;--pill-primary-bg:var(--accent);--pill-primary-ink:#fff;--pill-primary-line:rgba(255,255,255,.22);--pill-hype-bg:linear-gradient(90deg,var(--badge-hot),var(--badge-derby));--pill-hype-ink:#fff;--pill-hype-line:rgba(255,255,255,.18);--pill-neutral-bg:rgba(148,163,184,.16);--pill-neutral-ink:#e2e8f0;--pill-neutral-line:rgba(148,163,184,.28)}
+[data-theme=light]{color-scheme:light;--bg:#f8fafc;--card:#ffffff;--field:#f8fafc;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#1d4ed8;--score:#15803d;--countdown:#2563eb;--countdown-bg:rgba(37,99,235,.1);--danger:var(--t-danger);--chip:#e2e8f0;--hover:rgba(15,23,42,.045);--footer:#64748b;--glass:rgba(255,255,255,.62);--glass-border:rgba(15,23,42,.08);--glass-hi:rgba(255,255,255,.7);--glass-shadow:0 8px 32px rgba(15,23,42,.08);--glow1:rgba(37,99,235,.09);--glow2:rgba(96,165,250,.08);--scrim:rgba(248,250,252,.78);--rowsurf:rgba(241,245,249,.72);--t-primary:#2563eb;--t-success:#15803d;--t-success-ink:#15803d;--t-success-soft:rgba(21,128,61,.12);--t-success-line:rgba(21,128,61,.32);--t-warning:#b45309;--t-highlight:#7e22ce;--t-danger:#dc2626;--t-neutral:#e2e8f0;--t-neutral-soft:rgba(15,23,42,.05);--badge-top:#b45309;--badge-hot:var(--t-warning);--badge-derby:var(--t-highlight);--badge-league:var(--t-neutral);--badge-live:var(--t-success-ink);--nav-link:#334155;--nav-link-hover:#0f172a;--pill-primary-bg:var(--accent);--pill-primary-ink:#fff;--pill-primary-line:rgba(255,255,255,.22);--pill-hype-bg:linear-gradient(90deg,var(--badge-hot),var(--badge-derby));--pill-hype-ink:#fff;--pill-hype-line:rgba(255,255,255,.18);--pill-neutral-bg:rgba(15,23,42,.08);--pill-neutral-ink:#1e293b;--pill-neutral-line:rgba(15,23,42,.16)}
+/* v13.131-playerpresence (owner round): the HUD layer dims to .74
+   opacity (the big blue neon read too bright — the stadium scene bleeds
+   through), the player figures ENLARGE to 78% (bottom 4%) on
+   alpha-trimmed /players/hero/ canvases so the club jersey reads clearly
+   (mask fade 36% -> 18%), the bell pill RETIRES, the countdown panel
+   compacts to a 200px strip (was 480px — owner: "at least 60%"), the
+   mobile time artwork widens 210 -> 242px and the mobile order becomes
+   [league][logos][time][date][stadium]. History — v13.129-hudframe: the
+   featured-match card rides the supplied futuristic HUD artwork
+   (/ui/sportsignal-hud-matches-hero.png — 1000x325 RGBA, angular beveled
+   neon frame, deep-navy interior, glow halo in the canvas' transparent
+   margins) as an absolute layer behind the content; the static corner
+   carousel pill was RETIRED (owner directive — the hero shows ONE match);
+   the crest watermarks + swooshes clip AT the section edge
+   (owner: "logos must clip at the edge of the container"); <=1019px the
+   player figures retire (thumbnail-sized flanks); <=899px the frame
+   switches to 9-slice border-image rendering so the stacked mobile card
+   keeps crisp corners. The 2026/27 UCL roster portraits: yamal + dembele
+   (+7 more v2.2-reframed entries) reverted to the INITIAL official UEFA
+   cutoffs (owner: "use the previous ones"). */
+/* v13.128-layoutrefine: the page shell is FULL-WIDTH — the old model put a
+   760px column on <body> and let #topbar/.herowrap break out with the
+   width:100vw + margin-inline:calc(50% - 50vw) trick. 100vw is wider than
+   the visible area on classic-scrollbar browsers, and inside the >=1440px
+   body grid the percentage margins resolved against the 1400px track, so
+   the header band rendered 44px shifted and pushed the inline-end controls
+   (moon/EN/gear) out of the viewport (the owner's report). The column
+   constraint moved to .page-col (the wrapper around everything below the
+   hero) and the footer; html+body clip horizontal overflow (clip, not
+   hidden — no scroll container). */
+html{overflow-x:clip;scroll-behavior:smooth}
+body{font-family:Peyda,'Segoe UI',Tahoma,system-ui,sans-serif;background-color:var(--bg);color:var(--text);max-width:none;margin:0;padding:24px 0 36px;line-height:1.6;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s;overflow-x:clip}
+/* the centered content column — everything below the hero (the sync line +
+   the boxes) and the footer; the header + the hero scene span the full page */
+.page-col{box-sizing:border-box;width:100%;max-width:760px;margin-inline:auto;padding-inline:20px}
+body:before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(900px 520px at 88% -8%,var(--glow1),transparent 60%),radial-gradient(820px 620px at -12% 32%,var(--glow2),transparent 60%),linear-gradient(var(--scrim),var(--scrim)),url(/bg.jpg) center/cover no-repeat}
+#topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px 22px;margin-bottom:10px;position:relative;z-index:20;box-sizing:border-box;width:100%;padding:16px 22px 8px}
+/* v13.126-herolook: the header floats TRANSPARENT over the full-bleed hero scene (the scene pulls up behind it — see the hero block at the end of this file). The whole top band is part of the dark hero island in BOTH themes (the light theme only turns the page below the hero), so the nav + controls use scene colors here, never --text (which follows the theme and would wash out against the always-dark scene). The dark-mode moon icon is GOLD (#F6C513, sampled from desired-look.jpg). No Telegram CTA in the header (per the reference) — the join link lives on in #tgFab / #joinSticky / footer. The sync line moved under the hero (P1.3). */
+#topbar .mainnav a{color:#9FD8EC;background:transparent}
+#topbar .mainnav a:hover{color:#FFFFFF;background:rgba(0,211,255,.14)}
+.brand{display:inline-flex;align-items:center;text-decoration:none;flex-shrink:0}
+.brand img{display:block;height:42px;width:auto;transition:transform .15s cubic-bezier(.16,1,.3,1)}
+.brand:hover img{transform:none}
+.head-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-inline-start:auto}
+.tb-btns{display:inline-flex;align-items:center;gap:2px;padding:4px;border-radius:999px;background:rgba(1,13,35,.6);border:1px solid rgba(255,255,255,.16);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.tb-btns button{width:34px;height:34px;padding:4px 10px;font-size:12.5px;font-weight:800;line-height:1;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:none;border-radius:999px;color:#FFFFFF;cursor:pointer;font-family:inherit;transition:background .2s ease,color .2s ease}
+.tb-btns button svg{display:block}
+.tb-btns button:hover{background:rgba(0,211,255,.14);color:#1FFFFF}
+.tb-btns button:active{transform:scale(.94)}
+.tb-btns button:focus-visible{outline:2px solid #1FFFFF;outline-offset:1px}
+#tzpanel{display:none;position:absolute;top:calc(100% + 10px);inset-inline-end:0;z-index:60;width:min(340px,calc(100vw - 40px));flex-direction:column;gap:8px;background:rgba(1,13,35,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(0,211,255,.55);border-radius:14px;padding:12px;color:#FFFFFF;box-shadow:0 18px 44px rgba(1,10,29,.5)}
+#tzpanel .tz-head{color:#FFFFFF}
+#tzpanel #tzclose{color:#9FD8EC}
+#tzpanel #tzclose:hover{color:#FFFFFF;background:rgba(0,211,255,.14)}
+#tzpanel #tzfilter,#tzpanel #tzsel{background:#01204A;color:#FFFFFF;border-color:rgba(0,211,255,.35)}
+#tzpanel #tzfilter:hover,#tzpanel #tzsel:hover{border-color:#00D3FF}
+#tzpanel.open{display:flex}
+.tz-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700}
+#tzclose{background:none;border:none;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;padding:2px 8px;border-radius:8px;font-family:inherit;transition:color .15s,background .15s}
+#tzclose:hover{color:var(--text);background:var(--hover)}
+#sbtn[aria-expanded=true]{transform:rotate(90deg);border-color:var(--accent)}
+#tzfilter{background:var(--field);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box;transition:border-color .15s}
+#tzsel{background:var(--field);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 11px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;width:100%;box-sizing:border-box;transition:border-color .15s}
+#tzsel[size]{height:auto;max-height:280px;overflow-y:auto}
+#tzsel:hover{border-color:var(--accent)}
+#tzfilter:focus,#tzsel:focus{border-color:var(--accent);outline:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1{font-size:27px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 6px}
+.sub a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent;transition:border-bottom-color .15s}
+.sub a:hover{border-bottom-color:var(--link)}
+.sync{font-size:11.5px;opacity:.9;margin:0 0 4px;font-variant-numeric:tabular-nums}
+.cta{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:var(--accent);color:#fff;font-size:13px;font-weight:600;padding:10px 18px;border-radius:999px;text-decoration:none;transition:background .15s,transform .15s cubic-bezier(.16,1,.3,1),box-shadow .15s}
+.cta:hover{background:var(--accent-strong);transform:translateY(-1px);box-shadow:0 6px 16px #2563eb33}
+#joinSticky{position:fixed;bottom:0;left:0;right:0;z-index:70;display:none;justify-content:center;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--glass);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);border-top:1px solid var(--glass-border);box-shadow:0 -8px 28px #02061773;text-decoration:none}
+#joinSticky.show{display:flex}
+@media (min-width:601px){#joinSticky{display:none!important}}
+#joinSticky .js-inner{display:inline-flex;align-items:center;gap:9px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;padding:12px 22px;border-radius:999px;transition:background .15s,transform .15s cubic-bezier(.16,1,.3,1)}
+#joinSticky .js-inner:hover{background:var(--accent-strong);transform:translateY(-1px)}
+#joinSticky svg{flex-shrink:0}
+body.joinsticky{padding-bottom:88px}
+#tgFab{position:fixed;bottom:24px;right:24px;z-index:65;display:none;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#229ed9;text-decoration:none;cursor:pointer;filter:drop-shadow(0 3px 8px rgba(34,158,217,.35)) drop-shadow(0 1px 3px rgba(0,0,0,.2));transition:transform .15s cubic-bezier(.16,1,.3,1),filter .15s,opacity .3s ease;animation:tgFab-pulse 2.6s ease-in-out infinite}
+#tgFab:hover{transform:scale(1.08);filter:drop-shadow(0 5px 12px rgba(34,158,217,.5)) drop-shadow(0 2px 5px rgba(0,0,0,.25))}
+#tgFab:active{transform:scale(.96)}
+#tgFab svg{flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
+@keyframes tgFab-pulse{0%,to{transform:scale(1)}50%{transform:scale(1.05)}}
+#tgFab:after{content:attr(data-promo);position:absolute;bottom:50%;right:100%;margin-right:10px;margin-bottom:0;white-space:nowrap;background:#fff;color:#0f172a;font-size:13px;font-weight:700;padding:8px 16px;border-radius:12px;box-shadow:0 4px 16px #0000002e;opacity:0;pointer-events:none;transform:translateY(50%) translate(8px);transition:opacity .4s ease,transform .4s ease;filter:none}
+#tgFab:before{content:"";position:absolute;bottom:50%;right:100%;margin-right:-2px;margin-bottom:-6px;width:0;height:0;border-style:solid;border-width:6px 0 6px 8px;border-color:transparent transparent transparent #fff;opacity:0;pointer-events:none;transform:translateY(50%);transition:opacity .4s ease}
+#tgFab.promo-show:after{opacity:1;transform:translateY(50%) translate(0)}
+#tgFab.promo-show:before{opacity:1}
+@media (min-width:601px){#tgFab{display:inline-flex}}
+@media (min-width:601px){#topbar .cta{display:none}}
+.bb-end{display:inline-flex;align-items:center;gap:8px;min-width:0}
+@keyframes hero-ember{0%{transform:translateY(0) translate(0);opacity:0}12%{opacity:.75}70%{opacity:.3}to{transform:translateY(-200px) translate(16px);opacity:0}}
+@keyframes hero-tick{0%{transform:scale(1)}35%{transform:scale(1.055);filter:brightness(1.4)}to{transform:scale(1)}}
+#topspotCard .spotitem .logo{box-shadow:none;filter:none;width:43px;height:43px;font-size:20px}
+@media (min-width:601px){#topspotCard .spotitem .logo{width:51px;height:51px;font-size:22px}}
+@media (min-width:601px){}
+@media (max-width:600px){}
+.livechip{display:inline-flex;align-items:center;gap:6px;background:var(--t-success-soft);color:var(--t-success-ink);border:1px solid var(--t-success-line);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;margin:0 6px;vertical-align:middle}
+.livechip .dot{width:8px;height:8px;border-radius:50%;background:var(--badge-live);animation:live-beep 1.1s ease-in-out infinite}
+@keyframes live-beep{0%,to{box-shadow:0 0 #22c55e59;transform:scale(1)}50%{box-shadow:0 0 0 6px #22c55e00;transform:scale(1.15)}}
+.live-breath{display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c555;box-shadow:0 0 #22c55e80;animation:live-breath 2s ease-in-out infinite;vertical-align:-1px;margin-inline-end:8px;flex-shrink:0}
+@keyframes live-breath{0%,to{opacity:.5;box-shadow:0 0 #22c55e66;transform:scale(.85)}50%{opacity:1;box-shadow:0 0 12px 4px #22c55e40;transform:scale(1.15)}}
+#liveCard h2{display:flex;align-items:center}
+#liveCard .spotitem{padding:1px 0;border-bottom:1px solid var(--border)}
+#liveCard .spotitem:last-child{border-bottom:none}
+#liveCard .match{padding:2px 0;gap:6px}
+#liveCard .logo{width:28px;height:28px;font-size:12px;border-radius:50%}
+#liveCard .logo img{width:100%;height:100%;object-fit:contain}
+#liveCard .team{font-size:12px;font-weight:700}
+#liveCard .kick{flex:0 0 72px;gap:1px}
+#liveCard .kick .score{font-size:14px;flex:0 0 auto}
+#liveCard .uclspot-info,#liveCard .sharewrap,.hero-card .sharewrap{display:none}
+.lmin{display:inline-block;background:#2563eb1f;color:var(--accent);border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;vertical-align:middle}
+[data-theme=light] .lmin{background:#2563eb1a}
+.scorers{flex:1 1 100%;margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+.scorers .srow{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.derbybadge{display:inline-flex;align-items:center;gap:4px;background:var(--pill-hype-bg);color:var(--pill-hype-ink);border:1px solid var(--pill-hype-line);border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:800;margin-inline-start:6px;vertical-align:middle}
+.bigcard{border:2px solid rgba(52,211,153,.38);border-radius:16px;padding:14px 16px 6px;margin:14px 0;background:radial-gradient(120% 160% at 15% 0%,rgba(16,185,129,.2),transparent 55%),linear-gradient(135deg,#064e3b,#065f46 55%,#047857);box-shadow:0 0 10px #05966929,0 8px 26px #00000059,var(--glass-shadow),inset 0 1px #ffffff29;color:#fff}
+.bigcard .match{border-bottom-color:#ffffff29}
+.bigcard .match:hover{background:#ffffff14}
+.bigcard .team,.bigcard .info{color:#ecfdf5}
+.bigcard .comp{background:#ffffff29;color:#fff}
+.bigcard .countdown{background:#fff3;color:#fff}
+.bigcard .venue{background:#ffffff24;color:#fff}
+.bigcard .logo{background:#00000047;border-color:#ffffff59}
+[data-theme=light] .bigcard{background:linear-gradient(135deg,#ecfdf5,#d1fae5 55%,#a7f3d0);border-color:#0596696b;color:#064e3b;box-shadow:0 8px 24px #05966929,var(--glass-shadow),inset 0 1px #ffffffd9}
+[data-theme=light] .bigcard .match{border-bottom-color:#052e1624}
+[data-theme=light] .bigcard .match:hover{background:#fff6}
+[data-theme=light] .bigcard .team,[data-theme=light] .bigcard .info{color:#064e3b}
+[data-theme=light] .bigcard .comp{background:#052e1624;color:#052e16}
+[data-theme=light] .bigcard .countdown{background:#052e1629;color:#052e16}
+[data-theme=light] .bigcard .venue{background:#052e161f;color:#052e16}
+[data-theme=light] .bigcard .logo{background:#ffffff8c;border-color:#052e162e}
+.bigcard-head{font-size:13px;font-weight:800;color:var(--accent);margin-bottom:4px}
+.bigcard .bigcard-head{color:#a7f3d0}
+[data-theme=light] .bigcard-head{color:var(--accent-strong)}
+[data-theme=light] .bigcard .bigcard-head{color:#047857}
+.card{background:var(--glass);-webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);border:1px solid var(--glass-border);border-radius:16px;padding:18px;margin:14px 0;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+.uclspot-logo{width:72px;height:72px;object-fit:contain;display:block;margin:4px auto 12px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.35))}
+.uclspot-info{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;font-size:12.5px;color:var(--muted);text-align:center}
+.uclspot-wait{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0 8px}
+.uclh2{display:flex;align-items:center;gap:10px}
+.uclh2>span[data-i]{text-align:end;flex:0 1 auto;min-width:0;margin-inline-end:auto}
+.ucl-logo{flex-shrink:0;width:34px;height:34px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 10px #02061773,inset 0 0 0 1px #0e20581a}
+.ucl-logo svg{width:29px;height:29px;display:block}
+.ucl-logo.sm{width:26px;height:26px}
+.ucl-logo.sm svg{width:22px;height:22px}
+.uclspot-ball{width:64px;height:64px;margin:0 auto;filter:drop-shadow(0 4px 14px rgba(0,0,0,.45))}
+.uclspot-ball svg{width:100%;height:100%;display:block}
+#uclSpotCard h2{font-size:19px;color:#fff;background:linear-gradient(135deg,#0e2058,#1b3480);border-color:#7ea1f54d;border-inline-start-color:#7ea1f5}
+.uclcard h2{color:#fff;background:linear-gradient(135deg,#0e2058,#1b3480);border-color:#7ea1f54d;border-inline-start-color:#7ea1f5}
+#uclSpotCard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2048%2048'%3E%3Cpath fill='%23ffffff' fill-opacity='.028' d='M24%2015L26%2021.2%2032.6%2021.2%2027.3%2025.1%2029.3%2031.3%2024%2027.4%2018.7%2031.3%2020.7%2025.1%2015.4%2021.2%2022%2021.2Z'/%3E%3C/svg%3E"),linear-gradient(168deg,#1b3480b8,#0d1c47cc);background-repeat:repeat,no-repeat;background-size:54px 54px,100% 100%;border-color:#7ea1f542}
+.uclcard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2048%2048'%3E%3Cpath fill='%23ffffff' fill-opacity='.028' d='M24%2015L26%2021.2%2032.6%2021.2%2027.3%2025.1%2029.3%2031.3%2024%2027.4%2018.7%2031.3%2020.7%2025.1%2015.4%2021.2%2022%2021.2Z'/%3E%3C/svg%3E");background-repeat:repeat;background-size:54px 54px;border-color:#7ea1f538}
+[data-theme=light] #uclSpotCard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2048%2048'%3E%3Cpath fill='%230e2058' fill-opacity='.04' d='M24%2015L26%2021.2%2032.6%2021.2%2027.3%2025.1%2029.3%2031.3%2024%2027.4%2018.7%2031.3%2020.7%2025.1%2015.4%2021.2%2022%2021.2Z'/%3E%3C/svg%3E"),linear-gradient(168deg,#e2eafff0,#c9d8f8e6);border-color:#172a6938}
+[data-theme=light] .uclcard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0%200%2048%2048'%3E%3Cpath fill='%230e2058' fill-opacity='.04' d='M24%2015L26%2021.2%2032.6%2021.2%2027.3%2025.1%2029.3%2031.3%2024%2027.4%2018.7%2031.3%2020.7%2025.1%2015.4%2021.2%2022%2021.2Z'/%3E%3C/svg%3E");border-color:#172a6929}
+[data-theme=light] .uclcard h2,[data-theme=light] #uclSpotCard h2{color:#0f172a;background:linear-gradient(135deg,#dbeafe,#bfdbfe);border-color:#2563eb38;border-inline-start-color:#3b82f6}
+.spotitem .match{margin:0 0 6px}
+.spotitem.past{opacity:.48;filter:saturate(.55)}
+.spotitem.past:hover{opacity:.72}
+.spotitem.past .match{animation:none}
+.spotitem.past .logo{filter:grayscale(.5)}
+.spotitem.past .score{opacity:.85}
+.wkdone{color:var(--muted);font-weight:700;font-size:11.5px;background:var(--t-neutral-soft);border-radius:999px;padding:3px 10px;display:inline-block;margin-left:6px}
+.ucl-head{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14.5px;margin-bottom:8px}
+.ucl-emblem{width:26px;height:26px;border-radius:6px;flex-shrink:0}
+.uclh2 .ucl-md{font-size:12px;color:#ffffffeb;font-weight:700;background:#ffffff24;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:2px 10px;flex-shrink:0;white-space:nowrap;margin-left:0;margin-inline-end:0}
+[data-theme=light] .uclh2 .ucl-md{color:#1e3a8a;background:#2563eb1f;border-color:#2563eb47}
+.ucl-md{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:600}
+.ucl-next{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;font-weight:600;color:var(--muted);margin:7px 0 2px;width:fit-content;max-width:100%;line-height:1.7}
+.ucl-next b{color:var(--text);font-weight:800;letter-spacing:.01em}
+.ucl-stand-wrap{position:relative;margin-top:10px}
+.ucl-stand{max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:6px 8px;background:#0f172ab8}
+[data-theme=light] .ucl-stand{background:#f8fafcc7}
+.ucl-stand-wrap .stnot-overlay{inset:6px;background:#02061799}
+[data-theme=light] .ucl-stand-wrap .stnot-overlay{background:#f8fafcb3}
+h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin:0 0 14px;padding:9px 14px;background:#94a3b817;border:1px solid rgba(148,163,184,.15);border-inline-start:4px solid var(--accent);border-radius:12px}
+[data-theme=light] h2{background:#0f172a0a;border-color:#0f172a17}
+#topspotCard h2{font-size:19px;background:#3b5fad1f;border-color:#3b5fad4d;border-inline-start-color:#3b5fad}
+[data-theme=light] #topspotCard h2{background:#3b5fad0f;border-color:#3b5fad33}
+.mrow,.spotitem{position:relative;border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin:0 0 10px;background:var(--rowsurf);transition:background .15s,border-color .15s;display:flex;flex-direction:column;justify-content:center}
+.mrow:last-child,.spotitem:last-child{margin-bottom:0}
+.mrow:hover,.spotitem:hover{filter:brightness(1.07);border-color:#2563eb66}
+.match{display:flex;align-items:center;gap:12px;padding:2px 0;border-radius:10px;animation:rise .35s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--i,0)*40ms)}
+.stable .match{animation:none}
+.side{display:flex;align-items:center;gap:10px;flex:1 1 0;min-width:0;flex-wrap:nowrap}
+.side .team{flex:1;min-width:0;padding-inline:2px;overflow:hidden;text-overflow:ellipsis}
+.side.away .team{text-align:end}
+.logo{width:41px;height:41px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0}
+.logo img{width:100%;height:100%;object-fit:contain}
+.team{flex:1;font-weight:700;font-size:14.5px}
+.score{font-weight:800;font-size:17px;color:var(--score);flex:0 0 92px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+.kick .score{flex:0 0 auto}
+.score b{font-weight:900;text-shadow:0 0 12px rgba(74,222,128,.45)}
+[data-theme=light] .score b{text-shadow:0 0 10px rgba(21,128,61,.25)}
+.score .lose{font-weight:600;opacity:.55}
+.score .sep{opacity:.5;font-weight:600}
+.kick{flex:0 0 92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;margin-top:7px}
+.kick .countdown{margin:0;font-size:13px;padding:4px 12px}
+.kickdate{font-size:11px;font-weight:700;color:var(--countdown);text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (min-width:601px) and (max-width:900px){}
+@media (min-width:901px){}
+.info{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:6px;text-align:center}
+.comp{display:inline-block;background:var(--pill-neutral-bg);color:var(--pill-neutral-ink);border:1px solid var(--pill-neutral-line);border-radius:999px;padding:3px 10px;font-size:11px;margin-inline-start:6px;font-weight:600}
+.complogo{width:14px;height:14px;border-radius:3px;vertical-align:-2.5px;margin-inline-end:5px}
+.countdown{color:var(--countdown);font-weight:700;font-size:11.5px;background:var(--countdown-bg);border-radius:999px;padding:3px 10px;display:inline-block;margin-left:6px}
+.venue{display:inline-block;background:var(--t-neutral-soft);border-radius:999px;padding:3px 10px;font-size:11px;margin-left:6px;font-weight:600;color:var(--text)}
+.grid4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:601px){.grid4{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.stbox{position:relative;background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);border:1px solid var(--glass-border);border-radius:12px;padding:10px 12px;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi);min-width:0}
+.stbox-head{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;margin-bottom:6px;min-width:0}
+.stbox-head img{width:20px;height:20px;border-radius:3px;flex-shrink:0}
+@media (min-width:1440px){.stbox-head img{width:40px;height:40px;border-radius:5px}}
+.strow{display:flex;align-items:center;gap:5px;font-size:11.5px;padding:2.5px 0;border-bottom:1px dashed var(--border)}
+.strow:last-child{border-bottom:none}
+.sthead{display:flex;align-items:center;gap:5px;padding:0 2px 3px;border-bottom:1px solid var(--border)}
+.sthead-fill{flex:1}
+.sthead-p{font-size:9.5px;font-weight:700;color:var(--muted);min-width:34px;text-align:end;flex-shrink:0}
+.stpos{width:16px;text-align:center;font-weight:800;color:var(--muted);flex-shrink:0}
+.stpos.top3{color:var(--accent)}
+.strow.top1,.strow.top1 .stname{font-weight:800;font-size:13.5px}
+.strow.top1 .stpts,.strow.top1 .stpos{font-weight:800}
+.stname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stname.haslogo{display:flex;align-items:center;gap:5px;overflow:hidden}
+.stname.haslogo .sttxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stlogo{width:19px;height:19px;border-radius:50%;background:var(--bg);border:1px solid var(--border);object-fit:contain;flex-shrink:0}
+.stpts{font-weight:800;flex-shrink:0;min-width:34px;text-align:end;font-variant-numeric:tabular-nums}
+.stnum{width:24px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums;color:var(--muted)}
+.sthead-num{font-size:9.5px;font-weight:700;color:var(--muted)}
+.strow.uclhead{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);z-index:1;font-weight:700}
+.strow.uclhead .stnum{font-size:9.5px;font-weight:700;color:var(--muted);line-height:1.3}
+.strow.uclhead .stpts{font-size:10px;color:var(--muted)}
+@media (max-width:600px){.ucl-hidem{display:none}}
+.stempty{color:var(--muted);font-size:11.5px;padding:4px 0}
+.stnot-overlay{position:absolute;inset:38px 8px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:#02061785;-webkit-backdrop-filter:blur(7px) saturate(1.2);backdrop-filter:blur(7px) saturate(1.2);border-radius:10px;text-align:center;z-index:2;box-shadow:inset 0 1px 0 var(--glass-hi)}
+[data-theme=light] .stnot-overlay{background:#f8fafc99}
+.stnot-ovl-label{font-size:12px;font-weight:800;color:var(--text)}
+.stnot-ovl-timer{font-size:10.5px;font-weight:700;color:var(--countdown);background:var(--countdown-bg);border-radius:999px;padding:2px 10px;font-variant-numeric:tabular-nums}
+.cupgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cupbox{background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);border:1px solid var(--glass-border);border-radius:12px;padding:10px 12px;box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+.cupbox-head{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;margin-bottom:4px}
+.cupbox-head img{width:18px;height:18px;border-radius:4px}
+.cupgroup-title{margin:12px 0 6px;font-size:12.5px;font-weight:800;color:var(--muted);display:flex;align-items:center;gap:6px}
+.cupgroup-title:first-child{margin-top:0}
+.cupmatch{font-size:11.5px;line-height:1.7}
+.cupmatch .teams{font-weight:700}
+.cupdate{color:var(--muted);font-size:11px}
+.cupdate .live-tag{color:var(--t-success-ink);font-weight:700}
+.sharewrap{position:absolute;top:0;inset-inline-end:0;z-index:6;width:44px;height:44px}
+.sharetoggle{display:inline-flex;align-items:flex-start;justify-content:flex-end;width:44px;height:44px;padding-block-start:8px;padding-inline-end:4px;border-radius:14px;background:transparent;border:none;cursor:pointer;font-family:inherit;color:#93c5fd;transition:color .15s,background .15s}
+[data-theme=light] .sharetoggle{color:#9ca3af}
+.sharetoggle:hover{color:var(--text);background:var(--hover)}
+.sharetoggle:active{transform:scale(.88)}
+.sharetoggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sharetoggle svg{display:block;fill:currentColor}
+.share{display:none;position:absolute;top:40px;inset-inline-end:0;align-items:center;gap:5px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;box-shadow:0 12px 32px #02061773,inset 0 1px 0 var(--glass-hi);z-index:7}
+.sharewrap.open .share{display:inline-flex}
+.share a,.share button{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:var(--chip);border:1px solid var(--border);padding:0;cursor:pointer;font-family:inherit;color:var(--muted);text-decoration:none;transition:transform .15s,background .15s}
+.share a:hover,.share button:hover{transform:translateY(-1px);background:var(--hover)}
+.share a:active,.share button:active{transform:scale(.9)}
+.share svg{display:block}
+.topbadge{display:inline-flex;align-items:center;background:#fef9c3;color:#451a03;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:800;margin-inline-start:6px;vertical-align:middle;border:1px solid #fde68a;opacity:.92}
+#msg{text-align:center;color:var(--muted);font-size:13px;padding:12px}
+.empty{color:var(--muted);text-align:center;padding:24px;font-size:14px}
+.card-loading{position:relative;min-height:60px;opacity:.4;transition:opacity .25s;pointer-events:none}
+.card-loading:has(.skelwrap){opacity:1}
+.card-loading:after{content:"";position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px 0 0 -24px;opacity:1;z-index:10;background:transparent}
+.card-loading .loading-spin{position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px 0 0 -24px;z-index:10;opacity:1;pointer-events:none}
+.loading-spin{width:48px;height:48px;border-radius:50%;border:4px solid var(--t-neutral-soft);border-top-color:var(--t-success-ink);animation:loading-rot 1s linear infinite}
+@keyframes loading-rot{to{transform:rotate(360deg)}}
+@keyframes card-spin{to{transform:rotate(360deg)}}
+.skelwrap{display:flex;flex-direction:column;gap:8px;padding:6px 2px}
+.skelwrap.skel-rows .skel{height:64px;border-radius:14px}
+.skelwrap.skel-tbl .skel{height:22px;border-radius:8px}
+.skelwrap.skel-cards .skel{height:72px;border-radius:12px}
+.skelwrap.skel-hero .skel{height:110px;border-radius:16px}
+.skel{background:linear-gradient(100deg,var(--chip) 32%,var(--hover) 50%,var(--chip) 68%);background-size:220% 100%;animation:skel-shimmer 1.5s ease-in-out infinite;opacity:.85}
+@keyframes skel-shimmer{0%{background-position:180% 0}to{background-position:-80% 0}}
+.mrow{content-visibility:auto;contain-intrinsic-size:auto 96px}
+#backTop{position:fixed;bottom:24px;left:24px;z-index:65;width:46px;height:46px;border-radius:50%;border:1px solid var(--glass-border);background:var(--glass);-webkit-backdrop-filter:blur(10px) saturate(1.3);backdrop-filter:blur(10px) saturate(1.3);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(14px);transition:opacity .25s ease,transform .25s cubic-bezier(.16,1,.3,1),border-color .15s,background .15s;box-shadow:0 4px 14px #02061740}
+#backTop.show{opacity:1;pointer-events:auto;transform:translateY(0)}
+#backTop:hover{border-color:var(--accent);background:var(--hover)}
+#backTop:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#backTop svg{width:20px;height:20px}
+@media (max-width:600px){#backTop{bottom:18px;left:18px;width:42px;height:42px}}
+.empty.loading-empty{position:relative;min-height:80px;padding:24px;display:flex;align-items:center;justify-content:center}
+.empty.loading-empty .loading-spin{width:48px;height:48px}
+.empty.loading-empty .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.finmore{display:flex;align-items:center;justify-content:center;gap:6px;width:fit-content;margin:12px auto 2px;padding:7px 20px;border-radius:999px;background:var(--chip);border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:color .15s,background .15s,transform .15s cubic-bezier(.16,1,.3,1)}
+.finmore:hover{color:var(--text);background:var(--hover);transform:translateY(-1px)}
+.finmore:active{transform:scale(.96)}
+.finmore:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.aboutbox,.contactbox{margin:0 0 16px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.aboutbox h3,.contactbox h3{font-size:14.5px;font-weight:800;color:var(--text);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.aboutbox p,.contactbox p{font-size:13px;line-height:1.85;color:var(--muted);margin:0 0 8px}
+.aboutbox p:last-child,.contactbox p.contact-cta{margin:0}
+.contactbox .contact-cta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px}
+.contactbox .contact-cta a{font-weight:800;color:var(--link);text-decoration:none;padding:6px 14px;border:1px solid var(--border);border-radius:999px;font-size:13px;background:var(--bg);transition:background .15s,border-color .15s}
+.contactbox .contact-cta a:hover{background:var(--hover);border-color:var(--link)}
+.contactbox .contact-email{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;color:var(--text);direction:ltr;display:inline-block}
+.aboutbox .about-tag{font-size:14.5px;font-weight:800;color:var(--text);line-height:1.6;margin:0 0 12px;padding:8px 12px;border-inline-start:3px solid var(--link);background:var(--bg);border-radius:0 8px 8px 0}
+footer{text-align:start;color:var(--footer);font-size:12px;margin-top:28px;line-height:2;box-sizing:border-box;max-width:760px;margin-inline:auto;padding-inline:20px}
+footer a{color:var(--link);text-decoration:none}
+footer a:hover{text-decoration:underline}
+.mainnav,.footnav{display:none}
+@media (min-width:601px){.mainnav{display:flex;align-items:center;gap:18px}}
+@media (min-width:1440px){.mainnav{display:flex;flex:1 1 auto;justify-content:flex-start;align-items:center;gap:18px;min-width:0}}
+.mainnav a{color:var(--nav-link);text-decoration:none;font-size:13.5px;font-weight:700;padding:8px 16px;border-radius:10px;transition:color .15s,background .15s;white-space:nowrap}
+.mainnav a:hover{color:var(--nav-link-hover);background:var(--hover)}
+@media (max-width:600px){.footnav{display:flex;justify-content:flex-start;align-items:center;gap:2px;flex-wrap:wrap;margin:0 0 8px}.footnav a{color:var(--link);text-decoration:none;font-size:13px;font-weight:700;padding:4px 12px;border-radius:8px}.footnav a:hover{text-decoration:underline}}
+@media (max-width:600px){body{padding:16px 0 28px;background-attachment:scroll}.page-col,footer{padding-inline:12px}h1{font-size:23px}.sub{font-size:12.5px}#topbar .cta{font-size:11.5px;padding:8px 12px;gap:6px}.head-actions{gap:6px}#topbar{margin-bottom:8px}#topbar .cta{display:none}#tgbtn{display:flex}#sbtn{display:none}.tb-btns{display:inline-flex;gap:4px;padding:4px;background:var(--glass);-webkit-backdrop-filter:blur(10px) saturate(1.3);backdrop-filter:blur(10px) saturate(1.3);border:1px solid var(--glass-border);border-radius:12px}.card{padding:13px 9px}h2{font-size:15.5px;padding:8px 12px}#topspotCard h2,#uclSpotCard h2{font-size:17px}.match{flex-wrap:wrap;gap:6px;padding:6px 2px}.match .side{order:1;flex-direction:column;align-items:center;gap:3px}.match .side .team{flex:0 0 auto;width:100%;min-width:0;text-align:center;font-size:13px;word-wrap:break-word;overflow-wrap:anywhere;padding:4px 6px;box-sizing:border-box}.match .side.away{flex-direction:column-reverse}.match>.kick{order:1;flex:0 0 auto;align-self:center;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin-top:0;min-width:0}.match>.score{order:1;flex:0 0 auto;align-self:center;height:auto;display:flex;flex-direction:row;align-items:center;justify-content:center;margin-top:0;min-width:0;white-space:nowrap}.logo{width:37px;height:37px;font-size:16px}.score{font-size:15px}.kick .countdown{font-size:11.5px;padding:3px 9px}.mrow,.spotitem{padding:8px 10px}.info{font-size:11px;line-height:1.7}#topbar button{padding:7px 12px}#tzpanel{width:min(320px,calc(100vw - 24px))}}
+/* v13.128-layoutrefine: the two-column layout — the OWNER'S DIAGRAM
+   (47.png): [side bar | most important games of leagues + the containers
+   below it], with the TABLES in the side bar. The wide main column
+   (inline-START, right in fa) carries #wideMain (topspot/uclspot/week/
+   finished — the important games + containers); the narrow rail
+   (inline-END, left in fa) carries #wideSide (live/ucl/standings/cups/
+   stats — the tables). Previously the JS grid auto-placement dropped
+   #wideMain into the narrow 440-500px track ("the main container has moved
+   to side bar") and the rail took the wide column — the columns are now
+   placed EXPLICITLY. The grid lives on .page-col (gated by the .wide class
+   the JS sets with the relocation, so no-JS clients keep the clean single
+   column) and the threshold drops 1440px -> 1080px so laptops get the
+   reference layout too.
+   Addendum: box-sizing:border-box on the three padded full-width shells —
+   the site has NO global border-box, so #topbar's old width:100vw + 44px
+   horizontal padding summed to viewport+44 (the header band really did
+   stick out of the viewport — the owner's report #3; the same trap waits
+   for .page-col/footer). */
+@media (min-width:1080px){
+  #topbar{margin-bottom:0}
+  footer{margin-top:0;max-width:1400px;padding-inline:24px}
+  .page-col{max-width:1400px;padding-inline:24px}
+  .page-col.wide{display:grid;grid-template-columns:minmax(0,1fr) minmax(440px,500px);column-gap:28px;row-gap:14px;align-items:start}
+  .page-col.wide>.hero-sync{grid-column:1/-1;margin:10px 0 8px}
+  .page-col.wide #wideMain{grid-column:1}
+  .page-col.wide #wideSide{grid-column:2}
+  #wideMain,#wideSide{display:flex;flex-direction:column;gap:14px}
+  #wideMain>*,#wideSide>*{margin:0}
+  #wideSide .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@keyframes rise{0%{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.bigcard{box-shadow:0 0 10px #05966929,0 8px 26px #00000059,var(--glass-shadow),inset 0 1px #ffffff29}}
+@media (prefers-reduced-transparency:reduce){body{background:var(--bg)}.card,.stbox,.cupbox,.uclcard,.uclspot,#tzsel,#tzfilter,#tzpanel,#joinSticky{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 1px 2px #0f172a0d}.tb-btns,.hero-card,.time-state,.venue-pill{background:#01142E;-webkit-backdrop-filter:none;backdrop-filter:none}.count-tile::before{background:#010D23}}
+#favbar{display:flex;justify-content:center;margin:2px 0 12px}
+#favbar .favhint{color:var(--muted);font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;background:var(--glass);border:1px dashed var(--glass-border);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#favbar .favseg{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-border);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+.favchip{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:800;padding:7px 14px;border-radius:999px;cursor:pointer;min-height:32px;transition:background .18s,color .18s,box-shadow .18s}
+.favchip:hover{color:var(--ink);background:var(--pill-neutral-bg)}
+.favchip:focus-visible{outline:2px solid var(--accent,#f59e0b);outline-offset:2px}
+.favchip.on{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#451a03;box-shadow:0 2px 8px #f59e0b59,inset 0 1px #ffffff59}
+#favbar.active .favseg{border-color:#f59e0b73;box-shadow:0 0 10px #f59e0b24,var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+.favstar{appearance:none;background:transparent;border:0;color:var(--muted);opacity:.55;font-size:15px;line-height:1;width:26px;height:26px;min-width:26px;min-height:26px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;order:99;flex:0 0 auto;margin-inline-start:2px;transition:opacity .15s,transform .15s,color .15s}
+.favstar:hover{opacity:1;color:#f59e0b;background:#f59e0b1f}
+.favstar:focus-visible{outline:2px solid #f59e0b;outline-offset:1px;opacity:1}
+.favstar.on{opacity:1;color:#fbbf24;text-shadow:0 0 8px rgba(251,191,36,.55)}
+.favstar.on:active{transform:scale(1.25)}
+.spotitem.hasfav{border-inline-start:3px solid rgba(251,191,36,.65)}
+[dir=rtl] .spotitem.hasfav{background:linear-gradient(to left,rgba(251,191,36,.08),transparent 42%)}
+[dir=ltr] .spotitem.hasfav{background:linear-gradient(to right,rgba(251,191,36,.08),transparent 42%)}
+.match.hasfav{border-inline-start:3px solid rgba(251,191,36,.65);box-shadow:inset 6px 0 14px -10px #fbbf2480}
+.roundchip{display:inline-flex;align-items:center;background:var(--pill-neutral-bg);color:var(--pill-neutral-ink);border:1px solid rgba(245,158,11,.35);border-radius:999px;padding:1px 9px;font-size:10.5px;font-weight:700;margin-inline-start:6px;vertical-align:middle;white-space:nowrap}
+.cupmatch .roundchip{margin-inline-start:0;margin-top:3px;font-size:10.5px}
+[data-theme=light] .favchip.on{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff}
+[data-theme=light] .favstar.on{color:#d97706;text-shadow:none}
+[data-theme=light] [dir=rtl] .spotitem.hasfav{background:linear-gradient(to left,rgba(217,119,6,.09),transparent 42%)}
+[data-theme=light] [dir=ltr] .spotitem.hasfav{background:linear-gradient(to right,rgba(217,119,6,.09),transparent 42%)}
+[data-theme=light] .match.hasfav{box-shadow:inset 6px 0 14px -10px #d977068c}
+[data-theme=light] .roundchip{border-color:#d9770666}
+.cupbox{transition:transform .18s,box-shadow .18s,border-color .18s}
+.cupbox:hover{transform:translateY(-2px);border-color:#f59e0b59;box-shadow:0 6px 18px #00000047,var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+@media (max-width:600px),(pointer:coarse){.favstar{width:38px;height:38px;min-width:38px;min-height:38px;font-size:16px}.favchip{min-height:38px}}
+.sthead-star{width:20px;flex-shrink:0}
+.sthead-star:before{content:"";display:block;width:12px;margin-inline-start:auto}
+.favstar.ststar{width:20px;height:20px;min-width:20px;min-height:20px;font-size:12px;order:0;margin-inline-start:0;position:relative}
+.favstar.ststar:after{content:"";position:absolute;inset:-7px}
+.strow.hasfav .stname{color:#fbbf24;text-shadow:0 0 10px rgba(251,191,36,.18)}
+.strow.hasfav .stpos{color:#fbbf24d9}
+.strow.hasfav{position:relative}
+.strow.hasfav:before{content:"";position:absolute;inset-inline-start:-8px;top:15%;bottom:15%;width:2.5px;border-radius:2px;background:linear-gradient(to bottom,#fbbf24bf,#fbbf2440)}
+[dir=rtl] .strow.hasfav{background:linear-gradient(to left,rgba(251,191,36,.07),transparent 46%)}
+[dir=ltr] .strow.hasfav{background:linear-gradient(to right,rgba(251,191,36,.07),transparent 46%)}
+[data-theme=light] .strow.hasfav .stname{color:#b45309;text-shadow:none}
+[data-theme=light] .strow.hasfav:before{background:linear-gradient(to bottom,#d97706cc,#d977064d)}
+.favstar.cupstar{width:18px;height:18px;min-width:18px;min-height:18px;font-size:11.5px;order:0;margin-inline-start:0;position:relative;vertical-align:middle}
+.favstar.cupstar:after{content:"";position:absolute;inset:-8px}
+.cupmatch .teams{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap}
+.cupmatch .teams>button.cupstar{flex:0 0 auto}
+.favchip.manage{padding:7px 10px;font-size:13px;color:var(--muted);letter-spacing:.5px}
+.favchip.manage:hover{color:#f59e0b;background:#f59e0b1f}
+.favchip.manage[aria-expanded=true]{color:#451a03;background:linear-gradient(135deg,#fbbf24,#f59e0b)}
+[data-theme=light] .favchip.manage[aria-expanded=true]{color:#fff}
+#favpop{position:absolute;top:calc(100% + 8px);left:50%;transform:translate(-50%) translateY(-4px) scale(.97);min-width:min(320px,88vw);max-width:88vw;max-height:min(340px,52vh);overflow-y:auto;border-radius:16px;background:var(--glass);border:1px solid var(--glass-border);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);box-shadow:0 12px 34px #00000061,var(--glass-shadow),inset 0 1px 0 var(--glass-hi);padding:10px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s,transform .18s,visibility .18s;z-index:60}
+#favbar{position:relative}
+#favpop.open{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%) translateY(0) scale(1)}
+#favpop .favpop-head{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.3px;padding:2px 4px 8px;border-bottom:1px dashed var(--glass-border);margin-bottom:6px}
+#favpop .favpop-empty{color:var(--muted);font-size:12.5px;padding:10px 4px;text-align:center}
+#favpop .favpop-list{display:flex;flex-direction:column;max-height:200px;overflow-y:auto}
+#favpop .favpop-row{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:10px}
+#favpop .favpop-row:hover{background:#f59e0b14}
+#favpop .favpop-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;font-weight:700;color:var(--ink)}
+#favpop .favpop-x{appearance:none;border:0;background:transparent;color:var(--muted);width:30px;height:30px;min-width:30px;min-height:30px;border-radius:999px;cursor:pointer;font-size:13px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,color .15s,transform .15s}
+#favpop .favpop-x:hover{background:#ef444424;color:#f87171}
+#favpop .favpop-x:active{transform:scale(.9)}
+#favpop .favpop-x:focus-visible{outline:2px solid #f87171;outline-offset:1px}
+#favpop .favpop-foot{border-top:1px dashed var(--glass-border);margin-top:8px;padding-top:8px;display:flex;justify-content:center}
+#favpop .favpop-clear{appearance:none;border:1px solid rgba(239,68,68,.35);background:transparent;color:#f87171;font:inherit;font-size:12px;font-weight:800;padding:6px 14px;border-radius:999px;cursor:pointer;transition:background .15s,color .15s}
+#favpop .favpop-clear:hover{background:#ef44441f}
+#favpop .favpop-clear:focus-visible{outline:2px solid #f87171;outline-offset:2px}
+[data-theme=light] #favpop{box-shadow:0 12px 34px #00000024,var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+[data-theme=light] #favpop .favpop-clear{color:#b91c1c;border-color:#b91c1c4d}
+@media (max-width:600px),(pointer:coarse){#favpop .favpop-x{width:36px;height:36px;min-width:36px;min-height:36px}#favpop .favpop-clear{min-height:36px}.favchip.manage{min-height:38px;min-width:38px}}
+
+
+/* v14.0.3-gridfix: the semantic <main> wrapper (added by the SEO work) must be
+   transparent to layout — pre-SEO the hero/cards were direct <body> children, so
+   the >=1440px body grid placed them directly; as a block <main> becomes ONE grid
+   item, squeezing the hero into column 1 and misplacing every section.
+   display:contents keeps <main> in the DOM (SEO/a11y intact) but its children
+   participate in the body grid exactly like the pre-SEO page. */
+main{display:contents}
+
+
+/* v14.0.4-sronly: GLOBAL .sr-only — the pre-SEO stylesheet only scoped the
+   rule to .empty.loading-empty containers, so SEO-added sr-only elements (the
+   homepage intro paragraph, the no-live-matches note) rendered VISIBLE.
+   Same declarations as the scoped rule, now global. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* ================================================================
+   v13.126-herolook — the featured-match hero, "Stadium Night"
+   (the owner's desired-look.jpg reference, 1522x463 fa/dark):
+   - full-bleed graded night-photo scene behind the whole section; the
+     transparent header floats over it (the island top band, above)
+   - centred GLASS card ~=58.5% x ~280px @1522; 3-lane grid [team|stack|team]
+   - chamfered time chip (233x76 @1522): cyan rim + #124693->#02266D fill
+   - countdown panel BELOW the card (chamfered cyan->aqua border, 4 tiles)
+   - the players flank the card: heads pop above its top edge, bodies cross
+     its side edges (3D), figures fade into the scene at the bottom
+   - corner pills: static carousel (inline-start) + the "see upcoming" bell
+   The design tokens are the iteration-pack set, inlined once here. The light
+   theme only turns the PAGE below the hero — the hero (with its header band)
+   stays a dark island in both themes.
+   Preserved: all data/states (LIVE score + minute/est, FINISHED, POSTPONED,
+   started->"soon"), fa/en + RTL/LTR via logical properties, the tz label,
+   and the whole #bigbar countdown contract (updateBigBar drives the same ids
+   every second; the 24h progress track stays in the DOM as a polite sr-only
+   progressbar).
+   Dropped (visual layer only, per the reference): the video stage, the amber/
+   red urgency colors (data-urgent is still set by the JS — nothing consumes
+   it now), and the visible progress track.
+   ================================================================ */
+
+/* ---------- design tokens (iteration pack tokens.css, imported once) ---------- */
+:root{
+  --ss-bg-abyss:#010A1D;--ss-bg-deep:#011430;--ss-bg-navy:#01204A;--ss-bg-haze:#183C60;
+  --ss-blue:#0087FA;--ss-blue-fill:#124693;--ss-cyan:#00D3FF;--ss-aqua:#1FFFFF;--ss-green:#06F9C3;
+  --ss-text:#FFFFFF;--ss-text-label:#34D0F8;--ss-text-muted:#9FD8EC;
+  --ss-glass-bg:rgba(0,20,48,.55);--ss-glass-bg-soft:rgba(0,20,48,.35);
+  --ss-glass-border:rgba(0,211,255,.55);--ss-glass-blur:12px;
+  --ss-glow-cyan:0 0 18px rgba(0,211,255,.45),inset 0 0 14px rgba(0,211,255,.25);
+  --ss-glow-green:0 0 18px rgba(6,249,195,.45);
+  --ss-hero-min-h:460px;--ss-crest-size:82px;--ss-time-w:250px;--ss-time-h:60px;
+  --ss-time-chamfer:18px;
+  /* v13.145-countdown (owner): the countdown rides the SUPPLIED HUD artwork
+     /ui/sportsignal-countdown-bg.png (474×204 stadium capsule) — the compact
+     200px box reopens so four legible cells fit the artwork's glass interior
+     (measured band 341×74 source px); the height derives from the artwork's
+     own 474/204 aspect, so --ss-countdown-h retires with the old CSS panel.
+     v13.146-compact (owner): the whole countdown shrinks 50% — the clamp
+     halves to clamp(162px,15.5vw,230px) and every fixed-px value inside
+     the panel halves with it (type clamps, gaps, paddings, chamfer, lime
+     tick), so the composition scales as one piece: desktop 230×99, 375px
+     phones 162×70. The artwork ALSO fades 20% (its own .hero-count::before
+     layer at opacity .8 — only the artwork dims, never the digits).
+     v13.147-syncdate (owner): +20% on top of the compact result — the
+     clamp scales ×1.2 to clamp(194.4px,18.6vw,276px) and every fixed-px
+     value inside scales with it (desktop 276×119, 375px phones 194×84);
+     the artwork fades another 20% (.8 × .8 = .64) and the caption below
+     the panel reads تاریخ به‌روزرسانی (i18n lastUpd — core-13.13.js).
+     v13.148-head12 (owner): the head caption «تا بازی بزرگ بعدی» moves to a
+     FLAT 12px — the ×1.2 scaling capped it at 7.8px, under the owner's
+     at-least-12px legibility floor; icon 13px + gap 5.5px keep the row's
+     shipped proportions. */
+  --ss-countdown-w:clamp(194.4px,18.6vw,276px);
+  --ss-radius-pill:999px;--ss-radius-tile:10px;--ss-radius-panel:16px;--ss-safe-gap:24px;
+  --ss-page-bg:#01142E;--ss-page-ink:#FFFFFF;--ss-page-ink-muted:#9FD8EC;
+  --ss-hero-shadow:0 24px 60px -24px rgba(0,0,0,.6);
+  --ss-player-glow:drop-shadow(0 0 14px rgba(0,211,255,.35));
+  /* v13.142-cinematic (owner): the reusable hero-player treatment,
+     centralized — restrained grade (brightness ~neutral, contrast +12%,
+     saturate +8%: jersey richness, natural skin tones, no crushed
+     blacks) + separation (soft dark shadow for depth, a VERY subtle
+     cool-blue halo matching the floodlights — close inspection only,
+     never a neon outline). The assets are alpha-trimmed lossless webp
+     cutouts, so both drop-shadows follow the silhouette (no
+     rectangle). Consumed by .hero-player--cinematic. */
+  --ss-player-grade:brightness(.97) contrast(1.12) saturate(1.08);
+  --ss-player-shadow:drop-shadow(0 12px 22px rgba(0,8,25,.38));
+  --ss-player-halo:drop-shadow(0 0 14px rgba(0,155,255,.14));
+}
+/* light theme: only the page below the hero turns — the hero island stays
+   dark (lifted one step from near-black so it floats on the pale page) */
+[data-theme=light]{
+  --ss-page-bg:#EEF4FA;--ss-page-ink:#0B1B33;--ss-page-ink-muted:#3B506B;
+  --ss-page-surface:#FFFFFF;--ss-page-border:#CFDDEC;--ss-page-accent:#0A64D6;
+  --ss-bg-abyss:#08203F;--ss-bg-deep:#0A2A5C;--ss-bg-navy:#07499C;
+  --ss-hero-shadow:0 28px 60px -22px rgba(8,32,63,.5);
+  --ss-player-glow:drop-shadow(0 8px 16px rgba(8,32,63,.4));
+  /* v13.142-cinematic — light theme: navy shadow/glow instead of the
+     blue halo (the P6.7 pattern — kill any light fringe on the pale page) */
+  --ss-player-shadow:drop-shadow(0 12px 22px rgba(8,32,63,.42));
+  --ss-player-halo:drop-shadow(0 0 10px rgba(8,32,63,.3));
+}
+
+/* ---------- measured overrides (desired-look.jpg) ----------
+   v13.127-matchtimeart: the time chip is now the SUPPLIED ARTWORK
+   /ui/sportsignal-match-time-bg.png (500x202 chamfered octagon, cyan
+   glowing borders, transparent halo — preserved exactly as shipped). The
+   v13.128-layoutrefine: the chip is slightly ENLARGED (the owner's report —
+   the digits felt tight inside the artwork's borders): the clamp grows
+   196/233 -> 210/250 (+7.3%, same +14px @1522 as the verified sandbox
+   port) and the centre lane's minmax 240 -> 252px so the wider chip keeps
+   its track. The chip keeps deriving its height from the artwork's own
+   500:202 aspect, so background-size:100% 100% stays an exact,
+   undistorted fit.
+   --ss-header-h covers the page-top
+   zone the scene pulls up behind (body padding-top 24 + header band 66 +
+   header margin 10 = 100 @1522; verified per breakpoint). */
+:root{
+  --ss-time-w:clamp(210px,16.4vw,250px);
+  --ss-card-w:min(900px,max(760px,58.5%));
+  /* v13.129-hudframe: 760px floor — below that the card's content height
+     would stretch the 1000x325 HUD artwork past ~25% (585px-wide card
+     @1000 -> 56% stretch = visibly broken; the floor keeps the fill-fit
+     <= ~20% at every desktop width) */
+  --ss-hud-pad-x:clamp(20px,5.4%,48px);
+  --ss-hud-pad-y:clamp(16px,7%,22px);
+  --ss-panel-chamfer:12px;
+  --ss-header-h:94px;
+}
+
+/* ---------- the section (full-bleed scene; the card stays) ----------
+   v13.128-layoutrefine: full-bleed comes free — <body> is the full-width
+   shell now (no 100vw breakout trick; see the page-shell note at the top
+   of this file). */
+.herowrap{position:relative;display:flow-root;margin-top:calc(-1 * var(--ss-header-h));width:100%;padding-bottom:34px}
+
+/* ---------- the full-bleed scene ---------- */
+.hero-bg{position:absolute;inset:0;z-index:1;pointer-events:none;background:var(--ss-bg-abyss);overflow:hidden}
+/* v13.129-hudframe: overflow:hidden — the club-crest watermarks (bottom
+   -80px) and the swoosh overhangs clip AT the section edge, never spilling
+   past the container (the owner's report); the HUD card's glow lives on a
+   sibling layer above and is NOT affected */
+.hero-bg .bg-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(.7)}
+.hero-bg .bg-grade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(1,10,29,.85) 0%,rgba(1,10,29,.8) 9%,rgba(1,13,35,.64) 15%,rgba(1,17,42,.44) 20%,rgba(1,20,48,.26) 27%,rgba(1,20,48,.26) 62%,rgba(1,10,29,.88) 74%,rgba(1,10,29,.88) 100%)}
+.hero-bg .bg-flood{position:absolute;inset:0;background:none}
+.hero-bg .bg-swoosh{position:absolute;bottom:-40px;width:min(52%,620px);height:84%;pointer-events:none;mix-blend-mode:screen}
+.hero-bg .bg-swoosh.sw-left{left:-40px}
+.hero-bg .bg-swoosh.sw-right{right:-50px;width:min(19%,300px);height:92%}
+.hero-bg .bg-wm{position:absolute;width:420px;height:420px;object-fit:contain;opacity:.264;filter:blur(1px);pointer-events:none}
+.hero-bg .bg-wm.wm-home{inset-inline-start:10px;bottom:-80px}
+.hero-bg .bg-wm.wm-away{inset-inline-end:10px;bottom:-80px}
+.hero-bg .bg-vignette{position:absolute;inset:0;background:radial-gradient(115% 100% at 50% 50%,transparent 36%,var(--ss-bg-abyss) 100%)}
+.hero-bg .bg-scrim{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,rgba(1,10,29,.55),transparent 75%)}
+/* v13.134-typelight (owner, lighting round): the stadium-lights overlay —
+   /stadium-lights-hero.png (1400x467 transparent PNG, cyan beams near the
+   top and outer edges, transparent centre) screens over the composed
+   scene at .799 opacity (v13.144-lights, owner: "+10% — it can be
+   brighter"; raise chain .35 zoom -> .5 -> .6 polish -> .66 refine ->
+   .726 cinematic -> .799 lights — the transparent centre keeps the HUD
+   zone readable) as an atmospheric layer, never a second
+   stadium; .hero-bg stays z1 — below the card (z2), players (z3) and
+   header (z20). Clipped by .hero-bg overflow; pointer-transparent. */
+.hero-bg .bg-lights{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;mix-blend-mode:screen;opacity:.799;pointer-events:none;-webkit-user-select:none;user-select:none;display:block}
+
+/* ---------- the players (3D pop-out, outside the card's side edges) ----------
+   The UEFA portraits are 512x512 canvases with a uniform 460px alpha band
+   (measured: every one of the 34).
+   v13.128-layoutrefine (the owner's report: not enough margin between the
+   player's head and the SportSignal logo; v13.129-hudframe: asked TWICE —
+   the image box shrinks again 82% -> 63% (bottom 12%): the figures ride
+   fully below the header band. PRODUCTION calibration (this header band is
+   94px tall — body padding 24 + bar 68 — vs the 68px sandbox header, and
+   box-sizing:border-box now rides on the card): card margin-top 100px,
+   head ~46px clear of the logo bottom @1522; the head-pop above the card
+   is retired in favour of the breathing room the owner asked for).
+   v13.135-zoomlight (owner, zoom round): the figures become full-lane
+   COVER boxes — every build fills ~108% of the section height (uniform
+   zoomed framing; the old 78% contain letterboxed wide builds), the head
+   pops above the card top while staying just below the topbar band
+   (measured live @1522: box top y89 vs bar bottom y92 vs card top y116),
+   and the mask fade (26%) completes ~22px above the section-bottom clip —
+   the crop line never reads as a hard edge.
+   v13.136-dezoom (owner, de-zoom round): the zoom round overshot — the
+   figures read too zoomed (heavy side-crop on wide builds). Back to the
+   natural framing, three asks: (a) UNZOOMED — contain, the FULL figure
+   head-to-feet visible at its natural build proportions, nothing cropped;
+   (b) ~30% SMALLER — box height 108% -> 76% (108 x 0.7); slim builds
+   render exactly 76% of the section, wide builds render as tall as the
+   lane width allows (unzoomed wins over exact height); (c) NEARER the
+   big blue HUD — each figure anchors at its wrapper's INNER edge (the
+   card's side; the zoom round's mid-lane centred crop read as too far
+   from the card). The figure stands ON the section floor (bottom 0, no
+   overhang) and only the feet melt — fade done at 20% of the box (~80px):
+   the shins dissolve, the torso and the club jersey stay fully visible
+   (owner: "the picture must continue at least until their torso").
+   v13.137-enlarge (owner, enlarge round): the de-zoom figures grow 15% —
+   height 76% -> 87.4% (76 x 1.15). The growth rides DOWNWARD on a small
+   floor overhang (bottom 0 -> -11.4%): the head keeps its approved height
+   (~0.24xS from the section top, clear of the topbar band — a naive
+   bottom-0 +15% would push the head 65px higher, into the header). The
+   excess below the section bottom is clipped by the wrapper, and the 20%
+   fade completes ~35px above that clip so the cut never reads. Wide builds
+   still clamp at the lane width (max-width) and land slightly under +15%
+   — unzoomed (no crop) wins over exact size.
+   v13.138-polish (owner, polish round): five refinements — (1) the figures
+   grow another 5% (87.4% -> 91.77% box height); the growth SPLITS half
+   up / half down (bottom -11.4% -> -13.585%) so the head lifts only ~12px
+   (still clear of the topbar) and the melt stays graceful. (2) Both
+   players lean 16px closer to the blue HUD: the img anchors step 16px
+   PAST the lane's inner edge (negative insets) and the wrapper clip opens
+   the same 16px inward (players are z3 over the card z2 — 3D layering,
+   inside the card's outer padding). (3) max-width 100% -> calc(100% + 16px):
+   the overlap allowance doubles as width budget, so lane-clamped wide
+   canvases grow (lane+16)/lane = +5.07% with the height-driven +5% — BOTH
+   players deliver the 5%. (4) The mask now reaches ZERO opacity exactly AT
+   the section floor (transparent hold to 14.8% = overhang/height, black at
+   26%): the figure materialises out of the floor instead of being chopped
+   by the wrapper clip (the old 0->20% ramp left the shin 0.65-0.88 opaque
+   at the cut and read as a hard edge). (5) Scene polish: the top colour
+   grade eases over 0-27% (the 0.85 hold + 12-22% drop read as "suddenly
+   dark" — now a gradual 0.85->0.80->0.64->0.44->0.26 ramp), the crest
+   watermarks gain 10% presence (.18 -> .198, mobile .16 -> .176) and the
+   floodlights brighten again (.5 -> .6). */
+.hero-player{position:absolute;bottom:0;height:100%;z-index:3;pointer-events:none;width:calc((100% - var(--ss-card-w))/2);display:none}
+.hero-player.player-home{inset-inline-start:0}
+.hero-player.player-away{inset-inline-end:0}
+.hero-player.has{display:block}
+.hero-player img{position:absolute;bottom:-13.585%;height:91.77%;width:auto;max-width:calc(100% + 16px);object-fit:contain;object-position:center bottom;filter:var(--ss-player-glow) brightness(.88) contrast(1.08);-webkit-mask-image:linear-gradient(to top,transparent 0,transparent 14.8%,#000 26%);mask-image:linear-gradient(to top,transparent 0,transparent 14.8%,#000 26%);transform:rotate(var(--ss-player-tilt,0deg));transform-origin:bottom center}
+.hero-player.player-home img{inset-inline-end:-16px;inset-inline-start:auto}
+.hero-player.player-away img{inset-inline-start:-16px;inset-inline-end:auto}
+[dir=ltr] .hero-player.player-home{clip-path:inset(-100% -16px 0 -100%)}
+[dir=ltr] .hero-player.player-away{clip-path:inset(-100% -100% 0 -16px)}
+[dir=rtl] .hero-player.player-home{clip-path:inset(-100% -100% 0 -16px)}
+[dir=rtl] .hero-player.player-away{clip-path:inset(-100% -16px 0 -100%)}
+[dir=ltr] .hero-player.player-home img{--ss-player-tilt:-1deg}
+[dir=ltr] .hero-player.player-away img{--ss-player-tilt:1deg}
+[dir=rtl] .hero-player.player-home img{--ss-player-tilt:1deg}
+[dir=rtl] .hero-player.player-away img{--ss-player-tilt:-1deg}
+[data-theme=light] .hero-player img{filter:drop-shadow(0 0 1px rgba(8,32,63,.6)) var(--ss-player-glow) brightness(.88) contrast(1.08)}
+/* v13.142-cinematic (owner): BOTH hero figures carry .hero-player--cinematic
+   (the base filter above stays as the no-class fallback). Params live in
+   :root above (the light theme swaps the blue halo for navy). Order
+   matters — grade first, dark shadow second, halo LAST: a glow cast over
+   the shadowed result stays clean, while the reverse would cast the dark
+   shadow OF the glow (chain semantics — each filter sees the previous
+   one's output). The feet-fade mask applies after the whole chain, so
+   both shadows dissolve with the figure at the floor — no hard shadow
+   edge, no rectangle (the assets are alpha-trimmed cutouts, so the
+   drop-shadows follow the silhouette exactly). */
+.hero-player--cinematic img{filter:var(--ss-player-grade) var(--ss-player-shadow) var(--ss-player-halo)}
+[data-theme=light] .hero-player--cinematic img{filter:drop-shadow(0 0 1px rgba(8,32,63,.6)) var(--ss-player-grade) var(--ss-player-shadow) var(--ss-player-halo)}
+
+/* ---------- v13.129-hudframe: the match card rides the supplied futuristic
+   HUD artwork (/ui/sportsignal-hud-matches-hero.png, 1000x325 RGBA — angular
+   beveled neon-blue/cyan frame, deep-navy interior, exterior glow halo baked
+   into the canvas' transparent margins). The artwork is an absolute layer
+   BEHIND the content (a.card-hud, pointer-events:none); the old glass
+   radius/border/backdrop/shadow are retired — they would duplicate and fight
+   the PNG's own chrome. Nothing here may clip the artwork's exterior glow.
+   box-sizing:border-box on the card (this site has NO global border-box —
+   without it the HUD padding rendered OUTSIDE the width var and the card
+   came out 96px wider than the player lanes, which size from the same var). */
+.hero-card{position:relative;z-index:2;display:block;box-sizing:border-box;width:var(--ss-card-w);margin-inline:auto;margin-top:118px;padding:var(--ss-hud-pad-y) var(--ss-hud-pad-x) calc(var(--ss-hud-pad-y) - 4px);background:none;border:none;border-radius:0;box-shadow:none;text-decoration:none;color:inherit}
+/* the supplied HUD PNG — absolute visual layer covering the container,
+   behind all text/logos/interactive elements; never blocks interaction.
+   NOTE: % paddings resolve against the card's WIDTH (CSS rule) — the clamps
+   cap them so the insets stay inside the artwork's rim at every size. */
+.hero-card .card-hud{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;opacity:.666;pointer-events:none;user-select:none;-webkit-user-drag:none;z-index:0;display:block}
+/* content sits above the frame layer */
+.hero-card .hero-grid,.hero-card .hero-league,.hero-card .hero-time,.hero-card .hero-date,.hero-card .hero-venue{position:relative;z-index:1}
+.hero-card:focus-visible{outline:2px solid var(--ss-aqua);outline-offset:4px}
+
+/* ---------- the card's 3-lane grid: [team] [centre stack] [team] ---------- */
+.hero-grid{display:grid;column-gap:8px;row-gap:11px;grid-template-columns:minmax(0,1fr) minmax(252px,27%) minmax(0,1fr)}
+.hero-league{grid-column:2;grid-row:1;position:relative}
+.hero-time{grid-column:2;grid-row:2;position:relative;margin-top:15px}
+.hero-date{grid-column:2;grid-row:3;position:relative}
+.hero-venue{grid-column:2;grid-row:4;position:relative;margin-top:1px}
+
+/* ---------- team blocks (crest + name + role) ---------- */
+.hero-team{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-width:0;align-self:center;margin-block-start:-26px}
+.hero-team.team-home{grid-column:1;grid-row:1/5;padding-inline-start:var(--ss-safe-gap)}
+.hero-team.team-away{grid-column:3;grid-row:1/5;padding-inline-end:var(--ss-safe-gap)}
+.team-crest{width:var(--ss-crest-size);height:var(--ss-crest-size);flex:0 0 auto;filter:drop-shadow(0 10px 22px rgba(1,6,20,.55));display:flex;align-items:center;justify-content:center;overflow:visible}
+.team-crest .logo{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:34px}
+.team-crest .logo img{width:100%;height:100%;object-fit:contain}
+.hero-name{font-size:clamp(19px,2.1vw,29px);font-weight:800;line-height:1.45;color:var(--ss-text);text-align:center;max-width:100%;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-shadow:0 1px 12px rgba(1,10,29,.6);line-height:1.45}
+.hero-role{font-size:12.5px;font-weight:500;color:var(--ss-text-muted);line-height:1}
+
+/* ---------- league row (icon + title) ---------- */
+.hero-league{display:flex;flex-direction:column;align-items:center;gap:6px}
+.league-icon{width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(2,6,23,.45),inset 0 0 0 1px rgba(14,32,88,.1);overflow:hidden}
+.league-icon svg{width:32px;height:32px;display:block}
+.league-icon img{width:32px;height:32px;object-fit:contain;display:block}
+.league-title{font-size:18px;font-family:var(--font-body);font-weight:500;color:var(--ss-text-label);line-height:1.35}
+
+/* ---------- time row: the kickoff-time chip on the supplied artwork (or the state pill / score) ----------
+   v13.127-matchtimeart: the chamfered panel, its cyan glowing border and its
+   outer halo are ALL in the supplied PNG (/ui/sportsignal-match-time-bg.png,
+   500x202) — no CSS border/glow is drawn on top (it would compete with the
+   artwork). The chip element carries the image as a background at the
+   artwork's exact 500:202 aspect (undistorted 100% 100% fit); the clock
+   icon + digits stay real HTML layered above it, centred in the artwork's
+   usable interior (its glowing borders + chamfered corners measure x 53-444
+   of 500 -> ~11% side margins; the interior's vertical centre sits at
+   49.5% of the canvas). */
+.hero-time{display:flex;justify-content:center;flex-wrap:wrap;align-items:center;gap:8px}
+.time-glow{position:relative;display:inline-flex}
+.time-chip{position:relative;display:block;width:var(--ss-time-w);aspect-ratio:500/202;background:url(/ui/sportsignal-match-time-bg.png) center center/100% 100% no-repeat}
+.time-fill{position:absolute;inset:0;padding-inline:11%;display:flex;align-items:center;justify-content:center;gap:12px}
+.time-fill>svg{flex:0 0 auto;display:block}
+.time-digits{font-size:38px;font-weight:600;line-height:1.15;color:var(--ss-text);font-variant-numeric:tabular-nums;letter-spacing:.02em;unicode-bidi:isolate}
+.time-state{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 18px;border-radius:var(--ss-radius-pill);background:var(--ss-glass-bg);border:1px solid var(--ss-glass-border);color:var(--ss-text);font-weight:800;font-size:15px;-webkit-backdrop-filter:blur(var(--ss-glass-blur));backdrop-filter:blur(var(--ss-glass-blur))}
+.time-state .dot{width:8px;height:8px;border-radius:50%;background:var(--ss-green);box-shadow:0 0 10px rgba(6,249,195,.7)}
+/* LIVE/FINISHED scores keep their data (score + minute/est) — restyled */
+.hero-time .hero-score{direction:ltr;font-variant-numeric:tabular-nums;font-weight:800;font-size:clamp(22px,2.4vw,30px);line-height:1.3;color:var(--ss-text);background:var(--ss-glass-bg);border:1px solid var(--ss-glass-border);border-radius:var(--ss-radius-pill);padding:2px 18px;display:inline-flex;align-items:center}
+.hero-time .lmin{background:rgba(1,13,35,.6);color:var(--ss-text);border:1px solid var(--ss-glass-border);font-size:12.5px;font-weight:700;padding:2px 9px;border-radius:999px}
+
+/* ---------- date row ---------- */
+.hero-date{display:flex;align-items:baseline;justify-content:center;gap:8px;flex-wrap:wrap}
+.date-main{font-size:16px;font-weight:700;color:var(--ss-text-muted);line-height:1.3}
+.date-tz{font-size:12px;font-weight:500;color:var(--ss-text-muted);opacity:.8}
+
+/* ---------- venue row ---------- */
+.hero-venue{display:flex;justify-content:center}
+.venue-pill{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 16px;border-radius:var(--ss-radius-pill);background:var(--ss-glass-bg);border:1px solid var(--ss-glass-border);-webkit-backdrop-filter:blur(var(--ss-glass-blur));backdrop-filter:blur(var(--ss-glass-blur));color:var(--ss-text);font-size:14px;font-weight:500;white-space:nowrap;max-width:100%}
+.venue-pill svg{color:var(--ss-cyan);flex:0 0 auto}
+.venue-pill>span{overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- the countdown panel (BELOW the card, over the scene) ----------
+   v13.145-countdown (owner): the panel rides the SUPPLIED HUD artwork
+   /ui/sportsignal-countdown-bg.png (474×204 stadium capsule — cyan/electric
+   neon edges with white-hot highlights, lime top+bottom centre notches,
+   deep-teal tinted glass, soft outer halo; preserved exactly as shipped:
+   no CSS/SVG/gradient re-creation, no extra card or border, glow never
+   cropped). Geometry measured from the artwork's pixels — frame core
+   x50..417/y51..147, glass interior x63..404/y60..136 → the four-cell
+   band sits at left 13.7% / right 15.2% / top 29.9% / bottom 33.8% of the
+   474/204 canvas; the box keeps the artwork's aspect and background
+   100% 100% is an exact undistorted fit (the .time-chip pattern). The
+   head row floats in the artwork's top halo (top 9%); the old cyan→aqua
+   chamfer wrapper + .count-inner navy box retire — the artwork IS the
+   frame. Cell type scales with the artwork via container queries (px
+   fallbacks before every cqi declaration).
+   v13.146-compact (owner): the panel halves (clamp 460/324 → 230/162; the
+   type clamps, gaps, paddings, chamfer and the lime tick all halve with
+   the canvas) and the artwork backs off 20% — it moves from the element
+   background to a dedicated ::before layer at opacity .8, so ONLY the
+   artwork fades (element opacity would dim the digits/labels too).
+   v13.147-syncdate (owner): +20% on top of the compact result — every
+   fixed-px value scales ×1.2 with the canvas, and the artwork fades
+   another 20% (::before opacity .8 → .64). The caption line below the
+   panel relabels to تاریخ به‌روزرسانی (i18n lastUpd; core-13.13.js +
+   markup.ts server fill — text, not CSS). */
+.hero-count{position:relative;z-index:2;width:min(var(--ss-countdown-w),calc(100% - 16px));margin-inline:auto;margin-top:8px;aspect-ratio:474/204;container-type:inline-size}
+/* v13.146-compact (owner): the artwork layer — exact 100% 100% undistorted
+   fit; v13.147-syncdate: opacity .64 (.8 × .8 — two 20% reductions); the
+   content rows above it (tree order: ::before paints first) keep full
+   contrast */
+.hero-count::before{content:"";position:absolute;inset:0;background:url(/ui/sportsignal-countdown-bg.png) center center/100% 100% no-repeat;opacity:.64;pointer-events:none}
+.count-head{position:absolute;top:9%;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:5.5px;color:var(--ss-green);font-size:12px;font-weight:700;line-height:1;white-space:nowrap}
+.count-head svg{flex:0 0 auto;display:block;width:13px;height:auto}
+.count-tiles{position:absolute;left:13.7%;right:15.2%;top:29.9%;bottom:33.8%;display:flex;gap:3.6px}
+.count-tile{--tile-chamfer:3px;position:relative;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.8px;padding:3.6px 1.2px;background:linear-gradient(180deg,rgba(0,211,255,.62),rgba(0,211,255,.2) 32%,rgba(0,211,255,.2) 68%,rgba(31,255,255,.48));clip-path:polygon(var(--tile-chamfer) 0,calc(100% - var(--tile-chamfer)) 0,100% var(--tile-chamfer),100% calc(100% - var(--tile-chamfer)),calc(100% - var(--tile-chamfer)) 100%,var(--tile-chamfer) 100%,0 calc(100% - var(--tile-chamfer)),0 var(--tile-chamfer))}
+.count-tile::before{content:"";position:absolute;inset:1px;z-index:0;background-color:rgba(1,13,35,.8);background-image:linear-gradient(180deg,rgba(120,235,255,.14),rgba(120,235,255,0) 36%),radial-gradient(130% 150% at 50% 0%,rgba(0,190,255,.13),rgba(0,190,255,0) 62%);clip-path:polygon(var(--tile-chamfer) 0,calc(100% - var(--tile-chamfer)) 0,100% var(--tile-chamfer),100% calc(100% - var(--tile-chamfer)),calc(100% - var(--tile-chamfer)) 100%,var(--tile-chamfer) 100%,0 calc(100% - var(--tile-chamfer)),0 var(--tile-chamfer))}
+.count-tile::after{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:7.2px;height:1.2px;background:var(--ss-green);box-shadow:0 0 3.6px rgba(6,249,195,.55)}
+.count-num{position:relative;z-index:1;font-size:11.4px;font-size:clamp(9px,6.6cqi,18px);font-weight:600;line-height:1;color:var(--ss-text);font-variant-numeric:tabular-nums}
+.count-unit{position:relative;z-index:1;font-style:normal;font-size:5.4px;font-size:clamp(5.1px,2.7cqi,6.9px);font-weight:700;line-height:1;color:var(--ss-aqua);white-space:nowrap}
+#hcS.tick{animation:tick-fade .18s ease}
+/* the 24h progress track stays in the contract (updateBigBar drives it) but
+   rides visually hidden — the reference panel has no visible bar */
+.hc-track{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.bigbar-fill{position:absolute;left:0;top:0;height:100%;width:0%}
+
+/* ---------- v13.131-playerpresence: the corner pills are RETIRED (the
+   carousel in v13.129, the bell now — owner directive; heroPills in
+   public-13.34.js null-guards their absence) ---------- */
+
+/* ---------- the sync line (moved out of the header, under the hero) ---------- */
+.hero-sync{display:none}
+
+/* ---------- narrow-desktop aid (<=999px) ---------- */
+@media (max-width:999px){
+  /* v13.129-hudframe: no width override — the 760px aspect floor from :root
+     keeps the HUD proportions; only the facing padding trades down */
+  .hero-team.team-home{padding-inline-start:16px}
+  .hero-team.team-away{padding-inline-end:16px}
+}
+
+/* ---------- v13.129-hudframe: player visibility floor (<=1019px) — below
+   this the card's flanks (viewport - 760px floor) narrow to <130px per side;
+   the figures would clamp to thumbnail size, so they retire (the crest
+   watermarks stay) ---------- */
+@media (max-width:1019px){
+  .hero-player,.hero-player.has{display:none}
+}
+
+/* ---------- below 900px: stacked mobile composition ---------- */
+@media (max-width:899px){
+  /* v13.133-persiantype (owner): the countdown closes the hero — the section
+     below follows immediately; the tiny in-hero sync line (#lastSyncM), not
+     dead padding, ends the block */
+  .herowrap{padding-bottom:0;--ss-header-h:100px}
+  /* v13.132 (owner): 242px @375, shrinking with the viewport on narrower
+     phones so the chip always fits the card interior */
+  :root{--ss-time-w:min(242px,calc(100vw - 118px))}
+  /* v13.132 (owner): safe margin between the site logo and the blue HUD
+     container — the frame used to start ABOVE the logo's bottom edge
+     (collided @375: card y36 vs logo bottom y75). 100px clears it. */
+  /* v13.132 (owner): a DEDICATED mobile HUD artwork replaces the downscaled
+     desktop PNG. Portrait-native 500x719 source drawn as a 9-SLICE (CSS
+     border-image): rim bands measured from the artwork (top 66 / right 69 /
+     bottom 59 / left 65 source px — glow margin + neon edge + bevel + side
+     circuitry; the corner brackets live fully in the corner cells). Bands
+     render at ~0.5 scale (border widths 33/35/29/33) so the time artwork
+     fits the interior at every phone width; corners undistorted, straight
+     edges stretch invisibly, `fill` paints the deep-navy interior. */
+  .hero-card{width:auto;margin-inline:10px;margin-top:100px;border-style:solid;border-color:transparent;border-width:33px 35px 29px 33px;border-image:url(/ui/sportsignal-hud-matches-hero-mobile.png) 66 69 59 65 fill;padding:10px 12px 10px}
+  /* v13.131: the 9-slice fill can't take an opacity like the desktop
+     .card-hud layer, so a dark veil sits over the painted card (frame +
+     fill), under the content — v13.135-zoomlight (owner): veil .26 -> .4,
+     ~20% less opaque (visibility .74 -> .59); v13.139-hud (owner): veil
+     .4 -> .5 — the mobile blue HUD reads 15% less opaque again
+     (visibility .59 -> .50 = .59 x .85, the veil is 1 - .5015) */
+  .hero-card::after{content:"";position:absolute;inset:0;z-index:0;background:rgba(1,9,24,.5);pointer-events:none}
+  .hero-card .card-hud{display:none}
+  .hero-grid{grid-template-columns:1fr 1fr;row-gap:14px}
+  /* v13.130 (owner): the mobile order is [league] [club logos] [time]
+     [date] [stadium] — explicit rows beat DOM order (the desktop template
+     interleaves the team blocks around the centre stack) */
+  .hero-league{grid-column:1/3;grid-row:1}
+  .hero-team{margin-block-start:0}
+  .hero-team.team-home{grid-column:1;grid-row:2;padding-inline-start:0}
+  .hero-team.team-away{grid-column:2;grid-row:2;padding-inline-end:0}
+  .hero-time{grid-column:1/3;grid-row:3;margin-top:12px}
+  .hero-date{grid-column:1/3;grid-row:4}
+  .hero-venue{grid-column:1/3;grid-row:5;margin-top:0}
+  .team-crest{width:68px;height:68px}
+  .team-crest .logo{font-size:28px}
+  .hero-name{font-size:17.5px}
+  .hero-count{width:min(var(--ss-countdown-w),calc(100% - 8px));margin-top:12px}
+  /* v13.132 (owner): "آخرین به‌روزرسانی" rides INSIDE the hero on phones.
+     v13.142-cinematic (owner): the line sits BELOW the countdown panel —
+     a SIBLING of #bigbar, not part of the chamfered box — on ALL
+     viewports (the refine round had it inside the panel; the owner moved
+     it back out). The page-col copy (#lastSync) stays in the DOM for
+     renderSync (public-13.36.js) but is display:none everywhere
+     (.hero-sync base rule). */
+  .hero-player,.hero-player.has{display:none}
+  /* v13.132 (owner): the club-crest watermarks return on mobile — low
+     opacity like the desktop. The card spans nearly the full phone width,
+     so they flank the countdown strip at the hero's foot, clipped at the
+     section edge exactly like the desktop bottom:-80px crop.
+     v13.139-hud (owner): +15% presence on mobile only (.176 -> .202);
+     v13.140-refine (owner): +10% again — .202 -> .222, the desktop
+     .198 -> .218 (both x 1.1 this round);
+     v13.141-wm (owner): +10% again — mobile .222 -> .244,
+     desktop .218 -> .240 (both x 1.1 this round);
+     v13.142-cinematic (owner): +10% again — mobile .244 -> .268,
+     desktop .240 -> .264 (both x 1.1 this round) */
+  .hero-bg .bg-wm{width:168px;height:168px;opacity:.268;filter:blur(1.2px);top:auto;bottom:-52px}
+  .hero-bg .bg-wm.wm-home{inset-inline-start:-38px}
+  .hero-bg .bg-wm.wm-away{inset-inline-end:-38px}
+  .hero-bg .bg-swoosh path:not(.band-primary){display:none}
+}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion:reduce){
+  #hcS.tick{animation:none}
+}
+
+@keyframes tick-fade{from{opacity:.35}to{opacity:1}}
+
+/* ==========================================================================
+   v13.133-persiantype — the Persian typography design system (single source).
+   Families (owner directive, from the "Fonts for farsi" pack):
+     • Morabba — ALL headings & display text: page/section/card headings,
+       the hero league title, team names, kickoff digits, countdown digits.
+       ONE variable font (wght 250-900, /fonts/MorabbaVF.woff2, 38KB).
+     • Peyda  — ALL regular text: body copy, descriptions, forms, inputs,
+       buttons, navigation, tables, labels, chips, meta lines. Static
+       weights 400/500/600/700/800/900 (FaNum editions: Persian digits are
+       the default figures), ~29KB each — registered by FONT_FACES_STYLE
+       (src/pages/styles-shared.ts) which all three templates inline.
+   Fallbacks are Persian-capable system stacks; letter-spacing stays 0
+   (Persian script is never tracked); headings keep their per-component
+   sizes — only the FAMILY is centralized here. New display classes join
+   the list below, never a local font-family override.
+   ========================================================================== */
+:root{--font-heading:Morabba,Peyda,'Segoe UI',Tahoma,system-ui,sans-serif;--font-body:Peyda,'Segoe UI',Tahoma,system-ui,sans-serif;--fw-regular:400;--fw-medium:500;--fw-semibold:600;--fw-bold:700;--fw-extrabold:800;--fw-black:900}
+h1,h2,h3,h4,h5,h6,.hero-name{font-family:var(--font-heading)}
+.hero-sync-m{display:none}
+/* v13.142-cinematic (owner): the "آخرین به‌روزرسانی" line sits BELOW the
+   countdown panel — a sibling of #bigbar in the template, NOT part of the
+   chamfered box — on ALL viewports (base layer; the <=899px-only rule is
+   retired). #id beats the .hero-sync-m class above it. Peyda via
+   inheritance. */
+/* v13.144-lights (owner): "add آخرین به‌روزرسانی INSTANTLY after this
+   box" — the gap tightens 6px -> 4px so the caption reads as immediately
+   following the chamfered box (still a sibling below it, NOT part). */
+#lastSyncM{display:block;margin:4px 0 0;padding:0;text-align:center;font-size:11px;line-height:1.65}
+.time-digits,.venue-pill,.count-num,.count-label{font-family:var(--font-body)}
+.time-digits{font-weight:600;line-height:1.15}
+.venue-pill{font-weight:500}
+.count-num{font-weight:600;line-height:1.2}
+.count-label{font-weight:500}

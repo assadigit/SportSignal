@@ -6,6 +6,29 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.148-head12] — 2026-10-20 (countdown head caption ≥12px)
+
+- Owner: "also make this text at least 12px : تا بازی بزرگ بعدی" (with an
+  annotated screenshot; the screenshot's other two asks — the
+  تاریخ به روز رسانی caption in the yellow-marked area below the panel
+  and the artwork PNG 20% less opacity — were already live from
+  13.147-syncdate, which the pre-release screenshot predated).
+- The countdown head caption «تا بازی بزرگ بعدی» moves to a FLAT 12px on
+  every viewport: .count-head font-size clamp(6px,2.8cqi,7.8px) → 12px
+  (the ×1.2 syncdate scaling capped it at 7.8px — under the owner's
+  at-least-12px legibility floor; a flat px needs no cqi fallback split).
+  The head icon scales to match — .count-head svg width
+  clamp(6.6px,3cqi,9.6px) → 13px (keeps the shipped icon:text ratio
+  ~1.07) — and the head gap 3.6 → 5.5px. The EN twin "Until the next
+  big match" fits with room (137.5px content vs the 276px desktop
+  panel); verified 12px computed at 1522/375/320px with no overflow and
+  no tile collision (11.8px desktop / 4.5px mobile clearance).
+- Everything else in the panel is untouched: the 276×119 / 194×84
+  canvas, the .64 artwork opacity, the digits/units, and the
+  تاریخ به‌روزرسانی caption 4px below.
+- Release: public-13.48.css → 13.49.css (CSS-only, core-13.13.js and
+  public-13.36.js carry over), SW v53 → v54.
+
 ## [13.147-syncdate] — 2026-10-20 (countdown +20%, artwork opacity −20% again, caption label تاریخ به‌روزرسانی)
 
 - Owner: "Make it 20% bigger. also write this : تاریخ به روز رسانی ......

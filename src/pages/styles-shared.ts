@@ -7,7 +7,7 @@
 // Morabba (headings, ONE variable file wght 250–900) + Peyda (body/UI,
 // static 400–900, FaNum editions with Persian-default digits). Both
 // self-hosted under /fonts/ (immutable, week-fresh per _headers). The
-// family↔weight map is the typography contract; public-13.48.css assigns
+// family↔weight map is the typography contract; public-13.49.css assigns
 // them (body=Peyda; h1-h6 + display classes=Morabba via --font-heading).
 // v13.134-typelight: the numeric/meta surfaces (time-digits, venue-pill,
 //   count-num, count-label) moved to Peyda at lighter weights; the theme
