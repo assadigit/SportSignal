@@ -6,6 +6,67 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.154-polish] — 2026-10-21 (the 6 owner adjustments from 545454.png)
+
+- Owner (screenshot 545454.png, six items). CSS-only release:
+  public-13.54.css -> public-13.55.css (rename-on-edit, the retired file
+  stays served + pinned), public-13.39.js + core-13.14.js carry over
+  (NO JS/template logic changes — the one template edit is the stylesheet
+  href swap), SW v59 -> v60, VERSION 13.154-polish, package 13.154.0.0,
+  _headers + check-stats pins rewritten, admin-parity re-frozen (the
+  href swap is an intended public-page output change).
+- 1) A REAL page gap between the hero and the main area. The v13.153
+  dark-floor extension could never fix the collision: the wide layout's
+  "#wideMain,#wideSide>*{margin:0}" strips card margins and the flex gap
+  never applies to the FIRST card — measured live, #topspotCard.top ==
+  .herowrap.bottom EXACTLY (0.0px at 1869/1920/1440; phones kept 14px via
+  .card{margin:14px 0}). Fix: .herowrap + margin-bottom:32px desktop /
+  +24px in the <=899px block — real page-background margin the wide
+  layout cannot eat; the 72/48px dark floor stays as the players' melt
+  zone and the light-theme island boundary stays crisp.
+- 2) The match day rides BARELY closer to the kickoff digits:
+  .hero-time gap clamp(2px,.5cqi,5px) -> clamp(1px,.3cqi,3.5px)
+  (4.6 -> 2.8px at the 920px canvas, 2 -> 1px on phones) + .time-date
+  line-height 1.25 -> 1.15.
+- 3) The kickoff digits slightly larger: .time-digits
+  clamp(18px,3.95cqi,36px) -> clamp(20px,4.4cqi,40px) (+~11%; 40px at
+  the 920px canvas, 20px floor on phones).
+- 4) تاریخ به‌روزرسانی (the sync caption) at 60% opacity: #lastSyncM +
+  opacity:.6 — it is meta data, one step back from the countdown/players
+  hierarchy.
+- 5) PLAYER LANES FIXED (functional bug, every match): the figures were
+  on the WRONG sides on the RTL site — the home player beside the AWAY
+  crest and vice versa (Kane beside the Arsenal wing, Saka beside
+  Bayern). Root cause: the wings are PHYSICAL (.team-home{left:6.5%} at
+  every direction) but the player wrappers + watermarks used LOGICAL
+  anchors (inset-inline-start/end), which mirror with dir. Fix: physical
+  lanes everywhere — .player-home{left:0}/.player-away{right:0}, the img
+  tucks right:-32px/left:auto (home) + left:-32px/right:auto (away), the
+  four [dir] clip-path + tilt rules collapse to two physical ones (home
+  inset(-100% -32px 0 -100%), away inset(-100% -100% 0 -32px); home img
+  -1deg, away img +1deg — each SCREEN SIDE keeps the lean the live RTL
+  site already rendered), watermarks .wm-home{left:10px}/.wm-away
+  {right:10px} desktop + left/right:-38px mobile. Each figure now stands
+  beside his OWN team's crest in fa and en alike.
+- 6) The time+date cluster is dead-centre in the clock pod: .hero-time
+  left:43%/right:35.5% -> symmetric left:39.25%/right:39.25%. The pill's
+  rim was measured from the artwork PNG at y=166 (bright runs x332-335 /
+  x347-348 left, x652 / x666-668 right, baked clock icon ends x423):
+  the pill spans x332-668, centre x500 = the artwork's exact centre; the
+  old zone centred the cluster at x537.5 — 3.75% of card width RIGHT of
+  centre, which read as off-centre (owner: "needs to come slightly
+  left"). The symmetric band lands on x500; the digits still clear the
+  baked clock icon by ~19px at the 920px canvas.
+- Sandbox QA (the my-project mirror, 1:1 with the ported values):
+  zone offset vs card centre 3.75% -> 0.00% at 1920/1440/375/320;
+  digits 40/38/20/20px; gapDD 2.8/2.6/1.1/1px; sync opacity .6; real gap
+  below hero 32/32/24/24px; players home cx 1542.8 -> 377.2 @1920 (left,
+  beside the home wing 679) and away 266.3 -> 1653.7 (right, beside the
+  away wing 1240); watermarks on their lanes; overflow 0 everywhere;
+  VLM 6/6 PASS.
+
+---
+
 ## [13.153-heronext] — 2026-10-21 (the hero shows the NEXT match + the hero→main safe margin)
 
 - Owner: "Do not show the current result in hero. just show the next good

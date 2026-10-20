@@ -91,22 +91,43 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.153-heronext: the current pair (13.54.css + 13.39.js — the hero
-# always shows the NEXT future match: pickHeroMatch drops the live-first
-# clause so a rolling ball never takes the card (owner: "do not show the
-# current result in hero; just show the next good match, next hour or
-# next day"), and barTarget()'s new ok() guard skips live/finished/
-# already-kicked-off candidates from every source (nextBig, topSpot,
-# upcoming fallbacks) so even a stale payload rolls at kickoff second
-# zero; PLUS the hero→main-area safe margin — the scene floor doubles
-# (padding-bottom 34 -> 72px desktop, 0 -> 48px phones)) — immutable
-# under the rename-on-edit rule; the retired pair (13.53.css + 13.38.js)
-# stays pinned below per the retention rule (stale edge HTML <=900s may
-# still reference it).
-/public-13.54.css
+# v13.154-polish: the current pair (13.55.css + 13.39.js — the 6 owner
+# adjustments from 545454.png, CSS-only: (1) a REAL page gap below the hero
+# floor — .herowrap margin-bottom 32px desktop / 24px phones (the first
+# container "دیدارهای جذاب لیگ‌ها" was starting EXACTLY at the floor's end,
+# 0px away, because the wide layout's #wideMain children carry margin:0 and
+# the flex gap never applies to the first card); (2) the match day barely
+# closer to the kickoff digits (flex gap 4.6→2.8px @920 canvas + date
+# line-height 1.25→1.15); (3) the kickoff digits +11% (clamp 18/3.95cqi/36
+# → 20/4.4cqi/40); (4) the sync caption تاریخ به‌روزرسانی at 60% opacity
+# (#lastSyncM — meta data, one step back); (5) the player lanes PHYSICAL —
+# .player-home{left:0}/.player-away{right:0} + physical tucks/clip-paths/
+# tilts/watermarks (the old inline-start/end anchors mirrored with dir, so
+# on the RTL site every figure stood beside the OPPOSITE team's crest —
+# Kane beside the Arsenal wing, Saka beside Bayern; now each figure stands
+# beside his own crest in both fa and en); (6) the time+date cluster
+# dead-centre in the clock pod (left/right 43%/35.5% → 39.25%/39.25% — the
+# pill rim measures x332-668 of the 1000-wide artwork, centre x500; the old
+# zone centred at x537.5, 3.75% right)) — immutable under the rename-on-edit
+# rule; the retired pair (13.54.css + the unchanged 13.39.js) stays pinned
+# below per the retention rule (stale edge HTML <=900s may still reference
+# it).
+/public-13.55.css
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.39.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.153-heronext (retired under v13.154-polish): 13.54.css — the hero
+# always shows the NEXT future match: pickHeroMatch drops the live-first
+# clause so a rolling ball never takes the card, and barTarget()'s ok()
+# guard skips live/finished/already-kicked-off candidates from every source
+# (nextBig, topSpot, upcoming fallbacks) so even a stale payload rolls at
+# kickoff second zero; PLUS the hero→main-area safe margin (the scene floor
+# doubles: padding-bottom 34 -> 72px desktop, 0 -> 48px phones) — stays
+# pinned per the retention rule (stale edge HTML <=900s may still
+# reference it).
+/public-13.54.css
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.152-spacing (retired under v13.153-heronext): 13.53.css — the 4 owner

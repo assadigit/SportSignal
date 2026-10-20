@@ -5,6 +5,20 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v60 (v13.154-polish: bumped from v59 — routine
+//              evict for this release's public-13.54.css→13.55.css rename
+//              (the 6 owner adjustments from 545454.png: a REAL page gap
+//              below the hero floor — margin-bottom 32px desktop / 24px
+//              phones, the first container was starting at the floor's end
+//              0px away; the match day barely closer to the kickoff
+//              digits; the digits +11% (20/4.4cqi/40); the sync caption at
+//              60% opacity; the player lanes PHYSICAL — each figure stands
+//              beside his own team's crest, the old logical anchors
+//              mirrored on RTL; the time+date cluster dead-centre in the
+//              clock pod); stale HTML may still reference the retired
+//              13.54.css, which stays served per the retention rule —
+//              cache-first assets can't refresh without a rename or a
+//              bump, the v13.39 rule: every asset-editing release bumps.)
 // Cache name:  sportsignal-v59 (v13.153-heronext: bumped from v58 — routine
 //              evict for this release's public-13.53.css→13.54.css +
 //              public-13.38.js→13.39.js renames (the hero always shows the
@@ -248,7 +262,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v59";
+const CACHE = "sportsignal-v60";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
