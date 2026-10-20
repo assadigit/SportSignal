@@ -91,7 +91,45 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.150-hud: the current pair (13.51.css + 13.37.js + core-13.13.js —
+# v13.151-edits: the current pair (13.52.css + 13.38.js — the 8 owner
+# adjustments from requested-edits.png: bigger wing names hugging the crest,
+# the time considerably larger/bolder with the match day riding BELOW it in
+# the clock pod, the date shelf retired as a content zone, the countdown
+# grid dead-centre in the artwork's pockets, the sync caption pulled up onto
+# the card's bottom rim, the competition LOGO (the owner's European-Leagues
+# WebP pack — 6 white-transparent lockups for CL/PL/PD/SA/FL1/EL) riding ON
+# the frame's top rim, the players +15% and tucked nearer the HUD, the
+# stadium lights +15% brightness +15% opacity) — immutable under the
+# rename-on-edit rule; the retired 13.51/13.37 pair stays pinned below per
+# the retention rule (stale edge HTML <=900s may still reference them).
+/public-13.52.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.38.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.151-edits: the league logo pack — /leagues/ (400×400
+# white-transparent stacked lockups from the owner's
+# European-Leagues-WebP-Transparent-White.zip upload)
+/leagues/champions-league.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/leagues/premier-league.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/leagues/la-liga.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/leagues/serie-a.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/leagues/ligue-1.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/leagues/europa-league.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.150-hud (retired under v13.151-edits): the pair (13.51.css + 13.37.js —
 # CSS+template+JS release: the whole match HUD is now ONE supplied frame,
 # /ui/sportsignal-pc-match-hud.png 1000×406, replacing the wide card frame
 # PNG + the match-time chip PNG + the countdown panel PNG) — immutable

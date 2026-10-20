@@ -227,7 +227,18 @@
 //              (i18n lastUpd relabel). Routine evict — stale HTML may
 //              still reference 13.47.css / core-13.12.js, which stay
 //              served per the retention rule.)
-const CACHE = "sportsignal-v56";
+// Cache name:  sportsignal-v57 (v13.151-edits: bumped from v56 — the 8
+//              owner adjustments from requested-edits.png: bigger wing names
+//              + halved crest gap, the time larger/bolder with the match day
+//              below it in the clock pod (the date shelf retires as a content
+//              zone), the countdown grid dead-centre in the artwork pockets,
+//              the sync caption onto the card's bottom rim, the competition
+//              LOGO pack (/leagues/*.webp) riding the frame's top rim,
+//              players +15% nearer the HUD, stadium lights +15%/+15%. This
+//              release renamed the asset pair public-13.51.css→13.52.css +
+//              public-13.37.js→13.38.js; stale HTML may still reference the
+//              retired pair, which stays served per the retention rule.)
+const CACHE = "sportsignal-v57";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -163,7 +163,7 @@ export function mrowHtml(sm: SeoMatch, idx: number, finished: boolean): string {
 }
 
 // v13.126-herolook: the SERVER mirror of the client hero card (renderHeroSpot/
-// heroTeamNode/heroCentreNode in public-13.37.js) — class-for-class so the
+// heroTeamNode/heroCentreNode in public-13.38.js) — class-for-class so the
 // no-JS first paint looks native and the client re-render is seamless. The
 // output fills #heroSpot INSIDE the static card anchor (public.ts) — that
 // anchor is the ONE real link to the match page (R-02, A-01/A-02).
@@ -171,6 +171,9 @@ export function mrowHtml(sm: SeoMatch, idx: number, finished: boolean): string {
 // are the measured overlay zones (wings / clock pod / date shelf / venue
 // tail; the league block rides ABOVE the canvas via bottom:100%). The old
 // chip/clock + stadium SVGs retire: the frame artwork carries both icons.
+// v13.151-edits: the match day rides the clock pod (.time-date under the
+// digits); the shelf row retires; a mapped competition renders its LOGO
+// (hero-league.has-logo) from the owner's European-Leagues WebP pack.
 
 // the hero date line: the CLIENT format (fa-IR Intl => Jalali months, e.g.
 // "سه‌شنبه ۲۸ مهر") — the legacy faHeroDate (Gregorian months) stays for the
@@ -187,6 +190,19 @@ function statePill(txt: string, dot = false): string {
   return '<span class="time-state">' + (dot ? '<span class="dot"></span>' : "") + esc(txt) + "</span>";
 }
 
+// v13.151-edits: the competition LOGO map — the owner's European-Leagues
+// WebP pack (400×400 white-transparent stacked lockups, /leagues/).
+// A mapped code renders the LOGO in the league block (riding ON the frame's
+// top rim); unknown codes keep the icon+title text block.
+const LEAGUE_LOGOS: Record<string, string> = {
+  CL: "/leagues/champions-league.webp",
+  PL: "/leagues/premier-league.webp",
+  PD: "/leagues/la-liga.webp",
+  SA: "/leagues/serie-a.webp",
+  FL1: "/leagues/ligue-1.webp",
+  EL: "/leagues/europa-league.webp",
+};
+
 export function heroCardHtml(sm: SeoMatch): string {
   const m = sm.s;
   const live = isLiveSt(m.status);
@@ -194,17 +210,24 @@ export function heroCardHtml(sm: SeoMatch): string {
   const scored = (live || m.status === "FINISHED") && m.score && m.score.home !== null;
   const kk = m.utcDate ? Date.parse(m.utcDate) : NaN;
   const started = !isNaN(kk) && kk <= Date.now();
+  const leagueLogo = m.competition && m.competition.code ? LEAGUE_LOGOS[m.competition.code] : undefined;
   let out = "";
   if (m.big) out += '<span class="sr-only">\u0628\u0627\u0632\u06CC \u0645\u0647\u0645</span>';
   out += '<div class="hero-grid">';
   out += heroTeamHtml(m.homeTeam, false);
-  // row 1 — league
-  out += '<div class="hero-league"><span class="league-icon">';
-  out += (m.competition && m.competition.emblem)
-    ? '<img src="' + esc(m.competition.emblem) + '" alt="" loading="lazy" decoding="async">'
-    : UCL_LOGO_CHIP;
-  out += '</span><span class="league-title">' + esc(compNameFa(m)) + "</span></div>";
-  // row 2 — time / state / score
+  // row 1 — league (v13.151-edits: a mapped competition renders its LOGO —
+  // bigger, riding ON the frame's top rim per requested-edits.png)
+  if (leagueLogo) {
+    out += '<div class="hero-league has-logo"><img class="league-logo" src="' + leagueLogo + '" alt="" aria-hidden="true" loading="eager" decoding="async" draggable="false"></div>';
+  } else {
+    out += '<div class="hero-league"><span class="league-icon">';
+    out += (m.competition && m.competition.emblem)
+      ? '<img src="' + esc(m.competition.emblem) + '" alt="" loading="lazy" decoding="async">'
+      : UCL_LOGO_CHIP;
+    out += '</span><span class="league-title">' + esc(compNameFa(m)) + "</span></div>";
+  }
+  // row 2 — time / state / score + THE MATCH DAY below them (v13.151-edits:
+  // the date moved off the retired shelf INTO the clock pod)
   let time = '<div class="hero-time">';
   if (live) time += statePill(T.live, true);
   else if (m.status === "FINISHED") time += statePill(T.wkDone);
@@ -216,10 +239,12 @@ export function heroCardHtml(sm: SeoMatch): string {
     if (started) time += statePill("به‌زودی", true);
     else time += '<span class="time-digits" dir="ltr">' + esc(faTime(m.utcDate)) + "</span>";
   }
+  if (m.utcDate) time += '<span class="time-date">' + esc(faHeroDateJalali(m.utcDate)) + "</span>";
   time += "</div>";
   out += time;
-  // row 3 — date (Jalali, mirroring the client fmtHeroDate)
-  if (m.utcDate) out += '<div class="hero-date"><span class="date-main">' + esc(faHeroDateJalali(m.utcDate)) + '</span><span class="date-tz">به وقت تهران</span></div>';
+  // v13.151-edits: row 3 (the .hero-date shelf) RETIRES — the match day
+  // rides the clock pod as .time-date (see above); the artwork's thin
+  // cyan-lined shelf band stays baked into the frame.
   // row 4 — venue
   if (m.venue) out += '<div class="hero-venue"><span class="venue-pill">' + esc(m.venueFa || m.venue) + "</span></div>";
   out += heroTeamHtml(m.awayTeam, true);

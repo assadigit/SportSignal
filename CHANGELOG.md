@@ -6,6 +6,74 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.151-edits] — 2026-10-20 (the 8 requested adjustments — requested-edits.png)
+
+- Owner: "The overall implementation is nice, but needs some adjustments…
+  I, on purpose, used yellow, so you can find my notes" — the yellow
+  annotations on requested-edits.png (pixel-mapped: the yellow UCL logo
+  above the frame, a yellow team-name copy riding higher under the crest,
+  the time repainted yellow + a yellow match-day line under it with the
+  shelf date erased, a "Fix Alignment of countdown, exactly as center
+  middle" note + arrow, a yellow copy of the sync caption centred on the
+  card's bottom rim) + the numbered instruction list.
+- 1) Wing names +4px and hugging the crest: .hero-name
+  clamp(15px,3cqi,27px) -> clamp(19px,3.45cqi,31px); the .hero-team
+  crest-name gap halves (clamp(10px,4.2cqi,42px) -> clamp(6px,2.1cqi,21px)).
+- 2) The clock-pod time is CONSIDERABLY larger + bolder — .time-digits
+  clamp(16px,3.4cqi,30px)/600 -> clamp(18px,3.95cqi,36px)/800 (the Peyda
+  group override follows), glow 14px/.35 -> 16px/.4 — and the MATCH DAY
+  rides directly below it in the same container: the new .time-date
+  (clamp(10px,1.7cqi,15px)/700 at .85) inside .hero-time, which becomes a
+  centred flex column over the FULL pod pill interior (top 33.5/54.5 ->
+  33.25/51.2 = the artwork's y135–198). The state pills/score share the
+  pod with the date under them.
+- 3) The date shelf RETIRES as a content zone: .hero-date/.date-main/
+  .date-tz + the tz label (tzLabelFa in heroCentreNode; «به وقت تهران»)
+  drop — the artwork's thin cyan-lined band stays baked into the frame,
+  empty. The hero tz note goes with it (the mockup shows the date only;
+  the time already renders in the visitor's selected timezone).
+- 4) The countdown content is EXACTLY centred in its pockets: .hud-cells
+  becomes a measured 5-track GRID (28.32/6.94/29.48/6.94/28.32fr = the
+  artwork's pockets x327–425/x449–551/x575–673 + dividers, on the strip
+  x327–673) with the zone on the pocket INTERIORS (top 58.6/24.4 ->
+  60.85/24.15 = y247–308) — every label+number stack dead-centre
+  horizontally AND vertically (verified: numCx == tileCx, stackCy ==
+  tileCy on all three pockets). The hud-round zone opened 8px ABOVE the
+  pockets so the label breathed over the chamfer — that pulled every
+  stack high; the grid fixes it.
+- 5) The «تاریخ به‌روزرسانی» caption moves UPPER — onto the card's
+  bottom rim: #lastSyncM margin 4px -> -8px (the caption centres on the
+  frame's bottom edge per the mockup) + pointer-events:none so the
+  overlap never steals card clicks.
+- 6) The league block renders the competition LOGO — the owner's
+  European-Leagues-WebP-Transparent-White.zip (400×400 white-transparent
+  stacked lockups) extracted to /leagues/ (URL root — the repo's assets/
+  dir maps to /; CL/PL/PD/SA/FL1/EL): .hero-league.has-logo +
+  .league-logo clamp(64px,15cqi,150px) with margin-bottom:-4.6% — the
+  logo's lower third rides ON the frame's top rim (mockup: 137px wide,
+  42px overlap at the 920px canvas). Unknown codes keep the icon+title
+  text block. Server mirror (markup.ts LEAGUE_LOGOS) + client
+  (heroCentreNode LGL map) + 6 new immutable _headers pins.
+- 7) Players +15% and NEARER the HUD: .hero-player img height
+  91.77% -> 105.54%; the inward anchor tuck doubles (-16px -> -32px),
+  the wrapper clip opens the same 32px inward, max-width
+  calc(100% + 32px).
+- 8) Stadium lights +15% brightness AND +15% opacity: .bg-lights
+  opacity .799 -> .919 + filter brightness(1.15).
+- Assets: public-13.51.css -> 13.52.css, public-13.37.js -> 13.38.js
+  (heroCentreNode: the LGL logo branch + the .time-date under the
+  digits; the .hero-date row + tzLabelFa drop), SW v56 -> v57, VERSION
+  13.151-edits, package 13.151.0.0; the retired pair stays pinned per
+  the retention rule; check-stats pins rewritten (zone map, digits,
+  cells grid, players, lights, lastSyncM, mobile, typography group, the
+  headers chain + the /leagues/ pack); admin-parity fixture re-frozen.
+- Verified locally (wrangler dev --local + a mocked /api/public-matches):
+  logo 137×137 at y87–224 riding the rim, digits 36px/800 + the Jalali
+  date under them in the pod, all three pockets dead-centre, names 31px,
+  caption straddling the card's bottom edge, lights .919/brightness(1.15),
+  zero overflow at 1522 — plus the sandbox mirror at 1522/375/320/EN/
+  light-theme/soon-state/long-name stress.
+
 ## [13.150-hud] — 2026-10-20 (the ONE-frame match HUD — PC-Match-hero-HUD.png)
 
 - Owner: "Remove current HUD and it's PNG (match time, countdown and main

@@ -131,7 +131,7 @@ const mpoolSrc = readSrc("match-pool.ts");
 const provSrc = readSrc("providers.ts");
 const apiSrc = readSrc("api.ts");
 const wsSrc = fs.readFileSync(path.join(__dirname, "lib", "worker-src.js"), "utf8");
-const pubJs = fs.readFileSync(path.join(__dirname, "..", "assets", "public-13.37.js"), "utf8");
+const pubJs = fs.readFileSync(path.join(__dirname, "..", "assets", "public-13.38.js"), "utf8");
 const pubPage = readSrc(path.join("pages", "public.ts"));
 const headersSrc = fs.readFileSync(path.join(__dirname, "..", "assets", "_headers"), "utf8");
 
