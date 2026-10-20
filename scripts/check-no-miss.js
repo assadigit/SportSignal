@@ -350,8 +350,21 @@ var MEM_DEDUPE = new Set();
   check("herotruth: bot /featured uses the shared pickHeroMatch", /const featured = pickHeroMatch\(matches\);/.test(src));
   check("herotruth: site hero uses the shared pickHeroMatch (public-matches)", /const heroMatch = pickHeroMatch\(matches\);/.test(src));
   check("herotruth: no private hero re-implementation left (isHeroWorthy gone)", !/isHeroWorthy/.test(src));
-  check("herotruth: shared expression semantics — featured||masterPair, not-FINISHED, live-first, nearest kickoff",
-    /function pickHeroMatch\(matches\) \{[\s\S]{0,700}?isFeaturedMatch\(m\) \|\| isMasterPair\(m\)[\s\S]{0,300}?isLiveStatus\(m\.status\) \|\| new Date\(m\.utcDate\)\.getTime\(\) > Date\.now\(\)[\s\S]{0,400}?\(isLiveStatus\(a\.status\) \? 0 : 1\) - \(isLiveStatus\(b\.status\) \? 0 : 1\) \|\| new Date\(a\.utcDate\)\.getTime\(\) - new Date\(b\.utcDate\)\.getTime\(\) \|\| priorityTier\(b\) - priorityTier\(a\)/.test(src));
+  // v13.153-heronext: the hero is always the NEXT FUTURE match — the live
+  // clause is GONE from the shared expression (the owner: "do not show the
+  // current result in hero; just show the next good match").
+  check("herotruth: shared expression semantics — featured||masterPair, not-FINISHED, NOT-live (v13.153-heronext), nearest future kickoff, tier ties",
+    (function () {
+      // scope to the pickHeroMatch BODY: the cups/UCL-card sorts keep their
+      // own live-first ordering (they are lists, not the hero) and must not
+      // trip the negative half of this check.
+      const fn = src.match(/function pickHeroMatch\(matches\) \{[\s\S]*?\n\}/);
+      return !!fn
+        && /m\.status !== "FINISHED" && !isLiveStatus\(m\.status\)/.test(fn[0])
+        && /isFeaturedMatch\(m\) \|\| isMasterPair\(m\)/.test(fn[0])
+        && /new Date\(a\.utcDate\)\.getTime\(\) - new Date\(b\.utcDate\)\.getTime\(\) \|\| priorityTier\(b\) - priorityTier\(a\)/.test(fn[0])
+        && !/isLiveStatus\(a\.status\)/.test(fn[0]);
+    })());
   // v13.100-priority: same-kickoff ties break by the desired-team tier —
   // the curated featured clash leads the simultaneous (City–PSG over
   // Roma–Real on the 2026-10-14 UCL night).

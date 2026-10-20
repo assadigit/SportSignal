@@ -106,7 +106,17 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   const weekAll = (Array.isArray(p.thisWeek) ? p.thisWeek : []).map(asSm).filter(Boolean) as SeoMatch[];
   const uclAll = (p.ucl && Array.isArray(p.ucl.matches) ? p.ucl.matches : []).map(asSm).filter(Boolean) as SeoMatch[];
   const upcoming = upcomingAll.slice(0, 45);
-  const nextBig = (asSm(p.nextBig) || upcoming[0] || null) as SeoMatch | null;
+  // v13.153-heronext: the fallback (when nextBig is absent) must also skip
+  // live/finished/already-kicked-off rows — the server-rendered hero and its
+  // meta description describe the NEXT big match (owner: never the current
+  // result); the upcoming list is live-ranked, so a bare [0] could be a
+  // rolling ball.
+  const nextBig = (asSm(p.nextBig) || upcoming.find((sm) => {
+    const st = String(sm.raw.status || "").toUpperCase();
+    if (st === "LIVE" || st === "IN_PLAY" || st === "PAUSED" || st === "FINISHED") return false;
+    const kk = sm.s.utcDate ? Date.parse(sm.s.utcDate) : NaN;
+    return !Number.isNaN(kk) && kk > Date.now();
+  }) || null) as SeoMatch | null;
   const topSpotList = (topSpotAll.length ? topSpotAll : upcoming).slice(1, 11);
   const live = upcomingAll.filter((sm) => /IN_PLAY|LIVE|PAUSED/i.test(String(sm.raw.status)));
   const week = weekAll.slice(0, 12);

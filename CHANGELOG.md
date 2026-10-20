@@ -6,6 +6,55 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.153-heronext] — 2026-10-21 (the hero shows the NEXT match + the hero→main safe margin)
+
+- Owner: "Do not show the current result in hero. just show the next good
+  match for example next hour or next day. also the distance between hero
+  and site main area is low, add some safe margin."
+- 1) The hero NEVER shows the rolling ball or a final score — it is always
+  the next FUTURE hero-worthy kickoff ("next hour or next day"):
+  - pickHeroMatch (the ONE shared expression, ADR-001 website-as-truth —
+    the site's nextBig AND the bot's /featured) drops the live-first
+    clause: the filter excludes LIVE/IN_PLAY/PAUSED alongside FINISHED and
+    requires utcDate > now; the live-first sort term goes with it (nearest
+    future kickoff, priorityTier breaks the same-kickoff ties as before).
+    The bot's /featured follows by construction (one expression, two
+    consumers — no drift).
+  - public-13.38.js -> public-13.39.js: barTarget() gains the ok()
+    future-only guard applied to EVERY candidate source — nextBig, the
+    topSpot pick, and both upcoming fallbacks (big-first, then any). Even a
+    STALE payload (KV cache + 60s poll + the live overlay marking the
+    cached nextBig IN_PLAY) rolls the hero at kickoff second zero,
+    client-side, without waiting for the rebuild. The old bare
+    upcoming[0] last-resort (which could serve a live row) is gone —
+    nothing future means the hero hides (the existing empty-pool path).
+    POSTPONED keeps its pill path (a future-dated postponement still
+    renders its notice, as before).
+  - seo/router.ts: the server-rendered hero's fallback (nextBig || …)
+    also skips live/finished/kicked-off rows — the no-JS/crawler hero and
+    the "بازی بزرگ بعدی" meta description never describe the current
+    result either.
+  - Tests: check-priority's "LIVE leads everything" flips to "LIVE never
+    heroes" (+ a PAUSED twin); check-no-miss's shared-expression shape
+    regex now asserts NOT-live + the absence of the live-first sort.
+- 2) The hero→main-area SAFE MARGIN: the scene floor doubles — .herowrap
+  padding-bottom 34 -> 72px desktop, 0 -> 48px phones (the ≤600px block).
+  The scene layers are inset:0 on the section's padding box, so the extra
+  depth stays scene-colored (the dark island simply extends; the boundary
+  stays crisp in the light theme) and the swoosh/watermarks still clip at
+  the new edge. With the first card's own margin the hero→content gap
+  goes ~48 -> ~86px desktop, ~14 -> ~62px phones.
+- Assets: public-13.53.css -> 13.54.css + public-13.38.js -> 13.39.js
+  (rename-on-edit; the retired pair stays served + pinned per the
+  retention rule), SW v58 -> v59, VERSION 13.153-heronext, package
+  13.153.0.0, _headers + check-stats pins rewritten, admin-parity
+  re-frozen. The sandbox mirror (data.ts pickHeroMatch + hero.css floors)
+  verified first: the hero rolled from the live PSG–Barcelona to Bayern
+  München–Arsenal (the next future big match) with a clean 00/22/39
+  countdown, VLM 3/3 PASS at 1920/375.
+
+---
+
 ## [13.152-spacing] — 2026-10-21 (the 4 follow-up adjustments)
 
 - Owner: "add some padding/margin between sportsignal and header and players

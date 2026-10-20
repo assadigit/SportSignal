@@ -411,11 +411,12 @@ export async function handleTelegramUpdate(env: Env, update) {
       const matches = Array.isArray(pool && pool.matches) ? pool.matches : [];
       // v13.73-herotruth: /featured calls the SHARED pickHeroMatch (matches.ts)
       // — the exact expression the website hero uses (isFeaturedMatch ||
-      // isMasterPair, live-first, nearest kickoff). v13.68 made the website
-      // the ground truth; until here the bot carried a hand-copied filter that
-      // had already drifted (unsorted live pick). One expression, two
-      // consumers (ADR-001). Was shouldNotify(m) before v13.68 — that only
-      // required ONE big team.
+      // isMasterPair, nearest FUTURE kickoff — v13.153-heronext: live matches
+      // are excluded too, so /featured answers with the NEXT big match, never
+      // the in-play one). v13.68 made the website the ground truth; until
+      // here the bot carried a hand-copied filter that had already drifted
+      // (unsorted live pick). One expression, two consumers (ADR-001). Was
+      // shouldNotify(m) before v13.68 — that only required ONE big team.
       const featured = pickHeroMatch(matches);
       if (!featured) {
         await sendTelegram(env, lang === "en" ? "No upcoming matches right now\\." : "\u{1F4C5} \u062F\u0631 \u062D\u0627\u0644 \u062D\u0627\u0636\u0631 \u0628\u0627\u0632\u06CC \u0645\u0647\u0645\u06CC \u0648\u062C\u0648\u062F \u0646\u062F\u0627\u0631\u062F\\.", chatId, replyKeyboard(lang));

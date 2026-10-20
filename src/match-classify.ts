@@ -245,11 +245,13 @@ export function priorityTier(match, prefs?, chatId?) {
 // v13.73-herotruth: THE single hero-selection expression (ADR-001,
 // website-as-truth). The site's hero (public-matches.ts nextBig) and the
 // bot's /featured MUST both call this — neither may re-implement the
-// filter/sort. Semantics (unchanged from the site's v13.68 filter):
+// filter/sort. Semantics (v13.153-heronext, the owner's directive: "do not
+// show the current result in hero — just show the next good match, next
+// hour or next day"):
 //   - hero-worthy = isFeaturedMatch(m) || isMasterPair(m) (BOTH teams big)
-//   - exclude FINISHED
-//   - live matches first (isLiveStatus), then by nearest kickoff
-//     (live matches sort by their original kickoff time)
+//   - exclude FINISHED **and LIVE/IN_PLAY/PAUSED** — a rolling ball never
+//     takes the hero; the hero is always a match still to come
+//   - nearest FUTURE kickoff first
 // v13.100-priority: SAME-KICKOFF ties (every UCL league-phase slot) now
 // break by priorityTier — a curated big-vs-big clash (featured) outranks a
 // followed-vs-followed pair, which outranks the rest of the tie. The
@@ -258,13 +260,14 @@ export function priorityTier(match, prefs?, chatId?) {
 // game never led the site. Kickoff still dominates (the hero stays the
 // NEXT big match, not the biggest one far away); the tier only orders the
 // simultaneous.
-// The bot's pre-13.73 copy diverged in 3 ways (unsorted live[0] pick,
-// SCHEDULED|TIMED-only upcoming, inline live status set); this function
-// ends that — one expression, two consumers, zero drift.
+// v13.153-heronext: the pre-13.153 live-first clause (isLiveStatus(m.status)
+// in the filter + the live-first sort term) is REMOVED — it made the hero
+// show the in-play match (its live score/result) from kickoff until FT.
+// The bot's /featured follows the same change by construction (ADR-001).
 export function pickHeroMatch(matches) {
   const hero = (matches || [])
-    .filter((m) => m.status !== "FINISHED" && (isFeaturedMatch(m) || isMasterPair(m)) && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > Date.now()))
-    .sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime() || priorityTier(b) - priorityTier(a));
+    .filter((m) => m.status !== "FINISHED" && !isLiveStatus(m.status) && (isFeaturedMatch(m) || isMasterPair(m)) && new Date(m.utcDate).getTime() > Date.now())
+    .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime() || priorityTier(b) - priorityTier(a));
   return hero.length ? hero[0] : null;
 }
 export function hasSelectedTeam(match) {

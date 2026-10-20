@@ -293,8 +293,12 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   chk(live && live.scorers.length === 1 && live.scorers[0].scorer === "Haaland", "live scorers exposed (TOP BOX)");
   chk(live && live.derby === true, "derby flag on Manchester derby (TOP BOX)");
   chk(live && live.clash === true, "clash flag on TOP BOX headline");
-  chk(data.nextBig && data.nextBig.id === "m-live", "nextBig = nearest featured match (live wins)");
-  chk(data.nextBig && data.nextBig.derby === true, "nextBig carries derby flag (Manchester derby)");
+  // v13.153-heronext: live entries NEVER take the hero (owner: "do not show
+  // the current result in hero; just show the next good match") — nextBig is
+  // the nearest FUTURE featured match; the rolling ball (m-live) stays in the
+  // LIVE section + the TOP BOX, never the hero.
+  chk(data.nextBig && data.nextBig.id === "m-in", "nextBig = nearest FUTURE featured match (live never heroes — v13.153-heronext)");
+  chk(data.nextBig && data.nextBig.status !== "IN_PLAY" && Date.parse(data.nextBig.utcDate) > Date.now(), "nextBig is upcoming-timed (not the rolling ball)");
   chk(data.nextBig && data.nextBig.id != null, "nextBig exposes id");
   chk((box || []).find((m) => m.id === "m-in").derby === false, "no derby flag on Arsenal-Liverpool");
   chk((box || []).every((m) => m.id != null), "pubMatch exposes id");

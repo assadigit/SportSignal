@@ -103,9 +103,15 @@ console.log("\n=== 3. pickHeroMatch (the 2026-10-14 hero lesson) ===");
   const cityPsgLater = mk("Manchester City FC", "Paris Saint-Germain FC", isoIn(5));
   check("hero: kickoff still dominates (earlier master pair beats later featured)", ctx.pickHeroMatch([romaReal, cityPsgLater]) === romaReal);
   const romaRealLive = mk("AS Roma", "Real Madrid CF", KO2, "IN_PLAY");
-  check("hero: LIVE leads everything (rolling ball)", ctx.pickHeroMatch([cityPsg, romaRealLive]) === romaRealLive);
+  // v13.153-heronext: the hero NEVER shows the rolling ball (the owner's
+  // directive: "do not show the current result in hero; just show the next
+  // good match, next hour or next day") — live entries are excluded, the
+  // pick rolls to the next FUTURE hero-worthy kickoff.
+  check("hero: LIVE never heroes (v13.153-heronext — rolls to the next future match)", ctx.pickHeroMatch([cityPsg, romaRealLive]) === cityPsg);
+  const romaRealPaused = mk("AS Roma", "Real Madrid CF", KO2, "PAUSED");
+  check("hero: PAUSED never heroes either (every live status is excluded)", ctx.pickHeroMatch([cityPsg, romaRealPaused]) === cityPsg);
   const cityPsgDone = mk("Manchester City FC", "Paris Saint-Germain FC", KO2, "FINISHED");
-  check("hero: FINISHED never heroes (falls to the live/next one)", ctx.pickHeroMatch([cityPsgDone, romaReal]) === romaReal);
+  check("hero: FINISHED never heroes (falls to the next one)", ctx.pickHeroMatch([cityPsgDone, romaReal]) === romaReal);
   check("hero: nothing hero-worthy => null (no arbitrary fallback)", ctx.pickHeroMatch([mk("Feyenoord Rotterdam", "Como 1907", KO1)]) === null);
 }
 

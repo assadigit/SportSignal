@@ -5,13 +5,16 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
-// Cache name:  sportsignal-v58 (v13.152-spacing: bumped from v57 — routine
-//              evict for this release's public-13.52.css→13.53.css rename
-//              (player headroom cap + brand logo +20% + watermark brightness
-//              + smaller countdown numbers); stale HTML may still reference
-//              the retired 13.52.css, which stays served per the retention
-//              rule — cache-first assets can't refresh without a rename or a
-//              bump, the v13.39 rule: every asset-editing release bumps.)
+// Cache name:  sportsignal-v59 (v13.153-heronext: bumped from v58 — routine
+//              evict for this release's public-13.53.css→13.54.css +
+//              public-13.38.js→13.39.js renames (the hero always shows the
+//              NEXT future match — live/finished never take the card — plus
+//              the hero→main-area safe margin: the scene floor 34→72px
+//              desktop, 0→48px phones); stale HTML may still reference the
+//              retired 13.53.css/13.38.js pair, which stays served per the
+//              retention rule — cache-first assets can't refresh without a
+//              rename or a bump, the v13.39 rule: every asset-editing
+//              release bumps.)
 // Cache name:  sportsignal-v39 (v13.130: bumped from v38 — routine evict;
 //              this release renamed the asset pair public-13.32.css→13.33.css
 //              + public-13.33.js→13.34.js and added /players/hero/*; stale
@@ -245,7 +248,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v58";
+const CACHE = "sportsignal-v59";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
