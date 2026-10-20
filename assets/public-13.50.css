@@ -912,7 +912,15 @@ h1,h2,h3,h4,h5,h6,.hero-name{font-family:var(--font-heading)}
 /* v13.144-lights (owner): "add آخرین به‌روزرسانی INSTANTLY after this
    box" — the gap tightens 6px -> 4px so the caption reads as immediately
    following the chamfered box (still a sibling below it, NOT part). */
-#lastSyncM{display:block;margin:4px 0 0;padding:0;text-align:center;font-size:11px;line-height:1.65}
+/* v13.149-syncfix (owner: "still dont see the text"): the caption was a
+   STATIC element — it painted UNDERNEATH .hero-bg (absolute, z-index:1,
+   the 618px-tall stadium photo layer), invisible on every viewport since
+   it moved below the panel. Lifted into the content layer (z-index:2,
+   the panel/card layer). The color is pinned explicitly — the hero
+   island stays dark in BOTH themes but the page ink token flips
+   light->dark, which would hide it again in light theme; and 12px
+   matches the owner's at-least-12px floor for this area. */
+#lastSyncM{display:block;position:relative;z-index:2;margin:4px 0 0;padding:0;text-align:center;font-size:12px;line-height:1.65;color:#E2E8F0}
 .time-digits,.venue-pill,.count-num,.count-label{font-family:var(--font-body)}
 .time-digits{font-weight:600;line-height:1.15}
 .venue-pill{font-weight:500}

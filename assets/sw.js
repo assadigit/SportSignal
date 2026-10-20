@@ -189,6 +189,19 @@
 //              (.18→.198), floodlights .5→.6. Routine evict — stale
 //              HTML may still reference 13.39.css, which stays served
 //              per the retention rule.)
+// Cache name:  sportsignal-v55 (v13.149-syncfix: public-13.49.css→13.50.css
+//              — CSS-only release, core-13.13.js carries over unchanged.
+//              The owner's syncfix round: the تاریخ به‌روزرسانی caption
+//              below the countdown was a STATIC element — it painted
+//              UNDERNEATH .hero-bg (the z-index:1 stadium photo layer)
+//              and was invisible on every viewport since v13.142 moved
+//              it below the panel. Lifted into the content layer
+//              (position:relative + z-index:2), the color pinned to a
+//              hero-stable #E2E8F0 (the page ink token flips light→dark
+//              in light theme and would hide it again), and 12px to
+//              match the owner's at-least-12px floor for this area.
+//              Routine evict — stale HTML may still reference 13.49.css,
+//              which stays served per the retention rule.)
 // Cache name:  sportsignal-v54 (v13.148-head12: public-13.48.css→13.49.css
 //              — CSS-only release, core-13.13.js carries over unchanged.
 //              The owner's head12 round: the countdown head caption
@@ -207,7 +220,7 @@
 //              (i18n lastUpd relabel). Routine evict — stale HTML may
 //              still reference 13.47.css / core-13.12.js, which stay
 //              served per the retention rule.)
-const CACHE = "sportsignal-v54";
+const CACHE = "sportsignal-v55";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

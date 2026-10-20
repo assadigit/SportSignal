@@ -6,6 +6,33 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.149-syncfix] — 2026-10-20 (the تاریخ به‌روزرسانی caption was INVISIBLE — paint-order fix)
+
+- Owner: "The font got bigger, but still dont see the text of تاریخ
+  آخرین به روز رسانی. Please fix it." (the head12 font change confirmed
+  live on their side; the date caption still missing)
+- Root cause (pixel-verified on production): #lastSyncM is a STATIC
+  (non-positioned) element, so it painted UNDERNEATH .hero-bg — the
+  absolute, z-index:1 stadium-photo layer that spans the full 618px
+  hero. The card, panel and players were carefully z-indexed (2/2/3)
+  when the caption moved below the panel in v13.142, but the caption
+  itself never got a stacking level — it has been invisible on EVERY
+  viewport since. The v13.147 "verified" checks read DOM text/geometry
+  (textContent/getBoundingClientRect exist even when painted under a
+  photo) and VLM flip-flopped on it; a pixel sample proves it: 0 light
+  pixels in the caption band with .hero-bg visible, 161 with it hidden.
+- The fix: #lastSyncM gets position:relative + z-index:2 (joins the
+  panel/card content layer, above the z-index:1 photo); the color is
+  pinned explicitly to #E2E8F0 — the caption previously inherited the
+  page body ink, which flips light→dark in light theme while the hero
+  island stays dark (that would hide it again); and the size moves
+  11px → 12px, matching the owner's at-least-12px floor for this area.
+- Verified by pixel sampling, not just DOM: 236 light pixels in the
+  caption band after the fix (was 0) at 1522px; sandbox 208 desktop /
+  251 mobile; VLM reads the line below the panel on the fixed render.
+- Release: public-13.49.css → 13.50.css (CSS-only, core-13.13.js and
+  public-13.36.js carry over), SW v54 → v55.
+
 ## [13.148-head12] — 2026-10-20 (countdown head caption ≥12px)
 
 - Owner: "also make this text at least 12px : تا بازی بزرگ بعدی" (with an

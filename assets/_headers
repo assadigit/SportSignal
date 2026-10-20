@@ -91,7 +91,24 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.148-head12: the current pair (13.49.css + 13.36.js + core-13.13.js
+# v13.149-syncfix: the current pair (13.50.css + 13.36.js + core-13.13.js
+# — CSS-only release, the JS carries over) — immutable under the
+# rename-on-edit rule; retired versions stay pinned below per the
+# retention rule (stale edge HTML <=900s may still reference them).
+# v13.149-syncfix (owner: "still dont see the text"): the
+# تاریخ به‌روزرسانی caption below the countdown was a STATIC element —
+# it painted UNDERNEATH .hero-bg (absolute, z-index:1, the 618px-tall
+# stadium photo layer) and was invisible on every viewport since
+# v13.142 moved it below the panel (the panel/card got z-index:2 but
+# the caption never did). Lifted into the content layer
+# (position:relative + z-index:2); the color pinned to a hero-stable
+# #E2E8F0 (the page ink token flips light→dark in light theme, which
+# would hide it again on the always-dark hero island); 12px to match
+# the owner's at-least-12px floor for this area.
+/public-13.50.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.148-head12 (retired under v13.149-syncfix): the pair (13.49.css + 13.36.js + core-13.13.js
 # — CSS-only release, the JS carries over) — immutable under the
 # rename-on-edit rule; retired versions stay pinned below per the
 # retention rule (stale edge HTML <=900s may still reference them).
