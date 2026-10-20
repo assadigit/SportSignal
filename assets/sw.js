@@ -5,6 +5,17 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v61 (v13.155-herodepth: bumped from v60 — routine
+//              evict for this release's public-13.55.css→13.56.css +
+//              public-13.39.js→13.40.js renames (the hero visual depth pass:
+//              directional player silhouettes cast onto the HUD's inner face,
+//              the darker/dimensional panel face + frame depth, the faint
+//              inward-facing player rim light, and the ambient particle
+//              layer); stale HTML may still reference the retired
+//              13.55.css/13.39.js pair, which stays served per the
+//              retention rule — cache-first assets can't refresh without a
+//              rename or a bump, the v13.39 rule: every asset-editing
+//              release bumps.)
 // Cache name:  sportsignal-v60 (v13.154-polish: bumped from v59 — routine
 //              evict for this release's public-13.54.css→13.55.css rename
 //              (the 6 owner adjustments from 545454.png: a REAL page gap
@@ -262,7 +273,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v60";
+const CACHE = "sportsignal-v61";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

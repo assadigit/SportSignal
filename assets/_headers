@@ -91,7 +91,27 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.154-polish: the current pair (13.55.css + 13.39.js — the 6 owner
+# v13.155-herodepth (the hero visual depth pass, spec-driven): (1) the
+# projected player-shadow plane — blackened copies of the same portrait
+# PNGs cast inward+down onto the HUD artwork's measured INNER face
+# (clip-path polygon; physical lanes only: hs-home=left casts +X, hs-away
+# right casts -X, never dir/team/DOM order); (2) the interior-face depth
+# overlay (translucent navy gradient, same polygon) + the frame's own
+# alpha-aware drop-shadows (soft ground shadow + tight perimeter glow);
+# (3) the directional player rim light (faint cool-blue contour lift on
+# the HUD-facing side, lane-keyed tokens); (4) the ambient particle layer
+# (9 fixed 1-3px points, CSS-only drift, parked under reduced-motion);
+# heroArt (public-13.40.js) fills the shadow copies from the same art
+# entries as the figures — immutable under the rename-on-edit rule; the
+# retired pair (13.55.css + 13.39.js) stays pinned below per the
+# retention rule (stale edge HTML <=900s may still reference it).
+/public-13.56.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.40.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.154-polish (retired under v13.155-herodepth): 13.55.css — the 6 owner
 # adjustments from 545454.png, CSS-only: (1) a REAL page gap below the hero
 # floor — .herowrap margin-bottom 32px desktop / 24px phones (the first
 # container "دیدارهای جذاب لیگ‌ها" was starting EXACTLY at the floor's end,
@@ -108,10 +128,8 @@
 # beside his own crest in both fa and en); (6) the time+date cluster
 # dead-centre in the clock pod (left/right 43%/35.5% → 39.25%/39.25% — the
 # pill rim measures x332-668 of the 1000-wide artwork, centre x500; the old
-# zone centred at x537.5, 3.75% right)) — immutable under the rename-on-edit
-# rule; the retired pair (13.54.css + the unchanged 13.39.js) stays pinned
-# below per the retention rule (stale edge HTML <=900s may still reference
-# it).
+# zone centred at x537.5, 3.75% right)) — stays pinned per the retention
+# rule below.
 /public-13.55.css
   Cache-Control: public, max-age=31536000, immutable
 

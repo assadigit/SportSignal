@@ -45,3 +45,8 @@ SportSignal-v*.zip
 # UEFA player portrait pipeline working cache (originals + discovery state)
 # (scripts/uefa-player-portraits/ holds the reproducible inputs instead)
 .cache/uefa-player-portraits/
+
+# Local dev-seeding helpers (sandbox QA tooling; reseed.sh embeds an operator
+# token in plaintext — NEVER tracked; seed-local.js is its local-only companion)
+reseed.sh
+scripts/seed-local.js

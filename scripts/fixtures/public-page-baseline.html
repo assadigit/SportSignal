@@ -75,7 +75,7 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.55.css">
+<link rel="stylesheet" href="/public-13.56.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -147,6 +147,24 @@ __SEO_JSONLD__
 <img class="bg-wm wm-away" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'">
 <div class="bg-vignette"></div>
 <div class="bg-scrim"></div>
+<!-- v13.155-herodepth (spec 02): the ambient particle layer — ~9 fixed,
+deterministic 1-3px cool-blue points in the open stadium areas (outer
+thirds + the band above the HUD; the vars carry position/size/duration/
+negative delay/drift so no two share a rhythm and no JS is involved).
+Rides BEFORE .bg-lights so the floodlight overlay stays .hero-bg's last
+child (its v13.134 contract); decorative only — aria-hidden,
+pointer-transparent, parked under prefers-reduced-motion (CSS). -->
+<div class="hero-particles" aria-hidden="true">
+<i class="hero-particle" style="--p-x:6%;--p-y:9%;--p-s:2px;--p-dur:29s;--p-del:-11s;--p-drift:14px"></i>
+<i class="hero-particle" style="--p-x:14%;--p-y:16%;--p-s:1px;--p-dur:23s;--p-del:-7s;--p-drift:-10px"></i>
+<i class="hero-particle" style="--p-x:24%;--p-y:7%;--p-s:2px;--p-dur:33s;--p-del:-19s;--p-drift:18px"></i>
+<i class="hero-particle" style="--p-x:10%;--p-y:34%;--p-s:1px;--p-dur:27s;--p-del:-3s;--p-drift:-12px"></i>
+<i class="hero-particle" style="--p-x:19%;--p-y:52%;--p-s:2px;--p-dur:31s;--p-del:-23s;--p-drift:9px"></i>
+<i class="hero-particle" style="--p-x:76%;--p-y:6%;--p-s:1px;--p-dur:26s;--p-del:-9s;--p-drift:12px"></i>
+<i class="hero-particle" style="--p-x:86%;--p-y:14%;--p-s:2px;--p-dur:35s;--p-del:-15s;--p-drift:-16px"></i>
+<i class="hero-particle" style="--p-x:93%;--p-y:27%;--p-s:1px;--p-dur:21s;--p-del:-5s;--p-drift:10px"></i>
+<i class="hero-particle" style="--p-x:80%;--p-y:44%;--p-s:2px;--p-dur:30s;--p-del:-25s;--p-drift:-14px"></i>
+</div>
 <!-- v13.134-typelight (owner, lighting round): the stadium-lights overlay — the supplied
      transparent PNG (/stadium-lights-hero.png, 1400x467) as a subtle atmospheric
      light layer over the composed scene (screen blend, .799 opacity in
@@ -180,6 +198,13 @@ __SEO_JSONLD__
      static sibling BEFORE #heroSpot so the client-side renderHeroSpot
      rebuild (which rewrites only #heroSpot's innerHTML) never removes it. -->
 <img class="card-hud" src="/ui/sportsignal-pc-match-hud.png" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
+<!-- v13.155-herodepth (spec 03): the interior-face depth overlay — a
+     translucent navy deepening gradient clipped to the artwork's measured
+     inner face (the same polygon the .hud-shadow-plane below uses, here in
+     card-relative %). Static inside the card anchor (survives the
+     renderHeroSpot rebuild like .hud-cells); z0 with DOM-after the frame =
+     painted above the frame, under every content zone (z1). -->
+<div class="hud-depth" aria-hidden="true"></div>
 <!-- v13.150-hud: the countdown cells — a STATIC layer over the artwork's
      three pockets, driven by updateBigBar every second (same #hcD/#hcH/#hcM
      ids and data-i labels as the old #bigbar tiles; the seconds tile
@@ -200,6 +225,21 @@ __SEO_JSONLD__
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 <div id="heroSpot">__SEO_HERO__</div>
 </a>
+<!-- v13.155-herodepth (spec 01): the projected player-shadow plane — a
+     section-level decorative layer ABOVE the card (z2, DOM-after) and BELOW
+     the figures (z3). heroArt() fills the four <img> copies with the SAME
+     portrait URLs as the foreground figures (one soft + one near component
+     per side) and toggles .has on the .hs-player wrappers exactly like the
+     .hero-player ones; the CSS clips the plane to the HUD artwork's inner
+     face and casts each silhouette toward the banner centre + slightly
+     down, by PHYSICAL lane (hs-home = left = +X, hs-away = right = -X —
+     see the direction contract in public-13.56.css). Empty until JS fills
+     it; aria-hidden + pointer-events:none; retired <=1019px with the
+     figures. -->
+<div class="hud-shadow-plane" aria-hidden="true">
+<div class="hs-player hs-home"><img class="hs-img hs-img--soft" alt="" referrerpolicy="no-referrer"><img class="hs-img hs-img--near" alt="" referrerpolicy="no-referrer"></div>
+<div class="hs-player hs-away"><img class="hs-img hs-img--soft" alt="" referrerpolicy="no-referrer"><img class="hs-img hs-img--near" alt="" referrerpolicy="no-referrer"></div>
+</div>
 <!-- v13.150-hud: the old #bigbar countdown PANEL (head row + four tiles on
      the 474×204 capsule artwork) is RETIRED — the countdown now lives
      INSIDE the card as the .hud-cells layer over the PC-Match frame's own
@@ -376,7 +416,7 @@ __SEO_JSONLD__
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.14.js" defer></script>
 <script>var PAGE_TZ = "__PAGE_TZ__";</script>
-<script src="/public-13.39.js" defer></script>
+<script src="/public-13.40.js" defer></script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a
