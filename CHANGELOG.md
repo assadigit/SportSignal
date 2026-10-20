@@ -6,6 +6,32 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.146-compact] — 2026-10-20 (countdown −50%, artwork opacity −20%)
+
+- Owner: "reduce the size of countdown by 50%. also reduce the opacity of
+  it's bg background by 20%."
+- The countdown panel halves as one piece: --ss-countdown-w
+  clamp(324px,31vw,460px) → clamp(162px,15.5vw,230px) (desktop 460×198 →
+  230×99; 375px phones 324×139 → 162×70) and EVERY fixed-px value inside
+  the panel halves with the canvas so the composition scales undistorted —
+  .count-num clamp(15px,6.6cqi,30px) → clamp(7.5px,6.6cqi,15px) (19px →
+  9.5px px-fallback), .count-unit clamp(8.5px,2.7cqi,11.5px) →
+  clamp(4.25px,2.7cqi,5.75px) (9px → 4.5px fallback), .count-head
+  10/13px → 5/6.5px, head icon 11/16px → 5.5/8px, tiles gap 6 → 3px, tile
+  padding 6px 2px → 3px 1px, tile inner gap 3 → 1.5px, chamfer 5 → 2.5px,
+  lime tick 12×2px → 6×1px (its glow 6 → 3px). The measured % geometry
+  (13.7/15.2/29.9/33.8 glass band) and the 474/204 aspect are untouched —
+  the cells stay inside the artwork's glass interior at every width, and
+  the cqi values scale on their own.
+- The HUD artwork backs off 20%: it moves from the .hero-count element
+  background to a dedicated .hero-count::before layer at opacity .8, so
+  ONLY the artwork fades — an element-level opacity would dim the digits
+  and labels riding above it too (tree order keeps the content rows on
+  top; pointer-events:none keeps the layer inert).
+- CSS-only release (public-13.46.css → public-13.47.css, SW v51 → v52);
+  #bigbar's ids/contract, the sync caption 4px below the box, and every
+  other section are untouched.
+
 ## [13.145-countdown] — 2026-10-20 (countdown round: the supplied HUD artwork becomes the panel; four cells rebuilt inside it)
 
 - Owner: "Build a Responsive Four-Cell Countdown UI Using the New HUD

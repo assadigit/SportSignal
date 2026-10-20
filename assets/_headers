@@ -85,7 +85,20 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.145-countdown: the current pair (13.46.css + 13.36.js — CSS+template
+# v13.146-compact: the current pair (13.47.css + 13.36.js — CSS-only
+# release, the JS carries over) — immutable under the rename-on-edit rule;
+# retired versions stay pinned below per the retention rule (stale edge
+# HTML <=900s may still reference them).
+# v13.146-compact (owner): the countdown halves (clamp 460/324 → 230/162;
+# every fixed-px value inside the panel halves with the canvas — type
+# clamps, gaps, paddings, chamfer, lime tick) and the HUD artwork backs
+# off 20% (its own .hero-count::before layer at opacity .8, so only the
+# artwork fades, never the digits/labels riding above it). CSS-only round;
+# #bigbar's ids/contract are untouched.
+/public-13.47.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.145-countdown (retired under v13.146-compact): the pair (13.46.css + 13.36.js — CSS+template
 # release, the JS carries over) — immutable under the rename-on-edit rule;
 # retired versions stay pinned below per the retention rule (stale edge
 # HTML <=900s may still reference them).

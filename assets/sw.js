@@ -189,16 +189,15 @@
 //              (.18→.198), floodlights .5→.6. Routine evict — stale
 //              HTML may still reference 13.39.css, which stays served
 //              per the retention rule.)
-// Cache name:  sportsignal-v51 (v13.145-countdown: public-13.45.css→13.46.css
-//              + the supplied countdown HUD artwork
-//              /ui/sportsignal-countdown-bg.png — the panel rides the
-//              artwork (474×204 stadium capsule kept exactly as shipped),
-//              the four cells rebuilt inside its measured glass interior
-//              (.count-inner + the old CSS chamfer panel retire; #bigbar
-//              keeps its ids/contract). Routine evict — stale HTML may
-//              still reference 13.45.css, which stays served per the
-//              retention rule.)
-const CACHE = "sportsignal-v51";
+// Cache name:  sportsignal-v52 (v13.146-compact: public-13.46.css→13.47.css
+//              — the countdown halves (clamp 460/324 → 230/162; every
+//              fixed-px value inside the panel halves with the canvas) and
+//              the HUD artwork fades 20% (its own .hero-count::before
+//              layer at opacity .8 — only the artwork dims, never the
+//              digits). CSS-only round; #bigbar keeps its ids/contract.
+//              Routine evict — stale HTML may still reference 13.46.css,
+//              which stays served per the retention rule.)
+const CACHE = "sportsignal-v52";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
