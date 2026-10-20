@@ -55,7 +55,9 @@ Version strings follow the value exposed by the live `/api/status` endpoint
   مهمان) retire (the reference shows crest + name only).
 - Files: assets/ui/sportsignal-pc-match-hud.png (new), public-13.50.css →
   public-13.51.css (hero section rewrite), public-13.36.js →
-  public-13.37.js (heroCentreNode/heroTeamNode/updateBigBar), public.ts
+  public-13.37.js (heroCentreNode/heroTeamNode/updateBigBar), core-13.13.js
+  → core-13.14.js (the EN unit labels d/h/m spell out to Days/Hours/Min —
+  they ride ABOVE the numbers in the frame's pockets), public.ts
   (template restructure), markup.ts (server mirror), router.ts (the
   non-upcoming hide targets .hud-cells), sw.js v55 → v56, VERSION
   13.150-hud.

@@ -232,7 +232,7 @@ const seoCfgSrc = read("src/seo/config.ts");
 check("public-13.37.js referenced in homepage (13.37 since v13.150-hud — the heroCentreNode/heroTeamNode zone restructure + updateBigBar drives .hud-cells; was 13.36)", /\/public-13\.37\.js/.test(publicSrc) && !/\/public-13\.36\.js\/<\/script/.test(publicSrc));
 check("public-13.51.css referenced in homepage (13.51 since v13.150-hud — the ONE-frame PC-Match HUD; was 13.50)", /\/public-13\.51\.css/.test(publicSrc) && !/\/public-13\.50\.css\/">/.test(publicSrc));
 check("public-13.51.css referenced in SEO page-shell (13.51 since v13.150-hud; was 13.50)", /\/public-13\.51\.css/.test(shellSrc) && !/\/public-13\.50\.css/.test(shellSrc));
-check("core-13.13.js referenced in homepage (public page script tag; core-13.12→13.13 in v13.147-syncdate — the i18n lastUpd label reads تاریخ به‌روزرسانی / Update date)", /\/core-13\.13\.js/.test(publicSrc));
+check("core-13.14.js referenced in homepage (public page script tag; core-13.13→13.14 in v13.150-hud — the EN unit labels spell out to Days/Hours/Min for the frame pockets)", /\/core-13\.14\.js/.test(publicSrc) && !/\/core-13\.13\.js/.test(publicSrc));
 check("public-13.36.js exists", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.36.js")));
 check("public-13.45.css exists (v13.144-lights) + the retired 13.44.css stays on disk per the retention rule", fs.existsSync(path.join(__dirname, "..", "assets", "public-13.45.css")) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.44.css")));
 check("the supplied kickoff artwork exists (assets/ui/sportsignal-match-time-bg.png — the chip background since v13.127-matchtimeart)", fs.existsSync(path.join(__dirname, "..", "assets", "ui", "sportsignal-match-time-bg.png")));
@@ -289,14 +289,14 @@ check("homepage inline CSS has .sr-only class", /\.sr-only\{/.test(publicSrc));
 check("public countries capped at 5 (SQL LIMIT 5)", /LIMIT 5/.test(statsSrc));
 
 // v13.65-lgtitle: hLgNext retitled (domestic leagues + cups only; UCL has its own section)
-const coreSrc = read("assets/core-13.13.js");
-check("core-13.13.js exists (renamed from 13.12 in v13.147-syncdate, rename-on-edit rule — the i18n lastUpd relabel; 13.12 stays on disk one TTL as the alias)", fs.existsSync(path.join(__dirname, "..", "assets", "core-13.13.js")) && fs.existsSync(path.join(__dirname, "..", "assets", "core-13.11.js")) && !fs.existsSync(path.join(__dirname, "..", "assets", "core-13.10.js")));
-check("core-13.13.js fa hLgNext retitled to دیدارهای جذاب لیگ‌ها (v13.147-syncdate: file renamed 13.12→13.13)", /hLgNext:"دیدارهای جذاب لیگ‌ها"/.test(coreSrc));
-check("core-13.13.js en hLgNext retitled to Exciting League Fixtures (v13.147-syncdate: file renamed 13.12→13.13)", /hLgNext:"Exciting League Fixtures"/.test(coreSrc));
-check("core-13.13.js referenced in admin page (v13.147-syncdate core rename)", /\/core-13\.13\.js/.test(read("src/pages/admin.ts")));
-check("core-13.13.js referenced in login page (v13.147-syncdate core rename)", /\/core-13\.13\.js/.test(read("src/pages/login.ts")));
-check("core-13.13.js referenced in public page (v13.147-syncdate core rename)", /\/core-13\.13\.js/.test(read("src/pages/public.ts")));
-check("assets/_headers pins core-13.13 immutable + keeps core-13.12 + core-13.11 through one SEO TTL (the v13.147-syncdate lastUpd relabel rename)", /\/core-13\.13\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && /\/core-13\.12\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && /\/core-13\.11\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
+const coreSrc = read("assets/core-13.14.js");
+check("core-13.14.js exists (renamed from 13.13 in v13.150-hud, rename-on-edit rule — the EN unit labels spell out; 13.13 + 13.12 stay on disk one TTL as the aliases)", fs.existsSync(path.join(__dirname, "..", "assets", "core-13.14.js")) && fs.existsSync(path.join(__dirname, "..", "assets", "core-13.13.js")) && fs.existsSync(path.join(__dirname, "..", "assets", "core-13.11.js")) && !fs.existsSync(path.join(__dirname, "..", "assets", "core-13.10.js")));
+check("core-13.14.js fa hLgNext retitled to دیدارهای جذاب لیگ‌ها (carried from 13.13)", /hLgNext:"دیدارهای جذاب لیگ‌ها"/.test(coreSrc));
+check("core-13.14.js en hLgNext retitled to Exciting League Fixtures (carried from 13.13) + v13.150-hud: the EN unit labels spell out (uDay Days / uHour Hours / uMin Min / uSec Sec — they ride ABOVE the numbers in the frame pockets)", /hLgNext:"Exciting League Fixtures"/.test(coreSrc) && /uDay:"Days",uHour:"Hours",uMin:"Min",uSec:"Sec"/.test(coreSrc) && !/uDay:"d",uHour:"h",uMin:"m"/.test(coreSrc));
+check("core-13.14.js referenced in admin page (v13.150-hud core rename)", /\/core-13\.14\.js/.test(read("src/pages/admin.ts")));
+check("core-13.14.js referenced in login page (v13.150-hud core rename)", /\/core-13\.14\.js/.test(read("src/pages/login.ts")));
+check("core-13.14.js referenced in public page (v13.150-hud core rename)", /\/core-13\.14\.js/.test(read("src/pages/public.ts")));
+check("assets/_headers pins core-13.14 immutable + keeps core-13.13 + core-13.12 + core-13.11 through one SEO TTL (the v13.150-hud EN unit-label rename)", /\/core-13\.14\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && /\/core-13\.13\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && /\/core-13\.12\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) && /\/core-13\.11\.js\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc));
 // v13.84: the orphan data-i keys found by the QA sweep — hStats/btnStats had
 // no dict entries, so the live admin showed raw "hStats"/"btnStats" text in
 // BOTH languages. Locked so a future key typo can't resurrect silently.
