@@ -5,6 +5,13 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v58 (v13.152-spacing: bumped from v57 — routine
+//              evict for this release's public-13.52.css→13.53.css rename
+//              (player headroom cap + brand logo +20% + watermark brightness
+//              + smaller countdown numbers); stale HTML may still reference
+//              the retired 13.52.css, which stays served per the retention
+//              rule — cache-first assets can't refresh without a rename or a
+//              bump, the v13.39 rule: every asset-editing release bumps.)
 // Cache name:  sportsignal-v39 (v13.130: bumped from v38 — routine evict;
 //              this release renamed the asset pair public-13.32.css→13.33.css
 //              + public-13.33.js→13.34.js and added /players/hero/*; stale
@@ -238,7 +245,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v57";
+const CACHE = "sportsignal-v58";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -6,6 +6,44 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.152-spacing] — 2026-10-21 (the 4 follow-up adjustments)
+
+- Owner: "add some padding/margin between sportsignal and header and players
+  picture, currently part of the player's head is colliding with header
+  items. also increase Logos (club logos) in BG which has low opacity,
+  brighter like 20% more opacity. also make the logo of sportsignal 20%
+  bigger. make the countdown text sizes (numbers) smaller."
+- 1) Player heads clear the header: the figures had grown so tall their
+  heads rode up INTO the header band (105.54% of the section put the head
+  top ~8% from the section top — under the brand/nav/controls). The height
+  gains a HEADROOM CAP — .hero-player img
+  height:min(105.54%,calc(113.585% - 122px)) — the box top (100% + 13.585%
+  - height) parks ~122px from the section top, clearly below the header
+  items; the bottom anchor + the feet-fade mask are untouched (the melt at
+  the floor is exactly as before); the cap only binds when the head would
+  collide, tall scenes keep the full 105.54% ceiling.
+- 2) The SportSignal brand logo grows 20%: .brand img
+  height:42px -> calc(42px*1.2) (= 50.4px); --ss-header-h follows
+  94 -> 102px so the scene still starts at the page top (the var stays
+  >= the rendered header height). Mobile: the card margin-top
+  118 -> 134px so the league-logo crown keeps clearing the bigger brand
+  at 320-375px (verified 320/375 in the sandbox: crown 15.8-18.3px below
+  the brand bottom).
+- 3) The bg club-crest watermarks brighten +20 POINTS of opacity:
+  .bg-wm .264 -> .464 (desktop), .268 -> .468 (mobile) — the owner read
+  the faint crests as too low-contrast against the dark grade.
+- 4) The countdown numbers shrink ~20%: .count-num
+  clamp(12px,3.9cqi,34px) -> clamp(11px,3.1cqi,27px) (the px fallback
+  12 -> 11) — they read oversized in the frame's pockets next to the
+  enlarged clock digits.
+- CSS-only release: public-13.52.css -> public-13.53.css (rename-on-edit,
+  the retired pair stays served + pinned per the retention rule);
+  public-13.38.js + core-13.14.js carry over unchanged; SW v57 -> v58;
+  VERSION 13.152-spacing; package 13.152.0.0. Sandbox-verified at
+  1522/1920/1440(EN)/375/320: head top ~101px page-y on every desktop
+  width (35px below the brand bottom), zero horizontal overflow, VLM
+  4/4 + 3/3 + 3/3 PASS.
+
 ## [13.151-edits] — 2026-10-20 (the 8 requested adjustments — requested-edits.png)
 
 - Owner: "The overall implementation is nice, but needs some adjustments…
