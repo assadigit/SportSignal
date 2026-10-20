@@ -224,7 +224,12 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
         .replace("__SEO_HCM__", hcM).replace("__SEO_HCS__", hcS)
         .replace("__SEO_HCPCT__", hcPct);
     } else {
-      html = html.replace('<div id="bigbar" class="hero-count">', '<div id="bigbar" class="hero-count" style="display:none">');
+      // v13.150-hud: the countdown lives INSIDE the card as the static
+      // .hud-cells layer now (the old #bigbar panel is gone) — ship the
+      // layer hidden for non-upcoming heroes; updateBigBar keeps the same
+      // rule every tick. __SEO_HCS__ has no tile anymore (three pockets)
+      // but stays replaced so the placeholder never leaks into HTML.
+      html = html.replace('<div class="hud-cells" role="timer" dir="ltr">', '<div class="hud-cells" role="timer" dir="ltr" style="display:none">');
       html = html.replace(/__SEO_HC[DHMS]__/g, "--").replace("__SEO_HCPCT__", "0");
     }
   }

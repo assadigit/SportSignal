@@ -6,6 +6,60 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.150-hud] — 2026-10-20 (the ONE-frame match HUD — PC-Match-hero-HUD.png)
+
+- Owner: "Remove current HUD and it's PNG (match time, countdown and main
+  hud) and replace it with this: PC-Match-hero-HUD.png … for having
+  instruction to where things go see this visual reference and create
+  according to it: hud-visual-reference.png."
+- The previous THREE hero artworks RETIRE (all stay on disk + pinned per
+  the retention rule — retired CSS still references them):
+  sportsignal-hud-matches-hero.png (the wide card frame),
+  sportsignal-match-time-bg.png (the kickoff chip) and
+  sportsignal-countdown-bg.png (the 474×204 countdown panel) — plus the
+  mobile portrait 9-slice (sportsignal-hud-matches-hero-mobile.png) and
+  the whole #bigbar countdown panel markup with its head caption
+  «تا بازی بزرگ بعدی» and its seconds tile.
+- The whole match HUD is now ONE supplied frame:
+  /ui/sportsignal-pc-match-hud.png (1000×406 RGBA — two wing panels + a
+  centre column stacking a clock pod, a thin cyan-lined date shelf, THREE
+  countdown pockets with baked dividers and a venue tail; the clock +
+  stadium icons are BAKED INTO the artwork). The card renders the frame
+  at its exact 1000:406 aspect (aspect-ratio + container-type — every
+  zone's type scales with the frame via cqi) and the content is a stack
+  of absolutely-positioned overlay zones MEASURED from the artwork's
+  pixels (pod interiors located by alpha/color row-column profiling):
+  wings x60-330/x670-940 y75-310 (crest above name, the reference's
+  rhythm — crest high, name low), clock pod x430-645 y136-184 (kickoff
+  digits right of the baked clock icon; the state pills + live score
+  share the pod), date shelf x345-660 y209-238 (the Jalali date + tz
+  note keep their home), countdown pockets x330-670 y238-307 (label
+  ABOVE the number per the reference — DAYS over 03; the label rides
+  cyan caps, the number big white; the .hud-cells layer is STATIC inside
+  the card anchor so renderHeroSpot never rebuilds it), venue tail
+  x440-620 y337-382 (the name right of the baked stadium icon — the old
+  glass pill + HERO_STADIUM_SVG retire) and the league block centred
+  ABOVE the frame (bottom:100% — the reference's UCL logo band).
+- Contract preserved: #hcD/#hcH/#hcM keep their ids (they moved into the
+  card as the .hud-cells layer), #hcS is gone (three pockets — setNum
+  null-guards it), #hcSr + #bigbarTrack/#bigbarFill stay (a11y, sr-only),
+  updateBigBar now hides/shows the .hud-cells layer (the retired #bigbar
+  element is null-guarded), the router ships the layer hidden for
+  non-upcoming heroes, renderHeroSpot/heroCentreNode/heroTeamNode emit
+  the new zone structure class-for-class with the heroCardHtml server
+  mirror, fitHeroNames (.hero-name) carries over, the تاریخ به‌روزرسانی
+  caption still sits 4px below the card (v13.149-syncfix z-index fix
+  intact) and the players still flank the card (--ss-card-w drives both).
+- EN i18n unit labels d/h/m → Days/Hours/Min (the labels are prominent
+  now — the reference spells them out). The .hero-role tags (میزبان/
+  مهمان) retire (the reference shows crest + name only).
+- Files: assets/ui/sportsignal-pc-match-hud.png (new), public-13.50.css →
+  public-13.51.css (hero section rewrite), public-13.36.js →
+  public-13.37.js (heroCentreNode/heroTeamNode/updateBigBar), public.ts
+  (template restructure), markup.ts (server mirror), router.ts (the
+  non-upcoming hide targets .hud-cells), sw.js v55 → v56, VERSION
+  13.150-hud.
+
 ## [13.149-syncfix] — 2026-10-20 (the تاریخ به‌روزرسانی caption was INVISIBLE — paint-order fix)
 
 - Owner: "The font got bigger, but still dont see the text of تاریخ

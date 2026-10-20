@@ -163,12 +163,14 @@ export function mrowHtml(sm: SeoMatch, idx: number, finished: boolean): string {
 }
 
 // v13.126-herolook: the SERVER mirror of the client hero card (renderHeroSpot/
-// heroTeamNode/heroCentreNode in public-13.32.js) — class-for-class so the
+// heroTeamNode/heroCentreNode in public-13.37.js) — class-for-class so the
 // no-JS first paint looks native and the client re-render is seamless. The
 // output fills #heroSpot INSIDE the static card anchor (public.ts) — that
 // anchor is the ONE real link to the match page (R-02, A-01/A-02).
-const HERO_CLOCK_SVG = '<svg viewBox="0 0 28 28" width="26" height="26" aria-hidden="true" focusable="false"><circle cx="14" cy="14" r="11" fill="#FFFFFF" stroke="var(--ss-cyan)" stroke-width="2.4"/><path d="M14 8.2v6l4 2.4" fill="none" stroke="#02266D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const HERO_STADIUM_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><ellipse cx="12" cy="7.5" rx="8" ry="3"/><path d="M4 7.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/><path d="M4 10.6c0 1.6 3.6 2.9 8 2.9s8-1.3 8-2.9"/></svg>';
+// v13.150-hud: the card is the ONE PC-Match frame now — #heroSpot's children
+// are the measured overlay zones (wings / clock pod / date shelf / venue
+// tail; the league block rides ABOVE the canvas via bottom:100%). The old
+// chip/clock + stadium SVGs retire: the frame artwork carries both icons.
 
 // the hero date line: the CLIENT format (fa-IR Intl => Jalali months, e.g.
 // "سه‌شنبه ۲۸ مهر") — the legacy faHeroDate (Gregorian months) stays for the
@@ -195,7 +197,7 @@ export function heroCardHtml(sm: SeoMatch): string {
   let out = "";
   if (m.big) out += '<span class="sr-only">\u0628\u0627\u0632\u06CC \u0645\u0647\u0645</span>';
   out += '<div class="hero-grid">';
-  out += heroTeamHtml(m.homeTeam, T.heroHome, false);
+  out += heroTeamHtml(m.homeTeam, false);
   // row 1 — league
   out += '<div class="hero-league"><span class="league-icon">';
   out += (m.competition && m.competition.emblem)
@@ -212,21 +214,23 @@ export function heroCardHtml(sm: SeoMatch): string {
     if (live && m.minute != null) time += '<span class="lmin hero-min">' + toFaDigits(String(m.minute)) + "\u02B9</span>";
   } else if (m.utcDate && !post) {
     if (started) time += statePill("به‌زودی", true);
-    else time += '<span class="time-glow"><span class="time-chip"><span class="time-fill">' + HERO_CLOCK_SVG + '<span class="time-digits" dir="ltr">' + esc(faTime(m.utcDate)) + "</span></span></span></span>";
+    else time += '<span class="time-digits" dir="ltr">' + esc(faTime(m.utcDate)) + "</span>";
   }
   time += "</div>";
   out += time;
   // row 3 — date (Jalali, mirroring the client fmtHeroDate)
   if (m.utcDate) out += '<div class="hero-date"><span class="date-main">' + esc(faHeroDateJalali(m.utcDate)) + '</span><span class="date-tz">به وقت تهران</span></div>';
   // row 4 — venue
-  if (m.venue) out += '<div class="hero-venue"><span class="venue-pill">' + HERO_STADIUM_SVG + "<span>" + esc(m.venueFa || m.venue) + "</span></span></div>";
-  out += heroTeamHtml(m.awayTeam, T.heroAway, true);
+  if (m.venue) out += '<div class="hero-venue"><span class="venue-pill">' + esc(m.venueFa || m.venue) + "</span></div>";
+  out += heroTeamHtml(m.awayTeam, true);
   out += "</div>";
   return out;
 }
 
-function heroTeamHtml(t: any, role: string, away: boolean): string {
-  return '<div class="hero-team ' + (away ? "team-away" : "team-home") + '"><span class="team-crest">' + logoHtml(t) + '</span><div class="hero-name">' + nameHtml(displayName(t)) + '</div><span class="hero-role">' + esc(role) + '</span></div>';
+function heroTeamHtml(t: any, away: boolean): string {
+  // v13.150-hud: the .hero-role tag retires — the visual reference shows
+  // crest + name only in the wings
+  return '<div class="hero-team ' + (away ? "team-away" : "team-home") + '"><span class="team-crest">' + logoHtml(t) + '</span><div class="hero-name">' + nameHtml(displayName(t)) + '</div></div>';
 }
 
 // The spotitem anatomy (hero / big-matches / week / ucl boxes).

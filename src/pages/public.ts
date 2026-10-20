@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.50.css">
+<link rel="stylesheet" href="/public-13.51.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -166,68 +166,62 @@ ${FONT_FACES_STYLE}
      regex scans raw HTML). -->
 <div class="hero-player hero-player--cinematic player-home" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"></div>
 <div class="hero-player hero-player--cinematic player-away" aria-hidden="true"><img alt="" referrerpolicy="no-referrer"></div>
-<!-- the glass card: ONE real link to the match page wraps the grid;
+<!-- the match card: ONE real link to the match page wraps the whole HUD;
      renderHeroSpot paints #heroSpot (class-for-class with the server
-     mirror so the client re-render is seamless). -->
+     mirror so the client re-render is seamless).
+     v13.150-hud (owner): the previous THREE artworks (the wide card frame
+     PNG, the match-time chip PNG and the countdown panel PNG) are RETIRED —
+     the whole HUD is now ONE supplied frame: /ui/sportsignal-pc-match-hud.png
+     (1000×406: wings + clock pod + date shelf + three countdown pockets +
+     venue tail, the clock/stadium icons BAKED IN). The card renders the
+     frame at its exact 1000:406 aspect and the content is a stack of
+     absolutely-positioned overlay zones measured from the artwork's pixels
+     (hud-visual-reference.png: crest+name wings, time in the clock pod,
+     DAYS/HOURS/MINUTES in the pockets, venue in the tail, league block
+     above the frame). -->
 <a class="hero-card" id="bigHeroCard" style="display:none" href="#">
-<!-- v13.129-hudframe: the supplied futuristic HUD PNG — absolute visual
-     layer BEHIND all content (pointer-events:none, decorative only; its RGBA
-     glow halo must not be clipped, so nothing here may clip the card). It
-     rides as a static sibling BEFORE #heroSpot so the client-side
-     renderHeroSpot rebuild (which rewrites only #heroSpot's innerHTML)
-     never removes it. -->
-<img class="card-hud" src="/ui/sportsignal-hud-matches-hero.png" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
-<div id="heroSpot">__SEO_HERO__</div>
-</a>
-<!-- the countdown panel — a four-unit digital clock driven by updateBigBar
-     every second. Only the digit nodes change; the unit labels ride data-i
-     (translated on language switch). The __SEO_HC*__ placeholders are
-     filled server-side from the hero kickoff at render time (honest for
-     no-JS visitors; the client corrects them on load). #hcSr is the
-     screen-reader summary — polite, refreshed only when the remaining
-     MINUTE changes. The 24h progress track stays in the contract as a
-     polite sr-only progressbar (no visible bar in the reference design).
-     v13.145-countdown (owner): the panel rides the SUPPLIED HUD artwork
-     /ui/sportsignal-countdown-bg.png (474×204 stadium capsule, exactly as
-     shipped — no CSS recreation of the frame). .count-inner retires with
-     the old CSS panel: the head row, the tiles, #hcSr and the sr-only
-     track are now DIRECT children of #bigbar (the updateBigBar contract —
-     ids, dir=ltr order, data-i labels — is untouched).
-     v13.146-compact (owner): the panel halves (clamp 460/324 → 230/162 —
-     every fixed-px value inside halves with the canvas) and the artwork
-     fades 20% (.hero-count::before at opacity .8) — CSS-only, the markup
-     and the ids/contract are untouched.
-     v13.147-syncdate (owner): +20% on top of the compact result (clamp
-     194.4/276, every fixed-px value ×1.2) and the artwork fades another
-     20% (::before .8 → .64) — CSS-only again; the caption below reads
-     تاریخ به‌روزرسانی (i18n lastUpd — core-13.13.js + markup.ts). -->
-<div id="bigbar" class="hero-count">
-<div class="count-head"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="14"/><line x1="15" x2="15" y1="11" y2="18"/><path d="M8.5 4.5a8.5 8.5 0 1 0 12.6 5.8"/></svg><span id="bigbarLabel" class="count-label" data-i="barNext">تا بازی بزرگ بعدی</span></div>
-<div class="count-tiles" role="timer" dir="ltr">
-<span class="count-tile"><b class="count-num" id="hcD">__SEO_HCD__</b><i class="count-unit" data-i="uDay">روز</i></span>
-<span class="count-tile"><b class="count-num" id="hcH">__SEO_HCH__</b><i class="count-unit" data-i="uHour">ساعت</i></span>
-<span class="count-tile"><b class="count-num" id="hcM">__SEO_HCM__</b><i class="count-unit" data-i="uMin">دقیقه</i></span>
-<span class="count-tile"><b class="count-num" id="hcS">__SEO_HCS__</b><i class="count-unit" data-i="uSec">ثانیه</i></span>
+<!-- the supplied PC-Match HUD frame — absolute visual layer BEHIND all
+     content (pointer-events:none, decorative only; its RGBA glow halo must
+     not be clipped, so nothing here may clip the card). It rides as a
+     static sibling BEFORE #heroSpot so the client-side renderHeroSpot
+     rebuild (which rewrites only #heroSpot's innerHTML) never removes it. -->
+<img class="card-hud" src="/ui/sportsignal-pc-match-hud.png" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
+<!-- v13.150-hud: the countdown cells — a STATIC layer over the artwork's
+     three pockets, driven by updateBigBar every second (same #hcD/#hcH/#hcM
+     ids and data-i labels as the old #bigbar tiles; the seconds tile
+     retires with the old panel — the frame has exactly three pockets).
+     Label rides ABOVE the number per the visual reference. Static inside
+     the card anchor so renderHeroSpot never rebuilds it. The __SEO_HC*__
+     placeholders are filled server-side from the hero kickoff at render
+     time (honest for no-JS visitors; the client corrects them on load);
+     the router ships the layer hidden for non-upcoming heroes and
+     updateBigBar keeps the same rule every tick. #hcSr + the sr-only 24h
+     progress track keep their ids (a11y contract untouched). -->
+<div class="hud-cells" role="timer" dir="ltr">
+<span class="count-tile"><i class="count-unit" data-i="uDay">روز</i><b class="count-num" id="hcD">__SEO_HCD__</b></span>
+<span class="count-tile"><i class="count-unit" data-i="uHour">ساعت</i><b class="count-num" id="hcH">__SEO_HCH__</b></span>
+<span class="count-tile"><i class="count-unit" data-i="uMin">دقیقه</i><b class="count-num" id="hcM">__SEO_HCM__</b></span>
 </div>
 <span id="hcSr" class="sr-only" aria-live="polite"></span>
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
-</div>
+<div id="heroSpot">__SEO_HERO__</div>
+</a>
+<!-- v13.150-hud: the old #bigbar countdown PANEL (head row + four tiles on
+     the 474×204 capsule artwork) is RETIRED — the countdown now lives
+     INSIDE the card as the .hud-cells layer over the PC-Match frame's own
+     pockets (the ids/contract moved with it, see the card anchor above).
+     The «تا بازی بزرگ بعدی» head caption retires with the panel — the
+     pockets carry their own روز/ساعت/دقیقه labels per the reference. -->
 <!-- v13.142-cinematic (owner): the "آخرین به‌روزرسانی" line sits BELOW the
-     countdown panel — a SIBLING of #bigbar, NOT part of the chamfered box —
-     on ALL viewports (the refine round had it inside the panel; the owner
-     moved it back out; public-13.45.css; renderSync in public-13.36.js
-     keeps mirroring #lastSync into it).
+     card — a SIBLING of the card, NOT part of it — on ALL viewports
+     (public-13.45.css; renderSync in public-13.36.js keeps mirroring
+     #lastSync into it).
      v13.144-lights (owner): "add آخرین به‌روزرسانی INSTANTLY after this
-     box" — the gap tightens 6px -> 4px (#lastSyncM margin, CSS); still
-     a sibling below the chamfered box, NOT part of it).
-     v13.145-countdown: the box is the artwork canvas now (the supplied
-     HUD artwork, 474/204 aspect) — the caption still reads as instantly
-     after it, 4px below the canvas's glow.
-     v13.146-compact: the canvas halves (clamp 230/162) — the caption
-     still rides 4px below the smaller box, unchanged.
-     v13.147-syncdate: the canvas grows 20% (clamp 194.4/276) and the
-     label reads تاریخ به‌روزرسانی: … (the site's latest-update clock,
-     still 4px below the box). -->
+     box" — the gap tightens 6px -> 4px (#lastSyncM margin, CSS).
+     v13.147-syncdate: the label reads تاریخ به‌روزرسانی: … .
+     v13.149-syncfix: position:relative + z-index:2 (CSS) — it was painted
+     UNDERNEATH the z1 stadium photo, invisible since v13.142.
+     v13.150-hud: still 4px below the card — now below the ONE-frame HUD. -->
 <p class="hero-sync-m" id="lastSyncM" aria-hidden="true">__SEO_SYNC__</p>
 <!-- v13.131-playerpresence: BOTH corner pills are RETIRED (the carousel in
      v13.129, the bell now — owner directive); heroPills() in public-13.36.js
@@ -388,7 +382,7 @@ ${FONT_FACES_STYLE}
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.13.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.36.js" defer><\/script>
+<script src="/public-13.37.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

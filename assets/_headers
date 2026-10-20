@@ -91,7 +91,33 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.149-syncfix: the current pair (13.50.css + 13.36.js + core-13.13.js
+# v13.150-hud: the current pair (13.51.css + 13.37.js + core-13.13.js —
+# CSS+template+JS release: the whole match HUD is now ONE supplied frame,
+# /ui/sportsignal-pc-match-hud.png 1000×406, replacing the wide card frame
+# PNG + the match-time chip PNG + the countdown panel PNG) — immutable
+# under the rename-on-edit rule; retired versions stay pinned below per
+# the retention rule (stale edge HTML <=900s may still reference them).
+# v13.150-hud (owner): the card renders the PC-Match frame at its exact
+# 1000:406 aspect; content = measured absolute overlay zones (crest+name
+# wings, kickoff digits in the clock pod, the Jalali date on the shelf
+# band, THREE countdown pockets with the label ABOVE the number — the
+# seconds tile and the «تا بازی بزرگ بعدی» head caption retire with the
+# old panel — the venue name in the tail, the league block above the
+# frame). The clock + stadium icons are baked into the artwork (the old
+# HERO_CLOCK_ICON/HERO_STADIUM_ICON SVGs retire). #hcD/#hcH/#hcM/#hcSr/
+# #bigbarTrack keep their ids — they now live as a static .hud-cells layer
+# inside the card anchor (#bigbar is gone; updateBigBar hides the layer
+# for non-upcoming heroes). The PNG is content-addressed by name only.
+/public-13.51.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.37.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/ui/sportsignal-pc-match-hud.png
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.149-syncfix (retired under v13.150-hud): the pair (13.50.css + 13.36.js + core-13.13.js
 # — CSS-only release, the JS carries over) — immutable under the
 # rename-on-edit rule; retired versions stay pinned below per the
 # retention rule (stale edge HTML <=900s may still reference them).

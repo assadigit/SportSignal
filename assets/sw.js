@@ -189,6 +189,13 @@
 //              (.18→.198), floodlights .5→.6. Routine evict — stale
 //              HTML may still reference 13.39.css, which stays served
 //              per the retention rule.)
+// v13.150-hud: the whole match HUD is ONE supplied frame now —
+// /ui/sportsignal-pc-match-hud.png (1000x406: wings + clock pod + date
+// shelf + three countdown pockets + venue tail, icons baked in) replaces
+// the card PNG + match-time chip PNG + countdown panel PNG; content =
+// measured overlay zones per hud-visual-reference.png. New immutable
+// pair: /public-13.51.css + /public-13.37.js (heroCentreNode restructure,
+// bare digits/venue, the .hud-cells countdown layer inside the card).
 // Cache name:  sportsignal-v55 (v13.149-syncfix: public-13.49.css→13.50.css
 //              — CSS-only release, core-13.13.js carries over unchanged.
 //              The owner's syncfix round: the تاریخ به‌روزرسانی caption
@@ -220,7 +227,7 @@
 //              (i18n lastUpd relabel). Routine evict — stale HTML may
 //              still reference 13.47.css / core-13.12.js, which stay
 //              served per the retention rule.)
-const CACHE = "sportsignal-v55";
+const CACHE = "sportsignal-v56";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
