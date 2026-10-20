@@ -6,6 +6,35 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.147-syncdate] — 2026-10-20 (countdown +20%, artwork opacity −20% again, caption label تاریخ به‌روزرسانی)
+
+- Owner: "Make it 20% bigger. also write this : تاریخ به روز رسانی ......
+  so it shows the latest update of just just below the container of
+  countdown. Reduce the opacity of countdown picture png by 20%."
+- The countdown grows 20% on top of the compact result: --ss-countdown-w
+  clamp(162px,15.5vw,230px) → clamp(194.4px,18.6vw,276px) (desktop
+  230×99 → 276×119; 375px phones 162×70 → 194×84) with EVERY fixed-px
+  value inside the panel scaling ×1.2 so the composition stays
+  proportional — .count-num clamp(7.5px,6.6cqi,15px) →
+  clamp(9px,6.6cqi,18px) (9.5px → 11.4px fallback), .count-unit
+  clamp(4.25px,2.7cqi,5.75px) → clamp(5.1px,2.7cqi,6.9px) (4.5px → 5.4px),
+  .count-head 5/6.5px → 6/7.8px, head icon 5.5/8px → 6.6/9.6px, tiles gap
+  3 → 3.6px, tile padding 3px 1px → 3.6px 1.2px, tile gap 1.5 → 1.8px,
+  chamfer 2.5 → 3px, lime tick 6×1px → 7.2×1.2px (glow 3 → 3.6px). The
+  measured % geometry and the 474/204 aspect are untouched.
+- The HUD artwork fades another 20%: .hero-count::before opacity .8 →
+  .64 (.8 × .8 across the two rounds) — still its own layer, so only the
+  artwork dims; the digits/labels keep full contrast.
+- The caption below the countdown relabels to تاریخ به‌روزرسانی: … (was
+  آخرین به‌روزرسانی) — the site's latest-update clock, still #lastSyncM,
+  4px below the artwork canvas on all viewports. The label lives in the
+  i18n lastUpd dict: core-13.12.js → core-13.13.js (rename-on-edit; FA +
+  EN "Update date") + the markup.ts server fill (lastUpdatedHtml) — the
+  renderSync mirror, the cached-suffix format and the PF-08 zero-height-
+  change handover are untouched.
+- Release: public-13.47.css → 13.48.css, core-13.12.js → core-13.13.js
+  (admin + login pages follow the core rename), SW v52 → v53.
+
 ## [13.146-compact] — 2026-10-20 (countdown −50%, artwork opacity −20%)
 
 - Owner: "reduce the size of countdown by 50%. also reduce the opacity of

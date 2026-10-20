@@ -404,7 +404,10 @@ export function lastUpdatedHtml(fetchedAt: string | null): string {
   const hh = parseInt(String(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, timeZone: SEO.DISPLAY_TZ }).format(new Date(fetchedAt))), 10) || 0;
   const per = (hh < 5 || hh >= 19) ? "شب" : (hh < 12 ? "صبح" : (hh < 16 ? "ظهر" : "عصر"));
   const wd = new Intl.DateTimeFormat("fa-IR", { weekday: "long", timeZone: SEO.DISPLAY_TZ }).format(new Date(fetchedAt));
-  return "آخرین به‌روزرسانی: " + timeEl(fetchedAt, wd + " " + t + " " + per);
+  // v13.147-syncdate (owner): the caption below the countdown reads
+  // تاریخ به‌روزرسانی (was آخرین به‌روزرسانی) — EXACTLY the client's
+  // renderSync() one-line format still (fmtStamp + lastUpd, core-13.13.js).
+  return "تاریخ به‌روزرسانی: " + timeEl(fetchedAt, wd + " " + t + " " + per);
 }
 
 // Breadcrumbs (P-17) — visible trail + BreadcrumbList source of truth.

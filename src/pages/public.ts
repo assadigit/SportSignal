@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.47.css">
+<link rel="stylesheet" href="/public-13.48.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -196,7 +196,11 @@ ${FONT_FACES_STYLE}
      v13.146-compact (owner): the panel halves (clamp 460/324 → 230/162 —
      every fixed-px value inside halves with the canvas) and the artwork
      fades 20% (.hero-count::before at opacity .8) — CSS-only, the markup
-     and the ids/contract are untouched. -->
+     and the ids/contract are untouched.
+     v13.147-syncdate (owner): +20% on top of the compact result (clamp
+     194.4/276, every fixed-px value ×1.2) and the artwork fades another
+     20% (::before .8 → .64) — CSS-only again; the caption below reads
+     تاریخ به‌روزرسانی (i18n lastUpd — core-13.13.js + markup.ts). -->
 <div id="bigbar" class="hero-count">
 <div class="count-head"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="14"/><line x1="15" x2="15" y1="11" y2="18"/><path d="M8.5 4.5a8.5 8.5 0 1 0 12.6 5.8"/></svg><span id="bigbarLabel" class="count-label" data-i="barNext">تا بازی بزرگ بعدی</span></div>
 <div class="count-tiles" role="timer" dir="ltr">
@@ -220,7 +224,10 @@ ${FONT_FACES_STYLE}
      HUD artwork, 474/204 aspect) — the caption still reads as instantly
      after it, 4px below the canvas's glow.
      v13.146-compact: the canvas halves (clamp 230/162) — the caption
-     still rides 4px below the smaller box, unchanged. -->
+     still rides 4px below the smaller box, unchanged.
+     v13.147-syncdate: the canvas grows 20% (clamp 194.4/276) and the
+     label reads تاریخ به‌روزرسانی: … (the site's latest-update clock,
+     still 4px below the box). -->
 <p class="hero-sync-m" id="lastSyncM" aria-hidden="true">__SEO_SYNC__</p>
 <!-- v13.131-playerpresence: BOTH corner pills are RETIRED (the carousel in
      v13.129, the bell now — owner directive); heroPills() in public-13.36.js
@@ -379,7 +386,7 @@ ${FONT_FACES_STYLE}
      string so the language toggle updates it. -->
 <a id="tgFab" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram" data-promo="\u0628\u0631\u0627\u06CC \u062F\u0633\u062A \u0646\u062F\u0627\u062F\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645\u060C \u0628\u0647 \u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645 \u0628\u067E\u06CC\u0648\u0646\u062F\u06CC\u062F \u2728"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="#fff" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg></a>
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
-<script src="/core-13.12.js" defer><\/script>
+<script src="/core-13.13.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
 <script src="/public-13.36.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin

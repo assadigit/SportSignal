@@ -189,15 +189,15 @@
 //              (.18→.198), floodlights .5→.6. Routine evict — stale
 //              HTML may still reference 13.39.css, which stays served
 //              per the retention rule.)
-// Cache name:  sportsignal-v52 (v13.146-compact: public-13.46.css→13.47.css
-//              — the countdown halves (clamp 460/324 → 230/162; every
-//              fixed-px value inside the panel halves with the canvas) and
-//              the HUD artwork fades 20% (its own .hero-count::before
-//              layer at opacity .8 — only the artwork dims, never the
-//              digits). CSS-only round; #bigbar keeps its ids/contract.
-//              Routine evict — stale HTML may still reference 13.46.css,
-//              which stays served per the retention rule.)
-const CACHE = "sportsignal-v52";
+// Cache name:  sportsignal-v53 (v13.147-syncdate: public-13.47.css→13.48.css
+//              + core-13.12.js→core-13.13.js — the countdown grows 20%
+//              (clamp 162/230 → 194.4/276, every fixed-px value ×1.2),
+//              the HUD artwork fades another 20% (::before .8 → .64),
+//              and the caption below the panel reads تاریخ به‌روزرسانی
+//              (i18n lastUpd relabel). Routine evict — stale HTML may
+//              still reference 13.47.css / core-13.12.js, which stay
+//              served per the retention rule.)
+const CACHE = "sportsignal-v53";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

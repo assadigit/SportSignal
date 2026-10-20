@@ -64,6 +64,12 @@
 # tables in the side bar, softer میزبان/میهمان, no players on mobile) — same
 # retention rule: the retired pair stays pinned through one 900s edge-HTML
 # window.
+# v13.147-syncdate: core-13.13.js is the current core (the i18n lastUpd
+# label reads تاریخ به‌روزرسانی / Update date); 13.12 stays pinned below
+# through one SEO TTL per the retention rule.
+/core-13.13.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /core-13.12.js
   Cache-Control: public, max-age=31536000, immutable
 
@@ -85,10 +91,21 @@
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.146-compact: the current pair (13.47.css + 13.36.js — CSS-only
-# release, the JS carries over) — immutable under the rename-on-edit rule;
+# v13.147-syncdate: the current pair (13.48.css + 13.36.js + core-13.13.js
+# — CSS + core-dict release) — immutable under the rename-on-edit rule;
 # retired versions stay pinned below per the retention rule (stale edge
 # HTML <=900s may still reference them).
+# v13.147-syncdate (owner): (1) the countdown grows 20% on top of the
+# compact result (clamp 162/230 → 194.4/276 — every fixed-px value inside
+# the panel scales ×1.2 with the canvas); (2) the HUD artwork fades
+# another 20% (.hero-count::before opacity .8 → .64); (3) the caption
+# below the panel reads تاریخ به‌روزرسانی (i18n lastUpd — the
+# core-13.12.js → core-13.13.js rename-on-edit + the markup.ts server
+# fill; the #lastSyncM contract and 4px gap are untouched).
+/public-13.48.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.146-compact (retired under v13.147-syncdate): the pair (13.47.css + 13.36.js — CSS-only
 # v13.146-compact (owner): the countdown halves (clamp 460/324 → 230/162;
 # every fixed-px value inside the panel halves with the canvas — type
 # clamps, gaps, paddings, chamfer, lime tick) and the HUD artwork backs
