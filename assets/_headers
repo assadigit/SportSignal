@@ -113,6 +113,27 @@
 # cast that stays feathered (no hard edges); every other hero-depth contract
 # untouched. The retired 13.56.css stays pinned below per the retention rule
 # (stale edge HTML <=900s may still reference it).
+# v13.158-pngshadow (the owner's black-line/rectangle fix, round 2): the
+# owner reported live v13.157 as "a black line and rectangle instead" —
+# the --ss-cast-* drop-shadow ON the .hero-player--cinematic WRAPPER was
+# pixel-perfect in Chromium (sandbox + production, VLM-verified silhouette)
+# but filter() on a container wrapping a masked + clip-path'ed child is
+# ENGINE-FRAGILE (the ancestor filter re-rasterizes the child's mask/clip
+# during offscreen compositing — the classic WebKit-class failure), and
+# the wrapper's own clip-path inset(-32px) hard-cut the cast's inward tail
+# at the 32px tuck line in every engine. Per the owner's own direction —
+# "cast shadow on the PNG picture object itself" — the shadow is now A
+# SECOND COPY OF THE PNG (img.hero-cast, first child of each lane
+# wrapper): filter:brightness(0) blur(clamp(20px,1.9vw,38px)) +
+# opacity --ss-cast-alpha (.52 dark / .45 light) + the lane-split
+# translate toward the card (+X home / −X away by PHYSICAL lane),
+# inheriting the figure's geometry/anchoring/feet-fade mask with
+# mask-clip:no-clip; heroArt() (public-13.42.js) fills figure + copy from
+# the same heroArtFor entry; the wrapper filter rules RETIRE and the lane
+# wrapper clip-path inward bound widens 32→120px so the copy's blur
+# fringe never meets a hard cut. Immutable under the rename-on-edit rule;
+# the retired pair (13.58.css + 13.41.js) stays pinned below per the
+# retention rule (stale edge HTML <=900s may still reference it).
 # v13.157-shadowfix (the owner's rectangle-shadow fix): the projected
 # player-shadow plane (v13.155/.156) RETIRED — its blackened portrait
 # copies carried the fg figure's feet-fade mask, whose default
@@ -133,6 +154,12 @@
 # public.ts template. Immutable under the rename-on-edit rule; the
 # retired pair (13.57.css + 13.40.js) stays pinned below per the
 # retention rule (stale edge HTML <=900s may still reference it).
+/public-13.59.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.42.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.58.css
   Cache-Control: public, max-age=31536000, immutable
 

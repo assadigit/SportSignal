@@ -5,6 +5,24 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v64 (v13.158-pngshadow: bumped from v63 — routine
+//              evict for this release's public-13.58.css→13.59.css +
+//              public-13.41.js→13.42.js renames (the owner reported the
+//              v13.157 wrapper cast as "a black line and rectangle" —
+//              filter() on a container wrapping a masked + clip-path'ed
+//              child is engine-fragile; per the owner's own direction the
+//              shadow is now A SECOND COPY OF THE PNG ITSELF — img.hero-cast,
+//              first child of each lane wrapper, brightness(0) + blur + the
+//              lane-split translate toward the card, inheriting the figure's
+//              geometry/anchoring/feet-fade mask with mask-clip:no-clip;
+//              heroArt fills figure + copy from the same heroArtFor entry;
+//              the v13.157 wrapper drop-shadow rules RETIRE and the lane
+//              wrapper clip-path inward bound widens 32→120px so the copy's
+//              blur fringe never meets a hard cut); stale HTML may still
+//              reference the retired 13.58.css/13.41.js pair, which stays
+//              served per the retention rule — cache-first assets can't
+//              refresh without a rename or a bump, the v13.39 rule: every
+//              asset-editing release bumps.)
 // Cache name:  sportsignal-v63 (v13.157-shadowfix: bumped from v62 — routine
 //              evict for this release's public-13.57.css→13.58.css +
 //              public-13.40.js→13.41.js renames (the owner's rectangle-
@@ -300,7 +318,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v63";
+const CACHE = "sportsignal-v64";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

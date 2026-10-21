@@ -6,6 +6,76 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.158-pngshadow] — 2026-10-21 (the owner's black-line/rectangle fix, round 2 — the shadow becomes the PNG object itself)
+
+- Owner (on live v13.157): "The method didnt work and casted a black
+  line and rectangle instead. Can't you just cast shadow on the PNG
+  picture object itself?" The v13.157 wrapper drop-shadow had measured
+  and VLM-verified as an organic silhouette in Chromium (sandbox AND
+  production: 78,557 toggle-verified pixels, contour variation
+  13.5–141.7px std, head/shoulder/arm contours at 8/10 softness), so
+  the failure is a rendering-engine difference, not a parameter
+  mistake: filter() on a CONTAINER wrapping a masked + clip-path'ed
+  child is engine-fragile (the ancestor filter re-rasterizes the
+  child's mask/clip during offscreen compositing — the classic
+  WebKit-class failure mode), and independently the wrapper's own
+  clip-path inset(-32px) hard-cut the cast's inward tail at the 32px
+  tuck line in EVERY engine (the v13.157 QA's flank cluster ended
+  exactly at that clip). An owner browser that mishandles the
+  ancestor-filter compositing sees the lane box as a black rectangle,
+  with the clip line reading as the black line.
+- THE FIX (the owner's own direction, literally): the projected shadow
+  is now A SECOND COPY OF THE PLAYER'S OWN PNG — img.hero-cast, the
+  FIRST child of each .hero-player lane wrapper (DOM order = behind
+  the figure), filled by heroArt() from the SAME heroArtFor entry
+  (one source of truth, zero extra network — the URL is already
+  fetched for the figure). filter:brightness(0) flattens the copy to
+  pure black while preserving the PNG's alpha, so the shadow IS the
+  player's silhouette BY CONSTRUCTION; blur(clamp(20px,1.9vw,38px))
+  softens it; opacity var(--ss-cast-alpha) (.52 dark / .45 light)
+  weights it; the lane-split translate() casts it toward the card
+  (+X home / −X away, PHYSICAL lanes, dir-agnostic — the direction
+  contract). The copy inherits the figure's exact geometry, anchoring
+  and feet-fade mask from the .hero-player img base + lane rules, so
+  the silhouette lands exactly under its source and melts at the
+  floor with the figure; mask-clip:no-clip (-webkit- prefixed twin
+  included) keeps the blur fringe from being cropped to the img
+  element's box — the v13.156 rectangle lesson (browsers without
+  no-clip degrade to a fringe cut at the img box, which the
+  contain-fit side margins hide — the cast img box is wider than the
+  silhouette by ~90px per side at 1920). Every primitive involved —
+  img filter, img mask, transform translate — is the most
+  widely-deployed CSS-filter pattern in existence; nothing composites
+  a child's mask from an ancestor anymore, so no engine can regress
+  the layer into a rectangle or a line.
+- Consequential edits: the v13.157 WRAPPER drop-shadow rules RETIRE
+  from the CSS (post-mortem comment block where they lived); the lane
+  wrapper clip-path inward bound widens 32px → 120px (home right /
+  away left) so the cast copy's blur fringe never meets a hard cut —
+  the figure's own geometry is untouched (its img box can never
+  exceed 32px past the lane edge: max-width calc(100% + 32px) + the
+  inner-edge anchor, so the wider bound changes nothing for the
+  approved figure rendering); --ss-cast-color retires in favor of
+  --ss-cast-alpha (brightness(0) yields near-black; the light theme
+  takes .45); the figure filter chains (grade/separation/rim/halo),
+  the hud-depth overlay, the particles and every other hero-depth
+  contract are untouched.
+- Release mechanics: public-13.58.css→13.59.css +
+  public-13.41.js→13.42.js (rename-on-edit; the retired pair stays
+  served + pinned per the retention rule), SW v63→v64, VERSION
+  13.158-pngshadow, package 13.158.0.0, _headers gains the new pair's
+  immutable pins, check-stats pins rewritten (homepage/shell refs,
+  the headers chain incl. the new live pair, SW v64, the template
+  player-slot pin now expecting the cast+figure img pair per wrapper,
+  the heroArt put() pin asserting the img:not(.hero-cast) figure
+  query + the .hero-cast copy fill/clear, the NEW cast-copy CSS pin
+  asserting the lane-split rules + tokens + mask-clip:no-clip + the
+  −120px clip bound + the full retirement of the v13.157 wrapper
+  filter), admin-parity re-frozen (public-page baseline: the +2 cast
+  imgs), hero-coverage regenerated (bundle ref only, 33 wired).
+
+---
+
 ## [13.157-shadowfix] — 2026-10-21 (the owner's rectangle-shadow fix)
 
 - Owner: "There is a shadow but it's a weird … a rectangle shape casted
