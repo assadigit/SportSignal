@@ -467,7 +467,7 @@ export function lastUpdatedHtml(fetchedAt: string | null): string {
   // renderSync() one-line format still (fmtStamp + lastUpd, core-13.13.js).
   // v13.161-tzstamp (owner): the parenthetical zone note — «چهارشنبه ۱۵:۲۰
   // ظهر (تهران 3:30 GMT)», the owner's literal example. The client's
-  // fmtStamp()/tzStamp() (public-13.45.js) renders the SAME shape from the
+  // fmtStamp()/tzStamp() (public-13.46.js) renders the SAME shape from the
   // user's SELECTED zone (ss_tz cookie), so the JS handover stays
   // height-neutral; the server always stamps Tehran (DISPLAY_TZ) — the
   // default zone for no-JS visitors. Plain string, no LRM guards: the

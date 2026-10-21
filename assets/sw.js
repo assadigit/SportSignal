@@ -307,6 +307,26 @@
 //              (i18n lastUpd relabel). Routine evict — stale HTML may
 //              still reference 13.47.css / core-13.12.js, which stay
 //              served per the retention rule.)
+// Cache name:  sportsignal-v68 (v13.162-heropair: bumped from v67 — the
+//              owner's Chelsea + Tottenham round: «Investigate why chelsea
+//              and tottenham doesnt have hero player pictures. if not
+//              available. fetch and scrap them.» Root cause: HERO_ART was
+//              scoped to the 2026/27 UCL 36-club roster and both PL giants
+//              sat outside it (UEFA publishes no transparent cutoff for
+//              either player — bounded 404 sweep re-verified 2026-10-19);
+//              their portraits already lived UNWIRED in the 96-club big-5
+//              hero MVP library (league-official premierleague.com headshot
+//              cards, spec §8b). Fix: both wired — 2 new alpha-trimmed
+//              hero canvases (365×464 / 366×464, the standard subject box)
+//              + 2 pre-baked .cast.webp shadows (35 total, all 33 prior
+//              casts byte-identical under the deterministic bake), kit
+//              VLM-verified (João Pedro: Chelsea blue/lion crest/Nike;
+//              Maddison: Spurs white/cockerel crest/AIA), uniform
+//              bright-to-bottom so the default fade ramp carries both
+//              (no custom tier). This release renames the bundle
+//              public-13.45.js->13.46.js (CSS pair unchanged:
+//              13.62.css); stale HTML may still reference the retired
+//              13.45.js, which stays served per the retention rule.)
 // Cache name:  sportsignal-v67 (v13.161-tzstamp: bumped from v66 — the
 //              owner's two-item round: (1) the sync line («تاریخ
 //              به‌روزرسانی: …») carries the display zone + GMT offset in
@@ -361,7 +381,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v67";
+const CACHE = "sportsignal-v68";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

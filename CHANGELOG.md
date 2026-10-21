@@ -6,6 +6,82 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.162] — 2026-10-22 — v13.162-heropair (owner): Chelsea FC + Tottenham Hotspur FC join HERO_ART — the two Premier League giants get their hero player pictures
+
+**The owner's ask:** «Investigate why chelsea and tottenham doesnt have
+hero player pictures. if not available. fetch and scrap them.»
+
+**The investigation (root cause — both portraits already existed,
+UNWIRED):** HERO_ART's display scope was the 2026/27 UCL 36-club roster
+(33 wired after the documented deferrals/exclusions), and both PL giants
+sit OUTSIDE it this season — so their fixtures rendered the crest-only
+fallback (by design: the empty-mapping fallback is a tested state, no
+broken <img>, no CLS). Their portraits were NOT missing: the 96-club
+big-5 hero MVP library (docs §7b, assets/players/uefa/manifest-heroes.json)
+had already fetched, normalized and validated both —
+João Pedro Junqueira de Jesus (Chelsea FC) and James Maddison
+(Tottenham Hotspur FC) — as league-official premierleague.com headshot
+cards (transparent PNG, 2026/27 season, spec §8b alt-source route: UEFA
+itself publishes NO transparent cutoff for either player — the bounded
+404 sweep across UECL/UEL/NT competition segments is recorded in
+roster-heroes.json no_asset, re-verified 2026-10-19). Wiring was an
+owner-gated display decision (README §4); this release is that decision.
+
+**The wiring (public-13.45.js→13.46.js, rename-on-edit):** two new
+HERO_ART entries — "Chelsea FC" and "Tottenham Hotspur FC" (the EXACT
+football-data.org provider names; FD team ids 61/73 verified against the
+live API this round) — pointing at two NEW alpha-trimmed hero canvases
+built by the standard v13.131 rule (alpha-bbox threshold 8 + 2px pad,
+lossless webp): joao-pedro-junqueira-de-jesus.webp 365×464 and
+james-maddison.webp 366×464, both the standard 464px subject box (460 +
+2×2 pad), generated from the manifest-pinned uefa originals. Kit
+VLM-verified 2026-10-22 BEFORE wiring (the §3 owner rule "no kit
+mismatch allowed"): João Pedro — royal blue Chelsea shirt, lion crest,
+yellow Nike swoosh; Maddison — white Spurs shirt, cockerel crest, AIA
+sponsor, navy Nike swoosh. Fade tier: the v13.123 bottom-region
+luminance scan runs clean on both — bright content extends uniformly to
+99.4% of the canvas height with max adjacent-row steps of 6 (João
+Pedro) / 15 (Maddison) — far under the custom-tier thresholds (Yamal's
+step 106 @ 88% → "hi"; Šimić's bright-ends-69.5% → "deep") — so both
+ship the DEFAULT fade ramp, no fade field. Casts:
+make-hero-casts.js regenerates ALL 35 — the 33 existing .cast.webp
+files are byte-identical under the deterministic bake (md5-verified
+before/after), only the 2 new casts land (17.4KB / 18.1KB).
+
+**Coverage bookkeeping:** src/hero-coverage.ts regenerated — 35 wired
+(was 33), 76 library-only (was 78); Chelsea + Tottenham carry their
+library annotations (player + league) so heroTeamArt()/heroLibraryFor()
+resolve and the runtime hero-gap detector stops flagging them.
+
+Release: public-13.45.js→13.46.js only (the CSS pair 13.62.css carries
+over unchanged — the figures/casts ride the existing lane rules), SW
+v67→v68, VERSION 13.162-heropair, package 13.162.0.0, _headers gains
+the 13.46.js immutable pin (13.45.js stays pinned one SEO TTL),
+admin-parity re-frozen (the public-page baseline 41387B — the intended
+diff is the script-ref digit + its design-history comment), check-stats
+pins rewritten (js20 → 13.46.js, the homepage ref pin, the headers
+chain, SW v68, HERO_ART count 33→35 with the two new key-presence
+assertions, the alt-count 33→35).
+
+QA (wrangler dev :8787, KV fixture reseeded with hero = Chelsea FC vs
+Tottenham Hotspur FC): DOM — both lane wrappers .has, figure img
+/players/hero/joao-pedro-junqueira-de-jesus.webp (home, physical LEFT
+lane x0) + /players/hero/james-maddison.webp (away, RIGHT lane x1420),
+both .hero-cast imgs carry the new .cast.webp srcs; league logo
+/leagues/premier-league.webp rides the frame rim (the LGL code map
+resolves PL automatically); names چلسی/تاتنهام; sync line still stamps
+the v13.161 zone+GMT parenthetical. Cast A/B pixel proof (tickers
+static, visibility toggled): 188,698 toggle-verified px — left flank
+95,005 px luminance 98.7→79.3 (−19.3), right flank 93,693 px
+104.5→88.0 (−16.5), the CARD/content zone 0.00 px delta (no overlap);
+flank-crop VLM: the left cast reads as "a soft, blurred, darkened
+shadow… natural soft shadow rather than a hard rectangle"; the right
+flank confirms under the comparative on/off side-by-side test (the
+documented reliable method — full-page VLM attention misses 4%-width
+bands). Mobile 375px: both figures retire (display:none) with the
+≤1019px rule. No page errors; sw.js v68 served. Gates: npm test EXIT 0
+(2075 checks).
+
 ## [13.161] — 2026-10-21 — v13.161-tzstamp (owner): the sync line carries the zone + GMT in parentheses, and the match day rides a few px closer to the match time
 
 **1. «Show in parenthesis the time zone and GMT»** (owner's literal example:
