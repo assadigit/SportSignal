@@ -217,10 +217,14 @@
 # example: «چهارشنبه ۱۵:۲۰ ظهر (تهران 3:30 GMT)». Server side
 # (seo/markup.ts lastUpdatedHtml + displayTzGmtOffset) always stamps
 # Tehran (DISPLAY_TZ, shortOffset-honest); client side
-# public-13.46.js (v13.162-heropair: HERO_ART wires Chelsea FC + Tottenham
-# Hotspur — 35 hero portraits, 2 new league-official PL canvases + casts;
-# fmtStamp/tzStamp heritage) and the retired 13.45.js (fmtStamp + the
-# NEW tzStamp/tzOffAt helpers) renders
+# public-13.47.js (v13.163-herohd: the Chelsea + Tottenham hero portraits
+# upgrade to the players' NATIVE UEFA 1080px UCL-25/26 cutoffs — Cole Palmer
+# + Dominic Solanke, downscaled lanczos3 to the 512 library canvas — the
+# owner's quality directive replaced the 220x280 PL headshot upscales;
+# v13.162-heropair heritage: the wiring itself) and the retired 13.46.js
+# (v13.162-heropair: HERO_ART wires Chelsea FC + Tottenham Hotspur — 35 hero
+# portraits, 2 league-official PL canvases + casts; fmtStamp/tzStamp
+# heritage) renders
 # the SAME shape from the user's ss_tz-selected zone — the offset
 # computed AT THE STAMPED INSTANT (DST-honest: Melbourne reads 11:00 in
 # southern summer, 10:00 in winter, always agreeing with the rendered
@@ -238,6 +242,9 @@
 # (13.61.css + 13.44.js) stays pinned below per the retention rule
 # (stale edge HTML <=900s may still reference it).
 /public-13.62.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.47.js
   Cache-Control: public, max-age=31536000, immutable
 
 /public-13.46.js

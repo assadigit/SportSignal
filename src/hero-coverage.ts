@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit by hand.
-// Source of truth #1 (render): HERO_ART in assets/public-13.46.js (the live
+// Source of truth #1 (render): HERO_ART in assets/public-13.47.js (the live
 //   client bundle — assets/hero/players/README.md is the contract).
 // Source of truth #2 (library): assets/players/uefa/hero-clubs.json
 //   (the uefa-player-portraits pipeline's club → MVP portrait map).
@@ -11,13 +11,13 @@
 //   published portrait that is not displayed (wiring = owner decision).
 
 export const HERO_COVERAGE_RAW = {
-  generated_at: "2026-10-21T23:04:55.794Z",
-  bundle: "public-13.46.js",
+  generated_at: "2026-10-21T23:42:23.355Z",
+  bundle: "public-13.47.js",
   wired: [
     { name: "Arsenal FC", src: "/players/hero/bukayo-saka.webp", fade: null, slug: "arsenal-fc", player: "Bukayo Saka", league: "Premier League" },
     { name: "AS Roma", src: "/players/hero/paulo-dybala.webp", fade: null, slug: "as-roma", player: "Paulo Dybala", league: "Serie A" },
     { name: "Borussia Dortmund", src: "/players/hero/serhou-guirassy.webp", fade: null, slug: "borussia-dortmund", player: "Serhou Guirassy", league: "Bundesliga" },
-    { name: "Chelsea FC", src: "/players/hero/joao-pedro-junqueira-de-jesus.webp", fade: null, slug: "chelsea-fc", player: "João Pedro Junqueira de Jesus", league: "Premier League" },
+    { name: "Chelsea FC", src: "/players/hero/cole-palmer.webp", fade: null, slug: "chelsea-fc", player: "Cole Palmer", league: "Premier League" },
     { name: "Club Atlético de Madrid", src: "/players/hero/julian-alvarez.webp", fade: null, slug: "club-atletico-de-madrid", player: "Julián Álvarez", league: "La Liga" },
     { name: "Club Brugge KV", src: "/players/hero/nicolo-tresoldi.webp", fade: null, slug: "club-brugge-kv", player: null, league: null },
     { name: "Como 1907", src: "/players/hero/nico-paz.webp", fade: null, slug: "como-1907", player: "Moise Kean", league: "Serie A" },
@@ -45,7 +45,7 @@ export const HERO_COVERAGE_RAW = {
     { name: "ŠK Slovan Bratislava", src: "/players/hero/andraz-sporar.webp", fade: null, slug: "sk-slovan-bratislava", player: null, league: null },
     { name: "Sporting Clube de Portugal", src: "/players/hero/luis-suarez-colombia.webp", fade: null, slug: "sporting-clube-de-portugal", player: null, league: null },
     { name: "SSC Napoli", src: "/players/hero/scott-mctominay.webp", fade: null, slug: "ssc-napoli", player: "Kevin De Bruyne", league: "Serie A" },
-    { name: "Tottenham Hotspur FC", src: "/players/hero/james-maddison.webp", fade: null, slug: "tottenham-hotspur-fc", player: "James Maddison", league: "Premier League" },
+    { name: "Tottenham Hotspur FC", src: "/players/hero/dominic-solanke.webp", fade: null, slug: "tottenham-hotspur-fc", player: "Dominic Solanke", league: "Premier League" },
     { name: "VfB Stuttgart", src: "/players/hero/deniz-undav.webp", fade: null, slug: "vfb-stuttgart", player: "Bilal El Khannouss", league: "Bundesliga" },
     { name: "Viking FK", src: "/players/hero/zlatko-tripic.webp", fade: null, slug: "viking-fk", player: null, league: null },
     { name: "Villarreal CF", src: "/players/hero/georges-mikautadze.webp", fade: null, slug: "villarreal-cf", player: "Georges Mikautadze", league: "La Liga" },

@@ -10,7 +10,7 @@
 //   rotation deploy resolves the club's open departure event automatically.
 
 export const HERO_CLUB_ALTERNATES_RAW = {
-  generated_at: "2026-10-19T23:40:38.966Z",
+  generated_at: "2026-10-21T23:40:28.593Z",
   clubs: {
   "1-fc-koln": {
     "club": "1. FC Köln",
@@ -706,10 +706,15 @@ export const HERO_CLUB_ALTERNATES_RAW = {
     "club": "Chelsea FC",
     "league": "Premier League",
     "fdTeamId": 61,
-    "active": "João Pedro Junqueira de Jesus",
-    "activeUrl": "/players/clubs/premier-league/chelsea-fc/joao-pedro-junqueira-de-jesus.webp",
+    "active": "Cole Palmer",
+    "activeUrl": "/players/clubs/premier-league/chelsea-fc/cole-palmer.webp",
     "activeStyle": "jersey_photo",
     "candidates": [
+      {
+        "player": "Cole Palmer",
+        "url": "/players/clubs/premier-league/chelsea-fc/cole-palmer.webp",
+        "style": "jersey_photo"
+      },
       {
         "player": "João Pedro Junqueira de Jesus",
         "url": "/players/clubs/premier-league/chelsea-fc/joao-pedro-junqueira-de-jesus.webp",
@@ -2596,10 +2601,15 @@ export const HERO_CLUB_ALTERNATES_RAW = {
     "club": "Tottenham Hotspur FC",
     "league": "Premier League",
     "fdTeamId": 73,
-    "active": "James Maddison",
-    "activeUrl": "/players/clubs/premier-league/tottenham-hotspur-fc/james-maddison.webp",
+    "active": "Dominic Solanke",
+    "activeUrl": "/players/clubs/premier-league/tottenham-hotspur-fc/dominic-solanke.webp",
     "activeStyle": "jersey_photo",
     "candidates": [
+      {
+        "player": "Dominic Solanke",
+        "url": "/players/clubs/premier-league/tottenham-hotspur-fc/dominic-solanke.webp",
+        "style": "jersey_photo"
+      },
       {
         "player": "James Maddison",
         "url": "/players/clubs/premier-league/tottenham-hotspur-fc/james-maddison.webp",

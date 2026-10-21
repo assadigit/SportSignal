@@ -43,11 +43,11 @@
     "chelsea-fc": {
       "club": "Chelsea FC",
       "league": "Premier League",
-      "player": "João Pedro Junqueira de Jesus",
+      "player": "Cole Palmer",
       "status": "complete",
-      "portrait_url": "/players/uefa/joao-pedro-junqueira-de-jesus.webp",
+      "portrait_url": "/players/uefa/cole-palmer.webp",
       "style": "jersey_photo",
-      "uefa_player_id": null,
+      "uefa_player_id": "250124282",
       "canonical_profile_url": null
     },
     "liverpool-fc": {
@@ -203,11 +203,11 @@
     "tottenham-hotspur-fc": {
       "club": "Tottenham Hotspur FC",
       "league": "Premier League",
-      "player": "James Maddison",
+      "player": "Dominic Solanke",
       "status": "complete",
-      "portrait_url": "/players/uefa/james-maddison.webp",
+      "portrait_url": "/players/uefa/dominic-solanke.webp",
       "style": "jersey_photo",
-      "uefa_player_id": null,
+      "uefa_player_id": "250066930",
       "canonical_profile_url": null
     },
     "fc-barcelona": {

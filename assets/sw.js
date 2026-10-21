@@ -307,6 +307,34 @@
 //              (i18n lastUpd relabel). Routine evict — stale HTML may
 //              still reference 13.47.css / core-13.12.js, which stay
 //              served per the retention rule.)
+// Cache name:  sportsignal-v69 (v13.163-herohd: bumped from v68 — the
+//              owner's quality round: «The quality of pictures are too
+//              low, find better quality pictures for tottenham and
+//              chelsea (it doesnt matter if you find one of the best
+//              players of either team) not only the MVP.» The two v13.162
+//              hero portraits were 220x280 premierleague.com headshot
+//              cards upscaled ×1.65 to the 512 canvas (the documented
+//              low-res exception — no larger official PL variant is
+//              served). Both clubs' players DO have native UEFA
+//              1080×1080 transparent cutoffs on the UCL 2025/26 campaign
+//              URLs (the probe gap: the original no_asset sweep never
+//              probed segment 1 / season 2026 — UCL 25/26 was both clubs'
+//              most recent UEFA participation; fetched through the
+//              redeployed uefa-image-relay). The swap: Chelsea → Cole
+//              Palmer (id 250124282 — FD squad + FPL verified current),
+//              Tottenham → Dominic Solanke (id 250066930; Romero,
+//              Vicario and Johnson also carry 1080px cutoffs but all
+//              three are DEPARTED per the FD squad — Romero's UEFA
+//              profile now reads Atleti/UCL 26/27). The 1080px cutoffs
+//              are downscaled lanczos3 to the 512 library canvas
+//              (normalizePortrait — no upscale exception), then the
+//              standard hero trim (345×464 / 298×464) + fresh casts; the
+//              retired joao-pedro/maddison hero canvases + casts stay
+//              served (retention rule: stale HTML + the pinned 13.46.js
+//              still reference them). This release renames the bundle
+//              public-13.46.js→13.47.js (CSS pair 13.62.css unchanged);
+//              stale HTML may still reference the retired 13.46.js, which
+//              stays served per the retention rule.)
 // Cache name:  sportsignal-v68 (v13.162-heropair: bumped from v67 — the
 //              owner's Chelsea + Tottenham round: «Investigate why chelsea
 //              and tottenham doesnt have hero player pictures. if not
@@ -381,7 +409,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v68";
+const CACHE = "sportsignal-v69";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

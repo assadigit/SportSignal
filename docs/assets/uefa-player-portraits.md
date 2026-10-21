@@ -214,6 +214,16 @@ in the roster `no_asset` records. `npm run portraits:heroes` re-runs the
 UEFA pipeline; `node scripts/uefa-player-portraits/alt-fetch.js` re-runs
 the alt-source stage.
 
+**v13.163-herohd update (2026-10-22):** the Chelsea FC + Tottenham
+Hotspur FC hero entries were re-sourced from UEFA cutoffs — the original
+no_asset sweep never probed UCL segment 1 / season 2026 (the UCL 2025/26
+campaign, both clubs' most recent UEFA participation), where native
+1080x1080 transparent cutoffs exist. Chelsea → Cole Palmer
+(250124282), Tottenham → Dominic Solanke (250066930) — both
+FD-squad-verified current (Romero/Vicario/Johnson cutoffs rejected:
+departed). Fetched via the redeployed `uefa-image-relay` worker;
+manifest-heroes.json carries the full per-entry provenance.
+
 ## 8. Repository layout
 
 ```

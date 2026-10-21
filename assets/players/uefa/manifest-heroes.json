@@ -268,57 +268,50 @@
       "roster_index": 4,
       "requested_name": "João Pedro",
       "requested_club_label": "Chelsea FC",
-      "filename": "joao-pedro-junqueira-de-jesus.webp",
-      "chosen_player": "João Pedro Junqueira de Jesus",
+      "filename": "cole-palmer.webp",
+      "chosen_player": "Cole Palmer",
       "status": "complete",
-      "uefa_player_id": null,
+      "uefa_player_id": "250124282",
       "canonical_profile_url": null,
       "identity_evidence": {
-        "uefa_full_name": null,
+        "uefa_full_name": "Cole Palmer",
         "nationality": null,
         "date_of_birth": null,
         "position": null,
-        "disambiguation": "identity anchored by the Premier League platform match: player \"João Pedro Junqueira de Jesus\" on Chelsea FC's official premierleague.com data (2026-10-19)",
-        "external_corroboration": null
+        "disambiguation": "v13.163-herohd swap (owner quality directive 2026-10-22: 'The quality of pictures are too low, find better quality pictures… it doesnt matter if you find one of the best players'): the 220x280 premierleague.com headshot (upscaled x1.65 to the 512 canvas — the documented low-res exception) is replaced by the player's native UEFA 1080x1080 transparent cutoff from the UCL 2025/26 campaign (Chelsea's most recent UEFA participation — the club is outside UEFA competition in 2026/27). Identity anchored by the UEFA player id 250124282 (UEFA Nations League / European Qualifiers England player pages, search-verified 2026-10-22) + CURRENT Chelsea squad membership verified on football-data.org /v4/teams/61 (the transfer-watch source) and the 2026/27 FPL squad (38 pts).",
+        "external_corroboration": "FD squad list + FPL bootstrap-static, both fetched 2026-10-22"
       },
-      "observed_uefa_club": null,
-      "source_image_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/475168.png",
-      "source_asset_season": "2026/27",
-      "source_competition": "Premier League (league-official media)",
-      "alt_source": {
-        "platform": "premierleague.com",
-        "platform_player_ref": "fpl photo id 475168 (João Pedro Junqueira de Jesus, Chelsea)",
-        "crop_top_fraction": 0,
-        "allow_upscale": true,
-        "note": "220x280 official PL headshot card (transparent PNG) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)"
-      },
-      "fetched_at": "2026-10-19T12:09:39.322Z",
-      "source_width": 220,
-      "source_height": 280,
+      "observed_uefa_club": "Chelsea",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2026/cutoff/250124282.webp",
+      "source_asset_season": "2025/26",
+      "source_competition": "UEFA Champions League (club competitions media)",
+      "fetched_at": "2026-10-21T23:40:24.414Z",
+      "source_width": 1080,
+      "source_height": 1080,
       "source_has_alpha": true,
-      "source_sha256": "ba0f31850f874352223695aaf1b3fddf52098f34186aed49633bc6a9832eed09",
-      "download_transport": "direct (league-official platform)",
+      "source_sha256": "fe8b4870206f32e3b0ebd6f23445f3c48ba02a95daf78629eb51085ff5bb7f64",
+      "download_transport": "relay (self-hosted uefa-image-relay workers.dev, the documented restricted-network route)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "ec62ea4bebbba69fb3731b82c28e3853253d4d7d8e2af9019dfd89de2005a51e",
+      "output_sha256": "9511e6bbe8ed87b06f2446bf11ce9cb8f0730b1b9ee11a793b50dfc707d26e10",
       "normalization": {
-        "source_width": 220,
-        "source_height": 280,
+        "source_width": 1080,
+        "source_height": 1080,
         "source_subject_bounds": {
-          "x": 1,
-          "y": 2,
-          "w": 218,
-          "h": 278
+          "x": 108,
+          "y": 41,
+          "w": 771,
+          "h": 1039
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.654676,
+        "applied_scale": 0.442733,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 361,
+          "w": 341,
           "h": 460
         },
         "placement": {
-          "left": 76,
+          "left": 86,
           "top": 26
         },
         "content_box": {
@@ -328,12 +321,9 @@
           "h": 460
         },
         "framing_override": null,
-        "encoder": "sharp webp lossless (lanczos3 downscale)",
-        "warnings": []
+        "encoder": "sharp webp lossless (lanczos3 downscale)"
       },
-      "warnings": [
-        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from premierleague.com (fpl photo id 475168 (João Pedro Junqueira de Jesus, Chelsea)), official league media — provenance in fetch log alt_source"
-      ],
+      "warnings": [],
       "hero": {
         "club_slug": "chelsea-fc",
         "club_display": "Chelsea FC",
@@ -347,7 +337,7 @@
         ]
       },
       "style": "jersey_photo",
-      "style_verified_at": "2026-10-19T18:21:32.703Z"
+      "style_verified_at": "2026-10-21T23:40:24.414Z"
     },
     {
       "roster_index": 5,
@@ -1621,57 +1611,50 @@
       "roster_index": 20,
       "requested_name": "James Maddison",
       "requested_club_label": "Tottenham Hotspur FC",
-      "filename": "james-maddison.webp",
-      "chosen_player": null,
+      "filename": "dominic-solanke.webp",
+      "chosen_player": "Dominic Solanke",
       "status": "complete",
-      "uefa_player_id": null,
+      "uefa_player_id": "250066930",
       "canonical_profile_url": null,
       "identity_evidence": {
-        "uefa_full_name": null,
+        "uefa_full_name": "Dominic Solanke",
         "nationality": null,
         "date_of_birth": null,
         "position": null,
-        "disambiguation": "identity anchored by the Premier League platform match: player \"James Maddison\" on Tottenham Hotspur FC's official premierleague.com data (2026-10-19)",
-        "external_corroboration": null
+        "disambiguation": "v13.163-herohd swap (owner quality directive 2026-10-22): the 220x280 premierleague.com headshot replaced by the native UEFA 1080x1080 transparent cutoff from the UCL 2025/26 campaign (Spurs' most recent UEFA participation). Identity anchored by the UEFA player id 250066930 (search-verified UEFA profile 2026-10-22) + CURRENT Tottenham squad membership verified on football-data.org /v4/teams/73 and the 2026/27 FPL squad (18 pts). Candidates REJECTED during this round: Cristian Romero (UEFA 1080px cutoff exists but his profile now reads Atleti / UCL 2026/27 — DEPARTED, kit-mismatch) and Guglielmo Vicario + Brennan Johnson (also absent from the current FD squad); James Maddison re-probed (UCL segment 1 season 2026 — the gap in the original no_asset sweep) — still 404.",
+        "external_corroboration": "FD squad list + FPL bootstrap-static, both fetched 2026-10-22"
       },
-      "observed_uefa_club": null,
-      "source_image_url": "https://resources.premierleague.com/premierleague25/photos/players/110x140/172780.png",
-      "source_asset_season": "2026/27",
-      "source_competition": "Premier League (league-official media)",
-      "alt_source": {
-        "platform": "premierleague.com",
-        "platform_player_ref": "fpl photo id 172780 (James Maddison, Spurs)",
-        "crop_top_fraction": 0,
-        "allow_upscale": true,
-        "note": "220x280 official PL headshot card (transparent PNG) — upscaled to the 512 canvas as a documented per-entry exception (no larger official variant is served)"
-      },
-      "fetched_at": "2026-10-19T12:09:42.812Z",
-      "source_width": 220,
-      "source_height": 280,
+      "observed_uefa_club": "Tottenham Hotspur",
+      "source_image_url": "https://img.uefa.com/imgml/TP/players/1/2026/cutoff/250066930.webp",
+      "source_asset_season": "2025/26",
+      "source_competition": "UEFA Champions League (club competitions media)",
+      "fetched_at": "2026-10-21T23:40:24.414Z",
+      "source_width": 1080,
+      "source_height": 1080,
       "source_has_alpha": true,
-      "source_sha256": "0975e1e8f3d85a7dcc59dcfebc181366ce57cd1ed4cf25f05ef3752fcc0ce889",
-      "download_transport": "direct (league-official platform)",
+      "source_sha256": "3ac544c941d4ffcf1dc461516b1f594525a0a0d1b42e0cdbc84e2c3b5952565d",
+      "download_transport": "relay (self-hosted uefa-image-relay workers.dev, the documented restricted-network route)",
       "output_width": 512,
       "output_height": 512,
-      "output_sha256": "965e7f17fa21be3d8e7c25418a790a7fc3e962e3aef8a3e60ccef08c33fdfff6",
+      "output_sha256": "e36ce39bd7217b2e7c81c2b87268680fc0bb7a0f6d834f0da5b84ee966856e40",
       "normalization": {
-        "source_width": 220,
-        "source_height": 280,
+        "source_width": 1080,
+        "source_height": 1080,
         "source_subject_bounds": {
-          "x": 0,
-          "y": 3,
-          "w": 218,
-          "h": 277
+          "x": 153,
+          "y": 93,
+          "w": 630,
+          "h": 987
         },
         "alpha_threshold": 8,
-        "applied_scale": 1.66065,
+        "applied_scale": 0.466059,
         "scale_capped_at_one": false,
         "output_subject_size": {
-          "w": 362,
+          "w": 294,
           "h": 460
         },
         "placement": {
-          "left": 75,
+          "left": 109,
           "top": 26
         },
         "content_box": {
@@ -1681,12 +1664,9 @@
           "h": 460
         },
         "framing_override": null,
-        "encoder": "sharp webp lossless (lanczos3 downscale)",
-        "warnings": []
+        "encoder": "sharp webp lossless (lanczos3 downscale)"
       },
-      "warnings": [
-        "alt source: no UEFA transparent cutoff exists for this club's candidates; portrait filled from premierleague.com (fpl photo id 172780 (James Maddison, Spurs)), official league media — provenance in fetch log alt_source"
-      ],
+      "warnings": [],
       "hero": {
         "club_slug": "tottenham-hotspur-fc",
         "club_display": "Tottenham Hotspur FC",
@@ -1700,7 +1680,7 @@
         ]
       },
       "style": "jersey_photo",
-      "style_verified_at": "2026-10-19T18:21:14.590Z"
+      "style_verified_at": "2026-10-21T23:40:24.414Z"
     },
     {
       "roster_index": 21,

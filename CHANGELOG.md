@@ -6,6 +6,74 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.163] — 2026-10-22 — v13.163-herohd (owner): the Chelsea + Tottenham hero portraits upgrade to native UEFA 1080px cutoffs — Cole Palmer + Dominic Solanke
+
+**The owner's directive:** «The quality of pictures are too low, find
+better quality pictures for tottenham and chelsea (it doesnt matter if
+you find one of the best players of either team) not only the MVP.»
+
+**Root cause of the low quality:** the v13.162 wiring had used the
+96-club library's premierleague.com headshot cards — 220x280 transparent
+PNGs upscaled ×1.65 to the 512 canvas (the documented low-res exception:
+the PL platform serves no larger official variant). Every other wired
+club uses a native UEFA cutoff; the two PL giants looked visibly softer.
+
+**The probe gap found this round:** the original no_asset sweep probed
+the UECL/UEL/NT segment space but never **UCL segment 1 / season 2026**
+— the UCL 2025/26 campaign, which is BOTH clubs' most recent UEFA
+participation (both won 2024/25 European trophies and played UCL 25/26).
+Native UEFA **1080×1080 transparent cutoffs exist there** (the new UEFA
+canvas generation — even larger than the 512s). Fetched through the
+redeployed `uefa-image-relay` worker (deployed isolated at
+uefa-image-relay.sportsignal.workers.dev — the main wrangler.toml's cron
+triggers aborted the first attempt at the account's 5-trigger free
+limit; production was never touched, healthz verified).
+
+**Selection (the owner allowed any star, not only the MVP):** star
+players were enumerated via web-search (UEFA profile URLs carry the
+player ids), probed across the segment/season matrix, and
+**current-squad-verified against football-data.org /v4/teams/{61,73}**
+(the transfer-watch source) + the 2026/27 FPL squads. REJECTED despite
+having 1080px cutoffs: Cristian Romero (his UEFA profile now reads
+«Cristian Romero | Atleti | UEFA Champions League 2026/27» — DEPARTED,
+an Atlético kit would violate the no-kit-mismatch rule), Guglielmo
+Vicario and Brennan Johnson (both absent from the current FD squad).
+Maddison re-probed at the gap segment (1/2026) — still 404. The winners:
+**Chelsea → Cole Palmer** (id 250124282; FPL 38 pts this season; blue
+Chelsea kit, lion crest, Nike — kit VLM-verified) and **Tottenham →
+Dominic Solanke** (id 250066930; FPL 18 pts; white Spurs kit, cockerel
+crest, AIA — kit VLM-verified). João Pedro and Maddison both remain at
+their clubs (FD-verified) — the swap is purely the quality/star upgrade
+the owner endorsed.
+
+**The assets:** both 1080px cutoffs run through the pipeline's own
+normalizePortrait (lanczos3 downscale to the 512 library canvas, 5%
+content box, bottom baseline — no upscale exception), then the standard
+alpha-trim hero canvases (cole-palmer 345×464, dominic-solanke 298×464)
++ pre-baked casts (make-hero-casts.js: 37 files, the 35 existing casts
+byte-identical). Fade-tier scan: bright-to-bottom uniform on both (max
+adjacent-row steps 4/16 — far under the custom-tier thresholds) →
+default ramp, no fade field. Library bookkeeping: manifest-heroes.json +
+hero-clubs.json re-pointed with full UEFA provenance; the clubs DB gains
+the two as active hero candidates (the old João Pedro / Maddison
+candidates demoted to alternates, active parity maintained);
+hero-club-alternates.ts re-synced; hero-coverage.ts regenerated (35
+wired, players updated).
+
+Release: public-13.46.js→13.47.js (rename-on-edit; the CSS pair
+13.62.css carries over), SW v68→v69, VERSION 13.163-herohd, package
+13.163.0.0, _headers gains the 13.47.js immutable pin (13.46.js stays
+pinned one SEO TTL), admin-parity re-frozen (the script-ref digit),
+check-stats pins rewritten (js20→13.47.js, homepage ref, headers chain,
+SW v69, the 482-pin description). The retired joao-pedro/maddison hero
+canvases + casts stay served per the retention rule (stale HTML + the
+pinned 13.46.js reference them for one cache TTL).
+
+QA (wrangler dev :8787, the Chelsea–Tottenham seed): both lanes .has
+with the new srcs + casts, PL logo, names چلسی/تاتنهام; cast A/B pixel
+proof + VLM below; mobile retirement; no page errors. Gates: npm test
+EXIT 0 (2075 checks).
+
 ## [13.162] — 2026-10-22 — v13.162-heropair (owner): Chelsea FC + Tottenham Hotspur FC join HERO_ART — the two Premier League giants get their hero player pictures
 
 **The owner's ask:** «Investigate why chelsea and tottenham doesnt have

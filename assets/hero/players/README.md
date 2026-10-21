@@ -124,6 +124,39 @@ Re-add Lille when UEFA reshots Ueda: `cli.js fetch --refresh` + kit
 re-verification, then restore the one-line `HERO_ART` entry (33→34) and
 update the pin count in `scripts/check-stats.js`.
 
+## 3b. v13.163-herohd — the Chelsea + Tottenham quality swap (2026-10-22)
+
+The owner's directive: "The quality of pictures are too low, find better
+quality pictures for tottenham and chelsea (it doesnt matter if you find
+one of the best players of either team) not only the MVP." The v13.162
+wiring had used the 96-club library's premierleague.com headshot cards —
+220x280 transparent PNGs upscaled x1.65 to the 512 canvas (the documented
+low-res exception: no larger official PL variant is served). The probe
+gap found this round: the original no_asset sweep never probed
+**UCL segment 1 / season 2026** — the UCL 2025/26 campaign, both clubs'
+most recent UEFA participation (both won 2024/25 European trophies and
+played UCL 25/26). Native UEFA 1080x1080 transparent cutoffs EXIST there
+(fetched through the redeployed uefa-image-relay):
+
+| Team | v13.162 (low-res) | v13.163 (native UEFA 1080px) |
+|---|---|---|
+| "Chelsea FC" | João Pedro (PL 220x280 upscale) | **Cole Palmer** (id 250124282) — FD squad + FPL verified current; blue Chelsea kit, lion crest, Nike; kit VLM-verified |
+| "Tottenham Hotspur FC" | Maddison (PL 220x280 upscale) | **Dominic Solanke** (id 250066930) — FD squad + FPL verified current; white Spurs kit, cockerel crest, AIA; kit VLM-verified |
+
+REJECTED during selection (all have 1080px cutoffs but all are DEPARTED
+per the football-data.org squad lists — the kit rule + the owner's
+rotation directive): Cristian Romero (UEFA profile now reads
+**Atleti / UCL 2026/27** — he moved), Guglielmo Vicario, Brennan
+Johnson. João Pedro and Maddison remain AT their clubs (verified) — the
+swap is purely the quality/star-power upgrade the owner endorsed.
+
+The 1080px cutoffs are downscaled lanczos3 to the 512 library canvas via
+the pipeline's own normalizePortrait (no upscale exception), then the
+standard alpha-trim hero canvases (345x464 / 298x464) + pre-baked casts.
+The retired joao-pedro/maddison hero canvases + casts stay served (the
+retention rule: stale HTML + the pinned 13.46.js still reference them
+for one cache TTL).
+
 ## 4. Rights (the standing constraint)
 
 `docs/assets/uefa-player-portraits.md` §7: **redistribution permission is NOT
