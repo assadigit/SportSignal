@@ -6,6 +6,75 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.159] — 2026-10-21 — v13.159-bakedcast (owner): the projected player shadow becomes a PRE-BAKED IMAGE — the black-line/rectangle fix, round 3
+
+The owner reported live v13.158 as "The problem persists. there are still
+line and hard edges and rectangles" — and the report was verified failing
+TWICE OVER on the local mirror (1920×900, KV fixture reseeded, casts
+visibility-toggled for reproducibility): (a) in Chromium,
+`mask-clip:no-clip` EXTENDS the cast's mask painting area past the img box
+and the lane wrapper's `clip-path` does NOT contain the mask-extended
+paint — the blurred feet-fringe LEAKS BELOW THE HERO onto the match list
+(60,848 toggle-verified changed pixels, a solid black smear under the away
+player, ASCII-heatmap-mapped x≈1560-1920 / y≈760-900+; the v13.158 QA had
+seen this exact below-fold A/B diff and MISATTRIBUTED it to "the live match
+list"); (b) forcing the `border-box` fallback (the owner's likely engine:
+no `mask-clip:no-clip` support — Safari/older Chromium) razor-cuts the
+blur fringe at the img element box — the v13.155/.156 rectangle again;
+(c) the wrapper clip-path's `bottom:0` straight-lines every filtered paint
+crossing the wrapper's bottom edge (the floor-line cut, present since
+v13.142 for the figure's own drop-shadow tails). ROOT CAUSE, one sentence:
+three rounds built the shadow from LIVE filter/mask/clip compositing, and
+those primitives diverge per engine at their GEOMETRIC EDGES — every fix
+round swapped one fragile primitive for another. THE FIX removes the entire
+primitive family from the shadow layer: the cast is BAKED INTO PIXELS —
+`scripts/make-hero-casts.js` (committed, deterministic, sharp) generates
+`assets/players/hero/<slug>.cast.webp` for all 33 portraits: blackened (RGB
+→ 0, alpha preserved — the silhouette IS the shadow), gaussian-blurred
+(σ = 6.5% of source height ≈ 36px at the 1920 hero, matching the approved
+v13.158 softness), floor-faded (smoothstep 15%→26% of source height — the
+figure's mask ramp, so the shadow melts at the floor exactly with its
+source), top-feathered across the whole top pad, master alpha ×0.55,
+padded (12.5%H sides / 8%H top / 0 bottom — max(12.5%H, 1.9σ); the side
+pads are HEIGHT-based so the cast box tracks the figure box uniformly
+across poses: width-proportional pads made wide-pose files so much wider
+than their figure boxes that the edge-anchored box growth cancelled the
+away lane's translate and put the crescent on the WRONG side — caught by
+A/B band mapping during the v13.159 QA) so the blur fringe NEVER reaches
+the file edge. heroArt() (public-13.43.js) fills
+img.hero-cast with `<src>.replace(/\.webp$/,".cast.webp")` from the SAME
+heroArtFor entry (one source of truth, one extra day-fresh-cached request
+per visible figure); public-13.60.css carries the cast with NO filter, NO
+mask (both EXPLICITLY killed — the base `.hero-player img` rule would
+otherwise hand it the figure's chain and feet-fade mask: the mask's
+border-box clip is the v13.155/.156 rectangle mechanism, and
+mask-clip:no-clip is the v13.158 leak) and NO max-width (the lane's +32px
+budget must not contain-shrink the padded file) — only `opacity`
+(`--ss-cast-alpha` 1 dark / .82 light over the baked .55) and the
+lane-split translate, enlarged to `clamp(48px,4.4vw,88px)` to compensate
+the baked side pads' silhouette offset and leave the ~30px visible
+crescent beside the figure. The lane wrapper clips OPEN to
+`inset(-100% -160px -100% -100%)` / `inset(-100% -100% -100% -160px)`:
+the `bottom:0` floor cut retires with the live compositing it guarded, the
+−160px card-side bound clears the padded cast's translated box (~116px at
+1920) while guarding the wing crests; `--ss-cast-blur` retires (baked).
+The figure rendering (grade/separation/rim/halo chain, tilt, feet-fade
+mask, physical lanes), the HUD, particles and every other hero contract
+are untouched. Plain alpha pixels have no failure modes: identical in
+every engine, not croppable into a rectangle, unable to paint outside
+their own file bounds. Full three-round dossier with reproduction steps:
+`SHADOW-CONSULTATION.md`. Release: public-13.59.css→13.60.css +
+public-13.42.js→13.43.js (rename-on-edit; the retired pair stays served +
+pinned per the retention rule), SW v64→v65, VERSION 13.159-bakedcast,
+package 13.159.0.0, _headers gains the new pair's immutable pins,
+check-stats pins rewritten (references, headers chain, SW v65, the clip
+rules inside the hero-geometry block, the heroArt cast-src derivation,
+the FULL cast-CSS contract, a NEW baked-cast-files pin: every HERO_ART src
+must have its .cast.webp sibling + the bake script's documented params),
+admin-parity re-frozen (public-page baseline 40528B, the comment/href
+swap). Gates: npm test EXIT 0 (2069 checks — the new baked-cast-files pin).
+---
+
 ## [13.158-pngshadow] — 2026-10-21 (the owner's black-line/rectangle fix, round 2 — the shadow becomes the PNG object itself)
 
 - Owner (on live v13.157): "The method didnt work and casted a black

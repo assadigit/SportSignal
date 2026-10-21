@@ -307,7 +307,18 @@
 //              (i18n lastUpd relabel). Routine evict — stale HTML may
 //              still reference 13.47.css / core-13.12.js, which stay
 //              served per the retention rule.)
-// Cache name:  sportsignal-v57 (v13.151-edits: bumped from v56 — the 8
+// Cache name:  sportsignal-v65 (v13.159-bakedcast: bumped from v64 — the
+//              owner's black-line/rectangle fix, round 3: the projected
+//              player shadow becomes a PRE-BAKED IMAGE (/players/hero/
+//              <slug>.cast.webp from scripts/make-hero-casts.js) shown by a
+//              filter-less, mask-less img.hero-cast — plain alpha pixels,
+//              zero engine-sensitive compositing primitives (the three-round
+//              post-mortem: SHADOW-CONSULTATION.md). This release renamed
+//              the asset pair public-13.59.css→13.60.css +
+//              public-13.42.js→13.43.js; stale HTML may still reference the
+//              retired pair, which stays served per the retention rule.
+// History — v13.158-pngshadow (v64): the cast became a brightness(0)+blur
+//              masked copy; v13.151-edits (v57): the 8
 //              owner adjustments from requested-edits.png: bigger wing names
 //              + halved crest gap, the time larger/bolder with the match day
 //              below it in the clock pod (the date shelf retires as a content
@@ -318,7 +329,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v64";
+const CACHE = "sportsignal-v65";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

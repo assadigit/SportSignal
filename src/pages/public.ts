@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.59.css">
+<link rel="stylesheet" href="/public-13.60.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -182,15 +182,18 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      by heroArt() through the HERO_ART mapping (no src here — the layer
      renders only for a mapped team; spelled out because seo-check's T-03
      regex scans raw HTML).
-     v13.158-pngshadow (owner: "cast shadow on the PNG picture object
-     itself"): each lane wrapper carries TWO imgs — the .hero-cast shadow
-     copy FIRST (DOM order = behind the figure) and the figure img second,
-     both filled from the SAME heroArtFor entry by heroArt(). The copy is
-     the player's own PNG blackened (filter:brightness(0)) + blurred +
-     translated toward the card by the lane-split cast vector
-     (public-13.59.css): the shadow IS the silhouette by construction, in
-     every engine — no drop-shadow-of-a-masked-child compositing, no
-     parent filter, no clip that can crop it into a rectangle. -->
+     v13.159-bakedcast (owner: "there are still line and hard edges and
+     rectangles" — the live v13.158 verified failing, twice over): each
+     lane wrapper carries TWO imgs — the .hero-cast SHADOW img FIRST (DOM
+     order = behind the figure) and the figure img second, both filled from
+     the SAME heroArtFor entry by heroArt(); the cast src is the entry's
+     <slug>.cast.webp — the player's own portrait PRE-BAKED into a shadow
+     by scripts/make-hero-casts.js (blackened + gaussian-blurred +
+     floor-faded IN PIXELS, padded so the blur fringe never meets a file
+     edge) and shown with NO filter and NO mask (public-13.60.css), only
+     opacity + the lane-split translate: plain alpha pixels, zero
+     engine-sensitive compositing primitives — the three-round
+     live-compositing post-mortem lives in SHADOW-CONSULTATION.md. -->
 <div class="hero-player hero-player--cinematic player-home" aria-hidden="true"><img class="hero-cast" alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"></div>
 <div class="hero-player hero-player--cinematic player-away" aria-hidden="true"><img class="hero-cast" alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"></div>
 <!-- the match card: ONE real link to the match page wraps the whole HUD;
@@ -242,22 +245,30 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 <div id="heroSpot">__SEO_HERO__</div>
 </a>
-<!-- v13.158-pngshadow (owner): the projected player shadow is now the PNG
-     OBJECT ITSELF — a SECOND COPY of the same portrait (img.hero-cast, the
-     first child of each lane wrapper above) with filter:brightness(0)
-     blur() + the lane-split translate toward the card. The v13.157
-     --ss-cast-* WRAPPER drop-shadow is RETIRED: it measured and VLM-verified
-     as an organic silhouette in Chromium (sandbox + production), but the
-     owner's browser drew it as "a black line and rectangle" — filter() on
-     a container wrapping a masked + clip-path'ed child is engine-fragile
-     (the ancestor filter re-rasterizes the child's mask/clip during
-     offscreen compositing), and the wrapper's own inset(-32px) clip
-     hard-cut the cast's inward tail at the 32px tuck line in every engine.
-     The copy approach uses only universally-supported primitives (img
-     filter, img mask, transform) so no engine can regress it into a
-     rectangle; heroArt() (public-13.42.js) fills figure + copy from the
-     same heroArtFor entry. Retires ≤1019px with the figures
-     automatically (the copy rides the wrapper). -->
+<!-- v13.159-bakedcast (owner: "there are still line and hard edges and
+     rectangles" — the live v13.158 verified failing, twice over): the
+     projected player shadow is a PRE-BAKED IMAGE — img.hero-cast (the
+     first child of each lane wrapper above) filled by heroArt() with
+     <slug>.cast.webp (scripts/make-hero-casts.js: the player's own
+     portrait blackened + blurred + floor-faded IN PIXELS, padded so the
+     fringe never meets a file edge), carried with NO filter and NO mask
+     (public-13.60.css) — only opacity + the lane-split translate toward
+     the card. THE POST-MORTEM (three rounds, one root cause — every
+     round built the shadow from LIVE filter/mask/clip compositing, and
+     those primitives diverge per engine at their geometric edges):
+     v13.155/.156 (filter+mask on a copy) — mask-clip:border-box cropped
+     the filtered paint to the img rectangle (the razor rectangle);
+     v13.157 (drop-shadow on the masked wrapper) — engine-fragile
+     ancestor-filter compositing + the wrapper clip-path hard cuts ("a
+     black line and rectangle"); v13.158 (brightness(0)+blur+mask-clip:
+     no-clip on a copy) — Chromium leaks the mask-extended fringe BELOW
+     the hero onto the match list (60,848 toggle-verified px at 1920×900,
+     which the v13.158 QA misattributed to "the live match list"),
+     while engines without no-clip razor-cut the fringe at the img box.
+     Baked pixels have no failure modes: identical in every engine, not
+     croppable into a rectangle, unable to paint outside their own file
+     bounds. Retires ≤1019px with the figures automatically (the cast
+     rides the wrapper). Full dossier: SHADOW-CONSULTATION.md. -->
 <!-- v13.150-hud: the old #bigbar countdown PANEL (head row + four tiles on
      the 474×204 capsule artwork) is RETIRED — the countdown now lives
      INSIDE the card as the .hud-cells layer over the PC-Match frame's own
@@ -434,7 +445,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.14.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.42.js" defer><\/script>
+<script src="/public-13.43.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a
