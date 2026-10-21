@@ -307,6 +307,21 @@
 //              (i18n lastUpd relabel). Routine evict — stale HTML may
 //              still reference 13.47.css / core-13.12.js, which stay
 //              served per the retention rule.)
+// Cache name:  sportsignal-v66 (v13.160-casttune: bumped from v65 — the
+//              owner's three-item round: (1) the cast shadows re-baked
+//              stronger (sigma 9%H / alpha .68, all 33 .cast.webp files)
+//              with a bigger lane-split vector + skewX(3.2deg) so the
+//              head-shadow leans toward the card (left player casts
+//              right, right player casts left); (2) the pose-width guard
+//              (--ss-pose-shift) pulls wide poses inward off the viewport
+//              edge; (3) the Melbourne timezone fix — the tz select's
+//              filter auto-pick poisoned the change event; the choice now
+//              persists in the ss_tz cookie + localStorage mirror and the
+//              first-visit default is the browser/OS-locale zone. This
+//              release renamed the asset pair public-13.60.css->13.61.css
+//              + public-13.43.js->13.44.js; stale HTML may
+//              still reference the retired pairs, which stay served per
+//              the retention rule.
 // Cache name:  sportsignal-v65 (v13.159-bakedcast: bumped from v64 — the
 //              owner's black-line/rectangle fix, round 3: the projected
 //              player shadow becomes a PRE-BAKED IMAGE (/players/hero/
@@ -329,7 +344,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v65";
+const CACHE = "sportsignal-v66";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

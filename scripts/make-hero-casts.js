@@ -1,4 +1,5 @@
-// SportSignal — v13.159-bakedcast: the hero player CAST-SHADOW baking pipeline.
+// SportSignal — v13.159-bakedcast / v13.160-casttune: the hero player
+// CAST-SHADOW baking pipeline.
 //
 // WHY THIS EXISTS (the three-round rectangle post-mortem, see
 // SHADOW-CONSULTATION.md): every prior round built the projected shadow from
@@ -34,15 +35,19 @@
 //           so no engine ever sees a file-edge cut; the top pad is fully
 //           feathered away)
 //   blacken RGB -> 0, alpha preserved (the silhouette shape IS the shadow)
-//   blur    gaussian sigma = 6.5% of H (displays ~36px at the 1920 hero —
-//           matches the v13.158 clamp(20px,1.9vw,38px) look)
+//   blur    gaussian sigma = 9% of H (v13.160-casttune, owner: "make the
+//           shadow more visible and with more spread" — was 6.5%: the
+//           penumbra grows ~40% wider at the 1920 hero; the side pads grow
+//           with sigma automatically via the max() below)
 //   fade    bottom: alpha 0 below 15% H, smoothstep to 1 at 26% H (mirrors
 //           the figure's feet-fade mask ramp so the shadow melts at the
 //           floor exactly with its source) | top: smoothstep 0->1 across
 //           the whole top pad (the head fringe feathers out — no file-edge
 //           cut, and a downward cast reads natural)
-//   alpha   x 0.55 (the dark-theme master weight; the light theme uses the
-//           CSS opacity token)
+//   alpha   x 0.68 (v13.160-casttune: was 0.55 — the owner asked for a MORE
+//           VISIBLE cast; 0.68 keeps it a ground shadow, not a black
+//           duplicate; the light theme still scales it via the CSS opacity
+//           token)
 //   out     lossless webp with alpha, <slug>.cast.webp next to its source.
 //
 // Order mirrors the CSS it replaces: blacken+blur (was filter) -> fades
@@ -56,13 +61,13 @@ const sharp = require("sharp");
 
 const DIR = path.join(__dirname, "..", "assets", "players", "hero");
 
-const SIGMA_H = 0.065; // gaussian sigma as a fraction of source height
+const SIGMA_H = 0.09; // gaussian sigma as a fraction of source height (v13.160-casttune: was 0.065 — owner: "more spread")
 const PAD_SIDE_H = 0.125; // side pad as a fraction of source HEIGHT (pose-uniform)
 const PAD_SIDE_SIGMA = 1.9; // ...or 1.9 sigma, whichever is larger
 const PAD_TOP_H = 0.08; // top pad as a fraction of source height
 const FADE_LO_H = 0.15; // bottom fade: fully transparent below this
 const FADE_HI_H = 0.26; // bottom fade: fully opaque above this
-const ALPHA = 0.55; // master alpha weight baked into the pixels
+const ALPHA = 0.68; // master alpha weight baked into the pixels (v13.160-casttune: was 0.55 — owner: "more visible")
 
 const smoothstep = (t) => {
   const x = Math.min(1, Math.max(0, t));

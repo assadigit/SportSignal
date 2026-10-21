@@ -183,6 +183,40 @@
 # public.ts template. Immutable under the rename-on-edit rule; the
 # retired pair (13.57.css + 13.40.js) stays pinned below per the
 # retention rule (stale edge HTML <=900s may still reference it).
+# v13.160-casttune (the owner's three-item round, all verified on the
+# local mirror): (1) the cast shadows are MORE VISIBLE and WIDER-SPREAD
+# and now DIRECTIONAL — scripts/make-hero-casts.js re-baked all 33
+# /players/hero/<slug>.cast.webp files (sigma 6.5%->9%H, alpha .55->.68),
+# public-13.61.css grows the vector --ss-cast-x clamp(48px,4.4vw,88px)->
+# clamp(56px,5vw,100px) and adds a lane-split skewX(3.2deg) about the cast
+# img's bottom (feet planted, head-shadow leaning TOWARD the card — left
+# player casts right, right player casts left, exactly the owner's rule);
+# still zero filter/mask/mask-clip on the shadow layer (the v13.159
+# post-mortem contract intact — translate+skewX+opacity are compositor-
+# only, engine-uniform). (2) the POSE-WIDTH GUARD — wide poses (Saka .89 /
+# Haaland .92 aspect) filled the whole lane budget and kissed the viewport
+# edge while narrow ones floated ~200px in; heroArt() (public-13.44.js)
+# now measures each laid-out figure and sets --ss-pose-shift on the
+# wrapper: the extra inward inset guaranteeing clamp(24px,3vw,56px) outer
+# clearance; narrow poses shift 0 (pixel-identical to v13.159); the lane
+# clip inward guard widens 160px->320px for the stronger cast reach.
+# (3) THE MELBOURNE TIMEZONE FIX — the tz panel's filter rebuild
+# auto-picked the FIRST matching option as the select's value, so clicking
+# that very option fired NO change event ("found melbourne, but did
+# nothing"); the rebuild now inserts a disabled placeholder instead, adds
+# an Auto (browser) reset entry, persists the choice to the ss_tz COOKIE
+# (path=/, 1y, SameSite=Lax) + the legacy localStorage mirror, and the
+# first-visit default is the OS/BROWSER-LOCALE zone
+# (Intl.DateTimeFormat().resolvedOptions().timeZone) with PAGE_TZ as the
+# final fallback. Immutable under the rename-on-edit rule; the retired
+# pair (13.60.css + 13.43.js) stays pinned below per the retention rule
+# (stale edge HTML <=900s may still reference it).
+/public-13.61.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.44.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.60.css
   Cache-Control: public, max-age=31536000, immutable
 

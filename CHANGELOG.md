@@ -6,6 +6,91 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.160] — 2026-10-21 — v13.160-casttune (owner): the three-item round — stronger directional cast shadows, the wide-pose viewport-edge guard, and the Melbourne timezone fix
+
+**1. The cast shadows — more visible, more spread, and now explicitly
+directional by lane** (owner: "make the shadow more visible and with more
+spread, make them relative to player position in right or left — if
+player is left, the shadow must cast slightly on right; if player is
+right, the shadow must cast slightly on left"). The v13.159 bake pipeline
+re-ran with stronger parameters (scripts/make-hero-casts.js: sigma
+6.5%→9% of source height — the penumbra grows ~40% wider at the 1920
+hero — and master alpha .55→.68; all 33 /players/hero/<slug>.cast.webp
+regenerated deterministically, side pads auto-grew via the existing
+max(12.5%H, 1.9σ) rule). public-13.61.css follows through: the cast
+vector --ss-cast-x grows clamp(48px,4.4vw,88px)→clamp(56px,5vw,100px)
+(84px→96px at 1920) and each lane gains skewX(±3.2deg) about the cast
+img's bottom (transform-origin 50% 100% — the floor line): the feet stay
+planted and the head-shadow LEANS TOWARD THE CARD (home/left lane skews
+negative = leans right; away/right lane positive = leans left — CSS
+skewX(+θ) leans an origin-anchored image's top LEFT). The lane wrapper
+clip-path inward guard widens 160px→320px for the stronger reach (the
+dense core still stops short of the wing crest zone; only the sub-5%-alpha
+gaussian tail crosses it, exactly like v13.159). NO filter, NO mask, NO
+mask-clip re-entered — translate+skewX+opacity are compositor-only and
+engine-uniform; the three-round post-mortem contract
+(SHADOW-CONSULTATION.md) holds.
+
+**2. The pose-width guard** (owner: "a player of arsenal almost collided
+with the edge of the viewport, but player of bayern munich took
+significantly less space — for the players with wider pictures, make them
+slightly closer to the HUD"). The figure box is inner-edge anchored and
+grows OUTWARD with the pose's aspect ratio: wide poses (Saka .89, Haaland
+.92) fill the whole lane budget (max-width calc(100% + 32px)) and their
+silhouettes land flush at the viewport edge, while narrow poses (Kane .51)
+center in the box ~200px in. heroArt() (public-13.44.js) now measures the
+laid-out figure width once the img loads (offsetWidth — unrotated,
+budget-capped) and sets --ss-pose-shift on the lane WRAPPER: the extra
+inward inset that guarantees a minimum OUTER clearance of
+clamp(24px,3vw,56px) from the lane's outer edge (= the viewport edge —
+the lanes are full-bleed). Narrow poses measure 0 and render
+pixel-identically to v13.159; the cast rides the same wrapper so the
+shadow shifts WITH its figure; window resize re-measures both lanes
+(refitHeroPoses in the resize rAF pass); the shift is capped by the
+clearance itself (the max-width budget bounds it), so a wide pose can
+never dive fully under the card.
+
+**3. The Melbourne timezone fix** (owner: "I tried to use the gear icon
+and change time-zone to melbourne — the site didn't change and that
+option didn't work… I want the site to save a cookie of users, so when
+they set locale to another city it's always that city for them; set the
+default timezone based on the users' default windows and browser locale").
+ROOT CAUSE (reproduced on the live site): the tz panel's filter rebuild
+ended with `!e.value && e.options.length && (e.value = e.options[0].value)`
+— after a search narrowed the list to one city, that city was
+AUTO-SELECTED as the select's displayed value, so clicking the very
+option the user had just searched for changed NOTHING: no change event,
+no store, no re-render, no panel close. "found melbourne, but did
+nothing." THE FIX (public-13.44.js): while a filter is active and the
+stored zone is not among the matches, a DISABLED PLACEHOLDER ("— انتخاب
+کنید —") is inserted and nothing is auto-picked — the user's click now
+fires change. The panel also gains an "⏱ Auto (browser)" entry (first in
+the list; matched by the filters auto/browser/خودکار) that CLEARS the
+stored preference so the OS/browser-locale zone takes over again.
+PERSISTENCE: the choice is written to the ss_tz COOKIE (path=/,
+max-age=1y, SameSite=Lax — the owner-asked store, survives localStorage
+clears and rides the browser profile) AND the legacy localStorage ucl_tz
+mirror (existing users' stored zones migrate to the cookie at initTz).
+DEFAULT: curTz() resolves ss_tz cookie → legacy localStorage →
+Intl.DateTimeFormat().resolvedOptions().timeZone (the browser/OS-locale
+zone — the first-visit default the owner asked for; Iranian users still
+resolve Asia/Tehran) → PAGE_TZ (server, final fallback). Every candidate
+is Intl-validated so a malformed stored value can never break rendering,
+and the resolution is cached (TZ_CACHE + tzInvalidate()) because curTz()
+sits on the per-second countdown hot path. Server-side PAGE_TZ stays
+Asia/Tehran: the homepage HTML is edge-cached (s-maxage=60,
+stale-while-revalidate=300) shared across users — varying SSR by cookie
+would poison the shared cache, and the client re-renders every section on
+load anyway.
+
+Release mechanics: public-13.60.css→13.61.css + public-13.43.js→13.44.js
+(immutable under the rename-on-edit rule; retired pair stays pinned in
+_headers per the retention rule), SW cache sportsignal-v65→v66, VERSION
+13.160-casttune, package 13.160.0.0, hero-coverage regenerated against
+the 13.44 bundle, admin parity untouched.
+
+---
+
 ## [13.159] — 2026-10-21 — v13.159-bakedcast (owner): the projected player shadow becomes a PRE-BAKED IMAGE — the black-line/rectangle fix, round 3
 
 The owner reported live v13.158 as "The problem persists. there are still
