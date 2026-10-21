@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.57.css">
+<link rel="stylesheet" href="/public-13.58.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -206,8 +206,10 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <img class="card-hud" src="/ui/sportsignal-pc-match-hud.png" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
 <!-- v13.155-herodepth (spec 03): the interior-face depth overlay — a
      translucent navy deepening gradient clipped to the artwork's measured
-     inner face (the same polygon the .hud-shadow-plane below uses, here in
-     card-relative %). Static inside the card anchor (survives the
+     inner face (card-relative %; measured from the PC-Match frame PNG with
+     the same ≥10px-inset method the v13.155 shadow plane used before its
+     v13.157 retirement — this overlay's polygon is its OWN, kept). Static
+     inside the card anchor (survives the
      renderHeroSpot rebuild like .hud-cells); z0 with DOM-after the frame =
      painted above the frame, under every content zone (z1). -->
 <div class="hud-depth" aria-hidden="true"></div>
@@ -231,21 +233,19 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 <div id="heroSpot">__SEO_HERO__</div>
 </a>
-<!-- v13.155-herodepth (spec 01): the projected player-shadow plane — a
-     section-level decorative layer ABOVE the card (z2, DOM-after) and BELOW
-     the figures (z3). heroArt() fills the four <img> copies with the SAME
-     portrait URLs as the foreground figures (one soft + one near component
-     per side) and toggles .has on the .hs-player wrappers exactly like the
-     .hero-player ones; the CSS clips the plane to the HUD artwork's inner
-     face and casts each silhouette toward the banner centre + slightly
-     down, by PHYSICAL lane (hs-home = left = +X, hs-away = right = -X —
-     see the direction contract in public-13.57.css). Empty until JS fills
-     it; aria-hidden + pointer-events:none; retired <=1019px with the
-     figures. -->
-<div class="hud-shadow-plane" aria-hidden="true">
-<div class="hs-player hs-home"><img class="hs-img hs-img--soft" alt="" referrerpolicy="no-referrer"><img class="hs-img hs-img--near" alt="" referrerpolicy="no-referrer"></div>
-<div class="hs-player hs-away"><img class="hs-img hs-img--soft" alt="" referrerpolicy="no-referrer"><img class="hs-img hs-img--near" alt="" referrerpolicy="no-referrer"></div>
-</div>
+<!-- v13.157-shadowfix: the v13.155/.156 projected player-shadow plane is
+     RETIRED (this block used to hold the .hud-shadow-plane + .hs-player
+     markup). The copies' feet-fade mask clipped their filtered paint to
+     the img element rectangle (mask-clip:border-box) while the ECHO
+     drop-shadow filled the box interior — the layer rendered as the
+     razor-edged black RECTANGLE the owner reported; and the wing's
+     inner-face window could never expose a recognizable silhouette anyway
+     (bbox-cropped poses map their head/arms outside it). The projected
+     shadow is now the --ss-cast-* drop-shadow ON the .hero-player
+     wrappers themselves (public-13.58.css): shape from the live masked
+     alpha, soft, unclipped; direction by PHYSICAL lane (home +X toward
+     the card, away −X); heroArt() (public-13.41.js) is figures-only
+     again. Retires ≤1019px with the figures automatically. -->
 <!-- v13.150-hud: the old #bigbar countdown PANEL (head row + four tiles on
      the 474×204 capsule artwork) is RETIRED — the countdown now lives
      INSIDE the card as the .hud-cells layer over the PC-Match frame's own
@@ -422,7 +422,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.14.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.40.js" defer><\/script>
+<script src="/public-13.41.js" defer><\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

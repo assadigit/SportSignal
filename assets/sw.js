@@ -5,6 +5,22 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v63 (v13.157-shadowfix: bumped from v62 — routine
+//              evict for this release's public-13.57.css→13.58.css +
+//              public-13.40.js→13.41.js renames (the owner's rectangle-
+//              shadow fix: the v13.155/.156 projected-shadow plane RETIRED —
+//              its blackened portrait copies carried the fg figure's
+//              feet-fade mask, whose border-box clip cropped the filtered
+//              paint to the img element's rectangle while the echo filled
+//              the box interior → the razor-edged black RECTANGLE the owner
+//              reported; replaced by the --ss-cast-* drop-shadow ON the
+//              .hero-player--cinematic wrappers: shape from the live masked
+//              alpha, soft (blur clamp(20px,1.9vw,38px)), unclipped, +X
+//              home / −X away by PHYSICAL lane; heroArt drops putShadow);
+//              stale HTML may still reference the retired 13.57.css/13.40.js
+//              pair, which stays served per the retention rule — cache-first
+//              assets can't refresh without a rename or a bump, the v13.39
+//              rule: every asset-editing release bumps.)
 // Cache name:  sportsignal-v62 (v13.156-shadowtune: bumped from v61 — routine
 //              evict for this release's public-13.56.css→13.57.css rename
 //              (the owner-reported invisible cast shadows: the v13.155
@@ -284,7 +300,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v62";
+const CACHE = "sportsignal-v63";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

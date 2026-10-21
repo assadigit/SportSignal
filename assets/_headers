@@ -113,6 +113,32 @@
 # cast that stays feathered (no hard edges); every other hero-depth contract
 # untouched. The retired 13.56.css stays pinned below per the retention rule
 # (stale edge HTML <=900s may still reference it).
+# v13.157-shadowfix (the owner's rectangle-shadow fix): the projected
+# player-shadow plane (v13.155/.156) RETIRED — its blackened portrait
+# copies carried the fg figure's feet-fade mask, whose default
+# mask-clip:border-box cropped the whole filtered paint (blur + the +67px
+# echo drop-shadow that filled the box interior) to the img element's
+# rectangle: the layer rendered as the razor-edged black RECTANGLE the
+# owner reported ("instead of the player's silhouette… must be blurred
+# and soft"); and the wing's inner-face window could never expose a
+# recognizable silhouette anyway (bbox-cropped poses map head/arms
+# outside it — Kane's visible sliver was his featureless right-torso
+# slab). Replaced by the --ss-cast-* drop-shadow ON the
+# .hero-player--cinematic wrappers (public-13.58.css): shape derived from
+# the live masked alpha (head/shoulders/arms readable in the fringe),
+# clamp(20px,1.9vw,38px) blur, .52 alpha, +X home / −X away by PHYSICAL
+# lane, unclipped in every direction; measured 0.00 delta over the
+# crest/clock/sync content zones. heroArt() (public-13.41.js) drops
+# putShadow (figures-only again); the plane markup retires from the
+# public.ts template. Immutable under the rename-on-edit rule; the
+# retired pair (13.57.css + 13.40.js) stays pinned below per the
+# retention rule (stale edge HTML <=900s may still reference it).
+/public-13.58.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.41.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.57.css
   Cache-Control: public, max-age=31536000, immutable
 

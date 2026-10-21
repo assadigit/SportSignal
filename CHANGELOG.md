@@ -6,6 +6,68 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.157-shadowfix] — 2026-10-21 (the owner's rectangle-shadow fix)
+
+- Owner: "There is a shadow but it's a weird … a rectangle shape casted
+  shadow, instead of the player's (png-based) silhouette of the same
+  person. Moreover, the shadow must be blurred and soft; currently there
+  is just a rectangle and ugly shadow." The report was verified twice
+  over on the local mirror: the v13.156 plane rendered as a razor-edged
+  solid black RECTANGLE (VLM literal inspection of the owner crop:
+  "solid filled rectangle/block, softness 1/10"; A/B pixel map: a
+  uniform ~77px block with a hard right edge exactly at the img element
+  box). Root causes, measured: (1) the .hs-img copies carried the fg
+  figure's feet-fade mask, whose default mask-clip:border-box cropped
+  the whole filtered paint — blur AND the +67px ECHO drop-shadow — to
+  the img element's straight edges, while the echo's offset filled the
+  box interior: union(silhouette, echo) ≈ the whole box, clipped to a
+  rectangle; (2) the architecture itself could never show a recognizable
+  silhouette: the wing's inner-face clip exposes a 22px→~100px window
+  (at 1920) of the portrait's INNER edge only — for bbox-cropped poses
+  the recognizable features map outside it (Kane's head and arm gap both
+  land behind the figure/polygon; the window holds his featureless
+  right-torso slab), so no tuning of copy alphas or cast vectors could
+  fix the shape.
+- THE FIX (architecture change, not a retune): the projected
+  player-shadow plane RETIRES — markup (public.ts), putShadow fill
+  (heroArt), CSS rules + the 28-vertex inner-face clip polygon — and the
+  shadow becomes a --ss-cast-* drop-shadow ON the .hero-player--cinematic
+  WRAPPERS themselves: the wrapper carries no mask, so the drop-shadow
+  derives its shape from the live masked img alpha (the full silhouette —
+  head, shoulders, arms — with the floor melt preserved) and paints
+  unclipped in every direction; nothing geometric can ever crop it into a
+  rectangle again. Parameters chosen by in-browser A/B + a 3-variant VLM
+  panel test (the winner: "perfectly traces the silhouette … premium
+  composite"): vector clamp(28px,2.6vw,52px) X + clamp(10px,.9vw,18px) Y
+  (at 1920: +49.92/+17.28), blur clamp(20px,1.9vw,38px) (36.5 @1920),
+  color rgba(2,12,30,.52) dark / rgba(8,32,63,.45) navy light; direction
+  by PHYSICAL lane exactly like the rim tokens (home +X toward the card,
+  away −X; dir-agnostic — verified byte-identical filters + unchanged
+  lanes under the LTR toggle).
+- Measured result @1920 (A/B toggle of the wrapper filters): an organic
+  figure-shaped footprint (rounded head blob, shoulder widening, contour
+  variation, feathered edges — NO straight block); content zones all
+  0.00 delta (Bayern crest, Arsenal crest, central clock pod, sync
+  caption); VLM flank crops PASS both sides (silhouette follows
+  head/shoulders/arms, softness 8/10, no rectangles) and the comparative
+  side-by-side test identifies the shadow half correctly on BOTH flanks
+  (85/95 confidence). @1440 the cast scales (37.44/12.96/27.36) with the
+  VLM pass; @375 the figures retire and the cast retires with them (it
+  rides the wrapper — no figures, no cast); light theme renders + VLM
+  PASS; no page errors.
+- Release: public-13.57.css -> 13.58.css + public-13.40.js -> 13.41.js
+  (rename-on-edit; the retired pair stays served + pinned per the
+  retention rule), SW v62 -> v63, VERSION 13.157-shadowfix, package
+  13.157.0.0, _headers pins + check-stats pins rewritten (refs, the
+  headers chain, SW v63, the 1019px retirement regex, the heroArt
+  figures-only signature, a NEW wrapper-cast pin asserting the
+  lane-split rules + tokens + the plane's full retirement), admin-parity
+  re-frozen (public-page baseline 38908 -> 38781B — the retired plane
+  markup), hero-coverage regenerated (bundle ref only, 33 wired
+  unchanged).
+
+---
+
 ## [13.156-shadowtune] — 2026-10-21 (the owner's shadow-visibility fix)
 
 - Owner: "I don't see any shadow" — the v13.155 projected player-shadow
