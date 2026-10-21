@@ -6,6 +6,47 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.156-shadowtune] — 2026-10-21 (the owner's shadow-visibility fix)
+
+- Owner: "I don't see any shadow" — the v13.155 projected player-shadow
+  plane rendered but was imperceptible: the .13/.055 alphas measured only
+  a −2.7 mean-luminance wash on the navy HUD face (VLM agreed at normal
+  zoom). CSS-only release: public-13.56.css -> public-13.57.css
+  (rename-on-edit, the retired file stays served + pinned),
+  public-13.40.js + core-13.14.js carry over (no JS/template changes
+  beyond the stylesheet href swap), SW v61 -> v62, VERSION
+  13.156-shadowtune, package 13.156.0.0, _headers + check-stats pins
+  rewritten, admin-parity re-frozen (the href swap is the intended
+  public-page output change).
+- The retune: .hs-img--soft blur 16px -> 13px @ opacity .13 -> .5;
+  .hs-img--near blur 3px (unchanged) @ opacity .055 -> .22; the ECHO
+  drop-shadow color alpha .45 -> .55 (blur + vector unchanged). The cast
+  now reads as a readable figure-shaped shadow (head/shoulder/torso
+  contour visible on the HUD flanks) while staying feathered — no hard
+  edges, no rectangle (brightness(0) still preserves the PNG alpha). Every
+  other v13.155 hero-depth contract untouched: physical lanes, the
+  inner-face clip polygon, the <=1019px retirement, reduced-motion,
+  the rim light, the depth overlay, the particles.
+
+## [13.155-herodepth] — 2026-10-21 (the hero visual depth pass, spec-driven)
+
+- The four spec layers from match-hero-specs.zip, each restrained and
+  subordinate to the matchup info: (1) the projected player-shadow plane
+  (blackened same-PNG copies cast inward+down onto the HUD's measured
+  inner face, physical lanes only — left casts +X, right casts −X);
+  (2) the interior-face depth overlay (translucent navy gradient on the
+  same polygon) + the frame's alpha-aware drop-shadows (grounding + tight
+  blue perimeter glow); (3) the directional rim light (a faint cool-blue
+  contour lift on the HUD-facing side, lane-keyed); (4) the ambient
+  particle layer (9 fixed 1-3px cool-blue points, CSS-only drift, parked
+  under reduced-motion, <=899px caps to 4). CSS+JS release:
+  public-13.55.css -> 13.56.css + public-13.39.js -> 13.40.js
+  (heroArt() fills the shadow copies from the same art entries), SW
+  v60 -> v61, VERSION 13.155-herodepth, package 13.155.0.0, _headers +
+  check-stats pins rewritten, admin-parity re-frozen, hero-coverage
+  regenerated. The cast alphas shipped here at .13/.055 were later found
+  imperceptible — see 13.156-shadowtune.
+
 ## [13.154-polish] — 2026-10-21 (the 6 owner adjustments from 545454.png)
 
 - Owner (screenshot 545454.png, six items). CSS-only release:

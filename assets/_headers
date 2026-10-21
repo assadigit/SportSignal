@@ -105,6 +105,17 @@
 # entries as the figures — immutable under the rename-on-edit rule; the
 # retired pair (13.55.css + 13.39.js) stays pinned below per the
 # retention rule (stale edge HTML <=900s may still reference it).
+# v13.156-shadowtune (the owner's shadow-visibility fix): the v13.155 cast
+# alphas (.13 soft / .055 near) measured a -2.7 mean-luminance wash on the
+# navy HUD face — the owner read the projected player shadows as absent.
+# CSS-only retune: .hs-img--soft blur 16px->13px @ opacity .5, .hs-img--near
+# @ .22, the echo drop-shadow color alpha .45->.55 — a readable figure-shaped
+# cast that stays feathered (no hard edges); every other hero-depth contract
+# untouched. The retired 13.56.css stays pinned below per the retention rule
+# (stale edge HTML <=900s may still reference it).
+/public-13.57.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.56.css
   Cache-Control: public, max-age=31536000, immutable
 

@@ -5,6 +5,17 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v62 (v13.156-shadowtune: bumped from v61 — routine
+//              evict for this release's public-13.56.css→13.57.css rename
+//              (the owner-reported invisible cast shadows: the v13.155
+//              .13/.055 alphas measured a −2.7 mean-luminance wash on the
+//              navy HUD face; the pair lifts to .5/.22 with the soft blur
+//              16→13px and the echo color alpha .45→.55 — a readable
+//              figure-shaped cast, still feathered); stale HTML may still
+//              reference the retired 13.56.css, which stays served per the
+//              retention rule — cache-first assets can't refresh without a
+//              rename or a bump, the v13.39 rule: every asset-editing
+//              release bumps.)
 // Cache name:  sportsignal-v61 (v13.155-herodepth: bumped from v60 — routine
 //              evict for this release's public-13.55.css→13.56.css +
 //              public-13.39.js→13.40.js renames (the hero visual depth pass:
@@ -273,7 +284,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v61";
+const CACHE = "sportsignal-v62";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

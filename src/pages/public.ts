@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.56.css">
+<link rel="stylesheet" href="/public-13.57.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -239,7 +239,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      .hero-player ones; the CSS clips the plane to the HUD artwork's inner
      face and casts each silhouette toward the banner centre + slightly
      down, by PHYSICAL lane (hs-home = left = +X, hs-away = right = -X —
-     see the direction contract in public-13.56.css). Empty until JS fills
+     see the direction contract in public-13.57.css). Empty until JS fills
      it; aria-hidden + pointer-events:none; retired <=1019px with the
      figures. -->
 <div class="hud-shadow-plane" aria-hidden="true">
