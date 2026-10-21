@@ -75,7 +75,7 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.61.css">
+<link rel="stylesheet" href="/public-13.62.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -184,7 +184,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      <slug>.cast.webp — the player's own portrait PRE-BAKED into a shadow
      by scripts/make-hero-casts.js (blackened + gaussian-blurred +
      floor-faded IN PIXELS, padded so the blur fringe never meets a file
-     edge) and shown with NO filter and NO mask (public-13.61.css), only
+     edge) and shown with NO filter and NO mask (public-13.62.css), only
      opacity + the lane-split translate+skewX: plain alpha pixels, zero
      engine-sensitive compositing primitives — the three-round
      live-compositing post-mortem lives in SHADOW-CONSULTATION.md. -->
@@ -246,7 +246,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      <slug>.cast.webp (scripts/make-hero-casts.js: the player's own
      portrait blackened + blurred + floor-faded IN PIXELS, padded so the
      fringe never meets a file edge), carried with NO filter and NO mask
-     (public-13.61.css) — only opacity + the lane-split translate+skewX toward
+     (public-13.62.css) — only opacity + the lane-split translate+skewX toward
      the card (v13.160: stronger sigma/alpha bake, the skew leans the head-
      shadow toward the card per the player's lane; the wide-pose figures
      shift inward via --ss-pose-shift so they never kiss the viewport edge). THE POST-MORTEM (three rounds, one root cause — every
@@ -280,7 +280,16 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      v13.147-syncdate: the label reads تاریخ به‌روزرسانی: … .
      v13.149-syncfix: position:relative + z-index:2 (CSS) — it was painted
      UNDERNEATH the z1 stadium photo, invisible since v13.142.
-     v13.150-hud: still 4px below the card — now below the ONE-frame HUD. -->
+     v13.150-hud: still 4px below the card — now below the ONE-frame HUD.
+     v13.161-tzstamp (owner): the line carries the display zone + GMT offset
+     in parentheses — «تاریخ به‌روزرسانی: چهارشنبه ۱۵:۲۰ ظهر (تهران 3:30 GMT)»,
+     the owner's literal example. Server: lastUpdatedHtml (seo/markup.ts)
+     always stamps Tehran; client: fmtStamp()+tzStamp() (public-13.45.js)
+     renders the same shape from the user's ss_tz-selected zone — so this
+     pre-JS paint matches the post-JS render line-for-line (PF-08). The
+     /__SEO_SYNC__/g replace in seo/router.ts now fills BOTH copies (the
+     old first-occurrence-only replace left #lastSync as a raw placeholder
+     until the client overwrote it). -->
 <p class="hero-sync-m" id="lastSyncM" aria-hidden="true">__SEO_SYNC__</p>
 <!-- v13.131-playerpresence: BOTH corner pills are RETIRED (the carousel in
      v13.129, the bell now — owner directive); heroPills() in public-13.36.js
@@ -441,7 +450,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.14.js" defer></script>
 <script>var PAGE_TZ = "__PAGE_TZ__";</script>
-<script src="/public-13.44.js" defer></script>
+<script src="/public-13.45.js" defer></script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

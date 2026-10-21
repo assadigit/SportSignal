@@ -6,6 +6,54 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.161] — 2026-10-21 — v13.161-tzstamp (owner): the sync line carries the zone + GMT in parentheses, and the match day rides a few px closer to the match time
+
+**1. «Show in parenthesis the time zone and GMT»** (owner's literal example:
+«تاریخ به‌روزرسانی: چهارشنبه ۱۵:۲۰ ظهر (تهران 3:30 GMT)»). The
+«تاریخ به‌روزرسانی» line — hero caption (#lastSyncM) + the below-hero
+copy (#lastSync) + every SEO page's answer footer — now appends the
+display zone + GMT offset in parentheses. SERVER (src/seo/markup.ts):
+lastUpdatedHtml gains the note, always stamping Tehran (DISPLAY_TZ) via
+the new displayTzGmtOffset() (Intl shortOffset primary, a parts-diff
+fallback, the UTC+3:30 constant as the honest last resort — Tehran has
+no DST). CLIENT (public-13.44.js→13.45.js): fmtStamp() appends the new
+tzStamp() — the city from the SAME FA_TZ map the tz panel uses (fa name
+/ en IANA path), the offset from the new tzOffAt() (the formatToParts
+diff computed AT THE STAMPED INSTANT — DST-honest: a Melbourne stamp
+reads 11:00 in southern summer and 10:00 in winter, always agreeing
+with the clock the line sits under; unlike the tz dropdown labels which
+pin the TZ_ANCHOR). Both language paths render the same shape — fa
+«…ظهر (تهران 3:30 GMT)», en «…15:20 (Tehran 3:30 GMT)» — so the
+server→client handover stays height-neutral (PF-08). Bidi: the plain
+string renders as one RTL-ordered group (تهران rightmost → the 3:30
+number island → GMT), verified in browser QA. Also fixed here: the
+router's __SEO_SYNC__ replace was first-occurrence-only, so #lastSync
+served the RAW placeholder to no-JS visitors (#lastSyncM got the
+stamp) — now /__SEO_SYNC__/g fills both copies.
+
+**2. «slightly move the match day up like several pixels so it's close
+to match time»** (public-13.61.css→13.62.css). The clock pod's match day
+(.time-date) rises toward the digits above it:
+.hero-time .time-digits + .time-date gains --ss-date-lift:
+clamp(-9px,-.8cqi,-3px) as margin-top with an EQUAL padding-bottom —
+the flex stack height stays byte-stable, so the digits remain exactly
+centered in the artwork's clock pod and ONLY the date text moves (at
+the 1000px card: -8px; the visual gap between the digit bottoms and
+the date tops drops ~15px → ~7px, absorbed by the digits' line-height-1
+descender slack). Scoped to the upcoming digits pairing only — live
+and score pods (state pill → score → date) keep their spacing, the
+score chip having no descender slack to absorb an overlap.
+
+Release: public-13.61.css→13.62.css + public-13.44.js→13.45.js
+(rename-on-edit; retired pair stays served + pinned per the retention
+rule), SW v66→v67, VERSION 13.161-tzstamp, package 13.161.0.0, _headers
+immutable pins for the new pair, hero-coverage regenerated (bundle ref
+only, 33 wired), admin-parity re-frozen, check-stats pins rewritten
+(refs, headers chain, SW v67, the tzStamp contract, the time-date lift
+contract, the /__SEO_SYNC__/g router pin).
+
+---
+
 ## [13.160] — 2026-10-21 — v13.160-casttune (owner): the three-item round — stronger directional cast shadows, the wide-pose viewport-edge guard, and the Melbourne timezone fix
 
 **1. The cast shadows — more visible, more spread, and now explicitly

@@ -424,6 +424,35 @@ export function fullWhenHtml(iso: string): string {
     ' <span class="utcnote" dir="ltr">' + esc(iso.slice(11, 16) + " UTC") + "</span>";
 }
 
+// v13.161-tzstamp (owner): «Show in parenthesis the time zone and GMT» —
+// the sync line gains the display zone + GMT offset: «(تهران 3:30 GMT)».
+// Offset of SEO.DISPLAY_TZ at the stamped instant (DST-honest — Tehran has
+// no DST today but the helper stays general), formatted «3:30» / «-5:00»
+// (no leading +, exactly the owner's example; Latin digits + the literal
+// GMT — the same Latin-island convention as the match pages' utcnote).
+// shortOffset is the primary source; the parts-diff fallback covers
+// ICU-less runtimes; the constant is the honest last resort (Tehran is
+// UTC+3:30 year-round, so it can never mislead).
+function displayTzGmtOffset(iso: string): string {
+  const d = new Date(iso);
+  try {
+    const p = new Intl.DateTimeFormat("en-US", { timeZone: SEO.DISPLAY_TZ, timeZoneName: "shortOffset" }).formatToParts(d);
+    const g = (p.find((x) => x.type === "timeZoneName") || {}).value || "";
+    const m = g.match(/^GMT([+-])(\d{1,2})(?::(\d{2}))?$/);
+    if (m) return (m[1] === "-" ? "-" : "") + m[2] + ":" + (m[3] || "00");
+    if (g === "GMT") return "0:00";
+  } catch { /* fall through */ }
+  try {
+    const loc = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: SEO.DISPLAY_TZ }).format(d);
+    const utc = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(d);
+    const [th, tm] = loc.split(":").map(Number);
+    const [uh, um] = utc.split(":").map(Number);
+    let diff = (th * 60 + tm) - (uh * 60 + um);
+    if (diff > 720) diff -= 1440; else if (diff < -720) diff += 1440;
+    return (diff < 0 ? "-" : "") + Math.floor(Math.abs(diff) / 60) + ":" + String(Math.abs(diff) % 60).padStart(2, "0");
+  } catch { return "3:30"; }
+}
+
 export function lastUpdatedHtml(fetchedAt: string | null): string {
   if (!fetchedAt) return "";
   // EXACTLY the client's renderSync() one-line format (fmtStamp + lastUpd)
@@ -436,7 +465,16 @@ export function lastUpdatedHtml(fetchedAt: string | null): string {
   // v13.147-syncdate (owner): the caption below the countdown reads
   // تاریخ به‌روزرسانی (was آخرین به‌روزرسانی) — EXACTLY the client's
   // renderSync() one-line format still (fmtStamp + lastUpd, core-13.13.js).
-  return "تاریخ به‌روزرسانی: " + timeEl(fetchedAt, wd + " " + t + " " + per);
+  // v13.161-tzstamp (owner): the parenthetical zone note — «چهارشنبه ۱۵:۲۰
+  // ظهر (تهران 3:30 GMT)», the owner's literal example. The client's
+  // fmtStamp()/tzStamp() (public-13.45.js) renders the SAME shape from the
+  // user's SELECTED zone (ss_tz cookie), so the JS handover stays
+  // height-neutral; the server always stamps Tehran (DISPLAY_TZ) — the
+  // default zone for no-JS visitors. Plain string, no LRM guards: the
+  // parenthetical renders as one RTL-ordered group (تهران rightmost, then
+  // the 3:30 number island, then GMT — verified in browser QA).
+  const note = " (تهران " + displayTzGmtOffset(fetchedAt) + " GMT)";
+  return "تاریخ به‌روزرسانی: " + timeEl(fetchedAt, wd + " " + t + " " + per + note);
 }
 
 // Breadcrumbs (P-17) — visible trail + BreadcrumbList source of truth.

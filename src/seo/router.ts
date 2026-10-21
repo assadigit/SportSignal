@@ -171,7 +171,13 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
     .replace(/__SEO_OG_DESC__/g, esc(desc))
     .replace(/__SEO_OG_IMAGE__/g, esc(absUrl(SEO.OG_DEFAULT_IMAGE)))
     .replace("__SEO_JSONLD__", jsonld)
-    .replace("__SEO_SYNC__", syncHtml)
+    // v13.161-tzstamp: /g — the placeholder rides TWICE in the template
+    // (#lastSyncM in-hero + #lastSync below the hero, public.ts); the old
+    // first-occurrence-only string replace left the desktop line as a raw
+    // «__SEO_SYNC__» literal until the client renderSync() overwrote it
+    // (no-JS visitors saw the placeholder text). Both copies now carry the
+    // server stamp — with the v13.161 zone note «(تهران 3:30 GMT)».
+    .replace(/__SEO_SYNC__/g, syncHtml)
     .replace("__SEO_HERO__", heroHtml)
     .replace("__SEO_LIVE__", liveHtml || (live.length ? "" : '<span class="sr-only">در حال حاضر بازی زنده‌ای در برنامه نیست.</span>'))
     .replace("__SEO_TOPSPOT__", topspotHtml)

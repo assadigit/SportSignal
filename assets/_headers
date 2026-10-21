@@ -211,6 +211,35 @@
 # final fallback. Immutable under the rename-on-edit rule; the retired
 # pair (13.60.css + 13.43.js) stays pinned below per the retention rule
 # (stale edge HTML <=900s may still reference it).
+# v13.161-tzstamp (owner's two-item round): (1) «Show in parenthesis the
+# time zone and GMT» — the sync line («تاریخ به‌روزرسانی: …») now carries
+# the display zone + GMT offset in parentheses, exactly the owner's
+# example: «چهارشنبه ۱۵:۲۰ ظهر (تهران 3:30 GMT)». Server side
+# (seo/markup.ts lastUpdatedHtml + displayTzGmtOffset) always stamps
+# Tehran (DISPLAY_TZ, shortOffset-honest); client side
+# public-13.45.js (fmtStamp + the NEW tzStamp/tzOffAt helpers) renders
+# the SAME shape from the user's ss_tz-selected zone — the offset
+# computed AT THE STAMPED INSTANT (DST-honest: Melbourne reads 11:00 in
+# southern summer, 10:00 in winter, always agreeing with the rendered
+# clock), the city from the SAME FA_TZ map the tz panel uses (fa name;
+# en keeps the IANA path). The /__SEO_SYNC__/g replace in seo/router.ts
+# fixes the pre-existing quirk where only #lastSyncM got the server
+# stamp (#lastSync showed the raw placeholder until the client
+# overwrite). (2) «slightly move the match day up … close to match
+# time» — public-13.62.css lifts .time-date toward .time-digits
+# (--ss-date-lift clamp(-9px,-.8cqi,-3px) + an equal padding-bottom so
+# the flex stack height — and the digits' centering in the artwork's
+# clock pod — is byte-stable), scoped to the upcoming digits pairing
+# only (.time-digits + .time-date) so live/score pods keep their
+# spacing. Immutable under the rename-on-edit rule; the retired pair
+# (13.61.css + 13.44.js) stays pinned below per the retention rule
+# (stale edge HTML <=900s may still reference it).
+/public-13.62.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.45.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.61.css
   Cache-Control: public, max-age=31536000, immutable
 

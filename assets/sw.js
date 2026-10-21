@@ -307,6 +307,23 @@
 //              (i18n lastUpd relabel). Routine evict — stale HTML may
 //              still reference 13.47.css / core-13.12.js, which stay
 //              served per the retention rule.)
+// Cache name:  sportsignal-v67 (v13.161-tzstamp: bumped from v66 — the
+//              owner's two-item round: (1) the sync line («تاریخ
+//              به‌روزرسانی: …») carries the display zone + GMT offset in
+//              parentheses — «(تهران 3:30 GMT)» — server-stamped from
+//              DISPLAY_TZ (markup.ts displayTzGmtOffset, shortOffset-
+//              honest) and client-rendered from the user's ss_tz zone
+//              (public-13.45.js tzStamp/tzOffAt — the offset at the
+//              stamped instant, DST-honest; the city from the FA_TZ map);
+//              the /__SEO_SYNC__/g router replace fixes the raw
+//              placeholder that #lastSync showed pre-JS. (2) the match
+//              day lifts a few px toward the match time
+//              (.time-digits + .time-date --ss-date-lift, equal
+//              padding-bottom keeps the digits centered in the clock
+//              pod). This release renamed the asset pair
+//              public-13.61.css->13.62.css + public-13.44.js->13.45.js;
+//              stale HTML may still reference the retired pairs, which
+//              stay served per the retention rule.)
 // Cache name:  sportsignal-v66 (v13.160-casttune: bumped from v65 — the
 //              owner's three-item round: (1) the cast shadows re-baked
 //              stronger (sigma 9%H / alpha .68, all 33 .cast.webp files)
@@ -344,7 +361,7 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v66";
+const CACHE = "sportsignal-v67";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
