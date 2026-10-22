@@ -409,6 +409,24 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
+// v13.165-mcfa (v71): the owner round on the mobile hero — "1. too much
+//              waste margin space around the HUD 2. unclear that they
+//              should scroll — no sign of below containers 3. FA mode must
+//              show jalali calender + farsi numerals + farsi translations".
+//              The frame re-ships CROPPED as /ui/sportsignal-hud-mobile-c.webp
+//              (alpha-bounds crop 743x1357 — the ~14%/side baked transparent
+//              margins gone; lossless, composited-pixel-identical, 625KB),
+//              the card is HEIGHT-driven (min(72svh,660px) + aspect-ratio
+//              743/1357) so the first screen always shows the new scroll
+//              hint (#mcHint — «بازی‌های دیگر» / More matches) + the next
+//              card's peek, and the whole presentation goes LOCALE-AWARE:
+//              data-i label hooks (core-13.14.js→core-13.15.js: mcVs/mcDay/
+//              mcD/mcH/mcM/mcHint), renderMCard renders faName names + the
+//              JALALI date + faNum digits + venueFa (mset rides fmtNum;
+//              mcardHtml the FA/Jalali server mirror), en keeps the Latin
+//              design language. Renames public-13.63.css→13.64.css +
+//              public-13.48.js→13.49.js; CORE_URLS stays minimal (the
+//              cropped frame + fonts lazy-cache on demand, cache-first).
 // v13.164-matchcard (v70): the MOBILE hero — the HUD mobile match card
 //              (the owner-supplied 1024x1536 2:3 frame, served lossless as
 //              /ui/sportsignal-hud-mobile.webp) takes the hero <=899px (the
@@ -418,7 +436,7 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v70";
+const CACHE = "sportsignal-v71";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

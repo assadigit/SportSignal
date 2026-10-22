@@ -241,25 +241,38 @@
 # spacing. Immutable under the rename-on-edit rule; the retired pair
 # (13.61.css + 13.44.js) stays pinned below per the retention rule
 # (stale edge HTML <=900s may still reference it).
-# v13.164-matchcard (owner): the MOBILE hero — the HUD mobile match card.
-# The owner-supplied frame artwork (SportSignal-HUD-Mobile.png, 1024x1536,
-# 2:3 — uploaded to the repo root 2026-10-22) rides the hero <=899px (the
-# phone zone where the PC HUD frame squeezed to ~150px tall); >=900px the
-# PC card + player figures are untouched. Served LOSSLESS as
-# /ui/sportsignal-hud-mobile.webp — composited-pixel-identical to the PNG
-# (verified: alpha channel exact, premultiplied RGBA exact) at 646KB vs
-# 1.35MB. The card: 14 absolutely-positioned cqw-scaled slots over the
-# baked frame (center-point anchors, the same container-type technique as
-# the PC card), Chakra Petch self-hosted woff2 (500/600/700 latin),
-# direction:ltr pinned so the RTL page never mirrors it, VS/MATCH DAY
-# navy pills interrupting the baked glow lines, countdown ticking via
-# updateBigBar (mcD/mcH/mcM — the same second-tick as #hcD), data from
-# the SAME nextBig hero selection (renderMCard from both renderHeroSpot
-# exits; mcardHtml the server mirror with Tehran stamps). The date line
-# and kickoff time render in the user's ss_tz zone. Immutable under the
-# rename-on-edit rule; the retired pair (13.62.css + 13.47.js) stays
-# pinned below per the retention rule (stale edge HTML <=900s may still
-# reference it).
+# v13.165-mcfa (owner round: "1. too much waste margin space around the
+# HUD 2. unclear that they should scroll — no sign of below containers
+# 3. FA mode must show jalali calender + farsi numerals + farsi
+# translations; the overall graphical is nice"): the frame re-ships
+# CROPPED as /ui/sportsignal-hud-mobile-c.webp — the artwork's own baked
+# TRANSPARENT margins (alpha scan x 141-883 / y 97-1453 of the 1024x1536
+# PNG → 743x1357, ~14% per side) are gone, lossless,
+# composited-pixel-identical, 625KB; the card is HEIGHT-driven
+# (min(72svh,660px) + aspect-ratio 743/1357) so the visible HUD fills the
+# width it gets while the first screen always shows the scroll hint
+# (#mcHint — «بازی‌های دیگر» / More matches, smooth-scrolls to the first
+# visible card) + the next card's peek. FA: the static labels carry the
+# data-i hooks (core-13.15.js: mcVs/mcDay/mcD/mcH/mcM/mcHint — مقابل /
+# روز مسابقه / روز-ساعت-دقیقه), renderMCard renders faName names + the
+# JALALI date (byte-parity with the mcardHtml server mirror's pure-math
+# jalaliDateStr) + faNum digits + venueFa; the en presentation is the
+# artwork's own Latin design language. The old frame webp stays served +
+# pinned one SEO TTL below (stale edge HTML references it). Immutable
+# under the rename-on-edit rule; the retired v13.164 pair (13.63.css +
+# 13.48.js + core-13.14.js) stays pinned below per the retention rule.
+/public-13.64.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.49.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/core-13.15.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/ui/sportsignal-hud-mobile-c.webp
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.63.css
   Cache-Control: public, max-age=31536000, immutable
 

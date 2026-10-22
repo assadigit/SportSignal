@@ -144,7 +144,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   // v13.120-hero: the hero is the Stadium-Pulse card (M.heroCardHtml — the
   // server mirror of renderHeroSpot in public-13.29.js).
   // v13.164-matchcard: M.mcardHtml — the mobile HUD card's server mirror
-  // (renderMCard in public-13.48.js); the SAME nextBig selection feeds both
+  // (renderMCard in public-13.49.js); the SAME nextBig selection feeds both
   // cards (one source of truth — the hero never differs between presentations).
   const heroHtml = nextBig ? M.heroCardHtml(nextBig) : "";
   const mheroHtml = nextBig ? M.mcardHtml(nextBig) : "";
@@ -183,8 +183,9 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
     // server stamp — with the v13.161 zone note «(تهران 3:30 GMT)».
     .replace(/__SEO_SYNC__/g, syncHtml)
     .replace("__SEO_HERO__", heroHtml)
-    // v13.164-matchcard: the mobile HUD card's data zone (Tehran stamps —
-    // the client renderMCard corrects to the user's ss_tz zone on load)
+    // v13.164-matchcard: the mobile HUD card's data zone (Tehran stamps
+    // the client renderMCard corrects to the user's ss_tz zone on load;
+    // v13.165-mcfa: the mirror ships the FA/Jalali/Persian-digit presentation)
     .replace("__SEO_MHERO__", mheroHtml)
     .replace("__SEO_LIVE__", liveHtml || (live.length ? "" : '<span class="sr-only">در حال حاضر بازی زنده‌ای در برنامه نیست.</span>'))
     .replace("__SEO_TOPSPOT__", topspotHtml)
@@ -217,6 +218,10 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   // card (a hero exists ⇒ content visible for no-JS; CSS decides which card
   // the viewport shows — ≤899px the mobile card, ≥900px the PC card).
   if (mheroHtml) html = html.replace('<a class="hero-mcard" id="heroMCard" style="display:none" href="#" dir="ltr">', '<a class="hero-mcard" id="heroMCard" href="#" dir="ltr">');
+  // v13.165-mcfa: the scroll hint unhides under the SAME rule (a hero
+  // exists => the hint shows for no-JS too; CSS decides which viewport
+  // paints it — <=899px; renderMCard re-manages it client-side).
+  if (mheroHtml) html = html.replace('<a class="mc-hint" id="mcHint" style="display:none" href="#topspotCard">', '<a class="mc-hint" id="mcHint" href="#topspotCard">');
   if (liveHtml) html = html.replace('<div class="card" id="liveCard" style="display:none">', '<div class="card" id="liveCard">');
   if (topspotHtml) html = html.replace('<div class="card" id="topspotCard" style="display:none">', '<div class="card" id="topspotCard">');
   if (weekHtml) html = html.replace('<div class="card" id="weekCard" style="display:none">', '<div class="card" id="weekCard">');
@@ -229,9 +234,10 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   {
     const z = (n: number) => (n < 10 ? "0" + n : "" + n);
     let hcD = "--", hcH = "--", hcM = "--", hcS = "--", hcPct = "0", hcUpcoming = false;
-    // v13.164-matchcard: the mobile card's cells ride the SAME epoch + guard
-    // (Latin digits — the HUD artwork's own design language; updateBigBar
-    // corrects them every tick client-side exactly like #hcD/#hcH/#hcM).
+    // v13.164-matchcard + v13.165-mcfa: the mobile card's cells ride the SAME
+    // epoch + guard (Persian digits — the FA default the whole page ships;
+    // updateBigBar corrects them every tick client-side exactly like
+    // #hcD/#hcH/#hcM, fmtNum rewriting to Latin for en).
     let mcD = "--", mcH = "--", mcM = "--";
     if (nextBig && nextBig.s.utcDate) {
       const st = String(nextBig.s.status || "").toUpperCase();
@@ -245,9 +251,9 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
         hcH = toFaDigits(z(Math.floor(ms % 864e5 / 36e5)));
         hcM = toFaDigits(z(Math.floor(ms % 36e5 / 6e4)));
         hcS = toFaDigits(z(Math.floor(ms % 6e4 / 1e3)));
-        mcD = z(Math.floor(ms / 864e5));
-        mcH = z(Math.floor(ms % 864e5 / 36e5));
-        mcM = z(Math.floor(ms % 36e5 / 6e4));
+        mcD = toFaDigits(z(Math.floor(ms / 864e5)));
+        mcH = toFaDigits(z(Math.floor(ms % 864e5 / 36e5)));
+        mcM = toFaDigits(z(Math.floor(ms % 36e5 / 6e4)));
         let g = 1 - ms / 864e5; if (g < 0) g = 0; if (g > 1) g = 1;
         hcPct = String(Math.max(2, Math.round(g * 100)));
       }
@@ -257,8 +263,9 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
         .replace("__SEO_HCD__", hcD).replace("__SEO_HCH__", hcH)
         .replace("__SEO_HCM__", hcM).replace("__SEO_HCS__", hcS)
         .replace("__SEO_HCPCT__", hcPct)
-        // v13.164-matchcard: the mobile card's three pockets — same remaining
-        // time, Latin tabular digits
+        // v13.164-matchcard + v13.165-mcfa: the mobile card's three pockets —
+        // same remaining time, Persian-digit tabular cells (the FA default;
+        // the client's fmtNum writer re-renders Latin for en)
         .replace("__SEO_MCD__", mcD).replace("__SEO_MCH__", mcH).replace("__SEO_MCM__", mcM);
     } else {
       // v13.150-hud: the countdown lives INSIDE the card as the static

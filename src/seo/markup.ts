@@ -258,17 +258,22 @@ function heroTeamHtml(t: any, away: boolean): string {
   return '<div class="hero-team ' + (away ? "team-away" : "team-home") + '"><span class="team-crest">' + logoHtml(t) + '</span><div class="hero-name">' + nameHtml(displayName(t)) + '</div></div>';
 }
 
-// v13.164-matchcard: the SERVER mirror of the mobile hero card — fills
-// #mcardSpot inside the static a.hero-mcard anchor (public.ts) for no-JS
-// visitors; renderMCard (public-13.48.js) rebuilds the same DOM on load.
-// Tehran stamps exactly like every server mirror (the client corrects to
-// the user's ss_tz zone). English/Latin by design — the HUD artwork's own
-// language (the baked VS / MATCH DAY / DAYS-HOURS-MINUTES labels); the
-// team names ride the FD Latin names (CSS uppercases them) and the venue
-// the English FD string. Missing fields render the spec placeholders
-// ("--" + .mc-mut, empty crest slot) — zero layout shift.
-const MC_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-
+// v13.164-matchcard + v13.165-mcfa: the SERVER mirror of the mobile hero
+// card — fills #mcardSpot inside the static a.hero-mcard anchor (public.ts)
+// for no-JS visitors; renderMCard (public-13.49.js) rebuilds the same DOM
+// on load. Tehran stamps exactly like every server mirror (the client
+// corrects to the user's ss_tz zone). v13.165-mcfa (owner: "it must show
+// jalali calender + farsi numerals and farsi translations in FA mode"): the
+// mirror ships the FA presentation — the FA default the site's no-JS paint
+// always uses (the static labels in public.ts carry the FA defaults + the
+// data-i hooks): faName team names, the JALALI date via the pure-math
+// jalaliDateStr (seo/utils — «۱ آبان ۱۴۰۵», day-month-year, Persian digits,
+// byte-identical to the client's fa-IR-u-ca-persian Intl render: same month
+// names, same digits, plain 0x20 separators — browser-verified), the faNum
+// kickoff digits and the venueFa string. The EN client re-renders to the
+// Latin presentation on load (renderMCard), exactly like every other server
+// mirror on the page. Missing fields render the spec placeholders ("--" +
+// .mc-mut, empty crest slot) — zero layout shift.
 function mcLogoHtml(t: any, extra: string): string {
   const c = t && t.crest;
   return '<div class="mc-slot ' + extra + '">' + (c ? '<img src="' + esc(c) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' : "") + "</div>";
@@ -283,22 +288,23 @@ export function mcardHtml(sm: SeoMatch): string {
   const m = sm.s;
   let dt = "--", tm = "--";
   if (m.utcDate && !isNaN(Date.parse(m.utcDate))) {
-    // Tehran wall clock, Latin digits — deterministic (tehranParts, no
-    // locale variance); matches the client render byte-for-byte in the
-    // default zone ("APR 26, 2026" / "22:30").
+    // Tehran wall clock — deterministic (tehranParts, no locale variance);
+    // the Jalali date rides the pure-math converter (jalaliDateStr) so the
+    // mirror matches the client's fa-IR Intl render byte-for-byte in the
+    // default zone («۱ آبان ۱۴۰۵» / «۲۱:۳۰»).
     const p = tehranParts(m.utcDate);
     const z = (n: number) => (n < 10 ? "0" + n : "" + n);
-    dt = MC_MONTHS[p.m - 1] + " " + p.d + ", " + p.y;
-    tm = z(p.hh) + ":" + z(p.mm);
+    dt = jalaliDateStr(m.utcDate);
+    tm = toFaDigits(z(p.hh) + ":" + z(p.mm));
   }
   let out = "";
   out += mcLogoHtml(m.homeTeam, "mc-logo");
   out += mcLogoHtml(m.awayTeam, "mc-logo mc-logo-a");
-  out += mcTextHtml("mc-slot mc-name", m.homeTeam && m.homeTeam.name);
-  out += mcTextHtml("mc-slot mc-name mc-name-a", m.awayTeam && m.awayTeam.name);
+  out += mcTextHtml("mc-slot mc-name", m.homeTeam && (m.homeTeam.faName || m.homeTeam.name));
+  out += mcTextHtml("mc-slot mc-name mc-name-a", m.awayTeam && (m.awayTeam.faName || m.awayTeam.name));
   out += mcTextHtml("mc-slot mc-date", dt);
   out += mcTextHtml("mc-slot mc-ko", tm);
-  out += mcTextHtml("mc-slot mc-venue", m.venue);
+  out += mcTextHtml("mc-slot mc-venue", m.venueFa || m.venue);
   return out;
 }
 

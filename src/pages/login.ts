@@ -51,7 +51,7 @@ h1{font-size:18px}
 <button id="btnLogin" onclick="doLogin()" data-i="btnLogin">\u0648\u0631\u0648\u062F</button>
 <div class="err" id="err" role="alert"></div>
 </div>
-<script src="/core-13.14.js"><\/script>
+<script src="/core-13.15.js"><\/script>
 <script>
 function err(t){ var e=document.getElementById("err"); e.textContent=t; e.style.display="block"; }
 async function doLogin(){

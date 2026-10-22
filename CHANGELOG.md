@@ -8,6 +8,103 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.165] — 2026-10-23 — v13.165-mcfa (owner): the mobile card round — tight fit, scroll sign, FA/Jalali
+
+**The owner's three-item round (2026-10-23):** "1. The margin is too much,
+there are a lot of waste margin space around the HUD. 2. due to margin,
+it's unclear for first-time viewer that they should scroll to see the
+rest, no sign of below containers. 3. in either FA/EN locale, it shows
+latin numbers and latin calender, but it must show jalali calender +
+farsi numerals and farsi translations in FA mode. the overall graphical
+is nice though. Good job."
+
+**1 — the waste margin was BAKED IN THE ARTWORK.** An alpha scan of the
+1024×1536 frame found the visible content spans only x 141–883 /
+y 97–1453: ~13.8% fully-transparent margin per side + 6.3%/5.3% top/bottom
+(invisible alpha ≤8 noise). At 390px that was 53px of dead space on EACH
+side of the glowing HUD. The frame re-ships CROPPED as
+`/ui/sportsignal-hud-mobile-c.webp` (743×1357, lossless,
+composited-pixel-identical, 625KB; the old webp stays served + pinned one
+SEO TTL). Every slot was remapped through the crop origin (141,97)/size
+(743,1357) — logos 33/67%→26.5/73.4%, VS y 28.3→24.9%, names top 34→31.3%,
+MATCH DAY 45.8→44.7%, date left 41.5→38.2%, kickoff 57.2→57.6%, cells
+34/50/66→27.9/49.9/72% @74.3/77.1%, venue 47.3/82.8→46.2/86.6% — with the
+cqw type scaled ×1024/743 (kickoff 11.3→15.6cqw, countdown 3.7→5.1cqw…).
+The card is HEIGHT-driven now: `height:min(72svh,660px)` (+vh fallback) +
+`aspect-ratio:743/1357` + `width:auto` — the visible HUD fills the width
+it is given at every phone height (390px: 333px wide vs the old 283px =
++18%; 430px: 361 vs 312 = +16%; 360px: 292 vs 261 = +12%) and NEVER
+overflows the fold (the old card bottomed at 699-of-844 and clipped past
+the fold on ≤667px phones — now the whole card is always visible).
+
+**2 — the scroll sign.** A new `#mcHint` pill sits under the sync caption
+(the last hero child): «بازی‌های دیگر» / "More matches" + a down chevron,
+bobbing gently (parked under prefers-reduced-motion), ≤899px only. It is
+a REAL link (#topspotCard) whose click the public JS intercepts to
+smooth-scroll to the first VISIBLE card below the hero (live > topspot >
+week > ucl > standings; .page-col the hidden-everything fallback;
+reduced-motion → instant). The height cap + the tightened ≤899px wrap
+spacing (padding-bottom 48→16, margin-bottom 24→8) put the NEXT card's
+title peaking into the first screen at every phone height (844px: 48px of
+«دیدارهای جذاب لیگ‌ها» visible; 740px: 19px; 932px: 84px). The hint
+shows/hides exactly with the card (no hero → no hint) — renderMCard
+manages it client-side, the router unhides it under the same rule as the
+card for no-JS.
+
+**3 — FA speaks Persian; EN keeps the artwork's design language.** The
+v13.164 card was Latin-by-design in both locales (the artwork's baked VS /
+MATCH DAY / DAYS-HOURS-MINUTES language). Now the STATIC labels carry
+data-i hooks (core-13.14.js→core-13.15.js: mcVs/mcDay/mcD/mcH/mcM —
+«مقابل» / «روز مسابقه» / «روز-ساعت-دقیقه», trText flips them with the
+language toggle) and renderMCard renders the FA data: faName team names,
+the JALALI date («۳ آبان ۱۴۰۵» — fa-IR-u-ca-persian, day-month-year,
+Persian digits, in the user's ss_tz zone), the faNum kickoff («۲۱:۰۰»),
+the venueFa string («آلیانتس آرنا»); the countdown cells ride the fmtNum
+locale writer (fa pockets read «۰۲/۲۱/۳۷», en keeps the Latin tabular
+pair). The mcardHtml SERVER mirror ships the same FA presentation
+(jalaliDateStr pure-math — byte-identical to the client's Intl render:
+same month names, same digits, plain 0x20 separators — browser-verified;
+toFaDigits time; faName; venueFa) so the no-JS first paint matches the
+post-JS render, exactly like every other server mirror. Typography per
+the v13.133 Persian system: Morabba carries names/date/kickoff/countdown
+digits, Peyda carries the labels + venue, letter-spacing 0 (Persian is
+never tracked), sizes tuned per face (html[lang="fa"] overrides — the
+static `<html lang="fa">` default means the overrides hold for no-JS
+too). direction:ltr stays pinned on the card — the Persian strings ride
+the Unicode bidi algorithm inside the LTR block (RTL runs + LTR digit
+islands render correctly; browser-verified).
+
+**QA (wrangler dev :8787, KV fixture FC Bayern München vs Arsenal FC):**
+390 FA — DOM rect audit lands every slot on the remapped spec (logos
+26.5/73.4 @23.4 w23.4%, VS 49.9 @24.9, MATCH DAY 49.9 @44.7, date left
+38.2 @48.5, kickoff 49.9 @57.6 fs 13.8cqw, cells 27.9 @74.3/77.1 w20.7%,
+venue 46.2 @86.6); the full FA text set verified (مقابل / روز مسابقه /
+بایرن مونیخ / آرسنال / ۳ آبان ۱۴۰۵ / ۲۱:۰۰ / آلیانتز آرنا /
+۰۲-۲۱-۳۷ ticking); VLM crop inspection 6/6 (no clipping, labels inside
+the pockets, date after the calendar icon, «مقابل» clear of both crests);
+Morabba + Peyda fontLoaded:true. EN toggle — the full Latin presentation
+returns (VS / MATCH DAY / DAYS-HOURS-MINUTES / FC BAYERN MÜNCHEN /
+ARSENAL FC / OCT 25, 2026 / 21:00 / Allianz Arena / More matches),
+Chakra Petch. Responsive: 375×667 (whole card visible + hint — the old
+card clipped past the fold there), 360×740 (peek 19px), 430×932 (660px
+cap, peek 84px). Desktop 1920 regression — mobile card + hint display:
+none, PC card + Kane/Saka + hud-cells grid byte-untouched. Hint click
+smooth-scrolls 0→788 (topspot at y=8). No-hero stub — card + hint hide
+together; restored on load. 899/900 breakpoint edges exact. tz: the
+client UTC-zone paint «۳ آبان ۱۴۰۵ ۲۱:۰۰» and the Tehran server mirror
+«۴ آبان ۱۴۰۵ ۰۰:۳۰» are the same instant, date flipping across the
+midnight boundary correctly. Zero console messages, zero page errors.
+
+**Release mechanics:** public-13.63.css→13.64.css +
+public-13.48.js→13.49.js + core-13.14.js→core-13.15.js (rename-on-edit;
+the retired trio + the old frame webp stay served + pinned per the
+retention rule), refs in public.ts + page-shell.ts + admin.ts + login.ts,
+_headers pins the new quartet, SW v70→v71 + history, VERSION
+13.165-mcfa, package 13.165.0.0, check-stats pins rewritten (read paths,
+version refs, headers chain, SW v71, an 8-check v13.165 feature block),
+hero-coverage regen (bundle ref only, 35 wired), admin-parity re-frozen
+(all three page baselines — the core ref + the card markup).
+
 ## [13.164] — 2026-10-23 — v13.164-matchcard (owner): the MOBILE hero — the HUD mobile match card
 
 **The owner's ask (spec-driven):** build the mobile match card on the raw

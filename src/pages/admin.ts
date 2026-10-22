@@ -21,7 +21,7 @@ ${ADMIN_MAIN_STYLE}
 </head>
 <body>
 ${ADMIN_BODY}
-<script src="/core-13.14.js"><\/script>
+<script src="/core-13.15.js"><\/script>
 <script>
 ${ADMIN_SCRIPT}
 <\/script>
