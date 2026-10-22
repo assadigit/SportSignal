@@ -6,6 +6,62 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+---
+
+## [13.164] — 2026-10-23 — v13.164-matchcard (owner): the MOBILE hero — the HUD mobile match card
+
+**The owner's ask (spec-driven):** build the mobile match card on the raw
+PNG frame (SportSignal-HUD-Mobile.png, 1024×1536, 2:3 — uploaded to the
+repo root 2026-10-22) with live data overlaid in measured slots, matching
+the «Futuristic Barcelona vs PSG Match Card» reference. The card was
+built and QA'd as a standalone demo first (high-fidelity VLM verdict,
+360/390/430 renders, long-name + missing-field contracts), then
+integrated into the production site in this release.
+
+**The integration:** at ≤899px (the phone zone, where the PC HUD frame
+went width:auto and squeezed to ~150px tall) the mobile card takes the
+hero — the PC card + player figures are untouched at ≥900px. The card is
+a.hero-mcard #heroMCard: ONE real link to the match page (the PC card's
+architecture verbatim — static frame + countdown cells + sr region
+layers that survive the data rebuild; #mcardSpot is the data zone). 14
+absolutely-positioned slots anchored by center point (left/top % +
+translate(-50%,-50%)), cqw type via container-type:inline-size,
+direction:ltr pinned (anchor + CSS) so the RTL page never mirrors the
+layout; the VS and MATCH DAY navy pills interrupt the baked glow lines;
+the date line starts after the baked calendar icon (41.5%, never
+centred); the countdown's three cells sit in the baked capsule pockets
+(34%/50%/66%) with tabular digits; the stadium line ellipsises inside
+the baked pill. Chakra Petch self-hosted (500/600/700 latin woff2,
+~10KB each, fetched only where the card's rules match text).
+
+**Data wiring:** the SAME nextBig hero selection feeds both cards (one
+source of truth). renderMCard (public-13.48.js) renders from both
+renderHeroSpot exits — the mobile card follows the hero through
+load/language-toggle/poll-refresh/empty; updateBigBar writes mcD/mcH/mcM
+every second-tick (the same contract as #hcD, zeros clamp, cells hidden
+for live/post) and the #mcSr polite region announces per-minute in the
+page language. The date line + kickoff time render in the user's ss_tz
+zone (curTz — the sync-line contract); mcardHtml (seo/markup.ts) is the
+no-JS server mirror with Tehran stamps (tehranParts, deterministic
+«APR 26, 2026» / «22:30» Latin formatting); the router fills
+__SEO_MHERO__ + the __SEO_MCD/H/M__ digits from the payload epoch and
+unhides the card under the same rule as the PC card. Missing fields
+render the spec placeholders («--» + .mc-mut, empty crest slot) — zero
+layout shift.
+
+**Asset engineering:** the frame ships LOSSLESS as
+/ui/sportsignal-hud-mobile.webp — composited-pixel-identical to the PNG
+(verified: alpha channel exact, premultiplied RGBA exact — the raw RGB
+deltas of a premultiply roundtrip cancel under alpha weighting), 646KB
+vs 1.35MB. A palette PNG (453KB) measured 45.8dB composited PSNR and
+lossy webp q95 measured 37.1dB — both rejected; lossless webp is INF.
+
+**Release:** public-13.62.css→13.63.css + public-13.47.js→13.48.js
+(rename-on-edit, retired pair stays served + pinned per the retention
+rule), SW v69→v70, VERSION 13.164-matchcard, _headers gains the
+13.63.css + 13.48.js + frame immutable pins, check-stats pins rewritten
++ new mobile-card pin block, admin-parity re-frozen, page-shell ref.
+
 ## [13.163] — 2026-10-22 — v13.163-herohd (owner): the Chelsea + Tottenham hero portraits upgrade to native UEFA 1080px cutoffs — Cole Palmer + Dominic Solanke
 
 **The owner's directive:** «The quality of pictures are too low, find

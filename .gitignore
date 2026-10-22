@@ -50,3 +50,6 @@ SportSignal-v*.zip
 # token in plaintext — NEVER tracked; seed-local.js is its local-only companion)
 reseed.sh
 scripts/seed-local.js
+
+# Local QA artifacts (screenshots, VLM verdicts — session-local, never tracked)
+qa/

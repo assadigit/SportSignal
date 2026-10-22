@@ -258,6 +258,50 @@ function heroTeamHtml(t: any, away: boolean): string {
   return '<div class="hero-team ' + (away ? "team-away" : "team-home") + '"><span class="team-crest">' + logoHtml(t) + '</span><div class="hero-name">' + nameHtml(displayName(t)) + '</div></div>';
 }
 
+// v13.164-matchcard: the SERVER mirror of the mobile hero card — fills
+// #mcardSpot inside the static a.hero-mcard anchor (public.ts) for no-JS
+// visitors; renderMCard (public-13.48.js) rebuilds the same DOM on load.
+// Tehran stamps exactly like every server mirror (the client corrects to
+// the user's ss_tz zone). English/Latin by design — the HUD artwork's own
+// language (the baked VS / MATCH DAY / DAYS-HOURS-MINUTES labels); the
+// team names ride the FD Latin names (CSS uppercases them) and the venue
+// the English FD string. Missing fields render the spec placeholders
+// ("--" + .mc-mut, empty crest slot) — zero layout shift.
+const MC_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+function mcLogoHtml(t: any, extra: string): string {
+  const c = t && t.crest;
+  return '<div class="mc-slot ' + extra + '">' + (c ? '<img src="' + esc(c) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' : "") + "</div>";
+}
+
+function mcTextHtml(cls: string, txt: string | null | undefined, mut?: boolean): string {
+  const v = txt == null || txt === "" ? "--" : txt;
+  return '<div class="' + cls + ((mut || v === "--") ? " mc-mut" : "") + '">' + esc(v) + "</div>";
+}
+
+export function mcardHtml(sm: SeoMatch): string {
+  const m = sm.s;
+  let dt = "--", tm = "--";
+  if (m.utcDate && !isNaN(Date.parse(m.utcDate))) {
+    // Tehran wall clock, Latin digits — deterministic (tehranParts, no
+    // locale variance); matches the client render byte-for-byte in the
+    // default zone ("APR 26, 2026" / "22:30").
+    const p = tehranParts(m.utcDate);
+    const z = (n: number) => (n < 10 ? "0" + n : "" + n);
+    dt = MC_MONTHS[p.m - 1] + " " + p.d + ", " + p.y;
+    tm = z(p.hh) + ":" + z(p.mm);
+  }
+  let out = "";
+  out += mcLogoHtml(m.homeTeam, "mc-logo");
+  out += mcLogoHtml(m.awayTeam, "mc-logo mc-logo-a");
+  out += mcTextHtml("mc-slot mc-name", m.homeTeam && m.homeTeam.name);
+  out += mcTextHtml("mc-slot mc-name mc-name-a", m.awayTeam && m.awayTeam.name);
+  out += mcTextHtml("mc-slot mc-date", dt);
+  out += mcTextHtml("mc-slot mc-ko", tm);
+  out += mcTextHtml("mc-slot mc-venue", m.venue);
+  return out;
+}
+
 // The spotitem anatomy (hero / big-matches / week / ucl boxes).
 // opts.finished → show final score · opts.past → dimmed expired ·
 // opts.noComp → UCL box (skip comp chip) · opts.noDate → hero stack.

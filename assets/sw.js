@@ -409,7 +409,16 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
-const CACHE = "sportsignal-v69";
+// v13.164-matchcard (v70): the MOBILE hero — the HUD mobile match card
+//              (the owner-supplied 1024x1536 2:3 frame, served lossless as
+//              /ui/sportsignal-hud-mobile.webp) takes the hero <=899px (the
+//              phone zone — the PC HUD frame squeezed to ~150px tall there);
+//              14 cqw-scaled center-anchored slots, Chakra Petch
+//              self-hosted, renderMCard + the updateBigBar second-tick,
+//              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
+//              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
+//              frame + fonts lazy-cache on demand, cache-first).
+const CACHE = "sportsignal-v70";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

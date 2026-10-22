@@ -241,6 +241,34 @@
 # spacing. Immutable under the rename-on-edit rule; the retired pair
 # (13.61.css + 13.44.js) stays pinned below per the retention rule
 # (stale edge HTML <=900s may still reference it).
+# v13.164-matchcard (owner): the MOBILE hero — the HUD mobile match card.
+# The owner-supplied frame artwork (SportSignal-HUD-Mobile.png, 1024x1536,
+# 2:3 — uploaded to the repo root 2026-10-22) rides the hero <=899px (the
+# phone zone where the PC HUD frame squeezed to ~150px tall); >=900px the
+# PC card + player figures are untouched. Served LOSSLESS as
+# /ui/sportsignal-hud-mobile.webp — composited-pixel-identical to the PNG
+# (verified: alpha channel exact, premultiplied RGBA exact) at 646KB vs
+# 1.35MB. The card: 14 absolutely-positioned cqw-scaled slots over the
+# baked frame (center-point anchors, the same container-type technique as
+# the PC card), Chakra Petch self-hosted woff2 (500/600/700 latin),
+# direction:ltr pinned so the RTL page never mirrors it, VS/MATCH DAY
+# navy pills interrupting the baked glow lines, countdown ticking via
+# updateBigBar (mcD/mcH/mcM — the same second-tick as #hcD), data from
+# the SAME nextBig hero selection (renderMCard from both renderHeroSpot
+# exits; mcardHtml the server mirror with Tehran stamps). The date line
+# and kickoff time render in the user's ss_tz zone. Immutable under the
+# rename-on-edit rule; the retired pair (13.62.css + 13.47.js) stays
+# pinned below per the retention rule (stale edge HTML <=900s may still
+# reference it).
+/public-13.63.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.48.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/ui/sportsignal-hud-mobile.webp
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.62.css
   Cache-Control: public, max-age=31536000, immutable
 

@@ -50,7 +50,14 @@ __SEO_JSONLD__
      The user can still toggle to light via the theme button. -->
 <meta name="color-scheme" content="dark light">
 <title>__SEO_TITLE__</title>
-<style>@font-face{font-family:'Morabba';src:url('/fonts/MorabbaVF.woff2') format('woff2');font-weight:250 900;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-ExtraBold.woff2') format('woff2');font-weight:800;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Black.woff2') format('woff2');font-weight:900;font-style:normal;font-display:swap}</style>
+<style>@font-face{font-family:'Morabba';src:url('/fonts/MorabbaVF.woff2') format('woff2');font-weight:250 900;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-ExtraBold.woff2') format('woff2');font-weight:800;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Black.woff2') format('woff2');font-weight:900;font-style:normal;font-display:swap}
+/* v13.164-matchcard: the mobile HUD card's squared techno face (the owner's
+     reference card's own typography). Self-hosted latin subsets (~10KB
+     each); fetched ONLY when the mobile card's rules match text — no
+     download on desktop or non-home pages. */
+@font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}</style>
 <style>/* v13.56-visitcount: footer page-view counter. The number span has a
      fixed min-width so the arriving digits never cause layout shift. */
 .visitcount{font-size:.78rem;color:var(--muted,#94a3b8);margin-top:10px;line-height:1.9;direction:rtl}
@@ -75,7 +82,7 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.62.css">
+<link rel="stylesheet" href="/public-13.63.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -238,6 +245,43 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <span id="hcSr" class="sr-only" aria-live="polite"></span>
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 <div id="heroSpot">__SEO_HERO__</div>
+</a>
+<!-- v13.164-matchcard (owner): the MOBILE hero — the HUD mobile match card.
+     The owner-supplied frame artwork (SportSignal-HUD-Mobile.png, 1024x1536,
+     2:3, uploaded to the repo root) is served LOSSLESS as
+     /ui/sportsignal-hud-mobile.webp (composited-pixel-identical to the PNG,
+     verified: alpha channel exact, premultiplied RGBA exact, 646KB vs 1.35MB).
+     The anchor mirrors the PC card's architecture exactly: ONE real link to
+     the match page wrapping the whole HUD; the frame img + the VS / MATCH DAY
+     navy pills + the countdown cells (mcD/mcH/mcM — updateBigBar writes them
+     every tick, same ids-everywhere contract as #hcD/#hcH/#hcM) + the #mcSr
+     polite region are STATIC layers (survive the renderMCard rebuild);
+     #mcardSpot is the data zone rebuilt client-side (renderMCard, called
+     from BOTH renderHeroSpot exits — same lifecycle as the PC hero) and
+     filled server-side by mcardHtml (seo/markup.ts — the no-JS mirror,
+     Tehran stamps like every server mirror). dir="ltr" is pinned on the
+     anchor AND in the CSS so the RTL page can never mirror the layout.
+     The English labels (VS / MATCH DAY / DAYS-HOURS-MINUTES) are the
+     artwork's own design language — baked into the owner's reference.
+     Visibility: display:none by default; the router unhides it exactly like
+     the PC card when a hero exists; CSS shows it ONLY <=899px (the phone
+     zone — the PC HUD frame squeezed to ~150px tall there; >=900px the PC
+     card + player figures are untouched). renderMCard keeps inline
+     display="" so the CSS breakpoint always decides. -->
+<a class="hero-mcard" id="heroMCard" style="display:none" href="#" dir="ltr">
+<img class="mc-frame" src="/ui/sportsignal-hud-mobile.webp" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
+<div class="mc-slot mc-vs" aria-hidden="true"><span class="mc-vs-t">VS</span></div>
+<div class="mc-slot mc-mday" aria-hidden="true"><span class="mc-mday-t">MATCH DAY</span></div>
+<div class="mc-cells" id="mcCells" role="timer" dir="ltr">
+<b class="mc-slot mc-num mc-pos-d" id="mcD">__SEO_MCD__</b>
+<i class="mc-slot mc-lbl mc-pos-d" aria-hidden="true"><span class="mc-lbl-t">DAYS</span></i>
+<b class="mc-slot mc-num mc-pos-h" id="mcH">__SEO_MCH__</b>
+<i class="mc-slot mc-lbl mc-pos-h" aria-hidden="true"><span class="mc-lbl-t">HOURS</span></i>
+<b class="mc-slot mc-num mc-pos-m" id="mcM">__SEO_MCM__</b>
+<i class="mc-slot mc-lbl mc-pos-m" aria-hidden="true"><span class="mc-lbl-t">MINUTES</span></i>
+</div>
+<span id="mcSr" class="sr-only" aria-live="polite"></span>
+<div id="mcardSpot">__SEO_MHERO__</div>
 </a>
 <!-- v13.159-bakedcast (owner: "there are still line and hard edges and
      rectangles" — the live v13.158 verified failing, twice over): the
@@ -450,7 +494,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.14.js" defer></script>
 <script>var PAGE_TZ = "__PAGE_TZ__";</script>
-<script src="/public-13.47.js" defer></script>
+<script src="/public-13.48.js" defer></script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a
