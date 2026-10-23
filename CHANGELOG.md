@@ -10,6 +10,71 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.168] — 2026-10-23 — v13.168-mchint (owner): the «بازی‌های دیگر» button 50% bigger + attention-grabbing
+
+**The owner (2026-10-23, follow-up on the live v13.167):** "Make the button
+of «بازی‌های دیگر» 50% bigger and more attention grabbing. in mobile"
+
+**Fix — every pill dimension ×1.5 + a real-button treatment (markup
+byte-unchanged; the size is pure presentation in the CSS):**
+
+```css
+/* before (v13.165 ghost pill)            /* after (v13.168 button) */
+font-size:12px          → 18px             (×1.5)
+font-weight:500         → 700
+color:#A7C6E9           → #EAF6FF          (near-white)
+padding:4px 14px 6px    → 6px 21px 9px     (×1.5)
+.mc-hint-ic 11px        → 17px             (×1.5)
+gap:6px                 → 9px              (×1.5)
+margin-top:10px         → 12px
+background:rgba(3,23,51,.6)          → rgba(4,38,76,.88)   (solid glass)
+border:1px rgba(122,195,242,.22)     → 1.5px rgba(23,205,240,.6)
+                                       + box-shadow 0 6px 22px rgba(23,205,240,.32),
+                                         0 0 0 4px rgba(23,205,240,.1)  (cyan cast + ring)
+bob amplitude 3px       → 5px
+```
+
+- The pill height grows 30 → 45px — it crosses the 44px touch-target floor.
+- The passive ghost pill (60%-transparent navy, 22%-alpha border, muted
+  #A7C6E9 text) becomes a real BUTTON read: solid navy glass + the site's
+  cyan accent #17CDF0 as the border + a two-layer glow + near-white
+  700-weight 18px text. `:hover` brightens to a cyan wash; `:active`
+  deepens it (tap feedback).
+- Attention without noise: the bob amplitude 3 → 5px (same 2.6s cadence);
+  reduced-motion still parks it, and the new reduced-transparency plate is
+  solid #04224C with the glow off.
+- FA safety: NO letter-spacing (Persian is never tracked — the cursive
+  joining stays intact, same rule as the card labels); the label keeps the
+  data-i hook + the Peyda body stack at 18px.
+
+**Paying for the taller pill (the first-screen contract survives):** the
+card's height term reserve grows 60 → 80px (128 → 148 in the base
+`.hero-mcard` calc) so the ×1.5 pill (~45px + 12px margin) still lands
+FULLY inside the first screen on every phone height — 390x740: card
+324x592, pill bottom ~729/740; 375x667: card 284x519, pill bottom
+~656/667; tall phones (390x844: 381x696) keep the width term — the
+full-bleed fill of v13.167 is untouched there; short viewports pay ~3% card
+width for the 50%-bigger button.
+
+**QA (wrangler dev :8787, KV fixture Bayern vs Arsenal):** measured at
+390x844 — pill 45px tall (30px before = +50%), 18px/700/#EAF6FF text, cyan
+border + glow computed, fully inside the first screen; FA label
+«بازی‌های دیگر» intact, cursive joining unbroken; 1920x900 desktop
+byte-untouched (hint display:none, PC card 920x374); zero page errors;
+VLM pass on the attention read.
+
+**Release:** public-13.66.css -> public-13.67.css (rename-on-edit; the
+retired 13.66.css stays served + pinned one SEO TTL per the retention
+rule — the v13.167 lesson's existsSync gate now covers the 13.67/66/65
+triple), refs in public.ts + page-shell.ts, _headers gains the 13.67.css
+immutable pin, SW v73 -> v74 + history, VERSION 13.168-mchint, package
+13.168.0.0, check-stats pins rewritten (homepage/shell refs, the headers
+chain, SW v74, the card-CSS feature block re-pinned at the 148px height
+term + the new .mc-hint declaration), admin-parity re-frozen (the CSS
+href). Gates: npm test EXIT 0.
+
+---
+
 ## [13.167] — 2026-10-23 — v13.167-mcfill (owner): the mobile HUD card fills the viewport
 
 **The owner (2026-10-23, follow-up on the live v13.166):** "make the HUD

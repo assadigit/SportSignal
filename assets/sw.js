@@ -409,6 +409,25 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
+// v13.168-mchint (v74): the owner follow-up on the mobile hero — "Make
+//              the button of «بازی‌های دیگر» 50% bigger and more attention
+//              grabbing. in mobile". The scroll-hint pill scales ×1.5 in
+//              EVERY dimension (12→18px 700-weight near-white text, padding
+//              4/14/6→6/21/9, icon 11→17px, gap 6→9, margin-top 10→12 —
+//              height 30→45px, crossing the 44px touch-target floor) and
+//              graduates from a ghost pill to a real BUTTON read: solid navy
+//              glass rgba(4,38,76,.88) + the site cyan #17CDF0 as a 1.5px
+//              border + a two-layer glow (6px 22px cyan cast + 4px soft
+//              ring) + bob amplitude 3→5px (reduced-motion still parked;
+//              reduced-transparency gets a solid #04224C plate, glow off).
+//              The taller pill is paid for in the BASE rule's height term:
+//              the below-card reserve 60→80px (128→148 in the calc) so the
+//              pill still lands fully inside the first screen on every
+//              phone height — tall phones keep the width term (≈full-bleed
+//              card) either way; short viewports pay ~3% card width
+//              (390x740: 324x592; 375x667: 284x519). Renames
+//              public-13.66.css -> 13.67.css only; JS + core + the frame
+//              unchanged, CORE_URLS stays minimal.
 // v13.167-mcfill (v73): the owner follow-up on the mobile hero — "make
 //              the HUD bigger, so it appears fuller and bigger in the HUD
 //              and everything becomes bigger; there are unnecessary margins
@@ -470,7 +489,7 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v73";
+const CACHE = "sportsignal-v74";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

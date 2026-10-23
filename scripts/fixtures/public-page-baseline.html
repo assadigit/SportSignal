@@ -82,7 +82,7 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.66.css">
+<link rel="stylesheet" href="/public-13.67.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -364,7 +364,13 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      Lifecycle: display:none by default; the router unhides it under the
      SAME rule as the card (a hero exists — no hero, no hint), and
      renderMCard hides it with the card client-side (inline display=""
-     so the breakpoint always decides). -->
+     so the breakpoint always decides).
+     v13.168-mchint (owner: "Make the button of «بازی‌های دیگر» 50% bigger
+     and more attention grabbing. in mobile"): the pill's SIZE lives in
+     the CSS (public-13.67.css .mc-hint — every dimension ×1.5 + the
+     cyan-button treatment + the 44px touch-target floor); this MARKUP is
+     byte-unchanged (the label, the icon, the hooks, the lifecycle all
+     stay — the size is presentation). -->
 <a class="mc-hint" id="mcHint" style="display:none" href="#topspotCard"><svg class="mc-hint-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg><span data-i="mcHint">بازی‌های دیگر</span></a>
 <!-- v13.131-playerpresence: BOTH corner pills are RETIRED (the carousel in
      v13.129, the bell now — owner directive); heroPills() in public-13.36.js
