@@ -73,7 +73,13 @@ stronger bloom; countdown numbers 7.2cqw (weight 800 fa) vs 2.8cqw labels
 (rename-on-edit; the retired pair stays served + pinned), the V2 frame
 pin in _headers, SW v74 → v75, VERSION 13.169-mcv2, package 13.169.0.0,
 check-stats pins rewritten, admin-parity re-frozen, CHANGELOG (this
-entry). Core bundle untouched (the static labels' data-i hooks still
+entry). Core bundle untouched. DEPLOY FIX: Cloudflare caps _headers at
+100 rules (first deploy attempt rejected, code 100324) — the OLDEST
+retired pins (core-13.11/12/13.js + public-13.25-29.css, v13.121-13.135
+era, retention TTLs long expired) are pruned from _headers (101 -> 93
+rules; the FILES stay served + on disk through default caching; the
+corresponding check-stats assertions flip from pin-regex to
+file-existence) (the static labels' data-i hooks still
 mcD/mcH/mcM — mcVs/mcDay keys stay dormant in the dictionary, harmless).
 
 ## [13.168] — 2026-10-23 — v13.168-mchint (owner): the «بازی‌های دیگر» button 50% bigger + attention-grabbing
