@@ -8,7 +8,7 @@
 import { SEO } from "./config";
 import { matchPath, compSlug } from "../slugs";
 import { UCL_LOGO_CHIP } from "../tables";
-import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, tehranDayKey, isLiveSt, faGregorianDate, faHeroDate, tehranParts, toJalali } from "./utils";
+import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, jalaliWeekdayStr, tehranDayKey, isLiveSt, faGregorianDate, faHeroDate, tehranParts, toJalali } from "./utils";
 import { toFaDigits } from "../utils";
 import { translateCompetition } from "../translate";
 import type { SeoMatch } from "./data";
@@ -260,7 +260,7 @@ function heroTeamHtml(t: any, away: boolean): string {
 
 // v13.164-matchcard + v13.165-mcfa: the SERVER mirror of the mobile hero
 // card — fills #mcardSpot inside the static a.hero-mcard anchor (public.ts)
-// for no-JS visitors; renderMCard (public-13.49.js) rebuilds the same DOM
+// for no-JS visitors; renderMCard (public-13.50.js) rebuilds the same DOM
 // on load. Tehran stamps exactly like every server mirror (the client
 // corrects to the user's ss_tz zone). v13.165-mcfa (owner: "it must show
 // jalali calender + farsi numerals and farsi translations in FA mode"): the
@@ -289,22 +289,33 @@ export function mcardHtml(sm: SeoMatch): string {
   let dt = "--", tm = "--";
   if (m.utcDate && !isNaN(Date.parse(m.utcDate))) {
     // Tehran wall clock — deterministic (tehranParts, no locale variance);
-    // the Jalali date rides the pure-math converter (jalaliDateStr) so the
-    // mirror matches the client's fa-IR Intl render byte-for-byte in the
-    // default zone («۱ آبان ۱۴۰۵» / «۲۱:۳۰»).
+    // v13.169-mcv2: the banner date is the Jalali WEEKDAY+day+month
+    // (jalaliWeekdayStr — byte-identical to the client's fa-IR-u-ca-persian
+    // {weekday, day, month} Intl render; no year, per the V2 spec shape).
     const p = tehranParts(m.utcDate);
     const z = (n: number) => (n < 10 ? "0" + n : "" + n);
-    dt = jalaliDateStr(m.utcDate);
+    dt = jalaliWeekdayStr(m.utcDate);
     tm = toFaDigits(z(p.hh) + ":" + z(p.mm));
   }
+  // v13.169-mcv2: names too long for one line at the display size (fa
+  // joined script > 11 chars) step down to .mc-name-xl — the SAME rule
+  // the client's renderMCard applies, so the no-JS paint and the post-JS
+  // render agree class-for-class.
+  const nameCls = (t: any): string => {
+    const n = t && (t.faName || t.name);
+    return "mc-slot mc-name" + (n && String(n).length > 11 ? " mc-name-xl" : "");
+  };
   let out = "";
   out += mcLogoHtml(m.homeTeam, "mc-logo");
   out += mcLogoHtml(m.awayTeam, "mc-logo mc-logo-a");
-  out += mcTextHtml("mc-slot mc-name", m.homeTeam && (m.homeTeam.faName || m.homeTeam.name));
-  out += mcTextHtml("mc-slot mc-name mc-name-a", m.awayTeam && (m.awayTeam.faName || m.awayTeam.name));
+  out += mcTextHtml(nameCls(m.homeTeam), m.homeTeam && (m.homeTeam.faName || m.homeTeam.name));
+  out += mcTextHtml(nameCls(m.awayTeam) + " mc-name-a", m.awayTeam && (m.awayTeam.faName || m.awayTeam.name));
   out += mcTextHtml("mc-slot mc-date", dt);
   out += mcTextHtml("mc-slot mc-ko", tm);
-  out += mcTextHtml("mc-slot mc-venue", m.venueFa || m.venue);
+  // v13.169-mcv2 (V2 spec): a missing venue renders the localized neutral
+  // fallback — a real value, never the '--' rest state.
+  const ve = m.venueFa || m.venue;
+  out += '<div class="mc-slot mc-venue">' + esc(ve || "استادیوم نامشخص") + "</div>";
   return out;
 }
 

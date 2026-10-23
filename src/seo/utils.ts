@@ -84,6 +84,17 @@ const JALALI_MONTHS = [
   "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
 ];
 
+// v13.169-mcv2: the V2 mobile card's banner date — Jalali WEEKDAY + day +
+// month (no year), the exact shape of the client's fa-IR-u-ca-persian
+// {weekday, day, month} Intl render so the no-JS mirror and the client
+// re-render agree byte-for-byte (same weekday/month names as FA_WEEKDAYS/
+// JALALI_MONTHS — both browser-verified against Intl in v13.120/v13.165).
+export function jalaliWeekdayStr(iso: string): string {
+  const t = tehranParts(iso);
+  const j = toJalali(t.y, t.m, t.d);
+  return FA_WEEKDAYS[t.wd] + " " + toFaDigits(String(j.jd)) + " " + JALALI_MONTHS[j.jm - 1];
+}
+
 export function jalaliDateStr(iso: string): string {
   const t = tehranParts(iso);
   const j = toJalali(t.y, t.m, t.d);

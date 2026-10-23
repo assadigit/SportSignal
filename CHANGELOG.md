@@ -10,6 +10,72 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.169] — 2026-10-23 — v13.169-mcv2 (owner): the V2 mobile HUD match card — portraits + re-measured slots + LIVE/FT states
+
+**The owner (2026-10-23, repo upload f5b7936 + the V2 spec):** a NEW blank
+template — SportSignal-HUD-Mobile-V2.jpg (600x1065, the 928x1648 design grid
+at 0.646 scale) + Visual reference v2.png — with a full spec: player
+portraits in the upper stadium zones, crests+names in the scoreboard,
+weekday+date + kickoff in the central banner, a three-box countdown
+(icon-free, equal boxes), the venue beside the baked footer icon, and
+LIVE/FT states from the match data. Built + QA'd as a standalone demo
+first (typography tuned through a VLM side-by-side against the owner's
+reference; 6/6 state bench: upcoming/long-names/live/finished/postponed/
+missing-data; 320–430px width audit), then integrated.
+
+**The frame:** /ui/sportsignal-hud-mobile-v2.webp — 2x lanczos3 upscale
+(1200x2130) re-encoded webp q85, 188KB (near-native on DPR2/DPR3 phones;
+the source is a full-bleed JPG — no alpha, no baked margins, so the
+v13.165 crop pass retires with V1; the old mobile-c.webp stays served +
+pinned one SEO TTL per the retention rule). Aspect 743/1357 → 600/1065
+in the v13.167 width-driven fill; the 148px height reserve + the v13.168
+×1.5 scroll-pill contract unchanged.
+
+**New layers:**
+- **Player portraits** (.mc-ports/.mc-port) — the club-keyed HERO_ART
+  cutouts (the SAME featured-player mapping the PC hero figures use —
+  never a wrong-club player; unmapped club ⇒ empty slot), bottom edges
+  clipped at y39.0% (just above the panel's glowing top frame at y39.1%
+  so the frame is never obscured), object-fit:contain +
+  object-position:bottom, single drop-shadow rim light (reduced-
+  transparency: glow off). Filled client-side by renderMCard into STATIC
+  containers (the PC hero's no-JS contract: figures are decorative,
+  aria-hidden, client-only).
+- **.mc-state** — LIVE/IN_PLAY/PAUSED ⇒ «زنده»/LIVE (site live green),
+  FINISHED ⇒ «پایان»/FT, POSTPON/CANCEL/SUSPEND ⇒ «معلق»/«لغو شده»
+  (muted) — parks the countdown in the middle box zone; the status comes
+  from the match data, never inferred from the clock. Wired in THREE
+  places: renderMCard (rebuilds), updateBigBar (the 1s tick + a new
+  FINISHED branch), and the router (the no-JS mirror ships the FA chip
+  for non-upcoming heroes).
+
+**Re-measured slots (from the V2 template's pixels + the reference):**
+crest boxes centered (30,52)/(70,52) 17cqw × max-h 21.3cqw; names centered
+(30,61.3)/(70,61.3) 39cqw ≤2 lines with the NEW .mc-name-xl one-line-fit
+step-down (fa>11 chars joined script, en>10 caps); banner date center
+y68.65 (the localized WEEKDAY+date — Jalali «سه‌شنبه ۵ آبان» /
+"Tuesday, 27 October", no year) + kickoff center y72.6 (fs 11.2cqw en /
+10.4cqw fa, gradient + strengthened glow); countdown boxes at centers
+28/51/73 (row y77.9–86.7%), number center y81.2 (7.2cqw), label center
+y84.6 (2.9cqw) — three EQUAL boxes, no icons (the spec overrides the
+reference's baked icons), sizes never react to the values; venue
+left-aligned from x42.5% to ≤84% beside the baked stadium icon
+(x31.8–39.7%), localized neutral fallback «استادیوم نامشخص»/Venue TBA.
+The VS + MATCH DAY navy pills retire (no VS slot in V2; the banner
+carries the date itself).
+
+**Typography round (VLM-tuned against the reference):** names 6.2cqw fa/
+5.9cqw en at weight 800/700 + two-layer glow; kickoff 11.2/10.4cqw with
+stronger bloom; countdown numbers 7.2cqw (weight 800 fa) vs 2.8cqw labels
+(higher number/label contrast).
+
+**RELEASE:** public-13.67.css → 13.68.css + public-13.49.js → 13.50.js
+(rename-on-edit; the retired pair stays served + pinned), the V2 frame
+pin in _headers, SW v74 → v75, VERSION 13.169-mcv2, package 13.169.0.0,
+check-stats pins rewritten, admin-parity re-frozen, CHANGELOG (this
+entry). Core bundle untouched (the static labels' data-i hooks still
+mcD/mcH/mcM — mcVs/mcDay keys stay dormant in the dictionary, harmless).
+
 ## [13.168] — 2026-10-23 — v13.168-mchint (owner): the «بازی‌های دیگر» button 50% bigger + attention-grabbing
 
 **The owner (2026-10-23, follow-up on the live v13.167):** "Make the button

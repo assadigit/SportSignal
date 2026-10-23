@@ -144,7 +144,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   // v13.120-hero: the hero is the Stadium-Pulse card (M.heroCardHtml — the
   // server mirror of renderHeroSpot in public-13.29.js).
   // v13.164-matchcard: M.mcardHtml — the mobile HUD card's server mirror
-  // (renderMCard in public-13.49.js); the SAME nextBig selection feeds both
+  // (renderMCard in public-13.50.js); the SAME nextBig selection feeds both
   // cards (one source of truth — the hero never differs between presentations).
   const heroHtml = nextBig ? M.heroCardHtml(nextBig) : "";
   const mheroHtml = nextBig ? M.mcardHtml(nextBig) : "";
@@ -276,6 +276,24 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
       html = html.replace('<div class="hud-cells" role="timer" dir="ltr">', '<div class="hud-cells" role="timer" dir="ltr" style="display:none">');
       // v13.164-matchcard: the mobile card's cells hide under the SAME rule
       html = html.replace('<div class="mc-cells" id="mcCells" role="timer" dir="ltr">', '<div class="mc-cells" id="mcCells" role="timer" dir="ltr" style="display:none">');
+      // v13.169-mcv2: a non-upcoming hero shows the match-state chip in the
+      // middle countdown box instead of a stale countdown — the status
+      // SUPPLIED BY THE MATCH DATA (live green «زنده», «پایان» finished,
+      // muted «معلق»/«لغو شده» postponed/canceled); mcStateSet keeps the
+      // same rule client-side every render + every tick.
+      {
+        const st = nextBig ? String(nextBig.s.status || "").toUpperCase() : "";
+        let stTxt = "", stCls = "mc-slot mc-state";
+        if (/IN_PLAY|LIVE|PAUSED/.test(st)) { stTxt = "زنده"; stCls += " mc-state-live"; }
+        else if (st === "FINISHED") { stTxt = "پایان"; }
+        else if (/CANCEL/.test(st)) { stTxt = "لغو شده"; stCls += " mc-state-mut"; }
+        else if (/POSTPON|SUSPEND/.test(st)) { stTxt = "معلق"; stCls += " mc-state-mut"; }
+        if (stTxt && mheroHtml) {
+          html = html.replace(
+            '<div class="mc-slot mc-state" id="mcState" style="display:none" aria-hidden="true"></div>',
+            '<div class="' + stCls + '" id="mcState" aria-hidden="true">' + esc(stTxt) + "</div>");
+        }
+      }
       html = html.replace(/__SEO_HC[DHMS]__/g, "--").replace("__SEO_HCPCT__", "0").replace(/__SEO_MC[DHM]__/g, "--");
     }
   }

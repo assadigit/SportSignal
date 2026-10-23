@@ -409,6 +409,32 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
+// v13.169-mcv2 (v75): the V2 mobile HUD match card — the owner-supplied
+//              V2 blank template (SportSignal-HUD-Mobile-V2.jpg, 600x1065 =
+//              the 928x1648 design grid at 0.646 scale, repo-root upload
+//              2026-10-23) replaces the V1 frame: /ui/sportsignal-
+//              hud-mobile-v2.webp (2x lanczos3, 1200x2130, q85, 188KB;
+//              full-bleed JPG — no alpha, no crop pass). NEW LAYERS: the
+//              player PORTRAITS (club-keyed HERO_ART cutouts in the two
+//              upper stadium zones, bottom edges clipped above the panel's
+//              glowing top frame, object-fit:contain, single-drop-shadow
+//              rim light) and the .mc-state chip (LIVE/FT/postponed parks
+//              the countdown in the middle box zone — status from the match
+//              data, never the clock; live green / FT / muted postponed).
+//              The banner date becomes the localized WEEKDAY+date (Jalali
+//              «سه‌شنبه ۵ آبان» fa / "Tuesday, 27 October" en, no year);
+//              names gain the .mc-name-xl one-line-fit step-down; the
+//              venue gains the localized neutral fallback («استادیوم
+//              نامشخص»/Venue TBA); the VS + MATCH DAY navy pills retire
+//              (no VS slot in the V2 artwork; the banner carries the date).
+//              Every slot re-measured from the V2 template's pixels + the
+//              owner's Visual reference v2.png; the aspect flips 743/1357 →
+//              600/1065 in the v13.167 width-driven fill (the 148px height
+//              reserve + the v13.168 ×1.5 pill contract unchanged). Renames
+//              public-13.67.css → 13.68.css + public-13.49.js → 13.50.js;
+//              the retired pair + the V1 frame stay served + pinned one
+//              SEO TTL per the retention rule; CORE_URLS stays minimal
+//              (lazy-caches on demand, as ever).
 // v13.168-mchint (v74): the owner follow-up on the mobile hero — "Make
 //              the button of «بازی‌های دیگر» 50% bigger and more attention
 //              grabbing. in mobile". The scroll-hint pill scales ×1.5 in
@@ -489,7 +515,7 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v74";
+const CACHE = "sportsignal-v75";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -307,6 +307,31 @@
 # 13.67.css (rename-on-edit; the retired 13.66.css stays served + pinned
 # one SEO TTL below — stale edge HTML may still reference it). JS + core +
 # the frame unchanged.
+# v13.169-mcv2 (owner): the V2 mobile HUD match card — the owner-supplied
+# V2 blank template (SportSignal-HUD-Mobile-V2.jpg, 600x1065 = the 928x1648
+# design grid at 0.646 scale) ships as /ui/sportsignal-hud-mobile-v2.webp
+# (2x lanczos3 upscale, 1200x2130, webp q85, 188KB — near-native on
+# DPR2/DPR3 phones; full-bleed JPG artwork: no alpha, no crop pass, the
+# v13.165 crop retires with V1 — the old mobile-c.webp stays served +
+# pinned one SEO TTL below). NEW: the player-portrait layer (club-keyed
+# HERO_ART cutouts in the upper stadium zones, clipped above the panel
+# glow), the .mc-state chip (LIVE/FT/postponed parks the countdown — the
+# status from the match data, never the clock), the weekday+date banner
+# line (Jalali fa / "Tuesday, 27 October" en), .mc-name-xl long-name
+# step-down, the localized venue fallback; every slot re-measured from
+# the V2 template + Visual reference v2.png; VS + MATCH DAY pills retire.
+# Renames public-13.67.css -> 13.68.css + public-13.49.js -> 13.50.js
+# (rename-on-edit; the retired pair stays served + pinned one SEO TTL
+# below — stale edge HTML may still reference it).
+/public-13.68.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.50.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/ui/sportsignal-hud-mobile-v2.webp
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.67.css
   Cache-Control: public, max-age=31536000, immutable
 
