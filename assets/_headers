@@ -70,18 +70,6 @@
 
 
 
-/public-13.33.js
-  Cache-Control: public, max-age=31536000, immutable
-
-/public-13.32.js
-  Cache-Control: public, max-age=31536000, immutable
-
-/public-13.31.js
-  Cache-Control: public, max-age=31536000, immutable
-
-/public-13.30.js
-  Cache-Control: public, max-age=31536000, immutable
-
 /public-13.29.js
   Cache-Control: public, max-age=31536000, immutable
 
@@ -322,6 +310,47 @@
 # Renames public-13.67.css -> 13.68.css + public-13.49.js -> 13.50.js
 # (rename-on-edit; the retired pair stays served + pinned one SEO TTL
 # below — stale edge HTML may still reference it).
+# v13.170-mcref (owner): the V3 mobile HUD match card — rebuilt CODE-DRAWN
+# to the owner's Visual reference v2.png (the 13-instruction fidelity
+# pass). Renames public-13.68.css -> 13.69.css + public-13.50.js ->
+# 13.51.js (rename-on-edit; the retired pair stays served + pinned one
+# SEO TTL below — stale edge HTML may still reference it). NEW immutable
+# assets: the Poppins Digits faces (the reference's rounded geometric
+# digit letterform), the WHITE full Tottenham crest + the trimmed Chelsea
+# crest (the MC_CREST display variants), the reference-cut player cutouts
+# (chelsea-v3 + tottenham-v3, cropped from the reference's top 42%) and
+# the crowd bokeh noise texture. The v13.169 JPG template
+# (sportsignal-hud-mobile-v2.webp) RETIRES from the card — stays served +
+# pinned one SEO TTL. Prunes the 4 oldest retired js pins (public-13.30/
+# 31/32/33.js — the Cloudflare 100-rule cap; the FILES stay served + on
+# disk through default caching).
+/public-13.69.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.51.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/Poppins-Bold.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/Poppins-ExtraBold.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+/ui/crest-chelsea.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/ui/crest-tottenham-white.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/ui/mc-crowd.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/players/hero/chelsea-v3.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/players/hero/tottenham-v3.webp
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.68.css
   Cache-Control: public, max-age=31536000, immutable
 

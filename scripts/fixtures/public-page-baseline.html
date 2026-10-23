@@ -54,10 +54,16 @@ __SEO_JSONLD__
 /* v13.164-matchcard: the mobile HUD card's squared techno face (the owner's
      reference card's own typography). Self-hosted latin subsets (~10KB
      each); fetched ONLY when the mobile card's rules match text — no
-     download on desktop or non-home pages. */
+     download on desktop or non-home pages.
+     v13.170-mcref: 'Poppins Digits' — the V3 card's LATIN digit face
+     (instr 8: the reference's rounded geometric letterform, ~8KB latin
+     subsets, digits+colon unicode-range so it swaps in only when a digit
+     run renders; the FA text keeps falling through to Morabba/Peyda). */
 @font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}
 @font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}</style>
+@font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Poppins Digits';src:url('/fonts/Poppins-Bold.woff2') format('woff2');font-weight:600 700;font-style:normal;font-display:swap;unicode-range:U+0030-0039,U+003A,U+0020,U+002D}
+@font-face{font-family:'Poppins Digits';src:url('/fonts/Poppins-ExtraBold.woff2') format('woff2');font-weight:800;font-style:normal;font-display:swap;unicode-range:U+0030-0039,U+003A,U+0020,U+002D}</style>
 <style>/* v13.56-visitcount: footer page-view counter. The number span has a
      fixed min-width so the arriving digits never cause layout shift. */
 .visitcount{font-size:.78rem;color:var(--muted,#94a3b8);margin-top:10px;line-height:1.9;direction:rtl}
@@ -82,7 +88,7 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.68.css">
+<link rel="stylesheet" href="/public-13.69.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -119,7 +125,7 @@ __SEO_JSONLD__
      it in the footer) — v12.26 right-aligned with the logo, not centered. -->
 <a class="brand" href="/" aria-label="SportSignal"><img src="/logo.png" alt="SportSignal" width="146" height="50" referrerpolicy="no-referrer"></a>
 <nav class="mainnav" aria-label="ناوبری اصلی"><a href="/" data-i="navHome">خانه</a><a href="#about" data-i="navAbout">درباره</a><a href="#contact" data-i="navContact">تماس</a></nav>
-<div class="head-actions"><span class="tb-btns"><button id="sbtn" onclick="toggleTz()" aria-expanded="false" aria-controls="tzpanel" title="منطقه زمانی" aria-label="منطقه زمانی"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button><button id="lbtn" onclick="switchLang()"></button><!-- v13.134-typelight: the dark/light toggle is TEMPORARILY RETIRED (owner directive — the app is always dark). toggleTheme()/setTheme() in core JS stay null-guarded; the bundle init pins setTheme("dark"). Re-add this button to re-enable. --></span></div>
+<div class="head-actions"><span class="tb-btns"><button id="sbtn" onclick="toggleTz()" aria-expanded="false" aria-controls="tzpanel" title="منطقه زمانی" aria-label="منطقه زمانی"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="miter" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button><button id="lbtn" onclick="switchLang()"></button><!-- v13.134-typelight: the dark/light toggle is TEMPORARILY RETIRED (owner directive — the app is always dark). toggleTheme()/setTheme() in core JS stay null-guarded; the bundle init pins setTheme("dark"). Re-add this button to re-enable. --></span></div>
 <div id="tzpanel" role="group" aria-label="منطقه زمانی"><div class="tz-head"><span data-i="tzTitle">🌍 منطقه زمانی</span><button id="tzclose" onclick="toggleTz()" title="بستن" aria-label="بستن">✕</button></div><input id="tzfilter" type="search" placeholder="جستجوی کشور یا شهر…" data-p="tzSearch" aria-label="جستجوی کشور یا شهر"><select id="tzsel" title="منطقه زمانی" aria-label="منطقه زمانی"></select></div>
 <!-- v12.20: visible PROOF for the auto-update claim. v12.26: the sync line
      prints the TRUTHFUL absolute stamp of the last real API refresh —
@@ -246,58 +252,75 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 <div id="heroSpot">__SEO_HERO__</div>
 </a>
-<!-- v13.169-mcv2 (owner): the MOBILE hero — the V2 HUD match card. The
-     owner-supplied V2 blank template (SportSignal-HUD-Mobile-V2.jpg,
-     600x1065 = the 928x1648 design grid at 0.646 scale, repo root upload
-     2026-10-23) ships as /ui/sportsignal-hud-mobile-v2.webp — a 2x lanczos3
-     upscale (1200x2130, webp q85, 188KB; full-bleed JPG artwork: no alpha,
-     no baked margins to crop — the v13.165 crop pass RETIRES with V1; the
-     old sportsignal-hud-mobile-c.webp stays served + pinned one SEO TTL per
-     the retention rule). NEW in V2: the PLAYER PORTRAIT layer (.mc-ports —
-     two static containers clipped above the panel's glowing top edge at
-     y39%; renderMCard fills them with the club-keyed HERO_ART cutouts,
-     the SAME featured-player mapping the PC hero figures use) and the
-     .mc-state chip (LIVE/FT/postponed replaces the stale countdown in the
-     middle box zone — the status comes from the match data, never inferred
-     from the clock). The VS + MATCH DAY navy pills RETIRE (the V2 artwork
-     has no VS slot; the banner carries the localized weekday+date itself —
-     «سه‌شنبه ۵ آبان» / "TUESDAY, 27 OCTOBER"); every slot re-measured from
-     the V2 template + the Visual reference v2.png (geometry table in
-     public-13.68.css). The v13.167 width-driven fill keeps its shape —
-     only the ratio flips 743/1357 → 600/1065 (the 148px height reserve
-     keeps the sync caption + the v13.168 ×1.5 scroll pill inside the
-     first screen on short phones).
-     The anchor mirrors the PC card's architecture exactly: ONE real link to
-     the match page wrapping the whole HUD; the frame img + the portrait
-     containers + the countdown cells (mcD/mcH/mcM — updateBigBar writes
-     them every tick with the fmtNum locale writer) + the #mcState chip +
-     the #mcSr polite region are STATIC layers (survive the renderMCard
-     rebuild); #mcardSpot is the data zone rebuilt client-side (renderMCard,
-     called from BOTH renderHeroSpot exits — same lifecycle as the PC hero)
-     and filled server-side by mcardHtml (seo/markup.ts — the no-JS mirror,
-     FA/Jalali/Persian-digit stamps like every server mirror).
-     v13.165-mcfa (owner: "it must show jalali calender + farsi numerals and
-     farsi translations in FA mode"): the labels stay LOCALE-AWARE — the
-     static layers carry data-i hooks (core-13.15 I18N: mcD/mcH/mcM) with
-     the FA defaults here (روز-ساعت-دقیقه; trText flips them to the
-     artwork's EN design language on toggle), and renderMCard renders the
-     faName names + the Jalali weekday+date + faNum digits + venueFa
-     client-side (en keeps the Latin presentation). Missing venue renders
-     the localized neutral fallback («استادیوم نامشخص» / Venue TBA) per the
-     V2 spec.
-     dir="ltr" is pinned on the anchor AND in the CSS so the RTL page can
-     never mirror the layout; the Persian strings ride the Unicode bidi
-     algorithm inside the LTR block.
-     Visibility: display:none by default; the router unhides it exactly like
-     the PC card when a hero exists; CSS shows it ONLY <=899px (the phone
-     zone — the PC HUD frame squeezed to ~150px tall there; >=900px the PC
-     card + player figures are untouched). renderMCard keeps inline
-     display="" so the CSS breakpoint always decides. -->
+<!-- v13.170-mcref (owner): the MOBILE hero — the V3 HUD match card,
+     rebuilt CODE-DRAWN to 95% visual parity with the owner's Visual
+     reference v2.png (the 13-instruction fidelity pass; geometry table in
+     public-13.69.css). The v13.169 JPG template RETIRES from the card
+     (hud-mobile-v2.webp stays served + pinned one SEO TTL) — every shape
+     is CSS/SVG now: the dark navy stadium scene (floodlight glow field,
+     corner flares, fog, edge-masked crowd bokeh, the perspective pitch
+     strip), the chamfered SVG panel with the raised tab + double
+     electric-blue border + drop-shadow glow, the fading center divider,
+     the hexagonal time capsule with glowing chevrons, three chamfered
+     countdown tiles with outline icons, the chamfered venue bar with the
+     centered icon+text group, and the top-center competition logo (the
+     white LEAGUE_LOGOS pack — NEVER the SportSignal brand inside the card).
+     The player cutouts are reference-cropped (/players/hero/chelsea-v3 +
+     tottenham-v3) on exact reference geometry; other clubs fall back to
+     HERO_ART via the MC_ART map (public-13.51.js).
+     ARCHITECTURE (unchanged from v13.164): ONE real link wrapping the HUD;
+     the scene/frame/tile/capsule/venue-bar layers + the countdown cells
+     (mcD/mcH/mcM — updateBigBar ticks them) + #mcState + #mcSr + the venue
+     text (#mcVenue — the SEO venue token stamps it like every server
+     mirror) are STATIC layers surviving the renderMCard rebuild;
+     #mcardSpot stays the rebuilt data zone (crests/names/date/time/comp
+     logo — server mirror mcardHtml, client renderMCard).
+     v13.170-mcref digits: LATIN 0-9 everywhere (date/time/countdown) in
+     the rounded geometric "Poppins Digits" face (styles-shared.ts
+     @font-face) — the FA date renders the Jalali weekday+month with Latin
+     day digits («سه شنبه 27 مهر»); the FA labels/venue/names keep the
+     Persian faces (Morabba 900 names). dir="ltr" stays pinned (the team
+     row never mirrors; Persian strings ride the bidi algorithm).
+     Visibility contract unchanged: display:none default; the router
+     unhides under the same rule as the PC card; CSS shows it ONLY
+     <=899px (renderMCard keeps inline display="" so the breakpoint
+     decides). -->
 <a class="hero-mcard" id="heroMCard" style="display:none" href="#" dir="ltr">
-<img class="mc-frame" src="/ui/sportsignal-hud-mobile-v2.webp" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
+<svg class="mc-bgdefs" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<linearGradient id="mcPF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B2C5C"/><stop offset=".18" stop-color="#072348"/><stop offset=".52" stop-color="#051D3E"/><stop offset="1" stop-color="#020E26"/></linearGradient>
+<linearGradient id="mcPB" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5FCFFF"/><stop offset=".28" stop-color="#A7E8FF"/><stop offset=".5" stop-color="#F2FBFF"/><stop offset=".72" stop-color="#A7E8FF"/><stop offset="1" stop-color="#5FCFFF"/></linearGradient>
+<linearGradient id="mcCF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#072A5E"/><stop offset=".5" stop-color="#041C40"/><stop offset="1" stop-color="#021228"/></linearGradient>
+<linearGradient id="mcTF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#06244C"/><stop offset="1" stop-color="#020D24"/></linearGradient>
+<linearGradient id="mcVF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#06224A"/><stop offset="1" stop-color="#020D24"/></linearGradient>
+<linearGradient id="mcGd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#041731"/><stop offset="1" stop-color="#0A3157"/></linearGradient>
+<radialGradient id="mcGp" cx=".5" cy="1" r=".8"><stop offset="0" stop-color="rgba(90,195,255,.62)"/><stop offset="1" stop-color="rgba(70,180,255,0)"/></radialGradient>
+</defs></svg>
+<div class="mc-bg" aria-hidden="true"></div>
+<div class="mc-bg-glow" aria-hidden="true"></div>
+<div class="mc-bg-flare mc-bg-flare-l" aria-hidden="true"></div>
+<div class="mc-bg-flare mc-bg-flare-r" aria-hidden="true"></div>
+<div class="mc-bg-star mc-bg-star-tl" aria-hidden="true"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><g fill="#EAF8FF"><path d="M50 0 L54 46 L100 50 L54 54 L50 100 L46 54 L0 50 L46 46 Z" opacity=".95"/><path d="M50 22 L56 44 L78 50 L56 56 L50 78 L44 56 L22 50 L44 44 Z" opacity=".7"/><circle cx="50" cy="50" r="7"/></g></svg></div>
+<div class="mc-bg-star mc-bg-star-tr" aria-hidden="true"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><g fill="#DCF3FF"><path d="M50 0 L54 46 L100 50 L54 54 L50 100 L46 54 L0 50 L46 46 Z" opacity=".9"/><path d="M50 22 L56 44 L78 50 L56 56 L50 78 L44 56 L22 50 L44 44 Z" opacity=".65"/><circle cx="50" cy="50" r="6"/></g></svg></div>
+<div class="mc-bg-star mc-bg-star-br" aria-hidden="true"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><g fill="#BFE7FF"><path d="M50 0 L54 46 L100 50 L54 54 L50 100 L46 54 L0 50 L46 46 Z" opacity=".6"/><circle cx="50" cy="50" r="5"/></g></svg></div>
+<div class="mc-bg-fog" aria-hidden="true"></div>
+<div class="mc-bg-arc" aria-hidden="true"><svg viewBox="0 0 1000 740" preserveAspectRatio="none" aria-hidden="true" focusable="false"><polygon points="45,410.0 55,410.0 506,640 494,640" fill="rgba(170,225,255,.11)"/><polygon points="135,329.0 145,329.0 506,640 494,640" fill="rgba(170,225,255,.11)"/><polygon points="225,266.0 235,266.0 506,640 494,640" fill="rgba(170,225,255,.11)"/><polygon points="315,221.0 325,221.0 506,640 494,640" fill="rgba(170,225,255,.11)"/><polygon points="405,194.0 415,194.0 506,640 494,640" fill="rgba(170,225,255,.11)"/><polygon points="495,185.0 505,185.0 506,640 494,640" fill="rgba(170,225,255,.11)"/><polygon points="585,194.0 595,194.0 506,640 494,640" fill="rgba(170,225,255,.11)"/><polygon points="675,221.0 685,221.0 506,640 494,640" fill="rgba(170,225,255,.11)"/><polygon points="765,266.0 775,266.0 506,640 494,640" fill="rgba(170,225,255,.11)"/><polygon points="855,329.0 865,329.0 506,640 494,640" fill="rgba(170,225,255,.11)"/><polygon points="945,410.0 955,410.0 506,640 494,640" fill="rgba(170,225,255,.11)"/><g fill="#EAF7FF" style="filter:drop-shadow(0 0 4 rgba(140,220,255,.95)) drop-shadow(0 0 10 rgba(70,180,255,.55))"><circle cx="50" cy="410.0" r="5"/><circle cx="95" cy="367.2" r="3.6"/><circle cx="140" cy="329.0" r="5"/><circle cx="185" cy="295.2" r="3.6"/><circle cx="230" cy="266.0" r="5"/><circle cx="275" cy="241.2" r="3.6"/><circle cx="320" cy="221.0" r="5"/><circle cx="365" cy="205.2" r="3.6"/><circle cx="410" cy="194.0" r="5"/><circle cx="455" cy="187.2" r="3.6"/><circle cx="500" cy="185.0" r="5"/><circle cx="545" cy="187.2" r="3.6"/><circle cx="590" cy="194.0" r="5"/><circle cx="635" cy="205.2" r="3.6"/><circle cx="680" cy="221.0" r="5"/><circle cx="725" cy="241.2" r="3.6"/><circle cx="770" cy="266.0" r="5"/><circle cx="815" cy="295.2" r="3.6"/><circle cx="860" cy="329.0" r="5"/><circle cx="905" cy="367.2" r="3.6"/><circle cx="950" cy="410.0" r="5"/></g><polyline points="50,360.0 95,340.1 140,322.2 185,306.4 230,292.8 275,281.2 320,271.8 365,264.4 410,259.2 455,256.1 500,255.0 545,256.1 590,259.2 635,264.4 680,271.8 725,281.2 770,292.8 815,306.4 860,322.2 905,340.1 950,360.0" fill="none" stroke="rgba(130,190,245,0.12)" stroke-width="3"/><polyline points="50,410.0 95,390.1 140,372.2 185,356.4 230,342.8 275,331.2 320,321.8 365,314.4 410,309.2 455,306.1 500,305.0 545,306.1 590,309.2 635,314.4 680,321.8 725,331.2 770,342.8 815,356.4 860,372.2 905,390.1 950,410.0" fill="none" stroke="rgba(130,190,245,0.09)" stroke-width="3"/><polyline points="50,460.0 95,440.1 140,422.2 185,406.4 230,392.8 275,381.2 320,371.8 365,364.4 410,359.2 455,356.1 500,355.0 545,356.1 590,359.2 635,364.4 680,371.8 725,381.2 770,392.8 815,406.4 860,422.2 905,440.1 950,460.0" fill="none" stroke="rgba(130,190,245,0.07)" stroke-width="3"/></svg></div>
+<div class="mc-bg-headglow mc-bg-headglow-l" aria-hidden="true"></div>
+<div class="mc-bg-headglow mc-bg-headglow-r" aria-hidden="true"></div>
+<div class="mc-bg-crowd mc-bg-crowd-l" aria-hidden="true"></div>
+<div class="mc-bg-crowd mc-bg-crowd-r" aria-hidden="true"></div>
+<div class="mc-bg-pitch" aria-hidden="true"><svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M158 0 L842 0 L1000 100 L0 100 Z" fill="url(#mcGd)"/><g fill="rgba(120,200,255,.05)"><polygon points="240,0 320,0 350,100 190,100"/><polygon points="400,0 480,0 500,100 350,100"/><polygon points="560,0 640,0 660,100 510,100"/><polygon points="720,0 800,0 830,100 670,100"/></g><ellipse cx="500" cy="100" rx="330" ry="70" fill="url(#mcGp)"/><path d="M158 0 L0 100 M842 0 L1000 100" stroke="rgba(120,205,255,.62)" stroke-width="4" fill="none"/><path d="M205 7 L795 7" stroke="rgba(200,240,255,.8)" stroke-width="5"/><path d="M495 0 L505 0 L518 100 L482 100 Z" fill="rgba(160,225,255,.9)"/></svg></div>
 <div class="mc-ports" aria-hidden="true">
 <div class="mc-port mc-port-h"></div>
 <div class="mc-port mc-port-a"></div>
+</div>
+<div class="mc-panel" aria-hidden="true"><svg viewBox="0 -72 800 1032" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><path d="M52 0 L240 0 L312 -72 L488 -72 L560 0 L748 0 L800 52 L800 908 L748 960 L52 960 L0 908 L0 52 Z" fill="url(#mcPF)" stroke="url(#mcPB)" stroke-width="7" stroke-linejoin="miter"/><path d="M57 13 L245 13 L318 -59 L482 -59 L555 13 L743 13 L787 57 L787 903 L743 947 L57 947 L13 903 L13 57 Z" fill="none" stroke="rgba(200,240,255,.78)" stroke-width="3.2" stroke-linejoin="miter"/></svg></div>
+<div class="mc-wedge" aria-hidden="true"></div>
+<div class="mc-div" aria-hidden="true"></div>
+<div class="mc-capsule" aria-hidden="true"><svg viewBox="0 0 660 180" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><path d="M80 8 L580 8 L660 90 L580 172 L80 172 L0 90 Z" fill="url(#mcCF)" stroke="#F0FAFF" stroke-width="6.5" stroke-linejoin="miter"/><path d="M90 19 L570 19 L633 90 L570 161 L90 161 L27 90 Z" fill="none" stroke="rgba(200,240,255,.7)" stroke-width="2.8" stroke-linejoin="miter"/><g fill="#F4FCFF" style="filter:drop-shadow(0 0 5 rgba(70,210,255,.95)) drop-shadow(0 0 12 rgba(50,180,255,.6))"><path d="M28 92 L96 42 L96 70 L58 92 L96 114 L96 142 Z"/><path d="M108 92 L156 58 L156 78 L128 92 L156 106 L156 126 Z"/><path d="M632 92 L564 42 L564 70 L602 92 L564 114 L564 142 Z"/><path d="M552 92 L504 58 L504 78 L532 92 L504 106 L504 126 Z"/></g></svg></div>
+<div class="mc-tiles" id="mcTiles" aria-hidden="true">
+<div class="mc-tile mc-tile-d"><svg viewBox="0 0 193 151" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><path d="M16 0 L177 0 L193 16 L193 135 L177 151 L16 151 L0 135 L0 16 Z" fill="url(#mcTF)" stroke="#EFFAFF" stroke-width="5" stroke-linejoin="miter"/><path d="M25 9 L168 9 L184 25 L184 126 L168 142 L25 142 L9 126 L9 25 Z" fill="none" stroke="rgba(200,240,255,.7)" stroke-width="2.6" stroke-linejoin="miter"/></svg><span class="mc-tile-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="miter" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="15.5" rx="2.2"/><path d="M3.5 9.5h17M8 2.8v4.4M16 2.8v4.4"/><path d="M7.6 13h2.8M7.6 16.4h2.8M13.6 13h2.8M13.6 16.4h2.8"/></svg></span></div>
+<div class="mc-tile mc-tile-h"><svg viewBox="0 0 193 151" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><path d="M16 0 L177 0 L193 16 L193 135 L177 151 L16 151 L0 135 L0 16 Z" fill="url(#mcTF)" stroke="#EFFAFF" stroke-width="5" stroke-linejoin="miter"/><path d="M25 9 L168 9 L184 25 L184 126 L168 142 L25 142 L9 126 L9 25 Z" fill="none" stroke="rgba(200,240,255,.7)" stroke-width="2.6" stroke-linejoin="miter"/></svg><span class="mc-tile-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="miter" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.6 2.2"/></svg></span></div>
+<div class="mc-tile mc-tile-m"><svg viewBox="0 0 193 151" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><path d="M16 0 L177 0 L193 16 L193 135 L177 151 L16 151 L0 135 L0 16 Z" fill="url(#mcTF)" stroke="#EFFAFF" stroke-width="5" stroke-linejoin="miter"/><path d="M25 9 L168 9 L184 25 L184 126 L168 142 L25 142 L9 126 L9 25 Z" fill="none" stroke="rgba(200,240,255,.7)" stroke-width="2.6" stroke-linejoin="miter"/></svg><span class="mc-tile-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="miter" aria-hidden="true" focusable="false"><circle cx="12" cy="13.6" r="7.6"/><path d="M12 9.8v3.8l2.8 1.8M9.6 2.8h4.8M12 2.8v3.2M17.8 7.4l1.6-1.6"/></svg></span></div>
 </div>
 <div class="mc-cells" id="mcCells" role="timer" dir="ltr">
 <b class="mc-slot mc-num mc-pos-d" id="mcD">__SEO_MCD__</b>
@@ -309,6 +332,11 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 </div>
 <div class="mc-slot mc-state" id="mcState" style="display:none" aria-hidden="true"></div>
 <span id="mcSr" class="sr-only" aria-live="polite"></span>
+<div class="mc-venuewrap" aria-hidden="false">
+<div class="mc-venuebar" aria-hidden="true"><svg viewBox="0 0 630 68" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><path d="M12 0 L618 0 L630 12 L630 56 L618 68 L12 68 L0 56 L0 12 Z" fill="url(#mcVF)" stroke="#F0FAFF" stroke-width="4.6" stroke-linejoin="miter"/><path d="M20 9 L610 9 L621 20 L621 48 L610 59 L20 59 L9 48 L9 20 Z" fill="none" stroke="rgba(200,240,255,.7)" stroke-width="2.4" stroke-linejoin="miter"/></svg></div>
+<span class="mc-venue-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="miter" aria-hidden="true" focusable="false"><ellipse cx="12" cy="11" rx="9.2" ry="5.6"/><ellipse cx="12" cy="11" rx="5" ry="2.8"/><path d="M2.8 11v4.2c0 1.8 4.1 4.4 9.2 4.4s9.2-2.6 9.2-4.4V11"/></svg></span>
+<span class="mc-venue" id="mcVenue">__SEO_MCVENUE__</span>
+</div>
 <div id="mcardSpot">__SEO_MHERO__</div>
 </a>
 <!-- v13.159-bakedcast (owner: "there are still line and hard edges and
@@ -381,11 +409,11 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      so the breakpoint always decides).
      v13.168-mchint (owner: "Make the button of «بازی‌های دیگر» 50% bigger
      and more attention grabbing. in mobile"): the pill's SIZE lives in
-     the CSS (public-13.68.css .mc-hint — every dimension ×1.5 + the
+     the CSS (public-13.69.css .mc-hint — every dimension ×1.5 + the
      cyan-button treatment + the 44px touch-target floor); this MARKUP is
      byte-unchanged (the label, the icon, the hooks, the lifecycle all
      stay — the size is presentation). -->
-<a class="mc-hint" id="mcHint" style="display:none" href="#topspotCard"><svg class="mc-hint-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg><span data-i="mcHint">بازی‌های دیگر</span></a>
+<a class="mc-hint" id="mcHint" style="display:none" href="#topspotCard"><svg class="mc-hint-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="miter" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg><span data-i="mcHint">بازی‌های دیگر</span></a>
 <!-- v13.131-playerpresence: BOTH corner pills are RETIRED (the carousel in
      v13.129, the bell now — owner directive); heroPills() in public-13.36.js
      null-guards their absence. -->
@@ -542,10 +570,10 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      FAB replaces it. The tooltip + aria-label carry the join-i18n
      string so the language toggle updates it. -->
 <a id="tgFab" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram" data-promo="برای دست ندادن مسابقات مهم، به ربات تلگرام بپیوندید ✨"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="#fff" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg></a>
-<button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
+<button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="miter" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.15.js" defer></script>
 <script>var PAGE_TZ = "__PAGE_TZ__";</script>
-<script src="/public-13.50.js" defer></script>
+<script src="/public-13.51.js" defer></script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a

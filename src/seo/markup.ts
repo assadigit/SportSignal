@@ -8,7 +8,7 @@
 import { SEO } from "./config";
 import { matchPath, compSlug } from "../slugs";
 import { UCL_LOGO_CHIP } from "../tables";
-import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, jalaliWeekdayStr, tehranDayKey, isLiveSt, faGregorianDate, faHeroDate, tehranParts, toJalali } from "./utils";
+import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, jalaliWeekdayStr, jalaliWeekdayStrLatin, tehranDayKey, isLiveSt, faGregorianDate, faHeroDate, tehranParts, toJalali } from "./utils";
 import { toFaDigits } from "../utils";
 import { translateCompetition } from "../translate";
 import type { SeoMatch } from "./data";
@@ -275,9 +275,21 @@ function heroTeamHtml(t: any, away: boolean): string {
 // mirror on the page. Missing fields render the spec placeholders ("--" +
 // .mc-mut, empty crest slot) — zero layout shift.
 function mcLogoHtml(t: any, extra: string): string {
-  const c = t && t.crest;
+  // v13.170-mcref: the display-variant crest override — the WHITE full
+  // Tottenham crest + the trimmed Chelsea crest (MC_CREST, the same map
+  // public-13.51.js carries; other clubs keep the data crest URL).
+  const override = t && (MC_CREST[t.name] || MC_CREST[t.faName]);
+  const c = override || (t && t.crest);
   return '<div class="mc-slot ' + extra + '">' + (c ? '<img src="' + esc(c) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' : "") + "</div>";
 }
+
+// v13.170-mcref: the mobile card's display-variant crest map (the server
+// twin of MC_CREST in public-13.51.js — markup mirror and client render
+// agree src-for-src).
+const MC_CREST: Record<string, string> = {
+  "Tottenham Hotspur FC": "/ui/crest-tottenham-white.webp",
+  "Chelsea FC": "/ui/crest-chelsea.webp",
+};
 
 function mcTextHtml(cls: string, txt: string | null | undefined, mut?: boolean): string {
   const v = txt == null || txt === "" ? "--" : txt;
@@ -289,13 +301,15 @@ export function mcardHtml(sm: SeoMatch): string {
   let dt = "--", tm = "--";
   if (m.utcDate && !isNaN(Date.parse(m.utcDate))) {
     // Tehran wall clock — deterministic (tehranParts, no locale variance);
-    // v13.169-mcv2: the banner date is the Jalali WEEKDAY+day+month
-    // (jalaliWeekdayStr — byte-identical to the client's fa-IR-u-ca-persian
-    // {weekday, day, month} Intl render; no year, per the V2 spec shape).
+    // v13.170-mcref: the banner date is the Jalali WEEKDAY+day+month with
+    // LATIN digits (jalaliWeekdayStrLatin — the v13.170 digit rule; the
+    // client renders faLat(Intl(...)) — the same presentation) and the
+    // kickoff time stays Latin "21:00" (the Poppins Digits face carries
+    // both locales now).
     const p = tehranParts(m.utcDate);
     const z = (n: number) => (n < 10 ? "0" + n : "" + n);
-    dt = jalaliWeekdayStr(m.utcDate);
-    tm = toFaDigits(z(p.hh) + ":" + z(p.mm));
+    dt = jalaliWeekdayStrLatin(m.utcDate);
+    tm = z(p.hh) + ":" + z(p.mm);
   }
   // v13.169-mcv2: names too long for one line at the display size (fa
   // joined script > 11 chars) step down to .mc-name-xl — the SAME rule
@@ -306,16 +320,23 @@ export function mcardHtml(sm: SeoMatch): string {
     return "mc-slot mc-name" + (n && String(n).length > 11 ? " mc-name-xl" : "");
   };
   let out = "";
+  // v13.170-mcref: the top-center competition logo — the white league
+  // lockup (LEAGUE_LOGOS — the same pack the PC hero rides; the client
+  // renders the MC_COMP twin). Unknown codes render an empty slot.
+  const compCode = m.competition && m.competition.code;
+  const compLogo = compCode ? LEAGUE_LOGOS[compCode] : undefined;
+  out += '<div class="mc-slot mc-comp mc-comp-slot">' + (compLogo ? '<img src="' + compLogo + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' : "") + "</div>";
   out += mcLogoHtml(m.homeTeam, "mc-logo");
   out += mcLogoHtml(m.awayTeam, "mc-logo mc-logo-a");
   out += mcTextHtml(nameCls(m.homeTeam), m.homeTeam && (m.homeTeam.faName || m.homeTeam.name));
   out += mcTextHtml(nameCls(m.awayTeam) + " mc-name-a", m.awayTeam && (m.awayTeam.faName || m.awayTeam.name));
   out += mcTextHtml("mc-slot mc-date", dt);
   out += mcTextHtml("mc-slot mc-ko", tm);
-  // v13.169-mcv2 (V2 spec): a missing venue renders the localized neutral
-  // fallback — a real value, never the '--' rest state.
-  const ve = m.venueFa || m.venue;
-  out += '<div class="mc-slot mc-venue">' + esc(ve || "استادیوم نامشخص") + "</div>";
+  // v13.170-mcref: the venue rides the STATIC #mcVenue layer now (the
+  // .mc-venuewrap flex group with the outline stadium icon — public.ts);
+  // the router stamps it via __SEO_MCVENUE__ and renderMCard fills
+  // #mcVenue by textContent. The localized neutral fallback («استادیوم
+  // نامشخص») lives in the router stamp.
   return out;
 }
 

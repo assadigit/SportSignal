@@ -10,6 +10,80 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.170] — 2026-10-23 — v13.170-mcref (owner): the V3 code-drawn mobile card — 95% visual parity with Visual reference v2.png
+
+**The owner (2026-10-23, the 13-instruction fidelity spec):** the mobile
+match card must reach 95%+ visual similarity with Visual reference v2.png
+(Chelsea vs Tottenham): instructions 1–13 — the full-width 9:16 container
+with cqw units, the code-drawn dark navy stadium scene replacing the JPG
+template, the Premier League logo at the top center (never the brand
+logo), reference-cropped head-and-shoulders player cutouts, the chamfered
+SVG panel with the raised tab + double electric-blue border +
+drop-shadow glow, the fading center divider, big crests with the WHITE
+full Tottenham crest, the heaviest Farsi names, LATIN digits everywhere
+in a rounded geometric face, the hexagonal time capsule with glowing
+chevrons, the chamfered countdown tiles with outline icons, the chamfered
+venue bar, and the final 50%-opacity overlay fidelity pass.
+
+**The card is now CODE-DRAWN (the v13.169 JPG template retires — the file
+stays served + pinned one SEO TTL):** the stadium scene = a navy base
+gradient + the floodlight glow field + vertical flare columns with
+starburst lens flares at the corners + the floodlight ARC (21 point
+sources on a curved roofline with converging volumetric beams + tier
+ribbons) + head-back glows behind each player + edge-masked crowd bokeh
+(/ui/mc-crowd.webp) + the perspective pitch strip (trapezoid + the
+converging center line + glowing side edges + mow stripes). The panel =
+an inline SVG chamfered frame (45° cuts ~6.5cqw, the raised tab at ~40%
+of the panel width with 45° shoulders, a white-hot double border with a
+cyan drop-shadow glow) — with overflow:visible on every card SVG (the
+half-clipped-stroke bug: the stroke's outer half was invisible until the
+viewBox clip was lifted). The capsule = the elongated hexagon with
+OUTWARD-pointing filled chevrons; the tiles = three equal chamfered
+boxes (row = the capsule width) with outline calendar/clock/stopwatch
+icons; the venue bar = the chamfered frame with the centered
+icon+text flex group.
+
+**New assets:** /fonts/Poppins-{Bold,ExtraBold}.woff2 (the reference's
+rounded geometric digit face, digits+colon unicode-range — 8KB each),
+/ui/crest-tottenham-white.webp (the WHITE full crest — cockerel on ball
++ TOTTENHAM HOTSPUR text, luminance-keyed from the FD SVG),
+/ui/crest-chelsea.webp (the trimmed FD crest), /ui/mc-crowd.webp (the
+bokeh noise), /players/hero/{chelsea,tottenham}-v3.webp (the
+reference-cut player cutouts — GrabCut-extracted from the owner's
+reference top 42%, on exact reference geometry: faces at ~24%/75%W,
+shoulders past the card edges, jerseys tucked behind the panel).
+
+**The data layer:** the comp logo renders from the white LEAGUE_LOGOS
+pack (the MC_COMP twin in the client); the crest/art overrides are
+club-keyed maps (MC_CREST/MC_ART — the PC hero is untouched); the digits
+are LATIN in BOTH locales (faLat maps the Jalali date's ۰-۹ → 0-9; the
+mset writer dropped fmtNum; jalaliWeekdayStrLatin ships the server
+mirror); the venue rides the STATIC #mcVenue layer (the router stamps
+__SEO_MCVENUE__; renderMCard fills by textContent). The state chip
+(LIVE/FT/postponed — status from the data, never the clock), the
+no-JS mirror, the EN toggle, the hint pill and the sync line all keep
+their contracts.
+
+**Fidelity verification (instruction 13's own method):** the 50%-opacity
+overlay fuses EVERY structural element (panel, capsule, tiles, venue
+bar, crests, names, time, logo — pixel-verified alignment); the border
+peaks, the chevrons, the tab and the overall luminance match the
+reference's sampled values (mean lum 83.1 vs 83.4; peaks within ~5%);
+the residual difference is the player-cutout edge fringe (the extracted
+silhouette vs the reference's baked rendering) and the atmospheric
+texture detail. QA: 320–430px width sweep (full-bleed, no horizontal
+scroll, proportional cqw scaling), EN toggle, LIVE/FINISHED/POSTPONED
+server mirrors, the desktop PC hero byte-untouched (mcard display:none).
+
+**Release:** renames public-13.68.css → 13.69.css + public-13.50.js →
+13.51.js (the retired pair stays served + pinned); _headers pins the new
+live set (98 rules — 4 ancient js pins pruned at the 100-rule cap); SW
+v75 → v76; VERSION 13.170-mcref; package 13.170.0.0; check-stats pins
+rewritten for the V3 card; admin-parity baselines re-frozen (59075B
+public).
+
+---
+
 ## [13.169] — 2026-10-23 — v13.169-mcv2 (owner): the V2 mobile HUD match card — portraits + re-measured slots + LIVE/FT states
 
 **The owner (2026-10-23, repo upload f5b7936 + the V2 spec):** a NEW blank

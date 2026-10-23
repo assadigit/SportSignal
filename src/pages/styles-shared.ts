@@ -19,7 +19,13 @@ export const FONT_FACES_STYLE = `<style>@font-face{font-family:'Morabba';src:url
 /* v13.164-matchcard: the mobile HUD card's squared techno face (the owner's
      reference card's own typography). Self-hosted latin subsets (~10KB
      each); fetched ONLY when the mobile card's rules match text — no
-     download on desktop or non-home pages. */
+     download on desktop or non-home pages.
+     v13.170-mcref: 'Poppins Digits' — the V3 card's LATIN digit face
+     (instr 8: the reference's rounded geometric letterform, ~8KB latin
+     subsets, digits+colon unicode-range so it swaps in only when a digit
+     run renders; the FA text keeps falling through to Morabba/Peyda). */
 @font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}
 @font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}</style>`;
+@font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Poppins Digits';src:url('/fonts/Poppins-Bold.woff2') format('woff2');font-weight:600 700;font-style:normal;font-display:swap;unicode-range:U+0030-0039,U+003A,U+0020,U+002D}
+@font-face{font-family:'Poppins Digits';src:url('/fonts/Poppins-ExtraBold.woff2') format('woff2');font-weight:800;font-style:normal;font-display:swap;unicode-range:U+0030-0039,U+003A,U+0020,U+002D}</style>`;

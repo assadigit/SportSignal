@@ -187,6 +187,11 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
     // the client renderMCard corrects to the user's ss_tz zone on load;
     // v13.165-mcfa: the mirror ships the FA/Jalali/Persian-digit presentation)
     .replace("__SEO_MHERO__", mheroHtml)
+    // v13.170-mcref: the venue rides the STATIC #mcVenue layer (the
+    // .mc-venuewrap flex group) — the router stamps it exactly like the
+    // old mcardHtml venue div did (FA default + the localized neutral
+    // fallback; renderMCard re-fills it by textContent on load/toggle).
+    .replace("__SEO_MCVENUE__", esc((nextBig && (nextBig.s.venueFa || nextBig.s.venue)) || "استادیوم نامشخص"))
     .replace("__SEO_LIVE__", liveHtml || (live.length ? "" : '<span class="sr-only">در حال حاضر بازی زنده‌ای در برنامه نیست.</span>'))
     .replace("__SEO_TOPSPOT__", topspotHtml)
     .replace("__SEO_UCLSPOT__", uclspotHtml)
@@ -234,10 +239,10 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   {
     const z = (n: number) => (n < 10 ? "0" + n : "" + n);
     let hcD = "--", hcH = "--", hcM = "--", hcS = "--", hcPct = "0", hcUpcoming = false;
-    // v13.164-matchcard + v13.165-mcfa: the mobile card's cells ride the SAME
-    // epoch + guard (Persian digits — the FA default the whole page ships;
-    // updateBigBar corrects them every tick client-side exactly like
-    // #hcD/#hcH/#hcM, fmtNum rewriting to Latin for en).
+    // v13.164-matchcard + v13.170-mcref: the mobile card's cells ride the SAME
+    // epoch + guard; the digits ship LATIN now (the V3 card's digit rule —
+    // Poppins Digits in both locales; updateBigBar's mset writer keeps
+    // plain Latin every tick exactly like the server stamp).
     let mcD = "--", mcH = "--", mcM = "--";
     if (nextBig && nextBig.s.utcDate) {
       const st = String(nextBig.s.status || "").toUpperCase();
@@ -251,9 +256,9 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
         hcH = toFaDigits(z(Math.floor(ms % 864e5 / 36e5)));
         hcM = toFaDigits(z(Math.floor(ms % 36e5 / 6e4)));
         hcS = toFaDigits(z(Math.floor(ms % 6e4 / 1e3)));
-        mcD = toFaDigits(z(Math.floor(ms / 864e5)));
-        mcH = toFaDigits(z(Math.floor(ms % 864e5 / 36e5)));
-        mcM = toFaDigits(z(Math.floor(ms % 36e5 / 6e4)));
+        mcD = z(Math.floor(ms / 864e5));
+        mcH = z(Math.floor(ms % 864e5 / 36e5));
+        mcM = z(Math.floor(ms % 36e5 / 6e4));
         let g = 1 - ms / 864e5; if (g < 0) g = 0; if (g > 1) g = 1;
         hcPct = String(Math.max(2, Math.round(g * 100)));
       }
@@ -263,9 +268,9 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
         .replace("__SEO_HCD__", hcD).replace("__SEO_HCH__", hcH)
         .replace("__SEO_HCM__", hcM).replace("__SEO_HCS__", hcS)
         .replace("__SEO_HCPCT__", hcPct)
-        // v13.164-matchcard + v13.165-mcfa: the mobile card's three pockets —
-        // same remaining time, Persian-digit tabular cells (the FA default;
-        // the client's fmtNum writer re-renders Latin for en)
+        // v13.164-matchcard + v13.170-mcref: the mobile card's three pockets —
+        // same remaining time, LATIN tabular cells (the V3 digit rule; the
+        // client's mset writer keeps plain Latin in both locales)
         .replace("__SEO_MCD__", mcD).replace("__SEO_MCH__", mcH).replace("__SEO_MCM__", mcM);
     } else {
       // v13.150-hud: the countdown lives INSIDE the card as the static

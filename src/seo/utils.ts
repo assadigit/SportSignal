@@ -95,6 +95,17 @@ export function jalaliWeekdayStr(iso: string): string {
   return FA_WEEKDAYS[t.wd] + " " + toFaDigits(String(j.jd)) + " " + JALALI_MONTHS[j.jm - 1];
 }
 
+// v13.170-mcref: the LATIN-digit twin of jalaliWeekdayStr — the V3 mobile
+// card's digit rule (instr 8: Latin 0-9 on the date/time/countdown). The
+// client renders faLat(Intl("fa-IR-u-ca-persian", {weekday, day, month}))
+// — the same weekday/month words with the day digits mapped ۰-۹→0-9, so
+// the no-JS mirror and the post-JS render agree byte-for-byte.
+export function jalaliWeekdayStrLatin(iso: string): string {
+  const t = tehranParts(iso);
+  const j = toJalali(t.y, t.m, t.d);
+  return FA_WEEKDAYS[t.wd] + " " + String(j.jd) + " " + JALALI_MONTHS[j.jm - 1];
+}
+
 export function jalaliDateStr(iso: string): string {
   const t = tehranParts(iso);
   const j = toJalali(t.y, t.m, t.d);

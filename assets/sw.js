@@ -409,6 +409,25 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
+// v13.170-mcref (v76): the V3 mobile HUD match card — rebuilt CODE-DRAWN to
+// the owner's Visual reference v2.png (the 13-instruction fidelity pass):
+// the dark navy stadium scene (floodlight ARC with converging beams, tier
+// ribbons, head-back glows, corner starbursts, edge-masked crowd bokeh,
+// the perspective pitch strip), the chamfered SVG panel with the raised
+// tab + white-hot double border + drop-shadow glow (overflow:visible so
+// the stroke's outer half paints), the fading divider, the hexagonal time
+// capsule with filled outward chevrons, three chamfered tiles with
+// outline icons, the chamfered venue bar with the centered icon+text
+// group, the top-center competition logo (white LEAGUE_LOGOS pack), and
+// LATIN digits everywhere (Poppins Digits — the reference's rounded
+// geometric face). The v13.169 JPG template retires from the card (the
+// file stays served one SEO TTL). Renames public-13.68.css -> 13.69.css +
+// public-13.50.js -> 13.51.js (the retired pair stays served + pinned).
+// NEW assets: /fonts/Poppins-{Bold,ExtraBold}.woff2 +
+// /ui/crest-{chelsea,tottenham-white}.webp + /ui/mc-crowd.webp +
+// /players/hero/{chelsea,tottenham}-v3.webp (the reference-cut player
+// cutouts). Replaces v75 — the v13.169-mcv2 release: the V2 JPG template
+// card. Replaces v74 — the v13.168-mchint release: the ×1.5 scroll-hint.
 // v13.169-mcv2 (v75): the V2 mobile HUD match card — the owner-supplied
 //              V2 blank template (SportSignal-HUD-Mobile-V2.jpg, 600x1065 =
 //              the 928x1648 design grid at 0.646 scale, repo-root upload
@@ -515,7 +534,7 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v75";
+const CACHE = "sportsignal-v76";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
