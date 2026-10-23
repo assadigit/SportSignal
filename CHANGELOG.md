@@ -10,6 +10,85 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.170] — 2026-10-23 — v13.170-mcv3 (owner): the reference-rebuild HUD match card — the 13-instruction fidelity round
+
+**The owner (2026-10-23):** a 13-instruction brief against Visual reference
+v2.png (941x1671) with a hard goal — 95%+ visual similarity on a 390px
+render, every element position within 2%W on a 50%-opacity overlay, and
+"do not change anything outside the match card" (the EN button, the
+«بازی‌های دیگر» scroll hint and the sync line stay untouched). Built +
+calibrated as a standalone demo first (23 measured iterations: numeric
+zone-by-zone RGB comparison + VLM side-by-side + the overlay position
+check), then integrated. **Final verdicts: VLM 98/100 on the standalone
+build, 92/100 on the integrated production render; mean abs pixel diff
+39.6 -> 28.3; every element position within 2%W.**
+
+**The architecture flip — the card is DRAWN LIVE (the baked V2 frame
+retires; the old /ui/sportsignal-hud-mobile-v2.webp stays served + pinned
+one SEO TTL):** a full-bleed 9:16 container-type:inline-size canvas with
+square outer corners, every element sized in cqw (instruction 1). The
+background (instruction 2): a layered CSS stadium scene — deep-navy base
+with floodlit corners, a bright bloom band behind the players at y20-26%,
+a light shaft between the heads, crowd-stand edge bands, a pitch strip
+with a converging centre line + flare hotspots and a corner vignette —
+UNDER the extracted photographic /ui/mc/scene.webp (the reference's own
+top 43% minus the players and the competition logo, alpha-masked at 92%;
+the synthetic layers stay under it so a dead asset degrades gracefully).
+**The panel (instruction 5):** an inline SVG path — chamfered 45deg
+corners, a raised tab with angled shoulders sitting ON the continuous top
+border, a DOUBLE border (pure-cyan #00E9FD outer line + #3E9BE8 inner
+line), blue inner-glow strokes (clipPath + feGaussianBlur), white-hot
+corner nodes, and the strong blue outer glow via filter:drop-shadow on
+the SVG (box-shadow would be clipped); the tab emits a blue glow ABOVE
+the panel over the players. The centre divider (instruction 6) fades both
+ends. **The capsule (instruction 9):** an elongated hexagon with a
+gradient border (dim blue ends, white-cyan center) + glowing chevron
+marks at both pointed ends. **The tiles (instructions 10-11):** three
+chamfered tiles stacking an outline icon (calendar/clock/stopwatch), a
+2-digit Latin number and the FA label. **The venue bar (instruction 12):**
+chamfered with an outline stadium icon + the Peyda venue text.
+
+**The digit rule (instruction 8):** LATIN digits (0-9) everywhere on the
+card in BOTH languages — «سه شنبه 27 مهر» renders the Jalali weekday+
+day+month with Latin day digits (enDigits/mcEnDigits map the fa-IR Persian
+digits back), «23:00» stays en-GB 24h, and mset dropped fmtNum so the
+countdown cells stay Latin — tabular Chakra Petch everywhere so the
+countdown never jitters.
+
+**The overrides (the owner's notes):** /ui/mc/art-chelsea.webp +
+art-tottenham.webp (MC_ART — the reference's own player cutouts, rembg
+u2net with NO alpha matting so the dark blue jersey keeps full opacity;
+object-fit:fill maps the boxes 1:1 onto the reference's pixels; unmapped
+clubs fall back to the HERO_ART library cutouts), /ui/mc/crest-chelsea.
+webp + crest-tottenham.webp (MC_CREST — the white-ring Chelsea crest +
+the FULL white cockerel-on-ball Tottenham crest with the TOTTENHAM
+HOTSPUR text, keyed from the reference; other clubs keep the FD crest
+URLs) and /ui/mc/wl-*.webp (MC_WL — the white competition lockups for
+PL/CL/PD/SA/FL1/EL, luminance-recolored from the /leagues/ pack;
+unmapped comps render an empty logo slot). The competition logo replaces
+the retired SportSignal slot at the card top (instruction 3).
+
+**Geometry (measured from the reference's pixels):** crests centered
+(30,52.25)/(70,52.25) 23cqw; names (30,63)/(70,63) Morabba 900 5.2cqw;
+date y68.3 3.5cqw; kickoff y72.6 Chakra 700 8.5cqw; the tiles row
+15.7-84.3%W at y78.5-86.5%H; the venue bar 17.5-82.5%W at y88.6-93.1%H;
+the panel x11.4-88.6%W y42.7-95.5%H. direction:ltr stays pinned (RTL can
+never mirror the layout). The v13.167 width-driven fill RETIRES for the
+card (instruction 1: full viewport width, no side margin, 9:16).
+
+**The stack kept whole:** the renderMCard/mcardHtml/updateBigBar/router
+contracts are unchanged (same exits, same ids mcD/mcH/mcM, same state-chip
+rule, same __SEO fills + one new __SEO_MVEN__), the static template owns
+every non-data layer (bg, SVGs, tiles, venue frame) so the ticking never
+churns the artwork, and the release rides the full ceremony: renames
+public-13.68.css -> 13.69.css + public-13.50.js -> 13.51.js, the /ui/mc/*
+_headers wildcard (ONE rule for the whole pack — the 100-rule cap),
+SW v75 -> v76, VERSION 13.170-mcv3, check-stats pins rewritten,
+admin-parity re-frozen (57946B), hero-coverage bundle ref regenerated.
+Gates: tsc EXIT 0, npm test EXIT 0 (2084 checks), wrangler dev smoke:
+healthz OK + the FA/EN renders verified (names/date/time/venue/overrides)
++ the LIVE state chip + the countdown ticking in Latin tabular digits.
+
 ## [13.169] — 2026-10-23 — v13.169-mcv2 (owner): the V2 mobile HUD match card — portraits + re-measured slots + LIVE/FT states
 
 **The owner (2026-10-23, repo upload f5b7936 + the V2 spec):** a NEW blank

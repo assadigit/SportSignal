@@ -322,6 +322,25 @@
 # Renames public-13.67.css -> 13.68.css + public-13.49.js -> 13.50.js
 # (rename-on-edit; the retired pair stays served + pinned one SEO TTL
 # below — stale edge HTML may still reference it).
+# v13.170-mcv3 (owner): the reference-rebuild HUD match card (the owner's
+# 13-instruction round against Visual reference v2.png — the card drawn
+# live: CSS stadium scene + inline-SVG panel/capsule/tiles/venue, Latin
+# digits, the /ui/mc/* asset pack: scene.webp (the extracted photographic
+# background), wl-*.webp (white competition lockups), crest-*.webp (the
+# white crest overrides) + art-*.webp (the owner-reference player
+# cutouts)). Renames public-13.68.css -> 13.69.css + public-13.50.js ->
+# 13.51.js (rename-on-edit; the retired pair + the V2 frame stay served +
+# pinned one SEO TTL below). The /ui/mc/* wildcard pins the whole pack in
+# ONE rule (the 100-rule cap — see the v13.169 deploy note).
+/public-13.69.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.51.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/ui/mc/*
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.68.css
   Cache-Control: public, max-age=31536000, immutable
 

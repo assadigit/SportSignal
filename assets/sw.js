@@ -409,6 +409,23 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
+// v13.170-mcv3 (v76): the reference-rebuild HUD match card — the owner's
+//              13-instruction round against Visual reference v2.png (VLM
+//              98/100 side-by-side on the standalone build): the card is
+//              DRAWN LIVE (full-bleed 9:16 cqw canvas): a layered CSS
+//              stadium scene under the extracted photographic
+//              /ui/mc/scene.webp, an inline-SVG chamfered panel (double
+//              border + inner glow + raised tab + corner nodes + drop-shadow
+//              bloom), the hexagon date/time capsule with chevron marks,
+//              three chamfered countdown tiles with icons, the chamfered
+//              venue bar, the white competition lockups (/ui/mc/wl-*), the
+//              white crest overrides (/ui/mc/crest-*) and the
+//              owner-reference player cutouts (/ui/mc/art-* — MC_ART with
+//              HERO_ART fallback). LATIN digits on the card in both
+//              languages (instruction 8 — tabular Chakra Petch). Renames
+//              public-13.68.css -> 13.69.css + public-13.50.js -> 13.51.js;
+//              the retired pair + the V2 frame stay served + pinned one SEO
+//              TTL; CORE_URLS stays minimal.
 // v13.169-mcv2 (v75): the V2 mobile HUD match card — the owner-supplied
 //              V2 blank template (SportSignal-HUD-Mobile-V2.jpg, 600x1065 =
 //              the 928x1648 design grid at 0.646 scale, repo-root upload
@@ -515,7 +532,7 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v75";
+const CACHE = "sportsignal-v76";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
