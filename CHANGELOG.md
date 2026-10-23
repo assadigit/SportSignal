@@ -8,6 +8,65 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+---
+
+## [13.167] — 2026-10-23 — v13.167-mcfill (owner): the mobile HUD card fills the viewport
+
+**The owner (2026-10-23, follow-up on the live v13.166):** "make the HUD
+bigger, so it appears fuller and bigger in the HUD and everything becomes
+bigger. there are unnecessary margins right now. it can fill viewport
+without much margin."
+
+**Diagnosis (the live v13.166, 390x844):** the card was HEIGHT-driven —
+`height:min(72svh,660px)` + `width:auto` + `aspect-ratio:743/1357` — which
+capped it at 333x608 on a 390-wide phone: ~29px gutters per side plus the
+660px absolute cap; "everything" (names, kickoff digits, countdown cells,
+logos — all cqw-scaled) rendered at the small end of its range.
+
+**Fix — the sizing model flips, the slot geometry is untouched:** the base
+`.hero-mcard` rule is WIDTH-driven FILL now —
+
+```css
+width:min(calc(100% - 8px), calc((100vh  - 128px)*743/1357));  /* vh fallback */
+width:min(calc(100% - 8px), calc((100svh - 128px)*743/1357));  /* svh line */
+height:auto; aspect-ratio:743/1357;
+```
+
+- Tall phones (375x812 / 390x844 / 430x932 measured): the width term wins —
+  a 4px gutter per side and ~15% linear growth (390x844: 382x698 vs
+  333x608; kickoff 52.7px vs 46.1px; countdown digits 19.5px vs 17.0px).
+  Every cqw-scaled element grows with the card — "everything becomes
+  bigger" without a single slot edit.
+- Short viewports (16:9 phones, landscape, short windows): the
+  `(100svh - 128px)` term caps the height — 128 = the v13.166-settled 68px
+  top margin + a 60px below-card reserve (sync caption ~20px + the
+  scroll-hint pill ~40px), so the hint stays FULLY inside the first screen
+  everywhere (390x740: 335x612, hint bottom 732/740; 375x667: 295x539).
+  The scroll-sign contract of v13.165 survives; the next-card peek shrinks
+  to ~2-35px on tall phones (the hint carries the affordance there).
+- The 660px absolute cap RETIRES — a tall portrait window now gets a
+  proportionally tall card (that IS the fill ask).
+- The v13.166 `margin-top:68px` stays byte-identical (settled last round).
+
+**QA (wrangler dev :8787, KV fixture Bayern vs Arsenal):** measured at
+390x844 (card 382x698 @x4, gutters 4/4, hint 788-818 fully visible, ko
+52.7px, cells 19.5px — VLM: "fills the vast majority of the viewport width,
+no excessive empty space, no clipping, no rendering defects"), 390x740
+(335x612, hint bottom 732 <= 740), 1920x900 desktop byte-untouched (PC card
+920x374, 2 player figures, mcard display:none); FA presentation intact
+(۲ آبان ۱۴۰۵ / ۲۱:۰۰ / cells ۰۱-۰۹-۱۱ / آلیانتس آرنا); zero page errors.
+
+**Release:** public-13.65.css -> public-13.66.css (rename-on-edit; the
+retired 13.65.css stays served + pinned one SEO TTL per the retention
+rule), refs in public.ts + page-shell.ts, _headers gains the 13.66.css
+immutable pin, SW v72 -> v73 + history, VERSION 13.167-mcfill, package
+13.167.0.0, check-stats pins rewritten (homepage/shell refs, the headers
+chain, SW v73, the card-CSS feature block re-pinned at the width-driven
+declaration pair), admin-parity re-frozen (public page 47102B -> 47249B —
+the CSS href + the markup comment). Gates: npm test EXIT 0.
+
+---
+
 ## [13.166] — 2026-10-23 — v13.166-mctop (owner): the mobile HUD card's upper margin
 
 **The owner (2026-10-23, follow-up on the live v13.165):** "reduce the upper

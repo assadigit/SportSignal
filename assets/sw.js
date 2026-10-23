@@ -409,6 +409,25 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
+// v13.167-mcfill (v73): the owner follow-up on the mobile hero — "make
+//              the HUD bigger, so it appears fuller and bigger in the HUD
+//              and everything becomes bigger; there are unnecessary margins
+//              right now; it can fill viewport without much margin". ONE
+//              declaration pair in the BASE rule (the <=899px zone's
+//              margin-top:68px stays — v13.166-settled): the card flips
+//              HEIGHT-driven -> WIDTH-driven FILL —
+//              width:min(calc(100% - 8px), calc((100svh - 128px)*743/1357))
+//              + height:auto + aspect-ratio 743/1357 (vh fallback line
+//              first). Tall phones: the width term wins — a 4px gutter per
+//              side, ~15% linear growth (390x844: 382x697 vs 333x608), every
+//              cqw-scaled element grows with the card. Short viewports: the
+//              height term caps — 128 = 68 top + 60 below-card reserve (sync
+//              caption + hint pill) so the hint stays fully in the first
+//              screen (390x740: 335x612; 375x667: 295x539); the 660px
+//              absolute cap retires (a tall portrait window gets a
+//              proportionally tall card — that IS the fill ask). Renames
+//              public-13.65.css -> 13.66.css only; JS + core + the frame
+//              unchanged, CORE_URLS stays minimal.
 // v13.166-mctop (v72): the owner follow-up on the mobile hero — "reduce
 //              the upper margin of the HUD of next upcoming match — it's
 //              too much". ONE line in the <=899px phone zone: the
@@ -451,7 +470,7 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v72";
+const CACHE = "sportsignal-v73";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

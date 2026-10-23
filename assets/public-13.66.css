@@ -1144,11 +1144,26 @@ h1,h2,h3,h4,h5,h6,.hero-name{font-family:var(--font-heading)}
    content bounds (alpha scan: x 141-883, y 97-1453 → 743x1357; the ~13.8%
    left/right + 6.3%/5.3% top/bottom baked TRANSPARENT margins the owner
    measured as "waste margin space around the HUD" are gone, the glow feather
-   is preserved; composited-pixel-identical, 625KB). The card is HEIGHT-driven
-   now (height:min(72svh,660px) + width:auto + aspect-ratio 743/1357): the
-   visible HUD fills the width it is given at every phone height AND the
-   first screen always leaves room below (the scroll-hint + the next card's
-   peek — the owner's first-time-viewer complaint). Every slot is an
+   is preserved; composited-pixel-identical, 625KB).
+   v13.167-mcfill (owner: "make the HUD bigger — fuller and bigger,
+   everything becomes bigger; there are unnecessary margins right now; it
+   can fill viewport without much margin"): the card is WIDTH-driven FILL
+   now (width:min(calc(100% - 8px), calc((100svh - 128px)*743/1357)) +
+   height:auto + aspect-ratio 743/1357 — with a vh fallback line before the
+   svh one). On every tall phone (375x812 / 390x844 / 430x932 measured) the
+   width term wins: the card spans viewport-width minus a 4px gutter per
+   side (the artwork's faintest outer glow fringe stays visible, never
+   clipped by the screen edge; the card's top corners sit ~68px down — below
+   every physical corner radius) and grows ~15% linear over the v13.165
+   height-driven size (390x844: 382x697 vs 333x608 — every cqw-scaled
+   element — names, kickoff digits, countdown cells, logos — grows with it).
+   The calc((100svh - 128px)*743/1357) term is the HEIGHT cap for short
+   viewports (16:9 phones, landscape, short windows): 128 = the v13.166 top
+   margin 68px + a 60px below-card reserve (the sync caption ~20px + the
+   scroll-hint pill ~40px) — so even there the card is as WIDE as the
+   viewport can pay for while the hint pill still lands fully inside the
+   first screen (390x740: 335x612, 375x667: 295x539 — both larger than the
+   v13.165 card at the same sizes). Every slot is an
    absolutely-positioned overlay anchored by its CENTER point
    (left/top % + translate(-50%,-50%)) with cqw type (container-type:
    inline-size); positions/sizes remapped from the v13.164 values through the
@@ -1171,7 +1186,7 @@ h1,h2,h3,h4,h5,h6,.hero-name{font-family:var(--font-heading)}
    rides the v13.133 Persian system — Morabba for names/digits/date/kickoff,
    Peyda for the labels + venue, letter-spacing 0 (Persian is never tracked),
    sizes tuned per face (the owner's Jalali + Farsi-numerals round). */
-.hero-mcard{position:relative;z-index:2;display:none;box-sizing:border-box;height:min(72vh,660px);height:min(72svh,660px);width:auto;aspect-ratio:743/1357;margin-inline:auto;container-type:inline-size;direction:ltr;font-family:"Chakra Petch",Morabba,Peyda,'Segoe UI',Tahoma,ui-sans-serif,sans-serif;text-decoration:none;color:inherit;background:none;border:none;padding:0;user-select:none;-webkit-user-select:none}
+.hero-mcard{position:relative;z-index:2;display:none;box-sizing:border-box;width:min(calc(100% - 8px),calc((100vh - 128px)*743/1357));width:min(calc(100% - 8px),calc((100svh - 128px)*743/1357));height:auto;aspect-ratio:743/1357;margin-inline:auto;container-type:inline-size;direction:ltr;font-family:"Chakra Petch",Morabba,Peyda,'Segoe UI',Tahoma,ui-sans-serif,sans-serif;text-decoration:none;color:inherit;background:none;border:none;padding:0;user-select:none;-webkit-user-select:none}
 .hero-mcard .mc-frame{display:block;width:100%;height:auto;pointer-events:none;user-select:none;-webkit-user-drag:none}
 .hero-mcard .mc-slot{position:absolute;pointer-events:none}
 /* teams — logo slots (object-fit:contain keeps every crest's aspect) */
@@ -1258,7 +1273,11 @@ html[lang="fa"] .hero-mcard .mc-venue{font-family:Peyda,'Segoe UI',Tahoma,system
    collide with the header controls, which sit at the screen edges) and
    lands the visible rim ~18px under the controls' bottom edge at every
    phone height (667/740/844/932 verified); the freed 40px flows to the
-   bottom — more of the next card peeks into the first screen. */
+   bottom — more of the next card peeks into the first screen.
+   v13.167-mcfill (owner: "make the HUD bigger — it can fill viewport
+   without much margin"): the 68px top margin stays (v13.166-settled); the
+   card's SIZE now comes from the width-driven fill in the base rule above,
+   so this zone only owns the swap + the margin. */
 @media (max-width:899px){
   .hero-card{display:none}
   .hero-mcard{display:block;margin-top:68px}

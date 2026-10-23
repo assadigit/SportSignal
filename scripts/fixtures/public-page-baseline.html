@@ -82,7 +82,7 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.65.css">
+<link rel="stylesheet" href="/public-13.66.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -252,11 +252,13 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      v13.165 CROPPED to the artwork's own content bounds (alpha scan
      x 141-883 / y 97-1453 -> 743x1357; the ~14% baked transparent side
      margins the owner measured as "waste margin space around the HUD" are
-     gone; composited-pixel-identical, 625KB) and the card is HEIGHT-driven
-     (height:min(72svh,660px) + aspect-ratio 743/1357) so the visible HUD
-     fills the width it gets at every phone height while the first screen
-     always leaves the scroll-hint + the next card's peek visible (the
-     owner's "no sign of below containers" complaint).
+     gone; composited-pixel-identical, 625KB) and v13.167-mcfill made it
+     WIDTH-driven (width:min(calc(100% - 8px), calc((100svh - 128px)*
+     743/1357)) + height:auto + aspect-ratio 743/1357) so the card FILLS
+     the viewport — a 4px gutter per side on every tall phone, every
+     cqw-scaled element ~15% bigger — while the 128px height reserve keeps
+     the scroll-hint + a next-card peek visible on short phones too (the
+     owner's "it can fill viewport without much margin" round).
      The anchor mirrors the PC card's architecture exactly: ONE real link to
      the match page wrapping the whole HUD; the frame img + the VS/MATCH DAY
      navy pills + the countdown cells (mcD/mcH/mcM — updateBigBar writes them

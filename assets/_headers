@@ -274,6 +274,25 @@
 # first screen. Renames public-13.64.css -> 13.65.css (rename-on-edit;
 # the retired 13.64.css stays served + pinned one SEO TTL below — stale
 # edge HTML may still reference it). JS + core + the frame unchanged.
+# v13.167-mcfill (owner: "make the HUD bigger, so it appears fuller and
+# bigger in the HUD and everything becomes bigger; there are unnecessary
+# margins right now; it can fill viewport without much margin"): the
+# mobile card flips HEIGHT-driven -> WIDTH-driven FILL — the base rule's
+# width:min(calc(100% - 8px), calc((100svh - 128px)*743/1357)) + height:auto
+# + aspect-ratio 743/1357. On tall phones the width term wins: a 4px gutter
+# per side, ~15% linear growth (390x844: 382x697 vs 333x608) — every
+# cqw-scaled element (names, kickoff digits, countdown cells, logos) grows
+# with the card. The height term caps SHORT viewports: 128 = the v13.166
+# 68px top margin + a 60px below-card reserve (sync caption + hint pill),
+# so the hint stays fully inside the first screen everywhere (390x740:
+# 335x612; 375x667: 295x539). The 660px absolute cap is gone — a tall
+# portrait window gets a proportionally tall card (that IS the fill ask).
+# Renames public-13.65.css -> 13.66.css (rename-on-edit; the retired
+# 13.65.css stays served + pinned one SEO TTL below — stale edge HTML may
+# still reference it). JS + core + the frame unchanged.
+/public-13.66.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.65.css
   Cache-Control: public, max-age=31536000, immutable
 
