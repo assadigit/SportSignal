@@ -409,6 +409,21 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
+// v13.166-mctop (v72): the owner follow-up on the mobile hero — "reduce
+//              the upper margin of the HUD of next upcoming match — it's
+//              too much". ONE line in the <=899px phone zone: the
+//              .hero-mcard margin-top 108px -> 68px. The 108 stacked the
+//              header-zone (100px) + breathing (8px) from the PAGE TOP
+//              with the artwork's own top glow-fade (~33px to the first
+//              clearly-visible rim at 390px) into a ~95px perceived empty
+//              band under the header controls (VLM-measured live); 68
+//              slides the card's INVISIBLE top fade behind the transparent
+//              topbar's lower padding (nothing visible can collide) and
+//              lands the visible rim ~18px under the controls at every
+//              phone height, with the freed 40px flowing to the bottom
+//              (more of the next card peeks into the first screen).
+//              Renames public-13.64.css -> 13.65.css only; JS + core +
+//              the frame unchanged, CORE_URLS stays minimal.
 // v13.165-mcfa (v71): the owner round on the mobile hero — "1. too much
 //              waste margin space around the HUD 2. unclear that they
 //              should scroll — no sign of below containers 3. FA mode must
@@ -436,7 +451,7 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v71";
+const CACHE = "sportsignal-v72";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

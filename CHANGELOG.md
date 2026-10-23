@@ -8,6 +8,44 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.166] — 2026-10-23 — v13.166-mctop (owner): the mobile HUD card's upper margin
+
+**The owner (2026-10-23, follow-up on the live v13.165):** "reduce the upper
+margin of the HUD of next upcoming match it's too much".
+
+**Diagnosis (measured on the live site, 390x844):** the phone-zone card's
+`margin-top:108px` is measured from the PAGE TOP (the herowrap pulls up
+-100px under the transparent topbar), i.e. header-zone 100px + 8px breathing.
+Stacked with the artwork's own top glow-fade (the first clearly-visible rim
+sits ~33px inside the card box — ~5.5% of the height), the perceived empty
+band between the header controls (bottom edge 82px) and the card's visible
+rim ran ~95px (VLM-measured on the live screenshot: "the card is visually
+pushed significantly downward... a deliberate floating effect" instead of a
+hero sitting under the nav).
+
+**Fix — one line:** `.hero-mcard{margin-top:68px}` in the <=899px phone zone.
+68 puts the card's INVISIBLE top fade (first ~24px is alpha<=8) exactly
+behind the transparent topbar's lower padding — nothing visible can collide
+with the header controls (they sit at the screen edges, the card is centered)
+— and lands the visible rim ~18px under the controls' bottom edge at every
+phone height (390x667 / 390x740 / 390x844 / 430x932 verified live against
+the topbar's measured boxes; VLM A/B: 68 = "comfortable, no collision,
+significantly better" vs 108 = "too big, bottom-heavy"). The freed 40px flows
+to the bottom: more of the next card's title peeks into the first screen
+(66px peek even on the 667px small phone, 153px on the 932px tall one) —
+compounding the v13.165 scroll-sign win. Desktop (>=900px) byte-untouched.
+
+**Release mechanics:** public-13.64.css -> public-13.65.css (rename-on-edit;
+the retired 13.64.css stays served + pinned one SEO TTL per the retention
+rule), refs in public.ts + page-shell.ts, _headers gains the 13.65.css
+immutable pin, SW v71 -> v72 + history, VERSION 13.166-mctop, package
+13.166.0.0, check-stats pins rewritten (homepage/shell refs, the headers
+chain, SW v72, the card-CSS feature block re-pinned at margin-top 68px),
+admin-parity re-frozen (public page 47102B — the CSS href change only).
+JS (13.49) + core (13.15) + the cropped frame webp ride on unchanged.
+
+---
+
 ## [13.165] — 2026-10-23 — v13.165-mcfa (owner): the mobile card round — tight fit, scroll sign, FA/Jalali
 
 **The owner's three-item round (2026-10-23):** "1. The margin is too much,

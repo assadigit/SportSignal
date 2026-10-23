@@ -261,6 +261,22 @@
 # pinned one SEO TTL below (stale edge HTML references it). Immutable
 # under the rename-on-edit rule; the retired v13.164 pair (13.63.css +
 # 13.48.js + core-13.14.js) stays pinned below per the retention rule.
+# v13.166-mctop (owner: "reduce the upper margin of the HUD of next
+# upcoming match — it's too much"): ONE line — the <=899px phone-zone
+# .hero-mcard margin-top 108px -> 68px. The 108 stacked the header-zone
+# (100px) + breathing (8px) from the PAGE TOP with the artwork's own top
+# glow-fade (~33px to the first clearly-visible rim at 390px) into a
+# ~95px perceived empty band under the header controls (VLM-measured
+# live). 68 slides the card's INVISIBLE top fade (first ~24px alpha<=8)
+# behind the transparent topbar's lower padding and lands the visible
+# rim ~18px under the controls' bottom edge at every phone height; the
+# freed 40px flows to the bottom — more of the next card peeks into the
+# first screen. Renames public-13.64.css -> 13.65.css (rename-on-edit;
+# the retired 13.64.css stays served + pinned one SEO TTL below — stale
+# edge HTML may still reference it). JS + core + the frame unchanged.
+/public-13.65.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.64.css
   Cache-Control: public, max-age=31536000, immutable
 
