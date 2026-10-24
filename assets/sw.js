@@ -409,6 +409,31 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
+// v13.176-mctcrop (v79): the owner's correction to the v13.175 crop — the
+//              crop line now sits at the bottom of the jersey's chest
+//              crest/logo zone (the owner's "T logo" landmark — the exact
+//              composition of Visual reference v2.png, whose own two
+//              players end at their crest bottoms with only the sponsor's
+//              letter-tips peeking). FOUR pre-cropped files ship (originals
+//              kept): art-chelsea-3/art-tottenham-3 (the reference pair,
+//              crest-line cuts, ~12-14px baked headroom) + the
+//              mc-port-yamal/mc-port-mbappe pair for the live El Clásico
+//              fixture (the CARD-only override — the PC hero + the og-card
+//              renderer keep reading HERO_ART). The port imgs move to
+//              height:auto + aspect-ratio:var(--mcar,1) on the wider-than-
+//              port frame (116.7% of the 48%W port): the box bottom IS the
+//              melt line, set per-file by the DCL MC_GEOM table (set
+//              pre-load, no layout shift); the faces ride at reference
+//              scale, the shoulders bleed ~3%W off-card, the away port
+//              anchors object-position top RIGHT (the physical right edge
+//              — dir=ltr pinned so the RTL page can never mirror it); the
+//              bottom mask fade shrinks 27% -> 12% of the image height so
+//              the crest/logo line stays clearly visible. Routine CACHE
+//              bump: the evict also clears the cached OLD /ui/mc URLs
+//              (art-*-2 etc.) from storage.
+//              (v78 was v13.174-mcfix — the owner's 5-fix round: the venue
+//              icon out, the PL ghost gone, the real player photos, the
+//              clean crests, the header-melting top fade.)
 // v13.174-mcfix (v78): the owner's 5-fix round on the deployed mcv3 card —
 //              (1) the venue bar's stadium icon is REMOVED (it painted on
 //              top of the venue text; the text centers alone), (2) the
@@ -580,7 +605,7 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v78";
+const CACHE = "sportsignal-v79";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -6,6 +6,35 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.176-mctcrop] — 2026-10-25
+
+The owner's correction to the v13.175 crop: "The crop line must now sit
+at the bottom of the 'T' logo on the jersey" — the precise landmark cut
+(the reference's own players end at their crest bottoms with only the
+sponsor's letter-tips peeking), not the looser chest line. Four
+PRE-CROPPED files ship (originals kept): art-chelsea-3 / art-tottenham-3
+(the Chelsea + Tottenham reference pair) and mc-port-yamal /
+mc-port-mbappe (the live El Clásico fixture). Each file carries the
+crest-line cut + a few jersey rows (the fade never dissolves the logo) +
+~12-14px of baked headroom above the hair. The port imgs move to
+height:auto + aspect-ratio:var(--mcar,1) on the wider-than-port frame
+(116.7% x 48%W port, margins -6.25%/-10.4% -> body centers ~25%/75%W):
+the box bottom IS the melt line, so each player's logo line lands at
+the frame's bottom edge while the faces ride at reference scale with the
+shoulders bleeding ~3%W off-card; the away port anchors object-position
+top RIGHT (the physical right edge — dir=ltr is pinned so the RTL page
+can never mirror it). The bottom mask fade shrinks 27% -> 12% of the
+image height (the "T logo" stays clearly visible). The DCL MC_ART
+override carries all four clubs + the MC_GEOM table ([window aspect,
+fade stop] per file — set pre-load, no layout shift); the library
+fallback keeps the 0.53-0.66 cover band at the default window (aspect 1
+-> the ~53-66% bust crop) and .mc-fit-w contain for wider/narrower
+sources. Zero JS-asset changes (the pinned public-13.51.js renderMCard
+contract is untouched — putPort still assigns mc-fill, now a no-op
+class); the new CSS/JS is inline in the server-rendered homepage.
+
+---
+
 ## [13.175-mccrop] — 2026-10-25
 
 The owner's 3-request player-image round on the hero header (crop the
