@@ -76,6 +76,17 @@ export function isBotSilentLeague(code) {
   return !!(code && Array.isArray(CONFIG.BOT_SILENT_LEAGUES) && CONFIG.BOT_SILENT_LEAGUES.includes(code));
 }
 
+// v13.173-noal: the website-side mirror of the bot-silent gate — leagues the
+// SITE must never surface (CONFIG.SITE_HIDDEN_LEAGUES). Applied at the public
+// read surfaces (fetchPublicMatches pool, getSeoCtx pool, og card route),
+// never inside the pool itself.
+export function isSiteHiddenLeague(code?: string): boolean {
+  return !!(code && Array.isArray(CONFIG.SITE_HIDDEN_LEAGUES) && CONFIG.SITE_HIDDEN_LEAGUES.includes(code));
+}
+export function isSiteHiddenMatch(match?: { competition?: { code?: string } } | null): boolean {
+  return !!(match && match.competition && isSiteHiddenLeague(match.competition.code));
+}
+
 function teamNormCache() {
   let c = CONFIG.__teamNorm;
   if (!c || c.sig !== CONFIG.BIG_TEAMS_BY_LEAGUE) {

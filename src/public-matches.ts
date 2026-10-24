@@ -14,7 +14,7 @@ import { normAlias } from "./teams";
 import { isLiveStatus } from "./match-model";
 import { computeFixtureSignal, decideActivity, reconcileStaleLive } from "./scheduler";
 import { matchPath } from "./slugs"; // v13.80-canonical-hrefs: payload rows carry the server-canonical URL
-import { shouldReport, isFeaturedMatch, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName, pickHeroMatch, priorityTier } from "./match-classify";
+import { shouldReport, isFeaturedMatch, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName, pickHeroMatch, priorityTier, isSiteHiddenMatch } from "./match-classify";
 import { fetchLongView } from "./providers";
 import { getCachedMatches } from "./match-pool";
 import { applySettings } from "./admin";
@@ -447,6 +447,12 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     if (cached && cached.data) return cached.data;
     matches = await getCachedMatches(env);
   }
+  // v13.173-noal: the public payload is built from a site-hidden-leagues-free
+  // pool — the hero pick (pickHeroMatch below), topSpot, upcoming/live,
+  // finished, thisWeek/nextWeek, cups and the UCL box all read this one
+  // filtered array, and the KV snapshot the degraded path re-serves inherits
+  // the same filter.
+  if (Array.isArray(matches)) matches = matches.filter((m) => !isSiteHiddenMatch(m));
   const now = Date.now();
   // v13.118-fixsched: the pool-level stale-live reconcile — the same
   // doctrine as pubMatch/applyLiveOverlay but applied to the RAW rows

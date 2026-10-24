@@ -7,6 +7,7 @@
 import type { Env } from "./types";
 import { CONFIG } from "./config";
 import { matchKey } from "./dedupe";
+import { isSiteHiddenMatch } from "./match-classify";
 
 export async function handleCardRoute(req: Request, env: Env, url: URL): Promise<Response> {
   const rawPath = url.pathname.slice("/api/card/".length);
@@ -22,6 +23,8 @@ export async function handleCardRoute(req: Request, env: Env, url: URL): Promise
     if (tracked && Array.isArray(tracked.matches)) {
       match = tracked.matches.find((m) => {
         if (!m || !m.homeTeam || !m.awayTeam || !m.utcDate) return false;
+        // v13.173-noal: hidden-league rows never render a share/og card.
+        if (isSiteHiddenMatch(m)) return false;
         return matchKey(m) === matchKeyParam || String(m.id || "") === matchKeyParam;
       });
     }
@@ -40,6 +43,8 @@ export async function handleCardRoute(req: Request, env: Env, url: URL): Promise
         );
         match = pools.find((m) => {
           if (!m || !m.homeTeam || !m.awayTeam || !m.utcDate) return false;
+          // v13.173-noal: hidden-league rows never render a share/og card.
+          if (isSiteHiddenMatch(m)) return false;
           return matchKey(m) === matchKeyParam || String(m.id || "") === matchKeyParam;
         });
       }

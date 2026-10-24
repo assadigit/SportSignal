@@ -97,7 +97,14 @@ ${FONT_FACES_STYLE}
 @keyframes feat-glow-shift{0%{opacity:.4}100%{opacity:.9}}
 .match-featured .match{background:transparent!important;border:none!important;overflow:visible!important}
 @media(prefers-reduced-motion:reduce){.match-featured{animation:none}.match-featured::before{display:none}.match-featured::after{animation:none;opacity:.6}}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* v13.173-noal (owner: "the icons (calender clock clock) must be removed"):
+     the three outline icons inside the countdown tiles are GONE from the
+     markup — this re-centers the surviving number+label pair dead-center
+     vertically (the public-13.71.css (0,2,0) rules left them in the
+     icon-era lower positions; these (0,3,0) overrides win regardless of
+     link order). */
+.hero-mcard .mc-tile .mc-num{top:43%}.hero-mcard .mc-tile .mc-lbl{bottom:25.5%}</style>
 </head>
 <body>
 <!-- v12.24 (the user's ask): a real WEBSITE header \u2014 the uploaded SportSignal
@@ -417,10 +424,6 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <path d="M 6 4.2 L 94 4.2 L 95.8 6 L 95.8 40 L 94 41.8 L 6 41.8 L 4.2 40 L 4.2 6 Z" fill="none" stroke="#3E9BE8" stroke-width=".42" opacity=".85"/>
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="url(#tstroke)" stroke-width=".6" stroke-linejoin="miter"/>
 </svg>
-<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-<rect x="3.5" y="5" width="17" height="16" rx="1.5"/>
-<path d="M3.5 9.5h17M8 2.8v4M16 2.8v4"/>
-</svg>
 <b class="mc-num" id="mcD">__SEO_MCD__</b>
 <i class="mc-lbl" aria-hidden="true"><span class="mc-lbl-t" data-i="mcD">روز</span></i>
 </div>
@@ -430,10 +433,6 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <path d="M 6 4.2 L 94 4.2 L 95.8 6 L 95.8 40 L 94 41.8 L 6 41.8 L 4.2 40 L 4.2 6 Z" fill="none" stroke="#3E9BE8" stroke-width=".42" opacity=".85"/>
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="url(#tstroke)" stroke-width=".6" stroke-linejoin="miter"/>
 </svg>
-<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-<circle cx="12" cy="12.5" r="8.5"/>
-<path d="M12 7.8v4.7l3.2 2"/>
-</svg>
 <b class="mc-num" id="mcH">__SEO_MCH__</b>
 <i class="mc-lbl" aria-hidden="true"><span class="mc-lbl-t" data-i="mcH">ساعت</span></i>
 </div>
@@ -442,10 +441,6 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="#04152E" opacity=".95"/>
 <path d="M 6 4.2 L 94 4.2 L 95.8 6 L 95.8 40 L 94 41.8 L 6 41.8 L 4.2 40 L 4.2 6 Z" fill="none" stroke="#3E9BE8" stroke-width=".42" opacity=".85"/>
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="url(#tstroke)" stroke-width=".6" stroke-linejoin="miter"/>
-</svg>
-<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-<circle cx="12" cy="13.5" r="7.8"/>
-<path d="M12 13.5l2.8-2.8M10 2.5h4M6.2 3.4 4.8 5.2M17.8 3.4l1.4 1.8"/>
 </svg>
 <b class="mc-num" id="mcM">__SEO_MCM__</b>
 <i class="mc-lbl" aria-hidden="true"><span class="mc-lbl-t" data-i="mcM">دقیقه</span></i>

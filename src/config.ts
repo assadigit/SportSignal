@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.172-mcfit";
+export const VERSION = "13.173-noal";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -18,6 +18,18 @@ export const CONFIG: Record<string, any> = {
   // morning/week-ahead/night digests. An AL-following user keeps the site
   // and loses the push — the explicit product trade the owner asked for.
   BOT_SILENT_LEAGUES: ["AL"],
+  // v13.173-noal (owner): "Avoid Australian League and Games altogether,
+  // currently shows melbourn city vs melbourne victory." The website now
+  // hides every SITE_HIDDEN_LEAGUES row at ALL public read surfaces: the
+  // hero pick + public payload (fetchPublicMatches — upcoming/live/
+  // finished/topSpot/thisWeek/nextWeek/cups/UCL + the KV snapshot the
+  // degraded path re-serves), every SEO page (getSeoCtx — /matches/*,
+  // /teams/*, /competitions/*, sitemaps, feed.xml, calendar.ics,
+  // matches.json, the homepage JSON-LD + meta description) and the og
+  // card route. The rows keep flowing into the pool (matches_v13_tracked)
+  // so the bot keeps its v13.113-alquiet rules and admin diagnostics stay
+  // honest — but no visitor-facing surface can surface them again.
+  SITE_HIDDEN_LEAGUES: ["AL"],
   // Season-dependent cup phase windows (review/update each August): EL/ECL are
   // in the qualifying phase until their league phase starts (late Sep); the FA
   // Cup's big clubs enter at the First Round Proper (~early Nov). sportscore's

@@ -14,7 +14,7 @@ import { normalizeTeamName } from "../teams";
 // the root module grounds.ts (shared with pubMatch — one source of truth).
 import { homeGround, curatedVenueFa } from "../grounds";
 import { isLiveStatus } from "../match-model";
-import { shouldReport } from "../match-classify";
+import { shouldReport, isSiteHiddenMatch } from "../match-classify";
 import { fetchJSON } from "../utils";
 import { SEO } from "./config";
 import { teamSlug, compSlug } from "../slugs";
@@ -71,6 +71,11 @@ export async function getSeoCtx(env: Env): Promise<SeoCtx> {
   } catch (e) { /* pool unavailable — pages fall back to the payload lists */ }
   const ov = await env.STATE.get(CONFIG.KV_LIVE_OVERLAY, "json").catch(() => null);
   if (pool.length && ov) pool = applyLiveOverlay({ pool: pool.slice() }, ov).pool;
+  // v13.173-noal: every SEO surface (match pages, /matches/* hubs, teams,
+  // competitions, sitemaps, feed, calendar, matches.json, the homepage
+  // lists/JSON-LD) reads this pool — hidden-league rows never reach a page,
+  // a list or a sitemap URL (their match pages 404).
+  pool = pool.filter((m) => !isSiteHiddenMatch(m));
   const shaped = pool.map((m) => pubMatch(m));
   const fetchedAt = poolStamp || payloadRes.data.fetchedAt || null;
   return { env, payload: payloadRes.data, pool, shaped, fetchedAt, degraded: payloadRes.degraded && !pool.length };
