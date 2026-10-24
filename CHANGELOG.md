@@ -6,6 +6,47 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.172-mcfit] — 2026-10-24
+
+The reference-fidelity round ON THE DEPLOYED v13.170-mcv3 card (the
+instruction-13 overlay loop, every position measured against Visual
+reference v2.png at a 390px viewport):
+
+- **The POPPINS DIGITS face restored (instruction 8):** the mcv3 round
+  had shipped Chakra Petch's squared technical cuts for the card's
+  digits — a visible letterform mismatch against the reference's ROUNDED
+  geometric digits on the card's most prominent text ("23:00"). The
+  Poppins-Bold/ExtraBold woff2 faces return (digits+colon
+  unicode-range), .mc-ko/.mc-num ride "Poppins Digits" 800, and the FA
+  date override lists Poppins first so the Latin day digit rides Poppins
+  while the Jalali words keep Morabba.
+- **Tile row to the reference:** top 78.5 -> 79.5%, height 8 -> 8.3%
+  (the reference's 79.6-87.8), the row narrowed to the capsule width
+  (17-83%W, gaps 2 -> 1.3cqw — the reference's measured ~1.25%W), the
+  icons smaller/thinner/contained (top 13%, height 18%, stroke 2 ->
+  1.5), the labels raised (bottom 10.5%).
+- **The capsule top edge down to the reference's 65.9%H** (its flat top
+  sat 1.1% too high; all six capsule paths + the clip re-geometried) and
+  the capsule border flipped to the reference's horizontal gradient
+  treatment (dark ends, cyan flanks, white-hot core — the cstroke stops
+  re-sampled from the reference).
+- **The center divider re-timed to the reference's WHITE-HOT peak at
+  ~53.9%H** (the old cyan plateau peaked ~1%H early; the divgrad stops
+  now ramp cyan -> white at 62.5% -> cyan fade) with a stronger glow.
+- **The tile borders** flip from flat cyan to the white-center gradient
+  (tstroke); **the panel border** gets a VERTICAL gradient (cyan top
+  edge -> white bottom edge, per the reference's sampled border colors)
+  and its bottom edge moves down to the reference's ~95.9%H.
+- **The venue bar** fill darkened to the reference's interior sample
+  (#02193C) with the same white-core gradient border (vstroke); the
+  pitch center line's luminous peak lowered to ~95.9%H.
+- QA: 320/390/430 sweep (9:16 full-bleed, no h-scroll), FA/EN toggle,
+  no console errors. Gates: tsc EXIT 0, npm test EXIT 0, seo:check
+  --local 56/0, admin-parity re-frozen. RELEASE: public-13.69.css ->
+  13.71.css (the 13.69 name had carried TWO different 13.170 contents —
+  mcref's and mcv3's; it stays served + pinned one SEO TTL); the
+  Poppins faces return to _headers; SW v76 -> v77; VERSION 13.172-mcfit.
+
 ---
 
 ---

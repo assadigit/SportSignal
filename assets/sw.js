@@ -409,6 +409,25 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
+// v13.172-mcfit (v77): the reference-fidelity round on the DEPLOYED mcv3
+//              card (the instruction-13 overlay loop, measured against
+//              Visual reference v2.png): the tiles row slides to the
+//              reference (top 78.5 -> 79.5%, height 8 -> 8.3% — the
+//              reference's 79.6-87.8), the capsule top edge DOWN to the
+//              reference's 65.9%H (its flat top sat 1.1% too high), the
+//              capsule + tile borders flip to the reference's horizontal
+//              gradient treatment (dark ends, cyan flanks, white-hot
+//              core — cstroke/tstroke), the center divider re-timed to
+//              the reference's WHITE-HOT peak at ~53.9%H with a stronger
+//              glow, the pitch center line's peak lowered to ~95.9%H, and
+//              the POPPINS DIGITS face restored (instruction 8: the
+//              reference's rounded geometric digits — the mcv3 round had
+//              shipped Chakra Petch's squared technical cuts, a visible
+//              letterform mismatch on the card's most prominent text).
+//              Renames public-13.69.css -> 13.71.css (the name carried TWO
+//              different 13.170 contents; 13.69 stays served + pinned one
+//              SEO TTL); the Poppins faces return to _headers + the
+//              @font-face set (unicode-range digits-only, both locales).
 // v13.170-mcv3 (v76): the reference-rebuild HUD match card — the owner's
 //              13-instruction round against Visual reference v2.png (VLM
 //              98/100 side-by-side on the standalone build): the card is
@@ -532,7 +551,7 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v76";
+const CACHE = "sportsignal-v77";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -22,4 +22,6 @@ export const FONT_FACES_STYLE = `<style>@font-face{font-family:'Morabba';src:url
      download on desktop or non-home pages. */
 @font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}
 @font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}</style>`;
+@font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Poppins Digits';src:url('/fonts/Poppins-Bold.woff2') format('woff2');font-weight:600 700;font-style:normal;font-display:swap;unicode-range:U+0030-0039,U+003A,U+0020,U+002D}
+@font-face{font-family:'Poppins Digits';src:url('/fonts/Poppins-ExtraBold.woff2') format('woff2');font-weight:800;font-style:normal;font-display:swap;unicode-range:U+0030-0039,U+003A,U+0020,U+002D}</style>`;

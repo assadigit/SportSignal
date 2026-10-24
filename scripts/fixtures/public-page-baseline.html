@@ -57,7 +57,9 @@ __SEO_JSONLD__
      download on desktop or non-home pages. */
 @font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}
 @font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}</style>
+@font-face{font-family:'Chakra Petch';src:url('/fonts/ChakraPetch-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Poppins Digits';src:url('/fonts/Poppins-Bold.woff2') format('woff2');font-weight:600 700;font-style:normal;font-display:swap;unicode-range:U+0030-0039,U+003A,U+0020,U+002D}
+@font-face{font-family:'Poppins Digits';src:url('/fonts/Poppins-ExtraBold.woff2') format('woff2');font-weight:800;font-style:normal;font-display:swap;unicode-range:U+0030-0039,U+003A,U+0020,U+002D}</style>
 <style>/* v13.56-visitcount: footer page-view counter. The number span has a
      fixed min-width so the arriving digits never cause layout shift. */
 .visitcount{font-size:.78rem;color:var(--muted,#94a3b8);margin-top:10px;line-height:1.9;direction:rtl}
@@ -82,7 +84,7 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.69.css">
+<link rel="stylesheet" href="/public-13.71.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -330,38 +332,49 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <stop offset=".18" stop-color="#041739"/>
 <stop offset="1" stop-color="#020E26"/>
 </linearGradient>
+<linearGradient id="tstroke" x1="0" y1="0" x2="1" y2="0">
+<stop offset="0" stop-color="#0A9FE0"/>
+<stop offset=".5" stop-color="#F4FCFF"/>
+<stop offset="1" stop-color="#0A9FE0"/>
+</linearGradient>
+<linearGradient id="pstroke" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#17DDF6"/>
+<stop offset=".55" stop-color="#5EE7FF"/>
+<stop offset="1" stop-color="#EAFDFF"/>
+</linearGradient>
 <linearGradient id="divgrad" x1="0" y1="0" x2="0" y2="1">
 <stop offset="0" stop-color="#0F92FF" stop-opacity="0"/>
-<stop offset=".22" stop-color="#0F92FF" stop-opacity=".95"/>
-<stop offset=".78" stop-color="#0F92FF" stop-opacity=".95"/>
+<stop offset=".35" stop-color="#22C4FF" stop-opacity=".85"/>
+<stop offset=".625" stop-color="#FFFFFF" stop-opacity="1"/>
+<stop offset=".8" stop-color="#0BE6FF" stop-opacity=".8"/>
 <stop offset="1" stop-color="#0F92FF" stop-opacity="0"/>
 </linearGradient>
 <filter id="pblur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".55"/></filter>
 <filter id="pblur2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.1"/></filter>
-<clipPath id="pclip"><path d="M 16.9 75.9 L 83.1 75.9 L 88.6 81.4 L 88.6 164.1 L 83.1 169.6 L 16.9 169.6 L 11.4 164.1 L 11.4 81.4 Z"/></clipPath>
+<clipPath id="pclip"><path d="M 16.9 75.9 L 83.1 75.9 L 88.6 81.4 L 88.6 165.0 L 83.1 170.5 L 16.9 170.5 L 11.4 165.0 L 11.4 81.4 Z"/></clipPath>
 </defs>
-<path d="M 16.9 75.9 L 83.1 75.9 L 88.6 81.4 L 88.6 164.1 L 83.1 169.6 L 16.9 169.6 L 11.4 164.1 L 11.4 81.4 Z" fill="url(#pfill)" opacity=".97"/>
+<path d="M 16.9 75.9 L 83.1 75.9 L 88.6 81.4 L 88.6 165.0 L 83.1 170.5 L 16.9 170.5 L 11.4 165.0 L 11.4 81.4 Z" fill="url(#pfill)" opacity=".97"/>
 <path d="M 29.5 75.9 L 35.5 69.1 L 38.8 68.4 L 61.2 68.4 L 64.5 69.1 L 70.5 75.9 Z" fill="url(#pfill)" opacity=".97"/>
 <path d="M 33 75.9 L 37 66.5 L 63 66.5 L 67 75.9 Z" fill="rgba(10,120,255,.5)" filter="url(#pblur2)"/>
 <path d="M 36 75.9 L 38.5 69.5 L 61.5 69.5 L 64 75.9 Z" fill="rgba(0,150,255,.55)" filter="url(#pblur)"/>
 <g clip-path="url(#pclip)">
-<path d="M 16.9 75.9 L 83.1 75.9 L 88.6 81.4 L 88.6 164.1 L 83.1 169.6 L 16.9 169.6 L 11.4 164.1 L 11.4 81.4 Z" fill="none" stroke="#0A73E8" stroke-width="2.4" opacity=".6" filter="url(#pblur2)"/>
-<path d="M 16.9 75.9 L 83.1 75.9 L 88.6 81.4 L 88.6 164.1 L 83.1 169.6 L 16.9 169.6 L 11.4 164.1 L 11.4 81.4 Z" fill="none" stroke="#0B82F2" stroke-width="1.2" opacity=".7" filter="url(#pblur)"/>
+<path d="M 16.9 75.9 L 83.1 75.9 L 88.6 81.4 L 88.6 165.0 L 83.1 170.5 L 16.9 170.5 L 11.4 165.0 L 11.4 81.4 Z" fill="none" stroke="#0A73E8" stroke-width="2.4" opacity=".6" filter="url(#pblur2)"/>
+<path d="M 16.9 75.9 L 83.1 75.9 L 88.6 81.4 L 88.6 165.0 L 83.1 170.5 L 16.9 170.5 L 11.4 165.0 L 11.4 81.4 Z" fill="none" stroke="#0B82F2" stroke-width="1.2" opacity=".7" filter="url(#pblur)"/>
 </g>
-<path d="M 18.1 78.1 L 81.9 78.1 L 86.4 82.6 L 86.4 162.9 L 81.9 167.4 L 18.1 167.4 L 13.6 162.9 L 13.6 82.6 Z" fill="none" stroke="#3E9BE8" stroke-width=".34" opacity=".9"/>
-<path d="M 16.9 75.9 L 83.1 75.9 L 88.6 81.4 L 88.6 164.1 L 83.1 169.6 L 16.9 169.6 L 11.4 164.1 L 11.4 81.4 Z" fill="none" stroke="#2CF5FE" stroke-width=".78" stroke-linejoin="miter"/>
+<path d="M 18.1 78.1 L 81.9 78.1 L 86.4 82.6 L 86.4 163.8 L 81.9 168.3 L 18.1 168.3 L 13.6 163.8 L 13.6 82.6 Z" fill="none" stroke="#3E9BE8" stroke-width=".34" opacity=".9"/>
+<path d="M 16.9 75.9 L 83.1 75.9 L 88.6 81.4 L 88.6 165.0 L 83.1 170.5 L 16.9 170.5 L 11.4 165.0 L 11.4 81.4 Z" fill="none" stroke="url(#pstroke)" stroke-width=".78" stroke-linejoin="miter"/>
 <path d="M 29.5 75.9 L 35.5 69.1 L 38.8 68.4 L 61.2 68.4 L 64.5 69.1 L 70.5 75.9" fill="none" stroke="#2CF5FE" stroke-width=".78" stroke-linejoin="miter"/>
 <path d="M 17.4 75.9 L 82.6 75.9" stroke="#66F7FF" stroke-width=".88" opacity=".97"/>
 <path d="M 39.3 68.4 L 60.7 68.4" stroke="#37F0FE" stroke-width=".62" opacity=".95"/>
-<path d="M 17.4 169.6 L 82.6 169.6" stroke="#9FF2FF" stroke-width=".8" opacity=".95"/>
+<path d="M 17.4 170.5 L 82.6 170.5" stroke="#9FF2FF" stroke-width=".8" opacity=".95"/>
 <g fill="#DFF4FF" filter="drop-shadow(0 0 .8 rgba(60,160,255,.95))">
 <circle cx="16.9" cy="75.9" r=".6"/><circle cx="83.1" cy="75.9" r=".6"/>
 <circle cx="11.4" cy="81.4" r=".6"/><circle cx="88.6" cy="81.4" r=".6"/>
-<circle cx="11.4" cy="164.1" r=".6"/><circle cx="88.6" cy="164.1" r=".6"/>
-<circle cx="16.9" cy="169.6" r=".6"/><circle cx="83.1" cy="169.6" r=".6"/>
+<circle cx="11.4" cy="165.0" r=".6"/><circle cx="88.6" cy="165.0" r=".6"/>
+<circle cx="16.9" cy="170.5" r=".6"/><circle cx="83.1" cy="170.5" r=".6"/>
 </g>
 <circle cx="50" cy="75.9" r=".8" fill="#FFFFFF" filter="drop-shadow(0 0 1.2 rgba(160,240,255,.95))"/>
-<rect x="49.8" y="78.6" width=".42" height="27.5" fill="url(#divgrad)" filter="drop-shadow(0 0 1 rgba(80,200,255,1))"/>
+<rect x="49.8" y="78.6" width=".42" height="27.5" fill="url(#divgrad)" filter="drop-shadow(0 0 1.3 rgba(0,225,255,1))"/>
 </svg>
 <svg class="mc-capsule" viewBox="0 0 100 177.778" preserveAspectRatio="none" aria-hidden="true">
 <defs>
@@ -371,23 +384,27 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <stop offset="1" stop-color="#020D22"/>
 </linearGradient>
 <linearGradient id="cstroke" x1="0" y1="0" x2="1" y2="0">
-<stop offset="0" stop-color="#0E86D6"/>
-<stop offset=".44" stop-color="#19A9EE"/>
-<stop offset=".5" stop-color="#E8FBFF"/>
-<stop offset=".56" stop-color="#19A9EE"/>
-<stop offset="1" stop-color="#0E86D6"/>
+<stop offset="0" stop-color="#011F3F"/>
+<stop offset=".12" stop-color="#02B6F6"/>
+<stop offset=".22" stop-color="#0BF2FF"/>
+<stop offset=".36" stop-color="#DFFBFF"/>
+<stop offset=".5" stop-color="#FFFFFF"/>
+<stop offset=".64" stop-color="#DFFBFF"/>
+<stop offset=".78" stop-color="#0BF2FF"/>
+<stop offset=".88" stop-color="#02B6F6"/>
+<stop offset="1" stop-color="#011F3F"/>
 </linearGradient>
 <filter id="cblur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".45"/></filter>
 <filter id="cblur2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".9"/></filter>
-<clipPath id="cclip"><path d="M 25.6 115.3 L 74.4 115.3 L 84.3 125.6 L 74.4 135.8 L 25.6 135.8 L 15.7 125.6 Z"/></clipPath>
+<clipPath id="cclip"><path d="M 25.6 117.2 L 74.4 117.2 L 84.3 125.6 L 74.4 135.8 L 25.6 135.8 L 15.7 125.6 Z"/></clipPath>
 </defs>
-<path d="M 25.6 115.3 L 74.4 115.3 L 84.3 125.6 L 74.4 135.8 L 25.6 135.8 L 15.7 125.6 Z" fill="url(#cfill)" opacity=".92"/>
+<path d="M 25.6 117.2 L 74.4 117.2 L 84.3 125.6 L 74.4 135.8 L 25.6 135.8 L 15.7 125.6 Z" fill="url(#cfill)" opacity=".92"/>
 <g clip-path="url(#cclip)">
-<path d="M 25.6 115.3 L 74.4 115.3 L 84.3 125.6 L 74.4 135.8 L 25.6 135.8 L 15.7 125.6 Z" fill="none" stroke="#0A73E8" stroke-width="1.8" opacity=".7" filter="url(#cblur2)"/>
-<path d="M 25.6 115.3 L 74.4 115.3 L 84.3 125.6 L 74.4 135.8 L 25.6 135.8 L 15.7 125.6 Z" fill="none" stroke="#0B82F2" stroke-width=".9" opacity=".75" filter="url(#cblur)"/>
+<path d="M 25.6 117.2 L 74.4 117.2 L 84.3 125.6 L 74.4 135.8 L 25.6 135.8 L 15.7 125.6 Z" fill="none" stroke="#0A73E8" stroke-width="1.8" opacity=".7" filter="url(#cblur2)"/>
+<path d="M 25.6 117.2 L 74.4 117.2 L 84.3 125.6 L 74.4 135.8 L 25.6 135.8 L 15.7 125.6 Z" fill="none" stroke="#0B82F2" stroke-width=".9" opacity=".75" filter="url(#cblur)"/>
 </g>
-<path d="M 27.3 116.9 L 72.7 116.9 L 81.8 125.6 L 72.7 134.2 L 27.3 134.2 L 18.2 125.6 Z" fill="none" stroke="#3E9BE8" stroke-width=".3" opacity=".9"/>
-<path d="M 25.6 115.3 L 74.4 115.3 L 84.3 125.6 L 74.4 135.8 L 25.6 135.8 L 15.7 125.6 Z" fill="none" stroke="url(#cstroke)" stroke-width=".6" stroke-linejoin="miter"/>
+<path d="M 27.3 118.6 L 72.7 118.6 L 81.8 125.6 L 72.7 134.2 L 27.3 134.2 L 18.2 125.6 Z" fill="none" stroke="#3E9BE8" stroke-width=".3" opacity=".9"/>
+<path d="M 25.6 117.2 L 74.4 117.2 L 84.3 125.6 L 74.4 135.8 L 25.6 135.8 L 15.7 125.6 Z" fill="none" stroke="url(#cstroke)" stroke-width=".6" stroke-linejoin="miter"/>
 <g stroke="#7CD5F5" fill="none" stroke-linecap="round" stroke-linejoin="round">
 <path d="M 10.0 121.6 L 7.3 125.6 L 10.0 129.5" stroke-width=".62" filter="drop-shadow(0 0 .5 rgba(120,200,255,.95))"/>
 <path d="M 89.9 121.6 L 92.6 125.6 L 89.9 129.5" stroke-width=".62" filter="drop-shadow(0 0 .5 rgba(120,200,255,.95))"/>
@@ -401,9 +418,9 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <svg viewBox="0 0 100 46" preserveAspectRatio="none" aria-hidden="true">
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="#04152E" opacity=".95"/>
 <path d="M 6 4.2 L 94 4.2 L 95.8 6 L 95.8 40 L 94 41.8 L 6 41.8 L 4.2 40 L 4.2 6 Z" fill="none" stroke="#3E9BE8" stroke-width=".42" opacity=".85"/>
-<path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="#4DF2FE" stroke-width=".6" stroke-linejoin="miter"/>
+<path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="url(#tstroke)" stroke-width=".6" stroke-linejoin="miter"/>
 </svg>
-<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 <rect x="3.5" y="5" width="17" height="16" rx="1.5"/>
 <path d="M3.5 9.5h17M8 2.8v4M16 2.8v4"/>
 </svg>
@@ -414,9 +431,9 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <svg viewBox="0 0 100 46" preserveAspectRatio="none" aria-hidden="true">
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="#04152E" opacity=".95"/>
 <path d="M 6 4.2 L 94 4.2 L 95.8 6 L 95.8 40 L 94 41.8 L 6 41.8 L 4.2 40 L 4.2 6 Z" fill="none" stroke="#3E9BE8" stroke-width=".42" opacity=".85"/>
-<path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="#4DF2FE" stroke-width=".6" stroke-linejoin="miter"/>
+<path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="url(#tstroke)" stroke-width=".6" stroke-linejoin="miter"/>
 </svg>
-<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 <circle cx="12" cy="12.5" r="8.5"/>
 <path d="M12 7.8v4.7l3.2 2"/>
 </svg>
@@ -427,9 +444,9 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <svg viewBox="0 0 100 46" preserveAspectRatio="none" aria-hidden="true">
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="#04152E" opacity=".95"/>
 <path d="M 6 4.2 L 94 4.2 L 95.8 6 L 95.8 40 L 94 41.8 L 6 41.8 L 4.2 40 L 4.2 6 Z" fill="none" stroke="#3E9BE8" stroke-width=".42" opacity=".85"/>
-<path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="#4DF2FE" stroke-width=".6" stroke-linejoin="miter"/>
+<path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="url(#tstroke)" stroke-width=".6" stroke-linejoin="miter"/>
 </svg>
-<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 <circle cx="12" cy="13.5" r="7.8"/>
 <path d="M12 13.5l2.8-2.8M10 2.5h4M6.2 3.4 4.8 5.2M17.8 3.4l1.4 1.8"/>
 </svg>
@@ -440,9 +457,20 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <div class="mc-slot mc-state" id="mcState" style="display:none" aria-hidden="true"></div>
 <div class="mc-venue" aria-hidden="true">
 <svg viewBox="0 0 100 8" preserveAspectRatio="none">
-<path d="M 3 1 L 97 1 L 98.3 2.3 L 98.3 5.7 L 97 7 L 3 7 L 1.7 5.7 L 1.7 2.3 Z" fill="#04203E" opacity=".95"/>
+<defs><linearGradient id="vstroke" x1="0" y1="0" x2="1" y2="0">
+<stop offset="0" stop-color="#023159"/>
+<stop offset=".1" stop-color="#03538F"/>
+<stop offset=".22" stop-color="#00B6F0"/>
+<stop offset=".36" stop-color="#8FEBFF"/>
+<stop offset=".5" stop-color="#F2FEFF"/>
+<stop offset=".64" stop-color="#8FEBFF"/>
+<stop offset=".78" stop-color="#00B6F0"/>
+<stop offset=".9" stop-color="#03538F"/>
+<stop offset="1" stop-color="#023159"/>
+</linearGradient></defs>
+<path d="M 3 1 L 97 1 L 98.3 2.3 L 98.3 5.7 L 97 7 L 3 7 L 1.7 5.7 L 1.7 2.3 Z" fill="#02193C" opacity=".97"/>
 <path d="M 4.4 1.9 L 95.6 1.9 L 96.2 2.5 L 96.2 5.5 L 95.6 6.1 L 4.4 6.1 L 3.8 5.5 L 3.8 2.5 Z" fill="none" stroke="#2E86D6" stroke-width=".26" opacity=".85"/>
-<path d="M 3 1 L 97 1 L 98.3 2.3 L 98.3 5.7 L 97 7 L 3 7 L 1.7 5.7 L 1.7 2.3 Z" fill="none" stroke="#55A4EC" stroke-width=".3" stroke-linejoin="miter"/>
+<path d="M 3 1 L 97 1 L 98.3 2.3 L 98.3 5.7 L 97 7 L 3 7 L 1.7 5.7 L 1.7 2.3 Z" fill="none" stroke="url(#vstroke)" stroke-width=".3" stroke-linejoin="miter"/>
 <path d="M 3.4 7 L 96.6 7" stroke="#B5DBFB" stroke-width=".38" opacity=".9"/>
 </svg>
 <div class="v-group">
@@ -526,7 +554,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      so the breakpoint always decides).
      v13.168-mchint (owner: "Make the button of «بازی‌های دیگر» 50% bigger
      and more attention grabbing. in mobile"): the pill's SIZE lives in
-     the CSS (public-13.69.css .mc-hint — every dimension ×1.5 + the
+     the CSS (public-13.71.css .mc-hint — every dimension ×1.5 + the
      cyan-button treatment + the 44px touch-target floor); this MARKUP is
      byte-unchanged (the label, the icon, the hooks, the lifecycle all
      stay — the size is presentation). -->
