@@ -6,6 +6,46 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.175-mccrop] — 2026-10-25
+
+The owner's 3-request player-image round on the hero header (crop the
+portrait, protect the head, fade the bottom into the HUD) — pure
+inline-style + DCL-script surgery, zero asset changes:
+
+- **CROP + SCALE:** the portrait boxes shrink 50%W x 43%H -> 48%W x
+  41%H and the imgs switch to `object-fit:cover; object-position:center
+  top` — the frame now ENDS at the player's chest (the UEFA cutoffs
+  are 464px tall with the bust line at ~row 394; at 41%H the crop lands
+  exactly there), the container uses less vertical space, and the
+  cover fit fills the box width so the player reads ~10-15% larger
+  (the live fixtures: Yamal +12%, Mbappe +7%). The MC_ART reference
+  cutouts ride a wider-than-port frame (116.7% x 100%, margins
+  -6.25%/-10.4% -> box centers stay 25%/75%W, +12% scale, shoulders
+  bleed ~3%W off-card; the card's overflow:hidden clips the bleed).
+- **HEAD PROTECTED:** the topfade veil drops to z1 and the ports rise
+  to z2 — the header-melt gradient now darkens ONLY the stadium scene;
+  the head tops ride above it, fully bright, never dimmed, never
+  clipped (top-anchored + the baked-in headroom keep a >=8px gap above
+  the hair at every screen width). The panel stays above the ports
+  (later DOM at the same z2).
+- **BOTTOM FADE:** every portrait gets `mask-image:
+  linear-gradient(180deg,#000 0 73%,transparent 100%)` (with the
+  -webkit- prefix) — ONLY the bottom 27% of the image height fades, so
+  the player dissolves into the dark scene above the HUD panel at
+  every screen width; the HUD always draws over the fade.
+- **THE BANDS:** the HERO_ART library spans aspect 0.44-0.925 — one
+  rule cannot frame them all. A DCL classifier (MutationObserver per
+  port, idempotent via dataset, re-runs on every renderMCard re-render)
+  measures each loaded portrait: the 0.53-0.66 band (17 wired
+  portraits + both MC_ART arts) gets the cover design; wider /
+  narrower ones get `.mc-fit-w` (contain, bottom-anchored — the whole
+  player visible, no mid-air shoulder cuts, no +40% inflation) inside
+  the same shorter faded box.
+- Gates: tsc 0, npm test 0, check-stats green, seo:check --local,
+  admin-parity re-frozen. QA: 320/390/430 on all three framing bands
+  (cover / mc-fill / contain), EN toggle, no console errors, no
+  h-scroll.
+
 ## [13.174-mcfix] — 2026-10-24
 
 The owner's 5-fix round on the deployed mcv3 card (all five issues

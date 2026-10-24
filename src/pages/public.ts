@@ -118,9 +118,49 @@ ${FONT_FACES_STYLE}
      navy) so the header + the hero read as one continuous background.
      ~18% of the card height, pure vertical gradient (symmetric, RTL-
      agnostic); the white PL lockup (z2, later DOM) rides ABOVE the veil and
-     stays fully readable; the players' head tops (z1, under it) fade with
-     the scene. */
-.hero-mcard .mc-topfade{position:absolute;left:0;right:0;top:0;height:18%;z-index:2;pointer-events:none;background:linear-gradient(180deg,#040F23 0%,rgba(4,15,35,.94) 30%,rgba(4,15,35,.6) 58%,rgba(4,15,35,.22) 82%,rgba(4,15,35,0) 100%)}</style>
+     stays fully readable.
+     v13.175-mccrop (owner: "protect the player's head"): the veil drops to
+     z1 and the players (z2) now ride ABOVE it — the fade melts ONLY the
+     stadium scene, the head tops stay fully bright, never dimmed. */
+.hero-mcard .mc-topfade{position:absolute;left:0;right:0;top:0;height:18%;z-index:1;pointer-events:none;background:linear-gradient(180deg,#040F23 0%,rgba(4,15,35,.94) 30%,rgba(4,15,35,.6) 58%,rgba(4,15,35,.22) 82%,rgba(4,15,35,0) 100%)}
+/* v13.175-mccrop (owner) — the 3-request player-image round:
+     (1) CROP: the portrait boxes shrink 50%W x 43%H -> 48%W x 41%H and the
+         imgs switch to object-fit:cover + object-position:center top — the
+         frame now ENDS at the player's chest (the UEFA cutoffs are 464px
+         tall with the bust line at ~row 394; at the box's 41%H the crop
+         lands exactly there), the container uses less vertical space, and
+         the cover fit fills the box width so the player reads ~10-15%
+         LARGER (the current fixtures: Yamal +12%, Mbappe +7%).
+     (2) HEAD: the ports rise to z2 (above the z1 topfade veil — the fade
+         never touches the heads again); object-position top-anchored + the
+         headroom baked into every source portrait keep a >=8px gap of
+         empty space above the hair at every screen width, and nothing
+         clips at the top edge.
+     (3) FADE: a mask-image linear-gradient (with the -webkit- prefix)
+         fades ONLY the bottom 27% of each portrait box (73% -> 100% of the
+         image height, so the effect is identical at every screen width) —
+         the player dissolves into the dark scene above the HUD panel; the
+         panel itself stays above the ports in stacking order (later DOM at
+         the same z2), so the HUD always draws over the fade.
+     THE BANDS (the HERO_ART library spans aspect 0.44-0.925 — one rule
+     cannot frame them all): the DCL script below classifies each loaded
+     portrait by naturalWidth/naturalHeight. The 0.53-0.66 band (17 wired
+     portraits + both MC_ART arts) gets the cover design above. Outside the
+     band (14 wide-shoulder + 4 narrow portraits) .mc-fit-w keeps the
+     whole player visible (object-fit:contain, bottom-anchored — no
+     mid-air shoulder cuts, no +40% inflation) inside the same shorter
+     faded box. The MC_ART reference cutouts (470x718, aspect 0.655) ride
+     the cover path at +12% via a wider-than-port frame (116.7% x 100%,
+     margins -6.25%/-10.4% -> box centers stay 25%/75%W, shoulders bleed
+     ~3%W off-card exactly like the reference composition); the card's
+     overflow:hidden clips the bleed at the card edge (no h-scroll). */
+.hero-mcard .mc-ports{z-index:2}
+.hero-mcard .mc-ports .mc-port{height:41%;width:48%}
+.hero-mcard .mc-ports .mc-port.mc-port-a{left:52%}
+.hero-mcard .mc-ports .mc-port img{object-fit:cover;object-position:center top;-webkit-mask-image:linear-gradient(180deg,#000 0 73%,transparent 100%);mask-image:linear-gradient(180deg,#000 0 73%,transparent 100%)}
+.hero-mcard .mc-ports .mc-port img.mc-fill{object-fit:cover;object-position:center top;width:116.7%;height:100%;margin-left:-6.25%}
+.hero-mcard .mc-ports .mc-port.mc-port-a img.mc-fill{margin-left:-10.4%}
+.hero-mcard .mc-ports .mc-port img.mc-fit-w{object-fit:contain;object-position:center bottom}</style>
 </head>
 <body>
 <!-- v12.24 (the user's ask): a real WEBSITE header \u2014 the uploaded SportSignal
@@ -284,10 +324,15 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
        the competition logo, alpha-masked at 92% — the synthetic layers stay
        under it so a dead asset degrades gracefully).
      · .mc-ports — the STATIC portrait containers (home left / away right,
-       50%W x 43%H each); renderMCard fills them with the MC_ART
-       owner-reference cutouts FIRST (object-fit:fill — the boxes map 1:1
-       onto the reference's own pixels) and falls back to the HERO_ART
-       library cutouts (contain, bottom-anchored) for unmapped clubs.
+       v13.175-mccrop: 48%W x 41%H each, z2 above the topfade veil);
+       renderMCard fills them with the MC_ART owner-reference cutouts
+       FIRST (object-fit:cover, top-anchored, +12% via the wider-than-port
+       frame, the crop ends at the chest) and falls back to the HERO_ART
+       library cutouts for unmapped clubs (cover for the 0.53-0.66 aspect
+       band — same chest-crop design; .mc-fit-w contain for the wider /
+       narrower ones, classified by the DCL script). Every portrait's
+       bottom 27% melts into the scene via a mask-image gradient so the
+       transition into the HUD below stays soft.
      · svg.mc-panel — the chamfered HUD frame drawn as an inline SVG path:
        45deg corner cuts, a raised tab with angled shoulders sitting ON the
        continuous top border, a DOUBLE border (pure-cyan #00E9FD outer line
@@ -321,6 +366,9 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
        (#040F23 → transparent, ~18%H) that melts the card's bright scene
        into the flat header band so the header + hero read as one
        continuous background (the hard seam the owner reported).
+       v13.175-mccrop (owner: "protect the player's head"): the veil is
+       z1 — it darkens ONLY the scene; the players (z2) ride above it
+       with fully bright, never-dimmed head tops.
      · .mc-state — the LIVE/FT/postponed chip in the middle tile zone
        (unchanged v13.169 contract — the status comes from the match data,
        never inferred from the clock).
@@ -747,6 +795,29 @@ document.addEventListener("DOMContentLoaded",function(){
 try{
 if(typeof MC_ART!=="undefined")MC_ART={"Chelsea FC":{src:"/ui/mc/art-chelsea-2.webp"},"Tottenham Hotspur FC":{src:"/ui/mc/art-tottenham-2.webp"}};
 if(typeof MC_CREST!=="undefined")MC_CREST={"Chelsea FC":"/ui/mc/crest-chelsea-2.webp","Tottenham Hotspur FC":"/ui/mc/crest-tottenham-2.webp"};
+/* v13.175-mccrop (owner): the portrait framing classifier — every img
+   renderMCard drops into a .mc-port gets measured (naturalWidth /
+   naturalHeight) once it has loaded. Aspect 0.53-0.66 keeps the plain
+   cover design (the chest crop); anything wider or narrower gets
+   .mc-fit-w (the whole-player contain look, no mid-air shoulder cuts).
+   A MutationObserver per port re-runs the scan on every re-render
+   (language toggle, poll refresh) — renderMCard wipes innerHTML and
+   rebuilds, firing childList each time. The dataset guard makes it
+   idempotent; a failed load just never classifies (the img removes
+   itself). The mc-fill reference arts (0.655) always stay in-band. */
+var mcFitScan=function(){
+document.querySelectorAll(".hero-mcard .mc-port img").forEach(function(im){
+if(im.dataset.mcfit)return;
+if(!im.naturalWidth){im.addEventListener("load",mcFitScan,{once:true});return}
+im.dataset.mcfit="1";
+var a=im.naturalWidth/im.naturalHeight;
+if(a<0.53||a>0.66)im.classList.add("mc-fit-w");
+});
+};
+document.querySelectorAll(".hero-mcard .mc-port").forEach(function(p){
+new MutationObserver(mcFitScan).observe(p,{childList:true});
+});
+mcFitScan();
 }catch(e){}
 });<\/script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
