@@ -6,6 +6,32 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.177-mcmelt] — 2026-10-25
+
+The owner's melt-line round: "align both players' melt lines to the same
+height / DEEPEN CROP." Visual reference v2.png holds the target — its own
+two players BOTH dissolve at exactly 45.9%H — so the melt line becomes
+ONE uniform line for every portrait on the card: the img box (56.016%W
+wide on the 9:16 card) puts its bottom edge at 0.31509/aspect %H, and
+the SHARED 0.686 window aspect — now the CSS default AND every MC_GEOM
+entry — lands it at 45.9%H for the four pre-cropped files, the library
+cover band (0.53-0.66, its bust crop deepened to 77-96% of the file)
+and the .mc-fit-w contain fallback (bottom-anchored at the same line)
+alike: any fixture, any pair, one melt line. The four pre-cropped files
+are rebuilt to exactly that aspect under NEW immutable names
+(mc-port-yamal-2, mc-port-mbappe-2, art-chelsea-4, art-tottenham-4;
+originals kept) with the cut lines moved deep below the crest/logo zone
+into the torso — Yamal 266 -> 365 src rows, Mbappe 346 -> 383, Solanke
+561 -> 718, Palmer at the source bottom (his melt line moves 41.3 ->
+45.9%H) — while the arts keep their figure scale by including the
+fully-transparent rows above the hair (hair tops ~6.3-6.4%H, toward the
+reference's 8.0%H) instead of stretching; every crest/logo zone stays
+fully above the fade start (pixel-verified 25-176-row margins). Faces
+keep the reference scale, the shoulders still bleed ~3%W off-card, the
+away port stays pinned to the physical right edge, and the port
+container height follows the melt line (41% -> 46%). SW v79 -> v80
+(evicts the cached old /ui/mc URLs).
+
 ## [13.176-mctcrop] — 2026-10-25
 
 The owner's correction to the v13.175 crop: "The crop line must now sit
