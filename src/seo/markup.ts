@@ -273,9 +273,16 @@ function heroTeamHtml(t: any, away: boolean): string {
 // venue rides the STATIC bar's __SEO_MVEN__ slot (the router fills it —
 // mcardHtml no longer emits a venue node). Missing fields render the spec
 // placeholders ("--" + .mc-mut, empty crest slot) — zero layout shift.
+// v13.174-mcfix (owner: "remove the white dot artifacts around the club
+// crests"): the overrides move to the CLEANED crest-2 files — the same
+// artwork with the baked alpha-38 navy plate (the "faint rectangular edge")
+// and the top-edge speckle noise removed. New filenames on purpose:
+// /ui/mc/* is immutable-pinned, a same-name content swap never reaches
+// returning browsers. The client map override (public.ts inline DCL
+// script) mirrors these URLs.
 const MC_CREST: Record<string, string> = {
-  "Chelsea FC": "/ui/mc/crest-chelsea.webp",
-  "Tottenham Hotspur FC": "/ui/mc/crest-tottenham.webp",
+  "Chelsea FC": "/ui/mc/crest-chelsea-2.webp",
+  "Tottenham Hotspur FC": "/ui/mc/crest-tottenham-2.webp",
 };
 const MC_WL: Record<string, string> = {
   PL: "/ui/mc/wl-premier-league.webp",

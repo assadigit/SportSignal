@@ -409,6 +409,35 @@
 //              release renamed the asset pair public-13.51.css→13.52.css +
 //              public-13.37.js→13.38.js; stale HTML may still reference the
 //              retired pair, which stays served per the retention rule.)
+// v13.174-mcfix (v78): the owner's 5-fix round on the deployed mcv3 card —
+//              (1) the venue bar's stadium icon is REMOVED (it painted on
+//              top of the venue text; the text centers alone), (2) the
+//              "mirrored Premier League logo" under the lockup is GONE — it
+//              was a ghost of the reference's own logo+reflection left in
+//              scene.webp's logo-cutout patchy alpha; scene-2.webp (the
+//              cleared cutout, feathered) replaces it via the inline-style
+//              background-image override, (3) the placeholder-looking
+//              reference player figures are replaced by the clubs' REAL
+//              official hero portraits (Cole Palmer / Dominic Solanke — the
+//              published /players/clubs/ cutoffs, same manifest provenance +
+//              kit verification as the PC hero), re-framed to the reference
+//              geometry (470x718, head top y128, head width matched), (4)
+//              the crest overrides move to the cleaned crest-2 files (the
+//              baked alpha-38 navy plate + top-edge speckle noise removed),
+//              (5) the card top melts into the header band (#040F23 gradient
+//              veil, ~18%H — .mc-topfade) so the header + hero read as one
+//              continuous background. ALL four replaced images ship under
+//              NEW filenames (/ui/mc/*-2.webp — the wildcard immutable pin
+//              covers them; a same-name content swap never reaches returning
+//              browsers), and the MC_ART/MC_CREST maps are re-assigned by the
+//              fresh server-rendered homepage's DOMContentLoaded inline
+//              script (after the deferred public-13.51.js evaluates its own
+//              vars, before the payload's async render reads them) — the
+//              pinned 13.51.js itself is untouched. Routine CACHE bump: the
+//              evict also clears the cached OLD /ui/mc URLs from storage.
+//              (v77 was v13.173-noal — the A-League site-wide hide + the
+//              countdown-tile icon removal, hot-patched onto the deployed
+//              bundle that round; no asset changes.)
 // v13.172-mcfit (v77): the reference-fidelity round on the DEPLOYED mcv3
 //              card (the instruction-13 overlay loop, measured against
 //              Visual reference v2.png): the tiles row slides to the
@@ -551,7 +580,7 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v77";
+const CACHE = "sportsignal-v78";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

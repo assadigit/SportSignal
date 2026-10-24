@@ -6,6 +6,57 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.174-mcfix] — 2026-10-24
+
+The owner's 5-fix round on the deployed mcv3 card (all five issues
+verified on a 390px render of the v13.173-noal build first):
+
+- **[repo-sync] v13.173-noal landed in source:** the A-League site-wide
+  hide (SITE_HIDDEN_LEAGUES + the fetchPublicMatches/getSeoCtx/og-card
+  filters) and the countdown-tile icon removal were hot-patched onto the
+  deployed bundle in the previous session (no GitHub credentials); the
+  7-edit repo-sync spec is applied first so this deploy no longer
+  reverts them.
+- **The venue bar's stadium icon REMOVED:** the outline stadium SVG
+  painted ON TOP of «ورزشگاه استمفورد بریج» (an absolute-positioned
+  .v-icon inside the flex .v-group); the bar now carries the centered
+  venue text only (the flex centering handles both axes).
+- **The "mirrored Premier League logo" GONE:** root cause was NOT CSS
+  (no box-reflect, no pseudo-element, one img) — scene.webp's
+  logo-cutout zone retained a ghost of the REFERENCE's own logo +
+  reflection in its patchy alpha (the extraction hole was dirty).
+  scene-2.webp ships with the cutout fully cleared (16px feather); the
+  inline-style background-image override points the .mc-scene layer at
+  it (no CSS-asset rename ripple).
+- **REAL player photos:** the reference render's placeholder-looking
+  figures are replaced by each club's own PUBLISHED hero cutoffs —
+  Cole Palmer (Chelsea) and Dominic Solanke (Tottenham), the same
+  /players/clubs/ files the PC hero serves (manifest provenance + kit
+  verification inherited, no new scraping). Re-framed to the reference
+  geometry: 470x718, head top y128, head width matched to the old art
+  (x2 Lanczos of the 512 source — effective 254px source width, above
+  the site's own 220px upscale precedent), q90 lossy webp.
+- **The crest halo/speckles GONE:** both crest overrides carried a
+  baked alpha-38 navy plate (the "faint rectangular edge") + white
+  speckle noise along the top edge. crest-chelsea-2/crest-tottenham-2
+  ship cleaned: plate+AA zeroed, speckle components removed
+  (geometry-based: Chelsea keeps only the circle, Spurs the cockerel +
+  the curved text letters), 1px defringe.
+- **The hero top melts into the header:** the hard seam between the
+  flat header band and the card's bright scene is bridged by
+  .mc-topfade — a #040F23 -> transparent vertical gradient veil
+  (~18%H, symmetric, z2 over the players' head tops, under the later-
+  DOM content so the white PL lockup stays fully readable).
+- **Cache doctrine (the reason for the -2 filenames):** /ui/mc/* is
+  immutable-pinned — a same-name content swap never reaches returning
+  browsers (HTTP cache + SW CacheStorage). All four replaced images
+  ship under NEW -2 filenames (covered by the existing /ui/mc/*
+  wildcard pin), the MC_ART/MC_CREST maps are re-assigned by the
+  homepage's DOMContentLoaded inline script (AFTER the deferred
+  public-13.51.js evaluates its own vars, BEFORE the payload's async
+  render reads them — the pinned JS is untouched), and the SW cache
+  bumps v77 -> v78 (the evict also clears the old /ui/mc storage).
+
 ## [13.172-mcfit] — 2026-10-24
 
 The reference-fidelity round ON THE DEPLOYED v13.170-mcv3 card (the

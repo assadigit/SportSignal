@@ -100,7 +100,30 @@ __SEO_JSONLD__
 @keyframes feat-glow-shift{0%{opacity:.4}100%{opacity:.9}}
 .match-featured .match{background:transparent!important;border:none!important;overflow:visible!important}
 @media(prefers-reduced-motion:reduce){.match-featured{animation:none}.match-featured::before{display:none}.match-featured::after{animation:none;opacity:.6}}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* v13.173-noal (owner: "the icons (calender clock clock) must be removed"):
+     the three outline icons inside the countdown tiles are GONE from the
+     markup — this re-centers the surviving number+label pair dead-center
+     vertically (the public-13.71.css (0,2,0) rules left them in the
+     icon-era lower positions; these (0,3,0) overrides win regardless of
+     link order). */
+.hero-mcard .mc-tile .mc-num{top:43%}.hero-mcard .mc-tile .mc-lbl{bottom:25.5%}
+/* v13.174-mcfix (owner): the scene asset swap — scene-2.webp is scene.webp
+     with the logo-cutout zone fully cleared: the original extraction left a
+     ghost of the reference's own logo+reflection in the cutout's patchy
+     alpha (the "mirrored Premier League logo" the owner saw under the
+     lockup). NEW filename on purpose — /ui/mc/* is immutable-pinned, a
+     same-name content swap never reaches returning browsers; this (0,2,0)
+     override takes the 13.71 rule by cascade order. */
+.hero-mcard .mc-scene{background-image:url('/ui/mc/scene-2.webp')}
+/* v13.174-mcfix (owner): the top-of-hero gradient fade — the card's bright
+     scene melts into the flat header band (#040F23, the sampled page-top
+     navy) so the header + the hero read as one continuous background.
+     ~18% of the card height, pure vertical gradient (symmetric, RTL-
+     agnostic); the white PL lockup (z2, later DOM) rides ABOVE the veil and
+     stays fully readable; the players' head tops (z1, under it) fade with
+     the scene. */
+.hero-mcard .mc-topfade{position:absolute;left:0;right:0;top:0;height:18%;z-index:2;pointer-events:none;background:linear-gradient(180deg,#040F23 0%,rgba(4,15,35,.94) 30%,rgba(4,15,35,.6) 58%,rgba(4,15,35,.22) 82%,rgba(4,15,35,0) 100%)}</style>
 </head>
 <body>
 <!-- v12.24 (the user's ask): a real WEBSITE header — the uploaded SportSignal
@@ -292,9 +315,15 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
        outline icon (calendar/clock/stopwatch), the two-digit Latin number
        (mcD/mcH/mcM — the updateBigBar ticking contract, ids unchanged) and
        the FA label (data-i hooks, core-13.15 I18N).
-     · .mc-venue — the chamfered venue bar (static frame + outline stadium
-       icon + the #mcVenue text node renderMCard/mcardHtml fill; the
-       localized neutral fallback «استادیوم نامشخص»/Venue TBA).
+     · .mc-venue — the chamfered venue bar (static frame + the #mcVenue
+       text node renderMCard/mcardHtml fill; the localized neutral fallback
+       «استادیوم نامشخص»/Venue TBA; v13.174-mcfix (owner): the outline
+       stadium icon is REMOVED — it painted on top of the text; the bar now
+       carries the centered venue text only).
+     · .mc-topfade — v13.174-mcfix (owner): the top-of-hero gradient veil
+       (#040F23 → transparent, ~18%H) that melts the card's bright scene
+       into the flat header band so the header + hero read as one
+       continuous background (the hard seam the owner reported).
      · .mc-state — the LIVE/FT/postponed chip in the middle tile zone
        (unchanged v13.169 contract — the status comes from the match data,
        never inferred from the clock).
@@ -325,6 +354,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <div class="mc-port mc-port-h"></div>
 <div class="mc-port mc-port-a"></div>
 </div>
+<div class="mc-topfade" aria-hidden="true"></div>
 <svg class="mc-panel" viewBox="0 0 100 177.778" preserveAspectRatio="none" aria-hidden="true">
 <defs>
 <linearGradient id="pfill" x1="0" y1="0" x2="0" y2="1">
@@ -420,10 +450,6 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <path d="M 6 4.2 L 94 4.2 L 95.8 6 L 95.8 40 L 94 41.8 L 6 41.8 L 4.2 40 L 4.2 6 Z" fill="none" stroke="#3E9BE8" stroke-width=".42" opacity=".85"/>
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="url(#tstroke)" stroke-width=".6" stroke-linejoin="miter"/>
 </svg>
-<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-<rect x="3.5" y="5" width="17" height="16" rx="1.5"/>
-<path d="M3.5 9.5h17M8 2.8v4M16 2.8v4"/>
-</svg>
 <b class="mc-num" id="mcD">__SEO_MCD__</b>
 <i class="mc-lbl" aria-hidden="true"><span class="mc-lbl-t" data-i="mcD">روز</span></i>
 </div>
@@ -433,10 +459,6 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <path d="M 6 4.2 L 94 4.2 L 95.8 6 L 95.8 40 L 94 41.8 L 6 41.8 L 4.2 40 L 4.2 6 Z" fill="none" stroke="#3E9BE8" stroke-width=".42" opacity=".85"/>
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="url(#tstroke)" stroke-width=".6" stroke-linejoin="miter"/>
 </svg>
-<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-<circle cx="12" cy="12.5" r="8.5"/>
-<path d="M12 7.8v4.7l3.2 2"/>
-</svg>
 <b class="mc-num" id="mcH">__SEO_MCH__</b>
 <i class="mc-lbl" aria-hidden="true"><span class="mc-lbl-t" data-i="mcH">ساعت</span></i>
 </div>
@@ -445,10 +467,6 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="#04152E" opacity=".95"/>
 <path d="M 6 4.2 L 94 4.2 L 95.8 6 L 95.8 40 L 94 41.8 L 6 41.8 L 4.2 40 L 4.2 6 Z" fill="none" stroke="#3E9BE8" stroke-width=".42" opacity=".85"/>
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="none" stroke="url(#tstroke)" stroke-width=".6" stroke-linejoin="miter"/>
-</svg>
-<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="#E6F6FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-<circle cx="12" cy="13.5" r="7.8"/>
-<path d="M12 13.5l2.8-2.8M10 2.5h4M6.2 3.4 4.8 5.2M17.8 3.4l1.4 1.8"/>
 </svg>
 <b class="mc-num" id="mcM">__SEO_MCM__</b>
 <i class="mc-lbl" aria-hidden="true"><span class="mc-lbl-t" data-i="mcM">دقیقه</span></i>
@@ -474,11 +492,6 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <path d="M 3.4 7 L 96.6 7" stroke="#B5DBFB" stroke-width=".38" opacity=".9"/>
 </svg>
 <div class="v-group">
-<svg class="v-icon" viewBox="0 0 26 14" fill="none" stroke="#CBE6FA" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-<ellipse cx="13" cy="8" rx="11.5" ry="5.2"/>
-<ellipse cx="13" cy="8" rx="6.2" ry="2.8"/>
-<path d="M13 2.8V1M11.2 1h3.6M2.5 6.2 1.2 4.6M23.5 6.2l1.3-1.6"/>
-</svg>
 <span class="v-txt" id="mcVenue">__SEO_MVEN__</span>
 </div>
 </div>
@@ -719,6 +732,26 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <script src="/core-13.15.js" defer></script>
 <script>var PAGE_TZ = "__PAGE_TZ__";</script>
 <script src="/public-13.51.js" defer></script>
+<script>/* v13.174-mcfix (owner): the cache-busted hero-art swap — REAL
+     official portraits (Cole Palmer / Dominic Solanke — each club's own
+     published hero cutoff from /players/clubs/, the same manifest provenance
+     + kit verification as the PC hero) replace the reference render's
+     placeholder-looking player figures, and the crest overrides move to the
+     cleaned crest-2 files (the navy plate + edge speckles removed). The
+     maps live in the immutable-pinned public-13.51.js (a same-name edit
+     never reaches returning browsers), so this fresh server-rendered page
+     re-assigns them on DOMContentLoaded — AFTER the deferred 13.51.js has
+     evaluated its own var declarations, and BEFORE the payload's async
+     renderHeroSpot/renderMCard reads them (the payload fetch cannot
+     resolve before DOMContentLoaded fires — its response task is queued
+     behind the DCL task). Re-renders (language toggle, poll refresh) read
+     the already-patched maps. */
+document.addEventListener("DOMContentLoaded",function(){
+try{
+if(typeof MC_ART!=="undefined")MC_ART={"Chelsea FC":{src:"/ui/mc/art-chelsea-2.webp"},"Tottenham Hotspur FC":{src:"/ui/mc/art-tottenham-2.webp"}};
+if(typeof MC_CREST!=="undefined")MC_CREST={"Chelsea FC":"/ui/mc/crest-chelsea-2.webp","Tottenham Hotspur FC":"/ui/mc/crest-tottenham-2.webp"};
+}catch(e){}
+});</script>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. ONE same-origin
      GET /api/visit per page load (never from prerender); the worker counts it
      in the background (ctx.waitUntil: page view + daily unique dedup via a
