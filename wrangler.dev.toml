@@ -1,0 +1,36 @@
+# Local-only dev config for the repo source (git-ignored; see .git/info/exclude).
+# Differences from wrangler.toml: no [ai] remote binding (token lacks
+# remote-preview), no [triggers], local KV ids are fine for miniflare.
+name = "ucl-notifier"
+main = "src/worker.ts"
+compatibility_date = "2025-11-04"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "STATE"
+id = "c63588df02ae4bf1bfdc18d19c5b3631"
+
+[[d1_databases]]
+binding = "STATS_DB"
+database_name = "sportsignal-stats"
+database_id = "b371048b-4ae0-4ea5-9519-1d308390b700"
+
+[[d1_databases]]
+binding = "USERS_DB"
+database_name = "sportsignal-users"
+database_id = "c64064ff-aa78-4c73-80cd-e2805d550a5b"
+
+[[services]]
+binding = "DRAIN_SELF"
+service = "ucl-notifier"
+
+rules = [
+  { type = "CompiledWasm", globs = ["**/*.wasm"], fallthrough = false }
+]
+
+[assets]
+directory = "./assets"
+not_found_handling = "none"
+
+[vars]
+TEHRAN_TZ = "Asia/Tehran"

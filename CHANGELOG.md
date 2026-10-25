@@ -6,6 +6,79 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.180-mcequal] — 2026-10-26
+
+The three-request round on the featured-match hero card: silhouettes out,
+equal columns, the shoulder-inclusive fade.
+
+**Silhouettes removed behind real cutouts** (owner: "A dark silhouette
+placeholder is still visible behind the right-hand player (Mbappé) and
+yamal and must go"). scene-3.webp (NEW immutable name): scene-2 with BOTH
+player-shaped alpha holes inpainted — the hole core + the anti-aliased
+fringe (alpha < 235) refilled to the scene's own 235 standard alpha with a
+Navier-Stokes fill; the center logo-cutout zone (x 361-596) stays cleared
+as the MC_WL lockup backdrop (the v13.174 design). The swap is
+conditional, answering the owner's fallback question: the .mc-clean class
+(any port carrying an <img>, toggled by the mcFitScan mutation scan)
+serves the clean scene ONLY behind real cutouts — a crest-only fixture
+with no portrait at all keeps scene-2's ghost figures as the placeholder
+look.
+
+**Equal space for both players** (owner: "Divide the player area into two
+columns of equal width... mirrored around the vertical center axis...").
+The ports return to TRUE 50/50 columns; every img sits exactly 2cqw from
+its OUTER screen edge (left:2cqw home / left:auto;right:2cqw away — no
+player bleeds off-card anymore, the old left-bleed was the complaint), and
+the five rebuilt pre-cropped files carry head-CENTERED x-windows so the
+head centers land at 28/72%W for ANY fixture pairing (a club can be home
+or away; mirror symmetry head-fraction + mirrored-fraction = 1 holds only
+when every window is head-centered at exactly 50%). Both players at the
+SAME scale (face 11.1%W — the v13.178 zoom ×0.75: the old 14.8%W face put
+the crest at 38.5%H, only 4%H above the panel, too low for the deep fade
+to read) on the SAME baseline (one top −3.72cqw, one width 52cqw, one .62
+aspect → the box bottom 45.1%H for all five), the boxes overlapping 8cqw
+at the center — the owner: "it's okay if two players overlap slightly ...
+5%-10% (one behind another)".
+
+**Fade that includes the shoulders** (owner: "The current fade stops at
+the HUD's top edge with a straight cut across the shirts"). Every portrait
+now fades through BOTH mask axes, intersected with mask-composite (plus
+the -webkit-mask-composite:source-in twin — the owner's explicit prefix
+request). The vertical gradient runs fully visible at the face/neck to
+fully transparent at the box bottom; the five .mc-pre files start the fade
+just below their own measured crest (per-file --mcfade 69/77/71/66/61% —
+crest card positions 25.4–33.1%H, the fade start 26.4–34.1%H: "about chest
+height", FACES AND CRESTS STAY SHARP, the shoulders + torso dissolve; the
+tails pass alpha 0.15–0.20 by the panel top 42.7%H and the box bottom
+hides behind the panel — no straight cut anywhere). The inner side edge
+fades (75→98% of the box width toward the center) so the two players blend
+at the center overlap with no seam; the head spans 18–38%W vs the fade
+band 41%W+ (3cqw clearance — never touches a face). The .mc-fit-w
+whole-player contain fallback keeps the vertical-only 88% fade (its
+--mc-side is an opaque constant). z-order kept: scene → topfade z1 →
+ports z2 (heads never dimmed) → panel z3 (the tab + top border cross the
+fading chests) → capsule/crests/names z3+ DOM-later.
+
+**The files** (NEW immutable names, originals kept): mc-port-kane-2,
+mc-port-yamal-4, mc-port-mbappe-4, mc-port-palmer, art-tottenham-6 — each
+built to the shared .62 window (crown 8.0%H, crest at 48–56% of the
+figure, the cut deep below the crest; the v13.178 files cut 25–56 rows
+UNDER the crest, geometrically unable to fade the shoulders while keeping
+the crest sharp, hence the rebuild). Chelsea moves OFF the reference art:
+art-chelsea-2's figure carries its crest at 73–79% of its own span — the
+crest would ride behind the HUD panel under the new fade; cole-palmer
+(the standard-proportioned Chelsea bust from the club library) takes the
+slot. Tottenham keeps its art figure (crest 41–47% — the one compatible
+art source). Library paths (unmapped clubs) keep the v13.179 rendering at
+the default window (56.016cqw, top −38.2cqw, melt 41.0%H, 88% fade) with
+the new symmetric insets.
+
+Gates: tsc EXIT 0, npm test green, check-stats pins rewritten (the v83
+cache pin + the equal-columns/scene-3/mcFitScan/MC_ART set), parity
+re-frozen, SW CACHE v82 → v83.
+
+---
+
 ## [13.179-mcsilo] — 2026-10-25
 
 The 3-request round on the featured-match hero card.
