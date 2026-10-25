@@ -260,7 +260,7 @@ function heroTeamHtml(t: any, away: boolean): string {
 
 // v13.170-mcv3: the SERVER mirror of the mobile hero card — fills #mcardSpot
 // inside the static a.hero-mcard anchor (public.ts) for no-JS visitors;
-// renderMCard (public-13.51.js) rebuilds the same DOM on load. Tehran stamps
+// renderMCard (public-13.52.js) rebuilds the same DOM on load. Tehran stamps
 // exactly like every server mirror (the client corrects to the user's ss_tz
 // zone). THE DIGITS ARE LATIN (the owner's instruction 8): the Jalali
 // weekday+day+month line «سه شنبه 27 مهر» ships with LATIN day digits

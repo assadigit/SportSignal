@@ -605,7 +605,7 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v81";
+const CACHE = "sportsignal-v82";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

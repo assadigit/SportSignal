@@ -335,6 +335,16 @@
 /public-13.69.css
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.179-mcsilo (owner: the 3-request round — Kane's cutout moved into
+# the background silhouette (the heads ride the scene.webp ghost figures,
+# the panel back above the torsos), the BOTH-teams AND hero filter
+# (barTarget candidates all gated on m.pair), the "More games" scroll cue
+# (7px bob + the EN label)): renames public-13.51.js -> 13.52.js
+# (rename-on-edit; the retired 13.51.js stays served + pinned one SEO
+# TTL below — the retention rule).
+/public-13.52.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.51.js
   Cache-Control: public, max-age=31536000, immutable
 

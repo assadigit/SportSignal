@@ -427,6 +427,7 @@ function translateCompetition(c){ return c; }
 function isLiveStatus(s){ var x = String(s || "").toUpperCase(); return x === "LIVE" || x === "IN_PLAY" || x === "PAUSED"; }
 function matchPath(){ return "/x"; }
 function isFeaturedMatch(){ return false; }
+function isMasterPair(){ return false; }
 function isDerby(){ return false; }
 function rivalryName(){ return null; }
 var LEAGUE_LOGOS = {};

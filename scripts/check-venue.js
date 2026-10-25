@@ -98,6 +98,8 @@ new Function("CONFIG", groundsSeg + "\nglobalThis.homeGround = homeGround; globa
 globalThis.LEAGUE_LOGOS = {};
 globalThis.isLiveStatus = (s) => s === "LIVE";
 globalThis.isFeaturedMatch = () => false;
+// v13.179-heroand: pubMatch\'s pair flag reads isMasterPair too
+globalThis.isMasterPair = () => false;
 globalThis.isDerby = () => false;
 globalThis.rivalryName = () => null; // v13.51-rivalries stub (pubMatch tags)
 // v13.35-rounds: pubMatch derives round/roundFa through roundLabel — the

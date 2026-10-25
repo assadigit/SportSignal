@@ -6,6 +6,66 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.179-mcsilo] — 2026-10-25
+
+The 3-request round on the featured-match hero card.
+
+**Kane into the silhouette** (owner: "move the cutout up, so its head and
+shoulders fill the silhouette area of the hero background ... the
+screenshot shows two silhouettes, and I assumed the player takes the
+right-hand one"). The scene-2.webp ghost figures measured once (right:
+crown ~8.0%H, head 64.3-85.9%W, center 74.9%W; left: crown ~9%H, head
+13.0-33.9%W, center 24.3%W): every .mc-port img goes position:absolute at
+top:-38.2cqw + left:-10.9/-12.3cqw so each crown lands at its silhouette
+crown and each head spans the ghost head zone edge-to-edge (away head
+64.7-85.1%W vs the ghost's 64.3-85.9%W; head width 20.2 vs 20.1%W — the
+scale matches, so the v13.178 zoom, crop and 88% fade stop are all KEPT).
+The melt line moves with the box (62.5 -> 41.0%H, still one uniform line
+for every port incl. the library fallbacks), the crest still dissolves
+inside the 12% fade band, and the fade tail now melts into the dark
+silhouette hole while the panel — flipped BACK above the torsos
+(.mc-panel z-index 1 -> 3; crests/names/capsule/tiles/venue stay z3+
+DOM-later) — overlaps the fading chest and arm flare at its top edge
+(42.7%H) and raised tab (37.4%H): the player stands behind the HUD, over
+the background, like the reference.
+
+**The BOTH-teams hero filter** (owner: "a match qualifies only if both
+the home team and the away team are in the desired-teams list (AND
+condition) ... hide the featured section when no match qualifies").
+Root cause of the Bayern–Freiburg sighting: barTarget's client fallbacks
+(the topSpot box's first match — a selected-vs-top-5 fixture — and the
+bare first-upcoming row) bypassed the server's AND-only pickHeroMatch
+once the Clásico rolled live. pubMatch now carries the AND flag per row
+(pair: isFeaturedMatch || isMasterPair) and public-13.52.js gates EVERY
+candidate source on it (the topSpot pick scans for the first pair row;
+the bare first-upcoming fallback is gone; a stale pre-13.179 cached row
+falls back to the curated .big subset — never toward a one-desired
+fixture). No qualifying match = no hero: the section, the countdown and
+the scroll cue all hide (renderHeroSpot/renderMCard/mcHint lifecycle).
+
+**The "More games" scroll cue** (owner: "a button below the HUD panel ...
+label 'More games' ... a vertical bounce loop (~6-8px) ... smooth-scroll
+... prefers-reduced-motion ... at least 44px ... Farsi on the Farsi
+version, English on the EN version"). The v13.165/168 pill already
+carries the placement, the chevron, the 45px touch target, the
+reduced-motion parking and the smooth-scroll interception — this round
+rides the owner's exact numbers/wording: the bob amplitude 5 -> 7px (a
+later same-name @keyframes override in the homepage inline style; the
+pinned public-13.71.css stays byte-frozen) and the EN label "More
+games" (was "More matches") via the DCL I18N re-assignment; the FA
+«بازی‌های دیگر» default is unchanged.
+
+Renames public-13.51.js -> public-13.52.js (rename-on-edit; 13.51 stays
+served + pinned one SEO TTL). SW v81 -> v82 (evicts the cached
+13.51.js URL). Gates: tsc EXIT 0, npm test EXIT 0 (2094), parity
+re-frozen, seo:check untouched. QA: DOM-verified head-in-silhouette
+placement against a pixel-mapped overlay of the scene's own holes at
+320/390/430px widths, panel-over-chest occlusion confirmed, EN toggle +
+reduced-motion paths exercised, no console errors, no h-scroll, desktop
+byte-untouched.
+
+---
+
 ## [13.178-mcdeep] — 2026-10-25
 
 The owner's Photoshop round: "I used photoshop to crop and fade harry kane

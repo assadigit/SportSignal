@@ -140,6 +140,18 @@ export function pubMatch(m) {
     minute: !staleLive && isLiveStatus(m.status) && m.minute != null ? m.minute : null,
     scorers: !staleLive && isLiveStatus(m.status) ? (m.scorers || []).map((s) => ({ minute: s.minute, type: s.type, scorer: s.scorer, team: s.team })) : [],
     big: isFeaturedMatch(m),
+    // v13.179-heroand (owner: "a match qualifies only if both the home
+    // team and the away team are in the desired-teams list (AND
+    // condition)"): the BOTH-teams hero flag — the exact pickHeroMatch
+    // rule (isFeaturedMatch || isMasterPair), carried per-row so the
+    // client's barTarget can gate EVERY hero candidate source on the
+    // same AND. The old client fallbacks (the topSpot box's first match
+    // — a selected-vs-top5 fixture like Bayern–Freiburg — and the bare
+    // first-upcoming row) let a ONE-desired match take the hero once the
+    // server pick went live; the client now accepts pair rows only, and
+    // a stale pre-13.179 cached row (pair undefined) falls back to the
+    // curated .big subset — never toward a one-desired fixture.
+    pair: isFeaturedMatch(m) || isMasterPair(m),
     derby: isDerby(m),
     // v13.51-rivalries: named-rivalry tags (El Clásico, Der Klassiker, …).
     // rivalry = the English name (null when none — including UCL meetings,

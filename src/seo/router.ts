@@ -144,7 +144,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   // v13.120-hero: the hero is the Stadium-Pulse card (M.heroCardHtml — the
   // server mirror of renderHeroSpot in public-13.29.js).
   // v13.164-matchcard: M.mcardHtml — the mobile HUD card's server mirror
-  // (renderMCard in public-13.51.js); the SAME nextBig selection feeds both
+  // (renderMCard in public-13.52.js); the SAME nextBig selection feeds both
   // cards (one source of truth — the hero never differs between presentations).
   const heroHtml = nextBig ? M.heroCardHtml(nextBig) : "";
   const mheroHtml = nextBig ? M.mcardHtml(nextBig) : "";
