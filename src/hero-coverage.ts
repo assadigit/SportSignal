@@ -1,5 +1,5 @@
 // GENERATED FILE — do not edit by hand.
-// Source of truth #1 (render): HERO_ART in assets/public-13.52.js (the live
+// Source of truth #1 (render): HERO_ART in assets/public-13.53.js (the live
 //   client bundle — assets/hero/players/README.md is the contract).
 // Source of truth #2 (library): assets/players/uefa/hero-clubs.json
 //   (the uefa-player-portraits pipeline's club → MVP portrait map).
@@ -11,8 +11,8 @@
 //   published portrait that is not displayed (wiring = owner decision).
 
 export const HERO_COVERAGE_RAW = {
-  generated_at: "2026-10-22T23:26:37.638Z",
-  bundle: "public-13.52.js",
+  generated_at: "2026-10-25T22:27:43.835Z",
+  bundle: "public-13.53.js",
   wired: [
     { name: "Arsenal FC", src: "/players/hero/bukayo-saka.webp", fade: null, slug: "arsenal-fc", player: "Bukayo Saka", league: "Premier League" },
     { name: "AS Roma", src: "/players/hero/paulo-dybala.webp", fade: null, slug: "as-roma", player: "Paulo Dybala", league: "Serie A" },

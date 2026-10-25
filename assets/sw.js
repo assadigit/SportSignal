@@ -605,7 +605,14 @@
 //              mcardHtml the server mirror. Renames public-13.62.css→13.63.css
 //              + public-13.47.js→13.48.js; CORE_URLS stays minimal (the
 //              frame + fonts lazy-cache on demand, cache-first).
-const CACHE = "sportsignal-v83";
+// v13.181-herokeep (v84): the flash-teardown fix — public-13.52.js->
+//              13.53.js renames load() with the PAIR-AWARE DEGRADED/
+//              HERO-LESS PAYLOAD GUARD (a 200-but-empty payload OR a
+//              pair-null one keeps the SSR mirror / last-good render
+//              instead of hiding both hero cards and collapsing the
+//              section) + the SSR-preserving catch. Routine evict for
+//              the JS rename; CORE_URLS unchanged.
+const CACHE = "sportsignal-v84";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

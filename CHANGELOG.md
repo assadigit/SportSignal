@@ -6,6 +6,41 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.181-herokeep] — 2026-10-26
+
+The owner's bug report: "there is a bug, the whole hero section opens up
+for a millisecond then it hides and compacts." Root cause (reproduced
+locally, herowrap 845px -> 28px): the client hid BOTH hero cards
+whenever barTarget() returned null, on two live paths — (a) a
+200-but-EMPTY /api/public-matches (the route's degraded catch tail:
+degraded:true / schedMode:"DEGRADED" / pollHint 300, or the empty-view
+KV payload a failed sweep caches 720s), and (b) the v13.179-heroand
+BOTH-teams rule's designed "no qualifier = no hero" firing while the
+<=5min-old SSR mirror (the homepage edge hold) still painted a hero.
+Either way the SSR-painted hero collapsed in front of the visitor and
+stayed down until a good poll (up to 5 min on the degraded tail's
+pollHint). FIX (public-13.52.js -> 13.53.js, the immutable-pin rename,
+ON TOP of the kept v13.179 pair rule + the v13.180-mcequal card): the
+PAIR-AWARE DEGRADED/HERO-LESS PAYLOAD GUARD in load() — a payload
+flagged degraded OR unable to name ONE eligible hero (mirroring
+barTarget's exact null-ness: ok() future/not-live + the AND() pair
+gate over nextBig / the topSpot first-AND row + topSpot.next / the
+upcoming AND+ok scan) keeps whatever is on screen (the SSR mirror on a
+first load, the last-good render once HERO_PRIMED), drops the loading
+skeletons and lets the 60s poll retry; the catch path is SSR-preserving
+too (a failed fetch no longer overwrites the SSR lists with errLoad
+boxes or hides the topspot/week cards — the same flash family on a
+network blip). The hide-when-no-qualifier design still lands — on the
+next SSR render, never as a mid-view teardown. _headers pins 13.53.js
+immutable (13.52.js stays one SEO TTL); SW v83 -> v84; hero-coverage
+regenerated for the new bundle; parity re-frozen. QA: the degraded mock
+and a healthy pair-null mock both keep the SSR hero at every frame, the
+poll recovery re-renders normally, a healthy->degraded mid-session poll
+leaves the screen untouched, the catch path keeps the SSR page with
+zero errLoad boxes, and the normal load / EN toggle / desktop +
+the v13.180 card (silhouettes, 50/50 columns, shoulder fades) render
+regression-clean.
+
 ## [13.180-mcequal] — 2026-10-26
 
 The three-request round on the featured-match hero card: silhouettes out,

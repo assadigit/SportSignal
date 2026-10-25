@@ -234,7 +234,7 @@ __SEO_JSONLD__
      keyframes; the css71 file itself stays byte-frozen). The pill keeps
      its 2.6s ease-in-out infinite cadence, its ~45px height (>= the 44px
      touch-target floor), the prefers-reduced-motion parking (css71) and
-     the smooth-scroll interception (public-13.52.js). */
+     the smooth-scroll interception (public-13.53.js). */
 @keyframes mc-hint-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}</style>
 </head>
 <body>
@@ -858,16 +858,33 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.15.js" defer></script>
 <script>var PAGE_TZ = "__PAGE_TZ__";</script>
-<script src="/public-13.52.js" defer></script>
+<script src="/public-13.53.js" defer></script>
+<!-- v13.181-herokeep (owner bug: "the whole hero section opens up for a
+     millisecond then it hides and compacts"): the JS rename 13.52 -> 13.53
+     carries the load() DEGRADED/HERO-LESS PAYLOAD GUARD + the SSR-preserving
+     catch, ON TOP of the v13.179-heroand pair rule and the v13.180-mcequal
+     card (both kept byte-intact inside the bundle). Root cause (reproduced
+     845px -> 28px): the client hid BOTH hero cards whenever barTarget()
+     returned null — either from a 200-but-empty /api/public-matches (the
+     route's degraded catch tail OR the empty-view KV payload cached 720s)
+     or from the pair rule's designed "no qualifier = no hero" while the
+     <=5min-old SSR mirror still painted a hero (the edge hold). The guard
+     mirrors barTarget's EXACT null-ness (ok() + the AND() pair gate):
+     such a payload keeps whatever is on screen (the SSR mirror on a
+     first load, the last-good render once HERO_PRIMED), drops the
+     skeletons and lets the 60s poll retry; the catch path also stops
+     overwriting the SSR lists with errLoad boxes / hiding the
+     topspot+week cards on a network blip. Same-name edits never reach
+     returning browsers — hence the rename (the immutable-pin rule). -->
 <script>/* v13.174-mcfix (owner): the cache-busted hero-art swap — REAL
      official portraits (Cole Palmer / Dominic Solanke — each club's own
      published hero cutoff from /players/clubs/, the same manifest provenance
      + kit verification as the PC hero) replace the reference render's
      placeholder-looking player figures, and the crest overrides move to the
      cleaned crest-2 files (the navy plate + edge speckles removed). The
-     maps live in the immutable-pinned public-13.52.js (a same-name edit
+     maps live in the immutable-pinned public-13.53.js (a same-name edit
      never reaches returning browsers), so this fresh server-rendered page
-     re-assigns them on DOMContentLoaded — AFTER the deferred 13.51.js has
+     re-assigns them on DOMContentLoaded — AFTER the deferred 13.53.js has
      evaluated its own var declarations, and BEFORE the payload's async
      renderHeroSpot/renderMCard reads them (the payload fetch cannot
      resolve before DOMContentLoaded fires — its response task is queued
@@ -884,7 +901,7 @@ try{
    same spec as the ports). Tottenham keeps its art figure (crest at
    41-47% of the span — the one compatible art source). The re-assignment
    runs at DCL exactly as before: AFTER the immutable-pinned
-   public-13.52.js has evaluated its own var declarations and BEFORE the
+   public-13.53.js has evaluated its own var declarations and BEFORE the
    payload's async renderHeroSpot/renderMCard reads them (the payload
    fetch cannot resolve before DOMContentLoaded fires). Re-renders
    (language toggle, poll refresh) read the already-patched maps. */

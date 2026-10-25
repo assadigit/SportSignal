@@ -70,9 +70,6 @@
 
 
 
-/public-13.33.js
-  Cache-Control: public, max-age=31536000, immutable
-
 /public-13.32.js
   Cache-Control: public, max-age=31536000, immutable
 
@@ -342,6 +339,20 @@
 # (7px bob + the EN label)): renames public-13.51.js -> 13.52.js
 # (rename-on-edit; the retired 13.51.js stays served + pinned one SEO
 # TTL below — the retention rule).
+# v13.181-herokeep (owner bug: "the whole hero section opens up for a
+# millisecond then it hides and compacts"): renames public-13.52.js ->
+# 13.53.js — the PAIR-AWARE degraded/hero-less payload guard + the
+# SSR-preserving catch in load(), ON TOP of the kept v13.179-heroand
+# pair rule + the v13.180-mcequal card. A payload that is flagged
+# degraded OR cannot name ONE eligible hero (barTarget's exact null:
+# ok() + the AND() pair gate) keeps the SSR mirror / last-good render
+# instead of hiding both hero cards and collapsing the section
+# (845 -> 28px, reproduced); a failed fetch no longer writes errLoad
+# boxes over the SSR lists. (rename-on-edit; 13.52.js stays served +
+# pinned one SEO TTL below.)
+/public-13.53.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.52.js
   Cache-Control: public, max-age=31536000, immutable
 
