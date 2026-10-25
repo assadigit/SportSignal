@@ -6,6 +6,28 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 ---
 
+## [13.178-mcdeep] — 2026-10-25
+
+The owner's Photoshop round: "I used photoshop to crop and fade harry kane
+the way I like ... left of the picture is the amount of zoom and crop and
+fade which you must apply." Decoded from the paste (measured against the
+card chrome and cross-validated as the site's own UEFA Kane cutoff at
+scale 1.2488): melt line 62.5%H (window aspect 0.686 -> 0.504 — 16.6%H
+deeper than v13.177), face 14.8%W (the owner's zoom, ~1.13x the
+pre-cropped scale), hair top at 29.5%H (the lowered head: open stadium
+above), the 88% fade stop unchanged (the owner's band measures the same
+12.8% of the box) with the crest zone now dissolving INSIDE the fade.
+FIVE pre-cropped files ship under NEW immutable names (mc-port-kane — the
+owner's reference subject joins MC_ART for FC Bayern Muenchen,
+mc-port-yamal-3, mc-port-mbappe-3, art-chelsea-5, art-tottenham-5;
+originals kept), each built to exactly 0.504 with the cut 25-56 src rows
+below the crest zone (Kane's cut = 28 rows below his crest bottom,
+matching the paste). The library cover band re-centers 0.53-0.66 ->
+0.43-0.67 for the deeper window (the 17 bulk cutoffs keep cover, the
+three ~0.49 sources join the bust look, the 16 wide 0.68-0.92 sources
+keep whole-player contain). SW v80 -> v81 (evicts the cached old /ui/mc
+URLs).
+
 ## [13.177-mcmelt] — 2026-10-25
 
 The owner's melt-line round: "align both players' melt lines to the same

@@ -126,63 +126,83 @@ __SEO_JSONLD__
      z1 and the players (z2) now ride ABOVE it — the fade melts ONLY the
      stadium scene, the head tops stay fully bright, never dimmed. */
 .hero-mcard .mc-topfade{position:absolute;left:0;right:0;top:0;height:18%;z-index:1;pointer-events:none;background:linear-gradient(180deg,#040F23 0%,rgba(4,15,35,.94) 30%,rgba(4,15,35,.6) 58%,rgba(4,15,35,.22) 82%,rgba(4,15,35,0) 100%)}
-/* v13.175-mccrop + v13.176-mctcrop + v13.177-mcmelt (owner) — the player-image
-     framing system:
-     THE MELT LINE (v13.177, owner: "align both players' melt lines to the
-     same height / DEEPEN CROP"): every portrait on the card — the four
-     pre-cropped files AND every library fallback — now dissolves at ONE
-     uniform line, 45.9%H, measured straight off Visual reference v2.png
-     (the reference's OWN two players both melt at exactly 45.9%H, heads
-     at 8.0%H; ours previously sat at 31.0/33.9/41.3/41.7%H per file). The
-     window aspect is the single knob: the img box is 56.016%W wide
-     (116.7% of the 48%W port) on the 9:16 card, so the box bottom sits at
-     0.31509/aspect %H — the SHARED 0.686 window (the CSS default AND
-     every MC_GEOM entry) lands it at 45.9%H for the stretched MC_ART
-     files, the library cover band and the .mc-fit-w contain fallback
-     alike: any fixture, any pair, one melt line.
-     THE DEEPENED CROP (v13.177): the four pre-cropped files are rebuilt
-     (new names per the immutable-pin rule — mc-port-yamal-2,
-     mc-port-mbappe-2, art-chelsea-4, art-tottenham-4; originals kept) to
-     exactly the 0.686 window aspect, with the cut lines moved FAR below
-     the crest/logo zone into the torso: Yamal 266 -> 365 (+99 src rows,
-     the Spotify line fully clear of the fade), Mbappe 346 -> 383 (+37,
-     Emirates clear), Solanke 561 -> 718 (+157, the source bottom),
-     Palmer at the source bottom with his melt line moving 41.3 ->
-     45.9%H. The arts keep their figure scale by INCLUDING the fully-
-     transparent rows above the hair (natural headroom: hair tops land at
-     ~6.3-6.4%H toward the reference's 8.0%H) instead of stretching —
-     every crest/logo zone stays fully above the fade start with a
-     pixel-verified 25-176-row margin.
+/* v13.175-mccrop + v13.176-mctcrop + v13.177-mcmelt + v13.178-mcdeep
+     (owner) — the player-image framing system:
+     THE MELT LINE (v13.178, owner's Photoshop reference of Kane: "the
+     amount of zoom and crop and fade which you must apply"): every
+     portrait on the card dissolves at ONE uniform line, 62.5%H — decoded
+     from the owner's own paste (their fade full-strength to ~54.5%H,
+     50% at ~58.5%, gone at ~62.5%; the crest sits INSIDE the fade,
+     dissolving — the owner's new look replaces the old keep-the-crest-
+     clear rule). The window aspect is the single knob: the img box is
+     56.016%W wide (116.7% of the 48%W port) on the 9:16 card, so the box
+     bottom sits at 0.31509/aspect %H — the SHARED 0.504 window (the CSS
+     default AND every MC_GEOM entry) lands it at 62.5%H for the
+     stretched MC_ART files, the library cover band and the .mc-fit-w
+     contain fallback alike: any fixture, any pair, one melt line.
+     THE ZOOM + THE HEAD (v13.178): the owner's paste = the site's own
+     UEFA Kane cutoff at scale 1.2488 — face 14.8%W, hair top at 29.5%H
+     (a deliberately lowered head: ~29.5%H of open stadium above the
+     hair vs the old ~6.4%H). The five pre-cropped files are rebuilt
+     (new names per the immutable-pin rule — mc-port-kane,
+     mc-port-yamal-3, mc-port-mbappe-3, art-chelsea-5, art-tottenham-5;
+     originals kept) to exactly the 0.504 window aspect at face 14.8%W
+     with the hair padded to 29.5%H; the cut lines land 25-56 src rows
+     below each crest zone (Kane's cut = 28 rows below his crest bottom,
+     matching the owner's paste exactly). x-windows are centered on the
+     VISIBLE figure (rows above the fade start) so the arms flaring
+     inside the bottom fade zone may clip imperceptibly at <=35% alpha.
+     v13.177 history: the melt line sat at 45.9%H (the Visual-reference
+     v2 line) with heads at ~6.3-6.4%H — superseded by the owner's
+     deeper Photoshop composition.
      THE FRAME (v13.176, kept): every .mc-port img rides the wider-than-port
      frame (margins -6.25%/-10.4% keep the body centers at ~25%/75%W like
-     the reference) with height:auto + aspect-ratio:var(--mcar,.686) — the
-     box bottom IS the melt line; the faces keep the reference scale
-     (~15-17%H) with the shoulders bleeding ~3%W off-card — the card's
-     overflow:hidden clips the bleed (no h-scroll). The away port anchors
-     its img to the PHYSICAL right edge (object-position top right —
-     dir=ltr is pinned on the card anchor AND in CSS, so the RTL page can
-     never mirror it).
+     the reference) with height:auto + aspect-ratio:var(--mcar,.504) — the
+     box bottom IS the melt line; the faces ride the owner's 14.8%W zoom
+     with the shoulders bleeding ~3%W off-card — the card's
+     overflow:hidden clips the bleed (no h-scroll). The img box now
+     extends BELOW the 46%H port container down to the 62.5%H melt line —
+     safe: nothing between the port and the card edge clips (the card's
+     own overflow:hidden never bites inside the card).
+     THE Z-ORDER (v13.178): the panel's near-opaque pfill box used to
+     cover the portraits below its 42.7%H top edge (same z2, later in
+     the DOM) — the v13.177 melt line sat barely 3%H under it so nobody
+     noticed. The owner's 62.5%H melt needs the torsos DISSOLVING OVER
+     the panel's dark fill (their paste shows exactly that), so this
+     inline override (the v13.174 scene-2 mechanism — same specificity
+     as the css71 rule, later in the document) drops the panel to z1:
+     scene (auto) -> topfade z1 -> PANEL z1 -> ports z2 -> crests/names/
+     capsule/tiles/venue z3 -> date/ko z4. The crests/names keep riding
+     ABOVE the fading torsos like the owner's paste; the panel's neon
+     borders pass BEHIND the opaque torsos. The away port anchors its img to the PHYSICAL right edge
+     (object-position top right — dir=ltr is pinned on the card anchor
+     AND in CSS, so the RTL page can never mirror it).
      THE HEAD (v13.175, kept): .mc-ports rides z2 above the z1 topfade
-     veil — the fade never touches the heads; the baked headroom rows keep
-     a ~22-45px gap above the hair at every screen width and nothing clips
+     veil — the fade never touches the heads; the baked headroom rows
+     keep the hair at 29.5%H at every screen width and nothing clips
      at the top edge.
      THE FADE (v13.175 27% -> v13.176 12%, kept): the mask-image gradient
      (with the -webkit- prefix) fades only the bottom 12% of each portrait
-     box (88% -> 100% of the image height, screen-width-independent) —
-     small enough that the crest/logo zones stay clearly visible.
-     THE BANDS (kept, window deepened): the DCL classifier below measures
-     unmapped library portraits (naturalWidth/naturalHeight); 0.53-0.66
-     rides this cover design at the SAME shared 0.686 window (the bust
-     crop now shows 77-96% of the file — the deepened library look),
-     wider/narrower gets .mc-fit-w (whole-player contain, bottom-anchored
-     at the same 45.9%H line — no mid-air shoulder cuts). The four
-     pre-cropped files skip the classifier: the DCL sets their --mcar from
-     the MC_GEOM table the moment the <img> exists (pre-load — no layout
-     shift). */
+     box (88% -> 100% of the image height = 55.0 -> 62.5%H — the owner's
+     paste measures 12.8%, the same proportional band). The crest zone
+     now sits INSIDE the fade by design (the owner's paste: the crest
+     dissolves with the chest).
+     THE BANDS (re-centered on the deeper window): the DCL classifier
+     below measures unmapped library portraits (naturalWidth /
+     naturalHeight); 0.43-0.67 rides this cover design at the SAME shared
+     0.504 window (cover crops 5-23% of the width for the 17 bulk
+     0.54-0.65 sources — the bust look at the owner's zoom; the three
+     ~0.49 sources now join the band instead of whole-player contain);
+     wider gets .mc-fit-w (whole-player contain, bottom-anchored at the
+     same 62.5%H line — the 16 wide 0.68-0.92 sources keep their exact
+     v13.177 classification). The five pre-cropped files skip the
+     classifier: the DCL sets their --mcar from the MC_GEOM table the
+     moment the <img> exists (pre-load — no layout shift). */
 .hero-mcard .mc-ports{z-index:2}
+.hero-mcard .mc-panel{z-index:1}
 .hero-mcard .mc-ports .mc-port{height:46%;width:48%}
 .hero-mcard .mc-ports .mc-port.mc-port-a{left:52%}
-.hero-mcard .mc-ports .mc-port img{width:116.7%;height:auto;aspect-ratio:var(--mcar,.686);object-fit:cover;object-position:top center;margin-left:-6.25%;-webkit-mask-image:linear-gradient(180deg,#000 0 88%,transparent 100%);mask-image:linear-gradient(180deg,#000 0 88%,transparent 100%)}
+.hero-mcard .mc-ports .mc-port img{width:116.7%;height:auto;aspect-ratio:var(--mcar,.504);object-fit:cover;object-position:top center;margin-left:-6.25%;-webkit-mask-image:linear-gradient(180deg,#000 0 88%,transparent 100%);mask-image:linear-gradient(180deg,#000 0 88%,transparent 100%)}
 .hero-mcard .mc-ports .mc-port.mc-port-a img{object-position:top right;margin-left:-10.4%}
 .hero-mcard .mc-ports .mc-port img.mc-fit-w{object-fit:contain;object-position:center bottom}</style>
 </head>
@@ -353,11 +373,12 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
        FIRST (the pre-cropped /ui/mc/art-*-3 + mc-port-* files — the
        T-logo crop, aspect-pinned via --mcar) and falls back to the
        HERO_ART library cutouts for unmapped clubs (cover for the
-       0.53-0.66 aspect band at the library default window; .mc-fit-w
-       contain for the wider/narrower ones, classified by the DCL
+       0.43-0.67 aspect band at the library default window; .mc-fit-w
+       contain for the wider ones, classified by the DCL
        script). Every portrait's bottom 12% melts into the scene via a
        mask-image gradient so the transition into the HUD below stays
-       soft — the crest/logo line itself stays clearly visible.
+       soft — the crest/logo zone dissolves with the chest inside the
+       fade (the owner's v13.178 Photoshop composition).
      · svg.mc-panel — the chamfered HUD frame drawn as an inline SVG path:
        45deg corner cuts, a raised tab with angled shoulders sitting ON the
        continuous top border, a DOUBLE border (pure-cyan #00E9FD outer line
@@ -818,40 +839,46 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      the already-patched maps. */
 document.addEventListener("DOMContentLoaded",function(){
 try{
-/* v13.176-mctcrop + v13.177-mcmelt (owner — the deep uniform melt line):
-   MC_ART now carries FOUR clubs: the Chelsea + Tottenham reference pair
-   moves to the pre-cropped art-*-4 files and the live El Clasico pair to
-   mc-port-yamal-2/mc-port-mbappe-2 — every file built to exactly the
-   shared 0.686 window aspect, cut deep below the crest/logo zone (the
-   melt line lands at the uniform 45.9%H for every fixture). The cropped
-   files replace the shared PC-hero library srcs on the CARD only (the PC
-   hero + the og-card renderer keep reading HERO_ART — their rendering is
-   untouched). The re-assignment runs at DCL: AFTER the immutable-pinned
-   public-13.51.js has evaluated its own var declarations and BEFORE the
-   payload's async renderHeroSpot/renderMCard reads them (the payload
-   fetch cannot resolve before DOMContentLoaded fires). Re-renders
-   (language toggle, poll refresh) read the already-patched maps. */
-if(typeof MC_ART!=="undefined")MC_ART={"Chelsea FC":{src:"/ui/mc/art-chelsea-4.webp"},"Tottenham Hotspur FC":{src:"/ui/mc/art-tottenham-4.webp"},"FC Barcelona":{src:"/ui/mc/mc-port-yamal-2.webp"},"Real Madrid CF":{src:"/ui/mc/mc-port-mbappe-2.webp"}};
+/* v13.176-mctcrop + v13.177-mcmelt + v13.178-mcdeep (owner — the deep
+   uniform melt line at the owner's zoom): MC_ART now carries FIVE clubs:
+   the Chelsea + Tottenham reference pair moves to the art-*-5 files, the
+   El Clasico pair to mc-port-yamal-3/mc-port-mbappe-3, and FC Bayern
+   München (the owner's Photoshop reference subject — Kane) gets
+   mc-port-kane — every file built to exactly the shared 0.504 window
+   aspect (melt 62.5%H) at face 14.8%W with the hair at 29.5%H. The
+   cropped files replace the shared PC-hero library srcs on the CARD only
+   (the PC hero + the og-card renderer keep reading HERO_ART — their
+   rendering is untouched). The re-assignment runs at DCL: AFTER the
+   immutable-pinned public-13.51.js has evaluated its own var declarations
+   and BEFORE the payload's async renderHeroSpot/renderMCard reads them
+   (the payload fetch cannot resolve before DOMContentLoaded fires).
+   Re-renders (language toggle, poll refresh) read the already-patched
+   maps. */
+if(typeof MC_ART!=="undefined")MC_ART={"Chelsea FC":{src:"/ui/mc/art-chelsea-5.webp"},"Tottenham Hotspur FC":{src:"/ui/mc/art-tottenham-5.webp"},"FC Barcelona":{src:"/ui/mc/mc-port-yamal-3.webp"},"Real Madrid CF":{src:"/ui/mc/mc-port-mbappe-3.webp"},"FC Bayern München":{src:"/ui/mc/mc-port-kane.webp"}};
 if(typeof MC_CREST!=="undefined")MC_CREST={"Chelsea FC":"/ui/mc/crest-chelsea-2.webp","Tottenham Hotspur FC":"/ui/mc/crest-tottenham-2.webp"};
-/* v13.177-mcmelt: the per-file window geometry for the pre-cropped
-   portraits — [window aspect, fade stop %]. ALL FOUR files (and the CSS
-   default for the library paths) share the ONE 0.686 window aspect: the
+/* v13.178-mcdeep: the per-file window geometry for the pre-cropped
+   portraits — [window aspect, fade stop %]. ALL FIVE files (and the CSS
+   default for the library paths) share the ONE 0.504 window aspect: the
    img box is 56.016%W wide on the 9:16 card, so the box bottom — the
-   melt line — sits at 0.31509/0.686 = 45.9%H for every portrait on the
-   card (the reference's own two players melt at exactly 45.9%H). Each
-   file is BUILT to that same aspect, so the .mc-fill stretch is identity
-   and the file's own bottom row IS the melt row; the fade stop keeps the
-   12% melt off every crest/logo zone (88% -> 100%, pixel-verified 25-
-   176-row margins). */
-var MC_GEOM={"/ui/mc/mc-port-yamal-2.webp":[0.686,88],"/ui/mc/mc-port-mbappe-2.webp":[0.686,88],"/ui/mc/art-chelsea-4.webp":[0.686,88],"/ui/mc/art-tottenham-4.webp":[0.686,88]};
+   melt line — sits at 0.31509/0.504 = 62.5%H for every portrait on the
+   card (the owner's Photoshop paste of Kane melts at exactly 62.5%H,
+   face 14.8%W, hair 29.5%H). Each file is BUILT to that same aspect, so
+   the .mc-fill stretch is identity and the file's own bottom row IS the
+   melt row; the fade stop keeps the 12% band (88% -> 100% = 55.0-62.5%H,
+   the owner's paste measures the same 12.8% proportional band) with the
+   crest zone dissolving inside it — the owner's new composition. */
+var MC_GEOM={"/ui/mc/mc-port-kane.webp":[0.504,88],"/ui/mc/mc-port-yamal-3.webp":[0.504,88],"/ui/mc/mc-port-mbappe-3.webp":[0.504,88],"/ui/mc/art-chelsea-5.webp":[0.504,88],"/ui/mc/art-tottenham-5.webp":[0.504,88]};
 /* v13.175-mccrop: the portrait framing classifier — every img
    renderMCard drops into a .mc-port gets measured (naturalWidth /
    naturalHeight) once it has loaded. The PRE-CROPPED files skip the
    measurement: the DCL sets their exact --mcar/--mcfade from MC_GEOM the
    moment the <img> exists (pre-load, no layout shift). Unmapped library
-   portraits ride the default window (aspect .686, fade 88%) when their
-   aspect is 0.53-0.66; anything wider or narrower gets .mc-fit-w (the
-   whole-player contain look, no mid-air shoulder cuts). A
+   portraits ride the default window (aspect .504, fade 88%) when their
+   aspect is 0.43-0.67 (re-centered on the deeper v13.178 window: the 17
+   bulk 0.54-0.65 cutoffs keep their v13.177 cover classification, the
+   three ~0.49 sources join the bust look); anything wider gets .mc-fit-w
+   (the whole-player contain look, no mid-air shoulder cuts — the 16
+   wide 0.68-0.92 sources keep their exact v13.177 classification). A
    MutationObserver per port re-runs the scan on every re-render
    (language toggle, poll refresh) — renderMCard wipes innerHTML and
    rebuilds, firing childList each time. The dataset guard makes it
@@ -865,7 +892,7 @@ if(g){im.dataset.mcfit="1";im.style.setProperty("--mcar",String(g[0]));im.style.
 if(!im.naturalWidth){im.addEventListener("load",mcFitScan,{once:true});return}
 im.dataset.mcfit="1";
 var a=im.naturalWidth/im.naturalHeight;
-if(a<0.53||a>0.66)im.classList.add("mc-fit-w");
+if(a<0.43||a>0.67)im.classList.add("mc-fit-w");
 });
 };
 document.querySelectorAll(".hero-mcard .mc-port").forEach(function(p){
