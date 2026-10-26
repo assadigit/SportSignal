@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "name": "mc-pre canonical window (v13.182-mcmirror standard)",
+  "derived_from": {
+    "mc-port-palmer.webp": "356x574 crown 21.43%H head 91px=25.56%W cx 55.62%W",
+    "mc-port-bruno.webp": "356x574 crown 21.43%H head 94px=26.40%W cx 44.04%W",
+    "note": "The v13.182 mirror pair (palmer home / bruno away) is the newest owner-approved standard - EQUAL head size, both heads 19.0cqw from the card's center axis. Every number below is machine-checkable."
+  },
+  "window": {
+    "width": 356,
+    "height": 574,
+    "aspect": 0.6202,
+    "aspect_tol": 0.0008,
+    "crown_row": 123,
+    "crown_row_pct": 21.43,
+    "crown_row_tol": 3,
+    "figure_bottom_min_row": 534,
+    "comment": "crown_row_pct x 574 = 123.0; the figure must reach >= row 534 (93.1% of the window) so its bottom edge dissolves inside the approved 66% fade (alpha <= ~0.2 at the edge) instead of floating above the HUD panel."
+  },
+  "head": {
+    "max_width_px": 91,
+    "max_width_pctw": 25.56,
+    "max_width_tol_px": 3,
+    "cx_home_pctw": 55.6,
+    "cx_away_pctw": 44,
+    "cx_tol_pctw": 1.2,
+    "metric": "the widest opaque RUN inside the head band (crown..chin, arms excluded) - palmer's own 91px, the value v13.182 matched bruno to."
+  },
+  "fade": {
+    "default_pct": 66,
+    "min_pct": 50,
+    "max_pct": 80,
+    "comment": "66 = the approved palmer/bruno stop (fade row 379 of 574 = 2.8 heads below the crown; crest zones sit 25-33%H, the fade starts below every measured crest). Per-file override via --fade when a pose pushes the crest lower."
+  },
+  "ingest_guards": {
+    "min_source_head_px": 48,
+    "max_upscale": 1.6,
+    "warn_upscale": 1.3,
+    "min_figure_span_out_rows": 420,
+    "max_lateral_clip_pct_per_side": 22,
+    "comment": "A source that fails a guard is REJECTED with a reason - the operator then picks a deeper shot from the club alternates (assets/players/clubs/<league>/<club>/). This is the guard that would have caught the Bruno bug before it shipped. Lateral clip tolerance 22%: both window edges sit inside the side-fade transparent bands (0-14% outer, 75-98% inner), so edge clips are masked by design - the approved bruno clips 15% the same way."
+  },
+  "encoding": {
+    "format": "webp",
+    "lossless": true,
+    "kernel": "lanczos3",
+    "comment": "matches the portrait library contract (webp-lossless-alpha) and the mc-port hand-crafted files."
+  },
+  "side_variants": {
+    "suffix_home": "-h",
+    "suffix_away": "-a",
+    "comment": "ingest emits BOTH variants (-h head at 55.6%W, -a at 44.0%W - 20px from the window center either way); the runtime MC_SIDE swap in the DCL script serves the right one per slot, so a fixture that flips a club to the other side can never render a head leaning off-center."
+  }
+}

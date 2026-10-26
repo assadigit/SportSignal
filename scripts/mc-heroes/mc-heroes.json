@@ -1,0 +1,204 @@
+{
+ "schema_version": 1,
+ "generated_at": "2026-10-26T13:01:57.338Z",
+ "clubs": {
+  "Chelsea FC": {
+   "kind": "legacy-pair",
+   "fade": 66,
+   "source": "assets/players/hero/cole-palmer.webp",
+   "origin": "v13.180-mcequal hand-craft (round-trip verified 2026-10-26: crown 123, head 91, cx 55.62%W, bottom 99.83%H — regenerated EXACTLY by the pipeline)",
+   "home": "mc-port-palmer.webp",
+   "home_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 91,
+    "headCx": 198,
+    "figureBottom": 573
+   },
+   "away": "mc-port-palmer-a.webp",
+   "away_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 91,
+    "headCx": 158,
+    "figureBottom": 573
+   }
+  },
+  "Manchester United FC": {
+   "kind": "legacy-pair",
+   "fade": 66,
+   "source": "assets/players/hero/bruno-fernandes.webp",
+   "origin": "v13.182-mcmirror hand-craft (round-trip verified 2026-10-26: crown 123, head 91 spec, cx 44.04%W)",
+   "home": "mc-port-bruno-h.webp",
+   "home_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 94,
+    "headCx": 199,
+    "figureBottom": 573
+   },
+   "away": "mc-port-bruno.webp",
+   "away_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 94,
+    "headCx": 157,
+    "figureBottom": 573
+   }
+  },
+  "Tottenham Hotspur FC": {
+   "kind": "legacy-pair",
+   "fade": 61,
+   "source": "assets/ui/mc/art-tottenham-6.webp",
+   "origin": "v13.180-mcequal hand-craft (the one compatible art source — crest 41-47% of span)",
+   "home": "art-tottenham-6.webp",
+   "home_geo": {
+    "dims": "464x748",
+    "crown": 160,
+    "headMaxW": 158,
+    "headCx": 260,
+    "figureBottom": 747
+   },
+   "away": "art-tottenham-6-a.webp",
+   "away_geo": {
+    "dims": "464x748",
+    "crown": 160,
+    "headMaxW": 158,
+    "headCx": 204,
+    "figureBottom": 747
+   }
+  },
+  "FC Barcelona": {
+   "kind": "legacy-pair",
+   "fade": 77,
+   "source": "assets/players/clubs/laliga/fc-barcelona/lamine-yamal.webp",
+   "origin": "v13.180-mcequal hand-craft (head-centered legacy scale)",
+   "home": "mc-port-yamal-4.webp",
+   "home_geo": {
+    "dims": "276x445",
+    "crown": 95,
+    "headMaxW": 107,
+    "headCx": 134,
+    "figureBottom": 444
+   },
+   "away": "mc-port-yamal-4-a.webp",
+   "away_geo": {
+    "dims": "276x445",
+    "crown": 95,
+    "headMaxW": 107,
+    "headCx": 142,
+    "figureBottom": 444
+   }
+  },
+  "Real Madrid CF": {
+   "kind": "legacy-pair",
+   "fade": 71,
+   "source": "assets/players/clubs/laliga/real-madrid-cf/kylian-mbappe.webp",
+   "origin": "v13.180-mcequal hand-craft (head-centered legacy scale)",
+   "home": "mc-port-mbappe-4.webp",
+   "home_geo": {
+    "dims": "290x468",
+    "crown": 100,
+    "headMaxW": 125,
+    "headCx": 146,
+    "figureBottom": 467
+   },
+   "away": "mc-port-mbappe-4-a.webp",
+   "away_geo": {
+    "dims": "290x468",
+    "crown": 100,
+    "headMaxW": 125,
+    "headCx": 144,
+    "figureBottom": 467
+   }
+  },
+  "FC Bayern München": {
+   "kind": "canonical",
+   "fade": 66,
+   "source": "assets/players/clubs/bundesliga/fc-bayern-munchen/harry-kane.webp",
+   "origin": "generated 2026-10-26 at the v13.182 canonical spec — REPLACES the legacy kane-2 scale (head 30.3%W) so Bayern matches every canonical club head-for-head (the v13.180-era bigger-head look retired with the standardization round; kane-2 stays on disk under the immutable-pin rule)",
+   "home": "mc-port-kane-3-h.webp",
+   "home_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 91,
+    "headCx": 198,
+    "figureBottom": 573
+   },
+   "away": "mc-port-kane-3-a.webp",
+   "away_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 91,
+    "headCx": 157,
+    "figureBottom": 573
+   }
+  },
+  "Arsenal FC": {
+   "kind": "canonical",
+   "fade": 66,
+   "source": "assets/players/hero/bukayo-saka.webp",
+   "origin": "generated 2026-10-26 at the v13.182 canonical spec",
+   "home": "mc-port-saka-h.webp",
+   "home_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 92,
+    "headCx": 198,
+    "figureBottom": 572
+   },
+   "away": "mc-port-saka-a.webp",
+   "away_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 92,
+    "headCx": 157,
+    "figureBottom": 572
+   }
+  },
+  "Manchester City FC": {
+   "kind": "canonical",
+   "fade": 66,
+   "source": "assets/players/hero/erling-haaland.webp",
+   "origin": "generated 2026-10-26 at the v13.182 canonical spec",
+   "home": "mc-port-haaland-h.webp",
+   "home_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 91,
+    "headCx": 198,
+    "figureBottom": 573
+   },
+   "away": "mc-port-haaland-a.webp",
+   "away_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 92,
+    "headCx": 157,
+    "figureBottom": 573
+   }
+  },
+  "FC Internazionale Milano": {
+   "kind": "canonical",
+   "fade": 66,
+   "source": "assets/players/hero/lautaro-martinez.webp",
+   "origin": "generated 2026-10-26 at the v13.182 canonical spec",
+   "home": "mc-port-lautaro-h.webp",
+   "home_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 90,
+    "headCx": 198,
+    "figureBottom": 557
+   },
+   "away": "mc-port-lautaro-a.webp",
+   "away_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 90,
+    "headCx": 157,
+    "figureBottom": 557
+   }
+  }
+ }
+}

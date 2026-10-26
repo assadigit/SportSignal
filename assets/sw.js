@@ -628,7 +628,20 @@
 //              (the RTL-page mirroring contract: one shared rule, only
 //              the direction pair differs). Both new assets ride NEW
 //              immutable names; the bump evicts any cached first paint.
-const CACHE = "sportsignal-v85";
+// v13.183-mchero (owner: the flawless mobile-heroes system — standardize
+//              the featured-match card's player windows): the
+//              scripts/mc-heroes pipeline (ingest/registry/wire/gate)
+//              ships ELEVEN new .mc-pre window files under new immutable
+//              names — mc-port-saka-h/-a (Arsenal), mc-port-haaland-h/-a
+//              (Man City), mc-port-lautaro-h/-a (Inter), the canonical
+//              mc-port-kane-3-h/-a (Bayern; head 91px like every canonical
+//              club) + the mirrored twins mc-port-palmer-a, mc-port-bruno-h,
+//              art-tottenham-6-a, mc-port-yamal-4-a, mc-port-mbappe-4-a —
+//              and the DCL patch gains MC_SIDE/MC_HOME_SRC + the side-aware
+//              src swap inside mcFitScan (a club flipping home/away between
+//              fixtures can never render a head leaning off-center). The
+//              bump evicts any cached first paint of the 6-club map.
+const CACHE = "sportsignal-v86";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -21,6 +21,7 @@ Route by task:
 | Update a player (transfer, kit change, better pick) | INSTRUCTIONS.md §2c |
 | Season-turnover refresh (annual) | INSTRUCTIONS.md §2d |
 | A team renders crest-only / fill hero gaps (the loop) | INSTRUCTIONS.md §13 — `npm run heroes:report` first |
+| **The mobile featured-match card's player windows (mc-heroes)** | `docs/mc-heroes/SPEC.md` — add the next game's player in 3 steps (`registry.js` entry → `npm run mc:build` → `npm run mc:wire`; the `npm test` gate enforces the canonical 356x574 / crown 123 / head 91px spec) |
 | A portrait looks like a FIFA card / jersey-priority verification | INSTRUCTIONS.md §13.5 + SPEC.md §8c — `npm run heroes:style-audit` |
 | A player can't be found on any platform (star fallback) | SPEC.md §8c + INSTRUCTIONS.md §13.5 |
 | A hero left his club (transfer/retirement) — rotate to a bench star | INSTRUCTIONS.md §14 — `npm run heroes:rotate -- --club <slug>` (check `/api/hero-rotation` for the worklist) |
