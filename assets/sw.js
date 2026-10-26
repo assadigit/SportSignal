@@ -612,7 +612,23 @@
 //              instead of hiding both hero cards and collapsing the
 //              section) + the SSR-preserving catch. Routine evict for
 //              the JS rename; CORE_URLS unchanged.
-const CACHE = "sportsignal-v84";
+// v13.182-mcmirror (v85): the mirrored-pair round — the between-players
+//              scene band rebuilt as the reference's bright stadium glow
+//              (scene-4.webp replaces scene-3 behind real cutouts: the
+//              near-black roof void + the cleared logo-zone black box +
+//              the crowd's shoulder-shaped spectator silhouettes — the
+//              "dark shape between the players" — all replaced by the
+//              glow gradient the Visual reference v2 center axis
+//              prescribes) + the SIXTH .mc-pre window mc-port-bruno.webp
+//              (Man United — the library bruno-fernandes.webp pre-cropped
+//              to the exact .62 spec: crown row 123, head 25.6%W, head
+//              center 44.2%W mirroring palmer's 55.7%W, the same 451-row
+//              baseline, palmer's own 66% fade stop) + the port/img
+//              positioning converted to logical inset-inline properties
+//              (the RTL-page mirroring contract: one shared rule, only
+//              the direction pair differs). Both new assets ride NEW
+//              immutable names; the bump evicts any cached first paint.
+const CACHE = "sportsignal-v85";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
