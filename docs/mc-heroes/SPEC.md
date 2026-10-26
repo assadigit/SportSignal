@@ -52,10 +52,12 @@ npm test                    # includes the mc-heroes gate (spec/round-trip/regis
 1. **Add an entry** to `ENTRIES` in `scripts/mc-heroes/registry.js`:
    ```js
    "New Club FC": {
-     kind: "canonical",
+     kind: "canonical",          // or "legacy-scale" + head: <px> when the
+                                  // source is too shallow for 91px (every
+                                  // figure must still reach the 534 fade floor)
      file: "mc-port-<player>-h.webp", twin: "mc-port-<player>-a.webp",
      source: "assets/players/hero/<player>.webp",  // or a club-alternate path
-     fade: 66,
+     fade: 66,                    // just below the figure's measured crest
      origin: "generated <date> at the v13.182 canonical spec",
    },
    ```
@@ -94,25 +96,33 @@ renders the pair at the real CSS geometry (fades included) for a VLM
    registry, (d) every MC_ART src and twin exists on disk. A non-conforming
    file cannot pass CI.
 
-## Coverage (BIG_MATCH_TEAMS universe, 2026-10-26)
+## Coverage (BIG_MATCH_TEAMS universe, 2026-10-27)
 
 | Club | File (home) | Scale | Notes |
 |---|---|---|---|
 | Chelsea FC | mc-port-palmer | canonical 91px | approved v13.182, round-trip verified |
 | Manchester United FC | mc-port-bruno-h | canonical | approved away file + generated home twin |
-| Arsenal FC | mc-port-saka-h | canonical | NEW (pipeline-generated) |
-| Manchester City FC | mc-port-haaland-h | canonical | NEW |
-| FC Internazionale Milano | mc-port-lautaro-h | canonical | NEW |
-| FC Bayern München | mc-port-kane-3-h | canonical | NEW — replaces the legacy kane-2 scale |
+| Arsenal FC | mc-port-saka-h | canonical | pipeline-generated |
+| Manchester City FC | mc-port-haaland-h | canonical | pipeline-generated |
+| FC Internazionale Milano | mc-port-lautaro-h | canonical | pipeline-generated |
+| FC Bayern München | mc-port-kane-3-h | canonical | replaces the legacy kane-2 scale |
+| **Liverpool FC** | **mc-port-barcola-h** | **canonical 91px** | v13.184: Barcola (the UCL-roster Liverpool rep) — the ONE Liverpool source deep enough for a true 91px window (460-row figure at a 95px head, downscale 0.96x); fade 62 (crest bottom ~60%H) |
+| **AC Milan** | **mc-port-pulisic-h** | **legacy-scale 111px** | v13.184: Milan is outside the 2026/27 UCL roster — the club library is the photo home; Pulisic is the manifest's active rep; fade 72 (crest bottom ~70%H) |
+| **Club Atlético de Madrid** | **mc-port-alvarez-h** | **legacy-scale 104px** | v13.184: Álvarez (UCL-roster rep); fade 66 (crest bottom ~63-65%H) |
+| **Borussia Dortmund** | **mc-port-guirassy-h** | **legacy-scale 103px** | v13.184: Guirassy (UCL-roster rep) — his official cutoff is a BACK VIEW (surname + number 9, no chest crest; the card's crest slot still shows the BVB logo); VLM-reviewed acceptable as the face-off look. Upgrade path: one registry entry + rebuild when a front-facing deep source lands |
+| **Paris Saint-Germain FC** | **mc-port-dembele-h** | **legacy-scale 119px** | v13.184: Dembélé (UCL-roster rep, Ballon d'Or-era star); fade 63 (crest bottom ~61-62%H); his pointing arm dissolves into the by-design center blend |
 | FC Barcelona | mc-port-yamal-4 | **legacy 107px head** | source too shallow to canonicalize (391 of 420 rows); El Clasico pairs fine (both legacy) |
 | Real Madrid CF | mc-port-mbappe-4 | **legacy 125px head** | same limitation |
 | Tottenham Hotspur FC | art-tottenham-6 | art (34%W) | dormant — not in BIG_MATCH_TEAMS; kept + twinned |
 
-**Unwired BIG clubs** (hero portrait too shallow / no windowable source yet —
-they render the crest-only or library fallback, never a broken window):
-Liverpool (Wirtz 358 rows), AC Milan (Pulisic 349), Atlético (Álvarez 370),
-Dortmund (Guirassy 374), PSG (Dembélé 324). When a deeper source lands
-(UEFA reshot / league platform fullBody), the 3-step flow wires them.
+**Every BIG_MATCH_TEAMS + PSG club is wired** (v13.184 — the owner's
+"no crest-only big clubs" directive: all desired clubs carry BOTH the club
+logo in the crest slots and player windows). The four legacy-scale big
+clubs land at 103-119px heads (28.9-33.4%W) — each SMALLER than the shipped
+yamal-4 (36.1%W) / mbappe-4 (40.1%W) legacy heads, and every one is a
+DOWNSCALE of its 512px library source (no upscale, crisp). Cross-pairings
+legacy-vs-canonical show the scale difference (the same known limitation as
+Barcelona/Real Madrid below).
 
 **Known limitation:** Barcelona/Real Madrid still ride the v13.180
 legacy-scale windows (bigger heads). Cross-pairings against canonical clubs

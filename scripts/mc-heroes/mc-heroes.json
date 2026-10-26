@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "generated_at": "2026-10-26T13:01:57.338Z",
+ "generated_at": "2026-10-26T17:54:21.948Z",
  "clubs": {
   "Chelsea FC": {
    "kind": "legacy-pair",
@@ -198,6 +198,116 @@
     "headMaxW": 90,
     "headCx": 157,
     "figureBottom": 557
+   }
+  },
+  "Liverpool FC": {
+   "kind": "canonical",
+   "fade": 62,
+   "source": "assets/players/hero/bradley-barcola.webp",
+   "origin": "generated 2026-10-27 at the v13.182 canonical spec (the 2026/27 UCL-roster Liverpool representative — hero/bradley-barcola.webp is the ONE Liverpool source deep enough for a 91px window: figure spans 460 rows at a 95px head)",
+   "home": "mc-port-barcola-h.webp",
+   "home_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 91,
+    "headCx": 198,
+    "figureBottom": 563
+   },
+   "away": "mc-port-barcola-a.webp",
+   "away_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 91,
+    "headCx": 157,
+    "figureBottom": 563
+   }
+  },
+  "AC Milan": {
+   "kind": "legacy-scale",
+   "fade": 72,
+   "source": "assets/players/clubs/serie-a/ac-milan/christian-pulisic.webp",
+   "origin": "generated 2026-10-27 legacy-scale (Milan is outside the 2026/27 UCL roster — the club library is the only photo home; Pulisic is the manifest's active representative)",
+   "home": "mc-port-pulisic-h.webp",
+   "home_geo": {
+    "dims": "356x574",
+    "crown": 122,
+    "headMaxW": 111,
+    "headCx": 199,
+    "figureBottom": 544
+   },
+   "away": "mc-port-pulisic-a.webp",
+   "away_geo": {
+    "dims": "356x574",
+    "crown": 122,
+    "headMaxW": 111,
+    "headCx": 157,
+    "figureBottom": 544
+   }
+  },
+  "Club Atlético de Madrid": {
+   "kind": "legacy-scale",
+   "fade": 66,
+   "source": "assets/players/clubs/laliga/club-atletico-de-madrid/julian-alvarez.webp",
+   "origin": "generated 2026-10-27 legacy-scale (Álvarez — the UCL-roster Atlético representative, manifest active)",
+   "home": "mc-port-alvarez-h.webp",
+   "home_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 104,
+    "headCx": 198,
+    "figureBottom": 546
+   },
+   "away": "mc-port-alvarez-a.webp",
+   "away_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 104,
+    "headCx": 157,
+    "figureBottom": 546
+   }
+  },
+  "Borussia Dortmund": {
+   "kind": "legacy-scale",
+   "fade": 66,
+   "source": "assets/players/clubs/bundesliga/borussia-dortmund/serhou-guirassy.webp",
+   "origin": "generated 2026-10-27 legacy-scale (Guirassy — the UCL-roster Dortmund representative, manifest active)",
+   "home": "mc-port-guirassy-h.webp",
+   "home_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 103,
+    "headCx": 198,
+    "figureBottom": 546
+   },
+   "away": "mc-port-guirassy-a.webp",
+   "away_geo": {
+    "dims": "356x574",
+    "crown": 123,
+    "headMaxW": 103,
+    "headCx": 158,
+    "figureBottom": 546
+   }
+  },
+  "Paris Saint-Germain FC": {
+   "kind": "legacy-scale",
+   "fade": 63,
+   "source": "assets/players/hero/ousmane-dembele.webp",
+   "origin": "generated 2026-10-27 legacy-scale (Dembélé — the UCL-roster PSG representative, manifest active)",
+   "home": "mc-port-dembele-h.webp",
+   "home_geo": {
+    "dims": "356x574",
+    "crown": 122,
+    "headMaxW": 119,
+    "headCx": 198,
+    "figureBottom": 546
+   },
+   "away": "mc-port-dembele-a.webp",
+   "away_geo": {
+    "dims": "356x574",
+    "crown": 122,
+    "headMaxW": 119,
+    "headCx": 157,
+    "figureBottom": 546
    }
   }
  }

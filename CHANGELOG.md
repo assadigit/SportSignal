@@ -4,6 +4,59 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.184-mcbig5 — no crest-only big clubs (owner: "I dont approve crest only clubs. especially for this big clubs. all desired clubs must have club logo and players")
+
+_2026-10-27 · on top of v13.183-mchero_
+
+**The owner's directive**: the v13.183 audit left Liverpool / AC Milan /
+Atlético / Dortmund / PSG unwired ("crest-only until deeper photos exist") —
+the owner rejected that: crop the existing pictures to proper dimensions
+instead. Every desired club now carries BOTH the club logo (the crest
+slots) and player windows.
+
+- **LIVERPOOL IS CANONICAL.** The v13.183 audit only measured the club-library
+  files; the hero canvas `bradley-barcola.webp` (the UCL-roster Liverpool
+  representative) is the ONE Liverpool source deep enough for a true 91px
+  window — its 460-row figure at a 95px head spans 441 output rows at the
+  canonical scale (a 0.96x DOWNSCALE). `mc-port-barcola-h/-a` join the
+  canonical set (crown 123, head 91, cx 198/157, bottom 563, fade 62 —
+  his crest bottom sits ~60%H vs palmer's 65%).
+- **THE FOUR LEGACY-SCALE BIG CLUBS.** Milan / Atlético / Dortmund / PSG have
+  no 91px-windowable source (every available figure is the same ~460-row
+  UEFA/league cutoff), so the new `legacy-scale` ingest mode builds them at
+  the SPEC WINDOW (356x574, crown 123, cx 55.6/44.0%W) with a per-entry head
+  scaled up just enough to keep the figure on the 534 fade floor — the shipped
+  yamal-4/mbappe-4 precedent, now pipeline-generated + self-verified:
+  Pulisic 111px (AC Milan — outside the UCL roster, club-library source),
+  Álvarez 104px, Guirassy 103px, Dembélé 119px. Each head is SMALLER than
+  the shipped yamal (36.1%W) / mbappe (40.1%W) legacy heads, and every one
+  is a downscale of its 512px library source. Fades set just below each
+  figure's VLM-measured crest bottom: Pulisic 72, Álvarez 66, Guirassy 66,
+  Dembélé 63.
+- **DORTMUND'S BACK VIEW (documented)**: Guirassy's official cutoff — the
+  only windowable Dortmund source (the club alternates are 53-58%W
+  bust-clown heads) — photographs him from BEHIND (surname + number 9, no
+  chest crest). VLM pair review: heads level + compatible, dissolve smooth,
+  "acceptable as a face-off style graphic"; the card's crest slots still
+  carry the BVB logo (the owner's club-logo requirement holds). Upgrade path
+  documented in SPEC.md — one registry entry + rebuild when a front-facing
+  deep source lands.
+- **THE PIPELINE**: `ingest.js` gains the `legacy-scale` mode (`--head N`);
+  `registry.js` gains the `legacy-scale` kind (both variants generated +
+  self-verified like canonical); `check-mc-heroes.js` adds the barcola pair
+  to the canonical target list. MC_ART 9 -> 14 clubs, MC_GEOM/MC_SIDE 28
+  files. SW v86 -> v87.
+- **QA**: registry re-measure all-pass (10 new files: dims/crown/head/cx/
+  bottom/mirror); card-mock VLM review of the five new pairings (Liverpool-
+  Chelsea, Milan-City, Atlético-Barcelona, Dortmund-Bayern, PSG-Real):
+  heads aligned + compatible, crests sharp, smooth dissolves, no glitches
+  (Dembélé's pointing arm dissolves into the by-design center blend —
+  focused re-read: professional, intentional).
+
+_Gates: tsc EXIT 0 · npm test EXIT 0 (incl. the mc-heroes gate) ·
+check-stats pins extended · parity re-frozen · seo:check unchanged._
+
+
 ---
 
 ## [13.181-herokeep] — 2026-10-26

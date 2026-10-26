@@ -84,7 +84,7 @@ const check = (name, cond) => {
   }
 
   // canonical files must sit at the spec targets exactly
-  const CANON = ["mc-port-saka-h.webp", "mc-port-saka-a.webp", "mc-port-haaland-h.webp", "mc-port-haaland-a.webp", "mc-port-lautaro-h.webp", "mc-port-lautaro-a.webp", "mc-port-kane-3-h.webp", "mc-port-kane-3-a.webp"];
+  const CANON = ["mc-port-saka-h.webp", "mc-port-saka-a.webp", "mc-port-haaland-h.webp", "mc-port-haaland-a.webp", "mc-port-lautaro-h.webp", "mc-port-lautaro-a.webp", "mc-port-kane-3-h.webp", "mc-port-kane-3-a.webp", "mc-port-barcola-h.webp", "mc-port-barcola-a.webp"];
   for (const f of CANON) {
     const p = path.join(MC_DIR, f);
     check(`canonical: ${f} exists`, fs.existsSync(p));
@@ -107,7 +107,7 @@ const check = (name, cond) => {
   check("wiring: MC_SIDE observer present", page.includes('if(wa===ih){im.setAttribute("src",tw);s0=tw}'));
   check("wiring: MC_HOME_SRC map present", /var MC_HOME_SRC=\{/.test(page));
   check("wiring: swap falls through to MC_GEOM[s0] lookup", /var g=MC_GEOM\[s0\];/.test(page));
-  check("wiring: MC_ART has 9 registry clubs", (page.match(/if\(typeof MC_ART!=="undefined"\)MC_ART=\{/g) || []).length === 1);
+  check("wiring: MC_ART has 14 registry clubs", (page.match(/if\(typeof MC_ART!=="undefined"\)MC_ART=\{/g) || []).length === 1);
 
   // wire --check (byte-sync of the generated blocks)
   try {
@@ -117,9 +117,9 @@ const check = (name, cond) => {
     check("wiring: wire.js --check in sync — " + String(err.stdout || err.message), false);
   }
 
-  // sw cache bumped (the release pin: v86 shipped these assets)
+  // sw cache bumped (the release pin: v87 shipped these assets)
   const sw = fs.readFileSync(path.join(ROOT, "assets", "sw.js"), "utf8");
-  check("wiring: SW cache bumped to sportsignal-v86", /const CACHE = "sportsignal-v86"/.test(sw) && !/const CACHE = "sportsignal-v85"/.test(sw));
+  check("wiring: SW cache bumped to sportsignal-v87", /const CACHE = "sportsignal-v87"/.test(sw) && !/const CACHE = "sportsignal-v86"/.test(sw));
 
   console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / wiring)");
   process.exit(failed ? 1 : 0);

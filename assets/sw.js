@@ -641,7 +641,7 @@
 //              src swap inside mcFitScan (a club flipping home/away between
 //              fixtures can never render a head leaning off-center). The
 //              bump evicts any cached first paint of the 6-club map.
-const CACHE = "sportsignal-v86";
+const CACHE = "sportsignal-v87";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

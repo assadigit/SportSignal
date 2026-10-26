@@ -14,15 +14,21 @@
 // contain fallback) before it ever shipped.
 //
 // Modes:
-//   canonical   target the spec (new players)
-//   twin        re-window a source at an existing legacy file's own
-//               geometry with the MIRRORED head center (adds the missing
-//               side variant to an approved window without touching it)
+//   canonical     target the spec (new players)
+//   legacy-scale  target the spec WINDOW (356x574, crown 123, cx 55.6/44.0%W)
+//                but a PER-ENTRY head width --head <px> — for sources whose
+//                figure is too shallow to span the window at the canonical
+//                91px head (the yamal/mbappe precedent, machine-generated:
+//                the head lands bigger so the figure still reaches the fade
+//                floor; the registry records the head, the gate re-checks it)
+//   twin          re-window a source at an existing legacy file's own
+//                geometry with the MIRRORED head center (adds the missing
+//                side variant to an approved window without touching it)
 //
 // Usage:
 //   node scripts/mc-heroes/ingest.js --src <source.webp> --out <outBasename> \
-//        [--side home|away] [--fade N] [--mode canonical|twin --legacy <file>] \
-//        [--force] [--json]
+//        [--side home|away] [--fade N] [--mode canonical|legacy-scale|twin --legacy <file>] \
+//        [--head N] [--force] [--json]
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -64,7 +70,7 @@ function buildWindow(src, tgt) {
 }
 
 async function runIngest(opts) {
-  const { srcFile, outName, side, fade, mode, legacyFile, force } = opts;
+  const { srcFile, outName, side, fade, mode, legacyFile, head, force } = opts;
 
   // ---------- source ----------
   const src = await measure(srcFile);
@@ -90,6 +96,21 @@ async function runIngest(opts) {
       cxPx: leg.px.width - leg.head.headCx, // mirrored head center
     };
     fadePct = fade; // required from the registry (the legacy file's own stop)
+  } else if (mode === "legacy-scale") {
+    // v13.184-mcbig5: the spec window at a bigger head — for the big clubs
+    // whose every available source spans the same ~460-row UEFA cutoff (too
+    // shallow for 91px), the head is scaled up just enough that the figure
+    // still reaches the 534 fade floor (the shipped yamal-4 107px / mbappe-4
+    // 125px precedent, now pipeline-generated + self-verified).
+    if (!head) return fail("--mode legacy-scale requires --head <px> (the window-filling head width)");
+    tgt = {
+      w: SPEC.window.width,
+      h: SPEC.window.height,
+      crownRow: SPEC.window.crown_row,
+      headPx: head,
+      cxPx: Math.round((side === "home" ? SPEC.head.cx_home_pctw : SPEC.head.cx_away_pctw) / 100 * SPEC.window.width),
+    };
+    fadePct = fade !== undefined ? fade : SPEC.fade.default_pct;
   } else {
     tgt = {
       w: SPEC.window.width,
@@ -235,10 +256,11 @@ async function main() {
     fade: arg("fade") !== undefined ? parseInt(arg("fade"), 10) : undefined,
     mode: arg("mode") || "canonical",
     legacyFile: arg("legacy"),
+    head: arg("head") !== undefined ? parseInt(arg("head"), 10) : undefined,
     force: argv.includes("--force"),
   };
   if (!opts.srcFile || !opts.outName) {
-    console.error("usage: ingest --src <file> --out <name.webp> [--side home|away] [--fade N] [--mode twin --legacy <file>] [--force] [--json]");
+    console.error("usage: ingest --src <file> --out <name.webp> [--side home|away] [--fade N] [--mode canonical|legacy-scale --head N | twin --legacy <file>] [--force] [--json]");
     process.exit(1);
   }
   const res = await runIngest(opts);

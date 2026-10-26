@@ -22,12 +22,20 @@ const MC_DIR = path.join(__dirname, "..", "..", "assets", "ui", "mc");
 
 // ---------------------------------------------------------------------------
 // THE REGISTRY
-// kind: "legacy-pair"  — an owner-approved hand-crafted window (kept
+// kind: "legacy-pair"   — an owner-approved hand-crafted window (kept
 //                        byte-intact, immutable-pin rule) + a generated twin
 //                        for the other side
-//        "canonical"   — a pipeline-generated pair at the v13.182 spec
+//        "canonical"    — a pipeline-generated pair at the v13.182 spec
+//        "legacy-scale" — a pipeline-generated pair at the SPEC WINDOW but
+//                        a per-entry `head` px — the v13.184 treatment for
+//                        big clubs whose every source is the same ~460-row
+//                        UEFA cutoff (too shallow for the 91px canonical
+//                        head): the head scales up just enough that the
+//                        figure still reaches the 534 fade floor (the shipped
+//                        yamal-4/mbappe-4 precedent, machine-generated)
 // side_of_file: which slot the EXISTING file was composed for (legacy) —
-//               the twin mirrors it; canonical pairs are generated both ways
+//               the twin mirrors it; canonical/legacy-scale pairs are
+//               generated both ways
 // ---------------------------------------------------------------------------
 const ENTRIES = {
   "Chelsea FC": {
@@ -85,6 +93,45 @@ const ENTRIES = {
     source: "assets/players/hero/lautaro-martinez.webp",
     fade: 66, origin: "generated 2026-10-26 at the v13.182 canonical spec",
   },
+  // ---- v13.184-mcbig5 (owner: "all desired clubs must have club logo and
+  // players" — no crest-only big clubs): the five unwired BIG_MATCH_TEAMS
+  // clubs, windowed from the site's own library. Liverpool is CANONICAL
+  // (Barcola's 460-row hero canvas spans 441 output rows at 91px — a genuine
+  // spec window, downscale 0.96x); the other four ride legacy-scale (their
+  // every source is the same ~460-row cutoff, too shallow for 91px — the
+  // head scales up just enough to reach the fade floor, the shipped
+  // yamal-4/mbappe-4 precedent, each SMALLER than yamal's 36.1%/mbappe's
+  // 40.1% heads). ----
+  "Liverpool FC": {
+    kind: "canonical",
+    file: "mc-port-barcola-h.webp", twin: "mc-port-barcola-a.webp",
+    source: "assets/players/hero/bradley-barcola.webp",
+    fade: 62, origin: "generated 2026-10-27 at the v13.182 canonical spec (the 2026/27 UCL-roster Liverpool representative — hero/bradley-barcola.webp is the ONE Liverpool source deep enough for a 91px window: figure spans 460 rows at a 95px head)",
+  },
+  "AC Milan": {
+    kind: "legacy-scale", head: 110,
+    file: "mc-port-pulisic-h.webp", twin: "mc-port-pulisic-a.webp",
+    source: "assets/players/clubs/serie-a/ac-milan/christian-pulisic.webp",
+    fade: 72, origin: "generated 2026-10-27 legacy-scale (Milan is outside the 2026/27 UCL roster — the club library is the only photo home; Pulisic is the manifest's active representative)",
+  },
+  "Club Atlético de Madrid": {
+    kind: "legacy-scale", head: 104,
+    file: "mc-port-alvarez-h.webp", twin: "mc-port-alvarez-a.webp",
+    source: "assets/players/clubs/laliga/club-atletico-de-madrid/julian-alvarez.webp",
+    fade: 66, origin: "generated 2026-10-27 legacy-scale (Álvarez — the UCL-roster Atlético representative, manifest active)",
+  },
+  "Borussia Dortmund": {
+    kind: "legacy-scale", head: 103,
+    file: "mc-port-guirassy-h.webp", twin: "mc-port-guirassy-a.webp",
+    source: "assets/players/clubs/bundesliga/borussia-dortmund/serhou-guirassy.webp",
+    fade: 66, origin: "generated 2026-10-27 legacy-scale (Guirassy — the UCL-roster Dortmund representative, manifest active)",
+  },
+  "Paris Saint-Germain FC": {
+    kind: "legacy-scale", head: 119,
+    file: "mc-port-dembele-h.webp", twin: "mc-port-dembele-a.webp",
+    source: "assets/players/hero/ousmane-dembele.webp",
+    fade: 63, origin: "generated 2026-10-27 legacy-scale (Dembélé — the UCL-roster PSG representative, manifest active)",
+  },
 };
 
 function abs(p) { return path.join(__dirname, "..", "..", p); }
@@ -97,11 +144,13 @@ async function build(force) {
     const needTwin = !fs.existsSync(path.join(MC_DIR, e.twin)) || force;
     const needFile = e.kind === "canonical" && (!fs.existsSync(path.join(MC_DIR, e.file)) || force);
 
-    if (e.kind === "canonical") {
+    if (e.kind === "canonical" || e.kind === "legacy-scale") {
       for (const [name, side] of [[e.file, "home"], [e.twin, "away"]]) {
         if (!fs.existsSync(path.join(MC_DIR, name)) || force) {
           const r = await runIngest({
-            srcFile: abs(e.source), outName: name, side, fade: e.fade, mode: "canonical", force,
+            srcFile: abs(e.source), outName: name, side, fade: e.fade,
+            mode: e.kind === "legacy-scale" ? "legacy-scale" : "canonical",
+            head: e.head, force,
           });
           if (!r) { failures++; continue; }
           console.log(`BUILD ${club} ${name} ok`);
@@ -121,8 +170,8 @@ async function build(force) {
     // home/away here = the SLOT each file is COMPOSED FOR (the direction the
     // head leans) — for a legacy club whose approved file was composed for
     // the AWAY slot (Man United / bruno), the twin is the home variant.
-    const homeFile = e.kind === "canonical" ? e.file : (e.side_of_file === "home" ? e.file : e.twin);
-    const awayFile = e.kind === "canonical" ? e.twin : (e.side_of_file === "home" ? e.twin : e.file);
+    const homeFile = e.kind === "canonical" || e.kind === "legacy-scale" ? e.file : (e.side_of_file === "home" ? e.file : e.twin);
+    const awayFile = e.kind === "canonical" || e.kind === "legacy-scale" ? e.twin : (e.side_of_file === "home" ? e.twin : e.file);
     for (const [key, fname] of [["home", homeFile], ["away", awayFile]]) {
       const f = path.join(MC_DIR, fname);
       if (!fs.existsSync(f)) { console.error(`MISSING ${fname} for ${club}`); failures++; continue; }
