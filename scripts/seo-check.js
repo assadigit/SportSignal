@@ -47,13 +47,55 @@ function pass(id, msg) { results.push({ id, ok: true, msg }); console.log("  ✓
 function fail(id, msg) { results.push({ id, ok: false, msg }); failures++; console.log("  ✗ " + msg); }
 function section(t) { console.log("\n== " + t + " =="); }
 
+// v13.186-seofix: politeness + transient-5xx resilience. Root cause (the
+// 2026-10-27 bug hunt): the check's own back-to-back rapid fetches tripped
+// the worker's free-tier CPU budget on cold SSR renders (Cloudflare
+// "exceededResources" -> HTTP 503) — CF analytics caught 11 of them inside
+// ONE T-05 crawl window (the checker was its own biggest outage source;
+// organic slow-paced loads never trip it, 0/40 in probing). Two-part fix:
+//   1. PACE_MS — every origin request waits its turn (>=250ms apart), so
+//      cold renders never land on top of each other.
+//   2. RETRY_5XX — a 502/503/504 (or a network/timeout error) is retried
+//      twice with backoff before it counts. A capacity blip is not a
+//      regression; a SYSTEMATIC block/503 still fails after the retries
+//      (T-11's bot-blocking semantics stay intact — only transient blips
+//      are absorbed).
+const PACE_MS = 250;
+// v13.186-seofix: the backoff is MEASURED, not guessed — a cold-render burst
+// trips the isolate's CPU-average debt and the recovery window is ~3s
+// (2026-10-27 experiment: 4/54 rapid-fire cold pages 503'd; ALL four passed
+// when retried 3s later). The first draft's [400,1500] retried INSIDE the
+// debt window and the retries died with it.
+const RETRY_5XX_MS = [3000, 8000];
+let _lastReqAt = 0;
+const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function fetchRaw(url, opts = {}) {
-  const ctl = new AbortController();
-  const to = setTimeout(() => ctl.abort(), CONFIG.TIMEOUT_MS);
-  try {
-    const res = await fetch(url, { redirect: "manual", signal: ctl.signal, headers: { "user-agent": opts.ua || UA, ...(opts.headers || {}) }, method: opts.method || "GET" });
-    return res;
-  } finally { clearTimeout(to); }
+  let lastErr = null;
+  for (let attempt = 0; attempt <= RETRY_5XX_MS.length; attempt++) {
+    const pace = _lastReqAt + PACE_MS - Date.now();
+    if (pace > 0) await sleepMs(pace);
+    const ctl = new AbortController();
+    const to = setTimeout(() => ctl.abort(), CONFIG.TIMEOUT_MS);
+    try {
+      _lastReqAt = Date.now();
+      const res = await fetch(url, { redirect: "manual", signal: ctl.signal, headers: { "user-agent": opts.ua || UA, ...(opts.headers || {}) }, method: opts.method || "GET" });
+      const transient = res.status === 502 || res.status === 503 || res.status === 504;
+      if (transient && attempt < RETRY_5XX_MS.length && !opts.noRetry) {
+        await sleepMs(RETRY_5XX_MS[attempt]);
+        continue;
+      }
+      return res;
+    } catch (e) {
+      lastErr = e;
+      if (attempt < RETRY_5XX_MS.length && !opts.noRetry) {
+        await sleepMs(RETRY_5XX_MS[attempt]);
+        continue;
+      }
+      throw e;
+    } finally { clearTimeout(to); }
+  }
+  throw lastErr || new Error("fetch failed: " + url);
 }
 
 async function body(res) { try { return await res.text(); } catch (e) { return ""; } }
@@ -176,8 +218,18 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       const links = [...html.matchAll(/href="(\/[a-z0-9-]*)"/g)].map((m) => m[1]);
       const internal = links.filter((l) => !/\.(css|js|png|jpg|ico|woff2?|svg|mp4)$/.test(l));
       if (internal.length < 3) fail(id, url + " has only " + internal.length + " internal content links");
-      // images without alt
-      const imgsNoAlt = [...html.matchAll(/<img((?![^>]*alt=)[^>]*)>/gi)].length;
+      // images without alt — in the MARKUP, not in embedded script text.
+      // v13.186-seofix: the homepage's inline DCL comments carry three
+      // literal "<img>" strings (the v13.180 mcFitScan notes) and the old
+      // raw-HTML regex counted them as attribute-less images — a false
+      // positive that failed EVERY run since v13.180 (100/100 red CI).
+      // Strip <script>/<style>/HTML comments first; the real DOM keeps all
+      // its <img> elements (127 on the homepage, every one alt-carrying).
+      const bodyHtml = html
+        .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+        .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+        .replace(/<!--[\s\S]*?-->/g, " ");
+      const imgsNoAlt = [...bodyHtml.matchAll(/<img((?![^>]*alt=)[^>]*)>/gi)].length;
       if (imgsNoAlt) fail(id, url + " " + imgsNoAlt + " <img> without alt");
       // JSON-LD presence
       if (!/application\/ld\+json/.test(html)) fail(id, url + " no JSON-LD");

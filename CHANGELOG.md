@@ -4,6 +4,47 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# QA hotfix — the seo-check CI turns green (both failing families fixed)
+
+_2026-10-27 · on top of v13.185-mcfront · scripts-only (no worker/assets
+change — the deployed VERSION stays 13.185-mcfront)_
+
+**The symptom.** The `seo-check` GitHub Action failed on **every single
+run** — 100/100 since 2026-10-18 (every push + the daily 06:53 schedule),
+a permanently red CI the owner sees on each commit. Exactly two check
+families failed:
+
+1. **[T-03] "3 `<img>` without alt" on the homepage — a false positive.**
+   The check counted `<img>` with a raw-HTML regex, and the homepage's
+   inline DCL script carries three *literal* `<img>` strings inside
+   JavaScript comments (the v13.180 mcFitScan notes: "whenever ANY port
+   carries an `<img>`" …). The real DOM has zero alt-less images (138
+   imgs, every one alt-carrying). **Fix:** strip `<script>/<style>`/HTML
+   comments before the img scan — real markup keeps all its `<img>`
+   elements (127 after the strip, all with `alt`).
+
+2. **[T-05] intermittent HTTP 503 on crawled URLs — the checker was its
+   own outage source.** CF analytics caught 11 `exceededResources` errors
+   inside ONE crawl window: the crawler's back-to-back cold SSR renders
+   trip the Workers free-tier CPU-average budget, and the per-colo
+   `caches.default` render hold only helps *repeat* hits. Organic loads
+   never trip it (40/40 slow-paced probes pass; single cold renders at
+   >=1s spacing pass). **Fix (measured, not guessed):** `fetchRaw` now
+   paces every origin request (>=250ms apart) and retries transient
+   502/503/504 (and network errors) twice; the backoff `[3s, 8s]` comes
+   from a controlled experiment — 4/54 rapid-fire cold pages 503'd and
+   ALL four passed when retried 3s later (the isolate's CPU debt decays
+   in ~3s; a first draft at [400ms, 1.5s] retried inside the debt window
+   and died with it). A *systematic* block/503 still fails after the
+   retries, so T-11's bot-blocking semantics stay intact.
+
+**Verified:** a full production run now reports `PASS: 56 FAIL: 0`
+(exit 0) — T-03 "checked 15 templates + 8 random sitemap URLs", T-05
+"crawled 85 internal URLs to depth 3, 0 errors". Gates: tsc EXIT 0,
+npm test EXIT 0 (2387 checks). No production change (the 503s are
+load-induced blips on cold renders; the per-colo render hold and the
+organic-traffic path are untouched).
+
 # v13.185-mcfront — Dortmund's front face (owner: "Yes fetch front-facing dortmund source")
 
 _2026-10-27 · on top of v13.184-mcbig5_
