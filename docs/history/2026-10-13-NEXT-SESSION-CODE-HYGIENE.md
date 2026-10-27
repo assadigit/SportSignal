@@ -32,7 +32,7 @@
 
 ```
 GitHub repo:   https://github.com/assadigit/SportSignal.git
-GitHub token:  REDACTED-GITHUB-TOKEN
+GitHub token:  [REDACTED:github_token — was live in plaintext here 2026-10-13 onward; purged from git history + repo made public in v13.187-publicity. Rotate: GitHub Settings > Developer settings > Personal access tokens; the classic PAT cannot be revoked via API]
 Clone to:      /home/z/sportsignal   (clone URL with token:
                https://assadigit:<token>@github.com/assadigit/SportSignal.git)
 
