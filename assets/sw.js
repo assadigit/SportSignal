@@ -650,7 +650,19 @@
 //              change propagates without eviction; the bump is the
 //              every-release routine (v13.39 rule discipline) and evicts
 //              any cached first paint of stale payload-derived markup.
-const CACHE = "sportsignal-v90";
+// v13.188-publicity (the repo goes PUBLIC + the first real CI runs): the
+//              release is again server-side — the UCL starball chip's SVG
+//              path carried two LOST-SPACE corruptions since inception
+//              ("0.50 2.9" was "0.5 0 2.9", "0.90 1.8" was "0.9 0 1.8";
+//              both implicit cubic repeats ran a parameter short, Chrome
+//              aborted the path parse mid-way, and the homepage starball
+//              rendered TRUNCATED with two console errors on every load —
+//              found by the first unblocked Lighthouse run) and the CSP
+//              blocked the zone's own Cloudflare Web Analytics beacon
+//              (script-src/connect-src now allow the cloudflareinsights
+//              origins). The chip is SSR-inlined, so the bump evicts any
+//              cached first paint of the truncated starball.
+const CACHE = "sportsignal-v91";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

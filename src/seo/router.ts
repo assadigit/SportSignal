@@ -41,7 +41,10 @@ function htmlHeaders(envSafe: boolean, extra?: Record<string, string>): Record<s
     "strict-transport-security": "max-age=31536000; includeSubDomains",
     // CSP: same policy as the existing PAGE_SEC_HEADERS (keeps the inline
     // JSON-LD + theme scripts allowed; no third-party origins).
-    "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'"
+    // v13.188-publicity: + the Cloudflare Web Analytics beacon origins
+    // (script-src static.cloudflareinsights.com / connect-src
+    // cloudflareinsights.com) — kept byte-identical to PAGE_SEC_HEADERS.
+    "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'"
   };
   if (envSafe) h["x-robots-tag"] = "noindex, nofollow";
   return Object.assign(h, extra || {});

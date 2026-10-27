@@ -120,7 +120,7 @@ const check = (name, cond) => {
   // sw cache bumped (the release pin: v89 shipped v13.186-qa; v13.187 is a
   // no-asset release — the bump is the every-release routine)
   const sw = fs.readFileSync(path.join(ROOT, "assets", "sw.js"), "utf8");
-  check("wiring: SW cache bumped to sportsignal-v90 (v13.187-laligadepth — the La Liga depth round: the canonicalization attempt is a DOCUMENTED NO-GO (laliga.com's squad photo system is waist-up — see SPEC.md), so the mc map is unchanged; the release ships the FD-crest pass-through hardening)", /const CACHE = "sportsignal-v90"/.test(sw) && !/const CACHE = "sportsignal-v89"/.test(sw) && !/const CACHE = "sportsignal-v88"/.test(sw));
+  check("wiring: SW cache bumped to sportsignal-v91 (v13.188-publicity — the repo goes public + the first real CI runs: the starball path repair + the CSP beacon allowance are server-side, the mc map is unchanged; the registry byte-stable — this gate re-proves the 14-club map untouched)", /const CACHE = "sportsignal-v91"/.test(sw) && !/const CACHE = "sportsignal-v90"/.test(sw) && !/const CACHE = "sportsignal-v89"/.test(sw));
 
   console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / wiring)");
   process.exit(failed ? 1 : 0);
