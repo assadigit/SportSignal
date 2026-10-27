@@ -119,7 +119,7 @@ const check = (name, cond) => {
 
   // sw cache bumped (the release pin: v87 shipped these assets)
   const sw = fs.readFileSync(path.join(ROOT, "assets", "sw.js"), "utf8");
-  check("wiring: SW cache bumped to sportsignal-v88", /const CACHE = "sportsignal-v88"/.test(sw) && !/const CACHE = "sportsignal-v87"/.test(sw));
+  check("wiring: SW cache bumped to sportsignal-v89 (v13.186-qa — the EN hero-name fit + the standings crest parity)", /const CACHE = "sportsignal-v89"/.test(sw) && !/const CACHE = "sportsignal-v88"/.test(sw) && !/const CACHE = "sportsignal-v87"/.test(sw));
 
   console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / wiring)");
   process.exit(failed ? 1 : 0);

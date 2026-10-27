@@ -83,7 +83,11 @@ let uclOut;
 // snapshot fallback source declared above the extracted block) — stub it
 // null so the stCL-null path keeps its pre-13.53 semantics (started=true,
 // teams=null).
-try { const out = eval("(() => { const stPGL = null; const stCL = null; var snapUcl = null; const matches = " + JSON.stringify(matches) + ";" + cupBlock.replace("const cupOrder", "var cupOrder") + "return { cups, ucl };})()"); cups = out.cups; uclOut = out.ucl; }
+// v13.186-qa: the block now also carries the standings crest/faName
+// enrichment loop (placed after crestOf) — stub an empty standings map so
+// the enrichment iterates nothing (it is not under test here; the dedicated
+// check-stats pin covers it).
+try { const out = eval("(() => { const stPGL = null; const stCL = null; var snapUcl = null; const standings = {}; const matches = " + JSON.stringify(matches) + ";" + cupBlock.replace("const cupOrder", "var cupOrder") + "return { cups, ucl };})()"); cups = out.cups; uclOut = out.ucl; }
 catch (e) { console.error("FAIL: cups block threw: " + e.message); process.exit(1); }
 
 const byCode = {};

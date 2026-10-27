@@ -4,6 +4,75 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.186-qa — the QA follow-ups round: the EN hero-name fit + the league-standings crest parity
+
+_2026-10-27 · on top of v13.185-mcfront + the seo-check QA hotfix · both QA
+follow-ups found in the v13.185 bug-hunt sweep, fixed + gated_
+
+**FIX 1 — the EN hero card names never ellipsized to nothing ("MANCHESTER
+…" on the Chelsea-United live card).** Three coordinated parts:
+
+1. **The slot widens** (`public-13.72.css`, rename-on-edit — `13.71.css`
+   stays byte-frozen on disk + pinned one SEO TTL): `.hero-mcard .mc-name`
+   `width:30cqw → 38cqw`. The slots stay centered on the 30%/70% axes —
+   spans 11-49% / 51-89%, a 2% seam each side of the card axis, never
+   crossing; short names render pixel-identically (`text-align:center`),
+   long names gain 8cqw of runway.
+2. **The EN display trim** (`public-13.54.js`, rename-on-edit — `13.53.js`
+   stays served + pinned one SEO TTL): `renderMCard`'s `nm()` strips the
+   legal suffixes for the card display only (leading `FC `/`CF ` +
+   trailing ` FC`/` CF`/` AFC`, the broadcast-HUD convention — "Manchester
+   United FC" renders "MANCHESTER UNITED"; FA names keep their `faName`
+   form; the trim is guarded so a trim-to-empty keeps the original, and
+   the aria-label rides it too). The SSR `mcardHtml` (`seo/markup.ts`)
+   applies the IDENTICAL trim feeding the SAME `.mc-name-xl` length rule,
+   so the no-JS paint and the post-JS render keep agreeing
+   class-for-class on the EN-fallback path.
+3. **The fit** (`fitMcNames()` in `13.54.js`): the established
+   `fitHeroNames` measurement pattern, width-flavored — reset the inline
+   step, read the computed step font, shrink 0.75px per pass (≤16 passes)
+   while `scrollWidth` overflows `clientWidth`, floor at **62%** of the
+   step size (proportional — the same fraction holds at 320/390/430).
+   Wired into `renderMCard` right after both name slots are placed (every
+   load / language-toggle / poll re-render) + the resize rAF pass + the
+   webfont-ready hook (both re-fit alongside `fitHeroNames`).
+
+Measured against the live card (playwright, 320/390/430): every name in the
+hero universe — the desired-team pairs the card can ever show, longest after
+the trim: "MANCHESTER UNITED" (17), "BORUSSIA DORTMUND" (17), "PARIS
+SAINT-GERMAIN" (19) — now renders **full, one line** at every width (the
+17-char names ride a ≤3% fit shrink at 390, imperceptible). Names OUTSIDE
+the desired universe (23-24 chars: "BORUSSIA MÖNCHENGLADBACH",
+"WOLVERHAMPTON WANDERERS" — never a hero pairing, both teams must be
+desired) land exactly at the 62% floor and degrade to the graceful
+nowrap+ellipsis — the broadcast-ticker fallback for the unreachable tail.
+FA names (all fit natively at 4.2cqw even before the widen) are untouched
+by the fit (it exits on the first non-overflowing pass).
+
+**FIX 2 — the league standings rows carry no crest (the UCL table has
+them since v12.18).** The `strow` renderer (`renderStandings` in
+`13.54.js`) gains the **exact `renderUcl` markup**: `.stname.haslogo`
+wrapping `.stlogo` (lazy/async/no-referrer, `onerror` drops the img AND
+the class) + the `.sttxt` name span; a team without a crest keeps the
+plain-name branch (renderUcl's graceful contract). Zero CSS additions —
+`.stlogo`/`.haslogo`/`.sttxt` are shared classes the UCL table already
+styles. The payload side (`src/public-matches.ts`) enriches EVERY
+standings code's teams with `crest` (the clubs-catalog `crestMap` — the
+same `crestOf` the UCL table uses) + `faName` (the same `translateTeam`
+stack, written only when it actually translates — the EN fallback keeps
+`nameInto`'s LTR-bdi path), right after the crestMap is built so
+stale-snapshot tables are covered too. Bonus parity: FA pages now show
+Persian club names in the league tables (the SSR `standingsHtml` picks
+up `faName` automatically) — matching the UCL table's behavior.
+
+**Release wiring.** `VERSION 13.186-qa`, package `13.186.0.0`, SW
+`sportsignal-v88 → v89` (evicts any cached first paint of the old
+name-slot width + the old payload shape), `_headers` immutable pins for
+both new bundles (the retired pair stays pinned one SEO TTL),
+`check-stats` pins rewritten + 7 new gate checks (the trim, the fit, the
+wiring, the widen, the SSR class-agreement, the enrichment, the strow
+markup), `check-admin-parity` baseline re-frozen.
+
 # QA hotfix — the seo-check's two failing families fixed + the CI's true blocker found
 
 _2026-10-27 · on top of v13.185-mcfront · scripts-only (no worker/assets

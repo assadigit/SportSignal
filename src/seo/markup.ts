@@ -323,9 +323,23 @@ export function mcardHtml(sm: SeoMatch): string {
   // > 11 chars) step down to .mc-name-xl — the SAME rule the client's
   // renderMCard applies, so the no-JS paint and the post-JS render agree
   // class-for-class.
+  // v13.186-qa: EN names display-trimmed on the HUD card (the broadcast
+  // convention — the legal suffixes go, "Manchester United FC" renders
+  // "MANCHESTER UNITED"; FA names keep their faName form untouched). The
+  // SAME trim feeds the length rule and the displayed text; the client's
+  // nm() applies the identical trim (public-13.54.js) so the class
+  // agreement holds on the EN-fallback SSR path (a team without a faName).
+  const mcName = (t: any): string => {
+    let n: any = t && (t.faName || t.name);
+    if (n && !(t && t.faName) && /^[A-Za-z]/.test(String(n))) {
+      const tn = String(n).replace(/^(FC|CF)\s+/i, "").replace(/\s+(FC|CF|AFC)$/i, "");
+      if (tn) n = tn;
+    }
+    return n == null ? "" : String(n);
+  };
   const nameCls = (t: any): string => {
-    const n = t && (t.faName || t.name);
-    return "mc-slot mc-name" + (n && String(n).length > 11 ? " mc-name-xl" : "");
+    const n = mcName(t);
+    return "mc-slot mc-name" + (n.length > 11 ? " mc-name-xl" : "");
   };
   let out = "";
   // the white competition lockup (unmapped comps render an empty slot)
@@ -335,8 +349,8 @@ export function mcardHtml(sm: SeoMatch): string {
   // the crests — the MC_CREST white overrides first, the FD crest URLs fallback
   out += mcCrestHtml(m.homeTeam, false);
   out += mcCrestHtml(m.awayTeam, true);
-  out += mcTextHtml(nameCls(m.homeTeam), m.homeTeam && (m.homeTeam.faName || m.homeTeam.name));
-  out += mcTextHtml(nameCls(m.awayTeam) + " mc-name-a", m.awayTeam && (m.awayTeam.faName || m.awayTeam.name));
+  out += mcTextHtml(nameCls(m.homeTeam), mcName(m.homeTeam) || undefined);
+  out += mcTextHtml(nameCls(m.awayTeam) + " mc-name-a", mcName(m.awayTeam) || undefined);
   out += mcTextHtml("mc-slot mc-date", dt);
   out += mcTextHtml("mc-slot mc-ko", tm);
   return out;

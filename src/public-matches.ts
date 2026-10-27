@@ -703,6 +703,25 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     }
   }
   const crestOf = (n) => n ? crestMap.get(normTeamKey(n)) || null : null;
+  // v13.186-qa: the league tables get the SAME crest + faName enrichment the
+  // UCL table has carried since v12.18 — the strow renderer (public-13.54.js)
+  // already knows the haslogo/stlogo/sttxt pattern (shared CSS, the UCL
+  // markup verbatim); a team without a catalog crest renders name-only
+  // (the graceful branch — renderUcl's contract), a broken img drops itself.
+  // faName rides the same translateTeam stack as every other surface (only
+  // when it actually translates — the EN fallback nameInto already wraps in
+  // an LTR bdi), so the FA pages show Persian club names in the league
+  // tables like the UCL table already does.
+  for (const c of Object.keys(standings)) {
+    const st = standings[c];
+    if (st && Array.isArray(st.teams) && st.teams.length) {
+      st.teams = st.teams.map((t) => {
+        if (!t || !t.name || (t.crest != null && t.faName != null)) return t;
+        const fa = t.faName || translateTeam(t.name);
+        return { ...t, faName: fa && fa !== t.name ? fa : t.faName || undefined, crest: t.crest || crestOf(t.name) || undefined };
+      });
+    }
+  }
   const ucl = {
     emblem: LEAGUE_LOGOS.CL || null,
     matchday: stCL ? stCL.matchday : snapUcl ? snapUcl.matchday : null,

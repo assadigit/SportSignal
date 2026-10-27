@@ -70,18 +70,13 @@
 
 
 
-/public-13.32.js
-  Cache-Control: public, max-age=31536000, immutable
-
-/public-13.31.js
-  Cache-Control: public, max-age=31536000, immutable
-
-/public-13.30.js
-  Cache-Control: public, max-age=31536000, immutable
-
-/public-13.29.js
-  Cache-Control: public, max-age=31536000, immutable
-
+# v13.186-qa: the public-13.29/13.30/13.31/13.32.js pins EVICTED — the Workers
+# _headers rule limit (100) forced the sweep of the oldest retired pins (the
+# v13.128-layoutrefine era, ~58 releases past their one-SEO-TTL retention;
+# no HTML has referenced them since v13.129, their immutable cache windows
+# are long dead). The files stay on disk (assets/public-13.2x-3x.js) — a
+# stray ancient cached HTML re-fetching one gets the default cache headers,
+# a 404 is impossible while the asset exists.
 # v13.155-herodepth (the hero visual depth pass, spec-driven): (1) the
 # projected player-shadow plane — blackened copies of the same portrait
 # PNGs cast inward+down onto the HUD artwork's measured INNER face
@@ -353,6 +348,17 @@
 /public-13.53.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.186-qa: the QA follow-ups round on the bundle — (1) the EN hero-name
+# fit: nm() display-trims the EN legal suffixes ("Manchester United FC" ->
+# "MANCHESTER UNITED", the broadcast convention) + fitMcNames() (the
+# fitHeroNames measurement pattern, width-flavored, proportional 62% floor)
+# wired into renderMCard + the resize/webfont re-fit hooks; (2) the league
+# standings crest parity: renderStandings' strow gains the exact renderUcl
+# haslogo/stlogo/sttxt crest markup (shared CSS). (rename-on-edit; 13.53.js
+# stays served + pinned one SEO TTL above.)
+/public-13.54.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.52.js
   Cache-Control: public, max-age=31536000, immutable
 
@@ -367,6 +373,14 @@
 # the name is retired because BOTH 13.170 variants shipped different
 # contents under it).
 /public-13.71.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.186-qa: the hero-card name slot widens 30cqw -> 38cqw (the slots stay
+# centered on the 30%/70% axes, spans 11-49%/51-89% — never crossing the
+# card axis; short names render identically, long EN names gain runway
+# before the 13.54.js fitMcNames shrink engages). (rename-on-edit; 13.71.css
+# stays served + pinned one SEO TTL above.)
+/public-13.72.css
   Cache-Control: public, max-age=31536000, immutable
 
 /fonts/Poppins-Bold.woff2
