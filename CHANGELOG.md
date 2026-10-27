@@ -4,6 +4,96 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.187-laligadepth — the La Liga depth round: the canonicalization no-go (documented) + the FD-crest hardening
+
+_2026-10-27/28 · on top of v13.186-qa · the brief asked for "the final
+canonicalization"; the honest answer is a documented NO-GO plus one
+hardening fix_
+
+**THE CANONICALIZATION — checked, evidenced, and correctly REFUSED.** The
+brief: walk the documented Bundesliga depth path (v13.185-mcfront) for
+Barcelona (Yamal) + Real Madrid (Mbappé) — "find the official laliga.com
+full-body transparent PNGs", VLM-verify, publish as
+`assets/players/clubs/laliga/<player>-fullbody.webp`, flip the registry to
+canonical. The hunt ran the full §8b accessor pattern and the answer is:
+**laliga.com does not serve full-body player PNGs — the path does not
+reproduce.** The evidence (all recorded in `docs/mc-heroes/SPEC.md`'s La
+Liga depth note):
+
+1. **The laliga.com photo system is waist-up.** The player pages (found
+   via the sitemap index: `en-GB/player/lamine-yamal` +
+   `en-GB/player/kylian-mbappe-lottin`, title-verified) expose a `photos`
+   object with four variants under
+   `assets.laliga.com/squad/2026/t{team}/p{player}/{size}/…_{series}_{variant}_000.png`:
+   004 (the known EA-FC card render), **001 (the "tall" 1024×1113 /
+   2048×2225 transparent PNG — a WAIST-UP cutout)**, 002 (JPG), 003
+   (square transparent PNG, same pose family). A URL-space probe
+   (series 0-3 × variants 000-006, polite pacing) found exactly one
+   unlisted extra — series-0 variant 001, another waist-up pose. Five
+   images per player, all waist-up or renders; no `/player/*-body.png`
+   family exists (404 on every Bundesliga-style pattern probe).
+2. **The geometry deficit is conclusive.** The deepest figure (Yamal's
+   tall s1v1, 2048×2225, head 539px) spans **4.06 head-widths below the
+   crown = 369 output rows at the 91px canonical head — 51 rows short of
+   the 420-row floor** (`min_figure_span_out_rows`); Mbappé 3.1-3.9
+   heads = 283-354 rows. Control: the official Bundesliga full-body PNG
+   spans 5.26 heads = 479 rows. The current library sources (391/334
+   rows) remain the BEST available — the La Liga tall PNGs are strictly
+   worse, so no asset swap is warranted either.
+3. **Hard cuts, not natural figure ends.** Bottom-strip analysis: both
+   tall variants end at the image bottom with full-opacity runs
+   (alpha-255, 853/1176px wide at the final row) — cropped mid-jersey
+   (VLM: "cropped horizontally through the lower part of the striped
+   jersey" / "through the lower torso and waist"), unlike the
+   Bundesliga original whose figure ends at the feet naturally.
+4. **Style + identity pass, depth fails.** Both tall variants ARE real
+   front-facing photos of the right players in club kit, no overlays
+   (Yamal: high-confidence identity zoom-read; Mbappé: same-person
+   verdict vs the kit-verified library source after two
+   appearance-only misfires — "Vinícius"/"Trent" — the documented
+   v13.185 misfire class). They would pass every Dortmund-style gate
+   EXCEPT the depth guard — which is the point of the guard. Per the
+   brief's own rule ("do NOT force an upscale"), the registry entries
+   stay untouched and no La Liga asset ships.
+
+**THE HARDENING (the change that did ship) — `fetchStandings` passes
+`r.team.crest` through.** The FD v4 standings rows carry
+`r.team.crest`; `composers.ts` now maps it onto every team row (all three
+FD paths: the live table, the notStarted `/teams` roster rows, the
+zero-points table fallback), so the league-table crest enrichment has TWO
+independent sources instead of one: **the FD crest URL becomes the
+PRIMARY, the clubs catalog (`crestOf`) stays the fallback.** The payload
+side follows the same rule — `public-matches.ts`'s `compact()` carries
+`t.crest` into the top-8 rows (the v13.186-qa enrichment loop's
+`t.crest`-first term goes live), and the UCL card's teams map prefers
+`t.crest` before `crestOf` (the v12.18 catalog-only contract upgrades to
+the same FD-primary rule). A code whose clubs-catalog entry is stale or
+missing still renders its logos; old KV-cached rows without `crest`
+degrade to the catalog-only v13.186-qa look unchanged — the migration is
+gradual by construction (the 6h freshness gates + 24h TTL roll the field
+in). Harmless to every text consumer (Telegram tables, SEO pages, the
+notify engine — none read `crest`).
+
+**THE CI CHECK — the billing block is NOT cleared.** A workflow_dispatch
+run of `seo-check` was triggered (run 40564192991) and died in ~2s with
+zero executed steps — the exact annotation:
+`The job was not started because recent account payments have failed or
+your spending limit needs to be increased. Please check the 'Billing &
+plans' section in your settings`. The owner-side fix (GitHub Settings >
+Billing & plans) is still pending; the checks themselves were verified
+green locally twice (PASS 56 FAIL 0) by the v13.186-qa QA hotfix, so the
+next run after the block clears is positioned to be the first GREEN.
+
+**Release wiring.** `VERSION 13.187-laligadepth`, package `13.187.0.0`,
+SW `sportsignal-v89 → v90` (no new assets — API/navigations are
+network-first so the crest change propagates without eviction; the bump
+is the every-release routine), `check-stats` +5 new v13.187 gates (the
+release wiring, the crest pass-through ×3, the no-go note-on-file) +
+the SW pins moved to v90, `check-mc-heroes` SW pin moved to v90 (the
+registry itself untouched — the gate re-proves the 14-club map is
+byte-stable), parity baselines unchanged (no template change — the
+check passes as-frozen).
+
 # v13.186-qa — the QA follow-ups round: the EN hero-name fit + the league-standings crest parity
 
 _2026-10-27 · on top of v13.185-mcfront + the seo-check QA hotfix · both QA

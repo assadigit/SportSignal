@@ -641,7 +641,16 @@
 //              src swap inside mcFitScan (a club flipping home/away between
 //              fixtures can never render a head leaning off-center). The
 //              bump evicts any cached first paint of the 6-club map.
-const CACHE = "sportsignal-v89";
+// v13.187-laligadepth (the La Liga depth round): no new assets — the
+//              release is server-side (fetchStandings passes r.team.crest
+//              through so the league-table crest enrichment gets the FD
+//              crest as PRIMARY with the clubs catalog as fallback; the
+//              compact() mapper + the UCL teams map carry it into the
+//              payload). API/navigations are network-first, so the crest
+//              change propagates without eviction; the bump is the
+//              every-release routine (v13.39 rule discipline) and evicts
+//              any cached first paint of stale payload-derived markup.
+const CACHE = "sportsignal-v90";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

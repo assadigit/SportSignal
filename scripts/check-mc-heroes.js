@@ -117,9 +117,10 @@ const check = (name, cond) => {
     check("wiring: wire.js --check in sync — " + String(err.stdout || err.message), false);
   }
 
-  // sw cache bumped (the release pin: v87 shipped these assets)
+  // sw cache bumped (the release pin: v89 shipped v13.186-qa; v13.187 is a
+  // no-asset release — the bump is the every-release routine)
   const sw = fs.readFileSync(path.join(ROOT, "assets", "sw.js"), "utf8");
-  check("wiring: SW cache bumped to sportsignal-v89 (v13.186-qa — the EN hero-name fit + the standings crest parity)", /const CACHE = "sportsignal-v89"/.test(sw) && !/const CACHE = "sportsignal-v88"/.test(sw) && !/const CACHE = "sportsignal-v87"/.test(sw));
+  check("wiring: SW cache bumped to sportsignal-v90 (v13.187-laligadepth — the La Liga depth round: the canonicalization attempt is a DOCUMENTED NO-GO (laliga.com's squad photo system is waist-up — see SPEC.md), so the mc map is unchanged; the release ships the FD-crest pass-through hardening)", /const CACHE = "sportsignal-v90"/.test(sw) && !/const CACHE = "sportsignal-v89"/.test(sw) && !/const CACHE = "sportsignal-v88"/.test(sw));
 
   console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / wiring)");
   process.exit(failed ? 1 : 0);

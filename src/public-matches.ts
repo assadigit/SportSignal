@@ -484,7 +484,12 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     // v12.16: full per-team stats ride along (played/won/draw/lost/gf/ga/gd —
     // fd and the PGL Wikipedia fallback serve them; sources without stats
     // simply carry undefined and the UI renders "—").
-    teams: st.teams.slice(0, 8).map((t) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), points: t.points, played: t.played, won: t.won, draw: t.draw, lost: t.lost, gf: t.gf, ga: t.ga, gd: t.gd != null ? t.gd : t.gf != null && t.ga != null ? t.gf - t.ga : null }))
+    // v13.187-laligadepth: crest rides along too — the FD v4 standings row
+    // now passes r.team.crest through (composers.ts), so the enrichment
+    // loop below sees the FD crest as the PRIMARY (t.crest first) with the
+    // clubs catalog (crestOf) demoted to the fallback. Old KV rows without
+    // crest degrade unchanged (catalog-only, exactly the v13.186-qa look).
+    teams: st.teams.slice(0, 8).map((t) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), crest: t.crest || undefined, points: t.points, played: t.played, won: t.won, draw: t.draw, lost: t.lost, gf: t.gf, ga: t.ga, gd: t.gd != null ? t.gd : t.gf != null && t.ga != null ? t.gf - t.ga : null }))
   } : null;
   const stMap: Record<string, any> = {};
   // v13.55-epochflow: standings are now read CACHE-ONLY on every serve-path
@@ -733,7 +738,11 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     // now (MP / W / D / L / GD / Pts columns), not just points.
     // v12.18: + crest (the round club logo the user asked for).
     // v13.53-standsteady: snapshot's teams fill the card when stCL is empty.
-    teams: stCL ? stCL.teams.map((t) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), crest: crestOf(t.name), points: t.points, played: t.played, won: t.won, draw: t.draw, lost: t.lost, gf: t.gf, ga: t.ga, gd: t.gd != null ? t.gd : t.gf != null && t.ga != null ? t.gf - t.ga : null })) : snapUcl && Array.isArray(snapUcl.teams) && snapUcl.teams.length ? snapUcl.teams : null,
+    // v13.187-laligadepth: FD crest primary (t.crest — fetchStandings passes
+    // it through now), catalog fallback — the same hardening the league
+    // tables' enrichment loop got; a UCL side missing from the clubs
+    // catalog still shows its logo.
+    teams: stCL ? stCL.teams.map((t) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), crest: t.crest || crestOf(t.name), points: t.points, played: t.played, won: t.won, draw: t.draw, lost: t.lost, gf: t.gf, ga: t.ga, gd: t.gd != null ? t.gd : t.gf != null && t.ga != null ? t.gf - t.ga : null })) : snapUcl && Array.isArray(snapUcl.teams) && snapUcl.teams.length ? snapUcl.teams : null,
     matches: clBox.map(pubMatch)
   };
   const tNow = getNowTehran(env);

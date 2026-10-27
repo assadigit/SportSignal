@@ -111,8 +111,8 @@ renders the pair at the real CSS geometry (fades included) for a VLM
 | **Club Atlético de Madrid** | **mc-port-alvarez-h** | **legacy-scale 104px** | v13.184: Álvarez (UCL-roster rep); fade 66 (crest bottom ~63-65%H) |
 | **Borussia Dortmund** | **mc-port-guirassy-2-h** | **canonical 91px** | v13.185: Guirassy RE-WINDOWED at the true canonical spec from the official Bundesliga full-body PNG (`serhou-guirassy-fullbody.webp`, 780×960 transparent, dfl-obj-00278s — VLM-verified front-facing photo, arms crossed); fade 68 (grid-VLM crest bottom 66%); replaces the v13.184 back-view legacy-scale 103px window (guirassy-h/-a stay on disk, immutable-pin) |
 | **Paris Saint-Germain FC** | **mc-port-dembele-h** | **legacy-scale 119px** | v13.184: Dembélé (UCL-roster rep, Ballon d'Or-era star); fade 63 (crest bottom ~61-62%H); his pointing arm dissolves into the by-design center blend |
-| FC Barcelona | mc-port-yamal-4 | **legacy 107px head** | source too shallow to canonicalize (391 of 420 rows); El Clasico pairs fine (both legacy) |
-| Real Madrid CF | mc-port-mbappe-4 | **legacy 125px head** | same limitation |
+| FC Barcelona | mc-port-yamal-4 | **legacy 107px head** | v13.187: the laliga.com full-body hunt CLOSED — no windowable source exists (see the La Liga depth note); stays legacy |
+| Real Madrid CF | mc-port-mbappe-4 | **legacy 125px head** | v13.187: same closure — no windowable source (334 of 420 rows) |
 | Tottenham Hotspur FC | art-tottenham-6 | art (34%W) | dormant — not in BIG_MATCH_TEAMS; kept + twinned |
 
 **Every BIG_MATCH_TEAMS + PSG club is wired** (v13.184 — the owner's
@@ -131,11 +131,59 @@ the body PNG (the §8b accessor pattern), publish it as
 `<player>-fullbody.webp` in the club folder, flip the registry entry to
 `kind: "canonical"` with new immutable file names, `mc:build` + `mc:wire`.
 
+**The La Liga depth note (v13.187) — the path does NOT reproduce, checked
+and closed with evidence.** The Bundesliga upgrade was attempted for
+Barcelona (Yamal) + Real Madrid (Mbappé) on 2026-10-27 and stopped at the
+source hunt: **laliga.com has no full-body player PNGs.** The evidence:
+
+1. **The photo system is waist-up.** The laliga.com player pages (title-
+   verified `Lamine Yamal Nasraoui Ebana LALIGA EA SPORTS | LALIGA`,
+   `en-GB/player/kylian-mbappe-lottin`) expose a `photos` object with four
+   variants under `assets.laliga.com/squad/2026/t{team}/p{player}/{size}/
+   p{player}_t{team}_2026_{series}_{variant}_000.png`: **004** (the known
+   EA-FC card render), **001** (the "tall" 1024×1113 / 2048×2225
+   transparent PNG), **002** (JPG), **003** (square 2048×2048 transparent
+   PNG). A URL-space probe (series 0–3 × variants 000–006) found exactly
+   ONE unlisted extra — series-0 variant 001 — another waist-up pose.
+   Five images per player, all waist-up or renders. There is no
+   `/player/*-body.png` family (404 on every Bundesliga-style pattern).
+2. **The geometry deficit.** The deepest available figure (Yamal s1v1,
+   2048×2225, head 539px) spans **4.06 head-widths below the crown = 369
+   output rows at the 91px canonical head — 51 rows short of the 420-row
+   floor** (`min_figure_span_out_rows`). Mbappé: 3.1–3.9 heads = 283–354
+   rows. The control: the official Bundesliga full-body PNG spans
+   **5.26 heads = 479 rows** — that is what a windowable source looks
+   like. The current library sources (391/334 rows) remain the BEST
+   available for both clubs — the La Liga tall PNGs are strictly worse.
+3. **Hard cuts, not natural ends.** Both tall variants end at the image
+   bottom with full-opacity runs (alpha-255, 853/1176px wide at the final
+   row) — the figure is cropped mid-jersey (VLM bottom-strip read:
+   "cropped horizontally through the lower part of the striped jersey" /
+   "through the lower torso and waist"). The Bundesliga original's feet
+   run to its bottom edge naturally.
+4. **Style + identity pass, depth fails.** The tall variants ARE real
+   front-facing photos of the right players in club kit, no overlays
+   (Yamal: high-confidence identity read; Mbappé: same-person verdict vs
+   the kit-verified library source — the "Vinícius/Trent" first guesses
+   were appearance-only misfires, the documented v13.185 class). They
+   would pass every Dortmund-style gate EXCEPT the depth guard — which
+   exists precisely so a waist-up cutout is never forced into a window
+   it cannot fill (the >1.6x no-upscale rule's sibling).
+
+Per the v13.187 brief: **Barcelona/Real Madrid keep their legacy windows,
+the registry entries stay untouched, and no La Liga asset ships.** The day
+laliga.com starts serving true full-body cutouts (or a deeper league-
+official source appears), re-run the hunt from this note's URL pattern —
+the Dortmund runbook then applies unchanged.
+
 **Known limitation:** Barcelona/Real Madrid still ride the v13.180
 legacy-scale windows (bigger heads). Cross-pairings against canonical clubs
 (El Clasico vs Chelsea etc.) will show the scale difference. Re-window them
 the day a deeper source for yamal/mbappe exists — `registry.js` entry change
-+ `npm run mc:build`.
++ `npm run mc:build`. (v13.187 update: the laliga.com hunt is CHECKED and
+CLOSED — see the La Liga depth note above; laliga.com serves waist-up
+cutouts only, so the legacy windows remain the best available treatment
+until a genuine full-body source appears.)
 
 ## Provenance & rights
 

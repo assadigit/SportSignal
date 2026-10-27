@@ -294,13 +294,15 @@ export async function fetchStandings(env: Env, code, allowFetch = true, opts?) {
             if (tRes.ok) {
               const tData: any = await tRes.json();
               const roster = (tData.teams || []).slice().sort((a, b) => a.name.localeCompare(b.name));
-              zeroRows = roster.map((t, i) => ({ name: t.name, pos: i + 1, points: 0 }));
+              // v13.187-laligadepth: the FD v4 /teams rows carry crest too —
+              // same pass-through as the standings rows below.
+              zeroRows = roster.map((t, i) => ({ name: t.name, pos: i + 1, points: 0, crest: t.crest || undefined }));
             }
           }
           out = {
             matchday: 0,
             started: false,
-            teams: zeroRows || table.map((r) => ({ name: r.team.name, pos: r.position, points: 0 }))
+            teams: zeroRows || table.map((r) => ({ name: r.team.name, pos: r.position, points: 0, crest: r.team.crest || undefined }))
           };
         } else {
           out = {
@@ -308,8 +310,17 @@ export async function fetchStandings(env: Env, code, allowFetch = true, opts?) {
             started: true,
             // v12.16: full detail per team (the UCL card now renders MP/W/D/L/
             // GF/GA/GD columns); football-data serves all of it.
+            // v13.187-laligadepth (HARDENING): r.team.crest passes through so
+            // the league-table crest enrichment (public-matches.ts) has TWO
+            // independent sources — the FD v4 crest URL rides the KV-cached
+            // standings row as the PRIMARY, the clubs catalog (crestOf)
+            // stays the fallback; a code whose clubs-catalog entry is stale
+            // or missing still renders its logos. Harmless to every other
+            // consumer (the compact() mapper + the enrichment loop decide
+            // what the payload carries; text surfaces ignore it).
             teams: table.map((r) => ({
               name: r.team.name,
+              crest: r.team.crest || undefined,
               pos: r.position,
               points: r.points,
               played: r.playedGames != null ? r.playedGames : r.played,
