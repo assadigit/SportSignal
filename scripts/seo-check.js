@@ -66,7 +66,15 @@ const PACE_MS = 250;
 // (2026-10-27 experiment: 4/54 rapid-fire cold pages 503'd; ALL four passed
 // when retried 3s later). The first draft's [400,1500] retried INSIDE the
 // debt window and the retries died with it.
-const RETRY_5XX_MS = [3000, 8000];
+// v13.187-publicity: a THIRD backoff at 30s — the first real CI run (the
+// billing block cleared, run 40572769486) caught the residual case: a deep
+// cold-render route (lecce-vs-genoa) 503'd through BOTH retries, because
+// each retry itself re-triggers a cold SSR render and re-feeds the very
+// debt it is waiting out (3 attempts inside ~11s all died). The 30s quiet
+// period lets the isolate's CPU-average window fully decay; a probe 30s
+// later returned 200 in 1.7s. Systematic blocks still fail — a true 503
+// wall survives all 4 attempts spanning ~41s and correctly fails T-05/T-11.
+const RETRY_5XX_MS = [3000, 8000, 30000];
 let _lastReqAt = 0;
 const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
 

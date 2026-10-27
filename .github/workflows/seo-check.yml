@@ -17,6 +17,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      # v13.187-publicity: lighthouse must exist BEFORE the check runs —
+      # T-09 spawns the binary directly. The first unblocked CI run
+      # (40572769486) failed 4 checks on "spawnSync lighthouse ENOENT"
+      # because the install only happened in the best-effort step BELOW.
+      # Hard-fail on install errors: the check depends on it (a silent
+      # ENOENT turns 4 green checks into noise).
+      - name: Install lighthouse (T-09 dependency)
+        run: npm i -g lighthouse
       - name: Run SEO checks
         run: node scripts/seo-check.js
       - name: Lighthouse (optional, best effort)
