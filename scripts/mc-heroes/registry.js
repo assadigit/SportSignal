@@ -121,10 +121,10 @@ const ENTRIES = {
     fade: 66, origin: "generated 2026-10-27 legacy-scale (Álvarez — the UCL-roster Atlético representative, manifest active)",
   },
   "Borussia Dortmund": {
-    kind: "legacy-scale", head: 103,
-    file: "mc-port-guirassy-h.webp", twin: "mc-port-guirassy-a.webp",
-    source: "assets/players/clubs/bundesliga/borussia-dortmund/serhou-guirassy.webp",
-    fade: 66, origin: "generated 2026-10-27 legacy-scale (Guirassy — the UCL-roster Dortmund representative, manifest active)",
+    kind: "canonical",
+    file: "mc-port-guirassy-2-h.webp", twin: "mc-port-guirassy-2-a.webp",
+    source: "assets/players/clubs/bundesliga/borussia-dortmund/serhou-guirassy-fullbody.webp",
+    fade: 68, origin: "generated 2026-10-27 at the v13.182 canonical spec (owner-approved front-facing upgrade: the official Bundesliga full-body PNG dfl-obj-00278s — 780x960 transparent, VLM-verified front-facing photo, BVB kit, arms crossed — replaces the back-view UEFA cutoff; Guirassy's head lands at the canonical 91px = every canonical club, a 0.50x downscale; fade 68 = grid-VLM crest bottom 66% + the margin; the guirassy-h/-a back-view pair stays on disk under the immutable-pin rule)",
   },
   "Paris Saint-Germain FC": {
     kind: "legacy-scale", head: 119,

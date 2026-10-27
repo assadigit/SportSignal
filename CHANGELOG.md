@@ -4,6 +4,57 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.185-mcfront — Dortmund's front face (owner: "Yes fetch front-facing dortmund source")
+
+_2026-10-27 · on top of v13.184-mcbig5_
+
+**The owner's directive**: v13.184 shipped Dortmund on Guirassy's official
+UEFA cutoff — a BACK VIEW (surname + number 9, no chest crest), the only
+windowable source the v13.184 audit found, with a documented upgrade path
+("one registry entry + rebuild when a front-facing deep source lands"). The
+owner approved executing that path.
+
+**The source hunt.** The depth problem was never Guirassy — it was the
+library's own framing: every Bundesliga club-library alternate is a 0.42
+TOP-CROP of an official `assets.bundesliga.com` full-body PNG (the 780×960
+transparent originals the alternates builder crops "to head-and-shoulders
+for collection consistency" — the crop that THREW AWAY the figure depth the
+mc window needs). The pipeline's own §8b league-official accessor supplied
+the fetch pattern: player page → dfl-obj ref → body PNG. Fetched (pipeline
+UA, polite pacing): **Guirassy `dfl-obj-00278s` 780×960 transparent PNG**,
+plus Brandt (backup; Adeyemi's head detection fails — afro hair defeats the
+head-band rules). VLM gates: pose FRONT-FACING (arms crossed, face/chest to
+camera), PHOTO not card-render, BVB kit, no overlays; identity verified on
+a zoomed face read (late-20s/early-30s, short-cropped hair, goatee,
+striker build — CONSISTENT; the low-zoom first guess "Moukoko" was an
+appearance-only misfire; page provenance title-verified).
+
+**The window.** Published the original as
+`assets/players/clubs/bundesliga/borussia-dortmund/serhou-guirassy-fullbody.webp`
+(lossless webp, no crop, no downscale — the alternates keep their top-crops)
+and re-windowed Dortmund through the pipeline at the TRUE CANONICAL SPEC:
+**mc-port-guirassy-2-h/-a** — 356×574, crown 123, **head 91px** (the v13.182
+standard — Dortmund leaves the legacy-scale 103px compromise and joins the
+canonical set), cx 198/157 mirrored, figure bottom 573 (dissolves inside the
+fade), fade 68 (grid-VLM crest bottom 66% + the margin; palmer control read
+65% → 66 as calibration). The 0.50× window scale is a pure downscale. The
+back-view guirassy-h/-a stays on disk under the immutable-pin rule.
+
+**QA.** Registry re-measure all-pass (dims/crown/head/cx/bottom/aspect +
+pair mirror 198+157=355). Card-mock VLM on Der Klassiker (Dortmund-Bayern —
+now a canonical-vs-canonical pairing): equal heads, aligned eyes,
+front-facing style match, gradual dissolves, crests sharp, no glitches,
+"professional and highly matched". Cross-pairing vs Chelsea (the approved
+palmer reference): "meets the reference standard". check-mc-heroes CANON
+list += the guirassy-2 pair (every canonical file re-proves at the spec
+targets on every `npm test`).
+
+**Known limitation retired.** Dortmund was the one club in the coverage
+table with a view compromise; the BIG_MATCH_TEAMS universe now renders
+head-for-head canonical in every cross-pairing except the documented
+Barcelona/Real Madrid legacy-scale pair (source-depth-limited, unchanged).
+
+
 # v13.184-mcbig5 — no crest-only big clubs (owner: "I dont approve crest only clubs. especially for this big clubs. all desired clubs must have club logo and players")
 
 _2026-10-27 · on top of v13.183-mchero_

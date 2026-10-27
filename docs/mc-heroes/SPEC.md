@@ -109,7 +109,7 @@ renders the pair at the real CSS geometry (fades included) for a VLM
 | **Liverpool FC** | **mc-port-barcola-h** | **canonical 91px** | v13.184: Barcola (the UCL-roster Liverpool rep) — the ONE Liverpool source deep enough for a true 91px window (460-row figure at a 95px head, downscale 0.96x); fade 62 (crest bottom ~60%H) |
 | **AC Milan** | **mc-port-pulisic-h** | **legacy-scale 111px** | v13.184: Milan is outside the 2026/27 UCL roster — the club library is the photo home; Pulisic is the manifest's active rep; fade 72 (crest bottom ~70%H) |
 | **Club Atlético de Madrid** | **mc-port-alvarez-h** | **legacy-scale 104px** | v13.184: Álvarez (UCL-roster rep); fade 66 (crest bottom ~63-65%H) |
-| **Borussia Dortmund** | **mc-port-guirassy-h** | **legacy-scale 103px** | v13.184: Guirassy (UCL-roster rep) — his official cutoff is a BACK VIEW (surname + number 9, no chest crest; the card's crest slot still shows the BVB logo); VLM-reviewed acceptable as the face-off look. Upgrade path: one registry entry + rebuild when a front-facing deep source lands |
+| **Borussia Dortmund** | **mc-port-guirassy-2-h** | **canonical 91px** | v13.185: Guirassy RE-WINDOWED at the true canonical spec from the official Bundesliga full-body PNG (`serhou-guirassy-fullbody.webp`, 780×960 transparent, dfl-obj-00278s — VLM-verified front-facing photo, arms crossed); fade 68 (grid-VLM crest bottom 66%); replaces the v13.184 back-view legacy-scale 103px window (guirassy-h/-a stay on disk, immutable-pin) |
 | **Paris Saint-Germain FC** | **mc-port-dembele-h** | **legacy-scale 119px** | v13.184: Dembélé (UCL-roster rep, Ballon d'Or-era star); fade 63 (crest bottom ~61-62%H); his pointing arm dissolves into the by-design center blend |
 | FC Barcelona | mc-port-yamal-4 | **legacy 107px head** | source too shallow to canonicalize (391 of 420 rows); El Clasico pairs fine (both legacy) |
 | Real Madrid CF | mc-port-mbappe-4 | **legacy 125px head** | same limitation |
@@ -117,12 +117,19 @@ renders the pair at the real CSS geometry (fades included) for a VLM
 
 **Every BIG_MATCH_TEAMS + PSG club is wired** (v13.184 — the owner's
 "no crest-only big clubs" directive: all desired clubs carry BOTH the club
-logo in the crest slots and player windows). The four legacy-scale big
-clubs land at 103-119px heads (28.9-33.4%W) — each SMALLER than the shipped
-yamal-4 (36.1%W) / mbappe-4 (40.1%W) legacy heads, and every one is a
-DOWNSCALE of its 512px library source (no upscale, crisp). Cross-pairings
-legacy-vs-canonical show the scale difference (the same known limitation as
-Barcelona/Real Madrid below).
+logo in the crest slots and player windows). Liverpool and Dortmund are
+CANONICAL (v13.184 / v13.185); Milan/Atlético/PSG ride legacy-scale heads at
+111/104/119px — each SMALLER than the shipped yamal-4 (36.1%W) / mbappe-4
+(40.1%W) legacy heads, and every one is a DOWNSCALE of its source (no
+upscale, crisp). Cross-pairings legacy-vs-canonical show the scale
+difference (the same known limitation as Barcelona/Real Madrid below).
+**The Bundesliga depth note (v13.185):** the club library's Bundesliga
+alternates are 0.42 top-crops of official 780×960 full-body PNGs — the
+depth the mc window needs is IN the originals on `assets.bundesliga.com`.
+Any legacy-scale Bundesliga club upgrades the same way Dortmund did: fetch
+the body PNG (the §8b accessor pattern), publish it as
+`<player>-fullbody.webp` in the club folder, flip the registry entry to
+`kind: "canonical"` with new immutable file names, `mc:build` + `mc:wire`.
 
 **Known limitation:** Barcelona/Real Madrid still ride the v13.180
 legacy-scale windows (bigger heads). Cross-pairings against canonical clubs
@@ -136,4 +143,7 @@ Sources are the site's own portrait library (`assets/players/hero/`,
 `assets/players/clubs/`) — UEFA official cutoffs and league-official
 platforms, kit-verified, per `docs/scrapping/uefa-players/SPEC.md`. The
 generated windows are bbox-crops of those manifest-pinned originals
-(same contract as `/players/hero/`).
+(same contract as `/players/hero/`). The Dortmund full-body original
+(v13.185) is the league-official `assets.bundesliga.com` body PNG,
+page-title-verified on the player's own Bundesliga profile, archived
+uncropped as `serhou-guirassy-fullbody.webp`.

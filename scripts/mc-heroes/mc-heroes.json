@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "generated_at": "2026-10-26T17:54:21.948Z",
+ "generated_at": "2026-10-27T00:50:52.472Z",
  "clubs": {
   "Chelsea FC": {
    "kind": "legacy-pair",
@@ -267,25 +267,25 @@
    }
   },
   "Borussia Dortmund": {
-   "kind": "legacy-scale",
-   "fade": 66,
-   "source": "assets/players/clubs/bundesliga/borussia-dortmund/serhou-guirassy.webp",
-   "origin": "generated 2026-10-27 legacy-scale (Guirassy — the UCL-roster Dortmund representative, manifest active)",
-   "home": "mc-port-guirassy-h.webp",
+   "kind": "canonical",
+   "fade": 68,
+   "source": "assets/players/clubs/bundesliga/borussia-dortmund/serhou-guirassy-fullbody.webp",
+   "origin": "generated 2026-10-27 at the v13.182 canonical spec (owner-approved front-facing upgrade: the official Bundesliga full-body PNG dfl-obj-00278s — 780x960 transparent, VLM-verified front-facing photo, BVB kit, arms crossed — replaces the back-view UEFA cutoff; Guirassy's head lands at the canonical 91px = every canonical club, a 0.50x downscale; fade 68 = grid-VLM crest bottom 66% + the margin; the guirassy-h/-a back-view pair stays on disk under the immutable-pin rule)",
+   "home": "mc-port-guirassy-2-h.webp",
    "home_geo": {
     "dims": "356x574",
     "crown": 123,
-    "headMaxW": 103,
+    "headMaxW": 91,
     "headCx": 198,
-    "figureBottom": 546
+    "figureBottom": 573
    },
-   "away": "mc-port-guirassy-a.webp",
+   "away": "mc-port-guirassy-2-a.webp",
    "away_geo": {
     "dims": "356x574",
     "crown": 123,
-    "headMaxW": 103,
-    "headCx": 158,
-    "figureBottom": 546
+    "headMaxW": 91,
+    "headCx": 157,
+    "figureBottom": 573
    }
   },
   "Paris Saint-Germain FC": {

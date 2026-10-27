@@ -84,7 +84,7 @@ const check = (name, cond) => {
   }
 
   // canonical files must sit at the spec targets exactly
-  const CANON = ["mc-port-saka-h.webp", "mc-port-saka-a.webp", "mc-port-haaland-h.webp", "mc-port-haaland-a.webp", "mc-port-lautaro-h.webp", "mc-port-lautaro-a.webp", "mc-port-kane-3-h.webp", "mc-port-kane-3-a.webp", "mc-port-barcola-h.webp", "mc-port-barcola-a.webp"];
+  const CANON = ["mc-port-saka-h.webp", "mc-port-saka-a.webp", "mc-port-haaland-h.webp", "mc-port-haaland-a.webp", "mc-port-lautaro-h.webp", "mc-port-lautaro-a.webp", "mc-port-kane-3-h.webp", "mc-port-kane-3-a.webp", "mc-port-barcola-h.webp", "mc-port-barcola-a.webp", "mc-port-guirassy-2-h.webp", "mc-port-guirassy-2-a.webp"];
   for (const f of CANON) {
     const p = path.join(MC_DIR, f);
     check(`canonical: ${f} exists`, fs.existsSync(p));
@@ -119,7 +119,7 @@ const check = (name, cond) => {
 
   // sw cache bumped (the release pin: v87 shipped these assets)
   const sw = fs.readFileSync(path.join(ROOT, "assets", "sw.js"), "utf8");
-  check("wiring: SW cache bumped to sportsignal-v87", /const CACHE = "sportsignal-v87"/.test(sw) && !/const CACHE = "sportsignal-v86"/.test(sw));
+  check("wiring: SW cache bumped to sportsignal-v88", /const CACHE = "sportsignal-v88"/.test(sw) && !/const CACHE = "sportsignal-v87"/.test(sw));
 
   console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / wiring)");
   process.exit(failed ? 1 : 0);
