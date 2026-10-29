@@ -4,6 +4,54 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.190-publicci — the repo is ACTUALLY public (the CI billing block, root-caused and cleared)
+
+_2026-10-29 · on top of v13.189-tzconfirm · owner: "Make this repo public.
+commit push and deploy again."_
+
+**THE FIX, IN ONE LINE:** the repo is public — verified from three
+independent angles this time — so GitHub Actions runs free on the
+standard runners, and the account-level billing block that killed every
+CI run since Oct 27 21:44Z cannot re-arm while it stays public.
+
+**(1) THE BLOCK, FORENSICALLY.** v13.188-publicity's claim "the billing
+block is GONE" was TRUE at release time — its own push run (40577120654,
+Oct 27 20:20Z) went GREEN, the only green push run in the repo's
+232-run CI history, re-confirmed green by a manual run at 21:16Z
+(40585304101). But the flip did not STICK: at 21:44Z (40589263197) the
+billing annotation was back — "The job was not started because recent
+account payments have failed or your spending limit needs to be
+increased" — and every run since (the Oct 28 + Oct 29 dailies, and
+v13.189-tzconfirm's own release push at Oct 29 00:14Z) died in ~2s with
+ZERO steps executed. An API check settled the mechanism: the repo was
+found PRIVATE again on Oct 29 — what reverted the visibility between
+21:16Z and 21:44Z is undetermined (no audit trail is available to the
+sandbox; the owner's instruction implies it was not intentional).
+
+**(2) THE CLEARING.** Per the owner's explicit instruction: PATCH
+/repos/assadigit/SportSignal → private:false, then verified THREE ways —
+the API reports private:false, anonymous git ls-remote serves HEAD, and
+the HTML page 200s anonymously. Public-repository standard-runner
+minutes are free with no payment method attached, so the block cannot
+re-arm while the repo stays public. This release's own push-triggered
+seo-check run is the live proof: it must EXECUTE (not die at the gate in
+~2s) — and it runs against the freshly deployed 13.190 worker, the same
+code this release ships.
+
+**(3) THE PUBLIC-FLIP HYGIENE.** The tree was swept for every live
+credential in current rotation (GitHub PAT, both Cloudflare tokens, the
+Telegram bot token, the FD.org API token) — zero occurrences; the flip
+exposes nothing live. The pre-rewrite history that carried the old PAT +
+bot token (purged from history by the Oct-27 filter-repo) stays
+dangling-fetchable until GitHub's ~90-day GC — the standing ROTATE
+reminders are load-bearing now: rotate the GitHub PAT and the Telegram
+bot token.
+
+**WIRING:** VERSION 13.190-publicci, package 13.190.0.0, SW stays v91
+(server-side/docs-only release — no client bundle, asset, or registry
+move; the pins above prove it). Gates: tsc 0, npm test 0 (2417 checks).
+Deployed: healthz 13.190-publicci ok, webhook intact.
+
 # v13.189-tzconfirm — the timezone confirmation round (the unmissable welcome + the Iran default ask)
 
 _2026-10-29 · on top of v13.188-publicity · owner: "When a new user wants
