@@ -255,10 +255,10 @@ const check = (name, cond) => {
     console.error("FAIL: language-tap callback block not found in worker source");
     process.exit(1);
   }
-  // the real builders (replyKeyboard / tzOnboardText / tzPickerKeyboard)
+  // the real builders (replyKeyboard / tzOnboardText / tzDefaultKeyboard)
   const buildersApi = new Function(
     "CONFIG", "toFaDigits", "escapeMarkdownCharacters", "normalizeTeamName", "translateTeam",
-    buildersSrc + "\n; return { replyKeyboard, tzOnboardText, tzPickerKeyboard };"
+    buildersSrc + "\n; return { replyKeyboard, tzOnboardText, tzDefaultKeyboard, tzPickerKeyboard };"
   )(CONFIG, (s) => String(s), (s) => String(s), (n) => String(n), (n) => String(n));
 
   // real registerChat / saveUserPref via the seam eval (same pattern as the
@@ -286,7 +286,7 @@ const check = (name, cond) => {
     + "const getUserPrefs = stubs.getUserPrefs;\n"
     + "const replyKeyboard = stubs.replyKeyboard;\n"
     + "const tzOnboardText = stubs.tzOnboardText;\n"
-    + "const tzPickerKeyboard = stubs.tzPickerKeyboard;\n"
+    + "const tzDefaultKeyboard = stubs.tzDefaultKeyboard;\n"
     + src.slice(bsStart, bsEnd) + "\n"
     + userStoreSrc + "\n"
     + "return async function (env, update) {\n"
@@ -309,7 +309,7 @@ const check = (name, cond) => {
     getUserPrefs: async (env) => (await env.STATE.get(CONFIG.KV_USER_PREFS, "json")) || {},
     replyKeyboard: buildersApi.replyKeyboard,
     tzOnboardText: buildersApi.tzOnboardText,
-    tzPickerKeyboard: buildersApi.tzPickerKeyboard,
+    tzDefaultKeyboard: buildersApi.tzDefaultKeyboard,
   });
 
   const langEnv = makeTapEnv();
@@ -323,7 +323,14 @@ const check = (name, cond) => {
   check("lang-tap welcome attaches the reply keyboard", !!tapSent[0].kb);
   check("lang:fa tap registers the chat (real seam)", (await langEnv.STATE.get(CONFIG.KV_USERS_KEY)).includes(42));
   check("lang:fa tap pages the owner once (join signal)", tapAdminPages.length === 1 && tapAdminPages[0].chatId === 42 && tapAdminPages[0].total === 2);
-  check("tz onboarding fires for a tz-less joiner (v13.90 intact)", tapSent[1].msg.includes("منطقه") && !!tapSent[1].kb);
+  // v13.189-tzconfirm: the onboarding is the PROCEED-WITH-DEFAULT ask —
+  // Iran (UTC+3:30) one-tap accept + the other-region row.
+  check("tz onboarding fires for a tz-less joiner (the DEFAULT-ASK: Iran + UTC+3:30)",
+    tapSent[1].msg.includes("منطقه") && tapSent[1].msg.includes("ایران") && tapSent[1].msg.includes("3:30") && !!tapSent[1].kb);
+  check("tz onboarding keyboard offers Iran accept + other region (no hub)",
+    (tapSent[1].kb.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:tehran") &&
+    (tapSent[1].kb.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:hub") &&
+    !(tapSent[1].kb.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:reset"));
   // the tap answered the callback (dismisses the spinner)
   check("callback_query answered", tapAnswers.length === 1);
 

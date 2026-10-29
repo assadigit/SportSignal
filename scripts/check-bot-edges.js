@@ -208,10 +208,14 @@ const check = (name, cond) => {
   // v13.90-tzonboard: welcome + tz onboarding prompt (no tz set yet)
   check("cbq lang:fa sends welcome + tz onboarding (2 msgs)", sent.length === 2 && sent[0].id === 42);
   check("cbq lang:fa welcome spells خوش آمدید (typo fixed)", /خوش آمدید/.test(sent[0].msg));
-  check("cbq lang:fa tz prompt offers the hub (tzr: + tz:tehran + tz:reset)",
+  // v13.189-tzconfirm: the onboarding is the PROCEED-WITH-DEFAULT ask —
+  // one tap accepts Iran (UTC+3:30), the other row opens the region hub.
+  check("cbq lang:fa tz prompt is the DEFAULT-ASK (tz:tehran + tzr:hub, no hub regions)",
     sent[1].keyboard && (sent[1].keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:tehran") &&
-    (sent[1].keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:oceania") &&
-    (sent[1].keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:reset"));
+    (sent[1].keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:hub") &&
+    !(sent[1].keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:reset") &&
+    !(sent[1].keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:oceania"));
+  check("cbq lang:fa default-ask names Iran + the UTC+3:30 offset (fa)", /\u0627\u06CC\u0631\u0627\u0646/.test(sent[1].msg) && /3:30/.test(sent[1].msg));
   check("cbq lang:fa welcome is MarkdownV2-clean (fixed v13.90 single-escape bug)", sent[0].msg.includes("\\!") && !/(^|[^\\])[.!?]/.test(sent[0].msg.replace(/\u2705/g, "")));
 
   // 2) callback_query lang:en — English welcome
@@ -222,6 +226,9 @@ const check = (name, cond) => {
   check("cbq lang:en answers the callback", answered.length === 1 && answered[0].text === "English");
   check("cbq lang:en sends English welcome + tz prompt (2 msgs)", sent.length === 2 && /Welcome to SportSignal/.test(sent[0].msg));
   check("cbq lang:en tz prompt is English", /timezone/i.test(sent[1].msg));
+  check("cbq lang:en default-ask offers Iran + another region", /Iran/.test(sent[1].msg) &&
+    (sent[1].keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:tehran") &&
+    (sent[1].keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:hub"));
 
   // 3) callback_query with malformed data — no crash, no send (silent)
   const env3 = freshEnv();
@@ -286,14 +293,14 @@ const check = (name, cond) => {
   await env11.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify({ "42": { lang: "fa" } }));
   await msgHandler("/start", 42, env11);
   check("/start fa welcome spells خوش آمدید (typo fixed)", sent.some((s) => /خوش آمدید/.test(s.msg)));
-  check("/start (fa, no tz) also offers the tz picker", sent.some((s) => s.keyboard && (s.keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:eu")));
+  check("/start (fa, no tz) also offers the tz default-ask (Iran)", sent.some((s) => s.keyboard && (s.keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:tehran") && (s.keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:hub")));
 
   // 12) /start en welcome (existing en user)
   const env12 = freshEnv();
   await env12.STATE.put(CONFIG.KV_USER_PREFS, JSON.stringify({ "42": { lang: "en" } }));
   await msgHandler("/start", 42, env12);
   check("/start en welcome is English", sent.some((s) => /Welcome to SportSignal/.test(s.msg)));
-  check("/start (en, no tz) also offers the tz picker", sent.some((s) => s.keyboard && (s.keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:namerica")));
+  check("/start (en, no tz) also offers the tz default-ask (Iran)", sent.some((s) => s.keyboard && (s.keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:tehran") && (s.keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:hub")));
 
   // 13) /teams sends the numbered list AND the inline toggle grid
   const env13 = freshEnv();
@@ -347,11 +354,17 @@ const check = (name, cond) => {
   await cbHandler(env18, { callback_query: { id: "cb18", data: "tz:london", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 101 } } });
   const prefs18 = await env18.STATE.get(CONFIG.KV_USER_PREFS, "json");
   check("tz:london sets tz=Europe/London", prefs18 && prefs18["42"] && prefs18["42"].tz === "Europe/London");
-  // v13.90-tzonboard: selecting a zone edits to the select+confirm view
-  check("tz:london edits to the confirm view (tzok + change-region)", edited.length === 1 &&
-    (edited[0].kb.inline_keyboard || []).flat().some((b) => b.callback_data === "tzok") &&
-    (edited[0].kb.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:hub"));
-  check("tz confirm view carries the zone + a time hint", /Europe\/London/.test(edited[0].text) && /\d\d:\d\d/.test(edited[0].text));
+  // v13.189-tzconfirm: selecting a zone SENDS the unmissable confirmation
+  // (a fresh message — tzok + change-region buttons) and COLLAPSES the
+  // tapped picker message (its buttons stripped, no stale re-taps).
+  check("tz:london SENDS the confirmation message (tzok + change-region)", sent.length === 1 &&
+    (sent[0].keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tzok") &&
+    (sent[0].keyboard.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:hub"));
+  check("tz confirmation carries the zone + a time hint", /Europe\/London/.test(sent[0].msg) && /\d\d:\d\d/.test(sent[0].msg));
+  check("tz confirmation welcomes + promises updates (fa)", /\u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F/.test(sent[0].msg) && /\u062F\u0631\u06CC\u0627\u0641\u062A \u062E\u0648\u0627\u0647\u06CC\u062F \u06A9\u0631\u062F/.test(sent[0].msg));
+  check("tz:london collapses the tapped picker (buttons removed)", edited.length === 1 &&
+    /Europe\/London/.test(edited[0].text) &&
+    (!edited[0].kb || (edited[0].kb.inline_keyboard || []).length === 0));
 
   // 19) tz:reset clears it again
   await cbHandler(env18, { callback_query: { id: "cb19", data: "tz:reset", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 102 } } });
@@ -436,12 +449,15 @@ const check = (name, cond) => {
   await cbHandler(env28, { callback_query: { id: "cb28", data: "tz:sydney", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 202 } } });
   const prefs28 = await env28.STATE.get(CONFIG.KV_USER_PREFS, "json");
   check("tz:sydney writes tz=Australia/Sydney (write-first)", prefs28 && prefs28["42"] && prefs28["42"].tz === "Australia/Sydney");
-  check("tz:sydney confirm view shows the local time + UTC offset",
-    /Australia\/Sydney/.test(edited[0].text) && /UTC[+-]\d/.test(edited[0].text) && /\d\d:\d\d/.test(edited[0].text));
+  check("tz:sydney confirmation (SENT, not edited) shows the local time + UTC offset",
+    sent.length === 1 && /Australia\/Sydney/.test(sent[0].msg) && /UTC[+-]\d/.test(sent[0].msg) && /\d\d:\d\d/.test(sent[0].msg));
+  check("tz:sydney collapse edit strips the picker buttons", edited.length === 1 &&
+    (!edited[0].kb || (edited[0].kb.inline_keyboard || []).length === 0));
   await cbHandler(env28, { callback_query: { id: "cb29", data: "tzok", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 202 } } });
   check("tzok edits to the done text with buttons removed", edited.length === 2 &&
     /All set/.test(edited[1].text) &&
     (!edited[1].kb || (edited[1].kb.inline_keyboard || []).length === 0));
+  check("tzok done text is the final welcome (welcome aboard + you'll receive updates)", /Welcome aboard/.test(edited[1].text) && /receive match updates/.test(edited[1].text));
 
   // 29) the REAL tz helpers (brace-sliced from the concatenated source, with
   //     the REAL toFaDigits — not the identity stub)
@@ -491,7 +507,7 @@ const check = (name, cond) => {
         globalThis.tzOffsetMinutes = eval("(" + realTzOff[0] + ")");
         globalThis.zonedYmDHm = eval("(" + realZonedYmDHm[0] + ")");
       }
-      const tzApi = eval("(function () { " + src.slice(tzSegStart, tzSegEnd) + " return { TZ_REGIONS, tzLocalTime, tzUtcOffset, tzOnboardText, tzConfirmText, tzDoneText, tzRegionText, tzStatusText, tzPickerKeyboard }; })()");
+      const tzApi = eval("(function () { " + src.slice(tzSegStart, tzSegEnd) + " return { TZ_REGIONS, tzLocalTime, tzUtcOffset, tzOnboardText, tzDefaultKeyboard, tzConfirmText, tzSetCollapseText, tzDoneText, tzRegionText, tzStatusText, tzPickerKeyboard }; })()");
       check("tzUtcOffset Tehran = UTC+3:30 (stable, no DST)", tzApi.tzUtcOffset("Asia/Tehran") === "UTC+3:30");
       check("tzUtcOffset Tokyo = UTC+9", tzApi.tzUtcOffset("Asia/Tokyo") === "UTC+9");
       check("tzUtcOffset Kathmandu = UTC+5:45 (quarter-hour zone)", tzApi.tzUtcOffset("Asia/Kathmandu") === "UTC+5:45");
@@ -522,6 +538,20 @@ const check = (name, cond) => {
       check("tzproof: Iran quick-pick reads Timezone (Iran) (en)", !!enBtn && /Timezone \(Iran\)/.test(enBtn.text));
       check("tzproof: Iran quick-pick still carries the live time", !!faBtn && /\u00B7 \u06F0?[\u06F0-\u06F9]{1,2}:/.test(faBtn.text));
       check("tzproof: reset default says \u0627\u06CC\u0631\u0627\u0646 not \u062A\u0647\u0631\u0627\u0646", !!faReset && /\u0627\u06CC\u0631\u0627\u0646\)/.test(faReset.text));
+      // v13.189-tzconfirm: the DEFAULT-ASK keyboard — one-tap Iran accept
+      // (carrying the offset + the live Tehran clock) + the other-region
+      // row; never the full hub (no regions, no reset).
+      const askFa = tzApi.tzDefaultKeyboard("fa");
+      const askEn = tzApi.tzDefaultKeyboard("en");
+      const askYesFa = (askFa.inline_keyboard || []).flat().find((b) => b.callback_data === "tz:tehran");
+      const askYesEn = (askEn.inline_keyboard || []).flat().find((b) => b.callback_data === "tz:tehran");
+      check("tz default-ask: Yes-Iran button carries the offset + live clock (fa)", !!askYesFa && /3:30/.test(askYesFa.text) && /\u00B7/.test(askYesFa.text));
+      check("tz default-ask: Yes-Iran button is English for en", !!askYesEn && /Yes \u2014 Iran \(UTC\+3:30\)/.test(askYesEn.text));
+      check("tz default-ask: exactly 2 rows (accept + other region, no hub)", (askFa.inline_keyboard || []).length === 2 &&
+        (askFa.inline_keyboard || []).flat().some((b) => b.callback_data === "tzr:hub") &&
+        !(askFa.inline_keyboard || []).flat().some((b) => b.callback_data === "tz:reset"));
+      check("tz default-ask: onboard text names Iran + UTC+3:30 (fa, offset escaped)", /\u0627\u06CC\u0631\u0627\u0646/.test(tzApi.tzOnboardText("fa")) && /UTC\\?\+3:30/.test(tzApi.tzOnboardText("fa")));
+      check("tz default-ask: onboard text is the proceed-with-default question (en)", /default timezone is Iran/.test(tzApi.tzOnboardText("en")) && /proceed with the default/.test(tzApi.tzOnboardText("en")));
       // TZ_REGIONS integrity: every city slug resolves (via the REAL
       // resolveTimeZone + TZ_ALIASES) to the canonical tz stored in the row
       const aliasStart = src.indexOf("var TZ_ALIASES = {");
@@ -545,7 +575,7 @@ const check = (name, cond) => {
       // entity-aware validator" (outside code spans every reserved char
       // must still be escaped — the v13.90 rule, unchanged in spirit).
       const { mdv2Safe, mdv2Entities: mdv2Ent } = require("./lib/mdv2");
-      const mdTexts = [tzApi.tzOnboardText("fa"), tzApi.tzOnboardText("en"), tzApi.tzRegionText("fa"), tzApi.tzRegionText("en"), tzApi.tzConfirmText("fa", "Europe/London"), tzApi.tzConfirmText("en", "Europe/London"), tzApi.tzDoneText("fa", "Europe/London"), tzApi.tzDoneText("en", "Europe/London"), tzApi.tzStatusText("fa", "Europe/London"), tzApi.tzStatusText("en", "Europe/London"), tzApi.tzConfirmText("fa", "Asia/Tehran"), tzApi.tzConfirmText("en", "Australia/Sydney")];
+      const mdTexts = [tzApi.tzOnboardText("fa"), tzApi.tzOnboardText("en"), tzApi.tzRegionText("fa"), tzApi.tzRegionText("en"), tzApi.tzConfirmText("fa", "Europe/London"), tzApi.tzConfirmText("en", "Europe/London"), tzApi.tzDoneText("fa", "Europe/London"), tzApi.tzDoneText("en", "Europe/London"), tzApi.tzStatusText("fa", "Europe/London"), tzApi.tzStatusText("en", "Europe/London"), tzApi.tzConfirmText("fa", "Asia/Tehran"), tzApi.tzConfirmText("en", "Australia/Sydney"), tzApi.tzSetCollapseText("fa", "Asia/Tehran"), tzApi.tzSetCollapseText("en", "Australia/Sydney")];
       const mdClean = mdTexts.every((t) => mdv2Safe(t));
       check("v13.90 tz texts are MarkdownV2-clean (escaped punctuation)", mdClean);
       // v13.106-mdstyle: the local time renders as a MONOSPACE code span
@@ -569,6 +599,7 @@ const check = (name, cond) => {
   await cbHandler(env30, { callback_query: { id: "cb30", data: "tz:sydney", from: { id: 42 }, message: { chat: { id: 42 }, message_id: 300 } } });
   check("tz:sydney quota-failure answers retry-later (fa)", answered.length === 1 && /\u0630\u062E\u06CC\u0631\u0647 \u0646\u0634\u062F/.test(answered[0].text));
   check("tz:sydney quota-failure sends NO confirm edit", edited.length === 0);
+  check("tz:sydney quota-failure sends NO confirmation message either (v13.189)", sent.length === 0);
 
   // 31) /timezone <city> with a throwing put -> honest warning message
   const env31 = freshEnv();

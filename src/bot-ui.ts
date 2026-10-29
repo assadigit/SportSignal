@@ -249,26 +249,71 @@ export function tzRegionText(lang) {
     : "\u23F0 \u0634\u0647\u0631 \u062E\u0648\u062F \u0631\u0627 \u0627\u0646\u062A\u062E\u0627\u0628 \u06A9\u0646\u06CC\u062F \u2014 \u0633\u0627\u0639\u062A\u0650 \u0645\u062D\u0644\u06CC\u0650 \u0647\u0631 \u0634\u0647\u0631 \u0631\u0648\u06CC \u062F\u06A9\u0645\u0647\u0654 \u0622\u0646 \u0646\u0648\u0634\u062A\u0647 \u0634\u062F\u0647\u061B \u062F\u06A9\u0645\u0647\u0627\u06CC \u06A9\u0647 \u0633\u0627\u0639\u062A\u0634 \u0628\u0627 \u0633\u0627\u0639\u062A\u0650 \u0634\u0645\u0627 \u06CC\u06A9\u06CC \u0627\u0633\u062A \u0631\u0627 \u0628\u0632\u0646\u06CC\u062F\\:";
 }
 
-// tzOnboardText: the /start-time prompt (sent right after the language
-// welcome for users with no tz set \u2014 new joiners and returning members
-// who never picked one).
+// tzOnboardText (v13.189-tzconfirm): the /start-time prompt — now the
+// PROCEED-WITH-DEFAULT ask (the owner's ask): the bot's default timezone
+// is Iran (UTC+3:30, live-computed — all of Iran shares ONE zone, so the
+// whole country is covered by one tap); the user confirms the default or
+// opts into the region picker. Sent right after the language welcome for
+// users with no tz set — new joiners and returning members who never
+// picked one.
 export function tzOnboardText(lang) {
+  // live offset (UTC+3:30 — Iran abolished DST in 2022, so this is stable
+  // year-round); the hardcoded fallback covers a colo where the offset
+  // probe fails closed.
+  const off = tzUtcOffset("Asia/Tehran") || "UTC+3:30";
   return lang === "en"
-    ? "\u23F0 One last step \u2014 pick your timezone so every match alert arrives at YOUR local time\\(a Sydney fan and a New York fan live in very different hours\\)\\:"
-    : "\u23F0 \u0642\u062F\u0645 \u0622\u062E\u0631 \u2014 \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u062E\u0648\u062F \u0631\u0627 \u0627\u0646\u062A\u062E\u0627\u0628 \u06A9\u0646\u06CC\u062F \u062A\u0627 \u0647\u0645\u0647\u0654 \u0627\u0639\u0644\u0627\u0646\u200C\u0647\u0627 \u0628\u0647 \u0648\u0642\u062A\u0650 \u0645\u062D\u0644\u0650 \u0634\u0645\u0627 \u0628\u0631\u0633\u062F\\(\u0647\u0648\u0627\u062F\u0627\u0631 \u0633\u06CC\u062F\u0646\u06CC \u0648 \u0647\u0648\u0627\u062F\u0627\u0631 \u0646\u06CC\u0648\u06CC\u0648\u0631\u06A9 \u0633\u0627\u0639\u0627\u062A\u06CC \u06A9\u0627\u0645\u0644\u0627\u064B \u0645\u062A\u0641\u0627\u0648\u062A \u062F\u0627\u0631\u0646\u062F\\)\\:";
+    ? "\u23F0 Last step \u2014 the default timezone is Iran \\(" + escapeMarkdownCharacters(off) + "\\)\\.\nAll of Iran shares one timezone \u2014 proceed with the default\\?"
+    : "\u23F0 \u0642\u062F\u0645 \u0622\u062E\u0631 \u2014 \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u067E\u06CC\u0634\u200C\u0641\u0631\u0636 \u0631\u0628\u0627\u062A\u060C \u0627\u06CC\u0631\u0627\u0646 \\(" + escapeMarkdownCharacters(off) + "\\) \u0627\u0633\u062A\\.\n\u062A\u0645\u0627\u0645 \u0627\u06CC\u0631\u0627\u0646 \u06CC\u06A9 \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u062F\u0627\u0631\u062F \u2014 \u0628\u0627 \u0647\u0645\u06CC\u0646 \u067E\u06CC\u0634\u200C\u0641\u0631\u0636 \u067E\u06CC\u0634 \u0628\u0631\u0648\u06CC\u0645\u061F";
 }
 
-// The post-selection view: write-first means the tz is ALREADY saved when
-// this renders \u2014 the \u2705/Change buttons are pure UX (confirm-dismiss vs
-// re-open), never a gate on the saved value.
+// tzDefaultKeyboard (v13.189-tzconfirm): the onboarding answer surface —
+// ONE tap accepts the Iran default (the majority audience; the button
+// carries the live Tehran clock so the user can verify it against their
+// wall clock before tapping), the other row opens the full region picker
+// (tzr:hub renders tzStatusText + tzPickerKeyboard — the same hub
+// /timezone serves).
+export function tzDefaultKeyboard(lang) {
+  const en = lang === "en";
+  const off = tzUtcOffset("Asia/Tehran") || "UTC+3:30";
+  const t = tzLocalTime("Asia/Tehran", lang);
+  return { inline_keyboard: [
+    [{ text: "\uD83C\uDDEE\uD83C\uDDF7 \u2705 " + (en ? "Yes \u2014 Iran (" + off + ")" : "\u0628\u0644\u0647 \u2014 \u0627\u06CC\u0631\u0627\u0646 (" + off + ")") + (t ? " \u00B7 " + t : ""), callback_data: "tz:tehran" }],
+    [{ text: "\uD83C\uDF0D " + (en ? "Choose another region" : "\u0627\u0646\u062A\u062E\u0627\u0628 \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u062F\u06CC\u06AF\u0631"), callback_data: "tzr:hub" }]
+  ] };
+}
+
+// tzSetCollapseText (v13.189-tzconfirm): what the TAPPED picker message
+// collapses to (its buttons stripped) once the fresh confirmation lands —
+// the old message can never offer stale re-taps, and points at the
+// durable confirmation below it.
+export function tzSetCollapseText(lang, tz) {
+  const off = tzUtcOffset(tz);
+  return lang === "en"
+    ? "\u2705 Timezone set: " + escapeMarkdownCharacters(tz) + (off ? " \\(" + escapeMarkdownCharacters(off) + "\\)" : "") + " \u2014 see the confirmation below \u2B07\uFE0F"
+    : "\u2705 \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u062B\u0628\u062A \u0634\u062F: " + escapeMarkdownCharacters(tz) + (off ? " \\(" + escapeMarkdownCharacters(off) + "\\)" : "") + " \u2014 \u062A\u0623\u06CC\u06CC\u062F \u062F\u0631 \u067E\u06CC\u0627\u0645 \u0628\u0639\u062F\u06CC \u2B07\uFE0F";
+}
+
+// The post-selection view (v13.189-tzconfirm: sent as a FRESH message, not
+// an in-place edit — the v13.90 edit-only flow was easy to miss, and the
+// owner's live report was that users couldn't tell success from failure
+// after tapping their zone). Write-first means the tz is ALREADY saved
+// when this lands: the unmissable "your timezone is set" + the WELCOME +
+// the you'll-receive-updates line, plus the live local time so the user
+// can verify it against their wall clock (✅-confirm or re-open the
+// picker — pure UX, never a gate on the saved value).
 export function tzConfirmText(lang, tz) {
   const local = tzLocalTime(tz, lang);
   const off = tzUtcOffset(tz);
-  const t = (local ? mdCode(local) : "") + (off ? " \\(" + escapeMarkdownCharacters(off) + "\\)" : "");
+  const zone = escapeMarkdownCharacters(tz);
+  const offPart = off ? " \\(" + escapeMarkdownCharacters(off) + "\\)" : "";
+  const timePart = local ? " \u2014 " + (lang === "en" ? "your time: " : "\u0633\u0627\u0639\u062A\u0650 \u0634\u0645\u0627: ") + mdCode(local) : "";
   return lang === "en"
-    ? "\u2705 Timezone set: " + escapeMarkdownCharacters(tz) + (local ? "\n\uD83D\uDD50 Your local time: " + t : "") + "\nMatch alerts will arrive at your local time from now on \u2014 is this right\\?"
-    : "\u2705 \u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u062B\u0628\u062A \u0634\u062F: " + escapeMarkdownCharacters(tz) + (local ? "\n\uD83D\uDD50 \u0633\u0627\u0639\u062A\u0650 \u0634\u0645\u0627: " + t : "") + "\n\u0627\u0639\u0644\u0627\u0646\u200C\u0647\u0627\u06CC \u0628\u0627\u0632\u06CC \u0627\u0632 \u0627\u06CC\u0646 \u067E\u0633 \u0628\u0647 \u0648\u0642\u062A\u0650 \u0634\u0645\u0627 \u0645\u06CC\u200C\u0631\u0633\u062F \u2014 \u062F\u0631\u0633\u062A \u0627\u0633\u062A\\?";
+    ? "\u2705 *Your timezone is set:*\n\uD83D\uDD50 " + zone + offPart + timePart + "\n\n\uD83C\uDF89 *Welcome to the bot\\!*\nFrom now on, you'll receive match updates at your local time\\.\n\nIs this right\\?"
+    : "\u2705 *\u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627 \u062B\u0628\u062A \u0634\u062F:*\n\uD83D\uDD50 " + zone + offPart + timePart + "\n\n\uD83C\uDF89 *\u0628\u0647 \u0631\u0628\u0627\u062A \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\\!*\n\u0627\u0632 \u0627\u06CC\u0646 \u067E\u0633 \u0627\u0639\u0644\u0627\u0645\u200C\u0647\u0627\u06CC \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0631\u0627 \u0628\u0647 \u0648\u0642\u062A\u0650 \u062E\u0648\u062F\u062A\u0627\u0646 \u062F\u0631\u06CC\u0627\u0641\u062A \u062E\u0648\u0627\u0647\u06CC\u062F \u06A9\u0631\u062F\\.\n\n\u062F\u0631\u0633\u062A \u0627\u0633\u062A\u061F";
 }
+
+// tzConfirmKeyboard (v13.90): rides the fresh confirmation message —
+// ✅-dismiss (edits to tzDoneText) or re-open the picker hub.
 export function tzConfirmKeyboard(lang) {
   const en = lang === "en";
   return { inline_keyboard: [
@@ -276,10 +321,17 @@ export function tzConfirmKeyboard(lang) {
     [{ text: "\uD83DD008 " + (en ? "Change region" : "\u062A\u063A\u06CC\u06CC\u0631 \u0645\u0646\u0637\u0642\u0647"), callback_data: "tzr:hub" }]
   ] };
 }
+// tzDoneText (v13.189-tzconfirm): the final welcome after the ✅ tap —
+// the confirmation message edits in place (buttons removed), closing the
+// onboarding exchange with the welcome + the you'll-receive-updates
+// promise + the change-anytime affordance.
 export function tzDoneText(lang, tz) {
   const off = tzUtcOffset(tz);
+  const zone = escapeMarkdownCharacters(tz);
+  const offPart = off ? " \\(" + escapeMarkdownCharacters(off) + "\\)" : "";
   return lang === "en"
-    ? "\u2705 All set \u2014 " + escapeMarkdownCharacters(tz) + (off ? " \\(" + escapeMarkdownCharacters(off) + "\\)" : "") + "\\.\nChange it anytime with /timezone\\. Enjoy the matches\\! \u26BD"
-    : "\u2705 \u0647\u0645\u0647\u200C\u0686\u06CC\u0632 \u0622\u0645\u0627\u062F\u0647 \u0627\u0633\u062A \u2014 " + escapeMarkdownCharacters(tz) + (off ? " \\(" + escapeMarkdownCharacters(off) + "\\)" : "") + "\\.\n\u0647\u0631 \u0648\u0642\u062A \u0628\u062E\u0648\u0627\u0647\u06CC\u062F \u0628\u0627 /timezone \u0645\u06CC\u062A\u0648\u0627\u0646\u06CC\u062F \u062A\u063A\u06CC\u06CC\u0631\u0634 \u062F\u0647\u06CC\u062F\\. \u0644\u0630\u062A \u0628\u0628\u0631\u06CC\u062F\\! \u26BD";
+    ? "\uD83C\uDF89 *Welcome aboard\\! All set\\.*\nYour timezone: " + zone + offPart + "\nFrom now on, you'll receive match updates at your local time \u26BD\nChange it anytime with /timezone\\."
+    : "\uD83C\uDF89 *\u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F\\! \u0647\u0645\u0647\u200C\u0686\u06CC\u0632 \u0622\u0645\u0627\u062F\u0647 \u0627\u0633\u062A\\.*\n\u0645\u0646\u0637\u0642\u0647\u0654 \u0632\u0645\u0627\u0646\u06CC \u0634\u0645\u0627: " + zone + offPart + "\n\u0627\u0632 \u0627\u06CC\u0646 \u067E\u0633 \u0627\u0639\u0644\u0627\u0645\u200C\u0647\u0627\u06CC \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0631\u0627 \u0628\u0647 \u0648\u0642\u062A\u0650 \u062E\u0648\u062F\u062A\u0627\u0646 \u062F\u0631\u06CC\u0627\u0641\u062A \u0645\u06CC\u200C\u06A9\u0646\u06CC\u062F \u26BD\n\u0647\u0631 \u0648\u0642\u062A \u0628\u062E\u0648\u0627\u0647\u06CC\u062F \u0628\u0627 /timezone \u0645\u06CC\u200C\u062A\u0648\u0627\u0646\u06CC\u062F \u062A\u063A\u06CC\u06CC\u0631\u0634 \u062F\u0647\u06CC\u062F\\.";
 }
+
 

@@ -491,7 +491,8 @@ check("#buttons callback handlers cover tf: and tz: callbacks", /tft = data\.mat
 // (which stays for the Tehran quick-pick + reset + city slugs).
 check("#buttons v13.90 tz region navigation callback (tzr:)", /tzreg = data\.match\(\/\^tzr:\(\[a-z\]\+\)\$\/\)/.test(botBtnSeg) && /TZ_REGIONS\[tzreg\[1\]\]/.test(botBtnSeg));
 check("#buttons v13.90 tz confirm callback (tzok) exists", /data === "tzok"/.test(botBtnSeg));
-check("#buttons v13.90 onboarding prompt after the language welcome", /tzOnboardText\(lang\), cbChatId2, tzPickerKeyboard\(lang\)/.test(botBtnSeg));
+check("#buttons v13.189 onboarding prompt after the language welcome (the default-ask)", /tzOnboardText\(lang\), cbChatId2, tzDefaultKeyboard\(lang\)/.test(botBtnSeg));
+check("#buttons v13.189 tz tap sends the fresh confirmation + collapses the picker", /sendTelegram\(env, tzConfirmText\(lang, tz\), cbChatId2, tzConfirmKeyboard\(lang\)\)/.test(botBtnSeg) && /tzSetCollapseText\(lang, tz\), \{ inline_keyboard: \[\] \}/.test(botBtnSeg));
 check("#buttons v13.90 /start re-prompts tz-less returning members", /if \(langSet && !up\.tz\)/.test(botBtnSeg));
 check("#buttons editMessageText sender exists in telegram.ts", (src.match(/\/\/ ===== src\/telegram\.ts =====[\s\S]*?(?=\/\/ ===== src\/)/) || [""])[0].includes("editMessageText"));
 const kbAttaches = (botBtnSeg.match(/chatId, replyKeyboard\(lang\)/g) || []).length;

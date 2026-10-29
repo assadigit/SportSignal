@@ -25,7 +25,7 @@ import { getRegisteredChats, getUserPrefs, setUserLang, getUserTz, masterTeamLis
 // not). Boolean returns drive the v13.91 honest-failure UX.
 import { registerChat, removeChat, saveUserPref, deleteUserPref, saveChatProfile, chatProfileGet, updSeen } from "./user-store";
 import { sendLeagueTables, sendWeekAhead } from "./digest-weekly";
-import { replyKeyboard, normalizeCommand, teamsMessageText, teamsGridKeyboard, tzStatusText, tzPickerKeyboard, tzRegionText, tzRegionKeyboard, tzOnboardText, tzConfirmText, tzConfirmKeyboard, tzDoneText, TZ_REGIONS } from "./bot-ui";
+import { replyKeyboard, normalizeCommand, teamsMessageText, teamsGridKeyboard, tzStatusText, tzPickerKeyboard, tzRegionText, tzRegionKeyboard, tzOnboardText, tzDefaultKeyboard, tzConfirmText, tzConfirmKeyboard, tzSetCollapseText, tzDoneText, TZ_REGIONS } from "./bot-ui";
 import { applySettings } from "./admin";
 import { isAdminChat, notifyAdminUserJoined, notifyAdminUserLeft, adminPanelText, adminPanelKeyboard, adminMembersMessage, adminStatusMessage, adminBroadcast } from "./admin-bot";
 export async function handleTelegramUpdate(env: Env, update) {
@@ -81,10 +81,14 @@ export async function handleTelegramUpdate(env: Env, update) {
             // re-tapping an old picker. Users with a tz are never nagged.
             // Without this a Sydney member's alerts silently ran on
             // Tehran time forever.
+            // v13.189-tzconfirm: the ask is now the PROCEED-WITH-DEFAULT
+            // prompt — Iran (UTC+3:30) is the default zone (all of Iran
+            // shares one timezone); one tap accepts it, the other row
+            // opens the full region picker.
             const pnow = await getUserPrefs(env);
             const pnowTz = pnow[String(cbChatId2)] && pnow[String(cbChatId2)].tz;
             if (!pnowTz) {
-              await sendTelegram(env, tzOnboardText(lang), cbChatId2, tzPickerKeyboard(lang));
+              await sendTelegram(env, tzOnboardText(lang), cbChatId2, tzDefaultKeyboard(lang));
             }
           }
         // v13.49-buttons: team-grid callbacks (tf:<n> / tf:all) from the
@@ -156,12 +160,21 @@ export async function handleTelegramUpdate(env: Env, update) {
                 await answerCallbackQuery(env, cbq.id, lang === "en" ? "\u26A0\uFE0F Could not save right now \u2014 try again later" : "\u26A0\uFE0F \u0641\u0639\u0644\u0627\u064B \u0630\u062E\u06CC\u0631\u0647 \u0646\u0634\u062F \u2014 \u0628\u0639\u062F\u0627\u064B \u062F\u0648\u0628\u0627\u0631\u0647 \u0627\u0645\u062A\u062D\u0627\u0646 \u06A9\u0646\u06CC\u062F");
                 return;
               }
-              await answerCallbackQuery(env, cbq.id, lang === "en" ? "Timezone: " + tz : "\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC: " + tz);
-              // v13.90-tzonboard: the select\+confirm step \u2014 the tz is
-              // already SAVED (write-first); the confirm view shows the
-              // live local time + offset so the user can verify it against
-              // their wall clock, then \u2705-dismiss or re-open the picker.
-              await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzConfirmText(lang, tz), tzConfirmKeyboard(lang));
+              await answerCallbackQuery(env, cbq.id, lang === "en" ? "\u2705 Timezone set" : "\u2705 \u062B\u0628\u062A \u0634\u062F");
+              // v13.189-tzconfirm: the UNMISSABLE confirmation — a FRESH
+              // message, not an in-place edit. The v13.90 edit-only flow
+              // was easy to miss (the owner's live report: users couldn't
+              // tell success from failure after tapping their zone).
+              // Write-first already persisted the tz above; this message
+              // carries the set-zone + the WELCOME + the
+              // you'll-receive-updates line, with the live local time for
+              // the wall-clock check (\u2705-confirm or re-open the picker).
+              await sendTelegram(env, tzConfirmText(lang, tz), cbChatId2, tzConfirmKeyboard(lang));
+              // collapse the TAPPED picker message (buttons stripped — no
+              // stale re-taps). Best-effort: a >48h-old message can no
+              // longer be edited and this fails silently — the fresh
+              // confirmation above is the durable record either way.
+              await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzSetCollapseText(lang, tz), { inline_keyboard: [] });
             } else {
               await answerCallbackQuery(env, cbq.id, lang === "en" ? "Unknown timezone" : "\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC \u0646\u0627\u0645\u0639\u062A\u0628\u0631 \u0627\u0633\u062A");
               await editMessageText(env, cbChatId2, cbq.message && cbq.message.message_id, tzStatusText(lang, prefs[key] && prefs[key].tz ? prefs[key].tz : env.TEHRAN_TZ || "Asia/Tehran"), tzPickerKeyboard(lang));
@@ -284,8 +297,10 @@ export async function handleTelegramUpdate(env: Env, update) {
       // before the onboarding existed (they see it on their next /start,
       // once; a set tz never re-prompts). The lang tap itself sends the
       // picker for brand-new joiners (see the lang: callback above).
+      // v13.189-tzconfirm: the same PROCEED-WITH-DEFAULT ask (Iran
+      // UTC+3:30 one-tap accept, or open the region picker).
       if (langSet && !up.tz) {
-        await sendTelegram(env, tzOnboardText(up.lang === "en" ? "en" : "fa"), chatId, tzPickerKeyboard(up.lang === "en" ? "en" : "fa"));
+        await sendTelegram(env, tzOnboardText(up.lang === "en" ? "en" : "fa"), chatId, tzDefaultKeyboard(up.lang === "en" ? "en" : "fa"));
       }
     } else if (text === "/lang") {
       const promptText = "\u{1F310} \u0632\u0628\u0627\u0646 / Language";

@@ -4,6 +4,76 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.189-tzconfirm — the timezone confirmation round (the unmissable welcome + the Iran default ask)
+
+_2026-10-29 · on top of v13.188-publicity · owner: "When a new user wants
+to join the telegram bot, they must set their time-zone. But, after
+clicking their timezone, they do not get any confirmation... I want a
+confirmation message, that your timezone is set. welcome to the bot and
+from now on, you'll receive updates. also make the time zone of tehran,
+iran, because all iran have same timezone. also make the iran's timezone
+default, and ask user proceed with default timezone? Iran (3:30 for
+example)"_
+
+**THE FIX, IN ONE LINE:** a timezone tap now lands a FRESH confirmation
+message — "your timezone is set + welcome to the bot + from now on
+you'll receive updates" — instead of the easy-to-miss in-place edit, and
+the onboarding itself became a one-tap PROCEED-WITH-DEFAULT ask: "the
+default timezone is Iran (UTC+3:30) — proceed with it?"
+
+**(1) WHY THE OLD FLOW FELT SILENT.** v13.90-tzonboard confirmed a zone
+tap by EDITING the tapped picker message into the confirm view. An
+in-place edit produces no notification and no new bubble — a user
+mid-scroll (or on a lagging client) genuinely could not tell success
+from failure (the owner's live report; the v13.116 dead-button episode
+made the same surface a known trap). The fix is structural, not
+cosmetic: the `tz:<city>` callback now SENDS A NEW MESSAGE (unmissable
+by construction) carrying the set-zone + the UTC offset + the live
+local time, the welcome ("به ربات خوش آمدید!" / "Welcome to the bot!"),
+and the explicit promise ("از این پس اعلام‌های مسابقات را به وقتِ خودتان
+دریافت خواهید کرد" / "From now on, you'll receive match updates at your
+local time") — then COLLAPSES the tapped picker message to a
+buttons-stripped "Timezone set — see the confirmation below ⬇️" (an
+empty `inline_keyboard` in the edit, so the stale buttons can never be
+re-tapped). Order matters and is deliberate: the fresh confirmation is
+sent FIRST (the durable record — survives even when the collapse edit
+fails on a >48h-old message, which editMessageText silently rejects);
+the collapse is best-effort cosmetics. The v13.90 verify-your-wall-clock
+step is preserved: the confirmation carries the ✅ "Yes, correct" /
+🔀 "Change region" buttons, and the ✅ tap still edits to the done text
+— now the full "Welcome aboard! All set. From now on, you'll receive
+match updates at your local time ⚽" close-out. The success toast got
+the same honesty pass ("✅ Timezone set" / "✅ ثبت شد", was the bare
+zone string). The v13.91 quota-failure contract is untouched: a failed
+save still gets ONLY the retry-later toast — never a welcome for a tz
+that was not persisted (now also gated: no confirmation message either).
+
+**(2) THE IRAN DEFAULT ASK.** The onboarding prompt (both entry points —
+the language-tap join and the /start re-prompt for tz-less members) is
+now the owner-asked question: "قدم آخر — منطقهٔ زمانی پیش‌فرض ربات، ایران
+(UTC+3:30) است. تمام ایران یک منطقهٔ زمانی دارد — با همین پیش‌فرض پیش
+برویم؟" / "Last step — the default timezone is Iran (UTC+3:30). All of
+Iran shares one timezone — proceed with the default?" — answered by a
+TWO-ROW keyboard: "🇮🇷 ✅ بله — ایران (UTC+3:30) · <live Tehran clock>"
+(tz:tehran — one tap, done; the button carries the live local time so
+the user can verify against their wall clock BEFORE tapping) and
+"🌍 انتخاب منطقهٔ زمانی دیگر" (tzr:hub — opens the unchanged full region
+picker the /timezone command serves). The offset is LIVE-COMPUTED via
+tzUtcOffset (UTC+3:30 — Iran abolished DST in 2022, stable year-round)
+with the hardcoded fallback for a colo where the probe fails closed.
+The region picker, the tz:reset, and the /timezone command surface are
+byte-unchanged — changers keep the full 47-city hub.
+
+**(3) THE GATES.** The onboarding/confirmation flow is behavioral-tested
+in check-bot-edges (the default-ask keyboard shape, the fresh-message
+confirmation with tzok/tzr:hub buttons, the welcome + updates promise
+wording, the collapse edit stripping buttons, the quota-failure
+no-confirm contract now including the send), check-join-flow (the
+lang-tap joiner's default-ask), and check-reliability (the wiring
+pins). All four new/changed texts ride the shared mdv2Safe
+MarkdownV2-parse gate (bold welcome spans, escaped offsets, the single
+code-span local time — parse-400 cannot ship). tsc 0, npm test 0.
+
 # v13.188-publicity — the repo goes public (unlimited CI/CD) + the bugs the first real CI runs found
 
 _2026-10-28 · on top of v13.187-laligadepth · owner: "Make the repo public,
