@@ -677,6 +677,25 @@
 //              stays served per the retention rule — cache-first assets
 //              can't refresh without a rename or a bump, the v13.39 rule:
 //              every asset-editing release bumps.)
+// v13.193-leagueinset (the owner's "inner margin for the circle" round):
+//              routine evict for this release's public-13.73.css→13.74.css
+//              rename — the fallback league crown's white .league-icon
+//              disc gains its INNER INSET: the svg/img content slot
+//              shrinks 76% -> 62%, because an edge-to-edge SQUARE emblem
+//              (the FD BL1 crest, 200x200 with content bbox 0,0->200,200)
+//              overflows the disc's inscribed square — at 76% the
+//              square's corners sat 53.7% of the disc diameter from the
+//              centre, past the 50% radius, clipped flush against the
+//              overflow:hidden rim (the "logo touches the circle" the
+//              owner saw); at 62% they sit at 43.8% — a clear
+//              ~6.2%-of-diameter white inset at the tightest point and
+//              ~19% on the flats. The disc's own box, the on-rim crown
+//              and the centering contract are untouched; the JS bundle
+//              is unchanged (13.56.js stays). Stale HTML may still
+//              reference the retired 13.73.css, which stays served per
+//              the retention rule — cache-first assets can't refresh
+//              without a rename or a bump, the v13.39 rule: every
+//              asset-editing release bumps.
 // v13.192-leaguebadge (the owner's "the logo is enough" round): routine
 //              evict for this release's public-13.72.css→13.73.css +
 //              public-13.55.js→13.56.js renames — the fallback league
@@ -694,7 +713,7 @@
 //              pair, which stays served per the retention rule —
 //              cache-first assets can't refresh without a rename or a
 //              bump, the v13.39 rule: every asset-editing release bumps.
-const CACHE = "sportsignal-v93";
+const CACHE = "sportsignal-v94";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

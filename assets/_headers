@@ -398,6 +398,20 @@
 /public-13.71.css
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.193-leagueinset: the owner's "inner margin for the circle" round —
+# the fallback league crown's white .league-icon disc gains its INNER
+# INSET: the svg/img content slot shrinks 76% -> 62% so an edge-to-edge
+# SQUARE emblem (the FD BL1 crest, 200x200 content bbox 0,0->200,200)
+# can never touch the rim again — at 76% the square's corners sat 53.7%
+# of the disc diameter from the centre (past the 50% radius, clipped
+# flush against the overflow:hidden rim); at 62% they sit at 43.8% — a
+# clear ~6.2%-of-diameter white inset at the tightest point, ~19% on
+# the flats. The disc's own box, the on-rim crown and the centering
+# contract are untouched. (rename-on-edit; 13.73.css stays served +
+# pinned one SEO TTL above.)
+/public-13.74.css
+  Cache-Control: public, max-age=31536000, immutable
+
 # v13.192-leaguebadge: the owner's "the logo is enough" round — the
 # fallback league crown goes BADGE-ONLY (the .league-title wordmark
 # retires from both render paths) and the white .league-icon disc doubles

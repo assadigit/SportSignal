@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.73.css">
+<link rel="stylesheet" href="/public-13.74.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.

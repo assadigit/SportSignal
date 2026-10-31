@@ -120,7 +120,7 @@ const check = (name, cond) => {
   // sw cache bumped (the release pin: v93 ships v13.192-leaguebadge; the
   // bump is the every-release routine (v13.39 rule))
   const sw = fs.readFileSync(path.join(ROOT, "assets", "sw.js"), "utf8");
-  check("wiring: SW cache bumped to sportsignal-v93 (v13.192-leaguebadge — the owner's badge-only league crown rides the css+js renames; the mc map is unchanged, the registry byte-stable — this gate re-proves the 14-club map untouched)", /const CACHE = "sportsignal-v93"/.test(sw) && !/const CACHE = "sportsignal-v92"/.test(sw) && !/const CACHE = "sportsignal-v91"/.test(sw));
+  check("wiring: SW cache bumped to sportsignal-v94 (v13.193-leagueinset — the owner's disc inner-inset round rides the css rename (the mc map is unchanged, the registry byte-stable — this gate re-proves the 14-club map untouched); v93 — v13.192-leaguebadge, the badge-only league crown on the css+js renames)", /const CACHE = "sportsignal-v94"/.test(sw) && !/const CACHE = "sportsignal-v93"/.test(sw) && !/const CACHE = "sportsignal-v92"/.test(sw));
 
   console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / wiring)");
   process.exit(failed ? 1 : 0);

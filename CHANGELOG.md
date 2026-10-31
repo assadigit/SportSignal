@@ -4,6 +4,64 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.193-leagueinset — the disc gains its inner margin (the logo never touches the rim)
+
+_2026-11-01 · on top of v13.192-leaguebadge · owner: "یک حاشیه برای داخل
+دایره در نظر بگیر، تا لوگو لبه‌های با دایره طلاقی پیدا نکنه." (an inner
+margin for the circle, so the logo's edges never touch it.)_
+
+**THE CHANGE, IN ONE LINE:** the white `.league-icon` disc's svg/img
+content slot shrinks `76%` → `62%` of the disc box — a clear inner white
+margin between the emblem and the rim, at every clamp size — riding the
+public-13.73.css → 13.74.css rename (the JS bundle is unchanged: no
+markup moved, 13.56.js stays).
+
+**(1) WHAT THE OWNER SAW.** The v13.192 doubled badge (e.g. Bundesliga)
+rendered its emblem at 76% of the disc — but the FD BL1 crest is an
+edge-to-edge 200×200 SQUARE (content bbox 0,0→200,200), and a square
+overflows the disc's inscribed square: at 76% the square's corners sit
+53.7% of the disc DIAMETER from the centre (0.537 = 0.76 × 0.7071), PAST
+the 50% radius — clipped flush against the `overflow:hidden` rim. The
+logo read as touching/sticking to the circle's edge.
+
+**(2) THE MATH.** 62% puts the same corners at 43.8% of the diameter —
+a ~6.2%-of-diameter white inset at the tightest point (the square's
+corners) and 19% on the flats, at every clamp size; a rounder emblem
+simply reads as a wider coin rim. The disc's OWN box is untouched: the
+clamp `clamp(60px,9cqi,84px)`, the shadow, the inset rim, the on-rim
+crown and the centering contract all ride unchanged from v13.192.
+
+**(3) THE RENDER PATHS.** None moved — the slot lives entirely in the
+`.league-icon svg` / `.league-icon img` CSS rules, so `heroCardHtml`
+(src/seo/markup.ts) and `heroCentreNode` (public-13.56.js) stay
+byte-identical (the SSR paint and the client re-render never diverge);
+the mapped six-logo webp branch (`.league-logo`) is untouched.
+
+**(4) VERIFICATION.** Playwright against the local repro server (live
+homepage HTML + the new pair), BL1 hero: slot 62.0% measured at all four
+widths; img-box corners 43.8-43.9% of the disc diameter (was 53.7%),
+`cornersClipped` true→false, inset −3.7%→+6.1/+6.2% of diameter at the
+corners and 12%→19% on the flats; disc 69/78/83/83px at
+1280/1440/1727/1920 (unchanged from v13.192); `.hero-league` centre
+EXACTLY 50.00% of the card at every width, one distinct geometry state
+across the load lifecycle (no shift); pixel-level before/after: solid
+red (208,6,20) all the way to 99.5% of the radius BEFORE → white
+(255,255,255) from 87.6% of the radius to the rim AFTER, the flats
+white ring 17px → 29px at the 2×/1440 crop (matches 12%→19% of the
+156px disc); PL mapped webp identical 13.73 vs 13.74 (130×130 lockup,
+centre 50%); SSR no-JS paint = client render (disc 78px, slot 62%,
+centre 50%); mobile ≤899px: `.hero-mcard` shown, the PC card hidden,
+`.league-icon` only inside the hidden desktop card. `npm test` green
+end-to-end (exit 0), including the new v13.193 gates (the 62% slot
+contract + the no-76% negative pins, the positioning contract re-pinned
+LIVE on 13.74.css, retention of the retired 13.73.css, SW v94, the
+re-baselined public-page-baseline.html, and the mc-heroes SW-v94 gate).
+
+**(5) THE WIRING.** VERSION 13.193-leagueinset + package 13.193.0.0, SW
+`sportsignal-v93` → `v94` (CSS-only release: the JS pair stays 13.56.js),
+`_headers` pins public-13.74.css (95 rules — 5 under the 100-rule cap;
+13.73.css stays served + pinned one SEO TTL per the retention rule).
+
 # v13.192-leaguebadge — the fallback league crown goes badge-only ("the logo is enough", the doubled disc)
 
 _2026-10-31 · on top of v13.191-herocentre · owner: "make the leagues' logo
