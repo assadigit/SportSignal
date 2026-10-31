@@ -662,7 +662,22 @@
 //              (script-src/connect-src now allow the cloudflareinsights
 //              origins). The chip is SSR-inlined, so the bump evicts any
 //              cached first paint of the truncated starball.
-const CACHE = "sportsignal-v91";
+// v13.191-herocentre (the league-block class regression fix): routine
+//              evict for this release's public-13.54.js→13.55.js rename —
+//              heroCentreNode's fallback branch (unmapped competition code,
+//              e.g. BL1) never set lg.className, so the client renderHeroSpot
+//              rebuild swapped the server's <div class="hero-league"> for a
+//              BARE <div> and the emblem+title cluster lost its absolute
+//              centered-above-the-frame positioning, reflowing to the card's
+//              top-right INSIDE the frame (RTL block flow) — the owner's
+//              "league logo shifts right after the page finishes loading".
+//              The fix restores lg.className="hero-league" there,
+//              class-for-class with the heroCardHtml server mirror. Stale
+//              HTML may still reference the retired 13.54.js pair, which
+//              stays served per the retention rule — cache-first assets
+//              can't refresh without a rename or a bump, the v13.39 rule:
+//              every asset-editing release bumps.)
+const CACHE = "sportsignal-v92";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

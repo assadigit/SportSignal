@@ -117,10 +117,10 @@ const check = (name, cond) => {
     check("wiring: wire.js --check in sync — " + String(err.stdout || err.message), false);
   }
 
-  // sw cache bumped (the release pin: v89 shipped v13.186-qa; v13.187 is a
-  // no-asset release — the bump is the every-release routine)
+  // sw cache bumped (the release pin: v92 ships v13.191-herocentre; the
+  // bump is the every-release routine (v13.39 rule))
   const sw = fs.readFileSync(path.join(ROOT, "assets", "sw.js"), "utf8");
-  check("wiring: SW cache bumped to sportsignal-v91 (v13.188-publicity — the repo goes public + the first real CI runs: the starball path repair + the CSP beacon allowance are server-side, the mc map is unchanged; the registry byte-stable — this gate re-proves the 14-club map untouched)", /const CACHE = "sportsignal-v91"/.test(sw) && !/const CACHE = "sportsignal-v90"/.test(sw) && !/const CACHE = "sportsignal-v89"/.test(sw));
+  check("wiring: SW cache bumped to sportsignal-v92 (v13.191-herocentre — the league-block class regression fix rides a bundle rename; the mc map is unchanged, the registry byte-stable — this gate re-proves the 14-club map untouched)", /const CACHE = "sportsignal-v92"/.test(sw) && !/const CACHE = "sportsignal-v91"/.test(sw) && !/const CACHE = "sportsignal-v90"/.test(sw));
 
   console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / wiring)");
   process.exit(failed ? 1 : 0);

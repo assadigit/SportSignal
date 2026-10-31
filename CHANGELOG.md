@@ -4,6 +4,89 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.191-herocentre — the league logo shifts right after load (the hero-league class regression, root-caused and fixed)
+
+_2026-10-31 · on top of v13.190-publicci · owner: "Fix the horizontal
+positioning of the competition/league logo in the desktop hero section…
+When the page initially loads, the league logo appears in the correct
+position (centered above the HUD). As the page finishes loading, the logo
+suddenly shifts horizontally to the right."_
+
+**THE FIX, IN ONE LINE:** `heroCentreNode`'s FALLBACK branch (any
+competition code outside the six-logo LGL map — BL1/Bundesliga today) never
+set `lg.className`, so the client's `renderHeroSpot()` rebuild replaced the
+server's `<div class="hero-league">` with a BARE `<div>`; the fix restores
+`lg.className="hero-league"` in that branch — class-for-class with the
+`heroCardHtml` server mirror — and rides the public-13.54.js → 13.55.js
+rename-on-edit.
+
+**(1) THE REPRODUCTION (measured, not guessed).** Playwright against the
+live homepage at 1440px, sampling `getBoundingClientRect()` across the page
+lifecycle (initial parse → DOMContentLoaded → the `renderHeroSpot()`
+rebuild → image load → `document.fonts.ready` → window load):
+
+- **Server paint (no-JS):** `.hero-league` present, `position:absolute`,
+  `bottom:100%`, `left/right:15%` of the `.hero-grid` canvas (inset:0 of
+  the card) + the centered flex column — emblem icon center at exactly
+  **50.00% of the .hero-card width**, sitting ABOVE the frame
+  (block bottom y166.4 vs card top y180.4).
+- **After the API payload lands and `renderHeroSpot()` rebuilds
+  `#heroSpot`:** `.hero-league` count = **0** — the league row is a bare
+  `<div>`. Static block inside `.hero-grid`, children flowing as block +
+  inline content in RTL: the emblem icon lands at **97.75% of the card
+  width** (flush to the right rim, 0px gap), INSIDE the card at the top
+  (y = card top), the title right-aligned beneath it. VLM on the
+  before/after screenshots: "centered horizontally above the top edge of
+  the HUD frame" → "moved to the top-right corner of the HUD frame".
+
+That is the owner's screenshot exactly: correct at first paint, jumps
+right once "the page finishes loading" (= once the async
+`/api/public-matches` response triggers the rebuild), and stays wrong —
+every subsequent render (language toggle, the 60s poll, resize) goes
+through the same buggy branch.
+
+**(2) THE ROOT CAUSE.** v13.151-edits (public-13.38.js) split
+`heroCentreNode`'s league row into two branches when the owner's
+European-Leagues WebP pack landed: the mapped branch gained
+`lg.className="hero-league has-logo"`, the new fallback branch (unmapped
+codes keep the icon+title block) simply never assigned the class. The
+server mirror (`heroCardHtml`, src/seo/markup.ts) always emitted
+`<div class="hero-league">` — hence "initially centered, shifts after
+load": the SSR paint is correct, the client re-render is not. The bug
+was invisible while the hero rode a mapped competition (PL/CL/PD/SA/
+FL1/EL all set the class) and surfaced the moment the next big match was
+a BL1 fixture.
+
+**(3) THE FIX.** `assets/public-13.55.js` (rename-on-edit; 13.54.js stays
+served + pinned one SEO TTL): the fallback branch sets
+`lg.className="hero-league"` before appending the icon+title — one
+insertion, +27 bytes, byte-identical otherwise. No CSS changes: the
+existing `.hero-league` rule (absolute, `bottom:100%`, symmetric
+`left:15%/right:15%` over the card-filling `.hero-grid`, centered flex
+column) already centers the block at exactly 50% of the `.hero-card`
+width — the containing-block geometry the owner asked to keep — for both
+the fallback and the `has-logo` variant, in RTL and LTR alike.
+
+**(4) GATED.** Five new check-stats gates: the fallback branch's class
+assignment (the exact regression, plus a negative pin on the old bare-div
+pattern), the mapped branch's `hero-league has-logo`, the SSR/client
+class parity against `heroCardHtml`, the league-block positioning contract
+in public-13.72.css (bottom:100% + symmetric insets + the inset:0 grid
+canvas), and the retired-bundle retention rule.
+
+Release: VERSION 13.191-herocentre, package 13.191.0.0, SW
+sportsignal-v91 → v92, `_headers` immutable pin for public-13.55.js,
+hero-coverage regenerated (bundle 13.55.js, HERO_ART unchanged),
+check-stats bundle pins rewritten, parity re-frozen (public baseline,
+script-tag line only).
+Gates: tsc EXIT 0; npm test EXIT 0 (2422 checks, +5).
+QA: Playwright at 1280/1440/1727/1920 — the emblem cluster (fallback,
+BL1) and the league logo (mapped, PL) both stay at 50.00% of the card
+width through the FULL lifecycle (initial parse, DCL, the
+renderHeroSpot rebuild, logo image load, fonts.ready, window load), after
+a forced hero re-render, and after the EN language toggle; mobile hero
+(`.hero-mcard`) byte-unchanged.
+
 # v13.190-publicci — the repo is ACTUALLY public (the CI billing block, root-caused and cleared)
 
 _2026-10-29 · on top of v13.189-tzconfirm · owner: "Make this repo public.

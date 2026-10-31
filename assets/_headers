@@ -359,6 +359,19 @@
 /public-13.54.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.191-herocentre: the league-block class regression fix —
+# heroCentreNode's FALLBACK branch (competition code outside the six-logo
+# LGL map, e.g. BL1) never set lg.className, so the client renderHeroSpot
+# rebuild replaced the server's <div class="hero-league"> with a BARE <div>:
+# the emblem+title cluster lost position:absolute/bottom:100%/15% insets +
+# the centered flex column and reflowed to the card's top-right INSIDE the
+# frame (RTL block flow) — the owner's "league logo shifts right after
+# load". The fix restores lg.className="hero-league" in that branch,
+# class-for-class with the heroCardHtml server mirror. (rename-on-edit;
+# 13.54.js stays served + pinned one SEO TTL above.)
+/public-13.55.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.52.js
   Cache-Control: public, max-age=31536000, immutable
 
