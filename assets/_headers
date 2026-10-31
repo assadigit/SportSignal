@@ -359,6 +359,16 @@
 /public-13.54.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.192-leaguebadge: the owner's "the logo is enough" round on the
+# fallback league block — the .league-title wordmark RETIRES from both
+# render paths (heroCardHtml + heroCentreNode) and the white .league-icon
+# disc doubles (clamp 30/4.5/42 -> 60/9/84, shadow + rim scaled with it);
+# the now badge-only block joins the mapped webp's on-rim crown
+# (margin-bottom:-4.6% in the base rule, the .has-logo override retires).
+# (rename-on-edit; 13.55.js stays served + pinned one SEO TTL above.)
+/public-13.56.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # v13.191-herocentre: the league-block class regression fix —
 # heroCentreNode's FALLBACK branch (competition code outside the six-logo
 # LGL map, e.g. BL1) never set lg.className, so the client renderHeroSpot
@@ -386,6 +396,18 @@
 # the name is retired because BOTH 13.170 variants shipped different
 # contents under it).
 /public-13.71.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.192-leaguebadge: the owner's "the logo is enough" round — the
+# fallback league crown goes BADGE-ONLY (the .league-title wordmark
+# retires from both render paths) and the white .league-icon disc doubles
+# (clamp 30/4.5/42 -> 60/9/84, shadow + inset rim scaled with it); the
+# badge-only block takes the mapped webp's on-rim margin-bottom:-4.6% in
+# the base .hero-league rule (the .has-logo override retires — measured:
+# the old 14px above-rim float would put the doubled disc's top into the
+# 102px header band at >=1440px). (rename-on-edit; 13.72.css stays served
+# + pinned one SEO TTL above.)
+/public-13.73.css
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.186-qa: the hero-card name slot widens 30cqw -> 38cqw (the slots stay

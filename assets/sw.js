@@ -677,7 +677,24 @@
 //              stays served per the retention rule — cache-first assets
 //              can't refresh without a rename or a bump, the v13.39 rule:
 //              every asset-editing release bumps.)
-const CACHE = "sportsignal-v92";
+// v13.192-leaguebadge (the owner's "the logo is enough" round): routine
+//              evict for this release's public-13.72.css→13.73.css +
+//              public-13.55.js→13.56.js renames — the fallback league
+//              crown (competition code outside the six-logo LGL map,
+//              e.g. BL1) drops the .league-title wordmark from BOTH
+//              render paths (heroCardHtml + heroCentreNode, class-for-
+//              class) and the white .league-icon disc doubles (clamp
+//              30/4.5/42 -> 60/9/84, shadow + rim scaled with it); the
+//              badge-only block joins the mapped webp's on-rim crown
+//              (margin-bottom:-4.6% in the base .hero-league rule, the
+//              .has-logo override retires — measured: the retired 14px
+//              above-rim float would have put the doubled disc's top
+//              ~2-6px into the 102px header band at >=1440px). Stale
+//              HTML may still reference the retired 13.72.css/13.55.js
+//              pair, which stays served per the retention rule —
+//              cache-first assets can't refresh without a rename or a
+//              bump, the v13.39 rule: every asset-editing release bumps.
+const CACHE = "sportsignal-v93";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

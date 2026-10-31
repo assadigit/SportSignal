@@ -4,6 +4,72 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.192-leaguebadge — the fallback league crown goes badge-only ("the logo is enough", the doubled disc)
+
+_2026-10-31 · on top of v13.191-herocentre · owner: "make the leagues' logo
+circle 100% bigger, it's too small; also remove its text — for example
+Bundesliga, the logo is enough."_
+
+**THE CHANGE, IN ONE LINE:** the fallback league block (any competition
+code outside the six-logo LGL map — BL1/Bundesliga, PGL, …) drops the
+`.league-title` wordmark from BOTH render paths and the white `.league-icon`
+disc doubles — `clamp(30px,4.5cqi,42px)` → `clamp(60px,9cqi,84px)`, exactly
++100% at every clamp point — riding the public-13.72.css → 13.73.css +
+public-13.55.js → 13.56.js renames.
+
+**(1) WHAT THE OWNER SAW.** A mapped competition (PL/CL/PD/SA/FL1/EL)
+renders its big European-Leagues WebP lockup riding ON the frame's top rim;
+every other competition rendered a SMALL 30-42px white disc + the Persian
+wordmark under it (e.g. بوندسلیگا) floating 14px ABOVE the rim — visibly
+the poor cousin of the mapped crown.
+
+**(2) THE MEASURED GEOMETRY (why the block also moves onto the rim).**
+Doubling the disc while keeping the old `margin-bottom:14px` above-rim
+float would push the badge's top to y≈84-88px at ≥1440px — INTO the 102px
+header band (nav items bottom y90.4, measured): a 2-6px collision at
+1440-1920px. The badge-only block instead takes the mapped webp's OWN
+on-rim treatment: `margin-bottom:-4.6%` folds into the base `.hero-league`
+rule (the `.hero-league.has-logo` override RETIRES — both branches share
+the geometry now; the class stays in the markup as the mapped-branch
+hook). Measured after: badge top 50-56px clear of the header at all four
+acceptance widths, bottom straddling the rim by 35-42px (≈ the webp's
+-4.6% of card width), center EXACTLY 50% of the card.
+
+**(3) THE RENDER PATHS (class-for-class, as ever).** `heroCardHtml`
+(src/seo/markup.ts) and `heroCentreNode` (public-13.56.js) both emit
+`<div class="hero-league"><span class="league-icon">[emblem|UCL chip]</span></div>`
+— the `.league-title` span, its `compNameFa`/`compName` call site, and the
+`.league-title` CSS rule all retire together; the mapped branch
+(`hero-league has-logo` + `.league-logo`) is byte-identical to v13.191.
+The disc's shadow + inset rim scale with it (`0 2px 12px` → `0 4px 22px`,
+`1px` → `2px`) so the doubled badge keeps its weight.
+
+**(4) VERIFICATION.** Playwright against the local repro server (live
+homepage HTML + the new pair), BL1 hero: icon 69/78/83/83px at
+1280/1440/1727/1920 (was 35/39/41/41 — exactly 2.0×), title absent in the
+DOM in BOTH the no-JS server paint and the post-`renderHeroSpot()` client
+render, `.hero-league` center 50.00% of the card at every width, ONE
+distinct geometry state across 31 samples over 8s of the full load
+lifecycle (no shift), header clearance 50-56px, PL mapped webp unchanged
+(130px lockup, `has-logo`), mobile ≤899px unchanged (the desktop card
+hidden, `.hero-mcard` shown). VLM on the before/after screenshots: the
+small badge + بوندسلیگا wordmark → "the circular white badge is visibly
+larger (approximately twice the size)", the wordmark gone, the badge
+"horizontally centered over the HUD frame… bottom half overlapping/on top
+of the frame's top rim", no header collision (the BUNDESLIGA lettering it
+reports sits INSIDE the crest artwork itself — the logo, which is enough).
+`npm test` green end-to-end (2,426 OK, exit 0), including the new
+v13.192 gates (badge-only render paths, doubled-disc clamp, on-rim base
+rule, retired `.has-logo` override + `.league-title` rule, retention of
+the retired 13.55.js/13.72.css pair, SW v93, the re-baselined
+public-page-baseline.html).
+
+**(5) THE WIRING.** VERSION 13.192-leaguebadge + package 13.192.0.0, SW
+`sportsignal-v92` → `v93`, `_headers` pins the new pair (13.55.js +
+13.72.css stay pinned one SEO TTL per the retention rule),
+`sync-hero-coverage` regenerated for the 13.56 bundle, the mc-heroes map
+byte-stable (14 clubs untouched).
+
 # v13.191-herocentre — the league logo shifts right after load (the hero-league class regression, root-caused and fixed)
 
 _2026-10-31 · on top of v13.190-publicci · owner: "Fix the horizontal

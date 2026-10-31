@@ -193,7 +193,8 @@ function statePill(txt: string, dot = false): string {
 // v13.151-edits: the competition LOGO map — the owner's European-Leagues
 // WebP pack (400×400 white-transparent stacked lockups, /leagues/).
 // A mapped code renders the LOGO in the league block (riding ON the frame's
-// top rim); unknown codes keep the icon+title text block.
+// top rim); unknown codes keep the doubled icon disc, wordmark-less since
+// v13.192-leaguebadge (the owner: "the logo is enough").
 const LEAGUE_LOGOS: Record<string, string> = {
   CL: "/leagues/champions-league.webp",
   PL: "/leagues/premier-league.webp",
@@ -216,7 +217,10 @@ export function heroCardHtml(sm: SeoMatch): string {
   out += '<div class="hero-grid">';
   out += heroTeamHtml(m.homeTeam, false);
   // row 1 — league (v13.151-edits: a mapped competition renders its LOGO —
-  // bigger, riding ON the frame's top rim per requested-edits.png)
+  // bigger, riding ON the frame's top rim per requested-edits.png;
+  // v13.192-leaguebadge (owner): the fallback drops the .league-title
+  // wordmark — the doubled white .league-icon disc alone, same on-rim
+  // crown as the mapped webp, class-for-class with heroCentreNode)
   if (leagueLogo) {
     out += '<div class="hero-league has-logo"><img class="league-logo" src="' + leagueLogo + '" alt="" aria-hidden="true" loading="eager" decoding="async" draggable="false"></div>';
   } else {
@@ -224,7 +228,7 @@ export function heroCardHtml(sm: SeoMatch): string {
     out += (m.competition && m.competition.emblem)
       ? '<img src="' + esc(m.competition.emblem) + '" alt="" loading="lazy" decoding="async">'
       : UCL_LOGO_CHIP;
-    out += '</span><span class="league-title">' + esc(compNameFa(m)) + "</span></div>";
+    out += "</span></div>";
   }
   // row 2 — time / state / score + THE MATCH DAY below them (v13.151-edits:
   // the date moved off the retired shelf INTO the clock pod)
