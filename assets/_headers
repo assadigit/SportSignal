@@ -765,6 +765,16 @@
 /stadium-lights-hero.png
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.192-leaguebadge: THE 100-RULE CAP SWEEP #3 — the v13.129→v13.134
+# era CSS pins EVICTED (13.30/13.31/13.32/13.33/13.34/13.36.css, the
+# oldest expired pins on disk, ~58 releases past their one-SEO-TTL
+# retention; the CSS counterparts of the v13.186 13.29-32.js sweep). The
+# release's own +2 pins (13.56.js + 13.73.css) pushed the file to 101
+# rules and the deploy failed on Cloudflare's _headers 100-rule cap
+# (error 100324) — exactly the v13.169/v13.186 failure mode. The FILES
+# stay on disk, so an ancient cached HTML re-fetching one still resolves
+# — it just rides the default cache headers.
+
 # v13.134-typelight (retired pair — kept per the retention rule)
 # v13.134-typelight (owner, type round 2 + lighting): the featured club
 # names enlarge (clamp cap 20px -> 29px, mobile 15px -> 17.5px, + a
@@ -772,34 +782,16 @@
 # (kickoff clock / stadium name / countdown) move to Peyda at lighter
 # weights, the stadium-lights overlay joins the hero scene, and the
 # dark/light toggle retires (always dark). The overlay PNG is immutable.
-/public-13.36.css
-  Cache-Control: public, max-age=31536000, immutable
-
-/public-13.35.js
-  Cache-Control: public, max-age=31536000, immutable
 
 # v13.133-persiantype (retired pair — kept per the retention rule):
 # the Morabba+Peyda Persian typography system (the owner's font pack) +
 # the dedicated mobile HUD artwork + the mobile layout round (logo
 # clearance, flush in-hero sync line, countdown-flank crest watermarks).
-/public-13.34.css
-  Cache-Control: public, max-age=31536000, immutable
-
-/public-13.33.css
-  Cache-Control: public, max-age=31536000, immutable
 
 /public-13.34.js
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.129 (retired pair — kept per the retention rule)
-/public-13.32.css
-  Cache-Control: public, max-age=31536000, immutable
-
-/public-13.31.css
-  Cache-Control: public, max-age=31536000, immutable
-
-/public-13.30.css
-  Cache-Control: public, max-age=31536000, immutable
 
 
 

@@ -68,7 +68,14 @@ public-page-baseline.html).
 `sportsignal-v92` → `v93`, `_headers` pins the new pair (13.55.js +
 13.72.css stay pinned one SEO TTL per the retention rule),
 `sync-hero-coverage` regenerated for the 13.56 bundle, the mc-heroes map
-byte-stable (14 clubs untouched).
+byte-stable (14 clubs untouched). **The deploy-time cap sweep #3:** the
+release's +2 pins pushed `_headers` to 101 rules and the first
+`wrangler deploy` FAILED on Cloudflare's 100-rule cap (error 100324 —
+the exact v13.169/v13.186 failure mode); the v13.129→v13.134 era pins
+(13.30/13.31/13.32/13.33/13.34/13.36.css + 13.35.js, the oldest expired
+pins, ~58 releases past their one-SEO-TTL retention — the CSS
+counterparts of the v13.186 13.29-32.js sweep) are EVICTED, the FILES
+stay on disk; 94 rules now (~3 releases of headroom at +2/release).
 
 # v13.191-herocentre — the league logo shifts right after load (the hero-league class regression, root-caused and fixed)
 
