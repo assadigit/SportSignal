@@ -14,7 +14,7 @@ import { normAlias } from "./teams";
 import { isLiveStatus } from "./match-model";
 import { computeFixtureSignal, decideActivity, reconcileStaleLive } from "./scheduler";
 import { matchPath } from "./slugs"; // v13.80-canonical-hrefs: payload rows carry the server-canonical URL
-import { shouldReport, isFeaturedMatch, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName, pickHeroMatch, priorityTier, isSiteHiddenMatch } from "./match-classify";
+import { shouldReport, isFeaturedMatch, isDomesticLeagueCode, isMasterPair, hasSelectedTeam, isMasterClash, isDerby, rivalryName, pickHeroMatches, priorityTier, isSiteHiddenMatch } from "./match-classify";
 import { fetchLongView } from "./providers";
 import { getCachedMatches } from "./match-pool";
 import { applySettings } from "./admin";
@@ -314,6 +314,12 @@ export function applyLiveOverlay(data, ov) {
       data.finished = justFinished.concat(Array.isArray(data.finished) ? data.finished : []).slice(0, 20);
     }
   }
+  // v13.194-herocarousel: every heroMatches row gets the same overlay
+  // patch (status/score/minute + the stale-live downgrade) as nextBig — a
+  // slate member the tick just saw go live/finished must not ride the
+  // upcoming carousel; the CLIENT's per-row eligibility re-check drops it
+  // from the active rotation (public-13.57.js carOk).
+  if (Array.isArray(data.heroMatches)) data.heroMatches.forEach((m) => patch(m));
   if (data.nextBig) patch(data.nextBig);
   if (data.topSpot) {
     if (data.topSpot.next) patch(data.topSpot.next);
@@ -600,6 +606,26 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     finished: pool.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && m.status === "FINISHED" && now - new Date(m.utcDate).getTime() < 7 * 864e5).sort((a, b) => new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime()).slice(0, 20)
   });
   let { upcoming, finished } = select(matches);
+  // v13.194-herocarousel: the hero slate — the SHARED pickHeroMatches
+  // selector (match-classify.ts, the same eligibility the bot's /featured
+  // reads via its pickHeroMatch wrapper — ADR-001 website-as-truth). The
+  // server is AUTHORITATIVE for eligibility, the 8-hour window, the
+  // six-slide cap and the slide order; the client never rebuilds ACE
+  // eligibility from team lists. heroMatches is the ordered array the
+  // carousel renders (zero to six pubMatch rows); nextBig stays as the
+  // heroMatches[0] compatibility alias for older cached clients + the SSR
+  // router + the bot-era consumers. DECLARED BEFORE every secondary
+  // selection below (the heroKeys exclusion set is read by addBox).
+  const heroList = pickHeroMatches(matches);
+  const heroMatches = heroList.map(pubMatch);
+  const nextBig = heroMatches[0] || null;
+  // v13.194-herocarousel (spec §15): the SELECTED slate members leave the
+  // secondary presentations (upcoming / topSpot / UCL card / week lists)
+  // so a fixture never renders twice on the same page. Same key shape as
+  // the topSpotKeys set (id|utcDate — the canonical row identity), applied
+  // BEFORE the withTop/pubMatch shaping. Overflow (eligible ACE fixtures
+  // beyond the six-slide cap) is NOT keyed here — those stay listed.
+  const heroKeys = new Set(heroList.map((m) => String(m.id || "") + "|" + m.utcDate));
   const BOX_NEAR_MS = 7 * 864e5;
   const lgPool = matches.filter((m) => m.status !== "FINISHED" && isDomesticLeagueCode(m.competition.code) && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > now && new Date(m.utcDate).getTime() <= now + 90 * 864e5)).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
   const bigLgOf = (m) => isMasterClash(m) || isDerby(m) || isTopTable(m);
@@ -610,7 +636,7 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   const topSpotKeys = new Set();
   const addBox = (m) => {
     const k = String(m.id || "") + "|" + m.utcDate;
-    if (topSpotKeys.has(k) || topSpotPicked.length >= 11) return;
+    if (topSpotKeys.has(k) || heroKeys.has(k) || topSpotPicked.length >= 11) return;
     topSpotKeys.add(k);
     topSpotPicked.push(m);
   };
@@ -618,11 +644,6 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   lgRest.forEach(addBox);
   const topSpotList = topSpotPicked.sort(byKick);
   const topSpotNext = topSpotList[0] || null;
-  // v13.73-herotruth: the hero pick is the SHARED pickHeroMatch expression
-  // (matches.ts) — the same one the bot's /featured uses. Website-as-truth
-  // (v13.68) now holds by construction, not by coincidence.
-  const heroMatch = pickHeroMatch(matches);
-  const nextBig = heroMatch ? pubMatch(heroMatch) : null;
   const standings: Record<string, any> = {};
   standCodes.forEach((c) => {
     standings[c] = Object.assign({ code: c, name: COMP_EN[c] || c, faName: translateCompetition(c), emblem: LEAGUE_LOGOS[c] || null }, compact(stMap[c]));
@@ -694,7 +715,7 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   // still lead everything (a rolling ball outranks any fixture). The
   // 2026-10-14 case: the card read LASK–Liverpool → Roma–Real → Bodø–Dortmund
   // → City–PSG (chronological); now City–PSG opens the card.
-  const clBox = clMatches.filter((m) => hasSelectedTeam(m)).sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || priorityTier(b) - priorityTier(a) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 8);
+  const clBox = clMatches.filter((m) => hasSelectedTeam(m) && !heroKeys.has(String(m.id || "") + "|" + m.utcDate)).sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || priorityTier(b) - priorityTier(a) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 8);
   // v13.53-standsteady: when the live CL table is missing, the snapshot's
   // ucl card fills in (same stale-fallback as the league tables — the card
   // used to render its own «جدول هنوز در دسترس نیست» twin whenever the CL
@@ -754,9 +775,9 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   // days of the Persian week, not a full 7-day lookahead.
   const weekStart = Date.now();
   const weekEnd = weekStart + 7 * 864e5;
-  const thisWeek = matches.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekStart && new Date(m.utcDate).getTime() < weekEnd).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
-  const nextWeek = matches.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && new Date(m.utcDate).getTime() >= weekEnd && new Date(m.utcDate).getTime() < weekEnd + 7 * 864e5).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
-  const data: any = { upcoming: upcoming.filter((m) => !topSpotKeys.has(String(m.id || "") + "|" + m.utcDate)).map(withTop), finished: finished.map(withTop), nextBig, topSpot: { next: topSpotNext ? withTop(topSpotNext) : null, matches: topSpotList.map(withTop) }, thisWeek: thisWeek.map(withTop), nextWeek: nextWeek.map(withTop), standings, cups, ucl, fetchedAt: null, pollHint: pollHintSec, schedMode };
+  const thisWeek = matches.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && !heroKeys.has(String(m.id || "") + "|" + m.utcDate) && new Date(m.utcDate).getTime() >= weekStart && new Date(m.utcDate).getTime() < weekEnd).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
+  const nextWeek = matches.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && !heroKeys.has(String(m.id || "") + "|" + m.utcDate) && new Date(m.utcDate).getTime() >= weekEnd && new Date(m.utcDate).getTime() < weekEnd + 7 * 864e5).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
+  const data: any = { upcoming: upcoming.filter((m) => !topSpotKeys.has(String(m.id || "") + "|" + m.utcDate) && !heroKeys.has(String(m.id || "") + "|" + m.utcDate)).map(withTop), finished: finished.map(withTop), heroMatches, nextBig, topSpot: { next: topSpotNext ? withTop(topSpotNext) : null, matches: topSpotList.map(withTop) }, thisWeek: thisWeek.map(withTop), nextWeek: nextWeek.map(withTop), standings, cups, ucl, fetchedAt: null, pollHint: pollHintSec, schedMode };
   if (prewarm) data.prewarm = true;
   const poolMeta = matches ? await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null) : null;
   data.fetchedAt = poolMeta && poolMeta.fetchedAt || (new Date()).toISOString();

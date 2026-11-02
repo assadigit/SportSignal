@@ -713,7 +713,12 @@
 //              pair, which stays served per the retention rule —
 //              cache-first assets can't refresh without a rename or a
 //              bump, the v13.39 rule: every asset-editing release bumps.
-const CACHE = "sportsignal-v94";
+// v13.194-herocarousel: the hero carousel release — routine evict for
+//              the public-13.56.js→13.57.js + public-13.74.css→13.75.css +
+//              core-13.15.js→13.16.js renames (the CAR controller, the
+//              control-bar styles and the carousel i18n strings). Every
+//              asset-editing release bumps (the v13.39 rule).
+const CACHE = "sportsignal-v95";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

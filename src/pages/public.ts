@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.74.css">
+<link rel="stylesheet" href="/public-13.75.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -360,6 +360,15 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      live-compositing post-mortem lives in SHADOW-CONSULTATION.md. -->
 <div class="hero-player hero-player--cinematic player-home" aria-hidden="true"><img class="hero-cast" alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"></div>
 <div class="hero-player hero-player--cinematic player-away" aria-hidden="true"><img class="hero-cast" alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"></div>
+<!-- v13.194-herocarousel (SPORTSIGNAL_HERO_CAROUSEL_SPEC.md): the hero
+     becomes a ONE-MATCH-PER-SLIDE carousel. #heroCarRegion wraps the TWO
+     existing card anchors (the PC card + the mobile card — the SAME two
+     responsive renderings of the ACTIVE slide, never two independent
+     carousels) plus the control bar; it carries the carousel region
+     semantics. A plain static wrapper (no styles of its own — the cards'
+     margin-top collapses through it exactly as before; every hero query in
+     the client is .herowrap-descendant-scoped, unaffected). -->
+<div class="hero-car-region" id="heroCarRegion" role="region" aria-roledescription="carousel" aria-label="دیدارهای ویژه">
 <!-- the match card: ONE real link to the match page wraps the whole HUD;
      renderHeroSpot paints #heroSpot (class-for-class with the server
      mirror so the client re-render is seamless).
@@ -648,6 +657,29 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 </div>
 <span id="mcSr" class="sr-only" aria-live="polite"></span>
 </a>
+<!-- v13.194-herocarousel: the CONTROL BAR — one shared controller drives
+     BOTH card renderings (public-13.57.js CAR). Buttons/dots/counter stay
+     OUTSIDE the card anchors (never a nested interactive control inside
+     the match link). display:none by default; the client adds .on when the
+     active slate holds TWO or more slides — a single hero keeps the plain
+     card exactly as before, and a no-JS visitor never sees dead controls
+     (the SSR paints slide 1 as the ordinary hero). Order in the flex row
+     follows the page direction automatically: prev sits inline-START,
+     next inline-END (RTL fa / LTR en both correct). The count is
+     dir="ltr" so «۲ / ۵» always reads current-first. Labels/aria strings
+     ship the FA defaults here and flip via the core-13.16.js dictionary
+     (carPrev/carNext/carPause/carPlay/carRegion) on load + every language
+     toggle. #carSr is the polite announcement slot — the controller only
+     writes it on USER-triggered navigation (autoplay stays quiet). -->
+<div class="hero-car" id="heroCar">
+<span id="carSr" class="sr-only" aria-live="polite"></span>
+<button class="car-btn" id="carPrev" type="button" aria-label="مسابقه قبلی" aria-controls="heroCarRegion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6"/></svg></button>
+<div class="car-dots" id="carDots"></div>
+<span class="car-count" id="carCount" dir="ltr"></span>
+<button class="car-btn" id="carPlay" type="button" aria-label="توقف چرخش" aria-pressed="false"><svg class="car-ic-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 4H6v16h4z"/><path d="M18 4h-4v16h4z"/></svg><svg class="car-ic-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 4 14 8-14 8z"/></svg></button>
+<button class="car-btn" id="carNext" type="button" aria-label="مسابقه بعدی" aria-controls="heroCarRegion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></button>
+</div>
+</div>
 <!-- v13.159-bakedcast (owner: "there are still line and hard edges and
      rectangles" — the live v13.158 verified failing, twice over): the
      projected player shadow is a PRE-BAKED IMAGE — img.hero-cast (the
@@ -882,9 +914,16 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      string so the language toggle updates it. -->
 <a id="tgFab" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram" data-promo="\u0628\u0631\u0627\u06CC \u062F\u0633\u062A \u0646\u062F\u0627\u062F\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645\u060C \u0628\u0647 \u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645 \u0628\u067E\u06CC\u0648\u0646\u062F\u06CC\u062F \u2728"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="#fff" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg></a>
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
-<script src="/core-13.15.js" defer><\/script>
+<script src="/core-13.16.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.56.js" defer><\/script>
+<script src="/public-13.57.js" defer><\/script>
+<!-- v13.194-herocarousel: the JS rename 13.56 -> 13.57 carries the hero
+     CAROUSEL controller (the CAR module: active-slide state, 6s rotation,
+     prev/next/dots/pause controls, keyboard + touch, payload
+     reconciliation by canonical identity, kickoff roll-off). The CSS
+     rename 13.74 -> 13.75 + core 13.15 -> 13.16 ride the same release —
+     the immutable-pin rule: a same-name edit never reaches returning
+     browsers. -->
 <!-- v13.181-herokeep (owner bug: "the whole hero section opens up for a
      millisecond then it hides and compacts"): the JS rename 13.52 -> 13.53
      carries the load() DEGRADED/HERO-LESS PAYLOAD GUARD + the SSR-preserving

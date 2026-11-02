@@ -348,22 +348,27 @@ var MEM_DEDUPE = new Set();
   // v13.73-herotruth: the hero pick is ONE shared expression (ADR-001).
   check("herotruth: pickHeroMatch defined exactly once", (src.match(/function pickHeroMatch\(/g) || []).length === 1);
   check("herotruth: bot /featured uses the shared pickHeroMatch", /const featured = pickHeroMatch\(matches\);/.test(src));
-  check("herotruth: site hero uses the shared pickHeroMatch (public-matches)", /const heroMatch = pickHeroMatch\(matches\);/.test(src));
+  check("herotruth: site hero uses the shared selector (public-matches -> pickHeroMatches; pickHeroMatch stays the /featured wrapper)", /const heroList = pickHeroMatches\(matches\);/.test(src) && /const nextBig = heroMatches\[0\] \|\| null;/.test(src));
   check("herotruth: no private hero re-implementation left (isHeroWorthy gone)", !/isHeroWorthy/.test(src));
-  // v13.153-heronext: the hero is always the NEXT FUTURE match — the live
-  // clause is GONE from the shared expression (the owner: "do not show the
-  // current result in hero; just show the next good match").
-  check("herotruth: shared expression semantics — featured||masterPair, not-FINISHED, NOT-live (v13.153-heronext), nearest future kickoff, tier ties",
+  // v13.194-herocarousel: the shared expression is now pickHeroMatches (the
+  // slate); pickHeroMatch is its [0] wrapper (ADR-001 holds — the site hero
+  // and the bot /featured read the SAME selection, whose primary is the
+  // highest-priority match of the active 8-hour slate).
+  check("herotruth: shared expression semantics — featured||masterPair, not-FINISHED, NOT-live (v13.153-heronext), future-only, the 8h slate + tier ranking + 6-cap (v13.194-herocarousel)",
     (function () {
-      // scope to the pickHeroMatch BODY: the cups/UCL-card sorts keep their
+      // scope to the pickHeroMatches BODY: the cups/UCL-card sorts keep their
       // own live-first ordering (they are lists, not the hero) and must not
       // trip the negative half of this check.
-      const fn = src.match(/function pickHeroMatch\(matches\) \{[\s\S]*?\n\}/);
-      return !!fn
-        && /m\.status !== "FINISHED" && !isLiveStatus\(m\.status\)/.test(fn[0])
+      const fn = src.match(/function pickHeroMatches\(matches, now\) \{[\s\S]*?\n\}/);
+      const wrap = src.match(/function pickHeroMatch\(matches\) \{[\s\S]*?\n\}/);
+      return !!fn && !!wrap
+        && /m\.status === "FINISHED" \|\| isLiveStatus\(m\.status\)/.test(fn[0])
         && /isFeaturedMatch\(m\) \|\| isMasterPair\(m\)/.test(fn[0])
-        && /new Date\(a\.utcDate\)\.getTime\(\) - new Date\(b\.utcDate\)\.getTime\(\) \|\| priorityTier\(b\) - priorityTier\(a\)/.test(fn[0])
-        && !/isLiveStatus\(a\.status\)/.test(fn[0]);
+        && /ko > t/.test(fn[0])
+        && /k - anchor <= 8 \* 60 \* 60 \* 1000/.test(fn[0])
+        && /priorityTier\(b\) - priorityTier\(a\)/.test(fn[0])
+        && /\.slice\(0, 6\)/.test(fn[0])
+        && /return pickHeroMatches\(matches\)\[0\] \|\| null;/.test(wrap[0]);
     })());
   // v13.100-priority: same-kickoff ties break by the desired-team tier —
   // the curated featured clash leads the simultaneous (City–PSG over

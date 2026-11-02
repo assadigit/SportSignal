@@ -94,7 +94,7 @@ const teamNormSrc = grabFn("function teamNormCache()");
 // the CONFIG already in this eval scope).
 const botSilentSrc = grabFn("function isBotSilentLeague(code)");
 const shouldNotifySrc = botSilentSrc + "\n" + grabFn("function shouldNotify(match)") + "\n" + grabFn("function shouldReport(match)");
-const featSrc = grabVar("BIG_MATCH_TEAMS") + "\n" + grabVar("BIG_MATCH_UEFA") + "\n" + grabFn("function isFeaturedMatch(match)") + "\n" + grabFn("function pickHeroMatch(matches)"); // v13.73-herotruth: the shared hero expression fetchPublicMatches now calls
+const featSrc = grabVar("BIG_MATCH_TEAMS") + "\n" + grabVar("BIG_MATCH_UEFA") + "\n" + grabFn("function isFeaturedMatch(match)") + "\n" + grabFn("function heroMatchIdentity(m)") + "\n" + grabFn("function pickHeroMatches(matches, now)") + "\n" + grabFn("function pickHeroMatch(matches)"); // v13.73-herotruth: the shared hero expression fetchPublicMatches now calls; v13.194-herocarousel: pickHeroMatch wraps pickHeroMatches (the slate) — the selector + its canonical-identity helper ride along; matchPath/teamSlug are already hoisted in via roundSrc
 const derbyBlockSrc = grabVarBalanced("DERBY_PAIRS") + "\n" + grabVarBalanced("DERBY_NORM") + "\n" + grabFn("function isDerby(match)") + "\n" + grabVarBalanced("RIVALRY_PAIRS") + "\n" + grabVarBalanced("RIVALRY_NORM") + "\n" + grabFn("function rivalryName(match, lang, allowUcl)");
 const livesSrc = grabFn("function isLiveStatus(status)") + "\n" + grabFn("function applyLiveDetail(m, detail)") + "\n" + grabFn("async function enrichLiveMatches(env, matches)");
 const pubSrc = grabFn("function pubMatch(m)");
@@ -280,12 +280,13 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   // the upcoming list is empty and the box IS their presentation.
   chk(!ids.length, "v12.7: all big fixtures consolidated into the TOP BOX, upcoming list empty");
   const box = data.topSpot && data.topSpot.matches;
-  chk(Array.isArray(box) && box.length === 4, "TOP BOX holds the 4 big matches (live clash + near clash + month-out clash + far derby)");
+  chk(Array.isArray(data.heroMatches) && data.heroMatches.length === 1 && data.heroMatches[0].id === "m-in", "v13.194: heroMatches = the in-window featured match (one slide, server-ordered)");
+  chk(Array.isArray(box) && box.length === 3, "v13.194: TOP BOX holds the 3 non-hero big matches (the hero never duplicates into the box — spec section 15)");
   chk(data.topSpot.next && data.topSpot.next.id === "m-live", "TOP BOX slot 1 = live master clash (v12.4 headline semantics)");
   const boxIds = (box || []).map((m) => m.id);
   chk(boxIds[0] === "m-live", "slot 1 = live master clash");
-  chk(boxIds[1] === "m-in", "slot 2 = nearest ≤7-day clash");
-  chk(boxIds[2] === "m-out" && boxIds[3] === "m-far", "far slots follow kickoff order (month-out clash then far derby)");
+  chk(boxIds[1] === "m-out" && boxIds[2] === "m-far", "far slots follow kickoff order (month-out clash then far derby)");
+  chk(!boxIds.includes("m-in"), "v13.194: the hero match is NOT in the box (no duplicate card)");
   chk(!boxIds.includes("m-nonfollowed"), "non-followed match never boxes");
   const live = data.topSpot && data.topSpot.next;
   chk(!!live && live.id === "m-live", "TOP BOX headline = live master clash");
@@ -297,10 +298,10 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   // the current result in hero; just show the next good match") — nextBig is
   // the nearest FUTURE featured match; the rolling ball (m-live) stays in the
   // LIVE section + the TOP BOX, never the hero.
-  chk(data.nextBig && data.nextBig.id === "m-in", "nextBig = nearest FUTURE featured match (live never heroes — v13.153-heronext)");
+  chk(data.nextBig && data.nextBig.id === "m-in", "nextBig = heroMatches[0] (live never heroes — v13.153-heronext)");
   chk(data.nextBig && data.nextBig.status !== "IN_PLAY" && Date.parse(data.nextBig.utcDate) > Date.now(), "nextBig is upcoming-timed (not the rolling ball)");
   chk(data.nextBig && data.nextBig.id != null, "nextBig exposes id");
-  chk((box || []).find((m) => m.id === "m-in").derby === false, "no derby flag on Arsenal-Liverpool");
+  chk(data.nextBig && data.nextBig.derby === false, "no derby flag on Arsenal-Liverpool (the hero row)");
   chk((box || []).every((m) => m.id != null), "pubMatch exposes id");
 
   // Scenario 2: no featured match inside the month window → nextBig must cross EOM.
@@ -311,7 +312,8 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   chk(data2.nextBig && data2.nextBig.id === "m-far", "nextBig crosses EOM (far featured match)");
   chk(data2.nextBig && data2.nextBig.derby === true, "far El Clasico flagged as derby");
   chk(!data2.upcoming.length, "month list empty without in-window featured matches");
-  chk(data2.topSpot && data2.topSpot.next && data2.topSpot.next.id === "m-far", "far clash headlines the TOP BOX (90-day horizon crosses EOM)");
+  chk(Array.isArray(data2.heroMatches) && data2.heroMatches.length === 1 && data2.heroMatches[0].id === "m-far", "v13.194: the far clash rides heroMatches (the hero owns it, 90-day horizon crosses EOM)");
+  chk(data2.topSpot && data2.topSpot.next === null && !(data2.topSpot.matches || []).length, "v13.194: the box no longer duplicates the hero (empty box, null next — spec section 15)");
 
   // Scenario 3 (v12.3): TOP BOX — a domestic selected-vs-selected clash is the
   // headline; it is excluded from the upcoming list; further clashes stay in
@@ -331,18 +333,18 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   ];
   eval("const applySettings = async () => {};\nconst getCachedMatches = async () => pool3;\nconst fetchLongView = async () => pool3;\nconst enrichLiveMatches = async (e, ms) => ms;\nconst fetchStandings = async (env, code) => null;\nconst compact = (st) => (st && st.teams && st.teams.length ? st : null);\nconst COMP_EN = { PL: \"PL\", PD: \"PD\", SA: \"SA\", BL1: \"BL1\", FL1: \"FL1\", AL: \"AL\", CL: \"CL\", EL: \"EL\", ECL: \"ECL\", PGL: \"PGL\" };\nconst LEAGUE_LOGOS = {};\n/* v13.173-noal: the site-hidden-league helpers (stubbed CONFIG carries no list -> always false here) */\nconst isSiteHiddenLeague = (code) => !!(code && Array.isArray(CONFIG.SITE_HIDDEN_LEAGUES) && CONFIG.SITE_HIDDEN_LEAGUES.includes(code));\nconst isSiteHiddenMatch = (m) => !!(m && m.competition && isSiteHiddenLeague(m.competition.code));\nconst CONFIG = { KV_PUBLIC_MATCHES: \"pm3\", INTL_COMPETITIONS: {}, DOMESTIC_CUP_IDS: { FA_CUP: 2055 }, CUP_PHASE_WINDOWS: { EURO_LL_START: \"2026-09-28T00:00:00Z\", FA_ROUND1: \"2026-11-09T00:00:00Z\" } };\n" + fetchPM);
   const d3 = await fetchPublicMatches(env3);
-  chk(d3.topSpot && d3.topSpot.next && d3.topSpot.next.id === "t-derby", "TOP BOX headline = nearest selected-vs-selected league clash");
-  chk(d3.topSpot.next.clash === true && d3.topSpot.next.derby === true, "TOP BOX headline carries clash+derby flags");
+  chk(Array.isArray(d3.heroMatches) && d3.heroMatches.length === 1 && d3.heroMatches[0].id === "t-derby", "v13.194: heroMatches = [t-derby] (t-clash2 sits 3 days later — outside the 8-hour slate)");
+  chk(d3.heroMatches[0].derby === true && d3.heroMatches[0].big === true && d3.heroMatches[0].pair === true, "the hero row carries the pubMatch flags (derby + big + pair — clash/top/sel are the withTop extras the box rows carry)");
   // v12.7: the further clash is CONSOLIDATED into the box (was: stays in the
   // list) — the box holds up to six big matches together.
   // v12.8: t-one (Arsenal–Brentford — ONE selected side vs a non-top-5
   // opponent, no standings available) is NOT big anymore: it stays in the
   // upcoming list instead of taking a box slot (the Liverpool–Fulham rule).
   const box3 = d3.topSpot.matches || [];
-  chk(box3.map((m) => m.id).join(",") === "t-derby,t-clash2", "v12.8: box = [nearest clash, further clash] in kickoff order");
+  chk(box3.map((m) => m.id).join(",") === "t-clash2", "v13.194: box = [further clash] (the hero clash left the box — spec section 15)");
   const c2 = box3.find((m) => m.id === "t-clash2");
-  chk(!!c2 && c2.clash === true, "further clash consolidated into the box, clash-flagged");
-  chk(!d3.upcoming.some((m) => m.id === "t-derby"), "headline clash excluded from the upcoming list");
+  chk(!!c2 && c2.clash === true, "further clash stays in the box, clash-flagged");
+  chk(!d3.upcoming.some((m) => m.id === "t-derby"), "hero clash excluded from the upcoming list");
   chk(!d3.upcoming.some((m) => m.id === "t-clash2"), "boxed further clash excluded from the upcoming list");
   chk(d3.upcoming.some((m) => m.id === "t-one"), "v12.8: single-selected vs non-top-5 stays in the upcoming list (NOT big)");
   chk(!box3.some((m) => m.id === "t-one"), "v12.8: single-selected vs non-top-5 never boxes (Liverpool–Fulham rule)");
@@ -377,12 +379,13 @@ eval("const applySettings = async () => {};\nconst getCachedMatches = async () =
   eval("const applySettings = async () => {};\nconst getCachedMatches = async () => pool4;\nconst fetchLongView = async () => pool4;\nconst enrichLiveMatches = async (e, ms) => ms;\nconst fetchStandings = async (env, code) => (stand4[code] || null);\nconst compact = (st) => (st && st.teams && st.teams.length ? st : null);\nconst COMP_EN = { PL: \"PL\", PD: \"PD\", SA: \"SA\", BL1: \"BL1\", FL1: \"FL1\", AL: \"AL\", CL: \"CL\", EL: \"EL\", ECL: \"ECL\", PGL: \"PGL\" };\nconst LEAGUE_LOGOS = {};\n/* v13.173-noal: the site-hidden-league helpers (stubbed CONFIG carries no list -> always false here) */\nconst isSiteHiddenLeague = (code) => !!(code && Array.isArray(CONFIG.SITE_HIDDEN_LEAGUES) && CONFIG.SITE_HIDDEN_LEAGUES.includes(code));\nconst isSiteHiddenMatch = (m) => !!(m && m.competition && isSiteHiddenLeague(m.competition.code));\nconst CONFIG = { KV_PUBLIC_MATCHES: \"pm4\", INTL_COMPETITIONS: {}, DOMESTIC_CUP_IDS: { FA_CUP: 2055 }, CUP_PHASE_WINDOWS: { EURO_LL_START: \"2026-09-28T00:00:00Z\", FA_ROUND1: \"2026-11-09T00:00:00Z\" } };\n" + fetchPM);
   const d4 = await fetchPublicMatches(env4);
   const box4 = d4.topSpot.matches || [];
-  chk(box4.map((m) => m.id).join(",") === "t-fb,t-derby", "v12.8: strict kickoff order — closest (fallback) on top, derby behind");
+  chk(Array.isArray(d4.heroMatches) && d4.heroMatches.length === 1 && d4.heroMatches[0].id === "t-derby", "v13.194: heroMatches = [t-derby] (the only pair)");
+  chk(box4.map((m) => m.id).join(",") === "t-fb", "v13.194: box = [fallback clash] (the derby is the hero now — spec section 15)");
   chk(d4.topSpot.next && d4.topSpot.next.id === "t-fb", "v12.8: countdown target (topSpot.next) = the box top = closest big match");
   chk(box4.some((m) => m.id === "t-fb"), "v12.8: selected-vs-top-5 (Liverpool–Tottenham) boxes via the fallback tier");
   chk(!box4.some((m) => m.id === "t-rout"), "v12.8: selected-vs-non-top-5 (Arsenal–Brentford) never boxes");
   chk(d4.upcoming.some((m) => m.id === "t-rout"), "v12.8: routine selected fixture stays in the upcoming list");
-  chk(!d4.upcoming.some((m) => m.id === "t-fb") && !d4.upcoming.some((m) => m.id === "t-derby"), "boxed fixtures excluded from the upcoming list");
+  chk(!d4.upcoming.some((m) => m.id === "t-fb") && !d4.upcoming.some((m) => m.id === "t-derby"), "boxed + hero fixtures excluded from the upcoming list");
 
   // Scenario 5 (v13.35): prewarm ride-along + canary strip + round labels.
   // The cron tick passes its in-memory pool (which CONTAINS the synthetic

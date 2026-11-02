@@ -12,6 +12,7 @@ import { normalizeTeamName, normAlias } from "./teams";
 import { isDomesticCup, isQuarterFinalOrLater } from "./translate";
 import { masterTeamList, masterMemo, userFollowsSides } from "./users";
 import { isLiveStatus } from "./match-model";
+import { matchPath } from "./slugs";
 
 // v13.109-consolidated: THE TWO ELIGIBILITY TIERS.
 //
@@ -253,6 +254,84 @@ export function priorityTier(match, prefs?, chatId?) {
   }
   return (h && a ? 2 : h || a ? 1 : 0) + (isFeaturedMatch(match) ? 1 : 0);
 }
+// v13.194-herocarousel: THE multi-match hero slate
+// (SPORTSIGNAL_HERO_CAROUSEL_SPEC.md). pickHeroMatch's single
+// earliest-future-kickoff rule becomes a SLATE of up to six matches:
+//   - eligibility is UNCHANGED (isFeaturedMatch || isMasterPair, BOTH
+//     teams big; future kickoff; never FINISHED, never LIVE/IN_PLAY/PAUSED
+//     — v13.153-heronext). The window NEVER promotes a lesser fixture.
+//   - the slate = every eligible candidate whose kickoff falls in
+//     [earliest eligible kickoff, +8h] — ONE anchor, no chained windows
+//     (16:00 → 23:30 joins the slate; a 00:01+1d does not until the
+//     anchor advances past its earliest member). When the anchor starts
+//     or otherwise ceases to qualify the slate RE-ANCHORS on the next
+//     earliest remaining candidate (this recomputes naturally on every
+//     pool read — pickHeroMatches is called per payload build).
+//   - >6 candidates: rank by priorityTier desc, earlier kickoff first,
+//     then the CANONICAL matchPath identity (deterministic — never the
+//     provider's array order); keep the first six. The overflow stays in
+//     the site's secondary sections (public-matches.ts excludes only the
+//     SELECTED six from those lists).
+//   - slide order: the HIGHEST-priority selected match is slide 1 even
+//     when a lower-tier slate-mate kicks off earlier (the 2026-10-14
+//     lesson, extended across the whole matchday); slides 2+ follow
+//     kickoff order (tier + identity break the ties).
+// `now` is injectable for the offline tests (check-hero-carousel.js).
+// pickHeroMatch stays as the compatibility wrapper returning the slate's
+// PRIMARY (slide 1) — ADR-001 website-as-truth holds: the site hero and
+// the bot's /featured both lead with the same match. Documented side
+// effect (spec §17): /featured's lead may change from the earliest
+// eligible kickoff to the highest-priority match inside the active
+// 8-hour slate. Scheduled notifications, dedupe and broadcast rules are
+// untouched (they never read this selector).
+export function heroMatchIdentity(m) {
+  try {
+    return String(matchPath(m.homeTeam && m.homeTeam.name, m.awayTeam && m.awayTeam.name, m.utcDate) || "");
+  } catch (e) {
+    return "";
+  }
+}
+export function pickHeroMatches(matches, now?) {
+  // (the if-form instead of a Date.now() ternary — the eval harness's
+  // untype pass strips type-looking spans, and harness-safe source is the
+  // repo's root-src convention)
+  let t = now;
+  if (t == null) t = Date.now();
+  const kof = (m) => (m && m.utcDate ? new Date(m.utcDate).getTime() : NaN);
+  const eligible = (matches || []).filter((m) => {
+    if (!m || m.status === "FINISHED" || isLiveStatus(m.status)) return false;
+    if (!(isFeaturedMatch(m) || isMasterPair(m))) return false;
+    const ko = kof(m);
+    return !isNaN(ko) && ko > t; // invalid/missing kickoff dates can never slate
+  });
+  if (!eligible.length) return [];
+  let anchor = Infinity;
+  for (const m of eligible) {
+    const k = kof(m);
+    if (k < anchor) anchor = k;
+  }
+  // ONE 8-hour envelope from the earliest eligible kickoff (inclusive at
+  // the boundary; no rolling/chained windows — a chain of fixtures can
+  // never stretch the slate past 8h from its original anchor).
+  const inSlate = eligible.filter((m) => {
+    const k = kof(m);
+    return k >= anchor && k - anchor <= 8 * 60 * 60 * 1000;
+  });
+  const bestFirst = inSlate.slice().sort((a, b) =>
+    priorityTier(b) - priorityTier(a) ||
+    kof(a) - kof(b) ||
+    heroMatchIdentity(a).localeCompare(heroMatchIdentity(b))
+  );
+  const selected = bestFirst.slice(0, 6); // never more than six slides
+  if (selected.length <= 1) return selected;
+  const primary = selected[0];
+  const rest = selected.slice(1).sort((a, b) =>
+    kof(a) - kof(b) ||
+    priorityTier(b) - priorityTier(a) ||
+    heroMatchIdentity(a).localeCompare(heroMatchIdentity(b))
+  );
+  return [primary].concat(rest);
+}
 // v13.73-herotruth: THE single hero-selection expression (ADR-001,
 // website-as-truth). The site's hero (public-matches.ts nextBig) and the
 // bot's /featured MUST both call this — neither may re-implement the
@@ -262,24 +341,17 @@ export function priorityTier(match, prefs?, chatId?) {
 //   - hero-worthy = isFeaturedMatch(m) || isMasterPair(m) (BOTH teams big)
 //   - exclude FINISHED **and LIVE/IN_PLAY/PAUSED** — a rolling ball never
 //     takes the hero; the hero is always a match still to come
-//   - nearest FUTURE kickoff first
-// v13.100-priority: SAME-KICKOFF ties (every UCL league-phase slot) now
-// break by priorityTier — a curated big-vs-big clash (featured) outranks a
-// followed-vs-followed pair, which outranks the rest of the tie. The
-// 2026-10-14 case: Roma–Real and City–PSG both 19:00Z, both master pairs;
-// stable pool order handed the hero to Roma–Real and the month's marquee
-// game never led the site. Kickoff still dominates (the hero stays the
-// NEXT big match, not the biggest one far away); the tier only orders the
-// simultaneous.
+// v13.194-herocarousel: the pick is now the PRIMARY of the shared
+// pickHeroMatches slate (slide 1 = the highest-priority eligible match in
+// the active 8-hour window — v13.100-priority's tie-break grew from the
+// simultaneous-kickoff case to the whole matchday). Kickoff recency no
+// longer dominates across the slate; the eligible set itself is unchanged.
 // v13.153-heronext: the pre-13.153 live-first clause (isLiveStatus(m.status)
 // in the filter + the live-first sort term) is REMOVED — it made the hero
 // show the in-play match (its live score/result) from kickoff until FT.
 // The bot's /featured follows the same change by construction (ADR-001).
 export function pickHeroMatch(matches) {
-  const hero = (matches || [])
-    .filter((m) => m.status !== "FINISHED" && !isLiveStatus(m.status) && (isFeaturedMatch(m) || isMasterPair(m)) && new Date(m.utcDate).getTime() > Date.now())
-    .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime() || priorityTier(b) - priorityTier(a));
-  return hero.length ? hero[0] : null;
+  return pickHeroMatches(matches)[0] || null;
 }
 export function hasSelectedTeam(match) {
   masterTeamList();

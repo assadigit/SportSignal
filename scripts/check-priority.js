@@ -27,8 +27,14 @@ const grab = (re) => { const m = src.match(re); return m ? untype(m[0]).replace(
 
 // The eval pieces: the full normalize chain, the master machinery, the
 // per-chat follow helpers, and the new tier + hero + order expressions.
+// v13.194-herocarousel: pickHeroMatch is now the PRIMARY-of-the-slate
+// wrapper — the pieces also carry pickHeroMatches + heroMatchIdentity and
+// their slugs.ts deps (TEAM_SLUGS/STRICT_STRIP/teamSlug/matchPath — the
+// canonical identity tie-breaker) so the eval stays self-contained.
 const cfgSrc = fs.readFileSync("src/config.ts", "utf8");
 const teamsSrc = fs.readFileSync("src/teams.ts", "utf8");
+const slugsSrc = fs.readFileSync("src/slugs.ts", "utf8");
+const stripRec = (s) => String(s).replace(/: Record<string, string>/g, "");
 const pieces = [
   grab(/var NORM_BASE_TOKENS = "[^"]*";/) || teamsSrc.match(/const NORM_BASE_TOKENS: string = "[^"]*";/)[0].replace("const NORM_BASE_TOKENS: string", "var NORM_BASE_TOKENS"),
   grab(/var TRANSLIT_FOLDS = \{[\s\S]*?\n\};/) || teamsSrc.match(/const TRANSLIT_FOLDS: Record<string, string> = \{[\s\S]*?\n\};/)[0].replace("const TRANSLIT_FOLDS: Record<string, string>", "var TRANSLIT_FOLDS"),
@@ -48,6 +54,12 @@ const pieces = [
   grab(/function userFollowsSides\([^)]*\) \{[\s\S]*?\n\}/),
   grab(/function isMasterPair\([^)]*\) \{[\s\S]*?\n\}/),
   grab(/function priorityTier\([^)]*\) \{[\s\S]*?\n\}/),
+  stripRec(slugsSrc.match(/export const TEAM_SLUGS[^=]*= \{[\s\S]*?\n\};/)[0].replace("export const", "var")),
+  slugsSrc.match(/const STRICT_STRIP = new Set\(\[[\s\S]*?\]\);/)[0],
+  slugsSrc.match(/export function teamSlug\([^)]*\) \{[\s\S]*?\n\}/)[0].replace("export ", ""),
+  slugsSrc.match(/export function matchPath\([^)]*\) \{[\s\S]*?\n\}/)[0].replace("export ", ""),
+  grab(/function heroMatchIdentity\([^)]*\) \{[\s\S]*?\n\}/),
+  grab(/function pickHeroMatches\([^)]*\) \{[\s\S]*?\n\}/),
   grab(/function pickHeroMatch\([^)]*\) \{[\s\S]*?\n\}/),
   grab(/function uclPreviewOrder\([^)]*\) \{[\s\S]*?\n\}/),
 ];
@@ -65,7 +77,7 @@ const SETTINGS_TEAMS = {
   FL1: ["Paris Saint-Germain FC"],
   BL1: ["FC Bayern München", "Borussia Dortmund"]
 };
-const ctx = eval("(() => { " + pieces.join("\n") + "; var BIG_TEAMS_BY_LEAGUE = " + JSON.stringify(SETTINGS_TEAMS) + "; var CONFIG = { BIG_TEAMS_BY_LEAGUE: BIG_TEAMS_BY_LEAGUE, __teamNorm: null, LATE_STAGES: [\"QUARTER_FINALS\",\"QUARTER_FINAL\",\"SEMI_FINALS\",\"SEMI_FINAL\",\"FINAL\",\"THIRD_PLACE\"], DOMESTIC_CUP_IDS: { FA_CUP: 1, EFL_CUP: 1, CDR: 1, COPPA_ITALIA: 1, DFB_POKAL: 1 } }; return { priorityTier, pickHeroMatch, uclPreviewOrder, isFeaturedMatch, isMasterPair, masterTeamList }; })()");
+const ctx = eval("(() => { " + pieces.join("\n") + "; var BIG_TEAMS_BY_LEAGUE = " + JSON.stringify(SETTINGS_TEAMS) + "; var CONFIG = { BIG_TEAMS_BY_LEAGUE: BIG_TEAMS_BY_LEAGUE, __teamNorm: null, LATE_STAGES: [\"QUARTER_FINALS\",\"QUARTER_FINAL\",\"SEMI_FINALS\",\"SEMI_FINAL\",\"FINAL\",\"THIRD_PLACE\"], DOMESTIC_CUP_IDS: { FA_CUP: 1, EFL_CUP: 1, CDR: 1, COPPA_ITALIA: 1, DFB_POKAL: 1 } }; return { priorityTier, pickHeroMatch, pickHeroMatches, uclPreviewOrder, isFeaturedMatch, isMasterPair, masterTeamList }; })()");
 
 const mk = (h, a, ko, status) => ({ homeTeam: { name: h }, awayTeam: { name: a }, utcDate: ko, status: status || "TIMED", competition: { code: "CL" } });
 // v13.102: DYNAMIC kickoffs (now-anchored) — the original fixed 2026-10-14
@@ -101,7 +113,15 @@ console.log("\n=== 3. pickHeroMatch (the 2026-10-14 hero lesson) ===");
   check("hero: same kickoff — featured City–PSG beats master-only Roma–Real (pool order Roma first)", ctx.pickHeroMatch([romaReal, cityPsg]) === cityPsg);
   check("hero: same kickoff — order-independent (City first input too)", ctx.pickHeroMatch([cityPsg, romaReal]) === cityPsg);
   const cityPsgLater = mk("Manchester City FC", "Paris Saint-Germain FC", isoIn(5));
-  check("hero: kickoff still dominates (earlier master pair beats later featured)", ctx.pickHeroMatch([romaReal, cityPsgLater]) === romaReal);
+  // v13.194-herocarousel (spec section 4.5 / Example B + section 17's
+  // documented /featured side effect): the slate's PRIMARY is the
+  // HIGHEST-priority eligible match inside the active 8-hour window —
+  // kickoff recency no longer dominates across the slate (both fixtures
+  // sit 2h apart, well inside the envelope; City-PSG tier 3 beats
+  // Roma-Real tier 2). The old earliest-kickoff-first expectation FLIPS
+  // here BY DESIGN; the full slate contract lives in check-hero-carousel.js.
+  check("hero: the slate primary is the highest-priority match even when it kicks off later (v13.194-herocarousel)", ctx.pickHeroMatch([romaReal, cityPsgLater]) === cityPsgLater);
+  check("hero: pickHeroMatch === pickHeroMatches()[0] (the ADR-001 wrapper)", ctx.pickHeroMatch([romaReal, cityPsgLater]) === ctx.pickHeroMatches([romaReal, cityPsgLater])[0]);
   const romaRealLive = mk("AS Roma", "Real Madrid CF", KO2, "IN_PLAY");
   // v13.153-heronext: the hero NEVER shows the rolling ball (the owner's
   // directive: "do not show the current result in hero; just show the next
@@ -157,7 +177,7 @@ check("wiring: preview fan-out orders per chat (uclPreviewOrder(ucl, prefs, c))"
 check("wiring: preview lines memoized once per match per lang (lineFor cache)", /const lineCache = new Map\(\); \/\/ lang -> Map\(matchKey -> line\)/.test(uclSrc) && /line = uclPreviewLine\(envTz, mt, lang\)/.test(uclSrc));
 check("wiring: the shared per-lang message cache is GONE (per-chat bodies now)", !/msgByLang/.test(uclSrc));
 check("wiring: preview imports the shared tier (no private re-implementation)", /import \{ priorityTier \} from "\.\/match-classify";/.test(uclSrc));
-check("wiring: site UCL card sorts live-first, then tier, then kickoff", /const clBox = clMatches\.filter\(\(m\) => hasSelectedTeam\(m\)\)\.sort\(\(a, b\) => \(isLiveStatus\(a\.status\) \? 0 : 1\) - \(isLiveStatus\(b\.status\) \? 0 : 1\) \|\| priorityTier\(b\) - priorityTier\(a\) \|\| new Date\(a\.utcDate\)\.getTime\(\) - new Date\(b\.utcDate\)\.getTime\(\)\)\.slice\(0, 8\)/.test(pubSrc));
+check("wiring: site UCL card sorts live-first, then tier, then kickoff (+ the v13.194-herocarousel hero-slate exclusion — the selected slides never render twice)", /const clBox = clMatches\.filter\(\(m\) => hasSelectedTeam\(m\) && !heroKeys\.has\(String\(m\.id \|\| ""\) \+ "\|" \+ m\.utcDate\)\)\.sort\(\(a, b\) => \(isLiveStatus\(a\.status\) \? 0 : 1\) - \(isLiveStatus\(b\.status\) \? 0 : 1\) \|\| priorityTier\(b\) - priorityTier\(a\) \|\| new Date\(a\.utcDate\)\.getTime\(\) - new Date\(b\.utcDate\)\.getTime\(\)\)\.slice\(0, 8\)/.test(pubSrc));
 check("wiring: priorityTier reads per-chat teams via userFollowsSides", /const s = userFollowsSides\(prefs, chatId, match\);/.test(clsSrc));
 check("wiring: priorityTier exported from match-classify (one definition)", /export function priorityTier\(match, prefs\?, chatId\?\)/.test(clsSrc));
 

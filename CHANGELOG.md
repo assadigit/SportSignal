@@ -4,6 +4,91 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.194-herocarousel — the featured hero becomes a one-match-per-slide carousel
+
+_2026-11-03 · on top of v13.193-leagueinset · implements
+SPORTSIGNAL_HERO_CAROUSEL_SPEC.md (the repository-root spec, the
+authoritative acceptance criteria)._
+
+**THE CHANGE, IN ONE LINE:** the single-match featured hero becomes a
+carousel of up to six ACE matches — one complete match per slide, driven
+by ONE controller shared by the existing PC card and mobile card, with
+the eligibility threshold UNCHANGED (isFeaturedMatch || isMasterPair —
+the window groups genuinely important matches, it never promotes a
+lesser fixture).
+
+**(1) THE SELECTOR (src/match-classify.ts).** pickHeroMatches(matches,
+now) builds the slate: every future, non-live, non-finished pair match
+whose kickoff falls in ONE 8-hour envelope anchored at the earliest
+eligible kickoff (no chained windows — 16:00 and 23:30 share a slate,
+a 00:01+1d does not); >6 candidates rank by priorityTier, then kickoff,
+then the CANONICAL matchPath identity (deterministic — never provider
+order), keeping six. Slide 1 = the highest-priority selected match even
+when it kicks off later; slides 2+ follow kickoff order. pickHeroMatch
+stays as the [0] wrapper — ADR-001 website-as-truth holds: the site
+hero and the bot /featured read the same selection (the spec's
+documented side effect: /featured's lead may change to the slate
+primary). Scheduled notifications, dedupe and broadcast rules are
+untouched.
+
+**(2) THE PAYLOAD (src/public-matches.ts).** /api/public-matches gains
+heroMatches (the ordered 0–6 pubMatch array) + keeps nextBig as the
+heroMatches[0] compatibility alias; applyLiveOverlay patches every slate
+row like nextBig. Per spec §15 the SELECTED six leave the secondary
+presentations (upcoming / topSpot box / UCL card / week lists — key =
+id|utcDate, applied before shaping), so a fixture never renders twice on
+one page; overflow beyond the cap stays listed.
+
+**(3) THE CLIENT (assets/public-13.56.js → 13.57.js).** The CAR
+controller: active-slide state that barTarget() serves to every existing
+hero consumer (the card, the link, the countdown cells, the progress
+track, the sr text always belong to the SAME fixture), 6s rotation with
+wrap, prev/next/dots/«۲ / ۵»-count/pause-play controls (hidden at 1
+slide; never nested inside the card anchor), hover/focus/hidden-tab/
+explicit-pause pausing, prefers-reduced-motion off-by-default autoplay
+(the play control can opt in), direction-aware arrow keys + >=40px
+horizontal-dominant swipes with click suppression, reconciliation by
+canonical href (a refresh that kept the active match never jumps back to
+slide 1; a started match rolls off within the 1s tick and the Live
+section owns it), the v13.181 degraded/hero-less payload guard reading
+heroMatches (an empty array is a real empty slate — a stale nextBig
+never resurrects; a legacy payload without the array falls back to
+[nextBig]), a client-side dedupe twin for legacy cached payloads, and
+next-slide-only art preloading.
+
+**(4) THE MARKUP + STYLES (src/pages/public.ts, assets/
+public-13.74.css → 13.75.css).** #heroCarRegion wraps the two existing
+card anchors + the control bar (role=region, aria-roledescription=
+carousel, localized «دیدارهای ویژه»/Featured matches label; core-13.15
+→ core-13.16 carries the fa+en control strings). Every control has a
+44×44 hit area (the <=600px two-line grid keeps SIX dot targets inside a
+320px viewport with zero overflow); the transition is a 200ms content
+fade (#heroSpot/#mcardSpot only — the frame never moves, no reflow),
+instant under reduced motion. Controls stay display:none until the
+controller turns them on — a no-JS visitor sees the plain SSR hero with
+zero dead controls.
+
+**(5) THE SSR FIRST PAINT (src/seo/router.ts).** Both heroCardHtml and
+mcardHtml render heroMatches[0] (the same row the client inits on — no
+hydration swap); the topSpot SSR slice drops its historical first-row
+skip (the hero is server-excluded from the box now, so the skip would
+lose a legit match — first ten instead, same count).
+
+**GATES:** tsc 0; npm test 0 (2507 checks — the NEW
+scripts/check-hero-carousel.js gate: 75 checks = the spec §18 selection
+scenarios with an injected now, the payload/SSR/dedupe contracts, and
+the REAL eval'd CAR module under a DOM stub); check-priority's
+kickoff-dominance expectation flipped to the spec's
+primary-is-the-strongest rule; check-no-miss's herotruth pins follow the
+wrapper; live-derby's box expectations follow the §15 exclusion; the
+parity baselines re-frozen (--update, reviewed: the region wrapper, the
+control bar and the three asset-rename references only). SW v94 → v95;
+_headers pins the new trio (13.57.js/13.75.css/13.16.js) + keeps the
+retired trio one SEO TTL (98 rules — the 100-rule cap has 2 slots of
+headroom; the NEXT asset release should sweep the oldest expired pins).
+hero-coverage regenerated (bundle public-13.57.js, the 35-club map
+byte-stable).
+
 # v13.193-leagueinset — the disc gains its inner margin (the logo never touches the rim)
 
 _2026-11-01 · on top of v13.192-leaguebadge · owner: "یک حاشیه برای داخل

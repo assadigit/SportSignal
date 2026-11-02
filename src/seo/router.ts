@@ -109,18 +109,29 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   const weekAll = (Array.isArray(p.thisWeek) ? p.thisWeek : []).map(asSm).filter(Boolean) as SeoMatch[];
   const uclAll = (p.ucl && Array.isArray(p.ucl.matches) ? p.ucl.matches : []).map(asSm).filter(Boolean) as SeoMatch[];
   const upcoming = upcomingAll.slice(0, 45);
-  // v13.153-heronext: the fallback (when nextBig is absent) must also skip
-  // live/finished/already-kicked-off rows — the server-rendered hero and its
-  // meta description describe the NEXT big match (owner: never the current
-  // result); the upcoming list is live-ranked, so a bare [0] could be a
-  // rolling ball.
-  const nextBig = (asSm(p.nextBig) || upcoming.find((sm) => {
+  // v13.194-herocarousel: the SSR first paint is SLIDE 1 of the payload's
+  // heroMatches slate (the server-authoritative ordered array — the same
+  // row the client's carousel inits on, so hydration never swaps content).
+  // nextBig stays the compatibility alias (=== heroMatches[0] in every
+  // new payload; legacy pre-13.194 cached payloads carry only nextBig).
+  // v13.153-heronext: the fallback (when no hero row survives) must also
+  // skip live/finished/already-kicked-off rows — the server-rendered hero
+  // and its meta description describe the NEXT big match (owner: never the
+  // current result); the upcoming list is live-ranked, so a bare [0] could
+  // be a rolling ball.
+  const heroRow = (Array.isArray(p.heroMatches) && p.heroMatches.length ? p.heroMatches[0] : p.nextBig) || null;
+  const nextBig = (asSm(heroRow) || upcoming.find((sm) => {
     const st = String(sm.raw.status || "").toUpperCase();
     if (st === "LIVE" || st === "IN_PLAY" || st === "PAUSED" || st === "FINISHED") return false;
     const kk = sm.s.utcDate ? Date.parse(sm.s.utcDate) : NaN;
     return !Number.isNaN(kk) && kk > Date.now();
   }) || null) as SeoMatch | null;
-  const topSpotList = (topSpotAll.length ? topSpotAll : upcoming).slice(1, 11);
+  // v13.194-herocarousel: the topSpot box no longer carries the hero slate
+  // (public-matches.ts excludes the SELECTED six from the box list — spec
+  // §15, one fixture never renders twice), so the historical slice(1, 11)
+  // that skipped the box's first row (the usual hero) would now drop a
+  // legit match: take the FIRST ten instead. Same count, no lost fixture.
+  const topSpotList = (topSpotAll.length ? topSpotAll : upcoming).slice(0, 10);
   const live = upcomingAll.filter((sm) => /IN_PLAY|LIVE|PAUSED/i.test(String(sm.raw.status)));
   const week = weekAll.slice(0, 12);
   const ucl = uclAll.slice(0, 8);
