@@ -4,6 +4,78 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.196-carlive — the carousel slides on its own, and the players can never go stale
+
+_2026-11-03 · on top of v13.195-carsides · the owner's second carousel
+round, verbatim: "1. Auto slide is not default on make it on. 2. I slided
+manually, the players picture didn't change! (harry kane remained and the
+other player) but teams names and logos changed"_
+
+**THE CHANGE, IN ONE LINE:** the 6-second rotation is DEFAULT-ON and
+UNCONDITIONAL — the hover/focus/reduced-motion pause gates retire (the
+hidden tab is the only pause left) — and the slide portraits can never go
+stale: ALL slides' art warms the moment the slate is built, and the
+portrait swap is ready-gated (hide at swap, fade in on decode).
+
+**(1) THE AUTOPLAY (assets/public-13.58.js → 13.59.js).** Both owner
+reports were reproduced live against v13.195 before a line changed: with
+the pointer resting anywhere over the hero region — or an arrow button
+holding focus after its click — `carPlayAllowed()` returned false and the
+timer never armed (`CAR.hoverPause`/`CAR.focusPause`), with no visual cue;
+on a device with `prefers-reduced-motion: reduce` the same freeze applied
+via `CAR.rm`. The owner reads that as "auto slide is not default on".
+The fix is the owner's instruction taken literally: `carPlayAllowed()`
+is now `CAR.list.length>1&&!CAR.docHidden` — the hover/focus listeners,
+the hover-capability probe, the reduced-motion query and their four state
+flags (`hoverPause`/`focusPause`/`canHover`/`rm`) are deleted from
+`carInit()` and the CAR state; `carInit()` additionally arms the timer at
+boot. Reduced-motion visitors keep the INSTANT swap (the site-wide CSS
+kill rule already strips the animation) while still auto-advancing — the
+content change is not motion.
+
+**(2) THE PORTRAITS (same rename).** Root cause, reproduced with a
+blocked-image experiment: `heroArt()`'s `put()` reuses the SAME `<img>`
+element for the cinematic flanks, and a cold `<img>` `src` swap keeps
+painting the PREVIOUS bitmap until the new file arrives — names, crests
+and count are text + tiny cached imgs, so they flipped instantly while
+Kane stayed on the flanks under Manchester United's name. v13.194/195's
+`carPreload` only warmed ONE slide ahead, and only AFTER the first
+transition — the first manual slide was always cold. Two-part fix:
+(a) `carPreload` becomes **`carWarm`** — every slide's library portrait +
+its baked cast (`<slug>.cast.webp`) + the MC_ART `-h` busts + crests +
+competition lockups warm the moment the slate is built (`carReconcile`
+fires it whenever the joined-href slate key changes; `carInit` registers
+a DOMContentLoaded re-warm because the inline MC_ART override lands after
+this deferred bundle has defined the default; warming is off the critical
+path and idempotent — cache hits cost nothing);
+(b) the swap itself is **ready-gated** — `put()` hides the figure wrapper
+the moment the club changes (`opacity 0`) and fades it back in
+(~220ms) the moment `img.decode()` resolves (onload fallback for engines
+without decode; a failed load stays hidden — the wrong club's bitmap is
+never painted under the new names). `renderMCard`'s `putPort()` gets the
+same gate (its freshly-created imgs show nothing while loading anyway —
+this is polish + visual sync). A re-render with the SAME club never
+touches opacity, so the 60s payload re-renders cannot flicker.
+
+**SPEC:** `SPORTSIGNAL_HERO_CAROUSEL_SPEC.md` §7 (the rotation contract:
+default-on, no environmental gates, hidden-tab-only pause, reduced
+motion = instant swaps but still auto-advancing), §6.3/§16/§21/§22 (the
+art-warming + ready-gate contract replaces the old next-only preload
+note; the acceptance checklist gains "autoplay advances with the pointer
+over the hero and after clicking an arrow").
+
+**GATES:** tsc 0; npm test 0 (2517 checks — check-hero-carousel re-pinned
+to the new contracts: P6 autoplay-default-on + all-slides-warming +
+ready-gated-swap source assertions, the C10 pause-flag retirement, the
+NEW C14 warm behavioral test — the whole slate warms on build, a
+same-slate slide change does NOT re-warm, a changed slate re-warms);
+check-stats re-pinned (homepage references 13.59.js, the _headers pin,
+the release-wiring VERSION/package/SW triple); page-template byte-parity
+re-baselined (--update); _headers 99 rules (+1 pin, under the 100-rule
+cap — no eviction needed); SW CACHE v96 → v97; the CSS is untouched
+(13.76.css stays). Server slate/payload work, the Telegram bot and every
+other asset are unchanged.
+
 # v13.195-carsides — the carousel arrows move to the players' flanks
 
 _2026-11-03 · on top of v13.194-herocarousel · the owner's first carousel

@@ -722,7 +722,16 @@
 //              the public-13.57.js→13.58.js + public-13.75.css→13.76.css
 //              renames (the side arrows at the players' flanks, the play
 //              control retirement + the direction-aware slide+fade).
-const CACHE = "sportsignal-v96";
+// v13.196-carlive: the owner's autoplay round — routine evict for the
+//              public-13.58.js→13.59.js rename (the 6s rotation is
+//              DEFAULT-ON for everyone — the hover/focus/reduced-motion
+//              pause gates retire, the hidden tab is the only pause left;
+//              ALL slides' art warms on slate build + the portrait swap
+//              is ready-gated, so a cold network never keeps the previous
+//              slide's players painted under the new names). The CSS is
+//              untouched (13.76.css stays). Every asset-editing release
+//              bumps (the v13.39 rule).
+const CACHE = "sportsignal-v97";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

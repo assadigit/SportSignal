@@ -684,12 +684,13 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <button class="car-side" id="carLeft" type="button" aria-label="مسابقه بعدی" aria-controls="heroCarRegion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6"/></svg></button>
 <button class="car-side" id="carRight" type="button" aria-label="مسابقه قبلی" aria-controls="heroCarRegion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg></button>
 </div>
-<!-- v13.194-herocarousel → v13.195-carsides: the CONTROL BAR keeps only
-     the dots + count — the prev/next buttons moved to the players'
-     flanks (above) and the play/pause control RETIRED (owner: "the play
-     button is redundant"; the automatic pause conditions —
-     hover/focus/hidden-tab/reduced-motion — stay in the controller).
-     One shared controller drives BOTH card renderings (public-13.58.js
+<!-- v13.194-herocarousel → v13.195-carsides → v13.196-carlive: the
+     CONTROL BAR keeps only the dots + count — the prev/next buttons moved
+     to the players' flanks (above) and the play/pause control RETIRED
+     (owner: "the play button is redundant"). v13.196 (owner: "Auto slide
+     is not default on make it on"): the automatic pauses are now ONLY the
+     hidden tab — the hover/focus/reduced-motion gates retired with it.
+     One shared controller drives BOTH card renderings (public-13.59.js
      CAR). display:none by default; the client adds .on when the active
      slate holds TWO or more slides. The count is dir="ltr" so «۲ / ۵»
      always reads current-first. #carSr is the polite announcement slot
@@ -937,11 +938,22 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.16.js" defer></script>
 <script>var PAGE_TZ = "__PAGE_TZ__";</script>
-<script src="/public-13.58.js" defer></script>
-<!-- v13.195-carsides: the JS rename 13.57 -> 13.58 carries the owner's
+<script src="/public-13.59.js" defer></script>
+<!-- v13.196-carlive: the JS rename 13.58 -> 13.59 carries the owner's
+     autoplay round — the 6s rotation is DEFAULT-ON for everyone (the
+     hover/focus/reduced-motion pause gates retire; the hidden tab is
+     the only pause left) and the slide portraits can never go stale:
+     ALL slides' art warms when the slate is built (carWarm, re-run on
+     slate change + once at DOMContentLoaded so the inline MC_ART -h
+     busts are covered) while the portrait swap itself is ready-gated
+     (heroArt's put + renderMCard's putPort hide the old bitmap at the
+     swap and fade the new one in on decode — a slow network shows an
+     empty lane for a beat, never the previous slide's players under
+     the new names). The CSS is untouched (13.76.css stays). -->
+<!-- v13.195-carsides: the JS rename 13.57 -> 13.58 carried the owner's
      arrow round (the side arrows at the players' flanks with
      direction-aware action, the play/pause control retirement, the
-     direction-aware slide+fade). The CSS rename 13.75 -> 13.76 rides the
+     direction-aware slide+fade). The CSS rename 13.75 -> 13.76 rode the
      same release — the immutable-pin rule: a same-name edit never
      reaches returning browsers. (v13.194-herocarousel: the rename
      13.56 -> 13.57 carried the hero CAROUSEL controller — the CAR

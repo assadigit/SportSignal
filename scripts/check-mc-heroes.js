@@ -120,7 +120,7 @@ const check = (name, cond) => {
   // sw cache bumped (the release pin: v93 ships v13.192-leaguebadge; the
   // bump is the every-release routine (v13.39 rule))
   const sw = fs.readFileSync(path.join(ROOT, "assets", "sw.js"), "utf8");
-  check("wiring: SW cache bumped to sportsignal-v96 (v13.195-carsides — the owner's arrow round: routine evict for the public-13.57.js→13.58.js + public-13.75.css→13.76.css renames; the mc map is unchanged, the registry byte-stable; v95 — v13.194-herocarousel — the carousel release: routine evict for the public-13.56.js→13.57.js + public-13.74.css→13.75.css + core-13.15.js→13.16.js renames; the mc map is unchanged, the registry byte-stable — this gate re-proves the 14-club map untouched; v94 — v13.193-leagueinset)", /const CACHE = "sportsignal-v96"/.test(sw) && !/const CACHE = "sportsignal-v95"/.test(sw) && !/const CACHE = "sportsignal-v94"/.test(sw));
+  check("wiring: SW cache bumped to sportsignal-v96 (v13.195-carsides — the owner's arrow round: routine evict for the public-13.57.js→13.58.js + public-13.75.css→13.76.css renames; the mc map is unchanged, the registry byte-stable; v95 — v13.194-herocarousel — the carousel release: routine evict for the public-13.56.js→13.57.js + public-13.74.css→13.75.css + core-13.15.js→13.16.js renames; the mc map is unchanged, the registry byte-stable — this gate re-proves the 14-club map untouched; v94 — v13.193-leagueinset)", /const CACHE = "sportsignal-v97"/.test(sw) && !/const CACHE = "sportsignal-v96"/.test(sw) && !/const CACHE = "sportsignal-v94"/.test(sw));
 
   console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / wiring)");
   process.exit(failed ? 1 : 0);

@@ -373,6 +373,15 @@
 /public-13.57.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.196-carlive: the owner's autoplay round — the 6s rotation is
+# DEFAULT-ON for everyone (the hover/focus/reduced-motion pause gates
+# retire; the hidden tab is the only pause left), ALL slides' art warms
+# on slate build (carWarm) and the portrait swap is ready-gated so a
+# cold network never shows the previous slide's players.
+# (rename-on-edit; 13.58.js stays served + pinned one SEO TTL above.)
+/public-13.59.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # v13.195-carsides: the owner's arrow round (the side arrows at the
 # players' flanks + direction-aware action, the play/pause control
 # retirement, the direction-aware slide+fade).

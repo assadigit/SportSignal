@@ -29,7 +29,7 @@ For the website, this means **show more of the genuinely important matches witho
 | Primary slide | The most important eligible match appears first, even if another eligible match starts earlier. |
 | Remaining slides | After the primary match, order the remaining selected matches chronologically. |
 | Maximum slides | Six matches. Never render more than six slides. |
-| Automatic rotation | Enabled by default when there are at least two slides; rotate every 6 seconds (within the requested 5–7 second range). |
+| Automatic rotation | Enabled by default when there are at least two slides; rotate every 6 seconds (within the requested 5–7 second range). Owner round 2 (v13.196): the rotation is DEFAULT-ON and UNCONDITIONAL for every visitor — only a hidden tab pauses it. |
 | Manual navigation | Previous / next controls, pagination indicators, keyboard support, and touch swipe on mobile. |
 | Desktop layout | Preserve the large existing hero presentation. Show one complete slide at a time, with clear navigation and indicators. |
 | Mobile layout | Preserve the existing mobile hero card design. Show one complete slide at a time, with clear navigation and indicators. |
@@ -229,11 +229,11 @@ When there are multiple slides, show:
 - Previous and next arrow controls.
 - A visible pagination indicator for each slide (maximum six).
 - A textual position indicator such as `2 / 5` so users can tell how many matches are featured and where they are.
-- A pause / play control for automatic rotation.
+- (Owner round 1, v13.195) No pause / play control — it was retired as redundant. The arrows, indicators and count alone communicate the rotation.
 
 These controls must remain clear and usable at both breakpoints. They must not cover team names, crests, kickoff time, venue, or countdown values.
 
-When there is only one slide, hide carousel navigation, pagination, counter and pause/play controls. The match remains a normal hero card.
+When there is only one slide, hide carousel navigation, pagination and counter. The match remains a normal hero card.
 
 ### 6.4 Responsive placement and touch targets
 
@@ -258,30 +258,22 @@ The transition must not cause the page or hero to jump vertically. Keep the hero
 - Advance one slide at a time and wrap from the last slide back to the first.
 - Manual previous/next and pagination navigation must also wrap at the ends.
 - Do not rotate at all when there is only one slide.
+- (Owner round 2, v13.196: “Auto slide is not default on make it on.”) The rotation must run **from the first render, for every visitor, with no opt-in and no environmental gate** — a pointer resting on the hero or an arrow button holding focus must never freeze it. It must be observably sliding within the first interval on a clean load.
 
-### 7.2 Pause and resume
+### 7.2 Pause and resume (owner rounds 1 + 2)
 
-Provide an explicit pause / play button so the visitor can stop automatic movement at any time.
-
-Pause automatic rotation while:
-
-- The pointer is hovering over the carousel on desktop.
-- Keyboard focus is anywhere inside the carousel controls or active slide.
-- The document/tab is hidden.
-- The visitor has explicitly pressed Pause.
-
-Resume after hover/focus leaves only when the visitor has not explicitly paused it. A manual slide change resets the six-second interval; it must not trigger an immediate second change.
-
-On touch devices, a swipe is a manual slide change and resets the interval. The explicit pause control remains available.
+- (Owner round 1, v13.195) There is **no explicit pause / play control** — the owner retired it as redundant.
+- (Owner round 2, v13.196) The hover pause and the keyboard-focus pause are **retired** as well: they silently killed the rotation whenever the cursor rested anywhere over the hero region or an arrow button kept focus after its click, with no visual cue — which the owner read as “auto slide is not default on”.
+- The **only** automatic pause left is the hidden document/tab (a resource save, not a UX state); rotation resumes when the tab becomes visible again.
+- A manual slide change resets the six-second interval; it must not trigger an immediate second change.
+- On touch devices, a swipe is a manual slide change and resets the interval.
 
 ### 7.3 Reduced motion
 
 Respect `prefers-reduced-motion: reduce`:
 
-- Disable automatic rotation by default for that visitor.
-- Remove/disable slide transition animation.
-- Keep manual navigation fully functional.
-- A visitor may explicitly start rotation using the play control.
+- (Owner round 2, v13.196) Auto-advance **stays on** — the content change is not motion. What reduced motion removes is the animation: the slide+fade transition is disabled by the site-wide CSS kill rule, so those visitors get instant swaps.
+- Manual navigation remains fully functional.
 
 Do not rely on motion alone to communicate that the slide changed.
 
@@ -411,7 +403,7 @@ Use canonical match identity consistently when removing duplicates; do not compa
 
 - No new frontend framework or carousel dependency.
 - No new API endpoint, provider call, scheduled job, KV key, D1 table, or persistent carousel state.
-- Do not load all six player-art variants eagerly if that would materially increase first paint. Prioritize the active slide's art; preload only what is needed for a smooth next transition.
+- (Owner round 2, v13.196) Warm **all** slides’ art — every slide’s library portrait, its baked cast shadow, the mobile `-h` portrait busts, the crests and the competition lockups — as soon as the slate is built (and again whenever the slate changes, plus once at DOMContentLoaded so the late inline portrait map is covered). The active slide renders eagerly; the warming happens off the critical path. Rationale (verbatim owner report: “I slided manually, the players picture didn’t change! (harry kane remained and the other player) but teams names and logos changed”): a cold `<img>` `src` swap keeps painting the previous bitmap until the new file arrives, so names/crests flip instantly while the players stay stale. The swap itself must be **ready-gated**: the old bitmap is hidden the moment the slide changes and the new portrait fades in once decoded — a slow network may show an empty lane for a beat but must never show the previous slide’s players under the new names.
 - Avoid layout shift when a new slide has longer club names, missing venue, or missing crest. Reuse the existing truncation / fallback behavior.
 - Avoid duplicating countdown timers or listeners per slide. Use one controller and one timer lifecycle.
 - Keep event listeners scoped to the carousel and cleanly handle state changes when the match list shrinks or becomes empty.
@@ -478,8 +470,9 @@ Test at minimum:
 - Persian RTL and English LTR.
 - Dark and light themes.
 - One slide, two slides, and six slides.
-- Autoplay at six seconds, wrap-around, manual next / previous and direct indicator selection.
-- Pause / resume, hover pause, focus pause, hidden-tab pause, and reduced-motion behavior.
+- Autoplay at six seconds, default-on for every visitor (pointer over the hero and focused arrows must not pause it), wrap-around, manual next / previous and direct indicator selection.
+- The hidden-tab pause; the retired hover/focus/reduced-motion pause gates must stay retired.
+- All-slides art warming on slate build + the ready-gated portrait swap (no stale players on a cold cache).
 - Touch swipe in both directions without opening the match link or blocking vertical scroll.
 - Countdown correctness after switching slides and after a payload refresh.
 - Current slide retained across a normal data refresh; removed active match falls back cleanly to the new primary.
@@ -501,8 +494,8 @@ The feature is complete only when all of the following are true:
 - [ ] The remaining selected matches are chronological.
 - [ ] The carousel never exceeds six slides.
 - [ ] Desktop and mobile show one complete slide at a time, with no adjacent preview.
-- [ ] Arrows, indicators, slide count and pause/play clearly communicate that more matches are available.
-- [ ] Autoplay advances every six seconds and remains manually controllable.
+- [ ] Arrows, indicators and the slide count clearly communicate that more matches are available.
+- [ ] Autoplay advances every six seconds from a clean load — with the pointer over the hero and after clicking an arrow — and remains manually controllable.
 - [ ] RTL Persian and LTR English work correctly.
 - [ ] The active slide's team data, match link, kickoff, date, venue and countdown always belong to the same fixture.
 - [ ] A match leaves the upcoming hero when it starts; provider-reported live status is shown through the existing Live section.
