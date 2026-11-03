@@ -295,7 +295,7 @@ Every slide must show the data for its own match, not a mixture of one slide's c
 When the active slide changes, update all relevant fields together:
 
 - Home and away team names.
-- Team crests and the appropriate desktop/mobile player artwork.
+- Team crests and the player artwork — ONE image set since v13.197-mcdesktop: the same `heroArtFor()` HERO_ART desktop library serves the PC cinematic flanks AND the mobile portrait ports (the MC_ART mobile cutouts are retired from the runtime; fitted on mobile by the ONE shared `.mc-port img` CSS rule: cover, center bottom, the two-axis fade).
 - Competition identity / logo.
 - Kickoff time and match date.
 - Venue, where available, with the existing fallback behavior where it is not.
@@ -403,7 +403,7 @@ Use canonical match identity consistently when removing duplicates; do not compa
 
 - No new frontend framework or carousel dependency.
 - No new API endpoint, provider call, scheduled job, KV key, D1 table, or persistent carousel state.
-- (Owner round 2, v13.196) Warm **all** slides’ art — every slide’s library portrait, its baked cast shadow, the mobile `-h` portrait busts, the crests and the competition lockups — as soon as the slate is built (and again whenever the slate changes, plus once at DOMContentLoaded so the late inline portrait map is covered). The active slide renders eagerly; the warming happens off the critical path. Rationale (verbatim owner report: “I slided manually, the players picture didn’t change! (harry kane remained and the other player) but teams names and logos changed”): a cold `<img>` `src` swap keeps painting the previous bitmap until the new file arrives, so names/crests flip instantly while the players stay stale. The swap itself must be **ready-gated**: the old bitmap is hidden the moment the slide changes and the new portrait fades in once decoded — a slow network may show an empty lane for a beat but must never show the previous slide’s players under the new names.
+- (Owner round 2, v13.196) Warm **all** slides’ art — every slide’s library portrait, its baked cast shadow, the crests and the competition lockups — as soon as the slate is built (and again whenever the slate changes, plus once at DOMContentLoaded as a belt-and-braces re-warm; v13.197-mcdesktop: the mobile `-h` portrait busts left the warm list — the mobile ports read the same library portraits + casts as the flanks). The active slide renders eagerly; the warming happens off the critical path. Rationale (verbatim owner report: “I slided manually, the players picture didn’t change! (harry kane remained and the other player) but teams names and logos changed”): a cold `<img>` `src` swap keeps painting the previous bitmap until the new file arrives, so names/crests flip instantly while the players stay stale. The swap itself must be **ready-gated**: the old bitmap is hidden the moment the slide changes and the new portrait fades in once decoded — a slow network may show an empty lane for a beat but must never show the previous slide’s players under the new names.
 - Avoid layout shift when a new slide has longer club names, missing venue, or missing crest. Reuse the existing truncation / fallback behavior.
 - Avoid duplicating countdown timers or listeners per slide. Use one controller and one timer lifecycle.
 - Keep event listeners scoped to the carousel and cleanly handle state changes when the match list shrinks or becomes empty.

@@ -373,6 +373,20 @@
 /public-13.57.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.197-mcdesktop (owner: use the desktop player images on mobile too):
+# putPort serves the SAME heroArtFor() HERO_ART desktop library for BOTH
+# cards (the MC_ART mobile-cutout priority + the .mc-fill class retire;
+# carWarm drops the MC_ART/MC_SIDE bust warming). The mobile fit rides
+# the page's inline style (ONE shared .mc-port img rule) — the CSS
+# bundle is untouched. The 100-rule cap sweep #6 prunes the
+# /public-13.38.js pin (the oldest expired pin, ~59 releases past its
+# one-SEO-TTL retention; the file stays on disk, an ancient cached HTML
+# re-fetching it still resolves — it just rides the default cache
+# headers).
+# (rename-on-edit; 13.61.js stays served + pinned one SEO TTL above.)
+/public-13.62.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # v13.196-carlive (final cut): the warm list also covers the MC_SIDE
 # away-variant busts (kane-3-a & co — the inline copy-step swaps the
 # away port to the mirrored file, which the home-src-only warm missed).
@@ -825,9 +839,11 @@
 /public-13.39.css
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.136-dezoom (retired pair — kept per the retention rule)
-/public-13.38.css
-  Cache-Control: public, max-age=31536000, immutable
+# v13.136-dezoom (retired pair — EVICTED by the v13.197-mcdesktop
+# 100-rule cap sweep #6, the oldest expired pin (~59 releases past the
+# one-SEO-TTL retention); the file stays on disk, an ancient cached
+# HTML re-fetching it still resolves — it just rides the default cache
+# headers).
 
 # v13.135-zoomlight (retired pair — EVICTED by the v13.195-carsides
 # 100-rule cap sweep #4, ~60 releases past the one-SEO-TTL retention;

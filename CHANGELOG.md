@@ -4,6 +4,116 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.197-mcdesktop — the desktop player images on mobile too, fitted with CSS only
+
+_2026-11-03 · on top of v13.196-carlive · the owner's round, verbatim: "Use
+the desktop player images on mobile too, and fit them with CSS only" (the
+Champions League match slider — the hero player images above each match
+info panel)._
+
+**THE CHANGE, IN ONE LINE:** the mobile featured-match ports now serve the
+SAME `heroArtFor()` HERO_ART desktop library the PC cinematic flanks read —
+ONE image set on every screen — and a single shared CSS rule (no per-file
+geometry, no JS measurement, no pre-cropped mobile variants) fits every
+source: `width:100%` of a 25cqw column, a fixed 58cqw height,
+`object-fit:cover`, `object-position:center bottom`, bottom-anchored behind
+the panel top, horizontally centered, the bottom edge melting into the match
+info panel through a `mask-image` linear-gradient (transparent at the
+bottom) with soft symmetric left/right edge fades.
+
+**(1) THE SWAP REMOVED (assets/public-13.61.js → 13.62.js + the public.ts
+DCL block).** The mobile-specific image mechanism was threefold: the
+bundle's `MC_ART` map + `putPort`'s `own||heroArtFor(sd)` priority (the
+`/ui/mc/mc-port-*` pre-cropped windows with the `.mc-fill` class), the page
+DCL script's 14-club `MC_ART` re-assignment, and `mcFitScan`'s
+`MC_GEOM`/`MC_SIDE`/`MC_HOME_SRC` maps (the side-aware home/away variant
+swap + the per-file `--mcfade` stops + the aspect-band `.mc-fit-w`
+contain classifier). ALL retire: `putPort` reads `heroArtFor(sd)` alone,
+`carWarm` drops the `MC_ART`/`MC_SIDE` bust warming (the library portrait +
+baked cast + crest + lockup warm covers every slide), the DCL script keeps
+only `MC_CREST` (the crest-2 overrides are unrelated to the players) and
+the `.mc-clean` scene toggle, and the bundle's own `var MC_ART` default is
+deleted. NOTHING IS DELETED FROM DISK: the `/ui/mc` cutout files, the
+mc-heroes registry (`mc-heroes.json`), the whole pipeline
+(measure/ingest/registry/wire/mock) and its spec/round-trip/registry gates
+stay under the immutable-pin rule; `wire.js` is rewritten to ENFORCE the
+retired state (its `--check` fails if the maps ever creep back), and
+`check-mc-heroes.js` layer 4 becomes the retirement gate (files on disk +
+no runtime wiring + the live bundle serves the desktop library + the shared
+CSS rule present + the SW bump). The ready-gated reveal (hide at swap, fade
+in on decode — the carlive contract) is byte-untouched.
+
+**(2) THE SHARED CSS (the public.ts inline style — the block edited in
+place like every mc round since v13.174; no css rename rides this
+release).** ONE rule for BOTH sides of EVERY slide
+(`.hero-mcard .mc-ports .mc-port img`), measured against all 35 shipped
+`/players/hero` cutoffs (464px tall, figures flush to both canvas edges —
+no headroom, head zones 87-171px, aspects .440-.925):
+
+- **THE PORTS** become 25cqw columns centered in each half
+  (`height:46%;width:25cqw`, `inset-inline-start:12.5cqw` home /
+  `62.5cqw` away — logical properties per the v13.182 contract; the head
+  centers land at 25/75%W, carrying over the v13.180 28/72%W placement).
+- **THE IMG**: `position:absolute;bottom:0;inset-inline:0;width:100%;height:58cqw;object-fit:cover;object-position:center bottom`.
+  The .431 box aspect sits UNDER the narrowest source (.440 mikautadze):
+  every source is height-constrained, so the full figure height always
+  shows and `cover` only ever trims ARMS/sides (the widest poses — haaland
+  .925, tripic .784 — crop through the soft side fades), NEVER a head —
+  the flush-cropped sources carry no headroom to cut into, so no slide
+  (Man United vs Roma, Atletico vs Bayern, any pairing) needs per-slide
+  adjustment: the shared class is the single tuning knob, exactly as
+  specified.
+- **THE SIZE** (the owner's ~10-15% smaller): the rendered figure runs
+  57.5cqw tall vs the retired `.mc-pre` windows' 65.7cqw (-12.5%); the
+  img bottom sits 5.9cqw BEHIND the z3 panel top (42.7%H) — anchored to
+  the bottom, behind the top of the match info panel.
+- **THE FADE**: both mask axes intersected via `mask-composite` (the
+  `-webkit-mask-composite:source-in` twin kept). `--mc-fade`:
+  `linear-gradient(180deg,#000 0 52%,transparent 97%)` — opaque to 52% of
+  the box (above every crest), fully transparent at the bottom edge; the
+  dissolve band runs 54→80cqw, landing ~84% dissolved at the panel top.
+  `--mc-side`: `linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%)`
+  — the slight symmetric left/right edge fades; ONE definition shared by
+  home and away (the retired per-side mirrored gradient +
+  `object-position:top right` override are gone: cover + center is
+  symmetric by construction, so RTL (the ltr-pinned card) and both the FA
+  and EN renders are identical by construction).
+- **STALE-CACHE IMMUNITY**: the new rule overrides every base
+  `public-13.76.css` `.mc-port img` property (width/height/object-fit/
+  object-position/filter:none) at higher specificity, so a cached old
+  bundle adding `.mc-fill`/`.mc-pre`/`.mc-fit-w` classes changes nothing.
+
+**(3) THE RELEASE WIRING.** `VERSION` 13.196-carlive → **13.197-mcdesktop**;
+package.json 13.197.0.0; `public-13.61.js` → **`public-13.62.js`** (the
+immutable-pin rename; 13.61.js stays served + pinned one SEO TTL);
+`_headers` gains the 13.62.js immutable pin and the **100-rule cap sweep
+#6** prunes the expired `/public-13.38.css` pin (the oldest, ~59 releases
+past its one-SEO-TTL retention — the file stays on disk; the CSS pin's
+JS twin `/public-13.38.js` stays pinned); SW CACHE v99 → **v100**; the
+page-parity baselines re-frozen (`--update`); `hero-coverage.ts`
+regenerated (the bundle name bump — 35 wired / 76 library-only / 96
+library clubs, content unchanged); check-stats re-pinned (the homepage
+bundle reference, the _headers pin, the SW bump, the mcequal CSS pins →
+the ONE shared rule, the mchero classifier/MC_ART pins → the retirement
+assertions, the renderMCard putPort fragments retargeted from the frozen
+13.56.js to the live 13.62.js, the release-wiring triple);
+check-hero-carousel re-pinned (the bundle read + the new one-image-set
+source assertion); check-mc-heroes layer 4 rewritten as the retirement
+gate; wire.js rewritten as the retirement enforcer. The CSS bundle, the
+Telegram bot, the server payload work and every other asset are unchanged.
+
+**GATES:** tsc 0; npm test 0 (all 38 check scripts, incl. the rewritten
+mc-heroes + hero-carousel + stats gates); page-template byte-parity
+re-baselined (--update). QA: the mobile-viewport visual pass over the
+fixture pairings (Man United vs Roma, Atletico vs Bayern + the wide-pose
+extremes haaland/tripic/dembélé) — full figures, heads never cropped, the
+torsos dissolving into the panel, no hard cuts, FA/EN + RTL identical,
+desktop byte-untouched.
+
+**SPEC:** `SPORTSIGNAL_HERO_CAROUSEL_SPEC.md` §art (the one-image-set
+contract replaces the MC_ART priority note); `docs/mc-heroes/SPEC.md` (the
+runtime-retirement note — the pipeline stays for the files' sake).
+
 # v13.196-carlive — the carousel slides on its own, and the players can never go stale
 
 _2026-11-03 · on top of v13.195-carsides · the owner's second carousel

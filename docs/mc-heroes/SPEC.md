@@ -1,6 +1,15 @@
 # mc-heroes — the standardized mobile featured-match image system
 
-**Since v13.183-mchero.** The featured-match hero card (`.hero-mcard`, mobile)
+**Since v13.183-mchero — runtime wiring RETIRED in v13.197-mcdesktop.**
+The owner's round ("use the desktop player images on mobile too, and fit
+them with CSS only") moved the mobile featured-match ports onto the SAME
+heroArtFor() HERO_ART desktop library the PC cinematic flanks read: the
+MC_ART runtime map, the side-aware variant swap and the framing classifier
+are retired from `src/pages/public.ts` + the live bundle, and `wire.js`
+now ENFORCES the retired state. The canonical FILES, the registry, this
+pipeline and the spec/round-trip/registry gates all STAY (the files are
+never deleted — immutable-pin rule), so a future round can re-enable them
+by reverting v13.197. The featured-match hero card (`.hero-mcard`, mobile)
 renders player windows from ONE canonical specification. This file is the
 operator runbook; the machine-checkable spec lives in
 `scripts/mc-heroes/spec.json`, the single source of truth for what ships in

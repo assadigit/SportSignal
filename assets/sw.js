@@ -5,6 +5,20 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v100 (v13.197-mcdesktop: bumped from v99 — routine
+//              evict for this release's public-13.61.js→13.62.js rename (the
+//              owner's one-image-set round: the mobile featured-match ports
+//              now serve the SAME heroArtFor() HERO_ART desktop library the
+//              PC cinematic flanks read — the MC_ART mobile-cutout priority,
+//              its .mc-fill mapping and the MC_ART/MC_SIDE bust warming
+//              retire from the bundle; the mobile fit is ONE shared .mc-port
+//              img rule in the page's inline style, so no css rename rides
+//              this release; the /ui/mc cutout files stay on disk, the
+//              registry + pipeline unchanged). Stale HTML may still
+//              reference the retired 13.61.js, which stays served per the
+//              retention rule — cache-first assets can't refresh without a
+//              rename or a bump, the v13.39 rule: every asset-editing
+//              release bumps.)
 // Cache name:  sportsignal-v64 (v13.158-pngshadow: bumped from v63 — routine
 //              evict for this release's public-13.58.css→13.59.css +
 //              public-13.41.js→13.42.js renames (the owner reported the
@@ -735,7 +749,7 @@
 //              slide's players painted under the new names). The CSS is
 //              untouched (13.76.css stays). Every asset-editing release
 //              bumps (the v13.39 rule).
-const CACHE = "sportsignal-v99";
+const CACHE = "sportsignal-v100";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

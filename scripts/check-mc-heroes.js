@@ -10,10 +10,15 @@
 //      hand-craft on every test run.
 //   3. REGISTRY — every wired file exists and re-measures within tolerance
 //      of its recorded geometry; every pair mirrors; every fade in range.
-//   4. WIRING — public.ts's generated MC-HEROES blocks are byte-in sync
-//      with the registry (wire.js --check), the side-swap observer is
-//      present, every MC_ART src + MC_SIDE twin exists on disk, and the
-//      service worker cache is bumped past the release that shipped them.
+//   4) RETIREMENT (v13.197-mcdesktop) — the RUNTIME wiring for the cutouts
+//      is retired from public.ts (no MC_ART/MC_GEOM/MC_SIDE/MC_HOME_SRC,
+//      no side-aware scan; mcFitScan is the .mc-clean scene toggle only —
+//      wire.js --check enforces it), every registry file still exists on
+//      disk (the immutable-pin rule: nothing is deleted), the LIVE bundle
+//      (public-13.62.js) serves the heroArtFor() desktop library on BOTH
+//      cards, the ONE shared .mc-port img CSS rule fits every source, and
+//      the service worker cache is bumped past the release that retired
+//      the wiring.
 //
 // A new player file that does not conform CANNOT pass npm test — the
 // "flawless for the next game" contract is enforced, not aspirational.
@@ -98,30 +103,32 @@ const check = (name, cond) => {
     check(`canonical: ${f} bottom >= ${SPEC.window.figure_bottom_min_row}`, m.bbox.y1 >= SPEC.window.figure_bottom_min_row - 8);
   }
 
-  // ---------- 4) WIRING ----------
+  // ---------- 4) RETIREMENT (v13.197-mcdesktop) ----------
   const page = fs.readFileSync(path.join(ROOT, "src", "pages", "public.ts"), "utf8");
+  const liveBundle = fs.readFileSync(path.join(ROOT, "assets", "public-13.62.js"), "utf8");
   for (const e of Object.values(REG.clubs)) {
-    check(`wiring: /ui/mc/${e.home} wired in MC_ART`, page.includes(`"/ui/mc/${e.home}"`));
-    check(`wiring: twin /ui/mc/${e.away} on disk`, fs.existsSync(path.join(MC_DIR, e.away)));
+    check(`retirement: ${e.home} file stays on disk (${e.home})`, fs.existsSync(path.join(MC_DIR, e.home)));
+    check(`retirement: twin ${e.away} stays on disk`, fs.existsSync(path.join(MC_DIR, e.away)));
   }
-  check("wiring: MC_SIDE observer present", page.includes('if(wa===ih){im.setAttribute("src",tw);s0=tw}'));
-  check("wiring: MC_HOME_SRC map present", /var MC_HOME_SRC=\{/.test(page));
-  check("wiring: swap falls through to MC_GEOM[s0] lookup", /var g=MC_GEOM\[s0\];/.test(page));
-  check("wiring: MC_ART has 14 registry clubs", (page.match(/if\(typeof MC_ART!=="undefined"\)MC_ART=\{/g) || []).length === 1);
+  check("retirement: NO MC_ART re-assignment in public.ts (the mobile-cutout priority is gone — the desktop library serves both cards)", !/if\(typeof MC_ART!=="undefined"\)MC_ART=\{/.test(page));
+  check("retirement: NO MC_GEOM / MC_SIDE / MC_HOME_SRC maps in public.ts", !/var MC_GEOM=\{/.test(page) && !/var MC_SIDE=\{/.test(page) && !/var MC_HOME_SRC=\{/.test(page));
+  check("retirement: the side-aware swap is gone", !page.includes('if(wa===ih){im.setAttribute("src",tw);s0=tw}'));
+  check("retirement: the .mc-pre / .mc-fit-w classifiers are gone", !/classList\.add\("mc-pre"\)/.test(page) && !/classList\.add\("mc-fit-w"\)/.test(page));
+  check("retirement: the ONE shared .mc-port img rule fits every desktop source (cover + center bottom + the two-axis fade)", page.includes('.hero-mcard .mc-ports .mc-port img{position:absolute;bottom:0;inset-inline:0;width:100%;height:58cqw;object-fit:cover;object-position:center bottom'));
+  check("retirement: putPort in the LIVE bundle serves the heroArtFor() desktop library (no MC_ART read)", liveBundle.includes("var art=heroArtFor(sd);if(art&&art.src)") && !/var own=MC_ART\[/.test(liveBundle) && !/var MC_ART=\{/.test(liveBundle));
+  check("retirement: carWarm warms the library portrait + cast only (no MC_ART/MC_SIDE busts)", !liveBundle.includes("MC_SIDE[own.src]") && liveBundle.includes('var lib=heroArtFor(sd);if(lib&&lib.src)'));
 
-  // wire --check (byte-sync of the generated blocks)
+  // wire --check (the retirement state, enforced)
   try {
     execSync("node scripts/mc-heroes/wire.js --check", { cwd: ROOT, stdio: "pipe" });
-    check("wiring: wire.js --check in sync", true);
+    check("retirement: wire.js --check holds", true);
   } catch (err) {
-    check("wiring: wire.js --check in sync — " + String(err.stdout || err.message), false);
+    check("retirement: wire.js --check holds — " + String(err.stdout || err.message), false);
   }
 
-  // sw cache bumped (the release pin: v93 ships v13.192-leaguebadge; the
-  // bump is the every-release routine (v13.39 rule))
   const sw = fs.readFileSync(path.join(ROOT, "assets", "sw.js"), "utf8");
-  check("wiring: SW cache bumped to sportsignal-v99 (v13.196-carlive final cut — the owner's autoplay round: routine evict for the public-13.58.js→13.59.js→13.60.js renames; the mc map is unchanged, the registry byte-stable; v97 — the 30-minute first cut of the same round; v96 — v13.195-carsides — the owner's arrow round: routine evict for the public-13.57.js→13.58.js + public-13.75.css→13.76.css renames; the mc map is unchanged, the registry byte-stable; v95 — v13.194-herocarousel — the carousel release: routine evict for the public-13.56.js→13.57.js + public-13.74.css→13.75.css + core-13.15.js→13.16.js renames; the mc map is unchanged, the registry byte-stable — this gate re-proves the 14-club map untouched; v94 — v13.193-leagueinset)", /const CACHE = "sportsignal-v99"/.test(sw) && !/const CACHE = "sportsignal-v98"/.test(sw) && !/const CACHE = "sportsignal-v96"/.test(sw));
+    check("retirement: SW cache bumped to sportsignal-v100 (v13.197-mcdesktop — the one-image-set round: routine evict for the public-13.61.js→13.62.js rename; the /ui/mc files, the registry and the pipeline are unchanged on disk — this gate re-proves the retirement + the file set; v99 — v13.196-carlive final cut: routine evict for the public-13.58.js→13.59.js→13.60.js→13.61.js renames; v96 — v13.195-carsides — the owner's arrow round; v95 — v13.194-herocarousel — the carousel release)", /const CACHE = "sportsignal-v100"/.test(sw) && !/const CACHE = "sportsignal-v99"/.test(sw) && !/const CACHE = "sportsignal-v98"/.test(sw));
 
-  console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / wiring)");
+  console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / retirement)");
   process.exit(failed ? 1 : 0);
 })().catch((e) => { console.error("ERROR", e); process.exit(1); });
