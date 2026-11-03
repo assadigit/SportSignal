@@ -373,6 +373,16 @@
 /public-13.57.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.196-carlive (amended): the 13.59.js reveal gate could miss its
+# load event on warm caches (the handler attached AFTER src — a
+# same-task-complete image never fires it, leaving the mobile
+# portraits hidden); handlers now attach BEFORE src + a
+# same-task-complete belt-and-braces reveal. The immutable rule
+# forces the rename to 13.60.js.
+# (rename-on-edit; 13.59.js stays served + pinned one SEO TTL above.)
+/public-13.60.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # v13.196-carlive: the owner's autoplay round — the 6s rotation is
 # DEFAULT-ON for everyone (the hover/focus/reduced-motion pause gates
 # retire; the hidden tab is the only pause left), ALL slides' art warms

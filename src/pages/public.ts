@@ -687,7 +687,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      (owner: "the play button is redundant"). v13.196 (owner: "Auto slide
      is not default on make it on"): the automatic pauses are now ONLY the
      hidden tab — the hover/focus/reduced-motion gates retired with it.
-     One shared controller drives BOTH card renderings (public-13.59.js
+     One shared controller drives BOTH card renderings (public-13.60.js
      CAR). display:none by default; the client adds .on when the active
      slate holds TWO or more slides. The count is dir="ltr" so «۲ / ۵»
      always reads current-first. #carSr is the polite announcement slot
@@ -935,9 +935,10 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.16.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.59.js" defer><\/script>
-<!-- v13.196-carlive: the JS rename 13.58 -> 13.59 carries the owner's
-     autoplay round — the 6s rotation is DEFAULT-ON for everyone (the
+<script src="/public-13.60.js" defer><\/script>
+<!-- v13.196-carlive: the JS rename 13.58 -> 13.60 (13.59 lived ~30
+     minutes) carries the owner's
+     autoplay round + the warm-cache reveal fix — the 6s rotation is DEFAULT-ON for everyone (the
      hover/focus/reduced-motion pause gates retire; the hidden tab is
      the only pause left) and the slide portraits can never go stale:
      ALL slides' art warms when the slate is built (carWarm, re-run on

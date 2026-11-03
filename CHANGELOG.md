@@ -57,6 +57,22 @@ same gate (its freshly-created imgs show nothing while loading anyway —
 this is polish + visual sync). A re-render with the SAME club never
 touches opacity, so the 60s payload re-renders cannot flicker.
 
+**THE AMENDMENT (assets/public-13.58.js → 13.59.js → 13.60.js).** The
+live verification of the first cut (13.59.js, ~30 minutes in the field)
+caught its own regression on a warm browser cache: putPort() attached
+`im.onload` AFTER assigning `im.src` — and a memory-cached image can
+complete in the same task, so the load event fires before the handler
+exists and never re-fires: BOTH mobile portraits rendered
+`complete:true, opacity:0` — loaded but permanently hidden (repeat
+visitors, and even first visits whenever the SSR portraits finished
+before the client re-render). 13.60.js attaches the reveal handlers
+BEFORE the src assignment (an event that cannot be missed) plus a
+same-task-complete belt-and-braces reveal
+(`im.complete&&im.naturalWidth&&(im.style.opacity="")`), and heroArt's
+put() gets the same ordering (decode() stays the primary reveal there —
+a promise cannot miss). The immutable-pin rule forces the rename:
+13.59.js stays on disk + pinned one SEO TTL, never edited in place.
+
 **SPEC:** `SPORTSIGNAL_HERO_CAROUSEL_SPEC.md` §7 (the rotation contract:
 default-on, no environmental gates, hidden-tab-only pause, reduced
 motion = instant swaps but still auto-advancing), §6.3/§16/§21/§22 (the
@@ -65,16 +81,18 @@ note; the acceptance checklist gains "autoplay advances with the pointer
 over the hero and after clicking an arrow").
 
 **GATES:** tsc 0; npm test 0 (2517 checks — check-hero-carousel re-pinned
-to the new contracts: P6 autoplay-default-on + all-slides-warming +
-ready-gated-swap source assertions, the C10 pause-flag retirement, the
-NEW C14 warm behavioral test — the whole slate warms on build, a
-same-slate slide change does NOT re-warm, a changed slate re-warms);
-check-stats re-pinned (homepage references 13.59.js, the _headers pin,
-the release-wiring VERSION/package/SW triple); page-template byte-parity
-re-baselined (--update); _headers 99 rules (+1 pin, under the 100-rule
-cap — no eviction needed); SW CACHE v96 → v97; the CSS is untouched
-(13.76.css stays). Server slate/payload work, the Telegram bot and every
-other asset are unchanged.
+(both cuts) to the new contracts: P6 autoplay-default-on +
+all-slides-warming + ready-gated-swap-with-handlers-before-src source
+assertions, the C10 pause-flag retirement, the NEW C14 warm behavioral
+test — the whole slate warms on build, a same-slate slide change does
+NOT re-warm, a changed slate re-warms); check-stats re-pinned (homepage
+references 13.60.js, the _headers pins, the release-wiring
+VERSION/package/SW triple); page-template byte-parity re-baselined
+(--update); _headers 100 rules (exactly at the cap — the +1 pins for
+13.59.js + 13.60.js, no eviction needed: the historical failures were at
+101); SW CACHE v96 → v97 → v98 (one per deployed cut); the CSS is
+untouched (13.76.css stays). Server slate/payload work, the Telegram
+bot and every other asset are unchanged.
 
 # v13.195-carsides — the carousel arrows move to the players' flanks
 

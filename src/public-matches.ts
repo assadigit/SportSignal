@@ -318,7 +318,7 @@ export function applyLiveOverlay(data, ov) {
   // patch (status/score/minute + the stale-live downgrade) as nextBig — a
   // slate member the tick just saw go live/finished must not ride the
   // upcoming carousel; the CLIENT's per-row eligibility re-check drops it
-  // from the active rotation (public-13.59.js carOk).
+  // from the active rotation (public-13.60.js carOk).
   if (Array.isArray(data.heroMatches)) data.heroMatches.forEach((m) => patch(m));
   if (data.nextBig) patch(data.nextBig);
   if (data.topSpot) {
