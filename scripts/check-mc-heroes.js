@@ -114,7 +114,7 @@ const check = (name, cond) => {
   check("retirement: NO MC_GEOM / MC_SIDE / MC_HOME_SRC maps in public.ts", !/var MC_GEOM=\{/.test(page) && !/var MC_SIDE=\{/.test(page) && !/var MC_HOME_SRC=\{/.test(page));
   check("retirement: the side-aware swap is gone", !page.includes('if(wa===ih){im.setAttribute("src",tw);s0=tw}'));
   check("retirement: the .mc-pre / .mc-fit-w classifiers are gone", !/classList\.add\("mc-pre"\)/.test(page) && !/classList\.add\("mc-fit-w"\)/.test(page));
-  check("retirement: the ONE shared .mc-port img rule fits every desktop source (cover + center bottom + the two-axis fade)", page.includes('.hero-mcard .mc-ports .mc-port img{position:absolute;bottom:0;inset-inline:0;width:100%;height:58cqw;object-fit:cover;object-position:center bottom'));
+  check("retirement: the ONE shared .mc-port img rule fits every desktop source (cover + center bottom + the two-axis fade; v13.198-mcsize rescale: the 98.6cqw owner's-1.7x height)", page.includes('.hero-mcard .mc-ports .mc-port img{position:absolute;bottom:0;inset-inline:0;width:100%;height:98.6cqw;object-fit:cover;object-position:center bottom'));
   check("retirement: putPort in the LIVE bundle serves the heroArtFor() desktop library (no MC_ART read)", liveBundle.includes("var art=heroArtFor(sd);if(art&&art.src)") && !/var own=MC_ART\[/.test(liveBundle) && !/var MC_ART=\{/.test(liveBundle));
   check("retirement: carWarm warms the library portrait + cast only (no MC_ART/MC_SIDE busts)", !liveBundle.includes("MC_SIDE[own.src]") && liveBundle.includes('var lib=heroArtFor(sd);if(lib&&lib.src)'));
 
@@ -127,7 +127,7 @@ const check = (name, cond) => {
   }
 
   const sw = fs.readFileSync(path.join(ROOT, "assets", "sw.js"), "utf8");
-    check("retirement: SW cache bumped to sportsignal-v100 (v13.197-mcdesktop — the one-image-set round: routine evict for the public-13.61.js→13.62.js rename; the /ui/mc files, the registry and the pipeline are unchanged on disk — this gate re-proves the retirement + the file set; v99 — v13.196-carlive final cut: routine evict for the public-13.58.js→13.59.js→13.60.js→13.61.js renames; v96 — v13.195-carsides — the owner's arrow round; v95 — v13.194-herocarousel — the carousel release)", /const CACHE = "sportsignal-v100"/.test(sw) && !/const CACHE = "sportsignal-v99"/.test(sw) && !/const CACHE = "sportsignal-v98"/.test(sw));
+    check("retirement: SW cache bumped to sportsignal-v101 (v13.198-mcsize — the too-small-too-faded round: routine evict for the inline-style rescale of the ONE shared .mc-port img rule — no asset renames, the /ui/mc files, the registry and the pipeline are unchanged on disk — this gate re-proves the retirement + the file set; v100 — v13.197-mcdesktop — the one-image-set round: routine evict for the public-13.61.js→13.62.js rename; v99 — v13.196-carlive final cut: routine evict for the public-13.58.js→13.59.js→13.60.js→13.61.js renames; v96 — v13.195-carsides — the owner's arrow round; v95 — v13.194-herocarousel — the carousel release)", /const CACHE = "sportsignal-v101"/.test(sw) && !/const CACHE = "sportsignal-v100"/.test(sw) && !/const CACHE = "sportsignal-v99"/.test(sw) && !/const CACHE = "sportsignal-v98"/.test(sw));
 
   console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / retirement)");
   process.exit(failed ? 1 : 0);

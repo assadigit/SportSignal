@@ -153,44 +153,52 @@ ${FONT_FACES_STYLE}
      z1 and the players (z2) now ride ABOVE it — the fade melts ONLY the
      stadium scene, the head tops stay fully bright, never dimmed. */
 .hero-mcard .mc-topfade{position:absolute;left:0;right:0;top:0;height:18%;z-index:1;pointer-events:none;background:linear-gradient(180deg,#040F23 0%,rgba(4,15,35,.94) 30%,rgba(4,15,35,.6) 58%,rgba(4,15,35,.22) 82%,rgba(4,15,35,0) 100%)}
-/* v13.197-mcdesktop (owner: use the desktop player images on mobile too,
-     and fit them with CSS only) — THE ONE SHARED PORTRAIT RULE. The
-     per-source framing system RETIRES (the .mc-pre pre-cropped windows,
-     the .mc-fit-w contain band, the per-file --mcfade stops and the DCL
-     aspect classifier — the mcFitScan script below is now the .mc-clean
-     scene toggle only): every .mc-port img is the SAME
-     /players/hero/<slug>.webp cutoff the PC cinematic flanks read
-     (putPort in public-13.62.js — the MC_ART priority is gone), fitted
-     by ONE rule, no per-slide or per-file geometry anywhere.
-     THE GEOMETRY (measured from the 35 shipped cutoffs — 464px tall,
-     figures flush to both canvas edges, head zones 87-171px, aspects
-     .440-.925): each port is a 25cqw COLUMN centered in its half
-     (inset-inline-start 12.5cqw / 62.5cqw — the head centers land at
-     25/75%W, the v13.180 28/72%W placement carried over), and the img
-     fills it width:100% at a FIXED 58cqw height, bottom-anchored at
-     the port bottom (46%H = 81.8cqw, the lower 5.9cqw riding BEHIND
-     the z3 panel top at 42.7%H), object-fit:cover + object-position
-     center bottom. The .431 box aspect sits UNDER the narrowest source
-     (.440 mikautadze): every source is height-constrained — the full
-     figure height always shows (crowns at ~13.5%H) and cover only ever
-     trims ARMS/sides (the widest poses — haaland .925, tripic .784 —
-     crop to the box through the soft side fades), never a head: the
-     flush-cropped sources carry no headroom to cut into.
-     THE SIZE (owner: ~10-15% smaller than the retired windows): the
-     rendered figure is 57.5cqw tall vs the .mc-pre 65.7cqw (-12.5%);
-     the canonical-source heads run ~11.5-14.5cqw vs the fixed 13.3cqw
-     window — the real-proportion spread of the shared desktop art.
-     THE FADE (the v13.180 two-axis contract, one definition now): both
-     mask axes intersected via mask-composite (with the
-     -webkit-mask-composite:source-in twin). The VERTICAL gradient is
-     opaque to 52% of the box (30.2cqw — above every crest) and fully
-     transparent by 97%: the dissolve band runs 54->80cqw, landing
-     ~84% dissolved at the panel top and gone before the port bottom —
-     the torso melts into the HUD, no hard cut. The side edges fade
-     symmetrically on BOTH sides (transparent 0-9%, opaque 9-91%,
-     transparent 100%) — ONE rule for home and away (the retired
-     per-side mirrored --mc-side + object-position:top right override
-     are gone: cover + center is symmetric by construction).
+/* v13.198-mcsize (owner: "the player cutouts became much too small and
+     too faded — all players must look like Dybala in the ORIGINAL
+     version"): the v13.197 25cqw-column/58cqw box rendered the heads
+     at ~12%W riding mid-scene under a 45%-long dissolve that dimmed
+     the whole chest. This round rescales THE ONE SHARED RULE (still
+     ONE image set, still no per-slide or per-file geometry anywhere)
+     to the original library-default Dybala placement and re-cuts the
+     fades. The .mc-pre/.mc-fit-w retirement, the putPort library
+     wiring and the .mc-clean scan all stay EXACTLY as v13.197 built
+     them.
+     THE SIZE (the owner's 1.7x first try): img height 58 -> 98.6cqw —
+     the measured skulls (70-98px across the shipped cutoffs) render
+     15-21cqw; the Dybala/Alvarez/Yamal heads land at 20.6-20.8cqw =
+     the owner's ~20%W target measured off the original; the spread is
+     the sources' real proportions (no per-file normalization exists
+     by design since v13.197).
+     THE GEOMETRY: each port is a 43cqw COLUMN (the .436 box aspect
+     sits under the narrowest .440 source — every source stays
+     height-constrained, cover only ever trims ARMS/sides, never a
+     head: the flush-cropped sources carry no headroom to cut into) at
+     inset-inline-start 3.5cqw / 53.5cqw — the head centers land at
+     25/75%W (the v13.180/197 placement carried over; the v13.182
+     logical-property mirror contract holds: the card anchor pins
+     direction:ltr, so inline-start = the physical LEFT in every
+     direction). The port height 46 -> 57% drops the img bottom to
+     101.3cqw — 25.4cqw BEHIND the z3 panel top at 42.7%H — so the
+     crowns land at 3.2-4cqw (~2%H, the original library-default crown
+     placement just under the header melt, clear of the MC_WL lockup
+     zone x38.7-61.3%W), the shoulders ~31cqw, the figure dissolving
+     into the glowing frame. The wide poses (bruno .890, haaland .925)
+     crop through the outer arms AT the box edges (3.5cqw off the
+     screen edge — the shoulders reach close to the edges); the narrow
+     (mikautadze .440) floats its full 43cqw figure.
+     THE FADE (owner: "reduce the fade — only a short fade on the
+     bottom edge, about the last 15-20%, and a very light 5-8% on the
+     outer edges; the faces and jerseys must be fully bright"): the
+     VERTICAL gradient is opaque to 62% of the box (61.2cqw — below
+     every crest) and fully transparent by 80% (81.6cqw): the dissolve
+     band is the last ~16% of the VISIBLE figure (63.8 -> 75.9cqw at
+     the panel top, ~30% opacity crossing the glowing border, gone
+     5.7cqw behind it) — v13.197's 52->97% band dimmed the whole chest
+     and read as "too faded". The side edges fade symmetrically on
+     BOTH sides at 6% (2.6cqw — softening the cover crop cuts at the
+     box edges for the wide poses + the screen-edge emergence); ONE
+     rule for home and away (cover + center is symmetric by
+     construction). v13.197's 9% side stops retire.
      Z-ORDER unchanged: scene (auto) -> topfade z1 -> ports z2 (the
      heads stay above the veil, never dimmed) -> PANEL z3 (the tab +
      top border cross OVER the fading torsos; the near-opaque fill
@@ -199,23 +207,23 @@ ${FONT_FACES_STYLE}
      (DOM-later).
      HISTORY: v13.175-.180 the crop/melt/equal-columns rounds ->
      v13.182-mcmirror the logical-property mirror -> v13.183-mchero the
-     canonical 356x574 windows (files + registry + pipeline stay on
-     disk under the immutable-pin rule) -> this round: one image set,
-     one rule, CSS-only fit. */
+     canonical 356x574 windows -> v13.197-mcdesktop one image set, one
+     rule, CSS-only fit -> this round: the original size back. */
 .hero-mcard .mc-ports{z-index:2}
 .hero-mcard .mc-panel{z-index:3}
 /* v13.182-mcmirror's LOGICAL-property contract carries over (the page is
      RTL Persian; the card anchor pins direction:ltr, so inline-start =
      the physical LEFT — the computed geometry is identical in every
-     direction). v13.197: ONE SHARED RULE for both sides — the ports are
-     the 25cqw columns (centered per half above), the img fills its port
-     width:100% at the fixed 58cqw height; no per-side img override, no
-     .mc-pre/.mc-fit-w variants, no per-file --mcfade (the side fade is
-     symmetric, so home and away share it verbatim). */
-.hero-mcard .mc-ports .mc-port{height:46%;width:25cqw}
-.hero-mcard .mc-ports .mc-port.mc-port-h{inset-inline-start:12.5cqw}
-.hero-mcard .mc-ports .mc-port.mc-port-a{inset-inline-start:62.5cqw}
-.hero-mcard .mc-ports .mc-port img{position:absolute;bottom:0;inset-inline:0;width:100%;height:58cqw;object-fit:cover;object-position:center bottom;--mc-fade:linear-gradient(180deg,#000 0 52%,transparent 97%);--mc-side:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%);-webkit-mask-image:var(--mc-fade),var(--mc-side);-webkit-mask-composite:source-in;mask-image:var(--mc-fade),var(--mc-side);mask-composite:intersect}
+     direction). v13.198-mcsize: ONE SHARED RULE for both sides — the
+     ports are the 43cqw columns (head centers 25/75%W above), the img
+     fills its port width:100% at the fixed 98.6cqw height (the owner's
+     1.7x); no per-side img override, no .mc-pre/.mc-fit-w variants, no
+     per-file --mcfade (the side fade is symmetric, so home and away
+     share it verbatim). */
+.hero-mcard .mc-ports .mc-port{height:57%;width:43cqw}
+.hero-mcard .mc-ports .mc-port.mc-port-h{inset-inline-start:3.5cqw}
+.hero-mcard .mc-ports .mc-port.mc-port-a{inset-inline-start:53.5cqw}
+.hero-mcard .mc-ports .mc-port img{position:absolute;bottom:0;inset-inline:0;width:100%;height:98.6cqw;object-fit:cover;object-position:center bottom;--mc-fade:linear-gradient(180deg,#000 0 62%,transparent 80%);--mc-side:linear-gradient(90deg,transparent 0,#000 6%,#000 94%,transparent 100%);-webkit-mask-image:var(--mc-fade),var(--mc-side);-webkit-mask-composite:source-in;mask-image:var(--mc-fade),var(--mc-side);mask-composite:intersect}
 /* v13.179-mcsilo (owner: the "More games" scroll cue — "animate the
      button with a vertical bounce loop ... small amplitude, suggested:
      ~6-8px"): the bob amplitude rides the owner's 6-8px band — this
@@ -403,19 +411,21 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
        the competition logo, alpha-masked at 92% — the synthetic layers stay
        under it so a dead asset degrades gracefully).
      · .mc-ports — the STATIC portrait containers (home left / away right,
-       25cqw columns centered in each half, z2 above the topfade veil);
+       43cqw columns, head centers 25/75%W, z2 above the topfade veil);
        v13.197-mcdesktop (owner: use the desktop player images on mobile
        too): renderMCard fills them with the SAME heroArtFor() HERO_ART
        desktop library portraits the PC cinematic flanks read — ONE
        image set on every screen (the MC_ART mobile cutouts + their
        .mc-fill mapping retire; the /ui/mc files stay on disk). ONE
        shared CSS rule fits every source (the inline style): width 100%
-       of the column, fixed 58cqw height, object-fit cover,
-       object-position center bottom — full figures, bottom-anchored
-       behind the panel top, horizontally centered, and the two-axis
-       mask fade (vertical dissolve into the HUD + soft symmetric side
-       fades). The .mc-clean toggle swaps in the hole-free scene-4
-       behind any real cutout (v13.180: the silhouettes are gone).
+       of the column, fixed 98.6cqw height (the v13.198-mcsize owner's
+       1.7x — heads ~20%W, crowns ~2%H like the original), object-fit
+       cover, object-position center bottom — full figures, bottom-
+       anchored deep behind the panel top, horizontally centered, and
+       the two-axis mask fade (a SHORT vertical dissolve into the HUD +
+       very light 6% side fades). The .mc-clean toggle swaps in the
+       hole-free scene-4 behind any real cutout (v13.180: the
+       silhouettes are gone).
      · svg.mc-panel — the chamfered HUD frame drawn as an inline SVG path:
        45deg corner cuts, a raised tab with angled shoulders sitting ON the
        continuous top border, a DOUBLE border (pure-cyan #00E9FD outer line

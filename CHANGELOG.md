@@ -4,6 +4,93 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.198-mcsize — the too-small-too-faded round: the original size back
+
+_2026-11-03 · on top of v13.197-mcdesktop · the owner's round, verbatim:
+"In the last change, the player cutouts became much too small and too
+faded. Fix it so that all players look like Dybala in the ORIGINAL version
+(the old mobile image set), but using the desktop images with CSS only."_
+
+**THE CHANGE, IN ONE LINE:** the ONE shared `.mc-port img` rule v13.197
+built is RESCALED to the original library-default Dybala placement and its
+fades re-cut SHORT — still ONE image set (the `heroArtFor()` HERO_ART
+desktop library), still ONE rule, still zero per-slide/per-file geometry,
+CSS-only, no bundle or stylesheet rename (the edit lives in the page's
+inline style; the CSS bundle stays `public-13.76.css`, the JS stays
+`public-13.62.js`).
+
+**(1) THE SCALE — the owner's "1.6-1.8x, try 1.7x first".** The img height
+58 → **98.6cqw** (exactly 1.7x). Measured against the rendering it must
+match (the v13.196 original rebuilt locally and pixel-measured): the
+Dybala head-top lands at **y=78px on a 390px screen in BOTH** (1.7%H of
+the card — the original library-default crown placement, just under the
+header melt), and the hair-span head width lands at **21.0%W vs the
+original's 23.6%W** — dead on the owner's stated ~20%W target (the current
+v13.197 rendered ~12%W). The measured skulls (70-98px across the 35
+shipped cutoffs) render 15-21cqw — Dybala/Álvarez/Yamal at 20.6-20.8cqw,
+the spread is the sources' real proportions (no per-file normalization
+exists by design).
+
+**(2) THE GEOMETRY — the columns widened to half-width players.** The
+ports 25cqw → **43cqw** at `inset-inline-start` **3.5cqw / 53.5cqw**
+(head centers at the carried-over 25/75%W; the `.436` box aspect sits
+UNDER the narrowest `.440` source, so EVERY source stays
+height-constrained — cover only ever trims arms/sides, never a head). The
+port height 46% → **57%**, dropping the img bottom to 101.3cqw = **25.4cqw
+BEHIND the z3 panel top** at 42.7%H — the bottom of the players is hidden
+behind the top of the match info panel (the glowing frame), exactly per
+the owner's spec, with the crowns at 3.2-4cqw, the shoulders ~31cqw, the
+bright torso to ~64cqw. The wide poses (bruno `.890`, haaland `.925`) crop
+through the outer arms AT the box edges — 3.5cqw off the screen edge, the
+owner's "shoulders reach close to the left and right screen edges"; the
+narrow (mikautadze `.440`) floats its full 43cqw figure.
+
+**(3) THE FADE — "reduce the fade; the faces and jerseys must be fully
+bright and sharp."** The vertical `--mc-fade` re-cut from v13.197's
+`#000 0 52% → transparent 97%` (a 45%-long dissolve that dimmed the whole
+chest and read as "too faded") to **`#000 0 62% → transparent 80%`** —
+opaque to 61.2cqw (below every crest), fully gone by 81.6cqw: the
+dissolve band is the **last ~16% of the VISIBLE figure** (63.8 → 75.9cqw
+at the panel top, ~30% opacity crossing the glowing border, gone 5.7cqw
+behind it) — the owner's "about the last 15-20% of the image". The
+symmetric `--mc-side` fades re-cut from 9% to **6%** both edges (2.6cqw —
+the owner's "very light 5-8% on the outer left and right edges",
+softening the cover crop cuts at the box edges + the screen-edge
+emergence). `object-fit:cover` + `object-position:center bottom` kept
+verbatim — the images stay anchored to the bottom, aspect ratio preserved.
+
+**(4) NOT TOUCHED (verified by the gates):** the `.mc-pre`/`.mc-fit-w`
+retirement, `putPort`'s library wiring, the `.mc-clean` scan, the whole
+`/ui/mc` file set + the mc-heroes registry + pipeline (immutable-pin
+rule), the desktop flank path (byte-untouched), the panel/lockup/arrows
+z-order. The heads clear the MC_WL lockup zone (x 38.7-61.3%W) on every
+slide — home heads span ~15-35%W, away ~65-85%W; the arrows (z6, y
+84.5-93.2cqw) sit below the fade's zero point (81.6cqw) — nothing
+overlaps.
+
+**(5) QA (browser-verified, agent-browser at 390px + 412px).** All four
+carousel slides — Atletico-Bayern, ManU-Roma (the owner's Dybala
+reference: pixel-compared against the rebuilt v13.196 original — head top
+IDENTICAL at y=78, head width 21.0% vs 23.6% on the owner's ~20% target),
+City-Villarreal (the `.925`/`.440` aspect extremes — heads equal at
+~19-20%W, no hard cuts, no floating parts) and PSG-Barca — in FA (RTL) at
+390/412 and in EN (LTR) at 412: heads fully visible on every slide, faces
++ jerseys bright and sharp, torsos dissolving softly into the glowing
+frame, no overlap with the logo/badge/EN button/arrows, the DOM geometry
+byte-identical between RTL and EN (the `direction:ltr` anchor +
+logical-property contract held: home port left 14.4px = 3.5cqw at 412 in
+both directions).
+
+**(6) RELEASE WIRING.** `VERSION` 13.198-mcsize, package 13.198.0.0, SW
+`sportsignal-v100` → **v101** (the v13.39 rule: the served HTML itself
+changed — the inline style — so stale-HTML SWR visitors pick the new rule
+up on the next load; no asset renames ride this release). Gates: tsc 0,
+`npm test` 0 (all 38 check scripts; the check-mc-heroes layer-4 pin, the
+check-stats geometry pin + release-wiring pin re-pinned; the admin-parity
+baseline re-frozen — the public-page baseline is the inline-style edit).
+Docs: AGENTS.md routing note + docs/mc-heroes/SPEC.md retirement note
+updated to v13.198.
+
 # v13.197-mcdesktop — the desktop player images on mobile too, fitted with CSS only
 
 _2026-11-03 · on top of v13.196-carlive · the owner's round, verbatim: "Use

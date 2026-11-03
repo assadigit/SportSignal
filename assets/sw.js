@@ -5,6 +5,24 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v101 (v13.198-mcsize: bumped from v100 — routine
+//              evict for this release's inline-style edit (the owner's
+//              "the player cutouts became much too small and too faded"
+//              round: the ONE shared .mc-port img rule rescales to the
+//              original library-default look — the 43cqw columns at
+//              inset 3.5/53.5cqw, the 98.6cqw img height = the owner's
+//              1.7x, heads ~20%W with crowns ~2%H just under the header
+//              melt, the img bottom 25.4cqw behind the panel top, and
+//              the fades re-cut SHORT — the vertical dissolve opaque to
+//              62%/gone by 80% instead of v13.197's 52->97% whole-chest
+//              dim, the side fades 6% instead of 9%; still ONE image
+//              set, ONE rule, no bundle or css rename rides this
+//              release — the HTML itself changed, and stale-HTML SWR
+//              visitors get the new rule on the next load). Stale HTML
+//              still references 13.62.js, which stays served per the
+//              retention rule — cache-first assets can't refresh without
+//              a rename or a bump, the v13.39 rule: every asset-editing
+//              release bumps.)
 // Cache name:  sportsignal-v100 (v13.197-mcdesktop: bumped from v99 — routine
 //              evict for this release's public-13.61.js→13.62.js rename (the
 //              owner's one-image-set round: the mobile featured-match ports
@@ -749,7 +767,7 @@
 //              slide's players painted under the new names). The CSS is
 //              untouched (13.76.css stays). Every asset-editing release
 //              bumps (the v13.39 rule).
-const CACHE = "sportsignal-v100";
+const CACHE = "sportsignal-v101";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -6,7 +6,13 @@ them with CSS only") moved the mobile featured-match ports onto the SAME
 heroArtFor() HERO_ART desktop library the PC cinematic flanks read: the
 MC_ART runtime map, the side-aware variant swap and the framing classifier
 are retired from `src/pages/public.ts` + the live bundle, and `wire.js`
-now ENFORCES the retired state. The canonical FILES, the registry, this
+now ENFORCES the retired state. **v13.198-mcsize** (the owner's
+too-small-too-faded round) then rescaled the ONE shared `.mc-port img`
+rule to the original library-default look — the 43cqw columns at
+inset 3.5/53.5cqw, the 98.6cqw img height (the owner's 1.7x: heads ~20%W,
+crowns ~2%H like the v13.196 original), the img bottom 25.4cqw behind the
+panel top, and the fades re-cut SHORT (vertical 62→80% of the box, sides
+6%). The canonical FILES, the registry, this
 pipeline and the spec/round-trip/registry gates all STAY (the files are
 never deleted — immutable-pin rule), so a future round can re-enable them
 by reverting v13.197. The featured-match hero card (`.hero-mcard`, mobile)
