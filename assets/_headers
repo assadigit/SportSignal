@@ -391,6 +391,13 @@
 /public-13.63.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.200-carsmooth: the carousel cross-slide choreography — carGhost exits the
+# outgoing lanes as clones while carEnter slides the fresh lanes in
+# (staggered, springy) and carSheen sweeps the light band.
+# (rename-on-edit; 13.63.js stays served + pinned one SEO TTL above.)
+/public-13.64.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # v13.197-mcdesktop (owner: use the desktop player images on mobile too):
 # putPort serves the SAME heroArtFor() HERO_ART desktop library for BOTH
 # cards (the MC_ART mobile-cutout priority + the .mc-fill class retire;
@@ -487,6 +494,12 @@
 # the direction-aware slide+fade keyframes.
 # (rename-on-edit; 13.75.css stays served + pinned one SEO TTL above.)
 /public-13.76.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.200-carsmooth: the choreography styles — the car-exit/car-enter keyframes +
+# the sheen + the #heroSpot/#mcardSpot positioning fix.
+# (rename-on-edit; 13.76.css stays served + pinned one SEO TTL above.)
+/public-13.77.css
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.192-leaguebadge: the owner's "the logo is enough" round — the
@@ -845,13 +858,12 @@
 /public-13.42.css
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.139-hud (retired pair — kept per the retention rule)
-/public-13.41.css
-  Cache-Control: public, max-age=31536000, immutable
-
-# v13.138-polish (retired pair — kept per the retention rule)
-/public-13.40.css
-  Cache-Control: public, max-age=31536000, immutable
+# v13.200-carsmooth cap sweep #8: /public-13.40.css + /public-13.41.css
+# pins EVICTED (the oldest expired pins, ~60 releases past their
+# one-SEO-TTL retention — the same terms as every sweep; the +2 pins of
+# this release pushed the file past Cloudflare's _headers 100-rule cap).
+# The FILES stay on disk, so an ancient cached HTML re-fetching one still
+# resolves — it just rides the default cache headers.
 
 # v13.137-enlarge (retired pair — EVICTED by the v13.199-mcspace
 # 100-rule cap sweep #7, the oldest expired pin (~62 releases past the

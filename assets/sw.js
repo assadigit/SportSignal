@@ -781,7 +781,14 @@
 //              slide's players painted under the new names). The CSS is
 //              untouched (13.76.css stays). Every asset-editing release
 //              bumps (the v13.39 rule).
-const CACHE = "sportsignal-v102";
+// v13.200-carsmooth: the owner's smoothness round — routine evict for
+//              the public-13.63.js→13.64.js + public-13.76.css→13.77.css
+//              renames (the cross-slide choreography: the ghost-exit
+//              clones, the staggered springy enter with the responsive
+//              travel, the light sheen, the #heroSpot/#mcardSpot
+//              absolute-inset positioning fix). Every asset-editing
+//              release bumps (the v13.39 rule).
+const CACHE = "sportsignal-v103";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

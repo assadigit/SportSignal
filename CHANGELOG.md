@@ -4,6 +4,102 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.200-carsmooth — the slide change becomes a real cross-slide: the old match leaves, the new one arrives
+
+_2026-11-04 · on top of v13.199-mcspace · the owner's smoothness round,
+verbatim: "The sliding carousel of concurrent matches are not smooth I
+want a smooth, a little delayed and exciting sliding animation."_
+
+**THE CHANGE, IN ONE LINE:** the slide change is a direction-aware
+CROSS-SLIDE now — the outgoing content visibly slides OUT of the card
+while the fresh match slides IN (staggered, springy, with a light band
+sweeping across) — replacing the retired 24px/340ms nudge that animated
+only the two small data spots while the portraits hard-swapped under
+them, which is exactly why the rotation read as "not smooth".
+
+**(1) THE ROOT CAUSE.** The v13.195 transition painted `car-in` on
+`#heroSpot`/`#mcardSpot` alone: a 24px travel over 340ms —
+sub-perceptual — while the actual slide identity (the two portrait
+lanes, the biggest pixels on the card) was replaced in ONE frame by the
+ready-gated swap. The eye saw a hard cut with a tiny text nudge on top.
+
+**(2) THE EXIT — `carGhost` (public-13.63.js → 13.64.js).** Before the
+synchronous re-render, each of the five changing lanes — the two PC
+portrait lanes + `#heroSpot`, the mobile `.mc-ports` + `#mcardSpot` —
+is CLONED into a `.car-ghost` overlay (aria-hidden,
+pointer-transparent, every id stripped so the clone can never shadow
+the live nodes) that slides out toward the exit side: .42s
+accelerating, opacity holding to ~55% then dissolving. The clones paint
+the OLD bitmaps — always cache-hot, they were on screen a beat ago — so
+the old match VISIBLY leaves. The lane clones keep their own
+class-driven geometry and z (`.car-ghost` only adds pointer-events +
+the animation); the two spot clones carry `.car-ghost-spot` for the
+`inset:0` box their originals just gained. Each clone self-removes on
+`animationend`, with a 900ms timeout sweeping the hidden-breakpoint
+clones (a `display:none` lane never fires animationend).
+
+**(3) THE ENTER — `carEnter`.** After the swap, the fresh lanes slide
+in from the arrival side: the travel is the responsive
+`--car-dx = clamp(72px, 14vw, 190px)` × a per-lane `--car-k`
+multiplier (the portrait lanes ride the full distance; the in-card data
+zones a calmer .42/.5 so the names stay near the frame), .64s expo-out
+with a ~3% overshoot spring at the settle and a .985→1 scale for
+depth. The opacity gains most of its range in the first 42% of the
+curve, so the travel outside the frame reads as a blur of motion,
+never floating text. The lanes are STAGGERED lane-first (home 0ms,
+away .06s, the data zones .11s): the players lead, the names land just
+behind — the owner's "a little delayed" beat.
+
+**(4) THE SHEEN — `carSheen`.** One skewed cyan-white light band
+crosses the card per change (.9s), in the direction the tape moves —
+the "exciting" flourish, riding a new static `.car-sheen` div inside
+`.hero-cards` (aria-hidden, pointer-transparent, invisible at rest).
+
+**(5) THE ENABLING FIX — `#heroSpot`/`#mcardSpot` become
+`position:absolute;inset:0` (public-13.76.css → 13.77.css, the first
+stylesheet rename since v13.195).** They were unpositioned zero-height
+boxes whose positioned children (`.hero-grid`/`.mc-slot`) anchor to the
+CARD; a transform on them would have become those children's containing
+block and collapsed the zones to 0px. `inset:0` of the same card box is
+geometry-identical, and both spots are DOM-last inside their anchors,
+so the transform's stacking context keeps the slots above the panels
+exactly as before. The v13.197-mcdesktop/v13.198-mcsize port geometry
+(the one-shared-rule `.mc-port img` + the inline overrides) is
+untouched — the animation rides the `.mc-ports` CONTAINER, so it works
+unchanged against their architecture.
+
+**(6) THE CONTRACTS HELD.** The swap itself stays SYNCHRONOUS — render,
+countdown, link, dots and every 1s-tick consumer never wait on an
+animation (the exit is a pure overlay; `carApply` runs
+`carGhost`+`carSheen`, then the same render chain as always, then
+`carEnter`). Transform+opacity only — the card frames, the countdown
+cells and the section geometry never move, no reflow. The
+`prefers-reduced-motion` path stays the INSTANT swap: ghosts are
+skipped entirely (the site-wide kill rule would park a clone mid-air)
+and the enter is killed to instant. `carGo`/`carArm`/reconciliation/
+swipe/keyboard are untouched. The behavioral carousel suite (C1-C14)
+passes against the eval'd live bundle unchanged, and the P5 gate now
+asserts the cross-slide contract end-to-end (the keyframes, the
+ghost/enter/sheen functions, the synchronous `carApply` order, the
+`--car-dx`/`--car-k` hand-off).
+
+**RELEASE WIRING:** bundle `public-13.63.js → 13.64.js`, stylesheet
+`public-13.76.css → 13.77.css` (both pinned immutable in
+`assets/_headers` with **cap sweep #8** — the +2 pins pushed the file
+past Cloudflare's 100-rule cap, so the expired `/public-13.40.css` +
+`/public-13.41.css` pins are pruned, files stay on disk, still 100
+rules), SEO page-shell CSS bump, `hero-coverage.ts` regenerated for
+the new bundle name (`npm run heroes:sync`), SW cache
+`sportsignal-v102 → v103`, `VERSION = 13.200-carsmooth`, package
+`13.200.0.0`, the `check-stats`/`check-mc-heroes`/`check-hero-carousel`
+gates updated (the v13.199 wiring pin goes historical; a new sweep-#8
+check pins the prune), the public-page baseline regenerated. `npm test`
+green end-to-end (2,525 checks). Built on a base that moved underneath
+it — the parallel v13.197-mcdesktop/v13.198-mcsize/v13.199-mcspace
+rounds took the first-cut names (13.62.js, SW v100, the v13.197 label)
+while this round was being built, so it was rebased onto v13.199 and
+re-christened v13.200.
+
 # v13.199-mcspace — the header-space round: margin, lockup x1.3, Farsi time
 
 _2026-11-03 · on top of v13.198-mcsize · the owner's round, verbatim:
