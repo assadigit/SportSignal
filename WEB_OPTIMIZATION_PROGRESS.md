@@ -14,7 +14,7 @@
 | :--- | :--- |
 | **Current phase** | 0 COMPLETE — Phase 1 (Comprehensive audit) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | (fill after Phase 0 push — see Git section below) |
+| **Latest commit** | `a9c87c0` (`docs: add website architecture and isolation audit (web-optimization Phase 0)`) — pushed & verified via `git ls-remote` |
 | **Production** | `13.201-carstack` (= repo HEAD `f39ce2b` at Phase 0 close; NOT redeployed for Phase 0 — documentation-only phase) |
 | **Production health at audit** | `/healthz` → `ok:true`, `degraded:true` (kv_writes_day 838 vs soft 700), pool 498 matches, sched LIVE. Monitored, not an incident. |
 | **Last verified** | 2026-11-04 (Phase 0 recon + `npm test` green) |
@@ -86,7 +86,7 @@ is the authoritative reference for every later phase.
 
 | Phase | Commit | Push | Deploy | Production verify |
 | :--- | :--- | :--- | :--- | :--- |
-| 0 | (set at push) | `main` @ GitHub | **NOT DEPLOYED** (documentation-only phase — spec §14.4: no unnecessary production redeployment) | n/a (production already = repo HEAD `f39ce2b` / `13.201-carstack`, verified via `/healthz`) |
+| 0 | `a9c87c0` (architecture+isolation report, tracker) + `docs(progress): record Phase 0 commit hash` (tracker hash backfill) | `main` @ GitHub, verified via `git ls-remote` | **NOT DEPLOYED** (documentation-only phase — spec §14.4: no unnecessary production redeployment) | n/a (production already = repo code state `13.201-carstack`, verified via `/healthz`) |
 
 ---
 
