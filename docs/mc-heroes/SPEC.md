@@ -12,7 +12,12 @@ rule to the original library-default look — the 43cqw columns at
 inset 3.5/53.5cqw, the 98.6cqw img height (the owner's 1.7x: heads ~20%W,
 crowns ~2%H like the v13.196 original), the img bottom 25.4cqw behind the
 panel top, and the fades re-cut SHORT (vertical 62→80% of the box, sides
-6%). The canonical FILES, the registry, this
+6%). **v13.199-mcspace** (the owner's header-space round) then dropped the
+card 16px lower under the topbar (margin-top 68→84px — the crowns clear
+the brand-logo band), scaled the `.mc-pl` lockup x1.3 (29.4cqw × 7%) and
+switched the FA kickoff to Persian digits «۲۰:۰۰» under Morabba (all
+three ride the page inline style; the digit mapping rides the
+public-13.62.js→13.63.js rename). The canonical FILES, the registry, this
 pipeline and the spec/round-trip/registry gates all STAY (the files are
 never deleted — immutable-pin rule), so a future round can re-enable them
 by reverting v13.197. The featured-match hero card (`.hero-mcard`, mobile)

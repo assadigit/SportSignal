@@ -5,6 +5,20 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v102 (v13.199-mcspace: bumped from v101 — this
+//              release edits a client-referenced asset (public-13.62.js ->
+//              13.63.js: renderMCard's FA kickoff maps its digits through
+//              faNum — the 24h SHAPE stays, the glyphs become Persian-Indic
+//              «۲۰:۰۰» under the Morabba face from the page inline style;
+//              EN stays Latin) plus the served HTML itself (the header-space
+//              round rides the page inline style: the mobile card margin-top
+//              68 -> 84px — the owner's "a little margin padding (just
+//              slightly from the header)" + the Kane-head/logo safe-space
+//              note — and the league/UCL lockup scales x1.3, 22.6 -> 29.4cqw
+//              x 5.4 -> 7%). Cache-first assets can't refresh without a
+//              rename or a bump, the v13.39 rule. Stale HTML still
+//              references 13.62.js, which stays served per the retention
+//              rule.)
 // Cache name:  sportsignal-v101 (v13.198-mcsize: bumped from v100 — routine
 //              evict for this release's inline-style edit (the owner's
 //              "the player cutouts became much too small and too faded"
@@ -767,7 +781,7 @@
 //              slide's players painted under the new names). The CSS is
 //              untouched (13.76.css stays). Every asset-editing release
 //              bumps (the v13.39 rule).
-const CACHE = "sportsignal-v101";
+const CACHE = "sportsignal-v102";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

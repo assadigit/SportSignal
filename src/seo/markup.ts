@@ -300,6 +300,13 @@ const MC_FA_DIGITS = "\u06f0\u06f1\u06f2\u06f3\u06f4\u06f5\u06f6\u06f7\u06f8\u06
 function mcEnDigits(s: string): string {
   return String(s).replace(/[\u06f0-\u06f9]/g, (d) => String(MC_FA_DIGITS.indexOf(d)));
 }
+// v13.199-mcspace (owner: "make the match time written in farsi numerals
+// (use farsi font)"): the inverse map — the SSR FA kickoff «۲۰:۰۰». The
+// client's renderMCard applies the identical faNum mapping (public-13.63.js)
+// so the no-JS paint and the post-JS render agree byte-shape.
+function mcFaDigits(s: string): string {
+  return String(s).replace(/[0-9]/g, (d) => MC_FA_DIGITS[+d]);
+}
 
 function mcImgHtml(url: string): string {
   return '<img src="' + esc(url) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">';
@@ -317,11 +324,16 @@ export function mcardHtml(sm: SeoMatch): string {
     // Tehran wall clock — deterministic (tehranParts, no locale variance);
     // v13.170-mcv3: the banner date is the Jalali WEEKDAY+day+month with
     // LATIN day digits (the owner's instruction 8 — no Persian-Indic digits
-    // anywhere on the card); the kickoff is the plain Latin hh:mm pair.
+    // on the date line); the kickoff rode the plain Latin hh:mm pair until
+    // v13.199-mcspace (owner: "make the match time written in farsi
+    // numerals (use farsi font)") — the SSR is always the FA presentation
+    // (lang=fa default; the client re-renders for EN), so the time now
+    // ships faNum-mapped Persian digits «۲۰:۰۰» (mcFaDigits), the exact
+    // shape renderMCard's fa branch paints post-JS.
     const p = tehranParts(m.utcDate);
     const z = (n: number) => (n < 10 ? "0" + n : "" + n);
     dt = mcEnDigits(jalaliWeekdayStr(m.utcDate));
-    tm = z(p.hh) + ":" + z(p.mm);
+    tm = mcFaDigits(z(p.hh) + ":" + z(p.mm));
   }
   // names too long for one line at the display size (fa joined script
   // > 11 chars) step down to .mc-name-xl — the SAME rule the client's

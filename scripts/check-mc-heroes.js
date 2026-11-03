@@ -15,7 +15,7 @@
 //      no side-aware scan; mcFitScan is the .mc-clean scene toggle only —
 //      wire.js --check enforces it), every registry file still exists on
 //      disk (the immutable-pin rule: nothing is deleted), the LIVE bundle
-//      (public-13.62.js) serves the heroArtFor() desktop library on BOTH
+//      (public-13.63.js since v13.199-mcspace) serves the heroArtFor() desktop library on BOTH
 //      cards, the ONE shared .mc-port img CSS rule fits every source, and
 //      the service worker cache is bumped past the release that retired
 //      the wiring.
@@ -105,7 +105,7 @@ const check = (name, cond) => {
 
   // ---------- 4) RETIREMENT (v13.197-mcdesktop) ----------
   const page = fs.readFileSync(path.join(ROOT, "src", "pages", "public.ts"), "utf8");
-  const liveBundle = fs.readFileSync(path.join(ROOT, "assets", "public-13.62.js"), "utf8");
+  const liveBundle = fs.readFileSync(path.join(ROOT, "assets", "public-13.63.js"), "utf8"); // v13.199-mcspace: the read follows the 13.62 -> 13.63 rename (the FA kickoff faNum edit)
   for (const e of Object.values(REG.clubs)) {
     check(`retirement: ${e.home} file stays on disk (${e.home})`, fs.existsSync(path.join(MC_DIR, e.home)));
     check(`retirement: twin ${e.away} stays on disk`, fs.existsSync(path.join(MC_DIR, e.away)));
@@ -127,7 +127,7 @@ const check = (name, cond) => {
   }
 
   const sw = fs.readFileSync(path.join(ROOT, "assets", "sw.js"), "utf8");
-    check("retirement: SW cache bumped to sportsignal-v101 (v13.198-mcsize — the too-small-too-faded round: routine evict for the inline-style rescale of the ONE shared .mc-port img rule — no asset renames, the /ui/mc files, the registry and the pipeline are unchanged on disk — this gate re-proves the retirement + the file set; v100 — v13.197-mcdesktop — the one-image-set round: routine evict for the public-13.61.js→13.62.js rename; v99 — v13.196-carlive final cut: routine evict for the public-13.58.js→13.59.js→13.60.js→13.61.js renames; v96 — v13.195-carsides — the owner's arrow round; v95 — v13.194-herocarousel — the carousel release)", /const CACHE = "sportsignal-v101"/.test(sw) && !/const CACHE = "sportsignal-v100"/.test(sw) && !/const CACHE = "sportsignal-v99"/.test(sw) && !/const CACHE = "sportsignal-v98"/.test(sw));
+    check("retirement: SW cache bumped to sportsignal-v102 (v13.199-mcspace — the header-space round: the public-13.62.js -> 13.63.js rename (the renderMCard FA-kickoff faNum edit) + the inline-style margin/lockup/time overrides; the /ui/mc files, the registry and the pipeline are unchanged on disk — this gate re-proves the retirement + the file set; v101 — v13.198-mcsize — the too-small-too-faded round: routine evict for the inline-style rescale of the ONE shared .mc-port img rule — no asset renames; v100 — v13.197-mcdesktop — the one-image-set round: routine evict for the public-13.61.js→13.62.js rename; v99 — v13.196-carlive final cut: routine evict for the public-13.58.js→13.59.js→13.60.js→13.61.js renames; v96 — v13.195-carsides — the owner's arrow round; v95 — v13.194-herocarousel — the carousel release)", /const CACHE = "sportsignal-v102"/.test(sw) && !/const CACHE = "sportsignal-v101"/.test(sw) && !/const CACHE = "sportsignal-v100"/.test(sw) && !/const CACHE = "sportsignal-v99"/.test(sw) && !/const CACHE = "sportsignal-v98"/.test(sw));
 
   console.log(failed ? `\n${failed} MC-HEROES GATE FAILURES` : "\nmc-heroes gate: all layers pass (spec / round-trip / registry / retirement)");
   process.exit(failed ? 1 : 0);

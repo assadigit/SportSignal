@@ -373,6 +373,24 @@
 /public-13.57.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.199-mcspace (owner: the header-space round — "a little margin
+# padding (just slightly from the header)", "make the league or ucl
+# logo 30% larger in mobile view", "make the match time written in
+# farsi numerals (use farsi font)" + the Kane-head/logo safe-space
+# note): the ONE bundle edit — renderMCard's FA kickoff maps its digits
+# through faNum (the 24h SHAPE stays, the glyphs become Persian-Indic
+# «۲۰:۰۰» under the Morabba face from the page inline style; EN stays
+# Latin). The margin-top 68 -> 84px, the .mc-pl x1.3 (29.4cqw x 7%)
+# and the FA .mc-ko override all ride the page inline style — the CSS
+# bundle is untouched (13.76.css stays byte-frozen). The 100-rule cap
+# sweep #7 prunes the /public-13.39.css pin (the oldest expired pin,
+# ~62 releases past its one-SEO-TTL retention; the file stays on disk,
+# an ancient cached HTML re-fetching it still resolves — it just rides
+# the default cache headers).
+# (rename-on-edit; 13.62.js stays served + pinned one SEO TTL above.)
+/public-13.63.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # v13.197-mcdesktop (owner: use the desktop player images on mobile too):
 # putPort serves the SAME heroArtFor() HERO_ART desktop library for BOTH
 # cards (the MC_ART mobile-cutout priority + the .mc-fill class retire;
@@ -835,9 +853,11 @@
 /public-13.40.css
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.137-enlarge (retired pair — kept per the retention rule)
-/public-13.39.css
-  Cache-Control: public, max-age=31536000, immutable
+# v13.137-enlarge (retired pair — EVICTED by the v13.199-mcspace
+# 100-rule cap sweep #7, the oldest expired pin (~62 releases past the
+# one-SEO-TTL retention); the file stays on disk, an ancient cached
+# HTML re-fetching it still resolves — it just rides the default cache
+# headers).
 
 # v13.136-dezoom (retired pair — EVICTED by the v13.197-mcdesktop
 # 100-rule cap sweep #6, the oldest expired pin (~59 releases past the

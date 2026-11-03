@@ -250,7 +250,7 @@ console.log("\n=== 2. payload / SSR / dedupe contracts (source) ===");
 const pmSrc = read("src/public-matches.ts");
 const routerSrc = read("src/seo/router.ts");
 const publicSrc = read("src/pages/public.ts");
-const js61 = read("assets/public-13.62.js"); // v13.197-mcdesktop: the bundle read follows the rename (the variable name stays js61 — the historical pin idiom)
+const js61 = read("assets/public-13.63.js"); // v13.199-mcspace: the bundle read follows the rename (the variable name stays js61 — the historical pin idiom); 13.63 since v13.199-mcspace (the renderMCard FA-kickoff faNum edit), 13.62 since v13.197-mcdesktop
 const core16 = read("assets/core-13.16.js");
 const css76 = read("assets/public-13.76.css");
 

@@ -224,6 +224,53 @@ ${FONT_FACES_STYLE}
 .hero-mcard .mc-ports .mc-port.mc-port-h{inset-inline-start:3.5cqw}
 .hero-mcard .mc-ports .mc-port.mc-port-a{inset-inline-start:53.5cqw}
 .hero-mcard .mc-ports .mc-port img{position:absolute;bottom:0;inset-inline:0;width:100%;height:98.6cqw;object-fit:cover;object-position:center bottom;--mc-fade:linear-gradient(180deg,#000 0 62%,transparent 80%);--mc-side:linear-gradient(90deg,transparent 0,#000 6%,#000 94%,transparent 100%);-webkit-mask-image:var(--mc-fade),var(--mc-side);-webkit-mask-composite:source-in;mask-image:var(--mc-fade),var(--mc-side);mask-composite:intersect}
+/* v13.199-mcspace (owner: "I want a little margin padding (just slightly
+     from the header)" + the note "the head of harry kane is too much
+     close to the website's logo, just slightly add some safe space"):
+     the mobile card drops 16px lower under the transparent topbar —
+     margin-top 68 -> 84px in the <=899px zone. The v13.166-settled 68
+     put the card top ~66px from the page top, so the tallest crown
+     (Kane, .6% source headroom -> ~80px) rode LEVEL with the brand
+     logo's bottom edge (~82px) inside the logo's x-band (RTL pins the
+     brand top-right, exactly over the away lane) — the owner's
+     "too much close". 84 lifts EVERY crown ~16px: Kane's hair-line
+     lands ~96px = ~13px daylight under the logo box at 390px (~15px
+     at 412px — the gap is width-driven, the logo is fixed-px, so it
+     only grows), the mc-pl lockup and the topfade veil ride down with
+     the card (the melt into the header band is untouched — the strip
+     the card vacates shows the same full-bleed hero-bg photo the
+     header already floats on). The 16px is paid from the below-card
+     peek (the v13.168 first-screen reserve), never from the card. */
+@media (max-width:899px){.hero-mcard{margin-top:84px}}
+/* v13.199-mcspace (owner: "make the league or ucl logo 30% larger in
+     mobile view"): the white competition lockup scales x1.3 — width
+     22.6 -> 29.4cqw, height 5.4 -> 7% (object-fit:contain scales the
+     artwork exactly 1.3x whatever its own aspect). The translate(-50%,
+     -50%) center keeps the box symmetric about (50%W, 6.7%H): the top
+     edge rises 4.0 -> 3.2%H (still under the header melt), the 29.4cqw
+     span (35.3-64.7%W) stays clear of both head columns (the crowns'
+     outer edges land ~35/65%W — the gap between the players is exactly
+     where the lockup lives). (0,2,0) later in the cascade beats the
+     public-13.76.css rule; the stylesheet file itself stays
+     byte-frozen (the v13.39 rename-on-edit rule — served-HTML edits
+     ride this inline block). */
+.hero-mcard .mc-pl{width:29.4cqw;height:7%}
+/* v13.199-mcspace (owner: "make the match time written in farsi numerals
+     (use farsi font)"): the FA kickoff swaps the Latin techno faces for
+     the PERSIAN DISPLAY FACE — Morabba (the heading variable 250-900,
+     already preloaded) carries «۲۰:۰۰» exactly the way it carries the
+     FA names above it; the DIGITS themselves arrive faNum-mapped from
+     renderMCard (public-13.63.js — the 13.62 -> 13.63 rename carries
+     this round) and from mcardHtml (the SSR mirror, seo/markup.ts), so
+     the no-JS paint and every re-render (carousel slide, language
+     toggle, poll refresh) agree; EN keeps the Latin Poppins/Chakra
+     treatment untouched, and the mset countdown writer stays
+     fmtNum-free (tabular Latin — the countdown never jitters). The
+     gradient fill + stroke + glow ride any glyph; letter-spacing keeps
+     the .35cqw (Persian digits never join). (0,3,1) beats the base
+     (0,2,0) exactly like the FA name/date overrides in
+     public-13.76.css. */
+html[lang="fa"] .hero-mcard .mc-ko{font-family:Morabba,Peyda,'Segoe UI',Tahoma,sans-serif;font-weight:800}
 /* v13.179-mcsilo (owner: the "More games" scroll cue — "animate the
      button with a vertical bounce loop ... small amplitude, suggested:
      ~6-8px"): the bob amplitude rides the owner's 6-8px band — this
@@ -439,10 +486,14 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
        filled server-side by mcardHtml (seo/markup.ts): the white
        competition lockup (MC_WL — /ui/mc/wl-*.webp), the crests (MC_CREST
        white overrides or the FD crest URLs), the names, the WEEKDAY+date
-       line and the kickoff time. LATIN digits everywhere on the card (the
-       owner's instruction 8): «سه شنبه 27 مهر» renders the Jalali
-       weekday+day+month with Latin day digits, «23:00» stays en-GB 24h,
-       tabular-nums so the countdown never jitters.
+       line and the kickoff time. LATIN digits on the card (the owner's
+       instruction 8): «سه شنبه 27 مهر» renders the Jalali
+       weekday+day+month with Latin day digits, tabular-nums so the
+       countdown never jitters — EXCEPT the kickoff time since
+       v13.199-mcspace (owner: "make the match time written in farsi
+       numerals (use farsi font)"): FA renders «۲۰:۰۰» (faNum-mapped
+       digits, the Morabba face via the inline-style override) while EN
+       keeps the Latin «23:00».
      · svg.mc-capsule — the elongated hexagon date/time capsule with
        gradient border (dim blue ends, white-cyan center) + glowing chevron
        marks at both pointed ends.
@@ -908,7 +959,18 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.16.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<script src="/public-13.62.js" defer><\/script>
+<script src="/public-13.63.js" defer><\/script>
+<!-- v13.199-mcspace (owner: the header-space round — "a little margin
+     padding (just slightly from the header)", "make the league or ucl
+     logo 30% larger in mobile view", "make the match time written in
+     farsi numerals (use farsi font)" + the Kane-head/logo safe-space
+     note): the JS rename 13.62 -> 13.63 carries the ONE bundle edit —
+     renderMCard's FA kickoff maps its digits through faNum (the en-GB
+     24h SHAPE stays, the glyphs become Persian-Indic «۲۰:۰۰»; EN stays
+     Latin), matching the PC pocket's fmtNum time. The margin-top
+     68 -> 84px, the .mc-pl x1.3 (29.4cqw x 7%) and the FA .mc-ko
+     Morabba override all ride the page inline style above (the CSS
+     bundle stays byte-frozen, 13.76.css). -->
 <!-- v13.197-mcdesktop (owner: use the desktop player images on mobile
      too): the JS rename 13.61 -> 13.62 carries the ONE-IMAGE-SET round —
      putPort serves the SAME heroArtFor() HERO_ART desktop library for
@@ -974,7 +1036,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 document.addEventListener("DOMContentLoaded",function(){
 try{
 /* v13.197-mcdesktop (owner: use the desktop player images on mobile too):
-   the MC_ART re-assignment RETIRES — putPort in public-13.62.js serves
+   the MC_ART re-assignment RETIRES — putPort in public-13.63.js serves
    the heroArtFor() HERO_ART desktop library for BOTH cards (the PC
    cinematic flanks and the mobile featured-match ports read ONE image
    set, fitted on mobile by the ONE shared .mc-port img rule in the

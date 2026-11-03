@@ -4,6 +4,83 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.199-mcspace — the header-space round: margin, lockup x1.3, Farsi time
+
+_2026-11-03 · on top of v13.198-mcsize · the owner's round, verbatim:
+"Ok now it's great but I want a little margin padding (just slightly
+from the header). Also make the league or ucl logo 30% larger in mobile
+view. also make the match time written in farsi numerals (use farsi
+font). -note: see the head of harry kane is too much close to the
+website's logo, just slightly add some safe space."_
+
+**THE CHANGE, IN ONE LINE:** the mobile hero card drops 16px lower under
+the transparent topbar (Kane's crown clears the brand-logo band), the
+white competition lockup scales x1.3, and the FA kickoff time renders
+Persian digits under the Morabba face — the margin + the lockup + the
+font override ride the page inline style (13.76.css stays byte-frozen),
+the digit mapping rides the public-13.62.js → **13.63.js** rename (the
+immutable-pin rule), and the SSR mirror ships the same «۲۰:۰۰» shape.
+
+**(1) THE MARGIN — the owner's "a little margin padding (just slightly
+from the header)" + the Kane-head/logo safe-space note.** The
+<=899px margin-top 68 → **84px**. Measured live at 390px: the card top
+sat ~66px from the page top, so the tallest crown (Kane, .6% source
+headroom → ~80px) rode LEVEL with the brand logo's bottom edge (~82px)
+inside the logo's x-band (RTL pins the brand top-right, exactly over the
+away lane) — the owner's "too much close". 84 lifts every crown
+~16px: Kane's hair-line lands ~96px = **~13px daylight** under the logo
+box at 390px (**~14px at 412px** — the gap is width-driven, the logo
+fixed-px, so it only grows); the mc-pl lockup and the topfade veil ride
+down with the card (the melt into the header band is untouched — the
+strip the card vacates shows the same full-bleed hero-bg photo the
+header already floats on). The 16px is paid from the below-card peek
+(the v13.168 first-screen reserve), never from the card.
+
+**(2) THE LOCKUP — the owner's "make the league or ucl logo 30% larger
+in mobile view".** `.hero-mcard .mc-pl` width 22.6 → **29.4cqw**,
+height 5.4 → **7%** (object-fit:contain scales the artwork exactly 1.3x
+whatever its own aspect). The translate(-50%,-50%) center keeps the box
+symmetric about (50%W, 6.7%H): the top edge rises 4.0 → 3.2%H (still
+under the header melt), and the 29.4cqw span (35.3-64.7%W) stays clear
+of both head columns (the crowns' outer edges land ~35/65%W — the gap
+between the players is exactly where the lockup lives; VLM-verified
+uncropped with comfortable clearance on both sides at 390/412px).
+
+**(3) THE TIME — the owner's "make the match time written in farsi
+numerals (use farsi font)".** FA now renders **«۲۰:۰۰»**: renderMCard
+keeps the en-GB 24h SHAPE and maps the digits through faNum
+(public-13.63.js — the ONLY bundle edit; the mset countdown writer stays
+fmtNum-free, tabular Latin so the countdown never jitters), the SSR
+mirror mcardHtml maps the Tehran wall clock through the new mcFaDigits
+(the page is always the FA presentation pre-JS, so the no-JS paint and
+the post-JS render agree byte-shape), and the FA override
+`html[lang="fa"] .hero-mcard .mc-ko{font-family:Morabba,…}` swaps
+the Latin techno faces for the Persian display face (Morabba, the
+heading variable, already preloaded — the same face the FA names ride).
+EN keeps the Latin Poppins/Chakra treatment untouched, and the date line
++ the countdown tiles keep their Latin digits (the owner asked for the
+MATCH TIME only — instruction 8 survives everywhere else). The PC card
+already rendered fmtNum Persian time in FA, so the two cards now agree.
+
+**QA (agent-browser, 390px + 412px, FA/RTL + EN/LTR):** slide 1
+(Atlético–Bayern, Kane) and slide 2 (ManU–Roma, Bruno/Dybala) — Kane's
+crown 13-14px clear of the logo band, the x1.3 lockup uncropped and
+clear of both heads, «۲۰:۰۰» centered in the capsule with clear padding
+from the pointed ends (VLM-verified), EN "20:00" Latin, countdown
+00/02/26 Latin tabular, the desktop >=900px PC card untouched, RTL/EN
+mirror intact.
+
+**WIRING:** VERSION 13.199-mcspace, package 13.199.0.0, SW v101 → **v102**
+(this release edits a client-referenced asset — the 13.62.js → 13.63.js
+rename — plus the served HTML); _headers +1 pin (the 100-rule cap sweep
+#7 prunes the expired /public-13.39.css pin, the file stays on disk);
+check-stats + check-mc-heroes + check-hero-carousel re-pinned (the
+bundle reads follow the rename; a new v13.199 fragment check pins the
+three overrides + the faNum gate + the mcFaDigits mirror); hero-coverage
+source-of-truth pointer follows the bundle rename; parity baseline
+re-frozen (the template bytes changed). Gates: tsc 0, npm test 0 (2523
+checks).
+
 # v13.198-mcsize — the too-small-too-faded round: the original size back
 
 _2026-11-03 · on top of v13.197-mcdesktop · the owner's round, verbatim:
