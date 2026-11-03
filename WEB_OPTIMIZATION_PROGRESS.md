@@ -81,6 +81,7 @@ is the authoritative reference for every later phase.
 | 2026-11-04 | `git status` clean on `main`, HEAD = remote `f39ce2b` | ✅ |
 | 2026-11-04 | Live `/healthz` matches repo VERSION (`13.201-carstack`) | ✅ production = HEAD |
 | 2026-11-04 | Live headers spot-check: `/` → 200, br, `cf-cache-status: HIT`, `s-maxage=60`; `/public-13.78.css` → immutable 1y, br; workers.dev → `x-robots-tag: noindex` | ✅ as documented |
+| 2026-11-04 | Phase 0 push → GitHub Actions `seo-check` on both commits (`a9c87c0`, `00c2e9f`) | ✅ completed · success (×2) |
 
 ## Git & deployment log
 
