@@ -373,6 +373,13 @@
 /public-13.57.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.196-carlive (final cut): the warm list also covers the MC_SIDE
+# away-variant busts (kane-3-a & co — the inline copy-step swaps the
+# away port to the mirrored file, which the home-src-only warm missed).
+# (rename-on-edit; 13.60.js stays served + pinned one SEO TTL above.)
+/public-13.61.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # v13.196-carlive (amended): the 13.59.js reveal gate could miss its
 # load event on warm caches (the handler attached AFTER src — a
 # same-task-complete image never fires it, leaving the mobile
@@ -684,9 +691,6 @@
 # inside the card anchor (#bigbar is gone; updateBigBar hides the layer
 # for non-upcoming heroes). The PNG is content-addressed by name only.
 /public-13.51.css
-  Cache-Control: public, max-age=31536000, immutable
-
-/public-13.37.js
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.150-hud follow-up: core-13.13.js -> core-13.14.js (rename-on-edit — the

@@ -723,7 +723,7 @@
 //              renames (the side arrows at the players' flanks, the play
 //              control retirement + the direction-aware slide+fade).
 // v13.196-carlive: the owner's autoplay round — routine evict for the
-//              public-13.58.js→13.59.js→13.60.js renames (13.59 lived
+//              public-13.58.js→13.59.js→13.60.js→13.61.js renames (13.59 lived
 //              ~30 minutes: its putPort reveal attached onload AFTER src,
 //              which a warm-cache same-task-complete load never fires —
 //              the mobile portraits could stay hidden; 13.60 attaches the
@@ -735,7 +735,7 @@
 //              slide's players painted under the new names). The CSS is
 //              untouched (13.76.css stays). Every asset-editing release
 //              bumps (the v13.39 rule).
-const CACHE = "sportsignal-v98";
+const CACHE = "sportsignal-v99";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

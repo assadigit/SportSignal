@@ -57,21 +57,26 @@ same gate (its freshly-created imgs show nothing while loading anyway —
 this is polish + visual sync). A re-render with the SAME club never
 touches opacity, so the 60s payload re-renders cannot flicker.
 
-**THE AMENDMENT (assets/public-13.58.js → 13.59.js → 13.60.js).** The
-live verification of the first cut (13.59.js, ~30 minutes in the field)
-caught its own regression on a warm browser cache: putPort() attached
-`im.onload` AFTER assigning `im.src` — and a memory-cached image can
-complete in the same task, so the load event fires before the handler
-exists and never re-fires: BOTH mobile portraits rendered
-`complete:true, opacity:0` — loaded but permanently hidden (repeat
-visitors, and even first visits whenever the SSR portraits finished
-before the client re-render). 13.60.js attaches the reveal handlers
-BEFORE the src assignment (an event that cannot be missed) plus a
-same-task-complete belt-and-braces reveal
-(`im.complete&&im.naturalWidth&&(im.style.opacity="")`), and heroArt's
-put() gets the same ordering (decode() stays the primary reveal there —
-a promise cannot miss). The immutable-pin rule forces the rename:
-13.59.js stays on disk + pinned one SEO TTL, never edited in place.
+**THE AMENDMENT (assets/public-13.58.js → 13.59.js → 13.60.js → 13.61.js,
+three in-field cuts).** The live verification of the first cut caught its
+own regression on a warm browser cache: putPort() attached `im.onload`
+AFTER assigning `im.src` — and a memory-cached image can complete in the
+same task, so the load event fires before the handler exists and never
+re-fires: BOTH mobile portraits rendered `complete:true, opacity:0` —
+loaded but permanently hidden (repeat visitors, and even first visits
+whenever the SSR portraits finished before the client re-render).
+13.60.js attaches the reveal handlers BEFORE the src assignment (an
+event that cannot be missed) plus a same-task-complete belt-and-braces
+reveal (`im.complete&&im.naturalWidth&&(im.style.opacity="")`), and
+heroArt's put() gets the same ordering (decode() stays the primary
+reveal there — a promise cannot miss). The final 13.61.js cut completes
+the warm list: the inline MC_SIDE copy-step swaps the AWAY port to the
+mirrored bust (kane-3-h → kane-3-a & co), which the home-src-only warm
+never fetched — the away-side first encounter now rides a warm cache
+too. The immutable-pin rule forces each rename: 13.59.js/13.60.js stay
+on disk + pinned one SEO TTL, never edited in place; the 100-rule cap
+sweep #5 prunes the long-expired /public-13.37.js pin (file stays on
+disk, served through default caching).
 
 **SPEC:** `SPORTSIGNAL_HERO_CAROUSEL_SPEC.md` §7 (the rotation contract:
 default-on, no environmental gates, hidden-tab-only pause, reduced
@@ -80,18 +85,18 @@ art-warming + ready-gate contract replaces the old next-only preload
 note; the acceptance checklist gains "autoplay advances with the pointer
 over the hero and after clicking an arrow").
 
-**GATES:** tsc 0; npm test 0 (2517 checks — check-hero-carousel re-pinned
+**GATES:** tsc 0; npm test 0 (2518 checks — check-hero-carousel re-pinned
 (both cuts) to the new contracts: P6 autoplay-default-on +
 all-slides-warming + ready-gated-swap-with-handlers-before-src source
 assertions, the C10 pause-flag retirement, the NEW C14 warm behavioral
 test — the whole slate warms on build, a same-slate slide change does
 NOT re-warm, a changed slate re-warms); check-stats re-pinned (homepage
-references 13.60.js, the _headers pins, the release-wiring
+references 13.61.js, the _headers pins, the release-wiring
 VERSION/package/SW triple); page-template byte-parity re-baselined
-(--update); _headers 100 rules (exactly at the cap — the +1 pins for
-13.59.js + 13.60.js, no eviction needed: the historical failures were at
-101); SW CACHE v96 → v97 → v98 (one per deployed cut); the CSS is
-untouched (13.76.css stays). Server slate/payload work, the Telegram
+(--update); _headers 100 rules (the +3 pins for the three cuts offset
+by the cap sweep #5 — the expired /public-13.37.js pin pruned, the file
+stays on disk; the historical failures were at 101); SW CACHE
+v96 → v97 → v98 → v99 (one per deployed cut); the CSS is untouched (13.76.css stays). Server slate/payload work, the Telegram
 bot and every other asset are unchanged.
 
 # v13.195-carsides — the carousel arrows move to the players' flanks
