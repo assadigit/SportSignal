@@ -718,7 +718,11 @@
 //              core-13.15.js→13.16.js renames (the CAR controller, the
 //              control-bar styles and the carousel i18n strings). Every
 //              asset-editing release bumps (the v13.39 rule).
-const CACHE = "sportsignal-v95";
+// v13.195-carsides: the owner's carousel-arrow round — routine evict for
+//              the public-13.57.js→13.58.js + public-13.75.css→13.76.css
+//              renames (the side arrows at the players' flanks, the play
+//              control retirement + the direction-aware slide+fade).
+const CACHE = "sportsignal-v96";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

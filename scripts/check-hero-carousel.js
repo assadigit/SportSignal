@@ -16,7 +16,8 @@
 // Part 3 CLIENT CONTROLLER (behavioral on the eval'd CAR module from the
 //   live bundle, with a minimal DOM stub): slate build (heroMatches vs the
 //   legacy nextBig fallback vs the EMPTY-array-is-really-empty rule), the
-//   44px-threshold swipe gate, and wrap-around.
+//   44px-threshold swipe gate, wrap-around, and (v13.195-carsides) the
+//   PHYSICAL side arrows with direction-aware action + labels.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -249,9 +250,9 @@ console.log("\n=== 2. payload / SSR / dedupe contracts (source) ===");
 const pmSrc = read("src/public-matches.ts");
 const routerSrc = read("src/seo/router.ts");
 const publicSrc = read("src/pages/public.ts");
-const js57 = read("assets/public-13.57.js");
+const js58 = read("assets/public-13.58.js");
 const core16 = read("assets/core-13.16.js");
-const css75 = read("assets/public-13.75.css");
+const css76 = read("assets/public-13.76.css");
 
 check("P1 public-matches builds heroMatches from the shared selector", /const heroList = pickHeroMatches\(matches\);/.test(pmSrc) && /const heroMatches = heroList\.map\(pubMatch\);/.test(pmSrc));
 check("P1 nextBig is the heroMatches[0] compatibility alias", /const nextBig = heroMatches\[0\] \|\| null;/.test(pmSrc));
@@ -265,28 +266,31 @@ check("P3 the hero slate is declared BEFORE addBox consumes heroKeys (no TDZ)", 
 check("P4 SSR router paints slide 1 (heroMatches[0], nextBig alias fallback)", /const heroRow = \(Array\.isArray\(p\.heroMatches\) && p\.heroMatches\.length \? p\.heroMatches\[0\] : p\.nextBig\) \|\| null;/.test(routerSrc));
 check("P4 SSR router feeds BOTH cards from the SAME hero row", /const heroHtml = nextBig \? M\.heroCardHtml\(nextBig\) : "";/.test(routerSrc) && /const mheroHtml = nextBig \? M\.mcardHtml\(nextBig\) : "";/.test(routerSrc));
 check("P4 the topSpot SSR slice drops the retired first-row skip (hero now server-excluded)", /\.slice\(0, 10\);/.test(routerSrc) && !/\.slice\(1, 11\)/.test(routerSrc));
-check("P5 the page carries the carousel region + control bar", /id="heroCarRegion" role="region" aria-roledescription="carousel"/.test(publicSrc) && /id="heroCar"/.test(publicSrc) && /id="carPrev"/.test(publicSrc) && /id="carNext"/.test(publicSrc) && /id="carDots"/.test(publicSrc) && /id="carCount"/.test(publicSrc) && /id="carPlay"/.test(publicSrc) && /id="carSr"/.test(publicSrc));
-check("P5 controls live OUTSIDE the card anchors (no nested interactives)", publicSrc.indexOf('id="heroMCard"') < publicSrc.indexOf('id="heroCar"') && /<\/a>\n<!-- v13\.194-herocarousel: the CONTROL BAR/.test(publicSrc));
-check("P5 the control bar is display:none by default (no dead no-JS controls)", /\.hero-car\{display:none/.test(css75) && /\.hero-car\.on\{display:flex/.test(css75));
-check("P5 single-slide heroes keep the plain card (controls only at 2+)", /if\(n>1\)bar\.classList\.add\("on"\);else bar\.classList\.remove\("on"\)/.test(js57));
-check("P5 every control carries a 44x44 hit area", /\.car-btn\{[^}]*width:44px;height:44px/.test(css75) && /\.car-dot\{[^}]*width:44px;height:44px/.test(css75));
-check("P5 the transition is a restrained ~200ms content fade", /#heroSpot\.car-in,#mcardSpot\.car-in\{animation:car-in \.2s ease-out\}/.test(css75));
+check("P5 the page carries the carousel region + control bar", /id="heroCarRegion" role="region" aria-roledescription="carousel"/.test(publicSrc) && /id="heroCar"/.test(publicSrc) && /id="carLeft"/.test(publicSrc) && /id="carRight"/.test(publicSrc) && /id="carDots"/.test(publicSrc) && /id="carCount"/.test(publicSrc) && /id="carSr"/.test(publicSrc));
+check("P5 the play/pause control is RETIRED (owner: redundant)", !/id="carPlay"/.test(publicSrc) && !/carPlaySync/.test(js58) && !/userPaused/.test(js58) && !/CAR\.rmPlay/.test(js58));
+check("P5 the arrows flank the players at the card's vertical centre", /\.hero-cards\{position:relative\}/.test(css76) && /#carLeft\{left:6px\}/.test(css76) && /#carRight\{right:6px\}/.test(css76) && /\.car-side\{[^}]*top:50%;transform:translateY\(-50%\)/.test(css76));
+check("P5 controls live OUTSIDE the card anchors (no nested interactives)", publicSrc.indexOf('id="heroMCard"') < publicSrc.indexOf('id="carLeft"') && /<\/a>\n<!-- v13\.195-carsides \(owner: "the buttons are too big/.test(publicSrc) && /<div class="hero-cards">/.test(publicSrc) && publicSrc.indexOf('class="hero-cards">') < publicSrc.indexOf('id="bigHeroCard"'));
+check("P5 the control bar is display:none by default (no dead no-JS controls)", /\.hero-car\{display:none/.test(css76) && /\.hero-car\.on\{display:flex/.test(css76));
+check("P5 single-slide heroes keep the plain card (controls only at 2+)", /var on2=n>1;bar\.classList\.toggle\("on",on2\);sl&&sl\.classList\.toggle\("on",on2\);sr&&sr\.classList\.toggle\("on",on2\)/.test(js58));
+check("P5 dots keep a 44x44 hit area; the side arrows are the owner's SMALLER 38px", /\.car-dot\{[^}]*width:44px;height:44px/.test(css76) && /\.car-side\{[^}]*width:38px;height:38px/.test(css76) && /@media \(max-width:899px\)\{\n  \.car-side\{width:34px;height:34px/.test(css76));
+check("P5 the transition is a direction-aware ~340ms slide+fade", /@keyframes car-in\{from\{opacity:0;transform:translateX\(calc\(var\(--car-dx,-24px\) \* -1\)\)\}to\{opacity:1;transform:none\}\}/.test(css76) && /#heroSpot\.car-in,#mcardSpot\.car-in\{animation:car-in \.34s cubic-bezier\(/.test(css76) && /setProperty\("--car-dx",dx\+"px"\)/.test(js58));
 check("P6 the i18n keys exist in BOTH dictionaries", ["carRegion", "carPrev", "carNext", "carPause", "carPlay", "carSlide", "carOf"].every((k) => new RegExp(k + ':"[^"]+"').test(core16.split("en:{")[0])) && ["carRegion", "carPrev", "carNext", "carPause", "carPlay", "carSlide", "carOf"].every((k) => new RegExp(k + ':"[^"]+"').test(core16.split("en:{")[1])));
-check("P6 the client reads the slate (never rebuilds ACE from team lists)", /function carBuild\(\)\{var t=DATA\|\|\{\},rows=Array\.isArray\(t\.heroMatches\)\?t\.heroMatches:/.test(js57));
-check("P6 barTarget serves the ACTIVE slide to every hero consumer", /var __c=carActive\(\);if\(__c\)return\{m:__c,big:!!__c\.big\};/.test(js57));
-check("P6 reconciliation preserves the active slide by canonical href", /keep=carHref\(CAR\.list\[CAR\.idx\]\)/.test(js57) && /if\(keep\)for\(i=0;i<nl\.length;i\+\+\)if\(carHref\(nl\[i\]\)===keep\)\{ni=i;break\}/.test(js57));
-check("P6 the 1s sweep drops started matches (the Live section owns them)", /function carRollTick\(\)/.test(js57) && /updateBigBar\(\)\{carRollTick\(\);/.test(js57));
-check("P6 rotation is 6s + wrap + manual reset", /carGo\(CAR\.idx\+1,!1\)\},6e3\)/.test(js57) && /i=\(\(i%n\)\+n\)%n/.test(js57) && /if\(manual\)\{carAnnounce\(\);carArm\(\)\}/.test(js57));
-check("P6 pause conditions: hover/focus/hidden-tab/explicit/reduced-motion", /hoverPause/.test(js57) && /focusPause/.test(js57) && /docHidden/.test(js57) && /userPaused/.test(js57) && /\(prefers-reduced-motion: reduce\)/.test(js57) && /CAR\.rmPlay/.test(js57));
-check("P6 announcements are polite + user-triggered only", /id="carSr" class="sr-only" aria-live="polite"/.test(publicSrc) && /if\(manual\)\{carAnnounce\(\);carArm\(\)\}/.test(js57));
-check("P6 swipe: >=40px horizontal-dominant, click suppressed, RTL-aware", /Math\.abs\(dx\)>=40&&Math\.abs\(dx\)>Math\.abs\(dy\)/.test(js57) && /CAR\.swipe=Date\.now\(\)/.test(js57) && /rtl\?dx>0:dx<0/.test(js57));
-check("P6 the degraded/hero-less guard reads heroMatches (empty array = real empty)", /Array\.isArray\(t&&t\.heroMatches\)\?t\.heroMatches\.some\(ssOk\):ssOk\(t&&t\.nextBig\)/.test(js57));
-check("P6 the legacy payload falls back to [nextBig]; empty heroMatches does not", /t\.nextBig&&ssOk\(t\.nextBig\)&&ssAND\(t\.nextBig\)\?\[t\.nextBig\]:\[\]/.test(js57));
+check("P6 the client reads the slate (never rebuilds ACE from team lists)", /function carBuild\(\)\{var t=DATA\|\|\{\},rows=Array\.isArray\(t\.heroMatches\)\?t\.heroMatches:/.test(js58));
+check("P6 barTarget serves the ACTIVE slide to every hero consumer", /var __c=carActive\(\);if\(__c\)return\{m:__c,big:!!__c\.big\};/.test(js58));
+check("P6 reconciliation preserves the active slide by canonical href", /keep=carHref\(CAR\.list\[CAR\.idx\]\)/.test(js58) && /if\(keep\)for\(i=0;i<nl\.length;i\+\+\)if\(carHref\(nl\[i\]\)===keep\)\{ni=i;break\}/.test(js58));
+check("P6 the 1s sweep drops started matches (the Live section owns them)", /function carRollTick\(\)/.test(js58) && /updateBigBar\(\)\{carRollTick\(\);/.test(js58));
+check("P6 rotation is 6s + wrap + manual reset", /carGo\(CAR\.idx\+1,!1\)\},6e3\)/.test(js58) && /i=\(\(i%n\)\+n\)%n/.test(js58) && /if\(manual\)\{carAnnounce\(\);carArm\(\)\}/.test(js58));
+check("P6 pause conditions: hover/focus/hidden-tab/reduced-motion (the explicit play control retired)", /hoverPause/.test(js58) && /focusPause/.test(js58) && /docHidden/.test(js58) && /\(prefers-reduced-motion: reduce\)/.test(js58) && !/userPaused/.test(js58) && !/CAR\.rmPlay/.test(js58));
+check("P6 announcements are polite + user-triggered only", /id="carSr" class="sr-only" aria-live="polite"/.test(publicSrc) && /if\(manual\)\{carAnnounce\(\);carArm\(\)\}/.test(js58));
+check("P6 swipe: >=40px horizontal-dominant, click suppressed, RTL-aware", /Math\.abs\(dx\)>=40&&Math\.abs\(dx\)>Math\.abs\(dy\)/.test(js58) && /CAR\.swipe=Date\.now\(\)/.test(js58) && /rtl\?dx>0:dx<0/.test(js58));
+check("P6 the side arrows are direction-aware (RTL: left=forward), like swipe+keys", /carGo\(CAR\.idx\+\(carRtl\(\)\?1:-1\),!0\)/.test(js58) && /carGo\(CAR\.idx\+\(carRtl\(\)\?-1:1\),!0\)/.test(js58) && /var ll=rtl\?T\("carNext"\):T\("carPrev"\)/.test(js58) && /var rl=rtl\?T\("carPrev"\):T\("carNext"\)/.test(js58));
+check("P6 the degraded/hero-less guard reads heroMatches (empty array = real empty)", /Array\.isArray\(t&&t\.heroMatches\)\?t\.heroMatches\.some\(ssOk\):ssOk\(t&&t\.nextBig\)/.test(js58));
+check("P6 the legacy payload falls back to [nextBig]; empty heroMatches does not", /t\.nextBig&&ssOk\(t\.nextBig\)&&ssAND\(t\.nextBig\)\?\[t\.nextBig\]:\[\]/.test(js58));
 
 console.log("\n=== 3. the client CAR controller (behavioral, DOM-stubbed) ===");
 // Eval the CAR module + its bundle deps from the LIVE asset with a minimal
 // DOM stub — the real controller code, not a re-implementation.
-const bundle = js57;
+const bundle = js58;
 const modStart = bundle.indexOf("/* ==== v13.194-herocarousel: THE HERO CAROUSEL controller");
 const modEnd = bundle.indexOf("function barTarget(){");
 if (modStart < 0 || modEnd < 0 || modEnd <= modStart) { console.log("FAIL CAR module not found in bundle"); process.exit(1); }
@@ -317,7 +321,7 @@ function stubDoc() {
     get onclick() { return this._onclick; }, set onclick(f) { this._onclick = f; },
     style: {}, dataset: {}, tagName: "DIV", offsetWidth: 0
   });
-  ["heroCar", "carDots", "carCount", "carPrev", "carNext", "carPlay", "carSr", "heroCarRegion", "heroSpot", "mcardSpot", "bigHeroCard", "heroMCard"].forEach((id) => { els[id] = mkEl(id); els[id].children = []; });
+  ["heroCar", "carDots", "carCount", "carLeft", "carRight", "carSr", "heroCarRegion", "heroSpot", "mcardSpot", "bigHeroCard", "heroMCard"].forEach((id) => { els[id] = mkEl(id); els[id].children = []; });
   global.document = {
     getElementById: (id) => els[id] || null,
     documentElement: { dir: "rtl" },
@@ -348,7 +352,7 @@ function updateBigBar(){global.__ubb=(global.__ubb||0)+1}
 function fitHeroNames(){}
 function fitMcNames(){}
 `;
-const carCtx = eval("(() => {" + helpers + matchHrefSrc + carModule + "; return { CAR, __setD, carBuild, carOk, carPair, carHref, carFilter, carReconcile, carGo, carRollTick, carActive, carPlayAllowed, carArm }; })()");
+const carCtx = eval("(() => {" + helpers + matchHrefSrc + carModule + "; return { CAR, __setD, carBuild, carOk, carPair, carHref, carFilter, carReconcile, carGo, carRollTick, carActive, carPlayAllowed, carArm, carInit, carSync }; })()");
 
 const M = (h, a, koMin, extra) => Object.assign({
   homeTeam: { name: h, faName: h }, awayTeam: { name: a, faName: a },
@@ -457,14 +461,9 @@ Date.now = realNow;
   carCtx.__setD({ heroMatches: [M("A", "B", 60), M("C", "D", 120)] });
   carCtx.carReconcile();
   check("C10 two slides: rotation allowed", carCtx.carPlayAllowed());
-  carCtx.CAR.userPaused = true;
-  check("C10 explicit pause blocks rotation", !carCtx.carPlayAllowed());
-  carCtx.CAR.userPaused = false;
-  carCtx.CAR.rm = true; carCtx.CAR.rmPlay = false;
-  check("C10 prefers-reduced-motion: autoplay OFF by default", !carCtx.carPlayAllowed());
-  carCtx.CAR.rmPlay = true;
-  check("C10 reduced-motion + explicit play: rotation runs", carCtx.carPlayAllowed());
-  carCtx.CAR.rm = false; carCtx.CAR.rmPlay = false;
+  carCtx.CAR.rm = true;
+  check("C10 prefers-reduced-motion: autoplay OFF (no opt-in control - the owner's round)", !carCtx.carPlayAllowed());
+  carCtx.CAR.rm = false;
   carCtx.CAR.hoverPause = true;
   check("C10 hover pause (pointer devices)", !carCtx.carPlayAllowed());
   carCtx.CAR.hoverPause = false; carCtx.CAR.focusPause = true;
@@ -493,6 +492,22 @@ Date.now = realNow;
   check("C12 next wraps last -> first", carCtx.CAR.idx === 0);
   carCtx.carGo(carCtx.CAR.idx - 1, true); // before the start -> wraps to last
   check("C12 prev wraps first -> last", carCtx.CAR.idx === 2);
+}
+
+// C13 (v13.195-carsides): the side arrows are PHYSICAL; their action
+// flips with direction (the stub document is RTL) - the left arrow
+// advances, the right arrow goes back, and the labels follow.
+{
+  carCtx.__setD({ heroMatches: [M("A", "B", 60), M("C", "D", 120), M("E", "F", 180)] });
+  carCtx.carInit();
+  check("C13a setup: the side arrows + bar are on with 3 slides", stubs.carLeft.classList.contains("on") && stubs.carRight.classList.contains("on") && stubs.heroCar.classList.contains("on"));
+  carCtx.CAR.idx = 0;
+  stubs.carLeft.onclick(); // RTL: left = FORWARD
+  check("C13 RTL: the left arrow advances", carCtx.CAR.idx === 1);
+  stubs.carRight.onclick(); // RTL: right = BACK
+  check("C13 RTL: the right arrow goes back", carCtx.CAR.idx === 0);
+  check("C13 RTL: the left arrow carries the NEXT label", stubs.carLeft.getAttribute("aria-label") === "بعد");
+  check("C13 RTL: the right arrow carries the PREVIOUS label", stubs.carRight.getAttribute("aria-label") === "پیش");
 }
 
 console.log(fails ? `\n${fails} FAIL` : "\nAll hero-carousel checks passed");

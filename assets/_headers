@@ -373,6 +373,13 @@
 /public-13.57.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.195-carsides: the owner's arrow round (the side arrows at the
+# players' flanks + direction-aware action, the play/pause control
+# retirement, the direction-aware slide+fade).
+# (rename-on-edit; 13.57.js stays served + pinned one SEO TTL above.)
+/public-13.58.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # v13.191-herocentre: the league-block class regression fix —
 # heroCentreNode's FALLBACK branch (competition code outside the six-logo
 # LGL map, e.g. BL1) never set lg.className, so the client renderHeroSpot
@@ -416,6 +423,12 @@
 # v13.194-herocarousel: the carousel control bar + slide fade styles.
 # (rename-on-edit; 13.74.css stays served + pinned one SEO TTL above.)
 /public-13.75.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.195-carsides: the carousel side arrows + the dots/count-only bar +
+# the direction-aware slide+fade keyframes.
+# (rename-on-edit; 13.75.css stays served + pinned one SEO TTL above.)
+/public-13.76.css
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.192-leaguebadge: the owner's "the logo is enough" round — the
@@ -793,9 +806,10 @@
 /public-13.38.css
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.135-zoomlight (retired pair — kept per the retention rule)
-/public-13.37.css
-  Cache-Control: public, max-age=31536000, immutable
+# v13.135-zoomlight (retired pair — EVICTED by the v13.195-carsides
+# 100-rule cap sweep #4, ~60 releases past the one-SEO-TTL retention;
+# the file stays on disk, an ancient cached HTML re-fetching it still
+# resolves — it just rides the default cache headers).
 
 /stadium-lights-hero.png
   Cache-Control: public, max-age=31536000, immutable
@@ -823,8 +837,8 @@
 # the dedicated mobile HUD artwork + the mobile layout round (logo
 # clearance, flush in-hero sync line, countdown-flank crest watermarks).
 
-/public-13.34.js
-  Cache-Control: public, max-age=31536000, immutable
+# v13.133-persiantype /public-13.34.js — EVICTED by the v13.195-carsides
+# 100-rule cap sweep #4 (same terms as the 13.37.css eviction above).
 
 # v13.129 (retired pair — kept per the retention rule)
 

@@ -4,6 +4,64 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.195-carsides — the carousel arrows move to the players' flanks
+
+_2026-11-03 · on top of v13.194-herocarousel · the owner's first carousel
+round, verbatim: "The buttons are too big, also they must appear at the
+sides of the players like < {player}  {player} >. Also it must have fade
+effect and some delay for next match (some sliding animation). Also the
+play button is redundant."_
+
+**THE CHANGE, IN ONE LINE:** the prev/next arrows leave the bottom
+control bar for the players' flanks — small chevron circles vertically
+centred on the card — the play/pause control retires, and the slide
+change becomes a direction-aware slide+fade.
+
+**(1) THE ARROWS (src/pages/public.ts + assets/public-13.75.css →
+13.76.css).** A new `.hero-cards` positioning wrapper (position:relative,
+margin-collapse preserved) spans BOTH responsive card anchors; the
+`.car-side` buttons (38px glass circles, 34px under 900px, `#carLeft`
+at `left:6px` / `#carRight` at `right:6px`, `top:50%
+translateY(-50%)`) ride it — so the vertical centring is measured
+against the VISIBLE card at every breakpoint (the wrapper's height IS
+the shown card; CSS display:nones the other). The arrows stay OUTSIDE
+the card anchors (never a nested interactive inside the match link).
+They are PHYSICAL, and their MEANING flips with direction exactly the
+way the swipe + keyboard handlers already read direction: in RTL the
+LEFT chevron advances (the reading direction), in LTR left=previous;
+carSync labels them accordingly (FA defaults: carLeft «مسابقه بعدی»,
+carRight «مسابقه قبلی» — the core-13.16.js dictionary keys carPrev/
+carNext re-used, no core bump).
+
+**(2) THE PLAY CONTROL RETIRES (assets/public-13.57.js → 13.58.js).**
+"The play button is redundant": #carPlay, carPlaySync(), CAR.userPaused
+and CAR.rmPlay are gone. Rotation pause conditions are now all
+automatic — pointer hover over the region, keyboard focus inside, hidden
+tab, prefers-reduced-motion (autoplay off; manual navigation via
+arrows/dots/swipe/keys stays fully functional). The bottom bar keeps
+only the dots + the «۲ / ۵» count (the <=600px two-line grid retires —
+dots+count fit one centered flex row at 320px).
+
+**(3) THE SLIDE+FADE.** carGo now derives the travel sign (wrap-aware)
+and hands it to carApply→carFade, which sets `--car-dx` on
+#heroSpot/#mcardSpot before restarting the car-in animation: a ~340ms
+cubic-bezier slide+fade where the new content travels in from the side
+it arrives at (RTL forward enters from the LEFT — the same direction a
+forward swipe drags it; LTR from the right; backward flips). Transform+
+opacity only — the HUD frame, the players and the section geometry
+never move (no reflow, no layout shift); the site-wide
+prefers-reduced-motion kill rule keeps it instant for those visitors.
+
+**GATES:** tsc 0; npm test 0 (the check-hero-carousel gate re-pinned to
+the new contract: the play-control retirement, the side positioning,
+the 38px sizing, the direction-aware wiring + labels — plus the new
+behavioral C13: the DOM-stubbed RTL controller must advance on the LEFT
+arrow and go back on the RIGHT one); page-template byte-parity
+re-baselined (`check-admin-parity --update`, the sanctioned path for an
+intended output change); _headers 98 rules (the +2 pins for 13.58.js +
+13.76.css offset by the 100-rule cap sweep #4: the expired 13.34.js +
+13.37.css pins evicted, files stay on disk); sw CACHE v95 → v96.
+
 # v13.194-herocarousel — the featured hero becomes a one-match-per-slide carousel
 
 _2026-11-03 · on top of v13.193-leagueinset · implements
