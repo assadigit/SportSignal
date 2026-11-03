@@ -81,7 +81,7 @@ ${FONT_FACES_STYLE}
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.77.css">
+<link rel="stylesheet" href="/public-13.78.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -708,11 +708,11 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      the LIGHT SWEEP overlay — one skewed cyan-white band crosses the card
      per slide change, in the direction the tape moves (the controller's
      carSheen toggles .run and sets --car-sa/--car-sb per travel side; the
-     band itself is the ::after gradient in public-13.77.css). Decorative
+     band itself is the ::after gradient in public-13.78.css). Decorative
      only: aria-hidden, pointer-transparent, z7 above the card + arrows,
      invisible at rest. The cross-slide choreography (the ghost-exit
      clones + the staggered springy enter across the five lanes) lives in
-     the public-13.64.js carGhost/carEnter pair + the public-13.77.css
+     the public-13.65.js carGhost/carEnter pair + the public-13.78.css
      keyframes. -->
 <div class="car-sheen" aria-hidden="true"></div>
 </div>
@@ -722,7 +722,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      (owner: "the play button is redundant"). v13.196 (owner: "Auto slide
      is not default on make it on"): the automatic pauses are now ONLY the
      hidden tab — the hover/focus/reduced-motion gates retired with it.
-     One shared controller drives BOTH card renderings (public-13.64.js
+     One shared controller drives BOTH card renderings (public-13.65.js
      CAR). display:none by default; the client adds .on when the active
      slate holds TWO or more slides. The count is dir="ltr" so «۲ / ۵»
      always reads current-first. #carSr is the polite announcement slot
@@ -970,11 +970,14 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <script src="/core-13.16.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
-<!-- v13.200-carsmooth: the JS rename 13.63 -> 13.64 (the cross-slide
-     choreography: carGhost exits the outgoing lanes as clones, carEnter
-     slides the fresh lanes in with the staggered spring, carSheen fires
-     the light sweep; the swap itself stays synchronous). -->
-<script src="/public-13.64.js" defer><\/script>
+<!-- v13.201-carstack: the JS rename 13.64 -> 13.65 (the stacking
+     repair: carGhost strips the carried .car-in class from every ghost
+     clone — a clone still wearing it played the ENTER keyframes over
+     the exit; the companion CSS rename gives #heroSpot/#mcardSpot the
+     explicit z-index:5 that keeps the data zone above the veil/panel/
+     capsule after the fill-mode transform creates its stacking context
+     — the "blank HUD + dim league logo on the second slide" fix). -->
+<script src="/public-13.65.js" defer><\/script>
 <!-- v13.199-mcspace (owner: the header-space round — "a little margin
      padding (just slightly from the header)", "make the league or ucl
      logo 30% larger in mobile view", "make the match time written in

@@ -4,6 +4,74 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.201-carstack — the stacking repair: the slide-change data zone returns above the card chrome (the blank HUD + the dimmed league logo)
+
+_2026-11-04 · on top of v13.200-carsmooth · the owner's stacking round,
+verbatim: "There is a bug here, the slide is now cool and looking good,
+but when i slide, it shows the players for that teams, but there aren't
+any match info, just shows a blank HUD. also in the second slide, the
+UCl (league logo) is low opacity, but it must be 100% opacity like the
+first slide."_
+
+**THE CHANGE, IN ONE LINE:** `#heroSpot`/`#mcardSpot` (and their
+`.car-ghost-spot` exit clones) gain an explicit `z-index:5`, so the
+whole data zone — the names, crests, date, kickoff and the white
+competition lockup — stays ABOVE the card chrome in every state,
+fixing both reported bugs; and `carGhost` strips the carried `car-in`
+class from every ghost clone so the exit always plays `car-exit`.
+
+**(1) THE ROOT CAUSE — one mechanism, both bugs.** v13.200 made the two
+spots `position:absolute;inset:0` and animated them with `car-enter`
+`animation-fill-mode:both`. Two consequences collided:
+
+- A `fill-mode:both` animation leaves the spots with a **computed
+  transform (an identity matrix — NOT `none`) forever** after the first
+  slide change, and any non-`none` transform creates a **stacking
+  context**.
+- The spots have `z-index:auto`, so that stacking context demotes the
+  ENTIRE data zone below every sibling with a positive z-index: the
+  mobile veil (`.mc-topfade` z1 — **the dimmed UCL lockup**), the HUD
+  panel (`.mc-panel` z2 — **the names/date/ko vanish behind its opaque
+  fill: the "blank HUD"**), and the capsule (z3) — while the z1
+  `.mc-ports` players kept painting. Which is exactly the owner's
+  report: players change, match info gone — and why the FIRST slide
+  looked right (pre-animation the spot had no stacking context, so the
+  slots' own z2/3/4 ruled) while every post-slide state did not.
+
+**(2) THE FIX.** `#heroSpot,#mcardSpot{position:absolute;inset:0;
+z-index:5}` + `.car-ghost-spot{position:absolute;inset:0;z-index:5}` —
+above every in-card layer (veil z1 / panel z2 / capsule z3 / cells z3),
+still under the arrows (z6) and the sheen (z7) that live in the
+`.hero-cards` wrapper, and scoped INSIDE the card anchors (both
+`position:relative;z-index:2`). The spot now owns a PERMANENT stacking
+context, so before / during / after the animation the layering is
+IDENTICAL — no state-dependent stacking, no pop, reduced-motion
+included. The slots' internal order (pl z2 / crest+name z3 / date+ko
+z4) is untouched — it just happens inside the spot's own context now.
+
+**(3) THE GHOST EXIT REPAIR (public-13.64.js → 13.65.js).** The
+`carGhost` clones carry the original's classes — including `car-in`
+(left there by the previous `carEnter`). A clone still wearing it
+matched `.mc-ports.car-in` / `.hero-player.car-in` (0,2,0) which BEATS
+`.car-ghost` (0,1,0): the outgoing players played the ENTER keyframes
+over the exit — the old players re-entered over the fresh ones for the
+clone's 900ms life. `carGhost` now removes `car-in` from every clone,
+so the ghost always plays `car-exit`, and the spot clones exit at the
+same z-index:5 as their originals (visible above the panel, not
+sliding out behind it).
+
+**RELEASE WIRING:** bundle + stylesheet renames (public-13.64.js →
+13.65.js, public-13.76.css → 13.77.css → **13.78.css**) pinned
+immutable in `_headers` with CAP SWEEP #9 (the +2 pins pushed the file
+past Cloudflare's 100-rule cap — the expired `/public-13.42.css` +
+`/public-13.43.css` pins pruned, files stay on disk, still 100 rules),
+the SEO page-shell CSS bump, hero-coverage.ts regenerated for the new
+bundle name, SW cache `sportsignal-v103` → `v104`, VERSION
+`13.201-carstack`, package `13.201.0.0`, the check-stats/check-mc-heroes/
+check-hero-carousel gates updated (P5 now pins the z-index:5 stacking
+contract + the ghost `car-in` strip), the parity baseline re-frozen.
+npm test green end-to-end.
+
 # v13.200-carsmooth — the slide change becomes a real cross-slide: the old match leaves, the new one arrives
 
 _2026-11-04 · on top of v13.199-mcspace · the owner's smoothness round,

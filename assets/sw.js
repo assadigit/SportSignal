@@ -788,7 +788,15 @@
 //              travel, the light sheen, the #heroSpot/#mcardSpot
 //              absolute-inset positioning fix). Every asset-editing
 //              release bumps (the v13.39 rule).
-const CACHE = "sportsignal-v103";
+// v13.201-carstack: the stacking repair — routine evict for the
+//              public-13.64.js→13.65.js + public-13.77.css→13.78.css
+//              renames (carGhost strips the carried .car-in from every
+//              ghost clone; #heroSpot/#mcardSpot + .car-ghost-spot gain
+//              the explicit z-index:5 that keeps the data zone above the
+//              veil/panel/capsule in every state — the blank-HUD +
+//              low-opacity-league-logo root cause). Every asset-editing
+//              release bumps (the v13.39 rule).
+const CACHE = "sportsignal-v104";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
