@@ -15,7 +15,7 @@
 | :--- | :--- |
 | **Current phase** | 2 COMPLETE (v13.204-foldsplit — the verified final state) — Phase 3 (Assets & Core Web Vitals) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | `53b05ef` (`v13.204-foldsplit` — the Phase 2 verified re-apply) — pushed & verified via `git ls-remote`; CI seo-check **success** on `53b05ef` |
+| **Latest commit** | `3afa822` (the Phase 2 final tracker backfill; the code state is `53b05ef` `v13.204-foldsplit` + the `a04ace4` docs arc) — pushed & verified via `git ls-remote`; CI seo-check **success** on `53b05ef`, `a04ace4` (after 2 documented transient data-state reds) and `3afa822` |
 | **Production** | **`13.204-foldsplit` (= deployed code `53b05ef`)** — the v13.202 → v13.203 (contaminated-measurement revert) → v13.204 (clean-verified re-apply) arc shipped three deploys, each tested + CI-green; final state = the fold-split bundle byte-identical to v13.202's 13.66.js + the F-M1 CSS pass + carWarm load-event deferral. SW v107, cap sweeps #10–#12 |
 | **Production health at close-out** | `/healthz` → `ok:true`, `version:13.204-foldsplit`, `degraded:false`, `outbox_depth` 0, tick cadence normal. |
 | **Last verified** | 2026-11-04 (Phase 2 final: `npm test` 2,527 checks green on `53b05ef`; CI success; clean Lighthouse re-measurement reproduced bootup 0.9–1.6→0.4 s / TTI 9.9→7.9–8.9 s; live functional round re-verified — see `WEB_OPTIMIZATION_RESULTS.md` §8) |
