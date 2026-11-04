@@ -24,6 +24,21 @@ import {
 } from "./pages-static";
 import * as F from "./files";
 import { pingIndexNowIfChanged } from "./indexnow";
+import { HERO_COVERAGE_RAW } from "../hero-coverage";
+
+// v13.205-lcpreveal (F-C1, Phase 3): the server-side hero-portrait lookup.
+// Mirrors the client's heroArtFor() contract (public-13.68.js:
+// HERO_ART[e.name]||HERO_ART[e.faName]) using hero-coverage.ts — the
+// GENERATED mirror of the bundle's HERO_ART map (sync-hero-coverage.js,
+// drift-gated by check-hero-coverage in npm test), so the SSR decision and
+// the client putPort decision can never disagree.
+const HERO_ART_SSR = new Map<string, string>();
+for (const w of HERO_COVERAGE_RAW.wired) HERO_ART_SSR.set(w.name, w.src);
+function heroArtSrv(t: any): string | null {
+  if (!t) return null;
+  const a = HERO_ART_SSR.get(t.name) || HERO_ART_SSR.get(t.faName);
+  return a || null;
+}
 
 // ------------------------------------------------------------ headers (SE-01..SE-03, PF-01)
 
@@ -231,7 +246,39 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   // v13.164-matchcard: the mobile card unhides under the SAME rule as the PC
   // card (a hero exists ⇒ content visible for no-JS; CSS decides which card
   // the viewport shows — ≤899px the mobile card, ≥900px the PC card).
-  if (mheroHtml) html = html.replace('<a class="hero-mcard" id="heroMCard" style="display:none" href="#" dir="ltr">', '<a class="hero-mcard" id="heroMCard" href="#" dir="ltr">');
+  // v13.205-lcpreveal (F-C1, Phase 3 — the P0): the SSR mirror now ships the
+  // slide-1 presentation the client will CONFIRM, so the LCP art paints at
+  // first CSS paint instead of chaining behind the carousel build:
+  //   · mc-clean: when EITHER hero team has portrait coverage (the exact
+  //     mcFitScan contract — "any port carrying an <img>"), the anchor
+  //     ships `mc-clean` and the scene is the 4.9 KB hole-free scene-4 from
+  //     the first paint; the DCL mcFitScan() + every per-port MutationObserver
+  //     re-scan keep the class in sync (ports have imgs → stays), and
+  //     renderMCard's putPort replaces the SSR portraits with byte-identical
+  //     cached ones — no scene swap, no late LCP candidate.
+  //   · portraits: the SSR fills the two .mc-port containers with the same
+  //     heroArtFor() library art putPort would (lazy + async + no-referrer,
+  //     the shared .mc-port img CSS rule fits every source — no fade: that
+  //     needs JS; absolutely-positioned inside fixed boxes → CLS stays 0).
+  //     No-JS visitors now get the complete card, not a ghost-figure scene.
+  //   · preload: the scene art (scene-4 with coverage, else the 55 KB
+  //     scene-2 ghost-figure fallback) rides a media-scoped (≤899px — the
+  //     mobile card zone) fetchpriority=high preload so the fetch starts at
+  //     HTML-parse time instead of waiting for the render-blocking external
+  //     stylesheet to apply the element's display rule (the measured
+  //     ~1.4 s load-delay root cause).
+  let mcClean = false;
+  if (mheroHtml && nextBig) {
+    const hArt = heroArtSrv(nextBig.s.homeTeam);
+    const aArt = heroArtSrv(nextBig.s.awayTeam);
+    const port = (src: string) => '<img src="' + esc(src) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">';
+    if (hArt) html = html.replace('<div class="mc-port mc-port-h"></div>', '<div class="mc-port mc-port-h">' + port(hArt) + "</div>");
+    if (aArt) html = html.replace('<div class="mc-port mc-port-a"></div>', '<div class="mc-port mc-port-a">' + port(aArt) + "</div>");
+    mcClean = !!(hArt || aArt);
+    const scene = mcClean ? "/ui/mc/scene-4.webp" : "/ui/mc/scene-2.webp";
+    html = html.replace("</head>", '<link rel="preload" href="' + scene + '" as="image" media="(max-width:899px)" fetchpriority="high">\n</head>');
+  }
+  if (mheroHtml) html = html.replace('<a class="hero-mcard" id="heroMCard" style="display:none" href="#" dir="ltr">', '<a class="hero-mcard' + (mcClean ? " mc-clean" : "") + '" id="heroMCard" href="#" dir="ltr">');
   // v13.165-mcfa: the scroll hint unhides under the SAME rule (a hero
   // exists => the hint shows for no-JS too; CSS decides which viewport
   // paints it — <=899px; renderMCard re-manages it client-side).

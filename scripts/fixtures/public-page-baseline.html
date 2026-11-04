@@ -84,14 +84,19 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<!-- v13.202-threaddiet (F-M1): the stylesheet rename 13.78 -> 13.79 — the
-     conservative dead-rule pass (31 provably-dead rules / 2654 bytes raw
+<!-- v13.205-lcpreveal (F-H2, Phase 3): the stylesheet rename 13.79 -> 13.80 —
+     the ONE client-referenced change inside: body:before's photographic
+     background url(/bg.jpg) 92 KB -> url(/bg-2.webp) 39 KB (WebP q63,
+     VLM-reviewed clean under the dark scrim the rule itself stacks on
+     top; 13.79.css stays served + pinned one SEO TTL per the retention
+     rule). Was 13.78 -> 13.79 since v13.202-threaddiet (F-M1) —
+     the conservative dead-rule pass (31 provably-dead rules / 2654 bytes raw
      retired: .bb-end, the .bigcard family, .uclspot-logo/.ucl-head/
      .ucl-emblem, the .empty.loading-empty trio, .hero-mcard .t-icon/
      .v-icon, .mc-port img.mc-fill — every removal verified dead against
      every client-referencing surface + the dynamic-class audit + git
      history; no live rule, state, lang, theme or media variant touched). -->
-<link rel="stylesheet" href="/public-13.79.css">
+<link rel="stylesheet" href="/public-13.80.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -368,8 +373,15 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      transparent PNG (/stadium-lights-hero.png, 1400x467) as a subtle atmospheric
      light layer over the composed scene (screen blend, .799 opacity in
      public-13.45.css; the raise chain .35 -> .5 -> .6 -> .66 -> .726 -> .799). LAST child of .hero-bg: above photo/grade/swooshes/watermarks/
-     vignette/scrim, below the card, players and header. Decorative only. -->
-<img class="bg-lights" src="/stadium-lights-hero.png" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
+     vignette/scrim, below the card, players and header. Decorative only.
+     v13.205-lcpreveal (F-H2, Phase 3): the overlay re-encodes as
+     /ui/stadium-lights-2.webp (q68/aq68, 192 -> 70 KB — the ~97%
+     semi-transparent soft-gradient content sets WebP's floor near 65 KB
+     at visually-safe quality; VLM-reviewed clean against the original
+     under the real screen-blend composite; explicit 1400×467 dimensions).
+     The retired PNG stays served + pinned one SEO TTL per the retention
+     rule. -->
+<img class="bg-lights" src="/ui/stadium-lights-2.webp" width="1400" height="467" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
 </div>
 <!-- the players: absolute at section level, flanking the glass card; filled
      by heroArt() through the HERO_ART mapping (no src here — the layer
@@ -421,8 +433,16 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      content (pointer-events:none, decorative only; its RGBA glow halo must
      not be clipped, so nothing here may clip the card). It rides as a
      static sibling BEFORE #heroSpot so the client-side renderHeroSpot
-     rebuild (which rewrites only #heroSpot's innerHTML) never removes it. -->
-<img class="card-hud" src="/ui/sportsignal-pc-match-hud.png" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer">
+     rebuild (which rewrites only #heroSpot's innerHTML) never removes it.
+     v13.205-lcpreveal (F-H2, Phase 3): the frame re-encodes as
+     /ui/sportsignal-pc-match-hud-2.webp (q86, 122 -> 57 KB, VLM-reviewed
+     pixel-aligned on the real dark-card composite; explicit 1000×406
+     dimensions) AND turns loading=lazy — the PC card is display:none
+     at ≤899px, so phones stop paying the 125 KB frame download entirely;
+     on desktop the card is the above-fold hero, so the lazy load fires
+     immediately after layout (unchanged visual timing). The retired PNG
+     stays served + pinned one SEO TTL per the retention rule. -->
+<img class="card-hud" src="/ui/sportsignal-pc-match-hud-2.webp" width="1000" height="406" alt="" aria-hidden="true" loading="lazy" decoding="async" referrerpolicy="no-referrer">
 <!-- v13.155-herodepth (spec 03): the interior-face depth overlay — a
      translucent navy deepening gradient clipped to the artwork's measured
      inner face (card-relative %; measured from the PC-Match frame PNG with

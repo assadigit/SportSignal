@@ -5,6 +5,16 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v108 (v13.205-lcpreveal: bumped from v107 — this
+//              release edits client-referenced assets: public-13.79.css ->
+//              13.80.css (the body background re-encodes as /bg-2.webp,
+//              92 -> 39 KB), the hero art re-encodes (/ui/stadium-lights-2.webp
+//              192 -> 70 KB screen-blend overlay + /ui/sportsignal-pc-match-hud-2.webp
+//              122 -> 57 KB PC frame, now lazy so phones never fetch it) and
+//              the league emblems move to the local immutable /emblems/*.webp
+//              pack (F-H1). Cache-first assets can't refresh without a rename
+//              or a bump, the v13.39 rule; stale HTML still references the
+//              retired names, which stay served per the retention rule.)
 // Cache name:  sportsignal-v102 (v13.199-mcspace: bumped from v101 — this
 //              release edits a client-referenced asset (public-13.62.js ->
 //              13.63.js: renderMCard's FA kickoff maps its digits through
@@ -822,7 +832,7 @@
 //              the v13.201 baseline; the parallel session's clean v13.202
 //              runs measured bootup 0.9→0.35s / TTI 9.9→7.4s). Every
 //              asset-editing release bumps (the v13.39 rule).
-const CACHE = "sportsignal-v107";
+const CACHE = "sportsignal-v108";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

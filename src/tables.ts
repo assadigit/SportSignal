@@ -13,28 +13,56 @@ export const STAGE_EN = {
   "FINAL": "Final",
   "THIRD_PLACE": "Third-place play-off"
 };
+// v13.205-lcpreveal (F-H1, Phase 3): the league emblems are SELF-HOSTED.
+// Every value now points at the local /emblems/*.webp set (256×256 square
+// transparent WebP, contain-normalized from the same api-sports art the
+// site displayed before — sourced + normalized by scripts/phase3-emblems.js,
+// VLM-quality-checked) instead of ~1.2 MB of third-party
+// api-sports media PNGs on `/` (the external league-mark CDN).
+//
+// BOT-SAFETY ARGUMENT (isolation map §3.3 — this file is SHARED, so the
+// edit ships with a proven-neutral case, per spec §2.1):
+//   1. Exhaustive consumer audit (grep across src/): LEAGUE_LOGOS is read
+//      by exactly TWO modules — src/public-matches.ts (the public web
+//      payload's emblem stamping: competition.emblem, standings[].emblem,
+//      cups[].emblem, ucl.emblem — consumed only by the website SSR pages,
+//      the client re-render and the admin panel) and src/card.ts line 15,
+//      which imports it but NEVER references it (a dead import — the card
+//      composer uses team crest URLs, `match.homeTeam.crest`, exclusively).
+//   2. No bot-side module (bot.ts, bot-ui.ts, telegram.ts, notify-*,
+//      digest-*, composers.ts, users.ts, user-store.ts, admin-bot.ts,
+//      cron-*) reads LEAGUE_LOGOS or any `.emblem` field — bot messages
+//      are text and bot cards render provider crests, never league marks.
+//   3. The eval harness stubs LEAGUE_LOGOS = {} in every script that
+//      eval-extracts public-matches.ts (check-venue, check-stats,
+//      check-scheduler, check-cups, live-derby-test) — value-indifferent.
+//   4. The values flow into KV payload `public_matches_v1` on the next
+//      payload rebuild (cron-preflight prewarm cadence, unchanged); no new
+//   KV writes, no key changes (R2/R6 respected).
+// If a future consumer needs the external URLs, the api-sports id map is
+// preserved in scripts/phase3-emblems.js (CODES).
 export const LEAGUE_LOGOS = {
-  "CL": "https://media.api-sports.io/football/leagues/2.png",
-  "EL": "https://media.api-sports.io/football/leagues/3.png",
-  "ECL": "https://media.api-sports.io/football/leagues/848.png",
-  "PL": "https://media.api-sports.io/football/leagues/39.png",
-  "PD": "https://media.api-sports.io/football/leagues/140.png",
-  "SA": "https://media.api-sports.io/football/leagues/135.png",
-  "FL1": "https://media.api-sports.io/football/leagues/61.png",
-  "BL1": "https://media.api-sports.io/football/leagues/78.png",
-  "AL": "https://media.api-sports.io/football/leagues/188.png",
-  "FA_CUP": "https://media.api-sports.io/football/leagues/45.png",
-  "EFL_CUP": "https://media.api-sports.io/football/leagues/41.png",
-  "CDR": "https://media.api-sports.io/football/leagues/143.png",
-  "COPPA_ITALIA": "https://media.api-sports.io/football/leagues/137.png",
-  "DFB_POKAL": "https://media.api-sports.io/football/leagues/81.png",
-  "PGL": "https://media.api-sports.io/football/leagues/290.png",
-  "HAZFI_CUP": "https://media.api-sports.io/football/leagues/719.png",
-  "WC": "https://media.api-sports.io/football/leagues/1.png",
-  "EC": "https://media.api-sports.io/football/leagues/4.png",
-  "COPA": "https://media.api-sports.io/football/leagues/9.png",
-  "AFCON": "https://media.api-sports.io/football/leagues/79.png",
-  "AFC": "https://media.api-sports.io/football/leagues/77.png"
+  "CL": "/emblems/cl.webp",
+  "EL": "/emblems/el.webp",
+  "ECL": "/emblems/ecl.webp",
+  "PL": "/emblems/pl.webp",
+  "PD": "/emblems/pd.webp",
+  "SA": "/emblems/sa.webp",
+  "FL1": "/emblems/fl1.webp",
+  "BL1": "/emblems/bl1.webp",
+  "AL": "/emblems/al.webp",
+  "FA_CUP": "/emblems/fa_cup.webp",
+  "EFL_CUP": "/emblems/efl_cup.webp",
+  "CDR": "/emblems/cdr.webp",
+  "COPPA_ITALIA": "/emblems/coppa_italia.webp",
+  "DFB_POKAL": "/emblems/dfb_pokal.webp",
+  "PGL": "/emblems/pgl.webp",
+  "HAZFI_CUP": "/emblems/hazfi_cup.webp",
+  "WC": "/emblems/wc.webp",
+  "EC": "/emblems/ec.webp",
+  "COPA": "/emblems/copa.webp",
+  "AFCON": "/emblems/afcon.webp",
+  "AFC": "/emblems/afc.webp"
 };
 export const COMP_EN = {
   "CL": "Champions League",

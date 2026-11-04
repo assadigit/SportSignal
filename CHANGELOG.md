@@ -4,6 +4,77 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.205-lcpreveal — web-optimization Phase 3: assets & Core Web Vitals (F-C1 + F-H1 + F-H2 + F-M7)
+
+_2026-11-04 · the Phase 3 round per `WEB_OPTIMIZATION_AUDIT.md` §8 (the
+P0 LCP fix + the asset diet; the before/after record lives in
+`WEB_OPTIMIZATION_RESULTS.md`)._
+
+**F-C1 (the P0 — the homepage mobile LCP fix):** the measured root cause
+was a THREE-LINK chain, not the template's `display:none` default (the
+router had unhidden the card since v13.164): (1) the scene art's
+background-image fetch only started AFTER the render-blocking external
+stylesheet applied the element's ≤899px display rule (~1.4 s load
+delay); (2) the 55.9 KB scene-2 webp competed with ~460 KB of eager art
+(stadium-lights 197 KB + PC-HUD 125 KB + fonts) on the throttled link;
+(3) renderMCard's portrait insertion flipped `.mc-clean` ~4.2 s in,
+swapping the scene to scene-4 — the FINAL LCP candidate painted at
+~5.7–7.0 s. THE FIX (server-side only, zero bundle edit): the router now
+consults the GENERATED hero-coverage map (the exact heroArtFor contract)
+and, when either hero team has portrait coverage, ships the anchor with
+`mc-clean` + fills both `.mc-port` containers with the SSR portraits
+(lazy/async/no-referrer — CLS-neutral absolute boxes) + preloads the
+scene (scene-4 4.9 KB with coverage, else the scene-2 fallback) with
+`fetchpriority="high"` media-scoped to ≤899px. The DCL `mcFitScan()` and
+the per-port MutationObserver keep the class in sync, putPort replaces
+the SSR portraits with byte-identical cached ones, and NO scene swap
+ever lands post-paint — the late LCP candidate is gone. No-JS visitors
+now get the complete card (portraits included), not the ghost-figure
+scene.
+
+**F-H2 (the hero-art re-encodes, all VLM-reviewed against the real
+composites):** `/ui/stadium-lights-2.webp` (192 → 70 KB q68/aq68 — the
+~97 %-semi-transparent soft-gradient content sets WebP's floor near
+65 KB at visually-safe quality, so the ≤60 KB audit target yields to the
+preserve-visual-identity rule); `/ui/sportsignal-pc-match-hud-2.webp`
+(122 → 57 KB q86) now `loading="lazy"` — the PC card is display:none at
+≤899px, so phones stop paying the frame download entirely;
+`/bg-2.webp` (92 → 39 KB q63) via the stylesheet rename
+`public-13.79.css` → `13.80.css` (the admin + login templates follow);
+explicit width/height on both hero `<img>`s.
+
+**F-H1 (the league emblems self-host, SHARED-FILE EDIT with the proven
+bot-neutrality argument in `src/tables.ts`):** `LEAGUE_LOGOS` now points
+all 21 codes at the local `/emblems/*.webp` pack (256×256 square
+contain-normalized WebP, 4–23 KB each, sourced from the same api-sports
+art by `scripts/phase3-emblems.js`) — ~1.2 MB of third-party PNGs retire
+from the `/` wire. Bot-safety: the only bot-side reference is card.ts's
+dead import (never evaluated), no bot module reads `.emblem`, the eval
+harness stubs the map empty, and the values flow only into the web
+payload (regenerating on the normal prewarm cadence — zero new KV
+writes). The square intrinsic ratio also resolves **F-M4** (the
+aspect-ratio mismatch: square slots vs non-square marks).
+
+**F-M7:** `og/default.png` recompressed in place (294 → 89 KB palette
+PNG, VLM-acceptable; the 1-day freshness rule needs no rename ceremony).
+**Font audit (honest no-trim):** all ten homepage font files are
+referenced by live rules (Peyda 400–900 all used — Black serves the live
+score digits; MorabbaVF is already the optimal one-file variable 250–900).
+
+**Ceremony:** `_headers` +5 pins (13.80.css, the two hero-art webps,
+bg-2.webp, the `/emblems/*` wildcard) with **cap sweep #13** (the
+v13.159–163 era `/public-13.42..46.js` pins evicted, files retained —
+still exactly 100 rules); SW `sportsignal-v107` → `v108`; VERSION
+`13.205-lcpreveal`, package `13.205.0.0`; the check-stats /
+check-mc-heroes / check-hero-carousel pins re-pinned (+ the three new
+v13.205 gate checks: the F-C1 SSR-reveal wiring, the F-H1 dictionary +
+21-file set, the F-H2 size ceilings); the three parity baselines
+re-frozen. Gates: `npm test` EXIT 0 — 2,530 checks (was 2,527 + the 3
+new pins); tsc EXIT 0; wrangler dev smoke (100 header rules parsed,
+healthz JSON, the seeded-KV fixture render verified the mc-clean +
+portraits + preload output on both the covered and the uncovered hero
+paths). No Telegram bot files, configuration or behavior were modified.
+
 # Web optimization program — Phases 0–1 complete (documentation only; no version change)
 
 # v13.203 + v13.204 — web-optimization Phase 2 final arc: the contaminated revert and the verified re-apply
