@@ -264,10 +264,18 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       if (r.status === 200) { await checkPage(B + t, true); okCount++; }
       else fail("T-03", "template " + t + " HTTP " + r.status);
     }
-    // random sample from all sitemap URLs
+    // random sample from all sitemap URLs — WITHOUT replacement (v13.208:
+    // the with-replacement draw could pick the same URL twice and the
+    // seen-titles map then flagged "duplicate title: X (u & u)" — a
+    // self-collision false positive that reddened CI on ed74342 while the
+    // URL was listed exactly once across all children; K10-class noise)
     const pool = allSitemapUrls.filter((u) => !CONFIG.TEMPLATE_PATHS.some((t) => u === B + t));
-    for (let i = 0; i < Math.min(CONFIG.SAMPLE_N, pool.length); i++) {
-      const u = pool[Math.floor(Math.random() * pool.length)];
+    const picked = new Set();
+    let guard = 0;
+    while (picked.size < Math.min(CONFIG.SAMPLE_N, pool.length) && guard++ < CONFIG.SAMPLE_N * 20) {
+      picked.add(pool[Math.floor(Math.random() * pool.length)]);
+    }
+    for (const u of picked) {
       await checkPage(u, false);
     }
     pass("T-03", "checked " + okCount + " templates + up to " + CONFIG.SAMPLE_N + " random sitemap URLs");
