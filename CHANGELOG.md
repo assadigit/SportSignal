@@ -34,6 +34,17 @@ announcers (outside both anchors since v13.209) carry the live countdown
 for assistive tech. WCAG 2.5.3's intent holds by construction: the
 accessible name IS the visible text.
 
+**The sub-page final-pass catch (`5ab4b2d`):** the post-deploy WCAG
+re-audit across the page families found exactly one more failing node —
+`h2 > span.simcount`, the shell's count chip (the muted `#94a3b8` ink on
+its 12%-gray pill over the glass card computed `#303b4e` = 4.4:1, under
+the floor; the pre-existing sub-page 95s in the frozen audit,
+data-dependent). Same one-token class as every F-M3 fix: the
+quieter-than-text mid-slate `#b6c5da` = 6.45:1 on the same stack,
+computed + pinned in check-a11y. The sub-page families re-audit at 100
+(`/competitions` verified live; the team/match pages re-verify after the
+900 s edge render-hold rolls the pre-fix renders out).
+
 # v13.209-a11y — web-optimization Phase 6: accessibility & security (F-M3 contrast + F-M3b hero accessible names + F-M6 touch targets + F-L3 skip-link order)
 
 _2026-11-04 · the Phase 6 round per `WEB_OPTIMIZATION_AUDIT.md §8/§6.1`

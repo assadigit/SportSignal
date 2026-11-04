@@ -13,13 +13,13 @@
 
 | Field | Value |
 | :--- | :--- |
-| **Current phase** | 5 COMPLETE (v13.208-lastmod — deployed 2026-11-04, the seo_lastmod_v1 eviction fix + F-L1 + F-H3 beacon + IndexNow drain + the R11 og:locale completion) — Phase 6 (Accessibility & security) NOT STARTED |
+| **Current phase** | 6 COMPLETE (v13.209-a11y + the v13.210-namefix close-out — deployed 2026-11-04: the F-M3 opacity→color dimming, F-M3b the hero-card accessible names final shape, F-M6 touch targets, F-L3 skip-link-first + the page-shell skip link, the .simcount final-pass catch, the 36-check check-a11y gate; a11y 100 on / (mobile+desktop, ZERO flagged audits) and on the sub-page families) — Phase 7 (Final verification & requirements reconciliation) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | `53f847e` (fix(seo-check): the T-03 without-replacement sampler) on top of `ed74342` (seo: the R11 og:locale:alternate removal) and `888f1ae` (`v13.208-lastmod` — the Phase 5 code round) — all pushed & verified via `git ls-remote`. CI: `888f1ae` green 68/0; `ed74342` RED on a diagnosed sampler self-collision (the T-03 with-replacement draw flagged one URL against itself — K10 protocol: root-caused, sampler fixed, `53f847e` green **77/0**, T-09 `/` perf 62) |
-| **Production** | **`13.208-lastmod`** (= the Phase 5 state: hash-driven sitemap lastmods that actually persist across children + a map-derived sitemap index, the 404 without a fictional canonical, the CF Web Analytics beacon live on every public page — Phase 7's RUM source, IndexNow parking that drains, og:locale fa_IR only). SW v109; `_headers` still exactly 100 rules (Phase 5 touched no client asset) |
+| **Latest commit** | `5ab4b2d` (a11y: the .simcount final-pass catch) on top of `6d842bc` (`v13.210-namefix` — the hero-label final shape) and `0475257` (`v13.209-a11y` — the Phase 6 code round) — all pushed & verified via `git ls-remote`. CI: `0475257` **77/0 green first-try** (T-09 `/` perf 57); `6d842bc` **77/0 green first-try** (T-09 `/` perf 44, in the K10 band); the docs close-out commit rides after |
+| **Production** | **`13.210-namefix`** (= the Phase 6 state: the past-row dimming is color-based and AA-legal (7.3–8.9:1 measured), both hero card anchors unlabeled/name-from-content so label-content-name-mismatch can never fire, the ticking cells aria-hidden + the #mcSr/#hcSr announcers outside the anchors, the 44px touch-target floors, the skip link first-focusable on EVERY page, the .simcount chip at 6.45:1). SW **v111**; `_headers` still exactly 100 rules (sweeps #14+#15 evicted 13.66/13.67/13.65.js pins); a11y **100 on / (mobile ×3 + desktop) and on the team/match/hub sub-pages — ZERO flagged audits** |
 | **Production health at close-out** | `/healthz` → `ok:true`, `version:13.208-lastmod`, `degraded:true` (the LIVE-mode match-evening KV profile continued: `kv_writes_day` 783→840 vs the 850 hard cap — bot-side cadence; `kv_writes_web` 405→439 incl. the one-time sitemap-map convergence writes; resets UTC midnight), `outbox_depth` 0, ticks completing (`last_cron_age` 3–9 min across checks). |
 | **Last verified** | 2026-11-04 (Phase 5: `npm test` 2,552 green; deploy verify + ticks; the 3-cycle lastmod stability matrix + index-ETag stability — RESULTS §16.1; seo:check production 65/0 + CI 77/0; the metadata/JSON-LD 24-page audit §16.8; IndexNow end-to-end HTTP 200 §16.5) |
-| **Next action** | Phase 6 — Accessibility & security per AUDIT §8: F-M3/M3b contrast + hero-card accessible name (CSS rename ceremony), F-M6 touch targets, F-L3 skip-link order, CSP eval (R13-bounded). GSC (K5) still owner-blocked; the Web Analytics dashboard check (24–48 h) is the owner's F-H3 confirmation step |
+| **Next action** | Phase 7 — Final verification & requirements reconciliation per spec §13: repeat the baselines identically, the requirement-by-requirement checklist (§13.6), field data via the CF Web Analytics RUM (the v13.208 beacon has now accumulated ~a day+ — the owner's 24–48 h dashboard check), GSC (K5, still owner-blocked unless credentials arrive), the full regression + device round, the final report + requirements checklist |
 
 ## Phase roadmap (spec §5)
 
@@ -31,7 +31,7 @@
 | 3 | Assets & Core Web Vitals | ✅ **COMPLETED** (2026-11-04, `738d969` `v13.205-lcpreveal` + `db84622` `v13.206-scenediet`) | The two-commit arc: the code session shipped F-C1 (SSR slide-1 reveal + `fetchpriority=high` scene preload + SSR portraits via the generated hero-coverage map) + F-H1 (21 self-hosted `/emblems/*.webp`, ~1.2 MB third-party retired, SHARED tables.ts with the proven bot-neutrality argument — independently re-verified) + F-H2 (stadium-lights 197→71 KB, PC-HUD 125→59 KB + lazy, bg 93→40 KB via 13.80.css) + F-M7 (og 301→91 KB) + font audit (honest no-trim) + F-M4 (square emblems). The reconciliation close-out found the ONE defect — the preload shipped the **264 KB effectively-lossless scene-4** (the "4.9 KB" claim was wrong) — and fixed it as v13.206 (scene-4-2.webp, 44 KB, q90 VLM-verified). Verified: lab LCP 9.2 s → **5.5 s median** (discovery fixed: load delay 1,440→21–33 ms, obsLCP = FCP, one run 658 ms; the ≤2.5 s target NOT met — the residual is the Fast-3G render-blocking chain weight, Phase 4+ candidate); desktop 95→**100** (LCP 1.4→0.9 s); sub-page 100; CLS 0; a11y/SEO/BP 100. Full record: RESULTS §9–§14. |
 | 4 | Cloudflare & caching | ✅ **COMPLETED** (2026-11-04, `v13.207-condget`) | F-M5 fixed (the two root causes: the unchecked edge-cache HIT path + the strict ETag comparison that CF's in-transit weakening made unmatchable — weak-comparison comparator per RFC 9110 §13.1.2 + 304 branches on both `wantCached` paths); ETag on the 5 machine-file surfaces; F-H3 evaluated via API → owner-action-required (OWNER_TODO §11, token lacks the permission, beacon verified absent); F-L6/F-L7 evaluated with numbers and deferred (RESULTS §15.5). Freshness ladder byte-identical (R12), zero new KV writes (R2), `npm test` 2,539. |
 | 5 | Technical & multilingual SEO | ✅ **COMPLETED** (2026-11-04, `888f1ae`+`ed74342`+`53f847e` `v13.208-lastmod`) | The spot-audit found a LIVE F-05-class regression the frozen audit had marked green: `computeLastmods` replaced the whole seo_lastmod_v1 map per child render — cross-child eviction → every render re-stamped its FULL URL set with the clock (94/94 teams + 144/144 upcoming at one millisecond, live-proven twice) + a KV write per render + full-list IndexNow pings. Fixed: merge + change-only writes + a map-derived sitemap index (pages=CONTENT_VERSION). F-L1 fixed (404 emits no canonical/og:url). F-H3 EXECUTED (the Web Analytics beacon manually inserted in both templates — auto-inject never reaches Worker HTML; /privacy disclosure added). IndexNow park-drain fixed. F-M8 DECIDED: keep the hub canonical (documented with evidence, RESULTS §16.2). R11 completed (og:locale:alternate en_US removed; stance pinned). Metadata/JSON-LD 24-page audit clean. GSC remains owner-blocked (K5, honest limitation recorded). |
-| 6 | Accessibility & security | ⬜ | F-M3 contrast fixes, F-M3b hero accessible name, F-M6 touch targets, F-L3 skip-link order; CSP eval bounded by R13. |
+| 6 | Accessibility & security | ✅ **COMPLETED** (2026-11-04, `0475257`+`6d842bc`+`5ab4b2d` `v13.209-a11y`→`v13.210-namefix`) | F-M3: the expired-row opacity:.48 dimming retired for COLOR (the impossibility proof: #fff at .48 over the pill stack = 4.48:1 — pinned in the gate); measured 7.34–8.92:1 after. F-M3b: BOTH hero labels retired (the K19 lesson — axe's rule only matches labeled widgets + counts every painted glyph; name-from-content, cells aria-hidden, #mcSr/#hcSr outside the anchors). F-M6: 44px floors (lbtn/sbtn, nav, footnav, finmore, backTop, contact-email, skip pill) + the 2.5.8 AA 24px floor elsewhere (documented exceptions). F-L3: skip link first-focusable + the page-shell pages GAIN one (2.4.1). The .simcount sub-page catch (6.45:1). CSP R13-bounded: unsafe-inline stays (documented), beacon origins pinned. The NEW 36-check check-a11y gate. a11y 100 everywhere, zero flagged audits. Full record: RESULTS §17. |
 | 7 | Final verification & requirements reconciliation | ⬜ | Repeat baselines identically; requirements checklist per spec §13.6; field data via CF Web Analytics RUM if enabled in Phase 4. |
 
 ## Changes made (cumulative log)
@@ -348,6 +348,71 @@
 | `OWNER_TODO.md` | §11 → done-by-code + the 24–48 h dashboard check; the summary line |
 
 
+### Phase 6 — 2026-11-04 (accessibility & security; the v13.209 → v13.210 arc + the final-pass catch)
+
+- **`0475257` `v13.209-a11y`** — the Phase 6 code round, per AUDIT §8:
+  - **F-M3 (contrast):** `.spotitem.past{opacity:.48}` → color-based
+    dimming (the impossibility proof: pure #fff at .48 over the
+    countdown pill stack = 4.48:1 < 4.5 — no ink could rescue it). The
+    past rows keep saturate(.55) + a deeper box tint
+    rgba(11,17,31,.72)/#243044 + grayscale logos + muted-but-legal inks
+    (team #a8b7cc 8.92:1, countdown/kickdate #89b8f5 7.34–8.85:1, info
+    #a3b3ca 8.53:1 — measured live).
+  - **F-M3b round 1:** the mobile label extended to contain its visible
+    text; the DESKTOP label retired (state-dependent centre);
+    `.mc-cells`/`.hud-cells` aria-hidden; `#mcSr`/`#hcSr` moved outside
+    both card anchors; the router's hide-for-non-upcoming replace
+    literals synced (the check-stats 485 pin caught the desync
+    pre-commit).
+  - **F-M6:** `.tb-btns button` 34→44px, `.mainnav a` 38→45.6px,
+    `.footnav a` 34→46px, `.finmore` 35→44px, `#backTop` 42→44px,
+    `.contact-email` 40→46px, skip pill 26→47px, `.foot-base a` 18→30px
+    (2.5.8 AA; 44 documented-exception), `.pagesfoot nav a`/`.stmore`
+    ≥24px.
+  - **F-L3:** the homepage skip link moved before the topbar (was the
+    3rd tab stop at phone widths); **every page-shell sub-page GAINED
+    its first skip link ever** (WCAG 2.4.1) with the shell-side CSS.
+  - **CSP (R13):** keep `unsafe-inline` — documented (the inline
+    JSON-LD carries per-page dynamic data; a nonce is incompatible with
+    edge-cached HTML); the beacon origins pinned in the new gate.
+  - **Ceremony:** 13.80.css → **13.81.css** + 13.68.js → **13.69.js**,
+    `_headers` +2 pins / cap sweep #14 (−13.66.js/13.67.js — still 100),
+    SW **v110**, harness re-pins, parity re-frozen (8 reviewed hunks),
+    the NEW 34-check `scripts/check-a11y.js` gate registered in npm test.
+- **`6d842bc` `v13.210-namefix`** — the close-out defect fix (the
+  v13.206 same-session precedent): the post-deploy Lighthouse series
+  proved the mobile label-extension structurally unresolvable (K19:
+  axe's rule only MATCHES aria-labeled widgets and its visible-text walk
+  counts every PAINTED glyph — the ticking digits can never sit inside
+  any static name). BOTH hero labels now retired; name-from-content,
+  always content-matched; the rule never fires. Ceremony: 13.69.js →
+  **13.70.js**, sweep #15 (−13.65.js), SW **v111**, npm test 2,589.
+- **`5ab4b2d`** — the sub-page final-pass catch: `.simcount` (the shell
+  count chip) 4.4:1 → **6.45:1** (`#b6c5da`), computed + pinned; the
+  team/match/hub sub-pages re-audit at **100 clean** (the frozen
+  audit's pre-existing sub-page 95s resolved).
+
+## Files modified in Phase 6
+
+| File | Change |
+| :-- | :-- |
+| `assets/public-13.81.css` | NEW — the F-M3 past-state color rules + the F-M6 touch-target floors (13.80.css stays on disk, immutable) |
+| `assets/public-13.69.js` → `assets/public-13.70.js` | NEW — the F-M3b bundle arc: 13.69 the label-extension (deployed ~25 min, superseded), 13.70 the final no-label shape |
+| `assets/_headers` | +2+1 pins, cap sweeps #14 (−13.66/13.67.js) + #15 (−13.65.js), still exactly 100 rules |
+| `assets/sw.js` | CACHE v109 → v110 → v111 (+ release comments) |
+| `src/pages/public.ts` | The skip-link move; mc/hud-cells aria-hidden; #mcSr/#hcSr outside the anchors; `.foot-base`; asset refs 13.81/13.70 |
+| `src/seo/page-shell.ts` | The sub-page skip link + CSS; 13.81.css ref; `.pagesfoot nav a`/`.stmore` ≥24px; the `.simcount` ink fix |
+| `src/seo/router.ts` | The hide-for-non-upcoming replace literals synced to the aria-hidden tags; the skip-link focus-pill padding |
+| `src/hero-coverage.ts` | bundle pointer → 13.70.js |
+| `src/config.ts`, `package.json`, `package-lock.json` | VERSION → `13.210-namefix` / 13.210.0.0 |
+| `scripts/check-a11y.js` | NEW — the 36-check Phase 6 gate (the WCAG contrast matrix computed from the real tokens, the touch-target pins, the skip-link order, the F-M3b contracts, the reduced-motion rule, the R13 CSP stance, the .simcount pin) |
+| `scripts/check-stats.js` | The release-wiring checks (v13.209/v13.210) + the label pins + the _headers matrix + the SW pins |
+| `scripts/check-hero-carousel.js`, `scripts/check-mc-heroes.js` | bundle-read + SW re-pins; the P5 adjacency relaxation |
+| `scripts/fixtures/public-page-baseline.html` | parity re-frozen ×2 (the 8 intended hunks; the 1-line script ref) |
+| `WEB_OPTIMIZATION_RESULTS.md` | §17 — the Phase 6 record (this phase's spec §4 deliverable) |
+| `WEB_OPTIMIZATION_PROGRESS.md` | UPDATED — status, roadmap, this section, verification + git logs (this file) |
+| `CHANGELOG.md` | v13.209-a11y + v13.210-namefix entries |
+
 ## Known issues, blockers & deferred work
 
 | # | Item | Type | Raised |
@@ -359,6 +424,7 @@
 | K15 | **Phase 3 LCP honesty:** the ≤ 2.5 s lab-LCP acceptance target is NOT met (median 5.5 s, from 9.2 s). The F-C1 discovery mechanics are proven fixed (load delay 1,440→21–33 ms, priority-hinted, discoverable, obsLCP = FCP); the residual is the Fast-3G simulated render-blocking chain weight (HTML 184 KB + CSS 135 KB + fonts + JS). Candidate Phase 4+ work: critical-chain diet. See RESULTS §10. | Open (documented) | Phase 3 |
 | K16 | **Preload-asset-size lesson (Phase 3):** the v13.205 commit claimed a "4.9 KB" scene the file system said was 264 KB — a fetchpriority preload is only as good as the bytes it fronts. The v13.206 gate now pins the 30–50 KB ceiling so the lossless weight can never silently return. Always `stat()` the asset behind a preload claim. | Resolved (gate added) | Phase 3 |
 | K17 | **The cross-cache-window audit lesson (Phase 5):** the seo_lastmod_v1 eviction bug was live for weeks while two audits and three optimization phases passed it — because every verification sampled within a single edge-cache window (the eviction only manifests ACROSS windows, when a foreign child renders in between). Any "X is stable/honest" claim about edge-cached derived state must be re-verified across at least one full TTL window with an interleaved foreign render. The new check-seo-lastmod gate pins the merge behavior; the live 3-cycle matrix is the template. | Lesson (gate added) | Phase 5 |
+| K19 | **The axe-semantics lesson (Phase 6):** spec-summary reasoning about a WCAG rule is not evidence — READ THE RULE'S IMPLEMENTATION before shipping a fix. The `label-content-name-mismatch` round-1 fix (extend the mobile label) was structurally unresolvable: the rule (a) only MATCHES widgets carrying aria-label/labelledby and (b) counts every PAINTED glyph in its visible-text walk (hiddenMethods2 = opacity/scroll/overflow/clip/offscreen — aria-hidden is invisible to it), so ticking painted digits can never sit inside ANY static accessible name. The round-2 shape (retire the labels; name-from-content) is deterministic; the discovery method (dump the flagged node's exact state, read the axe source in the Lighthouse bundle, test the candidate against the exact algorithm in the live browser BEFORE the rename) is the template for future a11y-rule work. Cost of skipping it: one full ADR-006 ceremony. | Lesson (gate pins the shape) | Phase 6 |
 | K18 | **The sampler self-collision (Phase 5 CI):** `ed74342` reddened on "duplicate title: X (u & u)" — seo-check's T-03 sampled WITH replacement, so one URL drawn twice collided with itself in the seen-titles map. Root-caused (the URL was listed exactly once), fixed to draw without replacement (`53f847e`, green 77/0). Any future "duplicate" CI red should first be checked for a self-collision (same URL twice) before treating it as a site defect. | Resolved (sampler fixed) | Phase 5 |
 | K14 | **Measurement-contamination incident (Phase 2, resolved same day):** the v13.203 revert shipped on Lighthouse runs taken while a local `wrangler dev` + browsers consumed the sandbox CPU (TBT appeared 2–3× worse); the clean re-measurement landed exactly on baseline and v13.204 re-applied the change. **The recorded lesson (RESULTS §8): kill every background process before any Lighthouse run; never ship a revert without a clean re-measurement of the reverted state; treat a surprising single-source regression as an artifact until reproduced.** | Resolved (lesson recorded) | Phase 2 |
 | K3 | `package-lock.json.bak` is gitignored; npm-only toolchain (bun breaks resvg). | Constraint | Phase 0 |
@@ -391,6 +457,15 @@ full `npm test` green (2,531 checks incl. every bot suite).
 
 | Date | Check | Result |
 | :--- | :--- | :--- |
+| 2026-11-04 | **Phase 6 session-start verification:** clone at `23c7fd8` (clean, in sync — no K13 race); healthz `13.208-lastmod` = repo VERSION; `npm install` + `npm test` → exit 0, **2,552 checks** (the expected baseline); production `seo:check` **65/0** | ✅ |
+| 2026-11-04 | **BEFORE evidence (production v13.208):** Lighthouse a11y mobile ×3 + desktop — **100 everywhere BUT label-content-name-mismatch flagged #heroMCard (mobile, every run) and #bigHeroCard (desktop)**; the live forced-`.past` contrast matrix: countdown **2.95:1**, kickdate **3.19:1**, team **4.15:1** (the audit's 7-node family reproduced live); **19 interactive elements < 44px at 390px** (lbtn 34×34, footer nav 34px, utility links 18px); #heroMCard label = teams-only vs visible names+date+time+digits | ✅ |
+| 2026-11-04 | `npm test` with the NEW 36-check check-a11y gate + the re-pins → exit 0, **2,591 checks**; parity re-frozen ×2 via the reviewed `--update` path (the 8 intended v13.209 hunks, then the 1-line script ref); the router-replace-literal desync CAUGHT by the check-stats 485 pin pre-commit | ✅ |
+| 2026-11-04 | **wrangler dev smoke (R8):** the 5 probe routes (healthz JSON / 200 / 404 / 404 / 200); `seo:check:local` → **65 PASS / 0 FAIL**; the dev-rendered page carries every a11y marker | ✅ |
+| 2026-11-04 | **CI:** `0475257` **77/0 green first-try** (T-09 `/` perf 57); `6d842bc` **77/0 green first-try** (T-09 `/` perf 44, in the K10 band) — no self-collision (K18 holds), no re-run needed | ✅ |
+| 2026-11-04 | **Deploy ×3** (`bc94e18b` v13.209, `4b3c8c64` v13.210, `64339b38` the simcount catch): healthz flipped ≤15 s each (`13.209-a11y` → `13.210-namefix`), `ok:true` throughout, outbox 0, ticks completing (last_cron_age 3→5→9→5→7 min = multiple fresh completions across checks) | ✅ |
+| 2026-11-04 | **KV budget (R2):** `kv_writes_web` **463 at session start AND 463 at close** — zero new web-side write classes; `kv_writes_day` 879→913 (the LIVE-evening bot cadence, pre-existing, resets UTC midnight) | ✅ |
+| 2026-11-04 | **FINAL Lighthouse series (production v13.210, K14-clean, load < 0.1):** `/` mobile ×3 → **a11y 100, ZERO flagged audits (the mismatch does not even fire)**; desktop → **100 clean**; full-category `/` → perf 61 (the F-C1 band) / a11y 100 / SEO 100 / BP 96 / CLS 0; `/matches/today` → perf 99 / a11y 100 / CLS 0 / LCP 1.8 s; the sub-page re-audit after the simcount fix → `/teams/atalanta-bc`, `/matches/...barcelona`, `/competitions` all **100 clean** | ✅ |
+| 2026-11-04 | **Visual + functional round (production):** no horizontal overflow at 360/390/768/1024/1280/1440/1920; fa↔en round-trip intact; zero console errors; the forced past-row VLM-reviewed ("successfully recedes… no clipping or broken layout"; its "borderline contrast" guess superseded by the measured 7.34–8.92:1); the skip pill 117×54 at 8px/8px on focus; lbtn 44×44 live; the new pins immutable + the swept pins 200-on-default live; production `seo:check` **65/0** | ✅ |
 | 2026-11-04 | **Phase 5 session-start verification:** clone at `c45edc8` (clean, in sync — no K13 race); healthz `13.207-condget` = repo VERSION (kv_writes_day 783 — the R2 watch begins); `npm install` + `npm test` → exit 0, **2,539 checks** (the expected baseline) | ✅ |
 | 2026-11-04 | **The lastmod eviction — pre-fix live evidence:** 94/94 teams + 144/144 upcoming + 6/6 comps + 21/21 archive each sharing ONE render-time millisecond; cross-window re-fetch ADVANCED the stamps (teams → 19:41:18.409, upcoming → 19:41:19.192) — the "now on every build" proof | ✅ (bug confirmed) |
 | 2026-11-04 | **The lastmod fix — post-fix live stability (3 cycles):** C1 convergence (comps+archive one-time re-stamp as predicted); C2: teams kept 88/90, upcoming 142/144; C3: teams kept 67 + 25 honestly-changed (LIVE evening), upcoming 139/144, comps+archive identical; sitemap-index ETag render-stable (`"ss-cd479d472db"` ×2); index shows pages=CONTENT_VERSION + family maxima | ✅ |
@@ -466,6 +541,8 @@ full `npm test` green (2,531 checks incl. every bot suite).
 ## Git & deployment log
 
 | Phase | Commit | Push | Deploy | Production verify |
+| 6 | `0475257` (`v13.209-a11y` — F-M3+F-M6+F-L3+the label round 1+the gate) + `6d842bc` (`v13.210-namefix` — the label final shape) + `5ab4b2d` (a11y: the .simcount catch) + the docs close-out commit | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote`); CI seo-check **77/0 first-try on both code commits** (T-09 perf 57 / 44 — in the K10 band) | **DEPLOYED** ×3 (`npx wrangler deploy` — client assets + server code changed; versions `bc94e18b` / `4b3c8c64` / `64339b38`) | `/healthz` → `13.210-namefix`, `ok:true`, ticks completing, outbox 0; a11y 100 on / (mobile ×3 + desktop) with ZERO flagged audits + on the sub-page families; the contrast matrix 7.34–11.34:1 measured live; the 44px targets live; the skip link first-focusable on every page; the simcount chip 6.45:1 after the 900 s render-hold rollover; bot-side fields healthy |
+
 | :--- | :--- | :--- | :--- | :--- |
 | 5 | `888f1ae` (`v13.208-lastmod` — the lastmod eviction fix + F-L1 + F-H3 beacon + IndexNow drain + F-M8 decision) + `ed74342` (seo: the R11 og:locale:alternate removal) + `53f847e` (fix(seo-check): the without-replacement sampler) + this docs commit | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote`); CI: `888f1ae` 68/0, `ed74342` red-on-sampler-noise → root-caused → `53f847e` **77/0** | **DEPLOYED** (`npx wrangler deploy` ×2 — server code changed; versions `e8fea8b9-…` + `5e22b84c-…`) | `/healthz` → `13.208-lastmod`, `ok:true`, ticks completing, outbox 0; the 3-cycle lastmod stability matrix + stable index ETag; beacon live on every public page; 404 canonical-free; og:locale:alternate 0; bot-side fields healthy |
 | 4 | `v13.207-condget` (the code: router F-M5 fix + machine-file ETags + the 8-check gate + ceremony) + the Phase 4 docs commit (results/tracker/changelog/owner-todo) | `main` @ GitHub (one-shot token push, verified via `git ls-remote`) | **DEPLOYED** (`npx wrangler deploy` — server code changed, spec §14.4 step 4; version `1d4ca832-…`) | `/healthz` → `13.207-condget`, `ok:true`, ticks completing, outbox 0; the 11-URL 304 matrix green; ladder byte-identical; bot-side fields healthy |

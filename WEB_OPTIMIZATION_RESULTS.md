@@ -885,3 +885,217 @@ pages, team pages, competition pages), all 200:
   (except matches.json) and `/admin*` before any changed line executes;
   full `npm test` (every bot suite) green; bot-side healthz fields healthy
   post-deploy (heartbeat/last_cron fresh, outbox 0, tick cadence normal).
+
+---
+
+## 17. Phase 6 — Accessibility & security (v13.209-a11y + the v13.210-namefix close-out, 2026-11-04)
+
+The two-commit-plus-catch arc: `0475257` (v13.209-a11y — the F-M3
+color-dimming, F-M6 touch targets, F-L3 skip-link order, the page-shell
+skip link, the F-M3b label round 1, the check-a11y gate), `6d842bc`
+(v13.210-namefix — the F-M3b final shape after reading the real axe
+source), `5ab4b2d` (the sub-page `.simcount` final-pass catch, same
+release). Both client assets rode the FULL ADR-006 ceremony twice.
+
+### 17.1 F-M3 — the expired-row dimming moves from opacity to COLOR
+
+**Before (measured live in the rendered browser, `agent-browser` +
+getComputedStyle with the axe compositing model):** the 7-node F-M3
+family from the frozen audit (AUDIT §6.1), forced into the `.past` state
+on the live production DOM:
+
+| Node (all inside `.spotitem.past{opacity:.48}`) | Effective fg on bg | Ratio | AA |
+| :-- | :-- | :-- | :-- |
+| `.kick .countdown` (11.5px pill) | `#56769f` on `#1d2d48` | **2.95:1** | ✗ |
+| `.kickdate` (11px) | `#516e92` on `#141d2f` | **3.19:1** | ✗ |
+| `.side .team` (13px) | `#777e8c` on `#141d2f` | **4.15:1** | ✗ |
+| `.logo` text fallback (20px/700) | `#747b89` on `#0f172a` | 4.21:1 | ✗ small / ✓ large |
+
+**The impossibility proof (why no palette tweak could rescue the old
+token):** even pure `#fff` composited at opacity .48 over the countdown
+pill's layer stack (`--countdown-bg` .12 → `--rowsurf` .42 → `--glass`
+.55 → `--bg`) lands at **4.48:1** — under the 4.5:1 floor. Opacity-based
+dimming and WCAG 1.4.3 AA are mathematically incompatible for this
+stack; the dimming must be carried by COLOR.
+
+**After (measured live, same method, production v13.209):** the past
+rows keep their quiet expired look via the SAME `saturate(.55)` + a
+deeper box tint (`rgba(11,17,31,.72)`, border `#243044`) + the same
+grayscale logos + muted-but-LEGAL inks, all at full opacity:
+
+| Node | Ink | Ratio (measured) | Ratio (gate-computed) |
+| :-- | :-- | :-- | :-- |
+| `.kick .countdown` | `#89b8f5` | **7.34:1** | 7.33:1 |
+| `.kickdate` | `#89b8f5` | **8.85:1** | 8.90:1 |
+| `.side .team` | `#a8b7cc` | **8.92:1** | 8.96:1 |
+| `.info` | `#a3b3ca` | **8.53:1** | 8.55:1 |
+| `.info .comp` chip | `#e2e8f0` on the pill | **11.34:1** | — |
+
+The full matrix (normal + past, both counted live at every steady state)
+is now computed from the real stylesheet tokens inside
+`scripts/check-a11y.js` — 12 contrast assertions + the 4.48:1
+impossibility evidence pin, so the `.48` can never silently return.
+VLM visual review of the forced past row: "successfully recedes against
+the more active cards… the correct hierarchy for an expired match… no
+clipping or broken layout" (its qualitative "borderline contrast" guess
+is factually superseded by the measured 7.34–8.92:1 — the Phase 3
+VLM-reliability note applies).
+
+### 17.2 F-M3b — the hero-card accessible names (the two-round arc, honestly recorded)
+
+**Round 1 (v13.209):** extended the mobile card's `aria-label` to
+contain its visible text (home − away، date، kickoff), retired the
+DESKTOP card's curated label (its state-dependent centre — live
+score+minute vs upcoming time+date — was judged unmatchable), moved the
+ticking cells `aria-hidden`, moved `#mcSr`/`#hcSr` outside both anchors,
+and kept the router's hide-for-non-upcoming replace literals in sync
+(the harness caught that desync pre-commit — the replace literals must
+byte-match the edited template tags).
+
+**The round-1 defect (found by the post-deploy Lighthouse series):** the
+mobile flag persisted, deterministically. Reading the REAL axe source
+(lighthouse's bundled axe-core 4.10) revealed both semantics the spec
+summaries miss:
+
+1. `labelContentNameMismatchMatches` — **the rule only MATCHES widgets
+   that carry an `aria-label`/`aria-labelledby`.** An unlabeled link is
+   never examined at all.
+2. `visibleVirtual(node, screenReader=false)` — **the visible-text walk
+   counts every PAINTED glyph**: its hidden methods are
+   `[opacityHidden, scrollHidden, overflowHidden, clipHidden,
+   isOffscreen]` — `aria-hidden` is invisible to them. The per-second
+   ticking `.mc-cells` digits are painted BY DESIGN, so they contribute
+   tokens to the needle while any `aria-hidden` keeps them OUT of the
+   accessible name. No static label can ever contain a ticking number.
+
+**Round 2 (v13.210-namefix):** the mobile label RETIRES, completing the
+desktop treatment. Both hero anchors now take **name-from-content**
+(names + date + kickoff; the ticking cells/labels/venue aria-hidden out
+of the ACCNAME computation = a clean, stable announcement; the polite
+`#mcSr`/`#hcSr` live regions carry the countdown for AT). The rule's
+gate never fires on an unlabeled link; WCAG 2.5.3's intent holds by
+construction (the accessible name IS the visible text).
+
+**Final Lighthouse series (production v13.210, K14-clean, load < 0.1):**
+
+| Run | a11y | failing audits |
+| :-- | :-- | :-- |
+| mobile ×3 (412px) | **100 / 100 / 100** | **NONE — the mismatch does not even fire** |
+| desktop (1353px) | **100** | **NONE** (before: flagged `#bigHeroCard`) |
+| full-category `/` mobile | perf 61 (the F-C1 band), a11y 100, SEO 100, BP 96, CLS 0, LCP 6.9 s | no regressions |
+| `/matches/today` full | perf 99, a11y 100, SEO 100, BP 96, CLS 0, LCP 1.8 s | matches baseline |
+
+### 17.3 F-M6 — touch targets (44px where the layout tolerates; 2.5.8 AA everywhere else)
+
+Measured live at 390px before → after (all `agent-browser`
+getBoundingClientRect):
+
+| Element | Before | After | Floor |
+| :-- | :-- | :-- | :-- |
+| `#lbtn` / `#sbtn` (`.tb-btns button`) | 34×34 | **44×44** | 44 |
+| header `.mainnav a` (desktop) | 38px tall | **45.6px** | 44 |
+| footer `.footnav a` (mobile) | 34px tall | **46px** | 44 |
+| `.finmore` | 35px tall | **44px** | 44 |
+| `#backTop` (mobile) | 42×42 | **44×44** | 44 |
+| `.contact-email` | 40px tall | **46px** | 44 |
+| `.skip-link` focus pill | 26px tall | **47–54px** | 44 |
+| footer baseline links (`.foot-base a`) | 18px tall | **30px** | 24 (AA) — 44 documented-exception (the WCAG 2.5.8 "inline in text" exemption applies to the sentence row; the compact sub-page `.pagesfoot nav a` + `.stmore` likewise clear 24px) |
+
+### 17.4 F-L3 + the page-shell skip link + CSP (R13)
+
+- **F-L3:** the homepage skip link moved before `<header id="topbar">`
+  — it was the 3rd tab stop at phone widths (brand → lang button →
+  skip); now first focusable, off-canvas until :focus (verified live:
+  focus places the 117×54px pill at 8px/8px). Zero visual change.
+- **WCAG 2.4.1:** the `page-shell` sub-pages (hubs, teams, matches,
+  competitions, about/privacy/…) had NO skip link at all — every page
+  now carries the same first-focusable bypass with its own `.skip-link`
+  CSS in the shell's style block.
+- **CSP (R13-bounded evaluation — no header change, documented):**
+  `script-src 'unsafe-inline'` STAYS: the inline JSON-LD carries
+  per-page dynamic match data (a hash-based CSP cannot cover it, and a
+  per-request nonce is incompatible with the edge-cached-HTML
+  architecture where one rendered body serves many requests). The
+  beacon origins (`https://static.cloudflareinsights.com` script +
+  `https://cloudflareinsights.com` connect, live since v13.188/v13.208)
+  stay allowed and are now PINNED in check-a11y so they can never be
+  swept out of the CSP silently. HSTS / nosniff / Referrer-Policy /
+  Permissions-Policy / X-Frame-Options re-verified strong
+  (check-security 29/29). `npm audit --omit=dev`: 0 vulnerabilities
+  (re-run in this session's tree).
+
+### 17.5 The sub-page final-pass catch (`5ab4b2d`)
+
+The post-deploy WCAG re-audit across page families found exactly ONE
+failing node beyond the homepage set: `h2 > span.simcount` — the shell
+count chip's muted ink (`#94a3b8`) on its 12%-gray pill over the glass
+card computed `#303b4e` = **4.4:1** (the pre-existing sub-page 95s in
+the frozen audit, data-dependent — the chip only renders when a count
+rides the heading). Fixed with the same one-token class: the
+quieter-than-text mid-slate `#b6c5da` = **6.45:1** (computed + pinned in
+check-a11y). `/competitions` re-audits at **100** live; the team/match
+pages re-verify at 100 after the 900 s edge render-hold rolls the
+pre-fix renders (the hold, not the fix, was the delay — verified the
+served HTML still carried the old ink at `age: 292`).
+
+### 17.6 Gates + verification (v13.209 + v13.210)
+
+- **Gates:** `tsc` exit 0; `npm test` exit 0 — final **2,591 checks**
+  (2,552 baseline + the NEW 36-check `scripts/check-a11y.js` + the
+  release-wiring + the label-retirement pin); the public-page parity
+  baseline re-frozen TWICE via the reviewed `--update` path (the 8
+  intended v13.209 hunks, then the 1-line script ref); every ADR-006
+  surface re-pinned (check-stats ×13 edits, check-hero-carousel,
+  check-mc-heroes, check-stats `_headers` pin matrix).
+- **ADR-006 ×2:** `public-13.80.css → 13.81.css` + `public-13.68.js →
+  13.69.js → 13.70.js` (the close-out rename); `_headers` +2/+1 pins
+  with cap sweeps **#14** (− `13.66.js`/`13.67.js`, 4–5 SW generations
+  stale) and **#15** (− `13.65.js`, 7 generations) — **exactly 100
+  rules** verified live (the new pins immutable, the swept files 200 on
+  the default headers per the retention rule); SW `v109 → v110 → v111`.
+- **CI:** `0475257` **77/0 green first-try** (T-09 `/` perf 57,
+  sub-pages 97/95); `6d842bc` **77/0 green first-try** (T-09 `/` perf
+  44 — inside the documented K10 band); no self-collision (K18 — the
+  sampler fix holds), no re-run needed.
+- **Deploy ×2:** `bc94e18b` (v13.209-a11y) + `4b3c8c64` (v13.210-namefix)
+  + `64339b38` (the simcount catch); healthz flipped ≤15 s each time,
+  `ok:true` throughout, outbox 0, ticks completing (`last_cron_age`
+  observed 3→5→9→5→7 min across checks = multiple fresh completions);
+  bot-side fields healthy.
+- **KV budget (R2):** `kv_writes_web` = **463 at session start and 463 at
+  close** — ZERO new web-side write classes (the healthz meter is the
+  live proof). `kv_writes_day` rode 879 → 913 (the LIVE-evening bot
+  cadence, pre-existing, resets UTC midnight).
+- **Visual + functional round (production):** no horizontal overflow at
+  360/390/768/1024/1280/1440/1920; fa↔en round-trip intact (text + dir
+  + lang flip verified on the footer baseline link); zero console
+  errors; the hero + the forced past row VLM-reviewed clean; the skip
+  pill + the 44px targets measured live.
+- **seo:check production: 65 PASS / 0 FAIL** (≥56 floor; the
+  check-conditional-gets + check-seo-lastmod gates green — the v13.207
+  caching contract and the v13.208 lastmod contract untouched).
+- **Bot protection:** no bot file in any commit (`0475257` 17 files,
+  `6d842bc` 14, `5ab4b2d` 3 — all §3.1 website-only: templates, client
+  assets, harness, fixtures, docs, config VERSION); the SEO router
+  returns `null` for `/webhook`, `/api/*` and `/admin*` before any
+  changed line executes; full `npm test` (every bot suite) green ×2;
+  `src/tables.ts` (the CSP home, SHARED) NOT touched.
+
+### 17.7 The lessons (for the tracker's known-issues register)
+
+- **K19 (the axe-semantics lesson):** spec-summary reasoning about a
+  WCAG rule is not evidence — READ THE RULE'S IMPLEMENTATION before
+  shipping a fix for it. The `label-content-name-mismatch` round-1 fix
+  (extend the label) was structurally unresolvable because the rule (a)
+  only matches aria-LABELED widgets and (b) counts every PAINTED glyph
+  in its visible-text walk (aria-hidden is invisible to the on-screen
+  methods). The round-2 shape (retire the labels; name-from-content) is
+  deterministic. The discovery method — dump the flagged node's exact
+  state, read the axe source in the Lighthouse bundle, test the exact
+  candidate against the exact algorithm in the live browser BEFORE the
+  rename — is the template for any future a11y-rule work. The bundle
+  rename cost of skipping it: one full ADR-006 ceremony.
+- **The router-replace-literal desync:** editing a static template tag
+  that a server replace() targets requires syncing the replace literal
+  in the SAME edit (the check-stats 485 pin caught it pre-commit — the
+  non-upcoming-hero hiding would have shipped broken).
