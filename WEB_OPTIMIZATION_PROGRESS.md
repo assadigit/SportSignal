@@ -13,13 +13,13 @@
 
 | Field | Value |
 | :--- | :--- |
-| **Current phase** | 4 COMPLETE (v13.207-condget — deployed 2026-11-04, the F-M5 conditional-GET fix + ETag on the machine files; curl-verified 304s on every cached class) — Phase 5 (Technical & multilingual SEO) NOT STARTED |
+| **Current phase** | 5 COMPLETE (v13.208-lastmod — deployed 2026-11-04, the seo_lastmod_v1 eviction fix + F-L1 + F-H3 beacon + IndexNow drain + the R11 og:locale completion) — Phase 6 (Accessibility & security) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | `ea98e70` (docs: the Phase 4 close-out + T-13) on top of `f4f66f8` (`v13.207-condget` — the code) — both pushed & verified via `git ls-remote`. CI seo-check SUCCESS on both first-try: `f4f66f8` 68/0 (T-09 `/` perf 43), `ea98e70` **77/0** (with the 9 new T-13 assertions; T-09 `/` perf 51, `/teams` 94) — no K10 re-runs needed |
-| **Production** | **`13.207-condget`** (= the Phase 4 state: F-M5 304s honored on both `wantCached` paths with weak-comparison If-None-Match, ETag on sitemaps/feed/calendar/matches.json; the freshness ladder byte-identical, zero new KV writes). SW v109; `_headers` still exactly 100 rules (Phase 4 touched no client asset) |
-| **Production health at close-out** | `/healthz` → `ok:true`, `version:13.207-condget`, `degraded:true` (a LIVE-mode match-evening KV-write profile: `kv_writes_day` 715→721 ≥ the 700 soft cap — bot-side cadence, zero web-side additions, resets UTC midnight; `ok:true` throughout, hard cap 850), `outbox_depth` 0, ticks completing. |
-| **Last verified** | 2026-11-04 (Phase 4: `npm test` 2,539 green; deploy verify + ≥2 ticks; the 11-URL conditional-GET matrix — RESULTS §15; the response-class policy table §15.4) |
-| **Next action** | Phase 5 — Technical & multilingual SEO per AUDIT §8: F-M8 pagination canonical decision, F-L1 404-canonical cleanup, sitemap lastmod honesty spot-audit, GSC owner-run reports (K5), IndexNow ping verification. F-H3 owner step (OWNER_TODO §11) pending — the Phase 7 field-data source |
+| **Latest commit** | `53f847e` (fix(seo-check): the T-03 without-replacement sampler) on top of `ed74342` (seo: the R11 og:locale:alternate removal) and `888f1ae` (`v13.208-lastmod` — the Phase 5 code round) — all pushed & verified via `git ls-remote`. CI: `888f1ae` green 68/0; `ed74342` RED on a diagnosed sampler self-collision (the T-03 with-replacement draw flagged one URL against itself — K10 protocol: root-caused, sampler fixed, `53f847e` green **77/0**, T-09 `/` perf 62) |
+| **Production** | **`13.208-lastmod`** (= the Phase 5 state: hash-driven sitemap lastmods that actually persist across children + a map-derived sitemap index, the 404 without a fictional canonical, the CF Web Analytics beacon live on every public page — Phase 7's RUM source, IndexNow parking that drains, og:locale fa_IR only). SW v109; `_headers` still exactly 100 rules (Phase 5 touched no client asset) |
+| **Production health at close-out** | `/healthz` → `ok:true`, `version:13.208-lastmod`, `degraded:true` (the LIVE-mode match-evening KV profile continued: `kv_writes_day` 783→840 vs the 850 hard cap — bot-side cadence; `kv_writes_web` 405→439 incl. the one-time sitemap-map convergence writes; resets UTC midnight), `outbox_depth` 0, ticks completing (`last_cron_age` 3–9 min across checks). |
+| **Last verified** | 2026-11-04 (Phase 5: `npm test` 2,552 green; deploy verify + ticks; the 3-cycle lastmod stability matrix + index-ETag stability — RESULTS §16.1; seo:check production 65/0 + CI 77/0; the metadata/JSON-LD 24-page audit §16.8; IndexNow end-to-end HTTP 200 §16.5) |
+| **Next action** | Phase 6 — Accessibility & security per AUDIT §8: F-M3/M3b contrast + hero-card accessible name (CSS rename ceremony), F-M6 touch targets, F-L3 skip-link order, CSP eval (R13-bounded). GSC (K5) still owner-blocked; the Web Analytics dashboard check (24–48 h) is the owner's F-H3 confirmation step |
 
 ## Phase roadmap (spec §5)
 
@@ -30,7 +30,7 @@
 | 2 | Frontend optimization (CSS/JS/rendering/deps) | ✅ **COMPLETED** (2026-11-04, final state `53b05ef` `v13.204-foldsplit`) | The three-release arc: `a5a805d` `v13.202-threaddiet` (F-M2 fold-split + idle-initTz + carWarm-on-load; F-M1 31 dead CSS rules; cap sweep #10, SW v105, K2 fixed) → `2c2d78b` `v13.203-warmdefer` (the fold-split reverted on **contaminated** after-deploy Lighthouse runs — executed while a local wrangler dev + browsers ate the sandbox CPU; clean re-measurement of the revert landed exactly on the v13.201 baseline, proving the contamination) → `53b05ef` `v13.204-foldsplit` (the fold-split re-applied byte-identical to v13.202's 13.66.js after the clean evidence; cap sweeps #11–#12, SW v107). Final verified results (two independent sessions, RESULTS §2–§3 + §8): **JS bootup 0.9–1.6 → 0.35–0.4 s, TTI 9.9 → 7.4–8.9 s**, TBT median ~unchanged (242–590 ms, within variance; the 629 ms render monolith → interleavable ≤356–771 ms tasks), CLS 0 kept, LCP still F-C1-bound (Phase 3). Optional X-card i18n prune deferred (K12). |
 | 3 | Assets & Core Web Vitals | ✅ **COMPLETED** (2026-11-04, `738d969` `v13.205-lcpreveal` + `db84622` `v13.206-scenediet`) | The two-commit arc: the code session shipped F-C1 (SSR slide-1 reveal + `fetchpriority=high` scene preload + SSR portraits via the generated hero-coverage map) + F-H1 (21 self-hosted `/emblems/*.webp`, ~1.2 MB third-party retired, SHARED tables.ts with the proven bot-neutrality argument — independently re-verified) + F-H2 (stadium-lights 197→71 KB, PC-HUD 125→59 KB + lazy, bg 93→40 KB via 13.80.css) + F-M7 (og 301→91 KB) + font audit (honest no-trim) + F-M4 (square emblems). The reconciliation close-out found the ONE defect — the preload shipped the **264 KB effectively-lossless scene-4** (the "4.9 KB" claim was wrong) — and fixed it as v13.206 (scene-4-2.webp, 44 KB, q90 VLM-verified). Verified: lab LCP 9.2 s → **5.5 s median** (discovery fixed: load delay 1,440→21–33 ms, obsLCP = FCP, one run 658 ms; the ≤2.5 s target NOT met — the residual is the Fast-3G render-blocking chain weight, Phase 4+ candidate); desktop 95→**100** (LCP 1.4→0.9 s); sub-page 100; CLS 0; a11y/SEO/BP 100. Full record: RESULTS §9–§14. |
 | 4 | Cloudflare & caching | ✅ **COMPLETED** (2026-11-04, `v13.207-condget`) | F-M5 fixed (the two root causes: the unchecked edge-cache HIT path + the strict ETag comparison that CF's in-transit weakening made unmatchable — weak-comparison comparator per RFC 9110 §13.1.2 + 304 branches on both `wantCached` paths); ETag on the 5 machine-file surfaces; F-H3 evaluated via API → owner-action-required (OWNER_TODO §11, token lacks the permission, beacon verified absent); F-L6/F-L7 evaluated with numbers and deferred (RESULTS §15.5). Freshness ladder byte-identical (R12), zero new KV writes (R2), `npm test` 2,539. |
-| 5 | Technical & multilingual SEO | ⬜ | Verification + gap-fix: F-M8 pagination canonical decision, F-L1 404 canonical cleanup, GSC owner access or owner-run reports. fa/en stays client-toggle (R11). |
+| 5 | Technical & multilingual SEO | ✅ **COMPLETED** (2026-11-04, `888f1ae`+`ed74342`+`53f847e` `v13.208-lastmod`) | The spot-audit found a LIVE F-05-class regression the frozen audit had marked green: `computeLastmods` replaced the whole seo_lastmod_v1 map per child render — cross-child eviction → every render re-stamped its FULL URL set with the clock (94/94 teams + 144/144 upcoming at one millisecond, live-proven twice) + a KV write per render + full-list IndexNow pings. Fixed: merge + change-only writes + a map-derived sitemap index (pages=CONTENT_VERSION). F-L1 fixed (404 emits no canonical/og:url). F-H3 EXECUTED (the Web Analytics beacon manually inserted in both templates — auto-inject never reaches Worker HTML; /privacy disclosure added). IndexNow park-drain fixed. F-M8 DECIDED: keep the hub canonical (documented with evidence, RESULTS §16.2). R11 completed (og:locale:alternate en_US removed; stance pinned). Metadata/JSON-LD 24-page audit clean. GSC remains owner-blocked (K5, honest limitation recorded). |
 | 6 | Accessibility & security | ⬜ | F-M3 contrast fixes, F-M3b hero accessible name, F-M6 touch targets, F-L3 skip-link order; CSP eval bounded by R13. |
 | 7 | Final verification & requirements reconciliation | ⬜ | Repeat baselines identically; requirements checklist per spec §13.6; field data via CF Web Analytics RUM if enabled in Phase 4. |
 
@@ -259,6 +259,95 @@
 | `CHANGELOG.md` | v13.207-condget entry |
 | `OWNER_TODO.md` | §11 NEW — the CF Web Analytics owner steps (F-H3); §2 status marker corrected to the K7 reality (all 15 bot UAs 200, verified 2026-11-04) |
 
+
+### Phase 5 — 2026-11-04 (technical & multilingual SEO; the lastmod-honesty round)
+
+- **`v13.208-lastmod`** — three commits: `888f1ae` (the code round),
+  `ed74342` (the R11 og:locale completion), `53f847e` (the seo-check
+  sampler fix). All website-only surfaces (§3.1):
+  - **THE HEADLINE — the seo_lastmod_v1 cross-child eviction bug:** the
+    Phase 5 "lastmod honesty" spot-audit found every sitemap child
+    re-render stamping its FULL URL set with the render clock (live:
+    94/94 teams + 144/144 upcoming at one render millisecond, advancing
+    again across cache windows — the exact "now on every build" F-05
+    forbids, plus a KV write per render and full-list IndexNow pings).
+    Root cause: `computeLastmods` REPLACED the whole KV map with the
+    calling child's candidates (each child evicted the others). Fix in
+    `src/seo/files.ts`: MERGE (400-day stale prune on write) +
+    strictly change-only writes; the sitemap INDEX now derives per-child
+    `<lastmod>` from the per-URL family max (pages=CONTENT_VERSION)
+    instead of `now` (the index ETag is now render-stable — proven
+    `"ss-cd479d472db"` ×2). Post-fix live proof: teams kept 88/90 then
+    67/92 stamps across fresh renders (only genuinely-changed URLs
+    advanced on the LIVE match evening); upcoming kept 142/144, 139/144;
+    competitions/archive re-rendered with identical stamps.
+  - **F-L1:** the 404 builder no longer emits the fictional
+    `canonical → /404` / `og:url → /404` (`HeadInput.path` optional;
+    production-verified 0 canonical, 0 og:url, noindex intact).
+  - **F-H3 EXECUTED** (the owner-step fallback, OWNER_TODO §11 step 6):
+    this session's CF token HAS the Web Analytics read permission — the
+    API showed the site EXISTS since 2026-10-13 (`auto_install:true`) but
+    auto-injection never reaches Worker-rendered HTML (0 beacons live,
+    `/cdn-cgi/rum` 404). The manual snippet (public token
+    `fb7e7f1d…`) now rides BOTH HTML templates (public.ts + page-shell);
+    `/privacy` gained the honest disclosure section; OWNER_TODO §11
+    updated to done-by-code + the 24–48 h dashboard check. Phase 7's
+    field-CWV source now exists.
+  - **IndexNow drain:** rate-limited parked URLs never re-sent (expired
+    unsend); the send path now merges the park (zero extra KV writes).
+    End-to-end verified once: key file 200 + a manual POST → HTTP 200.
+  - **F-M8 DECIDED (no code change):** `/matches?page=2+` KEEPS the hub
+    canonical — sliding-window pagination is not a stable indexable
+    entity; every page-2+ fixture is discoverable via per-match pages +
+    sitemap (all 144 upcoming, not page 1's slice) + hubs + feed;
+    evidence in RESULTS §16.2.
+  - **R11 completed:** hreflang stays correctly absent (0 links, no en
+    URLs); the homepage's leftover `og:locale:alternate=en_US` removed
+    (implied a crawlable English variant that doesn't exist); stance
+    pinned in the gate.
+  - **Metadata/JSON-LD spot-audit:** 16 templates + 8 dynamic samples —
+    unique titles/descs (except the deliberate page-2 pair), all
+    canonicals self-referencing, all JSON-LD parses with the honest
+    type set (SportsEvent fields all real). T-04 green in CI.
+  - **GSC (K5):** still owner-blocked — no credentials; the honest
+    limitation + the standing owner ask recorded (RESULTS §16.7).
+- **Gates:** NEW `scripts/check-seo-lastmod.js` (12 checks: the
+  merge/no-write/hash-change/stale-prune/index-derivation behavioral
+  vectors + the F-L1/F-H3/IndexNow/R11 source contracts) registered in
+  `npm test` → **2,552 checks, exit 0**; the public-page parity baseline
+  re-frozen twice via the reviewed `--update` path (the beacon + the
+  og:locale line — the only intended output changes); check-stats
+  v13.208 release-wiring pin; NO client asset changed (13.68.js /
+  13.80.css / SW v109 all stay).
+- **CI:** `888f1ae` 68/0 green; `ed74342` RED → diagnosed as the T-03
+  with-replacement sampler flagging ONE URL against itself (verified
+  listed exactly once across children — K10 protocol: root-caused,
+  fixed without replacement, `53f847e` **77/0** green, T-09 `/` perf 62).
+- **Deploy:** two deploys (`e8fea8b9-…` then `5e22b84c-…` with the
+  og:locale follow-up); healthz `13.208-lastmod` ≤15 s, `ok:true`,
+  ticks completing; production seo:check 65/0 (CI 77/0); beacon live on
+  every public page family; og:locale:alternate 0 occurrences.
+
+## Files modified in Phase 5
+
+| File | Change |
+| :--- | :--- |
+| `src/seo/files.ts` | THE FIX: `computeLastmods` merge + change-only write + 400d stale prune; `buildSitemapIndex` derives per-child lastmod from the map (drops the unused getSeoCtx call) |
+| `src/seo/page-shell.ts` | F-L1: `HeadInput.path` optional, canonical/og:url conditional; F-H3: the Web Analytics beacon before `</body>` |
+| `src/seo/pages-static.ts` | F-L1: `build404Page` passes no path; /privacy: the CF Web Analytics disclosure section + the updated summary line |
+| `src/pages/public.ts` | F-H3: the beacon; R11: `og:locale:alternate=en_US` removed |
+| `src/seo/indexnow.ts` | the parked-URL drain on the send path |
+| `src/config.ts`, `package.json`, `package-lock.json` | VERSION → `13.208-lastmod` / 13.208.0.0 |
+| `scripts/check-seo-lastmod.js` | NEW — the 12-check lastmod-honesty gate (extract+eval behavioral vectors) |
+| `scripts/check-stats.js` | the v13.208 release-wiring pin (v13.207 → HISTORICAL) |
+| `scripts/seo-check.js` | T-03 samples WITHOUT replacement (the self-collision false positive) |
+| `scripts/fixtures/public-page-baseline.html` | re-frozen ×2 (the beacon; the og:locale line) |
+| `WEB_OPTIMIZATION_RESULTS.md` | §16 — the Phase 5 record |
+| `WEB_OPTIMIZATION_PROGRESS.md` | UPDATED — status, roadmap, this section, verification + git logs (this file) |
+| `CHANGELOG.md` | v13.208-lastmod entry |
+| `OWNER_TODO.md` | §11 → done-by-code + the 24–48 h dashboard check; the summary line |
+
+
 ## Known issues, blockers & deferred work
 
 | # | Item | Type | Raised |
@@ -269,11 +358,13 @@
 | K13 | Phase 2 session-interruption recovery: the code round (`a5a805d`) had been committed, pushed and deployed by an interrupted session; the close-out session reconciled (no re-work), verified acceptance end-to-end and completed the missing documentation. No duplicate commits. **Recurred in Phase 3** (`738d969` landed mid-docs-reading) — the recovery protocol held both times; treat it as the standing pattern for this program. | Resolved (×2) | Phase 2 |
 | K15 | **Phase 3 LCP honesty:** the ≤ 2.5 s lab-LCP acceptance target is NOT met (median 5.5 s, from 9.2 s). The F-C1 discovery mechanics are proven fixed (load delay 1,440→21–33 ms, priority-hinted, discoverable, obsLCP = FCP); the residual is the Fast-3G simulated render-blocking chain weight (HTML 184 KB + CSS 135 KB + fonts + JS). Candidate Phase 4+ work: critical-chain diet. See RESULTS §10. | Open (documented) | Phase 3 |
 | K16 | **Preload-asset-size lesson (Phase 3):** the v13.205 commit claimed a "4.9 KB" scene the file system said was 264 KB — a fetchpriority preload is only as good as the bytes it fronts. The v13.206 gate now pins the 30–50 KB ceiling so the lossless weight can never silently return. Always `stat()` the asset behind a preload claim. | Resolved (gate added) | Phase 3 |
+| K17 | **The cross-cache-window audit lesson (Phase 5):** the seo_lastmod_v1 eviction bug was live for weeks while two audits and three optimization phases passed it — because every verification sampled within a single edge-cache window (the eviction only manifests ACROSS windows, when a foreign child renders in between). Any "X is stable/honest" claim about edge-cached derived state must be re-verified across at least one full TTL window with an interleaved foreign render. The new check-seo-lastmod gate pins the merge behavior; the live 3-cycle matrix is the template. | Lesson (gate added) | Phase 5 |
+| K18 | **The sampler self-collision (Phase 5 CI):** `ed74342` reddened on "duplicate title: X (u & u)" — seo-check's T-03 sampled WITH replacement, so one URL drawn twice collided with itself in the seen-titles map. Root-caused (the URL was listed exactly once), fixed to draw without replacement (`53f847e`, green 77/0). Any future "duplicate" CI red should first be checked for a self-collision (same URL twice) before treating it as a site defect. | Resolved (sampler fixed) | Phase 5 |
 | K14 | **Measurement-contamination incident (Phase 2, resolved same day):** the v13.203 revert shipped on Lighthouse runs taken while a local `wrangler dev` + browsers consumed the sandbox CPU (TBT appeared 2–3× worse); the clean re-measurement landed exactly on baseline and v13.204 re-applied the change. **The recorded lesson (RESULTS §8): kill every background process before any Lighthouse run; never ship a revert without a clean re-measurement of the reverted state; treat a surprising single-source regression as an artifact until reproduced.** | Resolved (lesson recorded) | Phase 2 |
 | K3 | `package-lock.json.bak` is gitignored; npm-only toolchain (bun breaks resvg). | Constraint | Phase 0 |
 | K4 | No staging environment — `wrangler dev` smoke is the only pre-prod gate (R8). | Constraint | Phase 0 |
 | K5 | Google Search Console access NOT available (no credentials in session; owner completed DNS TXT verification 2026-10-11 per OWNER_TODO). Phase 5/7 needs owner-run reports or credentials. | Open question | Phase 0 |
-| K6 | No field CWV/INP data source exists (CrUX empty; PSI quota blocked) — **F-H3 evaluated in Phase 4: owner-action-required.** The API token lacks the Web Analytics permission (10405/10000); `/cdn-cgi/rum` 404 + zero beacon occurrences in the served HTML. The exact 7-step dashboard path is `OWNER_TODO.md` §11; if automatic injection does not reach Worker-rendered HTML, the manual snippet is a small website-only template insertion for a later session. Phase 7 field data depends on the owner completing it. | Measurement gap (owner step pending) | Phase 1 |
+| K6 | **RESOLVED (Phase 5, v13.208)** — the beacon now ships in both HTML templates (public.ts + page-shell.ts). The full API verification: the Web Analytics site existed since 2026-10-13 with `auto_install:true`, but automatic injection never reaches Worker-rendered HTML (0 beacons live, `/cdn-cgi/rum` 404) — the manual snippet (this session's token had the rum read permission) closed it. `/privacy` discloses it; OWNER_TODO §11 = done-by-code + the owner's 24–48 h dashboard check. **Phase 7 now has its RUM source** (data accumulates from deploy time). | Resolved | Phase 1 |
 | K7 | ClaudeBot/Amazonbot 403 block from OWNER_TODO §2 (2026-10-11) is **resolved** — all 15 bot UAs return 200 (verified live 2026-11-04). | Resolved | Phase 1 |
 | K8 | `wrangler.dev.toml` is git-tracked despite its header comment claiming git-ignored (resource IDs only, no secrets) — F-L2 hygiene note. | Hygiene | Phase 1 |
 | K9 | **RESOLVED (Phase 4)** — F-M5 fixed in v13.207-condget: weak-comparison If-None-Match honored on both `wantCached` paths; curl-verified 304s on every cached class (RESULTS §15.3); the regression guard rides `npm test` (check-conditional-gets). | Resolved | Phase 1 |
@@ -300,6 +391,15 @@ full `npm test` green (2,531 checks incl. every bot suite).
 
 | Date | Check | Result |
 | :--- | :--- | :--- |
+| 2026-11-04 | **Phase 5 session-start verification:** clone at `c45edc8` (clean, in sync — no K13 race); healthz `13.207-condget` = repo VERSION (kv_writes_day 783 — the R2 watch begins); `npm install` + `npm test` → exit 0, **2,539 checks** (the expected baseline) | ✅ |
+| 2026-11-04 | **The lastmod eviction — pre-fix live evidence:** 94/94 teams + 144/144 upcoming + 6/6 comps + 21/21 archive each sharing ONE render-time millisecond; cross-window re-fetch ADVANCED the stamps (teams → 19:41:18.409, upcoming → 19:41:19.192) — the "now on every build" proof | ✅ (bug confirmed) |
+| 2026-11-04 | **The lastmod fix — post-fix live stability (3 cycles):** C1 convergence (comps+archive one-time re-stamp as predicted); C2: teams kept 88/90, upcoming 142/144; C3: teams kept 67 + 25 honestly-changed (LIVE evening), upcoming 139/144, comps+archive identical; sitemap-index ETag render-stable (`"ss-cd479d472db"` ×2); index shows pages=CONTENT_VERSION + family maxima | ✅ |
+| 2026-11-04 | `npm test` with the 12-check check-seo-lastmod gate + the new wiring pin → exit 0, **2,552 checks**; parity baseline re-frozen ×2 via the reviewed `--update` path (the 9-line beacon + the 1-line og:locale — the only intended output changes) | ✅ |
+| 2026-11-04 | **wrangler dev smoke (R8):** healthz JSON, `/` 200+beacon, `/matches?page=2` → hub canonical, shell-404 (0 canonical, 0 og:url, noindex, beacon), `/privacy` disclosure, CONTENT_VERSION on the pages child; local 304 matrix (strong + weakened replays) | ✅ |
+| 2026-11-04 | **Deploy ×2** (`e8fea8b9-…`, then `5e22b84c-…` with the og:locale follow-up): healthz `13.208-lastmod` ≤15 s, `ok:true`, outbox 0, ticks completing (3–9 min ages across checks) | ✅ |
+| 2026-11-04 | **Production verification:** beacon ≥1 on every public family; 404 → 0 canonical/0 og:url/noindex; `/matches?page=2` → `/matches`; og:locale:alternate 0; /privacy disclosure live; IndexNow key file 200 + manual POST → **HTTP 200**; production `seo:check` **65/0** | ✅ |
+| 2026-11-04 | **Metadata/JSON-LD audit (24 pages):** 16 templates + 8 dynamic samples — unique titles/descs (except the deliberate page-2 pair), self-canonicals everywhere, JSON-LD all-parse with the honest type set; hreflang 0 links (correct N/A) | ✅ |
+| 2026-11-04 | **CI:** `888f1ae` green 68/0; `ed74342` RED (the T-03 sampler self-collision — "duplicate title: X (u & u)", the URL verified listed exactly once across children); root-caused + sampler fixed → `53f847e` **green 77/0**, T-09 `/` perf 62, `/matches/today` 97, `/teams` 96 | ✅ (K10 protocol exercised) |
 | 2026-11-04 | `npm run seo:check` (production) with the NEW T-13 → **65 PASS / 0 FAIL** (all 9 T-13 assertions green: 4 machine files etag+304 + `/` etag; the HTML 304 half deliberately out of CI — the SWR transient, RESULTS §15.3a) | ✅ |
 | 2026-11-04 | **CI seo-check on `f4f66f8` (the v13.207 code commit): SUCCESS first-try** — **68 PASS / 0 FAIL**; T-09 Lighthouse `/` perf 43 (inside the documented 43–65 K10 band, threshold 40), `/matches/today` 98, `/teams` 96 — no re-run needed | ✅ |
 | 2026-11-04 | **Final conditional-GET matrix (post sitemap-window rollover): 44 PASS / 0 FAIL** — all 11 URLs (HTML ×5, sitemap index + 2 children, feed, calendar, matches.json): etag present + 304 on the delivered-etag replay + 200 on non-matching + ladder byte-identical; homepage 304 = 0 B vs 46,360 B br | ✅ |
@@ -367,6 +467,7 @@ full `npm test` green (2,531 checks incl. every bot suite).
 
 | Phase | Commit | Push | Deploy | Production verify |
 | :--- | :--- | :--- | :--- | :--- |
+| 5 | `888f1ae` (`v13.208-lastmod` — the lastmod eviction fix + F-L1 + F-H3 beacon + IndexNow drain + F-M8 decision) + `ed74342` (seo: the R11 og:locale:alternate removal) + `53f847e` (fix(seo-check): the without-replacement sampler) + this docs commit | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote`); CI: `888f1ae` 68/0, `ed74342` red-on-sampler-noise → root-caused → `53f847e` **77/0** | **DEPLOYED** (`npx wrangler deploy` ×2 — server code changed; versions `e8fea8b9-…` + `5e22b84c-…`) | `/healthz` → `13.208-lastmod`, `ok:true`, ticks completing, outbox 0; the 3-cycle lastmod stability matrix + stable index ETag; beacon live on every public page; 404 canonical-free; og:locale:alternate 0; bot-side fields healthy |
 | 4 | `v13.207-condget` (the code: router F-M5 fix + machine-file ETags + the 8-check gate + ceremony) + the Phase 4 docs commit (results/tracker/changelog/owner-todo) | `main` @ GitHub (one-shot token push, verified via `git ls-remote`) | **DEPLOYED** (`npx wrangler deploy` — server code changed, spec §14.4 step 4; version `1d4ca832-…`) | `/healthz` → `13.207-condget`, `ok:true`, ticks completing, outbox 0; the 11-URL 304 matrix green; ladder byte-identical; bot-side fields healthy |
 | 0 | `a9c87c0` + `00c2e9f` + `63a1d02` (docs + tracker hash backfills) | `main` @ GitHub, verified via `git ls-remote`; CI seo-check green on all | **NOT DEPLOYED** (docs-only) | n/a (production = repo code state, verified via `/healthz`) |
 | 1 | `101024f` (audit) + `b5f77a3` (tracker hash backfill) + `63a1d02→b5f77a3` CI verification note | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote` → `ab7b7ab` after the final CI-note commit) | **NOT DEPLOYED** (documentation-only phase — spec §14.4) | n/a (production unchanged = `13.201-carstack`, re-verified via `/healthz` after push: `ok:true`, `degraded:false`) |
@@ -378,9 +479,10 @@ full `npm test` green (2,531 checks incl. every bot suite).
 
 ## Next-session prompt
 
-The complete, copy-paste-ready Phase 4 prompt is emitted at the end of the
-Phase 3 session report (per repo convention; the authoritative master
-specification is `SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md` §10 = Phase 4, and
-the evidence-based targets live in `WEB_OPTIMIZATION_AUDIT.md` §7 F-M5 /
-F-H3 / F-L6 / F-L7 + `WEB_OPTIMIZATION_RESULTS.md` §14 for the Phase 3
-residuals — the lab-LCP floor note K15 in this file).
+The complete, copy-paste-ready Phase 6 prompt is emitted at the end of the
+Phase 5 session report (per repo convention; the authoritative master
+specification is `SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md` §12 = Phase 6, and
+the evidence-based targets live in `WEB_OPTIMIZATION_AUDIT.md` §6.1
+(F-M3/F-M3b contrast + accessible name, F-M6 touch targets, F-L3 skip-link
+order) + `WEB_OPTIMIZATION_RESULTS.md` §16 for the Phase 5 state this
+phase builds on, and the K15/K16/K17/K18 lessons in this file).

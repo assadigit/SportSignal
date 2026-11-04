@@ -625,3 +625,263 @@ without Link headers).
   `/webhook`, `/api/*` (except matches.json) and `/admin*` before any
   changed line executes; full `npm test` (every bot suite) green;
   bot-side healthz fields healthy post-deploy.
+
+## 16. Phase 5 — Technical & multilingual SEO (v13.208-lastmod, 2026-11-04)
+
+The verification + gap-fix phase per AUDIT §8. Commits: `888f1ae` (the code
+round), `ed74342` (the R11 og:locale completion), `53f847e` (the seo-check
+sampler fix). Deploy: version `5e22b84c-…` (the second of two; `e8fea8b9-…`
+was superseded within minutes by the og:locale follow-up). healthz flipped
+to `13.208-lastmod` ≤ 15 s after each deploy; ticks completing throughout
+(`last_cron_age` 3–9 min, `outbox_depth` 0, `ok:true`).
+
+### 16.1 The headline finding — the seo_lastmod_v1 cross-child eviction bug (F-05 "now on every build", live)
+
+The Phase 5 lastmod-honesty spot-audit found a **live regression the Phase 1
+audit had marked green**: every sitemap child's full URL set carried the
+RENDER CLOCK, not content-change times.
+
+**Live evidence (pre-fix):**
+- 19:24 fetches: 94/94 teams at `19:24:09.220Z`, 6/6 competitions at
+  `19:24:10.125Z`, 144/144 upcoming at `19:24:11.114Z`, 21/21 archive at
+  `19:24:12.171Z` — whole-child sets sharing one render-time millisecond
+  (each stamp group = my sequential curl pacing, ~1 s apart).
+- Cross-window re-fetch at 19:41 (after the 600 s edge TTL lapsed): teams
+  re-stamped to `19:41:18.409Z`, upcoming to `19:41:19.192Z` — the stamps
+  ADVANCE on every render. Under honest hash-driven lastmod, the 94 team
+  timestamps would be spread across days/weeks (whenever each team's next
+  match last changed); the probability of all 94 changing in one millisecond
+  is zero.
+- The `pages` child was the only honest one (15 × `2026-10-11T00:00:00Z` =
+  CONTENT_VERSION — the hand-written stamp).
+
+**Root cause (code):** `computeLastmods` (src/seo/files.ts) built `next`
+from ONLY the calling child's candidates and `put` the whole map — the four
+data children (teams / competitions / matches-upcoming / matches-archive)
+each **evicted every other child's entries**. The next render of any child
+therefore saw its full URL set as "new" (absent from the map) → re-stamped
+everything with `now` → wrote the map → returned the full set as
+`changedUrls` to IndexNow. The old write condition
+(`changed.length || prevKeys !== candidates.length`) fired on EVERY
+cross-child interleaving — a web-side KV write per child render (R2
+pressure) and a KV-write race window (two renders ~0.8 s apart can converge
+to either write). The Phase 1 audit's §3.1 "no now on every build ✅" was
+sampled within single cache windows — the eviction only manifests across
+them, which is why three sessions missed it.
+
+**The fix (v13.208):** MERGE, never replace — `next` starts from `prev`
+(entries older than the 400-day retention pruned on write, bounding growth
+against the 365-day match archive), candidates update/add, and the write is
+strictly change-only. The sitemap INDEX now derives each child's
+`<lastmod>` from the per-URL family max in the same map (`pages` →
+CONTENT_VERSION; `/teams/`, `/competitions/`, `/matches/` family prefixes;
+the two match children share the `/matches/` max — a match changing state
+moves between them, so both legitimately change together) instead of `now`
+on every render. An empty/unreadable map degrades to fresh stamps (the old
+behavior).
+
+**Live proof (post-fix), the three-cycle matrix:**
+- Cycle 1 (19:46, post-deploy): competitions re-stamped once (6 ×
+  `19:46:00.210Z`) and archive once (21 × `19:46:01.878Z`) — the predicted
+  one-time convergence (their entries had been evicted by the pre-fix
+  renders). teams/upcoming still served their pre-fix cached copies.
+- Cycle 2 (19:52, after those caches lapsed): teams render kept **88/90**
+  old stamps (`19:41:18.409Z`) and re-stamped only 2 (live-evening
+  next-match changes); upcoming kept **142/144**. Under the old code both
+  renders would have re-stamped 100%.
+- Cycle 3 (20:03, full windows lapsed): teams kept 67, re-stamped 25
+  (23:33 Tehran — matches finishing flip many teams' `next` context;
+  honest change-driven churn), upcoming kept 139/144; competitions and
+  archive re-rendered post-expiry with **identical** stamps. The sitemap
+  index ETag is now render-stable: `"ss-cd479d472db"` across consecutive
+  fetches (the old `now`-stamped index churned its ETag every render).
+- Gate: `scripts/check-seo-lastmod.js` — 12 checks (the merge / no-change
+  no-write / hash-change / stale-prune / index-derivation behavioral
+  vectors via the repo's extract+eval harness style, + the F-L1/F-H3/
+  IndexNow/R11 source contracts), registered in `npm test`.
+
+**R2 side effect (positive):** child re-renders without changes no longer
+write KV. Pre-fix, every child render = 1 `seo_lastmod_v1` put (plus
+potential park writes from full-list "changed" IndexNow calls); post-fix,
+writes are change-only. Observed `kv_writes_web` 405 → 439 over the session
+window (which included the one-time convergence writes + SWR
+revalidations); steady-state should be strictly lower.
+
+### 16.2 F-M8 — the pagination canonical DECISION (documented, no code change)
+
+**Decision: KEEP.** `/matches?page=2+` continues to canonicalize to
+`/matches` — the deliberate de-dup, now with the evidence on record:
+
+- **Live state verified:** `/matches?page=2` → 200, `canonical →
+  https://sportsignal.ir/matches`, title/description identical to page 1
+  (the de-dup signal set is coherent: same canonical + same metadata).
+- **The pagination nav is crawlable plain links** (`<a href="/matches?page=N">`,
+  no JS dependency) — deep pages are traversable by any crawler that
+  chooses to follow them; the canonical tells it which URL represents the
+  hub.
+- **Everything on pages 2+ is discoverable via stable canonical URLs:**
+  every upcoming big match has its own page and ALL of them ride the
+  `matches-upcoming` sitemap child (144 URLs at audit time — not just
+  page 1's slice), plus the time hubs (today/tomorrow/this-week/
+  this-weekend), team pages, competition pages and the Atom feed. No
+  orphaned content exists behind the pagination.
+- **Why not self-canonical:** the paginated list is a sliding window over
+  a live-ranked upcoming set — `?page=2` is not a stable entity (its
+  content shifts as matches finish; totalPages itself shrinks on match
+  evenings). Indexing unstable fragments creates index churn and soft-404
+  risk when pages disappear, and would additionally require unique
+  titles/descriptions per page (spec §11.2) for content that deliberately
+  duplicates page 1's. The site's indexable surface is the per-match
+  pages + hubs; `/matches` is the hub. Google's modern pagination guidance
+  (self-canonical per page) targets stable paginated sequences, which this
+  is not.
+
+### 16.3 F-L1 — the 404-canonical cleanup (fixed)
+
+The 404 builder passed the fictional `path: "/404"` to `buildHead`,
+emitting `canonical → https://sportsignal.ir/404` (a URL that 404s itself)
+and the same fictional `og:url`. `HeadInput.path` is now optional;
+URL-less pages emit NO canonical and NO og:url. Production-verified:
+`/teams/nonexistent-xyz` → 404 with 0 canonical, 0 og:url, meta noindex +
+`x-robots-tag: noindex, nofollow`, links home, beacon present. (The
+scanner-path cheap 404 never had a canonical.) Gate: check-seo-lastmod #9.
+
+### 16.4 F-H3 — the Cloudflare Web Analytics beacon (the owner-step fallback, executed)
+
+Phase 4 left this owner-action-required; Phase 5 closed it:
+
+- **API verification (this session's token HAS the Web Analytics read
+  permission — Phase 4's did not):** `accounts/{id}/rum/site_info/list` →
+  the site EXISTS: `site_tag 08a51fd8…`, `auto_install: true`, zone
+  ruleset enabled, created 2026-10-13 (zone-setup day). So the owner DID
+  complete the dashboard step three weeks ago.
+- **Why no data ever flowed:** automatic injection never reaches
+  Worker-rendered HTML — live-verified again this session: 0
+  `cloudflareinsights` occurrences in the served homepage/match pages,
+  `/cdn-cgi/rum` → 404. The K6-predicted scenario exactly.
+- **The fix (OWNER_TODO §11 step 6, executed with the full ceremony):**
+  the manual snippet (token `fb7e7f1d…` — public by design, it rides every
+  served page exactly like INDEXNOW_KEY) inserted before `</body>` in BOTH
+  HTML templates — the homepage (`src/pages/public.ts`) and every
+  SEO-shell page (`src/seo/page-shell.ts`, which covers match/team/
+  competition/hub/trust pages + the full 404). Cookieless, aggregate-only
+  RUM; CSP-allowed since v13.188 (`script-src static.cloudflareinsights.com`
+  + `connect-src cloudflareinsights.com`). `/privacy` gained the honest
+  disclosure section («آنالیتیکس کلادفلر (بدون کوکی)») and its summary line
+  was rewritten to name both measurement tools. The admin/login pages
+  deliberately carry no beacon (owner tooling, noindex).
+- **Production-verified:** `curl -s https://sportsignal.ir/ | grep -c
+  cloudflareinsights` → ≥ 1 on every public page family. **Phase 7's
+  field-CWV source now exists**; the owner checks the Web Vitals p75
+  dashboard 24–48 h from now (OWNER_TODO §11 updated to reflect the
+  done-by-code state).
+- Residual risk documented: if Cloudflare ever starts auto-injecting into
+  Worker responses (a platform change), pages would double-count RUM —
+  detectable as two beacon scripts in the page source; the mitigation is
+  disabling the zone's auto-install toggle (the manual snippet is then the
+  single source).
+
+### 16.5 IndexNow — the end-to-end story, verified once (F-16/T-11)
+
+- **Key file:** `/6f1c2ab9d84e53a7c0b5e2f8a3d6c4b1.txt` → 200, body = the
+  exact key (T-11 green in CI and in this session's production run).
+- **Endpoint round-trip:** a manual POST to `api.indexnow.org/indexnow`
+  with `{host, key, keyLocation, urlList:["https://sportsignal.ir/"]}`
+  (the homepage — a URL that genuinely changed this deploy) → **HTTP 200
+  (accepted)**. Key, key location and host all validate end-to-end.
+- **The wiring (code):** the SEO router calls `pingIndexNowIfChanged` with
+  each child's `changedUrls`; the 15-min rate-limit stamp + park list
+  bound the cadence. **Defect found + fixed:** the parked list was never
+  re-read on the send path — rate-limited "changed" URLs expired unsend.
+  The send now drains the park into `urlList` (zero extra KV writes — R2;
+  duplicates bounded by the park's 1 h TTL; IndexNow pings are idempotent
+  recrawl hints). Gate: check-seo-lastmod #10.
+- With the eviction fix, `changedUrls` is now genuinely small (real
+  content changes only) instead of full-URL-set noise.
+
+### 16.6 R11/hreflang — the N/A stance re-verified + one inconsistency closed
+
+- **hreflang: 0 links** on every page family (correct — there are no `en`
+  URLs to annotate; `en` is a client-side localStorage toggle in
+  `core-13.16.js`, no `?lang=`/`/en/` routes exist).
+- **og:locale: `fa_IR`** on every page family.
+- **Found + fixed:** the homepage still carried
+  `og:locale:alternate=en_US` (a pre-program leftover; the shell pages
+  never had it) — an alternate-locale hint implies a crawlable English
+  variant that does not exist. Removed (`ed74342`); production-verified 0
+  occurrences. The stance is now pinned: check-seo-lastmod #12 (fa_IR in
+  both templates + no og:locale:alternate). No hreflang was added, no
+  language versions invented (spec §11.4).
+
+### 16.7 GSC (K5) — the honest limitation
+
+No Google Search Console credentials exist in this session (the
+Cloudflare/GitHub tokens cannot access GSC). The owner completed DNS TXT
+verification 2026-10-11 (OWNER_TODO §3) but has not supplied report access
+or run the requested reports. **What Phase 5 could NOT verify:**
+indexation counts, sitemap processing status, canonical selection as seen
+by Google, crawl errors, and search performance. The site-side facts that
+GSC would confirm are all verified directly (crawl files, canonicals,
+status codes, JSON-LD validity — this section + §16.8); the missing piece
+is Google's own view. **Standing ask (unchanged, owner action):** either
+grant a GSC user read-only access for the next session, or run the three
+reports (Indexing → Pages; Sitemaps; Performance) and share the outcome —
+needed for Phase 7's final report.
+
+### 16.8 Metadata uniqueness + JSON-LD validity spot-audit (verified, not rebuilt)
+
+16 templates + 8 dynamic samples (2 per family: upcoming/archive match
+pages, team pages, competition pages), all 200:
+
+- **Titles unique** across every URL except the deliberate
+  `/matches` ↔ `/matches?page=2` de-dup pair (§16.2). Dynamic pages carry
+  fixture-specific titles (dates, team names).
+- **Descriptions unique** with the same single deliberate exception;
+  70–165 chars everywhere (T-03 asserts ≥ 50).
+- **Canonicals:** 15/15 templates self-referencing; all 8 dynamic samples
+  self-referencing; `?page=2` → hub (§16.2); 404 → none (§16.3).
+- **JSON-LD:** every page parses; `@graph` types are the honest set —
+  Organization + WebSite everywhere; CollectionPage/ItemList on hubs;
+  WebPage + **SportsEvent** + BreadcrumbList on match pages (startDate
+  ISO-8601 with Tehran offset, eventStatus mapped from real status, real
+  teams/organizer, venue only when the data has one — no invented fields);
+  SportsTeam/SportsOrganization on team/competition pages. T-04 deep-check
+  green in CI.
+- **Robots:** production `index, follow` everywhere public; noindex only
+  on the 404 (correct).
+
+### 16.9 Gates + verification (v13.208)
+
+- **Gates:** tsc EXIT 0; `npm test` EXIT 0 — **2,552 checks** (2,539 + 12
+  new check-seo-lastmod + 1 new check-stats release-wiring pin); the
+  public-page parity baseline re-frozen twice via the reviewed
+  `--update` path (the 9-line beacon diff, then the 1-line og:locale
+  removal — the only intended output changes).
+- **wrangler dev smoke (R8):** `/healthz` JSON, `/` 200 + beacon,
+  `/matches?page=2` canonical → `/matches`, the shell-404 (no canonical,
+  no og:url, noindex, beacon), `/privacy` disclosure, sitemap index with
+  CONTENT_VERSION on the pages child; local 304 matrix intact (strong +
+  weakened ETag replays → 304).
+- **CI:** `888f1ae` green (68/0); `ed74342` RED — root-caused to the
+  T-03 sampler sampling one URL twice (a self-collision "duplicate title:
+  X (u & u)"; the URL verified listed exactly once across all children);
+  sampler fixed to draw without replacement (`53f847e`) and that run is
+  green: **77 PASS / 0 FAIL** — the acceptance target met. CI Lighthouse:
+  `/` perf 62, `/matches/today` 97, `/teams` 96 (T-09 threshold ≥ 40).
+- **Production seo:check (this session, with the fixed sampler):**
+  **65 PASS / 0 FAIL** (count is data-state dependent; CI's independent
+  draw saw 77 — both ≥ the 56 floor).
+- **Deploy + ticks:** two deploys (`e8fea8b9`, then `5e22b84c` with the
+  og:locale follow-up); healthz `13.208-lastmod`, `ok:true` throughout;
+  ticks completing (`last_cron_age` 3–9 min across four checks, outbox 0).
+- **KV watch:** `kv_writes_day` 783 → 840 over the session (LIVE match
+  evening — the documented bot-side cadence; hard cap 850, resets UTC
+  midnight); `kv_writes_web` 405 → 439 including the one-time sitemap-map
+  convergence writes. Zero NEW steady-state web write classes were added
+  (R2); the eviction fix strictly reduces them.
+- **Bot protection:** no bot files in any diff (13 files: src/seo/**,
+  src/pages/public.ts, src/config.ts VERSION, scripts, fixtures, package
+  files, docs); the SEO router returns `null` for `/webhook`, `/api/*`
+  (except matches.json) and `/admin*` before any changed line executes;
+  full `npm test` (every bot suite) green; bot-side healthz fields healthy
+  post-deploy (heartbeat/last_cron fresh, outbox 0, tick cadence normal).
