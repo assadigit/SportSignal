@@ -13,13 +13,13 @@
 
 | Field | Value |
 | :--- | :--- |
-| **Current phase** | 2 COMPLETE (v13.204-foldsplit — the verified final state) — Phase 3 (Assets & Core Web Vitals) NOT STARTED |
+| **Current phase** | 3 COMPLETE (v13.205-lcpreveal `738d969` + the v13.206-scenediet close-out `db84622` — deployed) — Phase 4 (Cloudflare & caching) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | `3afa822` (the Phase 2 final tracker backfill; the code state is `53b05ef` `v13.204-foldsplit` + the `a04ace4` docs arc) — pushed & verified via `git ls-remote`; CI seo-check **success** on `53b05ef`, `a04ace4` (after 2 documented transient data-state reds) and `3afa822` |
-| **Production** | **`13.204-foldsplit` (= deployed code `53b05ef`)** — the v13.202 → v13.203 (contaminated-measurement revert) → v13.204 (clean-verified re-apply) arc shipped three deploys, each tested + CI-green; final state = the fold-split bundle byte-identical to v13.202's 13.66.js + the F-M1 CSS pass + carWarm load-event deferral. SW v107, cap sweeps #10–#12 |
-| **Production health at close-out** | `/healthz` → `ok:true`, `version:13.204-foldsplit`, `degraded:false`, `outbox_depth` 0, tick cadence normal. |
-| **Last verified** | 2026-11-04 (Phase 2 final: `npm test` 2,527 checks green on `53b05ef`; CI success; clean Lighthouse re-measurement reproduced bootup 0.9–1.6→0.4 s / TTI 9.9→7.9–8.9 s; live functional round re-verified — see `WEB_OPTIMIZATION_RESULTS.md` §8) |
-| **Next action** | Phase 3 — assets & Core Web Vitals per `WEB_OPTIMIZATION_AUDIT.md` §8: **F-C1 (P0) SSR-reveal first hero slide + priority scene art**, F-H2 image re-encodes, F-H1 league-emblem self-host (tables.ts bot-safety design FIRST), F-M7 OG recompress, font-weight audit |
+| **Latest commit** | `db84622` (`v13.206-scenediet` — the Phase 3 close-out re-encode) — pushed & verified via `git ls-remote`. CI seo-check on `738d969` and `db84622` both required re-runs (K10-class lab variance — see the verification log) |
+| **Production** | **`13.206-scenediet`** (= the Phase 3 final state: the F-C1 SSR reveal + priority preload on the 44 KB scene-4-2, the F-H1 self-hosted emblem pack, the F-H2 re-encodes, F-M7). SW v109; `_headers` still exactly 100 rules (cap sweep #13 rode v13.205; v13.206 needed no sweep — the rename sits inside the `/ui/mc/*` wildcard) |
+| **Production health at close-out** | `/healthz` → `ok:true`, `version:13.206-scenediet`, `degraded:false`, `outbox_depth` 0, ticks completing, `kv_writes_day` 602 (< 700 soft cap). |
+| **Last verified** | 2026-11-04 (Phase 3 close-out: `npm test` 2,531 green on `db84622`; deploy verify; clean Lighthouse series — RESULTS §10–§13; agent-browser + VLM visual round; live DOM checks of the F-C1/F-H1 output) |
+| **Next action** | Phase 4 — Cloudflare & caching per `WEB_OPTIMIZATION_AUDIT.md` §8: **F-M5 304 handling** (SEO router), ETag on machine files, **F-H3 CF Web Analytics RUM** (the Phase 7 field-data source), optional F-L6 cap-sweep + F-L7 early-hints eval. Zero new KV writes (R2), freshness ladder intact (R12) |
 
 ## Phase roadmap (spec §5)
 
@@ -28,7 +28,7 @@
 | 0 | Reconnaissance & architecture audit | ✅ **COMPLETED** (2026-11-04) | Docs only: `WEB_OPTIMIZATION_ARCHITECTURE.md` + this tracker. |
 | 1 | Comprehensive audit (perf/SEO/a11y/security baselines) | ✅ **COMPLETED** (2026-11-04) | `WEB_OPTIMIZATION_AUDIT.md` created — **FROZEN BASELINE**. Headline: sub-pages excellent (LH 91–99, CLS 0, TTFB 45–80 ms warm); homepage mobile is the outlier (LH perf 49–65, lab LCP 9.2 s) — root cause F-C1: SSR hero card ships `display:none` (`src/pages/public.ts:525`), LCP art chains behind client JS. 1 Critical / 3 High / 6 Medium / 10 Low findings. |
 | 2 | Frontend optimization (CSS/JS/rendering/deps) | ✅ **COMPLETED** (2026-11-04, final state `53b05ef` `v13.204-foldsplit`) | The three-release arc: `a5a805d` `v13.202-threaddiet` (F-M2 fold-split + idle-initTz + carWarm-on-load; F-M1 31 dead CSS rules; cap sweep #10, SW v105, K2 fixed) → `2c2d78b` `v13.203-warmdefer` (the fold-split reverted on **contaminated** after-deploy Lighthouse runs — executed while a local wrangler dev + browsers ate the sandbox CPU; clean re-measurement of the revert landed exactly on the v13.201 baseline, proving the contamination) → `53b05ef` `v13.204-foldsplit` (the fold-split re-applied byte-identical to v13.202's 13.66.js after the clean evidence; cap sweeps #11–#12, SW v107). Final verified results (two independent sessions, RESULTS §2–§3 + §8): **JS bootup 0.9–1.6 → 0.35–0.4 s, TTI 9.9 → 7.4–8.9 s**, TBT median ~unchanged (242–590 ms, within variance; the 629 ms render monolith → interleavable ≤356–771 ms tasks), CLS 0 kept, LCP still F-C1-bound (Phase 3). Optional X-card i18n prune deferred (K12). |
-| 3 | Assets & Core Web Vitals | ⬜ | Contains the P0: F-C1 SSR-reveal hero + priority scene art (target lab LCP ≤ 2.5 s); F-H2 image re-encodes; F-H1 self-host league emblems (tables.ts = SHARED — bot-safety design required); F-M7 OG recompress; font-weight audit. |
+| 3 | Assets & Core Web Vitals | ✅ **COMPLETED** (2026-11-04, `738d969` `v13.205-lcpreveal` + `db84622` `v13.206-scenediet`) | The two-commit arc: the code session shipped F-C1 (SSR slide-1 reveal + `fetchpriority=high` scene preload + SSR portraits via the generated hero-coverage map) + F-H1 (21 self-hosted `/emblems/*.webp`, ~1.2 MB third-party retired, SHARED tables.ts with the proven bot-neutrality argument — independently re-verified) + F-H2 (stadium-lights 197→71 KB, PC-HUD 125→59 KB + lazy, bg 93→40 KB via 13.80.css) + F-M7 (og 301→91 KB) + font audit (honest no-trim) + F-M4 (square emblems). The reconciliation close-out found the ONE defect — the preload shipped the **264 KB effectively-lossless scene-4** (the "4.9 KB" claim was wrong) — and fixed it as v13.206 (scene-4-2.webp, 44 KB, q90 VLM-verified). Verified: lab LCP 9.2 s → **5.5 s median** (discovery fixed: load delay 1,440→21–33 ms, obsLCP = FCP, one run 658 ms; the ≤2.5 s target NOT met — the residual is the Fast-3G render-blocking chain weight, Phase 4+ candidate); desktop 95→**100** (LCP 1.4→0.9 s); sub-page 100; CLS 0; a11y/SEO/BP 100. Full record: RESULTS §9–§14. |
 | 4 | Cloudflare & caching | ⬜ | F-M5 304 handling; ETag on machine files; F-H3 enable CF Web Analytics RUM (field-data source for Phase 7); optional cap-sweep (F-L6). No new KV writes (R2); freshness ladder intact (R12). |
 | 5 | Technical & multilingual SEO | ⬜ | Verification + gap-fix: F-M8 pagination canonical decision, F-L1 404 canonical cleanup, GSC owner access or owner-run reports. fa/en stays client-toggle (R11). |
 | 6 | Accessibility & security | ⬜ | F-M3 contrast fixes, F-M3b hero accessible name, F-M6 touch targets, F-L3 skip-link order; CSP eval bounded by R13. |
@@ -152,6 +152,62 @@
 | `WEB_OPTIMIZATION_PROGRESS.md` | UPDATED — status, verification log, Git log (this file) |
 | `CHANGELOG.md` | v13.202-threaddiet entry |
 
+### Phase 3 — 2026-11-04 (assets & Core Web Vitals; the two-commit reconciliation arc)
+
+- **`738d969` `v13.205-lcpreveal`** — the code round (committed + pushed +
+  deployed by a parallel session while the close-out session was reading
+  the mandatory docs — the K13 interrupted-session pattern, second
+  occurrence; recovery protocol applied: reconcile, no re-work):
+  - **F-C1 (P0):** the SSR mirror ships the slide-1 presentation — `mc-clean`
+    + SSR portraits in both `.mc-port` containers (either-team HERO_ART
+    coverage, decided via the GENERATED hero-coverage map — the exact
+    `heroArtFor` contract, drift-gated by check-hero-coverage) + a
+    media-scoped (≤899px) `fetchpriority="high"` preload for the scene
+    art. Server-side only, zero bundle edit. No-JS visitors get the
+    complete card.
+  - **F-H1:** `LEAGUE_LOGOS` (SHARED `src/tables.ts`) points all 21 codes
+    at the local `/emblems/*.webp` pack (256×256, 4–23 KB) — ~1.2 MB of
+    third-party PNGs retire from `/`; the bot-neutrality argument ships
+    in the file header (card.ts's import is dead, no bot module reads
+    `.emblem`, harness stubs value-indifferent) and was INDEPENDENTLY
+    re-verified by the close-out session's greps. F-M4 rides along
+    (square intrinsic ratio).
+  - **F-H2:** stadium-lights 197→71 KB, PC-HUD 125→59 KB (+lazy),
+    bg 93→40 KB via `public-13.79.css`→`13.80.css`; F-M7: og 301→91 KB;
+    font audit: honest no-trim. Ceremony: +5 `_headers` pins, cap sweep
+    #13 (−5 expired JS pins, still 100), SW v108, harness re-pins + 3
+    new gates, parity re-freeze.
+- **`db84622` `v13.206-scenediet`** — the close-out defect fix: the v13.205
+  preload shipped the **264 KB effectively-lossless scene-4.webp** (the
+  commit message's "4.9 KB" claim was factually wrong — the v13.182
+  inpainting save). Proven by the clean pre-fix Lighthouse series
+  (discovery fixed, simulated LCP stuck 6.1–7.4 s) and fixed with
+  `/ui/mc/scene-4-2.webp` (q90/alpha95, 44,352 B, −83 %, VLM-verified
+  visually indistinguishable at 2× zoom; q85 rejected for glow-core
+  banding). Ceremony: rename inside the `/ui/mc/*` wildcard (no cap
+  sweep needed), SW v109, pins re-pinned + 1 new size-ceiling gate,
+  parity re-frozen, `npm test` 2,531.
+
+## Files modified in Phase 3
+
+| File | Change |
+| :--- | :--- |
+| `src/seo/router.ts` | F-C1: heroArtSrv (hero-coverage map), SSR portraits, mc-clean emit, the scene preload (+ the v13.206 scene-4-2 URL) |
+| `src/pages/public.ts` | The `.mc-clean .mc-scene` rule → scene-4-2.webp + release comments; F-H2 img swaps + dimensions + lazy |
+| `src/tables.ts` | F-H1: LEAGUE_LOGOS → 21 local `/emblems/*.webp` (SHARED — bot-neutrality argument in header) |
+| `src/seo/page-shell.ts`, `src/pages/admin-css.ts`, `src/pages/login.ts` | stylesheet → 13.80.css; bg → bg-2.webp |
+| `assets/emblems/*.webp` (21), `assets/ui/mc/scene-4-2.webp`, `assets/ui/stadium-lights-2.webp`, `assets/ui/sportsignal-pc-match-hud-2.webp`, `assets/bg-2.webp` | NEW art (re-encodes + the emblem pack) |
+| `assets/og/default.png` | recompressed in place (301→91 KB) |
+| `assets/_headers` | +5 pins, cap sweep #13 (100 rules) |
+| `assets/sw.js` | CACHE v107 → v108 → v109 (+ header comments) |
+| `src/config.ts`, `package.json`, `package-lock.json` | 13.205 → 13.206 |
+| `scripts/check-stats.js`, `check-mc-heroes.js`, `check-hero-carousel.js` | re-pins + 4 new gates (3× v13.205 + 1× v13.206) |
+| `scripts/phase3-emblems.js`, `phase3-reencode.js`, `phase3-render-check.ts` | the Phase 3 tooling (committed by the code session) |
+| `scripts/fixtures/*-baseline.html` | parity re-frozen (×2) |
+| `CHANGELOG.md` | v13.205 + v13.206 entries |
+| `WEB_OPTIMIZATION_RESULTS.md` | §9–§14 — the Phase 3 before/after record (this phase's spec §4 deliverable) |
+| `WEB_OPTIMIZATION_PROGRESS.md` | UPDATED — status, verification log, Git log (this file) |
+
 ## Known issues, blockers & deferred work
 
 | # | Item | Type | Raised |
@@ -159,7 +215,9 @@
 | K1 | KV write budget watch — at Phase 0 audit: 838/1000 (`degraded:true`); counter has since reset (Phase 1 audit: 18/1000, `degraded:false`). Not caused by this project; keep NOT adding web-side KV writes (R2). | Observation | Phase 0 |
 | K2 | **RESOLVED (Phase 2)** — `package-lock.json` version field now 13.202.0.0, matching package.json (fixed in the first code-touching commit `a5a805d` per the plan). | Hygiene | Phase 0 |
 | K12 | Phase 2 optional item **deferred by design**: the 18 documented inert X-card i18n keys were not pruned (optional/low-priority per AUDIT §8; kept the phase's diff surface minimal). Candidate for the next bundle-touching round. | Deferred | Phase 2 |
-| K13 | Phase 2 session-interruption recovery: the code round (`a5a805d`) had been committed, pushed and deployed by an interrupted session; the close-out session reconciled (no re-work), verified acceptance end-to-end and completed the missing documentation. No duplicate commits. | Resolved | Phase 2 |
+| K13 | Phase 2 session-interruption recovery: the code round (`a5a805d`) had been committed, pushed and deployed by an interrupted session; the close-out session reconciled (no re-work), verified acceptance end-to-end and completed the missing documentation. No duplicate commits. **Recurred in Phase 3** (`738d969` landed mid-docs-reading) — the recovery protocol held both times; treat it as the standing pattern for this program. | Resolved (×2) | Phase 2 |
+| K15 | **Phase 3 LCP honesty:** the ≤ 2.5 s lab-LCP acceptance target is NOT met (median 5.5 s, from 9.2 s). The F-C1 discovery mechanics are proven fixed (load delay 1,440→21–33 ms, priority-hinted, discoverable, obsLCP = FCP); the residual is the Fast-3G simulated render-blocking chain weight (HTML 184 KB + CSS 135 KB + fonts + JS). Candidate Phase 4+ work: critical-chain diet. See RESULTS §10. | Open (documented) | Phase 3 |
+| K16 | **Preload-asset-size lesson (Phase 3):** the v13.205 commit claimed a "4.9 KB" scene the file system said was 264 KB — a fetchpriority preload is only as good as the bytes it fronts. The v13.206 gate now pins the 30–50 KB ceiling so the lossless weight can never silently return. Always `stat()` the asset behind a preload claim. | Resolved (gate added) | Phase 3 |
 | K14 | **Measurement-contamination incident (Phase 2, resolved same day):** the v13.203 revert shipped on Lighthouse runs taken while a local `wrangler dev` + browsers consumed the sandbox CPU (TBT appeared 2–3× worse); the clean re-measurement landed exactly on baseline and v13.204 re-applied the change. **The recorded lesson (RESULTS §8): kill every background process before any Lighthouse run; never ship a revert without a clean re-measurement of the reverted state; treat a surprising single-source regression as an artifact until reproduced.** | Resolved (lesson recorded) | Phase 2 |
 | K3 | `package-lock.json.bak` is gitignored; npm-only toolchain (bun breaks resvg). | Constraint | Phase 0 |
 | K4 | No staging environment — `wrangler dev` smoke is the only pre-prod gate (R8). | Constraint | Phase 0 |
@@ -173,25 +231,36 @@
 
 ## Telegram bot protection status
 
-**Phase 2: NO Telegram bot files, configuration, secrets or behavior were
-modified.** Verified by `git show --stat a5a805d` review (14 files —
-assets, page templates, SEO shell, harness scripts, fixtures, config,
-package files, tracker/results/changelog only; zero `src/bot*`,
-`src/telegram*`, `src/notify*`, `src/cron*`, `src/digest*`,
-`src/users*` or `assets/bot/` paths) and by post-deploy healthz bot-side
-fields (heartbeat/last_cron fresh, `outbox_depth:0`, tick cadence
-normal). The deploy shipped bot+web together per the single-artifact
+**Phase 3: NO Telegram bot files, configuration, secrets or behavior were
+modified.** Verified by `git show --stat` review of both commits
+(`738d969`: 47 files — assets, page templates, SEO shell/router, tables.ts
+(the SHARED file carrying the bot-neutrality argument, independently
+re-verified: card.ts's LEAGUE_LOGOS import is dead code, zero bot modules
+read `.emblem`, the eval harness stubs the map empty), harness scripts,
+fixtures, config, package files, changelog only; `db84622`: 13 files —
+the scene re-encode + ceremony). Post-deploy healthz bot-side fields
+healthy (heartbeat/last_cron fresh, `outbox_depth:0`, tick cadence
+normal). No bot interactions were performed (no test messages, no token
+use). The deploy shipped bot+web together per the single-artifact
 architecture (R1); the bot-safety argument is the website-only diff +
-full `npm test` green (2,527 checks incl. every bot suite). No bot
-interactions were performed (no test messages, no token use). The
-isolation map (`WEB_OPTIMIZATION_ARCHITECTURE.md` §3) remains the
-authoritative reference — F-H1's `src/tables.ts` bot-safety design is
-still REQUIRED before any Phase 3 edit there.
+full `npm test` green (2,531 checks incl. every bot suite).
 
 ## Verification log
 
 | Date | Check | Result |
 | :--- | :--- | :--- |
+| 2026-11-04 | **Phase 3 session-start reconciliation:** `git fetch` revealed remote main moved `b6e1c46`→`738d969` (a parallel session had shipped the Phase 3 code round `v13.205-lcpreveal` + deployed mid-docs-reading — the K13 pattern again). Local fast-forwarded; production verified = `13.205-lcpreveal` (healthz, ok:true). No re-work performed (recovery protocol) | ✅ |
+| 2026-11-04 | **Phase 3 code review (trust nothing):** `738d969` diff audited — the tables.ts bot-neutrality argument re-verified by independent greps (card.ts import dead, zero bot `.emblem` readers, harness stubs empty); the F-C1 router logic reads the GENERATED hero-coverage map (drift-gated); ceremony complete (+5 pins, sweep #13, SW v108). **One defect found:** the preload targets scene-4.webp at 263,812 B, not the claimed "4.9 KB" (the v13.182 lossless save) | ✅ (1 defect → v13.206) |
+| 2026-11-04 | `npm install` + `npm test` on `738d969` | ✅ exit 0 — 2,530 checks |
+| 2026-11-04 | **Pre-fix Lighthouse series (deployed v13.205, 5 clean mobile runs):** LCP 6.1–7.4 s BUT discovery proven fixed (load delay 21–33 ms vs audit 1,440 ms, requestDiscoverable/priorityHinted/eagerlyLoaded all true, obsLCP = obsFCP 1.5–2.5 s) — isolating the 264 KB scene-4 preload as the residual | ✅ (evidence for v13.206) |
+| 2026-11-04 | v13.206 ceremony: scene-4-2.webp q90/alpha95 re-encode (44,352 B, VLM q-ladder reviewed at 2× zoom — q90 indistinguishable, q85 rejected for glow banding); references updated (public.ts rule, router preload, render-check, cardmock, fixtures); SW v109; pins + 1 new gate | ✅ |
+| 2026-11-04 | `npm test` on `db84622` (after the parity --update re-freeze + the mc-heroes retirement gate re-pin) | ✅ exit 0 — **2,531 checks**, tsc 0 |
+| 2026-11-04 | `wrangler dev` smoke (R8): 100 header rules parsed; `/healthz` JSON, `/` 200, `/nope` 404, `/api/card/nope` 404, `/admin` 200 (the seeded-KV render chase hit a wrangler-v4 CLI/dev storage split — file store vs sqlite — documented; the definitive render check moved to the post-deploy live HTML) | ✅ |
+| 2026-11-04 | **Deploy `db84622`** (`npx wrangler deploy`, version bb078b03 + the header-comment re-deploy a469fc52): healthz `13.206-scenediet` ok:true; ticks completing (last_cron 4–10 min); outbox 0; kv_writes_day 602 | ✅ |
+| 2026-11-04 | **Post-deploy asset/HTML verify:** scene-4-2.webp 200 + immutable; fresh HTML (after the 300 s render hold) ships the scene-4-2 preload + mc-clean rule + SSR portraits; SW live body md5-verified = v109 (`const CACHE` line — the line-8 header comment initially read as v108 was the historical-comment grep trap, fixed in the close-out commit); all v13.205 assets + retired files resolve | ✅ |
+| 2026-11-04 | **After Lighthouse series (v13.206, 5 clean mobile runs):** LCP 4.6–6.4 s (median 5.5, from 9.2 s audit / 6.9 s pre-fix), TTI 6.2–7.6 s, CLS 0 (one 0.0012 micro-shift), obsLCP 658–2,500 ms; desktop perf 100 (LCP 0.9 s, was 1.4); `/matches/today` perf 100 (LCP 1.1 s); a11y/SEO/BP 100 everywhere | ✅ (K15: the ≤2.5 s target not met — documented) |
+| 2026-11-04 | **Visual + functional round (production, agent-browser + VLM):** 7 audit viewports — no overflow, heights within fixture variance; mobile FA hero — scene-4-2 clean (no banding), portraits clean, layout intact; standings — 6 league boxes with local emblems crisp, RTL correct; EN round-trip fully Latin at DOM level (countdown 04/03/40, 20:00, "Sunday 8 November"); zero console errors. (One VLM pass hallucinated Persian digits in EN — disproven by DOM inspection, recorded as a VLM-reliability note) | ✅ |
+| 2026-11-04 | CI seo-check on `738d969`: **failed T-09 `/` perf 36** (run taken ~2 min post-deploy, cold caches; the same run's advisory Lighthouse: `/` 65, sub-pages 97–98) — K10 class. CI on `db84622`: **failed on a crashed Lighthouse invocation + `/matches/today` 39-vs-40 flicker** (mid-deploy-transition; the same page measured perf 100 from the sandbox minutes later) — K10 class. Re-run triggered; verdict recorded in the Git log | ✅ (K10 documented; see below) |
 | 2026-11-04 | `git fetch` + `git ls-remote` — remote main = `63a1d02` = local HEAD (no owner uploads since Phase 0) | ✅ |
 | 2026-11-04 | Live `/healthz` version = repo `src/config.ts` VERSION = `13.201-carstack` (no divergence) | ✅ |
 | 2026-11-04 | `npm install` + `npm test` (tsc + ~40 check scripts) | ✅ exit 0 — 2,525 checks OK, 0 failures |
@@ -236,14 +305,15 @@ still REQUIRED before any Phase 3 edit there.
 | 1 | `101024f` (audit) + `b5f77a3` (tracker hash backfill) + `63a1d02→b5f77a3` CI verification note | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote` → `ab7b7ab` after the final CI-note commit) | **NOT DEPLOYED** (documentation-only phase — spec §14.4) | n/a (production unchanged = `13.201-carstack`, re-verified via `/healthz` after push: `ok:true`, `degraded:false`) |
 | 1 (close-out) | `578126f` (changelog + tracker session-close) + this hash-backfill commit | `main` @ GitHub (one-shot token push, verified via `git ls-remote` → `578126f`; backfill pushed immediately after) | **NOT DEPLOYED** (documentation-only — spec §14.4; production already equals repo code) | `/healthz` re-verified: `13.201-carstack`, `ok:true`, `degraded:false` |
 | 2 | `a5a805d` (`v13.202-threaddiet` — F-M2 bundle rename 13.65→13.66.js, F-M1 stylesheet rename 13.78→13.79.css, ADR-006 ceremony, K2 fix; committed+pushed by the interrupted session) + the close-out docs commit (results/tracker/changelog — this session) | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote`; CI `seo-check` **success** on `a5a805d`, docs commit verified after push) | **DEPLOYED** (`npx wrangler deploy` — client assets changed, spec §14.4 step 4; deployed with the code commit) | `/healthz` → `13.202-threaddiet`, `ok:true`, `degraded:false`, ticks completing, assets+pins+SW v105 live, functional/visual round green, bot-side fields healthy |
+| 3 | `738d969` (`v13.205-lcpreveal` — the code round, pushed+deployed by the parallel session) + `db84622` (`v13.206-scenediet` — the close-out defect fix) + this docs commit | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote` → `db84622` + docs); CI seo-check on both code commits RED on first run (K10-class lab variance), **re-run SUCCESS 68/0** (`/` perf 43) | **DEPLOYED** (`npx wrangler deploy` ×2 — client assets changed; versions bb078b03 + a469fc52) | `/healthz` → `13.206-scenediet`, `ok:true`, `degraded:false`, ticks completing; scene-4-2 preload + mc-clean + SSR portraits live; `/emblems/*` live (0 external api-sports URLs); SW v109 md5-verified; all pins live; bot-side fields healthy |
 
 ---
 
 ## Next-session prompt
 
-The complete, copy-paste-ready Phase 3 prompt is emitted at the end of the
-Phase 2 session report (per repo convention; the authoritative master
-specification is `SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md` §9 = Phase 3, and
-evidence-based targets live in `WEB_OPTIMIZATION_AUDIT.md` §7 F-C1/F-H1/
-F-H2/F-M7 + `WEB_OPTIMIZATION_RESULTS.md` §7 for the current
-post-Phase-2 baseline numbers).
+The complete, copy-paste-ready Phase 4 prompt is emitted at the end of the
+Phase 3 session report (per repo convention; the authoritative master
+specification is `SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md` §10 = Phase 4, and
+the evidence-based targets live in `WEB_OPTIMIZATION_AUDIT.md` §7 F-M5 /
+F-H3 / F-L6 / F-L7 + `WEB_OPTIMIZATION_RESULTS.md` §14 for the Phase 3
+residuals — the lab-LCP floor note K15 in this file).

@@ -5,6 +5,17 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v109 (v13.206-scenediet: bumped from v108 — the
+//              Phase 3 close-out re-encode: /ui/mc/scene-4.webp -> scene-4-2.webp
+//              (the v13.182 inpainted hole-free scene was saved effectively
+//              LOSSLESS at 264KB — 4.7x its siblings — and the v13.205
+//              fetchpriority=high preload put those bytes at the head of the
+//              throttled mobile queue, eating the F-C1 discovery win; the
+//              q90/alpha95 re-encode is 44KB, VLM-verified visually
+//              indistinguishable at 2x zoom). Cache-first assets can't
+//              refresh without a rename or a bump, the v13.39 rule; stale
+//              HTML still references the retired name, which stays served
+//              per the retention rule.)
 // Cache name:  sportsignal-v108 (v13.205-lcpreveal: bumped from v107 — this
 //              release edits client-referenced assets: public-13.79.css ->
 //              13.80.css (the body background re-encodes as /bg-2.webp,
@@ -12,9 +23,7 @@
 //              192 -> 70 KB screen-blend overlay + /ui/sportsignal-pc-match-hud-2.webp
 //              122 -> 57 KB PC frame, now lazy so phones never fetch it) and
 //              the league emblems move to the local immutable /emblems/*.webp
-//              pack (F-H1). Cache-first assets can't refresh without a rename
-//              or a bump, the v13.39 rule; stale HTML still references the
-//              retired names, which stay served per the retention rule.)
+//              pack (F-H1).)
 // Cache name:  sportsignal-v102 (v13.199-mcspace: bumped from v101 — this
 //              release edits a client-referenced asset (public-13.62.js ->
 //              13.63.js: renderMCard's FA kickoff maps its digits through

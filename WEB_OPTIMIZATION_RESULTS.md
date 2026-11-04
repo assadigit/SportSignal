@@ -271,3 +271,164 @@ treat a surprising single-source regression as a measurement artifact
 until a clean re-run reproduces it; never ship a revert without a clean
 re-measurement of the reverted state.
 
+
+---
+
+# PHASE 3 — Assets & Core Web Vitals (F-C1 + F-H1 + F-H2 + F-M7 + F-M4)
+
+> **Change under test:** `738d969` `v13.205-lcpreveal` (the Phase 3 round —
+> shipped + deployed by the code session) **+ `db84622` `v13.206-scenediet`**
+> (the reconciliation close-out: the scene-4 re-encode defect fix).
+> **Measured by:** the Phase 3 close-out session, 2026-11-04.
+> **Conditions:** production `https://sportsignal.ir`, Lighthouse 13.6.0 CLI,
+> headless Chrome 156, default mobile throttling (4× CPU, Fast 3G simulated),
+> quiet sandbox (the K14 lesson applied — every run series preceded by a
+> process check). Lab measurements only (F-H3 unchanged — no field source).
+
+## 9. What changed (the treatment)
+
+| Finding | Change | Commit |
+| :--- | :--- | :--- |
+| **F-C1 (P0)** | SSR ships the slide-1 presentation: `mc-clean` + SSR portraits in both `.mc-port` containers (when either hero team has HERO_ART coverage, decided via the GENERATED hero-coverage map — the exact `heroArtFor` contract, drift-gated) + a media-scoped (≤899px) `fetchpriority="high"` preload for the scene art. Server-side only, zero bundle edit. | v13.205 |
+| **F-C1 defect fix** | The v13.205 preload pointed at the **264 KB effectively-lossless** `scene-4.webp` (the v13.182 inpainting save — the commit message's "4.9 KB" claim was wrong). Re-encoded as `scene-4-2.webp` **44,352 B (−83 %)**, q90/alpha95, VLM-verified visually indistinguishable at 2× zoom (glow band + crowd-edge crops; q85 rejected for glow-core banding). | v13.206 |
+| **F-H1** | `LEAGUE_LOGOS` (SHARED `src/tables.ts`, bot-neutrality argument in the file header — verified by the close-out session's independent grep audit: card.ts's import is dead, no bot module reads `.emblem`, harness stubs value-indifferent) points all 21 codes at the local `/emblems/*.webp` pack (256×256, 4–23 KB each). **~1.2 MB of third-party `media.api-sports.io` PNGs retire from `/`.** Also resolves **F-M4** (square intrinsic ratio). | v13.205 |
+| **F-H2** | `/ui/stadium-lights-2.webp` 197→71 KB (q68/aq68 — the ≤60 KB target yielded to preserve visual identity on the ~97 %-semi-transparent gradient content); `/ui/sportsignal-pc-match-hud-2.webp` 125→59 KB (q86) now `loading="lazy"` (phones never fetch the PC-only frame); `/bg-2.webp` 93→40 KB (q63) via the `public-13.79.css`→`13.80.css` rename; explicit dimensions on both hero imgs. | v13.205 |
+| **F-M7** | `og/default.png` 301→91 KB (palette PNG, in place — 1-day freshness rule). | v13.205 |
+| **Font audit** | Honest **no-trim**: all ten homepage font files serve live rules (Peyda 400–900 all used; MorabbaVF already one-file variable). | v13.205 |
+
+## 10. Homepage `/` mobile — lab Core Web Vitals
+
+**Baselines:** the frozen Phase 1 audit (v13.201, LCP 9.2 s), the Phase 2
+final (v13.204, RESULTS §2/§8) and the close-out session's own **pre-fix
+series against deployed v13.205** (5 runs, 16:00 UTC — isolating the
+scene-4 defect). **After** = 5 runs against v13.206 (16:10–16:20 UTC):
+
+| Metric | Audit (v13.201) | Phase 2 (v13.204) | v13.205 pre-fix (5 runs) | **v13.206 after (5 runs)** |
+| :--- | :--- | :--- | :--- | :--- |
+| Performance | 49–65 | 61/54/57 + 68 median (§2) | 0.50–0.57 | **0.51–0.61** |
+| **LCP (simulated)** | **9.2 s** | 5.9–7.7 s | 6.1–7.4 s (median 6.9) | **4.6–6.4 s (median 5.5)** |
+| **LCP resource load delay** | **1,440 ms** | — | **21–33 ms** | **21–30 ms** |
+| Observed LCP (= FCP) | ~4.9 s+ (scene fetched at 4,865 ms unthrottled) | — | 1,501–2,450 ms | **658–2,500 ms** |
+| TBT | 250 ms | 420–1,140 ms | 410–610 ms | 770–1,320 ms |
+| TTI | 9.9 s | 7.4–8.9 s | 7.5–8.6 s | 6.2–7.6 s |
+| JS bootup | 0.9 s | 0.35–0.4 s | 0.3–0.4 s | 0.2–0.6 s |
+| CLS | 0 | 0 (max 0.0002) | 0 | 0 (one run 0.0012, unattributed micro-shift) |
+
+**The F-C1 mechanics are proven fixed** (Lighthouse's own LCP-discovery
+insight): `requestDiscoverable: true`, `priorityHinted: true`
+(fetchpriority=high applied), `eagerlyLoaded: true` — vs the audit's
+`requestDiscoverable: false` + 1,440 ms load delay. The scene paints with
+first paint (observed LCP = observed FCP in every run, one run at 658 ms).
+
+**Honesty notes:**
+
+- **The ≤ 2.5 s lab-LCP target is NOT met** (median 5.5 s). The discovery
+  half of F-C1 is fixed (33 ms load delay, priority-hinted, discoverable);
+  what remains is Lantern's Fast-3G simulation of the render-blocking
+  critical chain itself: HTML 184 KB + CSS 135 KB + 3 preloaded fonts
+  (~98 KB) + the 44 KB scene on a 1.6 Mbps link, plus the 4× CPU
+  simulation of the boot chain. On unthrottled/4G-class connections the
+  paint lands at 0.7–2.5 s (observed). Further lab-LCP reduction needs
+  critical-chain weight work (HTML/CSS diet or prioritization — a natural
+  Phase 4+ candidate), not more discovery fixes.
+- **TBT 770–1,320 ms** is within the documented historical envelope
+  (Phase 2 §8 recorded 420–1,140 ms on v13.204; the quiet 410–610 window
+  of the pre-fix series was a calm-data period ~10 minutes earlier — live
+  matches were starting around 17:45 UTC). Median TTI improved 7.5–8.6 →
+  6.2–7.6 s.
+- The v13.205 pre-fix series (6.1–7.4 s) vs Phase 2 (5.9–7.7 s): the
+  264 KB preload ate the discovery win — the one defect the reconciliation
+  audit found (see §12).
+
+## 11. Sub-pages + desktop + regression watch
+
+| Page / mode | Audit baseline | Phase 2 | **Phase 3 (v13.206)** |
+| :--- | :--- | :--- | :--- |
+| `/` desktop | perf 95 · LCP 1.4 s · TBT 10 ms | perf 95 · LCP 1.4 s | **perf 100 · FCP 0.3 s · LCP 0.9 s · TBT 100 ms · TTI 1.3 s · CLS 0.011** (the F-H2 re-encodes: bg-lights 197→71 KB) |
+| `/matches/today` mobile | perf 99 · LCP 1.6 s | perf 99 · LCP 1.6 s | **perf 100 · LCP 1.1 s · TBT 0 · CLS 0** |
+| a11y / SEO / BP (both) | 96–100 | 100 / 100 / 96 | **100 / 100 / 100** |
+
+Desktop CLS 0.011 (was 0): an unattributed micro-shift + a 0.0001
+font-swap — 9× below the 0.1 "good" threshold; recorded for the Phase 7
+comparison rather than treated as a regression.
+
+## 12. The reconciliation arc (honesty record)
+
+The Phase 3 code round (`738d969`) was committed, pushed and deployed by a
+parallel session while the close-out session was reading the mandatory
+docs (the K13 interrupted-session pattern, second occurrence). The
+close-out session's recovery protocol: **reconcile (no re-work) →
+independently audit every claim → verify acceptance → complete the missing
+documentation.** The audit found exactly one defect: the "scene-4 4.9 KB"
+claim in the v13.205 commit message vs the real **263,812 B**
+effectively-lossless file the preload shipped — proven by the clean 5-run
+pre-fix series (discovery fixed, simulated LCP stuck at 6.1–7.4 s) and
+fixed as `v13.206-scenediet` with the full ADR-006 ceremony. **Lesson:**
+a fetchpriority preload is only as good as the bytes it fronts — always
+`stat()` the asset behind a preload claim before believing the commit
+message.
+
+## 13. Functional + visual + production verification (v13.206)
+
+- **Gates:** tsc EXIT 0; `npm test` EXIT 0 — **2,531 checks, 0 failures**
+  (2,530 + the new v13.206 size-ceiling gate); `check-version-sync` green;
+  parity baselines re-frozen (check-admin-parity byte-identical).
+- **wrangler dev smoke (R8):** 100 header rules parsed; `/healthz` JSON,
+  `/` 200, `/nope` 404, `/api/card/nope` 404, `/admin` 200.
+- **Live DOM verification (agent-browser, production):** scene =
+  `scene-4-2.webp` in the `.mc-scene` computed style; `mc-clean` on the
+  anchor; 2 SSR portraits; **14 local `/emblems/*` imgs, 0 external
+  api-sports requests**; EN toggle round-trip fully Latin at the DOM level
+  (countdown `04/03/40`, kickoff `20:00`, "Sunday 8 November") — the
+  LTR/RTL contract unchanged.
+- **Viewport matrix (7 audit widths):** no horizontal overflow at
+  360/390/430/768/1024/1440/1920; page heights 9,362/8,424/6,465/6,488 px
+  at ≥768 — within fixture-data variance of the Phase 2 baseline
+  (9,413/8,456/6,550/6,572).
+- **VLM visual review:** mobile FA hero — scene-4-2 clean (no banding/
+  blocking in the glow gradients or crowd), portraits cleanly faded,
+  layout intact; standings — all 6 league boxes show the local emblems
+  crisply, RTL rows correct, no broken images; desktop hero crop — HUD
+  frame aligned, countdown in-card, clean portrait fades. (One VLM pass
+  hallucinated Persian digits in EN mode — DOM inspection disproved it;
+  recorded as a VLM-reliability note, DOM checks stay authoritative for
+  text content.)
+- **Console:** zero messages/errors on `/` (FA + EN).
+- **CI:** the push-run on `738d969` failed T-09 at `/` perf 36 (taken
+  ~2 min post-deploy, cold edge caches; the same run's advisory Lighthouse
+  measured `/` 65); the push-run on `db84622` failed on a crashed
+  Lighthouse invocation + `/matches/today` 39-vs-40 flicker (measured
+  mid-deploy-transition; the same page measured perf 100 / LCP 1.1 s from
+  the close-out sandbox minutes later). Both are the documented K10
+  variance class — re-run verdict recorded in the tracker.
+- **Production post-deploy:** `/healthz` → `13.206-scenediet`, `ok:true`,
+  `degraded:false`, `outbox_depth:0`, ticks completing (`last_cron_age_min`
+  4–10 across reads), `kv_writes_day` 602 (< 700 soft cap);
+  `/ui/mc/scene-4-2.webp` 200 + immutable; SW `const CACHE =
+  "sportsignal-v109"` live (body md5-verified against the repo file);
+  fresh HTML (after the 300 s render hold) ships the scene-4-2 preload +
+  the mc-clean rule; all v13.205 assets (13.80.css, the two hero-art
+  webps, bg-2.webp, /emblems/*) immutable-pinned; retired assets still
+  resolve (retention rule).
+- **Telegram bot:** zero bot files in either Phase 3 commit (verified by
+  `git show --stat` review); bot-side healthz fields healthy post-deploy;
+  no bot interactions performed.
+
+## 14. Remaining limitations (for Phase 4+)
+
+1. **Lab LCP floor:** the remaining ~5.5 s simulated LCP is the
+   render-blocking chain's weight on Fast 3G (HTML 184 KB + CSS 135 KB +
+   fonts + JS), not discovery. Candidates: HTML diet (the 145-line
+   release-comment history rides every response), critical-CSS evaluation,
+   or splitting the page inline style — all Phase 4+ scope, weighed
+   against R4 (ceremony cost) and the "no rewrites" house rule.
+2. **F-H3 unchanged:** still no field CWV/INP source (Phase 4: enable CF
+   Web Analytics RUM).
+3. **K10 stands:** the T-09 CI gate remains a single-run lab measurement
+   against live production — it flickered red twice during Phase 3 on
+   variance-class runs (36 and 39, both < 40 threshold, both with healthy
+   same-run advisory numbers). The K10 note stays open until the gate is
+   re-based on a calmer measurement or the F-C1 residual work lands.
+4. **stadium-lights-2.webp is 71 KB**, above the audit's ≤60 KB target —
+   the honest yield documented in v13.205 (visual-identity floor of the
+   soft-gradient content).
