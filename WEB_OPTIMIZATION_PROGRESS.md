@@ -15,7 +15,7 @@
 | :--- | :--- |
 | **Current phase** | 1 COMPLETE — Phase 2 (Frontend optimization) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | Phase 1 docs commit (hash recorded in the Git log below after push) |
+| **Latest commit** | `101024f` (`docs: add comprehensive performance/SEO/a11y baseline audit`) — pushed & verified via `git ls-remote` |
 | **Production** | `13.201-carstack` (= repo `63a1d02` at audit time; NOT redeployed for Phase 1 — documentation-only phase) |
 | **Production health at audit** | `/healthz` → `ok:true`, `degraded:false`, `kv_writes_day: 18` (counter reset since Phase 0; no incident), `kv_writes_web: 0`, pool 519 matches, sched UPCOMING. |
 | **Last verified** | 2026-11-04 (Phase 1 audit + `npm test` green, 2,525 checks) |
@@ -122,7 +122,7 @@ bot-safety argument BEFORE any edit there.)
 | Phase | Commit | Push | Deploy | Production verify |
 | :--- | :--- | :--- | :--- | :--- |
 | 0 | `a9c87c0` + `00c2e9f` + `63a1d02` (docs + tracker hash backfills) | `main` @ GitHub, verified via `git ls-remote`; CI seo-check green on all | **NOT DEPLOYED** (docs-only) | n/a (production = repo code state, verified via `/healthz`) |
-| 1 | `docs: add comprehensive performance/SEO/a11y baseline audit` (WEB_OPTIMIZATION_AUDIT.md + this tracker) | `main` @ GitHub (one-shot token push, verified via `git ls-remote`) | **NOT DEPLOYED** (documentation-only phase — spec §14.4) | n/a (production unchanged = `13.201-carstack`, re-verified via `/healthz` after push) |
+| 1 | `101024f` (`docs: add comprehensive performance/SEO/a11y baseline audit` — WEB_OPTIMIZATION_AUDIT.md + this tracker) | `main` @ GitHub (one-shot token push, verified via `git ls-remote` → `101024f`) | **NOT DEPLOYED** (documentation-only phase — spec §14.4) | n/a (production unchanged = `13.201-carstack`, re-verified via `/healthz` after push) |
 
 ---
 
