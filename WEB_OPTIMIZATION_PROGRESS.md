@@ -15,7 +15,7 @@
 | :--- | :--- |
 | **Current phase** | 4 COMPLETE (v13.207-condget — deployed 2026-11-04, the F-M5 conditional-GET fix + ETag on the machine files; curl-verified 304s on every cached class) — Phase 5 (Technical & multilingual SEO) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | see the Git log below (Phase 4: the `v13.207-condget` code commit + the Phase 4 docs commit). CI seo-check verdict recorded in the verification log |
+| **Latest commit** | `ea98e70` (docs: the Phase 4 close-out + T-13) on top of `f4f66f8` (`v13.207-condget` — the code) — both pushed & verified via `git ls-remote`. CI seo-check SUCCESS on both first-try: `f4f66f8` 68/0 (T-09 `/` perf 43), `ea98e70` **77/0** (with the 9 new T-13 assertions; T-09 `/` perf 51, `/teams` 94) — no K10 re-runs needed |
 | **Production** | **`13.207-condget`** (= the Phase 4 state: F-M5 304s honored on both `wantCached` paths with weak-comparison If-None-Match, ETag on sitemaps/feed/calendar/matches.json; the freshness ladder byte-identical, zero new KV writes). SW v109; `_headers` still exactly 100 rules (Phase 4 touched no client asset) |
 | **Production health at close-out** | `/healthz` → `ok:true`, `version:13.207-condget`, `degraded:true` (a LIVE-mode match-evening KV-write profile: `kv_writes_day` 715→721 ≥ the 700 soft cap — bot-side cadence, zero web-side additions, resets UTC midnight; `ok:true` throughout, hard cap 850), `outbox_depth` 0, ticks completing. |
 | **Last verified** | 2026-11-04 (Phase 4: `npm test` 2,539 green; deploy verify + ≥2 ticks; the 11-URL conditional-GET matrix — RESULTS §15; the response-class policy table §15.4) |
