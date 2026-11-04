@@ -13,13 +13,13 @@
 
 | Field | Value |
 | :--- | :--- |
-| **Current phase** | 3 COMPLETE (v13.205-lcpreveal `738d969` + the v13.206-scenediet close-out `db84622` — deployed) — Phase 4 (Cloudflare & caching) NOT STARTED |
+| **Current phase** | 4 COMPLETE (v13.207-condget — deployed 2026-11-04, the F-M5 conditional-GET fix + ETag on the machine files; curl-verified 304s on every cached class) — Phase 5 (Technical & multilingual SEO) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | `db84622` (`v13.206-scenediet` — the Phase 3 close-out re-encode) — pushed & verified via `git ls-remote`. CI seo-check on `738d969` and `db84622` both required re-runs (K10-class lab variance — see the verification log) |
-| **Production** | **`13.206-scenediet`** (= the Phase 3 final state: the F-C1 SSR reveal + priority preload on the 44 KB scene-4-2, the F-H1 self-hosted emblem pack, the F-H2 re-encodes, F-M7). SW v109; `_headers` still exactly 100 rules (cap sweep #13 rode v13.205; v13.206 needed no sweep — the rename sits inside the `/ui/mc/*` wildcard) |
-| **Production health at close-out** | `/healthz` → `ok:true`, `version:13.206-scenediet`, `degraded:false`, `outbox_depth` 0, ticks completing, `kv_writes_day` 602 (< 700 soft cap). |
-| **Last verified** | 2026-11-04 (Phase 3 close-out: `npm test` 2,531 green on `db84622`; deploy verify; clean Lighthouse series — RESULTS §10–§13; agent-browser + VLM visual round; live DOM checks of the F-C1/F-H1 output) |
-| **Next action** | Phase 4 — Cloudflare & caching per `WEB_OPTIMIZATION_AUDIT.md` §8: **F-M5 304 handling** (SEO router), ETag on machine files, **F-H3 CF Web Analytics RUM** (the Phase 7 field-data source), optional F-L6 cap-sweep + F-L7 early-hints eval. Zero new KV writes (R2), freshness ladder intact (R12) |
+| **Latest commit** | see the Git log below (Phase 4: the `v13.207-condget` code commit + the Phase 4 docs commit). CI seo-check verdict recorded in the verification log |
+| **Production** | **`13.207-condget`** (= the Phase 4 state: F-M5 304s honored on both `wantCached` paths with weak-comparison If-None-Match, ETag on sitemaps/feed/calendar/matches.json; the freshness ladder byte-identical, zero new KV writes). SW v109; `_headers` still exactly 100 rules (Phase 4 touched no client asset) |
+| **Production health at close-out** | `/healthz` → `ok:true`, `version:13.207-condget`, `degraded:true` (a LIVE-mode match-evening KV-write profile: `kv_writes_day` 715→721 ≥ the 700 soft cap — bot-side cadence, zero web-side additions, resets UTC midnight; `ok:true` throughout, hard cap 850), `outbox_depth` 0, ticks completing. |
+| **Last verified** | 2026-11-04 (Phase 4: `npm test` 2,539 green; deploy verify + ≥2 ticks; the 11-URL conditional-GET matrix — RESULTS §15; the response-class policy table §15.4) |
+| **Next action** | Phase 5 — Technical & multilingual SEO per AUDIT §8: F-M8 pagination canonical decision, F-L1 404-canonical cleanup, sitemap lastmod honesty spot-audit, GSC owner-run reports (K5), IndexNow ping verification. F-H3 owner step (OWNER_TODO §11) pending — the Phase 7 field-data source |
 
 ## Phase roadmap (spec §5)
 
@@ -29,7 +29,7 @@
 | 1 | Comprehensive audit (perf/SEO/a11y/security baselines) | ✅ **COMPLETED** (2026-11-04) | `WEB_OPTIMIZATION_AUDIT.md` created — **FROZEN BASELINE**. Headline: sub-pages excellent (LH 91–99, CLS 0, TTFB 45–80 ms warm); homepage mobile is the outlier (LH perf 49–65, lab LCP 9.2 s) — root cause F-C1: SSR hero card ships `display:none` (`src/pages/public.ts:525`), LCP art chains behind client JS. 1 Critical / 3 High / 6 Medium / 10 Low findings. |
 | 2 | Frontend optimization (CSS/JS/rendering/deps) | ✅ **COMPLETED** (2026-11-04, final state `53b05ef` `v13.204-foldsplit`) | The three-release arc: `a5a805d` `v13.202-threaddiet` (F-M2 fold-split + idle-initTz + carWarm-on-load; F-M1 31 dead CSS rules; cap sweep #10, SW v105, K2 fixed) → `2c2d78b` `v13.203-warmdefer` (the fold-split reverted on **contaminated** after-deploy Lighthouse runs — executed while a local wrangler dev + browsers ate the sandbox CPU; clean re-measurement of the revert landed exactly on the v13.201 baseline, proving the contamination) → `53b05ef` `v13.204-foldsplit` (the fold-split re-applied byte-identical to v13.202's 13.66.js after the clean evidence; cap sweeps #11–#12, SW v107). Final verified results (two independent sessions, RESULTS §2–§3 + §8): **JS bootup 0.9–1.6 → 0.35–0.4 s, TTI 9.9 → 7.4–8.9 s**, TBT median ~unchanged (242–590 ms, within variance; the 629 ms render monolith → interleavable ≤356–771 ms tasks), CLS 0 kept, LCP still F-C1-bound (Phase 3). Optional X-card i18n prune deferred (K12). |
 | 3 | Assets & Core Web Vitals | ✅ **COMPLETED** (2026-11-04, `738d969` `v13.205-lcpreveal` + `db84622` `v13.206-scenediet`) | The two-commit arc: the code session shipped F-C1 (SSR slide-1 reveal + `fetchpriority=high` scene preload + SSR portraits via the generated hero-coverage map) + F-H1 (21 self-hosted `/emblems/*.webp`, ~1.2 MB third-party retired, SHARED tables.ts with the proven bot-neutrality argument — independently re-verified) + F-H2 (stadium-lights 197→71 KB, PC-HUD 125→59 KB + lazy, bg 93→40 KB via 13.80.css) + F-M7 (og 301→91 KB) + font audit (honest no-trim) + F-M4 (square emblems). The reconciliation close-out found the ONE defect — the preload shipped the **264 KB effectively-lossless scene-4** (the "4.9 KB" claim was wrong) — and fixed it as v13.206 (scene-4-2.webp, 44 KB, q90 VLM-verified). Verified: lab LCP 9.2 s → **5.5 s median** (discovery fixed: load delay 1,440→21–33 ms, obsLCP = FCP, one run 658 ms; the ≤2.5 s target NOT met — the residual is the Fast-3G render-blocking chain weight, Phase 4+ candidate); desktop 95→**100** (LCP 1.4→0.9 s); sub-page 100; CLS 0; a11y/SEO/BP 100. Full record: RESULTS §9–§14. |
-| 4 | Cloudflare & caching | ⬜ | F-M5 304 handling; ETag on machine files; F-H3 enable CF Web Analytics RUM (field-data source for Phase 7); optional cap-sweep (F-L6). No new KV writes (R2); freshness ladder intact (R12). |
+| 4 | Cloudflare & caching | ✅ **COMPLETED** (2026-11-04, `v13.207-condget`) | F-M5 fixed (the two root causes: the unchecked edge-cache HIT path + the strict ETag comparison that CF's in-transit weakening made unmatchable — weak-comparison comparator per RFC 9110 §13.1.2 + 304 branches on both `wantCached` paths); ETag on the 5 machine-file surfaces; F-H3 evaluated via API → owner-action-required (OWNER_TODO §11, token lacks the permission, beacon verified absent); F-L6/F-L7 evaluated with numbers and deferred (RESULTS §15.5). Freshness ladder byte-identical (R12), zero new KV writes (R2), `npm test` 2,539. |
 | 5 | Technical & multilingual SEO | ⬜ | Verification + gap-fix: F-M8 pagination canonical decision, F-L1 404 canonical cleanup, GSC owner access or owner-run reports. fa/en stays client-toggle (R11). |
 | 6 | Accessibility & security | ⬜ | F-M3 contrast fixes, F-M3b hero accessible name, F-M6 touch targets, F-L3 skip-link order; CSP eval bounded by R13. |
 | 7 | Final verification & requirements reconciliation | ⬜ | Repeat baselines identically; requirements checklist per spec §13.6; field data via CF Web Analytics RUM if enabled in Phase 4. |
@@ -208,6 +208,57 @@
 | `WEB_OPTIMIZATION_RESULTS.md` | §9–§14 — the Phase 3 before/after record (this phase's spec §4 deliverable) |
 | `WEB_OPTIMIZATION_PROGRESS.md` | UPDATED — status, verification log, Git log (this file) |
 
+### Phase 4 — 2026-11-04 (Cloudflare & caching; the F-M5 round)
+
+- **`v13.207-condget`** — F-M5 (the P0) + the machine-file ETags, all in
+  `src/seo/router.ts` (website-only, §3.1):
+  - **The diagnosis (two root causes, both live-verified):** (1) the
+    `wantCached` edge-cache HIT path returned the stored body
+    unconditionally — no If-None-Match branch; (2) `withEtag` compared
+    strict-equals, which can never match in production because CF's
+    compression layer weakens the strong ETags in transit (Worker sends
+    `"ss-…"`, client receives `W/"ss-…"` — verified on every compressed
+    class; fonts/WebP keep strong tags).
+  - **The fix:** `etagMatches` (weak comparison per RFC 9110 §13.1.2 —
+    W/-strip, comma lists, `*`) + `notModified304` (strips
+    content-length/encoding, carries the restored public cache-control)
+    wired into BOTH `wantCached` paths — the HIT branch after the x-ss-cc
+    restore, the fresh-render branch after the edge-cache store (the
+    rendered 200 still serves the next unconditional visitor).
+  - **Machine files:** `/sitemap.xml`, `/sitemaps/{kind}.xml`,
+    `/feed.xml`, `/calendar.ics`, `/api/matches.json` now render through
+    `withEtag` (epoch-stable bodies; robots/llms/security.txt + OG pngs
+    deliberately etag-less).
+  - **New gate** `scripts/check-conditional-gets.js` (8 checks incl. the
+    7 behavior vectors + the R12 ladder literals + the strict-comparison
+    regression guard), registered in `npm test` (2,531 → **2,539**);
+    check-stats release-wiring re-pinned; VERSION/package ceremony; NO
+    client asset changed (SW stays v109, `_headers` untouched at 100).
+  - **F-H3:** API-evaluated → owner-action-required (OWNER_TODO §11; the
+    token lacks Web Analytics permission; `/cdn-cgi/rum` 404 + zero
+    `cloudflareinsights` in the served HTML prove the zone setup was
+    never completed). F-L6/F-L7 evaluated with numbers, deferred
+    (RESULTS §15.5).
+  - **Production verify:** healthz flip + ticks; the 11-URL
+    conditional-GET matrix all-304 (RESULTS §15.3, incl. the sitemap
+    cache-window transition note §15.3a); the response-class policy
+    table §15.4; homepage 200 = 46,359 B br vs 304 = 0 B.
+
+## Files modified in Phase 4
+
+| File | Change |
+| :--- | :--- |
+| `src/seo/router.ts` | F-M5: `etagMatches` + `notModified304` + the two `wantCached` 304 branches; `withEtag` refactored (stamps validators; the 304 decision moved to `wantCached`) and now wraps the 5 machine-file renders |
+| `src/config.ts`, `package.json`, `package-lock.json` | VERSION → `13.207-condget` / 13.207.0.0 |
+| `scripts/check-conditional-gets.js` | NEW — the 8-check conditional-GET gate |
+| `scripts/seo-check.js` | NEW T-13 — the CI conditional-GET guard (etag presence ×5 + 304-on-replay per machine file, one retry for epoch flips; HTML 304 out of CI per the SWR-transient note) |
+| `package.json` (test chain) | + check-conditional-gets registration |
+| `scripts/check-stats.js` | the release-wiring check re-pinned (v13.207 title + VERSION/package regexes; SW pin stays v109) |
+| `WEB_OPTIMIZATION_RESULTS.md` | §15 — the Phase 4 before/after record (this phase's spec §4 deliverable) |
+| `WEB_OPTIMIZATION_PROGRESS.md` | UPDATED — status, verification log, Git log (this file) |
+| `CHANGELOG.md` | v13.207-condget entry |
+| `OWNER_TODO.md` | §11 NEW — the CF Web Analytics owner steps (F-H3); §2 status marker corrected to the K7 reality (all 15 bot UAs 200, verified 2026-11-04) |
+
 ## Known issues, blockers & deferred work
 
 | # | Item | Type | Raised |
@@ -222,10 +273,10 @@
 | K3 | `package-lock.json.bak` is gitignored; npm-only toolchain (bun breaks resvg). | Constraint | Phase 0 |
 | K4 | No staging environment — `wrangler dev` smoke is the only pre-prod gate (R8). | Constraint | Phase 0 |
 | K5 | Google Search Console access NOT available (no credentials in session; owner completed DNS TXT verification 2026-10-11 per OWNER_TODO). Phase 5/7 needs owner-run reports or credentials. | Open question | Phase 0 |
-| K6 | No field CWV/INP data source exists (CrUX empty; PSI quota blocked) — **F-H3**: enable Cloudflare Web Analytics RUM (owner-visible, free, beacon already allowed by CSP) so Phase 7 has field data. | Measurement gap | Phase 1 |
+| K6 | No field CWV/INP data source exists (CrUX empty; PSI quota blocked) — **F-H3 evaluated in Phase 4: owner-action-required.** The API token lacks the Web Analytics permission (10405/10000); `/cdn-cgi/rum` 404 + zero beacon occurrences in the served HTML. The exact 7-step dashboard path is `OWNER_TODO.md` §11; if automatic injection does not reach Worker-rendered HTML, the manual snippet is a small website-only template insertion for a later session. Phase 7 field data depends on the owner completing it. | Measurement gap (owner step pending) | Phase 1 |
 | K7 | ClaudeBot/Amazonbot 403 block from OWNER_TODO §2 (2026-10-11) is **resolved** — all 15 bot UAs return 200 (verified live 2026-11-04). | Resolved | Phase 1 |
 | K8 | `wrangler.dev.toml` is git-tracked despite its header comment claiming git-ignored (resource IDs only, no secrets) — F-L2 hygiene note. | Hygiene | Phase 1 |
-| K9 | If-None-Match returns 200 not 304 (F-M5) — contradicts prior SEO report R-12; Phase 4 fix in `src/seo/router.ts`. | Defect | Phase 1 |
+| K9 | **RESOLVED (Phase 4)** — F-M5 fixed in v13.207-condget: weak-comparison If-None-Match honored on both `wantCached` paths; curl-verified 304s on every cached class (RESULTS §15.3); the regression guard rides `npm test` (check-conditional-gets). | Resolved | Phase 1 |
 | K10 | CI T-09 Lighthouse homepage gate (perf ≥ 40) is **flickering against the documented F-C1 variance** — observed 38 (fail) / 47 / 49 / 51 / 58 (pass) across five recent runs. Expect intermittent red CI until the Phase 3 LCP fix lands; a red T-09 on a docs-only commit is lab variance, not regression. | Observation | Phase 1 |
 | K11 | The Phase 1 audit's own production traffic consumed ~33 web-side KV writes (SWR payload revalidations; `kv_writes_web` 0 → 33 during the session) — negligible vs the 1,000/day cap, noted for transparency; no persistent impact (counter resets daily). | Observation | Phase 1 |
 
@@ -249,6 +300,21 @@ full `npm test` green (2,531 checks incl. every bot suite).
 
 | Date | Check | Result |
 | :--- | :--- | :--- |
+| 2026-11-04 | `npm run seo:check` (production) with the NEW T-13 → **65 PASS / 0 FAIL** (all 9 T-13 assertions green: 4 machine files etag+304 + `/` etag; the HTML 304 half deliberately out of CI — the SWR transient, RESULTS §15.3a) | ✅ |
+| 2026-11-04 | **CI seo-check on `f4f66f8` (the v13.207 code commit): SUCCESS first-try** — **68 PASS / 0 FAIL**; T-09 Lighthouse `/` perf 43 (inside the documented 43–65 K10 band, threshold 40), `/matches/today` 98, `/teams` 96 — no re-run needed | ✅ |
+| 2026-11-04 | **Final conditional-GET matrix (post sitemap-window rollover): 44 PASS / 0 FAIL** — all 11 URLs (HTML ×5, sitemap index + 2 children, feed, calendar, matches.json): etag present + 304 on the delivered-etag replay + 200 on non-matching + ladder byte-identical; homepage 304 = 0 B vs 46,360 B br | ✅ |
+| 2026-11-04 | **No-regression proof:** the homepage body is BYTE-IDENTICAL across the deploy (same 183,085 B, same ETag `W/"ss-d54f695f2a9cd"` pre- and post-deploy — the withEtag refactor changed zero HTML output); all Phase 3 structure markers present (scene-4-2, mc-clean, SSR portraits wiring, 13.68.js/13.80.css refs); ≥2 ticks verified (18:10 + 18:20 UTC, `last_cron_age` 1–3 min, outbox 0) | ✅ |
+| 2026-11-04 | **Phase 4 session-start verification:** clone at `f74605e` (clean, in sync — no K13 race this time); healthz `13.206-scenediet` = repo VERSION; `npm install` + `npm test` → exit 0, **2,531 checks** (the expected baseline) | ✅ |
+| 2026-11-04 | **F-M5 before-evidence (deployed v13.206):** conditional GET with the exact served ETag on `/matches/today` → **200 + full 27,983 B body** (twice; `cf-cache-status: HIT`, age 24) — the Phase 1 finding re-confirmed; plus the in-transit ETag weakening discovered (`"ss-…"` → `W/"ss-…"`) explaining why the old strict comparison could never match | ✅ |
+| 2026-11-04 | **Response-class baseline (§10.1–10.7):** the 15-surface header matrix captured pre-change (immutable pins, HTML ladder, machine TTLs, API 60 s, no-store 404s/admin, brotli+zstd verified, the feed/ics compression-allowlist gap documented) | ✅ |
+| 2026-11-04 | **F-H3 API evaluation:** token valid (zones/settings read) but `rum/site_info` GET → 10405 / POST → 10000 (no Web Analytics permission); `/cdn-cgi/rum` → 404; zero `cloudflareinsights` in the served HTML → owner-action-required, steps shipped as OWNER_TODO §11 | ✅ (documented) |
+| 2026-11-04 | `npm test` on the v13.207 tree (router fix + 8-check gate + re-pin) | ✅ exit 0 — **2,539 checks** |
+| 2026-11-04 | **wrangler dev smoke (R8):** `/healthz` JSON, `/` 200, `/nope` 404, `/api/card/nope` 404, `/admin` 200; **local 304 matrix all-green** (strong/weak/list/`*` forms on `/matches/today` + all 5 machine files; non-matching → 200); `seo:check:local` 56/1 (the 1 = a transient production 503 on a sampled match page, re-verified 200 ×3 immediately — K10-class, production still v13.206) | ✅ |
+| 2026-11-04 | **Deploy `v13.207-condget`** (`npx wrangler deploy`, version `1d4ca832-…`): healthz flipped within 15 s; ticks completing (18:10 UTC tick, `last_cron_age` 1–2 min, outbox 0, `ok:true`); bot-side fields healthy | ✅ |
+| 2026-11-04 | **Post-deploy conditional-GET matrix (11 URLs):** HTML ×5 + feed + calendar + matches.json → etag present + **304 on the delivered-etag replay** + 200 on non-matching; homepage 304 = 0 B vs 46,359 B br; sitemap family initially etag-less inside the pre-deploy 600 s cache window (§15.3a) → verified 304 after rollover | ✅ |
+| 2026-11-04 | **Freshness ladder re-probe (R12):** every class byte-identical to the pre-change baseline (immutable 31536000, HTML `max-age=0, s-maxage=60, swr=300`, sitemaps 600, feed/ics 300, matches.json 60/300, API 60, robots 3600, 404 no-store, admin no-store) | ✅ |
+| 2026-11-04 | **KV budget (R2):** zero new web-side KV writes (pure Cache API + headers); healthz `kv_writes_web` moved only with SWR revalidations; `kv_writes_day` 715→721 ≥ 700 → `degraded:true` (LIVE-mode match-evening bot cadence, pre-existing, resets UTC midnight — observation recorded, not caused by Phase 4) | ✅ |
+| 2026-11-04 | **F-L6/F-L7 evaluations:** the JS tail = 40+6 files / 5.1 MB / zero wire cost / 43 `_headers` pins + 4 harness scripts + retention rule → deferred; early hints: zone off, no Link headers, win bounded ~TTFB ≈ ~1 % of lab LCP → not built (RESULTS §15.5) | ✅ (documented decisions) |
 | 2026-11-04 | **Phase 3 session-start reconciliation:** `git fetch` revealed remote main moved `b6e1c46`→`738d969` (a parallel session had shipped the Phase 3 code round `v13.205-lcpreveal` + deployed mid-docs-reading — the K13 pattern again). Local fast-forwarded; production verified = `13.205-lcpreveal` (healthz, ok:true). No re-work performed (recovery protocol) | ✅ |
 | 2026-11-04 | **Phase 3 code review (trust nothing):** `738d969` diff audited — the tables.ts bot-neutrality argument re-verified by independent greps (card.ts import dead, zero bot `.emblem` readers, harness stubs empty); the F-C1 router logic reads the GENERATED hero-coverage map (drift-gated); ceremony complete (+5 pins, sweep #13, SW v108). **One defect found:** the preload targets scene-4.webp at 263,812 B, not the claimed "4.9 KB" (the v13.182 lossless save) | ✅ (1 defect → v13.206) |
 | 2026-11-04 | `npm install` + `npm test` on `738d969` | ✅ exit 0 — 2,530 checks |
@@ -301,6 +367,7 @@ full `npm test` green (2,531 checks incl. every bot suite).
 
 | Phase | Commit | Push | Deploy | Production verify |
 | :--- | :--- | :--- | :--- | :--- |
+| 4 | `v13.207-condget` (the code: router F-M5 fix + machine-file ETags + the 8-check gate + ceremony) + the Phase 4 docs commit (results/tracker/changelog/owner-todo) | `main` @ GitHub (one-shot token push, verified via `git ls-remote`) | **DEPLOYED** (`npx wrangler deploy` — server code changed, spec §14.4 step 4; version `1d4ca832-…`) | `/healthz` → `13.207-condget`, `ok:true`, ticks completing, outbox 0; the 11-URL 304 matrix green; ladder byte-identical; bot-side fields healthy |
 | 0 | `a9c87c0` + `00c2e9f` + `63a1d02` (docs + tracker hash backfills) | `main` @ GitHub, verified via `git ls-remote`; CI seo-check green on all | **NOT DEPLOYED** (docs-only) | n/a (production = repo code state, verified via `/healthz`) |
 | 1 | `101024f` (audit) + `b5f77a3` (tracker hash backfill) + `63a1d02→b5f77a3` CI verification note | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote` → `ab7b7ab` after the final CI-note commit) | **NOT DEPLOYED** (documentation-only phase — spec §14.4) | n/a (production unchanged = `13.201-carstack`, re-verified via `/healthz` after push: `ok:true`, `degraded:false`) |
 | 1 (close-out) | `578126f` (changelog + tracker session-close) + this hash-backfill commit | `main` @ GitHub (one-shot token push, verified via `git ls-remote` → `578126f`; backfill pushed immediately after) | **NOT DEPLOYED** (documentation-only — spec §14.4; production already equals repo code) | `/healthz` re-verified: `13.201-carstack`, `ok:true`, `degraded:false` |

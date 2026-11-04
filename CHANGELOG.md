@@ -4,6 +4,79 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.207-condget — web-optimization Phase 4: Cloudflare & caching (F-M5 conditional-GET 304s + ETag on the machine files)
+
+_2026-11-04 · the Phase 4 round per `WEB_OPTIMIZATION_AUDIT.md` §8 (the
+caching phase; the before/after record lives in
+`WEB_OPTIMIZATION_RESULTS.md` §15)._
+
+**F-M5 (the P0 of the phase — 304 handling for conditional GETs):** the
+SEO router served ETags but revalidation always returned 200 with the full
+body (verified twice in the Phase 1 audit on `/matches/today` and `/`).
+Two root causes, both fixed in `src/seo/router.ts` (website-only,
+`WEB_OPTIMIZATION_ARCHITECTURE.md` §3.1): (1) the `wantCached` edge-cache
+HIT path returned the stored body unconditionally — no If-None-Match
+branch anywhere before it; (2) the render path's `withEtag` compared
+`inm.trim() === tag` STRICTLY, which can never match in production
+because Cloudflare's compression layer weakens our strong ETags in
+transit (verified live: the Worker sends `"ss-…"`, the client receives
+`W/"ss-…"`). The fix: a weak-comparison `etagMatches` helper (RFC 9110
+§13.1.2 — `W/`-prefix stripping, comma lists, `*`) + a `notModified304`
+body-less reply on BOTH the cache-hit path (after the public
+cache-control restore) and the fresh-render path (after the edge-cache
+store, so the rendered 200 still serves the next unconditional visitor).
+The 304 carries the same public cache-control the 200 would — the
+freshness ladder (R12) is byte-identical.
+
+**ETag on the machine files (AUDIT §8 item 2):** `/sitemap.xml`,
+`/sitemaps/{kind}.xml`, `/feed.xml`, `/calendar.ics` and
+`/api/matches.json` now carry the same strong validators as the HTML
+(their bodies are stable within a data epoch — the honest `<lastmod>`
+map rides the content hash). `robots.txt`/`llms.txt`/`security.txt`
+(tiny, static, 1 h TTL) and `/og/match-*.png` (binary, hourly) stay
+etag-less deliberately. Verified live: repeat visits of every cached
+class now answer 304 with a 0-byte body (the homepage 200 is ~46 KB br
+on the wire; see RESULTS §15 for the 11-URL verification matrix).
+
+**F-H3 (CF Web Analytics RUM):** evaluated via the Cloudflare API — the
+session token lacks the Web Analytics permission (rum/site_info answers
+10000/10405), and `/cdn-cgi/rum` proves the zone setup was never
+completed. **Owner-action-required**: exact dashboard steps added as
+`OWNER_TODO.md` §11 (5 minutes, free, CSP-ready since v13.188; the
+beacon is absent from the served HTML today). This stays the Phase 7
+field-data source.
+
+**F-L6/F-L7 (evaluated, not built — the honest calls):** the retained
+JS tail is 40 old `public-13.*` bundles + 6 `core-*` (5.1 MB, zero wire
+cost — unreferenced immutable files are never downloaded) pinned across
+4 harness scripts + 43 `_headers` rules + the one-SEO-TTL retention
+rule: deletion is a deploy-size-only win with a wide blast radius —
+deferred with the numbers. Early hints: the zone toggle is off and our
+preload `<link>`s sit in the first KB of the document; Link response
+headers would bound the win at ~TTFB (45–80 ms warm) ≈ ~1 % of the
+current 5.5 s lab LCP — not worth a new header surface to keep in sync;
+left off (a no-op without Link headers anyway).
+
+**Ceremony:** no client asset changed — bundle stays `public-13.68.js`,
+stylesheet `public-13.80.css`, SW `sportsignal-v109` (ADR-006: server-side
+src changes never bump it), `_headers` untouched (still exactly 100
+rules); VERSION `13.207-condget`, package `13.207.0.0`; NEW gate
+`scripts/check-conditional-gets.js` (8 checks: the weak/list/star
+comparator + 7 behavior vectors, the HIT/MISS 304 branch order, the
+5 machine-file etag wraps, the strict-comparison regression guard, the
+R12 ladder literals) registered in `npm test`; the check-stats
+release-wiring check re-pinned; `seo-check.js` gains **T-13** (the CI
+conditional-GET guard: ETag presence on 4 machine files + `/`, and a
+curl-verified 304 on each machine-file surface with a one-retry
+epoch-flip absorption — the HTML 304 half stays out of CI because the
+platform's stale-while-revalidate window can transiently answer 200,
+which would flake K10-style; documented in the test). Gates: tsc EXIT 0;
+`npm test` EXIT 0 — **2,539 checks** (2,531 + 8 new); `seo:check` **65
+PASS / 0 FAIL** (56 + the 9 new T-13 assertions, T-09 skipped locally
+without chrome). Zero new KV writes (R2 — the fix is pure Cache API +
+response headers). No Telegram bot files, configuration or behavior
+were modified.
+
 # v13.206-scenediet — web-optimization Phase 3 close-out: the scene-4 re-encode (the missing F-C1 piece)
 
 _2026-11-04 · the Phase 3 reconciliation round: the close-out session's

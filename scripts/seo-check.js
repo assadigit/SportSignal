@@ -500,6 +500,42 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     else pass("B-01", "BingSiteAuth.xml served: direct 200, key present, xml content-type");
   }
 
+  // ---------------- T-13: caching + conditional GETs (F-M5, Phase 4) ----------------
+  section("T-13 conditional GETs (F-M5)");
+  {
+    // v13.207-condget: every cached machine surface carries a strong ETag and
+    // answers 304 to a matching If-None-Match (weak form included — CF weakens
+    // our tags in transit). Asserted on the MACHINE files only: they carry no
+    // stale-while-revalidate directive, so their revalidation path is
+    // deterministic; HTML pages have a platform SWR window in which a
+    // conditional replay can transiently answer 200 (observed once at edge
+    // object age 188 s — WEB_OPTIMIZATION_RESULTS.md §15.3a), which would make
+    // this gate flake K10-style. The etag-PRESENCE half is asserted on all.
+    const surfaces = ["/sitemap.xml", "/feed.xml", "/calendar.ics", "/api/matches.json"];
+    for (const u of surfaces) {
+      let res = await fetchRaw(B + u);
+      const tag = res.headers.get("etag");
+      if (!tag) { fail("T-13", u + " serves no ETag (the v13.207 withEtag wrap regressed?)"); continue; }
+      pass("T-13", u + " carries ETag " + tag);
+      // replay the DELIVERED tag verbatim (what a real client does); one retry
+      // absorbs a data-epoch flip between the two requests (a 200 + NEW tag is
+      // a legitimate content change, not a regression — retry against it).
+      let ok304 = false, tries = 0, lastTag = tag;
+      while (tries++ < 2 && !ok304) {
+        const r = await fetchRaw(B + u, { headers: { "if-none-match": lastTag } });
+        if (r.status === 304) ok304 = true;
+        else lastTag = r.headers.get("etag") || lastTag; // epoch flipped — replay the new tag
+      }
+      if (ok304) pass("T-13", u + " conditional GET -> 304 (F-M5)");
+      else fail("T-13", u + " conditional GET never 304'd across " + tries + " tries (F-M5 regression or platform-layer change)");
+    }
+    // HTML: etag presence only (the 304 half is Worker-proven + matrix-verified
+    // in RESULTS §15.3; the platform SWR transient keeps it out of CI).
+    const home = await fetchRaw(B + "/");
+    if (home.headers.get("etag")) pass("T-13", "/ carries ETag (304 path asserted in RESULTS §15.3, not in CI — SWR transient)");
+    else fail("T-13", "/ serves no ETag");
+  }
+
   // ---------------- T-12 summary ----------------
   section("T-12 summary");
   {

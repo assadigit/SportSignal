@@ -432,3 +432,196 @@ message.
 4. **stadium-lights-2.webp is 71 KB**, above the audit's ≤60 KB target —
    the honest yield documented in v13.205 (visual-identity floor of the
    soft-gradient content).
+
+## 15. Phase 4 — Cloudflare & caching (v13.207-condget, 2026-11-04)
+
+> The caching phase per `WEB_OPTIMIZATION_AUDIT.md` §8: F-M5 (the P0 —
+> conditional-GET 304s), ETag on the machine files, F-H3 (CF Web Analytics
+> RUM), the F-L6/F-L7 evidence-gated evaluations, and the spec §10.1–10.7
+> response-class policy verification. All curl evidence below was taken
+> against production unless noted.
+
+### 15.1 What changed (the treatment)
+
+| Item | Change | Commit |
+| :--- | :--- | :--- |
+| **F-M5 (P0)** | `wantCached` (src/seo/router.ts, website-only §3.1) honors `If-None-Match` on **both** paths: the edge-cache HIT branch (after the `x-ss-cc` public-header restore, before the body) and the fresh-render branch (after the edge-cache store — the rendered 200 still serves the next unconditional visitor). New `etagMatches` helper implements RFC 9110 §13.1.2 **weak** comparison (`W/`-prefix stripping, comma lists, `*`); new `notModified304` strips `content-length`/`content-encoding` and carries the same public `cache-control` the 200 would. | v13.207 |
+| **Machine-file ETags** | `/sitemap.xml`, `/sitemaps/{kind}.xml`, `/feed.xml`, `/calendar.ics`, `/api/matches.json` now route their renders through `withEtag` (bodies are epoch-stable — the honest `<lastmod>` map rides the content hash). `robots.txt`/`llms.txt`/`security.txt` (tiny, static, 1 h TTL) and `/og/match-*.png` stay etag-less deliberately. | v13.207 |
+| **`withEtag` refactor** | The 304 decision moved out of `withEtag` into `wantCached` (it needs the final response, hit or miss); `withEtag` now only stamps ETag (+ Last-Modified from `data-ss-generated` on HTML). | v13.207 |
+| **New gate** | `scripts/check-conditional-gets.js` — 8 checks: the weak/list/star comparator, 7 behavior vectors (incl. the weakened replay), the HIT/MISS branch order (public-CC restore BEFORE the 304), the 5 machine-file etag wraps, the strict-comparison regression guard, and the R12 freshness-ladder literals. Registered in `npm test`. PLUS `seo-check.js` **T-13** (the CI guard): ETag presence on the 4 machine files + `/`, 304-on-replay per machine file (one retry absorbs epoch flips; the HTML 304 half stays out of CI — the platform SWR window can transiently 200, RESULTS §15.3a). | v13.207 |
+| **F-H3** | API-evaluated; **owner-action-required** — exact dashboard steps shipped as `OWNER_TODO.md` §11 (see §15.5 below). | docs |
+| **F-L6 / F-L7** | Evaluated with numbers, deliberately not built (§15.5). | docs |
+
+Ceremony: no client asset changed → no `_headers` edit (still exactly 100
+rules), no SW bump (stays `sportsignal-v109` per ADR-006), bundle stays
+`public-13.68.js` / stylesheet `public-13.80.css`. VERSION
+`13.207-condget`, package `13.207.0.0`, check-stats release-wiring
+re-pinned.
+
+### 15.2 The two F-M5 root causes (live evidence)
+
+1. **The edge-cache HIT path never checked `If-None-Match`.** `wantCached`
+   returned the stored body unconditionally. Phase 1 audit evidence: an
+   immediate revalidation on `/matches/today` (and `/`) returned 200 with
+   the full body. Re-confirmed against deployed v13.206 at session start:
+   `If-None-Match: "ss-0bf4150c6601"` (the exact tag just served) → **200,
+   27,983-byte body, `cf-cache-status: HIT`, age 24**.
+2. **The strict comparison could never match in production.** The Worker
+   emits strong validators (`etag: "ss-0bf4150c6601"`), but Cloudflare's
+   compression layer **weakens them in transit** — the client receives
+   `etag: W/"ss-0bf4150c6601"` (verified on `/`, `/matches/today`,
+   `/teams`, `/api/matches.json`, the JS/CSS static assets; fonts and
+   WebP art keep strong etags because they are served uncompressed).
+   Browsers and curl replay the weakened form, and the old
+   `inm.trim() === tag` check compares `W/"ss-…"` against `"ss-…"` — a
+   guaranteed mismatch. (The strong-form 304s observed after the fix prove
+   the platform itself performs strict strong-vs-strong comparisons at the
+   zone-cache layer, so the weak-aware comparator is what makes
+   delivered-etag replays work end to end.)
+
+### 15.3 Before/after — the conditional-GET matrix (production)
+
+**Before (v13.206):** conditional GET with the exact served ETag →
+`200` + full body on every surface (re-verified at session start on
+`/matches/today`, twice, matching the Phase 1 audit).
+
+**After (v13.207, deployed 2026-11-04 ~18:05 UTC):** replay the delivered
+ETag verbatim (what every real client does), expect 304 with a 0-byte body:
+
+| URL | Class | Delivered ETag | Replay → | Non-matching → |
+| :--- | :--- | :--- | :--- | :--- |
+| `/` | HTML | `W/"ss-d54f695f2a9cd"` | **304** | 200 |
+| `/matches/today` | HTML | `W/"ss-af0dd2f96aaf"` | **304** | 200 |
+| `/teams` | HTML | `W/"ss-8a5215fb843a"` | **304** | 200 |
+| `/matches` | HTML | `W/"ss-cfe99e7213319"` | **304** | 200 |
+| `/about` | HTML | `W/"ss-1e8448d1543e"` | **304** | 200 |
+| `/sitemap.xml` | sitemap | `W/"ss-ea9795152df"` | **304** (post-window, §15.3a) | 200 |
+| `/sitemaps/pages.xml` | sitemap | `W/"ss-8b21226160f"` | **304** (post-window) | 200 |
+| `/sitemaps/teams.xml` | sitemap | `W/"ss-3e706c2f274a"` | **304** (post-window) | 200 |
+| `/feed.xml` | feed | `"ss-199fddc82151"` | **304** | 200 |
+| `/calendar.ics` | ics | `"ss-c486e44d44c4"` | **304** | 200 |
+| `/api/matches.json` | JSON | `W/"ss-61abd869e782"` | **304** | 200 |
+
+**Body saving:** homepage 200 = 46,359–46,360 B (br on the wire) vs
+304 = **0 B** — a repeat visit with a matched validator re-downloads
+nothing. Final matrix rerun once the sitemap window had fully rolled:
+**44 PASS / 0 FAIL** across all 11 URLs (etag present + 304 replay +
+200 on non-matching + ladder byte-identical on every row).
+
+**Local (wrangler dev) full-form matrix:** strong / weak `W/` / comma-list
+/ `*` forms all 304 on `/matches/today` + all five machine files;
+non-matching → 200 with body; the 304 carries the byte-identical public
+ladder. (The `*` form is Worker-side only in production — the zone cache
+layer answers before the Worker for hot objects.)
+
+**§15.3a — the sitemap cache-window note (the honest wart):** the first
+post-deploy matrix run showed the three sitemap surfaces still etag-less —
+their **pre-deploy zone-cache + Cache API copies (600 s TTL, etag-less
+v13.206 renders)** were still inside their window (the session's own
+pre-deploy probes had populated them). feed.xml/calendar.ics (300 s) had
+already rolled over. After the 600 s window elapsed the sitemaps served
+fresh v13.207 renders with ETags and 304 on replay (table above). No
+action needed — the transition is inherent to in-place cache TTLs and
+self-resolves; recorded so a future reader of the first-run logs isn't
+confused.
+
+**Platform-layer notes (documented, outside Worker control):** (1) the
+zone cache in front of the Worker serves hot HTML from its own copy within
+`s-maxage=60` (+ the 300 s SWR window) and answers conditionals with
+strict strong-form comparison — one transient weak-form 200 was observed
+on `/matches/today` while its edge object sat at age 188 s inside the SWR
+window; fresh-object states 304 the same request. (2) 304s are
+body-savings only — the freshness ladder is unchanged, so live scores
+still refresh exactly as before (R12, §15.4).
+
+### 15.4 Response-class policy verification (spec §10.1–10.7, v13.207)
+
+| Class (§10.1) | Surface | Policy (live-verified) | Status |
+| :--- | :--- | :--- | :--- |
+| Fingerprinted static (§10.2) | `/public-13.68.js`, `/public-13.80.css`, `/ui/mc/scene-4-2.webp` | `public, max-age=31536000, immutable` + zone-cache HIT | ✅ unchanged |
+| Fonts | `/*.woff2` | `public, max-age=604800` (1 week, non-fingerprinted) | ✅ unchanged |
+| HTML (§10.3) | `/`, `/matches*`, `/teams*`, `/competitions*`, static pages | `public, max-age=0, s-maxage=60, stale-while-revalidate=300` + ETag (+Last-Modified) + render holds (300 s `/`, 900 s default, 120 s live, upcoming = ko+120 s) | ✅ byte-identical ladder |
+| Machine files | `/sitemap.xml` + children (600 s), `/feed.xml`, `/calendar.ics` (300 s) | public TTLs + **ETag (new)** | ✅ TTLs unchanged |
+| Public JSON (§10.4) | `/api/matches.json` | `public, max-age=60, s-maxage=300` + CORS + **ETag (new)** | ✅ unchanged |
+| Website API | `/api/public-matches` | `public, max-age=60` (SWR overlay + 60 s edge) | ✅ unchanged |
+| Plain text | `/robots.txt`, `/llms.txt`, `/security.txt` | `public, max-age=3600` | ✅ unchanged |
+| 404s | unknown routes | `no-store` (scanner-probe CPU guard) — never cached, never 304 | ✅ unchanged |
+| Private/auth | `/admin*`, `/api/*` admin routes | `no-store, no-cache, must-revalidate` — **no public caching of private content** | ✅ verified |
+| Redirects | www/http → apex | 301, `public, max-age=3600` | ✅ unchanged |
+| Compression (§10.6) | HTML/CSS/JS/JSON/XML/robots | `br` (44,296 B homepage), `gzip`, or `zstd` per Accept-Encoding | ✅ verified all three |
+| Compression gap | `/feed.xml` (9.3 KB), `/calendar.ics` (19.5 KB) | served **identity** — `application/atom+xml`/`text/calendar` are outside CF's platform compression allowlist; both files are small and machine-consumed; a Worker-side `CompressionStream` would add streaming complexity for a micro-win | 📝 documented, not built |
+| `Vary` correctness (§10.4) | all SEO surfaces | no `Vary` needed: SSR output is identical for every `Accept-Language`/`Accept-Encoding` (fa-only SSR, platform negotiates compression post-response) | ✅ verified |
+| `Age`/`cf-cache-status` (§10.7) | HTML | zone-cache `HIT` + `age` within s-maxage+SWR; Cache-API hits serve the render holds | ✅ verified |
+| KV budget (R2) | — | **zero new KV writes** (the fix is pure Cache API + response headers); healthz `kv_writes_web` tracked the session's SWR revalidations only | ✅ |
+| Freshness ladder (R12) | every class | **byte-identical to the Phase 3 close-out** (re-probed post-deploy, table above) | ✅ |
+
+### 15.5 F-H3 / F-L6 / F-L7 — the evaluation records
+
+**F-H3 (CF Web Analytics RUM) — owner-action-required.** API evidence: the
+session's Cloudflare token authenticates (zones read, settings read —
+`early_hints` is `off`/editable) but the Web Analytics endpoints reject
+it (`accounts/{id}/rum/site_info` GET → 10405 "Method not allowed for this
+authentication scheme"; POST create → 10000 "Authentication error" — the
+token lacks the Web Analytics permission). `/cdn-cgi/rum` answers 404 and
+the served HTML contains **zero** `cloudflareinsights` occurrences — the
+zone setup was never completed (the v13.188 CSP entries were
+future-proofing only). The beacon is *not* injected by the platform today.
+**Action shipped:** `OWNER_TODO.md` §11 — the exact 7-step dashboard path
+(account → Analytics & Logs → Web Analytics → Add a site → automatic
+setup), a 10-minute curl self-test (`grep -c cloudflareinsights`), and the
+fallback instruction (if automatic injection does not reach
+Worker-rendered HTML, hand the snippet to the next session for a
+website-only template insertion). Phase 7 field data depends on this.
+
+**F-L6 (retained-asset tail) — evaluated, deferred.** The live tail is 40
+old `public-13.*.js` bundles (5.0 MB) + 6 `core-*` (144 KB) — ~5.1 MB, not
+the R14 headline's ~85 MB (that figure is the whole `assets/` dir, 66 MB
+of which is the live player-portrait libraries). The tail has **zero wire
+cost** (immutable + unreferenced = never downloaded; verified: the live
+templates reference exactly `public-13.68.js` + `core-13.16.js`). The
+blast radius of deletion: 43 old-bundle pins in `_headers`, historical
+references across `check-stats`/`check-hero-carousel`/`check-mc-heroes`/
+`check-scheduler`, and the repo's own retention rule (retired bundles stay
+on disk one SEO TTL so an ancient cached HTML re-fetching one still
+resolves). A deploy-size-only cosmetic win against that surface —
+**deferred**; revisit only if deploy size becomes a real constraint.
+
+**F-L7 (103 Early Hints) — evaluated, not built.** The zone setting is
+`off` (API-verified; it is editable with this token). Without origin
+`Link` response headers the toggle is a no-op, and the Worker emits none —
+our preload `<link>` tags sit in the first KB of the document, discovered
+at parse time. The honest bound on the win: ~TTFB (45–80 ms warm edge
+hits) ≈ ~1 % of the current 5.5 s lab LCP (K15 residual), against the cost
+of a new response-header surface that must mirror the media-scoped F-C1
+preload exactly (or risk double-fetches) and ride the ADR-006 ceremony.
+**Verdict: not worth building now; the toggle stays off** (a no-op anyway
+without Link headers).
+
+### 15.6 Gates + verification (v13.207)
+
+- **Gates:** tsc EXIT 0; `npm test` EXIT 0 — **2,539 checks, 0 failures**
+  (2,531 + the 8 new conditional-gets checks); `check-version-sync` green;
+  `npm run seo:check` (production, with the new T-13) → **65 PASS /
+  0 FAIL** (the 9 T-13 assertions: 4 machine files etag+304 + `/` etag;
+  T-09 Lighthouse skipped locally — no chrome — but CI ran it: `/` perf
+  43, sub-pages 98/96).
+- **wrangler dev smoke (R8):** `/healthz` JSON, `/` 200, `/nope` 404,
+  `/api/card/nope` 404, `/admin` 200; local 304 matrix all-green
+  (§15.3); `seo:check:local` 56 PASS / 1 transient production 503 on a
+  sampled match page (re-verified 200 ×3 immediately — the documented
+  K10-class crawl-window blip, not a regression; production was still
+  v13.206 at that moment).
+- **Deploy:** `npx wrangler deploy` (version `1d4ca832-…`), healthz
+  flipped to `13.207-condget` within 15 s; ticks completing
+  (`last_cron_age` 1–2 min, outbox 0, `ok:true`).
+- **KV watch (observation, not caused by this phase):** the post-deploy
+  window rode a LIVE-mode match evening — `kv_writes_day` 715→721
+  (≥ 700 soft cap → `degraded:true`, `ok:true` throughout; hard cap 850;
+  counter resets UTC midnight). Zero of those writes come from the
+  website changes (R2); the match-evening write profile is the documented
+  bot-side cadence.
+- **Bot protection:** no bot files in the diff (5 files + 1 new script —
+  router/config/package/harness only); the SEO router returns `null` for
+  `/webhook`, `/api/*` (except matches.json) and `/admin*` before any
+  changed line executes; full `npm test` (every bot suite) green;
+  bot-side healthz fields healthy post-deploy.
