@@ -212,5 +212,13 @@ function mkEnv(initial) {
     ok("IndexNow: the parked list drains into the next send (rate-limited URLs no longer expire unsend)");
   else bad("IndexNow drain missing — parked URLs die unsend again");
 
+  // 11. R11 single-language stance: fa only, og:locale:alternate must stay
+  //     absent (en is a client-side toggle, not a URL language version —
+  //     spec §11.4: never imply alternates that have no crawlable URL)
+  if (!/og:locale:alternate/.test(publicSrc) && !/og:locale:alternate/.test(shellSrc) &&
+    /og:locale" content="fa_IR"/.test(publicSrc) && /og:locale" content="fa_IR"/.test(shellSrc))
+    ok("R11 stance: og:locale fa_IR everywhere, no og:locale:alternate (single-language site, en stays client-side)");
+  else bad("R11 stance broken: og:locale:alternate is back or og:locale drifted from fa_IR");
+
   if (failures) { console.error("check-seo-lastmod: " + failures + " failure(s)"); process.exit(1); }
 })();
