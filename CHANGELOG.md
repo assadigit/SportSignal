@@ -4,6 +4,36 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.210-namefix — web-optimization Phase 6 close-out: the hero-card accessible names take their final shape (both curated labels retired)
+
+_2026-11-04 · the Phase 6 defect fix, the v13.206-scenediet precedent (a
+close-out round inside the same session). Website-only surfaces; the
+Telegram bot is untouched. `public-13.69.js → 13.70.js` with the full
+ADR-006 ceremony; `_headers` +1 pin with cap sweep #15 (− the
+7-generations-stale `13.65.js` pin, still exactly 100 rules); SW
+`sportsignal-v110 → v111`; npm test 2,588 (the retirement pin + the
+re-pins)._
+
+**The defect (found by the post-deploy verification Lighthouse runs):**
+the v13.209 label-extension still flagged `#heroMCard`. Reading the real
+axe source revealed both semantics the spec-summary missed: (1) the rule's
+`matches()` gate only fires on widgets that carry an aria-label/aria-
+labelledby — an UNLABELED link is never matched at all; (2) the visible-
+text walk (`screenReader=false`) counts every PAINTED glyph — its hidden
+methods are opacity/scroll/overflow/clip/offscreen, so aria-hidden-but-
+painted content still contributes tokens. The per-second ticking
+`.mc-cells` digits are painted by design, so NO static label could ever
+contain them — the extension approach was structurally unresolvable.
+
+**The fix:** the mobile card's curated label RETIRES (completing the
+desktop treatment): both hero anchors now take name-from-content —
+names + date + kickoff, with the ticking cells/labels/venue aria-hidden
+out of the ACCNAME computation (a clean, stable announcement) — and the
+rule's gate never fires on an unlabeled link. The polite `#mcSr`/`#hcSr`
+announcers (outside both anchors since v13.209) carry the live countdown
+for assistive tech. WCAG 2.5.3's intent holds by construction: the
+accessible name IS the visible text.
+
 # v13.209-a11y — web-optimization Phase 6: accessibility & security (F-M3 contrast + F-M3b hero accessible names + F-M6 touch targets + F-L3 skip-link order)
 
 _2026-11-04 · the Phase 6 round per `WEB_OPTIMIZATION_AUDIT.md §8/§6.1`

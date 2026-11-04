@@ -404,9 +404,6 @@
 # .car-in class from every ghost clone (a clone still wearing it played the
 # ENTER keyframes over the .car-ghost exit).
 # (rename-on-edit; 13.64.js stays served + pinned one SEO TTL above.)
-/public-13.65.js
-  Cache-Control: public, max-age=31536000, immutable
-
 # v13.202-threaddiet (F-M2): the main-thread diet — SUPERSEDED ~35
 # minutes later by the v13.203-warmdefer revert: the fold-split render
 # chain (the below-fold groups draining one per idle rIC slot) FAILED
@@ -460,6 +457,20 @@
 # moved outside both card anchors (same ids, same wiring).
 # (rename-on-edit; 13.68.js stays served + pinned one SEO TTL above.)
 /public-13.69.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.210-namefix (the Phase 6 close-out defect fix, the v13.206
+# precedent): public-13.69.js -> 13.70.js - the MOBILE hero card's curated
+# aria-label RETIRES (same treatment as the desktop card landed in
+# v13.209). axe's label-content-name-mismatch only MATCHES widgets that
+# carry an aria-label, and its visible-text walk counts every PAINTED
+# glyph (aria-hidden is invisible to the on-screen methods), so the
+# per-second ticking digits can never sit inside ANY static name;
+# name-from-content is always content-matched and the rule's gate never
+# fires. Cap sweep #15: the /public-13.65.js pin EVICTED (last served in
+# v13.201/SW v104 - 7 cache generations stale at v111; the FILE stays on
+# disk per the retention rule).
+/public-13.70.js
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.197-mcdesktop (owner: use the desktop player images on mobile too):

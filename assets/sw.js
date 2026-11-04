@@ -879,7 +879,15 @@
 //              44px floor where the layout tolerates it and the WCAG
 //              2.5.8 AA 24px floor everywhere else). Every
 //              asset-editing release bumps (the v13.39 rule).
-const CACHE = "sportsignal-v110";
+// v13.210-namefix (the Phase 6 close-out): bumped from v110 - the bundle
+//              public-13.69.js->13.70.js (the mobile hero card's curated
+//              aria-label RETIRES, completing the desktop treatment: axe's
+//              label-content-name-mismatch only matches aria-LABELED
+//              widgets and its visible-text walk counts every painted
+//              glyph, so the ticking countdown digits can never sit
+//              inside any static accessible name; name-from-content is
+//              always content-matched and the rule's gate never fires).
+const CACHE = "sportsignal-v111";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

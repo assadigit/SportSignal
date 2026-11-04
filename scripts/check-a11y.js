@@ -143,6 +143,10 @@ const hcSr = pub.indexOf('<span id="hcSr"');
 const hcAnchorClose = pub.lastIndexOf("</a>", hcSr);
 check("F-M3b: #hcSr lives OUTSIDE the #bigHeroCard anchor", hcSr > -1 && pub.slice(hcAnchorClose + 4, hcSr).replace(/<!--[\s\S]*?-->/g, "").indexOf("<") === -1);
 
+// --- F-M3b final shape (v13.210): BOTH hero card anchors are UNLABELED ---
+const bundle = read("assets/public-13.70.js");
+check("F-M3b (v13.210 close-out): the live bundle sets NO aria-label on either hero card (axe's label-content-name-mismatch only MATCHES aria-labeled widgets; name-from-content is always content-matched and the ticking painted digits make every static label unmatchable)", !/e\.setAttribute\("aria-label",\(nm\(t\.homeTeam\)/.test(bundle) && !/e\.setAttribute\("aria-label",hn\+/.test(bundle));
+
 // --- the reduced-motion global kill rule (WCAG 2.3.3) still stands ---
 check("WCAG 2.3.3: the global prefers-reduced-motion kill rule survives the rename", /@media \(prefers-reduced-motion:reduce\)\{\*\{transition:none!important;animation:none!important\}\}/.test(css));
 
