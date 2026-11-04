@@ -796,7 +796,15 @@
 //              veil/panel/capsule in every state — the blank-HUD +
 //              low-opacity-league-logo root cause). Every asset-editing
 //              release bumps (the v13.39 rule).
-const CACHE = "sportsignal-v104";
+// v13.202-threaddiet (F-M2 + F-M1): the main-thread diet + the CSS
+//              dead-rule pass — routine evict for the
+//              public-13.65.js→13.66.js + public-13.78.css→13.79.css
+//              renames (the boot render chain splits at the fold with the
+//              below-fold groups draining one per idle slot; initTz idles;
+//              the belt-and-braces carWarm rides the load event; 31
+//              provably-dead CSS rules retired). Every asset-editing
+//              release bumps (the v13.39 rule).
+const CACHE = "sportsignal-v105";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

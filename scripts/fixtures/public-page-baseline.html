@@ -84,7 +84,14 @@ __SEO_JSONLD__
 #statsCard .sbar i{display:block;height:100%;background:#5ea0ff;border-radius:3px}
 /* v13.58-herofix: hero countdown timezone label (below the kickoff time). */
 .kicktz{display:block;font-size:.72rem;opacity:.62;margin-top:3px;font-weight:400;white-space:nowrap}</style>
-<link rel="stylesheet" href="/public-13.78.css">
+<!-- v13.202-threaddiet (F-M1): the stylesheet rename 13.78 -> 13.79 — the
+     conservative dead-rule pass (31 provably-dead rules / 2654 bytes raw
+     retired: .bb-end, the .bigcard family, .uclspot-logo/.ucl-head/
+     .ucl-emblem, the .empty.loading-empty trio, .hero-mcard .t-icon/
+     .v-icon, .mc-port img.mc-fill — every removal verified dead against
+     every client-referencing surface + the dynamic-class audit + git
+     history; no live rule, state, lang, theme or media variant touched). -->
+<link rel="stylesheet" href="/public-13.79.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -980,7 +987,19 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      explicit z-index:5 that keeps the data zone above the veil/panel/
      capsule after the fill-mode transform creates its stacking context
      — the "blank HUD + dim league logo on the second slide" fix). -->
-<script src="/public-13.65.js" defer></script>
+<script src="/public-13.66.js" defer></script>
+<!-- v13.202-threaddiet (F-M2): the JS rename 13.65 -> 13.66 — the
+     main-thread diet. The boot render chain splits at the fold:
+     updateBigBar/renderHeroSpot/fitHeroNames (the above-fold hero card
+     + countdown + name fit) run in the fetch task; every below-fold
+     render drains one group per idle slot (__belowFoldQueue/__idleSlot,
+     reading DATA so a straggler can only render the newest good
+     payload). initTz leaves the sync init chain (idle, ahead of load();
+     toggleTz self-builds the picker on first open if it has not run).
+     The belt-and-braces carWarm rides the window load event instead of
+     DOMContentLoaded (no art-prefetch competition with the LCP fetch on
+     a throttled link). The poll cadence is untouched. -->
+
 <!-- v13.199-mcspace (owner: the header-space round — "a little margin
      padding (just slightly from the header)", "make the league or ucl
      logo 30% larger in mobile view", "make the match time written in

@@ -407,6 +407,18 @@
 /public-13.65.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.202-threaddiet (F-M2): the main-thread diet — the boot render chain
+# splits at the fold (updateBigBar/renderHeroSpot/fitHeroNames in the
+# fetch task; the below-fold renders drain one group per idle slot via
+# __belowFoldQueue/__idleSlot, reading DATA so a straggler renders only
+# the newest good payload), initTz leaves the sync init chain (idle, with
+# the toggleTz lazy-build guard closing the open-before-build race) and
+# the belt-and-braces carWarm rides the window load event instead of DCL
+# (no art prefetch competition with the LCP fetch).
+# (rename-on-edit; 13.65.js stays served + pinned one SEO TTL above.)
+/public-13.66.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # v13.197-mcdesktop (owner: use the desktop player images on mobile too):
 # putPort serves the SAME heroArtFor() HERO_ART desktop library for BOTH
 # cards (the MC_ART mobile-cutout priority + the .mc-fill class retire;
@@ -518,6 +530,17 @@
 # the blank-HUD/low-opacity-logo root cause).
 # (rename-on-edit; 13.77.css stays served + pinned one SEO TTL above.)
 /public-13.78.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.202-threaddiet (F-M1): the conservative dead-rule pass — 31
+# provably-dead rules retired (2654 bytes raw; the retired-markup
+# remnants .bb-end / .bigcard family / .uclspot-logo / .ucl-head /
+# .ucl-emblem / .empty.loading-empty trio / .t-icon / .v-icon /
+# img.mc-fill, each verified dead against every client-referencing
+# surface + the dynamic-class audit + git history; no live rule, state,
+# lang, theme or media variant touched).
+# (rename-on-edit; 13.78.css stays served + pinned one SEO TTL above.)
+/public-13.79.css
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.192-leaguebadge: the owner's "the logo is enough" round — the
@@ -839,31 +862,17 @@
 /ui/sportsignal-countdown-bg.png
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.144-lights (retired under v13.145-countdown): the pair (13.45.css + 13.36.js — CSS-only
-# release, the JS carried over) — immutable under the rename-on-edit rule;
-# retired versions stay pinned below per the retention rule (stale edge
-# HTML <=900s may still reference them).
-# v13.144-lights (owner): (1) stadium floodlights +10% again ("it can be
-# brighter": .726 -> .799); (2) the "آخرین به‌روزرسانی" caption tightens
-# to 4px below the chamfered countdown box ("instantly after this box" —
-# still a sibling of #bigbar, NOT part of the box).
-/public-13.45.css
-  Cache-Control: public, max-age=31536000, immutable
+# v13.202-threaddiet cap sweep #10: /public-13.44.css + /public-13.45.css
+# pins EVICTED (the oldest expired pins, ~62 releases past their
+# one-SEO-TTL retention — the same terms as every sweep; the +2 pins of
+# this release pushed the file past Cloudflare's _headers 100-rule cap).
+# The FILES stay on disk, so an ancient cached HTML re-fetching one still
+# resolves — it just rides the default cache headers.
 
-# v13.142-cinematic (retired under v13.144-lights): the pair (13.44.css + 13.36.js — CSS+template
-# release, the JS carries over) — immutable under the rename-on-edit rule;
-# retired versions stay pinned below per the retention rule (stale edge
-# HTML <=900s may still reference them).
-# v13.142-cinematic (owner): (1) the hero players get a reusable cinematic
-# treatment (.hero-player--cinematic — grade brightness .97 / contrast
-# 1.12 / saturate 1.08 + a soft dark drop-shadow + a very subtle blue
-# halo; params centralized as --ss-player-* tokens); (2) stadium
-# floodlights +10% (.66 -> .726); (3) crest watermarks +10% (.240 ->
-# .264 desktop, .244 -> .268 mobile); (4) the "آخرین به‌روزرسانی" line
-# moves OUT of the chamfered countdown panel — a sibling of #bigbar,
-# directly below the box, on all viewports.
-/public-13.44.css
-  Cache-Control: public, max-age=31536000, immutable
+# v13.144-lights + v13.142-cinematic (retired pairs — EVICTED by the
+# v13.202-threaddiet 100-rule cap sweep #10 above; the files stay on
+# disk, an ancient cached HTML re-fetching one still resolves — it just
+# rides the default cache headers).
 
 /public-13.36.js
   Cache-Control: public, max-age=31536000, immutable
