@@ -13,13 +13,13 @@
 
 | Field | Value |
 | :--- | :--- |
-| **Current phase** | 1 COMPLETE — Phase 2 (Frontend optimization) NOT STARTED |
+| **Current phase** | 2 COMPLETE — Phase 3 (Assets & Core Web Vitals) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | `578126f` (`docs: record web-optimization phases 0-1 in changelog`) — pushed & verified via `git ls-remote` |
-| **Production** | `13.201-carstack` (= deployed code `f70fe81`; every commit since is documentation-only — NOT redeployed for Phases 0–1, per spec §14.4) |
-| **Production health at audit** | `/healthz` → `ok:true`, `degraded:false`, `kv_writes_day: 18` (counter reset since Phase 0; no incident), `kv_writes_web: 0`, pool 519 matches, sched UPCOMING. |
-| **Last verified** | 2026-11-04 (Phase 1 audit + `npm test` green, 2,525 checks; session close-out re-verified push/CI/production/merge-state) |
-| **Next action** | Phase 2 — frontend optimization per `WEB_OPTIMIZATION_AUDIT.md` §8 (JS main-thread diet + conservative CSS dead-code pass, full ADR-006 ceremony) |
+| **Latest commit** | `a5a805d` (`v13.202-threaddiet` — the Phase 2 code round) + the Phase 2 close-out docs commit (results/tracker/changelog) — pushed & verified via `git ls-remote` |
+| **Production** | **`13.202-threaddiet` (= deployed code `a5a805d`)** — Phase 2 changed client assets, so spec §14.4 step 4 applied: deployed via `npx wrangler deploy`, verified (healthz version flip, ≥2 ticks, assets + immutable pins live, SW v105, spot-checks, bot-side fields healthy) |
+| **Production health at close-out** | `/healthz` → `ok:true`, `degraded:false`, `kv_writes_day` 400, `outbox_depth` 0, heartbeat/last_cron ≤ 6 min, sched UPCOMING. |
+| **Last verified** | 2026-11-04 (Phase 2: `npm test` 2,527 checks green; CI seo-check success on `a5a805d`; production functional/visual/measurement round — see `WEB_OPTIMIZATION_RESULTS.md`) |
+| **Next action** | Phase 3 — assets & Core Web Vitals per `WEB_OPTIMIZATION_AUDIT.md` §8: **F-C1 (P0) SSR-reveal first hero slide + priority scene art**, F-H2 image re-encodes, F-H1 league-emblem self-host (tables.ts bot-safety design FIRST), F-M7 OG recompress, font-weight audit |
 
 ## Phase roadmap (spec §5)
 
@@ -27,7 +27,7 @@
 | :--- | :--- | :--- | :--- |
 | 0 | Reconnaissance & architecture audit | ✅ **COMPLETED** (2026-11-04) | Docs only: `WEB_OPTIMIZATION_ARCHITECTURE.md` + this tracker. |
 | 1 | Comprehensive audit (perf/SEO/a11y/security baselines) | ✅ **COMPLETED** (2026-11-04) | `WEB_OPTIMIZATION_AUDIT.md` created — **FROZEN BASELINE**. Headline: sub-pages excellent (LH 91–99, CLS 0, TTFB 45–80 ms warm); homepage mobile is the outlier (LH perf 49–65, lab LCP 9.2 s) — root cause F-C1: SSR hero card ships `display:none` (`src/pages/public.ts:525`), LCP art chains behind client JS. 1 Critical / 3 High / 6 Medium / 10 Low findings. |
-| 2 | Frontend optimization (CSS/JS/rendering/deps) | ⬜ NOT STARTED | Plan in AUDIT §8: defer below-fold JS init (F-M2), conservative CSS dead-code pass (F-M1, 30 KB flagged), one ADR-006 rename + pins + SW bump + harness re-pin per edit. |
+| 2 | Frontend optimization (CSS/JS/rendering/deps) | ✅ **COMPLETED** (2026-11-04) | `a5a805d` `v13.202-threaddiet` + close-out docs commit. F-M2: boot render chain split at the fold (`__belowFoldQueue`/`__idleSlot`), `initTz` deferred to idle (lazy-build guard in `toggleTz`), `carWarm` DCL→load; `public-13.65.js`→`13.66.js`. F-M1: 31 provably-dead CSS rules retired; `public-13.78.css`→`13.79.css`. Full ADR-006 ceremony (cap sweep #10, SW v105, harness re-pins, parity re-freeze); K2 lockfile drift fixed. Results in `WEB_OPTIMIZATION_RESULTS.md`: TTI 9.9→7.4 s, JS bootup 0.9→0.35 s, LCP 9.2→6.5 s lab (F-C1 still open — Phase 3), TBT median 242 vs 250 ms with the 629 ms render-chain long task eliminated (max task now ≤356 ms), CLS 0 kept, a11y 100. Optional X-card i18n prune deferred (documented). |
 | 3 | Assets & Core Web Vitals | ⬜ | Contains the P0: F-C1 SSR-reveal hero + priority scene art (target lab LCP ≤ 2.5 s); F-H2 image re-encodes; F-H1 self-host league emblems (tables.ts = SHARED — bot-safety design required); F-M7 OG recompress; font-weight audit. |
 | 4 | Cloudflare & caching | ⬜ | F-M5 304 handling; ETag on machine files; F-H3 enable CF Web Analytics RUM (field-data source for Phase 7); optional cap-sweep (F-L6). No new KV writes (R2); freshness ladder intact (R12). |
 | 5 | Technical & multilingual SEO | ⬜ | Verification + gap-fix: F-M8 pagination canonical decision, F-L1 404 canonical cleanup, GSC owner access or owner-run reports. fa/en stays client-toggle (R11). |
@@ -75,12 +75,66 @@
 | `WEB_OPTIMIZATION_AUDIT.md` | NEW — Phase 1 frozen baseline audit (spec §7 deliverable) |
 | `WEB_OPTIMIZATION_PROGRESS.md` | UPDATED — status, verification log, Git log (this file) |
 
+### Phase 2 — 2026-11-04 (frontend optimization; the first code-touching phase)
+
+- **`a5a805d` `v13.202-threaddiet`** — F-M2 + F-M1 per AUDIT §8:
+  - **F-M2 (JS main-thread diet, `public-13.65.js` → `13.66.js`):** boot
+    render chain split at the fold (above-fold trio in the fetch task;
+    nine below-fold render groups drain one per idle slot via
+    `__belowFoldQueue`/`__idleSlot`, reading module `DATA`); `initTz`
+    deferred to the load-idle callback (the ~459-option picker build +
+    ~900 `Intl.DateTimeFormat` label constructions leave the sync boot
+    chain) with a lazy-build guard in `toggleTz()`; `carWarm` rides the
+    window `load` event instead of DCL (no art-prefetch competition with
+    the LCP fetch). Poll cadence untouched.
+  - **F-M1 (conservative CSS dead-rule pass, `public-13.78.css` →
+    `13.79.css`):** 31 provably-dead rules / 2,654 B retired; verified
+    dead against every client-referencing surface + a 145-pattern
+    dynamic-class audit + git history; no live/state/lang/theme/media
+    variant touched.
+  - **Full ADR-006 ceremony:** `_headers` +2 pins with **cap sweep #10**
+    (expired `/public-13.44.css` + `/public-13.45.css` pins pruned, files
+    stay on disk, still 100 rules); SW `sportsignal-v104` → `v105`;
+    `src/config.ts` VERSION `13.202-threaddiet`; `package.json`
+    `13.202.0.0`; **K2 fixed** (`package-lock.json` version field
+    13.197.0.0 → 13.202.0.0 in this first code-touching commit);
+    `check-stats`/`check-mc-heroes`/`check-hero-carousel` re-pinned (two
+    new gate checks pin the fold-split contracts + the dead-rule
+    retirements); `hero-coverage.ts` bundle pointer regenerated; parity
+    baseline re-frozen.
+- **Phase 2 close-out docs commit** — created
+  `WEB_OPTIMIZATION_RESULTS.md` (before/after evidence), updated this
+  tracker, added the `CHANGELOG.md` v13.202 entry.
+- **Deploy:** production redeployed per spec §14.4 step 4 (client assets
+  changed) and verified (healthz version flip, ticks, immutable pins,
+  SW v105, functional/visual round, bot-side fields healthy).
+
+## Files modified in Phase 2
+
+| File | Change |
+| :--- | :--- |
+| `assets/public-13.66.js` | NEW — the diet bundle (13.65.js stays on disk, immutable) |
+| `assets/public-13.79.css` | NEW — the dead-rule-pass stylesheet (13.78.css stays on disk) |
+| `assets/_headers` | +2 immutable pins, cap sweep #10 (−2 expired pins, still 100 rules) |
+| `assets/sw.js` | CACHE v104 → v105 |
+| `src/pages/public.ts`, `src/seo/page-shell.ts` | asset references → 13.66.js / 13.79.css (+ release comments) |
+| `src/hero-coverage.ts` | bundle pointer → public-13.66.js |
+| `src/config.ts` | VERSION → `13.202-threaddiet` |
+| `package.json`, `package-lock.json` | 13.202.0.0 (K2 drift fixed) |
+| `scripts/check-stats.js`, `check-mc-heroes.js`, `check-hero-carousel.js` | harness re-pins + 2 new gate checks |
+| `scripts/fixtures/public-page-baseline.html` | parity baseline re-frozen |
+| `WEB_OPTIMIZATION_RESULTS.md` | NEW — Phase 2 measurement record (this phase's spec §4 deliverable) |
+| `WEB_OPTIMIZATION_PROGRESS.md` | UPDATED — status, verification log, Git log (this file) |
+| `CHANGELOG.md` | v13.202-threaddiet entry |
+
 ## Known issues, blockers & deferred work
 
 | # | Item | Type | Raised |
 | :--- | :--- | :--- | :--- |
 | K1 | KV write budget watch — at Phase 0 audit: 838/1000 (`degraded:true`); counter has since reset (Phase 1 audit: 18/1000, `degraded:false`). Not caused by this project; keep NOT adding web-side KV writes (R2). | Observation | Phase 0 |
-| K2 | `package-lock.json` version field drift (13.197.0.0 vs package.json 13.201.0.0). Cosmetic; fix in the first code-touching commit (Phase 2). | Hygiene | Phase 0 |
+| K2 | **RESOLVED (Phase 2)** — `package-lock.json` version field now 13.202.0.0, matching package.json (fixed in the first code-touching commit `a5a805d` per the plan). | Hygiene | Phase 0 |
+| K12 | Phase 2 optional item **deferred by design**: the 18 documented inert X-card i18n keys were not pruned (optional/low-priority per AUDIT §8; kept the phase's diff surface minimal). Candidate for the next bundle-touching round. | Deferred | Phase 2 |
+| K13 | Phase 2 session-interruption recovery: the code round (`a5a805d`) had been committed, pushed and deployed by an interrupted session; the close-out session reconciled (no re-work), verified acceptance end-to-end and completed the missing documentation. No duplicate commits. | Resolved | Phase 2 |
 | K3 | `package-lock.json.bak` is gitignored; npm-only toolchain (bun breaks resvg). | Constraint | Phase 0 |
 | K4 | No staging environment — `wrangler dev` smoke is the only pre-prod gate (R8). | Constraint | Phase 0 |
 | K5 | Google Search Console access NOT available (no credentials in session; owner completed DNS TXT verification 2026-10-11 per OWNER_TODO). Phase 5/7 needs owner-run reports or credentials. | Open question | Phase 0 |
@@ -93,14 +147,20 @@
 
 ## Telegram bot protection status
 
-**Phase 1: NO Telegram bot files, configuration, secrets or behavior were
-modified.** The audit was read-only against production + local clone; the
-only committed changes are two documentation files. Verified by
-`git diff --stat` review of the Phase 1 commit (documents only). The
+**Phase 2: NO Telegram bot files, configuration, secrets or behavior were
+modified.** Verified by `git show --stat a5a805d` review (14 files —
+assets, page templates, SEO shell, harness scripts, fixtures, config,
+package files, tracker/results/changelog only; zero `src/bot*`,
+`src/telegram*`, `src/notify*`, `src/cron*`, `src/digest*`,
+`src/users*` or `assets/bot/` paths) and by post-deploy healthz bot-side
+fields (heartbeat/last_cron fresh, `outbox_depth:0`, tick cadence
+normal). The deploy shipped bot+web together per the single-artifact
+architecture (R1); the bot-safety argument is the website-only diff +
+full `npm test` green (2,527 checks incl. every bot suite). No bot
+interactions were performed (no test messages, no token use). The
 isolation map (`WEB_OPTIMIZATION_ARCHITECTURE.md` §3) remains the
-authoritative reference for every later phase. (Note: F-H1's league-emblem
-self-hosting touches SHARED `src/tables.ts` — Phase 3 must produce the
-bot-safety argument BEFORE any edit there.)
+authoritative reference — F-H1's `src/tables.ts` bot-safety design is
+still REQUIRED before any Phase 3 edit there.
 
 ## Verification log
 
@@ -119,6 +179,18 @@ bot-safety argument BEFORE any edit there.)
 | 2026-11-04 | Cloudflare zone settings read-only (brotli/http3/early_hints/0rtt/minify) | ✅ recorded in AUDIT §1.5 |
 | 2026-11-04 | GSC inspection | ⛔ NOT PERFORMED — no credentials (documented per spec §7.5, AUDIT §5) |
 | 2026-11-04 | Phase 1 push → GitHub Actions `seo-check`: `101024f` **success** (attempt 1); `b5f77a3` backfill commit **failed once on a flaky T-09 lab run** (homepage mobile perf 38 < 40 threshold — pure Lighthouse variance of the documented F-C1 range, docs-only commit, zero code changes) → **re-run (attempt 2) SUCCESS**: `/` perf 47 / seo 100 / a11y 100 / BP 93, sub-pages 93–97, **PASS: 68 FAIL: 0** | ✅ both commits CI-green after re-run |
+| 2026-11-04 | **Phase 2 session-start reconciliation:** `git fetch` revealed remote main moved `ddb1ce1`→`a5a805d` (an interrupted Phase 2 session had already committed+pushed+deployed `v13.202-threaddiet`). Local fast-forwarded; production verified = `13.202-threaddiet` (healthz). No re-work performed (recovery protocol) | ✅ |
+| 2026-11-04 | **Phase 2 code review (trust nothing):** `a5a805d` diff audited — render-chain split preserves `SYNC_TS`/`__SS_SIG__`/herokeep guards; below-fold groups read module `DATA`; CSS diff = exactly 31 selectors removed / 0 added, all references comment-only across templates/SEO/bundles/sw | ✅ |
+| 2026-11-04 | `npm install` + `npm test` on `a5a805d` | ✅ exit 0 — **2,527 checks OK**, 0 failures (282 names, 0 failures) |
+| 2026-11-04 | GitHub API: `seo-check` check-run on `a5a805d` → **completed / success**; T-09 `/` perf 50 (pass), `/matches/today` 94, `/teams` 94; **68 PASS / 0 FAIL** | ✅ |
+| 2026-11-04 | `wrangler dev` smoke (R8): `/healthz` health JSON, `/` 200, `/nope` 404, `/api/card/nope` 404, `/admin` 200 | ✅ |
+| 2026-11-04 | Production post-deploy: `/healthz` `13.202-threaddiet` `ok:true` ×2 reads (heartbeat/last_cron 3→6 min — ticks completing); `outbox:0`; `kv_writes_day` 387→400; `/public-13.66.js`+`/public-13.79.css` 200 HIT immutable; old 13.65/13.78 still immutable; swept 13.44.css default headers; `sw.js` v105 | ✅ |
+| 2026-11-04 | **Phase 2 measurements (5 mobile runs + desktop + sub-page, Lighthouse 13.6.0 vs frozen audit baseline):** TTI 9.9→7.4 s, JS bootup 0.9→0.35 s, LCP 9.2→6.5 s (F-C1 still open), TBT median 242 ms (207–320) vs 250 ms, 629 ms render-chain long task eliminated (max ≤356 ms), CLS 0, a11y 100/BP 96, desktop 95, sub-page 99; initTz cold-build micro-benchmark 147–260 ms unthrottled (~0.6–1.0 s at 4× throttle — the deferred work) — full record in `WEB_OPTIMIZATION_RESULTS.md` | ✅ |
+| 2026-11-04 | Functional round (live production): fa↔en toggle round-trip (immediate nav + async hero re-render); tz panel opens populated (459 options); tz change round-trip re-renders kickoff (Tehran ۲۳:۳۰ → NY ۱۵:۰۰ → restored, `ss_tz` cookie written/restored); lazy-build guard (cleared→open→459 rebuilt); single-slide day → arrows hidden (C10); below-fold idle queue fully drained (0 skeletons) | ✅ |
+| 2026-11-04 | Viewport matrix 360–1920 (7 widths): no horizontal overflow; page heights identical to audit baseline at ≥768 px | ✅ |
+| 2026-11-04 | VLM visual review (fa/en × mobile/tablet/desktop, above- + below-fold): hero card complete (portraits, LaLiga lockup, crests, Persian names, countdown, kickoff, venue); below-fold fully rendered; EN/LTR fully localized; no blank boxes or broken styling | ✅ |
+| 2026-11-04 | Console errors: zero on `/`, `/matches/today`, `/teams` | ✅ |
+| 2026-11-04 | GSC inspection | ⛔ NOT PERFORMED — no credentials (unchanged since Phase 1; documented per spec §7.5) |
 | 2026-11-04 | **Session close-out:** `git fetch` + rev-parse — remote `main` = `ab7b7ab` = local HEAD (Phase 1 push fully confirmed on GitHub; local tracking ref had been stale because pushes use the one-time token URL) | ✅ |
 | 2026-11-04 | GitHub API (authenticated): `seo-check` check-run on `ab7b7ab` → **completed / success** | ✅ |
 | 2026-11-04 | GitHub API: open pull requests = **0**; branches = **`main` only** → nothing to merge (single-branch repo, no feature branches) | ✅ |
@@ -133,12 +205,15 @@ bot-safety argument BEFORE any edit there.)
 | 0 | `a9c87c0` + `00c2e9f` + `63a1d02` (docs + tracker hash backfills) | `main` @ GitHub, verified via `git ls-remote`; CI seo-check green on all | **NOT DEPLOYED** (docs-only) | n/a (production = repo code state, verified via `/healthz`) |
 | 1 | `101024f` (audit) + `b5f77a3` (tracker hash backfill) + `63a1d02→b5f77a3` CI verification note | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote` → `ab7b7ab` after the final CI-note commit) | **NOT DEPLOYED** (documentation-only phase — spec §14.4) | n/a (production unchanged = `13.201-carstack`, re-verified via `/healthz` after push: `ok:true`, `degraded:false`) |
 | 1 (close-out) | `578126f` (changelog + tracker session-close) + this hash-backfill commit | `main` @ GitHub (one-shot token push, verified via `git ls-remote` → `578126f`; backfill pushed immediately after) | **NOT DEPLOYED** (documentation-only — spec §14.4; production already equals repo code) | `/healthz` re-verified: `13.201-carstack`, `ok:true`, `degraded:false` |
+| 2 | `a5a805d` (`v13.202-threaddiet` — F-M2 bundle rename 13.65→13.66.js, F-M1 stylesheet rename 13.78→13.79.css, ADR-006 ceremony, K2 fix; committed+pushed by the interrupted session) + the close-out docs commit (results/tracker/changelog — this session) | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote`; CI `seo-check` **success** on `a5a805d`, docs commit verified after push) | **DEPLOYED** (`npx wrangler deploy` — client assets changed, spec §14.4 step 4; deployed with the code commit) | `/healthz` → `13.202-threaddiet`, `ok:true`, `degraded:false`, ticks completing, assets+pins+SW v105 live, functional/visual round green, bot-side fields healthy |
 
 ---
 
 ## Next-session prompt
 
-The complete, copy-paste-ready Phase 2 prompt is emitted at the end of the
-Phase 1 session report (per repo convention; the authoritative master
-specification is `SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md` §8 = Phase 2, and the
-evidence-based plan is `WEB_OPTIMIZATION_AUDIT.md` §8).
+The complete, copy-paste-ready Phase 3 prompt is emitted at the end of the
+Phase 2 session report (per repo convention; the authoritative master
+specification is `SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md` §9 = Phase 3, and
+evidence-based targets live in `WEB_OPTIMIZATION_AUDIT.md` §7 F-C1/F-H1/
+F-H2/F-M7 + `WEB_OPTIMIZATION_RESULTS.md` §7 for the current
+post-Phase-2 baseline numbers).

@@ -6,6 +6,62 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 # Web optimization program — Phases 0–1 complete (documentation only; no version change)
 
+# v13.202-threaddiet — web-optimization Phase 2: the main-thread diet + the conservative CSS dead-rule pass (F-M2 + F-M1)
+
+_2026-11-04 · on top of v13.201-carstack · the web-optimization program's
+Phase 2 round (frontend performance), per
+`SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md` §8 and `WEB_OPTIMIZATION_AUDIT.md`
+§8 (the evidence-based plan built on the frozen Phase 1 baseline).
+Measurements of record: `WEB_OPTIMIZATION_RESULTS.md`._
+
+**THE CHANGE, IN TWO MOVES:** (1) **F-M2** — the homepage's single
+post-fetch render-chain long task (~629 ms on a throttled mobile CPU)
+splits at the fold: the above-fold trio (hero card + countdown + name
+fit) stays in the fetch task, every below-fold render group drains one
+per idle slot (`__belowFoldQueue`/`__idleSlot`), the timezone-picker
+build (~459 options + ~900 `Intl.DateTimeFormat` label constructions —
+measured 147–260 ms unthrottled, ~4× that under mobile throttle) leaves
+the sync boot chain for the load-idle callback (with a lazy-build guard
+in `toggleTz()` so the panel can never open unpopulated), and the
+all-slides art prefetch (`carWarm`) rides the window `load` event
+instead of DOMContentLoaded so it never competes with the LCP art fetch.
+(2) **F-M1** — 31 provably-dead CSS rules retired (2,654 B raw):
+`.bb-end`, the `.bigcard`/`.bigcard-head` family (incl. the
+`[data-theme=light]` + reduced-motion variants), `.uclspot-logo`/
+`.ucl-head`/`.ucl-emblem`, the `.empty.loading-empty` trio,
+`.hero-mcard .t-icon`/`.v-icon`, `.mc-port img.mc-fill` — every removal
+verified dead against every client-referencing surface + a 145-pattern
+dynamic-class audit + git history; no live rule, state, lang, theme or
+media variant touched.
+
+**WIRED THE v13.201 WAY (ADR-006):** `public-13.65.js` → `13.66.js` +
+`public-13.78.css` → `13.79.css` renames, `_headers` +2 immutable pins
+with **cap sweep #10** (the expired `/public-13.44.css` + `/public-13.45.css`
+pins pruned; files stay on disk; still 100 rules), SEO page-shell CSS
+bump, `hero-coverage.ts` pointer regenerated, SW cache
+`sportsignal-v104` → `v105`, VERSION `13.202-threaddiet`, package
+`13.202.0.0` (the K2 `package-lock.json` version-field drift fixed in
+this first code-touching commit), the
+`check-stats`/`check-mc-heroes`/`check-hero-carousel` gates re-pinned
+(two new gate checks pin the fold-split contracts + the dead-rule
+retirements), the parity baseline re-frozen. **Gates:** tsc 0, `npm
+test` 0 (2,527 checks).
+
+**MEASURED (production, Lighthouse 13.6.0, 5 mobile runs vs the frozen
+audit baseline):** TTI 9.9 → 7.4 s; JS bootup 0.9 → 0.35 s; lab LCP
+9.2 → 6.5 s (still F-C1's problem — the SSR hero reveal is Phase 3);
+TBT median 242 ms vs 250 ms with the render-chain monolith eliminated
+(max long task now ≤ 356 ms, 11–15 interleavable tasks); CLS 0 kept;
+a11y 100 / BP 96; desktop 95 and sub-pages 99 unchanged; CI T-09 `/`
+perf 50 (pass). QA (agent-browser + VLM, fa/en, 360–1920): hero card
+complete, below-fold sections fully rendered by the idle sequencer,
+fa↔en + timezone round-trips correct, zero console errors, no overflow.
+**Telegram bot:** untouched — zero bot files in the commit, full
+`npm test` (bot suites included) green, post-deploy healthz bot-side
+fields healthy.
+
+# Web optimization program — Phases 0–1 complete (documentation only; no version change)
+
 _2026-11-04 · **No product change: the live worker remains
 `13.201-carstack`.** No application code, assets, runtime configuration
 or bot files were modified and no redeployment was performed
