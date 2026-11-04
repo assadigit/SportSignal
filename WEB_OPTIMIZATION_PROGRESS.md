@@ -88,6 +88,8 @@
 | K7 | ClaudeBot/Amazonbot 403 block from OWNER_TODO §2 (2026-10-11) is **resolved** — all 15 bot UAs return 200 (verified live 2026-11-04). | Resolved | Phase 1 |
 | K8 | `wrangler.dev.toml` is git-tracked despite its header comment claiming git-ignored (resource IDs only, no secrets) — F-L2 hygiene note. | Hygiene | Phase 1 |
 | K9 | If-None-Match returns 200 not 304 (F-M5) — contradicts prior SEO report R-12; Phase 4 fix in `src/seo/router.ts`. | Defect | Phase 1 |
+| K10 | CI T-09 Lighthouse homepage gate (perf ≥ 40) is **flickering against the documented F-C1 variance** — observed 38 (fail) / 47 / 49 / 51 / 58 (pass) across five recent runs. Expect intermittent red CI until the Phase 3 LCP fix lands; a red T-09 on a docs-only commit is lab variance, not regression. | Observation | Phase 1 |
+| K11 | The Phase 1 audit's own production traffic consumed ~33 web-side KV writes (SWR payload revalidations; `kv_writes_web` 0 → 33 during the session) — negligible vs the 1,000/day cap, noted for transparency; no persistent impact (counter resets daily). | Observation | Phase 1 |
 
 ## Telegram bot protection status
 
@@ -116,13 +118,14 @@ bot-safety argument BEFORE any edit there.)
 | 2026-11-04 | `npm audit --omit=dev` | ✅ 0 vulnerabilities |
 | 2026-11-04 | Cloudflare zone settings read-only (brotli/http3/early_hints/0rtt/minify) | ✅ recorded in AUDIT §1.5 |
 | 2026-11-04 | GSC inspection | ⛔ NOT PERFORMED — no credentials (documented per spec §7.5, AUDIT §5) |
+| 2026-11-04 | Phase 1 push → GitHub Actions `seo-check`: `101024f` **success** (attempt 1); `b5f77a3` backfill commit **failed once on a flaky T-09 lab run** (homepage mobile perf 38 < 40 threshold — pure Lighthouse variance of the documented F-C1 range, docs-only commit, zero code changes) → **re-run (attempt 2) SUCCESS**: `/` perf 47 / seo 100 / a11y 100 / BP 93, sub-pages 93–97, **PASS: 68 FAIL: 0** | ✅ both commits CI-green after re-run |
 
 ## Git & deployment log
 
 | Phase | Commit | Push | Deploy | Production verify |
 | :--- | :--- | :--- | :--- | :--- |
 | 0 | `a9c87c0` + `00c2e9f` + `63a1d02` (docs + tracker hash backfills) | `main` @ GitHub, verified via `git ls-remote`; CI seo-check green on all | **NOT DEPLOYED** (docs-only) | n/a (production = repo code state, verified via `/healthz`) |
-| 1 | `101024f` (`docs: add comprehensive performance/SEO/a11y baseline audit` — WEB_OPTIMIZATION_AUDIT.md + this tracker) | `main` @ GitHub (one-shot token push, verified via `git ls-remote` → `101024f`) | **NOT DEPLOYED** (documentation-only phase — spec §14.4) | n/a (production unchanged = `13.201-carstack`, re-verified via `/healthz` after push) |
+| 1 | `101024f` (audit) + `b5f77a3` (tracker hash backfill) + `63a1d02→b5f77a3` CI verification note | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote` → `b5f77a3`) | **NOT DEPLOYED** (documentation-only phase — spec §14.4) | n/a (production unchanged = `13.201-carstack`, re-verified via `/healthz` after push: `ok:true`, `degraded:false`) |
 
 ---
 
