@@ -240,7 +240,7 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
 .pagination a{transition:border-color .15s,background .15s}
 .pagination a:hover{border-color:rgba(94,160,255,.5);background:rgba(94,160,255,.08)}
 @media (prefers-reduced-motion:reduce){.hubtile,.hubtile:hover{transform:none}.mact:active{transform:none}.fdot,.fdot:hover{transform:none}.strow-me{transition:none}}
-.simcount{display:inline-block;font-size:.72rem;font-weight:600;color:var(--muted,#9aa4b2);background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.24);border-radius:999px;padding:1px 9px;margin-inline-start:8px;vertical-align:middle}
+.simcount{display:inline-block;font-size:.72rem;font-weight:600;color:#b6c5da;background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.24);border-radius:999px;padding:1px 9px;margin-inline-start:8px;vertical-align:middle}
 .mactions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:2px 0 14px}
 /* v13.209-a11y (F-L3/WCAG 2.4.1): the sub-page bypass - the shell pages
    had NO skip link at all (only the homepage carried one), leaving

@@ -147,6 +147,12 @@ check("F-M3b: #hcSr lives OUTSIDE the #bigHeroCard anchor", hcSr > -1 && pub.sli
 const bundle = read("assets/public-13.70.js");
 check("F-M3b (v13.210 close-out): the live bundle sets NO aria-label on either hero card (axe's label-content-name-mismatch only MATCHES aria-labeled widgets; name-from-content is always content-matched and the ticking painted digits make every static label unmatchable)", !/e\.setAttribute\("aria-label",\(nm\(t\.homeTeam\)/.test(bundle) && !/e\.setAttribute\("aria-label",hn\+/.test(bundle));
 
+// --- the sub-page final-pass catch (v13.210): the .simcount count chip ---
+const sim = css_match = shell.match(/\.simcount\{([^}]*)\}/);
+check("F-M3 sub-page: the .simcount chip ink is the AA-passing #b6c5da (the pre-existing muted ink landed 4.4:1 on its 12% gray pill over the glass card — the sub-page 95s in the frozen audit)", !!sim && /color:#b6c5da/.test(sim[1]));
+const shellBg = comp(rgbaToRgb('rgba(148,163,184,.12)'), comp(T.glass, T.bg));
+check("F-M3 sub-page: #b6c5da on the simcount pill stack >= 4.5:1 (computed)", contrast(hexToRgb('#b6c5da'), shellBg) >= 4.5);
+
 // --- the reduced-motion global kill rule (WCAG 2.3.3) still stands ---
 check("WCAG 2.3.3: the global prefers-reduced-motion kill rule survives the rename", /@media \(prefers-reduced-motion:reduce\)\{\*\{transition:none!important;animation:none!important\}\}/.test(css));
 
