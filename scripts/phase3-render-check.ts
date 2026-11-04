@@ -33,7 +33,7 @@ const html = await buildHomePage(ctx, false);
 
 const checks: [string, boolean][] = [
   ["mc-clean class on anchor", /<a class="hero-mcard mc-clean" id="heroMCard" href="#" dir="ltr">/.test(html)],
-  ["scene-4 preload (fetchpriority, media-scoped)", /<link rel="preload" href="\/ui\/mc\/scene-4\.webp" as="image" media="\(max-width:899px\)" fetchpriority="high">/.test(html)],
+  ["scene-4 preload (fetchpriority, media-scoped)", /<link rel="preload" href="\/ui\/mc\/scene-4-2\.webp" as="image" media="\(max-width:899px\)" fetchpriority="high">/.test(html)],
   ["SSR home portrait", /<div class="mc-port mc-port-h"><img src="\/players\/hero\/kylian-mbappe\.webp" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><\/div>/.test(html)],
   ["SSR away portrait", /<div class="mc-port mc-port-a"><img src="\/players\/hero\/lamine-yamal\.webp" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><\/div>/.test(html)],
   ["hero card unhidden", /<a class="hero-card" id="bigHeroCard" href="#">/.test(html)],

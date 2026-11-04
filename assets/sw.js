@@ -832,7 +832,24 @@
 //              the v13.201 baseline; the parallel session's clean v13.202
 //              runs measured bootup 0.9→0.35s / TTI 9.9→7.4s). Every
 //              asset-editing release bumps (the v13.39 rule).
-const CACHE = "sportsignal-v108";
+// v13.205-lcpreveal (Phase 3, F-C1/F-H1/F-H2/F-M7): routine evict for
+//              the public-13.79.css→13.80.css rename (the /bg-2.webp body
+//              background), the /ui/stadium-lights-2.webp +
+//              /ui/sportsignal-pc-match-hud-2.webp hero-art re-encodes and
+//              the /emblems/* self-hosted league pack. Every asset-editing
+//              release bumps (the v13.39 rule).
+// v13.206-scenediet (Phase 3 close-out): routine evict for the
+//              /ui/mc/scene-4.webp→scene-4-2.webp re-encode — the v13.182
+//              inpainted hole-free scene was saved effectively LOSSLESS
+//              (264KB, 4.7x its siblings) and the v13.205 fetchpriority=high
+//              preload put those bytes at the head of the throttled mobile
+//              queue, eating the F-C1 discovery win (simulated LCP stayed
+//              6.1-7.4s while observed LCP = FCP). The q90/alpha95
+//              re-encode (44KB, VLM-verified visually indistinguishable at
+//              2x zoom in the glow band + crowd-edge crops) is what the
+//              mc-clean scene rule and the preload ship now. Every
+//              asset-editing release bumps (the v13.39 rule).
+const CACHE = "sportsignal-v109";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

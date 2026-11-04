@@ -4,6 +4,53 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.206-scenediet — web-optimization Phase 3 close-out: the scene-4 re-encode (the missing F-C1 piece)
+
+_2026-11-04 · the Phase 3 reconciliation round: the close-out session's
+independent audit of `v13.205-lcpreveal` found the one defect the round
+shipped with — the F-C1 preload was pointing at a 5×-too-heavy file. (The
+before/after record lives in `WEB_OPTIMIZATION_RESULTS.md`.)_
+
+**THE DEFECT:** the v13.205 commit message (and its gate description)
+claimed the covered-hero preload ships "scene-4 4.9 KB" — the file is
+actually **263,812 B (264 KB)**: the v13.182-mcmirror inpainting round
+saved the hole-free scene **effectively lossless** (a lossless re-encode
+of it measures 255.3 KB), 4.7× its 55–60 KB scene-2/scene-3 siblings. The
+reconciliation session's clean 5-run Lighthouse series against the
+deployed v13.205 proved the discovery half of F-C1 landed (observed
+LCP = FCP = 1.5–2.4 s, resource load delay **33 ms** vs the audit's
+1,440 ms, `requestDiscoverable` + `priorityHinted` + `eagerlyLoaded` all
+true) but the **simulated mobile LCP stayed 6.1–7.4 s** — the
+`fetchpriority="high"` preload was putting 264 KB at the head of the
+Fast-3G queue ahead of the CSS/fonts, eating the discovery win. (This is
+also why CI T-09 flickered red at perf 36 on the post-deploy run.)
+
+**THE FIX:** `/ui/mc/scene-4-2.webp` — a q90/alphaQuality-95 lossy
+re-encode, **44,352 B (−83 %)**, same art, same 941×718 alpha contract.
+Quality ladder VLM-reviewed at 2× zoom in the two worst regions (the cyan
+floodlight glow band; the crowd stipple + alpha-feathered left edge):
+**q90 is visually indistinguishable from the lossless original** ("no
+clearly visible artifacts — matches original at this zoom"); q85 was
+rejected (mild banding in the glow core, faint specular-dot ringing).
+Both the `.hero-mcard.mc-clean .mc-scene` rule (the page inline style)
+and the router's media-scoped preload now ship scene-4-2.webp; the
+lossless `scene-4.webp` stays on disk under the `/ui/mc/*` wildcard pin
+per the retention rule.
+
+**Ceremony:** ADR-006 rename inside the existing `/ui/mc/*` wildcard pin
+(no new `_headers` rule, no cap sweep — still exactly 100); SW
+`sportsignal-v108` → `v109`; VERSION `13.206-scenediet`, package
+`13.206.0.0`; the check-stats pins re-pinned (the v13.174 CSS pin, the
+v13.205 F-C1 gate's scene ternary + its wrong 4.9 KB claim corrected,
+the release-wiring gate, the SW retirement chain) + **one new v13.206
+gate** (scene-4-2.webp exists, 30–50 KB size ceiling, the lossless
+original retained at exactly 263,812 B, both references consistent, RIFF
+magic — a future edit can never silently restore the lossless weight);
+the public-page parity baseline re-frozen; `scripts/phase3-render-check.ts`
++ `mc-heroes/cardmock.js` follow the rename. Gates: tsc EXIT 0; `npm test`
+EXIT 0 — **2,531 checks** (2,530 + the new pin). No Telegram bot files,
+configuration or behavior were modified.
+
 # v13.205-lcpreveal — web-optimization Phase 3: assets & Core Web Vitals (F-C1 + F-H1 + F-H2 + F-M7)
 
 _2026-11-04 · the Phase 3 round per `WEB_OPTIMIZATION_AUDIT.md` §8 (the

@@ -153,8 +153,18 @@ ${FONT_FACES_STYLE}
      peak at the bloom row (22.8%H), easing into crowd haze and fading
      behind the panel — measured off the reference's own center-axis
      luminance profile (lum 24-29 top -> 59-136 glow/peak), NO figure
-     shapes anywhere in the band. Same immutability rule: NEW filename. */
-.hero-mcard.mc-clean .mc-scene{background-image:url('/ui/mc/scene-4.webp')}
+     shapes anywhere in the band. Same immutability rule: NEW filename.
+     v13.206-scenediet (Phase 3 close-out): the file re-encodes as
+     scene-4-2.webp — the v13.182 save was effectively LOSSLESS (257.6KB,
+     4.7x its 55KB siblings), and the v13.205 F-C1 preload shipping it at
+     fetchpriority=high put 264KB at the head of the throttled mobile
+     queue, eating the discovery win (simulated LCP stayed 6.1-7.4s).
+     The q90/alpha95 re-encode (44.3KB, -83%) is VLM-verified visually
+     indistinguishable at 2x zoom in the two worst regions (the cyan
+     floodlight glow band, the crowd stipple + alpha feather). Same art,
+     same 941x718 alpha contract — the lossless scene-4.webp stays on
+     disk under the /ui/mc/* wildcard pin per the retention rule. */
+.hero-mcard.mc-clean .mc-scene{background-image:url('/ui/mc/scene-4-2.webp')}
 /* v13.174-mcfix (owner): the top-of-hero gradient fade — the card's bright
      scene melts into the flat header band (#040F23, the sampled page-top
      navy) so the header + the hero read as one continuous background.

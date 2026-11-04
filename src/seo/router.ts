@@ -251,7 +251,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   // first CSS paint instead of chaining behind the carousel build:
   //   · mc-clean: when EITHER hero team has portrait coverage (the exact
   //     mcFitScan contract — "any port carrying an <img>"), the anchor
-  //     ships `mc-clean` and the scene is the 4.9 KB hole-free scene-4 from
+  //     ships `mc-clean` and the scene is the 44 KB hole-free scene-4-2 from
   //     the first paint; the DCL mcFitScan() + every per-port MutationObserver
   //     re-scan keep the class in sync (ports have imgs → stays), and
   //     renderMCard's putPort replaces the SSR portraits with byte-identical
@@ -261,12 +261,20 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   //     the shared .mc-port img CSS rule fits every source — no fade: that
   //     needs JS; absolutely-positioned inside fixed boxes → CLS stays 0).
   //     No-JS visitors now get the complete card, not a ghost-figure scene.
-  //   · preload: the scene art (scene-4 with coverage, else the 55 KB
+  //   · preload: the scene art (scene-4-2 with coverage, else the 55 KB
   //     scene-2 ghost-figure fallback) rides a media-scoped (≤899px — the
   //     mobile card zone) fetchpriority=high preload so the fetch starts at
   //     HTML-parse time instead of waiting for the render-blocking external
   //     stylesheet to apply the element's display rule (the measured
   //     ~1.4 s load-delay root cause).
+  //   · v13.206-scenediet (Phase 3 close-out): the covered-scene preload
+  //     follows the re-encode — the v13.205 preload pointed at the
+  //     effectively-LOSSLESS 264 KB scene-4 (the v13.182 inpainting save),
+  //     which put 5x the necessary bytes at the head of the throttled
+  //     mobile queue and kept the simulated LCP at 6.1–7.4 s despite the
+  //     discovery fix landing (observed LCP = FCP, load delay 33 ms). The
+  //     q90 re-encode scene-4-2.webp (44 KB, VLM-verified visually
+  //     indistinguishable at 2x zoom) is what the preload ships now.
   let mcClean = false;
   if (mheroHtml && nextBig) {
     const hArt = heroArtSrv(nextBig.s.homeTeam);
@@ -275,7 +283,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
     if (hArt) html = html.replace('<div class="mc-port mc-port-h"></div>', '<div class="mc-port mc-port-h">' + port(hArt) + "</div>");
     if (aArt) html = html.replace('<div class="mc-port mc-port-a"></div>', '<div class="mc-port mc-port-a">' + port(aArt) + "</div>");
     mcClean = !!(hArt || aArt);
-    const scene = mcClean ? "/ui/mc/scene-4.webp" : "/ui/mc/scene-2.webp";
+    const scene = mcClean ? "/ui/mc/scene-4-2.webp" : "/ui/mc/scene-2.webp";
     html = html.replace("</head>", '<link rel="preload" href="' + scene + '" as="image" media="(max-width:899px)" fetchpriority="high">\n</head>');
   }
   if (mheroHtml) html = html.replace('<a class="hero-mcard" id="heroMCard" style="display:none" href="#" dir="ltr">', '<a class="hero-mcard' + (mcClean ? " mc-clean" : "") + '" id="heroMCard" href="#" dir="ltr">');

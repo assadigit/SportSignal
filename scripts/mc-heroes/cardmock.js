@@ -48,11 +48,11 @@ async function renderPair(homeClub, awayClub, outFile) {
   const H = REG.clubs[homeClub], A = REG.clubs[awayClub];
   if (!H || !A) throw new Error("club not in registry: " + (!H ? homeClub : awayClub));
 
-  // background: dark navy + the live scene-4 across the top 43%
+  // background: dark navy + the live scene-4-2 (the v13.206 q90 re-encode) across the top 43%
   const base = await sharp({
     create: { width: CW, height: CH, channels: 4, background: { r: 3, g: 15, b: 44, alpha: 1 } },
   }).png().toBuffer();
-  const scene = await sharp(path.join(MC_DIR, "scene-4.webp"))
+  const scene = await sharp(path.join(MC_DIR, "scene-4-2.webp"))
     .resize(CW, Math.round(CH * 0.43), { fit: "fill" })
     .composite([{ input: await svgMask(CW, Math.round(CH * 0.43), [[0, 0.92], [85, 0.92], [100, 0]], "v"), blend: "dest-in" }])
     .png().toBuffer();
