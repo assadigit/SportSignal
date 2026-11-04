@@ -4,6 +4,43 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# Web optimization program — Phases 0–1 complete (documentation only; no version change)
+
+_2026-11-04 · **No product change: the live worker remains
+`13.201-carstack`.** No application code, assets, runtime configuration
+or bot files were modified and no redeployment was performed
+(documentation-only phases are pushed, not deployed — program spec
+§14.4). Production was re-verified healthy after the pushes
+(`/healthz` → `ok:true`, `degraded:false`)._
+
+The website-optimization program (master specification:
+`SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md`, owner-uploaded 2026-11-04) has
+completed its first two phases on top of the live code:
+
+- **Phase 0 — repository reconnaissance & architecture audit**
+  (`a9c87c0`, `00c2e9f`, `63a1d02`): created
+  `WEB_OPTIMIZATION_ARCHITECTURE.md` (single-worker website/bot
+  isolation map, shared-component risks R1–R14, Cloudflare deploy
+  workflow, test gates) and the persistent tracker
+  `WEB_OPTIMIZATION_PROGRESS.md`.
+- **Phase 1 — comprehensive performance/SEO/a11y/security baseline
+  audit** (`101024f`, `b5f77a3`, `ab7b7ab`): created the frozen
+  baseline `WEB_OPTIMIZATION_AUDIT.md`. Headline measurements: TTFB
+  45–80 ms warm on all 16 representative production routes (HTTP/2,
+  edge-cached, Brotli/zstd); Lighthouse mobile sub-pages 91–99 with
+  CLS 0; the homepage mobile is the single outlier (perf 49–65, lab
+  LCP 9.2 s — root cause finding F-C1: the SSR hero card ships
+  `display:none`, so the LCP art chains behind client JS);
+  `npm run seo:check` 56/56; `npm test` 2,525 checks green. Findings
+  register: 1 Critical / 3 High / 6 Medium / 10 Low, feeding the
+  prioritized Phase 2–6 implementation plan (AUDIT §8).
+
+**Telegram bot protection:** no Telegram bot files, configuration,
+secrets or behavior were modified in either phase (verified by
+`git diff --stat` review of every commit — documentation files only).
+The next session begins Phase 2 (frontend optimization) per the
+program roadmap.
+
 # v13.201-carstack — the stacking repair: the slide-change data zone returns above the card chrome (the blank HUD + the dimmed league logo)
 
 _2026-11-04 · on top of v13.200-carsmooth · the owner's stacking round,

@@ -15,10 +15,10 @@
 | :--- | :--- |
 | **Current phase** | 1 COMPLETE — Phase 2 (Frontend optimization) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | `101024f` (`docs: add comprehensive performance/SEO/a11y baseline audit`) — pushed & verified via `git ls-remote` |
-| **Production** | `13.201-carstack` (= repo `63a1d02` at audit time; NOT redeployed for Phase 1 — documentation-only phase) |
+| **Latest commit** | `ab7b7ab` (`docs(progress): record Phase 1 CI verification in tracker`) — pushed & verified via `git fetch`/`ls-remote`; close-out commits follow (see Git & deployment log) |
+| **Production** | `13.201-carstack` (= deployed code `f70fe81`; every commit since is documentation-only — NOT redeployed for Phases 0–1, per spec §14.4) |
 | **Production health at audit** | `/healthz` → `ok:true`, `degraded:false`, `kv_writes_day: 18` (counter reset since Phase 0; no incident), `kv_writes_web: 0`, pool 519 matches, sched UPCOMING. |
-| **Last verified** | 2026-11-04 (Phase 1 audit + `npm test` green, 2,525 checks) |
+| **Last verified** | 2026-11-04 (Phase 1 audit + `npm test` green, 2,525 checks; session close-out re-verified push/CI/production/merge-state) |
 | **Next action** | Phase 2 — frontend optimization per `WEB_OPTIMIZATION_AUDIT.md` §8 (JS main-thread diet + conservative CSS dead-code pass, full ADR-006 ceremony) |
 
 ## Phase roadmap (spec §5)
@@ -119,13 +119,20 @@ bot-safety argument BEFORE any edit there.)
 | 2026-11-04 | Cloudflare zone settings read-only (brotli/http3/early_hints/0rtt/minify) | ✅ recorded in AUDIT §1.5 |
 | 2026-11-04 | GSC inspection | ⛔ NOT PERFORMED — no credentials (documented per spec §7.5, AUDIT §5) |
 | 2026-11-04 | Phase 1 push → GitHub Actions `seo-check`: `101024f` **success** (attempt 1); `b5f77a3` backfill commit **failed once on a flaky T-09 lab run** (homepage mobile perf 38 < 40 threshold — pure Lighthouse variance of the documented F-C1 range, docs-only commit, zero code changes) → **re-run (attempt 2) SUCCESS**: `/` perf 47 / seo 100 / a11y 100 / BP 93, sub-pages 93–97, **PASS: 68 FAIL: 0** | ✅ both commits CI-green after re-run |
+| 2026-11-04 | **Session close-out:** `git fetch` + rev-parse — remote `main` = `ab7b7ab` = local HEAD (Phase 1 push fully confirmed on GitHub; local tracking ref had been stale because pushes use the one-time token URL) | ✅ |
+| 2026-11-04 | GitHub API (authenticated): `seo-check` check-run on `ab7b7ab` → **completed / success** | ✅ |
+| 2026-11-04 | GitHub API: open pull requests = **0**; branches = **`main` only** → nothing to merge (single-branch repo, no feature branches) | ✅ |
+| 2026-11-04 | Live `/healthz` re-verified at close-out: version `13.201-carstack` = repo `src/config.ts` VERSION, `ok:true`, `degraded:false`, `kv_writes_day:134` — every commit after the deployed code (`f70fe81`) is documentation-only, so **no redeploy** per spec §14.4 | ✅ |
+| 2026-11-04 | `npm test` re-run before the close-out push (docs-only diff) | ✅ exit 0 — 2,525 checks OK, 0 failures |
+| 2026-11-04 | `CHANGELOG.md` updated with the Phases 0–1 documentation-milestone entry (marked no-version-change / no-product-change) | ✅ |
 
 ## Git & deployment log
 
 | Phase | Commit | Push | Deploy | Production verify |
 | :--- | :--- | :--- | :--- | :--- |
 | 0 | `a9c87c0` + `00c2e9f` + `63a1d02` (docs + tracker hash backfills) | `main` @ GitHub, verified via `git ls-remote`; CI seo-check green on all | **NOT DEPLOYED** (docs-only) | n/a (production = repo code state, verified via `/healthz`) |
-| 1 | `101024f` (audit) + `b5f77a3` (tracker hash backfill) + `63a1d02→b5f77a3` CI verification note | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote` → `b5f77a3`) | **NOT DEPLOYED** (documentation-only phase — spec §14.4) | n/a (production unchanged = `13.201-carstack`, re-verified via `/healthz` after push: `ok:true`, `degraded:false`) |
+| 1 | `101024f` (audit) + `b5f77a3` (tracker hash backfill) + `63a1d02→b5f77a3` CI verification note | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote` → `ab7b7ab` after the final CI-note commit) | **NOT DEPLOYED** (documentation-only phase — spec §14.4) | n/a (production unchanged = `13.201-carstack`, re-verified via `/healthz` after push: `ok:true`, `degraded:false`) |
+| 1 (close-out) | changelog + tracker session-close commit (hash recorded in the follow-up backfill commit) | `main` @ GitHub (one-shot token push, verified via `git ls-remote` + CI) | **NOT DEPLOYED** (documentation-only — spec §14.4; production already equals repo code) | `/healthz` re-verified: `13.201-carstack`, `ok:true`, `degraded:false` |
 
 ---
 
