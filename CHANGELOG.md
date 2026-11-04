@@ -4,6 +4,77 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.208-lastmod — web-optimization Phase 5: technical & multilingual SEO (the seo_lastmod_v1 eviction fix + F-L1 + F-H3 beacon + IndexNow drain)
+
+_2026-11-04 · the Phase 5 round per `WEB_OPTIMIZATION_AUDIT.md` §8 (the
+verification + gap-fix phase; the before/after record lives in
+`WEB_OPTIMIZATION_RESULTS.md` §16). Website-only surfaces
+(`WEB_OPTIMIZATION_ARCHITECTURE.md` §3.1); the Telegram bot is untouched._
+
+**The headline — the seo_lastmod_v1 cross-child eviction bug (found by the
+Phase 5 "lastmod honesty" spot-audit, fixed in `src/seo/files.ts`):** every
+sitemap child re-render stamped its FULL URL set with the render clock.
+Live evidence: all 94/94 teams and 144/144 upcoming-match `<lastmod>` values
+shared one render-time millisecond, and a cross-cache-window re-fetch
+advanced them again. Root cause: `computeLastmods` REPLACED the whole KV map
+with only the calling child's candidates — the five children
+(teams/competitions/matches-upcoming/matches-archive) each evicted every
+other child's entries, so the next render of any child saw its whole URL set
+as "new". That is precisely the "now on every build" dishonesty spec F-05
+forbids, PLUS a web-side KV write on every child render (R2 pressure) and
+full-URL-list IndexNow "changed" pings (rate-limit noise). The fix MERGES:
+previous entries survive foreign children's renders (pruned only past the
+400-day retention) and the write is strictly change-only. The sitemap INDEX
+now derives each child's `<lastmod>` from the honest per-URL family max
+(pages = the hand-written CONTENT_VERSION) instead of `now` — the index ETag
+is stable within a data epoch as a side effect.
+
+**F-L1 (404-canonical cleanup):** the 404 builder no longer emits a
+fictional `canonical → /404` (and `og:url → /404`). `HeadInput.path` is now
+optional; URL-less pages emit no canonical/og:url at all. The 404 status +
+meta noindex remain the real signals (verified locally: 404 → 0 canonical,
+0 og:url, noindex present, links home).
+
+**F-H3 (CF Web Analytics beacon — the owner-step fallback executed):** the
+zone's Web Analytics site has existed since 2026-10-13 with auto_install
+enabled, but Cloudflare's automatic injection never reaches Worker-rendered
+HTML (live-verified across 3+ weeks: zero `cloudflareinsights` occurrences,
+`/cdn-cgi/rum` 404). The manual snippet (the token read from the owner's
+account with this session's credentials) now rides both HTML templates —
+the homepage (`src/pages/public.ts`) and every SEO-shell page
+(`src/seo/page-shell.ts`) — giving Phase 7 its field-CWV source. Cookieless,
+aggregate-only RUM; CSP-allowed since v13.188; `/privacy` gained an honest
+disclosure section ("آنالیتیکس کلادفلر (بدون کوکی)"). The beacon token is
+public by design (it rides every served page, exactly like INDEXNOW_KEY).
+
+**IndexNow parked-URL drain (`src/seo/indexnow.ts`):** rate-limited windows
+parked changed URLs but the send path never re-read them — they expired
+unsend. The send now merges the parked list (zero additional KV writes —
+R2; duplicates bounded by the park entry's 1h TTL; IndexNow treats repeat
+pings as idempotent recrawl hints).
+
+**F-M8 (pagination canonical) — DECIDED, no code change:** `/matches?page=2+`
+KEEPS canonicalizing to `/matches` (the deliberate de-dup). Rationale +
+live evidence in RESULTS §16.2: the paginated list is a sliding window
+(content shifts as matches finish — page 2 is not a stable entity), every
+fixture on pages 2+ is discoverable through stable canonical URLs (per-match
+pages, time hubs, team/competition pages, the sitemap, the feed), and the
+pagination nav itself stays crawlable plain links. Self-canonical per page
+would index unstable fragments with duplicate metadata — make-work against
+the site's actual goals.
+
+**Ceremony:** VERSION `13.208-lastmod` / package 13.208.0.0; new gate
+`scripts/check-seo-lastmod.js` (11 checks: the cross-child merge vectors,
+change-only writes, stale prune, index family derivation, F-L1/F-H3/IndexNow
+source contracts) registered in `npm test` (2,539 → 2,551 checks, exit 0);
+the public-page parity baseline re-frozen via the reviewed `--update` path
+(the 9-line beacon diff only); the check-stats v13.208 release-wiring pin
+added; NO client asset changed (bundle public-13.68.js, stylesheet
+public-13.80.css, SW sportsignal-v109 all stay). One-time post-deploy
+effect, documented: the first render of each child after the fix converges
+the KV map (each child's URLs were absent from the evicted state → one
+re-stamp + at most rate-limited IndexNow notifications), then stability.
+
 # v13.207-condget — web-optimization Phase 4: Cloudflare & caching (F-M5 conditional-GET 304s + ETag on the machine files)
 
 _2026-11-04 · the Phase 4 round per `WEB_OPTIMIZATION_AUDIT.md` §8 (the

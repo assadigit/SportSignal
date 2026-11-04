@@ -22,14 +22,22 @@ export async function pingIndexNowIfChanged(env: Env, urls: string[]): Promise<{
       await env.STATE.put(SEO.KV_SEO_INDEXNOW + ":park", JSON.stringify({ urls: merged }), { expirationTtl: 3600 }).catch(() => { });
       return { ok: false, sent: 0, reason: "rate-limited (parked " + merged.length + ")" };
     }
-    const body = JSON.stringify({ host: SEO.CANONICAL_HOST, key: SEO.INDEXNOW_KEY, keyLocation: SEO.SITE_URL + "/" + SEO.INDEXNOW_KEY + ".txt", urlList: list });
+    // v13.208-lastmod (Phase 5): DRAIN the parked list into this send. The
+    // old code parked URLs whenever the 15-min window was busy but never
+    // re-read them — parked "changed" URLs silently expired (TTL 1h) instead
+    // of ever going out. Merging on the send path adds ZERO KV writes (R2):
+    // duplicates are bounded by the park entry's own 1h TTL and IndexNow
+    // treats repeat pings as idempotent recrawl hints.
+    const parked = await env.STATE.get(SEO.KV_SEO_INDEXNOW + ":park", "json").catch(() => null);
+    const toSend = Array.from(new Set(list.concat((parked && parked.urls) || []))).slice(0, 1000);
+    const body = JSON.stringify({ host: SEO.CANONICAL_HOST, key: SEO.INDEXNOW_KEY, keyLocation: SEO.SITE_URL + "/" + SEO.INDEXNOW_KEY + ".txt", urlList: toSend });
     const res = await fetch(SEO.INDEXNOW_ENDPOINT, {
       method: "POST",
       headers: { "content-type": "application/json; charset=utf-8" },
       body
     });
     await env.STATE.put(SEO.KV_SEO_INDEXNOW, String(Date.now()), { expirationTtl: 86400 }).catch(() => { });
-    return { ok: res.ok, sent: list.length, reason: "HTTP " + res.status };
+    return { ok: res.ok, sent: toSend.length, reason: "HTTP " + res.status };
   } catch (e: any) {
     return { ok: false, sent: 0, reason: e.message };
   }

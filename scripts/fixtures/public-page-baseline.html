@@ -1198,5 +1198,14 @@ try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin
   renderStatsBox(d);
 }).catch(function(){});}catch(e){}
 })();</script>
+<!-- v13.208-lastmod (F-H3, Phase 5): Cloudflare Web Analytics beacon — the
+MANUAL insertion (OWNER_TODO §11 step 6). The zone's Web Analytics site has
+existed since 2026-10-13 with auto_install:true, but Cloudflare's automatic
+injection never reaches Worker-rendered HTML (live-verified: zero
+cloudflareinsights occurrences + /cdn-cgi/rum 404 for 3+ weeks), so the
+field-CWV source Phase 7 needs was silently absent. Cookieless, aggregate
+RUM only; CSP-allowed since v13.188. The token is public by design (it rides
+every served page). -->
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "fb7e7f1d66e84ed3b4572545c93ef538"}'></script>
 </body>
 </html>

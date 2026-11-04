@@ -128,10 +128,29 @@ async function lastmodMap(env: Env): Promise<Record<string, { h: string; t: numb
 
 // Compute honest lastmods: update ts ONLY for URLs whose content hash
 // changed. Returns [entries, changedUrls, wrote] for IndexNow (F-16).
+//
+// v13.208-lastmod (Phase 5 spot-audit finding): this function used to
+// REPLACE the whole KV map with ONLY the calling child's candidates — the
+// five children (teams/competitions/matches-upcoming/matches-archive) each
+// evicted every other child's entries, so the next render of any child saw
+// its full URL set as "new": all lastmods re-stamped with the render clock
+// (live-verified 2026-11-04: 94/94 teams and 144/144 upcoming matches
+// sharing one render-time millisecond), a KV write on EVERY render, and
+// full-list IndexNow "changed" pings — precisely the "now on every build"
+// dishonesty F-05 forbids, invisible to audits that sampled within one
+// child's cache window. The fix MERGES: prev entries survive a foreign
+// child's render (pruned only past the 400-day retention), and the map is
+// written strictly change-only.
 async function computeLastmods(env: Env, candidates: { path: string; hash: string }[]): Promise<{ map: Record<string, string>; changed: string[] }> {
   const prev = await lastmodMap(env);
   const now = Date.now();
   const next: Record<string, { h: string; t: number }> = {};
+  // carry over every still-fresh previous entry (cross-child merge)
+  const staleCutoff = now - 400 * 864e5;
+  for (const path of Object.keys(prev)) {
+    const r = prev[path];
+    if (r && typeof r.t === "number" && r.t > staleCutoff) next[path] = r;
+  }
   const outIso: Record<string, string> = {};
   const changed: string[] = [];
   for (const c of candidates) {
@@ -144,8 +163,10 @@ async function computeLastmods(env: Env, candidates: { path: string; hash: strin
     }
     outIso[c.path] = new Date(next[c.path].t).toISOString();
   }
-  const prevKeys = Object.keys(prev).length;
-  if (changed.length || prevKeys !== candidates.length) {
+  // change-only write: an unchanged re-render never touches KV (the old
+  // `prevKeys !== candidates.length` clause fired on every cross-child
+  // interleaving — the eviction bug's write amplifier)
+  if (changed.length) {
     await env.STATE.put(SEO.KV_SEO_LASTMOD, JSON.stringify({ urls: next }), { expirationTtl: 400 * 86400 }).catch(() => { });
   }
   return { map: outIso, changed };
@@ -166,12 +187,35 @@ function urlsetXml(rows: string): string {
 }
 
 export async function buildSitemapIndex(env: Env): Promise<string> {
-  const ctx = await getSeoCtx(env);
-  const now = new Date().toISOString();
-  const kids = ["pages", "competitions", "teams", "matches-upcoming", "matches-archive"];
+  // v13.208-lastmod (Phase 5): the index's per-child <lastmod> is now
+  // DERIVED from the honest per-URL map instead of `now` on every render —
+  // the old stamp overstated freshness on every build (the F-05 class) and
+  // churned the ETag each render. One bounded KV read (cheaper than the
+  // getSeoCtx call it replaces, which was fetched and never used).
+  // Semantics: pages → CONTENT_VERSION (hand-written stamp); teams and
+  // competitions → the max ts of their URL family; the two matches children
+  // share the /matches/ family max (a match changing state moves it between
+  // upcoming and archive — both children legitimately change together).
+  // Fallback: an empty/unreadable map degrades to `now` (the old behavior).
+  const map = await lastmodMap(env);
+  const familyMax = (prefix: string): string => {
+    let max = 0;
+    for (const path of Object.keys(map)) {
+      const r = map[path];
+      if (r && typeof r.t === "number" && path.startsWith(prefix) && r.t > max) max = r.t;
+    }
+    return max ? new Date(max).toISOString() : new Date().toISOString();
+  };
+  const kids: { file: string; lastmod: string }[] = [
+    { file: "pages", lastmod: SEO.CONTENT_VERSION },
+    { file: "competitions", lastmod: familyMax("/competitions/") },
+    { file: "teams", lastmod: familyMax("/teams/") },
+    { file: "matches-upcoming", lastmod: familyMax("/matches/") },
+    { file: "matches-archive", lastmod: familyMax("/matches/") }
+  ];
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
   for (const k of kids) {
-    xml += "  <sitemap><loc>" + xmlEsc(SEO.SITE_URL + "/sitemaps/" + k + ".xml") + "</loc><lastmod>" + xmlEsc(now) + "</lastmod></sitemap>\n";
+    xml += "  <sitemap><loc>" + xmlEsc(SEO.SITE_URL + "/sitemaps/" + k.file + ".xml") + "</loc><lastmod>" + xmlEsc(k.lastmod) + "</lastmod></sitemap>\n";
   }
   xml += "</sitemapindex>\n";
   return xml;

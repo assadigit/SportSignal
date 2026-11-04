@@ -10,7 +10,11 @@ import { esc } from "./utils";
 import * as JL from "./jsonld";
 
 export interface HeadInput {
-  path: string;                 // clean path, no query
+  // v13.208-lastmod (F-L1, Phase 5): path is OPTIONAL — a page with no real
+  // URL (the 404 builder) emits NO canonical and NO og:url instead of the
+  // old fictional canonical → /404 (a path that 404s itself). Real pages
+  // always pass their clean path (no query).
+  path?: string;                // clean path, no query — omit on URL-less pages
   title: string;                // unique per URL (P-04)
   description: string;          // 70–160 chars (P-05)
   indexable: boolean;           // P-07
@@ -21,14 +25,18 @@ export interface HeadInput {
 }
 
 export function buildHead(h: HeadInput): string {
-  const canonical = absUrl(h.path);
+  // F-L1: canonical/og:url only when the page HAS a URL. A canonical that
+  // points at a non-existent path (/404) is ignored by crawlers anyway (the
+  // 404 status + meta noindex decide), but emitting a fictional URL was
+  // cosmetic dishonesty — the Phase 5 audit's F-L1 cleanup.
+  const canonical = h.path ? absUrl(h.path) : "";
   const robots = h.indexable
     ? "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
     : "noindex, follow";
   const img = h.ogImage || absUrl(SEO.OG_DEFAULT_IMAGE);
   let s = "<title>" + esc(h.title) + "</title>\n";
   s += '<meta name="description" content="' + esc(h.description) + "\">\n";
-  s += '<link rel="canonical" href="' + esc(canonical) + "\">\n";
+  if (canonical) s += '<link rel="canonical" href="' + esc(canonical) + "\">\n";
   s += '<meta name="robots" content="' + robots + "\">\n";
   // Icons + manifest (F-08..F-10)
   s += '<link rel="icon" href="/favicon.ico" sizes="any">\n';
@@ -44,7 +52,7 @@ export function buildHead(h: HeadInput): string {
   s += '<meta property="og:site_name" content="SportSignal">\n';
   s += '<meta property="og:title" content="' + esc(h.title) + "\">\n";
   s += '<meta property="og:description" content="' + esc(h.description) + "\">\n";
-  s += '<meta property="og:url" content="' + esc(canonical) + "\">\n";
+  if (canonical) s += '<meta property="og:url" content="' + esc(canonical) + "\">\n";
   s += '<meta property="og:locale" content="fa_IR">\n';
   s += '<meta property="og:image" content="' + esc(img) + '">\n';
   s += '<meta property="og:image:width" content="1200">\n';
@@ -267,6 +275,15 @@ function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
 try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(!d)return;set('vcToday',faNum(d.today_views||0));set('vcYesterday',faNum(d.yesterday_visitors||0));set('vcMonth',faNum(d.month_visitors||0));set('vcTotal',faNum(d.total_views||0));}).catch(function(){});}catch(e){}
 })();
 </script>
+<!-- v13.208-lastmod (F-H3, Phase 5): Cloudflare Web Analytics beacon — the
+MANUAL insertion (OWNER_TODO §11 step 6). The zone's Web Analytics site has
+existed since 2026-10-13 with auto_install:true, but Cloudflare's automatic
+injection never reaches Worker-rendered HTML (live-verified: zero
+cloudflareinsights occurrences + /cdn-cgi/rum 404 for 3+ weeks), so the
+field-CWV source Phase 7 needs was silently absent. Cookieless, aggregate
+RUM only; CSP-allowed since v13.188. The token is public by design (it rides
+every served page). -->
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "fb7e7f1d66e84ed3b4572545c93ef538"}'></script>
 </body>
 </html>`;
 }
