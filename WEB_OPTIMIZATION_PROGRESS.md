@@ -15,7 +15,7 @@
 | :--- | :--- |
 | **Current phase** | 1 COMPLETE — Phase 2 (Frontend optimization) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | `ab7b7ab` (`docs(progress): record Phase 1 CI verification in tracker`) — pushed & verified via `git fetch`/`ls-remote`; close-out commits follow (see Git & deployment log) |
+| **Latest commit** | `578126f` (`docs: record web-optimization phases 0-1 in changelog`) — pushed & verified via `git ls-remote` |
 | **Production** | `13.201-carstack` (= deployed code `f70fe81`; every commit since is documentation-only — NOT redeployed for Phases 0–1, per spec §14.4) |
 | **Production health at audit** | `/healthz` → `ok:true`, `degraded:false`, `kv_writes_day: 18` (counter reset since Phase 0; no incident), `kv_writes_web: 0`, pool 519 matches, sched UPCOMING. |
 | **Last verified** | 2026-11-04 (Phase 1 audit + `npm test` green, 2,525 checks; session close-out re-verified push/CI/production/merge-state) |
@@ -132,7 +132,7 @@ bot-safety argument BEFORE any edit there.)
 | :--- | :--- | :--- | :--- | :--- |
 | 0 | `a9c87c0` + `00c2e9f` + `63a1d02` (docs + tracker hash backfills) | `main` @ GitHub, verified via `git ls-remote`; CI seo-check green on all | **NOT DEPLOYED** (docs-only) | n/a (production = repo code state, verified via `/healthz`) |
 | 1 | `101024f` (audit) + `b5f77a3` (tracker hash backfill) + `63a1d02→b5f77a3` CI verification note | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote` → `ab7b7ab` after the final CI-note commit) | **NOT DEPLOYED** (documentation-only phase — spec §14.4) | n/a (production unchanged = `13.201-carstack`, re-verified via `/healthz` after push: `ok:true`, `degraded:false`) |
-| 1 (close-out) | changelog + tracker session-close commit (hash recorded in the follow-up backfill commit) | `main` @ GitHub (one-shot token push, verified via `git ls-remote` + CI) | **NOT DEPLOYED** (documentation-only — spec §14.4; production already equals repo code) | `/healthz` re-verified: `13.201-carstack`, `ok:true`, `degraded:false` |
+| 1 (close-out) | `578126f` (changelog + tracker session-close) + this hash-backfill commit | `main` @ GitHub (one-shot token push, verified via `git ls-remote` → `578126f`; backfill pushed immediately after) | **NOT DEPLOYED** (documentation-only — spec §14.4; production already equals repo code) | `/healthz` re-verified: `13.201-carstack`, `ok:true`, `degraded:false` |
 
 ---
 
