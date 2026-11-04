@@ -6,6 +6,47 @@ Version strings follow the value exposed by the live `/api/status` endpoint
 
 # Web optimization program — Phases 0–1 complete (documentation only; no version change)
 
+# v13.203 + v13.204 — web-optimization Phase 2 final arc: the contaminated revert and the verified re-apply
+
+_2026-11-04 · the same-day measurement arc that finished Phase 2 (the
+full record lives in `WEB_OPTIMIZATION_RESULTS.md` §8; the final state
+is `v13.204-foldsplit`, deployed + verified)._
+
+**v13.202** (the fold-split diet) shipped green — CI, `npm test` 2,527,
+VLM visual pass, functional round. ~35 minutes later **v13.203-warmdefer**
+reverted it: a second session's after-deploy Lighthouse runs measured
+the split 2–3× worse (mobile TBT 1,810–2,570 ms vs the 300–1,060 ms
+baseline) and the revert shipped as `public-13.67.js` (byte-13.65 plus
+only the `carWarm` load-event deferral; SW v106; cap sweep #11 evicting
+the expired `/public-13.46.css` pin). **Those runs were contaminated** —
+a local `wrangler dev` (workerd) + browsers were consuming the sandbox
+CPU during the measurement window. The proof: the clean re-measurement of
+the reverted v13.203 (every background process killed) landed **exactly
+on the v13.201 baseline** (TBT 340/650/1,020 ms vs 300/590/1,060 ms —
+statistically identical), and the close-out session's independent clean
+v13.202 runs had measured the split **better** on every user-facing axis
+(JS bootup 0.9 → 0.35 s, TTI 9.9 → 7.4 s).
+
+**v13.204-foldsplit** re-applied the fold-split bundle byte-identical to
+v13.202's `13.66.js` as `public-13.68.js` (SW v107; cap sweep #12
+evicting the expired `/public-13.47.css` pin; the deployed 13.67.js and
+13.66.js artifacts stay on disk pinned one SEO TTL). Re-verified clean
+in the same browser and conditions as the baseline: **JS bootup 0.4 s
+(vs 0.9–1.6 s baseline) and TTI 7.9–8.9 s (vs 9.5–9.9 s)** — the
+improvement reproduced in a second independent session. TBT median is
+unchanged within variance; the honest claim is structural: the boot
+window sheds ~0.5–1 s of JS execution (the timezone-picker build + the
+render-chain monolith → interleavable tasks) and the page becomes
+interactive 1–2 s sooner. `npm test` 2,527 green; CI seo-check success;
+live functional round re-verified (all below-fold idle groups render,
+0 skeletons, 0 console errors, tz picker 459 options + lazy-build guard,
+fa↔en round-trip, hero cards visible).
+
+**The recorded lesson (never again):** kill every background process
+before any Lighthouse run; treat a surprising single-source regression
+as a measurement artifact until a clean re-run reproduces it; never ship
+a revert without a clean re-measurement of the reverted state.
+
 # v13.202-threaddiet — web-optimization Phase 2: the main-thread diet + the conservative CSS dead-rule pass (F-M2 + F-M1)
 
 _2026-11-04 · on top of v13.201-carstack · the web-optimization program's

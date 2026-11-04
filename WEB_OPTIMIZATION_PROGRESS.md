@@ -13,12 +13,12 @@
 
 | Field | Value |
 | :--- | :--- |
-| **Current phase** | 2 COMPLETE — Phase 3 (Assets & Core Web Vitals) NOT STARTED |
+| **Current phase** | 2 COMPLETE (v13.204-foldsplit — the verified final state) — Phase 3 (Assets & Core Web Vitals) NOT STARTED |
 | **Branch** | `main` |
-| **Latest commit** | `a5a805d` (`v13.202-threaddiet` — the Phase 2 code round) + the Phase 2 close-out docs commit (results/tracker/changelog) — pushed & verified via `git ls-remote` |
-| **Production** | **`13.202-threaddiet` (= deployed code `a5a805d`)** — Phase 2 changed client assets, so spec §14.4 step 4 applied: deployed via `npx wrangler deploy`, verified (healthz version flip, ≥2 ticks, assets + immutable pins live, SW v105, spot-checks, bot-side fields healthy) |
-| **Production health at close-out** | `/healthz` → `ok:true`, `degraded:false`, `kv_writes_day` 400, `outbox_depth` 0, heartbeat/last_cron ≤ 6 min, sched UPCOMING. |
-| **Last verified** | 2026-11-04 (Phase 2: `npm test` 2,527 checks green; CI seo-check success on `a5a805d`; production functional/visual/measurement round — see `WEB_OPTIMIZATION_RESULTS.md`) |
+| **Latest commit** | `53b05ef` (`v13.204-foldsplit` — the Phase 2 verified re-apply) — pushed & verified via `git ls-remote`; CI seo-check **success** on `53b05ef` |
+| **Production** | **`13.204-foldsplit` (= deployed code `53b05ef`)** — the v13.202 → v13.203 (contaminated-measurement revert) → v13.204 (clean-verified re-apply) arc shipped three deploys, each tested + CI-green; final state = the fold-split bundle byte-identical to v13.202's 13.66.js + the F-M1 CSS pass + carWarm load-event deferral. SW v107, cap sweeps #10–#12 |
+| **Production health at close-out** | `/healthz` → `ok:true`, `version:13.204-foldsplit`, `degraded:false`, `outbox_depth` 0, tick cadence normal. |
+| **Last verified** | 2026-11-04 (Phase 2 final: `npm test` 2,527 checks green on `53b05ef`; CI success; clean Lighthouse re-measurement reproduced bootup 0.9–1.6→0.4 s / TTI 9.9→7.9–8.9 s; live functional round re-verified — see `WEB_OPTIMIZATION_RESULTS.md` §8) |
 | **Next action** | Phase 3 — assets & Core Web Vitals per `WEB_OPTIMIZATION_AUDIT.md` §8: **F-C1 (P0) SSR-reveal first hero slide + priority scene art**, F-H2 image re-encodes, F-H1 league-emblem self-host (tables.ts bot-safety design FIRST), F-M7 OG recompress, font-weight audit |
 
 ## Phase roadmap (spec §5)
@@ -27,7 +27,7 @@
 | :--- | :--- | :--- | :--- |
 | 0 | Reconnaissance & architecture audit | ✅ **COMPLETED** (2026-11-04) | Docs only: `WEB_OPTIMIZATION_ARCHITECTURE.md` + this tracker. |
 | 1 | Comprehensive audit (perf/SEO/a11y/security baselines) | ✅ **COMPLETED** (2026-11-04) | `WEB_OPTIMIZATION_AUDIT.md` created — **FROZEN BASELINE**. Headline: sub-pages excellent (LH 91–99, CLS 0, TTFB 45–80 ms warm); homepage mobile is the outlier (LH perf 49–65, lab LCP 9.2 s) — root cause F-C1: SSR hero card ships `display:none` (`src/pages/public.ts:525`), LCP art chains behind client JS. 1 Critical / 3 High / 6 Medium / 10 Low findings. |
-| 2 | Frontend optimization (CSS/JS/rendering/deps) | ✅ **COMPLETED** (2026-11-04) | `a5a805d` `v13.202-threaddiet` + close-out docs commit. F-M2: boot render chain split at the fold (`__belowFoldQueue`/`__idleSlot`), `initTz` deferred to idle (lazy-build guard in `toggleTz`), `carWarm` DCL→load; `public-13.65.js`→`13.66.js`. F-M1: 31 provably-dead CSS rules retired; `public-13.78.css`→`13.79.css`. Full ADR-006 ceremony (cap sweep #10, SW v105, harness re-pins, parity re-freeze); K2 lockfile drift fixed. Results in `WEB_OPTIMIZATION_RESULTS.md`: TTI 9.9→7.4 s, JS bootup 0.9→0.35 s, LCP 9.2→6.5 s lab (F-C1 still open — Phase 3), TBT median 242 vs 250 ms with the 629 ms render-chain long task eliminated (max task now ≤356 ms), CLS 0 kept, a11y 100. Optional X-card i18n prune deferred (documented). |
+| 2 | Frontend optimization (CSS/JS/rendering/deps) | ✅ **COMPLETED** (2026-11-04, final state `53b05ef` `v13.204-foldsplit`) | The three-release arc: `a5a805d` `v13.202-threaddiet` (F-M2 fold-split + idle-initTz + carWarm-on-load; F-M1 31 dead CSS rules; cap sweep #10, SW v105, K2 fixed) → `2c2d78b` `v13.203-warmdefer` (the fold-split reverted on **contaminated** after-deploy Lighthouse runs — executed while a local wrangler dev + browsers ate the sandbox CPU; clean re-measurement of the revert landed exactly on the v13.201 baseline, proving the contamination) → `53b05ef` `v13.204-foldsplit` (the fold-split re-applied byte-identical to v13.202's 13.66.js after the clean evidence; cap sweeps #11–#12, SW v107). Final verified results (two independent sessions, RESULTS §2–§3 + §8): **JS bootup 0.9–1.6 → 0.35–0.4 s, TTI 9.9 → 7.4–8.9 s**, TBT median ~unchanged (242–590 ms, within variance; the 629 ms render monolith → interleavable ≤356–771 ms tasks), CLS 0 kept, LCP still F-C1-bound (Phase 3). Optional X-card i18n prune deferred (K12). |
 | 3 | Assets & Core Web Vitals | ⬜ | Contains the P0: F-C1 SSR-reveal hero + priority scene art (target lab LCP ≤ 2.5 s); F-H2 image re-encodes; F-H1 self-host league emblems (tables.ts = SHARED — bot-safety design required); F-M7 OG recompress; font-weight audit. |
 | 4 | Cloudflare & caching | ⬜ | F-M5 304 handling; ETag on machine files; F-H3 enable CF Web Analytics RUM (field-data source for Phase 7); optional cap-sweep (F-L6). No new KV writes (R2); freshness ladder intact (R12). |
 | 5 | Technical & multilingual SEO | ⬜ | Verification + gap-fix: F-M8 pagination canonical decision, F-L1 404 canonical cleanup, GSC owner access or owner-run reports. fa/en stays client-toggle (R11). |
@@ -108,6 +108,27 @@
 - **Deploy:** production redeployed per spec §14.4 step 4 (client assets
   changed) and verified (healthz version flip, ticks, immutable pins,
   SW v105, functional/visual round, bot-side fields healthy).
+- **`2c2d78b` `v13.203-warmdefer` — the contaminated revert (same day,
+  ~35 min later):** a second session's after-deploy Lighthouse runs
+  measured the fold-split 2–3× worse (mobile TBT 1,810–2,570 ms) and
+  reverted it to byte-13.65 + the carWarm load-event edit
+  (`public-13.66.js`→`13.67.js`, SW v106, cap sweep #11 evicting the
+  expired `/public-13.46.css` pin). **The runs were contaminated** — a
+  local `wrangler dev` (workerd) + browsers were consuming the sandbox
+  CPU during the measurement window; the clean re-measurement of v13.203
+  landed exactly on the v13.201 baseline (RESULTS §8 proves it with the
+  3-run table).
+- **`53b05ef` `v13.204-foldsplit` — the verified re-apply (~50 min
+  later):** the fold-split bundle returned byte-identical to v13.202's
+  `13.66.js` (`public-13.67.js`→`13.68.js`, SW v107, cap sweep #12
+  evicting `/public-13.47.css`; 13.67.js/13.66.js deployed artifacts
+  stay on disk pinned one SEO TTL). Re-verified clean in the SAME
+  browser/conditions as the baseline: **JS bootup 0.4 s (vs 0.9–1.6
+  baseline), TTI 7.9–8.9 s (vs 9.5–9.9)** — reproducing the close-out
+  session's independent numbers (0.35 s / 7.4 s). `npm test` 2,527
+  green; CI seo-check success; live functional round re-verified
+  (below-fold idle groups all render, 0 skeletons, 0 console errors,
+  tz 459 options + guard, fa↔en round-trip).
 
 ## Files modified in Phase 2
 
@@ -123,7 +144,11 @@
 | `package.json`, `package-lock.json` | 13.202.0.0 (K2 drift fixed) |
 | `scripts/check-stats.js`, `check-mc-heroes.js`, `check-hero-carousel.js` | harness re-pins + 2 new gate checks |
 | `scripts/fixtures/public-page-baseline.html` | parity baseline re-frozen |
-| `WEB_OPTIMIZATION_RESULTS.md` | NEW — Phase 2 measurement record (this phase's spec §4 deliverable) |
+| `assets/public-13.67.js` | NEW — the v13.203 revert bundle (13.65 + carWarm-on-load; deployed artifact, stays on disk) |
+| `assets/public-13.68.js` | NEW — the v13.204 re-apply bundle (byte-identical to v13.202's 13.66.js — the FINAL Phase 2 bundle) |
+| `assets/_headers` | +2 more immutable pins (13.67.js, 13.68.js), cap sweeps #11 (−13.46.css) + #12 (−13.47.css), still 100 rules |
+| `assets/sw.js` | CACHE v105 → v106 → v107 |
+| `WEB_OPTIMIZATION_RESULTS.md` | NEW — Phase 2 measurement record (this phase's spec §4 deliverable) + §8 the contamination arc |
 | `WEB_OPTIMIZATION_PROGRESS.md` | UPDATED — status, verification log, Git log (this file) |
 | `CHANGELOG.md` | v13.202-threaddiet entry |
 
@@ -135,6 +160,7 @@
 | K2 | **RESOLVED (Phase 2)** — `package-lock.json` version field now 13.202.0.0, matching package.json (fixed in the first code-touching commit `a5a805d` per the plan). | Hygiene | Phase 0 |
 | K12 | Phase 2 optional item **deferred by design**: the 18 documented inert X-card i18n keys were not pruned (optional/low-priority per AUDIT §8; kept the phase's diff surface minimal). Candidate for the next bundle-touching round. | Deferred | Phase 2 |
 | K13 | Phase 2 session-interruption recovery: the code round (`a5a805d`) had been committed, pushed and deployed by an interrupted session; the close-out session reconciled (no re-work), verified acceptance end-to-end and completed the missing documentation. No duplicate commits. | Resolved | Phase 2 |
+| K14 | **Measurement-contamination incident (Phase 2, resolved same day):** the v13.203 revert shipped on Lighthouse runs taken while a local `wrangler dev` + browsers consumed the sandbox CPU (TBT appeared 2–3× worse); the clean re-measurement landed exactly on baseline and v13.204 re-applied the change. **The recorded lesson (RESULTS §8): kill every background process before any Lighthouse run; never ship a revert without a clean re-measurement of the reverted state; treat a surprising single-source regression as an artifact until reproduced.** | Resolved (lesson recorded) | Phase 2 |
 | K3 | `package-lock.json.bak` is gitignored; npm-only toolchain (bun breaks resvg). | Constraint | Phase 0 |
 | K4 | No staging environment — `wrangler dev` smoke is the only pre-prod gate (R8). | Constraint | Phase 0 |
 | K5 | Google Search Console access NOT available (no credentials in session; owner completed DNS TXT verification 2026-10-11 per OWNER_TODO). Phase 5/7 needs owner-run reports or credentials. | Open question | Phase 0 |
@@ -172,6 +198,9 @@ still REQUIRED before any Phase 3 edit there.
 | 2026-11-04 | Production timing suite: 16 routes × 3 runs (TTFB, wire bytes, headers, cache status) | ✅ recorded in AUDIT §1.1/§1.6 |
 | 2026-11-04 | Lighthouse local (7 pages, mobile+desktop) + CI history (3 runs) | ✅ recorded in AUDIT §1.2 |
 | 2026-11-04 | Viewport matrix 360–1920 (7 widths) + fa/en + carousel + countdown functional tests + VLM visual review | ✅ no overflow; all pass (AUDIT §2) |
+| 2026-11-04 | Phase 2 close-out (parallel session): `npm test` on `a5a805d` re-verified 2,527 OK; CI seo-check success; Lighthouse ×5 clean (RESULTS §2–§3); VLM visual + functional round; deploy verify (healthz v13.202, SW v105, immutable pins live) | ✅ |
+| 2026-11-04 | v13.203 revert: `npm test` 2,527 OK on `2c2d78b`; CI success; deploy verify (healthz v13.203); **clean re-measurement = baseline** (the contamination proof, RESULTS §8) | ✅ (but see K14) |
+| 2026-11-04 | v13.204 re-apply (final): `npm test` 2,527 OK on `53b05ef`; CI seo-check **success**; deploy verify (healthz `13.204-foldsplit`, `ok:true`, `degraded:false`; 13.68.js 200 + immutable; HTML references 13.68/13.79; SW v107); clean Lighthouse ×3+desktop reproduced bootup 0.4 s / TTI 7.9–8.9 s; live functional round (idle groups render, 0 skeletons, 0 console errors, tz guard, fa↔en) | ✅ **Phase 2 final** |
 | 2026-11-04 | `npm run seo:check` (production) | ✅ **56 PASS / 0 FAIL** |
 | 2026-11-04 | JSON-LD extraction + validation on 5 page families | ✅ valid, content-matched (AUDIT §3.4) |
 | 2026-11-04 | Redirect/404/canonical matrix (18 URLs) + internal links (157 found / 25 sampled) + sitemap spot-check (12 URLs) | ✅ all as documented (AUDIT §3) |

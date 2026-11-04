@@ -203,3 +203,71 @@ Sub-pages were already excellent and are unchanged — no regressions.
 
 *Frozen baseline reference: `WEB_OPTIMIZATION_AUDIT.md` (Phase 1 — never
 overwritten). Phase status: `WEB_OPTIMIZATION_PROGRESS.md`.*
+
+---
+
+## 8. The v13.203 → v13.204 measurement-contamination arc (Phase 2, same day)
+
+> **Honesty record.** The same-day sequence below is preserved verbatim so
+> future sessions never repeat the mistake — and never trust a single noisy
+> measurement source.
+
+1. **v13.202 shipped the fold-split** (§1–§6 above). CI green, VLM visual
+   pass, functional pass, `npm test` 2,527.
+2. **A second session ran after-deploy Lighthouse runs and measured it
+   2–3× WORSE** (mobile TBT 1,810 / 2,370 / 2,570 ms vs the 300–1,060 ms
+   baseline; JS-bundle long-task totals 2,389–2,802 ms) and **reverted the
+   fold-split** as `v13.203-warmdefer` (`2c2d78b`; bundle byte-13.65 plus
+   only the `carWarm` load-event deferral). The revert's release comments
+   claimed per-group layout passes + rIC-timeout forcing as root cause.
+3. **The contamination proof:** the revert session then re-measured
+   v13.203 **under clean conditions** (all background processes killed —
+   the earlier after-deploy runs had executed while a local `wrangler dev`
+   (workerd) + browsers consumed the sandbox CPU) and landed **exactly on
+   the v13.201 baseline**:
+
+   | Run (mobile, clean, Chrome 156) | Perf | LCP | TBT | bootup | TTI | long tasks | JS-bundle ms | max task |
+   | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+   | v13.201 baseline ×3 | 52/60/66 | 5.9–6.5 s | 1,060/590/300 | 0.9–1.6 s | 9.5–9.9 s | 8–14 | 533–926 | 296–629 |
+   | v13.203 revert ×3 | 59/64/49 | 6.1–7.3 s | 650/340/1,020 | 1.3–1.4 s | 9.3–10.2 s | 9–13 | 660–887 | 447–584 |
+
+   The revert restored the baseline byte-for-byte, so the two rows are
+   statistically identical — meaning the "2–3× regression" seen in step 2
+   was **sandbox CPU contention during the measurement window, not the
+   code**. The structural "root cause" in the revert commit message was
+   wrong.
+4. **v13.204-foldsplit re-applied the fold-split byte-identical to
+   v13.202's `13.66.js`** (`53b05ef`, `public-13.68.js`; SW v107; cap
+   sweep #12 evicting the expired `/public-13.47.css` pin; the
+   `13.67.js`/`13.66.js` deployed artifacts stay on disk pinned one SEO
+   TTL). Re-verified clean (same browser as the baseline rows above):
+
+   | Run (mobile, clean, Chrome 156) | Perf | LCP | TBT | bootup | TTI | long tasks | JS-bundle ms | max task |
+   | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+   | v13.204 re-apply ×3 | 61/54/57 | 6.0–7.7 s | 420/1,140/590 | **0.4 s** | **7.9–8.9 s** | 11–19 | 1,093–1,414 | 572–771 |
+   | v13.204 desktop ×1 | 93 | 1.4 s | 140 ms | **0.2 s** | 1.9 s | 3 | 295 | 295 |
+
+   **The improvement reproduced in a second, independent session/browser:**
+   JS bootup **0.9–1.6 s → 0.4 s** (mobile) and **0.5 → 0.2 s** (desktop);
+   TTI **9.9 → 7.9–8.9 s** (mobile). TBT median is unchanged within
+   variance (590 vs 590 ms) — the honest claim is structural (bootup/TTI +
+   the monolith → interleavable tasks), consistent with §2–§3. The higher
+   JS-bundle long-task *totals* reflect per-group task attribution (more
+   tasks above the 50 ms threshold each carry attribution), not more
+   user-facing blocking (TTI/bootup improved).
+5. **Final state (Phase 2 close):** production runs
+   **`13.204-foldsplit`** (= the fold-split bundle + the F-M1 CSS pass +
+   `carWarm` load-event deferral). CI seo-check **success** on `53b05ef`;
+   `npm test` **2,527 checks, 0 failures**; live functional round
+   re-verified post-re-apply (all below-fold idle groups render —
+   topSpot 10 / uclSpot 8 / weekBox 16 / finished 6 children, 0 skeletons,
+   0 console errors, tz picker 459 options + open/close + lazy-build
+   guard, fa↔en round-trip, hero cards visible); healthz
+   `ok:true, version:13.204-foldsplit, degraded:false`.
+
+**Lesson recorded (for every later phase):** kill every background
+process (dev servers, browsers, VLM calls) before any Lighthouse run;
+treat a surprising single-source regression as a measurement artifact
+until a clean re-run reproduces it; never ship a revert without a clean
+re-measurement of the reverted state.
+
