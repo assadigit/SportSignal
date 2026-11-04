@@ -250,7 +250,7 @@ console.log("\n=== 2. payload / SSR / dedupe contracts (source) ===");
 const pmSrc = read("src/public-matches.ts");
 const routerSrc = read("src/seo/router.ts");
 const publicSrc = read("src/pages/public.ts");
-const js61 = read("assets/public-13.66.js"); // v13.202-threaddiet (F-M2): the bundle read follows the 13.65 -> 13.66 rename (the main-thread diet: the fold-split render chain — the car consumers renderHeroSpot/updateBigBar stay in the fetch task, the below-fold lists idle; the belt-and-braces carWarm rides the window load event); the variable name stays js61 — the historical pin idiom; was 13.65 since v13.201-carstack (the ghost car-in strip); was 13.64 since v13.200-carsmooth (the cross-slide choreography)
+const js61 = read("assets/public-13.67.js"); // v13.203-warmdefer (F-M2, the honest cut): the bundle read follows the 13.66 -> 13.67 rename (the fold-split experiment reverted after failing the lab gate — the bundle is byte-13.65 plus the belt-and-braces carWarm riding the window load event); the variable name stays js61 — the historical pin idiom; was 13.66 since v13.202-threaddiet (the experiment); was 13.65 since v13.201-carstack (the ghost car-in strip); was 13.64 since v13.200-carsmooth (the cross-slide choreography)
 const core16 = read("assets/core-13.16.js");
 const css76 = read("assets/public-13.79.css"); // v13.202-threaddiet (F-M1): the stylesheet read follows the 13.78 -> 13.79 rename (the conservative dead-rule pass — 31 provably-dead rules retired; no live carousel rule touched); the variable name stays css76 — the historical pin idiom; was 13.78 since v13.201-carstack (the z-index:5 stacking repair); was 13.77 since v13.200-carsmooth (the cross-slide keyframes + the sheen)
 

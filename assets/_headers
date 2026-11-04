@@ -407,16 +407,29 @@
 /public-13.65.js
   Cache-Control: public, max-age=31536000, immutable
 
-# v13.202-threaddiet (F-M2): the main-thread diet — the boot render chain
-# splits at the fold (updateBigBar/renderHeroSpot/fitHeroNames in the
-# fetch task; the below-fold renders drain one group per idle slot via
-# __belowFoldQueue/__idleSlot, reading DATA so a straggler renders only
-# the newest good payload), initTz leaves the sync init chain (idle, with
-# the toggleTz lazy-build guard closing the open-before-build race) and
-# the belt-and-braces carWarm rides the window load event instead of DCL
+# v13.202-threaddiet (F-M2): the main-thread diet — SUPERSEDED ~35
+# minutes later by the v13.203-warmdefer revert: the fold-split render
+# chain (the below-fold groups draining one per idle rIC slot) FAILED
+# the lab gate — Lighthouse mobile TBT went 300-1060ms -> 1810-2570ms
+# (the per-group style/layout passes cost more than the one batched
+# pass, and the rIC timeouts force the groups INTO the busy boot
+# window); the bundle is byte-13.65 except the ONE surviving edit — the
+# belt-and-braces carWarm rides the window load event instead of DCL
 # (no art prefetch competition with the LCP fetch).
 # (rename-on-edit; 13.65.js stays served + pinned one SEO TTL above.)
 /public-13.66.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.203-warmdefer (F-M2, the honest cut): public-13.66.js -> 13.67.js
+# — the fold-split + idle-initTz experiment REVERTED after failing the
+# lab gate (TBT 2-3x worse, measured); the bundle is byte-13.65 plus
+# the ONE edit that measured safe: the belt-and-braces carWarm defers
+# to the window LOAD event (post-LCP-critical-resources) instead of
+# DCL, keeping the all-slides art prefetch off the LCP fetch window;
+# carReconcile's slate-change warm (the primary) + the next-slide
+# preload + the ready-gated swap keep every rotation fresh.
+# (rename-on-edit; 13.66.js stays served + pinned one SEO TTL above.)
+/public-13.67.js
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.197-mcdesktop (owner: use the desktop player images on mobile too):
@@ -833,6 +846,18 @@
 /public-13.48.css
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.203-warmdefer cap sweep #11: /public-13.46.css pin EVICTED (the
+# oldest expired pin, ~63 releases past its one-SEO-TTL retention — the
+# same terms as every sweep; the +1 pin of this release pushed the file
+# past Cloudflare's _headers 100-rule cap). The FILE stays on disk, so an
+# ancient cached HTML re-fetching it still resolves — it just rides the
+# default cache headers.
+
+# v13.145-countdown (retired pair — EVICTED by the v13.203-warmdefer
+# 100-rule cap sweep #11 above; the file stays on disk, an ancient cached
+# HTML re-fetching it still resolves — it just rides the default cache
+# headers).
+
 # v13.146-compact (retired under v13.147-syncdate): the pair (13.47.css + 13.36.js — CSS-only
 # v13.146-compact (owner): the countdown halves (clamp 460/324 → 230/162;
 # every fixed-px value inside the panel halves with the canvas — type
@@ -841,20 +866,6 @@
 # artwork fades, never the digits/labels riding above it). CSS-only round;
 # #bigbar's ids/contract are untouched.
 /public-13.47.css
-  Cache-Control: public, max-age=31536000, immutable
-
-# v13.145-countdown (retired under v13.146-compact): the pair (13.46.css + 13.36.js — CSS+template
-# release, the JS carries over) — immutable under the rename-on-edit rule;
-# retired versions stay pinned below per the retention rule (stale edge
-# HTML <=900s may still reference them).
-# v13.145-countdown (owner): the countdown panel rides the SUPPLIED HUD
-# artwork /ui/sportsignal-countdown-bg.png (474×204 stadium capsule, kept
-# exactly as shipped) — the four cells are rebuilt inside its measured
-# glass interior (deep-navy translucent pockets, thin cyan outlines,
-# chamfered corners, lime top ticks, cqi-scaled type); the old CSS chamfer
-# panel + .count-inner retire; #bigbar keeps its ids/contract (template
-# restructure: count-head/count-tiles/hcSr/hc-track are direct children).
-/public-13.46.css
   Cache-Control: public, max-age=31536000, immutable
 
 # the supplied countdown HUD artwork — immutable (referenced by exact URL

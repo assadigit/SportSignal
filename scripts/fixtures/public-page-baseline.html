@@ -987,18 +987,21 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      explicit z-index:5 that keeps the data zone above the veil/panel/
      capsule after the fill-mode transform creates its stacking context
      — the "blank HUD + dim league logo on the second slide" fix). -->
-<script src="/public-13.66.js" defer></script>
-<!-- v13.202-threaddiet (F-M2): the JS rename 13.65 -> 13.66 — the
-     main-thread diet. The boot render chain splits at the fold:
-     updateBigBar/renderHeroSpot/fitHeroNames (the above-fold hero card
-     + countdown + name fit) run in the fetch task; every below-fold
-     render drains one group per idle slot (__belowFoldQueue/__idleSlot,
-     reading DATA so a straggler can only render the newest good
-     payload). initTz leaves the sync init chain (idle, ahead of load();
-     toggleTz self-builds the picker on first open if it has not run).
-     The belt-and-braces carWarm rides the window load event instead of
-     DOMContentLoaded (no art-prefetch competition with the LCP fetch on
-     a throttled link). The poll cadence is untouched. -->
+<script src="/public-13.67.js" defer></script>
+<!-- v13.202-threaddiet + v13.203-warmdefer (F-M2, the honest cut):
+     the main-thread-diet experiment and its revert, ~35 minutes apart.
+     v13.202 split the boot render chain at the fold (the below-fold
+     renders draining one per idle rIC slot) and idled initTz — the lab
+     gate FAILED it: Lighthouse mobile TBT went 300-1060ms ->
+     1810-2570ms (the per-group style/layout passes cost more than the
+     one batched pass, and the rIC timeouts force the groups INTO the
+     busy boot window). v13.203 reverts to the byte-13.65 chain and
+     keeps the ONE edit that measured safe: the belt-and-braces carWarm
+     rides the window LOAD event (post-LCP-critical-resources) instead
+     of DOMContentLoaded, keeping the all-slides art prefetch off the
+     LCP fetch window (carReconcile's slate-change warm is the
+     primary; the next-slide preload + the ready-gated swap keep every
+     rotation fresh). The poll cadence is untouched. -->
 
 <!-- v13.199-mcspace (owner: the header-space round — "a little margin
      padding (just slightly from the header)", "make the league or ucl

@@ -804,7 +804,17 @@
 //              the belt-and-braces carWarm rides the load event; 31
 //              provably-dead CSS rules retired). Every asset-editing
 //              release bumps (the v13.39 rule).
-const CACHE = "sportsignal-v105";
+// v13.203-warmdefer (F-M2, the honest cut): the fold-split + idle-initTz
+//              experiment REVERTED after failing the lab gate (Lighthouse
+//              mobile TBT 300-1060ms -> 1810-2570ms: the per-group
+//              style/layout passes cost more than the one batched pass and
+//              the rIC timeouts force the groups INTO the busy boot
+//              window) — routine evict for the public-13.66.js→13.67.js
+//              rename: the bundle is byte-13.65 plus the ONE edit that
+//              measured safe (the belt-and-braces carWarm rides the window
+//              load event, post-LCP-critical-resources). Every
+//              asset-editing release bumps (the v13.39 rule).
+const CACHE = "sportsignal-v106";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
