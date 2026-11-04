@@ -814,7 +814,15 @@
 //              measured safe (the belt-and-braces carWarm rides the window
 //              load event, post-LCP-critical-resources). Every
 //              asset-editing release bumps (the v13.39 rule).
-const CACHE = "sportsignal-v106";
+// v13.204-foldsplit (F-M2, the verified re-apply): routine evict for
+//              the public-13.67.js→13.68.js rename — the fold-split bundle
+//              returns byte-identical to the v13.202 13.66.js after the
+//              v13.203 revert was shown to be based on contaminated lab
+//              runs (clean re-measurement: the revert landed exactly on
+//              the v13.201 baseline; the parallel session's clean v13.202
+//              runs measured bootup 0.9→0.35s / TTI 9.9→7.4s). Every
+//              asset-editing release bumps (the v13.39 rule).
+const CACHE = "sportsignal-v107";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

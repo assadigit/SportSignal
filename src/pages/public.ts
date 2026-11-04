@@ -984,21 +984,23 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      explicit z-index:5 that keeps the data zone above the veil/panel/
      capsule after the fill-mode transform creates its stacking context
      — the "blank HUD + dim league logo on the second slide" fix). -->
-<script src="/public-13.67.js" defer><\/script>
-<!-- v13.202-threaddiet + v13.203-warmdefer (F-M2, the honest cut):
-     the main-thread-diet experiment and its revert, ~35 minutes apart.
-     v13.202 split the boot render chain at the fold (the below-fold
-     renders draining one per idle rIC slot) and idled initTz — the lab
-     gate FAILED it: Lighthouse mobile TBT went 300-1060ms ->
-     1810-2570ms (the per-group style/layout passes cost more than the
-     one batched pass, and the rIC timeouts force the groups INTO the
-     busy boot window). v13.203 reverts to the byte-13.65 chain and
-     keeps the ONE edit that measured safe: the belt-and-braces carWarm
-     rides the window LOAD event (post-LCP-critical-resources) instead
-     of DOMContentLoaded, keeping the all-slides art prefetch off the
-     LCP fetch window (carReconcile's slate-change warm is the
-     primary; the next-slide preload + the ready-gated swap keep every
-     rotation fresh). The poll cadence is untouched. -->
+<script src="/public-13.68.js" defer><\/script>
+<!-- v13.202-threaddiet + v13.203-warmdefer + v13.204-foldsplit (F-M2,
+     the full arc): v13.202 split the boot render chain at the fold
+     (the above-fold trio updateBigBar/renderHeroSpot/fitHeroNames in
+     the fetch task; the nine below-fold render groups one per idle
+     slot via __belowFoldQueue/__idleSlot reading DATA; initTz at the
+     head of the idle callback with the toggleTz lazy-build guard; the
+     belt-and-braces carWarm on the window load event). v13.203
+     reverted it on a lab measurement that was later shown
+     CONTAMINATED (the runs executed while a local wrangler dev +
+     browsers ate the sandbox CPU — the clean v13.203 re-measurement
+     landed exactly on the v13.201 baseline, and the parallel
+     close-out session's clean v13.202 runs measured bootup 0.9s ->
+     0.35s / TTI 9.9s -> 7.4s with the 629ms render monolith replaced
+     by interleavable <=356ms tasks). v13.204 re-applies the fold-split
+     bundle byte-identical to v13.202's 13.66.js, re-verified clean.
+     The poll cadence is untouched throughout. -->
 
 <!-- v13.199-mcspace (owner: the header-space round — "a little margin
      padding (just slightly from the header)", "make the league or ucl

@@ -421,15 +421,33 @@
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.203-warmdefer (F-M2, the honest cut): public-13.66.js -> 13.67.js
-# — the fold-split + idle-initTz experiment REVERTED after failing the
-# lab gate (TBT 2-3x worse, measured); the bundle is byte-13.65 plus
-# the ONE edit that measured safe: the belt-and-braces carWarm defers
-# to the window LOAD event (post-LCP-critical-resources) instead of
-# DCL, keeping the all-slides art prefetch off the LCP fetch window;
-# carReconcile's slate-change warm (the primary) + the next-slide
-# preload + the ready-gated swap keep every rotation fresh.
+# — the fold-split + idle-initTz experiment REVERTED after a lab
+# measurement that was later shown CONTAMINATED (the runs executed
+# while a local wrangler dev + browsers consumed the sandbox CPU —
+# the clean v13.203 re-measurement landed exactly on the v13.201
+# baseline, and the parallel close-out session's clean v13.202 runs
+# measured bootup 0.9s -> 0.35s / TTI 9.9s -> 7.4s); superseded ~50
+# minutes later by the v13.204-foldsplit re-apply.
 # (rename-on-edit; 13.66.js stays served + pinned one SEO TTL above.)
 /public-13.67.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# v13.204-foldsplit (F-M2, the verified re-apply): public-13.67.js ->
+# 13.68.js — the fold-split bundle is BACK, byte-identical to the
+# v13.202 13.66.js (the boot render chain splits at the fold: the
+# above-fold trio updateBigBar/renderHeroSpot/fitHeroNames in the
+# fetch task; the nine below-fold render groups one per idle slot via
+# __belowFoldQueue/__idleSlot reading DATA; initTz at the head of the
+# idle callback ahead of load() with the toggleTz lazy-build guard;
+# the belt-and-braces carWarm on the window load event). The evidence:
+# the parallel close-out session's CLEAN runs measured bootup 0.9 ->
+# 0.35s, TTI 9.9 -> 7.4s, TBT 250 -> 242ms, perf 65 -> 68 with the
+# 629ms render monolith replaced by interleavable <=356ms tasks; the
+# revert was based on runs contaminated by sandbox CPU contention
+# (wrangler dev + browsers running concurrently) — re-applied and
+# re-verified clean.
+# (rename-on-edit; 13.67.js stays served + pinned one SEO TTL above.)
+/public-13.68.js
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.197-mcdesktop (owner: use the desktop player images on mobile too):
@@ -858,15 +876,17 @@
 # HTML re-fetching it still resolves — it just rides the default cache
 # headers).
 
-# v13.146-compact (retired under v13.147-syncdate): the pair (13.47.css + 13.36.js — CSS-only
-# v13.146-compact (owner): the countdown halves (clamp 460/324 → 230/162;
-# every fixed-px value inside the panel halves with the canvas — type
-# clamps, gaps, paddings, chamfer, lime tick) and the HUD artwork backs
-# off 20% (its own .hero-count::before layer at opacity .8, so only the
-# artwork fades, never the digits/labels riding above it). CSS-only round;
-# #bigbar's ids/contract are untouched.
-/public-13.47.css
-  Cache-Control: public, max-age=31536000, immutable
+# v13.204-foldsplit cap sweep #12: /public-13.47.css pin EVICTED (the
+# oldest expired pin, ~64 releases past its one-SEO-TTL retention — the
+# same terms as every sweep; the +1 pin of this release pushed the file
+# past Cloudflare's _headers 100-rule cap). The FILE stays on disk, so
+# an ancient cached HTML re-fetching it still resolves — it just rides
+# the default cache headers.
+
+# v13.146-compact (retired pair — EVICTED by the v13.204-foldsplit
+# 100-rule cap sweep #12 above; the file stays on disk, an ancient
+# cached HTML re-fetching it still resolves — it just rides the
+# default cache headers).
 
 # the supplied countdown HUD artwork — immutable (referenced by exact URL
 # from 13.46.css; it never changes in place).
