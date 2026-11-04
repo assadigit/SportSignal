@@ -231,7 +231,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   // announced by screen readers); it just does not occupy visual layout.
   // The injected styles stay inline so the shared stylesheet stays untouched.
   html = html.replace("</style>",
-    ".hero-h1{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.skip-link{position:absolute;inset-inline-start:-9999px}.skip-link:focus{inset-inline-start:8px;top:8px;z-index:99;background:#0f172a;color:#fff;padding:8px 14px;border-radius:8px}a.match{color:inherit;text-decoration:none}a.match:hover .team{opacity:.85}a.match:focus-visible{outline:2px solid #5ea0ff;border-radius:8px}</style>");
+    ".hero-h1{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.skip-link{position:absolute;inset-inline-start:-9999px}.skip-link:focus{inset-inline-start:8px;top:8px;z-index:99;background:#0f172a;color:#fff;padding:14px 18px;border-radius:8px}a.match{color:inherit;text-decoration:none}a.match:hover .team{opacity:.85}a.match:focus-visible{outline:2px solid #5ea0ff;border-radius:8px}</style>");
 
   // The ONE <h1> (P-12) — sr-only (uifix, see above); a short sr-only page
   // summary follows it (A-04/A-01). The client JS leaves these nodes alone
@@ -348,9 +348,9 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
       // layer hidden for non-upcoming heroes; updateBigBar keeps the same
       // rule every tick. __SEO_HCS__ has no tile anymore (three pockets)
       // but stays replaced so the placeholder never leaks into HTML.
-      html = html.replace('<div class="hud-cells" role="timer" dir="ltr">', '<div class="hud-cells" role="timer" dir="ltr" style="display:none">');
+      html = html.replace('<div class="hud-cells" role="timer" dir="ltr" aria-hidden="true">', '<div class="hud-cells" role="timer" dir="ltr" aria-hidden="true" style="display:none">');
       // v13.164-matchcard: the mobile card's cells hide under the SAME rule
-      html = html.replace('<div class="mc-cells" id="mcCells" role="timer" dir="ltr">', '<div class="mc-cells" id="mcCells" role="timer" dir="ltr" style="display:none">');
+      html = html.replace('<div class="mc-cells" id="mcCells" role="timer" dir="ltr" aria-hidden="true">', '<div class="mc-cells" id="mcCells" role="timer" dir="ltr" aria-hidden="true" style="display:none">');
       // v13.169-mcv2: a non-upcoming hero shows the match-state chip in the
       // middle countdown box instead of a stale countdown — the status
       // SUPPLIED BY THE MATCH DATA (live green «زنده», «پایان» finished,

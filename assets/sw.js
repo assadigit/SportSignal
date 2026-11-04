@@ -858,7 +858,28 @@
 //              2x zoom in the glow band + crowd-edge crops) is what the
 //              mc-clean scene rule and the preload ship now. Every
 //              asset-editing release bumps (the v13.39 rule).
-const CACHE = "sportsignal-v109";
+// v13.209-a11y (Phase 6, F-M3b/F-M3/F-M6): bumped from v109 — this
+//              release edits BOTH client-referenced assets: the bundle
+//              public-13.68.js→13.69.js (the hero card accessible names
+//              land WCAG 2.5.3 Label in Name: the mobile card's
+//              aria-label now contains its visible text — home − away +
+//              the Jalali date + the kickoff; the desktop card's curated
+//              label RETIRES for name-from-content because its
+//              state-dependent centre can never sit inside a static
+//              accessible name; the ticking countdown digits live
+//              aria-hidden in the static markup and the #mcSr/#hcSr
+//              polite announcers moved outside both card anchors) and
+//              the stylesheet public-13.80.css→13.81.css (the expired-row
+//              dimming moves from opacity:.48 to color — pure #fff at
+//              .48 over the countdown pill stack lands 4.48:1, under
+//              the 4.5:1 AA floor, so no ink could rescue opacity
+//              dimming; the past rows keep their quiet look via
+//              saturate(.55) + a deeper box tint + grayscale logos +
+//              muted-but-legal text inks; the touch targets reach the
+//              44px floor where the layout tolerates it and the WCAG
+//              2.5.8 AA 24px floor everywhere else). Every
+//              asset-editing release bumps (the v13.39 rule).
+const CACHE = "sportsignal-v110";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

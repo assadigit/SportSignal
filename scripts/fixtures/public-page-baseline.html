@@ -95,7 +95,7 @@ __SEO_JSONLD__
      .v-icon, .mc-port img.mc-fill — every removal verified dead against
      every client-referencing surface + the dynamic-class audit + git
      history; no live rule, state, lang, theme or media variant touched). -->
-<link rel="stylesheet" href="/public-13.80.css">
+<link rel="stylesheet" href="/public-13.81.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -315,6 +315,14 @@ html[lang="fa"] .hero-mcard .mc-ko{font-family:Morabba,Peyda,'Segoe UI',Tahoma,s
      ask; the v12.20 sync stamp becomes the header's quiet second row. The
      tz popover still anchors to this bar (same ids, same wiring — only the
      chrome around them changed). -->
+<!-- v13.209-a11y (F-L3, WCAG 2.4.1/2.4.3): the skip link is the FIRST
+     focusable element in the DOM — it rode AFTER the topbar since v12.24,
+     making it the 3rd tab stop (brand → lang button → skip) at phone
+     widths where the nav is display:none and #sbtn hides. A bypass that
+     keyboard users must tab INTO the header to reach is not a bypass;
+     moving it before <header> restores the WCAG 2.4.3 expected order
+     without touching the visual (it stays off-canvas until :focus). -->
+<a class="skip-link" href="#main">پرش به محتوا</a>
 <header id="topbar">
 <!-- v12.26 (the user's ask): "in darkmode it turns to a white sillohuette.
      fix this. show the given logo in both light and dark mode" — the white
@@ -332,7 +340,6 @@ html[lang="fa"] .hero-mcard .mc-ko{font-family:Morabba,Peyda,'Segoe UI',Tahoma,s
      «آخرین به‌روزرسانی: جمعه ۲۱:۳۰ شب» (weekday + time + period word) —
      rendered by renderSync()/fmtStamp() from the payload's fetchedAt. -->
 </header>
-<a class="skip-link" href="#main">پرش به محتوا</a>
 <main id="main">
 <!-- v12.12: the view toggle is RETIRED — the page is permanently big-only
      («فقط بازی‌های بزرگ», the user's default). The hero card + the topspot
@@ -472,15 +479,16 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      the router ships the layer hidden for non-upcoming heroes and
      updateBigBar keeps the same rule every tick. #hcSr + the sr-only 24h
      progress track keep their ids (a11y contract untouched). -->
-<div class="hud-cells" role="timer" dir="ltr">
+<div class="hud-cells" role="timer" dir="ltr" aria-hidden="true"><!-- v13.209-a11y (F-M3b, WCAG 2.5.3): same treatment as the mobile mc-cells — the ticking digits retire from the accessible tree; #hcSr (moved below, outside the anchor) carries the countdown. -->
 <span class="count-tile"><i class="count-unit" data-i="uDay">روز</i><b class="count-num" id="hcD">__SEO_HCD__</b></span>
 <span class="count-tile"><i class="count-unit" data-i="uHour">ساعت</i><b class="count-num" id="hcH">__SEO_HCH__</b></span>
 <span class="count-tile"><i class="count-unit" data-i="uMin">دقیقه</i><b class="count-num" id="hcM">__SEO_HCM__</b></span>
 </div>
-<span id="hcSr" class="sr-only" aria-live="polite"></span>
 <div class="hc-track" id="bigbarTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="__SEO_HCPCT__" title="نوار پیشرفت در ۲۴ ساعت پایانی قبل از شروع بازی پر می‌شود"><div id="bigbarFill" class="bigbar-fill"></div></div>
 <div id="heroSpot">__SEO_HERO__</div>
 </a>
+<!-- v13.209-a11y (F-M3b): #hcSr moved OUTSIDE the desktop card anchor — same tick-in-the-name problem as #mcSr; same id, same polite wiring. -->
+<span id="hcSr" class="sr-only" aria-live="polite"></span>
 <!-- v13.170-mcv3 (owner): the MOBILE hero — the reference-rebuild HUD match
      card (the owner's 13-instruction round against Visual reference v2.png;
      built + QA'd as a standalone demo first — VLM 98/100 side-by-side, every
@@ -671,7 +679,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 </g>
 </svg>
 <div id="mcardSpot">__SEO_MHERO__</div>
-<div class="mc-cells" id="mcCells" role="timer" dir="ltr">
+<div class="mc-cells" id="mcCells" role="timer" dir="ltr" aria-hidden="true"><!-- v13.209-a11y (F-M3b, WCAG 2.5.3): the per-second ticking digits are decorative — the polite #mcSr announcements (now OUTSIDE the anchor) carry the live countdown for assistive tech, and keeping the digits in the accessible tree made the anchor's label-content-name-mismatch unresolvable (a ticking number can never sit inside a static accessible name). -->
 <div class="mc-tile">
 <svg viewBox="0 0 100 46" preserveAspectRatio="none" aria-hidden="true">
 <path d="M 4 1.5 L 96 1.5 L 98.5 4 L 98.5 42 L 96 44.5 L 4 44.5 L 1.5 42 L 1.5 4 Z" fill="#04152E" opacity=".95"/>
@@ -723,8 +731,9 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <span class="v-txt" id="mcVenue">__SEO_MVEN__</span>
 </div>
 </div>
-<span id="mcSr" class="sr-only" aria-live="polite"></span>
 </a>
+<!-- v13.209-a11y (F-M3b): #mcSr moved OUTSIDE the card anchor — the live-region text ticked every second and sat inside the link's visible-text computation, so no accessible name could ever contain it. It still announces the countdown politely (same id, same wiring). -->
+<span id="mcSr" class="sr-only" aria-live="polite"></span>
 <!-- v13.195-carsides (owner: "the buttons are too big, also they must
      appear at the sides of the players"): the arrows leave the bar —
      small chevron circles at the players' flanks, vertically centred on
@@ -991,7 +1000,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <div class="contact-cta"><a href="mailto:sportsignal@atomicmail.io" class="contact-email">sportsignal@atomicmail.io</a></div>
 </div>
 </div>
-<div><span data-i="madeWith">ساخته‌شده با ❤️</span> — <a href="/admin" data-i="adminLink">ورود مدیریت</a> — <a href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="botLink">ربات تلگرام</a></div>
+<div class="foot-base"><span data-i="madeWith">ساخته‌شده با ❤️</span> — <a href="/admin" data-i="adminLink">ورود مدیریت</a> — <a href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="botLink">ربات تلگرام</a></div>
 <div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده دیروز:</span> <span class="vc-n" id="vcYesterday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده این ماه:</span> <span class="vc-n" id="vcMonth">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div></footer>
 <!-- v12.20 (the user's ask): sticky Telegram join CTA — the hero button
      scrolls away with the header; once the user is past it, this bottom bar
@@ -1016,7 +1025,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      explicit z-index:5 that keeps the data zone above the veil/panel/
      capsule after the fill-mode transform creates its stacking context
      — the "blank HUD + dim league logo on the second slide" fix). -->
-<script src="/public-13.68.js" defer></script>
+<script src="/public-13.69.js" defer></script>
 <!-- v13.202-threaddiet + v13.203-warmdefer + v13.204-foldsplit (F-M2,
      the full arc): v13.202 split the boot render chain at the fold
      (the above-fold trio updateBigBar/renderHeroSpot/fitHeroNames in

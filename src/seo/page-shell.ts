@@ -1,6 +1,6 @@
 // SportSignal — <head> builder (P-01..P-11) + the HTML shell shared by every
 // NEW public page (match/team/competition/hubs/trust). The shell reuses the
-// site's versioned stylesheet (currently /public-13.80.css) so the design
+// site's versioned stylesheet (currently /public-13.81.css) so the design
 // (cards, rows, tables, fonts, themes) is identical to the homepage, plus a
 // small inline block for page-specific components (breadcrumbs, facts,
 // prose). No home-page JS is loaded — these pages are complete server HTML.
@@ -92,7 +92,7 @@ export function pageShell(opts: {
 ${themeInit}
 <link rel="preload" href="/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/public-13.80.css">
+<link rel="stylesheet" href="/public-13.81.css">
 <style>
 /* Page-specific components for server-rendered SEO pages (breadcrumbs,
    answer-first block, facts table, prose). Reuses the site's CSS vars. */
@@ -128,7 +128,11 @@ ${themeInit}
 .pagination .cur{background:rgba(94,160,255,.15);border-color:rgba(94,160,255,.5)}
 footer.pagesfoot{margin-top:26px;border-top:1px solid rgba(148,163,184,.18);padding:16px 0 26px;font-size:.85rem;color:var(--muted,#9aa4b2)}
 footer.pagesfoot nav{display:flex;flex-wrap:wrap;gap:14px;padding:6px 0}
-footer.pagesfoot a{color:inherit;text-decoration:none}
+footer.pagesfoot a{color:inherit;text-decoration:none;}
+/* v13.209-a11y (F-M6): the compact footer nav links clear the WCAG 2.5.8
+   AA 24px floor via padding; the 44px enhancement target is a documented
+   exception for this compact row (RESULTS §17). */
+footer.pagesfoot nav a{display:inline-block;padding:7px 2px}
 footer.pagesfoot a:hover{text-decoration:underline}
 .pagenotfound{padding:30px 6px}
 .pagenotfound h1{font-size:1.5rem}
@@ -178,7 +182,7 @@ a.mvenue-map:active{transform:scale(.97)}
 .stwin{margin:0}
 .strow-me{background:rgba(125,211,252,.10);border:1px solid rgba(125,211,252,.32);border-inline-start:3px solid rgba(125,211,252,.55);border-radius:8px;padding:4px 6px;font-weight:700;transition:background .15s}
 .strow-me:hover{background:rgba(125,211,252,.16)}
-.stmore{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:#7dd3fc;text-decoration:none;padding:8px 2px 2px;margin-top:5px;border-top:1px dashed var(--border,#334155)}
+.stmore{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:#7dd3fc;text-decoration:none;padding:12px 2px 4px;margin-top:2px;border-top:1px dashed var(--border,#334155)}
 .stmore:hover{text-decoration:underline}
 /* v13.87-formtable: the match page's recent-form strip — one row per side,
    dots ب/م/ش (win/draw/loss) colored green/gray/red, hover title with
@@ -238,6 +242,13 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
 @media (prefers-reduced-motion:reduce){.hubtile,.hubtile:hover{transform:none}.mact:active{transform:none}.fdot,.fdot:hover{transform:none}.strow-me{transition:none}}
 .simcount{display:inline-block;font-size:.72rem;font-weight:600;color:var(--muted,#9aa4b2);background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.24);border-radius:999px;padding:1px 9px;margin-inline-start:8px;vertical-align:middle}
 .mactions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:2px 0 14px}
+/* v13.209-a11y (F-L3/WCAG 2.4.1): the sub-page bypass - the shell pages
+   had NO skip link at all (only the homepage carried one), leaving
+   keyboard users to tab through brand + 6 nav links + the CTA before
+   reaching #main on every page. Same off-canvas-until-focus pattern
+   as the homepage; first focusable in the DOM. */
+.skip-link{position:absolute;inset-inline-start:-9999px}
+.skip-link:focus{inset-inline-start:8px;top:8px;z-index:99;background:#0f172a;color:#fff;padding:14px 18px;border-radius:8px}
 .mact{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:var(--fg,#e8eefc);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.28);border-radius:11px;padding:8px 14px;text-decoration:none;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s,transform .15s}
 .mact:hover{border-color:rgba(94,160,255,.55);background:rgba(94,160,255,.12)}
 .mact:active{transform:scale(.97)}
@@ -248,6 +259,7 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
 ${opts.head}
 </head>
 <body class="${opts.bodyClass || ""}" data-ss-generated="${opts.bodyDate || ""}">
+<a class="skip-link" href="#main">پرش به محتوا</a>
 <header id="topbar">
 <a class="brand" href="/" aria-label="SportSignal"><img src="/logo.png" alt="SportSignal" width="146" height="50" referrerpolicy="no-referrer"></a>
 <nav class="mainnav" aria-label="ناوبری اصلی"><a href="/">خانه</a><a href="/matches">بازی‌ها</a><a href="/teams">تیم‌ها</a><a href="/competitions">رقابت‌ها</a><a href="/methodology">روش کار</a><a href="/about">درباره</a></nav>

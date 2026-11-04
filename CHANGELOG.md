@@ -4,6 +4,91 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.209-a11y — web-optimization Phase 6: accessibility & security (F-M3 contrast + F-M3b hero accessible names + F-M6 touch targets + F-L3 skip-link order)
+
+_2026-11-04 · the Phase 6 round per `WEB_OPTIMIZATION_AUDIT.md §8/§6.1`
+(the before/after record lives in `WEB_OPTIMIZATION_RESULTS.md §17`).
+Website-only surfaces (`WEB_OPTIMIZATION_ARCHITECTURE.md §3.1`); the
+Telegram bot is untouched. Both client assets ride the full ADR-006
+rename ceremony: `public-13.80.css → 13.81.css` + `public-13.68.js
+→ 13.69.js`, `_headers` +2 pins with cap sweep #14 (− the
+4\u20135-SW-generations-stale `13.66.js`/`13.67.js` pins, still exactly 100
+rules), SW `sportsignal-v109 → v110`, harness re-pins
+(check-stats/check-hero-carousel/check-mc-heroes), the public-page parity
+baseline re-frozen via the reviewed `--update` path, `npm test` 2,587
+(2,552 + the NEW 34-check `scripts/check-a11y.js` gate + the release
+wiring)._
+
+**F-M3 — the expired-row dimming moves from opacity to COLOR (the
+unfixable-by-any-ink proof):** `.spotitem.past{opacity:.48}` failed WCAG
+1.4.3 AA on every past-match row (measured live: the countdown pill
+2.95:1, `.kickdate` 3.19:1, `.team` 4.15:1 — the audit's 7-node F-M3
+family). Compositing math shows NO ink could rescue it: even pure #fff at
+.48 opacity over the countdown pill's layer stack
+(countdown-bg → rowsurf → glass → --bg) lands at 4.48:1, under
+the 4.5:1 floor. The past rows keep their quiet expired look via the SAME
+`saturate(.55)` desaturation + a deeper box tint
+(rgba(11,17,31,.72) + border #243044) + the same grayscale logos +
+muted-but-LEGAL text inks (`.team` #a8b7cc → 8.92:1,
+`.kickdate`/`.countdown` #89b8f5 → 7.34\u20138.85:1, `.info` #a3b3ca
+→ 8.53:1 — all measured in the rendered browser after the fix).
+
+**F-M3b — the hero card accessible names land WCAG 2.5.3 Label in Name:**
+Lighthouse flagged `label-content-name-mismatch` on BOTH hero card
+anchors (the mobile `#heroMCard` at phone widths, the desktop
+`#bigHeroCard` at desktop widths — the weight-0 audit that flickered in
+every CI run). Root cause: the client set curated `aria-label`s
+("home − away") while the visible card text (names + Jalali date +
+kickoff + the per-second ticking countdown) sat outside the name — and
+the ticking digits/live-region text made ANY static label permanently
+unmatchable. THE FIX: the mobile card's label now contains its visible
+text ("home − away\u060C date\u060C kickoff"); the desktop card's curated
+label RETIRES (its state-dependent centre — live score+minute vs
+upcoming time+date — can never sit inside a static accessible name, so
+the anchor takes name-from-content, always content-matched); the ticking
+`.mc-cells`/`.hud-cells` digits live `aria-hidden` in the static markup;
+and the `#mcSr`/`#hcSr` polite countdown announcers moved OUTSIDE both
+card anchors (same ids, same wiring — they still announce the countdown,
+they just stop polluting the links' visible-text computation). The
+router's hide-for-non-upcoming-heroes replace literals stay in sync.
+
+**F-M6 — touch targets reach the 44px floor where the layout tolerates
+it (WCAG 2.5.8 AA everywhere else):** `.tb-btns button` (the timezone +
+EN language pills) 34↗44px; `.mainnav a` rows 38↗ 45.6px; the mobile
+footer `.footnav a` 34↗46px; `.finmore` 35↗44px; the mobile
+`#backTop` 42↗44px; `.contact-email` 40↗46px; the skip-link focus
+pill 26↗47px; the footer baseline utility links 18↗30px (≥ the
+2.5.8 AA 24px floor — their 44px status is a documented exception in
+RESULTS §17); the sub-page `.pagesfoot nav a` + `.stmore` links clear
+the 24px floor via padding.
+
+**F-L3 — the skip link is the first focusable element (and the sub-pages
+gain one):** the homepage skip link rode AFTER the topbar since v12.24,
+making it the 3rd tab stop at phone widths (brand → lang button
+→ skip — the audit's F-L3); it now precedes `<header id="topbar">`
+(off-canvas until :focus, zero visual change). The `page-shell` sub-pages
+had NO skip link at all (WCAG 2.4.1 Bypass Blocks gap) — every hub/team/
+match/competition page now carries the same first-focusable bypass with
+its own `.skip-link` CSS.
+
+**Security (R13-bounded evaluation, documented — no header change):**
+the CSP keeps `script-src 'unsafe-inline'` (the inline JSON-LD carries
+per-page dynamic match data → a hash/nonce CSP cannot cover it, and a
+per-request nonce is incompatible with the edge-cached-HTML architecture
+where one body serves many requests); the beacon origins
+(`static.cloudflareinsights.com` script + `cloudflareinsights.com`
+connect, live since v13.188/v13.208) stay allowed and are now PINNED in
+the new check-a11y gate; HSTS/nosniff/referrer/permissions/frame-ancestors
+all re-verified strong (check-security 29/29).
+
+**The NEW gate — `scripts/check-a11y.js` (34 checks):** the WCAG
+contrast matrix computed from the REAL stylesheet tokens with the
+Lighthouse/axe compositing model (every steady text state ≥ 4.5:1, both
+normal + past), the impossible-.48 evidence pin, the touch-target rule
+pins, the skip-link-first order (both templates), the F-M3b static
+contracts, the reduced-motion kill rule, and the R13 CSP stance.
+Registered in the `npm test` chain (exit 0 — 2,587 checks).
+
 # v13.208-lastmod — web-optimization Phase 5: technical & multilingual SEO (the seo_lastmod_v1 eviction fix + F-L1 + F-H3 beacon + IndexNow drain)
 
 _2026-11-04 · the Phase 5 round per `WEB_OPTIMIZATION_AUDIT.md` §8 (the
@@ -6747,12 +6832,12 @@ Closes the v13.87 handover item "the form strip is fail-closed-dark TODAY": the 
 
 ## [13.87-formtable] — 2026-10-13 (the league-table window + the recent-form strip)
 
-Both cards ride data the pages ALREADY hold (zero subrequests, fail-closed: no data \u2192 no card):
+Both cards ride data the pages ALREADY hold (zero subrequests, fail-closed: no data → no card):
 
-- Team pages (/teams/{slug}): the \u00ab\u062c\u062f\u0648\u0644\u00bb window \u2014 a 5-row standings neighborhood (2 above, the team highlighted via .strow-me, 2 below; clamped at the top when the team is top-3) from the payload's standings snapshots, with a \u00ab\u062c\u062f\u0648\u0644 \u06a9\u0627\u0645\u0644\u00bb link into the competition page (internal-linking + engagement). Picks the NEXT fixture's competition, falling back to any table containing the team (covers cup-next pages).
-- Match pages: \u00ab\u0641\u0631\u0645 \u0627\u062e\u06cc\u0631\u00bb \u2014 both sides' last-5 W/D/L as \u0628/\u0645/\u0634 dots (green/gray/red, hover title with opponent + score + date) + a W\u00b7D\u00b7L count summary. From the pool's 30-day FINISHED rows; a side with <3 results drops out, both sides short \u2192 no card.
+- Team pages (/teams/{slug}): the \u00ab\u062c\u062f\u0648\u0644\u00bb window — a 5-row standings neighborhood (2 above, the team highlighted via .strow-me, 2 below; clamped at the top when the team is top-3) from the payload's standings snapshots, with a \u00ab\u062c\u062f\u0648\u0644 \u06a9\u0627\u0645\u0644\u00bb link into the competition page (internal-linking + engagement). Picks the NEXT fixture's competition, falling back to any table containing the team (covers cup-next pages).
+- Match pages: \u00ab\u0641\u0631\u0645 \u0627\u062e\u06cc\u0631\u00bb — both sides' last-5 W/D/L as \u0628/\u0645/\u0634 dots (green/gray/red, hover title with opponent + score + date) + a W\u00b7D\u00b7L count summary. From the pool's 30-day FINISHED rows; a side with <3 results drops out, both sides short → no card.
 - Styling: .strow-me sky-accent highlight (the .mcount/.mvenue-map family), .stmore footer link, .formstrip/.formrow/.formdot .fw/.fd/.fl with tabular digits + reduced footprint on mobile.
-- New data helpers: teamStandingsWindow + teamForm (seo/data.ts \u2014 content-additive; seo/* is NOT in the eval harness, so no worker-src changes; new static locks in check-stats).
+- New data helpers: teamStandingsWindow + teamForm (seo/data.ts — content-additive; seo/* is NOT in the eval harness, so no worker-src changes; new static locks in check-stats).
 
 ## [13.86-groundsfix] — 2026-10-13 (QA-found name-form bugs: the hero match gains its venue)
 
