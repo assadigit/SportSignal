@@ -378,22 +378,55 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
 
 // ------------------------------------------------------------ edge cache + ETag (PF-01/R-12)
 
-// ETag/304 handling for HTML (R-12).
-function withEtag(req: Request, body: string, headers: Record<string, string>): Response {
+// ETag (+ Last-Modified when the data epoch is known) for HTML and — since
+// v13.207-condget (F-M5, Phase 4) — the machine files too (sitemaps, feed,
+// calendar, matches.json). The 304 DECISION lives in wantCached (it needs
+// the final response, cache-hit or fresh render); this only stamps the
+// validators on the rendered body.
+function withEtag(body: string, headers: Record<string, string>): Response {
   const tag = '"ss-' + fnv1aHex(body) + '"';
   const h = Object.assign({}, headers, { etag: tag });
   // G-06: Last-Modified rides along when the data epoch is known via the
-  // body's generator note (set by the page builders below).
+  // body's generator note (set by the page builders below). Machine files
+  // carry no generator note — ETag alone is their validator (the XML
+  // <lastmod> entries are per-URL page data, not the document's birthdate).
   const gen = /data-ss-generated="([^"]+)"/.exec(body);
   if (gen) {
     const t = Date.parse(gen[1]);
     if (!isNaN(t)) h["last-modified"] = new Date(t).toUTCString();
   }
-  const inm = req.headers.get("if-none-match");
-  if (inm && inm.trim() === tag) {
-    return new Response(null, { status: 304, headers: h });
-  }
   return new Response(body, { status: 200, headers: h });
+}
+
+// v13.207-condget (F-M5, Phase 4): If-None-Match uses the WEAK comparison
+// (RFC 9110 §13.1.2: W/"x" matches "x") and may carry a comma-separated
+// validator list or "*". Cloudflare's compression layer weakens our strong
+// ETags in transit (verified live: the Worker sends "ss-…", the client
+// receives W/"ss-…"), so browsers replay the weakened form — the old strict
+// `inm.trim() === tag` comparison could never match in production, which
+// together with the unchecked cache-hit path was the F-M5 root cause
+// (revalidation always returned 200 with the full body).
+function etagMatches(inm: string, tag: string | null): boolean {
+  if (!tag) return false;
+  const opaque = (s: string) => s.trim().replace(/^W\//i, "");
+  const want = opaque(tag);
+  if (!want) return false;
+  for (const part of inm.split(",")) {
+    const cand = opaque(part);
+    if (cand === "*" || cand === want) return true;
+  }
+  return false;
+}
+
+// v13.207-condget (F-M5): the 304 body-less reply. It carries the SAME
+// public cache-control the 200 would have (on the cache-hit path that is
+// the x-ss-cc-restored public header), so the freshness ladder (R12) is
+// byte-identical — the browser still revalidates on the next visit.
+function notModified304(headers: Headers): Response {
+  const h = new Headers(headers);
+  h.delete("content-length");
+  h.delete("content-encoding");
+  return new Response(null, { status: 304, headers: h });
 }
 const HEX = "0123456789abcdef";
 function fnv1aHex(str: string): string {
@@ -531,6 +564,15 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
           h.set("cache-control", orig);
           h.delete("x-ss-cc");
         }
+        // v13.207-condget (F-M5, Phase 4): the HIT path used to return the
+        // full body unconditionally — conditional GETs (browsers on the
+        // max-age=0 revalidation ladder, crawlers) re-downloaded the whole
+        // document on every repeat visit. Honor If-None-Match against the
+        // STORED validator and answer 304 with no body.
+        const inmHit = req.headers.get("if-none-match");
+        if (inmHit && etagMatches(inmHit, h.get("etag"))) {
+          return notModified304(h);
+        }
         return new Response(hit.body, { status: hit.status, headers: h });
       }
     } catch (e) { cacheKey = null; }
@@ -549,13 +591,25 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
         ctx.waitUntil(caches.default.put(cacheKey, new Response(store.body, { status: store.status, headers: h })));
       } catch (e) { }
     }
+    // v13.207-condget (F-M5, Phase 4): the fresh render gets the same
+    // conditional treatment — withEtag stamped the validator above, so a
+    // matching If-None-Match answers 304 with no body while the rendered
+    // 200 was still stored at the edge for the next unconditional visitor.
+    // (A 404 render carries no ETag and passes through untouched.)
+    const inmMiss = req.headers.get("if-none-match");
+    if (inmMiss && res.headers.has("etag") && etagMatches(inmMiss, res.headers.get("etag"))) {
+      return notModified304(res.headers);
+    }
     return res;
   };
 
   if (path === "/sitemap.xml") {
     return wantCached("/sitemap.xml", SEO.SITEMAP_CACHE_TTL, async () => {
       const xml = await F.buildSitemapIndex(env);
-      return new Response(xml, { headers: F.sitemapHeaders(SEO.SITEMAP_CACHE_TTL) });
+      // v13.207-condget (F-M5): ETag on the machine files so crawlers can
+      // revalidate instead of re-downloading (the bodies are stable within a
+      // data epoch — the honest <lastmod> map rides the content hash).
+      return withEtag(xml, F.sitemapHeaders(SEO.SITEMAP_CACHE_TTL));
     });
   }
   const smMatch = /^\/sitemaps\/([a-z-]+)\.xml$/.exec(path);
@@ -567,32 +621,33 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
       const { xml, changedUrls } = await F.buildSitemap(env, kind);
       // F-16/T-11: ping IndexNow for URLs whose content changed.
       if (changedUrls.length) ctx.waitUntil(pingIndexNowIfChanged(env, changedUrls).catch(() => { }));
-      return new Response(xml, { headers: F.sitemapHeaders(SEO.SITEMAP_CACHE_TTL) });
+      return withEtag(xml, F.sitemapHeaders(SEO.SITEMAP_CACHE_TTL)); // v13.207-condget (F-M5)
     });
   }
   if (path === "/calendar.ics") {
     return wantCached("/calendar.ics", SEO.HTML_CACHE_TTL, async () => {
       const ics = await F.buildCalendar(env);
-      return new Response(ics, { headers: { "content-type": "text/calendar; charset=utf-8", "cache-control": "public, max-age=300" } });
+      return withEtag(ics, { "content-type": "text/calendar; charset=utf-8", "cache-control": "public, max-age=300" }); // v13.207-condget (F-M5)
     });
   }
   if (path === "/feed.xml") {
     return wantCached("/feed.xml", SEO.HTML_CACHE_TTL, async () => {
       const xml = await F.buildFeed(env);
-      return new Response(xml, { headers: { "content-type": "application/atom+xml; charset=utf-8", "cache-control": "public, max-age=300" } });
+      return withEtag(xml, { "content-type": "application/atom+xml; charset=utf-8", "cache-control": "public, max-age=300" }); // v13.207-condget (F-M5)
     });
   }
   if (path === "/api/matches.json") {
     return wantCached("/api/matches.json", 300, async () => {
       const json = await F.buildMatchesJson(env);
-      return new Response(json, {
-        headers: {
-          "content-type": "application/json; charset=utf-8",
-          "cache-control": "public, max-age=60, s-maxage=300",
-          "access-control-allow-origin": "*",
-          "access-control-allow-methods": "GET, OPTIONS",
-          "x-content-type-options": "nosniff"
-        }
+      // v13.207-condget (F-M5): ETag rides the public JSON too (CORS: the
+      // tag is usable by non-browser clients; browsers fetch this file
+      // same-origin/no-cors where the header is visible either way).
+      return withEtag(json, {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "public, max-age=60, s-maxage=300",
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": "GET, OPTIONS",
+        "x-content-type-options": "nosniff"
       });
     });
   }
@@ -719,7 +774,7 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
       const seoCtx = await getSeoCtx(env);
       return notFoundResponse(req, seoCtx, isProd);
     }
-    return withEtag(req, r.body, htmlHeaders(!isProd));
+    return withEtag(r.body, htmlHeaders(!isProd));
   });
   return page;
 }
