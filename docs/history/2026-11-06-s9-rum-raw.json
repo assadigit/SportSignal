@@ -1,0 +1,366 @@
+{
+  "_s9_rum_pull": {
+    "session": "S9 (docs/history/2026-11-06-s9-rumwatch2.md)",
+    "pulled_utc": "2026-11-05T20:35-20:37 UTC (main pull + recency probe)",
+    "method": "CF GraphQL rumWebVitalsEventsAdaptiveGroups + rumPageloadEventsAdaptiveGroups, site tag 08a51fd889514c818e0161066160e5b3, grouped by date x bot x deviceType, window 2026-10-31..2026-11-07 (open end)",
+    "recency_check": "separate datetimeHour_geq=2026-11-05T00:00:00Z pull on BOTH datasets at ~20:36 UTC returned ZERO groups — no event has landed on/after 2026-11-05",
+    "delta_vs_s8": "both arrays byte-identical to docs/history/2026-11-06-s8-rum-raw.json (diff-verified) — zero group churn in the ~1h between the S8 and S9 pulls; the 11-02 desktop human INP 16 ms was already in the S8 raw (the S8 note prose under-quoted it)",
+    "units": "LCP/TTFB/INP quantiles are MICROSECONDS; CLS is unitless; -1 = metric not recorded for that event set"
+  },
+  "webVitals": [
+    {
+      "count": 30,
+      "dimensions": {
+        "bot": 1,
+        "date": "2026-10-31",
+        "deviceType": "desktop"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0,
+        "interactionToNextPaintP75": -1,
+        "largestContentfulPaintP50": 416000,
+        "largestContentfulPaintP75": 1372000,
+        "timeToFirstByteP50": 93000
+      }
+    },
+    {
+      "count": 17,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-10-31",
+        "deviceType": "mobile"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0,
+        "interactionToNextPaintP75": 96000,
+        "largestContentfulPaintP50": 1877000,
+        "largestContentfulPaintP75": 3140000,
+        "timeToFirstByteP50": 1381000
+      }
+    },
+    {
+      "count": 6,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-10-31",
+        "deviceType": "desktop"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0.008,
+        "interactionToNextPaintP75": 8000,
+        "largestContentfulPaintP50": 3826000,
+        "largestContentfulPaintP75": 5700000,
+        "timeToFirstByteP50": 1341000
+      }
+    },
+    {
+      "count": 2,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-01",
+        "deviceType": "desktop"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0,
+        "interactionToNextPaintP75": 8000,
+        "largestContentfulPaintP50": 1392000,
+        "largestContentfulPaintP75": 2638000,
+        "timeToFirstByteP50": 278000
+      }
+    },
+    {
+      "count": 6,
+      "dimensions": {
+        "bot": 1,
+        "date": "2026-11-01",
+        "deviceType": "desktop"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0,
+        "interactionToNextPaintP75": -1,
+        "largestContentfulPaintP50": 132000,
+        "largestContentfulPaintP75": 372000,
+        "timeToFirstByteP50": 36000
+      }
+    },
+    {
+      "count": 2,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-01",
+        "deviceType": "mobile"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0,
+        "interactionToNextPaintP75": 168000,
+        "largestContentfulPaintP50": 1640000,
+        "largestContentfulPaintP75": 1640000,
+        "timeToFirstByteP50": 958000
+      }
+    },
+    {
+      "count": 3,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-02",
+        "deviceType": "mobile"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0,
+        "interactionToNextPaintP75": -1,
+        "largestContentfulPaintP50": 3148000,
+        "largestContentfulPaintP75": 3256000,
+        "timeToFirstByteP50": 2339000
+      }
+    },
+    {
+      "count": 19,
+      "dimensions": {
+        "bot": 1,
+        "date": "2026-11-02",
+        "deviceType": "desktop"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0,
+        "interactionToNextPaintP75": -1,
+        "largestContentfulPaintP50": 1356000,
+        "largestContentfulPaintP75": 1720000,
+        "timeToFirstByteP50": 103000
+      }
+    },
+    {
+      "count": 5,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-02",
+        "deviceType": "desktop"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0,
+        "interactionToNextPaintP75": 16000,
+        "largestContentfulPaintP50": 4744000,
+        "largestContentfulPaintP75": 5004000,
+        "timeToFirstByteP50": 361000
+      }
+    },
+    {
+      "count": 1,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-03",
+        "deviceType": "desktop"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": -1,
+        "cumulativeLayoutShiftP75": -1,
+        "interactionToNextPaintP75": -1,
+        "largestContentfulPaintP50": -1,
+        "largestContentfulPaintP75": -1,
+        "timeToFirstByteP50": 4130000
+      }
+    },
+    {
+      "count": 5,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-03",
+        "deviceType": "mobile"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0,
+        "interactionToNextPaintP75": -1,
+        "largestContentfulPaintP50": 3116000,
+        "largestContentfulPaintP75": 3920000,
+        "timeToFirstByteP50": 1726000
+      }
+    },
+    {
+      "count": 94,
+      "dimensions": {
+        "bot": 1,
+        "date": "2026-11-03",
+        "deviceType": "desktop"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0.027,
+        "interactionToNextPaintP75": -1,
+        "largestContentfulPaintP50": 820000,
+        "largestContentfulPaintP75": 1784000,
+        "timeToFirstByteP50": 105000
+      }
+    },
+    {
+      "count": 3,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-04",
+        "deviceType": "desktop"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0.007,
+        "cumulativeLayoutShiftP75": 0.007,
+        "interactionToNextPaintP75": -1,
+        "largestContentfulPaintP50": 1376000,
+        "largestContentfulPaintP75": 2357000,
+        "timeToFirstByteP50": 309000
+      }
+    },
+    {
+      "count": 2,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-04",
+        "deviceType": "mobile"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0,
+        "interactionToNextPaintP75": -1,
+        "largestContentfulPaintP50": 1592000,
+        "largestContentfulPaintP75": 2532000,
+        "timeToFirstByteP50": 774000
+      }
+    },
+    {
+      "count": 232,
+      "dimensions": {
+        "bot": 1,
+        "date": "2026-11-04",
+        "deviceType": "desktop"
+      },
+      "quantiles": {
+        "cumulativeLayoutShiftP50": 0,
+        "cumulativeLayoutShiftP75": 0,
+        "interactionToNextPaintP75": 256000,
+        "largestContentfulPaintP50": 852000,
+        "largestContentfulPaintP75": 1516000,
+        "timeToFirstByteP50": 109000
+      }
+    }
+  ],
+  "pageloads": [
+    {
+      "count": 1,
+      "dimensions": {
+        "bot": 1,
+        "date": "2026-10-31",
+        "deviceType": "desktop"
+      }
+    },
+    {
+      "count": 50,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-10-31",
+        "deviceType": "mobile"
+      }
+    },
+    {
+      "count": 10,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-10-31",
+        "deviceType": "desktop"
+      }
+    },
+    {
+      "count": 3,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-01",
+        "deviceType": "desktop"
+      }
+    },
+    {
+      "count": 8,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-01",
+        "deviceType": "mobile"
+      }
+    },
+    {
+      "count": 22,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-02",
+        "deviceType": "mobile"
+      }
+    },
+    {
+      "count": 3,
+      "dimensions": {
+        "bot": 1,
+        "date": "2026-11-02",
+        "deviceType": "desktop"
+      }
+    },
+    {
+      "count": 7,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-02",
+        "deviceType": "desktop"
+      }
+    },
+    {
+      "count": 1,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-03",
+        "deviceType": "desktop"
+      }
+    },
+    {
+      "count": 91,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-03",
+        "deviceType": "mobile"
+      }
+    },
+    {
+      "count": 22,
+      "dimensions": {
+        "bot": 1,
+        "date": "2026-11-03",
+        "deviceType": "desktop"
+      }
+    },
+    {
+      "count": 16,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-04",
+        "deviceType": "desktop"
+      }
+    },
+    {
+      "count": 206,
+      "dimensions": {
+        "bot": 0,
+        "date": "2026-11-04",
+        "deviceType": "mobile"
+      }
+    },
+    {
+      "count": 68,
+      "dimensions": {
+        "bot": 1,
+        "date": "2026-11-04",
+        "deviceType": "desktop"
+      }
+    }
+  ]
+}

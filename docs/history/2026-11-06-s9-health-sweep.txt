@@ -1,0 +1,316 @@
+
+> ucl-notifier@13.224.0.0 seo:check
+> node scripts/seo-check.js
+
+
+== T-01 robots.txt ==
+  ✓ robots.txt does not block /
+  ✓ robots.txt Sitemap line points at https://sportsignal.ir
+  ✓ AI bot policy matches config (all allowed)
+
+== T-02 sitemaps ==
+  ✓ sitemap index reachable (0.7 KB)
+  ✓ pages.xml: 15 URLs
+  ✓ pages.xml all URLs canonical+https+lastmod, no dupes
+  ✓ competitions.xml: 6 URLs
+  ✓ competitions.xml all URLs canonical+https+lastmod, no dupes
+  ✓ teams.xml: 90 URLs
+  ✓ teams.xml all URLs canonical+https+lastmod, no dupes
+  ✓ matches-upcoming.xml: 139 URLs
+  ✓ matches-upcoming.xml all URLs canonical+https+lastmod, no dupes
+  ✓ matches-archive.xml: 27 URLs
+  ✓ matches-archive.xml all URLs canonical+https+lastmod, no dupes
+  ✓ no priority/changefreq in sitemap index
+
+== T-03 page checks (templates + random sitemap sample) ==
+  ✓ https://sportsignal.ir/ carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/matches carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/matches/today carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/matches/tomorrow carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/matches/this-week carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/matches/this-weekend carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/teams carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/competitions carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/about carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/methodology carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/contact carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/privacy carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/terms carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/data carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/sitemap carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/matches/nottingham-forest-vs-manchester-city-2026-11-07 carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/teams/monaco carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/teams/bayer-04-leverkusen carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/teams/lazio carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/teams/marseille carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/matches/augsburg-vs-freiburg-2026-10-31 carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/teams/athletic-club carries the data-source attribution (SS-08)
+  ✓ https://sportsignal.ir/teams/atalanta-bc carries the data-source attribution (SS-08)
+  ✓ checked 15 templates + up to 8 random sitemap URLs
+
+== T-04 JSON-LD ==
+  ✓ SportsEvent has all required fields (S-01)
+  ✓ startDate ISO 8601 with offset: 2026-11-07T14:30:00.000+03:30
+  ✓ eventStatus valid: EventScheduled
+  ✓ marked-up teams match visible page text
+  ✓ no fake offers/ratings (S-04)
+  ✓ no SearchAction in WebSite node
+
+== T-05 crawl to depth 3 ==
+  ✓ crawled 85 internal URLs to depth 3, 0 errors
+  ✓ no significant orphan pages (42 of 277)
+
+== T-06 soft-404 guard ==
+  ✓ invented URL → 404
+  ✓ 404 page links home (R-11)
+  ✓ 404 page is noindex
+
+== T-07 redirects ==
+  ✓ http://sportsignal.ir/ → 301 https://sportsignal.ir/
+  ✓ https://football.sportsignal.ir/matches → 301 https://sportsignal.ir/matches
+  ✓ https://www.sportsignal.ir/ → 301 https://sportsignal.ir/
+  ✓ https://www.sportsignal.ir/matches/today → 301 https://sportsignal.ir/matches/today
+  ✓ https://sportsignal.ir/matches/ → 301 https://sportsignal.ir/matches
+  ✓ https://sportsignal.ir/Matches → 301 https://sportsignal.ir/matches
+  ✓ https://sportsignal.ir/public → 301 https://sportsignal.ir/
+  ✓ http://sportsignal.ir/matches single-hop to 200
+  ✓ https://football.sportsignal.ir/ single-hop to 200
+
+== T-08 hreflang ==
+  ✓ site is single-language (fa) — hreflang not applicable per spec Section 11
+
+== T-09 Lighthouse mobile ==
+  ⚠ SKIPPED (set CHROME_PATH + install lighthouse to enable) — lab CWV verified manually in the report
+
+== T-10 production noindex guard ==
+  ✓ production serves index, follow
+  ✓ non-production host serves noindex (R-13)
+
+== T-11/T-G-02 bots and IndexNow ==
+  ✓ Googlebot → 200
+  ✓ bingbot → 200
+  ✓ OAI-SearchBot → 200
+  ✓ ChatGPT-User → 200
+  ✓ Claude-SearchBot → 200
+  ✓ Claude-User → 200
+  ✓ PerplexityBot → 200
+  ✓ Perplexity-User → 200
+  ✓ DuckAssistBot → 200
+  ✓ GPTBot → 200
+  ✓ ClaudeBot → 200
+  ✓ Applebot → 200
+  ✓ Amazonbot → 200
+  ✓ CCBot → 200
+  ✓ meta-externalagent → 200
+  ✓ IndexNow key file served (F-16)
+  ✓ BingSiteAuth.xml served: direct 200, key present, xml content-type
+
+== T-13 conditional GETs (F-M5) ==
+  ✓ /sitemap.xml carries ETag W/"ss-baf77a432db"
+  ✓ /sitemap.xml conditional GET -> 304 (F-M5)
+  ✓ /feed.xml carries ETag "ss-66b433c4277a"
+  ✓ /feed.xml conditional GET -> 304 (F-M5)
+  ✓ /calendar.ics carries ETag "ss-9d2c61e15839"
+  ✓ /calendar.ics conditional GET -> 304 (F-M5)
+  ✓ /api/matches.json carries ETag W/"ss-775fd2eee628"
+  ✓ /api/matches.json conditional GET -> 304 (F-M5)
+  ✓ / carries ETag (304 path asserted in RESULTS §15.3, not in CI — SWR transient)
+
+== T-14 time hubs ==
+  ✓ /matches/today (today): title/H1 Jalali dates agree («۱۵ آبان»)
+  ✓ /matches/today (today): numberOfItems == visible rows (5)
+  ✓ /matches/today (today): answer-sentence count matches (5)
+  ✓ /matches/tomorrow (tomorrow): title/H1 Jalali dates agree («۱۶ آبان»)
+  ✓ /matches/tomorrow (tomorrow): numberOfItems == visible rows (19)
+  ✓ /matches/tomorrow (tomorrow): answer-sentence count matches (19)
+
+== T-15 Shamsi-first display (SS-27) ==
+  ✓ /matches/today H1 Shamsi-first D1 ✓ «جمعه ۱۵ آبان ۱۴۰۵ (۶ نوامبر ۲۰۲۶)…»
+  ✓ /matches/today: all 1 dategroup headers Shamsi-first D1 ✓
+  ✓ /matches/today: answer sentence carries Shamsi-first date ✓
+  ✓ /matches/tomorrow H1 Shamsi-first D1 ✓ «شنبه ۱۶ آبان ۱۴۰۵ (۷ نوامبر ۲۰۲۶)…»
+  ✓ /matches/tomorrow: all 1 dategroup headers Shamsi-first D1 ✓
+  ✓ /matches/tomorrow: answer sentence carries Shamsi-first date ✓
+  ✓ /matches: all 9 dategroup headers Shamsi-first D1 ✓
+  ✓ /matches: answer sentence carries Shamsi-first date ✓
+  ✓ /matches/this-week H1 Shamsi-first D1 ✓ «جمعه ۱۵ آبان ۱۴۰۵ (۶ نوامبر ۲۰۲۶)…»
+  ✓ /matches/this-week: all 3 dategroup headers Shamsi-first D1 ✓
+  ✓ /matches/this-week: answer sentence carries Shamsi-first date ✓
+  ✓ match H1 Shamsi-first D2 ✓ («۱۶ آبان (۷ نوامبر)»)
+  ✓ match facts-table date Shamsi-first D1 ✓ («شنبه ۱۶ آبان ۱۴۰۵ (۷ نوامبر ۲۰۲۶)، ساعت ۱۸:۰۰…»)
+  ✓ llms.txt stays Gregorian-only (no Shamsi months) ✓
+  ✓ llms-full.txt stays Gregorian-only (no Shamsi months) ✓
+  ✓ matches.json kickoff_utc stays ISO-8601 ✓ (2026-11-07T12:30:00Z)
+
+== T-16 pagination canonicals (SS-03) ==
+  ✓ ?page=1 canonicals to /matches ✓
+  ✓ ?page=1 carries no page suffix in title ✓
+  ✓ ?page=2 self-canonical ✓ (https://sportsignal.ir/matches?page=2)
+  ✓ ?page=2 og:url follows the canonical ✓
+  ✓ ?page=2 title suffix «— صفحه ۲» before the brand ✓
+  ✓ ?page=2 title distinct from page 1 ✓
+
+== T-17 Organization.sameAs (SS-04) ==
+  ✓ https://sportsignal.ir/: Organization.sameAs carries https://t.me/SportSignalAlertsBot ✓
+  ✓ https://sportsignal.ir/matches/today: Organization.sameAs carries https://t.me/SportSignalAlertsBot ✓
+  ✓ https://sportsignal.ir/matches/1-fsv-mainz-05-vs-bayern-munich-2026-11-07: Organization.sameAs carries https://t.me/SportSignalAlertsBot ✓
+
+== T-18 entity grounding sameAs (SS-05) ==
+  ✓ https://sportsignal.ir/competitions/champions-league sameAs «https://en.wikipedia.org/wiki/UEFA_Champions_League» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/competitions/champions-league sameAs «https://www.wikidata.org/wiki/Q18756» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/competitions/premier-league sameAs «https://en.wikipedia.org/wiki/Premier_League» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/competitions/premier-league sameAs «https://www.wikidata.org/wiki/Q9448» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/competitions/la-liga sameAs «https://en.wikipedia.org/wiki/La_Liga» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/competitions/la-liga sameAs «https://www.wikidata.org/wiki/Q324867» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/competitions/serie-a sameAs «https://en.wikipedia.org/wiki/Serie_A» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/competitions/serie-a sameAs «https://www.wikidata.org/wiki/Q15804» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/competitions/ligue-1 sameAs «https://en.wikipedia.org/wiki/Ligue_1» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/competitions/ligue-1 sameAs «https://www.wikidata.org/wiki/Q13394» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/competitions/bundesliga sameAs «https://en.wikipedia.org/wiki/Bundesliga» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/competitions/bundesliga sameAs «https://www.wikidata.org/wiki/Q82595» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/arsenal sameAs «https://en.wikipedia.org/wiki/Arsenal_F.C.» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/arsenal sameAs «https://www.wikidata.org/wiki/Q9617» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/chelsea sameAs «https://en.wikipedia.org/wiki/Chelsea_F.C.» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/chelsea sameAs «https://www.wikidata.org/wiki/Q9616» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/manchester-united sameAs «https://en.wikipedia.org/wiki/Manchester_United_F.C.» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/manchester-united sameAs «https://www.wikidata.org/wiki/Q18656» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/manchester-city sameAs «https://en.wikipedia.org/wiki/Manchester_City_F.C.» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/manchester-city sameAs «https://www.wikidata.org/wiki/Q50602» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/liverpool sameAs «https://en.wikipedia.org/wiki/Liverpool_F.C.» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/liverpool sameAs «https://www.wikidata.org/wiki/Q1130849» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/barcelona sameAs «https://en.wikipedia.org/wiki/FC_Barcelona» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/barcelona sameAs «https://www.wikidata.org/wiki/Q7156» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/ssc-napoli sameAs «https://en.wikipedia.org/wiki/SSC_Napoli» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/ssc-napoli sameAs «https://www.wikidata.org/wiki/Q2641» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/aston-villa sameAs «https://en.wikipedia.org/wiki/Aston_Villa_F.C.» verified 200, no redirect ✓
+  ✓ https://sportsignal.ir/teams/aston-villa sameAs «https://www.wikidata.org/wiki/Q18711» verified 200, no redirect ✓
+
+== T-19 llms.txt + llms-full.txt (SS-07) ==
+  ✓ /llms.txt serves 200, text/plain; charset=utf-8 ✓
+  ✓ /llms.txt link «https://sportsignal.ir» exists ✓
+  ✓ /llms.txt link «https://t.me/SportSignalAlertsBot» exists ✓
+  ✓ /llms.txt link «https://www.football-data.org/» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/llms-full.txt» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/matches» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/matches/today» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/matches/tomorrow» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/matches/this-week» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/matches/this-weekend» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/teams» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/competitions» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/about» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/methodology» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/contact» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/privacy» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/terms» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/data» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/sitemap» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/api/matches.json» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/calendar.ics» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/feed.xml» exists ✓
+  ✓ /llms.txt link «https://sportsignal.ir/llms-full.txt» exists ✓
+  ✓ /llms-full.txt serves 200, text/plain; charset=utf-8 ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir» exists ✓
+  ✓ /llms-full.txt link «https://t.me/SportSignalAlertsBot» exists ✓
+  ✓ /llms-full.txt link «https://www.football-data.org/» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/methodology» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/matches» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/matches/today» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/matches/tomorrow» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/matches/this-week» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/matches/this-weekend» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/about» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/methodology» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/contact» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/privacy» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/terms» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/data» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/sitemap» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir/sitemap.xml» exists ✓
+  ✓ /llms-full.txt link «https://www.football-data.org/» exists ✓
+  ✓ /llms-full.txt link «https://sportsignal.ir» exists ✓
+  ✓ /llms-full.txt link «https://t.me/SportSignalAlertsBot» exists ✓
+
+== T-20 FAQ + FAQPage (SS-06) ==
+  ✓ /methodology: FAQPage carries 5 Q&As ✓
+  ✓ /methodology: all 5 Q&As byte-identical visible ↔ FAQPage node ✓
+  ✓ /about: FAQPage carries 5 Q&As ✓
+  ✓ /about: all 5 Q&As byte-identical visible ↔ FAQPage node ✓
+  ✓ /data: FAQPage carries 5 Q&As ✓
+  ✓ /data: all 5 Q&As byte-identical visible ↔ FAQPage node ✓
+  ✓ /matches/today: FAQPage carries 5 Q&As ✓
+  ✓ /matches/today: all 5 Q&As byte-identical visible ↔ FAQPage node ✓
+  ✓ /matches/today: FAQ answer count matches the visible rows (5) ✓
+  ✓ /matches/today: answer == rows == ItemList.numberOfItems (5) ✓
+  ✓ /matches/today: top-match FAQ answer rides the first row's date («۱۵ آبان») ✓
+  ✓ /matches/tomorrow: FAQPage carries 5 Q&As ✓
+  ✓ /matches/tomorrow: all 5 Q&As byte-identical visible ↔ FAQPage node ✓
+  ✓ /matches/tomorrow: FAQ answer count matches the visible rows (19) ✓
+  ✓ /matches/tomorrow: answer == rows == ItemList.numberOfItems (19) ✓
+  ✓ /matches/tomorrow: top-match FAQ answer rides the first row's date («۱۶ آبان») ✓
+  ✓ /matches/this-week: FAQPage carries 5 Q&As ✓
+  ✓ /matches/this-week: all 5 Q&As byte-identical visible ↔ FAQPage node ✓
+  ✓ /matches/this-week: FAQ answer count matches the visible rows (48) ✓
+  ✓ /matches/this-week: answer == rows == ItemList.numberOfItems (48) ✓
+  ✓ /matches/this-week: top-match FAQ answer rides the first row's date («۱۶ آبان») ✓
+  ✓ /matches/this-weekend: FAQPage carries 5 Q&As ✓
+  ✓ /matches/this-weekend: all 5 Q&As byte-identical visible ↔ FAQPage node ✓
+  ✓ /matches/this-weekend: FAQ answer count matches the visible rows (43) ✓
+  ✓ /matches/this-weekend: answer == rows == ItemList.numberOfItems (43) ✓
+  ✓ /matches/this-weekend: top-match FAQ answer rides the first row's date («۱۶ آبان») ✓
+
+== T-21 full 404 (SS-12) ==
+  ✓ /zzz-unknown answers 404 ✓
+  ✓ /zzz-unknown carries X-Robots-Tag: noindex, nofollow ✓
+  ✓ /zzz-unknown serves the FULL 404 (shell nav + links + footer, 21415 bytes) ✓
+  ✓ /zzz-unknown meta robots noindex ✓
+  ✓ /deep/nested/unknown-page answers 404 ✓
+  ✓ /deep/nested/unknown-page carries X-Robots-Tag: noindex, nofollow ✓
+  ✓ /deep/nested/unknown-page serves the FULL 404 (shell nav + links + footer, 21415 bytes) ✓
+  ✓ /deep/nested/unknown-page meta robots noindex ✓
+  ✓ /teams/zzz-unknown answers 404 ✓
+  ✓ /teams/zzz-unknown carries X-Robots-Tag: noindex, nofollow ✓
+  ✓ /teams/zzz-unknown serves the FULL 404 (shell nav + links + footer, 21415 bytes) ✓
+  ✓ /teams/zzz-unknown meta robots noindex ✓
+  ✓ security.txt: no mailto (SS-09), Telegram contact + note present ✓
+
+== T-22 index ItemLists + Dataset (SS-13/SS-14) ==
+  ✓ /teams: ItemList numberOfItems == 90 == visible tiles == itemListElement count ✓
+  ✓ /teams: 5 sampled ItemList children all answer 200 ✓
+  ✓ /competitions: ItemList numberOfItems == 6 == visible tiles == itemListElement count ✓
+  ✓ /competitions: 5 sampled ItemList children all answer 200 ✓
+  ✓ /data: Dataset.creator → https://sportsignal.ir/#organization (present in the same graph) ✓
+  ✓ /data: Dataset.isAccessibleForFree: true ✓
+  ✓ /data: Dataset.license → https://sportsignal.ir/terms (the real terms page) ✓
+  ✓ /data: Dataset.distribution carries 3 DataDownloads ✓
+  ✓ /data distribution «matches.json» → 200 application/json (matches encodingFormat) ✓
+  ✓ /data distribution «calendar.ics» → 200 text/calendar (matches encodingFormat) ✓
+  ✓ /data distribution «feed.xml» → 200 application/atom+xml (matches encodingFormat) ✓
+
+== T-23 full-sweep titles ≤65 + descriptions ≤165 + per-match image (SS-10/SS-11/SS-15) ==
+  ✓ all 277 swept titles ≤ 65 chars (max 65) — zero pixel-risk band titles (SS-10)
+  ✓ all 277 swept meta descriptions 50–165 chars (max 165) (SS-11)
+  ✓ all 277 swept titles unique (full-sitemap uniqueness — T-03's sampled check hardened)
+  ✓ all 166 swept match pages carry the per-match OG in SportsEvent.image (SS-15)
+  ✓ 5 sampled per-match OG PNGs all answer 200 image/png (SS-15)
+  ✓ full sweep fetched all 277 sitemap URLs
+
+== T-24 feed lastmod honesty + ics DTEND + admin X-Robots (SS-16/SS-17/SS-18) ==
+  ⚠ [report] 2 feed entr(ies) outside the matches sitemap children (the map-miss fallback — data epoch — in use)
+  ✓ all 28 feed entries' <updated> match their sitemap lastmod (SS-16 — honest per-URL timestamps)
+  ✓ all 87 VEVENTs carry DTEND = DTSTART + 2h (SS-17)
+  ✓ /admin/login (HTTP 302) carries X-Robots-Tag: noindex, nofollow (SS-18)
+  ✓ /admin (HTTP 200) carries X-Robots-Tag: noindex, nofollow (SS-18)
+  ✓ /admin/zzz-unknown (HTTP 401) carries X-Robots-Tag: noindex, nofollow (SS-18)
+
+== T-12 summary ==
+
+----------------------------------------
+PASS: 255  FAIL: 0  REPORTS: 1
+
+Report-mode findings (surfaced, non-fatal):
+  ⚠ [T-24] 2 feed entr(ies) outside the matches sitemap children (the map-miss fallback — data epoch — in use)
+----------------------------------------
+EXIT=0
