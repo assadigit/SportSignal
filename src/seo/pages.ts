@@ -39,7 +39,11 @@ function isTopTable(m: any, top3: Record<string, Set<string>>): boolean {
 }
 
 // ---- answer-first sentence for a match (G-03) ----
-export function matchAnswerSentence(sm: SeoMatch): string {
+// SS-11 (Phase-2 spec §3): opts.noVenue drops the STADIUM clause only (the
+// meta-description trim ladder's first step). The UTC clause never drops —
+// timezone honesty outranks length. The visible answercard, the finished
+// result block and the SportsEvent description all keep the full sentence.
+export function matchAnswerSentence(sm: SeoMatch, opts?: { noVenue?: boolean }): string {
   const m = sm.s;
   const h = faName(m.homeTeam), a = faName(m.awayTeam);
   const comp = M.compNameFa(m);
@@ -53,7 +57,7 @@ export function matchAnswerSentence(sm: SeoMatch): string {
     return s;
   }
   let s = h + " در " + comp + (m.roundFa ? " (" + m.roundFa + ")" : "") + " میزبان " + a + " است؛ این بازی " + when + " به وقت تهران برگزار می‌شود";
-  if (m.venue) s += "؛ ورزشگاه " + (m.venueFa || m.venue);
+  if (m.venue && !(opts && opts.noVenue)) s += "؛ ورزشگاه " + (m.venueFa || m.venue);
   s += ".";
   s += " زمان جهانی این بازی " + utcTime(m.utcDate) + " است.";
   return s;
@@ -268,21 +272,42 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // D3 (CALENDAR_DISPLAY_v2): Shamsi short + Gregorian parens while the
   // assembled title stays ≤ 65 chars — the SS-10 trim ladder, in order:
   // drop the Gregorian parens → drop the brand → shorten the competition
-  // name (trailing words fall off first, never past the first word).
+  // name (trailing words fall off first, never past the first word) →
+  // drop the competition clause entirely (SS-10 final guard: teams + date
+  // is the irreducible unique core, and the date token is what keeps a
+  // pairing's two legs distinct, so it NEVER drops; two real team names
+  // plus a date cannot reach 65, and if they ever did the seo-check >75
+  // backstop reports it instead of the ladder mangling the title).
   const tCore = faName(m.homeTeam) + " – " + faName(m.awayTeam) + " | ";
   const tDate = faDateD2(m.utcDate);
+  const pIdx = tDate.indexOf(" (");
+  const tDateShort = pIdx > 0 ? tDate.slice(0, pIdx) : tDate;
   let title = tCore + compFa + "، " + tDate + " | SportSignal";
-  if (title.length > 65) title = tCore + compFa + "، " + tDate.slice(0, tDate.indexOf(" (")) + " | SportSignal";
-  if (title.length > 65) title = tCore + compFa + "، " + tDate.slice(0, tDate.indexOf(" ("));
+  if (title.length > 65) title = tCore + compFa + "، " + tDateShort + " | SportSignal";
+  if (title.length > 65) title = tCore + compFa + "، " + tDateShort;
   if (title.length > 65) {
     const words = String(compFa).split(" ");
     while (title.length > 65 && words.length > 1) {
       words.pop();
-      title = tCore + words.join(" ") + "، " + tDate.slice(0, tDate.indexOf(" ("));
+      title = tCore + words.join(" ") + "، " + tDateShort;
     }
   }
+  if (title.length > 65) title = tCore + tDateShort;
+  // SS-11 (Phase-2 spec §3): meta description ≤ 165 — the trim ladder:
+  // (1) drop the stadium clause (noVenue; the UTC clause stays), (2) only
+  // then trim at a word boundary with an ellipsis — never mid-word. The
+  // meta/og/twitter description is the ONLY consumer of the trimmed text;
+  // the visible answercard and the SportsEvent description keep the full
+  // sentence (visible text == machine text stays byte-identical there).
   let desc = matchAnswerSentence(sm).replace(/<[^>]+>/g, "");
-  if (desc.length > 175) desc = desc.slice(0, 172) + "…";
+  if (desc.length > 165 && m.venue) desc = matchAnswerSentence(sm, { noVenue: true }).replace(/<[^>]+>/g, "");
+  if (desc.length > 165) {
+    const cut = desc.slice(0, 163);
+    const sp = cut.lastIndexOf(" ");
+    // strip a trailing sentence separator before the ellipsis («می‌شود.» →
+    // «می‌شود…», never «می‌شود.…») — the ellipsis IS the continuation mark
+    desc = (sp >= 100 ? cut.slice(0, sp) : cut).replace(/[.،؛]$/, "") + "…";
+  }
   if (desc.length < 70) desc += " برنامه و ساعت دقیق بازی‌های مهم فوتبال در SportSignal.";
 
   // Key facts table (7.4 item 3) — only fields that exist.

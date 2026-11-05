@@ -4,6 +4,51 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.222-titlesweep — the SEO/GEO Phase-2 Session 5 / SS-10 + SS-11: match titles ≤ 65 + descriptions ≤ 165
+
+_2026-11-06 · spec §3/SS-10 + SS-11. Server-side only — title/meta assembly
+only (no visible page text changed → NO CONTENT_VERSION bump, the
+v13.213/v13.214 precedent; no client asset changed, no date shape changed —
+CALENDAR_DISPLAY_v2 D-shapes and Persian digits ride through untouched)._
+
+**Feature (SS-10).** The match-page `<title>` trim ladder (the SS-27 D3
+ladder: drop Gregorian parens → drop brand → shorten competition) gains its
+final guard: if a title is still over 65 after the competition words fall
+off, the competition clause drops entirely — teams + Shamsi date is the
+irreducible unique core (the date token is what keeps a pairing's two legs
+distinct, so it never drops; two real team names plus a date cannot reach
+65, and the seo-check >75 backstop reports the impossible case instead of
+the ladder mangling a title). The audit's 13 titles of 66–74 chars were
+already gone at the SS-27 round; this release makes the ≤65 guarantee
+structural.
+
+**Feature (SS-11).** The match-page meta description rides a trim ladder to
+≤ 165 chars (the audit found 85 at 166–175; the live re-sweep before this
+release: 84–90 depending on the pool, max 175): (1) drop the stadium clause
+(`matchAnswerSentence(sm, { noVenue: true })` — new optional param; the UTC
+clause never drops, timezone honesty outranks length), (2) only then trim
+at a word boundary with an ellipsis — never mid-word, and never
+«.…» (a trailing sentence separator is stripped before the ellipsis). The
+visible answercard, the finished-result block and the SportsEvent
+description keep the FULL sentence (visible text == machine text stays
+byte-identical there); only the meta/og/twitter description consumes the
+trimmed text. Team/competition/hub descriptions already slice to 165
+(verified).
+
+**Tooling.** seo-check gains REPORT mode (`report()` — surfaced, counted,
+never exit-code-fatal; the T-12 summary prints "PASS/FAIL (+N reports)")
+and **T-23**: the full-sitemap sweep — every sitemap URL's title
+(> 75 = FAIL hard backstop, 66–75 = REPORT, the SS-10 pixel-risk band) and
+meta description (> 165 = FAIL, < 50 = FAIL, SS-11), plus full-sweep title
+uniqueness (T-03 sampled check hardened — the trim ladder makes
+near-collisions marginally likelier, so the sweep hard-asserts it).
+
+**Evidence.** Local render sanity (esbuild harness): worst-case synthetic
+names/venues/comps render title ≤ 65 (59–64 observed) + desc ≤ 165
+(162–163) with word-boundary ellipses; real-data render over the live
+`/api/matches.json` pool (120 matches): maxTitle 65, maxDesc 165, zero
+over-length, zero duplicate titles. `npm test` 2,603 OK.
+
 # v13.221-indexschema — the SEO/GEO Phase-2 Session 4 / SS-13 + SS-14: ItemList on the indexes + Dataset on /data
 
 _2026-11-06 · spec §3/SS-13 + SS-14. Server-side only — JSON-LD-only change

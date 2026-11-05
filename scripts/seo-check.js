@@ -56,10 +56,17 @@ const CONFIG = {
 
 const results = [];
 let failures = 0;
+let reports = 0;   // T-23 report-mode findings (surfaced, never silent, never fatal)
 const UA = "SportSignal-seo-check/1.0 (+https://sportsignal.ir)";
 
 function pass(id, msg) { results.push({ id, ok: true, msg }); console.log("  ✓ " + msg); }
 function fail(id, msg) { results.push({ id, ok: false, msg }); failures++; console.log("  ✗ " + msg); }
+// SS-10 (Phase-2 spec §3): REPORT mode — a finding that must be SURFACED
+// ("titles in the 66–75 pixel-risk band") but not exit-code-fatal: the
+// >75 hard backstop below it stays the failure line. Reports are counted
+// and printed in the T-12 summary so a report-only run reads
+// "PASS: n FAIL: 0 (+R reports)" — visible, never greenwashed.
+function report(id, msg) { results.push({ id, ok: true, msg, report: true }); reports++; console.log("  ⚠ [report] " + msg); }
 function section(t) { console.log("\n== " + t + " =="); }
 
 // v13.186-seofix: politeness + transient-5xx resilience. Root cause (the
@@ -1112,11 +1119,55 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     }
   }
 
+  // ---------------- T-23: full-sitemap title/description sweep (SS-10/SS-11, Phase 2) ----------------
+  section("T-23 full-sweep titles ≤65 + descriptions ≤165 (SS-10/SS-11)");
+  {
+    const id = "T-23";
+    // The SS-10/SS-11 acceptance gate: EVERY sitemap URL, not a sample.
+    // Title policy (spec §3/SS-10): > 75 chars = FAIL (the hard backstop —
+    // Persian glyphs render narrower, 75 ≈ Google's ~580px desktop cutoff
+    // for fa); 66–75 = REPORT (the pixel-truncation RISK band — surfaced
+    // and counted, never silently green). Description policy (SS-11):
+    // > 165 = FAIL, < 50 = FAIL (T-03 checks both on samples; here the
+    // full sweep carries it). Titles must also stay unique across the
+    // FULL sweep (T-03 samples uniqueness; the SS-10 trim ladder makes
+    // near-collisions marginally likelier, so the sweep hard-asserts it).
+    const seenTitles = new Map();
+    let over65 = 0, maxTitle = 0, maxDesc = 0, over165 = 0, under50 = 0, dupTitles = 0, fetched = 0, fetchFails = 0;
+    const over65Samples = [];
+    for (const u of allSitemapUrls) {
+      let res, html;
+      try { res = await fetchRaw(u); html = await body(res); }
+      catch (e) { fail(id, u + " fetch error: " + e.message); fetchFails++; continue; }
+      if (res.status !== 200) { fail(id, u + " HTTP " + res.status); fetchFails++; continue; }
+      fetched++;
+      const title = (html.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1] || "";
+      const desc = (html.match(/<meta[^>]+name="description"[^>]+content="([^"]*)"/i) || [])[1] || "";
+      if (title.length > maxTitle) maxTitle = title.length;
+      if (desc.length > maxDesc) maxDesc = desc.length;
+      if (title.length > 75) fail(id, u + " title > 75 chars (" + title.length + ", the hard backstop): " + title.slice(0, 70));
+      else if (title.length > 65) { over65++; if (over65Samples.length < 5) over65Samples.push(u.replace(B, "") + " (" + title.length + ")"); }
+      if (desc.length > 165) { over165++; fail(id, u + " meta description > 165 chars (" + desc.length + ", SS-11)"); }
+      if (desc.length > 0 && desc.length < 50) { under50++; fail(id, u + " meta description < 50 chars (" + desc.length + ")"); }
+      if (seenTitles.has(title)) { dupTitles++; fail(id, "duplicate title: «" + title.slice(0, 60) + "» (" + seenTitles.get(title) + " & " + u + ")"); }
+      else seenTitles.set(title, u);
+    }
+    if (over65) report(id, over65 + " title(s) in the 66–75 pixel-risk band (SS-10 report-mode; max " + maxTitle + "): " + over65Samples.join(", "));
+    else pass(id, "all " + fetched + " swept titles ≤ 65 chars (max " + maxTitle + ") — zero pixel-risk band titles (SS-10)");
+    if (!over165 && !under50) pass(id, "all " + fetched + " swept meta descriptions 50–165 chars (max " + maxDesc + ") (SS-11)");
+    if (!dupTitles) pass(id, "all " + fetched + " swept titles unique (full-sitemap uniqueness — T-03's sampled check hardened)");
+    if (!fetchFails) pass(id, "full sweep fetched all " + fetched + " sitemap URLs");
+  }
+
   // ---------------- T-12 summary ----------------
   section("T-12 summary");
   {
     console.log("\n----------------------------------------");
-    console.log("PASS: " + (results.length - failures) + "  FAIL: " + failures);
+    console.log("PASS: " + (results.length - failures) + "  FAIL: " + failures + (reports ? "  REPORTS: " + reports : ""));
+    if (reports) {
+      console.log("\nReport-mode findings (surfaced, non-fatal):");
+      results.filter((r) => r.report).slice(0, 10).forEach((r) => console.log("  ⚠ [" + r.id + "] " + r.msg));
+    }
     if (failures) {
       console.log("\nFirst failing checks:");
       results.filter((r) => !r.ok).slice(0, 10).forEach((r) => console.log("  [" + r.id + "] " + r.msg));
