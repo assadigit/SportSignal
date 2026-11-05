@@ -191,6 +191,29 @@ export function itemListNode(list: SeoMatch[], name?: string): any {
   };
 }
 
+// SS-06 (Phase-2 spec §3): the FAQPage node. NOTE: Google retired FAQ
+// rich results in August 2023 — this node is NOT a SERP-enrichment play;
+// it exists so AI answer engines (AI Overviews, ChatGPT, Perplexity,
+// Claude) can quote the EXACT visible Q&A text with a citation. The
+// contract (seo-check T-20): the q/a strings fed here are the very same
+// strings the page renders visibly — byte-identical, one source array
+// shared by faqHtml() (visible) and this node (machine). Answers are
+// factual from the real pool/config only (rule §1.1); hub answers are
+// generated from the same upcomingFollowed list the page renders.
+export function faqNode(qas: { q: string; a: string }[]): any {
+  return {
+    "@type": "FAQPage",
+    mainEntity: qas.map((qa) => ({
+      "@type": "Question",
+      name: qa.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: qa.a
+      }
+    }))
+  };
+}
+
 export function sportsTeamNode(entry: TeamEntry): any {
   const node: any = {
     "@type": "SportsTeam",

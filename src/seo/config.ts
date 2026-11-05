@@ -59,7 +59,10 @@ export const SEO = {
   // attribution line — hand-written page text changed on all page types.
   // v13.217-llmsfull (SS-07): the /data page gained the llms-full.txt
   // entry in its machine-files list — that page's text changed.
-  CONTENT_VERSION: "2026-11-06T12:00:00Z",
+  // v13.219-faq (SS-06): /about + /methodology + /data gained their FAQ
+  // blocks and the four time hubs gained the dynamic FAQ — hand-written
+  // page text changed (the FAQ answers themselves ride the live data).
+  CONTENT_VERSION: "2026-11-06T16:00:00Z",
   // Edge cache for rendered HTML (R-04: at least every 5 minutes).
   HTML_CACHE_TTL: 300,
   // v13.97-seocpu: the per-colo RENDER hold — the Cache API copy's TTL.

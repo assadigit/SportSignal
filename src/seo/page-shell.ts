@@ -123,6 +123,12 @@ ${themeInit}
 .listhead{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between;margin:14px 0 4px}
 .listhead h2{margin:0;font-size:1.05rem}
 .dategroup{font-weight:700;color:var(--muted,#9aa4b2);margin:16px 0 4px;font-size:.95rem;border-inline-start:3px solid #5ea0ff;padding-inline-start:8px}
+/* SS-06 (Phase-2 spec): the visible FAQ card — plain h3+p pairs inside the
+   .prose card; a hairline between items for scannability, nothing hidden. */
+.faqcard .faqitem{padding:6px 0;border-bottom:1px dashed rgba(148,163,184,.16)}
+.faqcard .faqitem:last-child{border-bottom:none}
+.faqcard .faqq{margin:6px 0 4px;font-size:.98rem}
+.faqcard .faqa{margin:0;font-size:.92rem;line-height:2;color:var(--fg,#e8eefc)}
 .pagination{display:flex;gap:10px;justify-content:center;padding:14px 0;flex-wrap:wrap}
 .pagination a,.pagination span{padding:8px 14px;border-radius:10px;border:1px solid rgba(148,184,214,.25);text-decoration:none;color:inherit;font-size:.9rem}
 .pagination .cur{background:rgba(94,160,255,.15);border-color:rgba(94,160,255,.5)}

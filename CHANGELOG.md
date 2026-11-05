@@ -4,6 +4,51 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.219-faq — the SEO/GEO Phase-2 Session 4 / SS-06: FAQ content + FAQPage schema (the AI-answer surface)
+
+_2026-11-06 · spec §3/SS-06. Server-side only — no client asset changed
+(bundle public-13.71.js / stylesheet public-13.81.css / SW sportsignal-v112
+stay)._
+
+**Feature.** The FAQ AI-answer surface. Google retired FAQ rich results in
+August 2023 — this is NOT a SERP-enrichment play; the FAQPage node exists so
+AI answer engines (Google AI Overviews, ChatGPT, Perplexity, Claude) can
+quote the exact visible Q&A text with a citation. The core contract
+(seo-check **T-20**): the visible FAQ text and the FAQPage JSON-LD
+Question.name / Answer.text are the SAME strings, byte-identical — one q/a
+array per surface feeds both renderers.
+
+- NEW `faqNode()` (`src/seo/jsonld.ts`) — the FAQPage node — and
+  `faqHtml()` (`src/seo/markup.ts`) — the visible `.faqcard` block (plain
+  `<h3 class="faqq">` + `<p class="faqa">` pairs under one `<h2>`, nothing
+  hidden, complete server HTML). Minimal hairline styling in the page-shell
+  inline style.
+- Statics (`src/seo/pages-static.ts`): `/about`, `/methodology` and `/data`
+  each gain 5 hand-written factual Q&As — every answer restates facts the
+  site already documents (the pages' own text, the real machine files, the
+  real bot, the real attribution); nothing invented (rule §1.1), no dates
+  hand-rolled.
+- Hubs (`src/seo/pages.ts` `buildHub`): the DYNAMIC FAQ. Q1
+  «امروز/فردا/این هفته/آخر هفته چه بازی‌هایی است؟» is answered from the
+  SAME `upcomingFollowed` list the page renders — naming the window's real
+  matches with `faDateD2`/`faTime` (capped at 8 named + «N بازی دیگر»);
+  an empty window answers honestly that nothing is scheduled. Q2
+  «بزرگ‌ترین/نزدیک‌ترین بازی … چیست؟» names the top fixture with `faDateD1`
+  (only when one exists). Plus three factual Q&As (Tehran timezone +
+  Shamsi/Gregorian dates, the ~10-minute refresh cadence, where the full
+  schedule lives) — 5 Q&As on a normal day, 4 on an empty one, always
+  within the spec's 4–6.
+- `SEO.CONTENT_VERSION` → `2026-11-06T16:00:00Z` (the statics' hand-written
+  text changed — the F-05 honest-lastmod rule; the pages sitemap `<lastmod>`
+  advances with it).
+- seo-check **T-20**: the 3 statics + all 4 hubs must carry a visible FAQ
+  AND a FAQPage node with 4–6 Q&As whose strings are byte-identical between
+  the visible text and the node; on hubs the dynamic answer's count must
+  equal the visible rows and the ItemList `numberOfItems`, the top-match
+  answer must ride the same Jalali date token as the page's first dategroup
+  header, and an empty window must answer honestly («ثبت نشده است»).
+
+
 # v13.218-entitylinks2 — the SEO/GEO Phase-2 Session 3 / SS-05 batch 2: 20 more grounded clubs
 
 _2026-11-06 · spec §3/SS-05 (session capacity remained after CP2): 20 more

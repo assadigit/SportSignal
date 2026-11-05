@@ -622,4 +622,20 @@ export function faFullDateHtml(iso: string): string {
   return esc(faFullDateTime(iso));
 }
 
+// SS-06 (Phase-2 spec §3): the visible FAQ block. Plain server HTML — no
+// <details>, nothing hidden from no-JS readers or crawlers — every Q&A is
+// a real h3 + p under one h2. The SAME q/a array feeds JL.faqNode() so the
+// visible text and the FAQPage JSON-LD agree byte-for-byte (the AI-citation
+// contract; FAQ rich results were retired by Google in 2023 — this is a GEO
+// surface, not a SERP feature). Answers are plain text (no inner markup)
+// precisely so the esc()'d render and the JSON.stringify'd node decode to
+// the identical string.
+export function faqHtml(qas: { q: string; a: string }[]): string {
+  let out = '<div class="card prose faqcard"><h2>پرسش‌های پرتکرار</h2>';
+  for (const qa of qas) {
+    out += '<div class="faqitem"><h3 class="faqq">' + esc(qa.q) + '</h3><p class="faqa">' + esc(qa.a) + "</p></div>";
+  }
+  return out + "</div>";
+}
+
 export { compNameFa };

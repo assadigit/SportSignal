@@ -909,6 +909,88 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     }
   }
 
+  // ---------------- T-20: FAQ content + FAQPage schema (SS-06, Phase 2) ----------------
+  section("T-20 FAQ + FAQPage (SS-06)");
+  {
+    const id = "T-20";
+    // SS-06 (spec §3): the AI-answer surface. Google retired FAQ rich
+    // results in 2023 — the FAQPage node exists for AI citations, and the
+    // CONTRACT is byte-identity: the visible Q&A text and the node's
+    // Question.name / Answer.text must be the same strings. Statics carry
+    // hand-written factual Q&As; the four hubs carry DYNAMIC answers that
+    // must reflect the live list (count == visible rows == ItemList).
+    const faToEn = (s) => String(s).replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+    const unescapeHtml = (s) => String(s)
+      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+    const extractVisibleFaq = (html) =>
+      [...html.matchAll(/<h3 class="faqq">([\s\S]*?)<\/h3>\s*<p class="faqa">([\s\S]*?)<\/p>/g)]
+        .map((m) => ({ q: unescapeHtml(m[1].trim()), a: unescapeHtml(m[2].trim()) }));
+    const extractFaqNode = (html) => {
+      const scripts = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi)].map((m) => m[1]);
+      for (const sc of scripts) {
+        try {
+          const parsed = JSON.parse(sc);
+          const graph = parsed["@graph"] || [parsed];
+          const faq = graph.find((g) => g["@type"] === "FAQPage");
+          if (faq) return faq;
+        } catch (e) { /* T-04 counts parse errors */ }
+      }
+      return null;
+    };
+    for (const path of ["/methodology", "/about", "/data", "/matches/today", "/matches/tomorrow",
+      "/matches/this-week", "/matches/this-weekend"]) {
+      const res = await fetchRaw(B + path);
+      const html = await body(res);
+      if (res.status !== 200) { fail(id, path + " HTTP " + res.status); continue; }
+      const vis = extractVisibleFaq(html);
+      const node = extractFaqNode(html);
+      if (!vis.length) { fail(id, path + ": no visible FAQ block (SS-06)"); continue; }
+      if (!node) { fail(id, path + ": no FAQPage node in JSON-LD (SS-06)"); continue; }
+      const me = Array.isArray(node.mainEntity) ? node.mainEntity : [];
+      if (me.length < 4) fail(id, path + ": FAQPage carries only " + me.length + " Q&As (spec SS-06: 4–6)");
+      else if (me.length > 6) fail(id, path + ": FAQPage carries " + me.length + " Q&As (spec SS-06: 4–6)");
+      else pass(id, path + ": FAQPage carries " + me.length + " Q&As ✓");
+      if (me.length !== vis.length) { fail(id, path + ": visible FAQ has " + vis.length + " items but the node has " + me.length); continue; }
+      let mismatch = 0, firstBad = "";
+      for (let i = 0; i < me.length; i++) {
+        const nq = String((me[i] && me[i].name) || "").trim();
+        const na = String((me[i] && me[i].acceptedAnswer && me[i].acceptedAnswer.text) || "").trim();
+        if (nq !== vis[i].q || na !== vis[i].a) { mismatch++; if (!firstBad) firstBad = "node«" + nq.slice(0, 40) + "» vs visible«" + vis[i].q.slice(0, 40) + "»"; }
+      }
+      if (mismatch) fail(id, path + ": " + mismatch + "/" + me.length + " Q&As differ between visible text and FAQPage node (" + firstBad + ")");
+      else pass(id, path + ": all " + me.length + " Q&As byte-identical visible ↔ FAQPage node ✓");
+      // hubs: the dynamic answer must reflect the live list — the «چه
+      // بازی‌هایی» count == visible rows (== ItemList.numberOfItems, T-14)
+      if (path.startsWith("/matches/")) {
+        const rows = (html.match(/class="mrow"/g) || []).length;
+        const noi = parseInt(faToEn((html.match(/"numberOfItems":\s*(\d+)/) || [])[1] || "-1"), 10);
+        const firstA = vis[0].a;
+        if (rows > 0) {
+          const cntM = firstA.match(/([۰-۹]+) بازی در برنامه SportSignal است/);
+          const ansN = cntM ? parseInt(faToEn(cntM[1]), 10) : -1;
+          if (ansN !== rows) fail(id, path + ": FAQ answer count " + ansN + " ≠ " + rows + " visible rows (live-data mismatch)");
+          else pass(id, path + ": FAQ answer count matches the visible rows (" + ansN + ") ✓");
+          if (noi >= 0 && noi === rows && ansN === rows) pass(id, path + ": answer == rows == ItemList.numberOfItems (" + rows + ") ✓");
+          // the top-match answer (2nd Q when present) rides the SAME date
+          // as the page's first dategroup header (both derive from all[0])
+          const JAL = "فروردین|اردیبهشت|خرداد|تیر|مرداد|شهریور|مهر|آبان|آذر|دی|بهمن|اسفند";
+          const jalToken = (s) => { const m = String(s).match(new RegExp("([۰-۹]+) (" + JAL + ")")); return m ? m[1] + " " + m[2] : ""; };
+          const g1 = (html.match(/<div class="dategroup">([^<]+)<\/div>/) || [])[1] || "";
+          const a2 = vis.length > 1 ? vis[1].a : "";
+          const tokG = jalToken(g1), tokA = jalToken(a2);
+          if (tokG && tokA) {
+            if (tokG === tokA) pass(id, path + ": top-match FAQ answer rides the first row's date («" + tokA + "») ✓");
+            else fail(id, path + ": top-match FAQ date «" + tokA + "» ≠ first dategroup «" + tokG + "»");
+          }
+        } else {
+          if (/ثبت نشده است/.test(firstA)) pass(id, path + ": empty window — FAQ answers honestly («بازی‌ای … ثبت نشده است») ✓");
+          else fail(id, path + ": empty window but the FAQ answer does not say so («" + firstA.slice(0, 80) + "»)");
+        }
+      }
+    }
+  }
+
   // ---------------- T-12 summary ----------------
   section("T-12 summary");
   {

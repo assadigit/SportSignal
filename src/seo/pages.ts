@@ -479,9 +479,54 @@ function buildHub(ctx: SeoCtx, def: HubDef): string {
       faName(top.s.homeTeam) + " – " + faName(top.s.awayTeam) + " (" + M.compNameFa(top.s) + ")، " +
       faDateD1(top.s.utcDate) + " ساعت " + faTime(top.s.utcDate) + " به وقت تهران.";
   }
+  // SS-06 (Phase-2 spec §3): the hub's DYNAMIC FAQ — the questions real
+  // users ask about this window («چه بازی‌هایی امروز است؟»), answered from
+  // the SAME upcomingFollowed list the page renders (rule §1.1: no invented
+  // facts; an empty window answers honestly that nothing is scheduled). The
+  // one array feeds both M.faqHtml (visible) and JL.faqNode (JSON-LD), so
+  // the visible text and the FAQPage node agree byte-for-byte (T-20). All
+  // dates ride the faDateD1/D2 helpers — never hand-rolled (rule §1.3).
+  const FAQ_NAMED_CAP = 8;
+  const hubFaq: { q: string; a: string }[] = [];
+  if (all.length) {
+    const named = all.slice(0, FAQ_NAMED_CAP)
+      .map((sm) => faName(sm.s.homeTeam) + " – " + faName(sm.s.awayTeam) + " (" + M.compNameFa(sm.s) + ")، " + faDateD2(sm.s.utcDate) + " ساعت " + faTime(sm.s.utcDate))
+      .join("؛ ");
+    hubFaq.push({
+      q: def.crumb + " چه بازی‌هایی است؟",
+      a: def.crumb + " " + toFaDigits(String(all.length)) + " بازی در برنامه SportSignal است: " + named +
+        (all.length > FAQ_NAMED_CAP ? "؛ و " + toFaDigits(String(all.length - FAQ_NAMED_CAP)) + " بازی دیگر که فهرست کامل آن‌ها در همین صفحه آمده است." : ".")
+    });
+  } else {
+    hubFaq.push({
+      q: def.crumb + " چه بازی‌هایی است؟",
+      a: "در برنامه فعلی SportSignal بازی‌ای برای " + def.crumb + " ثبت نشده است؛ به‌محض اعلام برنامه بازی‌های جدید، همین صفحه به‌روزرسانی می‌شود."
+    });
+  }
+  if (top) {
+    const topBig = isBigForSeo(top.raw, top3) || top.s.big;
+    hubFaq.push({
+      q: (topBig ? "بزرگ‌ترین" : "نزدیک‌ترین") + " بازی " + def.crumb + " چیست؟",
+      a: (topBig ? "بزرگ‌ترین بازی " : "نزدیک‌ترین بازی ") + def.crumb + ": " + faName(top.s.homeTeam) + " – " + faName(top.s.awayTeam) +
+        " در " + M.compNameFa(top.s) + "، " + faDateD1(top.s.utcDate) + " ساعت " + faTime(top.s.utcDate) + " به وقت تهران."
+    });
+  }
+  hubFaq.push({
+    q: "ساعت بازی‌ها به وقت کجاست؟",
+    a: "ساعت همه بازی‌ها به وقت تهران نمایش داده می‌شود و زمان جهانی هر بازی در صفحه خودش آمده است؛ تاریخ‌ها هم شمسی با معادل میلادی هستند."
+  });
+  hubFaq.push({
+    q: "این صفحه چند وقت یک‌بار به‌روز می‌شود؟",
+    a: "داده‌های مسابقات به‌صورت خودکار و مکرر بررسی می‌شوند و نتیجه بازی‌های در جریان تقریباً هر ۱۰ دقیقه یک‌بار تازه می‌شود؛ زمان آخرین به‌روزرسانی در بالای همین صفحه نمایش داده می‌شود."
+  });
+  hubFaq.push({
+    q: "برنامه بازی‌های بعدی را کجا ببینم؟",
+    a: "فهرست کامل بازی‌های بزرگ پیش‌رو در صفحه بازی‌ها و برنامه هفتگی در صفحه این هفته آمده است؛ صفحه هر تیم و هر رقابت هم برنامه اختصاصی خودش را دارد."
+  });
   const main =
     '<div class="answercard">' + esc(answer) + "</div>" +
     '<div class="card"><h2>' + def.h1 + "</h2>" + dateGroupedRows(all, false) + "</div>" +
+    M.faqHtml(hubFaq) +
     hubTiles();
   // P-05: descriptions stay 70+ chars even on empty days (honest text).
   const descFull = (answer + " تاریخ و ساعت هر بازی به وقت تهران و زمان جهانی نمایش داده می‌شود و هر بازی صفحه اختصاصی دارد.").slice(0, 165);
@@ -489,7 +534,7 @@ function buildHub(ctx: SeoCtx, def: HubDef): string {
   return pageShell({
     head: buildHead({
       path: def.path, title: def.title, description: descFull, indexable: true,
-      jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(def.path, def.h1, ctx.fetchedAt), JL.itemListNode(all, def.h1), JL.breadcrumbNode(trail)]
+      jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(def.path, def.h1, ctx.fetchedAt), JL.itemListNode(all, def.h1), JL.faqNode(hubFaq), JL.breadcrumbNode(trail)]
     }),
     h1: def.h1 + " — " + faDateD1(anchorIso),
     crumbHtml: M.breadcrumbsHtml(trail),
