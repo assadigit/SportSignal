@@ -34,12 +34,15 @@
 //   and each https://www.wikidata.org/wiki/<QID> URL was itself fetched
 //   and confirmed 200 + non-redirect.
 //
-// BATCH 1 (this file, 2026-11-06): the 6 competitions (CL, PL, PD, SA,
-// FL1, BL1) + the 20 highest-priority teams — the followed-team priority
-// list (src/config.ts BIG_TEAMS_BY_LEAGUE + the master clubs in
-// src/slugs.ts TEAM_SLUGS, A-League excluded as site-hidden). Batch 2
-// (more pool teams) extends TEAM_ENTITY_LINKS in a later pass under the
-// SAME fetch-and-confirm rule.
+// BATCH 1 (2026-11-06): the 6 competitions (CL, PL, PD, SA, FL1, BL1) +
+// the 20 highest-priority teams — the followed-team priority list
+// (src/config.ts BIG_TEAMS_BY_LEAGUE + the master clubs in
+// src/slugs.ts TEAM_SLUGS, A-League excluded as site-hidden).
+// BATCH 2 (same session, capacity remained): 20 more pool clubs with live
+// team pages — the biggest Serie A / PL / La Liga / Bundesliga / Ligue 1
+// contenders plus Porto, Sporting CP and PSV (40 grounded teams total).
+// Later batches extend TEAM_ENTITY_LINKS under the SAME fetch-and-confirm
+// rule.
 //
 // VERIFICATION RE-RUN RULE: URLs can rot (articles get renamed → the old
 // title becomes a #REDIRECT). seo-check T-18 live-validates a sample
@@ -166,6 +169,131 @@ export const TEAM_ENTITY_LINKS: Record<string, string[]> = {
   "Everton FC": [
     "https://en.wikipedia.org/wiki/Everton_F.C.",
     "https://www.wikidata.org/wiki/Q5794"
+  ],
+
+  // ---- batch 2 (2026-11-06, same fetch-and-confirm round): the biggest
+  // remaining pool clubs with live team pages today — Serie A / PL / La
+  // Liga / Bundesliga / Ligue 1 contenders + the CL regulars Porto,
+  // Sporting CP and PSV. Same rules: FD legal name + provider variants
+  // as keys; article titles are the CANONICAL enwiki forms (the API
+  // redirects list was empty for every one of these — none is a
+  // #REDIRECT page; e.g. Athletic Club's article title IS Athletic
+  // Bilbao, Real Betis Balompié's IS Real Betis). ----
+  "SSC Napoli": [
+    "https://en.wikipedia.org/wiki/SSC_Napoli",
+    "https://www.wikidata.org/wiki/Q2641"
+  ],
+  "Aston Villa FC": [
+    "https://en.wikipedia.org/wiki/Aston_Villa_F.C.",
+    "https://www.wikidata.org/wiki/Q18711"
+  ],
+  "Newcastle United FC": [
+    "https://en.wikipedia.org/wiki/Newcastle_United_F.C.",
+    "https://www.wikidata.org/wiki/Q18716"
+  ],
+  "Atalanta BC": [
+    "https://en.wikipedia.org/wiki/Atalanta_BC",
+    "https://www.wikidata.org/wiki/Q1886"
+  ],
+  "RB Leipzig": [
+    "https://en.wikipedia.org/wiki/RB_Leipzig",
+    "https://www.wikidata.org/wiki/Q702455"
+  ],
+  "Bayer 04 Leverkusen": [
+    "https://en.wikipedia.org/wiki/Bayer_04_Leverkusen",
+    "https://www.wikidata.org/wiki/Q104761"
+  ],
+  "Villarreal CF": [
+    "https://en.wikipedia.org/wiki/Villarreal_CF",
+    "https://www.wikidata.org/wiki/Q12297"
+  ],
+  "Real Sociedad de Fútbol": [
+    "https://en.wikipedia.org/wiki/Real_Sociedad",
+    "https://www.wikidata.org/wiki/Q10315"
+  ],
+  "Real Sociedad": [
+    "https://en.wikipedia.org/wiki/Real_Sociedad",
+    "https://www.wikidata.org/wiki/Q10315"
+  ],
+  "Athletic Club": [
+    "https://en.wikipedia.org/wiki/Athletic_Bilbao",
+    "https://www.wikidata.org/wiki/Q8687"
+  ],
+  "Athletic Bilbao": [
+    "https://en.wikipedia.org/wiki/Athletic_Bilbao",
+    "https://www.wikidata.org/wiki/Q8687"
+  ],
+  "Valencia CF": [
+    "https://en.wikipedia.org/wiki/Valencia_CF",
+    "https://www.wikidata.org/wiki/Q10333"
+  ],
+  "FC Porto": [
+    "https://en.wikipedia.org/wiki/FC_Porto",
+    "https://www.wikidata.org/wiki/Q128446"
+  ],
+  "Sporting Clube de Portugal": [
+    "https://en.wikipedia.org/wiki/Sporting_CP",
+    "https://www.wikidata.org/wiki/Q75729"
+  ],
+  "Sporting CP": [
+    "https://en.wikipedia.org/wiki/Sporting_CP",
+    "https://www.wikidata.org/wiki/Q75729"
+  ],
+  "PSV": [
+    "https://en.wikipedia.org/wiki/PSV_Eindhoven",
+    "https://www.wikidata.org/wiki/Q11938"
+  ],
+  "PSV Eindhoven": [
+    "https://en.wikipedia.org/wiki/PSV_Eindhoven",
+    "https://www.wikidata.org/wiki/Q11938"
+  ],
+  "Olympique Lyonnais": [
+    "https://en.wikipedia.org/wiki/Olympique_Lyonnais",
+    "https://www.wikidata.org/wiki/Q704"
+  ],
+  "AS Monaco FC": [
+    "https://en.wikipedia.org/wiki/AS_Monaco_FC",
+    "https://www.wikidata.org/wiki/Q180305"
+  ],
+  "AS Monaco": [
+    "https://en.wikipedia.org/wiki/AS_Monaco_FC",
+    "https://www.wikidata.org/wiki/Q180305"
+  ],
+  "Bologna FC 1909": [
+    "https://en.wikipedia.org/wiki/Bologna_FC_1909",
+    "https://www.wikidata.org/wiki/Q1893"
+  ],
+  "Bologna": [
+    "https://en.wikipedia.org/wiki/Bologna_FC_1909",
+    "https://www.wikidata.org/wiki/Q1893"
+  ],
+  "Real Betis Balompié": [
+    "https://en.wikipedia.org/wiki/Real_Betis",
+    "https://www.wikidata.org/wiki/Q8723"
+  ],
+  "Real Betis": [
+    "https://en.wikipedia.org/wiki/Real_Betis",
+    "https://www.wikidata.org/wiki/Q8723"
+  ],
+  "RC Celta de Vigo": [
+    "https://en.wikipedia.org/wiki/RC_Celta_de_Vigo",
+    "https://www.wikidata.org/wiki/Q8749"
+  ],
+  "Celta Vigo": [
+    "https://en.wikipedia.org/wiki/RC_Celta_de_Vigo",
+    "https://www.wikidata.org/wiki/Q8749"
+  ],
+  "VfB Stuttgart": [
+    "https://en.wikipedia.org/wiki/VfB_Stuttgart",
+    "https://www.wikidata.org/wiki/Q4512"
+  ],
+  "SV Werder Bremen": [
+    "https://en.wikipedia.org/wiki/SV_Werder_Bremen",
+    "https://www.wikidata.org/wiki/Q51976"
+  ],
+  "Werder Bremen": [
+    "https://en.wikipedia.org/wiki/SV_Werder_Bremen",
+    "https://www.wikidata.org/wiki/Q51976"
   ]
 };
 

@@ -841,12 +841,24 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       "bayern-munich", "borussia-dortmund", "tottenham", "everton", "juventus",
       "roma", "lazio", "torino", "marseille"
     ];
+    // batch-2 clubs (the biggest remaining pool teams): also sampled so a
+    // later rot in ANY batch surfaces in the gate
+    const teamSlugCandidatesB2 = [
+      "ssc-napoli", "aston-villa", "newcastle-united", "atalanta-bc", "rb-leipzig",
+      "bayer-04-leverkusen", "villarreal", "real-sociedad-de-futbol", "athletic-club",
+      "valencia", "porto", "sporting-clube-de-portugal", "psv", "olympique-lyonnais",
+      "monaco", "bologna", "real-betis-balompie", "rc-celta-de-vigo", "vfb-stuttgart",
+      "sv-werder-bremen"
+    ];
     const liveTeamUrls = new Set(allSitemapUrls.filter((u) => /^https:\/\/[^/]+\/teams\//.test(u)));
     const present = teamSlugCandidates.filter((s) => liveTeamUrls.has(B + "/teams/" + s));
     if (present.length < 4) {
       console.log("  ⚠ only " + present.length + " batch-1 team pages live today — the followed clubs' pages are transient; the competition assertions above still gate the map");
     }
     for (const s of present.slice(0, 6)) await checkEntityPage(B + "/teams/" + s, "SportsTeam", "team");
+    // + up to 2 batch-2 team pages when live
+    const presentB2 = teamSlugCandidatesB2.filter((s) => liveTeamUrls.has(B + "/teams/" + s));
+    for (const s of presentB2.slice(0, 2)) await checkEntityPage(B + "/teams/" + s, "SportsTeam", "team");
   }
 
   // ---------------- T-19: llms.txt + llms-full.txt (SS-07, Phase 2) ----------------

@@ -4,6 +4,33 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.218-entitylinks2 — the SEO/GEO Phase-2 Session 3 / SS-05 batch 2: 20 more grounded clubs
+
+_2026-11-06 · spec §3/SS-05 (session capacity remained after CP2): 20 more
+pool clubs get the verified entity grounding — 40 grounded teams total
+plus the 6 competitions. Server-side only — no client asset changed
+(bundle public-13.71.js / stylesheet public-13.81.css / SW
+sportsignal-v112 stay)._
+
+**Fix.** `TEAM_ENTITY_LINKS` (`src/seo/entity-links.ts`) gains the biggest
+remaining pool clubs with live team pages: SSC Napoli, Aston Villa,
+Newcastle United, Atalanta, RB Leipzig, Bayer 04 Leverkusen, Villarreal,
+Real Sociedad (de Fútbol), Athletic Club (Bilbao), Valencia, FC Porto,
+Sporting Clube de Portugal (CP), PSV (Eindhoven), Olympique Lyonnais, AS
+Monaco (FC), Bologna (FC 1909), Real Betis (Balompié), RC Celta de Vigo,
+VfB Stuttgart and SV Werder Bremen — each keyed by the FD legal name +
+the provider-variant spellings. Same fetch-and-confirm round as batch 1:
+every article title is the CANONICAL enwiki form (empty redirects list —
+none of these is a #REDIRECT page; Athletic Club's article IS
+"Athletic_Bilbao", Real Betis Balompié's IS "Real_Betis"), QIDs from the
+enwiki pageprops API cross-checked via `wbgetentities` (label + sitelink
+URL == the listed article), every `wikidata.org/wiki/<QID>` URL confirmed
+200 + non-redirect (three transient 429s cleared on paced retry). Every
+key was additionally matched against the live page's SportsTeam node name
+before shipping. seo-check T-18 now also samples up to 2 batch-2 team
+pages per run, so rot in ANY batch surfaces in the gate. npm test 2,599 →
+**2,600**.
+
 # v13.217-llmsfull — the SEO/GEO Phase-2 Session 3 / SS-07: llms.txt expansion + llms-full.txt
 
 _2026-11-06 · spec §3/SS-07: llms.txt was a minimal stub (8 links, no
