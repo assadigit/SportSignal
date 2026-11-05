@@ -509,7 +509,10 @@ IndexNow key file (T-11).
    Claude and Amazon assistants cannot fetch the site. Everything else is
    ready for them.
 2. **Home LCP** stays ~4.5 s on throttled mobile because of the hero video —
-   owner decision offered (OWNER_TODO §8).
+   owner decision offered (OWNER_TODO §8). *(Superseded 2026-11-06: the hero
+   is a static poster since long before Phase 2; see §10 / SS-20 for the
+   current state — priority-hinted, field data at the "good" line, and the
+   lab floor honestly documented.)*
 3. **Slugs derive from provider names;** followed clubs have a frozen map.
    If the data provider renames a club, a new slug means a new URL (the old
    one 404s). Risk is low (major clubs are in the frozen map) and visible in
@@ -550,5 +553,105 @@ IndexNow key file (T-11).
 5. Send contact e-mail confirmation + social profile URLs (§5)
 6. Review privacy/terms text (§6)
 7. Decide home-hero option A (keep video) or B (optimized image) (§8)
+   *(superseded — see §10/SS-20 and OWNER_TODO §8's 2026-11-06 refresh)*
+
+---
+
+## 10. SEO/GEO Phase 2 (2026-11-05 → 2026-11-06) — the 100%-compliance program (SS-01…SS-27)
+
+The 2026-11-05 live audit (273 sitemap URLs, 22 crawler UAs, machine files,
+headers, DNS, full `src/seo/` review — evidence pack
+`docs/history/2026-11-05-seo-audit/`) found the Phase-1 baseline verified-good
+and cataloged 26 gaps (SS-01…SS-26); the owner added the Shamsi-first display
+rule (SS-27). The program spec is
+`docs/SPORTSIGNAL_SEO_GEO_SPEC_PHASE2.md` (rules §1, register §3, tracker §5,
+protocol §4/§6, program definition-of-done §7); it ran over six sessions
+(S1…S6, 2026-11-05 → 2026-11-06) with a commit+push+deploy checkpoint per
+item group. Session notes live in `docs/history/`
+(`2026-11-05-s1-hubtruth.md` … `2026-11-06-s6-closeout.md`).
+
+### 10.1 The register, closed (SS-01…SS-27)
+
+Legend: ✅ VERIFIED live (deployed + curl/lighthouse/seo-check evidence) ·
+OWNER = owner action, parked current in `OWNER_TODO.md` with click-paths.
+
+| ID | Gap (short) | Status | Tag(s) | Evidence digest |
+|---|---|---|---|---|
+| SS-01 | Hubs under-listed matches | ✅ | v13.211-hubtruth | /matches/today 18 rows (was 0); noi==rows==answer 18; T-14 green |
+| SS-02 | Tomorrow H1 wrong date | ✅ | v13.211-hubtruth | title/H1 both «۶ نوامبر ۲۰۲۶»; T-14 green |
+| SS-27 | Shamsi-first display rule | ✅ | v13.212-shamsifirst | T-15 sweep green (hubs/match/teams/comps/homepage); en+machine unchanged; SSR==client byte-verified |
+| SS-03 | Pagination canonicals | ✅ | v13.213-pagecanon | ?page=2 self-canonical + og:url + «— صفحه ۲»; ?page=1 → /matches; T-16 green |
+| SS-04 | Organization.sameAs | ✅ | v13.214-sameas | every page graph carries sameAs=[t.me/SportSignalAlertsBot]; T-17 green |
+| SS-05 | Team/comp entity grounding | ✅ (b1+b2) | v13.216-entitylinks, v13.218-entitylinks2 | 40 teams + 6 comps grounded, all URLs fetch-and-confirmed; T-18 green (193/0) |
+| SS-06 | FAQ + FAQPage | ✅ | v13.219-faq | T-20 green (3 statics + 4 hubs, byte-identical visible↔node; today-hub answer 36==rows==noi with real fixtures named) |
+| SS-07 | llms.txt + llms-full.txt | ✅ | v13.217-llmsfull | both 200 text/plain UTF-8; 44 links validated; T-19 green |
+| SS-08 | Footer attribution | ✅ | v13.215-attribution | «منبع داده: football-data.org» on all page types; T-03 sweep green |
+| SS-09 | security.txt email | ✅ | v13.220-secremail | no mailto, Telegram Contact + Remarks; OWNER_TODO §12 Email Routing path; T-21 green |
+| SS-10 | Title lengths ≤65 | ✅ | v13.222-titlesweep | T-23 full sweep — 279 titles ≤65 (max 65), zero 66–75 band, all unique |
+| SS-11 | Description ≤165 | ✅ | v13.222-titlesweep | T-23 — 279 descs 50–165 (max 165); UTC clause never drops |
+| SS-12 | One full 404 | ✅ | v13.220-secremail | all 404 shapes serve the full shell, noindex meta + X-Robots-Tag; pure render (no KV on the 404 path); T-21 green |
+| SS-13 | ItemList on indexes | ✅ | v13.221-indexschema | /teams 93==tiles + /competitions 7==tiles child-link ItemLists; T-22 green |
+| SS-14 | Dataset on /data | ✅ | v13.221-indexschema | creator in-graph, isAccessibleForFree true, license /terms, 3 DataDownloads content-type-verified; T-22 green |
+| SS-15 | SportsEvent.image per-match | ✅ | v13.223-machpolish | 166 match pages per-match OG in SportsEvent.image; 5 sampled PNGs 200 image/png |
+| SS-16 | feed entry lastmod honesty | ✅ | v13.223-machpolish | all feed entries' <updated> == same-URL sitemap lastmod; map-miss → data epoch (report mode, non-fatal) |
+| SS-17 | ics DTEND | ✅ | v13.223-machpolish | all VEVENTs DTEND == DTSTART+2h (curl-exact) |
+| SS-18 | /admin X-Robots-Tag | ✅ | v13.223-machpolish | X-Robots-Tag on /admin(200)+/admin/login(302/401)+unknown(401); robots Disallow kept |
+| SS-19 | 410 for retired teams | ⛔ SKIPPED | — | the spec's own fallback: an honest 410 needs a 404-path KV read (the archive) — forbidden by the item; SS-12 plain 404 stays |
+| SS-20 | Home mobile LCP | ✅ (option 1) + owner decision | v13.224-herolcp | see §10.2 |
+| SS-21 | GSC sitemap submit + Coverage/CWV watch | OWNER | — | OWNER_TODO §3 (registration ✅; submit + watch steps with click-paths) |
+| SS-22 | Bing WMT sitemap submit | OWNER | — | OWNER_TODO §4 (registration ✅; submit step with click-path; IndexNow already pinging) |
+| SS-23 | Analytics decision | ✅ resolved by choice | — | Cloudflare Web Analytics live (beacon in every page, CSP-allowed, transparently disclosed in /privacy); alternatives would need a CSP edit — not wanted |
+| SS-24 | Privacy/terms review | OWNER | — | OWNER_TODO §6 (5-min read; texts match the real operation) |
+| SS-25 | CWV field gate for SS-20 | OWNER (time-gated) | — | OWNER_TODO §3 step 6 (GSC Experience → Core Web Vitals once traffic accrues); first CF Web Analytics window already shows human LCP p75 ≈ 2.4 s desktop / 2.5 s mobile |
+| SS-26 | Social profiles → sameAs | OWNER | — | OWNER_TODO §5 (send real profile URLs → SEO.ORG_SAMEAS + footer + twitter:site; verified-live-only rule) |
+
+### 10.2 SS-20 — the home mobile-LCP round (v13.224-herolcp), the honest close
+
+The audit's only perf concern (mobile 62–71, LCP 6.4 s lab). The Phase-3
+web-optimization program had already fixed the scene art's discovery
+(v13.205/206); the Phase-7 diagnostic + this session's fresh BEFORE series
+(Lighthouse 13.6.0, `/` mobile ×3: LCP 5.7–6.9 s, `priorityHinted:false`)
+both named the unhinted `img.bg-photo` (`/hero-poster.jpg`) as the LCP
+element. **Option 1 of the spec's preference order shipped (v13.224):** a
+media-scoped `(max-width:899px)` `fetchpriority=high` preload in the head +
+`fetchpriority="high"` on the img itself — verified live (curl: both wires;
+Lighthouse after: `priorityHinted:true`, on-the-wire priority Medium → High,
+load delay 19 ms). **The <2.5 s lab target is NOT met by priority wiring
+alone** — before/after series: 5.7–6.9 s → 5.6–7.1 s (medians 6.2 → 6.3 s,
+within the documented variance band). The residual is the render-blocking
+chain (HTML ≈181 KB + CSS ≈137 KB parse/apply/first-layout) amplified by the
+lab's 4× CPU throttle: observed LCP == FCP (0.9–1.5 s unthrottled — the
+poster paints at first paint), and the simulated FCP→LCP gap (3.3–4.4 s)
+tracks 4× the observed element-render-delay window across every run. Option 2
+is moot (the hero has been a static poster since before Phase 2 — no video /
+large art to swap). Option 3 (page-weight diet: critical-CSS split, hero-first
+restructure) is a real redesign with visual trade-offs → **documented owner
+decision** (OWNER_TODO §8, refreshed 2026-11-06: accept the CWV field gate —
+recommended; or approve a future page-weight project). The field reality
+already stands at the "good" line: CF Web Analytics first window — human
+LCP p75 2.36 s desktop / 2.53 s mobile, CLS p75 ≈ 0.
+
+### 10.3 The closing verification (2026-11-06, after deploy 668fb0a5)
+
+- `npm test` → exit 0, **2,607 checks** (2,605 at S5 + the two v13.224 pins).
+- `npm run seo:check` vs production → **PASS 255 / FAIL 0 / REPORTS 1**
+  (the 1 report: T-24's documented map-miss feed fallback, count drifts with
+  the live pool). The final full-sitemap sweep inside it, fresh evidence:
+  all **279** sitemap URLs fetched, titles ≤65 (max 65), descriptions 50–165
+  (max 165), all unique, zero canonical mismatches (all 5 children
+  canonical+https+lastmod, no dupes; sampled pages self-canonical), one H1
+  per page (T-03/T-15), JSON-LD valid everywhere (T-04 + per-item T-17…T-23
+  assertions), Shamsi-first on every fa surface with en/machine surfaces
+  Gregorian-only (T-15), 85-URL depth-3 crawl with 0 errors, all 15 bot UAs
+  admitted, machine files + ETag/304 green. Raw log:
+  `docs/history/2026-11-06-s6-final-sweep.txt`.
+- Lighthouse (T-09-equivalent, Lighthouse 13.6.0, same flags): `/` mobile
+  perf 62–68 / seo 100 / a11y 96–100 / BP 96 (all above the T-09 regression
+  floors); `/matches/today` perf 98, LCP 1.9 s; `/teams` perf 99, LCP 1.8 s.
+  T-09's chrome flags were fixed this session (`--headless=new` was removed
+  in Chrome 132 — the old flag aborted the launch on modern binaries).
+- Zero regressions: webhook, admin, bot, cron, /api/* untouched (the SS-20
+  change is homepage-template-only: no bundle, no stylesheet, no asset
+  renamed; SW bump v112→v113 is the routine evict).
 
 — End of report —

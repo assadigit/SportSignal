@@ -330,13 +330,13 @@ next safe point, checkpoint, and hand off a continuation prompt.
 | SS-17 | ics DTEND | S5 | VERIFIED | v13.223-machpolish | live 2026-11-06: T-24 — all 87 VEVENTs DTEND == DTSTART+2h (curl-exact) |
 | SS-18 | /admin X-Robots-Tag | S5 | VERIFIED | v13.223-machpolish | live 2026-11-06: T-24 — X-Robots-Tag on /admin(200)+/admin/login(302/401)+unknown(401); robots Disallow kept |
 | SS-19 | 410 for retired teams | S5 | SKIPPED (optional; spec fallback) | — | honest 410 needs a 404-path KV read (archive) — forbidden by the item itself; SS-12 plain 404 stays (see 2026-11-06-s5 note) |
-| SS-20 | Mobile LCP 6.4 s | S6 | OPEN | — | lighthouse harness |
-| SS-21 | GSC sitemap submit | S6 | OWNER | — | OWNER_TODO.md |
-| SS-22 | Bing WMT | S6 | OWNER | — | OWNER_TODO.md |
-| SS-23 | Analytics decision | S6 | OWNER | — | OWNER_TODO.md |
-| SS-24 | Privacy/terms review | S6 | OWNER | — | OWNER_TODO.md |
-| SS-25 | CWV field gate | S6 | OWNER | — | OWNER_TODO.md |
-| SS-26 | Social profiles → sameAs | S6 | OWNER | — | OWNER_TODO.md |
+| SS-20 | Mobile LCP 6.4 s | S6 | VERIFIED (option 1) + owner decision documented | v13.224-herolcp | deploy 668fb0a5: both hint wires live (curl); lighthouse after: priorityHinted:true, wire priority Medium→High, load delay 19 ms; lab LCP 5.6–7.1 s (median 6.3) — the residual is the render-blocking chain (HTML 181 KB + CSS 137 KB) × 4× CPU, obs LCP==FCP 0.9–1.5 s; field RUM p75 2.36/2.53 s already at the good line; OWNER_TODO §8 refreshed (accept field gate vs page-weight project) |
+| SS-21 | GSC sitemap submit | S6 | OWNER | — | OWNER_TODO §3 (refreshed 2026-11-06: registration ✅; sitemap submit + Request indexing + Coverage/CWV watch click-paths) |
+| SS-22 | Bing WMT | S6 | OWNER | — | OWNER_TODO §4 (refreshed: registration ✅; sitemap submit click-path; IndexNow already pinging) |
+| SS-23 | Analytics decision | S6 | DONE (resolved by choice) | — | Cloudflare Web Analytics live (beacon in every page, CSP-allowed, /privacy-disclosed) — OWNER_TODO §11 ✅ + the SS-23 note; alternatives would need a CSP edit, not wanted |
+| SS-24 | Privacy/terms review | S6 | OWNER | — | OWNER_TODO §6 (5-min read; texts match the real operation incl. the cookieless beacon disclosure) |
+| SS-25 | CWV field gate | S6 | OWNER (time-gated) | — | OWNER_TODO §3 step 6 (GSC Experience → Core Web Vitals once traffic accrues) — the acceptance gate for SS-20; first CF Web Analytics window: human LCP p75 2.36 s desktop / 2.53 s mobile |
+| SS-26 | Social profiles → sameAs | S6 | OWNER | — | OWNER_TODO §5 (send real profile URLs → SEO.ORG_SAMEAS + footer + twitter:site; verified-live-only rule) |
 
 ---
 
