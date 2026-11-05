@@ -320,16 +320,16 @@ next safe point, checkpoint, and hand off a continuation prompt.
 | SS-07 | llms.txt + llms-full.txt | S3 | VERIFIED | v13.217-llmsfull | live 2026-11-06: both files 200 text/plain UTF-8; 44 links validated; T-19 green |
 | SS-08 | Footer attribution | S2 | VERIFIED | v13.215-attribution | live 2026-11-05: «منبع داده: football-data.org» on all page types; T-03 sweep green |
 | SS-09 | security.txt email | S4 | VERIFIED | v13.220-secremail | live 2026-11-06: no mailto, Telegram Contact + Remarks; OWNER_TODO §12 Email Routing path; T-21 green |
-| SS-10 | Title lengths ≤65 | S5 | OPEN | — | sweep |
-| SS-11 | Description ≤165 | S5 | OPEN | — | sweep |
+| SS-10 | Title lengths ≤65 | S5 | VERIFIED | v13.222-titlesweep | live 2026-11-06: T-23 full sweep — 279 titles ≤65 (max 65), zero 66–75 band, all unique |
+| SS-11 | Description ≤165 | S5 | VERIFIED | v13.222-titlesweep | live 2026-11-06: T-23 full sweep — 279 descs 50–165 (max 165); UTC clause never drops |
 | SS-12 | One full 404 | S4 | VERIFIED | v13.220-secremail | live 2026-11-06: /zzz-unknown + deep + route-family 404s all serve the full 22KB shell, noindex meta + X-Robots-Tag; pure render (no KV on 404 path); T-21 green |
 | SS-13 | ItemList on indexes | S4 | VERIFIED | v13.221-indexschema | live 2026-11-06: /teams 93==tiles + /competitions 7==tiles child-link ItemLists, sampled children 200; T-22 green |
 | SS-14 | Dataset on /data | S4 | VERIFIED | v13.221-indexschema | live 2026-11-06: Dataset node — creator in-graph, isAccessibleForFree true, license /terms, 3 DataDownloads with live content-type match; T-22 green |
-| SS-15 | SportsEvent.image per-match | S5 | OPEN | — | JSON-LD |
-| SS-16 | feed entry lastmod honesty | S5 | OPEN | — | feed diff |
-| SS-17 | ics DTEND | S5 | OPEN | — | ics content |
-| SS-18 | /admin X-Robots-Tag | S5 | OPEN | — | curl -I |
-| SS-19 | 410 for retired teams | S5 | OPEN (optional) | — | curl retired slug |
+| SS-15 | SportsEvent.image per-match | S5 | VERIFIED | v13.223-machpolish | live 2026-11-06: T-23 — 166 match pages per-match OG in SportsEvent.image; 5 sampled PNGs 200 image/png |
+| SS-16 | feed entry lastmod honesty | S5 | VERIFIED | v13.223-machpolish | live 2026-11-06: T-24 — all feed entries' <updated> == same-URL sitemap lastmod (curl-exact on 2); map-miss → data epoch (report mode) |
+| SS-17 | ics DTEND | S5 | VERIFIED | v13.223-machpolish | live 2026-11-06: T-24 — all 87 VEVENTs DTEND == DTSTART+2h (curl-exact) |
+| SS-18 | /admin X-Robots-Tag | S5 | VERIFIED | v13.223-machpolish | live 2026-11-06: T-24 — X-Robots-Tag on /admin(200)+/admin/login(302/401)+unknown(401); robots Disallow kept |
+| SS-19 | 410 for retired teams | S5 | SKIPPED (optional; spec fallback) | — | honest 410 needs a 404-path KV read (archive) — forbidden by the item itself; SS-12 plain 404 stays (see 2026-11-06-s5 note) |
 | SS-20 | Mobile LCP 6.4 s | S6 | OPEN | — | lighthouse harness |
 | SS-21 | GSC sitemap submit | S6 | OWNER | — | OWNER_TODO.md |
 | SS-22 | Bing WMT | S6 | OWNER | — | OWNER_TODO.md |
