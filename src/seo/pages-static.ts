@@ -233,7 +233,7 @@ export function buildDataPage(ctx: SeoCtx): string {
 <p>هر بازی شامل: شناسه، تیم میزبان و میهمان (نام انگلیسی و فارسی)، زمان شروع UTC (ISO 8601)، کد رقابت، مرحله، وضعیت (scheduled / live / finished)، ورزشگاه (در صورت وجود) و نتیجه (پس از پایان).</p>
 </div>` +
     M.faqHtml(FAQ_DATA);
-  return staticPage("/data", "داده‌های باز و ماشین‌خوان | SportSignal", "تقویم iCal، فید Atom و JSON عمومی بازی‌های بزرگ فوتبال در SportSignal — همراه شرایط استفاده و ذکر منبع.", "داده‌های ماشین‌خوان", main, ctx, { jsonld: [JL.faqNode(FAQ_DATA)] });
+  return staticPage("/data", "داده‌های باز و ماشین‌خوان | SportSignal", "تقویم iCal، فید Atom و JSON عمومی بازی‌های بزرگ فوتبال در SportSignal — همراه شرایط استفاده و ذکر منبع.", "داده‌های ماشین‌خوان", main, ctx, { jsonld: [JL.faqNode(FAQ_DATA), JL.datasetNode()] });
 }
 
 // ---- /sitemap human page (P-20) ----

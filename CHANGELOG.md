@@ -4,6 +4,39 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.221-indexschema — the SEO/GEO Phase-2 Session 4 / SS-13 + SS-14: ItemList on the indexes + Dataset on /data
+
+_2026-11-06 · spec §3/SS-13 + SS-14. Server-side only — JSON-LD-only change
+(no visible text changed → NO CONTENT_VERSION bump, the v13.213/v13.214
+precedent; no client asset changed)._
+
+**Feature (SS-13).** The `/teams` and `/competitions` indexes gain an
+ItemList of child links — the same pattern the hubs use
+(`numberOfItems` + `ListItem` position/name/url), but the elements are the
+child pages. NEW `linkItemList()` (`src/seo/jsonld.ts`); wired as
+`teamList`/`compList` in `buildTeamsIndexPage`/`buildCompetitionsIndexPage`
+(`src/seo/pages.ts`). The names are the SAME strings the visible tiles
+render, so the machine list and the visible grid describe one another
+exactly, and `numberOfItems` == the visible tile count.
+
+**Feature (SS-14).** `/data` gains a Dataset node. NEW `datasetNode()`
+(`src/seo/jsonld.ts`): name + honest description (attribution required,
+football-data.org base data), `url`, `isAccessibleForFree: true` (no
+paywall exists), `license` → `/terms` (where the attribution requirement
+actually lives), `creator` → the Organization `@id` already present in
+every page's graph, and `distribution` → three DataDownloads for
+`/api/matches.json` (`application/json`), `/calendar.ics`
+(`text/calendar`) and `/feed.xml` (`application/atom+xml`) — the real
+media types the routes actually serve.
+
+- seo-check **T-22**: both indexes carry the child-link ItemList with
+  numberOfItems == visible tiles == element count, and sampled children
+  answer 200 (graceful pass on an honest empty universe); `/data` carries
+  the Dataset whose creator resolves in-graph, isAccessibleForFree is
+  true, the license is on-site, and each distribution's `encodingFormat`
+  matches the LIVE content type of its URL.
+
+
 # v13.220-secremail — the SEO/GEO Phase-2 Session 4 / SS-09 + SS-12: honest security.txt + one full 404
 
 _2026-11-06 · spec §3/SS-09 + SS-12. Server-side only — no client asset

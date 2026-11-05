@@ -1028,6 +1028,90 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     else pass(id, "security.txt: no mailto (SS-09), Telegram contact + note present ✓");
   }
 
+  // ---------------- T-22: ItemList on indexes + Dataset on /data (SS-13/SS-14, Phase 2) ----------------
+  section("T-22 index ItemLists + Dataset (SS-13/SS-14)");
+  {
+    const id = "T-22";
+    const extractNode = (html, type, pred) => {
+      const scripts = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi)].map((m) => m[1]);
+      for (const sc of scripts) {
+        try {
+          const parsed = JSON.parse(sc);
+          const graph = parsed["@graph"] || [parsed];
+          const found = graph.find((g) => g["@type"] === type && (!pred || pred(g)));
+          if (found) return { node: found, graph };
+        } catch (e) { /* T-04 counts parse errors */ }
+      }
+      return null;
+    };
+    // SS-13: /teams + /competitions carry an ItemList of child links whose
+    // numberOfItems == the visible tile count; sampled child URLs exist.
+    for (const [path, tilePrefix] of [["/teams", "/teams/"], ["/competitions", "/competitions/"]]) {
+      const res = await fetchRaw(B + path);
+      const html = await body(res);
+      if (res.status !== 200) { fail(id, path + " HTTP " + res.status); continue; }
+      const found = extractNode(html, "ItemList", (g) => Array.isArray(g.itemListElement) && g.itemListElement.length && g.itemListElement[0].url && String(g.itemListElement[0].url).indexOf(tilePrefix) > -1);
+      if (!found) {
+        // graceful empty universe: no tiles → an empty ItemList is honest
+        const anyTiles = (html.match(/class="hubtile"/g) || []).length;
+        if (!anyTiles) { pass(id, path + ": no fixtures universe today — empty index, ItemList skipped (honest empty state)"); continue; }
+        fail(id, path + ": no child-link ItemList in JSON-LD (SS-13)");
+        continue;
+      }
+      const list = found.node;
+      const tiles = (html.match(new RegExp('class="hubtile" href="' + tilePrefix.replace(/\//g, "\\/") + '"', "g")) || []).length;
+      const noi = list.numberOfItems;
+      const elems = (list.itemListElement || []).length;
+      if (noi === tiles && elems === tiles) pass(id, path + ": ItemList numberOfItems == " + noi + " == visible tiles == itemListElement count ✓");
+      else fail(id, path + ": ItemList numberOfItems " + noi + " / elements " + elems + " ≠ " + tiles + " visible tiles (SS-13 count mismatch)");
+      // sampled child URLs exist (first 3 + last 2)
+      const sample = list.itemListElement.filter((x, i, arr) => i < 3 || i >= arr.length - 2);
+      let bad = 0;
+      for (const li of sample) {
+        const r = await fetchRaw(String(li.url));
+        if (r.status !== 200) { fail(id, path + " ItemList child «" + li.url + "» HTTP " + r.status); bad++; }
+      }
+      if (!bad) pass(id, path + ": " + sample.length + " sampled ItemList children all answer 200 ✓");
+    }
+    // SS-14: /data carries the Dataset node — creator @id resolves to the
+    // Organization in the SAME graph, isAccessibleForFree true, 3 real
+    // DataDownloads with matching live content types.
+    const dres = await fetchRaw(B + "/data");
+    const dhtml = await body(dres);
+    if (dres.status !== 200) fail(id, "/data HTTP " + dres.status);
+    else {
+      const found = extractNode(dhtml, "Dataset");
+      if (!found) fail(id, "/data: no Dataset node in JSON-LD (SS-14)");
+      else {
+        const ds = found.node;
+        const orgId = B + "/#organization";
+        const hasOrg = found.graph.some((g) => g["@id"] === orgId && g["@type"] === "Organization");
+        if (ds.creator && ds.creator["@id"] === orgId && hasOrg) pass(id, "/data: Dataset.creator → " + orgId + " (present in the same graph) ✓");
+        else fail(id, "/data: Dataset.creator does not resolve to the graph's Organization @id");
+        if (ds.isAccessibleForFree === true) pass(id, "/data: Dataset.isAccessibleForFree: true ✓");
+        else fail(id, "/data: Dataset.isAccessibleForFree is not true");
+        if (ds.license && String(ds.license).startsWith(B + "/")) pass(id, "/data: Dataset.license → " + ds.license + " (the real terms page) ✓");
+        else fail(id, "/data: Dataset.license missing/not on-site: " + ds.license);
+        const dist = Array.isArray(ds.distribution) ? ds.distribution : [];
+        const want = [
+          { name: "matches.json", url: B + "/api/matches.json", ct: "application/json" },
+          { name: "calendar.ics", url: B + "/calendar.ics", ct: "text/calendar" },
+          { name: "feed.xml", url: B + "/feed.xml", ct: "application/atom+xml" }
+        ];
+        if (dist.length !== 3) fail(id, "/data: Dataset.distribution carries " + dist.length + " DataDownloads (expected 3)");
+        else pass(id, "/data: Dataset.distribution carries 3 DataDownloads ✓");
+        for (const w of want) {
+          const dd = dist.find((x) => x.name === w.name);
+          if (!dd || dd.contentUrl !== w.url || dd.encodingFormat !== w.ct) { fail(id, "/data: distribution «" + w.name + "» wrong (got " + JSON.stringify(dd) + ")"); continue; }
+          const r = await fetchRaw(w.url);
+          const ct = (r.headers.get("content-type") || "").split(";")[0].trim();
+          if (r.status === 200 && ct === w.ct) pass(id, "/data distribution «" + w.name + "» → 200 " + ct + " (matches encodingFormat) ✓");
+          else fail(id, "/data distribution «" + w.name + "» answers " + r.status + " " + ct + " (expected 200 " + w.ct + ")");
+        }
+      }
+    }
+  }
+
   // ---------------- T-12 summary ----------------
   section("T-12 summary");
   {

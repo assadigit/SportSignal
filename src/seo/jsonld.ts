@@ -214,6 +214,66 @@ export function faqNode(qas: { q: string; a: string }[]): any {
   };
 }
 
+// SS-13 (Phase-2 spec §3): ItemList of CHILD LINKS for the /teams and
+// /competitions indexes — the same hub pattern (numberOfItems + ListItem
+// position/name/url) but the elements are the child pages, not matches.
+// The names are the SAME strings the visible tiles render, so the machine
+// list and the visible grid describe one another exactly.
+export function linkItemList(items: { name: string; url: string }[], name?: string): any {
+  return {
+    "@type": "ItemList",
+    name: name || "فهرست صفحه‌ها",
+    numberOfItems: items.length,
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.name,
+      url: it.url
+    }))
+  };
+}
+
+// SS-14 (Phase-2 spec §3): the Dataset node for /data — the site's machine
+// surfaces described as a dataset. Every field is real: creator → the
+// Organization @id already in every graph; distribution → DataDownload per
+// REAL file (matches.json / calendar.ics / feed.xml) with the media types
+// the routes actually serve; the license points at /terms where the
+// attribution requirement lives (honest: attribution required, and the
+// description says so — never a license we do not actually grant);
+// isAccessibleForFree: true (no paywall exists).
+export function datasetNode(): any {
+  return {
+    "@type": "Dataset",
+    "@id": absUrl("/data") + "#dataset",
+    name: "داده‌های ماشین‌خوان بازی‌های بزرگ فوتبال SportSignal",
+    description: "داده‌های بازی‌های بزرگ فوتبال که SportSignal دنبال می‌کند — به‌صورت JSON، تقویم iCalendar و فید Atom با زمان‌های ISO 8601 (UTC). استفاده با ذکر منبع (SportSignal) مجاز است؛ داده‌های پایه از football-data.org دریافت می‌شود.",
+    url: absUrl("/data"),
+    isAccessibleForFree: true,
+    license: absUrl("/terms"),
+    creator: { "@id": SEO.SITE_URL + "/#organization" },
+    distribution: [
+      {
+        "@type": "DataDownload",
+        name: "matches.json",
+        encodingFormat: "application/json",
+        contentUrl: absUrl("/api/matches.json")
+      },
+      {
+        "@type": "DataDownload",
+        name: "calendar.ics",
+        encodingFormat: "text/calendar",
+        contentUrl: absUrl("/calendar.ics")
+      },
+      {
+        "@type": "DataDownload",
+        name: "feed.xml",
+        encodingFormat: "application/atom+xml",
+        contentUrl: absUrl("/feed.xml")
+      }
+    ]
+  };
+}
+
 export function sportsTeamNode(entry: TeamEntry): any {
   const node: any = {
     "@type": "SportsTeam",

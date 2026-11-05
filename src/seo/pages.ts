@@ -622,13 +622,22 @@ export function buildTeamsIndexPage(ctx: SeoCtx): string {
   const main = '<div class="answercard">صفحه هر تیم، برنامه بازی‌های بزرگ بعدی و نتایج اخیر آن تیم را نشان می‌دهد — به وقت تهران و با لینک به صفحه هر بازی.</div>' +
     '<div class="card"><div class="listhead"><h2>تیم‌ها</h2><span class="pagesub">' + toFaDigits(String(entries.length)) + " تیم</span></div>" +
     '<div class="hubgrid">' + grid + "</div></div>";
+  // SS-13 (Phase-2 spec §3): the index's ItemList of child links — the same
+  // names the visible tiles render, numberOfItems == the tile count (the
+  // hub pattern). Every entry HAS a live page (teamsIndex only lists teams
+  // with playable upcoming big matches — the same universe the router
+  // resolves team slugs from).
+  const teamList = JL.linkItemList(
+    entries.map((e) => ({ name: e.faName || e.name, url: absUrl("/teams/" + e.slug) })),
+    "تیم‌های دنبال‌شده"
+  );
   return pageShell({
     head: buildHead({
       path,
       title: "تیم‌های فوتبال دنبال‌شده — برنامه بازی‌ها | SportSignal",
       description: "فهرست تیم‌های فوتبال که SportSignal دنبال می‌کند؛ صفحه هر تیم شامل تاریخ و ساعت بازی بعدی و نتایج اخیر است.",
       indexable: true,
-      jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(path, "تیم‌ها", ctx.fetchedAt), JL.breadcrumbNode(trail)]
+      jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(path, "تیم‌ها", ctx.fetchedAt), teamList, JL.breadcrumbNode(trail)]
     }),
     h1: "تیم‌های دنبال‌شده",
     crumbHtml: M.breadcrumbsHtml(trail),
@@ -793,13 +802,22 @@ export function buildCompetitionsIndexPage(ctx: SeoCtx): string {
   if (!grid) grid = '<div class="empty">رقابتی در برنامه پیش‌رو نیست.</div>';
   const main = '<div class="answercard">صفحه هر رقابت، بازی‌های بزرگ پیش‌روی همان لیگ یا جام را با تاریخ و ساعت نشان می‌دهد.</div>' +
     '<div class="card"><h2>رقابت‌ها</h2><div class="hubgrid">' + grid + "</div></div>";
+  // SS-13 (Phase-2 spec §3): the index's ItemList of child links — the
+  // SAME cNameFa the visible tiles render, numberOfItems == the tile count.
+  const compList = JL.linkItemList(
+    entries.map((e) => ({
+      name: String((e.next && (e.next.s.competition.faName || COMP_EN[e.code])) || COMP_EN[e.code] || e.code),
+      url: absUrl("/competitions/" + e.slug)
+    })),
+    "رقابت‌های دنبال‌شده"
+  );
   return pageShell({
     head: buildHead({
       path,
       title: "رقابت‌های فوتبال — لیگ‌ها و جام‌ها | SportSignal",
       description: "برنامه بازی‌های بزرگ لیگ قهرمانان اروپا، لیگ برتر انگلیس، لالیگا، سری‌آ، بوندسلیگا، لیگ یک فرانسه و جام‌های حذفی در SportSignal.",
       indexable: true,
-      jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(path, "رقابت‌ها", ctx.fetchedAt), JL.breadcrumbNode(trail)]
+      jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(path, "رقابت‌ها", ctx.fetchedAt), compList, JL.breadcrumbNode(trail)]
     }),
     h1: "رقابت‌های دنبال‌شده",
     crumbHtml: M.breadcrumbsHtml(trail),
