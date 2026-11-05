@@ -132,6 +132,30 @@ export function upcomingBig(ctx: SeoCtx): SeoMatch[] {
     });
 }
 
+// SS-01 (Phase-2 spec): the time hubs list ALL followed-team fixtures in
+// their window — the pool IS the followed universe (providers.ts fetches
+// followed-team matches; team/competition pages already list from it), so a
+// day with only non-big followed matches still lists them. Big matches
+// (isBigForSeo || s.big) sort first and keep their badges in mrowHtml;
+// /matches stays on upcomingBig (the big-matches listing) unchanged.
+export function upcomingFollowed(ctx: SeoCtx): SeoMatch[] {
+  const top3 = payloadTop3(ctx.payload);
+  const now = Date.now();
+  const horizon = now + 92 * 864e5;
+  const bigOf = (sm: SeoMatch) => isBigForSeo(sm.raw, top3) || sm.s.big;
+  return ctx.shaped
+    .map((s, i) => ({ raw: ctx.pool[i], s }))
+    .filter(({ raw }) => raw && raw.utcDate &&
+      new Date(raw.utcDate).getTime() <= horizon &&
+      PLAYABLE_FUTURE(raw, now))
+    .sort((a, b) => {
+      const ba = bigOf(a) ? 0 : 1, bb = bigOf(b) ? 0 : 1;
+      if (ba !== bb) return ba - bb;
+      const la = isLiveStatus(a.raw.status) ? 0 : 1, lb = isLiveStatus(b.raw.status) ? 0 : 1;
+      return la - lb || new Date(a.raw.utcDate).getTime() - new Date(b.raw.utcDate).getTime();
+    });
+}
+
 export function finishedRecent(ctx: SeoCtx, days = 7): SeoMatch[] {
   const top3 = payloadTop3(ctx.payload);
   const now = Date.now();

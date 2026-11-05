@@ -4,6 +4,50 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.211-hubtruth — the SEO/GEO Phase-2 Session 1: SS-01 + SS-02 (the time hubs tell the truth)
+
+_2026-11-05 · first release of the Phase-2 program (spec:
+`docs/SPORTSIGNAL_SEO_GEO_SPEC_PHASE2.md`). Server-side only — no client
+asset changed (bundle public-13.70.js / stylesheet public-13.81.css /
+SW sportsignal-v111 stay). npm test 2,592 → **2,593**._
+
+**SS-01 — the time hubs under-listed matches (CRITICAL, cached by Google).**
+`/matches/today` and `/matches/tomorrow` filtered their source list through
+`upcomingBig` (top-3/derby/featured per `isBigForSeo`), so any Tehran day
+without a *big* match rendered the empty state («مسابقه‌ای در راه نیست») and
+`ItemList numberOfItems: 0` while followed-team fixtures DID exist that day
+(audit evidence: 2026-11-05 Monaco–Nordsjaelland 23:30 Tehran; 2026-11-06
+Everton–Coventry — both hubs showed zero). **Fix:** new
+`upcomingFollowed(ctx)` in `src/seo/data.ts` — the pool IS the followed
+universe (providers.ts fetches followed-team matches; team/competition
+pages already list from it), horizon 92d + `PLAYABLE_FUTURE`, big matches
+(`isBigForSeo || s.big`) sorted FIRST so the day's headline stays on top;
+`buildHub` switches its source to `upcomingFollowed(ctx).filter(def.filter)`.
+Big matches keep their badges (`mrowHtml` renders them from `s.big` — it
+already handles non-big rows; team pages proved it). The answer sentence
+now counts ALL listed matches («۵ بازی امروز در برنامه است (۲ بازی بزرگ).
+بزرگ‌ترین/نزدیک‌ترین: …» — بزرگ‌ترین only when the top fixture is big).
+De-«بزرگ» the hub titles/descs/tiles that now list everything (this-week
+title «بازی‌های فوتبال این هفته — ۷ روز آینده», weekend title «بازی‌های
+فوتبال آخر هفته — …», today/tomorrow descs + hubTiles descriptions).
+`/matches` (the big-matches listing) stays on `upcomingBig` unchanged.
+
+**SS-02 — the tomorrow hub H1 showed TODAY's date (CRITICAL, cached by
+Google).** `buildHub` stamped every hub H1 with the render-time date while
+the `<title>` carried the hub's own day — the tomorrow page said
+«فردا — ۶ نوامبر» in the title but «فردا — ۵ نوامبر» in the H1. **Fix:**
+`HubDef.anchor?: string` — each hub passes its own anchor day (today → now;
+tomorrow → its tomorrow instant; this-week → now; weekend → the window's
+Saturday `win.start`) and the H1 date renders from `anchorIso`, so title and
+H1 can never disagree.
+
+**New gate — seo-check T-14 (time-hub consistency):** for /matches/today +
+/matches/tomorrow live: (1) the Gregorian date token in `<title>` must equal
+the H1's (SS-02 anchor regression guard), (2) `ItemList.numberOfItems` ==
+visible `.mrow` rows (SS-01 listing guard), (3) the answer-sentence count
+matches numberOfItems when > 0, and an empty day must show the honest empty
+state with no count sentence.
+
 # web-optimization Phase 7 close-out — the final verification & requirements reconciliation (no version change; harness + docs only)
 
 _2026-11-05 · the last phase of the web-optimization program (spec §13).

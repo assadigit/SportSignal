@@ -10,7 +10,7 @@ import { esc, faTime, faGregorianDate, faGregorianDateShort, jalaliDateStr, tehr
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm, teamSeasonRecord } from "./data";
+import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm, teamSeasonRecord } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -419,8 +419,8 @@ export function buildMatchesPage(ctx: SeoCtx, page: number): string {
 
 function hubTiles(): string {
   return '<div class="card"><h2>میان‌برها</h2><div class="hubgrid">' +
-    hubTile("/matches/today", "بازی‌های امروز", "بازی‌های بزرگ امروز به وقت تهران") +
-    hubTile("/matches/tomorrow", "بازی‌های فردا", "برنامه بازی‌های بزرگ فردا") +
+    hubTile("/matches/today", "بازی‌های امروز", "بازی‌های امروز به وقت تهران") +
+    hubTile("/matches/tomorrow", "بازی‌های فردا", "برنامه بازی‌های فردا") +
     hubTile("/matches/this-week", "بازی‌های این هفته", "برنامه ۷ روز آینده") +
     hubTile("/matches/this-weekend", "بازی‌های آخر هفته", "شنبه و یکشنبه این هفته") +
     "</div></div>";
@@ -430,15 +430,27 @@ function hubTile(href: string, t: string, d: string): string {
 }
 
 // ================= TIME HUBS =================
-interface HubDef { path: string; h1: string; title: string; desc: string; filter: (sm: SeoMatch) => boolean; crumb: string }
+interface HubDef { path: string; h1: string; title: string; desc: string; filter: (sm: SeoMatch) => boolean; crumb: string; anchor?: string }
 
 function buildHub(ctx: SeoCtx, def: HubDef): string {
-  const all = upcomingBig(ctx).filter(def.filter);
+  // SS-01 (Phase-2 spec): hubs list ALL followed-team fixtures in their
+  // window (big matches first), not only big matches — the pool is the
+  // followed universe, the same one team/competition pages list from.
+  const all = upcomingFollowed(ctx).filter(def.filter);
+  const top3 = payloadTop3(ctx.payload);
+  const bigCount = all.filter((sm) => isBigForSeo(sm.raw, top3) || sm.s.big).length;
   const nowIso = new Date().toISOString();
+  // SS-02 (Phase-2 spec): the H1 date rides the hub's own anchor day
+  // (today / tomorrow / weekend start), never the bare render instant —
+  // the tomorrow page must never say today's date.
+  const anchorIso = def.anchor || nowIso;
   const top = all[0];
   let answer = def.desc + ".";
   if (top) {
-    answer = toFaDigits(String(all.length)) + " بازی بزرگ " + def.crumb + " در برنامه است. بزرگ‌ترین: " +
+    const topBig = isBigForSeo(top.raw, top3) || top.s.big;
+    answer = toFaDigits(String(all.length)) + " بازی " + def.crumb + " در برنامه است" +
+      (bigCount ? " (" + toFaDigits(String(bigCount)) + " بازی بزرگ)" : "") + ". " +
+      (topBig ? "بزرگ‌ترین" : "نزدیک‌ترین") + ": " +
       faName(top.s.homeTeam) + " – " + faName(top.s.awayTeam) + " (" + M.compNameFa(top.s) + ")، " +
       faGregorianDateShort(top.s.utcDate) + " ساعت " + faTime(top.s.utcDate) + " به وقت تهران.";
   }
@@ -454,7 +466,7 @@ function buildHub(ctx: SeoCtx, def: HubDef): string {
       path: def.path, title: def.title, description: descFull, indexable: true,
       jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(def.path, def.h1, ctx.fetchedAt), JL.itemListNode(all, def.h1), JL.breadcrumbNode(trail)]
     }),
-    h1: def.h1 + " — " + faGregorianDateShort(nowIso) + " (" + jalaliDateStr(nowIso) + ")",
+    h1: def.h1 + " — " + faGregorianDateShort(anchorIso) + " (" + jalaliDateStr(anchorIso) + ")",
     crumbHtml: M.breadcrumbsHtml(trail),
     mainHtml: main,
     updatedHtml: M.lastUpdatedHtml(ctx.fetchedAt)
@@ -462,13 +474,15 @@ function buildHub(ctx: SeoCtx, def: HubDef): string {
 }
 
 export function buildTodayPage(ctx: SeoCtx): string {
-  const day = tehranDayKey(new Date().toISOString());
+  const nowIso = new Date().toISOString();
+  const day = tehranDayKey(nowIso);
   return buildHub(ctx, {
     path: "/matches/today",
     h1: "بازی‌های فوتبال امروز",
-    title: "بازی‌های فوتبال امروز — " + faGregorianDateShort(new Date().toISOString()) + " | SportSignal",
-    desc: "برنامه بازی‌های بزرگ امروز",
+    title: "بازی‌های فوتبال امروز — " + faGregorianDateShort(nowIso) + " | SportSignal",
+    desc: "برنامه بازی‌های امروز",
     crumb: "امروز",
+    anchor: nowIso,
     filter: (sm) => tehranDayKey(sm.s.utcDate) === day
   });
 }
@@ -480,8 +494,9 @@ export function buildTomorrowPage(ctx: SeoCtx): string {
     path: "/matches/tomorrow",
     h1: "بازی‌های فوتبال فردا",
     title: "بازی‌های فوتبال فردا — " + faGregorianDateShort(tomorrow) + " | SportSignal",
-    desc: "برنامه بازی‌های بزرگ فردا",
+    desc: "برنامه بازی‌های فردا",
     crumb: "فردا",
+    anchor: tomorrow,
     filter: (sm) => tehranDayKey(sm.s.utcDate) === day
   });
 }
@@ -491,8 +506,8 @@ export function buildThisWeekPage(ctx: SeoCtx): string {
   return buildHub(ctx, {
     path: "/matches/this-week",
     h1: "بازی‌های فوتبال این هفته",
-    title: "بازی‌های بزرگ فوتبال این هفته — ۷ روز آینده | SportSignal",
-    desc: "برنامه بازی‌های بزرگ ۷ روز آینده",
+    title: "بازی‌های فوتبال این هفته — ۷ روز آینده | SportSignal",
+    desc: "برنامه بازی‌های ۷ روز آینده",
     crumb: "این هفته",
     filter: (sm) => {
       const t = new Date(sm.s.utcDate).getTime();
@@ -509,9 +524,10 @@ export function buildWeekendPage(ctx: SeoCtx): string {
   return buildHub(ctx, {
     path: "/matches/this-weekend",
     h1: "بازی‌های فوتبال آخر هفته",
-    title: "بازی‌های بزرگ آخر هفته — " + faGregorianDateShort(win.start) + " | SportSignal",
-    desc: "برنامه بازی‌های بزرگ شنبه و یکشنبه",
+    title: "بازی‌های فوتبال آخر هفته — " + faGregorianDateShort(win.start) + " | SportSignal",
+    desc: "برنامه بازی‌های شنبه و یکشنبه",
     crumb: "آخر هفته",
+    anchor: win.start,
     filter: (sm) => {
       const k = tehranDayKey(sm.s.utcDate);
       return k >= startKey && k <= endKey;

@@ -544,6 +544,43 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     else fail("T-13", "/ serves no ETag");
   }
 
+  // ---------------- T-14: time-hub consistency (SS-01/SS-02, Phase 2) ----------------
+  section("T-14 time hubs");
+  {
+    const faToEn = (s) => String(s).replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+    for (const [path, label] of [["/matches/today", "today"], ["/matches/tomorrow", "tomorrow"]]) {
+      const res = await fetchRaw(B + path);
+      const html = await body(res);
+      const id = "T-14";
+      if (res.status !== 200) { fail(id, path + " HTTP " + res.status); continue; }
+      const title = (html.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1] || "";
+      const h1 = (html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || [])[1] || "";
+      // SS-02: the Gregorian date token in <title> and in the H1 must agree
+      // (the H1 date rides the hub's anchor day, not the render instant).
+      const tDate = (title.split("—")[1] || "").split("|")[0].trim();
+      const h1Date = (h1.split("—")[1] || "").split("(")[0].trim();
+      if (!tDate || !h1Date) fail(id, path + " (" + label + "): could not parse title/H1 date tokens");
+      else if (tDate !== h1Date) fail(id, path + " (" + label + "): title date «" + tDate + "» ≠ H1 date «" + h1Date + "» (SS-02 anchor regression)");
+      else pass(id, path + " (" + label + "): title/H1 dates agree («" + tDate + "»)");
+      // SS-01: ItemList.numberOfItems == visible rows == answer-sentence count
+      const noi = parseInt(faToEn((html.match(/"numberOfItems":\s*(\d+)/) || [])[1] || "-1"), 10);
+      const rows = (html.match(/class="mrow"/g) || []).length;
+      if (noi < 0) fail(id, path + " (" + label + "): ItemList numberOfItems not found");
+      else if (noi !== rows) fail(id, path + " (" + label + "): numberOfItems " + noi + " ≠ " + rows + " visible rows (SS-01 listing mismatch)");
+      else pass(id, path + " (" + label + "): numberOfItems == visible rows (" + noi + ")");
+      const ansM = html.match(/([۰-۹]+) بازی (امروز|فردا|این هفته|آخر هفته) در برنامه است/);
+      if (ansM) {
+        const ansN = parseInt(faToEn(ansM[1]), 10);
+        if (ansN !== noi) fail(id, path + " (" + label + "): answer sentence count " + ansN + " ≠ numberOfItems " + noi);
+        else pass(id, path + " (" + label + "): answer-sentence count matches (" + ansN + ")");
+      } else if (noi > 0) {
+        fail(id, path + " (" + label + "): " + noi + " matches listed but no answer-sentence count found");
+      } else {
+        pass(id, path + " (" + label + "): empty day — honest empty state, no count sentence");
+      }
+    }
+  }
+
   // ---------------- T-12 summary ----------------
   section("T-12 summary");
   {
