@@ -485,7 +485,17 @@
 /public-13.71.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.226.1-herowirefix (THE ELISION HOTFIX RENAME): public-13.72.js ->
+# 13.73.js. The first hotfix edited the immutable-published 13.72.js in
+# place — a violation of the rename-on-edit rule (ADR-006): any client that
+# fetched the broken bytes in the ~10-minute window holds them immutable
+# for a year. The fixed bytes ship under a fresh name; 13.72.js stays
+# served + pinned one SEO TTL below (stale-HTML retention — it carries the
+# FIXED bytes now, so a straggler fetch is merely duplicate, not broken).
 /public-13.72.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.73.js
   Cache-Control: public, max-age=31536000, immutable
 
 # v13.197-mcdesktop (owner: use the desktop player images on mobile too):
@@ -733,13 +743,9 @@
 /ui/sportsignal-hud-mobile-c.webp
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.63.css
-  Cache-Control: public, max-age=31536000, immutable
-
-# v13.226-herowire cap sweep #16: the /public-13.48.js pin EVICTED (~70
-# releases past its one-SEO-TTL retention — last served in the v13.164
-# era; the FILE stays on disk per the retention rule, an ancient cached
-# HTML re-fetching it still resolves on the default cache headers).
+# v13.226.1-herowirefix cap sweep #16 (third): the /public-13.63.css pin
+# EVICTED (unasserted anywhere; the v13.163-herohd-era stylesheet, ~60
+# releases past retention; the FILE stays on disk per the retention rule).
 
 /ui/sportsignal-hud-mobile.webp
   Cache-Control: public, max-age=31536000, immutable

@@ -887,6 +887,11 @@
 //              glyph, so the ticking countdown digits can never sit
 //              inside any static accessible name; name-from-content is
 //              always content-matched and the rule's gate never fires).
+// v13.226.1-herowirefix (THE ELISION HOTFIX RENAME): bumped from v115 —
+//              public-13.72.js -> 13.73.js per ADR-006 rename-on-edit (the
+//              first hotfix edited the immutable-published 13.72.js in
+//              place, stranding immutable-cached clients on the broken
+//              bytes; the fixed bundle ships under a fresh name).
 // v13.226-herowire (the owner's S9 WIRE decision, executed S10): bumped
 //              from v114 — the hero-wiring round: public-13.71.js -> 13.72.js
 //              (the HERO_ART map grows 35 -> 111 entries — the 76 published
@@ -929,7 +934,7 @@
 //              vocabulary so the client mirrors the server pure-math
 //              helpers byte-for-byte). Cache-first assets cannot refresh
 //              without a rename or a bump, the v13.39 rule.
-const CACHE = "sportsignal-v115";
+const CACHE = "sportsignal-v116";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

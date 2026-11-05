@@ -4,6 +4,31 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.226.1-herowirefix — the elision hotfix: the syntax gate + the ADR-006 rename (public-13.72.js → 13.73.js)
+
+**Same night as v13.226, ~23:0x UTC — THE ELISION.** The bundle-builder's
+separator landed AFTER the HERO_ART block's trailing comment (Tottenham's
+entry ends `…kit VLM-verified */` with its comma BEFORE the comment) — an
+object-literal elision = SyntaxError. public-13.72.js loaded (HTTP 200)
+but executed NOTHING: no carousel, no countdown, no client render — while
+SSR content still painted, healthz stayed ok, and every offline gate
+(regex extraction, parity baseline, the wrangler healthz smoke) was green.
+**Caught by the post-deploy live browser check**, the exact tool-class the
+2026-09-15 1101 lesson mandates. Two commits: (1) the one-comma fix + the
+new **syntax gate** in npm test (`new Function()` compiles the live bundle
++ the pinned-era read as real JavaScript — a parse failure now fails the
+suite) + the comma rule fixed in both generators (decide the separator on
+the comment-stripped tail); (2) **the ADR-006 rename** public-13.72.js →
+**13.73.js** — the first hotfix had edited an immutable-published asset
+in place, which strands any client that fetched the broken bytes in the
+~10-minute window (immutable = never revalidated); the fixed bytes ship
+under a fresh name, 13.72.js stays served one SEO TTL (it carries the
+fixed bytes), SW v115 → v116, `_headers` gains the 13.73.js pin (cap
+sweep #16 third: the unasserted /public-13.63.css pin evicted, the cap
+held at 100). Live-impact window ≈ 22:52–23:1x UTC (Tehran ~02:00 AM,
+RUM-scale traffic ≈ zero human visitors); SSR pages stayed readable
+throughout — the failure class was client interactivity only.
+
 # v13.226-herowire — the S10 HERO-WIRING round: the 76 published big-5 portraits join HERO_ART (the owner's S9 WIRE decision — the library is FULLY wired)
 
 _2026-11-06 · the S10 session (docs/history/2026-11-06-s10-herowire.md).
