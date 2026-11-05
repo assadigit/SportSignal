@@ -319,10 +319,10 @@ next safe point, checkpoint, and hand off a continuation prompt.
 | SS-06 | FAQ + FAQPage | S4 | VERIFIED | v13.219-faq | live 2026-11-06: T-20 green (3 statics + 4 hubs, byte-identical visible↔node; today-hub answer 36==rows==noi with real fixtures named) |
 | SS-07 | llms.txt + llms-full.txt | S3 | VERIFIED | v13.217-llmsfull | live 2026-11-06: both files 200 text/plain UTF-8; 44 links validated; T-19 green |
 | SS-08 | Footer attribution | S2 | VERIFIED | v13.215-attribution | live 2026-11-05: «منبع داده: football-data.org» on all page types; T-03 sweep green |
-| SS-09 | security.txt email | S4 | OPEN | — | security.txt content |
+| SS-09 | security.txt email | S4 | VERIFIED | v13.220-secremail | live 2026-11-06: no mailto, Telegram Contact + Remarks; OWNER_TODO §12 Email Routing path; T-21 green |
 | SS-10 | Title lengths ≤65 | S5 | OPEN | — | sweep |
 | SS-11 | Description ≤165 | S5 | OPEN | — | sweep |
-| SS-12 | One full 404 | S4 | OPEN | — | /zzz-unknown |
+| SS-12 | One full 404 | S4 | VERIFIED | v13.220-secremail | live 2026-11-06: /zzz-unknown + deep + route-family 404s all serve the full 22KB shell, noindex meta + X-Robots-Tag; pure render (no KV on 404 path); T-21 green |
 | SS-13 | ItemList on indexes | S4 | OPEN | — | JSON-LD |
 | SS-14 | Dataset on /data | S4 | OPEN | — | JSON-LD |
 | SS-15 | SportsEvent.image per-match | S5 | OPEN | — | JSON-LD |

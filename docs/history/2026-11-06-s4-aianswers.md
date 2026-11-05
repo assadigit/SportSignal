@@ -69,3 +69,58 @@ What shipped (spec §3/SS-06):
   later; the re-run is the 219/0 above.
 
 **SS-06 status: VERIFIED.**
+
+## CP2 — SS-09 + SS-12: honest security.txt + one full 404 (v13.220-secremail)
+
+Commit `0836f73` (tag v13.220-secremail), deploy
+`62a57604-faa9-464a-b320-d1197ed77510`. Server-side only — no client asset
+changed, no indexed page text changed (NO CONTENT_VERSION bump: the 404 is
+noindex and security.txt is a machine file).
+
+What shipped (spec §3/SS-09 + SS-12):
+
+- **SS-09** — `buildSecurityTxt()` (`src/seo/files.ts`) drops
+  `Contact: mailto:security@sportsignal.ir` (the domain has no MX — the
+  address was undeliverable; rule §1.1: never list an unreachable
+  contact). The Telegram bot Contact stays + a `Remarks:` note that a
+  security@ mailbox will be added once it exists. The contact page
+  references no email (verified) — untouched. `OWNER_TODO.md` gains §12:
+  the exact Cloudflare Email Routing click-path for a free `security@`
+  alias (Email → Email Routing → enable → Routing rules → Create address
+  `security` → real destination inbox → verification email → Save), plus
+  the re-enable instruction; §5's stale claim that the contact page
+  displays an atomicmail.io email is corrected.
+- **SS-12** — ONE full 404 for every HTML-ish unknown path.
+  `build404Page()` drops its unused `ctx` parameter (a PURE static render:
+  no KV reads, no pool map) — which is what lets the router serve the
+  full shell for scanner garbage without re-introducing the v13.97-seocpu
+  CPU kill. The unknown-path branch (previously the 647-byte minimal
+  page), the unknown-sitemap-kind fallback and the unknown-team/comp/match
+  404s all serve the full page; the old known-family flow's SECOND
+  `getSeoCtx` fetch on the 404 path is gone too. noindex meta +
+  `X-Robots-Tag: noindex, nofollow` stay on every 404.
+- seo-check **T-21**: `/zzz-unknown` + a deep unknown path +
+  `/teams/zzz-unknown` must answer 404 with the full shell (mainnav +
+  today/sitemap links + pagesfoot) + both noindex signals; security.txt
+  must carry no `mailto:` while keeping the Telegram contact.
+
+### Evidence (live, 2026-11-06 after deploy 62a57604)
+
+- `npm test` → exit 0 (**2,602 OK** / 0 fail; the v13.220 wiring pin
+  added, the v13.219 pin retired to HISTORICAL).
+- `curl https://sportsignal.ir/.well-known/security.txt` → the five-field
+  body: Telegram Contact + Expires + Preferred-Languages + Canonical +
+  Remarks — **no mailto line**.
+- `curl -D- https://sportsignal.ir/zzz-unknown` → HTTP 404,
+  `x-robots-tag: noindex, nofollow`, **22,175 bytes** (was 647) — the full
+  shell: mainnav, the pagenotfound links (home/today/matches/sitemap),
+  pagesfoot; `<meta name="robots" content="noindex, follow">` present.
+- `/deep/nested/unknown-page`, `/teams/zzz-unknown` AND the
+  vulnerability-probe class (`/bin/.env`) → all 404 + the same full
+  22,175-byte shell (the probe pays only the pure static render — no KV,
+  the v13.97-seocpu contract kept).
+- `npm run seo:check` vs production → **PASS 232 / FAIL 0** (219 at CP1;
+  +13 = T-21's assertions: 4 per 404 path × 3 + the security.txt check).
+
+**SS-09 + SS-12 status: VERIFIED.**
+
