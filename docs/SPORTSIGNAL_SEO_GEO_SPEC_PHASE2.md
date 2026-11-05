@@ -310,8 +310,8 @@ next safe point, checkpoint, and hand off a continuation prompt.
 
 | ID | Gap (short) | Session | Status | Tag | Evidence |
 |---|---|---|---|---|---|
-| SS-01 | Hubs under-list matches | S1 | IN PROGRESS | — | audit results-1/2.json; live curl after fix |
-| SS-02 | Tomorrow H1 wrong date | S1 | OPEN | — | Google cache; live curl after fix |
+| SS-01 | Hubs under-list matches | S1 | VERIFIED | v13.211-hubtruth | live 2026-11-05: /matches/today 18 rows (was 0), noi==rows==answer 18; T-14 green |
+| SS-02 | Tomorrow H1 wrong date | S1 | VERIFIED | v13.211-hubtruth | live 2026-11-05: tomorrow title/H1 both «۶ نوامبر ۲۰۲۶»; T-14 green |
 | SS-27 | Shamsi-first display rule | S2 | OPEN | — | fresh sweep |
 | SS-03 | Pagination canonicals | S2 | OPEN | — | curl ?page=2 |
 | SS-04 | Organization.sameAs | S2 | OPEN | — | JSON-LD sweep |
