@@ -1059,7 +1059,7 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
         continue;
       }
       const list = found.node;
-      const tiles = (html.match(new RegExp('class="hubtile" href="' + tilePrefix.replace(/\//g, "\\/") + '"', "g")) || []).length;
+      const tiles = (html.match(new RegExp('class="hubtile" href="' + tilePrefix.replace(/\//g, "\\/"), "g")) || []).length;
       const noi = list.numberOfItems;
       const elems = (list.itemListElement || []).length;
       if (noi === tiles && elems === tiles) pass(id, path + ": ItemList numberOfItems == " + noi + " == visible tiles == itemListElement count ✓");

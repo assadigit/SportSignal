@@ -323,8 +323,8 @@ next safe point, checkpoint, and hand off a continuation prompt.
 | SS-10 | Title lengths ≤65 | S5 | OPEN | — | sweep |
 | SS-11 | Description ≤165 | S5 | OPEN | — | sweep |
 | SS-12 | One full 404 | S4 | VERIFIED | v13.220-secremail | live 2026-11-06: /zzz-unknown + deep + route-family 404s all serve the full 22KB shell, noindex meta + X-Robots-Tag; pure render (no KV on 404 path); T-21 green |
-| SS-13 | ItemList on indexes | S4 | OPEN | — | JSON-LD |
-| SS-14 | Dataset on /data | S4 | OPEN | — | JSON-LD |
+| SS-13 | ItemList on indexes | S4 | VERIFIED | v13.221-indexschema | live 2026-11-06: /teams 93==tiles + /competitions 7==tiles child-link ItemLists, sampled children 200; T-22 green |
+| SS-14 | Dataset on /data | S4 | VERIFIED | v13.221-indexschema | live 2026-11-06: Dataset node — creator in-graph, isAccessibleForFree true, license /terms, 3 DataDownloads with live content-type match; T-22 green |
 | SS-15 | SportsEvent.image per-match | S5 | OPEN | — | JSON-LD |
 | SS-16 | feed entry lastmod honesty | S5 | OPEN | — | feed diff |
 | SS-17 | ics DTEND | S5 | OPEN | — | ics content |

@@ -124,3 +124,96 @@ What shipped (spec §3/SS-09 + SS-12):
 
 **SS-09 + SS-12 status: VERIFIED.**
 
+## CP3 — SS-13 + SS-14: ItemList on the indexes + Dataset on /data (v13.221-indexschema)
+
+Commit `3bcd9cf` (tag v13.221-indexschema), deploy
+`bc55ffdd-a4d7-416d-9cfe-13a7dfe7269d`. Server-side only — JSON-LD-only
+change (no visible text changed → NO CONTENT_VERSION bump, the
+v13.213/v13.214 precedent).
+
+What shipped (spec §3/SS-13 + SS-14):
+
+- **SS-13** — NEW `linkItemList()` (`src/seo/jsonld.ts`): the hub ItemList
+  pattern over CHILD PAGES (numberOfItems + ListItem position/name/url).
+  Wired as `teamList` in `buildTeamsIndexPage` + `compList` in
+  `buildCompetitionsIndexPage` (`src/seo/pages.ts`) — the names are the
+  SAME strings the visible tiles render (the comp name replicates the
+  tile's own `cName` expression), so the machine list and the visible grid
+  describe one another exactly.
+- **SS-14** — NEW `datasetNode()` (`src/seo/jsonld.ts`) wired into
+  `buildDataPage`: name + honest description (attribution required,
+  football-data.org base data), `url`, `isAccessibleForFree: true`,
+  `license` → `/terms` (where the attribution requirement actually lives),
+  `creator` → the Organization `@id` already in every graph, and
+  `distribution` → three DataDownloads — `/api/matches.json`
+  (application/json), `/calendar.ics` (text/calendar), `/feed.xml`
+  (application/atom+xml) — the real media types the routes serve.
+- seo-check **T-22**: both indexes carry the child-link ItemList with
+  numberOfItems == visible tiles == element count, sampled children answer
+  200 (graceful pass on an honest empty universe); `/data` carries the
+  Dataset whose creator resolves in-graph, isAccessibleForFree true,
+  on-site license, and each distribution's encodingFormat matches the
+  LIVE content type of its URL.
+
+### Evidence (live, 2026-11-06 after deploy bc55ffdd)
+
+- `npm test` → exit 0 (2,602-class suite green; the v13.221 wiring pin
+  added, the v13.220 pin retired to HISTORICAL).
+- Local render sanity (esbuild): /teams 6==6 tiles, /competitions 3==3,
+  /data Dataset creator resolves in-graph + 3 distributions + FAQ intact.
+- `curl https://sportsignal.ir/teams` →
+  `"@type":"ItemList","name":"تیم‌های دنبال‌شده","numberOfItems":91` (93 by
+  the seo:check run minutes later — live data moved, both counts matched
+  their own page's tiles at fetch time);
+  `/competitions` → `"numberOfItems":7`.
+- `/data` — the S2/S3 edge-cache lesson bit ONE more time, in a new shape:
+  the version went live at 12:47:00 but a pre-deploy render had been
+  cached at 12:42:57 with the 900 s hold, so /data served the CP2 copy
+  until 12:57:57 (curl `age: 855` + `date:` headers proved it — waiting,
+  not debugging). After expiry: `"@type":"Dataset"` present,
+  `"isAccessibleForFree":true`, `"license":"https://sportsignal.ir/terms"`,
+  `"creator":{"@id":"https://sportsignal.ir/#organization"}` + the three
+  encodingFormats.
+- One check-side bug found and fixed during the run: T-22's tile-count
+  regex demanded the closing quote right after the `/teams/` prefix
+  (slugs follow the prefix — the count was always 0); check-side only,
+  committed with this close-out.
+- `npm run seo:check` vs production → **PASS 243 / FAIL 0** (232 at CP2;
+  +11 = T-22's assertions).
+
+**SS-13 + SS-14 status: VERIFIED.**
+
+## S4 close-out
+
+All five session items VERIFIED live: SS-06 (v13.219-faq — the FAQ
+AI-answer surface, byte-identical visible↔FAQPage on 3 statics + 4 hubs
+with live-data answers), SS-09 + SS-12 (v13.220-secremail — honest
+security.txt without the undeliverable mailto + ONE full 404 on every
+HTML-ish unknown path, pure render, no KV on the 404 path), SS-13 + SS-14
+(v13.221-indexschema — child-link ItemLists on both indexes + the Dataset
+node on /data). Three deploys (d905e4c1 → 62a57604 → bc55ffdd). npm test
+2,600 → 2,602; seo:check 193 → 243 assertions, all green. Deviations
+from the session plan: none.
+
+Operational notes for S5:
+- The edge-cache flip lesson now has a second recorded shape: a cache
+  entry stored MINUTES BEFORE a deploy holds the OLD render for its full
+  ≤900 s window even after every other route has flipped — when a
+  specific page lags a deploy, read its `age`/`date` response headers
+  before debugging (12:42:57-store vs 12:47:00-deploy this session).
+- One transient T-05 503 on a cold team render (the v13.186-seofix class)
+  cleared on the 30 s re-run — not a regression.
+- The workers.dev host shares the worker's Cache API keys
+  (`edge-internal.sportsignal.ir`) — it cannot be used as a cache-bypass
+  view of a route.
+- T-20's hub FAQ is generated per render from `upcomingFollowed` — on
+  genuinely empty windows the hub carries 4 Q&As (spec-compliant), and
+  the empty-day answer is asserted honest by T-20.
+
+Next (S5, per spec §4): **SS-10** (title trim ladder ≤65), **SS-11**
+(description ≤165), **SS-15** (per-match SportsEvent.image),
+**SS-16** (feed entry lastmod honesty), **SS-17** (ics DTEND),
+**SS-18** (/admin X-Robots-Tag), **SS-19** (410 for retired teams,
+optional).
+
+
