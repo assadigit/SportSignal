@@ -1119,8 +1119,8 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     }
   }
 
-  // ---------------- T-23: full-sitemap title/description sweep (SS-10/SS-11, Phase 2) ----------------
-  section("T-23 full-sweep titles ≤65 + descriptions ≤165 (SS-10/SS-11)");
+  // ---------------- T-23: full-sitemap title/description sweep + per-match OG image (SS-10/SS-11/SS-15, Phase 2) ----------------
+  section("T-23 full-sweep titles ≤65 + descriptions ≤165 + per-match image (SS-10/SS-11/SS-15)");
   {
     const id = "T-23";
     // The SS-10/SS-11 acceptance gate: EVERY sitemap URL, not a sample.
@@ -1132,9 +1132,14 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     // full sweep carries it). Titles must also stay unique across the
     // FULL sweep (T-03 samples uniqueness; the SS-10 trim ladder makes
     // near-collisions marginally likelier, so the sweep hard-asserts it).
+    // SS-15: every swept MATCH page's SportsEvent.image must carry the
+    // per-match OG PNG (/og/match-<slug>.png — the same art og:image
+    // uses); a sample of those PNGs is fetched and must answer 200
+    // image/png.
     const seenTitles = new Map();
-    let over65 = 0, maxTitle = 0, maxDesc = 0, over165 = 0, under50 = 0, dupTitles = 0, fetched = 0, fetchFails = 0;
+    let over65 = 0, maxTitle = 0, maxDesc = 0, over165 = 0, under50 = 0, dupTitles = 0, fetched = 0, fetchFails = 0, matchPages = 0, imgMissing = 0;
     const over65Samples = [];
+    const matchOgSamples = [];
     for (const u of allSitemapUrls) {
       let res, html;
       try { res = await fetchRaw(u); html = await body(res); }
@@ -1151,12 +1156,107 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       if (desc.length > 0 && desc.length < 50) { under50++; fail(id, u + " meta description < 50 chars (" + desc.length + ")"); }
       if (seenTitles.has(title)) { dupTitles++; fail(id, "duplicate title: «" + title.slice(0, 60) + "» (" + seenTitles.get(title) + " & " + u + ")"); }
       else seenTitles.set(title, u);
+      // SS-15: match pages carry the per-match image in SportsEvent.image
+      if (/\/matches\/([a-z0-9-]+-vs-[a-z0-9-]+-\d{4}-\d{2}-\d{2})$/.test(u)) {
+        matchPages++;
+        const slug = u.replace(B + "/matches/", "");
+        const expectOg = B + "/og/match-" + slug + ".png";
+        let imgOk = false;
+        for (const sm2 of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi)) {
+          try {
+            const parsed = JSON.parse(sm2[1]);
+            const graph = parsed["@graph"] || [parsed];
+            const ev = graph.find((g) => g["@type"] === "SportsEvent");
+            if (!ev) continue;
+            const imgs = Array.isArray(ev.image) ? ev.image : [ev.image];
+            if (imgs.some((x) => String(x) === expectOg)) { imgOk = true; break; }
+          } catch (e) { /* T-04 counts parse errors */ }
+        }
+        if (!imgOk) { imgMissing++; fail(id, u + " SportsEvent.image missing the per-match OG URL (SS-15): " + expectOg); }
+        else if (matchOgSamples.length < 5) matchOgSamples.push(expectOg);
+      }
     }
     if (over65) report(id, over65 + " title(s) in the 66–75 pixel-risk band (SS-10 report-mode; max " + maxTitle + "): " + over65Samples.join(", "));
     else pass(id, "all " + fetched + " swept titles ≤ 65 chars (max " + maxTitle + ") — zero pixel-risk band titles (SS-10)");
     if (!over165 && !under50) pass(id, "all " + fetched + " swept meta descriptions 50–165 chars (max " + maxDesc + ") (SS-11)");
     if (!dupTitles) pass(id, "all " + fetched + " swept titles unique (full-sitemap uniqueness — T-03's sampled check hardened)");
+    if (matchPages && !imgMissing) pass(id, "all " + matchPages + " swept match pages carry the per-match OG in SportsEvent.image (SS-15)");
+    // SS-15 sample: the per-match PNGs answer 200 image/png
+    let ogBad = 0;
+    for (const og of matchOgSamples) {
+      const r = await fetchRaw(og);
+      const ct = (r.headers.get("content-type") || "").split(";")[0].trim();
+      if (r.status !== 200 || ct !== "image/png") { fail(id, "per-match OG " + og + " answers " + r.status + " " + ct + " (expected 200 image/png)"); ogBad++; }
+    }
+    if (matchOgSamples.length && !ogBad) pass(id, matchOgSamples.length + " sampled per-match OG PNGs all answer 200 image/png (SS-15)");
     if (!fetchFails) pass(id, "full sweep fetched all " + fetched + " sitemap URLs");
+  }
+
+  // ---------------- T-24: machine-file polish (SS-16/SS-17/SS-18, Phase 2) ----------------
+  section("T-24 feed lastmod honesty + ics DTEND + admin X-Robots (SS-16/SS-17/SS-18)");
+  {
+    const id = "T-24";
+    // SS-16: every feed entry's <updated> must equal the SAME URL's honest
+    // <lastmod> in the matches sitemap children (both read seo_lastmod_v1
+    // — equal values prove the feed no longer restamps per build; a
+    // deterministic stand-in for fetching twice across the cache window).
+    const feedRes = await fetchRaw(B + "/feed.xml");
+    const feedXml = await body(feedRes);
+    if (feedRes.status !== 200) fail(id, "/feed.xml HTTP " + feedRes.status);
+    else {
+      const sitemapLastmod = new Map();
+      for (const kind of ["matches-upcoming", "matches-archive"]) {
+        const r = await fetchRaw(B + "/sitemaps/" + kind + ".xml");
+        const x = await body(r);
+        for (const m of x.matchAll(/<loc>([^<]+)<\/loc><lastmod>([^<]+)<\/lastmod>/g)) sitemapLastmod.set(m[1], m[2]);
+      }
+      const entries = [...feedXml.matchAll(/<entry>[\s\S]*?<\/entry>/g)];
+      if (!entries.length) fail(id, "/feed.xml carries no entries");
+      else {
+        let mismatched = 0, outside = 0, checked = 0;
+        for (const e of entries) {
+          const link = (e[0].match(/<link href="([^"]+)"\/>/) || [])[1] || "";
+          const upd = (e[0].match(/<updated>([^<]+)<\/updated>/) || [])[1] || "";
+          if (!link || !upd) { fail(id, "feed entry missing link/updated"); continue; }
+          const lm = sitemapLastmod.get(link);
+          if (lm === undefined) { outside++; continue; }
+          checked++;
+          if (lm !== upd) { mismatched++; if (mismatched <= 3) fail(id, "feed entry " + link + " <updated> " + upd + " ≠ sitemap lastmod " + lm + " (SS-16 — restamped per build? re-run after the 300 s feed cache window if a live match just changed state — the known cache-race caveat)"); }
+        }
+        if (outside) report(id, outside + " feed entr(ies) outside the matches sitemap children (the map-miss fallback — data epoch — in use)");
+        if (checked && !mismatched) pass(id, "all " + checked + " feed entries' <updated> match their sitemap lastmod (SS-16 — honest per-URL timestamps)");
+      }
+    }
+    // SS-17: every VEVENT carries DTEND = DTSTART + 2h
+    const icsRes = await fetchRaw(B + "/calendar.ics");
+    const ics = await body(icsRes);
+    if (icsRes.status !== 200) fail(id, "/calendar.ics HTTP " + icsRes.status);
+    else {
+      const vevents = ics.split("BEGIN:VEVENT").slice(1);
+      if (!vevents.length) report(id, "calendar.ics carries no VEVENTs today (empty fixture window — nothing to assert)");
+      else {
+        let noEnd = 0, badEnd = 0;
+        const fmt = (d) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+        for (const v of vevents) {
+          const st = (v.match(/DTSTART:(\d{8}T\d{6}Z)/) || [])[1];
+          const en = (v.match(/DTEND:(\d{8}T\d{6}Z)/) || [])[1];
+          if (!st || !en) { noEnd++; continue; }
+          const want = fmt(new Date(Date.parse(st.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/, "$1-$2-$3T$4:$5:$6Z")) + 2 * 3600 * 1000));
+          if (en !== want) { badEnd++; if (badEnd <= 3) fail(id, "VEVENT DTEND " + en + " ≠ DTSTART+2h " + want + " (SS-17)"); }
+        }
+        if (noEnd) fail(id, noEnd + " VEVENT(s) missing DTSTART/DTEND (SS-17)");
+        if (!noEnd && !badEnd) pass(id, "all " + vevents.length + " VEVENTs carry DTEND = DTSTART + 2h (SS-17)");
+      }
+    }
+    // SS-18: every /admin response carries X-Robots-Tag: noindex, nofollow
+    // (login page GET, the unauthed admin surface, and an unknown admin
+    // path — whatever status they answer, the header must ride it).
+    for (const path of ["/admin/login", "/admin", "/admin/zzz-unknown"]) {
+      const r = await fetchRaw(B + path);
+      const xr = r.headers.get("x-robots-tag") || "";
+      if (!/noindex/i.test(xr)) fail(id, path + " (HTTP " + r.status + ") missing X-Robots-Tag noindex (SS-18; got «" + xr + "»)");
+      else pass(id, path + " (HTTP " + r.status + ") carries X-Robots-Tag: " + xr.trim() + " (SS-18)");
+    }
   }
 
   // ---------------- T-12 summary ----------------

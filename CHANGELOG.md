@@ -4,6 +4,65 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.223-machpolish — the SEO/GEO Phase-2 Session 5 / SS-15 + SS-16 + SS-17 + SS-18: per-match image, feed lastmod honesty, ics DTEND, admin noindex
+
+_2026-11-06 · spec §3/SS-15…SS-18. Server-side only — machine files, JSON-LD
+and response headers (no visible page text changed → NO CONTENT_VERSION
+bump, the v13.213/v13.214 precedent; no client asset changed)._
+
+**Feature (SS-15).** `SportsEvent.image` now points at the per-match OG PNG
+(`src/seo/jsonld.ts` `sportsEventNode`): `image:
+[absUrl("/og/match-<slug>.png"), absUrl(SEO.OG_DEFAULT_IMAGE)]` — the same
+art the page's `og:image` carries, with the site default as the fallback
+shape (schema.org accepts an array; consumers use the first usable entry).
+The slug derives from `matchPath` — no new data, no fetching.
+
+**Feature (SS-16).** feed.xml entry `<updated>` honesty: `buildFeed`
+(`src/seo/files.ts`) reads the per-URL lastmod map (`seo_lastmod_v1` — the
+SAME map the sitemap children compute) for each entry's timestamp, so two
+builds with no data change between them emit IDENTICAL entry values instead
+of restamping every entry with the build clock (the old "now on every
+build" dishonesty, the F-05 class). KV discipline (rule §1.4): read/reuse
+ONLY — one bounded read, no new write path (`buildFeed` never calls
+`computeLastmods`). A URL missing from the map falls back to the data epoch
+(the pool stamp — the version this content became current in; the slim pool
+rows carry no per-match change timestamp, dropped in `match-pool.ts`). The
+feed-level `<updated>` stays the data epoch.
+
+**Feature (SS-17).** Every calendar.ics VEVENT gains `DTEND = DTSTART +
+2h` — an ASSUMPTION, documented at the line: the provider carries no end
+times (football matches run ~1h45–2h+ with stoppage), and an event without
+DTEND renders as an instant or an unbounded block depending on the client.
+Machine dates stay ISO 8601 UTC basic format (rule §1.3).
+
+**Feature (SS-18).** Every `/admin` response carries
+`X-Robots-Tag: noindex, nofollow`. ONE wrap point at the fetch entry
+(`src/api.ts` `worker_default.fetch`): `new Response(res.body, res)` +
+`headers.set` — login GET/POST, logout, change-password, the auth-gate
+401s, `/admin` itself, the ops routes and any 405 tail all inherit it
+without their handlers being touched (rule §1.7: the admin flow is
+unchanged — only a header is added). robots.txt Disallow stays the first
+line; the SEO router never sees `/admin` paths (it bails on the prefix), so
+this is out of the seo router by construction.
+
+**Tooling.** seo-check T-23 grows the SS-15 assertion (every swept match
+page's `SportsEvent.image` carries the per-match OG URL + up to 5 sampled
+PNGs must answer `200 image/png`); NEW **T-24** — the machine-polish gate:
+every feed entry's `<updated>` must equal the SAME URL's `<lastmod>` in the
+matches sitemap children (the SS-16 crosscheck — a deterministic stand-in
+for fetching twice across the cache window; the known cache-race caveat is
+documented in the failure message), every VEVENT's `DTEND` must equal
+`DTSTART + 2h` (SS-17), and `/admin/login` + `/admin` + an unknown
+`/admin/*` path must all carry the X-Robots-Tag whatever status they answer
+(SS-18).
+
+**Evidence.** Local harness (esbuild): buildFeed against a fake map —
+entries carry the map timestamps, a map-miss falls back to the data epoch,
+two consecutive no-change builds are byte-identical; buildCalendar — all
+VEVENTs `DTEND = DTSTART+2h`; sportsEventNode — `image =
+["…/og/match-arsenal-vs-hull-city-2026-11-24.png",
+"…/og/default.png"]`. `npm test` 2,605 OK.
+
 # v13.222-titlesweep — the SEO/GEO Phase-2 Session 5 / SS-10 + SS-11: match titles ≤ 65 + descriptions ≤ 165
 
 _2026-11-06 · spec §3/SS-10 + SS-11. Server-side only — title/meta assembly

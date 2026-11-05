@@ -279,10 +279,19 @@ export async function buildCalendar(env: Env): Promise<string> {
     const m = sm.s;
     const uid = String(m.id || sha1ish(m.homeTeam.name + m.awayTeam.name + m.utcDate)) + "@sportsignal.ir";
     const dt = m.utcDate.replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+    // SS-17 (Phase-2 spec §3): DTEND = kickoff + 2h — an ASSUMPTION, not
+    // data: the provider carries no end times (football matches run
+    // ~1h45–2h+ with stoppage), and a calendar event without DTEND renders
+    // as an instant or an unbounded block depending on the client. 2h is
+    // the documented sporting convention; machine dates stay ISO 8601 UTC
+    // basic format (rule §1.3 — CALENDAR_DISPLAY_v2 governs DISPLAY text
+    // only, never machine files).
+    const dtEnd = new Date(Date.parse(m.utcDate) + 2 * 3600 * 1000).toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
     ics += "BEGIN:VEVENT\r\n";
     ics += "UID:" + uid + "\r\n";
     ics += "DTSTAMP:" + (ctx.fetchedAt || new Date().toISOString()).replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z") + "\r\n";
     ics += "DTSTART:" + dt + "\r\n";
+    ics += "DTEND:" + dtEnd + "\r\n";
     ics += "SUMMARY:" + icsEsc((m.homeTeam.faName || m.homeTeam.name) + " – " + (m.awayTeam.faName || m.awayTeam.name) + " (" + (m.competition.faName || m.competition.code) + ")") + "\r\n";
     if (m.venue) ics += "LOCATION:" + icsEsc(m.venue) + "\r\n";
     ics += "URL:" + absUrl(matchPath(m.homeTeam.name, m.awayTeam.name, m.utcDate)) + "\r\n";
@@ -300,6 +309,23 @@ export async function buildFeed(env: Env): Promise<string> {
   const finished = finishedRecent(ctx, 3).slice(0, 10);
   const all = [...upcoming, ...finished];
   const updated = ctx.fetchedAt || new Date().toISOString();
+  // SS-16 (Phase-2 spec §3): entry <updated> honesty — the per-URL lastmod
+  // map (seo_lastmod_v1, the SAME map the sitemap children compute) supplies
+  // each entry's timestamp, so two builds with no data change between them
+  // emit IDENTICAL entry values instead of restamping every entry with the
+  // build clock (the old "now on every build" dishonesty, the F-05 class).
+  // KV discipline (rule §1.4): READ/reuse ONLY — one bounded read, no new
+  // write path (buildFeed never calls computeLastmods). Fallback for a URL
+  // missing from the map: the data epoch (the pool stamp — the version this
+  // content became current in; the slim pool rows carry no per-match change
+  // timestamp — dropped in match-pool.ts). The feed-level <updated> above
+  // stays the data epoch (a feed's own modification time, per Atom).
+  const lastmods = await lastmodMap(env);
+  const entryUpdated = (path: string): string => {
+    const r = lastmods[path];
+    if (r && typeof r.t === "number") return new Date(r.t).toISOString();
+    return updated;
+  };
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<feed xmlns="http://www.w3.org/2005/Atom">\n';
   xml += "<title>" + xmlEsc("بازی‌های بزرگ فوتبال — SportSignal") + "</title>\n";
   xml += "<id>" + xmlEsc(SEO.SITE_URL + "/feed.xml") + "</id>\n";
@@ -315,7 +341,7 @@ export async function buildFeed(env: Env): Promise<string> {
     xml += "<id>" + xmlEsc(absUrl(path) + "#event") + "</id>\n";
     xml += "<title>" + xmlEsc(title) + "</title>\n";
     xml += '<link href="' + xmlEsc(absUrl(path)) + '"/>\n';
-    xml += "<updated>" + xmlEsc(updated) + "</updated>\n";
+    xml += "<updated>" + xmlEsc(entryUpdated(path)) + "</updated>\n";
     xml += "<summary>" + xmlEsc((m.competition.faName || m.competition.code) + " — " + m.utcDate) + "</summary>\n";
     xml += "</entry>\n";
   }

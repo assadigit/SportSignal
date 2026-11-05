@@ -389,7 +389,25 @@ const worker_default = {
     // flush rides ctx.waitUntil and is a no-op on read-only invocations.
     installWebKvMeter(env);
     try {
-      return await handleFetchRequest(req, env, ctx);
+      const res = await handleFetchRequest(req, env, ctx);
+      // SS-18 (Phase-2 spec §3): EVERY /admin response carries
+      // X-Robots-Tag: noindex, nofollow. robots.txt Disallow stays the
+      // first line; the header covers what robots.txt cannot (a linked or
+      // already-indexed admin URL keeps its noindex hints). ONE wrap point
+      // at the fetch entry — login GET/POST, logout, change-password, the
+      // auth-gate 401s, /admin itself, the ops routes and any 405 tail all
+      // inherit it without their handlers being touched (rule §1.7: the
+      // admin flow itself is unchanged — only a response header is added).
+      // The SEO router never sees /admin paths (it bails on the prefix), so
+      // this stays out of the seo router by construction.
+      let adminPath = false;
+      try { const p = new URL(req.url).pathname; adminPath = p === "/admin" || p.startsWith("/admin/"); } catch (e) { /* unparseable URL falls through untouched */ }
+      if (adminPath) {
+        const wrapped = new Response(res.body, res);
+        wrapped.headers.set("x-robots-tag", "noindex, nofollow");
+        return wrapped;
+      }
+      return res;
     } finally {
       maybeFlushWebKvWrites(env, ctx);
     }

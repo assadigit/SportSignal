@@ -105,7 +105,8 @@ export function eventStatusOf(status: string): string {
 // S-01: the SportsEvent node for a match page. Only real fields.
 export function sportsEventNode(sm: SeoMatch, why: string): any {
   const m = sm.s;
-  const url = absUrl(matchPath(m.homeTeam.name, m.awayTeam.name, m.utcDate));
+  const mp = matchPath(m.homeTeam.name, m.awayTeam.name, m.utcDate);
+  const url = absUrl(mp);
   // SS-05 (Phase-2 spec): the organizer's entity grounding — the same
   // verified static map as sportsOrganizationNode (pure lookup, no
   // fetching; an unverified competition omits sameAs).
@@ -129,7 +130,13 @@ export function sportsEventNode(sm: SeoMatch, why: string): any {
       ...(organizerLinks && organizerLinks.length ? { sameAs: organizerLinks } : {})
     },
     mainEntityOfPage: url,
-    image: [absUrl(SEO.OG_DEFAULT_IMAGE)]
+    // SS-15 (Phase-2 spec §3): the per-match OG PNG — the SAME art the
+    // page's og:image/meta carries (the /og/match-<slug>.png route renders
+    // this match's names + kickoff) — with the site default as the fallback
+    // shape (schema.org image accepts an array; consumers use the first
+    // usable entry, so the per-match art wins and the default guarantees a
+    // valid image even where a consumer cannot fetch the route).
+    image: [absUrl("/og/match-" + mp.slice("/matches/".length) + ".png"), absUrl(SEO.OG_DEFAULT_IMAGE)]
   };
   // description = the answer-first sentence (matches visible text).
   ev.description = why;
