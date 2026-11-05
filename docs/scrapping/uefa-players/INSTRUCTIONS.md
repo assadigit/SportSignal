@@ -736,17 +736,21 @@ rejected in §9b — so the runtime never downloads portraits, by design.
    teams drop out of the scan, and the registry marks them `resolved_at`
    (visible for 7 days as loop health, then pruned).
 
-### 13.4 Current backlog context (2026-10-20, post-style-audit)
+### 13.4 Current backlog context (2026-11-06, post-v13.226-herowire: CLOSED)
 
-The 96-club big-5 library is complete AND style-clean (§ header: 84 jersey
-photos + 12 busts, zero cards), but the site's HERO_ART map wires only 33
-teams (the UCL-era set + big-5 overlap) — **78 published portraits sit
-unwired**, so most big-5 clubs render crest-only today. They now appear as
-`library_ready` gaps the moment they surface in fixtures, and
-`hero-clubs.json` carries each portrait's `style` tier (v2.3) to inform the
-owner's wiring decision (jersey_photo first). Non-big-5 clubs (FA Cup
-qualifying sides, A-League, …) log as `no portrait` demand evidence — most
-will never be worth a portrait; the 30-day prune cycles them automatically.
+The wiring backlog is **CLOSED**. History: the 96-club big-5 library
+completed 2026-10-20 (style-clean, § header), but the site's HERO_ART map
+wired only 33→35 teams (the UCL-era set + Chelsea/Tottenham at v13.162) —
+76 published portraits sat unwired, appearing as `library_ready` gaps the
+moment they surfaced in fixtures. **v13.226-herowire (2026-11-06, the
+owner's S9 WIRE decision) wired all 76**: HERO_ART 35 → 111, the coverage
+mirror at 111 wired / **0 library-only** — the big-5 library is FULLY
+wired. The runtime gap detector's remaining class is only the no-library
+club (FA Cup qualifying sides, A-League, … — "no portrait" demand
+evidence; most never worth a portrait; the 30-day prune cycles them
+automatically). Future library additions (season turnover §2d) appear as
+`library_ready` gaps again and wire via the §13.3 flow — `--wire` now
+builds the trimmed canvas + cast itself (the v13.226 co-evolution fix).
 
 ### 13.5 The style audit step (v2.3 — the loop's QA half)
 

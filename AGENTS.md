@@ -48,9 +48,11 @@ Since v13.129-herogaploop the runtime closes the visibility gap: the cron
 tick logs every fixture team without wired HERO_ART artwork into KV
 `hero_gaps_v1` (write-disciplined, ~1 write/day) and `GET /api/hero-gaps`
 (+ `npm run heroes:report`) returns the prioritized worklist — see
-INSTRUCTIONS §13. Notable backlog it surfaced at launch: 78 published
-big-5 portraits are NOT yet wired into the site's HERO_ART map (a wiring
-backlog gated on the owner's display decision, not a scraping gap).
+INSTRUCTIONS §13. **The launch backlog is CLOSED (v13.226-herowire,
+2026-11-06): the 76 then-unwired big-5 portraits were wired as the owner's
+S9 WIRE decision — HERO_ART now carries 111 entries and the big-5 library
+is FULLY wired (0 library-only). The detector's remaining gap class is the
+no-library club ("no portrait" demand evidence, 30-day pruned).**
 
 Since v13.133-clubalt every club also carries a BENCH: 3 star alternates
 pre-fetched, VLM-style-gated and deployed under
