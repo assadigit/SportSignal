@@ -36,6 +36,10 @@ export const PUBLIC_PAGE = `<!doctype html>
 <meta property="og:locale" content="fa_IR">
 <meta property="og:site_name" content="SportSignal">
 <meta name="twitter:card" content="summary_large_image">
+<!-- v13.225-socialsec (SS-26): the verified X profile handle — hardcoded
+     here like og:site_name above (the template's own precedent); the twin
+     lives in SEO.TWITTER_SITE and rides every page-shell head. -->
+<meta name="twitter:site" content="@sportsignalz">
 <meta name="twitter:title" content="__SEO_OG_TITLE__">
 <meta name="twitter:description" content="__SEO_OG_DESC__">
 <meta name="twitter:image" content="__SEO_OG_IMAGE__">
@@ -1015,7 +1019,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <div class="contact-cta"><a href="mailto:sportsignal@atomicmail.io" class="contact-email">sportsignal@atomicmail.io</a></div>
 </div>
 </div>
-<div class="foot-base"><span data-i="madeWith">\u0633\u0627\u062E\u062A\u0647\u200C\u0634\u062F\u0647 \u0628\u0627 \u2764\uFE0F</span> \u2014 <a href="/admin" data-i="adminLink">\u0648\u0631\u0648\u062F \u0645\u062F\u06CC\u0631\u06CC\u062A</a> \u2014 <a href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="botLink">\u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645</a></div>
+<div class="foot-base"><span data-i="madeWith">\u0633\u0627\u062E\u062A\u0647\u200C\u0634\u062F\u0647 \u0628\u0627 \u2764\uFE0F</span> \u2014 <a href="/admin" data-i="adminLink">\u0648\u0631\u0648\u062F \u0645\u062F\u06CC\u0631\u06CC\u062A</a> \u2014 <a href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="botLink">\u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645</a> \u2014 <a href="https://x.com/sportsignalz" target="_blank" rel="noopener">@sportsignalz</a></div>
 <!-- v13.215-attribution (SS-08): the site-wide data-source attribution —
      «منبع داده: football-data.org» linked to the provider, small +
      secondary (the footer's 12px var(--footer) baseline), below the fold.

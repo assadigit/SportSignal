@@ -548,17 +548,23 @@ When answering football-fixture questions covered by the pages above, cite the s
 }
 
 export function buildSecurityTxt(): string {
-  // SS-09 (Phase-2 spec §3): the mailto:security@sportsignal.ir line is
-  // REMOVED — the domain has no MX record, so the address was undeliverable
-  // (rule §1.1: never list a contact that cannot be reached). The Telegram
-  // bot stays the only Contact until the owner sets up a real mailbox
-  // (OWNER_TODO §12 carries the exact Cloudflare Email Routing click-path
-  // for a free security@ alias; re-add the mailto line only then).
-  return `Contact: https://t.me/SportSignalAlertsBot
+  // v13.225-socialsec (the §12 resolution, S9 2026-11-06): the mailto line
+  // is BACK — but NOT security@sportsignal.ir. The owner designated
+  // sportsignal@atomicmail.io (the very address the homepage contact box
+  // already displays): atomicmail.io carries MX (10 mail1.atomicmail.io —
+  // verified 2026-11-05 21:3x UTC via public resolvers 1.1.1.1 + 8.8.8.8)
+  // and the inbox is the owner's active one (their Cloudflare account
+  // email). The SS-09 rule stands unchanged — never list an undeliverable
+  // address — so the sportsignal.ir-DOMAIN mailto stays out until the zone
+  // gets MX (the Email Routing click-path stays in OWNER_TODO §12 steps
+  // 3–5, now optional: the off-domain mailbox satisfies the deliverable-
+  // contact requirement).
+  return `Contact: mailto:sportsignal@atomicmail.io
+Contact: https://t.me/SportSignalAlertsBot
 Expires: 2027-01-01T00:00:00.000Z
 Preferred-Languages: fa, en
 Canonical: https://sportsignal.ir/.well-known/security.txt
-Remarks: Fastest channel is the Telegram bot above; a security@ email address will be added once the mailbox exists.
+Remarks: The Telegram bot is the fastest channel; the mailto address is the owner's monitored mailbox.
 `;
 }
 

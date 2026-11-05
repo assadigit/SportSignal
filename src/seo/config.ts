@@ -29,10 +29,17 @@ export const SEO = {
   DATA_SOURCE_NAME: "football-data.org",
   DATA_SOURCE_URL: "https://www.football-data.org/",
   // SS-04 (Phase-2 spec): the Organization node's sameAs — real, owned, live
-  // profiles ONLY (rule §1.1: never invented). The Telegram bot is the one
-  // verified profile today; the owner appends future social profiles here
-  // (spec SS-26) without touching jsonld.ts.
-  ORG_SAMEAS: ["https://t.me/SportSignalAlertsBot"],
+  // profiles ONLY (rule §1.1: never invented). The Telegram bot was the
+  // founding entry; v13.225-socialsec (SS-26, S9 2026-11-06) appends the
+  // owner-supplied X profile — x.com/sportsignalz, display name
+  // «اسپرت سیگنال», verified live 2026-11-05 21:33 UTC via the profile-page
+  // title fetch. Future profiles keep appending here without touching
+  // jsonld.ts.
+  ORG_SAMEAS: ["https://t.me/SportSignalAlertsBot", "https://x.com/sportsignalz"],
+  // SS-26 (v13.225-socialsec): the twitter:site handle — the same verified
+  // X profile as ORG_SAMEAS[1]. page-shell emits the meta when set; the
+  // homepage template hardcodes it (the og:site_name precedent).
+  TWITTER_SITE: "@sportsignalz",
   // Bot policy toggles (spec Section 0 — all true by owner's spec).
   ALLOW_AI_SEARCH_BOTS: true,
   ALLOW_AI_USER_BOTS: true,
@@ -62,7 +69,11 @@ export const SEO = {
   // v13.219-faq (SS-06): /about + /methodology + /data gained their FAQ
   // blocks and the four time hubs gained the dynamic FAQ — hand-written
   // page text changed (the FAQ answers themselves ride the live data).
-  CONTENT_VERSION: "2026-11-06T16:00:00Z",
+  // v13.225-socialsec (SS-26, S9): every page footer gained the social line
+  // (the X + Telegram profiles) and the head gained twitter:site —
+  // hand-written footer text changed on all page types (the v13.215
+  // attribution precedent: footer text rides the pages' honest lastmod).
+  CONTENT_VERSION: "2026-11-06T21:50:00Z",
   // Edge cache for rendered HTML (R-04: at least every 5 minutes).
   HTML_CACHE_TTL: 300,
   // v13.97-seocpu: the per-colo RENDER hold — the Cache API copy's TTL.

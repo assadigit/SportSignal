@@ -60,6 +60,10 @@ export function buildHead(h: HeadInput): string {
   s += '<meta property="og:image:alt" content="' + esc(h.title) + '">\n';
   // Twitter (SO-02)
   s += '<meta name="twitter:card" content="summary_large_image">\n';
+  // v13.225-socialsec (SS-26): the verified X profile handle, config-driven
+  // (SEO.TWITTER_SITE); emitted only when set — the same conditional shape
+  // as ORG_SAMEAS (nothing invented, nothing empty-rendered).
+  if (SEO.TWITTER_SITE) s += '<meta name="twitter:site" content="' + SEO.TWITTER_SITE + '">\n';
   s += '<meta name="twitter:title" content="' + esc(h.title) + "\">\n";
   s += '<meta name="twitter:description" content="' + esc(h.description) + "\">\n";
   s += '<meta name="twitter:image" content="' + esc(img) + "\">\n";
@@ -281,6 +285,12 @@ ${opts.mainHtml}
 <nav aria-label="ناوبری پابرگ"><a href="/">خانه</a><a href="/matches">بازی‌ها</a><a href="/matches/today">بازی‌های امروز</a><a href="/matches/this-week">بازی‌های این هفته</a><a href="/teams">تیم‌ها</a><a href="/competitions">رقابت‌ها</a><a href="/about">درباره</a><a href="/methodology">روش انتخاب بازی‌ها</a><a href="/contact">تماس</a><a href="/data">داده‌ها</a><a href="/privacy">حریم خصوصی</a><a href="/terms">شرایط استفاده</a><a href="/sitemap">نقشه سایت</a></nav>
 <p>© SportSignal — <span id="footYear">۱۴۰۵</span> · ساخته‌شده با ❤️</p>
 <p class="srcline">منبع داده: <a href="${SEO.DATA_SOURCE_URL}" target="_blank" rel="noopener">${SEO.DATA_SOURCE_NAME}</a></p>
+<!-- v13.225-socialsec (SS-26, S9 2026-11-06): the footer social line — the
+     owner-verified X profile (x.com/sportsignalz, display name «اسپرت سیگنال»,
+     verified live 2026-11-05 21:33 UTC) + the Telegram bot, the two real,
+     owned, live profiles (the same URLs ride SEO.ORG_SAMEAS; the handle rides
+     SEO.TWITTER_SITE). Verified-live-only rule — never a dead link. -->
+<p class="srcline">ایکس (توییتر): <a href="https://x.com/sportsignalz" target="_blank" rel="noopener">@sportsignalz</a> · ربات تلگرام: <a href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener">@SportSignalAlertsBot</a></p>
 <div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده دیروز:</span> <span class="vc-n" id="vcYesterday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده این ماه:</span> <span class="vc-n" id="vcMonth">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div>
 </footer>
 <script>/* v13.57-uniqueregions: cookieless page-view beacon. One same-origin GET

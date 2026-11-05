@@ -240,6 +240,11 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       if (!/name="viewport"/i.test(html)) fail(id, url + " missing viewport");
       if (!/property="og:title"/i.test(html)) fail(id, url + " missing og:title");
       if (!/name="twitter:card"/i.test(html)) fail(id, url + " missing twitter:card");
+      // v13.225-socialsec (SS-26): the verified X handle + profile link ride
+      // every page (the meta via SEO.TWITTER_SITE / the homepage hardcode;
+      // the link in the footer social line or the Organization.sameAs JSON-LD).
+      if (!/name="twitter:site"\s+content="@sportsignalz"/i.test(html)) fail(id, url + " missing twitter:site @sportsignalz (SS-26)");
+      if (!/https:\/\/x\.com\/sportsignalz/.test(html)) fail(id, url + " missing the X profile link (SS-26 — footer/sameAs)");
       // raw-HTML content check (R-01): one of the known team/comp markers must
       // exist WITHOUT JS. Home/hubs/matches always carry real text.
       const textLen = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length;
@@ -730,8 +735,10 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
   {
     const id = "T-17";
     // Every page's graph carries the Organization node; sameAs must list the
-    // real, owned profiles from SEO.ORG_SAMEAS (the Telegram bot today).
-    const want = "https://t.me/SportSignalAlertsBot";
+    // real, owned profiles from SEO.ORG_SAMEAS (the Telegram bot + the X
+    // profile since v13.225-socialsec/SS-26 — both owner-supplied, verified
+    // live; never invented).
+    const want = ["https://t.me/SportSignalAlertsBot", "https://x.com/sportsignalz"];
     const checkSameAs = async (url) => {
       const res = await fetchRaw(url);
       const html = await body(res);
@@ -747,8 +754,9 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       }
       if (!org) { fail(id, url + ": no Organization node in JSON-LD"); return; }
       const sa = org.sameAs;
-      if (Array.isArray(sa) && sa.includes(want)) pass(id, url + ": Organization.sameAs carries " + want + " ✓");
-      else fail(id, url + ": Organization.sameAs missing " + want + " (got " + JSON.stringify(sa) + ")");
+      const missing = want.filter((w) => !(Array.isArray(sa) && sa.includes(w)));
+      if (!missing.length) pass(id, url + ": Organization.sameAs carries " + want.join(" + ") + " ✓");
+      else fail(id, url + ": Organization.sameAs missing " + missing.join(", ") + " (got " + JSON.stringify(sa) + ")");
       if (Array.isArray(sa)) {
         const bad = sa.filter((u) => !/^https:\/\/(t\.me|twitter\.com|x\.com|instagram\.com|facebook\.com|youtube\.com|wikipedia\.org|www\.wikidata\.org)\//.test(String(u)));
         if (bad.length) fail(id, url + ": sameAs carries non-profile URL(s): " + bad.join(", "));
@@ -1031,14 +1039,19 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       if (!/<meta name="robots" content="noindex/.test(html)) fail(id, path + " missing meta robots noindex");
       else pass(id, path + " meta robots noindex ✓");
     }
-    // SS-09 (spec §3): security.txt carries NO undeliverable mailto (the
-    // domain has no MX); the Telegram contact + note stay.
+    // v13.225-socialsec (the §12 resolution, S9 2026-11-06): security.txt
+    // carries the owner-verified DELIVERABLE mailto (sportsignal@atomicmail.io
+    // — MX 10 mail1.atomicmail.io verified via 1.1.1.1 + 8.8.8.8; the same
+    // address the homepage contact box shows). The SS-09 undeliverable-
+    // address rule stays armed for the DOMAIN mailto (security@sportsignal.ir
+    // stays out until the zone gets MX) and the Telegram contact stays.
     const sec = await fetchRaw(B + "/.well-known/security.txt");
     const secTxt = await body(sec);
     if (sec.status !== 200) fail(id, "security.txt HTTP " + sec.status);
-    else if (/mailto:/i.test(secTxt)) fail(id, "security.txt still carries a mailto: address (SS-09 — undeliverable until MX exists)");
+    else if (!/mailto:sportsignal@atomicmail\.io/.test(secTxt)) fail(id, "security.txt lost the owner-verified mailto (the §12 resolution, v13.225)");
+    else if (/mailto:security@sportsignal\.ir/i.test(secTxt)) fail(id, "security.txt carries the undeliverable domain mailto (SS-09 — sportsignal.ir has no MX)");
     else if (!/t\.me\/SportSignalAlertsBot/.test(secTxt)) fail(id, "security.txt lost the Telegram contact");
-    else pass(id, "security.txt: no mailto (SS-09), Telegram contact + note present ✓");
+    else pass(id, "security.txt: deliverable mailto (atomicmail) + Telegram contact present ✓");
   }
 
   // ---------------- T-22: ItemList on indexes + Dataset on /data (SS-13/SS-14, Phase 2) ----------------

@@ -4,6 +4,59 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.225-socialsec — the post-Phase-2 S9 continuation / SS-26 + the §12 resolution: the verified X profile wired (sameAs + footer + twitter:site) + the deliverable security mailto
+
+_2026-11-06 · spec §3/SS-26 + the §12 question (the S7 question block's
+answers, arrived in chat 2026-11-06 after the S9 close — this release is
+the S9 addendum's code leg). A served-HTML change on every page type
+(footer social line + head meta) → CONTENT_VERSION bumped
+2026-11-06T16:00:00Z → 2026-11-06T21:50:00Z (the v13.215 footer-text
+precedent); no client asset renamed (no bundle bytes changed — the
+v13.39 rename rule does not fire)._
+
+**Feature (SS-26 — social profiles).** The owner supplied the X handle
+`@sportsignalz`; verified live BEFORE wiring (2026-11-05 21:33 UTC — the
+profile-page title fetch returns «اسپرت سیگنال (@sportsignalz) / X», the
+site's own Persian name; the verified-live-only rule satisfied):
+
+- `SEO.ORG_SAMEAS` gains `https://x.com/sportsignalz` (entry #2, after
+  the Telegram bot) → every page's `Organization.sameAs` carries both
+  owned profiles.
+- `SEO.TWITTER_SITE = "@sportsignalz"` → `page-shell.ts` `buildHead`
+  emits `<meta name="twitter:site">` when set; the homepage template
+  hardcodes the same meta (the `og:site_name` precedent).
+- **Footer social line on every page type:** the page-shell `pagesfoot`
+  gains «ایکس (توییتر): @sportsignalz · ربات تلگرام:
+  @SportSignalAlertsBot» beside the data-source line; the homepage
+  `foot-base` gains the `@sportsignalz` link after the Telegram link
+  (handle-as-label, no `data-i` — language-neutral, no bundle edit).
+
+**Feature (§12 — the security contact).** The owner designated
+`sportsignal@atomicmail.io` as the security mailbox (the very address
+the homepage contact box already displays). Evidence before wiring: MX
+`10 mail1.atomicmail.io` via 1.1.1.1 + 8.8.8.8 (2026-11-05 21:3x UTC).
+`buildSecurityTxt()` re-gains a DELIVERABLE `Contact: mailto:` line; the
+SS-09 undeliverable-address rule stays armed for the domain mailto
+(`security@sportsignal.ir` stays out until the zone gets MX — Email
+Routing remains an optional OWNER_TODO §12 path, no longer a
+precondition); the Telegram `Contact:` stays; `Remarks` updated.
+
+**Ceremony.** SW cache bump sportsignal-v113 → **v114** (the routine
+evict for a served-HTML edit — the SWR/offline-fallback copies of "/"
+carrying the old footer leave the cache); the public-page parity
+baseline re-frozen (`check-admin-parity --update`, reviewed);
+`check-stats` re-pinned (the v13.224 wiring check retired to a
+historical stub + a new v13.225 gate; the SW retirement gate re-pinned
+v114) — the offline suite grows by one check per release (expected npm
+test count 2,607 → **2,608**); `check-mc-heroes` retirement gate
+re-pinned (v114; no /ui/mc asset, no bundle, no mc map change — the
+registry byte-stable). **seo-check co-evolution (production gates):**
+T-17's sameAs want-list gains the X URL (both profiles now required on
+every graph); the per-page head sweep asserts `twitter:site` + the
+profile link on every sitemap URL; the security.txt check flips from
+"no mailto" to "deliverable mailto present + the domain mailto still
+absent". Expected seo:check: 255 / 0 / 1.
+
 # v13.224-herolcp — the SEO/GEO Phase-2 Session 6 / SS-20: the homepage mobile-LCP priority round (poster fetchpriority + head preload)
 
 _2026-11-05 · spec §3/SS-20. A served-HTML client-asset change (the

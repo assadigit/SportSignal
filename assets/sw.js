@@ -887,6 +887,16 @@
 //              glyph, so the ticking countdown digits can never sit
 //              inside any static accessible name; name-from-content is
 //              always content-matched and the rule's gate never fires).
+// v13.225-socialsec (SS-26 + the §12 resolution, S9): bumped from v113 — the
+//              social-wiring round: every page footer gains the social line
+//              (the X profile + the Telegram bot) and the head gains
+//              twitter:site; security.txt re-gains a DELIVERABLE mailto
+//              (the owner-verified sportsignal@atomicmail.io — the homepage
+//              contact box's own address; MX verified). No asset file
+//              renamed (no bundle bytes changed — the v13.39 rename rule
+//              does not fire); the routine evict so the SWR/offline-
+//              fallback copies of "/" carrying the OLD footer leave the
+//              cache (the v13.224 v113 precedent).
 // v13.224-herolcp (SS-20, Phase-2 S6): bumped from v112 — the served-HTML
 //              LCP-priority round: the homepage head gains the mobile-scoped
 //              (max-width:899px) fetchpriority=high preload of
@@ -910,7 +920,7 @@
 //              vocabulary so the client mirrors the server pure-math
 //              helpers byte-for-byte). Cache-first assets cannot refresh
 //              without a rename or a bump, the v13.39 rule.
-const CACHE = "sportsignal-v113";
+const CACHE = "sportsignal-v114";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
