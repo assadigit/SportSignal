@@ -28,6 +28,11 @@ export const SEO = {
   OG_DEFAULT_IMAGE: "/og/default.png",
   DATA_SOURCE_NAME: "football-data.org",
   DATA_SOURCE_URL: "https://www.football-data.org/",
+  // SS-04 (Phase-2 spec): the Organization node's sameAs — real, owned, live
+  // profiles ONLY (rule §1.1: never invented). The Telegram bot is the one
+  // verified profile today; the owner appends future social profiles here
+  // (spec SS-26) without touching jsonld.ts.
+  ORG_SAMEAS: ["https://t.me/SportSignalAlertsBot"],
   // Bot policy toggles (spec Section 0 — all true by owner's spec).
   ALLOW_AI_SEARCH_BOTS: true,
   ALLOW_AI_USER_BOTS: true,

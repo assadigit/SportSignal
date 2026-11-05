@@ -699,6 +699,41 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     }
   }
 
+  // ---------------- T-17: Organization.sameAs (SS-04, Phase 2) ----------------
+  section("T-17 Organization.sameAs (SS-04)");
+  {
+    const id = "T-17";
+    // Every page's graph carries the Organization node; sameAs must list the
+    // real, owned profiles from SEO.ORG_SAMEAS (the Telegram bot today).
+    const want = "https://t.me/SportSignalAlertsBot";
+    const checkSameAs = async (url) => {
+      const res = await fetchRaw(url);
+      const html = await body(res);
+      if (res.status !== 200) { fail(id, url + " HTTP " + res.status); return; }
+      const scripts = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi)].map((m) => m[1]);
+      let org = null;
+      for (const sc of scripts) {
+        try {
+          const parsed = JSON.parse(sc);
+          const graph = parsed["@graph"] || [parsed];
+          org = org || graph.find((g) => g["@type"] === "Organization");
+        } catch (e) { /* counted by T-04 on match pages */ }
+      }
+      if (!org) { fail(id, url + ": no Organization node in JSON-LD"); return; }
+      const sa = org.sameAs;
+      if (Array.isArray(sa) && sa.includes(want)) pass(id, url + ": Organization.sameAs carries " + want + " ✓");
+      else fail(id, url + ": Organization.sameAs missing " + want + " (got " + JSON.stringify(sa) + ")");
+      if (Array.isArray(sa)) {
+        const bad = sa.filter((u) => !/^https:\/\/(t\.me|twitter\.com|x\.com|instagram\.com|facebook\.com|youtube\.com|wikipedia\.org|www\.wikidata\.org)\//.test(String(u)));
+        if (bad.length) fail(id, url + ": sameAs carries non-profile URL(s): " + bad.join(", "));
+      }
+    };
+    await checkSameAs(B + "/");
+    await checkSameAs(B + "/matches/today");
+    const mu = allSitemapUrls.find((u) => /\/matches\/[a-z0-9-]+-vs-/.test(u));
+    if (mu) await checkSameAs(mu);
+  }
+
   // ---------------- T-12 summary ----------------
   section("T-12 summary");
   {

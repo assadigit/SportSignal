@@ -4,6 +4,26 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.214-sameas — the SEO/GEO Phase-2 Session 2 / SS-04: Organization.sameAs (entity grounding begins)
+
+_2026-11-05 · spec §3/SS-04: the Organization node carried no `sameAs` — an
+entity island that AI engines cannot cross-link to the site's real
+profiles. Server-side only — no client asset changed (bundle
+public-13.71.js / stylesheet public-13.81.css / SW sportsignal-v112 stay)._
+
+**Fix.** New `SEO.ORG_SAMEAS` array in `src/seo/config.ts` =
+`["https://t.me/SportSignalAlertsBot"]` — the one real, owned, live profile
+(rule §1.1: never invented; the bot URL answers 200 and is linked from
+every page's CTA already). `organizationNode()` in `src/seo/jsonld.ts`
+consumes it (`sameAs` emitted only when the array is non-empty), replacing
+the old "added by the owner later" comment — future profiles append in
+config.ts without touching jsonld.ts (the SS-26 owner path). Every page's
+JSON-LD graph now grounds the Organization entity. seo-check gains **T-17**:
+the Organization node on `/`, `/matches/today` and a sampled match page
+must carry the Telegram URL in `sameAs`, and every `sameAs` entry must look
+like a real profile URL (t.me/twitter/x/instagram/facebook/youtube/
+wikipedia/wikidata).
+
 # v13.213-pagecanon — the SEO/GEO Phase-2 Session 2 / SS-03: paginated /matches canonicals
 
 _2026-11-05 · spec §3/SS-03: `?page=2/3` returned 200 with distinct content

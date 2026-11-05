@@ -38,9 +38,11 @@ export function organizationNode(): any {
       url: absUrl(SEO.LOGO_PATH),
       width: 512,
       height: 512
-    }
-    // sameAs: added by the owner later via real social profiles (G-09) —
-    // never invented here. OWNER_TODO asks for the URLs.
+    },
+    // SS-04 (Phase-2 spec): sameAs from the SEO.ORG_SAMEAS config array —
+    // real, owned, live profiles only (the Telegram bot today; the owner
+    // appends future profiles in config.ts, never invented here).
+    ...(SEO.ORG_SAMEAS && SEO.ORG_SAMEAS.length ? { sameAs: SEO.ORG_SAMEAS } : {})
   };
 }
 
