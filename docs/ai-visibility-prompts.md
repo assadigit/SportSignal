@@ -45,12 +45,38 @@ months are normal. What matters is the trend.
 
 | Month | Assistant | Prompt # | Cited? (Y/N) | Info correct? (Y/N) | Link shown? | Notes |
 |---|---|---|---|---|---|---|
-| 2026-11 | Google AI Mode | 1 | | | | |
-| 2026-11 | ChatGPT | 12 | | | | |
-| 2026-11 | Perplexity | 2 | | | | |
-| 2026-11 | Claude | 5 | | | | |
-| 2026-11 | Gemini | 3 | | | | |
-| 2026-11 | Copilot | 4 | | | | |
+| 2026-11 | Google AI Mode | 1 | — | — | — | not run — the six assistant UIs need accounts this environment does not have; blank per "leave blank what cannot be verified" (the owner can run them in the UIs per the how-to above) |
+| 2026-11 | ChatGPT | 12 | — | — | — | not run — same reason |
+| 2026-11 | Perplexity | 2 | — | — | — | not run — same reason |
+| 2026-11 | Claude | 5 | — | — | — | not run — same reason |
+| 2026-11 | Gemini | 3 | — | — | — | not run — same reason |
+| 2026-11 | Copilot | 4 | — | — | — | not run — same reason |
+| 2026-11 | Web search (the engine verifiably available to the build environment) | 1–20 (all) | N (0 cites) | — (not cited, nothing to assess) | N | 19/20 prompts ran (8–10 results each, 170 total); prompt 19's query returned engine-empty (422 "No search results available") — an engine-side empty, not a site result; direct `sportsignal.ir` name probe: not in the top-10 |
+
+### 2026-11 baseline note (first monthly run — G-14)
+
+Run 2026-11-05/06 (session S7), engine: the backend web-search function available
+to the build environment (the only engine verifiable from there this month —
+the six assistant UIs are login-walled; rows left blank honestly per this
+file's own rule). Method: the 20 prompt lines were extracted programmatically
+from this file (byte-exact, no retyping), each run with `num: 10`; every
+result's url/name/snippet was checked for `sportsignal.ir`. Raw per-prompt
+JSON preserved at `docs/history/2026-11-06-s7-g14-raw.json`.
+
+- **Citations: 0/170 results across 19 runs** (+1 engine-empty query, #19).
+  No `sportsignal.ir` url, title or snippet anywhere. Expected at month 0:
+  the site's indexes are days old and the GSC/Bing sitemap submissions were
+  still pending at run time (SS-21/22) — "missing citations in the first
+  months are normal"; this is the trend's starting point, not a verdict.
+- **Who owns these SERPs today** (the trend's competitors, top hosts by
+  frequency): fa prompts — footballi.net (16), varzesh3.com (15),
+  football360.ir (11); en prompts — espn.com (10), uefa.com (4),
+  skysports.com (7). The direct `sportsignal.ir` probe surfaced the Google
+  Play "Sport Signal" app and a "Sports Signal" Substack instead of the site.
+- **What to watch in 2026-12:** re-run after the sitemap submissions land
+  (GSC + Bing), IndexNow keeps pinging, and real links accrue (OWNER_TODO
+  §9). A first citation anywhere in the 20-prompt set would be the needle
+  moving; until then the lab-side baseline stands at 0.
 
 **Scoring:** a good month = cited on at least 2 assistants with correct data.
 If cited with WRONG data: check the site's own page — if the site is wrong,
