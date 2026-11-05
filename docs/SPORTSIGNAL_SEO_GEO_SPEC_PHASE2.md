@@ -335,7 +335,7 @@ next safe point, checkpoint, and hand off a continuation prompt.
 | SS-22 | Bing WMT | S6 | OWNER | — | OWNER_TODO §4 (refreshed: registration ✅; sitemap submit click-path; IndexNow already pinging) |
 | SS-23 | Analytics decision | S6 | DONE (resolved by choice) | — | Cloudflare Web Analytics live (beacon in every page, CSP-allowed, /privacy-disclosed) — OWNER_TODO §11 ✅ + the SS-23 note; alternatives would need a CSP edit, not wanted |
 | SS-24 | Privacy/terms review | S6 | OWNER | — | OWNER_TODO §6 (5-min read; texts match the real operation incl. the cookieless beacon disclosure) |
-| SS-25 | CWV field gate | S6 | OWNER (time-gated) | — | OWNER_TODO §3 step 6 (GSC Experience → Core Web Vitals once traffic accrues) — the acceptance gate for SS-20; first CF Web Analytics window: human LCP p75 2.36 s desktop / 2.53 s mobile |
+| SS-25 | CWV field gate | S6 | OWNER (time-gated) | — | OWNER_TODO §3 step 6 (GSC Experience → Core Web Vitals once traffic accrues) — the acceptance gate for SS-20; first CF Web Analytics window: human LCP p75 2.36 s desktop / 2.53 s mobile; 2026-11-06 S7 read: no 2026-11-05 events landed (same-day ingestion lag) — the latest window is still the first (2.36/2.53 unchanged); the full 10-31→11-04 human series + the tiny-n caveat in docs/history/2026-11-06-s7-baseline.md §3; GSC CWV remains the gate |
 | SS-26 | Social profiles → sameAs | S6 | OWNER | — | OWNER_TODO §5 (send real profile URLs → SEO.ORG_SAMEAS + footer + twitter:site; verified-live-only rule) |
 
 ---
