@@ -81,7 +81,14 @@ const SETTINGS_TEAMS = {
 const ctx = eval("(() => { " + pieces.join("\n") + "; var BIG_TEAMS_BY_LEAGUE = " + JSON.stringify(SETTINGS_TEAMS) + "; var CONFIG = { BIG_TEAMS_BY_LEAGUE: BIG_TEAMS_BY_LEAGUE, __teamNorm: null, LATE_STAGES: [\"QUARTER_FINALS\",\"QUARTER_FINAL\",\"SEMI_FINALS\",\"FINAL\",\"THIRD_PLACE\"], DOMESTIC_CUP_IDS: { FA_CUP: 1, EFL_CUP: 1, CDR: 1, COPPA_ITALIA: 1, DFB_POKAL: 1 } }; return { priorityTier, pickHeroMatch, pickHeroMatches, isFeaturedMatch, isMasterPair }; })()");
 
 // ---- fixtures: a fixed epoch (injected now) + real team names ----
-const NOW = Date.parse("2026-11-05T12:00:00.000Z");
+// The S-series/C-series fixtures ride this FIXED epoch (determinism). It
+// must stay in the FUTURE relative to the wall clock — the controller's
+// carOk drops rows whose kickoff has passed, so an expired epoch fails
+// C1/C2/C5/C6/C10–C12 spuriously (first hit live 2026-11-05 ~13:00Z, 67
+// minutes after the then-current epoch — NOT a code regression). Bump it
+// forward when a session runs past 2026-11-30 15:00Z (the +180 min
+// fixture's horizon).
+const NOW = Date.parse("2026-11-30T12:00:00.000Z");
 const at = (min) => new Date(NOW + min * 6e4).toISOString();
 const mk = (h, a, koMin, status, code) => ({
   homeTeam: { name: h }, awayTeam: { name: a },

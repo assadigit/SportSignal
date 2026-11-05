@@ -209,6 +209,16 @@ Operational notes for S5:
 - T-20's hub FAQ is generated per render from `upcomingFollowed` — on
   genuinely empty windows the hub carries 4 Q&As (spec-compliant), and
   the empty-day answer is asserted honest by T-20.
+- A PRE-EXISTING latent offline-check time bomb surfaced at the final
+  close-out test run: `check-hero-carousel.js` anchors its S/C-series
+  fixtures to a FIXED epoch (`NOW`, bumped by hand each session — the
+  treadmill convention) and the controller drops rows whose kickoff has
+  passed, so the epoch's 13:00Z expiry (67 min after the S2 session's
+  12:00Z stamp) failed C1/C2/C5/C6/C10–C12 spuriously at ~13:07Z —
+  NOT a regression (the same code was green at 12:43Z). Fixed check-side
+  only: `NOW` → `2026-11-30T12:00:00.000Z` with the expiry + bump rule
+  documented at the constant. If a future session runs past
+  2026-11-30 15:00Z, bump it again.
 
 Next (S5, per spec §4): **SS-10** (title trim ladder ≤65), **SS-11**
 (description ≤165), **SS-15** (per-match SportsEvent.image),
