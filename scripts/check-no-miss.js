@@ -716,8 +716,18 @@ var MEM_DEDUPE = new Set();
   // the old fixed 2026-09-16 dates would all be treated as stale-live rows
   // and every live-patch assertion below would test the wrong branch.
   const pubRow = (id, h, a, day, status, extra) => Object.assign({ id, homeTeam: { name: h }, awayTeam: { name: a }, utcDate: day, status, minute: null, score: null }, extra || {});
-  const OD = new Date(Date.now() - 30 * 6e4).toISOString();
-  const OD2 = new Date(Date.now() - 25 * 6e4).toISOString(); // same UTC day, different kick (byPair day-slice lookup)
+  // K20 (2026-11-05, caught live at 00:26 UTC): the two offsets must share a
+  // UTC day — applyLiveOverlay's byPair fallback keys on the utcDate
+  // day-slice, and between 00:25–00:30 UTC the 30/25-min-ago pair straddles
+  // midnight, so the id-miss fixture silently tested the wrong branch (the
+  // lookup legitimately missed a different-day pair). Build OD2 from OD's
+  // instant and rewind into OD's day when the +5min kick would roll over;
+  // the guard check below pins the invariant forever.
+  const odMs = Date.now() - 30 * 6e4;
+  const OD = new Date(odMs).toISOString();
+  const od2Ms = odMs + 5 * 6e4;
+  const OD2 = new Date(od2Ms).toISOString().slice(0, 10) === OD.slice(0, 10) ? new Date(od2Ms).toISOString() : OD; // same UTC day, different kick (byPair day-slice lookup)
+  check("overlay: the OD/OD2 fixture pair shares a UTC day (K20 midnight-straddle guard)", OD.slice(0, 10) === OD2.slice(0, 10));
   // FT purge: a LIVE row the overlay now reports FINISHED leaves upcoming,
   // lands at the head of finished with the final score and no minute.
   // v14.0.6-livescore: scores on PUBLIC rows are FLAT {home,away} — the
