@@ -201,7 +201,7 @@ var HERO_ART={
 "Galatasaray SK":{src:"/players/hero/victor-osimhen.webp",alt:""},                   /* #35 Osimhen — GS kit verified */
 "\u0160K Slovan Bratislava":{src:"/players/hero/andraz-sporar.webp",alt:""}          /* #36 Šporar — Slovan kit VERIFIED 2026-10-18 (false alarm resolved) */,
 "Chelsea FC":{src:"/players/hero/cole-palmer.webp",alt:""},    /* v13.163-herohd: the NATIVE UEFA 1080px UCL-25/26 cutoff (lanczos3 downscale to the 512 library canvas — the owner's 2026-10-22 quality directive replaced the 220x280 PL headshot upscale); FD squad + FPL verified current; kit VLM-verified */
-"Tottenham Hotspur FC":{src:"/players/hero/dominic-solanke.webp",alt:""},             /* v13.163-herohd: the NATIVE UEFA 1080px UCL-25/26 cutoff; Romero/Vicario/Johnson cutoffs exist but all three are DEPARTED per the FD squad (Romero now Atleti per his UEFA profile); Solanke verified current; kit VLM-verified */,
+"Tottenham Hotspur FC":{src:"/players/hero/dominic-solanke.webp",alt:""},             /* v13.163-herohd: the NATIVE UEFA 1080px UCL-25/26 cutoff; Romero/Vicario/Johnson cutoffs exist but all three are DEPARTED per the FD squad (Romero now Atleti per his UEFA profile); Solanke verified current; kit VLM-verified */
 /* v13.226-herowire (the owner's S9 WIRE decision, executed S10 2026-11-06): the 76
    published big-5 library portraits join HERO_ART — every hero-clubs.json club
    with a complete VLM-style-gated portrait now renders. The library is FULLY

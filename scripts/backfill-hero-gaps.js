@@ -272,10 +272,16 @@ function cmdWire(club) {
   const m = bundle.match(/var HERO_ART=\{[\s\S]*?\n\};/);
   if (!m) die("HERO_ART block not found in " + bundleName);
   const block = m[0];
-  const trimmed = block.replace(/\n\};$/, "").replace(/,\s*$/, "");
+  // THE COMMA RULE (the v13.226 live-lesson): the block may end with a
+  // trailing COMMENT after the last entry's comma — strip comments from the
+  // tail before deciding the separator; never emit two (an object-literal
+  // elision is a SyntaxError the regex gates cannot see).
+  const trimmed = block.replace(/\n\};$/, "");
+  const tailNoComment = trimmed.replace(/\s*\/\*[\s\S]*?\*\/\s*$/, "").replace(/\s+$/, "");
+  const sep = /,$/.test(tailNoComment) ? "" : ",";
   const heroSrc = "/players/hero/" + playerFile;
   const entry = '"' + lib.club + '":{src:"' + heroSrc + '",alt:""}';
-  const nextBlock = trimmed + ",\n" + entry + "\n};";
+  const nextBlock = trimmed + sep + "\n" + entry + "\n};";
   const nextBundle = bundle.replace(block, nextBlock);
 
   const ver = bundleName.match(/public-(\d+)\.(\d+)\.js/);

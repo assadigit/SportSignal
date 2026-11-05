@@ -68,8 +68,15 @@ function main() {
   const m = src.match(/var HERO_ART=\{[\s\S]*?\n\};/);
   if (!m) throw new Error("HERO_ART block not found");
   const block = m[0];
+  // THE COMMA RULE (the v13.226 live-lesson, caught by the browser check):
+  // the block may end with a trailing COMMENT after the last entry's comma —
+  // replace(/,\s*$/) does not fire, and a blindly appended ",\n" lands AFTER
+  // the comment = an object-literal elision = a SyntaxError the regex gates
+  // cannot see. Decide on the comment-stripped tail; never two separators.
   const trimmed = block.replace(/\n\};$/, "");
-  const nextBlock = trimmed + ",\n" + lines.join("\n") + "\n};";
+  const tailNoComment = trimmed.replace(/\s*\/\*[\s\S]*?\*\/\s*$/, "").replace(/\s+$/, "");
+  const sep = /,$/.test(tailNoComment) ? "" : ",";
+  const nextBlock = trimmed + sep + "\n" + lines.join("\n") + "\n};";
   fs.writeFileSync(DST, src.replace(block, nextBlock));
 
   // verification: the sync's own extraction reads 111
