@@ -407,6 +407,12 @@ export function buildMatchesPage(ctx: SeoCtx, page: number): string {
   const p = Math.min(Math.max(1, page), totalPages);
   const slice = all.slice((p - 1) * PER_PAGE, p * PER_PAGE);
   const path = "/matches";
+  // SS-03 (Phase-2 spec): ?page=N (N ≥ 2) is its own indexable URL — a
+  // self-referencing canonical + a « — صفحه N» title suffix (Persian
+  // digits) before the brand; og:url follows the canonical. ?page=1 / the
+  // bare path keep canonical /matches. The router caches per full key
+  // (path + ?page=N), so each page's head is cached with its own canonical.
+  const canonPath = p >= 2 ? path + "?page=" + p : path;
   const top = all[0];
   let answer = "همه بازی‌های بزرگ فوتبال که SportSignal دنبال می‌کند، به تفکیک تاریخ و به وقت تهران.";
   if (top) {
@@ -414,7 +420,8 @@ export function buildMatchesPage(ctx: SeoCtx, page: number): string {
       faDateD1(top.s.utcDate) + " ساعت " + faTime(top.s.utcDate) + " به وقت تهران. " +
       "در مجموع " + toFaDigits(String(all.length)) + " بازی بزرگ در برنامه پیش‌رو است.";
   }
-  const title = "بازی‌های بزرگ فوتبال پیش‌رو — تاریخ و ساعت شروع | SportSignal";
+  const title = "بازی‌های بزرگ فوتبال پیش‌رو — تاریخ و ساعت شروع" +
+    (p >= 2 ? " — صفحه " + toFaDigits(String(p)) : "") + " | SportSignal";
   const desc = ("برنامه کامل بازی‌های مهم فوتبال: لیگ قهرمانان اروپا، لیگ برتر، لالیگا، سری‌آ، بوندسلیگا و لیگ یک — " +
     (top ? "نزدیک‌ترین بازی: " + faName(top.s.homeTeam) + " – " + faName(top.s.awayTeam) + "، " + faDateD2(top.s.utcDate) + "." : "به‌زودی به‌روزرسانی می‌شود.")).slice(0, 165);
   const trail = [{ name: "خانه", href: "/" }, { name: "بازی‌ها" }];
@@ -425,8 +432,8 @@ export function buildMatchesPage(ctx: SeoCtx, page: number): string {
     hubTiles();
   return pageShell({
     head: buildHead({
-      path, title, description: desc, indexable: true,
-      jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(path, "بازی‌های بزرگ فوتبال", ctx.fetchedAt), JL.itemListNode(all, "بازی‌های بزرگ پیش‌رو"), JL.breadcrumbNode(trail)]
+      path: canonPath, title, description: desc, indexable: true,
+      jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(canonPath, "بازی‌های بزرگ فوتبال", ctx.fetchedAt), JL.itemListNode(all, "بازی‌های بزرگ پیش‌رو"), JL.breadcrumbNode(trail)]
     }),
     h1: "بازی‌های بزرگ فوتبال پیش‌رو",
     crumbHtml: M.breadcrumbsHtml(trail),

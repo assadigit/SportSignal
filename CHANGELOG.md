@@ -4,6 +4,30 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.213-pagecanon — the SEO/GEO Phase-2 Session 2 / SS-03: paginated /matches canonicals
+
+_2026-11-05 · spec §3/SS-03: `?page=2/3` returned 200 with distinct content
+but canonicalized to `/matches` and duplicated its title — unindexable.
+Server-side only — no client asset changed (bundle public-13.71.js /
+stylesheet public-13.81.css / SW sportsignal-v112 stay).
+npm test 2,594 → **2,595**._
+
+**Fix.** `buildMatchesPage` (`src/seo/pages.ts`) now derives
+`canonPath = /matches?page=N` for **N ≥ 2** — a self-referencing canonical
+(`https://sportsignal.ir/matches?page=N`) with `og:url` following it (both
+flow from `buildHead`'s single canonical computation), and the title gains
+« — صفحه N» (Persian digits) before the brand: «بازی‌های بزرگ فوتبال
+پیش‌رو — تاریخ و ساعت شروع — صفحه ۲ | SportSignal». `?page=1` and the bare
+path keep canonical `/matches` with no suffix; an out-of-range `?page=99`
+clamps to the last real page and canonicalizes to IT (the content shown is
+that page — honest). The CollectionPage JSON-LD node's url/@id ride
+`canonPath` too. The router already caches per full key (`path + ?page=N`),
+so each page's head stays cached under its own canonical. seo-check gains
+**T-16**: `?page=1` → canonical `/matches` + no suffix; when a page-2 link
+exists in the pagination nav, `?page=2` → self-canonical + `og:url` equal +
+the «— صفحه ۲» suffix + a title distinct from page 1 (honest skip when the
+big-match count is ≤ 50).
+
 # v13.212-shamsifirst — the SEO/GEO Phase-2 Session 2 / SS-27: Shamsi-first calendar display (CALENDAR_DISPLAY_v2)
 
 _2026-11-05 · the owner's calendar rule (spec §1.3 / §3/SS-27): every fa

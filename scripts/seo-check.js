@@ -662,6 +662,43 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     if (!checked) fail(id, "no fa surfaces checked (sitemap empty?)");
   }
 
+  // ---------------- T-16: paginated /matches canonicals (SS-03, Phase 2) ----------------
+  section("T-16 pagination canonicals (SS-03)");
+  {
+    const id = "T-16";
+    // ?page=1 / the bare path canonical to /matches
+    const r1 = await fetchRaw(B + "/matches?page=1");
+    const h1 = await body(r1);
+    const canon1 = (h1.match(/<link[^>]+rel="canonical"[^>]+href="([^"]+)"/i) || [])[1] || "";
+    const title1 = (h1.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1] || "";
+    if (r1.status === 200 && canon1 === B + "/matches") pass(id, "?page=1 canonicals to /matches ✓");
+    else fail(id, "?page=1 canonical is «" + canon1 + "» (expected " + B + "/matches)");
+    if (r1.status === 200 && !/صفحه/.test(title1)) pass(id, "?page=1 carries no page suffix in title ✓");
+    else fail(id, "?page=1 title carries a page suffix: «" + title1 + "»");
+    // page 2 (only when pagination exists — the count of big matches can
+    // legitimately be ≤ PER_PAGE on quiet days)
+    const hasP2 = /href="\/matches\?page=2"/.test(h1);
+    if (hasP2) {
+      const r2 = await fetchRaw(B + "/matches?page=2");
+      const h2 = await body(r2);
+      const canon2 = (h2.match(/<link[^>]+rel="canonical"[^>]+href="([^"]+)"/i) || [])[1] || "";
+      const ogurl2 = (h2.match(/<meta property="og:url" content="([^"]+)"/i) || [])[1] || "";
+      const title2 = (h2.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1] || "";
+      const want = B + "/matches?page=2";
+      if (r2.status === 200 && canon2 === want) pass(id, "?page=2 self-canonical ✓ (" + canon2 + ")");
+      else fail(id, "?page=2 canonical is «" + canon2 + "» (expected " + want + ")");
+      if (ogurl2 === want) pass(id, "?page=2 og:url follows the canonical ✓");
+      else fail(id, "?page=2 og:url is «" + ogurl2 + "» (expected " + want + ")");
+      if (/— صفحه ۲/.test(title2)) pass(id, "?page=2 title suffix «— صفحه ۲» before the brand ✓");
+      else fail(id, "?page=2 title lacks the «— صفحه ۲» suffix: «" + title2 + "»");
+      if (title2 !== title1) pass(id, "?page=2 title distinct from page 1 ✓");
+      else fail(id, "?page=2 title duplicates the page-1 title");
+    } else {
+      console.log("  ⚠ /matches has no page 2 today (≤ 50 big matches listed) — the ?page=2 assertions skipped");
+      pass(id, "pagination absent today — bare canonical verified above");
+    }
+  }
+
   // ---------------- T-12 summary ----------------
   section("T-12 summary");
   {
