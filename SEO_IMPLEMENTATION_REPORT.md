@@ -586,7 +586,7 @@ OWNER = owner action, parked current in `OWNER_TODO.md` with click-paths.
 | SS-06 | FAQ + FAQPage | ✅ | v13.219-faq | T-20 green (3 statics + 4 hubs, byte-identical visible↔node; today-hub answer 36==rows==noi with real fixtures named) |
 | SS-07 | llms.txt + llms-full.txt | ✅ | v13.217-llmsfull | both 200 text/plain UTF-8; 44 links validated; T-19 green |
 | SS-08 | Footer attribution | ✅ | v13.215-attribution | «منبع داده: football-data.org» on all page types; T-03 sweep green |
-| SS-09 | security.txt email | ✅ | v13.220-secremail | no mailto, Telegram Contact + Remarks; OWNER_TODO §12 Email Routing path; T-21 green |
+| SS-09 | security.txt email | ✅ | v13.225-socialsec | deliverable mailto restored (the owner-designated sportsignal@atomicmail.io, MX verified) + Telegram Contact; the domain mailto stays out until MX; T-21 green |
 | SS-10 | Title lengths ≤65 | ✅ | v13.222-titlesweep | T-23 full sweep — 279 titles ≤65 (max 65), zero 66–75 band, all unique |
 | SS-11 | Description ≤165 | ✅ | v13.222-titlesweep | T-23 — 279 descs 50–165 (max 165); UTC clause never drops |
 | SS-12 | One full 404 | ✅ | v13.220-secremail | all 404 shapes serve the full shell, noindex meta + X-Robots-Tag; pure render (no KV on the 404 path); T-21 green |
@@ -598,12 +598,12 @@ OWNER = owner action, parked current in `OWNER_TODO.md` with click-paths.
 | SS-18 | /admin X-Robots-Tag | ✅ | v13.223-machpolish | X-Robots-Tag on /admin(200)+/admin/login(302/401)+unknown(401); robots Disallow kept |
 | SS-19 | 410 for retired teams | ⛔ SKIPPED | — | the spec's own fallback: an honest 410 needs a 404-path KV read (the archive) — forbidden by the item; SS-12 plain 404 stays |
 | SS-20 | Home mobile LCP | ✅ (option 1) + owner decision | v13.224-herolcp | see §10.2 |
-| SS-21 | GSC sitemap submit + Coverage/CWV watch | OWNER | — | OWNER_TODO §3 (registration ✅; submit + watch steps with click-paths) |
-| SS-22 | Bing WMT sitemap submit | OWNER | — | OWNER_TODO §4 (registration ✅; submit step with click-path; IndexNow already pinging) |
+| SS-21 | GSC sitemap submit + Coverage/CWV watch | OWNER (submitted) | — | 2026-11-06 chat: submitted per the owner ("success") — owner-attested; the +3d Pages / +2w Performance reads owner-side (§3 timing rule) |
+| SS-22 | Bing WMT sitemap submit | OWNER (submitted) | — | 2026-11-06 chat: submitted per the owner ("success"); IndexNow already pinging |
 | SS-23 | Analytics decision | ✅ resolved by choice | — | Cloudflare Web Analytics live (beacon in every page, CSP-allowed, transparently disclosed in /privacy); alternatives would need a CSP edit — not wanted |
-| SS-24 | Privacy/terms review | OWNER | — | OWNER_TODO §6 (5-min read; texts match the real operation) |
+| SS-24 | Privacy/terms review | ✅ owner-approved | — | 2026-11-06 chat: read and approved as-is — no edits |
 | SS-25 | CWV field gate for SS-20 | OWNER (time-gated) | — | OWNER_TODO §3 step 6 (GSC Experience → Core Web Vitals once traffic accrues); first CF Web Analytics window already shows human LCP p75 ≈ 2.4 s desktop / 2.5 s mobile |
-| SS-26 | Social profiles → sameAs | OWNER | — | OWNER_TODO §5 (send real profile URLs → SEO.ORG_SAMEAS + footer + twitter:site; verified-live-only rule) |
+| SS-26 | Social profiles → sameAs | ✅ | v13.225-socialsec | live 2026-11-06: the verified X profile @sportsignalz wired (ORG_SAMEAS #2 + twitter:site + footer social line); T-17 green |
 
 ### 10.2 SS-20 — the home mobile-LCP round (v13.224-herolcp), the honest close
 

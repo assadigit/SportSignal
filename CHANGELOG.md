@@ -55,7 +55,13 @@ T-17's sameAs want-list gains the X URL (both profiles now required on
 every graph); the per-page head sweep asserts `twitter:site` + the
 profile link on every sitemap URL; the security.txt check flips from
 "no mailto" to "deliverable mailto present + the domain mailto still
-absent". Expected seo:check: 255 / 0 / 1.
+absent". seo:check vs production (log: docs/history/
+2026-11-06-s9-v132225-sweep.txt): **PASS 254 / FAIL 0 / REPORTS 0,
+EXIT 0** — equivalent-or-better vs the S7–S9 baseline's 255/0/1: the
+check-line count is identical (254 ✓), and the T-24 map-miss ⚠ that
+rode every previous run (the 1–2 live-pool drift band, counted as the
+255th non-fatal pass) self-resolved this run — all 30 feed entries
+match their sitemap lastmod; zero report-mode findings at all.
 
 # v13.224-herolcp — the SEO/GEO Phase-2 Session 6 / SS-20: the homepage mobile-LCP priority round (poster fetchpriority + head preload)
 
