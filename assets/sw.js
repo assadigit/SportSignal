@@ -887,6 +887,19 @@
 //              glyph, so the ticking countdown digits can never sit
 //              inside any static accessible name; name-from-content is
 //              always content-matched and the rule's gate never fires).
+// v13.224-herolcp (SS-20, Phase-2 S6): bumped from v112 — the served-HTML
+//              LCP-priority round: the homepage head gains the mobile-scoped
+//              (max-width:899px) fetchpriority=high preload of
+//              /hero-poster.jpg and the img.bg-photo element itself carries
+//              fetchpriority="high" (the Phase-7 §18.4 diagnostic + the S6
+//              BEFORE series both name the unhinted poster as the mobile
+//              lab-LCP element; lighthouse's own discovery insight asked
+//              for the hint). No asset file renamed (the v13.39 rename rule
+//              doesn't fire — the poster bytes are untouched); the bump is
+//              the routine evict so the SWR/offline-fallback copies of "/"
+//              carrying the OLD unhinted markup leave the cache (the
+//              v13.198-mcsize v101 precedent: routine evict for a
+//              served-HTML edit).
 // v13.212-shamsifirst (SS-27 / CALENDAR_DISPLAY_v2, Phase-2 S2): bumped
 //              from v111 — the bundle public-13.70.js->13.71.js (the date
 //              renderers go Shamsi-first with Gregorian parens: fmtDate
@@ -897,7 +910,7 @@
 //              vocabulary so the client mirrors the server pure-math
 //              helpers byte-for-byte). Cache-first assets cannot refresh
 //              without a rename or a bump, the v13.39 rule.
-const CACHE = "sportsignal-v112";
+const CACHE = "sportsignal-v113";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -4,6 +4,49 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.224-herolcp — the SEO/GEO Phase-2 Session 6 / SS-20: the homepage mobile-LCP priority round (poster fetchpriority + head preload)
+
+_2026-11-05 · spec §3/SS-20. A served-HTML client-asset change (the
+homepage template only — no JS bundle, no stylesheet, no image bytes
+renamed or re-encoded; no hand-written page text changed → NO
+CONTENT_VERSION bump, the v13.213/v13.214 precedent)._
+
+**Feature (SS-20, option 1 of the spec's preference order).** The mobile
+lab-LCP element — `div.hero-bg > img.bg-photo` (`/hero-poster.jpg`,
+412×900, 40 KB), per the Phase-7 final diagnostic (WEB_OPTIMIZATION_
+RESULTS.md §18.4) and this session's fresh BEFORE series (Lighthouse
+13.6.0, `/` mobile ×3: LCP 5.7–6.9 s, `lcp-discovery-insight`
+`priorityHinted:false`) — is now priority-hinted on both wires, exactly
+the treatment the v13.205/v13.206 rounds gave the mobile card scene
+(which then stopped being the LCP):
+
+- **Head preload** (`src/pages/public.ts`): `<link rel="preload"
+  href="/hero-poster.jpg" as="image" media="(max-width:899px)"
+  fetchpriority="high">` next to the font preloads — discovery at
+  HTML-byte-0 instead of mid-document (after the ~135 KB inline head
+  styles); media-scoped so the desktop queue is untouched (desktop lab
+  LCP is already 0.9 s).
+- **Element hint** (same file): `img.bg-photo` itself carries
+  `fetchpriority="high"` (unconditional — one template serves every
+  viewport), so the fetch keeps High priority when the parser reaches
+  the element instead of riding at the default Medium behind the
+  VeryHigh CSS + High fonts/scene.
+
+**Ceremony.** SW cache bump sportsignal-v112 → **v113** (the routine
+evict for a served-HTML edit — the SWR/offline-fallback copies of "/"
+carrying the old unhinted markup leave the cache; the v13.198-mcsize
+v101 precedent; no asset renamed so the v13.39 rename rule does not
+fire); the public-page parity baseline re-frozen
+(`check-admin-parity --update`, reviewed); `check-stats` re-pinned (SW
+v113) + a new v13.224 gate check asserting both hint wires + the
+untouched server-side scene preload. **seo-check T-09 fix:** the
+lighthouse chrome flags move to `--headless --no-sandbox
+--disable-dev-shm-usage` — `--headless=new` was removed in Chrome 132
+(the old flag aborts the launch on any modern binary and T-09 read as
+"lighthouse failed" instead of measuring) and the shm flag covers
+containerized vantages (64 MB /dev/shm → "tab has unexpectedly
+crashed").
+
 # v13.223-machpolish — the SEO/GEO Phase-2 Session 5 / SS-15 + SS-16 + SS-17 + SS-18: per-match image, feed lastmod honesty, ics DTEND, admin noindex
 
 _2026-11-06 · spec §3/SS-15…SS-18. Server-side only — machine files, JSON-LD

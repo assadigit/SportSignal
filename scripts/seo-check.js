@@ -452,9 +452,15 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
         } catch (e) { /* handled below */ }
         try {
           const tmp = "/tmp/seo-check-lh.json";
+          // v13.224-herolcp (SS-20): the chrome flags move with the times —
+          // --headless=new was REMOVED in Chrome 132 (headless IS the new
+          // mode now; the old flag aborts the launch on any modern binary
+          // and T-09 read as "lighthouse failed" instead of measuring), and
+          // --disable-dev-shm-usage is added for containerized vantages
+          // (a 64MB /dev/shm is the classic "tab has unexpectedly crashed").
           execFileSync(lhBin, [B + p, "--output=json", "--output-path=" + tmp, "--quiet",
             "--only-categories=performance,seo,accessibility,best-practices",
-            '--chrome-flags=--headless=new --no-sandbox',
+            '--chrome-flags=--headless --no-sandbox --disable-dev-shm-usage',
             ...(chrome ? ["--chrome-path=" + chrome] : [])], { stdio: "ignore", timeout: 120000 });
           const d = JSON.parse(fs.readFileSync(tmp, "utf-8"));
           for (const [cat, min] of Object.entries(CONFIG.LIGHTHOUSE.THRESHOLDS)) {

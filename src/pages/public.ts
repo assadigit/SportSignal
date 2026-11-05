@@ -47,6 +47,24 @@ export const PUBLIC_PAGE = `<!doctype html>
 <link rel="preload" href="/fonts/Peyda-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/Peyda-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/MorabbaVF.woff2" as="font" type="font/woff2" crossorigin>
+<!-- v13.224-herolcp (SS-20, Phase-2 S6): the hero poster preload — the
+     Phase-7 final diagnostic (WEB_OPTIMIZATION_RESULTS.md §18.4) and this
+     session's fresh BEFORE series both attribute the mobile lab LCP to
+     div.hero-bg > img.bg-photo (/hero-poster.jpg, 412×900, 40 KB):
+     lighthouse's own lcp-discovery-insight says "fetchpriority=high
+     should be applied" (priorityHinted:false) — the poster rides at
+     MEDIUM priority behind the VeryHigh CSS + the High fonts/scene and,
+     discovered mid-document (after the ~135 KB inline head styles), its
+     throttled fetch lands ~4 s after FCP. The scene got exactly this
+     treatment at v13.205 (media-scoped (max-width:899px) fetchpriority=
+     high preload) and stopped being the LCP; the poster now gets the
+     same: the head link discovers it at HTML-byte-0 (before the inline
+     style blocks), the matching fetchpriority="high" on the img itself
+     (below) keeps the priority when the element parses, and the media
+     scope leaves the desktop queue untouched (desktop lab LCP is
+     already 0.9 s). Unconditional element hint + mobile-scoped preload
+     = the LCP image fetches in parallel with the CSS from byte-0. -->
+<link rel="preload" href="/hero-poster.jpg" as="image" media="(max-width:899px)" fetchpriority="high">
 __SEO_JSONLD__
 ${THEME_INIT_SCRIPT}
 <!-- v12.x-force-dark: the default theme is ALWAYS dark, regardless of the
@@ -355,7 +373,7 @@ html[lang="fa"] .hero-mcard .mc-ko{font-family:Morabba,Peyda,'Segoe UI',Tahoma,s
      preserved — the full note lives in public-13.31.css. -->
 <div class="herowrap">
 <div class="hero-bg" aria-hidden="true">
-<img class="bg-photo" src="/hero-poster.jpg" alt="" decoding="async" referrerpolicy="no-referrer">
+<img class="bg-photo" src="/hero-poster.jpg" alt="" fetchpriority="high" decoding="async" referrerpolicy="no-referrer">
 <div class="bg-grade"></div>
 <div class="bg-flood"></div>
 <svg class="bg-swoosh sw-left" viewBox="0 0 560 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false"><defs><linearGradient id="swLg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#0087FA" stop-opacity="0.95"/><stop offset="0.7" stop-color="#00D3FF" stop-opacity="0.45"/><stop offset="1" stop-color="#00D3FF" stop-opacity="0"/></linearGradient><filter id="swLglow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g fill="none" stroke-linecap="round" filter="url(#swLglow)"><path class="band-primary" d="M-20 236 C 130 196, 300 252, 470 116" stroke="url(#swLg)" stroke-width="14" opacity="0.8"/><path class="band-secondary" d="M-20 268 C 150 238, 320 286, 520 168" stroke="url(#swLg)" stroke-width="8" opacity="0.85"/><path class="band-secondary" d="M-20 252 C 140 217, 310 268, 495 142" stroke="#CBEFFF" stroke-width="2.2" opacity="0.9"/></g></svg>
