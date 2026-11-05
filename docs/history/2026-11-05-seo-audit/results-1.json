@@ -1,0 +1,804 @@
+{
+ "_meta": {
+  "started": "2026-11-05T02:32:18.980615+00:00",
+  "site": "https://sportsignal.ir",
+  "finished": "2026-11-05T02:32:29.730703+00:00"
+ },
+ "machine_files": {
+  "robots_txt": {
+   "status": 200,
+   "body": "# SportSignal robots.txt\n# Canonical host: https://sportsignal.ir\nUser-agent: *\nAllow: /\nDisallow: /admin\n# Note: /api/ stays crawlable — the page JS refreshes from it.\n\nSitemap: https://sportsignal.ir/sitemap.xml\n"
+  },
+  "sitemap_index": {
+   "status": 200,
+   "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n  <sitemap><loc>https://sportsignal.ir/sitemaps/pages.xml</loc><lastmod>2026-10-11T00:00:00Z</lastmod></sitemap>\n  <sitemap><loc>https://sportsignal.ir/sitemaps/competitions.xml</loc><lastmod>2026-11-04T20:09:51.504Z</lastmod></sitemap>\n  <sitemap><loc>https://sportsignal.ir/sitemaps/teams.xml</loc><lastmod>2026-11-04T20:09:51.908Z</lastmod></sitemap>\n  <sitemap><loc>https://sportsignal.ir/sitemaps/matches-upcoming.xml</loc><lastmod>2026-11-05T00:34:11.150Z</lastmod></sitemap>\n  <sitemap><loc>https://sportsignal.ir/sitemaps/matches-archive.xml</loc><lastmod>2026-11-05T00:34:11.150Z</lastmod></sitemap>\n</sitemapindex>\n"
+  },
+  "sitemap_pages": {
+   "status": 200,
+   "url_count": 15,
+   "urls": [
+    "https://sportsignal.ir/",
+    "https://sportsignal.ir/matches",
+    "https://sportsignal.ir/matches/today",
+    "https://sportsignal.ir/matches/tomorrow",
+    "https://sportsignal.ir/matches/this-week",
+    "https://sportsignal.ir/matches/this-weekend",
+    "https://sportsignal.ir/teams",
+    "https://sportsignal.ir/competitions",
+    "https://sportsignal.ir/about",
+    "https://sportsignal.ir/methodology",
+    "https://sportsignal.ir/contact",
+    "https://sportsignal.ir/privacy",
+    "https://sportsignal.ir/terms",
+    "https://sportsignal.ir/data",
+    "https://sportsignal.ir/sitemap"
+   ],
+   "lastmods": [
+    "2026-10-11T00:00:00Z",
+    "2026-10-11T00:00:00Z",
+    "2026-10-11T00:00:00Z",
+    "2026-10-11T00:00:00Z",
+    "2026-10-11T00:00:00Z",
+    "..."
+   ],
+   "lastmod_count": 15,
+   "bytes": 1551
+  },
+  "sitemap_competitions": {
+   "status": 200,
+   "url_count": 6,
+   "urls": [
+    "https://sportsignal.ir/competitions/bundesliga",
+    "https://sportsignal.ir/competitions/premier-league",
+    "https://sportsignal.ir/competitions/ligue-1",
+    "https://sportsignal.ir/competitions/serie-a",
+    "https://sportsignal.ir/competitions/la-liga",
+    "https://sportsignal.ir/competitions/champions-league"
+   ],
+   "lastmods": [
+    "2026-11-04T19:46:00.210Z",
+    "2026-11-04T19:46:00.210Z",
+    "2026-11-04T19:46:00.210Z",
+    "2026-11-04T19:46:00.210Z",
+    "2026-11-04T19:46:00.210Z",
+    "..."
+   ],
+   "lastmod_count": 6,
+   "bytes": 795
+  },
+  "sitemap_teams": {
+   "status": 200,
+   "url_count": 90,
+   "urls": [
+    "https://sportsignal.ir/teams/1-fsv-mainz-05",
+    "https://sportsignal.ir/teams/bayern-munich",
+    "https://sportsignal.ir/teams/borussia-dortmund",
+    "https://sportsignal.ir/teams/sv-07-elversberg",
+    "https://sportsignal.ir/teams/arsenal",
+    "https://sportsignal.ir/teams/hull-city",
+    "https://sportsignal.ir/teams/nottingham-forest",
+    "https://sportsignal.ir/teams/manchester-city",
+    "https://sportsignal.ir/teams/paris-saint-germain",
+    "https://sportsignal.ir/teams/es-troyes",
+    "https://sportsignal.ir/teams/roma",
+    "https://sportsignal.ir/teams/sassuolo",
+    "https://sportsignal.ir/teams/valencia",
+    "https://sportsignal.ir/teams/real-madrid",
+    "https://sportsignal.ir/teams/ssc-napoli",
+    "https://sportsignal.ir/teams/lazio",
+    "https://sportsignal.ir/teams/crystal-palace",
+    "https://sportsignal.ir/teams/liverpool",
+    "https://sportsignal.ir/teams/genoa-cfc",
+    "https://sportsignal.ir/teams/ac-milan",
+    "https://sportsignal.ir/teams/stade-rennais",
+    "https://sportsignal.ir/teams/lille-osc",
+    "https://sportsignal.ir/teams/sunderland",
+    "https://sportsignal.ir/teams/chelsea",
+    "https://sportsignal.ir/teams/brighton-and-hove-albion",
+    "https://sportsignal.ir/teams/brentford",
+    "https://sportsignal.ir/teams/stade-brestois-29",
+    "https://sportsignal.ir/teams/olympique-lyonnais",
+    "https://sportsignal.ir/teams/manchester-united",
+    "https://sportsignal.ir/teams/aston-villa",
+    "https://sportsignal.ir/teams/freiburg",
+    "https://sportsignal.ir/teams/1-union-berlin",
+    "https://sportsignal.ir/teams/internazionale-milano",
+    "https://sportsignal.ir/teams/como",
+    "https://sportsignal.ir/teams/club-atletico-de-madrid",
+    "https://sportsignal.ir/teams/barcelona",
+    "https://sportsignal.ir/teams/1-koln",
+    "https://sportsignal.ir/teams/fulham",
+    "https://sportsignal.ir/teams/lecce",
+    "https://sportsignal.ir/teams/borussia-monchengladbach",
+    "https://sportsignal.ir/teams/leeds-united",
+    "https://sportsignal.ir/teams/ogc-nice",
+    "https://sportsignal.ir/teams/parma",
+    "https://sportsignal.ir/teams/newcastle-united",
+    "https://sportsignal.ir/teams/getafe",
+    "https://sportsignal.ir/teams/villarreal",
+    "https://sportsignal.ir/teams/rc-celta-de-vigo",
+    "https://sportsignal.ir/teams/frosinone",
+    "https://sportsignal.ir/teams/atalanta-bc",
+    "https://sportsignal.ir/teams/psv",
+    "https://sportsignal.ir/teams/sabah",
+    "https://sportsignal.ir/teams/club-brugge-kv",
+    "https://sportsignal.ir/teams/sporting-clube-de-portugal",
+    "https://sportsignal.ir/teams/viking",
+    "https://sportsignal.ir/teams/vfb-stuttgart",
+    "https://sportsignal.ir/teams/hamburger-sv",
+    "https://sportsignal.ir/teams/torino",
+    "https://sportsignal.ir/teams/le-mans",
+    "https://sportsignal.ir/teams/lorient",
+    "https://sportsignal.ir/teams/elche",
+    "https://sportsignal.ir/teams/rc-deportivo-la-coruna",
+    "https://sportsignal.ir/teams/deportivo-alaves",
+    "https://sportsignal.ir/teams/everton",
+    "https://sportsignal.ir/teams/rb-leipzig",
+    "https://sportsignal.ir/teams/monza",
+    "https://sportsignal.ir/teams/bayer-04-leverkusen",
+    "https://sportsignal.ir/teams/monaco",
+    "https://sportsignal.ir/teams/cagliari",
+    "https://sportsignal.ir/teams/bournemouth",
+    "https://sportsignal.ir/teams/bologna",
+    "https://sportsignal.ir/teams/schalke-04",
+    "https://sportsignal.ir/teams/aj-auxerre",
+    "https://sportsignal.ir/teams/paderborn-07",
+    "https://sportsignal.ir/teams/toulouse",
+    "https://sportsignal.ir/teams/tsg-hoffenheim",
+    "https://sportsignal.ir/teams/coventry-city",
+    "https://sportsignal.ir/teams/tottenham",
+    "https://sportsignal.ir/teams/real-betis-balompie",
+    "https://sportsignal.ir/teams/athletic-club",
+    "https://sportsignal.ir/teams/slavia-praha",
+    "https://sportsignal.ir/teams/porto",
+    "https://sportsignal.ir/teams/paris",
+    "https://sportsignal.ir/teams/augsburg",
+    "https://sportsignal.ir/teams/ca-osasuna",
+    "https://sportsignal.ir/teams/malaga",
+    "https://sportsignal.ir/teams/marseille",
+    "https://sportsignal.ir/teams/sv-werder-bremen",
+    "https://sportsignal.ir/teams/ipswich-town",
+    "https://sportsignal.ir/teams/juventus",
+    "https://sportsignal.ir/teams/real-sociedad-de-futbol"
+   ],
+   "lastmods": [
+    "2026-11-04T19:41:18.409Z",
+    "2026-11-04T19:41:18.409Z",
+    "2026-11-04T20:03:23.109Z",
+    "2026-11-04T19:41:18.409Z",
+    "2026-11-04T20:03:23.109Z",
+    "..."
+   ],
+   "lastmod_count": 90,
+   "bytes": 9847
+  },
+  "sitemap_matches-upcoming": {
+   "status": 200,
+   "url_count": 139,
+   "urls": [
+    "https://sportsignal.ir/matches/1-fsv-mainz-05-vs-bayern-munich-2026-11-07",
+    "https://sportsignal.ir/matches/borussia-dortmund-vs-sv-07-elversberg-2026-11-07",
+    "https://sportsignal.ir/matches/arsenal-vs-hull-city-2026-11-07",
+    "https://sportsignal.ir/matches/nottingham-forest-vs-manchester-city-2026-11-07",
+    "https://sportsignal.ir/matches/paris-saint-germain-vs-es-troyes-2026-11-07",
+    "https://sportsignal.ir/matches/roma-vs-sassuolo-2026-11-07",
+    "https://sportsignal.ir/matches/valencia-vs-real-madrid-2026-11-07",
+    "https://sportsignal.ir/matches/ssc-napoli-vs-lazio-2026-11-08",
+    "https://sportsignal.ir/matches/crystal-palace-vs-liverpool-2026-11-08",
+    "https://sportsignal.ir/matches/genoa-cfc-vs-ac-milan-2026-11-08",
+    "https://sportsignal.ir/matches/stade-rennais-vs-lille-osc-2026-11-08",
+    "https://sportsignal.ir/matches/sunderland-vs-chelsea-2026-11-08",
+    "https://sportsignal.ir/matches/brighton-and-hove-albion-vs-brentford-2026-11-08",
+    "https://sportsignal.ir/matches/stade-brestois-29-vs-olympique-lyonnais-2026-11-08",
+    "https://sportsignal.ir/matches/manchester-united-vs-aston-villa-2026-11-08",
+    "https://sportsignal.ir/matches/freiburg-vs-1-union-berlin-2026-11-08",
+    "https://sportsignal.ir/matches/internazionale-milano-vs-como-2026-11-08",
+    "https://sportsignal.ir/matches/club-atletico-de-madrid-vs-barcelona-2026-11-08",
+    "https://sportsignal.ir/matches/bayern-munich-vs-1-koln-2026-11-20",
+    "https://sportsignal.ir/matches/manchester-city-vs-fulham-2026-11-21",
+    "https://sportsignal.ir/matches/lazio-vs-lecce-2026-11-21",
+    "https://sportsignal.ir/matches/sv-07-elversberg-vs-freiburg-2026-11-21",
+    "https://sportsignal.ir/matches/borussia-monchengladbach-vs-borussia-dortmund-2026-11-21",
+    "https://sportsignal.ir/matches/chelsea-vs-leeds-united-2026-11-21",
+    "https://sportsignal.ir/matches/ogc-nice-vs-paris-saint-germain-2026-11-21",
+    "https://sportsignal.ir/matches/parma-vs-roma-2026-11-21",
+    "https://sportsignal.ir/matches/newcastle-united-vs-arsenal-2026-11-21",
+    "https://sportsignal.ir/matches/lille-osc-vs-olympique-lyonnais-2026-11-21",
+    "https://sportsignal.ir/matches/getafe-vs-club-atletico-de-madrid-2026-11-22",
+    "https://sportsignal.ir/matches/barcelona-vs-villarreal-2026-11-22",
+    "https://sportsignal.ir/matches/real-madrid-vs-rc-celta-de-vigo-2026-11-22",
+    "https://sportsignal.ir/matches/hull-city-vs-brighton-and-hove-albion-2026-11-22",
+    "https://sportsignal.ir/matches/liverpool-vs-manchester-united-2026-11-22",
+    "https://sportsignal.ir/matches/ac-milan-vs-frosinone-2026-11-22",
+    "https://sportsignal.ir/matches/atalanta-bc-vs-internazionale-milano-2026-11-22",
+    "https://sportsignal.ir/matches/arsenal-vs-borussia-dortmund-2026-11-24",
+    "https://sportsignal.ir/matches/real-madrid-vs-psv-2026-11-24",
+    "https://sportsignal.ir/matches/manchester-city-vs-ssc-napoli-2026-11-24",
+    "https://sportsignal.ir/matches/sabah-vs-barcelona-2026-11-25",
+    "https://sportsignal.ir/matches/club-brugge-kv-vs-liverpool-2026-11-25",
+    "https://sportsignal.ir/matches/sporting-clube-de-portugal-vs-manchester-united-2026-11-25",
+    "https://sportsignal.ir/matches/club-atletico-de-madrid-vs-viking-2026-11-25",
+    "https://sportsignal.ir/matches/paris-saint-germain-vs-roma-2026-11-25",
+    "https://sportsignal.ir/matches/lille-osc-vs-bayern-munich-2026-11-25",
+    "https://sportsignal.ir/matches/internazionale-milano-vs-vfb-stuttgart-2026-11-25",
+    "https://sportsignal.ir/matches/nottingham-forest-vs-chelsea-2026-11-27",
+    "https://sportsignal.ir/matches/hamburger-sv-vs-bayern-munich-2026-11-28",
+    "https://sportsignal.ir/matches/manchester-united-vs-brentford-2026-11-28",
+    "https://sportsignal.ir/matches/torino-vs-lazio-2026-11-28",
+    "https://sportsignal.ir/matches/le-mans-vs-lille-osc-2026-11-28",
+    "https://sportsignal.ir/matches/paris-saint-germain-vs-lorient-2026-11-28",
+    "https://sportsignal.ir/matches/internazionale-milano-vs-genoa-cfc-2026-11-28",
+    "https://sportsignal.ir/matches/elche-vs-club-atletico-de-madrid-2026-11-29",
+    "https://sportsignal.ir/matches/rc-deportivo-la-coruna-vs-barcelona-2026-11-29",
+    "https://sportsignal.ir/matches/real-madrid-vs-deportivo-alaves-2026-11-29",
+    "https://sportsignal.ir/matches/everton-vs-liverpool-2026-11-29",
+    "https://sportsignal.ir/matches/brighton-and-hove-albion-vs-newcastle-united-2026-11-29",
+    "https://sportsignal.ir/matches/freiburg-vs-rb-leipzig-2026-11-29",
+    "https://sportsignal.ir/matches/arsenal-vs-manchester-city-2026-11-29",
+    "https://sportsignal.ir/matches/roma-vs-monza-2026-11-29",
+    "https://sportsignal.ir/matches/borussia-dortmund-vs-bayer-04-leverkusen-2026-11-29",
+    "https://sportsignal.ir/matches/olympique-lyonnais-vs-monaco-2026-11-29",
+    "https://sportsignal.ir/matches/cagliari-vs-ac-milan-2026-11-30",
+    "https://sportsignal.ir/matches/manchester-city-vs-leeds-united-2026-12-02",
+    "https://sportsignal.ir/matches/chelsea-vs-crystal-palace-2026-12-02",
+    "https://sportsignal.ir/matches/bournemouth-vs-brighton-and-hove-albion-2026-12-02",
+    "https://sportsignal.ir/matches/brentford-vs-arsenal-2026-12-02",
+    "https://sportsignal.ir/matches/liverpool-vs-sunderland-2026-12-02",
+    "https://sportsignal.ir/matches/newcastle-united-vs-manchester-united-2026-12-02",
+    "https://sportsignal.ir/matches/bologna-vs-roma-2026-12-04",
+    "https://sportsignal.ir/matches/schalke-04-vs-borussia-dortmund-2026-12-05",
+    "https://sportsignal.ir/matches/lille-osc-vs-aj-auxerre-2026-12-05",
+    "https://sportsignal.ir/matches/bayern-munich-vs-paderborn-07-2026-12-05",
+    "https://sportsignal.ir/matches/es-troyes-vs-olympique-lyonnais-2026-12-05",
+    "https://sportsignal.ir/matches/toulouse-vs-paris-saint-germain-2026-12-05",
+    "https://sportsignal.ir/matches/freiburg-vs-tsg-hoffenheim-2026-12-05",
+    "https://sportsignal.ir/matches/brentford-vs-manchester-city-2026-12-05",
+    "https://sportsignal.ir/matches/manchester-united-vs-coventry-city-2026-12-05",
+    "https://sportsignal.ir/matches/nottingham-forest-vs-brighton-and-hove-albion-2026-12-05",
+    "https://sportsignal.ir/matches/chelsea-vs-liverpool-2026-12-05",
+    "https://sportsignal.ir/matches/tottenham-vs-arsenal-2026-12-05",
+    "https://sportsignal.ir/matches/frosinone-vs-internazionale-milano-2026-12-05",
+    "https://sportsignal.ir/matches/club-atletico-de-madrid-vs-real-betis-balompie-2026-12-06",
+    "https://sportsignal.ir/matches/barcelona-vs-rc-celta-de-vigo-2026-12-06",
+    "https://sportsignal.ir/matches/athletic-club-vs-real-madrid-2026-12-06",
+    "https://sportsignal.ir/matches/lazio-vs-atalanta-bc-2026-12-06",
+    "https://sportsignal.ir/matches/ac-milan-vs-parma-2026-12-06",
+    "https://sportsignal.ir/matches/barcelona-vs-manchester-city-2026-12-08",
+    "https://sportsignal.ir/matches/bayern-munich-vs-slavia-praha-2026-12-08",
+    "https://sportsignal.ir/matches/manchester-united-vs-rb-leipzig-2026-12-08",
+    "https://sportsignal.ir/matches/aston-villa-vs-paris-saint-germain-2026-12-08",
+    "https://sportsignal.ir/matches/liverpool-vs-porto-2026-12-09",
+    "https://sportsignal.ir/matches/borussia-dortmund-vs-internazionale-milano-2026-12-09",
+    "https://sportsignal.ir/matches/psv-vs-club-atletico-de-madrid-2026-12-09",
+    "https://sportsignal.ir/matches/arsenal-vs-real-madrid-2026-12-09",
+    "https://sportsignal.ir/matches/paris-saint-germain-vs-paris-2026-12-12",
+    "https://sportsignal.ir/matches/1-fsv-mainz-05-vs-freiburg-2026-12-12",
+    "https://sportsignal.ir/matches/tsg-hoffenheim-vs-bayern-munich-2026-12-12",
+    "https://sportsignal.ir/matches/lorient-vs-lille-osc-2026-12-12",
+    "https://sportsignal.ir/matches/borussia-dortmund-vs-augsburg-2026-12-12",
+    "https://sportsignal.ir/matches/manchester-city-vs-chelsea-2026-12-12",
+    "https://sportsignal.ir/matches/brighton-and-hove-albion-vs-everton-2026-12-12",
+    "https://sportsignal.ir/matches/crystal-palace-vs-manchester-united-2026-12-12",
+    "https://sportsignal.ir/matches/liverpool-vs-leeds-united-2026-12-12",
+    "https://sportsignal.ir/matches/arsenal-vs-bournemouth-2026-12-12",
+    "https://sportsignal.ir/matches/real-madrid-vs-ca-osasuna-2026-12-13",
+    "https://sportsignal.ir/matches/malaga-vs-barcelona-2026-12-13",
+    "https://sportsignal.ir/matches/club-atletico-de-madrid-vs-valencia-2026-12-13",
+    "https://sportsignal.ir/matches/lazio-vs-roma-2026-12-13",
+    "https://sportsignal.ir/matches/internazionale-milano-vs-torino-2026-12-13",
+    "https://sportsignal.ir/matches/olympique-lyonnais-vs-marseille-2026-12-13",
+    "https://sportsignal.ir/matches/ssc-napoli-vs-ac-milan-2026-12-13",
+    "https://sportsignal.ir/matches/frosinone-vs-lazio-2026-12-18",
+    "https://sportsignal.ir/matches/lecce-vs-internazionale-milano-2026-12-18",
+    "https://sportsignal.ir/matches/rb-leipzig-vs-borussia-dortmund-2026-12-19",
+    "https://sportsignal.ir/matches/bayern-munich-vs-sv-werder-bremen-2026-12-19",
+    "https://sportsignal.ir/matches/freiburg-vs-vfb-stuttgart-2026-12-19",
+    "https://sportsignal.ir/matches/arsenal-vs-manchester-united-2026-12-19",
+    "https://sportsignal.ir/matches/chelsea-vs-aston-villa-2026-12-19",
+    "https://sportsignal.ir/matches/brighton-and-hove-albion-vs-ipswich-town-2026-12-19",
+    "https://sportsignal.ir/matches/liverpool-vs-tottenham-2026-12-19",
+    "https://sportsignal.ir/matches/manchester-city-vs-hull-city-2026-12-19",
+    "https://sportsignal.ir/matches/ac-milan-vs-como-2026-12-19",
+    "https://sportsignal.ir/matches/roma-vs-juventus-2026-12-19",
+    "https://sportsignal.ir/matches/rc-celta-de-vigo-vs-club-atletico-de-madrid-2026-12-20",
+    "https://sportsignal.ir/matches/rc-deportivo-la-coruna-vs-real-madrid-2026-12-20",
+    "https://sportsignal.ir/matches/barcelona-vs-real-sociedad-de-futbol-2026-12-20",
+    "https://sportsignal.ir/matches/fulham-vs-brighton-and-hove-albion-2026-12-26",
+    "https://sportsignal.ir/matches/hull-city-vs-liverpool-2026-12-26",
+    "https://sportsignal.ir/matches/newcastle-united-vs-manchester-city-2026-12-26",
+    "https://sportsignal.ir/matches/coventry-city-vs-chelsea-2026-12-27",
+    "https://sportsignal.ir/matches/manchester-united-vs-nottingham-forest-2026-12-27",
+    "https://sportsignal.ir/matches/crystal-palace-vs-arsenal-2026-12-27",
+    "https://sportsignal.ir/matches/tottenham-vs-brighton-and-hove-albion-2026-12-29",
+    "https://sportsignal.ir/matches/everton-vs-manchester-city-2026-12-29",
+    "https://sportsignal.ir/matches/manchester-united-vs-sunderland-2026-12-30",
+    "https://sportsignal.ir/matches/fulham-vs-arsenal-2026-12-30",
+    "https://sportsignal.ir/matches/ipswich-town-vs-chelsea-2026-12-30",
+    "https://sportsignal.ir/matches/aston-villa-vs-liverpool-2026-12-30"
+   ],
+   "lastmods": [
+    "2026-11-04T19:46:00.943Z",
+    "2026-11-04T19:46:00.943Z",
+    "2026-11-04T19:46:00.943Z",
+    "2026-11-04T19:46:00.943Z",
+    "2026-11-04T19:46:00.943Z",
+    "..."
+   ],
+   "lastmod_count": 139,
+   "bytes": 19297
+  },
+  "sitemap_matches-archive": {
+   "status": 200,
+   "url_count": 23,
+   "urls": [
+    "https://sportsignal.ir/matches/pae-aek-vs-real-madrid-2026-11-04",
+    "https://sportsignal.ir/matches/fenerbahce-vs-liverpool-2026-11-04",
+    "https://sportsignal.ir/matches/barcelona-vs-aston-villa-2026-11-03",
+    "https://sportsignal.ir/matches/villarreal-vs-paris-saint-germain-2026-11-03",
+    "https://sportsignal.ir/matches/feyenoord-rotterdam-vs-internazionale-milano-2026-11-03",
+    "https://sportsignal.ir/matches/club-atletico-de-madrid-vs-bayern-munich-2026-11-03",
+    "https://sportsignal.ir/matches/manchester-united-vs-roma-2026-11-03",
+    "https://sportsignal.ir/matches/liverpool-vs-arsenal-2026-11-01",
+    "https://sportsignal.ir/matches/olympique-lyonnais-vs-angers-sco-2026-11-01",
+    "https://sportsignal.ir/matches/real-racing-club-de-santander-vs-real-madrid-2026-11-01",
+    "https://sportsignal.ir/matches/lazio-vs-cagliari-2026-11-01",
+    "https://sportsignal.ir/matches/barcelona-vs-deportivo-alaves-2026-10-31",
+    "https://sportsignal.ir/matches/ac-milan-vs-internazionale-milano-2026-10-31",
+    "https://sportsignal.ir/matches/bayern-munich-vs-borussia-dortmund-2026-10-31",
+    "https://sportsignal.ir/matches/udinese-vs-roma-2026-10-31",
+    "https://sportsignal.ir/matches/manchester-city-vs-brighton-and-hove-albion-2026-10-31",
+    "https://sportsignal.ir/matches/augsburg-vs-freiburg-2026-10-31",
+    "https://sportsignal.ir/matches/levante-vs-club-atletico-de-madrid-2026-10-31",
+    "https://sportsignal.ir/matches/chelsea-vs-manchester-united-2026-10-31",
+    "https://sportsignal.ir/matches/lille-osc-vs-racing-club-de-lens-2026-10-30",
+    "https://sportsignal.ir/matches/le-havre-vs-paris-saint-germain-2026-10-30",
+    "https://sportsignal.ir/matches/foolad-khozestan-vs-aluminium-arak-2026-10-30",
+    "https://sportsignal.ir/matches/kheybar-khorramabad-vs-sepahan-2026-10-30"
+   ],
+   "lastmods": [
+    "2026-11-05T02:32:22.226Z",
+    "2026-11-05T02:32:22.226Z",
+    "2026-11-04T19:46:01.878Z",
+    "2026-11-04T19:46:01.878Z",
+    "2026-11-04T19:46:01.878Z",
+    "..."
+   ],
+   "lastmod_count": 23,
+   "bytes": 3327
+  },
+  "file_llms_txt": {
+   "status": 200,
+   "body": "# SportSignal\n\n> مسابقات پیش‌رو، رقابت‌های صدر جدول و نتایج تیم‌های منتخب — به‌روزرسانی خودکار\n\nبازی‌های بزرگ فوتبال (لیگ قهرمانان اروپا، لیگ برتر انگلیس، لالیگا، سری‌آ، بوندسلیگا، لیگ یک فرانسه و جام‌های حذفی) با تاریخ و ساعت دقیق به وقت تهران و زمان جهانی.\n\n## Main pages\n\n- [Home — next big matches](https://sportsignal.ir/): the next big football matches with countdown\n- [All upcoming big matches](https://sportsignal.ir/matches)\n- [Matches today](https://sportsignal.ir/matches/today)\n- [Matches this week](https://sportsignal.ir/matches/this-week)\n- [Teams](https://sportsignal.ir/teams)\n- [Competitions](https://sportsignal.ir/competitions)\n- [How we pick \"big matches\"](https://sportsignal.ir/methodology)\n- [Machine-readable data](https://sportsignal.ir/data)\n\n## Data\n\n- Machine JSON: https://sportsignal.ir/api/matches.json\n- iCalendar: https://sportsignal.ir/calendar.ics\n- Atom feed: https://sportsignal.ir/feed.xml\n\nTimes are UTC (ISO 8601) in machine files; the site displays Tehran time plus UTC.\n",
+   "bytes": 1221
+  },
+  "file_llms-full_txt": {
+   "status": 404,
+   "body": "404 Not Found",
+   "bytes": 13
+  },
+  "file_humans_txt": {
+   "status": 404,
+   "body": "404 Not Found",
+   "bytes": 13
+  },
+  "file_ads_txt": {
+   "status": 404,
+   "body": "404 Not Found",
+   "bytes": 13
+  },
+  "feed_xml": {
+   "status": 200,
+   "headers": {
+    "content-type": "application/atom+xml; charset=utf-8",
+    "cache-control": "public, max-age=300"
+   },
+   "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<feed xmlns=\"http://www.w3.org/2005/Atom\">\n<title>بازی‌های بزرگ فوتبال — SportSignal</title>\n<id>https://sportsignal.ir/feed.xml</id>\n<link rel=\"self\" href=\"https://sportsignal.ir/feed.xml\"/>\n<link rel=\"alternate\" href=\"https://sportsignal.ir/\"/>\n<updated>2026-11-05T01:40:20.884Z</updated>\n<entry>\n<id>https://sportsignal.ir/matches/leeds-united-vs-tottenham-2026-11-07#event</id>\n<title>لیدز – تاتنهام</title>\n<link href=\"https://sportsignal.ir/matches/leeds-united-vs-tottenham-2026-11-07\"/>\n<updated>2026-11-05T01:40:20.884Z</updated>\n<summary>لیگ برتر انگلیس — 2026-11-07T12:30:00Z</summary>\n</entry>\n<entry>\n<id>https://sportsignal.ir/matches/1-fsv-mainz-05-vs-bayern-munich-2026-11-07#event</id>\n<title>ماینس – بایرن مونیخ</title>\n<link href=\"https://sportsignal.ir/matches/1-fsv-mainz-05-vs-bayern-munich-2026-11-07\"/>\n<updated>2026-11-05T01:40:20.884Z</updated>\n<summary>بوندسلیگا — 2026-11-07T14:30:00Z</summary>\n</entry>\n<entry>\n<id>https://sportsignal.ir/matches/borussia-dortmund-vs-sv-07-elversberg-2026-11-07#event</id>\n<title>دورتموند – الورسبرگ</title>\n<link href=\"https://sportsignal.ir/matches/borussia-dortmund-vs-sv-07-elversberg-2026-11-07\"/>\n<updated>2026-11-05T01:40:20.884Z</updated>\n<summary>بوندسلیگا — 2026-11-07T14:30:00Z</summary>\n</entry>\n<entry>\n<id>https://sportsignal.ir/matches/arsenal-vs-hull-city-2026-11-07#event</id>\n<title>آرسنال – هال سیتی</title>\n<link href=\"https://sportsignal.ir/matches/arsenal-vs-hull-city-2026-11-",
+   "bytes": 9567
+  },
+  "calendar_ics": {
+   "status": 200,
+   "headers": {
+    "content-type": "text/calendar; charset=utf-8",
+    "cache-control": "public, max-age=300"
+   },
+   "body": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//SportSignal//Fixtures//FA\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:بازی‌های بزرگ فوتبال — SportSignal\r\nX-WR-TIMEZONE:UTC\r\nBEGIN:VEVENT\r\nUID:565851@sportsignal.ir\r\nDTSTAMP:20261105T014020Z\r\nDTSTART:20261107T143000Z\r\nSUMMARY:ماینس – بایرن مونیخ (بوندسلیگا)\r\nURL:https://sportsignal.ir/matches/1-fsv-mainz-05-vs-bayern-munich-2026-11-07\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:565850@sportsignal.ir\r\nDTSTAMP:20261105T014020Z\r\nDTSTART:20261107T143000Z\r\nSUMMARY:دورتموند – الورسبرگ (بوندسلیگا)\r\nLOCATION:Signal Iduna Park\r\nURL:https://sportsignal.ir/matches/borussia-dortmund-vs-sv-07-elversberg-2026-11-07\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:560640@sportsignal.ir\r\nDTSTAMP:20261105T014020Z\r\nDTSTART:20261107T150000Z\r\nSUMMARY:آرسنال – هال سیتی (لیگ برتر انگلیس)\r\nLOCATION:Emirates Stadium\r\nURL:https://sportsignal.ir/matches/arsenal-vs-hull-city-2026-11-07\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:560641@sportsignal.ir\r\nDTSTAMP:20261105T014020Z\r\nDTSTART:20261107T173000Z\r\nSUMMARY:ناتینگهام فارست – منچسترسیتی (لیگ برتر انگلیس)\r\nURL:https://sportsignal.ir/matches/nottingham-forest-vs-manchester-city-2026-11-07\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:559635@sportsignal.ir\r\nDTSTAMP:20261105T014020Z\r\nDTSTART:20261107T194500Z\r\nSUMMARY:پاری سن ژرمن – تروا (لیگ یک فرانسه)\r\nLOCATION:Parc des Princes\r\nURL:https://sportsignal.ir/matches/paris-saint-germain-vs-es-troyes-2026-11-07\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:558531@sportsignal.ir\r\nDTSTAMP:20261105T014020Z\r\nDTSTART:20261107T194500Z\r\nSUMMA",
+   "bytes": 20078
+  },
+  "api_matches_json": {
+   "status": 200,
+   "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "access-control-allow-origin": "*",
+    "cache-control": "public, max-age=60, s-maxage=300"
+   },
+   "body": "{\n  \"site\": \"https://sportsignal.ir\",\n  \"generated_at\": \"2026-11-05T01:40:20.884Z\",\n  \"timezone_note\": \"All kickoff_utc values are ISO 8601 UTC. Display site timezone: Asia/Tehran.\",\n  \"licence\": \"Attribution required: SportSignal (https://sportsignal.ir). Base data: football-data.org.\",\n  \"upcoming\": [\n    {\n      \"id\": \"565851\",\n      \"home_team\": \"1. FSV Mainz 05\",\n      \"home_team_fa\": \"ماینس\",\n      \"away_team\": \"FC Bayern München\",\n      \"away_team_fa\": \"بایرن مونیخ\",\n      \"kickoff_utc\": \"2026-11-07T14:30:00Z\",\n      \"competition\": \"Bundesliga\",\n      \"competition_fa\": \"بوندسلیگا\",\n      \"round\": null,\n      \"status\": \"timed\",\n      \"venue\": null,\n      \"score\": null,\n      \"url\": \"https://sportsignal.ir/matches/1-fsv-mainz-05-vs-bayern-munich-2026-11-07\"\n    },\n    {\n      \"id\": \"565850\",\n      \"home_team\": \"Borussia Dortmund\",\n      \"home_team_fa\": \"دورتموند\",\n      \"away_team\": \"SV 07 Elversberg\",\n      \"away_team_fa\": \"الورسبرگ\",\n      \"kickoff_utc\": \"2026-11-07T14:30:00Z\",\n      \"competition\": \"Bundesliga\",\n      \"competition_fa\": \"بوندسلیگا\",\n      \"round\": null,\n      \"status\": \"timed\",\n      \"venue\": \"Signal Iduna Park\",\n      \"score\": null,\n      \"url\": \"https://sportsignal.ir/matches/borussia-dortmund-vs-sv-07-elversberg-2026-11-07\"\n    },\n    {\n      \"id\": \"560640\",\n      \"home_team\": \"Arsenal FC\",\n      \"home_team_fa\": \"آرسنال\",\n      \"away_team\": \"Hull City AFC\",\n      \"away_team_fa\": \"هال سیتی\",\n      \"kickoff_utc\": \"2026-11-07T15:00:00Z\",\n      \"competit",
+   "bytes": 62224
+  },
+  "security_txt": {
+   "status": 200,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "public, max-age=3600"
+   },
+   "body": "Contact: https://t.me/SportSignalAlertsBot\nContact: mailto:security@sportsignal.ir\nExpires: 2027-01-01T00:00:00.000Z\nPreferred-Languages: fa, en\nCanonical: https://sportsignal.ir/.well-known/security.txt\n",
+   "bytes": 204
+  },
+  "bing_site_auth": {
+   "status": 200,
+   "headers": {
+    "content-type": "application/xml",
+    "cache-control": "public, max-age=86400"
+   },
+   "body": "<?xml version=\"1.0\"?>\n<users>\n        <user>231A90C90F293E3FAAD90B3CB81009F1</user>\n</users>\n",
+   "bytes": 93
+  },
+  "indexnow_key": {
+   "status": 200,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "public, max-age=86400"
+   },
+   "body": "6f1c2ab9d84e53a7c0b5e2f8a3d6c4b1",
+   "bytes": 32
+  },
+  "webmanifest": {
+   "status": 200,
+   "headers": {
+    "content-type": "application/manifest+json",
+    "cache-control": "public, max-age=3600"
+   },
+   "body": "{\n  \"name\": \"SportSignal\",\n  \"short_name\": \"SportSignal\",\n  \"description\": \"مسابقات پیش‌رو، رقابت‌های صدر جدول و نتایج تیم‌های منتخب — به‌روزرسانی خودکار\",\n  \"icons\": [\n    {\"src\": \"/android-chrome-192x192.png\", \"sizes\": \"192x192\", \"type\": \"image/png\"},\n    {\"src\": \"/android-chrome-512x512.png\", \"sizes\": \"512x512\", \"type\": \"image/png\"}\n  ],\n  \"theme_color\": \"#0f172a\",\n  \"background_color\": \"#0f172a\",\n  \"display\": \"standalone\",\n  \"start_url\": \"/\",\n  \"lang\": \"fa\",\n  \"dir\": \"rtl\"\n}\n",
+   "bytes": 555
+  },
+  "traffic_advice": {
+   "status": 404,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store",
+    "x-robots-tag": "noindex, nofollow"
+   },
+   "body": "\u001f�\b\u0000\u0000\u0000\u0000\u0000\u0000�uS�n\u00131\u0014��\u0015�]tA&�H��Lf\"�%\u0014Ѫ]�U\u000b;��Nb�G���`�n��VHP\t������4�D\u0017l,���s�}8y�Kj�\u0015��)y?Y��\u00131JqA0ʙJ�2\u001c�\f����`\b�c�4�\u0014OM�D�>*H\t)�1�WR\u0019��\u0014\u0006�E�Yn�i\u000e3F���4�`�\u0011�hJ8��c\n%3i�?\u0004B2�â��,$�rn�\u0019\u000e����S�uu�V��|�o�k���Է�\u0003\u001a�]\f�H\u0010��\u001bt�n��d�D�,�4.��S���e���@�LY�!U���\u0004\u001a�\b�hP��e�NFJNE\u001eoy�\u001f\u0004^�J.U�\u0005\u0001D��3�0\u000e�V7��<�^E�Q�RP\"�\u001e�f���5{\u0007��\f���ɺ��I��$jĄcd\u0015ߓ\u00124VP���\u000f�{kE�\u0005/��7�u����e���\u001b+Q��W����%�;U?�T�ʠ�FX\t�O9X6ES<6�ұ�jC\f�M��4/8Q��f���M*K7\u0003b��,�h���B��\u0005���[�OZa�\u0001�\u0013t�yԱ�N7�(��^7��ن�\u00143�\u0014�1\t��9;<�D\u0007�b���8�\u0017��G�\u0013g����lBg��M5<.\u0007��w*e�\ry��8���|@��|w\u0016�{l��I5�'�yp�_V���ijW�\u0018����8N���\u0019(ͤ�1\u000e�������\u001b��\t�c�5�)�|g\u0007�6䭬\u001dv��\u001d�n\u000b��\u0015Y�±���\"8\u000e>n#���R1;�\u0014\u0013!Ų�Sm\u0007�n�����U\\�����\u0005�Qe�\u0003\u0000\u0000",
+   "bytes": 677
+  }
+ },
+ "sitemap_crosscheck": {
+  "total_urls": 273,
+  "per_child": {
+   "pages": 15,
+   "competitions": 6,
+   "teams": 90,
+   "matches-upcoming": 139,
+   "matches-archive": 23
+  },
+  "duplicate_urls": [],
+  "non_canonical_urls": [],
+  "non_canonical_count": 0
+ },
+ "redirects_hosts": {
+  "http_apex": {
+   "status": 301,
+   "location": "https://sportsignal.ir/",
+   "final_url": "http://sportsignal.ir/",
+   "x_robots_tag": null,
+   "hsts": null
+  },
+  "http_apex_path": {
+   "status": 301,
+   "location": "https://sportsignal.ir/matches",
+   "final_url": "http://sportsignal.ir/matches",
+   "x_robots_tag": null,
+   "hsts": null
+  },
+  "https_www": {
+   "status": 301,
+   "location": "https://sportsignal.ir/",
+   "final_url": "https://www.sportsignal.ir/",
+   "x_robots_tag": null,
+   "hsts": null
+  },
+  "trailing_slash": {
+   "status": 301,
+   "location": "https://sportsignal.ir/matches",
+   "final_url": "https://sportsignal.ir/matches/",
+   "x_robots_tag": null,
+   "hsts": null
+  },
+  "uppercase_path": {
+   "status": 301,
+   "location": "https://sportsignal.ir/matches",
+   "final_url": "https://sportsignal.ir/MATCHES",
+   "x_robots_tag": null,
+   "hsts": null
+  },
+  "public_alias": {
+   "status": 301,
+   "location": "https://sportsignal.ir/",
+   "final_url": "https://sportsignal.ir/public",
+   "x_robots_tag": null,
+   "hsts": null
+  },
+  "football_home": {
+   "status": 301,
+   "location": "https://sportsignal.ir/",
+   "final_url": "https://football.sportsignal.ir/",
+   "x_robots_tag": null,
+   "hsts": null
+  },
+  "football_matches": {
+   "status": 301,
+   "location": "https://sportsignal.ir/matches",
+   "final_url": "https://football.sportsignal.ir/matches",
+   "x_robots_tag": null,
+   "hsts": null
+  },
+  "workers_dev": {
+   "status": 404,
+   "location": null,
+   "final_url": "https://ucl-notifier.sedanama-ir.workers.dev/",
+   "x_robots_tag": null,
+   "hsts": null
+  },
+  "custom_404_get": {
+   "status": 404,
+   "body_has_noindex": false,
+   "body_has_nav": false,
+   "body_len": 647
+  },
+  "custom_404_head": {
+   "status": 404
+  },
+  "head_home": {
+   "status": 200
+  },
+  "matches_page2": {
+   "status": 200,
+   "canonical": "https://sportsignal.ir/matches"
+  },
+  "matches_utm": {
+   "status": 200,
+   "canonical": "https://sportsignal.ir/matches"
+  },
+  "sensitive_env": {
+   "status": 404,
+   "x_robots": "noindex, nofollow"
+  },
+  "sensitive_git_config": {
+   "status": 404,
+   "x_robots": "noindex, nofollow"
+  },
+  "sensitive_admin": {
+   "status": 200,
+   "x_robots": null
+  }
+ },
+ "headers_protocol": {
+  "home_response_headers": "HTTP/2 200 \ndate: Thu, 05 Nov 2026 02:32:26 GMT\ncontent-type: text/html; charset=utf-8\netag: W/\"ss-6c01d1122b7d1\"\ncf-ray: a55872acbc9572ce-HKG\ncf-cache-status: HIT\nnel: {\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}\nage: 135\ncache-control: public, max-age=0, s-maxage=60, stale-while-revalidate=300\nlast-modified: Thu, 05 Nov 2026 01:40:20 GMT\nserver: cloudflare\nstrict-transport-security: max-age=31536000; includeSubDomains\ncontent-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'\npermissions-policy: camera=(), microphone=(), geolocation=(), payment=()\nreferrer-policy: strict-origin-when-cross-origin\nx-content-type-options: nosniff\nx-frame-options: DENY\nreport-to: {\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=Bj8GGkDBUH8DGWDsHn%2FECzPIHIQvbOP%2Bvp%2BPhMFdmKWdTeQNVjEldXEyti5aqNt82Zg5nG1pHXwJE4rhGkB1jt8KXDLcM7lZqwYxf7iwX6vij8eDMDW77lSaFRnkpccatQ%3D%3D\"}]}\ncontent-encoding: br\nalt-svc: h3=\":443\"; ma=86400\n\n",
+  "http2_probe": "200|2|text/html; charset=utf-8|45634|0.060974|1",
+  "brotli_probe": "HTTP/2 200 \ndate: Thu, 05 Nov 2026 02:32:26 GMT\ncontent-type: text/html; charset=utf-8\netag: W/\"ss-6c01d1122b7d1\"\ncf-ray: a55872ada83288cc-HKG\ncf-cache-status: HIT\nnel: {\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}\nage: 136\ncache-control: public, max-age=0, s-maxage=60, stale-while-revalidate=300\nlast-modified: Thu, 05 Nov 2026 01:40:20 GMT\nserver: cloudflare\nstrict-transport-security: max-age=31536000; includeSubDomains\ncontent-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'\npermissions-policy: camera=(), microphone=(), geolocation=(), payment=()\nreferrer-poli",
+  "home_etag": null,
+  "home_last_modified": "Thu, 05 Nov 2026 01:40:20 GMT",
+  "alt_svc": "h3=\":443\"; ma=86400",
+  "asset_cache_header_sample": "HTTP/2 200 \ndate: Thu, 05 Nov 2026 02:32:27 GMT\ncontent-type: text/css\ncf-cache-status: MISS\ncache-control: public, max-age=31536000, immutable\netag: \"03e71a9fda6f75182cc2377cfa3e15e4\"\nreport-to: {\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=0EyLnUgmzXarfi%2Fk%2F9q2ihThv8YrBW0x1Oa0db7Wb3JMr4rTbXfepPFwOHf6PVp6nlh%2FoUtSyrdJ3E8r1g0ABw5BEPYUdlAm7MXRhHoHpSnrecucolrfoRXyjuiSIBXTDA%3D%3D\"}]}\nnel: {\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}\nserver: cloudflare\ncf-ray: a55872ae9cfa0474-HKG\nalt-svc: h3=\":443\"; ma=86400\n\n",
+  "api_public_matches": {
+   "status": 200,
+   "x_robots_tag": null,
+   "cache_control": "public, max-age=60",
+   "content_type": "application/json"
+  },
+  "healthz": {
+   "status": 200
+  }
+ },
+ "ai_bot_access": {
+  "GPTBot": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "OAI-SearchBot": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "ChatGPT-User": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "ClaudeBot": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "Claude-Web": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "Claude-User": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "anthropic-ai": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "PerplexityBot": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "Perplexity-User": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "Google-Extended": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "Applebot": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "Applebot-Extended": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "Bytespider": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "CCBot": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "Amazonbot": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "meta-externalagent": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "DuckAssistBot": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "Googlebot": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "bingbot": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "YandexBot": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "MistralAI-User": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  },
+  "cohere-ai": {
+   "status": 200,
+   "err": null,
+   "bytes": 187041,
+   "server": "cloudflare",
+   "cf_mitigated": null
+  }
+ },
+ "dns": {
+  "apex_A": "172.67.202.168\n104.21.14.79",
+  "www_CNAME": "172.67.202.168\n104.21.14.79",
+  "www_A": "104.21.14.79\n172.67.202.168",
+  "txt_root": "\"google-site-verification=UU6-ueHL4BQ32E2b88BQMP8nwspMfxK6INquxc8mVg0\"",
+  "football_A": "104.21.14.79\n172.67.202.168",
+  "mx": ""
+ },
+ "images_icons": {
+  "og_default_png": {
+   "status": 200,
+   "bytes": 91410,
+   "content_type": "image/png",
+   "dimensions": [
+    1200,
+    630
+   ]
+  },
+  "favicon_ico": {
+   "status": 200,
+   "bytes": 15406
+  },
+  "favicon_svg": {
+   "status": 200,
+   "bytes": 307
+  },
+  "favicon_32": {
+   "status": 200,
+   "bytes": 2068
+  },
+  "apple_touch": {
+   "status": 200,
+   "bytes": 35991
+  },
+  "favicon_192": {
+   "status": 200,
+   "bytes": 40350
+  },
+  "favicon_512": {
+   "status": 200,
+   "bytes": 238804
+  }
+ },
+ "psi_home_mobile": {
+  "categories": {},
+  "metrics": {
+   "first-contentful-paint": null,
+   "largest-contentful-paint": null,
+   "total-blocking-time": null,
+   "cumulative-layout-shift": null,
+   "speed-index": null,
+   "interactive": null
+  },
+  "crux": null,
+  "lighthouse_version": null
+ }
+}
