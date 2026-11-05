@@ -57,7 +57,9 @@ export const SEO = {
   // is actually edited (spec F-05 — never "now on every build").
   // v13.215-attribution (SS-08): every page footer gained the data-source
   // attribution line — hand-written page text changed on all page types.
-  CONTENT_VERSION: "2026-11-05T12:00:00Z",
+  // v13.217-llmsfull (SS-07): the /data page gained the llms-full.txt
+  // entry in its machine-files list — that page's text changed.
+  CONTENT_VERSION: "2026-11-06T12:00:00Z",
   // Edge cache for rendered HTML (R-04: at least every 5 minutes).
   HTML_CACHE_TTL: 300,
   // v13.97-seocpu: the per-colo RENDER hold — the Cache API copy's TTL.

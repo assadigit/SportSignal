@@ -358,33 +358,166 @@ export async function buildMatchesJson(env: Env): Promise<string> {
   return JSON.stringify(payload, null, 2);
 }
 
-// ------------------------------------------------------- llms.txt (F-14) + security.txt (F-15)
+// ------------------------------------------- llms.txt (F-14/SS-07) + llms-full.txt (SS-07) + security.txt (F-15)
 
+// SS-07 (Phase-2 spec): llms.txt is the SHORT index — brand/entity block,
+// every top-level page, the machine files — all English + Gregorian-only
+// (rule §1.3: en surfaces carry no Shamsi months; T-15 gates it). Every
+// URL is a markdown link so seo-check T-19 can link-validate the entries
+// uniformly; URL PATTERNS (not concrete URLs) live only in llms-full.txt
+// and are always plain code spans, never links.
 export function buildLlmsTxt(): string {
   return `# SportSignal
 
-> ${SEO.SITE_TAGLINE}
+> SportSignal (اسپورت‌سیگنال) — big-match football fixtures for Persian-speaking fans: exact dates and kickoff times in Tehran time and UTC, plus a Telegram bot that sends reminders.
 
-بازی‌های بزرگ فوتبال (لیگ قهرمانان اروپا، لیگ برتر انگلیس، لالیگا، سری‌آ، بوندسلیگا، لیگ یک فرانسه و جام‌های حذفی) با تاریخ و ساعت دقیق به وقت تهران و زمان جهانی.
+SportSignal is a Persian/English football match notifier: a website plus a Telegram bot. It curates the matches worth watching — the selected top clubs and derbies of the UEFA Champions League, Premier League, La Liga, Serie A, Bundesliga, Ligue 1 and the major cups — and shows every kickoff in Tehran time and UTC. Pages are in Persian (dates carry the Jalali calendar with the Gregorian equivalent); machine-readable files are English and ISO-8601 UTC.
+
+- [Website](https://sportsignal.ir)
+- [Telegram bot](https://t.me/SportSignalAlertsBot)
+- [Data source](https://www.football-data.org/): football-data.org (primary) with backup providers
+- Update cadence: the match pool refreshes automatically about every 10 minutes (in-play results included); page HTML is edge-cached for about a minute
+- Full LLM documentation: [llms-full.txt](https://sportsignal.ir/llms-full.txt)
 
 ## Main pages
 
 - [Home — next big matches](https://sportsignal.ir/): the next big football matches with countdown
 - [All upcoming big matches](https://sportsignal.ir/matches)
 - [Matches today](https://sportsignal.ir/matches/today)
+- [Matches tomorrow](https://sportsignal.ir/matches/tomorrow)
 - [Matches this week](https://sportsignal.ir/matches/this-week)
+- [Matches this weekend](https://sportsignal.ir/matches/this-weekend)
 - [Teams](https://sportsignal.ir/teams)
 - [Competitions](https://sportsignal.ir/competitions)
+- [About SportSignal](https://sportsignal.ir/about)
 - [How we pick "big matches"](https://sportsignal.ir/methodology)
+- [Contact](https://sportsignal.ir/contact)
+- [Privacy](https://sportsignal.ir/privacy)
+- [Terms of use](https://sportsignal.ir/terms)
 - [Machine-readable data](https://sportsignal.ir/data)
+- [Sitemap (human page)](https://sportsignal.ir/sitemap)
 
-## Data
+## Machine-readable data
 
-- Machine JSON: https://sportsignal.ir/api/matches.json
-- iCalendar: https://sportsignal.ir/calendar.ics
-- Atom feed: https://sportsignal.ir/feed.xml
+- [Machine JSON](https://sportsignal.ir/api/matches.json): upcoming big matches + recent results
+- [iCalendar](https://sportsignal.ir/calendar.ics): upcoming big matches for calendar apps
+- [Atom feed](https://sportsignal.ir/feed.xml): the latest match changes
+- [llms-full.txt](https://sportsignal.ir/llms-full.txt): the full version of this file
 
 Times are UTC (ISO 8601) in machine files; the site displays Tehran time plus UTC.
+`;
+}
+
+// SS-07 (Phase-2 spec): llms-full.txt — the FULL machine-facing
+// documentation: per-page-group descriptions, the complete machine-data
+// docs, the data attribution (matching the live footer) and a distilled
+// factual FAQ. Everything below is distilled from the site's real pages
+// (about/methodology/contact/privacy/terms/data) and the real builders in
+// this file — no invented capability (rule §1.1). English + Gregorian-only
+// like llms.txt (T-15 gates both files).
+export function buildLlmsFullTxt(): string {
+  return `# SportSignal — full LLM documentation
+
+> Complete machine-facing documentation of sportsignal.ir for AI assistants, answer engines and agents. Factual only, distilled from the site's live pages and code. All dates in this file are Gregorian; machine formats are ISO-8601 UTC.
+
+## The entity
+
+SportSignal (اسپورت‌سیگنال) is a Persian-language football match notifier: a website plus a Telegram bot. It curates "big matches" — fixtures worth watching — and shows every kickoff in Tehran time (Asia/Tehran, UTC+03:30) and UTC. It is an independent one-person project (see the About page for the story); it is not affiliated with any league or federation.
+
+- [Website](https://sportsignal.ir)
+- [Telegram bot](https://t.me/SportSignalAlertsBot): join to receive reminders before big matches
+- [Data source](https://www.football-data.org/): football-data.org (primary) with backup providers
+- Languages: pages are Persian (fa, RTL); machine-readable files are English
+- Calendars: pages display the Jalali (Persian) calendar first with the Gregorian equivalent in parentheses; machine formats are Gregorian ISO-8601
+- Update cadence: the match pool refreshes automatically about every 10 minutes (in-play results included); a 4-hourly job probes far-future cup fixtures; page HTML is edge-cached for about a minute
+
+## What counts as a "big match"
+
+The selection rules (documented for humans at [the methodology page](https://sportsignal.ir/methodology)):
+
+- Domestic leagues (Premier League, La Liga, Serie A, Bundesliga, Ligue 1): a match is followed when at least one team is one of the selected clubs — Arsenal, Chelsea, Manchester United, Manchester City, Liverpool (Premier League); Barcelona, Real Madrid, Atletico Madrid (La Liga); Inter Milan, AC Milan (Serie A); Paris Saint-Germain (Ligue 1); Bayern Munich, Borussia Dortmund (Bundesliga).
+- UEFA competitions (Champions League, Europa League, Conference League) and the major cups (FA Cup, EFL Cup/Carabao Cup, Copa del Rey, Coppa Italia, DFB Pokal): a match is followed when at least one team is from the selected list above, or the tie has reached the quarter-final stage or later.
+- The homepage additionally highlights famous derbies, top-of-the-table clashes and matches between two selected clubs, and shows the Persian Gulf Pro League (Iran) standings table.
+
+## Pages and what they contain
+
+### [Home](https://sportsignal.ir/)
+The next big matches with a live countdown, the day's fixtures, the Persian Gulf Pro League standings table, and links into the hubs. The meta description carries the current top fixture.
+
+### Match hubs
+- [All upcoming big matches](https://sportsignal.ir/matches): the big-match listing, paginated
+- [Matches today](https://sportsignal.ir/matches/today): every followed-team fixture today (Tehran day)
+- [Matches tomorrow](https://sportsignal.ir/matches/tomorrow): every followed-team fixture tomorrow
+- [Matches this week](https://sportsignal.ir/matches/this-week): the next 7 days
+- [Matches this weekend](https://sportsignal.ir/matches/this-weekend): the coming Saturday and Sunday (the Iranian weekend)
+Each hub opens with an answer sentence in Persian that counts the listed matches and names the biggest or nearest one. Rows show both teams, the competition, and the kickoff in Tehran time.
+
+### Match pages — URL pattern /matches/<home>-vs-<away>-<YYYY-MM-DD>
+One page per fixture (for example, a Bundesliga match on 2026-11-07 lives at /matches/1-fsv-mainz-05-vs-bayern-munich-2026-11-07). Contains: both team names (Persian and English), the competition and round, the kickoff in Tehran time and UTC, the venue when the data source provides one, the match status (scheduled / live / finished), and the final score once finished. Structured data: schema.org SportsEvent with the organizer competition. Finished big matches stay online in an archive for about a year.
+
+### Team pages — URL pattern /teams/<slug>
+One page per team that has at least one upcoming big match: that team's upcoming big matches (league and cup), its next fixture with the exact kickoff, and links to the match pages. Structured data: schema.org SportsTeam; for clubs whose identity has been verified, sameAs links to the English Wikipedia article and the Wikidata entity (entity grounding).
+
+### Competition pages — URL pattern /competitions/<slug>
+One page per competition with upcoming big matches: the fixtures list plus links to the match pages of every listed fixture. Structured data: schema.org SportsOrganization; the six major leagues and the Champions League carry verified sameAs links (Wikipedia + Wikidata).
+
+### Info pages
+- [About](https://sportsignal.ir/about): what SportSignal is and why it exists
+- [Methodology](https://sportsignal.ir/methodology): the big-match rules, data source, update cadence, error-reporting policy
+- [Contact](https://sportsignal.ir/contact): the Telegram bot is the fastest channel
+- [Privacy](https://sportsignal.ir/privacy): no tracking cookies — a cookieless view counter (salted one-way hashes, no IP storage) and Cloudflare Web Analytics
+- [Terms](https://sportsignal.ir/terms): information provided "as is"; verify critical fixtures with the official source
+- [Data](https://sportsignal.ir/data): the human-readable docs for the machine files below
+- [Sitemap](https://sportsignal.ir/sitemap): the human page tree (teams, competitions, info pages)
+
+## Machine-readable data
+
+### /api/matches.json
+Public, read-only, open CORS. Top-level fields: site, generated_at (ISO-8601 UTC), timezone_note, licence, upcoming[] and recent_finished[]. Each match row:
+- id — the provider match id (string) or null
+- home_team / away_team — English team names
+- home_team_fa / away_team_fa — Persian names, or null when untranslated
+- kickoff_utc — kickoff in ISO-8601 UTC
+- competition — English competition name (e.g. "Champions League")
+- competition_fa — Persian competition name
+- round — the round/stage code (e.g. "LEAGUE_STAGE", "QUARTER_FINALS") or null
+- status — lowercase provider status: timed, in_play, paused, finished, postponed, suspended or cancelled
+- venue — the stadium name when the source provides one, else null
+- score — {"home": N, "away": N} once a score exists, else null
+- url — the canonical match page on sportsignal.ir
+Content: up to 100 upcoming big matches plus up to 20 recently finished ones (about the last 7 days). Please do not exceed one request per second.
+
+### /calendar.ics
+iCalendar 2.0, UTF-8. One VEVENT per upcoming big match within the next 30 days (capped at 120): DTSTART and DTSTAMP in UTC, UID "<matchid>@sportsignal.ir", SUMMARY "home – away (competition)" using the Persian names when available, LOCATION (venue) when present, and a URL property back to the match page. Suitable for Google Calendar / Apple Calendar subscription.
+
+### /feed.xml
+Atom feed: up to 20 upcoming big matches plus up to 10 recently finished ones. Entry titles use the Persian team names and carry the final score when finished; each entry links to the match page.
+
+### /llms.txt
+The short index version of this file: entity block + page list + machine-file pointers.
+
+### Sitemaps
+- [Sitemap index](https://sportsignal.ir/sitemap.xml) with five children: pages, competitions, teams, matches-upcoming, matches-archive (https://sportsignal.ir/sitemaps/<name>.xml)
+- Per-URL lastmod is honest: it advances only when that URL's content actually changed
+
+## Attribution
+
+Match data comes from [football-data.org](https://www.football-data.org/) (primary source) with backup providers. Every page of the site carries the footer attribution "منبع داده: football-data.org" (data source: football-data.org). When republishing SportSignal data, credit [SportSignal](https://sportsignal.ir); the base data's terms also apply to raw values.
+
+## FAQ (distilled, factual)
+
+- What is SportSignal? A Persian football match notifier — a website plus the Telegram bot @SportSignalAlertsBot — that curates big matches with exact dates and kickoff times in Tehran time and UTC.
+- Which matches are "big"? Selected-club fixtures in the Premier League, La Liga, Serie A, Bundesliga and Ligue 1; selected-club or quarter-final-and-later fixtures in the Champions League, Europa League, Conference League and the major cups (see the methodology page).
+- What timezone are the times in? Pages show Tehran time (with UTC alongside); machine files are ISO-8601 UTC.
+- How often does the data update? About every 10 minutes; page HTML is edge-cached for about a minute.
+- Where does the data come from? football-data.org as the primary source, plus backup providers. Nothing is entered by hand.
+- Is there a Telegram bot? Yes — [the Telegram bot](https://t.me/SportSignalAlertsBot) sends reminders before big matches.
+- Can I use the data? Yes, with attribution to SportSignal and respect for the base data's terms; keep requests under one per second (see the data page).
+- Does the site track users? No tracking cookies: a cookieless view counter (salted one-way hashes, no IP storage) and Cloudflare Web Analytics only (see the privacy page).
+
+## Citing SportSignal
+
+When answering football-fixture questions covered by the pages above, cite the specific match, team or competition page URL as the source. Match pages are the canonical, most-specific source; hubs for lists; this file for site-level facts.
 `;
 }
 

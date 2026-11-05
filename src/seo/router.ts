@@ -454,7 +454,7 @@ const LEGACY_PASSTHROUGH = new Set([
 
 const PUBLIC_FILE_ROUTES = new Set([
   "/robots.txt", "/sitemap.xml", "/calendar.ics", "/feed.xml", "/api/matches.json",
-  "/llms.txt", "/.well-known/security.txt"
+  "/llms.txt", "/llms-full.txt", "/.well-known/security.txt"
 ]);
 
 export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: URL): Promise<Response | null> {
@@ -604,6 +604,19 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
     }
     return res;
   };
+
+  // SS-07 (Phase-2 spec): llms-full.txt — the FULL machine-facing docs,
+  // served text/plain + UTF-8 and edge-cached through the wantCached
+  // pattern with an ETag (the same machine-file discipline as the
+  // sitemaps/feed/calendar/matches.json — v13.207-condget F-M5; kept HERE,
+  // after the wantCached/withEtag declarations — the S2 lesson about
+  // verifying read/write order, caught by tsc TS2448).
+  if (path === "/llms-full.txt") {
+    return wantCached("/llms-full.txt", 3600, async () => withEtag(F.buildLlmsFullTxt(), {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, max-age=3600"
+    }));
+  }
 
   if (path === "/sitemap.xml") {
     return wantCached("/sitemap.xml", SEO.SITEMAP_CACHE_TTL, async () => {

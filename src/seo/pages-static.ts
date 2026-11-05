@@ -147,6 +147,7 @@ export function buildDataPage(ctx: SeoCtx): string {
 <li><a href="/feed.xml">/feed.xml</a> — فید Atom تازه‌ترین تغییرات.</li>
 <li><a href="/api/matches.json">/api/matches.json</a> — داده JSON بازی‌های بزرگ پیش‌رو و نتایج اخیر (عمومی، فقط-خواندنی، CORS باز).</li>
 <li><a href="/llms.txt">/llms.txt</a> — معرفی کوتاه سایت برای دستیارهای هوش مصنوعی.</li>
+<li><a href="/llms-full.txt">/llms-full.txt</a> — مستندات کامل ماشین‌خوان سایت برای موتورهای پاسخ و دستیارهای هوش مصنوعی.</li>
 </ul>
 <h2>قواعد استفاده</h2>
 <p>استفاده از داده‌ها با ذکر منبع (SportSignal) مجاز است. داده‌های پایه از ${SEO.DATA_SOURCE_NAME} و منابع پشتیبان دریافت می‌شود؛ شرایط استفاده منبع اصلی داده نیز در مورد داده‌های خام اعمال می‌شود. لطفاً بیش از یک درخواست در ثانیه نفرستید.</p>

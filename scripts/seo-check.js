@@ -652,11 +652,15 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       else fail(id, "match facts-table date not Shamsi-first D1 («" + factsTxt.slice(0, 90) + "»)");
       checked += 2;
     }
-    // en + machine surfaces stay Gregorian-only: llms.txt carries no Shamsi
-    // month names; matches.json keeps ISO kickoff_utc
+    // en + machine surfaces stay Gregorian-only: llms.txt AND llms-full.txt
+    // carry no Shamsi month names (SS-07 added the full file); matches.json
+    // keeps ISO kickoff_utc
     const llms = await body(await fetchRaw(B + "/llms.txt"));
     if (new RegExp(JAL).test(llms)) fail(id, "llms.txt (en surface) contains Shamsi month names — must stay Gregorian-only");
     else pass(id, "llms.txt stays Gregorian-only (no Shamsi months) ✓");
+    const llmsFull = await body(await fetchRaw(B + "/llms-full.txt"));
+    if (new RegExp(JAL).test(llmsFull)) fail(id, "llms-full.txt (en surface) contains Shamsi month names — must stay Gregorian-only");
+    else pass(id, "llms-full.txt stays Gregorian-only (no Shamsi months) ✓");
     const mj = await body(await fetchRaw(B + "/api/matches.json"));
     try {
       const j = JSON.parse(mj);
@@ -843,6 +847,54 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       console.log("  ⚠ only " + present.length + " batch-1 team pages live today — the followed clubs' pages are transient; the competition assertions above still gate the map");
     }
     for (const s of present.slice(0, 6)) await checkEntityPage(B + "/teams/" + s, "SportsTeam", "team");
+  }
+
+  // ---------------- T-19: llms.txt + llms-full.txt (SS-07, Phase 2) ----------------
+  section("T-19 llms.txt + llms-full.txt (SS-07)");
+  {
+    const id = "T-19";
+    // Both files answer 200 as text/plain UTF-8, and EVERY URL they list
+    // exists (spec §3/SS-07 acceptance: link-validate the entries). The
+    // files carry URLs ONLY as markdown links (buildLlmsTxt's contract);
+    // URL patterns in llms-full.txt are plain code spans, never links.
+    const files = ["/llms.txt", "/llms-full.txt"];
+    // reuse T-18's external pacer discipline for the few off-origin links
+    let _lastExtAt = 0;
+    const extFetch = async (url) => {
+      for (let attempt = 0; ; attempt++) {
+        const pace = _lastExtAt + 700 - Date.now();
+        if (pace > 0) await sleepMs(pace);
+        try {
+          _lastExtAt = Date.now();
+          const ctl = new AbortController();
+          const to = setTimeout(() => ctl.abort(), 25000);
+          const res = await fetch(url, { redirect: "follow", signal: ctl.signal, headers: { "user-agent": UA } });
+          clearTimeout(to);
+          const transient = res.status === 429 || res.status >= 500;
+          if (transient && attempt < 2) { await sleepMs(4000 * (attempt + 1)); continue; }
+          return res.status;
+        } catch (e) {
+          if (attempt < 2) { await sleepMs(4000); continue; }
+          return 0;
+        }
+      }
+    };
+    for (const f of files) {
+      const res = await fetchRaw(B + f);
+      if (res.status !== 200) { fail(id, f + " HTTP " + res.status + " (expected 200)"); continue; }
+      const ct = res.headers.get("content-type") || "";
+      if (!/text\/plain;\s*charset=utf-8/i.test(ct)) fail(id, f + " content-type is «" + ct + "» (expected text/plain; charset=utf-8)");
+      else pass(id, f + " serves 200, text/plain; charset=utf-8 ✓");
+      const txt = await body(res);
+      const links = [...txt.matchAll(/\]\((https?:\/\/[^)\s]+)\)/g)].map((m) => m[1]);
+      if (!links.length) { fail(id, f + " carries no markdown links to validate"); continue; }
+      for (const u of links) {
+        const isOurs = u.startsWith(B + "/") || u.startsWith("https://sportsignal.ir/");
+        const st = isOurs ? (await fetchRaw(u)).status : await extFetch(u);
+        if (st === 200) pass(id, f + " link «" + u + "» exists ✓");
+        else fail(id, f + " link «" + u + "» answers HTTP " + st + " — every listed URL must exist");
+      }
+    }
   }
 
   // ---------------- T-12 summary ----------------

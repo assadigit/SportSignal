@@ -4,6 +4,46 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.217-llmsfull — the SEO/GEO Phase-2 Session 3 / SS-07: llms.txt expansion + llms-full.txt
+
+_2026-11-06 · spec §3/SS-07: llms.txt was a minimal stub (8 links, no
+entity block, no cadence) and no full machine-facing documentation
+existed — answer engines had no faithful site-level briefing. Server-side
+only — no client asset changed (bundle public-13.71.js / stylesheet
+public-13.81.css / SW sportsignal-v112 stay)._
+
+**Fix.** `buildLlmsTxt` (`src/seo/files.ts`) expands to the full page set
+(/matches/tomorrow, /matches/this-weekend, /about, /contact, /privacy,
+/terms, /sitemap — 15 pages + the machine files), gains the brand/entity
+block (what SportSignal is, the [Telegram bot](t.me) URL — the same
+profile SEO.ORG_SAMEAS grounds in the Organization node, the
+football-data.org data source, the ~10-minute update cadence + the ~1
+minute page cache) and points at the new full file. New
+`buildLlmsFullTxt`: per-page-group descriptions (home, the five hubs,
+match pages with the URL pattern, team pages, competition pages, info
+pages), the complete machine-data docs (every `/api/matches.json` field
+with real value examples, calendar.ics VEVENT semantics, feed.xml
+contents, the sitemap family), the football-data.org attribution matching
+the live footer, and a distilled factual FAQ (8 Q&As distilled from
+about/methodology/contact/privacy/terms — zero invention, rule §1.1).
+Everything English + Gregorian-only (rule §1.3); URL patterns are code
+spans, concrete URLs are markdown links — the link contract T-19
+validates.
+
+Serving: `/llms-full.txt` joins `PUBLIC_FILE_ROUTES`, served
+`text/plain; charset=utf-8` and edge-cached via `wantCached` + `withEtag`
+(the v13.207 F-M5 machine-file discipline; the handler sits AFTER the
+wantCached declaration — a first-draft placement tripped tsc TS2448, the
+S2 read/write-order lesson catching its second occurrence). The /data page
+lists the new file; `SEO.CONTENT_VERSION` bumped to
+`2026-11-06T12:00:00Z` (that page's text changed — the F-05 honest
+lastmod). seo-check: new **T-19** (both files 200 as text/plain UTF-8 +
+every markdown-listed URL exists — 44 links across both files,
+re-validated live) + T-15 extended to assert llms-full.txt stays
+Gregorian-only. Also folded in: the T-15 ISO-8601 regex now accepts
+optional fractional seconds (a pre-existing latent strictness that fired
+on live data during the CP1 run). npm test 2,598 → **2,599**.
+
 # v13.216-entitylinks — the SEO/GEO Phase-2 Session 3 / SS-05: team + competition entity grounding (batch 1)
 
 _2026-11-06 · spec §3/SS-05 (the highest-leverage GEO item): the SportsTeam
