@@ -661,7 +661,11 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     try {
       const j = JSON.parse(mj);
       const iso = j.upcoming && j.upcoming[0] && j.upcoming[0].kickoff_utc;
-      if (iso && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(iso)) pass(id, "matches.json kickoff_utc stays ISO-8601 ✓ (" + iso + ")");
+      // ISO-8601 UTC, optionally with fractional seconds — the provider
+      // sometimes stamps ".000Z" (first seen live 2026-11-06: a perfectly
+      // valid 2026-11-05T17:45:00.000Z failed the ms-less regex; the
+      // assertion must validate the FORMAT, not one provider spelling).
+      if (iso && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/.test(iso)) pass(id, "matches.json kickoff_utc stays ISO-8601 ✓ (" + iso + ")");
       else fail(id, "matches.json kickoff_utc not ISO-8601: " + String(iso));
     } catch (e) { fail(id, "matches.json unparseable: " + e.message); }
     if (!checked) fail(id, "no fa surfaces checked (sitemap empty?)");
