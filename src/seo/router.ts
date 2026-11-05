@@ -631,7 +631,7 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   if (smMatch) {
     const kind = smMatch[1];
     const allowed = ["pages", "competitions", "teams", "matches-upcoming", "matches-archive"];
-    if (!allowed.includes(kind)) return notFoundResponse(req, ctx, isProd);
+    if (!allowed.includes(kind)) return notFoundResponse(req, isProd);
     return wantCached("/sitemaps/" + kind + ".xml", SEO.SITEMAP_CACHE_TTL, async () => {
       const { xml, changedUrls } = await F.buildSitemap(env, kind);
       // F-16/T-11: ping IndexNow for URLs whose content changed.
@@ -761,23 +761,16 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   const isHtmlish = !/\.(svg|png|jpg|jpeg|gif|webp|ico|mp4|woff2?|ttf|map|txt|xml|json|js|css)$/i.test(path) || path === "/" || /^\/(matches|teams|competitions|about|methodology|contact|privacy|terms|data|sitemap)/.test(path);
   if (!isHtmlish) return null; // let unknown extensions fall to the legacy flow (405/404)
 
-  // v13.97-seocpu: scanner garbage must not pay the full 404 render. The
-  // live tail caught vulnerability probes (/bin/.env, /node/.env, /.git/…)
-  // dying to `Exceeded CPU Limit` — every one paid getSeoCtx (5 KV reads
-  // + the 700-match map) to build a pretty 404, and 404s are never cached
-  // so every probe re-rendered. Only the KNOWN route families reach the
-  // expensive flow now; everything else gets the static cheap 404 (T-06
-  // semantics preserved: 404 + link home + noindex).
+  // SS-12 (Phase-2 spec §3): ONE full 404 for ALL HTML-ish unknown paths —
+  // the complete page shell (brand, nav, the 404 links home/today/matches/
+  // sitemap, footer) instead of the old 647-byte minimal page. The
+  // v13.97-seocpu lesson is preserved: notFoundResponse renders
+  // build404Page() — a PURE static string build, no getSeoCtx (no KV reads,
+  // no pool map) — so vulnerability probes (/bin/.env, /.git/…) still pay
+  // only the render, never the context fetch (T-06 semantics preserved:
+  // 404 + link home + noindex).
   if (!/^\/($|matches(\/[a-z0-9-]*)?$|teams(\/[a-z0-9-]*)?$|competitions(\/[a-z0-9-]*)?$|about$|methodology$|contact$|privacy$|terms$|data$|sitemap$)/.test(path)) {
-    return new Response("<!doctype html><html lang=\"fa\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex, nofollow\"><title>صفحه پیدا نشد | SportSignal</title></head><body style=\"font-family:system-ui,-apple-system,sans-serif;background:#0b1220;color:#e2e8f0;text-align:center;padding:3rem 1rem\"><h1 style=\"font-size:1.5rem\">صفحه پیدا نشد</h1><p style=\"margin-top:1rem\"><a href=\"/\" style=\"color:#f59e0b\">بازگشت به خانه</a></p></body></html>", {
-      status: 404,
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-store",
-        "x-robots-tag": "noindex, nofollow",
-        "x-content-type-options": "nosniff"
-      }
-    });
+    return notFoundResponse(req, isProd);
   }
 
   const key = path + (url.searchParams.get("page") ? "?page=" + url.searchParams.get("page") : "");
@@ -786,18 +779,26 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   const page = await wantCached("/html" + key, () => pageHold.v, async () => {
     const r = await renderPage();
     if (!r) {
-      const seoCtx = await getSeoCtx(env);
-      return notFoundResponse(req, seoCtx, isProd);
+      // SS-12: the unknown-team/comp/match 404 renders WITHOUT a second
+      // getSeoCtx — build404Page() is a pure static render, so the 404 path
+      // stops paying the extra context fetch entirely.
+      return notFoundResponse(req, isProd);
     }
     return withEtag(r.body, htmlHeaders(!isProd));
   });
   return page;
 }
 
-function notFoundResponse(req: Request, seoCtx: SeoCtx, isProd: boolean): Response {
+// SS-12 (Phase-2 spec §3): the ONE 404 renderer — the FULL page shell
+// (brand, nav, the pagenotfound links, footer) with the noindex meta
+// (buildHead indexable:false) + X-Robots-Tag: noindex, nofollow, served for
+// every HTML-ish 404 (unknown paths AND unknown route-family members).
+// Pure static render: no KV, no pool, no provider fetch — CPU-safe against
+// scanner probes (the v13.97-seocpu contract, kept by construction).
+function notFoundResponse(req: Request, isProd: boolean): Response {
   let body: string;
   try {
-    body = build404Page(seoCtx);
+    body = build404Page();
   } catch (e) {
     body = "<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>صفحه پیدا نشد | SportSignal</title><body><h1>صفحه پیدا نشد</h1><p><a href=\"/\">بازگشت به خانه</a></p></body></html>";
   }

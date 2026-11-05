@@ -991,6 +991,43 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     }
   }
 
+  // ---------------- T-21: one full 404 (SS-12, Phase 2) ----------------
+  section("T-21 full 404 (SS-12)");
+  {
+    const id = "T-21";
+    // SS-12 (spec §3): ALL HTML-ish unknown paths serve the FULL 404 (the
+    // page shell: brand, nav, the pagenotfound links, footer) — not the
+    // old 647-byte minimal page — with 404 + meta noindex + X-Robots-Tag:
+    // noindex, nofollow. Sampled on a flat unknown path, a deep unknown
+    // path AND an unknown member of a known route family.
+    for (const path of ["/zzz-unknown", "/deep/nested/unknown-page", "/teams/zzz-unknown"]) {
+      const res = await fetchRaw(B + path);
+      const html = await body(res);
+      if (res.status !== 404) { fail(id, path + " HTTP " + res.status + " (expected 404)"); continue; }
+      pass(id, path + " answers 404 ✓");
+      const xr = res.headers.get("x-robots-tag") || "";
+      if (!/noindex/i.test(xr)) fail(id, path + " missing X-Robots-Tag noindex (got «" + xr + "»)");
+      else pass(id, path + " carries X-Robots-Tag: " + xr.trim() + " ✓");
+      const full = /<h1[^>]*>صفحه پیدا نشد/.test(html) &&
+        /<nav class="mainnav"/.test(html) &&
+        /href="\/matches\/today"/.test(html) &&
+        /href="\/sitemap"/.test(html) &&
+        /class="pagesfoot"/.test(html);
+      if (full) pass(id, path + " serves the FULL 404 (shell nav + links + footer, " + html.length + " bytes) ✓");
+      else fail(id, path + " is not the full 404 page (" + html.length + " bytes — the minimal-page regression?)");
+      if (!/<meta name="robots" content="noindex/.test(html)) fail(id, path + " missing meta robots noindex");
+      else pass(id, path + " meta robots noindex ✓");
+    }
+    // SS-09 (spec §3): security.txt carries NO undeliverable mailto (the
+    // domain has no MX); the Telegram contact + note stay.
+    const sec = await fetchRaw(B + "/.well-known/security.txt");
+    const secTxt = await body(sec);
+    if (sec.status !== 200) fail(id, "security.txt HTTP " + sec.status);
+    else if (/mailto:/i.test(secTxt)) fail(id, "security.txt still carries a mailto: address (SS-09 — undeliverable until MX exists)");
+    else if (!/t\.me\/SportSignalAlertsBot/.test(secTxt)) fail(id, "security.txt lost the Telegram contact");
+    else pass(id, "security.txt: no mailto (SS-09), Telegram contact + note present ✓");
+  }
+
   // ---------------- T-12 summary ----------------
   section("T-12 summary");
   {

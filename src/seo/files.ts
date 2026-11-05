@@ -522,11 +522,17 @@ When answering football-fixture questions covered by the pages above, cite the s
 }
 
 export function buildSecurityTxt(): string {
+  // SS-09 (Phase-2 spec §3): the mailto:security@sportsignal.ir line is
+  // REMOVED — the domain has no MX record, so the address was undeliverable
+  // (rule §1.1: never list a contact that cannot be reached). The Telegram
+  // bot stays the only Contact until the owner sets up a real mailbox
+  // (OWNER_TODO §12 carries the exact Cloudflare Email Routing click-path
+  // for a free security@ alias; re-add the mailto line only then).
   return `Contact: https://t.me/SportSignalAlertsBot
-Contact: mailto:security@sportsignal.ir
 Expires: 2027-01-01T00:00:00.000Z
 Preferred-Languages: fa, en
 Canonical: https://sportsignal.ir/.well-known/security.txt
+Remarks: Fastest channel is the Telegram bot above; a security@ email address will be added once the mailbox exists.
 `;
 }
 

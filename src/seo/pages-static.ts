@@ -275,7 +275,13 @@ ${comps.map((c) => '<li><a href="/competitions/' + c.slug + '">' + esc(c.next &&
 }
 
 // ---- 404 (R-11) ----
-export function build404Page(ctx: SeoCtx): string {
+// SS-12 (Phase-2 spec §3): ONE full 404 for every unknown path. The ctx
+// parameter is GONE — the builder is a PURE static render (no KV reads, no
+// pool map), which is what lets the router serve the full page shell for
+// scanner garbage too without re-introducing the v13.97-seocpu CPU kill
+// (every probe used to pay getSeoCtx — 5 KV reads + the 700-match map —
+// just to build a pretty 404).
+export function build404Page(): string {
   const main = `
 <div class="pagenotfound card">
 <h1>صفحه پیدا نشد</h1>

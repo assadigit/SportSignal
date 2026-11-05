@@ -4,6 +4,42 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.220-secremail — the SEO/GEO Phase-2 Session 4 / SS-09 + SS-12: honest security.txt + one full 404
+
+_2026-11-06 · spec §3/SS-09 + SS-12. Server-side only — no client asset
+changed, no indexed page text changed (NO CONTENT_VERSION bump — the 404 is
+noindex and security.txt is a machine file)._
+
+**Fix (SS-09).** `buildSecurityTxt()` (`src/seo/files.ts`) drops the
+`Contact: mailto:security@sportsignal.ir` line — the domain has no MX
+record, so the address was undeliverable and security reports sent to it
+were lost (rule §1.1: never list an unreachable contact). The Telegram bot
+Contact stays, plus a `Remarks:` note that a security@ mailbox will be
+added once it exists. `OWNER_TODO.md` gains §12 with the exact Cloudflare
+Email Routing click-path for a free `security@` alias (Email → Email
+Routing → enable → Routing rules → Create address `security` → destination
+= a real inbox → verify), and §5's stale claim that the contact page
+displays an atomicmail.io email is corrected (the contact page shows the
+bot only).
+
+**Fix (SS-12).** ONE full 404 for every HTML-ish unknown path. The
+unknown-path branch in `src/seo/router.ts` (previously the 647-byte
+minimal page) now serves the complete `build404Page()` shell — brand, nav,
+the pagenotfound links (home / today / matches / sitemap), footer — as do
+the unknown-sitemap-kind fallback and the unknown-team/comp/match 404s that
+already did. `build404Page()` loses its unused `ctx` parameter (it is a
+PURE static render: no KV reads, no pool map), which is what lets the full
+page serve scanner probes too without re-introducing the v13.97-seocpu CPU
+kill — and the old known-family flow's SECOND `getSeoCtx` fetch on the 404
+path is gone as well. noindex meta + `X-Robots-Tag: noindex, nofollow`
+stay on every 404.
+
+- seo-check **T-21**: `/zzz-unknown`, a deep unknown path AND
+  `/teams/zzz-unknown` must answer 404 with the full shell (mainnav +
+  today/sitemap links + pagesfoot) + both noindex signals; security.txt
+  must carry no `mailto:` while keeping the Telegram contact.
+
+
 # v13.219-faq — the SEO/GEO Phase-2 Session 4 / SS-06: FAQ content + FAQPage schema (the AI-answer surface)
 
 _2026-11-06 · spec §3/SS-06. Server-side only — no client asset changed
