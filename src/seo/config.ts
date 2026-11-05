@@ -55,7 +55,9 @@ export const SEO = {
   MIN_UPCOMING_FOR_INDEX: 1,
   // Honest lastmod for hand-written pages: bumped ONLY when their content
   // is actually edited (spec F-05 — never "now on every build").
-  CONTENT_VERSION: "2026-10-11T00:00:00Z",
+  // v13.215-attribution (SS-08): every page footer gained the data-source
+  // attribution line — hand-written page text changed on all page types.
+  CONTENT_VERSION: "2026-11-05T12:00:00Z",
   // Edge cache for rendered HTML (R-04: at least every 5 minutes).
   HTML_CACHE_TTL: 300,
   // v13.97-seocpu: the per-colo RENDER hold — the Cache API copy's TTL.

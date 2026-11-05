@@ -998,6 +998,12 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 </div>
 </div>
 <div class="foot-base"><span data-i="madeWith">\u0633\u0627\u062E\u062A\u0647\u200C\u0634\u062F\u0647 \u0628\u0627 \u2764\uFE0F</span> \u2014 <a href="/admin" data-i="adminLink">\u0648\u0631\u0648\u062F \u0645\u062F\u06CC\u0631\u06CC\u062A</a> \u2014 <a href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" data-i="botLink">\u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645</a></div>
+<!-- v13.215-attribution (SS-08): the site-wide data-source attribution —
+     «منبع داده: football-data.org» linked to the provider, small +
+     secondary (the footer's 12px var(--footer) baseline), below the fold.
+     Mirrors the pageShell footers (src/seo/page-shell.ts) so every SEO
+     page type carries it. -->
+<div class="src-attrib">\u0645\u0646\u0628\u0639 \u062F\u0627\u062F\u0647: <a href="https://www.football-data.org/" target="_blank" rel="noopener" style="color:inherit">football-data.org</a></div>
 <div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده دیروز:</span> <span class="vc-n" id="vcYesterday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده این ماه:</span> <span class="vc-n" id="vcMonth">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div></footer>
 <!-- v12.20 (the user's ask): sticky Telegram join CTA \u2014 the hero button
      scrolls away with the header; once the user is past it, this bottom bar

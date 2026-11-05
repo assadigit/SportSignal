@@ -256,6 +256,11 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       if (imgsNoAlt) fail(id, url + " " + imgsNoAlt + " <img> without alt");
       // JSON-LD presence
       if (!/application\/ld\+json/.test(html)) fail(id, url + " no JSON-LD");
+      // SS-08 (Phase-2 spec): every page footer carries the data-source
+      // attribution — «منبع داده: football-data.org» linked to the provider.
+      if (!/\u0645\u0646\u0628\u0639 \u062F\u0627\u062F\u0647:/.test(bodyHtml)) fail(id, url + " missing the data-source attribution text (SS-08)");
+      else if (!/href="https:\/\/www\.football-data\.org\/"/.test(html)) fail(id, url + " attribution present but not linked to football-data.org (SS-08)");
+      else pass(id, url + " carries the data-source attribution (SS-08)");
       return true;
     };
     let okCount = 0;

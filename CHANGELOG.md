@@ -4,6 +4,29 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.215-attribution — the SEO/GEO Phase-2 Session 2 / SS-08: site-wide data-source attribution
+
+_2026-11-05 · spec §3/SS-08: the pages never attributed their data source —
+a GEO trust signal (AI engines favor sites that name their sources).
+Server-side/HTML only — no client asset changed (bundle public-13.71.js /
+stylesheet public-13.81.css / SW sportsignal-v112 stay). Ships together
+with v13.214-sameas in the CP3 deploy._
+npm test 2,596 → **2,597**._
+
+**Fix.** Every SEO page footer gains «منبع داده: football-data.org» linked
+to `https://www.football-data.org/` — from the existing
+`SEO.DATA_SOURCE_NAME`/`DATA_SOURCE_URL` config (the attribution can never
+drift from the configured source): the `pageShell` footer
+(`src/seo/page-shell.ts`, riding the existing `.srcline` vocabulary — small
++ secondary color, below the fold) and the homepage footer
+(`src/pages/public.ts`, a `.src-attrib` line under `.foot-base` inheriting
+the footer's 12px secondary baseline). `SEO.CONTENT_VERSION` bumped to
+`2026-11-05T12:00:00Z` — hand-written page text changed on every page type,
+so the static-pages sitemap lastmod honestly advances (the F-05 rule).
+seo-check's **T-03** page sweep now asserts the attribution text + the
+provider link on every template page and every sampled sitemap URL. No CLS
+impact (a footer text line after the last content block).
+
 # v13.214-sameas — the SEO/GEO Phase-2 Session 2 / SS-04: Organization.sameAs (entity grounding begins)
 
 _2026-11-05 · spec §3/SS-04: the Organization node carried no `sameAs` — an
