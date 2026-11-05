@@ -87,3 +87,34 @@ What shipped (spec §1.3 / §3/SS-27):
   `/sw.js` `const CACHE = "sportsignal-v112"`.
 
 **SS-27 status: VERIFIED.**
+
+## CP2 — SS-03 pagination canonicals (v13.213-pagecanon)
+
+Commit `2e2780c` (tag v13.213-pagecanon), deploy `37a1a0fb`. Server-side
+only — no client asset changed (bundle public-13.71.js / stylesheet
+public-13.81.css / SW sportsignal-v112 stay).
+
+What shipped (spec §3/SS-03): `buildMatchesPage` derives
+`canonPath = /matches?page=N` for N ≥ 2 → self-referencing canonical +
+`og:url` follows (both from `buildHead`'s canonical), title gains « —
+صفحه N» (Persian digits) before the brand; `?page=1`/bare keep canonical
+`/matches`; out-of-range pages clamp to the last real page and canonicalize
+to it; the CollectionPage JSON-LD url/@id ride canonPath; the router's
+per-key cache keeps each page's head under its own canonical. seo-check
+gains **T-16**.
+
+### Evidence (live, 2026-11-05 after deploy 37a1a0fb)
+
+- `npm test` → exit 0, **2,595 OK / 0 fail**.
+- `curl 'https://sportsignal.ir/matches?page=2'`:
+  `<title>بازی‌های بزرگ فوتبال پیش‌رو — تاریخ و ساعت شروع — صفحه ۲ |
+  SportSignal</title>`;
+  `<link rel="canonical" href="https://sportsignal.ir/matches?page=2">`;
+  `<meta property="og:url" content="https://sportsignal.ir/matches?page=2">`.
+- `?page=1`: title unsuffixed, canonical `https://sportsignal.ir/matches`.
+- `?page=3`: «— صفحه ۳» + self-canonical `?page=3`.
+- `npm run seo:check` vs production → **PASS 92 / FAIL 0** (T-16: all six
+  assertions green — ?page=1 canonical / no suffix; ?page=2 self-canonical /
+  og:url follows / «— صفحه ۲» suffix / title distinct).
+
+**SS-03 status: VERIFIED.**

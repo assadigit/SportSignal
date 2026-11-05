@@ -313,7 +313,7 @@ next safe point, checkpoint, and hand off a continuation prompt.
 | SS-01 | Hubs under-list matches | S1 | VERIFIED | v13.211-hubtruth | live 2026-11-05: /matches/today 18 rows (was 0), noi==rows==answer 18; T-14 green |
 | SS-02 | Tomorrow H1 wrong date | S1 | VERIFIED | v13.211-hubtruth | live 2026-11-05: tomorrow title/H1 both «۶ نوامبر ۲۰۲۶»; T-14 green |
 | SS-27 | Shamsi-first display rule | S2 | VERIFIED | v13.212-shamsifirst | live 2026-11-05: T-15 sweep green (hubs/match/teams/comps/homepage); en+machine unchanged; SSR==client byte-verified |
-| SS-03 | Pagination canonicals | S2 | OPEN | — | curl ?page=2 |
+| SS-03 | Pagination canonicals | S2 | VERIFIED | v13.213-pagecanon | live 2026-11-05: ?page=2 self-canonical + og:url + «— صفحه ۲» title; ?page=1 → /matches; T-16 green |
 | SS-04 | Organization.sameAs | S2 | OPEN | — | JSON-LD sweep |
 | SS-05 | Team/comp entity links | S3 | OPEN | — | sampled 200s |
 | SS-06 | FAQ + FAQPage | S4 | OPEN | — | page + schema match |
