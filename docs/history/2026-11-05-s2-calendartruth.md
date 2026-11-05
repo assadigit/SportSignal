@@ -118,3 +118,73 @@ gains **T-16**.
   og:url follows / «— صفحه ۲» suffix / title distinct).
 
 **SS-03 status: VERIFIED.**
+
+## CP3 — SS-04 Organization.sameAs (v13.214-sameas) + SS-08 footer attribution (v13.215-attribution)
+
+Commits `0b6b1f6` (tag v13.214-sameas) + `4c4edd3` (tag v13.215-attribution),
+one combined deploy `b95804bf` (both items green together — the CP3
+combination the session plan allows). Server-side/HTML only — no client
+asset changed (bundle public-13.71.js / stylesheet public-13.81.css / SW
+sportsignal-v112 stay).
+
+**SS-04** (spec §3/SS-04): new `SEO.ORG_SAMEAS` array in
+`src/seo/config.ts` = `["https://t.me/SportSignalAlertsBot"]` consumed by
+`organizationNode()` (`src/seo/jsonld.ts`) — every page graph carries
+`sameAs`; the owner appends future profiles in config.ts only. seo-check
+gains **T-17** (Organization node on `/`, `/matches/today` + a sampled
+match page must carry the Telegram URL; every sameAs entry must be a real
+profile URL shape).
+
+**SS-08** (spec §3/SS-08): every SEO page footer gains «منبع داده:
+football-data.org» linked to `https://www.football-data.org/` from the
+existing `SEO.DATA_SOURCE_NAME`/`DATA_SOURCE_URL` — the `pageShell` footer
+(`src/seo/page-shell.ts`, the `.srcline` vocabulary: small + secondary,
+below the fold) + the homepage footer (`src/pages/public.ts`,
+`.src-attrib` under `.foot-base`). `SEO.CONTENT_VERSION` bumped to
+`2026-11-05T12:00:00Z` (hand-written page text changed on every page type
+— the honest-lastmod F-05 rule; the static-pages sitemap lastmod advances).
+seo-check **T-03** now sweeps the attribution on every template + sampled
+sitemap URL.
+
+### Evidence (live, 2026-11-05 after deploy b95804bf)
+
+- `npm test` → exit 0, **2,597 OK / 0 fail** (13.214 state: 2,596; 13.215
+  state: 2,597).
+- SS-04: `curl https://sportsignal.ir/` graph carries
+  `"sameAs":["https://t.me/SportSignalAlertsBot"]`; T-17 green on `/`,
+  `/matches/today` and `/matches/1-fsv-mainz-05-vs-bayern-munich-2026-11-07`.
+- SS-08: `curl` shows the attribution on every page type — `/`
+  (`منبع داده: <a href="https://www.football-data.org/" …>football-data.org</a>`),
+  `/matches`, `/matches/today|tomorrow|this-week|this-weekend`, `/teams`,
+  `/competitions`, `/about`, `/methodology`, `/contact`, `/privacy`,
+  `/terms`, `/data`, `/sitemap` + sampled match/team pages.
+- `npm run seo:check` vs production → **PASS 118 / FAIL 0** (92 at CP2;
+  +26 = the T-03 attribution sweep across 15 templates + sampled sitemap
+  URLs + T-17's 3 assertions). One transient during the first post-deploy
+  run (`/teams/psv` + four statics serving their ≤300 s stale-while-
+  revalidate copies) cleared on the re-run once the SWR window lapsed.
+- Sitemap lastmod honesty: the static pages' lastmod advanced to the new
+  CONTENT_VERSION only (the F-05 semantics — content actually changed).
+
+**SS-04 status: VERIFIED.**
+**SS-08 status: VERIFIED.**
+
+## S2 close-out
+
+All four session items VERIFIED live: SS-27 (v13.212-shamsifirst +
+a7c1eb0 retention fix), SS-03 (v13.213-pagecanon), SS-04
+(v13.214-sameas), SS-08 (v13.215-attribution). Five deploys total
+(97ff5fcf → 510704ba → 37a1a0fb → b95804bf). npm test 2,593 → 2,597;
+seo:check 71 → 118 assertions, all green. No deviations from the session
+plan beyond the deliberate scope notes recorded above (the mcard's
+Latin-digit date line per owner instruction 8; the OG PNG stays an
+all-English card; bot digests untouched). One operational lesson: a
+version-bump helper script crossed its read/write paths and briefly
+clobbered `src/config.ts` with the SEO config — caught by `npm test`
+(tsc) before any commit, restored from HEAD, re-applied correctly; the
+wiring gates (check-version-sync) held.
+
+Next (S3, per spec §4): **SS-05 batch 1** (entity grounding — sameAs for
+the 6 competitions + top-20 teams, verified URLs only, the new
+`src/seo/entity-links.ts` static map) + **SS-07** (llms.txt expansion +
+llms-full.txt).

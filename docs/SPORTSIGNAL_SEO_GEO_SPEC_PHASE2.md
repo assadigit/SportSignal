@@ -314,11 +314,11 @@ next safe point, checkpoint, and hand off a continuation prompt.
 | SS-02 | Tomorrow H1 wrong date | S1 | VERIFIED | v13.211-hubtruth | live 2026-11-05: tomorrow title/H1 both «۶ نوامبر ۲۰۲۶»; T-14 green |
 | SS-27 | Shamsi-first display rule | S2 | VERIFIED | v13.212-shamsifirst | live 2026-11-05: T-15 sweep green (hubs/match/teams/comps/homepage); en+machine unchanged; SSR==client byte-verified |
 | SS-03 | Pagination canonicals | S2 | VERIFIED | v13.213-pagecanon | live 2026-11-05: ?page=2 self-canonical + og:url + «— صفحه ۲» title; ?page=1 → /matches; T-16 green |
-| SS-04 | Organization.sameAs | S2 | OPEN | — | JSON-LD sweep |
+| SS-04 | Organization.sameAs | S2 | VERIFIED | v13.214-sameas | live 2026-11-05: every page graph carries sameAs=[t.me/SportSignalAlertsBot]; T-17 green |
 | SS-05 | Team/comp entity links | S3 | OPEN | — | sampled 200s |
 | SS-06 | FAQ + FAQPage | S4 | OPEN | — | page + schema match |
 | SS-07 | llms.txt + llms-full.txt | S3 | OPEN | — | 200 + link validation |
-| SS-08 | Footer attribution | S2 | OPEN | — | sweep |
+| SS-08 | Footer attribution | S2 | VERIFIED | v13.215-attribution | live 2026-11-05: «منبع داده: football-data.org» on all page types; T-03 sweep green |
 | SS-09 | security.txt email | S4 | OPEN | — | security.txt content |
 | SS-10 | Title lengths ≤65 | S5 | OPEN | — | sweep |
 | SS-11 | Description ≤165 | S5 | OPEN | — | sweep |
