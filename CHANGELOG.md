@@ -4,6 +4,40 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.216-entitylinks — the SEO/GEO Phase-2 Session 3 / SS-05: team + competition entity grounding (batch 1)
+
+_2026-11-06 · spec §3/SS-05 (the highest-leverage GEO item): the SportsTeam
+and SportsOrganization nodes carried no `sameAs` — every team and
+competition page was an entity island no answer engine could tie to the
+canonical web entities. Server-side only — no client asset changed (bundle
+public-13.71.js / stylesheet public-13.81.css / SW sportsignal-v112 stay)._
+
+**Fix.** New static map `src/seo/entity-links.ts` —
+`TEAM_ENTITY_LINKS` (keyed by the canonical English team name exactly as
+the provider pool emits it, plus the known provider-variant spellings that
+key the same club) and `COMP_ENTITY_LINKS` (keyed by the COMP_EN canonical
+name). Every entry = `[English Wikipedia article, Wikidata entity]`, and
+every URL was fetch-and-confirmed during the session (rule §1.1): HTTP
+200, final URL identical to the listed URL, and the served page's own
+`<link rel="canonical">` points back at it — which rejects #REDIRECT
+articles (e.g. `Juventus_F.C.` is a redirect page whose canonical is
+`Juventus_FC`, so the undotted form ships). Wikidata QIDs came from the
+enwiki MediaWiki `pageprops` API (never memory), cross-checked via
+`wbgetentities` and each `wikidata.org/wiki/<QID>` URL confirmed 200 +
+non-redirect. Batch 1 = the 6 competitions (CL, PL, PD, SA, FL1, BL1) +
+the 20 followed-team priority clubs (config `BIG_TEAMS_BY_LEAGUE` + the
+master-club bench in `TEAM_SLUGS`; A-League excluded as site-hidden).
+Unverifiable teams simply omit `sameAs`.
+
+Consumed by `sportsTeamNode()` / `sportsOrganizationNode()`
+(`src/seo/jsonld.ts`) and by the match pages' `SportsEvent.organizer`
+node — a pure static map lookup, NO render-time fetching (rule §1.5; the
+HTML path stays KV-read only). seo-check gains **T-18**: the 6 competition
+pages + sampled batch-1 team pages must carry sameAs with the
+Wikipedia+Wikidata pair, and every sameAs URL is re-verified live (200, no
+redirect, page-canonical self) — Wikipedia/Wikidata 429s are retried.
+npm test 2,597 → **2,598**.
+
 # v13.215-attribution — the SEO/GEO Phase-2 Session 2 / SS-08: site-wide data-source attribution
 
 _2026-11-05 · spec §3/SS-08: the pages never attributed their data source —

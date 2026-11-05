@@ -739,6 +739,108 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     if (mu) await checkSameAs(mu);
   }
 
+  // ---------------- T-18: team/competition entity grounding (SS-05, Phase 2) ----------------
+  section("T-18 entity grounding sameAs (SS-05)");
+  {
+    const id = "T-18";
+    // The verified entity map (src/seo/entity-links.ts): batch 1 = the 6
+    // competitions + the followed-team priority list (20 clubs). Live
+    // assertion (spec §3/SS-05 acceptance): sampled team/competition pages
+    // carry sameAs whose URLs all answer 200 — with NO redirect chain (a
+    // #REDIRECT Wikipedia page answers 200 but its own <link rel=canonical>
+    // points elsewhere; that is a fail per rule §1.1, so the canonical is
+    // checked too).
+    // Wikipedia/Wikidata rate-limit harder than our own worker (a 429 was
+    // observed during the S3 verification round) — external fetches get
+    // their own pacer (700ms) and 429/5xx retries.
+    let _lastExtAt = 0;
+    const extFetch = async (url) => {
+      for (let attempt = 0; ; attempt++) {
+        const pace = _lastExtAt + 700 - Date.now();
+        if (pace > 0) await sleepMs(pace);
+        try {
+          _lastExtAt = Date.now();
+          const ctl = new AbortController();
+          const to = setTimeout(() => ctl.abort(), 25000);
+          const res = await fetch(url, { redirect: "follow", signal: ctl.signal, headers: { "user-agent": UA } });
+          clearTimeout(to);
+          const finalUrl = res.url || url;
+          const transient = res.status === 429 || res.status >= 500;
+          if (transient && attempt < 2) { await sleepMs(4000 * (attempt + 1)); continue; }
+          const html = res.status === 200 ? await res.text() : "";
+          return { status: res.status, finalUrl, html };
+        } catch (e) {
+          if (attempt < 2) { await sleepMs(4000); continue; }
+          return { status: 0, finalUrl: url, html: "" };
+        }
+      }
+    };
+    const verifyEntityUrl = async (url) => {
+      const r = await extFetch(url);
+      if (r.status !== 200) return "HTTP " + r.status;
+      if (r.finalUrl !== url) return "redirected to " + r.finalUrl;
+      const canon = (r.html.match(/<link[^>]+rel="canonical"[^>]+href="([^"]+)"/i) || [])[1] || "";
+      if (canon && canon !== url) return "serves a redirect page (its canonical is " + canon + ")";
+      return null;
+    };
+    const extractNode = (html, type) => {
+      const scripts = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi)].map((m) => m[1]);
+      for (const sc of scripts) {
+        try {
+          const parsed = JSON.parse(sc);
+          const graph = parsed["@graph"] || [parsed];
+          const found = graph.find((g) => g["@type"] === type && Array.isArray(g.sameAs) && g.sameAs.length);
+          if (found) return found;
+        } catch (e) { /* T-04 counts parse errors */ }
+      }
+      // second pass without the sameAs requirement (for the miss message)
+      for (const sc of scripts) {
+        try {
+          const parsed = JSON.parse(sc);
+          const graph = parsed["@graph"] || [parsed];
+          const found = graph.find((g) => g["@type"] === type && g.name && g["@id"]);
+          if (found) return found;
+        } catch (e) { }
+      }
+      return null;
+    };
+    const checkEntityPage = async (url, type, label) => {
+      const res = await fetchRaw(url);
+      const html = await body(res);
+      if (res.status !== 200) { fail(id, url + " HTTP " + res.status); return; }
+      const node = extractNode(html, type);
+      if (!node) { fail(id, url + ": no " + type + " node in JSON-LD"); return; }
+      const sa = node.sameAs;
+      if (!Array.isArray(sa) || !sa.length) { fail(id, url + ": " + type + " «" + node.name + "» carries no sameAs (entity grounding missing)"); return; }
+      const hasWiki = sa.some((u) => /^https:\/\/en\.wikipedia\.org\/wiki\/[A-Za-z0-9._%,-]+$/.test(String(u)));
+      const hasWd = sa.some((u) => /^https:\/\/www\.wikidata\.org\/wiki\/Q\d+$/.test(String(u)));
+      if (!(hasWiki && hasWd)) { fail(id, url + ": sameAs lacks the Wikipedia+Wikidata pair: " + JSON.stringify(sa)); return; }
+      for (const u of sa) {
+        const err = await verifyEntityUrl(String(u));
+        if (err) fail(id, url + " sameAs «" + u + "» " + err);
+        else pass(id, url + " sameAs «" + u + "» verified 200, no redirect ✓");
+      }
+    };
+    // the 6 batch-1 competitions (CL, PL, PD, SA, FL1, BL1)
+    const compSlugs = ["champions-league", "premier-league", "la-liga", "serie-a", "ligue-1", "bundesliga"];
+    for (const c of compSlugs) await checkEntityPage(B + "/competitions/" + c, "SportsOrganization", "comp");
+    // the batch-1 teams: both slug forms per club (provider variants), the
+    // ones with a live page today (teams come and go with big fixtures)
+    const teamSlugCandidates = [
+      "arsenal", "chelsea", "manchester-united", "manchester-city", "liverpool",
+      "barcelona", "real-madrid", "club-atletico-de-madrid", "atletico-madrid",
+      "internazionale-milano", "inter-milan", "ac-milan", "paris-saint-germain",
+      "bayern-munich", "borussia-dortmund", "tottenham", "everton", "juventus",
+      "roma", "lazio", "torino", "marseille"
+    ];
+    const liveTeamUrls = new Set(allSitemapUrls.filter((u) => /^https:\/\/[^/]+\/teams\//.test(u)));
+    const present = teamSlugCandidates.filter((s) => liveTeamUrls.has(B + "/teams/" + s));
+    if (present.length < 4) {
+      console.log("  ⚠ only " + present.length + " batch-1 team pages live today — the followed clubs' pages are transient; the competition assertions above still gate the map");
+    }
+    for (const s of present.slice(0, 6)) await checkEntityPage(B + "/teams/" + s, "SportsTeam", "team");
+  }
+
   // ---------------- T-12 summary ----------------
   section("T-12 summary");
   {

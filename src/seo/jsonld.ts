@@ -9,6 +9,7 @@ import { matchPath, teamSlug, compSlug } from "../slugs";
 import { tehranParts } from "./utils";
 import { COMP_EN } from "../tables";
 import { translateCompetition } from "../translate";
+import { TEAM_ENTITY_LINKS, COMP_ENTITY_LINKS } from "./entity-links";
 import type { SeoMatch, TeamEntry, CompEntry, SeoCtx } from "./data";
 import { compNameFa } from "./markup";
 
@@ -105,6 +106,11 @@ export function eventStatusOf(status: string): string {
 export function sportsEventNode(sm: SeoMatch, why: string): any {
   const m = sm.s;
   const url = absUrl(matchPath(m.homeTeam.name, m.awayTeam.name, m.utcDate));
+  // SS-05 (Phase-2 spec): the organizer's entity grounding — the same
+  // verified static map as sportsOrganizationNode (pure lookup, no
+  // fetching; an unverified competition omits sameAs).
+  const organizerName = COMP_EN[m.competition.code] || m.competition.code;
+  const organizerLinks = COMP_ENTITY_LINKS[organizerName];
   const ev: any = {
     "@type": "SportsEvent",
     "@id": url + "#event",
@@ -118,8 +124,9 @@ export function sportsEventNode(sm: SeoMatch, why: string): any {
     awayTeam: teamRef(m.awayTeam.name),
     organizer: {
       "@type": "SportsOrganization",
-      name: COMP_EN[m.competition.code] || m.competition.code,
-      url: absUrl("/competitions/" + compSlug(m.competition.code))
+      name: organizerName,
+      url: absUrl("/competitions/" + compSlug(m.competition.code)),
+      ...(organizerLinks && organizerLinks.length ? { sameAs: organizerLinks } : {})
     },
     mainEntityOfPage: url,
     image: [absUrl(SEO.OG_DEFAULT_IMAGE)]
@@ -193,20 +200,32 @@ export function sportsTeamNode(entry: TeamEntry): any {
     url: absUrl("/teams/" + entry.slug)
   };
   if (entry.faName) node.alternateName = entry.faName;
-  // No logo (crest licence unconfirmed — spec default: none). No sameAs
-  // (official profiles unverified — G-09 owner task).
+  // SS-05 (Phase-2 spec §3): entity grounding from the static verified map
+  // (src/seo/entity-links.ts — every URL fetch-and-confirmed, provenance in
+  // that file's header). sameAs = [English Wikipedia article, Wikidata
+  // entity]; teams without a verified pair omit sameAs (rule §1.1 — never
+  // guessed). No logo (crest licence unconfirmed — spec default: none).
+  const links = TEAM_ENTITY_LINKS[entry.name];
+  if (links && links.length) node.sameAs = links;
   return node;
 }
 
 export function sportsOrganizationNode(code: string): any {
-  return {
+  const name = COMP_EN[code] || code;
+  const node: any = {
     "@type": "SportsOrganization",
     "@id": absUrl("/competitions/" + compSlug(code)) + "#org",
-    name: COMP_EN[code] || code,
+    name,
     alternateName: translateCompetition(code) || undefined,
     sport: "Football",
     url: absUrl("/competitions/" + compSlug(code))
   };
+  // SS-05 (Phase-2 spec §3): same verified-map grounding as sportsTeamNode
+  // — keyed by the COMP_EN canonical name (the map's own key contract).
+  if (node.alternateName === undefined) delete node.alternateName;
+  const links = COMP_ENTITY_LINKS[name];
+  if (links && links.length) node.sameAs = links;
+  return node;
 }
 
 export function jsonldScript(nodes: any[]): string {
