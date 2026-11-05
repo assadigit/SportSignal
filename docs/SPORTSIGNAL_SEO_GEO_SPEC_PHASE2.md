@@ -316,7 +316,7 @@ next safe point, checkpoint, and hand off a continuation prompt.
 | SS-03 | Pagination canonicals | S2 | VERIFIED | v13.213-pagecanon | live 2026-11-05: ?page=2 self-canonical + og:url + «— صفحه ۲» title; ?page=1 → /matches; T-16 green |
 | SS-04 | Organization.sameAs | S2 | VERIFIED | v13.214-sameas | live 2026-11-05: every page graph carries sameAs=[t.me/SportSignalAlertsBot]; T-17 green |
 | SS-05 | Team/comp entity links | S3 | VERIFIED (batches 1+2) | v13.216-entitylinks + v13.218-entitylinks2 | live 2026-11-06: 40 teams + 6 comps grounded, all URLs fetch-and-confirmed; T-18 green (193/0) |
-| SS-06 | FAQ + FAQPage | S4 | OPEN | — | page + schema match |
+| SS-06 | FAQ + FAQPage | S4 | VERIFIED | v13.219-faq | live 2026-11-06: T-20 green (3 statics + 4 hubs, byte-identical visible↔node; today-hub answer 36==rows==noi with real fixtures named) |
 | SS-07 | llms.txt + llms-full.txt | S3 | VERIFIED | v13.217-llmsfull | live 2026-11-06: both files 200 text/plain UTF-8; 44 links validated; T-19 green |
 | SS-08 | Footer attribution | S2 | VERIFIED | v13.215-attribution | live 2026-11-05: «منبع داده: football-data.org» on all page types; T-03 sweep green |
 | SS-09 | security.txt email | S4 | OPEN | — | security.txt content |
