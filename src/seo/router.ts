@@ -7,7 +7,7 @@
 
 import type { Env } from "../types";
 import { SEO, absUrl } from "./config";
-import { fnv1a, esc } from "./utils";
+import { fnv1a, esc, faDateD2, faTime } from "./utils";
 import { getSeoCtx, upcomingBig, finishedRecent, findMatchBySlug, type SeoCtx, type SeoMatch } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
@@ -156,10 +156,12 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   const title = "برنامه بازی‌های مهم فوتبال | تاریخ و ساعت شروع | SportSignal";
   let desc = "بازی‌های مهم فوتبال امروز و این هفته — لیگ قهرمانان اروپا، لیگ برتر، لالیگا، سری‌آ، بوندسلیگا و لیگ یک؛ با تاریخ و ساعت دقیق به وقت تهران.";
   if (nextBig) {
+    // SS-27 / CALENDAR_DISPLAY_v2: the homepage meta description rides D2 —
+    // Shamsi first with the Gregorian date in parentheses.
     desc = "بازی بزرگ بعدی: " + (nextBig.s.homeTeam.faName || nextBig.s.homeTeam.name) + " – " +
       (nextBig.s.awayTeam.faName || nextBig.s.awayTeam.name) + "، " + M.compNameFa(nextBig.s) + "، " +
-      new Intl.DateTimeFormat("fa-IR", { day: "numeric", month: "long", timeZone: "Asia/Tehran" }).format(new Date(nextBig.s.utcDate)) +
-      " ساعت " + toFaDigits(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Tehran" }).format(new Date(nextBig.s.utcDate))) + " به وقت تهران.";
+      faDateD2(nextBig.s.utcDate) +
+      " ساعت " + faTime(nextBig.s.utcDate) + " به وقت تهران.";
   }
   if (desc.length > 165) desc = desc.slice(0, 162) + "…";
 

@@ -548,6 +548,14 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
   section("T-14 time hubs");
   {
     const faToEn = (s) => String(s).replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+    // SS-27 / CALENDAR_DISPLAY_v2: both <title> and H1 now lead with the
+    // Shamsi date — the anchor-day agreement is asserted on the Jalali
+    // «day month» token each carries (the H1 rides D1, the title D2).
+    const JAL = "فروردین|اردیبهشت|خرداد|تیر|مرداد|شهریور|مهر|آبان|آذر|دی|بهمن|اسفند";
+    const jalToken = (s) => {
+      const m = String(s).match(new RegExp("([۰-۹]+) (" + JAL + ")"));
+      return m ? m[1] + " " + m[2] : "";
+    };
     for (const [path, label] of [["/matches/today", "today"], ["/matches/tomorrow", "tomorrow"]]) {
       const res = await fetchRaw(B + path);
       const html = await body(res);
@@ -555,13 +563,14 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       if (res.status !== 200) { fail(id, path + " HTTP " + res.status); continue; }
       const title = (html.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1] || "";
       const h1 = (html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || [])[1] || "";
-      // SS-02: the Gregorian date token in <title> and in the H1 must agree
-      // (the H1 date rides the hub's anchor day, not the render instant).
-      const tDate = (title.split("—")[1] || "").split("|")[0].trim();
-      const h1Date = (h1.split("—")[1] || "").split("(")[0].trim();
-      if (!tDate || !h1Date) fail(id, path + " (" + label + "): could not parse title/H1 date tokens");
-      else if (tDate !== h1Date) fail(id, path + " (" + label + "): title date «" + tDate + "» ≠ H1 date «" + h1Date + "» (SS-02 anchor regression)");
-      else pass(id, path + " (" + label + "): title/H1 dates agree («" + tDate + "»)");
+      // SS-02 (via SS-27 shapes): the Jalali day+month token in <title> and in
+      // the H1 must agree (the H1 date rides the hub's anchor day, not the
+      // render instant).
+      const tDate = jalToken(title);
+      const h1Date = jalToken(h1);
+      if (!tDate || !h1Date) fail(id, path + " (" + label + "): could not parse title/H1 Jalali date tokens (SS-27 shape regression?)");
+      else if (tDate !== h1Date) fail(id, path + " (" + label + "): title Jalali date «" + tDate + "» ≠ H1 Jalali date «" + h1Date + "» (SS-02 anchor regression)");
+      else pass(id, path + " (" + label + "): title/H1 Jalali dates agree («" + tDate + "»)");
       // SS-01: ItemList.numberOfItems == visible rows == answer-sentence count
       const noi = parseInt(faToEn((html.match(/"numberOfItems":\s*(\d+)/) || [])[1] || "-1"), 10);
       const rows = (html.match(/class="mrow"/g) || []).length;
@@ -579,6 +588,78 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
         pass(id, path + " (" + label + "): empty day — honest empty state, no count sentence");
       }
     }
+  }
+
+  // ---------------- T-15: Shamsi-first calendar display (SS-27, Phase 2) ----------------
+  section("T-15 Shamsi-first display (SS-27)");
+  {
+    // CALENDAR_DISPLAY_v2: fa surfaces render Shamsi FIRST with the Gregorian
+    // date in parentheses. D1 = «شنبه ۱۵ آبان ۱۴۰۵ (۵ نوامبر ۲۰۲۶)»; D2 =
+    // «۱۵ آبان (۵ نوامبر)». Asserted on the hub H1s, the dategroup headers,
+    // a sampled match page H1, and the machine/en surfaces staying Gregorian.
+    const JAL = "فروردین|اردیبهشت|خرداد|تیر|مرداد|شهریور|مهر|آبان|آذر|دی|بهمن|اسفند";
+    const GREG = "ژانویه|فوریه|مارس|آوریل|مه|ژوئن|ژوئیه|اوت|سپتامبر|اکتبر|نوامبر|دسامبر";
+    const WD = "یکشنبه|دوشنبه|سه‌شنبه|چهارشنبه|پنجشنبه|جمعه|شنبه";
+    // D1: weekday Jalali-day Jalali-month Jalali-year (Greg-day Greg-month Greg-year)
+    const d1 = new RegExp("(" + WD + ") ([۰-۹]+) (" + JAL + ") ?[۰-۹]* ?\\(([۰-۹]+) (" + GREG + ") ([۰-۹]+)\\)");
+    // D2: Jalali-day Jalali-month [Jalali-year] (Greg-day Greg-month [Greg-year])
+    const d2 = new RegExp("([۰-۹]+) (" + JAL + ")(?: ([۰-۹]+))? \\(([۰-۹]+) (" + GREG + ")(?: ([۰-۹]+))?\\)");
+    const id = "T-15";
+    let checked = 0;
+    for (const path of ["/matches/today", "/matches/tomorrow", "/matches", "/matches/this-week"]) {
+      const res = await fetchRaw(B + path);
+      const html = await body(res);
+      if (res.status !== 200) { fail(id, path + " HTTP " + res.status); continue; }
+      const h1 = (html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || [])[1] || "";
+      // H1s that carry a date (today/tomorrow/matches listing) must ride D1
+      if (/—/.test(h1)) {
+        if (d1.test(h1)) pass(id, path + " H1 Shamsi-first D1 ✓ «" + h1.split("—")[1].trim().slice(0, 50) + "…»");
+        else fail(id, path + " H1 is not Shamsi-first D1: «" + h1.slice(0, 90) + "»");
+        checked++;
+      }
+      // every dategroup header must ride D1
+      const groups = [...html.matchAll(/<div class="dategroup">([^<]+)<\/div>/g)].map((m) => m[1].trim());
+      const badGroups = groups.filter((g) => !d1.test(g));
+      if (groups.length) {
+        if (badGroups.length) fail(id, path + ": " + badGroups.length + "/" + groups.length + " dategroup headers not Shamsi-first D1 (e.g. «" + badGroups[0] + "»)");
+        else pass(id, path + ": all " + groups.length + " dategroup headers Shamsi-first D1 ✓");
+        checked++;
+      }
+      // answer sentences must lead with the Jalali date (D1 inside the sentence)
+      const ans = (html.match(/<div class="answercard">([\s\S]*?)<\/div>/) || [])[1] || "";
+      if (ans && /[۰-۹]+ بازی/.test(ans)) {
+        if (d1.test(ans) || d2.test(ans)) pass(id, path + ": answer sentence carries Shamsi-first date ✓");
+        else fail(id, path + ": answer sentence has no Shamsi-first date («" + ans.replace(/<[^>]+>/g, "").slice(0, 110) + "»)");
+        checked++;
+      }
+    }
+    // a sampled match page: H1 D2 + facts-table date row D1 (tag-stripped)
+    const mu = allSitemapUrls.find((u) => /\/matches\/[a-z0-9-]+-vs-/.test(u));
+    if (mu) {
+      const res = await fetchRaw(mu);
+      const html = await body(res);
+      const h1 = (html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || [])[1] || "";
+      if (d2.test(h1)) pass(id, "match H1 Shamsi-first D2 ✓ («" + (h1.split("،")[1] || h1).trim().slice(0, 40) + "»)");
+      else fail(id, "match H1 not Shamsi-first D2: «" + h1.slice(0, 90) + "»");
+      const factsTd = (html.match(/تاریخ<\/th><td>([\s\S]*?)<\/td>/) || [])[1] || "";
+      const factsTxt = factsTd.replace(/<[^>]+>/g, "");
+      if (d1.test(factsTxt)) pass(id, "match facts-table date Shamsi-first D1 ✓ («" + factsTxt.slice(0, 45) + "…»)");
+      else fail(id, "match facts-table date not Shamsi-first D1 («" + factsTxt.slice(0, 90) + "»)");
+      checked += 2;
+    }
+    // en + machine surfaces stay Gregorian-only: llms.txt carries no Shamsi
+    // month names; matches.json keeps ISO kickoff_utc
+    const llms = await body(await fetchRaw(B + "/llms.txt"));
+    if (new RegExp(JAL).test(llms)) fail(id, "llms.txt (en surface) contains Shamsi month names — must stay Gregorian-only");
+    else pass(id, "llms.txt stays Gregorian-only (no Shamsi months) ✓");
+    const mj = await body(await fetchRaw(B + "/api/matches.json"));
+    try {
+      const j = JSON.parse(mj);
+      const iso = j.upcoming && j.upcoming[0] && j.upcoming[0].kickoff_utc;
+      if (iso && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(iso)) pass(id, "matches.json kickoff_utc stays ISO-8601 ✓ (" + iso + ")");
+      else fail(id, "matches.json kickoff_utc not ISO-8601: " + String(iso));
+    } catch (e) { fail(id, "matches.json unparseable: " + e.message); }
+    if (!checked) fail(id, "no fa surfaces checked (sitemap empty?)");
   }
 
   // ---------------- T-12 summary ----------------

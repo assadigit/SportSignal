@@ -6,7 +6,7 @@
 
 import { SEO, absUrl } from "./config";
 import { matchPath, compSlug, teamSlug } from "../slugs";
-import { esc, faTime, faGregorianDate, faGregorianDateShort, jalaliDateStr, tehranDayKey, utcTime, statusLabelFa, weekendWindowTehran, enDate } from "./utils";
+import { esc, faTime, faDateD1, faDateD2, tehranDayKey, utcTime, statusLabelFa, weekendWindowTehran } from "./utils";
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
@@ -44,7 +44,9 @@ export function matchAnswerSentence(sm: SeoMatch): string {
   const h = faName(m.homeTeam), a = faName(m.awayTeam);
   const comp = M.compNameFa(m);
   const finished = String(sm.raw.status || "").toUpperCase() === "FINISHED";
-  const when = faGregorianDate(m.utcDate) + " (" + jalaliDateStr(m.utcDate) + ") ساعت " + faTime(m.utcDate);
+  // SS-27 / CALENDAR_DISPLAY_v2: answer sentences carry D1 — Shamsi first
+  // with the Gregorian date in parentheses.
+  const when = faDateD1(m.utcDate) + " ساعت " + faTime(m.utcDate);
   if (finished) {
     let s = h + " و " + a + " " + when + " به وقت تهران در " + comp + " به مصاف هم رفتند.";
     if (m.score && m.score.home != null) s += " نتیجه نهایی " + scoreStr(m.score) + " بود.";
@@ -131,7 +133,7 @@ function matchHeadHtml(sm: SeoMatch): string {
   } else {
     center += '<div class="mkick"><time datetime="' + esc(m.utcDate) + '">' + toFaDigits(faTime(m.utcDate)) + "</time></div>";
   }
-  center += '<div class="mkickdate">' + esc(faGregorianDateShort(m.utcDate)) + ' <span class="jdate">(' + esc(jalaliDateStr(m.utcDate)) + ")</span></div>";
+  center += '<div class="mkickdate">' + esc(faDateD2(m.utcDate)) + "</div>";
   // countdown only for upcoming matches (JS fills .mcount; hidden until then)
   if (!live && !finished) {
     center += '<div class="mcount" data-kickoff="' + esc(m.utcDate) + '" hidden></div>';
@@ -260,10 +262,25 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   const finished = String(sm.raw.status || "").toUpperCase() === "FINISHED";
   const live = M && /IN_PLAY|LIVE|PAUSED/i.test(String(sm.raw.status || ""));
 
-  const h1 = faName(m.homeTeam) + " – " + faName(m.awayTeam) + " | " + compFa + "، " + faGregorianDateShort(m.utcDate);
-  // Title ≤ ~60 chars (P-04): short fa date (no year — the slug carries it)
-  const shortDate = new Intl.DateTimeFormat("fa-IR", { day: "numeric", month: "long", timeZone: "Asia/Tehran" }).format(new Date(m.utcDate));
-  const title = faName(m.homeTeam) + " – " + faName(m.awayTeam) + " | " + compFa + "، " + shortDate + " | SportSignal";
+  // SS-27 / CALENDAR_DISPLAY_v2: the H1 always carries both calendars (D2
+  // compact — «، ۱۵ آبان (۵ نوامبر)"); the <title> rides the D3 ladder.
+  const h1 = faName(m.homeTeam) + " – " + faName(m.awayTeam) + " | " + compFa + "، " + faDateD2(m.utcDate);
+  // D3 (CALENDAR_DISPLAY_v2): Shamsi short + Gregorian parens while the
+  // assembled title stays ≤ 65 chars — the SS-10 trim ladder, in order:
+  // drop the Gregorian parens → drop the brand → shorten the competition
+  // name (trailing words fall off first, never past the first word).
+  const tCore = faName(m.homeTeam) + " – " + faName(m.awayTeam) + " | ";
+  const tDate = faDateD2(m.utcDate);
+  let title = tCore + compFa + "، " + tDate + " | SportSignal";
+  if (title.length > 65) title = tCore + compFa + "، " + tDate.slice(0, tDate.indexOf(" (")) + " | SportSignal";
+  if (title.length > 65) title = tCore + compFa + "، " + tDate.slice(0, tDate.indexOf(" ("));
+  if (title.length > 65) {
+    const words = String(compFa).split(" ");
+    while (title.length > 65 && words.length > 1) {
+      words.pop();
+      title = tCore + words.join(" ") + "، " + tDate.slice(0, tDate.indexOf(" ("));
+    }
+  }
   let desc = matchAnswerSentence(sm).replace(/<[^>]+>/g, "");
   if (desc.length > 175) desc = desc.slice(0, 172) + "…";
   if (desc.length < 70) desc += " برنامه و ساعت دقیق بازی‌های مهم فوتبال در SportSignal.";
@@ -358,7 +375,8 @@ function dateGroupedRows(list: SeoMatch[], finished: boolean): string {
   let out = "";
   let idx = 0;
   for (const [day, matches] of byDay) {
-    out += '<div class="dategroup">' + esc(faGregorianDate(matches[0].s.utcDate)) + " (" + esc(jalaliDateStr(matches[0].s.utcDate)) + ")</div>";
+    // SS-27: dategroup headers ride D1 — «شنبه ۱۵ آبان ۱۴۰۵ (۵ نوامبر ۲۰۲۶)».
+    out += '<div class="dategroup">' + esc(faDateD1(matches[0].s.utcDate)) + "</div>";
     for (const sm of matches) {
       out += M.mrowHtml(sm, idx++, finished);
     }
@@ -393,12 +411,12 @@ export function buildMatchesPage(ctx: SeoCtx, page: number): string {
   let answer = "همه بازی‌های بزرگ فوتبال که SportSignal دنبال می‌کند، به تفکیک تاریخ و به وقت تهران.";
   if (top) {
     answer = "نزدیک‌ترین بازی بزرگ: " + faName(top.s.homeTeam) + " – " + faName(top.s.awayTeam) + "، " +
-      faGregorianDateShort(top.s.utcDate) + " (" + jalaliDateStr(top.s.utcDate) + ") ساعت " + faTime(top.s.utcDate) + " به وقت تهران. " +
+      faDateD1(top.s.utcDate) + " ساعت " + faTime(top.s.utcDate) + " به وقت تهران. " +
       "در مجموع " + toFaDigits(String(all.length)) + " بازی بزرگ در برنامه پیش‌رو است.";
   }
   const title = "بازی‌های بزرگ فوتبال پیش‌رو — تاریخ و ساعت شروع | SportSignal";
   const desc = ("برنامه کامل بازی‌های مهم فوتبال: لیگ قهرمانان اروپا، لیگ برتر، لالیگا، سری‌آ، بوندسلیگا و لیگ یک — " +
-    (top ? "نزدیک‌ترین بازی: " + faName(top.s.homeTeam) + " – " + faName(top.s.awayTeam) + "، " + faGregorianDateShort(top.s.utcDate) + "." : "به‌زودی به‌روزرسانی می‌شود.")).slice(0, 165);
+    (top ? "نزدیک‌ترین بازی: " + faName(top.s.homeTeam) + " – " + faName(top.s.awayTeam) + "، " + faDateD2(top.s.utcDate) + "." : "به‌زودی به‌روزرسانی می‌شود.")).slice(0, 165);
   const trail = [{ name: "خانه", href: "/" }, { name: "بازی‌ها" }];
   const main =
     '<div class="answercard">' + esc(answer) + "</div>" +
@@ -452,7 +470,7 @@ function buildHub(ctx: SeoCtx, def: HubDef): string {
       (bigCount ? " (" + toFaDigits(String(bigCount)) + " بازی بزرگ)" : "") + ". " +
       (topBig ? "بزرگ‌ترین" : "نزدیک‌ترین") + ": " +
       faName(top.s.homeTeam) + " – " + faName(top.s.awayTeam) + " (" + M.compNameFa(top.s) + ")، " +
-      faGregorianDateShort(top.s.utcDate) + " ساعت " + faTime(top.s.utcDate) + " به وقت تهران.";
+      faDateD1(top.s.utcDate) + " ساعت " + faTime(top.s.utcDate) + " به وقت تهران.";
   }
   const main =
     '<div class="answercard">' + esc(answer) + "</div>" +
@@ -466,7 +484,7 @@ function buildHub(ctx: SeoCtx, def: HubDef): string {
       path: def.path, title: def.title, description: descFull, indexable: true,
       jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(def.path, def.h1, ctx.fetchedAt), JL.itemListNode(all, def.h1), JL.breadcrumbNode(trail)]
     }),
-    h1: def.h1 + " — " + faGregorianDateShort(anchorIso) + " (" + jalaliDateStr(anchorIso) + ")",
+    h1: def.h1 + " — " + faDateD1(anchorIso),
     crumbHtml: M.breadcrumbsHtml(trail),
     mainHtml: main,
     updatedHtml: M.lastUpdatedHtml(ctx.fetchedAt)
@@ -479,7 +497,7 @@ export function buildTodayPage(ctx: SeoCtx): string {
   return buildHub(ctx, {
     path: "/matches/today",
     h1: "بازی‌های فوتبال امروز",
-    title: "بازی‌های فوتبال امروز — " + faGregorianDateShort(nowIso) + " | SportSignal",
+    title: "بازی‌های فوتبال امروز — " + faDateD2(nowIso) + " | SportSignal",
     desc: "برنامه بازی‌های امروز",
     crumb: "امروز",
     anchor: nowIso,
@@ -493,7 +511,7 @@ export function buildTomorrowPage(ctx: SeoCtx): string {
   return buildHub(ctx, {
     path: "/matches/tomorrow",
     h1: "بازی‌های فوتبال فردا",
-    title: "بازی‌های فوتبال فردا — " + faGregorianDateShort(tomorrow) + " | SportSignal",
+    title: "بازی‌های فوتبال فردا — " + faDateD2(tomorrow) + " | SportSignal",
     desc: "برنامه بازی‌های فردا",
     crumb: "فردا",
     anchor: tomorrow,
@@ -524,7 +542,7 @@ export function buildWeekendPage(ctx: SeoCtx): string {
   return buildHub(ctx, {
     path: "/matches/this-weekend",
     h1: "بازی‌های فوتبال آخر هفته",
-    title: "بازی‌های فوتبال آخر هفته — " + faGregorianDateShort(win.start) + " | SportSignal",
+    title: "بازی‌های فوتبال آخر هفته — " + faDateD2(win.start) + " | SportSignal",
     desc: "برنامه بازی‌های شنبه و یکشنبه",
     crumb: "آخر هفته",
     anchor: win.start,
@@ -543,7 +561,7 @@ export function buildTeamsIndexPage(ctx: SeoCtx): string {
   let grid = "";
   for (const e of entries) {
     const d = e.next
-      ? "بازی بعدی: " + faName(e.next.s.homeTeam) + " – " + faName(e.next.s.awayTeam) + "، " + faGregorianDateShort(e.next.s.utcDate)
+      ? "بازی بعدی: " + faName(e.next.s.homeTeam) + " – " + faName(e.next.s.awayTeam) + "، " + faDateD2(e.next.s.utcDate)
       : "";
     grid += '<a class="hubtile" href="/teams/' + e.slug + '"><div class="t">' + esc(e.faName || e.name) +
       '</div><div class="d">' + esc(d) + "</div></a>";
@@ -667,7 +685,7 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
   let answer = "برنامه بازی‌های " + name + " در SportSignal — به وقت تهران.";
   if (next) {
     answer = "بازی بعدی " + name + ": " + faName(next.s.homeTeam) + " – " + faName(next.s.awayTeam) + " در " +
-      M.compNameFa(next.s) + "، " + faGregorianDate(next.s.utcDate) + " (" + jalaliDateStr(next.s.utcDate) + ") ساعت " +
+      M.compNameFa(next.s) + "، " + faDateD1(next.s.utcDate) + " ساعت " +
       faTime(next.s.utcDate) + " به وقت تهران.";
   }
   // v13.88-formagg: append the standings position to the answer (feeds the
@@ -715,7 +733,7 @@ export function buildCompetitionsIndexPage(ctx: SeoCtx): string {
   for (const e of entries) {
     const cName = (e.next && (e.next.s.competition.faName || COMP_EN[e.code])) || COMP_EN[e.code] || e.code;
     const d = e.next
-      ? "بازی بعدی: " + faName(e.next.s.homeTeam) + " – " + faName(e.next.s.awayTeam) + "، " + faGregorianDateShort(e.next.s.utcDate)
+      ? "بازی بعدی: " + faName(e.next.s.homeTeam) + " – " + faName(e.next.s.awayTeam) + "، " + faDateD2(e.next.s.utcDate)
       : "";
     grid += '<a class="hubtile" href="/competitions/' + e.slug + '"><div class="t">' + esc(String(cName)) +
       '</div><div class="d">' + esc(d) + "</div></a>";
@@ -789,7 +807,7 @@ export async function buildCompetitionPage(ctx: SeoCtx, slug: string): Promise<{
   let answer = "بازی‌های بزرگ پیش‌روی " + cNameFa + " در SportSignal — به وقت تهران.";
   if (next) {
     answer = "نزدیک‌ترین بازی بزرگ " + cNameFa + ": " + faName(next.s.homeTeam) + " – " + faName(next.s.awayTeam) +
-      "، " + faGregorianDate(next.s.utcDate) + " (" + jalaliDateStr(next.s.utcDate) + ") ساعت " + faTime(next.s.utcDate) + " به وقت تهران.";
+      "، " + faDateD1(next.s.utcDate) + " ساعت " + faTime(next.s.utcDate) + " به وقت تهران.";
   }
   const title = cNameFa + " — برنامه بازی‌های بزرگ پیش‌رو | SportSignal";
   const desc = (answer + " تاریخ و ساعت دقیق هر بازی در ادامه آمده است.").slice(0, 165);

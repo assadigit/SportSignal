@@ -8,7 +8,7 @@
 import { SEO } from "./config";
 import { matchPath, compSlug } from "../slugs";
 import { UCL_LOGO_CHIP } from "../tables";
-import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, jalaliWeekdayStr, tehranDayKey, isLiveSt, faGregorianDate, faHeroDate, tehranParts, toJalali } from "./utils";
+import { esc, faTime, faGregorianDateShort, faWeekdayShort, jalaliDateStr, jalaliWeekdayStr, tehranDayKey, isLiveSt, faDateD1Jalali, faDateD1Greg, faDateD2, faDateD2W, faFullDateTime, tehranParts, toJalali } from "./utils";
 import { toFaDigits } from "../utils";
 import { translateCompetition } from "../translate";
 import type { SeoMatch } from "./data";
@@ -175,15 +175,15 @@ export function mrowHtml(sm: SeoMatch, idx: number, finished: boolean): string {
 // digits); the shelf row retires; a mapped competition renders its LOGO
 // (hero-league.has-logo) from the owner's European-Leagues WebP pack.
 
-// the hero date line: the CLIENT format (fa-IR Intl => Jalali months, e.g.
-// "سه‌شنبه ۲۸ مهر") — the legacy faHeroDate (Gregorian months) stays for the
-// other pages; the hero must agree with the client re-render byte-for-byte.
+// SS-27 / CALENDAR_DISPLAY_v2: the hero date line — Shamsi FIRST (the
+// Jalali weekday + day + month the clock pod has shown since v13.151-edits)
+// with the Gregorian date now in parentheses, year only when the Gregorian
+// year differs from the current Tehran year. Pure math (faDateD2W) — the
+// exact byte shape of the client's fmtHeroDate() fa-IR + fa-IR-u-ca-gregory
+// render (public-13.71.js), so the no-JS paint and the client re-render
+// agree byte-for-byte (the v13.120-hero mirror contract).
 function faHeroDateJalali(iso: string): string {
-  try {
-    const parts = new Intl.DateTimeFormat("fa-IR", { day: "numeric", month: "long", weekday: "long", timeZone: "Asia/Tehran" }).formatToParts(new Date(iso));
-    const get = (t: string) => parts.find((p) => p.type === t)?.value || "";
-    return get("weekday") + " " + get("day") + " " + get("month");
-  } catch { return faHeroDate(iso); }
+  return faDateD2W(iso);
 }
 
 function statePill(txt: string, dot = false): string {
@@ -388,7 +388,7 @@ export function spotItemHtml(sm: SeoMatch, idx: number, opts?: { finished?: bool
   let item = '<div class="spotitem' + (opts && opts.past ? " past" : "") + '">';
   let row = '<a class="match' + (m.derby ? " derby" : "") + '" style="--i:' + idx + '" href="' + esc(matchHref(m)) + '">';
   const kickdate = m.utcDate && !live && !done
-    ? '<div class="kickdate"><time datetime="' + esc(m.utcDate) + '">' + esc(faGregorianDateShort(m.utcDate)) + "</time></div>"
+    ? '<div class="kickdate"><time datetime="' + esc(m.utcDate) + '">' + esc(faDateD2(m.utcDate)) + "</time></div>"
     : "";
   row += sideHome(m.homeTeam, displayName(m.homeTeam));
   if ((live || done) && m.score && m.score.home !== null) {
@@ -471,7 +471,7 @@ export function cupsHtml(cups: any[]): string {
         out += roundChipHtml(n);
         out += '<div class="cupdate">' + (live
           ? '<span class="live-tag">🔴 ' + esc(T.live) + "</span>"
-          : '<time datetime="' + esc(n.utcDate) + '">' + esc(faGregorianDate(n.utcDate)) + "</time>") + "</div></div>";
+          : '<time datetime="' + esc(n.utcDate) + '">' + faFullDateTime(n.utcDate) + "</time>") + "</div></div>";
       } else {
         out += '<div class="stempty">' + esc(T.cupsNone) + "</div>";
       }
@@ -495,7 +495,7 @@ export function uclHtml(ucl: any): string {
     }
     if (best) {
       out += '<div class="ucl-next">📅 <span>هفته بعدی مسابقات: </span><b>' +
-        esc(jalaliDateStr(best)) + "، ساعت " + faTime(best) + "</b></div>";
+        esc(jalaliDateStr(best)) + " (" + esc(faGregorianDateShort(best)) + ")، ساعت " + faTime(best) + "</b></div>";
     }
   }
   out += '<div class="ucl-stand-wrap"><div class="ucl-stand">';
@@ -534,12 +534,14 @@ export function timeEl(iso: string, visible: string, cls?: string): string {
   return '<time datetime="' + esc(iso) + '"' + (cls ? ' class="' + cls + '"' : "") + ">" + esc(visible) + "</time>";
 }
 
-// Full human datetime line: «شنبه ۱۱ اکتبر ۲۰۲۶ ساعت ۲۱:۳۰ (۱۴ مهر ۱۴۰۵) —
-// 18:00 UTC» — absolute Gregorian + Jalali + UTC (G-04, CALENDAR_DISPLAY).
+// Full human datetime line (SS-27 / CALENDAR_DISPLAY_v2): «شنبه ۱۵ آبان
+// ۱۴۰۵ (۵ نوامبر ۲۰۲۶)، ساعت ۲۱:۳۰ به وقت تهران — 18:00 UTC» — Shamsi
+// first + Gregorian parens + Tehran time + UTC (G-04; machine <time
+// datetime> stays Gregorian ISO).
 export function fullWhenHtml(iso: string): string {
-  return timeEl(iso, faGregorianDate(iso)) + "، ساعت " + timeEl(iso, faTime(iso)) +
+  return timeEl(iso, faDateD1Jalali(iso)) +
+    ' <span class="jdate">(' + esc(faDateD1Greg(iso)) + ")</span>، ساعت " + timeEl(iso, faTime(iso)) +
     ' <span class="tznote">' + esc(SEO.DISPLAY_TZ_LABEL) + "</span>" +
-    ' <span class="jdate">(' + esc(jalaliDateStr(iso)) + ')</span>' +
     ' <span class="utcnote" dir="ltr">' + esc(iso.slice(11, 16) + " UTC") + "</span>";
 }
 
@@ -611,17 +613,13 @@ export function breadcrumbsHtml(trail: Crumb[]): string {
   return out;
 }
 
-// fmtDate equivalent (client public-13.x.js) — the bare date text node of
-// LIST rows: «جمعه، ۲۴ مهر ۱۴۰۵ ساعت ۲۱:۳۰» (Jalali, fa-IR, Tehran clock).
+// fmtDate equivalent (client public-13.71.js) — the bare date text node of
+// LIST rows: «جمعه، ۲۴ مهر ۱۴۰۵ (۱۷ اکتبر ۲۰۲۶) ساعت ۲۱:۳۰» — Jalali first
+// (fa-IR persian calendar) with the Gregorian parens (SS-27), Tehran clock.
 // Mirrored server-side so finished-list rows carry the same run the client
 // renders (the server version previously omitted it entirely).
 export function faFullDateHtml(iso: string): string {
-  const t = tehranParts(iso);
-  const j = toJalali(t.y, t.m, t.d);
-  const months = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
-  const weekdays = ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه"];
-  const z = (n: number) => (n < 10 ? "0" + n : "" + n);
-  return esc(weekdays[t.wd] + "، " + toFaDigits(String(j.jd)) + " " + months[j.jm - 1] + " " + toFaDigits(String(j.jy)) + " ساعت " + toFaDigits(z(t.hh) + ":" + z(t.mm)));
+  return esc(faFullDateTime(iso));
 }
 
 export { compNameFa };

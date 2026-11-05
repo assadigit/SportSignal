@@ -1022,7 +1022,14 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      explicit z-index:5 that keeps the data zone above the veil/panel/
      capsule after the fill-mode transform creates its stacking context
      — the "blank HUD + dim league logo on the second slide" fix). -->
-<script src="/public-13.70.js" defer><\/script>
+<!-- v13.212-shamsifirst (SS-27 / CALENDAR_DISPLAY_v2): the JS rename
+     13.70 -> 13.71 — fmtDate/fmtHeroDate/renderUcl's ucl-next now render
+     Shamsi-first with the Gregorian date in parentheses (the FA_GREG
+     site-vocabulary month map; the spotitem .kickdate drops its weekday per
+     the spec's canonical D2 shape «۱۵ آبان (۵ نوامبر)»; en renders and the
+     mcard's Latin-digit date line are untouched), mirroring the server's
+     faDateD1/faDateD2 helpers byte-for-byte (the v13.120/v13.169 contracts). -->
+<script src="/public-13.71.js" defer><\/script>
 <!-- v13.202-threaddiet + v13.203-warmdefer + v13.204-foldsplit (F-M2,
      the full arc): v13.202 split the boot render chain at the fold
      (the above-fold trio updateBigBar/renderHeroSpot/fitHeroNames in

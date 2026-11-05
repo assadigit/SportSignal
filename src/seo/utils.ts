@@ -101,6 +101,81 @@ export function jalaliDateStr(iso: string): string {
   return toFaDigits(String(j.jd)) + " " + JALALI_MONTHS[j.jm - 1] + " " + toFaDigits(String(j.jy));
 }
 
+// ---- SS-27 / CALENDAR_DISPLAY_v2 (Phase-2 spec §1.3, owner rule 2026-11-05):
+// fa surfaces render Shamsi (Jalali) FIRST with the Gregorian date in
+// parentheses; en surfaces (llms.txt, enDate, <time> title attrs) and every
+// machine format (JSON-LD date fields, <time datetime>, sitemap lastmod,
+// feed, ics, matches.json) stay Gregorian ISO. The D-shapes below mirror the
+// client bundle's Intl renders BYTE-FOR-BYTE (fa-IR persian + fa-IR-u-ca-
+// gregory parts — the v13.120-hero / v13.169-mcv2 mirror precedents; the
+// month/weekday arrays were browser-verified against Intl in v13.120/v13.165).
+
+// D2 Gregorian compact half: «۵ نوامبر»; years join only when the Gregorian
+// year differs from the current Tehran year («۵ نوامبر ۲۰۲۶»).
+function gregCompact(iso: string, withYear: boolean): string {
+  const t = tehranParts(iso);
+  return toFaDigits(String(t.d)) + " " + FA_MONTHS[t.m - 1] + (withYear ? " " + toFaDigits(String(t.y)) : "");
+}
+
+// D2 Jalali compact half: «۱۵ آبان» / «۱۵ آبان ۱۴۰۵» (same year rule).
+function jalaliCompact(iso: string, withYear: boolean): string {
+  const t = tehranParts(iso);
+  const j = toJalali(t.y, t.m, t.d);
+  return toFaDigits(String(j.jd)) + " " + JALALI_MONTHS[j.jm - 1] + (withYear ? " " + toFaDigits(String(j.jy)) : "");
+}
+
+// The D2 year rule: years appear only when the date's Gregorian year differs
+// from the current Tehran year. Tehran is UTC+3:30 fixed (no DST since 2022)
+// — ms-math is exact for the YEAR comparison and cheaper than an Intl call
+// per row (the per-row tehranParts calls below stay Intl-correct).
+function tehranYearDiffers(iso: string): boolean {
+  const t = tehranParts(iso);
+  return t.y !== new Date(Date.now() + 12600000).getUTCFullYear();
+}
+
+// D2 compact (row kickdate, tiles, cards): «۱۵ آبان (۵ نوامبر)» — no year;
+// «۱۵ آبان ۱۴۰۵ (۵ نوامبر ۲۰۲۶)» when the Gregorian year differs from the
+// current Tehran year. Mirrors the client fmtHeroDate(e, noWd) FA render.
+export function faDateD2(iso: string): string {
+  const yr = tehranYearDiffers(iso);
+  return jalaliCompact(iso, yr) + " (" + gregCompact(iso, yr) + ")";
+}
+
+// D2 + weekday — the hero card's clock-pod date line keeps its owner-designed
+// weekday (v13.151-edits): «شنبه ۱۵ آبان (۵ نوامبر)». Mirrors the client
+// fmtHeroDate(e) FA render.
+export function faDateD2W(iso: string): string {
+  return FA_WEEKDAYS[tehranParts(iso).wd] + " " + faDateD2(iso);
+}
+
+// D1 full (H1 suffixes, dategroup headers, answer sentences):
+// «شنبه ۱۵ آبان ۱۴۰۵ (۵ نوامبر ۲۰۲۶)» — Jalali weekday + day + month + year,
+// Gregorian day + month + year in parens.
+export function faDateD1(iso: string): string {
+  return faDateD1Jalali(iso) + " (" + faDateD1Greg(iso) + ")";
+}
+// The two D1 halves, for callers that place the parens in their own markup
+// (fullWhenHtml keeps its .jdate span vocabulary).
+export function faDateD1Jalali(iso: string): string {
+  const t = tehranParts(iso);
+  const j = toJalali(t.y, t.m, t.d);
+  return FA_WEEKDAYS[t.wd] + " " + toFaDigits(String(j.jd)) + " " + JALALI_MONTHS[j.jm - 1] + " " + toFaDigits(String(j.jy));
+}
+export function faDateD1Greg(iso: string): string {
+  const t = tehranParts(iso);
+  return toFaDigits(String(t.d)) + " " + FA_MONTHS[t.m - 1] + " " + toFaDigits(String(t.y));
+}
+
+// The full row-date run (the client fmtDate FA render — the v14.0.1-uifix
+// list-row bare-date mirror): «جمعه، ۲۴ مهر ۱۴۰۵ (۱۷ اکتبر ۲۰۲۶) ساعت ۲۱:۳۰».
+export function faFullDateTime(iso: string): string {
+  const t = tehranParts(iso);
+  const j = toJalali(t.y, t.m, t.d);
+  const z = (n: number) => (n < 10 ? "0" + n : "" + n);
+  return FA_WEEKDAYS[t.wd] + "، " + toFaDigits(String(j.jd)) + " " + JALALI_MONTHS[j.jm - 1] + " " + toFaDigits(String(j.jy)) +
+    " (" + faDateD1Greg(iso) + ") ساعت " + toFaDigits(z(t.hh) + ":" + z(t.mm));
+}
+
 // Human-friendly Gregorian date in Persian, Tehran calendar day.
 export function faGregorianDate(iso: string): string {
   const t = tehranParts(iso);

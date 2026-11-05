@@ -887,7 +887,17 @@
 //              glyph, so the ticking countdown digits can never sit
 //              inside any static accessible name; name-from-content is
 //              always content-matched and the rule's gate never fires).
-const CACHE = "sportsignal-v111";
+// v13.212-shamsifirst (SS-27 / CALENDAR_DISPLAY_v2, Phase-2 S2): bumped
+//              from v111 — the bundle public-13.70.js->13.71.js (the date
+//              renderers go Shamsi-first with Gregorian parens: fmtDate
+//              list-rows/cups, fmtHeroDate hero-clock-pod + spotitem
+//              kickdate (the D2 canonical «۱۵ آبان (۵ نوامبر)», weekday
+//              dropped on the kickdate only), renderUcl's ucl-next line;
+//              the FA_GREG month map keeps the site's no-ezafe Gregorian
+//              vocabulary so the client mirrors the server pure-math
+//              helpers byte-for-byte). Cache-first assets cannot refresh
+//              without a rename or a bump, the v13.39 rule.
+const CACHE = "sportsignal-v112";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

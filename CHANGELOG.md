@@ -4,6 +4,71 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.212-shamsifirst — the SEO/GEO Phase-2 Session 2 / SS-27: Shamsi-first calendar display (CALENDAR_DISPLAY_v2)
+
+_2026-11-05 · the owner's calendar rule (spec §1.3 / §3/SS-27): every fa
+surface renders the Shamsi (Jalali) date FIRST with the Gregorian date in
+parentheses — inverted from the old Gregorian-primary displays. en surfaces
+and machine formats untouched. Client asset changed: the bundle rides the
+public-13.70.js → **public-13.71.js** rename + SW sportsignal-v111 →
+**v112** (the v13.39 rule); stylesheet public-13.81.css stays.
+npm test 2,593 → **2,594**._
+
+**The D-shapes (new helpers in `src/seo/utils.ts`).** `faDateD1(iso)` =
+«شنبه ۱۵ آبان ۱۴۰۵ (۵ نوامبر ۲۰۲۶)» — Jalali weekday + day + month + year,
+Gregorian day + month + year in parens (H1 suffixes, dategroup headers,
+answer sentences); `faDateD2(iso)` = «۱۵ آبان (۵ نوامبر)» — no year, years
+join only when the Gregorian year differs from the current Tehran year (row
+kickdates, tiles, cards); `faDateD2W(iso)` = D2 + weekday for the hero
+clock-pod line; `faFullDateTime(iso)` = the list-row bare date
+«جمعه، ۲۴ مهر ۱۴۰۵ (۱۷ اکتبر ۲۰۲۶) ساعت ۲۱:۳۰». All pure math
+(`toJalali` + the month/weekday arrays) — deterministic, no render-time
+fetching.
+
+**Server call sites** (`src/seo/pages.ts`): match answer sentence + hub
+answers + team/comp answers + the matches-page answer → D1; the hub H1
+suffix → D1 («بازی‌های فوتبال امروز — شنبه ۱۵ آبان ۱۴۰۵ (۵ نوامبر
+۲۰۲۶)»); dategroup headers → D1; `.mkickdate` + team/comp index tiles +
+the matches-page description → D2; the match H1 → D2 («رئال مادرید –
+بارسلونا | لالیگا، ۱۵ آبان (۵ نوامبر)»); the match `<title>` rides the
+**D3 ladder** — Shamsi short + Gregorian parens while ≤ 65 chars, then drop
+the parens → drop the brand → shorten the competition name (the SS-10 trim
+order, pre-implemented for match titles). Hub titles → the D2 date token
+(«بازی‌های فوتبال امروز — ۱۵ آبان (۵ نوامبر) | SportSignal»). In
+`src/seo/markup.ts`: the hero card's `.time-date` → D2+weekday; the
+spotitem `.kickdate` → the D2 canonical; cups `.cupdate` → the full row
+date (aligning a pre-existing SSR/client drift — the server used to render
+Gregorian there while the client rendered Jalali); the UCL box's
+«هفته بعدی مسابقات» line gains the Gregorian parens;
+`fullWhenHtml` (the facts table) re-orders to «شنبه ۱۵ آبان ۱۴۰۵ (۵
+نوامبر ۲۰۲۶)، ساعت ۲۱:۳۰ به وقت تهران — 18:00 UTC». `src/seo/router.ts`:
+the homepage meta description → D2. The per-match OG PNG (all-English card)
+stays Gregorian — verified in `src/seo/files.ts`; llms.txt / feed / ics /
+matches.json / JSON-LD date fields / `<time datetime>` / sitemap lastmod
+stay ISO-8601 Gregorian (rule §1.3, machine formats untouched).
+
+**The client mirror (public-13.70.js → public-13.71.js).** `fmtDate` (list
+rows + cups) inserts the Gregorian parens after the Jalali year;
+`fmtHeroDate(e, noWd)` renders D2+weekday for the hero clock-pod and the
+weekday-less D2 for the spotitem `.kickdate`; `renderUcl`'s ucl-next line
+gains the parens. The Gregorian month names map through a new `FA_GREG`
+array — the SITE's no-ezafe vocabulary («ژانویه», «مه») rather than CLDR's
+fa wide forms («ژانویهٔ», «مَی»), and en-GB numeric days are un-padded, so
+the client renders agree with the server pure-math helpers BYTE-FOR-BYTE
+(the v13.120-hero / v13.169-mcv2 mirror contracts — verified locally across
+same-year, year-boundary, and single-digit-day instants). The mobile HUD
+card's Latin-digit Jalali date line is untouched (the explicit v13.170-mcv3
+owner instruction 8). `src/hero-coverage.ts` regenerated for the bundle
+field (`npm run heroes:sync`).
+
+**Gates.** seo-check: **T-14** re-based on the Jalali date token (title/H1
+anchor-day agreement survives the shape change); new **T-15** Shamsi-first
+sweep — hub H1s D1, every dategroup header D1, answer sentences, a sampled
+match page H1 D2 + facts-table D1, llms.txt carrying no Shamsi months,
+matches.json staying ISO. check-stats: the v13.212 wiring pin (VERSION +
+package 13.212.0.0 + SW v112 + /public-13.71.js in public.ts +
+hero-coverage.ts).
+
 # v13.211-hubtruth — the SEO/GEO Phase-2 Session 1: SS-01 + SS-02 (the time hubs tell the truth)
 
 _2026-11-05 · first release of the Phase-2 program (spec:
