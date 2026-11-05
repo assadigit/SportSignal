@@ -13,13 +13,13 @@
 
 | Field | Value |
 | :--- | :--- |
-| **Current phase** | 6 COMPLETE (v13.209-a11y + the v13.210-namefix close-out — deployed 2026-11-04: the F-M3 opacity→color dimming, F-M3b the hero-card accessible names final shape, F-M6 touch targets, F-L3 skip-link-first + the page-shell skip link, the .simcount final-pass catch, the 36-check check-a11y gate; a11y 100 on / (mobile+desktop, ZERO flagged audits) and on the sub-page families) — Phase 7 (Final verification & requirements reconciliation) NOT STARTED |
+| **Current phase** | **7 COMPLETE — THE PROGRAM IS CLOSED** (2026-11-05: the comprehensive final verification — the full functional/device/SEO/production regression all green, the final Lighthouse series (Lighthouse 13.6.0, K14-clean, ×5 medians), the program's FIRST field-CWV data from the RUM (n=5 human — honest caveats), the 22-row requirements reconciliation checklist, the §18 final report; the one code-side find = the K20 harness time-bomb, fixed + gated, npm test 2,592) |
 | **Branch** | `main` |
-| **Latest commit** | `5ab4b2d` (a11y: the .simcount final-pass catch) on top of `6d842bc` (`v13.210-namefix` — the hero-label final shape) and `0475257` (`v13.209-a11y` — the Phase 6 code round) — all pushed & verified via `git ls-remote`. CI **77/0 green first-try on every Phase 6 commit**: `0475257` (T-09 `/` perf 57), `6d842bc` (44, K10 band), `5ab4b2d` (55), the docs close-out `00993d8` (60) + the recovery docs commit; the Phase 6 session died right after pushing `00993d8` with its CI `in_progress` — the recovery session watched it complete green, then finished the close-out |
+| **Latest commit** | `683c094` (the Phase 6 close-out recovery — K13 ×3) at Phase 7 session start; this session pushes the K20 harness fix + the Phase 7 close-out docs on top (see the git log below) |
 | **Production** | **`13.210-namefix`** (= the Phase 6 state: the past-row dimming is color-based and AA-legal (7.3–8.9:1 measured), both hero card anchors unlabeled/name-from-content so label-content-name-mismatch can never fire, the ticking cells aria-hidden + the #mcSr/#hcSr announcers outside the anchors, the 44px touch-target floors, the skip link first-focusable on EVERY page, the .simcount chip at 6.45:1). SW **v111**; `_headers` still exactly 100 rules (sweeps #14+#15 evicted 13.66/13.67/13.65.js pins); a11y **100 on / (mobile ×3 + desktop) and on the team/match/hub sub-pages — ZERO flagged audits** |
-| **Production health at close-out** | `/healthz` → `ok:true`, `version:13.210-namefix` (re-verified in the close-out recovery session), `degraded:true` (the LIVE-mode match-evening KV profile continued: `kv_writes_day` 879→913→935 vs the 1,000/day hard cap — bot-side cadence only; `kv_writes_web` **463 at session start AND 463 at close + still 463 in the recovery session — zero new web-side writes (R2)**; resets UTC midnight), `outbox_depth` 0, ticks completing (`last_cron_age` 3→5→9→5→7 min during Phase 6 + 4→10→2 min across the recovery re-verification = multiple fresh completions). |
-| **Last verified** | 2026-11-04 (Phase 6 close + the recovery session: `npm test` **2,591 checks exit 0** re-verified on a fresh clone; a11y **100 on / (mobile ×3 + desktop) with ZERO flagged audits** + the team/match/hub sub-page families; seo:check production **65/0**; CI **77/0 green first-try on all four commits** — `0475257` T-09 `/` perf 57, `6d842bc` 44 (K10 band), `5ab4b2d` 55 (sub-pages 97/96), docs `00993d8` 60 (sub-pages 97/94); the K18 sampler fix held on every run; deploy ×3 verified; the full evidence in RESULTS §17) |
-| **Next action** | Phase 7 — Final verification & requirements reconciliation per spec §13: repeat the baselines identically, the requirement-by-requirement checklist (§13.6), field data via the CF Web Analytics RUM (the v13.208 beacon has now accumulated ~a day+ — the owner's 24–48 h dashboard check), GSC (K5, still owner-blocked unless credentials arrive), the full regression + device round, the final report + requirements checklist |
+| **Production health at close-out** | `/healthz` → `ok:true`, `version:13.210-namefix` (unchanged by Phase 7 — harness+docs only, NO redeploy per spec §14.4), `degraded:false`, `outbox_depth` 0, ticks completing (`last_cron_age` 4–8 min across the session), `sched_mode:IDLE` (next kickoff 2026-11-07). The daily meters reset UTC midnight: `kv_writes_web` 6→24 during the session (the documented K11 class — this session's own verification traffic's SWR revalidations; R2 intact: zero new web-side write classes), `kv_writes_day` 49. |
+| **Last verified** | 2026-11-05 (Phase 7: `npm test` **2,592 exit 0** (the K20 fix + guard); the 57-point production battery all green (SW v111 md5-identical, ladder byte-identical, 304 matrix 9/9, lastmod stamps frozen at genuine change times, index ETag render-stable ×3); the Lighthouse final series ×10 + ×4 a11y rechecks (K14-clean; the transient axe artifact run to ground — steady state 7.65:1/9.36:1); the RUM field data pulled via GraphQL (first field CWV of the program); seo:check production **65/0**; the bot-untouched proof: 27 bot files + assets byte-identical pre-project→HEAD; the full record in RESULTS §18) |
+| **Next action** | **NONE — the program is complete (spec §15: no next phase).** The outstanding-work list for any future arc: RESULTS §18.9(11) — GSC access (K5), the lab-LCP residual (K15: priority-hint the now-LCP `/hero-poster.jpg` or re-scope the preload — a client-asset ceremony round), the RUM re-check after 1–2 weeks organic traffic, K12, F-L2/K8, F-L6/L7, K10 |
 
 ## Phase roadmap (spec §5)
 
@@ -32,7 +32,7 @@
 | 4 | Cloudflare & caching | ✅ **COMPLETED** (2026-11-04, `v13.207-condget`) | F-M5 fixed (the two root causes: the unchecked edge-cache HIT path + the strict ETag comparison that CF's in-transit weakening made unmatchable — weak-comparison comparator per RFC 9110 §13.1.2 + 304 branches on both `wantCached` paths); ETag on the 5 machine-file surfaces; F-H3 evaluated via API → owner-action-required (OWNER_TODO §11, token lacks the permission, beacon verified absent); F-L6/F-L7 evaluated with numbers and deferred (RESULTS §15.5). Freshness ladder byte-identical (R12), zero new KV writes (R2), `npm test` 2,539. |
 | 5 | Technical & multilingual SEO | ✅ **COMPLETED** (2026-11-04, `888f1ae`+`ed74342`+`53f847e` `v13.208-lastmod`) | The spot-audit found a LIVE F-05-class regression the frozen audit had marked green: `computeLastmods` replaced the whole seo_lastmod_v1 map per child render — cross-child eviction → every render re-stamped its FULL URL set with the clock (94/94 teams + 144/144 upcoming at one millisecond, live-proven twice) + a KV write per render + full-list IndexNow pings. Fixed: merge + change-only writes + a map-derived sitemap index (pages=CONTENT_VERSION). F-L1 fixed (404 emits no canonical/og:url). F-H3 EXECUTED (the Web Analytics beacon manually inserted in both templates — auto-inject never reaches Worker HTML; /privacy disclosure added). IndexNow park-drain fixed. F-M8 DECIDED: keep the hub canonical (documented with evidence, RESULTS §16.2). R11 completed (og:locale:alternate en_US removed; stance pinned). Metadata/JSON-LD 24-page audit clean. GSC remains owner-blocked (K5, honest limitation recorded). |
 | 6 | Accessibility & security | ✅ **COMPLETED** (2026-11-04, `0475257`+`6d842bc`+`5ab4b2d` `v13.209-a11y`→`v13.210-namefix`) | F-M3: the expired-row opacity:.48 dimming retired for COLOR (the impossibility proof: #fff at .48 over the pill stack = 4.48:1 — pinned in the gate); measured 7.34–8.92:1 after. F-M3b: BOTH hero labels retired (the K19 lesson — axe's rule only matches labeled widgets + counts every painted glyph; name-from-content, cells aria-hidden, #mcSr/#hcSr outside the anchors). F-M6: 44px floors (lbtn/sbtn, nav, footnav, finmore, backTop, contact-email, skip pill) + the 2.5.8 AA 24px floor elsewhere (documented exceptions). F-L3: skip link first-focusable + the page-shell pages GAIN one (2.4.1). The .simcount sub-page catch (6.45:1). CSP R13-bounded: unsafe-inline stays (documented), beacon origins pinned. The NEW 36-check check-a11y gate. a11y 100 everywhere, zero flagged audits. Full record: RESULTS §17. |
-| 7 | Final verification & requirements reconciliation | ⬜ | Repeat baselines identically; requirements checklist per spec §13.6; field data via CF Web Analytics RUM if enabled in Phase 4. |
+| 7 | Final verification & requirements reconciliation | ✅ **COMPLETED** (2026-11-05) | The full regression (functional + device + SEO + production, RESULTS §18.2–18.7); the final Lighthouse series (Lighthouse 13.6.0, K14-clean: `/` mobile ×5 median perf 67 / LCP 6.4 s / CLS 0, desktop 99, sub-pages 99–100); the FIRST field-CWV pull (RUM via GraphQL — 237 vitals events, 232 bot / 5 human, honest n=5 caveats); the 22-row requirements reconciliation (§18.8); the §18.9 final report; the K20 harness fix (npm test 2,592). One BLOCKED item (GSC, K5) + honest PARTIALLY verdicts (CWV lab-LCP, Lighthouse homepage-perf objective). |
 
 ## Changes made (cumulative log)
 
@@ -415,6 +415,41 @@
 | `scripts/check-version-sync.js` | RECOVERY COMMIT — the lockfile coverage (both version fields vs package.json; negative-tested; the K2 re-gate) |
 | `package-lock.json` | RECOVERY COMMIT — the inner `packages[""].version` re-synced to 13.210.0.0 (npm-regenerated; was stale at 13.208) |
 
+### Phase 7 — 2026-11-05 (final verification & requirements reconciliation — the program close)
+
+- **Verification-only by design** (spec §13); the ONE code-side find was
+  harness-side and rode no ceremony: **K20 — the check-no-miss.js UTC-
+  midnight-straddle fixture time-bomb** (the baseline gate went RED at
+  00:26 UTC; root-caused to the OD/OD2 fixture pair straddling UTC
+  midnight in the daily 00:25–00:30 window; `applyLiveOverlay`'s byPair
+  day-slice lookup legitimately missed; the APP was correct, the FIXTURE
+  was the defect). Fixed: OD2 derives from OD's instant with a rewind +
+  a new self-assertion guard; proven by the out-of-window re-run, the
+  frozen-clock in-window replay of the REAL function, and the preserved
+  mid-day "different kick" property. `npm test` 2,591 → **2,592**.
+- The verification battery (all green, RESULTS §18): the 57-point
+  production curl battery; the browser functional round (hero SSR,
+  countdown ticking, fa↔en, tz 459 options, nav, 404s, zero console
+  errors); the 7-viewport device matrix; the Lighthouse 13.6.0 final
+  series (K14-clean; ×5 medians + desktop + sub-pages + full-category
+  ×2 + ×4 a11y rechecks); the FIRST field-CWV pull via the CF Web
+  Analytics GraphQL RUM; `seo:check` production 65/0; the 16-page
+  metadata/JSON-LD spot audit; the bot-untouched proof (27 bot files +
+  assets byte-identical `f39ce2b`→HEAD); the 22-row requirements
+  reconciliation checklist + the §18.9 final report.
+- **NO redeploy** (harness + docs only; VERSION stays `13.210-namefix`
+  per spec §14.4 — a verification-only session commits docs and does not
+  redeploy).
+
+## Files modified in Phase 7
+
+| File | Change |
+| :--- | :--- |
+| `scripts/check-no-miss.js` | K20: the OD/OD2 overlay-fixture pair is now day-straddle-proof (derives from one instant + rewind) + the new self-assertion guard (suite 194 → 195 checks) |
+| `WEB_OPTIMIZATION_RESULTS.md` | §18 — the Phase 7 record + the program's final report (this phase's spec §4 deliverable) |
+| `WEB_OPTIMIZATION_PROGRESS.md` | UPDATED — status, roadmap, this section, K-register (K20), verification + git logs, the program-close note (this file) |
+| `CHANGELOG.md` | the Phase 7 entry (harness fix + docs milestone; no version change) |
+
 ## Known issues, blockers & deferred work
 
 | # | Item | Type | Raised |
@@ -427,6 +462,7 @@
 | K16 | **Preload-asset-size lesson (Phase 3):** the v13.205 commit claimed a "4.9 KB" scene the file system said was 264 KB — a fetchpriority preload is only as good as the bytes it fronts. The v13.206 gate now pins the 30–50 KB ceiling so the lossless weight can never silently return. Always `stat()` the asset behind a preload claim. | Resolved (gate added) | Phase 3 |
 | K17 | **The cross-cache-window audit lesson (Phase 5):** the seo_lastmod_v1 eviction bug was live for weeks while two audits and three optimization phases passed it — because every verification sampled within a single edge-cache window (the eviction only manifests ACROSS windows, when a foreign child renders in between). Any "X is stable/honest" claim about edge-cached derived state must be re-verified across at least one full TTL window with an interleaved foreign render. The new check-seo-lastmod gate pins the merge behavior; the live 3-cycle matrix is the template. | Lesson (gate added) | Phase 5 |
 | K19 | **The axe-semantics lesson (Phase 6):** spec-summary reasoning about a WCAG rule is not evidence — READ THE RULE'S IMPLEMENTATION before shipping a fix. The `label-content-name-mismatch` round-1 fix (extend the mobile label) was structurally unresolvable: the rule (a) only MATCHES widgets carrying aria-label/labelledby and (b) counts every PAINTED glyph in its visible-text walk (hiddenMethods2 = opacity/scroll/overflow/clip/offscreen — aria-hidden is invisible to it), so ticking painted digits can never sit inside ANY static accessible name. The round-2 shape (retire the labels; name-from-content) is deterministic; the discovery method (dump the flagged node's exact state, read the axe source in the Lighthouse bundle, test the candidate against the exact algorithm in the live browser BEFORE the rename) is the template for future a11y-rule work. Cost of skipping it: one full ADR-006 ceremony. | Lesson (gate pins the shape) | Phase 6 |
+| K20 | **The UTC-midnight-straddle fixture time-bomb (Phase 7):** `check-no-miss.js`'s overlay fixtures `OD = now−30min` / `OD2 = now−25min` were commented "same UTC day" — but in the daily **00:25–00:30 UTC window** the pair straddles midnight, so the byPair day-slice lookup legitimately missed and the suite failed (caught live 2026-11-05 00:26 UTC; the recovery session's 22:05-UTC run was green — the 5-minute window explains the divergence). The application logic was CORRECT; the fixture was the defect. Fixed: OD2 derives from OD's instant and rewinds into OD's day; a self-assertion ("the OD/OD2 fixture pair shares a UTC day") pins it forever. **Lesson: any now-relative fixture pair that a day-slice/geo/UTC-keyed comparison consumes must be constructed from ONE base instant (or day-clamped) — an offset pair is a time bomb.** The sibling sweep (check-pervchat/check-scheduler/live-derby-test) found no other instance. | Resolved (guard added) | Phase 7 |
 | K18 | **The sampler self-collision (Phase 5 CI):** `ed74342` reddened on "duplicate title: X (u & u)" — seo-check's T-03 sampled WITH replacement, so one URL drawn twice collided with itself in the seen-titles map. Root-caused (the URL was listed exactly once), fixed to draw without replacement (`53f847e`, green 77/0). Any future "duplicate" CI red should first be checked for a self-collision (same URL twice) before treating it as a site defect. | Resolved (sampler fixed) | Phase 5 |
 | K14 | **Measurement-contamination incident (Phase 2, resolved same day):** the v13.203 revert shipped on Lighthouse runs taken while a local `wrangler dev` + browsers consumed the sandbox CPU (TBT appeared 2–3× worse); the clean re-measurement landed exactly on baseline and v13.204 re-applied the change. **The recorded lesson (RESULTS §8): kill every background process before any Lighthouse run; never ship a revert without a clean re-measurement of the reverted state; treat a surprising single-source regression as an artifact until reproduced.** | Resolved (lesson recorded) | Phase 2 |
 | K3 | `package-lock.json.bak` is gitignored; npm-only toolchain (bun breaks resvg). | Constraint | Phase 0 |
@@ -459,6 +495,15 @@ full `npm test` green (2,531 checks incl. every bot suite).
 
 | Date | Check | Result |
 | :--- | :--- | :--- |
+| 2026-11-05 | **Phase 7 session-start:** clone clean/in-sync at `683c094` (the Phase 6 recovery — K13 ×3, reconciled, CI re-verified green via the API); healthz `13.210-namefix` `ok:true` (= repo VERSION); `npm install` + `npm test` → **RED: 1 failure** → root-caused to the K20 fixture time-bomb (the 00:25–00:30 UTC straddle window, caught live at 00:26:54 UTC; the identical tree ALL PASS at 00:31:04 UTC outside the window) | ✅ (the K20 catch) |
+| 2026-11-05 | **K20 fix:** day-straddle-proof OD/OD2 construction + the self-assertion guard; the frozen-clock in-window replay (REAL `applyLiveOverlay`): the fixed pair hits, the OLD pair still misses (the lookup correctly requires the same day); the mid-day different-kick property preserved; full `npm test` → **exit 0, 2,592 checks** | ✅ |
+| 2026-11-05 | **Production battery (§13.5):** healthz ×3 (`13.210-namefix`, `ok:true`, ticks 4–8 min, outbox 0); 24 URLs → 200 + 3 sitemap-sampled dynamic; redirects single-hop; 404 = custom + noindex + canonical-free + `no-store`; the 6 security headers present; the caching ladder byte-identical; 13.81.css/13.70.js/core-13.16.js immutable; **SW v111** (`const CACHE` line; the live file md5-identical to the repo — the historical-comment grep trap avoided); **conditional-GET 9/9 → 304**; beacon ×2; og:locale:alternate 0; skip-link + label-free hero anchors + the `.simcount` ink rule all present | ✅ |
+| 2026-11-05 | **Functional + device round (§13.1/§13.2, agent-browser):** hero SSR-visible + countdown ticking (23→22→19 min) + 0 skeletons + 14 local emblems/0 external; fa↔en round-trip (lang/dir/h1/localStorage + Latin EN announcer); tz dialog 459 options + `ss_tz` cookie round-trip; carousel arrows + 1 dot (C10); nav click-throughs (homepage + shell + match page complete); teams hub 92 links; known-family 404 full-rendered; **zero page/console errors throughout**; the 7-viewport matrix — no overflow, heights within audit variance; lbtn 44×44, skip pill 117×54; VLM visual pass (2 flagged "defects" disproven by DOM — the VLM-reliability protocol) | ✅ |
+| 2026-11-05 | **Lighthouse final series (§13.3, Lighthouse 13.6.0, K14-clean):** `/` mobile ×5 → perf 62/62/67/71/71 (median 67), LCP 5.4–6.7 s (median 6.4), TBT 200–500 (median 380), TTI 6.6–8.0 (median 7.6), bootup median 0.42 s, **CLS 0 every run**; desktop perf 99 / LCP 0.9 s; `/matches/today` + `/teams` perf 99 / LCP 1.8 s / TBT 0; full-category ×2 → a11y 100 / SEO 100 / BP 96. **New diagnostic:** the LCP element is now `img.bg-photo` (`/hero-poster.jpg`, unhinted) — the scene-4-2 preload fronts the non-LCP image in this data state (outstanding-work candidate). **The a11y flake run to ground:** 2/10 runs flagged a mid-rebuild transient (#6a8eba = #93c5fd @ ~66% opacity, 4.36:1); the steady state measured live = **7.65:1 / 9.36:1**; 4/4 a11y-only rechecks clean — a sampling artifact, no shipped ink below AA | ✅ (K15 stands, honestly) |
+| 2026-11-05 | **FIELD DATA (§13.3, the program's first):** the RUM read via the CF GraphQL API — 290 pageloads / 288 visits (all 2026-11-04, the beacon's first hours); 237 web-vitals events = **232 bot-classified (the CI Lighthouse + session browsers) + 5 human**; human (n=5, indicators only): LCP p50 1.38/1.59 s (desktop/mobile), p75 2.36/2.53 s, CLS p75 ≤0.007; bot sample: LCP p75 1.52 s, INP p75 256 ms (automation interactions); top paths / (111), /matches/today (56), /teams (49). Honest verdict: pipeline proven end-to-end, n too small for CWV claims — the 1–2-week organic re-check is the owner follow-up | ✅ (never fabricated) |
+| 2026-11-05 | **SEO verification (§13.4):** production `seo:check` **65 PASS / 0 FAIL**; the lastmod contract held under re-render pressure (all child stamps at genuine change times, NOT today's clock; index ETag render-stable ×3); the 16-page metadata/JSON-LD spot audit clean (unique titles, self-canonicals, one h1, JSON-LD parses, 0 hreflang — correct N/A); GSC: still K5 owner-blocked — documented, nothing claimed | ✅ |
+| 2026-11-05 | **Bot-untouched proof (§13.1):** all **27 §3.2 bot source files + assets/bot + assets/stickers byte-identical `f39ce2b`→HEAD** (the whole program); `config.ts` = VERSION-only; `tables.ts` = the single LEAGUE_LOGOS hunk; card.ts's import still dead; zero `.emblem` readers; the 70-file program diff contains zero files outside the known-safe surfaces | ✅ |
+| 2026-11-05 | **KV/R2 watch:** `kv_writes_web` 6 → 24 (the documented K11 class — this session's own verification traffic's SWR revalidations; **zero new web-side write classes**); `kv_writes_day` 49; `degraded:false` throughout | ✅ |
 | 2026-11-04 | **Phase 6 close-out recovery verification** (the session died after pushing the docs commit `00993d8` with its CI still `in_progress` — K13 pattern, third occurrence): CI re-checked via the GitHub API → **completed/success 77/0** (T-09 `/` perf 60, sub-pages 97/94; also `5ab4b2d` confirmed 77/0, perf 55); fresh-clone `npm install` + `npm test` → exit 0, **2,591 checks, 0 FAIL**; production re-verified: healthz `13.210-namefix` `ok:true` ×3 reads with a fresh tick (age 4→10→2 min), `kv_writes_web` 463 (R2 zero-drift), outbox 0; headers (CSP + beacon origins, HSTS, ladder) + SW `v111` `const CACHE` line + 13.81.css/13.70.js immutable pins + swept 13.65.js default-headers all confirmed; live HTML: skip link first-focusable on `/` AND the shell sub-page, both hero anchors label-free, cells aria-hidden, `#mcSr`/`#hcSr` outside the anchors, beacon ×2, `.simcount` ink `#b6c5da` on the teams page; agent-browser + VLM round: zero console errors, lbtn 44×44, skip pill 117×54 on focus, fa↔en round-trip, mobile + desktop VLM pass (the footer-ink "faded" guess superseded by the measured 9.9:1) | ✅ |
 | 2026-11-04 | **Phase 6 session-start verification:** clone at `23c7fd8` (clean, in sync — no K13 race); healthz `13.208-lastmod` = repo VERSION; `npm install` + `npm test` → exit 0, **2,552 checks** (the expected baseline); production `seo:check` **65/0** | ✅ |
 | 2026-11-04 | **BEFORE evidence (production v13.208):** Lighthouse a11y mobile ×3 + desktop — **100 everywhere BUT label-content-name-mismatch flagged #heroMCard (mobile, every run) and #bigHeroCard (desktop)**; the live forced-`.past` contrast matrix: countdown **2.95:1**, kickdate **3.19:1**, team **4.15:1** (the audit's 7-node family reproduced live); **19 interactive elements < 44px at 390px** (lbtn 34×34, footer nav 34px, utility links 18px); #heroMCard label = teams-only vs visible names+date+time+digits | ✅ |
@@ -544,6 +589,8 @@ full `npm test` green (2,531 checks incl. every bot suite).
 ## Git & deployment log
 
 | Phase | Commit | Push | Deploy | Production verify |
+| :--- | :--- | :--- | :--- | :--- |
+| 7 | the K20 harness fix (`scripts/check-no-miss.js` — the day-straddle-proof overlay fixture + the guard) + the Phase 7 close-out docs commit (RESULTS §18, tracker, changelog) | `main` @ GitHub (one-shot token push, verified via `git ls-remote`); CI watched via the GitHub API | **NOT DEPLOYED** (harness + docs only — spec §14.4; VERSION stays `13.210-namefix`) | `/healthz` re-verified post-push: `13.210-namefix`, `ok:true`, ticks completing, outbox 0 — production unchanged by design |
 | 6 | `0475257` (`v13.209-a11y` — F-M3+F-M6+F-L3+the label round 1+the gate) + `6d842bc` (`v13.210-namefix` — the label final shape) + `5ab4b2d` (a11y: the .simcount catch) + the docs close-out commit `00993d8` + the recovery docs commit (the close-out polish: the stale Phase 5 tracker rows → the Phase 6 state, the next-session section → Phase 7, K13 ×3) | `main` @ GitHub (one-shot token pushes, verified via `git ls-remote`); CI seo-check **77/0 green first-try on ALL FOUR commits** (`0475257` T-09 `/` perf 57 / `6d842bc` 44, K10 band / `5ab4b2d` 55 / `00993d8` 60 — the docs run completed green AFTER the session died; the recovery session verified it via the API) | **DEPLOYED** ×3 (`npx wrangler deploy` — client assets + server code changed; versions `bc94e18b` / `4b3c8c64` / `64339b38`) | `/healthz` → `13.210-namefix`, `ok:true`, ticks completing, outbox 0; a11y 100 on / (mobile ×3 + desktop) with ZERO flagged audits + on the sub-page families; the contrast matrix 7.34–11.34:1 measured live; the 44px targets live; the skip link first-focusable on every page; the simcount chip 6.45:1 after the 900 s render-hold rollover; bot-side fields healthy; the recovery session re-verified headers/SW v111/pins/HTML markers/browser round on the live deployment |
 
 | :--- | :--- | :--- | :--- | :--- |
@@ -559,17 +606,16 @@ full `npm test` green (2,531 checks incl. every bot suite).
 
 ## Next-session prompt
 
-The complete, copy-paste-ready Phase 7 prompt is emitted at the end of the
-Phase 6 session report (per repo convention; the authoritative master
-specification is `SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md` §13 = Phase 7 —
-final verification & requirements reconciliation, the program's last
-phase). The state it builds on: `WEB_OPTIMIZATION_RESULTS.md` §17 (the
-Phase 6 record) + the frozen `WEB_OPTIMIZATION_AUDIT.md` baselines (the
-§1–§6 numbers Phase 7 must repeat identically) + this file's K1–K19
-register — in particular K5 (GSC owner-blocked — Phase 7 needs the
-owner's reports or credentials), K15 (the lab-LCP honesty: 5.5 s median,
-the ≤2.5 s acceptance NOT met, documented), K18 (any CI "duplicate"
-red is a sampler self-collision first) and the RUM note: the v13.208
-Web-Analytics beacon has been accumulating since 2026-11-04 — the owner's
-24–48 h dashboard check is Phase 7's field-data source (never fabricate
-field data; if the dashboard is empty, say so).
+**NONE — the program is closed.** Per spec §15 (one phase per session;
+Phase 7 was the last), there is no next phase and no next-session prompt.
+Any future arc starts from the outstanding-work list in
+`WEB_OPTIMIZATION_RESULTS.md` §18.9(11) — GSC access (K5), the lab-LCP
+residual (K15 — priority-hint the now-LCP `/hero-poster.jpg` or
+re-scope the preload; a client-asset ceremony round), the RUM re-check
+after 1–2 weeks of organic traffic (use the dashboard bot filter — the
+CI Lighthouse runs pollute the raw sample), K12 (the 18 inert X-card
+i18n keys), F-L2/K8 (wrangler.dev.toml hygiene), F-L6/F-L7 (deferred
+with numbers, RESULTS §15.5) and K10 (the T-09 CI gate's single-run
+lab variance). The K1–K20 register above is the lessons library; the
+frozen baselines live in `WEB_OPTIMIZATION_AUDIT.md` and the full
+program record in `WEB_OPTIMIZATION_RESULTS.md` §1–§18.

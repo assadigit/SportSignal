@@ -4,6 +4,62 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# web-optimization Phase 7 close-out — the final verification & requirements reconciliation (no version change; harness + docs only)
+
+_2026-11-05 · the last phase of the web-optimization program (spec §13).
+Production stays `13.210-namefix` — a verification-only session commits
+docs and does NOT redeploy (spec §14.4). npm test 2,591 → **2,592**._
+
+**The one code-side find — K20, the UTC-midnight-straddle fixture
+time-bomb (`scripts/check-no-miss.js`):** the session's baseline gate
+went RED at 00:26 UTC on *"overlay: id-miss falls back to team-pair+day
+lookup"*. Root cause (proven by clock arithmetic, the out-of-window
+re-run, and a frozen-clock replay of the REAL `applyLiveOverlay`): the
+overlay fixtures `OD = now−30min` / `OD2 = now−25min` are commented
+"same UTC day", but in the daily **00:25–00:30 UTC window** the pair
+straddles midnight — and the byPair fallback keys on the utcDate
+day-slice, so the lookup legitimately missed. The application logic was
+correct; the fixture was the defect (the Phase 6 recovery session's
+22:05-UTC green run vs this session's 00:26-UTC red run = the 5-minute
+window). **Fix:** OD2 now derives from OD's instant and rewinds into
+OD's day when the +5min kick would roll over, plus a new self-assertion
+guard ("the OD/OD2 fixture pair shares a UTC day") so the invariant can
+never silently regress. The sibling sweep (check-pervchat /
+check-scheduler / live-derby-test) found no other instance of the
+class. Harness-only: no application code, no client assets, no bot
+files, no behavior change.
+
+**The final verification record (RESULTS §18):** the 57-point production
+battery all green (SW v111 md5-identical, the caching ladder
+byte-identical, conditional-GET 9/9 → 304, the lastmod stamps frozen at
+genuine change times, the sitemap-index ETag render-stable ×3); the
+browser functional round (hero SSR-visible, the countdown ticking,
+fa↔en + tz round-trips, nav, 404s, zero console errors); the 7-viewport
+device matrix (no overflow, heights within audit variance); the final
+Lighthouse series (Lighthouse 13.6.0, K14-clean): `/` mobile ×5 →
+median perf 67 / LCP 6.4 s / CLS 0, desktop perf 99 / LCP 0.9 s,
+sub-pages 99–100 — **K15 stands honestly** (the ≤2.5 s lab-LCP target
+never met; new diagnostic: the LCP element is now the unhinted
+`/hero-poster.jpg`, not the preloaded scene); **the program's first
+field-CWV data** via the CF Web Analytics GraphQL RUM (237 vitals
+events: 232 bot-classified — the CI Lighthouse + session browsers —
++ 5 human; human LCP p50 1.38–1.59 s / p75 2.36–2.53 s / CLS ≤0.007 —
+good-band indicators at an honestly-too-small sample);
+`seo:check` production 65/0; the 16-page metadata/JSON-LD audit clean;
+GSC still owner-blocked (K5 — the program's one BLOCKED item); the
+bot-untouched proof: **27 bot source files + bot/sticker assets
+byte-identical across the entire program** (`f39ce2b` → HEAD); and the
+22-row requirements reconciliation checklist (16 COMPLETED / 4
+PARTIALLY with explanations / 1 BLOCKED) + the §18.9 final report.
+
+**The program:** Phases 0–7 complete, 2026-11-04 → 2026-11-05, 30+
+commits, v13.202 → v13.210 (nine deploys, all verified). JS bootup
+0.9 → 0.42 s, TTI 9.9 → 7.6 s, mobile LCP 9.2 → 6.4 s lab (1.4–1.6 s
+observed), desktop perf 95 → 99, CLS 0 throughout, a11y 100 with zero
+flagged audits, the lastmod contract honest, 304s everywhere, and a
+working field-CWV pipeline. The Telegram bot was never touched. See
+`WEB_OPTIMIZATION_RESULTS.md` §18.9(11) for the outstanding-work list.
+
 # v13.210-namefix — web-optimization Phase 6 close-out: the hero-card accessible names take their final shape (both curated labels retired)
 
 _2026-11-04 · the Phase 6 defect fix, the v13.206-scenediet precedent (a

@@ -1099,3 +1099,379 @@ served HTML still carried the old ink at `age: 292`).
   that a server replace() targets requires syncing the replace literal
   in the SAME edit (the check-stats 485 pin caught it pre-commit — the
   non-upcoming-hero hiding would have shipped broken).
+
+---
+
+## 18. Phase 7 — Comprehensive final verification & requirements reconciliation (2026-11-05 — the program close)
+
+The final phase per spec §13: repeat the baselines identically, verify
+everything in production, reconcile every requirement, and emit the
+program's final report. Near-zero code by design — the ONE code-side
+find was harness-side (K20 below); the production deployment
+`13.210-namefix` is unchanged by this session (harness + docs only → no
+redeploy, spec §14.4).
+
+### 18.1 Session arc + the K20 catch (the one code-side find)
+
+- **Session-start reconciliation:** expected HEAD `00993d8`, found
+  `683c094` (the Phase 6 close-out recovery — K13's third occurrence,
+  already documented in the tracker; docs+harness-only, VERSION
+  unchanged). Reconciled, no re-work; CI on `683c094` re-verified green
+  via the GitHub API (`seo` completed/success). Production `/healthz` →
+  `ok:true`, `version:13.210-namefix` = repo `src/config.ts` (the
+  daily KV meters had reset at UTC midnight: `kv_writes_web` 6,
+  `kv_writes_day` 23 at start).
+- **The baseline gate went RED first — and the catch is the session's
+  one code find (K20):** `npm test` failed on
+  `check-no-miss.js` → *"overlay: id-miss falls back to team-pair+day
+  lookup"*. Root cause (proven, not guessed): the fixture pair
+  `OD = now−30min` / `OD2 = now−25min` is commented "same UTC day" —
+  but between **00:25–00:30 UTC** the two offsets straddle UTC midnight
+  (caught live at 00:26:54 UTC: OD = `2026-11-04T23:56`, OD2 =
+  `2026-11-05T00:01`). `applyLiveOverlay`'s byPair fallback keys on the
+  utcDate **day-slice** (`h|a|d.slice(0,10)`), so the lookup
+  legitimately missed a different-day pair — the APPLICATION logic is
+  correct; the FIXTURE was a daily 5-minute time bomb. The identical
+  tree re-ran ALL PASS at 00:31:04 UTC (outside the window) — the
+  diagnosis proof.
+- **The fix (harness-only, no ceremony — `scripts/` is a §3.1 surface;
+  the `683c094` recovery-commit precedent):** OD2 now derives from OD's
+  instant and rewinds into OD's day when the +5min kick would roll over;
+  a new self-assertion
+  *"the OD/OD2 fixture pair shares a UTC day (K20 midnight-straddle
+  guard)"* pins the invariant forever (suite 194 → **195 checks**).
+  Proven three ways: the suite passes normally; a frozen-clock replay at
+  a synthetic 00:27-UTC instant shows the fixed pair hits while the OLD
+  pair still misses (the lookup correctly requires the same day); the
+  mid-day "different kick" property is preserved.
+- **Sweep for siblings:** the other now-relative fixtures
+  (`check-pervchat` 20min, `check-scheduler` 30/160min,
+  `live-derby-test` 30/40min) are single fresh-live offsets with no
+  day-slice pairing — no other instance of the class exists.
+- **Final baseline gate: `npm test` exit 0 — 2,592 checks** (2,591 +
+  the K20 guard).
+
+### 18.2 Functional regression (spec §13.1) — all green, production
+
+Browser round (agent-browser, live production, zero page errors and
+zero console messages throughout):
+
+| Check | Result |
+| :-- | :-- |
+| Homepage hero | SSR-visible (F-C1 held): `mc-clean` + 2 SSR portraits; countdown **ticking** (announcer read 23 → 22 → 19 min across reads); 0 skeletons; below-fold drained (34 spotitems, 86 standings rows) |
+| Emblems | 14 local `/emblems/*` imgs, **0 external api-sports** (F-H1 held) |
+| fa↔en round-trip | `lang`/`dir`/`h1`/`localStorage.ucl_lang` all flip and restore; EN announcer fully Latin ("Until kickoff: 3 Days 19 Hours 22 Min", kickoff "Saturday 21 November") |
+| Timezone dialog | opens populated (**459 options**, `aria-expanded`), `ss_tz` cookie round-trip (Tehran → America/New_York → restored) |
+| Carousel | arrows present; 1 dot (single-slide day → rotation correctly off, C10) |
+| Navigation | homepage nav (تیم‌ها) + shell nav (بازی‌ها) click-through; match page complete (h1, breadcrumb, 1 JSON-LD, countdown, 4 calendar actions); `/teams` hub 92 team links |
+| Error handling | known-family 404 renders the full page («صفحه پیدا نشد», noindex, nav, beacon); cheap static 404 for unknown routes (`no-store`) |
+| Keyboard/a11y live | skip link first-focusable (pill 117×54 at 8px on focus); `#lbtn` 44×44; both hero anchors **label-free** (K19 shape held; name-from-content = names+date+kickoff) |
+
+**The VLM visual round:** hero card complete at 390/768/1440 (portraits,
+crests, Persian names, countdown, kickoff, venue; no broken images or
+blank boxes). Two VLM-flagged "defects" were **disproven by DOM
+inspection** (the documented VLM-reliability protocol): the "invalid
+۳۰:۳۰ time" is a screenshot-resolution misread of «۲۳:۳۰» (DOM:
+`یکشنبه 17 آبان | ۲۳:۳۰`), and the "unanchored toast overlapping the
+feed" does not exist (no fixed/sticky toast element on the page — only
+the by-design sticky standings header). The "tablet hero clipped"
+observation is the viewport fold (the card is 1,365px tall inside a
+1,024px viewport; `contentClipped:false`, no internal clipping).
+
+**Bot protection (spec §13.1's explicit verification):** all **27
+§3.2 bot-only source files** (`bot.ts` … `cup-elim.ts`) plus
+`assets/bot/*` and `assets/stickers/*` are **byte-identical
+`f39ce2b`→HEAD** (the whole program, `git diff` per file). The only
+SHARED-file touches are the documented neutrality cases:
+`src/config.ts` = the VERSION line only; `src/tables.ts` = the single
+LEAGUE_LOGOS hunk (card.ts's import still dead — re-verified; zero
+`.emblem` readers in any bot-facing module). The full-program diff (70
+files) contains **zero files outside the known-safe surfaces**. No bot
+interactions were performed in any phase (no test messages, no token
+use); bot-side healthz fields healthy at every check.
+
+### 18.3 Device verification (spec §13.2) — the 7-viewport matrix
+
+| Viewport | scrollWidth == clientWidth | Page height (audit baseline) |
+| :-- | :-- | :-- |
+| 360×740 | ✅ 360 | 10,165 px (10,066) |
+| 390×844 | ✅ 390 | 10,088 px (10,029) |
+| 430×932 | ✅ 430 | 10,004 px (9,944) |
+| 768×1024 | ✅ 768 | 9,437 px (9,413) |
+| 1024×768 | ✅ 1024 | 8,480 px (8,456) |
+| 1440×900 | ✅ 1440 | 6,573 px (6,550) |
+| 1920×1080 | ✅ 1920 | 6,596 px (6,572) |
+
+No horizontal overflow at any width; heights within fixture-data
+variance of the frozen audit. Touch targets live (lbtn 44×44, skip pill
+117×54); typography/Persian digits render correctly at every width
+(DOM-verified); image rendering clean (screenshots content-verified:
+96.5–99.8% non-white, dark theme dominant — plus the VLM pass above).
+
+### 18.4 Performance comparison — lab (spec §13.3) — the final Lighthouse series
+
+Conditions identical to the frozen baseline: **Lighthouse 13.6.0**
+(the audit's exact version), default mobile throttling, production
+target, **K14-clean sandbox** (zero browser/wrangler/background
+processes verified before the series; load < 0.1).
+
+| Metric — `/` mobile | Audit (v13.201) | Phase 2 (v13.204) | Phase 3 (v13.206) | **Phase 7 final (v13.210, ×5)** |
+| :-- | :-- | :-- | :-- | :-- |
+| Performance | 65 (range 49–65) | 68 median | 51–61 | **62/62/67/71/71 — median 67** |
+| LCP (simulated) | **9.2 s** | 5.9–7.7 s | 4.6–6.4 (median 5.5) | **5.4–6.7 s — median 6.4 s** |
+| FCP | 2.3 s | 2.2 s | — | 2.2 s median (2.1–2.7) |
+| TBT | 250 ms | 207–320 | 410–1,320 | 200–500 ms — median 380 |
+| TTI | 9.9 s | 7.4–8.9 s | 6.2–7.6 s | 6.6–8.0 s — median 7.6 |
+| JS bootup | 0.9 s | 0.35–0.4 s | 0.2–0.6 s | 0.29–0.56 s — median 0.42 |
+| CLS | 0 | 0 | 0 | **0** (every run) |
+| Speed Index | 4.6 s | 3.8 s | — | 3.3 s median |
+
+| Page | Audit | **Phase 7 final** |
+| :-- | :-- | :-- |
+| `/` desktop | perf 95 · LCP 1.4 s · TBT 10 ms | **perf 99 · FCP 0.6 s · LCP 0.9 s · TBT 46 ms · CLS 0.0002 · TTI 1.2 s** |
+| `/matches/today` mobile | perf 99 · LCP 1.6 s | **perf 99 · LCP 1.8 s · TBT 0 · CLS 0 · a11y/SEO 100 · BP 96** |
+| `/teams` mobile | perf 99 · LCP 1.6 s | **perf 99 · LCP 1.8 s · TBT 0 · CLS 0** |
+
+**K15 stands, honestly:** the ≤2.5 s lab-LCP acceptance target is **NOT
+met** (final median 6.4 s vs the Phase 3 median 5.5 s — within the
+documented data-day variance band; the structural improvement from 9.2 s
+is the durable claim). The observed (unthrottled) LCP is 0.81–1.43 s in
+every run.
+
+**The new Phase 7 diagnostic — the LCP element has shifted with the
+data:** the discovery insight now attributes the mobile LCP to
+`div.hero-bg > img.bg-photo` (**`/hero-poster.jpg`**, 412×900 — a
+v13.125-era unconditional template element), NOT the `.mc-scene` the
+audit profiled. The scene-4-2 `fetchpriority=high` preload still ships
+and still matches the scene — but in the current data state the poster
+(a plain, unhinted `<img>`) wins the LCP race:
+`priorityHinted:false`, LCP resource load delay 16–2,963 ms (run
+variance), while obsLCP stays 0.81–1.43 s. The F-C1 discovery mechanics
+remain fixed for the scene; the residual lab-LCP is now carried by the
+unhinted poster + the render-blocking chain weight (HTML 184 KB + CSS
+135 KB + fonts). **Outstanding-work candidate for any future arc:**
+priority-hint the poster or re-scope the preload to the actual LCP
+element (a client-asset change — full ADR-006 ceremony; out of a
+verification phase's scope by design).
+
+**A11y flake investigated to ground (the axe-sampling artifact):** 2 of
+10 mobile runs flagged `color-contrast` on week-card
+`.spotitem .countdown`/`.kickdate` nodes at `#6a8eba` on `#1a283f` =
+4.36:1. The color `#6a8eba` exists **nowhere in the repo** — it is
+exactly `#93c5fd` (the real `--countdown` token) blended at ~66%
+opacity, i.e. a **mid-rebuild transient** (the poll-cycle re-render
+window). The steady state, measured live with the axe-style background
+stack walk: countdown **7.65:1**, kickdate **9.36:1** — comfortably AA
+and pinned green in `check-a11y` (the gate's matrix covers the normal
+and past pill variants). 4/4 immediate a11y-only recheck runs: 100,
+zero flagged audits. **Verdict: no shipped ink is below AA; the flag is
+a sampling artifact class (like K10's lab variance), documented here
+for future verifiers.**
+
+### 18.5 Field data — the CF Web Analytics RUM (spec §13.3) — the program's FIRST field CWV
+
+The v13.208 beacon has now accumulated real data, and this session's
+Cloudflare token CAN read it (the GraphQL `rumWebVitalsEventsAdaptiveGroups`
+/ `rumPageloadEventsAdaptiveGroups` datasets; the site's internal tag
+`08a51fd889514c818e0161066160e5b3`). **Every number below is a verbatim
+API read — nothing estimated.**
+
+- **Window:** 2026-11-04 (the beacon's first hours — a Tehran match
+  evening) → 290 pageload events / 288 visits. Top paths:
+  `/` 111 visits, `/matches/today` 56, `/teams` 49, then a 1-visit
+  long tail (match/team/competition pages).
+- **Web-vitals events: 237 total — 232 bot-classified, 5 human**
+  (3 desktop + 2 mobile). The bot share is expected and explainable:
+  the CI `seo-check` Lighthouse runs (10+ runs on Nov 4 × 3 pages) and
+  the sessions' own verification browsers all execute the beacon.
+- **Human sample (n=5 — too small for p75 claims; recorded as
+  first-window indicators):** LCP p50 **1.38 s desktop / 1.59 s
+  mobile**; LCP p75 2.36 s / 2.53 s; CLS p75 **0.007 / 0**; TTFB p50
+  0.31 s / 0.77 s. No INP data (no recorded human interactions).
+- **Bot sample (n=232, for context):** LCP p75 1.52 s, FCP p75 1.46 s,
+  CLS p75 0, TTFB p75 255 ms, INP p75 256 ms (the only INP signal —
+  generated by automated interactions, not a user verdict).
+- **Honest verdict:** the F-H3 field pipeline is **proven end-to-end**
+  (beacon → CF Web Analytics → GraphQL), and the first human indicators
+  are GOOD (sub-2.5 s LCP at p50/p75 in this tiny sample, CLS ~0 —
+  consistent with the lab). But n=5 cannot support a CWV pass/fail
+  claim. **Owner action:** re-check the dashboard after 1–2 weeks of
+  organic traffic (the bot filter toggle excludes the CI noise).
+
+### 18.6 SEO verification (spec §13.4)
+
+- **`npm run seo:check` (production): 65 PASS / 0 FAIL** (floor ≥56;
+  includes all 15 bot UAs → 200, IndexNow key + BingSiteAuth, the
+  T-13 machine-file ETag + 304 assertions).
+- **Robots/sitemaps:** robots.txt 200 + sitemap pointer; index → 5
+  children all 200; sitemap-sampled URLs (3 dynamic) → 200.
+- **The lastmod contract (v13.208) held under re-render pressure:** all
+  child stamps still read their genuine change times (2026-11-04
+  19:41/19:46 — NOT today's clock, despite many TTL-expiry re-renders
+  since; under the old eviction bug every stamp would read "now");
+  sitemap-index ETag render-stable across 3 consecutive reads
+  (`"ss-6bfa5eb12db"` ×3).
+- **Metadata/JSON-LD spot audit (16 pages):** unique titles (no
+  duplicates), self-referencing canonicals, exactly one `<h1>` each,
+  every JSON-LD block parses, `og:locale:alternate` 0 (R11 held),
+  hreflang correctly absent (R11: no en URLs exist to annotate).
+- **Status codes/redirects:** http→https, www→apex, football→apex
+  (web paths), trailing-slash, uppercase, `/public` — all single-hop
+  301; 404s custom + noindex + `no-store` + canonical-free (F-L1 held).
+- **GSC (K5):** still **owner-blocked** — no GSC credentials in any
+  session of this program. Nothing is claimed from GSC; the standing
+  owner ask (reports or verifying-account access) remains in
+  `OWNER_TODO.md`. This is the program's one unresolved external
+  dependency.
+
+### 18.7 Production verification (spec §13.5) — the 57-point battery
+
+All green (the two initial "fails" were the author's own grep/fetch
+artifacts, run to ground and documented): `/healthz` ×3 →
+`13.210-namefix`, `ok:true`, ticks 4–8 min, outbox 0; 24 important URLs
+→ 200; redirects single-hop; 404 shape correct; all 6 security headers
+present (CSP byte-shape as pinned, HSTS, nosniff, Referrer-Policy,
+Permissions-Policy, XFO); the caching ladder **byte-identical** (HTML
+`max-age=0, s-maxage=60, swr=300`; robots 3600; sitemaps 600; feed/ics
+300; matches.json `60, s-maxage=300`; 404/admin no-store);
+`public-13.81.css` / `public-13.70.js` / `core-13.16.js`
+immutable-pinned; **SW `const CACHE = "sportsignal-v111"`** (the live
+sw.js md5-identical to the repo file — the line-8 historical-comment
+grep trap re-encountered and avoided); **conditional-GET matrix 9/9 →
+304** (the v13.207 contract held); beacon ×2 refs on every HTML family;
+the Phase 6 a11y markers all present (skip-link first, label-free hero
+anchors, `.simcount` ink rule `#b6c5da` in the served shell style —
+the chip element itself is data-dependent and did not render on
+today's hub pages; the rule + gate + served style are the verifiable
+contracts, all green). **R2/KV watch:** `kv_writes_web` 6 → 24 during
+the session — the documented K11 class (my own verification traffic's
+SWR revalidations), NOT a new write class; `kv_writes_day` 49 vs the
+1,000 cap.
+
+### 18.8 The requirements reconciliation checklist (spec §13.6)
+
+| # | Requirement (spec §) | Verdict | Evidence |
+| :-- | :-- | :-- | :-- |
+| 1 | Website-only; bot strictly off-limits (§2.1) | **COMPLETED** | 27 bot files + bot/sticker assets byte-identical pre-project→HEAD (§18.2); shared-file neutrality re-verified; zero bot interactions; bot-side healthz healthy at every phase |
+| 2 | Preserve design/content/routes/functionality (§2.2) | **COMPLETED** | 7-viewport heights within audit variance (§18.3); fa/en + tz + carousel + countdown + nav all verified (§18.2); CLS 0 held; zero console errors |
+| 3 | Autonomous safety (test→push→deploy→verify; no force ops) (§2.3) | **COMPLETED** | Every phase: npm test green before push, one-shot token pushes, ls-remote verified, deploys only on code changes, K13 recovery protocol ×3 |
+| 4 | Free-first (no new paid deps/services) (§2.4) | **COMPLETED** | Zero new dependencies added (client JS hand-written throughout); free-tier KV/CPU constraints respected (R2/R3) |
+| 5 | CWV targets: LCP ≤2.5 s, INP ≤200 ms, CLS ≤0.1 at p75 field (§3.1) | **PARTIALLY** | CLS **COMPLETED** (0 lab everywhere; ≤0.007 field). LCP **NOT met in lab** (K15: 9.2→6.4 s median; honest) — field first-window p75 2.36–2.53 s at n=5 (too small to claim). INP **NOT MEASURABLE** (no human-interaction field data yet; lab TBT 200–500 ms). Explanation: the residual is the render-chain weight + the now-unhinted LCP element (§18.4) |
+| 6 | Lighthouse objectives 90–100 ×4 categories (§3.2) | **PARTIALLY** | a11y 100 / SEO 100 / BP 96 / desktop+sub-pages 99–100 **met**; homepage mobile perf 62–71 — below the 90 objective (the K15 F-C1 residual, documented every phase; never hidden) |
+| 7 | Evidence-driven, no artificial LH optimization (§3.3) | **COMPLETED** | The K14/K16/K17/K19 honesty arc; two shipped-then-reverted/re-fixed rounds documented; no score-chasing changes |
+| 8 | Persistent docs: PROGRESS/AUDIT/RESULTS/CHANGELOG (§4) | **COMPLETED** | AUDIT frozen (never overwritten); RESULTS §1–§18; tracker + changelog per phase; single changelog system |
+| 9 | Roadmap order 0→7, one phase per session (§5) | **COMPLETED** | 8 sessions, in order; interruptions reconciled (K13 ×3), never re-worked |
+| 10 | Phase 0 recon (§6) | **COMPLETED** | WEB_OPTIMIZATION_ARCHITECTURE.md (isolation map §3, risks R1–R14); docs-only, no deploy |
+| 11 | Phase 1 audit + frozen baseline (§7) | **COMPLETED** | AUDIT §1–§8 + F-register (1C/3H/6M/10L); GSC limitation documented from day one |
+| 12 | Phase 2 CSS/JS/rendering/deps (§8) | **COMPLETED** | v13.202–204: bootup 0.9→0.35 s, TTI 9.9→7.4–8.9 s, 629 ms monolith → ≤356 ms interleavable, 31 dead CSS rules; all acceptance met |
+| 13 | Phase 3 assets/CWV (§9) | **COMPLETED** (target honest) | F-C1 discovery mechanics fixed (1,440→21–33 ms, obsLCP=FCP); F-H1/F-H2/F-M4/F-M7 done; fonts honest no-trim; the ≤2.5 s target NOT met → K15 |
+| 14 | Phase 4 caching (§10) | **COMPLETED** | F-M5 fixed (weak-comparison 304s, 11-URL matrix); machine-file ETags; ladder byte-identical (R12); zero new KV writes (R2); F-L6/L7 evaluated with numbers + deferred |
+| 15 | Phase 5 technical/multilingual SEO (§11) | **COMPLETED** | The lastmod eviction bug found+fixed (live-proven); F-L1; F-H3 beacon executed; IndexNow drain; F-M8 decision documented; R11 closed; 24-page metadata audit |
+| 16 | Phase 6 a11y/security (§12) | **COMPLETED** | F-M3 color dimming (7.34–8.92:1), F-M3b name-from-content (K19), F-M6 44px, F-L3 skip links, .simcount catch, CSP R13 documented, a11y 100 zero-flagged |
+| 17 | Phase 7 final verification (§13) | **COMPLETED** | This §18 |
+| 18 | Git/deploy safety (§14) | **COMPLETED** | Incremental commits per convention; full-diff review; bot-file check every push; deploy only when code/assets changed (docs phases pushed without redeploy) |
+| 19 | Handoff + next-session prompts (§15) | **COMPLETED** | Self-contained prompts every phase; this session ends the program (§18.10) |
+| 20 | F-register closure: F-C1, F-H1..H3, F-M1..M8, F-L1..L10 | **COMPLETED / 4 documented exceptions** | Fixed: F-C1(mechanics), F-H1, F-H2, F-H3, F-M1..M7, F-L1, F-L3, F-L4(K2), F-L10. Decided/kept: F-M8 (canonical stays, evidence §16.2), F-L5 (healthz design), F-L8 (theme retired by owner directive). Evaluated+deferred with numbers: F-L6 (asset tail), F-L7 (early hints). Hygiene note open: F-L2/K8 (wrangler.dev.toml tracked) |
+| 21 | GSC inspection (§7.5/§11.6/§13.4) | **BLOCKED** | No credentials in any session (K5); owner-run reports never supplied; nothing claimed; the standing ask remains in OWNER_TODO |
+| 22 | Field CWV data (§3.1/§13.3) | **PARTIALLY** | Pipeline live + first real numbers (§18.5) but n=5 human — insufficient for p75 verdicts; the 1–2-week organic re-check is owner follow-up |
+
+Every PARTIALLY/NOT/BLOCKED row carries its explanation above; no
+requirement is marked complete without evidence in this file or
+RESULTS §1–§17.
+
+### 18.9 The final report (spec §13.7) — the program summary
+
+1. **Executive summary.** Seven optimization phases (0–6) plus this
+   final verification, executed 2026-11-04 → 2026-11-05 across 30
+   commits, shipped v13.202 → v13.210 (nine production deploys, every
+   one healthz-verified with ticks completing). The website is
+   measurably faster (JS bootup −53%, TTI −2.3 s, desktop perf 95→99,
+   mobile LCP 9.2→~6 s lab / 1.4–1.6 s observed), fully AA-compliant
+   (a11y 100, zero flagged audits), honest in its SEO surfaces (the
+   lastmod contract now provably change-driven), completely
+   conditional-GET capable (9/9 304 matrix), and for the first time has
+   a working field-CWV pipeline. The Telegram bot is byte-untouched
+   throughout. The program's honest misses — the ≤2.5 s lab-LCP target
+   and GSC access — are documented, explained, and carried into the
+   outstanding-work list with concrete next steps.
+2. **Original baseline.** AUDIT §1–§7 (frozen): homepage mobile perf
+   49–65 / LCP 9.2 s (F-C1: `display:none` SSR hero), TBT 250 ms, TTI
+   9.9 s, bootup 0.9 s; sub-pages 91–99; CLS 0 everywhere; TTFB 45–80
+   ms warm; seo:check 56/56; 7 WCAG contrast/name/target findings; no
+   field data.
+3. **Final performance.** §18.4 tables: `/` mobile median perf 67,
+   LCP 6.4 s, TBT 380 ms, TTI 7.6 s, bootup 0.42 s, CLS 0; `/` desktop
+   perf 99 / LCP 0.9 s; sub-pages 99–100. The structural wins are
+   durable (fold-split, SSR reveal, local emblems, art diet); the
+   score variance across runs is data-day + LCP-element dependent.
+4. **Core Web Vitals comparison.** Lab: LCP 9.2 → 6.4 s (−30%) with
+   discovery mechanics provably fixed and obsLCP 0.8–1.4 s; CLS 0 → 0
+   (perfect throughout); TBT/INP-proxies: bootup 0.9 → 0.42 s. Field
+   (first window, n=5): LCP p50 1.4–1.6 s, p75 2.4–2.5 s, CLS ≤0.007 —
+   good-band indicators awaiting a statistically valid sample.
+5. **Technical & multilingual SEO.** §16 + §18.6: the lastmod eviction
+   bug fixed (the program's most consequential catch — live for weeks,
+   invisible to single-window audits, K17); 404 canonical cleanup; the
+   R11 single-language stance pinned (og:locale:alternate removed,
+   hreflang correctly absent); IndexNow drained; F-M8 decided with
+   evidence; metadata/JSON-LD clean across families; seo:check 56 → 65
+   checks, 0 fail.
+6. **Accessibility & security.** §17 + §18.2/18.4: contrast family
+   fixed via color-based dimming (7.34–8.92:1); hero accessible names
+   settled as name-from-content (the K19 lesson); 44px targets; skip
+   links first-focusable everywhere; .simcount caught; a11y 100 with
+   zero flagged audits on clean runs (the transient axe artifact
+   documented in §18.4); CSP stance documented (R13); security headers
+   strong; npm audit 0.
+7. **Caching.** §15 + §18.7: the F-M5 weak-comparison 304 fix across
+   both `wantCached` paths; ETags on the 5 machine files; the
+   freshness ladder byte-identical throughout (R12); zero new web-side
+   KV writes across the whole program (R2 — the §18.7 meter read is
+   documented SWR traffic).
+8. **Device compatibility.** §18.3: the 7-viewport matrix clean at
+   every phase boundary; heights stable vs baseline; touch targets,
+   RTL layout, Persian typography all verified live.
+9. **Regressions.** None open. Every phase's regression round (this
+   one: §18.2/18.3/18.7) green; the two same-session defect catches
+   (v13.206 preload weight, v13.210 label round) were found by the
+   program's own verification loops and fixed with ceremony.
+10. **Search Console.** Never accessed — no credentials in any session
+    (K5). Nothing claimed. DNS verification was owner-completed
+    2026-10-11; sitemap submission status unknown. The one standing
+    external dependency.
+11. **Outstanding issues & recommendations.** (a) GSC access (K5) —
+    owner reports or credentials; (b) the lab-LCP residual (K15) —
+    priority-hint `/hero-poster.jpg` or re-scope the preload to the
+    actual LCP element + the render-chain diet (HTML/CSS) — a client
+    asset round with full ADR-006 ceremony; (c) field CWV — re-check
+    the RUM dashboard after 1–2 weeks organic (use the bot filter; the
+    CI Lighthouse runs pollute the raw sample); (d) K12 (18 inert
+    X-card i18n keys) — candidate for the next bundle-touching round;
+    (e) F-L2/K8 (wrangler.dev.toml tracked despite its header) —
+    hygiene; (f) F-L6/F-L7 — evaluated, deferred (RESULTS §15.5);
+    (g) K10 — the T-09 CI gate remains a single-run lab measurement
+    against the F-C1 variance band.
+12. **Commit history & deployments.** 30 program commits `f39ce2b` →
+    this session's push: Phase 0 `a9c87c0/00c2e9f/63a1d02`; Phase 1
+    `101024f/b5f77a3/578126f`; Phase 2 `a5a805d/2c2d78b/53b05ef`;
+    Phase 3 `738d969/db84622`; Phase 4 `v13.207` code + docs; Phase 5
+    `888f1ae/ed74342/53f847e` + docs; Phase 6
+    `0475257/6d842bc/5ab4b2d/00993d8/683c094`; Phase 7 = the K20
+    harness fix + this close-out. Deploys: `13.202→13.210` (nine
+    `wrangler deploy` versions, all healthz-flip + tick verified);
+    docs-only phases deliberately not redeployed.
+13. **The requirements checklist.** §18.8 above — 16 COMPLETED, 4
+    PARTIALLY (each with its honest explanation), 1 BLOCKED (GSC), and
+    the register's documented keeps/deferrals.
+
+### 18.10 Session close + program end
+
+This is the final phase of the web-optimization program (spec §15: one
+phase per session; no next phase exists). Deliverables of this session:
+the K20 harness fix (`scripts/check-no-miss.js` + its guard, npm test
+2,591 → 2,592) and this §18 record. No application code, no client
+assets, no bot files changed; production remains `13.210-namefix` —
+verified healthy throughout (§18.7). The program's documentation set
+(SPEC / AUDIT / ARCHITECTURE / RESULTS §1–§18 / PROGRESS / CHANGELOG)
+is the handoff: any future arc starts from the outstanding-work list
+in §18.9(11) with the K1–K20 register as the lessons library.
