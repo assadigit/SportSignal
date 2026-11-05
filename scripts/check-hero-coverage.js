@@ -137,64 +137,77 @@ const mkMatch = (h, a, opts) => Object.assign({
   awayTeam: { name: a },
   competition: { code: "PL" }
 }, opts || {});
-// covered vs uncovered vs windows
+// covered vs uncovered vs windows — v13.226-herowire re-base: the fixture's
+// old gap teams (Aston Villa/Everton/Newcastle/Forest — library-only clubs)
+// are ALL WIRED now (the 76-portrait round wired the entire big-5 library),
+// so the gap class under test is the NO-LIBRARY club (Rangers/Olympiacos/
+// Malmö/Midtjylland — the "no portrait" demand evidence the §13 loop logs)
 const matches = [
   mkMatch("Arsenal FC", "Galatasaray SK"),                 // both wired → no gap
-  mkMatch("Aston Villa FC", "Everton FC"),                // library-only clubs → gap
-  mkMatch("Newcastle United FC", "Nottingham Forest FC"), // library-only → gap
-  mkMatch("København", "Malmö FF", { utcDate: iso(now + 30 * DAY) }), // beyond window
-  mkMatch("Feyenoord Rotterdam", "FC Porto"),             // wired (UCL set) → no gap
-  mkMatch("Olympique Lyonnais", "Lille OSC", { status: "FINISHED" }) // finished → excluded
+  mkMatch("Rangers FC", "Olympiacos FC"),                  // no-library clubs → gap
+  mkMatch("Malmö FF", "FC Midtjylland"),                   // no-library → gap
+  mkMatch("København", "Djurgårdens IF", { utcDate: iso(now + 30 * DAY) }), // beyond window
+  mkMatch("Feyenoord Rotterdam", "FC Porto"),              // wired (UCL set) → no gap
+  mkMatch("Olympique Lyonnais", "Lille OSC", { status: "FINISHED" }) // finished → excluded (Lille itself unwired — the exclusion is what keeps it out)
 ];
-const heroM = mkMatch("Aston Villa FC", "Newcastle United FC", { utcDate: iso(now + 36e5) });
+const heroM = mkMatch("Rangers FC", "Malmö FF", { utcDate: iso(now + 36e5) });
 const scan = scanHeroGaps(matches, heroM);
 check("scan: covered teams excluded (Arsenal/Galatasaray/Feyenoord/Porto)",
   !scan.has("arsenal-fc") && !scan.has("galatasaray-sk") && !scan.has("feyenoord-rotterdam") && !scan.has("fc-porto"));
 check("scan: uncovered in-window teams present with comp counts",
-  scan.has("aston-villa-fc") && scan.has("newcastle-united-fc") && scan.has("everton-fc") &&
-  scan.has("nottingham-forest-fc") && scan.get("aston-villa-fc").comps.PL === 2);
+  scan.has("rangers-fc") && scan.has("olympiacos-fc") && scan.has("malmo-ff") && scan.has("fc-midtjylland") &&
+  scan.get("rangers-fc").comps.PL === 2);
 check("scan: hero-match flag only on the featured sides",
-  scan.get("aston-villa-fc").heroPick === 1 && scan.get("newcastle-united-fc").heroPick === 1 && scan.get("everton-fc").heroPick === 0);
+  scan.get("rangers-fc").heroPick === 1 && scan.get("malmo-ff").heroPick === 1 && scan.get("olympiacos-fc").heroPick === 0);
 check("scan: >7d and FINISHED rows excluded",
-  !scan.has("kobenhavn") && !scan.has("malmo-ff") && !scan.has("olympique-lyonnais") && !scan.has("lille-osc"));
-check("scan: library-only gap carries no library annotation confusion (portrait exists, unwired)",
-  heroLibraryFor("Everton FC") !== null && heroTeamArt("Everton FC") === null);
+  !scan.has("kobenhavn") && !scan.has("djurgardens-if") && !scan.has("olympique-lyonnais") && !scan.has("lille-osc"));
+check("v13.226 full wiring: every hero-clubs library club resolves BOTH heroLibraryFor AND heroTeamArt (library_only is empty — the wiring-loop closure), while a no-library club resolves neither",
+  (() => { const lib = JSON.parse(fs.readFileSync(path.join(ROOT, "assets", "players", "uefa", "hero-clubs.json"), "utf8")).clubs;
+    return Object.values(lib).every((c) => heroLibraryFor(c.club) && heroTeamArt(c.club)); })() &&
+  heroLibraryFor("Rangers FC") === null && heroTeamArt("Rangers FC") === null);
 
 // merge discipline
 const t0 = now;
 const m1 = mergeHeroGapRegistry(null, scan, t0);
 check("merge: cold registry → dirty, all scanned teams created, hero picks counted",
-  m1.dirty && m1.teams["aston-villa-fc"].seen_days === 1 && m1.teams["aston-villa-fc"].hero_picks === 1 &&
-  m1.teams["newcastle-united-fc"].hero_picks === 1 && m1.teams["everton-fc"].hero_picks === 0);
-check("merge: library-ready annotation lands on the record",
-  m1.teams["everton-fc"].library_slug === "everton-fc" && !!m1.teams["everton-fc"].library_player);
+  m1.dirty && m1.teams["rangers-fc"].seen_days === 1 && m1.teams["rangers-fc"].hero_picks === 1 &&
+  m1.teams["malmo-ff"].hero_picks === 1 && m1.teams["olympiacos-fc"].hero_picks === 0);
+// library_ready annotation — the FUTURE-turnover path: v13.226 wired every
+// current library club, so no real scan can produce a library-but-unwired
+// team anymore; exercise the annotation with a hand-built scan entry (the
+// shape scanHeroGaps returns) so the path stays covered for the next
+// library addition / season turnover
+const libScan = new Map([["everton-fc", { name: "Everton FC", nkey: "everton-fc", comps: { PL: 1 }, heroPick: 0 }]]);
+const mLib = mergeHeroGapRegistry(null, libScan, t0);
+check("merge: library-ready annotation lands on the record (the future-turnover path — v13.226 wired every current library club)",
+  mLib.teams["everton-fc"].library_slug === "everton-fc" && !!mLib.teams["everton-fc"].library_player);
 const m2 = mergeHeroGapRegistry(m1.teams, scan, t0 + 6e4); // same UTC day, minutes later
 check("merge: same-day re-merge is a no-op (write discipline)", !m2.dirty);
 const nextDay = t0 + DAY + 36e5;
-const scan2 = scanHeroGaps([mkMatch("Aston Villa FC", "Everton FC")], null);
+const scan2 = scanHeroGaps([mkMatch("Rangers FC", "Olympiacos FC")], null);
 const m3 = mergeHeroGapRegistry(m1.teams, scan2, nextDay);
 check("merge: day rollover bumps seen_days and refreshes comps, absent teams retained",
-  m3.dirty && m3.teams["aston-villa-fc"].seen_days === 2 && m3.teams["nottingham-forest-fc"].seen_days === 1 &&
-  m3.teams["aston-villa-fc"].comps.PL === 1);
+  m3.dirty && m3.teams["rangers-fc"].seen_days === 2 && m3.teams["fc-midtjylland"].seen_days === 1 &&
+  m3.teams["rangers-fc"].comps.PL === 1);
 // resolution: portrait lands (splice a wired entry in, re-scan so the now-
 // covered team drops OUT of the scan, then merge — the resolution path only
 // fires for stored teams ABSENT from the current scan)
 const rawWired = HERO_COVERAGE_RAW;
 const savedWired = rawWired.wired;
-rawWired.wired = savedWired.concat([{ name: "Everton FC", src: "/players/uefa/test.webp", fade: null, slug: "everton-fc", player: "Test Player", league: "Premier League" }]);
+rawWired.wired = savedWired.concat([{ name: "Rangers FC", src: "/players/uefa/test.webp", fade: null, slug: "rangers-fc", player: "Test Player", league: null }]);
 heroCovIdx = null; // bust the lazy index
-const scanAfterCover = scanHeroGaps([mkMatch("Aston Villa FC", "Everton FC")], null);
-check("scan: freshly-wired team leaves the scan immediately", !scanAfterCover.has("everton-fc") && scanAfterCover.has("aston-villa-fc"));
+const scanAfterCover = scanHeroGaps([mkMatch("Rangers FC", "Olympiacos FC")], null);
+check("scan: freshly-wired team leaves the scan immediately", !scanAfterCover.has("rangers-fc") && scanAfterCover.has("olympiacos-fc"));
 const m4 = mergeHeroGapRegistry(m3.teams, scanAfterCover, nextDay + 6e5);
 check("merge: covered-again team marked resolved (not deleted)",
-  m4.dirty && m4.teams["everton-fc"].resolved_at && m4.resolvedNow.length === 1);
+  m4.dirty && m4.teams["rangers-fc"].resolved_at && m4.resolvedNow.length === 1);
 const m5 = mergeHeroGapRegistry(m4.teams, scanAfterCover, nextDay + 8 * DAY);
-check("merge: resolved entries pruned after 7 days", m5.dirty && !m5.teams["everton-fc"]);
+check("merge: resolved entries pruned after 7 days", m5.dirty && !m5.teams["rangers-fc"]);
 rawWired.wired = savedWired;
 heroCovIdx = null;
 // reopen: resolved team reappears in the scan
 const m6 = mergeHeroGapRegistry(m4.teams, scan, nextDay + 36e5);
-check("merge: a reappearing gap reopens (resolved_at cleared)", m6.dirty && !m6.teams["everton-fc"].resolved_at);
+check("merge: a reappearing gap reopens (resolved_at cleared)", m6.dirty && !m6.teams["rangers-fc"].resolved_at);
 // stale prune: 30d unseen, zero hero picks
 const stale = { "stale-fc": { name: "Stale FC", nkey: "stale", comps: {}, first_seen: iso(now - 40 * DAY), last_seen: iso(now - 40 * DAY), seen_days: 1, hero_picks: 0, resolved_at: null } };
 const m7 = mergeHeroGapRegistry(stale, scan, now);

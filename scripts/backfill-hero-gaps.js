@@ -40,6 +40,14 @@ const ROSTER_FILE = path.join(PIPE, "roster-heroes.json");
 const HERO_CLUBS = path.join(ROOT, "assets", "players", "uefa", "hero-clubs.json");
 const REPORT = path.join(ROOT, ".cache", "uefa-player-portraits", "hero-gap-report.json");
 const sync = require("./sync-hero-coverage.js");
+// v13.226-herowire: the wiring flow's asset leg — the SAME v13.131 alpha-trim
+// (scripts/hero-canvas.js) + the SAME deterministic cast bake
+// (make-hero-casts.js bakeCast, exported this release) the bulk S10 wiring
+// used. Before this fix --wire wrote a /players/uefa/ src (the v13.129-era
+// contract) that would FAIL npm test's v13.130 hero-canvas + cast-sibling
+// gates — the tool had drifted from the evolved contract.
+const { trimToHeroCanvas } = require("./hero-canvas.js");
+const { bakeCast, DIR: HERO_DIR } = require("./make-hero-casts.js");
 
 const LEAGUE_OF_CODE = {
   PL: "Premier League", PD: "La Liga", SA: "Serie A", BL1: "Bundesliga", FL1: "Ligue 1",
@@ -257,11 +265,16 @@ function cmdWire(club) {
   if (bundle.includes('"' + lib.club + '":{src:')) {
     die(lib.club + " is already wired in " + bundleName);
   }
+  // v13.226: the render-library canvas (PLAYER-slug filename, the v13.131
+  // alpha-trim: bbox thr 8 + 2px pad, lossless) + its deterministic cast —
+  // the HERO_ART src contract is /players/hero/<player-slug>.webp
+  const playerFile = path.basename(lib.portrait_url);
   const m = bundle.match(/var HERO_ART=\{[\s\S]*?\n\};/);
   if (!m) die("HERO_ART block not found in " + bundleName);
   const block = m[0];
   const trimmed = block.replace(/\n\};$/, "").replace(/,\s*$/, "");
-  const entry = '"' + lib.club + '":{src:"' + lib.portrait_url + '",alt:""}';
+  const heroSrc = "/players/hero/" + playerFile;
+  const entry = '"' + lib.club + '":{src:"' + heroSrc + '",alt:""}';
   const nextBlock = trimmed + ",\n" + entry + "\n};";
   const nextBundle = bundle.replace(block, nextBlock);
 
@@ -271,6 +284,15 @@ function cmdWire(club) {
   fs.writeFileSync(nextPath, nextBundle);
   console.log("OK   " + nextName + " created with the new HERO_ART entry:");
   note(entry);
+
+  // the render-library assets: trimmed canvas + cast (deterministic; the
+  // existing casts are never touched — one file baked per call)
+  trimToHeroCanvas(path.join(ROOT, "assets", "players", "uefa", playerFile), path.join(HERO_DIR, playerFile))
+    .then((r) => bakeCast(playerFile))
+    .then((r) => {
+      console.log("OK   render library: " + playerFile + " (" + r.src + " alpha-trimmed) + " + r.out + " cast baked");
+    })
+    .catch((e) => die("render-library build failed: " + e.message));
 
   // public.ts reference
   const pubTs = path.join(ROOT, "src", "pages", "public.ts");
@@ -299,7 +321,8 @@ function cmdWire(club) {
   console.log("");
   console.log("GATES before this can ship (the wiring is an OWNER DISPLAY DECISION — README §4):");
   note("1. fade-tier scan of " + lib.player + "'s portrait (README §2 v13.123 addendum — only a");
-  note("   non-uniform bottom luminance needs a fade field; uniform figures ship without one)");
+  note("   non-uniform bottom luminance needs a fade field; uniform figures ship without one;");
+  note("   scripts/s10-fadescan.js is the calibrated implementation)");
   note("2. npm run heroes:sync  (regenerates src/hero-coverage.ts with the new wired entry)");
   note("3. npm test — it will enumerate every version pin that still says " + bundleName +
     " (check-stats.js bundle checks, SW check, any sibling pins). Fix each listed pin.");

@@ -74,6 +74,10 @@ const smoothstep = (t) => {
   return x * x * (3 - 2 * x);
 };
 
+// v13.226-herowire: bakeCast is EXPORTED (guarded CLI below) so the wiring
+// flows (backfill-hero-gaps.js --wire, the bulk wiring scripts) bake a new
+// portrait's cast through the SAME deterministic rule instead of duplicating
+// the geometry — one source of truth for the shadow contract.
 async function bakeCast(file) {
   const src = path.join(DIR, file);
   const meta = await sharp(src).metadata();
@@ -123,14 +127,18 @@ async function bakeCast(file) {
   return { file, src: `${W}x${H}`, out: `${PW}x${PH}`, sigma, padSide, padTop };
 }
 
-(async () => {
-  const files = fs.readdirSync(DIR).filter((f) => f.endsWith(".webp") && !f.endsWith(".cast.webp")).sort();
-  if (!files.length) throw new Error("no source portraits found in " + DIR);
-  let n = 0;
-  for (const f of files) {
-    const r = await bakeCast(f);
-    n++;
-    console.log(`${r.file} ${r.src} -> ${r.out} (sigma=${r.sigma}px, pads=${r.padSide}/${r.padSide}/${r.padTop}/0)`);
-  }
-  console.log(`\nbaked ${n} cast files into ${DIR}`);
-})().catch((e) => { console.error(e); process.exit(1); });
+module.exports = { bakeCast, DIR };
+
+if (require.main === module) {
+  (async () => {
+    const files = fs.readdirSync(DIR).filter((f) => f.endsWith(".webp") && !f.endsWith(".cast.webp")).sort();
+    if (!files.length) throw new Error("no source portraits found in " + DIR);
+    let n = 0;
+    for (const f of files) {
+      const r = await bakeCast(f);
+      n++;
+      console.log(`${r.file} ${r.src} -> ${r.out} (sigma=${r.sigma}px, pads=${r.padSide}/${r.padSide}/${r.padTop}/0)`);
+    }
+    console.log(`\nbaked ${n} cast files into ${DIR}`);
+  })().catch((e) => { console.error(e); process.exit(1); });
+}

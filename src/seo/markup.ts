@@ -180,7 +180,7 @@ export function mrowHtml(sm: SeoMatch, idx: number, finished: boolean): string {
 // with the Gregorian date now in parentheses, year only when the Gregorian
 // year differs from the current Tehran year. Pure math (faDateD2W) — the
 // exact byte shape of the client's fmtHeroDate() fa-IR + fa-IR-u-ca-gregory
-// render (public-13.71.js), so the no-JS paint and the client re-render
+// render (public-13.72.js), so the no-JS paint and the client re-render
 // agree byte-for-byte (the v13.120-hero mirror contract).
 function faHeroDateJalali(iso: string): string {
   return faDateD2W(iso);
@@ -613,7 +613,7 @@ export function breadcrumbsHtml(trail: Crumb[]): string {
   return out;
 }
 
-// fmtDate equivalent (client public-13.71.js) — the bare date text node of
+// fmtDate equivalent (client public-13.72.js) — the bare date text node of
 // LIST rows: «جمعه، ۲۴ مهر ۱۴۰۵ (۱۷ اکتبر ۲۰۲۶) ساعت ۲۱:۳۰» — Jalali first
 // (fa-IR persian calendar) with the Gregorian parens (SS-27), Tehran clock.
 // Mirrored server-side so finished-list rows carry the same run the client

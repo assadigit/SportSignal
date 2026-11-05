@@ -4,6 +4,79 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.226-herowire — the S10 HERO-WIRING round: the 76 published big-5 portraits join HERO_ART (the owner's S9 WIRE decision — the library is FULLY wired)
+
+_2026-11-06 · the S10 session (docs/history/2026-11-06-s10-herowire.md).
+The one open S9 decision executed: wire the published big-5 library
+portraits into the runtime HERO_ART map. The count is 76, not the stale
+"78" of the S9 notes — v13.162-heropair already wired Chelsea + Tottenham
+(78 → 76, documented in that release's coverage bookkeeping). A
+client-asset change (public-13.71.js → 13.72.js, rename-on-edit) + 152
+new [assets] files; NO served-HTML edit rides the release (the SSR ports
+re-render from the regenerated coverage mirror on the next payload render
+— CONTENT_VERSION untouched, the v13.162 precedent)._
+
+**Feature (the wiring).** HERO_ART grows 35 → 111 entries: the 33
+UCL-roster representatives + Chelsea + Tottenham (v13.162/163) + the 76
+remaining hero-clubs.json clubs (PL 14 / La Liga 15 / Serie A 16 /
+Bundesliga 14 / Ligue 1 17). Keys are EXACT football-data.org provider
+names — all 76 cross-checked against the live FD league team lists
+(2026-11-05, one call per competition). hero-coverage.ts regenerates to
+**111 wired / 0 library-only** (96 library clubs total — the big-5
+library is FULLY wired; the runtime hero-gap detector's remaining gap
+class is only the no-library club: the "no portrait" demand evidence the
+§13 loop logs). The 4 big-5 clubs whose wired player differs from the
+current library MVP (Liverpool: Barcola wired / Wirtz in library;
+Stuttgart: Undav / El Khannouss; Napoli: McTominay / De Bruyne; Como:
+Nico Paz / Kean) keep their existing wired portraits — aligning them is
+a rotation/display decision (§2c/§14), not this release's scope; noted
+for the owner.
+
+**Assets (the render library).** 76 alpha-trimmed canvases land in
+`/players/hero/` — the standard v13.131 rule (alpha-bbox threshold 8 +
+2px pad, lossless webp; `scripts/hero-canvas.js`, new shared module) of
+the manifest-pinned `/players/uefa/` originals; PLAYER-slug filenames
+(never club names — the collection invariant); heights 404..464 (the 10
+bust_photos + Igor Thiago sit on the same bottom-aligned subject band;
+widths track the poses, 145..464). 76 deterministic casts baked
+(`make-hero-casts.js`) — the 37 pre-existing `.cast.webp` re-baked
+BYTE-IDENTICAL (md5-verified, the v13.162 precedent; `bakeCast` is now
+exported, guarded CLI).
+
+**QA (fade tiers — the v13.123 method, re-implemented and calibrated).**
+`scripts/s10-fadescan.js` measures every portrait's bottom-region
+luminance (per-row bright-quartile luma over the subject band) and
+reproduces the three documented precedents exactly (Yamal → hi: bright
+246 to ~91% then a 140-drop; Šimić → deep: brightEnd 69%; Baumgartner →
+default: uniform 241+ to the bottom). On the 76: **zero entries clear
+the tier bar** — the 5 flagged candidates (budimir, koch, clauss,
+panichelli, ajorque) are gradual dark-kit bottoms (65–147 luma, visible
+content) not the Šimić sharp bright→near-invisible (~30) drop; iron
+gomis's 108-drop sits at the 100% edge and giroud's 110-drop at 63% —
+both outside the tier windows. All 76 ship the DEFAULT ramp (no fade
+fields). Kit-timing was verified at publish time (the 2026-10-20 v2.3
+style audit) — never re-probed.
+
+**Tooling co-evolution.** `backfill-hero-gaps.js --wire` fixed to the
+v13.130 contract: it had kept writing `/players/uefa/` srcs (the
+v13.129-era contract) which would FAIL npm test's hero-canvas +
+cast-sibling gates; it now builds the trimmed canvas + cast through the
+same shared modules and points at `/players/hero/<player-slug>.webp`.
+
+**Release plumbing.** SW v114 → v115; `_headers` gains the 13.71.js
+retention pin (restoring the v13.212 omission — the chain had stopped at
+13.70.js) + the 13.72.js pin; cap sweep #16 evicts the unasserted
+`/public-13.48.js` + `/public-13.40.js` (the 100-rule cap held at 100);
+the public-page parity baseline re-frozen (the intended diff: the
+script-ref digit); check-stats re-pinned (js62 → 13.72.js, the hero pins
+MOVED from the stale js20/13.56.js historical read onto the live bundle,
+HERO_ART count 35 → 111, the homepage/headers/SW pins, the v13.225
+wiring check retired to a historical stub + the new v13.226 gate);
+check-hero-coverage re-based (the fixture's gap teams were
+library-only clubs — all wired now; the gap class under test is the
+no-library club, the library_ready annotation path kept alive via a
+hand-built scan entry for future season turnovers).
+
 # v13.225-socialsec — the post-Phase-2 S9 continuation / SS-26 + the §12 resolution: the verified X profile wired (sameAs + footer + twitter:site) + the deliverable security mailto
 
 _2026-11-06 · spec §3/SS-26 + the §12 question (the S7 question block's

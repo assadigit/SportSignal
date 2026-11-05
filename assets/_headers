@@ -473,6 +473,21 @@
 /public-13.70.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.226-herowire (the owner's S9 WIRE decision, executed S10): the 76
+# published big-5 library portraits join HERO_ART — public-13.71.js ->
+# 13.72.js (the map grows 35 -> 111 entries; every hero-clubs.json club
+# with a complete VLM-style-gated portrait renders; 76 new alpha-trimmed
+# /players/hero/ canvases + their deterministic cast bakes ride the
+# [assets] directory). The v13.212-shamsifirst rename omitted 13.71.js's
+# own pin (the chain stopped at 13.70.js) — restored here as the RETIRING
+# bundle's one-SEO-TTL retention pin.
+# (rename-on-edit; 13.71.js stays served + pinned one SEO TTL above.)
+/public-13.71.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/public-13.72.js
+  Cache-Control: public, max-age=31536000, immutable
+
 # v13.197-mcdesktop (owner: use the desktop player images on mobile too):
 # putPort serves the SAME heroArtFor() HERO_ART desktop library for BOTH
 # cards (the MC_ART mobile-cutout priority + the .mc-fill class retire;
@@ -721,8 +736,10 @@
 /public-13.63.css
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.48.js
-  Cache-Control: public, max-age=31536000, immutable
+# v13.226-herowire cap sweep #16: the /public-13.48.js pin EVICTED (~70
+# releases past its one-SEO-TTL retention — last served in the v13.164
+# era; the FILE stays on disk per the retention rule, an ancient cached
+# HTML re-fetching it still resolves on the default cache headers).
 
 /ui/sportsignal-hud-mobile.webp
   Cache-Control: public, max-age=31536000, immutable
@@ -754,8 +771,9 @@
 /public-13.56.css
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.40.js
-  Cache-Control: public, max-age=31536000, immutable
+# v13.226-herowire cap sweep #16 (second): the /public-13.40.js pin
+# EVICTED (~75 releases past retention — the v13.159-era portrait fill
+# bundle; the FILE stays on disk per the retention rule).
 
 # v13.154-polish (retired under v13.155-herodepth): 13.55.css — the 6 owner
 # adjustments from 545454.png, CSS-only: (1) a REAL page gap below the hero

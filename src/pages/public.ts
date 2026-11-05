@@ -1057,7 +1057,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      the spec's canonical D2 shape «۱۵ آبان (۵ نوامبر)»; en renders and the
      mcard's Latin-digit date line are untouched), mirroring the server's
      faDateD1/faDateD2 helpers byte-for-byte (the v13.120/v13.169 contracts). -->
-<script src="/public-13.71.js" defer><\/script>
+<script src="/public-13.72.js" defer><\/script>
 <!-- v13.202-threaddiet + v13.203-warmdefer + v13.204-foldsplit (F-M2,
      the full arc): v13.202 split the boot render chain at the fold
      (the above-fold trio updateBigBar/renderHeroSpot/fitHeroNames in

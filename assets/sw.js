@@ -887,6 +887,15 @@
 //              glyph, so the ticking countdown digits can never sit
 //              inside any static accessible name; name-from-content is
 //              always content-matched and the rule's gate never fires).
+// v13.226-herowire (the owner's S9 WIRE decision, executed S10): bumped
+//              from v114 — the hero-wiring round: public-13.71.js -> 13.72.js
+//              (the HERO_ART map grows 35 -> 111 entries — the 76 published
+//              big-5 library portraits join; 76 new alpha-trimmed
+//              /players/hero/ canvases + their cast bakes ride [assets]).
+//              Cache-first assets cannot refresh without a rename or a
+//              bump, the v13.39 rule; the retiring 13.71.js stays served
+//              + pinned one SEO TTL (its _headers pin restored — the
+//              v13.212 omission).
 // v13.225-socialsec (SS-26 + the §12 resolution, S9): bumped from v113 — the
 //              social-wiring round: every page footer gains the social line
 //              (the X profile + the Telegram bot) and the head gains
@@ -920,7 +929,7 @@
 //              vocabulary so the client mirrors the server pure-math
 //              helpers byte-for-byte). Cache-first assets cannot refresh
 //              without a rename or a bump, the v13.39 rule.
-const CACHE = "sportsignal-v114";
+const CACHE = "sportsignal-v115";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
