@@ -121,6 +121,27 @@ require a cache bump.
    cron fired and was handled). Recovery alert lands on the first post-incident
    success ping.
 
+5. **The RUM beacon route (learned 2026-11-06, the v13.227-rumzone incident)**
+   — the CF Web-Analytics beacon is fire-and-forget: a dead ingestion endpoint
+   produces NO error anywhere on the site (SSR fine, offline gates green, not
+   even a console error — the XHR 404 is swallowed). CF cut this site's
+   ingestion from the legacy absolute `cloudflareinsights.com/cdn-cgi/rum`
+   to the ZONE-RELATIVE `sportsignal.ir/cdn-cgi/rum` at 2026-11-05 00:00 UTC;
+   the manual snippet now carries `"send": {"to": "/cdn-cgi/rum"}` in its
+   `data-cf-beacon` attr (both HTML templates, gated by check-seo-lastmod #9).
+   The route VALIDATES the token: a valid-token POST answers **204**, a junk
+   token answers **404** (verified live, both) — so a quick liveness probe is
+   `curl -s -o /dev/null -w "%{http_code}" -X POST
+   https://sportsignal.ir/cdn-cgi/rum -H "content-type: application/json" -H
+   "origin: https://sportsignal.ir" --data '{"siteToken":"x"}'` → 404 means
+   the route answers and validates (NOT an outage — the 2026-11-05 outage was
+   the VALID-token POST 404ing). The real end-to-end proof: load the site in
+   a browser and watch the beacon POST (must be `sportsignal.ir/cdn-cgi/rum`
+   → 204), or run the GraphQL day-probe (the `s11-rum-read.js` shape) and see
+   fresh same-day groups. If a RUM read ever shows a zero-event day again,
+   suspect the endpoint FIRST — replay a captured beacon payload against BOTH
+   routes and compare (the S11 §3 method) before anything else.
+
 ---
 
 ## 4. Rollback
