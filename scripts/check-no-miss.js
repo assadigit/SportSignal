@@ -402,6 +402,14 @@ var MEM_DEDUPE = new Set();
   // (AL) — identity-false here (this harness's fixtures are PL/CL).
   function isBotSilentLeague() { return false; }
   const COMP_EN = {};
+  // v13.231-channelmirror co-evolution: detectStatusChanges now references
+  // the channel-hook seams — identity/no-op stubs (this check owns the
+  // PRIVATE fail-closed semantics; the channel matrix is check-channel-mirror).
+  function matchKey(m) { return String(m.homeTeam.name).toLowerCase().replace(/\s+/g, "") + "|" + String(m.awayTeam.name).toLowerCase().replace(/\s+/g, "") + "|" + String(m.utcDate || "").slice(0, 16); }
+  async function claimChannelPost() { return null; }
+  async function sendChannelPost() { return { ok: false }; }
+  function channelEventKeyStatus() { return null; }
+  function withChannelCta(t) { return t; }
   // v13.106-mdstyle: detectStatusChanges builds entity-styled messages —
   // slice the REAL md builders in alongside it (same grab discipline).
   eval([
@@ -615,6 +623,13 @@ var MEM_DEDUPE = new Set();
   CONFIG.API_RETRY_DELAY = 1000;
   function specialBanner() { return "BANNER "; }
   async function formatMatchStartMessage() { return "KICKOFF-MSG"; }
+  // v13.231-channelmirror co-evolution: the broadcast now claims/sends the
+  // channel copy + the private CTA — identity/no-op stubs.
+  function channelEventKeyMatch() { return null; }
+  function appendChannelFooter(t) { return t; }
+  function withChannelCta(t) { return t; }
+  async function claimChannelPost() { return null; }
+  async function sendChannelPost() { return { ok: false }; }
   eval([
     grabFn("function notifiedStoreActive(env)"),
     grabFn("async function importNotifiedFromKV(env)"),
@@ -805,6 +820,16 @@ var MEM_DEDUPE = new Set();
     function isBackfillEligible() { return false; }
     function isMatchFinished() { return false; }
     function specialBanner() { return ""; }
+    // v13.231-channelmirror co-evolution: the engine now claims/sends the
+    // channel copy around the private fan-out + the private CTA + the +2
+    // reservation read — identity/no-op stubs (channel matrix: check-channel-mirror).
+    function matchKey(m) { return String(m.homeTeam.name).toLowerCase().replace(/\s+/g, "") + "|" + String(m.awayTeam.name).toLowerCase().replace(/\s+/g, "") + "|" + String(m.utcDate || "").slice(0, 16); }
+    function channelActive() { return false; }
+    function channelEventKeyMatch() { return null; }
+    function appendChannelFooter(t) { return t; }
+    function withChannelCta(t) { return t; }
+    async function claimChannelPost() { return null; }
+    async function sendChannelPost() { return { ok: false }; }
     eval([grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, deferred)")].join("\n")); // v13.94-fanoutfix: 8th param now the deferred-keys tracker; the lean verdict is computed inside (after the window+dedupe gates, before the dedupe write) // v13.72-deadweight: dead nowTehran param removed (was never read)
     const mkMatch = (crests) => ({
       id: "cf-1",
@@ -864,8 +889,8 @@ var MEM_DEDUPE = new Set();
   console.log("\n=== VI. v13.94-fanoutfix: the reservation + the D1 dedupe store (behavioral) ===");
   await (async () => {
     eval([
-      grabFn("function fanoutFetchCost(chatGroups, config)"),
-      grabFn("function fanoutReservation(config, chatGroups)"),
+      grabFn("function fanoutFetchCost(chatGroups"),
+      grabFn("function fanoutReservation(config"),
       grabFn("function notifiedStoreActive(env)"),
       grabFn("async function importNotifiedFromKV(env)"),
       grabFn("async function getNotifiedMatches(env)"),

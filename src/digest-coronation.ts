@@ -14,6 +14,10 @@ import { isWithinPostMatchWindow } from "./match-windows";
 import { fetchStandings, weeklyTableCodes } from "./composers";
 import { sendTelegram } from "./telegram";
 import { getRegisteredChats, getUserPrefs } from "./users";
+import { matchKey } from "./dedupe";
+// v13.231-channelmirror: the Session-2 hook primitives (DISCOVERY §7.4.5) —
+// per coronation event after the snapshot gate (channelEventKeyCoronation).
+import { claimChannelPost, sendChannelPost, channelEventKeyCoronation, appendChannelFooter, withChannelCta } from "./channel-mirror";
 
 // bot sends a notification that Liverpool has reached the top of the table
 // after this match [match details]" \u2014 maybeNotifyTableToppers runs after
@@ -101,6 +105,16 @@ export async function maybeNotifyTableToppers(env: Env, matches) {
     };
     const trigger = matches.find((m) => involved(m, newLeader.name)) || matches.find((m) => involved(m, oldLeader.name));
     if (!trigger) continue;
+    // v13.231-channelmirror (DISCOVERY §7.4.5): claim the channel copy per
+    // coronation event, AFTER the snapshot gate (snapSaved + prev + the
+    // trigger fixture — the snapshot is this detector's own write-first
+    // dedupe). One post per (code, trigger fixture), ever.
+    let chClaim = null;
+    try {
+      chClaim = await claimChannelPost(env, channelEventKeyCoronation(code, matchKey(trigger)));
+    } catch (e) {
+      console.warn("channel-mirror: coronation claim hook isolated: " + e.message);
+    }
     // v12.x-bilingual-bot: render + send per-lang so each user gets the
     // coronation in their own lang. Falls back to "fa" if no prefs entry.
     const prefs = typeof getUserPrefs === "function" ? await getUserPrefs(env) : {};
@@ -116,10 +130,22 @@ export async function maybeNotifyTableToppers(env: Env, matches) {
       const text = await formatTableTopMessage(env, code, newLeader, prevRowOfNew, trigger, lng);
       if (!text) continue;
       for (const chatId of bucket) {
-        const r = await sendTelegram(env, text, chatId);
+        const r = await sendTelegram(env, withChannelCta(text, env, lng), chatId);
         if (r === true) ok++;
         else if (r !== "dead") out.failed++;
       }
+    }
+    // v13.231-channelmirror: ONE fa/Asia-Tehran channel post per coronation
+    // event, after the private lang buckets — the same formatTableTopMessage
+    // composition with lang "fa" + the required footer links (the coronation
+    // text's own football.sportsignal.ir link counts as the site link — only
+    // the bot line rides, no duplicate footer elements).
+    if (chClaim) {
+      await sendChannelPost(env, chClaim, async (chEnv, dest) => {
+        const text = await formatTableTopMessage(chEnv, code, newLeader, prevRowOfNew, trigger, "fa");
+        if (!text) return false;
+        return await sendTelegram(chEnv, appendChannelFooter(text), dest.chatId);
+      });
     }
     out.sent += ok;
     out.events.push({ code, leader: newLeader.name, prevPos: prevRowOfNew.pos, match: trigger.id || null, sent: ok });

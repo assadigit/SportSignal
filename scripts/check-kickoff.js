@@ -130,7 +130,7 @@ check("composers.ts carries the owner's verbatim «مسابقه شروع شد» 
 check("composers.ts carries the en mirror headline (The match has started)",
   /mdBold\("The match has started"\)/.test(compSrc));
 check("the notify-engine lean/defer semantics are UNTOUCHED (the drain is additive, not a rewrite)",
-  /if \(verdict === "defer"\)/.test(engineSrc) && /fanoutReservation\(config, chatGroups\)/.test(engineSrc));
+  /if \(verdict === "defer"\)/.test(engineSrc) && /fanoutReservation\(config, chatGroups, channelActive\(env\)\)/.test(engineSrc)); // v13.231: the reservation call threads channelActive(env) (+2 when a channel is configured)
 
 // ============================================================================
 // LAYER 2 — BEHAVIORAL (real functions, stubbed seams)

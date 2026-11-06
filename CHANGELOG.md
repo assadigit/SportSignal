@@ -4,6 +4,112 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.231-channelmirror — the Telegram Channel Mirror Session 2: all eligible notification families mirrored in code (deployed, still disabled by default)
+
+**S18, 2026-11-07 (the Channel Mirror program's second runtime session —
+`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 2, built exactly on the
+Session 1 foundation `v13.230-channelbase` + the Session 0 audit
+`docs/telegram-channel-mirror/DISCOVERY.md` §7.4–§7.7).**
+The mirror goes live IN CODE; production stays unconfigured (`[vars]
+TELEGRAM_CHANNEL_CHAT_ID` / `TELEGRAM_CHANNEL_PUBLIC_URL` still empty) ⇒
+still ZERO behavioral surface until the owner sets the vars (Session 4).
+With the chat-id var empty every hook no-ops before any KV/D1/subrequest
+operation: the bot, the site, the digests and healthz are byte-for-byte
+what v13.230 shipped.
+
+- **The six hook points (DISCOVERY §7.4) — one single call at the event
+  boundary, after the private write-first gate succeeded, outside any
+  per-recipient loop, each wrapped so a channel failure can never throw
+  into the private path:**
+  - `src/notify-engine.ts` `sendNotificationIfNeeded` — the 7 engine
+    types. Claim right after `saveNotifiedMatch` persisted (a CPU kill
+    mid-fan-out leaves a detectable pending claim, not a silent loss);
+    send + state after the group loop (dice fire-and-forget on
+    match-start, the fa card via `cachedCardPng`/`renderCardPngCached`
+    with the per-chat path's own text fallback, lean-mode aware). The
+    kickoff-drain chain re-runs the function verbatim ⇒ deferred units
+    carry their channel copy automatically, idempotently.
+  - `src/digest-bigmatch.ts` — both `-big` broadcasts; the
+    `channelEventKeyMatch` **stage collapse** makes the engine's earlier
+    `match-start`/`result` claim a clean no-op (one channel post per
+    logical stage, whichever path fired first).
+  - `src/notify-status.ts` `detectStatusChanges` — per alert after
+    `statusMapSaved` (the alerts' own fail-closed gate); keys
+    `:postponed | :cancelled | :ht` via `channelEventKeyStatus`.
+  - The three **Tehran edition digests** — ONE post per edition, never
+    per chat (the per-chat KV marks stay private):
+    `mirrorMorningChannelPost` (the 9am wall gate + the master-big-match
+    content gate before the claim), `mirrorUclNightChannelPost` (the
+    same window/wall guards, the fa GIF banner, the fixture list in
+    **plain kickoff order** — no `uclPreviewOrder` priority pass),
+    `mirrorNightChannelPost` (the ADDITIVE channel variant
+    `buildNightDigestChannelMessage`: the results list + elimination
+    events WITHOUT the per-chat followed-team sentences; the channel
+    valuable-night gate = UCL night ∨ elimination — the desired-teams
+    leg dropped). The private `buildNightDigestMessage` is byte-identical
+    (frozen-fixture parity test,
+    `scripts/fixtures/nightdigest-private-baseline.txt` — the
+    check-admin-parity precedent).
+  - `src/digest-coronation.ts` — per coronation event after the snapshot
+    gate (`channelEventKeyCoronation`).
+  - `src/digest-weekly.ts` `serveChannelWeekly` — the channel burst
+    reusing the fa payload group as [sticker][table]×N + week-ahead,
+    budget-reserved against `WEEKLY_FANOUT_CAP` via the same
+    `weeklyBurstCost` projection (claim only AFTER the reservation passes
+    — an unaffordable burst never burns the edition); the footer rides
+    the closing message only. Rides the start tick + continuation ticks
+    + a bounded Monday-window retry lane.
+- **The Persian/Asia-Tehran variant (DISCOVERY §7.5):** every channel
+  copy composes through the EXISTING formatters with
+  `channelEnvFor(env)` = `{...env, TEHRAN_TZ: "Asia/Tehran"}` and
+  `lang "fa"` — never a copy of a rendered per-subscriber message.
+  The dice/cards/stickers/GIF stay (the owner-default, DISCOVERY §12
+  q3); the trial footer rides the sender layer as everywhere (q4).
+- **The channel footer (spec PART II §4):** `appendChannelFooter` ends
+  every channel post with the website (`https://sportsignal.ir`) + bot
+  (`https://t.me/SportSignalAlertsBot`) links, Persian, MarkdownV2-safe,
+  with duplicate-avoidance (a message that already carries a
+  sportsignal.ir link — the v13.22 promo footer, the tables'
+  football.sportsignal.ir — gets only the missing bot line; fail-open at
+  the ceilings, the withTrialFooter law).
+- **The PRIVATE CTA:** `withChannelCta` adds the channel link to
+  eligible public notification messages ONLY when
+  `TELEGRAM_CHANNEL_PUBLIC_URL` is set (the `dest.publicUrl` seam);
+  unset or malformed ⇒ the identity function ⇒ byte-identical private
+  output (the parity law — tested in both states).
+- **Budget discipline (DISCOVERY §7.7):** `fanoutFetchCost` gains +2 per
+  unit when `channelActive(env)` (the exact pre-13.231 cost when not —
+  clean deferrals unchanged); the digest hooks respect their existing
+  wall guards; NO new cron/provider/polling/subrequest classes; the
+  completion blob folds the compact `notify.ch` breadcrumb
+  (`takeChannelTickStats` — sent/deferred/skipped/paused, zero extra KV
+  writes, null while unconfigured).
+- **The hook runner (`src/channel-mirror.ts` v2):**
+  `claimChannelPost` (gate → claim, never throws) /
+  `sendChannelPost` (sender → classify → record: `true`⇒sent,
+  `"dead"`⇒unreachable + the pause marker — the channel is never
+  dead-chat-pruned, `false`⇒failed/transient; the outbox already rides
+  inside `sendTelegram`; the full failure-injection matrix is Session 3)
+  / `mirrorChannelPost` (the one-shot digest/coronation/weekly variant).
+- **Harness co-evolution (the AGENTS same-commit rule):**
+  `scripts/lib/mock-env.js` learns the `channel_posts_v1` statement
+  surface (INSERT OR IGNORE + UPDATE — anything unrecognized still
+  throws); `scripts/check-channel-mirror.js` grows to **202 checks**
+  (the eligibility matrix — every ✅ family produces a channel event,
+  every ⛔ family never does; the one-post matrix — 1 vs many
+  subscribers → one post, repeated ticks → no duplicate, the stage
+  collapse, distinct stages separate, digest editions repeat only on a
+  new dateKey/week, budget-blocked weekly bursts never burn the claim;
+  Persian determinism — identical output regardless of subscriber
+  order/languages/timezones; the footer/CTA parity in both states; the
+  exclusion matrix; the resource assertions).
+  `check-no-miss`/`check-mdstyle` gain identity stubs for the new seams
+  in their eval scopes; `check-reliability`/`check-kickoff` re-pin the
+  reservation signature (`channelActive(env)`, the +2) and the
+  blob/weekly-segment regexes; `check-weekly-tables` stubs
+  `withChannelCta`/`serveChannelWeekly`; `check-stats` demotes the
+  v13.230 pin to HISTORICAL and adds the v13.231 LIVE wiring pin.
+
 # v13.230-channelbase — the Telegram Channel Mirror Session 1: destination configuration + the durable idempotency foundation (disabled by default)
 
 **S17, 2026-11-07 (the Channel Mirror program's first runtime session —

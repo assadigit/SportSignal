@@ -12,6 +12,10 @@ import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { resetSubrequestBudget, subrequestCount, kvOpsCount, bumpKvOp } from "./utils";
 import { maybeSendWeeklyTables } from "./digest-weekly";
+// v13.231-channelmirror: the compact notify.ch breadcrumb (DISCOVERY §7.7)
+// — rides the completion blob's EXISTING put, zero extra KV writes; null
+// while the channel is unconfigured (the shipped default).
+import { channelActive, takeChannelTickStats } from "./channel-mirror";
 import { alertPhaseError } from "./monitoring";
 import { runPreflight } from "./cron-preflight";
 import { runUserPhase } from "./cron-users";
@@ -215,7 +219,7 @@ export async function executeScheduledLogic(env: Env) {
         // v13.94-fanoutfix: o = per-chat outcome counters (sent/failed/dead),
         // dk = the deferred (match, type) keys — the tail-chat losses and
         // clean deferrals are now readable from the tick blob directly.
-        notify: notifySummary ? { f: notifySummary.found, n: notifySummary.noChats, d: notifySummary.budgetDeferred, s: notifySummary.sent, l: notifySummary.last, o: notifySummary.o, dk: notifySummary.dk } : null,
+        notify: notifySummary ? { f: notifySummary.found, n: notifySummary.noChats, d: notifySummary.budgetDeferred, s: notifySummary.sent, l: notifySummary.last, o: notifySummary.o, dk: notifySummary.dk, ch: channelActive(env) ? takeChannelTickStats() : null } : null,
         sched: schedBlob
       }));
     } catch (e) {

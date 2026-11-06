@@ -1,6 +1,7 @@
-// SportSignal — the Telegram Channel Mirror FOUNDATION (v13.230-channelbase,
-// Session 1 of the TELEGRAM_CHANNEL_MIRROR_SPEC.md program; the audited
-// design is docs/telegram-channel-mirror/DISCOVERY.md §7 — that document is
+// SportSignal — the Telegram Channel Mirror (v13.230-channelbase foundation,
+// v13.231-channelmirror hooks; Session 1+2 of the
+// TELEGRAM_CHANNEL_MIRROR_SPEC.md program; the audited design is
+// docs/telegram-channel-mirror/DISCOVERY.md §7 — that document is
 // authoritative for the inventory, the identity table and the architecture).
 //
 // WHAT THIS IS: the destination model + the durable, destination-scoped
@@ -66,6 +67,7 @@
 // harness must never touch the channel — DISCOVERY §7.4).
 import { CONFIG } from "./config";
 import type { Env } from "./types";
+import { escapeMarkdownCharacters } from "./utils";
 
 // ---------- destination configuration (spec PART IV §8–§9; DISCOVERY §7.1) ----------
 
@@ -369,4 +371,162 @@ export function channelEventKeyWeekly(isoWeekKey) {
 export function channelEventKeyCoronation(code, triggerMatchKey) {
   if (!code || !triggerMatchKey || typeof code !== "string" || typeof triggerMatchKey !== "string") return null;
   return "coronation:" + code + ":" + triggerMatchKey;
+}
+
+// ============================================================================
+// v13.231-channelmirror — SESSION 2: the hook runner, the footer/CTA and
+// the compact per-tick breadcrumb (DISCOVERY §7.4/§7.5/§7.7). The six hook
+// points (engine / -big broadcasts / status / the three edition digests /
+// coronation / weekly) all consume EXACTLY the primitives below — nothing
+// channel-side lives inside a per-recipient loop, and every hook call is
+// wrapped so a channel failure can NEVER throw into the private path.
+// ============================================================================
+
+// Cheap PURE "is a destination configured?" — the fan-out reservation's
+// +2 gate and the digest hooks' pre-claim edition gates read this BEFORE
+// spending any KV/D1/subrequest op (the disabled-state contract).
+export function channelActive(env: Env) {
+  return channelDestinations(env).length > 0;
+}
+
+// The channel locale/timezone discipline (DISCOVERY §7.5): the Persian
+// variant composes through the EXISTING formatters with a CLONED env whose
+// TEHRAN_TZ is pinned to Asia/Tehran — never a subscriber's personal tz,
+// never a copy of a rendered per-subscriber message.
+export function channelEnvFor(env: Env) {
+  return { ...env, TEHRAN_TZ: "Asia/Tehran" };
+}
+
+// ---------- the channel footer (spec PART II §4 — every channel post ends
+// with the website + bot links) ----------
+//
+// Persian, concise, MarkdownV2-escaped, consistent with the bot voice. The
+// DUPLICATE-AVOIDANCE law: a message that already carries a sportsignal.ir
+// link (the v13.22 promo footer on every engine message; the tables'
+// football.sportsignal.ir footer) gets ONLY the missing bot line, riding as
+// a plain continuation line — a second separator would be a duplicate
+// footer element (spec §4). The dot-escaped and raw URL forms are both
+// matched (flat = backslashes stripped) so an escaped promo link counts.
+// Fail-open at the ceiling like withTrialFooter: a message already at the
+// limit ships WITHOUT the footer rather than crossing it and losing itself.
+var CHANNEL_FOOTER_SEP = "\\-\\-\\-\\-\\-\\-";
+var CHANNEL_FOOTER_SITE = "\uD83C\uDF10 \u0633\u0627\u06CC\u062A: " + escapeMarkdownCharacters(CONFIG.CHANNEL_SITE_URL || "https://sportsignal.ir");
+var CHANNEL_FOOTER_BOT = "\uD83E\uDD16 \u0631\u0628\u0627\u062A: " + escapeMarkdownCharacters(CONFIG.CHANNEL_BOT_URL || "https://t.me/SportSignalAlertsBot");
+
+export function appendChannelFooter(text, cap?) {
+  if (typeof text !== "string" || !text) return text;
+  const flat = text.replace(/\\/g, "");
+  const hasSite = flat.indexOf("sportsignal.ir") >= 0;
+  const hasBot = flat.indexOf("t.me/SportSignalAlertsBot") >= 0;
+  if (hasSite && hasBot) return text;
+  const lines = [];
+  if (!hasSite) lines.push(CHANNEL_FOOTER_SITE);
+  if (!hasBot) lines.push(CHANNEL_FOOTER_BOT);
+  const block = (hasSite ? "\n" : "\n\n" + CHANNEL_FOOTER_SEP + "\n") + lines.join("\n");
+  if (text.length + block.length > (cap || 4096)) return text;
+  return text + block;
+}
+
+// ---------- the PRIVATE channel CTA (spec PART II §4) ----------
+//
+// Eligible public notification messages sent to private subscribers gain
+// the channel link ONLY when TELEGRAM_CHANNEL_PUBLIC_URL is set (the
+// dest.publicUrl seam). UNSET OR MALFORMED ⇒ the identity function —
+// byte-identical private output (the parity law). Applied at composition
+// time in the cron notification paths only (never bot.ts command replies,
+// never admin surfaces). Fail-open at the 4096 ceiling; never duplicated.
+export function withChannelCta(text, env, lang) {
+  if (typeof text !== "string" || !text) return text;
+  const dests = channelDestinations(env);
+  const url = dests.length ? dests[0].publicUrl : null;
+  if (!url) return text;
+  const flat = text.replace(/\\/g, "");
+  if (flat.indexOf(url) >= 0) return text;
+  const line = (lang === "en" ? "\uD83D\uDCE2 Our channel: " : "\uD83D\uDCE2 \u06A9\u0627\u0646\u0627\u0644 \u0645\u0627: ") + escapeMarkdownCharacters(url);
+  if (text.length + 1 + line.length > 4096) return text;
+  return text + "\n" + line;
+}
+
+// ---------- the compact per-tick breadcrumb (DISCOVERY §7.7) ----------
+//
+// notify.ch = {s: sent, d: deferred (claimed, not confirmed — transient
+// failures riding the outbox + unreachable), k: skipped (claim no-op:
+// race / re-fire / stuck), p: paused (the gate said so)}. Rides the
+// completion blob's EXISTING put — zero extra KV writes; takeChannelTickStats
+// reads AND resets (per-tick semantics across isolate reuse).
+var CHANNEL_TICK_STATS = { sent: 0, deferred: 0, skipped: 0, paused: 0 };
+
+export function takeChannelTickStats() {
+  const out = { s: CHANNEL_TICK_STATS.sent, d: CHANNEL_TICK_STATS.deferred, k: CHANNEL_TICK_STATS.skipped, p: CHANNEL_TICK_STATS.paused };
+  CHANNEL_TICK_STATS = { sent: 0, deferred: 0, skipped: 0, paused: 0 };
+  return out;
+}
+
+// ---------- the two-phase hook runner (DISCOVERY §7.4) ----------
+//
+// CLAIM phase — one single call at the event boundary, AFTER the private
+// write-first gate succeeded, BEFORE the private fan-out (the engine
+// pattern: a CPU kill mid-fan-out leaves a detectable pending claim, not a
+// silent loss). Returns the claim token {dest, eventKey} or null (never
+// throws; unconfigured/sim/paused/already-claimed/D1-failure all ⇒ null).
+export async function claimChannelPost(env: Env, eventKey) {
+  try {
+    if (!eventKey || typeof eventKey !== "string") return null;
+    const gate = await channelGate(env);
+    if (!gate.ok) {
+      if (gate.reason === "paused") CHANNEL_TICK_STATS.paused++;
+      return null;
+    }
+    for (const dest of gate.dests) {
+      if (await claimChannelEvent(env, dest, eventKey)) return { dest: dest, eventKey: eventKey };
+      CHANNEL_TICK_STATS.skipped++; // already claimed (race / re-fire / stuck) or D1 fail — no send
+    }
+  } catch (e) {
+    console.warn("channel-mirror: claim hook isolated (the private path is untouched): " + (e && e.message));
+  }
+  return null;
+}
+
+// SEND phase — after the private group loop. `sender(chEnv, dest)` composes
+// the Persian/Asia-Tehran variant and sends via the EXISTING telegram.ts
+// senders, returning the sender's verdict (true | "dead" | false). Outcome
+// classification (Session-2 minimal — Session 3 completes the end-to-end
+// failure-injection matrix): true ⇒ sent; "dead" ⇒ the dead-chat regex
+// matched (an unreachable channel: wrong id / bot kicked) ⇒ PAUSE the
+// destination (transition write) + record unreachable — the channel is
+// never dead-chat-pruned; false ⇒ transient/ambiguous ⇒ record failed (the
+// text paths already outboxed inside sendTelegram; the stuck-claim
+// reconciliation is Session 3). NEVER throws into the caller.
+export async function sendChannelPost(env: Env, claim, sender) {
+  if (!claim || !claim.dest || !claim.eventKey) return { ok: false, verdict: null };
+  let verdict: any = false;
+  try {
+    verdict = await sender(channelEnvFor(env), claim.dest);
+  } catch (e) {
+    console.warn("channel-mirror: send hook isolated (the private path is untouched): " + (e && e.message));
+    verdict = false;
+  }
+  if (verdict === true) {
+    CHANNEL_TICK_STATS.sent++;
+    await recordChannelState(env, claim.dest, claim.eventKey, "sent", null);
+    return { ok: true, verdict: verdict };
+  }
+  if (verdict === "dead") {
+    CHANNEL_TICK_STATS.deferred++;
+    await markChannelPaused(env, "dead-chat");
+    await recordChannelState(env, claim.dest, claim.eventKey, "unreachable", "dead-chat");
+    return { ok: false, verdict: verdict };
+  }
+  CHANNEL_TICK_STATS.deferred++;
+  await recordChannelState(env, claim.dest, claim.eventKey, "failed", "transient");
+  return { ok: false, verdict: verdict };
+}
+
+// The one-shot variant for hooks without the claim/send split (the digest
+// editions, coronation, weekly): claim → send → record in one call.
+export async function mirrorChannelPost(env: Env, eventKey, sender) {
+  const claim = await claimChannelPost(env, eventKey);
+  if (!claim) return { ok: false, claimed: false, verdict: null };
+  const r = await sendChannelPost(env, claim, sender);
+  return { ok: r.ok, claimed: true, verdict: r.verdict };
 }

@@ -103,18 +103,18 @@ check("#6 subrequestCount function defined", /function subrequestCount\(\)/.test
 // live-reported "first chats served, tail chats silent" shape). The old
 // guard must stay GONE; the reservation must stay wired.
 check("#6 old between-matches fetch-only guard REMOVED", !/subrequestCount\(\) > 38/.test(src));
-check("#6 fan-out reservation gate present (fanoutReservation)", /function fanoutReservation\(config, chatGroups\) \{/.test(src));
+check("#6 fan-out reservation gate present (fanoutReservation; v13.231 adds the channelEnabled param)", /function fanoutReservation\(config, chatGroups, channelEnabled\) \{/.test(src));
 check("#6 reservation reads the TRUE count (fetch + KV ops)", /const used = subrequestCount\(\) \+ kvOpsCount\(\);/.test(src));
 check("#6 reservation verdict full/lean/defer", /return "full";/.test(src) && /return "lean";/.test(src) && /return "defer";/.test(src));
 check("#6 match-start keeps must-fire semantics via lean mode", /if \(config && config\.type === "match-start"\) \{[\s\S]{0,260}return "lean";/.test(src));
 check("#6 fanoutFetchCost projects 2 crest + 2 sends/chat + margin", /chatGroups\.length \* 2 \+ sends \* 2 \+ 2/.test(src));
-check("#6 reservation runs INSIDE the send gate (after shouldSend, before the dedupe write)", /if \(!shouldSend\) return;[\s\S]{0,900}?const verdict = fanoutReservation\(config, chatGroups\);[\s\S]{0,1100}?saveNotifiedMatch/.test(src));
+check("#6 reservation runs INSIDE the send gate (after shouldSend, before the dedupe write; v13.231 threads channelActive(env) for the +2)", /if \(!shouldSend\) return;[\s\S]{0,900}?const verdict = fanoutReservation\(config, chatGroups, channelActive\(env\)\);[\s\S]{0,1100}?saveNotifiedMatch/.test(src));
 check("#6 the caller passes the deferred-keys tracker (8th param)", /sendNotificationIfNeeded\(match, config, chatGroups, env, notificationCounts, notifiedMatches, deadChats, deferredKeys\);/.test(src));
 check("#6 lean mode skips cards + dice (cheapest must-fire path)", /if \(!lean && \(match\.homeTeam\.crest \|\| match\.awayTeam\.crest\)\)/.test(src) && /config\.type === "match-start" && !late && !lean/.test(src));
 check("#6 deferred (match,type) keys land in the breadcrumb (notify.dk)", /notifySummary\.dk = deferredKeys\.slice\(0, 12\);/.test(src));
 check("#6 budgetDeferred counter logged", /Fan-out reservation: deferred \$\{deferredKeys\.length\} in-window/.test(src));
 check("#6 per-chat outcome counters (sent/failed/dead) in the summary", /notifySummary\.o = notificationCounts\.outcome/.test(src) && /counts\.outcome = counts\.outcome \|\| \{ sent: 0, failed: 0, dead: 0 \};/.test(src));
-check("#6 the completion blob folds o + dk into notify (visibility)", /o: notifySummary\.o, dk: notifySummary\.dk \} : null/.test(src));
+check("#6 the completion blob folds o + dk + ch into notify (visibility; ch = the v13.231 channel breadcrumb)", /o: notifySummary\.o, dk: notifySummary\.dk, ch: channelActive\(env\) \? takeChannelTickStats\(\) : null \} : null/.test(src));
 
 // v13.94-fanoutfix: THE D1 DEDUPE STORE. The write-first dedupe put was the
 // single critical KV write of the notify path — under the account-level
@@ -282,7 +282,7 @@ check("#nospam10 table-top suppression logged", /skipping coronation check this 
 // marker all persisted BEFORE the first send (the v13.37 write-first
 // doctrine extended to the chunked fan-out; the first burst runs inside
 // continueWeeklyDigest AFTER the marker put).
-const weeklySeg = (src.match(/const done = await env\.STATE\.get\(CONFIG\.KV_WEEKLY_TABLES\)[\s\S]{0,2600}?return await continueWeeklyDigest\(env, \{ week, ts: Date\.now\(\), pending: payload\.pending \}, payload\);/) || [""])[0];
+const weeklySeg = (src.match(/const done = await env\.STATE\.get\(CONFIG\.KV_WEEKLY_TABLES\)[\s\S]{0,2900}?await continueWeeklyDigest\(env, \{ week, ts: Date\.now\(\), pending: payload\.pending \}, payload\);/) || [""])[0]; // v13.231: the start tick now captures the continuation + serves the channel burst before returning r
 check("#nospam10 weekly tables: marker put BEFORE first send (write-first)", weeklySeg.indexOf("await env.STATE.put(CONFIG.KV_WEEKLY_TABLES, week);") >= 0);
 check("#nospam10 weekly tables: un-persisted bootstrap skips the digest", /Weekly-tables digest bootstrap failed[\s\S]{0,200}return null;/.test(src));
 check("#nospam10 weekly tables: old post-send conditional marker removed", !/if \(res\.sent > 0 \|\| weekAheadAgg\.sent > 0\) await env\.STATE\.put/.test(src));

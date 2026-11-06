@@ -45,6 +45,9 @@ import { sendTelegram, sendUclGifBanner } from "./telegram";
 import { getUserPrefs, getUserTz } from "./users";
 import { priorityTier } from "./match-classify";
 import { tzOffsetMs, dateKeyOf, matchesOfLocalDate } from "./digest-night";
+// v13.231-channelmirror: the Session-2 hook primitives (DISCOVERY §7.4.4) —
+// ONE channel post per Tehran UCL-preview edition, never per chat.
+import { channelActive, mirrorChannelPost, channelEventKeyDigest, appendChannelFooter, withChannelCta } from "./channel-mirror";
 
 // football-data.org: the Champions League proper. (Qualifiers are "CLQ",
 // Conference "CONF" etc. — deliberately NOT part of "UCL night".)
@@ -143,13 +146,60 @@ export async function maybeSendUclNightPreview(env: Env, chatIds, matches?) {
         console.error("UCL preview build failed: " + e.message);
         continue;
       }
-      const r = await sendTelegram(envTz, msg, c);
+      const r = await sendTelegram(envTz, withChannelCta(msg, env, lang), c);
       if (r === true) out.sent++;
       else out.skipped++; // dead or failed — already marked, this night is done
     }
     if (out.sent) console.log(`\u{1F3AF} UCL night preview (${tz}): sent=${out.sent} skipped=${out.skipped} (${ucl.length} games)`);
   }
+  // v13.231-channelmirror (DISCOVERY §7.4.4): ONE channel post per Tehran
+  // UCL-preview edition — same window, same CL-day gate, the GIF banner in
+  // fa, and the fixture list in PLAIN KICKOFF ORDER (no uclPreviewOrder
+  // priority pass — the channel has no follows; §7.5). Wall-guarded like
+  // the private fan-out (< 40 entry); the per-chat KV marks stay private.
+  // Exported with the explicit nowMs for the harness.
+  try {
+    await mirrorUclNightChannelPost(env, pool);
+  } catch (e) {
+    console.warn("channel-mirror: UCL preview hook isolated: " + e.message);
+  }
   return out;
+}
+export async function mirrorUclNightChannelPost(env: Env, pool, nowMs?) {
+  if (!channelActive(env)) return null;
+  if (!Array.isArray(pool) || !pool.length) return null;
+  if (subrequestCount() >= 40) return null; // the same cosmetic wall guard
+  const now = nowMs != null ? nowMs : Date.now();
+  const offset = tzOffsetMs("Asia/Tehran");
+  if (offset == null) return null;
+  const lp = new Date(now + offset);
+  const y = lp.getUTCFullYear(), m = lp.getUTCMonth() + 1, d = lp.getUTCDate();
+  const dateKey = dateKeyOf(y, m, d);
+  const todayMatches = matchesOfLocalDate(pool, offset, y, m, d);
+  const ucl = todayMatches
+    .filter((mm) => mm && mm.competition && UCL_CODES.indexOf(mm.competition.code) > -1)
+    .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
+  if (!ucl.length) return null;
+  const firstKo = new Date(ucl[0].utcDate).getTime();
+  if (previewWindowState(firstKo, now) !== "fire") return null;
+  const eventKey = channelEventKeyDigest("uclnight", dateKey);
+  if (!eventKey) return null;
+  return await mirrorChannelPost(env, eventKey, async (chEnv, dest) => {
+    // the banner first (GIF + the fa caption — the private path's own),
+    // guarded like it (< 42); a failure only skips the GIF, never the text.
+    if (subrequestCount() < 42) {
+      try {
+        const cap = "\u{1F3C6} \u0634\u0628 \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627 \u2014 " + jalaliDateFa(y, m, d);
+        await sendUclGifBanner(chEnv, dest.chatId, cap);
+      } catch (e) {
+        console.warn("channel-mirror: UCL banner failed (text still sends): " + e.message);
+      }
+    }
+    // the fixture list in PLAIN kickoff order — the array as sorted above;
+    // uclPreviewOrder's per-chat priority pass is deliberately NOT applied.
+    const msg = buildUclPreviewMessage(chEnv, ucl, "fa", y, m, d);
+    return await sendTelegram(chEnv, appendChannelFooter(msg), dest.chatId);
+  });
 }
 
 // v13.100-priority: the per-chat ORDERING — pure and harness-testable.

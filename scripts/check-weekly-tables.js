@@ -113,6 +113,13 @@ async function buildWeekAheadMessage(_env, _lng) { return waText; }
 async function getUserPrefs(_env) { return userPrefsStub; }
 async function sendWeekAhead(_env, _chatIds) { return { sent: 0, failed: 0, text: null, skipped: true }; }
 let standingsCalls = 0;
+// v13.231-channelmirror co-evolution: the grabbed functions now reference
+// the channel-mirror seams — withChannelCta (the payload's baked private
+// CTA; identity here — this harness never configures a channel) and
+// serveChannelWeekly (the channel burst; a no-op stub — the full-worker
+// channel matrix lives in scripts/check-channel-mirror.js).
+function withChannelCta(text) { return text; }
+async function serveChannelWeekly(_env, _week) { return null; }
 const standings = {
   PL: { matchday: 4, started: true, teams: [
     { name: "Manchester City FC", pos: 1, points: 9 },

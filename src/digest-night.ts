@@ -39,6 +39,11 @@ import { priorityTier, isBotSilentLeague } from "./match-classify";
 // v13.113-cupcover: the always-covered elimination events ("Club X
 // eliminated against Y" — the owner's rule).
 import { collectEliminations } from "./cup-elim";
+// v13.231-channelmirror: the Session-2 hook primitives (DISCOVERY §7.4.4 +
+// §6 row 14 — the night digest needs the ADDITIVE channel variant without
+// the per-chat followed-team sentences; valuable-night gate = UCL ∨
+// elimination, the desired-teams leg dropped).
+import { channelActive, mirrorChannelPost, channelEventKeyDigest, appendChannelFooter, withChannelCta } from "./channel-mirror";
 
 const DONE_STATUSES = ["FINISHED", "POSTPONED", "CANCELLED", "AWARDED", "SUSPENDED"];
 
@@ -301,14 +306,84 @@ export async function maybeSendNightDigest(env: Env, chatIds, matches?) {
           console.warn("UCL night banner failed: " + e.message);
         }
       }
-      const r = await sendTelegram({ ...env, TEHRAN_TZ: tz }, msg, c);
+      const r = await sendTelegram({ ...env, TEHRAN_TZ: tz }, withChannelCta(msg, env, lang), c);
       if (r === true) out.sent++;
       else out.skipped++; // dead or failed — already marked, don't retry this night
     }
     if (out.sent) console.log(`\u{1F319} Night results digest (${tz}): sent=${out.sent} skipped=${out.skipped}` + (nightHasUcl ? " (+UCL banner)" : ""));
     else if (out.quiet) console.log(`\u{1F319} Night digest (${tz}): quiet night — ${out.quiet} chat(s) skipped the valuable-night gate (no UCL, no desired team, no elimination)`);
   }
+  // v13.231-channelmirror (DISCOVERY §7.4.4 + §6 row 14): ONE channel post
+  // per Tehran NIGHT edition. The valuable-night gate for the channel is
+  // UCL night ∨ elimination event — the per-chat desired-teams leg is
+  // DROPPED (the channel has no follows); the message is the ADDITIVE
+  // channel variant (results + eliminations, no «بازی‌های شما» section).
+  // The function-level >= 44 wall guard above covers this hook too. The
+  // per-chat KV marks stay private. Exported with the explicit nowMs for
+  // the harness (deterministic edition boundaries).
+  try {
+    await mirrorNightChannelPost(env, pool);
+  } catch (e) {
+    console.warn("channel-mirror: night digest hook isolated: " + e.message);
+  }
   return out;
+}
+
+export async function mirrorNightChannelPost(env: Env, pool, nowMs?) {
+  if (!channelActive(env)) return null;
+  if (!Array.isArray(pool) || !pool.length) return null;
+  const now = nowMs != null ? nowMs : Date.now();
+  const offset = tzOffsetMs("Asia/Tehran");
+  if (offset == null) return null;
+  const lpNow = new Date(now + offset);
+  const hour = lpNow.getUTCHours();
+  // the same night window: evening (>= 20h) summarizes today, early
+  // morning (< 6h) summarizes yesterday; daytime never posts.
+  let y = lpNow.getUTCFullYear(), m = lpNow.getUTCMonth() + 1, d = lpNow.getUTCDate();
+  if (hour < 6) {
+    const prev = new Date(Date.UTC(y, m - 1, d) - 24 * 60 * 60 * 1e3);
+    y = prev.getUTCFullYear(); m = prev.getUTCMonth() + 1; d = prev.getUTCDate();
+  } else if (hour < 20) {
+    return null;
+  }
+  const dateKey = dateKeyOf(y, m, d);
+  let nightMatches = matchesOfLocalDate(pool, offset, y, m, d);
+  nightMatches = nightMatches.filter((mm) => mm && !isBotSilentLeague(mm.competition && mm.competition.code));
+  if (!nightMatches.length) return null;
+  const nightHasUcl = nightMatches.some((mm) => mm && mm.competition && mm.competition.code === "CL");
+  const verdict = nightIsOver(nightMatches, now);
+  if (!verdict.over) return null;
+  if (verdict.finished < 1) return null; // nothing actually resolved — no post
+  // the stale-pool completeness guard (the same discipline as the private
+  // path): defer unless it is the window's last-chance hour.
+  const lastChance = hour >= 23 || hour >= 5;
+  if (verdict.defended > 0 && verdict.finished * 2 < nightMatches.length && !lastChance) return null;
+  const eliminations = collectEliminations(nightMatches, pool);
+  // THE CHANNEL VALUABLE-NIGHT GATE: UCL night ∨ elimination — the desired-
+  // teams leg is dropped (no follows at the channel; DISCOVERY §6 row 14).
+  if (!nightHasUcl && !(Array.isArray(eliminations) && eliminations.length)) return null;
+  const eventKey = channelEventKeyDigest("night", dateKey);
+  if (!eventKey) return null;
+  return await mirrorChannelPost(env, eventKey, async (chEnv, dest) => {
+    let msg;
+    try {
+      msg = await buildNightDigestChannelMessage(chEnv, nightMatches, eliminations, { y, m, d });
+    } catch (e) {
+      console.warn("channel-mirror: night channel variant build failed: " + e.message);
+      return false;
+    }
+    // the UCL GIF banner first on CL nights — the private path's own shape
+    // (budget-guarded < 42; a failure only skips the GIF, never the text).
+    if (nightHasUcl && subrequestCount() < 42) {
+      try {
+        const cap = "\u{1F3C6} \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627 \u2014 \u0646\u062A\u0627\u06CC\u062C \u0634\u0628";
+        await sendUclGifBanner(chEnv, dest.chatId, cap);
+      } catch (e) {
+        console.warn("channel-mirror: UCL night banner failed: " + e.message);
+      }
+    }
+    return await sendTelegram(chEnv, appendChannelFooter(msg), dest.chatId);
+  });
 }
 
 export async function buildNightDigestMessage(env: Env, nightMatches, lang, prefs, chatId, rankCache, nightYmd?, eliminations?) {
@@ -494,4 +569,82 @@ function renderEliminationSection(eliminations, en) {
   }
   const title = en ? "*Cup eliminations:*\n" : "*\u062D\u0630\u0641\u200C\u0634\u062F\u06AF\u0627\u0646 \u062C\u0627\u0645\u200C\u0647\u0627\u06CC \u062D\u0630\u0641\u06CC:*\n";
   return title + lines.join("\n");
+}
+
+// v13.231-channelmirror: THE ADDITIVE CHANNEL VARIANT of the night digest
+// (DISCOVERY §6 row 14 + §7.5): the same results list + elimination events
+// the private digest carries, WITHOUT the per-chat followed-team sentences
+// and rank lines (the channel has no follows — «بازی‌های شما» would be a
+// lie). Purely ADDITIVE: buildNightDigestMessage above is byte-identical to
+// v13.230 (the parity law — a frozen-fixture check pins it), and this
+// variant reuses the same section discipline (collapsePairings for the
+// display-level dedupe, the eliminations section's own renderer, the
+// by-competition results grouping). fa-only by construction (the channel
+// locale), Tehran date from the caller's nightYmd.
+export async function buildNightDigestChannelMessage(env: Env, nightMatches, eliminations?, nightYmd?) {
+  const en = false; // the channel is Persian-only (spec PART II §1)
+  nightMatches = collapsePairings(nightMatches);
+  const elimList = Array.isArray(eliminations) ? eliminations : [];
+  let ny = nightYmd && nightYmd.y, nm = nightYmd && nightYmd.m, nd = nightYmd && nightYmd.d;
+  if (!ny || !nm || !nd) {
+    const wall = zonedYmDHm(env.TEHRAN_TZ || "Asia/Tehran", new Date(nightMatches[0].utcDate));
+    if (wall) {
+      ny = wall.y; nm = wall.m; nd = wall.d;
+    } else {
+      const p: any = {};
+      const parts = new Intl.DateTimeFormat("en-GB", { timeZone: env.TEHRAN_TZ || "Asia/Tehran", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(nightMatches[0].utcDate));
+      for (const x of parts) p[x.type] = x.value;
+      ny = parseInt(p.year, 10); nm = parseInt(p.month, 10); nd = parseInt(p.day, 10);
+    }
+  }
+  const head = "*\u{1F319} \u062E\u0644\u0627\u0635\u0647 \u0646\u062A\u0627\u06CC\u062C \u0634\u0628 \u2014 " + jalaliDateFa(ny, nm, nd) + "*\n\n";
+  // Split: elimination rows render in the eliminations section, never as a
+  // third plain line (the private builder's own rule — mirrored here).
+  const elimKeys = new Set();
+  for (const ev of elimList) elimKeys.add(ev.code + "|" + normalizeTeamName(ev.home) + "|" + normalizeTeamName(ev.away));
+  const others = [];
+  for (const m of nightMatches) {
+    if (String((m && m.status) || "").toUpperCase() !== "FINISHED") continue;
+    const k = ((m.competition && m.competition.code) || "?") + "|" + normalizeTeamName(m.homeTeam.name) + "|" + normalizeTeamName(m.awayTeam.name);
+    if (elimKeys.has(k)) continue;
+    others.push(m);
+  }
+  const sections: string[] = [];
+  if (elimList.length) {
+    sections.push(renderEliminationSection(elimList, en));
+  }
+  if (others.length) {
+    const title = "*\u0646\u062A\u0627\u06CC\u062C \u0634\u0628:*\n";
+    const byComp = new Map();
+    for (const m of others) {
+      const code = (m.competition && m.competition.code) || "?";
+      if (!byComp.has(code)) byComp.set(code, []);
+      byComp.get(code).push(m);
+    }
+    const lines: string[] = [];
+    let shown = 0;
+    const LIMIT = 20;
+    for (const [code, list] of byComp) {
+      const comp = translateCompetition(code);
+      lines.push("\u{1F3C6} " + mdItalic(comp));
+      for (const m of list) {
+        if (shown >= LIMIT) break;
+        const homeName = translateTeam(m.homeTeam.name);
+        const awayName = translateTeam(m.awayTeam.name);
+        const sc = ftScore(m);
+        const scoreStr = sc ? mdBold(toFaDigits(String(sc.home) + " - " + String(sc.away))) : "\u061F";
+        lines.push(escapeMarkdownCharacters(homeName) + " " + scoreStr + " " + escapeMarkdownCharacters(awayName));
+        shown++;
+      }
+    }
+    if (others.length > shown) {
+      const extra = escapeMarkdownCharacters("\u2026 \u0648 " + toFaDigits(String(others.length - shown)) + " \u0628\u0627\u0632\u06CC \u062F\u06CC\u06AF\u0631");
+      lines.push(extra);
+    }
+    sections.push(title + lines.join("\n"));
+  }
+  if (!sections.length) {
+    return "*\u{1F319} \u062E\u0644\u0627\u0635\u0647 \u0646\u062A\u0627\u06CC\u062C \u0634\u0628*";
+  }
+  return head + sections.join("\n");
 }

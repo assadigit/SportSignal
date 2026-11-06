@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.230-channelbase";
+export const VERSION = "13.231-channelmirror";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -553,6 +553,14 @@ export const CONFIG: Record<string, any> = {
   MIGRATION_TOTAL_DAYS: 14,
   MIGRATION_NEW_BOT_URL: "https://t.me/SportSignalAlertsBot",
   MIGRATION_NEW_BOT_HANDLE: "@SportSignalAlertsBot",
+  // v13.231-channelmirror: the CHANNEL FOOTER's required links (spec PART II
+  // §4 — every channel post ends with the website + bot links). The bot URL
+  // mirrors MIGRATION_NEW_BOT_URL (the verified live username — the owner's
+  // brief and the STICKER_SET_URL spelling agree on SportSignalAlertsBot);
+  // the site is the public origin the v13.22 promo footer already carries.
+  // MarkdownV2-escaping happens at the footer builder (channel-mirror.ts).
+  CHANNEL_SITE_URL: "https://sportsignal.ir",
+  CHANNEL_BOT_URL: "https://t.me/SportSignalAlertsBot",
   DATE_RANGE_DAYS: 10,
   DAYS_IN_PAST: 2,
   DAYS_IN_FUTURE: 8,

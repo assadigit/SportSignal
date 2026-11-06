@@ -12,9 +12,14 @@ import { normalizeTeamName } from "./teams";
 import { translateTeam, translateCompetition } from "./translate";
 import { isBackfillEligible } from "./match-windows";
 import { shouldSendNotification } from "./match-dedupe";
+import { matchKey } from "./dedupe";
 import { shouldNotify } from "./match-classify";
 import { sendTelegram } from "./telegram";
 import { getRegisteredChats, getUserPrefs, isMasterBigMatch } from "./users";
+// v13.231-channelmirror: the Session-2 hook primitives (DISCOVERY §7.4.3) —
+// per alert, after statusMapSaved (the alerts' own fail-closed gate), keys
+// via channelEventKeyStatus (POSTPONED/CANCELLED → their own, PAUSED → :ht).
+import { claimChannelPost, sendChannelPost, channelEventKeyStatus, appendChannelFooter, withChannelCta } from "./channel-mirror";
 
 export async function detectStatusChanges(env: Env, matches) {
   try {
@@ -80,6 +85,15 @@ export async function detectStatusChanges(env: Env, matches) {
         langBuckets.get(lng).push(c);
       }
       for (const a of alerts) {
+        // v13.231-channelmirror (DISCOVERY §7.4.3): claim the channel copy
+        // per alert, AFTER statusMapSaved — the map is the alerts' own
+        // write-first gate; one post per (match, transition), ever.
+        let chClaim = null;
+        try {
+          chClaim = await claimChannelPost(env, channelEventKeyStatus(matchKey(a.m), a.status));
+        } catch (e) {
+          console.warn("channel-mirror: status claim hook isolated: " + e.message);
+        }
         for (const [lng, bucket] of langBuckets) {
           const en = lng === "en";
           const home = en ? a.m.homeTeam.name : translateTeam(a.m.homeTeam.name);
@@ -90,7 +104,23 @@ export async function detectStatusChanges(env: Env, matches) {
           const msg = a.status === "CANCELLED"
             ? (en ? "\u274C *Match cancelled:* " + teams : "\u274C *\u0628\u0627\u0632\u06CC \u0644\u063A\u0648 \u0634\u062F:* " + teams)
             : (en ? "*Match postponed:* " + teams : "\u{1F550} *\u0628\u0627\u0632\u06CC \u0628\u0647 \u062A\u0639\u0648\u06CC\u0642 \u0627\u0641\u062A\u0627\u062F:* " + teams);
-          await Promise.allSettled(bucket.map((c) => sendTelegram(env, msg, c)));
+          await Promise.allSettled(bucket.map((c) => sendTelegram(env, withChannelCta(msg, env, lng), c)));
+        }
+        // v13.231-channelmirror: ONE fa/Asia-Tehran channel post per alert,
+        // after the private buckets — the same composition the fa bucket
+        // received (the channel is one more (Asia/Tehran, fa) group that
+        // always exists — DISCOVERY §7.5) + the required footer links.
+        if (chClaim) {
+          await sendChannelPost(env, chClaim, async (chEnv, dest) => {
+            const home = translateTeam(a.m.homeTeam.name);
+            const away = translateTeam(a.m.awayTeam.name);
+            const comp = translateCompetition(a.m.competition.code);
+            const teams = mdBold(home) + " \u{1F19A} " + mdBold(away) + " \u2014 " + mdItalic(comp);
+            const chMsg = a.status === "CANCELLED"
+              ? "\u274C *\u0628\u0627\u0632\u06CC \u0644\u063A\u0648 \u0634\u062F:* " + teams
+              : "\u{1F550} *\u0628\u0627\u0632\u06CC \u0628\u0647 \u062A\u0639\u0648\u06CC\u0642 \u0627\u0641\u062A\u0627\u062F:* " + teams;
+            return await sendTelegram(chEnv, appendChannelFooter(chMsg), dest.chatId);
+          });
         }
       }
     }
@@ -116,6 +146,13 @@ export async function detectStatusChanges(env: Env, matches) {
         const sH = m.score && m.score.fullTime && m.score.fullTime.home != null ? m.score.fullTime.home : null;
         const sA = m.score && m.score.fullTime && m.score.fullTime.away != null ? m.score.fullTime.away : null;
         const comp = COMP_EN[m.competition.code] || m.competition.code;
+        // v13.231-channelmirror: claim per HT alert, after statusMapSaved.
+        let chClaim = null;
+        try {
+          chClaim = await claimChannelPost(env, channelEventKeyStatus(matchKey(m), "PAUSED"));
+        } catch (e) {
+          console.warn("channel-mirror: HT claim hook isolated: " + e.message);
+        }
         for (const [lng, bucket] of langBuckets) {
           const en = lng === "en";
           const hName = en ? home : translateTeam(home);
@@ -126,7 +163,20 @@ export async function detectStatusChanges(env: Env, matches) {
           const head = en ? "*Half time*" : "*\u0627\u0633\u062A\u0631\u0627\u062D\u062A*";
           const vs = en ? " - " : " \u2014 ";
           const msg = head + "\n\n\u26BD *" + escapeMarkdownCharacters(hName) + vs + escapeMarkdownCharacters(aName) + "*\n" + mdItalic(compName) + "\n*" + hStr + "\\-" + aStr + "*";
-          await Promise.allSettled(bucket.map((c) => sendTelegram(env, msg, c)));
+          await Promise.allSettled(bucket.map((c) => sendTelegram(env, withChannelCta(msg, env, lng), c)));
+        }
+        // v13.231-channelmirror: ONE fa/Asia-Tehran channel post per HT
+        // alert (key :ht — the transition itself is the edition).
+        if (chClaim) {
+          await sendChannelPost(env, chClaim, async (chEnv, dest) => {
+            const hName = translateTeam(home);
+            const aName = translateTeam(away);
+            const compName = translateCompetition(m.competition.code);
+            const hStr = sH == null ? "?" : toFaDigits(String(sH));
+            const aStr = sA == null ? "?" : toFaDigits(String(sA));
+            const chMsg = "*\u0627\u0633\u062A\u0631\u0627\u062D\u062A*\n\n\u26BD *" + escapeMarkdownCharacters(hName) + " \u2014 " + escapeMarkdownCharacters(aName) + "*\n" + mdItalic(compName) + "\n*" + hStr + "\\-" + aStr + "*";
+            return await sendTelegram(chEnv, appendChannelFooter(chMsg), dest.chatId);
+          });
         }
       }
       console.log(`\u{1F680} HT alerts sent for ${htAlerts.length} big matches`);

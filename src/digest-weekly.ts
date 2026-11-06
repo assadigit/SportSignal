@@ -55,6 +55,11 @@ import { sendTelegram, sendSticker, outboxPush, withTrialFooter } from "./telegr
 import { getLeagueStickers } from "./stickers";
 import { getUserPrefs } from "./users";
 import { getCachedMatches } from "./match-pool";
+// v13.231-channelmirror: the Session-2 hook primitives (DISCOVERY §7.4.6 +
+// §7.7 — the channel burst reuses the fa payload group, budget-reserved
+// against WEEKLY_FANOUT_CAP; the private CTA is baked into the payload at
+// render time, per-lang).
+import { channelActive, claimChannelPost, sendChannelPost, channelEventKeyWeekly, appendChannelFooter, withChannelCta } from "./channel-mirror";
 
 export async function sendLeagueTables(env: Env, chatIds, opts, lang?) {
   const lng = lang === "en" ? "en" : "fa";
@@ -256,17 +261,86 @@ export async function buildWeeklyPayload(env: Env, chatIds) {
     for (const code of codes) {
       const st = standingsByCode[code];
       if (!st) continue;
-      tables.push({ code, text: buildLeagueTableMessage(code, st, { label }, lng), sticker: stickers[code] || null });
+      tables.push({ code, text: withChannelCta(buildLeagueTableMessage(code, st, { label }, lng), env, lng), sticker: stickers[code] || null });
     }
     let weekAhead = null;
     try {
       weekAhead = await buildWeekAheadMessage(env, lng);
+      if (weekAhead) weekAhead = withChannelCta(weekAhead, env, lng);
     } catch (e) {
       console.error("week-ahead build failed: " + e.message);
     }
     payload.groups[lng] = { tables, weekAhead };
   }
   return payload;
+}
+
+// v13.231-channelmirror (DISCOVERY §7.4.6 + §7.7): THE CHANNEL WEEKLY
+// BURST — the fa payload group mirrored to the channel destination as a
+// [sticker][table] × N + week-ahead sequence (the private burst's own
+// layout), budget-reserved against WEEKLY_FANOUT_CAP via the SAME
+// weeklyBurstCost projection. The claim fires only AFTER the reservation
+// passes (an unaffordable burst must not burn the edition); the required
+// footer links ride the CLOSING message (week-ahead, else the last table)
+// — a multi-message burst is ONE channel event and a footer on every
+// table would be footer spam (the tables' own football.sportsignal.ir
+// links already count as the site link per the duplicate-avoidance law).
+// Called on the digest's START tick, on continuation ticks while the
+// cursor is live, and on the Monday-window ticks after the week marker is
+// set (a bounded retry lane while the payload snapshot is fresh). No-op
+// once claimed/sent; never throws into the private path.
+async function serveChannelWeekly(env: Env, week) {
+  try {
+    if (!channelActive(env)) return null;
+    const eventKey = channelEventKeyWeekly(week);
+    if (!eventKey) return null;
+    // the SAME payload snapshot the private bursts serve (KV first — the
+    // snapshot is self-contained: continuation ticks need zero fetches).
+    let payload = null;
+    try {
+      payload = await env.STATE.get(CONFIG.KV_WEEKLY_PAYLOAD, "json").catch(() => null);
+    } catch (e) {
+      payload = null;
+    }
+    if (!payload || payload.week !== week || !payload.groups || !payload.groups.fa) return null;
+    const group = payload.groups.fa;
+    // THE RESERVATION (the v13.94/v13.124 discipline — the same projection
+    // the private bursts use): the channel burst only starts when its
+    // worst-case cost fits the remaining TRUE budget.
+    if (subrequestCount() + kvOpsCount() + weeklyBurstCost(group) > (CONFIG.WEEKLY_FANOUT_CAP || 44)) {
+      return { deferred: true };
+    }
+    const claim = await claimChannelPost(env, eventKey);
+    if (!claim) return null;
+    await sendChannelPost(env, claim, async (chEnv, dest) => {
+      const tables = group.tables || [];
+      let any = false;
+      for (let i = 0; i < tables.length; i++) {
+        const m = tables[i];
+        if (m && m.sticker) {
+          const sr = await sendSticker(chEnv, dest.chatId, m.sticker);
+          if (sr === "dead") return "dead";
+        }
+        // the footer rides the CLOSING message only (week-ahead, else the
+        // last table) — one channel event, one footer
+        const isClosing = !group.weekAhead && i === tables.length - 1;
+        const text = isClosing ? appendChannelFooter(m.text) : m.text;
+        const r = await sendTelegram(chEnv, text, dest.chatId);
+        if (r === "dead") return "dead";
+        if (r === true) any = true;
+      }
+      if (group.weekAhead) {
+        const r = await sendTelegram(chEnv, appendChannelFooter(group.weekAhead), dest.chatId);
+        if (r === "dead") return "dead";
+        if (r === true) any = true;
+      }
+      return any;
+    });
+    return { served: true };
+  } catch (e) {
+    console.warn("channel-mirror: weekly burst hook isolated: " + e.message);
+    return null;
+  }
 }
 
 // One chat's digest burst: [logo sticker][league table] per league, then
@@ -396,7 +470,11 @@ export async function maybeSendWeeklyTables(env: Env, chatIds) {
   }
   if (cursor && cursor.pending && Array.isArray(cursor.pending.fa) && Date.now() - (cursor.ts || 0) < 12 * 36e5) {
     const payload = await loadWeeklyPayload(env, cursor);
-    return await continueWeeklyDigest(env, cursor, payload);
+    const r = await continueWeeklyDigest(env, cursor, payload);
+    // v13.231-channelmirror: the channel burst rides continuation ticks
+    // while the payload is live (its own reservation; no-op once claimed).
+    await serveChannelWeekly(env, cursor.week);
+    return r;
   }
   if (cursor) {
     try {
@@ -408,7 +486,14 @@ export async function maybeSendWeeklyTables(env: Env, chatIds) {
   const mins = t.getUTCHours() * 60 + t.getUTCMinutes();
   if (mins < CONFIG.WEEKLY_TABLES.fromMin || mins >= CONFIG.WEEKLY_TABLES.toMin) return null;
   const done = await env.STATE.get(CONFIG.KV_WEEKLY_TABLES).catch(() => null);
-  if (done === week) return null;
+  if (done === week) {
+    // v13.231-channelmirror: the channel burst's Monday-window retry lane —
+    // after the marker is set the private cursor may already be complete
+    // (deleted); the channel claim still retries while the window + the
+    // payload snapshot are live (bounded: Monday 01:30–06:00 Tehran only).
+    await serveChannelWeekly(env, week);
+    return null;
+  }
   if (!Array.isArray(chatIds) || !chatIds.length) return null;
   // Render the week's snapshot (standings fetched ONCE — the payload is
   // the single source for every subsequent tick's bursts).
@@ -432,7 +517,11 @@ export async function maybeSendWeeklyTables(env: Env, chatIds) {
     return null;
   }
   WEEKLY_PAYLOAD_MEMO = { week, at: Date.now(), payload };
-  return await continueWeeklyDigest(env, { week, ts: Date.now(), pending: payload.pending }, payload);
+  const r = await continueWeeklyDigest(env, { week, ts: Date.now(), pending: payload.pending }, payload);
+  // v13.231-channelmirror: the channel burst on the START tick (private
+  // chats own the budget first; defers to the continuation lane above).
+  await serveChannelWeekly(env, week);
+  return r;
 }
 
 // The admin panel's manual "send tables" — the operator's explicit re-send

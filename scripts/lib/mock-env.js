@@ -41,7 +41,11 @@ function makeD1(opts) {
     upd_dedupe: new Map(),      // upd_id -> ts
     userstore_meta: new Map(),  // k -> v
     notified_v1: new Map(),     // "<match_key>\u0000<ntype>" -> {notified_at, expires_at, match_date}
-    notify_deliveries_v1: new Map() // "<match_key>\u0000<ntype>\u0000<chat_id>" -> {verdict, sent_at}
+    notify_deliveries_v1: new Map(), // "<match_key>\u0000<ntype>\u0000<chat_id>" -> {verdict, sent_at}
+    // v13.231-channelmirror: the channel mirror's claim ledger — the
+    // Session-2 hooks issue INSERT OR IGNORE (claim) + UPDATE (state) against
+    // it whenever a channel destination is configured in a scenario.
+    channel_posts_v1: new Map() // "<dest_key>\u0000<event_key>" -> {claimed_at, sent_at, state, attempts, last_error}
   };
   const nk = (k, nt) => k + "\u0000" + nt;
   const dk = (k, nt, c) => k + "\u0000" + nt + "\u0000" + c;
@@ -163,6 +167,23 @@ function makeD1(opts) {
       let changes = 0;
       for (const [k, v] of [...t.notify_deliveries_v1.entries()]) if (v.sent_at < p[0]) { t.notify_deliveries_v1.delete(k); changes++; }
       return { meta: { changes } };
+    }
+    // --- channel_posts_v1 (the v13.231 channel-mirror claim ledger) ---
+    if (s.startsWith("INSERT OR IGNORE INTO channel_posts_v1")) {
+      const key = p[0] + "\u0000" + p[1];
+      if (t.channel_posts_v1.has(key)) return { meta: { changes: 0 } };
+      t.channel_posts_v1.set(key, { claimed_at: p[2], sent_at: null, state: "claimed", attempts: 0, last_error: null });
+      return { meta: { changes: 1 } };
+    }
+    if (s.startsWith("UPDATE channel_posts_v1 SET state")) {
+      const key = p[3] + "\u0000" + p[4];
+      const row = t.channel_posts_v1.get(key);
+      if (!row) return { meta: { changes: 0 } };
+      row.state = p[0];
+      row.attempts = (row.attempts || 0) + 1;
+      if (p[0] === "sent") row.sent_at = p[1];
+      row.last_error = p[2] != null ? p[2] : null;
+      return { meta: { changes: 1 } };
     }
     throw new Error("mock D1: unrecognized statement: " + s.slice(0, 80));
   }

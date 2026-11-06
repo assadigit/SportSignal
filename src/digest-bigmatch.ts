@@ -9,9 +9,15 @@ import { formatResultMessage, formatMatchStartMessage, specialBanner } from "./c
 import { isMatchFinished } from "./match-model";
 import { isWithinPostMatchWindow, isMatchStartingNow } from "./match-windows";
 import { getNotifiedMatches, saveNotifiedMatch, shouldSendNotification, recordDeliveries } from "./match-dedupe";
+import { matchKey } from "./dedupe";
 // v13.92-d1userstore: the dead-chat registry prune goes through the seam.
 import { pruneChats } from "./user-store";
 import { sendTelegram } from "./telegram";
+// v13.231-channelmirror: the Session-2 hook primitives (DISCOVERY §7.4.2)
+// — the -big stage collapse lives in channelEventKeyMatch (match-start-big
+// → match-start, result-big → result), so the second claim of a stage the
+// engine already claimed is a clean no-op.
+import { claimChannelPost, sendChannelPost, channelEventKeyMatch, appendChannelFooter, withChannelCta } from "./channel-mirror";
 import { getRegisteredChats, getUserPrefs, groupChatsByTz, userFollowsMatch, isMasterBigMatch } from "./users";
 // v13.113-alquiet: the bot-silent league gate — AL big-vs-big clashes are
 // site content, not broadcasts (the owner's rule).
@@ -70,11 +76,20 @@ export async function broadcastBigMatchResults(env: Env, matches) {
       // KV-write governor could otherwise trip under write pressure).
       const persistedBig = await saveNotifiedMatch(env, match, "result-big", notifiedMatches);
       if (!persistedBig) continue;
+      // v13.231-channelmirror (DISCOVERY §7.4.2): claim the channel copy
+      // right after the private write-first gate — the stage collapse means
+      // an engine 'result' that already claimed leaves this a clean no-op.
+      let channelClaim = null;
+      try {
+        channelClaim = await claimChannelPost(env, channelEventKeyMatch(matchKey(match), "result-big"));
+      } catch (e) {
+        console.warn("channel-mirror: result-big claim hook isolated: " + e.message);
+      }
       const bigDeliveries: any[] = []; // {chatId, verdict}
       for (const g of groups) {
         const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
         const lang = g.lang || "fa";
-        const message = specialBanner(match, lang) + await formatResultMessage(match, scopedEnv, lang);
+        const message = withChannelCta(specialBanner(match, lang) + await formatResultMessage(match, scopedEnv, lang), env, lang);
         const sendResults = await Promise.allSettled(
           g.chats.map((chatId) => sendTelegram(scopedEnv, message, chatId))
         );
@@ -92,6 +107,22 @@ export async function broadcastBigMatchResults(env: Env, matches) {
         }
       }
       if (bigDeliveries.length) await recordDeliveries(env, match, "result-big", bigDeliveries);
+      // v13.231-channelmirror: the channel copy — ONE fa/Asia-Tehran post
+      // per logical result stage, after the private group loop (text-only,
+      // mirroring the broadcast's own shape — no cards/dice on this path).
+      if (channelClaim) {
+        await sendChannelPost(env, channelClaim, async (chEnv, dest) => {
+          let chMessage = "";
+          try {
+            chMessage = specialBanner(match, "fa") + await formatResultMessage(match, chEnv, "fa");
+          } catch (e) {
+            console.warn("channel-mirror: result-big formatter failed: " + e.message);
+            return false;
+          }
+          chMessage = appendChannelFooter(chMessage);
+          return await sendTelegram(chEnv, chMessage, dest.chatId);
+        });
+      }
       if (anySuccess) {
         out.sent++;
       }
@@ -145,11 +176,19 @@ export async function broadcastBigMatchKickoff(env: Env, matches) {
       // v13.44-quotaguard (F3): fail-closed — same gate as result-big above.
       const persistedBig = await saveNotifiedMatch(env, match, "match-start-big", notifiedMatches);
       if (!persistedBig) continue;
+      // v13.231-channelmirror (DISCOVERY §7.4.2): same claim discipline as
+      // result-big — collapsed with the engine's match-start stage.
+      let channelClaim = null;
+      try {
+        channelClaim = await claimChannelPost(env, channelEventKeyMatch(matchKey(match), "match-start-big"));
+      } catch (e) {
+        console.warn("channel-mirror: match-start-big claim hook isolated: " + e.message);
+      }
       const koDeliveries: any[] = []; // {chatId, verdict}
       for (const g of groups) {
         const scopedEnv: Env = { ...env, TEHRAN_TZ: g.tz };
         const lang = g.lang || "fa";
-        const message = specialBanner(match, lang) + await formatMatchStartMessage(match, scopedEnv, lang);
+        const message = withChannelCta(specialBanner(match, lang) + await formatMatchStartMessage(match, scopedEnv, lang), env, lang);
         const sendResults = await Promise.allSettled(
           g.chats.map((chatId) => sendTelegram(scopedEnv, message, chatId))
         );
@@ -166,6 +205,22 @@ export async function broadcastBigMatchKickoff(env: Env, matches) {
         }
       }
       if (koDeliveries.length) await recordDeliveries(env, match, "match-start-big", koDeliveries);
+      // v13.231-channelmirror: the channel copy — ONE fa/Asia-Tehran post
+      // per logical kickoff stage, after the private group loop (text-only,
+      // the broadcast's own shape).
+      if (channelClaim) {
+        await sendChannelPost(env, channelClaim, async (chEnv, dest) => {
+          let chMessage = "";
+          try {
+            chMessage = specialBanner(match, "fa") + await formatMatchStartMessage(match, chEnv, "fa");
+          } catch (e) {
+            console.warn("channel-mirror: match-start-big formatter failed: " + e.message);
+            return false;
+          }
+          chMessage = appendChannelFooter(chMessage);
+          return await sendTelegram(chEnv, chMessage, dest.chatId);
+        });
+      }
       if (anySuccess) {
         out.sent++;
       }

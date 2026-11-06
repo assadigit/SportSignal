@@ -155,7 +155,7 @@ const morningSrc = fs.readFileSync(path.join(SRC_DIR, "digest-morning.ts"), "utf
 check("night digest: per-chat dedupe key nightdigest_<date>_<chatId>", /"nightdigest_" \+ dateKey \+ "_" \+ c/.test(nightSrc));
 check("UCL preview: per-chat dedupe key uclnight_<date>_<chatId>", /"uclnight_" \+ dateKey \+ "_" \+ c/.test(uclSrc));
 check("morning digest: per-chat dedupe key digest_sent_<date>_<chatId>", /"digest_sent_" \+ dateKey \+ "_" \+ c/.test(morningSrc));
-check("night digest: per-chat send inside the tz loop (no group-level gate)", /for \(const c of tzChats\) \{/.test(nightSrc) && /sendTelegram\(\{ \.\.\.env, TEHRAN_TZ: tz \}, msg, c\)/.test(nightSrc));
+check("night digest: per-chat send inside the tz loop (no group-level gate; v13.231 wraps the text with withChannelCta \u2014 identity while the channel URL is unset)", /for \(const c of tzChats\) \{/.test(nightSrc) && /sendTelegram\(\{ \.\.\.env, TEHRAN_TZ: tz \}, withChannelCta\(msg, env, lang\), c\)/.test(nightSrc));
 
 console.log(failed ? failed + " FAILURES" : "same-flow audit OK");
 process.exit(failed ? 1 : 0);

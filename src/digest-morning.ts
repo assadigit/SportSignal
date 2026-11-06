@@ -13,6 +13,9 @@ import { mdBold, mdItalic, mdEscape } from "./md";
 import { translateTeam, translateCompetition } from "./translate";
 import { sendTelegram } from "./telegram";
 import { getUserPrefs, getUserTz, isMasterBigMatch } from "./users";
+// v13.231-channelmirror: the Session-2 hook primitives (DISCOVERY §7.4.4) —
+// ONE channel post per Tehran morning edition, never per chat.
+import { channelActive, mirrorChannelPost, channelEventKeyDigest, appendChannelFooter, withChannelCta } from "./channel-mirror";
 // v13.113-alquiet: the bot-silent league gate — the morning digest lists no
 // AL big-vs-big either (the owner's rule).
 import { isBotSilentLeague } from "./match-classify";
@@ -108,7 +111,7 @@ export async function maybeSendMorningDigest(env: Env, chatIds) {
       // re-sent the digest on every tick of the 9am hour.
       await env.STATE.put(dedupeKey, String(Date.now()), { expirationTtl: 36 * 60 * 60 }).catch(() => {});
       const msg = await buildMorningDigestMessage(scopedEnv, todayBig, lang);
-      const r = await sendTelegram(scopedEnv, msg, c);
+      const r = await sendTelegram(scopedEnv, withChannelCta(msg, env, lang), c);
       if (r === true) {
         out.sent++;
       } else if (r === "dead") {
@@ -118,7 +121,64 @@ export async function maybeSendMorningDigest(env: Env, chatIds) {
     }
   }
   if (out.sent) console.log(`\u{1F4C5} Morning digest sent=${out.sent} skipped=${out.skipped}`);
+  // v13.231-channelmirror (DISCOVERY §7.4.4): ONE channel post per Tehran
+  // morning edition — independent of which tz buckets the chats formed (the
+  // channel is simply one more (Asia/Tehran, fa) group that always exists,
+  // §7.5); the per-chat KV marks above stay PRIVATE. The edition gates (the
+  // 9am Tehran wall hour + the same master-big-match content gate) run
+  // BEFORE the claim so an unclaimed edition is never burned; nothing runs
+  // at all while the channel is unconfigured (channelActive is a pure env
+  // read — zero KV/D1/subrequest ops). Exported with the explicit nowMs for
+  // the harness (deterministic edition boundaries).
+  try {
+    await mirrorMorningChannelPost(env);
+  } catch (e) {
+    console.warn("channel-mirror: morning digest hook isolated: " + e.message);
+  }
   return out;
+}
+export async function mirrorMorningChannelPost(env: Env, nowMs?) {
+  if (!channelActive(env)) return null;
+  const now = nowMs != null ? nowMs : Date.now();
+  const wall = zonedYmDHm("Asia/Tehran", new Date(now));
+  if (!wall || wall.hh !== 9) return null; // the 9am Tehran edition gate
+  const p2 = (n) => (n < 10 ? "0" + n : "" + n);
+  const dateKey = wall.y + "-" + p2(wall.m) + "-" + p2(wall.d);
+  const eventKey = channelEventKeyDigest("morning", dateKey);
+  if (!eventKey) return null;
+  // the SAME pool the private digest reads (KV first, cached fallback)
+  let pool = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
+  let matches = pool && Array.isArray(pool.matches) ? pool.matches : [];
+  if (!matches.length) matches = await getCachedMatches(env).catch(() => []);
+  if (!Array.isArray(matches) || !matches.length) return null;
+  // the SAME content gate: today's master big matches on the Tehran-local
+  // calendar (not AL, not FINISHED), kickoff-sorted — a quiet day posts
+  // nothing (an empty digest is spam).
+  let dayStart = 0, dayEnd = 0;
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", ({
+      timeZone: "Asia/Tehran", hour12: false,
+      year: "numeric", month: "2-digit", day: "2-digit"
+    } as any)).formatToParts(new Date(now));
+    const p: any = {};
+    for (const x of parts) p[x.type] = x.value;
+    dayStart = Date.UTC(parseInt(p.year, 10), parseInt(p.month, 10) - 1, parseInt(p.day, 10), 0, 0, 0);
+    dayEnd = dayStart + 24 * 60 * 60 * 1e3;
+  } catch (e) {
+    return null;
+  }
+  const todayBig = matches.filter((m) =>
+    m && m.competition && m.competition.code &&
+    !isBotSilentLeague(m.competition.code) &&
+    isMasterBigMatch(m) &&
+    m.status !== "FINISHED" &&
+    (function () { const tt = new Date(m.utcDate).getTime(); return tt >= dayStart && tt < dayEnd; })()
+  ).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
+  if (!todayBig.length) return null;
+  return await mirrorChannelPost(env, eventKey, async (chEnv, dest) => {
+    const msg = await buildMorningDigestMessage(chEnv, todayBig, "fa");
+    return await sendTelegram(chEnv, appendChannelFooter(msg), dest.chatId);
+  });
 }
 export async function buildMorningDigestMessage(env: Env, matches, lang) {
   const en = lang === "en";

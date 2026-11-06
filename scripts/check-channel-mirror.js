@@ -1,12 +1,13 @@
-// Self-check: v13.230-channelbase — the Telegram Channel Mirror foundation
+// Self-check: v13.230-channelbase + v13.231-channelmirror — the Telegram
+// Channel Mirror foundation AND the Session-2 family hooks
 // (src/channel-mirror.ts, the REAL module sliced whole from the concat — the
 // check-userstore pattern) against a mock KV + a mock D1 recognizing exactly
-// the channel_posts_v1 statement surface. Session 1 of the
-// TELEGRAM_CHANNEL_MIRROR_SPEC program; DISCOVERY §7 is the design under
-// test. Everything here is offline/deterministic — no Telegram, no channel.
+// the channel_posts_v1 statement surface. The program:
+// TELEGRAM_CHANNEL_MIRROR_SPEC.md; DISCOVERY §7 is the design under test.
+// Everything here is offline/deterministic — no Telegram, no channel.
 //
-// The matrix (spec PART V §14 mapped to the Session-1 scope, prompt items
-// a–f):
+// The matrix (spec PART V §14 mapped to the sessions, prompt items a–f for
+// the v13.230 foundation PLUS the Session-2 families):
 //   a. disabled state: missing/empty/malformed TELEGRAM_CHANNEL_CHAT_ID ⇒
 //      channelDestinations [] and EVERY entry point a no-op BEFORE any
 //      KV/D1/subrequest op (the mock stores count every operation);
@@ -26,10 +27,71 @@
 //      is a no-write); reason sanitization; memo TTL lets an owner-side KV
 //      change propagate; a KV read failure fails open WITHOUT poisoning the
 //      memo.
-// Plus: the destination shape/parsing table (chatId numeric/@username,
-// publicUrl https://t.me/… only) and recordChannelState telemetry (row
-// updates, attempts increments, sanitized last_error, never throws).
+// Plus the v13.231 Session-2 matrix (spec PART VI Session 2 acceptance):
+//   g. the hook runner (claimChannelPost/sendChannelPost/mirrorChannelPost):
+//     claim→send→record lifecycle, outcome classification (sent / dead⇒
+//     unreachable+pause / transient⇒failed), never-throws isolation, tick
+//     stats, channelEnvFor, appendChannelFooter's duplicate-avoidance table,
+//     withChannelCta's identity-when-unset parity (both states);
+//   h. the family behavioral matrix — every ✅ family produces exactly ONE
+//     channel event per logical occurrence (the engine types, the -big stage
+//     collapse, status transitions, the morning/UCL/night Tehran editions,
+//     coronation, the weekly burst), against the REAL channel-mirror module
+//     + the REAL family functions with stubbed private seams;
+//   i. Persian determinism: the channel output is identical regardless of
+//     subscriber order/languages/timezones; private output is byte-identical
+//     when the channel is unconfigured AND when configured without a public
+//     URL (the CTA parity law);
+//   j. the ⛔ exclusion matrix: command replies / admin pages / heartbeats /
+//     migration / simulate / degradation never reach the channel;
+//   k. resources: the fan-out reservation gains exactly +2 when enabled, the
+//     exact pre-13.231 cost when not; no new cron triggers; notify.ch rides
+//     the completion blob's existing put.
 const src = require("./lib/worker-src")();
+
+// grabFn — brace-balanced slice (the check-composers.js scanner), for the
+// family functions under behavioral test.
+function grabFn(sig) {
+  const i = src.indexOf(sig);
+  if (i < 0) throw new Error("missing " + sig);
+  const open = src.indexOf("{", i);
+  let depth = 0, j = open;
+  let state = 0, tplExprDepth = 0;
+  const stack = [];
+  while (j < src.length) {
+    const ch = src[j], next = src[j + 1] || "";
+    if (state === 0) {
+      if (ch === "/" && next === "/") { state = 1; j += 2; continue; }
+      if (ch === "/" && next === "*") { state = 2; j += 2; continue; }
+      if (ch === '"') { stack.push(0); state = 3; j++; continue; }
+      if (ch === "'") { stack.push(0); state = 4; j++; continue; }
+      if (ch === "`") { stack.push(0); state = 5; j++; continue; }
+      if (ch === "{") depth++;
+      else if (ch === "}") { depth--; if (depth === 0) break; }
+      if (ch === "\\" && next === "u" && src[j + 2] === "{") {
+        const end = src.indexOf("}", j + 3);
+        if (end > 0) { j = end + 1; continue; }
+      }
+    } else if (state === 1) { if (ch === "\n") state = 0; }
+    else if (state === 2) { if (ch === "*" && next === "/") { state = 0; j += 2; continue; } }
+    else if (state === 3) { if (ch === "\\") { j += 2; continue; } if (ch === '"') state = stack.pop(); }
+    else if (state === 4) { if (ch === "\\") { j += 2; continue; } if (ch === "'") state = stack.pop(); }
+    else if (state === 5) {
+      if (ch === "\\") { j += 2; continue; }
+      if (ch === "`") { state = stack.pop(); j++; continue; }
+      if (ch === "$" && next === "{") { state = 6; tplExprDepth = 1; j += 2; continue; }
+    } else if (state === 6) {
+      if (ch === "{") tplExprDepth++;
+      else if (ch === "}") { tplExprDepth--; if (tplExprDepth === 0) state = 5; }
+      else if (ch === '"') { stack.push(6); state = 3; }
+      else if (ch === "'") { stack.push(6); state = 4; }
+      else if (ch === "`") { stack.push(6); state = 5; }
+      else if (ch === "\\") j++;
+    }
+    j++;
+  }
+  return src.slice(i, j + 1);
+}
 
 // --- slice the REAL channel-mirror module ---
 const cmStart = src.indexOf("// ===== src/channel-mirror.ts =====");
@@ -44,6 +106,7 @@ const channelMirrorSrc = src.slice(cmStart, cmEnd);
 function makeStore(opts) {
   const o = opts || {};
   const m = new Map();
+  if (o.seed) { for (const k of Object.keys(o.seed)) m.set(k, o.seed[k]); } // v13.231: pre-seeded state
   const store = {
     getCount: 0,
     putCount: 0,
@@ -119,7 +182,28 @@ function makeD1(opts) {
   return d1;
 }
 
-globalThis.CONFIG = { KV_CHANNEL_MIRROR: "channel_mirror_v1" };
+globalThis.CONFIG = {
+  KV_CHANNEL_MIRROR: "channel_mirror_v1",
+  // v13.231-channelmirror: the footer constants the module reads at eval time
+  CHANNEL_SITE_URL: "https://sportsignal.ir",
+  CHANNEL_BOT_URL: "https://t.me/SportSignalAlertsBot",
+  // the family eval scopes read these (fanoutReservation / the digest gates)
+  SUBREQUEST_FANOUT_CAP: 46,
+  KV_MATCHES_KEY: "matches_v13_tracked",
+  KV_MATCH_STATUS: "match_status_v1",
+  KV_WEEKLY_PAYLOAD: "weekly_tables_payload_v1",
+  KV_WEEKLY_CURSOR: "weekly_tables_cursor_v1",
+  KV_WEEKLY_TABLES: "weekly_tables_v1",
+  WEEKLY_FANOUT_CAP: 44,
+  WEEKLY_TABLES: { day: 1, fromMin: 90, toMin: 360 },
+  UCL_PREVIEW_LEAD_MS: 6 * 60 * 60 * 1e3,
+  UCL_PREVIEW_TAIL_MS: 10 * 60 * 1e3
+};
+// the REAL escape (utils.ts) — the channel-mirror module's footer/CTA
+// builders close over it (the transform strips its import).
+globalThis.escapeMarkdownCharacters = function escapeMarkdownCharacters(text) {
+  return text.replace(/([\[\]\(\)~`>#\+\-=|{}\.!_])/g, "\\$1");
+};
 
 let failed = 0;
 const check = (name, cond) => {
@@ -363,6 +447,684 @@ const check = (name, cond) => {
     const again = await claimChannelEvent(envL, destL, ek);
     check("lifecycle: claim → sent → re-claim on a later tick ⇒ false (one delivery per identity)", first === true && again === false);
   }
+
+
+  // ======================================================================
+  // v13.231-channelmirror — SESSION 2: the hook runner, the footer/CTA,
+  // the family behavioral matrix, Persian determinism, the exclusion
+  // matrix and the resource assertions (spec PART VI Session 2).
+  // ======================================================================
+
+  // ===== g) the hook runner + the footer/CTA tables =====
+  console.log("\n=== g. the v13.231 hook runner / footer / CTA ===");
+  {
+    // mirrorChannelPost on an unconfigured env: no claim, no ops.
+    const envG = { STATE: makeStore(), USERS_DB: makeD1() };
+    const rG = await mirrorChannelPost(envG, "match:x:y:match-start", async () => true);
+    check("g. mirrorChannelPost unconfigured ⇒ {ok:false, claimed:false}, ZERO D1 ops", rG.ok === false && rG.claimed === false && envG.USERS_DB._prepCount === 0);
+
+    // claim → sender(true) → row 'sent' + sent_at + stats.s
+    const envG2 = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID, TELEGRAM_CHANNEL_PUBLIC_URL: URL };
+    const sentArgs = [];
+    const rG2 = await mirrorChannelPost(envG2, "match:aa|bb|2026-11-07T16:00:result", async (chEnv, dest) => { sentArgs.push({ tz: chEnv.TEHRAN_TZ, chatId: dest.chatId }); return true; });
+    const rowG2 = envG2.USERS_DB._tables.channel_posts_v1.get("fa-football\u0000match:aa|bb|2026-11-07T16:00:result");
+    check("g. claim → send(true) ⇒ ok + row state 'sent' + sent_at set", rG2.ok === true && rG2.claimed === true && rowG2.state === "sent" && typeof rowG2.sent_at === "number");
+    check("g. the sender receives the channel env (TEHRAN_TZ pinned to Asia/Tehran) + the live dest", sentArgs.length === 1 && sentArgs[0].tz === "Asia/Tehran" && sentArgs[0].chatId === CHAT_ID);
+    check("g. channelEnvFor pins Asia/Tehran and preserves the rest of the env", (() => { const e = channelEnvFor({ TEHRAN_TZ: "Europe/London", BOT_TOKEN: "t", X: 1 }); return e.TEHRAN_TZ === "Asia/Tehran" && e.BOT_TOKEN === "t" && e.X === 1; })());
+
+    // verdict false ⇒ failed/transient
+    const envG3 = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    await mirrorChannelPost(envG3, "match:aa|bb|2026-11-07T16:00:match-start", async () => false);
+    check("g. sender false ⇒ row state 'failed' + last_error 'transient'", envG3.USERS_DB._tables.channel_posts_v1.get("fa-football\u0000match:aa|bb|2026-11-07T16:00:match-start").state === "failed");
+
+    // verdict "dead" ⇒ unreachable + PAUSE (the dead-chat class never prunes the channel)
+    const envG4 = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    await mirrorChannelPost(envG4, "match:aa|bb|2026-11-07T16:00:pre-match-1h", async () => "dead");
+    const rowG4 = envG4.USERS_DB._tables.channel_posts_v1.get("fa-football\u0000match:aa|bb|2026-11-07T16:00:pre-match-1h");
+    const pausedAfter = JSON.parse(envG4.STATE._map.get("channel_mirror_v1"));
+    check("g. sender 'dead' ⇒ row 'unreachable' + last_error 'dead-chat' + the pause marker", rowG4.state === "unreachable" && rowG4.last_error === "dead-chat" && pausedAfter.paused === true && pausedAfter.reason === "dead-chat");
+
+    // a sender that THROWS is isolated — the runner never throws into the private path
+    const envG5 = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    let threw = false;
+    try { await mirrorChannelPost(envG5, "match:aa|bb|2026-11-07T16:00:pre-match-3h", async () => { throw new Error("boom"); }); } catch (e) { threw = true; }
+    check("g. a throwing sender is isolated (never throws into the private path)", threw === false && envG5.USERS_DB._tables.channel_posts_v1.get("fa-football\u0000match:aa|bb|2026-11-07T16:00:pre-match-3h").state === "failed");
+
+    // the tick stats: sent/deferred/skipped/paused counted + reset by take
+    const st1 = takeChannelTickStats();
+    check("g. tick stats counted the g-section outcomes and takeChannelTickStats resets", st1.s >= 1 && st1.d >= 2 && typeof st1.k === "number" && typeof st1.p === "number");
+    const st2 = takeChannelTickStats();
+    check("g. a second take reads ZERO (reset semantics — per-tick across isolate reuse)", st2.s === 0 && st2.d === 0 && st2.k === 0 && st2.p === 0);
+
+    // appendChannelFooter — the duplicate-avoidance table
+    const NO_LINKS = "plain digest body";
+    const f1 = appendChannelFooter(NO_LINKS);
+    check("g. footer: no links present ⇒ separator + site + bot lines appended", f1 === NO_LINKS + "\n\n\\-\\-\\-\\-\\-\\-\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
+    const PROMO = "msg\n\n\\-\\-\\-\\-\\-\\-\n\u0645\u0634\u0627\u0647\u062F\u0647:\nhttps://sportsignal\\.ir";
+    const f2 = appendChannelFooter(PROMO);
+    check("g. footer: the escaped promo site link counts ⇒ ONLY the bot line rides (no second separator)", f2 === PROMO + "\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
+    const BOT_ONLY = "msg with https://t.me/SportSignalAlertsBot already";
+    const f3 = appendChannelFooter(BOT_ONLY);
+    check("g. footer: bot link already present (raw form) ⇒ only the site line + separator", f3 === BOT_ONLY + "\n\n\\-\\-\\-\\-\\-\\-\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir");
+    const BOTH = "msg https://sportsignal.ir and https://t.me/SportSignalAlertsBot";
+    check("g. footer: both links present ⇒ byte-identical (no duplicate footer elements)", appendChannelFooter(BOTH) === BOTH);
+    const FOOTERED = appendChannelFooter(NO_LINKS);
+    check("g. footer: idempotent (footering a footered message is a no-op)", appendChannelFooter(FOOTERED) === FOOTERED);
+    const LONG = "x".repeat(4090);
+    check("g. footer: fail-open at the 4096 ceiling (the withTrialFooter law)", appendChannelFooter(LONG) === LONG);
+    check("g. footer: the table-footer subdomain counts as the site link (no duplicate)", appendChannelFooter("table\n\n\u062C\u062F\u0648\u0644 \u06A9\u0627\u0645\u0644: football\\.sportsignal\\.ir") .endsWith("\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot"));
+
+    // withChannelCta — the private parity law, both states
+    const base = "private message body";
+    check("g. CTA: unconfigured ⇒ identity (byte-identical private output)", withChannelCta(base, {}, "fa") === base);
+    check("g. CTA: configured chat id but NO public URL ⇒ identity (no CTA without the real URL)", withChannelCta(base, { TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID }, "fa") === base);
+    check("g. CTA: malformed public URL ⇒ identity (never a wrong CTA)", withChannelCta(base, { TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID, TELEGRAM_CHANNEL_PUBLIC_URL: "https://example.com/x" }, "fa") === base);
+    const ctaFa = withChannelCta(base, configured(), "fa");
+    check("g. CTA: configured ⇒ the fa CTA line rides the private message", ctaFa === base + "\n\uD83D\uDCE2 \u06A9\u0627\u0646\u0627\u0644 \u0645\u0627: https://t\\.me/sportsignal\\_fa");
+    const ctaEn = withChannelCta(base, configured(), "en");
+    check("g. CTA: the en label form", ctaEn === base + "\n\uD83D\uDCE2 Our channel: https://t\\.me/sportsignal\\_fa");
+    check("g. CTA: never duplicated (the URL already present in either form)", withChannelCta(ctaFa, configured(), "fa") === ctaFa && withChannelCta(ctaFa.replace(/\\/g, ""), configured(), "fa") === ctaFa.replace(/\\/g, ""));
+    check("g. CTA: fail-open at the 4096 ceiling", withChannelCta("x".repeat(4090), configured(), "fa") === "x".repeat(4090));
+    check("g. CTA: non-string input passes through untouched", withChannelCta(null, configured(), "fa") === null);
+  }
+
+  // ===== shared helpers for the family scopes =====
+  const untype = (s) => s.replace(/:\s*(number|string|boolean|any|Date|Map<[^>]*>)(?![.\w])(\[\])?/g, "").replace(/\?([,)])/g, "$1");
+  const G = (sig) => untype(grabFn(sig));
+  const MD_PIECES = () => [
+    (src.match(/var MDV2_RESERVED = "[^"]*";/) || ["FAIL-MDV2-RESERVED"])[0],
+    (src.match(/var MDV2_ESCAPE_SRC = [^\n]*;/) || ["FAIL-MDV2-SRC"])[0],
+    (src.match(/var MDV2_ESCAPE_RE = [^\n]*;/) || ["FAIL-MDV2-RE"])[0],
+    G("function mdEscape(text)"),
+    G("function mdBold(text)"),
+    G("function mdItalic(text)"),
+    G("function mdCode(text)")
+  ];
+  const JALALI_PIECES = () => [
+    (src.match(/var JALALI_MONTHS_FA = \[[\s\S]*?\];/) || ["FAIL-JM"])[0],
+    (src.match(/var WEEKDAYS_FA = \[[^\]]*\];/) || ["FAIL-WD"])[0],
+    G("function toJalaliParts(gy"),
+    G("function jalaliDateFa(y"),
+    G("function englishDateYmd(y")
+  ];
+  const matchKeyStub = (m) => String(m.homeTeam.name).toLowerCase().replace(/\s+/g, "") + "|" + String(m.awayTeam.name).toLowerCase().replace(/\s+/g, "") + "|" + String(m.utcDate || "").slice(0, 16);
+
+  // ===== h1) the ENGINE family: one channel post per (match, type) unit =====
+  console.log("\n=== h1. the engine family (sendNotificationIfNeeded) ===");
+  await (async () => {
+    const CH = []; // channel-destination sends
+    const PV = []; // private sends
+    async function sendTelegram(env, text, chatId) { (String(chatId) === CHAT_ID ? CH : PV).push({ text, chatId }); return true; }
+    async function sendPhotoBinary() { return false; }
+    async function sendDice() { return 3; }
+    async function renderCardPngCached() { return null; }
+    async function cachedCardPng() { return null; }
+    async function shouldSendNotification() { return true; }
+    async function saveNotifiedMatch() { return true; }
+    function specialBanner() { return ""; }
+    async function recordDeliveries() { return true; }
+    function isBackfillEligible() { return false; }
+    function isMatchFinished() { return false; }
+    function subrequestCount() { return 0; }
+    function kvOpsCount() { return 0; }
+    const matchKey = matchKeyStub;
+    eval([
+      channelMirrorSrc,
+      G("function fanoutFetchCost(chatGroups, config, channelEnabled)"),
+      G("function fanoutReservation(config, chatGroups, channelEnabled)"),
+      ...MD_PIECES(),
+      G("function mdItalic(text)"),
+      G("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, deferred)")
+    ].join("\n"));
+    const match = { id: "e1", utcDate: new Date(Date.now() + 2 * 36e5).toISOString(), status: "SCHEDULED", competition: { code: "PL" }, homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" } };
+    const cfg = { type: "pre-match-3h", windowCheck: () => true, messageFormatter: async () => "MATCHTEXT", requiresFuture: true };
+    const groupsA = [{ tz: "Asia/Tehran", lang: "fa", chats: [501, 502] }, { tz: "Europe/London", lang: "en", chats: [503] }];
+    const groupsB = [{ tz: "Europe/London", lang: "en", chats: [503] }, { tz: "Asia/Tehran", lang: "fa", chats: [502, 501] }];
+    const run = (env, groups) => { const counts = { "pre-match-3h": 0 }; return sendNotificationIfNeeded(match, cfg, groups, env, counts, {}, []); };
+
+    // 1. UNCONFIGURED: private only, byte-frozen as the parity baseline
+    const envU = { STATE: makeStore(), USERS_DB: makeD1() };
+    await run(envU, groupsA);
+    check("h1. unconfigured ⇒ ZERO channel sends, ZERO claim rows", CH.length === 0 && envU.USERS_DB._tables.channel_posts_v1.size === 0);
+    const baselinePriv = JSON.stringify(PV);
+
+    // 2. CONFIGURED (no public URL): private output byte-identical + ONE channel post
+    CH.length = 0; PV.length = 0;
+    const envC = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    await run(envC, groupsA);
+    check("h1. configured ⇒ private output BYTE-IDENTICAL (the CTA parity law, unset URL)", JSON.stringify(PV) === baselinePriv);
+    check("h1. one fan-out to 3 subscribers (2 groups) ⇒ exactly ONE channel post", CH.length === 1 && CH[0].chatId === CHAT_ID);
+    const chTextA = CH[0].text;
+    check("h1. the channel copy is the fa/Asia-Tehran composition + promo + footer bot line", chTextA === "MATCHTEXT" + "\n\n\\-\\-\\-\\-\\-\\-\n\u0645\u0634\u0627\u0647\u062F\u0647 \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627 \u0648 \u0645\u0647\u0645\u062A\u0631\u06CC\u0646 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634 \u0631\u0648:\nhttps://sportsignal\\.ir" + "\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
+    check("h1. no subscriber chat id / username ever leaks into the channel payload", !chTextA.includes("501") && !chTextA.includes("502") && !chTextA.includes("503"));
+    check("h1. the claim row recorded 'sent'", envC.USERS_DB._tables.channel_posts_v1.get("fa-football\u0000match:" + matchKey(match) + ":pre-match-3h").state === "sent");
+
+    // 3. repeated tick: the claim no-ops — no duplicate channel post
+    CH.length = 0; PV.length = 0;
+    await run(envC, groupsA);
+    check("h1. repeated tick ⇒ NO second channel post (the D1 claim persists)", CH.length === 0);
+
+    // 4. Persian determinism: reversed subscriber order/langs/tz ⇒ identical channel text
+    CH.length = 0;
+    const envD = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    await run(envD, groupsB);
+    check("h1. Persian determinism: identical channel output regardless of subscriber order/lang/tz", CH.length === 1 && CH[0].text === chTextA);
+
+    // 5. CONFIGURED + public URL: private messages gain the CTA line; the channel post does NOT
+    CH.length = 0; PV.length = 0;
+    const envP = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID, TELEGRAM_CHANNEL_PUBLIC_URL: URL };
+    await run(envP, groupsA);
+    check("h1. configured + URL ⇒ private messages gain the CTA line (fa and en groups alike)", PV.length === 3 && PV.every((m) => m.text.includes("https://t\\.me/sportsignal\\_fa")) && PV.some((m) => m.text.includes("\u06A9\u0627\u0646\u0627\u0644 \u0645\u0627")) && PV.some((m) => m.text.includes("Our channel")));
+    check("h1. the channel post itself carries the FOOTER, never the private CTA", CH.length === 1 && CH[0].text === chTextA);
+
+    // 6. distinct stages on the same match stay separate posts
+    CH.length = 0;
+    const envS = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    await run(envS, groupsA);
+    const cfgMs = { type: "match-start", windowCheck: () => true, messageFormatter: async () => "KOSTART", requiresFuture: false };
+    await sendNotificationIfNeeded(match, cfgMs, groupsA, envS, { "match-start": 0 }, {}, []);
+    check("h1. distinct stages (3h + match-start) ⇒ TWO separate channel posts", CH.length === 2);
+  })().catch((e) => { console.error("FAIL h1 harness error: " + e.message); failed++; });
+
+  // ===== h2) the -big broadcasts + the stage collapse =====
+  console.log("\n=== h2. the big-match broadcasts (the -big stage collapse) ===");
+  await (async () => {
+    const CH = [];
+    async function sendTelegram(env, text, chatId) { if (String(chatId) === CHAT_ID) CH.push({ text, chatId }); return true; }
+    async function getRegisteredChats() { return [501]; }
+    async function getUserPrefs() { return {}; }
+    function userFollowsMatch() { return null; }
+    function groupChatsByTz(chatIds) { return [{ tz: "Asia/Tehran", lang: "fa", chats: chatIds }]; }
+    function isMasterBigMatch() { return true; }
+    function isMatchStartingNow() { return true; }
+    function isBotSilentLeague() { return false; }
+    async function getNotifiedMatches() { return {}; }
+    async function saveNotifiedMatch() { return true; }
+    async function shouldSendNotification() { return true; }
+    async function recordDeliveries() { return true; }
+    function notifiedStoreActive() { return false; }
+    function deliveriesActive() { return false; }
+    function specialBanner() { return ""; }
+    async function formatMatchStartMessage() { return "KOSTART"; }
+    async function formatResultMessage() { return "FTTEXT"; }
+    function isMatchFinished() { return true; }
+    function isWithinPostMatchWindow() { return true; }
+    async function renderCardPngCached() { return null; }
+    async function cachedCardPng() { return null; }
+    async function sendPhotoBinary() { return false; }
+    async function sendDice() { return 3; }
+    function isBackfillEligible() { return false; }
+    function subrequestCount() { return 0; }
+    function kvOpsCount() { return 0; }
+    const matchKey = matchKeyStub;
+    eval([
+      channelMirrorSrc,
+      G("function fanoutFetchCost(chatGroups, config, channelEnabled)"),
+      G("function fanoutReservation(config, chatGroups, channelEnabled)"),
+      G("function mdItalic(text)"),
+      G("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, deferred)"),
+      G("async function broadcastBigMatchKickoff(env, matches)"),
+      G("async function broadcastBigMatchResults(env, matches)")
+    ].join("\n"));
+    const bigMatch = { id: "b1", utcDate: new Date().toISOString(), status: "IN_PLAY", competition: { code: "PL" }, homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" } };
+    const cfgMs = { type: "match-start", windowCheck: () => true, messageFormatter: async () => "KOSTART", requiresFuture: false };
+
+    // 1. the broadcast alone posts exactly once
+    const env1 = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    await broadcastBigMatchKickoff(env1, [bigMatch]);
+    check("h2. match-start-big alone ⇒ ONE channel post (text-only, the full footer block)", CH.length === 1 && CH[0].text === "KOSTART" + "\n\n\\-\\-\\-\\-\\-\\-\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
+    CH.length = 0;
+    await broadcastBigMatchKickoff(env1, [bigMatch]);
+    check("h2. repeated broadcast tick ⇒ no duplicate", CH.length === 0);
+
+    // 2. THE STAGE COLLAPSE: the engine's match-start already claimed ⇒ the broadcast's claim no-ops
+    const env2 = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    await sendNotificationIfNeeded(bigMatch, cfgMs, [{ tz: "Asia/Tehran", lang: "fa", chats: [501] }], env2, { "match-start": 0 }, {}, []);
+    const afterEngine = CH.length;
+    await broadcastBigMatchKickoff(env2, [bigMatch]);
+    check("h2. STAGE COLLAPSE: engine match-start + match-start-big ⇒ exactly ONE kickoff post", afterEngine === 1 && CH.length === 1);
+    check("h2. the collapsed identity is match:<matchKey>:match-start (one row)", env2.USERS_DB._tables.channel_posts_v1.has("fa-football\u0000match:" + matchKey(bigMatch) + ":match-start") && env2.USERS_DB._tables.channel_posts_v1.size === 1);
+
+    // 3. result-big posts its own stage
+    const env3 = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    CH.length = 0;
+    await broadcastBigMatchResults(env3, [Object.assign({}, bigMatch, { status: "FINISHED", score: { fullTime: { home: 2, away: 1 } } })]);
+    check("h2. result-big ⇒ ONE channel post on the result stage", CH.length === 1 && env3.USERS_DB._tables.channel_posts_v1.has("fa-football\u0000match:" + matchKey(bigMatch) + ":result"));
+  })().catch((e) => { console.error("FAIL h2 harness error: " + e.message); failed++; });
+
+  // ===== h3) the status-change alerts =====
+  console.log("\n=== h3. the status-change alerts (detectStatusChanges) ===");
+  await (async () => {
+    const CH = [];
+    const PV = [];
+    async function sendTelegram(env, text, chatId) { (String(chatId) === CHAT_ID ? CH : PV).push({ text, chatId }); return true; }
+    async function getRegisteredChats() { return [501]; }
+    async function getUserPrefs() { return {}; }
+    function shouldNotify() { return true; }
+    function isMasterBigMatch() { return true; }
+    function normalizeTeamName(n) { return String(n).toLowerCase(); }
+    const translateTeam = (n) => n;
+    const translateCompetition = (c) => "COMP-" + c;
+    var COMP_EN = {};
+    const matchKey = matchKeyStub;
+    eval([
+      channelMirrorSrc,
+      ...MD_PIECES(),
+      G("function mdBold(text)"),
+      G("function mdItalic(text)"),
+      G("function toFaDigits(str)"),
+      G("async function detectStatusChanges(env")
+    ].join("\n"));
+    const statusMatch = (status, score) => ({ id: "s1", utcDate: new Date(Date.now() - 36e5).toISOString(), status, competition: { code: "PL" }, homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" }, score: { fullTime: score || { home: 0, away: 0 } } });
+    const envS = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    await detectStatusChanges(envS, [statusMatch("SCHEDULED")]);
+    check("h3. SCHEDULED baseline ⇒ no channel post", CH.length === 0);
+    await detectStatusChanges(envS, [statusMatch("POSTPONED")]);
+    check("h3. POSTPONED transition ⇒ ONE channel post (fa composition + footer)", CH.length === 1 && CH[0].text.includes("\u0628\u0627\u0632\u06CC \u0628\u0647 \u062A\u0639\u0648\u06CC\u0642 \u0627\u0641\u062A\u0627\u062F") && CH[0].text.includes("\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot"));
+    check("h3. the private bucket also got its copy (the mirror is additive)", PV.length === 1);
+    const claimedPostponed = envS.USERS_DB._tables.channel_posts_v1.size;
+    await detectStatusChanges(envS, [statusMatch("POSTPONED")]);
+    check("h3. same status again ⇒ no duplicate channel post", claimedPostponed === 1 && CH.length === 1);
+    // HT alert → the :ht key
+    const htEnv = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    const htMatch = (status) => ({ id: "s2", utcDate: new Date(Date.now() - 4e6).toISOString(), status, competition: { code: "PL" }, homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, score: { fullTime: { home: 1, away: 1 } } });
+    CH.length = 0;
+    await detectStatusChanges(htEnv, [htMatch("SCHEDULED")]);
+    await detectStatusChanges(htEnv, [htMatch("PAUSED")]);
+    check("h3. HT (PAUSED) transition ⇒ ONE channel post on the :ht key", CH.length === 1 && htEnv.USERS_DB._tables.channel_posts_v1.has("fa-football\u0000match:" + matchKey(htMatch("PAUSED")) + ":ht"));
+    // fail-closed: a failing status-map save suppresses the channel copy too
+    const envF = { STATE: makeStore({ failWrites: true }), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    const fm = (status) => ({ id: "s3", utcDate: new Date(Date.now() - 36e5).toISOString(), status, competition: { code: "SA" }, homeTeam: { name: "Inter Milan" }, awayTeam: { name: "AC Milan" }, score: { fullTime: { home: 0, away: 0 } } });
+    CH.length = 0;
+    await detectStatusChanges(envF, [fm("SCHEDULED")]);
+    await detectStatusChanges(envF, [fm("CANCELLED")]);
+    check("h3. statusMapSaved false (fail-closed) ⇒ NO channel post either", CH.length === 0 && envF.USERS_DB._tables.channel_posts_v1.size === 0);
+  })().catch((e) => { console.error("FAIL h3 harness error: " + e.message); failed++; });
+
+  // ===== h4) the morning digest edition =====
+  console.log("\n=== h4. the morning digest (mirrorMorningChannelPost) ===");
+  await (async () => {
+    const CH = [];
+    async function sendTelegram(env, text, chatId) { CH.push({ text, chatId }); return true; }
+    function isMasterBigMatch() { return true; }
+    function isBotSilentLeague() { return false; }
+    async function getCachedMatches() { return []; }
+    const translateTeam = (n) => n;
+    const translateCompetition = (c) => "COMP-" + c;
+    var COMP_EN = {};
+    eval([
+      channelMirrorSrc,
+      (src.match(/var JALALI_MONTHS_FA = \[[\s\S]*?\];/) || ["FAIL-JM"])[0],
+      (src.match(/var WEEKDAYS_FA = \[[^\]]*\];/) || ["FAIL-WD"])[0],
+      G("function toJalaliParts(gy"),
+      G("function jalaliDateFa(y"),
+      G("function englishDateYmd(y"),
+          (src.match(/var TZOFF_MEMO = \{\};/) || ["FAIL-TZM"])[0],
+    (src.match(/var TZOFF_MEMO_AT = 0;/) || ["FAIL-TZA"])[0],
+G("function tzOffsetMinutes(tz"),
+      G("function zonedYmDHm(tz, date)"),
+      G("function zonedHm(tz, date, lang)"),
+      G("function toFaDigits(str)"),
+      ...MD_PIECES(),
+      G("function mdEscape(text)"),
+      G("function mdBold(text)"),
+      G("function mdItalic(text)"),
+      G("async function buildMorningDigestMessage(env"),
+      G("async function mirrorMorningChannelPost(env")
+    ].join("\n"));
+    const pool = { matches: [
+      { competition: { code: "PL" }, utcDate: "2026-11-07T16:00:00Z", status: "SCHEDULED", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" } }
+    ] };
+    const mkEnv = (extra) => Object.assign({ STATE: makeStore({ seed: { matches_v13_tracked: JSON.stringify(pool) } }), USERS_DB: makeD1() }, extra || {});
+    const TEHRAN_0905 = Date.parse("2026-11-07T05:35:00Z"); // Tehran wall 09:05
+    const TEHRAN_1500 = Date.parse("2026-11-07T11:35:00Z"); // Tehran wall 15:05
+    // unconfigured: zero ops at 9am
+    const envU = mkEnv();
+    const rU = await mirrorMorningChannelPost(envU, TEHRAN_0905);
+    check("h4. unconfigured at Tehran 9am ⇒ null, ZERO D1 ops (the edition gates run only when configured)", rU === null && envU.USERS_DB._prepCount === 0);
+    // non-9am: no post even configured
+    const envN = mkEnv({ TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID });
+    const rN = await mirrorMorningChannelPost(envN, TEHRAN_1500);
+    check("h4. Tehran 15:05 ⇒ no morning edition (the 9am wall gate)", rN === null && CH.length === 0 && envN.USERS_DB._tables.channel_posts_v1.size === 0);
+    // 9am + big match ⇒ one post
+    const envM = mkEnv({ TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID });
+    const rM = await mirrorMorningChannelPost(envM, TEHRAN_0905);
+    check("h4. Tehran 9am + master big match ⇒ ONE channel post (fa digest + footer)", rM && rM.ok === true && CH.length === 1 && CH[0].chatId === CHAT_ID);
+    check("h4. the morning channel post carries the digest header + the footer links", CH[0].text.includes("\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0628\u0632\u0631\u06AF \u0627\u0645\u0631\u0648\u0632") && CH[0].text.includes("https://sportsignal\\.ir") && CH[0].text.includes("https://t\\.me/SportSignalAlertsBot"));
+    check("h4. the edition claim is digest:morning:<tehran-dateKey>", envM.USERS_DB._tables.channel_posts_v1.has("fa-football\u0000digest:morning:2026-11-07"));
+    // repeat same dateKey ⇒ no dup; next day ⇒ new edition
+    const rM2 = await mirrorMorningChannelPost(envM, TEHRAN_0905);
+    check("h4. repeat at the same dateKey ⇒ no second post", rM2 && rM2.claimed === false && CH.length === 1);
+    // quiet day (no big matches)
+    const envQ = mkEnv({ TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID });
+    envQ.STATE._map.set("matches_v13_tracked", JSON.stringify({ matches: [] }));
+    const rQ = await mirrorMorningChannelPost(envQ, TEHRAN_0905);
+    check("h4. a quiet Tehran day ⇒ no post, no claim burned", rQ === null && envQ.USERS_DB._tables.channel_posts_v1.size === 0);
+  })().catch((e) => { console.error("FAIL h4 harness error: " + e.message); failed++; });
+
+  // ===== h5) the UCL night preview edition =====
+  console.log("\n=== h5. the UCL night preview (mirrorUclNightChannelPost) ===");
+  await (async () => {
+    const CH = [];
+    const BANNERS = [];
+    async function sendTelegram(env, text, chatId) { CH.push({ text, chatId }); return true; }
+    async function sendUclGifBanner(env, chatId, caption) { BANNERS.push({ chatId, caption }); return true; }
+    const translateTeam = (n) => n;
+    var UCL_CODES = ["CL"];
+    function subrequestCount() { return 0; }
+    eval([
+      channelMirrorSrc,
+      G("function tzOffsetMs(tz"),
+      (src.match(/var TZOFF_MEMO = \{\};/) || ["FAIL-TZM"])[0],
+      (src.match(/var TZOFF_MEMO_AT = 0;/) || ["FAIL-TZA"])[0],
+      G("function tzOffsetMinutes(tz"),
+      G("function dateKeyOf(y"),
+      G("function localDateKeyOf(ms"),
+      G("function matchesOfLocalDate(matches"),
+      G("function previewWindowState(firstKoMs"),
+      (src.match(/var JALALI_MONTHS_FA = \[[\s\S]*?\];/) || ["FAIL-JM"])[0],
+      (src.match(/var WEEKDAYS_FA = \[[^\]]*\];/) || ["FAIL-WD"])[0],
+      G("function toJalaliParts(gy"),
+      G("function jalaliDateFa(y"),
+      G("function englishDateYmd(y"),
+          (src.match(/var TZOFF_MEMO = \{\};/) || ["FAIL-TZM"])[0],
+    (src.match(/var TZOFF_MEMO_AT = 0;/) || ["FAIL-TZA"])[0],
+G("function tzOffsetMinutes(tz"),
+      G("function zonedYmDHm(tz, date)"),
+      G("function zonedHm(tz, date, lang)"),
+      G("function getJalaliTime(utcDateStr"),
+      G("function getEnglishTime(utcDateStr"),
+      G("function toFaDigits(str)"),
+      ...MD_PIECES(),
+      G("function mdEscape(text)"),
+      G("function mdBold(text)"),
+      G("function uclPreviewLine(env"),
+      G("function buildUclPreviewMessage(env"),
+      G("async function mirrorUclNightChannelPost(env")
+    ].join("\n"));
+    const cl = (h, home, away) => ({ competition: { code: "CL" }, utcDate: "2026-11-07T" + h + ":00Z", status: "SCHEDULED", homeTeam: { name: home }, awayTeam: { name: away } });
+    const pool = [cl("19:45", "Arsenal FC", "Chelsea FC"), cl("20:00", "Real Madrid CF", "FC Barcelona")];
+    const NOW_IN_WINDOW = Date.parse("2026-11-07T15:00:00Z"); // Tehran 18:30; firstKo 19:45Z − 6h = 13:45Z ≤ now ≤ 19:35Z
+    const envU = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    const rU = await mirrorUclNightChannelPost(envU, pool, NOW_IN_WINDOW);
+    check("h5. in-window CL day ⇒ banner + ONE channel post", rU && rU.ok === true && BANNERS.length === 1 && CH.length === 1);
+    check("h5. the banner caption is the fa UCL-night line", BANNERS[0].caption.includes("\u0634\u0628 \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627"));
+    // PLAIN KICKOFF ORDER: the lines appear in kickoff order (19:45 team pair before 20:00)
+    const idxA = CH[0].text.indexOf("Arsenal FC");
+    const idxB = CH[0].text.indexOf("Real Madrid CF");
+    check("h5. the fixture list is in PLAIN kickoff order (no uclPreviewOrder priority pass)", idxA >= 0 && idxB >= 0 && idxA < idxB);
+    check("h5. the mirror function NEVER CALLS uclPreviewOrder (the name appears only in the explanatory comment)", !/uclPreviewOrder\(/.test(G("async function mirrorUclNightChannelPost(env")));
+    check("h5. the edition claim is digest:uclnight:<tehran-dateKey>", envU.USERS_DB._tables.channel_posts_v1.has("fa-football\u0000digest:uclnight:2026-11-07"));
+    const rU2 = await mirrorUclNightChannelPost(envU, pool, NOW_IN_WINDOW);
+    check("h5. repeat ⇒ no second preview (edition claimed)", rU2 && rU2.claimed === false && CH.length === 1);
+    // out of window (after the tail): no post, no claim burned
+    const envL = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    const rL = await mirrorUclNightChannelPost(envL, pool, Date.parse("2026-11-07T19:40:00Z"));
+    check("h5. past the window tail ⇒ no post, no claim burned", rL === null && envL.USERS_DB._tables.channel_posts_v1.size === 0);
+  })().catch((e) => { console.error("FAIL h5 harness error: " + e.message); failed++; });
+
+  // ===== h6) the night digest edition + the private parity law =====
+  console.log("\n=== h6. the night digest (mirrorNightChannelPost + the additive channel variant) ===");
+  await (async () => {
+    const CH = [];
+    const BANNERS = [];
+    async function sendTelegram(env, text, chatId) { CH.push({ text, chatId }); return true; }
+    async function sendUclGifBanner(env, chatId, caption) { BANNERS.push({ chatId, caption }); return true; }
+    let elimStub = [];
+    function collectEliminations() { return elimStub; } // SYNC like the real cup-elim.ts export
+    function isBotSilentLeague() { return false; }
+    function subrequestCount() { return 0; }
+    const translateTeam = (n) => n;
+    const translateCompetition = (c) => "COMP-" + c;
+    function normalizeTeamName(n) { return String(n).toLowerCase(); }
+    eval([
+      channelMirrorSrc,
+          (src.match(/var TZOFF_MEMO = \{\};/) || ["FAIL-TZM"])[0],
+    (src.match(/var TZOFF_MEMO_AT = 0;/) || ["FAIL-TZA"])[0],
+G("function tzOffsetMinutes(tz"),
+      G("function tzOffsetMs(tz"),
+      G("function zonedYmDHm(tz, date)"),
+      G("function dateKeyOf(y"),
+      G("function localDateKeyOf(ms"),
+      G("function matchesOfLocalDate(matches"),
+      (src.match(/(?:var|const) DONE_STATUSES = \[[^\]]*\];/) || ["FAIL-DS"])[0],
+      G("function nightIsOver(nightMatches"),
+      (src.match(/var JALALI_MONTHS_FA = \[[\s\S]*?\];/) || ["FAIL-JM"])[0],
+      (src.match(/var WEEKDAYS_FA = \[[^\]]*\];/) || ["FAIL-WD"])[0],
+      G("function toJalaliParts(gy"),
+      G("function jalaliDateFa(y"),
+      G("function englishDateYmd(y"),
+      G("function toFaDigits(str)"),
+      ...MD_PIECES(),
+      G("function mdEscape(text)"),
+      G("function mdBold(text)"),
+      G("function mdItalic(text)"),
+      G("function ftScore(m)"),
+      G("function collapsePairings(list)"),
+      G("function renderEliminationSection(eliminations, en)"),
+      G("async function buildNightDigestChannelMessage(env"),
+      G("async function mirrorNightChannelPost(env")
+    ].join("\n"));
+    const fin = (code, h, home, away, sH, sA) => ({ competition: { code }, utcDate: "2026-11-07T" + h + ":00Z", status: "FINISHED", homeTeam: { name: home }, awayTeam: { name: away }, score: { fullTime: { home: sH, away: sA } } });
+    const uclPool = [fin("CL", "19:45", "Arsenal FC", "Chelsea FC", 2, 1), fin("CL", "20:00", "Real Madrid CF", "FC Barcelona", 1, 1)];
+    const plPool = [fin("PL", "20:00", "Hull City AFC", "Everton FC", 0, 3)];
+    const TEHRAN_2100 = Date.parse("2026-11-07T17:30:00Z"); // Tehran 21:00 (>= 20)
+    // 1. UCL night ⇒ one channel post + banner
+    const envU = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    const rU = await mirrorNightChannelPost(envU, uclPool, TEHRAN_2100);
+    check("h6. a UCL night (over, all FINISHED) ⇒ banner + ONE channel post", rU && rU.ok === true && BANNERS.length === 1 && CH.length === 1);
+    check("h6. the channel variant has NO per-chat «بازی‌های شما» section", !CH[0].text.includes("\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0634\u0645\u0627"));
+    check("h6. the channel variant carries the results section + the footer links", CH[0].text.includes("\u0646\u062A\u0627\u06CC\u062C \u0634\u0628") && CH[0].text.includes("https://sportsignal\\.ir") && CH[0].text.includes("https://t\\.me/SportSignalAlertsBot"));
+    check("h6. the edition claim is digest:night:<tehran-dateKey>", envU.USERS_DB._tables.channel_posts_v1.has("fa-football\u0000digest:night:2026-11-07"));
+    // 2. repeat ⇒ no dup
+    const rU2 = await mirrorNightChannelPost(envU, uclPool, TEHRAN_2100);
+    check("h6. repeat at the same dateKey ⇒ no second post", rU2 && rU2.claimed === false && CH.length === 1);
+    // 3. QUIET night: non-UCL, no elimination — even though a hypothetical follower exists — NO post (the desired-teams leg is dropped)
+    const envQ = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    const rQ = await mirrorNightChannelPost(envQ, plPool, TEHRAN_2100);
+    check("h6. a QUIET night (no UCL, no elimination) ⇒ NO channel post, no claim burned (the desired-teams leg is dropped)", rQ === null && envQ.USERS_DB._tables.channel_posts_v1.size === 0);
+    // 4. elimination night ⇒ post with the elimination section
+    const envE = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    CH.length = 0;
+    elimStub = [{ code: "COPPA_ITALIA", home: "AS Roma", away: "Lazio Roma", loser: "Lazio Roma", winner: "AS Roma", agg: { w: 3, l: 1 }, final: false }];
+    const rE = await mirrorNightChannelPost(envE, plPool.concat([fin("COPPA_ITALIA", "18:30", "AS Roma", "Lazio Roma", 2, 0)]), TEHRAN_2100);
+    check("h6. an elimination night ⇒ ONE channel post with the eliminations section", rE && rE.ok === true && CH.length === 1 && CH[0].text.includes("\u062D\u0630\u0641\u200C\u0634\u062F\u06AF\u0627\u0646 \u062C\u0627\u0645\u200C\u0647\u0627\u06CC \u062D\u0630\u0641\u06CC"));
+    elimStub = [];
+    // 5. the night is not over ⇒ no post
+    const envO = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
+    const livePool = uclPool.concat([{ competition: { code: "CL" }, utcDate: "2026-11-07T17:00:00Z", status: "IN_PLAY", homeTeam: { name: "A Team" }, awayTeam: { name: "B Team" }, score: { fullTime: { home: 0, away: 0 } } }]);
+    const rO = await mirrorNightChannelPost(envO, livePool, TEHRAN_2100);
+    check("h6. a night still in play ⇒ no post (nightIsOver gate)", rO === null && envO.USERS_DB._tables.channel_posts_v1.size === 0);
+    // 6. daytime ⇒ nothing
+    const rD = await mirrorNightChannelPost(envO, uclPool, Date.parse("2026-11-07T08:00:00Z"));
+    check("h6. Tehran daytime ⇒ no night edition", rD === null);
+  })().catch((e) => { console.error("FAIL h6 harness error: " + e.message); failed++; });
+
+  // ===== h6b) the PRIVATE night digest builder — the frozen-fixture parity =====
+  console.log("\n=== h6b. buildNightDigestMessage — byte-identical private parity ===");
+  await (async () => {
+    const translateTeam = (n) => n;
+    const translateCompetition = (c) => "COMP-" + c;
+    function normalizeTeamName(n) { return String(n).toLowerCase().replace(/\s+/g, " "); }
+    function userFollowsMatch(prefs, chatId, m) {
+      const p = prefs[String(chatId)];
+      if (!p || !Array.isArray(p.teams)) return null;
+      return p.teams.includes(m.homeTeam.name) || p.teams.includes(m.awayTeam.name) ? "one" : null;
+    }
+    function userFollowsSides(prefs, chatId, m) {
+      const p = prefs[String(chatId)];
+      return { home: !!(p && p.teams && p.teams.includes(m.homeTeam.name)), away: !!(p && p.teams && p.teams.includes(m.awayTeam.name)) };
+    }
+    function priorityTier() { return 0; }
+    function zonedYmDHm(tz, date) { return { y: 2026, m: 11, d: 7, dow: 6, hh: 23, mm: 5, hm: "23:05" }; }
+    async function fetchStandings(env, code) {
+      if (code === "CL") return { teams: [{ name: "Arsenal FC", pos: 2, points: 7 }] };
+      return null;
+    }
+    eval([
+      ...MD_PIECES(),
+      G("function toFaDigits(str)"),
+      G("function ftScore(m)"),
+      G("function collapsePairings(list)"),
+      G("async function teamRank(env"),
+      G("function findTeamRow(data"),
+      G("function renderEliminationSection(eliminations, en)"),
+      (src.match(/var JALALI_MONTHS_FA = \[[\s\S]*?\];/) || ["FAIL-JM"])[0],
+      (src.match(/var WEEKDAYS_FA = \[[^\]]*\];/) || ["FAIL-WD"])[0],
+      G("function toJalaliParts(gy"),
+      G("function jalaliDateFa(y"),
+      G("async function buildNightDigestMessage(env")
+    ].join("\n"));
+    const nightMatches = [
+      { competition: { code: "CL" }, utcDate: "2026-11-07T19:45:00Z", status: "FINISHED", homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Chelsea FC" }, score: { fullTime: { home: 2, away: 1 } } },
+      { competition: { code: "PL" }, utcDate: "2026-11-07T20:00:00Z", status: "FINISHED", homeTeam: { name: "Hull City AFC" }, awayTeam: { name: "Everton FC" }, score: { fullTime: { home: 0, away: 3 } } },
+      { competition: { code: "PD" }, utcDate: "2026-11-07T21:30:00Z", status: "FINISHED", homeTeam: { name: "Deportivo Alavés" }, awayTeam: { name: "Real Betis" }, score: { fullTime: { home: 1, away: 1 } } },
+      { competition: { code: "COPPA_ITALIA" }, utcDate: "2026-11-07T18:30:00Z", status: "FINISHED", homeTeam: { name: "AS Roma" }, awayTeam: { name: "Lazio Roma" }, score: { fullTime: { home: 2, away: 0 } } }
+    ];
+    const prefs = { "501": { teams: ["Arsenal FC"], lang: "fa" } };
+    const eliminations = [{ code: "COPPA_ITALIA", home: "AS Roma", away: "Lazio Roma", loser: "Lazio Roma", winner: "AS Roma", agg: { w: 3, l: 1 }, final: false }];
+    const out = await buildNightDigestMessage({ TEHRAN_TZ: "Asia/Tehran" }, nightMatches, "fa", prefs, 501, new Map(), { y: 2026, m: 11, d: 7 }, eliminations);
+    const fsx = require("fs");
+    const FROZEN = fsx.readFileSync(require("path").join(__dirname, "fixtures", "nightdigest-private-baseline.txt"), "utf8");;
+    check("h6b. the PRIVATE buildNightDigestMessage output is byte-identical to the frozen v13.230 baseline", out === FROZEN);
+  })().catch((e) => { console.error("FAIL h6b harness error: " + e.message); failed++; });
+
+  // ===== h7) the coronation alerts =====
+  console.log("\n=== h7. the coronation alerts (maybeNotifyTableToppers) ===");
+  await (async () => {
+    const CH = [];
+    const PV = [];
+    async function sendTelegram(env, text, chatId) { (String(chatId) === CHAT_ID ? CH : PV).push({ text, chatId }); return true; }
+    async function getRegisteredChats() { return [501]; }
+    async function getUserPrefs() { return {}; }
+    function normAlias(n) { return String(n).toLowerCase(); }
+    function weeklyTableCodes() { return ["PL"]; }
+    function isMatchFinished() { return true; }
+    function isWithinPostMatchWindow() { return true; }
+    const translateTeam = (n) => n;
+    const translateCompetition = (c) => "COMP-" + c;
+    var COMP_EN = {};
+    const matchKey = matchKeyStub;
+    async function fetchStandings() { return { started: true, matchday: 11, teams: [ { name: "Arsenal FC", pos: 1, points: 12 }, { name: "Manchester City FC", pos: 2, points: 9 } ] }; }
+    eval([
+      channelMirrorSrc,
+      G("function toFaDigits(str)"),
+      (src.match(/var JALALI_MONTHS_FA = \[[\s\S]*?\];/) || ["FAIL-JM"])[0],
+      (src.match(/var WEEKDAYS_FA = \[[^\]]*\];/) || ["FAIL-WD"])[0],
+      G("function toJalaliParts(gy"),
+      G("function jalaliDateFa(y"),
+      G("function getJalaliDate(utcDateStr"),
+      G("function getEnglishDate(utcDateStr"),
+      G("async function formatTableTopMessage(env"),
+      G("async function maybeNotifyTableToppers(env")
+    ].join("\n"));
+    const trigger = { id: "c1", utcDate: new Date(Date.now() - 36e5).toISOString(), status: "FINISHED", competition: { code: "PL" }, homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Everton FC" }, score: { fullTime: { home: 3, away: 0 } } };
+    // seed the PREVIOUS snapshot: City on top, Arsenal second
+    const seed = { "table_top_v1:PL": JSON.stringify({ ts: Date.now() - 864e5, top: [ { name: "Manchester City FC", pos: 1, points: 9 }, { name: "Arsenal FC", pos: 2, points: 9 } ] }) };
+    const envC = Object.assign({ STATE: makeStore({ seed }), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID });
+    const rC = await maybeNotifyTableToppers(envC, [trigger]);
+    check("h7. a coronation event ⇒ ONE channel post (fa + footer on top of the table link)", CH.length === 1 && rC.events.length === 1);
+    check("h7. the coronation channel post names the new leader + the footer bot line", CH[0].text.includes("Arsenal FC") && CH[0].text.includes("\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot"));
+    check("h7. the claim key is coronation:<code>:<triggerMatchKey>", envC.USERS_DB._tables.channel_posts_v1.has("fa-football\u0000coronation:PL:" + matchKey(trigger)));
+    const claimed = CH.length;
+    await maybeNotifyTableToppers(envC, [trigger]);
+    check("h7. repeat (the snapshot now matches) ⇒ no second channel post", CH.length === claimed);
+    // snapshot save failure ⇒ fail-closed, no channel post
+    const envF = Object.assign({ STATE: makeStore({ seed, failWrites: true }), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID });
+    CH.length = 0;
+    await maybeNotifyTableToppers(envF, [trigger]);
+    check("h7. snapshot save failure ⇒ NO channel post (fail-closed gate respected)", CH.length === 0 && envF.USERS_DB._tables.channel_posts_v1.size === 0);
+  })().catch((e) => { console.error("FAIL h7 harness error: " + e.message); failed++; });
+
+  // ===== h8) the weekly channel burst =====
+  console.log("\n=== h8. the weekly channel burst (serveChannelWeekly) ===");
+  await (async () => {
+    const CH = [];
+    const STK = [];
+    async function sendTelegram(env, text, chatId) { CH.push({ text, chatId }); return true; }
+    async function sendSticker(env, chatId, sticker) { STK.push({ chatId, sticker }); return true; }
+    function subrequestCount() { return 0; }
+    function kvOpsCount() { return 0; }
+    eval([
+      channelMirrorSrc,
+      G("function weeklyBurstCost(group"),
+      G("async function serveChannelWeekly(env")
+    ].join("\n"));
+    const payload = { week: "2026-W46", groups: { fa: { tables: [ { code: "PL", text: "TBL-PL", sticker: null }, { code: "PD", text: "TBL-PD", sticker: "STK-PD" } ], weekAhead: "WEEKAHEAD" } } };
+    const mkEnv = (extra) => Object.assign({ STATE: makeStore({ seed: { weekly_tables_payload_v1: JSON.stringify(payload) } }), USERS_DB: makeD1() }, extra || {});
+    const envW = mkEnv({ TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID });
+    const rW = await serveChannelWeekly(envW, "2026-W46");
+    check("h8. the burst serves [sticker][table]×N + week-ahead to the channel", rW && rW.served === true && STK.length === 1 && STK[0].sticker === "STK-PD" && CH.length === 3);
+    check("h8. the footer rides the CLOSING message only (no footer spam on the tables)", !CH[0].text.includes("\u0633\u0627\u06CC\u062A") && !CH[1].text.includes("\u0633\u0627\u06CC\u062A") && CH[2].text === "WEEKAHEAD" + "\n\n\\-\\-\\-\\-\\-\\-\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
+    check("h8. the claim is digest:weekly:<isoWeekKey> + state 'sent'", envW.USERS_DB._tables.channel_posts_v1.get("fa-football\u0000digest:weekly:2026-W46").state === "sent");
+    const rW2 = await serveChannelWeekly(envW, "2026-W46");
+    check("h8. repeat ⇒ no second burst (the week is claimed)", rW2 === null && CH.length === 3);
+    // reservation-blocked: NO claim burned (the retry stays possible)
+    const envD = mkEnv({ TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID });
+    // (the grabbed function closes over THIS scope's subrequestCount binding)
+    subrequestCount = function () { return 40; };
+    const rD = await serveChannelWeekly(envD, "2026-W46");
+    check("h8. budget-blocked ⇒ {deferred:true} and NO claim burned (the retry lane stays open)", rD && rD.deferred === true && envD.USERS_DB._tables.channel_posts_v1.size === 0);
+    subrequestCount = function () { return 0; };
+    const rD2 = await serveChannelWeekly(envD, "2026-W46");
+    check("h8. budget recovered ⇒ the burst fires on the retry (the claim was not burned)", rD2 && rD2.served === true);
+    // a payload for a different week ⇒ no-op
+    const envX = mkEnv({ TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID });
+    const rX = await serveChannelWeekly(envX, "2026-W47");
+    check("h8. a payload from another week ⇒ no-op (week match enforced)", rX === null && envX.USERS_DB._tables.channel_posts_v1.size === 0);
+  })().catch((e) => { console.error("FAIL h8 harness error: " + e.message); failed++; });
+
+  // ===== i) the EXCLUSION matrix (every ⛔ family) =====
+  console.log("\n=== i. the exclusion matrix (spec PART II §2) ===");
+  {
+    const fs = require("fs");
+    const path = require("path");
+    const SRC = (f) => fs.readFileSync(path.join(__dirname, "..", "src", f), "utf8");
+    const CHANNEL_SEAM = /claimChannelPost|sendChannelPost|mirrorChannelPost|claimChannelEvent|recordChannelState|channelDestinations|channelActive|appendChannelFooter|withChannelCta|mirrorMorningChannelPost|mirrorUclNightChannelPost|mirrorNightChannelPost|serveChannelWeekly/;
+    const EXCLUDED = [
+      ["bot.ts", "the private command replies (/start /help /next /teams /timezone /lang /stop)"],
+      ["admin-bot.ts", "the admin command surface (/status /members /broadcast)"],
+      ["admin-ops.ts", "the admin panel operations"],
+      ["admin.ts", "the admin auth/ops layer"],
+      ["migration.ts", "the owner-triggered migration broadcast"],
+      ["monitoring.ts", "the phase-error admin pages"],
+      ["cron-users.ts", "the 6-hourly admin heartbeat"],
+      ["cron-preflight.ts", "the KV-budget + stale-run admin pages"],
+      ["providers.ts", "the provider degradation alert (owner decision pending — DISCOVERY §12 q2)"],
+      ["notify-audit.ts", "the notification-gap audit reports"],
+      ["users.ts", "the user-cap warning"],
+      ["simulate.ts", "the /api/simulate dry-run"]
+    ];
+    for (const [f, why] of EXCLUDED) {
+      check("i. \u25ED " + f + " (" + why + ") never reaches the channel", !CHANNEL_SEAM.test(SRC(f)));
+    }
+    check("i. the ONLY channel hook sites are the six DISCOVERY §7.4 boundaries", (() => {
+      const hooksIn = ["notify-engine.ts", "digest-bigmatch.ts", "notify-status.ts", "digest-morning.ts", "digest-uclnight.ts", "digest-night.ts", "digest-coronation.ts", "digest-weekly.ts", "cron.ts"];
+      for (const f of hooksIn) { if (!CHANNEL_SEAM.test(SRC(f))) return false; }
+      return true;
+    })());
+  }
+
+  // ===== k) resources (spec PART IV §12 / DISCOVERY §7.7) =====
+  console.log("\n=== k. the resource discipline ===");
+  {
+    const fs = require("fs");
+    const path = require("path");
+    const read = (f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8");
+    check("k. fanoutFetchCost gains exactly +2 per unit when the channel is enabled", (() => {
+      const fn = eval("(" + untype(grabFn("function fanoutFetchCost(chatGroups, config, channelEnabled)")) + ")");
+      const g = [{ tz: "Asia/Tehran", lang: "fa", chats: [1, 2] }];
+      const cfg = { type: "pre-match-1h" };
+      return fn(g, cfg) === 8 && fn(g, cfg, true) === 10;
+    })());
+    check("k. NO new cron triggers (the two documented crons unchanged)", /crons = \["\*\/10 \* \* \* \*", "27 \*\/4 \* \* \*"\]/.test(read("wrangler.toml")));
+    check("k. the notify.ch breadcrumb rides the completion blob's existing put (zero extra KV writes)", /ch: channelActive\(env\) \? takeChannelTickStats\(\) : null/.test(read("src/cron.ts")));
+    check("k. channel-mirror.ts imports no provider (no new fetch/polling class)", !/provider/.test(read("src/channel-mirror.ts").replace(/\/\/[^\n]*/g, "")));
+    check("k. the engine claim sits AFTER saveNotifiedMatch (the private write-first gate)", (() => { const s = grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, deferred)"); return s.indexOf("await saveNotifiedMatch") >= 0 && s.indexOf("await claimChannelPost") > s.indexOf("await saveNotifiedMatch") && s.indexOf("await claimChannelPost") < s.indexOf("for (const g of chatGroups)"); })());
+    check("k. the engine send sits AFTER the group loop (never inside a per-recipient loop)", (() => { const s = grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, deferred)"); return s.indexOf("await sendChannelPost") > s.indexOf("for (const g of chatGroups)"); })());
+    check("k. [vars] TELEGRAM_CHANNEL_CHAT_ID still EMPTY in wrangler.toml (disabled by default)", /TELEGRAM_CHANNEL_CHAT_ID = ""/.test(read("wrangler.toml")) && /TELEGRAM_CHANNEL_PUBLIC_URL = ""/.test(read("wrangler.toml")));
+  }
+
 
   console.log(failed ? failed + " FAILURES" : "channel-mirror OK");
   process.exit(failed ? 1 : 0);

@@ -404,6 +404,16 @@ const advMatch = Object.assign({}, faMatch, {
   globalThis.getRegisteredChats = async () => [555];
   globalThis.getUserPrefs = async () => ({});
   globalThis.isMasterBigMatch = () => true;
+  // v13.231-channelmirror co-evolution: detectStatusChanges now references
+  // the channel-hook seams (claim before the private buckets, send after;
+  // withChannelCta on the private copies). Identity/no-op stubs here — this
+  // check owns the PRIVATE message styling; the channel matrix lives in
+  // scripts/check-channel-mirror.js.
+  globalThis.claimChannelPost = async () => null;
+  globalThis.sendChannelPost = async () => ({ ok: false });
+  globalThis.channelEventKeyStatus = () => null;
+  globalThis.matchKey = (m) => String(m.homeTeam.name).toLowerCase() + "|" + String(m.awayTeam.name).toLowerCase() + "|" + String(m.utcDate || "").slice(0, 16);
+  globalThis.withChannelCta = (t) => t;
   const HT_SENT = [];
   globalThis.sendTelegram = async (_e, text, chatId) => { HT_SENT.push({ text, chatId }); return true; };
   eval([grabFn("async function detectStatusChanges(env, matches)")].join("\n"));

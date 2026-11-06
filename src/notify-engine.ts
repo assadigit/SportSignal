@@ -23,6 +23,10 @@ import { shouldNotify, setUclParticipants, uclPrimed, uclParticipantCount } from
 import { pruneChats } from "./user-store";
 import { format24HourMessage, formatBigMatchMessage, format3HourMessage, format1HourMessage, format5MinMessage, formatMatchStartMessage, formatResultMessage, specialBanner, fetchStandings } from "./composers";
 import { sendTelegram, sendDice, sendPhotoBinary } from "./telegram";
+// v13.231-channelmirror: the Session-2 hook primitives (DISCOVERY §7.4) —
+// claimChannelPost BEFORE the private fan-out, sendChannelPost after it;
+// appendChannelFooter on the channel copy, withChannelCta on the private one.
+import { claimChannelPost, sendChannelPost, channelEventKeyMatch, channelActive, appendChannelFooter, withChannelCta } from "./channel-mirror";
 import { renderCardPngCached, cachedCardPng } from "./card";
 import { getRegisteredChats, getUserPrefs, groupChatsByTz, userFollowsMatch, isBigMatch, isMasterBigMatch } from "./users";
 
@@ -89,7 +93,7 @@ export const NOTIFICATION_CONFIGS = [
 // dedupe record = permanent silent loss for exactly those users. The
 // reservation defers the whole (match, type) BEFORE any dedupe write — a
 // clean deferral the next tick retries inside the same window.
-export function fanoutFetchCost(chatGroups, config) {
+export function fanoutFetchCost(chatGroups, config, channelEnabled?) {
   let sends = 0;
   for (const g of chatGroups) sends += g.chats.length;
   // worst case per group: 2 crest fetches (cache miss) + per chat 1 photo
@@ -97,14 +101,21 @@ export function fanoutFetchCost(chatGroups, config) {
   // the dedupe write and pacing retries.
   let cost = chatGroups.length * 2 + sends * 2 + 2;
   if (config && config.type === "match-start") cost += sends;
+  // v13.231-channelmirror (DISCOVERY §7.7): the channel copy's own worst
+  // case — 1 send + 1 fallback/outbox margin per unit — reserved ONLY
+  // when a destination is actually configured (channelActive is a pure
+  // env read; unconfigured ⇒ the exact pre-13.231 cost, clean deferrals
+  // unchanged). Deferring the WHOLE unit (private + channel together)
+  // BEFORE any dedupe write preserves the v13.94 clean-deferral semantics.
+  if (channelEnabled) cost += 2;
   return cost;
 }
 // The gate verdict: "full" (cards + text), "lean" (match-start only:
 // text-only, no cards/dice — must-fire semantics under a tight budget),
 // "defer" (the next tick retries; no dedupe write happened).
-export function fanoutReservation(config, chatGroups) {
+export function fanoutReservation(config, chatGroups, channelEnabled?) {
   const used = subrequestCount() + kvOpsCount();
-  if (used + fanoutFetchCost(chatGroups, config) <= CONFIG.SUBREQUEST_FANOUT_CAP) return "full";
+  if (used + fanoutFetchCost(chatGroups, config, channelEnabled) <= CONFIG.SUBREQUEST_FANOUT_CAP) return "full";
   if (config && config.type === "match-start") {
     let sends = 0;
     for (const g of chatGroups) sends += g.chats.length;
@@ -134,7 +145,7 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
   // persisted record — the live-reported differential) is impossible by
   // construction. match-start keeps must-fire semantics: lean mode
   // (text-only, no cards/dice) when only the full fan-out cannot fit.
-  const verdict = fanoutReservation(config, chatGroups);
+  const verdict = fanoutReservation(config, chatGroups, channelActive(env));
   if (verdict === "defer") {
     if (deferred) deferred.push(matchKey(match) + ":" + config.type);
     return;
@@ -154,6 +165,19 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
   if (!persisted) {
     console.warn("\u23F8 Dedupe save failed for " + config.type + " (match " + match.id + ") — send deferred to the next tick (fail-closed anti-spam)");
     return;
+  }
+  // v13.231-channelmirror (DISCOVERY §7.4.1): CLAIM the channel copy — one
+  // single call at the event boundary, AFTER the private write-first gate
+  // succeeded, BEFORE the private fan-out. A CPU kill mid-fan-out then
+  // leaves a detectable pending claim (§7.6) instead of a silent loss;
+  // a re-run (next tick OR the kickoff-drain chain re-running this very
+  // function) finds the claim and no-ops — idempotent by construction.
+  // Never per-recipient; never throws into the private path.
+  let channelClaim = null;
+  try {
+    channelClaim = await claimChannelPost(env, channelEventKeyMatch(matchKey(match), config.type));
+  } catch (e) {
+    console.warn("channel-mirror: engine claim hook isolated: " + e.message);
   }
   let anySuccess = false;
   // v13.102-perchat: the per-chat verdict ledger for THIS (match, type)
@@ -185,6 +209,11 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
     message += lang === "en"
       ? "\n\n\\-\\-\\-\\-\\-\\-\nView league tables and the biggest upcoming matches:\nhttps://sportsignal\\.ir"
       : "\n\n\\-\\-\\-\\-\\-\\-\n\u0645\u0634\u0627\u0647\u062F\u0647 \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627 \u0648 \u0645\u0647\u0645\u062A\u0631\u06CC\u0646 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634 \u0631\u0648:\nhttps://sportsignal\\.ir";
+    // v13.231-channelmirror: the PRIVATE CTA — the channel link rides this
+    // eligible public notification ONLY when TELEGRAM_CHANNEL_PUBLIC_URL is
+    // configured; unset ⇒ withChannelCta is the identity function and the
+    // private output stays BYTE-IDENTICAL (the parity law, spec PART II §4).
+    message = withChannelCta(message, env, lang);
     // v13.10-animated: for match-start, send an animated ⚽ dice FIRST (a
     // spinning football that signals "kickoff!") before the text message.
     // This is Telegram's built-in sendDice animation — zero asset hosting.
@@ -303,6 +332,55 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
   // v13.102-perchat: persist the unit's per-chat verdicts (one D1 batch,
   // win-or-log — telemetry must never break the send path it describes).
   if (deliveries.length) await recordDeliveries(env, match, config.type, deliveries);
+  // v13.231-channelmirror (DISCOVERY §7.4.1): SEND the channel copy — after
+  // the private group loop, outside it, one fa/Asia-Tehran variant per
+  // (match, stage). The composition runs through the EXISTING formatters
+  // with the channel env (never a copy of a rendered per-subscriber
+  // message); the dice/card/text shape mirrors the private path's own
+  // (dice fire-and-forget on match-start; the card reuses the fa render —
+  // renderCardPngCached is per-(match,lang) memoized; the text fallback
+  // covers a failed card exactly like the per-chat path). sendChannelPost
+  // classifies + records the outcome and can never throw into this path.
+  if (channelClaim) {
+    await sendChannelPost(env, channelClaim, async (chEnv, dest) => {
+      let chMessage = "";
+      try {
+        chMessage = specialBanner(match, "fa") + await config.messageFormatter(match, chEnv, "fa");
+      } catch (e) {
+        console.warn("channel-mirror: engine formatter failed (" + config.type + "): " + e.message);
+        return false;
+      }
+      if (late) chMessage += "\n\n" + mdItalic("\u0627\u06CC\u0646 \u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u0628\u0627 \u062A\u0623\u062E\u06CC\u0631 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F");
+      chMessage += "\n\n\\-\\-\\-\\-\\-\\-\n\u0645\u0634\u0627\u0647\u062F\u0647 \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627 \u0648 \u0645\u0647\u0645\u062A\u0631\u06CC\u0646 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634 \u0631\u0648:\nhttps://sportsignal\\.ir";
+      // every channel post ends with the required links (the promo footer's
+      // site link is already present ⇒ only the bot line rides — no
+      // duplicate footer elements; the trial footer rides the sender layer)
+      chMessage = appendChannelFooter(chMessage);
+      // the cosmetic dice, fire-and-forget like the private path (lean mode
+      // and late backfills skip it — the text is the payload)
+      if (config.type === "match-start" && !late && !lean) {
+        sendDice(chEnv, dest.chatId, "\u26BD").catch(() => null);
+      }
+      // the match card (caption = the full channel message, MarkdownV2),
+      // text fallback on failure — the per-chat path's own shape
+      if (!lean && (match.homeTeam.crest || match.awayTeam.crest)) {
+        try {
+          const pngBuf = config.type === "match-start" || config.type === "pre-match-5min"
+            ? await cachedCardPng(chEnv, match, "fa")
+            : await renderCardPngCached(chEnv, match, "fa");
+          if (pngBuf) {
+            const caption = chMessage.length > 1024 ? chMessage.slice(0, 1020) + "…" : chMessage;
+            const r = await sendPhotoBinary(chEnv, dest.chatId, pngBuf, caption, true);
+            if (r === true) return true;
+            if (r === "dead") return "dead";
+          }
+        } catch (e) {
+          console.warn("channel-mirror: card failed, text fallback: " + e.message);
+        }
+      }
+      return await sendTelegram(chEnv, chMessage, dest.chatId);
+    });
+  }
   if (anySuccess) {
     counts[config.type]++;
     console.log(`\u{1F4E4} Sent ${config.type.toUpperCase()} notification for match ${match.id}`);
@@ -628,6 +706,9 @@ export async function repairPerChatGaps(env: Env, matches, gaps) {
       message += lang === "en"
         ? "\n\n\\-\\-\\-\\-\\-\\-\nView league tables and the biggest upcoming matches:\nhttps://sportsignal\\.ir"
         : "\n\n\\-\\-\\-\\-\\-\\-\n\u0645\u0634\u0627\u0647\u062F\u0647 \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627 \u0648 \u0645\u0647\u0645\u062A\u0631\u06CC\u0646 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634 \u0631\u0648:\nhttps://sportsignal\\.ir";
+      // v13.231-channelmirror: the repair copy is the SAME notification —
+      // the private CTA rides it too (identity when unconfigured).
+      message = withChannelCta(message, env, lang);
       for (const chatId of g.chats) {
         if (sendBudget <= 0) break;
         // The ledger bucket the chat would have been served through: the
