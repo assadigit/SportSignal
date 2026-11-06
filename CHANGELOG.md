@@ -36,13 +36,22 @@ next-longest name (دپورتیوو لاکرونیا, 63) keeps the full clause,
 everything shorter.
 
 **Versioning:** CONTENT_VERSION NOT bumped (no hand-written static page
-text changed — the teams-family sitemap lastmod re-dates AUTOMATICALLY via
-the content-hash map in files.ts, the honest per-URL re-crawl nudge); NO
-asset renamed (the v13.39 rule does not fire — the change rides served
-HTML); SW v118 → **v119** (the routine served-HTML evict: stale
+text changed); NO asset renamed (the v13.39 rule does not fire — the change
+rides served HTML); SW v118 → **v119** (the routine served-HTML evict: stale
 SWR/offline-fallback team pages carrying the 66-char title leave the
 cache). Gates co-evolved: the check-stats SW pin + the v13.229 release
 wiring gate (the v13.228 gate retired to a historical stub).
+
+**The lastmod honesty note (corrected in-session):** the teams-family
+sitemap lastmod map is DATA-keyed — `sha1ish(name + upcomingBig +
+next.utcDate)`, files.ts — so a title-only change does NOT re-date it (the
+initial CHANGELOG draft over-claimed an automatic re-date; this is the
+correction). The re-crawl rides the ordinary crawl cadence — precisely the
+S12 precedent (v13.228 changed all 96 team title renderings with no
+teams-family re-date either) — and Gladbach's next fixture rotation moves
+the hash within days regardless. Google re-crawls indexed /teams/* pages
+on its own cadence; the new title is live in the served HTML, the ETag
+rotated, and the SW v119 evict cleared the stale copies.
 
 # v13.228-farsibrand — the Farsi-brand SEO round: every SERP surface renders the brand in Farsi as «اسپرت سیگنال» (the S12 owner directive)
 
