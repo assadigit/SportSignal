@@ -4,6 +4,46 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.229-teamladder — the Gladbach 66-char team-title report decided: the SS-10 trim ladder reaches the per-team titles
+
+**S13, 2026-11-06 ~10:2x–11:0x UTC — the S12 carry-over, decided.**
+The v13.228 Farsi brand (+2 chars on every title's suffix) pushed exactly
+one team title into the seo-check T-23 pixel-risk REPORT band (66–75
+chars): `بروسیا مونشن‌گلادباخ — برنامه بازی بعدی و ساعت شروع | اسپرت سیگنال`
+at 66 — one char past the 65 line, 9 under the >75 hard backstop. S12
+deferred the call to S13: shorten the fixed clause, a team-title ladder,
+or accept.
+
+**The decision: the ladder.** The alternatives fell on evidence: a global
+clause-shorten churns all 96 team titles for a one-page problem, and
+accept leaves a standing report on every future boot (the repo keeps its
+bands clean). The ladder is the established SS-10 method — the match pages
+have trimmed on rungs since v13.222 — and the per-team title now does the
+same: the full clause renders while the assembled title stays ≤ 65; past
+65, the rung drops the least-essential qualifier «بعدی » (5 chars).
+
+**What the rung keeps honest:** the H1 is «برنامه بازی‌های X» — the whole
+upcoming schedule, not only the next match — so the rung title
+«X — برنامه بازی و ساعت شروع | اسپرت سیگنال» loses nothing the page
+doesn't say better; the answer sentence (answercard AND meta description,
+one source) still leads with «بازی بعدی X: …». The unique core — the team
+name — never drops (the match ladder's date-token rule, mirrored); a
+hypothetical longer name still >65 on the rung reaches the T-23 >75 hard
+backstop, never a mangled title.
+
+**Production effect: exactly one title changes** — Gladbach 66 → 61; the
+next-longest name (دپورتیوو لاکرونیا, 63) keeps the full clause, as does
+everything shorter.
+
+**Versioning:** CONTENT_VERSION NOT bumped (no hand-written static page
+text changed — the teams-family sitemap lastmod re-dates AUTOMATICALLY via
+the content-hash map in files.ts, the honest per-URL re-crawl nudge); NO
+asset renamed (the v13.39 rule does not fire — the change rides served
+HTML); SW v118 → **v119** (the routine served-HTML evict: stale
+SWR/offline-fallback team pages carrying the 66-char title leave the
+cache). Gates co-evolved: the check-stats SW pin + the v13.229 release
+wiring gate (the v13.228 gate retired to a historical stub).
+
 # v13.228-farsibrand — the Farsi-brand SEO round: every SERP surface renders the brand in Farsi as «اسپرت سیگنال» (the S12 owner directive)
 
 **S12, 2026-11-06 ~02:1x–03:0x UTC — the owner's standing directive, landed.**

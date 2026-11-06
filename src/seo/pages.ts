@@ -784,7 +784,20 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
   if (posFa) {
     answer += " " + name + (ptsFa ? " با " + ptsFa + " امتیاز" : "") + " در ردهٔ " + posFa + " " + esc(String(stw.compFa)) + " قرار دارد.";
   }
-  const title = name + " — برنامه بازی بعدی و ساعت شروع | اسپرت سیگنال";
+  // v13.229-teamladder: the SS-10 trim ladder reaches the per-team titles.
+  // The v13.228 Farsi brand (+2 chars) pushed exactly ONE team into the
+  // T-23 pixel-risk band: بروسیا مونشن‌گلادباخ at 66 (the 66–75 REPORT
+  // band; the next-longest name, دپورتیوو لاکرونیا, sits at 63). The
+  // ladder drops the least-essential qualifier — «بعدی » (5 chars) — only
+  // when the assembled title exceeds 65: the rung title «… — برنامه بازی
+  // و ساعت شروع | …» stays honest (the H1 is «برنامه بازی‌های X», the
+  // whole upcoming schedule; the answer sentence still leads with «بازی
+  // بعدی»), and the unique core (the team name) never drops — the match
+  // ladder's date-token rule, mirrored. If a future name still exceeds 65
+  // on the rung, the seo-check >75 hard backstop reports it; the ladder
+  // never mangles.
+  let title = name + " — برنامه بازی بعدی و ساعت شروع | اسپرت سیگنال";
+  if (title.length > 65) title = name + " — برنامه بازی و ساعت شروع | اسپرت سیگنال";
   const desc = (answer + (next ? " لینک صفحه هر بازی در ادامه است." : " به‌محض اعلام برنامه به‌روزرسانی می‌شود.")).slice(0, 165);
   const main =
     '<div class="answercard">' + esc(answer) + "</div>" +

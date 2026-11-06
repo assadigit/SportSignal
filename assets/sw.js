@@ -937,6 +937,15 @@
 // v13.227-rumzone (S11, 2026-11-06): bumped from v116 — the routine evict
 //              for a served-HTML edit (NO asset renamed, the v13.39 rename
 //              rule does not fire): the CF Web-Analytics beacon's
+// v13.229-teamladder (S13, 2026-11-06): bumped from v118 — the routine evict
+//              for a served-HTML edit (NO asset renamed, the v13.39 rename
+//              rule does not fire): the per-team <title> template gains the
+//              SS-10 trim ladder (the >65 rung drops «بعدی » — exactly one
+//              team rides it: بروسیا مونشن‌گلادباخ, 66→61; the S12 Farsi
+//              brand's +2 chars had pushed it into the T-23 pixel-risk
+//              report band); the bump evicts the SWR/offline-fallback team
+//              pages whose cached HTML still carries the 66-char title.
+//              (Below: the v13.228 note stands as history.)
 //              v13.228-farsibrand (S12): every SEO <title> + meta description
 //              template and the JSON-LD alternateName now render the brand in
 //              Farsi — «اسپرت سیگنال» (the owner's S12 directive, the verified X
@@ -951,7 +960,7 @@
 //              POST; zero RUM events landed 11-05); the bump evicts the
 //              SWR/offline-fallback copies of every page whose cached HTML
 //              still carries the dead-endpoint beacon.
-const CACHE = "sportsignal-v118";
+const CACHE = "sportsignal-v119";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",
