@@ -4,6 +4,73 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.228-farsibrand — the Farsi-brand SEO round: every SERP surface renders the brand in Farsi as «اسپرت سیگنال» (the S12 owner directive)
+
+**S12, 2026-11-06 ~02:1x–03:0x UTC — the owner's standing directive, landed.**
+The owner asked (S12 prompt): the SEO page names must write the brand in
+Farsi — «اسپرت سیگنال» — not the Latin `SportSignal` (a Latin brand token
+inside an otherwise-Farsi title is a language mismatch for Farsi queries),
+a football-ball emoji where it genuinely helps, and a meta-description
+work pass.
+
+**The canonical spelling decision**: «اسپرت سیگنال» — the owner's own
+spelling in the S12 message AND the owner-verified X display name
+(x.com/sportsignalz, verified live 2026-11-05 21:33 UTC). The older
+rendering «اسپورت‌سیگنال» (with و, ZWNJ-joined — the Phase-1
+`SEO.SITE_NAME_FA`) retires; `SEO.SITE_NAME_FA`, the llms.txt Farsi
+glosses and the about-page name-introduction surfaces all align to the
+canonical form, so the JSON-LD Organization/WebSite `alternateName`, the
+titles and the descriptions carry ONE Farsi rendering.
+
+**The title sweep** (24 sites): the match pages' trim-ladder brand rungs,
+the four time-hub titles, the teams/competitions index titles, the
+per-team and per-competition titles, the /matches pagination title, the
+static trust pages (about/contact/sitemap + privacy/terms/data/
+methodology), the homepage, and BOTH 404s — every `| SportSignal` suffix
+(and the mid-title `درباره/تماس با SportSignal` forms) becomes
+`| اسپرت سیگنال`. The 65-char trim ladder is untouched structurally: the
+brand is +2 chars («اسپرت سیگنال» 12 vs `SportSignal` 10), so the ladder
+drops the Gregorian parens one rung earlier on the longest pairings — by
+design (the ≤65 invariant stays structural; the >75 backstop unchanged).
+
+**The ⚽ call** (the owner's "if you think it helps", made once,
+documented): ONE ball, leading, on the FIXTURE surface only —
+`⚽ بارسلونا – استون ویلا | … | اسپرت سیگنال`. A listing is not a
+fixture: the hub/index/home/static titles stay text-only (an emoji there
+is decoration, not signal; and every non-match page would pay ladder
+pressure for it). The H1s never carry it. The ⚽ rides bidi-correctly at
+the reading start of the RTL title; worst case a renderer strips it in
+display — the token stays in the HTML title.
+
+**The meta-description pass**: every description that named the brand
+follows the title sweep — the match-page short-desc fallback sentence
+(«…در اسپرت سیگنال.»), the team/competition answer sentences (the
+answercard AND the desc share the one source — one edit fixes both),
+the hub FAQ name-introductions («…بازی در برنامه اسپرت سیگنال است:»),
+and the static pages' descriptions. The FAQ_ABOUT answer and the
+about-page answercard get the spelling fix (اسپرت سیگنال). The
+about-page owner-verbatim STORY keeps its own Latin brand mentions BY
+DESIGN — the story is the owner's voice, verbatim; the page's
+title/desc/h1/answercard-intro carry the Farsi rendering.
+
+**Versioning**: CONTENT_VERSION 2026-11-06T21:50:00Z →
+2026-11-06T23:00:00Z (hand-written page text changed — the static pages'
+answercards/descriptions/FAQ name-introductions; the v13.215 precedent);
+the pages-family sitemap lastmod re-dates → the re-crawl nudge for the
+new titles. NO asset renamed (the v13.39 rename rule does not fire —
+every change rides served HTML, not a cache-first asset); SW v117 →
+**v118** as the routine served-HTML evict (stale SWR/offline-fallback
+copies of `/` carrying the old Latin-brand titles leave the cache).
+
+**Gates co-evolved**: the seo-check hub-FAQ count regex now matches
+«بازی در برنامه اسپرت سیگنال است» (the T-20 byte-agreement is
+source-shared, unaffected); the check-stats SW pin + the v13.228 release
+wiring gate (the v13.227 gate retired to a historical stub); the
+check-mc-heroes retirement pin follows. The T-14/T-15 shape assertions
+and the T-23 ≤65/≤165 sweeps are form-based — they pass unchanged
+against the new rendering. npm test at the release commit: EXIT 0,
+2,613 OK / 0 FAIL (2,612 + the new wiring gate).
+
 # v13.227-rumzone — the RUM-zone override: the beacon's send.to fix for the 2026-11-05 ingestion cutover (SS-25)
 
 **S11, 2026-11-06 ~00:2x–01:1x UTC — the silent RUM outage, caught and

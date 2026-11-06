@@ -153,7 +153,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   const sig = payloadSig(p);
 
   // --- head values ---
-  const title = "برنامه بازی‌های مهم فوتبال | تاریخ و ساعت شروع | SportSignal";
+  const title = "برنامه بازی‌های مهم فوتبال | تاریخ و ساعت شروع | اسپرت سیگنال";
   let desc = "بازی‌های مهم فوتبال امروز و این هفته — لیگ قهرمانان اروپا، لیگ برتر، لالیگا، سری‌آ، بوندسلیگا و لیگ یک؛ با تاریخ و ساعت دقیق به وقت تهران.";
   if (nextBig) {
     // SS-27 / CALENDAR_DISPLAY_v2: the homepage meta description rides D2 —
@@ -800,7 +800,7 @@ function notFoundResponse(req: Request, isProd: boolean): Response {
   try {
     body = build404Page();
   } catch (e) {
-    body = "<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>صفحه پیدا نشد | SportSignal</title><body><h1>صفحه پیدا نشد</h1><p><a href=\"/\">بازگشت به خانه</a></p></body></html>";
+    body = "<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>صفحه پیدا نشد | اسپرت سیگنال</title><body><h1>صفحه پیدا نشد</h1><p><a href=\"/\">بازگشت به خانه</a></p></body></html>";
   }
   return new Response(body, {
     status: 404,

@@ -395,7 +395,7 @@ export async function buildMatchesJson(env: Env): Promise<string> {
 export function buildLlmsTxt(): string {
   return `# SportSignal
 
-> SportSignal (اسپورت‌سیگنال) — big-match football fixtures for Persian-speaking fans: exact dates and kickoff times in Tehran time and UTC, plus a Telegram bot that sends reminders.
+> SportSignal (اسپرت سیگنال) — big-match football fixtures for Persian-speaking fans: exact dates and kickoff times in Tehran time and UTC, plus a Telegram bot that sends reminders.
 
 SportSignal is a Persian/English football match notifier: a website plus a Telegram bot. It curates the matches worth watching — the selected top clubs and derbies of the UEFA Champions League, Premier League, La Liga, Serie A, Bundesliga, Ligue 1 and the major cups — and shows every kickoff in Tehran time and UTC. Pages are in Persian (dates carry the Jalali calendar with the Gregorian equivalent); machine-readable files are English and ISO-8601 UTC.
 
@@ -448,7 +448,7 @@ export function buildLlmsFullTxt(): string {
 
 ## The entity
 
-SportSignal (اسپورت‌سیگنال) is a Persian-language football match notifier: a website plus a Telegram bot. It curates "big matches" — fixtures worth watching — and shows every kickoff in Tehran time (Asia/Tehran, UTC+03:30) and UTC. It is an independent one-person project (see the About page for the story); it is not affiliated with any league or federation.
+SportSignal (اسپرت سیگنال) is a Persian-language football match notifier: a website plus a Telegram bot. It curates "big matches" — fixtures worth watching — and shows every kickoff in Tehran time (Asia/Tehran, UTC+03:30) and UTC. It is an independent one-person project (see the About page for the story); it is not affiliated with any league or federation.
 
 - [Website](https://sportsignal.ir)
 - [Telegram bot](https://t.me/SportSignalAlertsBot): join to receive reminders before big matches

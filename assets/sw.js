@@ -937,6 +937,13 @@
 // v13.227-rumzone (S11, 2026-11-06): bumped from v116 — the routine evict
 //              for a served-HTML edit (NO asset renamed, the v13.39 rename
 //              rule does not fire): the CF Web-Analytics beacon's
+//              v13.228-farsibrand (S12): every SEO <title> + meta description
+//              template and the JSON-LD alternateName now render the brand in
+//              Farsi — «اسپرت سیگنال» (the owner's S12 directive, the verified X
+//              display-name spelling) — and the match-page titles gain the
+//              leading ⚽; the bump evicts the SWR/offline-fallback page
+//              copies whose cached HTML still carries the old Latin-brand
+//              titles. (Below: the v13.227 note stands as history.)
 //              data-cf-beacon attr gains the send.to zone override on BOTH
 //              HTML templates — CF cut this site's beacon ingestion to the
 //              zone-relative /cdn-cgi/rum at 2026-11-05 00:00 UTC (the
@@ -944,7 +951,7 @@
 //              POST; zero RUM events landed 11-05); the bump evicts the
 //              SWR/offline-fallback copies of every page whose cached HTML
 //              still carries the dead-endpoint beacon.
-const CACHE = "sportsignal-v117";
+const CACHE = "sportsignal-v118";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

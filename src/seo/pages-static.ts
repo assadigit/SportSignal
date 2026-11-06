@@ -41,7 +41,7 @@ function M_lastUpdated(ctx: SeoCtx): string {
 const FAQ_ABOUT: { q: string; a: string }[] = [
   {
     q: "SportSignal چیست؟",
-    a: "اسپورت‌سیگنال یک سایت و ربات تلگرام فارسی است که بازی‌های مهم فوتبال را پیدا می‌کند و تاریخ و ساعت دقیق آن‌ها را به وقت تهران نشان می‌دهد."
+    a: "اسپرت سیگنال یک سایت و ربات تلگرام فارسی است که بازی‌های مهم فوتبال را پیدا می‌کند و تاریخ و ساعت دقیق آن‌ها را به وقت تهران نشان می‌دهد."
   },
   {
     q: "چرا SportSignal ساخته شد؟",
@@ -63,7 +63,7 @@ const FAQ_ABOUT: { q: string; a: string }[] = [
 
 const FAQ_METHODOLOGY: { q: string; a: string }[] = [
   {
-    q: "یک بازی چه زمانی وارد SportSignal می‌شود؟",
+    q: "یک بازی چه زمانی وارد اسپرت سیگنال می‌شود؟",
     a: "در لیگ برتر انگلیس، لالیگای اسپانیا، سری‌آی ایتالیا، بوندسلیگای آلمان و لیگ یک فرانسه، بازی دنبال می‌شود اگر حداقل یکی از دو تیم جزو تیم‌های منتخب سایت باشد؛ در لیگ قهرمانان اروپا، لیگ اروپا، لیگ کنفرانس و جام‌های حذفی معیار همین است یا بازی به مرحله یک‌چهارم نهایی یا بعد از آن رسیده باشد."
   },
   {
@@ -86,7 +86,7 @@ const FAQ_METHODOLOGY: { q: string; a: string }[] = [
 
 const FAQ_DATA: { q: string; a: string }[] = [
   {
-    q: "داده‌های ماشین‌خوان SportSignal شامل چه فایل‌هایی است؟",
+    q: "داده‌های ماشین‌خوان اسپرت سیگنال شامل چه فایل‌هایی است؟",
     a: "تقویم iCalendar در calendar.ics، فید Atom در feed.xml، داده JSON بازی‌ها در api/matches.json و دو فایل معرفی برای دستیارهای هوش مصنوعی: llms.txt و llms-full.txt."
   },
   {
@@ -110,7 +110,7 @@ const FAQ_DATA: { q: string; a: string }[] = [
 // ---- /about (P-21) — the owner's own story text, verbatim from the site ----
 export function buildAboutPage(ctx: SeoCtx): string {
   const main = `
-<div class="answercard">اسپورت‌سیگنال (SportSignal) یک سایت و ربات تلگرام فارسی است که بازی‌های مهم فوتبال را پیدا می‌کند و تاریخ و ساعت دقیق آن‌ها را به وقت تهران نشان می‌دهد.</div>
+<div class="answercard">اسپرت سیگنال (SportSignal) یک سایت و ربات تلگرام فارسی است که بازی‌های مهم فوتبال را پیدا می‌کند و تاریخ و ساعت دقیق آن‌ها را به وقت تهران نشان می‌دهد.</div>
 <div class="card prose">
 <h2>چرا SportSignal ساخته شد؟</h2>
 <p>قرار نیست هر مسابقه‌ای را ببینی؛ فقط نباید بازی مهم را از دست بدهی.</p>
@@ -126,13 +126,13 @@ export function buildAboutPage(ctx: SeoCtx): string {
 <p>ربات تلگرام SportSignal هم همین اطلاعات را قبل از بازی‌های بزرگ برای اعضا ارسال می‌کند: <a href="https://t.me/SportSignalAlertsBot" rel="noopener">@SportSignalAlertsBot</a></p>
 </div>` +
     M.faqHtml(FAQ_ABOUT);
-  return staticPage("/about", "درباره SportSignal | چه کسی و چرا این سایت را ساخته", "اسپورت‌سیگنال چه هست، چه کسی آن را می‌سازد، هر چند وقت یک‌بار به‌روزرسانی می‌شود و چطور با ما در تماس باشید.", "درباره SportSignal", main, ctx, { jsonld: [JL.faqNode(FAQ_ABOUT)] });
+  return staticPage("/about", "درباره اسپرت سیگنال | چه کسی و چرا این سایت را ساخته", "اسپرت سیگنال چه هست، چه کسی آن را می‌سازد، هر چند وقت یک‌بار به‌روزرسانی می‌شود و چطور با ما در تماس باشید.", "درباره اسپرت سیگنال", main, ctx, { jsonld: [JL.faqNode(FAQ_ABOUT)] });
 }
 
 // ---- /methodology (P-22, G-08) — the REAL rules from the code ----
 export function buildMethodologyPage(ctx: SeoCtx): string {
   const main = `
-<div class="answercard">در SportSignal هر بازی «بزرگ» نیست. این صفحه به زبان ساده توضیح می‌دهد یک بازی دقیقاً چه زمانی وارد سایت می‌شود، داده‌ها از کجا می‌آیند و اگر اشتباهی دیدید چطور گزارشش کنید.</div>
+<div class="answercard">در اسپرت سیگنال هر بازی «بزرگ» نیست. این صفحه به زبان ساده توضیح می‌دهد یک بازی دقیقاً چه زمانی وارد سایت می‌شود، داده‌ها از کجا می‌آیند و اگر اشتباهی دیدید چطور گزارشش کنید.</div>
 <div class="card prose">
 <h2>یک بازی چه زمانی «بزرگ» محسوب می‌شود؟</h2>
 <p>قاعده سایت ساده است و همان چیزی است که در کد برنامه هم نوشته شده:</p>
@@ -152,20 +152,20 @@ export function buildMethodologyPage(ctx: SeoCtx): string {
 <p>ساعت همه بازی‌ها به وقت تهران (به‌علاوه زمان جهانی) نمایش داده می‌شود. تاریخ‌ها هم میلادی و هم شمسی نشان داده می‌شوند.</p>
 </div>` +
     M.faqHtml(FAQ_METHODOLOGY);
-  return staticPage("/methodology", "روش کار — چطور بازی بزرگ انتخاب می‌شود | SportSignal", "معیار دقیق انتخاب بازی‌های بزرگ در SportSignal، منبع داده‌ها، دوره به‌روزرسانی و سیاست اصلاح خطاها.", "روش کار SportSignal", main, ctx, { jsonld: [JL.faqNode(FAQ_METHODOLOGY)] });
+  return staticPage("/methodology", "روش کار — چطور بازی بزرگ انتخاب می‌شود | اسپرت سیگنال", "معیار دقیق انتخاب بازی‌های بزرگ در اسپرت سیگنال، منبع داده‌ها، دوره به‌روزرسانی و سیاست اصلاح خطاها.", "روش کار اسپرت سیگنال", main, ctx, { jsonld: [JL.faqNode(FAQ_METHODOLOGY)] });
 }
 
 // ---- /contact (P-23) ----
 export function buildContactPage(ctx: SeoCtx): string {
   const main = `
-<div class="answercard">سریع‌ترین راه ارتباط با SportSignal، ربات تلگرام است. پیشنهادها، انتقادها و گزارش خطاها همگی خوشآمدند.</div>
+<div class="answercard">سریع‌ترین راه ارتباط با اسپرت سیگنال، ربات تلگرام است. پیشنهادها، انتقادها و گزارش خطاها همگی خوشآمدند.</div>
 <div class="card prose">
 <h2>ربات تلگرام</h2>
 <p><a href="https://t.me/SportSignalAlertsBot" rel="noopener">@SportSignalAlertsBot</a> — عضو شوید، بازی‌های بزرگ را قبل از شروع دریافت کنید و از همین طریق پیام بدهید.</p>
 <h2>گزارش خطا در داده‌ها</h2>
 <p>اگر تاریخ، ساعت یا نتیجه بازی‌ای اشتباه است، از ربات خبر دهید؛ جزئیات در <a href="/methodology">روش کار</a> آمده است.</p>
 </div>`;
-  return staticPage("/contact", "تماس با SportSignal | گزارش خطا و بازخورد", "راه‌های ارتباط با SportSignal: ربات تلگرام و گزارش خطاهای داده از طریق تماس.", "تماس با ما", main, ctx);
+  return staticPage("/contact", "تماس با اسپرت سیگنال | گزارش خطا و بازخورد", "راه‌های ارتباط با اسپرت سیگنال: ربات تلگرام و گزارش خطاهای داده از طریق تماس.", "تماس با ما", main, ctx);
 }
 
 // ---- /privacy (P-24) — accurate to what the site really does ----
@@ -186,7 +186,7 @@ export function buildPrivacyPage(ctx: SeoCtx): string {
 <h2>روبات‌ها شمارش نمی‌شوند</h2>
 <p>روبات‌های موتور جستجو (Googlebot، bingbot، GPTBot، ClaudeBot و موارد مشابه) به‌صورت خودکار شناسایی و شمارش نمی‌شوند تا اعداد واقعی بازدید انسانی را نشان دهند. شمارش در پس‌زمینه و بدون تأثیر بر سرعت بارگذاری صفحه انجام می‌شود.</p>
 <h2>چه داده‌ای ذخیره نمی‌شود؟</h2>
-<p>صفحات عمومی SportSignal هیچ داده شخصی ذخیره نمی‌کنند؛ نه کوکی تبلیغاتی، نه ردیاب، نه نشانی IP (فقط hash درهم‌شده‌ی نمک‌دار که قابل بازگشت نیست)، نه اثر انگشت دائمی، نه پروفایل کاربر. سرویس زیرساخت سایت (کلادفلر) به‌صورت استاندارد برخی اطلاعات فنی درخواست را برای ارائه سرویس ثبت می‌کند که در کنترل این سایت نیست و برای این شمارنده استفاده نمی‌شود.</p>
+<p>صفحات عمومی اسپرت سیگنال هیچ داده شخصی ذخیره نمی‌کنند؛ نه کوکی تبلیغاتی، نه ردیاب، نه نشانی IP (فقط hash درهم‌شده‌ی نمک‌دار که قابل بازگشت نیست)، نه اثر انگشت دائمی، نه پروفایل کاربر. سرویس زیرساخت سایت (کلادفلر) به‌صورت استاندارد برخی اطلاعات فنی درخواست را برای ارائه سرویس ثبت می‌کند که در کنترل این سایت نیست و برای این شمارنده استفاده نمی‌شود.</p>
 <h2>اعضای ربات تلگرام</h2>
 <p>برای کسانی که در ربات تلگرام عضو می‌شوند، فقط شناسه تلگرام و تنظیمات اعلان (تیم‌های موردعلاقه و زبان) نگهداری می‌شود تا همان اعلان‌ها ارسال شود. این داده‌ها با هیچ شخص ثالثی به اشتراک گذاشته نمی‌شود و هر زمان با حذف ربات، عضویت قطع می‌شود.</p>
 <h2>داده‌های مسابقات</h2>
@@ -194,7 +194,7 @@ export function buildPrivacyPage(ctx: SeoCtx): string {
 <h2>پنل مدیریت</h2>
 <p>ورود به بخش مدیریت با رمز عبور محافظت می‌شود و برای عموم در دسترس نیست. آمار بازدید (کل، یکتا، کشورها و آنلاین اکنون) در پنل مدیریت به‌صورت مجموع روزانه نمایش داده می‌شود.</p>
 </div>`;
-  return staticPage("/privacy", "حریم خصوصی | SportSignal", "سیاست حریم خصوصی SportSignal: شمارنده بدون کوکی بازدید صفحات و بازدیدکننده‌های یکتا (با hash نمک‌دار، بدون ذخیره IP) و کشور بازدیدکننده — بدون داده شخصی.", "حریم خصوصی", main, ctx);
+  return staticPage("/privacy", "حریم خصوصی | اسپرت سیگنال", "سیاست حریم خصوصی اسپرت سیگنال: شمارنده بدون کوکی بازدید صفحات و بازدیدکننده‌های یکتا (با hash نمک‌دار، بدون ذخیره IP) و کشور بازدیدکننده — بدون داده شخصی.", "حریم خصوصی", main, ctx);
 }
 
 // ---- /terms (P-24) ----
@@ -203,7 +203,7 @@ export function buildTermsPage(ctx: SeoCtx): string {
 <div class="answercard">خلاصه ساده: اطلاعات این سایت «همین‌طور که هست» ارائه می‌شود؛ قبل از تصمیم‌های مهم (مثل خرید بلیت یا تنظیم یادآور) ساعت را از منبع رسمی مسابقات هم چک کنید.</div>
 <div class="card prose">
 <h2>استفاده از سایت</h2>
-<p>محتوای SportSignal برای استفاده شخصی آزاد است. مسئولیت تصمیم‌هایی که بر اساس اطلاعات این سایت گرفته می‌شود با کاربر است.</p>
+<p>محتوای اسپرت سیگنال برای استفاده شخصی آزاد است. مسئولیت تصمیم‌هایی که بر اساس اطلاعات این سایت گرفته می‌شود با کاربر است.</p>
 <h2>دقت داده‌ها</h2>
 <p>داده‌ها از منابع رسمی داده فوتبال دریافت و خودکار به‌روزرسانی می‌شوند، اما هیچ سیستمی بی‌خطا نیست. تاریخ، ساعت و نتیجه بازی‌ها می‌تواند موقتاً نادرست یا قدیمی باشد. برای موارد حیاتی، منبع رسمی مسابقات را نیز بررسی کنید.</p>
 <h2>نشان‌ها و لوگوها</h2>
@@ -211,13 +211,13 @@ export function buildTermsPage(ctx: SeoCtx): string {
 <h2>تغییرات</h2>
 <p>این شرایط ممکن است به‌روزرسانی شود؛ تاریخ آخرین تغییر در بالای همین صفحه آمده است.</p>
 </div>`;
-  return staticPage("/terms", "شرایط استفاده | SportSignal", "شرایط استفاده از SportSignal: ارائه اطلاعات «همان‌طور که هست» و توصیه به بررسی منبع رسمی برای موارد حیاتی.", "شرایط استفاده", main, ctx);
+  return staticPage("/terms", "شرایط استفاده | اسپرت سیگنال", "شرایط استفاده از اسپرت سیگنال: ارائه اطلاعات «همان‌طور که هست» و توصیه به بررسی منبع رسمی برای موارد حیاتی.", "شرایط استفاده", main, ctx);
 }
 
 // ---- /data (F-13/G-10) — documents the machine endpoints ----
 export function buildDataPage(ctx: SeoCtx): string {
   const main = `
-<div class="answercard">داده‌های بازی‌های بزرگ SportSignal به‌صورت ماشین‌خوان هم در دسترس است: تقویم، فید و JSON — همه با ساعت جهانی (ISO 8601).</div>
+<div class="answercard">داده‌های بازی‌های بزرگ اسپرت سیگنال به‌صورت ماشین‌خوان هم در دسترس است: تقویم، فید و JSON — همه با ساعت جهانی (ISO 8601).</div>
 <div class="card prose">
 <h2>فایل‌های ماشین‌خوان</h2>
 <ul>
@@ -233,7 +233,7 @@ export function buildDataPage(ctx: SeoCtx): string {
 <p>هر بازی شامل: شناسه، تیم میزبان و میهمان (نام انگلیسی و فارسی)، زمان شروع UTC (ISO 8601)، کد رقابت، مرحله، وضعیت (scheduled / live / finished)، ورزشگاه (در صورت وجود) و نتیجه (پس از پایان).</p>
 </div>` +
     M.faqHtml(FAQ_DATA);
-  return staticPage("/data", "داده‌های باز و ماشین‌خوان | SportSignal", "تقویم iCal، فید Atom و JSON عمومی بازی‌های بزرگ فوتبال در SportSignal — همراه شرایط استفاده و ذکر منبع.", "داده‌های ماشین‌خوان", main, ctx, { jsonld: [JL.faqNode(FAQ_DATA), JL.datasetNode()] });
+  return staticPage("/data", "داده‌های باز و ماشین‌خوان | اسپرت سیگنال", "تقویم iCal، فید Atom و JSON عمومی بازی‌های بزرگ فوتبال در اسپرت سیگنال — همراه شرایط استفاده و ذکر منبع.", "داده‌های ماشین‌خوان", main, ctx, { jsonld: [JL.faqNode(FAQ_DATA), JL.datasetNode()] });
 }
 
 // ---- /sitemap human page (P-20) ----
@@ -242,7 +242,7 @@ export function buildHumanSitemapPage(ctx: SeoCtx): string {
   const comps = compsIndex(ctx);
   const upcomingCount = upcomingBig(ctx).length;
   let main = `
-<div class="answercard">نقشه کامل صفحات SportSignal — همه صفحه‌ها از همین‌جا در دسترس‌اند.</div>
+<div class="answercard">نقشه کامل صفحات اسپرت سیگنال — همه صفحه‌ها از همین‌جا در دسترس‌اند.</div>
 <div class="card prose">
 <h2>صفحه‌های اصلی</h2>
 <ul class="hubgrid">
@@ -255,7 +255,7 @@ export function buildHumanSitemapPage(ctx: SeoCtx): string {
 </ul>
 <h2>درباره سایت</h2>
 <ul>
-<li><a href="/about">درباره SportSignal</a></li>
+<li><a href="/about">درباره اسپرت سیگنال</a></li>
 <li><a href="/methodology">روش انتخاب بازی‌ها</a></li>
 <li><a href="/contact">تماس</a></li>
 <li><a href="/data">داده‌های ماشین‌خوان</a></li>
@@ -271,7 +271,7 @@ ${teams.map((t) => '<li><a href="/teams/' + t.slug + '">' + esc(t.faName || t.na
 ${comps.map((c) => '<li><a href="/competitions/' + c.slug + '">' + esc(c.next && c.next.s.competition.faName || c.code) + "</a></li>").join("")}
 </ul>
 </div>`;
-  return staticPage("/sitemap", "نقشه سایت | همه صفحه‌های SportSignal", "فهرست همه صفحه‌های SportSignal: بازی‌ها، تیم‌ها، رقابت‌ها و صفحه‌های اطلاعاتی.", "نقشه سایت", main, ctx);
+  return staticPage("/sitemap", "نقشه سایت | همه صفحه‌های اسپرت سیگنال", "فهرست همه صفحه‌های اسپرت سیگنال: بازی‌ها، تیم‌ها، رقابت‌ها و صفحه‌های اطلاعاتی.", "نقشه سایت", main, ctx);
 }
 
 // ---- 404 (R-11) ----
@@ -285,7 +285,7 @@ export function build404Page(): string {
   const main = `
 <div class="pagenotfound card">
 <h1>صفحه پیدا نشد</h1>
-<p class="prose">نشانی‌ای که باز کردید در SportSignal وجود ندارد یا حذف شده است. شاید بازی موردنظرتان در برنامه فعلی نیست.</p>
+<p class="prose">نشانی‌ای که باز کردید در اسپرت سیگنال وجود ندارد یا حذف شده است. شاید بازی موردنظرتان در برنامه فعلی نیست.</p>
 <ul class="prose">
 <li>🏠 <a href="/">صفحه اصلی — بازی بزرگ بعدی</a></li>
 <li>📅 <a href="/matches/today">بازی‌های امروز</a></li>
@@ -299,8 +299,8 @@ export function build404Page(): string {
   // the real signals).
   return pageShell({
     head: buildHead({
-      title: "صفحه پیدا نشد | SportSignal",
-      description: "این صفحه در SportSignal وجود ندارد.",
+      title: "صفحه پیدا نشد | اسپرت سیگنال",
+      description: "این صفحه در اسپرت سیگنال وجود ندارد.",
       indexable: false,
       jsonldNodes: [...JL.siteNodes()]
     }),

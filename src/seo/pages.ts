@@ -278,12 +278,16 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // pairing's two legs distinct, so it NEVER drops; two real team names
   // plus a date cannot reach 65, and if they ever did the seo-check >75
   // backstop reports it instead of the ladder mangling the title).
-  const tCore = faName(m.homeTeam) + " – " + faName(m.awayTeam) + " | ";
+  // v13.228-farsibrand: the title brand renders in Farsi — «اسپرت سیگنال»
+  // (the owner's verified X display name, the S12 directive) — and the
+  // pairing carries the leading ⚽ (the owner's S12 emoji ask: one ball, on
+  // the fixture surface only; the hub/index/home titles stay text-only).
+  const tCore = "⚽ " + faName(m.homeTeam) + " – " + faName(m.awayTeam) + " | ";
   const tDate = faDateD2(m.utcDate);
   const pIdx = tDate.indexOf(" (");
   const tDateShort = pIdx > 0 ? tDate.slice(0, pIdx) : tDate;
-  let title = tCore + compFa + "، " + tDate + " | SportSignal";
-  if (title.length > 65) title = tCore + compFa + "، " + tDateShort + " | SportSignal";
+  let title = tCore + compFa + "، " + tDate + " | اسپرت سیگنال";
+  if (title.length > 65) title = tCore + compFa + "، " + tDateShort + " | اسپرت سیگنال";
   if (title.length > 65) title = tCore + compFa + "، " + tDateShort;
   if (title.length > 65) {
     const words = String(compFa).split(" ");
@@ -308,7 +312,7 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
     // «می‌شود…», never «می‌شود.…») — the ellipsis IS the continuation mark
     desc = (sp >= 100 ? cut.slice(0, sp) : cut).replace(/[.،؛]$/, "") + "…";
   }
-  if (desc.length < 70) desc += " برنامه و ساعت دقیق بازی‌های مهم فوتبال در SportSignal.";
+  if (desc.length < 70) desc += " برنامه و ساعت دقیق بازی‌های مهم فوتبال در اسپرت سیگنال.";
 
   // Key facts table (7.4 item 3) — only fields that exist.
   const rows: [string, string][] = [];
@@ -439,14 +443,14 @@ export function buildMatchesPage(ctx: SeoCtx, page: number): string {
   // (path + ?page=N), so each page's head is cached with its own canonical.
   const canonPath = p >= 2 ? path + "?page=" + p : path;
   const top = all[0];
-  let answer = "همه بازی‌های بزرگ فوتبال که SportSignal دنبال می‌کند، به تفکیک تاریخ و به وقت تهران.";
+  let answer = "همه بازی‌های بزرگ فوتبال که اسپرت سیگنال دنبال می‌کند، به تفکیک تاریخ و به وقت تهران.";
   if (top) {
     answer = "نزدیک‌ترین بازی بزرگ: " + faName(top.s.homeTeam) + " – " + faName(top.s.awayTeam) + "، " +
       faDateD1(top.s.utcDate) + " ساعت " + faTime(top.s.utcDate) + " به وقت تهران. " +
       "در مجموع " + toFaDigits(String(all.length)) + " بازی بزرگ در برنامه پیش‌رو است.";
   }
   const title = "بازی‌های بزرگ فوتبال پیش‌رو — تاریخ و ساعت شروع" +
-    (p >= 2 ? " — صفحه " + toFaDigits(String(p)) : "") + " | SportSignal";
+    (p >= 2 ? " — صفحه " + toFaDigits(String(p)) : "") + " | اسپرت سیگنال";
   const desc = ("برنامه کامل بازی‌های مهم فوتبال: لیگ قهرمانان اروپا، لیگ برتر، لالیگا، سری‌آ، بوندسلیگا و لیگ یک — " +
     (top ? "نزدیک‌ترین بازی: " + faName(top.s.homeTeam) + " – " + faName(top.s.awayTeam) + "، " + faDateD2(top.s.utcDate) + "." : "به‌زودی به‌روزرسانی می‌شود.")).slice(0, 165);
   const trail = [{ name: "خانه", href: "/" }, { name: "بازی‌ها" }];
@@ -519,13 +523,13 @@ function buildHub(ctx: SeoCtx, def: HubDef): string {
       .join("؛ ");
     hubFaq.push({
       q: def.crumb + " چه بازی‌هایی است؟",
-      a: def.crumb + " " + toFaDigits(String(all.length)) + " بازی در برنامه SportSignal است: " + named +
+      a: def.crumb + " " + toFaDigits(String(all.length)) + " بازی در برنامه اسپرت سیگنال است: " + named +
         (all.length > FAQ_NAMED_CAP ? "؛ و " + toFaDigits(String(all.length - FAQ_NAMED_CAP)) + " بازی دیگر که فهرست کامل آن‌ها در همین صفحه آمده است." : ".")
     });
   } else {
     hubFaq.push({
       q: def.crumb + " چه بازی‌هایی است؟",
-      a: "در برنامه فعلی SportSignal بازی‌ای برای " + def.crumb + " ثبت نشده است؛ به‌محض اعلام برنامه بازی‌های جدید، همین صفحه به‌روزرسانی می‌شود."
+      a: "در برنامه فعلی اسپرت سیگنال بازی‌ای برای " + def.crumb + " ثبت نشده است؛ به‌محض اعلام برنامه بازی‌های جدید، همین صفحه به‌روزرسانی می‌شود."
     });
   }
   if (top) {
@@ -574,7 +578,7 @@ export function buildTodayPage(ctx: SeoCtx): string {
   return buildHub(ctx, {
     path: "/matches/today",
     h1: "بازی‌های فوتبال امروز",
-    title: "بازی‌های فوتبال امروز — " + faDateD2(nowIso) + " | SportSignal",
+    title: "بازی‌های فوتبال امروز — " + faDateD2(nowIso) + " | اسپرت سیگنال",
     desc: "برنامه بازی‌های امروز",
     crumb: "امروز",
     anchor: nowIso,
@@ -588,7 +592,7 @@ export function buildTomorrowPage(ctx: SeoCtx): string {
   return buildHub(ctx, {
     path: "/matches/tomorrow",
     h1: "بازی‌های فوتبال فردا",
-    title: "بازی‌های فوتبال فردا — " + faDateD2(tomorrow) + " | SportSignal",
+    title: "بازی‌های فوتبال فردا — " + faDateD2(tomorrow) + " | اسپرت سیگنال",
     desc: "برنامه بازی‌های فردا",
     crumb: "فردا",
     anchor: tomorrow,
@@ -601,7 +605,7 @@ export function buildThisWeekPage(ctx: SeoCtx): string {
   return buildHub(ctx, {
     path: "/matches/this-week",
     h1: "بازی‌های فوتبال این هفته",
-    title: "بازی‌های فوتبال این هفته — ۷ روز آینده | SportSignal",
+    title: "بازی‌های فوتبال این هفته — ۷ روز آینده | اسپرت سیگنال",
     desc: "برنامه بازی‌های ۷ روز آینده",
     crumb: "این هفته",
     filter: (sm) => {
@@ -619,7 +623,7 @@ export function buildWeekendPage(ctx: SeoCtx): string {
   return buildHub(ctx, {
     path: "/matches/this-weekend",
     h1: "بازی‌های فوتبال آخر هفته",
-    title: "بازی‌های فوتبال آخر هفته — " + faDateD2(win.start) + " | SportSignal",
+    title: "بازی‌های فوتبال آخر هفته — " + faDateD2(win.start) + " | اسپرت سیگنال",
     desc: "برنامه بازی‌های شنبه و یکشنبه",
     crumb: "آخر هفته",
     anchor: win.start,
@@ -659,8 +663,8 @@ export function buildTeamsIndexPage(ctx: SeoCtx): string {
   return pageShell({
     head: buildHead({
       path,
-      title: "تیم‌های فوتبال دنبال‌شده — برنامه بازی‌ها | SportSignal",
-      description: "فهرست تیم‌های فوتبال که SportSignal دنبال می‌کند؛ صفحه هر تیم شامل تاریخ و ساعت بازی بعدی و نتایج اخیر است.",
+      title: "تیم‌های فوتبال دنبال‌شده — برنامه بازی‌ها | اسپرت سیگنال",
+      description: "فهرست تیم‌های فوتبال که اسپرت سیگنال دنبال می‌کند؛ صفحه هر تیم شامل تاریخ و ساعت بازی بعدی و نتایج اخیر است.",
       indexable: true,
       jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(path, "تیم‌ها", ctx.fetchedAt), teamList, JL.breadcrumbNode(trail)]
     }),
@@ -768,7 +772,7 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
     ? '<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">' + toFaDigits(String(sims.length)) + " بازی</span></h2>" +
       sims.map((x, i) => M.mrowHtml(x, i, false)).join("") + "</div>"
     : "";
-  let answer = "برنامه بازی‌های " + name + " در SportSignal — به وقت تهران.";
+  let answer = "برنامه بازی‌های " + name + " در اسپرت سیگنال — به وقت تهران.";
   if (next) {
     answer = "بازی بعدی " + name + ": " + faName(next.s.homeTeam) + " – " + faName(next.s.awayTeam) + " در " +
       M.compNameFa(next.s) + "، " + faDateD1(next.s.utcDate) + " ساعت " +
@@ -780,7 +784,7 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
   if (posFa) {
     answer += " " + name + (ptsFa ? " با " + ptsFa + " امتیاز" : "") + " در ردهٔ " + posFa + " " + esc(String(stw.compFa)) + " قرار دارد.";
   }
-  const title = name + " — برنامه بازی بعدی و ساعت شروع | SportSignal";
+  const title = name + " — برنامه بازی بعدی و ساعت شروع | اسپرت سیگنال";
   const desc = (answer + (next ? " لینک صفحه هر بازی در ادامه است." : " به‌محض اعلام برنامه به‌روزرسانی می‌شود.")).slice(0, 165);
   const main =
     '<div class="answercard">' + esc(answer) + "</div>" +
@@ -839,8 +843,8 @@ export function buildCompetitionsIndexPage(ctx: SeoCtx): string {
   return pageShell({
     head: buildHead({
       path,
-      title: "رقابت‌های فوتبال — لیگ‌ها و جام‌ها | SportSignal",
-      description: "برنامه بازی‌های بزرگ لیگ قهرمانان اروپا، لیگ برتر انگلیس، لالیگا، سری‌آ، بوندسلیگا، لیگ یک فرانسه و جام‌های حذفی در SportSignal.",
+      title: "رقابت‌های فوتبال — لیگ‌ها و جام‌ها | اسپرت سیگنال",
+      description: "برنامه بازی‌های بزرگ لیگ قهرمانان اروپا، لیگ برتر انگلیس، لالیگا، سری‌آ، بوندسلیگا، لیگ یک فرانسه و جام‌های حذفی در اسپرت سیگنال.",
       indexable: true,
       jsonldNodes: [...JL.siteNodes(), JL.collectionPageNode(path, "رقابت‌ها", ctx.fetchedAt), compList, JL.breadcrumbNode(trail)]
     }),
@@ -899,12 +903,12 @@ export async function buildCompetitionPage(ctx: SeoCtx, slug: string): Promise<{
   const cNameEn = COMP_EN[code] || code;
   const trail = [{ name: "خانه", href: "/" }, { name: "رقابت‌ها", href: "/competitions" }, { name: String(cNameFa) }];
   const next = list[0];
-  let answer = "بازی‌های بزرگ پیش‌روی " + cNameFa + " در SportSignal — به وقت تهران.";
+  let answer = "بازی‌های بزرگ پیش‌روی " + cNameFa + " در اسپرت سیگنال — به وقت تهران.";
   if (next) {
     answer = "نزدیک‌ترین بازی بزرگ " + cNameFa + ": " + faName(next.s.homeTeam) + " – " + faName(next.s.awayTeam) +
       "، " + faDateD1(next.s.utcDate) + " ساعت " + faTime(next.s.utcDate) + " به وقت تهران.";
   }
-  const title = cNameFa + " — برنامه بازی‌های بزرگ پیش‌رو | SportSignal";
+  const title = cNameFa + " — برنامه بازی‌های بزرگ پیش‌رو | اسپرت سیگنال";
   const desc = (answer + " تاریخ و ساعت دقیق هر بازی در ادامه آمده است.").slice(0, 165);
   let standingsBlock = "";
   let st: any = ctx.payload && ctx.payload.standings && ctx.payload.standings[code];

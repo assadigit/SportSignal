@@ -13,7 +13,7 @@ export const SEO = {
   // The Telegram webhook host — never redirect these paths (POSTs must land).
   NO_REDIRECT_PREFIXES: ["/webhook", "/api/", "/admin"],
   SITE_NAME: "SportSignal",
-  SITE_NAME_FA: "اسپورت‌سیگنال",
+  SITE_NAME_FA: "اسپرت سیگنال",
   BRAND: "SportSignal",
   // From the existing homepage (SEO_AUDIT assumption #3).
   SITE_TAGLINE: "مسابقات پیش‌رو، رقابت‌های صدر جدول و نتایج تیم‌های منتخب — به‌روزرسانی خودکار",
@@ -73,7 +73,7 @@ export const SEO = {
   // (the X + Telegram profiles) and the head gained twitter:site —
   // hand-written footer text changed on all page types (the v13.215
   // attribution precedent: footer text rides the pages' honest lastmod).
-  CONTENT_VERSION: "2026-11-06T21:50:00Z",
+  CONTENT_VERSION: "2026-11-06T23:00:00Z",
   // Edge cache for rendered HTML (R-04: at least every 5 minutes).
   HTML_CACHE_TTL: 300,
   // v13.97-seocpu: the per-colo RENDER hold — the Cache API copy's TTL.

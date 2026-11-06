@@ -988,7 +988,7 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
         const noi = parseInt(faToEn((html.match(/"numberOfItems":\s*(\d+)/) || [])[1] || "-1"), 10);
         const firstA = vis[0].a;
         if (rows > 0) {
-          const cntM = firstA.match(/([۰-۹]+) بازی در برنامه SportSignal است/);
+          const cntM = firstA.match(/([۰-۹]+) بازی در برنامه اسپرت سیگنال است/);
           const ansN = cntM ? parseInt(faToEn(cntM[1]), 10) : -1;
           if (ansN !== rows) fail(id, path + ": FAQ answer count " + ansN + " ≠ " + rows + " visible rows (live-data mismatch)");
           else pass(id, path + ": FAQ answer count matches the visible rows (" + ansN + ") ✓");
