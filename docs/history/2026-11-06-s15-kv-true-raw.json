@@ -1,0 +1,611 @@
+{
+  "_s15_kv_true_pull": {
+    "session": "S15 (docs/history/2026-11-06-s15-audit.md)",
+    "pulled_utc": "2026-11-06T17:38:27.758Z",
+    "method": "CF GraphQL kvOperationsAdaptiveGroups, account a796fdfe71819812119b8a494d3d39c1, namespace c63588df02ae4bf1bfdc18d19c5b3631, window 2026-10-31..2026-11-06",
+    "purpose": "the TRUE KV burn (account analytics) — the app meters under-count (S14 regression + bot-path writes they never counted); compare dayAction totals vs healthz combined at the same minute for the gap",
+    "note": "the wall question: no 429/rejection class has EVER appeared in this dataset — writes 679-1,315/day over the 10-31..11-06 week all 200/400; the ~50-60/day 400-write class (09-12Z cluster) is a format failure, not quota"
+  },
+  "byDayAction": [
+    {
+      "count": 1315,
+      "dimensions": {
+        "actionType": "write",
+        "date": "2026-10-31"
+      }
+    },
+    {
+      "count": 16896,
+      "dimensions": {
+        "actionType": "read",
+        "date": "2026-10-31"
+      }
+    },
+    {
+      "count": 8346,
+      "dimensions": {
+        "actionType": "read",
+        "date": "2026-11-01"
+      }
+    },
+    {
+      "count": 3,
+      "dimensions": {
+        "actionType": "delete",
+        "date": "2026-11-01"
+      }
+    },
+    {
+      "count": 1075,
+      "dimensions": {
+        "actionType": "write",
+        "date": "2026-11-01"
+      }
+    },
+    {
+      "count": 679,
+      "dimensions": {
+        "actionType": "write",
+        "date": "2026-11-02"
+      }
+    },
+    {
+      "count": 3,
+      "dimensions": {
+        "actionType": "delete",
+        "date": "2026-11-02"
+      }
+    },
+    {
+      "count": 10069,
+      "dimensions": {
+        "actionType": "read",
+        "date": "2026-11-02"
+      }
+    },
+    {
+      "count": 26071,
+      "dimensions": {
+        "actionType": "read",
+        "date": "2026-11-03"
+      }
+    },
+    {
+      "count": 1076,
+      "dimensions": {
+        "actionType": "write",
+        "date": "2026-11-03"
+      }
+    },
+    {
+      "count": 2,
+      "dimensions": {
+        "actionType": "delete",
+        "date": "2026-11-03"
+      }
+    },
+    {
+      "count": 1211,
+      "dimensions": {
+        "actionType": "write",
+        "date": "2026-11-04"
+      }
+    },
+    {
+      "count": 36286,
+      "dimensions": {
+        "actionType": "read",
+        "date": "2026-11-04"
+      }
+    },
+    {
+      "count": 2,
+      "dimensions": {
+        "actionType": "delete",
+        "date": "2026-11-04"
+      }
+    },
+    {
+      "count": 108639,
+      "dimensions": {
+        "actionType": "read",
+        "date": "2026-11-05"
+      }
+    },
+    {
+      "count": 2,
+      "dimensions": {
+        "actionType": "delete",
+        "date": "2026-11-05"
+      }
+    },
+    {
+      "count": 1018,
+      "dimensions": {
+        "actionType": "write",
+        "date": "2026-11-05"
+      }
+    },
+    {
+      "count": 60473,
+      "dimensions": {
+        "actionType": "read",
+        "date": "2026-11-06"
+      }
+    },
+    {
+      "count": 751,
+      "dimensions": {
+        "actionType": "write",
+        "date": "2026-11-06"
+      }
+    },
+    {
+      "count": 1,
+      "dimensions": {
+        "actionType": "list",
+        "date": "2026-11-06"
+      }
+    },
+    {
+      "count": 3,
+      "dimensions": {
+        "actionType": "delete",
+        "date": "2026-11-06"
+      }
+    }
+  ],
+  "byDayStatusW": [
+    {
+      "count": 54,
+      "dimensions": {
+        "date": "2026-10-31",
+        "responseStatusCode": 400
+      }
+    },
+    {
+      "count": 1261,
+      "dimensions": {
+        "date": "2026-10-31",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 90,
+      "dimensions": {
+        "date": "2026-11-01",
+        "responseStatusCode": 400
+      }
+    },
+    {
+      "count": 985,
+      "dimensions": {
+        "date": "2026-11-01",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 11,
+      "dimensions": {
+        "date": "2026-11-02",
+        "responseStatusCode": 400
+      }
+    },
+    {
+      "count": 668,
+      "dimensions": {
+        "date": "2026-11-02",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 1030,
+      "dimensions": {
+        "date": "2026-11-03",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 46,
+      "dimensions": {
+        "date": "2026-11-03",
+        "responseStatusCode": 400
+      }
+    },
+    {
+      "count": 58,
+      "dimensions": {
+        "date": "2026-11-04",
+        "responseStatusCode": 400
+      }
+    },
+    {
+      "count": 1153,
+      "dimensions": {
+        "date": "2026-11-04",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 960,
+      "dimensions": {
+        "date": "2026-11-05",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 58,
+      "dimensions": {
+        "date": "2026-11-05",
+        "responseStatusCode": 400
+      }
+    },
+    {
+      "count": 717,
+      "dimensions": {
+        "date": "2026-11-06",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 34,
+      "dimensions": {
+        "date": "2026-11-06",
+        "responseStatusCode": 400
+      }
+    }
+  ],
+  "byDayStatusR": [
+    {
+      "count": 14132,
+      "dimensions": {
+        "date": "2026-10-31",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 2764,
+      "dimensions": {
+        "date": "2026-10-31",
+        "responseStatusCode": 404
+      }
+    },
+    {
+      "count": 1601,
+      "dimensions": {
+        "date": "2026-11-01",
+        "responseStatusCode": 404
+      }
+    },
+    {
+      "count": 6745,
+      "dimensions": {
+        "date": "2026-11-01",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 2624,
+      "dimensions": {
+        "date": "2026-11-02",
+        "responseStatusCode": 404
+      }
+    },
+    {
+      "count": 7445,
+      "dimensions": {
+        "date": "2026-11-02",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 20332,
+      "dimensions": {
+        "date": "2026-11-03",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 5739,
+      "dimensions": {
+        "date": "2026-11-03",
+        "responseStatusCode": 404
+      }
+    },
+    {
+      "count": 4961,
+      "dimensions": {
+        "date": "2026-11-04",
+        "responseStatusCode": 404
+      }
+    },
+    {
+      "count": 1,
+      "dimensions": {
+        "date": "2026-11-04",
+        "responseStatusCode": 500
+      }
+    },
+    {
+      "count": 31324,
+      "dimensions": {
+        "date": "2026-11-04",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 16769,
+      "dimensions": {
+        "date": "2026-11-05",
+        "responseStatusCode": 404
+      }
+    },
+    {
+      "count": 91870,
+      "dimensions": {
+        "date": "2026-11-05",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 54950,
+      "dimensions": {
+        "date": "2026-11-06",
+        "responseStatusCode": 200
+      }
+    },
+    {
+      "count": 5524,
+      "dimensions": {
+        "date": "2026-11-06",
+        "responseStatusCode": 404
+      }
+    }
+  ],
+  "dayHourW": [
+    {
+      "count": 68,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T00:00:00Z"
+      }
+    },
+    {
+      "count": 52,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T01:00:00Z"
+      }
+    },
+    {
+      "count": 62,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T02:00:00Z"
+      }
+    },
+    {
+      "count": 30,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T03:00:00Z"
+      }
+    },
+    {
+      "count": 18,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T04:00:00Z"
+      }
+    },
+    {
+      "count": 20,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T05:00:00Z"
+      }
+    },
+    {
+      "count": 22,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T06:00:00Z"
+      }
+    },
+    {
+      "count": 26,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T07:00:00Z"
+      }
+    },
+    {
+      "count": 35,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T08:00:00Z"
+      }
+    },
+    {
+      "count": 59,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T09:00:00Z"
+      }
+    },
+    {
+      "count": 70,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T10:00:00Z"
+      }
+    },
+    {
+      "count": 54,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T11:00:00Z"
+      }
+    },
+    {
+      "count": 52,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T12:00:00Z"
+      }
+    },
+    {
+      "count": 21,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T13:00:00Z"
+      }
+    },
+    {
+      "count": 36,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T14:00:00Z"
+      }
+    },
+    {
+      "count": 57,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T15:00:00Z"
+      }
+    },
+    {
+      "count": 31,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T16:00:00Z"
+      }
+    },
+    {
+      "count": 38,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T17:00:00Z"
+      }
+    }
+  ],
+  "dayHourR": [
+    {
+      "count": 7429,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T00:00:00Z"
+      }
+    },
+    {
+      "count": 1391,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T01:00:00Z"
+      }
+    },
+    {
+      "count": 9923,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T02:00:00Z"
+      }
+    },
+    {
+      "count": 380,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T03:00:00Z"
+      }
+    },
+    {
+      "count": 258,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T04:00:00Z"
+      }
+    },
+    {
+      "count": 267,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T05:00:00Z"
+      }
+    },
+    {
+      "count": 298,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T06:00:00Z"
+      }
+    },
+    {
+      "count": 329,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T07:00:00Z"
+      }
+    },
+    {
+      "count": 567,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T08:00:00Z"
+      }
+    },
+    {
+      "count": 608,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T09:00:00Z"
+      }
+    },
+    {
+      "count": 10087,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T10:00:00Z"
+      }
+    },
+    {
+      "count": 6624,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T11:00:00Z"
+      }
+    },
+    {
+      "count": 4008,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T12:00:00Z"
+      }
+    },
+    {
+      "count": 260,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T13:00:00Z"
+      }
+    },
+    {
+      "count": 992,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T14:00:00Z"
+      }
+    },
+    {
+      "count": 10566,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T15:00:00Z"
+      }
+    },
+    {
+      "count": 893,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T16:00:00Z"
+      }
+    },
+    {
+      "count": 5594,
+      "dimensions": {
+        "datetimeHour": "2026-11-06T17:00:00Z"
+      }
+    }
+  ],
+  "dayAction": [
+    {
+      "count": 3,
+      "dimensions": {
+        "actionType": "delete"
+      }
+    },
+    {
+      "count": 1,
+      "dimensions": {
+        "actionType": "list"
+      }
+    },
+    {
+      "count": 60481,
+      "dimensions": {
+        "actionType": "read"
+      }
+    },
+    {
+      "count": 751,
+      "dimensions": {
+        "actionType": "write"
+      }
+    }
+  ]
+}
