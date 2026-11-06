@@ -81,6 +81,16 @@ service = "ucl-notifier"
 
 [vars]
 TEHRAN_TZ = "Asia/Tehran"
+# v13.230-channelbase: the Telegram Channel Mirror destination — DISABLED
+# by default (empty vars). NOT secrets: a public channel id/url is not a
+# credential. TELEGRAM_CHANNEL_CHAT_ID accepts the numeric -100… channel id
+# (preferred, stable) or an interim @username; TELEGRAM_CHANNEL_PUBLIC_URL
+# is the https://t.me/… link the channel CTA uses. Both stay empty until
+# the owner creates the channel and supplies real values
+# (TELEGRAM_CHANNEL_MIRROR_SPEC.md PART VIII — never placeholders; see
+# src/channel-mirror.ts + docs/telegram-channel-mirror/DISCOVERY.md §7.1).
+TELEGRAM_CHANNEL_CHAT_ID = ""
+TELEGRAM_CHANNEL_PUBLIC_URL = ""
 
 # v12.x-ai-translate: Workers AI binding for automatic Farsi club name translation.
 # The worker's translateTeam function checks the AI-learned names (KV fa_teams_ai)

@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.229-teamladder";
+export const VERSION = "13.230-channelbase";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -412,6 +412,14 @@ export const CONFIG: Record<string, any> = {
   // when the admin opens the members card. Keyed by chat id.
   KV_USER_PROFILES: "user_profiles_v1",
   KV_MATCH_STATUS: "match_status_v1",
+  // v13.230-channelbase: the Telegram Channel Mirror PAUSE marker. Written
+  // ONLY on state transitions (paused on a permanent channel error class,
+  // resumed on config-change detection / owner action — DISCOVERY §7.6),
+  // never per tick; read through the isolate-memoized pausedChannel()
+  // (src/channel-mirror.ts). Shape: {paused: bool, reason: <class>|null,
+  // at, resumed_at?} — reason is a sanitized CLASS ('permanent-403'), never
+  // a raw error/payload/token. Absent = not paused (fresh deploy).
+  KV_CHANNEL_MIRROR: "channel_mirror_v1",
   // v13.37-nospam2: audit admin-alert rate-limit stamp (one gap alert / 6h).
   KV_AUDIT_ALERT: "audit_alert_v1",
   KV_LIVE_DETAIL: "live_detail_",

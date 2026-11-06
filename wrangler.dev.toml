@@ -34,3 +34,7 @@ not_found_handling = "none"
 
 [vars]
 TEHRAN_TZ = "Asia/Tehran"
+# v13.230-channelbase: channel mirror vars, empty = disabled (mirrors
+# wrangler.toml; this file is git-ignored local-only config).
+TELEGRAM_CHANNEL_CHAT_ID = ""
+TELEGRAM_CHANNEL_PUBLIC_URL = ""

@@ -4,6 +4,74 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.230-channelbase — the Telegram Channel Mirror Session 1: destination configuration + the durable idempotency foundation (disabled by default)
+
+**S17, 2026-11-07 (the Channel Mirror program's first runtime session —
+`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 1, built exactly on the
+Session 0 audit `docs/telegram-channel-mirror/DISCOVERY.md` §7).**
+Foundation only: destination configuration, the delivery seam's shared
+gate, and the destination-scoped write-first claim — **zero notification
+hooks this session, so ZERO behavioral surface until Session 2 wires
+them.** With `TELEGRAM_CHANNEL_CHAT_ID` empty (the shipped default) every
+new entry point no-ops before any KV/D1/subrequest operation: the bot, the
+site, the digests and healthz are byte-for-byte what v13.229 shipped.
+
+- `src/channel-mirror.ts` (new): `channelDestinations(env)` — the
+  destination model `{key:"fa-football", chatId, publicUrl, locale:"fa",
+  sport:"football", enabled}` behind `[vars]`
+  `TELEGRAM_CHANNEL_CHAT_ID` / `TELEGRAM_CHANNEL_PUBLIC_URL` (numeric
+  `-100…` preferred, `@username` accepted interim; `https://t.me/…` URL
+  only, malformed ⇒ unset — never a wrong CTA); `claimChannelEvent(env,
+  dest, eventKey)` — D1 `channel_posts_v1` `INSERT OR IGNORE`, `changes>0`
+  ⟺ newly claimed, existing row OR D1 failure ⇒ `false` (fail-closed —
+  no claim, no send; the `saveNotifiedMatch` law, D1-not-KV per the
+  v13.94 quota-death lesson); `recordChannelState(env, dest, eventKey,
+  state, errorClass?)` — post-send telemetry that can never break a send
+  path, `last_error` a sanitized CLASS only; `pausedChannel` /
+  `markChannelPaused` / `markChannelResumed` — the KV `channel_mirror_v1`
+  pause marker written ONLY on transitions, isolate-memoized read (60s
+  TTL, keyed by the STATE binding); `channelGate(env)` — the shared
+  entry-point gate (sim ⇒ unconfigured ⇒ paused, in that order, zero ops
+  before the answer); the five pure event-key builders from the DISCOVERY
+  §7.2 identity table (`match:<matchKey>:<type>` with the `-big`
+  base-stage collapse, status transitions `:postponed|:cancelled|:ht`,
+  `digest:<name>:<tehran-dateKey>`, `digest:weekly:<isoWeekKey>`,
+  `coronation:<code>:<triggerMatchKey>` — never bare matchKey, never
+  message text). SIM (`SIM_NOTIFIED_KEY`) hard-no-ops everything; a
+  non-live dest can never claim (misuse-proofing).
+- `db/users-schema.sql`: `channel_posts_v1` (PK `(dest_key, event_key)`;
+  states `claimed|sent|failed|unreachable`) — applied once with the
+  documented `wrangler d1 execute sportsignal-users --remote --file=…`
+  step (RUNBOOK §8b, new — the D1-schema-apply procedure the v13.94/
+  v13.102 introductions never got as an explicit runbook section); the
+  private `notified_v1` contract is untouched (disjoint by table AND key
+  shape).
+- `wrangler.toml` `[vars]`: both channel vars, EMPTY by default (NOT
+  secrets — a public channel id/url is not a credential);
+  `wrangler.dev.toml` (git-ignored) mirrors them locally.
+- Harness co-evolution (the §11 same-commit rule): `scripts/lib/
+  worker-src.js` concat order gains `channel-mirror.ts` after its deps
+  (config/telegram/composers/match-dedupe) and before its Session-2
+  importers (cup-elim/stickers/digest-*/notify-*/cron-notify);
+  `scripts/check-channel-mirror.js` (new, in the `npm test` chain after
+  check-userstore): 100 checks — the disabled-state zero-op matrix
+  (missing/empty/garbage chat id ⇒ `[]` and zero KV/D1/subrequest ops),
+  claim idempotency + destination scoping, D1 failure injection
+  (fail-closed), the SIM full no-op, the table-driven identity table (18
+  keys + 16 malformed-input nulls), pause-marker semantics (gate off when
+  paused, transition-only writes, reason sanitization, 60s memo TTL,
+  fail-open reads), recordChannelState telemetry, and the claim→sent→
+  re-claim lifecycle.
+- `src/types.ts` (+2 optional Env fields), `src/config.ts`
+  (`KV_CHANNEL_MIRROR` + VERSION), `src/worker.ts` (module map),
+  `package.json` (test chain + 13.230.0.0), lockfile version sync.
+
+**Deployed disabled:** `[vars]` ship empty, no hook calls the module —
+the cron tick's KV-write meter and healthz are unchanged (verified
+post-deploy: ≥2 ticks, `kv_writes_last_tick` at the quiet-tick baseline,
+zero channel log lines). Session 2 mirrors the eligible families;
+Session 3 hardens; Session 4 (owner-gated) activates the real channel.
+
 # v13.229-teamladder — the Gladbach 66-char team-title report decided: the SS-10 trim ladder reaches the per-team titles
 
 **S13, 2026-11-06 ~10:2x–11:0x UTC — the S12 carry-over, decided.**

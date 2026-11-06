@@ -47,6 +47,16 @@ export interface Env {
   HEALTHCHECK_PING_URL?: string;
   // vars
   TEHRAN_TZ?: string;
+  // v13.230-channelbase: the Telegram Channel Mirror destination (spec
+  // PART IV §9, DISCOVERY §7.1). Plain [vars] in wrangler.toml — a public
+  // channel id/url is NOT a credential — EMPTY by default: the mirror is
+  // disabled-by-default until the owner creates the channel (Session 4,
+  // PART VIII — never invent placeholders). CHAT_ID accepts the numeric
+  // -100… id (preferred, stable) or an interim @username; PUBLIC_URL is
+  // the https://t.me/… link used for the channel CTA on eligible public
+  // notifications (unset ⇒ no CTA anywhere).
+  TELEGRAM_CHANNEL_CHAT_ID?: string;
+  TELEGRAM_CHANNEL_PUBLIC_URL?: string;
   // v13.5-sim-scope: request-scoped KV-key overrides. /api/simulate passes a
   // CLONED env carrying these, so notification/prefs state is isolated to the
   // simulation without mutating the shared CONFIG at runtime (isolate-safety:

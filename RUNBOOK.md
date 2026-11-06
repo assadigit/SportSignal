@@ -314,12 +314,37 @@ curl -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
 | `weekly_tables_cursor_v1` / `weekly_tables_payload_v1` | weekly digest (13.124) | the chunked Monday digest's resumable state: CURSOR `{week, ts, pending:{fa,en}}` (remove-before-send per burst; TTL 8d; a >12h-old cursor is stale → dropped; ABSENT = idle — the digest only holds a cursor while delivering) and PAYLOAD (the week's rendered snapshot: per-lang tables + stickers + week-ahead; standings fetched once/week). A live cursor at rest = a digest mid-drain or paused on the KV-write quota (self-heals next tick) |
 | `x_*` (`x_enabled_v1` …) | REMOVED at 13.48-xtrim | none live (X never ran); see wrangler.toml restore note |
 | `cup_scan_v1` | EFL/FA Cup team-scan marker (13.50) | "ok:<ts>"/"fail:<ts>"; ok = skip 5h, fail = 30-min backoff; hot window re-scans ≤30 min |
+| `channel_mirror_v1` | channel-mirror (v13.230-channelbase) | the Telegram Channel Mirror PAUSE marker — written ONLY on state transitions (a permanent channel error class pauses the destination; config-change/owner action resumes). Absent = not paused. While `TELEGRAM_CHANNEL_CHAT_ID` is empty (the shipped default) NOTHING reads or writes it. See `src/channel-mirror.ts` + DISCOVERY §7.6 |
 
 **Orphans (self-cleaning or inert — do not "clean up" without checking TTLs):**
 `sched_v1:*` (156 keys, 7-day TTLs expire ~2026-09-22), `canary_match_v1` (TTL),
 legacy never-read: `REGISTERED_CHATS_LIST`, standalone `heartbeat`,
 `last_full_sweep`, `matches_v3/v4_store`. Deleting them is safe but pointless —
 they cost reads nothing.
+
+## 8b. D1 schema applies (the `sportsignal-users` database)
+
+D1 schema changes are **additive-only** (`CREATE TABLE IF NOT EXISTS` +
+`CREATE INDEX IF NOT EXISTS` — the same doctrine as §4's KV rules: no renames,
+no destructive migrations). `db/users-schema.sql` is the live contract; it is
+**idempotent — safe to re-run** (every statement is IF NOT EXISTS):
+
+```sh
+CLOUDFLARE_API_TOKEN=… npx wrangler d1 execute sportsignal-users \
+  --remote --file=db/users-schema.sql
+```
+
+History: `userstore` tables at v13.92, `notified_v1` at v13.94,
+`notify_deliveries_v1` at v13.102 — and **`channel_posts_v1` at
+v13.230-channelbase** (the Telegram Channel Mirror claim ledger — applied
+while the mirror is DISABLED; the table is pure foundation until Session 2
+wires the notification hooks, and old code ignores it entirely, so rollback
+before/after the apply is safe in both directions). A new table lands in the
+SAME commit as its runtime module + its harness checks (the §11 co-evolution
+rule); the apply itself is a one-time operator step recorded in the session
+note. Local verification of the statement surface:
+`npx wrangler d1 execute sportsignal-users --local --file=db/users-schema.sql`
+against a dev copy (never assume — run it before the remote apply).
 
 ---
 

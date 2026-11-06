@@ -111,6 +111,15 @@ function workerSrc() {
     // keep it obvious). provSeg15 in check-reliability spans breaker→telegram.
     "provider-breaker.ts", "provider-wikipedia.ts", "provider-sportscore.ts", "provider-tsp.ts", "provider-fd.ts", "match-pool.ts", "provider-cups.ts", "providers.ts",
     "telegram.ts", "composers.ts",
+    // v13.230-channelbase: the Telegram Channel Mirror foundation — the
+    // destination model + the D1 channel_posts_v1 write-first claim + the
+    // KV pause marker + the event-key builders (DISCOVERY §7). Sits after
+    // its dependencies (config/telegram/composers/match-dedupe — everything
+    // it references via grabFn is above) and BEFORE its Session-2 importers
+    // (cup-elim/stickers/digest-*/notify-*/cron-notify below), keeping the
+    // flat concat's dependency direction acyclic. check-channel-mirror
+    // evals this module whole (the check-userstore pattern).
+    "channel-mirror.ts",
     // v13.77-digestnotify: digest.ts + notifications.ts became GROUPS —
     // weekly/morning/bigmatch/coronation digests + engine/status/audit
     // notify modules. All harness deps are grab-based (position-independent)

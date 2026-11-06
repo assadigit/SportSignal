@@ -28,6 +28,7 @@
 //   providers.ts         sweep orchestrators (long view, live sweep, merge)
 //   telegram.ts          Bot API senders (retry, 429 pause, dead-chat)
 //   composers.ts         message composers + standings pipeline
+//   channel-mirror.ts    channel destination config + D1 claim ledger (13.230)
 //   digest-weekly.ts     Monday league tables + week-ahead fixtures
 //   digest-morning.ts    the 9am matchday digest (per-chat KV dedupe)
 //   digest-bigmatch.ts   big-match FT + kickoff broadcasts

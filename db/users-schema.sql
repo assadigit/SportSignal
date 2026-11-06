@@ -99,3 +99,43 @@ CREATE TABLE IF NOT EXISTS notify_deliveries_v1 (
   PRIMARY KEY (match_key, ntype, chat_id)
 );
 CREATE INDEX IF NOT EXISTS idx_deliveries_sent ON notify_deliveries_v1(sent_at);
+
+-- v13.230-channelbase — the Telegram Channel Mirror CLAIM LEDGER (spec
+-- TELEGRAM_CHANNEL_MIRROR_SPEC.md PART IV §10; DISCOVERY §7.2). The
+-- channel-side twin of notified_v1 (v13.94): destination-scoped,
+-- write-first, fail-closed event idempotency — INSERT OR IGNORE against
+-- PK (dest_key, event_key) makes the check+write ATOMIC; changes>0 ⟺ the
+-- event is newly claimed (the channel send may proceed); changes=0
+-- (already claimed: race, re-fire, stuck row) or a D1 error ⟺ NO send.
+-- One logical notification occurrence → at most ONE channel post per
+-- destination, ever. The private notified_v1 contract is UNTOUCHED —
+-- disjoint by table AND by key shape, so a channel claim can never
+-- suppress a private send or vice-versa. D1 (never KV) for the v13.94
+-- reason: the anti-spam claim is the one write that must never be
+-- KV-quota-starved; D1's separate 100k-writes/day tier makes it durable.
+--   state 'claimed'     — the write-first marker (sent_at NULL; a stuck
+--                          claim is Session 3's reconciliation surface,
+--                          never a blind re-send — at-most-once bias)
+--   state 'sent'        — confirmed post (sent_at set)
+--   state 'failed'      — transient failure (outbox-owned retry, S3)
+--   state 'unreachable' — permanent error class (pause-marker territory)
+-- last_error carries a sanitized CLASS only ('permanent-403'), never a
+-- raw error, payload, chat id or token. Rows are hygiene-pruned past 14
+-- days (Session 3, the notified_v1 tidy pattern) — the never-re-arm line
+-- is the row's existence, exactly notified_v1's law.
+-- Applied while the mirror is DISABLED (empty [vars]) — the table is pure
+-- foundation until Session 2 wires the hooks; nothing reads or writes it
+-- before then.
+--
+-- Apply once (RUNBOOK §8b — idempotent, safe to re-run):
+--   npx wrangler d1 execute sportsignal-users --remote --file=db/users-schema.sql
+CREATE TABLE IF NOT EXISTS channel_posts_v1 (
+  dest_key   TEXT NOT NULL,        -- "fa-football"
+  event_key  TEXT NOT NULL,        -- the DISCOVERY §7.2 identity table (builders: src/channel-mirror.ts)
+  claimed_at INTEGER NOT NULL,
+  sent_at    INTEGER,              -- null = claimed/pending
+  state      TEXT NOT NULL,        -- 'claimed' | 'sent' | 'failed' | 'unreachable'
+  attempts   INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,                 -- sanitized CLASS only, never payload/token
+  PRIMARY KEY (dest_key, event_key)
+);
