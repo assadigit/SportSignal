@@ -93,9 +93,9 @@ FILES CHANGED:
 TESTS:
 - npm test — EXIT 0, 2,614 OK / 0 FAIL (docs-only session; the suite re-run at the release commit per the AGENTS hard rule)
 COMMIT:
-- <filled at commit time> docs: the Channel Mirror Session 0 discovery (S16)
+- 2160576 (full: 21605769ca97aea7dd0cc17b419d7a64922addf6) "docs: the Channel Mirror Session 0 discovery …" (+ this SHA-fill follow-up commit)
 PUSH:
-- origin main — verified with git ls-remote after the push
+- origin main — verified with git ls-remote: refs/heads/main = 21605769ca97aea7dd0cc17b419d7a64922addf6
 DEPLOYMENT:
 - not applicable — documentation-only (per the spec: no deploy of a docs-only change)
 POST-DEPLOY VERIFICATION:
