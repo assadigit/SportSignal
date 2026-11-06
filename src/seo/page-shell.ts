@@ -311,8 +311,21 @@ injection never reaches Worker-rendered HTML (live-verified: zero
 cloudflareinsights occurrences + /cdn-cgi/rum 404 for 3+ weeks), so the
 field-CWV source Phase 7 needs was silently absent. Cookieless, aggregate
 RUM only; CSP-allowed since v13.188. The token is public by design (it rides
-every served page). -->
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "fb7e7f1d66e84ed3b4572545c93ef538"}'></script>
+every served page).
+v13.227-rumzone (2026-11-06, S11): the send.to override. CF cut this site's
+beacon ingestion over to the ZONE-RELATIVE endpoint at 2026-11-05 00:00 UTC
+— the legacy absolute https://cloudflareinsights.com/cdn-cgi/rum (where a
+token-only snippet sends, per beacon 2026.10.1's "version === undefined →
+absolute" rule) started 404ing every POST, and ZERO RUM events landed for
+the whole 11-05 UTC day (verified: verbatim payload replay → 404 absolute,
+204 zone-relative + the replay event visible in the GraphQL ~7 min later;
+site/token mapping intact per rum/site_info/list — one site, this exact
+site_tag/site_token pair). The override uses the beacon's own config hook
+(send.to takes precedence in its endpoint const) to post same-origin
+/cdn-cgi/rum — the same route the zone ruleset serves for auto-install —
+covered by connect-src 'self'. Gate: check-seo-lastmod #9 requires the
+override on BOTH templates. -->
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "fb7e7f1d66e84ed3b4572545c93ef538", "send": {"to": "/cdn-cgi/rum"}}'></script>
 </body>
 </html>`;
 }

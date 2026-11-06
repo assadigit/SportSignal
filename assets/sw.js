@@ -934,7 +934,17 @@
 //              vocabulary so the client mirrors the server pure-math
 //              helpers byte-for-byte). Cache-first assets cannot refresh
 //              without a rename or a bump, the v13.39 rule.
-const CACHE = "sportsignal-v116";
+// v13.227-rumzone (S11, 2026-11-06): bumped from v116 — the routine evict
+//              for a served-HTML edit (NO asset renamed, the v13.39 rename
+//              rule does not fire): the CF Web-Analytics beacon's
+//              data-cf-beacon attr gains the send.to zone override on BOTH
+//              HTML templates — CF cut this site's beacon ingestion to the
+//              zone-relative /cdn-cgi/rum at 2026-11-05 00:00 UTC (the
+//              legacy absolute cloudflareinsights.com endpoint 404s every
+//              POST; zero RUM events landed 11-05); the bump evicts the
+//              SWR/offline-fallback copies of every page whose cached HTML
+//              still carries the dead-endpoint beacon.
+const CACHE = "sportsignal-v117";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

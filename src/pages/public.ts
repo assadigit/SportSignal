@@ -1245,7 +1245,14 @@ injection never reaches Worker-rendered HTML (live-verified: zero
 cloudflareinsights occurrences + /cdn-cgi/rum 404 for 3+ weeks), so the
 field-CWV source Phase 7 needs was silently absent. Cookieless, aggregate
 RUM only; CSP-allowed since v13.188. The token is public by design (it rides
-every served page). -->
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "fb7e7f1d66e84ed3b4572545c93ef538"}'><\/script>
+every served page).
+v13.227-rumzone (2026-11-06, S11): the send.to override — CF cut this
+site's beacon ingestion to the ZONE-RELATIVE endpoint at 2026-11-05 00:00
+UTC (the legacy absolute cloudflareinsights.com/cdn-cgi/rum 404s every
+POST; zero RUM events landed 11-05; the zone-relative POST returns 204 and
+ingests — replay-verified in the GraphQL). send.to is the beacon's own
+endpoint hook; the same-origin POST is covered by connect-src 'self'.
+Gate: check-seo-lastmod #9 requires the override on BOTH templates. -->
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "fb7e7f1d66e84ed3b4572545c93ef538", "send": {"to": "/cdn-cgi/rum"}}'><\/script>
 </body>
 </html>`;

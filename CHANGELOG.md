@@ -4,6 +4,47 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.227-rumzone — the RUM-zone override: the beacon's send.to fix for the 2026-11-05 ingestion cutover (SS-25)
+
+**S11, 2026-11-06 ~00:2x–01:1x UTC — the silent RUM outage, caught and
+fixed.** The S11 prompt's RUM re-read expected the 2026-11-05/06 events to
+land; they did NOT — both datasets still ended at 2026-11-04 (byte-stable
+since S8), and the new day-probes (11-05, 11-06) returned zero groups
+~25h into the outage. Diagnosis chain (all live-verified this session):
+the beacon loads and fires (200 on beacon.min.js, the CORS preflight
+200s) but its POST to the legacy absolute
+`https://cloudflareinsights.com/cdn-cgi/rum` — where a token-only
+snippet sends, per beacon 2026.10.1's `version === undefined → absolute`
+rule — now returns **404** (a verbatim 801-byte payload replay from the
+browser's own captured POST reproduces it). `rum/site_info/list` shows
+the site/token mapping INTACT (one site: site_tag `08a51fd8…` / site_token
+`fb7e7f1d…`, created 2026-10-13 — the tracked pair; nothing was deleted
+or rotated on our side). The **zone-relative** `sportsignal.ir/cdn-cgi/rum`
+answers **204** and **ingests**: the replayed pageload event appeared in
+the CF GraphQL ~7 minutes later (the only 11-06 group at that moment —
+bot/desktop, this session's own replay). Conclusion: CF cut this site's
+beacon ingestion over to the zone route at 2026-11-05 00:00 UTC (the
+zone ruleset path auto-install uses); the legacy absolute endpoint is
+dead for this site. **The fix**: the `data-cf-beacon` attr gains
+`"send": {"to": "/cdn-cgi/rum"}` on BOTH HTML templates (homepage
+`src/pages/public.ts` + `src/seo/page-shell.ts`) — the beacon's own
+endpoint hook (`send.to` takes precedence in its endpoint const), posting
+same-origin, CSP-covered by the existing `connect-src 'self'`, the same
+route the zone ruleset serves. No asset renamed (the v13.39 rename rule
+does not fire — the attr rides the served HTML, not a cache-first asset);
+no CONTENT_VERSION bump (the spec rule: only hand-written page text);
+SW v116 → **v117** as the routine served-HTML evict (stale SWR/
+offline-fallback page copies still carry the dead-endpoint beacon).
+Gates: check-seo-lastmod #9 now REQUIRES the override on both templates
+(a template edit dropping it — silently re-routing every beacon to the
+dead endpoint — fails the suite); the check-stats release pin moves to
+13.227-rumzone. Data impact: the 11-05 UTC day is permanently unwitnessed
+(zero events); ~1–17 human events/day is the documented scale, so the
+loss is a handful of samples; the GSC CWV acceptance gate is untouched.
+Live-verified post-deploy: the beacon POST goes to
+`sportsignal.ir/cdn-cgi/rum` → 204, and fresh 11-06 events land in the
+GraphQL within minutes (see the S11 session note §3).
+
 # v13.226.1-herowirefix — the elision hotfix: the syntax gate + the ADR-006 rename (public-13.72.js → 13.73.js)
 
 **Same night as v13.226, ~23:0x UTC — THE ELISION.** The bundle-builder's

@@ -200,11 +200,19 @@ function mkEnv(initial) {
   else bad("F-L1 regression: canonical emission no longer conditional, or /404 path is back");
 
   // 9. F-H3: the Web Analytics beacon on BOTH HTML templates + disclosure
-  const beacon = /<script type="module" src="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js" data-cf-beacon='\{"token": "[0-9a-f]+"\}'><\/script>/.source;
+  // v13.227-rumzone: the attr now also carries the send.to zone override —
+  // CF cut this site's beacon ingestion to the zone-relative /cdn-cgi/rum at
+  // 2026-11-05 00:00 UTC (the legacy absolute cloudflareinsights.com/cdn-cgi/rum
+  // 404s every POST; the S11 session measured ZERO RUM events for the whole
+  // 11-05 UTC day). The regex REQUIRES the override so a template edit that
+  // drops it (silently re-routing every beacon to the dead endpoint) fails
+  // this gate. Replay evidence: absolute → 404, zone-relative → 204 + the
+  // event visible in the GraphQL ~7 min later.
+  const beacon = /<script type="module" src="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js" data-cf-beacon='\{"token": "[0-9a-f]+", "send": \{"to": "\/cdn-cgi\/rum"\}\}'><\/script>/.source;
   if (new RegExp(beacon).test(shellSrc) && new RegExp(beacon.replace("<\\/script>", "<\\\\/script>")).test(publicSrc) &&
     /آنالیتیکس کلادفلر/.test(staticSrc))
-    ok("F-H3: CF Web Analytics beacon present in page-shell + homepage with the /privacy disclosure");
-  else bad("F-H3: beacon missing from a template or the privacy disclosure is gone");
+    ok("F-H3: CF Web Analytics beacon present in page-shell + homepage with the /privacy disclosure + the v13.227 send.to zone override (the 11-05 ingestion cutover)");
+  else bad("F-H3: beacon missing from a template, the send.to zone override is gone (the beacon would post to the dead absolute endpoint), or the privacy disclosure is gone");
 
   // 10. IndexNow drain: parked URLs join the next send
   if (/toSend = Array\.from\(new Set\(list\.concat\(\(parked && parked\.urls\) \|\| \[\]\)\)\)/.test(nowSrc) &&
