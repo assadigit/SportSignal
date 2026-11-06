@@ -373,6 +373,9 @@ curl .../values/notified_matches_v6 | jq '.[] | select(.key | contains("elche"))
 # 2. Tick evidence: notify breadcrumb in the completion blob
 curl .../values/cron_status_v1 | jq .notify
 #    f=fired n=new d=deferred s=per-type sent l=last processed match
+#    ch=channel-mirror breadcrumb {s,d,k,p} (v13.231-channelmirror) — null
+#    while TELEGRAM_CHANNEL_CHAT_ID is empty (the disabled default): the
+#    per-tick sent/deferred/skipped/paused channel counters
 # 3. Gap audit: tail one tick — "N notification gaps found out of M worthy matches"
 #    (Sep-13/14 CPU-kill outages left 6 such gaps: 24h/3h/1h/start legs missed,
 #     results still delivered by post-match legs — the expected degradation mode)
