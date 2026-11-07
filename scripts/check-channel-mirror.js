@@ -1183,7 +1183,7 @@ G("function tzOffsetMinutes(tz"),
     check("k. channel-mirror.ts imports no provider (no new fetch/polling class)", !/provider/.test(read("src/channel-mirror.ts").replace(/\/\/[^\n]*/g, "")));
     check("k. the engine claim sits AFTER saveNotifiedMatch (the private write-first gate)", (() => { const s = grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, deferred)"); return s.indexOf("await saveNotifiedMatch") >= 0 && s.indexOf("await claimChannelPost") > s.indexOf("await saveNotifiedMatch") && s.indexOf("await claimChannelPost") < s.indexOf("for (const g of chatGroups)"); })());
     check("k. the engine send sits AFTER the group loop (never inside a per-recipient loop)", (() => { const s = grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, deferred)"); return s.indexOf("await sendChannelPost") > s.indexOf("for (const g of chatGroups)"); })());
-    check("k. [vars] TELEGRAM_CHANNEL_CHAT_ID still EMPTY in wrangler.toml (disabled by default)", /TELEGRAM_CHANNEL_CHAT_ID = ""/.test(read("wrangler.toml")) && /TELEGRAM_CHANNEL_PUBLIC_URL = ""/.test(read("wrangler.toml")));
+    check("k. [vars] carry the ACTIVATED destination (the S21 Session-4 owner gate: the numeric -100… chat id + the https://t.me/SportSignalz public URL — PUBLIC values, not secrets; malformed values still fail closed in channelDestinations)", /TELEGRAM_CHANNEL_CHAT_ID = "-1003654328600"/.test(read("wrangler.toml")) && /TELEGRAM_CHANNEL_PUBLIC_URL = "https:\/\/t\.me\/SportSignalz"/.test(read("wrangler.toml")));
   }
 
 

@@ -4,6 +4,43 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.233-channelactivate — the Telegram Channel Mirror ACTIVATION: the owner gate satisfied, the destination live (deployed-enabled)
+
+**S21, 2026-11-07 (the Channel Mirror program's activation session —
+`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 4 + PART V §15, executed
+per the S20 hand-off; the runtime code is exactly the shipped
+`v13.232-channelhardening` — this release changes CONFIGURATION, not
+code).** The owner created the PUBLIC Persian football channel
+**`@SportSignalz`** (https://t.me/SportSignalz) and made
+`@SportSignalAlertsBot` an administrator with post permission. The
+non-posting validation battery (DISCOVERY §7.8) passed before anything was
+enabled: `getMe` (bot id 8988731008 — the documented identity), `getChat`
+→ `type: "channel"`, numeric id **`-1003654328600`** (the stable preferred
+form), public username resolvable, and `getChatMember` → `administrator`
+with `can_post_messages: true`. No test post was sent (the spec's rule:
+the first channel post is the first NATURALLY-OCCURRING eligible event).
+
+- **The destination vars are set in `wrangler.toml [vars]`** —
+  `TELEGRAM_CHANNEL_CHAT_ID = "-1003654328600"` and
+  `TELEGRAM_CHANNEL_PUBLIC_URL = "https://t.me/SportSignalz"`. PUBLIC
+  values, not secrets (spec PART IV §9 / DISCOVERY §7.1): a public
+  channel's id/URL is not a credential. `channelDestinations` now returns
+  the one live `fa-football` destination, so the six Session-2 hook
+  points and the Session-3 hardening are live. Rollback to disabled:
+  empty both vars and redeploy (RUNBOOK §13.6).
+- **Zero runtime-code diff vs v13.232**: every hook, claim, outbox, pause
+  and admin surface is exactly what S17–S19 shipped and verified. The
+  only source-tree changes are the version three-way (config.ts /
+  package.json / this entry), the wrangler vars, and the harness pins
+  below.
+- **Harness co-evolution (the same-commit rule):** `check-stats` demotes
+  the v13.232 LIVE pin to HISTORICAL and adds the v13.233 LIVE activation
+  pin (the version three-way + the SET vars + SW v119 unchanged);
+  `check-channel-mirror`'s k-section "[vars] still EMPTY" check flips to
+  assert the ACTIVATED destination values. SW stays v119 — a
+  server-side-only release, no client-referenced asset changed (the
+  RUNBOOK §2 rule).
+
 # v13.232-channelhardening — the Telegram Channel Mirror Session 3: reliability + observability hardening (deployed, still disabled by default)
 
 **S19, 2026-11-07 (the Channel Mirror program's third runtime session —

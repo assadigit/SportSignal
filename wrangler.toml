@@ -81,16 +81,18 @@ service = "ucl-notifier"
 
 [vars]
 TEHRAN_TZ = "Asia/Tehran"
-# v13.230-channelbase: the Telegram Channel Mirror destination — DISABLED
-# by default (empty vars). NOT secrets: a public channel id/url is not a
-# credential. TELEGRAM_CHANNEL_CHAT_ID accepts the numeric -100… channel id
-# (preferred, stable) or an interim @username; TELEGRAM_CHANNEL_PUBLIC_URL
-# is the https://t.me/… link the channel CTA uses. Both stay empty until
-# the owner creates the channel and supplies real values
-# (TELEGRAM_CHANNEL_MIRROR_SPEC.md PART VIII — never placeholders; see
-# src/channel-mirror.ts + docs/telegram-channel-mirror/DISCOVERY.md §7.1).
-TELEGRAM_CHANNEL_CHAT_ID = ""
-TELEGRAM_CHANNEL_PUBLIC_URL = ""
+# v13.230-channelbase: the Telegram Channel Mirror destination — ACTIVATED
+# 2026-11-07 (S21, the Session-4 owner gate): the owner created the PUBLIC
+# Persian football channel @SportSignalz and made @SportSignalAlertsBot an
+# administrator with post permission (validated non-postingly: getChat →
+# type "channel" + the numeric id; getChatMember → administrator +
+# can_post_messages true). NOT secrets: a public channel id/url is not a
+# credential. TELEGRAM_CHANNEL_CHAT_ID is the numeric -100… channel id
+# (the stable preferred form; @username accepted as an interim value);
+# TELEGRAM_CHANNEL_PUBLIC_URL is the https://t.me/… link the channel CTA
+# uses. Rollback to disabled: empty both vars and redeploy (RUNBOOK §13.6).
+TELEGRAM_CHANNEL_CHAT_ID = "-1003654328600"
+TELEGRAM_CHANNEL_PUBLIC_URL = "https://t.me/SportSignalz"
 
 # v12.x-ai-translate: Workers AI binding for automatic Farsi club name translation.
 # The worker's translateTeam function checks the AI-learned names (KV fa_teams_ai)
