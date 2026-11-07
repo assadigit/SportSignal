@@ -185,6 +185,38 @@ function makeD1(opts) {
       row.last_error = p[2] != null ? p[2] : null;
       return { meta: { changes: 1 } };
     }
+    // v13.232-channelhardening: the admin health-snapshot reads (the
+    // channelHealthSnapshot aggregates — grouped counts + the newest
+    // last_error + the lazy stuck-candidate scan).
+    if (s.startsWith("SELECT dest_key, state, COUNT(*)")) {
+      const byKey = new Map();
+      for (const [k, v] of [...t.channel_posts_v1.entries()]) {
+        const dest_key = k.split("\u0000")[0];
+        if (!byKey.has(dest_key)) byKey.set(dest_key, new Map());
+        const g = byKey.get(dest_key);
+        if (!g.has(v.state)) g.set(v.state, { dest_key, state: v.state, n: 0, attempts: 0, oldest: null, last_sent: null });
+        const row = g.get(v.state);
+        row.n++;
+        row.attempts += v.attempts || 0;
+        if (row.oldest == null || v.claimed_at < row.oldest) row.oldest = v.claimed_at;
+        if (v.sent_at != null && (row.last_sent == null || v.sent_at > row.last_sent)) row.last_sent = v.sent_at;
+      }
+      return { results: [...byKey.values()].flatMap((g) => [...g.values()]) };
+    }
+    if (s.startsWith("SELECT dest_key, last_error, claimed_at")) {
+      const rows = [...t.channel_posts_v1.entries()]
+        .filter(([k, v]) => v.last_error != null)
+        .map(([k, v]) => ({ dest_key: k.split("\u0000")[0], last_error: v.last_error, claimed_at: v.claimed_at }))
+        .sort((a, b) => b.claimed_at - a.claimed_at);
+      return { results: rows };
+    }
+    if (s.startsWith("SELECT dest_key, event_key, state, claimed_at, last_error")) {
+      const cutoff = p[0];
+      const rows = [...t.channel_posts_v1.entries()]
+        .filter(([k, v]) => (v.state === "claimed" || v.state === "failed") && v.sent_at == null && v.claimed_at < cutoff)
+        .map(([k, v]) => ({ dest_key: k.split("\u0000")[0], event_key: k.split("\u0000")[1], state: v.state, claimed_at: v.claimed_at, last_error: v.last_error }));
+      return { results: rows };
+    }
     throw new Error("mock D1: unrecognized statement: " + s.slice(0, 80));
   }
   const d1 = {
@@ -250,9 +282,20 @@ function makeFetchDispatcher() {
       };
       state.telegramSends.push(entry);
       const verdict = await state.onTelegram(entry, u, init);
-      entry.ok = verdict !== "dead" && verdict !== "fail";
+      entry.ok = verdict !== "dead" && verdict !== "fail" && !(verdict && typeof verdict === "object" && verdict.status >= 400) && verdict !== "network";
       if (verdict === "dead") return json({ ok: false, error_code: 403, description: "Forbidden: bot was blocked by the user" }, 403);
       if (verdict === "fail") return json({ ok: false, error_code: 500, description: "internal" }, 500);
+      // v13.232-channelhardening: the failure-injection verdicts — an OBJECT
+      // builds an exact error response ({status, description, retryAfter})
+      // so scenarios can fingerprint every 400/403 class through the REAL
+      // senders; "network" throws (the fetch-level outage class).
+      if (verdict && typeof verdict === "object") {
+        const st = verdict.status || 400;
+        const headers = { "content-type": "application/json" };
+        if (verdict.retryAfter != null) headers["retry-after"] = String(verdict.retryAfter);
+        return new Response(JSON.stringify({ ok: false, error_code: st, description: verdict.description || ("Bad Request: " + (verdict.cls || "injected")) }), { status: st, headers });
+      }
+      if (verdict === "network") throw new Error("network down (injected)");
       return json({ ok: true, result: { message_id: Math.floor(Math.random() * 1e6) } });
     }
     for (const h of state.handlers) {

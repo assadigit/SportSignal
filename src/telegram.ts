@@ -80,15 +80,65 @@ export function withTrialFooter(text, cap?, md?) {
   return text + "\n" + app;
 }
 
+// v13.232-channelhardening (Session 3, DISCOVERY §7.6 + spec PART IV §11):
+// the sanitized Telegram failure-class fingerprint. PURE — (status, body) →
+// a short [a-z-] CLASS, never the raw description (which can echo payload
+// fragments). The transport's own dead-chat regex is UNCHANGED and stays
+// the verdict authority; this is the finer-grained, channel-policy-facing
+// view of the same responses. The class vocabulary:
+//   rate-limited (429) · server-error (5xx) · network (a thrown fetch) ·
+//   chat-not-found / need-administrator-rights / bot-not-a-member /
+//   dead-chat / bad-request-markdown / bad-request (other 4xx)
+// Which of these are PERMANENT for a channel destination is channel policy
+// (src/channel-mirror.ts) — the transport only reports.
+export function classifyTelegramFailure(status, body) {
+  const s = String(body == null ? "" : body);
+  if (status === 429) return "rate-limited";
+  if (status >= 500) return "server-error";
+  if (status >= 400 && status < 500) {
+    if (/chat not found/i.test(s)) return "chat-not-found";
+    if (/need administrator rights|not enough rights/i.test(s)) return "need-administrator-rights";
+    if (/bot is not a member|bot was kicked|kicked from the/i.test(s)) return "bot-not-a-member";
+    if (/blocked by the user|user is deactivated/i.test(s)) return "dead-chat";
+    if (/parse entities/i.test(s)) return "bad-request-markdown";
+    return "bad-request";
+  }
+  return "network";
+}
+
+// v13.232-channelhardening: the channel-drain hook — a dependency inversion
+// so the transport never imports the channel policy module (the flat concat
+// keeps its one-way layering: telegram.ts is a root, channel-mirror.ts sits
+// below it and REGISTERS here at module scope). drainOutbox calls the hook
+// when a dest-bearing outbox entry reaches an outcome; the hook (channel-
+// mirror's channelDrainOutcome) updates the D1 claim row / pauses the
+// destination. Null = unregistered (an isolated span-eval) → the drain's
+// channel branch is a no-op — the PRIVATE queue semantics are identical.
+var CHANNEL_DRAIN_HOOK = null;
+export function setChannelDrainHook(fn) { CHANNEL_DRAIN_HOOK = fn; }
+
+// The channel context a channel-path caller passes as the optional 5th
+// argument: {k: destKey, e: eventKey, cls} — the first two ride outbox
+// entries as the `dest` field (so a queued channel retry is distinguishable
+// from a private one and the drain can update the claim row); `cls` is the
+// OUT-param the sender fills with classifyTelegramFailure's verdict so the
+// channel layer can fingerprint 400/403 bodies the verdict alone flattens
+// to false. chanDest() projects the persistable part (never cls).
+function chanDest(chan) {
+  return chan && chan.k && chan.e ? { k: chan.k, e: chan.e } : undefined;
+}
+
 // Send a MarkdownV2 message. Returns true on success, "dead" when the chat
 // is gone (not found / blocked / kicked / deactivated), false otherwise.
 // `keyboard` (optional) is a Telegram InlineKeyboardMarkup object:
 // {inline_keyboard: [[{text, callback_data}]]}.
+// `chan` (optional, v13.232) is the channel context above — private callers
+// never pass it; channel callers pass the ctx their hook runner handed them.
 // v13.9-reliability #3: on final failure (3 retries exhausted), the message
 // is written to the dead-letter outbox (KV pending_sends_v1) so the next
 // cron sweep can retry it with exponential backoff. A message is NEVER
 // silently lost — only dropped when the chat is confirmed dead.
-export async function sendTelegram(env: Env, text, chatId, keyboard?) {
+export async function sendTelegram(env: Env, text, chatId, keyboard?, chan?) {
   // v13.115-trialfoot: footer BEFORE the payload AND before every outbox
   // push below — the outbox stores the footered text, so the drain's
   // sendTelegramDirect re-append is a no-op (idempotent guard).
@@ -111,7 +161,7 @@ export async function sendTelegram(env: Env, text, chatId, keyboard?) {
     // WAITS OUT the pause (bounded); only a pause that outlives the bound
     // defers via the outbox.
     if (Date.now() < TELEGRAM_PAUSE_UNTIL && !(await waitTelegramPause())) {
-      await outboxPush(env, text, chatId, keyboard).catch((e) => console.warn("Outbox push failed: " + e.message));
+      await outboxPush(env, text, chatId, keyboard, null, chanDest(chan)).catch((e) => console.warn("Outbox push failed: " + e.message));
       return false;
     }
     await paceTelegram();
@@ -119,7 +169,7 @@ export async function sendTelegram(env: Env, text, chatId, keyboard?) {
       // v13.69: subrequest-budget exhaustion defers via the outbox too
       // (was another silent `return false` — a message the next tick's
       // drain can and should recover).
-      await outboxPush(env, text, chatId, keyboard).catch((e) => console.warn("Outbox push failed: " + e.message));
+      await outboxPush(env, text, chatId, keyboard, null, chanDest(chan)).catch((e) => console.warn("Outbox push failed: " + e.message));
       return false;
     }
     try {
@@ -129,10 +179,12 @@ export async function sendTelegram(env: Env, text, chatId, keyboard?) {
         body: JSON.stringify(payload)
       });
       if (res.ok) {
+        if (chan) chan.cls = null; // success clears any earlier attempt's class
         vlog(`\u2705 Telegram${keyboard ? " (keyboard)" : ""} sent to ${chatId}`);
         return true;
       }
       const error = await res.text();
+      if (chan) chan.cls = classifyTelegramFailure(res.status, error); // v13.232
       console.error(`Telegram${keyboard ? " keyboard" : ""} error (attempt ${attempt}/${CONFIG.TELEGRAM_RETRY_ATTEMPTS}):`, error);
       if (res.status === 429) {
         const retryAfter = parseInt(res.headers.get("retry-after") || "2");
@@ -150,6 +202,7 @@ export async function sendTelegram(env: Env, text, chatId, keyboard?) {
         return false;
       }
     } catch (error) {
+      if (chan) chan.cls = "network"; // v13.232
       console.error(`Telegram network error (attempt ${attempt}/${CONFIG.TELEGRAM_RETRY_ATTEMPTS}):`, error.message);
     }
     if (attempt < CONFIG.TELEGRAM_RETRY_ATTEMPTS) {
@@ -158,13 +211,21 @@ export async function sendTelegram(env: Env, text, chatId, keyboard?) {
   }
   // v13.9-reliability #3: all 3 retries exhausted → dead-letter outbox.
   // The message will be retried by the next cron sweep's drainOutbox step.
-  await outboxPush(env, text, chatId, keyboard).catch((e) => console.warn("Outbox push failed: " + e.message));
+  await outboxPush(env, text, chatId, keyboard, null, chanDest(chan)).catch((e) => console.warn("Outbox push failed: " + e.message));
   return false;
 }
 
 // v13.9-reliability #3: push a failed send to the outbox KV list. Capped at
 // KV_OUTBOX_MAX entries (oldest dropped) so a sustained outage doesn't
 // bloat KV. Each entry carries an attempt count for exponential backoff.
+// v13.232-channelhardening: entries may carry an optional `dest`
+// {k: destKey, e: eventKey} — the additive-field precedent of v13.125's
+// `sticker`. A dest-bearing entry is a CHANNEL retry: the drain reports its
+// outcome to the channel-drain hook (claim-row update / pause). Entries
+// written before v13.232 have no field and drain EXACTLY as before — the
+// private queue's cap/age/attempt semantics are unchanged, channel entries
+// share the same single bounded list (never a second queue), and the hook
+// is best-effort: a hook failure can never break the drain itself.
 // v13.69-pacenotify: serialized per isolate. The pause/budget deferral
 // paths in sendTelegram can now reach the outbox from several concurrent
 // fan-out promises — concurrent read-modify-write cycles on the same KV key
@@ -186,12 +247,12 @@ var OUTBOX_CHAIN: Promise<void> = Promise.resolve();
 // the payload rule: a table must not die with its flourish).
 // `sticker` is backwards-compatible: entries written before v13.125 have
 // no field and drain text-only, exactly as before.
-export async function outboxPush(env: Env, text, chatId, keyboard?, sticker?): Promise<boolean> {
+export async function outboxPush(env: Env, text, chatId, keyboard?, sticker?, dest?): Promise<boolean> {
   let ok = false;
   const run = OUTBOX_CHAIN.then(async () => {
     try {
       const list = await env.STATE.get(CONFIG.KV_OUTBOX, "json").catch(() => null) || [];
-      list.push({ text, chatId, keyboard: keyboard || null, sticker: sticker || null, ts: Date.now(), attempts: 0 });
+      list.push({ text, chatId, keyboard: keyboard || null, sticker: sticker || null, dest: dest || null, ts: Date.now(), attempts: 0 });
       // Cap: drop oldest entries beyond the max.
       while (list.length > (CONFIG.KV_OUTBOX_MAX || 200)) list.shift();
       await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(list), { expirationTtl: 7 * 86400 });
@@ -244,6 +305,23 @@ export async function drainOutbox(env: Env) {
   let drained = 0, dead = 0;
   const requeue = [];
   for (const item of due) {
+    // v13.232-channelhardening: a dest-bearing entry is a CHANNEL retry —
+    // build its channel ctx so sendTelegramDirect fingerprints the failure
+    // class, then report every outcome to the channel-drain hook (which
+    // updates the claim row / pauses the destination). The hook is
+    // best-effort and try/catch'd: a channel-telemetry failure can NEVER
+    // break the private drain. Entries without dest (every private one,
+    // and every pre-v13.232 channel one) take the exact old path.
+    const chanCtx = item.dest && item.dest.k && item.dest.e ? { k: item.dest.k, e: item.dest.e, cls: null } : null;
+    const chanReport = async (outcome, cls) => {
+      if (!chanCtx || !CHANNEL_DRAIN_HOOK) return null;
+      try {
+        return await CHANNEL_DRAIN_HOOK(env, item.dest, outcome, cls, item.chatId);
+      } catch (e) {
+        console.warn("channel-mirror: drain hook isolated (the private drain is untouched): " + (e && e.message));
+        return null;
+      }
+    };
     // v13.125-stickeroutbox: an entry that still carries a sticker is an
     // unfinished [sticker][text] pair — the logo goes FIRST (the owner's
     // [laliga sticker][laliga table] layout), in THIS invocation's fresh
@@ -258,17 +336,30 @@ export async function drainOutbox(env: Env) {
       if (sr === "dead") { dead++; continue; }
       if (sr === true) item.sticker = null;
     }
-    const r = await sendTelegramDirect(env, item.text, item.chatId, item.keyboard);
+    const r = await sendTelegramDirect(env, item.text, item.chatId, item.keyboard, chanCtx);
     if (r === true) {
       drained++;
+      await chanReport("sent", chanCtx ? chanCtx.cls : null);
     } else if (r === "dead") {
       dead++;
+      await chanReport("dead", chanCtx ? chanCtx.cls : null);
     } else {
+      // A non-dead failure. For a channel entry, ask the hook whether the
+      // fingerprinted class is PERMANENT — a paused/unreachable destination
+      // must not ride 6 doomed attempts: the hook pauses + marks the claim
+      // unreachable and the entry is dropped here (bounded, never-spam).
+      // Transient/unknown classes keep the exact private semantics below.
+      const policy = chanCtx ? await chanReport("fail", chanCtx.cls) : null;
+      if (policy === "permanent") continue; // dropped — the claim row is the record
       // Still failing — re-queue with incremented attempt count (unless
       // we've hit the max 6 attempts, then drop to avoid infinite retry).
       item.attempts = (item.attempts || 0) + 1;
       item.ts = Date.now();
       if (item.attempts <= 6) requeue.push(item);
+      // the dead-letter: the bounded retry lane is exhausted — the class
+      // the reconciliation surfaces is the LANE's death, not the last
+      // transient error (already visible on the claim's earlier states)
+      else if (chanCtx) await chanReport("dropped", "outbox-exhausted");
     }
   }
   if (requeue.length) {
@@ -281,7 +372,10 @@ export async function drainOutbox(env: Env) {
 
 // Direct send without outbox recursion (so the drain loop can't re-outbox).
 // Same retry/429/dead-chat logic as sendTelegram but no outbox push on fail.
-export async function sendTelegramDirect(env: Env, text, chatId, keyboard?) {
+// `chan` (optional, v13.232): the channel ctx — the same cls fingerprinting
+// as sendTelegram; the drain (the only caller that passes it) uses the class
+// to route the channel outcome through the channel-drain hook.
+export async function sendTelegramDirect(env: Env, text, chatId, keyboard?, chan?) {
   // v13.115-trialfoot: the drain path — outbox entries written by THIS
   // version already carry the footer (idempotent no-op); entries queued
   // by an older deploy get their footer here, at delivery time.
@@ -304,8 +398,9 @@ export async function sendTelegramDirect(env: Env, text, chatId, keyboard?) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload)
       });
-      if (res.ok) return true;
+      if (res.ok) { if (chan) chan.cls = null; return true; }
       const error = await res.text();
+      if (chan) chan.cls = classifyTelegramFailure(res.status, error); // v13.232
       if (res.status === 429) {
         const retryAfter = parseInt(res.headers.get("retry-after") || "2");
         TELEGRAM_PAUSE_UNTIL = Math.max(TELEGRAM_PAUSE_UNTIL, Date.now() + Math.min(Math.max(retryAfter, 1), 10) * 1e3);
@@ -316,6 +411,7 @@ export async function sendTelegramDirect(env: Env, text, chatId, keyboard?) {
         return /chat not found|blocked by the user|bot was kicked|deactivated/i.test(error) ? "dead" : false;
       }
     } catch (error) {
+      if (chan) chan.cls = "network"; // v13.232
       console.error(`Telegram direct (attempt ${attempt}) error:`, error.message);
     }
     if (attempt < CONFIG.TELEGRAM_RETRY_ATTEMPTS) await new Promise((r) => setTimeout(r, 1e3 * attempt));
@@ -370,7 +466,7 @@ export async function sendDice(env: Env, chatId, emoji) {
 // blips). Same pause/pacing semantics as the text senders; 2 attempts —
 // the photo upload is the heaviest call, and the text fallback is the
 // safety net behind it.
-export async function sendPhotoBinary(env: Env, chatId, pngBuffer: ArrayBuffer, caption?, parseMode?: boolean) {
+export async function sendPhotoBinary(env: Env, chatId, pngBuffer, caption?, parseMode?) {
   // v13.115-trialfoot: the match-card caption is a message footer too
   // (1024 = Telegram's caption ceiling). v13.119-hbfix: parseMode is the
   // md flag — MarkdownV2 captions get the escaped footer, plain-text

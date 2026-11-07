@@ -33,7 +33,11 @@ const ADMIN_ONLY_ALLOWLIST = {
   "notify-audit.ts": ["the per-match gap report (6h rate-limit)", "the per-chat delivery gap report (6h rate-limit)"],
   "users.ts": ["checkUserCap — the free-tier capacity warning"],
   "admin-bot.ts": ["notifyAdminUserJoined/Left pages", "the /admin /members /status /broadcast toolbelt replies"],
-  "providers.ts": ["the all-sources-down degradation alert is FAN-OUT (all chats) — but its KV stamp write is admin-free; listed here for the alert's KV write only"]
+  "providers.ts": ["the all-sources-down degradation alert is FAN-OUT (all chats) — but its KV stamp write is admin-free; listed here for the alert's KV write only"],
+  // v13.232-channelhardening: the channel pause page (pageChannelPaused) —
+  // admin-only by construction (parseInt(env.CHAT_ID), the alertPhaseError
+  // pattern, rate-limited 1/30min, the sanitized CLASS only).
+  "channel-mirror.ts": ["pageChannelPaused — the channel-pause admin page (rate-limited, sanitized class only)"]
 };
 
 // Fan-out target patterns: a send whose chat argument is one of these is a

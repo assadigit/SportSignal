@@ -67,7 +67,13 @@
 // harness must never touch the channel — DISCOVERY §7.4).
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { escapeMarkdownCharacters } from "./utils";
+import { escapeMarkdownCharacters, toFaDigits } from "./utils";
+// v13.232-channelhardening: the transport seam this module now consumes —
+// sendTelegram for the rate-limited admin pause page (the alertPhaseError
+// pattern), setChannelDrainHook to REGISTER the drain-side outcome handler
+// (a dependency inversion: telegram.ts never imports this module, keeping
+// the concat's one-way layering — this file sits below telegram.ts).
+import { sendTelegram, setChannelDrainHook } from "./telegram";
 
 // ---------- destination configuration (spec PART IV §8–§9; DISCOVERY §7.1) ----------
 
@@ -202,8 +208,24 @@ export async function recordChannelState(env: Env, dest, eventKey, state, errorC
 // the marker is written only on transitions, so the steady-state cost is
 // ≤1 read/min while the channel is active, 0 while unconfigured, and an
 // owner-side KV delete propagates within a minute.
-var CHANNEL_PAUSE_MEM = { kv: null, at: 0, value: null };
+// v13.232-channelhardening: the memo is ALSO keyed by the configured chat
+// id, and a marker pinned to a DIFFERENT chat id than the currently-
+// configured one (pauseAppliesTo below) is a STALE pause — the config
+// changed since the pause was written, which is the documented un-pause
+// path (an operator fixing a wrong channel id must not stay paused).
+var CHANNEL_PAUSE_MEM = { kv: null, chat: null, at: 0, value: null };
 const CHANNEL_PAUSE_MEMO_MS = 60 * 1000;
+
+// Does this pause marker still govern the CURRENTLY-configured destination?
+// An old-shape marker (no chatId — written before v13.232) keeps pausing
+// (conservative: never blind-open an unknown pause). A marker whose chatId
+// differs from the configured one is stale: the config changed, the gate
+// opens, and the next real transition rewrites the marker.
+function pauseAppliesTo(marker, chatId) {
+  if (!marker || marker.chatId == null) return true;
+  if (chatId == null) return true; // an unconfigured reader (the drain) sees the pause as-is
+  return String(marker.chatId) === String(chatId);
+}
 
 // Returns the pause marker object ({paused:true, reason, at}) when the
 // channel is paused, else null. A KV read failure fails OPEN here on
@@ -213,10 +235,12 @@ const CHANNEL_PAUSE_MEMO_MS = 60 * 1000;
 // next call retries.
 export async function pausedChannel(env: Env) {
   if (!env || !env.STATE) return null;
+  const dests = channelDestinations(env);
+  const chatId = dests.length ? dests[0].chatId : null;
   const now = Date.now();
-  if (CHANNEL_PAUSE_MEM.kv === env.STATE && now - CHANNEL_PAUSE_MEM.at < CHANNEL_PAUSE_MEMO_MS) {
+  if (CHANNEL_PAUSE_MEM.kv === env.STATE && CHANNEL_PAUSE_MEM.chat === chatId && now - CHANNEL_PAUSE_MEM.at < CHANNEL_PAUSE_MEMO_MS) {
     const v = CHANNEL_PAUSE_MEM.value;
-    return v && v.paused ? v : null;
+    return v && v.paused && pauseAppliesTo(v, chatId) ? v : null;
   }
   let value = null;
   try {
@@ -224,8 +248,8 @@ export async function pausedChannel(env: Env) {
   } catch (e) {
     return null;
   }
-  CHANNEL_PAUSE_MEM = { kv: env.STATE, at: now, value: value || null };
-  return value && value.paused ? value : null;
+  CHANNEL_PAUSE_MEM = { kv: env.STATE, chat: chatId, at: now, value: value || null };
+  return value && value.paused && pauseAppliesTo(value, chatId) ? value : null;
 }
 
 // Un-memoized read used by the transition writers (they must see the
@@ -236,7 +260,8 @@ export async function pausedChannel(env: Env) {
 async function rawPauseRead(env: Env) {
   try {
     const v = await env.STATE.get(CONFIG.KV_CHANNEL_MIRROR, "json");
-    CHANNEL_PAUSE_MEM = { kv: env.STATE, at: Date.now(), value: v || null };
+    const dests = channelDestinations(env);
+    CHANNEL_PAUSE_MEM = { kv: env.STATE, chat: dests.length ? dests[0].chatId : null, at: Date.now(), value: v || null };
     return v || null;
   } catch (e) {
     return null;
@@ -247,21 +272,52 @@ function pauseReasonClass(reason) {
   return String(reason == null ? "" : reason).replace(/[^A-Za-z0-9-]/g, "").slice(0, 40) || "unspecified";
 }
 
+// v13.232-channelhardening: the rate-limited admin page on a real pause
+// transition — the alertPhaseError pattern (max 1 page / 30 min per
+// isolate, sent to the admin chat through the existing sender). The body
+// carries the sanitized CLASS only: no chat id, no response body, no
+// token — the spec's sanitized-observability law.
+var CHANNEL_PAGE_AT = 0;
+async function pageChannelPaused(env: Env, reason) {
+  try {
+    const now = Date.now();
+    if (now - CHANNEL_PAGE_AT < 30 * 60 * 1000) return;
+    CHANNEL_PAGE_AT = now;
+    const adminChat = parseInt(env.CHAT_ID);
+    if (isNaN(adminChat)) return;
+    await sendTelegram(env, "\u26A0\uFE0F *\u0645\u06CC\u0631\u0648\u0631 \u06A9\u0627\u0646\u0627\u0644 \u062A\u0644\u06AF\u0631\u0627\u0645 \u0645\u062A\u0648\u0642\u0641 \u0634\u062F*\n\u062F\u0644\u06CC\u0644: `" + reason + "`\n\u0627\u0631\u0633\u0627\u0644 \u0628\u0647 \u06A9\u0627\u0646\u0627\u0644 \u062A\u0627 \u0631\u0641\u0639 \u0645\u0634\u06A9\u0644 \u06CC\u0627 \u062A\u063A\u06CC\u06CC\u0631 \u067E\u06CC\u06A9\u0631\u0628\u0646\u062F\u06CC \u0645\u062A\u0648\u0642\u0641 \u0627\u0633\u062A\\.", adminChat).catch(() => {});
+  } catch (e) {
+    // the page is best-effort telemetry — never breaks the transition write
+  }
+}
+
 // Transition write INTO paused (a permanent channel error class — the
-// Session-2/3 send path calls this after classifying a 400/403-class
-// failure). Idempotent: re-marking the SAME reason does not rewrite (the
-// marker is written only on transitions, never per tick). Returns true
-// when a transition write actually happened.
-export async function markChannelPaused(env: Env, reason) {
+// send path calls this after classifying a 400/403-class failure, and the
+// drain-side hook after a queued entry's permanent/dead outcome). The
+// marker now carries the chatId it paused under (internal state — never
+// surfaced), so a LATER config change to a different id is detectable as a
+// stale pause (pauseAppliesTo). `chatIdHint` (the drain passes the queued
+// entry's own chat id) is used when the env itself is unconfigured — a
+// rollback emptied the vars while entries were still queued: the pause
+// still records WHICH destination was bad, so re-configuring the same id
+// does not blind-open a known-bad destination.
+// Idempotent: re-marking the SAME reason does not rewrite (the marker is
+// written only on transitions, never per tick); a real transition also
+// pages the admin (rate-limited above). Returns true when a transition
+// write actually happened.
+export async function markChannelPaused(env: Env, reason, chatIdHint?) {
   if (!env || !env.STATE || (env as any).SIM_NOTIFIED_KEY) return false;
   const cls = pauseReasonClass(reason);
+  const dests = channelDestinations(env);
+  const chatId = dests.length ? dests[0].chatId : (chatIdHint != null ? String(chatIdHint) : null);
   const cur = await rawPauseRead(env);
   if (cur && cur.paused && cur.reason === cls) return false;
-  const marker = { paused: true, reason: cls, at: Date.now() };
+  const marker = { paused: true, reason: cls, at: Date.now(), chatId: chatId };
   try {
     await env.STATE.put(CONFIG.KV_CHANNEL_MIRROR, JSON.stringify(marker));
-    CHANNEL_PAUSE_MEM = { kv: env.STATE, at: Date.now(), value: marker };
+    CHANNEL_PAUSE_MEM = { kv: env.STATE, chat: dests.length ? dests[0].chatId : null, at: Date.now(), value: marker };
     console.warn("channel-mirror: destination paused (" + cls + ") — channel sends suppressed until config change / owner action");
+    await pageChannelPaused(env, cls);
     return true;
   } catch (e) {
     console.warn("channel-mirror: pause-marker write failed: " + (e && e.message));
@@ -276,10 +332,11 @@ export async function markChannelResumed(env: Env) {
   if (!env || !env.STATE || (env as any).SIM_NOTIFIED_KEY) return false;
   const cur = await rawPauseRead(env);
   if (!cur || !cur.paused) return false;
-  const marker = { paused: false, reason: cur.reason || null, at: cur.at || null, resumed_at: Date.now() };
+  const marker = { paused: false, reason: cur.reason || null, at: cur.at || null, chatId: cur.chatId || null, resumed_at: Date.now() };
   try {
     await env.STATE.put(CONFIG.KV_CHANNEL_MIRROR, JSON.stringify(marker));
-    CHANNEL_PAUSE_MEM = { kv: env.STATE, at: Date.now(), value: marker };
+    const dests = channelDestinations(env);
+    CHANNEL_PAUSE_MEM = { kv: env.STATE, chat: dests.length ? dests[0].chatId : null, at: Date.now(), value: marker };
     console.log("channel-mirror: destination resumed (was paused: " + (cur.reason || "unspecified") + ")");
     return true;
   } catch (e) {
@@ -487,21 +544,37 @@ export async function claimChannelPost(env: Env, eventKey) {
   return null;
 }
 
-// SEND phase — after the private group loop. `sender(chEnv, dest)` composes
-// the Persian/Asia-Tehran variant and sends via the EXISTING telegram.ts
-// senders, returning the sender's verdict (true | "dead" | false). Outcome
-// classification (Session-2 minimal — Session 3 completes the end-to-end
-// failure-injection matrix): true ⇒ sent; "dead" ⇒ the dead-chat regex
-// matched (an unreachable channel: wrong id / bot kicked) ⇒ PAUSE the
-// destination (transition write) + record unreachable — the channel is
-// never dead-chat-pruned; false ⇒ transient/ambiguous ⇒ record failed (the
-// text paths already outboxed inside sendTelegram; the stuck-claim
-// reconciliation is Session 3). NEVER throws into the caller.
+// SEND phase — after the private group loop. `sender(chEnv, dest, chan)`
+// composes the Persian/Asia-Tehran variant and sends via the EXISTING
+// telegram.ts senders, returning the sender's verdict (true | "dead" |
+// false) and passing `chan` (the channel ctx {k, e, cls}) through to the
+// TEXT senders so (a) every transient retry the transport queues is a
+// dest-bearing outbox entry the drain can reconcile with this claim, and
+// (b) the 400/403 body the verdict flattens to false is fingerprinted for
+// the pause decision below.
+//
+// v13.232-channelhardening — the COMPLETE outcome classification (the S18
+// residual note 1 closed; DISCOVERY §7.6):
+//   true  ⇒ sent.
+//   "dead"⇒ the transport's dead-chat regex matched, or a sticker/card
+//           sender returned "dead" — an unreachable channel ⇒ PAUSE the
+//           destination (transition write + rate-limited admin page) +
+//           record unreachable. The channel is never dead-chat-pruned.
+//   false ⇒ read chan.cls: a PERMANENT class (chat-not-found /
+//           need-administrator-rights / bot-not-a-member / dead-chat /
+//           bad-request-markdown — retrying cannot help) ⇒ unreachable +
+//           PAUSE, same as dead; a TRANSIENT/unknown class (rate-limited,
+//           server-error, network, bad-request) ⇒ record failed with the
+//           class and leave the recovery to the outbox (if the transport
+//           queued one) and the stuck-claim reconciliation (if not) —
+//           at-most-once, never a blind re-send.
+// NEVER throws into the caller.
 export async function sendChannelPost(env: Env, claim, sender) {
   if (!claim || !claim.dest || !claim.eventKey) return { ok: false, verdict: null };
+  const chan = { k: claim.dest.key, e: claim.eventKey, cls: null };
   let verdict: any = false;
   try {
-    verdict = await sender(channelEnvFor(env), claim.dest);
+    verdict = await sender(channelEnvFor(env), claim.dest, chan);
   } catch (e) {
     console.warn("channel-mirror: send hook isolated (the private path is untouched): " + (e && e.message));
     verdict = false;
@@ -513,12 +586,16 @@ export async function sendChannelPost(env: Env, claim, sender) {
   }
   if (verdict === "dead") {
     CHANNEL_TICK_STATS.deferred++;
-    await markChannelPaused(env, "dead-chat");
-    await recordChannelState(env, claim.dest, claim.eventKey, "unreachable", "dead-chat");
+    await channelDeliveryFailure(env, claim, chan.cls && isPermanentChannelClass(chan.cls) ? chan.cls : "dead-chat");
     return { ok: false, verdict: verdict };
   }
   CHANNEL_TICK_STATS.deferred++;
-  await recordChannelState(env, claim.dest, claim.eventKey, "failed", "transient");
+  const cls = chan.cls || "transient";
+  if (isPermanentChannelClass(cls)) {
+    await channelDeliveryFailure(env, claim, cls);
+  } else {
+    await recordChannelState(env, claim.dest, claim.eventKey, "failed", cls);
+  }
   return { ok: false, verdict: verdict };
 }
 
@@ -529,4 +606,255 @@ export async function mirrorChannelPost(env: Env, eventKey, sender) {
   if (!claim) return { ok: false, claimed: false, verdict: null };
   const r = await sendChannelPost(env, claim, sender);
   return { ok: r.ok, claimed: true, verdict: r.verdict };
+}
+
+// ============================================================================
+// v13.232-channelhardening — SESSION 3: the permanent-class vocabulary, the
+// drain-side outcome hook, the stuck-claim reconciliation and the admin-only
+// health surface (DISCOVERY §7.6/§7.7 + spec PART IV §11/§13).
+// ============================================================================
+
+// The classes retrying cannot fix — each of these means the DESTINATION (or
+// the payload's parseability) is broken, so every further send is doomed:
+// pause the destination (rate-limited admin page) + mark the claim
+// unreachable. Everything else (rate-limited, server-error, network,
+// unknown bad-request) stays failed/outboxed — the bounded retries own it.
+const CHANNEL_PERMANENT_CLASSES = [
+  "chat-not-found",            // 400: the id is wrong or the channel is gone
+  "need-administrator-rights", // 400: the bot is in the channel but cannot post
+  "bot-not-a-member",          // 403: the bot was kicked / was never a member
+  "dead-chat",                 // the transport's dead-chat regex (private vocabulary)
+  "bad-request-markdown",      // 400 can't parse entities: the payload itself is undeliverable
+];
+
+export function isPermanentChannelClass(cls) {
+  return typeof cls === "string" && CHANNEL_PERMANENT_CLASSES.indexOf(cls) >= 0;
+}
+
+// The permanent-class settlement shared by the send path and the drain hook:
+// pause the destination (transition write + the rate-limited admin page)
+// and mark the claim unreachable. Never throws.
+async function channelDeliveryFailure(env: Env, claim, errorClass) {
+  await markChannelPaused(env, errorClass, claim && claim.dest ? claim.dest.chatId : null);
+  if (claim && claim.dest && claim.eventKey) {
+    await recordChannelState(env, claim.dest, claim.eventKey, "unreachable", errorClass);
+  }
+}
+
+// ---------- the drain-side outcome hook (registered into telegram.ts) ----------
+//
+// drainOutbox reports every dest-bearing outbox entry's outcome here (the
+// setChannelDrainHook registration at module scope wires it; the transport
+// stays channel-agnostic). Outcomes:
+//   "sent"    → recordChannelState 'sent' — the queued retry landed.
+//   "dead"    → unreachable + pause (the destination is gone for the
+//               dead-class reason; the entry is dropped by the drain).
+//   "fail"    → a non-dead false: return "permanent" when the fingerprinted
+//               class is a permanent channel class (the pause + unreachable
+//               happen HERE; the drain then drops the entry instead of
+//               riding 6 doomed attempts), else "transient" (the drain
+//               re-queues with the normal bounded backoff — the claim row
+//               already says failed and the reconciliation owns the tail).
+//   "dropped" → the entry exhausted its 6 attempts: record failed with the
+//               'outbox-exhausted' class — report-only; at-most-once
+//               forbids any automatic re-send.
+// Unconfigured env (a rollback emptied the vars while entries were queued):
+// no claim updates (the ledger is ignorable by design), "transient"
+// verdicts so the entries still ride the normal bounded retries, and the
+// pause marker still records the bad destination (chatIdHint = the entry's
+// own chat id) so re-configuring the SAME id does not blind-open it.
+export async function channelDrainOutcome(env: Env, destRef, outcome, cls, chatIdHint?) {
+  try {
+    if (!env || !destRef || !destRef.k || !destRef.e) return null;
+    let dest = null;
+    for (const d of channelDestinations(env)) {
+      if (d.key === destRef.k) { dest = d; break; }
+    }
+    const errClass = cls ? String(cls).replace(/[^A-Za-z0-9-]/g, "").slice(0, 40) : null;
+    if (outcome === "sent") {
+      if (dest) await recordChannelState(env, dest, destRef.e, "sent", null);
+      return null;
+    }
+    if (outcome === "dead") {
+      const reason = errClass && isPermanentChannelClass(errClass) ? errClass : "dead-chat";
+      await markChannelPaused(env, reason, dest ? dest.chatId : chatIdHint);
+      if (dest) await recordChannelState(env, dest, destRef.e, "unreachable", reason);
+      return null;
+    }
+    if (outcome === "fail") {
+      if (errClass && isPermanentChannelClass(errClass)) {
+        await markChannelPaused(env, errClass, dest ? dest.chatId : chatIdHint);
+        if (dest) await recordChannelState(env, dest, destRef.e, "unreachable", errClass);
+        return "permanent";
+      }
+      return "transient";
+    }
+    if (outcome === "dropped") {
+      if (dest) await recordChannelState(env, dest, destRef.e, "failed", errClass || "outbox-exhausted");
+      return null;
+    }
+    return null;
+  } catch (e) {
+    console.warn("channel-mirror: drain outcome hook isolated: " + (e && e.message));
+    return null;
+  }
+}
+
+// The registration — one statement at module scope. In the real bundle this
+// runs at module init (before any cron tick); in the flat eval harness the
+// module span carries it, so any eval that includes BOTH telegram.ts and
+// this module gets the hook wired in the same scope.
+setChannelDrainHook(channelDrainOutcome);
+
+// ---------- the stuck-claim reconciliation + the admin health surface ----------
+//
+// (spec PART IV §13 + DISCOVERY §7.6.) A claim row stuck 'claimed'/'failed'
+// with no sent_at, no in-flight outbox entry and an age past the grace
+// window is the residue of: an isolate death between claim and record, a
+// transient failure whose outbox push itself failed, or an entry that
+// exhausted its bounded retries. The owner's stated priority is at-most-
+// once, so these are NEVER blindly re-sent; this surface REPORTS them
+// (count + oldest age + last error class per destination), admin-only.
+//
+// THE REPAIR DECISION (documented, Session 3): a write-first repair lane
+// (re-queue exactly the reconciled events) was evaluated and DECLINED —
+// unlike repairPerChatGaps (which re-sends within open time windows against
+// a per-chat delivery ledger that proves non-delivery), a channel claim
+// cannot PROVE the post never landed: the residual timeout-after-accept
+// window means a re-queue can duplicate. The reconciliation is therefore
+// report-only; a human reading /api/audit decides whether a specific stuck
+// event is worth a manual, owner-approved re-queue (Session 4 tooling).
+const CHANNEL_STUCK_GRACE_MS = 30 * 60 * 1000;
+
+// The bounded, sanitized, admin-only snapshot. TWO aggregate D1 reads (plus
+// one LAZY stuck-candidate read that only runs when the aggregates say a
+// candidate exists), one outbox read, one pause-marker read — zero writes.
+// Unconfigured ⇒ {configured:false} with ZERO ops (the disabled-state
+// contract). No chat ids, no bodies, no tokens — counts, ages and CLASSES
+// only. Consumed by the admin /status card section and /api/audit's
+// channel block; the PUBLIC /healthz is unchanged by contract.
+export async function channelHealthSnapshot(env: Env) {
+  if (!env || (env as any).SIM_NOTIFIED_KEY || !(env as any).USERS_DB) {
+    return { configured: false, enabled: false };
+  }
+  const dests = channelDestinations(env);
+  if (!dests.length) return { configured: false, enabled: false };
+  const dest = dests[0];
+  const now = Date.now();
+  const out: any = {
+    configured: true,
+    enabled: dest.enabled !== false,
+    publicUrlSet: !!dest.publicUrl,
+    paused: null,
+    claims: null,
+    oldestPendingAgeMin: null,
+    lastSentAgeMin: null,
+    lastErrorClass: null,
+    stuck: null,
+  };
+  // 1) the claim aggregates (one grouped SELECT)
+  let rows: any[] = [];
+  try {
+    const r = await (env as any).USERS_DB.prepare(
+      "SELECT dest_key, state, COUNT(*) AS n, SUM(attempts) AS attempts, MIN(claimed_at) AS oldest, MAX(sent_at) AS last_sent FROM channel_posts_v1 GROUP BY dest_key, state"
+    ).all();
+    rows = (r && r.results) || [];
+  } catch (e) {
+    return out; // D1 unreachable — the counts stay null (honest, not zeros)
+  }
+  const claims = { sent: 0, failed: 0, unreachable: 0, claimed: 0, attempts: 0 };
+  let oldestPending = null, lastSent = null;
+  for (const row of rows) {
+    if (!row || row.dest_key !== dest.key) continue;
+    const n = Number(row.n) || 0;
+    if (row.state === "sent") claims.sent += n;
+    else if (row.state === "failed") claims.failed += n;
+    else if (row.state === "unreachable") claims.unreachable += n;
+    else if (row.state === "claimed") claims.claimed += n;
+    claims.attempts += Number(row.attempts) || 0;
+    const oldest = Number(row.oldest) || 0;
+    if ((row.state === "claimed" || row.state === "failed") && oldest && (oldestPending == null || oldest < oldestPending)) oldestPending = oldest;
+    const ls = Number(row.last_sent) || 0;
+    if (ls && (lastSent == null || ls > lastSent)) lastSent = ls;
+  }
+  out.claims = claims;
+  out.oldestPendingAgeMin = oldestPending != null ? Math.max(0, Math.round((now - oldestPending) / 60000)) : null;
+  out.lastSentAgeMin = lastSent != null ? Math.max(0, Math.round((now - lastSent) / 60000)) : null;
+  // 2) the newest last_error CLASS (one small SELECT)
+  try {
+    const r2 = await (env as any).USERS_DB.prepare(
+      "SELECT dest_key, last_error, claimed_at FROM channel_posts_v1 WHERE last_error IS NOT NULL ORDER BY claimed_at DESC"
+    ).all();
+    for (const row of (r2 && r2.results) || []) {
+      if (row && row.dest_key === dest.key) { out.lastErrorClass = row.last_error || null; break; }
+    }
+  } catch (e) { /* best-effort */ }
+  // 3) the pause marker (raw read — the admin surface sees the truth, not a memo)
+  try {
+    const m = await env.STATE.get(CONFIG.KV_CHANNEL_MIRROR, "json").catch(() => null);
+    if (m && m.paused && pauseAppliesTo(m, dest.chatId)) {
+      out.paused = { reason: m.reason || "unspecified", at: m.at || null };
+    }
+  } catch (e) { }
+  // 4) the stuck-claim reconciliation (report-only): candidates exist only
+  // when the oldest pending claim predates the grace window — the lazy
+  // second SELECT runs only then (the common healthy path issues NONE).
+  out.stuck = { count: 0, oldestAgeMin: null, lastErrorClass: null };
+  if (oldestPending != null && now - oldestPending > CHANNEL_STUCK_GRACE_MS) {
+    let candidates: any[] = [];
+    try {
+      const r3 = await (env as any).USERS_DB.prepare(
+        "SELECT dest_key, event_key, state, claimed_at, last_error FROM channel_posts_v1 WHERE state IN ('claimed','failed') AND sent_at IS NULL AND claimed_at < ?1"
+      ).bind(now - CHANNEL_STUCK_GRACE_MS).all();
+      candidates = ((r3 && r3.results) || []).filter((row) => row && row.dest_key === dest.key);
+    } catch (e) {
+      candidates = [];
+    }
+    // the in-flight channel outbox entries — the claims they cover are NOT
+    // stuck, they are riding the bounded retries
+    const inFlight = new Set();
+    try {
+      const ob = await env.STATE.get(CONFIG.KV_OUTBOX, "json").catch(() => null);
+      for (const item of (Array.isArray(ob) ? ob : [])) {
+        if (item && item.dest && item.dest.k === dest.key && item.dest.e) inFlight.add(item.dest.e);
+      }
+    } catch (e) { }
+    let stuckOldest = null;
+    for (const row of candidates) {
+      if (inFlight.has(row.event_key)) continue;
+      out.stuck.count++;
+      const at = Number(row.claimed_at) || 0;
+      if (at && (stuckOldest == null || at < stuckOldest)) stuckOldest = at;
+      if (row.last_error) out.stuck.lastErrorClass = row.last_error;
+    }
+    out.stuck.oldestAgeMin = stuckOldest != null ? Math.max(0, Math.round((now - stuckOldest) / 60000)) : null;
+  }
+  return out;
+}
+
+// The admin /status card section (spec PART IV §13) — a compact Persian
+// block the admin-bot card appends. Unconfigured ⇒ the single honest
+// "not configured" line with ZERO ops. Sanitized: classes and counts only.
+export async function channelStatusSection(env: Env) {
+  const health = await channelHealthSnapshot(env);
+  if (!health.configured) {
+    return { text: "\U0001F4E1 \u0645\u06CC\u0631\u0648\u0631 \u06A9\u0627\u0646\u0627\u0644 \u062A\u0644\u06AF\u0631\u0627\u0645: \u067E\u06CC\u06A9\u0631\u0628\u0646\u062F\u06CC\u200C\u0646\u0634\u062F\u0647", health: health };
+  }
+  const ageFa = (v) => v == null ? "\u0646\u0627\u0645\u0639\u0644\u0648\u0645" : toFaDigits(String(v)) + " \u062F\u0642\u06CC\u0642\u0647 \u067E\u06CC\u0634";
+  let text = "";
+  if (health.paused) {
+    text = "\U0001F6A8 \u0645\u06CC\u0631\u0648\u0631 \u06A9\u0627\u0646\u0627\u0644 \u062A\u0644\u06AF\u0631\u0627\u0645: \u0645\u062A\u0648\u0642\u0641 \\(`" + String(health.paused.reason) + "`\\) \u2014 \u0627\u0631\u0633\u0627\u0644 \u062A\u0627 \u0631\u0641\u0639 \u0645\u0634\u06A9\u0644 \u06CC\u0627 \u062A\u063A\u06CC\u06CC\u0631 \u067E\u06CC\u06A9\u0631\u0628\u0646\u062F\u06CC \u0645\u062A\u0648\u0642\u0641 \u0627\u0633\u062A";
+  } else {
+    const c = health.claims || { sent: 0, failed: 0, unreachable: 0, claimed: 0, attempts: 0 };
+    const pending = c.claimed + c.failed;
+    text = "\U0001F4E1 \u0645\u06CC\u0631\u0648\u0631 \u06A9\u0627\u0646\u0627\u0644 \u062A\u0644\u06AF\u0631\u0627\u0645: \u0641\u0639\u0627\u0644"
+      + " \u00B7 \u0622\u062E\u0631\u06CC\u0646 \u0627\u0631\u0633\u0627\u0644: " + ageFa(health.lastSentAgeMin)
+      + " \u00B7 \u062F\u0631 \u0627\u0646\u062A\u0638\u0627\u0631: " + toFaDigits(String(pending));
+    if (health.oldestPendingAgeMin != null) text += " \\(\u0642\u062F\u06CC\u0645\u06CC\u200C\u062A\u0631\u06CC\u0646 " + ageFa(health.oldestPendingAgeMin) + "\\)";
+    if (health.lastErrorClass) text += " \u00B7 \u0622\u062E\u0631\u06CC\u0646 \u062E\u0637\u0627: `" + String(health.lastErrorClass) + "`";
+    if (health.stuck && health.stuck.count > 0) {
+      text += "\n\u26A0\uFE0F \u0627\u062D\u062A\u0645\u0627\u0644 \u0627\u0646\u06AF\u0627\u0631\u06CC \u0645\u0627\u0646\u062F\u0647: " + toFaDigits(String(health.stuck.count)) + " \u0631\u0648\u06CC\u062F\u0627\u062F \u2014 \u06AF\u0632\u0627\u0631\u0634 \u06A9\u0627\u0645\u0644: `/api/audit`";
+    }
+  }
+  return { text: text, health: health };
 }

@@ -312,7 +312,7 @@ async function serveChannelWeekly(env: Env, week) {
     }
     const claim = await claimChannelPost(env, eventKey);
     if (!claim) return null;
-    await sendChannelPost(env, claim, async (chEnv, dest) => {
+    await sendChannelPost(env, claim, async (chEnv, dest, chan) => {
       const tables = group.tables || [];
       let any = false;
       for (let i = 0; i < tables.length; i++) {
@@ -325,12 +325,12 @@ async function serveChannelWeekly(env: Env, week) {
         // last table) — one channel event, one footer
         const isClosing = !group.weekAhead && i === tables.length - 1;
         const text = isClosing ? appendChannelFooter(m.text) : m.text;
-        const r = await sendTelegram(chEnv, text, dest.chatId);
+        const r = await sendTelegram(chEnv, text, dest.chatId, null, chan);
         if (r === "dead") return "dead";
         if (r === true) any = true;
       }
       if (group.weekAhead) {
-        const r = await sendTelegram(chEnv, appendChannelFooter(group.weekAhead), dest.chatId);
+        const r = await sendTelegram(chEnv, appendChannelFooter(group.weekAhead), dest.chatId, null, chan);
         if (r === "dead") return "dead";
         if (r === true) any = true;
       }

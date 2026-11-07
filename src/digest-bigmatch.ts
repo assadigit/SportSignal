@@ -111,7 +111,7 @@ export async function broadcastBigMatchResults(env: Env, matches) {
       // per logical result stage, after the private group loop (text-only,
       // mirroring the broadcast's own shape — no cards/dice on this path).
       if (channelClaim) {
-        await sendChannelPost(env, channelClaim, async (chEnv, dest) => {
+        await sendChannelPost(env, channelClaim, async (chEnv, dest, chan) => {
           let chMessage = "";
           try {
             chMessage = specialBanner(match, "fa") + await formatResultMessage(match, chEnv, "fa");
@@ -120,7 +120,7 @@ export async function broadcastBigMatchResults(env: Env, matches) {
             return false;
           }
           chMessage = appendChannelFooter(chMessage);
-          return await sendTelegram(chEnv, chMessage, dest.chatId);
+          return await sendTelegram(chEnv, chMessage, dest.chatId, null, chan);
         });
       }
       if (anySuccess) {
@@ -209,7 +209,7 @@ export async function broadcastBigMatchKickoff(env: Env, matches) {
       // per logical kickoff stage, after the private group loop (text-only,
       // the broadcast's own shape).
       if (channelClaim) {
-        await sendChannelPost(env, channelClaim, async (chEnv, dest) => {
+        await sendChannelPost(env, channelClaim, async (chEnv, dest, chan) => {
           let chMessage = "";
           try {
             chMessage = specialBanner(match, "fa") + await formatMatchStartMessage(match, chEnv, "fa");
@@ -218,7 +218,7 @@ export async function broadcastBigMatchKickoff(env: Env, matches) {
             return false;
           }
           chMessage = appendChannelFooter(chMessage);
-          return await sendTelegram(chEnv, chMessage, dest.chatId);
+          return await sendTelegram(chEnv, chMessage, dest.chatId, null, chan);
         });
       }
       if (anySuccess) {

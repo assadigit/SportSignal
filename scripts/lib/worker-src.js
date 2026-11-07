@@ -46,6 +46,13 @@ function transform(ts) {
   c = c.replace(/(\w): Env =/g, "$1 =");
   c = c.replace(/: any\[\] =/g, " =");
   c = c.replace(/\): Promise<any> \{/g, ") {");
+  // v13.232-channelhardening: the generalized Promise-typed returns/vars
+  // (telegram.ts's `): Promise<boolean> {` and `var OUTBOX_CHAIN: Promise<void> =`
+  // — the l-section of check-channel-mirror now evals that module whole
+  // through this transform; the old Promise<any>-only rule didn't cover
+  // the concrete types).
+  c = c.replace(/\): Promise<[A-Za-z0-9_<>, |]+> \{/g, ") {");
+  c = c.replace(/: Promise<[A-Za-z0-9_<>, |]+> =/g, " =");
   c = c.replace(/: any\]([)\s,;])/g, "$1");
   c = c.replace(/ as any\]/g, "");
   c = c.replace(/ as any\)/g, ")");

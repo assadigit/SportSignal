@@ -48,6 +48,11 @@
 //     exact pre-13.231 cost when not; no new cron triggers; notify.ch rides
 //     the completion blob's existing put.
 const src = require("./lib/worker-src")();
+// v13.232-channelhardening: the REAL-transport + full-worker harness pieces
+// (the l/m sections below — the transport/failure matrix through the REAL
+// senders + the budget re-measure through the REAL pipeline).
+const { makeKV, makeD1: makeMockD1, makeFetchDispatcher } = require("./lib/mock-env");
+const createFullWorker = require("./lib/full-worker");
 
 // grabFn — brace-balanced slice (the check-composers.js scanner), for the
 // family functions under behavioral test.
@@ -177,6 +182,34 @@ function makeD1(opts) {
       row.last_error = p[2] != null ? p[2] : null;
       return { meta: { changes: 1 } };
     }
+    // v13.232-channelhardening: the health-snapshot SELECTs (the
+    // channelHealthSnapshot aggregates + the lazy stuck scan)
+    if (s.startsWith("SELECT dest_key, state, COUNT(*)")) {
+      const byKey = new Map();
+      for (const [k, v] of [...t.channel_posts_v1.entries()]) {
+        const dest_key = k.split("\u0000")[0];
+        if (!byKey.has(dest_key)) byKey.set(dest_key, new Map());
+        const g = byKey.get(dest_key);
+        if (!g.has(v.state)) g.set(v.state, { dest_key, state: v.state, n: 0, attempts: 0, oldest: null, last_sent: null });
+        const row = g.get(v.state);
+        row.n++;
+        row.attempts += v.attempts || 0;
+        if (row.oldest == null || v.claimed_at < row.oldest) row.oldest = v.claimed_at;
+        if (v.sent_at != null && (row.last_sent == null || v.sent_at > row.last_sent)) row.last_sent = v.sent_at;
+      }
+      return { results: [...byKey.values()].flatMap((g) => [...g.values()]) };
+    }
+    if (s.startsWith("SELECT dest_key, last_error, claimed_at")) {
+      return { results: [...t.channel_posts_v1.entries()]
+        .filter(([k, v]) => v.last_error != null)
+        .map(([k, v]) => ({ dest_key: k.split("\u0000")[0], last_error: v.last_error, claimed_at: v.claimed_at }))
+        .sort((a, b) => b.claimed_at - a.claimed_at) };
+    }
+    if (s.startsWith("SELECT dest_key, event_key, state, claimed_at, last_error")) {
+      return { results: [...t.channel_posts_v1.entries()]
+        .filter(([k, v]) => (v.state === "claimed" || v.state === "failed") && v.sent_at == null && v.claimed_at < p[0])
+        .map(([k, v]) => ({ dest_key: k.split("\u0000")[0], event_key: k.split("\u0000")[1], state: v.state, claimed_at: v.claimed_at, last_error: v.last_error })) };
+    }
     throw new Error("mock D1: unrecognized statement: " + s.slice(0, 80));
   }
   return d1;
@@ -197,12 +230,40 @@ globalThis.CONFIG = {
   WEEKLY_FANOUT_CAP: 44,
   WEEKLY_TABLES: { day: 1, fromMin: 90, toMin: 360 },
   UCL_PREVIEW_LEAD_MS: 6 * 60 * 60 * 1e3,
-  UCL_PREVIEW_TAIL_MS: 10 * 60 * 1e3
+  UCL_PREVIEW_TAIL_MS: 10 * 60 * 1e3,
+  // v13.232-channelhardening: the transport-module constants the REAL
+  // telegram.ts senders read (the l section evals that module whole).
+  KV_OUTBOX: "pending_sends_v1",
+  KV_OUTBOX_MAX: 200,
+  TELEGRAM_RETRY_ATTEMPTS: 3,
+  TELEGRAM_MIN_SEND_GAP_MS: 0,
+  TELEGRAM_PAUSE_WAIT_MAX_MS: 8000,
+  TRIAL_FOOTER: "\u0646\u0633\u062E\u0647 \u0622\u0632\u0645\u0627\u06CC\u0634\u06CC\u0648\u0646.",
+  ONE_HOUR_MS: 60 * 60 * 1000
 };
 // the REAL escape (utils.ts) — the channel-mirror module's footer/CTA
 // builders close over it (the transform strips its import).
 globalThis.escapeMarkdownCharacters = function escapeMarkdownCharacters(text) {
   return text.replace(/([\[\]\(\)~`>#\+\-=|{}\.!_])/g, "\\$1");
+};
+// v13.232-channelhardening: the transport seams the channel module now
+// references at module scope (setChannelDrainHook — the registration
+// statement) and inside the pause page (sendTelegram). The unit sections
+// (a–k) run against these deterministic stubs; the l section below evals
+// the REAL telegram.ts module TOGETHER with the channel module in one
+// scope, which re-declares the real senders/registration over these.
+let DRAIN_HOOK_FN = null;
+globalThis.setChannelDrainHook = function setChannelDrainHook(fn) { DRAIN_HOOK_FN = fn; };
+// the REAL toFaDigits (utils.ts) — the /status section's Persian rendering
+// closes over it (the module's own import is stripped by the transform).
+globalThis.toFaDigits = function toFaDigits(str) {
+  const FA_DIGIT_MAP = { "0": "\u06F0", "1": "\u06F1", "2": "\u06F2", "3": "\u06F3", "4": "\u06F4", "5": "\u06F5", "6": "\u06F6", "7": "\u06F7", "8": "\u06F8", "9": "\u06F9" };
+  return String(str).replace(/[0-9]/g, (w) => FA_DIGIT_MAP[w] || w);
+};
+const ADMIN_PAGES = [];
+globalThis.sendTelegram = async function sendTelegram(env, text, chatId) {
+  ADMIN_PAGES.push({ text: String(text), chatId });
+  return true;
 };
 
 let failed = 0;
@@ -1125,6 +1186,671 @@ G("function tzOffsetMinutes(tz"),
     check("k. [vars] TELEGRAM_CHANNEL_CHAT_ID still EMPTY in wrangler.toml (disabled by default)", /TELEGRAM_CHANNEL_CHAT_ID = ""/.test(read("wrangler.toml")) && /TELEGRAM_CHANNEL_PUBLIC_URL = ""/.test(read("wrangler.toml")));
   }
 
+
+  // ======================================================================
+  // v13.232-channelhardening — SESSION 3 (spec PART VI Session 3; DISCOVERY
+  // §7.6/§7.7/§10): the transport/failure matrix through the REAL senders,
+  // the stuck-claim reconciliation + the admin health surface, and the
+  // full-worker budget re-measure.
+  // ======================================================================
+
+  // ===== l) the transport/failure matrix — REAL senders + REAL drain =====
+  console.log("\n=== l. the v13.232 transport/failure matrix (REAL senders) ===");
+  {
+    // Slice the REAL telegram.ts module (it sits right before composers.ts
+    // in the concat) and eval it TOGETHER with the channel module — ONE
+    // scope, so the module-scope setChannelDrainHook registration wires the
+    // REAL drainOutbox to the REAL channelDrainOutcome (the production
+    // wiring, exercised offline). The earlier sections' channel-module
+    // bindings are re-declared by this eval (same source) — the sections
+    // above have already run and asserted.
+    const tgStart = src.indexOf("// ===== src/telegram.ts =====");
+    const tgEnd = src.indexOf("// ===== src/composers.ts =====");
+    if (tgStart < 0 || tgEnd < 0 || tgEnd < tgStart) throw new Error("telegram module not found in concat");
+    const telegramSrc = src.slice(tgStart, tgEnd);
+    // the transport module's utility seams (the REAL budget gate is
+    // exercised in the m sections below; here it never trips)
+    globalThis.vlog = () => {};
+    globalThis.bumpSubrequest = () => false;
+    globalThis.VERSION = "13.232-test";
+    // a controlled clock + instant timers (the f-section precedent): the
+    // 429 pause-outlives-the-bound path needs fake seconds to elapse
+    // without real waiting. Every Date.now() read advances 1 fake-second;
+    // clockMs is directly adjustable between phases.
+    const RealDateNow = Date.now.bind(Date);
+    const RealSetTimeout = globalThis.setTimeout;
+    let clockMs = RealDateNow();
+    Date.now = () => (clockMs += 1000);
+    globalThis.setTimeout = (fn) => RealSetTimeout(fn, 0);
+    const dispatcher = makeFetchDispatcher();
+    globalThis.fetch = dispatcher.dispatch;
+    dispatcher.clock = () => clockMs;
+    try {
+      eval(telegramSrc + "\n" + channelMirrorSrc);
+
+      const rowOf = (env, ek) => env.USERS_DB._tables.channel_posts_v1.get("fa-football\u0000" + ek);
+      const boxOf = (env) => JSON.parse(env.STATE._map.get("pending_sends_v1") || "[]");
+      const markerOf = (env) => JSON.parse(env.STATE._map.get("channel_mirror_v1") || "null");
+      const chanEnv = (extra) => Object.assign({ STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID, BOT_TOKEN: "test-token", CHAT_ID: "92788333" }, extra || {});
+      const senderOf = (text) => async (chEnv, dest, chan) => sendTelegram(chEnv, text, dest.chatId, null, chan);
+
+      // --- l1. successful text send through the REAL sender ---
+      dispatcher.onTelegram = async () => true;
+      {
+        const env = chanEnv();
+        const r = await mirrorChannelPost(env, "match:l1|a|2026-11-08T16:00:match-start", senderOf("hello *channel*"));
+        const row = rowOf(env, "match:l1|a|2026-11-08T16:00:match-start");
+        check("l1. real sendTelegram success ⇒ sent + claim 'sent' + exactly one channel fetch",
+          r.ok === true && r.claimed === true && row.state === "sent" && typeof row.sent_at === "number" &&
+          dispatcher.telegramSends.filter((s) => s.chatId === Number(CHAT_ID)).length === 1 && boxOf(env).length === 0);
+      }
+
+      // --- l2. 429 + retry_after outliving the pause bound → dest-bearing outbox entry, claim failed (transient), NOT paused ---
+      {
+        const env = chanEnv();
+        dispatcher.onTelegram = async (e) => e.method === "sendMessage"
+          ? { status: 429, retryAfter: 9, description: "Too Many Requests: retry after 9" } : true;
+        const r = await mirrorChannelPost(env, "match:l2|a|2026-11-08T16:00:match-start", senderOf("rate limited body"));
+        const row = rowOf(env, "match:l2|a|2026-11-08T16:00:match-start");
+        const box = boxOf(env);
+        check("l2. 429+retry_after (pause outlives the 8s bound) ⇒ verdict false + claim failed/'rate-limited' + NOT paused",
+          r.ok === false && row.state === "failed" && row.last_error === "rate-limited" && markerOf(env) === null);
+        check("l2. the deferred entry carries dest {k,e} — distinguishable from every private entry",
+          box.length === 1 && box[0].dest && box[0].dest.k === "fa-football" && box[0].dest.e === "match:l2|a|2026-11-08T16:00:match-start" && box[0].chatId === CHAT_ID);
+      }
+
+      // --- l3. transient 5xx (retries exhausted) → dest entry; the NEXT
+      //     drain delivers it → the claim row goes 'sent' through the REAL
+      //     drain-hook registration (the retry-after-restart proof: the KV
+      //     list IS the persistence across invocations) ---
+      {
+        const env = chanEnv();
+        dispatcher.onTelegram = async (e) => e.method === "sendMessage" ? "fail" : true;
+        const r = await mirrorChannelPost(env, "match:l3|a|2026-11-08T16:00:result", senderOf("server error body"));
+        const row = rowOf(env, "match:l3|a|2026-11-08T16:00:result");
+        check("l3a. transient 5xx ×3 ⇒ claim failed/'server-error' + ONE dest-bearing entry",
+          r.ok === false && row.state === "failed" && row.last_error === "server-error" && boxOf(env).length === 1);
+        dispatcher.onTelegram = async () => true;
+        clockMs += 61 * 1000; // past the 1m first backoff
+        const d = await drainOutbox(env);
+        const row2 = rowOf(env, "match:l3|a|2026-11-08T16:00:result");
+        check("l3b. the drain (a fresh invocation — the KV list is the persistence) delivers it ⇒ drained + claim 'sent' + sent_at set",
+          d.drained === 1 && d.remaining === 0 && row2.state === "sent" && typeof row2.sent_at === "number" && boxOf(env).length === 0);
+      }
+
+      // --- l4. the PERMANENT 400/403 classes — every one pauses the
+      //     destination + marks the claim unreachable (the S18 residual
+      //     note 1 closed); non-dead 4xx never outboxes ---
+      {
+        const PERM = [
+          ["chat-not-found", 400, "Bad Request: chat not found", "dead"],
+          ["need-administrator-rights", 400, "Bad Request: need administrator rights in the channel chat", false],
+          ["bot-not-a-member", 403, "Forbidden: bot is not a member of the channel chat", false],
+          ["bad-request-markdown", 400, "Bad Request: can't parse entities: unclosed quote at byte 12", false],
+        ];
+        for (const [cls, st, desc, verdictExp] of PERM) {
+          const env = chanEnv();
+          dispatcher.onTelegram = async () => ({ status: st, description: desc });
+          const r = await mirrorChannelPost(env, "match:l4|a|2026-11-08T16:00:" + cls, senderOf("body"));
+          const row = rowOf(env, "match:l4|a|2026-11-08T16:00:" + cls);
+          const marker = markerOf(env);
+          check("l4. " + cls + " ⇒ claim 'unreachable' + last_error '" + cls + "' + the pause marker with that reason + ZERO outbox entries",
+            r.ok === false && r.verdict === verdictExp && row.state === "unreachable" && row.last_error === cls &&
+            marker && marker.paused === true && marker.reason === cls && marker.chatId === CHAT_ID && boxOf(env).length === 0);
+        }
+      }
+
+      // --- l5. the transient/unknown classes stay failed, never pause ---
+      {
+        const env5a = chanEnv();
+        dispatcher.onTelegram = async (e) => e.method === "sendMessage" ? "network" : true;
+        await mirrorChannelPost(env5a, "match:l5|a|2026-11-08T16:00:match-start", senderOf("network body"));
+        const row5a = rowOf(env5a, "match:l5|a|2026-11-08T16:00:match-start");
+        check("l5a. a network throw (the ambiguous-timeout class) ⇒ outboxed WITH dest + claim failed/'network' (the transport's documented at-least-once lane — the claim never blind-resends)",
+          row5a.state === "failed" && row5a.last_error === "network" && boxOf(env5a).length === 1 && boxOf(env5a)[0].dest.e === "match:l5|a|2026-11-08T16:00:match-start");
+        const env5b = chanEnv();
+        dispatcher.onTelegram = async () => ({ status: 400, description: "Bad Request: message is too long" });
+        const r5b = await mirrorChannelPost(env5b, "match:l5|a|2026-11-08T16:00:result", senderOf("too long body"));
+        const row5b = rowOf(env5b, "match:l5|a|2026-11-08T16:00:result");
+        check("l5b. an UNKNOWN 4xx ⇒ failed/'bad-request', NOT paused, NOT outboxed (the transport's hard-fail — the reconciliation surfaces it)",
+          r5b.ok === false && row5b.state === "failed" && row5b.last_error === "bad-request" && markerOf(env5b) === null && boxOf(env5b).length === 0);
+      }
+
+      // --- l6. missing config ⇒ zero surface through the REAL path ---
+      {
+        const envOffL = { STATE: makeStore(), USERS_DB: makeD1(), BOT_TOKEN: "test-token" };
+        const before = dispatcher.telegramSends.length;
+        const r = await mirrorChannelPost(envOffL, "match:l6|a|2026-11-08T16:00:match-start", senderOf("x"));
+        check("l6. unconfigured ⇒ {ok:false, claimed:false}, zero D1 ops, zero fetches",
+          r.ok === false && r.claimed === false && envOffL.USERS_DB._prepCount === 0 && dispatcher.telegramSends.length === before);
+      }
+
+      // --- l7. channel failure NEVER stops private sends; pause ⇒ hooks
+      //     skip; a paused channel never re-fires past claims; resume ---
+      {
+        const env = chanEnv();
+        dispatcher.onTelegram = async (e) => e.chatId === Number(CHAT_ID)
+          ? { status: 400, description: "Bad Request: chat not found" } : true;
+        // the private send to a healthy chat while the channel 400s:
+        const priv = await sendTelegram(env, "a private message", 12345);
+        check("l7a. a permanent channel failure NEVER stops private sends (same tick, same sender)",
+          priv === true && dispatcher.telegramSends.some((s) => s.chatId === 12345 && s.ok === true));
+        // the channel event that hits the wall:
+        await mirrorChannelPost(env, "match:l7|a|2026-11-08T16:00:match-start", senderOf("x"));
+        check("l7b. the channel claim is unreachable + the destination is paused", rowOf(env, "match:l7|a|2026-11-08T16:00:match-start").state === "unreachable" && markerOf(env).paused === true);
+        // paused ⇒ subsequent hooks skip BEFORE any claim (no new D1 row):
+        const prep = env.USERS_DB._prepCount;
+        const r2 = await mirrorChannelPost(env, "match:l7|b|2026-11-08T18:00:match-start", senderOf("x"));
+        check("l7c. paused ⇒ the hook skips with NO claim row (zero D1 ops) and no sends",
+          r2.ok === false && r2.claimed === false && env.USERS_DB._prepCount === prep && !rowOf(env, "match:l7|b|2026-11-08T18:00:match-start"));
+        // resume (the owner action) — the PAST claim never re-fires:
+        const sendsBefore = dispatcher.telegramSends.filter((s) => s.chatId === Number(CHAT_ID)).length;
+        check("l7d. markChannelResumed ⇒ the transition write", (await markChannelResumed(env)) === true);
+        const r3 = await mirrorChannelPost(env, "match:l7|a|2026-11-08T16:00:match-start", senderOf("x"));
+        const r4 = await mirrorChannelPost(env, "match:l7|b|2026-11-08T18:00:match-start", senderOf("x"));
+        const sendsAfter = dispatcher.telegramSends.filter((s) => s.chatId === Number(CHAT_ID)).length;
+        check("l7e. after resume: the PAST (already-claimed) event never re-fires; a NEW event claims + sends",
+          r3.claimed === false && r4.claimed === true && r4.ok === false && sendsAfter === sendsBefore + 1);
+        // resume on CONFIG CHANGE (a different chat id ⇒ the stale pause):
+        const envA = chanEnv();
+        await markChannelPaused(envA, "chat-not-found");
+        const envB = { STATE: envA.STATE, USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: "-1009998887777", BOT_TOKEN: "test-token" };
+        const gateB = await channelGate(envB);
+        check("l7f. a pause pinned to a DIFFERENT chat id is STALE after a config change ⇒ the gate opens (no writes)",
+          gateB.ok === true && markerOf(envA).paused === true);
+        const gateA = await channelGate(envA);
+        check("l7g. the same-id config keeps the pause in force (never blind-open a known-bad destination)",
+          gateA.ok === false && gateA.reason === "paused");
+        // the pre-v13.232 old-shape marker (no chatId) keeps pausing:
+        const envC = chanEnv();
+        envC.STATE._map.set("channel_mirror_v1", JSON.stringify({ paused: true, reason: "old-shape", at: 1 }));
+        check("l7h. an old-shape (chatId-less) marker keeps pausing (conservative)", (await channelGate(envC)).ok === false);
+      }
+
+      // --- l8. bounded retry/dead-letter: the 6-attempt drop of a
+      //     dest-bearing entry records 'outbox-exhausted' on the claim ---
+      {
+        const env = chanEnv();
+        const ek = "match:l8|a|2026-11-08T16:00:result";
+        await claimChannelEvent(env, channelDestinations(env)[0], ek);
+        await recordChannelState(env, channelDestinations(env)[0], ek, "failed", "server-error");
+        await env.STATE.put("pending_sends_v1", JSON.stringify([
+          { text: "retry me", chatId: CHAT_ID, keyboard: null, sticker: null, dest: { k: "fa-football", e: ek }, ts: clockMs - 36e5, attempts: 6 }
+        ]));
+        dispatcher.onTelegram = async (e) => e.method === "sendMessage" ? "fail" : true;
+        const d = await drainOutbox(env);
+        const row = rowOf(env, ek);
+        check("l8. attempts=6 + one more transient failure ⇒ dropped (bounded), claim failed/'outbox-exhausted', queue empty",
+          d.drained === 0 && d.remaining === 0 && boxOf(env).length === 0 && row.state === "failed" && row.last_error === "outbox-exhausted");
+      }
+
+      // --- l9. OLD (pre-v13.232, no-dest) entries drain EXACTLY as before ---
+      {
+        const env = chanEnv();
+        const prep = env.USERS_DB._prepCount;
+        await env.STATE.put("pending_sends_v1", JSON.stringify([
+          { text: "legacy private retry", chatId: 777, keyboard: null, sticker: null, ts: clockMs - 36e5, attempts: 0 }
+        ]));
+        dispatcher.onTelegram = async () => true;
+        const d = await drainOutbox(env);
+        check("l9. a legacy no-dest entry drains unchanged with ZERO channel D1 ops (the private queue is untouched by the hook)",
+          d.drained === 1 && boxOf(env).length === 0 && env.USERS_DB._prepCount === prep);
+      }
+
+      // --- l10. the drain-side DEAD outcome (a queued channel entry whose
+      //     retry hits the dead-chat regex) ⇒ unreachable + pause ---
+      {
+        const env = chanEnv();
+        const ek = "match:l10|a|2026-11-08T16:00:match-start";
+        await claimChannelEvent(env, channelDestinations(env)[0], ek);
+        await recordChannelState(env, channelDestinations(env)[0], ek, "failed", "server-error");
+        await env.STATE.put("pending_sends_v1", JSON.stringify([
+          { text: "dead retry", chatId: CHAT_ID, keyboard: null, sticker: null, dest: { k: "fa-football", e: ek }, ts: clockMs - 36e5, attempts: 0 }
+        ]));
+        dispatcher.onTelegram = async (e) => e.chatId === Number(CHAT_ID) ? "dead" : true;
+        const d = await drainOutbox(env);
+        const row = rowOf(env, ek);
+        const marker = markerOf(env);
+        check("l10. the drain-side dead ⇒ claim 'unreachable'/'dead-chat' + the pause marker + the entry dropped",
+          d.dead === 1 && row.state === "unreachable" && row.last_error === "dead-chat" && marker && marker.paused === true && boxOf(env).length === 0);
+      }
+
+      // --- l11. the drain-side PERMANENT failure ⇒ the entry is dropped
+      //     (never 6 doomed attempts) + unreachable + pause ---
+      {
+        const env = chanEnv();
+        const ek = "match:l11|a|2026-11-08T16:00:match-start";
+        await claimChannelEvent(env, channelDestinations(env)[0], ek);
+        await recordChannelState(env, channelDestinations(env)[0], ek, "failed", "server-error");
+        await env.STATE.put("pending_sends_v1", JSON.stringify([
+          { text: "need admin retry", chatId: CHAT_ID, keyboard: null, sticker: null, dest: { k: "fa-football", e: ek }, ts: clockMs - 36e5, attempts: 0 }
+        ]));
+        dispatcher.onTelegram = async () => ({ status: 400, description: "Bad Request: need administrator rights in the channel chat" });
+        const d = await drainOutbox(env);
+        const row = rowOf(env, ek);
+        check("l11. a permanent class at the drain ⇒ policy 'permanent': entry dropped, claim unreachable, destination paused",
+          d.drained === 0 && d.remaining === 0 && boxOf(env).length === 0 && row.state === "unreachable" && row.last_error === "need-administrator-rights" && markerOf(env).reason === "need-administrator-rights");
+      }
+
+      // --- l12. duplicate/out-of-order invocations: one channel post ---
+      {
+        const env = chanEnv();
+        dispatcher.onTelegram = async () => true;
+        const before = dispatcher.telegramSends.filter((s) => s.chatId === Number(CHAT_ID)).length;
+        await mirrorChannelPost(env, "match:l12|a|2026-11-08T16:00:match-start", senderOf("dup"));
+        await mirrorChannelPost(env, "match:l12|a|2026-11-08T16:00:match-start", senderOf("dup"));
+        await mirrorChannelPost(env, "match:l12|a|2026-11-08T16:00:match-start", senderOf("dup"));
+        check("l12. three invocations of the same event ⇒ exactly ONE channel send (the D1 claim is the fence)",
+          dispatcher.telegramSends.filter((s) => s.chatId === Number(CHAT_ID)).length === before + 1);
+      }
+
+      // --- l13. the rate-limited admin page on a real pause transition ---
+      {
+        const env = chanEnv();
+        dispatcher.onTelegram = async () => true;
+        const pagesBefore = dispatcher.telegramSends.filter((s) => s.chatId === 92788333).length;
+        clockMs += 31 * 60 * 1000; // clear the 30-min rate window from the earlier sections' transitions
+        await markChannelPaused(env, "need-administrator-rights");
+        const pagesAll = dispatcher.telegramSends.filter((s) => s.chatId === 92788333);
+        const pages = pagesAll.length - pagesBefore;
+        const pageText = (pagesAll[pagesAll.length - 1] || {}).text || "";
+        check("l13a. a real pause transition pages the admin (the sanitized CLASS only — the alertPhaseError pattern)",
+          pages === 1 && pageText.indexOf("need-administrator-rights") >= 0 && pageText.indexOf(CHAT_ID) < 0);
+        clockMs += 5 * 60 * 1000; // INSIDE the 30-min rate limit
+        await markChannelPaused(env, "chat-not-found");
+        const pages2 = dispatcher.telegramSends.filter((s) => s.chatId === 92788333).length - pagesBefore;
+        check("l13b. the page is rate-limited (a second transition within 30 min does not re-page)",
+          pages2 === 1 && markerOf(env).reason === "chat-not-found");
+        clockMs += 31 * 60 * 1000; // past the window
+        await markChannelPaused(env, "bot-not-a-member");
+        check("l13c. past the window a new transition pages again",
+          dispatcher.telegramSends.filter((s) => s.chatId === 92788333).length - pagesBefore === 2);
+      }
+
+      // --- l14. classifyTelegramFailure — the pure fingerprint table ---
+      {
+        const T = [
+          [429, "Too Many Requests", "rate-limited"],
+          [500, "internal", "server-error"],
+          [502, "bad gateway", "server-error"],
+          [400, "Bad Request: chat not found", "chat-not-found"],
+          [400, "Bad Request: need administrator rights in the channel chat", "need-administrator-rights"],
+          [403, "Forbidden: bot is not a member of the channel chat", "bot-not-a-member"],
+          [403, "Forbidden: bot was kicked from the supergroup chat", "bot-not-a-member"],
+          [403, "Forbidden: bot was blocked by the user", "dead-chat"],
+          [403, "Forbidden: user is deactivated", "dead-chat"],
+          [400, "Bad Request: can't parse entities: bad character", "bad-request-markdown"],
+          [400, "Bad Request: message is too long", "bad-request"],
+          [0, "", "network"],
+        ];
+        for (const [st, body, cls] of T) {
+          check("l14. classify(" + st + ", …) ⇒ '" + cls + "'", classifyTelegramFailure(st, body) === cls);
+        }
+        check("l14. isPermanentChannelClass: exactly the five permanent classes",
+          isPermanentChannelClass("chat-not-found") && isPermanentChannelClass("need-administrator-rights") &&
+          isPermanentChannelClass("bot-not-a-member") && isPermanentChannelClass("dead-chat") && isPermanentChannelClass("bad-request-markdown") &&
+          !isPermanentChannelClass("rate-limited") && !isPermanentChannelClass("server-error") && !isPermanentChannelClass("network") &&
+          !isPermanentChannelClass("bad-request") && !isPermanentChannelClass("transient") && !isPermanentChannelClass(null));
+      }
+
+      // --- l15. the stuck-claim reconciliation + the admin health surface ---
+      {
+        // unconfigured ⇒ zero ops
+        const envOff2 = { STATE: makeStore(), USERS_DB: makeD1() };
+        const snap0 = await channelHealthSnapshot(envOff2);
+        check("l15a. unconfigured ⇒ {configured:false} with ZERO D1/KV ops",
+          snap0.configured === false && envOff2.USERS_DB._prepCount === 0 && envOff2.STATE.getCount === 0);
+        const sec0 = await channelStatusSection(envOff2);
+        check("l15b. the /status section unconfigured ⇒ the single honest 'not configured' line",
+          typeof sec0.text === "string" && sec0.text.indexOf("\u067E\u06CC\u06A9\u0631\u0628\u0646\u062F\u06CC") >= 0);
+        // a populated ledger: 2 sent, 1 failed (in-flight — a dest entry
+        // covers it), 1 claimed STUCK (41 min old, nothing covers it),
+        // 1 unreachable recent
+        const env = chanEnv();
+        const d = channelDestinations(env)[0];
+        const now = Date.now();
+        for (const [ek, st] of [["match:s1|x:t:result", "sent"], ["digest:night:2026-11-07", "sent"]]) {
+          await claimChannelEvent(env, d, ek);
+          await recordChannelState(env, d, ek, st === "sent" ? "sent" : "failed", null);
+        }
+        await claimChannelEvent(env, d, "match:f1|x:t:match-start");
+        await recordChannelState(env, d, "match:f1|x:t:match-start", "failed", "server-error"); // in-flight
+        await env.STATE.put("pending_sends_v1", JSON.stringify([
+          { text: "in flight", chatId: CHAT_ID, keyboard: null, sticker: null, dest: { k: "fa-football", e: "match:f1|x:t:match-start" }, ts: now, attempts: 1 }
+        ]));
+        const stuckRow = { claimed_at: now - 41 * 60 * 1000, sent_at: null, state: "claimed", attempts: 0, last_error: null };
+        env.USERS_DB._tables.channel_posts_v1.set("fa-football\u0000match:st1|x:t:match-start", stuckRow); // an isolate-death residue — no outbox entry
+        await claimChannelEvent(env, d, "match:u1|x:t:result");
+        await recordChannelState(env, d, "match:u1|x:t:result", "unreachable", "need-administrator-rights");
+        const snap = await channelHealthSnapshot(env);
+        check("l15c. the snapshot counts: sent 2, failed 1, unreachable 1, claimed 1 (stuck) — sanitized (no ids/bodies)",
+          snap.configured === true && snap.claims.sent === 2 && snap.claims.failed === 1 && snap.claims.unreachable === 1 && snap.claims.claimed === 1 &&
+          JSON.stringify(snap).indexOf(CHAT_ID) < 0);
+        check("l15d. the reconciliation: the in-flight (outbox-covered) claim is NOT stuck; the 41-min orphan IS (count 1, oldest ≈ 41 min)",
+          snap.stuck.count === 1 && snap.stuck.oldestAgeMin >= 40 && snap.stuck.oldestAgeMin <= 42);
+        check("l15e. lastErrorClass surfaces the newest class ('need-administrator-rights')",
+          snap.lastErrorClass === "need-administrator-rights");
+        check("l15f. lastSentAgeMin is computed from MAX(sent_at)", typeof snap.lastSentAgeMin === "number" && snap.lastSentAgeMin <= 2);
+        // the at-most-once law: the stuck claim is NEVER re-sent — the
+        // next hook invocation finds the row and skips
+        const r = await claimChannelPost(env, "match:st1|x:t:match-start");
+        check("l15g. a stuck claim is NEVER re-claimed/re-sent (the reconciliation is report-only — at-most-once)",
+          r === null && env.USERS_DB._tables.channel_posts_v1.get("fa-football\u0000match:st1|x:t:match-start").state === "claimed");
+        // the /status section renders the configured + stuck state
+        const sec = await channelStatusSection(env);
+        check("l15h. the /status section: active + pending count + the stuck warning line",
+          sec.text.indexOf("\u0641\u0639\u0627\u0644") >= 0 && sec.text.indexOf("\u062F\u0631 \u0627\u0646\u062A\u0638\u0627\u0631") >= 0 && sec.text.indexOf("api/audit") >= 0);
+        // paused section
+        await markChannelPaused(env, "bot-not-a-member");
+        const secP = await channelStatusSection(env);
+        check("l15i. the /status section paused line carries the reason CLASS",
+          secP.text.indexOf("\u0645\u062A\u0648\u0642\u0641") >= 0 && secP.text.indexOf("bot-not-a-member") >= 0);
+        // the lazy stuck scan: a young ledger issues NO stuck-candidate SELECT
+        const envYoung = chanEnv();
+        await claimChannelEvent(envYoung, d, "match:y1|x:t:result");
+        await recordChannelState(envYoung, d, "match:y1|x:t:result", "failed", "server-error");
+        const prepYoung = envYoung.USERS_DB._prepCount;
+        const snapYoung = await channelHealthSnapshot(envYoung);
+        check("l15j. a young failed claim (< grace) issues no lazy stuck scan (exactly the 2 aggregate SELECTs)",
+          snapYoung.stuck.count === 0 && envYoung.USERS_DB._prepCount === prepYoung + 2);
+      }
+    } finally {
+      Date.now = RealDateNow;
+      globalThis.setTimeout = RealSetTimeout;
+    }
+  }
+
+  // ===== m) the budget re-measure — the REAL pipeline, configured vs unconfigured =====
+  console.log("\n=== m. the v13.232 budget re-measure (REAL pipeline) ===");
+  {
+    // The DISCOVERY §8 estimates, re-measured: each scenario runs TWICE
+    // through the REAL executeScheduledLogic (the full-worker harness —
+    // the whole tick graph) against IDENTICAL fixtures/clocks; the only
+    // difference is the channel [vars]. Assertions: ZERO delta while
+    // unconfigured, and the documented envelopes while configured.
+    const CHAN_ID_NUM = -1001234567890;
+    const pngBuf = () => new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+    globalThis.renderCardPngCached = async () => pngBuf(); // the check-lifecycle stub (card.ts is not in the cron body)
+    globalThis.cachedCardPng = async () => pngBuf();
+
+    async function budgetRun(opts, configured) {
+      const h = createFullWorker({ startMs: opts.ticks[0] });
+      // 429/retry waits must terminate under the frozen tick clock: wrap
+      // the harness's instant timer so every sleep advances the mock clock
+      // (the real runtime's Date.now advances across I/O the same way).
+      const harnessTimeout = globalThis.setTimeout;
+      globalThis.setTimeout = (fn, ms) => harnessTimeout(() => { h.advance(ms || 0); fn(); }, 0);
+      const kv = makeKV();
+      const realD1 = makeMockD1();
+      let kvPuts = 0, d1Channel = 0, d1Stmts = 0;
+      const env = {
+        STATE: {
+          async get(k, a) { return kv.get(k, a); },
+          async put(k, v, o) { kvPuts++; return kv.put(k, v, o); },
+          async delete(k) { return kv.delete(k); }
+        },
+        USERS_DB: {
+          prepare(sql) { d1Stmts++; if (String(sql).indexOf("channel_posts_v1") >= 0) d1Channel++; return realD1.prepare(sql); },
+          async batch(stmts) { return realD1.batch(stmts); }
+        },
+        BOT_TOKEN: "test-token",
+        CHAT_ID: "92788333",
+        API_TOKEN: "fd-token",
+        TEHRAN_TZ: "Asia/Tehran"
+      };
+      if (configured) {
+        env.TELEGRAM_CHANNEL_CHAT_ID = String(CHAN_ID_NUM);
+        env.TELEGRAM_CHANNEL_PUBLIC_URL = URL;
+      }
+      const fs = makeFetchDispatcher();
+      globalThis.fetch = fs.dispatch;
+      fs.clock = () => h.clockMs();
+      opts.program(fs, h, configured);
+      // the roster
+      const joined = new Date(opts.ticks[0] - 30 * 864e5).toISOString();
+      const UP = "INSERT INTO user_prefs (chat_id, teams, tz, lang, updated_at) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(chat_id) DO UPDATE SET teams=excluded.teams, tz=excluded.tz, lang=excluded.lang, updated_at=excluded.updated_at";
+      for (const c of opts.chats) {
+        await realD1.prepare("INSERT OR IGNORE INTO chats (chat_id, joined_at) VALUES (?1, ?2)").bind(c.id, joined).run();
+        await realD1.prepare(UP).bind(c.id, c.teams ? JSON.stringify(c.teams) : null, c.tz, c.lang, joined).run();
+      }
+      try {
+        for (const t of opts.ticks) {
+          h.setClock(t);
+          await executeScheduledLogic(env);
+        }
+      } catch (e) {
+        // a scenario bug — surface it loudly with the run's identity
+        throw new Error("budgetRun(" + opts.name + (configured ? ",configured" : ",unconfigured") + ") tick threw: " + e.message);
+      }
+      const out = {
+        kvPuts,
+        d1Stmts,
+        d1Channel,
+        chanRows: realD1._tables.channel_posts_v1.size,
+        chanSends: fs.telegramSends.filter((s) => s.chatId === CHAN_ID_NUM).length,
+        allTg: fs.telegramSends.length,
+        fetches: fs.calls.length
+      };
+      if (process.env.CHANNEL_BUDGET_DEBUG) {
+        console.error("[budget:" + opts.name + (configured ? "+ch" : "") + "] " + JSON.stringify(out) +
+          " rows=" + JSON.stringify([...realD1._tables.channel_posts_v1.entries()].map(([k, r]) => k.split("\u0000")[1] + ":" + r.state)));
+      }
+      globalThis.setTimeout = harnessTimeout;
+      h.restore();
+      return out;
+    }
+
+    // the shared provider surface: FD fixtures + CL standings (the
+    // check-lifecycle shape — everything else 502s, a lean realistic world)
+    function fdFixtures(fs, fixtures) {
+      fs.handlers.push(
+        {
+          match: (u) => u.indexOf("api.football-data.org/v4/matches?") >= 0,
+          handle: async () => fs.json({ matches: fixtures.map((f) => f()) })
+        },
+        {
+          match: (u) => /api\.football-data\.org\/v4\/competitions\/([A-Z_]+)\/standings/.test(u),
+          handle: async (u) => {
+            const code = (u.match(/competitions\/([A-Z_]+)\/standings/) || [])[1];
+            if (code !== "CL") return new Response("upstream", { status: 502 });
+            return fs.json({
+              season: { startDate: "2026-08-01", endDate: "2027-05-30" },
+              standings: [{ table: [
+                { position: 1, points: 9, team: { name: "Manchester City FC" } },
+                { position: 2, points: 7, team: { name: "Real Madrid CF" } },
+                { position: 3, points: 6, team: { name: "FC Bayern München" } },
+                { position: 4, points: 5, team: { name: "Paris Saint-Germain" } }
+              ] }]
+            });
+          }
+        }
+      );
+    }
+    const mk = (id, home, away, comp, iso, status, sc) => ({
+      id, utcDate: new Date(iso).toISOString(), status, competition: { code: comp },
+      homeTeam: { name: home, crest: "https://crests.example/a.png" },
+      awayTeam: { name: away, crest: "https://crests.example/b.png" },
+      score: sc ? { fullTime: { home: sc[0], away: sc[1] } } : null
+    });
+
+    // --- m1. QUIET: nothing in any window ⇒ ZERO delta, zero channel ops ---
+    {
+      const T0 = Date.parse("2026-11-10T12:00:00Z"); // a Tuesday noon
+      const mkFar = () => mk(901, "Real Madrid CF", "FC Barcelona", "PD", "2026-11-15T20:00:00Z", "SCHEDULED", null);
+      const opts = {
+        name: "quiet",
+        ticks: [T0, T0 + 10 * 60 * 1000],
+        chats: [{ id: 92788333, tz: null, lang: "fa", teams: null }],
+        program: (fs) => { fs.onTelegram = async () => true; fdFixtures(fs, [mkFar]); }
+      };
+      const off = await budgetRun(opts, false);
+      const on = await budgetRun(opts, true);
+      check("m1. quiet tick: ZERO delta while configured (KV writes, D1 statements, fetches, telegram sends all identical)",
+        on.kvPuts === off.kvPuts && on.d1Stmts === off.d1Stmts && on.fetches === off.fetches && on.allTg === off.allTg);
+      check("m1. quiet tick: ZERO channel D1 writes, ZERO channel sends, ZERO claim rows",
+        on.d1Channel === 0 && on.chanSends === 0 && on.chanRows === 0);
+    }
+
+    // --- m2. NORMAL: one pre-match-24h reminder fires ---
+    {
+      const T0 = Date.parse("2026-11-10T12:00:00Z"); // match kicks off 2026-11-11T09:00Z — 21h away: inside the 20–24h window
+      const mkM = () => mk(902, "Manchester City FC", "Paris Saint-Germain", "CL", "2026-11-11T09:00:00Z", "SCHEDULED", null);
+      const opts = {
+        name: "normal-1-reminder",
+        // tick 1 populates the pool (the long-view recovery burns the fan-out
+        // budget — the unit defers, exactly the live pattern); tick 2 is a
+        // cheap cached-pool tick and the deferred unit fires
+        ticks: [T0, T0 + 10 * 60 * 1000],
+        chats: [
+          { id: 92788333, tz: null, lang: "fa", teams: null },
+          { id: 101088217, tz: null, lang: "fa", teams: ["Manchester City FC"] }
+        ],
+        program: (fs) => { fs.onTelegram = async () => true; fdFixtures(fs, [mkM]); }
+      };
+      const off = await budgetRun(opts, false);
+      const on = await budgetRun(opts, true);
+      check("m2. normal 1-reminder tick: the private sends are IDENTICAL configured vs not (isolation)",
+        on.allTg - on.chanSends === off.allTg);
+      check("m2. the channel adds exactly ONE post (the fa card path) + 2 D1 writes (claim+sent) + 0 KV writes",
+        on.chanSends >= 1 && on.chanSends <= 2 && on.d1Channel === 2 && on.chanRows === 1 && on.kvPuts === off.kvPuts);
+      check("m2. the fetch delta stays inside the +2 reservation envelope (fanoutFetchCost +2 per unit)",
+        on.fetches - off.fetches >= 1 && on.fetches - off.fetches <= 2);
+    }
+
+    // --- m3. MATCH-NIGHT: 2 simultaneous kickoffs + HT + 2 results ---
+    {
+      const T0 = Date.parse("2026-11-10T18:40:00Z");
+      const KO1 = "2026-11-10T19:00:00Z", KO2 = "2026-11-10T19:00:00Z";
+      const state = { phase: 0 }; // 0=pre 1=live 2=ht 3=ft
+      const mkM1 = () => {
+        const s = state.phase === 0 ? ["SCHEDULED", null] : state.phase === 1 ? ["IN_PLAY", [1, 0]] : state.phase === 2 ? ["PAUSED", [1, 1]] : ["FINISHED", [2, 1]];
+        return mk(903, "Manchester City FC", "Paris Saint-Germain", "CL", KO1, s[0], s[1]);
+      };
+      const mkM2 = () => {
+        const s = state.phase === 0 ? ["SCHEDULED", null] : state.phase >= 3 ? ["FINISHED", [3, 0]] : ["IN_PLAY", [1, 0]];
+        return mk(904, "FC Bayern München", "LASK Linz", "CL", KO2, s[0], s[1]);
+      };
+      const opts = {
+        name: "match-night",
+        // 18:40 warm-up (pool recovery — nothing in-window), 19:05 the two
+        // kickoffs, 19:30 the HT, 20:50 FINISHED (a full-sweep tick may
+        // defer the result units — the real kickoff-drain chain delivers
+        // them; the harness models it with the 21:00 retry tick)
+        ticks: [T0, T0 + 25 * 60 * 1000, T0 + 50 * 60 * 1000, T0 + 130 * 60 * 1000, T0 + 140 * 60 * 1000],
+        chats: [
+          { id: 92788333, tz: null, lang: "fa", teams: null },
+          { id: 101088217, tz: null, lang: "fa", teams: ["Manchester City FC"] }
+        ],
+        program: (fs, h) => {
+          fs.onTelegram = async () => true;
+          fdFixtures(fs, [mkM1, mkM2]);
+          const orig = fs.handlers[0];
+          // advance the fixture phase per tick (the handlers close over
+          // state.phase; the tick loop bumps it via the clock)
+          fs.handlers[0] = {
+            match: orig.match,
+            handle: async (u, i) => {
+              const t = h.clockMs();
+              state.phase = t < Date.parse(KO1) ? 0 : t < Date.parse(KO1) + 25 * 60 * 1000 ? 1 : t < Date.parse(KO1) + 50 * 60 * 1000 ? 2 : 3;
+              return orig.handle(u, i);
+            }
+          };
+        }
+      };
+      const off = await budgetRun(opts, false);
+      const on = await budgetRun(opts, true);
+      // events: 2 match-start (M1 collapses with -big) + 1 HT (M1 master) + 2 results = 5
+      // (d1Channel counts PREPARED statements: 5×2 effective + the stage
+      // collapse's idempotent re-claims — honest D1-op metering)
+      check("m3. match-night: the channel events stay inside the documented envelope (≤6 events incl. the night digest ⇒ ≤13 D1 channel ops incl. the collapse no-ops)",
+        on.chanRows >= 5 && on.chanRows <= 6 && on.d1Channel <= 13 && on.d1Channel >= 8);
+      check("m3. match-night: the KV-write delta ≤ 3 (the result composers' standings snapshots — the measured correction to DISCOVERY §8's 0)",
+        on.kvPuts - off.kvPuts >= 0 && on.kvPuts - off.kvPuts <= 3);
+      check("m3. match-night: the channel fetch delta ≤ 9 (cards/dice/text per event, within the +2-per-unit reservations)",
+        on.fetches - off.fetches >= 4 && on.fetches - off.fetches <= 9);
+      check("m3. match-night: the private sends are unchanged configured vs not",
+        on.allTg - on.chanSends === off.allTg);
+    }
+
+    // --- m4. UCL NIGHT: preview + 2 kickoffs + results + the night digest ---
+    {
+      const T0 = Date.parse("2026-11-10T12:30:00Z"); // the warm-up: pool recovery (the 24h backfill defers here)
+      const KO = "2026-11-10T19:00:00Z"; // 22:30 Tehran — a clean same-date Tehran matchday (the preview + the night digest dateKey both key on it)
+      const state = { phase: 0 };
+      const mkA = () => {
+        const s = state.phase === 0 ? ["SCHEDULED", null] : state.phase === 1 ? ["IN_PLAY", [0, 0]] : ["FINISHED", [1, 0]];
+        return mk(905, "Manchester City FC", "Paris Saint-Germain", "CL", KO, s[0], s[1]);
+      };
+      const mkB = () => {
+        const s = state.phase === 0 ? ["SCHEDULED", null] : state.phase === 1 ? ["IN_PLAY", [0, 0]] : ["FINISHED", [2, 2]];
+        return mk(906, "FC Bayern München", "Real Madrid CF", "CL", KO, s[0], s[1]);
+      };
+      const opts = {
+        name: "ucl-night",
+        // 12:30 warm-up (pool recovery; the missed 24h window backfills),
+        // 13:40 the preview (inside [KO−6h, KO−10min] on a cheap tick) +
+        // the deferred 24h backfills, 19:05 both kickoffs (live sweep),
+        // 21:10 FINISHED (a heavy tick may defer the result units — the
+        // 21:20 retry models the kickoff-drain chain) + the night digest
+        // (00:50 Tehran, the 11-10 matchday over, UCL night)
+        ticks: [T0, Date.parse("2026-11-10T13:40:00Z"), Date.parse("2026-11-10T19:05:00Z"), Date.parse("2026-11-10T21:10:00Z"), Date.parse("2026-11-10T21:20:00Z")],
+        chats: [{ id: 92788333, tz: null, lang: "fa", teams: null }],
+        program: (fs, h) => {
+          fs.onTelegram = async () => true;
+          fdFixtures(fs, [mkA, mkB]);
+          const orig = fs.handlers[0];
+          fs.handlers[0] = {
+            match: orig.match,
+            handle: async (u, i) => {
+              const t = h.clockMs();
+              state.phase = t < Date.parse(KO) - 10 * 60 * 1000 ? 0 : t < Date.parse(KO) + 120 * 60 * 1000 ? 1 : 2;
+              return orig.handle(u, i);
+            }
+          };
+        }
+      };
+      const off = await budgetRun(opts, false);
+      const on = await budgetRun(opts, true);
+      // events: 2 pre-match-24h (backfill) + uclnight preview + 2 match-start + 2 results + night digest = 8
+      // (d1Channel includes the stage-collapse's idempotent re-claims)
+      check("m4. UCL night: the channel events stay inside the documented envelope (≤8 events ⇒ ≤18 D1 channel ops incl. the collapse no-ops)",
+        on.chanRows >= 6 && on.chanRows <= 8 && on.d1Channel <= 18);
+      check("m4. UCL night: the KV-write delta ≤ 3 (the result composers' standings snapshots — the measured DISCOVERY §8 correction)",
+        on.kvPuts - off.kvPuts >= 0 && on.kvPuts - off.kvPuts <= 3);
+      check("m4. UCL night: the channel fetch delta ≤ 14 (the DISCOVERY §8 envelope)",
+        on.fetches - off.fetches >= 5 && on.fetches - off.fetches <= 14);
+      check("m4. UCL night: the private sends are unchanged configured vs not",
+        on.allTg - on.chanSends === off.allTg);
+    }
+
+    // --- m5. WEEKLY MONDAY: the private weekly burst + the channel burst ---
+    {
+      // Monday 02:00 Tehran = Sunday 22:30Z (the WEEKLY_TABLES window)
+      const T0 = Date.parse("2026-11-15T22:30:00Z"); // a Sunday 22:30Z = Monday 02:00+ Tehran
+      const opts = {
+        name: "weekly-monday",
+        ticks: [T0, T0 + 10 * 60 * 1000, T0 + 20 * 60 * 1000],
+        chats: [{ id: 92788333, tz: null, lang: "fa", teams: null }],
+        program: (fs) => {
+          fs.onTelegram = async () => true;
+          // the fixture sits ~5 days out — inside the week-ahead horizon but
+          // OUTSIDE every notification window (the 72h window of an earlier
+          // draft accidentally fired an extra channel event)
+          fdFixtures(fs, [() => mk(907, "Manchester City FC", "Paris Saint-Germain", "CL", "2026-11-20T20:00:00Z", "SCHEDULED", null)]);
+        }
+      };
+      const off = await budgetRun(opts, false);
+      const on = await budgetRun(opts, true);
+      check("m5. weekly Monday: the channel burst lands ONE edition (chanRows 1, ≤2+2 D1 channel writes)",
+        on.chanRows === 1 && on.d1Channel <= 4 && on.d1Channel >= 2);
+      check("m5. weekly Monday: the channel sends ≤ 5 (the fa payload group's [sticker][table] + week-ahead)",
+        on.chanSends >= 1 && on.chanSends <= 5);
+      check("m5. weekly Monday: the KV-write delta ≤ 2 (the burst itself writes NO KV — claims are D1)",
+        on.kvPuts - off.kvPuts >= 0 && on.kvPuts - off.kvPuts <= 2);
+      check("m5. weekly Monday: the private sends are unchanged configured vs not",
+        on.allTg - on.chanSends === off.allTg);
+    }
+  }
 
   console.log(failed ? failed + " FAILURES" : "channel-mirror OK");
   process.exit(failed ? 1 : 0);

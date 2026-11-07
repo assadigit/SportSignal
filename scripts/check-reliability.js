@@ -32,7 +32,7 @@ check("#2 sendMatchNotifications returns a breadcrumb summary", /return notifySu
 check("#3 outboxPush function exists", /async function outboxPush\(env/.test(src));
 check("#3 drainOutbox function exists", /async function drainOutbox\(env/.test(src));
 check("#3 sendTelegramDirect function exists (no outbox recursion)", /async function sendTelegramDirect\(env/.test(src));
-check("#3 sendTelegram pushes to outbox on final failure", /await outboxPush\(env, text, chatId, keyboard\)/.test(src));
+check("#3 sendTelegram pushes to outbox on final failure", /await outboxPush\(env, text, chatId, keyboard, null, chanDest\(chan\)\)/.test(src)); // v13.232: the channel ctx threads the dest through
 check("#3 outbox KV key is pending_sends_v1", /KV_OUTBOX: "pending_sends_v1"/.test(src));
 check("#3 outbox has exponential backoff", /BACKOFFS\s*=\s*\[60e3/.test(src));
 check("#3 outbox caps at KV_OUTBOX_MAX", /KV_OUTBOX_MAX: 200/.test(src));
@@ -47,7 +47,7 @@ check("#3 drainOutbox called in cron", /await drainOutbox\(env\)/.test(src));
 check("#3 v13.69 no bare pause-return in senders (silent drop REMOVED)", !/if \(Date\.now\(\) < TELEGRAM_PAUSE_UNTIL\) return false;/.test(src));
 check("#3 v13.69 bounded pause-wait helper exists", /async function waitTelegramPause\(\)/.test(src));
 check("#3 v13.69 sendTelegram defers via outbox when the pause outlives the bound", /if \(Date\.now\(\) < TELEGRAM_PAUSE_UNTIL && !\(await waitTelegramPause\(\)\)\)/.test(src));
-check("#3 v13.69 subrequest-budget exhaustion defers via outbox (was silent false)", /bumpSubrequest\(\)\) \{\s*\n\s*\/\/ v13\.69[\s\S]{0,320}?await outboxPush\(env, text, chatId, keyboard\)/.test(src));
+check("#3 v13.69 subrequest-budget exhaustion defers via outbox (was silent false)", /bumpSubrequest\(\)\) \{\s*\n\s*\/\/ v13\.69[\s\S]{0,320}?await outboxPush\(env, text, chatId, keyboard, null, chanDest\(chan\)\)/.test(src));
 // Proactive pacing: Telegram's global bot limit is ~30 msg/s; the fan-out
 // fires every send in parallel. A 40ms floor (~25/s) keeps it under.
 check("#3 v13.69 proactive pacing helper exists", /async function paceTelegram\(\)/.test(src));
@@ -298,8 +298,9 @@ check("#nospam10 audit admin alert rate-limited via KV stamp", /KV_AUDIT_ALERT/.
 check("#nospam10 KV_AUDIT_ALERT key defined in CONFIG", /KV_AUDIT_ALERT: "audit_alert_v1"/.test(src));
 
 // v13.38-qc: quality-control round — the last at-least-once vector + hygiene.
-const drainSeg = (src.match(/const due = \[\];[\s\S]{0,2400}?sendTelegramDirect\(env, item\.text/) || [""])[0];
+const drainSeg = (src.match(/const due = \[\];[\s\S]{0,3600}?sendTelegramDirect\(env, item\.text/) || [""])[0];
 // v13.125-stickeroutbox: the window widened 1400→2400 — the drain's due-loop now carries the [sticker][text] pair block (the logo-first attempt) between the keep-list put and the text send; the write-first invariant is unchanged.
+// v13.232-channelhardening: widened 2400→3600 — the due-loop now also carries the channel-ctx/hook block (chanCtx + chanReport) ahead of the sticker block; the write-first invariant is still unchanged.
 check("#qc1 outbox drain: keep-list persisted BEFORE sends (write-first)", drainSeg.indexOf("await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(keep)") >= 0 && drainSeg.indexOf("sendTelegramDirect") > drainSeg.indexOf("await env.STATE.put(CONFIG.KV_OUTBOX, JSON.stringify(keep)"));
 check("#qc1 outbox drain: un-persistable keep-list aborts the drain", /Outbox keep-list save failed[\s\S]{0,200}return \{ drained: 0, remaining: list\.length, dead: 0 \};/.test(src));
 check("#qc1 MEM_DEDUPE has a size cap (no unbounded isolate growth)", /if \(MEM_DEDUPE\.size > 4000\) MEM_DEDUPE\.clear\(\);/.test(src));
@@ -814,7 +815,7 @@ check("#hbfix the footer's period rides ESCAPED on md paths only (raw display st
   // Wiring proof on the REAL sendTelegram body (brace-balanced grab): the
   // footer reassignment sits ABOVE every outboxPush(env, text, …) — the
   // outbox stores the ALREADY-FOOTERED text, so the drain can't double it.
-  const sendTg = grabFn("function sendTelegram(env, text, chatId, keyboard)");
+  const sendTg = grabFn("function sendTelegram(env, text, chatId, keyboard, chan)");
   t("wiring: sendTelegram footers (md) BEFORE every outboxPush (outbox stores footered text)", sendTg.indexOf("text = withTrialFooter(text, 4096, true);") >= 0 && sendTg.indexOf("text = withTrialFooter(text, 4096, true);") < sendTg.indexOf("outboxPush(env, text"));
   const drainSeg = grabFn("function drainOutbox(env)");
   t("wiring: the drain delivers through sendTelegramDirect (the footered idempotent path)", drainSeg.indexOf("sendTelegramDirect(env, item.text") >= 0);

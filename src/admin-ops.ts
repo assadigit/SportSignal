@@ -481,7 +481,17 @@ export const ADMIN_OPS_ROUTES: RouteDef[] = [
         const tracked = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
         const matches = tracked && Array.isArray(tracked.matches) ? tracked.matches : [];
         const { auditNotifications } = await import("./notify-audit");
-        const result = await auditNotifications(env, matches);
+        const result: any = await auditNotifications(env, matches);
+        // v13.232-channelhardening: the channel health block (spec PART IV
+        // §13) — admin-only, sanitized (counts/ages/CLASSES only — never the
+        // chat id, a message body, or a token). Bounded reads; a failure
+        // degrades to the honest {configured} stub, never a 500.
+        try {
+          const { channelHealthSnapshot } = await import("./channel-mirror");
+          result.channel = await channelHealthSnapshot(env);
+        } catch (e) {
+          result.channel = { configured: false, enabled: false, error: "channel health unavailable" };
+        }
         return jsonResponse(result);
       } catch (e) {
         return jsonResponse({ error: "audit failed: " + e.message }, 500);

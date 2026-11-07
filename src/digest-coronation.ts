@@ -141,10 +141,10 @@ export async function maybeNotifyTableToppers(env: Env, matches) {
     // text's own football.sportsignal.ir link counts as the site link — only
     // the bot line rides, no duplicate footer elements).
     if (chClaim) {
-      await sendChannelPost(env, chClaim, async (chEnv, dest) => {
+      await sendChannelPost(env, chClaim, async (chEnv, dest, chan) => {
         const text = await formatTableTopMessage(chEnv, code, newLeader, prevRowOfNew, trigger, "fa");
         if (!text) return false;
-        return await sendTelegram(chEnv, appendChannelFooter(text), dest.chatId);
+        return await sendTelegram(chEnv, appendChannelFooter(text), dest.chatId, null, chan);
       });
     }
     out.sent += ok;

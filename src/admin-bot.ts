@@ -38,6 +38,9 @@ import { getBotMembers, getRegisteredChats, getUserPrefs } from "./users";
 import { chatProfileGet } from "./user-store";
 import { getCronStatus, getPoolMetaCheap } from "./monitoring";
 import { sendTelegram } from "./telegram";
+// v13.232-channelhardening: the admin-only channel health section (spec
+// PART IV §13) — sanitized (classes/counts/ages only, never the chat id).
+import { channelStatusSection } from "./channel-mirror";
 
 // The owner chat id (NaN when CHAT_ID is unset/unparseable — then nothing
 // is admin-gated open and no pages are sent).
@@ -300,7 +303,7 @@ export async function adminStatusMessage(env: Env) {
   // code spans — code-span content needs no escaping (only the backtick
   // is special), so the old escapeMarkdownCharacters here was a DOUBLE
   // escape that rendered literal backslashes (`13\.103\-…`) in the card.
-  return "\u{1F4CA} *\u0648\u0636\u0639\u06CC\u062A SportSignal* \u2014 \u0646\u0633\u062E\u0647 `" + VERSION + "`\n\n"
+  let card = "\u{1F4CA} *\u0648\u0636\u0639\u06CC\u062A SportSignal* \u2014 \u0646\u0633\u062E\u0647 `" + VERSION + "`\n\n"
     + "\u062D\u0627\u0644 \u06A9\u0644\u06CC: " + verdict + "\n"
     + "\u23F1 \u0622\u062E\u0631\u06CC\u0646 \u062A\u06CC\u06A9 \u06A9\u0627\u0645\u0644: " + age(cronAge) + "\n"
     + "\u2764\uFE0F \u0636\u0631\u0628\u0627\u0646: " + age(hbAge) + "\n"
@@ -310,6 +313,17 @@ export async function adminStatusMessage(env: Env) {
     + (st.budget ? " \u00B7 \u0628\u0648\u062F\u062C\u0647: `" + String(st.budget) + "`" : "") + "\n"
     + "\u{1F6A8} \u0644\u0627\u06CC\u0647 \u0647\u0634\u062F\u0627\u0631 \u0645\u062F\u06CC\u0631: " + (adminOk ? "\u2713 \u0641\u0639\u0627\u0644" : "\u2717 \u063A\u06CC\u0631\u0641\u0639\u0627\u0644")
     + (st.api_source ? "\n\U0001F4E1 \u0645\u0646\u0628\u0639 \u062F\u0627\u062F\u0647: `" + String(st.api_source) + "`" : "");
+  // v13.232-channelhardening: the channel-mirror section — configured state,
+  // claim depth + oldest pending age, last successful delivery, last error
+  // CLASS, paused + reason (spec PART IV §13). Admin-only, sanitized; the
+  // card NEVER breaks on it (a section failure is swallowed).
+  try {
+    const sect = await channelStatusSection(env);
+    if (sect && sect.text) card += "\n" + sect.text;
+  } catch (e) {
+    console.warn("channel status section failed: " + e.message);
+  }
+  return card;
 }
 
 // /broadcast <text> — send a message to every registered chat. The body is

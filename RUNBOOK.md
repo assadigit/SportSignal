@@ -65,6 +65,13 @@ Then do §3 (post-deploy verification). Never deploy with a red suite; never dep
 src changes without the matching `scripts/lib/worker-src.js` order/transform update
 if signatures or files changed (the eval harness must co-evolve in the SAME commit).
 
+**Fetch the remote immediately BEFORE `npx wrangler deploy`, not only before
+the push** (the S18b lesson, 2026-11-06): a long session's clone can be stale
+by deploy time — a concurrent push/owner web-UI upload in between means the
+deploy silently ships the OLD tree and live drifts off `main` for hours. The
+git discipline (`git fetch <url> main`, rebase if moved, `ls-remote` verify)
+belongs at BOTH gates — the deploy AND the push.
+
 `sw.js` `CACHE` is only bumped when **client-referenced assets change**
 (`assets/core-*.js`, `public-*.js/css`, fonts). Server-side src changes do NOT
 require a cache bump.
@@ -314,7 +321,7 @@ curl -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
 | `weekly_tables_cursor_v1` / `weekly_tables_payload_v1` | weekly digest (13.124) | the chunked Monday digest's resumable state: CURSOR `{week, ts, pending:{fa,en}}` (remove-before-send per burst; TTL 8d; a >12h-old cursor is stale → dropped; ABSENT = idle — the digest only holds a cursor while delivering) and PAYLOAD (the week's rendered snapshot: per-lang tables + stickers + week-ahead; standings fetched once/week). A live cursor at rest = a digest mid-drain or paused on the KV-write quota (self-heals next tick) |
 | `x_*` (`x_enabled_v1` …) | REMOVED at 13.48-xtrim | none live (X never ran); see wrangler.toml restore note |
 | `cup_scan_v1` | EFL/FA Cup team-scan marker (13.50) | "ok:<ts>"/"fail:<ts>"; ok = skip 5h, fail = 30-min backoff; hot window re-scans ≤30 min |
-| `channel_mirror_v1` | channel-mirror (v13.230-channelbase) | the Telegram Channel Mirror PAUSE marker — written ONLY on state transitions (a permanent channel error class pauses the destination; config-change/owner action resumes). Absent = not paused. While `TELEGRAM_CHANNEL_CHAT_ID` is empty (the shipped default) NOTHING reads or writes it. See `src/channel-mirror.ts` + DISCOVERY §7.6 |
+| `channel_mirror_v1` | channel-mirror (v13.230-channelbase) | the Telegram Channel Mirror PAUSE marker — written ONLY on state transitions (a permanent channel error class pauses the destination; config-change/owner action resumes). Absent = not paused. Since v13.232 the marker also carries the `chatId` it paused under (internal — never surfaced): a marker pinned to a DIFFERENT id than the currently-configured one is a STALE pause (the gate opens — fixing a wrong id un-pauses); the same id stays paused. A real transition pages the admin (rate-limited 1/30 min, the sanitized class only). While `TELEGRAM_CHANNEL_CHAT_ID` is empty (the shipped default) NOTHING reads or writes it. See §13 + `src/channel-mirror.ts` + DISCOVERY §7.6 |
 
 **Orphans (self-cleaning or inert — do not "clean up" without checking TTLs):**
 `sched_v1:*` (156 keys, 7-day TTLs expire ~2026-09-22), `canary_match_v1` (TTL),
@@ -434,3 +441,113 @@ only on successful KV put + outbox write-first). If one is reported:
 - No CI runs anything — `npm test` is a local gate, run it before every deploy.
 - `npm test` includes `live-derby-test.js` (behavioral simulation, no network) —
   it must keep passing; it is the anti-regression for the public pipeline.
+
+---
+
+## 13. Channel-mirror operations (v13.232-channelhardening; TELEGRAM_CHANNEL_MIRROR_SPEC.md PART IV, DISCOVERY §7)
+
+The Telegram Channel Mirror ships COMPLETE but DISABLED: both `[vars]`
+empty in production ⇒ every hook no-ops before any KV/D1/subrequest op.
+The whole surface below activates only when the vars are set.
+
+### 13.1 Setup (owner actions, Session 4)
+
+1. Create the PUBLIC Telegram channel (Persian, football).
+2. Add `@SportSignalAlertsBot` as an administrator **with permission to
+   post messages** (post rights are required; the mere member state is not
+   enough — Telegram answers `need administrator rights`).
+3. Obtain the channel's numeric chat id (the `-100…` form; a `@username`
+   is accepted as an interim value) and its public `https://t.me/…` URL.
+4. Configure BOTH `[vars]` (public values, NOT secrets —
+   `wrangler.toml [vars]` or the dashboard settings):
+
+   ```sh
+   npx wrangler vars set/bucket … # or edit wrangler.toml [vars] + deploy
+   TELEGRAM_CHANNEL_CHAT_ID="-100…" TELEGRAM_CHANNEL_PUBLIC_URL="https://t.me/…"
+   ```
+
+   A malformed/empty chat id fails CLOSED (no destination, no posts); a
+   malformed URL simply means no channel CTA on private messages.
+
+### 13.2 Validation (non-posting; no test post to the public channel)
+
+With the vars set, `GET /api/audit` (admin) returns the `channel` health
+block (`configured:true, enabled:true, …`) — the claim ledger stays empty
+until real events fire. The owner-gated Session 4 validation uses the
+non-posting Bot API checks `getChat(chat_id)` + `getChatMember(chat_id,
+bot_id)` (role `administrator` with post permission) before the first
+live event is trusted. Do NOT send a fake test post to the public channel
+without explicit owner approval.
+
+### 13.3 What the mirror does (the 30-second version)
+
+- One channel post per LOGICAL notification occurrence (the D1
+  `channel_posts_v1` claim ledger — PK `(dest_key, event_key)` — is the
+  write-first, fail-closed fence; `match-start` and `match-start-big`
+  collapse to one kickoff post, likewise `result`/`result-big`).
+- The Persian/Asia-Tehran variant composes through the existing
+  formatters (never a copy of a subscriber's message) + the site/bot
+  footer links; eligible private messages gain the channel CTA only while
+  `TELEGRAM_CHANNEL_PUBLIC_URL` is set.
+- Channel failures are ISOLATED: a channel error can never throw into or
+  block a private send (pinned by the S3 test matrix).
+
+### 13.4 Failure classes + operator responses (v13.232)
+
+| Class (`last_error`) | Meaning | Behavior | Operator response |
+| :--- | :--- | :--- | :--- |
+| `chat-not-found` | wrong id / channel deleted | PERMANENT: claim `unreachable`, destination PAUSED, admin paged | fix `TELEGRAM_CHANNEL_CHAT_ID` or recreate the channel; a changed id auto-un-pauses (stale marker) |
+| `need-administrator-rights` | bot is a member but cannot post | PERMANENT: pause + unreachable + page | grant the bot POST permission in the channel admin settings |
+| `bot-not-a-member` | bot kicked / removed | PERMANENT: pause + unreachable + page | re-add the bot as admin |
+| `dead-chat` | the transport's dead-chat regex (kicked/blocked phrasing) | PERMANENT: pause + unreachable + page | as above — inspect which phrasing Telegram returned |
+| `bad-request-markdown` | the payload itself is undeliverable (parse entities) | PERMANENT: pause + unreachable + page | a composer bug — file it; the destination stays paused until fixed/config-cycled |
+| `rate-limited` / `server-error` / `network` | transient | claim `failed`, the retry rides the outbox (a dest-bearing entry — distinguishable from private retries), bounded ≤6 attempts | none — self-heals; watch `/status` pending |
+| `bad-request` (unknown 4xx) | unrecognized 400 | claim `failed`, NOT paused, NOT outboxed (the transport's hard-fail) | read the claim's class in `/api/audit`; escalate if it repeats |
+| `outbox-exhausted` | the bounded retry lane died (6 attempts) | claim `failed` with this class; report-only | decide per-event whether a manual re-send is worth the duplicate risk (at-most-once bias: the system NEVER auto-resends) |
+
+**Pause semantics:** the pause marker (KV `channel_mirror_v1`, §8) is
+written only on real transitions; while paused every hook skips BEFORE
+claiming (zero D1 ops). Un-pause: (a) change the configured chat id to a
+different one (stale-marker detection — the gate opens within the 60s
+memo TTL), or (b) owner action (`markChannelResumed` via a session, or
+delete the `channel_mirror_v1` KV key — absent = not paused). Re-pausing
+with the SAME id after an un-pause re-arms on the next permanent error.
+
+### 13.5 Observability (admin-only, sanitized — never in public /healthz)
+
+- The admin bot **`/status`** card ends with the channel section:
+  configured state, last successful delivery age, pending count (+ oldest
+  age), last error CLASS, paused + reason, and the stuck-claim warning
+  line. No chat ids, no bodies, no tokens.
+- **`GET /api/audit`** gains the `channel` block: the same numbers plus
+  the per-state claim counts, the pause reason, and the STUCK-CLAIM
+  RECONCILIATION — claims `claimed`/`failed` with no `sent_at`, no
+  in-flight outbox entry and >30 min age (count + oldest age + last class).
+  These are the residue of isolate deaths / failed outbox pushes /
+  exhausted retries; they are NEVER auto-resent (at-most-once). A
+  write-first repair lane was evaluated at v13.232 and DECLINED — a
+  channel claim cannot prove the post never landed (the residual
+  timeout-after-accept window); a human decides per-event.
+- The completion blob's `notify.ch` breadcrumb (per tick, compact):
+  `s` sent · `d` deferred (claimed, not confirmed — outbox/unreachable) ·
+  `k` skipped (claim no-op: race/re-fire/stuck) · `p` paused. `null`
+  while unconfigured (the disabled contract).
+
+### 13.6 Rollback
+
+Empty the two `[vars]` (or `npx wrangler rollback`): old code ignores the
+claim table entirely; the table is additive/ignorable (0 rows while
+disabled). Note: channel entries already queued in the outbox
+(`pending_sends_v1`, dest-bearing) still drain to the channel — bounded
+by the normal 6 attempts; emptying the vars stops NEW posts immediately.
+
+### 13.7 Budget (measured at v13.232 — the DISCOVERY §8 re-measure)
+
+Per 10-min tick, channel CONFIGURED: quiet 0 everywhere; a 1-reminder
+tick +1 post/+2 D1 writes/+0 KV; a match-night ≤6 events/+≤13 D1/+≤2 KV
+(the result composers' standings snapshots — the one measured correction
+to DISCOVERY §8's 0)/+≤9 fetches; a UCL night ≤8 events/+≤18 D1/+≤2 KV/
++≤14 fetches; the weekly Monday burst +1 edition/+≤4 D1/+0-2 KV. While
+UNCONFIGURED: ZERO delta on every axis (pinned by the m-scenarios in
+`scripts/check-channel-mirror.js`). The governor/meters needed NO
+threshold changes. Claims are D1 (the 100k/day tier), never KV.

@@ -175,9 +175,9 @@ export async function mirrorMorningChannelPost(env: Env, nowMs?) {
     (function () { const tt = new Date(m.utcDate).getTime(); return tt >= dayStart && tt < dayEnd; })()
   ).sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
   if (!todayBig.length) return null;
-  return await mirrorChannelPost(env, eventKey, async (chEnv, dest) => {
+  return await mirrorChannelPost(env, eventKey, async (chEnv, dest, chan) => {
     const msg = await buildMorningDigestMessage(chEnv, todayBig, "fa");
-    return await sendTelegram(chEnv, appendChannelFooter(msg), dest.chatId);
+    return await sendTelegram(chEnv, appendChannelFooter(msg), dest.chatId, null, chan);
   });
 }
 export async function buildMorningDigestMessage(env: Env, matches, lang) {

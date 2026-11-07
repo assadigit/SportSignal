@@ -364,7 +364,7 @@ export async function mirrorNightChannelPost(env: Env, pool, nowMs?) {
   if (!nightHasUcl && !(Array.isArray(eliminations) && eliminations.length)) return null;
   const eventKey = channelEventKeyDigest("night", dateKey);
   if (!eventKey) return null;
-  return await mirrorChannelPost(env, eventKey, async (chEnv, dest) => {
+  return await mirrorChannelPost(env, eventKey, async (chEnv, dest, chan) => {
     let msg;
     try {
       msg = await buildNightDigestChannelMessage(chEnv, nightMatches, eliminations, { y, m, d });
@@ -382,7 +382,7 @@ export async function mirrorNightChannelPost(env: Env, pool, nowMs?) {
         console.warn("channel-mirror: UCL night banner failed: " + e.message);
       }
     }
-    return await sendTelegram(chEnv, appendChannelFooter(msg), dest.chatId);
+    return await sendTelegram(chEnv, appendChannelFooter(msg), dest.chatId, null, chan);
   });
 }
 

@@ -111,7 +111,7 @@ export async function detectStatusChanges(env: Env, matches) {
         // received (the channel is one more (Asia/Tehran, fa) group that
         // always exists — DISCOVERY §7.5) + the required footer links.
         if (chClaim) {
-          await sendChannelPost(env, chClaim, async (chEnv, dest) => {
+          await sendChannelPost(env, chClaim, async (chEnv, dest, chan) => {
             const home = translateTeam(a.m.homeTeam.name);
             const away = translateTeam(a.m.awayTeam.name);
             const comp = translateCompetition(a.m.competition.code);
@@ -119,7 +119,7 @@ export async function detectStatusChanges(env: Env, matches) {
             const chMsg = a.status === "CANCELLED"
               ? "\u274C *\u0628\u0627\u0632\u06CC \u0644\u063A\u0648 \u0634\u062F:* " + teams
               : "\u{1F550} *\u0628\u0627\u0632\u06CC \u0628\u0647 \u062A\u0639\u0648\u06CC\u0642 \u0627\u0641\u062A\u0627\u062F:* " + teams;
-            return await sendTelegram(chEnv, appendChannelFooter(chMsg), dest.chatId);
+            return await sendTelegram(chEnv, appendChannelFooter(chMsg), dest.chatId, null, chan);
           });
         }
       }
@@ -168,14 +168,14 @@ export async function detectStatusChanges(env: Env, matches) {
         // v13.231-channelmirror: ONE fa/Asia-Tehran channel post per HT
         // alert (key :ht — the transition itself is the edition).
         if (chClaim) {
-          await sendChannelPost(env, chClaim, async (chEnv, dest) => {
+          await sendChannelPost(env, chClaim, async (chEnv, dest, chan) => {
             const hName = translateTeam(home);
             const aName = translateTeam(away);
             const compName = translateCompetition(m.competition.code);
             const hStr = sH == null ? "?" : toFaDigits(String(sH));
             const aStr = sA == null ? "?" : toFaDigits(String(sA));
             const chMsg = "*\u0627\u0633\u062A\u0631\u0627\u062D\u062A*\n\n\u26BD *" + escapeMarkdownCharacters(hName) + " \u2014 " + escapeMarkdownCharacters(aName) + "*\n" + mdItalic(compName) + "\n*" + hStr + "\\-" + aStr + "*";
-            return await sendTelegram(chEnv, appendChannelFooter(chMsg), dest.chatId);
+            return await sendTelegram(chEnv, appendChannelFooter(chMsg), dest.chatId, null, chan);
           });
         }
       }

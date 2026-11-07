@@ -4,6 +4,78 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.232-channelhardening — the Telegram Channel Mirror Session 3: reliability + observability hardening (deployed, still disabled by default)
+
+**S19, 2026-11-07 (the Channel Mirror program's third runtime session —
+`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 3, built exactly on the
+Session 2 mirror `v13.231-channelmirror`; the design under test is
+`docs/telegram-channel-mirror/DISCOVERY.md` §7.6/§7.7/§10).**
+Production stays unconfigured (`[vars] TELEGRAM_CHANNEL_CHAT_ID` /
+`TELEGRAM_CHANNEL_PUBLIC_URL` still empty) ⇒ still ZERO behavioral surface;
+with the chat-id var empty every entry point (including the new drain hook
+and admin surfaces) no-ops before any KV/D1/subrequest operation.
+
+- **The OUTBOX `dest` field + the drain update (DISCOVERY §7.6 + spec
+  PART IV §11):** `outboxPush` entries may carry an optional `dest`
+  `{k, e}` (the v13.125 `sticker` additive-field precedent — pre-v13.232
+  entries drain unchanged). The channel send path threads a channel ctx
+  through the REAL senders (`sendTelegram`/`sendTelegramDirect` gain an
+  optional 5th argument — private callers unaffected), so every transient
+  channel retry the transport queues is distinguishable from a private
+  one, and `drainOutbox` reports each dest-bearing entry's outcome to the
+  channel-drain hook (registered via `setChannelDrainHook` — a dependency
+  inversion that keeps telegram.ts channel-agnostic): sent ⇒ the claim row
+  goes `sent`; dead/permanent ⇒ unreachable + the pause marker; a
+  permanent class drops the entry instead of riding 6 doomed attempts;
+  the 6-attempt dead-letter records `outbox-exhausted`. Cap/age/attempt
+  semantics unchanged; the channel queue shares the one bounded private
+  list and can never block it (the hook is try/catch'd — a channel
+  telemetry failure cannot break the private drain).
+- **The pause classification, end-to-end (the S18 residual note 1
+  closed):** `classifyTelegramFailure` fingerprints the Telegram
+  400/403 bodies into sanitized classes — chat-not-found /
+  need-administrator-rights / bot-not-a-member / dead-chat /
+  bad-request-markdown (permanent: pause the destination + mark the claim
+  unreachable + a rate-limited admin page through the alertPhaseError
+  pattern) vs rate-limited / server-error / network / bad-request
+  (transient/unknown: stay failed/outboxed, bounded retries). The pause
+  marker now records the chatId it paused under, so a LATER config change
+  to a different id is detected as a stale pause (the gate opens — the
+  documented un-pause path); `markChannelResumed` remains the explicit
+  owner action.
+- **The stuck-claim reconciliation, report-only (DISCOVERY §7.6):**
+  claims stuck `claimed`/`failed` with no sent_at, no in-flight outbox
+  entry and an age past a 30-minute grace window are counted + aged +
+  class-labeled per destination — surfaced admin-only, never blindly
+  re-sent (at-most-once bias). A write-first repair lane was evaluated
+  and DECLINED (a channel claim cannot prove non-delivery — the residual
+  timeout-after-accept window makes a re-queue a duplicate risk); the
+  decision is documented in `src/channel-mirror.ts` and the S19 note.
+- **The admin observability surface (spec PART IV §13, sanitized — no
+  chat ids, no bodies, no tokens):** the admin bot `/status` card gains
+  the channel section (configured state, claim depth + oldest pending
+  age, last successful delivery, last error CLASS, paused + reason) via
+  `channelStatusSection`; `/api/audit` gains the `channel` health block
+  via `channelHealthSnapshot` (bounded reads: two aggregates + one lazy
+  stuck scan + the outbox + the pause marker). The PUBLIC `/healthz` is
+  unchanged by contract.
+- **Harness co-evolution (the same-commit rule):** `scripts/lib/mock-env.js`
+  learns the three health SELECTs + the failure-injection fetch verdicts
+  (an object verdict builds an exact `{status, description, retryAfter}`
+  Telegram error response; `"network"` throws);
+  `scripts/check-channel-mirror.js` grows the Session-3 matrix — the
+  transport/failure battery through the REAL senders (429+retry_after,
+  transient 5xx, network, permanent 400/403 per class, missing config,
+  channel failure never stops private sends, retry-after-restart, bounded
+  retry/dead-letter, the ambiguous-timeout policy, duplicate cron
+  invocations, pause/resume/stale-config) and the full-worker budget
+  re-measure (quiet / normal 1-reminder / match-night / UCL night /
+  weekly Monday — per-tick KV writes, D1 writes and fetch totals measured
+  configured-vs-unconfigured: ZERO delta unconfigured; the documented
+  envelopes hold configured). `check-reliability` re-pins the outbox call
+  shapes; `check-stats` demotes the v13.231 pin to HISTORICAL and adds
+  the v13.232 LIVE wiring pin. SW stays v119 (server-side only).
+
 # v13.231-channelmirror — the Telegram Channel Mirror Session 2: all eligible notification families mirrored in code (deployed, still disabled by default)
 
 **S18, 2026-11-07 (the Channel Mirror program's second runtime session —

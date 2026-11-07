@@ -184,7 +184,7 @@ export async function mirrorUclNightChannelPost(env: Env, pool, nowMs?) {
   if (previewWindowState(firstKo, now) !== "fire") return null;
   const eventKey = channelEventKeyDigest("uclnight", dateKey);
   if (!eventKey) return null;
-  return await mirrorChannelPost(env, eventKey, async (chEnv, dest) => {
+  return await mirrorChannelPost(env, eventKey, async (chEnv, dest, chan) => {
     // the banner first (GIF + the fa caption — the private path's own),
     // guarded like it (< 42); a failure only skips the GIF, never the text.
     if (subrequestCount() < 42) {
@@ -198,7 +198,7 @@ export async function mirrorUclNightChannelPost(env: Env, pool, nowMs?) {
     // the fixture list in PLAIN kickoff order — the array as sorted above;
     // uclPreviewOrder's per-chat priority pass is deliberately NOT applied.
     const msg = buildUclPreviewMessage(chEnv, ucl, "fa", y, m, d);
-    return await sendTelegram(chEnv, appendChannelFooter(msg), dest.chatId);
+    return await sendTelegram(chEnv, appendChannelFooter(msg), dest.chatId, null, chan);
   });
 }
 

@@ -342,7 +342,7 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
   // covers a failed card exactly like the per-chat path). sendChannelPost
   // classifies + records the outcome and can never throw into this path.
   if (channelClaim) {
-    await sendChannelPost(env, channelClaim, async (chEnv, dest) => {
+    await sendChannelPost(env, channelClaim, async (chEnv, dest, chan) => {
       let chMessage = "";
       try {
         chMessage = specialBanner(match, "fa") + await config.messageFormatter(match, chEnv, "fa");
@@ -378,7 +378,7 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
           console.warn("channel-mirror: card failed, text fallback: " + e.message);
         }
       }
-      return await sendTelegram(chEnv, chMessage, dest.chatId);
+      return await sendTelegram(chEnv, chMessage, dest.chatId, null, chan);
     });
   }
   if (anySuccess) {
