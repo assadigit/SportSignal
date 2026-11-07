@@ -154,9 +154,9 @@ TESTS:
 - wrangler dev local smoke, UNCONFIGURED — / 200, /healthz real JSON (version 13.232-channelhardening; ok:false locally = the documented no-local-cron state), /nope 404, /api/card/nope 404, /admin 200, /matches 200, zero runtime channel log lines (only the startup banner's [vars] rows)
 - wrangler dev local smoke, CONFIGURED (--var TELEGRAM_CHANNEL_CHAT_ID:-1009998887776 + a test URL) — routes still real, healthz sane, ZERO api.telegram.org fetches without an eligible event, zero channel-mirror runtime lines
 COMMIT:
-- <filled after commit> "feat: the Channel Mirror Session 3 — reliability + observability hardening, still disabled by default (v13.232-channelhardening)"
+- 01490c3 (full: 01490c3763706ffd542c9dc2795e357499bec861) "feat: the Channel Mirror Session 3 — reliability + observability hardening, still disabled by default (v13.232-channelhardening)"
 PUSH:
-- origin main — verified with git ls-remote (one-shot token push; token never in git config)
+- origin main — verified with git ls-remote: refs/heads/main = 01490c3763706ffd542c9dc2795e357499bec861 (one-shot token push; token never in git config)
 DEPLOYMENT:
 - deployed: npx wrangler deploy → ucl-notifier Version ID 86f48d91-d917-43fd-913a-5795fe95b65e (the latest, 100%); both channel vars deployed EMPTY (verified via the Workers settings API); both cron triggers intact (*/10 + 27 */4)
 POST-DEPLOY VERIFICATION:
@@ -211,7 +211,7 @@ MANDATORY READING BEFORE ANYTHING ELSE (in this order):
    budget).
 
 SESSIONS 1–3 SHIPPED (v13.232-channelhardening; live deployment
-86f48d91 from main@<the S19 commit>; disabled by default — [vars]
+86f48d91 from main@01490c3; disabled by default — [vars]
 TELEGRAM_CHANNEL_CHAT_ID / TELEGRAM_CHANNEL_PUBLIC_URL verified EMPTY in
 production; D1 channel_posts_v1 live with 0 rows; npm test 2,888 EXIT 0,
 68 of them the Session-3 transport/failure/budget matrix in
