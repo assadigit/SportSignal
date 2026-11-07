@@ -4,6 +4,50 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.236-promocalm — the promo strip redesign: one message at a time on a pure-CSS loop (the owner's "too distracting" verdict on the v13.235 marquee)
+
+**S24, 2026-11-08 (hours after v13.235 shipped, the owner's verdict,
+verbatim: «It's too distracting, it has too much texts at once, I suggest
+a changing pattern of texts using css, with some css effects to make it
+animated and living without bloating up the speed of site»).** A pure
+PRESENTATION release for the WEBSITE surface again: zero new state, zero
+new fetches, zero new writes, zero channel/bot change.
+
+- **The rotator**: the 6-message 30s marquee is RETIRED. `.ps-rot` is a
+  `display:grid` stack — `grid-area:1/1` puts every `.ps-fr` in the SAME
+  cell and the row auto-sizes to the tallest frame, so the strip NEVER
+  reflows between frames. Exactly ONE short message is visible at a
+  time, cycling on a **12s loop (3 frames × 4s)** via per-nth-child
+  NEGATIVE `animation-delay`s (0s / −8s / −4s — each frame's on-slot is
+  the first quarter of its own timeline, so the delays step backwards);
+  fade + 7px rise in/out at ~0.48s, centered. Hover parks the loop
+  (`animation-play-state`) — hold the message you are reading. Pure CSS:
+  no timers, no JS, works no-JS.
+- **The mark**: the 37.9 KB `/ui/promo-signal.gif` is RETIRED FROM THE
+  PAGE (the file + its immutable `_headers` pin stay per the retention
+  rule; nothing references it — **−37.9 KB, one fewer request**) and
+  replaced by a pure-CSS signal chip in the same skin: the Telegram
+  plane SVG floating ±1.2px (3.2s alternate) over TWO ping rings half a
+  phase apart (2.6s, 1.3s offset). Every animation is `opacity`/
+  `transform` ONLY — compositor-only, no layout, no paint, zero image
+  bytes, zero requests.
+- **The copies**: one idea per frame (news / channel / bot alerts), in
+  both fa+en per the language law. ≤600px swaps the `.ps-l` long copies
+  for `.ps-s` short ones (no @handles on phones — the pills carry
+  them). The `.ps-sr` static summary carries the whole sentence for
+  screen readers ONCE, calmly (the rotating stage is `aria-hidden` — a
+  4s aria-live would churn the announcement every cycle).
+- **Reduced motion**: the loop parks on frame 1 STATICALLY (opacity:1,
+  no animation — the bundle's global `*{animation:none!important}` kill
+  is honored) and the mark freezes.
+- **Unchanged contracts**: the strip geometry (after the skip link,
+  before `#topbar`, −24px/−16px full bleed, z-30), the two pills, the
+  44px dismiss + the 7-day `ps_hide` memory, the `html[lang]` fa/en
+  law, the inline-only round (no bundle edit, no SW bump).
+- **Harness co-evolution (same commit)**: the v13.235 wiring pin demotes
+  to HISTORICAL; the new v13.236 wiring pin carries the
+  rotator/mark/copies/headers contracts.
+
 # v13.235-promostrip — the website promo strip: the moving-GIF chip + the seamless ticker above the header (the owner's channel+bot promo ask)
 
 **S23, 2026-11-08 (the owner's ask: «a strip banner on top of header, with a
