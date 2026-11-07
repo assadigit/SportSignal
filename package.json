@@ -1,6 +1,6 @@
 {
   "name": "ucl-notifier",
-  "version": "13.233.0.0",
+  "version": "13.234.0.0",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",

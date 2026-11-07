@@ -4,6 +4,41 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.234-channelstyle — the channel presentation layer: stage badges + the labeled link block (the owner's tidy-up ask)
+
+**S22, 2026-11-07 (the style round, hours after the activation: the owner
+saw the first live post on @SportSignalz — «it's okay but can be more tidy
+and organized and good looking… for example the website should have its own
+emoji»).** A pure PRESENTATION release for the channel surface: zero new
+state, zero new fetches, zero new writes, zero private-message change (the
+parity law — private output stays byte-identical, always).
+
+- **The stage badge (`channelStageHead`)**: a channel is a FEED, not a
+  personal reminder — a reader scrolling @SportSignalz could not tell a
+  24h countdown post from a 3h one (the private v13.10-clean layout had
+  rightly dropped stage headers for reminders, but a public feed needs
+  each post self-explanatory). Every countdown channel post now opens
+  with a bold Persian badge: **«⏳ ۳ روز / ۲۴ ساعت / ۳ ساعت / ۱ ساعت /
+  ۵ دقیقه تا شروع بازی»**. match-start and result keep their formatters'
+  own headlines («⚽️ مسابقه شروع شد» / «🏁 نتیجه نهایی») — a badge would
+  duplicate them.
+- **The labeled link block**: the engine hook no longer pastes the v13.22
+  private promo CTA (the wordy «مشاهده جدول لیگ‌ها و مهمترین بازی‌های
+  پیش رو:» + the bare, un-emojied URL) onto channel copies.
+  `appendChannelFooter` now renders ONE consistent block for every family
+  — the heavy `━━━━━━━━━━━━` rule, then **«🌐 سایت: https://sportsignal.ir»**
+  and **«🤖 ربات: https://t.me/SportSignalAlertsBot»** — each link with its
+  own emoji label, exactly the owner's ask. The duplicate-avoidance law is
+  unchanged: a message already carrying a sportsignal.ir link (the tables'
+  football.sportsignal.ir footer) still gets only the bot line.
+- **Harness co-evolution (same commit)**: check-channel-mirror's g-section
+  pins the badge table (5 countdown types + the empty-string cases) and the
+  new separator; the h1/h2/h8 composition pins flip to the badge + labeled
+  block; the CHANNEL_SEAM exclusion regex learns `channelStageHead`; the
+  `mdBold` global stub joins `escapeMarkdownCharacters` for the module-slice
+  evals. The channel_posts_v1 ledger, the claim/send/record runner, the
+  budgets and the SW cache (v119) are all untouched.
+
 # v13.233-channelactivate — the Telegram Channel Mirror ACTIVATION: the owner gate satisfied, the destination live (deployed-enabled)
 
 **S21, 2026-11-07 (the Channel Mirror program's activation session —

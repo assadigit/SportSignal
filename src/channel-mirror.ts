@@ -68,6 +68,10 @@
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { escapeMarkdownCharacters, toFaDigits } from "./utils";
+// v13.234-channelstyle: the stage badge composes through the entity
+// builder (the v13.106 mdstyle law — every styled span goes through md.ts,
+// never hand-rolled delimiters).
+import { mdBold } from "./md";
 // v13.232-channelhardening: the transport seam this module now consumes —
 // sendTelegram for the rate-limited admin pause page (the alertPhaseError
 // pattern), setChannelDrainHook to REGISTER the drain-side outcome handler
@@ -454,19 +458,48 @@ export function channelEnvFor(env: Env) {
   return { ...env, TEHRAN_TZ: "Asia/Tehran" };
 }
 
+// ---------- the channel stage badge (v13.234-channelstyle) ----------
+//
+// The channel is a FEED, not a reminder: a reader scrolling @SportSignalz
+// could not tell a 24h countdown post from a 3h one — the private
+// v13.10-clean layout rightly dropped the stage headers for a personal
+// reminder, but a public feed needs each post self-explanatory. Every
+// countdown post therefore opens with a bold Persian badge naming its
+// stage. match-start and result keep their formatters' own headlines
+// («⚽️ مسابقه شروع شد» / «🏁 نتیجه نهایی») — a badge would duplicate them.
+// Pure static map: zero fetches, zero writes, MarkdownV2-safe via mdBold
+// (the ⏳ rides OUTSIDE the bold span, the formatMatchStartMessage
+// precedent for emoji-outside-entity).
+var CHANNEL_STAGE_BADGES = {
+  "pre-match-72h": "\u06F3 \u0631\u0648\u0632 \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC",
+  "pre-match-24h": "\u06F2\u06F4 \u0633\u0627\u0639\u062A \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC",
+  "pre-match-3h": "\u06F3 \u0633\u0627\u0639\u062A \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC",
+  "pre-match-1h": "\u06F1 \u0633\u0627\u0639\u062A \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC",
+  "pre-match-5min": "\u06F5 \u062F\u0642\u06CC\u0642\u0647 \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC"
+};
+export function channelStageHead(type) {
+  const b = type && CHANNEL_STAGE_BADGES[type];
+  return b ? "\u23F3 " + mdBold(b) + "\n\n" : "";
+}
+
 // ---------- the channel footer (spec PART II §4 — every channel post ends
 // with the website + bot links) ----------
 //
-// Persian, concise, MarkdownV2-escaped, consistent with the bot voice. The
-// DUPLICATE-AVOIDANCE law: a message that already carries a sportsignal.ir
-// link (the v13.22 promo footer on every engine message; the tables'
+// v13.234-channelstyle (the owner's tidy-up ask, 2026-11-07: "tidy up the
+// channel messages — the website should have its own emoji; more tidy,
+// organized and good looking"): the link block is a LABELED two-line unit
+// under a heavy box-drawing rule — «🌐 سایت» + «🤖 ربات», one voice, one
+// separator — replacing the v13.22 private promo CTA (the wordy «مشاهده
+// جدول لیگ‌ها…» line + the bare un-emojied URL) that the engine hook used
+// to paste onto channel copies. The DUPLICATE-AVOIDANCE law is unchanged:
+// a message that already carries a sportsignal.ir link (the tables'
 // football.sportsignal.ir footer) gets ONLY the missing bot line, riding as
-// a plain continuation line — a second separator would be a duplicate
+// a plain continuation line — never a second separator or a duplicate
 // footer element (spec §4). The dot-escaped and raw URL forms are both
 // matched (flat = backslashes stripped) so an escaped promo link counts.
 // Fail-open at the ceiling like withTrialFooter: a message already at the
 // limit ships WITHOUT the footer rather than crossing it and losing itself.
-var CHANNEL_FOOTER_SEP = "\\-\\-\\-\\-\\-\\-";
+var CHANNEL_FOOTER_SEP = "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501";
 var CHANNEL_FOOTER_SITE = "\uD83C\uDF10 \u0633\u0627\u06CC\u062A: " + escapeMarkdownCharacters(CONFIG.CHANNEL_SITE_URL || "https://sportsignal.ir");
 var CHANNEL_FOOTER_BOT = "\uD83E\uDD16 \u0631\u0628\u0627\u062A: " + escapeMarkdownCharacters(CONFIG.CHANNEL_BOT_URL || "https://t.me/SportSignalAlertsBot");
 

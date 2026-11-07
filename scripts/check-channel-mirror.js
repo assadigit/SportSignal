@@ -246,6 +246,15 @@ globalThis.CONFIG = {
 globalThis.escapeMarkdownCharacters = function escapeMarkdownCharacters(text) {
   return text.replace(/([\[\]\(\)~`>#\+\-=|{}\.!_])/g, "\\$1");
 };
+// v13.234-channelstyle: the REAL mdBold (md.ts) — the channel module's
+// stage-badge builder closes over it (the transform strips its import);
+// identical to the md.ts implementation (entities wrap ESCAPED inner text,
+// the whole reserved set — md.ts's MDV2_RESERVED law).
+globalThis.mdBold = function mdBold(text) {
+  const RESERVED = "_*[]()~`>#+-=|{}.!\\";
+  const RE = new RegExp("[" + RESERVED.replace(/[-\\^\[\]]/g, "\\$&") + "]", "g");
+  return "*" + String(text == null ? "" : text).replace(RE, "\\$&") + "*";
+};
 // v13.232-channelhardening: the transport seams the channel module now
 // references at module scope (setChannelDrainHook — the registration
 // statement) and inside the pause page (sendTelegram). The unit sections
@@ -560,13 +569,13 @@ const check = (name, cond) => {
     // appendChannelFooter — the duplicate-avoidance table
     const NO_LINKS = "plain digest body";
     const f1 = appendChannelFooter(NO_LINKS);
-    check("g. footer: no links present ⇒ separator + site + bot lines appended", f1 === NO_LINKS + "\n\n\\-\\-\\-\\-\\-\\-\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
+    check("g. footer: no links present ⇒ separator + site + bot lines appended", f1 === NO_LINKS + "\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
     const PROMO = "msg\n\n\\-\\-\\-\\-\\-\\-\n\u0645\u0634\u0627\u0647\u062F\u0647:\nhttps://sportsignal\\.ir";
     const f2 = appendChannelFooter(PROMO);
     check("g. footer: the escaped promo site link counts ⇒ ONLY the bot line rides (no second separator)", f2 === PROMO + "\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
     const BOT_ONLY = "msg with https://t.me/SportSignalAlertsBot already";
     const f3 = appendChannelFooter(BOT_ONLY);
-    check("g. footer: bot link already present (raw form) ⇒ only the site line + separator", f3 === BOT_ONLY + "\n\n\\-\\-\\-\\-\\-\\-\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir");
+    check("g. footer: bot link already present (raw form) ⇒ only the site line + separator", f3 === BOT_ONLY + "\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir");
     const BOTH = "msg https://sportsignal.ir and https://t.me/SportSignalAlertsBot";
     check("g. footer: both links present ⇒ byte-identical (no duplicate footer elements)", appendChannelFooter(BOTH) === BOTH);
     const FOOTERED = appendChannelFooter(NO_LINKS);
@@ -574,6 +583,16 @@ const check = (name, cond) => {
     const LONG = "x".repeat(4090);
     check("g. footer: fail-open at the 4096 ceiling (the withTrialFooter law)", appendChannelFooter(LONG) === LONG);
     check("g. footer: the table-footer subdomain counts as the site link (no duplicate)", appendChannelFooter("table\n\n\u062C\u062F\u0648\u0644 \u06A9\u0627\u0645\u0644: football\\.sportsignal\\.ir") .endsWith("\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot"));
+
+    // channelStageHead — the v13.234-channelstyle stage badges (the feed
+    // needs each countdown post self-explanatory; the old promo CTA is gone
+    // from channel copies, the badge is the new opener)
+    check("g. badge: pre-match-72h ⇒ \u23F3 bold «\u06F3 \u0631\u0648\u0632 \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC» + blank line", channelStageHead("pre-match-72h") === "\u23F3 *\u06F3 \u0631\u0648\u0632 \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC*\n\n");
+    check("g. badge: pre-match-24h ⇒ \u23F3 bold «\u06F2\u06F4 \u0633\u0627\u0639\u062A \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC»", channelStageHead("pre-match-24h") === "\u23F3 *\u06F2\u06F4 \u0633\u0627\u0639\u062A \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC*\n\n");
+    check("g. badge: pre-match-3h ⇒ \u23F3 bold «\u06F3 \u0633\u0627\u0639\u062A \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC»", channelStageHead("pre-match-3h") === "\u23F3 *\u06F3 \u0633\u0627\u0639\u062A \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC*\n\n");
+    check("g. badge: pre-match-1h ⇒ \u23F3 bold «\u06F1 \u0633\u0627\u0639\u062A \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC»", channelStageHead("pre-match-1h") === "\u23F3 *\u06F1 \u0633\u0627\u0639\u062A \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC*\n\n");
+    check("g. badge: pre-match-5min ⇒ \u23F3 bold «\u06F5 \u062F\u0642\u06CC\u0642\u0647 \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC»", channelStageHead("pre-match-5min") === "\u23F3 *\u06F5 \u062F\u0642\u06CC\u0642\u0647 \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC*\n\n");
+    check("g. badge: match-start / result / unknown / null ⇒ the empty string (their formatters carry the headlines)", channelStageHead("match-start") === "" && channelStageHead("result") === "" && channelStageHead("result-big") === "" && channelStageHead("nope") === "" && channelStageHead(null) === "");
 
     // withChannelCta — the private parity law, both states
     const base = "private message body";
@@ -656,7 +675,7 @@ const check = (name, cond) => {
     check("h1. configured ⇒ private output BYTE-IDENTICAL (the CTA parity law, unset URL)", JSON.stringify(PV) === baselinePriv);
     check("h1. one fan-out to 3 subscribers (2 groups) ⇒ exactly ONE channel post", CH.length === 1 && CH[0].chatId === CHAT_ID);
     const chTextA = CH[0].text;
-    check("h1. the channel copy is the fa/Asia-Tehran composition + promo + footer bot line", chTextA === "MATCHTEXT" + "\n\n\\-\\-\\-\\-\\-\\-\n\u0645\u0634\u0627\u0647\u062F\u0647 \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627 \u0648 \u0645\u0647\u0645\u062A\u0631\u06CC\u0646 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634 \u0631\u0648:\nhttps://sportsignal\\.ir" + "\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
+    check("h1. the channel copy is the badge + fa/Asia-Tehran composition + the labeled footer block (v13.234-channelstyle)", chTextA === "\u23F3 *\u06F3 \u0633\u0627\u0639\u062A \u062A\u0627 \u0634\u0631\u0648\u0639 \u0628\u0627\u0632\u06CC*\n\nMATCHTEXT" + "\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
     check("h1. no subscriber chat id / username ever leaks into the channel payload", !chTextA.includes("501") && !chTextA.includes("502") && !chTextA.includes("503"));
     check("h1. the claim row recorded 'sent'", envC.USERS_DB._tables.channel_posts_v1.get("fa-football\u0000match:" + matchKey(match) + ":pre-match-3h").state === "sent");
 
@@ -733,7 +752,7 @@ const check = (name, cond) => {
     // 1. the broadcast alone posts exactly once
     const env1 = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
     await broadcastBigMatchKickoff(env1, [bigMatch]);
-    check("h2. match-start-big alone ⇒ ONE channel post (text-only, the full footer block)", CH.length === 1 && CH[0].text === "KOSTART" + "\n\n\\-\\-\\-\\-\\-\\-\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
+    check("h2. match-start-big alone ⇒ ONE channel post (text-only, the full footer block)", CH.length === 1 && CH[0].text === "KOSTART" + "\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
     CH.length = 0;
     await broadcastBigMatchKickoff(env1, [bigMatch]);
     check("h2. repeated broadcast tick ⇒ no duplicate", CH.length === 0);
@@ -1116,7 +1135,7 @@ G("function tzOffsetMinutes(tz"),
     const envW = mkEnv({ TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID });
     const rW = await serveChannelWeekly(envW, "2026-W46");
     check("h8. the burst serves [sticker][table]×N + week-ahead to the channel", rW && rW.served === true && STK.length === 1 && STK[0].sticker === "STK-PD" && CH.length === 3);
-    check("h8. the footer rides the CLOSING message only (no footer spam on the tables)", !CH[0].text.includes("\u0633\u0627\u06CC\u062A") && !CH[1].text.includes("\u0633\u0627\u06CC\u062A") && CH[2].text === "WEEKAHEAD" + "\n\n\\-\\-\\-\\-\\-\\-\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
+    check("h8. the footer rides the CLOSING message only (no footer spam on the tables)", !CH[0].text.includes("\u0633\u0627\u06CC\u062A") && !CH[1].text.includes("\u0633\u0627\u06CC\u062A") && CH[2].text === "WEEKAHEAD" + "\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\uD83C\uDF10 \u0633\u0627\u06CC\u062A: https://sportsignal\\.ir\n\uD83E\uDD16 \u0631\u0628\u0627\u062A: https://t\\.me/SportSignalAlertsBot");
     check("h8. the claim is digest:weekly:<isoWeekKey> + state 'sent'", envW.USERS_DB._tables.channel_posts_v1.get("fa-football\u0000digest:weekly:2026-W46").state === "sent");
     const rW2 = await serveChannelWeekly(envW, "2026-W46");
     check("h8. repeat ⇒ no second burst (the week is claimed)", rW2 === null && CH.length === 3);
@@ -1141,7 +1160,7 @@ G("function tzOffsetMinutes(tz"),
     const fs = require("fs");
     const path = require("path");
     const SRC = (f) => fs.readFileSync(path.join(__dirname, "..", "src", f), "utf8");
-    const CHANNEL_SEAM = /claimChannelPost|sendChannelPost|mirrorChannelPost|claimChannelEvent|recordChannelState|channelDestinations|channelActive|appendChannelFooter|withChannelCta|mirrorMorningChannelPost|mirrorUclNightChannelPost|mirrorNightChannelPost|serveChannelWeekly/;
+    const CHANNEL_SEAM = /claimChannelPost|sendChannelPost|mirrorChannelPost|claimChannelEvent|recordChannelState|channelDestinations|channelActive|appendChannelFooter|channelStageHead|withChannelCta|mirrorMorningChannelPost|mirrorUclNightChannelPost|mirrorNightChannelPost|serveChannelWeekly/;
     const EXCLUDED = [
       ["bot.ts", "the private command replies (/start /help /next /teams /timezone /lang /stop)"],
       ["admin-bot.ts", "the admin command surface (/status /members /broadcast)"],

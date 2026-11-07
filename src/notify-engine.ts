@@ -26,7 +26,7 @@ import { sendTelegram, sendDice, sendPhotoBinary } from "./telegram";
 // v13.231-channelmirror: the Session-2 hook primitives (DISCOVERY §7.4) —
 // claimChannelPost BEFORE the private fan-out, sendChannelPost after it;
 // appendChannelFooter on the channel copy, withChannelCta on the private one.
-import { claimChannelPost, sendChannelPost, channelEventKeyMatch, channelActive, appendChannelFooter, withChannelCta } from "./channel-mirror";
+import { claimChannelPost, sendChannelPost, channelEventKeyMatch, channelActive, appendChannelFooter, withChannelCta, channelStageHead } from "./channel-mirror";
 import { renderCardPngCached, cachedCardPng } from "./card";
 import { getRegisteredChats, getUserPrefs, groupChatsByTz, userFollowsMatch, isBigMatch, isMasterBigMatch } from "./users";
 
@@ -345,16 +345,23 @@ export async function sendNotificationIfNeeded(match, config, chatGroups, env, c
     await sendChannelPost(env, channelClaim, async (chEnv, dest, chan) => {
       let chMessage = "";
       try {
-        chMessage = specialBanner(match, "fa") + await config.messageFormatter(match, chEnv, "fa");
+        // v13.234-channelstyle: the channel copy opens with the stage badge
+        // (a feed needs each post self-explanatory - a 24h countdown and a
+        // 3h one were indistinguishable); match-start/result get "" (their
+        // formatters carry their own headlines). The body still composes
+        // through the EXISTING formatters with the channel env - the law.
+        chMessage = channelStageHead(config.type) + specialBanner(match, "fa") + await config.messageFormatter(match, chEnv, "fa");
       } catch (e) {
         console.warn("channel-mirror: engine formatter failed (" + config.type + "): " + e.message);
         return false;
       }
       if (late) chMessage += "\n\n" + mdItalic("\u0627\u06CC\u0646 \u06CC\u0627\u062F\u0622\u0648\u0631\u06CC \u0628\u0627 \u062A\u0623\u062E\u06CC\u0631 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F");
-      chMessage += "\n\n\\-\\-\\-\\-\\-\\-\n\u0645\u0634\u0627\u0647\u062F\u0647 \u062C\u062F\u0648\u0644 \u0644\u06CC\u06AF\u200C\u0647\u0627 \u0648 \u0645\u0647\u0645\u062A\u0631\u06CC\u0646 \u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u067E\u06CC\u0634 \u0631\u0648:\nhttps://sportsignal\\.ir";
-      // every channel post ends with the required links (the promo footer's
-      // site link is already present ⇒ only the bot line rides — no
-      // duplicate footer elements; the trial footer rides the sender layer)
+      // v13.234-channelstyle: the channel link block replaces the private
+      // promo CTA on channel copies - the body carries NO site link here, so
+      // appendChannelFooter appends the FULL labeled block (heavy rule +
+      // the labeled site + bot lines; spec PART II 4; the owner's tidy-up
+      // ask). The private path above keeps its v13.22 promo footer untouched
+      // (the parity law - private output is byte-identical, always).
       chMessage = appendChannelFooter(chMessage);
       // the cosmetic dice, fire-and-forget like the private path (lean mode
       // and late backfills skip it — the text is the payload)
