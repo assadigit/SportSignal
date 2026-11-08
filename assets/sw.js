@@ -960,7 +960,19 @@
 //              POST; zero RUM events landed 11-05); the bump evicts the
 //              SWR/offline-fallback copies of every page whose cached HTML
 //              still carries the dead-endpoint beacon.
-const CACHE = "sportsignal-v119";
+// v13.242-faglow (S31, 2026-11-08): bumped from v119 — this release
+//              edits a client-referenced asset AND the served HTML: the
+//              bundle public-13.73.js -> 13.74.js (mset regains fmtNum so the
+//              MOBILE card countdown pockets render Persian-Indic digits in
+//              FA exactly like the desktop trio; EN stays Latin tabular) and
+//              the homepage inline style/script carry the S31 mobile round
+//              (the FA .mc-num Morabba override, the jersey flank dissolve
+//              mask, the grass-green glow pill — bigger, breathing, revealed
+//              within the first 20% of the viewport scroll — and the divided
+//              standalone header Telegram icon with the REAL circled logo).
+//              Cache-first assets cannot refresh without a rename or a bump,
+//              the v13.39 rule; 13.73.js stays served + pinned one SEO TTL.
+const CACHE = "sportsignal-v120";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -305,10 +305,14 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   {
     const z = (n: number) => (n < 10 ? "0" + n : "" + n);
     let hcD = "--", hcH = "--", hcM = "--", hcS = "--", hcPct = "0", hcUpcoming = false;
-    // v13.164-matchcard + v13.170-mcv3: the mobile card's cells ride the SAME
-    // epoch + guard — but the card's digits are LATIN in both languages (the
-    // owner's instruction 8; updateBigBar's mset writer keeps them Latin on
-    // every tick client-side, tabular Chakra Petch).
+    // v13.164-matchcard + v13.170-mcv3 + v13.242-faglow: the mobile card's
+    // cells ride the SAME epoch + guard. Since v13.242 (owner: "Make the
+    // countdown timer in both mobile and desktop, for farsi language,
+    // farsi numerals (mobile is latin numbers now)") the card's digits
+    // pass through toFaDigits EXACTLY like the desktop hcD/hcH/hcM trio
+    // (the page is always the FA presentation pre-JS; updateBigBar's
+    // mset writer — public-13.74.js — regains fmtNum so every client
+    // tick and the EN toggle agree with this mirror).
     let mcD = "--", mcH = "--", mcM = "--";
     if (nextBig && nextBig.s.utcDate) {
       const st = String(nextBig.s.status || "").toUpperCase();
@@ -322,9 +326,9 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
         hcH = toFaDigits(z(Math.floor(ms % 864e5 / 36e5)));
         hcM = toFaDigits(z(Math.floor(ms % 36e5 / 6e4)));
         hcS = toFaDigits(z(Math.floor(ms % 6e4 / 1e3)));
-        mcD = z(Math.floor(ms / 864e5));
-        mcH = z(Math.floor(ms % 864e5 / 36e5));
-        mcM = z(Math.floor(ms % 36e5 / 6e4));
+        mcD = toFaDigits(z(Math.floor(ms / 864e5)));
+        mcH = toFaDigits(z(Math.floor(ms % 864e5 / 36e5)));
+        mcM = toFaDigits(z(Math.floor(ms % 36e5 / 6e4)));
         let g = 1 - ms / 864e5; if (g < 0) g = 0; if (g > 1) g = 1;
         hcPct = String(Math.max(2, Math.round(g * 100)));
       }
@@ -341,8 +345,9 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
         .replace("__SEO_HCD__", hcD).replace("__SEO_HCH__", hcH)
         .replace("__SEO_HCM__", hcM).replace("__SEO_HCS__", hcS)
         .replace("__SEO_HCPCT__", hcPct)
-        // v13.164-matchcard + v13.170-mcv3: the mobile card's three pockets —
-        // same remaining time, Latin-digit tabular cells (instruction 8)
+        // v13.164-matchcard + v13.170-mcv3 + v13.242-faglow: the mobile
+        // card's three pockets — same remaining time, Persian-Indic digits
+        // under the FA presentation (the v13.242 owner instruction)
         .replace("__SEO_MCD__", mcD).replace("__SEO_MCH__", mcH).replace("__SEO_MCM__", mcM);
     } else {
       // v13.150-hud: the countdown lives INSIDE the card as the static

@@ -144,7 +144,7 @@ const hcAnchorClose = pub.lastIndexOf("</a>", hcSr);
 check("F-M3b: #hcSr lives OUTSIDE the #bigHeroCard anchor", hcSr > -1 && pub.slice(hcAnchorClose + 4, hcSr).replace(/<!--[\s\S]*?-->/g, "").indexOf("<") === -1);
 
 // --- F-M3b final shape (v13.210): BOTH hero card anchors are UNLABELED ---
-const bundle = read("assets/public-13.73.js"); // v13.226.1-herowirefix: the read follows the 13.72 -> 13.73 rename (the elision hotfix rename — the immutable-published 13.72.js was edited in place by the first hotfix, violating ADR-006; 13.73 is the rule-following cure); was 13.72 since v13.226-herowire (SS-27): the read follows the 13.70 -> 13.71 rename
+const bundle = read("assets/public-13.74.js"); // v13.226.1-herowirefix: the read follows the 13.72 -> 13.73 rename (the elision hotfix rename — the immutable-published 13.72.js was edited in place by the first hotfix, violating ADR-006; 13.73 is the rule-following cure); was 13.72 since v13.226-herowire (SS-27): the read follows the 13.70 -> 13.71 rename
 check("F-M3b (v13.210 close-out): the live bundle sets NO aria-label on either hero card (axe's label-content-name-mismatch only MATCHES aria-labeled widgets; name-from-content is always content-matched and the ticking painted digits make every static label unmatchable)", !/e\.setAttribute\("aria-label",\(nm\(t\.homeTeam\)/.test(bundle) && !/e\.setAttribute\("aria-label",hn\+/.test(bundle));
 
 // --- the sub-page final-pass catch (v13.210): the .simcount count chip ---

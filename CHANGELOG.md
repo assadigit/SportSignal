@@ -4,6 +4,66 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.242-faglow — Farsi countdown digits on mobile, the grass-green glow pill, the jersey flank dissolve, the divided header Telegram icon
+
+**S31, 2026-11-08 (the owner's four-change round).** One bundle edit
+(`public-13.73.js` -> `public-13.74.js` per the ADR-006 rename-on-edit
+law), one SSR edit (`src/seo/router.ts`), and the rest rides the served
+homepage HTML (inline style + inline script). The release bumps
+`sw.js` CACHE v119 -> v120 and adds the `/public-13.74.js` immutable
+pin (13.73.js stays served + pinned one SEO TTL). The 601-899px tablet
+zone and the ≥901px desktop are untouched (verified pixel-identical at
+1280px before/after).
+
+- **(1) Farsi countdown digits on the mobile card** (owner: "Make the
+  countdown timer in both mobile and desktop, for farsi language,
+  farsi numerals (mobile is latin numbers now)"): `mset` regains
+  `fmtNum` — the mobile pockets render «۰۰ / ۰۹ / ۴۹» in FA exactly
+  like the desktop `hcD/hcH/hcM` trio always did, while EN keeps the
+  Latin tabular Poppins/Chakra; the SSR mirror maps `mcD/mcH/mcM`
+  through `toFaDigits` in `seo/router.ts`; and the FA override
+  `html[lang=fa] .hero-mcard .mc-num{font-family:Morabba…}` rides the
+  same Persian display face the kickoff uses (the pockets tick at most
+  once a minute — no seconds tile — so the non-tabular glyph widths
+  never jitter a ticking readout). The desktop countdown was already
+  Farsi and is untouched.
+- **(2) The grass-green glow pill** (owner: the sticky banner "need to
+  attract more attention… with some green-grass glow effect on it, and
+  make it bigger, also it must start faster while scrolling like in
+  first 20% of scrolling"): the floating channel pill moves to the
+  site's own football-grass green (the banner CTA's #1f9d58 deepened
+  to #115c33 so the white text lands ~5.2:1) with a standing emerald
+  glow (static box-shadow), the first-show double pulse in the
+  rgb(52,211,153) family, and a SLOW standing breathe on the compact
+  state (::after opacity/transform only). BIGGER: 72px expanded /
+  58px compact, 26px icon, 13.5px headline, 16px/800 CTA. FASTER: the
+  reveal gate swaps the S30 hero-out IntersectionObserver for a
+  rAF-throttled passive scroll rule — scrollY ≥ 20% of ONE viewport
+  (~160px on a phone) shows the pill, scrolling back hides it, a
+  mid-page reload probes once. Memory, inert-while-hidden, the
+  x-sibling law and the reduced-motion kill all survive;
+  `body.tg-pill-on` pads 60px + 12px + safe-area and lifts #backTop
+  to 92px.
+- **(3) The jersey flank dissolve** (owner: "slighltly the player's
+  jersey bottom and edges are out of the HUD, (in mobile)… or better
+  yet, fade it smoothly (the bottom part of jersey.)"): the ONE shared
+  `.mc-port img` rule gains a bottom-anchored mask at ≤600px —
+  transparent at the image's own bottom edge, ~55% at 9% up, opaque by
+  21% up — so the flanking torsos melt into the HUD zone instead of
+  ending in hard mid-air cuts beside the panel's side edges. The
+  faces, shoulders beside the tab and both hands keep the v13.238
+  fully-opaque contract; the tablet zone and desktop keep the crisp
+  cut.
+- **(4) The divided header Telegram icon** (owner: "divide EN with
+  Telegram icon in mobile. Instead use a real telegram Icon."):
+  `#tgHead` leaves the `.tb-btns` glass pill and becomes its OWN
+  standalone round glass button in `.head-actions` (own 8px margin +
+  the flex gap = the divide; RTL keeps it on the pill's centre-facing
+  side) carrying the REAL Telegram mark — the circled plane, the same
+  path `#joinSticky`/`#tgFab` carry — in the site's cyan. Base
+  `display:none` keeps ≥601px exactly as before; the href still
+  renders from the ONE shared `TG_CHANNEL_URL` constant.
+
 # v13.241-mobilecta — the four-change mobile round (LaLiga logo on the card tab, smaller/shifted players, banner→header icon, the floating channel pill)
 
 **S30, 2026-11-08 (the owner's four-change mobile instruction).** Every

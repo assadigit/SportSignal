@@ -329,6 +329,22 @@ __SEO_JSONLD__
      (0,2,0) exactly like the FA name/date overrides in
      public-13.76.css. */
 html[lang="fa"] .hero-mcard .mc-ko{font-family:Morabba,Peyda,'Segoe UI',Tahoma,sans-serif;font-weight:800}
+/* v13.242-faglow (S31, owner: "Make the countdown timer in both mobile
+     and desktop, for farsi language, farsi numerals (mobile is latin
+     numbers now)"): the mobile card's three countdown pockets join the
+     FA presentation — the digits arrive faNum-mapped from mset (the
+     public-13.73.js -> 13.74.js rename: mset REGAINS fmtNum, so FA
+     renders «۰۹» exactly like the desktop hcD/hcH/hcM trio while EN
+     keeps the Latin tabular Poppins/Chakra) and from the SSR mirror
+     (seo/router.ts — mcD/mcH/mcM now pass through toFaDigits the same
+     way hcD/hcH/hcM always did, so the no-JS paint and every re-render
+     agree), and this FA font override swaps the techno faces for the
+     SAME Persian display face the kickoff already rides (Morabba 800,
+     the preloaded heading variable). The pockets change at most once a
+     minute (no seconds tile), so the non-tabular glyph widths never
+     jitter a ticking readout; EN is untouched. (0,3,1) beats the base
+     (0,2,0) exactly like the mc-ko override above. */
+html[lang="fa"] .hero-mcard .mc-num{font-family:Morabba,Peyda,'Segoe UI',Tahoma,sans-serif;font-weight:800}
 /* v13.179-mcsilo (owner: the "More games" scroll cue — "animate the
      button with a vertical bounce loop ... small amplitude, suggested:
      ~6-8px"): the bob amplitude rides the owner's 6-8px band — this
@@ -394,10 +410,22 @@ html[lang="fa"] .hero-mcard .mc-ko{font-family:Morabba,Peyda,'Segoe UI',Tahoma,s
    button and the pill share the bottom strip; without the lift the
    z65 button paints over the pill's inline-end at every phone width —
    measured overlap; the lift keeps BOTH usable). */
-/* (3) the header icon — base (all widths): hidden; the style mirrors the
-   .tb-btns button law (44x44 round, transparent, the pill carries the
-   glass border) so it reads as the EN button's twin inside .tb-btns */
-#tgHead{display:none;box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;padding:4px 10px;border-radius:999px;background:transparent;border:none;color:#17CDF0;text-decoration:none;cursor:pointer;font-family:inherit;transition:background .2s ease,color .2s ease}
+/* (3) the header icon — v13.242-faglow (S31, owner: "divide EN with
+   Telegram icon in mobile. Instead use a real telegram Icon."): the
+   icon LEAVES the .tb-btns glass pill and becomes its OWN standalone
+   round button — a hard visual divide between the EN language control
+   and the channel icon (the two were twins inside one pill and read as
+   one merged control). It rides .head-actions (DOM-before the pill, so
+   the RTL row keeps it on the pill's centre-facing side) with its own
+   8px margin + the flex gap = the division; its chrome mirrors the
+   pill's own glass law (rgba(1,13,35,.6) + the white .16 border + the
+   backdrop blur, set in the <=600px rule below — the base stays a bare
+   transparent 44x44 hit area). The GLYPH is the REAL Telegram mark —
+   the circled plane (the #joinSticky/#tgFab logo path) in the site's
+   cyan #17CDF0 — replacing the bare paper-plane. Desktop keeps
+   display:none (the base rule); the href still renders from the ONE
+   shared TG_CHANNEL_URL constant. */
+#tgHead{display:none;box-sizing:border-box;flex:0 0 auto;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border-radius:999px;background:transparent;border:none;color:#17CDF0;text-decoration:none;cursor:pointer;font-family:inherit;transition:background .2s ease,color .2s ease}
 #tgHead svg{display:block}
 #tgHead:hover{background:rgba(0,211,255,.14);color:#1FFFFF}
 #tgHead:active{transform:scale(.94)}
@@ -406,13 +434,28 @@ html[lang="fa"] .hero-mcard .mc-ko{font-family:Morabba,Peyda,'Segoe UI',Tahoma,s
 /* (1) the lockup rests on the tab */
 .hero-mcard .mc-pl{top:auto;bottom:58.2%;width:clamp(56px,16vw,84px);height:auto;transform:translateX(-50%);filter:drop-shadow(0 2px 6px rgba(2,10,25,.62))}
 .hero-mcard .mc-pl img{height:auto}
-/* (2) the players: ~6% smaller + 2cqw further out, outer-bottom origin */
+/* (2) the players: ~6% smaller + 2cqw further out, outer-bottom origin.
+   v13.242-faglow (S31, owner: "slighltly the player's jersey bottom and
+   edges are out of the HUD, (in mobile) ... or better yet, fade it
+   smoothly (the bottom part of jersey.)"): THE FLANK DISSOLVE — a
+   bottom-anchored mask on the ONE shared img rule melts each figure's
+   lower torso into the HUD zone instead of the hard mid-air cut the
+   flanks ended with beside the panel's side edges: fully transparent
+   at the img's own bottom edge, ~55% at 9% up, fully opaque again by
+   21% up (the band starts BELOW the panel's top border, so only the
+   jersey bits that poke out PAST the panel's side edges dissolve — the
+   faces, the shoulders beside the tab and both hands keep the v13.238
+   fully-opaque contract). Phones only (<=600px); the 601-899px tablet
+   zone and the desktop keep the crisp cut. -webkit- prefix first, the
+   standard property after. */
 .hero-mcard .mc-ports .mc-port.mc-port-h{left:-3.5cqw}
 .hero-mcard .mc-ports .mc-port.mc-port-a{left:auto;right:-3.5cqw}
-.hero-mcard .mc-ports .mc-port img{height:109cqw}
-/* (3) the header icon joins the phone pill row (AFTER the base rule —
-   the same-specificity cascade needs the media rule later) */
-#tgHead{display:inline-flex}
+.hero-mcard .mc-ports .mc-port img{height:109cqw;-webkit-mask-image:linear-gradient(to top,transparent 0,rgba(0,0,0,.55) 9%,#000 21%);mask-image:linear-gradient(to top,transparent 0,rgba(0,0,0,.55) 9%,#000 21%)}
+/* (3) the header icon joins the phone header as its OWN glass island
+   (AFTER the base rule — the same-specificity cascade needs the media
+   rule later); the 8px margin + the .head-actions gap draw the divide
+   the owner asked for between the icon and the EN pill */
+#tgHead{display:inline-flex;align-items:center;justify-content:center;margin-inline-end:8px;background:rgba(1,13,35,.6);border:1px solid rgba(255,255,255,.16);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 0 16px rgba(23,205,240,.25)}
 }
 /* (4) the floating pill — hidden state: translated below the screen,
    opacity 0, visibility hidden (+ the inert attribute from the
@@ -420,31 +463,52 @@ html[lang="fa"] .hero-mcard .mc-ko{font-family:Morabba,Peyda,'Segoe UI',Tahoma,s
 #tgPillBox{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom,0px));inset-inline:12px;z-index:58;display:flex;align-items:center;gap:8px;transform:translateY(calc(100% + 24px + env(safe-area-inset-bottom,0px)));opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .35s ease-out,visibility 0s linear .35s}
 #tgPillBox.show{transform:none;opacity:1;visibility:visible;pointer-events:auto;transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .35s ease-out}
 @media (min-width:601px){#tgPillBox{display:none!important}}
-#tgPill{position:relative;isolation:isolate;flex:1 1 auto;min-width:0;height:64px;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 20px;border-radius:999px;background:linear-gradient(180deg,#06204E 0%,#041739 100%);border:1.5px solid rgba(23,205,240,.6);box-shadow:0 6px 22px rgba(23,205,240,.32),0 10px 30px rgba(1,8,20,.55),inset 0 1px 0 rgba(255,255,255,.07);color:#EAF6FF;text-decoration:none;font-family:var(--font-body)}
-#tgPill.compact{height:52px}
-#tgPill .tgp-ic{flex:0 0 auto;width:22px;height:22px;color:#17CDF0;filter:drop-shadow(0 0 6px rgba(23,205,240,.45))}
-#tgPill .tgp-head{min-width:0;max-width:220px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px;font-weight:500;line-height:1.4;color:rgba(234,246,255,.85);transition:max-width .25s ease,opacity .25s ease}
+#tgPill{position:relative;isolation:isolate;flex:1 1 auto;min-width:0;height:72px;display:flex;align-items:center;justify-content:center;gap:12px;padding:0 24px;border-radius:999px;background:linear-gradient(180deg,#1f9d58 0%,#115c33 100%);border:1.5px solid rgba(74,222,128,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 8px 26px -6px rgba(21,128,61,.8),0 12px 34px rgba(1,8,20,.55),0 0 34px rgba(34,197,94,.55),0 0 10px rgba(52,211,153,.45);color:#FFFFFF;text-decoration:none;font-family:var(--font-body)}
+/* v13.242-faglow (S31, owner: the pill "need to attract more attention,
+   add some css effects with it, with some green-grass glow effect on it,
+   and make it bigger"): the surface swaps the dark-navy/cyan law for the
+   site's own FOOTBALL-GRASS GREEN family — the SAME #1f9d58 the banner's
+   channel CTA rides (deepened to #115c33 at the bottom so the centered
+   white text lands ~5.2:1, above the 4.5:1 AA floor), the emerald
+   rgba(74,222,128,.65) border, the bright top inset light and a
+   STANDING green outer glow (a static box-shadow, never animated).
+   BIGGER: 64 -> 72px expanded / 52 -> 58px compact, icon 22 -> 26px,
+   headline 12 -> 13.5px, CTA 14 -> 16px/800 with a soft dark text
+   shadow — every dimension still >= the 44px touch-target floor. */
+#tgPill.compact{height:58px}
+#tgPill .tgp-ic{flex:0 0 auto;width:26px;height:26px;color:#FFFFFF;filter:drop-shadow(0 0 7px rgba(209,250,229,.6))}
+#tgPill .tgp-head{min-width:0;max-width:240px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13.5px;font-weight:500;line-height:1.4;color:rgba(255,255,255,.95);transition:max-width .25s ease,opacity .25s ease}
 #tgPill.compact .tgp-head{max-width:0;opacity:0}
-#tgPill .tgp-cta{flex:0 0 auto;font-size:14px;font-weight:800;line-height:1.4;color:#17CDF0;white-space:nowrap}
+#tgPill .tgp-cta{flex:0 0 auto;font-size:16px;font-weight:800;line-height:1.4;color:#FFFFFF;white-space:nowrap;text-shadow:0 1px 2px rgba(4,50,25,.45)}
 /* the glow pulse — a ::after carrying a STATIC box-shadow; ONLY opacity
    and transform animate (box-shadow never repaints frame-by-frame on
-   weak phones); 2 iterations x 1.2s, played once per page view */
-#tgPill::after{content:"";position:absolute;inset:-4px;border-radius:999px;pointer-events:none;opacity:0;box-shadow:0 0 26px 5px rgba(23,205,240,.55),inset 0 0 0 1.5px rgba(23,205,240,.4);transform:scale(.985)}
+   weak phones); 2 iterations x 1.2s, played once per page view — now in
+   the GRASS-GREEN family (the emerald #34D399/rgb(52,211,153) cast +
+   the mint inner ring) */
+#tgPill::after{content:"";position:absolute;inset:-5px;border-radius:999px;pointer-events:none;opacity:0;box-shadow:0 0 34px 7px rgba(52,211,153,.7),inset 0 0 0 1.5px rgba(167,243,208,.55);transform:scale(.985)}
 #tgPill.pulse::after{animation:tgpGlow 1.2s ease-in-out 2}
-@keyframes tgpGlow{0%{opacity:0;transform:scale(.985)}45%{opacity:1;transform:scale(1.015)}100%{opacity:0;transform:scale(1)}}
+@keyframes tgpGlow{0%{opacity:0;transform:scale(.985)}45%{opacity:1;transform:scale(1.02)}100%{opacity:0;transform:scale(1)}}
+/* v13.242-faglow: the standing attention breathe — once the first-show
+   double pulse collapses into the compact state, the pill keeps a SLOW
+   subtle glow cycle (opacity .5 peak, 3.2s) so the green rim never goes
+   fully dark; still ONLY opacity+transform on the ::after (the static
+   box-shadow never repaints), and the reduced-motion kill below parks
+   it with everything else */
+#tgPill.compact::after{animation:tgpBreathe 3.2s ease-in-out .8s infinite}
+@keyframes tgpBreathe{0%,100%{opacity:.12;transform:scale(.99)}50%{opacity:.62;transform:scale(1.008)}}
 /* the x button — a separate sibling with its own 44x44 tap area and a
    logical 8px gap from the link (flex gap above); logical properties
    throughout so the RTL row places it at the inline-end (screen left) */
-#tgPillClose{flex:0 0 auto;box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;border-radius:999px;background:linear-gradient(180deg,#06204E 0%,#041739 100%);border:1.5px solid rgba(23,205,240,.45);color:#9FD8EC;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px rgba(1,8,20,.5);transition:background .2s ease,color .2s ease,border-color .2s ease}
-#tgPillClose:hover{color:#FFFFFF;border-color:rgba(23,205,240,.85)}
+#tgPillClose{flex:0 0 auto;box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;border-radius:999px;background:linear-gradient(180deg,#1f9d58 0%,#115c33 100%);border:1.5px solid rgba(74,222,128,.5);color:#D1FAE5;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px rgba(1,8,20,.5),0 0 14px rgba(34,197,94,.3);transition:background .2s ease,color .2s ease,border-color .2s ease}
+#tgPillClose:hover{color:#FFFFFF;border-color:rgba(74,222,128,.9)}
 #tgPillClose:active{transform:scale(.94)}
 #tgPillClose:focus-visible{outline:2px solid #1FFFFF;outline-offset:1px}
 /* page spacing while the pill is visible (phones only): the compact
    height + 12px + the safe-area inset, so the pill never covers the
    last content or the footer; #backTop lifts above the pill band */
 @media (max-width:600px){
-body.tg-pill-on{padding-bottom:calc(54px + 12px + env(safe-area-inset-bottom,0px))}
-body.tg-pill-on #backTop{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+body.tg-pill-on{padding-bottom:calc(60px + 12px + env(safe-area-inset-bottom,0px))}
+body.tg-pill-on #backTop{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
 }
 /* reduced motion: no slide, no pulse, no collapse animation — a plain
    fade-in straight to the compact state (the controller adds .compact
@@ -584,15 +648,18 @@ html[lang="en"] .ps-fa{display:none}
      it in the footer) — v12.26 right-aligned with the logo, not centered. -->
 <a class="brand" href="/" aria-label="SportSignal"><img src="/logo.png" alt="SportSignal" width="146" height="50" referrerpolicy="no-referrer"></a>
 <nav class="mainnav" aria-label="ناوبری اصلی"><a href="/" data-i="navHome">خانه</a><a href="#about" data-i="navAbout">درباره</a><a href="#contact" data-i="navContact">تماس</a></nav>
-<div class="head-actions"><span class="tb-btns"><button id="sbtn" onclick="toggleTz()" aria-expanded="false" aria-controls="tzpanel" title="منطقه زمانی" aria-label="منطقه زمانی"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button><!-- v13.241-mobilecta (S30): the phone-only Telegram CHANNEL icon —
-     the paper-plane in the site's cyan, riding INSIDE the .tb-btns glass
-     pill as the EN button's twin (same 44x44 round style; the pill's own
-     border is the border). DOM-before-#lbtn so the RTL flex row places
-     it visually to the EN button's RIGHT — the side facing the centre of
-     the screen (at >=601px it is display:none and the row is exactly as
-     before). The href renders from the ONE shared TG_CHANNEL_URL
-     constant; new tab + noopener noreferrer; the accessible name is the
-     owner's exact «عضویت در کانال تلگرام». --><a id="tgHead" href="https://t.me/sportsignalz" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M9.04 15.51l-.38 5.32c.54 0 .78-.23 1.06-.5l2.55-2.44 5.28 3.87c.97.53 1.66.25 1.92-.9L23.9 4.6c.31-1.42-.51-1.98-1.46-1.63L1.4 10.86c-1.39.54-1.37 1.32-.24 1.67l5.35 1.67L19.36 6.6c.57-.38 1.09-.17.66.21L9.04 15.51z"/></svg></a><button id="lbtn" onclick="switchLang()"></button><!-- v13.134-typelight: the dark/light toggle is TEMPORARILY RETIRED (owner directive — the app is always dark). toggleTheme()/setTheme() in core JS stay null-guarded; the bundle init pins setTheme("dark"). Re-add this button to re-enable. --></span></div>
+<div class="head-actions"><!-- v13.242-faglow (S31): the phone-only Telegram CHANNEL icon — now a
+     STANDALONE button DIVIDED from the EN language pill (the owner's
+     "divide EN with Telegram icon in mobile"): it sits OUTSIDE .tb-btns
+     as .head-actions' first child, so the RTL row keeps it on the pill's
+     centre-facing side with a hard 14px gap (its own 8px margin + the
+     flex gap) and its own glass circle (the <=600px rule in the inline
+     style). The glyph is the REAL Telegram mark — the circled plane, the
+     same path #joinSticky/#tgFab carry — in the site's cyan #17CDF0,
+     replacing the bare paper-plane. At >=601px it is display:none and
+     the header is exactly as before. The href renders from the ONE
+     shared TG_CHANNEL_URL constant; new tab + noopener noreferrer; the
+     accessible name stays the owner's exact «عضویت در کانال تلگرام». --><a id="tgHead" href="https://t.me/sportsignalz" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a><span class="tb-btns"><button id="sbtn" onclick="toggleTz()" aria-expanded="false" aria-controls="tzpanel" title="منطقه زمانی" aria-label="منطقه زمانی"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button><button id="lbtn" onclick="switchLang()"></button><!-- v13.134-typelight: the dark/light toggle is TEMPORARILY RETIRED (owner directive — the app is always dark). toggleTheme()/setTheme() in core JS stay null-guarded; the bundle init pins setTheme("dark"). Re-add this button to re-enable. --></span></div>
 <div id="tzpanel" role="group" aria-label="منطقه زمانی"><div class="tz-head"><span data-i="tzTitle">🌍 منطقه زمانی</span><button id="tzclose" onclick="toggleTz()" title="بستن" aria-label="بستن">✕</button></div><input id="tzfilter" type="search" placeholder="جستجوی کشور یا شهر…" data-p="tzSearch" aria-label="جستجوی کشور یا شهر"><select id="tzsel" title="منطقه زمانی" aria-label="منطقه زمانی"></select></div>
 <!-- v12.20: visible PROOF for the auto-update claim. v12.26: the sync line
      prints the TRUTHFUL absolute stamp of the last real API refresh —
@@ -1283,18 +1350,20 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      string so the language toggle updates it. -->
 <a id="tgFab" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram" data-promo="برای دست ندادن مسابقات مهم، به ربات تلگرام بپیوندید ✨"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="#fff" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg></a>
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
-<!-- v13.241-mobilecta (S30): the floating Telegram CHANNEL pill — phones
-     only (the site's 600px line). ONE link: the whole pill is the tap
-     target; the small x is a SEPARATE SIBLING (never inside the link) so
-     dismissing can never trigger the channel. Rides at the very end of
-     body so the keyboard order stays natural (footer -> backTop -> pill).
-     The link href renders from the ONE shared TG_CHANNEL_URL constant;
-     both texts are the banner's own copy (the ps-h headline tail + the
-     ps-ch label — no new wording), riding the same .ps-fa/.ps-en
-     html[lang] flip law as the banner. Ships inert + hidden (the
-     controller's IntersectionObserver on .herowrap reveals it only after
-     the hero is scrolled past; the CSS block above carries the full
-     geometry law). -->
+<!-- v13.241-mobilecta (S30) + v13.242-faglow (S31): the floating
+     Telegram CHANNEL pill — phones only (the site's 600px line), now on
+     the grass-green attention surface (bigger, glowing, breathing; the
+     CSS block above carries the full geometry law). ONE link: the whole
+     pill is the tap target; the small x is a SEPARATE SIBLING (never
+     inside the link) so dismissing can never trigger the channel. Rides
+     at the very end of body so the keyboard order stays natural
+     (footer -> backTop -> pill). The link href renders from the ONE
+     shared TG_CHANNEL_URL constant; both texts are the banner's own
+     copy (the ps-h headline tail + the ps-ch label — no new wording),
+     riding the same .ps-fa/.ps-en html[lang] flip law as the banner.
+     Ships inert + hidden (the v13.242 controller's scroll-progress gate
+     reveals it within the FIRST 20% of the page scroll and hides it
+     again below it). -->
 <div id="tgPillBox" inert>
 <a id="tgPill" href="https://t.me/sportsignalz" target="_blank" rel="noopener noreferrer">
 <svg class="tgp-ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.04 15.51l-.38 5.32c.54 0 .78-.23 1.06-.5l2.55-2.44 5.28 3.87c.97.53 1.66.25 1.92-.9L23.9 4.6c.31-1.42-.51-1.98-1.46-1.63L1.4 10.86c-1.39.54-1.37 1.32-.24 1.67l5.35 1.67L19.36 6.6c.57-.38 1.09-.17.66.21L9.04 15.51z"/></svg>
@@ -1321,7 +1390,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      the spec's canonical D2 shape «۱۵ آبان (۵ نوامبر)»; en renders and the
      mcard's Latin-digit date line are untouched), mirroring the server's
      faDateD1/faDateD2 helpers byte-for-byte (the v13.120/v13.169 contracts). -->
-<script src="/public-13.73.js" defer></script>
+<script src="/public-13.74.js" defer></script>
 <!-- v13.202-threaddiet + v13.203-warmdefer + v13.204-foldsplit (F-M2,
      the full arc): v13.202 split the boot render chain at the fold
      (the above-fold trio updateBigBar/renderHeroSpot/fitHeroNames in
@@ -1518,20 +1587,24 @@ ingests — replay-verified in the GraphQL). send.to is the beacon's own
 endpoint hook; the same-origin POST is covered by connect-src 'self'.
 Gate: check-seo-lastmod #9 requires the override on BOTH templates. -->
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "fb7e7f1d66e84ed3b4572545c93ef538", "send": {"to": "/cdn-cgi/rum"}}'></script>
-<script>/* v13.241-mobilecta (S30): the floating-pill controller — ONE
-   IntersectionObserver on .herowrap (threshold 0, NO scroll listener):
-   the pill shows only when the hero is NOT intersecting AND its top is
-   above the viewport (scrolled past), and hides again the moment the
-   hero re-enters. First show: slide-up (~350ms), then 2 cyan pulses on
-   the #tgPill::after (opacity+transform only — the box-shadow itself
-   never animates), then the animationend collapse (a 3.5s timeout as
-   the fallback) into the compact state, which stays for the rest of the
-   page view; every later re-show only slides. localStorage memory —
-   every read and write inside try/catch, so a blocked storage never
-   breaks anything: a link tap saves sp_pill_joined (30-day silence), an
-   x tap saves sp_pill_dismissed (3-day silence). prefers-reduced-motion:
-   no slide, no pulse, no collapse animation — a plain fade straight to
-   the compact state. While visible, body.tg-pill-on carries the page's
+<script>/* v13.241-mobilecta (S30) + v13.242-faglow (S31): the floating-pill
+   controller. THE REVEAL GATE (v13.242, owner: "it must start faster
+   while scrolling like in first 20% of scrolling"): a rAF-throttled
+   passive SCROLL-PROGRESS rule replaces the S30 hero-out
+   IntersectionObserver — the pill shows once the visitor has scrolled
+   20% of the page's scrollable range (and hides again below it; a
+   mid-page reload shows it at once; a page with nothing to scroll
+   never shows it). First show: slide-up (~350ms), then 2 grass-green
+   pulses on the #tgPill::after (opacity+transform only — the
+   box-shadow itself never animates), then the animationend collapse
+   (a 3.5s timeout as the fallback) into the compact state, which keeps
+   a slow glow breathe for the rest of the page view; every later
+   re-show only slides. localStorage memory — every read and write
+   inside try/catch, so a blocked storage never breaks anything: a link
+   tap saves sp_pill_joined (30-day silence), an x tap saves
+   sp_pill_dismissed (3-day silence). prefers-reduced-motion: no slide,
+   no pulse, no collapse animation — a plain fade straight to the
+   compact state. While visible, body.tg-pill-on carries the page's
    bottom padding + the #backTop lift (the CSS block above). */
 (function(){
 "use strict";
@@ -1539,8 +1612,7 @@ var box=document.getElementById("tgPillBox");
 if(!box)return;
 var link=document.getElementById("tgPill");
 var xBtn=document.getElementById("tgPillClose");
-var hero=document.querySelector(".herowrap");
-if(!link||!xBtn||!hero||!("IntersectionObserver"in window))return;
+if(!link||!xBtn)return;
 var rm=false;
 try{rm=window.matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){}
 var DAY=86400000;
@@ -1587,11 +1659,30 @@ function apply(on){
     if(tDelay){clearTimeout(tDelay);tDelay=null}
   }
 }
-var io=new IntersectionObserver(function(es){
-  var e=es[es.length-1];
-  apply(!e.isIntersecting&&e.boundingClientRect.top<0)
-},{threshold:0});
-io.observe(hero);
+/* v13.242-faglow: the 20% reveal — scrollY >= 20% of ONE viewport
+   height shows the pill (the user's "first 20% of scrolling" read as
+   screen units: ~160-170px on a phone — FAR earlier than the old
+   hero-out gate, which waited for the whole ~700px hero to clear; the
+   hero is still partly on screen when the pill slides in). Scrolling
+   back above the line hides it again. ONE rAF-throttled handler on
+   passive scroll+resize + one immediate probe (a mid-page reload shows
+   the pill without waiting for a scroll); the max>0 guard keeps a
+   nothing-to-scroll page pill-free. */
+var ticking=false;
+function onScroll(){
+  if(ticking)return;
+  ticking=true;
+  requestAnimationFrame(function(){
+    ticking=false;
+    var doc=document.documentElement;
+    var max=Math.max(0,(doc?doc.scrollHeight:document.body?document.body.scrollHeight:0)-window.innerHeight);
+    var y=window.scrollY||window.pageYOffset||0;
+    apply(max>0&&y>=window.innerHeight*.2)
+  })
+}
+window.addEventListener("scroll",onScroll,{passive:true});
+window.addEventListener("resize",onScroll,{passive:true});
+onScroll();
 link.addEventListener("click",function(){lsSet("sp_pill_joined",String(Date.now()));apply(false)});
 xBtn.addEventListener("click",function(){lsSet("sp_pill_dismissed",String(Date.now()));apply(false)});
 })();</script>

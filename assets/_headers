@@ -495,6 +495,20 @@
 /public-13.72.js
   Cache-Control: public, max-age=31536000, immutable
 
+# v13.242-faglow (S31, 2026-11-08): public-13.73.js -> 13.74.js — mset
+# regains fmtNum (the MOBILE card countdown pockets render Persian-Indic
+# digits in FA under the Morabba face from the page inline style; EN stays
+# Latin tabular Poppins/Chakra). 13.73.js stays served + pinned one SEO
+# TTL below (stale-HTML retention — it carries the pre-S31 countdown law).
+# THE 100-RULE CAP SWEEP #9: the +1 /public-13.74.js pin pushed the file
+# past Cloudflare's 100-rule cap — the /public-13.56.css pin (the v13.193-era
+# stylesheet, ~50 releases past its one-SEO-TTL retention and pinned by no
+# offline gate) is EVICTED; the FILE stays on disk, so an ancient cached
+# HTML re-fetching it still resolves — it just rides the default cache
+# headers (the v13.200 sweep #8 precedent).
+/public-13.74.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.73.js
   Cache-Control: public, max-age=31536000, immutable
 
@@ -780,8 +794,6 @@
 /public-13.57.css
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.56.css
-  Cache-Control: public, max-age=31536000, immutable
 
 # v13.226-herowire cap sweep #16 (second): the /public-13.40.js pin
 # EVICTED (~75 releases past retention — the v13.159-era portrait fill
@@ -932,6 +944,9 @@
 # icon scales to 13px and the head gap to 5.5px, keeping the row's
 # shipped proportions. The panel size, .64 artwork opacity, digits and
 # the تاریخ به‌روزرسانی caption below are untouched.
+/public-13.48.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.49.css
   Cache-Control: public, max-age=31536000, immutable
 
@@ -946,8 +961,6 @@
 # below the panel reads تاریخ به‌روزرسانی (i18n lastUpd — the
 # core-13.12.js → core-13.13.js rename-on-edit + the markup.ts server
 # fill; the #lastSyncM contract and 4px gap are untouched).
-/public-13.48.css
-  Cache-Control: public, max-age=31536000, immutable
 
 # v13.203-warmdefer cap sweep #11: /public-13.46.css pin EVICTED (the
 # oldest expired pin, ~63 releases past its one-SEO-TTL retention — the
