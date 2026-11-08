@@ -540,7 +540,7 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
     // stale-while-revalidate directive, so their revalidation path is
     // deterministic; HTML pages have a platform SWR window in which a
     // conditional replay can transiently answer 200 (observed once at edge
-    // object age 188 s — WEB_OPTIMIZATION_RESULTS.md §15.3a), which would make
+    // object age 188 s — docs/WEB_OPTIMIZATION_RESULTS.md §15.3a), which would make
     // this gate flake K10-style. The etag-PRESENCE half is asserted on all.
     const surfaces = ["/sitemap.xml", "/feed.xml", "/calendar.ics", "/api/matches.json"];
     for (const u of surfaces) {

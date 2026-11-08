@@ -2,7 +2,7 @@
 // CAST-SHADOW baking pipeline.
 //
 // WHY THIS EXISTS (the three-round rectangle post-mortem, see
-// SHADOW-CONSULTATION.md): every prior round built the projected shadow from
+// docs/SHADOW-CONSULTATION.md): every prior round built the projected shadow from
 // LIVE CSS compositing primitives — filter+mask on a copy (v13.155/.156:
 // mask-clip:border-box cropped the filtered paint to the img rectangle ->
 // the owner's razor rectangle), a drop-shadow on the masked wrapper

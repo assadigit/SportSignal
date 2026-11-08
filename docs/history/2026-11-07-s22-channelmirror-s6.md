@@ -17,7 +17,7 @@ better and more rich information without overwhelming our backend."*
   session's push HAD landed** (fetch showed remote main == 3a52839 — the
   stale local origin/main ref was the only artifact; updated).
 - Mandatory reading: the S21 note (the activation + first-event evidence),
-  `TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART II §4 (the footer law),
+  `docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART II §4 (the footer law),
   `DISCOVERY.md` §7.4/§7.5 (the composition law) + §8 (budgets) + §12
   (open confirmations), `src/channel-mirror.ts` + `src/notify-engine.ts`
   (the hook) + `src/composers.ts` (the formatters) + `src/telegram.ts`
@@ -172,7 +172,7 @@ SCOPE COMPLETED:
 FILES CHANGED:
 - src/channel-mirror.ts (badges + separator), src/notify-engine.ts (the channel hook), src/config.ts + package.json + package-lock.json + CHANGELOG.md (the version three-way)
 - scripts/check-channel-mirror.js (+6 checks, re-pins, seam, stub), scripts/check-stats.js (the v13.234 LIVE pin, v13.233 → HISTORICAL)
-- docs/telegram-channel-mirror/ENRICHMENT.md (new), OWNER_TODO.md (the S22 bullet), this note
+- docs/telegram-channel-mirror/ENRICHMENT.md (new), docs/OWNER_TODO.md (the S22 bullet), this note
 TESTS:
 - npm test — EXIT 0, 2,896 OK / 0 FAIL
 - node scripts/check-channel-mirror.js — 276/276

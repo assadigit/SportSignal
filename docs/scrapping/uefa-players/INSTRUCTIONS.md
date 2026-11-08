@@ -9,7 +9,7 @@ record):
 
 | Collection | Roster | Result (latest run) |
 |---|---|---|
-| `roster.json` — 36 fixed players | `uefa-player-portraits.spec.md` (v1) | **34 complete, 2 deferred** (Jackson, Thauvin — no UEFA cutoff exists) |
+| `roster.json` — 36 fixed players | `docs/uefa-player-portraits.spec.md` (v1) | **34 complete, 2 deferred** (Jackson, Thauvin — no UEFA cutoff exists) |
 | `roster-heroes.json` — 96 big-5-league hero MVPs | this spec | **96/96 complete (2026-10-20, style-audited v2.3): 22 UEFA official cutoffs + 74 league-official portraits (PL 16 / Serie A 16 / LaLiga 15 / Ligue 1 15 / Bundesliga 12), every file VLM-classified — 84 `jersey_photo` + 12 `bust_photo`, ZERO card renders.** The 2026-10-20 style audit (§13.5) replaced the 8 confirmed platform card renders (7 × LaLiga “004” series + Troyes' entire Ligue 1 media set — Troyes' hero is now Iron Gomis via the star fallback), repaired the 9 provenance records the 13.129-hudframe revert had left stale, and every fill now runs through the VLM style gate (spec §8c). Prior state (v2.2): framing-fixed, body visible to at least the jersey; Brest’s hero moved Del Castillo → Ajorque (§8 case 9) |
 
 The dominant finding of the hero pre-seed: **UEFA's transparent cutoffs exist

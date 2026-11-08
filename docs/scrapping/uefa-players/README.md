@@ -6,7 +6,7 @@ production runs (2026-10-18).
 
 | Read this | For |
 |---|---|
-| [SPEC.md](SPEC.md) | The rules: sources, identity verification, MVP selection, transport, manifests, acceptance criteria (v2 — supersedes the original `uefa-player-portraits.spec.md` at the repository root, which is preserved as the v1 historical task spec) |
+| [SPEC.md](SPEC.md) | The rules: sources, identity verification, MVP selection, transport, manifests, acceptance criteria (v2 — supersedes the original `docs/uefa-player-portraits.spec.md` at the repository root, which is preserved as the v1 historical task spec) |
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) | The practice: exact commands, the on-demand "new club appears in the hero" flow, the relay deploy runbook, the failure catalogue (what didn't work and why), the post-run checklist |
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) §2c–§2d | Updating players: transfers, kit changes, better picks, and the season-turnover refresh |
 | [INSTRUCTIONS.md](INSTRUCTIONS.md) §8–§12 | Kit-timing verification (method + precedent cases), the 2026-10-19 audit + alt-source run, disaster recovery, the sandbox survival guide, tooling reference |

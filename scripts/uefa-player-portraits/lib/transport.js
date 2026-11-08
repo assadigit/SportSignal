@@ -2,7 +2,7 @@
 // hosts. Supports direct fetches and an optional self-hosted relay worker for
 // network vantage points that UEFA's CDN edge refuses (datacenter IP ranges).
 //
-// Behaviour mandated by uefa-player-portraits.spec.md §7:
+// Behaviour mandated by docs/uefa-player-portraits.spec.md §7:
 //   - one request at a time, >= 1s between requests to the same host
 //   - honest descriptive User-Agent
 //   - explicit timeouts, bounded redirects (each hop re-validated)

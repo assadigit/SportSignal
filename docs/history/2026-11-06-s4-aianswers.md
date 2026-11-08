@@ -84,7 +84,7 @@ What shipped (spec §3/SS-09 + SS-12):
   address was undeliverable; rule §1.1: never list an unreachable
   contact). The Telegram bot Contact stays + a `Remarks:` note that a
   security@ mailbox will be added once it exists. The contact page
-  references no email (verified) — untouched. `OWNER_TODO.md` gains §12:
+  references no email (verified) — untouched. `docs/OWNER_TODO.md` gains §12:
   the exact Cloudflare Email Routing click-path for a free `security@`
   alias (Email → Email Routing → enable → Routing rules → Create address
   `security` → real destination inbox → verification email → Save), plus

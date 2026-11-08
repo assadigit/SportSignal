@@ -11,7 +11,7 @@
 matches that matter — before they start, while they're live, and the moment they end.**
 
 > **Current build:** v13.55-epochflow · [Live](https://sportsignal.ir) ·
-> **Operating it?** Read [`RUNBOOK.md`](RUNBOOK.md) first — deploy/verify/rollback,
+> **Operating it?** Read [`docs/RUNBOOK.md`](docs/RUNBOOK.md) first — deploy/verify/rollback,
 > monitoring semantics, incident playbooks, and the never-do list (§11).
 
 > **▶ WHERE TO CONTINUE — user note, kept verbatim (2026-10-10):**
@@ -372,7 +372,7 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
 - ✅ **13.47-seams** — the monolith split: 8 focused modules, route table
   conserved, +22 structural test locks
 - ✅ **13.48-xtrim** — the X path removed (see decision #10)
-- ✅ **RUNBOOK.md** — 12 sections of operating truth
+- ✅ **docs/RUNBOOK.md** — 12 sections of operating truth
 - ✅ **13.49-buttons** — the bot is fully tappable: persistent keyboard on
   every reply, `/teams` inline toggle grid, `/timezone` city quick-picks
 - ✅ **13.50-cupscan + 13.50.1** — EFL/FA Cup big-team coverage via the
@@ -417,7 +417,7 @@ doesn't have to re-derive them. (Full version-by-version narrative: CHANGELOG.)
 
 - ~~`cron.ts` phase extraction~~ — DONE in v13.75-cronsplit (shell + six
   phase modules, meter + completion blob stay in the shell by design; see
-  ARCHITECTURE.md and ADR-005)
+  docs/ARCHITECTURE.md and ADR-005)
 - ~~`pages/admin.ts` source split + inline-CSS dedupe~~ — DONE in v13.83-admintplsplit:
   admin.ts 683 → thin composer (28 lines) + admin-css/-html/-js +
   styles-shared.ts (theme-init + @font-face, previously triplicated ~2KB);
@@ -564,6 +564,6 @@ failure class); §6 the blind spots.
 
 *Built for the matches that matter. See
 [`CHANGELOG.md`](CHANGELOG.md) for the full history (version by version, newest
-first), [`RUNBOOK.md`](RUNBOOK.md) for operations, and
+first), [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for operations, and
 [`design-system/ucl-notifier/MASTER.md`](design-system/ucl-notifier/MASTER.md)
 for the design intent.*

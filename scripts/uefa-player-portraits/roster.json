@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "description": "Requested roster for the UEFA player portrait collection. Order and club labels are authoritative inputs from uefa-player-portraits.spec.md and MUST NOT be rewritten. identity_hint fields are pre-collection knowledge used only to verify the UEFA profile resolves to the requested PERSON (never to rewrite names/labels); null values mark cases where UEFA profile data plus club context plus recorded external evidence must carry the verification.",
-  "source_spec": "uefa-player-portraits.spec.md",
+  "description": "Requested roster for the UEFA player portrait collection. Order and club labels are authoritative inputs from docs/uefa-player-portraits.spec.md and MUST NOT be rewritten. identity_hint fields are pre-collection knowledge used only to verify the UEFA profile resolves to the requested PERSON (never to rewrite names/labels); null values mark cases where UEFA profile data plus club context plus recorded external evidence must carry the verification.",
+  "source_spec": "docs/uefa-player-portraits.spec.md",
   "players": [
     {
       "roster_index": 1,

@@ -402,7 +402,7 @@ parity law — private output stays byte-identical, always).
 # v13.233-channelactivate — the Telegram Channel Mirror ACTIVATION: the owner gate satisfied, the destination live (deployed-enabled)
 
 **S21, 2026-11-07 (the Channel Mirror program's activation session —
-`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 4 + PART V §15, executed
+`docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 4 + PART V §15, executed
 per the S20 hand-off; the runtime code is exactly the shipped
 `v13.232-channelhardening` — this release changes CONFIGURATION, not
 code).** The owner created the PUBLIC Persian football channel
@@ -439,7 +439,7 @@ the first channel post is the first NATURALLY-OCCURRING eligible event).
 # v13.232-channelhardening — the Telegram Channel Mirror Session 3: reliability + observability hardening (deployed, still disabled by default)
 
 **S19, 2026-11-07 (the Channel Mirror program's third runtime session —
-`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 3, built exactly on the
+`docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 3, built exactly on the
 Session 2 mirror `v13.231-channelmirror`; the design under test is
 `docs/telegram-channel-mirror/DISCOVERY.md` §7.6/§7.7/§10).**
 Production stays unconfigured (`[vars] TELEGRAM_CHANNEL_CHAT_ID` /
@@ -511,7 +511,7 @@ and admin surfaces) no-ops before any KV/D1/subrequest operation.
 # v13.231-channelmirror — the Telegram Channel Mirror Session 2: all eligible notification families mirrored in code (deployed, still disabled by default)
 
 **S18, 2026-11-07 (the Channel Mirror program's second runtime session —
-`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 2, built exactly on the
+`docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 2, built exactly on the
 Session 1 foundation `v13.230-channelbase` + the Session 0 audit
 `docs/telegram-channel-mirror/DISCOVERY.md` §7.4–§7.7).**
 The mirror goes live IN CODE; production stays unconfigured (`[vars]
@@ -617,7 +617,7 @@ what v13.230 shipped.
 # v13.230-channelbase — the Telegram Channel Mirror Session 1: destination configuration + the durable idempotency foundation (disabled by default)
 
 **S17, 2026-11-07 (the Channel Mirror program's first runtime session —
-`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 1, built exactly on the
+`docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 1, built exactly on the
 Session 0 audit `docs/telegram-channel-mirror/DISCOVERY.md` §7).**
 Foundation only: destination configuration, the delivery seam's shared
 gate, and the destination-scoped write-first claim — **zero notification
@@ -1187,7 +1187,7 @@ noindex and security.txt is a machine file)._
 record, so the address was undeliverable and security reports sent to it
 were lost (rule §1.1: never list an unreachable contact). The Telegram bot
 Contact stays, plus a `Remarks:` note that a security@ mailbox will be
-added once it exists. `OWNER_TODO.md` gains §12 with the exact Cloudflare
+added once it exists. `docs/OWNER_TODO.md` gains §12 with the exact Cloudflare
 Email Routing click-path for a free `security@` alias (Email → Email
 Routing → enable → Routing rules → Create address `security` → destination
 = a real inbox → verify), and §5's stale claim that the contact page
@@ -1588,7 +1588,7 @@ commits, v13.202 → v13.210 (nine deploys, all verified). JS bootup
 observed), desktop perf 95 → 99, CLS 0 throughout, a11y 100 with zero
 flagged audits, the lastmod contract honest, 304s everywhere, and a
 working field-CWV pipeline. The Telegram bot was never touched. See
-`WEB_OPTIMIZATION_RESULTS.md` §18.9(11) for the outstanding-work list.
+`docs/WEB_OPTIMIZATION_RESULTS.md` §18.9(11) for the outstanding-work list.
 
 # v13.210-namefix — web-optimization Phase 6 close-out: the hero-card accessible names take their final shape (both curated labels retired)
 
@@ -1633,9 +1633,9 @@ computed + pinned in check-a11y. The sub-page families re-audit at 100
 
 # v13.209-a11y — web-optimization Phase 6: accessibility & security (F-M3 contrast + F-M3b hero accessible names + F-M6 touch targets + F-L3 skip-link order)
 
-_2026-11-04 · the Phase 6 round per `WEB_OPTIMIZATION_AUDIT.md §8/§6.1`
-(the before/after record lives in `WEB_OPTIMIZATION_RESULTS.md §17`).
-Website-only surfaces (`WEB_OPTIMIZATION_ARCHITECTURE.md §3.1`); the
+_2026-11-04 · the Phase 6 round per `docs/WEB_OPTIMIZATION_AUDIT.md §8/§6.1`
+(the before/after record lives in `docs/WEB_OPTIMIZATION_RESULTS.md §17`).
+Website-only surfaces (`docs/WEB_OPTIMIZATION_ARCHITECTURE.md §3.1`); the
 Telegram bot is untouched. Both client assets ride the full ADR-006
 rename ceremony: `public-13.80.css → 13.81.css` + `public-13.68.js
 → 13.69.js`, `_headers` +2 pins with cap sweep #14 (− the
@@ -1718,10 +1718,10 @@ Registered in the `npm test` chain (exit 0 — 2,587 checks).
 
 # v13.208-lastmod — web-optimization Phase 5: technical & multilingual SEO (the seo_lastmod_v1 eviction fix + F-L1 + F-H3 beacon + IndexNow drain)
 
-_2026-11-04 · the Phase 5 round per `WEB_OPTIMIZATION_AUDIT.md` §8 (the
+_2026-11-04 · the Phase 5 round per `docs/WEB_OPTIMIZATION_AUDIT.md` §8 (the
 verification + gap-fix phase; the before/after record lives in
-`WEB_OPTIMIZATION_RESULTS.md` §16). Website-only surfaces
-(`WEB_OPTIMIZATION_ARCHITECTURE.md` §3.1); the Telegram bot is untouched._
+`docs/WEB_OPTIMIZATION_RESULTS.md` §16). Website-only surfaces
+(`docs/WEB_OPTIMIZATION_ARCHITECTURE.md` §3.1); the Telegram bot is untouched._
 
 **The headline — the seo_lastmod_v1 cross-child eviction bug (found by the
 Phase 5 "lastmod honesty" spot-audit, fixed in `src/seo/files.ts`):** every
@@ -1789,15 +1789,15 @@ re-stamp + at most rate-limited IndexNow notifications), then stability.
 
 # v13.207-condget — web-optimization Phase 4: Cloudflare & caching (F-M5 conditional-GET 304s + ETag on the machine files)
 
-_2026-11-04 · the Phase 4 round per `WEB_OPTIMIZATION_AUDIT.md` §8 (the
+_2026-11-04 · the Phase 4 round per `docs/WEB_OPTIMIZATION_AUDIT.md` §8 (the
 caching phase; the before/after record lives in
-`WEB_OPTIMIZATION_RESULTS.md` §15)._
+`docs/WEB_OPTIMIZATION_RESULTS.md` §15)._
 
 **F-M5 (the P0 of the phase — 304 handling for conditional GETs):** the
 SEO router served ETags but revalidation always returned 200 with the full
 body (verified twice in the Phase 1 audit on `/matches/today` and `/`).
 Two root causes, both fixed in `src/seo/router.ts` (website-only,
-`WEB_OPTIMIZATION_ARCHITECTURE.md` §3.1): (1) the `wantCached` edge-cache
+`docs/WEB_OPTIMIZATION_ARCHITECTURE.md` §3.1): (1) the `wantCached` edge-cache
 HIT path returned the stored body unconditionally — no If-None-Match
 branch anywhere before it; (2) the render path's `withEtag` compared
 `inm.trim() === tag` STRICTLY, which can never match in production
@@ -1825,7 +1825,7 @@ on the wire; see RESULTS §15 for the 11-URL verification matrix).
 session token lacks the Web Analytics permission (rum/site_info answers
 10000/10405), and `/cdn-cgi/rum` proves the zone setup was never
 completed. **Owner-action-required**: exact dashboard steps added as
-`OWNER_TODO.md` §11 (5 minutes, free, CSP-ready since v13.188; the
+`docs/OWNER_TODO.md` §11 (5 minutes, free, CSP-ready since v13.188; the
 beacon is absent from the served HTML today). This stays the Phase 7
 field-data source.
 
@@ -1865,7 +1865,7 @@ were modified.
 _2026-11-04 · the Phase 3 reconciliation round: the close-out session's
 independent audit of `v13.205-lcpreveal` found the one defect the round
 shipped with — the F-C1 preload was pointing at a 5×-too-heavy file. (The
-before/after record lives in `WEB_OPTIMIZATION_RESULTS.md`.)_
+before/after record lives in `docs/WEB_OPTIMIZATION_RESULTS.md`.)_
 
 **THE DEFECT:** the v13.205 commit message (and its gate description)
 claimed the covered-hero preload ships "scene-4 4.9 KB" — the file is
@@ -1909,9 +1909,9 @@ configuration or behavior were modified.
 
 # v13.205-lcpreveal — web-optimization Phase 3: assets & Core Web Vitals (F-C1 + F-H1 + F-H2 + F-M7)
 
-_2026-11-04 · the Phase 3 round per `WEB_OPTIMIZATION_AUDIT.md` §8 (the
+_2026-11-04 · the Phase 3 round per `docs/WEB_OPTIMIZATION_AUDIT.md` §8 (the
 P0 LCP fix + the asset diet; the before/after record lives in
-`WEB_OPTIMIZATION_RESULTS.md`)._
+`docs/WEB_OPTIMIZATION_RESULTS.md`)._
 
 **F-C1 (the P0 — the homepage mobile LCP fix):** the measured root cause
 was a THREE-LINK chain, not the template's `display:none` default (the
@@ -1983,7 +1983,7 @@ paths). No Telegram bot files, configuration or behavior were modified.
 # v13.203 + v13.204 — web-optimization Phase 2 final arc: the contaminated revert and the verified re-apply
 
 _2026-11-04 · the same-day measurement arc that finished Phase 2 (the
-full record lives in `WEB_OPTIMIZATION_RESULTS.md` §8; the final state
+full record lives in `docs/WEB_OPTIMIZATION_RESULTS.md` §8; the final state
 is `v13.204-foldsplit`, deployed + verified)._
 
 **v13.202** (the fold-split diet) shipped green — CI, `npm test` 2,527,
@@ -2025,9 +2025,9 @@ a revert without a clean re-measurement of the reverted state.
 
 _2026-11-04 · on top of v13.201-carstack · the web-optimization program's
 Phase 2 round (frontend performance), per
-`SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md` §8 and `WEB_OPTIMIZATION_AUDIT.md`
+`docs/SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md` §8 and `docs/WEB_OPTIMIZATION_AUDIT.md`
 §8 (the evidence-based plan built on the frozen Phase 1 baseline).
-Measurements of record: `WEB_OPTIMIZATION_RESULTS.md`._
+Measurements of record: `docs/WEB_OPTIMIZATION_RESULTS.md`._
 
 **THE CHANGE, IN TWO MOVES:** (1) **F-M2** — the homepage's single
 post-fetch render-chain long task (~629 ms on a throttled mobile CPU)
@@ -2085,18 +2085,18 @@ or bot files were modified and no redeployment was performed
 (`/healthz` → `ok:true`, `degraded:false`)._
 
 The website-optimization program (master specification:
-`SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md`, owner-uploaded 2026-11-04) has
+`docs/SPORTSIGNAL_WEB_OPTIMIZATION_SPEC.md`, owner-uploaded 2026-11-04) has
 completed its first two phases on top of the live code:
 
 - **Phase 0 — repository reconnaissance & architecture audit**
   (`a9c87c0`, `00c2e9f`, `63a1d02`): created
-  `WEB_OPTIMIZATION_ARCHITECTURE.md` (single-worker website/bot
+  `docs/WEB_OPTIMIZATION_ARCHITECTURE.md` (single-worker website/bot
   isolation map, shared-component risks R1–R14, Cloudflare deploy
   workflow, test gates) and the persistent tracker
-  `WEB_OPTIMIZATION_PROGRESS.md`.
+  `docs/WEB_OPTIMIZATION_PROGRESS.md`.
 - **Phase 1 — comprehensive performance/SEO/a11y/security baseline
   audit** (`101024f`, `b5f77a3`, `ab7b7ab`): created the frozen
-  baseline `WEB_OPTIMIZATION_AUDIT.md`. Headline measurements: TTFB
+  baseline `docs/WEB_OPTIMIZATION_AUDIT.md`. Headline measurements: TTFB
   45–80 ms warm on all 16 representative production routes (HTTP/2,
   edge-cached, Brotli/zstd); Lighthouse mobile sub-pages 91–99 with
   CLS 0; the homepage mobile is the single outlier (perf 49–65, lab
@@ -2546,7 +2546,7 @@ extremes haaland/tripic/dembélé) — full figures, heads never cropped, the
 torsos dissolving into the panel, no hard cuts, FA/EN + RTL identical,
 desktop byte-untouched.
 
-**SPEC:** `SPORTSIGNAL_HERO_CAROUSEL_SPEC.md` §art (the one-image-set
+**SPEC:** `docs/SPORTSIGNAL_HERO_CAROUSEL_SPEC.md` §art (the one-image-set
 contract replaces the MC_ART priority note); `docs/mc-heroes/SPEC.md` (the
 runtime-retirement note — the pipeline stays for the files' sake).
 
@@ -2624,7 +2624,7 @@ on disk + pinned one SEO TTL, never edited in place; the 100-rule cap
 sweep #5 prunes the long-expired /public-13.37.js pin (file stays on
 disk, served through default caching).
 
-**SPEC:** `SPORTSIGNAL_HERO_CAROUSEL_SPEC.md` §7 (the rotation contract:
+**SPEC:** `docs/SPORTSIGNAL_HERO_CAROUSEL_SPEC.md` §7 (the rotation contract:
 default-on, no environmental gates, hidden-tab-only pause, reduced
 motion = instant swaps but still auto-advancing), §6.3/§16/§21/§22 (the
 art-warming + ready-gate contract replaces the old next-only preload
@@ -2706,7 +2706,7 @@ intended output change); _headers 98 rules (the +2 pins for 13.58.js +
 # v13.194-herocarousel — the featured hero becomes a one-match-per-slide carousel
 
 _2026-11-03 · on top of v13.193-leagueinset · implements
-SPORTSIGNAL_HERO_CAROUSEL_SPEC.md (the repository-root spec, the
+docs/SPORTSIGNAL_HERO_CAROUSEL_SPEC.md (the repository-root spec, the
 authoritative acceptance criteria)._
 
 **THE CHANGE, IN ONE LINE:** the single-match featured hero becomes a
@@ -4591,7 +4591,7 @@ dense core still stops short of the wing crest zone; only the sub-5%-alpha
 gaussian tail crosses it, exactly like v13.159). NO filter, NO mask, NO
 mask-clip re-entered — translate+skewX+opacity are compositor-only and
 engine-uniform; the three-round post-mortem contract
-(SHADOW-CONSULTATION.md) holds.
+(docs/SHADOW-CONSULTATION.md) holds.
 
 **2. The pose-width guard** (owner: "a player of arsenal almost collided
 with the edge of the viewport, but player of bayern munich took
@@ -4710,7 +4710,7 @@ mask, physical lanes), the HUD, particles and every other hero contract
 are untouched. Plain alpha pixels have no failure modes: identical in
 every engine, not croppable into a rectangle, unable to paint outside
 their own file bounds. Full three-round dossier with reproduction steps:
-`SHADOW-CONSULTATION.md`. Release: public-13.59.css→13.60.css +
+`docs/SHADOW-CONSULTATION.md`. Release: public-13.59.css→13.60.css +
 public-13.42.js→13.43.js (rename-on-edit; the retired pair stays served +
 pinned per the retention rule), SW v64→v65, VERSION 13.159-bakedcast,
 package 13.159.0.0, _headers gains the new pair's immutable pins,
@@ -8707,11 +8707,11 @@ Checks: 817 → 833, all green; tsc clean.
 
 ---
 
-## [13.79-docs] — 2026-10-13 (ARCHITECTURE.md + ADR-001..006 + README/RUNBOOK refresh)
+## [13.79-docs] — 2026-10-13 (docs/ARCHITECTURE.md + ADR-001..006 + README/RUNBOOK refresh)
 
 Seventh hygiene phase (worklog Task 44 — the documentation deliverable).
 
-- **ARCHITECTURE.md** (new): the full module map in 8 layers (leaves →
+- **docs/ARCHITECTURE.md** (new): the full module map in 8 layers (leaves →
   match model → providers → composers → digest/notify products →
   user-facing state → surfaces → the cron shell + phases), the dependency
   rules (acyclic layer-down, no re-export shims, groups move together in
@@ -8725,7 +8725,7 @@ Seventh hygiene phase (worklog Task 44 — the documentation deliverable).
   "deliberately deferred" list updated (cron split DONE; admin.ts source
   split + ~2 KB inline-CSS dedupe deferred with measurements — needs a
   visual-parity harness first; public-matches justified-as-is).
-- **RUNBOOK.md**: saveNotifiedMatch pointer updated (matches.ts →
+- **docs/RUNBOOK.md**: saveNotifiedMatch pointer updated (matches.ts →
   match-dedupe.ts).
 
 No code changes; suite unchanged.
@@ -9957,7 +9957,7 @@ house style (#1 sched decoy / #5 canary).
 - **README.md** rewritten from v11.52-era claims (wrong alert model, wrong
   KV keys, `teams.js`/`dedupe.js` file refs, missing /healthz + governor +
   dead-man's-switch semantics) to the v13.46 architecture.
-- **RUNBOOK.md** (new): operations — deploy/verify/rollback procedures,
+- **docs/RUNBOOK.md** (new): operations — deploy/verify/rollback procedures,
   monitor + alert semantics (healthchecks.io cron-watch + UptimeRobot
   healthz poll + the degraded band), the healthz coverage matrix, missed/
   duplicate notification investigation playbooks, KV key table, measured

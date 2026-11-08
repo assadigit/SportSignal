@@ -35,7 +35,7 @@
 > recorded with the evidence.
 >
 > **Predecessor.** v1 is preserved at the repository root as
-> `uefa-player-portraits.spec.md` (the original task spec for the 36-player
+> `docs/uefa-player-portraits.spec.md` (the original task spec for the 36-player
 > collection). v2 keeps every hard rule of v1 and generalises the system to
 > the open-ended **hero MVP library**: one star player per club, any club,
 > scraped on first use.

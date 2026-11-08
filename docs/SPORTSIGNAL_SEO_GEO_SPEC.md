@@ -8,7 +8,7 @@ Owner: Ali (non-technical; explain results in plain language, deliver complete w
 
 ## 0. CONFIGURATION BLOCK (read first, confirm values during Phase 0)
 
-Anything marked AUTO-DETECT must be discovered from the codebase. Anything marked OWNER must be written into `OWNER_TODO.md` if it is unknown. Do not stop work for unknown values; use the stated default and list it under "Assumptions" in the final report.
+Anything marked AUTO-DETECT must be discovered from the codebase. Anything marked OWNER must be written into `docs/OWNER_TODO.md` if it is unknown. Do not stop work for unknown values; use the stated default and list it under "Assumptions" in the final report.
 
 ```
 SITE_URL                    = https://sportsignal.ir
@@ -35,7 +35,7 @@ FINISHED_MATCH_POLICY       = keep URL at HTTP 200, switch page to "result" mode
 FINISHED_MATCH_ARCHIVE_DAYS = 365      # after this, set noindex,follow only if the page has no unique content left
 MIN_UPCOMING_MATCHES_FOR_TEAM_OR_COMPETITION_PAGE = 1   # below this, noindex,follow and leave out of the sitemap
 INDEXNOW_ENABLED            = true     # pings Bing, Yandex and others when pages change (Google does not use it)
-ANALYTICS                   = AUTO-DETECT; if none, recommend a privacy-friendly one in OWNER_TODO.md, do not install without approval
+ANALYTICS                   = AUTO-DETECT; if none, recommend a privacy-friendly one in docs/OWNER_TODO.md, do not install without approval
 ```
 
 ---
@@ -61,13 +61,13 @@ ANALYTICS                   = AUTO-DETECT; if none, recommend a privacy-friendly
 
 ## 2. Operating rules for the agent
 
-1. Do Phase 0 (audit) first. Do not write feature code before `SEO_AUDIT.md` exists.
+1. Do Phase 0 (audit) first. Do not write feature code before `docs/SEO_AUDIT.md` exists.
 2. Do not change the visual design unless a requirement forces it (for example, adding a visible "last updated" line or a breadcrumb). Do not remove existing features.
 3. Work in small, separate commits (one per phase). Every commit message says which requirement IDs it covers.
 4. Never invent facts. No made-up match data, venues, TV channels, statistics, ratings, reviews, or authors. Show a field only if the data source provides it.
 5. Never serve different content to search or AI bots than to people (no cloaking). Do not use user-agent-based "dynamic rendering".
 6. Prefer the least invasive change that satisfies the requirement. If a requirement needs a big architecture change (see R-01), explain the options in plain language in the audit, pick one, and implement it.
-7. Do not commit secrets. Do not add tracking or third-party scripts that were not already there without writing it in `OWNER_TODO.md`.
+7. Do not commit secrets. Do not add tracking or third-party scripts that were not already there without writing it in `docs/OWNER_TODO.md`.
 8. Everything you write for the owner (reports, TODO files) must be plain language. Short sentences. No unexplained jargon.
 9. Every script you create must start with a clearly marked configuration block at the top (all editable values in one place) and must be complete and copy-paste runnable.
 10. When this spec says "check current docs", fetch the current Google Search Central page for that topic before finalizing, because guidance changes.
@@ -79,7 +79,7 @@ ANALYTICS                   = AUTO-DETECT; if none, recommend a privacy-friendly
 
 | Phase | Name | Output |
 |---|---|---|
-| 0 | Discovery and baseline audit | `SEO_AUDIT.md` |
+| 0 | Discovery and baseline audit | `docs/SEO_AUDIT.md` |
 | 1 | Rendering, URLs, status codes, redirects | Server-rendered HTML, clean URLs |
 | 2 | Crawl files | robots.txt, sitemaps, icons, manifest, feeds, IndexNow |
 | 3 | Page templates and on-page SEO | Titles, descriptions, headings, content blocks, internal links |
@@ -88,13 +88,13 @@ ANALYTICS                   = AUTO-DETECT; if none, recommend a privacy-friendly
 | 6 | Performance, security, hosting | Core Web Vitals, headers, caching |
 | 7 | AI / GEO layer | Answer-first blocks, machine-readable endpoints, bot policy |
 | 8 | Automation and tests | `seo-check` script, CI hook, post-deploy pings |
-| 9 | Verification, report, owner handoff | `SEO_IMPLEMENTATION_REPORT.md`, `OWNER_TODO.md` |
+| 9 | Verification, report, owner handoff | `docs/SEO_IMPLEMENTATION_REPORT.md`, `docs/OWNER_TODO.md` |
 
 ---
 
 ## 4. PHASE 0 — Discovery and baseline (P0)
 
-Write all findings in `SEO_AUDIT.md`.
+Write all findings in `docs/SEO_AUDIT.md`.
 
 - [ ] **D-01** Identify the stack: framework, build tool, router type (hash `/#/` or real paths), hosting provider, CDN/WAF (for example Cloudflare), database or data source, how match data is fetched and updated.
 - [ ] **D-02** Rendering test. Run `curl -s https://sportsignal.ir/ | head -200` and also view the page source. Answer: does the raw HTML contain real match names and dates, or only an empty `<div id="root">`? Record the answer. This decides R-01.
@@ -107,7 +107,7 @@ Write all findings in `SEO_AUDIT.md`.
 - [ ] **D-09** Check for duplicate hosts or environments (staging, preview URLs, `*.pages.dev`, `*.vercel.app`, `*.workers.dev`) that are publicly crawlable. These must be `noindex` and canonicalized to production.
 - [ ] **D-10** Produce a gap list: every requirement in this spec marked Done / Partial / Missing before you start.
 
-**Stack decision table for R-01 (pick one, explain why in `SEO_AUDIT.md`):**
+**Stack decision table for R-01 (pick one, explain why in `docs/SEO_AUDIT.md`):**
 
 | Situation found | What to do |
 |---|---|
@@ -150,7 +150,7 @@ Write all findings in `SEO_AUDIT.md`.
 ### 5.4 Environment safety (P0)
 
 - [ ] **R-13 (P0)** Production serves `index, follow`. Every non-production environment (staging, preview, localhost builds) serves `noindex, nofollow` via both `<meta name="robots">` and the `X-Robots-Tag` header, and ideally sits behind a password. Control it with one environment variable, and add a test that fails the deploy if production accidentally outputs `noindex`.
-- [ ] **R-14 (P0)** Make sure no firewall/CDN rule, rate limit, geo-block, JS challenge, or "bot fight" feature blocks or challenges Googlebot, Bingbot, or the AI search bots in Section 12. Do not trust the user-agent string alone for security decisions; verified Googlebot is identified by reverse DNS or Google's published IP ranges. Record what you changed. If the setting lives in a dashboard you cannot reach, put exact click-by-click steps in `OWNER_TODO.md`.
+- [ ] **R-14 (P0)** Make sure no firewall/CDN rule, rate limit, geo-block, JS challenge, or "bot fight" feature blocks or challenges Googlebot, Bingbot, or the AI search bots in Section 12. Do not trust the user-agent string alone for security decisions; verified Googlebot is identified by reverse DNS or Google's published IP ranges. Record what you changed. If the setting lives in a dashboard you cannot reach, put exact click-by-click steps in `docs/OWNER_TODO.md`.
 
 ### 5.5 URL design (P0/P1)
 
@@ -366,9 +366,9 @@ Requirements:
 
 ### 9.3 Hosting notes for a .ir domain (P0 awareness)
 
-- [ ] **H-01** A `.ir` domain is a country-code domain, so Google treats it as targeting Iran and this cannot be changed in Search Console. If the owner wants a global (non-Iran) audience, a `.com` is a business decision to put in `OWNER_TODO.md` (not an agent task).
-- [ ] **H-02** If the server is physically inside Iran, check from outside Iran that the site loads fast and reliably (Googlebot and AI crawlers crawl from abroad). Use Search Console "Crawl stats" and "URL Inspection → Test live URL" for real evidence. If slow or unreachable, recommend an edge/CDN or hosting outside Iran in `OWNER_TODO.md`.
-- [ ] **H-03** Some Google tools can be restricted for traffic coming from Iran. If the owner cannot reach them, list the workaround as "use a connection outside Iran for Search Console/Bing tools" in `OWNER_TODO.md` (no illegal or risky advice; just the neutral note).
+- [ ] **H-01** A `.ir` domain is a country-code domain, so Google treats it as targeting Iran and this cannot be changed in Search Console. If the owner wants a global (non-Iran) audience, a `.com` is a business decision to put in `docs/OWNER_TODO.md` (not an agent task).
+- [ ] **H-02** If the server is physically inside Iran, check from outside Iran that the site loads fast and reliably (Googlebot and AI crawlers crawl from abroad). Use Search Console "Crawl stats" and "URL Inspection → Test live URL" for real evidence. If slow or unreachable, recommend an edge/CDN or hosting outside Iran in `docs/OWNER_TODO.md`.
+- [ ] **H-03** Some Google tools can be restricted for traffic coming from Iran. If the owner cannot reach them, list the workaround as "use a connection outside Iran for Search Console/Bing tools" in `docs/OWNER_TODO.md` (no illegal or risky advice; just the neutral note).
 - [ ] **H-04** If the site is Persian, text hygiene (P1): use Persian letters ی and ک (not Arabic ي and ك), use ZWNJ (نیم‌فاصله) correctly, pick one digit style consistently (Persian or Latin) and keep search/index fields normalized so both spellings match.
 
 ---
@@ -415,7 +415,7 @@ Google's published guidance (May 2026) says AI Overviews and AI Mode build on no
 - If a toggle is `true`, you do not need a separate group (the default `User-agent: *` group already allows them). If a toggle is `false`, add a group `User-agent: <name>` with `Disallow: /` for that set.
 - `Google-Extended` is only a robots.txt control token for Gemini training/grounding use; Googlebot does the crawling. Blocking it does not remove the site from Google Search.
 - Keep AI user fetchers allowed even when training bots are blocked, so people asking an assistant about a SportSignal page can still get it read.
-- [ ] **G-02 (P1)** Verify after deployment that none of these agents gets 403/429/JS-challenge from the CDN/WAF: use the curl tests in Appendix F. Note that curl only tests user-agent rules; IP-based blocks show up only in Search Console live tests, so put that check in `OWNER_TODO.md`.
+- [ ] **G-02 (P1)** Verify after deployment that none of these agents gets 403/429/JS-challenge from the CDN/WAF: use the curl tests in Appendix F. Note that curl only tests user-agent rules; IP-based blocks show up only in Search Console live tests, so put that check in `docs/OWNER_TODO.md`.
 
 ### 12.3 Content that AI systems can quote (P0/P1)
 
@@ -443,7 +443,7 @@ Google's published guidance (May 2026) says AI Overviews and AI Mode build on no
 
 - [ ] **G-13** Analytics: create a "AI assistants" referral group for referrers such as `chatgpt.com`, `chat.openai.com`, `perplexity.ai`, `claude.ai`, `gemini.google.com`, `copilot.microsoft.com`, `you.com`, `duckduckgo.com` (if an analytics tool is installed or approved).
 - [ ] **G-14** Create `docs/ai-visibility-prompts.md` with 20 test prompts (in the site language and English), for example "When is the next Real Madrid vs Barcelona match?", "Big football matches this weekend", "{Team} next match date and time". Instructions for the owner to run them monthly in Google (AI Mode/AI Overviews), ChatGPT search, Perplexity, Claude, Gemini, Copilot, and log: cited? correct? Include a results table template.
-- [ ] **G-15** In Google Search Console, if the account shows a "Generative AI" performance report or a "Search generative AI" setting (rolling out in 2026), make sure the site is NOT opted out and use the report. Put this in `OWNER_TODO.md`.
+- [ ] **G-15** In Google Search Console, if the account shows a "Generative AI" performance report or a "Search generative AI" setting (rolling out in 2026), make sure the site is NOT opted out and use the report. Put this in `docs/OWNER_TODO.md`.
 
 ---
 
@@ -454,7 +454,7 @@ Agent tasks (P1):
 - [ ] **V-01** Add support for verification without breaking anything: prefer the DNS TXT method (owner does it); if the owner chooses the HTML tag or file method, add the tag/file the owner provides. Never invent verification codes.
 - [ ] **V-02** Make sure the sitemap URL and robots.txt are reachable, so the owner can submit them immediately.
 
-Owner tasks go into `OWNER_TODO.md` with click-by-click plain steps (see Section 17).
+Owner tasks go into `docs/OWNER_TODO.md` with click-by-click plain steps (see Section 17).
 
 ---
 
@@ -508,7 +508,7 @@ Create `scripts/seo-check` (Node or Python, whichever the project uses) with a *
 
 ---
 
-## 17. OWNER_TODO.md (agent must create this file in plain language)
+## 17. docs/OWNER_TODO.md (agent must create this file in plain language)
 
 Include these items, adapted to what the audit found, each with click-by-click steps and what success looks like:
 
@@ -530,9 +530,9 @@ Include these items, adapted to what the audit found, each with click-by-click s
 The agent must deliver:
 
 1. All code changes, in small commits per phase.
-2. `SEO_AUDIT.md` (Phase 0 findings, gap list, stack decision with reasoning).
-3. `SEO_IMPLEMENTATION_REPORT.md` containing: a checklist of every requirement ID with status (Done / Partial / Skipped + reason); files changed; before/after Lighthouse numbers; the output of `scripts/seo-check`; Rich Results Test and Schema Validator results for 3 sample URLs; assumptions made; known risks; "what the owner must do next".
-4. `OWNER_TODO.md` (Section 17).
+2. `docs/SEO_AUDIT.md` (Phase 0 findings, gap list, stack decision with reasoning).
+3. `docs/SEO_IMPLEMENTATION_REPORT.md` containing: a checklist of every requirement ID with status (Done / Partial / Skipped + reason); files changed; before/after Lighthouse numbers; the output of `scripts/seo-check`; Rich Results Test and Schema Validator results for 3 sample URLs; assumptions made; known risks; "what the owner must do next".
+4. `docs/OWNER_TODO.md` (Section 17).
 5. `docs/ai-visibility-prompts.md` (G-14).
 6. `scripts/seo-check` (T-01 to T-13) and the CI/cron hook.
 

@@ -61,7 +61,7 @@ Admin/owner:   Alitagram, Telegram chat id 92788333 (secret CHAT_ID on the worke
 
 1. `/home/z/my-project/worklog.md` — the append-only dev worklog
    (Tasks 32–34 cover v13.69–v13.71; read them to know what NOT to regress).
-2. `RUNBOOK.md` — especially §1 (access map), §2 (deploy procedure),
+2. `docs/RUNBOOK.md` — especially §1 (access map), §2 (deploy procedure),
    §9 (test invariants), §11 (the never-do list), §12 (sandbox gotchas).
 3. `CHANGELOG.md` top entries — version-by-version behavioral history.
 4. `README.md` — product description.

@@ -183,4 +183,4 @@ Operational notes for S6:
 Next (S6, per spec §4): **SS-20** (home mobile LCP — the lighthouse
 harness before/after), SS-21–26 OWNER_TODO refresh, **final
 full-sitemap sweep** (the audit's method, fresh evidence), the Phase-2
-section in `SEO_IMPLEMENTATION_REPORT.md`, the program close-out note.
+section in `docs/SEO_IMPLEMENTATION_REPORT.md`, the program close-out note.

@@ -5,7 +5,7 @@ Tehran late evening into 2026-11-08 (the program day continuing from the
 S17 Session 1 foundation `293477a`; the deploy landed 2026-11-06 ~22:10
 UTC — the sandbox clock runs behind the Tehran wall-clock convention the
 history notes use). Per the S17 hand-off, S18 executes
-**`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 2**: the mirror goes
+**`docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 2**: the mirror goes
 live IN CODE — every mirror-eligible family wired to the Session-1
 foundation — while production stays unconfigured ⇒ still ZERO surface
 until the owner sets the vars.
@@ -15,11 +15,11 @@ until the owner sets the vars.
 - Fresh clone this session; `git fetch` (one-shot token URL): origin
   `main` == `293477a` (the S17 close) — no owner push in between; tree
   clean at start; branch `main`.
-- Read in full, in order: `TELEGRAM_CHANNEL_MIRROR_SPEC.md` (PART VI
+- Read in full, in order: `docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` (PART VI
   Session 2 + PART II §2/§4 + PART IV §7 are this session's rules),
   `docs/telegram-channel-mirror/DISCOVERY.md` (authoritative — §7.4 the
   hook points, §7.3 the stage collapse, §7.5 the Persian variant, §7.6
-  the failure policy, §7.7 the budget), `AGENTS.md` + `RUNBOOK.md`
+  the failure policy, §7.7 the budget), `AGENTS.md` + `docs/RUNBOOK.md`
   (§1/§2/§8/§8b/§11), the S17 note
   (`2026-11-07-s17-channelmirror-s1.md`), then every source surface to
   be hooked (notify-engine / digest-bigmatch / notify-status /
@@ -214,18 +214,18 @@ NEXT SESSION:
 You are the lead engineer continuing the SportSignal Telegram Channel
 Mirror program (repo: https://github.com/assadigit/sportsignal, branch
 main). This is SESSION 3 of the program: "Reliability + observability
-hardening" (spec TELEGRAM_CHANNEL_MIRROR_SPEC.md PART VI Session 3;
+hardening" (spec docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md PART VI Session 3;
 DISCOVERY §7.6/§7.7/§10 are the design under test).
 
 MANDATORY READING BEFORE ANYTHING ELSE (in this order):
-1. TELEGRAM_CHANNEL_MIRROR_SPEC.md — the whole spec. PART VI defines
+1. docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md — the whole spec. PART VI defines
    this session; PART IV §10–§13 (the exactly-once reality, the outbox
    contract, the budget laws, the monitoring surface) are its rules.
 2. docs/telegram-channel-mirror/DISCOVERY.md — §7.6 (the failure
    policy: at-most-once bias, outbox dest-field reuse, pause on
    permanent errors, isolation), §7.7 (budget), §10 (the required
    transport/failure/resource test coverage).
-3. AGENTS.md + RUNBOOK.md (§1, §2, §8, §8b, §11) +
+3. AGENTS.md + docs/RUNBOOK.md (§1, §2, §8, §8b, §11) +
    docs/history/2026-11-07-s17-channelmirror-s1.md (the foundation) +
    docs/history/2026-11-07-s18-channelmirror-s2.md (the S18 note — its
    §2 documents every Session-2 seam: the six hooks, the runner
@@ -316,7 +316,7 @@ SESSION 3 SCOPE:
    copy-paste prompt for Session 4 (production readiness + activation:
    owner-gated config validation via getChat/getChatMember, first
    naturally-occurring event verification, the three-state honesty).
-   Also refresh OWNER_TODO.md with an S19 bullet in Persian, and print
+   Also refresh docs/OWNER_TODO.md with an S19 bullet in Persian, and print
    the next-session prompt in your final reply.
 
 CONSTANTS (from the owner, never committed to the repo): deploy needs

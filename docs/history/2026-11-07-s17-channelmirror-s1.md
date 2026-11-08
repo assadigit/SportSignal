@@ -2,7 +2,7 @@
 
 Wall-clock note (the repo's convention): this session ran 2026-11-07
 (Tehran evening, the program day continuing from the S16 Session 0 audit
-`c91db40`). Per the S16 hand-off, S17 executes **`TELEGRAM_CHANNEL_MIRROR_SPEC.md`
+`c91db40`). Per the S16 hand-off, S17 executes **`docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md`
 Session 1**: the runtime foundation — destination configuration, the
 delivery seam's shared gate, and the destination-scoped durable idempotency
 claim — **disabled by default, zero behavioral surface** until Session 2
@@ -13,10 +13,10 @@ wires the notification-family hooks.
 - `git fetch` (fresh clone this session; `npm install`): origin `main` ==
   `c91db40` (the S16 close) — no web-UI push in between; tree clean at
   start; branch `main`.
-- Read in full, in this order: `TELEGRAM_CHANNEL_MIRROR_SPEC.md` (all
+- Read in full, in this order: `docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` (all
   653 lines; PART VI Session 1 + PART IV §8–§11 are this session's
   rules), `docs/telegram-channel-mirror/DISCOVERY.md` (authoritative),
-  `AGENTS.md`, `RUNBOOK.md` (§1/§2/§8/§11), the S16 note
+  `AGENTS.md`, `docs/RUNBOOK.md` (§1/§2/§8/§11), the S16 note
   (`2026-11-07-s16-channelmirror-s0.md`), then the source surfaces to be
   touched: `src/types.ts`, `src/match-dedupe.ts` (the saveNotifiedMatch
   law being twinned), `src/config.ts`, `wrangler.toml` +
@@ -125,7 +125,7 @@ SCOPE COMPLETED:
 FILES CHANGED:
 - src/channel-mirror.ts (new), scripts/check-channel-mirror.js (new)
 - src/types.ts, src/config.ts, src/worker.ts, wrangler.toml, wrangler.dev.toml
-- db/users-schema.sql, RUNBOOK.md, scripts/lib/worker-src.js, scripts/check-stats.js
+- db/users-schema.sql, docs/RUNBOOK.md, scripts/lib/worker-src.js, scripts/check-stats.js
 - package.json, package-lock.json, CHANGELOG.md
 TESTS:
 - npm test — EXIT 0, 2,715 OK / 0 FAIL (2,614 baseline + 100 channel-mirror + 1 new wiring pin; exact arithmetic)
@@ -164,7 +164,7 @@ main). This is SESSION 2 of the program: "Mirror all eligible
 notification families".
 
 MANDATORY READING BEFORE ANYTHING ELSE (in this order):
-1. TELEGRAM_CHANNEL_MIRROR_SPEC.md (repo root) — the whole spec. PART VI
+1. docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md (repo root) — the whole spec. PART VI
    defines this session; PART II §2 (include/exclude), §4 (content +
    the Persian/locale rules + required links), PART IV §7 (the
    integration principle) are its rules.
@@ -173,7 +173,7 @@ MANDATORY READING BEFORE ANYTHING ELSE (in this order):
    mirror-eligible families, the six hook points (§7.4), the stage
    collapse (§7.3), the Persian variant discipline (§7.5), the failure
    policy (§7.6), the budget integration (§7.7).
-3. AGENTS.md + RUNBOOK.md (§1, §2, §8, §8b, §11) +
+3. AGENTS.md + docs/RUNBOOK.md (§1, §2, §8, §8b, §11) +
    docs/history/2026-11-07-s17-channelmirror-s1.md (the S17 note — the
    foundation you are building on; its §2 documents every v1 seam:
    channelGate, claimChannelEvent, recordChannelState, the pause
@@ -286,7 +286,7 @@ unconfigured ⇒ still zero surface until the owner sets the vars):
    claim reconciliation, pause classification end-to-end with failure
    injection, admin /status channel section + /api/audit extension,
    RUNBOOK channel-ops section, budget re-measure). Also refresh
-   OWNER_TODO.md with an S18 bullet in Persian, and print the
+   docs/OWNER_TODO.md with an S18 bullet in Persian, and print the
    next-session prompt in your final reply.
 
 CONSTANTS (from the owner, never committed to the repo): deploy needs
