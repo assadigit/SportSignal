@@ -8,6 +8,7 @@
 import { SEO, absUrl } from "./config";
 import { esc } from "./utils";
 import * as JL from "./jsonld";
+import { FONT_FACES_STYLE } from "../pages/styles-shared";
 
 export interface HeadInput {
   // v13.208-lastmod (F-L1, Phase 5): path is OPTIONAL — a page with no real
@@ -94,8 +95,19 @@ export function pageShell(opts: {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${themeInit}
-<link rel="preload" href="/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<!-- v13.239-seofont: the Persian design-system fonts, EXACTLY like the
+     homepage — the SEO shell used to preload the retired v13.6 Vazirmatn
+     faces and never declared @font-face at all, so public-13.81.css's
+     Peyda/Morabba assignments fell through to 'Segoe UI'/Tahoma (the
+     owner-spotted default-font bug on every per-match SEO page). The fix
+     reuses the homepage's own FONT_FACES_STYLE byte-for-byte (Morabba
+     variable 250–900 + Peyda 400–900 + Chakra Petch + Poppins Digits,
+     all self-hosted, CSP font-src 'self') and the homepage's preload
+     trio (body face 400/800 + the heading variable font). -->
+<link rel="preload" href="/fonts/Peyda-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Peyda-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/MorabbaVF.woff2" as="font" type="font/woff2" crossorigin>
+${FONT_FACES_STYLE}
 <link rel="stylesheet" href="/public-13.81.css">
 <style>
 /* Page-specific components for server-rendered SEO pages (breadcrumbs,

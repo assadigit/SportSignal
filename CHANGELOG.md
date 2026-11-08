@@ -4,6 +4,46 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.239-seofont — the SEO pages join the Persian design system (the default-font bug on every per-match page)
+
+**S28, 2026-11-08 (the owner's report, verbatim: «I've noticed that in seo
+pages (per match), in farsi language, you're using default font, maybe
+tahoma or arial. use our approved design system font for farsi (just
+like you've used them for the index page)»).** One server-side fix for
+every server-rendered SEO page — match, team, competition, hub and the
+static pages all render through the one `pageShell()` in
+`src/seo/page-shell.ts`, and that shell never declared a single
+`@font-face` rule.
+
+- **The bug**: `public-13.81.css` assigns the design system correctly
+  (`body → Peyda`, `h1–h6 → Morabba` via `--font-heading`), but the
+  `@font-face` declarations themselves live ONLY in the homepage's
+  inline `FONT_FACES_STYLE` block (`src/pages/styles-shared.ts`,
+  embedded since v13.133-persiantype) — the SEO shell linked the
+  stylesheet without the faces, so every sub-page fell through the
+  stack to `'Segoe UI'/Tahoma/system-ui` (the exact "default font"
+  the owner saw). The shell also preloaded the RETIRED v13.6
+  Vazirmatn-Regular/Bold faces — dead weight no rule referenced.
+- **The fix**: the homepage's own `FONT_FACES_STYLE` is now
+  interpolated into the SEO shell byte-for-byte (Morabba variable
+  250–900 + Peyda static 400–900 + Chakra Petch + Poppins Digits, all
+  self-hosted under `/fonts/`, already live for the index page; CSP
+  `font-src 'self'` needs no change), and the preload trio matches the
+  homepage exactly: `Peyda-Regular.woff2` + `Peyda-ExtraBold.woff2` +
+  `MorabbaVF.woff2` — first paint on sub-pages now holds the same
+  font-priority ladder as the index.
+- **Scope discipline**: server-side-only — no CSS/JS bundle edit, no
+  `sw.js` CACHE bump (the RUNBOOK §2 rule), no new assets, no
+  homepage/admin/login byte drift (the parity harness stays green).
+  The v13.238 mobile-hero and v13.237 promo-bar contracts ride
+  unchanged.
+- **Verification**: tsc clean, the full suite green (the v13.238
+  release-wiring check demoted to a HISTORICAL pin, the new
+  v13.239-seofont live pin carries the font contracts forward), the
+  rendered shell checked to carry all four families + the preload trio
+  + zero Vazirmatn preloads; production verified after deploy (HTML
+  grep + computed-style check on a live match page).
+
 # v13.238-mchedge — the concept-mockup mobile hero (the fades retire, the card overlaps the players, the outer hands crop at the screen edges)
 
 **S27, 2026-11-08 (the owner's mobile-hero instruction, verbatim: «Remove
