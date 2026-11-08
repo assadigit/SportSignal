@@ -4,6 +4,73 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.238-mchedge — the concept-mockup mobile hero (the fades retire, the card overlaps the players, the outer hands crop at the screen edges)
+
+**S27, 2026-11-08 (the owner's mobile-hero instruction, verbatim: «Remove
+the fade (the gradient mask) from the inner side of each player image.
+The hands near the center must stay fully opaque. Remove the fade at the
+bottom edge of each player image. Place the match card above the player
+images in the stacking order (z-index). Let the card overlap the lower
+part of the players. Scale each player image up moderately (suggested:
+~110–125%). Anchor the Atletico Madrid player to the left edge of the
+viewport. Anchor the Barcelona player to the right edge. Adjust the
+position of each image until the outer hand touches the viewport edge.
+Let the viewport crop that hand. Set the hero container to clip its
+overflow horizontally (overflow-x: clip or hidden). Keep the LaLiga logo
+above both images in the stacking order.» + the note: «Steps 5 and 6 use
+physical left and right on purpose. The artwork is a fixed picture
+(Atletico left, Barcelona right), so it must not mirror in the RTL
+layout. Do not use logical properties for these two images.»).** One
+presentation release for the mobile match hero (`<=899px`; zero new
+state, zero new fetches, zero bundle/asset change — the round rides the
+served HTML's inline style exactly like v13.198/v13.199/v13.237).
+
+- **The fades retire**: the v13.198 two-axis mask on `.mc-port img` (the
+  `--mc-fade` vertical dissolve + the `--mc-side` 6% side softeners) is
+  removed — the inward-facing hands near the centre and the bottom edge
+  stay fully opaque and crisp. The lower torso is hidden by the CARD
+  ITSELF instead: the panel (z3) already crosses over the players (z2)
+  and its near-opaque fill overlaps the figures' lower part, which is
+  what the fade used to hide.
+- **The scale-up**: the shared img height goes 98.6 → 116cqw (the
+  owner's ~110–125% band, 1.18×) — heads ~24cqw, crowns at ~3cqw, the
+  same library-default crown band under the header melt.
+- **The fit switches cover → contain**: with the side fades gone,
+  cover's inner column crop would slice a hard vertical edge through
+  the wide poses' inward arms (Álvarez .619 / Yamal .560 both trimmed
+  at the old .436 box); contain renders each source's FULL width so
+  the inner hands stay whole — the only crop left is the viewport edge
+  itself. The ports become full-width 104cqw lanes so every source up
+  to aspect .897 stays height-constrained at the full 116cqw (wider
+  poses fit the lane width and ride a touch shorter — always the full
+  figure, never a head cut).
+- **The edge anchoring — physical left/right ON PURPOSE** (the owner's
+  note: the artwork is a fixed picture and must NOT mirror in the RTL
+  layout — no logical properties on these rules): the home lane
+  (Atlético) hangs 2cqw past the card's LEFT edge, the away lane
+  (Barcelona) 2cqw past the RIGHT; each img aligns its figure to its
+  OWN outer edge (`object-position: left/right bottom`). The card's
+  own `overflow:hidden` crops each outer hand at the screen edge (the
+  outer hands reach ~1% of the source width, so ~1.3cqw of each hand
+  lands beyond the edge). The inner sides meet naturally near the
+  centre, the away lane painting over the home lane where the figures
+  interleave.
+- **The stack (kept)**: the panel (z3) above the players (z2) — the
+  card overlaps the lower part; the competition lockup (LaLiga) rides
+  `#mcardSpot` (z5) above both images; the topfade veil stays z1 under
+  the players.
+- **The horizontal clip**: `.herowrap` gains
+  `overflow-x:hidden;overflow-x:clip` at `<=899px` — belt-and-braces
+  on top of the card's own `overflow:hidden` so the scaled lanes can
+  never open a sideways scrollbar (`clip` declared after `hidden` so
+  engines that support it win; the `.hero-player` cinematic lanes are
+  `display:none` at `<=1019px`, so nothing that intentionally bleeds
+  is affected).
+- **Inline-only round** (the v13.237 law): no bundle edit, no SW bump —
+  navigations are network-first; the test gates co-evolve
+  (`check-mc-heroes` retirement pin + `check-stats` geometry/release
+  wiring pins).
+
 # v13.237-promobar — the approved static top bar (the S26 rollback round: the landing-page detour reverts, the banner rides the original page)
 
 **S26, 2026-11-08 (the owner's direction, verbatim: «Look, I only wanted

@@ -196,77 +196,78 @@ ${FONT_FACES_STYLE}
      z1 and the players (z2) now ride ABOVE it — the fade melts ONLY the
      stadium scene, the head tops stay fully bright, never dimmed. */
 .hero-mcard .mc-topfade{position:absolute;left:0;right:0;top:0;height:18%;z-index:1;pointer-events:none;background:linear-gradient(180deg,#040F23 0%,rgba(4,15,35,.94) 30%,rgba(4,15,35,.6) 58%,rgba(4,15,35,.22) 82%,rgba(4,15,35,0) 100%)}
-/* v13.198-mcsize (owner: "the player cutouts became much too small and
-     too faded — all players must look like Dybala in the ORIGINAL
-     version"): the v13.197 25cqw-column/58cqw box rendered the heads
-     at ~12%W riding mid-scene under a 45%-long dissolve that dimmed
-     the whole chest. This round rescales THE ONE SHARED RULE (still
-     ONE image set, still no per-slide or per-file geometry anywhere)
-     to the original library-default Dybala placement and re-cuts the
-     fades. The .mc-pre/.mc-fit-w retirement, the putPort library
-     wiring and the .mc-clean scan all stay EXACTLY as v13.197 built
-     them.
-     THE SIZE (the owner's 1.7x first try): img height 58 -> 98.6cqw —
-     the measured skulls (70-98px across the shipped cutoffs) render
-     15-21cqw; the Dybala/Alvarez/Yamal heads land at 20.6-20.8cqw =
-     the owner's ~20%W target measured off the original; the spread is
-     the sources' real proportions (no per-file normalization exists
-     by design since v13.197).
-     THE GEOMETRY: each port is a 43cqw COLUMN (the .436 box aspect
-     sits under the narrowest .440 source — every source stays
-     height-constrained, cover only ever trims ARMS/sides, never a
-     head: the flush-cropped sources carry no headroom to cut into) at
-     inset-inline-start 3.5cqw / 53.5cqw — the head centers land at
-     25/75%W (the v13.180/197 placement carried over; the v13.182
-     logical-property mirror contract holds: the card anchor pins
-     direction:ltr, so inline-start = the physical LEFT in every
-     direction). The port height 46 -> 57% drops the img bottom to
-     101.3cqw — 25.4cqw BEHIND the z3 panel top at 42.7%H — so the
-     crowns land at 3.2-4cqw (~2%H, the original library-default crown
-     placement just under the header melt, clear of the MC_WL lockup
-     zone x38.7-61.3%W), the shoulders ~31cqw, the figure dissolving
-     into the glowing frame. The wide poses (bruno .890, haaland .925)
-     crop through the outer arms AT the box edges (3.5cqw off the
-     screen edge — the shoulders reach close to the edges); the narrow
-     (mikautadze .440) floats its full 43cqw figure.
-     THE FADE (owner: "reduce the fade — only a short fade on the
-     bottom edge, about the last 15-20%, and a very light 5-8% on the
-     outer edges; the faces and jerseys must be fully bright"): the
-     VERTICAL gradient is opaque to 62% of the box (61.2cqw — below
-     every crest) and fully transparent by 80% (81.6cqw): the dissolve
-     band is the last ~16% of the VISIBLE figure (63.8 -> 75.9cqw at
-     the panel top, ~30% opacity crossing the glowing border, gone
-     5.7cqw behind it) — v13.197's 52->97% band dimmed the whole chest
-     and read as "too faded". The side edges fade symmetrically on
-     BOTH sides at 6% (2.6cqw — softening the cover crop cuts at the
-     box edges for the wide poses + the screen-edge emergence); ONE
-     rule for home and away (cover + center is symmetric by
-     construction). v13.197's 9% side stops retire.
-     Z-ORDER unchanged: scene (auto) -> topfade z1 -> ports z2 (the
-     heads stay above the veil, never dimmed) -> PANEL z3 (the tab +
-     top border cross OVER the fading torsos; the near-opaque fill
-     occludes the transparent tail) -> capsule z3 (DOM-later) ->
-     crests/names z3 (DOM-later) -> date/ko z4 -> tiles/venue z3
-     (DOM-later).
+/* v13.238-mchedge (owner, the concept-mockup mobile hero — the S27
+     instruction verbatim: «Remove the fade (the gradient mask) from the
+     inner side of each player image. The hands near the center must
+     stay fully opaque. Remove the fade at the bottom edge of each
+     player image. Place the match card above the player images in the
+     stacking order (z-index). Let the card overlap the lower part of
+     the players. Scale each player image up moderately (~110-125%).
+     Anchor the Atletico Madrid player to the left edge of the
+     viewport. Anchor the Barcelona player to the right edge. Adjust
+     the position of each image until the outer hand touches the
+     viewport edge. Let the viewport crop that hand. Set the hero
+     container to clip its overflow horizontally. Keep the LaLiga logo
+     above both images in the stacking order.» — matching the Visual
+     reference v2.png mockup frame instead of the faded look):
+     THE FADE IS GONE — the v13.198 two-axis mask (the --mc-fade
+     vertical dissolve + the --mc-side 6% side softeners) is RETIRED
+     from the ONE shared img rule: the inward-facing hands stay fully
+     opaque and sharp, and the bottom edge now ends crisp BEHIND the
+     panel — the card's near-opaque fill overlaps and hides the lower
+     torso, which is what the fade used to hide.
+     THE SIZE: img height 98.6 -> 116cqw — the owner's ~110-125% band
+     (1.18x): the Alvarez/Yamal heads land ~24cqw and the crowns ride
+     at ~3cqw, the same library-default crown band just under the
+     header melt that v13.198 set.
+     THE FIT: cover -> CONTAIN. With the side fades gone, cover's
+     inner column crop would slice a hard vertical edge through the
+     wide poses' inward arms (alvarez .619 / yamal .560 both trimmed
+     at the old .436 box); contain renders each source's FULL width,
+     so the inner hands stay whole and the only crop left is the
+     viewport edge itself. Each port becomes a full-width 104cqw lane
+     so every source up to aspect .897 stays height-constrained at
+     the full 116cqw (wider poses fit the lane width and ride a touch
+     shorter — always the full figure, never a head cut).
+     THE ANCHOR — PHYSICAL left/right ON PURPOSE (the owner's note:
+     the artwork is a fixed picture, Atletico left / Barcelona right,
+     and must NOT mirror in the RTL layout — no logical properties on
+     these rules; the card anchor's dir="ltr" pins the card anyway):
+     the home lane hangs 2cqw PAST the card's LEFT edge, the away lane
+     2cqw past the RIGHT — the card's own overflow:hidden crops each
+     outer hand at the screen edge (the outer hands reach ~1% of the
+     source width, so ~1.3cqw of each hand lands beyond the edge and
+     the viewport crops it), and each img aligns its figure to its OWN
+     outer edge (object-position left/right bottom): the inner sides
+     meet naturally near the centre, the away lane painting over the
+     home lane where the two figures interleave (DOM-later wins at the
+     shared z2).
+     THE STACK: unchanged where it already matched the mockup — the
+     PANEL (z3) crosses OVER the players (z2): the card overlaps the
+     lower torso; the competition lockup rides #mcardSpot (z5) above
+     both images; the topfade veil stays z1 under the players. The
+     .herowrap gains overflow-x:clip at <=899px (the rule below the
+     v13.199 margin note) so the scaled lanes can never open a
+     sideways scrollbar.
      HISTORY: v13.175-.180 the crop/melt/equal-columns rounds ->
-     v13.182-mcmirror the logical-property mirror -> v13.183-mchero the
-     canonical 356x574 windows -> v13.197-mcdesktop one image set, one
-     rule, CSS-only fit -> this round: the original size back. */
+     v13.182-mcmirror the logical-property mirror -> v13.183-mchero
+     the canonical 356x574 windows -> v13.197-mcdesktop one image set,
+     one rule -> v13.198-mcsize the original size back + the short
+     fades -> this round: the mockup hero — no fades, edge-anchored,
+     viewport-cropped outer hands. */
 .hero-mcard .mc-ports{z-index:2}
 .hero-mcard .mc-panel{z-index:3}
-/* v13.182-mcmirror's LOGICAL-property contract carries over (the page is
-     RTL Persian; the card anchor pins direction:ltr, so inline-start =
-     the physical LEFT — the computed geometry is identical in every
-     direction). v13.198-mcsize: ONE SHARED RULE for both sides — the
-     ports are the 43cqw columns (head centers 25/75%W above), the img
-     fills its port width:100% at the fixed 98.6cqw height (the owner's
-     1.7x); no per-side img override, no .mc-pre/.mc-fit-w variants, no
-     per-file --mcfade (the side fade is symmetric, so home and away
-     share it verbatim). */
-.hero-mcard .mc-ports .mc-port{height:57%;width:43cqw}
-.hero-mcard .mc-ports .mc-port.mc-port-h{inset-inline-start:3.5cqw}
-.hero-mcard .mc-ports .mc-port.mc-port-a{inset-inline-start:53.5cqw}
-.hero-mcard .mc-ports .mc-port img{position:absolute;bottom:0;inset-inline:0;width:100%;height:98.6cqw;object-fit:cover;object-position:center bottom;--mc-fade:linear-gradient(180deg,#000 0 62%,transparent 80%);--mc-side:linear-gradient(90deg,transparent 0,#000 6%,#000 94%,transparent 100%);-webkit-mask-image:var(--mc-fade),var(--mc-side);-webkit-mask-composite:source-in;mask-image:var(--mc-fade),var(--mc-side);mask-composite:intersect}
+/* v13.238-mchedge: ONE SHARED img rule for both sides (contain + the
+     fixed 116cqw height; no per-file geometry, no .mc-pre/.mc-fit-w
+     variants) + exactly TWO per-side overrides, both PHYSICAL: the
+     lane anchor (left vs right past the card edge) and the img's
+     outer object-position — the artwork must never mirror in RTL. */
+.hero-mcard .mc-ports .mc-port{height:67%;width:104cqw}
+.hero-mcard .mc-ports .mc-port.mc-port-h{left:-2cqw}
+.hero-mcard .mc-ports .mc-port.mc-port-a{left:auto;right:-2cqw}
+.hero-mcard .mc-ports .mc-port img{position:absolute;bottom:0;left:0;right:0;width:100%;height:116cqw;object-fit:contain;object-position:center bottom}
+.hero-mcard .mc-ports .mc-port.mc-port-h img{object-position:left bottom}
+.hero-mcard .mc-ports .mc-port.mc-port-a img{object-position:right bottom}
 /* v13.199-mcspace (owner: "I want a little margin padding (just slightly
      from the header)" + the note "the head of harry kane is too much
      close to the website's logo, just slightly add some safe space"):
@@ -285,6 +286,17 @@ ${FONT_FACES_STYLE}
      header already floats on). The 16px is paid from the below-card
      peek (the v13.168 first-screen reserve), never from the card. */
 @media (max-width:899px){.hero-mcard{margin-top:84px}}
+/* v13.238-mchedge (the owner's instruction: «Set the hero container to
+     clip its overflow horizontally (overflow-x: clip or hidden). The
+     scaled images must not cause sideways scrolling.»): the wrap clips
+     its own horizontal overflow in the phone zone — belt-and-braces
+     on top of the card's own overflow:hidden (the 104cqw lanes hung
+     2cqw past the card edges can never open a sideways scrollbar).
+     clip is declared after hidden so engines that support it win
+     (clip keeps overflow-y visible — no scroll-container side
+     effects); the .hero-player cinematic lanes are display:none at
+     <=1019px, so nothing that intentionally bleeds is affected. */
+@media (max-width:899px){.herowrap{overflow-x:hidden;overflow-x:clip}}
 /* v13.199-mcspace (owner: "make the league or ucl logo 30% larger in
      mobile view"): the white competition lockup scales x1.3 — width
      22.6 -> 29.4cqw, height 5.4 -> 7% (object-fit:contain scales the
@@ -610,22 +622,24 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
        /ui/mc/scene.webp (the reference's own top 43% minus the players and
        the competition logo, alpha-masked at 92% — the synthetic layers stay
        under it so a dead asset degrades gracefully).
-     · .mc-ports — the STATIC portrait containers (home left / away right,
-       43cqw columns, head centers 25/75%W, z2 above the topfade veil);
-       v13.197-mcdesktop (owner: use the desktop player images on mobile
-       too): renderMCard fills them with the SAME heroArtFor() HERO_ART
-       desktop library portraits the PC cinematic flanks read — ONE
-       image set on every screen (the MC_ART mobile cutouts + their
-       .mc-fill mapping retire; the /ui/mc files stay on disk). ONE
-       shared CSS rule fits every source (the inline style): width 100%
-       of the column, fixed 98.6cqw height (the v13.198-mcsize owner's
-       1.7x — heads ~20%W, crowns ~2%H like the original), object-fit
-       cover, object-position center bottom — full figures, bottom-
-       anchored deep behind the panel top, horizontally centered, and
-       the two-axis mask fade (a SHORT vertical dissolve into the HUD +
-       very light 6% side fades). The .mc-clean toggle swaps in the
-       hole-free scene-4 behind any real cutout (v13.180: the
-       silhouettes are gone).
+     · .mc-ports — the STATIC portrait containers (home left / away
+       right, full-width 104cqw lanes hung 2cqw past their own OUTER
+       card edge — physical left/right, the artwork never mirrors;
+       z2 above the topfade veil); v13.197-mcdesktop (owner: use the
+       desktop player images on mobile too): renderMCard fills them
+       with the SAME heroArtFor() HERO_ART desktop library portraits
+       the PC cinematic flanks read — ONE image set on every screen
+       (the MC_ART mobile cutouts + their .mc-fill mapping retire; the
+       /ui/mc files stay on disk). ONE shared CSS rule fits every
+       source (the inline style): width 100% of the lane, fixed 116cqw
+       height (the v13.238-mchedge concept-mockup round, 1.18x — heads
+       ~24%W, crowns ~1.7%H), object-fit contain, object-position
+       per-side OUTER bottom — full figures, bottom-anchored deep
+       behind the panel top, the outer hand cropped by the card edge,
+       and NO mask fade anywhere (the v13.198 two-axis dissolve
+       retired — the hands near the centre stay fully opaque). The
+       .mc-clean toggle swaps in the hole-free scene-4 behind any
+       real cutout (v13.180: the silhouettes are gone).
      · svg.mc-panel — the chamfered HUD frame drawn as an inline SVG path:
        45deg corner cuts, a raised tab with angled shoulders sitting ON the
        continuous top border, a DOUBLE border (pure-cyan #00E9FD outer line
