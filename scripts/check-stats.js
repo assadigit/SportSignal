@@ -1202,7 +1202,7 @@ check("v13.242-faglow (HISTORICAL pin — demoted at v13.243-langflag: the S32 o
 
 check("v13.243-langflag (HISTORICAL pin — demoted at v13.244-grasspill: the S33 owner round redesigned the floating pill this check pinned — the memory re-keyed again (the joined/dismissed pair -> sp_pill_joined3, the close-free redesign's one-shot reset), the 72/58px compacting geometry became the fixed 74px two-line grass-photo pill, and the x-sibling law retired with the blue Telegram mark; every other contract (the +50% #tgHead glyph, the EN/FA language flags, the deeper jersey dissolve, the FA countdown pockets, the 20% scroll gate, the SW v120 + 13.74.js immutable pin) rides UNCHANGED and the survivors are re-pinned in the v13.244 live check below)", true);
 
-check("v13.245-arrowcta (the release wiring — the S34 session, 2026-11-08: the owner's arrow round. (1) THE GROWN HEADING — owner: change «عضو کانالمون شو» to «عضو کانالمون شو تا بازیهای مهم رو از دست ندی!»: the fixed heading carries the owner's FULL sentence at 14px/800 wrapped to at most two lines (the -webkit-line-clamp:2 box retires the one-line 15.5px nowrap/ellipsis law that could never carry the longer wording); the EN mirror grows with it (\"Join our channel so you never miss the big matches!\") with explicit dir on both spans (the trailing \"!\" would otherwise bidi-jump in the RTL document). (2) THE NUDGING ARROW — owner: \"create a SVG arrow that is pointing animationly to the telegram button\": .tgp-arrow, the sky-blue #8EE3FF curved arrow with the static drop-shadow glow, rides BETWEEN the pill body and the blue mark as a FLEX CHILD of #tgPillBox (the writing mode does the placement: FA/RTL pill->arrow->mark, html[dir=ltr] scaleX(-1) mirrors it for EN — applyLang's own attribute); the nudge (1.35s infinite translateX(-5px) on the SVG user grid + opacity breathe) lives on the inner g.tgp-ain because the root svg carries the mirror and a keyframe transform on the root would overwrite it; aria-hidden + pointer-events:none; transform+opacity only (the v13.242 animation law); killed under prefers-reduced-motion. (3) THE BIGGER MARK — owner: \"also make the telegram circle button bigger\": #tgPillGo grows 46 -> 58px (glyph 27 -> 34px). (4) THE MEMORY RESET: sp_pill_joined3 -> sp_pill_joined4 (the S32/S33 one-shot trick — every S33-era tap verdict is zeroed once). THE RELEASE PLUMBING: an HTML-only round — no bundle edit, no CSS rename, NO SW BUMP; baseline re-frozen via --update)", (() => {
+check("v13.246-fullbar (the release wiring — the S35 session, 2026-11-08: the owner's full-width sticky round. (1) THE ARROW RETIRED — owner: \"Remove the arrow animated\": the S34 .tgp-arrow svg, its flex-child CSS, the html[dir=ltr] mirror, the .tgp-ain nudge keyframes and the reduced-motion kill are all GONE — the bar body and the blue mark are the box's only children again. (2) THE FULL-WIDTH BAR — owner: \"Make the sticky area full width\": the box drops the 12px float gutters (bottom:0 + inset-inline:0 — edge-to-edge; the hidden slide shrinks to translateY(calc(100% + 8px))); the pill grows to height calc(74px + env(safe-area-inset-bottom,0px)) so the grass itself fills the iPhone home-indicator strip, carries 16px top corners + square bottom corners flush at the screen edge (the 999px capsule law retires; the ::after glow follows the new shape) and reserves the mark's lane with padding-inline-end:84px; the 58px blue mark leaves the flex row for position:absolute (inset-inline-end:12px, bottom:calc(10px + env(safe-area-inset-bottom,0px)/2), z-index:2) so it rides ON the grass instead of beside it — no transparent seam at the screen edge; body.tg-pill-on pads calc(78px + safe-area) and #backTop lifts to calc(90px + safe-area). (3) THE REWORDED HEADING — owner: «با عضویت در کانال، بازی مهم بعدی رو از دست نده!» (the EN mirror \"Join the channel and don't miss the next big match!\"); the five-line rotator, the grass surface and the glow laws ride UNCHANGED from S33/S34. (4) THE MEMORY RESET: sp_pill_joined4 -> sp_pill_joined5 (the S32/S33/S34 one-shot trick — every S34-era tap verdict is zeroed once). THE RELEASE PLUMBING: an HTML-only round — no bundle edit, no CSS rename, NO SW BUMP; baseline re-frozen via --update)", (() => {
   const pub = read("src/pages/public.ts");
   const cfg = read("src/config.ts");
   const sw = read("assets/sw.js");
@@ -1217,7 +1217,7 @@ check("v13.245-arrowcta (the release wiring — the S34 session, 2026-11-08: the
   const phoneZone = firstMedia >= 0 && pillComment > firstMedia ? pub.slice(firstMedia, pillComment) : "";
   const baseZone = firstMedia >= 0 ? pub.slice(0, firstMedia) : pub;
   return !!phoneZone &&
-    // the v13.242/v13.243/v13.244 survivors re-pinned verbatim (FA countdown pockets + immutable pin + glyph + flags + dissolve + grass surface + rotator)
+    // the v13.242/v13.243/v13.244/v13.245 survivors re-pinned verbatim (FA countdown pockets + immutable pin + glyph + flags + dissolve + grass surface + rotator)
     /function mset\(el,v\)\{if\(!el\)return;var tx=fmtNum\(v<10\?"0"\+v:String\(v\)\);el\.textContent!==tx&&\(el\.textContent=tx\)\}/.test(js74) &&
     /mset\(mcDd,dd\),mset\(mcHh,hh\),mset\(mcMm,mm\)/.test(js74) &&
     /mcD = toFaDigits\(z\(Math\.floor\(ms \/ 864e5\)\)\);/.test(rt) &&
@@ -1239,48 +1239,52 @@ check("v13.245-arrowcta (the release wiring — the S34 session, 2026-11-08: the
     /#tgPill \.tgp-bg\{position:absolute;inset:0;border-radius:inherit;background:#115c33 url\("\/bg-sticky-bottom-mobile-grass\.jpg"\) center\/cover no-repeat;opacity:\.62;pointer-events:none\}/.test(pub) &&
     /#tgPill \.tgp-fade\{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient\(ellipse farthest-side at 50% 50%,/.test(pub) &&
     /\/bg-sticky-bottom-mobile-grass\.jpg\n  Cache-Control: public, max-age=86400/.test(hdr) &&
-    // (1) the grown heading: the owner's full sentence, the two-line clamp law, the EN mirror with its dir pair
-    /<strong class="tgp-head"><span class="ps-fa" dir="rtl">عضو کانالمون شو تا بازیهای مهم رو از دست ندی!<\/span><span class="ps-en" dir="ltr">Join our channel so you never miss the big matches!<\/span><\/strong>/.test(pub) &&
+    // (1) the arrow is GONE: no markup, no CSS rules, no keyframes, no rm kill (only the tombstone comment names it)
+    !/<svg class="tgp-arrow"/.test(pub) && !/#tgPillBox \.tgp-arrow\{/.test(pub) &&
+    !/tgpArrowNudge/.test(pub) && !/\.tgp-ain\{/.test(pub) &&
+    !/html\[dir="ltr"\] #tgPillBox \.tgp-arrow/.test(pub) &&
+    // (2) the full-width box law: edge-to-edge at the screen bottom, the 8px-clearance hidden slide
+    /#tgPillBox\{position:fixed;bottom:0;inset-inline:0;z-index:58;transform:translateY\(calc\(100% \+ 8px\)\);opacity:0;visibility:hidden;pointer-events:none;transition:transform \.35s cubic-bezier\(\.16,1,\.3,1\),opacity \.35s ease-out,visibility 0s linear \.35s\}/.test(pub) &&
+    /#tgPillBox\.show\{transform:none;opacity:1;visibility:visible;pointer-events:auto;transition:transform \.35s cubic-bezier\(\.16,1,\.3,1\),opacity \.35s ease-out\}/.test(pub) &&
+    // (2b) the full-width pill body: the safe-area height, the top-only corners, the mark lane
+    /#tgPill\{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:flex-start;gap:12px;height:calc\(74px \+ env\(safe-area-inset-bottom,0px\)\);padding:0 16px;padding-inline-end:84px;border-radius:16px 16px 0 0;/.test(pub) &&
+    /#tgPill::after\{content:"";position:absolute;inset:-5px;border-radius:16px 16px 0 0;/.test(pub) &&
+    // (2c) the mark rides ON the surface: absolute in the box, the inline-end lane, safe-area-centred, the S34 58px laws intact
+    /#tgPillGo\{position:absolute;inset-inline-end:12px;bottom:calc\(10px \+ env\(safe-area-inset-bottom,0px\)\/2\);z-index:2;box-sizing:border-box;width:58px;height:58px;min-width:58px;min-height:58px;/.test(pub) &&
+    /#tgPillGo svg\{width:34px;height:34px;display:block;/.test(pub) &&
+    /background:linear-gradient\(180deg,#2AABEE 0%,#1E96D3 100%\)/.test(pub) &&
+    /@keyframes tgpGoPulse\{0%,100%\{opacity:0;transform:scale\(\.96\)\}45%\{opacity:\.9;transform:scale\(1\.05\)\}\}/.test(pub) &&
+    /<a id="tgPillGo" href="\$\{TG_CHANNEL_URL\}" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام">/.test(pub) &&
+    !/tgPillClose/.test(pub) && !/tgp-ic/.test(pub) && !/tgp-cta/.test(pub) &&
+    // (3) the reworded heading (the owner's exact sentence) + the S33 rotator riding unchanged
+    /<strong class="tgp-head"><span class="ps-fa" dir="rtl">با عضویت در کانال، بازی مهم بعدی رو از دست نده!<\/span><span class="ps-en" dir="ltr">Join the channel and don't miss the next big match!<\/span><\/strong>/.test(pub) &&
     /#tgPill \.tgp-head\{font-size:14px;font-weight:800;line-height:1\.5;color:#FFFFFF;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-shadow:0 1px 3px rgba\(3,32,16,\.6\)\}/.test(pub) &&
     !/\.tgp-head\{font-size:15\.5px/.test(pub) &&
-    // (1b) the rotating sub rides UNCHANGED from S33
     /<span class="tgp-sub" id="tgpSub">/.test(pub) &&
     /"فوتبالهای مهم کی هستند؟","ناتیفیکیشن دریافت کن!"\]/.test(pub) &&
     /if\(sub\)\{setInterval\(tickSub,3200\)\}/.test(pub) &&
     /sub\.textContent=SUBS\[lang\]\[subI\];/.test(pub) &&
     /#tgPill \.tgp-sub\.tgp-in\{animation:tgpSubIn \.55s cubic-bezier\(\.16,1,\.3,1\) both\}/.test(pub) &&
     /@keyframes tgpSubIn\{from\{opacity:0;transform:translateY\(9px\);filter:blur\(3px\)\}to\{opacity:1;transform:none;filter:none\}\}/.test(pub) &&
-    // (2) the arrow: markup between the pill and the mark, the flex-child CSS, the dir flip, the g-nudge keyframes, the rm kill
-    /<svg class="tgp-arrow" viewBox="0 0 46 22" aria-hidden="true" focusable="false"><g class="tgp-ain"><path d="M42\.5 13\.5 C36\.5 6\.5 27 5\.5 19 8\.6"/.test(pub) &&
-    /#tgPillBox \.tgp-arrow\{flex:0 0 auto;width:34px;height:16px;display:block;overflow:visible;pointer-events:none;filter:drop-shadow\(0 0 5px rgba\(125,211,252,\.85\)\)\}/.test(pub) &&
-    /html\[dir="ltr"\] #tgPillBox \.tgp-arrow\{transform:scaleX\(-1\)\}/.test(pub) &&
-    /#tgPillBox \.tgp-arrow \.tgp-ain\{animation:tgpArrowNudge 1\.35s ease-in-out infinite\}/.test(pub) &&
-    /@keyframes tgpArrowNudge\{0%,100%\{transform:translateX\(0\);opacity:\.7\}50%\{transform:translateX\(-5px\);opacity:1\}\}/.test(pub) &&
-    /#tgPillBox \.tgp-arrow \.tgp-ain\{animation:none!important\}/.test(pub) &&
-    // (3) the bigger mark: 58px box + 34px glyph, the S33 glow/brand laws intact
-    /#tgPillGo\{position:relative;flex:0 0 auto;box-sizing:border-box;width:58px;height:58px;min-width:58px;min-height:58px;/.test(pub) &&
-    /#tgPillGo svg\{width:34px;height:34px;display:block;/.test(pub) &&
-    /background:linear-gradient\(180deg,#2AABEE 0%,#1E96D3 100%\)/.test(pub) &&
-    /@keyframes tgpGoPulse\{0%,100%\{opacity:0;transform:scale\(\.96\)\}45%\{opacity:\.9;transform:scale\(1\.05\)\}\}/.test(pub) &&
-    /<a id="tgPillGo" href="\$\{TG_CHANNEL_URL\}" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام">/.test(pub) &&
-    !/tgPillClose/.test(pub) && !/tgp-ic/.test(pub) && !/tgp-cta/.test(pub) &&
-    // (3b) the fixed pill body rides at 74px with no compact state, the page-padding law intact
-    /#tgPill\{position:relative;isolation:isolate;flex:1 1 auto;min-width:0;height:74px;/.test(pub) &&
+    // (3b) the page-padding law rides the new full-width geometry; no compact state
+    /body\.tg-pill-on\{padding-bottom:calc\(78px \+ env\(safe-area-inset-bottom,0px\)\)\}/.test(pub) &&
+    /body\.tg-pill-on #backTop\{bottom:calc\(90px \+ env\(safe-area-inset-bottom,0px\)\)\}/.test(pub) &&
     !/\.compact/.test(pub) &&
-    /body\.tg-pill-on\{padding-bottom:calc\(78px \+ 12px \+ env\(safe-area-inset-bottom,0px\)\)\}/.test(pub) &&
-    // (4) the memory: joined4 present, every older key gone
-    /sp_pill_joined4"/.test(pub) &&
-    !/sp_pill_joined3/.test(pub) && !/sp_pill_joined2/.test(pub) && !/sp_pill_dismissed2/.test(pub) &&
+    // (4) the memory: joined5 present, every older key gone
+    /sp_pill_joined5"/.test(pub) &&
+    !/sp_pill_joined4/.test(pub) && !/sp_pill_joined3/.test(pub) && !/sp_pill_joined2/.test(pub) && !/sp_pill_dismissed2/.test(pub) &&
     !/sp_pill_joined"/.test(pub) && !/sp_pill_dismissed"/.test(pub) &&
     /apply\(max>0&&y>=window\.innerHeight\*\.2\)/.test(pub) &&
-    // the cap sweep #17 (carried from S33): the 13.57.css pin gone (file on disk), 100 rules
+    // the cap sweep #17 (carried from S33/S34): the 13.57.css pin gone (file on disk), 100 rules
     !/\/public-13\.57\.css\s*\n\s*Cache-Control/.test(hdr) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.57.css")) &&
     (hdr.match(/\n\//g) || []).length <= 100 &&
     // plumbing: HTML-only round — NO SW bump, version + changelog bumped
     /const CACHE = "sportsignal-v120"/.test(sw) &&
-    /export const VERSION = "13\.245-arrowcta"/.test(cfg) &&
-    /# v13\.245-arrowcta/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.246-fullbar"/.test(cfg) &&
+    /# v13\.246-fullbar/.test(read("CHANGELOG.md"));
 })());
+
+check("v13.245-arrowcta (HISTORICAL pin — demoted at v13.246-fullbar: the S35 owner round redesigned the surfaces this check pinned — the S34 arrow between the pill body and the blue mark was RETIRED outright, the floating capsule became a FULL-WIDTH edge-to-edge bar (bottom:0 + inset-inline:0, 16px top corners, the grass filling the safe-area strip, the mark riding position:absolute ON the surface), the heading was reworded to «با عضویت در کانال، بازی مهم بعدی رو از دست نده!» and the memory re-keyed (sp_pill_joined4 -> sp_pill_joined5, the full-width round's one-shot reset); every other contract (the grown-sentence two-line clamp law, the five-line rotator, the grass surface, the no-dismiss law, the fixed 74px body, the 20% scroll gate, the SW v120 + 13.74.js immutable pin) rides UNCHANGED and the survivors are re-pinned in the v13.246 live check above)", true);
 
 check("v13.244-grasspill (HISTORICAL pin — demoted at v13.245-arrowcta: the S34 owner round changed the surfaces this check pinned — the heading grew into the owner's full sentence «عضو کانالمون شو تا بازیهای مهم رو از دست ندی!» on the two-line 14px clamp law (retiring the 15.5px nowrap/ellipsis pin), the blue mark grew 46 -> 58px with its glyph 27 -> 34px, a decorative arrow now rides between the pill and the mark, and the memory re-keyed (sp_pill_joined3 -> sp_pill_joined4, the arrow round's one-shot reset); every other contract (the grass photo surface, the five-line rotator, the no-dismiss law, the fixed 74px body, the 20% scroll gate, the SW v120 + 13.74.js immutable pin) rides UNCHANGED and the survivors are re-pinned in the v13.245 live check above)", true);
 

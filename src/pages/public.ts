@@ -396,29 +396,34 @@ html[lang="fa"] .hero-mcard .mc-num{font-family:Morabba,Peyda,'Segoe UI',Tahoma,
        display:none). RTL geometry: .tb-btns sits at the screen's left
        end; DOM-before-#lbtn places the icon visually to the EN button's
        RIGHT — the side facing the centre of the screen.
-   (4) THE FLOATING PILL — #tgPillBox (markup: end of body): ONE link
-       (the whole pill is the tap target) + the v13.245-arrowcta pair
-       riding after it: the sky-blue nudging ARROW (.tgp-arrow) aimed
-       at the ENLARGED 58px blue Telegram mark-link #tgPillGo
+   (4) THE FLOATING BAR — #tgPillBox (markup: end of body): ONE link
+       (the whole bar body is the tap target) + the blue 58px Telegram
+       mark-link #tgPillGo riding ON the grass at the inline end
        (v13.244-grasspill: it REPLACES the old x close — the pill
-       carries no dismiss; the pill body and the mark both open the
-       channel). The surface is the owner's grass photograph melted
-       over the grass-green gradient (the v13.244 rule block below
-       carries the full law). z58: above page content, below the tz
-       panel overlay (z60). Fixed at bottom
-       calc(12px + env(safe-area-inset-bottom,0px)) — the head
-       viewport meta now carries viewport-fit=cover so iPhones resolve
-       the inset — inset-inline:12px, border-radius:999px, height 74px
-       FIXED (the v13.242 compact collapse retired with S33: the
-       heading + rotating sub-headline lockup IS the pill). The
-       controller script (end of body) drives
+       carries no dismiss; the bar body and the mark both open the
+       channel; v13.246-fullbar: the S34 arrow between them RETIRES
+       and the mark leaves the flex row for position:absolute — no
+       transparent seam at the screen edge). The surface is the
+       owner's grass photograph melted over the grass-green gradient
+       (the v13.244 rule block below carries the full law). z58:
+       above page content, below the tz panel overlay (z60).
+       v13.246-fullbar (S35, owner: "make the sticky area full
+       width"): the box drops the 12px float gutters — bottom:0 +
+       inset-inline:0, an edge-to-edge bar with 16px top corners and
+       square bottom corners flush at the screen edge, the height
+       growing to calc(74px + env(safe-area-inset-bottom,0px)) so
+       the grass itself fills the iPhone home-indicator strip (the
+       head viewport meta carries viewport-fit=cover so the inset
+       resolves; the v13.242 compact collapse stays retired with
+       S33: the heading + rotating sub-headline lockup IS the bar).
+       The controller script (end of body) drives
        show/hide/pulse/rotation/memory.
-   While the pill is visible, body.tg-pill-on pads the page bottom
-   (the fixed body height + 12px + safe-area — the pill never covers
-   the last content/footer) and lifts #backTop above the pill band (the
-   round button and the pill share the bottom strip; without the lift
-   the z65 button paints over the pill's inline-end at every phone
-   width — measured overlap; the lift keeps BOTH usable). */
+   While the bar is visible, body.tg-pill-on pads the page bottom
+   (the fixed bar height + safe-area — the bar never covers the last
+   content/footer) and lifts #backTop above the bar band (the round
+   button and the bar share the bottom strip; without the lift the
+   z65 button paints over the bar's inline-end at every phone width —
+   measured overlap; the lift keeps BOTH usable). */
 /* (3) the header icon — v13.242-faglow (S31, owner: "divide EN with
    Telegram icon in mobile. Instead use a real telegram Icon."): the
    icon LEAVES the .tb-btns glass pill and becomes its OWN standalone
@@ -497,7 +502,7 @@ html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PH
 /* (4) the floating pill — hidden state: translated below the screen,
    opacity 0, visibility hidden (+ the inert attribute from the
    controller), so it can never be focused or tapped while hidden */
-#tgPillBox{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom,0px));inset-inline:12px;z-index:58;display:flex;align-items:center;gap:8px;transform:translateY(calc(100% + 24px + env(safe-area-inset-bottom,0px)));opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .35s ease-out,visibility 0s linear .35s}
+#tgPillBox{position:fixed;bottom:0;inset-inline:0;z-index:58;transform:translateY(calc(100% + 8px));opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .35s ease-out,visibility 0s linear .35s}
 #tgPillBox.show{transform:none;opacity:1;visibility:visible;pointer-events:auto;transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .35s ease-out}
 @media (min-width:601px){#tgPillBox{display:none!important}}
 /* v13.244-grasspill (S33, owner: "Use this for background of sticky
@@ -514,17 +519,17 @@ html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PH
    blades). Every layer carries border-radius:inherit, so the
    capsule clips them all while overflow stays VISIBLE — the ::after
    glow keeps breathing OUTSIDE the surface (inset:-5px). THE TEXT
-   LOCKUP: .tgp-head (v13.245-arrowcta: the owner's GROWN sentence
-   «عضو کانالمون شو تا بازیهای مهم رو از دست ندی!», 14px/800 white,
+   LOCKUP: .tgp-head (v13.246-fullbar: the owner's REWORDED sentence
+   «با عضویت در کانال، بازی مهم بعدی رو از دست نده!», 14px/800 white,
    wrapped to at most TWO lines by the -webkit-line-clamp box — the
    old one-line 15.5px nowrap/ellipsis law could never carry the
    longer wording) over .tgp-sub (the FIVE
    owner-worded lines rotating every 3.2s — the controller script at
    the end of body; fade+rise+de-blur entrance, .tgp-in). The
    v13.242 compact/collapse state RETIRES: the two-line lockup IS
-   the pill (74px, always); the first-show double green pulse, then
-   the standing breathe, remain. */
-#tgPill{position:relative;isolation:isolate;flex:1 1 auto;min-width:0;height:74px;display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:0 16px;border-radius:999px;background:linear-gradient(180deg,#1f9d58 0%,#115c33 100%);border:1.5px solid rgba(74,222,128,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 8px 26px -6px rgba(21,128,61,.8),0 12px 34px rgba(1,8,20,.55),0 0 34px rgba(34,197,94,.55),0 0 10px rgba(52,211,153,.45);color:#FFFFFF;text-decoration:none;font-family:var(--font-body)}
+   the bar (74px + the safe-area strip, always); the first-show
+   double green pulse, then the standing breathe, remain. */
+#tgPill{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:flex-start;gap:12px;height:calc(74px + env(safe-area-inset-bottom,0px));padding:0 16px;padding-inline-end:84px;border-radius:16px 16px 0 0;background:linear-gradient(180deg,#1f9d58 0%,#115c33 100%);border:1.5px solid rgba(74,222,128,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 8px 26px -6px rgba(21,128,61,.8),0 12px 34px rgba(1,8,20,.55),0 0 34px rgba(34,197,94,.55),0 0 10px rgba(52,211,153,.45);color:#FFFFFF;text-decoration:none;font-family:var(--font-body)}
 #tgPill .tgp-bg{position:absolute;inset:0;border-radius:inherit;background:#115c33 url("/bg-sticky-bottom-mobile-grass.jpg") center/cover no-repeat;opacity:.62;pointer-events:none}
 #tgPill .tgp-fade{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse farthest-side at 50% 50%,rgba(9,64,33,0) 42%,rgba(9,64,33,.55) 80%,rgba(6,44,24,.95) 100%),linear-gradient(180deg,rgba(31,157,88,.92) 0%,rgba(31,157,88,0) 30%,rgba(8,52,28,0) 55%,rgba(6,40,22,.88) 100%),linear-gradient(180deg,rgba(6,44,24,.16) 0%,rgba(6,44,24,.3) 100%)}
 #tgPill .tgp-txt{position:relative;min-width:0;display:flex;flex-direction:column;gap:3px}
@@ -539,7 +544,7 @@ html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PH
    the mint inner ring). v13.244: the S31 breathe moves onto the BASE
    ::after (the compact state is gone) — it takes over the moment the
    first-show pulse hands the surface back */
-#tgPill::after{content:"";position:absolute;inset:-5px;border-radius:999px;pointer-events:none;opacity:0;box-shadow:0 0 34px 7px rgba(52,211,153,.7),inset 0 0 0 1.5px rgba(167,243,208,.55);transform:scale(.985);animation:tgpBreathe 3.2s ease-in-out .8s infinite}
+#tgPill::after{content:"";position:absolute;inset:-5px;border-radius:16px 16px 0 0;pointer-events:none;opacity:0;box-shadow:0 0 34px 7px rgba(52,211,153,.7),inset 0 0 0 1.5px rgba(167,243,208,.55);transform:scale(.985);animation:tgpBreathe 3.2s ease-in-out .8s infinite}
 #tgPill.pulse::after{animation:tgpGlow 1.2s ease-in-out 2}
 @keyframes tgpGlow{0%{opacity:0;transform:scale(.985)}45%{opacity:1;transform:scale(1.02)}100%{opacity:0;transform:scale(1)}}
 @keyframes tgpBreathe{0%,100%{opacity:.12;transform:scale(.99)}50%{opacity:.62;transform:scale(1.008)}}
@@ -547,46 +552,37 @@ html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PH
    replace it with telegram icon (Blue) with some glowing around it"):
    the x close RETIRES — the official circled Telegram mark (the
    #tgHead logo path) on the Telegram brand-blue capsule takes its
-   place at the pill's inline-end, with its OWN standing sky-blue glow
-   ring (::after carries the STATIC box-shadow; ONLY opacity+transform
-   animate — the v13.242 law). Tapping it opens the channel exactly
-   like the pill body and starts the same 30-day joined silence — the
-   pill carries NO dismiss anymore (the owner's one-control direction;
-   docs/adr/ADR-007-pill-no-dismiss.md). */
-#tgPillGo{position:relative;flex:0 0 auto;box-sizing:border-box;width:58px;height:58px;min-width:58px;min-height:58px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#2AABEE 0%,#1E96D3 100%);border:1.5px solid rgba(255,255,255,.55);color:#FFFFFF;text-decoration:none;cursor:pointer;font-family:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 18px rgba(1,8,20,.5),0 0 16px rgba(42,171,238,.5);transition:transform .2s ease,filter .2s ease}
+   place, with its OWN standing sky-blue glow ring (::after carries
+   the STATIC box-shadow; ONLY opacity+transform animate — the
+   v13.242 law). Tapping it opens the channel exactly like the bar
+   body and starts the same 30-day joined silence — the pill carries
+   NO dismiss anymore (the owner's one-control direction;
+   docs/adr/ADR-007-pill-no-dismiss.md). v13.246-fullbar (S35): the
+   mark leaves the flex row (the S34 arrow that rode between them is
+   RETIRED) for position:absolute INSIDE the box — inset-inline-end
+   12px, bottom calc(10px + safe-area/2) keeps it centred on the
+   bar's 74px content zone at every inset, z-index:2 above the
+   isolated surface — so the grass runs edge-to-edge UNDER it with
+   no transparent seam at the screen edge (the .tgp-txt lane is
+   reserved by the body's padding-inline-end:84px). */
+#tgPillGo{position:absolute;inset-inline-end:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px)/2);z-index:2;box-sizing:border-box;width:58px;height:58px;min-width:58px;min-height:58px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#2AABEE 0%,#1E96D3 100%);border:1.5px solid rgba(255,255,255,.55);color:#FFFFFF;text-decoration:none;cursor:pointer;font-family:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 18px rgba(1,8,20,.5),0 0 16px rgba(42,171,238,.5);transition:transform .2s ease,filter .2s ease}
 #tgPillGo svg{width:34px;height:34px;display:block;filter:drop-shadow(0 1px 2px rgba(1,32,54,.4))}
 #tgPillGo:hover{filter:brightness(1.08)}
 #tgPillGo:active{transform:scale(.94)}
 #tgPillGo:focus-visible{outline:2px solid #1FFFFF;outline-offset:2px}
 #tgPillGo::after{content:"";position:absolute;inset:-4px;border-radius:999px;pointer-events:none;opacity:0;box-shadow:0 0 22px 6px rgba(42,171,238,.75);transform:scale(.96);animation:tgpGoPulse 2.6s ease-in-out 1.2s infinite}
 @keyframes tgpGoPulse{0%,100%{opacity:0;transform:scale(.96)}45%{opacity:.9;transform:scale(1.05)}}
-/* v13.245-arrowcta (S34, owner: "create a SVG arrow that is pointing
-   animationly to the telegram button, also make the telegram circle
-   button bigger"): .tgp-arrow — the sky-blue curved arrow riding
-   BETWEEN the pill body and the blue mark as a FLEX CHILD of
-   #tgPillBox, so the writing mode does the placement with zero
-   geometry work: FA/RTL orders it pill -> arrow -> mark along the
-   row, the glyph drawn aiming at the mark's side; the html[dir]
-   flip (applyLang's own attribute) mirrors it for EN/LTR. The NUDGE
-   animation lives on the inner <g> (.tgp-ain) — the root svg
-   carries the scaleX(-1) mirror and a keyframe transform on the
-   root would overwrite it; the g's translateX(-5px) rides the SVG
-   user grid (~3.7px on screen) toward the mark with a soft opacity
-   breathe. Purely decorative: aria-hidden + pointer-events:none;
-   the STATIC drop-shadow glow never repaints (transform+opacity
-   only — the v13.242 animation law). The MARK grows 46 -> 58px (the
-   glyph 27 -> 34px) so the arrow points at a bigger target. */
-#tgPillBox .tgp-arrow{flex:0 0 auto;width:34px;height:16px;display:block;overflow:visible;pointer-events:none;filter:drop-shadow(0 0 5px rgba(125,211,252,.85))}
-html[dir="ltr"] #tgPillBox .tgp-arrow{transform:scaleX(-1)}
-#tgPillBox .tgp-arrow .tgp-ain{animation:tgpArrowNudge 1.35s ease-in-out infinite}
-@keyframes tgpArrowNudge{0%,100%{transform:translateX(0);opacity:.7}50%{transform:translateX(-5px);opacity:1}}
-/* page spacing while the pill is visible (phones only): the fixed 74px
-   body (+3px of border) + 12px + the safe-area inset, so the pill never
-   covers the last content or the footer; #backTop lifts above the pill
-   band */
+/* v13.246-fullbar (S35, owner: "Remove the arrow animated"): the S34
+   .tgp-arrow — its markup, flex-child CSS, dir mirror, nudge
+   keyframes and the reduced-motion kill — is RETIRED outright; the
+   bar body and the blue mark are the box's only children again. */
+/* page spacing while the bar is visible (phones only): the fixed
+   full-width bar (74px body + 3px of border + the safe-area inset
+   the grass itself fills), so the bar never covers the last content
+   or the footer; #backTop lifts above the bar band */
 @media (max-width:600px){
-body.tg-pill-on{padding-bottom:calc(78px + 12px + env(safe-area-inset-bottom,0px))}
-body.tg-pill-on #backTop{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+body.tg-pill-on{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+body.tg-pill-on #backTop{bottom:calc(90px + env(safe-area-inset-bottom,0px))}
 }
 /* reduced motion: no slide, no pulse, no breathe, no rotation entrance
    — a plain fade-in; the sub-headline still changes, instantly (the
@@ -596,7 +592,6 @@ body.tg-pill-on #backTop{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 #tgPill::after{animation:none!important}
 #tgPill .tgp-sub{animation:none!important}
 #tgPillGo::after{animation:none!important}
-#tgPillBox .tgp-arrow .tgp-ain{animation:none!important}
 }</style>
 <style>/* v13.237-promobar (the S26 owner direction: «I only wanted to
      change the top bar of the site… You were only supposed to build
@@ -1433,23 +1428,26 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <a id="tgFab" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram" data-promo="\u0628\u0631\u0627\u06CC \u062F\u0633\u062A \u0646\u062F\u0627\u062F\u0646 \u0645\u0633\u0627\u0628\u0642\u0627\u062A \u0645\u0647\u0645\u060C \u0628\u0647 \u0631\u0628\u0627\u062A \u062A\u0644\u06AF\u0631\u0627\u0645 \u0628\u067E\u06CC\u0648\u0646\u062F\u06CC\u062F \u2728"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="#fff" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg></a>
 <button id="backTop" type="button" aria-label="بازگشت به بالا / Back to top" title="بازگشت به بالا / Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
 <!-- v13.241-mobilecta (S30) + v13.242-faglow (S31) + v13.244-grasspill
-     (S33): the floating Telegram CHANNEL pill — phones only (the site's
-     600px line). THE S33 SURFACE: the owner's grass photograph
-     (/bg-sticky-bottom-mobile-grass.jpg) melted over the grass-green
-     gradient by the .tgp-bg/.tgp-fade layers; the fixed heading (the
-     owner's grown sentence «عضو کانالمون شو تا بازیهای مهم رو از
-     دست ندی!», wrapped to two lines) over the FIVE-LINE ROTATING
-     sub-headline (the controller script below re-reads html[lang] every
-     tick; the static boot pair below rides the .ps-fa/.ps-en flip law
-     until the first tick takes over). THE S33 CONTROLS: ONE link (the
-     whole pill body is the tap target) + the sibling BLUE Telegram
-     mark-link #tgPillGo where the x close used to sit — the pill
-     carries NO dismiss; the pill body and the ENLARGED mark both
-     open the channel (each href renders from the ONE shared
-     TG_CHANNEL_URL constant), with the decorative nudging ARROW
-     between them aiming at the mark. Rides at the
-     very end of body so the keyboard order stays natural (footer ->
-     backTop -> pill). Ships inert + hidden (the controller's
+     (S33) + v13.246-fullbar (S35): the floating Telegram CHANNEL bar —
+     phones only (the site's 600px line). THE S33 SURFACE: the owner's
+     grass photograph (/bg-sticky-bottom-mobile-grass.jpg) melted over
+     the grass-green gradient by the .tgp-bg/.tgp-fade layers; the fixed
+     heading (v13.246: the owner's reworded sentence «با عضویت در کانال،
+     بازی مهم بعدی رو از دست نده!», wrapped to two lines) over the
+     FIVE-LINE ROTATING sub-headline (the controller script below
+     re-reads html[lang] every tick; the static boot pair below rides
+     the .ps-fa/.ps-en flip law until the first tick takes over). THE
+     S35 GEOMETRY: the box is a FULL-WIDTH edge-to-edge bar (bottom:0 +
+     inset-inline:0, 16px top corners, the safe-area strip filled by
+     the grass itself; the S34 arrow between the body and the mark is
+     RETIRED) and the blue mark rides position:absolute ON the grass at
+     the inline end. THE S33 CONTROLS: ONE link (the whole bar body is
+     the tap target) + the sibling BLUE Telegram mark-link #tgPillGo
+     where the x close used to sit — the pill carries NO dismiss; the
+     bar body and the ENLARGED mark both open the channel (each href
+     renders from the ONE shared TG_CHANNEL_URL constant). Rides at
+     the very end of body so the keyboard order stays natural (footer
+     -> backTop -> bar). Ships inert + hidden (the controller's
      scroll-progress gate reveals it within the FIRST 20% of the page
      scroll and hides it again below it). -->
 <div id="tgPillBox" inert>
@@ -1457,11 +1455,10 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <span class="tgp-bg" aria-hidden="true"></span>
 <span class="tgp-fade" aria-hidden="true"></span>
 <span class="tgp-txt">
-<strong class="tgp-head"><span class="ps-fa" dir="rtl">عضو کانالمون شو تا بازیهای مهم رو از دست ندی!</span><span class="ps-en" dir="ltr">Join our channel so you never miss the big matches!</span></strong>
+<strong class="tgp-head"><span class="ps-fa" dir="rtl">با عضویت در کانال، بازی مهم بعدی رو از دست نده!</span><span class="ps-en" dir="ltr">Join the channel and don't miss the next big match!</span></strong>
 <span class="tgp-sub" id="tgpSub"><span class="ps-fa" dir="rtl">بازیهای مهم رو از دست نده</span><span class="ps-en" dir="ltr">Don't miss the big matches</span></span>
 </span>
 </a>
-<svg class="tgp-arrow" viewBox="0 0 46 22" aria-hidden="true" focusable="false"><g class="tgp-ain"><path d="M42.5 13.5 C36.5 6.5 27 5.5 19 8.6" fill="none" stroke="#8EE3FF" stroke-width="3.6" stroke-linecap="round"/><path d="M19.6 2.6 L7.4 9.3 L19.9 15.1" fill="none" stroke="#8EE3FF" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
 <a id="tgPillGo" href="${TG_CHANNEL_URL}" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a>
 </div>
 <script src="/core-13.16.js" defer><\/script>
@@ -1678,35 +1675,36 @@ endpoint hook; the same-origin POST is covered by connect-src 'self'.
 Gate: check-seo-lastmod #9 requires the override on BOTH templates. -->
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "fb7e7f1d66e84ed3b4572545c93ef538", "send": {"to": "/cdn-cgi/rum"}}'><\/script>
 <script>/* v13.241-mobilecta (S30) + v13.242-faglow (S31) + v13.243-langflag
-   (S32) + v13.244-grasspill (S33) + v13.245-arrowcta (S34): the
-   floating-pill controller. (S34's arrow is CSS/markup-only — it
-   rides the box's own show/hide slide, so it needs no wiring here.)
-   THE
+   (S32) + v13.244-grasspill (S33) + v13.246-fullbar (S35): the
+   floating-bar controller. (S35's full-width geometry + the arrow
+   retirement are CSS/markup-only — they ride the box's own show/hide
+   slide, so they need no wiring here.) THE
    REVEAL GATE (v13.242, owner: "it must start faster while scrolling
    like in first 20% of scrolling"): a rAF-throttled passive
-   SCROLL-PROGRESS rule — the pill shows once the visitor has scrolled
+   SCROLL-PROGRESS rule — the bar shows once the visitor has scrolled
    20% of ONE viewport height (and hides again below it; a mid-page
    reload shows it at once; a page with nothing to scroll never shows
    it). First show: slide-up (~350ms), then 2 grass-green pulses on the
    #tgPill::after (opacity+transform only — the box-shadow itself never
    animates); the v13.242 animationend COLLAPSE is RETIRED (S33: the
-   two-line heading+sub lockup IS the pill — the standing breathe takes
+   two-line heading+sub lockup IS the bar — the standing breathe takes
    the surface back the moment the pulse ends). THE ROTATING
    SUB-HEADLINE (S33, owner: "sub heading (changing) with some
    effects"): the FIVE owner-worded lines cycle every 3.2s with a
    fade+rise+de-blur entrance (.tgp-in, restarted via the reflow
    trick); the active language is re-read from html[lang] on EVERY tick
    so a mid-view EN/FA switch self-heals within one tick; a hidden tab
-   (document.hidden) or a hidden pill skips the DOM write;
+   (document.hidden) or a hidden bar skips the DOM write;
    prefers-reduced-motion swaps the text with no animation.
    localStorage memory — every read and write inside try/catch, so a
-   blocked storage never breaks anything: ANY channel tap (the pill
-   body OR the blue mark) saves sp_pill_joined4 (30-day silence).
-   v13.245: the key carries the 4 suffix — a ONE-SHOT memory reset for
-   the arrow round (the same trick as S32's 2 / S33's 3): the S33
-   joined3 verdict is zeroed exactly once so every returning visitor,
-   the owner included, sees the grown-sentence + arrow + bigger-mark
-   pill (fresh taps re-seed the 30-day window under the new name).
+   blocked storage never breaks anything: ANY channel tap (the bar
+   body OR the blue mark) saves sp_pill_joined5 (30-day silence).
+   v13.246: the key carries the 5 suffix — a ONE-SHOT memory reset for
+   the full-width round (the same trick as S32's 2 / S33's 3 / S34's
+   4): the S34 joined4 verdict is zeroed exactly once so every
+   returning visitor, the owner included, sees the full-width
+   arrow-free bar with the reworded heading (fresh taps re-seed the
+   30-day window under the new name).
    prefers-reduced-motion: no slide, no pulse — a plain fade. While
    visible, body.tg-pill-on carries the page's bottom padding + the
    #backTop lift (the CSS block above). */
@@ -1723,7 +1721,7 @@ try{rm=window.matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){}
 var DAY=86400000;
 function lsGet(k){try{return window.localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{window.localStorage.setItem(k,v)}catch(e){}}
-var now=Date.now(),joinedAt=Number(lsGet("sp_pill_joined4"))||0;
+var now=Date.now(),joinedAt=Number(lsGet("sp_pill_joined5"))||0;
 if(joinedAt&&now-joinedAt<30*DAY)return;
 var shown=false,pulsed=false,tDelay=null,tFall=null;
 function endPulse(){
@@ -1805,7 +1803,7 @@ function tickSub(){
   if(!rm){sub.classList.remove("tgp-in");void sub.offsetWidth;sub.classList.add("tgp-in")}
 }
 if(sub){setInterval(tickSub,3200)}
-function joined(){lsSet("sp_pill_joined4",String(Date.now()));apply(false)}
+function joined(){lsSet("sp_pill_joined5",String(Date.now()));apply(false)}
 link.addEventListener("click",joined);
 goBtn.addEventListener("click",joined);
 })();<\/script>

@@ -4,6 +4,50 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.246-fullbar — the arrow retired + the sticky bar goes full-width with the reworded sentence
+
+**S35, 2026-11-08 (the owner's full-width round).** An HTML-ONLY
+release — every change rides the served homepage HTML (inline style +
+inline markup + the one controller key swap); no bundle edit, no CSS
+rename, NO `sw.js` bump (navigations are network-first; the RUNBOOK §2
+rule). Phones only (`<=600px`); the 601-899px tablet zone and the
+≥901px desktop are untouched.
+
+- **(1) THE ARROW RETIRED** (owner: "Remove the arrow animated"): the
+  S34 `.tgp-arrow` — its markup, its flex-child CSS, the
+  `html[dir="ltr"]` mirror, the `.tgp-ain` nudge keyframes and the
+  reduced-motion kill — is deleted outright; the bar body and the
+  blue Telegram mark are the box's only children again.
+- **(2) THE FULL-WIDTH BAR** (owner: "Make the sticky area full
+  width"): the box drops the 12px float gutters — `bottom:0` +
+  `inset-inline:0`, an edge-to-edge bar flush with the screen edges.
+  The pill grows to `calc(74px + env(safe-area-inset-bottom,0px))` so
+  the grass itself fills the iPhone home-indicator strip, carries
+  16px top corners with square bottom corners at the screen edge
+  (the 999px capsule law retires; the `::after` glow follows the new
+  shape), and reserves the mark's lane with `padding-inline-end:84px`.
+  The 58px blue mark leaves the flex row for `position:absolute`
+  (`inset-inline-end:12px`,
+  `bottom:calc(10px + env(safe-area-inset-bottom,0px)/2)`, `z-index:2`)
+  so it rides ON the grass instead of beside it — the grass runs
+  edge-to-edge under it with no transparent seam at the screen edge.
+  The page-padding law follows: `body.tg-pill-on` pads
+  `calc(78px + safe-area)` and `#backTop` lifts to
+  `calc(90px + safe-area)`.
+- **(3) THE REWORDED HEADING** (owner: "with this text: با عضویت در
+  کانال، بازی مهم بعدی رو از دست نده!"): the bar's fixed heading
+  carries the owner's exact sentence — matching the top promo bar's
+  headline word-for-word — at 14px/800, wrapped to at most two lines
+  (the `-webkit-line-clamp:2` law rides unchanged); EN mirror: "Join
+  the channel and don't miss the next big match!". The five-line
+  rotating sub-headline, the grass surface, the glow/breathe laws and
+  the 20% scroll gate ride UNCHANGED from S33/S34.
+- **(4) THE MEMORY RESET**: the pill's localStorage key re-keys
+  `sp_pill_joined4` → `sp_pill_joined5` (the S32/S33/S34 one-shot
+  trick) — every returning visitor who tapped during S34 sees the
+  new round once; fresh taps re-seed the 30-day silence under the
+  new name.
+
 # v13.245-arrowcta — the pill's grown heading sentence + the nudging arrow aimed at the bigger Telegram mark
 
 **S34, 2026-11-08 (the owner's arrow/heading round).** An HTML-ONLY
