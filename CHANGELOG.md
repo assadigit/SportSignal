@@ -4,6 +4,47 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.240-edgegut — the SEO pages join the site's edge-gutter system (the too-near-the-edge fix)
+
+**S29, 2026-11-08 (the owner's report, verbatim: «the seo pages, live the
+one i uploaded, are too much near the edge, add some conventional and ux
+friendly margin/padding for the edges» + the /about mobile screenshot —
+H1, meta line and cards sitting at ~0px from the screen edge).** One
+server-side layout fix for every server-rendered SEO page — match, team,
+competition, hub and the static pages all render through the one
+`pageShell()` in `src/seo/page-shell.ts`.
+
+- **The bug**: the shell dropped `.sub.sync` and `main`'s children
+  directly into `<body>`, and the body rule is `padding:24px 0 36px` —
+  **zero horizontal padding** — with no max-width column, so every
+  sub-page ran edge-to-edge. The homepage never had this problem: its
+  whole below-hero life lives inside ONE `.page-col` (the v13.128
+  component in `public-13.81.css`: `max-width:760px` centered +
+  `padding-inline:20px`; `12px` at ≤600px; `max-width:1400px` + `24px`
+  at ≥1080px).
+- **The fix**: the shell now reuses that EXACT component — the sync
+  line moves INSIDE `main > div.page-col`, mirroring the homepage's own
+  placement (the skip-link target `#main` still leads to the full
+  content). Zero new CSS: the responsive gutters come from the same
+  `.page-col` rules the index page already ships.
+- **The footer fix**: `footer.pagesfoot` used the `padding:16px 0 26px`
+  shorthand, whose zero horizontal padding out-specified the generic
+  `footer{...padding-inline:20px}` rule (and its `12px`/`24px`
+  responsive steps + the 760px/1400px centered column) — it becomes
+  `padding-block:16px 26px`, so the vertical rhythm (16px/26px around
+  the border-top) is unchanged while the horizontal padding finally
+  follows the site's responsive footer convention.
+- **Scope discipline**: server-side-only — no CSS/JS bundle edit, no
+  `sw.js` CACHE bump, no new assets; the header keeps its own
+  `padding:16px 22px 8px` (unchanged, same as the index). The v13.239
+  font, v13.238 mobile-hero and v13.237 promo-bar contracts ride
+  unchanged.
+- **Verification**: tsc + full suite green (v13.239 demoted HISTORICAL,
+  the new v13.240-edgegut live pin carries the gutter contracts +
+  everything forward); local smoke + browser measurement of the actual
+  computed gutters at mobile/tablet/desktop widths; production
+  re-verified after deploy.
+
 # v13.239-seofont — the SEO pages join the Persian design system (the default-font bug on every per-match page)
 
 **S28, 2026-11-08 (the owner's report, verbatim: «I've noticed that in seo

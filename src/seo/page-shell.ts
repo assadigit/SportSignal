@@ -148,7 +148,13 @@ ${FONT_FACES_STYLE}
 .pagination{display:flex;gap:10px;justify-content:center;padding:14px 0;flex-wrap:wrap}
 .pagination a,.pagination span{padding:8px 14px;border-radius:10px;border:1px solid rgba(148,184,214,.25);text-decoration:none;color:inherit;font-size:.9rem}
 .pagination .cur{background:rgba(94,160,255,.15);border-color:rgba(94,160,255,.5)}
-footer.pagesfoot{margin-top:26px;border-top:1px solid rgba(148,163,184,.18);padding:16px 0 26px;font-size:.85rem;color:var(--muted,#9aa4b2)}
+/* v13.240-edgegut: padding-block replaces the old padding:16px 0 26px
+   shorthand — the shorthand's zero horizontal padding out-specified the
+   generic footer rule (footer{...padding-inline:20px} / 12px at 600px /
+   24px at 1080px), leaving the SEO footer flush at the edges while the
+   homepage footer followed the responsive gutter. Vertical rhythm (the
+   16px/26px around the border-top) is unchanged. */
+footer.pagesfoot{margin-top:26px;border-top:1px solid rgba(148,163,184,.18);padding-block:16px 26px;font-size:.85rem;color:var(--muted,#9aa4b2)}
 footer.pagesfoot nav{display:flex;flex-wrap:wrap;gap:14px;padding:6px 0}
 footer.pagesfoot a{color:inherit;text-decoration:none;}
 /* v13.209-a11y (F-M6): the compact footer nav links clear the WCAG 2.5.8
@@ -287,11 +293,24 @@ ${opts.head}
 <nav class="mainnav" aria-label="ناوبری اصلی"><a href="/">خانه</a><a href="/matches">بازی‌ها</a><a href="/teams">تیم‌ها</a><a href="/competitions">رقابت‌ها</a><a href="/methodology">روش کار</a><a href="/about">درباره</a></nav>
 <div class="head-actions"><a class="cta" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener">عضویت در ربات تلگرام</a></div>
 </header>
-<p class="sub sync">${opts.updatedHtml || ""}</p>
+<!-- v13.240-edgegut: the SEO pages join the site's own edge-gutter system —
+     the shell used to drop .sub.sync + main's children directly into body
+     (body padding is 24px 0 36px — ZERO horizontal), so every sub-page ran
+     edge-to-edge (the owner's screenshot of /about: H1, meta line and cards
+     at ~0px from the screen edge). The homepage has never had this problem
+     because its whole below-hero life lives inside ONE .page-col (public-
+     13.81.css: max-width 760px centered, padding-inline 20px; 12px ≤600px;
+     max-width 1400px + 24px ≥1080px). The shell now reuses that exact
+     component — the sync line moves INSIDE main>page-col mirroring the
+     homepage's own placement, so the skip-link target still leads to the
+     full content and the gutter convention is identical to the index. -->
 <main id="main">
+<div class="page-col">
+<p class="sub sync">${opts.updatedHtml || ""}</p>
 ${opts.crumbHtml || ""}
 <div class="pageh1-wrap"><h1 class="pageh1">${opts.h1}</h1></div>
 ${opts.mainHtml}
+</div>
 </main>
 <footer class="pagesfoot" id="about">
 <nav aria-label="ناوبری پابرگ"><a href="/">خانه</a><a href="/matches">بازی‌ها</a><a href="/matches/today">بازی‌های امروز</a><a href="/matches/this-week">بازی‌های این هفته</a><a href="/teams">تیم‌ها</a><a href="/competitions">رقابت‌ها</a><a href="/about">درباره</a><a href="/methodology">روش انتخاب بازی‌ها</a><a href="/contact">تماس</a><a href="/data">داده‌ها</a><a href="/privacy">حریم خصوصی</a><a href="/terms">شرایط استفاده</a><a href="/sitemap">نقشه سایت</a></nav>
