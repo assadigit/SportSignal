@@ -7,15 +7,17 @@
 Live: **https://sportsignal.ir** · Worker `ucl-notifier` · KV namespace `STATE`
 (id `c63588df02ae4bf1bfdc18d19c5b3631`) · cron `*/10 * * * *` UTC · repo `main` only.
 
-> **2026-11-08 apex routing change (S25):** the apex homepage
-> `sportsignal.ir/` is now served by a SECOND worker, `sportsignal-site`
-> (the corrected landing page — repo `assadigit/SportSignal-Site`,
-> deployed via OpenNext). `ucl-notifier` keeps the apex catch-all
-> (`sportsignal.ir/*` → everything except `/`, `/_next/*`, `/img/*`,
-> `/logo.svg`), the `www` 301 route, and the `football.sportsignal.ir`
-> webhook Custom Domain. Zero `ucl-notifier` code changes; `npx wrangler
-> deploy` from this repo remains safe. Full routing table + rollback:
-> `docs/history/2026-11-08-s25-landing-routing.md`.
+> **2026-11-08 apex routing — ROLLED BACK same day (S26):** the S25
+> experiment (a second worker `sportsignal-site` serving `sportsignal.ir/`)
+> is reverted per the owner's direction — the four `sportsignal-site` zone
+> routes and the apex `AAAA 100::` DNS record are deleted, and
+> `sportsignal.ir` is re-attached as `ucl-notifier`'s Custom Domain. The
+> single-worker homepage is the standing state again: `/` serves this
+> repo's `PUBLIC_PAGE` (now v13.237-promobar). The `sportsignal-site`
+> worker + `assadigit/SportSignal-Site` repo stay dormant (unrouted);
+> delete them if the landing direction is ever abandoned for good.
+> History: `docs/history/2026-11-08-s25-landing-routing.md` (the switch)
+> and `docs/history/2026-11-08-s26-promobar-rollback.md` (the revert).
 
 > **v13.95-accountmigration:** the deployment moved to a DEDICATED Cloudflare
 > account on 2026-10-13 (was: shared with currena — the account-level KV write

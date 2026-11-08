@@ -4,6 +4,55 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.237-promobar — the approved static top bar (the S26 rollback round: the landing-page detour reverts, the banner rides the original page)
+
+**S26, 2026-11-08 (the owner's direction, verbatim: «Look, I only wanted
+to change the top bar of the site. Keep only this change in the image
+I'm sending. Revert everything else to how it was before this session.
+You were only supposed to build that top part, not redesign the whole
+site from scratch. Restore everything to the previous version
+immediately»).** Two moves in one session — an ACCOUNT-LEVEL ROLLBACK
+plus one PRESENTATION release for the website surface (zero new state,
+zero new fetches, zero new writes, zero channel/bot change).
+
+- **The rollback (account-level, no code)**: the S25 apex routing is
+  REVERSED — the four `sportsignal-site` zone routes (`/`, `/_next/*`,
+  `/img/*`, `/logo.svg`) and the apex `AAAA 100::` DNS record are
+  deleted, and `sportsignal.ir` is re-attached as `ucl-notifier`'s
+  Custom Domain. The single-worker homepage is back: `/` serves this
+  repo's `PUBLIC_PAGE` again (verified live: `/` 200, `/healthz` 200,
+  `www` 301 → apex, `football…/webhook` 403 protected).
+- **The top bar (the kept change)**: the v13.236 rotator strip is
+  replaced by the approved static banner — `.ps-q` the question
+  (13px/400, muted emerald) → `.ps-h` the headline (17px/800, white) →
+  `.ps-ch` the channel pill («عضو کانالمون شو» — the grass-green
+  gradient `#1f9d58→#146c3c`, the inset top light, the 5.5s `ps-sweep`
+  reflection) → `.ps-bot` the bot pill («ربات هوشمند» — dark + the
+  icy-blue border, clearly secondary, independently clickable). The
+  DOM order IS the visual RTL order (no row-reverse); the
+  question+headline ride one `.ps-msg` group so wraps keep them
+  adjacent above the CTAs. Bar: `#04140c` + a 1px emerald bottom edge.
+- **Retired with this release**: the rotator (`.ps-rot`/`.ps-fr`), the
+  pure-CSS signal mark (`.ps-mark`/`.ps-ring`), the dismiss button and
+  its 7-day `ps_hide` memory — the approved design carries no close
+  button. Zero inline script remains in the strip.
+- **Unchanged contracts**: the strip position (after the skip link,
+  before `#topbar`, the −24px/−16px full bleed, z-30), the CTA
+  destinations (`t.me/sportsignalz` + `t.me/SportSignalAlertsBot`),
+  the `html[lang]` fa/en law, the mobile law (≤600px: the bot pill
+  retires — `#joinSticky` owns the mobile bot CTA — and the channel
+  pill grows to the 44px touch-target floor), the inline-only round
+  (no bundle edit, no SW bump), the `/ui/promo-signal.gif` retirement
+  (file + immutable `_headers` pin stay, nothing references it).
+- **Harness co-evolution in the SAME commit**: the `check-cups` FA
+  window fixture was a time bomb — its fixed `FA_ROUND1:
+  2026-11-09T00:00:00Z` stub went stale at 2026-11-08T00:00:00Z (the
+  `d(1)` amateur tie crossed the window as the clock advanced,
+  flipping the gate red on the untouched remote HEAD). The stubbed
+  window now rides `d(2)` (relative to now) with `cup2`/`cup3` at
+  `d(3)`/`d(10)` — the hidden-amateur/picked-big-club scenario is
+  stable every day of every season.
+
 # v13.236-promocalm — the promo strip redesign: one message at a time on a pure-CSS loop (the owner's "too distracting" verdict on the v13.235 marquee)
 
 **S24, 2026-11-08 (hours after v13.235 shipped, the owner's verdict,

@@ -327,100 +327,73 @@ html[lang="fa"] .hero-mcard .mc-ko{font-family:Morabba,Peyda,'Segoe UI',Tahoma,s
      touch-target floor), the prefers-reduced-motion parking (css71) and
      the smooth-scroll interception (public-13.53.js). */
 @keyframes mc-hint-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}</style>
-<style>/* v13.236-promocalm (the owner's verdict on the v13.235 strip, hours
-     after it shipped: "It's too distracting, it has too much texts at
-     once, I suggest a changing pattern of texts using css, with some
-     css effects to make it animated and living without bloating up the
-     speed of site"). THE REDESIGN — two retirements, two replacements:
-     the 6-message marquee is retired for a ONE-message-at-a-time
-     rotator, and the 37.9KB moving GIF is retired for a pure-CSS signal
-     mark. (1) THE ROTATOR — .ps-rot is a display:grid stack:
-     grid-area:1/1 puts every .ps-fr in the SAME cell, and the row
-     auto-sizes to the tallest frame, so the strip NEVER reflows between
-     frames (a wrapping frame on a mid-width viewport lifts the whole
-     stage once, then stays put). Exactly ONE frame is visible per 4s
-     slot of a 12s loop; the cycle is pure CSS — per-nth-child NEGATIVE
-     animation-delays (0s / -8s / -4s: each frame's on-slot is the FIRST
-     quarter of its own timeline, so the delays step backwards), fade +
-     7px rise in/out at ~0.48s, text-align:center. Hover parks the loop
-     (animation-play-state — hold the message you are reading). (2) THE
-     MARK — the old chip's skin (navy #0A1D33 + cyan border/glow) now
-     carries the Telegram plane SVG floating ±1.2px (3.2s alternate) over
-     TWO ping rings half a phase apart (2.6s, 1.3s offset). Every
-     animation is opacity/transform ONLY — compositor-only, no layout,
-     no paint, zero image bytes, zero requests (the GIF leaves the page;
-     the file + its immutable _headers pin stay per the retention
-     rule). THE COPIES — one idea per frame; <=600px swaps the .ps-l
-     long copies for .ps-s short ones (no @handles on phones — the
-     pills carry them); the .ps-sr static summary carries the whole
-     sentence for screen readers ONCE, calmly (the rotating stage is
-     aria-hidden — a 4s aria-live would churn the announcement every
-     cycle). Reduced motion: the loop parks on frame 1 statically and
-     the mark freezes (the bundle's global *{animation:none!important}
-     kill is honored; frame 1's visibility is restored by opacity, not
-     by animation). UNCHANGED: the strip geometry (-24px/-16px full
-     bleed canceling body's top padding, z-30 above the hero scene),
-     the pills, the 44px dismiss + the 7-day ps_hide memory, the
-     html[lang] fa/en law (applyLang() flips the attr, zero bundle
-     edits), the inline-only round (no bundle edit, no rename-on-edit,
-     no SW bump — navigations are network-first in sw.js). */
-#promoStrip{position:relative;z-index:30;display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;margin:-24px 0 0;padding:7px 16px;background:linear-gradient(180deg,#0C2344 0%,#0A1D33 70%,#0A1D33 100%);border-bottom:1px solid rgba(0,211,255,.38)}
-.ps-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.ps-mark{position:relative;flex:0 0 auto;width:42px;height:42px;border-radius:11px;background:#0A1D33;border:1px solid rgba(0,211,255,.45);box-shadow:0 0 14px rgba(0,211,255,.22),inset 0 0 8px rgba(0,211,255,.10);display:inline-flex;align-items:center;justify-content:center}
-.ps-ring{position:absolute;inset:6px;border-radius:50%;border:1.5px solid rgba(0,211,255,.55);animation:ps-ping 2.6s cubic-bezier(0,0,.2,1) infinite}
-.ps-ring--b{animation-delay:1.3s}
-@keyframes ps-ping{0%{transform:scale(.42);opacity:.9}70%,100%{transform:scale(1.18);opacity:0}}
-.ps-mark svg{position:relative;width:19px;height:19px;color:#7FDFFF;filter:drop-shadow(0 0 5px rgba(0,211,255,.65));animation:ps-float 3.2s ease-in-out infinite alternate}
-@keyframes ps-float{from{transform:translateY(1.2px)}to{transform:translateY(-1.2px)}}
-.ps-rot{flex:1 1 auto;min-width:0;display:grid;text-align:center}
-.ps-fr{grid-area:1/1;justify-self:center;max-width:100%;opacity:0;transform:translateY(7px);animation:ps-rot 12s cubic-bezier(.4,0,.2,1) infinite;pointer-events:none}
-.ps-rot:hover .ps-fr{animation-play-state:paused}
-.ps-fr:nth-child(1){animation-delay:0s}
-.ps-fr:nth-child(2){animation-delay:-8s}
-.ps-fr:nth-child(3){animation-delay:-4s}
-@keyframes ps-rot{0%{opacity:0;transform:translateY(7px)}4%{opacity:1;transform:translateY(0)}29%{opacity:1;transform:translateY(0)}33.333%{opacity:0;transform:translateY(-7px)}100%{opacity:0;transform:translateY(-7px)}}
-.ps-fr>span{font-size:13px;font-weight:500;color:#CFE9FF;letter-spacing:.01em}
-.ps-ctas{display:flex;align-items:center;gap:8px;flex:0 0 auto}
-.ps-btn{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 16px;border-radius:999px;font-size:12.5px;font-weight:700;text-decoration:none;font-family:inherit;cursor:pointer;transition:transform .15s cubic-bezier(.16,1,.3,1),box-shadow .15s,background .15s,color .15s,border-color .15s}
+<style>/* v13.237-promobar (the S26 owner direction: «I only wanted to
+     change the top bar of the site… You were only supposed to build
+     that top part» — the S25 landing-page detour is ROLLED BACK at the
+     account level (sportsignal.ir is ucl-notifier's Custom Domain
+     again; the sportsignal-site zone routes + the apex AAAA are
+     deleted) and the approved banner design rides THE ORIGINAL PAGE.
+     THE DESIGN — a static message pair + two CTAs: .ps-q the question
+     (13px, 400, muted emerald rgba(209,250,229,.6)) → .ps-h the
+     headline (17px, 800, white) → .ps-ch the channel pill (natural
+     football-grass green linear-gradient(180deg,#1f9d58,#146c3c) +
+     the inset top light + the 5.5s ::after sweep — the subtle green
+     reflection, compositor-only) → .ps-bot the bot pill
+     (rgba(8,15,24,.85) + the icy-blue rgba(125,211,252,.45) border —
+     clearly secondary, independently clickable). THE RTL LAW: the
+     document is dir=rtl, so the DOM order IS the visual order
+     (question rightmost, bot pill leftmost) — NO row-reverse, no
+     double inversion; the question+headline ride one .ps-msg flex
+     group so a wrap keeps them adjacent ABOVE the CTAs. The bar:
+     #04140c near-black green + a 1px rgba(52,211,153,.15) bottom
+     edge. GEOMETRY UNCHANGED: after the skip link, before #topbar,
+     the -24px/-16px full bleed, z-30. THE LANGUAGE LAW: .ps-fa/.ps-en
+     ride every text; applyLang() flips html[lang] (zero bundle edits).
+     MOBILE (<=600px): tighter strip; the bot pill retires (#joinSticky
+     owns the mobile bot CTA — one primary action per strip, the
+     site's standing law); the channel pill grows to the 44px
+     touch-target floor. REDUCED MOTION: the sweep parks (the
+     bundle's global *{animation:none!important} kill is honored).
+     RETIRED WITH THIS RELEASE: the v13.236 rotator (.ps-rot/.ps-fr/
+     @keyframes ps-rot), the pure-CSS signal mark (.ps-mark/.ps-ring/
+     @keyframes ps-ping/ps-float), the 44px dismiss (#psClose) and the
+     7-day ps_hide memory — the approved design carries no close
+     button. */
+#promoStrip{position:relative;z-index:30;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 20px;width:100%;box-sizing:border-box;margin:-24px 0 0;padding:8px 16px;background:#04140c;border-bottom:1px solid rgba(52,211,153,.15)}
+.ps-msg{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 14px;min-width:0;max-width:100%}
+.ps-q{margin:0;font-size:13px;font-weight:400;color:rgba(209,250,229,.6);letter-spacing:.01em}
+.ps-h{margin:0;font-size:17px;font-weight:800;color:#fff;letter-spacing:.005em}
+.ps-ctas{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.ps-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 16px;border-radius:8px;font-size:12.5px;font-weight:700;text-decoration:none;font-family:inherit;cursor:pointer;transition:filter .25s ease,box-shadow .25s ease,border-color .25s ease,background-color .25s ease,transform .25s ease}
 .ps-btn svg{flex:0 0 auto}
-.ps-btn:active{transform:scale(.96)}
+.ps-btn:active{transform:translateY(1px)}
 .ps-btn:focus-visible{outline:2px solid #1FFFFF;outline-offset:2px}
-.ps-ch{background:linear-gradient(135deg,#00D3FF,#0FA8E8);color:#04121F;box-shadow:0 2px 12px rgba(0,211,255,.35)}
-.ps-ch:hover{box-shadow:0 4px 18px rgba(0,211,255,.55);transform:translateY(-1px)}
-.ps-bot{background:transparent;color:#9FD8EC;border:1px solid rgba(0,211,255,.42)}
-.ps-bot:hover{background:rgba(0,211,255,.16);color:#FFFFFF;border-color:rgba(0,211,255,.7)}
-#psClose{flex:0 0 auto;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:none;border-radius:10px;color:#7FA8C9;cursor:pointer;font-family:inherit;transition:color .15s,background .15s}
-#psClose:hover{color:#FFFFFF;background:rgba(0,211,255,.14)}
-#psClose:focus-visible{outline:2px solid #1FFFFF;outline-offset:1px}
+.ps-ch{position:relative;isolation:isolate;overflow:hidden;color:#fff;background:linear-gradient(180deg,#1f9d58 0%,#146c3c 100%);border:1px solid rgba(74,222,128,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 6px 18px -6px rgba(21,128,61,.55)}
+.ps-ch::after{content:"";position:absolute;inset:-20% -10%;z-index:-1;background:linear-gradient(105deg,transparent 42%,rgba(209,250,229,.28) 50%,transparent 58%);transform:translateX(-160%);animation:ps-sweep 5.5s ease-in-out infinite;pointer-events:none}
+@keyframes ps-sweep{0%,55%{transform:translateX(-160%)}85%,100%{transform:translateX(160%)}}
+.ps-ch:hover{filter:brightness(1.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 8px 22px -6px rgba(21,128,61,.65)}
+.ps-bot{color:#e0f2fe;background:rgba(8,15,24,.85);border:1px solid rgba(125,211,252,.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.ps-bot svg{color:rgba(125,211,252,.9)}
+.ps-bot:hover{border-color:rgba(125,211,252,.8);background:rgba(12,24,38,.9);box-shadow:0 0 0 1px rgba(125,211,252,.15)}
 /* the language toggle contract: applyLang() sets html[lang]; both texts
-   ride every frame/pill, exactly one is ever visible */
+   ride every element, exactly one is ever visible */
 html[lang="fa"] .ps-en{display:none}
 html[lang="en"] .ps-fa{display:none}
-/* desktop reads the full copies; phones swap to the short ones (the
-   @handles don't fit a ~150px stage — the pills carry them) */
-.ps-s{display:none}
 /* phones: tighter strip; the bot pill retires (#joinSticky owns the
-   mobile bot CTA — one primary action per strip) */
+   mobile bot CTA — one primary action per strip); the channel pill
+   grows to the 44px touch-target floor */
 @media (max-width:600px){
-#promoStrip{margin-top:-16px;gap:8px;padding:6px 10px}
-.ps-mark{width:34px;height:34px;border-radius:9px}
-.ps-mark svg{width:16px;height:16px}
-.ps-ring{inset:5px}
-.ps-fr>span{font-size:11.5px}
-.ps-l{display:none}
-.ps-s{display:inline}
-.ps-btn{height:38px;padding:0 12px;font-size:11.5px}
+#promoStrip{margin-top:-16px;gap:4px 10px;padding:6px 10px}
+.ps-msg{gap:1px 8px}
+.ps-q{font-size:11.5px}
+.ps-h{font-size:14px}
+.ps-ctas{gap:8px}
+.ps-btn{height:44px;padding:0 14px;font-size:12px}
 .ps-bot{display:none}
-#psClose{width:40px;height:40px}
 }
-/* reduced motion: the loop parks on frame 1 STATICALLY (opacity, not
-   animation — the bundle's global *{animation:none!important} kill
-   already freezes everything; this restores frame 1's visibility) */
+/* reduced motion: the sweep parks where the global kill froze it */
 @media (prefers-reduced-motion:reduce){
-.ps-fr{animation:none;opacity:0;transform:none}
-.ps-fr:first-child{opacity:1}
-.ps-mark svg,.ps-ring{animation:none}
-.ps-ring{opacity:.35}
+.ps-ch::after{animation:none}
 }</style>
 </head>
 <body>
@@ -440,35 +413,25 @@ html[lang="en"] .ps-fa{display:none}
      moving it before <header> restores the WCAG 2.4.3 expected order
      without touching the visual (it stays off-canvas until :focus). -->
 <a class="skip-link" href="#main">پرش به محتوا</a>
-<!-- v13.236-promocalm (owner): the redesign of the v13.235 strip per the
-     feedback — "too distracting, too much text at once" → ONE short
-     message at a time on a 12s pure-CSS loop (the style block above
-     carries the full design law); the moving-GIF chip is retired for the
-     pure-CSS signal mark (Telegram plane + two ping rings — zero image
-     bytes, zero requests). Rides AFTER the skip link (the v13.209-a11y
-     first-focusable contract) and BEFORE <header> at full bleed, same
-     as v13.235. The .ps-rot stage is aria-hidden (a 4s aria-live would
-     churn the announcement every cycle); the .ps-sr static summary
-     carries the whole sentence for screen readers once, calmly. The
-     inline script keeps ONLY the dismissal contract — the 7-day ps_hide
-     memory (a dismissed strip returns after a week) + wiring the close
-     button; the ticker-clone pass is gone with the marquee. Pure static
-     frontend — zero API calls, zero backend load. -->
-<div id="promoStrip" role="region" aria-label="اسپرت سیگنال در تلگرام">
-<p class="ps-sr"><span class="ps-fa">اخبار و هشدار بازی‌های بزرگ اسپرت سیگنال در تلگرام — کانال @sportsignalz و ربات @SportSignalAlertsBot</span><span class="ps-en">SportSignal big-match news and kickoff alerts on Telegram — channel @sportsignalz and bot @SportSignalAlertsBot</span></p>
-<span class="ps-mark" aria-hidden="true"><i class="ps-ring"></i><i class="ps-ring ps-ring--b"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg></span>
-<div class="ps-rot" aria-hidden="true">
-<span class="ps-fr"><span class="ps-fa ps-l" dir="rtl">📣 خبرها و هشدار بازی‌های بزرگ، حالا در تلگرام</span><span class="ps-fa ps-s" dir="rtl">📣 اسپرت سیگنال در تلگرام</span><span class="ps-en ps-l" dir="ltr">📣 Big-match news and kickoff alerts — now on Telegram</span><span class="ps-en ps-s" dir="ltr">📣 SportSignal is on Telegram</span></span>
-<span class="ps-fr"><span class="ps-fa ps-l" dir="rtl">⚡ اخبار روز فوتبال در کانال <bdi dir="ltr">@sportsignalz</bdi></span><span class="ps-fa ps-s" dir="rtl">⚡ اخبار روز در کانال تلگرام</span><span class="ps-en ps-l" dir="ltr">⚡ Daily football news — channel <bdi>@sportsignalz</bdi></span><span class="ps-en ps-s" dir="ltr">⚡ Daily football news on Telegram</span></span>
-<span class="ps-fr"><span class="ps-fa ps-l" dir="rtl">🔔 هشدار لحظه‌ی شروع بازی‌ها با ربات <bdi dir="ltr">@SportSignalAlertsBot</bdi></span><span class="ps-fa ps-s" dir="rtl">🔔 هشدار شروع بازی‌های بزرگ</span><span class="ps-en ps-l" dir="ltr">🔔 Instant kickoff alerts — bot <bdi>@SportSignalAlertsBot</bdi></span><span class="ps-en ps-s" dir="ltr">🔔 Instant kickoff alerts</span></span>
+<!-- v13.237-promobar (owner): the approved top-bar design replaces the
+     v13.236 rotator — a static message pair + two CTAs (the style block
+     above carries the full design law). Rides AFTER the skip link (the
+     v13.209-a11y first-focusable contract) and BEFORE <header> at full
+     bleed, same as every strip since v13.235. The DOM order IS the
+     visual RTL order — question → headline → channel CTA → bot CTA
+     (no row-reverse; html[dir=rtl] does the work). No dismiss, no
+     signal mark, no rotator, no inline script — pure static markup,
+     zero JS, zero requests, zero API calls. -->
+<div id="promoStrip" role="region" aria-label="پیشنهاد عضویت در کانال تلگرام اسپورت‌سیگنال">
+<div class="ps-msg">
+<p class="ps-q"><span class="ps-fa" dir="rtl">می‌خوای از زمان مهم‌ترین بازی‌ها مطلع باشی؟</span><span class="ps-en" dir="ltr">Want to know when the biggest matches kick off?</span></p>
+<p class="ps-h"><span class="ps-fa" dir="rtl">با عضویت در کانال، بازی مهم بعدی رو از دست نده!</span><span class="ps-en" dir="ltr">Join the channel and never miss the next big match!</span></p>
 </div>
 <div class="ps-ctas">
-<a class="ps-btn ps-ch" href="https://t.me/sportsignalz" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span class="ps-fa">کانال تلگرام</span><span class="ps-en">Channel</span></a>
-<a class="ps-btn ps-bot" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg><span class="ps-fa">ربات هشدار</span><span class="ps-en">Alert bot</span></a>
+<a class="ps-btn ps-ch" href="https://t.me/sportsignalz" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M9.04 15.51l-.38 5.32c.54 0 .78-.23 1.06-.5l2.55-2.44 5.28 3.87c.97.53 1.66.25 1.92-.9L23.9 4.6c.31-1.42-.51-1.98-1.46-1.63L1.4 10.86c-1.39.54-1.37 1.32-.24 1.67l5.35 1.67L19.36 6.6c.57-.38 1.09-.17.66.21L9.04 15.51z"/></svg><span class="ps-fa">عضو کانالمون شو</span><span class="ps-en">Join our channel</span></a>
+<a class="ps-btn ps-bot" href="https://t.me/SportSignalAlertsBot" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M9.04 15.51l-.38 5.32c.54 0 .78-.23 1.06-.5l2.55-2.44 5.28 3.87c.97.53 1.66.25 1.92-.9L23.9 4.6c.31-1.42-.51-1.98-1.46-1.63L1.4 10.86c-1.39.54-1.37 1.32-.24 1.67l5.35 1.67L19.36 6.6c.57-.38 1.09-.17.66.21L9.04 15.51z"/></svg><span class="ps-fa">ربات هوشمند</span><span class="ps-en">Smart bot</span></a>
 </div>
-<button id="psClose" type="button" aria-label="بستن نوار" title="بستن"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
-<script>(function(){var s=document.getElementById("promoStrip");try{var c=+localStorage.getItem("ps_hide")||0;if(c&&Date.now()-c<6048e5&&s&&s.parentNode)s.parentNode.removeChild(s);}catch(e){}var x=document.getElementById("psClose");if(x)x.addEventListener("click",function(){try{localStorage.setItem("ps_hide",String(Date.now()))}catch(e){}var p=document.getElementById("promoStrip");if(p&&p.parentNode)p.parentNode.removeChild(p);});})();</script>
 <header id="topbar">
 <!-- v12.26 (the user's ask): "in darkmode it turns to a white sillohuette.
      fix this. show the given logo in both light and dark mode" — the white

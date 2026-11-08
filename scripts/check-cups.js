@@ -60,17 +60,27 @@ globalThis.hasSelectedTeam = (m) => m.competition.code === "CL";
 // Only WC is "known" to the stub config: a WC match exists (box shows), while EC
 // has fixtures (intl codes are fetched) but is NOT in INTL_COMPETITIONS — assert
 // the cup list only ever includes codes from the config.
-globalThis.CONFIG = { INTL_COMPETITIONS: { WC: 2000 }, CUP_PHASE_WINDOWS: { EURO_LL_START: "2026-09-28T00:00:00Z", FA_ROUND1: "2026-11-09T00:00:00Z" } };
-// Fixture dates are generated relative to "now" (d(n) = today + n days) so the
-// gate never goes stale; the FA_CUP/round-window dates stay absolute because
-// they are compared against the fixed CUP_PHASE_WINDOWS in the stub config
-// below (refreshed each season alongside worker CONFIG).
+// v13.237-promobar harness co-evolution (S26, 2026-11-08): the FA_ROUND1
+// window stub went STALE at 2026-11-08T00:00:00Z — the fixture's pre-First-
+// Round amateur tie (cup9, d(1) = tomorrow) crossed the fixed 2026-11-09
+// window boundary as the clock advanced, flipping this gate red with zero
+// code changes (the remote HEAD itself fails it from that instant on).
+// THE FIX: the stubbed window is now RELATIVE TO NOW (FA_ROUND1 = d(2))
+// and cup2/cup3 ride d(3)/d(10) — the scenario (amateur tie hidden before
+// the window, big-club entry picked after it) is now stable every day of
+// every season; only EURO_LL_START stays absolute (no assertion depends
+// on its relation to now).
 const d = (days) => new Date(Date.now() + days * 864e5).toISOString();
+globalThis.CONFIG = { INTL_COMPETITIONS: { WC: 2000 }, CUP_PHASE_WINDOWS: { EURO_LL_START: "2026-09-28T00:00:00Z", FA_ROUND1: d(2) } };
+// Fixture dates are generated relative to "now" (d(n) = today + n days) so the
+// gate never goes stale; the FA_CUP/round-window dates are relative too (see
+// the v13.237 note above — the fixed-window variant was the 2026-11-08 time
+// bomb).
 const matches = [
   { id: "cup1", competition: { code: "FA_CUP" }, status: "FINISHED", utcDate: "2026-08-05T10:00:00Z" },   // finished → excluded
   { id: "cup9", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: d(1) },                   // pre First-Round amateur tie → must be hidden
-  { id: "cup2", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: "2026-11-10T10:00:00Z" },  // next FA cup (post Round-1, big-club entry)
-  { id: "cup3", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: "2026-11-20T10:00:00Z" },  // later → not picked
+  { id: "cup2", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: d(3) },                   // next FA cup (post Round-1, big-club entry)
+  { id: "cup3", competition: { code: "FA_CUP" }, status: "SCHEDULED", utcDate: d(10) },                  // later → not picked
   { id: "cup4", competition: { code: "CL" }, status: "LIVE", utcDate: "2026-08-08T10:00:00Z" },           // live CL → wins
   { id: "cup5", competition: { code: "CL" }, status: "SCHEDULED", utcDate: d(2) },                       // future CL
   { id: "cup6", competition: { code: "EL" }, status: "SCHEDULED", utcDate: d(5) },                        // EL (pre league-phase → labelled qualifying)
