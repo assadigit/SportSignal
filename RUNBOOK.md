@@ -7,6 +7,16 @@
 Live: **https://sportsignal.ir** · Worker `ucl-notifier` · KV namespace `STATE`
 (id `c63588df02ae4bf1bfdc18d19c5b3631`) · cron `*/10 * * * *` UTC · repo `main` only.
 
+> **2026-11-08 apex routing change (S25):** the apex homepage
+> `sportsignal.ir/` is now served by a SECOND worker, `sportsignal-site`
+> (the corrected landing page — repo `assadigit/SportSignal-Site`,
+> deployed via OpenNext). `ucl-notifier` keeps the apex catch-all
+> (`sportsignal.ir/*` → everything except `/`, `/_next/*`, `/img/*`,
+> `/logo.svg`), the `www` 301 route, and the `football.sportsignal.ir`
+> webhook Custom Domain. Zero `ucl-notifier` code changes; `npx wrangler
+> deploy` from this repo remains safe. Full routing table + rollback:
+> `docs/history/2026-11-08-s25-landing-routing.md`.
+
 > **v13.95-accountmigration:** the deployment moved to a DEDICATED Cloudflare
 > account on 2026-10-13 (was: shared with currena — the account-level KV write
 > quota collision behind the error-10048 lockouts). New resource IDs:
