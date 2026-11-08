@@ -4,6 +4,74 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.244-grasspill — the pill's grass-photo surface + the heading/rotating-sub lockup + the blue Telegram mark replacing the close
+
+**S33, 2026-11-08 (the owner's pill redesign round).** An HTML-ONLY
+release — every change rides the served homepage HTML (inline style +
+inline markup + the inline pill controller); no bundle edit, no CSS
+rename, NO `sw.js` bump (navigations are network-first; the RUNBOOK §2
+rule). Phones only (`<=600px`), exactly as before; the 601-899px tablet
+zone and the ≥901px desktop are untouched. The owner's uploaded
+`bg-sticky-bottom-mobile-grass.jpg` moves from the repo root into
+`assets/` (git-mv'd, served at the site root, day-fresh cache rule).
+
+- **(0) THE GRASS PHOTO SURFACE** (owner: "Use this for background of
+  sticky bottom, add some fading to it (around it)" + "use this picture
+  for the background of the sticky part (mobile)"): the pill's surface
+  becomes the owner's own photograph (500×176) floating over the
+  v13.242 grass-green gradient and MELTED into it — `.tgp-bg` (the
+  photo, cover-cropped, opacity .62) rides under `.tgp-fade` (a radial
+  vignette dissolving the photo's side/corner edges into the deep green
+  + a top/bottom wash in the surface's OWN two greens + a flat dark
+  scrim that keeps both text lines ≥4.5:1 over the blades). Every
+  layer carries `border-radius:inherit`, so the capsule clips them all
+  while `overflow` stays VISIBLE — the `::after` glow keeps breathing
+  OUTSIDE the surface exactly as before.
+- **(1) THE HEADING + THE ROTATING SUB-HEADLINE** (owner: "i want
+  heading and sub heading" + "sub heading (changing) with some
+  effects"): the pill's text becomes a two-line lockup — the FIXED
+  heading is the owner's exact «عضو کانالمون شو» (`.tgp-head`,
+  15.5px/800 white) over `.tgp-sub`, the FIVE owner-worded lines
+  cycling every 3.2s: «بازیهای مهم رو از دست نده» / «اعلان بازیهای
+  مهم در تلگرام» / «پیگیری بازیها در تلگرام» / «فوتبالهای مهم کی
+  هستند؟» / «ناتیفیکیشن دریافت کن!» — each swap plays a
+  fade+rise+de-blur entrance (`.tgp-in`, restarted via the reflow
+  trick); the active language is re-read from `html[lang]` on EVERY
+  tick (a mid-view EN/FA switch self-heals within one tick — the EN
+  mirrors ride the same rotation); a hidden tab (`document.hidden`) or
+  a hidden pill skips the DOM write; `prefers-reduced-motion` swaps
+  the text instantly with no animation.
+- **(2) THE BLUE TELEGRAM MARK** (owner: "instead of current close
+  button, replace it with telegram icon (Blue) with some glowing
+  around it"): the x close RETIRES — the official circled Telegram
+  mark (the `#tgHead` logo path) on the Telegram brand-blue capsule
+  (`#2AABEE -> #1E96D3`) takes its place at the pill's inline-end,
+  with its OWN standing sky-blue glow ring (`::after` carries the
+  STATIC box-shadow; ONLY opacity+transform animate — the v13.242
+  law). The pill carries NO dismiss anymore: BOTH controls (the pill
+  body and the blue mark) open the channel and seed the same 30-day
+  joined silence (decision recorded in `docs/adr/ADR-007-pill-no-dismiss.md`).
+- **(3) THE COLLAPSE RETIRES**: the v13.242 first-show
+  compact/collapse state is gone — the two-line lockup IS the pill
+  (74px, fixed); the first-show double green pulse plays once, then
+  the standing breathe (moved onto the base `::after`) takes over.
+  The page's `body.tg-pill-on` bottom padding and the `#backTop` lift
+  follow the new fixed geometry (78px + 12px + safe-area / 110px).
+- **THE MEMORY**: the joined key gains the `3` suffix
+  (`sp_pill_joined3`) — a ONE-SHOT reset for the redesign (the same
+  trick as S32's `2` suffix): the close is retired so the dismissed
+  verdict can no longer be written, and any verdict stored under the
+  S30-S32 keys is zeroed exactly once — every returning visitor, the
+  owner included, sees the redesigned pill; fresh taps re-seed the
+  same 30-day window under the new name.
+- **THE PLUMBING**: `_headers` grows the photo's day-fresh rule
+  (`max-age=86400`, owner-replaceable in place) and cap sweep #17
+  evicts the expired `/public-13.57.css` pin (the oldest pin no gate
+  pins, the file stays on disk; 100 rules). Version bumped to
+  `13.244-grasspill`; the pages baseline re-frozen via
+  `--update`; the release-wiring check re-pinned (v13.243 demoted to
+  a historical pin).
+
 # v13.243-langflag — the pill memory reset (the owner's invisible-pill report), the +50% header Telegram glyph, the EN/FA language flags, the deeper jersey dissolve
 
 **S32, 2026-11-08 (the owner's mobile-review round).** An HTML-ONLY

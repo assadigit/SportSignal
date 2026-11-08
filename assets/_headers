@@ -22,6 +22,12 @@
 /site.webmanifest
   Cache-Control: public, max-age=3600
 
+# v13.244-grasspill: the floating pill's grass photograph (the owner's
+# own upload, referenced by the inline page CSS). NOT immutable on
+# purpose: the owner may replace the photo in place.
+/bg-sticky-bottom-mobile-grass.jpg
+  Cache-Control: public, max-age=86400
+
 # v13.6 extracted page assets — filename-versioned, safe to cache immutably
 # for a year (bump the filename on change — the rename-on-edit rule).
 #
@@ -791,8 +797,13 @@
 /public-13.41.js
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.57.css
-  Cache-Control: public, max-age=31536000, immutable
+# v13.244-grasspill cap sweep #17: the /public-13.57.css pin EVICTED
+# (the oldest expired pin no gate pins, the v13.186-qa era, ~58 releases
+# past its one-SEO-TTL retention; the release's own +1 pin — the pill's
+# /bg-sticky-bottom-mobile-grass.jpg day-fresh rule — pushed the file to
+# 101 rules, over Cloudflare's _headers 100-rule cap). The FILE stays on
+# disk per the retention rule, so an ancient cached HTML re-fetching it
+# still resolves — it just rides the default cache headers; 100 rules now.
 
 
 # v13.226-herowire cap sweep #16 (second): the /public-13.40.js pin
