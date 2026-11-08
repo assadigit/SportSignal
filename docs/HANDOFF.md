@@ -29,8 +29,8 @@ The S35 owner round is **done in code, tested and deployed** — see
 
 ## Where things are
 
-- Version: `13.246-fullbar` (package.json / src/config.ts / lockfile in sync).
-- `npm test` exit 0 (2908 checks) as of the S35 close.
+- Version: `13.247-cyanglow` (package.json / src/config.ts / lockfile in sync).
+- `npm test` exit 0 (2908 checks) as of the S36 close.
 - Deploy: `npx wrangler deploy` (worker `ucl-notifier`, assets+worker together).
 
 ## Standing limits and reminders

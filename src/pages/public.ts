@@ -528,8 +528,9 @@ html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PH
    the end of body; fade+rise+de-blur entrance, .tgp-in). The
    v13.242 compact/collapse state RETIRES: the two-line lockup IS
    the bar (74px + the safe-area strip, always); the first-show
-   double green pulse, then the standing breathe, remain. */
-#tgPill{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:flex-start;gap:12px;height:calc(74px + env(safe-area-inset-bottom,0px));padding:0 16px;padding-inline-end:84px;border-radius:16px 16px 0 0;background:linear-gradient(180deg,#1f9d58 0%,#115c33 100%);border:1.5px solid rgba(74,222,128,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 8px 26px -6px rgba(21,128,61,.8),0 12px 34px rgba(1,8,20,.55),0 0 34px rgba(34,197,94,.55),0 0 10px rgba(52,211,153,.45);color:#FFFFFF;text-decoration:none;font-family:var(--font-body)}
+   double pulse (grass-green then; cyan-blue since v13.247), then the
+   standing breathe, remain. */
+#tgPill{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:flex-start;gap:12px;height:calc(74px + env(safe-area-inset-bottom,0px));padding:0 16px;padding-inline-end:84px;border-radius:16px 16px 0 0;background:linear-gradient(180deg,#1f9d58 0%,#115c33 100%);border:1.5px solid rgba(74,222,128,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 8px 26px -6px rgba(2,44,66,.8),0 12px 34px rgba(1,8,20,.55),0 0 34px rgba(34,211,238,.55),0 0 10px rgba(103,232,249,.4);color:#FFFFFF;text-decoration:none;font-family:var(--font-body)}
 #tgPill .tgp-bg{position:absolute;inset:0;border-radius:inherit;background:#115c33 url("/bg-sticky-bottom-mobile-grass.jpg") center/cover no-repeat;opacity:.62;pointer-events:none}
 #tgPill .tgp-fade{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse farthest-side at 50% 50%,rgba(9,64,33,0) 42%,rgba(9,64,33,.55) 80%,rgba(6,44,24,.95) 100%),linear-gradient(180deg,rgba(31,157,88,.92) 0%,rgba(31,157,88,0) 30%,rgba(8,52,28,0) 55%,rgba(6,40,22,.88) 100%),linear-gradient(180deg,rgba(6,44,24,.16) 0%,rgba(6,44,24,.3) 100%)}
 #tgPill .tgp-txt{position:relative;min-width:0;display:flex;flex-direction:column;gap:3px}
@@ -539,12 +540,27 @@ html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PH
 @keyframes tgpSubIn{from{opacity:0;transform:translateY(9px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
 /* the glow pulse — a ::after carrying a STATIC box-shadow; ONLY opacity
    and transform animate (box-shadow never repaints frame-by-frame on
-   weak phones); 2 iterations x 1.2s, played once per page view — now in
-   the GRASS-GREEN family (the emerald #34D399/rgb(52,211,153) cast +
-   the mint inner ring). v13.244: the S31 breathe moves onto the BASE
-   ::after (the compact state is gone) — it takes over the moment the
-   first-show pulse hands the surface back */
-#tgPill::after{content:"";position:absolute;inset:-5px;border-radius:16px 16px 0 0;pointer-events:none;opacity:0;box-shadow:0 0 34px 7px rgba(52,211,153,.7),inset 0 0 0 1.5px rgba(167,243,208,.55);transform:scale(.985);animation:tgpBreathe 3.2s ease-in-out .8s infinite}
+   weak phones); 2 iterations x 1.2s, played once per page view.
+   v13.247-cyanglow (S36, owner: "Make the surrounding glow, Cyan-Blueish,
+   so it doesnt mixed up with website's bg, it's currectly green.
+   (just glow)"): the halo LEAVES the grass-green family — every OUTER
+   glow layer re-hues to the CYAN-BLUE family: the standing 0 0 34px
+   halo (was the grass-green rgba(34,197,…)) -> rgba(34,211,238,.55)
+   (cyan #22D3EE), the 0 0 10px close glow (was the emerald
+   rgba(52,211,…)) -> rgba(103,232,249,.4) (pale cyan-300), the
+   breathing ::after cast (was the same emerald) -> rgba(34,211,238,.7)
+   and its mint inner ring -> the icy rgb(165,243,252) twin, and the
+   dark under-shadow (was the deep grass tone) -> the deep blue-teal
+   rgb(2,44,66) — so the bar reads against the dark navy page instead
+   of melting into the grass.
+   NOTHING ELSE changes (the "just glow" scope): the green surface
+   gradient, the grass photo, the green border, every alpha, blur
+   radius, offset and the animation timing stay byte-identical, and the
+   promo strip's own green accents + the blue mark's Telegram-blue glow
+   are untouched. v13.244: the S31 breathe moves onto the BASE ::after
+   (the compact state is gone) — it takes over the moment the first-show
+   pulse hands the surface back */
+#tgPill::after{content:"";position:absolute;inset:-5px;border-radius:16px 16px 0 0;pointer-events:none;opacity:0;box-shadow:0 0 34px 7px rgba(34,211,238,.7),inset 0 0 0 1.5px rgba(165,243,252,.55);transform:scale(.985);animation:tgpBreathe 3.2s ease-in-out .8s infinite}
 #tgPill.pulse::after{animation:tgpGlow 1.2s ease-in-out 2}
 @keyframes tgpGlow{0%{opacity:0;transform:scale(.985)}45%{opacity:1;transform:scale(1.02)}100%{opacity:0;transform:scale(1)}}
 @keyframes tgpBreathe{0%,100%{opacity:.12;transform:scale(.99)}50%{opacity:.62;transform:scale(1.008)}}
@@ -1684,9 +1700,10 @@ Gate: check-seo-lastmod #9 requires the override on BOTH templates. -->
    SCROLL-PROGRESS rule — the bar shows once the visitor has scrolled
    20% of ONE viewport height (and hides again below it; a mid-page
    reload shows it at once; a page with nothing to scroll never shows
-   it). First show: slide-up (~350ms), then 2 grass-green pulses on the
-   #tgPill::after (opacity+transform only — the box-shadow itself never
-   animates); the v13.242 animationend COLLAPSE is RETIRED (S33: the
+   it). First show: slide-up (~350ms), then 2 cyan-blue pulses on the
+   #tgPill::after (v13.247-cyanglow re-hues the glow out of the
+   grass-green family — opacity+transform only, the box-shadow itself
+   never animates); the v13.242 animationend COLLAPSE is RETIRED (S33: the
    two-line heading+sub lockup IS the bar — the standing breathe takes
    the surface back the moment the pulse ends). THE ROTATING
    SUB-HEADLINE (S33, owner: "sub heading (changing) with some
@@ -1698,13 +1715,13 @@ Gate: check-seo-lastmod #9 requires the override on BOTH templates. -->
    prefers-reduced-motion swaps the text with no animation.
    localStorage memory — every read and write inside try/catch, so a
    blocked storage never breaks anything: ANY channel tap (the bar
-   body OR the blue mark) saves sp_pill_joined5 (30-day silence).
-   v13.246: the key carries the 5 suffix — a ONE-SHOT memory reset for
-   the full-width round (the same trick as S32's 2 / S33's 3 / S34's
-   4): the S34 joined4 verdict is zeroed exactly once so every
-   returning visitor, the owner included, sees the full-width
-   arrow-free bar with the reworded heading (fresh taps re-seed the
-   30-day window under the new name).
+   body OR the blue mark) saves sp_pill_joined6 (30-day silence).
+   v13.247: the key carries the 6 suffix — a ONE-SHOT memory reset for
+   the cyan-glow round (the same trick as S32's 2 / S33's 3 / S34's
+   4 / S35's 5): the S35 joined5 verdict is zeroed exactly once so
+   every returning visitor, the owner included, sees the re-hued
+   cyan-blue halo even if a previous round's tap had silenced the bar
+   (fresh taps re-seed the 30-day window under the new name).
    prefers-reduced-motion: no slide, no pulse — a plain fade. While
    visible, body.tg-pill-on carries the page's bottom padding + the
    #backTop lift (the CSS block above). */
@@ -1721,7 +1738,7 @@ try{rm=window.matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){}
 var DAY=86400000;
 function lsGet(k){try{return window.localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{window.localStorage.setItem(k,v)}catch(e){}}
-var now=Date.now(),joinedAt=Number(lsGet("sp_pill_joined5"))||0;
+var now=Date.now(),joinedAt=Number(lsGet("sp_pill_joined6"))||0;
 if(joinedAt&&now-joinedAt<30*DAY)return;
 var shown=false,pulsed=false,tDelay=null,tFall=null;
 function endPulse(){
@@ -1803,7 +1820,7 @@ function tickSub(){
   if(!rm){sub.classList.remove("tgp-in");void sub.offsetWidth;sub.classList.add("tgp-in")}
 }
 if(sub){setInterval(tickSub,3200)}
-function joined(){lsSet("sp_pill_joined5",String(Date.now()));apply(false)}
+function joined(){lsSet("sp_pill_joined6",String(Date.now()));apply(false)}
 link.addEventListener("click",joined);
 goBtn.addEventListener("click",joined);
 })();<\/script>

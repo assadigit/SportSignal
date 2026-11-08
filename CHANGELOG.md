@@ -4,6 +4,45 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.247-cyanglow — the sticky bar's surrounding glow re-hues green → cyan-blue
+
+**S36, 2026-11-08 (the owner's glow round, verbatim: "Make the
+surrounding glow, Cyan-Blueish, so it doesnt mixed up with website's
+bg, it's currectly green. (just glow)").** An HTML-ONLY release — the
+glow law rides the inline style of the served homepage; no bundle
+edit, no CSS rename, NO `sw.js` bump. Phones only (`<=600px`); the
+601-899px tablet zone and the ≥901px desktop are untouched.
+
+- **(1) THE GLOW RE-HUE** — every OUTER glow layer of the floating
+  Telegram bar leaves the grass-green family for the CYAN-BLUE family:
+  the standing `0 0 34px` halo `rgba(34,197,94,.55)` →
+  `rgba(34,211,238,.55)` (cyan `#22D3EE`), the `0 0 10px` close glow
+  `rgba(52,211,153,.45)` → `rgba(103,232,249,.4)` (pale cyan-300), the
+  breathing `#tgPill::after` cast `rgba(52,211,153,.7)` →
+  `rgba(34,211,238,.7)`, its mint inner ring `rgba(167,243,208,.55)` →
+  the icy `rgb(165,243,252)` twin, and the dark under-shadow
+  `rgba(21,128,61,.8)` → the deep blue-teal `rgb(2,44,66)` — so the
+  halo reads against the dark navy page instead of melting into the
+  grass-green site chrome.
+- **(2) THE JUST-GLOW SCOPE** — nothing else changes: the green
+  surface gradient (`#1f9d58 → #115c33`), the owner's grass
+  photograph, the green border `rgba(74,222,128,.65)`, the white text,
+  every alpha / blur radius / offset, the `tgpGlow` + `tgpBreathe`
+  animation timing, the promo strip's own green accents and the blue
+  Telegram mark's own sky-blue glow ride byte-identical.
+- **(3) THE MEMORY RESET**: `sp_pill_joined5` → `sp_pill_joined6`
+  (the S32/S33/S34/S35 one-shot trick) — every S35-era tap verdict is
+  zeroed exactly once, so a returning visitor (the owner included)
+  sees the re-hued halo even if a previous round's tap had started the
+  30-day joined silence; fresh taps re-seed the window under the new
+  name.
+- **THE RELEASE PLUMBING**: VERSION 13.247-cyanglow (package trio
+  re-frozen), the v13.246 live check demoted to a HISTORICAL pin and
+  the survivors re-pinned in the new v13.247 wiring check
+  (scripts/check-stats.js) — including the two pill-only greens
+  (`rgba(34,197,94,*)`, `rgba(167,243,208,*)`) now asserted GONE from
+  the page.
+
 # v13.246-fullbar — the arrow retired + the sticky bar goes full-width with the reworded sentence
 
 **S35, 2026-11-08 (the owner's full-width round).** An HTML-ONLY
