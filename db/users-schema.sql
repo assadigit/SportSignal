@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS notify_deliveries_v1 (
 CREATE INDEX IF NOT EXISTS idx_deliveries_sent ON notify_deliveries_v1(sent_at);
 
 -- v13.230-channelbase — the Telegram Channel Mirror CLAIM LEDGER (spec
--- TELEGRAM_CHANNEL_MIRROR_SPEC.md PART IV §10; DISCOVERY §7.2). The
+-- docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md PART IV §10; DISCOVERY §7.2). The
 -- channel-side twin of notified_v1 (v13.94): destination-scoped,
 -- write-first, fail-closed event idempotency — INSERT OR IGNORE against
 -- PK (dest_key, event_key) makes the check+write ATOMIC; changes>0 ⟺ the

@@ -1,6 +1,6 @@
 // SportSignal — the Telegram Channel Mirror (v13.230-channelbase foundation,
 // v13.231-channelmirror hooks; Session 1+2 of the
-// TELEGRAM_CHANNEL_MIRROR_SPEC.md program; the audited design is
+// docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md program; the audited design is
 // docs/telegram-channel-mirror/DISCOVERY.md §7 — that document is
 // authoritative for the inventory, the identity table and the architecture).
 //

@@ -2,7 +2,7 @@
 
 > **Session:** 0 (repository audit + implementation design) — documentation only, no runtime code.
 > **Date:** 2026-11-07 (S16 of the 2026-11 work stream; the spec arrived mid-S15 as commit `c59091d`).
-> **Spec:** `TELEGRAM_CHANNEL_MIRROR_SPEC.md` (repo root). PART III §5–6 defines this document.
+> **Spec:** `docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` (repo root). PART III §5–6 defines this document.
 > **Baseline at audit time:** `main` @ `2513ca0`, working tree clean, `npm test` **EXIT 0, 2,614 OK / 0 FAIL** (exactly the S15 documented baseline). Production: `v13.229-teamladder`.
 > **Method:** every claim below was verified against current source (`grep -rn "api.telegram.org" src/` + every call site of `sendTelegram`/`sendTelegramDirect`/`sendPhotoBinary`/`sendDice`/`sendAnimation`/`sendUclGifBanner`/`sendSticker`/`editMessageText`), not against README/ARCHITECTURE prose. Where docs and code disagree, **code wins** and the disagreement is noted.
 
@@ -299,7 +299,7 @@ Daily steady state (typical): **+0 KV writes** (claims are D1; KV only sees outb
 
 **Migration/versioning decisions:** all new state is additive (D1 table via `CREATE TABLE IF NOT EXISTS` appended to `db/users-schema.sql` + applied with the repo's `wrangler d1 execute` step; one optional KV key `channel_mirror_v1`; one optional outbox field `dest`). **No existing KV key is renamed, repurposed, or written differently.** Rollback: remove the two `[vars]` (or `npx wrangler rollback`) → old code ignores the table and field entirely; KV schema additive ⇒ rollback-safe by the RUNBOOK §4 doctrine. Version discipline per RUNBOOK §1 (config `VERSION` ↔ package.json ↔ CHANGELOG, `check-version-sync`).
 
-**Test-harness changes required (spec deliverable 9, continued):** new module must be added to `scripts/lib/worker-src.js`'s concat order **in the same commit** (after its deps `config/telegram/composers/users/match-dedupe`, before its importers `notify-engine/digest-*/cron-notify`) — the harness silently skips missing files (`#seams` exists for exactly this); new `scripts/check-channel-mirror.js` added to the `npm test` chain in `package.json`; `src/worker.ts`'s module-map header comment updated (it is the "always-current condensed ARCHITECTURE.md").
+**Test-harness changes required (spec deliverable 9, continued):** new module must be added to `scripts/lib/worker-src.js`'s concat order **in the same commit** (after its deps `config/telegram/composers/users/match-dedupe`, before its importers `notify-engine/digest-*/cron-notify`) — the harness silently skips missing files (`#seams` exists for exactly this); new `scripts/check-channel-mirror.js` added to the `npm test` chain in `package.json`; `src/worker.ts`'s module-map header comment updated (it is the "always-current condensed docs/ARCHITECTURE.md").
 
 ---
 

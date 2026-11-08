@@ -3,7 +3,7 @@
 // (src/channel-mirror.ts, the REAL module sliced whole from the concat — the
 // check-userstore pattern) against a mock KV + a mock D1 recognizing exactly
 // the channel_posts_v1 statement surface. The program:
-// TELEGRAM_CHANNEL_MIRROR_SPEC.md; DISCOVERY §7 is the design under test.
+// docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md; DISCOVERY §7 is the design under test.
 // Everything here is offline/deterministic — no Telegram, no channel.
 //
 // The matrix (spec PART V §14 mapped to the sessions, prompt items a–f for

@@ -46,7 +46,7 @@
 <link rel="preload" href="/fonts/Peyda-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/MorabbaVF.woff2" as="font" type="font/woff2" crossorigin>
 <!-- v13.224-herolcp (SS-20, Phase-2 S6): the hero poster preload — the
-     Phase-7 final diagnostic (WEB_OPTIMIZATION_RESULTS.md §18.4) and this
+     Phase-7 final diagnostic (docs/WEB_OPTIMIZATION_RESULTS.md §18.4) and this
      session's fresh BEFORE series both attribute the mobile lab LCP to
      div.hero-bg > img.bg-photo (/hero-poster.jpg, 412×900, 40 KB):
      lighthouse's own lcp-discovery-insight says "fetchpriority=high
@@ -535,10 +535,10 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      edge) and shown with NO filter and NO mask (public-13.62.css), only
      opacity + the lane-split translate+skewX: plain alpha pixels, zero
      engine-sensitive compositing primitives — the three-round
-     live-compositing post-mortem lives in SHADOW-CONSULTATION.md. -->
+     live-compositing post-mortem lives in docs/SHADOW-CONSULTATION.md. -->
 <div class="hero-player hero-player--cinematic player-home" aria-hidden="true"><img class="hero-cast" alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"></div>
 <div class="hero-player hero-player--cinematic player-away" aria-hidden="true"><img class="hero-cast" alt="" referrerpolicy="no-referrer"><img alt="" referrerpolicy="no-referrer"></div>
-<!-- v13.194-herocarousel (SPORTSIGNAL_HERO_CAROUSEL_SPEC.md): the hero
+<!-- v13.194-herocarousel (docs/SPORTSIGNAL_HERO_CAROUSEL_SPEC.md): the hero
      becomes a ONE-MATCH-PER-SLIDE carousel. #heroCarRegion wraps the TWO
      existing card anchors (the PC card + the mobile card — the SAME two
      responsive renderings of the ACTIVE slide, never two independent
@@ -930,7 +930,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      Baked pixels have no failure modes: identical in every engine, not
      croppable into a rectangle, unable to paint outside their own file
      bounds. Retires ≤1019px with the figures automatically (the cast
-     rides the wrapper). Full dossier: SHADOW-CONSULTATION.md. -->
+     rides the wrapper). Full dossier: docs/SHADOW-CONSULTATION.md. -->
 <!-- v13.150-hud: the old #bigbar countdown PANEL (head row + four tiles on
      the 474×204 capsule artwork) is RETIRED — the countdown now lives
      INSIDE the card as the .hud-cells layer over the PC-Match frame's own

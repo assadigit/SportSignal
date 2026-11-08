@@ -13,7 +13,7 @@ transparent cutout for either player; see
 ## 1. What this is
 
 A reproducible pipeline that collects the official UEFA player cutout
-portraits for a fixed 36-player roster (see `uefa-player-portraits.spec.md`
+portraits for a fixed 36-player roster (see `docs/uefa-player-portraits.spec.md`
 at the repository root), verifies each player's identity against their
 canonical UEFA profile, and normalises every accepted portrait to one common
 canvas:

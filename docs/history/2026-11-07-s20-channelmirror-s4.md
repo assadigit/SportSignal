@@ -3,7 +3,7 @@
 Wall-clock note (the repo's convention): this session ran 2026-11-07
 Tehran mid-afternoon (the sandbox clock — 2026-11-07T12:0x–12:4xZ — runs
 behind the Tehran wall-clock convention the history notes use). Per the
-S19 hand-off, S20 executes **`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI
+S19 hand-off, S20 executes **`docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI
 Session 4** (production readiness + activation, owner-gated) with
 **PART V §15** (the three-state definition of done) as the honesty rule
 and **DISCOVERY §7.8** as the validation design.
@@ -13,12 +13,12 @@ and **DISCOVERY §7.8** as the validation design.
 - Fresh clone this session; `npm install`; `git fetch` (one-shot token
   URL): origin `main` == `b404e6c` (the S19b close) — no owner push in
   between; tree clean at start; branch `main`.
-- Read in full, in this order: `TELEGRAM_CHANNEL_MIRROR_SPEC.md` (all
+- Read in full, in this order: `docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` (all
   654 lines; PART VI Session 4 + PART V §15 + PART VIII — the
   owner-provided values table, never guessed), `docs/telegram-channel-mirror/DISCOVERY.md`
   (§7.8 the non-posting validation, §7.6 the failure policy, §10 the
   coverage that must stay green, §12 the open owner questions),
-  `AGENTS.md` + `RUNBOOK.md` (§1, §2 incl. the fetch-before-DEPLOY line,
+  `AGENTS.md` + `docs/RUNBOOK.md` (§1, §2 incl. the fetch-before-DEPLOY line,
   §3, §8, §8b, §11, §13 — the channel-ops section), the six program
   history notes (S17, S18, S18b, S18c, S19, S19b — the S19 §2 documents
   every Session-3 seam this session consumes; the S19b §4 records the
@@ -26,7 +26,7 @@ and **DISCOVERY §7.8** as the validation design.
   source: `src/channel-mirror.ts` (all 861 lines),
   `src/telegram.ts` (`classifyTelegramFailure`, the `chan` ctx, the
   outbox `dest` field, the drain's channel branch), `wrangler.toml`
-  `[vars]`, `OWNER_TODO.md`.
+  `[vars]`, `docs/OWNER_TODO.md`.
 - Read-only identity checks with the session-supplied bot token (never
   committed, never logged in full): `getMe` → bot id `8988731008`,
   username `@SportSignalAlertsBot` — matches `CONFIG.CHANNEL_BOT_URL`
@@ -110,7 +110,7 @@ SCOPE COMPLETED:
 - The three-state verdict recorded honestly (§4) + the S21 activation hand-off prompt written (§6)
 FILES CHANGED:
 - docs/history/2026-11-07-s20-channelmirror-s4.md (this note)
-- OWNER_TODO.md (the S20 bullet, Persian)
+- docs/OWNER_TODO.md (the S20 bullet, Persian)
 TESTS:
 - npm test — EXIT 0, 2,888 OK / 0 FAIL (exactly the canonical S19 arithmetic)
 - node scripts/check-channel-mirror.js standalone — 270/270
@@ -141,7 +141,7 @@ NEXT SESSION:
 You are the lead engineer continuing the SportSignal Telegram Channel
 Mirror program (repo: https://github.com/assadigit/sportsignal, branch
 main). This is the ACTIVATION session — S21 (the Session-4 readiness
-ran as S20 and closed owner-gated: TELEGRAM_CHANNEL_MIRROR_SPEC.md
+ran as S20 and closed owner-gated: docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md
 PART VI Session 4 + PART V §15; DISCOVERY §7.8 is the validation
 design; RUNBOOK §13 is the ops manual).
 
@@ -155,11 +155,11 @@ arrive, stop at this line and re-run the S20 readiness battery instead
 activation.
 
 MANDATORY READING BEFORE ANYTHING ELSE (in this order):
-1. TELEGRAM_CHANNEL_MIRROR_SPEC.md — PART VI Session 4 + PART V §15 +
+1. docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md — PART VI Session 4 + PART V §15 +
    PART VIII (owner-provided values; never guess).
 2. docs/telegram-channel-mirror/DISCOVERY.md — §7.8 (the non-posting
    validation), §7.6 (the failure policy), §10 (the coverage).
-3. AGENTS.md + RUNBOOK.md — §1, §2 (incl. the fetch-before-DEPLOY
+3. AGENTS.md + docs/RUNBOOK.md — §1, §2 (incl. the fetch-before-DEPLOY
    line), §8, §8b, §11, §13 (setup / validation / the failure-class
    table / pause-unpause / rollback / the measured budget).
 4. docs/history/2026-11-07-s20-channelmirror-s4.md (the S20 readiness
@@ -222,7 +222,7 @@ S21 SCOPE (every step gated on the previous one):
    counters, outbox 0, the site 200, the webhook 403-to-GET posture).
 7. End of session: write docs/history/<date>-s21-channelmirror-s5.md
    with the PART VII §17 report (CHANNEL STATE: active-and-verified, or
-   the honest blocker) + refresh OWNER_TODO.md with an S21 bullet in
+   the honest blocker) + refresh docs/OWNER_TODO.md with an S21 bullet in
    Persian + print the closing summary. Git discipline: fetch first,
    never force-push, scoped commit, one-shot push, ls-remote verify.
 

@@ -1,7 +1,7 @@
 # SportSignal — SEO/GEO Phase 2 Spec: the 100%-compliance program (SS-01 … SS-27)
 
 **Lineage:** Phase 1 spec = `docs/SPORTSIGNAL_SEO_GEO_SPEC.md` (implemented, report in
-`SEO_IMPLEMENTATION_REPORT.md`). The 2026-11-05 live audit (273 sitemap URLs, 22 crawler
+`docs/SEO_IMPLEMENTATION_REPORT.md`). The 2026-11-05 live audit (273 sitemap URLs, 22 crawler
 UAs, machine files, headers, DNS, full `src/seo/` review — evidence:
 `docs/history/2026-11-05-seo-audit/`) found the baseline verified-good and cataloged
 **26 gaps (SS-01…SS-26)**. The owner then added one more rule (**SS-27, the Shamsi
@@ -27,7 +27,7 @@ checkpoints** so nothing is ever lost, and at the end of each session hands the 
 2. This spec: §1 (governing rules), §3 (this session's gap register rows), §5 (tracker —
    what is already DONE, never redo it), §4 (session protocol).
 3. Latest note in `docs/history/` (session hand-offs + live-verification evidence).
-4. `RUNBOOK.md` for deploy/rollback.
+4. `docs/RUNBOOK.md` for deploy/rollback.
 
 ---
 
@@ -230,7 +230,7 @@ color, below the fold. Acceptance: sweep shows it on all page types; valid HTML;
 CLS impact.
 
 **SS-09 — Undeliverable security email (no MX).** Files: `src/seo/files.ts`
-`buildSecurityTxt()` + contact page in `pages-static.ts` + `OWNER_TODO.md`. Fix (code
+`buildSecurityTxt()` + contact page in `pages-static.ts` + `docs/OWNER_TODO.md`. Fix (code
 side): remove `mailto:security@sportsignal.ir` until mail exists; list working
 channels (Telegram bot contact + note); OWNER_TODO documents the two options
 (Cloudflare Email Routing free → security@ alias, or another deliverable address).
@@ -298,7 +298,7 @@ Owner task.
 | **S3** | Entity grounding + LLM files | **SS-05** batch 1 (6 comps + top-20 teams, verified only); **SS-07** (llms.txt + llms-full.txt); SS-05 batch 2 if capacity | CP1 after SS-05 b1; CP2 after SS-07 |
 | **S4** | AI-answer surfaces + trust + schema | **SS-06** (FAQ + FAQPage); **SS-09**; **SS-12**; **SS-13**; **SS-14** | CP1 after SS-06; CP2 after SS-09+SS-12; CP3 after SS-13+SS-14 |
 | **S5** | Meta/machine polish | **SS-10**; **SS-11**; **SS-15**; **SS-16**; **SS-17**; **SS-18**; **SS-19** (optional) | CP1 after SS-10+11 (sweep gate); CP2 after SS-15–18; CP3 after SS-19 |
-| **S6** | Performance + owner + program close | **SS-20** (lighthouse before/after); SS-21–26 OWNER_TODO refresh; **final full-sitemap sweep** (audit method, fresh evidence); Phase-2 section in `SEO_IMPLEMENTATION_REPORT.md`; program close-out note | CP1 after SS-20; CP2 final sweep + docs |
+| **S6** | Performance + owner + program close | **SS-20** (lighthouse before/after); SS-21–26 OWNER_TODO refresh; **final full-sitemap sweep** (audit method, fresh evidence); Phase-2 section in `docs/SEO_IMPLEMENTATION_REPORT.md`; program close-out note | CP1 after SS-20; CP2 final sweep + docs |
 
 Rules: items may be pulled forward if a session has capacity, never pushed past their
 session without a note in the tracker; if context runs low mid-session, stop at the
@@ -359,7 +359,7 @@ next safe point, checkpoint, and hand off a continuation prompt.
 5. **End of session**: write the `docs/history/<date>-s<N>-closeout.md` note (items
    done, tags, evidence digest, deviations), update this spec's tracker, push, and
    hand the owner the next-session prompt (below) in chat.
-6. **Rollback** if a deploy breaks something: RUNBOOK.md procedure, then fix forward.
+6. **Rollback** if a deploy breaks something: docs/RUNBOOK.md procedure, then fix forward.
 
 ### 6.2 Next-session prompt template (fill from this spec; NEVER include credentials)
 
@@ -397,12 +397,12 @@ from the previous close-out>
 ## 7) Program definition of done (all sessions)
 
 1. SS-01…SS-20 VERIFIED live with evidence; SS-21…SS-26 either done or parked in
-   OWNER_TODO.md with exact click-paths (owner actions).
+   docs/OWNER_TODO.md with exact click-paths (owner actions).
 2. Final full-sitemap sweep (the audit's method): zero titles > 65, zero descriptions
    > 165, zero canonical mismatches, one H1 per page, all schema nodes present and
    valid, Shamsi-first everywhere in fa, Gregorian-only in en.
 3. `npm test` + `npm run seo:check` green locally and against production.
 4. Zero regressions: webhook, admin, bot, cron, /api/* untouched; KV write volume
    unchanged except bounded change-only paths; no new per-request provider fetches.
-5. Docs current: CHANGELOG (one entry per tag), SEO_IMPLEMENTATION_REPORT.md Phase-2
-   section mapping SS-01…SS-27 → status, OWNER_TODO.md, this spec's tracker final.
+5. Docs current: CHANGELOG (one entry per tag), docs/SEO_IMPLEMENTATION_REPORT.md Phase-2
+   section mapping SS-01…SS-27 → status, docs/OWNER_TODO.md, this spec's tracker final.

@@ -255,7 +255,7 @@ export function priorityTier(match, prefs?, chatId?) {
   return (h && a ? 2 : h || a ? 1 : 0) + (isFeaturedMatch(match) ? 1 : 0);
 }
 // v13.194-herocarousel: THE multi-match hero slate
-// (SPORTSIGNAL_HERO_CAROUSEL_SPEC.md). pickHeroMatch's single
+// (docs/SPORTSIGNAL_HERO_CAROUSEL_SPEC.md). pickHeroMatch's single
 // earliest-future-kickoff rule becomes a SLATE of up to six matches:
 //   - eligibility is UNCHANGED (isFeaturedMatch || isMasterPair, BOTH
 //     teams big; future kickoff; never FINISHED, never LIVE/IN_PLAY/PAUSED

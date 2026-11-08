@@ -3,7 +3,7 @@
 Wall-clock note (the repo's convention): this session ran 2026-11-07
 (Tehran afternoon), the first session after the S15 close (`2513ca0`,
 2026-11-06 17:46 UTC). Per the S15 hand-off, S16 leads with the owner's
-new program: **`TELEGRAM_CHANNEL_MIRROR_SPEC.md` Session 0** — the
+new program: **`docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` Session 0** — the
 repository audit and implementation design for the one-way public Persian
 Telegram channel that mirrors the bot's public notifications.
 Documentation only; no runtime code; no deploy.
@@ -14,9 +14,9 @@ Documentation only; no runtime code; no deploy.
   push in between; tree clean at start; branch `main`.
 - `npm install` (fresh sandbox) + `npm test` → **EXIT 0, 2,614 OK /
   0 FAIL** — exactly the v13.229 baseline S15 documented.
-- Read in full, in this order: `TELEGRAM_CHANNEL_MIRROR_SPEC.md` (653
-  lines), `AGENTS.md`, `README.md`, `ARCHITECTURE.md`, `RUNBOOK.md`,
-  `docs/SCHEDULER.md`, `OWNER_TODO.md`, the S15 hand-off
+- Read in full, in this order: `docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` (653
+  lines), `AGENTS.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/RUNBOOK.md`,
+  `docs/SCHEDULER.md`, `docs/OWNER_TODO.md`, the S15 hand-off
   (`2026-11-06-s15-audit.md` — which flagged this session's charter),
   the six ADRs' titles/decisions, `package.json`, `wrangler.toml`,
   `wrangler.dev.toml`, `db/users-schema.sql`, `CHANGELOG.md` head, and
@@ -89,7 +89,7 @@ SCOPE COMPLETED:
 FILES CHANGED:
 - docs/telegram-channel-mirror/DISCOVERY.md (new)
 - docs/history/2026-11-07-s16-channelmirror-s0.md (this note)
-- OWNER_TODO.md (the S16 bullet)
+- docs/OWNER_TODO.md (the S16 bullet)
 TESTS:
 - npm test — EXIT 0, 2,614 OK / 0 FAIL (docs-only session; the suite re-run at the release commit per the AGENTS hard rule)
 COMMIT:
@@ -121,13 +121,13 @@ main). This is SESSION 1 of the program: "Destination configuration,
 delivery foundation and durable idempotency".
 
 MANDATORY READING BEFORE ANYTHING ELSE (in this order):
-1. TELEGRAM_CHANNEL_MIRROR_SPEC.md (repo root) — the whole spec. PART VI
+1. docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md (repo root) — the whole spec. PART VI
    defines this session; PART IV §8–§11 are its rules.
 2. docs/telegram-channel-mirror/DISCOVERY.md — the completed Session 0
    audit. It is authoritative for: the notification inventory, the
    verified dedupe/outbox behavior (D1 notified_v1, NOT the KV blob),
    the event-identity design, and the architecture you are building.
-3. AGENTS.md + RUNBOOK.md (§1 access map, §2 deploy procedure, §8 KV ops,
+3. AGENTS.md + docs/RUNBOOK.md (§1 access map, §2 deploy procedure, §8 KV ops,
    §11 never-do list) + docs/history/2026-11-07-s16-channelmirror-s0.md
    (the S16 note — boot gates + this prompt's provenance).
 
@@ -202,7 +202,7 @@ surface until Session 2):
    families per DISCOVERY §7.4's six hook points, the stage collapse,
    the Persian variant, the channel footer + private CTA when
    configured, the night-digest channel variant with byte-identical
-   private parity). Also refresh OWNER_TODO.md with an S17 bullet in
+   private parity). Also refresh docs/OWNER_TODO.md with an S17 bullet in
    Persian, and print the next-session prompt in your final reply.
 
 CONSTANTS (from the owner, never committed to the repo): deploy needs

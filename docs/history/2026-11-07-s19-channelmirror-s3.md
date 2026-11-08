@@ -4,7 +4,7 @@ Wall-clock note (the repo's convention): this session ran 2026-11-07
 Tehran pre-dawn into morning (the program day continuing from the S18c
 re-verification; the sandbox clock — 2026-11-07T00:xx–02:00Z — runs
 behind the Tehran wall-clock convention the history notes use). Per the
-S18/S18c hand-off, S19 executes **`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART
+S18/S18c hand-off, S19 executes **`docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART
 VI Session 3**: the outbox `dest` field + the drain update, the
 stuck-claim reconciliation, the pause classification end-to-end with
 failure injection, the admin observability surface, the RUNBOOK
@@ -16,11 +16,11 @@ unconfigured ⇒ still ZERO behavioral surface.
 - Fresh clone this session; `npm install`; `git fetch` (one-shot token
   URL): origin `main` == `c0a325c` (the S18c close) — no owner push in
   between; tree clean at start; branch `main`.
-- Read in full, in this order: `TELEGRAM_CHANNEL_MIRROR_SPEC.md` (all
+- Read in full, in this order: `docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` (all
   654 lines; PART VI Session 3 + PART IV §10–§13 are this session's
   rules), `docs/telegram-channel-mirror/DISCOVERY.md` (§7.6 the failure
   policy, §7.7 the budget, §10 the required coverage),
-  `AGENTS.md` + `RUNBOOK.md` (§1/§2/§8/§8b/§11), the S17 note, the S18
+  `AGENTS.md` + `docs/RUNBOOK.md` (§1/§2/§8/§8b/§11), the S17 note, the S18
   note (its §2 documents every Session-2 seam this session consumes),
   the S18b race note (the fetch-before-DEPLOY lesson — formalized into
   RUNBOOK §2 this session), and the S18c verification addendum.
@@ -146,7 +146,7 @@ FILES CHANGED:
 - src/notify-engine.ts, src/digest-bigmatch.ts, src/notify-status.ts, src/digest-morning.ts, src/digest-uclnight.ts, src/digest-night.ts, src/digest-coronation.ts, src/digest-weekly.ts (the sender closures thread the ctx)
 - src/admin-bot.ts (/status section), src/admin-ops.ts (/api/audit block), src/config.ts, src/worker.ts
 - scripts/lib/mock-env.js, scripts/lib/worker-src.js, scripts/check-channel-mirror.js, scripts/check-reliability.js, scripts/check-sameflow.js, scripts/check-stats.js
-- package.json, package-lock.json, CHANGELOG.md, RUNBOOK.md, OWNER_TODO.md
+- package.json, package-lock.json, CHANGELOG.md, docs/RUNBOOK.md, docs/OWNER_TODO.md
 TESTS:
 - npm test — EXIT 0, 2,888 OK / 0 FAIL (exactly 2,818 + 68 new channel-mirror l/m checks + 1 v13.232 stats pin + 1 sameflow allowlist self-check)
 - node scripts/check-channel-mirror.js standalone — 270/270
@@ -184,12 +184,12 @@ NEXT SESSION:
 You are the lead engineer continuing the SportSignal Telegram Channel
 Mirror program (repo: https://github.com/assadigit/sportsignal, branch
 main). This is SESSION 4 of the program — the FINAL session:
-"Production readiness + activation" (spec TELEGRAM_CHANNEL_MIRROR_SPEC.md
+"Production readiness + activation" (spec docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md
 PART VI Session 4 + PART V §15's definition of done; DISCOVERY §7.8 is
 the validation design).
 
 MANDATORY READING BEFORE ANYTHING ELSE (in this order):
-1. TELEGRAM_CHANNEL_MIRROR_SPEC.md — the whole spec. PART VI Session 4
+1. docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md — the whole spec. PART VI Session 4
    + PART V §15 (the definition of done: the three states —
    code-complete / deployed-disabled / live-channel-verified — must be
    separated honestly, never conflated) are this session's rules.
@@ -197,7 +197,7 @@ MANDATORY READING BEFORE ANYTHING ELSE (in this order):
    validation: getChat/getChatMember), §7.6 (the failure policy you will
    now see live if anything is misconfigured), §10 (the coverage that
    must stay green).
-3. AGENTS.md + RUNBOOK.md — §1, §2 (incl. the fetch-before-DEPLOY
+3. AGENTS.md + docs/RUNBOOK.md — §1, §2 (incl. the fetch-before-DEPLOY
    line), §8, §8b, §11, AND §13 (the channel-ops section S19 shipped:
    setup, validation, the failure-class table, pause/unpause, rollback,
    the measured budget).
@@ -266,7 +266,7 @@ deploy in the safe disabled state, and report exactly what remains):
    scoped commit, one-shot push, ls-remote verify.
 8. End of program: write docs/history/<date>-s20-<name>.md with the
    PART VII §17 report (CHANNEL STATE: the honest three-state verdict)
-   + refresh OWNER_TODO.md with an S20 bullet in Persian + print the
+   + refresh docs/OWNER_TODO.md with an S20 bullet in Persian + print the
    closing summary in your final reply. The program's spec is then
    COMPLETE unless the owner opens follow-ups (the DISCOVERY §12
    questions: the degradation-alert mirror, the cosmetic fidelity

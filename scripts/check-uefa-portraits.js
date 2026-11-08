@@ -1,5 +1,5 @@
 // check-uefa-portraits.js — offline test gate for the UEFA player portrait
-// pipeline (uefa-player-portraits.spec.md §11). Uses local fixtures ONLY:
+// pipeline (docs/uefa-player-portraits.spec.md §11). Uses local fixtures ONLY:
 // no live UEFA requests. Covers:
 //   - roster integrity: 36 entries, unique ASCII kebab-case filenames, order
 //   - accent/punctuation handling in name normalization

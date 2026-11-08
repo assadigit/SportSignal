@@ -364,11 +364,11 @@ leaves. The rotation is then a local, network-free manifest promotion:
 
 | Task | Read |
 |---|---|
-| Deploy / operate / rollback / monitoring / incidents | `RUNBOOK.md` |
-| System architecture | `ARCHITECTURE.md`, `docs/adr/` |
+| Deploy / operate / rollback / monitoring / incidents | `docs/RUNBOOK.md` |
+| System architecture | `docs/ARCHITECTURE.md`, `docs/adr/` |
 | Session hand-offs (dated next-session prompts) | `docs/history/` |
 | The original 36-player portrait collection | `docs/assets/uefa-player-portraits.md` |
-| Legacy task specs (historical, superseded) | `uefa-player-portraits.spec.md` (v1), `markdown-instructions.md` |
+| Legacy task specs (historical, superseded) | `docs/uefa-player-portraits.spec.md` (v1), `docs/markdown-instructions.md` |
 
 ### Commands you will actually use
 

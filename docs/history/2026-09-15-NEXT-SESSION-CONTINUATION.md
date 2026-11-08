@@ -5,7 +5,7 @@ record now lives in three places, in this order:
 
 1. **[`CHANGELOG.md`](CHANGELOG.md)** — what happened, version by version,
    newest first. The authoritative history of behavior changes.
-2. **[`RUNBOOK.md`](RUNBOOK.md)** — how to operate: deploy/verify/rollback,
+2. **[`docs/RUNBOOK.md`](docs/RUNBOOK.md)** — how to operate: deploy/verify/rollback,
    monitoring + alert semantics, incident playbooks (missed/duplicate
    notifications), KV contracts, measured budgets, safety invariants.
 3. **The dev worklog** (outside the repo, at `/home/z/my-project/worklog.md`

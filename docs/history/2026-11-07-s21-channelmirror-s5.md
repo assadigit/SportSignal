@@ -4,7 +4,7 @@ Wall-clock note (the repo's convention): this session ran 2026-11-07 Tehran
 late afternoon into night (the sandbox clock — 2026-11-07T12:2x–…Z — runs
 behind the Tehran wall-clock convention the history notes use). Per the
 S20 hand-off, S21 executes the ACTIVATION half of
-**`TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 4** with **PART V §15**
+**`docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` PART VI Session 4** with **PART V §15**
 (the three-state honesty rule) and **DISCOVERY §7.8** (the non-posting
 validation design). The S20 readiness half had closed owner-gated (channel
 not yet created); this session arrived WITH the owner's values.
@@ -15,15 +15,15 @@ not yet created); this session arrived WITH the owner's values.
   `git fetch` (one-shot token URL): origin `main` == `8274766` — no
   owner push in between, no concurrent-session race (the S18b/S19b
   fetch-first discipline held at every later gate too).
-- Read in full, in this order: `TELEGRAM_CHANNEL_MIRROR_SPEC.md` (PART VI
+- Read in full, in this order: `docs/TELEGRAM_CHANNEL_MIRROR_SPEC.md` (PART VI
   Session 4 + PART V §15 + PART VIII), `DISCOVERY.md` (§7.8, §7.6, §10),
-  `AGENTS.md` + `RUNBOOK.md` (§1, §2 incl. the fetch-before-DEPLOY line,
+  `AGENTS.md` + `docs/RUNBOOK.md` (§1, §2 incl. the fetch-before-DEPLOY line,
   §3, §8, §8b, §11, §13), the program history notes (S17, S18, S18b,
   S18c, S19, S19b, S20 — the S20 §6 prompt IS this session's instruction
   sheet), then the consuming seams in source: `src/channel-mirror.ts`
   (channelDestinations / the claim ledger / the pause marker),
   `src/telegram.ts` (the chan ctx / outbox dest / drain branch),
-  `wrangler.toml [vars]`, `OWNER_TODO.md`.
+  `wrangler.toml [vars]`, `docs/OWNER_TODO.md`.
 - Read-only identity checks with the session-supplied bot token (never
   committed, never logged in full): `getMe` → bot id `8988731008`,
   username `@SportSignalAlertsBot` (matches `CONFIG.CHANNEL_BOT_URL` and
@@ -161,7 +161,7 @@ FILES CHANGED:
 - wrangler.toml (the two [vars] + the activation provenance comment)
 - src/config.ts (VERSION 13.233-channelactivate), package.json + package-lock.json (13.233.0.0), CHANGELOG.md (the v13.233 head entry)
 - scripts/check-stats.js (the v13.233 LIVE activation pin + the v13.232 HISTORICAL demotion), scripts/check-channel-mirror.js (the k-section [vars] check flip)
-- docs/history/2026-11-07-s21-channelmirror-s5.md (this note), OWNER_TODO.md (the S21 bullet, Persian)
+- docs/history/2026-11-07-s21-channelmirror-s5.md (this note), docs/OWNER_TODO.md (the S21 bullet, Persian)
 TESTS:
 - npm test — EXIT 0, 2,889 OK / 0 FAIL (the canonical 2,888 + 1 new v13.233 activation pin)
 - node scripts/check-channel-mirror.js standalone — 270/270

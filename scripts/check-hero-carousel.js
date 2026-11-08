@@ -1,5 +1,5 @@
 // check-hero-carousel.js — v13.194-herocarousel: the hero CAROUSEL gate
-// (SPORTSIGNAL_HERO_CAROUSEL_SPEC.md section 18).
+// (docs/SPORTSIGNAL_HERO_CAROUSEL_SPEC.md section 18).
 //
 // Part 1 SELECTION (behavioral, injected `now` — no wall-clock dependence):
 // the pickHeroMatches slate contract: eligibility (pair-only, future, never
