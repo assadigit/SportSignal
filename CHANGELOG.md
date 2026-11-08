@@ -4,6 +4,51 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.245-arrowcta — the pill's grown heading sentence + the nudging arrow aimed at the bigger Telegram mark
+
+**S34, 2026-11-08 (the owner's arrow/heading round).** An HTML-ONLY
+release — every change rides the served homepage HTML (inline style +
+inline markup + the one controller key swap); no bundle edit, no CSS
+rename, NO `sw.js` bump (navigations are network-first; the RUNBOOK §2
+rule). Phones only (`<=600px`); the 601-899px tablet zone and the
+≥901px desktop are untouched.
+
+- **(1) THE GROWN HEADING** (owner: change «عضو کانالمون شو» to
+  «عضو کانالمون شو تا بازیهای مهم رو از دست ندی!»): the fixed
+  heading carries the owner's full sentence — 14px/800 (was
+  15.5px/800), wrapped to at most TWO lines via the
+  `-webkit-line-clamp:2` box (the old one-line
+  nowrap/ellipsis law could never carry the longer wording; the
+  clamp keeps a freak-wide future string from stretching the pill).
+  The EN mirror grows with it: "Join our channel so you never miss
+  the big matches!" (explicit `dir` on both spans — the longer EN
+  sentence's trailing "!" would otherwise bidi-jump in the RTL
+  document).
+- **(2) THE NUDGING ARROW** (owner: "create a SVG arrow that is
+  pointing animationly to the telegram button"): `.tgp-arrow` — a
+  sky-blue (#8EE3FF) curved arrow with a soft drop-shadow glow,
+  riding BETWEEN the pill body and the blue mark as a flex child of
+  `#tgPillBox`, so the writing mode does the placement: FA/RTL
+  orders it pill → arrow → mark with the glyph aiming at the mark;
+  `html[dir="ltr"]` (applyLang's own attribute) mirrors it for EN.
+  The nudge animation (1.35s infinite, translateX −5px on the SVG
+  user grid + an opacity breathe) lives on the inner `<g>` — the
+  root svg carries the `scaleX(-1)` mirror and a keyframe transform
+  on the root would overwrite it. Purely decorative
+  (aria-hidden + pointer-events:none); transform+opacity only, per
+  the v13.242 animation law; killed under
+  `prefers-reduced-motion`.
+- **(3) THE BIGGER MARK** (owner: "also make the telegram circle
+  button bigger"): `#tgPillGo` grows 46 → 58px (the circled-plane
+  glyph 27 → 34px, +26%) — a clearly bigger target for the arrow to
+  point at; the sky-blue glow ring and the tap/30-day-silence
+  behaviour are unchanged.
+- **(4) THE MEMORY RESET**: the pill's localStorage key re-keys
+  `sp_pill_joined3` → `sp_pill_joined4` (the S32/S33 one-shot
+  trick) — every returning visitor who tapped during S33 sees the
+  new round once; fresh taps re-seed the 30-day silence under the
+  new name.
+
 # v13.244-grasspill — the pill's grass-photo surface + the heading/rotating-sub lockup + the blue Telegram mark replacing the close
 
 **S33, 2026-11-08 (the owner's pill redesign round).** An HTML-ONLY

@@ -1202,7 +1202,7 @@ check("v13.242-faglow (HISTORICAL pin — demoted at v13.243-langflag: the S32 o
 
 check("v13.243-langflag (HISTORICAL pin — demoted at v13.244-grasspill: the S33 owner round redesigned the floating pill this check pinned — the memory re-keyed again (the joined/dismissed pair -> sp_pill_joined3, the close-free redesign's one-shot reset), the 72/58px compacting geometry became the fixed 74px two-line grass-photo pill, and the x-sibling law retired with the blue Telegram mark; every other contract (the +50% #tgHead glyph, the EN/FA language flags, the deeper jersey dissolve, the FA countdown pockets, the 20% scroll gate, the SW v120 + 13.74.js immutable pin) rides UNCHANGED and the survivors are re-pinned in the v13.244 live check below)", true);
 
-check("v13.244-grasspill (the release wiring — the S33 session, 2026-11-08: the owner's pill redesign round. (0) THE GRASS PHOTO SURFACE — owner: \"Use this for background of sticky bottom, add some fading to it (around it)\": the owner's own upload bg-sticky-bottom-mobile-grass.jpg (500x176, git-mv'd from the repo root into assets/) paints the pill through .tgp-bg (cover-crop, opacity .62) under .tgp-fade (the radial vignette + the top/bottom washes in the surface's own greens + the flat dark scrim — every layer border-radius:inherit so the capsule clips them while overflow stays visible for the ::after glow). (1) THE HEADING + ROTATING SUB — owner: \"i want heading and sub heading ... sub heading (changing) with some effects\": the fixed heading is the owner's exact «عضو کانالمون شو» (.tgp-head, 15.5px/800) over .tgp-sub — the FIVE owner-worded lines cycling every 3.2s (the controller's SUBS table + tickSub; the fade+rise+de-blur .tgp-in entrance; html[lang] re-read every tick so a mid-view EN/FA switch self-heals; document.hidden + the hidden pill skip the DOM write; reduced-motion swaps instantly). (2) THE BLUE MARK — owner: \"instead of current close button, replace it with telegram icon (Blue) with some glowing around it\": #tgPillGo (the #tgHead circled-plane path, the Telegram brand-blue #2AABEE->#1E96D3 capsule, its own ::after sky-blue glow pulse — static box-shadow, opacity+transform only) REPLACES the old close button; the pill carries NO dismiss — both controls open the channel and seed the 30-day sp_pill_joined3 silence (the 3-suffix one-shot reset zeroes every verdict stored under the S30-S32 keys; docs/adr/ADR-007-pill-no-dismiss.md). (3) THE COLLAPSE RETIRES: the pill is the fixed 74px two-line lockup; the S31 breathe moves onto the base ::after. THE RELEASE PLUMBING: an HTML-only round — no bundle edit, no CSS rename, NO SW BUMP (navigations are network-first; the RUNBOOK §2 rule); the _headers grows the photo's day-fresh rule and cap sweep #17 evicts the expired /public-13.57.css pin (the oldest pin no gate pins, the file stays on disk; 100 rules); baseline re-frozen via --update)", (() => {
+check("v13.245-arrowcta (the release wiring — the S34 session, 2026-11-08: the owner's arrow round. (1) THE GROWN HEADING — owner: change «عضو کانالمون شو» to «عضو کانالمون شو تا بازیهای مهم رو از دست ندی!»: the fixed heading carries the owner's FULL sentence at 14px/800 wrapped to at most two lines (the -webkit-line-clamp:2 box retires the one-line 15.5px nowrap/ellipsis law that could never carry the longer wording); the EN mirror grows with it (\"Join our channel so you never miss the big matches!\") with explicit dir on both spans (the trailing \"!\" would otherwise bidi-jump in the RTL document). (2) THE NUDGING ARROW — owner: \"create a SVG arrow that is pointing animationly to the telegram button\": .tgp-arrow, the sky-blue #8EE3FF curved arrow with the static drop-shadow glow, rides BETWEEN the pill body and the blue mark as a FLEX CHILD of #tgPillBox (the writing mode does the placement: FA/RTL pill->arrow->mark, html[dir=ltr] scaleX(-1) mirrors it for EN — applyLang's own attribute); the nudge (1.35s infinite translateX(-5px) on the SVG user grid + opacity breathe) lives on the inner g.tgp-ain because the root svg carries the mirror and a keyframe transform on the root would overwrite it; aria-hidden + pointer-events:none; transform+opacity only (the v13.242 animation law); killed under prefers-reduced-motion. (3) THE BIGGER MARK — owner: \"also make the telegram circle button bigger\": #tgPillGo grows 46 -> 58px (glyph 27 -> 34px). (4) THE MEMORY RESET: sp_pill_joined3 -> sp_pill_joined4 (the S32/S33 one-shot trick — every S33-era tap verdict is zeroed once). THE RELEASE PLUMBING: an HTML-only round — no bundle edit, no CSS rename, NO SW BUMP; baseline re-frozen via --update)", (() => {
   const pub = read("src/pages/public.ts");
   const cfg = read("src/config.ts");
   const sw = read("assets/sw.js");
@@ -1217,7 +1217,7 @@ check("v13.244-grasspill (the release wiring — the S33 session, 2026-11-08: th
   const phoneZone = firstMedia >= 0 && pillComment > firstMedia ? pub.slice(firstMedia, pillComment) : "";
   const baseZone = firstMedia >= 0 ? pub.slice(0, firstMedia) : pub;
   return !!phoneZone &&
-    // the v13.242/v13.243 survivors re-pinned verbatim (FA countdown pockets + immutable pin + glyph + flags + dissolve)
+    // the v13.242/v13.243/v13.244 survivors re-pinned verbatim (FA countdown pockets + immutable pin + glyph + flags + dissolve + grass surface + rotator)
     /function mset\(el,v\)\{if\(!el\)return;var tx=fmtNum\(v<10\?"0"\+v:String\(v\)\);el\.textContent!==tx&&\(el\.textContent=tx\)\}/.test(js74) &&
     /mset\(mcDd,dd\),mset\(mcHh,hh\),mset\(mcMm,mm\)/.test(js74) &&
     /mcD = toFaDigits\(z\(Math\.floor\(ms \/ 864e5\)\)\);/.test(rt) &&
@@ -1239,37 +1239,52 @@ check("v13.244-grasspill (the release wiring — the S33 session, 2026-11-08: th
     /#tgPill \.tgp-bg\{position:absolute;inset:0;border-radius:inherit;background:#115c33 url\("\/bg-sticky-bottom-mobile-grass\.jpg"\) center\/cover no-repeat;opacity:\.62;pointer-events:none\}/.test(pub) &&
     /#tgPill \.tgp-fade\{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient\(ellipse farthest-side at 50% 50%,/.test(pub) &&
     /\/bg-sticky-bottom-mobile-grass\.jpg\n  Cache-Control: public, max-age=86400/.test(hdr) &&
-    // (1) the heading + the rotating sub: the owner's exact words, the rotator wiring, the entrance keyframes
-    /<strong class="tgp-head"><span class="ps-fa">عضو کانالمون شو<\/span><span class="ps-en">Join our channel<\/span><\/strong>/.test(pub) &&
+    // (1) the grown heading: the owner's full sentence, the two-line clamp law, the EN mirror with its dir pair
+    /<strong class="tgp-head"><span class="ps-fa" dir="rtl">عضو کانالمون شو تا بازیهای مهم رو از دست ندی!<\/span><span class="ps-en" dir="ltr">Join our channel so you never miss the big matches!<\/span><\/strong>/.test(pub) &&
+    /#tgPill \.tgp-head\{font-size:14px;font-weight:800;line-height:1\.5;color:#FFFFFF;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-shadow:0 1px 3px rgba\(3,32,16,\.6\)\}/.test(pub) &&
+    !/\.tgp-head\{font-size:15\.5px/.test(pub) &&
+    // (1b) the rotating sub rides UNCHANGED from S33
     /<span class="tgp-sub" id="tgpSub">/.test(pub) &&
     /"فوتبالهای مهم کی هستند؟","ناتیفیکیشن دریافت کن!"\]/.test(pub) &&
     /if\(sub\)\{setInterval\(tickSub,3200\)\}/.test(pub) &&
     /sub\.textContent=SUBS\[lang\]\[subI\];/.test(pub) &&
     /#tgPill \.tgp-sub\.tgp-in\{animation:tgpSubIn \.55s cubic-bezier\(\.16,1,\.3,1\) both\}/.test(pub) &&
     /@keyframes tgpSubIn\{from\{opacity:0;transform:translateY\(9px\);filter:blur\(3px\)\}to\{opacity:1;transform:none;filter:none\}\}/.test(pub) &&
-    // (2) the blue mark replaces the x: branded + glowing + channel-wired, the close and the old classes GONE
-    /#tgPillGo\{position:relative;flex:0 0 auto;box-sizing:border-box;width:46px;height:46px;/.test(pub) &&
+    // (2) the arrow: markup between the pill and the mark, the flex-child CSS, the dir flip, the g-nudge keyframes, the rm kill
+    /<svg class="tgp-arrow" viewBox="0 0 46 22" aria-hidden="true" focusable="false"><g class="tgp-ain"><path d="M42\.5 13\.5 C36\.5 6\.5 27 5\.5 19 8\.6"/.test(pub) &&
+    /#tgPillBox \.tgp-arrow\{flex:0 0 auto;width:34px;height:16px;display:block;overflow:visible;pointer-events:none;filter:drop-shadow\(0 0 5px rgba\(125,211,252,\.85\)\)\}/.test(pub) &&
+    /html\[dir="ltr"\] #tgPillBox \.tgp-arrow\{transform:scaleX\(-1\)\}/.test(pub) &&
+    /#tgPillBox \.tgp-arrow \.tgp-ain\{animation:tgpArrowNudge 1\.35s ease-in-out infinite\}/.test(pub) &&
+    /@keyframes tgpArrowNudge\{0%,100%\{transform:translateX\(0\);opacity:\.7\}50%\{transform:translateX\(-5px\);opacity:1\}\}/.test(pub) &&
+    /#tgPillBox \.tgp-arrow \.tgp-ain\{animation:none!important\}/.test(pub) &&
+    // (3) the bigger mark: 58px box + 34px glyph, the S33 glow/brand laws intact
+    /#tgPillGo\{position:relative;flex:0 0 auto;box-sizing:border-box;width:58px;height:58px;min-width:58px;min-height:58px;/.test(pub) &&
+    /#tgPillGo svg\{width:34px;height:34px;display:block;/.test(pub) &&
     /background:linear-gradient\(180deg,#2AABEE 0%,#1E96D3 100%\)/.test(pub) &&
     /@keyframes tgpGoPulse\{0%,100%\{opacity:0;transform:scale\(\.96\)\}45%\{opacity:\.9;transform:scale\(1\.05\)\}\}/.test(pub) &&
     /<a id="tgPillGo" href="\$\{TG_CHANNEL_URL\}" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام">/.test(pub) &&
     !/tgPillClose/.test(pub) && !/tgp-ic/.test(pub) && !/tgp-cta/.test(pub) &&
-    // (3) the fixed two-line pill: no compact state anywhere, the page-padding law updated
+    // (3b) the fixed pill body rides at 74px with no compact state, the page-padding law intact
     /#tgPill\{position:relative;isolation:isolate;flex:1 1 auto;min-width:0;height:74px;/.test(pub) &&
     !/\.compact/.test(pub) &&
     /body\.tg-pill-on\{padding-bottom:calc\(78px \+ 12px \+ env\(safe-area-inset-bottom,0px\)\)\}/.test(pub) &&
-    // the memory: joined3 present, every older key gone
-    /sp_pill_joined3"/.test(pub) &&
-    !/sp_pill_joined2/.test(pub) && !/sp_pill_dismissed2/.test(pub) &&
+    // (4) the memory: joined4 present, every older key gone
+    /sp_pill_joined4"/.test(pub) &&
+    !/sp_pill_joined3/.test(pub) && !/sp_pill_joined2/.test(pub) && !/sp_pill_dismissed2/.test(pub) &&
     !/sp_pill_joined"/.test(pub) && !/sp_pill_dismissed"/.test(pub) &&
     /apply\(max>0&&y>=window\.innerHeight\*\.2\)/.test(pub) &&
-    // the cap sweep #17: the 13.57.css pin gone (file on disk), 100 rules
+    // the cap sweep #17 (carried from S33): the 13.57.css pin gone (file on disk), 100 rules
     !/\/public-13\.57\.css\s*\n\s*Cache-Control/.test(hdr) && fs.existsSync(path.join(__dirname, "..", "assets", "public-13.57.css")) &&
     (hdr.match(/\n\//g) || []).length <= 100 &&
     // plumbing: HTML-only round — NO SW bump, version + changelog bumped
     /const CACHE = "sportsignal-v120"/.test(sw) &&
-    /export const VERSION = "13\.244-grasspill"/.test(cfg) &&
-    /# v13\.244-grasspill/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.245-arrowcta"/.test(cfg) &&
+    /# v13\.245-arrowcta/.test(read("CHANGELOG.md"));
 })());
+
+check("v13.244-grasspill (HISTORICAL pin — demoted at v13.245-arrowcta: the S34 owner round changed the surfaces this check pinned — the heading grew into the owner's full sentence «عضو کانالمون شو تا بازیهای مهم رو از دست ندی!» on the two-line 14px clamp law (retiring the 15.5px nowrap/ellipsis pin), the blue mark grew 46 -> 58px with its glyph 27 -> 34px, a decorative arrow now rides between the pill and the mark, and the memory re-keyed (sp_pill_joined3 -> sp_pill_joined4, the arrow round's one-shot reset); every other contract (the grass photo surface, the five-line rotator, the no-dismiss law, the fixed 74px body, the 20% scroll gate, the SW v120 + 13.74.js immutable pin) rides UNCHANGED and the survivors are re-pinned in the v13.245 live check above)", true);
+
+
 
 check("v13.241-mobilecta (HISTORICAL pin — demoted at v13.242-faglow: the S31 owner round changed the surfaces this check pinned — the mobile countdown pockets went Persian-Indic (mset regained fmtNum via the 13.73.js -> 13.74.js rename), the pill moved to the grass-green attention surface (bigger, glowing, breathing, revealed within the first 20% of the viewport scroll instead of the hero-out IntersectionObserver gate), the players gained the flank dissolve mask, and the header icon left the .tb-btns pill for its own divided standalone button with the REAL Telegram circled logo; the LIVE version pin is the v13.242 check above)", true);
 

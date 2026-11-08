@@ -393,9 +393,11 @@ html[lang="fa"] .hero-mcard .mc-num{font-family:Morabba,Peyda,'Segoe UI',Tahoma,
        end; DOM-before-#lbtn places the icon visually to the EN button's
        RIGHT — the side facing the centre of the screen.
    (4) THE FLOATING PILL — #tgPillBox (markup: end of body): ONE link
-       (the whole pill is the tap target) + the sibling BLUE Telegram
-       mark-link #tgPillGo (v13.244-grasspill: it REPLACES the old x
-       close — the pill carries no dismiss; both controls open the
+       (the whole pill is the tap target) + the v13.245-arrowcta pair
+       riding after it: the sky-blue nudging ARROW (.tgp-arrow) aimed
+       at the ENLARGED 58px blue Telegram mark-link #tgPillGo
+       (v13.244-grasspill: it REPLACES the old x close — the pill
+       carries no dismiss; the pill body and the mark both open the
        channel). The surface is the owner's grass photograph melted
        over the grass-green gradient (the v13.244 rule block below
        carries the full law). z58: above page content, below the tz
@@ -508,8 +510,11 @@ html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PH
    blades). Every layer carries border-radius:inherit, so the
    capsule clips them all while overflow stays VISIBLE — the ::after
    glow keeps breathing OUTSIDE the surface (inset:-5px). THE TEXT
-   LOCKUP: .tgp-head (the owner's exact fixed heading
-   «عضو کانالمون شو», 15.5px/800 white) over .tgp-sub (the FIVE
+   LOCKUP: .tgp-head (v13.245-arrowcta: the owner's GROWN sentence
+   «عضو کانالمون شو تا بازیهای مهم رو از دست ندی!», 14px/800 white,
+   wrapped to at most TWO lines by the -webkit-line-clamp box — the
+   old one-line 15.5px nowrap/ellipsis law could never carry the
+   longer wording) over .tgp-sub (the FIVE
    owner-worded lines rotating every 3.2s — the controller script at
    the end of body; fade+rise+de-blur entrance, .tgp-in). The
    v13.242 compact/collapse state RETIRES: the two-line lockup IS
@@ -519,7 +524,7 @@ html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PH
 #tgPill .tgp-bg{position:absolute;inset:0;border-radius:inherit;background:#115c33 url("/bg-sticky-bottom-mobile-grass.jpg") center/cover no-repeat;opacity:.62;pointer-events:none}
 #tgPill .tgp-fade{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse farthest-side at 50% 50%,rgba(9,64,33,0) 42%,rgba(9,64,33,.55) 80%,rgba(6,44,24,.95) 100%),linear-gradient(180deg,rgba(31,157,88,.92) 0%,rgba(31,157,88,0) 30%,rgba(8,52,28,0) 55%,rgba(6,40,22,.88) 100%),linear-gradient(180deg,rgba(6,44,24,.16) 0%,rgba(6,44,24,.3) 100%)}
 #tgPill .tgp-txt{position:relative;min-width:0;display:flex;flex-direction:column;gap:3px}
-#tgPill .tgp-head{font-size:15.5px;font-weight:800;line-height:1.5;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(3,32,16,.6)}
+#tgPill .tgp-head{font-size:14px;font-weight:800;line-height:1.5;color:#FFFFFF;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-shadow:0 1px 3px rgba(3,32,16,.6)}
 #tgPill .tgp-sub{min-width:0;font-size:12.5px;font-weight:500;line-height:1.45;color:rgba(224,255,238,.96);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(3,32,16,.55)}
 #tgPill .tgp-sub.tgp-in{animation:tgpSubIn .55s cubic-bezier(.16,1,.3,1) both}
 @keyframes tgpSubIn{from{opacity:0;transform:translateY(9px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
@@ -544,13 +549,33 @@ html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PH
    like the pill body and starts the same 30-day joined silence — the
    pill carries NO dismiss anymore (the owner's one-control direction;
    docs/adr/ADR-007-pill-no-dismiss.md). */
-#tgPillGo{position:relative;flex:0 0 auto;box-sizing:border-box;width:46px;height:46px;min-width:46px;min-height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#2AABEE 0%,#1E96D3 100%);border:1.5px solid rgba(255,255,255,.55);color:#FFFFFF;text-decoration:none;cursor:pointer;font-family:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 18px rgba(1,8,20,.5),0 0 16px rgba(42,171,238,.5);transition:transform .2s ease,filter .2s ease}
-#tgPillGo svg{width:27px;height:27px;display:block;filter:drop-shadow(0 1px 2px rgba(1,32,54,.4))}
+#tgPillGo{position:relative;flex:0 0 auto;box-sizing:border-box;width:58px;height:58px;min-width:58px;min-height:58px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#2AABEE 0%,#1E96D3 100%);border:1.5px solid rgba(255,255,255,.55);color:#FFFFFF;text-decoration:none;cursor:pointer;font-family:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 18px rgba(1,8,20,.5),0 0 16px rgba(42,171,238,.5);transition:transform .2s ease,filter .2s ease}
+#tgPillGo svg{width:34px;height:34px;display:block;filter:drop-shadow(0 1px 2px rgba(1,32,54,.4))}
 #tgPillGo:hover{filter:brightness(1.08)}
 #tgPillGo:active{transform:scale(.94)}
 #tgPillGo:focus-visible{outline:2px solid #1FFFFF;outline-offset:2px}
 #tgPillGo::after{content:"";position:absolute;inset:-4px;border-radius:999px;pointer-events:none;opacity:0;box-shadow:0 0 22px 6px rgba(42,171,238,.75);transform:scale(.96);animation:tgpGoPulse 2.6s ease-in-out 1.2s infinite}
 @keyframes tgpGoPulse{0%,100%{opacity:0;transform:scale(.96)}45%{opacity:.9;transform:scale(1.05)}}
+/* v13.245-arrowcta (S34, owner: "create a SVG arrow that is pointing
+   animationly to the telegram button, also make the telegram circle
+   button bigger"): .tgp-arrow — the sky-blue curved arrow riding
+   BETWEEN the pill body and the blue mark as a FLEX CHILD of
+   #tgPillBox, so the writing mode does the placement with zero
+   geometry work: FA/RTL orders it pill -> arrow -> mark along the
+   row, the glyph drawn aiming at the mark's side; the html[dir]
+   flip (applyLang's own attribute) mirrors it for EN/LTR. The NUDGE
+   animation lives on the inner <g> (.tgp-ain) — the root svg
+   carries the scaleX(-1) mirror and a keyframe transform on the
+   root would overwrite it; the g's translateX(-5px) rides the SVG
+   user grid (~3.7px on screen) toward the mark with a soft opacity
+   breathe. Purely decorative: aria-hidden + pointer-events:none;
+   the STATIC drop-shadow glow never repaints (transform+opacity
+   only — the v13.242 animation law). The MARK grows 46 -> 58px (the
+   glyph 27 -> 34px) so the arrow points at a bigger target. */
+#tgPillBox .tgp-arrow{flex:0 0 auto;width:34px;height:16px;display:block;overflow:visible;pointer-events:none;filter:drop-shadow(0 0 5px rgba(125,211,252,.85))}
+html[dir="ltr"] #tgPillBox .tgp-arrow{transform:scaleX(-1)}
+#tgPillBox .tgp-arrow .tgp-ain{animation:tgpArrowNudge 1.35s ease-in-out infinite}
+@keyframes tgpArrowNudge{0%,100%{transform:translateX(0);opacity:.7}50%{transform:translateX(-5px);opacity:1}}
 /* page spacing while the pill is visible (phones only): the fixed 74px
    body (+3px of border) + 12px + the safe-area inset, so the pill never
    covers the last content or the footer; #backTop lifts above the pill
@@ -567,6 +592,7 @@ body.tg-pill-on #backTop{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 #tgPill::after{animation:none!important}
 #tgPill .tgp-sub{animation:none!important}
 #tgPillGo::after{animation:none!important}
+#tgPillBox .tgp-arrow .tgp-ain{animation:none!important}
 }</style>
 <style>/* v13.237-promobar (the S26 owner direction: «I only wanted to
      change the top bar of the site… You were only supposed to build
@@ -1407,14 +1433,17 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      600px line). THE S33 SURFACE: the owner's grass photograph
      (/bg-sticky-bottom-mobile-grass.jpg) melted over the grass-green
      gradient by the .tgp-bg/.tgp-fade layers; the fixed heading (the
-     owner's exact «عضو کانالمون شو») over the FIVE-LINE ROTATING
+     owner's grown sentence «عضو کانالمون شو تا بازیهای مهم رو از
+     دست ندی!», wrapped to two lines) over the FIVE-LINE ROTATING
      sub-headline (the controller script below re-reads html[lang] every
      tick; the static boot pair below rides the .ps-fa/.ps-en flip law
      until the first tick takes over). THE S33 CONTROLS: ONE link (the
      whole pill body is the tap target) + the sibling BLUE Telegram
      mark-link #tgPillGo where the x close used to sit — the pill
-     carries NO dismiss; BOTH controls open the channel (each href
-     renders from the ONE shared TG_CHANNEL_URL constant). Rides at the
+     carries NO dismiss; the pill body and the ENLARGED mark both
+     open the channel (each href renders from the ONE shared
+     TG_CHANNEL_URL constant), with the decorative nudging ARROW
+     between them aiming at the mark. Rides at the
      very end of body so the keyboard order stays natural (footer ->
      backTop -> pill). Ships inert + hidden (the controller's
      scroll-progress gate reveals it within the FIRST 20% of the page
@@ -1424,10 +1453,11 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 <span class="tgp-bg" aria-hidden="true"></span>
 <span class="tgp-fade" aria-hidden="true"></span>
 <span class="tgp-txt">
-<strong class="tgp-head"><span class="ps-fa">عضو کانالمون شو</span><span class="ps-en">Join our channel</span></strong>
+<strong class="tgp-head"><span class="ps-fa" dir="rtl">عضو کانالمون شو تا بازیهای مهم رو از دست ندی!</span><span class="ps-en" dir="ltr">Join our channel so you never miss the big matches!</span></strong>
 <span class="tgp-sub" id="tgpSub"><span class="ps-fa" dir="rtl">بازیهای مهم رو از دست نده</span><span class="ps-en" dir="ltr">Don't miss the big matches</span></span>
 </span>
 </a>
+<svg class="tgp-arrow" viewBox="0 0 46 22" aria-hidden="true" focusable="false"><g class="tgp-ain"><path d="M42.5 13.5 C36.5 6.5 27 5.5 19 8.6" fill="none" stroke="#8EE3FF" stroke-width="3.6" stroke-linecap="round"/><path d="M19.6 2.6 L7.4 9.3 L19.9 15.1" fill="none" stroke="#8EE3FF" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
 <a id="tgPillGo" href="https://t.me/sportsignalz" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a>
 </div>
 <script src="/core-13.16.js" defer></script>
@@ -1644,7 +1674,10 @@ endpoint hook; the same-origin POST is covered by connect-src 'self'.
 Gate: check-seo-lastmod #9 requires the override on BOTH templates. -->
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "fb7e7f1d66e84ed3b4572545c93ef538", "send": {"to": "/cdn-cgi/rum"}}'></script>
 <script>/* v13.241-mobilecta (S30) + v13.242-faglow (S31) + v13.243-langflag
-   (S32) + v13.244-grasspill (S33): the floating-pill controller. THE
+   (S32) + v13.244-grasspill (S33) + v13.245-arrowcta (S34): the
+   floating-pill controller. (S34's arrow is CSS/markup-only — it
+   rides the box's own show/hide slide, so it needs no wiring here.)
+   THE
    REVEAL GATE (v13.242, owner: "it must start faster while scrolling
    like in first 20% of scrolling"): a rAF-throttled passive
    SCROLL-PROGRESS rule — the pill shows once the visitor has scrolled
@@ -1664,14 +1697,12 @@ Gate: check-seo-lastmod #9 requires the override on BOTH templates. -->
    prefers-reduced-motion swaps the text with no animation.
    localStorage memory — every read and write inside try/catch, so a
    blocked storage never breaks anything: ANY channel tap (the pill
-   body OR the blue mark) saves sp_pill_joined3 (30-day silence).
-   v13.244: the key carries the 3 suffix — a ONE-SHOT memory reset for
-   the S33 redesign (the same trick as S32's 2 suffix): the x close is
-   RETIRED so the dismissed verdict can no longer be written, and any
-   stored joined/dismissed pair from the S30-S32 rounds is zeroed
-   exactly once — every returning visitor, the owner included, sees
-   the redesigned pill (fresh taps re-seed the 30-day window under the
-   new name).
+   body OR the blue mark) saves sp_pill_joined4 (30-day silence).
+   v13.245: the key carries the 4 suffix — a ONE-SHOT memory reset for
+   the arrow round (the same trick as S32's 2 / S33's 3): the S33
+   joined3 verdict is zeroed exactly once so every returning visitor,
+   the owner included, sees the grown-sentence + arrow + bigger-mark
+   pill (fresh taps re-seed the 30-day window under the new name).
    prefers-reduced-motion: no slide, no pulse — a plain fade. While
    visible, body.tg-pill-on carries the page's bottom padding + the
    #backTop lift (the CSS block above). */
@@ -1688,7 +1719,7 @@ try{rm=window.matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){}
 var DAY=86400000;
 function lsGet(k){try{return window.localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{window.localStorage.setItem(k,v)}catch(e){}}
-var now=Date.now(),joinedAt=Number(lsGet("sp_pill_joined3"))||0;
+var now=Date.now(),joinedAt=Number(lsGet("sp_pill_joined4"))||0;
 if(joinedAt&&now-joinedAt<30*DAY)return;
 var shown=false,pulsed=false,tDelay=null,tFall=null;
 function endPulse(){
@@ -1770,7 +1801,7 @@ function tickSub(){
   if(!rm){sub.classList.remove("tgp-in");void sub.offsetWidth;sub.classList.add("tgp-in")}
 }
 if(sub){setInterval(tickSub,3200)}
-function joined(){lsSet("sp_pill_joined3",String(Date.now()));apply(false)}
+function joined(){lsSet("sp_pill_joined4",String(Date.now()));apply(false)}
 link.addEventListener("click",joined);
 goBtn.addEventListener("click",joined);
 })();</script>
