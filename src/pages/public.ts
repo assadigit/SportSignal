@@ -523,8 +523,8 @@ html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PH
 #tgPill .tgp-bg{position:absolute;inset:0;border-radius:inherit;background:#115c33 url("/bg-sticky-bottom-mobile-grass.jpg") center/cover no-repeat;opacity:.62;pointer-events:none}
 #tgPill .tgp-fade{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse farthest-side at 50% 50%,rgba(9,64,33,0) 42%,rgba(9,64,33,.55) 80%,rgba(6,44,24,.95) 100%),linear-gradient(180deg,rgba(31,157,88,.92) 0%,rgba(31,157,88,0) 30%,rgba(8,52,28,0) 55%,rgba(6,40,22,.88) 100%),linear-gradient(180deg,rgba(6,44,24,.16) 0%,rgba(6,44,24,.3) 100%)}
 #tgPill .tgp-txt{position:relative;min-width:0;display:flex;flex-direction:column;gap:3px}
-#tgPill .tgp-head{font-size:15.5px;font-weight:800;line-height:1.35;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(3,32,16,.6)}
-#tgPill .tgp-sub{min-width:0;font-size:12.5px;font-weight:500;line-height:1.35;color:rgba(224,255,238,.96);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(3,32,16,.55)}
+#tgPill .tgp-head{font-size:15.5px;font-weight:800;line-height:1.5;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(3,32,16,.6)}
+#tgPill .tgp-sub{min-width:0;font-size:12.5px;font-weight:500;line-height:1.45;color:rgba(224,255,238,.96);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(3,32,16,.55)}
 #tgPill .tgp-sub.tgp-in{animation:tgpSubIn .55s cubic-bezier(.16,1,.3,1) both}
 @keyframes tgpSubIn{from{opacity:0;transform:translateY(9px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
 /* the glow pulse — a ::after carrying a STATIC box-shadow; ONLY opacity
