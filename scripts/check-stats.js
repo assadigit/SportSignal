@@ -1198,48 +1198,52 @@ check("v13.239-seofont (HISTORICAL pin — demoted at v13.240-edgegut: the SEO f
 
 check("v13.240-edgegut (HISTORICAL pin — demoted at v13.241-mobilecta: the edge-gutter contracts ride UNCHANGED (the shell's .page-col wrapper + the footer padding-block split + the font/wiring pins are re-pinned verbatim inside the v13.241 live check below); only the VERSION pins moved on — 13.241-mobilecta / 13.241.0.0; the LIVE version pin is the v13.241 check below)", true);
 
-check("v13.242-faglow (the release wiring — the S31 session, 2026-11-08: the owner's four-change round. (1) FARSI COUNTDOWN DIGITS ON MOBILE — the mobile card's three pockets join the FA presentation: mset REGAINS fmtNum (public-13.73.js -> 13.74.js per the ADR-006 rename-on-edit law; FA renders «۰۹» like the desktop hcD/hcH/hcM trio, EN keeps the Latin tabular Poppins/Chakra), the SSR mirror maps mcD/mcH/mcM through toFaDigits in seo/router.ts, and the FA .mc-num override rides the Morabba 800 face (the same display variable the kickoff uses; the pockets tick at most once a minute so the glyph widths never jitter); the desktop trio was already fmtNum-Farsi and is untouched. (2) THE GRASS-GREEN GLOW PILL — bigger (64 -> 72px expanded / 52 -> 58px compact, icon 22 -> 26px, headline 12 -> 13.5px, CTA 14 -> 16px/800) on the site's own football-grass green (the banner channel CTA's #1f9d58, deepened to #115c33 at the bottom so the centered white text lands ~5.2:1 over the 4.5:1 AA floor), a STANDING emerald outer glow (a static box-shadow, never animated) + the first-show double pulse now in the rgb(52,211,153) family + a SLOW standing breathe on the compact state (::after opacity/transform only — the static box-shadow never repaints), and the reveal gate swapped from the S30 hero-out IntersectionObserver to a rAF-throttled passive scroll-progress rule — scrollY >= 20% of ONE viewport height shows the pill (the owner's \"it must start faster while scrolling like in first 20% of scrolling\" read in screen units: ~160px on a phone, far earlier than the old whole-hero gate), scrolling back above the line hides it again, a mid-page reload probes once at boot; the memory (sp_pill_joined 30d / sp_pill_dismissed 3d, every ls read/write in try/catch), the inert-while-hidden law, the x-sibling law and the reduced-motion kill all survive; body.tg-pill-on pads 60px + 12px + safe-area and lifts #backTop to 92px. (3) THE JERSEY FLANK DISSOLVE — the ONE shared .mc-port img rule gains a bottom-anchored mask at <=600px (transparent at the img's own bottom, ~55% at 9% up, opaque by 21% up; -webkit- prefix + the standard property) so the flanking torsos melt into the HUD zone instead of ending in hard mid-air cuts beside the panel's side edges — the faces, shoulders and both hands keep the v13.238 fully-opaque contract, the tablet zone and the desktop keep the crisp cut. (4) THE DIVIDED HEADER ICON — #tgHead leaves the .tb-btns glass pill and becomes its OWN standalone round glass button in .head-actions (DOM-before the pill, RTL keeps it centre-facing; its own 8px margin + the flex gap = the divide the owner asked for) carrying the REAL Telegram mark — the circled plane, the #joinSticky/#tgFab path — in the site's cyan; base display:none keeps >=601px exactly as before; the href still renders from the ONE shared TG_CHANNEL_URL. THE RELEASE PLUMBING: sw.js CACHE v119 -> v120 + the _headers /public-13.74.js immutable pin (13.73.js stays pinned one SEO TTL); no event-logging function exists on the site so none was built)", (() => {
+check("v13.242-faglow (HISTORICAL pin — demoted at v13.243-langflag: the S32 owner round moved three of this pin's surfaces — the jersey flank-dissolve mask DEEPENED (~55% at 9% / opaque at 21% became ~30% at 18% / ~75% at 30% / opaque at 42%), the #tgHead glyph grew 21 → 32px (+50%), and the pill memory re-keyed (sp_pill_joined → sp_pill_joined2 / sp_pill_dismissed → sp_pill_dismissed2 — the one-shot reset that shows the pill again to every visitor who tapped it during the S30/S31 review); every other contract (the FA countdown pockets, the 72/58px green pill geometry, the standing glow + breathe, the 20% scroll gate, the x-sibling law, the SW v120 + 13.74.js immutable pin) rides UNCHANGED and the survivors are re-pinned in the v13.243 live check below)", true);
+
+check("v13.243-langflag (the release wiring — the S32 session, 2026-11-08: the owner's mobile-review round. (0) THE PILL MEMORY RESET — owner: \"I saw the mobile version, I didn't see the sticky to bottom in mobile to promote channel\": live-fresh-browser verification PROVED the S31 pill works (hidden at top, shown after a 300px scroll, hidden again at top), so the invisibility was the 30-day sp_pill_joined silence seeded when the owner tapped the pill during the S30/S31 reviews (navigations are network-first — never a stale-HTML cause); BOTH localStorage keys gain the 2 suffix, a ONE-SHOT reset that zeroes every stored verdict exactly once so every returning visitor — the owner included — sees the pill again, while fresh taps re-seed the same 30/3-day windows under the new names (the windows themselves unchanged). (1) THE HEADER TELEGRAM GLYPH +50% — owner: \"make the telegram logo in header 50% bigger\": the #tgHead circled-plane SVG grows 21 → 32px (+52%), still inside the 44px glass circle (a 6px clear ring); mobile-only as before. (2) THE LANGUAGE FLAGS — owner: \"add a british Flag, next to EN and Iran flag next to FA\": #lbtn grows its TARGET-language flag as a ::before pseudo-element — the label is core JS's textContent (EN while the site is FA / «فا» while the site is EN) and a pseudo survives every textContent write, so ZERO bundle edits; html[lang] (applyLang's own attribute) drives WHICH flag: html[lang=fa] → the Union Jack beside \"EN\", html[lang=en] → the Iran tricolor (with the red emblem mark) beside «فا»; both flags are inline base64 SVGs (21×12px, crisp at every DPR, zero network requests, a hairline white keyline on the glass); the fixed 44px box widens to fit (width:auto, min-width keeps the touch-target floor). Phones only (<=600px) — the desktop header stays byte-identical per the standing desktop-freeze law. (3) THE DEEPER JERSEY DISSOLVE — owner: \"add more fade strength on bottom of jersey's\": the flank-dissolve mask deepens — fully transparent to ~2% up, ~30% at 14%, ~75% at 25%, fully opaque only by 35% up (was ~55% at 9% / opaque at 21%): the melt band grows ~1.7x taller on a much softer curve so every bit poking past the panel's side edges melts away before the cut line; crowns/faces/shoulders/hands stay fully opaque. THE RELEASE PLUMBING: an HTML-only round — no bundle edit, no CSS rename, NO SW BUMP (navigations are network-first; the RUNBOOK §2 rule), baseline re-frozen via --update)", (() => {
   const pub = read("src/pages/public.ts");
+  const cfg = read("src/config.ts");
+  const sw = read("assets/sw.js");
   const rt = read("src/seo/router.ts");
   const js74 = read("assets/public-13.74.js");
   const hdr = read("assets/_headers");
-  const sw = read("assets/sw.js");
-  return /function mset\(el,v\)\{if\(!el\)return;var tx=fmtNum\(v<10\?"0"\+v:String\(v\)\);el\.textContent!==tx&&\(el\.textContent=tx\)\}/.test(js74) &&
+  // the phone-only laws live between the FIRST <=600px media opener and the floating-pill comment
+  const firstMedia = pub.indexOf("@media (max-width:600px){");
+  const pillComment = pub.indexOf("/* (4) the floating pill");
+  const phoneZone = firstMedia >= 0 && pillComment > firstMedia ? pub.slice(firstMedia, pillComment) : "";
+  const baseZone = firstMedia >= 0 ? pub.slice(0, firstMedia) : pub;
+  return !!phoneZone &&
+    // the v13.242 survivors re-pinned verbatim (the FA countdown pockets + the immutable pin)
+    /function mset\(el,v\)\{if\(!el\)return;var tx=fmtNum\(v<10\?"0"\+v:String\(v\)\);el\.textContent!==tx&&\(el\.textContent=tx\)\}/.test(js74) &&
     /mset\(mcDd,dd\),mset\(mcHh,hh\),mset\(mcMm,mm\)/.test(js74) &&
     /mcD = toFaDigits\(z\(Math\.floor\(ms \/ 864e5\)\)\);/.test(rt) &&
-    /mcH = toFaDigits\(z\(Math\.floor\(ms % 864e5 \/ 36e5\)\)\);/.test(rt) &&
-    /mcM = toFaDigits\(z\(Math\.floor\(ms % 36e5 \/ 6e4\)\)\);/.test(rt) &&
     /html\[lang="fa"\] \.hero-mcard \.mc-num\{font-family:Morabba,Peyda,'Segoe UI',Tahoma,sans-serif;font-weight:800\}/.test(pub) &&
-    /\.hero-mcard \.mc-ports \.mc-port img\{height:109cqw;-webkit-mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.55\) 9%,#000 21%\);mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.55\) 9%,#000 21%\)\}/.test(pub) &&
-    /<div class="head-actions"><!--[\s\S]*?<a id="tgHead" href="\$\{TG_CHANNEL_URL\}" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام"><svg viewBox="0 0 24 24" width="21" height="21"[\s\S]*?<span class="tb-btns"><button id="sbtn"/.test(pub) &&
-    /M11\.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12/.test(pub) &&
-    !/<\/button><!-- v13\.241-mobilecta[\s\S]*?<a id="tgHead"/.test(pub) &&
-    /#tgHead\{display:none;box-sizing:border-box;flex:0 0 auto;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border-radius:999px;background:transparent;border:none;color:#17CDF0;/.test(pub) &&
-    /#tgHead\{display:inline-flex;align-items:center;justify-content:center;margin-inline-end:8px;background:rgba\(1,13,35,\.6\);border:1px solid rgba\(255,255,255,\.16\);-webkit-backdrop-filter:blur\(10px\);backdrop-filter:blur\(10px\);box-shadow:0 0 16px rgba\(23,205,240,\.25\)\}/.test(pub) &&
+    /\/public-13\.74\.js\n  Cache-Control: public, max-age=31536000, immutable/.test(hdr) &&
+    // (1) the glyph 21 -> 32
+    /<svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path fill="currentColor" d="M11\.944/.test(pub) &&
+    // (2) the flags live ONLY inside the phone zone (the desktop-freeze law) + the base header law survives
+    /#lbtn\{width:auto;min-width:44px;padding:4px 10px;gap:5px\}/.test(phoneZone) &&
+    /#lbtn::before\{content:"";flex:0 0 auto;width:21px;height:12px;border-radius:2px;background-repeat:no-repeat;background-position:center;background-size:100% 100%;box-shadow:0 0 0 1px rgba\(255,255,255,\.28\)\}/.test(phoneZone) &&
+    /html\[lang="fa"\] #lbtn::before\{background-image:url\("data:image\/svg\+xml;base64,/.test(phoneZone) &&
+    /html\[lang="en"\] #lbtn::before\{background-image:url\("data:image\/svg\+xml;base64,/.test(phoneZone) &&
+    (pub.match(/#lbtn::before/g) || []).length === 3 &&
+    !/#lbtn::before/.test(baseZone) && !/#lbtn\{width:auto/.test(baseZone) &&
+    /#tgHead\{display:none;box-sizing:border-box;flex:0 0 auto;width:44px;height:44px;/.test(baseZone) &&
+    // (3) the deeper dissolve (phone zone only)
+    /\.hero-mcard \.mc-ports \.mc-port img\{height:109cqw;-webkit-mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.3\) 18%,rgba\(0,0,0,\.75\) 30%,#000 42%\);mask-image:linear-gradient\(to top,transparent 0,rgba\(0,0,0,\.3\) 18%,rgba\(0,0,0,\.75\) 30%,#000 42%\)\}/.test(phoneZone) &&
+    // (0) the key reset: new keys present, the BARE old keys gone (the "2 suffix follows "joined"/"dismissed")
+    /sp_pill_joined2"/.test(pub) && /sp_pill_dismissed2"/.test(pub) &&
+    !/sp_pill_joined"/.test(pub) && !/sp_pill_dismissed"/.test(pub) &&
+    // the S31 laws that ride unchanged
     /#tgPill\{position:relative;isolation:isolate;flex:1 1 auto;min-width:0;height:72px;/.test(pub) &&
     /#tgPill\.compact\{height:58px\}/.test(pub) &&
-    /background:linear-gradient\(180deg,#1f9d58 0%,#115c33 100%\);border:1\.5px solid rgba\(74,222,128,\.65\)/.test(pub) &&
-    /0 0 34px rgba\(34,197,94,\.55\),0 0 10px rgba\(52,211,153,\.45\)/.test(pub) &&
-    /#tgPill\.pulse::after\{animation:tgpGlow 1\.2s ease-in-out 2\}/.test(pub) &&
-    /box-shadow:0 0 34px 7px rgba\(52,211,153,\.7\),inset 0 0 0 1\.5px rgba\(167,243,208,\.55\)/.test(pub) &&
-    /#tgPill\.compact::after\{animation:tgpBreathe 3\.2s ease-in-out \.8s infinite\}/.test(pub) &&
-    /@keyframes tgpBreathe\{0%,100%\{opacity:\.12;transform:scale\(\.99\)\}50%\{opacity:\.62;transform:scale\(1\.008\)\}\}/.test(pub) &&
-    /#tgPillClose\{flex:0 0 auto;box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;border-radius:999px;background:linear-gradient\(180deg,#1f9d58 0%,#115c33 100%\);/.test(pub) &&
-    /body\.tg-pill-on\{padding-bottom:calc\(60px \+ 12px \+ env\(safe-area-inset-bottom,0px\)\)\}/.test(pub) &&
-    /body\.tg-pill-on #backTop\{bottom:calc\(92px \+ env\(safe-area-inset-bottom,0px\)\)\}/.test(pub) &&
-    /#tgPillBox\{transform:none!important;transition:opacity \.3s ease!important\}/.test(pub) &&
-    /if\(!link\|\|!xBtn\)return;/.test(pub) &&
     /apply\(max>0&&y>=window\.innerHeight\*\.2\)/.test(pub) &&
-    /window\.addEventListener\("scroll",onScroll,\{passive:true\}\);/.test(pub) &&
-    /window\.addEventListener\("resize",onScroll,\{passive:true\}\);/.test(pub) &&
-    !/new IntersectionObserver\(function\(es\)\{/.test(pub) &&
-    /sp_pill_joined/.test(pub) &&
-    /sp_pill_dismissed/.test(pub) &&
-    !/tg_pill_click/.test(pub) &&
+    /#tgHead\{display:inline-flex;align-items:center;justify-content:center;margin-inline-end:8px;background:rgba\(1,13,35,\.6\);border:1px solid rgba\(255,255,255,\.16\);-webkit-backdrop-filter:blur\(10px\);backdrop-filter:blur\(10px\);box-shadow:0 0 16px rgba\(23,205,240,\.25\)\}/.test(phoneZone) &&
     /<script src="\/public-13\.74\.js" defer>/.test(pub) &&
-    /\/public-13\.74\.js\n  Cache-Control: public, max-age=31536000, immutable/.test(hdr) &&
+    // plumbing: HTML-only round — NO SW bump, version + changelog bumped
     /const CACHE = "sportsignal-v120"/.test(sw) &&
-    /# v13\.242-faglow/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.243-langflag"/.test(cfg) &&
+    /# v13\.243-langflag/.test(read("CHANGELOG.md"));
 })());
 
 check("v13.241-mobilecta (HISTORICAL pin — demoted at v13.242-faglow: the S31 owner round changed the surfaces this check pinned — the mobile countdown pockets went Persian-Indic (mset regained fmtNum via the 13.73.js -> 13.74.js rename), the pill moved to the grass-green attention surface (bigger, glowing, breathing, revealed within the first 20% of the viewport scroll instead of the hero-out IntersectionObserver gate), the players gained the flank dissolve mask, and the header icon left the .tb-btns pill for its own divided standalone button with the REAL Telegram circled logo; the LIVE version pin is the v13.242 check above)", true);

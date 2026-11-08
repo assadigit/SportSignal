@@ -451,15 +451,43 @@ html[lang="fa"] .hero-mcard .mc-num{font-family:Morabba,Peyda,'Segoe UI',Tahoma,
    faces, the shoulders beside the tab and both hands keep the v13.238
    fully-opaque contract). Phones only (<=600px); the 601-899px tablet
    zone and the desktop keep the crisp cut. -webkit- prefix first, the
-   standard property after. */
+   standard property after.
+   v13.243-langflag (S32, owner: "add more fade strength on bottom of
+   jersey's"): the dissolve DEEPENS — fully transparent to ~3% up, ~30%
+   at 18%, ~75% at 30% and fully opaque only by 42% up (was ~55% at 9% /
+   opaque at 21%): the melt band grows ~2x taller on a much softer
+   curve, so every bit that pokes past the panel's side edges now melts
+   away well before the cut line instead of ending in a visible hard
+   step; the crowns, faces, shoulders, the chest numbers and both hands
+   stay fully opaque (the opaque zone starts at 42% of the 109cqw
+   column, above the chest — only the lower torso and shorts ride the
+   gradient; pixel-diff-verified the melt lands on the visible flank
+   strip beside the panel bevel, the covered bits are unchanged). */
 .hero-mcard .mc-ports .mc-port.mc-port-h{left:-3.5cqw}
 .hero-mcard .mc-ports .mc-port.mc-port-a{left:auto;right:-3.5cqw}
-.hero-mcard .mc-ports .mc-port img{height:109cqw;-webkit-mask-image:linear-gradient(to top,transparent 0,rgba(0,0,0,.55) 9%,#000 21%);mask-image:linear-gradient(to top,transparent 0,rgba(0,0,0,.55) 9%,#000 21%)}
+.hero-mcard .mc-ports .mc-port img{height:109cqw;-webkit-mask-image:linear-gradient(to top,transparent 0,rgba(0,0,0,.3) 18%,rgba(0,0,0,.75) 30%,#000 42%);mask-image:linear-gradient(to top,transparent 0,rgba(0,0,0,.3) 18%,rgba(0,0,0,.75) 30%,#000 42%)}
 /* (3) the header icon joins the phone header as its OWN glass island
    (AFTER the base rule — the same-specificity cascade needs the media
    rule later); the 8px margin + the .head-actions gap draw the divide
    the owner asked for between the icon and the EN pill */
 #tgHead{display:inline-flex;align-items:center;justify-content:center;margin-inline-end:8px;background:rgba(1,13,35,.6);border:1px solid rgba(255,255,255,.16);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 0 16px rgba(23,205,240,.25)}
+/* (4) v13.243-langflag (S32, owner: "add a british Flag, next to EN and
+   Iran flag next to FA"): the language pill grows its TARGET-language
+   flag. ZERO bundle edits: #lbtn's label is core JS's textContent (EN
+   while the site is FA / «فا» while the site is EN) and a ::before
+   pseudo-element SURVIVES every textContent write; html[lang] —
+   applyLang's own attribute — drives WHICH flag rides: html[lang="fa"]
+   -> the Union Jack beside "EN", html[lang="en"] -> the Iran tricolor
+   beside «فا». The fixed 44px box widens to fit the pair (width:auto;
+   the min-width keeps the pre-JS empty-boot floor at the touch-target
+   size); both flags are inline base64 SVGs (crisp at every DPR, zero
+   network requests); the hairline white keyline reads on the glass.
+   Phones only (<=600px) — the desktop header stays byte-identical per
+   the standing desktop-freeze law. */
+#lbtn{width:auto;min-width:44px;padding:4px 10px;gap:5px}
+#lbtn::before{content:"";flex:0 0 auto;width:21px;height:12px;border-radius:2px;background-repeat:no-repeat;background-position:center;background-size:100% 100%;box-shadow:0 0 0 1px rgba(255,255,255,.28)}
+html[lang="fa"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MCAzMCI+PGNsaXBQYXRoIGlkPSJ4Ij48cGF0aCBkPSJNMCAwTDYwIDMwTTYwIDBMMCAzMCIvPjwvY2xpcFBhdGg+PHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjMwIiBmaWxsPSIjMDAyNDdkIi8+PHBhdGggZD0iTTAgMEw2MCAzME02MCAwTDAgMzAiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI2Ii8+PHBhdGggZD0iTTAgMEw2MCAzME02MCAwTDAgMzAiIGNsaXAtcGF0aD0idXJsKCN4KSIgc3Ryb2tlPSIjY2YxNDJiIiBzdHJva2Utd2lkdGg9IjQiLz48cGF0aCBkPSJNMzAgMFYzME0wIDE1SDYwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMTAiLz48cGF0aCBkPSJNMzAgMFYzME0wIDE1SDYwIiBzdHJva2U9IiNjZjE0MmIiIHN0cm9rZS13aWR0aD0iNiIvPjwvc3ZnPg==")}
+html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MyAzNiI+PHJlY3Qgd2lkdGg9IjYzIiBoZWlnaHQ9IjM2IiBmaWxsPSIjZmZmIi8+PHJlY3Qgd2lkdGg9IjYzIiBoZWlnaHQ9IjEyIiBmaWxsPSIjMjM5ZjQwIi8+PHJlY3QgeT0iMjQiIHdpZHRoPSI2MyIgaGVpZ2h0PSIxMiIgZmlsbD0iI2RhMDAwMCIvPjxwYXRoIGZpbGw9IiNkYTAwMDAiIGQ9Ik0zMS41IDExLjhjLTIuNyAyLjEtNC4yIDMuOS00LjIgNS45IDAgMS4zLjYgMi40IDEuNiAzLjEtLjQtLjYtLjctMS40LS43LTIuMSAwLTEuMy43LTIuNSAxLjYtMy40LS4yIDEuOC4zIDMuMyAxLcgNC45IDEuNC0xLjYgMS45LTMuMSAxLjctNC45LjkuOSAxLjYgMi4xIDEuNiAzLjQgMCAuNy0uMyAxLjUtLjcgMi4xIDEtLjcgMS42LTEuOCAxLjYtMy4xIDAtMi0xLjUtMy44LTQuMi01Ljl6Ii8+PC9zdmc+")}
 }
 /* (4) the floating pill — hidden state: translated below the screen,
    opacity 0, visibility hidden (+ the inert attribute from the
@@ -660,10 +688,13 @@ html[lang="en"] .ps-fa{display:none}
      flex gap) and its own glass circle (the <=600px rule in the inline
      style). The glyph is the REAL Telegram mark — the circled plane, the
      same path #joinSticky/#tgFab carry — in the site's cyan #17CDF0,
-     replacing the bare paper-plane. At >=601px it is display:none and
+     replacing the bare paper-plane. v13.243-langflag (S32, owner:
+     "make the telegram logo in header 50% bigger"): the glyph grows
+     21 -> 32px (+52%) — still comfortably inside the 44px glass circle
+     (6px clear ring all around). At >=601px it is display:none and
      the header is exactly as before. The href renders from the ONE
      shared TG_CHANNEL_URL constant; new tab + noopener noreferrer; the
-     accessible name stays the owner's exact «عضویت در کانال تلگرام». --><a id="tgHead" href="${TG_CHANNEL_URL}" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a><span class="tb-btns"><button id="sbtn" onclick="toggleTz()" aria-expanded="false" aria-controls="tzpanel" title="منطقه زمانی" aria-label="منطقه زمانی"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button><button id="lbtn" onclick="switchLang()"></button><!-- v13.134-typelight: the dark/light toggle is TEMPORARILY RETIRED (owner directive — the app is always dark). toggleTheme()/setTheme() in core JS stay null-guarded; the bundle init pins setTheme("dark"). Re-add this button to re-enable. --></span></div>
+     accessible name stays the owner's exact «عضویت در کانال تلگرام». --><a id="tgHead" href="${TG_CHANNEL_URL}" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام"><svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a><span class="tb-btns"><button id="sbtn" onclick="toggleTz()" aria-expanded="false" aria-controls="tzpanel" title="منطقه زمانی" aria-label="منطقه زمانی"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button><button id="lbtn" onclick="switchLang()"></button><!-- v13.134-typelight: the dark/light toggle is TEMPORARILY RETIRED (owner directive — the app is always dark). toggleTheme()/setTheme() in core JS stay null-guarded; the bundle init pins setTheme("dark"). Re-add this button to re-enable. --></span></div>
 <div id="tzpanel" role="group" aria-label="\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC"><div class="tz-head"><span data-i="tzTitle">\u{1F30D} \u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC</span><button id="tzclose" onclick="toggleTz()" title="\u0628\u0633\u062A\u0646" aria-label="\u0628\u0633\u062A\u0646">\u2715</button></div><input id="tzfilter" type="search" placeholder="\u062C\u0633\u062A\u062C\u0648\u06CC \u06A9\u0634\u0648\u0631 \u06CC\u0627 \u0634\u0647\u0631\u2026" data-p="tzSearch" aria-label="\u062C\u0633\u062A\u062C\u0648\u06CC \u06A9\u0634\u0648\u0631 \u06CC\u0627 \u0634\u0647\u0631"><select id="tzsel" title="\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC" aria-label="\u0645\u0646\u0637\u0642\u0647 \u0632\u0645\u0627\u0646\u06CC"></select></div>
 <!-- v12.20: visible PROOF for the auto-update claim. v12.26: the sync line
      prints the TRUTHFUL absolute stamp of the last real API refresh \u2014
@@ -1605,8 +1636,17 @@ Gate: check-seo-lastmod #9 requires the override on BOTH templates. -->
    a slow glow breathe for the rest of the page view; every later
    re-show only slides. localStorage memory — every read and write
    inside try/catch, so a blocked storage never breaks anything: a link
-   tap saves sp_pill_joined (30-day silence), an x tap saves
-   sp_pill_dismissed (3-day silence). prefers-reduced-motion: no slide,
+   tap saves sp_pill_joined2 (30-day silence), an x tap saves
+   sp_pill_dismissed2 (3-day silence). v13.243-langflag (S32): BOTH KEY
+   NAMES carry the 2 suffix — a ONE-SHOT memory reset. The owner tapped
+   the live pill while reviewing the S30/S31 rounds, so their browser
+   (and every early tester's) sat in the 30-day joined silence and the
+   new bigger glowing pill never showed ("I didn't see the sticky to
+   bottom in mobile"); the rename zeroes every stored verdict exactly
+   once, so every returning visitor — the owner included — sees the
+   pill again (fresh taps re-seed the same 30/3-day windows under the
+   new names; the windows themselves are unchanged).
+   prefers-reduced-motion: no slide,
    no pulse, no collapse animation — a plain fade straight to the
    compact state. While visible, body.tg-pill-on carries the page's
    bottom padding + the #backTop lift (the CSS block above). */
@@ -1622,7 +1662,7 @@ try{rm=window.matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){}
 var DAY=86400000;
 function lsGet(k){try{return window.localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{window.localStorage.setItem(k,v)}catch(e){}}
-var now=Date.now(),joinedAt=Number(lsGet("sp_pill_joined"))||0,dismissedAt=Number(lsGet("sp_pill_dismissed"))||0;
+var now=Date.now(),joinedAt=Number(lsGet("sp_pill_joined2"))||0,dismissedAt=Number(lsGet("sp_pill_dismissed2"))||0;
 if(joinedAt&&now-joinedAt<30*DAY)return;
 if(dismissedAt&&now-dismissedAt<3*DAY)return;
 var shown=false,pulsed=false,collapsed=false,tDelay=null,tFall=null;
@@ -1687,8 +1727,8 @@ function onScroll(){
 window.addEventListener("scroll",onScroll,{passive:true});
 window.addEventListener("resize",onScroll,{passive:true});
 onScroll();
-link.addEventListener("click",function(){lsSet("sp_pill_joined",String(Date.now()));apply(false)});
-xBtn.addEventListener("click",function(){lsSet("sp_pill_dismissed",String(Date.now()));apply(false)});
+link.addEventListener("click",function(){lsSet("sp_pill_joined2",String(Date.now()));apply(false)});
+xBtn.addEventListener("click",function(){lsSet("sp_pill_dismissed2",String(Date.now()));apply(false)});
 })();<\/script>
 </body>
 </html>`;

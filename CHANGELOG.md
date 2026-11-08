@@ -4,6 +4,64 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.243-langflag — the pill memory reset (the owner's invisible-pill report), the +50% header Telegram glyph, the EN/FA language flags, the deeper jersey dissolve
+
+**S32, 2026-11-08 (the owner's mobile-review round).** An HTML-ONLY
+release — every change rides the served homepage HTML (inline style +
+inline markup + the inline pill controller); no bundle edit, no CSS
+rename, NO `sw.js` bump (navigations are network-first, so every
+visitor gets the fresh page on the next load; the RUNBOOK §2 rule).
+The 601-899px tablet zone and the ≥901px desktop are untouched (the
+new phone-only rules live strictly inside the `<=600px` media block —
+pinned by the release-wiring check).
+
+- **(0) THE PILL MEMORY RESET** (owner: "I saw the mobile version, I
+  didn't see the sticky to bottom in mobile to promote channel"): a
+  fresh-browser live verification PROVED the S31 pill works end-to-end
+  (hidden at the top, shown after a 300px scroll at 390px, hidden again
+  back at the top), so the invisibility was the 30-day `sp_pill_joined`
+  silence seeded when the owner tapped the pill during the S30/S31
+  reviews. BOTH localStorage keys gain the `2` suffix
+  (`sp_pill_joined2` / `sp_pill_dismissed2`) — a ONE-SHOT reset that
+  zeroes every stored verdict exactly once, so every returning visitor
+  — the owner included — sees the bigger glowing pill again; fresh taps
+  re-seed the SAME 30/3-day windows under the new names (the windows
+  themselves are unchanged, every read/write still try/catch'd).
+- **(1) THE HEADER TELEGRAM GLYPH +50%** (owner: "make the telegram
+  logo in header 50% bigger"): the `#tgHead` circled-plane SVG grows
+  21 -> 32px (+52%), still comfortably inside the 44px glass circle (a
+  6px clear ring all around); mobile-only as before (`display:none` at
+  ≥601px).
+- **(2) THE LANGUAGE FLAGS** (owner: "add a british Flag, next to EN
+  and Iran flag next to FA"): `#lbtn` grows its TARGET-language flag as
+  a `::before` pseudo-element — the label is core JS's `textContent`
+  ("EN" while the site is FA / «فا» while the site is EN) and a pseudo
+  survives every `textContent` write, so ZERO bundle edits; `html[lang]`
+  (applyLang's own attribute) drives WHICH flag rides:
+  `html[lang="fa"]` -> the Union Jack beside "EN",
+  `html[lang="en"]` -> the Iran tricolor (with the red emblem mark)
+  beside «فا». Both flags are inline base64 SVGs (21×12px, crisp at
+  every DPR, zero network requests, a hairline white keyline that
+  reads on the glass); the fixed 44px button box widens to fit the
+  pair (`width:auto`, the `min-width` keeps the touch-target floor).
+  Phones only — the desktop header stays byte-identical.
+- **(3) THE DEEPER JERSEY DISSOLVE** (owner: "add more fade strength on
+  bottom of jersey's"): the flank-dissolve mask deepens — fully
+  transparent to ~3% up, ~30% at 18%, ~75% at 30% and fully opaque
+  only by 42% up (was ~55% at 9% / opaque at 21%): the melt band grows
+  ~2x taller on a much softer curve, so every bit that pokes past
+  the panel's side edges now melts away well before the cut line
+  instead of ending in a visible hard step; the crowns, faces,
+  shoulders, the chest numbers and both hands stay fully opaque (the
+  opaque zone starts at 42% of the 109cqw column, above the chest;
+  pixel-diff-verified the melt lands on the visible flank strip beside
+  the panel bevel).
+- **The release plumbing:** `package.json`/`package-lock.json`/
+  `src/config.ts` bumped to 13.243, the public-page parity baseline
+  re-frozen via `--update`, and `scripts/check-stats.js` re-wired (the
+  v13.242 pin demoted to HISTORICAL; the new v13.243 pin carries the
+  four changes + the re-pinned S31 survivors).
+
 # v13.242-faglow — Farsi countdown digits on mobile, the grass-green glow pill, the jersey flank dissolve, the divided header Telegram icon
 
 **S31, 2026-11-08 (the owner's four-change round).** One bundle edit
