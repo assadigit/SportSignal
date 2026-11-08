@@ -1197,55 +1197,75 @@ check("v13.238-mchedge (the release wiring — the S27 session, 2026-11-08: the 
 
 check("v13.239-seofont (HISTORICAL pin — demoted at v13.240-edgegut: the SEO font contracts ride UNCHANGED inside the v13.240 release-wiring check below (FONT_FACES_STYLE interpolation + the Peyda/Morabba preload trio + the Vazirmatn retirement); only the VERSION pins moved on — 13.240-edgegut / 13.240.0.0; the LIVE version pin is the v13.240 check below)", true);
 
-check("v13.240-edgegut (the release wiring — the S29 session, 2026-11-08: the owner's report verbatim: «the seo pages, live the one i uploaded, are too much near the edge, add some conventional and ux friendly margin/padding for the edges» + the /about mobile screenshot (H1, meta line and cards at ~0px from the screen edge) — the SEO pages join the site's own edge-gutter system: the shell dropped .sub.sync + main's children directly into body (body padding is 24px 0 36px — ZERO horizontal), so every server-rendered sub-page ran edge-to-edge while the homepage never had the problem because its whole below-hero life lives inside ONE .page-col (public-13.81.css v13.128: max-width 760px centered + padding-inline 20px; 12px ≤600px; max-width 1400px + 24px ≥1080px); the shell now reuses that EXACT component — the sync line moves INSIDE main>div.page-col mirroring the homepage's own placement (skip-link target still leads to the full content) and the footer's old `padding:16px 0 26px` shorthand becomes padding-block:16px 26px so the generic footer rule's responsive padding-inline (20px base / 12px ≤600px / 24px ≥1080px + the 760px/1400px centered column) finally applies instead of being out-specified to zero; server-side-only change — no bundle edit, no sw.js CACHE bump, no new assets; the v13.239 font + v13.238 mobile-hero + v13.237 promo-bar contracts ride unchanged below)",
-  /export const VERSION = "13\.240-edgegut";/.test(read("src/config.ts")) &&
-  /"version": "13\.240\.0\.0"/.test(read("package.json")) &&
-  /* — the edge-gutter wiring (THIS release's own contracts) — */
+check("v13.240-edgegut (HISTORICAL pin — demoted at v13.241-mobilecta: the edge-gutter contracts ride UNCHANGED (the shell's .page-col wrapper + the footer padding-block split + the font/wiring pins are re-pinned verbatim inside the v13.241 live check below); only the VERSION pins moved on — 13.241-mobilecta / 13.241.0.0; the LIVE version pin is the v13.241 check below)", true);
+
+check("v13.241-mobilecta (the release wiring — the S30 session, 2026-11-08: the owner's four-change MOBILE round, every change scoped to the site's ONE phone breakpoint max-width:600px — the same line #joinSticky/#tgFab/#promoStrip-phones already use; the 601-899px tablet zone and the >=901px desktop are untouched, and the whole round rides the SERVED HTML: inline style + inline script, no bundle edit, no sw.js CACHE bump, no new assets (the v13.199/v13.238 inline-only law). THE SHARED CHANNEL LINK: TG_CHANNEL_URL — ONE constant at the top of src/pages/public.ts — renders into the promo banner's channel CTA, the new mobile header icon #tgHead and the new floating pill #tgPill, so the three surfaces can never drift apart. (1) THE LALIGA LOCKUP ON THE CARD TAB: .mc-pl drops from its top-of-hero float to the HUD frame's raised centre tab — bottom edge 58.2% from the card bottom (=41.8% from the top, INSIDE the tab band 38.5-42.7%H of the 100x177.778 viewBox, above and never touching the card's continuous top border line), width clamp(56px,16vw,84px), natural lockup height, a soft DARK drop-shadow (readable over the red/blue jerseys); the slot stays inside #mcardSpot (z5 — above the players z2 and the panel z3). (2) THE PLAYERS: img height 116 -> 109cqw (~6% smaller, OUTER-bottom origin via contain + object-position so the outer edge stays at the viewport edge and the inner edge pulls away from the centre) + each lane hangs 3.5cqw (2cqw further out, inside the owner's <=3% band) past its own PHYSICAL outer card edge — physical left/right only (the v13.238 no-mirror law); the outer hands stay visible AT the screen edge, the faces gain a clear gap, the stacking order + the no-fade contract are untouched. (3) THE BANNER RETIRES ON PHONES + THE HEADER ICON: #promoStrip{display:none} at <=600px inside the strip's own style block (markup + >=601px untouched; NOTHING in CSS or JS depends on the strip's height — the hero's -100px pull is relative to the header, so the hero island moves up WITH the header, no page-top gap); #tgHead rides the .tb-btns glass pill as the EN button's twin (44x44 round, the paper-plane in the site's cyan #17CDF0), DOM-before #lbtn so the RTL row places it on the EN button's centre-facing side, new tab + noopener noreferrer, accessible name «عضویت در کانال تلگرام». (4) THE FLOATING PILL: #tgPillBox at the end of body — ONE link (the whole pill is the tap target) + a SEPARATE sibling x button (44x44, logical 8px gap, inline-end in the RTL row); fixed at bottom calc(12px + env(safe-area-inset-bottom,0px)) with inset-inline:12px, 999px radius, 64px expanded / 52px compact, the match-card panel fill + the mc-hint cyan border/glow family (zero new colors, both texts >=4.5:1), z58 (above content, below the tz panel z60); ONE IntersectionObserver on .herowrap (threshold 0, NO scroll listener) shows it only when the hero is scrolled PAST and hides it when it re-enters; hidden = translateY below the screen + opacity 0 + visibility hidden + inert; first show = ~350ms slide-up -> 2 cyan pulses (1.2s each) on a ::after animating ONLY opacity+transform (box-shadow never animates) -> the animationend collapse (3.5s timeout fallback) to the compact state which stays for the page view, later re-shows only slide; localStorage memory in try/catch — link tap saves sp_pill_joined (30 days), x tap saves sp_pill_dismissed (3 days); prefers-reduced-motion = no slide/pulse/collapse, a plain fade straight to compact; while visible body.tg-pill-on pads the page bottom (compact + 12px + safe-area) and lifts #backTop above the pill band; the viewport metas (homepage + SEO shell) carry viewport-fit=cover; no event-logging function exists on the site so none was built)",
+  /export const VERSION = "13\.241-mobilecta";/.test(read("src/config.ts")) &&
+  /"version": "13\.241\.0\.0"/.test(read("package.json")) &&
+  /* — the carried edge-gutter + font wiring (v13.240/v13.239, unchanged) — */
   /<main id="main">\n<div class="page-col">\n<p class="sub sync">\$\{opts\.updatedHtml \|\| ""\}<\/p>/.test(read("src/seo/page-shell.ts")) &&
   /<div class="pageh1-wrap"><h1 class="pageh1">\$\{opts\.h1\}<\/h1><\/div>\n\$\{opts\.mainHtml\}\n<\/div>\n<\/main>/.test(read("src/seo/page-shell.ts")) &&
   /footer\.pagesfoot\{margin-top:26px;border-top:1px solid rgba\(148,163,184,\.18\);padding-block:16px 26px;font-size:\.85rem;color:var\(--muted,#9aa4b2\)\}/.test(read("src/seo/page-shell.ts")) &&
-  !/footer\.pagesfoot\{[^}]*padding:16px 0 26px/.test(read("src/seo/page-shell.ts")) &&
   /import \{ FONT_FACES_STYLE \} from "\.\.\/pages\/styles-shared";/.test(read("src/seo/page-shell.ts")) &&
   /\$\{FONT_FACES_STYLE\}/.test(read("src/seo/page-shell.ts")) &&
   /<link rel="preload" href="\/fonts\/Peyda-Regular\.woff2" as="font" type="font\/woff2" crossorigin>/.test(read("src/seo/page-shell.ts")) &&
-  /<link rel="preload" href="\/fonts\/Peyda-ExtraBold\.woff2" as="font" type="font\/woff2" crossorigin>/.test(read("src/seo/page-shell.ts")) &&
-  /<link rel="preload" href="\/fonts\/MorabbaVF\.woff2" as="font" type="font\/woff2" crossorigin>/.test(read("src/seo/page-shell.ts")) &&
   !/preload" href="\/fonts\/Vazirmatn/.test(read("src/seo/page-shell.ts")) &&
   /const CACHE = "sportsignal-v119"/.test(swSrc) &&
   /TELEGRAM_CHANNEL_CHAT_ID = "-1003654328600"/.test(read("wrangler.toml")) &&
   /TELEGRAM_CHANNEL_PUBLIC_URL = "https:\/\/t\.me\/SportSignalz"/.test(read("wrangler.toml")) &&
   /crons = \["\*\/10 \* \* \* \*", "27 \*\/4 \* \* \*"\]/.test(read("wrangler.toml")) &&
+  /* — the promo-bar contracts (v13.237, markup unchanged; the channel href now renders from the shared constant) — */
   /<div id="promoStrip" role="region"/.test(read("src/pages/public.ts")) &&
   !/src="\/ui\/promo-signal\.gif"/.test(read("src/pages/public.ts")) &&
   /#promoStrip\{position:relative;z-index:30/.test(read("src/pages/public.ts")) &&
   /background:#04140c;border-bottom:1px solid rgba\(52,211,153,\.15\)\}/.test(read("src/pages/public.ts")) &&
-  /\.ps-msg\{display:flex;flex-wrap:wrap/.test(read("src/pages/public.ts")) &&
-  /\.ps-q\{margin:0;font-size:13px;font-weight:400;color:rgba\(209,250,229,\.6\)/.test(read("src/pages/public.ts")) &&
-  /\.ps-h\{margin:0;font-size:17px;font-weight:800;color:#fff/.test(read("src/pages/public.ts")) &&
   /\.ps-ch\{position:relative;isolation:isolate;overflow:hidden;color:#fff;background:linear-gradient\(180deg,#1f9d58 0%,#146c3c 100%\)/.test(read("src/pages/public.ts")) &&
   /@keyframes ps-sweep\{/.test(read("src/pages/public.ts")) &&
-  /\.ps-bot\{color:#e0f2fe;background:rgba\(8,15,24,\.85\);border:1px solid rgba\(125,211,252,\.45\)/.test(read("src/pages/public.ts")) &&
-  /href="https:\/\/t\.me\/sportsignalz"/.test(read("src/pages/public.ts")) &&
   /href="https:\/\/t\.me\/SportSignalAlertsBot"/.test(read("src/pages/public.ts")) &&
   /عضو کانالمون شو/.test(read("src/pages/public.ts")) &&
-  /ربات هوشمند/.test(read("src/pages/public.ts")) &&
   /بازی مهم بعدی رو از دست نده/.test(read("src/pages/public.ts")) &&
-  /مطلع باشی؟/.test(read("src/pages/public.ts")) &&
-  !/\.ps-fr\{/.test(read("src/pages/public.ts")) &&
-  !/@keyframes ps-rot\{/.test(read("src/pages/public.ts")) &&
-  !/id="psClose"/.test(read("src/pages/public.ts")) &&
-  !/localStorage\.getItem\("ps_hide"\)/.test(read("src/pages/public.ts")) &&
-  /\/ui\/promo-signal\.gif\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headersSrc) &&
+  /* — the ONE shared channel constant + its three consumers — */
+  /const TG_CHANNEL_URL = "https:\/\/t\.me\/sportsignalz";/.test(read("src/pages/public.ts")) &&
+  read("src/pages/public.ts").split("${TG_CHANNEL_URL}").length === 4 &&
+  /* — the mobile viewport (safe-area) — */
+  /<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">/.test(read("src/pages/public.ts")) &&
+  /<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">/.test(read("src/seo/page-shell.ts")) &&
+  /* — (1) the lockup on the tab — */
+  /\.hero-mcard \.mc-pl\{top:auto;bottom:58\.2%;width:clamp\(56px,16vw,84px\);height:auto;transform:translateX\(-50%\);filter:drop-shadow\(0 2px 6px rgba\(2,10,25,\.62\)\)\}/.test(read("src/pages/public.ts")) &&
+  /\.hero-mcard \.mc-pl img\{height:auto\}/.test(read("src/pages/public.ts")) &&
+  /* — (2) the players: 109cqw + the 3.5cqw lanes at <=600px (the v13.238 base rules stay for 601-899px) — */
   /\.hero-mcard \.mc-ports \.mc-port\{height:67%;width:104cqw\}/.test(read("src/pages/public.ts")) &&
   /\.hero-mcard \.mc-ports \.mc-port\.mc-port-h\{left:-2cqw\}/.test(read("src/pages/public.ts")) &&
   /\.hero-mcard \.mc-ports \.mc-port\.mc-port-a\{left:auto;right:-2cqw\}/.test(read("src/pages/public.ts")) &&
   /\.hero-mcard \.mc-ports \.mc-port img\{position:absolute;bottom:0;left:0;right:0;width:100%;height:116cqw;object-fit:contain;object-position:center bottom\}/.test(read("src/pages/public.ts")) &&
   /\.hero-mcard \.mc-ports \.mc-port\.mc-port-h img\{object-position:left bottom\}/.test(read("src/pages/public.ts")) &&
   /\.hero-mcard \.mc-ports \.mc-port\.mc-port-a img\{object-position:right bottom\}/.test(read("src/pages/public.ts")) &&
+  /\.hero-mcard \.mc-ports \.mc-port\.mc-port-h\{left:-3\.5cqw\}\n\.hero-mcard \.mc-ports \.mc-port\.mc-port-a\{left:auto;right:-3\.5cqw\}\n\.hero-mcard \.mc-ports \.mc-port img\{height:109cqw\}/.test(read("src/pages/public.ts")) &&
   !/--mc-fade:/.test(read("src/pages/public.ts")) &&
   !/--mc-side:/.test(read("src/pages/public.ts")) &&
   /@media \(max-width:899px\)\{\.herowrap\{overflow-x:hidden;overflow-x:clip\}\}/.test(read("src/pages/public.ts")) &&
-  /# v13\.240-edgegut/.test(read("CHANGELOG.md")));
+  /* — (3) the banner off + the header icon on — */
+  /@media \(max-width:600px\)\{#promoStrip\{display:none\}\}/.test(read("src/pages/public.ts")) &&
+  /<a id="tgHead" href="\$\{TG_CHANNEL_URL\}" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام">/.test(read("src/pages/public.ts")) &&
+  /#tgHead\{display:none;box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;padding:4px 10px;border-radius:999px;background:transparent;border:none;color:#17CDF0;/.test(read("src/pages/public.ts")) &&
+  /* — (4) the floating pill — */
+  /<div id="tgPillBox" inert>/.test(read("src/pages/public.ts")) &&
+  /<a id="tgPill" href="\$\{TG_CHANNEL_URL\}" target="_blank" rel="noopener noreferrer">/.test(read("src/pages/public.ts")) &&
+  /<button id="tgPillClose" type="button" aria-label="بستن">/.test(read("src/pages/public.ts")) &&
+  /#tgPillBox\{position:fixed;bottom:calc\(12px \+ env\(safe-area-inset-bottom,0px\)\);inset-inline:12px;z-index:58;/.test(read("src/pages/public.ts")) &&
+  /#tgPill\{position:relative;isolation:isolate;flex:1 1 auto;min-width:0;height:64px;/.test(read("src/pages/public.ts")) &&
+  /#tgPill\.compact\{height:52px\}/.test(read("src/pages/public.ts")) &&
+  /#tgPill\.compact \.tgp-head\{max-width:0;opacity:0\}/.test(read("src/pages/public.ts")) &&
+  /#tgPill\.pulse::after\{animation:tgpGlow 1\.2s ease-in-out 2\}/.test(read("src/pages/public.ts")) &&
+  /#tgPillClose\{flex:0 0 auto;box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;/.test(read("src/pages/public.ts")) &&
+  /body\.tg-pill-on\{padding-bottom:calc\(54px \+ 12px \+ env\(safe-area-inset-bottom,0px\)\)\}/.test(read("src/pages/public.ts")) &&
+  /body\.tg-pill-on #backTop\{bottom:calc\(84px \+ env\(safe-area-inset-bottom,0px\)\)\}/.test(read("src/pages/public.ts")) &&
+  /#tgPillBox\{transform:none!important;transition:opacity \.3s ease!important\}/.test(read("src/pages/public.ts")) &&
+  /sp_pill_joined/.test(read("src/pages/public.ts")) &&
+  /sp_pill_dismissed/.test(read("src/pages/public.ts")) &&
+  /new IntersectionObserver\(function\(es\)\{\n  var e=es\[es\.length-1\];\n  apply\(!e\.isIntersecting&&e\.boundingClientRect\.top<0\)\n\},\{threshold:0\}\)/.test(read("src/pages/public.ts")) &&
+  !/tg_pill_click/.test(read("src/pages/public.ts")) &&
+  /# v13\.241-mobilecta/.test(read("CHANGELOG.md")));
 
 check("v13.236-promocalm (HISTORICAL pin — demoted at v13.237-promobar: the owner's S26 direction kept only the approved static top bar; the rotator, the signal mark and the dismissal contract are retired; the LIVE version pin is the v13.237 check above)", true);
 

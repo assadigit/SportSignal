@@ -4,6 +4,82 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.241-mobilecta — the four-change mobile round (LaLiga logo on the card tab, smaller/shifted players, banner→header icon, the floating channel pill)
+
+**S30, 2026-11-08 (the owner's four-change mobile instruction).** Every
+change is scoped to the site's ONE phone breakpoint `max-width:600px`
+(the same line `#joinSticky`/`#tgFab`/`#promoStrip`-phones already
+use); the 601-899px tablet zone and the ≥901px desktop are untouched,
+and the whole round rides the SERVED HTML (inline style + inline
+script) — no CSS/JS bundle edit, no `sw.js` CACHE bump, no new assets
+(the v13.199/v13.238 inline-only law; navigations are network-first).
+The Telegram CHANNEL link now lives in ONE shared constant
+(`TG_CHANNEL_URL` in `src/pages/public.ts`) and renders into the
+banner's channel CTA, the new mobile header icon and the new floating
+pill, so the three surfaces can never drift apart.
+
+- **(1) The LaLiga lockup moves onto the match card's raised tab**:
+  `.mc-pl` drops from its top-of-hero float (`top:6.7%`) to the HUD
+  frame's centre tab — bottom edge at 58.2% from the card bottom
+  (= 41.8% from the top), inside the tab band (38.5-42.7%H in the
+  100×177.778 viewBox), safely above the card's continuous top border
+  line and never touching it; `width:clamp(56px,16vw,84px)`, natural
+  height per league lockup. The slot stays inside `#mcardSpot` (z5 —
+  above the players z2 and the panel z3 at every width), and the cyan
+  glow filter becomes a soft DARK drop-shadow so the white mark reads
+  over the red/blue jerseys behind the tab. The hero height and the
+  scene art are untouched (no gap where the logo used to float).
+- **(2) The players shrink ~6% and shift outward**: the shared
+  `.mc-port img` rule rescales `116 -> 109cqw` with the OUTER bottom
+  corner as the origin (contain + object-position outer-bottom keeps
+  each lane's corner fixed — the outer edge stays at the viewport
+  edge, the inner edge pulls away from the centre), then each lane
+  hangs `3.5cqw` (2cqw further out, inside the owner's ≤3% band) past
+  its own PHYSICAL outer card edge (home left / away right — the
+  v13.238 no-logical-properties law). The outer hands stay visible AT
+  the screen edge (crop grows ~6px at 390px), the faces gain a clear
+  centred gap, the stacking order and the no-fade contract are
+  untouched, and `.herowrap` keeps clipping horizontal overflow.
+- **(3) The green banner retires on phones; the header gains a
+  Telegram icon**: `#promoStrip{display:none}` at ≤600px (markup +
+  ≥601px untouched; nothing in CSS or JS depends on the strip's height
+  — the hero's −100px pull is relative to the header, so the whole
+  hero island moves up WITH the header and the phone page top stays
+  seamless, measured). `#tgHead` joins the `.tb-btns` glass pill as
+  the EN button's twin (44×44 round, paper-plane in the site's cyan
+  `#17CDF0`), placed DOM-before `#lbtn` so the RTL row shows it on the
+  EN button's centre-facing side; same shared channel link, new tab +
+  `noopener noreferrer`, accessible name «عضویت در کانال تلگرام».
+- **(4) The floating Telegram pill** (`#tgPillBox`, end of body): ONE
+  link (the whole pill is the tap target) + a separate sibling ×
+  button (44×44 tap area, logical 8px gap, inline-end in the RTL row).
+  Fixed at `bottom:calc(12px + env(safe-area-inset-bottom,0px))` with
+  `inset-inline:12px`, 999px radius, 64px expanded / 52px compact; the
+  surface reuses the match-card panel fill + the mc-hint's exact
+  cyan border/glow family (zero new colors; both texts ≥4.5:1); z58 —
+  above content, below the tz panel overlay (z60). One
+  IntersectionObserver on `.herowrap` (threshold 0, no scroll
+  listener) shows the pill only when the hero is scrolled PAST and
+  hides it when it re-enters; hidden = translated below the screen +
+  opacity 0 + visibility hidden + `inert`. First show: ~350ms slide-up
+  → 2 cyan pulses (1.2s each) on a `::after` that animates ONLY
+  opacity+transform (the box-shadow never repaints) → the
+  `animationend` collapse (3.5s timeout fallback) to the compact
+  state, which stays for the rest of the page view; later re-shows
+  only slide. localStorage memory (every access in try/catch): link
+  tap → `sp_pill_joined` (30-day silence), × tap →
+  `sp_pill_dismissed` (3-day silence). Reduced motion: no slide, no
+  pulse, no collapse — a plain fade straight to compact. While
+  visible, `body.tg-pill-on` pads the page bottom (compact height +
+  12px + safe-area — the pill never covers the last content/footer)
+  and lifts `#backTop` above the pill band (they share the bottom
+  strip; without the lift the z65 round button paints over the pill's
+  inline-end — measured overlap at every phone width). The viewport
+  metas (homepage + SEO shell) now carry `viewport-fit=cover` so
+  iPhones resolve the safe-area inset. No event-logging function
+  exists on the site, so none was built (the owner's optional-hook
+  rule).
+
 # v13.240-edgegut — the SEO pages join the site's edge-gutter system (the too-near-the-edge fix)
 
 **S29, 2026-11-08 (the owner's report, verbatim: «the seo pages, live the
