@@ -2,6 +2,32 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole task.
 
+## Session goal (S40, started 2026-11-09 — the owner's rank-number quieting round)
+
+**Objective:** fix the league-standing number that OVERLAPS the club name on
+the match cards, and make it low-key: a quiet plain number in the same row
+as the club name — no circle, no border, no background, no icon — on the
+name's center-facing side for BOTH teams, logical CSS/flex order only,
+name truncates with ellipsis first, number `flex-shrink:0` never wraps,
+11–12px regular tabular Persian digits, muted blue-gray ≥4.5:1 contrast
+(measured), `title`+`aria-label` naming the table («رتبه ۳ در جدول لیگ
+قهرمانان اروپا», fallback «رتبه ۳ در جدول»), no rank → render nothing.
+Clear of the three-dot share menu. Verified at 360/768/1280px for every
+card variant; before/after screenshots into `docs/assets/`.
+
+**Milestones:** M1 recover the unpushed S39 drift (live serves
+`public-13.77.js`/`13.84.css` that git lacks) + BEFORE screenshots ·
+M2 the S40 implementation (client bundle + CSS + SSR twin + plumbing +
+checks + docs) · M3 local QA matrix (seeded KV + agent-browser, 3 widths,
+RTL/LTR, truncation, tooltip, light theme) · M4 deploy + live verify +
+AFTER screenshots + handoff docs.
+
+**Known going in:** live = v13.250-ranksup (S39: the chip became a
+physical top-right superscript on the name — THIS is the overlap the owner
+reports; that round was deployed but never pushed). S40 supersedes S39's
+presentation entirely and numbers after it (13.251, 13.78.js, 13.85.css,
+sw v124).
+
 ## Current state (after S38, v13.249-ranktip, 2026-11-09)
 
 The S38 tooltip round is **done in code, tested, deployed and

@@ -71,3 +71,33 @@ earlier decisions live in README §"Architecture decisions" and docs/adr/.)
 - **Reason:** delegation survives the poll re-renders and language flips
   for free; a single fixed-position bubble is trivially viewport-clamped
   in both directions. Decided by the agent.
+
+## 2026-11-09 — The unpushed S39 round (v13.250-ranksup): recover the static assets as retention files, supersede the rest (S40)
+
+- **Decision:** live serves `public-13.77.js` + `public-13.84.css` + sw v123
+  from an S39 session ("ranksup": the chip parked as a physical top-right
+  superscript on the `.tn` name box — `top:-8px;right:-8px`, the exact
+  overlap the owner then reported) that was **deployed but never pushed**.
+  S40 recovers the two asset files verbatim from the live server into
+  `assets/` (the retention rule: stale SW-v123-cached clients keep
+  referencing them, so every future deploy must keep serving them), numbers
+  the new round AFTER the deployed one (13.251, 13.78.js, 13.85.css, sw
+  v124), and lets the S40 markup/style completely replace S39's
+  presentation. No attempt is made to reconstruct S39's worker-side source
+  or its `_headers`/check-script state (unrecoverable — the deployed worker
+  bundle and headers are not introspectable byte-for-byte; a fake
+  "faithful" recovery would be guesswork and would break `npm test` at that
+  commit).
+- **Options:** (a) recover static assets + supersede (chosen), (b) full S39
+  reconstruction commit then S40 on top (rejected: worker source and
+  headers unrecoverable, checks would fail at that commit), (c) ignore the
+  drift and number S40 as 13.250 (rejected: version would go backwards on
+  `/api/status` and the live 13.77.js/13.84.css names would collide with
+  new content).
+- **Reason:** the retention files are the only live-only artifacts that must
+  survive future deploys; everything else S39 touched is overwritten by the
+  owner's new directive anyway. Decided by the agent; documented per
+  AGENTS.md §2.2 ("pick up where the last session stopped").
+- **Revisit:** none needed — S40 deploys over it; rollback path is
+  `git revert` of S40 (repo state 13.249 + retention files, a
+  live-verified look).
