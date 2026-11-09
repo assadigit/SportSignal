@@ -2,6 +2,21 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole task.
 
+## THIS SESSION (S42, 2026-11-10 — the pill restore round)
+
+**Goal:** the owner reports the sticky bottom channel bar is "gone" — restore it.
+**Diagnosis (verified live before any edit):** the bar (#tgPillBox, the grass
+channel pill) is live and fully functional for fresh visitors — browser-verified
+at mobile width in fa and en (markup + inline CSS + inline controller all
+served, `.show` applies on scroll, VLM screenshot confirms the visual). The one
+mechanism that hides it is the 30-day tap-silence memory `sp_pill_joined6`
+(any tap on the bar body or the blue mark silences the pill for that browser
+for 30 days). The owner tapped it since v13.247 → their own browser shows no
+bar. Identical to the S32 owner report; the fix is the established one-shot
+re-key (6 → 7). Milestones: M1 the re-key + version 13.252 + checks ·
+M2 commit/push · M3 deploy + live verify (silenced-browser simulation) ·
+M4 docs.
+
 ## Current state (after S41, 2026-11-09 — verification-only session)
 
 The S40 quiet-plain-number round (v13.251-ranknum) remains the live truth,

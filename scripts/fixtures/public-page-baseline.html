@@ -1733,13 +1733,22 @@ Gate: check-seo-lastmod #9 requires the override on BOTH templates. -->
    prefers-reduced-motion swaps the text with no animation.
    localStorage memory — every read and write inside try/catch, so a
    blocked storage never breaks anything: ANY channel tap (the bar
-   body OR the blue mark) saves sp_pill_joined6 (30-day silence).
+   body OR the blue mark) saves sp_pill_joined7 (30-day silence).
    v13.247: the key carries the 6 suffix — a ONE-SHOT memory reset for
    the cyan-glow round (the same trick as S32's 2 / S33's 3 / S34's
    4 / S35's 5): the S35 joined5 verdict is zeroed exactly once so
    every returning visitor, the owner included, sees the re-hued
    cyan-blue halo even if a previous round's tap had silenced the bar
    (fresh taps re-seed the 30-day window under the new name).
+   v13.252-pillreset (S42): the key carries the 7 suffix — the same
+   ONE-SHOT reset, this time for the owner's "the sticky bottom bar
+   is gone" report: the bar was live and healthy for fresh visitors
+   (verified end-to-end in a real browser before touching anything);
+   what hid it on the owner's own phone was the joined6 verdict from
+   a channel tap after v13.247 — the 30-day silence doing its job.
+   The re-key zeroes that verdict exactly once so every visitor who
+   tapped since v13.247 (the owner included) sees the bar again;
+   fresh taps re-seed the 30-day window under the new name.
    prefers-reduced-motion: no slide, no pulse — a plain fade. While
    visible, body.tg-pill-on carries the page's bottom padding + the
    #backTop lift (the CSS block above). */
@@ -1756,7 +1765,7 @@ try{rm=window.matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){}
 var DAY=86400000;
 function lsGet(k){try{return window.localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{window.localStorage.setItem(k,v)}catch(e){}}
-var now=Date.now(),joinedAt=Number(lsGet("sp_pill_joined6"))||0;
+var now=Date.now(),joinedAt=Number(lsGet("sp_pill_joined7"))||0;
 if(joinedAt&&now-joinedAt<30*DAY)return;
 var shown=false,pulsed=false,tDelay=null,tFall=null;
 function endPulse(){
@@ -1838,7 +1847,7 @@ function tickSub(){
   if(!rm){sub.classList.remove("tgp-in");void sub.offsetWidth;sub.classList.add("tgp-in")}
 }
 if(sub){setInterval(tickSub,3200)}
-function joined(){lsSet("sp_pill_joined6",String(Date.now()));apply(false)}
+function joined(){lsSet("sp_pill_joined7",String(Date.now()));apply(false)}
 link.addEventListener("click",joined);
 goBtn.addEventListener("click",joined);
 })();</script>

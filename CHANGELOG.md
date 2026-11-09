@@ -4,6 +4,39 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.252-pillreset — S42: the sticky channel bar restored for everyone who had tapped it
+
+**S42, 2026-11-10 (the owner's report: "Remember we had sticky bottom bar
+for promoting canal and bot? it's gone, restore it.").** One deliberate
+change, one line of behavior: the pill's one-shot memory re-key
+(`sp_pill_joined6 -> sp_pill_joined7`) — the same trick S32/S33/S34/S35/S36
+used for the same class of report.
+
+- **(1) THE DIAGNOSIS — the bar was never gone for new visitors.** Verified
+  live, end-to-end, in a real browser BEFORE touching anything: the markup,
+  the inline CSS and the inline controller all serve on every page load;
+  the `.show` reveal fires on scroll; a fresh visitor sees the grass
+  channel bar at the bottom in both fa and en. What hid it on the owner's
+  own phone was the pill's 30-day tap-silence memory: ANY tap on the bar
+  body or the blue mark (checking their own channel!) saves
+  `sp_pill_joined6` and silences the bar for that browser for 30 days —
+  a tap after v13.247 put the owner's browser inside that window.
+  Identical to the S32 "invisible pill" report, same root cause.
+- **(2) THE FIX — the re-key.** The controller now reads/writes
+  `sp_pill_joined7`; the joined6 verdict is zeroed exactly once (the old
+  key is simply never read again), so every visitor who tapped since
+  v13.247 — the owner included — sees the sticky channel bar again
+  immediately; fresh taps re-seed the 30-day window under the new name.
+  Nothing else changes: no bundle edit, no CSS rename, no SW bump, the
+  grass surface / cyan glow / 58px blue mark / five-line rotator / 20%
+  scroll gate / no-dismiss law all ride byte-identical.
+- **(3) THE RELEASE PLUMBING:** version 13.252 (package.json / src/config.ts
+  / lockfile in sync), the v13.251 live check demoted to HISTORICAL with the
+  survivors re-pinned in the new v13.252 live check (incl. the
+  joined7-present + every-older-key-gone law), the page baseline re-frozen
+  via `--update` (an intended output change: the served HTML's controller
+  now carries the 7-suffix key). `npm test` exit 0 (2948 checks).
+
 # v13.251-ranknum (re-verified) — S41: the independent live re-verification round
 
 **S41, 2026-11-09 (the owner re-sent the S40 directive; this session verified
