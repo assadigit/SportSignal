@@ -28,6 +28,10 @@ globalThis.COMP_EN = compEn;
 const translateCompetition = () => "x";
 const LEAGUE_LOGOS = {};
 globalThis.pubMatch = (m) => m;
+// v13.248-rankchip: the ucl card's matches now stamp team ranks through
+// attachTeamRanks (not under test here — identity stub, same as pubMatch).
+globalThis.attachTeamRanks = (p) => p;
+globalThis.rankSets = {};
 // bundle format: extracted code resolves (0, import_teams.normalizeTeamName)
 globalThis.import_teams = { normalizeTeamName: (n) => n };
 // esbuild __name wrappers (identity in the sandbox)

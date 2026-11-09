@@ -21,11 +21,14 @@ earlier decisions live in README §"Architecture decisions" and docs/adr/.)
 
 ## 2026-11-09 — Rank resolution reuses appendTableOrPhase's applicability law (S37)
 
-- **Decision:** a badge shows only when `!isDomesticCup(code) &&
-  !faStageName(stage) && !enStageName(stage)` and the code has a LIVE (non
-  `started:false`) table in `stMap` — the same gate the bot's FT table line
-  (`appendTableOrPhase`) uses. CL league-phase positions show; CL KO-stage
-  rows and all domestic cups hide.
+- **Decision:** a badge shows only when the code is not a domestic cup, the
+  stage is NOT in the explicit KO-only set (PLAYOFF_ROUND/ROUND_OF_16/32/
+  QUARTER_FINAL(S)/SEMI_FINAL(S)/FINAL/THIRD_PLACE — STAGE_EN's vocabulary),
+  and the code has a LIVE (non `started:false`) table in `stMap` — the bot's
+  `appendTableOrPhase` law, corrected to an explicit set: `faStageName`'s
+  STAGE_FA also carries LEAGUE_STAGE/LEAGUE_PHASE display labels, and league-
+  phase fixtures MUST rank (spec §4). CL league-phase positions show; CL
+  KO-stage rows and all domestic cups hide.
 - **Options:** (a) reuse the bot's stage gate (chosen), (b) also parse
   `roundRaw` for sportscore KO rows, (c) show CL league-phase rank on KO rows
   as "final league-phase standing".

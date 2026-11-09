@@ -1,6 +1,6 @@
 // SportSignal — <head> builder (P-01..P-11) + the HTML shell shared by every
 // NEW public page (match/team/competition/hubs/trust). The shell reuses the
-// site's versioned stylesheet (currently /public-13.81.css) so the design
+// site's versioned stylesheet (currently /public-13.82.css) so the design
 // (cards, rows, tables, fonts, themes) is identical to the homepage, plus a
 // small inline block for page-specific components (breadcrumbs, facts,
 // prose). No home-page JS is loaded — these pages are complete server HTML.
@@ -97,8 +97,8 @@ export function pageShell(opts: {
 ${themeInit}
 <!-- v13.239-seofont: the Persian design-system fonts, EXACTLY like the
      homepage — the SEO shell used to preload the retired v13.6 Vazirmatn
-     faces and never declared @font-face at all, so public-13.81.css's
-     Peyda/Morabba assignments fell through to 'Segoe UI'/Tahoma (the
+     faces and never declared @font-face at all, so the shared
+     stylesheet's Peyda/Morabba assignments fell through to 'Segoe UI'/Tahoma (the
      owner-spotted default-font bug on every per-match SEO page). The fix
      reuses the homepage's own FONT_FACES_STYLE byte-for-byte (Morabba
      variable 250–900 + Peyda 400–900 + Chakra Petch + Poppins Digits,
@@ -108,7 +108,7 @@ ${themeInit}
 <link rel="preload" href="/fonts/Peyda-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/MorabbaVF.woff2" as="font" type="font/woff2" crossorigin>
 ${FONT_FACES_STYLE}
-<link rel="stylesheet" href="/public-13.81.css">
+<link rel="stylesheet" href="/public-13.82.css">
 <style>
 /* Page-specific components for server-rendered SEO pages (breadcrumbs,
    answer-first block, facts table, prose). Reuses the site's CSS vars. */
@@ -299,7 +299,7 @@ ${opts.head}
      edge-to-edge (the owner's screenshot of /about: H1, meta line and cards
      at ~0px from the screen edge). The homepage has never had this problem
      because its whole below-hero life lives inside ONE .page-col (public-
-     13.81.css: max-width 760px centered, padding-inline 20px; 12px ≤600px;
+     the stylesheet (v13.81 era): max-width 760px centered, padding-inline 20px; 12px ≤600px;
      max-width 1400px + 24px ≥1080px). The shell now reuses that exact
      component — the sync line moves INSIDE main>page-col mirroring the
      homepage's own placement, so the skip-link target still leads to the

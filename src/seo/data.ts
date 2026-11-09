@@ -6,7 +6,7 @@
 import type { Env } from "../types";
 import { CONFIG } from "../config";
 import { getCachedMatches } from "../match-pool";
-import { applyLiveOverlay, pubMatch } from "../public-matches";
+import { applyLiveOverlay, pubMatch, teamRankSets, attachTeamRanks } from "../public-matches";
 import { COMP_EN } from "../tables";
 import { ensureFaAiCache, ensureFaVenueCache, translateVenue, translateCompetition } from "../translate";
 import { normalizeTeamName } from "../teams";
@@ -76,7 +76,19 @@ export async function getSeoCtx(env: Env): Promise<SeoCtx> {
   // lists/JSON-LD) reads this pool — hidden-league rows never reach a page,
   // a list or a sitemap URL (their match pages 404).
   pool = pool.filter((m) => !isSiteHiddenMatch(m));
-  const shaped = pool.map((m) => pubMatch(m));
+  // v13.248-rankchip: SSR badge parity — the SAME cache-only standings the
+  // payload build resolves ranks from (standings_cache_<CODE>, reads only,
+  // never a provider sweep), so the no-JS HTML mirrors the client cards.
+  const stMap: any = {};
+  await Promise.all(["PL", "PD", "SA", "BL1", "FL1", "CL", "PGL"].map(async (c) => {
+    try {
+      stMap[c] = await env.STATE.get(CONFIG.KV_STANDINGS_CACHE + c, "json").catch(() => null) || null;
+    } catch (e) {
+      stMap[c] = null;
+    }
+  }));
+  const rankSets = teamRankSets(stMap);
+  const shaped = pool.map((m) => attachTeamRanks(pubMatch(m), m, rankSets));
   const fetchedAt = poolStamp || payloadRes.data.fetchedAt || null;
   return { env, payload: payloadRes.data, pool, shaped, fetchedAt, degraded: payloadRes.degraded && !pool.length };
 }

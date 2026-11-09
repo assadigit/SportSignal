@@ -5,6 +5,17 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v121 (v13.248-rankchip: bumped from v120 — the S37
+//              team rank-chip round edits client-referenced assets:
+//              public-13.74.js -> 13.75.js (render()/spotItemNode() build the
+//              team blocks through teamRow(); rankBadge() renders the
+//              number-only circular competition-rank chip beside each team's
+//              name from the payload's homeTeam.rank/awayTeam.rank) and
+//              public-13.81.css -> 13.82.css (the .rankchip circle + the
+//              .team.team-r identity-row rules). Cache-first assets cannot
+//              refresh without a rename or a bump, the v13.39 rule; stale
+//              HTML still references the retired names, which stay served per
+//              the retention rule.)
 // Cache name:  sportsignal-v109 (v13.206-scenediet: bumped from v108 — the
 //              Phase 3 close-out re-encode: /ui/mc/scene-4.webp -> scene-4-2.webp
 //              (the v13.182 inpainted hole-free scene was saved effectively
@@ -972,7 +983,7 @@
 //              standalone header Telegram icon with the REAL circled logo).
 //              Cache-first assets cannot refresh without a rename or a bump,
 //              the v13.39 rule; 13.73.js stays served + pinned one SEO TTL.
-const CACHE = "sportsignal-v120";
+const CACHE = "sportsignal-v121";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

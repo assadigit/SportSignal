@@ -4,6 +4,77 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.248-rankchip — the team competition-rank chip on the match cards
+
+**S37, 2026-11-09 (the uploaded design pack:
+`docs/assets/sportsignal-team-rank-design-pack.zip`, spec filed at
+`docs/specs/team-rank-indicator.md`, audit at
+`docs/audits/2026-11-09-team-rank-indicator.md`).** A tiny circular badge
+beside each team's NAME on the match cards — the team's position in THE
+FIXTURE'S OWN competition (a PL fixture shows the PL position, a CL
+league-phase fixture the league-phase position). Supporting metadata only:
+quiet, number-only, restrained slate/icy-blue; the pre-badge card renders
+byte-identically wherever no rank resolves.
+
+- **(1) THE SERVER RESOLUTION** — `public-matches.ts` gains three pure
+  functions (`teamRankSets` / `rankApplicable` / `attachTeamRanks`): the
+  payload build resolves both teams' positions from the stMap it ALREADY
+  reads cache-only (`standings_cache_<CODE>` — zero new subrequests, zero
+  new KV writes; the cron's 6h stand_refresh cadence stays the refresh
+  authority) and stamps `homeTeam.rank` / `awayTeam.rank` on the withTop
+  list rows + the UCL spot rows (omitted when unresolvable — a missing rank
+  is null, never 0/-/?). The applicability law: the fixture's own
+  competition only (never a fallback), domestic cups never rank,
+  knockout-stage rows never rank (the explicit RANK_KO_STAGES set — STAGE_EN's
+  vocabulary, deliberately not faStageName whose STAGE_FA carries
+  LEAGUE_STAGE/LEAGUE_PHASE display labels: league-phase fixtures MUST rank),
+  pre-season `started:false` tables never feed badges (FD roster-alphabetical,
+  the BL1 zeroed fallback), stale snapshot tables never feed badges (the
+  top3/top5 LIVE-tables-only precedent), and each side resolves
+  independently (a missing opponent rank never suppresses the valid one).
+  Name resolution rides the established `normalizeTeamName` bridge
+  (the `standingsLine` pattern), with a per-isolate memo cache.
+- **(2) THE SEO SSR MIRROR** — `seo/data.ts` reads the same seven
+  `standings_cache_*` KV keys (reads only — the SEO layer's KV-only doctrine
+  holds) and stamps the shaped rows through the same `attachTeamRanks`;
+  `seo/markup.ts`'s `sideHome`/`sideAway` render the badge for both the
+  list-row (`mrowHtml`) and spotitem (`spotItemHtml`) twins — the no-JS
+  first paint mirrors the client cards class-for-class.
+- **(3) THE CLIENT** — `public-13.74.js -> 13.75.js` (rename-on-edit,
+  ADR-006): `render()` and `spotItemNode()` build their team blocks through
+  the new `teamRow()` + `rankBadge()` — a number-only `.rankchip` circle
+  beside the name, on the name's OUTER flank (home `[badge, name]` / away
+  `[name, badge]` in LOGICAL DOM order + logical justify packing — the badge
+  rides between the name and the crest, away from the central kickoff
+  column, in BOTH RTL and LTR); digits through `fmtNum` (Persian numerals in
+  FA); the localized `title`/`aria-label` carries the context the bare
+  number cannot («رتبه ۳ در لیگ برتر انگلیس» / "3rd in Premier League");
+  no rank -> the plain `.team` markup, byte-identical to the pre-badge card.
+- **(4) THE STYLESHEET** — `public-13.81.css -> 13.82.css`: `.rankchip`
+  (22px true circle, `--rank-chip-bg/line/ink` tokens — a tint of the
+  countdown pill's cool-blue family, 1px low-contrast border, tabular
+  digits, the app's own fonts) + `.team.team-r` (the name row; 20px +
+  centered group under the crest under 600px per the spec's narrow-screen
+  step-down; the live card's compact 28px-logo rows get a proportionate
+  18px). No other rule touched — non-badged rows render identically.
+- **(5) THE PLUMBING** — reference bumps (`src/pages/public.ts` +
+  `src/seo/page-shell.ts`), `_headers` pins for both new assets (the
+  100-rule cap sweep #18 evicts the expired `/public-13.48.css` +
+  `/public-13.49.css` pins — files stay on disk, the sweep #9/#17
+  precedent), the SW cache bump `sportsignal-v120 -> v121`,
+  `heroes:sync` re-run (the coverage `bundle` field follows the live read;
+  HERO_ART byte-identical in the copy), version bump
+  `13.248.0.0`/`13.248-rankchip` (+ lockfile), and a NEW offline gate
+  `scripts/check-team-ranks.js` wired into `npm test` (27 behavioral +
+  wiring checks: resolution, folding, phase gates, one-sided ranks,
+  pre-season/stale exclusion, SSR mirror, client bundle, stylesheet).
+- **The coverage limitation, documented** — EL/ECL league-phase tables are
+  not in the cron refresh set nor in the public payload's stMap; adding
+  them would mean new provider fetches (against the task's reuse-only
+  constraint), so EL/ECL fixtures render without badges. INTL cups, the
+  Hazfi Cup and knockout rounds likewise carry no badge (no official table
+  in the pool). Documented in the audit, not silently invented.
+
 # v13.247-cyanglow — the sticky bar's surrounding glow re-hues green → cyan-blue
 
 **S36, 2026-11-08 (the owner's glow round, verbatim: "Make the

@@ -42,10 +42,13 @@ The public page renders match cards CLIENT-side from `/api/public-matches`:
 ## The repository's own "when does a table apply" law
 
 `appendTableOrPhase` (composers.ts L402–412): a table/rank is applicable unless
-`isDomesticCup(code) || faStageName(stage) || enStageName(stage)` (knockout
-stages: PLAYOFF_ROUND, ROUND_OF_16, QUARTER_FINALS, SEMI_FINALS, FINAL,
-THIRD_PLACE). League-phase/regular-season matches get the table. The web
-badges will reuse this exact gate — one rule, bot + web.
+the fixture is a domestic cup or a knockout-stage row. The web badges reuse
+the SAME law but with an explicit KO-only stage set (STAGE_EN's vocabulary:
+PLAYOFF_ROUND, ROUND_OF_16/32, QUARTER_FINAL(S), SEMI_FINAL(S), FINAL,
+THIRD_PLACE) — deliberately NOT `faStageName`, whose STAGE_FA dictionary also
+carries LEAGUE_STAGE/LEAGUE_PHASE/GROUP_STAGE as *display* labels (the v13.108
+fasync bot-card labels); those rows are exactly the league-phase fixtures
+whose official table position MUST badge (spec §4).
 
 ## Gaps to close
 

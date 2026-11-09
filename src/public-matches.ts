@@ -9,7 +9,7 @@ import type { Env } from "./types";
 import { fetchJSON, getNowTehran } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams";
 import { homeGround, curatedVenueFa } from "./grounds";
-import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, ensureFaVenueCache } from "./translate";
+import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, ensureFaVenueCache, isDomesticCup } from "./translate";
 import { normAlias } from "./teams";
 import { isLiveStatus } from "./match-model";
 import { computeFixtureSignal, decideActivity, reconcileStaleLive } from "./scheduler";
@@ -166,6 +166,78 @@ export function pubMatch(m) {
     venueFa,
     score: (isLiveStatus(m.status) || m.status === "FINISHED") && m.score && m.score.fullTime ? m.score.fullTime : null
   };
+}
+// v13.248-rankchip (S37, docs/specs/team-rank-indicator.md): the team
+// competition-rank resolver for the public match cards. The badge's rank is
+// the team's position in THE FIXTURE'S OWN competition table — resolved
+// server-side from the stMap fetchPublicMatches already reads (cache-only,
+// zero new subrequests) and stamped on the shaped row's homeTeam/awayTeam as
+// `rank` (omitted when unresolvable — a missing rank is null, never 0/-/?).
+// Applicability = the bot's own appendTableOrPhase law (composers.ts): a
+// table applies unless the fixture is a domestic cup or a knockout-stage row
+// (faStageName/enStageName cover PLAYOFF_ROUND..FINAL/THIRD_PLACE —
+// LEAGUE_PHASE/REGULAR_SEASON/GROUP_STAGE return null and stay eligible).
+// Pre-season tables (started:false — FD roster-alphabetical, the BL1 zeroed
+// fallback, PGL's pts>0 heuristic) and stale snapshot tables never feed
+// badges (the same LIVE-tables-only precedent the top3/top5 clash flags use).
+const RANK_NORM_CACHE = new Map();
+function rankNorm(name) {
+  let v = RANK_NORM_CACHE.get(name);
+  if (v === undefined) {
+    v = normalizeTeamName(name);
+    RANK_NORM_CACHE.set(name, v);
+  }
+  return v;
+}
+// Build code -> Map<normalizedName, pos> from the live (non-pre-season) tables.
+export function teamRankSets(stMap) {
+  const out = {};
+  if (!stMap) return out;
+  for (const code of Object.keys(stMap)) {
+    const st = stMap[code];
+    if (!st || st.started === false || !Array.isArray(st.teams) || !st.teams.length) continue;
+    const map = new Map();
+    for (const t of st.teams) {
+      // providers are not uniform (FD numbers, TSP parseInt'd, sportscore
+      // occasionally strings) — coerce, then validate as a positive integer.
+      const pos = typeof (t && t.pos) === "number" ? t.pos : parseInt(t && t.pos, 10);
+      if (t && t.name && Number.isInteger(pos) && pos > 0) {
+        const k = rankNorm(t.name);
+        if (!map.has(k)) map.set(k, pos);
+      }
+    }
+    if (map.size) out[code] = map;
+  }
+  return out;
+}
+// The fixture-phase gate — true only where an official table position is
+// meaningful for THIS match. The KO-only stage vocabulary (STAGE_EN's set —
+// deliberately NOT faStageName: STAGE_FA also carries LEAGUE_STAGE/
+// LEAGUE_PHASE/GROUP_STAGE as *display* labels, and those rows are exactly
+// the league-phase/group fixtures whose official table position MUST badge
+// per spec §4; the bot's appendTableOrPhase faStageName gate treats them as
+// phase rows, the badges must not).
+const RANK_KO_STAGES = new Set(["PLAYOFF_ROUND", "ROUND_OF_16", "ROUND_OF_32", "QUARTER_FINALS", "QUARTER_FINAL", "SEMI_FINALS", "SEMI_FINAL", "FINAL", "THIRD_PLACE", "FINAL_THIRD"]);
+export function rankApplicable(m) {
+  if (!m || !m.competition || !m.competition.code) return false;
+  if (isDomesticCup(m.competition.code)) return false;
+  const stage = String((m && m.stage) || "").toUpperCase();
+  if (stage && RANK_KO_STAGES.has(stage)) return false;
+  return true;
+}
+// Stamp homeTeam.rank / awayTeam.rank on a pubMatch-shaped row (p) from the
+// raw pool row (m) — each side resolves independently; a missing side never
+// suppresses the other. Reused by the SEO shaper (seo/data.ts) so the no-JS
+// HTML mirrors the client cards from the same KV caches.
+export function attachTeamRanks(p, m, rankSets) {
+  if (!p || !m || !rankSets || !rankApplicable(m)) return p;
+  const set = rankSets[m.competition.code];
+  if (!set) return p;
+  const hr = m.homeTeam && m.homeTeam.name != null ? set.get(rankNorm(m.homeTeam.name)) : null;
+  const ar = m.awayTeam && m.awayTeam.name != null ? set.get(rankNorm(m.awayTeam.name)) : null;
+  if (Number.isInteger(hr) && hr > 0) p.homeTeam.rank = hr;
+  if (Number.isInteger(ar) && ar > 0) p.awayTeam.rank = ar;
+  return p;
 }
 export async function enrichLiveMatches(env: Env, matches) {
   const live = matches.filter((m) => isLiveStatus(m.status) && /^\d+$/.test(String(m.id)));
@@ -565,12 +637,15 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     if (!selHome && !selAway) return false;
     return selHome && set.has(norm(m.awayTeam.name)) || selAway && set.has(norm(m.homeTeam.name));
   };
+  // v13.248-rankchip: the list rows (upcoming/finished/topSpot/week lists)
+  // resolve both teams' fixture-competition ranks from the same stMap read.
+  const rankSets = teamRankSets(stMap);
   const withTop = (m) => {
     const p: any = pubMatch(m);
     p.top = isTopTable(m);
     p.clash = isMasterClash(m);
     p.sel = hasSelectedTeam(m);
-    return p;
+    return attachTeamRanks(p, m, rankSets);
   };
   // v13.118-fixsched: the fixture-aware POLL HINT (section 7) — the payload
   // tells the client how fast to poll: live/pre-match keep the legacy 60s
@@ -764,7 +839,7 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     // tables' enrichment loop got; a UCL side missing from the clubs
     // catalog still shows its logo.
     teams: stCL ? stCL.teams.map((t) => ({ pos: t.pos, name: t.name, faName: translateTeam(t.name), crest: t.crest || crestOf(t.name), points: t.points, played: t.played, won: t.won, draw: t.draw, lost: t.lost, gf: t.gf, ga: t.ga, gd: t.gd != null ? t.gd : t.gf != null && t.ga != null ? t.gf - t.ga : null })) : snapUcl && Array.isArray(snapUcl.teams) && snapUcl.teams.length ? snapUcl.teams : null,
-    matches: clBox.map(pubMatch)
+    matches: clBox.map((m) => attachTeamRanks(pubMatch(m), m, rankSets))
   };
   const tNow = getNowTehran(env);
   const daysSinceSat = (tNow.getUTCDay() + 1) % 7;

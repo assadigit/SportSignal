@@ -73,11 +73,31 @@ function kickHtml(iso: string, extra?: string): string {
   return '<div class="kick"><span class="countdown">🕒 <time datetime="' + esc(iso) + '">' + faTime(iso) + "</time></span>" + (extra || "") + "</div>";
 }
 
-function sideHome(t: any, teamName: string): string {
-  return '<div class="side">' + logoHtml(t) + '<div class="team">' + nameHtml(teamName) + "</div></div>";
+// v13.248-rankchip: the SSR twin of the client's rankBadge() — a number-only
+// circle beside the team NAME (outer flank: [badge, name] home / [name, badge]
+// away, logical order — mirrors teamRow() in public-13.75.js). The localized
+// hover/aria label carries the context the bare number cannot ("رتبه ۳ در …").
+// No rank → the plain .team markup, byte-identical to the pre-badge card.
+function rankChipHtml(t: any, m: any): string {
+  const r = t && t.rank;
+  const pos = typeof r === "number" ? r : parseInt(r, 10);
+  if (!(Number.isInteger(pos) && pos > 0)) return "";
+  const label = "رتبه " + toFaDigits(String(pos)) + " در " + compNameFa(m);
+  return '<span class="rankchip" title="' + esc(label) + '" aria-label="' + esc(label) + '">' + toFaDigits(String(pos)) + "</span>";
 }
-function sideAway(t: any, teamName: string): string {
-  return '<div class="side away"><div class="team">' + nameHtml(teamName) + "</div>" + logoHtml(t) + "</div>";
+function sideHome(t: any, teamName: string, m?: any): string {
+  const rc = rankChipHtml(t, m);
+  const team = rc
+    ? '<div class="team team-r">' + rc + '<span class="tn">' + nameHtml(teamName) + "</span></div>"
+    : '<div class="team">' + nameHtml(teamName) + "</div>";
+  return '<div class="side">' + logoHtml(t) + team + "</div>";
+}
+function sideAway(t: any, teamName: string, m?: any): string {
+  const rc = rankChipHtml(t, m);
+  const team = rc
+    ? '<div class="team team-r"><span class="tn">' + nameHtml(teamName) + "</span>" + rc + "</div>"
+    : '<div class="team">' + nameHtml(teamName) + "</div>";
+  return '<div class="side away">' + team + logoHtml(t) + "</div>";
 }
 
 function displayName(t: any): string {
@@ -152,10 +172,10 @@ export function mrowHtml(sm: SeoMatch, idx: number, finished: boolean): string {
   const live = !finished && isLiveSt(m.status);
   const scored = (finished || live) && m.score && m.score.home !== null;
   let row = '<a class="match' + (m.derby ? " derby" : "") + '" style="--i:' + idx + '" href="' + esc(matchHref(m)) + '">';
-  row += sideHome(m.homeTeam, displayName(m.homeTeam));
+  row += sideHome(m.homeTeam, displayName(m.homeTeam), m);
   if (scored) row += scoreHtml(m.score);
   else row += kickHtml(m.utcDate);
-  row += sideAway(m.awayTeam, displayName(m.awayTeam));
+  row += sideAway(m.awayTeam, displayName(m.awayTeam), m);
   row += "</a>";
   // v14.0.1-uifix: isRow → the client's list-row info (with the bare date
   // text node + roundFa chip allowance) — matches render() exactly.
@@ -390,13 +410,13 @@ export function spotItemHtml(sm: SeoMatch, idx: number, opts?: { finished?: bool
   const kickdate = m.utcDate && !live && !done
     ? '<div class="kickdate"><time datetime="' + esc(m.utcDate) + '">' + esc(faDateD2(m.utcDate)) + "</time></div>"
     : "";
-  row += sideHome(m.homeTeam, displayName(m.homeTeam));
+  row += sideHome(m.homeTeam, displayName(m.homeTeam), m);
   if ((live || done) && m.score && m.score.home !== null) {
     row += '<div class="kick">' + scoreHtml(m.score) + kickdate + "</div>";
   } else {
     row += kickHtml(m.utcDate, kickdate);
   }
-  row += sideAway(m.awayTeam, displayName(m.awayTeam));
+  row += sideAway(m.awayTeam, displayName(m.awayTeam), m);
   row += "</a>";
   // Spotitem info: comp (unless noComp) + derby + top + livechip (unless
   // isLiveCard) + venue — NO roundchip, NO date text (client spotItemNode).
