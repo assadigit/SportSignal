@@ -524,6 +524,22 @@
 # one-SEO-TTL retention, pinned by no offline gate; the FILE stays on disk,
 # an ancient cached HTML re-fetching it still resolves — it just rides the
 # default cache headers, the sweep #9/#17 precedent).
+# v13.249-ranktip (S38, 2026-11-09): public-13.75.js -> 13.76.js — the
+# tap+hover tooltip for the team rank chip (spec §11): rankBadge() stamps
+# the localized label into data-tip; ONE delegated listener set (capture-
+# phase click, the sharewrap-closer precedent) + ONE shared #rankTip bubble
+# drive hover (200ms rest), tap (instant toggle; outside tap/Escape/scroll
+# and every rerenderAll() close it); the native title strips on first
+# interaction; the SSR twins (seo/markup.ts) carry data-tip. 13.75.js stays
+# served + pinned one SEO TTL below (stale-HTML retention). THE 100-RULE
+# CAP SWEEP #19: the +1 pin needed one eviction — the expired
+# /public-13.38.js pin (the v13.135-zoomlight bundle, ~114 releases past
+# its one-SEO-TTL retention; the FILE stays on disk, an ancient cached
+# HTML re-fetching it still resolves — it just rides the default cache
+# headers, the sweep #18 precedent).
+/public-13.76.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.75.js
   Cache-Control: public, max-age=31536000, immutable
 
@@ -687,6 +703,17 @@
 # + pinned one SEO TTL below. CAP SWEEP #18's second eviction: the expired
 # /public-13.49.css pin (v13.123-era, same retention class; the FILE stays
 # on disk).
+# v13.249-ranktip (S38): public-13.82.css -> 13.83.css — the .ranktip
+# bubble (the shared fixed-position tooltip: elevated-slate surface in the
+# badge's own ink family, the tracking arrow via --ranktip-ax, the
+# light-theme pair, prefers-reduced-motion honored; .on/.up/.down states).
+# 13.82.css stays served + pinned one SEO TTL below. CAP SWEEP #19's second
+# eviction: the expired /public-13.50.css pin (the v13.168-mcv2-era
+# stylesheet, ~81 releases past its one-SEO-TTL retention, same retention
+# class; the FILE stays on disk).
+/public-13.83.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.82.css
   Cache-Control: public, max-age=31536000, immutable
 
@@ -899,8 +926,11 @@
 /public-13.52.css
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.38.js
-  Cache-Control: public, max-age=31536000, immutable
+# v13.249-ranktip cap sweep #19: the /public-13.38.js pin EVICTED (the
+# oldest expired JS pin, the v13.135-zoomlight bundle, ~114 releases past
+# its one-SEO-TTL retention; the FILE stays on disk per the retention rule
+# — check-scheduler still reads it from disk — so an ancient cached HTML
+# re-fetching it still resolves, it just rides the default cache headers).
 
 # v13.151-edits: the league logo pack — /leagues/ (400×400
 # white-transparent stacked lockups from the owner's
@@ -967,8 +997,12 @@
 # #E2E8F0 (the page ink token flips light→dark in light theme, which
 # would hide it again on the always-dark hero island); 12px to match
 # the owner's at-least-12px floor for this area.
-/public-13.50.css
-  Cache-Control: public, max-age=31536000, immutable
+# v13.249-ranktip cap sweep #19 (second eviction): the /public-13.50.css
+# pin EVICTED (the oldest expired CSS pin still standing after sweep #18,
+# the v13.168-mcv2-era stylesheet, ~81 releases past its one-SEO-TTL
+# retention; the FILE stays on disk per the retention rule, so an ancient
+# cached HTML re-fetching it still resolves — it just rides the default
+# cache headers).
 
 # v13.148-head12 (retired under v13.149-syncfix): the pair (13.49.css + 13.36.js + core-13.13.js
 # — CSS-only release, the JS carries over) — immutable under the

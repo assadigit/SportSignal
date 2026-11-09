@@ -75,15 +75,18 @@ function kickHtml(iso: string, extra?: string): string {
 
 // v13.248-rankchip: the SSR twin of the client's rankBadge() — a number-only
 // circle beside the team NAME (outer flank: [badge, name] home / [name, badge]
-// away, logical order — mirrors teamRow() in public-13.75.js). The localized
+// away, logical order — mirrors teamRow() in public-13.76.js). The localized
 // hover/aria label carries the context the bare number cannot ("رتبه ۳ در …").
 // No rank → the plain .team markup, byte-identical to the pre-badge card.
+// v13.249-ranktip (S38): data-tip carries the same label for the client's
+// delegated tap+hover tooltip (#rankTip — spec §11); the native title stays
+// for the no-JS view and is stripped on the first client interaction.
 function rankChipHtml(t: any, m: any): string {
   const r = t && t.rank;
   const pos = typeof r === "number" ? r : parseInt(r, 10);
   if (!(Number.isInteger(pos) && pos > 0)) return "";
   const label = "رتبه " + toFaDigits(String(pos)) + " در " + compNameFa(m);
-  return '<span class="rankchip" title="' + esc(label) + '" aria-label="' + esc(label) + '">' + toFaDigits(String(pos)) + "</span>";
+  return '<span class="rankchip" title="' + esc(label) + '" aria-label="' + esc(label) + '" data-tip="' + esc(label) + '">' + toFaDigits(String(pos)) + "</span>";
 }
 function sideHome(t: any, teamName: string, m?: any): string {
   const rc = rankChipHtml(t, m);

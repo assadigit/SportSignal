@@ -4,6 +4,50 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.249-ranktip — the tap + hover tooltip for the rank chip
+
+**S38, 2026-11-09 (the owner's directive: "add a TAP, mouse hover tool tip
+that shows what it means for example: \u0631\u062A\u0628\u0647 \u062F\u0631 \u067E\u0631\u06CC\u0645\u06CC\u0631\u0644\u06CC\u06AF / \u0631\u062A\u0628\u0647 \u062F\u0631 \u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646"; spec \u00a711 of
+`docs/specs/team-rank-indicator.md`).** The badge now explains itself on
+demand: a small dark tooltip bubble carries the SAME localized label the
+badge already has as its accessible name \u2014 \u00ab\u0631\u062A\u0628\u0647 3 \u062F\u0631 \u0644\u06CC\u06AF \u0628\u0631\u062A\u0631 \u0627\u0646\u06AF\u0644\u06CC\u0633\u00bb / "3rd in Premier League" \u2014 the
+number plus the fixture's own competition, so a tap or a hover answers
+"what does this number mean?".
+
+- **(1) THE ENGINE \u2014 `public-13.75.js -> 13.76.js`:** `rankBadge()` also
+  stamps the label into `data-tip`; ONE delegated listener set on
+  `document` (the sharewrap-closer precedent) drives it for the SSR badges
+  AND every client re-render with zero per-chip wiring: **hover**
+  (hover-capable devices) shows after a 200ms rest and hides on leave;
+  **tap** (`(hover: none)` devices) toggles instantly, with outside tap,
+  `Escape`, any scroll/resize and every `rerenderAll()` closing it. The
+  tap `preventDefault()`s the card-link navigation (the tooltip IS the
+  tap's purpose; the card body navigates as before).
+- **(2) THE BUBBLE:** ONE shared `#rankTip` element in `document.body`
+  (`role="tooltip"`, `aria-describedby` linked while visible): centered
+  above the chip, viewport-clamped, flipped below when there is no room,
+  the arrow tracking the chip's center (`--ranktip-ax`). Pure geometry \u2014
+  RTL and LTR share the one rule. The native `title` strips on first
+  interaction (no double tooltip; the no-JS SSR view keeps it).
+- **(3) THE STYLESHEET \u2014 `public-13.82.css -> 13.83.css`:** `.ranktip` \u2014
+  elevated-slate bubble in the badge's own ink family, borderless so the
+  arrow is seamless, `z-index:70` over the sticky bar,
+  `pointer-events:none`, a 140ms fade+rise (`prefers-reduced-motion`
+  honored), `.up`/`.down` arrow states, and the light-theme pair.
+- **(4) THE SSR TWIN:** `seo/markup.ts` `rankChipHtml` carries `data-tip`
+  (the same label) so the delegated engine covers the no-JS-first-paint
+  badges identically.
+- **(5) THE PLUMBING:** reference bumps (`public.ts` + `seo/page-shell.ts`),
+  `_headers` pins for 13.76.js + 13.83.css \u2014 **cap sweep #19** evicts the
+  expired `/public-13.38.js` + `/public-13.50.css` pins (the FILES stay on
+  disk; still 100 rules), `sw.js` v122, `heroes:sync` regen, version
+  13.249, DECISIONS, spec \u00a711.
+- **(6) TESTS:** `scripts/check-team-ranks.js` grows 27 -> 34 checks (the
+  delegated wiring, the (hover: none) guard, the bubble contract, the
+  geometry, the title-strip, the rerender hide, the .ranktip rules); the
+  co-evolution updates ride `check-stats` (the S38 wiring check + the
+  sweep #19 pin flips), `check-a11y`, `check-mc-heroes`.
+
 # v13.248-rankchip — the team competition-rank chip on the match cards
 
 **S37, 2026-11-09 (the uploaded design pack:

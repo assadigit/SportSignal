@@ -121,7 +121,7 @@ ${FONT_FACES_STYLE}
      .v-icon, .mc-port img.mc-fill — every removal verified dead against
      every client-referencing surface + the dynamic-class audit + git
      history; no live rule, state, lang, theme or media variant touched). -->
-<link rel="stylesheet" href="/public-13.82.css">
+<link rel="stylesheet" href="/public-13.83.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -1499,7 +1499,14 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      from the payload's homeTeam.rank/awayTeam.rank resolved server-side from
      the standings caches; no rank -> the plain .team markup, byte-identical).
      The stylesheet renames in step (13.81 -> 13.82: .rankchip/.team-r). -->
-<script src="/public-13.75.js" defer><\/script>
+<!-- v13.249-ranktip (S38): the JS rename 13.75 -> 13.76 — the tap+hover
+     tooltip for the rank chip (spec §11): rankBadge() stamps the label into
+     data-tip; ONE delegated listener set (capture-phase click) + ONE reused
+     #rankTip bubble drive hover (200ms rest), tap (instant toggle; outside
+     tap/Escape/scroll/rerender close), native title stripped on first
+     interaction; the SSR twins carry data-tip. The stylesheet renames in
+     step (13.82 -> 13.83: .ranktip). -->
+<script src="/public-13.76.js" defer><\/script>
 <!-- v13.202-threaddiet + v13.203-warmdefer + v13.204-foldsplit (F-M2,
      the full arc): v13.202 split the boot render chain at the fold
      (the above-fold trio updateBigBar/renderHeroSpot/fitHeroNames in

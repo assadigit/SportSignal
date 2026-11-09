@@ -296,3 +296,50 @@ Do not include any of the following in this task:
 ## 10. Definition of success
 
 At first glance, the match cards should look almost identical to the supplied reference. On a second glance, users should be able to pick up each team's competition position instantly. The feature should feel like it was always part of the card—not like another badge or decoration was added later.
+
+---
+
+## 11. S38 addendum — the tap + hover tooltip (owner-directed, 2026-11-09)
+
+> Supersedes ONE line of §9: the owner explicitly asked for the tooltip
+> ("Ok now add a TAP, mouse hover tool tip that shows what it means for
+> example: رتبه در پریمیرلیگ / رتبه در لیگ قهرمانان"). Everything else in
+> §9's non-goals stays in force. The interaction remains transient — never
+> persistent UI.
+
+### Goal
+
+The bare number cannot say WHAT it ranks. A small dark tooltip bubble — the
+same localized label the badge already carries as its accessible name
+(`«رتبه ۳ در لیگ برتر انگلیس»` / `"3rd in Premier League"`) — appears:
+
+- **Mouse hover** (hover-capable devices): after a 200ms rest on the circle,
+  centered above the chip; hides the moment the pointer leaves.
+- **Tap** (`(hover: none)` touch devices): instantly on tapping the circle;
+  stays until an outside tap, `Escape`, or any scroll.
+- The badge still is not a button: a tap shows the tooltip instead of
+  navigating the card link (the card body navigates exactly as before).
+
+### Rules
+
+- ONE delegated listener set on `document` (capture-phase click) — works for
+  the SSR badges AND every client re-render; zero per-chip wiring, nothing
+  to rebind on language switch or poll re-render (the site's sharewrap
+  closer is the precedent pattern).
+- The bubble is ONE reused `#rankTip` element in `document.body`
+  (`position:fixed`, geometry from `getBoundingClientRect`, clamped to the
+  viewport, flips below when there is no room above; the arrow tracks the
+  chip's center). Direction-agnostic geometry — RTL and LTR share one rule.
+- The native `title` is stripped on first interaction (no double tooltip);
+  the text rides `data-tip` (SSR + client); `aria-label` stays for screen
+  readers; `aria-describedby="rankTip"` links the bubble while visible.
+- No new tab stops: the chip stays a `<span>` (the page's ~60 badges must
+  not flood the keyboard tab order; the a11y name already ships via
+  `aria-label`).
+- The tooltip closes on every data re-render (`rerenderAll()` hides it — a
+  re-rendered list detaches the chip the bubble points at).
+- Visual: restrained elevated-slate bubble in the badge's own ink family
+  (`--ranktip-*` tokens, light-theme pair, `prefers-reduced-motion` honored,
+  z-index above the sticky bar, `pointer-events:none`).
+- Zero backend/data changes: the label is derived from the SAME payload
+  fields S37 already resolves (`rank` + the fixture's own competition name).

@@ -229,6 +229,22 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
 /* narrow screens: the badge shrinks a notch (spec §3), the group centers
    under the crest like the plain centered name does */
 @media (max-width:600px){.rankchip{width:20px;height:20px;min-width:20px;font-size:10.5px}.team.team-r{gap:5px;justify-content:center}.side.away .team.team-r{justify-content:center}}
+/* v13.249-ranktip (S38, spec §11): the badge's tap+hover tooltip — ONE
+   shared #rankTip bubble (position:fixed in body, placed by rankTipShow()
+   in public-13.76.js: centered above the chip, viewport-clamped, flipped
+   below when there is no room; the arrow tracks the chip's center through
+   --ranktip-ax). Elevated-slate bubble in the badge's own ink family,
+   borderless so the arrow is seamless; pointer-events:none so it never
+   traps the mouse or steals a tap; z-index above the sticky bar (60/65).
+   .on = visible (fade + 2px rise); .up = arrow under the bubble (chip
+   below it), .down = arrow over the bubble (chip above it). */
+.ranktip{--ranktip-bg:#0c1728;--ranktip-ink:#D6E9FA;position:fixed;left:0;top:0;z-index:70;max-width:min(300px,90vw);padding:6px 11px;border-radius:8px;background:var(--ranktip-bg);color:var(--ranktip-ink);font-size:11.5px;font-weight:600;line-height:1.45;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 10px 30px rgba(2,6,23,.55),inset 0 1px 0 rgba(255,255,255,.05);opacity:0;visibility:hidden;transform:translateY(2px);transition:opacity .14s ease,transform .14s ease,visibility .14s;pointer-events:none}
+.ranktip.on{opacity:1;visibility:visible;transform:none}
+.ranktip::after{content:"";position:absolute;left:var(--ranktip-ax,50%);transform:translateX(-50%);border:5px solid transparent;pointer-events:none}
+.ranktip.up::after{top:100%;border-top-color:var(--ranktip-bg)}
+.ranktip.down::after{bottom:100%;border-bottom-color:var(--ranktip-bg)}
+[data-theme=light] .ranktip{--ranktip-bg:#ffffff;--ranktip-ink:#31567c;box-shadow:0 8px 24px rgba(15,23,42,.16),inset 0 0 0 1px rgba(15,23,42,.07)}
+@media (prefers-reduced-motion:reduce){.ranktip{transition:none;transform:none}}
 .score{font-weight:800;font-size:17px;color:var(--score);flex:0 0 92px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
 .kick .score{flex:0 0 auto}
 .score b{font-weight:900;text-shadow:0 0 12px rgba(74,222,128,.45)}

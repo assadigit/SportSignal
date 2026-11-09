@@ -121,11 +121,11 @@ check("SSR: seo/data.ts reads the same standings_cache_* keys and stamps through
   /CONFIG\.KV_STANDINGS_CACHE \+ c/.test(dtSrc) &&
   /const rankSets = teamRankSets\(stMap\);/.test(dtSrc) &&
   /const shaped = pool\.map\(\(m\) => attachTeamRanks\(pubMatch\(m\), m, rankSets\)\);/.test(dtSrc));
-check("SSR: sideHome/sideAway carry the badge (outer flank, logical order) with the localized label",
+check("SSR: sideHome/sideAway carry the badge (outer flank, logical order) with the localized label + the data-tip the client tooltip reads",
   /function rankChipHtml\(t: any, m: any\): string \{/.test(mkSrc) &&
   /'<div class="team team-r">' \+ rc \+ '<span class="tn">'/.test(mkSrc) &&
   /'<div class="team team-r"><span class="tn">' \+ nameHtml\(teamName\) \+ "<\/span>" \+ rc/.test(mkSrc) &&
-  /'<span class="rankchip" title="' \+ esc\(label\) \+ '" aria-label="' \+ esc\(label\) \+ '">'/.test(mkSrc) &&
+  /'<span class="rankchip" title="' \+ esc\(label\) \+ '" aria-label="' \+ esc\(label\) \+ '" data-tip="' \+ esc\(label\) \+ '">'/.test(mkSrc) &&
   /\u0631\u062A\u0628\u0647 " \+ toFaDigits\(String\(pos\)\) \+ " \u062F\u0631 " \+ compNameFa\(m\)/.test(mkSrc) ||
   /رتبه " \+ toFaDigits\(String\(pos\)\) \+ " در " \+ compNameFa\(m\)/.test(mkSrc));
 check("SSR: both list-row and spotitem callers pass the match for the label context",
@@ -141,16 +141,45 @@ check("client: BOTH card families build team blocks through teamRow (render + sp
   /function teamRow\(e,a,t\)\{/.test(bundle) &&
   /u=teamRow\(n\.homeTeam,n,!1\),s=teamRow\(n\.awayTeam,n,!0\)/.test(bundle) &&
   /o=teamRow\(e\.homeTeam,e,!1\),l=teamRow\(e\.awayTeam,e,!0\)/.test(bundle));
-check("client: the badge is a number-only circle with localized digits + accessible label",
+check("client: the badge is a number-only circle with localized digits + accessible label + the data-tip the tooltip reads",
   /className="rankchip"/.test(bundle) &&
   /className="team team-r"/.test(bundle) &&
   /fmtNum\(r\)/.test(bundle) &&
   /setAttribute\("aria-label",i\)/.test(bundle) &&
-  /setAttribute\("title",i\)/.test(bundle));
+  /setAttribute\("title",i\)/.test(bundle) &&
+  /setAttribute\("data-tip",i\)/.test(bundle));
 check("client: no rank -> the plain .team markup (nameInto direct — the pre-badge card byte-for-byte)",
   /else nameInto\(r,n\)/.test(bundle) &&
   /if\(l\)\{r\.className="team team-r"/.test(bundle));
 check("client: the badge never renders 0/negative/NaN (integer gate)", /if\(!\(r>=1&&Number\.isInteger\(r\)\)\)return null/.test(bundle));
+
+// ---------- 4b) the tap+hover tooltip (S38, spec §11) ----------
+check("tooltip: ONE delegated listener set — mouseover (hover) + capture-phase click (tap beats the card link) + Escape + scroll + resize",
+  /document\.addEventListener\("mouseover",function\(e\)\{var t=e\.target&&e\.target\.closest\?e\.target\.closest\("\.rankchip"\):null/.test(bundle) &&
+  /document\.addEventListener\("click",function\(e\)\{var t=e\.target&&e\.target\.closest\?e\.target\.closest\("\.rankchip"\):null/.test(bundle) &&
+  /,true\);/.test(bundle) &&
+  /e\.preventDefault\(\)/.test(bundle) &&
+  /e\.key==="Escape"\|\|e\.key==="Esc"/.test(bundle) &&
+  /window\.addEventListener\("scroll",function\(\)\{rankTipFor&&rankTipHide\(\)\},true\)/.test(bundle) &&
+  /window\.addEventListener\("resize",function\(\)\{rankTipFor&&rankTipHide\(\)\}\)/.test(bundle));
+check("tooltip: the (hover: none) guard — tap-only devices never double-fire the hover path",
+  /window\.matchMedia\?window\.matchMedia\("\(hover: none\)"\):null/.test(bundle) &&
+  /RANK_TIP_MQL&&RANK_TIP_MQL\.matches\)return/.test(bundle));
+check("tooltip: ONE shared bubble — #rankTip in body, role=tooltip, data-tip/title text, aria-describedby while visible",
+  /t\.id="rankTip",t\.className="ranktip",t\.setAttribute\("role","tooltip"\)/.test(bundle) &&
+  /e\.getAttribute\("data-tip"\)\|\|e\.getAttribute\("title"\)\|\|""/.test(bundle) &&
+  /e\.setAttribute\("aria-describedby","rankTip"\)/.test(bundle) &&
+  /rankTipFor\.removeAttribute\("aria-describedby"\)/.test(bundle));
+check("tooltip: viewport-clamped geometry — centered above, flipped below, arrow tracks the chip center via --ranktip-ax",
+  /Math\.max\(8,Math\.min\(c-o\/2,n-o-8\)\)/.test(bundle) &&
+  /p>=8\?\(t\.classList\.add\("up"\),t\.style\.top=Math\.round\(p\)\+"px"\):\(t\.classList\.add\("down"\),t\.style\.top=Math\.round\(a\.bottom\+u\)\+"px"\)/.test(bundle) &&
+  /--ranktip-ax",Math\.round\(Math\.max\(12,Math\.min\(c-s,o-12\)\)\)\+"px"/.test(bundle));
+check("tooltip: the native title strips on first interaction (no double tooltip); hover shows after a 200ms rest; tap toggles instantly",
+  /function rankTipStrip\(e\)\{try\{e&&e\.getAttribute\("title"\)&&e\.removeAttribute\("title"\)\}catch\(d\)\{\}\}/.test(bundle) &&
+  /setTimeout\(function\(\)\{rankTipTimer=0,t\.isConnected&&rankTipShow\(t\)\},200\)/.test(bundle) &&
+  /rankTipFor===t\)\{rankTipHide\(\);return\}rankTipHide\(\),rankTipShow\(t\),rankTipPin=true/.test(bundle));
+check("tooltip: every data re-render hides it (the poll/lang re-render detaches the chip the bubble points at)",
+  /function rerenderAll\(\)\{rankTipHide\(\),applyView\(\)/.test(bundle));
 
 // ---------- 5) the stylesheet ----------
 const shellTs = read("src/seo/page-shell.ts");
@@ -166,6 +195,15 @@ check("css: the .rankchip circle (22px, tokens, tabular digits) + the .team-r id
 check("css: the narrow-screen step-down (20px + centered group under the crest) + the live card's proportionate 18px",
   /@media \(max-width:600px\)\{\.rankchip\{width:20px;height:20px;min-width:20px;font-size:10\.5px\}/.test(css) &&
   /#liveCard \.rankchip\{width:18px;height:18px;min-width:18px;font-size:10px\}/.test(css));
+check("css: the .ranktip bubble — fixed, above-the-sticky-bar z-index, pointer-transparent, fade+rise, arrow states, light pair, reduced-motion",
+  /\.ranktip\{--ranktip-bg:#0c1728;--ranktip-ink:#D6E9FA;position:fixed;left:0;top:0;z-index:70;/.test(css) &&
+  /pointer-events:none/.test(css) &&
+  /\.ranktip\.on\{opacity:1;visibility:visible;transform:none\}/.test(css) &&
+  /\.ranktip::after\{content:"";position:absolute;left:var\(--ranktip-ax,50%\);transform:translateX\(-50%\);border:5px solid transparent;pointer-events:none\}/.test(css) &&
+  /\.ranktip\.up::after\{top:100%;border-top-color:var\(--ranktip-bg\)\}/.test(css) &&
+  /\.ranktip\.down::after\{bottom:100%;border-bottom-color:var\(--ranktip-bg\)\}/.test(css) &&
+  /\[data-theme=light\] \.ranktip\{--ranktip-bg:#ffffff;--ranktip-ink:#31567c;/.test(css) &&
+  /@media \(prefers-reduced-motion:reduce\)\{\.ranktip\{transition:none;transform:none\}\}/.test(css));
 check("css: the SEO shell references the same stylesheet as the homepage",
   new RegExp("/" + (liveCss || "x").replace(/\./g, "\\.")).test(shellTs));
 
