@@ -343,3 +343,66 @@ same localized label the badge already carries as its accessible name
   z-index above the sticky bar, `pointer-events:none`).
 - Zero backend/data changes: the label is derived from the SAME payload
   fields S37 already resolves (`rank` + the fixture's own competition name).
+
+---
+
+## 12. S40 addendum — the quiet plain number (owner-directed, 2026-11-09)
+
+> Supersedes the §2 visual concept (the circle) and the S37 outer-flank
+> placement decision for the MATCH-CARD surfaces. The S37/S38 data layer
+> (§4 applicability, the cache-only resolution, the S38 tooltip) carries
+> over VERBATIM. This addendum records the owner's directive after the
+> deployed-but-unpushed S39 superscript round overlapped the club names
+> (76/76 chips measured overlapping on live).
+
+### Goal
+
+The standing is secondary information on an already data-dense card (time,
+date, competition chip, stadium chip). It renders as a **quiet plain
+number in the same row as the club name — no circle, no border, no
+background, no icon** — on the side of the name that faces the center of
+the card, for BOTH teams.
+
+### Rules
+
+- **Placement:** home `[name, number]` / away `[number, name]` in logical
+  DOM order inside the one `.team.team-r` flex row — logical CSS only,
+  zero physical `left`/`right`, so RTL and LTR mirror for free. (This
+  INVERTS the S37 outer-flank/crest-side decision by owner directive.)
+- **The name gives way first:** the name span (`.tn`) carries
+  `white-space:nowrap; overflow:hidden; text-overflow:ellipsis`; the
+  number carries `flex-shrink:0` and `white-space:nowrap`. When space
+  runs out the name truncates with an ellipsis; the number never moves,
+  wraps or gets covered.
+- **Typography:** about 11–12px (11px shipped), never below 11px; regular
+  weight; `font-variant-numeric:tabular-nums`; Persian digits in the FA
+  UI via the existing `fmtNum` convention. One size at every width and
+  card variant (the S37/S38 step-downs retire).
+- **Color:** a muted blue-gray that fits the navy card, with a MEASURED
+  ≥4.5:1 contrast against the layered card surface (page bg → `.card`
+  glass → row surface, glow peak as the worst case). Dark ink `#94a3b8`
+  (6.58/6.32:1), light ink `#5b6b82` (5.06/4.94:1) — the light `--muted`
+  `#64748b` measures 4.44:1 and must NOT be reused. The measurement is a
+  permanent gate in `scripts/check-team-ranks.js` (recomputed from the
+  live tokens).
+- **Gap:** the row's 6px gap (5px under 600px) — a small clear gap
+  between name and number.
+- **Label:** `title` + `aria-label` (+ the S38 `data-tip`) name the table:
+  «رتبه ۳ در جدول لیگ قهرمانان اروپا» / "3rd in Champions League
+  table"; when the fixture carries no competition name, «رتبه ۳ در
+  جدول» / "3rd in the table".
+- **No rank → render nothing at all** (no empty element, no placeholder,
+  no dash) — the pre-badge card byte-for-byte.
+- **Clear of the share menu:** the number is inline content inside the
+  team row; it never enters the 44×44 top-corner `.sharewrap` zone.
+- **Scope unchanged:** match cards only (list rows + spot cards + the
+  live card); the Telegram SVG cards and the hero/mcard surfaces stay
+  badge-free by design; zero backend/data changes.
+
+### Verification bar (S40)
+
+Rendered at 360px, 768px and 1280px on the real pages: the number's box
+must not overlap the name, the logo, the central time block or the
+three-dot share menu — for every card variant, with the longest club name
+on the page and a two-digit rank; the name truncates cleanly when space
+runs out; before/after screenshots filed in `docs/assets/s40-ranknum/`.

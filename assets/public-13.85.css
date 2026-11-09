@@ -1,4 +1,4 @@
-:root{color-scheme:dark;--bg:#0f172a;--card:#1e293b;--field:#0f172a;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#93c5fd;--score:#4ade80;--countdown:#93c5fd;--countdown-bg:rgba(96,165,250,.12);--danger:var(--t-danger);--chip:#334155;--hover:rgba(148,163,184,.08);--footer:#94a3b8;--glass:rgba(30,41,59,.55);--glass-border:rgba(148,163,184,.16);--glass-hi:rgba(255,255,255,.07);--glass-shadow:0 8px 32px rgba(0,0,0,.35);--glow1:rgba(37,99,235,.17);--glow2:rgba(29,78,216,.11);--scrim:rgba(2,6,23,.62);--rowsurf:rgba(15,23,42,.42);--t-primary:#2563eb;--t-success:#15803d;--t-success-ink:#4ade80;--t-success-soft:rgba(34,197,94,.14);--t-success-line:rgba(34,197,94,.35);--t-warning:#b45309;--t-highlight:#7e22ce;--t-danger:#f87171;--t-neutral:#334155;--t-neutral-soft:rgba(148,163,184,.14);--badge-top:#b45309;--badge-hot:var(--t-warning);--badge-derby:var(--t-highlight);--badge-league:var(--t-neutral);--badge-live:var(--t-success-ink);--nav-link:#cbd5e1;--nav-link-hover:#f1f5f9;--pill-primary-bg:var(--accent);--pill-primary-ink:#fff;--pill-primary-line:rgba(255,255,255,.22);--pill-hype-bg:linear-gradient(90deg,var(--badge-hot),var(--badge-derby));--pill-hype-ink:#fff;--pill-hype-line:rgba(255,255,255,.18);--pill-neutral-bg:rgba(148,163,184,.16);--pill-neutral-ink:#e2e8f0;--pill-neutral-line:rgba(148,163,184,.28);--rank-chip-bg:rgba(124,164,202,.14);--rank-chip-line:rgba(164,196,226,.30);--rank-chip-ink:#D6E9FA}
+:root{color-scheme:dark;--bg:#0f172a;--card:#1e293b;--field:#0f172a;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#93c5fd;--score:#4ade80;--countdown:#93c5fd;--countdown-bg:rgba(96,165,250,.12);--danger:var(--t-danger);--chip:#334155;--hover:rgba(148,163,184,.08);--footer:#94a3b8;--glass:rgba(30,41,59,.55);--glass-border:rgba(148,163,184,.16);--glass-hi:rgba(255,255,255,.07);--glass-shadow:0 8px 32px rgba(0,0,0,.35);--glow1:rgba(37,99,235,.17);--glow2:rgba(29,78,216,.11);--scrim:rgba(2,6,23,.62);--rowsurf:rgba(15,23,42,.42);--t-primary:#2563eb;--t-success:#15803d;--t-success-ink:#4ade80;--t-success-soft:rgba(34,197,94,.14);--t-success-line:rgba(34,197,94,.35);--t-warning:#b45309;--t-highlight:#7e22ce;--t-danger:#f87171;--t-neutral:#334155;--t-neutral-soft:rgba(148,163,184,.14);--badge-top:#b45309;--badge-hot:var(--t-warning);--badge-derby:var(--t-highlight);--badge-league:var(--t-neutral);--badge-live:var(--t-success-ink);--nav-link:#cbd5e1;--nav-link-hover:#f1f5f9;--pill-primary-bg:var(--accent);--pill-primary-ink:#fff;--pill-primary-line:rgba(255,255,255,.22);--pill-hype-bg:linear-gradient(90deg,var(--badge-hot),var(--badge-derby));--pill-hype-ink:#fff;--pill-hype-line:rgba(255,255,255,.18);--pill-neutral-bg:rgba(148,163,184,.16);--pill-neutral-ink:#e2e8f0;--pill-neutral-line:rgba(148,163,184,.28);--rank-chip-ink:#94a3b8}
 [data-theme=light]{color-scheme:light;--bg:#f8fafc;--card:#ffffff;--field:#f8fafc;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--accent:#2563eb;--accent-strong:#1d4ed8;--link:#1d4ed8;--score:#15803d;--countdown:#2563eb;--countdown-bg:rgba(37,99,235,.1);--danger:var(--t-danger);--chip:#e2e8f0;--hover:rgba(15,23,42,.045);--footer:#64748b;--glass:rgba(255,255,255,.62);--glass-border:rgba(15,23,42,.08);--glass-hi:rgba(255,255,255,.7);--glass-shadow:0 8px 32px rgba(15,23,42,.08);--glow1:rgba(37,99,235,.09);--glow2:rgba(96,165,250,.08);--scrim:rgba(248,250,252,.78);--rowsurf:rgba(241,245,249,.72);--t-primary:#2563eb;--t-success:#15803d;--t-success-ink:#15803d;--t-success-soft:rgba(21,128,61,.12);--t-success-line:rgba(21,128,61,.32);--t-warning:#b45309;--t-highlight:#7e22ce;--t-danger:#dc2626;--t-neutral:#e2e8f0;--t-neutral-soft:rgba(15,23,42,.05);--badge-top:#b45309;--badge-hot:var(--t-warning);--badge-derby:var(--t-highlight);--badge-league:var(--t-neutral);--badge-live:var(--t-success-ink);--nav-link:#334155;--nav-link-hover:#0f172a;--pill-primary-bg:var(--accent);--pill-primary-ink:#fff;--pill-primary-line:rgba(255,255,255,.22);--pill-hype-bg:linear-gradient(90deg,var(--badge-hot),var(--badge-derby));--pill-hype-ink:#fff;--pill-hype-line:rgba(255,255,255,.18);--pill-neutral-bg:rgba(15,23,42,.08);--pill-neutral-ink:#1e293b;--pill-neutral-line:rgba(15,23,42,.16)}
 /* v13.202-threaddiet (F-M1 CSS dead-code pass): 31 provably-dead
    rules retired (2654 bytes raw) - the retired-markup remnants, verified
@@ -210,25 +210,32 @@ h2{font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.005em;margin
 .logo{width:41px;height:41px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0}
 .logo img{width:100%;height:100%;object-fit:contain}
 .team{flex:1;font-weight:700;font-size:14.5px}
-/* v13.248-rankchip (S37): the team competition-rank badge — a restrained
-   number-only circle beside the team NAME (spec: docs/specs/team-rank-indicator.md).
-   Slate/icy-blue family (a tint of the countdown pill's cool blue), the app's
-   own fonts inherited from .team, tabular digits. team-r = the name row that
-   carries a badge: home [badge,name] / away [name,badge] in LOGICAL order, so
-   the badge rides the outer flank of the name (crest side, away from the
-   central kickoff column) in BOTH RTL and LTR; away mirrors its text-align:end
-   packing with justify-content:flex-end. No badge -> the plain .team markup,
-   the pre-badge card byte-for-byte. */
+/* v13.248-rankchip (S37, history — the circle; superseded by v13.251
+   below): team-r = the name row that carries the standing. No badge -> the
+   plain .team markup, the pre-badge card byte-for-byte. */
+/* v13.251-ranknum (S40, the owner's quieting directive — supersedes BOTH the
+   S37 outer-flank circle and the never-pushed S39 top-right superscript that
+   sat ON the name): the standing is a quiet PLAIN NUMBER in the name's own
+   row — no circle, no border, no background, no icon — on the name's
+   CENTER-FACING flank (home [name,num] / away [num,name] in the markup,
+   logical DOM order, so it mirrors in RTL and LTR with zero physical
+   left/right). The NAME gives way first: nowrap + ellipsis on .tn; the
+   number is flex-shrink:0 + nowrap, so it never moves, wraps or gets
+   covered. 11px regular tabular digits (never below 11px; the S37/S38 size
+   step-downs retire — one size at every width), muted blue-gray ink with a
+   MEASURED >=4.5:1 contrast on the layered row surface (bg -> .card glass
+   -> rowsurf; scripts/check-team-ranks.js recomputes the WCAG ratios; the
+   S39 72%-alpha whisper failed the owner's bar, and the light --muted
+   #64748b fails it too at 4.4:1 — hence the darker light ink). The S38
+   tooltip (.ranktip) rides the .rankchip class unchanged. */
 .team.team-r{display:flex;align-items:center;gap:6px}
 .side.away .team.team-r{justify-content:flex-end}
-.team.team-r .tn{flex:0 1 auto;min-width:0}
-.rankchip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;min-width:22px;aspect-ratio:1/1;border-radius:50%;border:1px solid var(--rank-chip-line);background:var(--rank-chip-bg);color:var(--rank-chip-ink);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
-[data-theme=light] .rankchip{--rank-chip-bg:rgba(51,78,109,.12);--rank-chip-line:rgba(51,78,109,.34);--rank-chip-ink:#31567c}
-/* the live card's compact rows (28px logos) get a proportionate badge */
-#liveCard .rankchip{width:18px;height:18px;min-width:18px;font-size:10px}
-/* narrow screens: the badge shrinks a notch (spec §3), the group centers
-   under the crest like the plain centered name does */
-@media (max-width:600px){.rankchip{width:20px;height:20px;min-width:20px;font-size:10.5px}.team.team-r{gap:5px;justify-content:center}.side.away .team.team-r{justify-content:center}}
+.team.team-r .tn{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rankchip{flex:0 0 auto;white-space:nowrap;color:var(--rank-chip-ink);font-size:11px;font-weight:400;font-variant-numeric:tabular-nums;line-height:1}
+[data-theme=light] .rankchip{--rank-chip-ink:#5b6b82}
+/* narrow screens: the group centers under the crest like the plain centered
+   name does (the 11px number needs no step-down) */
+@media (max-width:600px){.team.team-r{gap:5px;justify-content:center}.side.away .team.team-r{justify-content:center}}
 /* v13.249-ranktip (S38, spec §11): the badge's tap+hover tooltip — ONE
    shared #rankTip bubble (position:fixed in body, placed by rankTipShow()
    in public-13.76.js: centered above the chip, viewport-clamped, flipped

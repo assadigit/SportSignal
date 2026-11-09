@@ -1,14 +1,15 @@
-// Self-check: the team competition-rank chip on the match cards (v13.248-rankchip,
-// docs/specs/team-rank-indicator.md). Asserts:
+// Self-check: the team competition-rank number on the match cards (v13.251-ranknum,
+// docs/specs/team-rank-indicator.md §12). Asserts:
 //  1) The server resolver exists + the applicability law (fixture's own
 //     competition only; cups/knockout/pre-season never carry a rank)
 //  2) Behavioral: the real teamRankSets/rankApplicable/attachTeamRanks
 //     (eval-extracted from the concat) resolve, fold, gate and stamp correctly
 //  3) The payload wiring (withTop rows + UCL spot rows carry the ranks)
 //  4) The SEO SSR mirror (same KV caches, rankChipHtml in markup.ts)
-//  5) The client bundle renders the badge in BOTH card families; no rank ->
+//  5) The client bundle renders the number in BOTH card families; no rank ->
 //     the plain .team markup
-//  6) The stylesheet rules (the 22px circle, the narrow-screen step-down)
+//  6) The stylesheet rules (the plain 11px number, the nowrap+ellipsis name,
+//     the >=4.5:1 measured ink — recomputed from the live tokens)
 const fs = require("fs");
 const path = require("path");
 const src = require("./lib/worker-src")();
@@ -121,13 +122,13 @@ check("SSR: seo/data.ts reads the same standings_cache_* keys and stamps through
   /CONFIG\.KV_STANDINGS_CACHE \+ c/.test(dtSrc) &&
   /const rankSets = teamRankSets\(stMap\);/.test(dtSrc) &&
   /const shaped = pool\.map\(\(m\) => attachTeamRanks\(pubMatch\(m\), m, rankSets\)\);/.test(dtSrc));
-check("SSR: sideHome/sideAway carry the badge (outer flank, logical order) with the localized label + the data-tip the client tooltip reads",
+check("SSR: sideHome/sideAway carry the number on the name's CENTER-FACING flank (home [name,num] / away [num,name], logical order) with the table-naming label + the data-tip the client tooltip reads",
   /function rankChipHtml\(t: any, m: any\): string \{/.test(mkSrc) &&
-  /'<div class="team team-r">' \+ rc \+ '<span class="tn">'/.test(mkSrc) &&
-  /'<div class="team team-r"><span class="tn">' \+ nameHtml\(teamName\) \+ "<\/span>" \+ rc/.test(mkSrc) &&
+  /'<div class="team team-r"><span class="tn">' \+ nameHtml\(teamName\) \+ "<\/span>" \+ rc \+ "<\/div>"/.test(mkSrc) &&
+  /'<div class="team team-r">' \+ rc \+ '<span class="tn">' \+ nameHtml\(teamName\) \+ "<\/span><\/div>"/.test(mkSrc) &&
   /'<span class="rankchip" title="' \+ esc\(label\) \+ '" aria-label="' \+ esc\(label\) \+ '" data-tip="' \+ esc\(label\) \+ '">'/.test(mkSrc) &&
-  /\u0631\u062A\u0628\u0647 " \+ toFaDigits\(String\(pos\)\) \+ " \u062F\u0631 " \+ compNameFa\(m\)/.test(mkSrc) ||
-  /رتبه " \+ toFaDigits\(String\(pos\)\) \+ " در " \+ compNameFa\(m\)/.test(mkSrc));
+  /const cn = m && m\.competition \? compNameFa\(m\) : "";/.test(mkSrc) &&
+  (new RegExp("\\u0631\\u062A\\u0628\\u0647 \" \\+ toFaDigits\\(String\\(pos\\)\\) \\+ \" \\u062F\\u0631 \\u062C\\u062F\\u0648\\u0644\" \\+ \\(cn \\? \" \" \\+ cn : \"\"\\)")).test(mkSrc));
 check("SSR: both list-row and spotitem callers pass the match for the label context",
   /sideHome\(m\.homeTeam, displayName\(m\.homeTeam\), m\)/.test(mkSrc) &&
   /sideAway\(m\.awayTeam, displayName\(m\.awayTeam\), m\)/.test(mkSrc));
@@ -141,13 +142,17 @@ check("client: BOTH card families build team blocks through teamRow (render + sp
   /function teamRow\(e,a,t\)\{/.test(bundle) &&
   /u=teamRow\(n\.homeTeam,n,!1\),s=teamRow\(n\.awayTeam,n,!0\)/.test(bundle) &&
   /o=teamRow\(e\.homeTeam,e,!1\),l=teamRow\(e\.awayTeam,e,!0\)/.test(bundle));
-check("client: the badge is a number-only circle with localized digits + accessible label + the data-tip the tooltip reads",
+check("client: the badge is a number-only PLAIN span (the S40 quieting: no circle/border/background — the class stays .rankchip for the tooltip engine) with localized digits + the table-naming accessible label + the data-tip",
   /className="rankchip"/.test(bundle) &&
   /className="team team-r"/.test(bundle) &&
   /fmtNum\(r\)/.test(bundle) &&
   /setAttribute\("aria-label",i\)/.test(bundle) &&
   /setAttribute\("title",i\)/.test(bundle) &&
   /setAttribute\("data-tip",i\)/.test(bundle));
+check("client: the number rides the name's CENTER-FACING flank — home [name,num] / away [num,name] (the t flag swap; logical DOM order, zero physical left/right) and the label names the table with the no-competition fallback",
+  /i\.className="tn",nameInto\(i,n\),t\?\(r\.appendChild\(l\),r\.appendChild\(i\)\):\(r\.appendChild\(i\),r\.appendChild\(l\)\)/.test(bundle) &&
+  /ordNum\(r\)\+" in "\+\(l\?l\+" table":"the table"\)/.test(bundle) &&
+  /\\u062C\\u062F\\u0648\\u0644"\+\(l\?" "\+l:""\)/.test(bundle));
 check("client: no rank -> the plain .team markup (nameInto direct — the pre-badge card byte-for-byte)",
   /else nameInto\(r,n\)/.test(bundle) &&
   /if\(l\)\{r\.className="team team-r"/.test(bundle));
@@ -181,20 +186,58 @@ check("tooltip: the native title strips on first interaction (no double tooltip)
 check("tooltip: every data re-render hides it (the poll/lang re-render detaches the chip the bubble points at)",
   /function rerenderAll\(\)\{rankTipHide\(\),applyView\(\)/.test(bundle));
 
-// ---------- 5) the stylesheet ----------
+// ---------- 5) the stylesheet (S40: the plain number) ----------
 const shellTs = read("src/seo/page-shell.ts");
 const liveCss = (pubTs.match(/\/(public-\d+\.\d+\.css)/) || [])[1];
 const css = liveCss ? read("assets/" + liveCss) : "";
-check("css: the .rankchip circle (22px, tokens, tabular digits) + the .team-r identity row (logical order, RTL/LTR-agnostic)",
+check("css: the .rankchip plain number (11px regular tabular digits, flex-shrink:0, never wraps — no circle/border/background/width) + the .team-r identity row with the name giving way FIRST (nowrap+ellipsis)",
   /\.team\.team-r\{display:flex;align-items:center;gap:6px\}/.test(css) &&
   /\.side\.away \.team\.team-r\{justify-content:flex-end\}/.test(css) &&
-  /\.team\.team-r \.tn\{flex:0 1 auto;min-width:0\}/.test(css) &&
-  /\.rankchip\{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;min-width:22px;aspect-ratio:1\/1;border-radius:50%;/.test(css) &&
-  /font-variant-numeric:tabular-nums/.test(css) &&
-  /--rank-chip-bg:rgba\(124,164,202,\.14\);--rank-chip-line:rgba\(164,196,226,\.30\);--rank-chip-ink:#D6E9FA\}/.test(css));
-check("css: the narrow-screen step-down (20px + centered group under the crest) + the live card's proportionate 18px",
-  /@media \(max-width:600px\)\{\.rankchip\{width:20px;height:20px;min-width:20px;font-size:10\.5px\}/.test(css) &&
-  /#liveCard \.rankchip\{width:18px;height:18px;min-width:18px;font-size:10px\}/.test(css));
+  /\.team\.team-r \.tn\{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/.test(css) &&
+  /\.rankchip\{flex:0 0 auto;white-space:nowrap;color:var\(--rank-chip-ink\);font-size:11px;font-weight:400;font-variant-numeric:tabular-nums;line-height:1\}/.test(css) &&
+  !/\.rankchip\{[^}]*border-radius/.test(css) &&
+  !/\.rankchip\{[^}]*background/.test(css) &&
+  !/\.rankchip\{[^}]*width:/.test(css) &&
+  !/\.side \.team\.team-r\{overflow:visible\}/.test(css) &&
+  !/#liveCard \.rankchip\{/.test(css));
+check("css: the narrow-screen group stays centered under the crest (one 11px size at every width — the step-downs retire)",
+  /@media \(max-width:600px\)\{\.team\.team-r\{gap:5px;justify-content:center\}\.side\.away \.team\.team-r\{justify-content:center\}\}/.test(css) &&
+  !/@media \(max-width:600px\)\{\.rankchip\{/.test(css));
+
+// ---------- 5b) the S40 contrast gate (the owner's >=4.5:1 bar) ----------
+// WCAG 2.1 relative luminance over the LAYERED surfaces the number sits on:
+// page bg (+glow worst case) -> .card glass -> .mrow/.spotitem rowsurf. The
+// tokens are PARSED from the live stylesheet, so a future re-tint recomputes.
+function cLin(c) { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+function cLum(rgb) { return 0.2126 * cLin(rgb[0]) + 0.7152 * cLin(rgb[1]) + 0.0722 * cLin(rgb[2]); }
+function cRatio(fg, bg) { const a = cLum(fg), b = cLum(bg); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); }
+function cOver(fg, alpha, bg) { return [0, 1, 2].map(i => fg[i] * alpha + bg[i] * (1 - alpha)); }
+function cHex(s) { return [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)]; }
+function cssRgba(block, name) {
+  const m = block.match(new RegExp("--" + name + ":rgba\\((\\d+),(\\d+),(\\d+),(\\.\\d+)\\)"));
+  return m ? [+m[1], +m[2], +m[3], +m[4]] : null;
+}
+function cssHex(block, name) {
+  const m = block.match(new RegExp("--" + name + ":(#[0-9a-fA-F]{6})"));
+  return m ? cHex(m[1]) : null;
+}
+const rootBlock5 = (css.match(/:root\{([^}]*)\}/) || [])[1] || "";
+const lightBlock5 = (css.match(/\[data-theme=light\]\{([^}]*)\}/) || [])[1] || "";
+const inkD = cssHex(rootBlock5, "rank-chip-ink");
+const inkL = (css.match(/\[data-theme=light\] \.rankchip\{--rank-chip-ink:(#[0-9a-fA-F]{6})\}/) || [])[1];
+const surf = (block, glowAlpha) => {
+  const bg = cssHex(block, "bg"), glass = cssRgba(block, "glass"), row = cssRgba(block, "rowsurf"), glow = cssRgba(rootBlock5, "glow1");
+  if (!bg || !glass || !row) return null;
+  let base = bg;
+  if (glow && glowAlpha != null) base = cOver([glow[0], glow[1], glow[2]], glow[3], bg);
+  return cOver([row[0], row[1], row[2]], row[3], cOver([glass[0], glass[1], glass[2]], glass[3], base));
+};
+const dRow = surf(rootBlock5, null), dRowGlow = surf(rootBlock5, 1);
+const lRow = surf(lightBlock5, null), lRowGlow = surf(lightBlock5, 1);
+check("contrast: the muted blue-gray inks measure >=4.5:1 on every layered row surface (dark " + (dRow ? cRatio(inkD, dRow).toFixed(2) : "?") + "/" + (dRowGlow ? cRatio(inkD, dRowGlow).toFixed(2) : "?") + ":1, light " + (lRow ? cRatio(cHex(inkL), lRow).toFixed(2) : "?") + "/" + (lRowGlow ? cRatio(cHex(inkL), lRowGlow).toFixed(2) : "?") + ":1 — bg->glass->rowsurf composited, glow peak as the worst case)",
+  inkD && inkL && dRow && dRowGlow && lRow && lRowGlow &&
+  cRatio(inkD, dRow) >= 4.5 && cRatio(inkD, dRowGlow) >= 4.5 &&
+  cRatio(cHex(inkL), lRow) >= 4.5 && cRatio(cHex(inkL), lRowGlow) >= 4.5);
 check("css: the .ranktip bubble — fixed, above-the-sticky-bar z-index, pointer-transparent, fade+rise, arrow states, light pair, reduced-motion",
   /\.ranktip\{--ranktip-bg:#0c1728;--ranktip-ink:#D6E9FA;position:fixed;left:0;top:0;z-index:70;/.test(css) &&
   /pointer-events:none/.test(css) &&

@@ -537,6 +537,25 @@
 # its one-SEO-TTL retention; the FILE stays on disk, an ancient cached
 # HTML re-fetching it still resolves — it just rides the default cache
 # headers, the sweep #18 precedent).
+# v13.251-ranknum (S40, 2026-11-09): public-13.76.js -> 13.78.js — the
+# owner's quieting directive: the standing stops being a badge. teamRow()
+# parks the number on the name's CENTER-FACING flank (home [name,num] /
+# away [num,name], logical order — RTL/LTR-agnostic); rankBadge()'s label
+# names the table («رتبه ۳ در جدول لیگ قهرمانان اروپا», fallback
+# «رتبه ۳ در جدول»); the S38 tooltip engine rides the .rankchip class
+# unchanged. 13.76.js stays served + pinned one SEO TTL below
+# (stale-HTML retention). (13.77.js — the never-pushed S39 round's bundle,
+# recovered verbatim into assets/ — deliberately rides the DEFAULT cache
+# headers: it was live for under a day and no offline gate pins it.)
+# THE 100-RULE CAP SWEEP #20: the +1 pin needed one eviction — the expired
+# /public-13.39.js pin (the v13.158-pngshadow-era bundle, ~93 releases
+# past its one-SEO-TTL retention; the FILE stays on disk — check-scheduler
+# still reads other copies — so an ancient cached HTML re-fetching it
+# still resolves, it just rides the default cache headers, the sweep #19
+# precedent).
+/public-13.78.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.76.js
   Cache-Control: public, max-age=31536000, immutable
 
@@ -711,6 +730,22 @@
 # eviction: the expired /public-13.50.css pin (the v13.168-mcv2-era
 # stylesheet, ~81 releases past its one-SEO-TTL retention, same retention
 # class; the FILE stays on disk).
+# v13.251-ranknum (S40): public-13.83.css -> 13.85.css — the standing
+# becomes a quiet PLAIN NUMBER in the name's row: the chip's circle,
+# border, background and size step-downs retire; .tn gains
+# nowrap+ellipsis (the name gives way FIRST); the number is 11px regular
+# tabular digits in a MEASURED >=4.5:1 muted blue-gray ink (dark #94a3b8,
+# light #5b6b82 — the light --muted #64748b fails the owner's bar at
+# 4.4:1; scripts/check-team-ranks.js recomputes the WCAG ratios from
+# these tokens). 13.83.css stays served + pinned one SEO TTL below.
+# CAP SWEEP #20's second eviction: the expired /public-13.51.css pin (the
+# v13.150-hud-era stylesheet, ~101 releases past its one-SEO-TTL
+# retention, same retention class; the FILE stays on disk). (13.84.css —
+# the never-pushed S39 round's stylesheet, recovered verbatim into
+# assets/ — rides the default cache headers like 13.77.js above.)
+/public-13.85.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.83.css
   Cache-Control: public, max-age=31536000, immutable
 
@@ -884,8 +919,10 @@
 /public-13.55.css
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.39.js
-  Cache-Control: public, max-age=31536000, immutable
+# v13.251-ranknum (S40) CAP SWEEP #20 (first eviction): the /public-13.39.js
+# pin EVICTED (the expired v13.158-pngshadow-era bundle pin; the FILE stays
+# on disk, an ancient cached HTML re-fetching it still resolves — it just
+# rides the default cache headers, the sweep #19 precedent).
 
 # v13.153-heronext (retired under v13.154-polish): 13.54.css — the hero
 # always shows the NEXT future match: pickHeroMatch drops the live-first
@@ -970,8 +1007,10 @@
 # #bigbarTrack keep their ids — they now live as a static .hud-cells layer
 # inside the card anchor (#bigbar is gone; updateBigBar hides the layer
 # for non-upcoming heroes). The PNG is content-addressed by name only.
-/public-13.51.css
-  Cache-Control: public, max-age=31536000, immutable
+# v13.251-ranknum (S40) CAP SWEEP #20 (second eviction): the /public-13.51.css
+# pin EVICTED (the expired v13.150-hud-era stylesheet pin; the FILE stays
+# on disk, an ancient cached HTML re-fetching it still resolves — it just
+# rides the default cache headers, the sweep #19 precedent).
 
 # v13.150-hud follow-up: core-13.13.js -> core-13.14.js (rename-on-edit — the
 # EN unit labels d/h/m spell out to Days/Hours/Min; the labels ride ABOVE the

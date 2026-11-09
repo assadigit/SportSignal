@@ -4,6 +4,66 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.251-ranknum — the standing becomes a quiet plain number in the name's row
+
+**S40, 2026-11-09 (the owner's directive: fix the league-standing number
+that overlaps the club name, then make it low-key — "a quiet plain number
+in the same row as the club name. No circle, no border, no background, no
+icon"; spec §12 of `docs/specs/team-rank-indicator.md`).** The badge era
+ends: every rank chip on the match cards is now a small muted number that
+rides the name's own row, on the side facing the center of the card.
+
+- **(1) THE OVERLAP'S ROOT CAUSE:** the deployed-but-never-pushed S39 round
+  ("v13.250-ranksup") had parked the chip as an absolutely-positioned
+  superscript at the PHYSICAL top-right corner of the name box
+  (`top:-8px;right:-8px`, one corner for both teams and both directions)
+  — measured on the live page, **76/76 chips overlapped their name box**,
+  sitting on the first line of names like آرسنال and
+  منچستریونایتد. S40 removes the absolute positioning entirely.
+- **(2) THE ENGINE — `public-13.76.js -> 13.78.js`** (13.77 belongs to the
+  unpushed S39 round — recovered verbatim into `assets/` as retention
+  files): `teamRow()` keeps ONE identity row but parks the number on the
+  name's **center-facing flank** — home `[name,num]` / away `[num,name]`,
+  logical DOM order, so it mirrors correctly in RTL and LTR with zero
+  physical left/right. `rankBadge()`'s label now names the table:
+  «رتبه ۳ در جدول لیگ قهرمانان اروپا» / "3rd in Champions League
+  table", falling back to «رتبه ۳ در جدول» / "3rd in the table" when the
+  fixture carries no competition name. No rank -> the plain `.team` markup,
+  byte-for-byte. The S38 tooltip engine rides the `.rankchip` class
+  unchanged.
+- **(3) THE STYLESHEET — `public-13.83.css -> 13.85.css`:** the circle,
+  border, background, size step-downs and the live-card override all
+  retire. The number: **11px regular tabular digits** (never below 11px;
+  one size at every width), `flex-shrink:0`, `white-space:nowrap`. The NAME
+  gives way first: `.tn` gains `nowrap + overflow:hidden +
+  text-overflow:ellipsis`, so the name truncates with an ellipsis before
+  the number ever moves, wraps or is covered. Muted blue-gray ink with a
+  **measured ≥4.5:1 WCAG contrast** on the layered row surface
+  (bg -> glass -> rowsurf, glow peak as worst case): dark `#94a3b8`
+  (6.58/6.32:1), light `#5b6b82` (5.06/4.94:1) — the light `--muted`
+  #64748b measures 4.4:1 and fails the owner's bar, hence the dedicated
+  light ink.
+- **(4) THE SSR TWIN — `seo/markup.ts`:** `sideHome`/`sideAway` mirror the
+  flank swap; `rankChipHtml` builds the same plain span with the
+  table-naming label and the no-competition fallback.
+- **(5) THE PLUMBING:** reference bumps (`public.ts` + `seo/page-shell.ts`),
+  `_headers` pins for 13.78.js + 13.85.css — **cap sweep #20** evicts the
+  expired `/public-13.39.js` + `/public-13.51.css` pins (the FILES stay on
+  disk; still 100 rules; the recovered 13.77.js/13.84.css ride the DEFAULT
+  cache headers — live for under a day, pinned by no offline gate),
+  `sw.js` v124 (v123 never existed in git — it was the unpushed S39
+  round's bump), `heroes:sync` regen, version 13.251, DECISIONS ×3,
+  spec §12, admin-parity baseline re-run (the intended template output
+  change).
+- **(6) TESTS:** `scripts/check-team-ranks.js` grows 34 -> 36 checks (the
+  center-facing flank order + the table-naming label in both renderers, the
+  plain-number stylesheet contract with the no-circle/no-border/
+  no-background guards, and the **contrast gate** — the WCAG ratios are
+  recomputed from the live tokens every run); the co-evolution rides
+  `check-stats` (the S38 live check demoted to historical, the new
+  v13.251 release-wiring check, the three reference checks, the SW v124
+  assertion, the sweep #20 pin flips), `check-a11y`, `check-mc-heroes`.
+
 # v13.249-ranktip — the tap + hover tooltip for the rank chip
 
 **S38, 2026-11-09 (the owner's directive: "add a TAP, mouse hover tool tip

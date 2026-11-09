@@ -1,6 +1,6 @@
 // SportSignal — <head> builder (P-01..P-11) + the HTML shell shared by every
 // NEW public page (match/team/competition/hubs/trust). The shell reuses the
-// site's versioned stylesheet (currently /public-13.83.css) so the design
+// site's versioned stylesheet (currently /public-13.85.css) so the design
 // (cards, rows, tables, fonts, themes) is identical to the homepage, plus a
 // small inline block for page-specific components (breadcrumbs, facts,
 // prose). No home-page JS is loaded — these pages are complete server HTML.
@@ -108,7 +108,7 @@ ${themeInit}
 <link rel="preload" href="/fonts/Peyda-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/MorabbaVF.woff2" as="font" type="font/woff2" crossorigin>
 ${FONT_FACES_STYLE}
-<link rel="stylesheet" href="/public-13.83.css">
+<link rel="stylesheet" href="/public-13.85.css">
 <style>
 /* Page-specific components for server-rendered SEO pages (breadcrumbs,
    answer-first block, facts table, prose). Reuses the site's CSS vars. */

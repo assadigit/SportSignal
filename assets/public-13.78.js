@@ -3,20 +3,27 @@ function shareRow(e,a){/* v13.81-shareloop: shares carry the canonical match URL
 // v13.248-rankchip (S37): the team competition-rank badge — a number-only
 // circle beside the team NAME on the match cards (spec: docs/specs/team-rank-indicator.md).
 // rankBadge builds the span (digits via fmtNum — Persian numerals in FA);
-// teamRow wraps name+badge as ONE identity row: home [badge,name] / away
-// [name,badge] — logical DOM order, so the badge always rides the OUTER flank
-// of the name (toward the crest, away from the central kickoff column) in
-// both RTL and LTR; no rank -> the plain .team markup, byte-identical to the
-// pre-badge card. The localized title/aria-label carries the context the bare
-// number cannot ("3rd in Premier League" / "رتبه ۳ در لیگ برتر انگلیس").
 /* v13.249-ranktip (S38, the owner's directive): the tap+hover tooltip — the
    badge explains itself on demand (spec §11). rankBadge also stamps the label
    into data-tip; ONE delegated listener set on document + ONE reused #rankTip
    bubble (below) drives hover (200ms rest), tap (instant toggle, outside
    tap/Escape/scroll close) for the SSR badges AND every client re-render. */
+/* v13.251-ranknum (S40, the owner's quieting directive — supersedes BOTH the
+   S37 outer-flank circle and the never-pushed S39 top-right superscript that
+   sat ON the name): the standing stops being a badge at all. rankBadge still
+   builds the span (class rankchip — the S38 tooltip engine and the checks
+   target it), but the stylesheet renders it as a quiet PLAIN NUMBER: no
+   circle, no border, no background. teamRow keeps ONE identity row with the
+   number on the name's CENTER-FACING flank: home [name,num] / away [num,name]
+   — logical DOM order, so it mirrors correctly in RTL and LTR with zero
+   physical left/right (the t flag: !1 home -> name first, !0 away -> number
+   first). The label names the table: «رتبه ۳ در جدول لیگ قهرمانان اروپا» /
+   "3rd in Champions League table", falling back to «رتبه ۳ در جدول» /
+   "3rd in the table" when the fixture carries no competition name. No rank
+   -> the plain .team markup, byte-identical to the pre-badge card. */
 function ordNum(e){var a=["th","st","nd","rd"],t=e%100;return e+(a[(t-20)%10]||a[t]||a[0])}
-function rankBadge(e,a){var t=e&&e.rank,r=+t;if(!(r>=1&&Number.isInteger(r)))return null;var n=document.createElement("span");n.className="rankchip";n.textContent=fmtNum(r);var l=a&&a.competition?compName(a):"",i=curLang()==="en"?ordNum(r)+" in "+l:"\u0631\u062A\u0628\u0647 "+fmtNum(r)+" \u062F\u0631 "+l;return n.setAttribute("title",i),n.setAttribute("aria-label",i),n.setAttribute("data-tip",i),n}
-function teamRow(e,a,t){var r=document.createElement("div");r.className="team";var n=curLang()==="en"?e.name:e.faName||e.name,l=rankBadge(e,a);if(l){r.className="team team-r";var i=document.createElement("span");i.className="tn",nameInto(i,n),t?(r.appendChild(i),r.appendChild(l)):(r.appendChild(l),r.appendChild(i))}else nameInto(r,n);return r}
+function rankBadge(e,a){var t=e&&e.rank,r=+t;if(!(r>=1&&Number.isInteger(r)))return null;var n=document.createElement("span");n.className="rankchip";n.textContent=fmtNum(r);var l=a&&a.competition?compName(a):"",i=curLang()==="en"?ordNum(r)+" in "+(l?l+" table":"the table"):"\u0631\u062A\u0628\u0647 "+fmtNum(r)+" \u062F\u0631 \u062C\u062F\u0648\u0644"+(l?" "+l:"");return n.setAttribute("title",i),n.setAttribute("aria-label",i),n.setAttribute("data-tip",i),n}
+function teamRow(e,a,t){var r=document.createElement("div");r.className="team";var n=curLang()==="en"?e.name:e.faName||e.name,l=rankBadge(e,a);if(l){r.className="team team-r";var i=document.createElement("span");i.className="tn",nameInto(i,n),t?(r.appendChild(l),r.appendChild(i)):(r.appendChild(i),r.appendChild(l))}else nameInto(r,n);return r}
 /* v13.249-ranktip (S38): the badge tooltip engine — ONE delegated listener
    set on document (the sharewrap-closer precedent) so the SSR badges AND every
    client re-render (lang switch, poll tick) are covered with ZERO per-chip

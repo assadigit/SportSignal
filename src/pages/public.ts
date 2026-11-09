@@ -121,7 +121,7 @@ ${FONT_FACES_STYLE}
      .v-icon, .mc-port img.mc-fill — every removal verified dead against
      every client-referencing surface + the dynamic-class audit + git
      history; no live rule, state, lang, theme or media variant touched). -->
-<link rel="stylesheet" href="/public-13.83.css">
+<link rel="stylesheet" href="/public-13.85.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      \u2014 the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -1506,7 +1506,16 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      tap/Escape/scroll/rerender close), native title stripped on first
      interaction; the SSR twins carry data-tip. The stylesheet renames in
      step (13.82 -> 13.83: .ranktip). -->
-<script src="/public-13.76.js" defer><\/script>
+<!-- v13.251-ranknum (S40): the JS rename 13.76 -> 13.78 (13.77 belongs to
+     the never-pushed S39 round, recovered into assets/ as a retention
+     file) — the owner's quieting directive: the standing stops being a
+     badge; rankBadge()/teamRow() render a quiet PLAIN NUMBER in the name's
+     row on the center-facing flank (home [name,num] / away [num,name]),
+     the label names the table («رتبه ۳ در جدول لیگ قهرمانان اروپا»,
+     fallback «رتبه ۳ در جدول»). The stylesheet renames in step
+     (13.83 -> 13.85: the circle/border/background retire, .tn gains
+     nowrap+ellipsis, the muted 4.5:1 ink). -->
+<script src="/public-13.78.js" defer><\/script>
 <!-- v13.202-threaddiet + v13.203-warmdefer + v13.204-foldsplit (F-M2,
      the full arc): v13.202 split the boot render chain at the fold
      (the above-fold trio updateBigBar/renderHeroSpot/fitHeroNames in

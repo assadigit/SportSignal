@@ -50,7 +50,7 @@ function contrast(fg, bg) {
 }
 
 // --- parse the LIVE stylesheet tokens ---
-const css = read("assets/public-13.83.css"); // v13.249-ranktip: the read follows the 13.82 -> 13.83 rename (the .ranktip rules; every token this gate parses rides unchanged); was 13.82 since v13.248-rankchip: the read follows the 13.81 -> 13.82 rename (the .rankchip rules; every token this gate parses rides unchanged); was 13.81 since v13.209-a11y
+const css = read("assets/public-13.85.css"); // v13.251-ranknum: the read follows the 13.83 -> 13.85 rename (the plain-number rules; every token this gate parses rides unchanged); was 13.83 since v13.249-ranktip: the read follows the 13.82 -> 13.83 rename (the .ranktip rules; every token this gate parses rides unchanged); was 13.82 since v13.248-rankchip: the read follows the 13.81 -> 13.82 rename (the .rankchip rules; every token this gate parses rides unchanged); was 13.81 since v13.209-a11y
 const rootBlock = css.match(/:root\{([^}]*)\}/)[1];
 function token(name) {
   const m = rootBlock.match(new RegExp("--" + name + ":([^;}]+)"));
@@ -144,7 +144,7 @@ const hcAnchorClose = pub.lastIndexOf("</a>", hcSr);
 check("F-M3b: #hcSr lives OUTSIDE the #bigHeroCard anchor", hcSr > -1 && pub.slice(hcAnchorClose + 4, hcSr).replace(/<!--[\s\S]*?-->/g, "").indexOf("<") === -1);
 
 // --- F-M3b final shape (v13.210): BOTH hero card anchors are UNLABELED ---
-const bundle = read("assets/public-13.76.js"); // v13.249-ranktip: the read follows the 13.75 -> 13.76 rename (the S38 tooltip round; the hero-card aria contracts this gate pins ride unchanged); was 13.75 since v13.248-rankchip: the read follows the 13.74 -> 13.75 rename (the S37 team rank-chip round; the hero-card aria contracts this gate pins ride unchanged); was 13.74 since v13.226.1-herowirefix: the read follows the 13.72 -> 13.73 rename (the elision hotfix rename — the immutable-published 13.72.js was edited in place by the first hotfix, violating ADR-006; 13.73 is the rule-following cure); was 13.72 since v13.226-herowire (SS-27): the read follows the 13.70 -> 13.71 rename
+const bundle = read("assets/public-13.78.js"); // v13.251-ranknum: the read follows the 13.76 -> 13.78 rename (the S40 quieting round; the hero-card aria contracts this gate pins ride unchanged; 13.77 was skipped for the never-pushed S39 round); was 13.76 since v13.249-ranktip: the read follows the 13.75 -> 13.76 rename (the S38 tooltip round; the hero-card aria contracts this gate pins ride unchanged); was 13.75 since v13.248-rankchip: the read follows the 13.74 -> 13.75 rename (the S37 team rank-chip round; the hero-card aria contracts this gate pins ride unchanged); was 13.74 since v13.226.1-herowirefix: the read follows the 13.72 -> 13.73 rename (the elision hotfix rename — the immutable-published 13.72.js was edited in place by the first hotfix, violating ADR-006; 13.73 is the rule-following cure); was 13.72 since v13.226-herowire (SS-27): the read follows the 13.70 -> 13.71 rename
 check("F-M3b (v13.210 close-out): the live bundle sets NO aria-label on either hero card (axe's label-content-name-mismatch only MATCHES aria-labeled widgets; name-from-content is always content-matched and the ticking painted digits make every static label unmatchable)", !/e\.setAttribute\("aria-label",\(nm\(t\.homeTeam\)/.test(bundle) && !/e\.setAttribute\("aria-label",hn\+/.test(bundle));
 
 // --- the sub-page final-pass catch (v13.210): the .simcount count chip ---

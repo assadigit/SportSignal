@@ -101,3 +101,53 @@ earlier decisions live in README §"Architecture decisions" and docs/adr/.)
 - **Revisit:** none needed — S40 deploys over it; rollback path is
   `git revert` of S40 (repo state 13.249 + retention files, a
   live-verified look).
+
+## 2026-11-09 — The rank number rides the name's CENTER-FACING flank as a plain text span (S40)
+
+- **Decision:** the standing renders as a quiet plain number (no circle,
+  border, background or icon) in the name's own flex row — home
+  `[name,num]` / away `[num,name]` in logical DOM order — so it sits on
+  the side of the name facing the card's center for both teams in both
+  directions with zero physical left/right CSS. The name (`.tn`) gains
+  nowrap+ellipsis; the number is `flex-shrink:0`, never wraps.
+- **Options:** (a) center-facing plain number (chosen, the owner's
+  directive), (b) keep the S37 outer-flank slot as a plain number
+  (rejected: the owner explicitly asked for the center-facing side), (c)
+  repair the S39 superscript (rejected: the owner asked for the same-row
+  treatment, and the superscript's overhang is what collided with the
+  name and the share menu).
+- **Reason:** supersedes the 2026-11-09 outer-flank decision (S37) and
+  the never-pushed S39 superscript; the plain span needs no positioning
+  context at all, so the overlap class of bugs is structurally gone.
+  Decided by the owner; recorded by the agent.
+
+## 2026-11-09 — The rank label names the table; the fallback keeps the digit (S40)
+
+- **Decision:** `title`/`aria-label`/`data-tip` read «رتبه N در جدول
+  <competition>» ("Nth in <competition> table"); when the fixture carries
+  no competition object the label falls back to «رتبه N در جدول» /
+  "Nth in the table" — the digit STAYS in the fallback (the owner's
+  example pattern «رتبه ۳ در جدول لیگ قهرمانان اروپا» includes it, and
+  the visible number is self-explanatory only with the table context).
+- **Options:** (a) digit in the fallback (chosen), (b) the owner's
+  literal fallback words without the digit («رتبه در جدول») — the tooltip
+  would then name neither the rank nor the table it belongs to.
+- **Reason:** one string shape in both renderers; the S38 tooltip shows
+  the same label. Decided by the agent (safe reading of the owner's
+  fallback wording); revisit if the owner prefers the digit-less form.
+
+## 2026-11-09 — The rank ink: dark #94a3b8, light #5b6b82 — measured, gated (S40)
+
+- **Decision:** the number's muted blue-gray ink is `#94a3b8` (dark
+  theme, the site's own `--muted` value as a dedicated `--rank-chip-ink`
+  token) and `#5b6b82` (light theme — one step darker than the light
+  `--muted` `#64748b`, which measures 4.44:1 on the light row composite
+  and fails the owner's ≥4.5:1 bar). The WCAG ratios are recomputed from
+  the live stylesheet tokens on every `npm test` run (check-team-ranks.js
+  §5b), compositing page bg (+glow worst case) → `.card` glass → row
+  surface.
+- **Options:** (a) dedicated token pair with the gate (chosen), (b)
+  `var(--muted)` per theme (rejected: fails in light), (c) the S39
+  72%-alpha whisper ink (rejected: ~3.4:1, fails).
+- **Reason:** the owner set a measurable bar; the gate keeps it measured.
+  Decided by the agent.

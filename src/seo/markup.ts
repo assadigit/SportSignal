@@ -73,32 +73,37 @@ function kickHtml(iso: string, extra?: string): string {
   return '<div class="kick"><span class="countdown">🕒 <time datetime="' + esc(iso) + '">' + faTime(iso) + "</time></span>" + (extra || "") + "</div>";
 }
 
-// v13.248-rankchip: the SSR twin of the client's rankBadge() — a number-only
-// circle beside the team NAME (outer flank: [badge, name] home / [name, badge]
-// away, logical order — mirrors teamRow() in public-13.76.js). The localized
-// hover/aria label carries the context the bare number cannot ("رتبه ۳ در …").
-// No rank → the plain .team markup, byte-identical to the pre-badge card.
+// v13.248-rankchip (S37, history — the circle; superseded by v13.251 below):
+// the SSR twin of the client's rankBadge(). No rank → the plain .team
+// markup, byte-identical to the pre-badge card.
 // v13.249-ranktip (S38): data-tip carries the same label for the client's
 // delegated tap+hover tooltip (#rankTip — spec §11); the native title stays
 // for the no-JS view and is stripped on the first client interaction.
+// v13.251-ranknum (S40, the owner's quieting directive): the standing is a
+// quiet PLAIN NUMBER in the name's own row, on the name's CENTER-FACING
+// flank — home [name,num] / away [num,name], logical order — mirroring
+// teamRow() in public-13.78.js. The label names the table («رتبه ۳ در جدول
+// لیگ قهرمانان اروپا»), falling back to «رتبه ۳ در جدول» when the fixture
+// carries no competition name.
 function rankChipHtml(t: any, m: any): string {
   const r = t && t.rank;
   const pos = typeof r === "number" ? r : parseInt(r, 10);
   if (!(Number.isInteger(pos) && pos > 0)) return "";
-  const label = "رتبه " + toFaDigits(String(pos)) + " در " + compNameFa(m);
+  const cn = m && m.competition ? compNameFa(m) : "";
+  const label = "رتبه " + toFaDigits(String(pos)) + " در جدول" + (cn ? " " + cn : "");
   return '<span class="rankchip" title="' + esc(label) + '" aria-label="' + esc(label) + '" data-tip="' + esc(label) + '">' + toFaDigits(String(pos)) + "</span>";
 }
 function sideHome(t: any, teamName: string, m?: any): string {
   const rc = rankChipHtml(t, m);
   const team = rc
-    ? '<div class="team team-r">' + rc + '<span class="tn">' + nameHtml(teamName) + "</span></div>"
+    ? '<div class="team team-r"><span class="tn">' + nameHtml(teamName) + "</span>" + rc + "</div>"
     : '<div class="team">' + nameHtml(teamName) + "</div>";
   return '<div class="side">' + logoHtml(t) + team + "</div>";
 }
 function sideAway(t: any, teamName: string, m?: any): string {
   const rc = rankChipHtml(t, m);
   const team = rc
-    ? '<div class="team team-r"><span class="tn">' + nameHtml(teamName) + "</span>" + rc + "</div>"
+    ? '<div class="team team-r">' + rc + '<span class="tn">' + nameHtml(teamName) + "</span></div>"
     : '<div class="team">' + nameHtml(teamName) + "</div>";
   return '<div class="side away">' + team + logoHtml(t) + "</div>";
 }
