@@ -2,84 +2,60 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole task.
 
-## Session goal (S40, started 2026-11-09 — the owner's rank-number quieting round)
+## Current state (after S40, v13.251-ranknum, 2026-11-09)
 
-**Objective:** fix the league-standing number that OVERLAPS the club name on
-the match cards, and make it low-key: a quiet plain number in the same row
-as the club name — no circle, no border, no background, no icon — on the
-name's center-facing side for BOTH teams, logical CSS/flex order only,
-name truncates with ellipsis first, number `flex-shrink:0` never wraps,
-11–12px regular tabular Persian digits, muted blue-gray ≥4.5:1 contrast
-(measured), `title`+`aria-label` naming the table («رتبه ۳ در جدول لیگ
-قهرمانان اروپا», fallback «رتبه ۳ در جدول»), no rank → render nothing.
-Clear of the three-dot share menu. Verified at 360/768/1280px for every
-card variant; before/after screenshots into `docs/assets/`.
+The S40 quieting round is **done in code, tested, deployed and
+live-verified** — see `docs/history/2026-11-09-s40-ranknum.md` for the
+full record; the S38/S37 rounds before it live in
+`docs/history/2026-11-09-s38-ranktip.md` / `s37-rankchip.md`:
 
-**Milestones:** M1 recover the unpushed S39 drift (live serves
-`public-13.77.js`/`13.84.css` that git lacks) + BEFORE screenshots ·
-M2 the S40 implementation (client bundle + CSS + SSR twin + plumbing +
-checks + docs) · M3 local QA matrix (seeded KV + agent-browser, 3 widths,
-RTL/LTR, truncation, tooltip, light theme) · M4 deploy + live verify +
-AFTER screenshots + handoff docs.
-
-**Known going in:** live = v13.250-ranksup (S39: the chip became a
-physical top-right superscript on the name — THIS is the overlap the owner
-reports; that round was deployed but never pushed). S40 supersedes S39's
-presentation entirely and numbers after it (13.251, 13.78.js, 13.85.css,
-sw v124).
-
-## Current state (after S38, v13.249-ranktip, 2026-11-09)
-
-The S38 tooltip round is **done in code, tested, deployed and
-live-verified** — see `docs/history/2026-11-09-s38-ranktip.md` for the
-full record; the S37 rank-chip round before it lives in
-`docs/history/2026-11-09-s37-rankchip.md`:
-
-- Every rank chip on the match cards now explains itself on demand:
-  **hover** (200ms rest) and **tap** (instant toggle) open a small dark
-  bubble with the SAME localized label the badge carries as its
-  accessible name — «رتبه ۶ در لیگ برتر انگلیس» / "6th in Premier
-  League" — one delegated listener set + ONE shared `#rankTip` bubble,
-  so the SSR badges and every client re-render are covered with zero
-  per-chip wiring. Outside tap / Escape / scroll / re-render close it;
-  the tap never navigates the card link.
-- Assets renamed per ADR-006: public-13.75.js→13.76.js,
-  public-13.82.css→13.83.css; `_headers` cap sweep #19 (the expired
-  13.38.js + 13.50.css pins evicted, files on disk; still 100 rules);
-  SW cache v122; heroes:sync regen; version 13.249.
-- `scripts/check-team-ranks.js` grew 27 → 34 checks; `npm test` exit 0
-  (2945 checks).
+- The league-standing number no longer overlaps the club name (the
+  never-pushed S39 superscript was the root cause — recovered and
+  superseded). It is now a quiet PLAIN NUMBER in the name's own row on
+  the center-facing flank (home [name,num] / away [num,name], logical
+  order), 11px regular tabular Persian digits, `flex-shrink:0`; the NAME
+  truncates with an ellipsis first; a measured ≥4.5:1 muted blue-gray
+  ink (dark #94a3b8 / light #5b6b82 — the contrast is a permanent gate
+  in `check-team-ranks.js`); the label names the table («رتبه ۳ در جدول
+  لیگ قهرمانان اروپا», fallback «رتبه ۳ در جدول»); no rank renders
+  nothing. The S38 tap+hover tooltip rides along unchanged.
+- Assets renamed per ADR-006: public-13.76.js→13.78.js,
+  public-13.83.css→13.85.css (13.77/13.84 were the unpushed S39 names —
+  those files are recovered into `assets/` as retention copies);
+  `_headers` cap sweep #20 (the expired 13.39.js + 13.51.css pins
+  evicted, files on disk; still 100 rules); SW cache v124; heroes:sync
+  regen; version 13.251. `npm test` exit 0 (2948 checks,
+  check-team-ranks 36).
 
 ## Where things are
 
-- Version: `13.249-ranktip` (package.json / src/config.ts / lockfile in sync).
+- Version: `13.251-ranknum` (package.json / src/config.ts / lockfile in sync).
 - Deploy: `npx wrangler deploy` (worker `ucl-notifier`) — deployed
-  2026-11-09, healthz ok, live tap+hover verified on the real payload.
+  2026-11-09 (version 5e50aec9), healthz ok, live-verified at 360/768/
+  1280px (zero overlaps, clean ellipsis truncation on the longest names,
+  tooltip live-tapped).
 - The design pack stays filed: spec `docs/specs/team-rank-indicator.md`
-  (§11 = the S38 addendum), audit
-  `docs/audits/2026-11-09-team-rank-indicator.md`, reference
-  `docs/assets/team-rank-reference-match-cards-2026-11-09.jpg`, zip
-  `docs/assets/sportsignal-team-rank-design-pack.zip`.
+  (§12 = the S40 addendum), audit
+  `docs/audits/2026-11-09-team-rank-indicator.md`, screenshots
+  `docs/assets/s40-ranknum/` (before ×4, after-local ×6, after-live ×4).
 
 ## Standing limits and reminders
 
 - `_headers` sits at exactly 100 rules again — the NEXT +1 pin needs cap
-  sweep #20 (next-oldest expired candidates after this round's
-  13.38.js/13.50.css evictions: the JS pins 13.39.js/13.41.js, the CSS
-  pins 13.51.css/13.52.css — grep check-stats first, every flip needs
-  the co-evolution in the giant pins check).
+  sweep #21 (next-oldest expired candidates after this round's
+  13.39.js/13.51.css evictions: the JS pin 13.41.js, the CSS pin
+  13.52.css — grep check-stats first, every flip needs the co-evolution
+  in the giant pins check).
 - The EL/ECL rank limitation is deliberate (no new provider fetches) —
   see the S37 audit + DECISIONS before "fixing" it.
-- The Telegram SVG cards (`src/card.ts`) deliberately carry NO rank chip;
-  the hero/mcard surfaces stay badge-free by design.
-- The tooltip's transient 4px crest kiss on desktop rows is documented
-  (standard overlay semantics, pointer-transparent) — the gap-bump fix
-  (10→16px) would need one more rename round; see the S38 history
-  record's "Known notes".
+- The Telegram SVG cards (`src/card.ts`) deliberately carry NO rank
+  number; the hero/mcard surfaces stay number-free by design.
+- The recovered S39 assets (`public-13.77.js`/`13.84.css`) stay in
+  `assets/` forever (retention); they ride default cache headers.
 
 ## Next session candidates
 
 - Continue the owner's standing SEO focus (README's WHERE TO CONTINUE note).
-- If the owner asks: the tooltip gap/arrow polish round (one rename: the
-  crest-clearing 16px gap + optionally a 6px arrow), rank chips on the
-  Telegram SVG cards, or EL/ECL table coverage (see the S37 record).
+- If the owner asks: rank numbers on the Telegram SVG cards, or EL/ECL
+  table coverage (see the S37 record), or the tooltip polish round noted
+  in S38 (the 16px crest-clearing gap).
