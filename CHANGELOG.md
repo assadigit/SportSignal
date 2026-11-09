@@ -4,6 +4,33 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.251-ranknum (re-verified) — S41: the independent live re-verification round
+
+**S41, 2026-11-09 (the owner re-sent the S40 directive; this session verified
+rather than trusted the S40 record).** **Zero code, asset or worker changes**
+— every requirement of the directive was re-verified against the live site
+with independent tooling and passed; full record in
+`docs/history/2026-11-09-s41-rankverify.md`, evidence in
+`docs/assets/s41-rankverify/`.
+
+- `npm test` exit 0 (2948 checks, incl. the rank + contrast gates); live
+  `/healthz` reports `13.251-ranknum`, ok.
+- Live DOM sweep, **360/768/1280px in fa/RTL AND en/LTR**: 76 chips (62 spot
+  + 6 featured green-border + 8 list rows) — zero overlaps with the name,
+  logo, central time block or three-dot menu; zero clipped; home
+  `[name,num]` / away `[num,name]` center-facing in both directions; the
+  three longest names truncate with a clean ellipsis at 360px while the
+  two-digit numbers stay intact; 2 rank-less teams render nothing.
+- **Real-pixel contrast re-measured** (background sampled directly above/
+  below each chip across 5 animation frames): dark-theme worst **5.67:1 —
+  PASS** (the reachable theme; the boot script forces dark).
+- Two known notes filed in DECISIONS (deliberate non-changes): the
+  **unreachable light theme** measures 4.45:1 worst on the bluest glow
+  spots (fix the ink only if that theme ever ships), and the **featured
+  cards' pre-existing green shimmer** transiently dips the number to
+  ~3.4–3.8:1 while the band sweeps over it (it washes every element on
+  those cards equally; card decoration outside this feature's scope).
+
 # v13.251-ranknum — the standing becomes a quiet plain number in the name's row
 
 **S40, 2026-11-09 (the owner's directive: fix the league-standing number

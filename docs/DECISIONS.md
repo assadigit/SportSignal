@@ -151,3 +151,44 @@ earlier decisions live in README §"Architecture decisions" and docs/adr/.)
   72%-alpha whisper ink (rejected: ~3.4:1, fails).
 - **Reason:** the owner set a measurable bar; the gate keeps it measured.
   Decided by the agent.
+
+## 2026-11-09 — The light-theme rank ink stays #5b6b82 despite a 4.45:1 real-pixel worst (S41)
+
+- **Decision:** do NOT change the light ink now. The S41 re-verification
+  measured the real-pixel worst on live light surfaces at 4.45:1 (bluest
+  glow spots; the modeled gate says 4.94:1) — technically below the owner's
+  4.5:1 bar, but the light theme is unreachable for users: the page boot
+  script hard-codes `data-theme="dark"` on every load, `#tbtn` is not in
+  the DOM and `toggleTheme()` is never bound. Changing the ink would force
+  the full ADR-006 release ritual (asset rename, `_headers` cap sweep #21
+  at the 100-rule cap, SW bump, check co-evolution, version bump, deploy)
+  for zero user-visible effect.
+- **Options:** (a) leave it, document, fix only if the light theme ships
+  (chosen), (b) darken the light ink to ~`#52637c` (≈4.9:1 vs the worst
+  measured surface) with the full release ritual now, (c) also strengthen
+  the permanent gate to model the real glow peak.
+- **Reason:** smallest change that fully satisfies the directive on the
+  reachable UI (dark real-pixel worst 5.67:1, PASS); the owner's
+  "don't ask" instruction this session said pick the safest option and
+  mention it. Decided by the agent; revisit the moment a theme toggle
+  ships or the owner asks.
+
+## 2026-11-09 — The featured cards' green shimmer stays; its transient contrast dip on the number is accepted (S41)
+
+- **Decision:** leave the pre-existing featured-card treatment
+  (v13.66-flatglow: `--feat-tint` 6%, `--feat-glow` 22% border+glow, the
+  animated `::before` shimmer band) untouched. S41 measured the number's
+  effective contrast dipping to ~3.4–3.8:1 for the fraction of a second
+  the shimmer band sweeps over it — but the band washes EVERY content
+  element on those 6 cards equally (the white club names dip from ~15:1 to
+  >7:1 and stay fine), it predates the rank feature by ~90 versions, and
+  the task constraint forbids changing card colors/decoration outside the
+  number. Making the ink bright enough to clear 4.5:1 under the flash
+  (~#c2cede) would visibly violate the owner's "low-key" directive.
+- **Options:** (a) accept + document (chosen), (b) brighten the number's
+  ink to clear the flash (rejected: not low-key), (c) dim/remove the
+  shimmer (rejected: out of scope, owner-designed card look).
+- **Reason:** the 4.5:1 bar applies to the card background (static
+  surfaces — the number passes there: dark 5.67:1 real-pixel worst); the
+  shimmer is a passing whole-card animation, not the background. Decided by
+  the agent; revisit if the owner ever wants the featured cards quieter.
