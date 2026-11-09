@@ -156,7 +156,13 @@ Next session: <prompt below / nothing needed>
 
 On the first session in a repo, fill this section from your audit and keep it correct. Keep it short and factual: tech stack, hosting, default branch and deploy method, commands to run, test and deploy, database and backup commands, key folders, and any standing limits from the owner.
 
-(Not yet filled in.)
+- **Stack:** Cloudflare Workers (TypeScript, zero framework), one worker `ucl-notifier` deployed with `npx wrangler deploy` (assets + worker together). State: KV namespace `STATE`, two D1 databases (STATS_DB, USERS_DB), Workers AI binding `AI`.
+- **Default branch:** `main`. Deploy = push is not automatic — deploy manually per RUNBOOK §2 ritual (`npm test` → `npx wrangler dev` smoke → `npx wrangler deploy` → verify `/healthz`).
+- **Commands:** `npm test` (tsc + the check scripts — must exit 0 before every deploy). **npm only, never `bun install`** (breaks @resvg/resvg-wasm). Port for local dev: `npx wrangler dev` (8787).
+- **Key folders:** `src/` (worker modules; `scripts/lib/worker-src.js` carries the bundle file ORDER — co-evolve when adding files), `assets/` (immutable versioned client payload: `public-*.js/css`, `core-*.js`; rename-on-edit + `_headers` pin + `sw.js` cache bump), `docs/` (RUNBOOK, HANDOFF, specs, audits, history/ session records).
+- **Testing:** plain Node check scripts that eval-extract the REAL bundled source; new features get a new `scripts/check-*.js` wired into the `package.json` test chain.
+- **Backups:** KV is live state; no routine file backups (RUNBOOK §5 has the KV key contracts). Never rename KV keys.
+- **Standing limits:** `_headers` sits at the 100-rule cap — every new pin needs a cap sweep (check-stats pins some old JS pins; grep before evicting).
 
 ## 12. First-time setup of a repo (do this automatically)
 
