@@ -197,3 +197,33 @@ belongs in its own small session).
 FD token (credentials used, not stored) and the public TSP/SportScore
 endpoints. Provider docs were read at football-data.org/documentation/api and
 thesportsdb.com/docs_api_guide.*
+
+---
+
+## 8. Addendum (the continuation session, 2026-11-10 ~12:30 UTC) — a positive lineup probe
+
+The main report's TSP lineup evidence was two `null` probes. A third probe
+by the continuation session caught the feature populated:
+
+- `lookuplineup.php?id=2494090` (Manchester United vs Aston Villa,
+  2026-11-08, EPL, finished, new test key `123`) returned a **full lineup
+  array**: per player — `strPlayer` ("Harry Maguire"), `strPosition`
+  ("Centre-Back"), `strHome` ("Yes"), `strSubstitute` ("No"),
+  `intSquadNumber` ("5"), `strTeam`, plus player image URLs
+  (`strCutout`/`strThumb`/`strRender`).
+- The upcoming-fixture probe (an `eventsnextleague` event) still returned
+  `{"lineup":null}` — consistent with §3.2's "populates only close to
+  kickoff" reading.
+
+This strengthens (does not change) the verdict: TSP's free lineups are REAL
+when present — starter/substitute flags, positions, squad numbers, images —
+but arrival is late and coverage uneven. The owner's Q2 trade-off stands:
+pay for reliability (FD Tier 2's documented `lineup`/`bench` on the Match
+resource — unverified behind the paywall) or accept sparse free coverage.
+
+Also re-verified this session (no change to the report): FD v4 has **no
+lineup endpoint** (`/v4/matches/{id}/lineups|lineup|players` all 404) and
+the free-tier Match object carries no lineup/bench field — the paid-tier
+docs example (Match resource, `#match` anchor on
+football-data.org/documentation/api) is where the lineup/bench arrays are
+documented.

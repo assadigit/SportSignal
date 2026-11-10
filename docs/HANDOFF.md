@@ -26,12 +26,18 @@
   provider (FD ~49€/mo) or TSP's sparse free coverage. **S3 "where to watch"
   closed** (no audience-fit source); S3 lineups = owner decision (plan Q2).
   No worker deploy (scripts + docs only); `npm test` passes.
-- **Infra (owner instruction, NOT done this session):** rename the Cloudflare
-  worker `ucl-notifier` → `sportsignal`, delete the duplicate worker. This is a
-  risky, out-of-S1-scope operation (touches the live deploy target + custom
-  domain routing). Read-only investigation done; **deferred to a dedicated
-  session** with the owner's explicit go-ahead — see the S1 final report and
-  DECISIONS.
+- **Infra (owner instruction) — half done, half deferred (the continuation
+  session, 2026-11-10):** the duplicate worker `sportsignal-site` is
+  **DELETED** (verified unrouted first; its workers.dev URL now 404s; the
+  account keeps `ucl-notifier` + `uefa-image-relay`, which is a portrait
+  utility, NOT a duplicate). The rename `ucl-notifier` → `sportsignal` is
+  **deferred with an exact blocker**: no rename API exists, and a
+  new-worker rename cannot migrate the write-only secrets ADMIN_PASS,
+  ADMIN_TOKEN, CHAT_ID — losing them locks the /admin panel and the owner's
+  bot-admin identity. Options A (keep the name — recommended) / B (owner
+  supplies the three values) / C (generate new, handed over once) are with
+  the owner in the S1 final report; see DECISIONS 2026-11-10
+  (continuation).
 
 **Out of scope (hands off):** the title template, the today/tomorrow/
 this-weekend hubs, the sitemap. Everything SEO-facing is logged in

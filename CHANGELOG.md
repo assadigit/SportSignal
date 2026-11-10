@@ -4,6 +4,38 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# S1 continuation round, 2026-11-10 — duplicate worker deleted; rename blocked by unreadable secrets; investigation addendum
+
+**The S1 continuation session (a second agent run on the same prompt,
+reconciled with the parallel run's already-pushed M3).** No worker code
+changed; the live release stays v13.255-seospell.
+
+- **(1) Reconciliation.** The continuation run found its own M3 work
+  duplicated by a parallel session's already-pushed commit (`ffd0165` +
+  the session record `7bf78b2`); the remote was adopted as canonical
+  (the local duplicate is preserved on the branch `keep-my-m3` for
+  reference — its deeper T-25 variant measured 57 window matches
+  including followed-only fixtures, all ≥3 links at crawl depth 4,
+  confirming the same invariant the canonical T-25 checks).
+- **(2) The duplicate worker `sportsignal-site` is DELETED** (the owner's
+  end-of-prompt instruction). Verified unrouted first (no custom domain,
+  no zone routes — the S26 rollback had already removed them, only the
+  dormant workers.dev URL answered); deletion verified (404); the live
+  worker was untouched (healthz ok throughout). `uefa-image-relay` is
+  kept — a portrait-pipeline utility, not a duplicate.
+- **(3) The rename `ucl-notifier` → `sportsignal`: deferred with the exact
+  blocker.** No rename API exists for Workers; a rename means a new worker
+  + moving both custom domains + re-setting every secret — and ADMIN_PASS,
+  ADMIN_TOKEN, CHAT_ID are write-only (the prompt supplied only BOT_TOKEN
+  and API_TOKEN). Losing them locks /admin and the owner's bot-admin
+  identity with no undo. Options A/B/C are with the owner (DECISIONS,
+  2026-11-10 continuation).
+- **(4) Investigation addendum** (`docs/audits/…-broadcast-lineup-data.md`
+  §8): a positive `lookuplineup.php` probe (a full lineup — positions,
+  squad numbers, starter/substitute flags, player images — for a finished
+  EPL match) plus the FD no-lineup-endpoint re-verification. Strengthens
+  the report's TSP verdict; no conclusion changes.
+
 # v13.255.1-s1m3 — S1 M3: internal-link coverage check (T-25) + broadcast/lineup investigation
 
 **S1 M3, 2026-11-10 (the SEO growth plan's quick-wins close —

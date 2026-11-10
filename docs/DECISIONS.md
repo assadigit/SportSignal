@@ -359,3 +359,42 @@ earlier decisions live in README §"Architecture decisions" and docs/adr/.)
   request). The SEO plan's S1 is done and verified; the infra task is
   separable and safer alone. Decided by the agent; recorded for the owner.
   Revisit: when the owner opens the dedicated worker-rename session.
+## 2026-11-10 (continuation session) — duplicate worker deleted; rename blocked by unreadable secrets, question to the owner
+
+- **Decision 1 — the duplicate worker `sportsignal-site` is DELETED.** The
+  owner's instruction ("remove the duplicated worker which doesnt belong to
+  sportsignal.ir") was executed after verifying it served nothing: no custom
+  domain, no zone routes (deleted in the S26 rollback per the RUNBOOK note),
+  only its dormant `sportsignal-site.sportsignal.workers.dev` URL (the
+  rolled-back S25 Next.js landing experiment — the RUNBOOK itself
+  pre-authorized deleting it "if the landing direction is ever abandoned").
+  Deletion verified: the workers.dev URL now 404s; the account carries
+  `ucl-notifier` (the live worker) + `uefa-image-relay` (the portrait-pipeline
+  utility — NOT a duplicate, kept). sportsignal.ir unaffected throughout
+  (healthz ok:true before and after).
+- **Decision 2 — the rename `ucl-notifier` → `sportsignal` stays deferred,
+  now with the exact blocker identified.** There is no rename API (PATCH on
+  the script is rejected for this auth scheme; no rename endpoint exists), so
+  renaming = deploy a NEW worker + move the two custom domains
+  (sportsignal.ir, football.sportsignal.ir) + re-set ALL secrets + delete the
+  old worker. Secrets are write-only: the prompt supplied BOT_TOKEN and
+  API_TOKEN; **ADMIN_PASS, ADMIN_TOKEN and CHAT_ID cannot be read or
+  migrated** — without them the /admin panel locks, the owner's bot-admin
+  identity (Alitagram, env.CHAT_ID gates every admin command) and the admin
+  alerts die, with no recovery path that does not involve the owner handing
+  over new values. WEBHOOK_SECRET is regenerable (re-register the Telegram
+  webhook with the bot token); HEALTHCHECK_PING_URL is not set on the live
+  worker (one less). Options for the owner: **A. keep the name
+  `ucl-notifier`** (recommended — the name is internal, invisible to
+  visitors; zero risk), **B. supply the three values** (ADMIN_PASS,
+  ADMIN_TOKEN, CHAT_ID — from wherever they were stored at the 2026-10-13
+  account migration) and a continuation session executes the full rename,
+  **C. have the session generate new ADMIN values and accept that they must
+  be handed over once through a channel the owner chooses** (against the
+  repo's credential-handling rules — only if the owner insists).
+- **Reason:** AGENTS.md §5's stop-and-ask list covers domain changes and
+  actions without an undo path; a rename that silently breaks the owner's
+  own admin tools is not a "working result end to end". The duplicate
+  deletion carried no such risk and is done.
+- **Who:** the continuation agent. **Revisit:** the owner answers A/B/C
+  (final report); any later session executes B or C if chosen.
