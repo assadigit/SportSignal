@@ -1,41 +1,43 @@
 # HANDOFF — SportSignal
 
-> Agents: read AGENTS.md in the repo root first, and follow it for this whole task.
+> Agents: read AGENTS.md in the repo root first, and follow it for the whole task.
 
-## Current state (after S43, 2026-11-10 — the always-show round)
+## Current state (after S44 + the S44.1 hotfix, 2026-11-10 — the rank-badge container round)
 
-The S43 round (v13.253-alwaysshow) is LIVE: per the owner's directive
-("Do not add the quiet down option if user has tapped already. always
-show it."), the sticky channel bar's 30-day tap-silence memory — the
-mechanism behind BOTH earlier "gone bar" reports (S32, S42) — is
-RETIRED outright. The inline controller (`src/pages/public.ts`) reads
-and writes NO localStorage verdict at all: every `sp_pill_*` key the
-earlier rounds left in visitors' browsers is permanently inert (a
-browser holding an old tap verdict — the owner's included — sees the
-bar on the very next load, no migration). A tap (bar body OR the blue
-mark) now does exactly ONE thing: opens the channel in a new tab; the
-bar stays on screen and returns on every future visit. The standing
-reveal gates ride unchanged: the 20% scroll rule + the <=600px
-mobile-only law (>=601px keeps the #tgFab bot FAB). Full record:
-`docs/history/2026-11-10-s43-alwaysshow.md`, evidence
-`docs/assets/s43-alwaysshow/`, decision in DECISIONS (2026-11-10) +
-ADR-008-pill-always-show.md.
+The S44 round (v13.254.1-rankbadgefix) is LIVE on sportsignal.ir and
+workers.dev: per the owner's approved container (signed off in the sandbox
+replica — "I only approve the number container (e.g #5)"), the league
+standing left the name's row (the S40 plain number) and rides the CREST as
+a small anchored "#N" pill — Persian digits, the leading # isolated in an
+inner dir="ltr" text span, a solid dark disc (#0c1524) with a thin steel
+border (#46648f), pinned to the crest's bottom corner on the row's OUTER
+flank (home = inline-start corner, away = inline-end — one logical rule per
+side, mirroring correctly in RTL and LTR), with the #liveCard 28px-crest
+(14px) and narrow-screen 37px-crest (16px) step-downs. The name row is the
+plain pre-badge .team markup for every team; the S38 tap+hover tooltip rides
+the unchanged .rankchip class; the hero carousel stays badge-free (the spec
+scope law). Full record: `docs/history/2026-11-10-s44-rankbadge.md`,
+evidence `docs/assets/s44-rankbadge/`, spec §13.
 
-- Verified live post-deploy (agent-browser, 360px): the owner-sim
-  (joined7 = 1h ago — the exact state that HID the bar on v13.252) now
-  SHOWS the bar; a real tap on the blue mark opened t.me in a new tab
-  while the bar stayed visible, with NO key written; reload-after-tap
-  still shows; fresh visitors show in fa + en; 768px hides the pill and
-  shows the #tgFab (mobile-only law intact); console + page errors
-  clean; `/healthz` = `13.253-alwaysshow`.
-- An HTML-only round: no bundle edit, no CSS rename, no SW bump; the
-  v13.252 live check demoted with its survivors re-pinned in the new
-  v13.253 live check (the all-pill-memory-keys-gone law); the page
-  baseline re-frozen via `--update` (admin/login byte-identical after).
-  `npm test` exit 0 (2950 checks).
-- The custom-domain edge served the cached v13.252 HTML for ~3.5 min
-  after deploy (expected: `s-maxage=60` + `stale-while-revalidate=300`);
-  workers.dev had the new bytes immediately.
+- THE S44.1 HOTFIX (ADR-006, ~8 min after the first S44 deploy): the first
+  deploy shipped a corner-mirror bug — the outer .rankchip carried
+  direction:ltr, so its inset-inline-* corner rules resolved against the
+  badge's own ltr instead of the page's rtl (both pills sat on the INNER
+  corners). The fix moved the ltr to the inner #N span (the approved
+  structure) AND shipped under fresh names per ADR-006 rename-on-edit:
+  public-13.79.js -> 13.80.js + public-13.86.css -> 13.87.css, SW v125 ->
+  v126 (the ~8-minute-window immutable copies are stranded; the buggy files
+  stay on disk riding default headers). LESSON RE-LEARNED: never edit an
+  already-published immutable asset in place — not even 8 minutes later.
+- Verified live post-deploy (agent-browser, fresh sessions): 76 badges at
+  360px (16px step) / 768px / 1280px (18px) in fa/RTL AND en/LTR — home
+  pills at the crest's bottom-outer corner, away pills mirrored, zero
+  overlap with names/times/menus; the # sits left of the digits (no RTL
+  flip); the S38 tooltip opens on tap («رتبه ۶ در جدول لیگ برتر انگلیس»)
+  and closes on outside tap; `/healthz` = `13.254.1-rankbadgefix`, ok;
+  console clean. `npm test` exit 0 (2954 checks).
+- The custom-domain edge served the previous deploy's HTML for ~2-3 min
+  after each deploy (expected: `s-maxage=60` + `stale-while-revalidate=300`).
 
 ## Where things are (the S41/S40 verification record — the rank numbers)
 

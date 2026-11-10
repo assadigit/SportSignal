@@ -553,6 +553,29 @@
 # still reads other copies — so an ancient cached HTML re-fetching it
 # still resolves, it just rides the default cache headers, the sweep #19
 # precedent).
+# v13.254.1-rankbadgefix (ADR-006 hotfix, 2026-11-10): the S44 bundle ships
+# under a FRESH name — public-13.79.js -> 13.80.js. The first S44 deploy
+# published the corner-mirror bug (the outer .rankchip's own direction:ltr
+# flipped its inset-inline-* resolution); any client that fetched the
+# ~8-minute-window 13.79.js bytes holds them immutable for a year, so the
+# fixed bytes must never re-use the name (ADR-006). 13.79.js stays on disk,
+# riding the default cache headers (the sweep-precedent retention class).
+# v13.254-rankbadge (S44, 2026-11-10): public-13.78.js -> 13.79.js — the
+# owner's approved container: the standing rides the CREST as a small
+# anchored pill. rankBadge() stamps dir="ltr" + a leading # (the # must not
+# flip in RTL); logo(e,badge) tucks the pill inside the .logo wrapper (the
+# onerror monogram swap re-appends it); teamRow(e) reverts to the plain
+# name-only .team row for every team; the hero carousel's logo(side) stays
+# badge-free (spec scope law); the S38 tooltip engine rides the .rankchip
+# class unchanged. 13.78.js stays served + pinned one SEO TTL below
+# (stale-HTML retention). THE 100-RULE CAP SWEEP #21: the +1 pin needed
+# one eviction — the expired /public-13.41.js pin (the v13.143-era bundle,
+# ~112 releases past its one-SEO-TTL retention; the FILE stays on disk, an
+# ancient cached HTML re-fetching it still resolves — it just rides the
+# default cache headers, the sweep #19/#20 precedent).
+/public-13.80.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.78.js
   Cache-Control: public, max-age=31536000, immutable
 
@@ -743,6 +766,23 @@
 # retention, same retention class; the FILE stays on disk). (13.84.css —
 # the never-pushed S39 round's stylesheet, recovered verbatim into
 # assets/ — rides the default cache headers like 13.77.js above.)
+# v13.254.1-rankbadgefix (ADR-006 hotfix): the S44 stylesheet ships under a
+# FRESH name — public-13.86.css -> 13.87.css (the corner-mirror fix bytes;
+# the ~8-minute-window 13.86.css immutable copies are stranded, ADR-006;
+# 13.86.css stays on disk, riding the default cache headers).
+# v13.254-rankbadge (S44): public-13.85.css -> 13.86.css — the anchored
+# crest pill: the per-side outer-corner mirror rule (home = inline-start,
+# away = inline-end — direction-agnostic RTL/LTR), .logo gains
+# position:relative + overflow:visible scoped to .match .side .logo, the
+# #liveCard + narrow-screen step-downs, the light-theme disc pair; the
+# S40 .team-r/.tn row rules retire (the name row is the plain pre-badge
+# markup). 13.85.css stays served + pinned one SEO TTL below. CAP SWEEP
+# #21's second eviction: the expired /public-13.52.css pin (the
+# v13.170-mcv3-era stylesheet, ~84 releases past its one-SEO-TTL retention,
+# same retention class; the FILE stays on disk).
+/public-13.87.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /public-13.85.css
   Cache-Control: public, max-age=31536000, immutable
 
@@ -881,8 +921,11 @@
 /public-13.58.css
   Cache-Control: public, max-age=31536000, immutable
 
-/public-13.41.js
-  Cache-Control: public, max-age=31536000, immutable
+# v13.254-rankbadge CAP SWEEP #21: the /public-13.41.js pin EVICTED (the
+# +1 pin for this release's /public-13.79.js needed it — the oldest expired
+# JS pin, ~112 releases past its one-SEO-TTL retention; the FILE stays on
+# disk per the retention rule, an ancient cached HTML re-fetching it still
+# resolves, it just rides the default cache headers).
 
 # v13.244-grasspill cap sweep #17: the /public-13.57.css pin EVICTED
 # (the oldest expired pin no gate pins, the v13.186-qa era, ~58 releases
@@ -960,8 +1003,10 @@
 # stadium lights +15% brightness +15% opacity) — immutable under the
 # rename-on-edit rule; the retired 13.51/13.37 pair stays pinned below per
 # the retention rule (stale edge HTML <=900s may still reference them).
-/public-13.52.css
-  Cache-Control: public, max-age=31536000, immutable
+# v13.254-rankbadge CAP SWEEP #21 (second eviction): the /public-13.52.css
+# pin EVICTED (the +1 pin for this release's /public-13.86.css needed it —
+# the oldest expired CSS pin, ~84 releases past its one-SEO-TTL retention;
+# the FILE stays on disk per the retention rule).
 
 # v13.249-ranktip cap sweep #19: the /public-13.38.js pin EVICTED (the
 # oldest expired JS pin, the v13.135-zoomlight bundle, ~114 releases past

@@ -53,11 +53,15 @@ function monogram(t: any): string {
 
 // logo() equivalent. Crests are provider-hosted https images (existing
 // design); alt="" is decorative — the team name is adjacent text (A-01/A-02).
-export function logoHtml(t: any): string {
+// v13.254-rankbadge (S44): the rank pill (when the team carries a standing)
+// rides INSIDE the .logo wrapper — the stylesheet anchors it to the crest's
+// bottom corner on the row's outer flank. The wrapper is otherwise unchanged.
+export function logoHtml(t: any, badge?: string): string {
+  const b = badge || "";
   if (t && t.crest) {
-    return '<span class="logo"><img src="' + esc(t.crest) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="40" height="40"></span>';
+    return '<span class="logo"><img src="' + esc(t.crest) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="40" height="40">' + b + "</span>";
   }
-  return '<span class="logo">' + esc(monogram(t)) + "</span>";
+  return '<span class="logo">' + esc(monogram(t)) + b + "</span>";
 }
 
 function scoreHtml(score: any, extraClass?: string): string {
@@ -79,33 +83,38 @@ function kickHtml(iso: string, extra?: string): string {
 // v13.249-ranktip (S38): data-tip carries the same label for the client's
 // delegated tap+hover tooltip (#rankTip — spec §11); the native title stays
 // for the no-JS view and is stripped on the first client interaction.
-// v13.251-ranknum (S40, the owner's quieting directive): the standing is a
-// quiet PLAIN NUMBER in the name's own row, on the name's CENTER-FACING
-// flank — home [name,num] / away [num,name], logical order — mirroring
-// teamRow() in public-13.78.js. The label names the table («رتبه ۳ در جدول
-// لیگ قهرمانان اروپا»), falling back to «رتبه ۳ در جدول» when the fixture
-// carries no competition name.
+// v13.251-ranknum (S40, history — the quiet plain number in the name's own
+// row; superseded by v13.254 below).
+// v13.254-rankbadge (S44, the owner's approved container — the sandbox-signed
+// design): the standing rides the CREST as a small anchored pill: "#N" in
+// Persian digits, the leading # kept from flipping in RTL by the inner
+// text span's dir="ltr" (+ unicode-bidi:isolate in the stylesheet; the outer
+// span keeps the page direction so the corner rules stay page-relative). The pill pins to the
+// crest's bottom corner on the row's OUTER flank — home side = the
+// inline-start corner, away side = the inline-end — the mirror rule,
+// direction-agnostic in RTL and LTR (the stylesheet's corner rules). The
+// name row reverts to the plain pre-badge .team markup for EVERY team. The
+// label keeps naming the table («رتبه ۳ در جدول لیگ قهرمانان اروپا»,
+// fallback «رتبه ۳ در جدول»), and the S38 tooltip rides the unchanged
+// .rankchip class.
 function rankChipHtml(t: any, m: any): string {
   const r = t && t.rank;
   const pos = typeof r === "number" ? r : parseInt(r, 10);
   if (!(Number.isInteger(pos) && pos > 0)) return "";
   const cn = m && m.competition ? compNameFa(m) : "";
   const label = "رتبه " + toFaDigits(String(pos)) + " در جدول" + (cn ? " " + cn : "");
-  return '<span class="rankchip" title="' + esc(label) + '" aria-label="' + esc(label) + '" data-tip="' + esc(label) + '">' + toFaDigits(String(pos)) + "</span>";
+  // The dir="ltr" lives on the INNER text span (the approved structure): the
+  // outer .rankchip keeps the page direction so its inset-inline-* corner
+  // rules resolve against the page (an ltr outer span would flip them).
+  return '<span class="rankchip" title="' + esc(label) + '" aria-label="' + esc(label) + '" data-tip="' + esc(label) + '"><span dir="ltr">#' + toFaDigits(String(pos)) + "</span></span>";
 }
 function sideHome(t: any, teamName: string, m?: any): string {
-  const rc = rankChipHtml(t, m);
-  const team = rc
-    ? '<div class="team team-r"><span class="tn">' + nameHtml(teamName) + "</span>" + rc + "</div>"
-    : '<div class="team">' + nameHtml(teamName) + "</div>";
-  return '<div class="side">' + logoHtml(t) + team + "</div>";
+  // v13.254-rankbadge: the pill rides the crest (inside the .logo wrapper);
+  // the name row is the plain pre-badge markup for every team, rank or not.
+  return '<div class="side">' + logoHtml(t, rankChipHtml(t, m)) + '<div class="team">' + nameHtml(teamName) + "</div></div>";
 }
 function sideAway(t: any, teamName: string, m?: any): string {
-  const rc = rankChipHtml(t, m);
-  const team = rc
-    ? '<div class="team team-r">' + rc + '<span class="tn">' + nameHtml(teamName) + "</span></div>"
-    : '<div class="team">' + nameHtml(teamName) + "</div>";
-  return '<div class="side away">' + team + logoHtml(t) + "</div>";
+  return '<div class="side away"><div class="team">' + nameHtml(teamName) + "</div>" + logoHtml(t, rankChipHtml(t, m)) + "</div>";
 }
 
 function displayName(t: any): string {

@@ -4,6 +4,83 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.254.1-rankbadgefix — S44.1: the ADR-006 hotfix (fresh names for the corner-mirror fix)
+
+**S44.1, 2026-11-10 (~8 minutes after the first S44 deploy).** The first
+v13.254 deploy shipped a corner-mirror bug; this hotfix ships the corrected
+bytes under fresh asset names per ADR-006 rename-on-edit.
+
+- **(1) THE BUG.** The outer `.rankchip` carried `direction:ltr` (my bidi
+  handling for the leading `#`). Logical inset properties resolve against
+  the ELEMENT'S OWN direction, so `inset-inline-start:-4px` mapped to the
+  LEFT edge even on RTL pages — both teams' pills sat on the INNER corners
+  (facing the row center) instead of the approved OUTER flank (home right /
+  away left in RTL). Caught by the live post-deploy geometry verification
+  (home rightOverhang +27px / leftOverhang -2px — the mirror inverted).
+- **(2) THE FIX.** The `dir="ltr"` moves to the INNER `#N` text span (the
+  approved sandbox structure, verbatim): the outer span keeps the page
+  direction so the corner rules resolve against the page. Verified live in
+  a fresh browser session: home pills at the crest's bottom-RIGHT corner,
+  away pills at the bottom-LEFT, both mirroring correctly under `dir=rtl`.
+- **(3) THE ADR-006 RENAME.** The first deploy published `public-13.79.js`
+  + `public-13.86.css` with the buggy bytes under immutable cache headers;
+  any client that fetched them in the ~8-minute window holds them for a
+  year. The corrected bytes therefore ship under fresh names —
+  `public-13.80.js` + `public-13.87.css` — and the SW cache bumps v125 ->
+  v126 (superseding the never-really-seen v125). The buggy-window files
+  stay on disk per the retention rule, riding the default cache headers;
+  the _headers pins swap to the fresh names (still exactly 100 rules).
+  Version 13.254.1-rankbadgefix.
+
+# v13.254-rankbadge — S44: the rank number becomes the owner-approved crest pill
+
+**S44, 2026-11-10 (the owner's approved container, signed off in the sandbox
+replica: "I only approve the number container (e.g #5)").** The league
+standing leaves the name's row and rides the team crest as a small anchored
+"#N" pill — the exact container the owner approved, nothing more (the sandbox
+round's popover and section-info extras were reverted there before this
+production round began).
+
+- **(1) THE PILL.** rankBadge() still builds the span (class .rankchip — the
+  S38 tooltip engine and the checks target it) but now stamps dir="ltr" and a
+  leading # before the Persian digits (the # must not flip in RTL; the
+  stylesheet adds unicode-bidi:isolate). logo(e,badge) tucks the pill INSIDE
+  the .logo wrapper; the onerror monogram swap re-appends it after the
+  textContent wipe. The pill pins to the crest's bottom corner on the row's
+  OUTER flank — home = the inline-start corner, away = the inline-end corner:
+  ONE logical rule per side mirrors correctly in both RTL and LTR (a single
+  shared logical property would park both teams' pills on the same side of
+  their crests). Solid dark disc (#0c1524) with a thin steel border (#46648f)
+  in the navy family, 18px/10px bold tabular digits at the base size; the
+  #liveCard's 28px crests step to 14px, the narrow-screen 37px crests to
+  16px (the corner offset rides --rc-nub). The light theme gets its own disc
+  pair (#f1f5f9 / #94a3b8 / #1e293b — measured 13.35:1; the dark disc
+  measures 16.43:1, both far above the owner's 4.5:1 bar).
+- **(2) THE NAME ROW REVERTS.** teamRow(e) renders the plain pre-badge
+  name-only .team row for EVERY team (the S40 team-r/.tn identity row and its
+  nowrap/ellipsis law retire with the row-badge; the base .side .team rule
+  still ellipsizes long names). The away side keeps its [team, logo] DOM
+  order. No rank -> no pill at all — the pre-badge card byte-for-byte.
+- **(3) WHAT RIDES UNCHANGED.** The S38 tap+hover tooltip (the .rankchip
+  class carries data-tip; the delegated listeners and the #rankTip bubble are
+  untouched). The label still names the table («رتبه ۳ در جدول لیگ قهرمانان
+  اروپا», fallback «رتبه ۳ در جدول»). The hero carousel's logo(side) stays
+  badge-FREE (the spec scope law: the hero/mcard surfaces were never badge
+  surfaces). Zero backend/data changes — the same cache-only standings
+  resolver feeds the pill.
+- **(4) THE RELEASE PLUMBING:** the JS rename public-13.78.js -> 13.79.js +
+  the stylesheet rename public-13.85.css -> 13.86.css + the SW cache bump
+  v124 -> v125 (cache-first assets cannot refresh without a rename or a
+  bump, the v13.39 rule); the _headers pins for both new names with CAP
+  SWEEP #21 evicting the expired /public-13.41.js + /public-13.52.css pins
+  (the files stay on disk per the retention rule; still exactly 100 rules);
+  the v13.253 live check demoted to HISTORICAL with its survivors re-pinned
+  in the new v13.254 live check; the page baseline re-frozen via --update
+  (an intended output change — the served HTML's asset references).
+  scripts/check-team-ranks.js rewritten for the pill (the anchored-crest +
+  mirror-rule + own-disc contrast assertions); check-a11y/check-mc-heroes/
+  check-stats reads follow the renames.
+
 # v13.253-alwaysshow — S43: the sticky bar's tap-silence retired; it now always shows
 
 **S43, 2026-11-10 (the owner's directive: "Do not add the quiet down option if

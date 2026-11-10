@@ -1,15 +1,17 @@
-// Self-check: the team competition-rank number on the match cards (v13.251-ranknum,
-// docs/specs/team-rank-indicator.md §12). Asserts:
+// Self-check: the team competition-rank badge on the match cards (v13.254-rankbadge,
+// docs/specs/team-rank-indicator.md §13). Asserts:
 //  1) The server resolver exists + the applicability law (fixture's own
 //     competition only; cups/knockout/pre-season never carry a rank)
 //  2) Behavioral: the real teamRankSets/rankApplicable/attachTeamRanks
 //     (eval-extracted from the concat) resolve, fold, gate and stamp correctly
 //  3) The payload wiring (withTop rows + UCL spot rows carry the ranks)
-//  4) The SEO SSR mirror (same KV caches, rankChipHtml in markup.ts)
-//  5) The client bundle renders the number in BOTH card families; no rank ->
-//     the plain .team markup
-//  6) The stylesheet rules (the plain 11px number, the nowrap+ellipsis name,
-//     the >=4.5:1 measured ink — recomputed from the live tokens)
+//  4) The SEO SSR mirror (same KV caches, rankChipHtml in markup.ts) — the
+//     pill rides the CREST inside the .logo wrapper (v13.254)
+//  5) The client bundle renders the pill in BOTH card families; no rank ->
+//     no badge at all; the hero carousel stays badge-free
+//  6) The stylesheet rules (the anchored pill, the per-side outer-corner
+//     mirror, the >=4.5:1 measured ink on the pill's own disc — recomputed
+//     from the live tokens)
 const fs = require("fs");
 const path = require("path");
 const src = require("./lib/worker-src")();
@@ -115,20 +117,26 @@ check("rankApplicable: LEAGUE_PHASE/LEAGUE_STAGE/GROUP_STAGE/REGULAR_SEASON pass
 check("null/absent stMap and rankSets never throw (the degraded path)",
   (() => { try { attachTeamRanks(shape(mk("A", "B", "PL")), mk("A", "B", "PL"), null); attachTeamRanks(shape(mk("A", "B", "PL")), mk("A", "B", "PL"), teamRankSets(null)); return true; } catch (e) { return false; } })());
 
-// ---------- 3) the SEO SSR mirror ----------
+// ---------- 3) the SEO SSR mirror (v13.254: the pill rides the crest) ----------
 const mkSrc = read("src/seo/markup.ts");
 const dtSrc = read("src/seo/data.ts");
 check("SSR: seo/data.ts reads the same standings_cache_* keys and stamps through attachTeamRanks",
   /CONFIG\.KV_STANDINGS_CACHE \+ c/.test(dtSrc) &&
   /const rankSets = teamRankSets\(stMap\);/.test(dtSrc) &&
   /const shaped = pool\.map\(\(m\) => attachTeamRanks\(pubMatch\(m\), m, rankSets\)\);/.test(dtSrc));
-check("SSR: sideHome/sideAway carry the number on the name's CENTER-FACING flank (home [name,num] / away [num,name], logical order) with the table-naming label + the data-tip the client tooltip reads",
+check("SSR: rankChipHtml returns the dir=ltr #-prefixed pill span with the table-naming label + the data-tip the client tooltip reads (the # must not flip in RTL)",
   /function rankChipHtml\(t: any, m: any\): string \{/.test(mkSrc) &&
-  /'<div class="team team-r"><span class="tn">' \+ nameHtml\(teamName\) \+ "<\/span>" \+ rc \+ "<\/div>"/.test(mkSrc) &&
-  /'<div class="team team-r">' \+ rc \+ '<span class="tn">' \+ nameHtml\(teamName\) \+ "<\/span><\/div>"/.test(mkSrc) &&
-  /'<span class="rankchip" title="' \+ esc\(label\) \+ '" aria-label="' \+ esc\(label\) \+ '" data-tip="' \+ esc\(label\) \+ '">'/.test(mkSrc) &&
+  mkSrc.includes('<span class="rankchip" title="') &&
+  mkSrc.includes('"><span dir="ltr">#\' + toFaDigits(String(pos)) + "</span></span>"') &&
   /const cn = m && m\.competition \? compNameFa\(m\) : "";/.test(mkSrc) &&
   (new RegExp("\\u0631\\u062A\\u0628\\u0647 \" \\+ toFaDigits\\(String\\(pos\\)\\) \\+ \" \\u062F\\u0631 \\u062C\\u062F\\u0648\\u0644\" \\+ \\(cn \\? \" \" \\+ cn : \"\"\\)")).test(mkSrc));
+check("SSR: logoHtml takes the badge and tucks it INSIDE the .logo wrapper (crest-anchored pill); BOTH sideHome and sideAway pass rankChipHtml to it",
+  /export function logoHtml\(t: any, badge\?: string\): string \{/.test(mkSrc) &&
+  (mkSrc.match(/logoHtml\(t, rankChipHtml\(t, m\)\)/g) || []).length === 2);
+check("SSR: the name row is the PLAIN pre-badge .team markup for every team (the S40 team-r/.tn row retires; away keeps its [team, logo] DOM order)",
+  mkSrc.includes('\'<div class="team">\' + nameHtml(teamName) + "</div></div>"') &&
+  mkSrc.includes('\'<div class="side away"><div class="team">\' + nameHtml(teamName) + "</div>" + logoHtml') &&
+  !/team-r/.test(mkSrc.replace(/\/\/[^\n]*/g, "")));
 check("SSR: both list-row and spotitem callers pass the match for the label context",
   /sideHome\(m\.homeTeam, displayName\(m\.homeTeam\), m\)/.test(mkSrc) &&
   /sideAway\(m\.awayTeam, displayName\(m\.awayTeam\), m\)/.test(mkSrc));
@@ -138,25 +146,32 @@ const pubTs = read("src/pages/public.ts");
 const liveBundle = (pubTs.match(/\/(public-\d+\.\d+\.js)/) || [])[1];
 check("the live bundle is referenced from the served HTML", !!liveBundle);
 const bundle = liveBundle ? read("assets/" + liveBundle) : "";
-check("client: BOTH card families build team blocks through teamRow (render + spotItemNode)",
-  /function teamRow\(e,a,t\)\{/.test(bundle) &&
-  /u=teamRow\(n\.homeTeam,n,!1\),s=teamRow\(n\.awayTeam,n,!0\)/.test(bundle) &&
-  /o=teamRow\(e\.homeTeam,e,!1\),l=teamRow\(e\.awayTeam,e,!0\)/.test(bundle));
-check("client: the badge is a number-only PLAIN span (the S40 quieting: no circle/border/background — the class stays .rankchip for the tooltip engine) with localized digits + the table-naming accessible label + the data-tip",
-  /className="rankchip"/.test(bundle) &&
-  /className="team team-r"/.test(bundle) &&
-  /fmtNum\(r\)/.test(bundle) &&
+check("client: BOTH card families build team blocks through teamRow — now the name-only row (render + spotItemNode)",
+  /function teamRow\(e\)\{var r=document\.createElement\("div"\);r\.className="team";var n=curLang\(\)==="en"\?e\.name:e\.faName\|\|e\.name;return nameInto\(r,n\),r\}/.test(bundle) &&
+  /u=teamRow\(n\.homeTeam\),s=teamRow\(n\.awayTeam\)/.test(bundle) &&
+  /o=teamRow\(e\.homeTeam\),l=teamRow\(e\.awayTeam\)/.test(bundle) &&
+  !/team-r/.test(bundle.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "")));
+check("client: the pill is a #-prefixed dir=ltr span (the class stays .rankchip for the S38 tooltip engine) with localized digits + the table-naming accessible label + the data-tip",
+  /n\.className="rankchip";var d=document\.createElement\("span"\);d\.setAttribute\("dir","ltr"\);d\.textContent="#"\+fmtNum\(r\);n\.appendChild\(d\)/.test(bundle) &&
+  /ordNum\(r\)\+" in "\+\(l\?l\+" table":"the table"\)/.test(bundle) &&
+  /\\u062C\\u062F\\u0648\\u0644"\+\(l\?" "\+l:""\)/.test(bundle) &&
   /setAttribute\("aria-label",i\)/.test(bundle) &&
   /setAttribute\("title",i\)/.test(bundle) &&
   /setAttribute\("data-tip",i\)/.test(bundle));
-check("client: the number rides the name's CENTER-FACING flank — home [name,num] / away [num,name] (the t flag swap; logical DOM order, zero physical left/right) and the label names the table with the no-competition fallback",
-  /i\.className="tn",nameInto\(i,n\),t\?\(r\.appendChild\(l\),r\.appendChild\(i\)\):\(r\.appendChild\(i\),r\.appendChild\(l\)\)/.test(bundle) &&
-  /ordNum\(r\)\+" in "\+\(l\?l\+" table":"the table"\)/.test(bundle) &&
-  /\\u062C\\u062F\\u0648\\u0644"\+\(l\?" "\+l:""\)/.test(bundle));
-check("client: no rank -> the plain .team markup (nameInto direct — the pre-badge card byte-for-byte)",
-  /else nameInto\(r,n\)/.test(bundle) &&
-  /if\(l\)\{r\.className="team team-r"/.test(bundle));
-check("client: the badge never renders 0/negative/NaN (integer gate)", /if\(!\(r>=1&&Number\.isInteger\(r\)\)\)return null/.test(bundle));
+check("client: logo(e,badge) tucks the pill INSIDE the .logo wrapper and the onerror monogram swap re-appends it (the textContent wipe would drop it)",
+  /function logo\(e,badge\)\{/.test(bundle) &&
+  /badge&&a\.appendChild\(badge\),a\}/.test(bundle) &&
+  /t\.onerror=function\(\)\{a\.textContent=monogram\(e\),badge&&a\.appendChild\(badge\)\}/.test(bundle));
+check("client: BOTH card families pass the badge at their logo() calls (render + spotItemNode)",
+  /logo\(n\.homeTeam,rankBadge\(n\.homeTeam,n\)\)/.test(bundle) &&
+  /logo\(n\.awayTeam,rankBadge\(n\.awayTeam,n\)\)/.test(bundle) &&
+  /logo\(e\.homeTeam,rankBadge\(e\.homeTeam,e\)\)/.test(bundle) &&
+  /logo\(e\.awayTeam,rankBadge\(e\.awayTeam,e\)\)/.test(bundle));
+check("client: the hero carousel's logo(side) stays badge-FREE (the spec scope law — the hero/mcard surfaces were never badge surfaces)",
+  /logo\(side\)/.test(bundle) &&
+  !/logo\(side,rankBadge/.test(bundle));
+check("client: no rank -> no badge at all (rankBadge returns null before any element is built; the badge never renders 0/negative/NaN)",
+  /if\(!\(r>=1&&Number\.isInteger\(r\)\)\)return null/.test(bundle));
 
 // ---------- 4b) the tap+hover tooltip (S38, spec §11) ----------
 check("tooltip: ONE delegated listener set — mouseover (hover) + capture-phase click (tap beats the card link) + Escape + scroll + resize",
@@ -186,58 +201,45 @@ check("tooltip: the native title strips on first interaction (no double tooltip)
 check("tooltip: every data re-render hides it (the poll/lang re-render detaches the chip the bubble points at)",
   /function rerenderAll\(\)\{rankTipHide\(\),applyView\(\)/.test(bundle));
 
-// ---------- 5) the stylesheet (S40: the plain number) ----------
+// ---------- 5) the stylesheet (v13.254: the anchored crest pill) ----------
 const shellTs = read("src/seo/page-shell.ts");
 const liveCss = (pubTs.match(/\/(public-\d+\.\d+\.css)/) || [])[1];
 const css = liveCss ? read("assets/" + liveCss) : "";
-check("css: the .rankchip plain number (11px regular tabular digits, flex-shrink:0, never wraps — no circle/border/background/width) + the .team-r identity row with the name giving way FIRST (nowrap+ellipsis)",
-  /\.team\.team-r\{display:flex;align-items:center;gap:6px\}/.test(css) &&
-  /\.side\.away \.team\.team-r\{justify-content:flex-end\}/.test(css) &&
-  /\.team\.team-r \.tn\{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/.test(css) &&
-  /\.rankchip\{flex:0 0 auto;white-space:nowrap;color:var\(--rank-chip-ink\);font-size:11px;font-weight:400;font-variant-numeric:tabular-nums;line-height:1\}/.test(css) &&
-  !/\.rankchip\{[^}]*border-radius/.test(css) &&
-  !/\.rankchip\{[^}]*background/.test(css) &&
-  !/\.rankchip\{[^}]*width:/.test(css) &&
-  !/\.side \.team\.team-r\{overflow:visible\}/.test(css) &&
-  !/#liveCard \.rankchip\{/.test(css));
-check("css: the narrow-screen group stays centered under the crest (one 11px size at every width — the step-downs retire)",
-  /@media \(max-width:600px\)\{\.team\.team-r\{gap:5px;justify-content:center\}\.side\.away \.team\.team-r\{justify-content:center\}\}/.test(css) &&
-  !/@media \(max-width:600px\)\{\.rankchip\{/.test(css));
+check("css: the anchored pill — absolute, bottom corner on the row's OUTER flank (home inline-start / away inline-end — ONE logical rule PER SIDE, direction-agnostic), ltr-isolated bold tabular digits, solid disc + thin border; .logo gains the anchor scope",
+  css.includes(".match .side .logo{position:relative;overflow:visible}") &&
+  css.includes(".rankchip{position:absolute;bottom:var(--rc-nub);z-index:2;--rc-nub:-4px;--rank-chip-bg:#0c1524;--rank-chip-border:#46648f;--rank-chip-ink:#edf3ff;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:18px;min-width:18px;padding:0 4px;border-radius:9999px;background:var(--rank-chip-bg);border:1px solid var(--rank-chip-border);color:var(--rank-chip-ink);font-size:10px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}") &&
+  css.includes(".rankchip>span{direction:ltr;unicode-bidi:isolate}") &&
+  css.includes(".match .side .logo .rankchip{inset-inline-start:var(--rc-nub);inset-inline-end:auto}") &&
+  css.includes(".match .side.away .logo .rankchip{inset-inline-end:var(--rc-nub);inset-inline-start:auto}") &&
+  !/\.team\.team-r\{/.test(css) &&
+  !/\.team\.team-r \.tn\{/.test(css) &&
+  !/\.side \.logo\{overflow:visible\}/.test(css));
+check("css: the size law — the base 18px pill, the #liveCard 28px-crest step-down (14px), the narrow-screen 37px-crest step (16px); the corner offset follows --rc-nub",
+  css.includes("#liveCard .logo .rankchip{--rc-nub:-3px;height:14px;min-width:14px;padding:0 3px;font-size:8px}") &&
+  css.includes("@media (max-width:600px){.match .side .logo .rankchip{height:16px;min-width:16px;padding:0 3px;font-size:9px;--rc-nub:-3px}}"));
 
-// ---------- 5b) the S40 contrast gate (the owner's >=4.5:1 bar) ----------
-// WCAG 2.1 relative luminance over the LAYERED surfaces the number sits on:
-// page bg (+glow worst case) -> .card glass -> .mrow/.spotitem rowsurf. The
-// tokens are PARSED from the live stylesheet, so a future re-tint recomputes.
+// ---------- 5b) the contrast gate (the owner's >=4.5:1 bar) ----------
+// v13.254: the pill paints its OWN solid disc, so the ink is measured against
+// the disc background (dark + light) — the S40 row-surface compositing
+// retired with the plain number. The tokens are PARSED from the live
+// stylesheet, so a future re-tint recomputes.
 function cLin(c) { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
 function cLum(rgb) { return 0.2126 * cLin(rgb[0]) + 0.7152 * cLin(rgb[1]) + 0.0722 * cLin(rgb[2]); }
 function cRatio(fg, bg) { const a = cLum(fg), b = cLum(bg); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); }
-function cOver(fg, alpha, bg) { return [0, 1, 2].map(i => fg[i] * alpha + bg[i] * (1 - alpha)); }
 function cHex(s) { return [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)]; }
-function cssRgba(block, name) {
-  const m = block.match(new RegExp("--" + name + ":rgba\\((\\d+),(\\d+),(\\d+),(\\.\\d+)\\)"));
-  return m ? [+m[1], +m[2], +m[3], +m[4]] : null;
-}
 function cssHex(block, name) {
   const m = block.match(new RegExp("--" + name + ":(#[0-9a-fA-F]{6})"));
   return m ? cHex(m[1]) : null;
 }
-const rootBlock5 = (css.match(/:root\{([^}]*)\}/) || [])[1] || "";
-const lightBlock5 = (css.match(/\[data-theme=light\]\{([^}]*)\}/) || [])[1] || "";
-const inkD = cssHex(rootBlock5, "rank-chip-ink");
-const inkL = (css.match(/\[data-theme=light\] \.rankchip\{--rank-chip-ink:(#[0-9a-fA-F]{6})\}/) || [])[1];
-const surf = (block, glowAlpha) => {
-  const bg = cssHex(block, "bg"), glass = cssRgba(block, "glass"), row = cssRgba(block, "rowsurf"), glow = cssRgba(rootBlock5, "glow1");
-  if (!bg || !glass || !row) return null;
-  let base = bg;
-  if (glow && glowAlpha != null) base = cOver([glow[0], glow[1], glow[2]], glow[3], bg);
-  return cOver([row[0], row[1], row[2]], row[3], cOver([glass[0], glass[1], glass[2]], glass[3], base));
-};
-const dRow = surf(rootBlock5, null), dRowGlow = surf(rootBlock5, 1);
-const lRow = surf(lightBlock5, null), lRowGlow = surf(lightBlock5, 1);
-check("contrast: the muted blue-gray inks measure >=4.5:1 on every layered row surface (dark " + (dRow ? cRatio(inkD, dRow).toFixed(2) : "?") + "/" + (dRowGlow ? cRatio(inkD, dRowGlow).toFixed(2) : "?") + ":1, light " + (lRow ? cRatio(cHex(inkL), lRow).toFixed(2) : "?") + "/" + (lRowGlow ? cRatio(cHex(inkL), lRowGlow).toFixed(2) : "?") + ":1 — bg->glass->rowsurf composited, glow peak as the worst case)",
-  inkD && inkL && dRow && dRowGlow && lRow && lRowGlow &&
-  cRatio(inkD, dRow) >= 4.5 && cRatio(inkD, dRowGlow) >= 4.5 &&
-  cRatio(cHex(inkL), lRow) >= 4.5 && cRatio(cHex(inkL), lRowGlow) >= 4.5);
+const chipBlock = (css.match(/\.rankchip\{([^}]*)\}/) || [])[1] || "";
+const chipLightBlock = (css.match(/\[data-theme=light\] \.rankchip\{([^}]*)\}/) || [])[1] || "";
+const chipInkD = cssHex(chipBlock, "rank-chip-ink");
+const chipBgD = cssHex(chipBlock, "rank-chip-bg");
+const chipInkL = cssHex(chipLightBlock, "rank-chip-ink");
+const chipBgL = cssHex(chipLightBlock, "rank-chip-bg");
+check("contrast: the pill's ink measures >=4.5:1 on its own solid disc (dark " + (chipInkD && chipBgD ? cRatio(chipInkD, chipBgD).toFixed(2) : "?") + ":1, light " + (chipInkL && chipBgL ? cRatio(chipInkL, chipBgL).toFixed(2) : "?") + ":1 — the badge paints its own surface)",
+  chipInkD && chipBgD && chipInkL && chipBgL &&
+  cRatio(chipInkD, chipBgD) >= 4.5 && cRatio(chipInkL, chipBgL) >= 4.5);
 check("css: the .ranktip bubble — fixed, above-the-sticky-bar z-index, pointer-transparent, fade+rise, arrow states, light pair, reduced-motion",
   /\.ranktip\{--ranktip-bg:#0c1728;--ranktip-ink:#D6E9FA;position:fixed;left:0;top:0;z-index:70;/.test(css) &&
   /pointer-events:none/.test(css) &&

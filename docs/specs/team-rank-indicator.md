@@ -406,3 +406,54 @@ must not overlap the name, the logo, the central time block or the
 three-dot share menu — for every card variant, with the longest club name
 on the page and a two-digit rank; the name truncates cleanly when space
 runs out; before/after screenshots filed in `docs/assets/s40-ranknum/`.
+
+
+## 13. S44 addendum — the crest-anchored pill (owner-approved container, 2026-11-10)
+
+### Goal
+
+The standing leaves the name's row (S40) and rides the team crest as the
+owner's approved container: a small anchored "#N" pill, signed off in the
+sandbox replica ("I only approve the number container (e.g #5)").
+
+### Rules
+
+- **Anchor:** inside the `.logo` wrapper (`.match .side .logo` gains
+  `position:relative; overflow:visible` — scoped so the base `.logo` keeps
+  its clip for the monogram fallback elsewhere). The pill is
+  `position:absolute` on the crest's bottom corner, overlapping the edge by
+  4px (`--rc-nub`; 3px at the step-downs).
+- **Mirror rule:** the corner faces the row's OUTER flank — home side =
+  the `inset-inline-start` corner, away side = the `inset-inline-end`
+  corner. ONE logical rule per side; correct in RTL and LTR with zero
+  physical left/right. (A single shared logical property would park both
+  teams' pills on the same side of their crests.)
+- **Bidi (load-bearing):** the leading `#` is isolated in an INNER
+  `dir="ltr"` text span; the OUTER `.rankchip` keeps the page direction —
+  an ltr outer span flips its own `inset-inline-*` resolution and inverts
+  the mirror (the S44.1 bug, caught live and hotfixed under fresh names
+  per ADR-006).
+- **Look:** solid dark disc `#0c1524`, thin steel border `#46648f`, ink
+  `#edf3ff` (light theme `#f1f5f9` / `#94a3b8` / `#1e293b`), 10px bold
+  tabular digits, pill shape (min-width = height), 18px base; `#liveCard`
+  28px crests step to 14px, narrow-screen 37px crests to 16px.
+- **Contrast:** the ink is measured against the pill's OWN solid disc
+  (dark 16.43:1, light 13.35:1 — both above the owner's 4.5:1 bar; the
+  permanent gate in `scripts/check-team-ranks.js` recomputes from the live
+  tokens).
+- **Label:** unchanged — `title` + `aria-label` + the S38 `data-tip` name
+  the table: «رتبه ۳ در جدول لیگ قهرمانان اروپا» / "3rd in Champions
+  League table", fallback «رتبه ۳ در جدول» / "3rd in the table".
+- **No rank → no badge at all**; the name row is the plain pre-badge
+  `.team` markup for every team (the S40 `.team-r`/`.tn` row retires).
+- **Scope unchanged:** match cards only (list rows + spot cards + the live
+  card); the hero carousel and the mcard/Telegram surfaces stay badge-free.
+
+### Verification bar (S44)
+
+Rendered at 360px, 768px and 1280px on the live site in fa/RTL AND en/LTR:
+the pill sits on the crest's bottom-outer corner for both sides (measured
+geometry, not pixels), never overlaps the name, the central time block or
+the share menu; the `#` stays left of the digits; the S38 tooltip opens on
+tap and closes on outside tap; before/after evidence in
+`docs/assets/s44-rankbadge/`.

@@ -5,6 +5,25 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v126 (v13.254.1-rankbadgefix: bumped from v125 — the
+//              ADR-006 hotfix for the S44 crest-pill round: the first deploy's
+//              bytes carried the corner-mirror bug (the outer .rankchip's own
+//              direction:ltr flipped its inset-inline-* resolution), so the
+//              fixed bundle + stylesheet ship under fresh names —
+//              public-13.79.js -> 13.80.js + public-13.86.css -> 13.87.css
+//              (rename-on-edit; the ~8-minute-window immutable copies must be
+//              stranded, never re-served). The v125 bump itself is superseded
+//              before any client could hold it beyond that window.
+// Cache name:  sportsignal-v125 (v13.254-rankbadge: bumped from v124 — the S44
+//              round: public-13.78.js -> 13.79.js (rankBadge() stamps dir="ltr"
+//              + a leading #; logo(e,badge) anchors the pill inside the .logo
+//              wrapper; teamRow(e) reverts to the plain name-only row) +
+//              public-13.85.css -> 13.86.css (the anchored crest pill: the
+//              per-side outer-corner mirror rule, .logo position/overflow
+//              scope, the #liveCard + narrow-screen step-downs; .team-r/.tn
+//              retire). Clients cannot refresh a renamed asset without a
+//              cache bump (the v13.39 rule); stale HTML referencing the
+//              retired names still resolves — the files stay on disk.
 // Cache name:  sportsignal-v124 (v13.251-ranknum: bumped from v122 — the S40
 //              quieting round edits client-referenced assets:
 //              public-13.76.js -> 13.78.js (teamRow() parks the rank number
@@ -1007,7 +1026,7 @@
 //              standalone header Telegram icon with the REAL circled logo).
 //              Cache-first assets cannot refresh without a rename or a bump,
 //              the v13.39 rule; 13.73.js stays served + pinned one SEO TTL.
-const CACHE = "sportsignal-v124";
+const CACHE = "sportsignal-v126";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -117,7 +117,7 @@ __SEO_JSONLD__
      .v-icon, .mc-port img.mc-fill — every removal verified dead against
      every client-referencing surface + the dynamic-class audit + git
      history; no live rule, state, lang, theme or media variant touched). -->
-<link rel="stylesheet" href="/public-13.85.css">
+<link rel="stylesheet" href="/public-13.87.css">
 <style>/* v13.66-flatglow: flat outer glow (no inset bevel), uniform tint+border
      — the LIST variant of .match-featured (big matches inside the boxes
      below the hero) keeps this green treatment unchanged.
@@ -1512,7 +1512,26 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      fallback «رتبه ۳ در جدول»). The stylesheet renames in step
      (13.83 -> 13.85: the circle/border/background retire, .tn gains
      nowrap+ellipsis, the muted 4.5:1 ink). -->
-<script src="/public-13.78.js" defer></script>
+<!-- v13.254.1-rankbadgefix (ADR-006 hotfix): the FIRST S44 deploy published
+     the corner-mirror bug (the outer .rankchip carried direction:ltr, so its
+     inset-inline-* corner rules resolved against the badge's own ltr instead
+     of the page's rtl — both pills sat on the INNER corners). The fix moves
+     the ltr to the inner #N text span (the approved structure) — and per
+     ADR-006 rename-on-edit the fixed bytes ship under FRESH names:
+     public-13.79.js -> 13.80.js + public-13.86.css -> 13.87.css (any client
+     that fetched the ~8-minute-window bytes holds them immutable for a year;
+     13.79.js/13.86.css stay on disk, riding the default cache headers).
+     SW v125 -> v126. -->
+<!-- v13.254-rankbadge (S44, the owner's approved container): the JS rename
+     13.78 -> 13.79 — the standing rides the CREST as a small anchored pill:
+     rankBadge() stamps dir="ltr" + a leading #; logo(e,badge) tucks the pill
+     inside the .logo wrapper (the onerror monogram swap re-appends it);
+     teamRow(e) reverts to the plain name-only .team row for every team; the
+     hero carousel's logo(side) stays badge-free (spec scope law). The
+     stylesheet renames in step (13.85 -> 13.86: the anchored pill + the
+     per-side outer-corner mirror rule, .logo position/overflow scope, the
+     #liveCard + narrow-screen step-downs; .team-r/.tn retire). -->
+<script src="/public-13.80.js" defer></script>
 <!-- v13.202-threaddiet + v13.203-warmdefer + v13.204-foldsplit (F-M2,
      the full arc): v13.202 split the boot render chain at the fold
      (the above-fold trio updateBigBar/renderHeroSpot/fitHeroNames in

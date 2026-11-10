@@ -248,3 +248,61 @@ earlier decisions live in README §"Architecture decisions" and docs/adr/.)
   are presentation gates, not tap memories — left untouched. Decided by
   the owner (directive); recorded by the agent. Revisit only if the
   owner ever asks for a quieter bar again.
+
+## 2026-11-10 — S44: the rank badge becomes the owner-approved crest pill (production mapping of the sandbox sign-off)
+
+- **Decision:** the league standing rides the team crest as an anchored "#N"
+  pill (the owner's approved container from the sandbox round: "I only
+  approve the number container (e.g #5)" — the sandbox's popover and
+  section-info extras were already reverted there before this round). This
+  supersedes the S40 quiet-plain-number directive (the owner has now decided
+  otherwise; S40's spec §12 stays as history).
+- **Mapping decisions (sandbox design -> production surfaces):** (1) the
+  pill keeps the .rankchip CLASS so the S38 tap+hover tooltip engine and its
+  checks ride untouched — the tooltip is a pre-existing feature, not one of
+  the reverted sandbox extras; (2) the outer span keeps the PAGE direction
+  and only the inner #N text span is dir="ltr" (the approved structure) —
+  this is load-bearing: an ltr outer span flips its own inset-inline-*
+  resolution (the S44.1 bug); (3) the mirror uses ONE logical rule per side
+  (home = inset-inline-start, away = inset-inline-end) so the outer-flank
+  corner holds in both RTL and LTR; (4) the #liveCard 28px crests and the
+  narrow-screen 37px crests get scaled step-downs (14px/16px) to keep the
+  pill:crest ratio; the top-spot's larger crests ride the base 18px; (5) the
+  hero carousel stays badge-free (the standing spec scope law); (6) light
+  theme gets its own disc pair (#f1f5f9/#94a3b8/#1e293b, 13.35:1; the dark
+  disc measures 16.43:1 — both above the owner's 4.5:1 bar, now gated
+  against the pill's own solid surface in check-team-ranks.js).
+- **Options:** (a) map the approved container onto the production surfaces
+  as above (chosen — the smallest change that makes the approved design
+  live), (b) port the whole sandbox card UI to production (rejected: the
+  sandbox is a demo-data prototype; production has real data, deep links,
+  SEO surfaces), (c) keep the S40 plain number (rejected: the owner
+  explicitly approved the container and asked why it wasn't deployed).
+- **Reason:** the owner's approval was for the container itself; every
+  production-specific adaptation follows an existing repo law (S38 tooltip
+  contract, spec scope, contrast gate, step-down precedent). Decided by the
+  owner (the sandbox sign-off + the deploy expectation); recorded by the
+  agent. Revisit if the owner wants the tooltip gone from the badge too.
+
+## 2026-11-10 — S44.1: the ADR-006 hotfix (fresh names after the in-place edit mistake)
+
+- **Decision:** the first S44 deploy published the corner-mirror bug under
+  public-13.79.js + public-13.86.css (immutable pins), and the fix was
+  initially re-uploaded under the SAME names — violating ADR-006
+  rename-on-edit. Corrected ~8 minutes later: the fixed bytes ship under
+  public-13.80.js + public-13.87.css, SW v125 -> v126, pins swapped (still
+  exactly 100 _headers rules), the buggy-window files stay on disk riding
+  default cache headers.
+- **Root cause:** the corner bug itself (ltr on the outer span flipping the
+  inset-inline-* resolution) was caught by the live geometry verification
+  BEFORE any owner report; the rename violation was caught while
+  investigating why the verification browser still measured the old
+  geometry (it held the immutable first-deploy bytes).
+- **Options:** (a) fresh-name rename per ADR-006 (chosen — strands the
+  buggy immutable copies safely), (b) keep the same names and rely on edge
+  purges (rejected: ADR-006's exact failure mode — browsers hold immutable
+  for a year), (c) full revert and re-round (rejected: the fix was verified
+  correct; only the name hygiene needed repair).
+- **Reason:** ADR-006 is a standing repo law with a hotfix precedent
+  (v13.226.1-herowirefix). Decided by the agent (the law); recorded for the
+  owner. No revisit needed — the rule held.
