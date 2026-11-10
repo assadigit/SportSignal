@@ -223,3 +223,28 @@ earlier decisions live in README §"Architecture decisions" and docs/adr/.)
   something else entirely — e.g. the SW cache serving stale HTML, or a
   desktop expectation: the pill is mobile-only by design, ≥601px shows
   the #tgFab bot FAB instead).
+
+## 2026-11-10 — The pill's 30-day tap-silence is retired for good: the sticky bar always shows (S43)
+
+- **Decision:** per the owner's directive ("Do not add the quiet down
+  option if user has tapped already. always show it."), the floating
+  channel bar's tap-silence memory is REMOVED outright
+  (v13.253-alwaysshow): the controller no longer reads or writes ANY
+  localStorage verdict, so a browser holding any old tap verdict — the
+  owner's included — sees the bar on the next load; a tap (bar body or
+  blue mark) only opens the channel in a new tab; the bar returns on
+  every visit. This supersedes the S42 option-(b) rejection (the 30-day
+  no-nag law was then owner-approved design; the owner has now decided
+  otherwise) and closes the S32/S42 report class permanently (ADR-008).
+- **Options:** (a) retire the memory outright (chosen — the directive is
+  unconditional: "always show it"), (b) another one-shot re-key
+  (rejected: re-arms the same 30-day silence; the owner would hit it
+  again on their next channel check), (c) session-only dismissal
+  (rejected: the directive says always show — a bar that vanishes after
+  a tap and only returns on reload is not what was asked).
+- **Reason:** the memory was the only mechanism that could ever hide the
+  bar; removing it is the smallest change that makes "always show" true
+  for every visitor state. The 20% scroll reveal and the mobile-only law
+  are presentation gates, not tap memories — left untouched. Decided by
+  the owner (directive); recorded by the agent. Revisit only if the
+  owner ever asks for a quieter bar again.
