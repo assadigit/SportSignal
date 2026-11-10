@@ -306,3 +306,56 @@ earlier decisions live in README §"Architecture decisions" and docs/adr/.)
 - **Reason:** ADR-006 is a standing repo law with a hotfix precedent
   (v13.226.1-herowirefix). Decided by the agent (the law); recorded for the
   owner. No revisit needed — the rule held.
+
+## 2026-11-10 — S1 M3: S3 "where to watch" closed; lineups deferred to owner; TSP key dead; worker rename deferred
+
+- **Context:** the S1 M3 broadcast/lineup investigation
+  (`docs/audits/2026-11-10-broadcast-lineup-data.md`, report only) answered
+  whether the repo's existing data providers can supply broadcaster or lineup
+  data for the SEO growth plan's S3 (plan §8).
+- **Decision 1 — S3 "where to watch" block is CLOSED.** TheSportsDB's free
+  `lookuptv.php` does return real broadcaster data (channel, country, logo),
+  but every event probed carried channels for India, Brazil, US, Iceland —
+  **zero Iran or Afghanistan entries**. The site's audience is 91% Iran, 6%
+  Afghanistan (GSC audit F10). Showing off-audience channels is worse than
+  showing nothing. football-data.org has no broadcaster data on any tier;
+  SportScore's public free API has none either. No audience-fit source exists
+  in the current providers. Reopen only if an Iran-specific broadcast source
+  is licensed or found.
+- **Decision 2 — S3 lineups: owner decision (plan Q2), not auto-built.**
+  Lineup data is technically reachable via: (a) football-data.org PAID tier
+  (~49 €/month — reliable, covers the repo's competitions, lineup/bench arrays
+  documented but absent from the free `/v4/matches/{id}` response, confirmed
+  empirically); (b) TheSportsDB free `lookuplineup.php` (sparse, near-kickoff
+  only — returned `null` for every event probed); (c) SportScore via a paid
+  RapidAPI key (lineups exist per the listing but are NOT in the public free
+  API the repo uses — all detail endpoints returned HTML). None is free AND
+  reliable AND complete. The owner decides whether the spend is worth it.
+- **Side finding (flagged, not fixed — out of M3 scope): the repo's TSP key
+  `3` is permanently disabled.** `src/provider-tsp.ts` calls
+  `https://www.thesportsdb.com/api/v1/json/3/…`; TheSportsDB disabled that
+  key and every request now returns a plain-text "key disabled" message
+  (not JSON), so TSP silently contributes zero rows. The site still works
+  (FD + SportScore cover). The new free test key is `123` (confirmed live).
+  Fixing it is a one-line change but touches a runtime provider, so it
+  belongs in its own small session — NOT done here.
+- **Decision 3 — the worker rename (`ucl-notifier` → `sportsignal`) + duplicate
+  worker deletion is DEFERRED to a dedicated session.** The owner asked for it
+  at the end of the S1 prompt, but it is outside S1's scope (the plan's S1 is
+  M1/M2/M3 SEO quick wins), and it is a risky operation: it changes the live
+  deploy target, requires re-pointing the `sportsignal.ir` custom domain route
+  to the new worker name, re-attaching the KV/D1/AI bindings to the new worker,
+  and deleting the old worker + an unidentified "duplicate". A botched rename
+  takes the live site down. Read-only investigation of the account's workers
+  was done this session; the actual rename needs the owner's explicit go-ahead
+  in a session dedicated to it. The standing deploy instruction in this
+  HANDOFF (`wrangler.toml` `name` is the source of truth) already covers the
+  case where a future session performs the rename.
+- **Options considered:** (a) do the worker rename inside S1 (rejected — out
+  of scope and risky); (b) skip it silently (rejected — the owner asked);
+  (c) investigate read-only and defer with a clear handoff (chosen).
+- **Reason:** AGENTS.md §5 (stay in scope; stop-and-ask before risky
+  irreversible-ish infra changes) and §4 (smallest change that solves the
+  request). The SEO plan's S1 is done and verified; the infra task is
+  separable and safer alone. Decided by the agent; recorded for the owner.
+  Revisit: when the owner opens the dedicated worker-rename session.

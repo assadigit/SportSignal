@@ -7,20 +7,31 @@
 **Goal:** execute section 8 "S1 — Quick wins" of
 `docs/specs/seo-growth-plan-v2.md` exactly as written.
 
-- **M1 — Save and baseline:** audit → `docs/audits/2026-11-10-gsc-audit.md`,
-  plan → `docs/specs/seo-growth-plan-v2.md`, create `docs/SEO_GSC_LOG.md`
-  with the baseline, update this file.
-- **M2 — Spelling on the SEO surface only:** Leipzig «لایپزیگ» (alt
-  «لایپزیش»), Nordsjælland «نورشلان» (alt «نوردشیلند»), Roma keeps «رم» +
-  alt «آ س رم» — via a new SEO-only override map in `src/seo/`; the
-  fa-dict display names the bot/cards/digests use stay untouched.
-- **M3 — Internal-link coverage:** every match in the next 14 days has ≥3
-  internal links (home, hubs, team pages, sibling card) + a new count check
-  in `scripts/seo-check.js`; report-only investigation of broadcaster/lineup
-  data → `docs/audits/2026-11-10-broadcast-lineup-data.md`.
-- **Infra (owner instruction):** rename the Cloudflare worker `ucl-notifier`
-  → `sportsignal`, delete the duplicate worker that does not belong to
-  sportsignal.ir.
+- **M1 — Save and baseline:** ✅ done. Audit → `docs/audits/2026-11-10-gsc-audit.md`,
+  plan → `docs/specs/seo-growth-plan-v2.md`, `docs/SEO_GSC_LOG.md` with the
+  baseline, this file updated. Committed + pushed.
+- **M2 — Spelling on the SEO surface only:** ✅ done and verified live.
+  Leipzig «لایپزیگ» (alt «لایپزیش»), Nordsjælland «نورشلان» (alt «نوردشیلند»),
+  Roma keeps «رم» + alt «آ س رم» — via `src/seo/team-names.ts` (SEO-only
+  override map); `src/fa-dict.ts` untouched (bot/cards/digests byte-identical).
+  v13.255-seospell, deployed, live: `/teams/rb-leipzig` shows both spellings.
+- **M3 — Internal-link coverage + broadcast/lineup investigation:** ✅ done.
+  T-25 check added to `scripts/seo-check.js` (every match in the next 14 days
+  must have ≥3 internal links from home/hub/team/comp/matches surfaces).
+  Verified live on 2026-11-10: 21/21 upcoming 14-day matches have ≥3 links
+  (no rendering code changed — the invariant already held). Investigation →
+  `docs/audits/2026-11-10-broadcast-lineup-data.md` (report only): broadcaster
+  data exists on TSP free tier but **does not cover Iran/Afghanistan** (the
+  site's audience) and the repo's TSP key `3` is dead; lineups need a paid
+  provider (FD ~49€/mo) or TSP's sparse free coverage. **S3 "where to watch"
+  closed** (no audience-fit source); S3 lineups = owner decision (plan Q2).
+  No worker deploy (scripts + docs only); `npm test` passes.
+- **Infra (owner instruction, NOT done this session):** rename the Cloudflare
+  worker `ucl-notifier` → `sportsignal`, delete the duplicate worker. This is a
+  risky, out-of-S1-scope operation (touches the live deploy target + custom
+  domain routing). Read-only investigation done; **deferred to a dedicated
+  session** with the owner's explicit go-ahead — see the S1 final report and
+  DECISIONS.
 
 **Out of scope (hands off):** the title template, the today/tomorrow/
 this-weekend hubs, the sitemap. Everything SEO-facing is logged in

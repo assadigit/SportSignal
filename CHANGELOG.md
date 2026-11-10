@@ -4,6 +4,57 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.255.1-s1m3 — S1 M3: internal-link coverage check (T-25) + broadcast/lineup investigation
+
+**S1 M3, 2026-11-10 (the SEO growth plan's quick-wins close —
+`docs/specs/seo-growth-plan-v2.md` §8, audit F7 + F6).** Two deliverables, both
+non-deploying (scripts + docs only — `src/` untouched, no worker deploy):
+
+- **(1) F7 internal-link coverage check — T-25 in `scripts/seo-check.js`.**
+  Every match in the next 14 days must have ≥3 internal links from the
+  home/hub/team/competition/matches-list surfaces (the F7 invariant: orphaned
+  upcoming fixtures do not climb). The check crawls the REAL link graph as
+  Googlebot sees it — fetches the upcoming sitemap, filters to the 14-day
+  window by parsing the date from each match URL, then for each match fetches
+  the match page (to discover its team + competition links), caches every
+  source page, and counts `href` occurrences of the match URL across them.
+  New config: `UPCOMING_LINK_MIN=3`, `UPCOMING_LINK_WINDOW_DAYS=14`,
+  `UPCOMING_LINK_MAX_MATCHES=60`. The check is live-only (run
+  `node scripts/seo-check.js`); it is NOT in the offline `npm test` chain
+  (it crawls production). **No rendering code changed** — the invariant
+  already held: verified live on 2026-11-10, 21/21 upcoming 14-day matches
+  have ≥3 links (most have 4: `/matches` + both team pages + the competition
+  page; the 3 UCL matches on Nov 24 have 5, also linked from the homepage).
+  Re-run T-25 before each deploy that touches SEO rendering or the
+  home/hub/team/competition listings.
+- **(2) F6 broadcast/lineup data investigation — report only, no build.**
+  `docs/audits/2026-11-10-broadcast-lineup-data.md`. Empirically probed every
+  provider's live API. **Broadcaster:** football-data.org has none on any
+  tier; TheSportsDB's free `lookuptv.php` returns real channel/country/logo
+  data BUT covers India, Brazil, US, Iceland — **zero Iran/Afghanistan
+  entries** (the site is 91% Iran / 6% Afghanistan); SportScore's public free
+  API has none. **Lineups:** FD has them on the PAID tier only (~49 €/month,
+  absent from the free `/v4/matches/{id}` response — confirmed empirically);
+  TSP's free `lookuplineup.php` is sparse and near-kickoff only (returned
+  `null` for every event probed); SportScore's lineups are behind a paid
+  RapidAPI key. **Verdict:** S3 "where to watch" is CLOSED (no audience-fit
+  source); S3 lineups = owner decision (plan Q2 — paid provider or accept
+  sparse free coverage). Both recorded in `docs/DECISIONS.md`.
+- **Side finding (flagged, not fixed):** the repo's TheSportsDB key `3` is
+  permanently disabled — `src/provider-tsp.ts` calls
+  `https://www.thesportsdb.com/api/v1/json/3/…` and every request now returns
+  a "key disabled" plain-text message (not JSON), so TSP silently contributes
+  zero rows. The site still works (FD + SportScore cover). The new free test
+  key is `123`. Fixing it is a one-line change but touches a runtime provider,
+  so it is deferred to its own small session (not S1's scope).
+- **Worker rename deferred:** the owner's end-of-prompt instruction to rename
+  the Cloudflare worker `ucl-notifier` → `sportsignal` and delete the
+  duplicate worker is outside S1's scope and risky (changes the live deploy
+  target + custom-domain routing). Read-only account investigation was done;
+  the actual rename is deferred to a dedicated session with the owner's
+  explicit go-ahead. See `docs/DECISIONS.md`.
+- `npm test` passes (exit 0). No version bump (no `src/` change, no deploy).
+
 # v13.255-seospell — S1 M2: the F3 spelling fix rides the SEO surface only
 
 **S1 M2, 2026-11-10 (the SEO growth plan's first code round —

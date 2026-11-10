@@ -50,7 +50,16 @@ const CONFIG = {
     THRESHOLDS: { performance: 40, seo: 100, accessibility: 95, "best-practices": 85 }
   },
   FAIL_FAST: false,
-  TIMEOUT_MS: 20000
+  TIMEOUT_MS: 20000,
+  // T-25 (S1 M3, plan §8): every match in the next 14 days must have at least
+  // this many internal links pointing at it from the home/hub/team/comp/
+  // matches-list surfaces. The 2026-11-10 GSC audit (F7) named internal-link
+  // coverage as the most neglected rankings lever; this keeps the invariant
+  // true as fixtures rotate in. 3 = the plan's floor (home, a hub, both team
+  // pages, sibling card — any 3 of those surfaces).
+  UPCOMING_LINK_MIN: 3,
+  UPCOMING_LINK_WINDOW_DAYS: 14,
+  UPCOMING_LINK_MAX_MATCHES: 60
 };
 // ============================ END CONFIGURATION BLOCK ======================
 
@@ -1275,6 +1284,94 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       const xr = r.headers.get("x-robots-tag") || "";
       if (!/noindex/i.test(xr)) fail(id, path + " (HTTP " + r.status + ") missing X-Robots-Tag noindex (SS-18; got «" + xr + "»)");
       else pass(id, path + " (HTTP " + r.status + ") carries X-Robots-Tag: " + xr.trim() + " (SS-18)");
+    }
+  }
+
+  // ---------------- T-25: internal-link coverage for upcoming 14-day matches (S1 M3, plan §8) ----------------
+  section("T-25 internal-link coverage for upcoming 14-day matches");
+  {
+    const id = "T-25";
+    // F7 of the 2026-11-10 GSC audit: internal links decide which upcoming
+    // games get page-1 treatment. Every match in the next 14 days must have
+    // >= UPCOMING_LINK_MIN internal links from the home/hub/team/comp/matches
+    // surfaces, or it is orphaned and will not climb. This check measures the
+    // REAL link graph as Googlebot sees it (it crawls the source pages and
+    // counts href occurrences of each match URL).
+    const upSitemap = B + "/sitemaps/matches-upcoming.xml";
+    const smRes = await fetchRaw(upSitemap);
+    if (smRes.status !== 200) {
+      fail(id, "matches-upcoming sitemap HTTP " + smRes.status + " — cannot assess coverage");
+    } else {
+      const smTxt = await smRes.text();
+      const allUrls = [...smTxt.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+      // Filter to the next-14-day window by parsing the date from the URL
+      // (matchPath always ends in -YYYY-MM-DD).
+      const now = Date.now();
+      const horizonMs = now + CONFIG.UPCOMING_LINK_WINDOW_DAYS * 864e5;
+      const inWindow = allUrls.filter((u) => {
+        const dm = u.match(/-(\d{4}-\d{2}-\d{2})$/);
+        if (!dm) return false;
+        const t = new Date(dm[1] + "T00:00:00Z").getTime();
+        return t >= now && t <= horizonMs;
+      });
+      if (inWindow.length === 0) {
+        pass(id, "no upcoming matches in the next " + CONFIG.UPCOMING_LINK_WINDOW_DAYS + " days — nothing to cover (window gap)");
+      } else {
+        const matches = inWindow.slice(0, CONFIG.UPCOMING_LINK_MAX_MATCHES);
+        if (inWindow.length > CONFIG.UPCOMING_LINK_MAX_MATCHES) {
+          report(id, inWindow.length + " upcoming matches in the window — capped to first " + CONFIG.UPCOMING_LINK_MAX_MATCHES + " (raise UPCOMING_LINK_MAX_MATCHES for a full sweep)");
+        }
+        // Cache source pages so each is fetched at most once.
+        const srcCache = new Map();
+        async function sourceText(path) {
+          if (srcCache.has(path)) return srcCache.get(path);
+          const r = await fetchRaw(B + path);
+          const t = r.status === 200 ? await r.text() : "";
+          srcCache.set(path, { status: r.status, text: t });
+          return srcCache.get(path);
+        }
+        // The shared surfaces every match could be linked from.
+        const sharedPaths = ["/", "/matches", "/matches/today", "/matches/tomorrow", "/matches/this-week", "/matches/this-weekend"];
+        for (const p of sharedPaths) await sourceText(p);
+
+        let underMin = 0;
+        const offenders = [];
+        for (const mu of matches) {
+          const matchPath = new URL(mu).pathname;
+          // Fetch the match page once to discover its team + competition
+          // links (the competition cannot be derived from the URL).
+          const mp = await sourceText(matchPath);
+          if (mp.status !== 200) {
+            fail(id, matchPath + " HTTP " + mp.status + " — cannot discover its link sources");
+            underMin++;
+            offenders.push({ path: matchPath, count: 0, from: [], reason: "match page unreachable" });
+            continue;
+          }
+          const teamPaths = [...new Set([...mp.text.matchAll(/href="(\/teams\/[^"]+)"/g)].map((m) => m[1]))];
+          const compPaths = [...new Set([...mp.text.matchAll(/href="(\/competitions\/[^"]+)"/g)].map((m) => m[1]))];
+          const sources = [...sharedPaths, ...teamPaths, ...compPaths];
+          let count = 0;
+          const fromList = [];
+          for (const p of sources) {
+            if (p === matchPath) continue; // a page never counts itself
+            const src = await sourceText(p);
+            if (src.status !== 200) continue;
+            if (src.text.includes('href="' + matchPath + '"')) {
+              count++;
+              fromList.push(p);
+            }
+          }
+          if (count < CONFIG.UPCOMING_LINK_MIN) {
+            underMin++;
+            offenders.push({ path: matchPath, count, from: fromList });
+          }
+        }
+        if (underMin === 0) {
+          pass(id, "all " + matches.length + " upcoming matches in the next " + CONFIG.UPCOMING_LINK_WINDOW_DAYS + " days have >= " + CONFIG.UPCOMING_LINK_MIN + " internal links (home/hub/team/comp/matches surfaces)");
+        } else {
+          fail(id, underMin + " of " + matches.length + " upcoming matches have < " + CONFIG.UPCOMING_LINK_MIN + " internal links (F7 — orphaned upcoming fixtures will not climb): " + offenders.map((o) => o.path + " (" + o.count + (o.reason ? ", " + o.reason : "") + ", from [" + o.from.join(",") + "])").join("; "));
+        }
+      }
     }
   }
 
