@@ -1,0 +1,56 @@
+# SEO / Search Console change log
+
+> Agents: read AGENTS.md in the repo root first, and follow it for this whole task.
+
+Every SEO-facing change to sportsignal.ir gets one row here: date, what
+changed, which pages, and the baseline it started from. **No log entry means
+it did not happen.** This is the measurement-discipline backbone of
+`docs/specs/seo-growth-plan-v2.md` (its §5 rules: one change per group of
+pages, 3–4 week waits, control groups, same-position comparisons).
+
+Owner routine (plan §9): export Search Console (last 28 days) weekly, send
+the zip to the agent; also export Indexing → Pages and Links monthly.
+
+---
+
+## Baseline (recorded 2026-11-10, from `docs/audits/2026-11-10-gsc-audit.md`)
+
+Source export: `sportsignal_ir-Performance-on-Search-2026-11-10.zip`,
+window 2026-10-10 → 2026-11-07. The site is ~4 weeks old; treat all numbers
+as early signals.
+
+| Metric | Value |
+|---|---|
+| Clicks / impressions / CTR (4 weeks) | 190 / 6,945 / 2.74% |
+| Oct 10–31 (22 days) | 133 clicks, 3,986 impressions, 3.34% (≈6 clicks/day, 181 impressions/day) |
+| Nov 1–7 (7 days) — **the KPI baseline** | 57 clicks, 2,959 impressions, 1.93%, avg position 9.5 (≈8.1 clicks/day, 423 impressions/day) |
+| Share of visible impressions at positions 1–10 | 33.7% |
+| Click rate at positions 8–10 | ≈0.9% (8 of 923) |
+| Pages with ≥1 click | 55 of 315 |
+| Match pages | 225 pages · 5,827 impressions (82%) · 165 clicks · 2.83% |
+| Team pages | 73 pages · 833 impressions (12%) · 5 clicks · 0.60% |
+| Hubs (today/tomorrow/this-weekend) | 3 pages · 123 impressions · 10 clicks · 8.1% |
+| Homepage | 1 page · 203 impressions · 7 clicks · 3.45% |
+| Competition pages | 5 pages · 35 impressions · 1 click · 2.9% |
+| Country / device | Iran 91% · mobile 96.8% of impressions |
+| Query spelling mismatches (F3) | «لایپزیگ» 337 impr · «نورشلان» 275 · «آ س رم» 210 |
+
+KPI targets live in the plan §7 (3-month targets: 15 clicks/day, 800
+impressions/day, 50% of visible impressions at positions 1–10, 120 pages
+with a click).
+
+## Known changes before this log existed (context only — from the audit F11)
+
+| Date | Change | Pages |
+|---|---|---|
+| 2026-10-11 | Full SEO layer (SSR pages, canonicals, sitemap, SportsEvent markup) | all |
+| 2026-11-04 | AI bots unblocked (robots.txt) | all |
+| 2026-11-06 | v13.228-farsibrand: leading ⚽ + Farsi brand «اسپرت سیگنال» in match titles; one team-title shortening | match + team titles |
+
+The Nov 6 title change gets its clean 4-week read on **about Dec 4** — that
+export is the gate for the S2 title test (plan §8).
+
+## Change log (append below — one row per change)
+
+| Date | What changed | Pages affected | Baseline at change time |
+|---|---|---|---|
