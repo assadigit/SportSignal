@@ -2,23 +2,38 @@
 
 **Repository:** https://github.com/assadigit/sportsignal
 **Baseline commit:** `114426b` ("Add files via upload", 2026-11-10) — live production `13.255-seospell` verified matching this tree
-**Working branch:** `feat/match-centre` (proposed at the M0 gate; awaiting owner approval)
-**Preview target:** None configured (verified — see audit §10; owner decision requested: Option A version previews + B local)
+**Working branch:** `feat/match-centre` (owner-approved 2026-11-11; cut from `main` at `114426b`)
+**Preview target:** Option A + B approved 2026-11-11 — `npx wrangler versions upload` per-version preview URLs on the workers.dev subdomain for milestone smoke tests, plus `npx wrangler dev` local verification every session (audit §10)
 **Production target:** Worker `ucl-notifier` via `npx wrangler deploy` → `sportsignal.ir` (+ `football.sportsignal.ir`, `ucl-notifier.sportsignal.workers.dev` alias). Current deployment `88649642` / version `b48bae21` (2026-11-10T11:10:43Z). Rollback: `npx wrangler deployments list` → `npx wrangler rollback`.
 
 ## Current status
-- Current milestone: M0 (complete — awaiting owner approval of the audit/branch/deploy plan)
-- Current session: S01 (complete)
+- Current milestone: M1 — Page foundation (opening)
+- Current session: S02 (next to start)
 - Last completed session: S01 — architecture, data, cost and deployment audit (2026-11-11)
-- Last completed milestone: M0 (deliverables produced; gate pending)
-- Next action: Owner reviews `MATCH-CENTRE-IMPLEMENTATION-AUDIT.md` and approves the branch/preview/production plan; then S02 starts on `feat/match-centre`
-- Production release: Not approved until S21 readiness gate
+- Last completed milestone: M0 — complete and **owner-approved 2026-11-11** (blanket approval of the presented audit/branch/deploy plan; all six §15 decision points resolved with the recommended options — see the M0 gate decision record below)
+- Next action: S02 — route shell and semantic structure, on `feat/match-centre` (starting files: audit §16)
+- Production release: Not approved until S21 readiness gate; production deploy only at S22
+
+## M0 gate decision record (owner approval, 2026-11-11)
+
+Owner message: "Approve. give me the session for next session. commit push and update change logs." — blanket approval of the M0 plan as presented. The six decision points (audit §15) resolve to their recommended options:
+
+| # | Decision | Resolution (recommended option adopted) |
+|---|---|---|
+| Q1 | Kickoff timezone rendering (S05, decision 93) | **A — Tehran time + UTC note as today** (no new JS; owner may still switch to B — visitor-local `Intl` enhancement — any time before S05) |
+| Q2 | Venue city/country (S14) | **A — stadium name only**, city/country omitted (zero invention; a curated table can be authorized later, before S14) |
+| Q3 | Telegram illustration (S18, decision 69) | **A — compose from existing verified assets** (channel icon + existing stadium art) |
+| Q4 | Finished scorers (S04/S19, guardrails §1) | **A — finished scorers stay omitted** (zero-exception default holds; the bounded venue-detail piggyback was NOT approved) |
+| Q5 | Preview target (audit §10) | **A + B — Workers version previews (`wrangler versions upload`, never activated) + local `wrangler dev` every session**; read-only smoke tests only, same-KV caveat respected, no admin/simulate/broadcast against previews |
+| Q6 | Merge strategy (M10) | **A — owner merges `feat/match-centre` → `main` via PR** at the M10 gate (agent never merges/pushes `main` unless separately instructed) |
+
+Override rule: Q1–Q4 are product choices tied to S05/S14/S18/S04 respectively; the owner may override any of them before that session lands without re-opening M0. Q5/Q6 are process choices now in force.
 
 ## Milestones
 
 | Milestone | Status | Sessions | Commit SHAs | Preview deployment | Gate |
 |---|---|---|---|---|---|
-| M0 Discovery & execution plan | Complete (gate pending) | S00–S01 | — (M0 docs commit pending owner approval of branch plan) | None (audit only) | Owner audit approval required |
+| M0 Discovery & execution plan | Complete — **approved 2026-11-11** | S00–S01 | `82ee82b` (extraction + audit) + approval docs commit | None (audit only) | Approved 2026-11-11 (blanket; Q1–Q6 recommended options) |
 | M1 Page foundation | Not started | S02–S03 | — | Pending | Pending |
 | M2 Hero & navigation | Not started | S04–S06 | — | Pending | Pending |
 | M3 Summary & editorial system | Not started | S07–S09 | — | Pending | Pending |
@@ -34,12 +49,12 @@
 
 | Session | Status | Commit SHA | Push result | Tests | Notes |
 |---|---|---|---|---|---|
-| S00 | Complete | — | — | npm test baseline: exit 0, 2,961 OK, 0 failures | Package v1.2 extracted (README conflict → `MATCH-CENTRE-PACKAGE-README.md`); repo/design-system/docs audit; no code changes |
-| S01 | Complete | — | — | npm test re-verified exit 0 | Data matrix, cost audit, dated-audit re-verification (scorers R2 corrected — finished scorers NOT in pool at HEAD), deploy/rollback/CI verified read-only; audit + ledger + log produced |
+| S00 | Complete | `82ee82b` | Pushed to `origin/feat/match-centre` 2026-11-11, `ls-remote` verified | npm test baseline: exit 0, 2,961 OK, 0 failures | Package v1.2 extracted (README conflict → `MATCH-CENTRE-PACKAGE-README.md`); repo/design-system/docs audit; no code changes |
+| S01 | Complete | `82ee82b` | Pushed to `origin/feat/match-centre` 2026-11-11, `ls-remote` verified | npm test re-verified exit 0 | Data matrix, cost audit, dated-audit re-verification (scorers R2 corrected — finished scorers NOT in pool at HEAD), deploy/rollback/CI verified read-only; audit + ledger + log produced |
 | S02 | Not started | — | — | — | Starting files listed in audit §16 |
 | S03 | Not started | — | — | — | |
-| S04 | Not started | — | — | — | Finished scorers omitted pending owner decision Q4 |
-| S05 | Not started | — | — | — | Timezone decision Q1 pending |
+| S04 | Not started | — | — | — | Finished scorers omitted (Q4 = A, approved 2026-11-11) |
+| S05 | Not started | — | — | — | Kickoff rendering: Tehran + UTC note (Q1 = A, approved 2026-11-11; owner may switch to B before S05) |
 | S06 | Not started | — | — | — | |
 | S07 | Not started | — | — | — | Venue double-wording fix rides here (audit §5 R1) |
 | S08 | Not started | — | — | — | |
@@ -48,11 +63,11 @@
 | S11 | Not started | — | — | — | |
 | S12 | Not started | — | — | — | |
 | S13 | Not started | — | — | — | |
-| S14 | Not started | — | — | — | Venue city/country decision Q2 pending |
+| S14 | Not started | — | — | — | Venue: stadium name only, city/country omitted (Q2 = A, approved 2026-11-11) |
 | S15 | Not started | — | — | — | |
 | S16 | Not started | — | — | — | |
 | S17 | Not started | — | — | — | |
-| S18 | Not started | — | — | — | Illustration decision Q3 pending |
+| S18 | Not started | — | — | — | Telegram block composed from existing verified assets (Q3 = A, approved 2026-11-11) |
 | S19 | Not started | — | — | — | |
 | S20 | Not started | — | — | — | Must re-verify title/meta/JSON-LD contracts (SEO measurement in flight) |
 | S21 | Not started | — | — | — | |
@@ -62,7 +77,7 @@
 
 | Gate | Approval | Date | Notes |
 |---|---|---|---|
-| M0 audit / branch / deployment plan | Pending | — | Presented 2026-11-11 with 6 decision points (audit §15); preview-target question is runbook-mandated |
+| M0 audit / branch / deployment plan | **Approved** | 2026-11-11 | Blanket approval of the presented plan; Q1–Q6 resolved with recommended options (decision record above); branch `feat/match-centre`, preview A+B, merge via PR at M10 |
 | M9 release-candidate review | Pending | — | |
 | M10 production release | Pending | — | Last-known-good at audit time: deployment `88649642`, version `b48bae21` |
 

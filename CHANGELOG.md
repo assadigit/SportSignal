@@ -4,6 +4,32 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# Match Centre M0 round, 2026-11-11 — v1.2 package extracted; M0 audit owner-approved; `feat/match-centre` opened (doc-only)
+
+**The Match Centre engagement is formally open.** The owner's v1.2
+implementation package (`SportSignal-Match-Centre-Implementation-Package-v1.2
+(1).zip`, kept intact and git-tracked at the repo root) is extracted to the
+repo root — 16 files: 12 documents (the package `README.md` lands as
+`MATCH-CENTRE-PACKAGE-README.md`, the only filename conflict) plus all four
+`design-reference/*.png` explorations. The M0 milestone (S00 bootstrap + S01
+audit) is complete: `MATCH-CENTRE-IMPLEMENTATION-AUDIT.md` (architecture,
+data-availability matrix for every proposed section, provider/KV/CPU/
+subrequest/payload cost audit — every section feasible at **zero incremental
+provider requests and zero incremental KV ops**), plus the initialized
+`MATCH-CENTRE-MILESTONE-LEDGER.md` and `MATCH-CENTRE-EXECUTION-LOG.md`.
+
+**Owner approval received 2026-11-11 ("Approve.").** Working branch
+`feat/match-centre` (cut from `main` at `114426b`); milestone previews via
+Workers version uploads + local `wrangler dev` (Option A+B); merge to `main`
+by owner PR at the M10 gate. The six M0 decision points resolve to their
+recommended options (Tehran+UTC kickoff rendering; venue stadium-name-only;
+Telegram block from existing assets; finished scorers stay omitted; preview
+A+B; PR merge) — full record in the ledger's "M0 gate decision record".
+Top flagged risk carried forward: the free-plan CPU ceiling on the match-page
+render path. **Doc-only round — no application code, no deploy (production
+stays `13.255-seospell`), zero measurement contamination of the S1/S2 SEO
+baseline.** Next: S02 route shell and semantic structure.
+
 # S2 parking round, 2026-11-10 — S2 title test fired early, parked at the Dec 4 GSC gate (doc-only)
 
 **The S2 start prompt (the «X مقابل Y» match-title test) was re-fired on
