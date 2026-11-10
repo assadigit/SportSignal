@@ -10,6 +10,10 @@ import { tehranParts } from "./utils";
 import { COMP_EN } from "../tables";
 import { translateCompetition } from "../translate";
 import { TEAM_ENTITY_LINKS, COMP_ENTITY_LINKS } from "./entity-links";
+// S1 M2 (F3): the SEO-only spelling overrides — the alternateName arrays
+// carry BOTH spellings (searcher + dictionary) so the structured data
+// matches what people type AND what the page shows.
+import { seoTeamAltNames } from "./team-names";
 import type { SeoMatch, TeamEntry, CompEntry, SeoCtx } from "./data";
 import { compNameFa } from "./markup";
 
@@ -148,9 +152,13 @@ export function sportsEventNode(sm: SeoMatch, why: string): any {
       name: m.venue
     };
   }
-  // competitor + alternateName (G-05): Persian name as alternateName.
-  if (m.homeTeam.faName) ev.homeTeam.alternateName = m.homeTeam.faName;
-  if (m.awayTeam.faName) ev.awayTeam.alternateName = m.awayTeam.faName;
+  // competitor + alternateName (G-05): the Persian names — for overridden
+  // teams (S1 M2, F3) BOTH spellings ride along (the SEO name first, then
+  // the dictionary spelling), so either query form matches the entity.
+  const homeAlts = seoTeamAltNames(m.homeTeam);
+  if (homeAlts.length) ev.homeTeam.alternateName = homeAlts.length === 1 ? homeAlts[0] : homeAlts;
+  const awayAlts = seoTeamAltNames(m.awayTeam);
+  if (awayAlts.length) ev.awayTeam.alternateName = awayAlts.length === 1 ? awayAlts[0] : awayAlts;
   // Finished: score in the name/description happens at page level; here we
   // keep the event clean (no invented endDate/offers/ratings — S-03/S-04).
   return ev;
@@ -289,7 +297,11 @@ export function sportsTeamNode(entry: TeamEntry): any {
     sport: "Football",
     url: absUrl("/teams/" + entry.slug)
   };
-  if (entry.faName) node.alternateName = entry.faName;
+  // S1 M2 (F3): the override-aware alternateName list (SEO spelling first,
+  // dictionary spelling after) — same contract as the match-page team refs.
+  const altNames = seoTeamAltNames(entry);
+  if (altNames.length === 1) node.alternateName = altNames[0];
+  else if (altNames.length > 1) node.alternateName = altNames;
   // SS-05 (Phase-2 spec §3): entity grounding from the static verified map
   // (src/seo/entity-links.ts — every URL fetch-and-confirmed, provenance in
   // that file's header). sameAs = [English Wikipedia article, Wikidata

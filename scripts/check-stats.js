@@ -1318,8 +1318,24 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v126"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.254\.1-rankbadgefix"/.test(cfg) &&
-    /# v13\.254\.1-rankbadgefix/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.255-seospell"/.test(cfg) &&
+    /# v13\.255-seospell/.test(read("CHANGELOG.md"));
+})());
+
+// v13.255-seospell (the S1 M2 SEO round, 2026-11-10): the F3 spelling fix —
+// an SEO-surface-only release (src/seo/team-names.ts + the pages/jsonld
+// wiring + the .altnote shell CSS) that changed NO rank-badge surface, so
+// the v13.254 engine block above rides unchanged and only its version pins
+// were updated in place (the S44.1 hotfix precedent: 13.254 -> 13.254.1
+// was moved the same way). This block pins the release's own plumbing.
+check("v13.255-seospell (the release wiring — the S1 M2 SEO round: the F3 spelling fix, searcher spellings on the SEO surface only; the full story in CHANGELOG.md + docs/SEO_GSC_LOG.md; the rank-badge engine survivors ride unchanged in the v13.254 block above)", (() => {
+  const pkg = JSON.parse(read("package.json"));
+  const fs = require("fs");
+  const path = require("path");
+  return pkg.version === "13.255.0.0" &&
+    fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
+    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
+    /node scripts\/check-seo-lastmod\.js && node scripts\/check-seo-teamnames\.js/.test(pkg.scripts.test);
 })());
 
 

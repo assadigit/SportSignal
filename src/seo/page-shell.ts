@@ -244,6 +244,10 @@ a.mvenue-map:active{transform:scale(.97)}
    first-time visitors; the dots reuse .fdot sizing at reduced footprint. */
 .formlegend{display:flex;align-items:center;gap:6px;margin:2px 0 6px;font-size:.72rem;color:var(--muted,#9aa4b2)}
 .formlegend .fdot{width:16px;height:16px;font-size:.62rem;border-radius:5px}
+/* S1 M2 (F3): the alternate-spelling note on overridden team pages — muted
+   microcopy in the .formlegend family («لایپزیگ با نام «لایپزیش» هم
+   شناخته می‌شود.»); the dictionary spelling stays visible exactly once. */
+.altnote{margin:6px 0 0;font-size:.72rem;color:var(--muted,#9aa4b2)}
 /* v13.89-stdetail: the compact W·D·L standings column — «۶-۲-۱» per row,
    each count in its win/draw/loss hue (fw/fd/fl family), tabular digits,
    en-dash separators. Desktop-visible; hidden ≤600px (the .ucl-hidem

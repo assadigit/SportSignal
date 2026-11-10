@@ -15,6 +15,13 @@ import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
 import { normalizeTeamName } from "../teams";
+// S1 M2 (F3): the SEO-only spelling overrides — Leipzig «لایپزیگ»,
+// Nordsjaelland «نورشلان», Roma + «آ س رم». The local faName() below is the
+// ONE funnel every SEO-page surface reads (titles, H1, descriptions,
+// answer sentences, scoreboard names, FAQ text), so consulting the override
+// here changes the SEO surface while the bot/cards/digests (fa-dict.ts
+// renderers that never import this) stay byte-identical.
+import { seoTeamFaName, seoTeamAltName } from "./team-names";
 import { loadArchive } from "./files";
 // v13.89-stdetail: full-table sources for the competition pages — both
 // cache-only/reads-only (the seo layer never triggers a provider sweep).
@@ -24,7 +31,10 @@ import { translateTeam } from "../translate";
 const PER_PAGE = 50;
 
 function faName(t: any): string {
-  return (t && (t.faName || t.name)) || "";
+  // S1 M2 (F3): the SEO-visible name — the override map first (searcher
+  // spelling), else the dictionary faName (byte-identical to before for
+  // every team not in the map).
+  return seoTeamFaName(t);
 }
 
 function scoreStr(score: any): string {
@@ -320,6 +330,14 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   if (m.roundFa || m.round) rows.push(["مرحله", esc(m.roundFa || m.round)]);
   rows.push(["تاریخ", M.fullWhenHtml(m.utcDate)]);
   if (m.venue) rows.push(["ورزشگاه", venueMapLink(m, "")]);
+  // S1 M2 (F3): the alternate-spelling row — the SEO name (searcher
+  // spelling) leads every surface on the page; the dictionary spelling
+  // appears exactly once, here, so the page matches BOTH query spellings.
+  const altSpellings = [seoTeamAltName(m.homeTeam), seoTeamAltName(m.awayTeam)].filter(Boolean) as string[];
+  if (altSpellings.length) {
+    const uniq = Array.from(new Set(altSpellings));
+    rows.push(["نام‌های دیگر", esc(uniq.join("، "))]);
+  }
   rows.push(["وضعیت", statusFaOf(sm) + (live && m.minute != null ? " (" + toFaDigits(String(m.minute)) + "ʹ)" : "")]);
   if ((finished || live) && m.score && m.score.home != null) rows.push(["نتیجه", scoreStr(m.score)]);
   const facts = '<table class="facts"><caption>مشخصات بازی</caption><tbody>' +
@@ -644,7 +662,10 @@ export function buildTeamsIndexPage(ctx: SeoCtx): string {
     const d = e.next
       ? "بازی بعدی: " + faName(e.next.s.homeTeam) + " – " + faName(e.next.s.awayTeam) + "، " + faDateD2(e.next.s.utcDate)
       : "";
-    grid += '<a class="hubtile" href="/teams/' + e.slug + '"><div class="t">' + esc(e.faName || e.name) +
+    // S1 M2 (F3): the tile title rides the SEO override so the index agrees
+    // with the team page it links to (the machine list below uses the same
+    // names — the SS-13 visible==machine contract).
+    grid += '<a class="hubtile" href="/teams/' + e.slug + '"><div class="t">' + esc(seoTeamFaName(e)) +
       '</div><div class="d">' + esc(d) + "</div></a>";
   }
   if (!grid) grid = '<div class="empty">در حال حاضر بازی پیش‌رویی برای تیم‌های دنبال‌شده در برنامه نیست.</div>';
@@ -657,7 +678,7 @@ export function buildTeamsIndexPage(ctx: SeoCtx): string {
   // with playable upcoming big matches — the same universe the router
   // resolves team slugs from).
   const teamList = JL.linkItemList(
-    entries.map((e) => ({ name: e.faName || e.name, url: absUrl("/teams/" + e.slug) })),
+    entries.map((e) => ({ name: seoTeamFaName(e), url: absUrl("/teams/" + e.slug) })),
     "تیم‌های دنبال‌شده"
   );
   return pageShell({
@@ -725,7 +746,13 @@ function teamFormCardHtml(ctx: SeoCtx, entryName: string, fa: string, archive: a
 export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
   const entry = findTeamBySlug(ctx, slug);
   if (!entry) return { html: "", notFound: true };
-  const name = entry.faName || entry.name;
+  // S1 M2 (F3): the team page's own name rides the SEO override (Leipzig
+  // renders «لایپزیگ» in the title/H1/answer; the dictionary spelling is
+  // shown once via altNote below).
+  const name = seoTeamFaName(entry);
+  const altNote = seoTeamAltName(entry)
+    ? '<p class="altnote">' + esc(name + " با نام «" + seoTeamAltName(entry) + "» هم شناخته می‌شود.") + "</p>"
+    : "";
   const { upcoming, finished } = teamMatches(ctx, entry.name);
   const indexable = upcoming.length >= SEO.MIN_UPCOMING_FOR_INDEX;
   const path = "/teams/" + slug;
@@ -800,7 +827,7 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
   if (title.length > 65) title = name + " — برنامه بازی و ساعت شروع | اسپرت سیگنال";
   const desc = (answer + (next ? " لینک صفحه هر بازی در ادامه است." : " به‌محض اعلام برنامه به‌روزرسانی می‌شود.")).slice(0, 165);
   const main =
-    '<div class="answercard">' + esc(answer) + "</div>" +
+    '<div class="answercard">' + esc(answer) + "</div>" + altNote +
     '<div class="card"><div class="listhead"><h2>بازی‌های پیش‌روی ' + esc(name) + "</h2></div>" + dateGroupedRows(upcoming, false) + "</div>" +
     stWinCard +
     formCard +

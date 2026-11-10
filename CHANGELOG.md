@@ -4,6 +4,50 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.255-seospell — S1 M2: the F3 spelling fix rides the SEO surface only
+
+**S1 M2, 2026-11-10 (the SEO growth plan's first code round —
+`docs/specs/seo-growth-plan-v2.md` §8, audit F3,
+`docs/audits/2026-11-10-gsc-audit.md`).** Searchers spell three clubs
+differently from the site dictionary (Leipzig 337 impressions, Nordsjaelland
+275, Roma 210 in the 4-week GSC window); the SEO pages now carry BOTH
+spellings while the bot, the Telegram cards and the digests stay
+byte-identical.
+
+- **(1) THE OVERRIDE LAYER.** New `src/seo/team-names.ts`: a small map keyed
+  by `normTeamKey` (provider variants included — "RB Leipzig"/"Leipzig",
+  "FC Nordsjælland"/"Nordsjaelland"/"Nordsjælland" (the æ strips to its own
+  key), "AS Roma"/"Roma") with the searcher spelling (`fa`) and the
+  dictionary spelling (`alt`). RB Leipzig renders «لایپزیگ» (alt «لایپزیش»),
+  FC Nordsjælland «نورشلان» (alt «نوردشیلند»), AS Roma keeps «رم» and adds
+  «آ س رم» as the alternate only.
+- **(2) THE SURFACES.** The pages.ts `faName()` helper — the ONE funnel
+  every SEO page surface reads — delegates to `seoTeamFaName()`: titles, H1,
+  meta descriptions, answer sentences, scoreboard names, share links,
+  breadcrumbs, hub FAQ text and the teams-index tiles now render the
+  searcher spelling. Match pages gain a «نام‌های دیگر» facts-table row and
+  team pages a muted `.altnote` line — the dictionary spelling appears
+  exactly once in visible text. JSON-LD `alternateName` (SportsEvent
+  homeTeam/awayTeam + the team page's SportsTeam) carries BOTH spellings as
+  an array (SEO name first). List rows keep the dictionary names — they are
+  the shared client-mirror surface (public-13.x.js re-renders rows from the
+  payload's faName fields; changing SSR rows only would flicker back).
+- **(3) THE SCOPE LAW.** `src/fa-dict.ts` is untouched — the bot, cards and
+  digests render from it and never import the SEO layer. New
+  `scripts/check-seo-teamnames.js` (wired into `npm test`) gates the
+  behavior (7 override cases + control teams byte-identical), the wiring,
+  and the scope: nothing outside `src/seo/` may reference the override, and
+  fa-dict must keep the dictionary spellings only.
+- **(4) VERIFIED.** Local two-server diff (post-M2 :8787 vs pre-M2 :8788,
+  same KV seed): homepage, all four hubs, /matches, /competitions, /about,
+  control match/team/competition pages byte-identical (modulo the shared
+  `.altnote` shell-CSS rule); the Leipzig/Roma/Nordsjaelland pages differ
+  exactly in title/OG/twitter/answer/JSON-LD/facts-row/altnote. The
+  Nordsjaelland title incidentally GAINED the brand tail («…| اسپرت سیگنال»)
+  — the Persian name is shorter than the English one the trim ladder
+  previously cut. `npm test` exit 0 (incl. the new gate); deployed per the
+  RUNBOOK §2 ritual and live-verified (see docs/SEO_GSC_LOG.md).
+
 # v13.254.1-rankbadgefix — S44.1: the ADR-006 hotfix (fresh names for the corner-mirror fix)
 
 **S44.1, 2026-11-10 (~8 minutes after the first S44 deploy).** The first
