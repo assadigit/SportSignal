@@ -567,9 +567,10 @@ html[lang="en"] #lbtn::before{background-image:url("data:image/svg+xml;base64,PH
    place, with its OWN standing sky-blue glow ring (::after carries
    the STATIC box-shadow; ONLY opacity+transform animate — the
    v13.242 law). Tapping it opens the channel exactly like the bar
-   body and starts the same 30-day joined silence — the pill carries
-   NO dismiss anymore (the owner's one-control direction;
-   docs/adr/ADR-007-pill-no-dismiss.md). v13.246-fullbar (S35): the
+   body — the pill carries NO dismiss and, since v13.253-alwaysshow
+   (S43), NO tap-silence either: the bar always shows (the owner's
+   one-control + always-show direction; ADR-007 + ADR-008).
+   v13.246-fullbar (S35): the
    mark leaves the flex row (the S34 arrow that rode between them is
    RETIRED) for position:absolute INSIDE the box — inset-inline-end
    12px, bottom calc(10px + safe-area/2) keeps it centred on the
@@ -1731,24 +1732,20 @@ Gate: check-seo-lastmod #9 requires the override on BOTH templates. -->
    so a mid-view EN/FA switch self-heals within one tick; a hidden tab
    (document.hidden) or a hidden bar skips the DOM write;
    prefers-reduced-motion swaps the text with no animation.
-   localStorage memory — every read and write inside try/catch, so a
-   blocked storage never breaks anything: ANY channel tap (the bar
-   body OR the blue mark) saves sp_pill_joined7 (30-day silence).
-   v13.247: the key carries the 6 suffix — a ONE-SHOT memory reset for
-   the cyan-glow round (the same trick as S32's 2 / S33's 3 / S34's
-   4 / S35's 5): the S35 joined5 verdict is zeroed exactly once so
-   every returning visitor, the owner included, sees the re-hued
-   cyan-blue halo even if a previous round's tap had silenced the bar
-   (fresh taps re-seed the 30-day window under the new name).
-   v13.252-pillreset (S42): the key carries the 7 suffix — the same
-   ONE-SHOT reset, this time for the owner's "the sticky bottom bar
-   is gone" report: the bar was live and healthy for fresh visitors
-   (verified end-to-end in a real browser before touching anything);
-   what hid it on the owner's own phone was the joined6 verdict from
-   a channel tap after v13.247 — the 30-day silence doing its job.
-   The re-key zeroes that verdict exactly once so every visitor who
-   tapped since v13.247 (the owner included) sees the bar again;
-   fresh taps re-seed the 30-day window under the new name.
+   THE ALWAYS-SHOW LAW (v13.253-alwaysshow, S43, owner: "Do not add
+   the quiet down option if user has tapped already. always show
+   it."): the tap-silence memory is RETIRED outright — this
+   controller no longer reads or writes ANY localStorage verdict.
+   Every key the earlier rounds left behind (the joined/dismissed
+   family, all suffix generations, v13.241 through v13.252) is simply
+   never consulted again, so a browser holding an old tap verdict —
+   the owner's included — sees the bar on the very next load. A tap
+   (the bar body OR the blue mark) now does exactly ONE thing: opens
+   the channel in a new tab; the bar stays on screen and returns on
+   every future visit. The standing reveal gates ride unchanged (the
+   20% scroll rule below + the <=600px mobile-only CSS): dropping
+   below the scroll line is now the ONLY way the bar ever leaves the
+   screen — for everyone, on every visit.
    prefers-reduced-motion: no slide, no pulse — a plain fade. While
    visible, body.tg-pill-on carries the page's bottom padding + the
    #backTop lift (the CSS block above). */
@@ -1762,11 +1759,6 @@ if(!link||!goBtn)return;
 var sub=document.getElementById("tgpSub");
 var rm=false;
 try{rm=window.matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){}
-var DAY=86400000;
-function lsGet(k){try{return window.localStorage.getItem(k)}catch(e){return null}}
-function lsSet(k,v){try{window.localStorage.setItem(k,v)}catch(e){}}
-var now=Date.now(),joinedAt=Number(lsGet("sp_pill_joined7"))||0;
-if(joinedAt&&now-joinedAt<30*DAY)return;
 var shown=false,pulsed=false,tDelay=null,tFall=null;
 function endPulse(){
   if(tFall){clearTimeout(tFall);tFall=null}
@@ -1847,9 +1839,6 @@ function tickSub(){
   if(!rm){sub.classList.remove("tgp-in");void sub.offsetWidth;sub.classList.add("tgp-in")}
 }
 if(sub){setInterval(tickSub,3200)}
-function joined(){lsSet("sp_pill_joined7",String(Date.now()));apply(false)}
-link.addEventListener("click",joined);
-goBtn.addEventListener("click",joined);
 })();</script>
 </body>
 </html>

@@ -2,6 +2,19 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole task.
 
+## THIS SESSION (S43, started 2026-11-10) — goal and milestones
+
+> **Owner's directive, verbatim:** "Do not add the quiet down option if
+> user has tapped already. always show it."
+
+Goal: retire the sticky channel bar's 30-day tap-silence memory (the
+`sp_pill_joined7` law) so the bar ALWAYS shows — a tap opens the channel
+and nothing else; no localStorage verdict is ever read or written; the
+20% scroll reveal and the mobile-only law ride unchanged. Milestones:
+M1 the controller edit (HTML-only round, v13.253-alwaysshow) → M2 the
+test plumbing (v13.253 live check + baseline re-freeze + `npm test`) →
+M3 docs + push → M4 deploy + live verification battery + TLDR.
+
 ## Current state (after S42, 2026-11-10 — the pill restore round)
 
 The S42 round (v13.252-pillreset) is live: the owner's "the sticky

@@ -1211,7 +1211,9 @@ check("v13.248-rankchip (HISTORICAL pin — demoted at v13.249-ranktip: the S38 
 check("v13.249-ranktip (HISTORICAL pin — demoted at v13.251-ranknum: the S40 quieting round renamed the client-referenced assets this check pinned — public-13.76.js -> 13.78.js (the teamRow center-facing flank swap + the table-naming label; 13.77 was skipped for the never-pushed S39 round) + public-13.83.css -> 13.85.css (the circle/border/background retire; .tn nowrap+ellipsis; the measured 4.5:1 ink) and bumped the SW cache (v122 -> v124) per ADR-006 rename-on-edit; every surviving contract (the mset/HERO_ART pins, the S37 cache-only resolution law, the S38 tooltip engine + SSR twins, the sweep #19 evictions) rides UNCHANGED and is re-pinned in the v13.251 live check below; the retired 13.76.js/13.83.css stay served + pinned one SEO TTL)", true);
 check("v13.251-ranknum (HISTORICAL pin \u2014 demoted at v13.252-pillreset: the S42 restore round re-keyed the ONE pill contract this check pinned \u2014 sp_pill_joined6 -> sp_pill_joined7, the owner's gone-bar report (the 30-day tap-silence had hidden the sticky channel bar on the owner's own browser; the bar itself was verified live and healthy for fresh visitors before any edit); every other contract (the whole quiet-plain-number engine, the 13.78.js/13.85.css renames, the _headers pins + cap sweep #20, the SW v124, the SSR twin) rides UNCHANGED and the survivors are re-pinned in the v13.252 live check below)", true);
 
-check("v13.252-pillreset (the release wiring \u2014 the S42 session, 2026-11-10: the owner's report, verbatim: \"Remember we had sticky bottom bar for promoting canal and bot? it's gone, restore it.\" \u2014 DIAGNOSED FIRST, LIVE, BEFORE ANY EDIT: the bar was never gone for new visitors (browser-verified end-to-end at mobile width in fa AND en: the markup + the inline CSS + the inline controller all serve, the .show reveal fires on scroll, the VLM screenshot shows the grass surface + the reworded heading + the cyan halo + the 58px blue mark); what hid it on the owner's own phone was the pill's 30-day TAP-SILENCE MEMORY \u2014 any tap on the bar body or the blue mark (checking their own channel!) saves the key and silences the bar for that browser for 30 days, and a tap after v13.247 put the owner's browser inside the window (the S32 \"invisible pill\" report, same root cause, same fix). (1) THE RE-KEY: sp_pill_joined6 -> sp_pill_joined7 (the S32/S33/S34/S35/S36 one-shot trick \u2014 the joined6 verdict is zeroed exactly once because the old key is simply never read again, so every visitor who tapped since v13.247, the owner included, sees the sticky channel bar again immediately; fresh taps re-seed the 30-day window under the new name). (2) THE NOTHING-ELSE-CHANGES LAW: an HTML-only round \u2014 no bundle edit, no CSS rename, NO SW BUMP; the grass surface, the cyan glow stack, the full-width geometry, the 58px absolute mark, the five-line rotator, the 20% scroll gate and the no-dismiss law ride byte-identical. (3) THE PLUMBING: version 13.252, the v13.251 live check demoted to HISTORICAL with its survivors re-pinned here, the page baseline re-frozen via --update (an intended output change \u2014 the served HTML's controller carries the 7-suffix key)", (() => {
+check("v13.252-pillreset (HISTORICAL pin \u2014 demoted at v13.253-alwaysshow: the S43 owner round RETIRED the one contract this check pinned \u2014 the pill's 30-day tap-silence memory (the owner's directive, verbatim: \"Do not add the quiet down option if user has tapped already. always show it.\"), so the joined7 read+write pins and the sp_pill_* key-absence pins describe a law that no longer exists in the source (ALL pill memory keys are gone); every other contract (the whole quiet-plain-number engine, the 13.78.js/13.85.css pins, the _headers pins + cap sweep #20, the SW v124, the SSR twin) rides UNCHANGED and the survivors are re-pinned in the v13.253 live check below)", true);
+
+check("v13.253-alwaysshow (the release wiring \u2014 the S43 session, 2026-11-10: the owner's directive, verbatim: \"Do not add the quiet down option if user has tapped already. always show it.\" \u2014 the sticky channel bar's 30-day TAP-SILENCE MEMORY is RETIRED outright: the inline controller no longer reads or writes ANY localStorage verdict (the joined/dismissed key family, every suffix generation v13.241-v13.252, is simply never consulted again \u2014 a browser holding an old tap verdict, the owner's included, sees the bar on the very next load), and a tap (the bar body OR the blue mark) now does exactly ONE thing: opens the channel in a new tab \u2014 the bar stays on screen and comes back on every future visit. The standing reveal gates ride unchanged (the 20% scroll rule + the <=600px mobile-only CSS: dropping below the scroll line is now the ONLY way the bar ever leaves the screen). An HTML-only round \u2014 no bundle edit, no CSS rename, NO SW bump; the grass surface, the cyan glow stack, the full-width geometry, the 58px absolute mark, the five-line rotator and the no-dismiss law ride byte-identical. THE PLUMBING: version 13.253, the v13.252 live check demoted to HISTORICAL with its survivors re-pinned here, the page baseline re-frozen via --update (an intended output change \u2014 the served HTML's controller lost its memory lines)", (() => {
   const pub = read("src/pages/public.ts");
   const cfg = read("src/config.ts");
   const sw = read("assets/sw.js");
@@ -1231,12 +1233,20 @@ check("v13.252-pillreset (the release wiring \u2014 the S42 session, 2026-11-10:
     /mset\(mcDd,dd\),mset\(mcHh,hh\),mset\(mcMm,mm\)/.test(js78) &&
     /<script src="\/public-13\.78\.js" defer>/.test(pub) &&
     /box-shadow:inset 0 1px 0 rgba\(255,255,255,\.25\),0 8px 26px -6px rgba\(2,44,66,\.8\),0 12px 34px rgba\(1,8,20,\.55\),0 0 34px rgba\(34,211,238,\.55\),0 0 10px rgba\(103,232,249,\.4\);color:#FFFFFF;/.test(pub) &&
-    // (0b) THE S42 RE-KEY: joined7 present in the controller (both the read and the write), every older key gone
-    /var now=Date\.now\(\),joinedAt=Number\(lsGet\("sp_pill_joined7"\)\)\|\|0;/.test(pub) &&
-    /function joined\(\)\{lsSet\("sp_pill_joined7",String\(Date\.now\(\)\)\);apply\(false\)\}/.test(pub) &&
-    /sp_pill_joined7"/.test(pub) &&
-    !/sp_pill_joined6/.test(pub) && !/sp_pill_joined5/.test(pub) && !/sp_pill_joined4/.test(pub) && !/sp_pill_joined3/.test(pub) && !/sp_pill_joined2/.test(pub) && !/sp_pill_dismissed2/.test(pub) &&
-    !/sp_pill_joined"/.test(pub) && !/sp_pill_dismissed"/.test(pub) &&
+    // (0b) THE S43 ALWAYS-SHOW LAW: the tap-silence memory is RETIRED — no pill
+    // localStorage verdict is read or written anywhere in the served source and
+    // the tap handler that silenced the bar is gone; BOTH channel links + the 20%
+    // scroll gate + the rotator still wire (a tap navigates only)
+    !/sp_pill_joined/.test(pub) && !/sp_pill_dismissed/.test(pub) &&
+    !/joinedAt/.test(pub) && !/lsGet/.test(pub) && !/lsSet/.test(pub) &&
+    !/function joined\(/.test(pub) && !/apply\(false\)/.test(pub) && !/var DAY=/.test(pub) &&
+    /var shown=false,pulsed=false,tDelay=null,tFall=null;/.test(pub) &&
+    /goBtn=document\.getElementById\("tgPillGo"\)/.test(pub) &&
+    /window\.addEventListener\("scroll",onScroll,\{passive:true\}\);/.test(pub) &&
+    /apply\(max>0&&y>=window\.innerHeight\*\.2\)/.test(pub) &&
+    /if\(sub\)\{setInterval\(tickSub,3200\)\}/.test(pub) &&
+    /id="tgPill" href="\$\{TG_CHANNEL_URL\}" target="_blank"/.test(pub) &&
+    /id="tgPillGo" href="\$\{TG_CHANNEL_URL\}" target="_blank"/.test(pub) &&
     // (1) the S37 rank-chip survivors (the server resolution law + the SSR twins)
     /export function teamRankSets\(stMap\) \{/.test(pm) &&
     /export function rankApplicable\(m\) \{/.test(pm) &&
@@ -1293,8 +1303,8 @@ check("v13.252-pillreset (the release wiring \u2014 the S42 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v124"/.test(sw) &&
     /bundle: "public-13\.78\.js"/.test(cov) &&
-    /export const VERSION = "13\.252-pillreset"/.test(cfg) &&
-    /# v13\.252-pillreset/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.253-alwaysshow"/.test(cfg) &&
+    /# v13\.253-alwaysshow/.test(read("CHANGELOG.md"));
 })());
 
 

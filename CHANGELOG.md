@@ -4,6 +4,36 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.253-alwaysshow — S43: the sticky bar's tap-silence retired; it now always shows
+
+**S43, 2026-11-10 (the owner's directive: "Do not add the quiet down option if
+user has tapped already. always show it.").** One deliberate change, one law
+retired: the pill's 30-day tap-silence memory is gone — the sticky channel
+bar shows on every visit, for everyone.
+
+- **(1) THE LAW RETIRED.** Since v13.241 the floating channel bar carried a
+  no-nag memory: ANY tap on the bar body or the blue mark saved
+  `sp_pill_joined7` and silenced the bar for 30 days (the S32 "invisible
+  pill" and the S42 "gone bar" reports were both this memory doing its job
+  on the owner's own browser). Per the owner's directive the memory is now
+  RETIRED outright: the inline controller reads and writes NO localStorage
+  verdict at all — every key the earlier rounds left behind is simply never
+  consulted again, so a browser holding an old tap verdict (the owner's
+  included) sees the bar on the very next load.
+- **(2) WHAT A TAP DOES NOW.** Exactly one thing: opens the Telegram channel
+  in a new tab. The bar stays on screen and comes back on every future
+  visit. The standing reveal gates ride unchanged — the 20% scroll rule and
+  the <=600px mobile-only law (dropping below the scroll line is now the
+  ONLY way the bar ever leaves the screen).
+- **(3) THE RELEASE PLUMBING:** an HTML-only round (no bundle edit, no CSS
+  rename, no SW bump — the grass surface / cyan glow / 58px blue mark /
+  five-line rotator / no-dismiss law all ride byte-identical). Version
+  13.253 (package.json / src/config.ts / lockfile in sync), the v13.252
+  live check demoted to HISTORICAL with the survivors re-pinned in the new
+  v13.253 live check (the all-pill-memory-keys-gone law), the page baseline
+  re-frozen via `--update` (an intended output change: the served HTML's
+  controller lost its memory lines). `npm test` exit 0.
+
 # v13.252-pillreset — S42: the sticky channel bar restored for everyone who had tapped it
 
 **S42, 2026-11-10 (the owner's report: "Remember we had sticky bottom bar
