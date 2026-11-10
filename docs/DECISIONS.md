@@ -192,3 +192,34 @@ earlier decisions live in README §"Architecture decisions" and docs/adr/.)
   surfaces — the number passes there: dark 5.67:1 real-pixel worst); the
   shimmer is a passing whole-card animation, not the background. Decided by
   the agent; revisit if the owner ever wants the featured cards quieter.
+
+## 2026-11-10 — The "gone" sticky bar is restored by re-keying the pill's tap-silence memory, not by code repair (S42)
+
+- **Decision:** the owner's "the sticky bottom bar is gone, restore it"
+  report was diagnosed LIVE before any edit: the bar (the grass channel
+  pill, #tgPillBox) was serving and rendering perfectly for fresh
+  visitors (browser + VLM verified in fa and en). What hid it on the
+  owner's own browser was the pill's 30-day tap-silence memory — any tap
+  on the bar body or the blue mark (checking their own channel!) saves
+  `sp_pill_joined6` and silences the bar for 30 days; a tap after
+  v13.247 put the owner's browser inside that window. The fix is the
+  established one-shot re-key (`sp_pill_joined6 -> sp_pill_joined7`,
+  the S32/S33/S34/S35/S36 trick): the old key is never read again, so
+  every silenced visitor — the owner included — sees the bar again
+  immediately, while fresh taps re-seed the 30-day window under the new
+  name (verified live: joined6-set browser shows the bar; joined7-set
+  browser hides it).
+- **Options:** (a) the one-shot re-key (chosen — the repo's own
+  precedent for this exact report class, zero visual changes), (b) remove
+  the tap-silence entirely so the bar never hides (rejected: the
+  30-day law is owner-approved design — it keeps the bar from nagging
+  people who already joined), (c) code repair of a "broken" bar
+  (rejected: nothing was broken; every surface verified healthy live).
+- **Reason:** smallest change that fully satisfies "restore it" — the
+  bar reappears for exactly the population that had lost it, and the
+  design's no-nag law survives. Decided by the agent per the session's
+  don't-ask instruction; revisit if the owner reports the bar "gone"
+  again within a week of a genuine fresh visit (that would point at
+  something else entirely — e.g. the SW cache serving stale HTML, or a
+  desktop expectation: the pill is mobile-only by design, ≥601px shows
+  the #tgFab bot FAB instead).

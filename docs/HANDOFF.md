@@ -2,26 +2,36 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole task.
 
-## THIS SESSION (S42, 2026-11-10 — the pill restore round)
+## Current state (after S42, 2026-11-10 — the pill restore round)
 
-**Goal:** the owner reports the sticky bottom channel bar is "gone" — restore it.
-**Diagnosis (verified live before any edit):** the bar (#tgPillBox, the grass
-channel pill) is live and fully functional for fresh visitors — browser-verified
-at mobile width in fa and en (markup + inline CSS + inline controller all
-served, `.show` applies on scroll, VLM screenshot confirms the visual). The one
-mechanism that hides it is the 30-day tap-silence memory `sp_pill_joined6`
-(any tap on the bar body or the blue mark silences the pill for that browser
-for 30 days). The owner tapped it since v13.247 → their own browser shows no
-bar. Identical to the S32 owner report; the fix is the established one-shot
-re-key (6 → 7). Milestones: M1 the re-key + version 13.252 + checks ·
-M2 commit/push · M3 deploy + live verify (silenced-browser simulation) ·
-M4 docs.
+The S42 round (v13.252-pillreset) is live: the owner's "the sticky
+bottom bar is gone" report was diagnosed LIVE first — the grass channel
+bar (#tgPillBox) was serving and rendering perfectly for fresh visitors
+(browser + VLM verified, fa and en); what hid it on the owner's own
+browser was the pill's 30-day tap-silence memory (`sp_pill_joined6`,
+seeded by a channel tap after v13.247 — the S32 "invisible pill"
+report class). The fix is the established one-shot re-key
+(`sp_pill_joined6 -> sp_pill_joined7`): every visitor who had tapped
+since v13.247 sees the bar again immediately, fresh taps re-seed the
+30-day window under the new name. Full record:
+`docs/history/2026-11-10-s42-pillreset.md`, evidence
+`docs/assets/s42-pillreset/`, decision in DECISIONS (2026-11-10).
 
-## Current state (after S41, 2026-11-09 — verification-only session)
+- Verified live post-deploy: joined6-set browser (the owner's exact
+  state) SHOWS the bar; joined7-set browser hides it (the no-nag law
+  works under the new key); fresh visitors show in fa + en at 360px;
+  no heading clipping (head 42/42, sub 18/18); console clean;
+  `/healthz` = `13.252-pillreset`.
+- An HTML-only round: no bundle edit, no CSS rename, no SW bump; the
+  v13.251 live check demoted with its survivors re-pinned in the new
+  v13.252 live check; the page baseline re-frozen via `--update`.
+  `npm test` exit 0 (2949 checks).
 
-The S40 quiet-plain-number round (v13.251-ranknum) remains the live truth,
-and S41 re-verified it end to end against the live site with independent
-tooling — **zero code changes were needed**; see
+## Where things are (the S41 verification record — the rank numbers)
+
+The S40 quiet-plain-number round (v13.251-ranknum) remains the live truth
+for the rank numbers, and S41 re-verified it end to end against the live site
+with independent tooling — **zero code changes were needed**; see
 `docs/history/2026-11-09-s41-rankverify.md` for the full record:
 
 - The league-standing number is a quiet PLAIN NUMBER in the name's own row on
@@ -39,17 +49,18 @@ tooling — **zero code changes were needed**; see
   two-digit numbers; real-pixel dark-theme contrast worst 5.67:1 (PASS);
   VLM close-up reviews clean; console clean.
 
-## Where things are
+## Where things are (the machine state)
 
-- Version: `13.251-ranknum` (package.json / src/config.ts / lockfile in sync).
-  Live worker runs it (`/healthz` `"version":"13.251-ranknum"`, ok).
-- Deploy: `npx wrangler deploy` (worker `ucl-notifier`) — last deployed by S40
-  (2026-11-09); S41 deployed nothing (no code change) but verified the live
-  result at 360/768/1280px.
+- Version: `13.252-pillreset` (package.json / src/config.ts / lockfile in sync).
+  Live worker runs it (`/healthz` `"version":"13.252-pillreset"`, ok).
+- Deploy: `npx wrangler deploy` (worker `ucl-notifier`) — last deployed by S42
+  (2026-11-10, version ID 980251f4-831e-49f7-a0a5-3cd8b24c325b); the pill
+  restore round changed no assets (an HTML-only release).
 - Design pack: spec `docs/specs/team-rank-indicator.md` (§12 = the S40
   addendum), audit `docs/audits/2026-11-09-team-rank-indicator.md`,
   screenshots `docs/assets/s40-ranknum/` (S40 before/after) and
-  `docs/assets/s41-rankverify/` (S41 live re-verification set).
+  `docs/assets/s41-rankverify/` (S41 live re-verification set) +
+  `docs/assets/s42-pillreset/` (the S42 restore evidence).
 
 ## Standing limits and reminders
 
@@ -72,6 +83,12 @@ tooling — **zero code changes were needed**; see
   the hero/mcard surfaces stay number-free by design.
 - The recovered S39 assets (`public-13.77.js`/`13.84.css`) stay in `assets/`
   forever (retention); they ride default cache headers.
+- **The pill's tap-silence law is BY DESIGN** (ADR-007 no-dismiss + the
+  30-day joined7 silence): if the owner reports the sticky bar "gone"
+  again within days of a genuine fresh visit, do NOT assume regression —
+  diagnose live first (see the S42 record §1); suspect a stale SW cache
+  or a desktop check (the pill is mobile-only, ≥601px shows the #tgFab
+  bot FAB instead — verified live in S42).
 
 ## Next session candidates
 
@@ -79,3 +96,6 @@ tooling — **zero code changes were needed**; see
 - If the owner asks: rank numbers on the Telegram SVG cards, or EL/ECL table
   coverage (see the S37 record), or the tooltip polish round noted in S38
   (the 16px crest-clearing gap).
+- If the owner asks for the sticky bar to ALSO promote the bot (it promotes
+  the channel only today): that's a design change, not a repair — treat as
+  a new owner round.
