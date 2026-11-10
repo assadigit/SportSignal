@@ -4,6 +4,21 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# S2 parking round, 2026-11-10 — S2 title test fired early, parked at the Dec 4 GSC gate (doc-only)
+
+**The S2 start prompt (the «X مقابل Y» match-title test) was re-fired on
+2026-11-10, 24 days before its gate.** The gate requires a fresh Search
+Console export dated on or after **Dec 4, 2026** — 4 clean weeks on the
+Nov 6 title change (the ⚽ + Farsi brand). No export was attached to the
+prompt, and none dated on/after Dec 4 can exist yet. Per the prompt's own
+gate rule (STOP and ask) and the owner's Option A decision: **S2 is
+parked.** A one-line note at the top of `docs/HANDOFF.md` records it so
+the Dec 4 agent doesn't re-discover this; the decision is in DECISIONS
+(2026-11-10, S2 parking). **Doc-only commit — no code, no deploy, no title
+change; zero measurement contamination of the Nov 6 baseline.** Re-fire
+the unchanged S2 start prompt on/after Dec 4, 2026 with the fresh GSC
+export attached.
+
 # S1 continuation round, 2026-11-10 — duplicate worker deleted; rename blocked by unreadable secrets; investigation addendum
 
 **The S1 continuation session (a second agent run on the same prompt,

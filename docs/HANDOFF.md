@@ -2,55 +2,56 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for the whole session.
 
-## This session (S1 — SEO quick wins, started 2026-11-10)
+## This session (S2 — title test, FIRED 2026-11-10, PARKED at the Dec 4 GSC gate)
 
-**Goal:** execute section 8 "S1 — Quick wins" of
-`docs/specs/seo-growth-plan-v2.md` exactly as written.
+**S2 fired 2026-11-10, parked at the Dec 4 GSC gate.** The S2 start prompt
+arrived 24 days early with no Search Console export attached — and no export
+dated on or after **Dec 4, 2026** can exist yet (the gate needs 4 clean
+weeks on the Nov 6 title change, the ⚽ + Farsi brand). The prompt's own gate
+rule says STOP and ask; the owner's answer (Option A — DECISIONS 2026-11-10)
+is: park it. **This is a doc-only commit: no code, no deploy, no title
+change — zero measurement contamination of the Nov 6 baseline.** None of
+S2's milestones (the Dec 4 read, the match-title switch, the team-page test)
+were started.
 
-- **M1 — Save and baseline:** ✅ done. Audit → `docs/audits/2026-11-10-gsc-audit.md`,
-  plan → `docs/specs/seo-growth-plan-v2.md`, `docs/SEO_GSC_LOG.md` with the
-  baseline, this file updated. Committed + pushed.
-- **M2 — Spelling on the SEO surface only:** ✅ done and verified live.
-  Leipzig «لایپزیگ» (alt «لایپزیش»), Nordsjælland «نورشلان» (alt «نوردشیلند»),
-  Roma keeps «رم» + alt «آ س رم» — via `src/seo/team-names.ts` (SEO-only
-  override map); `src/fa-dict.ts` untouched (bot/cards/digests byte-identical).
-  v13.255-seospell, deployed, live: `/teams/rb-leipzig` shows both spellings.
-- **M3 — Internal-link coverage + broadcast/lineup investigation:** ✅ done.
-  T-25 check added to `scripts/seo-check.js` (every match in the next 14 days
-  must have ≥3 internal links from home/hub/team/comp/matches surfaces).
-  Verified live on 2026-11-10: 21/21 upcoming 14-day matches have ≥3 links
-  (no rendering code changed — the invariant already held). Investigation →
-  `docs/audits/2026-11-10-broadcast-lineup-data.md` (report only): broadcaster
-  data exists on TSP free tier but **does not cover Iran/Afghanistan** (the
-  site's audience) and the repo's TSP key `3` is dead; lineups need a paid
-  provider (FD ~49€/mo) or TSP's sparse free coverage. **S3 "where to watch"
-  closed** (no audience-fit source); S3 lineups = owner decision (plan Q2).
-  No worker deploy (scripts + docs only); `npm test` passes.
-- **Infra (owner instruction) — half done, half deferred (the continuation
-  session, 2026-11-10):** the duplicate worker `sportsignal-site` is
-  **DELETED** (verified unrouted first; its workers.dev URL now 404s; the
-  account keeps `ucl-notifier` + `uefa-image-relay`, which is a portrait
-  utility, NOT a duplicate). The rename `ucl-notifier` → `sportsignal` is
-  **deferred with an exact blocker**: no rename API exists, and a
-  new-worker rename cannot migrate the write-only secrets ADMIN_PASS,
-  ADMIN_TOKEN, CHAT_ID — losing them locks the /admin panel and the owner's
-  bot-admin identity. Options A (keep the name — recommended) / B (owner
-  supplies the three values) / C (generate new, handed over once) are with
-  the owner in the S1 final report; see DECISIONS 2026-11-10
-  (continuation).
+**What the Dec 4+ agent does:** re-fire the unchanged S2 start prompt on or
+after **Dec 4, 2026** with the fresh GSC export ATTACHED (last-28-days
+Performance export; add Indexing → Pages — plan §9). Confirm the export's
+date window first — if it is missing or dated before Dec 4, STOP and ask
+the owner. Scope: spec §8 "S2" + audit F4 (match titles) / F5 (team
+titles); the S1 M2 spelling fix is live and mid-measurement (judge ~Dec 8);
+hands off the today/tomorrow/this-weekend hubs, the sitemap and the
+homepage per the prompt.
 
-**Out of scope (hands off):** the title template, the today/tomorrow/
-this-weekend hubs, the sitemap. Everything SEO-facing is logged in
-`docs/SEO_GSC_LOG.md`.
+### Previous session (S1 — SEO quick wins, 2026-11-10): closed
+
+- **M1** ✅ audit + plan + `docs/SEO_GSC_LOG.md` baseline (commit 3583d33).
+- **M2** ✅ **live and being measured** — F3 spelling fix v13.255-seospell
+  (Leipzig «لایپزیگ», Nordsjælland «نورشلان», Roma «رم» + «آ س رم» via
+  `src/seo/team-names.ts`; `src/fa-dict.ts` untouched). **Do NOT change
+  team-name spellings before its ~Dec 8 read.**
+- **M3** ✅ T-25 internal-link check in `scripts/seo-check.js` (21/21
+  upcoming 14-day matches ≥3 links, verified live); broadcast/lineup
+  investigation → `docs/audits/2026-11-10-broadcast-lineup-data.md`:
+  **S3 "where to watch" CLOSED** (no Iran/Afghanistan source); S3 lineups =
+  owner decision (plan Q2). Side finding flagged, not fixed: the TSP key
+  `3` is dead (fix = `123`, own session).
+- **Infra:** duplicate worker `sportsignal-site` DELETED; the rename
+  `ucl-notifier` → `sportsignal` is deferred (write-only-secrets blocker;
+  options A/B/C with the owner). Full record:
+  `docs/history/2026-11-10-s1-seo-quickwins.md`.
 
 **Next sessions (the plan's schedule):**
 - **S2 — title test** («X مقابل Y» on half the match pages, control = other
   half, behind an off-by-default switch in `src/seo/config.ts`). **Gate:**
   needs a fresh Search Console export on or after **Dec 4, 2026** (4 clean
   weeks on the Nov 6 title change). The S1 agent wrote the S2 start prompt
-  (end of the S1 session record / see the owner's saved prompt).
-- **S3 — where-to-watch / lineups block** — only if the M3 investigation
-  found verified data; otherwise the item is closed in DECISIONS.
+  (end of the S1 session record / see the owner's saved prompt). **Fired
+  early once (2026-11-10) and parked — see the note above.**
+- **S3 — where-to-watch / lineups** — "where to watch" is CLOSED (no
+  audience-fit source; DECISIONS 2026-11-10); lineups = owner decision
+  (plan Q2: paid provider ~49 €/mo, or TSP's sparse free coverage after the
+  key fix).
 
 ## Current state (machine)
 

@@ -398,3 +398,32 @@ earlier decisions live in README §"Architecture decisions" and docs/adr/.)
   deletion carried no such risk and is done.
 - **Who:** the continuation agent. **Revisit:** the owner answers A/B/C
   (final report); any later session executes B or C if chosen.
+
+## 2026-11-10 (S2 parking) — S2 fired 24 days before its gate: park it, doc-only
+
+- **Decision:** the S2 title test («X مقابل Y» on half the match pages,
+  control = the other half, behind an off-by-default switch in
+  `src/seo/config.ts`) stays **parked until the Dec 4, 2026 GSC gate**. The
+  S2 start prompt was re-fired on 2026-11-10 claiming the gate had passed
+  with a fresh export attached — but no export was attached (verified: none
+  in the prompt, none in the workspace), and no export dated on or after
+  Dec 4, 2026 can exist yet (2026-11-10 is 24 days before the gate; the
+  gate exists to give 4 clean weeks on the Nov 6 title change). The parking
+  is recorded as a note at the top of `docs/HANDOFF.md` (plus this row and
+  a CHANGELOG entry); the commit is **doc-only — no code, no deploy, no
+  title change** — so the Nov 6 baseline stays clean.
+- **Options considered:** (a) park it with a HANDOFF note (chosen — the
+  owner's "A option"); (b) run S2 now anyway on the stale Nov 10 export
+  (rejected — the S2 prompt's own gate says STOP when the export is
+  missing or dated before Dec 4, and a title test without its baseline
+  read breaks plan §5's measurement discipline: 3–4 week waits, one change
+  per page group); (c) build the off-by-default switch now, deploy nothing,
+  flip it on Dec 4 (rejected — Option A explicitly says no code; an early
+  build invites scope creep into the measurement window and buys nothing —
+  the switch is a ~1-hour build on the day).
+- **Reason:** the plan's §5 rules exist because the site changed several
+  times in its first month and no single change could be judged; the owner
+  chose A to keep the measurement backbone intact at zero cost.
+- **Who:** the owner (Option A), recorded by the parking agent.
+  **Revisit:** on/after Dec 4, 2026 — re-fire the unchanged S2 start prompt
+  with the fresh GSC export attached.
