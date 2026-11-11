@@ -4,6 +4,34 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# Match Centre S02 round, 2026-11-11 — route shell + semantic section anchors (M1 opens; `feat/match-centre`)
+
+**The Match Centre page structure now exists.** A new pure-composer module,
+`src/seo/match-centre.ts`, owns the match page's body composition: an
+eleven-slot semantic section registry in specification §3 order (`mcentre-`
+hero, nav, summary/briefing+facts, standings, form, venue, schedule, faq,
+related, telegram, footer-hook — the `mcentre-` prefix deliberately avoids
+the mobile-card family's `mc` spelling). `buildMatchPage` delegates its main
+assembly to `matchCentreMain()`; the five slots that carry content today
+(hero, summary, form, related, footer-hook) render as anchored `<section
+aria-label>` wrappers, and empty parts are omitted entirely (the
+no-empty-cards law). The one deliberate DOM-order change: the finished
+«نتیجه نهایی» block joins the summary section (it is the answer restated),
+ahead of the S07 briefing rework. **GSC measurement surfaces preserved
+byte-for-byte, proven by a local base-vs-new render diff across all three
+lifecycle states (upcoming / live / finished): `<head>` (title ladder, meta
+description, canonical, OG/Twitter, JSON-LD), breadcrumbs, the answer-first
+sentence, the global header/footer and 15 unrelated routes are
+byte-identical; the only render deltas are the five wrappers + the result
+block relocation (+414 bytes/page).** Zero new KV reads, provider requests,
+dependencies, client polling, asset renames or `sw.js` bumps; the version
+string stays `13.255-seospell` (moves at deploy time only). Harness
+co-evolution in the same commit: `worker-src.js` gains the seo group entry,
+the new `scripts/check-match-centre.js` (18 assertions: registry, composer
+behavior incl. the no-empty-cards law, wiring, GSC surfaces, the cost law,
+harness) joins the `npm test` chain (exit 0 — 2,979 OK, 0 failures), and
+one `check-stats.js` v13.87 assertion re-points at the delegated assembly.
+
 # Match Centre M0 round, 2026-11-11 — v1.2 package extracted; M0 audit owner-approved; `feat/match-centre` opened (doc-only)
 
 **The Match Centre engagement is formally open.** The owner's v1.2

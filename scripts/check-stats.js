@@ -727,7 +727,11 @@ check("v13.87: teamStandingsWindow exists + wired into buildTeamPage", (() => {
 check("v13.87: teamForm exists + the match page renders the form strip", (() => {
   const d = read("src/seo/data.ts");
   const p2 = read("src/seo/pages.ts");
-  return /export function teamForm\(ctx: SeoCtx, teamName: string, archiveRows: any\[\] = \[\], limit = 5, min = 3\)/.test(d) && /const formCard = formStripHtml\(ctx, sm, archive, fullByCode\);/.test(p2) && /facts \+ formCard \+ similarCard/.test(p2) && /const archive = await loadArchive\(ctx\.env\)\.catch/.test(p2);
+  // Match Centre S02: the flat main concat (facts + formCard + similarCard)
+  // became the matchCentreMain delegation — the form strip still renders on
+  // the match page, now as the mcentre-form section part. The composer
+  // itself (registry/order/no-empty-cards) is gated by check-match-centre.
+  return /export function teamForm\(ctx: SeoCtx, teamName: string, archiveRows: any\[\] = \[\], limit = 5, min = 3\)/.test(d) && /const formCard = formStripHtml\(ctx, sm, archive, fullByCode\);/.test(p2) && /form: formCard,/.test(p2) && /const archive = await loadArchive\(ctx\.env\)\.catch/.test(p2);
 })());
 check("v13.87: teamForm is fail-closed (min-3 gate; null when short)", (() => {
   const d = read("src/seo/data.ts");

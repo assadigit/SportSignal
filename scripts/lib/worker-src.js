@@ -168,6 +168,17 @@ function workerSrc() {
     // independent) right before api.ts which wires it.
     "kickoff-drain.ts",
     "api.ts",
+    // Match Centre S02: the seo group — src/seo/* modules join the concat
+    // here, in import order. match-centre.ts (the section composer) is a
+    // PURE leaf (zero runtime imports — pure string composition), so it is
+    // position-independent for every grab; it opens the group because the
+    // later Match Centre modules (editorial.ts S08, faq-content.ts S16,
+    // and any grabbed seo/pages.ts builders from S04 on) will append after
+    // it, keeping the flat concat's dependency direction acyclic.
+    // Appended AFTER api.ts: every existing marker-split span (botSeg at
+    // cron-preflight, cronSeg, provSeg…) keeps its exact boundaries — no
+    // check spans from api.ts into the tail (verified S02).
+    "seo/match-centre.ts",
   ];
   const parts = [];
   for (const f of order) {

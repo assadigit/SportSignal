@@ -22,6 +22,10 @@ import { normalizeTeamName } from "../teams";
 // here changes the SEO surface while the bot/cards/digests (fa-dict.ts
 // renderers that never import this) stay byte-identical.
 import { seoTeamFaName, seoTeamAltName } from "./team-names";
+// Match Centre S02 (M1): the section composer — buildMatchPage's main
+// assembly delegates to it (semantic section anchors, spec §3 order). The
+// GSC surfaces + every data load stay HERE (see match-centre.ts header).
+import { matchCentreMain } from "./match-centre";
 import { loadArchive } from "./files";
 // v13.89-stdetail: full-table sources for the competition pages — both
 // cache-only/reads-only (the seo layer never triggers a provider sweep).
@@ -387,7 +391,24 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
     { name: "بازی‌ها", href: "/matches" },
     { name: faName(m.homeTeam) + " – " + faName(m.awayTeam) }
   ];
-  const main = matchHeadHtml(sm) + matchActionsHtml(sm, path) + matchHeadScript() + whyBigHtml(sm, ctx) + facts + formCard + similarCard + resultBlock + related;
+  // Match Centre S02 (M1): the main assembly delegates to the section
+  // composer — src/seo/match-centre.ts wraps the existing builders'
+  // byte-identical output in the semantic section anchors (registry order,
+  // spec §3: hero → nav → summary → standings → form → venue → schedule →
+  // faq → related → telegram → footer-hook; empty parts are omitted, never
+  // an empty placeholder). The one deliberate DOM-order change vs v13.9x:
+  // the finished «نتیجه نهایی» block joins the SUMMARY section (it is the
+  // answer restated — it sat after the similar card since v13.82) so the
+  // summary stays the page's single answer/result zone; S07 owns this area
+  // next. Everything above (title ladder, desc funnel, JSON-LD, trail) is
+  // untouched — the GSC measurement surfaces stay byte-for-byte.
+  const main = matchCentreMain({
+    hero: matchHeadHtml(sm) + matchActionsHtml(sm, path) + matchHeadScript(),
+    summary: whyBigHtml(sm, ctx) + facts + resultBlock,
+    form: formCard,
+    related: similarCard,
+    footerHook: related
+  });
   const html = pageShell({
     head: buildHead({
       path,

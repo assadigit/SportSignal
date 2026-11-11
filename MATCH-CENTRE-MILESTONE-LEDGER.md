@@ -7,11 +7,11 @@
 **Production target:** Worker `ucl-notifier` via `npx wrangler deploy` → `sportsignal.ir` (+ `football.sportsignal.ir`, `ucl-notifier.sportsignal.workers.dev` alias). Current deployment `88649642` / version `b48bae21` (2026-11-10T11:10:43Z). Rollback: `npx wrangler deployments list` → `npx wrangler rollback`.
 
 ## Current status
-- Current milestone: M1 — Page foundation (opening)
-- Current session: S02 (next to start)
-- Last completed session: S01 — architecture, data, cost and deployment audit (2026-11-11)
+- Current milestone: M1 — Page foundation (in progress)
+- Current session: S03 (next to start)
+- Last completed session: S02 — route shell and semantic structure (2026-11-11)
 - Last completed milestone: M0 — complete and **owner-approved 2026-11-11** (blanket approval of the presented audit/branch/deploy plan; all six §15 decision points resolved with the recommended options — see the M0 gate decision record below)
-- Next action: S02 — route shell and semantic structure, on `feat/match-centre` (starting files: audit §16)
+- Next action: S03 — responsive, spacing and RTL/LTR foundation, on `feat/match-centre` (audit §16 row S03)
 - Production release: Not approved until S21 readiness gate; production deploy only at S22
 
 ## M0 gate decision record (owner approval, 2026-11-11)
@@ -34,7 +34,7 @@ Override rule: Q1–Q4 are product choices tied to S05/S14/S18/S04 respectively;
 | Milestone | Status | Sessions | Commit SHAs | Preview deployment | Gate |
 |---|---|---|---|---|---|
 | M0 Discovery & execution plan | Complete — **approved 2026-11-11** | S00–S01 | `82ee82b` (extraction + audit) + approval docs commit | None (audit only) | Approved 2026-11-11 (blanket; Q1–Q6 recommended options) |
-| M1 Page foundation | Not started | S02–S03 | — | Pending | Pending |
+| M1 Page foundation | In progress — S02 complete | S02–S03 | S02: see Sessions table below | Pending (first preview after S03) | Pending |
 | M2 Hero & navigation | Not started | S04–S06 | — | Pending | Pending |
 | M3 Summary & editorial system | Not started | S07–S09 | — | Pending | Pending |
 | M4 Standings | Not started | S10–S11 | — | Pending | Pending |
@@ -51,7 +51,7 @@ Override rule: Q1–Q4 are product choices tied to S05/S14/S18/S04 respectively;
 |---|---|---|---|---|---|
 | S00 | Complete | `82ee82b` | Pushed to `origin/feat/match-centre` 2026-11-11, `ls-remote` verified | npm test baseline: exit 0, 2,961 OK, 0 failures | Package v1.2 extracted (README conflict → `MATCH-CENTRE-PACKAGE-README.md`); repo/design-system/docs audit; no code changes |
 | S01 | Complete | `82ee82b` | Pushed to `origin/feat/match-centre` 2026-11-11, `ls-remote` verified | npm test re-verified exit 0 | Data matrix, cost audit, dated-audit re-verification (scorers R2 corrected — finished scorers NOT in pool at HEAD), deploy/rollback/CI verified read-only; audit + ledger + log produced |
-| S02 | Not started | — | — | — | Starting files listed in audit §16 |
+| S02 | Complete | this session's commit (SHA + push result recorded in the immediate follow-up docs commit, per the M0 precedent) | Pushed to `origin/feat/match-centre` 2026-11-11, `ls-remote` verified | npm test exit 0 — 2,979 OK (baseline 2,961 + 18 new check-match-centre), 0 failures | Route shell + semantic section anchors; GSC surfaces byte-proven against a base-commit render diff (3 lifecycle states + 15 unrelated routes); zero new data work; no deploy |
 | S03 | Not started | — | — | — | |
 | S04 | Not started | — | — | — | Finished scorers omitted (Q4 = A, approved 2026-11-11) |
 | S05 | Not started | — | — | — | Kickoff rendering: Tehran + UTC note (Q1 = A, approved 2026-11-11; owner may switch to B before S05) |
