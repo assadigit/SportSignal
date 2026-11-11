@@ -48,6 +48,18 @@
 //      v13.81 hero presentation reworked in place (.mcentre-hero family)
 //      on the block's own tokens, logical properties only, .mvenue-map and
 //      the actions-row vocabulary untouched.
+//   8. S05 PORTRAITS + TIMEZONE/DATE (M2) — specification §5 Player
+//      portraits/Atmosphere/Date and time, decisions 7/8/85/93–95/99,
+//      Q1=A: the both-or-neither portrait face-off (the shared heroArtSrv
+//      coverage lookup — relocated verbatim to seo/data.ts, S05 — feeds the
+//      projection; the composer re-enforces the law; the .mport atom rides
+//      the .mc-port SSR vocabulary with a pure-DOM onerror that removes BOTH
+//      portraits, no retry — decision 85); the kickoff line gains
+//      «به وقت تهران» + the Latin UTC island (Q1=A — no new JS) and the date
+//      line upgrades to the D1 full localized date (decision 95); the Tehran
+//      midnight crossover runs the REAL seo/utils.ts helpers (transpiled
+//      from source, never re-implemented); atmosphere (decision 99) is
+//      CSS-only (zero new assets/requests).
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -259,9 +271,10 @@ check(heroUpcoming.indexOf('<span class="mchip"><a href="/competitions/premier-l
   "S04 comp header: the .mchip line renders above the face-off in every state (compact, secondary to teams and score — decision 98)");
 
 // (d) the balanced face-off: home FIRST (right under native Persian RTL),
-// away LAST (left); one shared side shape — [label, name, crest]; the subtle
-// role labels; no side-specific color/decoration (decision 96/97).
-const sideRe = /<div class="mteam(?: away)?"><div class="mside-lbl">([^<]+)<\/div><div class="mname">[\s\S]*?<\/div>[\s\S]*?<\/div>/g;
+// away LAST (left); one shared side shape — [portrait?, label, name, crest]
+// (the optional portrait slot is S05 — it only ever renders on BOTH sides);
+// the subtle role labels; no side-specific color/decoration (decision 96/97).
+const sideRe = /<div class="mteam(?: away)?">(?:<img class="mport"[^>]*>)?<div class="mside-lbl">([^<]+)<\/div><div class="mname">[\s\S]*?<\/div>[\s\S]*?<\/div>/g;
 function sidesOf(h) { const out = []; let m; sideRe.lastIndex = 0; while ((m = sideRe.exec(h)) !== null) out.push(m[1]); return out; }
 check(JSON.stringify(sidesOf(heroUpcoming)) === JSON.stringify(["میزبان", "میهمان"]) &&
   heroUpcoming.indexOf('<div class="mteam"><div class="mside-lbl">میزبان</div>') < heroUpcoming.indexOf('<div class="mcenter">') &&
@@ -313,7 +326,7 @@ check(!chipSeg.includes("<img") && chipSeg.includes('<span class="mchip"><a href
 // place — the container family, the dominant scoreboard scale, the finished
 // pill, the retired .mkicksub; the shared .mvenue-map/.mact vocabulary and
 // the .mdot reduced-motion guard untouched.
-check(shellSrc.includes(".mcentre-hero{background:linear-gradient(160deg,rgba(56,132,255,.10),rgba(56,132,255,.03) 55%,rgba(148,163,184,.05));border:1px solid rgba(94,160,255,.28);border-radius:18px;") &&
+check(shellSrc.includes(".mcentre-hero{background:radial-gradient(130% 100% at 50% -25%,rgba(56,132,255,.13),rgba(56,132,255,0) 55%),linear-gradient(160deg,rgba(56,132,255,.10),rgba(56,132,255,.03) 55%,rgba(148,163,184,.05));border:1px solid rgba(94,160,255,.28);border-radius:18px;") &&
   shellSrc.includes(".mcentre-hero-comp{display:flex;justify-content:center;padding-block-end:12px}") &&
   shellSrc.includes(".mcentre-hero-face{display:grid;grid-template-columns:1fr minmax(150px,auto) 1fr;align-items:center;gap:10px}"),
   "S04 CSS: the .mcentre-hero container carries the v13.81 card treatment byte-for-byte (no new colors) + the comp line + the three-track face-off grid");
@@ -329,9 +342,102 @@ check(/@media \(max-width:560px\)\{\.mcentre-hero\{padding:14px 8px\}\.mcentre-h
   "S04 CSS: the 560px stacking (home|away row, center below) co-evolved to the new selectors, logical properties; .mdot reduced-motion + the shared .mvenue-map/.mact vocabulary untouched");
 // (k) the S04-touched selectors use CSS logical properties only — no physical
 // left/right anywhere in the new container/comp/face/stacking rules.
-const s04Lines = (shellSrc.match(/\.mcentre-hero\{[^}]*\}|\.mcentre-hero-comp\{[^}]*\}|\.mcentre-hero-face\{[^}]*\}|@media \(max-width:560px\)\{\.mcentre-hero\{[^}]*\}\.mcentre-hero-comp\{[^}]*\}\.mcentre-hero-face\{[^}]*\}\.mteam\{grid-area:home\}\.mteam\.away\{grid-area:away\}\.mcenter\{[^}]*\}\.mcrest\{[^}]*\}\}/g) || []).join("");
+const s04Lines = (shellSrc.match(/\.mcentre-hero\{[^}]*\}|\.mcentre-hero-comp\{[^}]*\}|\.mcentre-hero-face\{[^}]*\}|@media \(max-width:560px\)\{\.mcentre-hero\{[^}]*\}\.mcentre-hero-comp\{[^}]*\}\.mcentre-hero-face\{[^}]*\}\.mteam\{grid-area:home\}\.mteam\.away\{grid-area:away\}\.mcenter\{[^}]*\}\.mcrest\{[^}]*\}(?:\.mport\{[^}]*\})?\}/g) || []).join("");
 check(s04Lines.length > 0 && !/margin-left|margin-right|padding-left|padding-right|text-align:\s*(left|right)|\bleft:|\bright:|float:/.test(s04Lines),
   "S04 RTL/LTR: the S04-touched hero rules are logical-property-only — the native-Persian RTL hero mirrors cleanly under a dir flip (decision 2)");
+
+// ---------- 8. S05 (M2): portraits, timezone and date ----------
+// The both-or-neither face-off + the Q1=A Tehran/UTC kickoff atoms. The
+// portrait atoms below are PREBUILT exactly the way pages.ts's projection
+// builds them (the composer never escapes); the crossover assertions run
+// the REAL seo/utils.ts helpers transpiled from source.
+const s05Port = (src) => '<img class="mport" src="' + src + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="88" height="88" ' +
+  "onerror=\"var h=this.closest('.mcentre-hero');if(h)h.querySelectorAll('.mport').forEach(function(x){x.remove()})\">";
+const heroPorts = mc.matchHeroHtml({ ...heroBase, home: { ...heroBase.home, portraitHtml: s05Port("/players/hero/christian-pulisic.webp") }, away: { ...heroBase.away, portraitHtml: s05Port("/players/hero/franck-rijkaard.webp") }, live: false, finished: false, scored: false, scoreTxt: "", liveTxt: "" });
+const portImgs = heroPorts.match(/<img class="mport"[^>]*>/g) || [];
+
+// (a) the contract: the optional portraitHtml atom on the side input
+check(/portraitHtml\?: string; \/\/ <img class="mport"> hero portrait — prebuilt \(S05, both-or-neither\)/.test(mcSrc) &&
+  /const ports = h\.home\.portraitHtml && h\.away\.portraitHtml;/.test(mcSrc) &&
+  /heroSideHtml\(h\.home, MC_HERO_HOME_LABEL, "", homePort\)/.test(mcSrc) &&
+  /heroSideHtml\(h\.away, MC_HERO_AWAY_LABEL, "away", awayPort\)/.test(mcSrc),
+  "S05 contract: MatchHeroSideInput gains the optional portraitHtml atom; matchHeroHtml resolves BOTH sides before either side renders (one shared side builder, one DOM shape)");
+
+// (b) both portraits render at the TOP of their side columns — home side
+// (right under RTL) portrait before the «میزبان» label, away side (left)
+// portrait after the center column, before the «میهمان» label; on mobile
+// the 560px grid areas keep the pair side-by-side ABOVE the scoreboard.
+check(portImgs.length === 2 &&
+  heroPorts.indexOf(portImgs[0]) < heroPorts.indexOf('<div class="mside-lbl">میزبان</div>') &&
+  heroPorts.indexOf(portImgs[1]) > heroPorts.indexOf('<div class="mcenter">') &&
+  heroPorts.indexOf(portImgs[1]) < heroPorts.indexOf('<div class="mside-lbl">میهمان</div>') &&
+  heroPorts.indexOf(portImgs[0]) < heroPorts.indexOf(portImgs[1]),
+  "S05 portraits: both atoms render — home portrait tops the home column (right under RTL), away portrait tops the away column (left); side-by-side above the scoreboard at ≤560px (decision 8)");
+check(portImgs.every((t) => t.includes('alt=""') && t.includes('loading="lazy"') && t.includes('decoding="async"') && t.includes('referrerpolicy="no-referrer"') && /width="88" height="88"/.test(t)),
+  "S05 portraits: every .mport img rides the .mc-port SSR vocabulary (lazy + async + no-referrer; decorative alt=\"\" — the names sit directly below; fixed width/height = CLS-neutral)");
+check(portImgs.every((t) => /onerror="var h=this\.closest\('\.mcentre-hero'\);if\(h\)h\.querySelectorAll\('\.mport'\)\.forEach\(function\(x\)\{x\.remove\(\)\}\)"/.test(t)) &&
+  !/fetch\(|setTimeout|setInterval|XMLHttpRequest|new Image/.test(portImgs.join("")),
+  "S05 fallback (decision 85): the onerror is a PURE DOM walk — BOTH portraits removed when either fails, restoring the S04 no-portrait scoreboard exactly; no retry, no fetch, no timer");
+
+// (c) both-or-neither — the composer's independent enforcement
+const heroOnePort = mc.matchHeroHtml({ ...heroBase, home: { ...heroBase.home, portraitHtml: s05Port("/players/hero/christian-pulisic.webp") }, live: false, finished: false, scored: false, scoreTxt: "", liveTxt: "" });
+check(!heroOnePort.includes("mport") && !heroUpcoming.includes("mport") && !heroLive.includes("mport") && !heroFinished.includes("mport"),
+  "S05 both-or-neither (decisions 7/8): a ONE-sided portraitHtml renders NO portrait at all — never half a face-off; the no-coverage hero keeps the exact S04 shape (label → name → crest)");
+
+// (d) the projection pins — pages.ts computes the atoms (the composer stays
+// the pure leaf; heroArtSrv is the SHARED data-layer lookup, S05-relocated)
+check(/, heroArtSrv \} from "\.\/data";/.test(pagesSrc),
+  "S05 wiring: pages.ts imports heroArtSrv from ./data (the shared lookup — relocated verbatim from seo/router.ts; no router→pages cycle)");
+check(/const hArt = heroArtSrv\(m\.homeTeam\);/.test(pagesSrc) && /const aArt = heroArtSrv\(m\.awayTeam\);/.test(pagesSrc) &&
+  /const ports = hArt && aArt \? \{ h: portraitHtml\(hArt\), a: portraitHtml\(aArt\) \} : null;/.test(pagesSrc) &&
+  /portraitHtml: ports \? ports\.h : ""/.test(pagesSrc) && /portraitHtml: ports \? ports\.a : ""/.test(pagesSrc),
+  "S05 projection: BOTH sides resolve through heroArtSrv before either atom is built (both-or-neither at the data layer too — one covered side alone renders nothing)");
+
+// (e) the Q1=A kickoff atoms — Tehran wall clock + the display-TZ label +
+// the Latin UTC island; the D1 full localized date; the frozen surfaces
+// (h1 D2, facts-table fullWhenHtml) untouched.
+check(/kickTimeHtml: '<time datetime="' \+ esc\(m\.utcDate\) \+ '">' \+ toFaDigits\(faTime\(m\.utcDate\)\) \+ '<\/time> <span class="tznote">' \+ esc\(SEO\.DISPLAY_TZ_LABEL\) \+ '<\/span> <span class="utcnote" dir="ltr">' \+ esc\(m\.utcDate\.slice\(11, 16\) \+ " UTC"\) \+ "<\/span>"/.test(pagesSrc),
+  "S05 kickoff (Q1=A, decisions 93/94): the prominent Tehran time + «به وقت تهران» + the Latin «… UTC» island (fullWhenHtml's tznote/utcnote vocabulary; <time datetime> stays Gregorian ISO — SS-27; no new JS)");
+check(/kickDateHtml: esc\(faDateD1\(m\.utcDate\)\),/.test(pagesSrc) &&
+  /const h1 = faName\(m\.homeTeam\) \+ " – " \+ faName\(m\.awayTeam\) \+ " \| " \+ compFa \+ "، " \+ faDateD2\(m\.utcDate\);/.test(pagesSrc) &&
+  /rows\.push\(\["تاریخ", M\.fullWhenHtml\(m\.utcDate\)\]\);/.test(pagesSrc),
+  "S05 date (decision 95): the hero date line is the D1 full localized date; the h1's compact D2 and the facts table's fullWhenHtml stay byte-frozen (the S1/S2 GSC measurement surfaces)");
+
+// (f) the midnight crossover + numeral formatting — the REAL seo/utils.ts
+// helpers (tehranParts/faTime/faDateD1), transpiled from source — never
+// re-implemented. 20:30Z crosses the Tehran calendar day (00:00 next day).
+function s05DateHelpers() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const extract = (rel, stubs, ret) => {
+    const src = fs.readFileSync(path.join(root, rel), "utf8")
+      .replace(/^import\s+[^;]+;\n?/gm, "").replace(/^export\s+/gm, "");
+    const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.None, target: "ES2020" } }).outputText;
+    return new Function(...Object.keys(stubs), js + "\nreturn " + ret + ";")(...Object.values(stubs));
+  };
+  const toFaDigits = extract("src/utils.ts", {}, "(typeof toFaDigits==='function')?toFaDigits:null");
+  return extract("src/seo/utils.ts", { SEO: { DISPLAY_TZ: "Asia/Tehran" }, toFaDigits }, "({tehranParts,faTime,faDateD1})");
+}
+const D = s05DateHelpers();
+check(D.faTime("2026-11-14T20:30:00Z") === "۰۰:۰۰" && D.faDateD1("2026-11-14T20:30:00Z") === "یکشنبه ۲۴ آبان ۱۴۰۵ (۱۵ نوامبر ۲۰۲۶)",
+  "S05 midnight crossover (the REAL helpers): a 20:30Z kickoff crosses the Tehran calendar day — the hero reads ۰۰:۰۰ and the FULL date carries the NEXT Tehran day (۲۴ آبان / ۱۵ نوامبر) while the UTC note keeps the Latin 20:30 UTC (decisions 93–95, Q1=A; decision 94: 24-hour Persian numerals)");
+check(D.faTime("2026-11-14T17:00:00Z") === "۲۰:۳۰" && D.faDateD1("2026-11-14T17:00:00Z") === "شنبه ۲۳ آبان ۱۴۰۵ (۱۴ نوامبر ۲۰۲۶)",
+  "S05 same-day sanity (the REAL helpers): a 17:00Z kickoff stays on the SAME Tehran calendar day — ۲۰:۳۰، شنبه ۲۳ آبان ۱۴۰۵ (۱۴ نوامبر ۲۰۲۶)");
+
+// (g) the S05 CSS — the portrait frame, the .mkick-scoped notes, the
+// atmosphere layer (decision 99), the 560px co-evolution, logical props.
+check(shellSrc.includes(".mport{width:88px;height:88px;border-radius:50%;object-fit:cover;object-position:center 18%;background:rgba(2,8,23,.45);border:1px solid rgba(94,160,255,.30);box-shadow:0 6px 18px rgba(2,8,23,.45)}") &&
+  /@media \(max-width:560px\)\{[\s\S]*?\.mcrest\{width:48px;height:48px\}\.mport\{width:64px;height:64px\}\}/.test(shellSrc),
+  "S05 CSS: the circular .mport frame (88px desktop / 64px ≤560px — crest-adjacent sizing, one shared shape; dark navy backing + icy ring = the restrained stadium depth, decision 99)");
+check(shellSrc.includes(".mkick .tznote{font-size:.8rem;font-weight:600;color:var(--muted,#9aa4b2)}") &&
+  shellSrc.includes(".mkick .utcnote{font-size:.74rem;font-weight:600;color:var(--muted,#9aa4b2);font-variant-numeric:tabular-nums}") &&
+  (shellSrc.match(/\.tznote\{/g) || []).length === 1 && (shellSrc.match(/\.utcnote\{/g) || []).length === 1 &&
+  shellSrc.includes(".mkickdate{line-height:1.8}"),
+  "S05 CSS: the kickoff notes are .mkick-SCOPED (exactly one .tznote/.utcnote rule each — the facts table's fullWhenHtml spans keep their inherited size) and the D1 date line wraps without truncation");
+check(shellSrc.includes(".mcentre-hero{background:radial-gradient(130% 100% at 50% -25%,rgba(56,132,255,.13),rgba(56,132,255,0) 55%),linear-gradient(160deg,rgba(56,132,255,.10),rgba(56,132,255,.03) 55%,rgba(148,163,184,.05));"),
+  "S05 CSS (decision 99): the restrained stadium light-wash layers ABOVE the S04 gradient — the block's own icy/navy tokens, zero new assets, zero new requests; the foreground hierarchy (names, crests, score) stays dominant");
+const s05Rules = (shellSrc.match(/\.mport\{[^}]*\}|\.mkick \.tznote\{[^}]*\}|\.mkick \.utcnote\{[^}]*\}|\.mkickdate\{line-height:1\.8\}/g) || []).join("");
+check(s05Rules.length > 0 && !/margin-left|margin-right|padding-left|padding-right|\bleft:|\bright:|float:/.test(s05Rules),
+  "S05 RTL/LTR: the S05-touched rules are physical-property-free — the portrait order comes from the DOM (home first = right under native RTL), so a deliberate LTR mirror stays clean (decision 2)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

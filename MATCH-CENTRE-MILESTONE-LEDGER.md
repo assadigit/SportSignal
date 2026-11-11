@@ -8,10 +8,10 @@
 
 ## Current status
 - Current milestone: M2 — Hero & navigation (in progress)
-- Current session: S05 (next to start)
-- Last completed session: S04 — hero identity and lifecycle (2026-11-11)
+- Current session: S06 (next to start)
+- Last completed session: S05 — portrait fallback, timezone and date (2026-11-12)
 - Last completed milestone: M1 — Page foundation **complete** (S02 shell + S03 foundation; the M1-gate version preview uploaded and smoke-tested — see the deployment entry in the execution log)
-- Next action: S05 — portrait fallback, timezone and date (audit §16 row S05; both-or-neither portraits via `heroArtSrv`; kickoff rendering per Q1=A — Tehran + UTC note stands unless the owner switches to B before S05)
+- Next action: S06 — sticky navigation and back-to-top (audit §12/§16 row S06: five destinations خلاصه/جدول/فرم/بازی‌ها/ورزشگاه, scroll tracking with offset, the floating back-to-top, reduced motion) — **the M2 gate + the M2 preview (`wrangler versions upload` at `13.25x-mc*`) ride AFTER S06**
 - Production release: Not approved until S21 readiness gate; production deploy only at S22 (production stays on `13.255-seospell`; the M1 preview version `13.256-mcfound` is uploaded but NEVER activated; mid-milestone sessions keep the version at `13.256-mcfound` — the M2 preview upload happens at the M2 gate after S06)
 
 ## M0 gate decision record (owner approval, 2026-11-11)
@@ -20,7 +20,7 @@ Owner message: "Approve. give me the session for next session. commit push and u
 
 | # | Decision | Resolution (recommended option adopted) |
 |---|---|---|
-| Q1 | Kickoff timezone rendering (S05, decision 93) | **A — Tehran time + UTC note as today** (no new JS; owner may still switch to B — visitor-local `Intl` enhancement — any time before S05) |
+| Q1 | Kickoff timezone rendering (S05, decision 93) | **A — Tehran time + UTC note** RESOLVED in S05 (2026-11-12): the hero ships Tehran wall clock + «به وقت تهران» + the Latin UTC note, no new JS; the owner may still commission B (a small inline `Intl` visitor-local enhancement) as a later change |
 | Q2 | Venue city/country (S14) | **A — stadium name only**, city/country omitted (zero invention; a curated table can be authorized later, before S14) |
 | Q3 | Telegram illustration (S18, decision 69) | **A — compose from existing verified assets** (channel icon + existing stadium art) |
 | Q4 | Finished scorers (S04/S19, guardrails §1) | **A — finished scorers stay omitted** (zero-exception default holds; the bounded venue-detail piggyback was NOT approved) |
@@ -35,7 +35,7 @@ Override rule: Q1–Q4 are product choices tied to S05/S14/S18/S04 respectively;
 |---|---|---|---|---|---|
 | M0 Discovery & execution plan | Complete — **approved 2026-11-11** | S00–S01 | `82ee82b` (extraction + audit) + approval docs commit | None (audit only) | Approved 2026-11-11 (blanket; Q1–Q6 recommended options) |
 | M1 Page foundation | Complete (S02+S03) | S02–S03 | S02: `9e6c0c1` + `ac13a1e`; S03: `ce1befd` | **Done** — Workers version preview `8053ea4c-d4ed-4224-9f3d-c61aca10ced9` (`13.256-mcfound`, https://8053ea4c-ucl-notifier.sportsignal.workers.dev; uploaded NEVER activated — the provided token cannot generate D1 bindings, so the preview config omits the two optional D1 bindings, documented; read-only smoke passed) | Passed 2026-11-11 (review evidence + deployment entry in the execution log; no owner approval required — next approval gate is M9) |
-| M2 Hero & navigation | In progress (S04 complete) | S04–S06 | S04: `c74e7e1` | Pending (at the M2 gate after S06) | Pending |
+| M2 Hero & navigation | In progress (S04+S05 complete) | S04–S06 | S04: `c74e7e1`; S05: this session's commit | Pending (at the M2 gate after S06) | Pending |
 | M3 Summary & editorial system | Not started | S07–S09 | — | Pending | Pending |
 | M4 Standings | Not started | S10–S11 | — | Pending | Pending |
 | M5 Form & recent results | Not started | S12–S13 | — | Pending | Pending |
@@ -54,9 +54,8 @@ Override rule: Q1–Q4 are product choices tied to S05/S14/S18/S04 respectively;
 | S02 | Complete | `9e6c0c1` | Pushed to `origin/feat/match-centre` 2026-11-11 via the one-shot token URL; `git ls-remote` verified (`9e6c0c193d…` = local HEAD; remote URL clean — token never persisted) | npm test exit 0 — 2,979 OK (baseline 2,961 + 18 new check-match-centre), 0 failures | Route shell + semantic section anchors; GSC surfaces byte-proven against a base-commit render diff (3 lifecycle states + 15 unrelated routes); zero new data work; no deploy |
 | S03 | Complete | `ce1befd` | Pushed to `origin/feat/match-centre` 2026-11-11 via the one-shot token URL; `git ls-remote` verified (`ce1befd35d…` = local HEAD; remote URL clean — token never persisted) | npm test exit 0 — 2,989 OK (baseline 2,979 + 10 new check-match-centre S03 assertions), 0 failures | CSS-only foundation in the page-shell style block: 28/20px section rhythm + the .mcentre-cols 1080px collapse utility, logical properties only; byte-proof vs `9e6c0c1`: only delta = +2,285 B CSS run, body byte-identical, 18 unrelated routes verified; **M1 gate: version `13.256-mcfound` preview `8053ea4c-d4ed-4224-9f3d-c61aca10ced9` uploaded (NEVER activated) + read-only smoke passed** — see the deployment entry in the execution log (the token cannot generate D1 bindings: the preview config omits the two optional D1 bindings, documented; the S22 deploy needs a D1-capable token) |
 | S04 | Complete | `c74e7e1` | Pushed to `origin/feat/match-centre` 2026-11-11 via the one-shot token URL; `git ls-remote` verified (`c74e7e1aef…` = local HEAD; remote URL clean — token never persisted) | npm test exit 0 — 3,002 OK (baseline 2,989 + 13 new check-match-centre S04 assertions), 0 failures; byte-proof 79/79 vs `440b9f8`; structural 110/110; RTL/LTR + 390/768/1440 layout matrix + screenshots | Hero ownership moved to the composer (matchHeroHtml + the matchHeroInput projection; legacy matchHeadHtml retired); comp header above teams; balanced RTL face-off; dominant scoreboard; upcoming/live/finished variants; «پایان بازی» pill; finished scorers omitted (Q4 = A); the pinned «خلاصه بازی» landmark preserved |
-| S05 | Not started | — | — | — | Kickoff rendering: Tehran + UTC note (Q1 = A, approved 2026-11-11; owner may switch to B before S05) |
-| S06 | Not started | — | — | — | |
-| S07 | Not started | — | — | — | Venue double-wording fix rides here (audit §5 R1) |
+| S05 | Complete | this session's commit | Pushed to `origin/feat/match-centre` 2026-11-12 via the one-shot token URL; `git ls-remote` verified (see the follow-up docs commit) | npm test exit 0 — 3,017 OK (baseline 3,002 + 15 new check-match-centre S05 assertions), 0 failures; byte-proof 109/109 vs `2536fd2`; layout matrix 390/768/1440 RTL/LTR + screenshots + VLM; live onerror hide-both verified | Both-or-neither portraits via the shared `heroArtSrv` (relocated verbatim router→seo/data.ts, cycle-free — homepage byte-identical outright); pure-DOM onerror hide-both (decision 85); CSS-only atmosphere (decision 99); Q1=A kickoff line (Tehran + «به وقت تهران» + Latin UTC note) + the D1 full localized date (decision 95); real-helper midnight-crossover tests; GSC surfaces byte-frozen |
+| S06 | Not started | — | — | — | The M2 gate + the M2 preview deployment ride immediately after S06 |
 | S08 | Not started | — | — | — | |
 | S09 | Not started | — | — | — | |
 | S10 | Not started | — | — | — | |

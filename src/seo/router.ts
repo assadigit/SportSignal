@@ -8,7 +8,7 @@
 import type { Env } from "../types";
 import { SEO, absUrl } from "./config";
 import { fnv1a, esc, faDateD2, faTime } from "./utils";
-import { getSeoCtx, upcomingBig, finishedRecent, findMatchBySlug, type SeoCtx, type SeoMatch } from "./data";
+import { getSeoCtx, upcomingBig, finishedRecent, findMatchBySlug, heroArtSrv, type SeoCtx, type SeoMatch } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { PUBLIC_PAGE } from "../pages/public";
@@ -24,21 +24,12 @@ import {
 } from "./pages-static";
 import * as F from "./files";
 import { pingIndexNowIfChanged } from "./indexnow";
-import { HERO_COVERAGE_RAW } from "../hero-coverage";
 
-// v13.205-lcpreveal (F-C1, Phase 3): the server-side hero-portrait lookup.
-// Mirrors the client's heroArtFor() contract (public-13.68.js:
-// HERO_ART[e.name]||HERO_ART[e.faName]) using hero-coverage.ts — the
-// GENERATED mirror of the bundle's HERO_ART map (sync-hero-coverage.js,
-// drift-gated by check-hero-coverage in npm test), so the SSR decision and
-// the client putPort decision can never disagree.
-const HERO_ART_SSR = new Map<string, string>();
-for (const w of HERO_COVERAGE_RAW.wired) HERO_ART_SSR.set(w.name, w.src);
-function heroArtSrv(t: any): string | null {
-  if (!t) return null;
-  const a = HERO_ART_SSR.get(t.name) || HERO_ART_SSR.get(t.faName);
-  return a || null;
-}
+// v13.205-lcpreveal (F-C1, Phase 3): the server-side hero-portrait lookup
+// used by the homepage .mc-port SSR mirror below — Match Centre S05 (M2)
+// relocated the map + lookup VERBATIM to seo/data.ts (the shared data-layer
+// home the match-centre hero projection also reads; one coverage decision,
+// no router→pages import cycle). The heritage comment lives at the map.
 
 // ------------------------------------------------------------ headers (SE-01..SE-03, PF-01)
 

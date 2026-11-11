@@ -170,7 +170,7 @@ footer.pagesfoot a:hover{text-decoration:underline}
 .visitcount .vc-n{display:inline-block;min-width:3.4em;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:var(--fg,#e8eefc)}
 .visitcount .vc-sep{margin:0 6px;opacity:.5}
 .visitcount .vc-l{opacity:.85}
-/* ---- v13.81-matchpage → Match Centre S04 (M2): the mcentre-hero ----
+/* ---- v13.81-matchpage → Match Centre S04/S05 (M2): the mcentre-hero ----
    The hero presentation: the legacy .matchhead card became the .mcentre-hero
    block (src/seo/match-centre.ts renders the markup — matchHeroHtml — and
    pages.ts delegates the data projection; audit §12). The competition chip
@@ -186,8 +186,13 @@ footer.pagesfoot a:hover{text-decoration:underline}
    state gains the «پایان بازی» status pill (.mfin — the .mcount sky
    family; NO scorer block: finished scorers are not in the data pool,
    Q4=A). Background/border/radius/pill tokens are the v13.81 block's own;
-   CSS logical properties only, so a deliberate LTR mirror stays clean. */
-.mcentre-hero{background:linear-gradient(160deg,rgba(56,132,255,.10),rgba(56,132,255,.03) 55%,rgba(148,163,184,.05));border:1px solid rgba(94,160,255,.28);border-radius:18px;padding:18px 14px;margin-block:12px 10px}
+   CSS logical properties only, so a deliberate LTR mirror stays clean.
+   Match Centre S05 (M2) — decision 99 (atmosphere): a restrained stadium
+   light-wash rides ABOVE the S04 gradient (a soft radial from the top —
+   floodlight depth, never overpowering the foreground: names, crests and
+   the score stay the legible hierarchy; the block's own icy/navy tokens,
+   zero new assets, zero new requests). */
+.mcentre-hero{background:radial-gradient(130% 100% at 50% -25%,rgba(56,132,255,.13),rgba(56,132,255,0) 55%),linear-gradient(160deg,rgba(56,132,255,.10),rgba(56,132,255,.03) 55%,rgba(148,163,184,.05));border:1px solid rgba(94,160,255,.28);border-radius:18px;padding:18px 14px;margin-block:12px 10px}
 .mcentre-hero-comp{display:flex;justify-content:center;padding-block-end:12px}
 .mcentre-hero-face{display:grid;grid-template-columns:1fr minmax(150px,auto) 1fr;align-items:center;gap:10px}
 .mteam{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
@@ -195,12 +200,28 @@ footer.pagesfoot a:hover{text-decoration:underline}
 .mteam .mside-lbl{font-size:.68rem;color:var(--muted,#9aa4b2);letter-spacing:.4px}
 .mcrest{width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(2,8,23,.35))}
 .mcrest-mono{display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#5ea0ff;background:rgba(94,160,255,.12);border:1px solid rgba(94,160,255,.3);border-radius:14px}
+/* Match Centre S05 (decisions 7/8/85): the both-or-neither hero portraits —
+   circular frames at the TOP of each side column (on mobile the 560px grid
+   areas keep them side-by-side above the scoreboard, decision 8), one
+   shared shape like the crests. The dark navy backing + icy ring give the
+   alpha-cutout library art its restrained stadium depth (decision 99);
+   the fixed square box is CLS-neutral, and the S05 onerror DOM walk (in
+   the projection's portrait atom) removes BOTH imgs when either fails —
+   decision 85: no retry, the S04 no-portrait scoreboard restores exactly. */
+.mport{width:88px;height:88px;border-radius:50%;object-fit:cover;object-position:center 18%;background:rgba(2,8,23,.45);border:1px solid rgba(94,160,255,.30);box-shadow:0 6px 18px rgba(2,8,23,.45)}
 .mcenter{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;min-width:0}
 .mchip{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted,#9aa4b2);background:rgba(148,163,184,.10);border:1px solid rgba(148,163,184,.22);border-radius:999px;padding:3px 11px;white-space:nowrap;max-width:100%;overflow:hidden}
 .mchip a{color:inherit;text-decoration:none}
 .mchip a:hover{text-decoration:underline}
 .mcomplogo{width:15px;height:15px;object-fit:contain}
 .mkick{font-size:clamp(2rem,5.5vw,2.9rem);font-weight:800;font-variant-numeric:tabular-nums;line-height:1.25}
+/* Match Centre S05 (Q1=A, decisions 93/94): the kickoff line's muted notes
+   beside the prominent time — «به وقت تهران» + the Latin UTC island
+   (fullWhenHtml's tznote/utcnote vocabulary). The selectors nest under
+   .mkick ONLY, so the facts table's own .tznote/.utcnote spans (the
+   «تاریخ» row) keep rendering with their inherited size, untouched. */
+.mkick .tznote{font-size:.8rem;font-weight:600;color:var(--muted,#9aa4b2)}
+.mkick .utcnote{font-size:.74rem;font-weight:600;color:var(--muted,#9aa4b2);font-variant-numeric:tabular-nums}
 /* Match Centre S04: the central scoreboard's display numerals — dominant
    (specification §5; the finished final score and the live score share this
    scale, the upcoming kickoff time rides the .mkick tier just below it). */
@@ -210,6 +231,11 @@ footer.pagesfoot a:hover{text-decoration:underline}
    family; the retired .mkicksub showed the generic «پایان‌یافته» label. */
 .mfin{display:inline-flex;align-items:center;gap:7px;font-size:.84rem;font-weight:700;color:#7dd3fc;background:rgba(125,211,252,.10);border:1px solid rgba(125,211,252,.28);border-radius:999px;padding:3px 12px}
 .mkickdate{font-size:.82rem;color:var(--muted,#9aa4b2)}
+/* Match Centre S05 (decision 95): the date line is now the D1 FULL localized
+   date («شنبه ۱۵ آبان ۱۴۰۵ (۵ نوامبر ۲۰۲۶)») — the extra length wraps to a
+   second line on narrow viewports by design (the .mcenter column centers
+   it; no fixed heights, no truncation). */
+.mkickdate{line-height:1.8}
 .mkickdate .jdate{opacity:.85}
 .mcount{font-size:.86rem;font-weight:700;color:#7dd3fc;background:rgba(125,211,252,.10);border:1px solid rgba(125,211,252,.28);border-radius:999px;padding:3px 12px;font-variant-numeric:tabular-nums}
 .mlive{display:inline-flex;align-items:center;gap:7px;font-size:.84rem;font-weight:700;color:#fca5a5}
@@ -309,7 +335,7 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
 .mact:hover{border-color:rgba(94,160,255,.55);background:rgba(94,160,255,.12)}
 .mact:active{transform:scale(.97)}
 .mact-cal{background:rgba(94,160,255,.13);border-color:rgba(94,160,255,.4)}
-@media (max-width:560px){.mcentre-hero{padding:14px 8px}.mcentre-hero-comp{padding-block-end:8px}.mcentre-hero-face{grid-template-columns:1fr 1fr;grid-template-areas:"home away" "center center"}.mteam{grid-area:home}.mteam.away{grid-area:away}.mcenter{grid-area:center;margin-block-start:8px}.mcrest{width:48px;height:48px}}
+@media (max-width:560px){.mcentre-hero{padding:14px 8px}.mcentre-hero-comp{padding-block-end:8px}.mcentre-hero-face{grid-template-columns:1fr 1fr;grid-template-areas:"home away" "center center"}.mteam{grid-area:home}.mteam.away{grid-area:away}.mcenter{grid-area:center;margin-block-start:8px}.mcrest{width:48px;height:48px}.mport{width:64px;height:64px}}
 @media (prefers-reduced-motion:reduce){.mdot{animation:none}}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero

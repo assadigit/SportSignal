@@ -35,9 +35,29 @@
 // untouched hidden .mcount mount, decision 92; live = score + status +
 // minute, no extra live apparatus, decision 90; finished = score + the
 // «پایان بازی» status, NO scorer block — Q4=A: finished scorers are not in
-// the data pool, so none is ever rendered). Portrait/atmosphere work is S05
-// (decision 99); the countdown/copy script and the actions row stay in
-// pages.ts and ride the hero part unchanged.
+// the data pool, so none is ever rendered).
+//
+// S05 LAW (specification §5 Player portraits/Atmosphere/Date and time,
+// decisions 7/8/85/93–95/99, Q1=A): the hero gains the both-or-neither
+// portrait face-off — the projection (pages.ts) looks BOTH clubs up via the
+// shared heroArtSrv data helper and passes EITHER two prebuilt portrait
+// <img> atoms OR none, and THIS renderer independently enforces the same
+// law (a one-sided portraitHtml never renders half a face-off — decision 7:
+// the cinematic face-off exists only when both portraits are available).
+// The portrait <img> rides the .mc-port SSR vocabulary (lazy + async +
+// no-referrer, decision 85) and carries a pure-DOM onerror that removes
+// BOTH portraits when either image fails — no retry, no fetch, no timer
+// (decision 85: the fallback is the S04 no-portrait scoreboard, restored
+// exactly). The portrait sits at the TOP of each side column, so on mobile
+// the existing 560px grid areas keep the two portraits side-by-side ABOVE
+// the scoreboard (decision 8). The kickoff line keeps the Tehran wall clock
+// + gains the «به وقت تهران» note and the Latin UTC island (Q1=A — no new
+// JS; option B stays available to the owner), and the date line upgrades
+// to the D1 full localized date (decision 95) — both atoms still arrive
+// PREBUILT from the projection. Atmosphere (decision 99) is CSS-only in the
+// page-shell style block — zero new assets/requests. The countdown/copy
+// script and the actions row stay in pages.ts and ride the hero part
+// unchanged.
 //
 // THE ANCHOR VOCABULARY — specification §3 page order. The five sticky-nav
 // destinations (decisions 11/13: خلاصه، جدول، فرم، بازی‌ها، ورزشگاه) land on
@@ -101,6 +121,7 @@ export interface MatchCentreParts {
 export interface MatchHeroSideInput {
   crestHtml: string; // <img class="mcrest"> or <span class="mcrest mcrest-mono"> — prebuilt
   nameHtml: string;   // M.nameHtml(faName(team)) — prebuilt
+  portraitHtml?: string; // <img class="mport"> hero portrait — prebuilt (S05, both-or-neither)
 }
 
 // The hero projection. Every field is a pre-escaped/pre-finished string or
@@ -117,8 +138,8 @@ export interface MatchHeroInput {
   scored: boolean;     // (live || finished) && score.home != null
   scoreTxt: string;    // Persian-digit "H – A" (scoreStr) — "" when !scored
   liveTxt: string;     // live status + " (minuteʹ)" suffix — prebuilt (decision 90: no extra live apparatus)
-  kickTimeHtml: string;// <time datetime="…">HH:MM</time> — prebuilt (upcoming's prominent kickoff, decision 92)
-  kickDateHtml: string; // faDateD2 localized date — prebuilt (S05 owns the date rework)
+  kickTimeHtml: string;// <time datetime="…">HH:MM</time> + «به وقت تهران» + «… UTC» note spans — prebuilt (S05, Q1=A; decision 93/94: Tehran wall clock, 24h, Persian digits, the Latin UTC island)
+  kickDateHtml: string; // faDateD1 full localized date «شنبه ۱۵ آبان ۱۴۰۵ (۵ نوامبر ۲۰۲۶)» — prebuilt (S05, decision 95)
   countHtml: string;   // the hidden-until-filled .mcount mount ("" for live/finished) — prebuilt, preserved exactly (decision 92: no new countdown dependency)
   venueHtml: string;   // the .mvenue map link ("" when none) — prebuilt (S14 owns the venue panel)
 }
@@ -133,12 +154,16 @@ const MC_HERO_AWAY_LABEL = "میهمان";
 const MC_HERO_FINISHED_LABEL = "پایان بازی";
 
 // One face-off side. BOTH sides share one builder and one DOM shape —
-// [label, name, crest] — so the two teams are equal by construction
+// [portrait?, label, name, crest] — so the two teams are equal by construction
 // (decision 96: balanced face-off, equal prominence), and the RTL face-off
 // order comes from the document: home first = right, away last = left
-// (decision 97). No side-specific color or decoration.
-function heroSideHtml(side: MatchHeroSideInput, label: string, extraClass: string): string {
+// (decision 97). No side-specific color or decoration. The portrait slot
+// (S05) renders ONLY when the caller resolved BOTH sides' portraits — the
+// both-or-neither law is enforced in matchHeroHtml before this runs, so a
+// one-sided portraitHtml can never reach the DOM (decision 7).
+function heroSideHtml(side: MatchHeroSideInput, label: string, extraClass: string, portraitHtml: string): string {
   return '<div class="mteam' + (extraClass ? " " + extraClass : "") + '">' +
+    (portraitHtml || "") +
     '<div class="mside-lbl">' + label + "</div>" +
     '<div class="mname">' + side.nameHtml + "</div>" +
     side.crestHtml +
@@ -155,6 +180,13 @@ function heroSideHtml(side: MatchHeroSideInput, label: string, extraClass: strin
 // date + the hidden countdown mount + the venue link carried over
 // unchanged for S05/S14.
 export function matchHeroHtml(h: MatchHeroInput): string {
+  // S05 both-or-neither (decisions 7/8): the cinematic portrait face-off
+  // renders ONLY when BOTH sides carry a portrait atom; either side missing
+  // (or a one-sided projection bug) collapses to the S04 no-portrait
+  // scoreboard with crests and names — never half a face-off.
+  const ports = h.home.portraitHtml && h.away.portraitHtml;
+  const homePort = ports ? h.home.portraitHtml || "" : "";
+  const awayPort = ports ? h.away.portraitHtml || "" : "";
   let center = "";
   if (h.scored) {
     center += '<div class="mscore"' + (h.live ? ' aria-label="در جریان"' : "") + ">" + h.scoreTxt + "</div>";
@@ -169,9 +201,9 @@ export function matchHeroHtml(h: MatchHeroInput): string {
   return '<section class="mcentre-hero" aria-label="خلاصه بازی">' +
     '<div class="mcentre-hero-comp"><span class="mchip">' + h.compHtml + "</span></div>" +
     '<div class="mcentre-hero-face">' +
-    heroSideHtml(h.home, MC_HERO_HOME_LABEL, "") +
+    heroSideHtml(h.home, MC_HERO_HOME_LABEL, "", homePort) +
     '<div class="mcenter">' + center + "</div>" +
-    heroSideHtml(h.away, MC_HERO_AWAY_LABEL, "away") +
+    heroSideHtml(h.away, MC_HERO_AWAY_LABEL, "away", awayPort) +
     "</div>" +
     "</section>";
 }

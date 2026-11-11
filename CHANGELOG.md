@@ -4,6 +4,50 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# Match Centre S05 round, 2026-11-12 — portrait fallback, timezone and date (M2; `feat/match-centre`)
+
+**The hero gains its cinematic face-off and its full kickoff line.** Per
+specification §5 (Player portraits / Atmosphere / Date and time) + decisions
+7/8/85/93–95/99 with **Q1=A** (Tehran + UTC note — the owner may still switch
+to option B, a small inline `Intl` visitor-local enhancement, any time): the
+**both-or-neither portrait law** lands twice — the projection
+(`matchHeroInput`) resolves BOTH clubs through the shared `heroArtSrv`
+coverage lookup (relocated VERBATIM from `seo/router.ts` to `seo/data.ts`,
+the data-layer home, so the homepage `.mc-port` SSR mirror and the match
+hero read ONE coverage decision with no router→pages import cycle) and
+passes either two prebuilt `<img class="mport">` atoms or none, and the
+composer (`matchHeroHtml`) independently refuses a one-sided `portraitHtml`
+— never half a face-off (decision 7). The portraits ride the `.mc-port` SSR
+vocabulary (lazy + async + no-referrer, decorative `alt=""`, fixed
+88/64 px square = CLS-neutral) at the TOP of each side column, so the
+existing 560 px grid areas keep them **side-by-side above the scoreboard on
+mobile** (decision 8) and flanking the scoreboard on desktop; a **pure-DOM
+`onerror`** removes BOTH portraits when either image fails — no retry, no
+fetch, no timer (decision 85: the S04 no-portrait scoreboard restores
+exactly, live-verified). **Atmosphere (decision 99) is CSS-only**: a
+restrained stadium light-wash (a soft radial above the S04 gradient, the
+block's own icy/navy tokens) plus the portraits' dark backing — zero new
+assets, zero new requests. **The kickoff line upgrades per Q1=A**: the
+prominent Tehran time (24-hour, Persian digits — unchanged) gains the
+«به وقت تهران» note + the Latin `… UTC` island (`fullWhenHtml`'s
+tznote/utcnote vocabulary, hero-scoped so the facts table stays untouched),
+and the date line becomes the **D1 full localized date** — «شنبه ۱۵ آبان
+۱۴۰۵ (۵ نوامبر ۲۰۲۶)» (decision 95); the Tehran-midnight crossover is
+pinned by real-helper tests (a 20:30Z kickoff reads ۰۰:۰۰ on the NEXT
+Tehran day while the UTC note keeps 20:30 UTC). The h1's compact D2, the
+facts table and every title/meta/canonical/JSON-LD surface stay
+byte-frozen (the S1/S2 GSC measurement runs to Dec 4–8). 15 new
+check-match-centre assertions (npm test 3,017 OK / 0 failures); byte-proof
+109/109 vs the S04 tree (two-server worktree diff, identical seeded KV:
+head identical modulo the +2,089 B S05 CSS, body identical outside the
+hero, hero delta = portraits + kickoff atoms only, homepage byte-identical
+outright — the `heroArtSrv` relocation is a no-op incl. the `.mc-port`
+mirror; kv_writes_day / subreq_last_tick / kv_ops_last_tick all 0);
+layout matrix 390/768/1440 RTL + LTR mirror + the live onerror
+hide-both + VLM visual verification. Mid-milestone: **no version bump, no
+deploy** — the M2 preview (`wrangler versions upload`) rides the M2 gate
+after S06.
+
 # Match Centre S04 round, 2026-11-11 — hero identity + lifecycle (M2 opens; `feat/match-centre`)
 
 **The match hero is now the composer's.** Per the audit §12 file plan, hero

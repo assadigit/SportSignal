@@ -19,6 +19,11 @@ import { fetchJSON } from "../utils";
 import { SEO } from "./config";
 import { teamSlug, compSlug } from "../slugs";
 import { isLiveSt } from "./utils";
+// Match Centre S05 (M2): the server-side hero-portrait lookup moved here
+// from seo/router.ts (verbatim — the v13.205-lcpreveal SSR mirror, now the
+// shared data-selection helper both the homepage mirror and the match-centre
+// hero projection read; see the full heritage comment at the map below).
+import { HERO_COVERAGE_RAW } from "../hero-coverage";
 
 export interface SeoCtx {
   env: Env;
@@ -121,6 +126,25 @@ export function isBigForSeo(m: any, top3: Record<string, Set<string>>): boolean 
 export interface SeoMatch {
   raw: any;      // pool row (status/score truth)
   s: any;        // shaped (pubMatch) row for display
+}
+
+// v13.205-lcpreveal (F-C1, Phase 3): the server-side hero-portrait lookup.
+// Mirrors the client's heroArtFor() contract (public-13.68.js:
+// HERO_ART[e.name]||HERO_ART[e.faName]) using hero-coverage.ts — the
+// GENERATED mirror of the bundle's HERO_ART map (sync-hero-coverage.js,
+// drift-gated by check-hero-coverage in npm test), so the SSR decision and
+// the client putPort decision can never disagree.
+// Match Centre S05 (M2): relocated VERBATIM from seo/router.ts (the homepage
+// .mc-port SSR mirror keeps reading it via its ./data import) so the
+// match-centre hero projection (pages.ts matchHeroInput) can read the SAME
+// lookup without a router→pages import cycle — one coverage decision for
+// every SSR surface. Pure map read: zero KV, zero fetch.
+const HERO_ART_SSR = new Map<string, string>();
+for (const w of HERO_COVERAGE_RAW.wired) HERO_ART_SSR.set(w.name, w.src);
+export function heroArtSrv(t: any): string | null {
+  if (!t) return null;
+  const a = HERO_ART_SSR.get(t.name) || HERO_ART_SSR.get(t.faName);
+  return a || null;
 }
 
 const PLAYABLE_FUTURE = (raw: any, now: number) =>

@@ -10,7 +10,7 @@ import { esc, faTime, faDateD1, faDateD2, tehranDayKey, utcTime, statusLabelFa, 
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm, teamSeasonRecord } from "./data";
+import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm, teamSeasonRecord, heroArtSrv } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -123,6 +123,22 @@ function crestHtml(t: any): string {
   return '<span class="mcrest mcrest-mono" aria-hidden="true">' + esc(mono) + "</span>";
 }
 
+// Match Centre S05 (M2): the hero portrait atom — the both-or-neither
+// cinematic face-off (specification §5 Player portraits, decisions 7/8/85).
+// The shared heroArtSrv data helper (seo/data.ts — the SAME coverage
+// decision the homepage .mc-port SSR mirror reads) resolves each side's
+// library portrait from HERO_COVERAGE_RAW; the projection passes EITHER two
+// atoms or none (the composer re-enforces the law). The <img> rides the
+// .mc-port SSR vocabulary (lazy + async + no-referrer — the v13.205 mirror);
+// the onerror is a PURE DOM walk that removes BOTH portraits when either
+// image fails (decision 85: hide both, fall back to the S04 no-portrait
+// scoreboard — no retry, no fetch, no timer). Decorative alt="" — the team
+// names sit directly below (the crest alt="" precedent).
+function portraitHtml(src: string): string {
+  return '<img class="mport" src="' + esc(src) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="88" height="88" ' +
+    "onerror=\"var h=this.closest('.mcentre-hero');if(h)h.querySelectorAll('.mport').forEach(function(x){x.remove()})\">";
+}
+
 function gcalBasic(iso: string, plusHours: number): string {
   const d = new Date(Date.parse(iso) + plusHours * 3600 * 1000);
   return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -139,7 +155,7 @@ function venueMapLink(m: any, labelPrefix: string): string {
   return '<a class="mvenue mvenue-map" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=' + q + '">' + labelPrefix + esc(shown) + ' <span class="mven-arrow" aria-hidden="true">↗</span><span class="sr-only"> — نمایش روی نقشه</span></a>';
 }
 
-// ---- v13.81-matchpage → Match Centre S04 (M2): the hero's data projection ----
+// ---- v13.81-matchpage → Match Centre S04/S05 (M2): the hero's data projection ----
 // (the v13.81 "big match" treatment note lives above, on the atoms block)
 // S04: the hero MARKUP is owned by src/seo/match-centre.ts (matchHeroHtml —
 // the mcentre-hero composer render; audit §12). THIS projection computes
@@ -149,6 +165,13 @@ function venueMapLink(m: any, labelPrefix: string): string {
 // link — each PRE-ESCAPED (the composer is a pure leaf with no imports, so
 // it never needs esc itself; zero new data work by construction). The
 // lifecycle gates below are byte-for-byte the legacy ones.
+// S05: the projection additionally resolves the both-or-neither portraits
+// via heroArtSrv (the shared data-layer lookup — pure map read, zero KV /
+// fetch; the same call the homepage .mc-port mirror makes) and upgrades the
+// kickoff atoms to the Q1=A Tehran + UTC presentation (decisions 93/94/95:
+// the tznote/utcnote spans mirror fullWhenHtml's vocabulary; the date line
+// becomes the D1 full localized date). The h1/answer/facts-table surfaces
+// keep their own D2/fullWhenHtml shapes — untouched GSC surfaces.
 function matchHeroInput(sm: SeoMatch): MatchHeroInput {
   const m = sm.s;
   const emblem = m.competition && m.competition.emblem;
@@ -156,6 +179,12 @@ function matchHeroInput(sm: SeoMatch): MatchHeroInput {
   const finished = String(sm.raw.status || "").toUpperCase() === "FINISHED";
   const scored = (live || finished) && m.score && m.score.home != null;
   const roundTxt = m.roundFa || "";
+  // S05 both-or-neither (decisions 7/8): BOTH clubs must carry library
+  // portrait coverage — one covered side alone renders NO portrait at all
+  // (the composer enforces the same law again on the atoms).
+  const hArt = heroArtSrv(m.homeTeam);
+  const aArt = heroArtSrv(m.awayTeam);
+  const ports = hArt && aArt ? { h: portraitHtml(hArt), a: portraitHtml(aArt) } : null;
   // the chip's inner content — emblem omitted when unavailable, never an
   // empty image frame (decision 98); the <a> keeps the competition hub link.
   const compHtml = (emblem ? '<img class="mcomplogo" src="' + esc(emblem) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' : "") +
@@ -163,15 +192,24 @@ function matchHeroInput(sm: SeoMatch): MatchHeroInput {
     (roundTxt ? " · " + esc(roundTxt) : "");
   return {
     compHtml,
-    home: { crestHtml: crestHtml(m.homeTeam), nameHtml: M.nameHtml(faName(m.homeTeam)) },
-    away: { crestHtml: crestHtml(m.awayTeam), nameHtml: M.nameHtml(faName(m.awayTeam)) },
+    home: { crestHtml: crestHtml(m.homeTeam), nameHtml: M.nameHtml(faName(m.homeTeam)), portraitHtml: ports ? ports.h : "" },
+    away: { crestHtml: crestHtml(m.awayTeam), nameHtml: M.nameHtml(faName(m.awayTeam)), portraitHtml: ports ? ports.a : "" },
     live,
     finished,
     scored,
     scoreTxt: scored ? scoreStr(m.score) : "",
     liveTxt: esc(statusFaOf(sm)) + (m.minute != null ? " (" + toFaDigits(String(m.minute)) + "ʹ)" : ""),
-    kickTimeHtml: '<time datetime="' + esc(m.utcDate) + '">' + toFaDigits(faTime(m.utcDate)) + "</time>",
-    kickDateHtml: esc(faDateD2(m.utcDate)),
+    // S05 (Q1=A, decisions 93/94): the Tehran wall-clock time keeps its
+    // prominent <time> (24h, Persian digits) and gains the display-TZ label
+    // + the Latin UTC island — fullWhenHtml's exact tznote/utcnote vocabulary
+    // (the facts-table «تاریخ» row), hero-scoped; <time datetime> stays the
+    // Gregorian ISO (SS-27). No new JS — option B stays available to the owner.
+    kickTimeHtml: '<time datetime="' + esc(m.utcDate) + '">' + toFaDigits(faTime(m.utcDate)) + '</time> <span class="tznote">' + esc(SEO.DISPLAY_TZ_LABEL) + '</span> <span class="utcnote" dir="ltr">' + esc(m.utcDate.slice(11, 16) + " UTC") + "</span>",
+    // S05 (decision 95): the D1 full localized date — «شنبه ۱۵ آبان ۱۴۰۵
+    // (۵ نوامبر ۲۰۲۶)» — the same Jalali+Gregorian calendar shape the facts
+    // table carries (one date vocabulary across the page; the compact D2
+    // stays on the h1/list rows — their GSC surfaces are frozen).
+    kickDateHtml: esc(faDateD1(m.utcDate)),
     // countdown mount only for upcoming matches (JS fills .mcount; hidden
     // until then) — preserved exactly (decision 92: no new countdown dep).
     countHtml: !live && !finished ? '<div class="mcount" data-kickoff="' + esc(m.utcDate) + '" hidden></div>' : "",
