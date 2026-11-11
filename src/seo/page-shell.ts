@@ -287,6 +287,37 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
 .mact-cal{background:rgba(94,160,255,.13);border-color:rgba(94,160,255,.4)}
 @media (max-width:560px){.matchhead{grid-template-columns:1fr 1fr;grid-template-areas:"home away" "center center";padding:14px 8px}.mteam{grid-area:home}.mteam.away{grid-area:away}.mcenter{grid-area:center;margin-top:8px}.mcrest{width:48px;height:48px}}
 @media (prefers-reduced-motion:reduce){.mdot{animation:none}}
+/* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
+   mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
+   effect on any page without a mcentre-* section. Breakpoints and tokens are
+   the design system's own (public-13.87.css: 600px = the site's mobile
+   breakpoint; 1080px = the wide threshold where .page-col widens 760→1400px);
+   no new colors, fonts or components. CSS logical properties ONLY, so the
+   native-Persian RTL composition mirrors cleanly into a deliberate English
+   LTR adaptation if dir ever flips (decision 2; the homepage's fa/en pattern). */
+/* Section rhythm (spec §4, decision 78): the page's MACRO rhythm lives on the
+   sections; the cards inside keep their own micro-rhythm (.card margin 14px).
+   The bare <section> wrapper is a margin-collapse conduit, so this rule WINS
+   the collapsed chain (28px = exactly 2× the 14px card rhythm on the design
+   system's own scale) instead of adding to the inner margins — no
+   double-spacing, and it degrades gracefully if a later session's builder
+   ever carries a larger inner margin. Adjacent-sibling so the first section
+   stays flush with the h1 block and an omitted section (the no-empty-cards
+   law) never strands a gap. */
+section[id^="mcentre-"]+section[id^="mcentre-"]{margin-block-start:28px}
+@media (max-width:600px){section[id^="mcentre-"]+section[id^="mcentre-"]{margin-block-start:20px}}
+/* The two-column→one-column collapse (spec §4, decisions 75–77): the pairing
+   grid the section builders wrap their internal pairs in (S07 briefing|
+   facts panel, S12 home|away form). Two tracks ONLY at the wide threshold —
+   .page-col is 1400px there, giving each track a comfortable measure — and
+   ONE column below it ("collapse to one column relatively early", decision
+   77), so intermediate widths never squeeze a pair into the 760px column.
+   RTL-neutral: grid auto-flow follows document direction. minmax(0,1fr)
+   tracks + min-width:0 children keep long team names from blowing out the
+   grid (overflow-wrap does the wrapping). */
+.mcentre-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.mcentre-cols>*{min-width:0}
+@media (min-width:1080px){.mcentre-cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 ${opts.head}
 </head>

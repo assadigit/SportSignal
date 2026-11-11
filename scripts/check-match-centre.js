@@ -23,6 +23,13 @@
 //      (hydrateMatchVenue, loadArchive, fullByCodeFor).
 //   5. HARNESS — worker-src.js carries the seo/match-centre.ts order entry
 //      (the co-evolution law) and package.json's test chain runs this file.
+//   6. S03 FOUNDATION — the responsive/spacing/RTL layer: the page-shell
+//      inline style block carries the mcentre foundation (section macro
+//      rhythm + the .mcentre-cols two-column→one-column collapse utility),
+//      scoped to the mcentre vocabulary, on the design system's own
+//      600px/1080px breakpoints, logical properties only, no new tokens,
+//      and the S02 wrapper stays attribute-only (S03 is CSS-only — the
+//      page body is byte-identical).
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -154,6 +161,45 @@ check(harnessSrc.indexOf('"seo/match-centre.ts"') > -1 && harnessSrc.indexOf('"s
 const pkg = JSON.parse(read("package.json"));
 check(String(pkg.scripts.test).includes("node scripts/check-match-centre.js"),
   "harness: package.json test chain runs check-match-centre.js");
+
+// ---------- 6. S03 (M1): the responsive/spacing/RTL foundation ----------
+// The foundation is a CSS-only extension of the page-shell's shared inline
+// <style> block (the ADR-006 pattern: no asset renames, no sw.js bump). It
+// is scoped to the mcentre vocabulary (id attribute selector + the
+// .mcentre-cols class), so every other SEO page ships the bytes but never
+// matches a rule — rendering unchanged by construction.
+const styleStart = shellSrc.indexOf("<style>");
+const styleEnd = shellSrc.indexOf("</style>", styleStart);
+const styleBlock = styleStart >= 0 && styleEnd > styleStart ? shellSrc.slice(styleStart, styleEnd) : "";
+const s03Idx = styleBlock.indexOf("Match Centre S03");
+const s03 = s03Idx >= 0 ? styleBlock.slice(s03Idx) : "";
+check(s03.length > 0,
+  "S03: the page-shell style block carries the Match Centre foundation (marked 'Match Centre S03', after the S02 component styles)");
+// (a) section rhythm — the macro rhythm lives ON the sections
+check(s03.includes('section[id^="mcentre-"]+section[id^="mcentre-"]{margin-block-start:28px}'),
+  "S03 rhythm: adjacent mcentre sections get macro spacing (28px = 2× the 14px card micro-rhythm; the rule WINS the collapsed chain — no double-spacing; first section stays flush with the h1 block)");
+check(s03.includes('@media (max-width:600px){section[id^="mcentre-"]+section[id^="mcentre-"]{margin-block-start:20px}}'),
+  "S03 rhythm: tighter at the design system's own 600px mobile breakpoint (28→20px, decision 78 adaptive spacing)");
+// (b) the two-column→one-column collapse utility (spec §4, decisions 75–77)
+check(s03.includes(".mcentre-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}"),
+  "S03 collapse: the .mcentre-cols pairing grid is ONE column by default (601–1079px never squeeze a pair into the 760px page-col)");
+check(s03.includes('@media (min-width:1080px){.mcentre-cols{grid-template-columns:repeat(2,minmax(0,1fr))}}'),
+  "S03 collapse: two tracks ONLY at the 1080px wide threshold (.page-col widens 760→1400px there) — collapse relatively early, decision 77");
+check(s03.includes(".mcentre-cols>*{min-width:0}"),
+  "S03 collapse: min-width:0 grid children — long team names wrap (overflow-wrap), never blow out the tracks");
+// (c) the breakpoint discipline: only the design system's own widths
+const s03Medias = s03.match(/@media[^{]+/g) || [];
+check(s03Medias.length === 2 && s03Medias.every((x) => /max-width:600px|min-width:1080px/.test(x)),
+  "S03 breakpoints: exactly the design system's own two (600px rhythm tightening + 1080px cols pairing; public-13.87.css) — no invented widths (spec §4)");
+// (d) the direction discipline: logical properties only
+check(!/margin-left|margin-right|padding-left|padding-right|text-align:\s*(left|right)|\bleft:|\bright:|float:/.test(s03),
+  "S03 RTL/LTR: CSS logical properties only (margin-block-start, minmax tracks) — the native-Persian RTL foundation mirrors cleanly under a dir flip (decision 2)");
+// (e) the token discipline: spacing/structure only — no new colors or fonts
+check(!/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsl\(|font-family|font-size/.test(s03),
+  "S03 tokens: no new colors, fonts or sizes — the foundation reuses the design system (spec §2: no new font/dependency)");
+// (f) S03 is CSS-only: the S02 wrapper shape is unchanged (zero body bytes)
+check(/return '<section id="' \+ def\.slot \+ '" aria-label="' \+ def\.label \+ '">' \+ inner \+ "<\/section>";/.test(mcSrc),
+  "S03 is CSS-only: the S02 section wrapper stays attribute-only (id + aria-label, no class hook) — the whole S03 diff rides the <style> block, the body is byte-identical");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

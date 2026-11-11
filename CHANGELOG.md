@@ -4,6 +4,62 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.256-mcfound — Match Centre S03 round + the M1 gate: responsive/spacing/RTL foundation; M1 complete with its first preview (`feat/match-centre`, 2026-11-11)
+
+**The Match Centre now has its responsive foundation.** S03 (M1's closing
+session) applies the existing design system to the `mcentre-*` section
+composition as a **CSS-only extension of the page-shell's shared inline
+`<style>` block** (the ADR-006 pattern — no asset renames, no `sw.js` bump):
+(1) the **section rhythm** — adjacent mcentre sections get a 28px macro
+spacing (exactly 2× the 14px card micro-rhythm on the design system's own
+scale; the rule wins the margin-collapse chain, so it never double-spaces),
+tightening to 20px at the site's own 600px mobile breakpoint (decision 78);
+(2) the **`.mcentre-cols` two-column→one-column collapse utility** — one
+column by default, two `minmax(0,1fr)` tracks ONLY at the 1080px wide
+threshold (where `.page-col` widens 760→1400px), collapsing "relatively
+early" below it (decisions 75–77) — the pairing grid S07 (briefing|facts)
+and S12 (home|away form) wrap their internal pairs in; `min-width:0`
+children keep long names from blowing out the tracks; (3) the **RTL/LTR
+discipline** — CSS logical properties only, so the native-Persian RTL
+composition mirrors cleanly under a dir flip (verified live: identical
+28px rhythm + zero overflow under `dir=ltr`). No new colors, fonts,
+components or breakpoints — everything reuses `public-13.87.css` tokens.
+
+**S03 touches no application TypeScript**: `src/seo/match-centre.ts` and
+`src/seo/pages.ts` are byte-unchanged (the id-scoped CSS needs no hook
+class — zero body bytes; the S02 wrapper stays attribute-only). Byte-proof
+against the S02 commit (`9e6c0c1`, base-worktree render diff under the
+same seeded KV): **the only delta on every page is the +2,285-byte CSS
+run** in the shared style block — `<head>` (title ladder, meta description,
+canonical, OG/Twitter, JSON-LD) and the entire `<body>` are byte-identical
+on all three lifecycle states + the long-Persian-names fixture, and 18
+unrelated routes are byte-identical (page-shell routes modulo the same
++2,285-byte run; the homepage, matches.json, feed.xml and calendar.ics
+outright; the sitemap index modulo its render-time `<lastmod>` stamps).
+The run is id-scoped (`section[id^="mcentre-"]` + `.mcentre-cols`), so
+every other SEO page ships the bytes but never matches a rule — rendering
+unchanged by construction, asserted on every route. Local smoke (seeded
+KV, three lifecycle states): 91/91 structural assertions incl. the five
+sections in registry order, the future slots still absent, the wrapper
+shape unchanged, and the four S03 rules shipping on every render;
+measured rhythm 28px/14px (inter/intra) at 1440px, 20px at 390px, zero
+horizontal overflow, the `.mcentre-cols` collapse verified at the exact
+1079/1080 boundary, icy-blue focus rings intact, no console errors.
+Harness co-evolution: `check-match-centre.js` gains the S03 group (10
+assertions — rhythm values, collapse contract, the design system's own
+600px/1080px breakpoints only, logical-property discipline, no new
+tokens, the CSS-only wrapper law); `npm test` exit 0 — **2,989 OK
+(baseline 2,979 + 10), 0 failures**. Zero new KV reads, provider
+requests, dependencies, client polling, asset renames or `sw.js` bumps.
+
+**M1 gate: the first Workers version preview.** Version triple moves
+`13.255-seospell` → **`13.256-mcfound`** (`src/config.ts` + `package.json`
++ `package-lock.json`, the check-version-sync gate); `wrangler versions
+upload` (never activated — production traffic stays on `13.255-seospell`)
+produces the milestone preview URL; read-only smoke against it (same-KV
+caveat respected). M1 (S02 shell + S03 foundation) is complete; next:
+M2/S04 — hero identity and lifecycle.
+
 # Match Centre S02 round, 2026-11-11 — route shell + semantic section anchors (M1 opens; `feat/match-centre`)
 
 **The Match Centre page structure now exists.** A new pure-composer module,

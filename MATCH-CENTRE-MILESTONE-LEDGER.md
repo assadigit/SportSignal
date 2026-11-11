@@ -7,12 +7,12 @@
 **Production target:** Worker `ucl-notifier` via `npx wrangler deploy` → `sportsignal.ir` (+ `football.sportsignal.ir`, `ucl-notifier.sportsignal.workers.dev` alias). Current deployment `88649642` / version `b48bae21` (2026-11-10T11:10:43Z). Rollback: `npx wrangler deployments list` → `npx wrangler rollback`.
 
 ## Current status
-- Current milestone: M1 — Page foundation (in progress)
-- Current session: S03 (next to start)
-- Last completed session: S02 — route shell and semantic structure (2026-11-11)
-- Last completed milestone: M0 — complete and **owner-approved 2026-11-11** (blanket approval of the presented audit/branch/deploy plan; all six §15 decision points resolved with the recommended options — see the M0 gate decision record below)
-- Next action: S03 — responsive, spacing and RTL/LTR foundation, on `feat/match-centre` (audit §16 row S03)
-- Production release: Not approved until S21 readiness gate; production deploy only at S22
+- Current milestone: M2 — Hero & navigation (next to open)
+- Current session: S04 (next to start)
+- Last completed session: S03 — responsive/spacing/RTL/LTR foundation + the M1 gate (2026-11-11)
+- Last completed milestone: M1 — Page foundation **complete** (S02 shell + S03 foundation; the M1-gate version preview uploaded and smoke-tested — see the deployment entry in the execution log)
+- Next action: S04 — hero identity and lifecycle (audit §16 row S04; finished scorers omitted per Q4=A)
+- Production release: Not approved until S21 readiness gate; production deploy only at S22 (production stays on `13.255-seospell`; the M1 preview version `13.256-mcfound` is uploaded but NEVER activated)
 
 ## M0 gate decision record (owner approval, 2026-11-11)
 
@@ -34,7 +34,7 @@ Override rule: Q1–Q4 are product choices tied to S05/S14/S18/S04 respectively;
 | Milestone | Status | Sessions | Commit SHAs | Preview deployment | Gate |
 |---|---|---|---|---|---|
 | M0 Discovery & execution plan | Complete — **approved 2026-11-11** | S00–S01 | `82ee82b` (extraction + audit) + approval docs commit | None (audit only) | Approved 2026-11-11 (blanket; Q1–Q6 recommended options) |
-| M1 Page foundation | In progress — S02 complete | S02–S03 | S02: see Sessions table below | Pending (first preview after S03) | Pending |
+| M1 Page foundation | Complete (S02+S03) | S02–S03 | S02: `9e6c0c1` + `ac13a1e`; S03: see Sessions table | **Done** — `wrangler versions upload` preview (`13.256-mcfound`, never activated; read-only smoke passed) | Passed 2026-11-11 (review evidence in the execution log; no owner approval required — next approval gate is M9) |
 | M2 Hero & navigation | Not started | S04–S06 | — | Pending | Pending |
 | M3 Summary & editorial system | Not started | S07–S09 | — | Pending | Pending |
 | M4 Standings | Not started | S10–S11 | — | Pending | Pending |
@@ -52,7 +52,7 @@ Override rule: Q1–Q4 are product choices tied to S05/S14/S18/S04 respectively;
 | S00 | Complete | `82ee82b` | Pushed to `origin/feat/match-centre` 2026-11-11, `ls-remote` verified | npm test baseline: exit 0, 2,961 OK, 0 failures | Package v1.2 extracted (README conflict → `MATCH-CENTRE-PACKAGE-README.md`); repo/design-system/docs audit; no code changes |
 | S01 | Complete | `82ee82b` | Pushed to `origin/feat/match-centre` 2026-11-11, `ls-remote` verified | npm test re-verified exit 0 | Data matrix, cost audit, dated-audit re-verification (scorers R2 corrected — finished scorers NOT in pool at HEAD), deploy/rollback/CI verified read-only; audit + ledger + log produced |
 | S02 | Complete | `9e6c0c1` | Pushed to `origin/feat/match-centre` 2026-11-11 via the one-shot token URL; `git ls-remote` verified (`9e6c0c193d…` = local HEAD; remote URL clean — token never persisted) | npm test exit 0 — 2,979 OK (baseline 2,961 + 18 new check-match-centre), 0 failures | Route shell + semantic section anchors; GSC surfaces byte-proven against a base-commit render diff (3 lifecycle states + 15 unrelated routes); zero new data work; no deploy |
-| S03 | Not started | — | — | — | |
+| S03 | Complete | this session's commit (finalized in the follow-up docs commit) | Pushed to `origin/feat/match-centre` 2026-11-11 via the one-shot token URL; `git ls-remote` verified (recorded in the follow-up docs commit) | npm test exit 0 — 2,989 OK (baseline 2,979 + 10 new check-match-centre S03 assertions), 0 failures | CSS-only foundation in the page-shell style block: 28/20px section rhythm + the .mcentre-cols 1080px collapse utility, logical properties only; byte-proof vs `9e6c0c1`: only delta = +2,285 B CSS run, body byte-identical, 18 unrelated routes verified; M1 gate: `13.256-mcfound` version preview uploaded (never activated) + read-only smoke |
 | S04 | Not started | — | — | — | Finished scorers omitted (Q4 = A, approved 2026-11-11) |
 | S05 | Not started | — | — | — | Kickoff rendering: Tehran + UTC note (Q1 = A, approved 2026-11-11; owner may switch to B before S05) |
 | S06 | Not started | — | — | — | |
