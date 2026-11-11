@@ -30,6 +30,24 @@
 //      600px/1080px breakpoints, logical properties only, no new tokens,
 //      and the S02 wrapper stays attribute-only (S03 is CSS-only — the
 //      page body is byte-identical).
+//   7. S04 HERO (M2) — specification §5, decisions 7–10/85/91–99, Q4=A: the
+//      hero MARKUP is owned by the composer (matchHeroHtml renders the
+//      mcentre-hero section — the legacy pages.ts matchHeadHtml is retired
+//      and pages.ts delegates via the matchHeroInput projection). Gated:
+//      the competition header line above the teams; the balanced face-off
+//      (home first = right under native RTL, away last, one shared side
+//      shape, «میزبان»/«میهمان» labels, no side color coding); the central
+//      scoreboard dominant across the three lifecycle states with the
+//      exact legacy state gates; upcoming = kickoff time + the untouched
+//      hidden .mcount mount (no new countdown dependency); live = score +
+//      status + minute with no extra live apparatus; finished = score +
+//      the «پایان بازی» status pill with NO scorer block (Q4=A — finished
+//      scorers are not in the data pool); the inner aria-label «خلاصه بازی"
+//      landmark preserved (S20 owns the a11y dedup); missing emblem/crest/
+//      venue/round never render empty frames; the page-shell style block's
+//      v13.81 hero presentation reworked in place (.mcentre-hero family)
+//      on the block's own tokens, logical properties only, .mvenue-map and
+//      the actions-row vocabulary untouched.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -110,15 +128,19 @@ check(withNav.indexOf('id="mcentre-hero"') < withNav.indexOf('id="mcentre-nav"')
 
 // ---------- 3. wiring: buildMatchPage delegates, GSC surfaces stay ----------
 let wiringOk = true;
-if (!/import \{ matchCentreMain \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import"); wiringOk = false; }
+if (!/import \{ matchCentreMain, matchHeroHtml, type MatchHeroInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml)"); wiringOk = false; }
 if (!/const main = matchCentreMain\(\{/.test(pagesSrc)) { bad("wiring: buildMatchPage no longer delegates its main assembly to matchCentreMain"); wiringOk = false; }
-if (!/hero: matchHeadHtml\(sm\) \+ matchActionsHtml\(sm, path\) \+ matchHeadScript\(\)/.test(pagesSrc)) { bad("wiring: the hero part is no longer the scoreboard head + actions + script"); wiringOk = false; }
+// Match Centre S04: the hero part is now the composer's matchHeroHtml render
+// (from the matchHeroInput projection) + the unchanged actions row + script.
+if (!/function matchHeroInput\(sm: SeoMatch\): MatchHeroInput \{/.test(pagesSrc)) { bad("wiring: the S04 hero data projection (matchHeroInput) is gone from pages.ts"); wiringOk = false; }
+if (!/hero: matchHeroHtml\(heroInput\) \+ matchActionsHtml\(sm, path\) \+ matchHeadScript\(\)/.test(pagesSrc)) { bad("wiring: the hero part is no longer the S04 hero render + actions + script"); wiringOk = false; }
+if (/function matchHeadHtml\(/.test(pagesSrc) || /class="matchhead"/.test(pagesSrc)) { bad("wiring: the legacy matchHeadHtml builder/marked-up still present after the S04 retirement"); wiringOk = false; }
 if (!/summary: whyBigHtml\(sm, ctx\) \+ facts \+ resultBlock/.test(pagesSrc)) { bad("wiring: the summary part no longer carries answercard + facts (+ result block)"); wiringOk = false; }
 if (!/form: formCard,/.test(pagesSrc)) { bad("wiring: the form part no longer carries the W/D/L strip"); wiringOk = false; }
 if (!/related: similarCard,/.test(pagesSrc)) { bad("wiring: the related part no longer carries the sibling-fixtures card"); wiringOk = false; }
 if (!/footerHook: related/.test(pagesSrc)) { bad("wiring: the footer-hook part no longer carries the related-links card"); wiringOk = false; }
-if (/matchHeadHtml\(sm\) \+ matchActionsHtml\(sm, path\) \+ matchHeadScript\(\) \+ whyBigHtml/.test(pagesSrc)) { bad("wiring: the old flat main concat is still present alongside the delegation"); wiringOk = false; }
-if (wiringOk) ok("wiring: buildMatchPage delegates the five parts to matchCentreMain (old flat concat gone)");
+if (/matchHeadHtml\(sm\) \+ matchActionsHtml/.test(pagesSrc)) { bad("wiring: the old flat hero assembly is still present alongside the delegation"); wiringOk = false; }
+if (wiringOk) ok("wiring: buildMatchPage delegates the five parts to matchCentreMain — the hero rides matchHeroHtml(matchHeroInput) + the unchanged actions/script (legacy matchHeadHtml retired)");
 
 // GSC measurement surfaces — byte-for-byte, still assembled in pages.ts
 let gscOk = true;
@@ -200,6 +222,116 @@ check(!/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsl\(|font-family|font-size/.test(s03),
 // (f) S03 is CSS-only: the S02 wrapper shape is unchanged (zero body bytes)
 check(/return '<section id="' \+ def\.slot \+ '" aria-label="' \+ def\.label \+ '">' \+ inner \+ "<\/section>";/.test(mcSrc),
   "S03 is CSS-only: the S02 section wrapper stays attribute-only (id + aria-label, no class hook) — the whole S03 diff rides the <style> block, the body is byte-identical");
+
+// ---------- 7. S04 (M2): the hero — identity and lifecycle ----------
+// The hero markup is owned by the composer; every behavioral assertion below
+// runs the REAL module (required above — never re-implemented).
+const hSide = (name, crest) => ({ crestHtml: crest, nameHtml: '<span title="' + name + '">' + name + "</span>" });
+const heroBase = {
+  compHtml: '<a href="/competitions/premier-league">لیگ برتل انگلیس</a> · هفته ۱۲',
+  home: hSide("آرسنال", '<img class="mcrest" src="https://x/a.png">'),
+  away: hSide("دورتموند", '<span class="mcrest mcrest-mono" aria-hidden="true">د</span>'),
+  kickTimeHtml: '<time datetime="2026-11-14T20:00:00Z">۲۳:۳۰</time>',
+  kickDateHtml: "شنبه ۲۴ آبان (۱۴ نوامبر)",
+  countHtml: '<div class="mcount" data-kickoff="2026-11-14T20:00:00Z" hidden></div>',
+  venueHtml: '<a class="mvenue mvenue-map" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=x">🏟</a>'
+};
+const heroUpcoming = mc.matchHeroHtml({ ...heroBase, live: false, finished: false, scored: false, scoreTxt: "", liveTxt: "" });
+const heroLive = mc.matchHeroHtml({ ...heroBase, live: true, finished: false, scored: true, scoreTxt: "۲ – ۱", liveTxt: "در جریان (۶۷ʹ)", countHtml: "" });
+const heroFinished = mc.matchHeroHtml({ ...heroBase, live: false, finished: true, scored: true, scoreTxt: "۲ – ۱", liveTxt: "", countHtml: "" });
+
+// (a) the composer contract: matchHeroHtml + the projection interfaces
+check(typeof mc.matchHeroHtml === "function" && /export interface MatchHeroInput/.test(mcSrc) && /export interface MatchHeroSideInput/.test(mcSrc),
+  "S04 contract: matchHeroHtml + MatchHeroInput/MatchHeroSideInput exported (the pre-escaped projection — the composer stays import-free)");
+
+// (b) the hero landmark: the inner aria-label «خلاصه بازی» is PRESERVED
+// (check-stats v13.81 lineage; the near-duplicate with the summary section
+// stays until S20's a11y dedup).
+const heroOpen = '<section class="mcentre-hero" aria-label="خلاصه بازی">';
+check(heroUpcoming.startsWith(heroOpen) && heroLive.startsWith(heroOpen) && heroFinished.startsWith(heroOpen) && (heroUpcoming.match(/aria-label="خلاصه بازی"/g) || []).length === 1,
+  "S04 landmark: the hero opens <section class=\"mcentre-hero\" aria-label=\"خلاصه بازی\"> — the pinned inner landmark survives the rework (S20 owns the dedup)");
+
+// (c) competition header — the restrained line ABOVE the teams (decision 98)
+const compIdx = (h) => h.indexOf('<div class="mcentre-hero-comp">');
+const faceIdx = (h) => h.indexOf('<div class="mcentre-hero-face">');
+check(heroUpcoming.indexOf('<span class="mchip"><a href="/competitions/premier-league">') > -1 && compIdx(heroUpcoming) > -1 && compIdx(heroUpcoming) < faceIdx(heroUpcoming) &&
+  [heroLive, heroFinished].every((h) => compIdx(h) > -1 && compIdx(h) < faceIdx(h)),
+  "S04 comp header: the .mchip line renders above the face-off in every state (compact, secondary to teams and score — decision 98)");
+
+// (d) the balanced face-off: home FIRST (right under native Persian RTL),
+// away LAST (left); one shared side shape — [label, name, crest]; the subtle
+// role labels; no side-specific color/decoration (decision 96/97).
+const sideRe = /<div class="mteam(?: away)?"><div class="mside-lbl">([^<]+)<\/div><div class="mname">[\s\S]*?<\/div>[\s\S]*?<\/div>/g;
+function sidesOf(h) { const out = []; let m; sideRe.lastIndex = 0; while ((m = sideRe.exec(h)) !== null) out.push(m[1]); return out; }
+check(JSON.stringify(sidesOf(heroUpcoming)) === JSON.stringify(["میزبان", "میهمان"]) &&
+  heroUpcoming.indexOf('<div class="mteam"><div class="mside-lbl">میزبان</div>') < heroUpcoming.indexOf('<div class="mcenter">') &&
+  heroUpcoming.indexOf('<div class="mcenter">') < heroUpcoming.indexOf('<div class="mteam away"><div class="mside-lbl">میهمان</div>') &&
+  heroUpcoming.indexOf('mcrest-mono') > -1 && heroUpcoming.indexOf('class="mcrest"') > -1,
+  "S04 face-off: home (میزبان, first → right in RTL) and away (میهمان, last → left) share one side shape — label, name, crest both visible; crest <img> and the mono fallback render");
+
+// (e) lifecycle — upcoming: kickoff time near the scoreboard + the full date
+// + the hidden .mcount mount preserved exactly (decision 92); no score/status.
+check(heroUpcoming.includes('<div class="mkick"><time datetime="2026-11-14T20:00:00Z">۲۳:۳۰</time></div>') &&
+  heroUpcoming.includes('<div class="mkickdate">شنبه ۲۴ آبان (۱۴ نوامبر)</div>') &&
+  heroUpcoming.includes('<div class="mcount" data-kickoff="2026-11-14T20:00:00Z" hidden></div>') &&
+  !/mscore|mlive|mfin/.test(heroUpcoming),
+  "S04 upcoming: prominent kickoff time + full localized date + the untouched hidden-until-filled .mcount (no countdown dependency); no score/status invented");
+
+// (f) lifecycle — live: score + status + minute in the hero; NO extra live
+// apparatus (decision 90) and no countdown mount (the legacy gate, byte-faithful).
+check(heroLive.includes('<div class="mscore" aria-label="در جریان">۲ – ۱</div>') &&
+  heroLive.includes('<div class="mlive"><span class="mdot" aria-hidden="true"></span>در جریان (۶۷ʹ)</div>') &&
+  !heroLive.includes("mcount") && !heroLive.includes("mfin") && heroLive.includes('<div class="mkickdate">'),
+  "S04 live: score (aria-labelled) + the .mlive status with the retained minute — no live strip, event timeline, minute component or extra live statistics; no .mcount");
+
+// (g) lifecycle — finished: the final score dominant + the clear «پایان بازی»
+// status pill; NO scorer block (Q4=A — finished scorers are not in the data
+// pool; nothing below the hero is invented) and no countdown.
+check(heroFinished.includes('<div class="mscore">۲ – ۱</div>') &&
+  heroFinished.includes('<div class="mfin">پایان بازی</div>') &&
+  !heroFinished.includes("mcount") && !heroFinished.includes("mlive") &&
+  !/گلزن|scorer/.test(heroFinished),
+  "S04 finished: final score + the «پایان بازی» status pill; NO scorer block ever renders (Q4=A) and no countdown");
+
+// (h) same core identity across the three states (decision 10): the comp
+// header + face-off + center column + date + venue ride every state.
+check([heroUpcoming, heroLive, heroFinished].every((h) =>
+  h.startsWith(heroOpen) && compIdx(h) < faceIdx(h) && h.includes('<div class="mcenter">') && h.includes('<div class="mkickdate">') && h.includes("mvenue-map")),
+  "S04 identity: the same hero framework across upcoming/live/finished (comp header, face-off, central scoreboard, date, venue)");
+
+// (i) missing-data states — never an empty frame, never an invented fact:
+// missing emblem → no <img> in the chip; missing venue → no .mvenue element;
+// unscored (missing score) → the kickoff-time branch, no empty .mscore.
+const heroNoEmblem = mc.matchHeroHtml({ ...heroBase, compHtml: '<a href="/competitions/pl">لیگ برتل</a>', live: false, finished: false, scored: false, scoreTxt: "", liveTxt: "" });
+const heroNoVenue = mc.matchHeroHtml({ ...heroBase, venueHtml: "", live: true, finished: false, scored: true, scoreTxt: "۱ – ۱", liveTxt: "در جریان" });
+const chipSeg = heroNoEmblem.slice(compIdx(heroNoEmblem), faceIdx(heroNoEmblem));
+check(!chipSeg.includes("<img") && chipSeg.includes('<span class="mchip"><a href="/competitions/pl">') &&
+  !heroNoVenue.includes("mvenue") && heroNoVenue.includes('<div class="mscore" aria-label="در جریان">۱ – ۱</div>'),
+  "S04 missing-data: emblem-less chip renders link-only (no empty image frame); venue-less hero drops the .mvenue element entirely");
+
+// (j) the page-shell S04 presentation: the v13.81 hero block reworked in
+// place — the container family, the dominant scoreboard scale, the finished
+// pill, the retired .mkicksub; the shared .mvenue-map/.mact vocabulary and
+// the .mdot reduced-motion guard untouched.
+check(shellSrc.includes(".mcentre-hero{background:linear-gradient(160deg,rgba(56,132,255,.10),rgba(56,132,255,.03) 55%,rgba(148,163,184,.05));border:1px solid rgba(94,160,255,.28);border-radius:18px;") &&
+  shellSrc.includes(".mcentre-hero-comp{display:flex;justify-content:center;padding-block-end:12px}") &&
+  shellSrc.includes(".mcentre-hero-face{display:grid;grid-template-columns:1fr minmax(150px,auto) 1fr;align-items:center;gap:10px}"),
+  "S04 CSS: the .mcentre-hero container carries the v13.81 card treatment byte-for-byte (no new colors) + the comp line + the three-track face-off grid");
+check(shellSrc.includes(".mscore{font-size:clamp(2.1rem,6vw,3.1rem);font-weight:800;") &&
+  shellSrc.includes(".mkick{font-size:clamp(2rem,5.5vw,2.9rem);font-weight:800;") &&
+  shellSrc.includes(".mfin{display:inline-flex;align-items:center;gap:7px;font-size:.84rem;font-weight:700;color:#7dd3fc;background:rgba(125,211,252,.10);border:1px solid rgba(125,211,252,.28);border-radius:999px;padding:3px 12px}") &&
+  !/\.mkicksub\{/.test(shellSrc),
+  "S04 CSS: dominant display numerals (.mscore/.mkick tiers) + the .fin «پایان بازی» pill in the block's own sky family; the .mkicksub rule retired (only the comment that documents the retirement remains)");
+check(/@media \(max-width:560px\)\{\.mcentre-hero\{padding:14px 8px\}\.mcentre-hero-comp\{padding-block-end:8px\}\.mcentre-hero-face\{grid-template-columns:1fr 1fr;grid-template-areas:"home away" "center center"\}/.test(shellSrc) &&
+  shellSrc.includes('.mcenter{grid-area:center;margin-block-start:8px}') && shellSrc.includes(".mcrest{width:48px;height:48px}") &&
+  /@media \(prefers-reduced-motion:reduce\)\{\.mdot\{animation:none\}\}/.test(shellSrc) &&
+  /a\.mvenue-map\{/.test(shellSrc) && /\.mact\{/.test(shellSrc) && /\.mactions\{/.test(shellSrc),
+  "S04 CSS: the 560px stacking (home|away row, center below) co-evolved to the new selectors, logical properties; .mdot reduced-motion + the shared .mvenue-map/.mact vocabulary untouched");
+// (k) the S04-touched selectors use CSS logical properties only — no physical
+// left/right anywhere in the new container/comp/face/stacking rules.
+const s04Lines = (shellSrc.match(/\.mcentre-hero\{[^}]*\}|\.mcentre-hero-comp\{[^}]*\}|\.mcentre-hero-face\{[^}]*\}|@media \(max-width:560px\)\{\.mcentre-hero\{[^}]*\}\.mcentre-hero-comp\{[^}]*\}\.mcentre-hero-face\{[^}]*\}\.mteam\{grid-area:home\}\.mteam\.away\{grid-area:away\}\.mcenter\{[^}]*\}\.mcrest\{[^}]*\}\}/g) || []).join("");
+check(s04Lines.length > 0 && !/margin-left|margin-right|padding-left|padding-right|text-align:\s*(left|right)|\bleft:|\bright:|float:/.test(s04Lines),
+  "S04 RTL/LTR: the S04-touched hero rules are logical-property-only — the native-Persian RTL hero mirrors cleanly under a dir flip (decision 2)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

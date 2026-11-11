@@ -4,6 +4,80 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# Match Centre S04 round, 2026-11-11 — hero identity + lifecycle (M2 opens; `feat/match-centre`)
+
+**The match hero is now the composer's.** Per the audit §12 file plan, hero
+ownership moves to `src/seo/match-centre.ts`: `matchHeroHtml()` renders the
+`mcentre-hero` content from a `matchHeroInput` projection, `pages.ts`
+retires the legacy `matchHeadHtml()` and delegates (the composer stays the
+S02 pure leaf — zero imports, zero KV, zero client scripts; every
+data-bearing string arrives pre-escaped from the projection). The hero per
+specification §5 + decisions 96–98: the **competition chip promoted above
+the teams** (`.mcentre-hero-comp` — a compact, restrained line secondary to
+teams and score; emblem omitted when unavailable, never an empty frame);
+the **balanced face-off** (`.mcentre-hero-face` three-track grid — home
+first = right under the native Persian RTL, away last = left, one shared
+side shape [label → name → crest] so the two teams are equal by
+construction, subtle «میزبان»/«میهمان» labels, no side color coding); the
+**dominant central scoreboard** (`.mscore`/`.mkick` raised to
+clamp(2.1rem,6vw,3.1rem)/clamp(2rem,5.5vw,2.9rem) display tiers). The
+lifecycle variants reuse the legacy state gates byte-for-byte: upcoming =
+the prominent kickoff time + the full localized date + the hidden-until-
+filled `.mcount` mount preserved exactly (decision 92 — no new countdown
+dependency); live = score + the `.mlive` status with the retained minute
+(decision 90 — no live strip/timeline/minute-component/extra stats, no
+polling); finished = the dominant final score + the new **«پایان بازی»
+status pill** (`.mfin`, the `.mcount` sky family — the retired
+`.mkicksub` label was the generic «پایان‌یافته»), and **NO scorer block
+ever renders (Q4=A: finished scorers are not in the data pool)**. The
+pinned inner landmark `aria-label="خلاصه بازی"` survives the rework on the
+new `<section class="mcentre-hero">` (the near-duplicate with the summary
+section stays — S20 owns the a11y dedup). Date (`.mkickdate` — S05 owns
+the timezone/date rework, Q1=A) and the venue map link (`.mvenue` — S14
+owns the venue panel) carried over unchanged; the actions row + the inline
+countdown/copy script ride the hero part byte-identical. The presentation
+rework rides the page-shell's shared inline `<style>` block in place
+(ADR-006 — no asset renames, no `sw.js` bump) on the v13.81 block's own
+tokens, logical properties only, the hero's own 560px stacking breakpoint
+kept (home|away row, center below).
+
+**GSC byte-proof (two-server base-vs-new render diff against `440b9f8`,
+identical seeded local KV): on all three lifecycle states + the
+long-Persian-names fixture + both sibling pages, the `<head>` (title
+ladder, meta description, canonical, OG/Twitter, JSON-LD) is
+byte-identical modulo the shared style block, whose delta is confined
+exactly to the hero-rules region + the 560px stacking line (the
+`.mlive`→`.mvenue` tail round-trips byte-identical); the body is
+byte-identical before and after the hero region (answercard, facts table,
+form strip, related, footer-hook, global footer), the actions row +
+inline script are byte-identical, and the only body delta is the hero
+markup itself.** 13 unrelated routes byte-identical modulo the same CSS
+delta; `/api/matches.json`, `/healthz`, `/feed.xml`, `/calendar.ics`
+outright; the homepage (its own template, +0 B) outright; the sitemap
+index modulo its render-time `<lastmod>` stamps; the unknown-match 404
+identical. Local `wrangler dev` smoke with seeded local KV (rebuilt this
+session, outside the repo): 110/110 structural assertions incl. the new
+S04 group + the live page legitimately dropping the empty related card
+(the no-empty-cards law); layout verified at 390/768/1440px RTL **and**
+an LTR mirror — comp line centered above the teams, home right/away
+left, zero horizontal overflow everywhere, crests/names/score legible
+(46px kickoff / 50px score at desktop, 32px/34px at mobile), the sky
+focus ring intact, no console errors; screenshots captured. Page-size
+delta: +2,043 B CSS on every page-shell route + a +69–77 B hero-markup
+delta on match pages (upcoming 44,439→46,559 B under the seed). Zero new
+provider requests, KV reads/writes (`kv_writes_day 0` after the full
+matrix), client scripts, dependencies or asset renames; `buildMatchPage`'s
+three awaits unchanged. Harness co-evolution in the same commit:
+`check-match-centre.js` gains the S04 group (13 assertions — the composer
+contract via the REAL module, the landmark preservation, comp-header
+placement, the balanced face-off, the three lifecycle variants, the
+missing-data states, the CSS discipline) and re-pins the S02 wiring;
+`check-stats.js` walks the v13.81 matchhead pins to the new markup owner
+(the `mvenue` pin to the projection); `npm test` exit 0 — **3,002 OK
+(baseline 2,989 + 13), 0 failures**. Mid-milestone session: no version
+bump (stays `13.256-mcfound`), no deploy, no `sw.js` bump — the M2
+preview upload happens at the M2 gate after S06.
+
 # v13.256-mcfound — Match Centre S03 round + the M1 gate: responsive/spacing/RTL foundation; M1 complete with its first preview (`feat/match-centre`, 2026-11-11)
 
 **The Match Centre now has its responsive foundation.** S03 (M1's closing

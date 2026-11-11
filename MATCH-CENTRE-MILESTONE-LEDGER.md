@@ -7,12 +7,12 @@
 **Production target:** Worker `ucl-notifier` via `npx wrangler deploy` → `sportsignal.ir` (+ `football.sportsignal.ir`, `ucl-notifier.sportsignal.workers.dev` alias). Current deployment `88649642` / version `b48bae21` (2026-11-10T11:10:43Z). Rollback: `npx wrangler deployments list` → `npx wrangler rollback`.
 
 ## Current status
-- Current milestone: M2 — Hero & navigation (next to open)
-- Current session: S04 (next to start)
-- Last completed session: S03 — responsive/spacing/RTL/LTR foundation + the M1 gate (2026-11-11)
+- Current milestone: M2 — Hero & navigation (in progress)
+- Current session: S05 (next to start)
+- Last completed session: S04 — hero identity and lifecycle (2026-11-11)
 - Last completed milestone: M1 — Page foundation **complete** (S02 shell + S03 foundation; the M1-gate version preview uploaded and smoke-tested — see the deployment entry in the execution log)
-- Next action: S04 — hero identity and lifecycle (audit §16 row S04; finished scorers omitted per Q4=A)
-- Production release: Not approved until S21 readiness gate; production deploy only at S22 (production stays on `13.255-seospell`; the M1 preview version `13.256-mcfound` is uploaded but NEVER activated)
+- Next action: S05 — portrait fallback, timezone and date (audit §16 row S05; both-or-neither portraits via `heroArtSrv`; kickoff rendering per Q1=A — Tehran + UTC note stands unless the owner switches to B before S05)
+- Production release: Not approved until S21 readiness gate; production deploy only at S22 (production stays on `13.255-seospell`; the M1 preview version `13.256-mcfound` is uploaded but NEVER activated; mid-milestone sessions keep the version at `13.256-mcfound` — the M2 preview upload happens at the M2 gate after S06)
 
 ## M0 gate decision record (owner approval, 2026-11-11)
 
@@ -35,7 +35,7 @@ Override rule: Q1–Q4 are product choices tied to S05/S14/S18/S04 respectively;
 |---|---|---|---|---|---|
 | M0 Discovery & execution plan | Complete — **approved 2026-11-11** | S00–S01 | `82ee82b` (extraction + audit) + approval docs commit | None (audit only) | Approved 2026-11-11 (blanket; Q1–Q6 recommended options) |
 | M1 Page foundation | Complete (S02+S03) | S02–S03 | S02: `9e6c0c1` + `ac13a1e`; S03: `ce1befd` | **Done** — Workers version preview `8053ea4c-d4ed-4224-9f3d-c61aca10ced9` (`13.256-mcfound`, https://8053ea4c-ucl-notifier.sportsignal.workers.dev; uploaded NEVER activated — the provided token cannot generate D1 bindings, so the preview config omits the two optional D1 bindings, documented; read-only smoke passed) | Passed 2026-11-11 (review evidence + deployment entry in the execution log; no owner approval required — next approval gate is M9) |
-| M2 Hero & navigation | Not started | S04–S06 | — | Pending | Pending |
+| M2 Hero & navigation | In progress (S04 complete) | S04–S06 | S04: see the sessions table below | Pending (at the M2 gate after S06) | Pending |
 | M3 Summary & editorial system | Not started | S07–S09 | — | Pending | Pending |
 | M4 Standings | Not started | S10–S11 | — | Pending | Pending |
 | M5 Form & recent results | Not started | S12–S13 | — | Pending | Pending |
@@ -53,7 +53,7 @@ Override rule: Q1–Q4 are product choices tied to S05/S14/S18/S04 respectively;
 | S01 | Complete | `82ee82b` | Pushed to `origin/feat/match-centre` 2026-11-11, `ls-remote` verified | npm test re-verified exit 0 | Data matrix, cost audit, dated-audit re-verification (scorers R2 corrected — finished scorers NOT in pool at HEAD), deploy/rollback/CI verified read-only; audit + ledger + log produced |
 | S02 | Complete | `9e6c0c1` | Pushed to `origin/feat/match-centre` 2026-11-11 via the one-shot token URL; `git ls-remote` verified (`9e6c0c193d…` = local HEAD; remote URL clean — token never persisted) | npm test exit 0 — 2,979 OK (baseline 2,961 + 18 new check-match-centre), 0 failures | Route shell + semantic section anchors; GSC surfaces byte-proven against a base-commit render diff (3 lifecycle states + 15 unrelated routes); zero new data work; no deploy |
 | S03 | Complete | `ce1befd` | Pushed to `origin/feat/match-centre` 2026-11-11 via the one-shot token URL; `git ls-remote` verified (`ce1befd35d…` = local HEAD; remote URL clean — token never persisted) | npm test exit 0 — 2,989 OK (baseline 2,979 + 10 new check-match-centre S03 assertions), 0 failures | CSS-only foundation in the page-shell style block: 28/20px section rhythm + the .mcentre-cols 1080px collapse utility, logical properties only; byte-proof vs `9e6c0c1`: only delta = +2,285 B CSS run, body byte-identical, 18 unrelated routes verified; **M1 gate: version `13.256-mcfound` preview `8053ea4c-d4ed-4224-9f3d-c61aca10ced9` uploaded (NEVER activated) + read-only smoke passed** — see the deployment entry in the execution log (the token cannot generate D1 bindings: the preview config omits the two optional D1 bindings, documented; the S22 deploy needs a D1-capable token) |
-| S04 | Not started | — | — | — | Finished scorers omitted (Q4 = A, approved 2026-11-11) |
+| S04 | Complete | (recorded in the follow-up docs commit — the M0/S02/S03 precedent) | Pushed to `origin/feat/match-centre` 2026-11-11 via the one-shot token URL; `git ls-remote` verified (see the S04 execution-log entry) | npm test exit 0 — 3,002 OK (baseline 2,989 + 13 new check-match-centre S04 assertions), 0 failures; byte-proof 79/79 vs `440b9f8`; structural 110/110; RTL/LTR + 390/768/1440 layout matrix + screenshots | Hero ownership moved to the composer (matchHeroHtml + the matchHeroInput projection; legacy matchHeadHtml retired); comp header above teams; balanced RTL face-off; dominant scoreboard; upcoming/live/finished variants; «پایان بازی» pill; finished scorers omitted (Q4 = A); the pinned «خلاصه بازی» landmark preserved |
 | S05 | Not started | — | — | — | Kickoff rendering: Tehran + UTC note (Q1 = A, approved 2026-11-11; owner may switch to B before S05) |
 | S06 | Not started | — | — | — | |
 | S07 | Not started | — | — | — | Venue double-wording fix rides here (audit §5 R1) |

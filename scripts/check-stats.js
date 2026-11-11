@@ -457,14 +457,20 @@ const wsrc = require("./lib/worker-src")();
 // ---------- 10) v13.81-matchpage: the match destination + growth loop ----------
 const pagesSrc = read("src/seo/pages.ts");
 const shellSrc81 = read("src/seo/page-shell.ts");
-check("match page carries the scoreboard head (matchhead section)", /<section class="matchhead" aria-label="خلاصه بازی">/.test(pagesSrc));
+// Match Centre S04 (M2): the hero markup moved to the composer — the pins
+// that walked the legacy matchHeadHtml builder now read match-centre.ts
+// (the markup owner) alongside pages.ts (the projection owner). The pinned
+// landmark label «خلاصه بازی» is PRESERVED on the new inner hero section
+// (the near-duplicate with the summary section stays — S20 owns the dedup).
+const mcSrc81 = read("src/seo/match-centre.ts");
+check("match page carries the scoreboard head (the hero landmark, now mcentre-hero)", /'<section class="mcentre-hero" aria-label="خلاصه بازی">'/.test(mcSrc81) && !/class="matchhead"/.test(pagesSrc));
 check("matchhead renders both crests + monogram fallback", /function crestHtml\(t: any\)/.test(pagesSrc) && /class="mcrest"/.test(pagesSrc) && /mcrest-mono/.test(pagesSrc));
 check("match page countdown element only for upcoming (data-kickoff)", /class="mcount" data-kickoff="/.test(pagesSrc));
 check("match page countdown script ticks + Persian digits + kickoff stop", /querySelector\('\.mcount'\)/.test(pagesSrc) && /setTimeout\(tick,30000\)/.test(pagesSrc) && /\\u06F0\\u06F1/.test(pagesSrc));
 check("match page actions: calendar + whatsapp + telegram + copy", /mact-cal/.test(pagesSrc) && /wa\.me\/\?text=/.test(pagesSrc) && /t\.me\/share\/url\?url=/.test(pagesSrc) && /copyMatchLink/.test(pagesSrc));
 check("calendar link built from kickoff +2h basic format", /gcalBasic\(m\.utcDate, 0\) \+ "\/" \+ gcalBasic\(m\.utcDate, 2\)/.test(pagesSrc));
-check("match page styles present in page-shell (matchhead/mactions/mact)", /\.matchhead\{/.test(shellSrc81) && /\.mactions\{/.test(shellSrc81) && /\.mact\{/.test(shellSrc81));
-check("matchhead mobile stacking breakpoint (560px)", /@media \(max-width:560px\)\{\.matchhead/.test(shellSrc81));
+check("match page styles present in page-shell (mcentre-hero/mactions/mact)", /\.mcentre-hero\{/.test(shellSrc81) && /\.mactions\{/.test(shellSrc81) && /\.mact\{/.test(shellSrc81));
+check("hero mobile stacking breakpoint (560px — the hero's own pre-S04 width, kept by the S04 rework)", /@media \(max-width:560px\)\{\.mcentre-hero\{/.test(shellSrc81));
 check("matchhead live dot pulse guarded by prefers-reduced-motion", /@media \(prefers-reduced-motion:reduce\)\{\.mdot\{animation:none\}\}/.test(shellSrc81));
 check("v13.210-namefix (F-M3b close-out): the MOBILE card's curated aria-label RETIRES in the live bundle (same as the desktop card) \u2014 axe\u2019s label-content-name-mismatch only MATCHES aria-LABELED widgets and its visible-text walk counts every painted glyph, so the per-second ticking mc-cells digits can never sit inside ANY static accessible name; name-from-content is always content-matched, the rule\u2019s matches() gate never fires, and the dt/tm computation stays for the mc-date/mc-ko slots", !/e\.setAttribute\("aria-label",\(nm\(t\.homeTeam\)\|\|"\?"\)/.test(js62) && !/e\.setAttribute\("aria-label",hn\+/.test(js62) && /e\.setAttribute\("aria-label",hn\+/.test(read("assets/public-13.56.js")));
 check("heroH1Sync exists and runs at the end of renderHeroSpot (EN H1 fix; v13.134-typelight: fitHeroNames is BACK — the NEW 2-line auto-fit for the enlarged club names, a different routine from the retired v13.12x layer)", /function heroH1Sync\(\)/.test(js20) && /heroH1Sync\(\)\}\}/.test(js20) && /function fitHeroNames\(\)\{var els=document\.querySelectorAll\("\.hero-name"\)/.test(js20));
@@ -642,7 +648,7 @@ check("hydrateMatchVenue races a 5s guard so the render can never hang", /Promis
 check("hydrateMatchVenue patches sm.s.venue + venueFa (v13.86: curated first, then translateVenue)", /sm\.s\.venue = rec\.v;/.test(dataSrc82) && /sm\.s\.venueFa = curatedVenueFa\(rec\.v\) \|\| translateVenue\(rec\.v\) \|\| rec\.v;/.test(dataSrc82));
 // map link: the venue becomes a place
 check("venueMapLink targets Google Maps search (api=1, no key)", /https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/.test(pagesSrc) && /encodeURIComponent\(m\.venue \+ " stadium"\)/.test(pagesSrc));
-check("mvenue in the scoreboard head is the map link (not a dead div)", /if \(m\.venue\) center \+= venueMapLink\(m, "🏟/.test(pagesSrc));
+check("mvenue in the scoreboard head is the map link (not a dead div)", /venueHtml: m\.venue \? venueMapLink\(m, "🏟/.test(pagesSrc));
 check("facts-table venue row is the map link too", /rows\.push\(\["ورزشگاه", venueMapLink\(m, ""\)\]\)/.test(pagesSrc));
 check("venue map link is off-site safe (target _blank + noopener) with sr-only label", /target="_blank" rel="noopener" href="https:\/\/www\.google\.com\/maps/.test(pagesSrc) && /class="sr-only"> — نمایش روی نقشه<\/span>/.test(pagesSrc));
 // similar matches card

@@ -170,8 +170,26 @@ footer.pagesfoot a:hover{text-decoration:underline}
 .visitcount .vc-n{display:inline-block;min-width:3.4em;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:var(--fg,#e8eefc)}
 .visitcount .vc-sep{margin:0 6px;opacity:.5}
 .visitcount .vc-l{opacity:.85}
-/* ---- v13.81-matchpage: the scoreboard head + actions row ---- */
-.matchhead{display:grid;grid-template-columns:1fr minmax(150px,auto) 1fr;align-items:center;gap:10px;background:linear-gradient(160deg,rgba(56,132,255,.10),rgba(56,132,255,.03) 55%,rgba(148,163,184,.05));border:1px solid rgba(94,160,255,.28);border-radius:18px;padding:18px 14px;margin:12px 0 10px}
+/* ---- v13.81-matchpage → Match Centre S04 (M2): the mcentre-hero ----
+   The hero presentation: the legacy .matchhead card became the .mcentre-hero
+   block (src/seo/match-centre.ts renders the markup — matchHeroHtml — and
+   pages.ts delegates the data projection; audit §12). The competition chip
+   (.mchip) is promoted ABOVE the face-off (.mcentre-hero-comp) — a compact,
+   restrained line secondary to the teams and score (specification §5,
+   decision 98); the three-track face-off grid (.mcentre-hero-face) keeps
+   home right / away left under the native Persian RTL document order with
+   one shared side shape (decisions 96/97: balanced face-off, subtle
+   «میزبان»/«میهمان» labels, no additional team color coding); the central
+   scoreboard owns the dominant display numerals (.mscore/.mkick — decision
+   10: one core identity across the lifecycle), the live status keeps the
+   .mlive pulse (decisions 18/90: no extra live apparatus) and the finished
+   state gains the «پایان بازی» status pill (.mfin — the .mcount sky
+   family; NO scorer block: finished scorers are not in the data pool,
+   Q4=A). Background/border/radius/pill tokens are the v13.81 block's own;
+   CSS logical properties only, so a deliberate LTR mirror stays clean. */
+.mcentre-hero{background:linear-gradient(160deg,rgba(56,132,255,.10),rgba(56,132,255,.03) 55%,rgba(148,163,184,.05));border:1px solid rgba(94,160,255,.28);border-radius:18px;padding:18px 14px;margin-block:12px 10px}
+.mcentre-hero-comp{display:flex;justify-content:center;padding-block-end:12px}
+.mcentre-hero-face{display:grid;grid-template-columns:1fr minmax(150px,auto) 1fr;align-items:center;gap:10px}
 .mteam{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
 .mteam .mname{font-weight:800;font-size:clamp(.95rem,2.4vw,1.18rem);text-align:center;line-height:1.6;overflow-wrap:anywhere}
 .mteam .mside-lbl{font-size:.68rem;color:var(--muted,#9aa4b2);letter-spacing:.4px}
@@ -182,9 +200,15 @@ footer.pagesfoot a:hover{text-decoration:underline}
 .mchip a{color:inherit;text-decoration:none}
 .mchip a:hover{text-decoration:underline}
 .mcomplogo{width:15px;height:15px;object-fit:contain}
-.mkick{font-size:clamp(1.7rem,5vw,2.35rem);font-weight:800;font-variant-numeric:tabular-nums;line-height:1.25}
-.mscore{font-size:clamp(1.8rem,5vw,2.5rem);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:2px}
-.mkicksub{font-size:.8rem;color:var(--muted,#9aa4b2)}
+.mkick{font-size:clamp(2rem,5.5vw,2.9rem);font-weight:800;font-variant-numeric:tabular-nums;line-height:1.25}
+/* Match Centre S04: the central scoreboard's display numerals — dominant
+   (specification §5; the finished final score and the live score share this
+   scale, the upcoming kickoff time rides the .mkick tier just below it). */
+.mscore{font-size:clamp(2.1rem,6vw,3.1rem);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:2px}
+/* Match Centre S04: the finished «پایان بازی» status pill (decision 91 /
+   specification §5) — the .mcount/.mlive scale in the block's own sky
+   family; the retired .mkicksub showed the generic «پایان‌یافته» label. */
+.mfin{display:inline-flex;align-items:center;gap:7px;font-size:.84rem;font-weight:700;color:#7dd3fc;background:rgba(125,211,252,.10);border:1px solid rgba(125,211,252,.28);border-radius:999px;padding:3px 12px}
 .mkickdate{font-size:.82rem;color:var(--muted,#9aa4b2)}
 .mkickdate .jdate{opacity:.85}
 .mcount{font-size:.86rem;font-weight:700;color:#7dd3fc;background:rgba(125,211,252,.10);border:1px solid rgba(125,211,252,.28);border-radius:999px;padding:3px 12px;font-variant-numeric:tabular-nums}
@@ -285,7 +309,7 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
 .mact:hover{border-color:rgba(94,160,255,.55);background:rgba(94,160,255,.12)}
 .mact:active{transform:scale(.97)}
 .mact-cal{background:rgba(94,160,255,.13);border-color:rgba(94,160,255,.4)}
-@media (max-width:560px){.matchhead{grid-template-columns:1fr 1fr;grid-template-areas:"home away" "center center";padding:14px 8px}.mteam{grid-area:home}.mteam.away{grid-area:away}.mcenter{grid-area:center;margin-top:8px}.mcrest{width:48px;height:48px}}
+@media (max-width:560px){.mcentre-hero{padding:14px 8px}.mcentre-hero-comp{padding-block-end:8px}.mcentre-hero-face{grid-template-columns:1fr 1fr;grid-template-areas:"home away" "center center"}.mteam{grid-area:home}.mteam.away{grid-area:away}.mcenter{grid-area:center;margin-block-start:8px}.mcrest{width:48px;height:48px}}
 @media (prefers-reduced-motion:reduce){.mdot{animation:none}}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero

@@ -25,7 +25,10 @@ import { seoTeamFaName, seoTeamAltName } from "./team-names";
 // Match Centre S02 (M1): the section composer — buildMatchPage's main
 // assembly delegates to it (semantic section anchors, spec §3 order). The
 // GSC surfaces + every data load stay HERE (see match-centre.ts header).
-import { matchCentreMain } from "./match-centre";
+// Match Centre S04 (M2): the hero renderer — the mcentre-hero MARKUP moved
+// to the composer (matchHeroHtml); THIS file builds the data projection
+// (matchHeroInput) and delegates. The legacy matchHeadHtml is retired.
+import { matchCentreMain, matchHeroHtml, type MatchHeroInput } from "./match-centre";
 import { loadArchive } from "./files";
 // v13.89-stdetail: full-table sources for the competition pages — both
 // cache-only/reads-only (the seo layer never triggers a provider sweep).
@@ -100,13 +103,17 @@ function statusFaOf(sm: SeoMatch): string {
   return statusLabelFa(sm.raw.status || sm.s.status);
 }
 
-// ---- v13.81-matchpage: the scoreboard head + actions row ----
+// ---- v13.81-matchpage: the hero's content atoms + the actions row ----
 // The match page is where every homepage/list row now lands (v13.80 made
 // those links canonical), so the destination gets a proper "big match"
 // treatment: crests facing each other, kickoff + live countdown, and the
 // growth loop (calendar / WhatsApp / Telegram / copy — all carrying the
 // canonical URL). Server-rendered HTML + ONE tiny inline script; no new
 // asset, no client fetch.
+// Match Centre S04 (M2): the hero markup itself moved to the composer
+// (matchHeroHtml in src/seo/match-centre.ts); the atoms below feed its
+// matchHeroInput projection (crestHtml, venueMapLink) and the facts table
+// (venueMapLink) — shared vocabulary, one source of truth.
 
 function crestHtml(t: any): string {
   if (t && t.crest) {
@@ -132,37 +139,44 @@ function venueMapLink(m: any, labelPrefix: string): string {
   return '<a class="mvenue mvenue-map" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=' + q + '">' + labelPrefix + esc(shown) + ' <span class="mven-arrow" aria-hidden="true">↗</span><span class="sr-only"> — نمایش روی نقشه</span></a>';
 }
 
-function matchHeadHtml(sm: SeoMatch): string {
+// ---- v13.81-matchpage → Match Centre S04 (M2): the hero's data projection ----
+// (the v13.81 "big match" treatment note lives above, on the atoms block)
+// S04: the hero MARKUP is owned by src/seo/match-centre.ts (matchHeroHtml —
+// the mcentre-hero composer render; audit §12). THIS projection computes
+// every content atom from the same SeoMatch fields the legacy matchHeadHtml
+// read — comp chip content, side crests/names, lifecycle flags, score,
+// status+minute, kickoff time/date, the hidden countdown mount, the venue
+// link — each PRE-ESCAPED (the composer is a pure leaf with no imports, so
+// it never needs esc itself; zero new data work by construction). The
+// lifecycle gates below are byte-for-byte the legacy ones.
+function matchHeroInput(sm: SeoMatch): MatchHeroInput {
   const m = sm.s;
-  const compFa = M.compNameFa(m);
-  const compHref = "/competitions/" + compSlug(m.competition.code);
   const emblem = m.competition && m.competition.emblem;
   const live = /IN_PLAY|LIVE|PAUSED/i.test(String(sm.raw.status || ""));
   const finished = String(sm.raw.status || "").toUpperCase() === "FINISHED";
   const scored = (live || finished) && m.score && m.score.home != null;
   const roundTxt = m.roundFa || "";
-
-  // center column: comp chip → big time / score → date (+ jalali) → countdown
-  let center = '<span class="mchip">' + (emblem ? '<img class="mcomplogo" src="' + esc(emblem) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' : "") + '<a href="' + compHref + '">' + esc(compFa) + "</a>" + (roundTxt ? " · " + esc(roundTxt) : "") + "</span>";
-  if (scored) {
-    center += '<div class="mscore"' + (live ? ' aria-label="در جریان"' : "") + ">" + scoreStr(m.score) + "</div>";
-    if (live) center += '<div class="mlive"><span class="mdot" aria-hidden="true"></span>' + esc(statusFaOf(sm)) + (m.minute != null ? " (" + toFaDigits(String(m.minute)) + "ʹ)" : "") + "</div>";
-    else center += '<div class="mkicksub">' + esc(statusFaOf(sm)) + "</div>";
-  } else {
-    center += '<div class="mkick"><time datetime="' + esc(m.utcDate) + '">' + toFaDigits(faTime(m.utcDate)) + "</time></div>";
-  }
-  center += '<div class="mkickdate">' + esc(faDateD2(m.utcDate)) + "</div>";
-  // countdown only for upcoming matches (JS fills .mcount; hidden until then)
-  if (!live && !finished) {
-    center += '<div class="mcount" data-kickoff="' + esc(m.utcDate) + '" hidden></div>';
-  }
-  if (m.venue) center += venueMapLink(m, "🏟\uFE0F ");
-
-  return '<section class="matchhead" aria-label="خلاصه بازی">' +
-    '<div class="mteam">' + crestHtml(m.homeTeam) + '<div class="mname">' + M.nameHtml(faName(m.homeTeam)) + '</div><div class="mside-lbl">میزبان</div></div>' +
-    '<div class="mcenter">' + center + "</div>" +
-    '<div class="mteam away"><div class="mside-lbl">میهمان</div><div class="mname">' + M.nameHtml(faName(m.awayTeam)) + "</div>" + crestHtml(m.awayTeam) + "</div>" +
-    "</section>";
+  // the chip's inner content — emblem omitted when unavailable, never an
+  // empty image frame (decision 98); the <a> keeps the competition hub link.
+  const compHtml = (emblem ? '<img class="mcomplogo" src="' + esc(emblem) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' : "") +
+    '<a href="/competitions/' + compSlug(m.competition.code) + '">' + esc(M.compNameFa(m)) + "</a>" +
+    (roundTxt ? " · " + esc(roundTxt) : "");
+  return {
+    compHtml,
+    home: { crestHtml: crestHtml(m.homeTeam), nameHtml: M.nameHtml(faName(m.homeTeam)) },
+    away: { crestHtml: crestHtml(m.awayTeam), nameHtml: M.nameHtml(faName(m.awayTeam)) },
+    live,
+    finished,
+    scored,
+    scoreTxt: scored ? scoreStr(m.score) : "",
+    liveTxt: esc(statusFaOf(sm)) + (m.minute != null ? " (" + toFaDigits(String(m.minute)) + "ʹ)" : ""),
+    kickTimeHtml: '<time datetime="' + esc(m.utcDate) + '">' + toFaDigits(faTime(m.utcDate)) + "</time>",
+    kickDateHtml: esc(faDateD2(m.utcDate)),
+    // countdown mount only for upcoming matches (JS fills .mcount; hidden
+    // until then) — preserved exactly (decision 92: no new countdown dep).
+    countHtml: !live && !finished ? '<div class="mcount" data-kickoff="' + esc(m.utcDate) + '" hidden></div>' : "",
+    venueHtml: m.venue ? venueMapLink(m, "🏟\uFE0F ") : ""
+  };
 }
 
 function matchActionsHtml(sm: SeoMatch, path: string): string {
@@ -402,8 +416,14 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // summary stays the page's single answer/result zone; S07 owns this area
   // next. Everything above (title ladder, desc funnel, JSON-LD, trail) is
   // untouched — the GSC measurement surfaces stay byte-for-byte.
+  // Match Centre S04 (M2): the hero part — the composer's matchHeroHtml
+  // renders mcentre-hero from the matchHeroInput projection (the legacy
+  // matchHeadHtml is retired); the actions row + the inline countdown/copy
+  // script ride the hero part unchanged (their bytes and the three
+  // pre-existing awaits are untouched).
+  const heroInput = matchHeroInput(sm);
   const main = matchCentreMain({
-    hero: matchHeadHtml(sm) + matchActionsHtml(sm, path) + matchHeadScript(),
+    hero: matchHeroHtml(heroInput) + matchActionsHtml(sm, path) + matchHeadScript(),
     summary: whyBigHtml(sm, ctx) + facts + resultBlock,
     form: formCard,
     related: similarCard,

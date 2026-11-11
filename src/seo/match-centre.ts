@@ -19,8 +19,25 @@
 //   their own — the shell's .page-col stays the centered editorial
 //   container). S03 applies the design system (responsive/RTL/spacing);
 //   S04+ migrate the section builders into this module one session at a
-//   time (S04 hero, S06 nav, S07 facts layout, S10/S11 standings, S12 form
-//   lists, S14 venue, S15 schedule, S16 faq, S18 telegram).
+//   time (S04 hero — THIS session, S06 nav, S07 facts layout, S10/S11
+//   standings, S12 form lists, S14 venue, S15 schedule, S16 faq, S18
+//   telegram).
+//
+// S04 LAW (specification §5, decisions 7–10/85/91–99, Q4=A): the hero
+// renderer receives PRE-BUILT content atoms (every data-bearing string
+// arrives escaped/finished from pages.ts's matchHeroInput projection), so
+// this module stays the pure leaf the S02 cost law pinned — zero imports,
+// zero KV, zero client scripts. It owns the hero MARKUP: the competition
+// header line above the teams (decision 98), the balanced face-off (home
+// right / away left under Persian RTL, equal DOM shape both sides — decision
+// 96/97), the central scoreboard's lifecycle branch (decision 10: same core
+// identity across upcoming/live/finished; upcoming = kickoff time + the
+// untouched hidden .mcount mount, decision 92; live = score + status +
+// minute, no extra live apparatus, decision 90; finished = score + the
+// «پایان بازی» status, NO scorer block — Q4=A: finished scorers are not in
+// the data pool, so none is ever rendered). Portrait/atmosphere work is S05
+// (decision 99); the countdown/copy script and the actions row stay in
+// pages.ts and ride the hero part unchanged.
 //
 // THE ANCHOR VOCABULARY — specification §3 page order. The five sticky-nav
 // destinations (decisions 11/13: خلاصه، جدول، فرم، بازی‌ها، ورزشگاه) land on
@@ -61,7 +78,7 @@ export const MC_SECTION_ORDER: MatchCentreSectionDef[] = [
 // the six later-milestone keys are optional so S06/S10/S14/S15/S16/S18 can
 // start passing them without touching this contract again.
 export interface MatchCentreParts {
-  hero: string;       // scoreboard head + actions row + the inline countdown/copy script
+  hero: string;       // the S04 hero (matchHeroHtml output) + actions row + the inline countdown/copy script
   summary: string;    // answer-first card + facts table (+ the finished result block)
   form: string;       // W/D/L strip — "" fail-closed when neither side has history
   related: string;    // sibling-fixtures card — "" when none qualify
@@ -72,6 +89,91 @@ export interface MatchCentreParts {
   schedule?: string;    // seven-day fixture schedule (S15)
   faq?: string;         // editorial FAQ (S16)
   telegram?: string;    // featured Telegram promotion (S18)
+}
+
+// ---- Match Centre S04 (M2): the hero renderer (specification §5) ----
+//
+// One side of the face-off. crestHtml carries either the crest <img> or the
+// .mcrest-mono initial fallback (pages.ts crestHtml — the branded-image
+// fallback rule, decision 85); nameHtml carries the SEO name markup
+// (Latin names isolate in <bdi dir="ltr">). Both arrive fully built so this
+// module never needs esc itself.
+export interface MatchHeroSideInput {
+  crestHtml: string; // <img class="mcrest"> or <span class="mcrest mcrest-mono"> — prebuilt
+  nameHtml: string;   // M.nameHtml(faName(team)) — prebuilt
+}
+
+// The hero projection. Every field is a pre-escaped/pre-finished string or
+// a lifecycle flag computed exactly as the legacy matchHeadHtml center
+// column did (live = IN_PLAY|LIVE|PAUSED, finished = FINISHED, scored =
+// (live||finished) && score.home != null) — the branch below reuses the
+// same gates byte-for-byte, so no data state changes with the rework.
+export interface MatchHeroInput {
+  compHtml: string;     // the .mchip inner content (emblem <img>? + linked comp name + " · " + round) — prebuilt; emblem omitted when unavailable (decision 98)
+  home: MatchHeroSideInput;  // home team — renders FIRST = the right side under Persian RTL
+  away: MatchHeroSideInput;  // away team — renders LAST = the left side
+  live: boolean;        // IN_PLAY|LIVE|PAUSED
+  finished: boolean;   // FINISHED
+  scored: boolean;     // (live || finished) && score.home != null
+  scoreTxt: string;    // Persian-digit "H – A" (scoreStr) — "" when !scored
+  liveTxt: string;     // live status + " (minuteʹ)" suffix — prebuilt (decision 90: no extra live apparatus)
+  kickTimeHtml: string;// <time datetime="…">HH:MM</time> — prebuilt (upcoming's prominent kickoff, decision 92)
+  kickDateHtml: string; // faDateD2 localized date — prebuilt (S05 owns the date rework)
+  countHtml: string;   // the hidden-until-filled .mcount mount ("" for live/finished) — prebuilt, preserved exactly (decision 92: no new countdown dependency)
+  venueHtml: string;   // the .mvenue map link ("" when none) — prebuilt (S14 owns the venue panel)
+}
+
+// The Persian role labels (decision 97: subtle, near the respective teams,
+// no additional team color coding or decorative distinction) and the
+// finished status (specification §5: a clear «پایان بازی» status — a UI
+// label, not a data claim; the scorer block never renders: finished scorers
+// are not in the data pool, Q4=A).
+const MC_HERO_HOME_LABEL = "میزبان";
+const MC_HERO_AWAY_LABEL = "میهمان";
+const MC_HERO_FINISHED_LABEL = "پایان بازی";
+
+// One face-off side. BOTH sides share one builder and one DOM shape —
+// [label, name, crest] — so the two teams are equal by construction
+// (decision 96: balanced face-off, equal prominence), and the RTL face-off
+// order comes from the document: home first = right, away last = left
+// (decision 97). No side-specific color or decoration.
+function heroSideHtml(side: MatchHeroSideInput, label: string, extraClass: string): string {
+  return '<div class="mteam' + (extraClass ? " " + extraClass : "") + '">' +
+    '<div class="mside-lbl">' + label + "</div>" +
+    '<div class="mname">' + side.nameHtml + "</div>" +
+    side.crestHtml +
+    "</div>";
+}
+
+// The hero renderer. DOM = the restrained competition header line ABOVE the
+// teams (decision 98 — secondary to teams and score), then the three-track
+// face-off grid with the central scoreboard between the sides. The center
+// column keeps the legacy's exact lifecycle assembly order (chip→score/time
+// →status→date→countdown→venue became score/time→status→date→countdown→
+// venue with the chip promoted above): same identity across all three
+// states (decision 10) — score (or kickoff time) dominant, status clear,
+// date + the hidden countdown mount + the venue link carried over
+// unchanged for S05/S14.
+export function matchHeroHtml(h: MatchHeroInput): string {
+  let center = "";
+  if (h.scored) {
+    center += '<div class="mscore"' + (h.live ? ' aria-label="در جریان"' : "") + ">" + h.scoreTxt + "</div>";
+    if (h.live) center += '<div class="mlive"><span class="mdot" aria-hidden="true"></span>' + h.liveTxt + "</div>";
+    else if (h.finished) center += '<div class="mfin">' + MC_HERO_FINISHED_LABEL + "</div>";
+  } else {
+    center += '<div class="mkick">' + h.kickTimeHtml + "</div>";
+  }
+  center += '<div class="mkickdate">' + h.kickDateHtml + "</div>";
+  if (h.countHtml) center += h.countHtml;
+  if (h.venueHtml) center += h.venueHtml;
+  return '<section class="mcentre-hero" aria-label="خلاصه بازی">' +
+    '<div class="mcentre-hero-comp"><span class="mchip">' + h.compHtml + "</span></div>" +
+    '<div class="mcentre-hero-face">' +
+    heroSideHtml(h.home, MC_HERO_HOME_LABEL, "") +
+    '<div class="mcenter">' + center + "</div>" +
+    heroSideHtml(h.away, MC_HERO_AWAY_LABEL, "away") +
+    "</div>" +
+    "</section>";
 }
 
 // One anchored wrapper. The no-empty-cards law lives HERE: empty or
