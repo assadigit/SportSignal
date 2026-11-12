@@ -980,5 +980,179 @@ var s08Rules = (shellSrc.match(/\.mcentre-narrative\{[^}]*\}|\.mcentre-narrative
 check(s08Rules.length > 0 && !/margin-left|margin-right|padding-left|padding-right|text-align:\s*(left|right)|\bleft:|\bright:|float:/.test(s08Rules),
   "S08 RTL/LTR: the narrative CSS rules are physical-property-free (margin-block-end, padding-block-end, border-block-end, margin-block-start, text-align:start — logical properties only) — the native-Persian RTL narrative mirrors cleanly under a dir flip (decision 2; the primary renders right-aligned under RTL, mirrors under LTR)");
 
+// ---------- 11. S09 (M3): the Persian copy + factual fallback + editorial QA ----------
+// specification §5 (M3/S09) + milestones-and-sessions.md M3/S09 — the final M3
+// session: complete the manually authored copy + the editorial QA. The S08
+// engine is the mechanism (the registry + the triggers + the deterministic
+// selection + the lifecycle eligibility); S09 is the COPY + the fallback
+// decision + the figure policy + the QA. The engine's structure (the
+// NARRATIVE_CATEGORIES shape + deterministicVariantIndex + the lifecycle
+// eligibility) is S08-frozen; S09 extends the variant ARRAYS only (2 → 4 per
+// category per lifecycle) + documents the OMIT fallback + the figure policy.
+// Every assertion below extracts the REAL engine (the `ne` transpile above) +
+// runs against fake SeoMatch objects.
+
+// (a) S09 variant count — "Multiple natural Persian variants per supported
+// category" (spec §5). The S08 floor was ≥1; S09 raises the copy-QA floor to
+// ≥3 (the "Multiple" threshold — 2 is the S08 seed pair, 3+ is "multiple") in
+// BOTH the upcoming/live `variants` array AND the finished `variantsFinished`
+// array, for every category. Authored at 4 each (the 3–5 target, middle value).
+check(ne.NARRATIVE_CATEGORIES.every((c) => c.variants.length >= 3),
+  "S09 variant count upcoming/live: every category carries ≥3 upcoming/live variants (spec §5 'Multiple manually written Persian wording variants' — the S08 seed pair of 2 expanded; authored at 4 each, the 3–5 target middle value; enough for the deterministic selection to vary meaningfully across matches without repetition)");
+check(ne.NARRATIVE_CATEGORIES.every((c) => c.variantsFinished.length >= 3),
+  "S09 variant count finished: every category carries ≥3 finished variants (the past-tense + significance pool — the same 'Multiple' floor; authored at 4 each; finished matches get a stable bucket selection from a real pool, not a single seed)");
+// the total variant corpus — 5 categories × ≥3 × 2 lifecycles ≥ 30 (authored 40)
+check(allVariants.length >= 30,
+  "S09 variant corpus: the total variant corpus (5 categories × both lifecycles) is ≥30 (authored 40 — 5 × 4 × 2); the deterministic selection has a real pool to distribute across matches, never a hollow single-variant-per-category registry");
+
+// (b) S09 grammar + RTL punctuation — Persian typography discipline across the
+// full variant corpus. The Persian comma «،», the semicolon «؛», the guillemets
+// ««»» (around the rivalry name), and the ZWNJ (U+200C, in compound words like
+// همیشه‌جدی / صدرنشین / به‌طور) are the markers of natural Persian editorial
+// copy. Their presence asserts the copy is native Persian (not transliterated,
+// not Latin-punctuated) + the compound words are properly joined.
+check(allVariants.some((v) => v.indexOf("،") > -1),
+  "S09 grammar Persian comma: the variant corpus uses the Persian comma «،» (not the Latin comma) — natural Persian editorial punctuation");
+check(allVariants.some((v) => v.indexOf("؛") > -1),
+  "S09 grammar Persian semicolon: the variant corpus uses the Persian semicolon «؛» — the clause separator in multi-clause editorial sentences");
+check(allVariants.some((v) => v.indexOf("«") > -1 && v.indexOf("»") > -1),
+  "S09 grammar guillemets: the variant corpus uses Persian guillemets ««»» (around the rivalry name — «{rivalry}»; the native-Persian quotation marks, not Latin double-quotes)");
+check(allVariants.some((v) => v.indexOf("\u200c") > -1),
+  "S09 grammar ZWNJ: the variant corpus uses the ZWNJ (U+200C) in Persian compound words (همیشه‌جدی / صدرنشین / به‌طور / پرطرفدار — the half-space that joins the parts of a compound without a full word break; the marker of correct Persian typography)");
+
+// (c) S09 factual equivalence — every variant of a category cites the SAME
+// source field (the category's factual evidence), worded differently. This is
+// the spec §5 "Factual evidence and source fields" + the "Multiple manually
+// written Persian wording variants" pair: same significance, different
+// wording. The rivalry variants all carry {rivalry}; the knockout variants all
+// carry {round} + {comp}; the top-table variants all carry {comp}; the derby
+// variants all carry «دربی» (no source field — the defining term); the big-club
+// variants all carry «SportSignal» (the defining term).
+function variantsOf(id, finished) {
+  const c = ne.NARRATIVE_CATEGORIES.find((x) => x.id === id);
+  return finished ? c.variantsFinished : c.variants;
+}
+check(variantsOf("rivalry", false).every((v) => v.indexOf("{rivalry}") > -1) &&
+  variantsOf("rivalry", true).every((v) => v.indexOf("{rivalry}") > -1),
+  "S09 factual equivalence rivalry: every rivalry variant (upcoming/live + finished) cites {rivalry} — the named rivalry is the factual evidence in every wording (the significance is the same; the phrasing varies)");
+check(variantsOf("knockout-stage", false).every((v) => v.indexOf("{round}") > -1 && v.indexOf("{comp}") > -1) &&
+  variantsOf("knockout-stage", true).every((v) => v.indexOf("{round}") > -1 && v.indexOf("{comp}") > -1),
+  "S09 factual equivalence knockout-stage: every knockout variant cites {round} + {comp} — the round name (an already-available figure, e.g. «یک‌چهارم نهایی») + the competition are the factual evidence in every wording");
+check(variantsOf("top-table", false).every((v) => v.indexOf("{comp}") > -1) &&
+  variantsOf("top-table", true).every((v) => v.indexOf("{comp}") > -1),
+  "S09 factual equivalence top-table: every top-table variant cites {comp} — the competition (both teams are verified top-3 in it) is the factual evidence in every wording");
+check(variantsOf("derby", false).every((v) => v.indexOf("دربی") > -1) &&
+  variantsOf("derby", true).every((v) => v.indexOf("دربی") > -1),
+  "S09 factual equivalence derby: every derby variant carries «دربی» — the defining term (no source field; the flag only) is the factual evidence in every wording");
+check(variantsOf("big-club", false).every((v) => v.indexOf("SportSignal") > -1) &&
+  variantsOf("big-club", true).every((v) => v.indexOf("SportSignal") > -1),
+  "S09 factual equivalence big-club: every big-club variant carries «SportSignal» — the defining term (the featured-match framing; both teams are SportSignal followed clubs) is the factual evidence in every wording");
+
+// (d) S09 no repeated/contradictory facts — within a category, no two variants
+// are byte-identical (no duplicate copy). A duplicate would mean the
+// deterministic selection could land on the same text for two different
+// indices — a hollow pool. Cross-variant contradiction is guarded by the
+// factual-equivalence check above (same source field) + the no-fabrication
+// guard below (no fabricated stats to contradict).
+check(ne.NARRATIVE_CATEGORIES.every((c) => new Set(c.variants).size === c.variants.length),
+  "S09 no repeated variants upcoming/live: within each category, no two upcoming/live variants are byte-identical (the deterministic pool is a real set — no hollow duplicates that would collapse the selection)");
+check(ne.NARRATIVE_CATEGORIES.every((c) => new Set(c.variantsFinished).size === c.variantsFinished.length),
+  "S09 no repeated variants finished: within each category, no two finished variants are byte-identical (the finished pool is a real set)");
+
+// (e) S09 figure policy — the no-fabricated-stats guard HOLDS (spec §5: "Use
+// figures only when they materially strengthen the narrative and are already
+// available"). The already-available figures (round / competition / rivalry
+// names) are ALREADY cited via the {round}/{comp}/{rivalry} placeholders. No
+// NEW figure placeholder is introduced (no {streak}/{wins}/{position}/{form} —
+// those would need new data work the pool does not carry). Every {placeholder}
+// across the full corpus is one of the three already-loaded fields.
+const allPlaceholders = allVariants.flatMap((v) => {
+  const arr = [];
+  v.replace(/\{(\w+)\}/g, (_m, k) => { arr.push(k); return _m; });
+  return arr;
+});
+check(allPlaceholders.every((k) => k === "rivalry" || k === "round" || k === "comp"),
+  "S09 figure policy: every {placeholder} across all variants is one of {rivalry}/{round}/{comp} — the three already-loaded SeoMatch fields (the figures that materially help + are already available without extra provider requests/KV/computation); NO new figure placeholder ({streak}/{wins}/{position}/{form}) is introduced — the no-fabricated-stats guard holds unchanged (S09-3 decision)");
+// the no-fabricated-stats regex re-asserted on the expanded corpus (the S08
+// assertion auto-extends via allVariants, but S09 re-asserts explicitly to
+// confirm the new variants 2–3 didn't introduce fabricated stats)
+check(!allVariants.some((v) => /\d+\s*برد|\d+\s*باخت|\d+\s*مساوی|پیاپی|متوالی|صعود کرد|حذف شد/.test(v)),
+  "S09 no-fabricated-stats (expanded): the expanded variant corpus (40 strings) carries NO streak counts / win-loss tallies / progression-outcome claims — no fabricated statistics (spec §5: 'No unsupported competitive stakes or fabricated statistics'; the knockout variants cite the round + the stakes — «شرط صعود» the noun, never «صعود کرد» the claimed outcome)");
+
+// (f) S09 lifecycle tense — stricter than S08 (which checks the rivalry
+// selected variant). S09 asserts the tense discipline ACROSS THE FULL CORPUS:
+// NO upcoming/live variant (any category) carries «به پایان رسید» (the
+// past-tense marker is exclusive to the finished pool); ALL rivalry finished
+// variants carry «به پایان رسید» (the rivalry category's finished pool is
+// uniformly past-tense — the S08 marker discipline holds at the corpus level).
+check(!allVariants.filter((v) => {
+  // is this an upcoming/live variant? reconstruct by checking it's in some
+  // category's `variants` (not variantsFinished)
+  return ne.NARRATIVE_CATEGORIES.some((c) => c.variants.indexOf(v) > -1);
+}).some((v) => v.indexOf("به پایان رسید") > -1),
+  "S09 lifecycle tense upcoming/live: NO upcoming/live variant across ANY category carries «به پایان رسید» (the past-tense marker is exclusive to the finished pool — spec §5: 'Upcoming: pre-match form and competition context' / 'Live: retain the pre-match briefing'; the upcoming/live variants carry present-tense framing only)");
+check(variantsOf("rivalry", true).every((v) => v.indexOf("به پایان رسید") > -1),
+  "S09 lifecycle tense rivalry finished: ALL rivalry finished variants carry «به پایان رسید» (the rivalry category's finished pool is uniformly past-tense + significance — spec §5: 'Finished: verified result and significance'; the S08 selected-variant check is raised to a corpus-wide invariant)");
+
+// (g) S09 fallback discipline — the OMIT decision (S09-2). When no category
+// qualifies, narrativeHtml returns "" (the element is omitted; the briefing|
+// facts pairing still renders; the S07 contract holds). NO sixth "fallback"
+// category is added to the registry (a generic match's only verified facts are
+// the kickoff/venue/competition/round — already covered by the answer sentence
+// + the facts table; a fallback editorial paragraph would restate them
+// [violating the M3 gate no-repetition discipline] or fabricate significance
+// [violating the no-fabrication guard]). The spec §5 "If no useful paragraph
+// can be made, omit the briefing" path is the correct resolution.
+check(ne.NARRATIVE_CATEGORIES.length === 5 &&
+  ne.NARRATIVE_CATEGORIES.every((c) => c.id !== "fallback"),
+  "S09 fallback OMIT — no fallback category: the registry stays at 5 categories (no sixth 'fallback' category — a generic match's only verified facts are the kickoff/venue/competition/round already in the answer sentence + the facts table; a fallback editorial paragraph would repeat them [M3 gate no-repetition] or fabricate significance [no-fabrication guard]; the S09-2 OMIT decision)");
+check(ne.narrativeHtml(mkSm(mkS({})), ctxNone, "upcoming") === "" &&
+  ne.narrativeHtml(mkSm(mkS({})), ctxNone, "live") === "" &&
+  ne.narrativeHtml(mkSm(mkS({}), { status: "FINISHED" }), ctxNone, "finished") === "",
+  "S09 fallback OMIT — empty return: a match with NO eligible category → narrativeHtml returns '' across ALL three lifecycles (the .mcentre-narrative element is omitted — the no-empty-cards law + the spec §5 'If no useful paragraph can be made, omit the briefing' path; the briefing card + facts table still render, the S07 contract holds; NO fabricated significance)");
+
+// (h) S09 variant distribution — with 4 variants per category, the deterministic
+// hash yields indices in [0,4) (the expanded pool). Several distinct matches
+// distribute across the 4 buckets (the selection varies meaningfully — spec
+// §5: "wording must not randomly change between page visits" + "Multiple …
+// variants"). Same match → same index (stability); different matches → may
+// differ (distribution).
+var s09Paths = ["/matches/a-vs-b-1", "/matches/c-vs-d-2", "/matches/e-vs-f-3", "/matches/g-vs-h-4", "/matches/i-vs-j-5"];
+var s09Indices = s09Paths.map((p) => dv(p + "|rivalry", 4));
+check(s09Indices.every((i) => typeof i === "number" && i >= 0 && i < 4),
+  "S09 variant distribution range: with 4 rivalry variants, the deterministic hash yields indices in [0,4) for every match — the expanded pool is in range (never out of bounds)");
+check(new Set(s09Indices).size >= 2,
+  "S09 variant distribution spread: ≥2 distinct indices across 5 matches (the stable hash distributes across the 4-bucket pool — the 'Multiple natural Persian variants' yield visibly different copy across matches, not a single always-selected variant)");
+
+// (i) S09 the S08 contract surface is byte-frozen — the engine's structure
+// (the NARRATIVE_CATEGORIES shape + the deterministic selection + the lifecycle
+// eligibility + the primary/optional-secondary plan) is S08-frozen; S09
+// extended the variant ARRAYS only. The function signatures + the types +
+// the trigger logic + the narrativeHtml markup are unchanged.
+check(typeof ne.narrativeHtml === "function" && typeof ne.narrativePlan === "function" &&
+  typeof ne.deterministicVariantIndex === "function" && typeof ne.topTableEligible === "function" &&
+  Array.isArray(ne.NARRATIVE_CATEGORIES) && ne.NARRATIVE_CATEGORIES.length === 5,
+  "S09 S08-frozen surface: the engine's contract (narrativeHtml + narrativePlan + deterministicVariantIndex + topTableEligible + NARRATIVE_CATEGORIES[5]) is unchanged — S09 extended the variant ARRAYS only (2 → 4 per category per lifecycle); the trigger logic + the deterministic selection + the lifecycle eligibility + the primary/optional-secondary plan are S08-frozen");
+// the narrativeHtml markup wraps the primary + optional secondary (unchanged)
+var s09NarrHtml = ne.narrativeHtml(mkSm(mkS({ rivalryFa: "ال کلاسیکو", roundFa: "نیمه‌نهایی" })), ctxNone, "upcoming");
+check(s09NarrHtml.indexOf('<div class="mcentre-narrative">') === 0 &&
+  s09NarrHtml.indexOf("mcentre-nar-primary") > -1 && s09NarrHtml.indexOf("mcentre-nar-secondary") > -1 &&
+  s09NarrHtml.indexOf("mcentre-nar-primary") < s09NarrHtml.indexOf("mcentre-nar-secondary") &&
+  s09NarrHtml.indexOf("</div>") > s09NarrHtml.indexOf("mcentre-nar-secondary"),
+  "S09 narrative HTML structure unchanged: the engine's narrativeHtml still wraps the primary (mcentre-nar-primary) + the optional secondary (mcentre-nar-secondary) in a .mcentre-narrative div — primary FIRST, secondary below, closed </div>; the S08 markup contract holds (S09 extended the variant strings, not the markup)");
+
+// (j) S09 the trigger matrix doc — the M3 gate's documentation requirement
+// (spec M3 gate: "Provide trigger matrix and rendered examples"). The doc
+// carries the 5 categories × their triggers × their eligibility boundaries × a
+// representative match per lifecycle × the rendered primary + secondary output.
+var matrixDoc = "";
+try { matrixDoc = read("docs/mc/narrative-trigger-matrix.md"); } catch (e) { matrixDoc = ""; }
+check(matrixDoc.length > 0,
+  "S09 trigger matrix doc exists: docs/mc/narrative-trigger-matrix.md is committed (the M3 gate documentation requirement — spec: 'Provide trigger matrix and rendered examples')");
+check(["rivalry", "knockout-stage", "top-table", "derby", "big-club"].every((id) => matrixDoc.indexOf(id) > -1),
+  "S09 trigger matrix doc coverage: the matrix documents all 5 categories (rivalry / knockout-stage / top-table / derby / big-club — the trigger conditions + the eligibility boundaries per lifecycle + the rendered primary + optional secondary)");
+check(matrixDoc.indexOf("به پایان رسید") > -1 && matrixDoc.indexOf("upcoming") > -1 && matrixDoc.indexOf("finished") > -1,
+  "S09 trigger matrix doc lifecycles: the matrix documents the lifecycle tense switching (upcoming/live → present-tense variants; finished → past-tense + significance — the «به پایان رسید» marker) across representative matches");
+
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

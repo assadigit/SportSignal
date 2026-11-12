@@ -103,6 +103,63 @@
 // narrative (the no-empty-cards law + the "omit the briefing if no useful
 // paragraph can be made" spec path — the briefing card + facts still render,
 // the S07 contract holds).
+//
+// S09 DECISION POINTS (resolved + recorded for the execution log — the copy
+// expansion + the editorial QA, the final M3 session):
+//
+// S09-1. Variant count — each category carries 4 upcoming/live variants + 4
+//   finished variants (the spec §5 "Multiple manually written Persian wording
+//   variants" — the "Multiple natural Persian variants per supported category"
+//   target, in the 3–5 range; 4 gives the deterministic selection 4 stable
+//   buckets per category per lifecycle — enough to vary meaningfully across
+//   matches without repetition, without bloating the registry). The S08 seeds
+//   (the legacy whyBigHtml sentence as variant[0] + the S08 variant[1]) are
+//   preserved as entries 0–1 (continuity); entries 2–3 are S09-authored.
+//
+// S09-2. Factual fallback — OMIT. When no category qualifies, narrativeHtml
+//   returns "" (unchanged from S08 — the element is omitted, the briefing|
+//   facts pairing still renders). The spec §5 allows BOTH ("show one concise
+//   factual editorial paragraph if useful … if no useful paragraph can be made,
+//   omit"); the OMIT resolution is the defensible one: a generic match's only
+//   verified facts are the kickoff time / venue / competition / round —
+//   ALREADY covered by the answer sentence (the G-03 answer-first briefing
+//   card, byte-frozen) + the facts table. A fallback editorial paragraph would
+//   EITHER restate those facts (violating the M3 gate no-repetition discipline
+//   — "Keep answer-first context and facts table distinct; avoid repetition")
+//   OR fabricate significance (violating the no-fabrication guard). No sixth
+//   "fallback" category is added to the registry; the no-category path returns
+//   "". The spec's "If no useful paragraph can be made, omit the briefing" path
+//   is the correct resolution (documented here + asserted in the S09 test
+//   group).
+//
+// S09-3. Figure policy — the no-fabricated-stats guard HOLDS UNCHANGED. The
+//   spec §5: "Use figures only when they materially strengthen the narrative
+//   and are already available without extra provider requests, KV operations or
+//   expensive computation." The already-available figures (the round name
+//   m.roundFa — e.g. «یک‌چهارم نهایی»; the competition name; the rivalry name)
+//   are ALREADY cited via the {round}/{comp}/{rivalry} placeholders (they ARE
+//   the figures that materially help + are already loaded by the three
+//   pre-existing awaits). No NEW figure is available without new data work
+//   (streak counts / win-loss tallies / progression outcomes / standings
+//   positions beyond top-3 stay EXCLUDED — they would need bracket/form data
+//   the pool does not carry). So no relaxation is warranted; the guard holds.
+//   The S09 test group asserts every {placeholder} across all variants is one
+//   of {rivalry}/{round}/{comp} (no new figure placeholders like {streak}).
+//
+// S09-4. Copy voice + RTL typography — football-commentator editorial tone,
+//   Persian throughout. Each variant of a category states the SAME
+//   significance, worded differently (factual equivalence — every variant
+//   cites the category's source field: rivalry variants all carry {rivalry};
+//   knockout variants all carry {round}+{comp}; top-table variants all carry
+//   {comp}; derby variants all carry «دربی»; big-club variants all carry
+//   «SportSignal»). Persian punctuation only: «،» (comma) / «؛» (semicolon) /
+//   «.» (period) / ««»» (guillemets around the rivalry name). The ZWNJ (U+200C)
+//   in compound words (همیشه‌جدی / صدرنشین / به‌طور / پرطرفدار / کم‌اهمیت‌ای /
+//   همشهری / پیش‌فرض). No Latin mixing. No byte-duplicate variants within a
+//   category (no repeated facts). The S08 no-repetition discipline holds: the
+//   variant templates NEVER reference the answer sentence's domain (kickoff
+//   time / venue / score — «به وقت تهران» / «ورزشگاه» / «نتیجه نهایی» /
+//   «زمان جهانی» / «ساعت»).
 
 import { esc } from "./utils";
 import { compNameFa } from "./markup";
@@ -172,11 +229,15 @@ export const NARRATIVE_CATEGORIES: NarrativeCategory[] = [
     },
     variants: [
       "این دیدار «{rivalry}» است — یکی از حساس‌ترین بازی‌های فوتبال جهان.",
-      "دربارهٔ «{rivalry}»: دیداری تاریخی میان دو حریف همیشه‌جدی که هیجان هر فصل را چند برابر می‌کند."
+      "دربارهٔ «{rivalry}»: دیداری تاریخی میان دو حریف همیشه‌جدی که هیجان هر فصل را چند برابر می‌کند.",
+      "وقتی دو تیم «{rivalry}» روبروی هم قرار می‌گیرند، فراتر از یک بازی معمولی سخن می‌گویند؛ رقابتی که سال‌هاست هواداران را در انتظار نگه داشته است.",
+      "«{rivalry}» تنها یک بازی نیست؛ تقابل دو مکتب رقیب است که هر بار فضایی متفاوت می‌سازد."
     ],
     variantsFinished: [
       "این دیدار «{rivalry}» بود — یکی از حساس‌ترین بازی‌های فوتبال جهان که به پایان رسید.",
-      "«{rivalry}» به پایان رسید؛ دیداری تاریخی میان دو حریف همیشه‌جدی."
+      "«{rivalry}» به پایان رسید؛ دیداری تاریخی میان دو حریف همیشه‌جدی.",
+      "دیدار «{rivalry}» به پایان رسید — تقابلی که بار دیگر نشان داد چرا این رقابت همیشه در یادها می‌ماند.",
+      "«{rivalry}» به پایان رسید؛ دوباره دو حریف همیشه‌جدی روبروی هم بودند و هیجانی که با این دیدار گره خورده، تکرار شد."
     ]
   },
   {
@@ -192,11 +253,15 @@ export const NARRATIVE_CATEGORIES: NarrativeCategory[] = [
     },
     variants: [
       "این بازی در مرحله {round} {comp} برگزار می‌شود — مرحله‌ای حذفی با شرط صعود.",
-      "مرحله {round} {comp}: برد می‌ماند، باخت کنار می‌رود."
+      "مرحله {round} {comp}: برد می‌ماند، باخت کنار می‌رود.",
+      "در {comp}، مرحله {round} یعنی فاصلهٔ یک قدم تا ادامه یا توقف؛ هیچ جایگاهی برای خطا نیست.",
+      "بازی {round} {comp} فراتر از یک دیدار عادی است؛ نتیجه ادامهٔ مسیر را تعیین می‌کند."
     ],
     variantsFinished: [
       "این بازی در مرحله {round} {comp} برگزار شد — مرحله‌ای حذفی که شرط صعود را تعیین کرد.",
-      "مرحله {round} {comp} به پایان رسید؛ نتیجه مسیر صعود را روشن کرد."
+      "مرحله {round} {comp} به پایان رسید؛ نتیجه مسیر صعود را روشن کرد.",
+      "دیدار {round} {comp} به پایان رسید؛ مرحله‌ای که شرط ادامه را روشن کرد.",
+      "در {comp}، مرحله {round} به پایان رسید — نتیجه سرنوشت مسیر را رقم زد."
     ]
   },
   {
@@ -209,11 +274,15 @@ export const NARRATIVE_CATEGORIES: NarrativeCategory[] = [
     trigger: (sm, top3) => topTableEligible(sm.s, top3) ? { comp: compNameFa(sm.s) } : null,
     variants: [
       "هر دو تیم هم‌اکنون در صدر جدول {comp} قرار دارند؛ برد این بازی در رقابت عنوان اهمیت دارد.",
-      "دو تیم صدرنشین {comp} روبروی هم — بردی که می‌تواند مسیر قهرمانی را تغییر دهد."
+      "دو تیم صدرنشین {comp} روبروی هم — بردی که می‌تواند مسیر قهرمانی را تغییر دهد.",
+      "وقتی دو صدرنشین {comp} دیدار می‌کنند، بازی فراتر از سه امتیاز است؛ نتیجه مستقیماً رقابت قهرمانی را متأثر می‌سازد.",
+      "این تقابل دو تیم بالای جدول {comp} است؛ بردی که در مسیر قهرمانی وزن زیادی دارد."
     ],
     variantsFinished: [
       "هر دو تیم در صدر جدول {comp} قرار داشتند؛ این نتیجه رقابت عنوان را تحت تأثیر قرار می‌دهد.",
-      "دیدار دو صدرنشین {comp} به پایان رسید؛ نتیجه در رقابت قهرمانی سنجیده می‌شود."
+      "دیدار دو صدرنشین {comp} به پایان رسید؛ نتیجه در رقابت قهرمانی سنجیده می‌شود.",
+      "تقابل دو صدرنشین {comp} به پایان رسید؛ نتیجه در رقابت قهرمانی اثرگذار بود.",
+      "دو تیم بالای جدول {comp} روبروی هم بودند و دیدار به پایان رسید؛ نتیجه در مسیر عنوان سنجیده می‌شود."
     ]
   },
   {
@@ -225,11 +294,15 @@ export const NARRATIVE_CATEGORIES: NarrativeCategory[] = [
     trigger: (sm) => (sm.s.derby && !sm.s.rivalryFa) ? {} : null,
     variants: [
       "این بازی یک دربی است؛ دیداری حساس بین دو حریف همیشه‌جدی.",
-      "دربی شهر — دو حریف همیشه‌جدی که هیچ بازی کم‌اهمیت‌ای ندارند."
+      "دربی شهر — دو حریف همیشه‌جدی که هیچ بازی کم‌اهمیت‌ای ندارند.",
+      "در یک دربی، جدول و آمار کنار می‌رود؛ آنچه می‌ماند غرور شهری و رقابتی است که هرگز آرام نمی‌گیرد.",
+      "دربی‌ها قاعدهٔ خود را دارند؛ دو تیم همشهری که پیش از سوت آغاز، فضا را داغ کرده‌اند."
     ],
     variantsFinished: [
       "این بازی یک دربی بود؛ دیداری حساس بین دو حریف همیشه‌جدی که به پایان رسید.",
-      "دربی به پایان رسید؛ دو حریف همیشه‌جدی و یک نتیجه ثبت‌شده."
+      "دربی به پایان رسید؛ دو حریف همیشه‌جدی و یک نتیجه ثبت‌شده.",
+      "دربی به پایان رسید؛ غرور شهری بار دیگر در یک تقابل حساس به آزمون درآمد.",
+      "دیدار دربی به پایان رسید — دو تیم همشهری که بار دیگر نشان دادند در این رقابت آرامشی وجود ندارد."
     ]
   },
   {
@@ -244,11 +317,15 @@ export const NARRATIVE_CATEGORIES: NarrativeCategory[] = [
     trigger: (sm, top3) => (sm.s.big && !topTableEligible(sm.s, top3)) ? {} : null,
     variants: [
       "هر دو تیم جزو تیم‌های منتخب و پرطرفدار SportSignal هستند.",
-      "دیدار دو تیم منتخب SportSignal — تیم‌هایی که بازی‌هایشان به‌طور خودکار دنبال می‌شود."
+      "دیدار دو تیم منتخب SportSignal — تیم‌هایی که بازی‌هایشان به‌طور خودکار دنبال می‌شود.",
+      "این تقابل دو تیم پرطرفدار SportSignal است؛ تیم‌هایی که همواره در کانون توجه هستند.",
+      "وقتی دو تیم منتخب SportSignal روبروی هم می‌شوند، دیداری است که به‌طور پیش‌فرض دنبال می‌شود."
     ],
     variantsFinished: [
       "هر دو تیم جزو تیم‌های منتخب و پرطرفدار SportSignal بودند؛ دیدار آن‌ها به پایان رسید.",
-      "دیدار دو تیم منتخب SportSignal به پایان رسید؛ بازی‌های این تیم‌ها همیشه دنبال می‌شود."
+      "دیدار دو تیم منتخب SportSignal به پایان رسید؛ بازی‌های این تیم‌ها همیشه دنبال می‌شود.",
+      "تقابل دو تیم پرطرفدار SportSignal به پایان رسید؛ دیداری که در کانون توجه بود.",
+      "دیدار دو تیم منتخب SportSignal به پایان رسید — تیم‌هایی که بازی‌هایشان همیشه دنبال می‌شود."
     ]
   }
 ];
