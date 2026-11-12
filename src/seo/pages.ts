@@ -28,7 +28,7 @@ import { seoTeamFaName, seoTeamAltName } from "./team-names";
 // Match Centre S04 (M2): the hero renderer — the mcentre-hero MARKUP moved
 // to the composer (matchHeroHtml); THIS file builds the data projection
 // (matchHeroInput) and delegates. The legacy matchHeadHtml is retired.
-import { matchCentreMain, matchHeroHtml, type MatchHeroInput } from "./match-centre";
+import { matchCentreMain, matchHeroHtml, matchSummaryHtml, type MatchHeroInput, type MatchSummaryInput } from "./match-centre";
 import { loadArchive } from "./files";
 // v13.89-stdetail: full-table sources for the competition pages — both
 // cache-only/reads-only (the seo layer never triggers a provider sweep).
@@ -463,14 +463,19 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   }
   rows.push(["وضعیت", statusFaOf(sm) + (live && m.minute != null ? " (" + toFaDigits(String(m.minute)) + "ʹ)" : "")]);
   if ((finished || live) && m.score && m.score.home != null) rows.push(["نتیجه", scoreStr(m.score)]);
-  const facts = '<table class="facts"><caption>مشخصات بازی</caption><tbody>' +
-    rows.map((r) => '<tr><th scope="row">' + r[0] + "</th><td>" + r[1] + "</td></tr>").join("") + "</tbody></table>";
 
-  // Result block (7.4 item 7)
-  let resultBlock = "";
-  if (finished && m.score && m.score.home != null) {
-    resultBlock = '<div class="card"><h2>نتیجه نهایی</h2><p class="prose">' + esc(matchAnswerSentence(sm)) + "</p></div>";
-  }
+  // Match Centre S07 (M3): the summary atoms — the facts rows stay as the
+  // projection's working array (the composer's matchSummaryHtml wraps them in
+  // the <table class="facts"> shape + the .mcentre-facts panel). The labels
+  // are pre-escaped here (the composer is a pure leaf — it never escapes);
+  // the values are already prebuilt HTML (links, <time>, the fullWhenHtml
+  // atom — the date row rides byte-identical inside its <td>, S05 decision 95
+  // frozen). The finished result block's INNER content (the h2 + the answer
+  // sentence) is built here too — the composer wraps it in the
+  // .mcentre-card.mcentre-result shell.
+  const resultHtml = finished && m.score && m.score.home != null
+    ? '<h2>نتیجه نهایی</h2><p class="prose">' + esc(matchAnswerSentence(sm)) + "</p>"
+    : "";
 
   // Related links (P-18)
   const related = '<div class="card"><h2>پیوندهای مرتبط</h2><ul class="prose" style="list-style:none;padding:0">' +
@@ -533,7 +538,23 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // always present; form may be empty; standings/venue/schedule join as S10/
   // S14/S15 ship). summaryHtml is extracted (byte-identical value) so the nav
   // and the matchCentreMain call read ONE summary string.
-  const summaryHtml = whyBigHtml(sm, ctx) + facts + resultBlock;
+  // Match Centre S07 (M3): the summary & editorial system — the composer's
+  // matchSummaryHtml renders the editorial card markup (the answer-first
+  // briefing card + the compact facts panel + the .mcentre-cols two-column
+  // pairing + the finished result block) from PRE-BUILT content atoms (the
+  // S04 hero precedent — the composer stays the S02 pure leaf). The answer
+  // sentence text (matchAnswerSentence) feeds the meta description + the
+  // SportsEvent JSON-LD (GSC surfaces, byte-frozen) AND the visible briefing
+  // card — one source of truth. The facts rows (the verified facts) and the
+  // finished result text ride as atoms; the fullWhenHtml date row stays
+  // byte-frozen inside its <td> (S05 decision 95). The summary is always
+  // present (every match has an answer sentence), so the nav's adaptive Q9=B
+  // filter still detects a non-empty summary (the خلاصه nav item renders).
+  const summaryHtml = matchSummaryHtml({
+    answerHtml: esc(matchAnswerSentence(sm)),
+    factsRows: rows.map((r) => ({ label: esc(r[0]), valueHtml: r[1] })),
+    resultHtml
+  });
   const navHtml = matchNavHtml({ summary: summaryHtml, form: formCard });
   const main = matchCentreMain({
     hero: matchHeroHtml(heroInput) + matchActionsHtml(sm, path) + matchHeadScript(),

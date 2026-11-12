@@ -60,6 +60,28 @@
 //      midnight crossover runs the REAL seo/utils.ts helpers (transpiled
 //      from source, never re-implemented); atmosphere (decision 99) is
 //      CSS-only (zero new assets/requests).
+//   9. S06 (M2) STICKY NAV + BACK-TO-TOP — Q9=B adaptive, Q10=C responsive,
+//      Q11=A IntersectionObserver, Q12 back-to-top, Q13=A inline script (see
+//      the section-9 assertions below for the full Q-mapping).
+//  10. S07 (M3) SUMMARY & EDITORIAL SYSTEM — specification §5 + the S03
+//      .mcentre-cols pairing grid (decisions 75–77): the summary MARKUP is
+//      owned by the composer (matchSummaryHtml renders the mcentre-summary
+//      inner content — the answer-first briefing card with id="answer"
+//      preserved from the S02 answercard, the compact facts panel wrapping
+//      the <table class="facts"> shape, the .mcentre-cols two-column briefing|
+//      facts pairing at the 1080px wide threshold collapsing to one column
+//      below it, and the finished result block below the pair); pages.ts
+//      delegates via the MatchSummaryInput projection (the S04 hero precedent
+//      — the composer stays the pure leaf). No <h2>«خلاصه» heading precedes
+//      the briefing (spec §5: "No repeated Summary heading before briefing").
+//      The answer sentence text (matchAnswerSentence) feeds the meta
+//      description + the SportsEvent JSON-LD AND the visible briefing card —
+//      one source of truth, byte-frozen. The facts rows' fullWhenHtml date
+//      row stays byte-frozen inside its <td> (S05 decision 95). The nav's
+//      adaptive Q9=B filter still detects a non-empty summary (the خلاصه nav
+//      item renders). CSS logical properties only (RTL/LTR clean under a dir
+//      flip — decision 2); the block's own icy/navy tokens, zero new
+//      assets/requests.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -140,19 +162,27 @@ check(withNav.indexOf('id="mcentre-hero"') < withNav.indexOf('id="mcentre-nav"')
 
 // ---------- 3. wiring: buildMatchPage delegates, GSC surfaces stay ----------
 let wiringOk = true;
-if (!/import \{ matchCentreMain, matchHeroHtml, type MatchHeroInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml)"); wiringOk = false; }
+if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, type MatchHeroInput, type MatchSummaryInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml)"); wiringOk = false; }
 if (!/const main = matchCentreMain\(\{/.test(pagesSrc)) { bad("wiring: buildMatchPage no longer delegates its main assembly to matchCentreMain"); wiringOk = false; }
 // Match Centre S04: the hero part is now the composer's matchHeroHtml render
 // (from the matchHeroInput projection) + the unchanged actions row + script.
 if (!/function matchHeroInput\(sm: SeoMatch\): MatchHeroInput \{/.test(pagesSrc)) { bad("wiring: the S04 hero data projection (matchHeroInput) is gone from pages.ts"); wiringOk = false; }
 if (!/hero: matchHeroHtml\(heroInput\) \+ matchActionsHtml\(sm, path\) \+ matchHeadScript\(\)/.test(pagesSrc)) { bad("wiring: the hero part is no longer the S04 hero render + actions + script"); wiringOk = false; }
 if (/function matchHeadHtml\(/.test(pagesSrc) || /class="matchhead"/.test(pagesSrc)) { bad("wiring: the legacy matchHeadHtml builder/marked-up still present after the S04 retirement"); wiringOk = false; }
-if (!(/summary: whyBigHtml\(sm, ctx\) \+ facts \+ resultBlock/.test(pagesSrc) || (/const summaryHtml = whyBigHtml\(sm, ctx\) \+ facts \+ resultBlock;/.test(pagesSrc) && /summary: summaryHtml,/.test(pagesSrc)))) { bad("wiring: the summary part no longer carries answercard + facts (+ result block)"); wiringOk = false; }
+// Match Centre S07: the summary part is now the composer's matchSummaryHtml
+// render (from the MatchSummaryInput projection — the answer-first sentence +
+// the facts rows + the finished result text). The legacy whyBigHtml + facts +
+// resultBlock flat assembly is retired (whyBigHtml stays as the S08 narrative
+// prep — exported, not called in the S07 summary path).
+if (!/const summaryHtml = matchSummaryHtml\(\{/.test(pagesSrc)) { bad("wiring: the summary part no longer delegates to matchSummaryHtml (S07)"); wiringOk = false; }
+if (!/answerHtml: esc\(matchAnswerSentence\(sm\)\)/.test(pagesSrc)) { bad("wiring: the summary answer atom no longer carries the answer-first sentence (the G-03 briefing copy — matchAnswerSentence, the same source that feeds the meta description + the JSON-LD)"); wiringOk = false; }
+if (!/factsRows: rows\.map\(\(r\) => \(\{ label: esc\(r\[0\]\), valueHtml: r\[1\] \}\)\)/.test(pagesSrc)) { bad("wiring: the summary facts atoms no longer carry the facts rows array (label pre-escaped, valueHtml prebuilt — the fullWhenHtml date row rides byte-identical inside its <td>)"); wiringOk = false; }
+if (!/const resultHtml = finished && m\.score && m\.score\.home != null/.test(pagesSrc)) { bad("wiring: the summary result atom no longer carries the finished result content (the h2 + the answer sentence — \"\" when not finished)"); wiringOk = false; }
 if (!/form: formCard,/.test(pagesSrc)) { bad("wiring: the form part no longer carries the W/D/L strip"); wiringOk = false; }
 if (!/related: similarCard,/.test(pagesSrc)) { bad("wiring: the related part no longer carries the sibling-fixtures card"); wiringOk = false; }
 if (!/footerHook: related/.test(pagesSrc)) { bad("wiring: the footer-hook part no longer carries the related-links card"); wiringOk = false; }
 if (/matchHeadHtml\(sm\) \+ matchActionsHtml/.test(pagesSrc)) { bad("wiring: the old flat hero assembly is still present alongside the delegation"); wiringOk = false; }
-if (wiringOk) ok("wiring: buildMatchPage delegates the five parts to matchCentreMain — the hero rides matchHeroHtml(matchHeroInput) + the unchanged actions/script (legacy matchHeadHtml retired)");
+if (wiringOk) ok("wiring: buildMatchPage delegates the parts to matchCentreMain — the hero rides matchHeroHtml(matchHeroInput) + actions/script (legacy matchHeadHtml retired); the summary rides matchSummaryHtml(MatchSummaryInput) — the answer-first sentence + facts rows + result text atoms (legacy whyBigHtml+facts+resultBlock flat assembly retired; whyBigHtml stays as S08 narrative prep)");
 
 // GSC measurement surfaces — byte-for-byte, still assembled in pages.ts
 let gscOk = true;
@@ -161,8 +191,18 @@ if (!/let desc = matchAnswerSentence\(sm\)\.replace\(/.test(pagesSrc)) { bad("GS
 if (!/path,\n\s+title,/.test(pagesSrc) || !/head: buildHead\(\{/.test(pagesSrc)) { bad("GSC: buildHead no longer receives the canonical path + title"); gscOk = false; }
 if (!/JL\.sportsEventNode\(sm, matchAnswerSentence\(sm\)\.replace\(/.test(pagesSrc)) { bad("GSC: the SportsEvent JSON-LD description node changed"); gscOk = false; }
 if (!/JL\.breadcrumbNode\(trail\)/.test(pagesSrc) || !/crumbHtml: M\.breadcrumbsHtml\(trail\)/.test(pagesSrc)) { bad("GSC: the breadcrumb node/render changed"); gscOk = false; }
-if (!/<div class="answercard" id="answer">/.test(pagesSrc) || !(/summary: whyBigHtml\(sm, ctx\)/.test(pagesSrc) || /summary: summaryHtml,/.test(pagesSrc))) { bad("GSC: the answer-first answercard is no longer rendered inside the summary section"); gscOk = false; }
-if (gscOk) ok("GSC surfaces intact: title ladder, desc funnel, canonical path, SportsEvent + Breadcrumb JSON-LD, answercard-in-summary — byte-for-byte");
+// S07: the answer-first briefing card (id="answer" — the G-03 anchor) now
+// renders via the composer's matchSummaryHtml (the S04 hero precedent — the
+// MARKUP moved to match-centre.ts). The TEXT source stays matchAnswerSentence
+// (the same function that feeds the meta description + the SportsEvent JSON-LD
+// — one source of truth, byte-frozen). The rendered briefing card carries
+// id="answer" (verified via the REAL matchSummaryHtml output below in the S07
+// group). whyBigHtml still carries the legacy answercard string in its source
+// (S08 prep — exported, not the S07 live path), so the source-inspection
+// check here is the COMPOSER's contract, not pages.ts's dead string.
+if (!/id="answer"/.test(mcSrc) || !/mcentre-brief/.test(mcSrc)) { bad("GSC: the answer-first briefing card (id=\"answer\" — the G-03 anchor) is no longer rendered by the composer (matchSummaryHtml)"); gscOk = false; }
+if (!/answerHtml: esc\(matchAnswerSentence\(sm\)\)/.test(pagesSrc)) { bad("GSC: the answer-first sentence (matchAnswerSentence — the meta-description + JSON-LD source) no longer feeds the visible briefing card atom"); gscOk = false; }
+if (gscOk) ok("GSC surfaces intact: title ladder, desc funnel, canonical path, SportsEvent + Breadcrumb JSON-LD, answer-first briefing card (id=\"answer\" via the composer) — byte-for-byte");
 
 // header/footer reuse: the shell still owns the global chrome + centered column
 let shellOk = true;
@@ -532,6 +572,135 @@ check(/@media \(prefers-reduced-motion:reduce\)\{\.mnav-item\{transition:none\}\
 var s06Rules = (shellSrc.match(/\.mnav\{[^}]*\}|\.mnav-item\{[^}]*\}|\.mnav-item\.is-active\{[^}]*\}|\.mnav-item:hover\{[^}]*\}|\.mtop\{[^}]*\}|\.mtop:hover\{[^}]*\}|\.mtop\[hidden\]\{[^}]*\}/g) || []).join("");
 check(s06Rules.length > 0 && !/margin-left|margin-right|padding-left|padding-right|\bleft:|\bright:|float:/.test(s06Rules),
   "S06 RTL/LTR: the S06 nav + back-to-top rules are physical-property-free (inset-block-end/inset-inline-end/inset-inline only — top:0 is vertical, doesn't flip under RTL) — the native-Persian RTL nav mirrors cleanly under a dir flip (decision 2)");
+
+// ---------- 10. S07 (M3): the summary & editorial system ----------
+// specification §5 (M3/S07) + the S03 .mcentre-cols pairing grid (decisions
+// 75–77). The summary MARKUP is owned by the composer (matchSummaryHtml renders
+// the mcentre-summary inner content — the editorial briefing card + the compact
+// facts panel + the .mcentre-cols two-column pairing + the finished result
+// block); pages.ts delegates via the MatchSummaryInput projection (the S04 hero
+// precedent — the composer stays the pure leaf). Every behavioral assertion
+// below runs the REAL module (required above — never re-implemented).
+
+// (a) the contract: matchSummaryHtml + MatchSummaryInput/MatchFactRow exported
+check(typeof mc.matchSummaryHtml === "function" &&
+  /export interface MatchSummaryInput/.test(mcSrc) &&
+  /export interface MatchFactRow/.test(mcSrc),
+  "S07 contract: matchSummaryHtml + MatchSummaryInput/MatchFactRow exported (the pre-escaped projection — the composer stays import-free, the S04 hero precedent)");
+
+// (b) the briefing card — id="answer" preserved (the G-03 anchor carried from
+// the S02 answercard); the .mcentre-card.mcentre-brief shell; the answer
+// sentence text rides inside (pre-escaped by the projection). Verified via the
+// REAL matchSummaryHtml output (not just source inspection).
+const s07Brief = mc.matchSummaryHtml({
+  answerHtml: "آرسنال میزبان دورتموند است؛ این بازی شنبه ۲۴ آبان ۱۴۰۵ ساعت ۲۳:۳۰ به وقت تهران برگزار می‌شود.",
+  factsRows: [],
+  resultHtml: ""
+});
+check(s07Brief.includes('<div class="mcentre-card mcentre-brief" id="answer">') &&
+  s07Brief.includes("آرسنال میزبان دورتموند است") &&
+  !s07Brief.includes("mcentre-facts") && !s07Brief.includes("mcentre-result") && !s07Brief.includes("mcentre-cols"),
+  "S07 briefing card: the answer-first card carries id=\"answer\" (the G-03 anchor) + the .mcentre-card.mcentre-brief shell + the pre-escaped answer sentence; with no facts/result atoms the pairing grid + the result block are OMITTED (no lone .mcentre-cols wrapper for a single child)");
+
+// (c) the facts panel — wraps the <table class="facts"> shape (the caption +
+// the <th scope="row">/<td> rows with their border dividers); the fullWhenHtml
+// date row rides byte-identical inside its <td> (S05 decision 95 frozen). The
+// caption is the composer constant MC_SUMMARY_FACTS_CAPTION («مشخصات بازی»).
+const s07FactsRow = { label: "تاریخ", valueHtml: '<time datetime="2026-11-14T20:00:00Z">شنبه ۲۴ آبان ۱۴۰۵ (۱۵ نوامبر ۲۰۲۶)</time> <span class="tznote">به وقت تهران</span>' };
+const s07Facts = mc.matchSummaryHtml({ answerHtml: "", factsRows: [s07FactsRow], resultHtml: "" });
+check(s07Facts.includes('<div class="mcentre-facts"><table class="facts"><caption>مشخصات بازی</caption><tbody>') &&
+  s07Facts.includes('<tr><th scope="row">تاریخ</th><td><time datetime="2026-11-14T20:00:00Z">شنبه ۲۴ آبان ۱۴۰۵ (۱۵ نوامبر ۲۰۲۶)</time>') &&
+  !s07Facts.includes("mcentre-brief") && !s07Facts.includes("mcentre-cols"),
+  "S07 facts panel: the .mcentre-facts panel wraps the <table class=\"facts\"> shape byte-identically (caption «مشخصات بازی» + <th scope=\"row\">/<td> rows); the fullWhenHtml date row rides inside its <td> untouched (S05 decision 95 frozen); with no answer atom the briefing card + the pairing grid are OMITTED");
+
+// (d) the two-column pairing — briefing | facts wrapped in .mcentre-cols when
+// BOTH atoms are present (briefing FIRST = right under native Persian RTL at
+// the wide threshold; first on mobile when collapsed to one column). The S03
+// .mcentre-cols utility (page-shell.ts) carries the 1080px collapse. When only
+// one atom is present, the grid is OMITTED (no .mcentre-cols wrapper for a
+// single child — verified in (b) and (c) above).
+const s07Pair = mc.matchSummaryHtml({ answerHtml: "خلاصه بازی", factsRows: [s07FactsRow], resultHtml: "" });
+check(s07Pair.indexOf('<div class="mcentre-cols">') > -1 &&
+  s07Pair.indexOf('<div class="mcentre-cols">') < s07Pair.indexOf('<div class="mcentre-card mcentre-brief" id="answer">') &&
+  s07Pair.indexOf('<div class="mcentre-card mcentre-brief" id="answer">') < s07Pair.indexOf('<div class="mcentre-facts">'),
+  "S07 pairing: briefing + facts wrapped in .mcentre-cols when both present — briefing FIRST (DOM order = right under native Persian RTL at the wide threshold; first on mobile), facts second; the S03 pairing grid carries the 1080px two-column→one-column collapse");
+
+// (e) the finished result block — rides below the pair (the answer restated);
+// the .mcentre-card.mcentre-result shell + the prebuilt inner content (h2 +
+// the answer sentence). OMITTED when resultHtml is "" (the no-empty-cards law).
+const s07Result = mc.matchSummaryHtml({ answerHtml: "خلاصه", factsRows: [s07FactsRow], resultHtml: '<h2>نتیجه نهایی</h2><p class="prose">آرسنال و دورتموند به مصاف هم رفتند.</p>' });
+check(s07Result.includes('<div class="mcentre-card mcentre-result"><h2>نتیجه نهایی</h2><p class="prose">') &&
+  s07Result.indexOf("mcentre-result") > s07Result.indexOf("mcentre-facts"),
+  "S07 result block: the finished result rides below the pairing grid in a .mcentre-card.mcentre-result shell; the h2 + the answer sentence are the prebuilt inner content; OMITTED when resultHtml=\"\" (verified in (b)/(c)/(d) — no mcentre-result renders without the atom)");
+
+// (f) the no-empty-cards law — all-empty input → "" (the section omits via
+// sectionHtml; the summary is always present in production — every match has
+// an answer sentence — but the renderer is fail-closed for the edge case).
+check(mc.matchSummaryHtml({ answerHtml: "", factsRows: [], resultHtml: "" }) === "",
+  "S07 no-empty-cards: all-empty atoms → empty string (the mcentre-summary section omits via sectionHtml — never a hollow card; the summary is always present in production but the renderer is fail-closed)");
+
+// (g) no repeated Summary heading before the briefing (spec §5: "No repeated
+// Summary heading before briefing") — the briefing card itself is the answer-
+// first surface; NO <h2>«خلاصه» precedes it. The section's aria-label is the
+// landmark name (not a visible heading).
+check(!/<h2[^>]*>خلاصه/.test(s07Brief) && !/<h2[^>]*>خلاصه/.test(s07Pair) && !/<h2[^>]*>خلاصه/.test(s07Result),
+  "S07 no-heading: no <h2>«خلاصه» heading precedes the briefing (spec §5: \"No repeated Summary heading before briefing\" — the briefing card itself is the answer-first surface; the section aria-label «خلاصه و مشخصات بازی» is the landmark name, not a visible heading)");
+
+// (h) the fullWhenHtml date row — byte-frozen inside its <td> (S05 decision 95).
+// The composer builds <th scope="row">LABEL</th><td>VALUEHTML</td> byte-for-byte
+// from the atoms; the valueHtml rides untouched (the seo-check.js facts-table
+// date regex `تاریخ</th><td>...</td>` still matches — the <th scope="row">
+// attribute precedes the label, the </th><td> structure is preserved).
+check(s07Facts.includes("تاریخ</th><td><time datetime=") &&
+  /تاریخ<\/th><td>([\s\S]*?)<\/td>/.test(s07Facts),
+  "S07 fullWhenHtml frozen: the facts-table date row markup is byte-identical (<th scope=\"row\">تاریخ</th><td>VALUEHTML</td>) — the seo-check.js facts-table date regex `تاریخ</th><td>...</td>` still matches; the fullWhenHtml atom rides untouched inside its <td> (S05 decision 95)");
+
+// (i) composer purity — the S07 renderer adds zero imports/KV/fetch/scripts.
+// The cost-law regex above (section 4) already gates the whole module; this
+// pins the summary-specific vocabulary to the pure-leaf contract.
+check(/export function matchSummaryHtml\(s: MatchSummaryInput\): string \{/.test(mcSrc) &&
+  !/import |env\.STATE|\.get\(|\.put\(|fetch\(|addEventListener|setTimeout|setInterval|<script/i.test(mcSrc),
+  "S07 purity: matchSummaryHtml is a pure string renderer — the composer carries zero imports/KV/fetch/client-scripts (the S02 pure leaf holds; the atoms arrive prebuilt from pages.ts)");
+
+// (j) the adaptive filter still passes — the summary is always present (every
+// match has an answer sentence), so the nav's Q9=B filter detects a non-empty
+// summary and the خلاصه nav item renders. The summaryHtml variable feeds both
+// matchNavHtml + matchCentreMain (the S06 extraction, byte-identical value).
+check(/const navHtml = matchNavHtml\(\{ summary: summaryHtml,/.test(pagesSrc) &&
+  /summary: summaryHtml,/.test(pagesSrc),
+  "S07 adaptive filter: the summaryHtml (matchSummaryHtml output) feeds both matchNavHtml + matchCentreMain — the nav's Q9=B filter detects a non-empty summary (the answer sentence is always present) so the خلاصه nav item renders (no contract change from S06)");
+
+// (k) the S07 CSS — the editorial card + facts panel + result block + the
+// pairing alignment override, on the block's own icy/navy tokens, logical
+// properties only.
+check(shellSrc.includes(".mcentre-card{background:linear-gradient(160deg,rgba(56,132,255,.08),rgba(56,132,255,.02) 55%,rgba(148,163,184,.04));border:1px solid rgba(94,160,255,.22);border-radius:14px;padding:14px 16px}") &&
+  shellSrc.includes(".mcentre-brief{font-size:1.04rem;line-height:1.95;color:var(--fg,#e8eefc)}") &&
+  shellSrc.includes(".mcentre-facts{background:rgba(2,8,23,.32);border:1px solid rgba(148,163,184,.18);border-radius:12px;padding:10px 12px}"),
+  "S07 CSS cards: the .mcentre-card container + the .mcentre-brief typography + the .mcentre-facts panel — the block's own icy/navy tokens (the hero/nav family), zero new assets/requests");
+check(shellSrc.includes(".mcentre-result{margin-block-start:14px}") &&
+  shellSrc.includes(".mcentre-result h2{font-size:1rem;font-weight:800;margin-block:0 6px;color:#7dd3fc}") &&
+  shellSrc.includes(".mcentre-facts .facts{margin:0;font-size:.9rem}") &&
+  shellSrc.includes(".mcentre-facts .facts caption{text-align:start;font-weight:700;padding-block-end:8px;color:#7dd3fc}"),
+  "S07 CSS details: the result block (margin-block-start + the sky-family h2) + the facts panel scoping (margin:0, .9rem, the sky-family caption — the existing .facts vocabulary overridden inside .mcentre-facts only, the global .facts/.answercard rules untouched)");
+check(shellSrc.includes("#mcentre-summary .mcentre-cols{align-items:start}"),
+  "S07 CSS pairing alignment: #mcentre-summary .mcentre-cols{align-items:start} — briefing | facts top-aligned (each card its natural height; scoped to #mcentre-summary so the shared S03 .mcentre-cols utility stays untouched for S12's home|away form pairing)");
+// the S07 block rides the page-shell style block (marked 'Match Centre S07')
+const s07StyleIdx = shellSrc.indexOf("Match Centre S07");
+check(s07StyleIdx > -1 && s07StyleIdx > shellSrc.indexOf("Match Centre S06") && s07StyleIdx < shellSrc.indexOf("Match Centre S03"),
+  "S07 CSS placement: the S07 style block rides the page-shell inline <style> after S06 and before the S03 foundation (chronological session order: S04 → S05 → S06 → S07 → S03)");
+
+// (l) S07 RTL/LTR — the S07-touched CSS rules use logical properties only
+// (no physical left/right anywhere in the new card/facts/result/pairing rules).
+var s07Rules = (shellSrc.match(/\.mcentre-card\{[^}]*\}|\.mcentre-brief\{[^}]*\}|\.mcentre-result\{[^}]*\}|\.mcentre-result h2\{[^}]*\}|\.mcentre-result \.prose\{[^}]*\}|\.mcentre-facts\{[^}]*\}|\.mcentre-facts \.facts\{[^}]*\}|\.mcentre-facts \.facts caption\{[^}]*\}|\.mcentre-facts \.facts th,\.mcentre-facts \.facts td\{[^}]*\}|#mcentre-summary \.mcentre-cols\{[^}]*\}/g) || []).join("");
+check(s07Rules.length > 0 && !/margin-left|margin-right|padding-left|padding-right|text-align:\s*(left|right)|\bleft:|\bright:|float:/.test(s07Rules),
+  "S07 RTL/LTR: the S07-touched rules are physical-property-free (margin-block-start, padding-block-end, padding-block, padding-inline, text-align:start, align-items:start — logical properties only) — the native-Persian RTL briefing|facts pairing mirrors cleanly under a dir flip (decision 2; the briefing renders right, facts left at the wide threshold under RTL, and mirrors under LTR)");
+
+// (m) the S03 .mcentre-cols utility stays byte-frozen — S07 reuses it, never
+// redefines it (the pairing grid is the shared utility; S07 only adds the
+// alignment override scoped to #mcentre-summary).
+check(shellSrc.includes(".mcentre-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}") &&
+  shellSrc.includes('@media (min-width:1080px){.mcentre-cols{grid-template-columns:repeat(2,minmax(0,1fr))}}'),
+  "S07 reuses S03: the .mcentre-cols pairing grid is byte-frozen from S03 (S07 reuses it for the briefing|facts pairing; only the #mcentre-summary-scoped align-items:start override is new — the shared utility stays untouched for S12)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

@@ -379,6 +379,35 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
 @media (min-width:601px){section[id^="mcentre-"]{scroll-margin-top:48px}}
 @media (max-width:600px){.mnav{position:fixed;inset-block-end:0;inset-inline:0;top:auto;justify-content:space-around;border-block-end:none;border-block-start:1px solid rgba(94,160,255,.22);border-radius:0;padding-block:6px;padding-inline:0;margin:0;background:rgba(2,8,23,.95)}.mnav-item{flex:1 1 0;text-align:center;padding:10px 4px;font-size:.82rem}.mtop{inset-block-end:calc(60px + .5rem)}}
 @media (prefers-reduced-motion:reduce){.mnav-item{transition:none}.mtop{transition:none}}
+/* ---- Match Centre S07 (M3): the summary & editorial system (specification §5)
+   The summary section's editorial presentation: the answer-first briefing card
+   (.mcentre-card.mcentre-brief — the G-03-style card, id="answer" preserved
+   from the S02 answercard), the compact facts panel (.mcentre-facts wrapping
+   the <table class="facts"> — the caption + the label/value rows with their
+   border dividers), and the finished result block (.mcentre-card.mcentre-
+   result). The .mcentre-cols pairing grid (S03, below) puts briefing | facts
+   side-by-side at the 1080px wide threshold and collapses to one column below
+   it (briefing first on mobile — spec §5). The block's own icy/navy tokens
+   (the hero/nav family), zero new assets/requests. CSS logical properties
+   ONLY — the native-Persian RTL composition mirrors cleanly under a dir flip
+   (decision 2). No <h2>«خلاصه» heading precedes the briefing (spec §5: "No
+   repeated Summary heading before briefing" — the briefing card itself is the
+   answer-first surface; the section aria-label «خلاصه و مشخصات بازی» is the
+   landmark name, not a visible heading). */
+.mcentre-card{background:linear-gradient(160deg,rgba(56,132,255,.08),rgba(56,132,255,.02) 55%,rgba(148,163,184,.04));border:1px solid rgba(94,160,255,.22);border-radius:14px;padding:14px 16px}
+.mcentre-brief{font-size:1.04rem;line-height:1.95;color:var(--fg,#e8eefc)}
+.mcentre-result{margin-block-start:14px}
+.mcentre-result h2{font-size:1rem;font-weight:800;margin-block:0 6px;color:#7dd3fc}
+.mcentre-result .prose{margin:0;line-height:1.85}
+.mcentre-facts{background:rgba(2,8,23,.32);border:1px solid rgba(148,163,184,.18);border-radius:12px;padding:10px 12px}
+.mcentre-facts .facts{margin:0;font-size:.9rem}
+.mcentre-facts .facts caption{text-align:start;font-weight:700;padding-block-end:8px;color:#7dd3fc}
+.mcentre-facts .facts th,.mcentre-facts .facts td{padding-block:7px;padding-inline:10px}
+/* The pairing grid alignment — briefing | facts top-aligned (each card its
+   natural height; the shorter one leaves whitespace below, never stretches to
+   match the taller). Scoped to #mcentre-summary so the shared .mcentre-cols
+   utility (S03) stays untouched for S12's home|away form pairing. */
+#mcentre-summary .mcentre-cols{align-items:start}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
    effect on any page without a mcentre-* section. Breakpoints and tokens are

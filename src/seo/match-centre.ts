@@ -59,6 +59,28 @@
 // script and the actions row stay in pages.ts and ride the hero part
 // unchanged.
 //
+// S07 LAW (specification §5, M3/S07, decisions 75–77 + the editorial briefing/
+// facts pairing): the summary renderer receives PRE-BUILT content atoms from
+// pages.ts's MatchSummaryInput projection (the answer-first sentence, the facts
+// rows, the finished result text — each pre-escaped/prebuilt), so this module
+// stays the pure leaf the S02 cost law pinned — zero imports, zero KV, zero
+// client scripts. It owns the summary MARKUP: the answer-first briefing card
+// (the G-03-style card, id="answer" preserved — the semantic anchor carried
+// from the S02 answercard), the compact facts panel wrapping the <table
+// class="facts"> shape (the caption + the <th>/<td> rows with their border
+// dividers — the fullWhenHtml date row rides byte-identical inside its <td>,
+// S05 decision 95 frozen), the .mcentre-cols two-column pairing (briefing |
+// facts at the 1080px wide threshold, one-column below — briefing first on
+// mobile per spec §5; the S03 pairing grid), and the finished result block
+// below the pair (the «نتیجه نهایی» heading + the answer sentence restated).
+// No <h2>«خلاصه» heading precedes the briefing (spec §5: "No repeated Summary
+// heading before briefing" — the briefing card itself is the answer-first
+// surface). The no-empty-cards law holds (the summary is always present — every
+// match has an answer sentence — but the facts panel and the result block are
+// independently conditional). The mcentre-summary slot (S02 contract) and the
+// nav's adaptive Q9=B filter (the non-empty summary drives the خلاصه nav item)
+// hold.
+
 // THE ANCHOR VOCABULARY — specification §3 page order. The five sticky-nav
 // destinations (decisions 11/13: خلاصه، جدول، فرم، بازی‌ها، ورزشگاه) land on
 // summary/standings/form/schedule/venue once S06 ships. The `mcentre-` id
@@ -206,6 +228,88 @@ export function matchHeroHtml(h: MatchHeroInput): string {
     heroSideHtml(h.away, MC_HERO_AWAY_LABEL, "away", awayPort) +
     "</div>" +
     "</section>";
+}
+
+// ---- Match Centre S07 (M3): the summary & editorial system (specification §5) ----
+//
+// One facts row: the Persian label (pre-escaped plain text) + the prebuilt
+// value HTML (may contain <a>, <span>, <time> — the fullWhenHtml date row, the
+// venue map link, the competition link, the score string). The label/value
+// pairing is the spec §5 "Persian label/value rows with dividers" — the
+// <th>/<td> border dividers carry the separation (the existing .facts table
+// vocabulary, unchanged). Missing facts are omitted at the projection (a row
+// with no data never enters the array — the no-empty-cards law at the row
+// level).
+export interface MatchFactRow {
+  label: string;     // Persian label, pre-escaped («رقابت», «مرحله», «تاریخ», …)
+  valueHtml: string; // prebuilt HTML (links, spans, <time> — the fullWhenHtml atom rides here)
+}
+
+// The summary projection. Every field is a pre-escaped/prebuilt string or a
+// facts-row array computed exactly as the legacy pages.ts summaryHtml did
+// (whyBigHtml's answer sentence + the facts rows + the finished result block)
+// — the branch below reuses the same gates byte-for-byte, so no data state
+// changes with the rework. The answer sentence text (matchAnswerSentence)
+// feeds the meta description + the SportsEvent JSON-LD (GSC surfaces,
+// byte-frozen in pages.ts) AND the visible briefing card — one source of
+// truth. The facts rows' fullWhenHtml date row stays byte-frozen inside its
+// <td> (S05 decision 95). The resultHtml is "" when not finished (the
+// no-empty-cards law at the block level).
+export interface MatchSummaryInput {
+  answerHtml: string;    // esc(matchAnswerSentence(sm)) — the briefing copy (the G-03 answer-first sentence)
+  factsRows: MatchFactRow[];  // the facts rows (empty array = no facts panel; the projection always fills ≥1 row today)
+  resultHtml: string;    // the finished result inner content (h2 + the answer sentence) — "" when not finished (prebuilt)
+}
+
+// The facts panel caption — a static Persian label, like the hero's «میزبان»/
+// «میهمان» role labels (a composer constant, not a data atom). The spec §5
+// "compact facts panel" heading: the caption names the table for screen
+// readers (the <caption> element is the accessible name).
+const MC_SUMMARY_FACTS_CAPTION = "مشخصات بازی";
+
+// The summary renderer. DOM = the .mcentre-cols pairing grid (briefing |
+// facts) when BOTH atoms are present, collapsing to one column below 1080px
+// (briefing first on mobile — spec §5; the S03 pairing grid rides the
+// page-shell style block). The finished result block rides below the pair.
+// The answer-first briefing card carries id="answer" (the G-03 semantic
+// anchor preserved from the S02 answercard — the answer-first surface's id).
+//
+// The no-empty-cards law: the summary is always present (every match has an
+// answer sentence), but the facts panel and the result block are independently
+// conditional. When only one of {briefing, facts} is present, the pairing grid
+// is omitted (a single card renders alone — no .mcentre-cols wrapper for a
+// single child, so the grid never strands a lone card in one track). When
+// neither is present (a future projection edge case), the renderer returns ""
+// and sectionHtml omits the mcentre-summary section entirely.
+export function matchSummaryHtml(s: MatchSummaryInput): string {
+  // The briefing card (answer-first) — id="answer" preserved (the G-03 anchor;
+  // the S02 answercard's id carries to the new editorial card).
+  const brief = s.answerHtml
+    ? '<div class="mcentre-card mcentre-brief" id="answer">' + s.answerHtml + "</div>"
+    : "";
+  // The facts panel — wraps the existing <table class="facts"> shape (the
+  // caption + the <th>/<td> rows with their border dividers). The fullWhenHtml
+  // date row rides byte-identical inside a <td> (S05 decision 95 — frozen).
+  const factsTable = s.factsRows.length
+    ? '<div class="mcentre-facts"><table class="facts"><caption>' + MC_SUMMARY_FACTS_CAPTION + "</caption><tbody>" +
+      s.factsRows.map((r) => '<tr><th scope="row">' + r.label + "</th><td>" + r.valueHtml + "</td></tr>").join("") +
+      "</tbody></table></div>"
+    : "";
+  // The pairing grid — briefing FIRST (DOM order = right under native Persian
+  // RTL at the wide threshold; first on mobile when collapsed to one column).
+  // When only one atom is present, the pairing grid is omitted (the single
+  // card renders alone — no .mcentre-cols wrapper for a single child).
+  const pair = brief && factsTable
+    ? '<div class="mcentre-cols">' + brief + factsTable + "</div>"
+    : brief + factsTable;
+  // The finished result block rides below the pair (the answer restated — the
+  // «نتیجه نهایی» heading + the answer sentence). Omitted when not finished.
+  const result = s.resultHtml
+    ? '<div class="mcentre-card mcentre-result">' + s.resultHtml + "</div>"
+    : "";
+  const inner = pair + result;
+  if (!inner || !inner.trim()) return "";
+  return inner;
 }
 
 // One anchored wrapper. The no-empty-cards law lives HERE: empty or
