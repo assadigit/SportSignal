@@ -507,6 +507,23 @@ check(shellSrc.includes(".mtop{position:fixed;inset-block-end:1rem;inset-inline-
   "S06 CSS back-to-top (Q12): .mtop fixed bottom-end (inset-block-end + inset-inline-end — logical properties, RTL/LTR clean), [hidden] removes it from layout + a11y tree");
 check(/@media \(min-width:601px\)\{section\[id\^="mcentre-"\]\{scroll-margin-top:48px\}\}/.test(shellSrc),
   "S06 CSS offset: desktop (≥601px) scroll-margin-top:48px on mcentre-* sections — a clicked destination clears the sticky nav (mobile bottom nav needs no top offset)");
+// S06 desktop sticky-persistence fix: the composer wraps the nav part in
+// <section id="mcentre-nav">, whose height equals .mnav's own (~48px) — that
+// gave .mnav{position:sticky;top:0} ZERO sticking range (the nav scrolled
+// away the instant its 48px section passed the viewport top; a 48px empty
+// gap on a non-adjacent click where the sticky bar should be). The fix
+// dissolves the section's BOX on desktop (display:contents) so .mnav's
+// containing block becomes .page-col (the grandparent — spans the whole
+// match page): the sticky nav persists at top:0 across ALL sections (Q10=C
+// desktop sticky-top, analogous to the mobile fixed-bottom). The element
+// stays in the DOM (id anchor + aria-label landmark + getElementById all
+// intact) — only its box vanishes. Mobile (≤600px) is unaffected (.mnav is
+// position:fixed there). This source-inspection assertion defeats the
+// 48px-wrapper defect at the rule level (the runtime persistence is the
+// agent-browser smoke's job — the documented S06 gap was that the source
+// checks never covered the layout/DOM-structure concern).
+check(/@media \(min-width:601px\)\{#mcentre-nav\{display:contents\}\}/.test(shellSrc),
+  "S06 sticky persistence (desktop fix): @media(min-width:601px){#mcentre-nav{display:contents}} dissolves the 48px section wrapper so .mnav's containing block spans .page-col — the sticky nav persists at viewport top:0 across all sections (defeats the zero-sticking-range defect; Q10=C desktop sticky-top, analogous to the mobile fixed-bottom)");
 check(/@media \(max-width:600px\)\{\.mnav\{position:fixed;inset-block-end:0;inset-inline:0;top:auto/.test(shellSrc) &&
   shellSrc.includes(".mtop{inset-block-end:calc(60px + .5rem)}"),
   "S06 CSS responsive (Q10=C mobile): ≤600px the nav becomes a fixed bottom tab-bar (inset-block-end:0, inset-inline:0, space-around) and .mtop rises above it (calc(60px + .5rem)) — thumb-reachable, no overlap");

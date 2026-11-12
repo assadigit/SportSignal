@@ -357,6 +357,25 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
 .mtop{position:fixed;inset-block-end:1rem;inset-inline-end:1rem;z-index:51;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(94,160,255,.18);border:1px solid rgba(94,160,255,.45);color:#7dd3fc;cursor:pointer;box-shadow:0 4px 14px rgba(2,8,23,.5);transition:opacity .2s,background .15s}
 .mtop:hover{background:rgba(94,160,255,.28)}
 .mtop[hidden]{display:none}
+/* S06 desktop sticky-persistence fix: the composer (match-centre.ts) wraps
+   the nav part in <section id="mcentre-nav"> (the S02 slot contract — the
+   mcentre-nav anchor + MatchCentreParts.nav?). That section's height equals
+   .mnav's own height (~48px), so .mnav{position:sticky;top:0} had ZERO
+   sticking range — the nav scrolled away the instant its 48px section passed
+   the viewport top (defect: nav_visible=false mid-content; a 48px empty gap
+   on فرم click where the sticky bar should be). display:contents dissolves
+   the section's BOX on desktop (≥601px) — the element stays in the DOM (the
+   id anchor + aria-label landmark + getElementById all still work), but it
+   generates no box, so .mnav's containing block becomes .page-col (the
+   grandparent, which spans the whole match page). The sticky nav now
+   persists at viewport top:0 across ALL sections (Q10=C desktop sticky-top,
+   analogous to the mobile fixed-bottom which persists regardless). Mobile
+   (≤600px) is unaffected: .mnav is position:fixed there (viewport-relative,
+   independent of any wrapper). display:contents is physical-property-free
+   (RTL/LTR clean under a dir flip — decision 2). The 48px scroll-margin-top
+   below still applies to the click destinations (#mcentre-summary etc.) —
+   those stay real <section> boxes, so a clicked destination clears the bar. */
+@media (min-width:601px){#mcentre-nav{display:contents}}
 @media (min-width:601px){section[id^="mcentre-"]{scroll-margin-top:48px}}
 @media (max-width:600px){.mnav{position:fixed;inset-block-end:0;inset-inline:0;top:auto;justify-content:space-around;border-block-end:none;border-block-start:1px solid rgba(94,160,255,.22);border-radius:0;padding-block:6px;padding-inline:0;margin:0;background:rgba(2,8,23,.95)}.mnav-item{flex:1 1 0;text-align:center;padding:10px 4px;font-size:.82rem}.mtop{inset-block-end:calc(60px + .5rem)}}
 @media (prefers-reduced-motion:reduce){.mnav-item{transition:none}.mtop{transition:none}}
