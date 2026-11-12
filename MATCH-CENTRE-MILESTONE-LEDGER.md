@@ -7,12 +7,12 @@
 **Production target:** Worker `ucl-notifier` via `npx wrangler deploy` → `sportsignal.ir` (+ `football.sportsignal.ir`, `ucl-notifier.sportsignal.workers.dev` alias). Current deployment `88649642` / version `b48bae21` (2026-11-10T11:10:43Z). Rollback: `npx wrangler deployments list` → `npx wrangler rollback`.
 
 ## Current status
-- Current milestone: M2 — Hero & navigation (in progress)
-- Current session: S06 (next to start)
-- Last completed session: S05 — portrait fallback, timezone and date (2026-11-12)
+- Current milestone: M2 — Hero & navigation (**complete — M2 gate pending**)
+- Current session: the M2 gate + the M2 preview deployment (S07 opens M3 after)
+- Last completed session: S06 — sticky section nav + back-to-top (2026-11-12)
 - Last completed milestone: M1 — Page foundation **complete** (S02 shell + S03 foundation; the M1-gate version preview uploaded and smoke-tested — see the deployment entry in the execution log)
-- Next action: S06 — sticky navigation and back-to-top (audit §12/§16 row S06: five destinations خلاصه/جدول/فرم/بازی‌ها/ورزشگاه, scroll tracking with offset, the floating back-to-top, reduced motion) — **the M2 gate + the M2 preview (`wrangler versions upload` at `13.25x-mc*`) ride AFTER S06**
-- Production release: Not approved until S21 readiness gate; production deploy only at S22 (production stays on `13.255-seospell`; the M1 preview version `13.256-mcfound` is uploaded but NEVER activated; mid-milestone sessions keep the version at `13.256-mcfound` — the M2 preview upload happens at the M2 gate after S06)
+- Next action: the **M2 gate** (milestone approval for S04+S05+S06) → the **M2 preview deployment** (`npx wrangler versions upload` at `13.25x-mc*`, NEVER activated, read-only smoke on the workers.dev preview URL) → then **S07** opens M3 (Summary & editorial system)
+- Production release: Not approved until S21 readiness gate; production deploy only at S22 (production stays on `13.255-seospell`; the M1 preview version `13.256-mcfound` is uploaded but NEVER activated; mid-milestone sessions keep the version at `13.256-mcfound` — the M2 preview upload happens at the M2 gate after S06, now due)
 
 ## M0 gate decision record (owner approval, 2026-11-11)
 
@@ -29,13 +29,25 @@ Owner message: "Approve. give me the session for next session. commit push and u
 
 Override rule: Q1–Q4 are product choices tied to S05/S14/S18/S04 respectively; the owner may override any of them before that session lands without re-opening M0. Q5/Q6 are process choices now in force.
 
+## S06 decision record (owner approval via chat, 2026-11-12)
+
+The five S06 decision points (from the S06 prompt) resolve to:
+
+| # | Decision | Resolution |
+|---|---|---|
+| Q9 | Nav anchor set | **B — adaptive** (only present sections render a nav item; the nav grows as S10/S14/S15 ship) |
+| Q10 | Nav placement | **C — responsive** (desktop ≥600px sticky-top, mobile <600px fixed-bottom tab-bar) |
+| Q11 | Scroll tracking | **A — IntersectionObserver** (-20%/-60% rootMargin active-reading zone; no main-thread thrash) |
+| Q12 | Back-to-top | **Resolved (delegated)** — hero-out-of-view threshold via the same observer; fixed bottom-end (logical properties); raised above the mobile nav; reduced-motion = instant; `<button aria-label="بازگشت به بالا">` + chevron SVG |
+| Q13 | Client script home | **A — inline `<script>` in the nav part** (no bundle/SW bump, ADR-006 respected) |
+
 ## Milestones
 
 | Milestone | Status | Sessions | Commit SHAs | Preview deployment | Gate |
 |---|---|---|---|---|---|
 | M0 Discovery & execution plan | Complete — **approved 2026-11-11** | S00–S01 | `82ee82b` (extraction + audit) + approval docs commit | None (audit only) | Approved 2026-11-11 (blanket; Q1–Q6 recommended options) |
 | M1 Page foundation | Complete (S02+S03) | S02–S03 | S02: `9e6c0c1` + `ac13a1e`; S03: `ce1befd` | **Done** — Workers version preview `8053ea4c-d4ed-4224-9f3d-c61aca10ced9` (`13.256-mcfound`, https://8053ea4c-ucl-notifier.sportsignal.workers.dev; uploaded NEVER activated — the provided token cannot generate D1 bindings, so the preview config omits the two optional D1 bindings, documented; read-only smoke passed) | Passed 2026-11-11 (review evidence + deployment entry in the execution log; no owner approval required — next approval gate is M9) |
-| M2 Hero & navigation | In progress (S04+S05 complete) | S04–S06 | S04: `c74e7e1`; S05: `d96ea3d` | Pending (at the M2 gate after S06) | Pending |
+| M2 Hero & navigation | **Complete (S04+S05+S06)** — M2 gate pending | S04–S06 | S04: `c74e7e1`; S05: `d96ea3d`; S06: `FEAT_SHA_PLACEHOLDER` | Pending (M2 preview upload next) | Pending |
 | M3 Summary & editorial system | Not started | S07–S09 | — | Pending | Pending |
 | M4 Standings | Not started | S10–S11 | — | Pending | Pending |
 | M5 Form & recent results | Not started | S12–S13 | — | Pending | Pending |
@@ -55,7 +67,7 @@ Override rule: Q1–Q4 are product choices tied to S05/S14/S18/S04 respectively;
 | S03 | Complete | `ce1befd` | Pushed to `origin/feat/match-centre` 2026-11-11 via the one-shot token URL; `git ls-remote` verified (`ce1befd35d…` = local HEAD; remote URL clean — token never persisted) | npm test exit 0 — 2,989 OK (baseline 2,979 + 10 new check-match-centre S03 assertions), 0 failures | CSS-only foundation in the page-shell style block: 28/20px section rhythm + the .mcentre-cols 1080px collapse utility, logical properties only; byte-proof vs `9e6c0c1`: only delta = +2,285 B CSS run, body byte-identical, 18 unrelated routes verified; **M1 gate: version `13.256-mcfound` preview `8053ea4c-d4ed-4224-9f3d-c61aca10ced9` uploaded (NEVER activated) + read-only smoke passed** — see the deployment entry in the execution log (the token cannot generate D1 bindings: the preview config omits the two optional D1 bindings, documented; the S22 deploy needs a D1-capable token) |
 | S04 | Complete | `c74e7e1` | Pushed to `origin/feat/match-centre` 2026-11-11 via the one-shot token URL; `git ls-remote` verified (`c74e7e1aef…` = local HEAD; remote URL clean — token never persisted) | npm test exit 0 — 3,002 OK (baseline 2,989 + 13 new check-match-centre S04 assertions), 0 failures; byte-proof 79/79 vs `440b9f8`; structural 110/110; RTL/LTR + 390/768/1440 layout matrix + screenshots | Hero ownership moved to the composer (matchHeroHtml + the matchHeroInput projection; legacy matchHeadHtml retired); comp header above teams; balanced RTL face-off; dominant scoreboard; upcoming/live/finished variants; «پایان بازی» pill; finished scorers omitted (Q4 = A); the pinned «خلاصه بازی» landmark preserved |
 | S05 | Complete | `d96ea3d` | Pushed to `origin/feat/match-centre` 2026-11-12 via the one-shot token URL (never persisted; remote URL clean); `git ls-remote` verified — `d96ea3dfde…` = local HEAD | npm test exit 0 — 3,017 OK (baseline 3,002 + 15 new check-match-centre S05 assertions), 0 failures; byte-proof 109/109 vs `2536fd2`; layout matrix 390/768/1440 RTL/LTR + screenshots + VLM; live onerror hide-both verified | Both-or-neither portraits via the shared `heroArtSrv` (relocated verbatim router→seo/data.ts, cycle-free — homepage byte-identical outright); pure-DOM onerror hide-both (decision 85); CSS-only atmosphere (decision 99); Q1=A kickoff line (Tehran + «به وقت تهران» + Latin UTC note) + the D1 full localized date (decision 95); real-helper midnight-crossover tests; GSC surfaces byte-frozen |
-| S06 | Not started | — | — | — | The M2 gate + the M2 preview deployment ride immediately after S06 |
+| S06 | Complete | `FEAT_SHA_PLACEHOLDER` | Pushed to `origin/feat/match-centre` via the one-shot token URL (never persisted; remote URL clean); `git ls-remote` verified | npm test exit 0 — 3,034 OK (baseline 3,017 + 17 new check-match-centre S06 assertions), 0 failures; tsc clean; git diff --check clean; wrangler dev boot smoke (worker boots, homepage 200, no errors) | Adaptive sticky nav (Q9=B/Q10=C) + IntersectionObserver active tracking (Q11=A) + back-to-top (Q12) as inline script (Q13=A); composer stays pure; summaryHtml extracted (byte-identical) feeds both the nav + the composer; 2 co-evolved S02 source-pins. Full byte-proof + layout matrix NOT run (seeder wiped — documented gap) |
 | S08 | Not started | — | — | — | |
 | S09 | Not started | — | — | — | |
 | S10 | Not started | — | — | — | |

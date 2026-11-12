@@ -337,6 +337,29 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
 .mact-cal{background:rgba(94,160,255,.13);border-color:rgba(94,160,255,.4)}
 @media (max-width:560px){.mcentre-hero{padding:14px 8px}.mcentre-hero-comp{padding-block-end:8px}.mcentre-hero-face{grid-template-columns:1fr 1fr;grid-template-areas:"home away" "center center"}.mteam{grid-area:home}.mteam.away{grid-area:away}.mcenter{grid-area:center;margin-block-start:8px}.mcrest{width:48px;height:48px}.mport{width:64px;height:64px}}
 @media (prefers-reduced-motion:reduce){.mdot{animation:none}}
+/* ---- Match Centre S06 (M2): the sticky section nav + back-to-top ----
+   Q10=C responsive: desktop (≥601px) sticky-top, mobile (≤600px) fixed-bottom
+   tab-bar — thumb-reachable. Q9=B adaptive: the nav items render only for
+   present mcentre-* sections (pages.ts matchNavHtml filters — a bare <nav>
+   never renders). Q11=A IntersectionObserver (the inline script in pages.ts)
+   drives the .is-active highlight; the scroll-margin-top on desktop keeps a
+   clicked destination clear of the sticky bar. Q12: the .mtop back-to-top
+   button is fixed bottom-end (logical properties — RTL/LTR clean), raised
+   above the mobile nav, and toggles via the hero's IntersectionObserver
+   (hidden while the hero is in view). Reduced motion = instant, no
+   transitions. CSS logical properties ONLY — the native-Persian RTL nav
+   mirrors cleanly under a dir flip (decision 2). The block's own icy/navy
+   tokens, zero new assets/requests. */
+.mnav{position:sticky;top:0;z-index:50;display:flex;justify-content:center;gap:2px;background:rgba(2,8,23,.92);backdrop-filter:blur(8px);border-block-end:1px solid rgba(94,160,255,.22);padding-block:4px;padding-inline:8px;margin-block:10px 12px}
+.mnav-item{display:inline-block;padding:8px 14px;border-radius:8px;color:var(--muted,#9aa4b2);text-decoration:none;font-size:.88rem;font-weight:600;transition:color .15s,background .15s}
+.mnav-item:hover{color:#e8eefc;background:rgba(94,160,255,.10)}
+.mnav-item.is-active{color:#7dd3fc;background:rgba(125,211,252,.12)}
+.mtop{position:fixed;inset-block-end:1rem;inset-inline-end:1rem;z-index:51;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(94,160,255,.18);border:1px solid rgba(94,160,255,.45);color:#7dd3fc;cursor:pointer;box-shadow:0 4px 14px rgba(2,8,23,.5);transition:opacity .2s,background .15s}
+.mtop:hover{background:rgba(94,160,255,.28)}
+.mtop[hidden]{display:none}
+@media (min-width:601px){section[id^="mcentre-"]{scroll-margin-top:48px}}
+@media (max-width:600px){.mnav{position:fixed;inset-block-end:0;inset-inline:0;top:auto;justify-content:space-around;border-block-end:none;border-block-start:1px solid rgba(94,160,255,.22);border-radius:0;padding-block:6px;padding-inline:0;margin:0;background:rgba(2,8,23,.95)}.mnav-item{flex:1 1 0;text-align:center;padding:10px 4px;font-size:.82rem}.mtop{inset-block-end:calc(60px + .5rem)}}
+@media (prefers-reduced-motion:reduce){.mnav-item{transition:none}.mtop{transition:none}}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
    effect on any page without a mcentre-* section. Breakpoints and tokens are

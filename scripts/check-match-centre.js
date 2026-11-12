@@ -147,7 +147,7 @@ if (!/const main = matchCentreMain\(\{/.test(pagesSrc)) { bad("wiring: buildMatc
 if (!/function matchHeroInput\(sm: SeoMatch\): MatchHeroInput \{/.test(pagesSrc)) { bad("wiring: the S04 hero data projection (matchHeroInput) is gone from pages.ts"); wiringOk = false; }
 if (!/hero: matchHeroHtml\(heroInput\) \+ matchActionsHtml\(sm, path\) \+ matchHeadScript\(\)/.test(pagesSrc)) { bad("wiring: the hero part is no longer the S04 hero render + actions + script"); wiringOk = false; }
 if (/function matchHeadHtml\(/.test(pagesSrc) || /class="matchhead"/.test(pagesSrc)) { bad("wiring: the legacy matchHeadHtml builder/marked-up still present after the S04 retirement"); wiringOk = false; }
-if (!/summary: whyBigHtml\(sm, ctx\) \+ facts \+ resultBlock/.test(pagesSrc)) { bad("wiring: the summary part no longer carries answercard + facts (+ result block)"); wiringOk = false; }
+if (!(/summary: whyBigHtml\(sm, ctx\) \+ facts \+ resultBlock/.test(pagesSrc) || (/const summaryHtml = whyBigHtml\(sm, ctx\) \+ facts \+ resultBlock;/.test(pagesSrc) && /summary: summaryHtml,/.test(pagesSrc)))) { bad("wiring: the summary part no longer carries answercard + facts (+ result block)"); wiringOk = false; }
 if (!/form: formCard,/.test(pagesSrc)) { bad("wiring: the form part no longer carries the W/D/L strip"); wiringOk = false; }
 if (!/related: similarCard,/.test(pagesSrc)) { bad("wiring: the related part no longer carries the sibling-fixtures card"); wiringOk = false; }
 if (!/footerHook: related/.test(pagesSrc)) { bad("wiring: the footer-hook part no longer carries the related-links card"); wiringOk = false; }
@@ -161,7 +161,7 @@ if (!/let desc = matchAnswerSentence\(sm\)\.replace\(/.test(pagesSrc)) { bad("GS
 if (!/path,\n\s+title,/.test(pagesSrc) || !/head: buildHead\(\{/.test(pagesSrc)) { bad("GSC: buildHead no longer receives the canonical path + title"); gscOk = false; }
 if (!/JL\.sportsEventNode\(sm, matchAnswerSentence\(sm\)\.replace\(/.test(pagesSrc)) { bad("GSC: the SportsEvent JSON-LD description node changed"); gscOk = false; }
 if (!/JL\.breadcrumbNode\(trail\)/.test(pagesSrc) || !/crumbHtml: M\.breadcrumbsHtml\(trail\)/.test(pagesSrc)) { bad("GSC: the breadcrumb node/render changed"); gscOk = false; }
-if (!/<div class="answercard" id="answer">/.test(pagesSrc) || !/summary: whyBigHtml\(sm, ctx\)/.test(pagesSrc)) { bad("GSC: the answer-first answercard is no longer rendered inside the summary section"); gscOk = false; }
+if (!/<div class="answercard" id="answer">/.test(pagesSrc) || !(/summary: whyBigHtml\(sm, ctx\)/.test(pagesSrc) || /summary: summaryHtml,/.test(pagesSrc))) { bad("GSC: the answer-first answercard is no longer rendered inside the summary section"); gscOk = false; }
 if (gscOk) ok("GSC surfaces intact: title ladder, desc funnel, canonical path, SportsEvent + Breadcrumb JSON-LD, answercard-in-summary — byte-for-byte");
 
 // header/footer reuse: the shell still owns the global chrome + centered column
@@ -438,6 +438,83 @@ check(shellSrc.includes(".mcentre-hero{background:radial-gradient(130% 100% at 5
 const s05Rules = (shellSrc.match(/\.mport\{[^}]*\}|\.mkick \.tznote\{[^}]*\}|\.mkick \.utcnote\{[^}]*\}|\.mkickdate\{line-height:1\.8\}/g) || []).join("");
 check(s05Rules.length > 0 && !/margin-left|margin-right|padding-left|padding-right|\bleft:|\bright:|float:/.test(s05Rules),
   "S05 RTL/LTR: the S05-touched rules are physical-property-free — the portrait order comes from the DOM (home first = right under native RTL), so a deliberate LTR mirror stays clean (decision 2)");
+
+// ---------- 9. S06 (M2): sticky section nav + back-to-top ----------
+// Q9=B adaptive (only present sections), Q10=C responsive (desktop sticky
+// top / mobile fixed bottom), Q11=A IntersectionObserver, Q12 back-to-top
+// (hero-out-of-view threshold, logical-property placement, reduced-motion),
+// Q13=A inline script (no bundle/SW bump). The composer stays pure — the
+// nav part arrives prebuilt, the composer only wraps it in mcentre-nav.
+
+// (a) the contract: MC_NAV_DESTS + matchNavHtml + matchNavScript in pages.ts
+check(/const MC_NAV_DESTS: \{ id: string; label: string \}\[\]/.test(pagesSrc) &&
+  /function matchNavHtml\(/.test(pagesSrc) && /function matchNavScript\(/.test(pagesSrc),
+  "S06 contract: pages.ts defines MC_NAV_DESTS + matchNavHtml + matchNavScript (the nav part builder + its inline script)");
+
+// (b) wiring: buildMatchPage passes nav: navHtml (the mcentre-nav slot fills)
+check(/const navHtml = matchNavHtml\(/.test(pagesSrc) && /nav: navHtml,/.test(pagesSrc),
+  "S06 wiring: buildMatchPage extracts summaryHtml + builds navHtml + passes nav: navHtml to matchCentreMain (the mcentre-nav slot fills — no contract change, the slot + MatchCentreParts.nav? exist since S02)");
+
+// (c) Q9=B adaptive: only present sections render a nav item
+check(/MC_NAV_DESTS\.filter\(/.test(pagesSrc) && /html && html\.trim\(\)\.length > 0/.test(pagesSrc),
+  "S06 adaptive (Q9=B): matchNavHtml filters MC_NAV_DESTS by non-empty part content — only present sections render a nav item (no broken anchors to not-yet-built sections; the nav grows as S10/S14/S15 ship)");
+
+// (d) the five spec destinations (decisions 11/13) in page order
+check(/\{ id: "mcentre-summary", label: "خلاصه" \}/.test(pagesSrc) &&
+  /\{ id: "mcentre-standings", label: "جدول" \}/.test(pagesSrc) &&
+  /\{ id: "mcentre-form", label: "فرم" \}/.test(pagesSrc) &&
+  /\{ id: "mcentre-schedule", label: "بازی‌ها" \}/.test(pagesSrc) &&
+  /\{ id: "mcentre-venue", label: "ورزشگاه" \}/.test(pagesSrc),
+  "S06 destinations: the five spec §3 nav targets (خلاصه/جدول/فرم/بازی‌ها/ورزشگاه — decisions 11/13) registered in page order");
+
+// (e) the nav item shape — href + data-target (the observer + click driver)
+check(/'<a class="mnav-item" href="#' \+ d\.id \+ '" data-target="' \+ d\.id \+ '">' \+ esc\(d\.label\) \+ '<\/a>'/.test(pagesSrc),
+  "S06 nav item: each item is <a class=\"mnav-item\" href=\"#mcentre-X\" data-target=\"mcentre-X\">LABEL</a> — the data-target drives the IntersectionObserver + the click handler");
+
+// (f) Q12 back-to-top: the button + the decorative chevron SVG, hidden initially
+check(pagesSrc.includes('<button class="mtop" type="button" aria-label="بازگشت به بالا" hidden>') &&
+  pagesSrc.includes('<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">'),
+  "S06 back-to-top (Q12): a <button class=\"mtop\" aria-label=\"بازگشت به بالا\" hidden> + a decorative chevron SVG (aria-hidden, focusable=false) — hidden until the hero leaves the viewport");
+
+// (g) Q11=A + Q13=A + cost law: the inline script (IntersectionObserver,
+//     DOMContentLoaded guard, scrollIntoView/scrollTo, reduced-motion) —
+//     pure DOM, no fetch/timer/polling. Extract the matchNavScript body to
+//     scope the cost-law check (matchHeadScript carries setTimeout elsewhere).
+var navFnStart = pagesSrc.indexOf("function matchNavScript");
+var navFnEnd = pagesSrc.indexOf("function matchActionsHtml", navFnStart);
+var navFnSrc = navFnStart >= 0 && navFnEnd > navFnStart ? pagesSrc.slice(navFnStart, navFnEnd) : "";
+check(navFnSrc.length > 0 && /IntersectionObserver/.test(navFnSrc) && /rootMargin:'-20% 0px -60% 0px'/.test(navFnSrc),
+  "S06 active tracking (Q11=A): the inline script uses IntersectionObserver with a -20%/-60% rootMargin (the active-reading zone) — no main-thread scroll thrash");
+check(navFnSrc.length > 0 && /document\.readyState==='loading'/.test(navFnSrc) && /DOMContentLoaded/.test(navFnSrc),
+  "S06 script guard: DOMContentLoaded — the target sections render after the mcentre-nav section in registry order, so the observer setup waits for the full DOM");
+check(navFnSrc.length > 0 && /scrollIntoView\(\{behavior:reduce\?'auto':'smooth',block:'start'\}\)/.test(navFnSrc) && /window\.scrollTo\(\{top:0,behavior:reduce\?'auto':'smooth'\}\)/.test(navFnSrc),
+  "S06 scroll (Q12): nav-item click → scrollIntoView (the CSS scroll-margin-top offsets the sticky bar); back-to-top → scrollTo(0); reduced-motion = instant (behavior:'auto')");
+check(navFnSrc.length > 0 && !/fetch\(|setInterval|setTimeout|XMLHttpRequest|new Image/.test(navFnSrc),
+  "S06 cost law (Q13=A): the inline nav script is pure DOM — no fetch/timer/polling/new Image (rides the mcentre-nav part like the S04 countdown script; no public-*.js bundle rename, no SW cache bump — ADR-006)");
+
+// (h) composer purity: match-centre.ts carries NO nav/observer/script code
+check(!/matchNavHtml|matchNavScript|IntersectionObserver|\.mnav\b|\.mtop\b/.test(mcSrc),
+  "S06 purity: the composer (match-centre.ts) carries zero nav/observer/script code — the nav part arrives prebuilt from pages.ts, the composer only wraps it in the mcentre-nav anchor (the S02 pure leaf holds)");
+
+// (i) the S06 CSS — sticky/fixed nav, active state, back-to-top, responsive,
+//     scroll-margin-top, reduced-motion, logical properties only.
+check(shellSrc.includes(".mnav{position:sticky;top:0;z-index:50;") &&
+  shellSrc.includes(".mnav-item{display:inline-block;") &&
+  shellSrc.includes(".mnav-item.is-active{color:#7dd3fc;"),
+  "S06 CSS nav (Q10=C desktop): .mnav sticky-top + .mnav-item + .is-active — the active destination highlights in the sky family");
+check(shellSrc.includes(".mtop{position:fixed;inset-block-end:1rem;inset-inline-end:1rem;") &&
+  shellSrc.includes(".mtop[hidden]{display:none}"),
+  "S06 CSS back-to-top (Q12): .mtop fixed bottom-end (inset-block-end + inset-inline-end — logical properties, RTL/LTR clean), [hidden] removes it from layout + a11y tree");
+check(/@media \(min-width:601px\)\{section\[id\^="mcentre-"\]\{scroll-margin-top:48px\}\}/.test(shellSrc),
+  "S06 CSS offset: desktop (≥601px) scroll-margin-top:48px on mcentre-* sections — a clicked destination clears the sticky nav (mobile bottom nav needs no top offset)");
+check(/@media \(max-width:600px\)\{\.mnav\{position:fixed;inset-block-end:0;inset-inline:0;top:auto/.test(shellSrc) &&
+  shellSrc.includes(".mtop{inset-block-end:calc(60px + .5rem)}"),
+  "S06 CSS responsive (Q10=C mobile): ≤600px the nav becomes a fixed bottom tab-bar (inset-block-end:0, inset-inline:0, space-around) and .mtop rises above it (calc(60px + .5rem)) — thumb-reachable, no overlap");
+check(/@media \(prefers-reduced-motion:reduce\)\{\.mnav-item\{transition:none\}\.mtop\{transition:none\}\}/.test(shellSrc),
+  "S06 CSS reduced-motion: the nav-item + back-to-top transitions are disabled under prefers-reduced-motion (decision: instant, no smooth)");
+var s06Rules = (shellSrc.match(/\.mnav\{[^}]*\}|\.mnav-item\{[^}]*\}|\.mnav-item\.is-active\{[^}]*\}|\.mnav-item:hover\{[^}]*\}|\.mtop\{[^}]*\}|\.mtop:hover\{[^}]*\}|\.mtop\[hidden\]\{[^}]*\}/g) || []).join("");
+check(s06Rules.length > 0 && !/margin-left|margin-right|padding-left|padding-right|\bleft:|\bright:|float:/.test(s06Rules),
+  "S06 RTL/LTR: the S06 nav + back-to-top rules are physical-property-free (inset-block-end/inset-inline-end/inset-inline only — top:0 is vertical, doesn't flip under RTL) — the native-Persian RTL nav mirrors cleanly under a dir flip (decision 2)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

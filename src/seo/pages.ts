@@ -217,6 +217,73 @@ function matchHeroInput(sm: SeoMatch): MatchHeroInput {
   };
 }
 
+// Match Centre S06 (M2): the sticky section navigation + the floating
+// back-to-top (specification §3 page order, decisions 11/13: the five
+// destinations خلاصه/جدول/فرم/بازی‌ها/ورزشگاه; audit §12/§16 row S06).
+// Q9=B adaptive: the nav renders ONLY the destinations whose target
+// mcentre-* section is present in the current parts (a nav item to a
+// not-yet-built section is a broken anchor — the no-false-claim guardrail);
+// the nav grows as S10/S14/S15 ship their sections. Q10=C responsive: the
+// CSS in page-shell.ts sticks the nav to the top on desktop (≥600px) and a
+// fixed bottom tab-bar on mobile (<600px). Q11=A IntersectionObserver drives
+// the active-item highlight (the inline script below — no main-thread scroll
+// thrash). Q12: the back-to-top button shows when the hero leaves the
+// viewport (the same observer) and hides when it returns; fixed bottom-end
+// (logical properties), raised above the mobile nav, reduced-motion = instant.
+// Q13=A: the script is INLINE here — it rides the mcentre-nav part like the
+// S04 countdown script rides the hero part (no public-*.js bundle rename, no
+// SW cache bump — ADR-006 respected). Pure DOM: observer + click handlers +
+// class/hidden toggles; no imports, no fetch, no timer, no polling. The
+// composer stays the S02 pure leaf — this part arrives fully built, the
+// composer only wraps it in the mcentre-nav anchor (the slot + MatchCentreParts
+// .nav? exist since S02 — no contract change).
+const MC_NAV_DESTS: { id: string; label: string }[] = [
+  { id: "mcentre-summary", label: "خلاصه" },
+  { id: "mcentre-standings", label: "جدول" },
+  { id: "mcentre-form", label: "فرم" },
+  { id: "mcentre-schedule", label: "بازی‌ها" },
+  { id: "mcentre-venue", label: "ورزشگاه" }
+];
+function matchNavHtml(parts: { summary: string; standings?: string; form: string; venue?: string; schedule?: string }): string {
+  const present = MC_NAV_DESTS.filter(d => {
+    const html = d.id === "mcentre-summary" ? parts.summary :
+                 d.id === "mcentre-standings" ? (parts.standings || "") :
+                 d.id === "mcentre-form" ? parts.form :
+                 d.id === "mcentre-schedule" ? (parts.schedule || "") :
+                 (parts.venue || "");
+    return html && html.trim().length > 0;
+  });
+  const items = present.map(d =>
+    '<a class="mnav-item" href="#' + d.id + '" data-target="' + d.id + '">' + esc(d.label) + '</a>'
+  ).join("");
+  // The back-to-top button + the observer script always ride the nav part
+  // (the hero is always present on a match page, so the button has a target
+  // to observe). The <nav> renders ONLY when at least one destination is
+  // present — a bare <nav> never renders (the no-empty-cards law).
+  const navEl = items
+    ? '<nav class="mnav" aria-label="ناوبری بخش‌های صفحه">' + items + '</nav>'
+    : "";
+  return navEl +
+    '<button class="mtop" type="button" aria-label="بازگشت به بالا" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M12 4l-8 8 1.41 1.41L11 7.83V20h2V7.83l5.58 5.58L20 12z" fill="currentColor"/></svg></button>' +
+    matchNavScript();
+}
+
+// The nav + back-to-top script — inline, CSP-legal (the page shell already
+// carries inline scripts: the S04 countdown/copy script). DOMContentLoaded
+// guard: the target sections (summary/form/…) render AFTER the mcentre-nav
+// section in registry order, so the observer setup waits for the full DOM.
+// IntersectionObserver (Q11=A) drives both the active-item highlight (a
+// -20%/-60% rootMargin active-reading zone) and the back-to-top show/hide
+// (hero out of view). Nav-item click → scrollIntoView (the CSS scroll-margin-
+// top on desktop offsets the sticky bar); back-to-top click → scrollTo(0).
+// Reduced motion = instant (no smooth behavior, no transitions). Pure DOM:
+// no fetch, no timer, no polling, no imports.
+function matchNavScript(): string {
+  return "<script>\n" +
+    "(function(){function init(){var hero=document.querySelector('.mcentre-hero');var topBtn=document.querySelector('.mtop');var nav=document.querySelector('.mnav');var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;if(nav){var items=nav.querySelectorAll('.mnav-item');if(items.length&&'IntersectionObserver'in window){var obs=new IntersectionObserver(function(es){es.forEach(function(e){var it=nav.querySelector('.mnav-item[data-target=\"'+e.target.id+'\"]');if(!it)return;if(e.isIntersecting){items.forEach(function(i){i.classList.remove('is-active')});it.classList.add('is-active')}})},{rootMargin:'-20% 0px -60% 0px',threshold:0});items.forEach(function(i){var t=document.getElementById(i.getAttribute('data-target'));if(t)obs.observe(t)});items.forEach(function(i){i.addEventListener('click',function(ev){ev.preventDefault();var t=document.getElementById(i.getAttribute('data-target'));if(!t)return;t.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'})})})}}if(hero&&topBtn&&'IntersectionObserver'in window){var hobs=new IntersectionObserver(function(es){es.forEach(function(e){topBtn.hidden=e.isIntersecting})},{threshold:0});hobs.observe(hero);topBtn.addEventListener('click',function(){window.scrollTo({top:0,behavior:reduce?'auto':'smooth'})})}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();\n" +
+    "<\/script>";
+}
+
 function matchActionsHtml(sm: SeoMatch, path: string): string {
   const m = sm.s;
   const finished = String(sm.raw.status || "").toUpperCase() === "FINISHED";
@@ -460,9 +527,18 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // script ride the hero part unchanged (their bytes and the three
   // pre-existing awaits are untouched).
   const heroInput = matchHeroInput(sm);
+  // Match Centre S06: the sticky section nav + back-to-top ride the mcentre-nav
+  // part. Q9=B adaptive — matchNavHtml inspects the parts that map to the five
+  // destinations and renders nav items only for the present ones (summary is
+  // always present; form may be empty; standings/venue/schedule join as S10/
+  // S14/S15 ship). summaryHtml is extracted (byte-identical value) so the nav
+  // and the matchCentreMain call read ONE summary string.
+  const summaryHtml = whyBigHtml(sm, ctx) + facts + resultBlock;
+  const navHtml = matchNavHtml({ summary: summaryHtml, form: formCard });
   const main = matchCentreMain({
     hero: matchHeroHtml(heroInput) + matchActionsHtml(sm, path) + matchHeadScript(),
-    summary: whyBigHtml(sm, ctx) + facts + resultBlock,
+    nav: navHtml,
+    summary: summaryHtml,
     form: formCard,
     related: similarCard,
     footerHook: related
