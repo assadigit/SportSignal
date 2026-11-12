@@ -56,3 +56,6 @@ scripts/seed-local.js
 
 # Local QA artifacts (screenshots, VLM verdicts — session-local, never tracked)
 qa/
+
+# M2 preview config — local only, never committed (D1 omitted; token can't generate bindings)
+wrangler.preview.toml
