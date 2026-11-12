@@ -172,13 +172,24 @@ function workerSrc() {
     // here, in import order. match-centre.ts (the section composer) is a
     // PURE leaf (zero runtime imports — pure string composition), so it is
     // position-independent for every grab; it opens the group because the
-    // later Match Centre modules (editorial.ts S08, faq-content.ts S16,
+    // later Match Centre modules (narrative.ts S08, faq-content.ts S16,
     // and any grabbed seo/pages.ts builders from S04 on) will append after
     // it, keeping the flat concat's dependency direction acyclic.
     // Appended AFTER api.ts: every existing marker-split span (botSeg at
     // cron-preflight, cronSeg, provSeg…) keeps its exact boundaries — no
     // check spans from api.ts into the tail (verified S02).
     "seo/match-centre.ts",
+    // Match Centre S08 (M3): the deterministic narrative engine — the "why
+    // this match matters" editorial layer. Sits AFTER match-centre.ts (the
+    // composer stays the pure leaf — it never imports the engine; the engine
+    // is imported by seo/pages.ts which the full-worker harness grabs via the
+    // pages dir / its own eval). The engine reads the SeoMatch fields already
+    // loaded (zero new awaits/KV/fetches); its registry + priority ranking +
+    // triggers + deterministic variant selection + lifecycle eligibility all
+    // live here. Registered for the concat-based self-checks (the check-match-
+    // centre S08 group extracts it via ts.transpileModule with stubbed deps for
+    // the behavioral assertions — the s05DateHelpers pattern).
+    "seo/narrative.ts",
   ];
   const parts = [];
   for (const f of order) {

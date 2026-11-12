@@ -255,10 +255,25 @@ export interface MatchFactRow {
 // truth. The facts rows' fullWhenHtml date row stays byte-frozen inside its
 // <td> (S05 decision 95). The resultHtml is "" when not finished (the
 // no-empty-cards law at the block level).
+//
+// S08 (M3): the projection GAINS the `narrativeHtml` atom — the deterministic
+// narrative engine's pre-built ".mcentre-narrative" element (the "why this
+// match matters" editorial layer, distinct from the answer sentence). The atom
+// is OPTIONAL + ""-safe: when no narrative qualifies (a match with no eligible
+// category — no rivalry/derby/top-table/knockout/big), the engine returns ""
+// and the composer omits the element (the no-empty-cards law — the
+// briefing|facts pairing still renders; the S07 contract holds byte-for-byte
+// when narrativeHtml is "" — `"" + pair + result` === `pair + result`). The
+// narrative is a SEPARATE editorial layer — its variant templates carry ONLY
+// the rivalry/derby/top-table/knockout/featured context and never reference
+// the kickoff time/venue/score (the answer sentence's domain), so the two
+// layers never repeat each other (spec M3 gate: "Keep answer-first context and
+// facts table distinct; avoid repetition").
 export interface MatchSummaryInput {
   answerHtml: string;    // esc(matchAnswerSentence(sm)) — the briefing copy (the G-03 answer-first sentence)
   factsRows: MatchFactRow[];  // the facts rows (empty array = no facts panel; the projection always fills ≥1 row today)
   resultHtml: string;    // the finished result inner content (h2 + the answer sentence) — "" when not finished (prebuilt)
+  narrativeHtml?: string;  // the S08 narrative atom (the engine's pre-built .mcentre-narrative element) — "" when no narrative qualifies (prebuilt; the composer slots it ABOVE the pairing)
 }
 
 // The facts panel caption — a static Persian label, like the hero's «میزبان»/
@@ -267,21 +282,34 @@ export interface MatchSummaryInput {
 // readers (the <caption> element is the accessible name).
 const MC_SUMMARY_FACTS_CAPTION = "مشخصات بازی";
 
-// The summary renderer. DOM = the .mcentre-cols pairing grid (briefing |
-// facts) when BOTH atoms are present, collapsing to one column below 1080px
-// (briefing first on mobile — spec §5; the S03 pairing grid rides the
-// page-shell style block). The finished result block rides below the pair.
-// The answer-first briefing card carries id="answer" (the G-03 semantic
-// anchor preserved from the S02 answercard — the answer-first surface's id).
+// The summary renderer. DOM = the S08 narrative element (the "why this
+// matters" editorial lead, ABOVE the pairing — omitted when no narrative
+// qualifies), then the .mcentre-cols pairing grid (briefing | facts) when BOTH
+// atoms are present, collapsing to one column below 1080px (briefing first on
+// mobile — spec §5; the S03 pairing grid rides the page-shell style block).
+// The finished result block rides below the pair. The answer-first briefing
+// card carries id="answer" (the G-03 semantic anchor preserved from the S02
+// answercard — the answer-first surface's id).
 //
 // The no-empty-cards law: the summary is always present (every match has an
-// answer sentence), but the facts panel and the result block are independently
-// conditional. When only one of {briefing, facts} is present, the pairing grid
-// is omitted (a single card renders alone — no .mcentre-cols wrapper for a
-// single child, so the grid never strands a lone card in one track). When
-// neither is present (a future projection edge case), the renderer returns ""
-// and sectionHtml omits the mcentre-summary section entirely.
+// answer sentence), but the narrative element, the facts panel and the result
+// block are independently conditional. When only one of {briefing, facts} is
+// present, the pairing grid is omitted (a single card renders alone — no
+// .mcentre-cols wrapper for a single child, so the grid never strands a lone
+// card in one track). When neither is present (a future projection edge case),
+// the renderer returns "" and sectionHtml omits the mcentre-summary section
+// entirely. The narrative element rides ABOVE whatever pair/result renders;
+// when narrativeHtml is "" (or undefined), it contributes nothing — `"" + pair
+// + result` === `pair + result` (the S07 contract holds byte-for-byte when no
+// narrative qualifies).
 export function matchSummaryHtml(s: MatchSummaryInput): string {
+  // The S08 narrative atom — the pre-built .mcentre-narrative element (the
+  // engine's output; "" when no narrative qualifies). Rides ABOVE the pairing
+  // (the editorial lead-in, then the answer-first briefing | facts, then the
+  // result). The narrative is DISTINCT from the answer sentence (no
+  // repetition — the variant templates never reference the kickoff time/venue/
+  // score).
+  const narrative = s.narrativeHtml || "";
   // The briefing card (answer-first) — id="answer" preserved (the G-03 anchor;
   // the S02 answercard's id carries to the new editorial card).
   const brief = s.answerHtml
@@ -307,7 +335,7 @@ export function matchSummaryHtml(s: MatchSummaryInput): string {
   const result = s.resultHtml
     ? '<div class="mcentre-card mcentre-result">' + s.resultHtml + "</div>"
     : "";
-  const inner = pair + result;
+  const inner = narrative + pair + result;
   if (!inner || !inner.trim()) return "";
   return inner;
 }

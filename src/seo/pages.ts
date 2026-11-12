@@ -14,7 +14,6 @@ import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
-import { normalizeTeamName } from "../teams";
 // S1 M2 (F3): the SEO-only spelling overrides — Leipzig «لایپزیگ»,
 // Nordsjaelland «نورشلان», Roma + «آ س رم». The local faName() below is the
 // ONE funnel every SEO-page surface reads (titles, H1, descriptions,
@@ -29,6 +28,17 @@ import { seoTeamFaName, seoTeamAltName } from "./team-names";
 // to the composer (matchHeroHtml); THIS file builds the data projection
 // (matchHeroInput) and delegates. The legacy matchHeadHtml is retired.
 import { matchCentreMain, matchHeroHtml, matchSummaryHtml, type MatchHeroInput, type MatchSummaryInput } from "./match-centre";
+// Match Centre S08 (M3): the deterministic narrative engine — the "why this
+// match matters" editorial layer. The engine runs HERE (pages.ts calls
+// narrativeHtml + passes the pre-built atom to the composer's MatchSummaryInput
+// projection); the composer stays the S02 pure leaf (it receives the pre-built
+// string — the S04 hero precedent). The engine reads the SAME SeoMatch fields
+// the legacy whyBigHtml read (m.rivalryFa / m.derby / m.big / m.roundFa /
+// isTopTable / the standings top3) — zero new awaits, zero new KV reads, zero
+// new fetches (the zero-runtime-cost law). whyBigHtml is RETIRED (its parts
+// array + the answercard return were the embryonic registry S08 formalizes
+// into src/seo/narrative.ts).
+import { narrativeHtml, type NarrativeLifecycle } from "./narrative";
 import { loadArchive } from "./files";
 // v13.89-stdetail: full-table sources for the competition pages — both
 // cache-only/reads-only (the seo layer never triggers a provider sweep).
@@ -49,17 +59,20 @@ function scoreStr(score: any): string {
   return toFaDigits(String(score.home)) + " – " + toFaDigits(String(score.away));
 }
 
-function isTopTable(m: any, top3: Record<string, Set<string>>): boolean {
-  const set = top3[m.competition && m.competition.code];
-  if (!set) return false;
-  return set.has(normalizeTeamName(m.homeTeam.name)) && set.has(normalizeTeamName(m.awayTeam.name));
-}
-
 // ---- answer-first sentence for a match (G-03) ----
 // SS-11 (Phase-2 spec §3): opts.noVenue drops the STADIUM clause only (the
 // meta-description trim ladder's first step). The UTC clause never drops —
 // timezone honesty outranks length. The visible answercard, the finished
 // result block and the SportsEvent description all keep the full sentence.
+// BYTE-FROZEN: this text feeds the meta description + the SportsEvent JSON-LD
+// (GSC surfaces — the S1/S2 SEO measurement runs to Dec 4–8) AND the visible
+// briefing card (the S07 MatchSummaryInput.answerHtml atom — one source of
+// truth). The S08 narrative engine (src/seo/narrative.ts) is a SEPARATE
+// editorial layer — its variant templates carry ONLY the "why this matters"
+// context (rivalry significance / derby heat / title-race implications) and
+// NEVER reference the kickoff time / venue / score (this sentence's domain),
+// so the two layers never repeat each other (spec M3 gate: "Keep answer-first
+// context and facts table distinct; avoid repetition").
 export function matchAnswerSentence(sm: SeoMatch, opts?: { noVenue?: boolean }): string {
   const m = sm.s;
   const h = faName(m.homeTeam), a = faName(m.awayTeam);
@@ -80,24 +93,24 @@ export function matchAnswerSentence(sm: SeoMatch, opts?: { noVenue?: boolean }):
   return s;
 }
 
-// ---- "why this is a big match" (7.4 item 4) — real data only ----
-export function whyBigHtml(sm: SeoMatch, ctx: SeoCtx): string {
-  const m = sm.s;
-  const top3 = payloadTop3(ctx.payload);
-  const parts: string[] = [];
-  if (m.rivalryFa) parts.push("این دیدار «" + esc(m.rivalryFa) + "» است — یکی از حساس‌ترین بازی‌های فوتبال جهان.");
-  if (m.derby && !m.rivalryFa) parts.push("این بازی یک دربی است؛ دیداری حساس بین دو حریف همیشه‌جدی.");
-  if (isTopTable(m, top3)) parts.push("هر دو تیم هم‌اکنون در صدر جدول " + esc(M.compNameFa(m)) + " قرار دارند؛ برد این بازی در رقابت عنوان اهمیت دارد.");
-  else if (m.big) parts.push("هر دو تیم جزو تیم‌های منتخب و پرطرفدار SportSignal هستند.");
-  if (m.roundFa && /فینال|نهایی|یک‌چهارم|نیمه/.test(m.roundFa || "")) {
-    parts.push("این بازی در مرحله " + esc(m.roundFa) + " " + esc(M.compNameFa(m)) + " برگزار می‌شود.");
-  }
-  if (!parts.length) {
-    const followed = m.big ? "هر دو تیم" : "حداقل یکی از دو تیم";
-    parts.push(followed + " جزو تیم‌های منتخب SportSignal است و بازی‌هایش به‌طور خودکار در این سایت دنبال می‌شود.");
-  }
-  return '<div class="answercard" id="answer">' + esc(matchAnswerSentence(sm)) + "</div>";
-}
+// Match Centre S08 (M3): the legacy `whyBigHtml` function + its `isTopTable`
+// helper are RETIRED. The "why this is a big match" editorial layer
+// (specification §5, M3/S08) is now the deterministic narrative engine in
+// src/seo/narrative.ts — a central category registry (rivalry / knockout-stage
+// / top-table / derby / big-club) + a global priority ranking + explicit
+// triggers/samples/exclusions + factual source fields + one primary narrative
+// + an optional distinct secondary + stable deterministic variant selection.
+// The engine's `topTableEligible` (both teams in the top-3 standings) replaces
+// the local `isTopTable`; the engine's `narrativeHtml(sm, ctx, lifecycle)`
+// replaces the `whyBigHtml` return. The engine reads the SAME SeoMatch fields
+// whyBigHtml read (m.rivalryFa / m.derby / m.big / m.roundFa / the standings
+// top3) — zero new awaits, zero new KV reads, zero new fetches. The narrative
+// atom is built in buildMatchPage below (narrativeHtml) and passed to the
+// composer's MatchSummaryInput.narrativeHtml projection (the S04 hero
+// precedent — the composer stays the S02 pure leaf). The `<div class=
+// "answercard" id="answer">` return whyBigHtml carried was dead code since S07
+// (superseded by the composer's briefing card); the parts array computation
+// is the embryonic registry S08 formalizes — both now live in the engine.
 
 function statusFaOf(sm: SeoMatch): string {
   return statusLabelFa(sm.raw.status || sm.s.status);
@@ -550,10 +563,27 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // byte-frozen inside its <td> (S05 decision 95). The summary is always
   // present (every match has an answer sentence), so the nav's adaptive Q9=B
   // filter still detects a non-empty summary (the خلاصه nav item renders).
+  // Match Centre S08 (M3): the deterministic narrative engine — the "why this
+  // match matters" editorial layer rides ABOVE the briefing|facts pairing as a
+  // distinct .mcentre-narrative element (the engine's narrativeHtml atom).
+  // The lifecycle flag (upcoming/live/finished) picks the variant tense:
+  // upcoming/live use the pre-match variants (live = retained — spec §5 "do
+  // not regenerate frequently"); finished uses the past-tense + significance
+  // variants. The narrative is a SEPARATE layer from the answer sentence
+  // (byte-frozen — feeds the meta description + the JSON-LD) — the variant
+  // templates carry ONLY the rivalry/derby/top-table/knockout/featured context
+  // and never reference the kickoff time/venue/score (no repetition). The
+  // engine reads the SAME SeoMatch fields the legacy whyBigHtml read (already
+  // loaded by the three pre-existing awaits — zero new awaits/KV/fetches). When
+  // no narrative qualifies, narrativeHtml is "" and the element is omitted (the
+  // no-empty-cards law — the briefing|facts pairing still renders).
+  const narrativeLifecycle: NarrativeLifecycle = finished ? "finished" : (live ? "live" : "upcoming");
+  const narrativeAtomHtml = narrativeHtml(sm, ctx, narrativeLifecycle);
   const summaryHtml = matchSummaryHtml({
     answerHtml: esc(matchAnswerSentence(sm)),
     factsRows: rows.map((r) => ({ label: esc(r[0]), valueHtml: r[1] })),
-    resultHtml
+    resultHtml,
+    narrativeHtml: narrativeAtomHtml
   });
   const navHtml = matchNavHtml({ summary: summaryHtml, form: formCard });
   const main = matchCentreMain({

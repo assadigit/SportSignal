@@ -408,6 +408,31 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
    match the taller). Scoped to #mcentre-summary so the shared .mcentre-cols
    utility (S03) stays untouched for S12's home|away form pairing. */
 #mcentre-summary .mcentre-cols{align-items:start}
+/* ---- Match Centre S08 (M3): the deterministic narrative engine (specification §5)
+   The "why this match matters" editorial layer — a distinct element that rides
+   ABOVE the .mcentre-cols briefing|facts pairing. The narrative is the editorial
+   CONTEXT (the rivalry significance / the derby heat / the title-race
+   implications / the knockout-stage stakes / the featured-match framing),
+   DISTINCT from the answer sentence (the G-03 answer-first briefing card,
+   id="answer" — byte-frozen, feeds the meta description + the JSON-LD). Per
+   spec §5: "Open editorial layout, not a prominent card background. Use
+   typography, spacing and subtle dividers." So the narrative is NOT a
+   .mcentre-card — it's a lightweight typography block with a subtle divider
+   (border-block-end) separating it from the pairing below, the block's own
+   icy/navy tokens, zero new assets/requests. One primary storyline (the
+   primary sentence, bolder) + an optional distinct secondary (a smaller muted
+   line below — never forced; the secondary only renders when a distinct
+   eligible category exists). Omitted when no narrative qualifies (the
+   no-empty-cards law — the briefing|facts pairing still renders). CSS logical
+   properties ONLY (margin-block-end, padding-block-end, border-block-end,
+   margin-block-start, text-align:start — RTL/LTR clean under a dir flip,
+   decision 2). The deterministic variant selection + the lifecycle eligibility
+   (upcoming/live → pre-match variants; finished → finished-tense variants)
+   live in the engine (src/seo/narrative.ts); this is the presentation only. */
+.mcentre-narrative{margin-block-end:14px;padding-block-end:12px;border-block-end:1px solid rgba(94,160,255,.16)}
+.mcentre-narrative p{margin:0;line-height:1.9;text-align:start;color:var(--fg,#e8eefc)}
+.mcentre-narrative p.mcentre-nar-primary{font-size:1.02rem;font-weight:600}
+.mcentre-narrative p.mcentre-nar-secondary{margin-block-start:8px;font-size:.94rem;color:var(--muted,#9aa4b2)}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
    effect on any page without a mcentre-* section. Breakpoints and tokens are

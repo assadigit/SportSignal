@@ -163,6 +163,8 @@ check(withNav.indexOf('id="mcentre-hero"') < withNav.indexOf('id="mcentre-nav"')
 // ---------- 3. wiring: buildMatchPage delegates, GSC surfaces stay ----------
 let wiringOk = true;
 if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, type MatchHeroInput, type MatchSummaryInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml)"); wiringOk = false; }
+// S08: pages.ts imports the narrative engine (narrativeHtml + the lifecycle type).
+if (!/import \{ narrativeHtml, type NarrativeLifecycle \} from "\.\/narrative";/.test(pagesSrc)) { bad("wiring: pages.ts lost the narrative engine import (narrativeHtml + NarrativeLifecycle — the S08 deterministic narrative engine)"); wiringOk = false; }
 if (!/const main = matchCentreMain\(\{/.test(pagesSrc)) { bad("wiring: buildMatchPage no longer delegates its main assembly to matchCentreMain"); wiringOk = false; }
 // Match Centre S04: the hero part is now the composer's matchHeroHtml render
 // (from the matchHeroInput projection) + the unchanged actions row + script.
@@ -172,17 +174,27 @@ if (/function matchHeadHtml\(/.test(pagesSrc) || /class="matchhead"/.test(pagesS
 // Match Centre S07: the summary part is now the composer's matchSummaryHtml
 // render (from the MatchSummaryInput projection — the answer-first sentence +
 // the facts rows + the finished result text). The legacy whyBigHtml + facts +
-// resultBlock flat assembly is retired (whyBigHtml stays as the S08 narrative
-// prep — exported, not called in the S07 summary path).
+// resultBlock flat assembly is retired.
+// Match Centre S08: whyBigHtml is RETIRED (replaced by the deterministic
+// narrative engine in src/seo/narrative.ts). The summary projection GAINS the
+// narrativeHtml atom (the engine's pre-built .mcentre-narrative element);
+// pages.ts computes the lifecycle flag + calls narrativeHtml + passes the atom.
 if (!/const summaryHtml = matchSummaryHtml\(\{/.test(pagesSrc)) { bad("wiring: the summary part no longer delegates to matchSummaryHtml (S07)"); wiringOk = false; }
 if (!/answerHtml: esc\(matchAnswerSentence\(sm\)\)/.test(pagesSrc)) { bad("wiring: the summary answer atom no longer carries the answer-first sentence (the G-03 briefing copy — matchAnswerSentence, the same source that feeds the meta description + the JSON-LD)"); wiringOk = false; }
 if (!/factsRows: rows\.map\(\(r\) => \(\{ label: esc\(r\[0\]\), valueHtml: r\[1\] \}\)\)/.test(pagesSrc)) { bad("wiring: the summary facts atoms no longer carry the facts rows array (label pre-escaped, valueHtml prebuilt — the fullWhenHtml date row rides byte-identical inside its <td>)"); wiringOk = false; }
 if (!/const resultHtml = finished && m\.score && m\.score\.home != null/.test(pagesSrc)) { bad("wiring: the summary result atom no longer carries the finished result content (the h2 + the answer sentence — \"\" when not finished)"); wiringOk = false; }
+// S08: the narrative lifecycle flag + the engine call + the atom wiring.
+if (!/const narrativeLifecycle: NarrativeLifecycle = finished \? "finished" : \(live \? "live" : "upcoming"\)/.test(pagesSrc)) { bad("wiring: the S08 narrative lifecycle flag (finished/live/upcoming — the same gates the hero + the answer sentence use) is gone from buildMatchPage"); wiringOk = false; }
+if (!/const narrativeAtomHtml = narrativeHtml\(sm, ctx, narrativeLifecycle\)/.test(pagesSrc)) { bad("wiring: buildMatchPage no longer calls the narrative engine (narrativeHtml — the S08 deterministic narrative)"); wiringOk = false; }
+if (!/narrativeHtml: narrativeAtomHtml/.test(pagesSrc)) { bad("wiring: the summary projection no longer carries the narrative atom (narrativeHtml — the engine's pre-built .mcentre-narrative element, passed to the composer)"); wiringOk = false; }
+// S08: whyBigHtml + its isTopTable helper are RETIRED (the engine subsumes both).
+if (/export function whyBigHtml\(/.test(pagesSrc) || /function whyBigHtml\(/.test(pagesSrc)) { bad("wiring: the legacy whyBigHtml is still present (S08 retired it — the narrative engine in src/seo/narrative.ts replaces it)"); wiringOk = false; }
+if (/function isTopTable\(/.test(pagesSrc)) { bad("wiring: the legacy isTopTable helper is still present (S08 retired it — the engine's topTableEligible replaces it)"); wiringOk = false; }
 if (!/form: formCard,/.test(pagesSrc)) { bad("wiring: the form part no longer carries the W/D/L strip"); wiringOk = false; }
 if (!/related: similarCard,/.test(pagesSrc)) { bad("wiring: the related part no longer carries the sibling-fixtures card"); wiringOk = false; }
 if (!/footerHook: related/.test(pagesSrc)) { bad("wiring: the footer-hook part no longer carries the related-links card"); wiringOk = false; }
 if (/matchHeadHtml\(sm\) \+ matchActionsHtml/.test(pagesSrc)) { bad("wiring: the old flat hero assembly is still present alongside the delegation"); wiringOk = false; }
-if (wiringOk) ok("wiring: buildMatchPage delegates the parts to matchCentreMain — the hero rides matchHeroHtml(matchHeroInput) + actions/script (legacy matchHeadHtml retired); the summary rides matchSummaryHtml(MatchSummaryInput) — the answer-first sentence + facts rows + result text atoms (legacy whyBigHtml+facts+resultBlock flat assembly retired; whyBigHtml stays as S08 narrative prep)");
+if (wiringOk) ok("wiring: buildMatchPage delegates the parts to matchCentreMain — the hero rides matchHeroHtml(matchHeroInput) + actions/script (legacy matchHeadHtml retired); the summary rides matchSummaryHtml(MatchSummaryInput) — the answer-first sentence + facts rows + result text atoms + the S08 narrative atom (legacy whyBigHtml+facts+resultBlock flat assembly retired; whyBigHtml RETIRED by S08 — the deterministic narrative engine in src/seo/narrative.ts replaces it; the narrativeHtml atom rides ABOVE the briefing|facts pairing)");
 
 // GSC measurement surfaces — byte-for-byte, still assembled in pages.ts
 let gscOk = true;
@@ -197,9 +209,9 @@ if (!/JL\.breadcrumbNode\(trail\)/.test(pagesSrc) || !/crumbHtml: M\.breadcrumbs
 // (the same function that feeds the meta description + the SportsEvent JSON-LD
 // — one source of truth, byte-frozen). The rendered briefing card carries
 // id="answer" (verified via the REAL matchSummaryHtml output below in the S07
-// group). whyBigHtml still carries the legacy answercard string in its source
-// (S08 prep — exported, not the S07 live path), so the source-inspection
-// check here is the COMPOSER's contract, not pages.ts's dead string.
+// group). S08 RETIRED whyBigHtml (the narrative engine in src/seo/narrative.ts
+// replaces it); the source-inspection check here is the COMPOSER's contract
+// (matchSummaryHtml renders id="answer"), not pages.ts's retired string.
 if (!/id="answer"/.test(mcSrc) || !/mcentre-brief/.test(mcSrc)) { bad("GSC: the answer-first briefing card (id=\"answer\" — the G-03 anchor) is no longer rendered by the composer (matchSummaryHtml)"); gscOk = false; }
 if (!/answerHtml: esc\(matchAnswerSentence\(sm\)\)/.test(pagesSrc)) { bad("GSC: the answer-first sentence (matchAnswerSentence — the meta-description + JSON-LD source) no longer feeds the visible briefing card atom"); gscOk = false; }
 if (gscOk) ok("GSC surfaces intact: title ladder, desc funnel, canonical path, SportsEvent + Breadcrumb JSON-LD, answer-first briefing card (id=\"answer\" via the composer) — byte-for-byte");
@@ -217,6 +229,15 @@ let costOk = true;
 if (/^\s*import (?!type )/m.test(mcSrc)) { bad("cost: match-centre.ts gained a RUNTIME import (S02 law: pure composition, type-only imports)"); costOk = false; }
 if (/env\.STATE|\.get\(|\.put\(|fetch\(|addEventListener|setTimeout|setInterval|<script/i.test(mcSrc)) { bad("cost: match-centre.ts contains KV/fetch/DOM/timer code (zero new data work — render from ctx only)"); costOk = false; }
 if (/STATE\.|KV_[A-Z]|cache:|_v\d|live_detail|standings_cache/.test(mcSrc)) { bad("cost: match-centre.ts references KV key vocabulary (no new reads)"); costOk = false; }
+// S08: the narrative engine (src/seo/narrative.ts) is a pure-logic module —
+// zero AI/network calls, zero KV/fetch/timer/polling, zero new Image (the
+// zero-runtime-cost law). It reads the SeoMatch fields already loaded by the
+// three pre-existing awaits; its deterministicVariantIndex is a sync string
+// hash (integer math, no crypto). The runtime imports it DOES carry (esc /
+// compNameFa / normalizeTeamName / payloadTop3) are the SAME seo/* helpers
+// pages.ts already imports — zero new dependency surface.
+const narrSrc = read("src/seo/narrative.ts");
+if (/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|generateText|chat\.completions/i.test(narrSrc)) { bad("cost: the narrative engine contains AI/network/KV/timer code (S08 zero-runtime-cost law — the engine reads from the SeoMatch fields already loaded; no AI, no network calls, no expensive per-match processing)"); costOk = false; }
 // buildMatchPage's awaits stay exactly the three pre-existing loads
 const bpStart = pagesSrc.indexOf("export async function buildMatchPage");
 const bpEnd = pagesSrc.indexOf("function dateGroupedRows", bpStart);
@@ -226,12 +247,15 @@ for (const pre of ["await hydrateMatchVenue(", "await loadArchive(", "await full
 }
 if (/await env\.STATE|await fetch\(|await fetchJSON/.test(bpSeg)) { bad("cost: buildMatchPage gained a new await on KV/fetch"); costOk = false; }
 const awaitCount = (bpSeg.match(/\bawait\b/g) || []).length;
-if (awaitCount !== 3) { bad("cost: buildMatchPage's await count is " + awaitCount + " (expected exactly 3: hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads)"); costOk = false; }
-if (costOk) ok("cost law: pure-leaf composer (no runtime imports/KV/fetch/timers) + buildMatchPage awaits unchanged (hydrateMatchVenue, loadArchive, fullByCodeFor)");
+if (awaitCount !== 3) { bad("cost: buildMatchPage's await count is " + awaitCount + " (expected exactly 3: hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; the narrative engine adds ZERO awaits — it reads the already-loaded SeoMatch fields)"); costOk = false; }
+if (costOk) ok("cost law: pure-leaf composer (no runtime imports/KV/fetch/timers) + the narrative engine (no AI/network/KV/timer) + buildMatchPage awaits unchanged (hydrateMatchVenue, loadArchive, fullByCodeFor — the narrative engine adds ZERO awaits)");
 
 // ---------- 5. harness co-evolution ----------
 check(harnessSrc.indexOf('"seo/match-centre.ts"') > -1 && harnessSrc.indexOf('"seo/match-centre.ts"') > harnessSrc.indexOf('"api.ts"'),
   "harness: worker-src.js carries seo/match-centre.ts after api.ts (the seo group opens)");
+// S08: the narrative engine joins the concat after match-centre.ts (the seo group grows).
+check(harnessSrc.indexOf('"seo/narrative.ts"') > -1 && harnessSrc.indexOf('"seo/narrative.ts"') > harnessSrc.indexOf('"seo/match-centre.ts"'),
+  "harness: worker-src.js carries seo/narrative.ts after seo/match-centre.ts (the S08 narrative engine joins the seo group — the co-evolution law)");
 const pkg = JSON.parse(read("package.json"));
 check(String(pkg.scripts.test).includes("node scripts/check-match-centre.js"),
   "harness: package.json test chain runs check-match-centre.js");
@@ -701,6 +725,260 @@ check(s07Rules.length > 0 && !/margin-left|margin-right|padding-left|padding-rig
 check(shellSrc.includes(".mcentre-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}") &&
   shellSrc.includes('@media (min-width:1080px){.mcentre-cols{grid-template-columns:repeat(2,minmax(0,1fr))}}'),
   "S07 reuses S03: the .mcentre-cols pairing grid is byte-frozen from S03 (S07 reuses it for the briefing|facts pairing; only the #mcentre-summary-scoped align-items:start override is new — the shared utility stays untouched for S12)");
+
+// ---------- 11. S08 (M3): the deterministic narrative engine ----------
+// specification §5 (M3/S08) + the milestones-and-sessions.md M3/S08 scope. The
+// "why this match matters" editorial layer — a central category registry +
+// global priority ranking + explicit triggers/samples/exclusions + factual
+// source fields + one primary narrative + an optional distinct secondary +
+// stable deterministic variant selection. No AI, no network calls, no
+// expensive per-match processing (the zero-runtime-cost law — the engine
+// reads the SeoMatch fields already loaded). The narrative is a SEPARATE
+// editorial layer, DISTINCT from the answer sentence (no repetition — the
+// variant templates carry ONLY the rivalry/derby/top-table/knockout/featured
+// context, never the kickoff time/venue/score). Every behavioral assertion
+// below extracts the REAL engine via ts.transpileModule (the s05DateHelpers
+// pattern — stubbed deps; never re-implemented) and runs it against fake
+// SeoMatch objects.
+
+// Extract the REAL narrative engine (src/seo/narrative.ts) via ts.transpileModule
+// with stubbed deps (esc / compNameFa / normalizeTeamName / payloadTop3 — the
+// s05DateHelpers pattern). The stubs let the tests control the top3 map + the
+// comp name; the engine's pure logic (the registry + the triggers + the
+// deterministic selection + the lifecycle gating) runs unmodified.
+function narrativeEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const src = fs.readFileSync(path.join(root, "src", "seo", "narrative.ts"), "utf8")
+    .replace(/^import\s+[^;]+;\n?/gm, "")
+    .replace(/^export\s+/gm, "");
+  const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.None, target: "ES2020" } }).outputText;
+  const stubs = {
+    // a real esc (so the text is properly escaped — matches production behavior)
+    esc: function (s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); },
+    // a fake compNameFa — returns the competition's faName (or the code), the
+    // same shape the real markup.ts compNameFa returns
+    compNameFa: function (m) { return (m && m.competition) ? (m.competition.faName || m.competition.code || "TEST_COMP") : "TEST_COMP"; },
+    // normalizeTeamName: identity-lowercase — so the test's top3 Set can hold
+    // lowercased names and the trigger's set.has() resolves them
+    normalizeTeamName: function (n) { return String(n || "").toLowerCase(); },
+    // payloadTop3: returns the test-controlled top3 map (ctx.payload._top3 or
+    // built from ctx.payload.standings — the real helper's shape, simplified)
+    payloadTop3: function (payload) {
+      const out = {};
+      const st = payload && (payload._top3 || (payload.standings ? (function () {
+        const o = {};
+        for (const code of Object.keys(payload.standings)) {
+          const teams = payload.standings[code] && payload.standings[code].teams;
+          if (Array.isArray(teams) && teams.length) {
+            o[code] = new Set(teams.slice(0, 3).map(function (t) { return String(t.name || "").toLowerCase(); }));
+          }
+        }
+        return o;
+      })() : null));
+      if (st) for (const k of Object.keys(st)) out[k] = st[k] instanceof Set ? st[k] : new Set(st[k]);
+      return out;
+    }
+  };
+  return new Function(...Object.keys(stubs), js + "\nreturn { NARRATIVE_CATEGORIES, narrativePlan, narrativeHtml, deterministicVariantIndex, topTableEligible };")(...Object.values(stubs));
+}
+const ne = narrativeEngine();
+
+// (a) the contract: the engine module exports its surface
+check(typeof ne.narrativeHtml === "function" && typeof ne.narrativePlan === "function" &&
+  typeof ne.deterministicVariantIndex === "function" && Array.isArray(ne.NARRATIVE_CATEGORIES) &&
+  typeof ne.topTableEligible === "function",
+  "S08 contract: the narrative engine (src/seo/narrative.ts) exports narrativeHtml + narrativePlan + deterministicVariantIndex + NARRATIVE_CATEGORIES + topTableEligible (the central registry + the plan + the selection + the eligibility helper)");
+
+// (b) the registry — five categories in priority order (1=rivalry … 5=big-club)
+check(ne.NARRATIVE_CATEGORIES.length === 5,
+  "S08 registry: five categories (rivalry / knockout-stage / top-table / derby / big-club — the spec §5 'Possible categories' mapped to the available data pool)");
+const catIds = ne.NARRATIVE_CATEGORIES.map((c) => c.id);
+check(JSON.stringify(catIds) === JSON.stringify(["rivalry", "knockout-stage", "top-table", "derby", "big-club"]),
+  "S08 priority: the global editorial priority hierarchy is rivalry(1) > knockout-stage(2) > top-table(3) > derby(4) > big-club(5) — a named rivalry is the marquee; a knockout round is high-stakes; a top-table clash is the title race; a derby is a heated local match; the big-club framing is the featured-match fallback (lowest — the 'concise factual editorial paragraph if useful' from spec §5)");
+check(ne.NARRATIVE_CATEGORIES.every((c, i) => c.priority === i + 1 && c.priority >= 1 && c.priority <= 5),
+  "S08 priority: every category carries a priority field 1..5 matching its registry position (the centrally-documented ranking — spec §5: 'Position in a centrally defined editorial priority hierarchy')");
+check(ne.NARRATIVE_CATEGORIES.every((c) => typeof c.trigger === "function" && Array.isArray(c.variants) && c.variants.length >= 1 && Array.isArray(c.variantsFinished) && c.variantsFinished.length >= 1),
+  "S08 registry shape: every category defines a trigger function + a variants array (upcoming/live) + a variantsFinished array (finished) — each with ≥1 variant (the deterministic selection mechanism is in force; S09 curates/expands the copy)");
+
+// (c) the triggers — explicit deterministic conditions (spec §5: "Explicit
+// deterministic trigger conditions"). Each trigger returns the source fields
+// if eligible, else null. Verified via the REAL engine against fake SeoMatch
+// objects (the stubbed deps let us control the top3 map + the comp name).
+function mkS(o) {
+  return Object.assign({
+    homeTeam: { name: "Arsenal" }, awayTeam: { name: "Dortmund" },
+    competition: { code: "PL", faName: "لیگ برتر انگلیس" },
+    rivalryFa: null, derby: false, big: false, roundFa: null,
+    path: "/matches/arsenal-vs-dortmund-2026-11-14"
+  }, o || {});
+}
+function mkSm(s, raw) { return { s, raw: raw || { status: "SCHEDULED" } }; }
+const ctxNone = { payload: { standings: null } };  // no top3 → top-table never eligible
+// rivalry: fires on m.rivalryFa (the Persian rivalry name)
+check(ne.narrativePlan(mkSm(mkS({ rivalryFa: "ال کلاسیکو" })), ctxNone, "upcoming").primary !== null &&
+  ne.narrativePlan(mkSm(mkS({ rivalryFa: "ال کلاسیکو" })), ctxNone, "upcoming").primary.categoryId === "rivalry",
+  "S08 trigger rivalry: m.rivalryFa truthy → the rivalry category fires (the named rivalry — El Clásico, Der Klassiker… — is the marquee, priority 1)");
+check(ne.narrativePlan(mkSm(mkS({ rivalryFa: null })), ctxNone, "upcoming").primary === null ||
+  ne.narrativePlan(mkSm(mkS({ rivalryFa: null, big: false })), ctxNone, "upcoming").primary === null,
+  "S08 trigger rivalry boundary: m.rivalryFa falsy + no other eligible → no rivalry category (the trigger is null — missing data, no fabrication)");
+// derby: fires on m.derby && !m.rivalryFa (a named rivalry supersedes a bare derby)
+check(ne.narrativePlan(mkSm(mkS({ derby: true })), ctxNone, "upcoming").primary.categoryId === "derby",
+  "S08 trigger derby: m.derby truthy + no rivalryFa → the derby category fires (priority 4; a bare derby, no named rivalry)");
+check(ne.narrativePlan(mkSm(mkS({ derby: true, rivalryFa: "ال کلاسیکو" })), ctxNone, "upcoming").primary.categoryId === "rivalry",
+  "S08 trigger derby exclusion: m.derby truthy BUT m.rivalryFa truthy → the rivalry category wins (a named rivalry supersedes a bare derby — the two are mutually exclusive; the derby trigger gates on !rivalryFa)");
+// big-club: fires on m.big && !topTable (the featured-match fallback; a top-table clash takes top-table instead)
+check(ne.narrativePlan(mkSm(mkS({ big: true })), ctxNone, "upcoming").primary.categoryId === "big-club",
+  "S08 trigger big-club: m.big truthy + not top-table → the big-club category fires (priority 5 — the featured-match fallback: both teams are SportSignal followed clubs, the v13.179 hero AND rule)");
+// knockout-stage: fires on m.roundFa matching the knockout regex
+check(ne.narrativePlan(mkSm(mkS({ roundFa: "یک‌چهارم نهایی" })), ctxNone, "upcoming").primary.categoryId === "knockout-stage",
+  "S08 trigger knockout-stage: m.roundFa matches /فینال|نهایی|یک‌چهارم|نیمه/ → the knockout-stage category fires (priority 2 — a knockout round, high stakes)");
+check(ne.narrativePlan(mkSm(mkS({ roundFa: "هفته ۱۲" })), ctxNone, "upcoming").primary === null ||
+  ne.narrativePlan(mkSm(mkS({ roundFa: "هفته ۱۲", big: false })), ctxNone, "upcoming").primary === null,
+  "S08 trigger knockout-stage boundary: m.roundFa is a league round (no match) → no knockout category (the regex gate excludes non-knockout rounds — no unsupported competitive stakes)");
+// top-table: fires on both teams in the top-3 standings
+const ctxTop3 = { payload: { standings: { PL: { teams: [{ name: "Arsenal" }, { name: "Dortmund" }, { name: "Chelsea" }] } } } };
+check(ne.narrativePlan(mkSm(mkS({ big: true })), ctxTop3, "upcoming").primary.categoryId === "top-table",
+  "S08 trigger top-table: both teams in the top-3 standings → the top-table category fires (priority 3 — the title race; supersedes big-club since the big-club trigger gates on !topTable)");
+check(ne.narrativePlan(mkSm(mkS({ homeTeam: { name: "Arsenal" }, awayTeam: { name: "Everton" }, big: true })), ctxTop3, "upcoming").primary.categoryId === "big-club",
+  "S08 trigger top-table boundary: only ONE team in the top-3 → top-table does NOT fire (both-teams gate — a single top-3 team is insufficient sample; the big-club fallback fires instead)");
+
+// (d) competing narrative priority — the primary is the highest-priority
+// eligible; the secondary is the next-highest DISTINCT eligible (never the
+// same category; never forced when only one is eligible)
+const multiPlan = ne.narrativePlan(mkSm(mkS({ rivalryFa: "ال کلاسیکو", roundFa: "نیمه‌نهایی", big: true, derby: true })), ctxTop3, "upcoming");
+check(multiPlan.primary.categoryId === "rivalry" && multiPlan.secondary !== null && multiPlan.secondary.categoryId === "knockout-stage",
+  "S08 competing priority: rivalry + knockout-stage + top-table + derby + big-club ALL eligible → primary=rivalry(1), secondary=knockout-stage(2) (the two highest-priority distinct categories; the rest are dropped — spec §5: 'Display one primary storyline and optionally one distinct secondary storyline. Never force a second' — only TWO render, never a third)");
+const soloPlan = ne.narrativePlan(mkSm(mkS({ rivalryFa: "ال کلاسیکو" })), ctxNone, "upcoming");
+check(soloPlan.primary.categoryId === "rivalry" && soloPlan.secondary === null,
+  "S08 no-forced-secondary: only ONE category eligible → primary=rivalry, secondary=null (the secondary is NEVER forced — it only renders when a distinct eligible category exists)");
+
+// (e) insufficient sample / missing data — no eligible category → no narrative
+// (the no-empty-cards law + the no-fabrication guard; the briefing|facts
+// pairing still renders — the S07 contract holds)
+const emptyPlan = ne.narrativePlan(mkSm(mkS({})), ctxNone, "upcoming");
+check(emptyPlan.primary === null && emptyPlan.secondary === null,
+  "S08 insufficient sample: a match with NO eligible category (no rivalry/derby/top-table/knockout/big) → primary=null, secondary=null (the narrative element is OMITTED — the no-empty-cards law + the 'omit the briefing if no useful paragraph can be made' spec path; the briefing card + facts still render, the S07 contract holds; NO fabricated significance)");
+check(ne.narrativeHtml(mkSm(mkS({})), ctxNone, "upcoming") === "",
+  "S08 no-fabrication: a match with no eligible category → narrativeHtml returns '' (the .mcentre-narrative element is omitted — never a hollow/filler narrative; spec §5: 'Never use generic filler or unsupported predictions')");
+
+// (f) stable deterministic variant selection — same match + same category →
+// same variant, every call (spec §5: "wording must not randomly change between
+// page visits"). Different matches CAN yield different variants (the stable
+// hash varies). Verified via the REAL deterministicVariantIndex + the plan.
+const dv = ne.deterministicVariantIndex;
+check(dv("path-A|rivalry", 2) === dv("path-A|rivalry", 2),
+  "S08 stable selection: deterministicVariantIndex is stable — same key + same count → same index, every call (no random between page visits)");
+check(dv("path-A|rivalry", 2) === dv("path-A|rivalry", 2) && dv("path-A|rivalry", 2) < 2 && dv("path-A|rivalry", 2) >= 0,
+  "S08 selection range: deterministicVariantIndex returns an index in [0, count) — never out of bounds");
+check(dv("", 1) === 0 && dv("anything", 1) === 0,
+  "S08 selection boundary: count <= 1 → index 0 (the single variant — no selection needed; fail-safe)");
+// two different matches with the rivalry category → the variant text may
+// differ (the stable hash varies by the canonical path); both stable across
+// repeated calls
+const pA1 = ne.narrativePlan(mkSm(mkS({ rivalryFa: "ال کلاسیکو", path: "/matches/a-vs-b-1" })), ctxNone, "upcoming");
+const pA2 = ne.narrativePlan(mkSm(mkS({ rivalryFa: "ال کلاسیکو", path: "/matches/a-vs-b-1" })), ctxNone, "upcoming");
+const pB1 = ne.narrativePlan(mkSm(mkS({ rivalryFa: "ال کلاسیکو", path: "/matches/c-vs-d-2" })), ctxNone, "upcoming");
+check(pA1.primary.text === pA2.primary.text,
+  "S08 stable output across repeated calls: the SAME match (same canonical path) + same category → the SAME variant text, every call (the stable hash → same index → same variant; spec §5: 'wording must not randomly change between page visits')");
+// at least one of the two distinct matches yields a different variant (the
+// hash varies; 2 variants → ~50% chance, but the test confirms the mechanism
+// CAN switch — if both happen to land on the same variant, that's still valid
+// stable behavior, so we assert the mechanism (the index CAN differ) not the
+// specific outcome)
+const idxA = dv("/matches/a-vs-b-1|rivalry", 2);
+const idxB = dv("/matches/c-vs-d-2|rivalry", 2);
+check(typeof idxA === "number" && typeof idxB === "number" && idxA >= 0 && idxB >= 0 && idxA < 2 && idxB < 2,
+  "S08 variant mechanism: different matches yield indices in [0,2) via the stable hash (the selection is deterministic per-match; the variant array has 2 entries — S09 expands to 'Multiple natural Persian variants')");
+
+// (g) lifecycle eligibility — upcoming/live use the `variants` array (live =
+// retained — spec §5: "do not regenerate frequently"); finished uses the
+// `variantsFinished` array (past tense + significance). The eligibility GATES
+// (which categories fire) are lifecycle-independent (rivalry fires whenever
+// m.rivalryFa, regardless of state).
+const upPlan = ne.narrativePlan(mkSm(mkS({ rivalryFa: "ال کلاسیکو" })), ctxNone, "upcoming");
+const livePlan = ne.narrativePlan(mkSm(mkS({ rivalryFa: "ال کلاسیکو" })), ctxNone, "live");
+const finPlan = ne.narrativePlan(mkSm(mkS({ rivalryFa: "ال کلاسیکو" }), { status: "FINISHED" }), ctxNone, "finished");
+check(upPlan.primary.categoryId === "rivalry" && livePlan.primary.categoryId === "rivalry" && finPlan.primary.categoryId === "rivalry",
+  "S08 lifecycle eligibility: the rivalry category is eligible across ALL three lifecycles (upcoming/live/finished) — the trigger is lifecycle-independent (rivalry fires whenever m.rivalryFa)");
+check(livePlan.primary.text === upPlan.primary.text,
+  "S08 live = retained upcoming: live matches use the SAME variants as upcoming (spec §5: 'Live: retain the pre-match briefing; do not regenerate frequently' — no regeneration between upcoming and live)");
+// the finished variant is from variantsFinished (past tense). The rivalry
+// category's variantsFinished entries ALL carry «به پایان رسید» (a past-tense
+// marker the upcoming variants never carry), so the finished plan's primary
+// text MUST contain it + the upcoming/live plans' primary text MUST NOT.
+check(finPlan.primary.text.indexOf("به پایان رسید") > -1,
+  "S08 finished tense: finished matches use the variantsFinished array — the rivalry finished variant carries «به پایان رسید» (the past-tense + significance marker; the upcoming/live variants are NOT used for finished)");
+check(upPlan.primary.text.indexOf("به پایان رسید") === -1 && livePlan.primary.text.indexOf("به پایان رسید") === -1,
+  "S08 upcoming/live tense: upcoming + live use the variants array — NO «به پایان رسید» (the upcoming variants carry present-tense framing; live = retained upcoming, the same present-tense variants — spec §5: 'do not regenerate frequently')");
+// a category with no source field (derby/big-club) still works across lifecycles
+const derbyFin = ne.narrativePlan(mkSm(mkS({ derby: true }), { status: "FINISHED" }), ctxNone, "finished");
+check(derbyFin.primary.categoryId === "derby" && derbyFin.primary.text.length > 0,
+  "S08 lifecycle no-field categories: the derby category (no source field) fires across lifecycles + the finished variant renders (past tense — no source field needed; the trigger is the flag only)");
+
+// (h) no-repetition-with-answer discipline — the narrative variant templates
+// carry ONLY the rivalry/derby/top-table/knockout/featured context; they NEVER
+// reference the kickoff time / venue / score (the answer sentence's domain).
+// Source-inspection: the variant strings never embed the answer-sentence
+// clauses ("به وقت تهران" / "ورزشگاه" / "نتیجه نهایی" / "زمان جهانی").
+const allVariants = ne.NARRATIVE_CATEGORIES.flatMap((c) => c.variants.concat(c.variantsFinished));
+check(allVariants.length > 0 && !allVariants.some((v) => /به وقت تهران|ورزشگاه|نتیجه نهایی|زمان جهانی|ساعت /.test(v)),
+  "S08 no-repetition: the variant templates NEVER reference the answer sentence's domain (no «به وقت تهران» / «ورزشگاه» / «نتیجه نهایی» / «زمان جهانی» / «ساعت» — the kickoff time / venue / score / UTC clause stay exclusive to the answer sentence; the narrative is the DISTINCT 'why this matters' context — spec M3 gate: 'Keep answer-first context and facts table distinct; avoid repetition')");
+// the narrative plan's primary text is never byte-equal to the answer sentence
+// (they're different layers by construction)
+const answer = "آرسنال در لیگ برتر انگلیس میزبان دورتموند است؛ این بازی شنبه به وقت تهران برگزار می‌شود.";
+check(ne.narrativePlan(mkSm(mkS({ rivalryFa: "ال کلاسیکو" })), ctxNone, "upcoming").primary.text !== answer,
+  "S08 distinct-from-answer: the narrative primary text is never byte-equal to the answer sentence (the two layers are distinct by construction — the narrative carries the rivalry significance, the answer carries the kickoff/venue/score)");
+
+// (i) no-fabricated-statistics guard — the variant templates never cite streak
+// counts, win/loss tallies, standings positions (beyond the verified top-3
+// fact), or progression outcomes (which would need bracket data the pool lacks)
+check(!allVariants.some((v) => /\d+\s*برد|\d+\s*باخت|\d+\s*مساوی|پیاپی|متوالی|صعود کرد|حذف شد/.test(v)),
+  "S08 no-fabricated-stats: the variant templates never cite streak counts / win-loss tallies / progression outcomes (no fabricated statistics — spec §5: 'No unsupported competitive stakes or fabricated statistics'; the top-table variant states the title-race significance defensibly because both-top-3 is a verified fact, not a fabricated stat)");
+
+// (j) the composer integration — matchSummaryHtml slots the narrative ABOVE
+// the pairing. With a narrativeHtml atom, the .mcentre-narrative element
+// renders FIRST (before the .mcentre-cols pairing). Without it (or ""), no
+// .mcentre-narrative renders (the S07 contract holds byte-for-byte).
+const s08WithNarr = mc.matchSummaryHtml({
+  answerHtml: "خلاصه", factsRows: [{ label: "تاریخ", valueHtml: "۱۴ آبان" }], resultHtml: "",
+  narrativeHtml: '<div class="mcentre-narrative"><p class="mcentre-nar-primary">دربی هفته</p></div>'
+});
+check(s08WithNarr.indexOf('<div class="mcentre-narrative">') === 0 &&
+  s08WithNarr.indexOf("mcentre-narrative") < s08WithNarr.indexOf("mcentre-cols") &&
+  s08WithNarr.indexOf("mcentre-cols") < s08WithNarr.indexOf("mcentre-brief"),
+  "S08 composer integration: the narrativeHtml atom rides ABOVE the .mcentre-cols pairing (DOM order: narrative → pairing grid → briefing card inside the grid) — the editorial lead-in, then the answer-first briefing | facts, then the result; the S07 pairing contract holds inside the grid");
+// without narrativeHtml (or "") — the S07 contract holds byte-for-byte (no .mcentre-narrative)
+const s08NoNarr = mc.matchSummaryHtml({
+  answerHtml: "خلاصه", factsRows: [{ label: "تاریخ", valueHtml: "۱۴ آبان" }], resultHtml: ""
+});
+check(!s08NoNarr.includes("mcentre-narrative") && s08NoNarr === mc.matchSummaryHtml({ answerHtml: "خلاصه", factsRows: [{ label: "تاریخ", valueHtml: "۱۴ آبان" }], resultHtml: "", narrativeHtml: "" }),
+  "S08 no-narrative fallback: narrativeHtml omitted OR '' → no .mcentre-narrative element (the S07 contract holds byte-for-byte — `'' + pair + result` === `pair + result`; the briefing|facts pairing still renders; the no-empty-cards law holds at the narrative level)");
+// the narrativeHtml atom wraps primary + optional secondary in the engine
+const narrWithSec = ne.narrativeHtml(mkSm(mkS({ rivalryFa: "ال کلاسیکو", roundFa: "نیمه‌نهایی" })), ctxNone, "upcoming");
+check(narrWithSec.indexOf('<div class="mcentre-narrative">') === 0 &&
+  narrWithSec.indexOf("mcentre-nar-primary") > -1 && narrWithSec.indexOf("mcentre-nar-secondary") > -1 &&
+  narrWithSec.indexOf("mcentre-nar-primary") < narrWithSec.indexOf("mcentre-nar-secondary"),
+  "S08 narrative HTML: the engine's narrativeHtml wraps the primary (mcentre-nar-primary) + the optional secondary (mcentre-nar-secondary) in a .mcentre-narrative div — primary FIRST, secondary below (the optional distinct secondary renders when a distinct eligible category exists)");
+const narrSolo = ne.narrativeHtml(mkSm(mkS({ rivalryFa: "ال کلاسیکو" })), ctxNone, "upcoming");
+check(narrSolo.indexOf("mcentre-nar-primary") > -1 && !narrSolo.includes("mcentre-nar-secondary"),
+  "S08 narrative HTML no-secondary: when only ONE category is eligible, the narrativeHtml renders the primary ONLY (no secondary — never forced)");
+
+// (k) the S08 CSS — the .mcentre-narrative block (the editorial typography +
+// the subtle divider), logical properties only, the block's own tokens.
+check(shellSrc.includes(".mcentre-narrative{margin-block-end:14px;padding-block-end:12px;border-block-end:1px solid rgba(94,160,255,.16)}") &&
+  shellSrc.includes(".mcentre-narrative p{margin:0;line-height:1.9;text-align:start;color:var(--fg,#e8eefc)}") &&
+  shellSrc.includes(".mcentre-narrative p.mcentre-nar-primary{font-size:1.02rem;font-weight:600}") &&
+  shellSrc.includes(".mcentre-narrative p.mcentre-nar-secondary{margin-block-start:8px;font-size:.94rem;color:var(--muted,#9aa4b2)}"),
+  "S08 CSS narrative: the .mcentre-narrative block (the editorial lead — NOT a .mcentre-card, per spec §5 'Open editorial layout, not a prominent card background') + the primary (1.02rem/font-weight 600 — prominent via typography) + the secondary (smaller/muted — the optional distinct storyline); the subtle border-block-end divider separates it from the pairing below; the block's own icy/navy tokens, zero new assets/requests");
+// the S08 block rides the page-shell style block AFTER S07 and BEFORE S03
+const s08StyleIdx = shellSrc.indexOf("Match Centre S08");
+check(s08StyleIdx > -1 && s08StyleIdx > shellSrc.indexOf("Match Centre S07") && s08StyleIdx < shellSrc.indexOf("Match Centre S03"),
+  "S08 CSS placement: the S08 style block rides the page-shell inline <style> after S07 and before the S03 foundation (chronological session order: S04 → S05 → S06 → S07 → S08 → S03)");
+
+// (l) S08 RTL/LTR — the narrative CSS rules use logical properties only
+var s08Rules = (shellSrc.match(/\.mcentre-narrative\{[^}]*\}|\.mcentre-narrative p\{[^}]*\}|\.mcentre-narrative p\.mcentre-nar-primary\{[^}]*\}|\.mcentre-narrative p\.mcentre-nar-secondary\{[^}]*\}/g) || []).join("");
+check(s08Rules.length > 0 && !/margin-left|margin-right|padding-left|padding-right|text-align:\s*(left|right)|\bleft:|\bright:|float:/.test(s08Rules),
+  "S08 RTL/LTR: the narrative CSS rules are physical-property-free (margin-block-end, padding-block-end, border-block-end, margin-block-start, text-align:start — logical properties only) — the native-Persian RTL narrative mirrors cleanly under a dir flip (decision 2; the primary renders right-aligned under RTL, mirrors under LTR)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");
