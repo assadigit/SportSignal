@@ -162,7 +162,7 @@ check(withNav.indexOf('id="mcentre-hero"') < withNav.indexOf('id="mcentre-nav"')
 
 // ---------- 3. wiring: buildMatchPage delegates, GSC surfaces stay ----------
 let wiringOk = true;
-if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, type MatchHeroInput, type MatchSummaryInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml)"); wiringOk = false; }
+if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml + the S12 form renderer matchFormHtml + the projection types)"); wiringOk = false; }
 // S08: pages.ts imports the narrative engine (narrativeHtml + the lifecycle type).
 if (!/import \{ narrativeHtml, type NarrativeLifecycle \} from "\.\/narrative";/.test(pagesSrc)) { bad("wiring: pages.ts lost the narrative engine import (narrativeHtml + NarrativeLifecycle — the S08 deterministic narrative engine)"); wiringOk = false; }
 if (!/const main = matchCentreMain\(\{/.test(pagesSrc)) { bad("wiring: buildMatchPage no longer delegates its main assembly to matchCentreMain"); wiringOk = false; }
@@ -190,7 +190,7 @@ if (!/narrativeHtml: narrativeAtomHtml/.test(pagesSrc)) { bad("wiring: the summa
 // S08: whyBigHtml + its isTopTable helper are RETIRED (the engine subsumes both).
 if (/export function whyBigHtml\(/.test(pagesSrc) || /function whyBigHtml\(/.test(pagesSrc)) { bad("wiring: the legacy whyBigHtml is still present (S08 retired it — the narrative engine in src/seo/narrative.ts replaces it)"); wiringOk = false; }
 if (/function isTopTable\(/.test(pagesSrc)) { bad("wiring: the legacy isTopTable helper is still present (S08 retired it — the engine's topTableEligible replaces it)"); wiringOk = false; }
-if (!/form: formCard,/.test(pagesSrc)) { bad("wiring: the form part no longer carries the W/D/L strip"); wiringOk = false; }
+if (!/form: formHtml,/.test(pagesSrc)) { bad("wiring: the form part no longer carries the W/D/L strip (the S12 matchFormHtml render)"); wiringOk = false; }
 if (!/related: similarCard,/.test(pagesSrc)) { bad("wiring: the related part no longer carries the sibling-fixtures card"); wiringOk = false; }
 if (!/footerHook: related/.test(pagesSrc)) { bad("wiring: the footer-hook part no longer carries the related-links card"); wiringOk = false; }
 if (/matchHeadHtml\(sm\) \+ matchActionsHtml/.test(pagesSrc)) { bad("wiring: the old flat hero assembly is still present alongside the delegation"); wiringOk = false; }
@@ -1635,8 +1635,8 @@ check(/import \{ matchStandingsWindow, type StandingsWindow \} from "\.\/standin
   "S11 wiring import: pages.ts imports matchStandingsWindow + the StandingsWindow type from ./standings-window (the S10 module — already loaded; fullByCode is already loaded by the pre-existing fullByCodeFor await)");
 check(/const standingsHtml = buildStandingsHtml\(matchStandingsWindow\(sm, ctx, fullByCode\)\)/.test(pagesSrc),
   "S11 wiring call: buildMatchPage calls matchStandingsWindow(sm, ctx, fullByCode) + buildStandingsHtml(window) — the S10 selection runs HERE (pure logic, zero new awaits), the renderer projects the 5 visible columns (pure string composition, zero new awaits)");
-check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formCard \}\)/.test(pagesSrc),
-  "S11 wiring nav: the standings string is passed to matchNavHtml ({ standings: standingsHtml }) so the nav's adaptive Q9=B filter renders the جدول nav item when the standings part is non-empty");
+check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formHtml \}\)/.test(pagesSrc),
+  "S11 wiring nav: the standings string is passed to matchNavHtml ({ standings: standingsHtml }) so the nav's adaptive Q9=B filter renders the جدول nav item when the standings part is non-empty (S12 co-evolution: the form part is now the matchFormHtml render — form: formHtml — the same adaptive filter renders the فرم nav item)");
 check(/standings: standingsHtml,/.test(pagesSrc),
   "S11 wiring composer: the standings string is passed to matchCentreMain ({ standings: standingsHtml }) so the composer wraps it in the mcentre-standings anchor (the S04 hero precedent — pages.ts builds the string, the composer wraps it)");
 
@@ -1708,6 +1708,275 @@ check(!/#mcentre-standings[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|p
 // the جدول nav item renders when the standings part is non-empty (the nav's adaptive Q9=B filter)
 check(/standings\?: string;.*\/\/ five-row context windows \(S10\/S11\)/.test(mcSrc),
   "S11 nav جدول item: MatchCentreParts.standings? (the slot + the mcentre-standings section) exist since S02 — S11 populates it; the nav's adaptive Q9=B filter renders the جدول nav item when the standings part is non-empty (the matchNavHtml call now passes standings: standingsHtml)");
+
+// ---------- 13. S12 (M5): the form renderer + the latest results (M5, session 1 of 2) ----------
+// specification §9 (Team form and recent results) + milestones-and-sessions.md
+// M5/S12. S12 ships the form renderer MIGRATION (the W/D/L dots + the count
+// summary + the season-record chip — the v13.87/v13.88 vocabulary migrated
+// into the composer as a .mcentre-form section, the S04/S07/S11 precedent)
+// + the NEW latest-results list (spec §9 "Latest five results" — the dots'
+// hover-title text promoted to visible text: opponent + score + date, from
+// the SAME teamForm return, ZERO new data work) + the participant-mark
+// typography (.mcentre-form-participant — the S11 .strow-participant
+// precedent: font-weight:600 + #7dd3fc on the team names, typography-only,
+// NO background, decision 25) + the responsive mobile layout (the dots + the
+// summary visible, the team name truncates, one line per result row, no
+// horizontal scroll). S13 (session 2 of 2) ships the M5 gate. The team-page
+// formStrip card (formRowHtml/formLegendHtml via teamFormCardHtml) stays
+// byte-frozen; the match-page matchFormHtml is a NEW composer function fed
+// by the pages.ts matchFormInput projection (the S04 hero precedent).
+
+// (a) the contract — matchFormHtml + the projection interfaces exported
+check(typeof mc.matchFormHtml === "function" &&
+  /export interface MatchFormInput/.test(mcSrc) &&
+  /export interface MatchFormSideInput/.test(mcSrc) &&
+  /export interface MatchFormResultRow/.test(mcSrc),
+  "S12 contract: matchFormHtml + MatchFormInput/MatchFormSideInput/MatchFormResultRow exported (the pre-built-atoms projection — the composer stays import-free, the S04 hero precedent; pages.ts's matchFormInput pre-escapes/prebuilds every string)");
+
+// (b) the renderer — both sides with dots (the REAL mc.matchFormHtml, never
+// re-implemented). Home: a 5-dot W/D/L/W/W side; away: a 3-dot D/W/W side.
+const s12HomeDots = {
+  team: "آرسنال",
+  dotsHtml: '<i class="fdot fw">ب</i><i class="fdot fd">م</i><i class="fdot fl">ش</i><i class="fdot fw">ب</i><i class="fdot fw">ب</i>',
+  sumHtml: s11FaDigits("3") + " برد · " + s11FaDigits("1") + " مساوی · " + s11FaDigits("1") + " شکست",
+  seasonHtml: "",
+  results: [
+    { dotHtml: '<i class="fdot fw">ب</i>', oppHtml: "ولورهمپتون", scoreHtml: s11FaDigits("2") + " – " + s11FaDigits("0"), dateHtml: "D2(2026-10-12)" },
+    { dotHtml: '<i class="fdot fd">م</i>', oppHtml: "لیورپول", scoreHtml: s11FaDigits("1") + " – " + s11FaDigits("1"), dateHtml: "D2(2026-10-19)" },
+    { dotHtml: '<i class="fdot fl">ش</i>', oppHtml: "منچستریونایتد", scoreHtml: s11FaDigits("0") + " – " + s11FaDigits("1"), dateHtml: "D2(2026-10-26)" },
+    { dotHtml: '<i class="fdot fw">ب</i>', oppHtml: "نیوکاسل", scoreHtml: s11FaDigits("3") + " – " + s11FaDigits("1"), dateHtml: "D2(2026-11-02)" },
+    { dotHtml: '<i class="fdot fw">ب</i>', oppHtml: "برایتون", scoreHtml: s11FaDigits("2") + " – " + s11FaDigits("1"), dateHtml: "D2(2026-11-09)" }
+  ]
+};
+const s12AwayDots = {
+  team: "چلسی",
+  dotsHtml: '<i class="fdot fd">م</i><i class="fdot fw">ب</i><i class="fdot fw">ب</i>',
+  sumHtml: s11FaDigits("2") + " برد · " + s11FaDigits("1") + " مساوی · " + s11FaDigits("0") + " شکست",
+  seasonHtml: "",
+  results: [
+    { dotHtml: '<i class="fdot fd">م</i>', oppHtml: "وست‌هم", scoreHtml: s11FaDigits("0") + " – " + s11FaDigits("0"), dateHtml: "D2(2026-10-10)" },
+    { dotHtml: '<i class="fdot fw">ب</i>', oppHtml: "فولام", scoreHtml: s11FaDigits("2") + " – " + s11FaDigits("0"), dateHtml: "D2(2026-10-17)" },
+    { dotHtml: '<i class="fdot fw">ب</i>', oppHtml: "بورنلی", scoreHtml: s11FaDigits("1") + " – " + s11FaDigits("0"), dateHtml: "D2(2026-10-31)" }
+  ]
+};
+const s12FormBoth = mc.matchFormHtml({ home: s12HomeDots, away: s12AwayDots });
+check(s12FormBoth.startsWith('<div class="card formstrip"><h2>فرم اخیر</h2>') &&
+  s12FormBoth.indexOf('<p class="formlegend"><i class="fdot fw">ب</i>برد · <i class="fdot fd">م</i>مساوی · <i class="fdot fl">ش</i>شکست</p>') > -1,
+  "S12 container: the renderer wraps the form in the .card.formstrip container (the v13.87 vocabulary — shared CSS with the team-page card) + the <h2>«فرم اخیر» title (any side has dots) + the dot legend (the ب=برد م=مساوی ش=شکست decoder — spec §9 'Accessible labels; never rely on color alone'; byte-identical to formLegendHtml()'s output so the match-page + team-page cards decode the dots identically)");
+check(s12FormBoth.indexOf('<span class="formdots">' + s12HomeDots.dotsHtml + "</span>") > -1 &&
+  s12FormBoth.indexOf('<span class="formsum">' + s12HomeDots.sumHtml + "</span>") > -1,
+  "S12 dots + summary: the composer wraps the pre-built dot atoms in <span class=\"formdots\"> + the count-summary text in <span class=\"formsum\"> (the v13.87 vocabulary — the W/D/L indicators ب/م/ش + the W·D·L count summary per side)");
+check(s12FormBoth.indexOf("title=") === -1,
+  "S12 no tooltip: the match-page dots carry NO title attribute (spec §9 'Non-interactive: no tooltip, click or expand' — the v13.87 hover-title text is promoted to the VISIBLE latest-results list below; the team-page formRowHtml keeps its titles, byte-frozen)");
+
+// (c) the latest-results list — <ul class="formresults"> with one <li> per
+// finished result: [dot][fropp opponent][frscore][frdate] — the dots' title
+// text promoted to visible text (spec §9 "Latest five results": up to five
+// per side, opponent + score prominent, date secondary).
+check((s12FormBoth.match(/<ul class="formresults">/g) || []).length === 2 &&
+  (s12FormBoth.match(/<li>/g) || []).length === 8,
+  "S12 results list: one <ul class=\"formresults\"> per dots side (2 lists; 5 + 3 = 8 <li> rows — up to five results per side, spec §9 'Up to five available results per team')");
+check(s12FormBoth.indexOf('<li><i class="fdot fw">ب</i><span class="fropp">ولورهمپتون</span><b class="frscore">' + s11FaDigits("2") + " – " + s11FaDigits("0") + '</b><span class="frdate">D2(2026-10-12)</span></li>') > -1,
+  "S12 results row: each row = the W/D/L dot + the opponent (<span class=\"fropp\">) + the score (<b class=\"frscore\">) + the date (<span class=\"frdate\">) — the dots' title text promoted to visible text, one compact line per result");
+check(s12FormBoth.indexOf('<ul class="formresults">') > s12FormBoth.indexOf('<span class="formdots">') &&
+  s12FormBoth.indexOf("آرسنال") < s12FormBoth.indexOf("چلسی") &&
+  s12FormBoth.indexOf("بورنلی") > s12FormBoth.indexOf("ولورهمپتون"),
+  "S12 list under the dots: the results list rides UNDER its side's dots row (the list follows the formrow in DOM order); home renders FIRST, away underneath (spec §9 layout: 'home team first, away team underneath' — the stacked two-side resolution)");
+
+// (d) the participant-mark typography — both team names carry
+// .mcentre-form-participant (the S11 .strow-participant precedent:
+// font-weight:600 + #7dd3fc via the page-shell S12 CSS, typography-only, NO
+// background, decision 25). The mark rides the TEAM NAME only.
+check((s12FormBoth.match(/<span class="formteam mcentre-form-participant">/g) || []).length === 2 &&
+  (s12FormBoth.match(/mcentre-form-participant/g) || []).length === 2,
+  "S12 participant-mark: both team names carry .formteam.mcentre-form-participant (the typography-only class — decision 25, the S11 precedent; the CSS applies font-weight:600 + #7dd3fc); the mark rides the TEAM NAME only — the dots + the summary + the chip carry NO participant class");
+check(s12FormBoth.indexOf("mcentre-cols") === -1 && s12FormBoth.indexOf("strow-me") === -1,
+  "S12 stacked: the two sides render STACKED (one .formrow per side + its list, NO .mcentre-cols pairing grid — the side-by-side pairing is the S07 summary's shape, not the form's) + NO .strow-me background (typography-only, decision 25)");
+
+// (e) the season-record fallback — a side with no dots falls back to the
+// pre-built .fseason chip (the aggregate W/D/L from the standings snapshot);
+// a chip side carries NO results list (no fake per-match granularity).
+const s12SeasonSide = {
+  team: "اورتون",
+  dotsHtml: "",
+  sumHtml: "",
+  seasonHtml: '<span class="fseason"><b class="fspos">ردیف ' + s11FaDigits("2") + '</b><b class="fsw">' + s11FaDigits("6") + '</b>ب <b class="fsd">' + s11FaDigits("2") + '</b>م <b class="fsl">' + s11FaDigits("2") + '</b>ش<i class="fsplayed">از ' + s11FaDigits("10") + ' بازی لیگ برتر انگلیس</i></span>',
+  results: []
+};
+const s12Mixed = mc.matchFormHtml({ home: s12HomeDots, away: s12SeasonSide });
+check(s12Mixed.indexOf(s12SeasonSide.seasonHtml) > -1 &&
+  (s12Mixed.match(/<ul class="formresults">/g) || []).length === 1 &&
+  s12Mixed.indexOf('<h2>فرم اخیر</h2>') > -1,
+  "S12 season fallback: a side with no dots falls back to the pre-built .fseason chip (the aggregate W/D/L — «ردیف ۲ ۶ب ۲م ۲ش از ۱۰ بازی»); the chip side carries NO results list (1 list total — no fake per-match granularity); the title stays «فرم اخیر» (any side has dots)");
+const s12SeasonSide2 = { ...s12SeasonSide, team: "فولام", seasonHtml: '<span class="fseason"><b class="fsw">' + s11FaDigits("1") + '</b>ب</span>' };
+const s12BothSeason = mc.matchFormHtml({ home: s12SeasonSide, away: s12SeasonSide2 });
+check(s12BothSeason.indexOf('<h2>وضعیت فصل</h2>') > -1 && s12BothSeason.indexOf("formlegend") === -1 && s12BothSeason.indexOf("formresults") === -1,
+  "S12 season title: when EVERY side falls back to the season aggregate the title honestly switches to «وضعیت فصل» + NO legend + NO results lists (the v13.88 behavior — no fake per-match granularity; the dots vocabulary never renders without dots)");
+
+// (f) the fail-closed — BOTH sides empty → "" (the no-empty-cards law: the
+// composer's sectionHtml omits the mcentre-form section; the فرم nav item
+// stays filtered out). One-sided: the empty side drops, the data side renders.
+const s12EmptySide = { team: "بی‌داده", dotsHtml: "", sumHtml: "", seasonHtml: "", results: [] };
+check(mc.matchFormHtml({ home: s12EmptySide, away: s12EmptySide }) === "",
+  "S12 fail-closed: BOTH sides empty (no dots AND no record) → \"\" (the no-empty-cards law — the composer's sectionHtml omits the mcentre-form section; the فرم nav item stays filtered out via the adaptive Q9=B filter)");
+const s12OneSided = mc.matchFormHtml({ home: s12EmptySide, away: s12AwayDots });
+check(s12OneSided.indexOf("چلسی") > -1 && s12OneSided.indexOf("بی‌داده") === -1 &&
+  (s12OneSided.match(/class="formrow"/g) || []).length === 1,
+  "S12 one-sided: a side with NEITHER dots NOR a record renders nothing (the empty side drops; the data side still renders — one .formrow total; the v13.88 one-sided rendering)");
+
+// (g) the projection — extract the REAL matchFormInput from pages.ts via
+// ts.transpileModule with CONTROLLABLE teamForm/teamSeasonRecord/faDateD2
+// stubs (the S08/S10/S11 pattern). The stubs let the tests control the data
+// atoms; the rest of pages.ts's imports are stubbed as no-ops exactly as the
+// S11 standingsRendererEngine does (matchFormInput never calls them — only
+// buildMatchPage/buildTeamPage/etc. do, and those are never invoked here).
+const S12_STUB_DOTS = {
+  Arsenal: [
+    { r: "W", oppFa: "ولورهمپتون", score: "2-0", date: "2026-10-12" },
+    { r: "D", oppFa: "لیورپول", score: "1-1", date: "2026-10-19" },
+    { r: "L", oppFa: "منچستریونایتد", score: "0-1", date: "2026-10-26" },
+    { r: "W", oppFa: "نیوکاسل", score: "3-1", date: "2026-11-02" },
+    { r: "W", oppFa: "ساندرلند & <b>", score: "2-1", date: "2026-11-09" }
+  ]
+};
+const S12_STUB_RECS = {
+  Everton: { code: "PL", compFa: "لیگ برتر انگلیس", pos: 2, played: 10, won: 6, draw: 2, lost: 2, points: 20 }
+};
+const s12RecCalls = [];
+function formProjectionEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const src = fs.readFileSync(path.join(root, "src", "seo", "pages.ts"), "utf8")
+    .replace(/^import\s+[^;]+;\n?/gm, "")
+    .replace(/^export\s+/gm, "");
+  const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.None, target: "ES2020" } }).outputText;
+  const stubs = {
+    // the controllable data stubs matchFormInput uses:
+    teamForm: function (ctx, name) { return S12_STUB_DOTS[name] || null; },
+    teamSeasonRecord: function (ctx, name) { s12RecCalls.push(name); return S12_STUB_RECS[name] || null; },
+    faDateD2: function (iso) { return "D2(" + iso + ")"; },
+    toFaDigits: function (s) { return s11FaDigits(s); },
+    esc: function (s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); },
+    seoTeamFaName: function (t) { return (t && (t.faName || t.name)) || ""; },
+    // no-op stubs for all other imports (never called by matchFormInput —
+    // only by buildMatchPage/buildTeamPage/etc. which are never invoked here):
+    SEO: {}, absUrl: function () { return ""; }, matchPath: function () { return ""; }, compSlug: function () { return ""; }, teamSlug: function () { return ""; },
+    faTime: function () { return ""; }, faDateD1: function () { return ""; }, tehranDayKey: function () { return ""; }, utcTime: function () { return ""; }, statusLabelFa: function () { return ""; }, weekendWindowTehran: function () { return null; },
+    COMP_EN: {},
+    upcomingBig: function () { return []; }, upcomingFollowed: function () { return []; }, isBigForSeo: function () { return false; }, finishedRecent: function () { return []; }, teamMatches: function () { return { upcoming: [], finished: [] }; }, compMatches: function () { return []; }, teamsIndex: function () { return []; }, compsIndex: function () { return []; }, findMatchBySlug: function () { return null; }, findTeamBySlug: function () { return null; }, payloadTop3: function () { return {}; }, hydrateMatchVenue: async function () { return null; }, similarMatches: function () { return []; }, teamStandingsWindow: function () { return null; }, heroArtSrv: function () { return null; },
+    JL: {}, buildHead: function () { return ""; }, pageShell: function () { return ""; },
+    seoTeamAltName: function () { return null; },
+    matchCentreMain: function () { return ""; }, matchHeroHtml: function () { return ""; }, matchSummaryHtml: function () { return ""; }, matchFormHtml: function () { return ""; },
+    narrativeHtml: function () { return ""; }, matchStandingsWindow: function () { return null; },
+    loadArchive: async function () { return []; }, fetchStandings: async function () { return null; }, translateTeam: function () { return ""; },
+    M: { nameHtml: function (s) { return String(s == null ? "" : s); } }
+  };
+  return new Function(...Object.keys(stubs), js + "\nreturn { matchFormInput };")(...Object.values(stubs));
+}
+const fp12 = formProjectionEngine();
+check(typeof fp12.matchFormInput === "function",
+  "S12 projection contract: pages.ts carries matchFormInput (the form data projection — the S04 hero precedent: pages.ts builds the MatchFormInput atoms, the composer renders the markup; the REAL function extracted via ts.transpileModule, never re-implemented)");
+const s12Sm = {
+  raw: { homeTeam: { name: "Arsenal" }, awayTeam: { name: "Everton" }, status: "" },
+  s: { homeTeam: { faName: "آرسنال" }, awayTeam: { faName: "اورتون" } }
+};
+const s12Input = fp12.matchFormInput(s12Sm, {}, [], {});
+check(s12Input.home.team === "آرسنال" && s12Input.away.team === "اورتون",
+  "S12 projection teams: each side carries the pre-escaped Persian faName (faName(sm.s.homeTeam/awayTeam) — the same atoms formStripHtml read; the data lookups use sm.raw.*.name exactly as before)");
+check(s12Input.home.dotsHtml === '<i class="fdot fw">ب</i><i class="fdot fd">م</i><i class="fdot fl">ش</i><i class="fdot fw">ب</i><i class="fdot fw">ب</i>' &&
+  s12Input.home.sumHtml === s11FaDigits("3") + " برد · " + s11FaDigits("1") + " مساوی · " + s11FaDigits("1") + " شکست",
+  "S12 projection dots + summary: the projection pre-builds the W/D/L dot atoms (ب/م/ش in the fW/fD/fL classes, oldest→newest — the teamForm DOM order) + the W·D·L count-summary text (۳ برد · ۱ مساوی · ۱ شکست — the same bytes formRowHtml renders)");
+check(s12Input.home.seasonHtml === "" && s12Input.away.dotsHtml === "" && s12Input.away.sumHtml === "" && s12Input.away.results.length === 0,
+  "S12 projection fallback split: a dots side carries NO season chip (seasonHtml=\"\") + a chip side carries NO dots/summary/results (the dots-else-chip branch — the chip is the fallback, never a companion)");
+check(s12Input.away.seasonHtml === '<span class="fseason"><b class="fspos">ردیف ' + s11FaDigits("2") + '</b><b class="fsw">' + s11FaDigits("6") + '</b>ب <b class="fsd">' + s11FaDigits("2") + '</b>م <b class="fsl">' + s11FaDigits("2") + '</b>ش<i class="fsplayed">از ' + s11FaDigits("10") + ' بازی لیگ برتر انگلیس</i></span>',
+  "S12 projection season chip: the pre-built .fseason chip is byte-identical to formRowHtml's shape (fspos «ردیف ۲» + fsw/fd/fl count segments + fsplayed «از ۱۰ بازی لیگ برتر انگلیس» — the v13.93-fullrec vocabulary, shared visual language with the team-page card)");
+check(s12RecCalls.indexOf("Arsenal") === -1 && s12RecCalls.indexOf("Everton") > -1,
+  "S12 projection gating: teamSeasonRecord runs ONLY for the no-dots side (Everton — the teamFormCardHtml precedent; Arsenal's dots skip the record lookup — the chip is the fallback, never a companion)");
+check(s12Input.home.results.length === 5 &&
+  s12Input.home.results[0].dotHtml === '<i class="fdot fw">ب</i>' &&
+  s12Input.home.results[0].oppHtml === "ولورهمپتون" &&
+  s12Input.home.results[0].scoreHtml === s11FaDigits("2") + " – " + s11FaDigits("0") &&
+  s12Input.home.results[0].dateHtml === "D2(2026-10-12)",
+  "S12 projection results: the latest-results rows carry all 4 atoms from the SAME teamForm return — the dotHtml badge + the opponent + the Persian-digit score «۲ – ۰» (the en-dash form, the dots' title score convention) + the faDateD2 compact date (ZERO new data work — the loadArchive await already feeds this)");
+check(s12Input.home.results[4].oppHtml === "ساندرلند &amp; &lt;b&gt;",
+  "S12 projection escaping: the opponent name arrives PRE-ESCAPED (the hostile «ساندرلند & <b>» → «ساندرلند &amp; &lt;b&gt;» — the projection owns every escaped string, the composer never needs esc; the S04 hero precedent)");
+
+// (h) the integration — the REAL projection feeds the REAL renderer (the
+// full pipeline on controlled data), + the fail-closed pipeline.
+const s12Pipe = mc.matchFormHtml(s12Input);
+check(s12Pipe.indexOf('<div class="card formstrip"><h2>فرم اخیر</h2>') > -1 &&
+  s12Pipe.indexOf('<span class="formteam mcentre-form-participant">آرسنال</span>') > -1 &&
+  s12Pipe.indexOf('<span class="formteam mcentre-form-participant">اورتون</span>') > -1 &&
+  s12Pipe.indexOf(s12Input.away.seasonHtml) > -1 &&
+  (s12Pipe.match(/<ul class="formresults">/g) || []).length === 1,
+  "S12 integration: matchFormHtml(matchFormInput(sm, ctx, archive, fullByCode)) renders the full card — the participant-marked team names + the home dots/summary/list + the away season chip (the mixed case end-to-end)");
+check(mc.matchFormHtml(fp12.matchFormInput({ raw: { homeTeam: { name: "X" }, awayTeam: { name: "Y" }, status: "" }, s: { homeTeam: { faName: "X" }, awayTeam: { faName: "Y" } } }, {}, [], {})) === "",
+  "S12 integration fail-closed: neither side has dots nor a record → the projection returns empty atoms → the renderer returns \"\" (the mcentre-form section is omitted; the فرم nav item stays filtered out)");
+
+// (i) the composer wiring — buildMatchPage calls matchFormInput +
+// matchFormHtml + passes form: formHtml to BOTH matchNavHtml + matchCentreMain.
+check(/const formHtml = matchFormHtml\(matchFormInput\(sm, ctx, archive, fullByCode\)\);/.test(pagesSrc),
+  "S12 wiring call: buildMatchPage calls matchFormInput(sm, ctx, archive, fullByCode) + matchFormHtml(input) — the projection reads the already-loaded teamForm + teamSeasonRecord data (the loadArchive + fullByCodeFor awaits — ZERO new awaits), the renderer is pure string composition in the composer");
+check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formHtml \}\)/.test(pagesSrc) && /form: formHtml,/.test(pagesSrc),
+  "S12 wiring dual: the form string feeds BOTH matchNavHtml (the فرم nav item — the adaptive Q9=B filter renders it when the form part is non-empty) AND matchCentreMain (the mcentre-form section anchor — the S11 standings dual-passing precedent)");
+check(/\{ id: "mcentre-form", label: "فرم" \}/.test(pagesSrc),
+  "S12 nav فرم item: the MC_NAV_DESTS registry carries the mcentre-form destination (فرم) — the nav item renders when the form part is non-empty (the adaptive Q9=B filter reads parts.form — already wired since S06, S12 keeps it)");
+
+// (j) the team-page path stays byte-frozen — formStripHtml/formRowHtml/
+// formLegendHtml stay in pages.ts untouched (the team-page teamFormCardHtml
+// renders through them; the match page no longer calls formStripHtml).
+check(/function formStripHtml\(ctx: SeoCtx, sm: SeoMatch, archive: any\[\], fullByCode\?: Record<string, any>\): string/.test(pagesSrc) &&
+  /function formRowHtml\(fa: string, dots: \{ r: string; oppFa: string; score: string; date: string \}\[\] \| null, rec: \{ won: number \| null; draw: number \| null; lost: number \| null; played: number \| null; pos\?: number \| null; compFa\?: string \| null \} \| null\): string/.test(pagesSrc) &&
+  /function formLegendHtml\(\): string/.test(pagesSrc),
+  "S12 team-page frozen: formStripHtml/formRowHtml/formLegendHtml stay in pages.ts byte-frozen (the S10/S11 split precedent — the team-page formStrip card renders through them via teamFormCardHtml; the match-page matchFormHtml is a NEW composer function)");
+check(/function teamFormCardHtml\(ctx: SeoCtx, entryName: string, fa: string, archive: any\[\], fullByCode\?: Record<string, any>\): string/.test(pagesSrc) &&
+  /const row = formRowHtml\(fa, dots, rec\);/.test(pagesSrc),
+  "S12 team-page card: teamFormCardHtml still renders through formRowHtml (the team-page form path untouched — the v13.87/v13.88/v13.93 renderer stays byte-frozen on team pages)");
+
+// (k) the cost law — the projection is pure string composition reading the
+// already-loaded data. Scoped to matchFormInput + matchFormSideInput (the
+// extractFnSrc brace-matched extraction — the S11 buildStandingsHtml
+// precedent) + the composer's matchFormHtml/formSideHtml (the whole-module
+// purity regex above already gates the composer; this pins the S12
+// functions).
+const s12ProjSrc = (extractFnSrc(pagesSrc, "matchFormSideInput") || "") + (extractFnSrc(pagesSrc, "matchFormInput") || "");
+const s12ProjStripped = s12ProjSrc.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s12ProjSrc.length > 0 && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|generateText|chat\.completions|await\b/i.test(s12ProjStripped),
+  "S12 cost law: matchFormInput + matchFormSideInput carry NO AI/network/KV/timer/polling/await code (the S08 zero-runtime-cost law — the projection reads the already-loaded teamForm + teamSeasonRecord data; zero new awaits, zero new KV reads, zero new fetches; the cost check is scoped to the projection functions — pages.ts's other functions keep their legitimate fetch/KV calls)");
+const s12CompSrc = (extractFnSrc(mcSrc, "formSideHtml") || "") + (extractFnSrc(mcSrc, "matchFormHtml") || "");
+const s12CompStripped = s12CompSrc.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s12CompSrc.length > 0 && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|import /i.test(s12CompStripped),
+  "S12 composer purity: matchFormHtml + formSideHtml are pure string renderers (the composer stays the S02 pure leaf — zero imports/KV/fetch/client-scripts; the atoms arrive prebuilt from pages.ts)");
+check(awaitCount === 3,
+  "S12 await count: buildMatchPage's await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; the S12 form renderer is pure string composition reading the already-loaded teamForm + teamSeasonRecord DATA — ZERO new awaits; the zero-runtime-cost law holds)");
+
+// (l) the CSS — the S12 style block rides page-shell.ts AFTER S11 and BEFORE
+// the S03 foundation (chronological session order: S04 → S05 → S06 → S07 →
+// S08 → S11 → S12 → S03). Scoped to #mcentre-form; logical properties only;
+// the block's own icy/navy tokens, zero new assets/requests.
+check(shellSrc.indexOf("Match Centre S11 (M4)") < shellSrc.indexOf("Match Centre S12 (M5)") && shellSrc.indexOf("Match Centre S12 (M5)") < shellSrc.indexOf("Match Centre S03 (M1)"),
+  "S12 CSS placement: the S12 style block rides page-shell.ts AFTER S11 (.stcrest mobile) and BEFORE S03 (the responsive/spacing/RTL foundation) — chronological session order: S04 → S05 → S06 → S07 → S08 → S11 → S12 → S03");
+check(/#mcentre-form \.formteam\.mcentre-form-participant\{font-weight:600;color:#7dd3fc\}/.test(shellSrc),
+  "S12 CSS participant-mark: the participant .formteam gets font-weight:600 + #7dd3fc (the icy-blue color — the .mfin/.mcount/.mnav-item.is-active family; typography-only — the S11 .strow-participant precedent, decision 25)");
+check(!/#mcentre-form \.formteam\.mcentre-form-participant\{[^}]*background/.test(shellSrc) && !/#mcentre-form[^{]*strow-me[^{]*\{[^}]*background/.test(shellSrc),
+  "S12 CSS no participant background: the .mcentre-form-participant class carries NO background (decision 25 — typography-only; NO #mcentre-form-scoped .strow-me rule applies a background — the team-page highlight is NOT applied to the match page)");
+check(shellSrc.includes("#mcentre-form .formresults{margin-block:4px 10px;margin-inline:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}") &&
+  shellSrc.includes("#mcentre-form .formresults li{display:flex;align-items:center;gap:8px;font-size:.78rem;line-height:1.7}"),
+  "S12 CSS results list: the .formresults list (margin-block/margin-inline logical spacing, list-style:none, the flex column with a 4px gap) + the one-line rows (flex, centered, .78rem — spec §9 'Compact vertical list; Opponent and score prominent; Date secondary')");
+check(/#mcentre-form \.fropp\{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}/.test(shellSrc) &&
+  /#mcentre-form \.frscore\{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;flex-shrink:0\}/.test(shellSrc) &&
+  /#mcentre-form \.frdate\{font-size:\.68rem;font-weight:600;color:var\(--muted,#9aa4b2\);white-space:nowrap;flex-shrink:0;margin-inline-start:auto\}/.test(shellSrc),
+  "S12 CSS row cells: the opponent truncates (min-width:0 + ellipsis — long names never blow out the row), the score is prominent (weight 800, tabular digits, never shrinks), the date rides the inline-end (margin-inline-start:auto — the muted secondary, spec §9 'Date secondary')");
+check(/#mcentre-form \.formrow\{border-block-end:none\}/.test(shellSrc) &&
+  /#mcentre-form \.formresults \+ \.formrow,\n#mcentre-form \.formrow \+ \.formrow\{border-block-start:1px dashed var\(--border,#334155\)\}/.test(shellSrc),
+  "S12 CSS side divider: the v13.87 per-row border-bottom is dropped inside #mcentre-form (border-block-end:none) + the dashed divider rides BETWEEN the sides (on the row that follows a list or another row — home|away separation, never inside a side)");
+check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-form \.formteam\{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}/.test(shellSrc) &&
+  /@media \(max-width:600px\)\{[\s\S]*?#mcentre-form \.formresults li\{gap:6px;font-size:\.72rem\}/.test(shellSrc) &&
+  /@media \(max-width:600px\)\{[\s\S]*?#mcentre-form \.formrow\{gap:8px;padding-block:6px\}/.test(shellSrc),
+  "S12 CSS mobile: at ≤600px the team name truncates (the .stname precedent from S11 — min-width:0 + ellipsis + nowrap), the gaps/padding tighten, the list rows stay ONE line at .72rem (spec §9: 'keep the dots + the summary visible; optimize padding and typography; no horizontal scrolling')");
+check(!/#mcentre-form[^{]*\.fdot\{[^}]*width/.test(shellSrc),
+  "S12 CSS fdot keeps 22px: the S12 block does NOT resize .fdot (the existing 22px desktop / 16px legend sizes are already touch-friendly — the S12 resolution: keep; the dots stay visible on mobile, no new sizing vocabulary)");
+check(!/#mcentre-form[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc),
+  "S12 CSS logical properties: the S12 block uses CSS logical properties ONLY (margin-block, margin-inline, padding-block, border-block-start — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

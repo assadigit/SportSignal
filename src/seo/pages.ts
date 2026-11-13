@@ -27,7 +27,7 @@ import { seoTeamFaName, seoTeamAltName } from "./team-names";
 // Match Centre S04 (M2): the hero renderer — the mcentre-hero MARKUP moved
 // to the composer (matchHeroHtml); THIS file builds the data projection
 // (matchHeroInput) and delegates. The legacy matchHeadHtml is retired.
-import { matchCentreMain, matchHeroHtml, matchSummaryHtml, type MatchHeroInput, type MatchSummaryInput } from "./match-centre";
+import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow } from "./match-centre";
 // Match Centre S08 (M3): the deterministic narrative engine — the "why this
 // match matters" editorial layer. The engine runs HERE (pages.ts calls
 // narrativeHtml + passes the pre-built atom to the composer's MatchSummaryInput
@@ -417,6 +417,106 @@ function formStripHtml(ctx: SeoCtx, sm: SeoMatch, archive: any[], fullByCode?: R
   return out + "</div>";
 }
 
+// Match Centre S12 (M5): the form projection — matchFormInput. Builds the
+// MatchFormInput (the composer's matchFormHtml contract — src/seo/
+// match-centre.ts) from the ALREADY-LOADED data: teamForm (fed by the
+// loadArchive await — one of the 3 pre-existing bounded reads) +
+// teamSeasonRecord (fed by the fullByCodeFor await). ZERO new awaits, ZERO
+// new KV reads, ZERO new fetches (the zero-runtime-cost law — the S08
+// narrative + the S10/S11 standings precedent). The composer owns the form
+// MARKUP; THIS projection owns the data atoms (the S04 hero precedent —
+// every string arrives pre-escaped/prebuilt, the composer is a pure leaf).
+// The existing formStripHtml/formRowHtml/formLegendHtml above STAY as the
+// team-page renderer's vocabulary (teamFormCardHtml — byte-frozen; the
+// match page no longer calls formStripHtml).
+//
+// S12 decision points (resolved + recorded per the session brief):
+// 1. The renderer home — MIGRATED to the composer (matchFormHtml in
+//    match-centre.ts — the S04 hero + the S07 summary + the S11 standings
+//    precedent: the composer owns the .mcentre-form MARKUP, pages.ts owns
+//    the data projection).
+// 2. The projection — PRE-BUILT atoms (the S04 hero precedent): the
+//    pre-escaped team name, the pre-built W/D/L dot atoms, the count-summary
+//    text, the pre-built season-record chip, the latest-results rows.
+// 3. The latest-results element — a compact list UNDER the dots (the
+//    composer's .formresults): each row = the W/D/L dot + the opponent
+//    faName + the score + the date (the dots' hover-title text promoted to
+//    VISIBLE text — spec §9 "Non-interactive: no tooltip, click or expand").
+//    The data source: the SAME teamForm return (the { r, oppFa, score,
+//    date }[] already carries all 4 fields) — ZERO new data work. NO match
+//    links: teamForm does not surface the fixture slug, and extending its
+//    return would be new data work — the list stays static (the S11
+//    "no team-page navigation" discipline); spec §9's link clause is noted
+//    for a future session that extends the data shape.
+// 4. The participant-mark — .mcentre-form-participant (a NEW class — the
+//    form is a different vocabulary from S11's .strow-participant):
+//    font-weight:600 + #7dd3fc on the TEAM NAME only, NO background
+//    (decision 25 — the S11 precedent). The dots + the summary + the chip
+//    stay default.
+// 5. The dots carry NO title attribute (spec §9: "Non-interactive: no
+//    tooltip, click or expand" — the title text is promoted to the visible
+//    latest-results list instead; the Persian letters ب/م/ش inside the dots
+//    remain the accessible non-color cue, decoded by the legend).
+// 6. The date format — faDateD2 (the site's compact card/row date
+//    «۱۵ آبان (۵ نوامبر)» — the CALENDAR_DISPLAY_v2 discipline; the D2
+//    helper's own comment names cards/rows as its surface).
+// 7. The season-chip gating — the record lookup runs ONLY when a side has
+//    no dots (the teamFormCardHtml precedent — the chip is the fallback,
+//    never a companion).
+// 8. The two-side layout — STACKED vertically (home FIRST, away underneath
+//    — spec §9 layout), ONE .mcentre-form section wrapping both sides; the
+//    .mcentre-cols side-by-side pairing is the S07 summary's shape, not the
+//    form's.
+function matchFormSideInput(ctx: SeoCtx, name: string | undefined, fa: string, archive: any[], fullByCode?: Record<string, any>): MatchFormSideInput {
+  const dots = teamForm(ctx, name || "", archive) || [];
+  const rec = dots.length ? null : teamSeasonRecord(ctx, name || "", fullByCode);
+  let dotsHtml = "";
+  let sumHtml = "";
+  let seasonHtml = "";
+  const results: MatchFormResultRow[] = [];
+  if (dots.length) {
+    const cnt = { W: 0, D: 0, L: 0 };
+    for (const d of dots) {
+      cnt[d.r]++;
+      // The dot atom — NO title (spec §9 non-interactive; the title text is
+      // promoted to the visible results row below). Same shape formRowHtml
+      // renders, minus the title.
+      const dot = '<i class="fdot f' + d.r.toLowerCase() + '">' + W_FA[d.r] + "</i>";
+      dotsHtml += dot;
+      results.push({
+        dotHtml: dot,
+        oppHtml: esc(d.oppFa),
+        scoreHtml: toFaDigits(d.score.replace("-", " – ")),
+        dateHtml: faDateD2(d.date)
+      });
+    }
+    sumHtml = toFaDigits(String(cnt.W)) + " برد · " + toFaDigits(String(cnt.D)) + " مساوی · " + toFaDigits(String(cnt.L)) + " شکست";
+  } else if (rec && rec.won != null && rec.draw != null && rec.lost != null) {
+    // The season aggregate — the pre-built .fseason chip (byte-identical
+    // shape to formRowHtml's chip: the position badge + the three W/D/L
+    // count segments + the played suffix — the v13.93-fullrec vocabulary).
+    seasonHtml = '<span class="fseason">' + (rec.pos != null ? '<b class="fspos">ردیف ' + toFaDigits(String(rec.pos)) + "</b>" : "") +
+      '<b class="fsw">' + toFaDigits(String(rec.won)) + "</b>" + W_FA.W +
+      ' <b class="fsd">' + toFaDigits(String(rec.draw)) + "</b>" + W_FA.D +
+      ' <b class="fsl">' + toFaDigits(String(rec.lost)) + "</b>" + W_FA.L +
+      (rec.played != null ? '<i class="fsplayed">از ' + toFaDigits(String(rec.played)) + " بازی" + (rec.compFa ? " " + esc(String(rec.compFa)) : "") + "</i>" : rec.compFa ? '<i class="fsplayed">' + esc(String(rec.compFa)) + "</i>" : "") + "</span>";
+  }
+  return { team: esc(fa), dotsHtml, sumHtml, seasonHtml, results };
+}
+
+// The form projection — both participating sides (home FIRST, away second —
+// the spec §9 layout). Reads the same team names formStripHtml read
+// (sm.raw.*.name for the data lookups + faName(sm.s.*) for the visible
+// atoms); the composer (matchFormHtml) enforces the fail-closed (both sides
+// empty → "" → the mcentre-form section is omitted, the فرم nav item stays
+// filtered out).
+function matchFormInput(sm: SeoMatch, ctx: SeoCtx, archive: any[], fullByCode?: Record<string, any>): MatchFormInput {
+  return {
+    home: matchFormSideInput(ctx, sm.raw.homeTeam && sm.raw.homeTeam.name, faName(sm.s.homeTeam), archive, fullByCode),
+    away: matchFormSideInput(ctx, sm.raw.awayTeam && sm.raw.awayTeam.name, faName(sm.s.awayTeam), archive, fullByCode)
+  };
+}
+
 export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
   let sm = findMatchBySlug(ctx, slug);
   if (!sm) return { html: "", notFound: true };
@@ -530,7 +630,23 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // top-8 payload compacts). ONE bounded cache-only KV read, fail-closed
   // (null → the payload path, exactly v13.88 behavior).
   const fullByCode = await fullByCodeFor(ctx, [sm.s.competition && sm.s.competition.code]);
-  const formCard = formStripHtml(ctx, sm, archive, fullByCode);
+  // Match Centre S12 (M5): the form renderer — the W/D/L dots + the count
+  // summary + the season-record chip fallback + the NEW latest-results list,
+  // composer-rendered (matchFormHtml in src/seo/match-centre.ts — the S04
+  // hero + the S07 summary + the S11 standings precedent). The projection
+  // (matchFormInput) reads the ALREADY-LOADED data — teamForm (fed by the
+  // loadArchive load above — one of the 3 pre-existing bounded reads) +
+  // teamSeasonRecord (fed by the fullByCodeFor load — already loaded) —
+  // ZERO new awaits, ZERO new KV reads, ZERO new fetches (the
+  // zero-runtime-cost law). The existing formStripHtml/formRowHtml/
+  // formLegendHtml stay as the team-page renderer's vocabulary (byte-frozen
+  // — the match page no longer calls formStripHtml). The form string feeds
+  // BOTH matchNavHtml (the فرم nav item — the adaptive Q9=B filter) AND
+  // matchCentreMain (the mcentre-form section anchor). Fail-closed: when
+  // neither side has dots nor a record, matchFormHtml returns "" → the
+  // composer's sectionHtml omits the mcentre-form section → the فرم nav
+  // item stays filtered out.
+  const formHtml = matchFormHtml(matchFormInput(sm, ctx, archive, fullByCode));
   // Match Centre S11 (M4): the standings renderer — the unified competition
   // table MARKUP (specification §8). The S10 selection (matchStandingsWindow)
   // runs HERE — pure logic reading the already-loaded ctx.payload.standings ×7
@@ -624,13 +740,15 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // S11: the standings string feeds BOTH the nav (so the جدول nav item renders
   // when the standings part is non-empty — the adaptive Q9=B filter) AND the
   // composer (so the mcentre-standings section wraps it in the anchor).
-  const navHtml = matchNavHtml({ summary: summaryHtml, standings: standingsHtml, form: formCard });
+  // S12: the form string feeds BOTH too (the فرم nav item — the same adaptive
+  // filter) — the composer-rendered matchFormHtml output.
+  const navHtml = matchNavHtml({ summary: summaryHtml, standings: standingsHtml, form: formHtml });
   const main = matchCentreMain({
     hero: matchHeroHtml(heroInput) + matchActionsHtml(sm, path) + matchHeadScript(),
     nav: navHtml,
     summary: summaryHtml,
     standings: standingsHtml,
-    form: formCard,
+    form: formHtml,
     related: similarCard,
     footerHook: related
   });

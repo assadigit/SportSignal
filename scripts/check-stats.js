@@ -741,7 +741,12 @@ check("v13.87: teamForm exists + the match page renders the form strip", (() => 
   // became the matchCentreMain delegation — the form strip still renders on
   // the match page, now as the mcentre-form section part. The composer
   // itself (registry/order/no-empty-cards) is gated by check-match-centre.
-  return /export function teamForm\(ctx: SeoCtx, teamName: string, archiveRows: any\[\] = \[\], limit = 5, min = 3\)/.test(d) && /const formCard = formStripHtml\(ctx, sm, archive, fullByCode\);/.test(p2) && /form: formCard,/.test(p2) && /const archive = await loadArchive\(ctx\.env\)\.catch/.test(p2);
+  // Match Centre S12 co-evolution: the match-page form strip is now the
+  // composer-rendered matchFormHtml(matchFormInput(...)) — the projection
+  // reads the SAME teamForm data (the loadArchive await above still feeds
+  // it); the team-page formStrip card (formRowHtml/formLegendHtml via
+  // teamFormCardHtml) keeps the v13.87 renderer byte-frozen.
+  return /export function teamForm\(ctx: SeoCtx, teamName: string, archiveRows: any\[\] = \[\], limit = 5, min = 3\)/.test(d) && /const formHtml = matchFormHtml\(matchFormInput\(sm, ctx, archive, fullByCode\)\);/.test(p2) && /form: formHtml,/.test(p2) && /const archive = await loadArchive\(ctx\.env\)\.catch/.test(p2);
 })());
 check("v13.87: teamForm is fail-closed (min-3 gate; null when short)", (() => {
   const d = read("src/seo/data.ts");

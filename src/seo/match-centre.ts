@@ -340,6 +340,112 @@ export function matchSummaryHtml(s: MatchSummaryInput): string {
   return inner;
 }
 
+// ---- Match Centre S12 (M5): the form renderer (specification §9) ----
+//
+// S12 LAW (specification §9 + the S04/S07/S11 precedent): the form renderer
+// receives PRE-BUILT content atoms from pages.ts's matchFormInput projection
+// (each side's pre-escaped team name, the pre-built W/D/L dot atoms, the
+// count-summary text, the pre-built season-record chip, the latest-results
+// rows — each pre-escaped/prebuilt), so this module stays the pure leaf the
+// S02 cost law pinned — zero imports, zero KV, zero fetch, zero client
+// scripts. It owns the form MARKUP: the .card.formstrip container (the
+// v13.87/v13.88 vocabulary — shared CSS with the team-page form card,
+// consistent visual language across the site) + the <h2> title («فرم اخیر»
+// when any side has per-match dots; «وضعیت فصل» when every side falls back to
+// the season aggregate) + the dot legend (the ب=برد م=مساوی ش=شکست decoder —
+// spec §9 "Accessible labels; never rely on color alone": the Persian letters
+// ride inside the dots, the legend spells them out) + the two sides STACKED
+// vertically (home FIRST, away underneath — spec §9 layout: "home team first,
+// away team underneath"; ONE mcentre-form section wraps both sides) + the
+// participant-mark typography (.mcentre-form-participant on the team names —
+// font-weight:600 + #7dd3fc via the page-shell S12 CSS, typography-only, NO
+// background, decision 25 — the S11 .strow-participant precedent; the dots +
+// the summary + the chip stay default) + the NEW latest-results list under
+// the dots (.formresults — spec §9 "Latest five results": up to five rows per
+// side, each row = the W/D/L dot + the opponent + the score + the date — the
+// dots' hover-title text promoted to VISIBLE text, spec §9 "Non-interactive:
+// no tooltip, click or expand": the dot atoms carry NO title) + the
+// season-record chip fallback (the .fseason vocabulary — a side with fewer
+// than 3 finished results falls back to the aggregate W/D/L from the
+// standings snapshot; no fake per-match granularity, no results list for a
+// chip side). The no-empty-cards law: a side with NEITHER dots NOR a record
+// renders nothing (one-sided rendering); when BOTH sides are empty the
+// renderer returns "" and sectionHtml omits the mcentre-form section
+// entirely (the فرم nav item stays filtered out — the nav's adaptive Q9=B
+// filter reads the same part).
+
+// One latest-result row — the atoms the projection pre-builds from teamForm's
+// { r, oppFa, score, date } return (ZERO new data work — the same last-5
+// finished results the dots read; the loadArchive await already loaded them).
+export interface MatchFormResultRow {
+  dotHtml: string;   // <i class="fdot fW/fD/fL">ب/م/ش</i> — prebuilt; NO title attribute (spec §9: non-interactive, no tooltip — the title text is promoted to this visible row)
+  oppHtml: string;   // the opponent's Persian name — pre-escaped
+  scoreHtml: string; // the score «۲ – ۰» (Persian digits, the en-dash form) — prebuilt
+  dateHtml: string;  // the compact D2 date «۱۵ آبان (۵ نوامبر)» — prebuilt
+}
+
+// One side of the form projection (home or away). Every string arrives
+// pre-escaped/prebuilt from pages.ts's matchFormInput projection (the S04
+// hero precedent) — the composer never needs esc itself.
+export interface MatchFormSideInput {
+  team: string;      // the side's Persian faName — pre-escaped plain text
+  dotsHtml: string;  // the joined <i class="fdot"> atoms (oldest→newest, the teamForm DOM order) — "" when teamForm returned null (the min-3 gate)
+  sumHtml: string;   // the W·D·L count-summary text «۳ برد · ۱ مساوی · ۱ شکست» — "" when no dots
+  seasonHtml: string;// the pre-built <span class="fseason">…</span> season-record chip — "" when no record (the fallback when the dots are dark)
+  results: MatchFormResultRow[]; // the latest-results rows — [] when no dots (the list is the dots' data promoted to visible text; a chip side carries none)
+}
+
+// The form projection — both participating sides.
+export interface MatchFormInput {
+  home: MatchFormSideInput;
+  away: MatchFormSideInput;
+}
+
+// The card titles + the dot legend — static Persian constants (the v13.87/
+// v13.88 vocabulary; the MC_HERO label precedent: a composer constant, not a
+// data atom). The legend bytes match formLegendHtml()'s output so the
+// match-page + team-page cards decode ب/م/ش identically.
+const MC_FORM_TITLE = "فرم اخیر";
+const MC_FORM_SEASON_TITLE = "وضعیت فصل";
+const MC_FORM_LEGEND = '<p class="formlegend"><i class="fdot fw">ب</i>برد · <i class="fdot fd">م</i>مساوی · <i class="fdot fl">ش</i>شکست</p>';
+
+// One side's block: the .formrow (the participant-marked team name + the
+// dots + the count summary, OR the season-record chip) + the latest-results
+// list under the dots. A side with NEITHER dots NOR a record renders ""
+// (one-sided rendering — the v13.88 fail-closed; the other side still
+// renders). The dots + the summary + the chip stay default — the
+// participant-mark (.mcentre-form-participant) rides the TEAM NAME only.
+function formSideHtml(side: MatchFormSideInput): string {
+  const mid = side.dotsHtml
+    ? '<span class="formdots">' + side.dotsHtml + "</span>" +
+      '<span class="formsum">' + side.sumHtml + "</span>"
+    : side.seasonHtml;
+  if (!mid) return "";
+  let out = '<div class="formrow"><span class="formteam mcentre-form-participant">' + side.team + "</span>" + mid + "</div>";
+  // The latest-results list — ONLY a dots side carries one (the chip side
+  // has no per-match data; no fake granularity, no empty list).
+  if (side.dotsHtml && side.results.length) {
+    out += '<ul class="formresults">' + side.results.map((r) =>
+      "<li>" + r.dotHtml + '<span class="fropp">' + r.oppHtml + '</span><b class="frscore">' + r.scoreHtml + '</b><span class="frdate">' + r.dateHtml + "</span></li>"
+    ).join("") + "</ul>";
+  }
+  return out;
+}
+
+// The form renderer. DOM = the .card.formstrip container (the v13.87
+// vocabulary) + the <h2> title + the legend (when any side has dots) + the
+// two sides stacked (home FIRST — the spec §9 layout). Fail-closed: BOTH
+// sides empty → "" (the no-empty-cards law — the composer's sectionHtml
+// omits the mcentre-form section; the فرم nav item stays filtered out).
+export function matchFormHtml(f: MatchFormInput): string {
+  const home = formSideHtml(f.home);
+  const away = formSideHtml(f.away);
+  if (!home && !away) return "";
+  const anyDots = !!(f.home.dotsHtml || f.away.dotsHtml);
+  return '<div class="card formstrip"><h2>' + (anyDots ? MC_FORM_TITLE : MC_FORM_SEASON_TITLE) + "</h2>" +
+    (anyDots ? MC_FORM_LEGEND : "") + home + away + "</div>";
+}
+
 // One anchored wrapper. The no-empty-cards law lives HERE: empty or
 // whitespace-only content returns "" — a section never renders hollow, so
 // a missing dataset can never leave a blank box on the page.

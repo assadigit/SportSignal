@@ -505,6 +505,67 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
   #mcentre-standings .stpts{min-width:28px}
   #mcentre-standings .stcrest{width:14px;height:14px}
 }
+/* ---- Match Centre S12 (M5): the form renderer (specification §9)
+   The W/D/L form indicators + the latest results — the match-page-specific
+   form rendering. pages.ts's matchFormInput projection reads the ALREADY-
+   LOADED data (teamForm — fed by the loadArchive await, one of the 3
+   pre-existing bounded reads; teamSeasonRecord — fed by the fullByCodeFor
+   await) and pre-builds every atom (the S04 hero precedent — the composer
+   stays the pure leaf); the composer's matchFormHtml owns the MARKUP: the
+   .card.formstrip container (the v13.87/v13.88 vocabulary — shared CSS with
+   the team-page form card, consistent visual language) + the two sides
+   STACKED vertically (home FIRST — one .formrow per side + the NEW
+   .formresults latest-results list under the dots: the W/D/L dot + the
+   opponent + the score + the date, the dots' hover-title text promoted to
+   visible text — spec §9 "Non-interactive: no tooltip") + the season-record
+   chip fallback (the .fseason vocabulary) + the participant-mark typography
+   (.mcentre-form-participant — the S11 .strow-participant precedent:
+   font-weight:600 + #7dd3fc on the team names, typography-only, NO
+   background, decision 25). Fail-closed: neither side has dots nor a record
+   → the mcentre-form section is omitted entirely (the no-empty-cards law).
+   The block's own icy/navy tokens (#7dd3fc — the .mfin/.mcount/.mnav-item.
+   is-active family), zero new assets/requests. CSS logical properties ONLY
+   (margin-block, margin-inline, padding-block — RTL/LTR clean under a dir
+   flip, decision 2). Scoped to #mcentre-form so the team-page formstrip
+   card (teamFormCardHtml — byte-frozen) is untouched. */
+/* The participant-mark (decision 25 — typography-only): both participating
+   team names get font-weight:600 + the icy-blue color. NO background, NO
+   border (the .strow-me background the team-page uses is NOT applied — the
+   match-page participant-mark is typography-only, the S11 precedent). The
+   dots + the summary + the chip stay default (the mark rides the NAME
+   only). */
+#mcentre-form .formteam.mcentre-form-participant{font-weight:600;color:#7dd3fc}
+/* The latest-results list — the compact vertical list under the dots (spec
+   §9 "Latest five results": up to five per side, opponent + score prominent,
+   date secondary). One line per row: [dot][opponent][score][date at the
+   inline-end]; the opponent truncates (min-width:0 + ellipsis), the score +
+   date never shrink. The dots reuse the .fdot vocabulary at their EXISTING
+   22px (touch-friendly — the S12 resolution: no resize). */
+#mcentre-form .formresults{margin-block:4px 10px;margin-inline:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+#mcentre-form .formresults li{display:flex;align-items:center;gap:8px;font-size:.78rem;line-height:1.7}
+#mcentre-form .formresults .fdot{flex-shrink:0}
+#mcentre-form .fropp{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mcentre-form .frscore{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;flex-shrink:0}
+#mcentre-form .frdate{font-size:.68rem;font-weight:600;color:var(--muted,#9aa4b2);white-space:nowrap;flex-shrink:0;margin-inline-start:auto}
+/* The side divider — the dashed separation BETWEEN the two sides (the
+   v13.87 per-row border-bottom is dropped inside #mcentre-form: the divider
+   rides on the side row that FOLLOWS a list or another row — home|away
+   separation, never inside a side). */
+#mcentre-form .formrow{border-block-end:none}
+#mcentre-form .formresults + .formrow,
+#mcentre-form .formrow + .formrow{border-block-start:1px dashed var(--border,#334155)}
+/* The mobile layout (spec §9: "keep the dots + the summary visible; optimize
+   padding and typography; no horizontal scrolling"): the team name truncates
+   (the .stname precedent from S11 — overflow:hidden + ellipsis + nowrap +
+   min-width:0), the gaps tighten, the list rows stay one line (the opponent
+   truncates, the date stays at the inline-end). The .fdot keeps its 22px
+   (the existing size is already touch-friendly — no resize). */
+@media (max-width:600px){
+  #mcentre-form .formrow{gap:8px;padding-block:6px}
+  #mcentre-form .formteam{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #mcentre-form .formresults{margin-block:2px 8px;gap:3px}
+  #mcentre-form .formresults li{gap:6px;font-size:.72rem}
+}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
    effect on any page without a mcentre-* section. Breakpoints and tokens are
