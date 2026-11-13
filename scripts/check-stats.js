@@ -746,7 +746,12 @@ check("v13.87: teamForm exists + the match page renders the form strip", (() => 
   // reads the SAME teamForm data (the loadArchive await above still feeds
   // it); the team-page formStrip card (formRowHtml/formLegendHtml via
   // teamFormCardHtml) keeps the v13.87 renderer byte-frozen.
-  return /export function teamForm\(ctx: SeoCtx, teamName: string, archiveRows: any\[\] = \[\], limit = 5, min = 3\)/.test(d) && /const formHtml = matchFormHtml\(matchFormInput\(sm, ctx, archive, fullByCode\)\);/.test(p2) && /form: formHtml,/.test(p2) && /const archive = await loadArchive\(ctx\.env\)\.catch/.test(p2);
+  // Match Centre S13 co-evolution: the form part is now the COMBINED
+  // formPartHtml (= the S12 form card + the S13 metrics card riding INSIDE
+  // the mcentre-form section — decision S13-1); the intent is preserved —
+  // teamForm still feeds the match-page form strip via the SAME loadArchive
+  // await, and the form part still carries it into matchCentreMain.
+  return /export function teamForm\(ctx: SeoCtx, teamName: string, archiveRows: any\[\] = \[\], limit = 5, min = 3\)/.test(d) && /const formHtml = matchFormHtml\(matchFormInput\(sm, ctx, archive, fullByCode\)\);/.test(p2) && /form: formPartHtml,/.test(p2) && /const archive = await loadArchive\(ctx\.env\)\.catch/.test(p2);
 })());
 check("v13.87: teamForm is fail-closed (min-3 gate; null when short)", (() => {
   const d = read("src/seo/data.ts");

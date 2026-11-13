@@ -585,6 +585,135 @@ export function teamForm(ctx: SeoCtx, teamName: string, archiveRows: any[] = [],
   return dots;
 }
 
+// Match Centre S13 (M5): a team's season metrics IN THE FIXTURE'S COMPETITION
+// — the numerical home/away performance comparison's data layer (audit §11
+// rows 70-71, specification §9 "Home/away performance", decisions 33/34/35).
+// Pure aggregation over (ctx, teamName, archiveRows, fullByCode, compCode) —
+// the CALLER passes the already-loaded archive rows in (data.ts cannot import
+// files.ts — the teamForm precedent), ZERO new awaits/KV reads/fetches:
+//   - GF/GA/played/compFa (audit grade A): the fixture's OWN competition
+//     standings rows. THREE already-loaded projections of the same
+//     standings_cache_<CODE> rows, in preference order, and the chosen
+//     table's row for THIS team must carry the gf/ga aggregates (missing is
+//     not zero — a row without aggregates falls through to the next source;
+//     a team in no usable table → null):
+//       1. fullByCode[compCode] — the fullByCodeFor await (loaded for
+//          exactly the fixture's code), the freshest full table. NOTE: the
+//          v13.89-stdetail fullStandings loader projects these rows WITHOUT
+//          gf/ga today (pos/name/faName/played/won/draw/lost/points), so the
+//          row check usually falls through to the compact — a future loader
+//          that keeps the aggregates upgrades the metrics to full-table
+//          coverage with ZERO changes here;
+//       2. ctx.payload.standings[compCode] — the top-8 compact (v12.16:
+//          "full per-team stats ride along" — gf/ga included);
+//       3. ctx.payload.ucl — the FULL UCL league-phase table (CL fixtures
+//          only — the teamSeasonRecord third source).
+//     The honest sample label = played + compFa (audit row 70: "honest
+//     sample label = played; missing table → omit"). MISSING IS NOT ZERO
+//     (spec §16): a missing table / a team not in any usable table /
+//     pre-season (started:false) / a degenerate table / played=0 / a missing
+//     gf|ga aggregate → NULL (the side omits entirely — a missing table is
+//     never rendered as zeroes).
+//   - Clean sheets (audit grade D — derivable, partial coverage): count
+//     finished fixtures with 0 conceded from the SAME source merge teamForm
+//     reads — ctx.pool FINISHED rows (raw.score.fullTime + raw.competition)
+//     + the caller-passed archive rows (m.score + m.competition.code, the
+//     pubMatch shape), deduped on the sorted-pair+day key (the teamForm key),
+//     FILTERED to the fixture's competition. The partial coverage (the
+//     tracked big-match universe only — the pool keeps finished rows ~7 days,
+//     the archive keeps 365 days of BIG matches) is why the minimum-sample
+//     gate exists: csSample < 3 → cs/csSample return NULL (the metric omits
+//     — never a misleading count; 0 conceded in a SUFFICIENT sample IS a real
+//     zero and returns cs=0). csSample ≥ 3 → the count + the honest window
+//     size both return (the caller discloses the window when it materially
+//     differs from played — decision 34).
+// NOTE the S12 season chip (teamSeasonRecord) is the RICHEST-record lookup
+// ACROSS competitions; THIS is the FIXTURE-competition lookup — the two
+// concerns stay distinct (a cup fixture against a league table never leaks
+// league aggregates in here).
+export interface TeamCompMetrics {
+  code: string;           // the fixture's competition code (the lookup scope)
+  compFa: string;         // the chosen table's faName || COMP_EN[code] || code (the teamStandingsWindow fallback)
+  played: number;         // the standings row's played count (the GF/GA sample label)
+  gf: number;             // season goals for in the competition (the standings aggregate — grade A)
+  ga: number;             // season goals against in the competition (the standings aggregate — grade A)
+  cs: number | null;      // clean sheets in the competition — NULL when below the min-sample gate (missing ≠ zero)
+  csSample: number | null; // the clean-sheet window size — NULL below the gate (the materiality disclosure input)
+}
+
+export function teamCompMetrics(ctx: SeoCtx, teamName: string, archiveRows: any[] = [], fullByCode?: Record<string, any>, compCode?: string | null): TeamCompMetrics | null {
+  const norm = normalizeTeamName(teamName);
+  if (!norm || !compCode) return null;
+  const num = (v: any) => (typeof v === "number" && isFinite(v)) || /^\d+$/.test(String(v)) ? Number(v) : null;
+  // the FIXTURE's OWN competition only — the three already-loaded projections
+  // in preference order; the chosen table's row for THIS team must carry the
+  // gf/ga aggregates or the lookup falls through to the next source.
+  let hit: { played: number; gf: number; ga: number; compFa: string } | null = null;
+  const tryTable = (st: any, faName: any): boolean => {
+    if (!st || typeof st !== "object") return false;                   // missing table
+    if (st.started === false) return false;                            // pre-season (the S10 gate)
+    if (!Array.isArray(st.teams) || st.teams.length < 2) return false; // degenerate table
+    const me = st.teams.find((t: any) => t && normalizeTeamName(t.name) === norm);
+    if (!me) return false;                                             // team not in the table
+    const p = num(me.played), g1 = num(me.gf), g2 = num(me.ga);
+    // played=0 (nothing played yet — the aggregates would read as fake
+    // zeroes) or a missing gf/ga aggregate → fall through (spec §16: the
+    // standings-table zeroes ARE real zeroes, but only once the season has
+    // games in it — played > 0 gates that)
+    if (p == null || p <= 0 || g1 == null || g2 == null) return false;
+    hit = { played: p, gf: g1, ga: g2, compFa: String(faName || COMP_EN[compCode] || compCode) };
+    return true;
+  };
+  const stAll = ctx.payload && ctx.payload.standings;
+  const stc = stAll && stAll[compCode];
+  if (
+    !tryTable(fullByCode && fullByCode[compCode], fullByCode && fullByCode[compCode] && fullByCode[compCode].faName) &&
+    !tryTable(stc, stc && stc.faName) &&
+    !(compCode === "CL" && tryTable(ctx.payload && ctx.payload.ucl, translateCompetition("CL")))
+  ) return null; // missing table / team not in any usable table / no aggregates → the side omits
+  const { played, gf, ga, compFa } = hit!;
+  // clean sheets — the SAME source merge teamForm reads (pool FINISHED rows
+  // + the caller-passed archive rows), deduped on the sorted-pair+day key,
+  // FILTERED to the fixture's competition. Conceded by OUR team: home → the
+  // away goals, away → the home goals.
+  const seen = new Set<string>();
+  let cs = 0;
+  let csSample = 0;
+  const addRow = (home: string, away: string, utcDate: string, gh: any, gaa: any, comp: any) => {
+    if (!comp || comp !== compCode) return;
+    if (gh == null || gaa == null) return;
+    const nh = normalizeTeamName(home), na = normalizeTeamName(away);
+    if (nh !== norm && na !== norm) return;
+    const key = [nh, na].sort().join("|") + "|" + String(utcDate || "").slice(0, 10);
+    if (seen.has(key)) return;
+    seen.add(key);
+    const conceded = nh === norm ? Number(gaa) : Number(gh);
+    if (conceded === 0) cs++;
+    csSample++;
+  };
+  // pool rows (raw shape: score.fullTime + competition.code; fa names unused —
+  // clean sheets need names + scores only)
+  ctx.shaped.forEach((s: any, i: number) => {
+    const raw = ctx.pool[i];
+    if (!raw || raw.status !== "FINISHED" || !raw.utcDate || !raw.homeTeam || !raw.awayTeam || !raw.competition) return;
+    const ft = (raw.score || {}).fullTime;
+    if (!ft) return;
+    addRow(raw.homeTeam.name, raw.awayTeam.name, raw.utcDate, ft.home, ft.away, raw.competition.code);
+  });
+  // archive rows (pubMatch shape: flat m.score + m.competition.code)
+  for (const rec of archiveRows || []) {
+    const m = rec && rec.m;
+    if (!m || !m.utcDate || !m.homeTeam || !m.awayTeam || !m.competition) continue;
+    const sc = m.score || {};
+    addRow(m.homeTeam.name, m.awayTeam.name, m.utcDate, sc.home, sc.away, m.competition.code);
+  }
+  // the minimum-sample gate (the teamForm min-3 precedent): below it the
+  // clean-sheet metric omits (NULL — missing ≠ zero); a sufficient sample
+  // returns the count + the honest window size (0 conceded IS a real zero)
+  if (csSample < 3) return { code: compCode, compFa, played, gf, ga, cs: null, csSample: null };
+  return { code: compCode, compFa, played, gf, ga, cs, csSample };
+}
+
 export function similarMatches(ctx: SeoCtx, sm: SeoMatch, max = 6): SeoMatch[] {
   if (!sm || !sm.raw) return [];
   const selfDay = String(sm.raw.utcDate || "").slice(0, 10);

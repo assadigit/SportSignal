@@ -10,7 +10,7 @@ import { esc, faTime, faDateD1, faDateD2, tehranDayKey, utcTime, statusLabelFa, 
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm, teamSeasonRecord, heroArtSrv } from "./data";
+import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, heroArtSrv } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -27,7 +27,7 @@ import { seoTeamFaName, seoTeamAltName } from "./team-names";
 // Match Centre S04 (M2): the hero renderer — the mcentre-hero MARKUP moved
 // to the composer (matchHeroHtml); THIS file builds the data projection
 // (matchHeroInput) and delegates. The legacy matchHeadHtml is retired.
-import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow } from "./match-centre";
+import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput } from "./match-centre";
 // Match Centre S08 (M3): the deterministic narrative engine — the "why this
 // match matters" editorial layer. The engine runs HERE (pages.ts calls
 // narrativeHtml + passes the pre-built atom to the composer's MatchSummaryInput
@@ -517,6 +517,95 @@ function matchFormInput(sm: SeoMatch, ctx: SeoCtx, archive: any[], fullByCode?: 
   };
 }
 
+// Match Centre S13 (M5): the metrics projection — matchMetricsInput. Builds
+// the MatchMetricsInput (the composer's matchMetricsHtml contract — src/seo/
+// match-centre.ts) from the ALREADY-LOADED data: teamCompMetrics (src/seo/
+// data.ts — the NEW S13 aggregation helper) reads the fixture's OWN
+// competition standings rows (GF/GA/played/compFa) from the three
+// already-loaded projections in preference order — fullByCode[compCode] (the
+// fullByCodeFor await, loaded for exactly sm.s.competition.code; the row must
+// carry the gf/ga aggregates — the v13.89-stdetail loader drops them today,
+// so the lookup usually falls through), then ctx.payload.standings[compCode]
+// (the top-8 compact, gf/ga included), then ctx.payload.ucl (the full CL
+// league-phase table, CL fixtures only — the teamSeasonRecord third source)
+// + the SAME pool-FINISHED/archive-row merge teamForm reads (fed by the
+// loadArchive await — one of the 3 pre-existing bounded reads; the CALLER
+// passes the archive rows in). ZERO new awaits, ZERO new KV reads, ZERO new
+// fetches (the zero-runtime-cost law — the S08 narrative + the S10/S11
+// standings + the S12 form precedent).
+//
+// S13 decision points (resolved + recorded per the session brief):
+// 1. The render home — INSIDE the #mcentre-form section, AFTER the two form
+//    sides (decision S13-1): the metrics are a SIBLING .card under the form
+//    card; NO new section anchor, NO new nav destination. The combined form
+//    part (formPartHtml = formHtml + metricsHtml) feeds BOTH matchNavHtml
+//    (the فرم nav item lights when EITHER the form card or the metrics card
+//    renders — the adaptive Q9=B filter) AND matchCentreMain (the
+//    mcentre-form anchor).
+// 2. The sample-label policy (decisions 33/34) — ONE shared label per team
+//    column: «در N بازی [compFa]» where N = the standings row's OWN played
+//    count (unequal samples label honestly — played 11 vs 10 renders «در ۱۱
+//    بازی» vs «در ۱۰ بازی», each side its own count). The clean-sheet metric
+//    carries its own window note («در N بازی») ONLY when its sample
+//    MATERIALLY differs from played: |csSample − played| ≥ 2 (a one-match lag
+//    between the standings snapshot and the newest finished round is timing
+//    noise, not a different window; two or more missing games IS a genuinely
+//    smaller window — the pool+archive merge covers the tracked big-match
+//    universe only, the partial-coverage disclosure).
+// 3. The minimum-sample gate — the data layer's csSample < 3 → cs = null →
+//    the side's clean-sheet cell renders the muted «—» (missing ≠ zero; a
+//    1-2 game clean-sheet sample is noise); BOTH sides below the gate → the
+//    clean-sheet row omits entirely.
+// 4. The missing-vs-zero law (spec §16) — a real zero (0 conceded in a
+//    sufficient sample, or gf=0/ga=0 with played > 0 in the authoritative
+//    standings table) renders «۰»; missing data NEVER renders a zero (null
+//    side → the column drops; null cs → the «—» marker).
+// 5. The numerals — toFaDigits everywhere (the S11 .stpos/.stgd precedent);
+//    numbers only, NO bars/charts/gradients (decision 35).
+// 6. The vocabulary — گل زده / گل خورده / کلین شیت (the common Persian
+//    football-media loanword — compact for the label column) + the
+//    «مقایسه آمار فصل» card title + the «آمار» corner header (composer
+//    constants, the S13 CSS block styles them).
+// 7. The participant-mark — REUSE the S12 .formteam.mcentre-form-participant
+//    classes on the column team names (the page-shell S12 rule — scoped to
+//    #mcentre-form, which contains the metrics card — applies
+//    font-weight:600 + #7dd3fc; NO new participant rule, NO background).
+function matchMetricsSideInput(ctx: SeoCtx, name: string | undefined, fa: string, archive: any[], fullByCode: Record<string, any> | undefined, compCode: string | null): MatchMetricsSideInput | null {
+  const met = teamCompMetrics(ctx, name || "", archive, fullByCode, compCode);
+  // missing table / team not in the table / pre-season / no games played →
+  // the side omits entirely (a one-sided omission drops that side's column
+  // honestly — the other side still renders)
+  if (!met) return null;
+  return {
+    team: esc(fa),
+    sampleHtml: "در " + toFaDigits(String(met.played)) + " بازی " + esc(met.compFa),
+    gf: toFaDigits(String(met.gf)),
+    ga: toFaDigits(String(met.ga)),
+    // cs == null = below the min-sample gate → "" (the renderer's «—» cell;
+    // 0 conceded in a sufficient sample IS a real zero and renders «۰»)
+    cs: met.cs == null ? "" : toFaDigits(String(met.cs)),
+    // the window note rides ONLY when the clean-sheet sample materially
+    // differs from the shared label's played count (|csSample − played| ≥ 2)
+    csNoteHtml: met.csSample != null && Math.abs(met.csSample - met.played) >= 2
+      ? "در " + toFaDigits(String(met.csSample)) + " بازی"
+      : ""
+  };
+}
+
+// The metrics projection — both participating sides (home FIRST = right under
+// native RTL; the fixture's competition scopes BOTH lookups). Reads the same
+// team names matchFormInput read (sm.raw.*.name for the data lookups +
+// faName(sm.s.*) for the visible atoms); the composer (matchMetricsHtml)
+// enforces the fail-closed (both sides null → "" → the metrics block omits,
+// the mcentre-form section survives on the S12 dots/chip alone).
+function matchMetricsInput(sm: SeoMatch, ctx: SeoCtx, archive: any[], fullByCode?: Record<string, any>): MatchMetricsInput {
+  const compCode = (sm.s.competition && sm.s.competition.code) || null;
+  return {
+    home: matchMetricsSideInput(ctx, sm.raw.homeTeam && sm.raw.homeTeam.name, faName(sm.s.homeTeam), archive, fullByCode, compCode),
+    away: matchMetricsSideInput(ctx, sm.raw.awayTeam && sm.raw.awayTeam.name, faName(sm.s.awayTeam), archive, fullByCode, compCode)
+  };
+}
+
 export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
   let sm = findMatchBySlug(ctx, slug);
   if (!sm) return { html: "", notFound: true };
@@ -647,6 +736,30 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // composer's sectionHtml omits the mcentre-form section → the فرم nav
   // item stays filtered out.
   const formHtml = matchFormHtml(matchFormInput(sm, ctx, archive, fullByCode));
+  // Match Centre S13 (M5): the home/away performance metrics — the numerical
+  // GF/GA/clean-sheets comparison of the two participants (specification §9
+  // "Home/away performance"; decisions 33/34/35), composer-rendered
+  // (matchMetricsHtml in src/seo/match-centre.ts — the S04/S07/S11/S12
+  // precedent). The projection (matchMetricsInput) reads the ALREADY-LOADED
+  // data through the NEW teamCompMetrics aggregation helper (src/seo/data.ts)
+  // — the fixture's OWN competition standings rows (GF/GA/played — fed by the
+  // fullByCodeFor load above, loaded for exactly sm.s.competition.code) + the
+  // SAME pool-FINISHED/archive merge the form dots read (fed by the
+  // loadArchive load above) — ZERO new awaits, ZERO new KV reads, ZERO new
+  // fetches (the zero-runtime-cost law). Decision S13-1: the metrics ride
+  // INSIDE the mcentre-form section, AFTER the two form sides (a SIBLING
+  // .card under the form card; NO new section anchor, NO new nav
+  // destination). The COMBINED form part (formPartHtml) feeds BOTH
+  // matchNavHtml (the فرم nav item lights when EITHER the form card or the
+  // metrics card renders — the adaptive Q9=B filter reads the same part) AND
+  // matchCentreMain (the mcentre-form section anchor — the S11/S12
+  // dual-passing precedent). Fail-closed: when neither side has sufficient
+  // stats (missing table / team not in the table / pre-season),
+  // matchMetricsHtml returns "" → the metrics card omits entirely → the فرم
+  // section survives on the S12 dots/chip alone, the nav item logic
+  // unchanged.
+  const metricsHtml = matchMetricsHtml(matchMetricsInput(sm, ctx, archive, fullByCode));
+  const formPartHtml = formHtml + metricsHtml;
   // Match Centre S11 (M4): the standings renderer — the unified competition
   // table MARKUP (specification §8). The S10 selection (matchStandingsWindow)
   // runs HERE — pure logic reading the already-loaded ctx.payload.standings ×7
@@ -742,13 +855,16 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // composer (so the mcentre-standings section wraps it in the anchor).
   // S12: the form string feeds BOTH too (the فرم nav item — the same adaptive
   // filter) — the composer-rendered matchFormHtml output.
-  const navHtml = matchNavHtml({ summary: summaryHtml, standings: standingsHtml, form: formHtml });
+  // S13: the COMBINED form part (formPartHtml = the S12 form card + the S13
+  // metrics card) feeds BOTH — the فرم nav item lights when EITHER card
+  // renders (the same adaptive Q9=B filter reads the same part).
+  const navHtml = matchNavHtml({ summary: summaryHtml, standings: standingsHtml, form: formPartHtml });
   const main = matchCentreMain({
     hero: matchHeroHtml(heroInput) + matchActionsHtml(sm, path) + matchHeadScript(),
     nav: navHtml,
     summary: summaryHtml,
     standings: standingsHtml,
-    form: formHtml,
+    form: formPartHtml,
     related: similarCard,
     footerHook: related
   });

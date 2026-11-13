@@ -566,6 +566,69 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
   #mcentre-form .formresults{margin-block:2px 8px;gap:3px}
   #mcentre-form .formresults li{gap:6px;font-size:.72rem}
 }
+/* ---- Match Centre S13 (M5): the home/away performance metrics (specification §9)
+   The numerical GF/GA/clean-sheets comparison of the two participants — the
+   match-page-specific metrics rendering (decision S13-1: a SIBLING .card
+   .mcentre-metrics under the form card, riding INSIDE #mcentre-form AFTER the
+   two form sides — no new section anchor, no new nav destination). The
+   composer's matchMetricsHtml owns the MARKUP (the compact semantic table —
+   the S11 table precedent: the «آمار» corner + the participant-marked team
+   column headers + the گل زده / گل خورده / کلین شیت rows); pages.ts's
+   matchMetricsInput projection pre-builds every atom (the S04 hero precedent
+   — the composer stays the pure leaf). The participant-mark REUSES the S12
+   rule (#mcentre-form .formteam.mcentre-form-participant — font-weight:600 +
+   #7dd3fc, NO background, decision 25) — the metrics card rides inside
+   #mcentre-form, so the S12 rule applies to the column team names with NO
+   new participant rule here. NUMBERS ONLY (decision 35: no decorative bars,
+   charts or gradients — the numerals are the comparison). The muted «—»
+   (mcmnd) marks an insufficient clean-sheet sample (missing ≠ zero — a real
+   zero renders «۰»). The thin dividers: the stronger header border-block-end
+   + the subtle between-row border-block-start. The block's own icy/navy
+   tokens, zero new assets/requests. CSS logical properties ONLY (text-align:
+   start, border-block-*, margin-inline-start, padding-block — RTL/LTR clean
+   under a dir flip, decision 2). Scoped to #mcentre-form .mcentre-metrics
+   sub-scope so the S12 form rules + the team-page cards stay byte-frozen. */
+/* The table — full-width, fixed layout (the corner + the two equal team
+   columns: .mcmcorner{width:26%} leaves 37% per team column), thin dividers
+   between the rows (subtle — the navy border color at half alpha). */
+#mcentre-form .mcentre-metrics .mcmtable{width:100%;table-layout:fixed;border-collapse:collapse;font-size:.8rem}
+#mcentre-form .mcentre-metrics .mcmcorner{width:26%;text-align:start;font-weight:600;color:var(--muted,#9aa4b2);white-space:nowrap}
+#mcentre-form .mcentre-metrics .mcmtable thead th{border-block-end:1px solid rgba(51,65,85,.9)}
+#mcentre-form .mcentre-metrics .mcmtable tbody tr+tr{border-block-start:1px solid rgba(51,65,85,.5)}
+#mcentre-form .mcentre-metrics .mcmtable tbody th,#mcentre-form .mcentre-metrics .mcmtable tbody td{padding-block:5px}
+/* The team column header — the participant-marked team name (the S12
+   .formteam.mcentre-form-participant rule applies the icy-blue 600 mark)
+   truncates to one line (table-layout:fixed constrains the column — the
+   .stname/S12 .formteam precedent); the honest sample label rides UNDER the
+   name (muted, .66rem, wraps to a second line when the comp name is long —
+   the honesty never truncates). */
+#mcentre-form .mcentre-metrics .mcmteam{text-align:center;padding-block-end:6px}
+#mcentre-form .mcentre-metrics .mcmteam .formteam{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mcentre-form .mcentre-metrics .mcmsample{display:block;font-size:.66rem;font-weight:600;color:var(--muted,#9aa4b2);line-height:1.7}
+/* The metric rows — the label column (muted 600, start-aligned) + the number
+   cells (centered, weight 800, tabular digits — the numbers ARE the
+   comparison, decision 35). The clean-sheet window note rides INLINE after
+   the count (muted, .6rem); the «—» insufficient marker is muted + normal
+   weight (NEVER a zero). */
+#mcentre-form .mcentre-metrics .mcmlbl{text-align:start;font-weight:600;color:var(--muted,#9aa4b2);white-space:nowrap}
+#mcentre-form .mcentre-metrics .mcmnum{text-align:center;font-weight:800;font-size:.92rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+#mcentre-form .mcentre-metrics .mcmnote{font-size:.6rem;font-weight:600;color:var(--muted,#9aa4b2);margin-inline-start:2px}
+#mcentre-form .mcentre-metrics .mcmnd{font-weight:400;color:var(--muted,#9aa4b2)}
+/* The mobile layout (spec §9: "Numbers remain the focus" + spec §4 "No
+   unnecessary horizontal scrolling"): the numbers stay readable at .85rem
+   weight 800, the labels/notes tighten, the sample label drops to .58rem
+   (wraps, never truncates — the honest window stays legible), the corner
+   narrows (26%→23%) so the team columns keep their share. table-layout:fixed
+   + the ellipsized team names keep the 3-column table inside the viewport —
+   no horizontal scroll. */
+@media (max-width:600px){
+  #mcentre-form .mcentre-metrics .mcmtable{font-size:.72rem}
+  #mcentre-form .mcentre-metrics .mcmcorner{width:23%}
+  #mcentre-form .mcentre-metrics .mcmnum{font-size:.85rem}
+  #mcentre-form .mcentre-metrics .mcmsample{font-size:.58rem;line-height:1.6}
+  #mcentre-form .mcentre-metrics .mcmnote{font-size:.56rem}
+  #mcentre-form .mcentre-metrics .mcmtable tbody th,#mcentre-form .mcentre-metrics .mcmtable tbody td{padding-block:4px}
+}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
    effect on any page without a mcentre-* section. Breakpoints and tokens are

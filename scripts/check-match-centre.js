@@ -162,7 +162,7 @@ check(withNav.indexOf('id="mcentre-hero"') < withNav.indexOf('id="mcentre-nav"')
 
 // ---------- 3. wiring: buildMatchPage delegates, GSC surfaces stay ----------
 let wiringOk = true;
-if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml + the S12 form renderer matchFormHtml + the projection types)"); wiringOk = false; }
+if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml + the S12 form renderer matchFormHtml + the S13 metrics renderer matchMetricsHtml + the projection types)"); wiringOk = false; }
 // S08: pages.ts imports the narrative engine (narrativeHtml + the lifecycle type).
 if (!/import \{ narrativeHtml, type NarrativeLifecycle \} from "\.\/narrative";/.test(pagesSrc)) { bad("wiring: pages.ts lost the narrative engine import (narrativeHtml + NarrativeLifecycle — the S08 deterministic narrative engine)"); wiringOk = false; }
 if (!/const main = matchCentreMain\(\{/.test(pagesSrc)) { bad("wiring: buildMatchPage no longer delegates its main assembly to matchCentreMain"); wiringOk = false; }
@@ -190,7 +190,7 @@ if (!/narrativeHtml: narrativeAtomHtml/.test(pagesSrc)) { bad("wiring: the summa
 // S08: whyBigHtml + its isTopTable helper are RETIRED (the engine subsumes both).
 if (/export function whyBigHtml\(/.test(pagesSrc) || /function whyBigHtml\(/.test(pagesSrc)) { bad("wiring: the legacy whyBigHtml is still present (S08 retired it — the narrative engine in src/seo/narrative.ts replaces it)"); wiringOk = false; }
 if (/function isTopTable\(/.test(pagesSrc)) { bad("wiring: the legacy isTopTable helper is still present (S08 retired it — the engine's topTableEligible replaces it)"); wiringOk = false; }
-if (!/form: formHtml,/.test(pagesSrc)) { bad("wiring: the form part no longer carries the W/D/L strip (the S12 matchFormHtml render)"); wiringOk = false; }
+if (!/form: formPartHtml,/.test(pagesSrc)) { bad("wiring: the form part no longer carries the W/D/L strip (the S12 matchFormHtml render — S13 co-evolution: the form part is now the COMBINED formPartHtml = the form card + the S13 metrics card, decision S13-1)"); wiringOk = false; }
 if (!/related: similarCard,/.test(pagesSrc)) { bad("wiring: the related part no longer carries the sibling-fixtures card"); wiringOk = false; }
 if (!/footerHook: related/.test(pagesSrc)) { bad("wiring: the footer-hook part no longer carries the related-links card"); wiringOk = false; }
 if (/matchHeadHtml\(sm\) \+ matchActionsHtml/.test(pagesSrc)) { bad("wiring: the old flat hero assembly is still present alongside the delegation"); wiringOk = false; }
@@ -1635,8 +1635,8 @@ check(/import \{ matchStandingsWindow, type StandingsWindow \} from "\.\/standin
   "S11 wiring import: pages.ts imports matchStandingsWindow + the StandingsWindow type from ./standings-window (the S10 module — already loaded; fullByCode is already loaded by the pre-existing fullByCodeFor await)");
 check(/const standingsHtml = buildStandingsHtml\(matchStandingsWindow\(sm, ctx, fullByCode\)\)/.test(pagesSrc),
   "S11 wiring call: buildMatchPage calls matchStandingsWindow(sm, ctx, fullByCode) + buildStandingsHtml(window) — the S10 selection runs HERE (pure logic, zero new awaits), the renderer projects the 5 visible columns (pure string composition, zero new awaits)");
-check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formHtml \}\)/.test(pagesSrc),
-  "S11 wiring nav: the standings string is passed to matchNavHtml ({ standings: standingsHtml }) so the nav's adaptive Q9=B filter renders the جدول nav item when the standings part is non-empty (S12 co-evolution: the form part is now the matchFormHtml render — form: formHtml — the same adaptive filter renders the فرم nav item)");
+check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formPartHtml \}\)/.test(pagesSrc),
+  "S11 wiring nav: the standings string is passed to matchNavHtml ({ standings: standingsHtml }) so the nav's adaptive Q9=B filter renders the جدول nav item when the standings part is non-empty (S12 co-evolution: the form part is the matchFormHtml render; S13 co-evolution: the form part is now the COMBINED formPartHtml — the form card + the metrics card — the same adaptive filter renders the فرم nav item when EITHER renders, decision S13-1)");
 check(/standings: standingsHtml,/.test(pagesSrc),
   "S11 wiring composer: the standings string is passed to matchCentreMain ({ standings: standingsHtml }) so the composer wraps it in the mcentre-standings anchor (the S04 hero precedent — pages.ts builds the string, the composer wraps it)");
 
@@ -1916,8 +1916,8 @@ check(mc.matchFormHtml(fp12.matchFormInput({ raw: { homeTeam: { name: "X" }, awa
 // matchFormHtml + passes form: formHtml to BOTH matchNavHtml + matchCentreMain.
 check(/const formHtml = matchFormHtml\(matchFormInput\(sm, ctx, archive, fullByCode\)\);/.test(pagesSrc),
   "S12 wiring call: buildMatchPage calls matchFormInput(sm, ctx, archive, fullByCode) + matchFormHtml(input) — the projection reads the already-loaded teamForm + teamSeasonRecord data (the loadArchive + fullByCodeFor awaits — ZERO new awaits), the renderer is pure string composition in the composer");
-check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formHtml \}\)/.test(pagesSrc) && /form: formHtml,/.test(pagesSrc),
-  "S12 wiring dual: the form string feeds BOTH matchNavHtml (the فرم nav item — the adaptive Q9=B filter renders it when the form part is non-empty) AND matchCentreMain (the mcentre-form section anchor — the S11 standings dual-passing precedent)");
+check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formPartHtml \}\)/.test(pagesSrc) && /form: formPartHtml,/.test(pagesSrc),
+  "S12 wiring dual: the form string feeds BOTH matchNavHtml (the فرم nav item — the adaptive Q9=B filter renders it when the form part is non-empty) AND matchCentreMain (the mcentre-form section anchor — the S11 standings dual-passing precedent) (S13 co-evolution: the form part is now the COMBINED formPartHtml = the S12 form card + the S13 metrics card riding INSIDE the mcentre-form section — decision S13-1; the فرم nav item lights when EITHER card renders)");
 check(/\{ id: "mcentre-form", label: "فرم" \}/.test(pagesSrc),
   "S12 nav فرم item: the MC_NAV_DESTS registry carries the mcentre-form destination (فرم) — the nav item renders when the form part is non-empty (the adaptive Q9=B filter reads parts.form — already wired since S06, S12 keeps it)");
 
@@ -1977,6 +1977,414 @@ check(!/#mcentre-form[^{]*\.fdot\{[^}]*width/.test(shellSrc),
   "S12 CSS fdot keeps 22px: the S12 block does NOT resize .fdot (the existing 22px desktop / 16px legend sizes are already touch-friendly — the S12 resolution: keep; the dots stay visible on mobile, no new sizing vocabulary)");
 check(!/#mcentre-form[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc),
   "S12 CSS logical properties: the S12 block uses CSS logical properties ONLY (margin-block, margin-inline, padding-block, border-block-start — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties)");
+
+// ---------- 14. S13 (M5): the home/away performance metrics + the M5 gate ----------
+// specification §9 (Team form and recent results > "Home/away performance") +
+// milestones-and-sessions.md M5/S13 + decisions 33/34/35 + audit §11 rows
+// 70-71. S13 ships the NUMERICAL comparison — goals scored / goals conceded /
+// clean sheets — the two participants compared side by side (home team column
+// FIRST = right under native RTL; "home/away" = the two participants, NOT
+// home-only/away-only splits — the standings source carries full-season team
+// aggregates). NUMBERS ONLY (decision 35). Data provenance (audit §11):
+// GF/GA/played (grade A) from the fixture's OWN competition standings rows
+// (fullByCode — the fullByCodeFor await, loaded for exactly the fixture's
+// code — then ctx.payload.standings); clean sheets (grade D — derivable,
+// partial coverage) from the SAME pool-FINISHED/archive merge teamForm reads,
+// deduped on the sorted-pair+day key, FILTERED to the fixture's competition,
+// with the min-3 sample gate. The renderer (matchMetricsHtml in the composer)
+// + the projection (matchMetricsInput in pages.ts) + the wiring (decision
+// S13-1: the metrics ride INSIDE the mcentre-form section AFTER the two form
+// sides — the combined formPartHtml feeds BOTH the nav's adaptive Q9=B filter
+// AND matchCentreMain; NO new section anchor, NO new nav destination).
+
+// (a) the contract — matchMetricsHtml + the projection interfaces exported +
+// the data helper teamCompMetrics exported from data.ts (audit §12 row S13:
+// "src/seo/data.ts (clean-sheet aggregation + sample labels),
+// src/seo/match-centre.ts | GF/GA from standings; clean sheets from
+// pool+archive with gates").
+check(typeof mc.matchMetricsHtml === "function" &&
+  /export interface MatchMetricsInput/.test(mcSrc) &&
+  /export interface MatchMetricsSideInput/.test(mcSrc),
+  "S13 contract: matchMetricsHtml + MatchMetricsInput/MatchMetricsSideInput exported (the pre-built-atoms projection — the composer stays import-free, the S04 hero precedent; pages.ts's matchMetricsInput pre-escapes/prebuilds every string)");
+check(/export function teamCompMetrics\(ctx: SeoCtx, teamName: string, archiveRows: any\[\] = \[\], fullByCode\?: Record<string, any>, compCode\?: string \| null\): TeamCompMetrics \| null/.test(read("src/seo/data.ts")) &&
+  /export interface TeamCompMetrics/.test(read("src/seo/data.ts")),
+  "S13 data contract: data.ts exports teamCompMetrics + the TeamCompMetrics interface (the S13 aggregation helper — pure aggregation over (ctx, teamName, archiveRows, fullByCode, compCode); the CALLER passes the already-loaded archive rows in [data.ts cannot import files.ts — the teamForm precedent]; the S12 season chip [teamSeasonRecord] is the richest-record lookup ACROSS competitions, this is the FIXTURE-competition lookup — the two concerns stay distinct)");
+
+// (b) the data helper — extract the REAL teamCompMetrics from data.ts
+// (brace-matched extraction + ts.transpileModule for the TS annotations — the
+// check-stats teamForm brace-matching precedent + the S10/S12 transpileModule
+// precedent) with the REAL normalizeTeamName (src/teams.ts — the check-stats
+// require precedent) + a controllable COMP_EN stub. The controlled data:
+// a fake PL table + a fake BL1 table (the scoping test) + pool FINISHED rows
+// + archive rows (one DUPLICATE across sources — the teamForm dedupe key).
+function s13DataEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const d = read("src/seo/data.ts");
+  const i = d.indexOf("export function teamCompMetrics");
+  if (i < 0) return null;
+  const open = d.indexOf("| null {", i) + 7; // body-open anchored past the return-type braces (the teamForm precedent)
+  let depth = 0, j = open;
+  for (; j < d.length; j++) {
+    if (d[j] === "{") depth++;
+    else if (d[j] === "}") { depth--; if (depth === 0) break; }
+  }
+  const seg = d.slice(i, j + 1).replace(/^export /, "");
+  const js = ts.transpileModule(seg, { compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const { normalizeTeamName } = require(path.join(root, "src", "teams.ts"));
+  const COMP_EN = { PL: "Premier League", BL1: "Bundesliga", CL: "Champions League" };
+  const translateCompetition = function (c) { return c === "CL" ? "\u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627" : c; };
+  return new Function("normalizeTeamName", "COMP_EN", "translateCompetition", js + "\n; return teamCompMetrics;")(normalizeTeamName, COMP_EN, translateCompetition);
+}
+const s13Tcm = s13DataEngine();
+check(typeof s13Tcm === "function",
+  "S13 data extraction: the REAL teamCompMetrics extracted from data.ts via brace-matched extraction + ts.transpileModule (never re-implemented — the check-stats teamForm brace-matching precedent + the S10/S12 transpileModule pattern), fed the REAL normalizeTeamName (src/teams.ts — the check-stats require precedent) + controllable COMP_EN/translateCompetition stubs");
+// the fake standings tables (the full S10 row shape: pos/name/faName/crest/
+// points/played/won/draw/lost/gf/ga — audit §R3/§67)
+function s13Row(name, pos, o) {
+  o = o || {};
+  return { name: name, pos: pos, faName: o.faName || name, crest: null, points: o.points != null ? o.points : 20 - pos,
+    played: o.played != null ? o.played : 10, won: o.won != null ? o.won : 10 - pos, draw: 0, lost: o.lost != null ? o.lost : pos,
+    gf: o.gf != null ? o.gf : 20 - pos, ga: o.ga != null ? o.ga : pos };
+}
+const S13_PL_TEAMS = [
+  s13Row("Arsenal", 1, { played: 11, gf: 28, ga: 12 }),
+  s13Row("Man City", 2, { played: 10, gf: 31, ga: 15 }),
+  s13Row("Liverpool", 3, { played: 11, gf: 24, ga: 9 }),
+  s13Row("Chelsea", 4, { played: 10, gf: 18, ga: 11 }),
+  s13Row("Tottenham", 5), s13Row("Everton", 6)
+];
+const S13_BL1_TEAMS = [s13Row("Dortmund", 1, { played: 9, gf: 22, ga: 10 }), s13Row("Leverkusen", 2, { played: 9, gf: 20, ga: 8 })];
+const s13Table = (teams, fa, started) => ({ started: started !== false, faName: fa, emblem: null, teams: teams });
+// the fake pool rows (raw shape: status/utcDate/score.fullTime/competition)
+function s13Pool(status, date, comp, home, away, gh, ga) {
+  return { status: status, utcDate: date, competition: { code: comp }, homeTeam: { name: home }, awayTeam: { name: away }, score: { fullTime: { home: gh, away: ga } } };
+}
+const S13_POOL = [
+  s13Pool("FINISHED", "2026-10-12T18:00:00Z", "PL", "Arsenal", "Wolves", 2, 0),      // Arsenal conceded 0 → clean sheet
+  s13Pool("FINISHED", "2026-10-19T16:30:00Z", "PL", "Liverpool", "Arsenal", 1, 1),   // Arsenal conceded 1
+  s13Pool("FINISHED", "2026-11-02T18:00:00Z", "PL", "Arsenal", "Newcastle", 3, 1),   // Arsenal conceded 1
+  s13Pool("FINISHED", "2026-11-05T20:00:00Z", "FA_CUP", "Arsenal", "Leeds", 1, 0),   // NOT PL → the comp filter excludes it
+  s13Pool("SCHEDULED", "2026-11-20T18:00:00Z", "PL", "Arsenal", "Chelsea", null, null), // not FINISHED → excluded
+  s13Pool("FINISHED", "2026-10-10T17:00:00Z", "PL", "Chelsea", "Tottenham", 2, 1)    // neither side is Arsenal → excluded
+];
+// the fake archive rows (pubMatch shape: m.utcDate/m.homeTeam/m.awayTeam/m.score/m.competition)
+function s13Arch(date, comp, home, away, gh, ga) {
+  return { m: { utcDate: date, competition: { code: comp }, homeTeam: { name: home }, awayTeam: { name: away }, score: { home: gh, away: ga } } };
+}
+const S13_ARCH = [
+  s13Arch("2026-09-26T16:30:00Z", "PL", "Arsenal", "Chelsea", 0, 0),   // Arsenal conceded 0 → clean sheet
+  s13Arch("2026-10-12T18:00:00Z", "PL", "Arsenal", "Wolves", 2, 0),    // DUPLICATE of pool row 0 (same pair+day) → deduped
+  s13Arch("2026-10-03T16:30:00Z", "PL", "Man City", "Man United", 4, 2) // Man City conceded 2 (only 1 sample → below the gate)
+];
+const s13Ctx = {
+  payload: { standings: { PL: s13Table(S13_PL_TEAMS, "لیگ برتر انگلیس"), BL1: s13Table(S13_BL1_TEAMS, "بوندسلیگا") } },
+  pool: S13_POOL,
+  shaped: S13_POOL.map(() => ({}))
+};
+// GF/GA/played/compFa from the fixture's OWN competition table (grade A) +
+// clean sheets from the pool+archive merge (grade D): Arsenal — played 11,
+// gf 28, ga 12; the merge dedupes the duplicate (pool row 0 == archive row 1)
+// → csSample 4 (3 pool + 1 archive), cs 2 (2026-10-12 + 2026-09-26); the
+// FA_CUP row, the SCHEDULED row + the other-teams row are excluded.
+const s13Ars = s13Tcm(s13Ctx, "Arsenal", S13_ARCH, undefined, "PL");
+check(s13Ars && s13Ars.code === "PL" && s13Ars.compFa === "لیگ برتر انگلیس" &&
+  s13Ars.played === 11 && s13Ars.gf === 28 && s13Ars.ga === 12 &&
+  s13Ars.cs === 2 && s13Ars.csSample === 4,
+  "S13 GF/GA grade A + clean sheets grade D: Arsenal → { PL, «لیگ برتر انگلیس», played 11, gf 28, ga 12, cs 2, csSample 4 } — the fixture's OWN competition standings rows carry the season aggregates (audit row 70) + the pool-FINISHED/archive merge (deduped on the sorted-pair+day key — the pool's Arsenal-Wolves 2026-10-12 + the archive's same fixture count ONCE; the FA_CUP row + the SCHEDULED row + the other-teams row are excluded by the comp/status/team filters — audit row 71)");
+// the min-sample gate: Man City has only 1 sample (the archive row) → cs
+// null + csSample null (the metric omits — never a misleading count).
+const s13City = s13Tcm(s13Ctx, "Man City", S13_ARCH, undefined, "PL");
+check(s13City && s13City.played === 10 && s13City.gf === 31 && s13City.ga === 15 &&
+  s13City.cs === null && s13City.csSample === null,
+  "S13 min-sample gate: Man City (csSample 1 < 3) → cs null + csSample null (the clean-sheet metric omits — a 1-2 game sample is noise, never a misleading count; the teamForm min-3 precedent; GF/GA still return — the gate is per-metric, decisions 33/34)");
+// the missing-vs-zero distinction: a team with 3+ samples and ZERO clean
+// sheets (conceded in every game) → cs 0 (a REAL zero, not null).
+const s13ZeroPool = [
+  s13Pool("FINISHED", "2026-10-01T18:00:00Z", "PL", "Everton", "Fulham", 1, 2),   // Everton conceded 2
+  s13Pool("FINISHED", "2026-10-08T18:00:00Z", "PL", "Everton", "Brentford", 1, 1), // Everton conceded 1
+  s13Pool("FINISHED", "2026-10-15T18:00:00Z", "PL", "Wolves", "Everton", 3, 1)    // Everton conceded 3
+];
+const s13ZeroCtx = { payload: { standings: { PL: s13Table(S13_PL_TEAMS, "لیگ برتر انگلیس") } }, pool: s13ZeroPool, shaped: s13ZeroPool.map(() => ({})) };
+const s13Zero = s13Tcm(s13ZeroCtx, "Everton", [], undefined, "PL");
+check(s13Zero && s13Zero.cs === 0 && s13Zero.csSample === 3,
+  "S13 actual zero: Everton (3 samples, conceded in all 3 → ZERO clean sheets) → cs 0 + csSample 3 (a 0 clean-sheet count in a SUFFICIENT sample IS a real zero — spec §16 'Missing is not zero' cuts both ways: missing → null, an actual zero → 0; the renderer renders «۰», never «—»)");
+// the partial dataset: played 11 vs a 4-game clean-sheet window → both
+// return (the caller discloses the window when it materially differs).
+check(s13Ars && s13Ars.played === 11 && s13Ars.csSample === 4 && s13Ars.csSample < s13Ars.played,
+  "S13 partial dataset: Arsenal played 11 but the pool+archive merge covers only 4 → csSample 4 returns alongside played 11 (the tracked big-match universe is a PARTIAL sample — the caller's materiality disclosure |csSample − played| ≥ 2 lights the window note, decision 34)");
+// the fail-closed gates: missing table / team not in the table / pre-season /
+// degenerate / played=0 / missing gf / no compCode → null (missing ≠ zero —
+// the side omits entirely; a missing table is NEVER rendered as zeroes).
+check(s13Tcm(s13Ctx, "Arsenal", [], undefined, "SA") === null,
+  "S13 missing table: no standings table for the fixture's code (SA) → null (audit row 70: 'missing table → omit' — a missing table is NOT zero; the side omits entirely)");
+check(s13Tcm(s13Ctx, "Real Madrid", [], undefined, "PL") === null,
+  "S13 team not in the table: Real Madrid is not in the PL table → null (the side omits; never a fabricated row)");
+const s13PreCtx = { payload: { standings: { PL: s13Table(S13_PL_TEAMS, "لیگ برتر انگلیس", false) } }, pool: [], shaped: [] };
+check(s13Tcm(s13PreCtx, "Arsenal", [], undefined, "PL") === null,
+  "S13 pre-season: started === false → null (the S10 gate — a pre-season table carries roster-alphabetical zeroes that would read as fake aggregates)");
+check(s13Tcm({ payload: { standings: { PL: s13Table([s13Row("Arsenal", 1)], "لیگ برتر انگلیس") } }, pool: [], shaped: [] }, "Arsenal", [], undefined, "PL") === null,
+  "S13 degenerate table: a 1-team table is not a table → null (the S10 gate)");
+check(s13Tcm({ payload: { standings: { PL: s13Table([s13Row("Arsenal", 1, { played: 0, gf: 0, ga: 0 })].concat(S13_PL_TEAMS.slice(1)) , "لیگ برتر انگلیس") } }, pool: [], shaped: [] }, "Arsenal", [], undefined, "PL") === null,
+  "S13 played=0: a standings row with played 0 → null (nothing played yet — gf 0/ga 0 would read as fake zeroes; spec §16 'Omit insufficient statistics rather than presenting zeroes or misleading values'; the standings-table zeroes ARE real only once the season has games in it — played > 0 gates that)");
+check(s13Tcm({ payload: { standings: { PL: s13Table([Object.assign(s13Row("Arsenal", 1, { played: 11, ga: 12 }), { gf: undefined })].concat(S13_PL_TEAMS.slice(1)), "لیگ برتر انگلیس") } }, pool: [], shaped: [] }, "Arsenal", [], undefined, "PL") === null,
+  "S13 missing aggregate: a standings row with gf missing (played 11) → null (fail-closed — never render a partial row with a fake zero in the missing cell)");
+check(s13Tcm(s13Ctx, "Arsenal", [], undefined, null) === null,
+  "S13 no compCode: a fixture with no competition code → null (fail-closed — no competition scope, no metrics)");
+// the fixture-competition scoping (the S12 season-chip distinction):
+// Dortmund IS in the BL1 table, but the fixture's code is PL → null (the
+// FIXTURE-competition lookup, NOT teamSeasonRecord's richest-record lookup
+// across competitions).
+check(s13Tcm(s13Ctx, "Dortmund", [], undefined, "PL") === null &&
+  s13Tcm(s13Ctx, "Dortmund", [], undefined, "BL1") !== null,
+  "S13 fixture-competition scoping: Dortmund (in BL1, not in PL) → null for a PL fixture but a full record for a BL1 fixture (the S12 season chip [teamSeasonRecord] is the RICHEST-record lookup ACROSS competitions; teamCompMetrics is the FIXTURE-competition lookup — a cup fixture against a league table never leaks league aggregates in)");
+// the fullByCode precedence: the full cached table wins over the payload
+// compact for the SAME code (the v13.93-fullrec + teamStandingsWindow
+// precedent — the freshest, complete source).
+const s13Full = { PL: s13Table([s13Row("Arsenal", 1, { played: 12, gf: 30, ga: 13 })].concat(S13_PL_TEAMS.slice(1)), "فول لیگ برتر"), BL1: undefined };
+const s13FromFull = s13Tcm(s13Ctx, "Arsenal", S13_ARCH, s13Full, "PL");
+check(s13FromFull && s13FromFull.played === 12 && s13FromFull.gf === 30 && s13FromFull.ga === 13 && s13FromFull.compFa === "فول لیگ برتر",
+  "S13 fullByCode precedence: fullByCode[PL] (the fullByCodeFor await, loaded for exactly the fixture's code) beats ctx.payload.standings[PL] for the same code (the v13.93-fullrec + teamStandingsWindow precedent — the freshest, complete source; played 12/gf 30/ga 13 + the full table's own compFa)");
+// the REAL-DATA provenance discovery (the mcM5x preview smoke): the
+// v13.89-stdetail fullStandings loader projects fullByCode's rows WITHOUT
+// gf/ga (pos/name/faName/played/won/draw/lost/points only) — a row without
+// the aggregates falls through to the payload's top-8 compact (v12.16: the
+// per-team stats ride along), so the metrics render from the compact.
+function s13StdRow(name, pos, o) {
+  o = o || {};
+  return { name: name, pos: pos, faName: name, played: o.played != null ? o.played : 12, won: o.won != null ? o.won : 8, draw: 2, lost: o.lost != null ? o.lost : 2, points: o.points != null ? o.points : 26 };
+}
+const s13FullNoGf = { PL: { teams: [s13StdRow("Arsenal", 1), s13StdRow("Man City", 2), s13StdRow("Liverpool", 3), s13StdRow("Chelsea", 4), s13StdRow("Tottenham", 5), s13StdRow("Everton", 6, { played: 12, won: 2, lost: 8, points: 8 })], faName: "فول لیگ برتر" } };
+const s13FromCompact = s13Tcm(s13Ctx, "Arsenal", S13_ARCH, s13FullNoGf, "PL");
+check(s13FromCompact && s13FromCompact.played === 11 && s13FromCompact.gf === 28 && s13FromCompact.ga === 12 && s13FromCompact.compFa === "لیگ برتر انگلیس" &&
+  s13FromCompact.cs === 2 && s13FromCompact.csSample === 4,
+  "S13 fullByCode without gf/ga falls through: the v13.89-stdetail fullStandings rows carry NO gf/ga (the real fullByCode shape discovered on the mcM5x preview) → the lookup falls through to ctx.payload.standings[PL] (the top-8 compact, v12.16: gf/ga ride along) → Arsenal renders { played 11, gf 28, ga 12 } from the compact (a row without the aggregates NEVER renders a fake zero — it falls through; a future loader that keeps the aggregates upgrades the metrics to full-table coverage with ZERO changes here)");
+// a team in the full table but NOT in the top-8 compact (the real Everton
+// case): fullByCode has no aggregates for it + the compact doesn't carry it
+// → null (the honest one-sided omission — the side omits, the other renders).
+const s13CompactNoEve = { payload: { standings: { PL: s13Table(S13_PL_TEAMS.slice(0, 5), "لیگ برتر انگلیس") } }, pool: [], shaped: [] };
+check(s13Tcm(s13CompactNoEve, "Everton", [], s13FullNoGf, "PL") === null,
+  "S13 not-in-compact omission: Everton (in fullByCode's table but WITHOUT gf/ga there, NOT in the payload's top-8 compact) → null (the side omits honestly — the one-sided omission; the data side still renders; never a fake zero)");
+// the CL fixtures' third source: payload.ucl — the FULL UCL league-phase
+// table (gf/ga ride along — the teamSeasonRecord third source). A CL fixture
+// whose compact/top-8 misses the team still renders from the full UCL table.
+const s13UclTeams = [
+  s13Row("PSG", 1, { played: 4, gf: 9, ga: 2 }),
+  s13Row("Roma", 2, { played: 4, gf: 7, ga: 4 }),
+  s13Row("Bayern", 3, { played: 4, gf: 11, ga: 3 }),
+  s13Row("Real Madrid", 4, { played: 4, gf: 8, ga: 5 })
+];
+const s13ClCtx = { payload: { standings: {}, ucl: s13Table(s13UclTeams, undefined, undefined) }, pool: [], shaped: [] };
+const s13Psg = s13Tcm(s13ClCtx, "PSG", [], undefined, "CL");
+check(s13Psg && s13Psg.code === "CL" && s13Psg.played === 4 && s13Psg.gf === 9 && s13Psg.ga === 2 && s13Psg.compFa === "لیگ قهرمانان اروپا",
+  "S13 CL via payload.ucl: a CL fixture whose payload.standings compact misses the team still renders from payload.ucl — the FULL UCL league-phase table (gf/ga ride along; the teamSeasonRecord third source; the compFa = translateCompetition(\"CL\") — the same fallback teamSeasonRecord uses); PSG → { CL, played 4, gf 9, ga 2 }");
+// the ucl third source is CL-ONLY: a PL fixture never reads payload.ucl.
+check(s13Tcm(s13ClCtx, "PSG", [], undefined, "PL") === null,
+  "S13 ucl source is CL-only: a PL fixture (PSG not in any PL table) never reads payload.ucl (the fixture-competition scoping holds across all three sources)");
+
+// (c) the renderer — the REAL mc.matchMetricsHtml with controlled atoms (the
+// S12 pattern). Home: played 11, cs 7 with a material window note (|9-11| ≥ 2);
+// away: played 10 (the unequal-samples case — each side labels its own count),
+// cs 6 with an immaterial window (no note).
+const s13HomeAtoms = {
+  team: "آرسنال",
+  sampleHtml: "در " + s11FaDigits("11") + " بازی لیگ برتر انگلیس",
+  gf: s11FaDigits("28"), ga: s11FaDigits("12"), cs: s11FaDigits("7"),
+  csNoteHtml: "در " + s11FaDigits("9") + " بازی"
+};
+const s13AwayAtoms = {
+  team: "منچستر سیتی",
+  sampleHtml: "در " + s11FaDigits("10") + " بازی لیگ برتر انگلیس",
+  gf: s11FaDigits("31"), ga: s11FaDigits("15"), cs: s11FaDigits("6"),
+  csNoteHtml: ""
+};
+const s13Both = mc.matchMetricsHtml({ home: s13HomeAtoms, away: s13AwayAtoms });
+check(s13Both.startsWith('<div class="card mcentre-metrics"><h2>مقایسه آمار فصل</h2><table class="mcmtable"><thead><tr><th class="mcmcorner" scope="col">آمار</th>') &&
+  s13Both.indexOf("</tbody></table></div>") > -1,
+  "S13 container: the renderer wraps the metrics in the .card.mcentre-metrics container + the <h2>«مقایسه آمار فصل</h2> title + the compact semantic <table class=\"mcmtable\"> (the S11 table precedent — a real table, not div rows; the card rides INSIDE #mcentre-form as a SIBLING under the form card, decision S13-1)");
+check(s13Both.indexOf('<th class="mcmteam" scope="col"><span class="formteam mcentre-form-participant">آرسنال</span><span class="mcmsample">' + s13HomeAtoms.sampleHtml + "</span></th>") > -1 &&
+  s13Both.indexOf('<th class="mcmteam" scope="col"><span class="formteam mcentre-form-participant">منچستر سیتی</span><span class="mcmsample">' + s13AwayAtoms.sampleHtml + "</span></th>") > -1,
+  "S13 team columns: the two team faNames ride the column headers (<th class=\"mcmteam\" scope=\"col\">) with the S12 participant-mark classes (.formteam.mcentre-form-participant — the page-shell S12 rule applies font-weight:600 + #7dd3fc inside #mcentre-form, NO background, decision 25) + the per-team sample label ONCE per column under the name («در ۱۱ بازی لیگ برتر انگلیس» vs «در ۱۰ بازی لیگ برتر انگلیس» — decisions 33/34; the unequal-samples case: each side labels its OWN played count)");
+check((s13Both.match(/formteam mcentre-form-participant/g) || []).length === 2 &&
+  s13Both.indexOf("mcentre-cols") === -1 && s13Both.indexOf("strow-me") === -1,
+  "S13 participant-mark reuse: exactly 2 participant-marked names (the two columns) + NO new participant class + NO .mcentre-cols pairing + NO .strow-me background (the S12 rule is REUSED, not duplicated — typography-only, decision 25)");
+check(s13Both.indexOf('<tr><th class="mcmlbl" scope="row">گل زده</th><td class="mcmnum">' + s11FaDigits("28") + '</td><td class="mcmnum">' + s11FaDigits("31") + "</td></tr>") > -1 &&
+  s13Both.indexOf('<tr><th class="mcmlbl" scope="row">گل خورده</th><td class="mcmnum">' + s11FaDigits("12") + '</td><td class="mcmnum">' + s11FaDigits("15") + "</td></tr>") > -1,
+  "S13 GF/GA rows: گل زده + گل خورده row headers (<th class=\"mcmlbl\" scope=\"row\">) + the centered Persian-digit number cells (<td class=\"mcmnum\"> — toFaDigits, the S11 .stpos/.stgd precedent; numbers ONLY — the numerals ARE the comparison, decision 35)");
+check(s13Both.indexOf('<tr><th class="mcmlbl" scope="row">کلین شیت</th><td class="mcmnum">' + s11FaDigits("7") + ' <span class="mcmnote">' + "در " + s11FaDigits("9") + " بازی</span></td>" + '<td class="mcmnum">' + s11FaDigits("6") + "</td></tr>") > -1,
+  "S13 clean-sheet row + window note: کلین شیت (the common Persian football-media loanword) + the inline .mcmnote window note rides ONLY the home cell (its sample materially differs: |9 − 11| ≥ 2 → «در ۹ بازی»; the away cell carries NO note — |10 − 10| immaterial, decision 34)");
+check(s13Both.indexOf("<svg") === -1 && s13Both.indexOf("canvas") === -1 && s13Both.indexOf("linear-gradient") === -1 && s13Both.indexOf("style=") === -1 && s13Both.indexOf("width=") === -1,
+  "S13 numbers only: NO svg/canvas/gradient/inline-style/width markup (decision 35: 'Clean numerical comparison; no decorative bars or charts' — the comparison is the numerals themselves)");
+// both sides below the clean-sheet gate → the ROW omits entirely (2 rows).
+const s13NoCs = mc.matchMetricsHtml({
+  home: { ...s13HomeAtoms, cs: "", csNoteHtml: "" },
+  away: { ...s13AwayAtoms, cs: "", csNoteHtml: "" }
+});
+check(s13NoCs.indexOf("کلین شیت") === -1 && (s13NoCs.match(/<tr><th class="mcmlbl"/g) || []).length === 2,
+  "S13 cs row omits: BOTH sides below the min-sample gate (cs \"\") → the کلین شیت row omits entirely (2 data rows remain — never a row of «—» «—»; the no-empty-cards law applied per-row)");
+// one side insufficient → the muted «—» cell; an actual zero renders «۰».
+const s13MixedCs = mc.matchMetricsHtml({ home: s13HomeAtoms, away: { ...s13AwayAtoms, cs: "", csNoteHtml: "" } });
+check(s13MixedCs.indexOf("کلین شیت") > -1 &&
+  s13MixedCs.indexOf('<td class="mcmnum mcmnd">—</td>') > -1 &&
+  s13MixedCs.indexOf('">' + s11FaDigits("7") + " <span") > -1,
+  "S13 one-sided insufficient: the row renders; the insufficient side's cell is the muted «—» marker (<td class=\"mcmnum mcmnd\">—</td> — the honest no-data marker, NEVER a zero; the data side still renders its count)");
+const s13ZeroCs = mc.matchMetricsHtml({ home: { ...s13HomeAtoms, cs: s11FaDigits("0"), csNoteHtml: "" }, away: s13AwayAtoms });
+check(s13ZeroCs.indexOf('<td class="mcmnum">' + s11FaDigits("0") + "</td>") > -1 && s13ZeroCs.indexOf("mcmnd") === -1,
+  "S13 actual zero renders: cs «۰» (a REAL zero — 0 conceded in a sufficient sample) renders as a plain number cell, NOT the «—» marker (missing ≠ zero, spec §16 — the distinction made visible: «—» = insufficient sample, «۰» = a real zero)");
+// one-sided (null side) → the single-team table; fail-closed (both null) → "".
+const s13OneSided = mc.matchMetricsHtml({ home: s13HomeAtoms, away: null });
+check(s13OneSided.indexOf("آرسنال") > -1 && s13OneSided.indexOf("منچستر سیتی") === -1 &&
+  (s13OneSided.match(/<th class="mcmteam"/g) || []).length === 1 &&
+  (s13OneSided.match(/<td class="mcmnum"/g) || []).length === 3,
+  "S13 one-sided omission: a null side (missing table / team not in the table / pre-season) drops its COLUMN honestly — 1 team header + 3 number cells (the data side still renders; the table never fabricates the missing side's cells)");
+check(mc.matchMetricsHtml({ home: null, away: null }) === "",
+  "S13 fail-closed: BOTH sides null (neither has sufficient stats) → \"\" (the no-empty-cards law — the metrics block omits entirely; the فرم section survives on the S12 dots/chip alone, the nav item logic unchanged)");
+
+// (d) the projection — extract the REAL matchMetricsInput from pages.ts via
+// ts.transpileModule with a CONTROLLABLE teamCompMetrics stub (the S12
+// formProjectionEngine pattern). The stub is swappable: the integration tests
+// below inject the REAL extracted teamCompMetrics for the full pipeline.
+const S13_STUB_METRICS = {
+  "Arsenal": { code: "PL", compFa: "لیگ برتر انگلیس", played: 11, gf: 28, ga: 12, cs: 2, csSample: 4 },
+  "Man City": { code: "PL", compFa: "لیگ برتر انگلیس", played: 10, gf: 31, ga: 15, cs: 6, csSample: 10 },
+  "Everton": { code: "PL", compFa: "لیگ برتر انگلیس", played: 11, gf: 5, ga: 15, cs: 5, csSample: 10 },
+  "Fulham": { code: "PL", compFa: "لیگ برتر انگلیس", played: 11, gf: 9, ga: 18, cs: 5, csSample: 11 },
+  "Wall FC": { code: "PL", compFa: "لیگ & <برتر>", played: 11, gf: 20, ga: 6, cs: null, csSample: null }
+};
+let s13MetricsImpl = null; // when set, overrides the stub table (the integration injection)
+function metricsProjectionEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const src = read("src/seo/pages.ts")
+    .replace(/^import\s+[^;]+;\n?/gm, "")
+    .replace(/^export\s+/gm, "");
+  const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const stubs = {
+    // the controllable data stub matchMetricsInput uses:
+    teamCompMetrics: function (ctx, name, archive, fullByCode, compCode) {
+      if (s13MetricsImpl) return s13MetricsImpl(ctx, name, archive, fullByCode, compCode);
+      return S13_STUB_METRICS[name] || null;
+    },
+    esc: function (s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); },
+    toFaDigits: function (s) { return s11FaDigits(s); },
+    seoTeamFaName: function (t) { return (t && (t.faName || t.name)) || ""; },
+    // no-op stubs for all other imports (never called by matchMetricsInput —
+    // only by buildMatchPage/buildTeamPage/etc. which are never invoked here):
+    SEO: {}, absUrl: function () { return ""; }, matchPath: function () { return ""; }, compSlug: function () { return ""; }, teamSlug: function () { return ""; },
+    faTime: function () { return ""; }, faDateD1: function () { return ""; }, faDateD2: function () { return ""; }, tehranDayKey: function () { return ""; }, utcTime: function () { return ""; }, statusLabelFa: function () { return ""; }, weekendWindowTehran: function () { return null; },
+    COMP_EN: {},
+    upcomingBig: function () { return []; }, upcomingFollowed: function () { return []; }, isBigForSeo: function () { return false; }, finishedRecent: function () { return []; }, teamMatches: function () { return { upcoming: [], finished: [] }; }, compMatches: function () { return []; }, teamsIndex: function () { return []; }, compsIndex: function () { return []; }, findMatchBySlug: function () { return null; }, findTeamBySlug: function () { return null; }, payloadTop3: function () { return {}; }, hydrateMatchVenue: async function () { return null; }, similarMatches: function () { return []; }, teamStandingsWindow: function () { return null; }, teamForm: function () { return null; }, teamSeasonRecord: function () { return null; }, heroArtSrv: function () { return null; },
+    JL: {}, buildHead: function () { return ""; }, pageShell: function () { return ""; },
+    seoTeamAltName: function () { return null; },
+    matchCentreMain: function () { return ""; }, matchHeroHtml: function () { return ""; }, matchSummaryHtml: function () { return ""; }, matchFormHtml: function () { return ""; }, matchMetricsHtml: function () { return ""; },
+    narrativeHtml: function () { return ""; }, matchStandingsWindow: function () { return null; },
+    loadArchive: async function () { return []; }, fetchStandings: async function () { return null; }, translateTeam: function () { return ""; },
+    M: { nameHtml: function (s) { return String(s == null ? "" : s); } }
+  };
+  return new Function(...Object.keys(stubs), js + "\nreturn { matchMetricsInput };")(...Object.values(stubs));
+}
+const mp13 = metricsProjectionEngine();
+check(typeof mp13.matchMetricsInput === "function",
+  "S13 projection contract: pages.ts carries matchMetricsInput (the metrics data projection — the S04 hero/S12 form precedent: pages.ts builds the MatchMetricsInput atoms, the composer renders the markup; the REAL function extracted via ts.transpileModule, never re-implemented)");
+const s13Sm = {
+  raw: { homeTeam: { name: "Arsenal" }, awayTeam: { name: "Man City" }, status: "" },
+  s: { homeTeam: { faName: "آرسنال" }, awayTeam: { faName: "منچستر سیتی" }, competition: { code: "PL" } }
+};
+const s13Proj = mp13.matchMetricsInput(s13Sm, {}, [], {});
+check(s13Proj.home && s13Proj.home.team === "آرسنال" &&
+  s13Proj.home.sampleHtml === "در " + s11FaDigits("11") + " بازی لیگ برتر انگلیس" &&
+  s13Proj.home.gf === s11FaDigits("28") && s13Proj.home.ga === s11FaDigits("12") && s13Proj.home.cs === s11FaDigits("2"),
+  "S13 projection atoms: the home side carries the pre-escaped faName + the pre-built sample label «در ۱۱ بازی لیگ برتر انگلیس» (played + compFa — decisions 33/34) + the Persian-digit gf/ga/cs numerals (toFaDigits — the S11 .stpos/.stgd precedent)");
+check(s13Proj.home.csNoteHtml === "در " + s11FaDigits("4") + " بازی" && s13Proj.away.csNoteHtml === "",
+  "S13 projection note gating: the window note rides ONLY the materially-different side (home |4 − 11| = 7 ≥ 2 → «در ۴ بازی»; away |10 − 10| = 0 → \"\" — a one-match lag is timing noise, two or more missing games is a genuinely smaller window, decision 34)");
+check(s13Proj.away && s13Proj.away.sampleHtml === "در " + s11FaDigits("10") + " بازی لیگ برتر انگلیس",
+  "S13 projection unequal samples: the away side labels its OWN played count («در ۱۰ بازی…» vs the home's «در ۱۱ بازی…» — each side's label reflects its own standings row, decisions 33/34)");
+const s13Sm2 = {
+  raw: { homeTeam: { name: "Wall FC" }, awayTeam: { name: "NotInTable" }, status: "" },
+  s: { homeTeam: { faName: "وال & <اف‌سی>" }, awayTeam: { faName: "ناشناس" }, competition: { code: "PL" } }
+};
+const s13Proj2 = mp13.matchMetricsInput(s13Sm2, {}, [], {});
+check(s13Proj2.home && s13Proj2.home.team === "وال &amp; &lt;اف‌سی&gt;" &&
+  s13Proj2.home.sampleHtml === "در " + s11FaDigits("11") + " بازی لیگ &amp; &lt;برتر&gt;" &&
+  s13Proj2.home.cs === "" && s13Proj2.home.csNoteHtml === "" && s13Proj2.away === null,
+  "S13 projection escaping + gates: the team name + the compFa arrive PRE-ESCAPED (the hostile «وال & <اف‌سی>» + «لیگ & <برتر>» → &amp;/&lt;/&gt; — the projection owns every escaped string, the S04 hero precedent) + cs null → \"\" (below the min-sample gate → the renderer's «—» cell) + the null side (teamCompMetrics null → the column drops — the one-sided omission)");
+
+// (e) the integration — the REAL data helper injected into the projection's
+// stub (the swappable teamCompMetrics) → the REAL projection → the REAL
+// renderer: the full pipeline on the controlled pool/archive/standings rows.
+s13MetricsImpl = s13Tcm;
+const s13PipeInput = mp13.matchMetricsInput(s13Sm, s13Ctx, S13_ARCH, undefined);
+const s13Pipe = mc.matchMetricsHtml(s13PipeInput);
+check(s13Pipe.indexOf('<span class="formteam mcentre-form-participant">آرسنال</span><span class="mcmsample">در ' + s11FaDigits("11") + " بازی لیگ برتر انگلیس</span>") > -1 &&
+  s13Pipe.indexOf('<span class="formteam mcentre-form-participant">منچستر سیتی</span><span class="mcmsample">در ' + s11FaDigits("10") + " بازی لیگ برتر انگلیس</span>") > -1 &&
+  s13Pipe.indexOf('<td class="mcmnum">' + s11FaDigits("28") + '</td><td class="mcmnum">' + s11FaDigits("31") + "</td>") > -1 &&
+  s13Pipe.indexOf('<td class="mcmnum">' + s11FaDigits("2") + ' <span class="mcmnote">در ' + s11FaDigits("4") + " بازی</span></td>") > -1 &&
+  s13Pipe.indexOf('<td class="mcmnum mcmnd">—</td>') > -1,
+  "S13 integration: matchMetricsHtml(matchMetricsInput(sm, ctx, archive, fullByCode)) with the REAL teamCompMetrics injected renders the full pipeline — the participant-marked names + the per-team played labels (11 vs 10 — the unequal samples) + the gf row (۲۸ | ۳۱) + Arsenal's clean-sheet cell (۲ with the material «در ۴ بازی» note — |4 − 11| ≥ 2) + Man City's muted «—» cell (csSample 1 < the min-3 gate) — the controlled pool/archive/standings rows flowing through the REAL data layer + the REAL projection + the REAL renderer");
+const s13PipeFail = mc.matchMetricsHtml(mp13.matchMetricsInput({ raw: { homeTeam: { name: "X" }, awayTeam: { name: "Y" }, status: "" }, s: { homeTeam: { faName: "X" }, awayTeam: { faName: "Y" }, competition: { code: "FA_CUP" } } }, s13Ctx, S13_ARCH, undefined));
+check(s13PipeFail === "",
+  "S13 integration fail-closed: a cup fixture (FA_CUP — no standings table) → both sides null → the metrics block omits entirely (\"\" — the mcentre-form section survives on the S12 dots/chip alone; the فرم nav item logic unchanged)");
+s13MetricsImpl = null;
+
+// (f) the wiring — the metrics render + the combined form part + the registry
+// unchanged (decision S13-1).
+check(/const metricsHtml = matchMetricsHtml\(matchMetricsInput\(sm, ctx, archive, fullByCode\)\);/.test(pagesSrc) &&
+  /const formPartHtml = formHtml \+ metricsHtml;/.test(pagesSrc),
+  "S13 wiring call: buildMatchPage calls matchMetricsInput(sm, ctx, archive, fullByCode) + matchMetricsHtml(input) + builds the COMBINED formPartHtml = formHtml + metricsHtml — the projection reads the already-loaded data through the teamCompMetrics aggregation helper (the loadArchive + fullByCodeFor awaits — ZERO new awaits), the renderer is pure string composition in the composer");
+check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formPartHtml \}\)/.test(pagesSrc) && /form: formPartHtml,/.test(pagesSrc),
+  "S13 wiring dual: the COMBINED form part feeds BOTH matchNavHtml (the فرم nav item lights when EITHER the form card or the metrics card renders — the adaptive Q9=B filter reads the same part) AND matchCentreMain (the mcentre-form section anchor — the S11/S12 dual-passing precedent)");
+check(/\{ id: "mcentre-form", label: "فرم" \}/.test(pagesSrc) &&
+  !/"mcentre-metrics"/.test(mcSrc.match(/MC_SECTION_ORDER[\s\S]{0,900}/) && mcSrc.match(/MC_SECTION_ORDER[\s\S]{0,900}/)[0] || "") &&
+  /"mcentre-form": parts\.form/.test(mcSrc),
+  "S13 wiring registry unchanged: the MC_NAV_DESTS فرم entry stays + NO mcentre-metrics section slot exists (the eleven-slot registry is unchanged — the metrics ride INSIDE the mcentre-form section, decision S13-1: no new nav destination, no new section anchor; the composer's bySlot still maps mcentre-form to parts.form)");
+
+// (g) the cost laws — the scoped cost law (the projection + the data helper
+// carry NO AI/network/KV/timer/polling/await code) + the composer purity +
+// the await count stays 3.
+const s13ProjSrc = (extractFnSrc(pagesSrc, "matchMetricsSideInput") || "") + (extractFnSrc(pagesSrc, "matchMetricsInput") || "");
+const s13ProjStripped = s13ProjSrc.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s13ProjSrc.length > 0 && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|generateText|chat\.completions|await\b/i.test(s13ProjStripped),
+  "S13 cost law (projection): matchMetricsInput + matchMetricsSideInput carry NO AI/network/KV/timer/polling/await code (the S08/S12 zero-runtime-cost law — the projection reads the already-loaded teamCompMetrics data; zero new awaits, zero new KV reads, zero new fetches; the cost check is scoped to the projection functions — pages.ts's other functions keep their legitimate fetch/KV calls)");
+const s13DataSeg = s13Tcm ? (function () { const d = read("src/seo/data.ts"); const i = d.indexOf("export function teamCompMetrics"); const open = d.indexOf("| null {", i) + 7; let depth = 0, j = open; for (; j < d.length; j++) { if (d[j] === "{") depth++; else if (d[j] === "}") { depth--; if (depth === 0) break; } } return d.slice(i, j + 1); })() : "";
+const s13DataStripped = s13DataSeg.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s13DataSeg.length > 0 && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|await\b/i.test(s13DataStripped),
+  "S13 cost law (data helper): teamCompMetrics carries NO AI/network/KV/timer/polling/await code (the check-stats teamForm precedent — pure aggregation over the caller-passed ctx + archive rows; the pool/payload/standings/fullByCode are ALREADY LOADED by getSeoCtx + buildMatchPage's 3 pre-existing awaits — zero new KV reads, zero new fetches, ADR-006)");
+const s13CompSrc = extractFnSrc(mcSrc, "matchMetricsHtml") || "";
+const s13CompStripped = s13CompSrc.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s13CompSrc.length > 0 && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|import /i.test(s13CompStripped),
+  "S13 composer purity: matchMetricsHtml is a pure string renderer (the composer stays the S02 pure leaf — zero imports/KV/fetch/client-scripts; the atoms arrive prebuilt from pages.ts)");
+check(awaitCount === 3,
+  "S13 await count: buildMatchPage's await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; the S13 metrics are pure aggregation over the already-loaded data — ZERO new awaits; the zero-runtime-cost law holds)");
+
+// (h) the CSS — the S13 style block rides page-shell.ts AFTER S12 and BEFORE
+// the S03 foundation (chronological session order: S04 → S05 → S06 → S07 →
+// S08 → S11 → S12 → S13 → S03). Scoped to the #mcentre-form .mcentre-metrics
+// sub-scope; logical properties only; the block's own icy/navy tokens; zero
+// new assets/requests; NO bars/gradients (decision 35).
+check(shellSrc.indexOf("Match Centre S12 (M5)") < shellSrc.indexOf("Match Centre S13 (M5)") && shellSrc.indexOf("Match Centre S13 (M5)") < shellSrc.indexOf("Match Centre S03 (M1)"),
+  "S13 CSS placement: the S13 style block rides page-shell.ts AFTER S12 (the form renderer) and BEFORE S03 (the responsive/spacing/RTL foundation) — chronological session order: S04 → S05 → S06 → S07 → S08 → S11 → S12 → S13 → S03");
+check(/#mcentre-form \.mcentre-metrics \.mcmtable\{width:100%;table-layout:fixed;border-collapse:collapse;font-size:\.8rem\}/.test(shellSrc) &&
+  /#mcentre-form \.mcentre-metrics \.mcmcorner\{width:26%;text-align:start;font-weight:600;color:var\(--muted,#9aa4b2\);white-space:nowrap\}/.test(shellSrc) &&
+  /#mcentre-form \.mcentre-metrics \.mcmtable thead th\{border-block-end:1px solid rgba\(51,65,85,\.9\)\}/.test(shellSrc) &&
+  /#mcentre-form \.mcentre-metrics \.mcmtable tbody tr\+tr\{border-block-start:1px solid rgba\(51,65,85,\.5\)\}/.test(shellSrc),
+  "S13 CSS table: the full-width fixed-layout table (the corner 26% + the two equal team columns) + the muted start-aligned corner + the thin logical dividers (the stronger thead border-block-end + the subtle tbody tr+tr border-block-start — thin, subtle dividers, spec §2)");
+check(/#mcentre-form \.mcentre-metrics \.mcmteam \.formteam\{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}/.test(shellSrc) &&
+  /#mcentre-form \.mcentre-metrics \.mcmsample\{display:block;font-size:\.66rem;font-weight:600;color:var\(--muted,#9aa4b2\);line-height:1\.7\}/.test(shellSrc),
+  "S13 CSS team columns: the team name truncates to one line (min-width:0 + ellipsis + nowrap — the .stname/S12 .formteam precedent; table-layout:fixed constrains the column) + the honest sample label rides UNDER the name (muted .66rem, wraps — the honesty never truncates)");
+check(/#mcentre-form \.mcentre-metrics \.mcmlbl\{text-align:start;font-weight:600;color:var\(--muted,#9aa4b2\);white-space:nowrap\}/.test(shellSrc) &&
+  /#mcentre-form \.mcentre-metrics \.mcmnum\{text-align:center;font-weight:800;font-size:\.92rem;font-variant-numeric:tabular-nums;white-space:nowrap\}/.test(shellSrc) &&
+  /#mcentre-form \.mcentre-metrics \.mcmnote\{font-size:\.6rem;font-weight:600;color:var\(--muted,#9aa4b2\);margin-inline-start:2px\}/.test(shellSrc) &&
+  /#mcentre-form \.mcentre-metrics \.mcmnd\{font-weight:400;color:var\(--muted,#9aa4b2\)\}/.test(shellSrc),
+  "S13 CSS rows: the muted start-aligned label column + the centered weight-800 tabular-digit number cells (the numbers ARE the comparison — numbers readable) + the inline-end muted window note (margin-inline-start) + the «—» insufficient marker muted at normal weight (NEVER styled like a number — missing ≠ zero)");
+check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-form \.mcentre-metrics \.mcmtable\{font-size:\.72rem\}/.test(shellSrc) &&
+  /@media \(max-width:600px\)\{[\s\S]*?#mcentre-form \.mcentre-metrics \.mcmnum\{font-size:\.85rem\}/.test(shellSrc) &&
+  /@media \(max-width:600px\)\{[\s\S]*?#mcentre-form \.mcentre-metrics \.mcmcorner\{width:23%\}/.test(shellSrc) &&
+  /@media \(max-width:600px\)\{[\s\S]*?#mcentre-form \.mcentre-metrics \.mcmsample\{font-size:\.58rem;line-height:1\.6\}/.test(shellSrc),
+  "S13 CSS mobile: at ≤600px the numbers stay readable (.85rem weight 800), the table font tightens (.72rem), the corner narrows (26%→23%) so the team columns keep their share, the sample label drops to .58rem (wraps, never truncates) — table-layout:fixed + the ellipsized names keep the 3-column table inside the viewport, no horizontal scroll (spec §9 'Numbers remain the focus' + spec §4)");
+check(!/#mcentre-form \.mcentre-metrics[^{]*\{[^}]*linear-gradient/.test(shellSrc) && !/#mcentre-form \.mcentre-metrics[^{]*\{[^}]*background[^}]*width:/.test(shellSrc),
+  "S13 CSS no bars/charts: the metrics sub-scope carries NO gradients and NO width-scaled backgrounds (decision 35: 'Clean numerical comparison; no decorative bars or charts' — the CSS mirrors the markup law)");
+check(!/#mcentre-form \.mcentre-metrics[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc),
+  "S13 CSS logical properties: the S13 metrics block uses CSS logical properties ONLY (text-align:start, border-block-end, border-block-start, margin-inline-start, padding-block — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties)");
+check((shellSrc.match(/#mcentre-form \.formteam\.mcentre-form-participant\{font-weight:600;color:#7dd3fc\}/g) || []).length === 1,
+  "S13 CSS participant-mark reuse: the S12 participant rule is REUSED exactly once (no S13 duplicate — the metrics card rides INSIDE #mcentre-form so the S12 rule applies to the column team names with NO new participant rule; the «reuse, don't duplicate» discipline)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

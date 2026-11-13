@@ -446,6 +446,108 @@ export function matchFormHtml(f: MatchFormInput): string {
     (anyDots ? MC_FORM_LEGEND : "") + home + away + "</div>";
 }
 
+// ---- Match Centre S13 (M5): the home/away performance metrics (specification §9) ----
+//
+// S13 LAW (specification §9 "Home/away performance" + decisions 33/34/35): the
+// numerical comparison — goals scored / goals conceded / clean sheets — the
+// two participants compared side by side (home team column FIRST = right
+// under native RTL, away second; "home/away" = the TWO PARTICIPANTS, not
+// home-only/away-only splits — the standings source carries full-season team
+// aggregates). NUMBERS ONLY (decision 35: no decorative bars, no charts, no
+// gradients — the comparison is the numerals themselves). The renderer
+// receives PRE-BUILT content atoms from pages.ts's matchMetricsInput
+// projection (the S04 hero precedent — the pre-escaped team faName, the
+// pre-built Persian-digit numerals, the pre-built sample label, the
+// pre-built window note), so this module stays the pure leaf the S02 cost
+// law pinned. It owns the metrics MARKUP: the .card.mcentre-metrics container
+// (a SIBLING card under the form card, riding INSIDE the #mcentre-form
+// section AFTER the two form sides — decision S13-1: no new section anchor,
+// no new nav destination; the combined form part feeds the nav's adaptive
+// Q9=B filter) + the compact semantic table (the S11 table precedent): rows
+// گل زده / گل خورده / کلین شیت, columns = the two team faNames with the
+// participant-mark typography (the S12 .mcentre-form-participant precedent —
+// the page-shell S12 rule applies font-weight:600 + #7dd3fc to the names
+// inside #mcentre-form, NO background) + the per-team sample label rendered
+// ONCE per team column («در N بازی [compFa]» — the honest shared window,
+// decisions 33/34; the clean-sheet metric carries its own window note ONLY
+// when its sample materially differs from played — the projection decides,
+// the renderer just renders the note). Missing ≠ zero (spec §16): a side
+// below the clean-sheet min-sample gate renders the muted «—» marker (NOT a
+// zero — 0 conceded in a sufficient sample IS a real zero and renders «۰»);
+// when BOTH sides are below the gate the clean-sheet ROW omits entirely. A
+// side with no sufficient stats at all (null — missing table / team not in
+// the table / pre-season) drops its COLUMN honestly (one-sided rendering);
+// when NEITHER side has stats the renderer returns "" and the metrics block
+// omits entirely (the no-empty-cards law — the فرم section survives on the
+// S12 dots/chip alone, the nav item logic unchanged).
+//
+// One side's column atoms — the projection pre-builds every string (the S04
+// hero precedent; the composer never needs esc).
+export interface MatchMetricsSideInput {
+  team: string;       // the side's Persian faName — pre-escaped plain text
+  sampleHtml: string; // the shared sample label «در ۱۱ بازی لیگ برتر انگلیس» — prebuilt (played + compFa, decisions 33/34)
+  gf: string;         // season goals scored — the Persian-digit numeral «۲۸»
+  ga: string;         // season goals conceded — the Persian-digit numeral «۱۲»
+  cs: string;         // clean sheets — the Persian-digit numeral; "" when below the min-sample gate (missing ≠ zero)
+  csNoteHtml: string; // the clean-sheet window note «در ۶ بازی» — "" when the window matches the shared label (immaterial)
+}
+
+// The metrics projection — one or both participant columns (null = the side
+// has no sufficient stats: missing table / team not in the table /
+// pre-season — the honest one-sided omission).
+export interface MatchMetricsInput {
+  home: MatchMetricsSideInput | null;
+  away: MatchMetricsSideInput | null;
+}
+
+// The card title + the row/corner labels + the insufficient-sample marker —
+// static Persian constants (the MC_FORM title precedent: composer constants,
+// not data atoms). «کلین شیت» = the common Persian football-media loanword
+// (compact for the label column); «—» = the muted no-data marker (NEVER a
+// zero — the missing-vs-zero distinction made visible).
+const MC_METRICS_TITLE = "مقایسه آمار فصل";
+const MC_METRICS_CORNER_LABEL = "آمار";
+const MC_METRICS_GF_LABEL = "گل زده";
+const MC_METRICS_GA_LABEL = "گل خورده";
+const MC_METRICS_CS_LABEL = "کلین شیت";
+const MC_METRICS_CS_ND = "—";
+
+// The home/away performance metrics renderer. DOM = the .card
+// .mcentre-metrics container + the <h2> title + the compact semantic table:
+// a header row (the «آمار» corner + one <th scope="col"> per present side —
+// the participant-marked team name + the sample label under it) + the گل
+// زده / گل خورده rows (always present when any side renders) + the کلین
+// شیت row (only when at least one side carries a sufficient sample; the
+// insufficient side's cell renders the muted «—»). Fail-closed: both sides
+// null → "" (the no-empty-cards law — the block omits entirely, the فرم
+// section survives on the S12 dots/chip alone).
+export function matchMetricsHtml(m: MatchMetricsInput): string {
+  const sides = [m.home, m.away].filter((s): s is MatchMetricsSideInput => !!s);
+  if (!sides.length) return "";
+  const headCells = sides.map((s) =>
+    '<th class="mcmteam" scope="col"><span class="formteam mcentre-form-participant">' + s.team + '</span><span class="mcmsample">' + s.sampleHtml + "</span></th>"
+  ).join("");
+  const numCells = (v: (s: MatchMetricsSideInput) => string) =>
+    sides.map((s) => '<td class="mcmnum">' + v(s) + "</td>").join("");
+  // the clean-sheet row renders ONLY when at least one side carries a
+  // sufficient sample; the insufficient side's cell renders the muted «—»
+  // (missing ≠ zero — a real zero renders «۰» via the non-empty cs string)
+  const anyCs = sides.some((s) => s.cs !== "");
+  const csRow = anyCs
+    ? '<tr><th class="mcmlbl" scope="row">' + MC_METRICS_CS_LABEL + "</th>" +
+      sides.map((s) => s.cs
+        ? '<td class="mcmnum">' + s.cs + (s.csNoteHtml ? ' <span class="mcmnote">' + s.csNoteHtml + "</span>" : "") + "</td>"
+        : '<td class="mcmnum mcmnd">' + MC_METRICS_CS_ND + "</td>"
+      ).join("") + "</tr>"
+    : "";
+  return '<div class="card mcentre-metrics"><h2>' + MC_METRICS_TITLE + "</h2>" +
+    '<table class="mcmtable"><thead><tr><th class="mcmcorner" scope="col">' + MC_METRICS_CORNER_LABEL + "</th>" + headCells + "</tr></thead><tbody>" +
+    '<tr><th class="mcmlbl" scope="row">' + MC_METRICS_GF_LABEL + "</th>" + numCells((s) => s.gf) + "</tr>" +
+    '<tr><th class="mcmlbl" scope="row">' + MC_METRICS_GA_LABEL + "</th>" + numCells((s) => s.ga) + "</tr>" +
+    csRow +
+    "</tbody></table></div>";
+}
+
 // One anchored wrapper. The no-empty-cards law lives HERE: empty or
 // whitespace-only content returns "" — a section never renders hollow, so
 // a missing dataset can never leave a blank box on the page.
