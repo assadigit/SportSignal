@@ -614,3 +614,12 @@ git push 'https://<owner GitHub PAT>@github.com/assadigit/SportSignal.git' feat/
 **main untouched** (`13.255-seospell` / deployment `88649642` / version `b48bae21`). **Token hygiene confirmed** (no tracked or untracked file contains the Cloudflare token or the GitHub PAT; `.wrangler/` gitignored + clean; `git config -l | grep ghp_` = zero matches; `git grep` for the PAT = zero matches). The repo version string stays `13.256-mcfound` (the mcM5x bump lives only in the uploaded bundle — reverted post-upload).
 
 **Next session**: **S14** — the venue + schedule data selection (M6 session 1 of 2; specification §10/§11 + milestones-and-sessions.md M6/S14: the verified venue panel [stadium name only — §15 Q2=A] + the seven-day schedule window anchored to the match date, cached data only).
+
+### S13 — one-shot token push (DONE 2026-11-13)
+
+**DONE 2026-11-13** (the token was available in-session). The one-shot token push succeeded:
+- **Push command** (ran from `/home/z/SportSignal`): `git push 'https://<PAT>@github.com/assadigit/SportSignal.git' feat/match-centre` → "5a736d2..b19a129 feat/match-centre -> feat/match-centre".
+- **Commits pushed**: `1f9255f` (the S13 implementation) + `b19a129` (the docs commit — ledger/log/changelog + the `docs/mc/form-indicators-matrix.md` gate doc) + this push-record docs commit.
+- **ls-remote verified**: `git ls-remote origin feat/match-centre` = `b19a129effa8092abdbd7ff41f077865a9d3f63b` === local HEAD (before this push-record commit; re-verified after the final push below) — remote = local HEAD.
+- **Token hygiene**: `git config -l | grep ghp_` = zero matches (the PAT was in the push URL only, never persisted in git config); `git remote get-url origin` = `https://github.com/assadigit/SportSignal.git` (clean — no token in the remote URL); `git grep` for the full PAT value = zero matches (no file contains the GitHub PAT); no tracked or untracked file contains the Cloudflare token; `.wrangler/` gitignored + clean.
+- **Production untouched**: main stays `13.255-seospell` / deployment `88649642`; the mcM5x preview versions (`96b712d8` superseded + `33000dec` final) are uploaded but NEVER activated (`wrangler versions deploy` / `wrangler deploy` NEVER run); the repo version string stays `13.256-mcfound`.
