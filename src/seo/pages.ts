@@ -39,6 +39,21 @@ import { matchCentreMain, matchHeroHtml, matchSummaryHtml, type MatchHeroInput, 
 // array + the answercard return were the embryonic registry S08 formalizes
 // into src/seo/narrative.ts).
 import { narrativeHtml, type NarrativeLifecycle } from "./narrative";
+// Match Centre S11 (M4): the standings renderer — the unified competition table
+// MARKUP (the 5 visible columns + the participant-mark typography + the ellipsis
+// sentinel + the responsive mobile layout). The S10 selection (standings-window.ts)
+// runs HERE (pages.ts buildMatchPage calls matchStandingsWindow + passes the
+// pre-built window DATA to buildStandingsHtml); the renderer projects the 5
+// visible columns from the S10 selection's full-row data + computes gd = gf-ga +
+// applies the participant-mark typography + renders the ellipsis sentinel. The
+// renderer is pure string composition — zero KV/await/fetch (the zero-runtime-cost
+// law holds; buildMatchPage's await count stays 3 — the standings are already
+// loaded by fullByCodeFor, the window is pure logic [S10], the renderer is pure
+// presentation [S11]). The team-page buildStandingsWindowHtml stays byte-frozen
+// (the S10/S11 split: the team-page path is untouched; the match-page renderer is
+// a NEW function — the S04 hero precedent: pages.ts builds the HTML string, the
+// composer wraps it in the mcentre-standings anchor).
+import { matchStandingsWindow, type StandingsWindow } from "./standings-window";
 import { loadArchive } from "./files";
 // v13.89-stdetail: full-table sources for the competition pages — both
 // cache-only/reads-only (the seo layer never triggers a provider sweep).
@@ -516,6 +531,27 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // (null → the payload path, exactly v13.88 behavior).
   const fullByCode = await fullByCodeFor(ctx, [sm.s.competition && sm.s.competition.code]);
   const formCard = formStripHtml(ctx, sm, archive, fullByCode);
+  // Match Centre S11 (M4): the standings renderer — the unified competition
+  // table MARKUP (specification §8). The S10 selection (matchStandingsWindow)
+  // runs HERE — pure logic reading the already-loaded ctx.payload.standings ×7
+  // + fullByCode (already loaded by the fullByCodeFor call above — one of the
+  // 3 pre-existing bounded reads) + sm.s.homeTeam/awayTeam/competition (already-
+  // loaded SeoMatch fields). ZERO new awaits, ZERO new KV reads, ZERO new
+  // fetches (the zero-runtime-cost law — the S08 narrative precedent). The
+  // renderer (buildStandingsHtml) projects the 5 visible columns (pos | team+
+  // crest | played | gd=gf-ga | points) + applies the participant-mark
+  // typography (the .strow-participant class — font-weight:600 + #7dd3fc on the
+  // home/away team names + the icy-blue color on the rank; NO background —
+  // decision 25) + renders the ellipsis sentinel («⋯» U+22EF) + the competition
+  // header (.stbox-head). Returns "" when the S10 selection returns null (the
+  // fail-closed gate — cups/KO / pre-season / degenerate / neither team found →
+  // the mcentre-standings section is omitted, the جدول nav item stays filtered
+  // out). The standings string is passed to BOTH matchNavHtml (so the nav's
+  // adaptive Q9=B filter renders the جدول nav item when non-empty) AND
+  // matchCentreMain (so the composer wraps it in the mcentre-standings anchor).
+  // buildMatchPage's bounded-read count stays 3 (the standings are already loaded; the
+  // window is pure logic [S10]; the renderer is pure string composition [S11]).
+  const standingsHtml = buildStandingsHtml(matchStandingsWindow(sm, ctx, fullByCode));
 
   const sims = similarMatches(ctx, sm);
   const similarCard = sims.length
@@ -585,11 +621,15 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
     resultHtml,
     narrativeHtml: narrativeAtomHtml
   });
-  const navHtml = matchNavHtml({ summary: summaryHtml, form: formCard });
+  // S11: the standings string feeds BOTH the nav (so the جدول nav item renders
+  // when the standings part is non-empty — the adaptive Q9=B filter) AND the
+  // composer (so the mcentre-standings section wraps it in the anchor).
+  const navHtml = matchNavHtml({ summary: summaryHtml, standings: standingsHtml, form: formCard });
   const main = matchCentreMain({
     hero: matchHeroHtml(heroInput) + matchActionsHtml(sm, path) + matchHeadScript(),
     nav: navHtml,
     summary: summaryHtml,
+    standings: standingsHtml,
     form: formCard,
     related: similarCard,
     footerHook: related
@@ -931,6 +971,242 @@ function buildStandingsWindowHtml(stw: { code: string; compFa: string; emblem: s
   });
   tbl += '<a class="stmore" href="/competitions/' + compSlug(stw.code) + '">جدول کامل ' + esc(String(stw.compFa)) + ' <span aria-hidden="true">↗</span><span class="sr-only">صفحه جدول کامل</span></a>';
   return tbl + "</div>";
+}
+
+// ---- Match Centre S11 (M4): the match-page standings renderer (specification §8) ----
+//
+// The RENDERING layer for the unified competition table (M4 session 2 of 2;
+// specification §8 "Competition standings"). The S10 selection
+// (src/seo/standings-window.ts — matchStandingsWindow) computed the pure DATA
+// (both teams' five-row neighbourhoods, merged/touching/separated, with the
+// participant-mark + the ellipsis sentinel + the fail-closed gate). THIS
+// function projects the 5 visible columns from the S10 selection's full-row
+// data + computes gd = gf-ga (a PRESENTATION concern — the selection is pure
+// data, the renderer is pure presentation — decision 4, the S04 hero
+// projection precedent) + applies the participant-mark typography + renders
+// the ellipsis sentinel. The output is a pre-built HTML STRING passed to the
+// composer's MatchCentreParts.standings (the S04 hero precedent — pages.ts
+// builds the string, the composer wraps it in the mcentre-standings anchor;
+// the composer stays the S02 pure leaf — zero imports/KV/fetch).
+//
+// SPECIFICATION §8 — Competition standings:
+//   - "Use one unified competition table." (same-competition: ONE block;
+//     different-competition: TWO blocks stacked — one per team's competition.)
+//   - Visible columns: رتبه | تیم | بازی | تفاضل | امتیاز
+//     (rank | team | played | goal difference | points).
+//   - "Show a five-row neighbourhood around each participating team. Merge
+//     overlapping or touching ranges. Use a discreet ellipsis when ranges are
+//     separated. Do not load or display intervening teams." (the S10 selection
+//     computes the neighbourhood + the merge/ellipsis; the renderer projects it.)
+//   - "Highlight participating team names and rank numbers with stronger
+//     typography and icy-blue text. No highlighted row background (decision 25
+//     — typography-only participant highlight)." (the .strow-participant class
+//     applies font-weight:600 + #7dd3fc to the name + the icy-blue color to the
+//     rank — NO background, NO border. The .strow-me background highlight the
+//     team-page uses is NOT applied here — the team-page path is byte-frozen.)
+//   - "Static table: no expandable rows, team-page navigation or extra
+//     controls." (NO .stmore "full table" link — the match-page table is a
+//     read-only context window, not a navigation surface. The team-page
+//     buildStandingsWindowHtml keeps its .stmore link; the match-page renderer
+//     omits it.)
+//   - "Mobile: keep all five columns visible; optimize padding and typography;
+//     no horizontal scrolling or hidden columns; team names must remain
+//     readable." (the played column does NOT carry .ucl-hidem — it stays
+//     visible on mobile; the .stname truncates with ellipsis [overflow:hidden
+//     + text-overflow:ellipsis + white-space:nowrap — the versioned stylesheet's
+//     existing .stname behavior]; the S11 CSS block in page-shell.ts optimizes
+//     the padding/font/gap + the crest size at the 600px breakpoint.)
+//
+// S11 DECISION POINTS (resolved + recorded for the execution log):
+//
+// 1. The renderer home — a NEW function in pages.ts (buildStandingsHtml). The
+//    team-page buildStandingsWindowHtml stays byte-frozen (the S10/S11 split:
+//    the team-page path is untouched; the match-page renderer is a NEW function
+//    — the S04 hero precedent: pages.ts builds the HTML string, the composer
+//    wraps it).
+//
+// 2. The table vocabulary — REUSE .stwin/.stbox/.stbox-head/.sthead/.strow/
+//    .stpos/.stname/.stnum/.stpts (the competition tables already render those —
+//    shared CSS, consistent visual language across the site; the S03 foundation
+//    precedent — no new vocabulary when the existing one fits). The
+//    participant-mark adds .strow-participant (typography-only — NO background,
+//    decision 25). The crest uses .stname.haslogo + .stcrest + .sttxt (the
+//    versioned stylesheet's existing crest-capable .stname variant). The gd
+//    column carries .stnum.stgd (reuses .stnum + a min-width override for the
+//    sign). The ellipsis uses .strow-ellipsis + .stellipsis.
+//
+// 3. The participant highlight (decision 25 — typography-only) — the
+//    participating team NAMES get font-weight:600 + the icy-blue color
+//    (#7dd3fc — the site's icy-blue token, the .mfin/.mcount/.mnav-item.is-active
+//    family). The rank NUMBERS (.stpos) get the icy-blue color (their existing
+//    font-weight:800 from the versioned stylesheet is already the strongest
+//    weight — "stronger typography" is achieved by the icy-blue color contrast,
+//    NOT by reducing the weight to 600; the brief's "font-weight 600" applies to
+//    the NAME which needs to become bolder from its default normal weight). The
+//    other columns (played/gd/points) stay default. NO highlighted row
+//    background (the .strow-me background the team-page uses is NOT applied —
+//    the match-page participant-mark is typography-only, scoped to
+//    #mcentre-standings so the team-page .strow-me stays byte-frozen).
+//
+// 4. The ellipsis rendering — the { ellipsis: true } sentinel row renders as
+//    «⋯» (U+22EF — the midline horizontal ellipsis) centered, spanning all 5
+//    columns (a single .stellipsis span in a .strow-ellipsis row; the flex row
+//    centers the single child). Discreet: muted color, smaller font, no team
+//    data. aria-hidden="true" (the ellipsis is decorative — screen readers skip
+//    it; the table is still navigable by the real rows).
+//
+// 5. The mobile layout — the design system's 600px breakpoint (public-13.87.css).
+//    The S11 CSS block optimizes the padding (2.5px→2px), the font-size
+//    (11.5px→11px), the gap (5px→3px), the crest size (16px→14px), and the
+//    number-column widths (24px→20px) at ≤600px so all 5 columns stay visible
+//    with no horizontal scroll. The team name truncates with ellipsis (the
+//    existing .stname overflow:hidden + text-overflow:ellipsis behavior) —
+//    readable, one line, no wrap.
+//
+// 6. The crest rendering — the standings_cache rows carry a crest URL. The
+//    renderer renders it as a small <img class="stcrest"> anchored to the team
+//    name (the .stname.haslogo variant — flex:1 + the .sttxt wrapper). Crest
+//    size: 16px desktop, 14px mobile. alt="" decorative (the team name is the
+//    accessible name — the crest is visual context only). loading="lazy" +
+//    decoding="async" + referrerpolicy="no-referrer" (the S05 hero portrait
+//    precedent). onerror="this.remove()" (a failed crest <img> removes just
+//    itself — NOT both-portrait-walk; the standings crest is independent per
+//    row, the both-or-neither law is the HERO's only).
+//
+// 7. The Persian digits — the pos/played/gd/points render with toFaDigits (the
+//    site-wide convention — the existing buildStandingsWindowHtml uses it).
+//    The gd column: gd = (gf||0) - (ga||0). Positive gd shows "+" + the Persian
+//    digits (e.g. "+۵"); zero shows "۰"; negative shows the Persian digits with
+//    the Latin hyphen-minus "-" (e.g. "-۳" — the toFaDigits default; the minus
+//    sign stays as the Latin hyphen-minus U+002D, the existing site convention
+//    — toFaDigits replaces [0-9] only, not the sign; no U+2212 override). The
+//    sign is shown for BOTH positive (+) and negative (-) so the column is
+//    scannable at a glance (the gd column is distinct from the points column —
+//    the sign makes the difference explicit).
+//
+// 8. The competition header — the block's compFa + emblem render as a header
+//    row ABOVE the table (reuse .stbox-head — the team-page + competition-page
+//    vocabulary). The emblem is a small <img> (the versioned stylesheet's
+//    .stbox-head img — 20px desktop, 40px ≥1440px) + the compFa text. Same
+//    markup the team-page buildStandingsWindowHtml uses (byte-identical header
+//    shape — the .stbox-head vocabulary is shared).
+//
+// 9. The two-block case (different-competition) — when the selection returns
+//    TWO blocks (the rare cross-competition case — a friendly/super-cup between
+//    teams from different leagues), the renderer renders TWO tables (one per
+//    block), each with its own competition header. The two tables stack
+//    vertically inside the mcentre-standings section (joined "" — the section's
+//    natural block flow puts one above the other; spec §8: "Use one unified
+//    competition table" — each competition gets its own table when the teams
+//    play in different leagues).
+//
+// 10. The null → "" fail-closed — when matchStandingsWindow returns null (the
+//     standings cache is missing / pre-season / degenerate / cups-KO / neither
+//     team found — the S10 fail-closed gate), buildStandingsHtml returns "" (the
+//     no-empty-cards law — the composer's sectionHtml omits the mcentre-standings
+//     section entirely; the جدول nav item stays filtered out by the nav's
+//     adaptive Q9=B filter). The S10 gate is the data layer; S11's renderer is
+//     the presentation layer that respects it.
+//
+// 11. The composer wiring — pages.ts buildMatchPage calls matchStandingsWindow
+//     (sm, ctx, fullByCode) (the S10 module — already loaded; fullByCode is
+//     already loaded by the pre-existing fullByCodeFor await, one of the 3
+//     bounded reads), builds the standings HTML string via buildStandingsHtml
+//     (window), and passes it to matchCentreMain ({ standings: standingsHtml }).
+//     The standings string is ALSO passed to matchNavHtml ({ standings:
+//     standingsHtml }) so the nav's adaptive Q9=B filter detects the non-empty
+//     standings part and renders the جدول nav item. The lifecycle/await count
+//     stays 3 (the standings are already loaded; the window is pure logic [S10];
+//     the renderer is pure string composition [S11] — ZERO new awaits, ZERO new
+//     KV reads, ZERO new fetches; the zero-runtime-cost law holds).
+//
+// 12. The CSS home — the .mcentre-standings block rides the page-shell inline
+//     <style> (the S03/S04/S05/S06/S07/S08 precedent — the match-centre CSS
+//     lives in page-shell.ts, scoped to the mcentre vocabulary). The S11 style
+//     block rides AFTER S08 and BEFORE the S03 foundation (chronological
+//     session order: S04 → S05 → S06 → S07 → S08 → S11 → S03). Scoped to
+//     #mcentre-standings + the .stwin/.strow vocabulary when inside it; logical
+//     properties only — RTL/LTR clean under a dir flip; the block's own
+//     icy/navy tokens, zero new assets/requests.
+//
+// ZERO-RUNTIME-COST LAW (the S08 narrative precedent, audited §R3): the
+// renderer is PURE STRING COMPOSITION. It reads ONLY the S10 selection's
+// pre-built window DATA (StandingsWindowBlock[] | null — already computed by
+// matchStandingsWindow, which reads the already-loaded standings_cache + the
+// already-loaded fullByCode). ZERO new KV reads, ZERO new awaits, ZERO new
+// fetches. The renderer carries NO AI/network/KV/timer/polling code (the cost
+// law gates this in check-match-centre — the same regex the S08 narrative
+// engine + the S10 selection are gated on). buildMatchPage's await count stays
+// exactly 3 (the cost law asserts this — the renderer adds ZERO awaits).
+function buildStandingsHtml(window: StandingsWindow): string {
+  // The fail-closed gate (the S10 null case — missing/pre-season/degenerate/
+  // cups-KO/neither-team). Returns "" → the composer's sectionHtml omits the
+  // mcentre-standings section (the no-empty-cards law); the جدول nav item
+  // stays filtered out (the nav's adaptive Q9=B filter).
+  if (!window || !Array.isArray(window) || !window.length) return "";
+  return window.map(function (block) {
+    // The competition header — reuse .stbox-head (the team-page + competition-
+    // page vocabulary — the emblem <img> + the compFa text, byte-identical
+    // shape to buildStandingsWindowHtml's header).
+    let html = '<div class="stbox stwin">';
+    html += '<div class="stbox-head">' + (block.emblem ? '<img src="' + esc(block.emblem) + '" alt="" loading="lazy">' : "") + esc(String(block.compFa)) + "</div>";
+    // The column header row — رتبه | تیم | بازی | تفاضل | امتیاز.
+    // .sthead-fill (flex:1) spans the pos + name columns (no text headers for
+    // those — the position number + the team name are self-evident). Then
+    // بازی (played) / تفاضل (gd) / امتیاز (points) headers. NO .ucl-hidem on
+    // the played header (the spec: "keep all five columns visible" on mobile).
+    html += '<div class="sthead"><span class="sthead-fill"></span><span class="stnum sthead-num">بازی</span><span class="stnum sthead-gd">تفاضل</span><span class="sthead-p">امتیاز</span></div>';
+    // The data rows — project the 5 visible columns from the S10 selection's
+    // full-row data + compute gd = gf-ga + apply the participant-mark
+    // typography (the .strow-participant class — the CSS in page-shell.ts
+    // applies font-weight:600 + #7dd3fc to the name + the icy-blue color to
+    // the rank; NO background). The ellipsis sentinel renders «⋯».
+    for (const row of block.rows) {
+      // The ellipsis sentinel — { ellipsis: true } (the S10 sentinel shape).
+      // Renders «⋯» (U+22EF) centered, spanning all 5 columns (a single
+      // .stellipsis span in a .strow-ellipsis row — the flex row centers the
+      // single child). Discreet: muted color, smaller font, no team data.
+      // aria-hidden="true" (decorative — screen readers skip it).
+      if ((row as any).ellipsis) {
+        html += '<div class="strow strow-ellipsis"><span class="stellipsis" aria-hidden="true">\u22EF</span></div>';
+        continue;
+      }
+      const t = (row as any).team;
+      const participant = (row as any).participant;
+      // gd = (gf||0) - (ga||0) — a PRESENTATION concern (decision 4 — the
+      // selection is pure data, the renderer computes gd). Positive shows "+",
+      // zero shows "۰", negative shows "-" (the toFaDigits default — the
+      // Latin hyphen-minus, the existing site convention; no U+2212 override).
+      const gd = (Number(t.gf) || 0) - (Number(t.ga) || 0);
+      const gdStr = gd > 0 ? "+" + toFaDigits(String(gd)) : toFaDigits(String(gd));
+      // The team name + crest — .stname.haslogo when a crest exists (the
+      // versioned stylesheet's crest-capable variant: display:flex + gap + the
+      // .sttxt wrapper for the text). The crest <img> rides .stcrest (16px
+      // desktop / 14px mobile — the S11 CSS block) — lazy + async + no-referrer
+      // + onerror="this.remove()" (a failed crest removes just itself, NOT a
+      // both-portrait walk — the standings crest is independent per row).
+      const nameAtom = M.nameHtml(t.faName || t.name);
+      const nameHtml = t.crest
+        ? '<span class="stname haslogo"><img class="stcrest" src="' + esc(t.crest) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="16" height="16" onerror="this.remove()"><span class="sttxt">' + nameAtom + '</span></span>'
+        : '<span class="stname">' + nameAtom + "</span>";
+      // The row — .strow + .strow-participant (when home/away — typography-only,
+      // NO background) + .top1 (when pos 1 — the league leader, the versioned
+      // stylesheet's existing class). The 5 cells: pos | name+crest | played |
+      // gd | points. NO .ucl-hidem on played (the spec: "keep all five columns
+      // visible"). NO .stwdl W/D/L column (the spec's 5 columns don't include
+      // it). NO .stmore link (the spec: "no expandable rows, team-page
+      // navigation or extra controls" — the match-page table is read-only).
+      html += '<div class="strow' + (participant ? " strow-participant" : "") + (t.pos === 1 ? " top1" : "") + '">' +
+        '<span class="stpos' + (t.pos <= 3 ? " top3" : "") + '">' + (t.pos == null ? "—" : toFaDigits(String(t.pos))) + "</span>" +
+        nameHtml +
+        '<span class="stnum">' + (t.played == null ? "—" : toFaDigits(String(t.played))) + "</span>" +
+        '<span class="stnum stgd">' + gdStr + "</span>" +
+        '<span class="stpts">' + (t.points == null ? "—" : toFaDigits(String(t.points))) + "</span>" +
+        "</div>";
+    }
+    html += "</div>";
+    return html;
+  }).join("");
 }
 
 // v13.88-formagg: the team page's own form card — the shared renderer

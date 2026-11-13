@@ -1453,5 +1453,261 @@ check(/standings\?: string;.*\/\/ five-row context windows \(S10\/S11\)/.test(mc
 check(!/^\s*import (?!type )/m.test(mcSrc),
   "S10 composer purity: match-centre.ts has NO runtime imports (the S02 pure-leaf law holds — the standings-window module is imported by pages.ts in S11, NOT by the composer; the composer stays the pure leaf)");
 
+// ---------- 12. S11 (M4): the standings rendering + CSS (M4, session 2 of 2) ----------
+// specification §8 (Competition standings) + milestones-and-sessions.md M4/S11.
+// S11 ships the RENDERING (the unified table markup + the participant highlight +
+// the responsive mobile layout + the CSS) + the composer wiring. S10 shipped the
+// pure SELECTION logic (matchStandingsWindow) + the tests; S11 renders the S10
+// selection's output. The S10/S11 split = selection (pure DATA) vs rendering
+// (pure PRESENTATION). The team-page buildStandingsWindowHtml stays byte-frozen
+// (the match-page buildStandingsHtml is a NEW function — the S04 hero precedent:
+// pages.ts builds the HTML string, the composer wraps it in the mcentre-standings
+// anchor).
+
+// a toFaDigits helper for computing the expected Persian-digit strings.
+function s11FaDigits(s) { return String(s == null ? "" : s).replace(/\d/g, function (d) { return "\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9"[d]; }); }
+
+// (a) S11 the contract — pages.ts exports buildStandingsHtml. Extract the REAL
+// renderer via ts.transpileModule with stubbed deps (the s05DateHelpers pattern —
+// the S08 narrative + the S10 standings-window precedent). The stubs let the
+// tests control toFaDigits + esc + M.nameHtml (the 3 deps buildStandingsHtml
+// uses); the rest of pages.ts's imports are stubbed as no-ops (buildStandingsHtml
+// never calls them — only buildMatchPage/buildTeamPage/etc. do, and those are
+// never invoked during the renderer tests).
+function standingsRendererEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const src = fs.readFileSync(path.join(root, "src", "seo", "pages.ts"), "utf8")
+    .replace(/^import\s+[^;]+;\n?/gm, "")
+    .replace(/^export\s+/gm, "");
+  const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.None, target: "ES2020" } }).outputText;
+  const stubs = {
+    // the 3 real stubs buildStandingsHtml uses:
+    toFaDigits: function (s) { return s11FaDigits(s); },
+    esc: function (s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); },
+    M: { nameHtml: function (s) { return String(s == null ? "" : s); } },
+    // no-op stubs for all other imports (never called by buildStandingsHtml —
+    // only by buildMatchPage/buildTeamPage/etc. which are never invoked here):
+    SEO: {}, absUrl: function () { return ""; }, matchPath: function () { return ""; }, compSlug: function () { return ""; }, teamSlug: function () { return ""; },
+    faTime: function () { return ""; }, faDateD1: function () { return ""; }, faDateD2: function () { return ""; }, tehranDayKey: function () { return ""; }, utcTime: function () { return ""; }, statusLabelFa: function () { return ""; }, weekendWindowTehran: function () { return null; },
+    COMP_EN: {},
+    upcomingBig: function () { return []; }, upcomingFollowed: function () { return []; }, isBigForSeo: function () { return false; }, finishedRecent: function () { return []; }, teamMatches: function () { return { upcoming: [], finished: [] }; }, compMatches: function () { return []; }, teamsIndex: function () { return []; }, compsIndex: function () { return []; }, findMatchBySlug: function () { return null; }, findTeamBySlug: function () { return null; }, payloadTop3: function () { return {}; }, hydrateMatchVenue: async function () { return null; }, similarMatches: function () { return []; }, teamStandingsWindow: function () { return null; }, teamForm: function () { return null; }, teamSeasonRecord: function () { return null; }, heroArtSrv: function () { return null; },
+    JL: {}, buildHead: function () { return ""; }, pageShell: function () { return ""; },
+    seoTeamFaName: function (t) { return (t && (t.faName || t.name)) || ""; }, seoTeamAltName: function () { return null; },
+    matchCentreMain: function () { return ""; }, matchHeroHtml: function () { return ""; }, matchSummaryHtml: function () { return ""; },
+    narrativeHtml: function () { return ""; }, matchStandingsWindow: function () { return null; },
+    loadArchive: async function () { return []; }, fetchStandings: async function () { return null; }, translateTeam: function () { return ""; }
+  };
+  return new Function(...Object.keys(stubs), js + "\nreturn { buildStandingsHtml };")(...Object.values(stubs));
+}
+const sr = standingsRendererEngine();
+check(typeof sr.buildStandingsHtml === "function",
+  "S11 contract: pages.ts exports buildStandingsHtml (the match-page standings renderer — the S10/S11 split: the renderer is a NEW function in pages.ts; the team-page buildStandingsWindowHtml stays byte-frozen)");
+
+// (b) S11 the null → "" fail-closed — when matchStandingsWindow returns null
+// (the S10 fail-closed gate: cups/KO / pre-season / degenerate / neither team
+// found), buildStandingsHtml returns "" (the no-empty-cards law — the
+// composer's sectionHtml omits the mcentre-standings section; the جدول nav
+// item stays filtered out).
+check(sr.buildStandingsHtml(null) === "",
+  "S11 null fail-closed: null → \"\" (the S10 fail-closed gate — the renderer returns \"\" when the selection returns null; the composer's sectionHtml omits the mcentre-standings section; the جدول nav item stays filtered out)");
+check(sr.buildStandingsHtml([]) === "",
+  "S11 empty fail-closed: [] → \"\" (the empty-window case — the renderer returns \"\" when the selection returns an empty array; the no-empty-cards law)");
+
+// (c) S11 the 5 visible columns — رتبه | تیم | بازی | تفاضل | امتیاز. Reuse the
+// S10 fake data + the S10 selection to produce real StandingsWindow objects,
+// then render them. The mid-table match (Chelsea vs Tottenham, both in PL).
+const s11MidWindow = sw.matchStandingsWindow(mkSmS("Chelsea", "Tottenham", "PL"), ctxPL);
+const s11MidHtml = sr.buildStandingsHtml(s11MidWindow);
+check(s11MidHtml.indexOf('class="stbox stwin"') > -1 && s11MidHtml.indexOf('class="stbox-head"') > -1,
+  "S11 box: the renderer wraps the table in .stbox.stwin + .stbox-head (reuses the team-page + competition-page vocabulary — shared CSS, consistent visual language across the site; the S03 foundation precedent — no new vocabulary when the existing one fits)");
+check(s11MidHtml.indexOf('class="sthead"') > -1 && s11MidHtml.indexOf("\u0628\u0627\u0632\u06CC") > -1 && s11MidHtml.indexOf("\u062A\u0641\u0627\u0636\u0644") > -1 && s11MidHtml.indexOf("\u0627\u0645\u062A\u06CC\u0627\u0632") > -1,
+  "S11 column headers: the .sthead row carries \u0628\u0627\u0632\u06CC (played) + \u062A\u0641\u0627\u0636\u0644 (gd) + \u0627\u0645\u062A\u06CC\u0627\u0632 (points) headers — the 3 number-column headers (the pos + name columns carry no text header — .sthead-fill spans them, the position number + team name are self-evident)");
+// NO W/D/L column (the spec's 5 columns don't include it)
+check(s11MidHtml.indexOf("stwdl") === -1 && s11MidHtml.indexOf("sthead-wdl") === -1,
+  "S11 no W/D/L: the match-page renderer does NOT carry the .stwdl / .sthead-wdl column (the spec's 5 visible columns are pos | team | played | gd | points — no W/D/L; the team-page buildStandingsWindowHtml keeps it, the match-page renderer omits it)");
+// NO .stmore link (spec §8: "Static table: no expandable rows, team-page navigation or extra controls")
+check(s11MidHtml.indexOf("stmore") === -1,
+  "S11 no stmore: the match-page renderer does NOT carry the .stmore 'full table' link (spec \u00A78: 'Static table: no expandable rows, team-page navigation or extra controls' — the match-page table is a read-only context window, not a navigation surface; the team-page buildStandingsWindowHtml keeps its .stmore link)");
+// NO .ucl-hidem on the played column (spec §8: "keep all five columns visible" on mobile)
+check(s11MidHtml.indexOf("ucl-hidem") === -1,
+  "S11 no ucl-hidem: the played column does NOT carry .ucl-hidem (spec \u00A78: 'keep all five columns visible; no hidden columns' — the played column stays visible on mobile; the team-page buildStandingsWindowHtml uses .ucl-hidem, the match-page renderer does not)");
+// the 5 cells per data row: stpos | stname | stnum | stnum stgd | stpts
+check(s11MidHtml.indexOf('class="stpos') > -1 && s11MidHtml.indexOf('class="stname"') > -1 && s11MidHtml.indexOf('class="stnum"') > -1 && s11MidHtml.indexOf('class="stnum stgd"') > -1 && s11MidHtml.indexOf('class="stpts"') > -1,
+  "S11 5 columns: each data row carries .stpos (rank) + .stname (team) + .stnum (played) + .stnum.stgd (gd) + .stpts (points) — the 5 visible columns (spec \u00A78: \u0631\u062A\u0628\u0647 | \u062A\u06CC\u0645 | \u0628\u0627\u0632\u06CC | \u062A\u0641\u0627\u0636\u0644 | \u0627\u0645\u062A\u06CC\u0627\u0632)");
+// the Persian digits: pos/played/gd/points render with toFaDigits
+check(s11MidHtml.indexOf(s11FaDigits("4")) > -1 && s11MidHtml.indexOf(s11FaDigits("10")) > -1 && s11MidHtml.indexOf(s11FaDigits("16")) > -1,
+  "S11 Persian digits: the pos/played/points render with toFaDigits (the site-wide convention — the existing buildStandingsWindowHtml uses it; Chelsea pos=4 \u2192 \u00AB\u06F4\u00BB, played=10 \u2192 \u00AB\u06F1\u06F0\u00BB, points=16 \u2192 \u00AB\u06F1\u06F6\u00BB)");
+
+// (d) S11 the participant-mark typography — the home (Chelsea) + away (Tottenham)
+// rows carry .strow-participant (typography-only — decision 25; NO .strow-me
+// background). The CSS in page-shell.ts applies font-weight:600 + #7dd3fc to
+// .stname + the icy-blue color to .stpos (NO background, NO border).
+check((s11MidHtml.match(/strow strow-participant/g) || []).length === 2,
+  "S11 participant-mark: the home (Chelsea) + away (Tottenham) rows carry .strow-participant (the typography-only class — decision 25; 2 participant rows in the merged block)");
+check(s11MidHtml.indexOf("strow-me") === -1,
+  "S11 no strow-me: the match-page participant-mark is typography-only (.strow-participant — font-weight:600 + icy-blue color, NO background); the .strow-me background the team-page uses is NOT applied (decision 25 — the team-page path stays byte-frozen; the match-page participant-mark is scoped to #mcentre-standings)");
+
+// (e) S11 the gd computation (gf - ga) + the sign convention. The fake rows
+// carry gf = 20-pos, ga = pos. Chelsea (pos 4): gf=16, ga=4 → gd=+12 → «+۱۲».
+// Positive shows "+", zero shows "۰", negative shows "-" (the toFaDigits
+// default — the Latin hyphen-minus, the existing site convention).
+const chelseaGd = (20 - 4) - 4;  // = 12
+check(s11MidHtml.indexOf("+" + s11FaDigits(String(chelseaGd))) > -1,
+  "S11 gd positive: Chelsea (gf=16, ga=4) \u2192 gd = +12 \u2192 rendered as \u00AB+" + s11FaDigits("12") + "\u00BB (the gd = gf-ga computation + the + sign for positive gd + Persian digits via toFaDigits — the spec's '\u062A\u0641\u0627\u0636\u0644' column = gf-ga is S11's job; the selection does NOT pre-compute gd [S10 decision 5] — the renderer computes it [decision 4, the S04 hero projection precedent])");
+// negative gd: Everton (pos 15): gf=5, ga=15 → gd=-10 → «-۱۰»
+const s11SepWindow = sw.matchStandingsWindow(mkSmS("Arsenal", "Everton", "PL"), ctxPL);
+const s11SepHtml = sr.buildStandingsHtml(s11SepWindow);
+const evertonGd = (20 - 15) - 15;  // = -10
+check(s11SepHtml.indexOf(s11FaDigits(String(evertonGd))) > -1,
+  "S11 gd negative: Everton (gf=5, ga=15) \u2192 gd = -10 \u2192 rendered as \u00AB" + s11FaDigits("-10") + "\u00BB (the Latin hyphen-minus — the toFaDigits default; the existing site convention — toFaDigits replaces [0-9] only, not the sign; no U+2212 override)");
+// zero gd: a team with gf === ga → gd = 0 → «۰» (no + sign for zero)
+const zeroGdRow = mkStandingsRow("TestZero", 1, { gf: 5, ga: 5 });
+const zeroGdTable = mkStandingsTable([zeroGdRow, mkStandingsRow("OtherTeam", 2, { gf: 10, ga: 5 })]);
+const zeroGdCtx = { payload: { standings: { PL: zeroGdTable } } };
+const zeroGdHtml = sr.buildStandingsHtml(sw.matchStandingsWindow(mkSmS("TestZero", "OtherTeam", "PL"), zeroGdCtx));
+check(zeroGdHtml.indexOf('stnum stgd">' + s11FaDigits("0") + '<') > -1,
+  "S11 gd zero: a team with gf === ga \u2192 gd = 0 \u2192 rendered as \u00AB\u06F0\u00BB in the .stgd cell (no + sign for zero — only positive shows +; zero shows the bare Persian digit; the assertion checks the specific .stgd cell, not just \u00AB\u06F0\u00BB which also appears in played=10 \u2192 \u00AB\u06F1\u06F0\u00BB)");
+check(zeroGdHtml.indexOf('stnum stgd">+' + s11FaDigits("0") + '<') === -1,
+  "S11 gd zero no-plus: the zero-gd cell does NOT carry a + sign (only positive gd shows +; zero + negative show no + sign)");
+
+// (f) S11 the ellipsis sentinel rendering — the { ellipsis: true } sentinel
+// renders as «⋯» (U+22EF) centered, spanning all 5 columns. The separated match
+// (Arsenal vs Everton) has an ellipsis sentinel between the two neighbourhoods.
+check(s11SepHtml.indexOf("strow-ellipsis") > -1 && s11SepHtml.indexOf("stellipsis") > -1,
+  "S11 ellipsis rendering: the { ellipsis: true } sentinel renders as .strow-ellipsis + .stellipsis (\u00AB\u22EF\u00BB U+22EF centered, spanning all 5 columns — the discreet separator between separated neighbourhoods; spec \u00A78: 'Use a discreet ellipsis when ranges are separated')");
+check(s11SepHtml.indexOf("\u22EF") > -1,
+  "S11 ellipsis glyph: the sentinel renders \u00AB\u22EF\u00BB (U+22EF — the midline horizontal ellipsis; the S10 sentinel shape { ellipsis: true } \u2192 S11's discreet visual)");
+check(s11SepHtml.indexOf('aria-hidden="true"') > -1,
+  "S11 ellipsis aria-hidden: the sentinel carries aria-hidden=\"true\" (decorative — screen readers skip it; the table is still navigable by the real rows)");
+
+// (g) S11 the crest rendering — the standings_cache rows carry a crest URL.
+// The renderer renders it as a small <img class="stcrest"> anchored to the
+// team name (the .stname.haslogo variant — display:flex + gap + .sttxt).
+const crestRow = mkStandingsRow("Arsenal", 1, { crest: "https://example.com/arsenal.png" });
+const crestRow2 = mkStandingsRow("Man City", 2, { crest: "https://example.com/city.png" });
+const crestTable = mkStandingsTable([crestRow, crestRow2, mkStandingsRow("Liverpool", 3), mkStandingsRow("Chelsea", 4), mkStandingsRow("Tottenham", 5)]);
+const crestCtx = { payload: { standings: { PL: crestTable } } };
+const crestHtml = sr.buildStandingsHtml(sw.matchStandingsWindow(mkSmS("Arsenal", "Man City", "PL"), crestCtx));
+check(crestHtml.indexOf('class="stname haslogo"') > -1 && crestHtml.indexOf('class="stcrest"') > -1 && crestHtml.indexOf('class="sttxt"') > -1,
+  "S11 crest rendering: the crest <img> rides .stname.haslogo + .stcrest + .sttxt (the versioned stylesheet's crest-capable .stname variant — display:flex + gap + the text wrapper; the crest is anchored to the team name)");
+check(crestHtml.indexOf('loading="lazy"') > -1 && crestHtml.indexOf('decoding="async"') > -1 && crestHtml.indexOf('referrerpolicy="no-referrer"') > -1,
+  "S11 crest attributes: the crest <img> carries loading=\"lazy\" + decoding=\"async\" + referrerpolicy=\"no-referrer\" (the S05 hero portrait precedent — CLS-neutral + privacy + no extra requests)");
+check(crestHtml.indexOf('alt=""') > -1,
+  "S11 crest alt: the crest <img> carries alt=\"\" (decorative — the team name is the accessible name; the crest is visual context only)");
+check(crestHtml.indexOf('onerror="this.remove()"') > -1,
+  "S11 crest onerror: the crest <img> carries onerror=\"this.remove()\" (a failed crest removes just itself — NOT a both-portrait walk; the standings crest is independent per row, the both-or-neither law is the HERO's only)");
+check(crestHtml.indexOf('width="16" height="16"') > -1,
+  "S11 crest size: the crest <img> carries width=\"16\" height=\"16\" (16px desktop — the S11 CSS block in page-shell.ts drops it to 14px at the 600px mobile breakpoint; CLS-neutral — the fixed square box)");
+
+// (h) S11 the two-block case (different-competition) — TWO .stbox.stwin tables
+// stacked (one per block, each with its own competition header). The rare
+// cross-competition case (Arsenal PL vs Inter SA).
+const s11DiffWindow = sw.matchStandingsWindow(mkSmS("Arsenal", "Inter", "PL"), ctxDiff);
+const s11DiffHtml = sr.buildStandingsHtml(s11DiffWindow);
+check((s11DiffHtml.match(/class="stbox stwin"/g) || []).length === 2,
+  "S11 two-block case: different-competition \u2192 TWO .stbox.stwin tables (one per block, stacked vertically — the rare cross-competition case; spec \u00A78: 'Use one unified competition table' — each competition gets its own table when the teams play in different leagues)");
+check((s11DiffHtml.match(/class="stbox-head"/g) || []).length === 2,
+  "S11 two-block headers: each of the two tables carries its own .stbox-head competition header (the PL block + the SA block — each with its own emblem + compFa)");
+
+// (i) S11 the competition header — the block's compFa + emblem render as a
+// header row ABOVE the table (reuse .stbox-head). The fake table's compFa is
+// "TEST_COMP_FA" + the emblem is "https://example.com/emblem.png".
+check(s11MidHtml.indexOf("TEST_COMP_FA") > -1 && s11MidHtml.indexOf("https://example.com/emblem.png") > -1,
+  "S11 competition header: the block's compFa + emblem render as .stbox-head (the emblem <img> + the compFa text — reuses the team-page + competition-page vocabulary; byte-identical header shape to buildStandingsWindowHtml)");
+
+// (j) S11 the fail-closed renders "" for the S10 null cases (cups/KO + pre-season
+// + degenerate + neither team). The renderer respects the S10 gate — null → "".
+check(sr.buildStandingsHtml(sw.matchStandingsWindow(mkSmS("Arsenal", "Chelsea", "FA_CUP"), ctxCup)) === "",
+  "S11 fail-closed cups/KO: the FA_CUP match (no standings_cache) \u2192 S10 returns null \u2192 S11 renders \"\" (the mcentre-standings section is omitted; the جدول nav item stays filtered out)");
+check(sr.buildStandingsHtml(sw.matchStandingsWindow(mkSmS("Arsenal", "Chelsea", "PL"), ctxPre)) === "",
+  "S11 fail-closed pre-season: the PL table with started===false \u2192 S10 returns null \u2192 S11 renders \"\"");
+check(sr.buildStandingsHtml(sw.matchStandingsWindow(mkSmS("Arsenal", "Chelsea", "PL"), ctxDegen)) === "",
+  "S11 fail-closed degenerate: the 1-team table \u2192 S10 returns null \u2192 S11 renders \"\"");
+check(sr.buildStandingsHtml(sw.matchStandingsWindow(mkSmS("Arsenal", "Chelsea", "PL"), ctxNotFound)) === "",
+  "S11 fail-closed neither team: neither team in the table \u2192 S10 returns null \u2192 S11 renders \"\"");
+
+// (k) S11 the composer wiring — buildMatchPage calls matchStandingsWindow +
+// buildStandingsHtml + passes standings: standingsHtml to matchCentreMain AND
+// matchNavHtml. The standings string feeds BOTH the nav (so the جدول nav item
+// renders when non-empty) AND the composer (so the mcentre-standings section
+// wraps it).
+check(/import \{ matchStandingsWindow, type StandingsWindow \} from "\.\/standings-window";/.test(pagesSrc),
+  "S11 wiring import: pages.ts imports matchStandingsWindow + the StandingsWindow type from ./standings-window (the S10 module — already loaded; fullByCode is already loaded by the pre-existing fullByCodeFor await)");
+check(/const standingsHtml = buildStandingsHtml\(matchStandingsWindow\(sm, ctx, fullByCode\)\)/.test(pagesSrc),
+  "S11 wiring call: buildMatchPage calls matchStandingsWindow(sm, ctx, fullByCode) + buildStandingsHtml(window) — the S10 selection runs HERE (pure logic, zero new awaits), the renderer projects the 5 visible columns (pure string composition, zero new awaits)");
+check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formCard \}\)/.test(pagesSrc),
+  "S11 wiring nav: the standings string is passed to matchNavHtml ({ standings: standingsHtml }) so the nav's adaptive Q9=B filter renders the جدول nav item when the standings part is non-empty");
+check(/standings: standingsHtml,/.test(pagesSrc),
+  "S11 wiring composer: the standings string is passed to matchCentreMain ({ standings: standingsHtml }) so the composer wraps it in the mcentre-standings anchor (the S04 hero precedent — pages.ts builds the string, the composer wraps it)");
+
+// (l) S11 the cost law — the renderer is pure string composition. Extract
+// JUST the buildStandingsHtml function source (brace-matched) + check it for
+// AI/network/KV/timer/polling code. The whole pages.ts has legitimate fetch/KV
+// calls in OTHER functions (buildCompetitionPage etc.) — checking the whole
+// file would false-positive; the cost law is scoped to the RENDERER only.
+function extractFnSrc(src, name) {
+  var re = new RegExp("function " + name + "\\(");
+  var m = re.exec(src);
+  if (!m) return null;
+  var start = m.index;
+  var braceIdx = src.indexOf("{", start);
+  var depth = 0, end = -1;
+  for (var i = braceIdx; i < src.length; i++) {
+    if (src[i] === "{") depth++;
+    else if (src[i] === "}") { depth--; if (depth === 0) { end = i; break; } }
+  }
+  return end < 0 ? null : src.slice(start, end + 1);
+}
+const bshSrc = extractFnSrc(pagesSrc, "buildStandingsHtml");
+const bshStripped = bshSrc ? String(bshSrc).replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "") : "";
+check(bshSrc != null && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|generateText|chat\.completions/i.test(bshStripped),
+  "S11 cost law: the buildStandingsHtml function carries NO AI/network/KV/timer/polling code (the S08 zero-runtime-cost law — the renderer is pure string composition reading the S10 selection's pre-built window DATA; zero new awaits, zero new KV reads, zero new fetches; the cost check is scoped to the RENDERER function — pages.ts's other functions [buildCompetitionPage etc.] keep their legitimate fetch/KV calls, the renderer does not)");
+check(awaitCount === 3,
+  "S11 await count: buildMatchPage's await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; the S11 renderer is pure string composition reading the S10 selection's pre-built window DATA — ZERO new awaits; the zero-runtime-cost law holds)")
+
+// (m) S11 the team-page path stays byte-frozen — buildStandingsWindowHtml in
+// pages.ts is NOT modified (the match-page buildStandingsHtml is a NEW function;
+// the team-page renderer stays byte-frozen, used on team pages).
+check(/function buildStandingsWindowHtml\(stw: \{ code: string; compFa: string; emblem: string \| null; rows: any\[\]; meIdx: number \}\): string/.test(pagesSrc),
+  "S11 team-page frozen: buildStandingsWindowHtml in pages.ts is byte-frozen (the team-page standings renderer stays untouched; the match-page buildStandingsHtml is a NEW function — the S10/S11 split: the team-page path is untouched)");
+check(/function buildStandingsHtml\(window: StandingsWindow\): string/.test(pagesSrc),
+  "S11 renderer home: buildStandingsHtml is a NEW function in pages.ts (the match-page renderer — distinct from the team-page buildStandingsWindowHtml; the S04 hero precedent: pages.ts builds the HTML string, the composer wraps it)");
+
+// (n) S11 the CSS — the .mcentre-standings block rides page-shell.ts AFTER S08
+// and BEFORE the S03 foundation (chronological session order: S04 → S05 → S06
+// → S07 → S08 → S11 → S03). Scoped to #mcentre-standings; logical properties
+// only; the block's own icy/navy tokens, zero new assets/requests.
+// (shellSrc is already loaded at the top of the file — line 98.)
+// the S11 block sits AFTER the S08 block (.mcentre-nar-secondary) and BEFORE the S03 block
+check(shellSrc.indexOf(".mcentre-narrative p.mcentre-nar-secondary") < shellSrc.indexOf("Match Centre S11 (M4)") && shellSrc.indexOf("Match Centre S11 (M4)") < shellSrc.indexOf("Match Centre S03 (M1)"),
+  "S11 CSS placement: the S11 style block rides page-shell.ts AFTER S08 (.mcentre-nar-secondary) and BEFORE S03 (the responsive/spacing/RTL foundation) — chronological session order: S04 → S05 → S06 → S07 → S08 → S11 → S03");
+// the participant-mark typography — font-weight:600 + #7dd3fc on .stname, #7dd3fc on .stpos, NO background
+check(/#mcentre-standings \.strow\.strow-participant \.stname\{font-weight:600;color:#7dd3fc\}/.test(shellSrc),
+  "S11 CSS participant name: the participant .stname gets font-weight:600 + #7dd3fc (the icy-blue color — the .mfin/.mcount/.mnav-item.is-active family; typography-only, NO background — decision 25)");
+check(/#mcentre-standings \.strow\.strow-participant \.stpos\{color:#7dd3fc\}/.test(shellSrc),
+  "S11 CSS participant rank: the participant .stpos gets #7dd3fc (the icy-blue color ONLY — its existing font-weight:800 from the versioned stylesheet is already the strongest weight; 'stronger typography' via color contrast, NOT by reducing the weight)");
+// NO background on the participant-mark (decision 25 — typography-only)
+check(!/#mcentre-standings \.strow\.strow-participant\{[^}]*background/.test(shellSrc),
+  "S11 CSS no participant background: the .strow-participant class carries NO background (decision 25 — typography-only participant highlight; the .strow-me background the team-page uses is NOT applied to the match page)");
+// the crest sizing — 16px desktop, 14px mobile
+check(/#mcentre-standings \.stcrest\{width:16px;height:16px/.test(shellSrc),
+  "S11 CSS crest desktop: the crest <img> is 16px desktop (object-fit:contain — CLS-neutral; the fixed square box)");
+check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-standings \.stcrest\{width:14px;height:14px/.test(shellSrc),
+  "S11 CSS crest mobile: the crest <img> drops to 14px at the 600px mobile breakpoint (spec §8: 'optimize padding and typography')");
+// the ellipsis rendering — .strow-ellipsis + .stellipsis
+check(/#mcentre-standings \.strow\.strow-ellipsis\{justify-content:center/.test(shellSrc),
+  "S11 CSS ellipsis: the .strow-ellipsis centers the «⋯» (justify-content:center — the single .stellipsis child is centered horizontally, spanning all 5 columns)");
+// the mobile layout — all 5 columns visible, no horizontal scroll, team names readable
+check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-standings \.strow\{font-size:11px/.test(shellSrc),
+  "S11 CSS mobile font: the .strow font-size drops to 11px at ≤600px (spec §8: 'optimize padding and typography' — all 5 columns stay visible with no horizontal scroll)");
+check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-standings \.stnum\{width:20px/.test(shellSrc),
+  "S11 CSS mobile columns: the .stnum width drops to 20px at ≤600px (the number columns narrow so all 5 stay visible — NO .ucl-hidem, no hidden columns)");
+// logical properties only — no physical properties (margin-left/right, padding-left/right, etc.)
+check(!/#mcentre-standings[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc),
+  "S11 CSS logical properties: the S11 block uses CSS logical properties ONLY (margin-block, padding-block, inset-inline, text-align — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties)");
+// the جدول nav item renders when the standings part is non-empty (the nav's adaptive Q9=B filter)
+check(/standings\?: string;.*\/\/ five-row context windows \(S10\/S11\)/.test(mcSrc),
+  "S11 nav جدول item: MatchCentreParts.standings? (the slot + the mcentre-standings section) exist since S02 — S11 populates it; the nav's adaptive Q9=B filter renders the جدول nav item when the standings part is non-empty (the matchNavHtml call now passes standings: standingsHtml)");
+
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

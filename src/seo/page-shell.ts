@@ -433,6 +433,78 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
 .mcentre-narrative p{margin:0;line-height:1.9;text-align:start;color:var(--fg,#e8eefc)}
 .mcentre-narrative p.mcentre-nar-primary{font-size:1.02rem;font-weight:600}
 .mcentre-narrative p.mcentre-nar-secondary{margin-block-start:8px;font-size:.94rem;color:var(--muted,#9aa4b2)}
+/* ---- Match Centre S11 (M4): the standings renderer (specification §8)
+   The unified competition table's presentation — the match-page-specific
+   standings rendering. The S10 selection (src/seo/standings-window.ts —
+   matchStandingsWindow) computed the pure DATA (both teams' five-row
+   neighbourhoods, merged/touching/separated, with the participant-mark + the
+   ellipsis sentinel + the fail-closed gate). pages.ts buildStandingsHtml
+   projects the 5 visible columns (رتبه | تیم | بازی | تفاضل | امتیاز) from the
+   S10 selection's full-row data + computes gd = gf-ga + applies the
+   participant-mark typography + renders the ellipsis sentinel. THIS block
+   owns the presentation: the participant-mark typography (decision 25 —
+   typography-only, NO row background), the crest sizing, the ellipsis
+   rendering, + the responsive mobile layout (all 5 columns visible, no
+   horizontal scroll, team names readable).
+   REUSES the site's .stbox/.strow/.stpos/.stname/.stnum/.stpts vocabulary
+   (public-13.87.css — the competition tables already render those; shared CSS,
+   consistent visual language across the site). The .strow-me background
+   highlight the team-page uses is NOT applied here — the match-page
+   participant-mark is typography-only (decision 25); scoped to
+   #mcentre-standings so the team-page .strow-me (used by
+   buildStandingsWindowHtml) stays byte-frozen. CSS logical properties ONLY
+   (margin-block, padding-block, inset-inline, text-align — RTL/LTR clean under
+   a dir flip, decision 2). The block's own icy/navy tokens (#7dd3fc — the
+   .mfin/.mcount/.mnav-item.is-active family), zero new assets/requests. */
+/* The participant-mark (decision 25 — typography-only): the participating
+   team NAME gets font-weight:600 + the icy-blue color (#7dd3fc). The rank
+   (.stpos) gets the icy-blue color ONLY (its existing font-weight:800 from
+   the versioned stylesheet is already the strongest weight — "stronger
+   typography" is achieved by the icy-blue color contrast, NOT by reducing
+   the weight; the brief's "font-weight 600" applies to the NAME which needs
+   to become bolder from its default normal weight). NO background, NO border
+   (the .strow-me background the team-page uses is NOT applied — the match-page
+   participant-mark is typography-only). Scoped to #mcentre-standings so the
+   team-page .strow-me stays byte-frozen (the team-page path is untouched). */
+#mcentre-standings .strow.strow-participant .stname{font-weight:600;color:#7dd3fc}
+#mcentre-standings .strow.strow-participant .stpos{color:#7dd3fc}
+/* The crest — a small <img> anchored to the team name (the .stname.haslogo
+   variant — display:flex + gap + the .sttxt wrapper). 16px desktop, 14px
+   mobile (the 600px breakpoint). alt="" decorative (the team name is the
+   accessible name). lazy + async + no-referrer (the S05 hero portrait
+   precedent). object-fit:contain so the crest keeps its aspect ratio in the
+   fixed square box (CLS-neutral). border-radius:2px for a slight corner softening. */
+#mcentre-standings .stcrest{width:16px;height:16px;object-fit:contain;flex-shrink:0;border-radius:2px}
+/* The gd column (تفاضل) — reuses .stnum (width:24px) + a min-width override
+   so the sign (+/-) fits without overflow. The gd value can be negative
+   (e.g. "-۳") or positive ("+۵") — the sign + 2 Persian digits need ~28px
+   at the 11.5px font-size. */
+#mcentre-standings .stgd{min-width:28px}
+#mcentre-standings .sthead-gd{min-width:28px}
+/* The ellipsis sentinel — «⋯» (U+22EF) centered, spanning all 5 columns.
+   A single .stellipsis span in a .strow-ellipsis row (the flex row centers
+   the single child via justify-content:center). Discreet: muted color,
+   smaller font, no team data. aria-hidden="true" (decorative — screen readers
+   skip it; the table is still navigable by the real rows). */
+#mcentre-standings .strow.strow-ellipsis{justify-content:center;padding:3px 0;opacity:.55}
+#mcentre-standings .stellipsis{font-size:14px;letter-spacing:2px;color:var(--muted,#9aa4b2)}
+/* The mobile layout (spec §8: "keep all five columns visible; optimize padding
+   and typography; no horizontal scrolling or hidden columns; team names must
+   remain readable"). At ≤600px: smaller font (11.5px→11px), tighter padding
+   (2.5px→2px) + gap (5px→3px), narrower number columns (24px→20px, gd 28→24px),
+   + the crest drops to 14px. The .stname keeps its overflow:hidden +
+   text-overflow:ellipsis + white-space:nowrap (the versioned stylesheet's
+   existing behavior) so long team names truncate to one line — readable, no
+   horizontal scroll. The played column stays visible (NO .ucl-hidem — the
+   spec's "no hidden columns"). */
+@media (max-width:600px){
+  #mcentre-standings .strow{font-size:11px;padding:2px 0;gap:3px}
+  #mcentre-standings .stnum{width:20px}
+  #mcentre-standings .stgd{min-width:24px}
+  #mcentre-standings .sthead-gd{min-width:24px}
+  #mcentre-standings .stpts{min-width:28px}
+  #mcentre-standings .stcrest{width:14px;height:14px}
+}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
    effect on any page without a mcentre-* section. Breakpoints and tokens are
