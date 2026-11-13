@@ -190,6 +190,17 @@ function workerSrc() {
     // centre S08 group extracts it via ts.transpileModule with stubbed deps for
     // the behavioral assertions — the s05DateHelpers pattern).
     "seo/narrative.ts",
+    // Match Centre S10 (M4): the standings selection/window logic — the pure
+    // data layer for the unified competition table. Sits AFTER narrative.ts
+    // (the composer stays the pure leaf — it never imports this module; S11's
+    // pages.ts buildMatchPage will call matchStandingsWindow + pass the pre-built
+    // window DATA to the renderer). The module reads the SAME already-loaded
+    // standings data (ctx.payload.standings ×7 + fullByCode from fullByCodeFor)
+    // — zero new awaits, zero new KV reads, zero new fetches (the zero-runtime-
+    // cost law). Registered for the concat-based self-checks (the check-match-
+    // centre S10 group extracts it via ts.transpileModule with stubbed deps for
+    // the behavioral assertions — the s05DateHelpers pattern, same as S08).
+    "seo/standings-window.ts",
   ];
   const parts = [];
   for (const f of order) {

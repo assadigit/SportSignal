@@ -1154,5 +1154,304 @@ check(["rivalry", "knockout-stage", "top-table", "derby", "big-club"].every((id)
 check(matrixDoc.indexOf("به پایان رسید") > -1 && matrixDoc.indexOf("upcoming") > -1 && matrixDoc.indexOf("finished") > -1,
   "S09 trigger matrix doc lifecycles: the matrix documents the lifecycle tense switching (upcoming/live → present-tense variants; finished → past-tense + significance — the «به پایان رسید» marker) across representative matches");
 
+// ---------- 12. S10 (M4): the standings selection/window logic ----------
+// specification §8 (M4/S10) + milestones-and-sessions.md M4/S10 — the unified
+// competition table's DATA layer. S10 ships the pure SELECTION logic (the
+// five-row neighbourhood for both teams, the merge/touch/ellipsis, the
+// participant-mark, the fail-closed gate) + the tests; S11 ships the renderer
+// (the unified table markup + the participant highlight + the responsive mobile
+// layout + the CSS) + the composer wiring. The S10/S11 split = selection vs
+// rendering (the spec's design). The selection is PURE LOGIC — zero KV reads,
+// zero awaits, zero fetches (the S08 narrative precedent, audit §R3: the
+// standings are already loaded by getSeoCtx + fullByCodeFor). The new module
+// src/seo/standings-window.ts owns the algorithm; the existing team-page
+// teamStandingsWindow (data.ts) is NOT modified (the team-page path stays
+// byte-frozen). The composer stays the S02 pure leaf (zero runtime imports).
+
+// (a) S10 the cost law — the new module is pure logic (zero AI/network/KV/
+// timer/polling). The same regex the S08 narrative engine is gated on.
+const swSrc = read("src/seo/standings-window.ts");
+check(!/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|generateText|chat\.completions/i.test(swSrc),
+  "S10 cost law: the standings-window module (src/seo/standings-window.ts) carries NO AI/network/KV/timer/polling code (the S08 zero-runtime-cost law — the module reads from the already-loaded standings_cache + fullByCode; zero new awaits, zero new KV reads, zero new fetches)");
+// the module's runtime imports are the SAME seo/* helpers pages.ts already
+// imports (normalizeTeamName + COMP_EN + the type-only SeoMatch/SeoCtx) — zero
+// new dependency surface.
+check(/^import \{ normalizeTeamName \} from "\.\.\/teams";/m.test(swSrc) &&
+  /^import \{ COMP_EN \} from "\.\.\/tables";/m.test(swSrc) &&
+  /^import type \{ SeoMatch, SeoCtx \} from "\.\/data";/m.test(swSrc),
+  "S10 imports: the standings-window module imports ONLY normalizeTeamName (teams) + COMP_EN (tables) + the type-only SeoMatch/SeoCtx (data) — the SAME seo/* helpers pages.ts already imports; zero new dependency surface");
+
+// (b) S10 harness co-evolution — worker-src.js carries the new module after
+// narrative.ts (the seo group grows).
+check(harnessSrc.indexOf('"seo/standings-window.ts"') > -1 &&
+  harnessSrc.indexOf('"seo/standings-window.ts"') > harnessSrc.indexOf('"seo/narrative.ts"'),
+  "S10 harness: worker-src.js carries seo/standings-window.ts after seo/narrative.ts (the S10 module joins the seo group — the co-evolution law)");
+
+// (c) S10 the contract — the module exports its surface. Extract the REAL
+// module via ts.transpileModule with stubbed deps (the s05DateHelpers pattern —
+// the S08 narrative precedent). The stubs let the tests control the
+// normalizeTeamName + COMP_EN; the module's pure logic (the lookup + the
+// neighbourhood + the merge/touch/ellipsis + the participant-mark + the
+// fail-closed gate) runs unmodified.
+function standingsWindowEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const src = fs.readFileSync(path.join(root, "src", "seo", "standings-window.ts"), "utf8")
+    .replace(/^import\s+[^;]+;\n?/gm, "")
+    .replace(/^export\s+/gm, "");
+  const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.None, target: "ES2020" } }).outputText;
+  const stubs = {
+    // normalizeTeamName: identity-lowercase (the same stub the S08 narrative
+    // test uses — so the test's fake teams match by lowercased name).
+    normalizeTeamName: function (n) { return String(n || "").toLowerCase(); },
+    // COMP_EN: a minimal stub — the test controls the fallback competition name.
+    COMP_EN: { PL: "Premier League", PD: "La Liga", SA: "Serie A", BL1: "Bundesliga", FL1: "Ligue 1", CL: "Champions League", PGL: "Persian Gulf Pro League" }
+  };
+  return new Function(...Object.keys(stubs), js + "\nreturn { matchStandingsWindow };")(...Object.values(stubs));
+}
+const sw = standingsWindowEngine();
+check(typeof sw.matchStandingsWindow === "function",
+  "S10 contract: the standings-window module (src/seo/standings-window.ts) exports matchStandingsWindow (the unified-window entry point)");
+
+// Build a fake SeoMatch + ctx for the behavioral assertions. The fake
+// standings tables carry the full row shape (pos/name/faName/crest/points/
+// played/won/draw/lost/gf/ga) — the same shape the real standings_cache rows
+// carry (audit §R3/§67). The gd column (gf-ga) is computed by S11's renderer,
+// not the selection — the selection returns the full row (decision 4).
+function mkStandingsRow(name, pos, opts) {
+  opts = opts || {};
+  return {
+    name: name,
+    pos: pos,
+    faName: opts.faName || name,
+    crest: opts.crest || null,
+    points: opts.points != null ? opts.points : (20 - pos),
+    played: opts.played != null ? opts.played : 10,
+    won: opts.won != null ? opts.won : (10 - pos),
+    draw: opts.draw != null ? opts.draw : 0,
+    lost: opts.lost != null ? opts.lost : pos,
+    gf: opts.gf != null ? opts.gf : (20 - pos),
+    ga: opts.ga != null ? opts.ga : pos
+  };
+}
+function mkStandingsTable(teams, started) {
+  return { started: started !== false, faName: "TEST_COMP_FA", emblem: "https://example.com/emblem.png", teams: teams };
+}
+function mkSmS(home, away, code) {
+  return {
+    s: {
+      homeTeam: { name: home }, awayTeam: { name: away },
+      competition: { code: code || "PL", faName: "لیگ برتر انگلیس" }
+    },
+    raw: { status: "SCHEDULED" }
+  };
+}
+
+// (d) S10 the neighbourhood size — five rows around each participating team
+// (the team's row ± 2, clamped at the table edges).
+const plTeams = [
+  mkStandingsRow("Arsenal", 1), mkStandingsRow("Man City", 2), mkStandingsRow("Liverpool", 3),
+  mkStandingsRow("Chelsea", 4), mkStandingsRow("Tottenham", 5), mkStandingsRow("Man United", 6),
+  mkStandingsRow("Newcastle", 7), mkStandingsRow("Brighton", 8), mkStandingsRow("West Ham", 9),
+  mkStandingsRow("Aston Villa", 10), mkStandingsRow("Brentford", 11), mkStandingsRow("Fulham", 12),
+  mkStandingsRow("Wolves", 13), mkStandingsRow("Palace", 14), mkStandingsRow("Everton", 15),
+  mkStandingsRow("Brentford2", 16), mkStandingsRow("Forest", 17), mkStandingsRow("Luton", 18),
+  mkStandingsRow("Burnley", 19), mkStandingsRow("Sheffield", 20)
+];
+const ctxPL = { payload: { standings: { PL: mkStandingsTable(plTeams) } } };
+
+// mid-table match: both teams near the middle → 5-row window each, centered.
+const midMatch = sw.matchStandingsWindow(mkSmS("Chelsea", "Tottenham", "PL"), ctxPL);
+check(midMatch !== null && midMatch.length === 1,
+  "S10 same-competition: both teams in the same competition's standings → ONE block (the unified window — spec §8: 'Use one unified competition table')");
+const midBlock = midMatch && midMatch[0];
+check(midBlock && midBlock.code === "PL" && midBlock.compFa === "TEST_COMP_FA" && midBlock.emblem === "https://example.com/emblem.png",
+  "S10 block shape: the block carries the code + the compFa (st.faName || COMP_EN[code] || code — the teamStandingsWindow precedent) + the emblem (st.emblem || null)");
+// Chelsea at pos 4, Tottenham at pos 5 → neighbourhoods [2,3,4,5,6] and [3,4,5,6,7]
+// → overlapping → MERGE → the union [2,3,4,5,6,7] = 6 rows.
+check(midBlock && midBlock.rows.length === 6 && !midBlock.rows.some((r) => r.ellipsis),
+  "S10 merge overlapping: Chelsea (pos 4) + Tottenham (pos 5) → neighbourhoods [2-6] + [3-7] overlap → MERGE into the union [2-7] = 6 rows (NO ellipsis — the ranges overlap, spec §8: 'Merge overlapping or touching ranges')");
+// the participant-mark: Chelsea + Tottenham are marked home + away.
+const chelseaRow = midBlock && midBlock.rows.find((r) => r.team && r.team.name === "Chelsea");
+const totRow = midBlock && midBlock.rows.find((r) => r.team && r.team.name === "Tottenham");
+check(chelseaRow && chelseaRow.participant === "home" && totRow && totRow.participant === "away",
+  "S10 participant-mark: the home (Chelsea) + away (Tottenham) rows carry participant='home'/'away'; every other row carries null (S11 applies the typography-only icy-blue highlight — decision 25, NO row background)");
+// the non-participant rows carry null participant.
+check(midBlock && midBlock.rows.filter((r) => r.team && r.participant === null).length === 4,
+  "S10 participant-mark discipline: the 4 non-participant rows in the merged block carry participant=null (only the home+away rows are marked; the union's contextual rows are NOT marked)");
+
+// (e) S10 the merge/touch/ellipsis boundary — three cases.
+// TOUCH (gap 0 — adjacent): Arsenal (pos 1) vs Man City (pos 2) → neighbourhoods
+// [1-5] + [1-5] → overlap (the windows are identical) → MERGE → 5 rows.
+const touchMatch = sw.matchStandingsWindow(mkSmS("Arsenal", "Man City", "PL"), ctxPL);
+const touchBlock = touchMatch && touchMatch[0];
+check(touchBlock && touchBlock.rows.length === 5 && !touchBlock.rows.some((r) => r.ellipsis),
+  "S10 touch adjacent: Arsenal (pos 1) + Man City (pos 2) → neighbourhoods [1-5] + [1-5] overlap → MERGE → 5 rows (no ellipsis — the ranges overlap, the union is contiguous)");
+// TOUCH (gap 1 — one row between): Chelsea (pos 4) vs Man United (pos 6) →
+// neighbourhoods [2-6] + [4-8] overlap (startB=4 <= endA=6) → MERGE → 7 rows.
+const touch1Match = sw.matchStandingsWindow(mkSmS("Chelsea", "Man United", "PL"), ctxPL);
+const touch1Block = touch1Match && touch1Match[0];
+check(touch1Block && touch1Block.rows.length === 7 && !touch1Block.rows.some((r) => r.ellipsis),
+  "S10 touch 1-row gap: Chelsea (pos 4) + Man United (pos 6) → neighbourhoods [2-6] + [4-8] overlap → MERGE → 7 rows (the gap row IS included — it's contextual between the two neighbourhoods, not 'intervening' in the separated-ranges sense)");
+// SEPARATED (gap ≥ 2): Arsenal (pos 1) vs Everton (pos 15) → neighbourhoods
+// [1-5] + [13-17] → gap = 13 - 6 = 7 (>= 2) → ELLIPSIS → 5 + 1 + 5 = 11 rows.
+const sepMatch = sw.matchStandingsWindow(mkSmS("Arsenal", "Everton", "PL"), ctxPL);
+const sepBlock = sepMatch && sepMatch[0];
+check(sepBlock && sepBlock.rows.length === 11 && sepBlock.rows.filter((r) => r.ellipsis).length === 1,
+  "S10 separated: Arsenal (pos 1) + Everton (pos 15) → neighbourhoods [1-5] + [13-17] gap >= 2 → ELLIPSIS sentinel + show both neighbourhoods (5 + 1 + 5 = 11 entries; the intervening teams are NOT loaded/displayed — spec §8: 'Use a discreet ellipsis when ranges are separated' + 'Do not load or display intervening teams')");
+const sepEllipsis = sepBlock && sepBlock.rows.find((r) => r.ellipsis);
+check(sepEllipsis && sepEllipsis.ellipsis === true && sepEllipsis.team === undefined,
+  "S10 ellipsis sentinel shape: the sentinel row carries { ellipsis: true } with NO team data (S11 renders «⋯» with no pos/name/played/gd/points cells — the discreet separator)");
+// the ellipsis sits BETWEEN the two neighbourhoods (after the home's 5 rows, before the away's 5 rows).
+const sepEllipsisIdx = sepBlock ? sepBlock.rows.findIndex((r) => r.ellipsis) : -1;
+check(sepEllipsisIdx === 5,
+  "S10 ellipsis placement: the sentinel sits at index 5 (after the lower-positioned team's 5-row neighbourhood, before the higher-positioned team's 5-row neighbourhood — the standings order, top to bottom)");
+// the participant-mark: Arsenal (home) is in the first neighbourhood, Everton (away) in the second.
+const sepHome = sepBlock && sepBlock.rows.slice(0, 5).find((r) => r.team && r.team.name === "Arsenal");
+const sepAway = sepBlock && sepBlock.rows.slice(6).find((r) => r.team && r.team.name === "Everton");
+check(sepHome && sepHome.participant === "home" && sepAway && sepAway.participant === "away",
+  "S10 separated participant-mark: the home (Arsenal) row in the first neighbourhood carries participant='home'; the away (Everton) row in the second neighbourhood carries participant='away' (the ellipsis sentinel carries no mark)");
+
+// (f) S10 the edge cases — team at pos 1 (no rows above) + team at pos N (no
+// rows below). The neighbourhood clamps at the table boundary (fewer than 5
+// rows is acceptable at the edges; no fabricated rows).
+const edgeTopMatch = sw.matchStandingsWindow(mkSmS("Arsenal", "Liverpool", "PL"), ctxPL);
+// Arsenal (pos 1) + Liverpool (pos 3) → neighbourhoods [1-5] + [1-5] overlap → MERGE → 5 rows.
+const edgeTopBlock = edgeTopMatch && edgeTopMatch[0];
+check(edgeTopBlock && edgeTopBlock.rows.length === 5 && edgeTopBlock.rows[0].team.pos === 1,
+  "S10 edge top: Arsenal (pos 1) → neighbourhood [1-5] (clamped at the table top — no rows above, no fabricated rows; the team's row ± 2 with edge clamping, the teamStandingsWindow precedent)");
+// Sheffield (pos 20, last) + Burnley (pos 19) → BOTH at the table bottom →
+// both neighbourhoods clamp to [16-20] (the team's row ± 2 with edge clamping:
+// start = max(0, min(idx-2, max(0, len-5))) = max(0, min(17, 15)) = 15 → slice
+// [15..20) = pos 16-20). The two neighbourhoods are IDENTICAL → overlap →
+// MERGE → 5 rows (the union of two identical ranges is the same 5 rows). The
+// last row is pos 20 (Sheffield, clamped at the bottom — no rows below, no
+// fabricated rows; the spec's 'fewer than 5 rows is acceptable at the edges').
+const edgeBotMatch = sw.matchStandingsWindow(mkSmS("Burnley", "Sheffield", "PL"), ctxPL);
+const edgeBotBlock = edgeBotMatch && edgeBotMatch[0];
+check(edgeBotBlock && edgeBotBlock.rows.length === 5 && edgeBotBlock.rows[edgeBotBlock.rows.length - 1].team.pos === 20,
+  "S10 edge bottom: Sheffield (pos 20, last) + Burnley (pos 19) → both neighbourhoods clamp to [16-20] (start = max(0, min(idx-2, max(0, len-5))) = 15 → slice [15..20)) → IDENTICAL → MERGE → 5 rows; the last row is pos 20 (clamped at the table bottom — no rows below, no fabricated rows; the spec's 'fewer than 5 rows is acceptable at the edges')");
+
+// (g) S10 the different-competition branch — both teams in DIFFERENT
+// competitions (the rare cross-competition case: a friendly/super-cup between
+// teams from different leagues). Two separate blocks (one per competition).
+const saTeams = [
+  mkStandingsRow("Inter", 1), mkStandingsRow("Milan", 2), mkStandingsRow("Juventus", 3),
+  mkStandingsRow("Napoli", 4), mkStandingsRow("Roma", 5), mkStandingsRow("Lazio", 6),
+  mkStandingsRow("Atalanta", 7), mkStandingsRow("Fiorentina", 8), mkStandingsRow("Bologna", 9),
+  mkStandingsRow("Torino", 10)
+];
+const ctxDiff = { payload: { standings: { PL: mkStandingsTable(plTeams), SA: mkStandingsTable(saTeams) } } };
+// Arsenal (PL) vs Inter (SA) — different competitions → two blocks.
+const diffMatch = sw.matchStandingsWindow(mkSmS("Arsenal", "Inter", "PL"), ctxDiff);
+check(diffMatch !== null && diffMatch.length === 2,
+  "S10 different-competition: home (Arsenal, PL) + away (Inter, SA) in DIFFERENT competitions → TWO blocks (the rare cross-competition case — one block per team's competition; spec §8: 'Use one unified competition table' — each competition gets its own table when the teams play in different leagues)");
+const diffHome = diffMatch && diffMatch.find((b) => b.code === "PL");
+const diffAway = diffMatch && diffMatch.find((b) => b.code === "SA");
+check(diffHome && diffAway && diffHome.rows.some((r) => r.team && r.team.name === "Arsenal" && r.participant === "home") &&
+  diffAway.rows.some((r) => r.team && r.team.name === "Inter" && r.participant === "away"),
+  "S10 different-competition blocks: the PL block carries Arsenal (participant='home'); the SA block carries Inter (participant='away') — each team's neighbourhood in its own competition's table");
+
+// (h) S10 the fail-closed gate — returns null when:
+//   - the standings cache is missing (covers cups/KO — no league table).
+//   - st.started === false (pre-season — FD roster-alphabetical, no matches played).
+//   - the table has <2 teams (degenerate).
+//   - NEITHER team is found in the table.
+// cups/KO: a cup competition (FA_CUP) has no standings_cache entry → null.
+const ctxCup = { payload: { standings: {} } };
+const cupMatch = sw.matchStandingsWindow(mkSmS("Arsenal", "Chelsea", "FA_CUP"), ctxCup);
+check(cupMatch === null,
+  "S10 fail-closed cups/KO: the fixture's competition (FA_CUP) has no standings_cache entry → null (cups/KO have no league table — the audit §67: 'cups/KO → not applicable'; the missing-cache gate handles them naturally; the mcentre-standings section is omitted, the جدول nav item stays filtered out)");
+// pre-season: the table exists but started === false → null.
+const ctxPre = { payload: { standings: { PL: mkStandingsTable(plTeams, false) } } };
+const preMatch = sw.matchStandingsWindow(mkSmS("Arsenal", "Chelsea", "PL"), ctxPre);
+check(preMatch === null,
+  "S10 fail-closed pre-season: the table exists but st.started === false → null (pre-season — FD roster-alphabetical, no matches played; the audit §67: 'pre-season (started:false) → drop section fail-closed'; the public-matches.ts/digest-weekly.ts/seo/markup.ts gates use the same flag)");
+// degenerate: the table has <2 teams → null.
+const ctxDegen = { payload: { standings: { PL: mkStandingsTable([mkStandingsRow("Arsenal", 1)]) } } };
+const degenMatch = sw.matchStandingsWindow(mkSmS("Arsenal", "Chelsea", "PL"), ctxDegen);
+check(degenMatch === null,
+  "S10 fail-closed degenerate: the table has <2 teams → null (a 1-team table is not a table; the fail-closed gate)");
+// neither team found: the table exists but neither team is in it → null.
+const ctxNotFound = { payload: { standings: { PL: mkStandingsTable([mkStandingsRow("Real Madrid", 1), mkStandingsRow("Barcelona", 2), mkStandingsRow("Atletico", 3), mkStandingsRow("Sevilla", 4), mkStandingsRow("Valencia", 5)]) } } };
+const notFoundMatch = sw.matchStandingsWindow(mkSmS("Arsenal", "Chelsea", "PL"), ctxNotFound);
+check(notFoundMatch === null,
+  "S10 fail-closed neither team: the table exists but neither participating team is in it → null (the team isn't in this competition's standings; no fabricated rows; the no-empty-cards law — the section is omitted)");
+
+// (i) S10 only ONE team found → a single-team window (the spec's "five-row
+// neighbourhood around each participating team" doesn't require BOTH to be
+// found — show the ones we CAN find, no fabricated rows). The home team is in
+// the PL table; the away team is NOT (a lower-division side not covered).
+const ctxOne = { payload: { standings: { PL: mkStandingsTable(plTeams) } } };
+const oneMatch = sw.matchStandingsWindow(mkSmS("Arsenal", "Real Madrid", "PL"), ctxOne);
+check(oneMatch !== null && oneMatch.length === 1 && oneMatch[0].code === "PL",
+  "S10 single-team: only the home team (Arsenal) is found in the PL table; the away (Real Madrid) is NOT in any standings_cache → a single-team window (ONE block, the home team's 5-row neighbourhood; the spec's 'five-row neighbourhood around each participating team' doesn't require BOTH to be found — show the ones we CAN find, no fabricated rows)");
+const oneBlock = oneMatch && oneMatch[0];
+check(oneBlock && oneBlock.rows.some((r) => r.team && r.team.name === "Arsenal" && r.participant === "home") &&
+  !oneBlock.rows.some((r) => r.participant === "away"),
+  "S10 single-team mark: the home (Arsenal) row carries participant='home'; no row carries participant='away' (the away team isn't in the standings — no fabricated mark)");
+
+// (j) S10 the column projection discipline — the selection returns the FULL
+// row data (the raw standings_cache row: pos/name/faName/crest/points/played/
+// won/draw/lost/gf/ga); S11's renderer projects the 5 visible columns (pos |
+// team+crest | played | gd=gf-ga | points). The won/draw/lost/gf/ga stay in
+// the cache, NOT displayed by S11 (the spec's "Do not load or display
+// intervening teams" discipline extends to columns: only the 5 visible columns
+// surface).
+const projBlock = midBlock;
+check(projBlock && projBlock.rows.every((r) => !r.ellipsis ? (
+  r.team && typeof r.team.pos === "number" && typeof r.team.name === "string" &&
+  "faName" in r.team && "crest" in r.team && "points" in r.team &&
+  "played" in r.team && "won" in r.team && "draw" in r.team && "lost" in r.team &&
+  "gf" in r.team && "ga" in r.team
+) : true),
+  "S10 column projection: the selection returns the FULL row data (pos/name/faName/crest/points/played/won/draw/lost/gf/ga — the audit §R3 full-row shape); S11's renderer projects the 5 visible columns (pos | team+crest | played | gd=gf-ga | points) — the selection is pure DATA, the renderer is pure presentation (decision 4 — the S04 hero projection precedent)");
+// gd is NOT pre-computed by the selection — S11 computes it (gf-ga).
+check(!projBlock || !projBlock.rows.some((r) => r.team && "gd" in r.team),
+  "S10 no pre-computed gd: the selection does NOT pre-compute gd (gf-ga) — the row carries gf + ga, S11's renderer computes gd (keeps the selection pure data; the spec's 'تفاضل' column = gf-ga is a presentation concern)");
+
+// (k) S10 the fullByCode precedence — when fullByCode has the fixture's code,
+// it wins over the payload's top-8 compact (the freshest, complete source —
+// the teamStandingsWindow precedent). A rank-9+ team invisible to the top-8
+// compact is found via fullByCode.
+const compactTeams = plTeams.slice(0, 8); // the payload compact only carries the top-8
+const fullByCodeFull = { PL: mkStandingsTable(plTeams) }; // the full cached table (all 20 teams)
+const ctxCompact = { payload: { standings: { PL: mkStandingsTable(compactTeams) } } };
+// Burnley is at pos 19 — invisible to the top-8 compact (which only has pos 1-8),
+// visible to the full table. The lookup must find Burnley via fullByCode (the
+// full table wins over the compact per the teamStandingsWindow precedent).
+const rank19Match = sw.matchStandingsWindow(mkSmS("Burnley", "Sheffield", "PL"), ctxCompact, fullByCodeFull);
+const rank19Block = rank19Match && rank19Match[0];
+check(rank19Block && rank19Block.code === "PL" &&
+  rank19Block.rows.some((r) => r.team && r.team.name === "Burnley" && r.participant === "home") &&
+  rank19Block.rows.some((r) => r.team && r.team.name === "Sheffield" && r.participant === "away"),
+  "S10 fullByCode precedence: the full cached table (fullByCode) wins over the payload's top-8 compact — a rank-19 team (Burnley, invisible to the top-8) is found via fullByCode; the teamStandingsWindow precedent (the full table is the freshest, complete source — already loaded by buildMatchPage's fullByCodeFor)");
+
+// (l) S10 buildMatchPage's await count stays 3 — the standings-window module
+// adds ZERO awaits (the zero-runtime-cost law). The S08 cost law already gates
+// this for the narrative engine; S10 re-asserts it for the standings-window.
+// (The existing cost-law check above already asserts awaitCount === 3 — S10
+// does NOT touch buildMatchPage, so the await count stays 3 by construction.
+// This re-assertion documents the S10 contribution to the cost law.)
+check(awaitCount === 3,
+  "S10 await count: buildMatchPage's await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; the standings-window module is pure logic reading the already-loaded standings_cache + fullByCode — ZERO new awaits; the zero-runtime-cost law holds; S10 does NOT touch buildMatchPage)");
+
+// (m) S10 the team-page path stays byte-frozen — teamStandingsWindow in
+// data.ts is NOT modified (the S10 unified-window computes both neighbourhoods
+// directly; the team-page path stays byte-frozen).
+const dataSrc = read("src/seo/data.ts");
+check(/export function teamStandingsWindow\(ctx: SeoCtx, teamName: string, next: SeoMatch \| null, fullByCode\?: Record<string, any>\): \{ code: string; compFa: string; emblem: string \| null; rows: any\[\]; meIdx: number \} \| null/.test(dataSrc),
+  "S10 team-page frozen: teamStandingsWindow in src/seo/data.ts is byte-frozen (the team-page standings path stays untouched; the unified-window for the match page computes both neighbourhoods directly from the standings_cache rows — the spec's S10/S11 split: the team-page renderer buildStandingsWindowHtml stays byte-frozen too, used on team pages)");
+
+// (n) S10 the composer stays the S02 pure leaf — the mcentre-standings slot +
+// MatchCentreParts.standings? exist since S02 (the slot is wired to receive
+// the pre-built window STRING in S11; S10 ships the SELECTION logic only, the
+// mcentre-standings section stays empty this session — the جدول nav item stays
+// filtered out until S11).
+check(/standings\?: string;.*\/\/ five-row context windows \(S10\/S11\)/.test(mcSrc),
+  "S10 composer slot: MatchCentreParts.standings? (the slot + the mcentre-standings section + label «جدول رقابت») exist since S02 — S10 ships the SELECTION logic + the tests only; S11 wires the renderer + passes the pre-built window string to the composer (the S10/S11 split: selection vs rendering)");
+// the composer has NO runtime imports (the S02 cost law — S10 does NOT break this).
+check(!/^\s*import (?!type )/m.test(mcSrc),
+  "S10 composer purity: match-centre.ts has NO runtime imports (the S02 pure-leaf law holds — the standings-window module is imported by pages.ts in S11, NOT by the composer; the composer stays the pure leaf)");
+
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");
