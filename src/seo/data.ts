@@ -17,7 +17,7 @@ import { isLiveStatus } from "../match-model";
 import { shouldReport, isSiteHiddenMatch } from "../match-classify";
 import { fetchJSON } from "../utils";
 import { SEO } from "./config";
-import { teamSlug, compSlug } from "../slugs";
+import { teamSlug, compSlug, matchPath } from "../slugs";
 import { isLiveSt, tehranDayKey } from "./utils";
 // Match Centre S05 (M2): the server-side hero-portrait lookup moved here
 // from seo/router.ts (verbatim — the v13.205-lcpreveal SSR mirror, now the
@@ -894,4 +894,221 @@ export function windowSchedule(ctx: SeoCtx, fixtureDate: string, fixturePath: st
   const next48h = groupByDay(collected.filter(r => r.group === 1));
   const remaining = groupByDay(collected.filter(r => r.group === 2));
   return { sameDay, next48h, remaining, coverageNote: true, total: collected.length };
+}
+
+// Match Centre S17 (M7): the related-matches DATA layer — the unified relevant
+// match list (specification §13 "Related matches" + audit §4 rows 76/77 +
+// §12 row S17 + decisions 59/60/61/62/63/64). Pure aggregation over the
+// already-loaded ctx.pool (the matches_v13_tracked 92-day horizon, hidden
+// leagues filtered — the SAME pool the S12 form + the S13 metrics + the S14
+// schedule read) + the already-loaded archive (the loadArchive read — one of
+// the 3 pre-existing awaits; the 365-day FINISHED superset). The CALLER
+// passes the already-loaded ctx + archive (data.ts cannot import files.ts —
+// the teamForm/teamCompMetrics/windowSchedule precedent); ZERO new awaits,
+// ZERO new KV reads, ZERO new fetches (ADR-006).
+//
+// Selection priority (spec §13 — MANDATORY):
+// 1. Upcoming fixtures involving EITHER participating team (home OR away —
+//    the upcoming-involving-either-team filter; SCHEDULED status, future only,
+//    the fixture ITSELF excluded by path).
+// 2. Previous meetings between the TWO participating teams (the head-to-head
+//    pair — both teams present in either home/away order, FINISHED, from the
+//    pool's finished rows [7-day] + the archive [365-day]).
+// One unified list, upcoming FIRST then previous H2H meetings.
+// Maximum FOUR matches; fewer if fewer qualify (the no-filler law).
+// NO unrelated competition matches as filler (every row involves at least
+// one participating team OR is a H2H meeting).
+//
+// S17 DECISION POINTS (resolved + recorded per the session brief):
+// - S17-H2H (the pair definition): a H2H meeting = a FINISHED match where both
+//   participating teams appear in either home/away order, matched via
+//   normalizeTeamName (the S10/S13 precedent — handles name variants:
+//   transliteration, accents, club-prefix tokens, founding-year digits). So:
+//   (norm(home)===norm(selfHome) && norm(away)===norm(selfAway)) OR the
+//   swapped. NOT a strict string match (the provider variant forms
+//   "FC Internazionale Milano" / "Inter" must collide).
+// - S17-Upcoming (the upcoming selection): the existing similarMatches does
+//   comp+stage priority (stage 0 = same comp+matchday, stage 1 = same comp,
+//   stage 2 = same day) — it does NOT do team-involving-either-team. S17 needs
+//   a NEW selection. The relatedMatches helper does the upcoming-involving-
+//   either-team filter inline (SCHEDULED, future, home-or-away normalized
+//   match, self-excluded-by-path).
+// - S17-Dedup: the fixture ITSELF excluded by path (the S14 precedent). The
+//   cross-section dedup (upcoming + H2H overlap) is by path — defensive
+//   (upcoming=SCHEDULED, H2H=FINISHED — no status overlap by definition; but
+//   the path-dedup is belt-and-braces). A match that is BOTH upcoming AND a
+//   H2H meeting (the two teams meet again in the future) appears in the
+//   upcoming section ONLY (spec §13 "One unified list, upcoming first" —
+//   upcoming takes priority; NO duplication). The H2H pair-dedup (the same
+//   meeting appearing in both the pool's finished + the archive) is on the
+//   teamForm key `home|away|utcDate-day` (the teamForm precedent).
+// - S17-Max4 (the cap + the priority order): the cap applies to the UNIFIED
+//   list (NOT per-section). Upcoming first (up to max=4), then H2H fills the
+//   rest (up to max total). If upcoming has 4, H2H omits. If upcoming has 2
+//   + H2H has 3, the list = 2 upcoming + 2 H2H = 4. Upcoming sort ASC (soonest
+//   first); H2H sort DESC (most recent first).
+// - S17-H2H-source: h2hMatches reads the ARCHIVE only (the 365-day FINISHED
+//   superset — the brief's h2hMatches(archive, ...) signature). The
+//   relatedMatches helper ALSO scans the pool's FINISHED rows for H2H
+//   (covering the 7-day gap — audit §4 row 77 "pool finished (7d) + archive
+//   (365d)" + the teamForm precedent). Merge + dedupe on the teamForm key.
+export interface RelatedRow {
+  path: string;          // the match page path (for the <a> link + the dedup) — "" when the row carries none
+  utcDate: string;       // the ISO kickoff time (the <time> datetime + the sort)
+  compFa: string;        // the competition faName (s.competition.faName || translateCompetition || COMP_EN || code — the compNameFa precedent)
+  homeFa: string;        // the home team faName (s.homeTeam.faName || name)
+  awayFa: string;        // the away team faName (s.awayTeam.faName || name)
+  gh: number | null;     // the home score (null when not scored — the upcoming marker)
+  ga: number | null;     // the away score (null when not scored)
+  live: boolean;         // IN_PLAY|LIVE|PAUSED (the status atom)
+  finished: boolean;     // FINISHED (the H2H rows are FINISHED)
+}
+
+// Build a RelatedRow from a raw+shaped twin (the pool) OR a shaped-only row
+// (the archive's pubMatch `m`). Mirrors windowSchedule's build helper (the
+// S14 precedent): the raw twin carries the status + score.fullTime (pool);
+// the shaped row carries the path + faNames + competition + flat score
+// (pubMatch). A path-less row is never the fixture (the fallback home+away
+// match is guarded by fixturePath being non-empty).
+function buildRelatedRow(raw: any, s: any): RelatedRow | null {
+  if (!s || !s.utcDate || !s.homeTeam || !s.awayTeam || !s.competition) return null;
+  const p = typeof s.path === "string" ? s.path : "";
+  const homeName = (s.homeTeam && s.homeTeam.name) || (raw && raw.homeTeam && raw.homeTeam.name) || "";
+  const awayName = (s.awayTeam && s.awayTeam.name) || (raw && raw.awayTeam && raw.awayTeam.name) || "";
+  if (!homeName || !awayName) return null;
+  const compCode = (s.competition && s.competition.code) || (raw && raw.competition && raw.competition.code) || "";
+  const compFa = String((s.competition && s.competition.faName) || translateCompetition(compCode) || COMP_EN[compCode] || compCode);
+  const homeFa = String((s.homeTeam && s.homeTeam.faName) || homeName);
+  const awayFa = String((s.awayTeam && s.awayTeam.faName) || awayName);
+  let gh: number | null = null, ga: number | null = null;
+  if (raw && raw.score && raw.score.fullTime) { gh = raw.score.fullTime.home; ga = raw.score.fullTime.away; }
+  else if (s.score) { gh = s.score.home; ga = s.score.away; }
+  const status = String((raw && raw.status) || s.status || "").toUpperCase();
+  const live = /IN_PLAY|LIVE|PAUSED/i.test(status);
+  const finished = status === "FINISHED";
+  return { path: p, utcDate: s.utcDate, compFa, homeFa, awayFa, gh, ga, live, finished };
+}
+
+// The H2H pair filter (audit §12 row S17: "src/seo/data.ts (H2H pair
+// filter)"). Pure aggregation over the caller-passed archive — returns the
+// FINISHED matches where both participating teams appear in either home/away
+// order (the normalized-team-name match — the S10/S13 normalizeTeamName
+// precedent). Sorted DESC (most recent first). Capped at `max`. Deduped on
+// the teamForm key `home|away|utcDate-day` (the teamForm precedent). Does NOT
+// exclude the fixture itself (the caller's relatedMatches helper excludes it
+// by path — h2hMatches is the PURE pair filter, independently testable).
+export function h2hMatches(archive: any[], homeName: string, awayName: string, max = 4): RelatedRow[] {
+  if (!archive || !archive.length || !homeName || !awayName) return [];
+  const nh = normalizeTeamName(homeName);
+  const na = normalizeTeamName(awayName);
+  if (!nh || !na) return [];
+  const out: { ts: number; row: RelatedRow }[] = [];
+  const seen = new Set<string>();
+  for (const rec of archive) {
+    const m = rec && rec.m;
+    if (!m || !m.utcDate || !m.homeTeam || !m.awayTeam) continue;
+    if (String(m.status || "").toUpperCase() !== "FINISHED") continue;
+    const mh = normalizeTeamName(m.homeTeam.name);
+    const ma = normalizeTeamName(m.awayTeam.name);
+    const isPair = (mh === nh && ma === na) || (mh === na && ma === nh);
+    if (!isPair) continue;
+    const key = [mh, ma].sort().join("|") + "|" + String(m.utcDate).slice(0, 10);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const row = buildRelatedRow(null, m);
+    if (!row) continue;
+    out.push({ ts: new Date(m.utcDate).getTime() || 0, row });
+  }
+  out.sort((a, b) => b.ts - a.ts); // DESC (most recent first)
+  return out.slice(0, max).map(o => o.row);
+}
+
+// The unified spec §13 related-matches selection. Returns the unified
+// RelatedRow[] (upcoming FIRST then H2H, deduped, capped at max). The
+// upcoming-involving-either-team filter scans ctx.pool (SCHEDULED, future,
+// home-or-away, self-excluded-by-path). The H2H filter scans ctx.pool's
+// FINISHED rows (7-day) + the archive's FINISHED rows (365-day, via
+// h2hMatches), merged + deduped on the teamForm key. The fixture ITSELF is
+// excluded by path from BOTH sections. The cross-section dedup (upcoming +
+// H2H overlap) is by path — upcoming takes priority. The cap: upcoming first
+// (up to max), then H2H fills the rest (up to max total). Pure aggregation —
+// ZERO new awaits/KV reads/fetches.
+export function relatedMatches(ctx: SeoCtx, sm: SeoMatch, archive: any[], max = 4): RelatedRow[] {
+  if (!sm || !sm.raw || !ctx) return [];
+  const selfHome = (sm.raw.homeTeam && sm.raw.homeTeam.name) || (sm.s && sm.s.homeTeam && sm.s.homeTeam.name) || "";
+  const selfAway = (sm.raw.awayTeam && sm.raw.awayTeam.name) || (sm.s && sm.s.awayTeam && sm.s.awayTeam.name) || "";
+  if (!selfHome || !selfAway) return [];
+  const nh = normalizeTeamName(selfHome);
+  const na = normalizeTeamName(selfAway);
+  if (!nh || !na) return [];
+  const fixturePath = (sm.s && typeof sm.s.path === "string" && sm.s.path) || matchPath(selfHome, selfAway, sm.raw.utcDate);
+  const now = Date.now();
+  const upcoming: { ts: number; row: RelatedRow }[] = [];
+  const h2h: { ts: number; row: RelatedRow }[] = [];
+  const h2hSeen = new Set<string>();
+  const involvesEither = (mHome: string, mAway: string): boolean => {
+    const mh = normalizeTeamName(mHome), ma = normalizeTeamName(mAway);
+    return mh === nh || mh === na || ma === nh || ma === na;
+  };
+  const isPair = (mHome: string, mAway: string): boolean => {
+    const mh = normalizeTeamName(mHome), ma = normalizeTeamName(mAway);
+    return (mh === nh && ma === na) || (mh === na && ma === nh);
+  };
+  // 1. pool scan — upcoming (future + not live — SCHEDULED/TIMED/POSTPONED,
+  //    the similarMatches precedent: t > now && !isLiveSt) + H2H (FINISHED,
+  //    both teams — the 7-day finished retention, audit §4 row 77)
+  ctx.shaped.forEach((s: any, i: number) => {
+    const raw = ctx.pool[i];
+    if (!raw || !raw.utcDate || !raw.homeTeam || !raw.awayTeam) return;
+    const status = String(raw.status || "").toUpperCase();
+    const t = new Date(raw.utcDate).getTime();
+    if (!isFinite(t)) return;
+    const isFinished = status === "FINISHED";
+    const isUpcoming = t > now && !isLiveSt(status); // future + not live (SCHEDULED/TIMED/POSTPONED — the similarMatches precedent)
+    if (!isUpcoming && !isFinished) return; // upcoming OR h2h only (no LIVE, no past non-finished)
+    const row = buildRelatedRow(raw, s);
+    if (!row) return;
+    if (fixturePath && row.path === fixturePath) return; // self-exclusion by path (the S14 precedent)
+    if (isUpcoming) {
+      if (!involvesEither(raw.homeTeam.name, raw.awayTeam.name)) return; // no-filler: must involve a team
+      upcoming.push({ ts: t, row });
+    } else {
+      if (!isPair(raw.homeTeam.name, raw.awayTeam.name)) return; // H2H only (both teams)
+      // the dedup key is PATH-based (uniform across pool + archive — both
+      // pubMatch-shaped rows carry s.path = matchPath(home,away,date); the
+      // same match has the same path in both sources → dedupes correctly)
+      const key = row.path + "|" + String(raw.utcDate).slice(0, 10);
+      if (h2hSeen.has(key)) return;
+      h2hSeen.add(key);
+      h2h.push({ ts: t, row });
+    }
+  });
+  // 2. archive scan — H2H (FINISHED, both teams — the 365-day superset, via
+  //    h2hMatches). Merged + deduped against the pool's finished H2H on the
+  //    PATH-based key (the pool's 7-day finished are a subset of the archive's
+  //    365-day finished, but the archive may lag the cron interval; the merge
+  //    + dedupe covers the gap — the same match has the same path in both
+  //    sources, so the path-based key dedupes correctly across sources).
+  const h2hArchive = h2hMatches(archive, selfHome, selfAway, max);
+  for (const row of h2hArchive) {
+    if (fixturePath && row.path === fixturePath) continue; // self-exclusion by path
+    const key = row.path + "|" + String(row.utcDate).slice(0, 10); // the path-based dedup key (uniform with the pool's H2H dedup)
+    if (h2hSeen.has(key)) continue;
+    h2hSeen.add(key);
+    const t = new Date(row.utcDate).getTime() || 0;
+    h2h.push({ ts: t, row });
+  }
+  // 3. sort — upcoming ASC (soonest first), H2H DESC (most recent first)
+  upcoming.sort((a, b) => a.ts - b.ts);
+  h2h.sort((a, b) => b.ts - a.ts);
+  // 4. dedupe H2H against upcoming (by path — defensive; a match in both
+  //    appears in upcoming only — spec §13 "One unified list, upcoming
+  //    first"; upcoming takes priority, NO duplication)
+  const upcomingPaths = new Set(upcoming.map(u => u.row.path));
+  const h2hDeduped = h2h.filter(h => !upcomingPaths.has(h.row.path));
+  // 5. cap — upcoming first (up to max), then H2H fills the rest (up to max total)
+  const upcomingTake = upcoming.slice(0, max).map(u => u.row);
+  const remaining = Math.max(0, max - upcomingTake.length);
+  const h2hTake = h2hDeduped.slice(0, remaining).map(h => h.row);
+  return upcomingTake.concat(h2hTake);
 }

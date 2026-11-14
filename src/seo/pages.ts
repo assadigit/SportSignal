@@ -10,7 +10,7 @@ import { esc, faTime, faDateD1, faDateD2, tehranDayKey, utcTime, statusLabelFa, 
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtSrv } from "./data";
+import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, relatedMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtSrv } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -27,7 +27,7 @@ import { seoTeamFaName, seoTeamAltName } from "./team-names";
 // Match Centre S04 (M2): the hero renderer — the mcentre-hero MARKUP moved
 // to the composer (matchHeroHtml); THIS file builds the data projection
 // (matchHeroInput) and delegates. The legacy matchHeadHtml is retired.
-import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput, type MatchFaqInput, type MatchFaqItemInput } from "./match-centre";
+import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml, matchRelatedHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput, type MatchFaqInput, type MatchFaqItemInput, type MatchRelatedInput, type MatchRelatedRowInput } from "./match-centre";
 // Match Centre S16 (M7): the authored FAQ content — src/seo/faq-content.ts owns
 // the facts-only Q/A copy (which questions, lifecycle phrasing, answer
 // composition). THIS file's matchFaqInput projection calls buildMatchFaqItems
@@ -851,6 +851,70 @@ function matchFaqInput(sm: SeoMatch): MatchFaqInput {
   };
 }
 
+// Match Centre S17 (M7): the related-matches projection — matchRelatedInput.
+// Builds the MatchRelatedRowInput atoms (the composer's matchRelatedHtml
+// contract — src/seo/match-centre.ts) from the RelatedRow[] returned by the
+// data layer's relatedMatches helper (src/seo/data.ts). ZERO new awaits, ZERO
+// new KV reads, ZERO new fetches (the zero-runtime-cost law — the S08
+// narrative + the S10/S11 standings + the S12/S13 form/metrics + the S14
+// venue + the S15 schedule + the S16 FAQ precedent). The relatedMatches
+// helper reads the ALREADY-LOADED ctx.pool (the 92-day horizon) + the
+// ALREADY-LOADED archive (the loadArchive read — one of the 3 pre-existing
+// awaits), pure aggregation over the caller-passed data.
+//
+// S17 decision points (resolved + recorded per the session brief):
+// 1. The selection (spec §13 priority: upcoming-first + H2H, max 4, no filler)
+//    is the DATA layer's responsibility (relatedMatches in data.ts — the
+//    windowSchedule/teamForm precedent). THIS projection escapes the raw
+//    RelatedRow fields into the MatchRelatedRowInput atoms (the S04 hero
+//    precedent — the composer is a pure leaf; the atoms arrive pre-escaped).
+// 2. The "only valid internal links" law (milestones S17 test list): every
+//    row's <a> link points to an existing match page (the matchPath helper —
+//    the same slug format the S15 schedule rows use; the path comes from the
+//    pubMatch s.path field, which is always matchPath(home,away,date)). A row
+//    with no path → the teams render as plain text (NO <a> — the S15 schedule
+//    precedent: r.path ? '<a href="...">' + teams + '</a>' : teams). NO
+//    external links, NO broken anchors.
+// 3. The numerals + dates (toFaDigits + faDateD2 — the S11/S12/S13/S14/S15/S16
+//    precedent). The scoreHtml carries the Persian-digit «H – A» when scored
+//    (the H2H finished rows); "" when not scored (the upcoming SCHEDULED rows
+//    — the S15 MISSING-IS-NOT-ZERO law, NOT a fake 0-0). The whenHtml carries
+//    the <time datetime=...> date atom (faDateD2 — the compact date; the time
+//    is in the datetime attribute, NOT the visible text — decision S17-When).
+// 4. The pre-existing slot (decision 13) — the mcentre-related section slot
+//    ALREADY EXISTS in the S02 registry (MC_SECTION_ORDER + the bySlot map).
+//    The related: string key is REQUIRED in MatchCentreParts (NOT optional
+//    like faq/venue/schedule — the S02 contract). NO new nav destination, NO
+//    new section anchor (decision 13: related matches are OUTSIDE the 5-item
+//    nav — خلاصه، جدول، فرم، بازی‌ها، ورزشگاه). The Q9=B adaptive filter
+//    unchanged (related never lights a nav destination).
+// 5. The legacy reconciliation (decision S17-Legacy): the match-page
+//    similarCard assembly (the v13.82 sibling-fixtures card via similarMatches
+//    + M.mrowHtml) is RETIRED — replaced by this matchRelatedHtml(matchRelatedInput)
+//    wiring. The team-page simCard (the similarMatches + M.mrowHtml usage at
+//    buildTeamPage) stays byte-frozen (the S12 precedent — the match-page
+//    retirement does NOT touch the team-page path). similarMatches + M.mrowHtml
+//    + the .simcard CSS stay available to the team-page caller.
+function matchRelatedInput(sm: SeoMatch, ctx: SeoCtx, archive: any[]): MatchRelatedInput {
+  const rows = relatedMatches(ctx, sm, archive, 4);
+  return {
+    rows: rows.map((r): MatchRelatedRowInput => {
+      const home = esc(r.homeFa), away = esc(r.awayFa);
+      const scored = (r.live || r.finished) && r.gh != null && r.ga != null;
+      return {
+        pathHtml: r.path ? '<a href="' + esc(r.path) + '">' + home + " – " + away + "</a>" : home + " – " + away,
+        whenHtml: '<time datetime="' + esc(r.utcDate) + '">' + faDateD2(r.utcDate) + "</time>",
+        compHtml: esc(r.compFa),
+        homeHtml: home,
+        awayHtml: away,
+        scoreHtml: scored ? toFaDigits(String(r.gh)) + " – " + toFaDigits(String(r.ga)) : "",
+        live: !!r.live,
+        finished: !!r.finished
+      };
+    })
+  };
+}
+
 export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
   let sm = findMatchBySlug(ctx, slug);
   if (!sm) return { html: "", notFound: true };
@@ -1027,11 +1091,28 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // window is pure logic [S10]; the renderer is pure string composition [S11]).
   const standingsHtml = buildStandingsHtml(matchStandingsWindow(sm, ctx, fullByCode));
 
-  const sims = similarMatches(ctx, sm);
-  const similarCard = sims.length
-    ? '<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">' + toFaDigits(String(sims.length)) + " بازی</span></h2>" +
-      sims.map((x, i) => M.mrowHtml(x, i, false)).join("") + "</div>"
-    : "";
+  // Match Centre S17 (M7): the related-matches list — the unified relevant
+  // match list (specification §13 "Related matches" + decisions 59–64 + audit
+  // §4 rows 76/77 + §12 row S17). The mcentre-related section slot ALREADY
+  // EXISTS in the S02 registry (decision 13 — related matches are OUTSIDE the
+  // 5-item nav); the related: string key is REQUIRED in MatchCentreParts
+  // (the S02 contract — NOT optional like faq/venue/schedule). S17 UPGRADES
+  // the content of this already-wired part: the NEW matchRelatedHtml renderer
+  // (the composer owns the .mcentre-related MARKUP — the S12 matchFormHtml /
+  // S14 matchVenueHtml / S15 matchScheduleHtml / S16 matchFaqHtml precedent)
+  // + the NEW matchRelatedInput projection (builds the pre-escaped atoms from
+  // the data layer's relatedMatches helper — the S04 hero precedent; the
+  // composer is a pure leaf) REPLACE the legacy v13.82 similarCard assembly
+  // (similarMatches + M.mrowHtml — RETIRED on the match page; the team-page
+  // simCard keeps them byte-frozen, decision S17-Legacy). The related list is
+  // a STATIC list, NON-interactive (NO script, NO expand control, NO accordion
+  // — the S07 summary precedent). The selection (upcoming-first + H2H, max 4,
+  // no filler) is the data layer's responsibility (relatedMatches in data.ts);
+  // ZERO new awaits (reads the already-loaded ctx.pool + the loadArchive
+  // archive — the same 3 pre-existing awaits; ADR-006). Fail-closed: an EMPTY
+  // related list → matchRelatedHtml returns "" → the mcentre-related slot
+  // detects "" → the section omits entirely (the no-empty-cards law).
+  const relatedHtml = matchRelatedHtml(matchRelatedInput(sm, ctx, archive));
 
   const trail = [
     { name: "خانه", href: "/" },
@@ -1133,7 +1214,7 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
     venue: venueHtml,
     schedule: scheduleHtml ? scheduleHtml + matchScheduleScript() : "",
     faq: faqHtml ? faqHtml + matchFaqScript() : "",
-    related: similarCard,
+    related: relatedHtml,
     footerHook: related
   });
   const html = pageShell({

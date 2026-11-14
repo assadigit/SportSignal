@@ -658,7 +658,10 @@ check("venue map link is off-site safe (target _blank + noopener) with sr-only l
 // similar matches card
 check("similarMatches exists with the three-stage priority (stage→comp→day)", /export function similarMatches\(ctx: SeoCtx, sm: SeoMatch, max = 6\)/.test(dataSrc82) && /stage = 0/.test(dataSrc82) && /stage = 1/.test(dataSrc82) && /stage = 2/.test(dataSrc82));
 check("similarMatches is upcoming-only + self-excluded + pairing-deduped + capped", /if \(!\(t > now\) \|\| isLiveSt\(raw\.status\)\) return; \/\/ upcoming only/.test(dataSrc82) && /\/\/ self/.test(dataSrc82) && /if \(seen\.has\(k\)\) continue;/.test(dataSrc82) && /if \(out\.length >= max\) break;/.test(dataSrc82));
-check("match page renders the sibling card (h2 + count chip + mrow rows)", /'<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">'/.test(pagesSrc) && /sims\.map\(\(x, i\) => M\.mrowHtml\(x, i, false\)\)/.test(pagesSrc));
+// similar matches card — v13.82 (the team-page simCard). S17 RETIRED the match-page
+// similarCard (replaced by the spec §13 unified related-matches list — matchRelatedHtml);
+// the team-page simCard keeps similarMatches + M.mrowHtml byte-frozen (decision S17-Legacy).
+check("team page renders the sibling card (h2 + count chip + mrow rows) — S17 retired the match-page similarCard; the team-page simCard keeps similarMatches + M.mrowHtml byte-frozen", /'<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">'/.test(pagesSrc) && /sims\.map\(\(x, i\) => M\.mrowHtml\(x, i, false\)\)/.test(pagesSrc) && /const sims = next \? similarMatches\(ctx, next, 6\) : \[\];/.test(pagesSrc));
 check("buildMatchPage is async + awaits the hydration before rendering", /export async function buildMatchPage\(ctx: SeoCtx, slug: string\): Promise<\{ html: string; notFound: boolean \}>/.test(pagesSrc) && /sm = await hydrateMatchVenue\(ctx\.env, sm\);/.test(pagesSrc));
 check("seo router awaits the async buildMatchPage", /const r = await buildMatchPage\(seoCtx, mm\[1\]\);/.test(routerSrc82));
 // live-detail venue adoption (free data — the fetch is already paid for)

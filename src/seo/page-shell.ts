@@ -770,6 +770,51 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
   #mcentre-faq .mfaq-q{font-size:.78rem;padding-block:7px;padding-inline:8px}
   #mcentre-faq .mfaq-a p{font-size:.74rem;line-height:1.7;padding-block:2px 8px;padding-inline:8px}
 }
+/* ---- Match Centre S17 (M7): the related-matches list — the unified upcoming
+   first + H2H broadcast rows (specification §13 "Related matches", M7/S17,
+   decisions 59/60/61/62/63/64 + audit §4 rows 76/77 + §12 row S17). S17 ADDS
+   the mcentre-related section content: the NEW matchRelatedHtml renderer +
+   the NEW matchRelatedInput projection + the NEW h2hMatches/relatedMatches
+   data helpers. Decision S17-Row: a NEW .mcentre-related-row variant with NEW
+   .mcentre-related-* classes (a self-contained S17 block scoped to
+   #mcentre-related). The visual style MIRRORS the S15 broadcast row (flex
+   layout, ellipsis truncation, prominent score, status indicator) — the S15
+   design vocabulary reused at the DESIGN level, NOT the CSS-class level (the
+   S15 .mcentre-sched-* block stays byte-frozen). The related list is a STATIC
+   list, NON-interactive (NO expand control, NO accordion, NO script — the S07
+   summary precedent; reduced-motion = no animation EXCEPT the live-dot pulse
+   IF a live row ever appears — spec §13 = upcoming + H2H only, live is NOT
+   expected, but the vocabulary is retained). CSS logical properties ONLY
+   (RTL/LTR clean under a dir flip, decision 2); the block's own icy/navy
+   tokens; the 600px mobile layout — no horizontal scroll. */
+#mcentre-related .mcentre-related{margin-block-start:14px}
+#mcentre-related .mcentre-related>h2{font-size:.92rem;font-weight:700;margin-block-end:8px;color:#e2e8f0}
+#mcentre-related .mcentre-related-list{display:flex;flex-direction:column;gap:2px}
+#mcentre-related .mcentre-related-row{display:flex;align-items:baseline;gap:.5rem;padding-block:5px;padding-inline:8px;border-radius:6px;background:rgba(15,23,42,.3)}
+#mcentre-related .mcentre-related-row.is-live{background:rgba(125,211,252,.08)}
+#mcentre-related .mcentre-related-when{flex:0 1 auto;min-width:0;font-size:.7rem;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mcentre-related .mcentre-related-when time{font-variant-numeric:tabular-nums}
+#mcentre-related .mcentre-related-comp{flex:0 1 auto;font-size:.68rem;color:var(--muted,#9aa4b2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mcentre-related .mcentre-related-teams{flex:1 1 auto;min-width:0;font-size:.76rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mcentre-related .mcentre-related-teams a{color:#e2e8f0;text-decoration:none}
+#mcentre-related .mcentre-related-teams a:hover{text-decoration:underline}
+#mcentre-related .mcentre-related-result{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:.3rem}
+#mcentre-related .mcentre-related-score{font-size:.78rem;font-weight:800;color:#e2e8f0;font-variant-numeric:tabular-nums}
+#mcentre-related .mcentre-related-upcoming{font-size:.68rem;color:var(--muted,#9aa4b2)}
+#mcentre-related .mcentre-related-live{display:inline-block;width:7px;height:7px;border-radius:50%;background:#7dd3fc;animation:mcrelated-pulse 1.4s ease-in-out infinite;align-self:center}
+@keyframes mcrelated-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){#mcentre-related .mcentre-related-live{animation:none}}
+#mcentre-related .mcentre-related-fin{font-size:.62rem;color:var(--muted,#9aa4b2)}
+@media (max-width:600px){
+  #mcentre-related .mcentre-related>h2{font-size:.86rem}
+  #mcentre-related .mcentre-related-row{gap:.35rem;padding-block:4px;padding-inline:6px}
+  #mcentre-related .mcentre-related-when{font-size:.66rem}
+  #mcentre-related .mcentre-related-comp{font-size:.62rem}
+  #mcentre-related .mcentre-related-teams{font-size:.72rem}
+  #mcentre-related .mcentre-related-score{font-size:.74rem}
+  #mcentre-related .mcentre-related-upcoming{font-size:.62rem}
+  #mcentre-related .mcentre-related-fin{font-size:.58rem}
+}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
    effect on any page without a mcentre-* section. Breakpoints and tokens are

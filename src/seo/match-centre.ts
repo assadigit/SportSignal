@@ -869,6 +869,160 @@ export function matchFaqHtml(f: MatchFaqInput): string {
   return '<div class="mcentre-faq"><h2>' + MC_FAQ_TITLE + '</h2><div class="mcentre-faq-list">' + items + "</div></div>";
 }
 
+// ---- Match Centre S17 (M7): the related-matches renderer (specification §13) ----
+//
+// S17 LAW (specification §13 "Related matches" + milestones-and-sessions.md
+// M7/S17 + decisions 59/60/61/62/63/64 + audit §4 rows 76/77 + §12 row S17):
+// the related renderer receives PRE-BUILT row atoms (every row arrives
+// pre-escaped from pages.ts's matchRelatedInput projection — the S04 hero
+// precedent), so this module stays the S02 pure leaf for the MARKUP (zero
+// imports, zero KV, zero fetch, zero client scripts — the related list is a
+// STATIC list, NON-interactive: NO expand control, NO accordion, NO script;
+// the S07 summary precedent: a static list, the composer is a pure leaf for
+// the related MARKUP). It owns the related MARKUP: the <h2>«بازی‌های مرتبط»
+// heading + the unified list (upcoming FIRST then previous H2H meetings —
+// the spec §13 priority order is the DATA layer's responsibility, NOT the
+// renderer's; the renderer renders the rows in the order they arrive) as
+// compact broadcast-style rows (spec §13 + decision 62: date/competition,
+// team names, score or upcoming indicator, status).
+//
+// S17 DECISION POINTS (resolved + recorded per the session brief):
+// - S17-Row (the broadcast-row reuse vs new variant): a NEW
+//   .mcentre-related-row variant with NEW .mcentre-related-* classes (a
+//   self-contained S17 CSS block scoped to #mcentre-related). The visual
+//   style MIRRORS the S15 broadcast row (flex layout, ellipsis truncation,
+//   prominent score, status indicator) — the S15 design vocabulary reused
+//   at the DESIGN level, NOT the CSS-class level. Rationale: the S15 CSS is
+//   scoped to #mcentre-schedule .mcentre-sched-* — reusing the classes under
+//   #mcentre-related would require duplicating the S15 rules under the new
+//   scope (verbose) OR modifying the S15 scoping (breaks the S15 byte-freeze,
+//   which the S17 contract MANDATES: the S15 schedule presentation stays
+//   untouched). A self-contained S17 block with .mcentre-related-* classes
+//   is cleaner + lower-risk + the S15 block stays byte-frozen.
+// - S17-When (the date atom): the whenHtml shows the date (faDateD2 — the
+//   S11/S12 compact-date precedent, Persian digits) inside a <time
+//   datetime=...>. The time is in the datetime attribute (machine-readable)
+//   but NOT in the visible text (the row stays compact — spec §13
+//   "date/competition"; no explicit time; the S15 row shows the time because
+//   the date is a day-heading — the related list is FLAT, the date is in each
+//   row, the exact kickoff time is on the match page). The cell truncates
+//   via ellipsis if the date is too long on mobile (no horizontal scroll —
+//   the milestones S17 test list: "mobile readability").
+// - S17-Legacy: KEEP similarMatches + M.mrowHtml + .simcard CSS (the team-page
+//   path keeps them — byte-frozen; the S12 precedent RETIRED formStripHtml on
+//   the match page but kept it on the team page). RETIRE the match-page
+//   similarCard assembly + the related: similarCard wiring (replaced by
+//   matchRelatedHtml(matchRelatedInput(...))). The team-page simCard +
+//   M.mrowHtml + .simcard CSS stay byte-frozen.
+//
+// Fail-closed: an EMPTY related list (no upcoming + no H2H — e.g. a
+// pre-season friendly between two teams with no history; the no-filler law)
+// → rows.length === 0 → "" (the section omits entirely — the no-empty-cards
+// law; the related: string REQUIRED key passes "" when no matches qualify;
+// the slot already detects "" → omits).
+
+// The related section title (matches the MC_SECTION_ORDER aria-label — line
+// 112: «بازی‌های مرتبط»).
+const MC_RELATED_TITLE = "بازی‌های مرتبط";
+// S17: the broadcast-row vocabulary (the S15 schedule vocabulary, compacted —
+// decision 62: "Compact broadcast-style related rows"). The upcoming marker
+// «در انتظار» (a SCHEDULED row — scoreHtml "" — MISSING IS NOT ZERO; the S15
+// MISSING-IS-NOT-ZERO law). The live aria-label «در جریان» (the S04/S15 hero
+// vocabulary — the live dot). The finished status «پایان» (the S04/S15 hero
+// «پایان بازی» compacted). NOTE: live rows are NOT expected in the related
+// list (spec §13 = upcoming + previous H2H only; LIVE is neither), but the
+// vocabulary is retained for completeness (a future LIVE-involving-either-team
+// extension would reuse it).
+const MC_RELATED_UPCOMING = "در انتظار";
+const MC_RELATED_LIVE_LABEL = "در جریان";
+const MC_RELATED_FINISHED_LABEL = "پایان";
+
+// One related row — the pre-escaped atoms (the S04 hero precedent — the
+// composer is a pure leaf; pages.ts's matchRelatedInput projection escapes
+// the raw RelatedRow fields into these atoms). The row mirrors the S15
+// MatchScheduleRowInput shape (the S15 broadcast-row vocabulary) with the
+// whenHtml atom replacing the S15 timeHtml (the date, NOT just the time — the
+// related list is flat, no day headings).
+export interface MatchRelatedRowInput {
+  pathHtml: string;    // the match link <a> (prebuilt) — "" carries no path → the teams render as plain text (NO <a> — the S15 schedule precedent: r.path ? '<a>' : teams)
+  whenHtml: string;    // the date <time datetime=...> atom (faDateD2, Persian digits — the S11/S12 compact-date precedent)
+  compHtml: string;    // the competition faName (escaped; the compFa fallback)
+  homeHtml: string;    // the home team faName (escaped)
+  awayHtml: string;    // the away team faName (escaped)
+  scoreHtml: string;   // the score "H – A" (Persian digits) — "" when not scored (the upcoming marker)
+  live: boolean;       // IN_PLAY|LIVE|PAUSED (NOT expected in the related list — spec §13 = upcoming + H2H only — but retained for completeness)
+  finished: boolean;   // FINISHED (the H2H rows are FINISHED)
+}
+
+// The related projection. The rows array carries the pre-built atoms in the
+// spec §13 priority order (upcoming FIRST then H2H — the DATA layer's
+// relatedMatches helper guarantees this order); an empty array → "" (the
+// no-empty-cards law — the section omits).
+export interface MatchRelatedInput {
+  rows: MatchRelatedRowInput[];
+}
+
+// One broadcast row (spec §13 «Compact broadcast-style rows: date/competition,
+// crests/team names, score or upcoming indicator, status» + decision 62).
+// Decision S17-Row: a NEW .mcentre-related-row variant (NEW .mcentre-related-*
+// classes — the S15 design vocabulary reused at the design level, NOT the
+// CSS-class level). The row: the whenHtml (the <time> date atom) + the
+// compHtml + the pathHtml (the teams — home – away, with the <a> link when
+// the row carries a path; name-only, decision S15-Crest precedent — NO
+// crestHtml atom) + the scoreHtml (the Persian-digit «H – A») OR the upcoming
+// marker «در انتظار» (a SCHEDULED row — scoreHtml "" — NEVER a fake 0-0; the
+// S15 MISSING-IS-NOT-ZERO law). The status: live → the live dot (the
+// .mcentre-related-live <i> with the «در جریان» aria-label) + the score;
+// finished → «پایان» + the score; scheduled → «در انتظار» (no score). Pure
+// string composition — the composer stays the S02 pure leaf (the atoms arrive
+// pre-escaped from pages.ts; ZERO client-script — the related list is a
+// static list, NON-interactive; the S07 summary precedent).
+function relatedRowHtml(r: MatchRelatedRowInput): string {
+  const statusCls = r.live ? " is-live" : r.finished ? " is-fin" : " is-sched";
+  let resultCell: string;
+  if (r.scoreHtml) {
+    // a scored row (finished — the H2H rows are FINISHED; live is NOT
+    // expected but retained) — the score + the status indicator
+    const statusHtml = r.live
+      ? '<i class="mcentre-related-live" aria-label="' + MC_RELATED_LIVE_LABEL + '"></i>'
+      : r.finished
+      ? '<span class="mcentre-related-fin">' + MC_RELATED_FINISHED_LABEL + "</span>"
+      : "";
+    resultCell = '<span class="mcentre-related-result"><span class="mcentre-related-score">' + r.scoreHtml + "</span>" + statusHtml + "</span>";
+  } else {
+    // a SCHEDULED row — the upcoming marker «در انتظار» (NOT a fake 0-0 — the
+    // S15 scoreHtml "" law: MISSING IS NOT ZERO; spec §13 «score or upcoming
+    // indicator» — the upcoming indicator, NOT a fabricated score)
+    resultCell = '<span class="mcentre-related-result"><span class="mcentre-related-upcoming">' + MC_RELATED_UPCOMING + "</span></span>";
+  }
+  return '<div class="mcentre-related-row' + statusCls + '">' +
+    '<span class="mcentre-related-when">' + r.whenHtml + "</span>" +
+    '<span class="mcentre-related-comp">' + r.compHtml + "</span>" +
+    '<span class="mcentre-related-teams">' + r.pathHtml + "</span>" +
+    resultCell +
+    "</div>";
+}
+
+// The related renderer (S17 = the M7 gate session — closes M7). The unified
+// list renders as compact broadcast-style rows in the spec §13 priority order
+// (upcoming FIRST then H2H — the order is the DATA layer's responsibility, NOT
+// the renderer's; the renderer renders the rows in the order they arrive). The
+// <h2>«بازی‌های مرتبط» heading + the .mcentre-related-list container. The
+// composer stays the S02 pure leaf (ZERO client-script — the related list is a
+// static list, NON-interactive; NO expand control, NO accordion, NO script;
+// the S07 summary precedent). Fail-closed: an EMPTY related list (rows.length
+// === 0) → "" (the section omits entirely — the no-empty-cards law). Partial
+// data → the present rows render (upcoming-only when no H2H; H2H-only when no
+// upcoming). The "only valid internal links" law (milestones S17 test list):
+// every row's <a> link points to an existing match page (the matchPath helper —
+// the same slug format the S15 schedule rows use); a row with no path → the
+// teams render as plain text (NO <a> — the S15 schedule precedent).
+export function matchRelatedHtml(r: MatchRelatedInput): string {
+  if (!r || !r.rows || !r.rows.length) return "";
+  const rows = r.rows.map(relatedRowHtml).join("");
+  return '<div class="mcentre-related"><h2>' + MC_RELATED_TITLE + '</h2><div class="mcentre-related-list">' + rows + "</div></div>";
+}
+
 // One anchored wrapper. The no-empty-cards law lives HERE: empty or
 // whitespace-only content returns "" — a section never renders hollow, so
 // a missing dataset can never leave a blank box on the page.

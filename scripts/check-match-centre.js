@@ -162,7 +162,7 @@ check(withNav.indexOf('id="mcentre-hero"') < withNav.indexOf('id="mcentre-nav"')
 
 // ---------- 3. wiring: buildMatchPage delegates, GSC surfaces stay ----------
 let wiringOk = true;
-if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput, type MatchFaqInput, type MatchFaqItemInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml + the S12 form renderer matchFormHtml + the S13 metrics renderer matchMetricsHtml + the S14 venue renderer matchVenueHtml + the S14 schedule renderer matchScheduleHtml + the S16 FAQ renderer matchFaqHtml + the projection types)"); wiringOk = false; }
+if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml, matchRelatedHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput, type MatchFaqInput, type MatchFaqItemInput, type MatchRelatedInput, type MatchRelatedRowInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml + the S12 form renderer matchFormHtml + the S13 metrics renderer matchMetricsHtml + the S14 venue renderer matchVenueHtml + the S14 schedule renderer matchScheduleHtml + the S16 FAQ renderer matchFaqHtml + the S17 related renderer matchRelatedHtml + the projection types)"); wiringOk = false; }
 // S08: pages.ts imports the narrative engine (narrativeHtml + the lifecycle type).
 if (!/import \{ narrativeHtml, type NarrativeLifecycle \} from "\.\/narrative";/.test(pagesSrc)) { bad("wiring: pages.ts lost the narrative engine import (narrativeHtml + NarrativeLifecycle — the S08 deterministic narrative engine)"); wiringOk = false; }
 if (!/const main = matchCentreMain\(\{/.test(pagesSrc)) { bad("wiring: buildMatchPage no longer delegates its main assembly to matchCentreMain"); wiringOk = false; }
@@ -191,7 +191,7 @@ if (!/narrativeHtml: narrativeAtomHtml/.test(pagesSrc)) { bad("wiring: the summa
 if (/export function whyBigHtml\(/.test(pagesSrc) || /function whyBigHtml\(/.test(pagesSrc)) { bad("wiring: the legacy whyBigHtml is still present (S08 retired it — the narrative engine in src/seo/narrative.ts replaces it)"); wiringOk = false; }
 if (/function isTopTable\(/.test(pagesSrc)) { bad("wiring: the legacy isTopTable helper is still present (S08 retired it — the engine's topTableEligible replaces it)"); wiringOk = false; }
 if (!/form: formPartHtml,/.test(pagesSrc)) { bad("wiring: the form part no longer carries the W/D/L strip (the S12 matchFormHtml render — S13 co-evolution: the form part is now the COMBINED formPartHtml = the form card + the S13 metrics card, decision S13-1)"); wiringOk = false; }
-if (!/related: similarCard,/.test(pagesSrc)) { bad("wiring: the related part no longer carries the sibling-fixtures card"); wiringOk = false; }
+if (!/related: relatedHtml,/.test(pagesSrc)) { bad("wiring: the related part no longer carries the S17 related-matches list (matchRelatedHtml(matchRelatedInput(...)) — the v13.82 similarCard sibling-fixtures card was RETIRED in S17 + replaced by the spec §13 unified upcoming-first + H2H list; the team-page simCard keeps similarMatches + M.mrowHtml byte-frozen)"); wiringOk = false; }
 if (!/footerHook: related/.test(pagesSrc)) { bad("wiring: the footer-hook part no longer carries the related-links card"); wiringOk = false; }
 if (/matchHeadHtml\(sm\) \+ matchActionsHtml/.test(pagesSrc)) { bad("wiring: the old flat hero assembly is still present alongside the delegation"); wiringOk = false; }
 if (wiringOk) ok("wiring: buildMatchPage delegates the parts to matchCentreMain — the hero rides matchHeroHtml(matchHeroInput) + actions/script (legacy matchHeadHtml retired); the summary rides matchSummaryHtml(MatchSummaryInput) — the answer-first sentence + facts rows + result text atoms + the S08 narrative atom (legacy whyBigHtml+facts+resultBlock flat assembly retired; whyBigHtml RETIRED by S08 — the deterministic narrative engine in src/seo/narrative.ts replaces it; the narrativeHtml atom rides ABOVE the briefing|facts pairing)");
@@ -3070,6 +3070,337 @@ check(/\.faqcard \.faqitem\{padding:6px 0;border-bottom:1px dashed rgba\(148,163
 // standings-window precedent).
 check(harnessSrc.indexOf('"seo/faq-content.ts"') > -1 && harnessSrc.indexOf('"seo/faq-content.ts"') > harnessSrc.indexOf('"seo/standings-window.ts"'),
   "S16 harness: worker-src.js carries seo/faq-content.ts after seo/standings-window.ts (the S16 authored-content module joins the concat — the seo group grows; the S08 narrative / S10 standings-window co-evolution precedent)");
+
+// ---------- 18. S17 (M7): the related-matches list — the unified upcoming
+// first + H2H broadcast rows (M7, session 2 of 2 — CLOSES M7) ----------
+// specification §13 (Related matches) + milestones-and-sessions.md M7/S17 +
+// decisions 59/60/61/62/63/64 + audit §4 rows 76/77 + §12 row S17. S17 ADDS
+// the mcentre-related section content: the NEW h2hMatches + relatedMatches
+// data helpers (src/seo/data.ts — the H2H pair filter + the unified spec §13
+// selection) + the NEW matchRelatedHtml renderer + the MatchRelatedInput/
+// MatchRelatedRowInput interfaces (src/seo/match-centre.ts — the broadcast-row
+// markup) + the NEW matchRelatedInput projection (src/seo/pages.ts — the
+// pre-escaped atoms) + the S17 CSS block (src/seo/page-shell.ts — scoped to
+// #mcentre-related). The mcentre-related section slot ALREADY EXISTS in the
+// S02 registry (decision 13 — related matches are OUTSIDE the 5-item nav); the
+// related: string key is REQUIRED in MatchCentreParts (the S02 contract — NOT
+// optional like faq/venue/schedule). S17 UPGRADES the content of this already-
+// wired part: the legacy v13.82 similarCard assembly (similarMatches +
+// M.mrowHtml) is RETIRED on the match page (the team-page simCard keeps them
+// byte-frozen, decision S17-Legacy). S17 is M7 session 2 of 2 — it CLOSES M7
+// (the M7 gate: the mcM7x preview upload + the production-KV agent-browser
+// smoke + the docs/mc/related-matches-matrix.md gate doc).
+
+// (a) the contract — the data helpers (h2hMatches + relatedMatches + the
+// RelatedRow interface) in data.ts + the renderer (matchRelatedHtml) + the
+// interfaces (MatchRelatedInput/MatchRelatedRowInput) + the title constant
+// in match-centre.ts + the projection (matchRelatedInput) in pages.ts + the
+// imports.
+const dataSrcS17 = read("src/seo/data.ts");
+check(/export function h2hMatches\(archive: any\[\], homeName: string, awayName: string, max = 4\): RelatedRow\[\]/.test(dataSrcS17),
+  "S17 contract data h2hMatches: data.ts exports h2hMatches(archive, homeName, awayName, max=4): RelatedRow[] (audit §12 row S17: 'src/seo/data.ts (H2H pair filter)' — the pure archive pair filter; the windowSchedule/teamForm precedent — data.ts cannot import files.ts, receives the archive as a param)");
+check(/export function relatedMatches\(ctx: SeoCtx, sm: SeoMatch, archive: any\[\], max = 4\): RelatedRow\[\]/.test(dataSrcS17),
+  "S17 contract data relatedMatches: data.ts exports relatedMatches(ctx, sm, archive, max=4): RelatedRow[] (the unified spec §13 selection — upcoming-first + H2H, deduped, capped; the windowSchedule precedent — pure aggregation over the caller-passed ctx + archive)");
+check(/export interface RelatedRow \{/.test(dataSrcS17) && /path: string;/.test(dataSrcS17) && /compFa: string;/.test(dataSrcS17) && /gh: number \| null;/.test(dataSrcS17) && /finished: boolean;/.test(dataSrcS17),
+  "S17 contract data RelatedRow: data.ts exports the RelatedRow interface (path/utcDate/compFa/homeFa/awayFa/gh/ga/live/finished — the ScheduleRow precedent, the S14 atom shape)");
+check(typeof mc.matchRelatedHtml === "function" && /export function matchRelatedHtml\(/.test(mcSrc) && /export interface MatchRelatedInput\b/.test(mcSrc) && /export interface MatchRelatedRowInput\b/.test(mcSrc),
+  "S17 contract renderer: matchRelatedHtml + the MatchRelatedInput/MatchRelatedRowInput interfaces live in match-centre.ts (the related-list MARKUP — the S12 matchFormHtml / S14 matchVenueHtml / S15 matchScheduleHtml / S16 matchFaqHtml precedent; the composer stays the S02 pure leaf for the markup — ZERO client-script; the related list is a STATIC list, NON-interactive)");
+check(/const MC_RELATED_TITLE = "[^"]+";/.test(mcSrc) && mcSrc.indexOf("const MC_RELATED_TITLE =") > -1 && /const MC_RELATED_TITLE = "[\u0600-\u06FF\u200c ]+";/.test(mcSrc) && mcSrc.indexOf('const MC_RELATED_TITLE = "بازی\u200cهای مرتبط"') > -1,
+  "S17 contract title: the MC_RELATED_TITLE constant carries the Persian label «بازی‌های مرتبط» (matches the MC_SECTION_ORDER aria-label — the mcentre-related slot label at line 112; the S15 MC_SCHEDULE_TITLE / S16 MC_FAQ_TITLE precedent; the label contains a ZWNJ [U+200C] between بازی + های — the character class includes \\u200c)");
+check(/const MC_RELATED_UPCOMING = "در انتظار";/.test(mcSrc) && /const MC_RELATED_LIVE_LABEL = "در جریان";/.test(mcSrc) && /const MC_RELATED_FINISHED_LABEL = "پایان";/.test(mcSrc),
+  "S17 contract vocabulary: the MC_RELATED_UPCOMING «در انتظار» + MC_RELATED_LIVE_LABEL «در جریان» + MC_RELATED_FINISHED_LABEL «پایان» constants (the S15 schedule vocabulary, compacted — decision 62: 'Compact broadcast-style related rows'; the MISSING-IS-NOT-ZERO law: a SCHEDULED row carries «در انتظار», NOT a fake 0-0)");
+check(/function matchRelatedInput\(sm: SeoMatch, ctx: SeoCtx, archive: any\[\]\): MatchRelatedInput/.test(pagesSrc),
+  "S17 contract projection: pages.ts defines matchRelatedInput(sm, ctx, archive) (the pre-escaped atoms projection — the S14 matchVenueInput / S15 matchScheduleInput / S16 matchFaqInput precedent; builds the MatchRelatedRowInput atoms from the data layer's relatedMatches helper)");
+check(/import \{ [^}]*\brelatedMatches\b[^}]* \} from "\.\/data";/.test(pagesSrc) && /import \{ [^}]*\bmatchRelatedHtml\b[^}]* \} from "\.\/match-centre";/.test(pagesSrc),
+  "S17 contract wiring: pages.ts imports relatedMatches from ./data (the data helper) + matchRelatedHtml from ./match-centre (the renderer) — the S04 hero/S14 venue/S15 schedule/S16 FAQ import precedent");
+
+// (b) the REAL renderer — the section wrapper + the broadcast rows + the
+// status classes + the no-empty-cards + the partial data + the only-valid-
+// internal-links + the no-script (the related list is a STATIC list).
+function s17Row(overrides) {
+  const o = overrides || {};
+  return {
+    pathHtml: o.pathHtml != null ? o.pathHtml : '<a href="/a-vs-c-2027-01-20">Arsenal – Chelsea</a>',
+    whenHtml: o.whenHtml != null ? o.whenHtml : '<time datetime="2027-01-20T17:00:00Z">، ۲۰ دی ۱۳۹۶ (۱۰ ژانویه)</time>',
+    compHtml: o.compHtml != null ? o.compHtml : "لیگ برتر انگلیس",
+    homeHtml: o.homeHtml != null ? o.homeHtml : "Arsenal",
+    awayHtml: o.awayHtml != null ? o.awayHtml : "Chelsea",
+    scoreHtml: o.scoreHtml != null ? o.scoreHtml : "",
+    live: !!o.live,
+    finished: !!o.finished
+  };
+}
+var s17Full = mc.matchRelatedHtml({ rows: [
+  s17Row({ pathHtml: '<a href="/a-vs-c-2027-01-20">Arsenal – Chelsea</a>', scoreHtml: "", finished: false }),
+  s17Row({ pathHtml: '<a href="/a-vs-b-2026-09-15">Arsenal – Brighton</a>', scoreHtml: "۲ – ۱", finished: true })
+] });
+check(s17Full.startsWith('<div class="mcentre-related"><h2>') && s17Full.includes("</h2><div class=\"mcentre-related-list\">") && s17Full.endsWith("</div></div>"),
+  "S17 section wrapper: matchRelatedHtml returns <div class=\"mcentre-related\"><h2>«بازی‌های مرتبط»</h2><div class=\"mcentre-related-list\">…</div></div> (the .mcentre-related-list is the row container — the S15 .mcentre-schedule wrapper precedent; the <section id=\"mcentre-related\"> anchor is added by the composer's sectionHtml)");
+check(s17Full.indexOf("بازی\u200cهای مرتبط") > -1,
+  "S17 title: the <h2> carries the «بازی‌های مرتبط» label (the MC_RELATED_TITLE constant — matches the MC_SECTION_ORDER aria-label)");
+check(s17Full.includes('<div class="mcentre-related-row is-sched">') && s17Full.includes('<div class="mcentre-related-row is-fin">'),
+  "S17 row status classes: a SCHEDULED row carries is-sched + a FINISHED row carries is-fin (the S15 .mcentre-sched-row status-class precedent — the live/finished/scheduled tri-state; the live row (is-live) is NOT expected in the related list [spec §13 = upcoming + H2H only] but the vocabulary is retained)");
+check(s17Full.includes('<span class="mcentre-related-when">') && s17Full.includes('<span class="mcentre-related-comp">') && s17Full.includes('<span class="mcentre-related-teams">') && s17Full.includes('<span class="mcentre-related-result">'),
+  "S17 row cells: each row carries the when/comp/teams/result cells (the S15 broadcast-row layout — flex, date/comp/teams/score; decision 62: 'Compact broadcast-style related rows: date/competition, crests/team names, score or upcoming indicator, status')");
+check(s17Full.includes('<span class="mcentre-related-upcoming">در انتظار</span>') && s17Full.includes('<span class="mcentre-related-score">۲ – ۱</span>') && s17Full.includes('<span class="mcentre-related-fin">پایان</span>'),
+  "S17 row result: a SCHEDULED row carries «در انتظار» (the upcoming marker — NOT a fake 0-0; the MISSING-IS-NOT-ZERO law) + a FINISHED row carries the Persian-digit score «۲ – ۱» + «پایان» (the S15 status vocabulary, compacted)");
+check(s17Full.includes('<a href="/a-vs-c-2027-01-20">Arsenal – Chelsea</a>'),
+  "S17 only-valid-internal-links: a row WITH a path renders the teams as an <a href=\"...\"> link (the matchPath URL — the same slug format the S15 schedule rows use; the milestones S17 test list: 'only valid internal links' — NO external links, NO broken anchors)");
+var s17NoPath = mc.matchRelatedHtml({ rows: [s17Row({ pathHtml: "Arsenal – Chelsea", scoreHtml: "", finished: false })] });
+check(s17NoPath.includes('<span class="mcentre-related-teams">Arsenal – Chelsea</span>') && !/<a [^>]*>Arsenal – Chelsea<\/a>/.test(s17NoPath),
+  "S17 no-path plain text: a row with NO path renders the teams as plain text (NO <a> — the S15 schedule precedent: r.path ? '<a>' : teams; the milestones S17 test list: 'missing fields' — a row with no path → plain text teams)");
+check(mc.matchRelatedHtml({ rows: [] }) === "" && mc.matchRelatedHtml(null) === "" && mc.matchRelatedHtml(undefined) === "",
+  "S17 no-empty-cards: an EMPTY related list (rows.length === 0 / null / undefined) → \"\" (the section omits entirely — the no-empty-cards law; the milestones S17 test list: '0–4 rows' + 'no-empty-cards' — no upcoming + no H2H → the section omits; the related: string REQUIRED key passes \"\" when no matches qualify; the slot detects \"\" → omits)");
+check(mc.matchRelatedHtml({ rows: [s17Row()] }).includes("mcentre-related-row") && (mc.matchRelatedHtml({ rows: [s17Row()] }).match(/mcentre-related-row/g) || []).length === 1,
+  "S17 partial data: a single row renders ONE row (the partial dataset renders the present rows — the milestones S17 test list: '0–4 rows' + 'partial/empty data'; upcoming-only when no H2H; H2H-only when no upcoming)");
+check(!/<script/i.test(s17Full) && !/addEventListener|setTimeout|setInterval/.test(s17Full),
+  "S17 no script: the related list is a STATIC list, NON-interactive — NO <script>, NO addEventListener, NO setTimeout (the S07 summary precedent: a static list, the composer is a pure leaf for the related MARKUP; the S15 schedule-expand-control + the S16 FAQ-accordion are the interactive parts, the related list is NOT)");
+
+// (c) the REAL h2hMatches — extracted via brace-matched extraction +
+// ts.transpileModule (the S13 teamCompMetrics / S14 windowSchedule precedent)
+// with the REAL normalizeTeamName (src/teams.ts) + controllable COMP_EN/
+// translateCompetition stubs. The controlled data: an archive with a FINISHED
+// H2H (home=A, away=B) + a FINISHED H2H swapped (home=B, away=A) + a FINISHED
+// non-H2H (home=C, away=D) + a SCHEDULED H2H (excluded — not FINISHED) + a
+// DUPLICATE H2H (same pair+day — the dedup key).
+function s17H2hEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const d = read("src/seo/data.ts");
+  const brrSrc = extractFnSrc(d, "buildRelatedRow");
+  const h2hSrc = extractFnSrc(d, "h2hMatches");
+  if (!brrSrc || !h2hSrc) return null;
+  const js = ts.transpileModule(brrSrc + "\n" + h2hSrc, { compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const { normalizeTeamName } = require(path.join(root, "src", "teams.ts"));
+  const COMP_EN = { PL: "Premier League", BL1: "Bundesliga", CL: "Champions League" };
+  const translateCompetition = function (c) { return c === "CL" ? "\u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627" : c; };
+  return new Function("normalizeTeamName", "COMP_EN", "translateCompetition", js + "\n; return h2hMatches;")(normalizeTeamName, COMP_EN, translateCompetition);
+}
+const s17H2h = s17H2hEngine();
+check(typeof s17H2h === "function",
+  "S17 h2hMatches extraction: the REAL h2hMatches extracted from data.ts via brace-matched extraction (extractFnSrc — the check-stats teamForm precedent) + ts.transpileModule (the S13 teamCompMetrics / S14 windowSchedule precedent) + the REAL buildRelatedRow (the nested helper — extracted + concatenated), fed the REAL normalizeTeamName (src/teams.ts — the S10/S13 precedent) + controllable COMP_EN/translateCompetition stubs");
+if (s17H2h) {
+  function s17Arch(date, comp, home, away, gh, ga, status) {
+    return { m: { utcDate: date, competition: { code: comp, faName: comp === "PL" ? "لیگ برتر انگلیس" : "بوندسلیگا" }, homeTeam: { name: home, faName: home + "Fa" }, awayTeam: { name: away, faName: away + "Fa" }, status: status || "FINISHED", score: { home: gh, away: ga }, path: "/" + home.toLowerCase().replace(/\s+/g, "-") + "-vs-" + away.toLowerCase().replace(/\s+/g, "-") + "-" + date.slice(0, 10) } };
+  }
+  const S17_H2H_ARCH = [
+    s17Arch("2026-09-15T17:00:00Z", "PL", "Arsenal", "Brighton", 2, 1),         // FINISHED H2H (home=A, away=B) — included
+    s17Arch("2026-03-10T17:00:00Z", "PL", "Brighton", "Arsenal", 0, 0),         // FINISHED H2H swapped (home=B, away=A) — included (either order)
+    s17Arch("2026-05-10T17:00:00Z", "BL1", "Dortmund", "Leverkusen", 3, 2),     // FINISHED non-H2H (neither A nor B) — excluded (no-filler)
+    s17Arch("2027-02-15T17:00:00Z", "PL", "Arsenal", "Brighton", null, null, "SCHEDULED"), // SCHEDULED H2H — excluded (not FINISHED)
+    s17Arch("2026-09-15T17:00:00Z", "PL", "Arsenal", "Brighton", 2, 1)         // DUPLICATE (same pair+day as row 0) — deduped
+  ];
+  const h2hResult = s17H2h(S17_H2H_ARCH, "Arsenal", "Brighton", 4);
+  check(h2hResult.length === 2,
+    "S17 h2hMatches pair filter: returns 2 H2H matches (Arsenal vs Brighton + Brighton vs Arsenal — both orders; the non-H2H Dortmund vs Leverkusen excluded; the SCHEDULED H2H excluded [not FINISHED]; the DUPLICATE deduped [same pair+day] — the milestones S17 test list: 'duplicates'");
+  check(h2hResult[0].utcDate === "2026-09-15T17:00:00Z" && h2hResult[1].utcDate === "2026-03-10T17:00:00Z",
+    "S17 h2hMatches sort DESC: the most recent H2H (2026-09-15) is FIRST, the older (2026-03-10) is SECOND (sort DESC — most recent first; the spec §13 'previous meetings' order — the most recent meeting is the most relevant)");
+  check(h2hResult[0].gh === 2 && h2hResult[0].ga === 1 && h2hResult[0].finished === true && h2hResult[0].live === false,
+    "S17 h2hMatches row atoms: the row carries the FINISHED score (gh=2, ga=1) + finished=true + live=false (the buildRelatedRow helper — the pubMatch m.score {home,away} flat shape, the S14 ScheduleRow precedent)");
+  check(h2hResult[0].path === "/arsenal-vs-brighton-2026-09-15" && h2hResult[0].compFa === "لیگ برتر انگلیس" && h2hResult[0].homeFa === "ArsenalFa" && h2hResult[0].awayFa === "BrightonFa",
+    "S17 h2hMatches row atoms: the row carries the path (the matchPath URL — for the <a> link) + compFa (the competition faName) + homeFa/awayFa (the team faNames — the buildRelatedRow fallbacks)");
+  const h2hCapped = s17H2h(S17_H2H_ARCH, "Arsenal", "Brighton", 1);
+  check(h2hCapped.length === 1 && h2hCapped[0].utcDate === "2026-09-15T17:00:00Z",
+    "S17 h2hMatches cap: the max param caps the results (max=1 → 1 row, the most recent — the S15 similarMatches cap precedent)");
+  check(s17H2h([], "Arsenal", "Brighton").length === 0 && s17H2h(S17_H2H_ARCH, "", "Brighton").length === 0,
+    "S17 h2hMatches degenerate guard: an empty archive OR an empty team name → [] (the fail-closed law — no fabricated H2H meetings)");
+}
+
+// (d) the REAL relatedMatches — extracted via brace-matched extraction +
+// ts.transpileModule (the S13/S14 precedent) with the REAL normalizeTeamName
+// + matchPath + controllable stubs. The controlled data: a fixture (A vs B,
+// SCHEDULED, future) + a pool with upcoming involving A + upcoming involving
+// B + an unrelated upcoming (no-filler) + a FINISHED H2H (pool's 7-day) + a
+// LIVE match (excluded) + an archive with a FINISHED H2H (365-day) + a
+// FINISHED non-H2H.
+function s17RelatedEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const d = read("src/seo/data.ts");
+  const brrSrc = extractFnSrc(d, "buildRelatedRow");
+  const h2hSrc = extractFnSrc(d, "h2hMatches");
+  const relSrc = extractFnSrc(d, "relatedMatches");
+  if (!brrSrc || !h2hSrc || !relSrc) return null;
+  const js = ts.transpileModule(brrSrc + "\n" + h2hSrc + "\n" + relSrc, { compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const { normalizeTeamName } = require(path.join(root, "src", "teams.ts"));
+  const { matchPath } = require(path.join(root, "src", "slugs.ts"));
+  const COMP_EN = { PL: "Premier League", BL1: "Bundesliga", CL: "Champions League" };
+  const translateCompetition = function (c) { return c === "CL" ? "\u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627" : c; };
+  // isLiveSt stub (src/seo/utils.ts — the REAL helper; a controllable stub here
+  // since utils.ts imports ./config which Node's type-stripping require can't
+  // resolve — the S14 tehranDayKey extraction precedent for utils.ts helpers).
+  // isLiveSt(status) = LIVE|IN_PLAY|PAUSED (after toUpperCase) — the S04 hero
+  // live-status vocabulary.
+  var isLiveSt = function (status) { var s = String(status || "").toUpperCase(); return s === "LIVE" || s === "IN_PLAY" || s === "PAUSED"; };
+  return new Function("normalizeTeamName", "COMP_EN", "translateCompetition", "matchPath", "isLiveSt", js + "\n; return relatedMatches;")(normalizeTeamName, COMP_EN, translateCompetition, matchPath, isLiveSt);
+}
+const s17Rel = s17RelatedEngine();
+check(typeof s17Rel === "function",
+  "S17 relatedMatches extraction: the REAL relatedMatches extracted from data.ts via brace-matched extraction + ts.transpileModule (the S13/S14 precedent) + the REAL buildRelatedRow + h2hMatches (concatenated — relatedMatches calls h2hMatches), fed the REAL normalizeTeamName + matchPath (src/slugs.ts — the fixturePath fallback) + a controllable isLiveSt stub (src/seo/utils.ts — utils.ts imports ./config which Node's type-stripping require can't resolve, so isLiveSt is stubbed [LIVE|IN_PLAY|PAUSED — the S04 hero vocabulary; the S14 tehranDayKey extraction precedent for utils.ts helpers]) + controllable COMP_EN/translateCompetition stubs");
+if (s17Rel) {
+  function s17PoolRow(home, away, iso, comp, status, gh, ga, path) {
+    return { utcDate: iso, homeTeam: { name: home, faName: home + "Fa" }, awayTeam: { name: away, faName: away + "Fa" }, competition: { code: comp, faName: comp === "PL" ? "لیگ برتر انگلیس" : (comp === "BL1" ? "بوندسلیگا" : "لیگ قهرمانان") }, status: status, score: status === "FINISHED" ? { fullTime: { home: gh, away: ga } } : undefined, path: path };
+  }
+  const S17_FX_HOME = "Arsenal", S17_FX_AWAY = "Brighton";
+  const S17_FX_DATE = "2027-01-15T17:00:00Z";
+  const S17_FX_PATH = "/arsenal-vs-brighton-2027-01-15";
+  const S17_POOL = [
+    s17PoolRow(S17_FX_HOME, S17_FX_AWAY, S17_FX_DATE, "PL", "SCHEDULED", null, null, S17_FX_PATH),            // the fixture itself (excluded by path)
+    s17PoolRow("Arsenal", "Chelsea", "2027-01-20T17:00:00Z", "PL", "TIMED", null, null, "/arsenal-vs-chelsea-2027-01-20"),  // upcoming involving Arsenal (TIMED status — the football-data.org v4 provider uses TIMED for timed-upcoming matches; the S17 filter accepts future + not-live [t > now && !isLiveSt], NOT just SCHEDULED — the similarMatches precedent)
+    s17PoolRow("Dortmund", "Brighton", "2027-01-22T17:00:00Z", "BL1", "SCHEDULED", null, null, "/dortmund-vs-brighton-2027-01-22"), // upcoming involving Brighton (away)
+    s17PoolRow("Dortmund", "Leverkusen", "2027-01-25T17:00:00Z", "BL1", "SCHEDULED", null, null, "/dortmund-vs-leverkusen-2027-01-25"), // unrelated upcoming (excluded — no-filler)
+    s17PoolRow("Arsenal", "Brighton", "2026-09-15T17:00:00Z", "PL", "FINISHED", 2, 1, "/arsenal-vs-brighton-2026-09-15"),        // FINISHED H2H (pool's 7-day)
+    s17PoolRow("Arsenal", "Everton", "2027-01-10T17:00:00Z", "PL", "IN_PLAY", 1, 0, "/arsenal-vs-everton-2027-01-10")            // LIVE involving Arsenal (excluded — not upcoming [future + not live] + not FINISHED)
+  ];
+  const S17_ARCH = [
+    s17Arch2("2026-03-10T17:00:00Z", "PL", "Brighton", "Arsenal", 0, 0),   // FINISHED H2H swapped (archive 365-day)
+    s17Arch2("2026-05-10T17:00:00Z", "BL1", "Dortmund", "Leverkusen", 3, 2) // FINISHED non-H2H (excluded)
+  ];
+  function s17Arch2(date, comp, home, away, gh, ga) {
+    return { m: { utcDate: date, competition: { code: comp, faName: comp === "PL" ? "لیگ برتر انگلیس" : "بوندسلیگا" }, homeTeam: { name: home, faName: home + "Fa" }, awayTeam: { name: away, faName: away + "Fa" }, status: "FINISHED", score: { home: gh, away: ga }, path: "/" + home.toLowerCase().replace(/\s+/g, "-") + "-vs-" + away.toLowerCase().replace(/\s+/g, "-") + "-" + date.slice(0, 10) } };
+  }
+  const s17Ctx2 = { payload: {}, pool: S17_POOL, shaped: S17_POOL.slice() };
+  const s17Sm = { raw: S17_POOL[0], s: S17_POOL[0] };
+  const relResult = s17Rel(s17Ctx2, s17Sm, S17_ARCH, 4);
+  // the unified list: upcoming first (Arsenal vs Chelsea 2027-01-20, Dortmund vs Brighton 2027-01-22) then H2H (Arsenal vs Brighton 2026-09-15, Brighton vs Arsenal 2026-03-10) = 4 rows
+  check(relResult.length === 4,
+    "S17 relatedMatches unified list: 4 rows (2 upcoming + 2 H2H — the max-4 cap; the milestones S17 test list: '0–4 rows' + 'priority order' + 'duplicates'");
+  check(relResult[0].path === "/arsenal-vs-chelsea-2027-01-20" && relResult[1].path === "/dortmund-vs-brighton-2027-01-22",
+    "S17 relatedMatches upcoming first: the upcoming rows come FIRST (Arsenal vs Chelsea [involving Arsenal] + Dortmund vs Brighton [involving Brighton away] — sorted ASC [soonest first]; spec §13 'One unified list, upcoming first then previous meetings'; decision 60: 'Prioritize upcoming fixtures involving either team'");
+  check(relResult[2].utcDate === "2026-09-15T17:00:00Z" && relResult[3].utcDate === "2026-03-10T17:00:00Z",
+    "S17 relatedMatches H2H after upcoming: the H2H rows come AFTER the upcoming (Arsenal vs Brighton 2026-09-15 [pool's 7-day] + Brighton vs Arsenal 2026-03-10 [archive 365-day] — sorted DESC [most recent first]; spec §13 'then previous meetings'; decision 60: 'then previous meetings between the two teams'");
+  check(relResult.every(r => r.path !== S17_FX_PATH),
+    "S17 relatedMatches fixture-self-exclusion: the fixture ITSELF (Arsenal vs Brighton 2027-01-15 — the match page's own match) is EXCLUDED by path (the S14 precedent — no self-reference in the related list; the milestones S17 test list: 'duplicates' — the fixture excluded)");
+  check(relResult.every(r => r.path !== "/dortmund-vs-leverkusen-2027-01-25"),
+    "S17 relatedMatches no-filler: the unrelated upcoming (Dortmund vs Leverkusen — involves NEITHER Arsenal NOR Brighton) is EXCLUDED (spec §13 'No unrelated competition matches as filler' — every row involves at least one participating team OR is a H2H meeting; the milestones S17 test list: 'no-filler law')");
+  check(relResult.every(r => r.path !== "/arsenal-vs-everton-2027-01-10"),
+    "S17 relatedMatches no-LIVE: the LIVE match (Arsenal vs Everton — IN_PLAY) is EXCLUDED (spec §13 = upcoming [future + not live — SCHEDULED/TIMED/POSTPONED, the similarMatches precedent: t > now && !isLiveSt] + previous H2H [FINISHED] only; LIVE is neither — isUpcoming = t > now && !isLiveSt(IN_PLAY) = false + isFinished = false → excluded; the related list is NOT a live-tracker; the milestones S17 test list: 'priority order')");
+  check(relResult[2].gh === 2 && relResult[2].ga === 1 && relResult[2].finished === true && relResult[3].gh === 0 && relResult[3].ga === 0,
+    "S17 relatedMatches H2H scores: the H2H rows carry the FINISHED scores (Arsenal vs Brighton 2-1 + Brighton vs Arsenal 0-0 — the buildRelatedRow helper reads the pubMatch m.score {home,away} flat shape)");
+  check(relResult[0].gh === null && relResult[0].ga === null && relResult[0].finished === false && relResult[0].live === false,
+    "S17 relatedMatches upcoming atoms: the upcoming rows carry gh/ga null + finished=false + live=false (SCHEDULED/TIMED — the upcoming marker «در انتظار» renders via the scoreHtml \"\" path; MISSING IS NOT ZERO — the S15 law)");
+  check(relResult[0].path === "/arsenal-vs-chelsea-2027-01-20",
+    "S17 relatedMatches TIMED status accepted: the Arsenal vs Chelsea row (status=TIMED — the football-data.org v4 provider's upcoming status) is INCLUDED in the upcoming section (the filter is future + not-live [t > now && !isLiveSt], NOT status === SCHEDULED — the similarMatches precedent; the real-data Newcastle vs Arsenal page rendered 0 rows before this fix because the pool's upcoming matches carry the TIMED status, not SCHEDULED)");
+  // the max-4 cap: upcoming has 2, H2H fills 2 → 4 total (if upcoming had 4, H2H omits)
+  const S17_POOL_4UP = [
+    s17PoolRow(S17_FX_HOME, S17_FX_AWAY, S17_FX_DATE, "PL", "SCHEDULED", null, null, S17_FX_PATH),
+    s17PoolRow("Arsenal", "Chelsea", "2027-01-20T17:00:00Z", "PL", "SCHEDULED", null, null, "/a1"),
+    s17PoolRow("Arsenal", "Everton", "2027-01-21T17:00:00Z", "PL", "SCHEDULED", null, null, "/a2"),
+    s17PoolRow("Arsenal", "Fulham", "2027-01-23T17:00:00Z", "PL", "SCHEDULED", null, null, "/a3"),
+    s17PoolRow("Dortmund", "Brighton", "2027-01-24T17:00:00Z", "BL1", "SCHEDULED", null, null, "/a4")
+  ];
+  const ctx4 = { payload: {}, pool: S17_POOL_4UP, shaped: S17_POOL_4UP.slice() };
+  const rel4 = s17Rel(ctx4, s17Sm, S17_ARCH, 4);
+  check(rel4.length === 4 && rel4.every(r => r.path !== S17_FX_PATH) && rel4[0].path === "/a1",
+    "S17 relatedMatches max-4 cap (upcoming has 4): when upcoming has 4 qualifying rows, H2H OMITS (the cap applies to the UNIFIED list, NOT per-section — decision S17-Max4; upcoming takes priority up to max, H2H fills the rest; if upcoming has max, H2H omits entirely)");
+  // the no-empty-cards: no upcoming + no H2H → []
+  const S17_POOL_EMPTY = [
+    s17PoolRow(S17_FX_HOME, S17_FX_AWAY, S17_FX_DATE, "PL", "SCHEDULED", null, null, S17_FX_PATH),
+    s17PoolRow("Dortmund", "Leverkusen", "2027-01-25T17:00:00Z", "BL1", "SCHEDULED", null, null, "/d1") // unrelated
+  ];
+  const ctxEmpty = { payload: {}, pool: S17_POOL_EMPTY, shaped: S17_POOL_EMPTY.slice() };
+  const relEmpty = s17Rel(ctxEmpty, s17Sm, [], 4);
+  check(relEmpty.length === 0,
+    "S17 relatedMatches no-empty-cards: no upcoming (none involving either team) + no H2H (empty archive) → [] (the no-empty-cards law — the section omits entirely; the milestones S17 test list: '0–4 rows' + 'no-empty-cards' — a pre-season friendly between two teams with no history)");
+  // the cross-section dedup: a match in both upcoming + H2H (impossible by status, but the path-dedup is defensive) — verify no duplication
+  const relDedup = s17Rel(s17Ctx2, s17Sm, [], 4); // archive empty — only pool's H2H (Arsenal vs Brighton 2026-09-15)
+  const h2hOnly = relDedup.filter(r => r.finished);
+  check(h2hOnly.length === 1 && h2hOnly[0].path === "/arsenal-vs-brighton-2026-09-15",
+    "S17 relatedMatches H2H-only when no upcoming: when no upcoming qualifies, the H2H section renders alone (partial data — the milestones S17 test list: '0–4 rows' + 'partial/empty data'; the pool's 7-day finished H2H [Arsenal vs Brighton 2026-09-15] renders, the archive is empty)");
+}
+
+// (e) the projection matchRelatedInput — extracted via extractFnSrc +
+// ts.transpileModule (the S11/S12/S14/S16 precedent) with the REAL
+// relatedMatches + the controllable atoms. The projection escapes the raw
+// RelatedRow fields into the MatchRelatedRowInput atoms (the S04 hero
+// precedent — the composer is a pure leaf; the atoms arrive pre-escaped).
+function s17ProjEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const projSrc = extractFnSrc(pagesSrc, "matchRelatedInput");
+  if (!projSrc) return null;
+  // the projection calls relatedMatches — stub it (the data layer is tested separately in (d))
+  const stubRelated = function (ctx, sm, archive, max) {
+    return [{
+      path: "/arsenal-vs-chelsea-2027-01-20", utcDate: "2027-01-20T17:00:00Z", compFa: "لیگ برتر انگلیس",
+      homeFa: "Arsenal", awayFa: "Chelsea", gh: null, ga: null, live: false, finished: false
+    }];
+  };
+  const js = ts.transpileModule("var esc = function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;');}; var toFaDigits = function(s){return String(s).replace(/[0-9]/g,function(w){return {0:'۰',1:'۱',2:'۲',3:'۳',4:'۴',5:'۵',6:'۶',7:'۷',8:'۸',9:'۹'}[w]||w;});}; var faDateD2 = function(iso){return '، ۲۰ دی ۱۳۹۶ (۱۰ ژانویه)';}; var relatedMatches = " + stubRelated.toString() + ";\n" + projSrc, { compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2020 } }).outputText;
+  return new Function(js + "\n; return matchRelatedInput;")();
+}
+const s17Proj = s17ProjEngine();
+check(typeof s17Proj === "function",
+  "S17 projection extraction: the REAL matchRelatedInput extracted from pages.ts via extractFnSrc + ts.transpileModule (the S11 buildStandingsHtml / S12 matchFormInput / S14 matchVenueInput / S16 matchFaqInput precedent), with relatedMatches stubbed (the data layer is tested separately in (d)) + esc/toFaDigits/faDateD2 stubbed (the s05DateHelpers / S10 standings-window pattern)");
+if (s17Proj) {
+  const projResult = s17Proj({ raw: {}, s: {} }, { payload: {}, pool: [], shaped: [] }, []);
+  check(projResult.rows.length === 1,
+    "S17 projection rows: the projection returns 1 row (the stubbed relatedMatches returns 1 row — the projection maps verbatim; the S04 hero precedent)");
+  var r0 = projResult.rows[0];
+  check(r0.pathHtml === '<a href="/arsenal-vs-chelsea-2027-01-20">Arsenal – Chelsea</a>',
+    "S17 projection pathHtml: the row WITH a path renders the teams as an <a href=\"...\"> link (prebuilt — the S15 schedule pathHtml precedent; the milestones S17 test list: 'only valid internal links')");
+  check(r0.whenHtml === '<time datetime="2027-01-20T17:00:00Z">، ۲۰ دی ۱۳۹۶ (۱۰ ژانویه)</time>',
+    "S17 projection whenHtml: the date atom is a <time datetime=\"...\"> with faDateD2 (the S11/S12 compact-date precedent; the datetime attribute carries the ISO — machine-readable; decision S17-When: date-only, the time is in the datetime attribute, NOT the visible text)");
+  check(r0.compHtml === "لیگ برتر انگلیس" && r0.homeHtml === "Arsenal" && r0.awayHtml === "Chelsea",
+    "S17 projection escaped atoms: compHtml/homeHtml/awayHtml are pre-escaped (the esc() discipline — the S04 hero precedent; the composer is a pure leaf, the atoms arrive pre-escaped)");
+  check(r0.scoreHtml === "" && r0.live === false && r0.finished === false,
+    "S17 projection upcoming atoms: a SCHEDULED row carries scoreHtml=\"\" (MISSING IS NOT ZERO — the S15 law, NOT a fake 0-0) + live=false + finished=false (the upcoming marker «در انتظار» renders via the scoreHtml \"\" path)");
+}
+
+// (f) the wiring — the pre-existing related: string REQUIRED key (NOT
+// optional — the S02 contract) + the pre-existing mcentre-related slot +
+// NO new nav destination (MC_NAV_DESTS keeps 5 — decision 13) + the
+// buildMatchPage wiring (related: relatedHtml).
+check(/related: string;/.test(mcSrc) && !/related\?: string;/.test(mcSrc),
+  "S17 wiring related key REQUIRED: the related: string key is REQUIRED in MatchCentreParts (NOT optional — the S02 contract line 126; contrast faq?:/venue?:/schedule?: which ARE optional). S17 FILLS the already-existing REQUIRED key — NO new interface field (the S02 contract preserved)");
+check(/"mcentre-related": parts\.related/.test(mcSrc) && /slot: "mcentre-related", label: "بازی\u200cهای مرتبط"/.test(mcSrc),
+  "S17 wiring pre-existing slot: the mcentre-related slot ALREADY EXISTS in the S02 registry (MC_SECTION_ORDER + the bySlot map — decision 13: NO new slot, NO new section anchor; the S14/S15/S16 discipline — S17 FILLS the already-existing slot)");
+check(/const MC_NAV_DESTS: \{ id: string; label: string \}\[\] = \[/.test(pagesSrc) && (function () { const s = pagesSrc.slice(pagesSrc.indexOf("MC_NAV_DESTS:"), pagesSrc.indexOf("];", pagesSrc.indexOf("MC_NAV_DESTS:")) + 2); return (s.match(/\u062e\u0644\u0627\u0635\u0647|\u062c\u062f\u0648\u0644|\u0641\u0631\u0645|\u0628\u0627\u0632\u06cc\u200c\u0647\u0627|\u0648\u0631\u0632\u0634\u06af\u0627\u0647/g) || []).length === 5 && !/related|\u0628\u0627\u0632\u06cc\u200c\u0647\u0627\u06cc \u0645\u0631\u062a\u0628\u0637|mcentre-related/.test(s); })(),
+  "S17 wiring no new nav destination (decision 13): MC_NAV_DESTS keeps exactly the 5 nav items (خلاصه، جدول، فرم، بازی‌ها، ورزشگاه) — related matches are OUTSIDE the 5-item nav (decision 13: 'FAQs/SEO outside nav'; the Q9=B adaptive filter unchanged — related never lights a nav destination; the milestones S17 test list: the nav stays 5 items)");
+check(/related: relatedHtml,/.test(pagesSrc) && /const relatedHtml = matchRelatedHtml\(matchRelatedInput\(sm, ctx, archive\)\);/.test(pagesSrc),
+  "S17 wiring buildMatchPage: the related part carries relatedHtml = matchRelatedHtml(matchRelatedInput(sm, ctx, archive)) (the legacy v13.82 similarCard assembly [similarMatches + M.mrowHtml] is RETIRED on the match page — decision S17-Legacy; the team-page simCard keeps similarMatches + M.mrowHtml byte-frozen)");
+check(!/const similarCard = sims\.length/.test(pagesSrc) && !/related: similarCard,/.test(pagesSrc),
+  "S17 wiring legacy retired: the match-page similarCard assembly (const similarCard = sims.length ? '<div class=\"card simcard\">...') + the related: similarCard wiring are GONE from buildMatchPage (the v13.82 sibling-fixtures card is RETIRED — replaced by the spec §13 unified list; decision S17-Legacy)");
+
+// (g) the cost laws — the composer purity (matchRelatedHtml + relatedRowHtml
+// no script/fetch/timer) + the h2hMatches/relatedMatches purity (pure
+// aggregation, no KV/fetch) + the await count = 3.
+check(!/<script|addEventListener|setTimeout|setInterval|fetch\(|env\.STATE|env\.AI/i.test(mcSrc.slice(mcSrc.indexOf("function relatedRowHtml"), mcSrc.indexOf("export function matchRelatedHtml"))) && !/<script|addEventListener|setTimeout|setInterval|fetch\(|env\.STATE|env\.AI/i.test(mcSrc.slice(mcSrc.indexOf("export function matchRelatedHtml"), mcSrc.indexOf("// One anchored wrapper"))),
+  "S17 composer purity: matchRelatedHtml + relatedRowHtml are pure string composition — ZERO client-script, ZERO fetch, ZERO KV, ZERO timer (the related list is a STATIC list, NON-interactive; the S07 summary precedent; the cost-law regex gates the composer)");
+const s17DataSeg = dataSrcS17.slice(dataSrcS17.indexOf("export interface RelatedRow"), dataSrcS17.indexOf("// Build a RelatedRow") + 20000);
+check(!/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|env\.STATE|env\.AI|AI\.run/.test(s17DataSeg.slice(0, 6000)),
+  "S17 data helper purity: h2hMatches + relatedMatches + buildRelatedRow are pure aggregation — ZERO AI/network/KV/timer/polling code (the zero-runtime-cost law — the helpers read the caller-passed ctx + archive; the windowSchedule/teamForm precedent)");
+check(awaitCount === 3,
+  "S17 await count: buildMatchPage's await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; S17 is a PRESENTATION + DATA-AGGREGATION session — the related list reads the already-loaded ctx.pool + the loadArchive archive via the relatedMatches helper; ZERO new awaits, ZERO new KV reads, ZERO new fetches — ADR-006; the zero-runtime-cost law holds)");
+
+// (h) the CSS — the placement (S16 < S17 < S03) + the row layout + the status
+// classes + the live-dot + the reduced-motion + the mobile + the logical
+// properties.
+check(shellSrc.indexOf("Match Centre S16 (M7)") < shellSrc.indexOf("Match Centre S17 (M7)") && shellSrc.indexOf("Match Centre S17 (M7)") < shellSrc.indexOf("Match Centre S03 (M1)"),
+  "S17 CSS placement: the S17 style block rides page-shell.ts AFTER S16 (the FAQ accordion) and BEFORE S03 (the responsive/spacing/RTL foundation) — chronological session order: S04 → S05 → S06 → S07 → S08 → S11 → S12 → S13 → S14 → S15 → S16 → S17 → S03");
+check(/#mcentre-related \.mcentre-related>h2\{[^}]*font-weight:700/.test(shellSrc) && /#mcentre-related \.mcentre-related-list\{display:flex;flex-direction:column/.test(shellSrc),
+  "S17 CSS wrapper: the #mcentre-related .mcentre-related>h2 (weight 700) + the .mcentre-related-list (flex column, gap 2px) — the S15 .mcentre-schedule wrapper precedent");
+check(/#mcentre-related \.mcentre-related-row\{display:flex;align-items:baseline;gap:\.5rem/.test(shellSrc) && /#mcentre-related \.mcentre-related-row\.is-live\{background:rgba\(125,211,252,\.08\)\}/.test(shellSrc),
+  "S17 CSS row: the .mcentre-related-row is a flex row (align-items:baseline, gap .5rem) + the .is-live variant (the subtle icy-blue background tint — the S15 .mcentre-sched-row precedent; decision S17-Row: a NEW .mcentre-related-row variant, the S15 design vocabulary reused at the design level)");
+check(/#mcentre-related \.mcentre-related-when\{flex:0 1 auto;min-width:0[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis/.test(shellSrc) && /#mcentre-related \.mcentre-related-when time\{font-variant-numeric:tabular-nums\}/.test(shellSrc),
+  "S17 CSS when cell: the .mcentre-related-when truncates via text-overflow:ellipsis (the date truncates if too long — no horizontal scroll; the milestones S17 test list: 'mobile readability') + the <time> carries font-variant-numeric:tabular-nums (the date digits align)");
+check(/#mcentre-related \.mcentre-related-teams\{flex:1 1 auto;min-width:0[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis/.test(shellSrc) && /#mcentre-related \.mcentre-related-teams a\{color:#e2e8f0;text-decoration:none\}/.test(shellSrc),
+  "S17 CSS teams cell: the .mcentre-related-teams takes the remaining space (flex:1 1 auto) + truncates + the <a> link carries the icy-navy color (the S15 .mcentre-sched-teams precedent)");
+check(/#mcentre-related \.mcentre-related-score\{[^}]*font-weight:800/.test(shellSrc) && /#mcentre-related \.mcentre-related-upcoming\{[^}]*color:var\(--muted/.test(shellSrc) && /#mcentre-related \.mcentre-related-fin\{[^}]*color:var\(--muted/.test(shellSrc),
+  "S17 CSS result cells: the .mcentre-related-score (weight 800 — prominent) + the .mcentre-related-upcoming + .mcentre-related-fin (muted color — the status indicators; the S15 .mcentre-sched-score/upcoming/fin precedent)");
+check(/#mcentre-related \.mcentre-related-live\{[^}]*animation:mcrelated-pulse 1\.4s ease-in-out infinite/.test(shellSrc) && /@keyframes mcrelated-pulse\{0%,100%\{opacity:1\}50%\{opacity:\.35\}\}/.test(shellSrc) && /@media \(prefers-reduced-motion:reduce\)\{#mcentre-related \.mcentre-related-live\{animation:none\}\}/.test(shellSrc),
+  "S17 CSS live-dot + reduced-motion: the .mcentre-related-live is a pulsing icy-blue dot (the mcrelated-pulse keyframes — the S15 mcsched-pulse precedent) + the prefers-reduced-motion media query gates the animation (reduced-motion = no animation — the S06/S15 precedent; the live dot is NOT expected in the related list [spec §13 = upcoming + H2H only] but the vocabulary is retained)");
+check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-related \.mcentre-related-row\{[^}]*gap:\.35rem/.test(shellSrc) && /@media \(max-width:600px\)\{[\s\S]*?#mcentre-related \.mcentre-related-when\{[^}]*font-size:\.66rem/.test(shellSrc),
+  "S17 CSS mobile: at ≤600px the row scales (gap .5→.35rem, the when cell .7→.66rem — the 600px mobile breakpoint, the design system's own; the milestones S17 test list: 'mobile readability — no horizontal scroll'; the rows stay one line, the names truncate, the score stays prominent)");
+check(!/#mcentre-related[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc),
+  "S17 CSS logical properties: the S17 related-matches block uses CSS logical properties ONLY (margin-block-start, margin-block-end, padding-block, padding-inline, gap — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties; the @keyframes + the reduced-motion media queries are NOT #mcentre-related-prefixed rules so the guard does not flag them)");
+check(/\.simcard\{/.test(shellSrc) && /\.simcount\{/.test(shellSrc),
+  "S17 legacy .simcard CSS byte-frozen: the existing .simcard + .simcount CSS stays byte-frozen (the team-page simCard uses them — decision S17-Legacy; the match-page similarCard is RETIRED but the team-page path keeps the vocabulary; the S12 precedent — the match-page formStripHtml retirement did NOT remove the team-page formStripHtml CSS)");
+
+// (i) the harness co-evolution — S17 adds NO new worker-src.js concat entry
+// (data.ts/match-centre.ts/pages.ts are already loaded by other means: data.ts
+// via read + brace-matched extraction in check scripts; match-centre.ts via
+// the require at line 127; pages.ts via read + extractFnSrc). NO new module
+// joins the concat (unlike S16's faq-content.ts).
+check(harnessSrc.indexOf('"seo/faq-content.ts"') > -1 && !/seo\/related-matches\.ts|seo\/h2h-matches\.ts/.test(harnessSrc),
+  "S17 harness NO new concat: S17 adds NO new module to worker-src.js (data.ts is loaded via read + brace-matched extraction in check scripts — the S13/S14 precedent; match-centre.ts is already in the concat at line 181; pages.ts is loaded via read + extractFnSrc. The h2hMatches + relatedMatches helpers live in data.ts [already read]; the matchRelatedHtml renderer lives in match-centre.ts [already concatenated]; the matchRelatedInput projection lives in pages.ts [already read]. NO new seo/ module joins the concat — unlike S16's faq-content.ts)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");
