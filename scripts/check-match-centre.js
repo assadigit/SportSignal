@@ -162,7 +162,7 @@ check(withNav.indexOf('id="mcentre-hero"') < withNav.indexOf('id="mcentre-nav"')
 
 // ---------- 3. wiring: buildMatchPage delegates, GSC surfaces stay ----------
 let wiringOk = true;
-if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml + the S12 form renderer matchFormHtml + the S13 metrics renderer matchMetricsHtml + the projection types)"); wiringOk = false; }
+if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml + the S12 form renderer matchFormHtml + the S13 metrics renderer matchMetricsHtml + the S14 venue renderer matchVenueHtml + the S14 schedule renderer matchScheduleHtml + the projection types)"); wiringOk = false; }
 // S08: pages.ts imports the narrative engine (narrativeHtml + the lifecycle type).
 if (!/import \{ narrativeHtml, type NarrativeLifecycle \} from "\.\/narrative";/.test(pagesSrc)) { bad("wiring: pages.ts lost the narrative engine import (narrativeHtml + NarrativeLifecycle — the S08 deterministic narrative engine)"); wiringOk = false; }
 if (!/const main = matchCentreMain\(\{/.test(pagesSrc)) { bad("wiring: buildMatchPage no longer delegates its main assembly to matchCentreMain"); wiringOk = false; }
@@ -1635,8 +1635,8 @@ check(/import \{ matchStandingsWindow, type StandingsWindow \} from "\.\/standin
   "S11 wiring import: pages.ts imports matchStandingsWindow + the StandingsWindow type from ./standings-window (the S10 module — already loaded; fullByCode is already loaded by the pre-existing fullByCodeFor await)");
 check(/const standingsHtml = buildStandingsHtml\(matchStandingsWindow\(sm, ctx, fullByCode\)\)/.test(pagesSrc),
   "S11 wiring call: buildMatchPage calls matchStandingsWindow(sm, ctx, fullByCode) + buildStandingsHtml(window) — the S10 selection runs HERE (pure logic, zero new awaits), the renderer projects the 5 visible columns (pure string composition, zero new awaits)");
-check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formPartHtml \}\)/.test(pagesSrc),
-  "S11 wiring nav: the standings string is passed to matchNavHtml ({ standings: standingsHtml }) so the nav's adaptive Q9=B filter renders the جدول nav item when the standings part is non-empty (S12 co-evolution: the form part is the matchFormHtml render; S13 co-evolution: the form part is now the COMBINED formPartHtml — the form card + the metrics card — the same adaptive filter renders the فرم nav item when EITHER renders, decision S13-1)");
+check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formPartHtml, venue: venueHtml, schedule: scheduleHtml \}\)/.test(pagesSrc),
+  "S11 wiring nav: the standings string is passed to matchNavHtml ({ standings: standingsHtml }) so the nav's adaptive Q9=B filter renders the جدول nav item when the standings part is non-empty (S12 co-evolution: the form part is the matchFormHtml render; S13 co-evolution: the form part is now the COMBINED formPartHtml — the form card + the metrics card — the same adaptive filter renders the فرم nav item when EITHER renders, decision S13-1; S14 co-evolution: the nav call now also passes venue: venueHtml, schedule: scheduleHtml — the ورزشگاه + بازی‌ها nav items join the same adaptive filter, decision S14-2: the pre-existing slots reused)");
 check(/standings: standingsHtml,/.test(pagesSrc),
   "S11 wiring composer: the standings string is passed to matchCentreMain ({ standings: standingsHtml }) so the composer wraps it in the mcentre-standings anchor (the S04 hero precedent — pages.ts builds the string, the composer wraps it)");
 
@@ -1916,8 +1916,8 @@ check(mc.matchFormHtml(fp12.matchFormInput({ raw: { homeTeam: { name: "X" }, awa
 // matchFormHtml + passes form: formHtml to BOTH matchNavHtml + matchCentreMain.
 check(/const formHtml = matchFormHtml\(matchFormInput\(sm, ctx, archive, fullByCode\)\);/.test(pagesSrc),
   "S12 wiring call: buildMatchPage calls matchFormInput(sm, ctx, archive, fullByCode) + matchFormHtml(input) — the projection reads the already-loaded teamForm + teamSeasonRecord data (the loadArchive + fullByCodeFor awaits — ZERO new awaits), the renderer is pure string composition in the composer");
-check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formPartHtml \}\)/.test(pagesSrc) && /form: formPartHtml,/.test(pagesSrc),
-  "S12 wiring dual: the form string feeds BOTH matchNavHtml (the فرم nav item — the adaptive Q9=B filter renders it when the form part is non-empty) AND matchCentreMain (the mcentre-form section anchor — the S11 standings dual-passing precedent) (S13 co-evolution: the form part is now the COMBINED formPartHtml = the S12 form card + the S13 metrics card riding INSIDE the mcentre-form section — decision S13-1; the فرم nav item lights when EITHER card renders)");
+check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formPartHtml, venue: venueHtml, schedule: scheduleHtml \}\)/.test(pagesSrc) && /form: formPartHtml,/.test(pagesSrc),
+  "S12 wiring dual: the form string feeds BOTH matchNavHtml (the فرم nav item — the adaptive Q9=B filter renders it when the form part is non-empty) AND matchCentreMain (the mcentre-form section anchor — the S11 standings dual-passing precedent) (S13 co-evolution: the form part is now the COMBINED formPartHtml = the S12 form card + the S13 metrics card riding INSIDE the mcentre-form section — decision S13-1; the فرم nav item lights when EITHER card renders; S14 co-evolution: the nav call now also passes venue: venueHtml, schedule: scheduleHtml — the pre-existing slots reused, decision S14-2)");
 check(/\{ id: "mcentre-form", label: "فرم" \}/.test(pagesSrc),
   "S12 nav فرم item: the MC_NAV_DESTS registry carries the mcentre-form destination (فرم) — the nav item renders when the form part is non-empty (the adaptive Q9=B filter reads parts.form — already wired since S06, S12 keeps it)");
 
@@ -2329,8 +2329,8 @@ s13MetricsImpl = null;
 check(/const metricsHtml = matchMetricsHtml\(matchMetricsInput\(sm, ctx, archive, fullByCode\)\);/.test(pagesSrc) &&
   /const formPartHtml = formHtml \+ metricsHtml;/.test(pagesSrc),
   "S13 wiring call: buildMatchPage calls matchMetricsInput(sm, ctx, archive, fullByCode) + matchMetricsHtml(input) + builds the COMBINED formPartHtml = formHtml + metricsHtml — the projection reads the already-loaded data through the teamCompMetrics aggregation helper (the loadArchive + fullByCodeFor awaits — ZERO new awaits), the renderer is pure string composition in the composer");
-check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formPartHtml \}\)/.test(pagesSrc) && /form: formPartHtml,/.test(pagesSrc),
-  "S13 wiring dual: the COMBINED form part feeds BOTH matchNavHtml (the فرم nav item lights when EITHER the form card or the metrics card renders — the adaptive Q9=B filter reads the same part) AND matchCentreMain (the mcentre-form section anchor — the S11/S12 dual-passing precedent)");
+check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formPartHtml, venue: venueHtml, schedule: scheduleHtml \}\)/.test(pagesSrc) && /form: formPartHtml,/.test(pagesSrc),
+  "S13 wiring dual: the COMBINED form part feeds BOTH matchNavHtml (the فرم nav item lights when EITHER the form card or the metrics card renders — the adaptive Q9=B filter reads the same part) AND matchCentreMain (the mcentre-form section anchor — the S11/S12 dual-passing precedent) (S14 co-evolution: the nav call now also passes venue: venueHtml, schedule: scheduleHtml — the pre-existing slots reused, decision S14-2)");
 check(/\{ id: "mcentre-form", label: "فرم" \}/.test(pagesSrc) &&
   !/"mcentre-metrics"/.test(mcSrc.match(/MC_SECTION_ORDER[\s\S]{0,900}/) && mcSrc.match(/MC_SECTION_ORDER[\s\S]{0,900}/)[0] || "") &&
   /"mcentre-form": parts\.form/.test(mcSrc),
@@ -2385,6 +2385,359 @@ check(!/#mcentre-form \.mcentre-metrics[^{]*\{[^}]*\b(margin-left|margin-right|p
   "S13 CSS logical properties: the S13 metrics block uses CSS logical properties ONLY (text-align:start, border-block-end, border-block-start, margin-inline-start, padding-block — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties)");
 check((shellSrc.match(/#mcentre-form \.formteam\.mcentre-form-participant\{font-weight:600;color:#7dd3fc\}/g) || []).length === 1,
   "S13 CSS participant-mark reuse: the S12 participant rule is REUSED exactly once (no S13 duplicate — the metrics card rides INSIDE #mcentre-form so the S12 rule applies to the column team names with NO new participant rule; the «reuse, don't duplicate» discipline)");
+
+// ---------- 15. S14 (M6): the venue panel + the seven-day schedule data layer ----------
+// specification §10 (Venue) + §11 (Weekly fixture schedule) +
+// milestones-and-sessions.md M6/S14 + decisions 37/38/42 + audit §4 rows
+// 72/74 + §5 R1. S14 ships the DATA SELECTION — the venue panel (the compact
+// information card: the stadium name [Q2=A: name only, city/country omitted]
+// + the discreet verified-source mark «تأییدشده»; decisions 37/38: NO
+// map/preview/external nav) + the seven-day schedule DATA layer (the
+// windowSchedule helper + the MatchScheduleInput atoms; S15 renders the
+// rows + the «نمایش روزهای بعد» expand control). The R1 venue double-wording
+// fix (audit §5 R1) rides the answer sentence (the no-prepend-if-already-
+// present pattern). The mcentre-venue + mcentre-schedule slots ALREADY EXIST
+// in the S02 registry (decision S14-2: NO new nav destination, NO new
+// section anchor). S14 is the pure-data layer — NO inline JS, NO expand
+// control this session.
+
+// (a) the contract — matchVenueHtml + matchScheduleHtml + the projection
+// interfaces exported + the data helper windowSchedule exported from data.ts
+// (audit §12 row S14: "src/seo/data.ts (7-day window helper),
+// src/seo/match-centre.ts | venue panel [name only — Q2=A], 48h emphasis,
+// coverage-note data").
+check(typeof mc.matchVenueHtml === "function" &&
+  /export interface MatchVenueInput/.test(mcSrc) &&
+  typeof mc.matchScheduleHtml === "function" &&
+  /export interface MatchScheduleInput/.test(mcSrc) &&
+  /export interface MatchScheduleDayGroup/.test(mcSrc) &&
+  /export interface MatchScheduleRowInput/.test(mcSrc),
+  "S14 contract: matchVenueHtml + matchScheduleHtml + MatchVenueInput/MatchScheduleInput/MatchScheduleDayGroup/MatchScheduleRowInput exported (the pre-built-atoms projection — the composer stays import-free, the S04 hero precedent; pages.ts's matchVenueInput/matchScheduleInput pre-escapes/prebuilds every string; the schedule atoms are forward-compatible for S15's row renderer)");
+check(/export function windowSchedule\(ctx: SeoCtx, fixtureDate: string, fixturePath: string\): WindowSchedule \| null/.test(read("src/seo/data.ts")) &&
+  /export interface WindowSchedule/.test(read("src/seo/data.ts")) &&
+  /export interface ScheduleDayGroup/.test(read("src/seo/data.ts")) &&
+  /export interface ScheduleRow/.test(read("src/seo/data.ts")),
+  "S14 data contract: data.ts exports windowSchedule + the WindowSchedule/ScheduleDayGroup/ScheduleRow interfaces (the S14 aggregation helper — pure aggregation over (ctx, fixtureDate, fixturePath); the CALLER passes the already-loaded ctx in [data.ts cannot import files.ts — the teamForm/teamCompMetrics precedent]; the 7-day window reads the already-loaded ctx.pool rows [the matches_v13_tracked 92-day horizon, hidden leagues filtered — the SAME pool the S12 form + the S13 clean-sheet reads use] + payload.thisWeek/nextWeek [deduped])");
+
+// (b) the data helper — extract the REAL windowSchedule from data.ts
+// (brace-matched extraction + ts.transpileModule for the TS annotations — the
+// S13 teamCompMetrics brace-matching precedent) with the REAL tehranDayKey
+// (extracted from seo/utils.ts — the S13 normalizeTeamName precedent; utils.ts
+// imports ./config which Node's type-stripping require can't resolve, so the
+// REAL tehranDayKey + its tehranParts helper are brace-extracted + transpiled
+// + fed a stub SEO = { DISPLAY_TZ: 'Asia/Tehran' }) + a controllable
+// COMP_EN/translateCompetition stub. The controlled data: a fake pool (raw +
+// shaped twins) + a payload (thisWeek + nextWeek lists) + a fixture (date +
+// path) — the same-day/next-48h/remaining grouping + the fixture-self-
+// exclusion + the ±3.5d window edges + the dedupe + the empty-window case.
+function s14TehranDayKey() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const u = read("src/seo/utils.ts");
+  const start = u.indexOf("export function tehranParts");
+  const dkStart = u.indexOf("export function tehranDayKey", start);
+  const dkBodyOpen = u.indexOf("{", dkStart);
+  let depth = 0, j = dkBodyOpen;
+  for (; j < u.length; j++) { if (u[j] === "{") depth++; else if (u[j] === "}") { depth--; if (depth === 0) break; } }
+  const seg = u.slice(start, j + 1).replace(/^export /gm, ""); // strip ALL export keywords (tehranParts + tehranDayKey — two functions; the /gm flag strips both, the S13 single-function .replace(/^export /,"") precedent generalised)
+  const js = ts.transpileModule(seg, { compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const SEO = { DISPLAY_TZ: "Asia/Tehran" };
+  return new Function("SEO", js + "\n; return tehranDayKey;")(SEO);
+}
+function s14DataEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const d = read("src/seo/data.ts");
+  const i = d.indexOf("export function windowSchedule");
+  if (i < 0) return null;
+  const open = d.indexOf("| null {", i) + 7; // body-open anchored past the return-type braces (the S13 teamCompMetrics precedent)
+  let depth = 0, j = open;
+  for (; j < d.length; j++) {
+    if (d[j] === "{") depth++;
+    else if (d[j] === "}") { depth--; if (depth === 0) break; }
+  }
+  const seg = d.slice(i, j + 1).replace(/^export /, "");
+  const js = ts.transpileModule(seg, { compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const tehranDayKey = s14TehranDayKey();
+  const COMP_EN = { PL: "Premier League", BL1: "Bundesliga", CL: "Champions League" };
+  const translateCompetition = function (c) { return c === "CL" ? "\u0644\u06CC\u06AF \u0642\u0647\u0631\u0645\u0627\u0646\u0627\u0646 \u0627\u0631\u0648\u067E\u0627" : c; };
+  return new Function("tehranDayKey", "COMP_EN", "translateCompetition", js + "\n; return windowSchedule;")(tehranDayKey, COMP_EN, translateCompetition);
+}
+const s14Ws = s14DataEngine();
+check(typeof s14Ws === "function" && typeof s14TehranDayKey() === "function",
+  "S14 data extraction: the REAL windowSchedule extracted from data.ts via brace-matched extraction + ts.transpileModule (never re-implemented — the S13 teamCompMetrics brace-matching precedent), fed the REAL tehranDayKey (extracted from seo/utils.ts via the same brace-matched extraction + transpileModule, fed a stub SEO = { DISPLAY_TZ: 'Asia/Tehran' } — utils.ts imports ./config which Node's type-stripping require can't resolve, so the REAL tehranDayKey + its tehranParts helper are extracted, not required) + controllable COMP_EN/translateCompetition stubs");
+if (s14Ws) {
+  // the controlled data: a fixture (2026-11-29 17:30Z, a PL match) + a pool of
+  // 6 matches around it (same-day, next-48h, remaining, the fixture itself,
+  // outside the window, a DUPLICATE across pool+payload — the dedupe key)
+  const fxDate = "2026-11-29T17:30:00Z";
+  const fxPath = "/arsenal-vs-mancity-2026-11-29";
+  const mkRow = (home, away, iso, code, status, gh, ga, path) => ({
+    utcDate: iso, homeTeam: { name: home, faName: home + "Fa" }, awayTeam: { name: away, faName: away + "Fa" },
+    competition: { code: code, faName: code === "PL" ? "لیگ برتر انگلیس" : (code === "BL1" ? "بوندسلیگا" : "لیگ قهرمانان") },
+    status: status, score: status === "FINISHED" ? { fullTime: { home: gh, away: ga } } : undefined,
+    score: status === "FINISHED" ? { home: gh, away: ga } : undefined, path: path
+  });
+  const pool = [
+    mkRow("Arsenal", "Man City", fxDate, "PL", "SCHEDULED", null, null, fxPath),       // the fixture itself (excluded by path)
+    mkRow("Liverpool", "Chelsea", "2026-11-29T15:00:00Z", "PL", "FINISHED", 2, 1, "/liverpool-vs-chelsea-2026-11-29"), // same-day (before kickoff)
+    mkRow("Spurs", "Newcastle", "2026-11-29T20:00:00Z", "PL", "SCHEDULED", null, null, "/spurs-vs-newcastle-2026-11-29"), // same-day (after kickoff)
+    mkRow("Dortmund", "Leverkusen", "2026-11-30T17:30:00Z", "BL1", "SCHEDULED", null, null, "/dortmund-vs-leverkusen-2026-11-30"), // next-48h (the next day)
+    mkRow("Bayern", "Leipzig", "2026-12-02T17:30:00Z", "BL1", "SCHEDULED", null, null, "/bayern-vs-leipzig-2026-12-02"), // remaining (>48h after, within ±3.5d)
+    mkRow("PSG", "Marseille", "2026-11-25T17:30:00Z", "CL", "FINISHED", 3, 0, "/psg-vs-marseille-2026-11-25")  // outside the window (4 days before — >3.5d)
+  ];
+  const shaped = pool.slice(); // the shaped twin (pubMatch shape — same fields for the test)
+  const payload = {
+    thisWeek: [mkRow("Liverpool", "Chelsea", "2026-11-29T15:00:00Z", "PL", "FINISHED", 2, 1, "/liverpool-vs-chelsea-2026-11-29")], // a DUPLICATE of a pool row (the dedupe key)
+    nextWeek: [mkRow("Atletico", "Barcelona", "2026-12-01T17:30:00Z", "CL", "SCHEDULED", null, null, "/atletico-vs-barca-2026-12-01")] // next-48h (within 48h, the 2nd day after)
+  };
+  const ctx = { pool: pool, shaped: shaped, payload: payload };
+  const win = s14Ws(ctx, fxDate, fxPath);
+  // the fixture-self-exclusion: the fixture (Arsenal vs Man City) is NOT in the window (excluded by path)
+  check(win && !win.sameDay.flatMap(g => g.rows).some(r => r.homeFa === "ArsenalFa") && !win.next48h.flatMap(g => g.rows).some(r => r.homeFa === "ArsenalFa") && !win.remaining.flatMap(g => g.rows).some(r => r.homeFa === "ArsenalFa"),
+    "S14 fixture-self-exclusion: the fixture ITSELF is excluded by path (the pubMatch shape always carries a path — no self-reference in its own schedule; the Arsenal-vs-ManCity fixture at /arsenal-vs-mancity-2026-11-29 is NOT in sameDay/next48h/remaining)");
+  // the same-day grouping: the 2 same-day matches (Liverpool vs Chelsea [15:00Z], Spurs vs Newcastle [20:00Z]) — the fixture's Tehran calendar day (2026-11-29)
+  const sameDayRows = win.sameDay.length === 1 ? win.sameDay[0].rows : [];
+  check(win && win.sameDay.length === 1 && sameDayRows.length === 2 &&
+    sameDayRows[0].homeFa === "LiverpoolFa" && sameDayRows[1].homeFa === "SpursFa", // chronological (15:00Z before 20:00Z)
+    "S14 same-day grouping: the 2 same-day matches (Liverpool vs Chelsea [15:00Z, FINISHED] + Spurs vs Newcastle [20:00Z, SCHEDULED]) group under the fixture's Tehran calendar day (2026-11-29), chronological (the earlier kickoff first — spec §11 «Same-day matches first»)");
+  // the next-48h grouping: Dortmund vs Leverkusen (next day, 2026-11-30) + Atletico vs Barcelona (2026-12-01, from the payload nextWeek, within 48h) — NOT the same-day matches
+  const next48hRows = win.next48h.length === 2 ? win.next48h[0].rows.concat(win.next48h[1].rows) : [];
+  check(win && win.next48h.length === 2 && next48hRows.length === 2 &&
+    next48hRows.some(r => r.homeFa === "DortmundFa") && next48hRows.some(r => r.homeFa === "AtleticoFa"),
+    "S14 next-48h grouping: the 48h-AFTER-kickoff matches on OTHER days (Dortmund vs Leverkusen [2026-11-30, the next day] + Atletico vs Barcelona [2026-12-01, from the payload nextWeek, within 48h]) — the emphasized window (spec §11 «next 48 hours»); same-day matches do NOT leak into next48h (sameDay takes precedence)");
+  // the remaining grouping: Bayern vs Leipzig (2026-12-02, >48h after, within ±3.5d) — for S15's expand control
+  const remainingRows = win.remaining.length === 1 ? win.remaining[0].rows : [];
+  check(win && win.remaining.length === 1 && remainingRows.length === 1 && remainingRows[0].homeFa === "BayernFa",
+    "S14 remaining grouping: the >48h-after match (Bayern vs Leipzig [2026-12-02, within the ±3.5d window]) groups into remaining — for S15's «نمایش روزهای بعد» expand control; a match >48h after the fixture but within the 7-day window is NOT same-day/next-48h");
+  // the ±3.5d window edge: PSG vs Marseille (2026-11-25, 4 days before — >3.5d) is EXCLUDED (outside the window)
+  check(win && !win.sameDay.flatMap(g => g.rows).concat(win.next48h.flatMap(g => g.rows), win.remaining.flatMap(g => g.rows)).some(r => r.homeFa === "PSGFa"),
+    "S14 window edge (±3.5d): the 4-days-before match (PSG vs Marseille [2026-11-25, >3.5d before the fixture]) is EXCLUDED — outside the 7-day window (the ±3.5d boundary); only matches within [fixtureDate − 3.5d, fixtureDate + 3.5d] are collected");
+  // the dedupe: the Liverpool vs Chelsea match appears in BOTH the pool AND the payload.thisWeek — counted ONCE (the teamForm dedupe key: home|away|utcDate-day)
+  const allRows = win.sameDay.flatMap(g => g.rows).concat(win.next48h.flatMap(g => g.rows), win.remaining.flatMap(g => g.rows));
+  check(win && allRows.filter(r => r.homeFa === "LiverpoolFa").length === 1,
+    "S14 dedupe: the Liverpool vs Chelsea match appears in BOTH the pool AND the payload.thisWeek — counted ONCE (the teamForm dedupe key: home|away|utcDate-day — a match is never double-counted across the pool + the payload lists)");
+  // the coverage-note flag: always true when the window is anchored (the mandatory tracked-universe coverage note)
+  check(win && win.coverageNote === true && win.total === allRows.length,
+    "S14 coverage-note flag: the coverageNote flag is always true when the window is anchored (the mandatory tracked-universe coverage note — audit §4 row 74 + decision 42; the no-false-empty law: empty ≠ «بدون مسابقه», spec §11); the total counts the deduped rows");
+  // the empty window: a fixture with NO other matches in the 7-day window → empty groups + coverageNote:true (NOT a fabricated «no matches»)
+  const emptyWin = s14Ws({ pool: [mkRow("Arsenal", "Man City", fxDate, "PL", "SCHEDULED", null, null, fxPath)], shaped: [mkRow("Arsenal", "Man City", fxDate, "PL", "SCHEDULED", null, null, fxPath)], payload: { thisWeek: [], nextWeek: [] } }, fxDate, fxPath);
+  check(emptyWin && emptyWin.sameDay.length === 0 && emptyWin.next48h.length === 0 && emptyWin.remaining.length === 0 && emptyWin.total === 0 && emptyWin.coverageNote === true,
+    "S14 empty window (no-false-empty): a fixture with NO other matches in the 7-day window → empty sameDay/next48h/remaining + coverageNote:true (the no-false-empty law — spec §11 «Never say «بدون مسابقه» merely because the dataset is empty»; the caller renders the coverage note ALONE, NOT a fabricated «no matches» — the tracked-universe coverage disclosure)");
+  // the degenerate guard: a missing/invalid fixtureDate → null (can't anchor the window — every match carries a utcDate, so this is the degenerate guard)
+  check(s14Ws(ctx, "", fxPath) === null && s14Ws(ctx, "not-a-date", fxPath) === null,
+    "S14 degenerate guard: a missing/invalid fixtureDate → null (can't anchor the 7-day window — every match carries a utcDate, so this is the degenerate guard; the caller's projection returns coverageNote:false → the schedule section omits entirely)");
+  // the row atoms: the compFa + the score + the status (the S15 broadcast-row inputs)
+  const livRow = sameDayRows.find(r => r.homeFa === "LiverpoolFa");
+  check(livRow && livRow.compFa === "لیگ برتر انگلیس" && livRow.gh === 2 && livRow.ga === 1 && livRow.finished === true && livRow.live === false && livRow.path === "/liverpool-vs-chelsea-2026-11-29",
+    "S14 row atoms: a FINISHED row carries compFa (the compNameFa fallback: s.competition.faName || translateCompetition || COMP_EN || code) + the gh/ga score (from raw.score.fullTime or s.score) + the finished flag + the path (the S15 broadcast-row inputs — forward-compatible)");
+  const spursRow = sameDayRows.find(r => r.homeFa === "SpursFa");
+  check(spursRow && spursRow.gh === null && spursRow.ga === null && spursRow.finished === false && spursRow.live === false,
+    "S14 upcoming row: a SCHEDULED row carries gh/ga = null (not scored — the S15 upcoming marker) + finished/live = false (MISSING IS NOT ZERO — a not-scored match is never a fake 0-0)");
+}
+
+// (c) the renderer — the REAL matchVenueHtml + matchScheduleHtml (the
+// composer is a pure leaf — required directly, the S13 matchMetricsHtml
+// precedent; zero imports/KV/fetch/client-scripts).
+check(mc.matchVenueHtml({ nameHtml: "" }) === "" &&
+  mc.matchVenueHtml({ nameHtml: "ورزشگاه آلیانز آرنا" }) === '<div class="card mcentre-venue-panel"><h2>ورزشگاه</h2><div class="mcentre-venue-name">ورزشگاه آلیانز آرنا</div><div class="mcentre-venue-mark">تأییدشده</div></div>',
+  "S14 venue renderer: the compact information card — the <h2>«ورزشگاه»</h2> title + the stadium name (.mcentre-venue-name) + the discreet verified-source mark «تأییدشده» (.mcentre-venue-mark); NO map/preview/external-nav (decisions 37/38); the stadium name shows venueFa AS-IS (NO «ورزشگاه » prepend — the R1 no-double pattern); fail-closed: nameHtml \"\" → \"\" (the no-empty-cards law — a missing venue is NOT «ورزشگاه نامشخص»)");
+check(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: false }) === "" &&
+  mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true }) === '<div class="mcentre-schedule"><h2>بازی\u200cهای هفته</h2><p class="mcentre-schedule-note">این برنامه بر اساس داده\u200cهای موجود نمایش داده می\u200cشود و ممکن است شامل تمام بازی\u200cها نباشد.</p></div>',
+  "S14 schedule renderer: the <h2>«بازی\u200cهای هفته»</h2> section title + the discreet tracked-universe coverage note (.mcentre-schedule-note) ALONE — S15 ships the rows + the «نمایش روزهای بعد» expand control + the inline JS; the no-false-empty law: an EMPTY window still renders the coverage note (coverageNote:true — NEVER «بدون مسابقه», spec §11); fail-closed: coverageNote:false (the degenerate guard — no fixture date) → \"\" (the section omits entirely); NO inline JS, NO expand control this session");
+// the empty-window case: the coverage note renders ALONE (not «بدون مسابقه») — the no-false-empty law
+check(/mcentre-schedule-note/.test(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true })) &&
+  !/بدون\s*مسابقه/.test(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true })),
+  "S14 no-false-empty law: an EMPTY window renders the coverage note ALONE — NEVER «بدون مسابقه» (spec §11 «Never say «بدون مسابقه» merely because the dataset is empty»; the discreet tracked-universe coverage note is the antidote — the section is present with the note, not a false «no matches» message; audit §4 row 74: «empty ≠ «no matches»»)");
+
+// (d) the projection — the REAL matchVenueInput + matchScheduleInput (the
+// S12/S13 extractFnSrc + ts.transpileModule pattern with a STUB data module
+// — the projection reads the already-loaded data; the swappable windowSchedule
+// stub feeds the controlled window).
+const s14VenueProj = extractFnSrc(pagesSrc, "matchVenueInput");
+check(s14VenueProj && /sm\.s\.venueFa\s*\|\|\s*sm\.s\.venue/.test(s14VenueProj) && /nameHtml:\s*v\s*\?\s*esc\(v\)\s*:\s*""/.test(s14VenueProj),
+  "S14 venue projection: matchVenueInput reads the ALREADY-LOADED sm.s.venueFa || sm.s.venue (the hydrateMatchVenue await — one of the 3 pre-existing awaits; the venue is ALREADY LOADED, ZERO new awaits) + pre-escapes the name (nameHtml = esc(v) when present, \"\" when missing → the panel omits — the no-empty-cards law; the stadium name shows venueFa AS-IS, NO prepend — the R1 no-double pattern)");
+function s14ProjEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const d = read("src/seo/data.ts");
+  const i = d.indexOf("export function windowSchedule");
+  const open = d.indexOf("| null {", i) + 7;
+  let depth = 0, j = open;
+  for (; j < d.length; j++) { if (d[j] === "{") depth++; else if (d[j] === "}") { depth--; if (depth === 0) break; } }
+  const wsSeg = d.slice(i, j + 1).replace(/^export /, "");
+  const wsJs = ts.transpileModule(wsSeg, { compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const tehranDayKey = s14TehranDayKey();
+  const windowSchedule = new Function("tehranDayKey", "COMP_EN", "translateCompetition", wsJs + "\n; return windowSchedule;")(tehranDayKey, { PL: "Premier League", BL1: "Bundesliga", CL: "Champions League" }, function (c) { return c === "CL" ? "لیگ قهرمانان اروپا" : c; });
+  // the projection reads windowSchedule + matchPath + esc + toFaDigits + faTime + faDateD2 (all stubbed except windowSchedule which is the REAL extracted helper)
+  const proj = extractFnSrc(pagesSrc, "matchScheduleInput");
+  if (!proj) return null;
+  const projJs = ts.transpileModule(proj, { compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const matchPath = function (h, a, iso) { return "/" + String(h).toLowerCase().replace(/\s+/g, "-") + "-vs-" + String(a).toLowerCase().replace(/\s+/g, "-") + "-" + String(iso).slice(0, 10); };
+  const esc = function (s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); };
+  const toFaDigits = function (s) { return String(s).replace(/[0-9]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹"[+d]; }); };
+  const faTime = function (iso) { var d = new Date(iso); var h = String(d.getUTCHours()).padStart(2, "0"); var m = String(d.getUTCMinutes()).padStart(2, "0"); return h + ":" + m; };
+  const faDateD2 = function (iso) { return "، " + iso.slice(0, 10); }; // a stub (the REAL one is the Jalali+Gregorian formatter — the projection's dateHtml is forward-compatible for S15; the stub verifies the projection CALLS faDateD2 with the dayKey ISO)
+  return new Function("windowSchedule", "matchPath", "esc", "toFaDigits", "faTime", "faDateD2", projJs + "\n; return matchScheduleInput;")(windowSchedule, matchPath, esc, toFaDigits, faTime, faDateD2);
+}
+const s14SchedProj = s14ProjEngine();
+check(typeof s14SchedProj === "function",
+  "S14 schedule projection extraction: the REAL matchScheduleInput extracted from pages.ts via extractFnSrc + ts.transpileModule, fed the REAL windowSchedule (extracted from data.ts — the same brace-matched extraction) + stub matchPath/esc/toFaDigits/faTime/faDateD2 (the S12/S13 swappable-stub precedent; the projection reads the already-loaded data through the windowSchedule aggregation helper)");
+if (s14SchedProj) {
+  const fxDate = "2026-11-29T17:30:00Z";
+  const fxPath = "/arsenal-vs-mancity-2026-11-29";
+  const mkS = (home, away, iso, code, status, gh, ga, path) => ({
+    utcDate: iso, homeTeam: { name: home, faName: home }, awayTeam: { name: away, faName: away },
+    competition: { code: code, faName: code === "PL" ? "لیگ برتر انگلیس" : "بوندسلیگا" }, status: status,
+    score: status === "FINISHED" ? { fullTime: { home: gh, away: ga } } : undefined, path: path
+  });
+  const pool = [
+    mkS("Arsenal", "Man City", fxDate, "PL", "SCHEDULED", null, null, fxPath),
+    mkS("Liverpool", "Chelsea", "2026-11-29T15:00:00Z", "PL", "FINISHED", 2, 1, "/liverpool-vs-chelsea-2026-11-29"),
+    mkS("Dortmund", "Leverkusen", "2026-11-30T17:30:00Z", "BL1", "SCHEDULED", null, null, "/dortmund-vs-leverkusen-2026-11-30")
+  ];
+  const sm = { s: { utcDate: fxDate, path: fxPath, homeTeam: { name: "Arsenal" }, awayTeam: { name: "Man City" }, venue: "Emirates", venueFa: "ورزشگاه امارات" } };
+  const input = s14SchedProj(sm, { pool: pool, shaped: pool, payload: { thisWeek: [], nextWeek: [] } });
+  // the projection pre-builds the day-group atoms (forward-compatible for S15)
+  check(input && input.coverageNote === true && input.sameDay.length === 1 && input.sameDay[0].rows.length === 1 &&
+    input.sameDay[0].rows[0].homeHtml === "Liverpool" && input.sameDay[0].rows[0].scoreHtml === "۲ – ۱" && input.sameDay[0].rows[0].finished === true,
+    "S14 schedule projection atoms: the REAL matchScheduleInput pre-builds the day-group atoms — the sameDay group with the Liverpool-vs-Chelsea row (the pre-escaped homeHtml + the Persian-digit scoreHtml «۲ – ۱» + the finished flag) + the coverageNote:true; the atoms are forward-compatible for S15's row renderer (the projection owns every escaped string — the composer is a pure leaf, the S04 hero precedent)");
+  check(input && input.next48h.length === 1 && input.next48h[0].rows.length === 1 && input.next48h[0].rows[0].compHtml === "بوندسلیگا" && input.next48h[0].rows[0].scoreHtml === "" && input.next48h[0].rows[0].live === false,
+    "S14 schedule projection upcoming row: the Dortmund-vs-Leverkusen row (SCHEDULED) carries compHtml «بوندسلیگا» + scoreHtml \"\" (not scored — the S15 upcoming marker) + live:false (MISSING IS NOT ZERO); the compFa fallback (s.competition.faName || translateCompetition || COMP_EN || code) resolves the BL1 faName");
+  check(input && input.remaining.length === 0,
+    "S14 schedule projection remaining: the Bayern-vs-Leipzig match is NOT in this pool (the controlled data has only same-day + next-48h) → remaining is empty; the remaining groups are forward-compatible for S15's expand control");
+  // the timeHtml + the pathHtml atoms (the S15 broadcast-row inputs)
+  const livRow = input && input.sameDay[0].rows[0];
+  check(livRow && /<time datetime=/.test(livRow.timeHtml) && /۱۵:۰۰|15:00/.test(livRow.timeHtml) && /<a href="\/liverpool-vs-chelsea-2026-11-29">Liverpool – Chelsea<\/a>/.test(livRow.pathHtml),
+    "S14 schedule projection time/link atoms: the timeHtml carries the <time datetime=...> + the Persian-digit kickoff time (faTime) + the pathHtml carries the <a href=\"/liverpool-vs-chelsea-2026-11-29\">Liverpool – Chelsea</a> link (the S15 broadcast-row inputs — forward-compatible)");
+}
+
+// (e) the integration — the REAL windowSchedule feeds the REAL projection
+// (the S12/S13 swappable-stub precedent). A venue-present case → the panel
+// renders; a venue-missing case → the panel omits; an empty-window case →
+// the schedule coverage note renders ALONE.
+check(mc.matchVenueHtml({ nameHtml: "ورزشگاه آلیانز آرنا" }).includes("mcentre-venue-name") && mc.matchVenueHtml({ nameHtml: "ورزشگاه آلیانز آرنا" }).includes("mcentre-venue-mark"),
+  "S14 integration (venue present): the venue panel renders the .mcentre-venue-name + the .mcentre-venue-mark (the verified-source mark «تأییدشده») — the compact information card with the RICHER presentation (the distinct role vs the byte-frozen S07 facts-table venue cell — decision S14-Venue-Redundancy option [a])");
+check(mc.matchVenueHtml({ nameHtml: "" }) === "",
+  "S14 integration (venue missing): a missing venue → nameHtml \"\" → the panel omits entirely (the no-empty-cards law — a missing venue is NOT «ورزشگاه نامشخص»; the mcentre-venue section omits, the ورزشگاه nav item stays filtered out)");
+check(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true }).includes("mcentre-schedule-note") && !/نمایش\s*روزهای\s*بعد/.test(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true })),
+  "S14 integration (empty window): the schedule section renders the coverage note ALONE (the no-false-empty law) — NO «نمایش روزهای بعد» expand control (S15 ships the expand control; S14 is the pure-data layer — NO inline JS, NO expand control this session)");
+
+// (f) the wiring — buildMatchPage calls matchVenueInput/matchVenueHtml +
+// matchScheduleInput/matchScheduleHtml + passes venue + schedule to BOTH
+// matchNavHtml (the ورزشگاه + بازی‌ها nav items — the adaptive Q9=B filter)
+// AND matchCentreMain (the mcentre-venue + mcentre-schedule section anchors).
+// The pre-existing slots (decision S14-2): NO new nav destination, NO new
+// section anchor (the eleven-slot registry + the five nav destinations
+// unchanged — S14 wires content into the pre-existing slots, the S13 discipline).
+check(/const venueHtml = matchVenueHtml\(matchVenueInput\(sm\)\);/.test(pagesSrc) && /const scheduleHtml = matchScheduleHtml\(matchScheduleInput\(sm, ctx\)\);/.test(pagesSrc),
+  "S14 wiring call: buildMatchPage calls matchVenueInput(sm) + matchVenueHtml(input) + matchScheduleInput(sm, ctx) + matchScheduleHtml(input) — the projection reads the already-loaded data (the venue via the hydrateMatchVenue await; the schedule via the windowSchedule aggregation helper over the already-loaded ctx.pool — ZERO new awaits), the renderers are pure string composition in the composer");
+check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formPartHtml, venue: venueHtml, schedule: scheduleHtml \}\)/.test(pagesSrc) &&
+  /venue: venueHtml,/.test(pagesSrc) && /schedule: scheduleHtml,/.test(pagesSrc),
+  "S14 wiring dual: the venue + schedule strings feed BOTH matchNavHtml (the ورزشگاه + بازی‌ها nav items — the adaptive Q9=B filter lights them only when their part is non-empty) AND matchCentreMain (the mcentre-venue + mcentre-schedule section anchors — the S11/S12/S13 dual-passing precedent)");
+check(/{ slot: "mcentre-venue", label: "ورزشگاه" }/.test(mcSrc) && /{ slot: "mcentre-schedule", label: "بازی\u200cهای هفته" }/.test(mcSrc) &&
+  /"mcentre-venue": parts\.venue/.test(mcSrc) && /"mcentre-schedule": parts\.schedule/.test(mcSrc) &&
+  !/"mcentre-metrics"/.test(mcSrc.match(/MC_SECTION_ORDER[\s\S]{0,900}/) && mcSrc.match(/MC_SECTION_ORDER[\s\S]{0,900}/)[0] || ""),
+  "S14 wiring registry unchanged (decision S14-2): the mcentre-venue + mcentre-schedule section slots ALREADY EXIST in the S02 registry (MC_SECTION_ORDER line 109/110 + the bySlot map line 571/572) + the MC_NAV_DESTS ورزشگاه + بازی‌ها entries stay — NO new nav destination, NO new section anchor (the eleven-slot registry + the five nav destinations unchanged — S14 wires content into the pre-existing slots, the S13 discipline; the composer's bySlot maps mcentre-venue→parts.venue + mcentre-schedule→parts.schedule)");
+check(/{ id: "mcentre-venue", label: "ورزشگاه" }/.test(pagesSrc) && /{ id: "mcentre-schedule", label: "بازی\u200cها" }/.test(pagesSrc),
+  "S14 nav destinations unchanged: the MC_NAV_DESTS ورزشگاه + بازی‌ها entries stay (the five nav destinations — S14 reuses the pre-existing ورزشگاه + بازی‌ها destinations, NO new nav item; the Q9=B adaptive filter lights them only when their part is non-empty)");
+
+// (g) the R1 venue double-wording fix (audit §5 R1) — the answer sentence
+// no-longer double-prepends «ورزشگاه » when venueFa already begins with
+// «ورزشگاه». A string fix, NOT a contract change (the title/meta [the venue
+// clause is dropped via noVenue]/canonical/og:title/SportsEvent SHAPE/h1
+// unchanged; the JSON-LD description string changes ONLY where the double-
+// wording bug existed). One fix, three surfaces: the answer sentence (fixed)
+// + the facts-table venue cell (byte-frozen — shows venueFa AS-IS, no prepend)
+// + the new S14 venue panel (shows venueFa AS-IS, no prepend).
+const r1Src = s14ExtractFnSig(pagesSrc, "matchAnswerSentence");
+check(r1Src && /startsWith\("ورزشگاه"\)/.test(r1Src) && !/؛ ورزشگاه " \+/.test(r1Src.replace(/\/\/[^\n]*/g, "")),
+  "S14 R1 fix (audit §5 R1): the answer sentence no-longer double-prepends «ورزشگاه » — the no-double fix checks String(v).startsWith(\"ورزشگاه\") and uses v AS-IS when it already begins with «ورزشگاه» (the curated venueFa values begin with «ورزشگاه», e.g. «ورزشگاه آلیانز آرنا»), else prepends «ورزشگاه » (the zero-cost string fix: stop prepending when venueFa already begins with «ورزشگاه» — audit §5 R1 root cause: seo/pages.ts prepends «ورزشگاه » while curated venueFa values already begin with «ورزشگاه» → «ورزشگاه ورزشگاه آلیانز آرنا»)");
+// the R1 fix produces NO double «ورزشگاه ورزشگاه» (the curated name) + STILL prepends for a non-«ورزشگاه» venueFa
+// NOTE: matchAnswerSentence's signature carries an inline object-type param (opts?: { noVenue?: boolean })
+// — the generic extractFnSrc finds the first `{` (the object type's) and brace-matches the wrong block.
+// The dedicated extractor below tracks PAREN depth past the params, then finds the body-open `{`.
+function s14ExtractFnSig(src, name) {
+  var re = new RegExp("function " + name + "\\(");
+  var m = re.exec(src);
+  if (!m) return null;
+  var i = m.index + m[0].length; // just past the opening (
+  var depth = 1; // inside the params (
+  for (; i < src.length && depth > 0; i++) {
+    if (src[i] === "(") depth++;
+    else if (src[i] === ")") depth--;
+  }
+  // i is just past the closing ) of the params — the body-open { is the first { after it
+  var bodyOpen = src.indexOf("{", i);
+  if (bodyOpen < 0) return null;
+  var d2 = 0, end = -1;
+  for (var j = bodyOpen; j < src.length; j++) {
+    if (src[j] === "{") d2++;
+    else if (src[j] === "}") { d2--; if (d2 === 0) { end = j; break; } }
+  }
+  return end < 0 ? null : src.slice(m.index, end + 1);
+}
+const r1Engine = (function () {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const seg = s14ExtractFnSig(pagesSrc, "matchAnswerSentence");
+  if (!seg) return null;
+  const js = ts.transpileModule(seg, { compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2020 } }).outputText;
+  // matchAnswerSentence reads: faName, M.compNameFa, faDateD1, faTime, scoreStr, utcTime (all stubbed)
+  const faName = function (t) { return (t && t.faName) || (t && t.name) || ""; };
+  const M = { compNameFa: function (m) { return (m.competition && (m.competition.faName || m.competition.code)) || ""; } };
+  const scoreStr = function (sc) { return sc && sc.home != null ? sc.home + " - " + sc.away : ""; };
+  const faTime = function () { return "17:30"; }; const utcTime = function () { return "14:00 UTC"; }; const faDateD1 = function () { return "شنبه ۱۵ آبان ۱۴۰۵"; };
+  return new Function("faName", "M", "scoreStr", "faTime", "utcTime", "faDateD1", js + "\n; return matchAnswerSentence;")(faName, M, scoreStr, faTime, utcTime, faDateD1);
+})();
+if (r1Engine) {
+  const curated = r1Engine({ s: { homeTeam: { name: "Arsenal" }, awayTeam: { name: "Man City" }, competition: { code: "PL" }, roundFa: "", utcDate: "2026-11-29T17:30:00Z", venue: "Allianz Arena", venueFa: "ورزشگاه آلیانز آرنا", score: null }, raw: { status: "SCHEDULED", minute: null } });
+  check(curated.includes("؛ ورزشگاه آلیانز آرنا.") && !/ورزشگاه ورزشگاه/.test(curated),
+    "S14 R1 fix (curated venueFa): the curated venueFa «ورزشگاه آلیانز آرنا» (already begins with «ورزشگاه») → the answer sentence uses it AS-IS (no prepend) → «؛ ورزشگاه آلیانز آرنا.» — NO double «ورزشگاه ورزشگاه» (the R1 double-wording bug fixed; audit §5 R1 root cause: the prepend produced «ورزشگاه ورزشگاه آلیانز آرنا» before the fix)");
+  const nonCurated = r1Engine({ s: { homeTeam: { name: "Arsenal" }, awayTeam: { name: "Man City" }, competition: { code: "PL" }, roundFa: "", utcDate: "2026-11-29T17:30:00Z", venue: "Emirates Stadium", venueFa: "امارات", score: null }, raw: { status: "SCHEDULED", minute: null } });
+  check(nonCurated.includes("؛ ورزشگاه امارات.") && !/ورزشگاه ورزشگاه/.test(nonCurated),
+    "S14 R1 fix (non-curated venueFa): a venueFa that does NOT begin with «ورزشگاه» («امارات») → the answer sentence PREPENDS «ورزشگاه » → «؛ ورزشگاه امارات.» (the fix only skips the prepend when venueFa already begins with «ورزشگاه» — the curated names; a non-curated name still gets the «ورزشگاه » prefix so the sentence stays grammatical)");
+  // the noVenue trim ladder (SS-11) still drops the venue clause (the meta description's first trim step) — the R1 fix doesn't break the trim ladder
+  const noVenue = r1Engine({ s: { homeTeam: { name: "Arsenal" }, awayTeam: { name: "Man City" }, competition: { code: "PL" }, roundFa: "", utcDate: "2026-11-29T17:30:00Z", venue: "Allianz Arena", venueFa: "ورزشگاه آلیانز آرنا", score: null }, raw: { status: "SCHEDULED", minute: null } }, { noVenue: true });
+  check(!/ورزشگاه/.test(noVenue),
+    "S14 R1 fix + the noVenue trim ladder: opts.noVenue still drops the venue clause entirely (the SS-11 meta-description trim ladder's first step — the R1 fix is a string fix to the venue clause, NOT a contract change; the noVenue trim ladder is byte-frozen; the meta description drops the venue clause, so the R1 fix does NOT affect the meta description — «meta unchanged»)");
+}
+
+// (h) the cost laws — the scoped cost law (the projection + the data helper
+// carry NO AI/network/KV/timer/polling/await code) + the composer purity +
+// the await count stays 3.
+const s14ProjSrc = (extractFnSrc(pagesSrc, "matchVenueInput") || "") + (extractFnSrc(pagesSrc, "matchScheduleInput") || "");
+const s14ProjStripped = s14ProjSrc.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s14ProjSrc.length > 0 && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|generateText|chat\.completions|await\b/i.test(s14ProjStripped),
+  "S14 cost law (projection): matchVenueInput + matchScheduleInput carry NO AI/network/KV/timer/polling/await code (the S08/S12/S13 zero-runtime-cost law — the projection reads the already-loaded data through the windowSchedule aggregation helper; zero new awaits, zero new KV reads, zero new fetches; the cost check is scoped to the projection functions — pages.ts's other functions keep their legitimate fetch/KV calls)");
+const s14DataSeg = s14Ws ? (function () { const d = read("src/seo/data.ts"); const i = d.indexOf("export function windowSchedule"); const open = d.indexOf("| null {", i) + 7; let depth = 0, j = open; for (; j < d.length; j++) { if (d[j] === "{") depth++; else if (d[j] === "}") { depth--; if (depth === 0) break; } } return d.slice(i, j + 1); })() : "";
+const s14DataStripped = s14DataSeg.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s14DataSeg.length > 0 && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|await\b/i.test(s14DataStripped),
+  "S14 cost law (data helper): windowSchedule carries NO AI/network/KV/timer/polling/await code (the S13 teamCompMetrics precedent — pure aggregation over the caller-passed ctx [pool + shaped + payload]; the pool/payload are ALREADY LOADED by getSeoCtx — zero new KV reads, zero new fetches, ADR-006; the only fetch on the match-page path is the venue-detail hydration [hydrateMatchVenue, one of the 3 pre-existing awaits] — the schedule reads the already-loaded ctx.pool, NOT a new fetch)");
+const s14CompVenue = extractFnSrc(mcSrc, "matchVenueHtml") || "";
+const s14CompSched = extractFnSrc(mcSrc, "matchScheduleHtml") || "";
+const s14CompStripped = (s14CompVenue + s14CompSched).replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s14CompVenue.length > 0 && s14CompSched.length > 0 && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|import /i.test(s14CompStripped),
+  "S14 composer purity: matchVenueHtml + matchScheduleHtml are pure string renderers (the composer stays the S02 pure leaf — zero imports/KV/fetch/client-scripts; the atoms arrive prebuilt from pages.ts; the schedule renderer renders the coverage note ONLY — the rows + the expand control are S15, NO inline JS this session)");
+check(awaitCount === 3,
+  "S14 await count: buildMatchPage's await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; the S14 venue + schedule are pure aggregation over the already-loaded data [the venue via the hydrateMatchVenue await; the schedule via the windowSchedule helper over the already-loaded ctx.pool] — ZERO new awaits; the zero-runtime-cost law holds)");
+
+// (i) the CSS — the S14 style block rides page-shell.ts AFTER S13 (the
+// metrics) and BEFORE S03 (the responsive/spacing/RTL foundation) —
+// chronological session order: S04 → S05 → S06 → S07 → S08 → S11 → S12 →
+// S13 → S14 → S03. Scoped to #mcentre-venue + #mcentre-schedule; logical
+// properties only; the block's own icy/navy tokens; the 600px mobile layout
+// — no horizontal scroll.
+check(shellSrc.indexOf("Match Centre S13 (M5)") < shellSrc.indexOf("Match Centre S14 (M6)") && shellSrc.indexOf("Match Centre S14 (M6)") < shellSrc.indexOf("Match Centre S03 (M1)"),
+  "S14 CSS placement: the S14 style block rides page-shell.ts AFTER S13 (the metrics) and BEFORE S03 (the responsive/spacing/RTL foundation) — chronological session order: S04 → S05 → S06 → S07 → S08 → S11 → S12 → S13 → S14 → S03");
+check(/#mcentre-venue \.mcentre-venue-panel\{[^}]*border-radius:10px/.test(shellSrc) &&
+  /#mcentre-venue \.mcentre-venue-name\{[^}]*font-weight:700/.test(shellSrc) &&
+  /#mcentre-venue \.mcentre-venue-mark\{[^}]*color:#7dd3fc/.test(shellSrc),
+  "S14 CSS venue panel: the compact information card — the .mcentre-venue-panel (border-radius + the navy/icy tokens) + the .mcentre-venue-name (prominent, weight 700) + the .mcentre-venue-mark (the discreet verified-source mark — the icy-blue #7dd3fc, a small pill; decision 37: a compact information panel; decision 38: NO map/preview/external-nav)");
+check(/#mcentre-schedule \.mcentre-schedule-note\{[^}]*font-size:\.75rem/.test(shellSrc) &&
+  /#mcentre-schedule \.mcentre-schedule-note\{[^}]*color:var\(--muted,#9aa4b2\)/.test(shellSrc),
+  "S14 CSS schedule note: the discreet tracked-universe coverage note — the .mcentre-schedule-note (muted, .75rem — the no-false-empty law: the note is MANDATORY when the section is present; NEVER «بدون مسابقه», spec §11; decision 42: one discreet schedule coverage note)");
+check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-venue \.mcentre-venue-panel\{[^}]*padding-inline:12px/.test(shellSrc) &&
+  /@media \(max-width:600px\)\{[\s\S]*?#mcentre-schedule \.mcentre-schedule-note\{[^}]*font-size:\.7rem/.test(shellSrc),
+  "S14 CSS mobile: at ≤600px the venue panel tightens (padding-inline 16→12px) + the venue name scales (.96rem) + the verified mark shrinks (.64rem) + the schedule note tightens (.7rem) — the compact panels stay inside the viewport, no horizontal scroll (spec §4 + §9; the 600px mobile breakpoint — the design system's own)");
+check(!/#mcentre-venue[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc) && !/#mcentre-schedule[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc),
+  "S14 CSS logical properties: the S14 venue + schedule blocks use CSS logical properties ONLY (margin-block-start, padding-block, padding-inline, border-block-start, border-inline — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

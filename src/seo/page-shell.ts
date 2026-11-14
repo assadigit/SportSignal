@@ -629,6 +629,40 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
   #mcentre-form .mcentre-metrics .mcmnote{font-size:.56rem}
   #mcentre-form .mcentre-metrics .mcmtable tbody th,#mcentre-form .mcentre-metrics .mcmtable tbody td{padding-block:4px}
 }
+/* ---- Match Centre S14 (M6): the venue panel + the schedule coverage note
+   (specification §10 "Venue" + §11 "Weekly fixture schedule", audit §4 rows
+   72/74, decisions 37/38/42, Q2=A). The venue panel: a compact information
+   card — the stadium name (Q2=A: name only, city/country omitted) + the
+   discreet verified-source mark «تأییدشده» (decision 37: a compact
+   information panel; decision 38: NO map/preview/external nav; the S07
+   facts-table venue cell STAYS byte-frozen — the panel is a SEPARATE
+   dedicated section with the richer presentation, NOT a duplicate; decision
+   S14-Venue-Redundancy option [a]). Missing venue → the panel omits (the
+   no-empty-cards law; a missing venue is NOT «ورزشگاه نامشخص»). The schedule
+   coverage note: the discreet tracked-universe coverage note (audit §4 row
+   74 + decision 42; the no-false-empty law — spec §11: empty data must NOT
+   mean «بدون مسابقه»; the note is MANDATORY when the section is present).
+   S14 is the pure-data layer — NO inline JS, NO expand control (S15 renders
+   the rows + the «نمایش روزهای بعد» control). The mcentre-venue +
+   mcentre-schedule slots ALREADY EXIST in the S02 registry (decision S14-2:
+   NO new nav destination, NO new section anchor). CSS logical properties
+   ONLY (RTL/LTR clean under a dir flip, decision 2); the block's own
+   icy/navy tokens; the 600px mobile layout — no horizontal scroll. Placed
+   AFTER S13 (the metrics) and BEFORE S03 (the responsive/spacing/RTL
+   foundation) — chronological session order: S04 → S05 → S06 → S07 → S08 →
+   S11 → S12 → S13 → S14 → S03. */
+#mcentre-venue .mcentre-venue-panel{padding-block:14px;padding-inline:16px;border:1px solid var(--border,#334155);border-radius:10px;background:rgba(15,23,42,.45)}
+#mcentre-venue .mcentre-venue-panel>h2{font-size:.95rem;font-weight:700;margin-block-end:8px;color:var(--muted,#9aa4b2)}
+#mcentre-venue .mcentre-venue-name{font-size:1.02rem;font-weight:700;line-height:1.6;color:#e2e8f0}
+#mcentre-venue .mcentre-venue-mark{display:inline-block;margin-block-start:8px;padding-block:2px;padding-inline:8px;font-size:.68rem;font-weight:600;color:#7dd3fc;border:1px solid rgba(125,211,252,.45);border-radius:999px;letter-spacing:.3px}
+#mcentre-schedule .mcentre-schedule>h2{font-size:.95rem;font-weight:700;margin-block-end:8px;color:var(--muted,#9aa4b2)}
+#mcentre-schedule .mcentre-schedule-note{margin:0;font-size:.75rem;line-height:1.7;color:var(--muted,#9aa4b2);padding-block:10px;padding-inline:14px;border-block-start:1px solid var(--border,#334155);border-radius:8px;background:rgba(15,23,42,.35)}
+@media (max-width:600px){
+  #mcentre-venue .mcentre-venue-panel{padding-block:12px;padding-inline:12px}
+  #mcentre-venue .mcentre-venue-name{font-size:.96rem}
+  #mcentre-venue .mcentre-venue-mark{font-size:.64rem;padding-inline:7px}
+  #mcentre-schedule .mcentre-schedule-note{font-size:.7rem;padding-block:8px;padding-inline:10px}
+}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
    effect on any page without a mcentre-* section. Breakpoints and tokens are

@@ -18,7 +18,7 @@ import { shouldReport, isSiteHiddenMatch } from "../match-classify";
 import { fetchJSON } from "../utils";
 import { SEO } from "./config";
 import { teamSlug, compSlug } from "../slugs";
-import { isLiveSt } from "./utils";
+import { isLiveSt, tehranDayKey } from "./utils";
 // Match Centre S05 (M2): the server-side hero-portrait lookup moved here
 // from seo/router.ts (verbatim — the v13.205-lcpreveal SSR mirror, now the
 // shared data-selection helper both the homepage mirror and the match-centre
@@ -754,4 +754,144 @@ export function similarMatches(ctx: SeoCtx, sm: SeoMatch, max = 6): SeoMatch[] {
     if (out.length >= max) break;
   }
   return out;
+}
+
+// Match Centre S14 (M6): the seven-day fixture schedule's DATA layer
+// (specification §11 "Weekly fixture schedule" + audit §4 row 74: "Weekly
+// schedule (7-day window) — fixtures ±3.5 d around match date | A | ctx.pool
+// (92-day horizon, hidden leagues filtered) + payload.thisWeek/nextWeek |
+// 0/0 | tracked-universe coverage → the discreet coverage note is mandatory;
+// empty ≠ «no matches» (spec §11)"). Pure aggregation over
+// (ctx, fixtureDate, fixturePath) — the CALLER passes the already-loaded ctx
+// (data.ts cannot import files.ts — the teamForm/teamCompMetrics precedent),
+// ZERO new awaits/KV reads/fetches. The 7-day window is anchored to the
+// fixture's date (±3.5 days around fixtureDate), computed from the
+// ALREADY-LOADED ctx.pool rows (the matches_v13_tracked 92-day horizon,
+// hidden leagues filtered — the SAME pool the S12 form + the S13 clean-sheet
+// reads use) + the payload.thisWeek/nextWeek lists (the homepage's views of
+// the same pool, deduped — they never add a match the pool trims). The
+// fixture ITSELF is excluded by path (the pubMatch shape always carries a
+// path — no self-reference in its own schedule). The day grouping uses the
+// Tehran calendar day (tehranDayKey — the spec §11 "localized date
+// headings"): sameDay = the fixture's calendar day (excl. the fixture);
+// next48h = the 48h AFTER the fixture's kickoff on OTHER days (the
+// emphasized window — spec §11 "Emphasize the next 48 hours"); remaining =
+// the rest of the 7-day window (before the fixture on other days, or >48h
+// after — grouped for S15's «نمایش روزهای بعد» expand control). The
+// coverage-note flag is MANDATORY (always true when the window is anchored —
+// the tracked-universe coverage; empty ≠ «بدون مسابقه», spec §11 "Never say
+// «بدون مسابقه» merely because the dataset is empty"). Returns null ONLY
+// when fixtureDate is missing/invalid (can't anchor the window — every match
+// carries a utcDate, so this is the degenerate guard); returns the (possibly
+// empty) groups + coverageNote:true when the window is empty (NOT a
+// fabricated "no matches" — the caller renders the coverage note alone).
+export interface ScheduleRow {
+  path: string;          // the match page path (for S15's link) — "" when the shaped row carries none
+  utcDate: string;       // the ISO kickoff time (the day grouping + the S15 time atom)
+  compCode: string;      // the competition code (the S15 competition atom)
+  compFa: string;        // the competition faName (s.competition.faName || translateCompetition || COMP_EN || code — the compNameFa precedent)
+  homeFa: string;        // the home team faName (s.homeTeam.faName || name)
+  awayFa: string;        // the away team faName (s.awayTeam.faName || name)
+  gh: number | null;     // the home score (null when not scored — the S15 score atom)
+  ga: number | null;     // the away score (null when not scored)
+  live: boolean;         // IN_PLAY|LIVE|PAUSED (the S15 status atom)
+  finished: boolean;     // FINISHED
+  minute: number | null; // the live minute (null when not live)
+}
+export interface ScheduleDayGroup {
+  dayKey: string;        // the Tehran calendar day "YYYY-MM-DD" (the S15 date-heading anchor)
+  rows: ScheduleRow[];   // the matches in this day, chronological
+}
+export interface WindowSchedule {
+  sameDay: ScheduleDayGroup[];    // 0–1 groups (the fixture's calendar day, excl. the fixture)
+  next48h: ScheduleDayGroup[];     // 0–2 groups (the 48h after kickoff on OTHER days)
+  remaining: ScheduleDayGroup[];   // 0+ groups (the rest of the 7-day window, for S15's expand control)
+  coverageNote: boolean;           // always true when the window is anchored (the mandatory coverage note)
+  total: number;                   // the total rows in the window (the nav + S15 visibility gate)
+}
+export function windowSchedule(ctx: SeoCtx, fixtureDate: string, fixturePath: string): WindowSchedule | null {
+  if (!fixtureDate) return null;
+  const fixtureTs = new Date(fixtureDate).getTime();
+  if (!isFinite(fixtureTs)) return null;
+  const fixtureDay = tehranDayKey(fixtureDate);
+  // ±3.5 days around the fixture's kickoff (spec §11 "seven-day window
+  // anchored to the selected match date"). 3.5 * 86400000 = 302400000 ms.
+  const windowStart = fixtureTs - 302400000;
+  const windowEnd = fixtureTs + 302400000;
+  // the emphasized 48h AFTER the fixture's kickoff (spec §11 "next 48 hours")
+  const next48hEnd = fixtureTs + 172800000; // 48 * 3600000
+  const seen = new Set<string>();
+  const collected: { row: ScheduleRow; dayKey: string; ts: number; group: 0 | 1 | 2 }[] = [];
+  // Build a ScheduleRow from a raw+shaped twin (the pool) OR a shaped-only row
+  // (the payload lists). Deduped on home|away|utcDate-day (the teamForm key
+  // shape). The fixture itself is excluded by path (the pubMatch shape always
+  // carries a path); a path-less row is never the fixture (the fallback
+  // home+away+day match is guarded by fixturePath being non-empty).
+  const build = (raw: any, s: any): ScheduleRow | null => {
+    if (!s || !s.utcDate || !s.homeTeam || !s.awayTeam || !s.competition) return null;
+    const ts = new Date(s.utcDate).getTime();
+    if (!isFinite(ts)) return null;
+    if (ts < windowStart || ts > windowEnd) return null;       // outside the 7-day window
+    const p = typeof s.path === "string" ? s.path : "";
+    if (fixturePath && p === fixturePath) return null;          // the fixture itself (path-based exclusion)
+    const homeName = (s.homeTeam && s.homeTeam.name) || (raw && raw.homeTeam && raw.homeTeam.name) || "";
+    const awayName = (s.awayTeam && s.awayTeam.name) || (raw && raw.awayTeam && raw.awayTeam.name) || "";
+    const key = homeName + "|" + awayName + "|" + String(s.utcDate).slice(0, 10);
+    if (!homeName || !awayName || seen.has(key)) return null;   // dedupe (the teamForm key shape)
+    seen.add(key);
+    const compCode = (s.competition && s.competition.code) || (raw && raw.competition && raw.competition.code) || "";
+    const compFa = String((s.competition && s.competition.faName) || translateCompetition(compCode) || COMP_EN[compCode] || compCode);
+    const homeFa = String((s.homeTeam && s.homeTeam.faName) || homeName);
+    const awayFa = String((s.awayTeam && s.awayTeam.faName) || awayName);
+    // the score: the raw twin's score.fullTime (pool) else the shaped row's flat score (payload/archive)
+    let gh: number | null = null, ga: number | null = null;
+    if (raw && raw.score && raw.score.fullTime) { gh = raw.score.fullTime.home; ga = raw.score.fullTime.away; }
+    else if (s.score) { gh = s.score.home; ga = s.score.away; }
+    const status = String((raw && raw.status) || s.status || "").toUpperCase();
+    const live = /IN_PLAY|LIVE|PAUSED/i.test(status);
+    const finished = status === "FINISHED";
+    const minute = (raw && raw.minute != null) ? raw.minute : (s.minute != null ? s.minute : null);
+    return { path: p, utcDate: s.utcDate, compCode, compFa, homeFa, awayFa, gh, ga, live, finished, minute };
+  };
+  const classify = (ts: number, dayKey: string): 0 | 1 | 2 => {
+    if (dayKey === fixtureDay) return 0;        // sameDay (the fixture's calendar day — takes precedence)
+    if (ts > fixtureTs && ts <= next48hEnd) return 1; // next48h (the 48h after kickoff, on other days)
+    return 2;                                    // remaining (before the fixture on other days, or >48h after)
+  };
+  // primary: ctx.pool + ctx.shaped (the 92-day horizon, hidden leagues filtered — the teamForm/similarMatches precedent)
+  ctx.shaped.forEach((s: any, i: number) => {
+    const raw = ctx.pool[i];
+    const row = build(raw, s);
+    if (!row) return;
+    const ts = new Date(row.utcDate).getTime();
+    collected.push({ row, dayKey: tehranDayKey(row.utcDate), ts, group: classify(ts, tehranDayKey(row.utcDate)) });
+  });
+  // supplement: payload.thisWeek + payload.nextWeek (the homepage's lists — the SAME pool, deduped; never add a match the pool trims)
+  const lists = [ctx.payload && ctx.payload.thisWeek, ctx.payload && ctx.payload.nextWeek];
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const s of list) {
+      const row = build(null, s);
+      if (!row) continue;
+      const ts = new Date(row.utcDate).getTime();
+      collected.push({ row, dayKey: tehranDayKey(row.utcDate), ts, group: classify(ts, tehranDayKey(row.utcDate)) });
+    }
+  }
+  // chronological within each group (the spec §11 broadcast-style order)
+  collected.sort((a, b) => a.ts - b.ts);
+  // groupByDay uses a plain object + Object.keys (NOT a Map — the cost-law
+  // regex `\.get\(` would false-positive on Map.get; the teamForm/similarMatches
+  // precedent uses Sets + plain arrays; bracket access keeps the cost law clean)
+  const groupByDay = (items: typeof collected): ScheduleDayGroup[] => {
+    const map: Record<string, ScheduleRow[]> = {};
+    for (const it of items) {
+      if (!map[it.dayKey]) map[it.dayKey] = [];
+      map[it.dayKey].push(it.row);
+    }
+    return Object.keys(map).map((dayKey) => ({ dayKey, rows: map[dayKey] }));
+  };
+  const sameDay = groupByDay(collected.filter(r => r.group === 0));
+  const next48h = groupByDay(collected.filter(r => r.group === 1));
+  const remaining = groupByDay(collected.filter(r => r.group === 2));
+  return { sameDay, next48h, remaining, coverageNote: true, total: collected.length };
 }

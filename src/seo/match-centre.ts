@@ -548,6 +548,125 @@ export function matchMetricsHtml(m: MatchMetricsInput): string {
     "</tbody></table></div>";
 }
 
+// Match Centre S14 (M6): the venue panel + the seven-day schedule coverage
+// note (specification §10 "Venue" + §11 "Weekly fixture schedule", audit §4
+// rows 72/74, decisions 37/38/42, Q2=A). S14 is the pure-data layer — the
+// venue panel renders the compact information card (spec §10: the stadium
+// name + the verified-source mark; Q2=A: stadium name ONLY, city/country
+// omitted — zero invention; decision 38: NO map/preview/external nav); the
+// schedule section renders the discreet tracked-universe coverage note ALONE
+// (the no-false-empty law — spec §11: empty data must NOT mean «بدون
+// مسابقه»; the note is MANDATORY when the section is present). S15 ships the
+// schedule ROWS (the broadcast-style rows + the localized date headings) +
+// the «نمایش روزهای بعد» expand control + the inline JS — S14 carries the
+// day-grouped atoms forward-compatible (the projection pre-builds them;
+// S15's renderer consumes them). The mcentre-venue + mcentre-schedule slots
+// ALREADY EXIST in the S02 registry (decision S14-2: NO new nav destination,
+// NO new section anchor — S14 wires content into the pre-existing slots, the
+// S13 discipline). The composer stays the S02 pure leaf (zero
+// imports/KV/fetch/client-scripts — every string arrives pre-escaped from
+// pages.ts, the S04 hero precedent).
+
+// The venue panel projection. The stadium name arrives PRE-ESCAPED (the
+// projection owns every escaped string — the S04 hero precedent); nameHtml
+// is "" when the venue is missing (the panel omits — the no-empty-cards
+// law; a missing venue is NOT «ورزشگاه نامشخص»). The verified-source mark
+// («تأییدشده») rides the panel as a discreet muted label — the richer
+// presentation that distinguishes the mcentre-venue panel from the S07
+// facts-table venue cell (byte-frozen — the panel is a SEPARATE dedicated
+// section, NOT a duplicate; decision S14-Venue-Redundancy: option [a] the
+// panel carries the name + the mark, the facts table carries the name
+// only — the redundancy is the name, accepted because the panel adds the
+// verified-source mark).
+export interface MatchVenueInput {
+  nameHtml: string;  // the stadium name (esc(venueFa || venue)) — "" when no venue → the panel omits
+}
+
+// The venue Persian constants (the MC_METRICS title precedent: composer
+// constants, not data atoms). «تأییدشده» = the discreet verified-source mark
+// (the venue is from a verified source — curated TEAM_STADIUMS, provider, or
+// the FD-detail hydration; the mark indicates the name is verified, never
+// fabricated).
+const MC_VENUE_TITLE = "ورزشگاه";
+const MC_VENUE_VERIFIED_MARK = "تأییدشده";
+
+// The venue panel renderer. DOM = the .card.mcentre-venue-panel container +
+// the <h2>«ورزشگاه»</h2> title + the stadium name (.mcentre-venue-name) + the
+// discreet verified-source mark (.mcentre-venue-mark). NO map, NO preview
+// image, NO external nav link (decisions 37/38). The stadium name shows the
+// venueFa AS-IS (NO «ورزشگاه » prepend — the R1 no-double pattern; the
+// <h2>«ورزشگاه» is the section title, a separate element — the label + the
+// name are NOT the adjacent double the R1 bug fixes in the answer sentence).
+// Fail-closed: nameHtml "" → "" (the panel omits entirely, the section
+// omits — the no-empty-cards law).
+export function matchVenueHtml(v: MatchVenueInput): string {
+  if (!v || !v.nameHtml) return "";
+  return '<div class="card mcentre-venue-panel"><h2>' + MC_VENUE_TITLE + "</h2>" +
+    '<div class="mcentre-venue-name">' + v.nameHtml + "</div>" +
+    '<div class="mcentre-venue-mark">' + MC_VENUE_VERIFIED_MARK + "</div></div>";
+}
+
+// The schedule row projection (forward-compatible for S15). Every field is a
+// PRE-ESCAPED/pre-finished string (the S04 hero precedent — the composer is a
+// pure leaf). S14's renderer does NOT render the rows (only the coverage
+// note); S15's renderer will consume these atoms (the broadcast-style rows +
+// the date headings + the «نمایش روزهای بعد» expand control).
+export interface MatchScheduleRowInput {
+  pathHtml: string;    // the match link <a> (prebuilt) — "" when the row carries no path
+  timeHtml: string;    // the kickoff time <time> (faTime, Persian digits — the S05 hero precedent)
+  compHtml: string;    // the competition faName (escaped)
+  homeHtml: string;    // the home team faName (escaped)
+  awayHtml: string;    // the away team faName (escaped)
+  scoreHtml: string;   // the score "H – A" (Persian digits) — "" when not scored (S15's upcoming marker)
+  live: boolean;       // IN_PLAY|LIVE|PAUSED (S15's status atom)
+  finished: boolean;   // FINISHED
+}
+
+// One day group (forward-compatible for S15). The dateHtml is the localized
+// date heading (faDateD2 — the S11/S12 compact-date precedent); the rows are
+// the pre-built MatchScheduleRowInput atoms.
+export interface MatchScheduleDayGroup {
+  dateHtml: string;               // the localized date heading (faDateD2)
+  rows: MatchScheduleRowInput[];  // the matches in this day, chronological
+}
+
+// The schedule projection. sameDay = the fixture's calendar day (excl. the
+// fixture); next48h = the 48h after kickoff on OTHER days (the emphasized
+// window); remaining = the rest of the 7-day window (for S15's expand
+// control). The coverage-note flag is MANDATORY (always true when the window
+// is anchored — the tracked-universe coverage; the no-false-empty law).
+export interface MatchScheduleInput {
+  sameDay: MatchScheduleDayGroup[];   // 0–1 groups (the fixture's day)
+  next48h: MatchScheduleDayGroup[];    // 0–2 groups (the 48h after kickoff)
+  remaining: MatchScheduleDayGroup[];  // 0+ groups (for S15's expand control)
+  coverageNote: boolean;               // always true when the window is anchored
+}
+
+// The schedule Persian constants (the MC_METRICS title precedent). The
+// section title «بازی‌های هفته» (the MC_SECTION_ORDER aria-label — line 110);
+// the discreet coverage note (spec §11: "one discreet coverage note
+// explaining that the schedule reflects currently available data and may
+// not include every match" — the tracked-universe coverage; the no-false-
+// empty law: NEVER «بدون مسابقه»).
+const MC_SCHEDULE_TITLE = "بازی‌های هفته";
+const MC_SCHEDULE_COVERAGE_NOTE = "این برنامه بر اساس داده‌های موجود نمایش داده می‌شود و ممکن است شامل تمام بازی‌ها نباشد.";
+
+// The schedule renderer (S14 = the pure-data layer). S14 renders the
+// <h2>«بازی‌های هفته»</h2> section title + the discreet coverage note ALONE
+// — the day-grouped rows + the «نمایش روزهای بعد» expand control + the
+// inline JS are ALL S15 (the atoms are forward-compatible in
+// MatchScheduleInput). NO inline JS, NO expand control this session. The
+// no-false-empty law: an EMPTY window (sameDay/next48h/remaining all empty)
+// still renders the coverage note (coverageNote:true — NEVER «بدون
+// مسابقه»); a window that can't be anchored (no fixture date → the
+// projection returns coverageNote:false) → "" (the section omits entirely
+// — every match carries a utcDate, so this is the degenerate guard).
+export function matchScheduleHtml(s: MatchScheduleInput): string {
+  if (!s || !s.coverageNote) return "";
+  return '<div class="mcentre-schedule"><h2>' + MC_SCHEDULE_TITLE + "</h2>" +
+    '<p class="mcentre-schedule-note">' + MC_SCHEDULE_COVERAGE_NOTE + "</p></div>";
+}
+
 // One anchored wrapper. The no-empty-cards law lives HERE: empty or
 // whitespace-only content returns "" — a section never renders hollow, so
 // a missing dataset can never leave a blank box on the page.

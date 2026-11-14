@@ -10,7 +10,7 @@ import { esc, faTime, faDateD1, faDateD2, tehranDayKey, utcTime, statusLabelFa, 
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, heroArtSrv } from "./data";
+import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtSrv } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -27,7 +27,7 @@ import { seoTeamFaName, seoTeamAltName } from "./team-names";
 // Match Centre S04 (M2): the hero renderer — the mcentre-hero MARKUP moved
 // to the composer (matchHeroHtml); THIS file builds the data projection
 // (matchHeroInput) and delegates. The legacy matchHeadHtml is retired.
-import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput } from "./match-centre";
+import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput } from "./match-centre";
 // Match Centre S08 (M3): the deterministic narrative engine — the "why this
 // match matters" editorial layer. The engine runs HERE (pages.ts calls
 // narrativeHtml + passes the pre-built atom to the composer's MatchSummaryInput
@@ -102,7 +102,20 @@ export function matchAnswerSentence(sm: SeoMatch, opts?: { noVenue?: boolean }):
     return s;
   }
   let s = h + " در " + comp + (m.roundFa ? " (" + m.roundFa + ")" : "") + " میزبان " + a + " است؛ این بازی " + when + " به وقت تهران برگزار می‌شود";
-  if (m.venue && !(opts && opts.noVenue)) s += "؛ ورزشگاه " + (m.venueFa || m.venue);
+  // S14 R1 fix (audit §5 R1 — the double-wording bug): the curated venueFa
+  // values already begin with «ورزشگاه» (e.g. «ورزشگاه آلیانز آرنا»), so the
+  // prepend «؛ ورزشگاه » produced «؛ ورزشگاه ورزشگاه آلیانز آرنا» (two adjacent
+  // «ورزشگاه»). The no-double fix: prepend ONLY when venueFa does NOT already
+  // begin with «ورزشگاه» (the facts-table venue cell + the hero venue link
+  // + the new S14 venue panel all show venueFa AS-IS, no prepend — this
+  // sentence was the one surface that double-prepended). A string fix, NOT a
+  // contract change (the title/meta [the venue clause is dropped via noVenue
+  // below]/canonical/og:title/SportsEvent SHAPE/h1 unchanged; the JSON-LD
+  // description string changes ONLY where the double-wording bug existed).
+  if (m.venue && !(opts && opts.noVenue)) {
+    const v = m.venueFa || m.venue;
+    s += "؛ " + (String(v).startsWith("ورزشگاه") ? v : "ورزشگاه " + v);
+  }
   s += ".";
   s += " زمان جهانی این بازی " + utcTime(m.utcDate) + " است.";
   return s;
@@ -606,6 +619,122 @@ function matchMetricsInput(sm: SeoMatch, ctx: SeoCtx, archive: any[], fullByCode
   };
 }
 
+// Match Centre S14 (M6): the venue panel + the seven-day schedule DATA
+// projection — matchVenueInput + matchScheduleInput. Builds the
+// MatchVenueInput + MatchScheduleInput atoms (the composer's matchVenueHtml
+// + matchScheduleHtml contract — src/seo/match-centre.ts) from the
+// ALREADY-LOADED data. ZERO new awaits, ZERO new KV reads, ZERO new fetches
+// (the zero-runtime-cost law — the S08 narrative + the S10/S11 standings +
+// the S12/S13 form/metrics precedent).
+//
+// S14 decision points (resolved + recorded per the session brief):
+// 1. The venue provenance (audit §4 row 72, grade A — ALREADY LOADED): the
+//    fixture's OWN venue field — the ALREADY-LOADED sm.s.venue / m.venue
+//    (the hydrateMatchVenue await [one of the 3 pre-existing awaits]
+//    populates it: TEAM_STADIUMS curated homeGround() gate first [neutral
+//    finals excluded], else the provider venue, else the FD-detail
+//    hydration [KV 24h, ≤1 fetch/match/day, fail-closed]). Q2 = A: stadium
+//    name ONLY (city/country omitted — zero invention; a curated
+//    city/country table can be authorized later). Missing venue →
+//    nameHtml "" → the panel omits (the no-empty-cards law; a missing venue
+//    is NOT «ورزشگاه نامشخص»). The stadium name shows venueFa AS-IS (NO
+//    «ورزشگاه » prepend — the R1 no-double pattern; the venueFa already
+//    begins with «ورزشگاه» for the curated names).
+// 2. The venue panel vs the S07 facts-table venue cell (decision
+//    S14-Venue-Redundancy, option [a]) — the mcentre-venue panel carries
+//    the RICHER presentation (the stadium name + the verified-source mark
+//    «تأییدشده»), distinct from the S07 facts-table venue cell (byte-frozen
+//    — the name only). The name appears in both (the facts table is
+//    byte-frozen per the S07 contract; the panel re-states the name per
+//    spec §10 "compact information panel with verified stadium name"). The
+//    redundancy is the name, accepted because the panel adds the
+//    verified-source mark (the distinct role).
+// 3. The 7-day window anchor (audit §4 row 74, grade A — ALREADY LOADED):
+//    the windowSchedule helper (src/seo/data.ts) reads the ALREADY-LOADED
+//    ctx.pool rows (the matches_v13_tracked 92-day horizon, hidden leagues
+//    filtered — the SAME pool the S12 form + the S13 clean-sheet reads use)
+//    + payload.thisWeek/nextWeek (deduped). The window is ±3.5 days around
+//    sm.s.utcDate. The fixture ITSELF is excluded by path. Same-day matches
+//    first (the fixture's Tehran calendar day), next-48h emphasized (the
+//    48h after kickoff on OTHER days), remaining days grouped for S15's
+//    expand control. The day grouping uses the Tehran calendar day
+//    (tehranDayKey — spec §11 "localized date headings").
+// 4. The coverage-note policy (decision 42 + audit §4 row 74) — the
+//    discreet tracked-universe coverage note is MANDATORY when the section
+//    is present (windowSchedule.coverageNote is always true when the
+//    window is anchored). The no-false-empty law (spec §11): an EMPTY
+//    window (sameDay/next48h/remaining all empty) still renders the
+//    coverage note (NEVER «بدون مسابقه»); a window that can't be anchored
+//    (no fixture date — the degenerate guard) → coverageNote:false → the
+//    section omits entirely.
+// 5. The S14 render scope (decision S14-Sched) — the venue panel renders
+//    the compact information card (the name + the mark); the schedule
+//    section renders the <h2>«بازی‌های هفته»</h2> title + the coverage note
+//    ALONE. The day-grouped rows + the localized date headings + the
+//    «نمایش روزهای بعد» expand control + the inline JS are ALL S15. The
+//    MatchScheduleInput atoms (sameDay/next48h/remaining day groups + the
+//    pre-built rows) are forward-compatible for S15 (the projection
+//    pre-builds them; S15's renderer consumes them). NO inline JS, NO
+//    expand control this session.
+// 6. The pre-existing slots (decision S14-2) — the mcentre-venue +
+//    mcentre-schedule section slots ALREADY EXIST in the S02 registry
+//    (MC_NAV_DESTS line 109/110 + the bySlot map line 571/572). NO new nav
+//    destination, NO new section anchor — S14 wires content into the
+//    pre-existing slots (the S13 discipline). The ورزشگاه + بازی‌های هفته
+//    nav items light only when their part is non-empty (the adaptive Q9=B
+//    filter — unchanged).
+// 7. The numerals + dates — toFaDigits + faDateD2/faTime (the S11/S12/S13
+//    precedent); the day-group dateHtml rides faDateD2.
+function matchVenueInput(sm: SeoMatch): MatchVenueInput {
+  // the venue is ALREADY LOADED by the hydrateMatchVenue await (the
+  // homeGround() gate → the provider venue → the FD-detail hydration). The
+  // stadium name shows venueFa AS-IS (NO prepend — the R1 no-double pattern).
+  const v = sm.s.venueFa || sm.s.venue;
+  return { nameHtml: v ? esc(v) : "" };
+}
+
+// The schedule projection — the 7-day window atoms (forward-compatible for
+// S15). Reads the ALREADY-LOADED data through the windowSchedule aggregation
+// helper (the ctx.pool — already loaded by getSeoCtx; ZERO new awaits).
+// Pre-builds every atom (the S04 hero precedent — the composer is a pure
+// leaf): the day groups with the localized date headings (faDateD2) + the
+// rows with the pre-escaped faNames/competition + the Persian-digit score +
+// the kickoff time <time>. The coverage-note flag rides the atoms.
+function matchScheduleInput(sm: SeoMatch, ctx: SeoCtx): MatchScheduleInput {
+  const fixtureDate = sm.s.utcDate;
+  const fixturePath = sm.s.path || matchPath(sm.s.homeTeam.name, sm.s.awayTeam.name, sm.s.utcDate);
+  const win = windowSchedule(ctx, fixtureDate, fixturePath);
+  if (!win) return { sameDay: [], next48h: [], remaining: [], coverageNote: false };
+  // one row's atoms — PRE-ESCAPED (the S04 hero precedent; the composer is a pure leaf)
+  const fmtRow = (r: any): MatchScheduleRowInput => {
+    const home = esc(r.homeFa), away = esc(r.awayFa);
+    const scored = (r.live || r.finished) && r.gh != null && r.ga != null;
+    return {
+      pathHtml: r.path ? '<a href="' + esc(r.path) + '">' + home + " – " + away + "</a>" : home + " – " + away,
+      timeHtml: '<time datetime="' + esc(r.utcDate) + '">' + toFaDigits(faTime(r.utcDate)) + "</time>",
+      compHtml: esc(r.compFa),
+      homeHtml: home,
+      awayHtml: away,
+      scoreHtml: scored ? toFaDigits(String(r.gh)) + " – " + toFaDigits(String(r.ga)) : "",
+      live: !!r.live,
+      finished: !!r.finished
+    };
+  };
+  // one day group — the localized date heading (faDateD2) + the pre-built rows
+  const fmtGroup = (g: any): MatchScheduleDayGroup => ({
+    // the dayKey is "YYYY-MM-DD"; faDateD2 needs an ISO string — noon UTC keeps
+    // the same Tehran calendar day under any DST edge (the tehranDayKey anchor)
+    dateHtml: esc(faDateD2(g.dayKey + "T12:00:00Z")),
+    rows: (g.rows || []).map(fmtRow)
+  });
+  return {
+    sameDay: win.sameDay.map(fmtGroup),
+    next48h: win.next48h.map(fmtGroup),
+    remaining: win.remaining.map(fmtGroup),
+    coverageNote: win.coverageNote
+  };
+}
+
 export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
   let sm = findMatchBySlug(ctx, slug);
   if (!sm) return { html: "", notFound: true };
@@ -858,13 +987,24 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // S13: the COMBINED form part (formPartHtml = the S12 form card + the S13
   // metrics card) feeds BOTH — the فرم nav item lights when EITHER card
   // renders (the same adaptive Q9=B filter reads the same part).
-  const navHtml = matchNavHtml({ summary: summaryHtml, standings: standingsHtml, form: formPartHtml });
+  // S14: the venue + schedule strings feed BOTH too (the ورزشگاه + بازی‌ها
+  // nav items — the same adaptive Q9=B filter — light only when their part
+  // is non-empty). The venue panel omits when the venue is missing (the
+  // no-empty-cards law); the schedule coverage note is mandatory when the
+  // window is anchored (the no-false-empty law — NEVER «بدون مسابقه»). The
+  // mcentre-venue + mcentre-schedule slots ALREADY EXIST in the S02 registry
+  // (decision S14-2: NO new nav destination, NO new section anchor).
+  const venueHtml = matchVenueHtml(matchVenueInput(sm));
+  const scheduleHtml = matchScheduleHtml(matchScheduleInput(sm, ctx));
+  const navHtml = matchNavHtml({ summary: summaryHtml, standings: standingsHtml, form: formPartHtml, venue: venueHtml, schedule: scheduleHtml });
   const main = matchCentreMain({
     hero: matchHeroHtml(heroInput) + matchActionsHtml(sm, path) + matchHeadScript(),
     nav: navHtml,
     summary: summaryHtml,
     standings: standingsHtml,
     form: formPartHtml,
+    venue: venueHtml,
+    schedule: scheduleHtml,
     related: similarCard,
     footerHook: related
   });
