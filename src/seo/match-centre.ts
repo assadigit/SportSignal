@@ -1188,6 +1188,26 @@ export function matchTelegramHtml(t: MatchTelegramInput): string {
 // One anchored wrapper. The no-empty-cards law lives HERE: empty or
 // whitespace-only content returns "" — a section never renders hollow, so
 // a missing dataset can never leave a blank box on the page.
+//
+// S19 (M9 session 1 of 2 — the resilience + lifecycle-integration audit,
+// specification §16 + §17): the S04-S18 renderers in this module are fail-closed
+// by construction — each renderer returns "" on empty/missing data (the
+// matchHeroHtml both-or-neither portrait law + the Q4=A no-scorer-block; the
+// matchSummaryHtml narrative/brief/facts independent conditionals; the
+// matchFormHtml both-sides-empty ""; the matchMetricsHtml no-sides ""; the
+// matchVenueHtml no-name ""; the matchScheduleHtml no-coverage-note "" + the
+// no-false-empty coverage-note-alone law; the matchFaqHtml no-items ""; the
+// matchRelatedHtml no-rows ""; the matchTelegramHtml no-href ""). The S19 audit
+// (scripts/check-match-centre.js S19 assertion group) VERIFIED this via the REAL
+// renderers extracted with extractFnSrc + ts.transpileModule + controllable
+// stubs, across the full section × state matrix (full/partial/stale/unavailable/
+// not-applicable × upcoming/live/finished). ZERO renderer/projection code
+// changes were warranted — the audit LOCKS IN the existing resilience for
+// regression protection (the noindex law, the no-client-retries/polling law, the
+// full cascade for all 5 nav-destined sections, the specific degenerate cases
+// [missing scorers/HT score/venue/portraits/crests/competition crest; empty
+// schedule; fewer-than-five results], the stale freshness cue, the lifecycle
+// consistency). The byte-frozen surfaces stay byte-frozen.
 function sectionHtml(def: MatchCentreSectionDef, inner: string): string {
   if (!inner || !inner.trim()) return "";
   return '<section id="' + def.slot + '" aria-label="' + def.label + '">' + inner + "</section>";

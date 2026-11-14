@@ -3574,5 +3574,345 @@ check(!/seo\/telegram\.ts|seo\/telegram-promotion\.ts/.test(harnessSrc),
 check(mcSrc.indexOf('slot: "mcentre-related"') < mcSrc.indexOf('slot: "mcentre-telegram"') && mcSrc.indexOf('slot: "mcentre-telegram"') < mcSrc.indexOf('slot: "mcentre-footer-hook"'),
   "S18 page order: the MC_SECTION_ORDER registry carries mcentre-related → mcentre-telegram → mcentre-footer-hook (the telegram block renders AFTER the related-matches section + BEFORE the footer-hook section — spec §1 position 11 [Featured Telegram promotion] + decision 72 'Place it after related matches and immediately before global footer'; the DOM order is the MC_SECTION_ORDER order — the composer never reorders; the mcentre-telegram slot ALREADY EXISTS at this position [the S02 registry — S18 FILLS it, does NOT add it])");
 
+// ============================================================================
+// S19 (M9 session 1 of 2) — the resilience + lifecycle-integration audit
+// (specification §16 Shared resilience rules + §17 SEO/content integrity +
+// milestones-and-sessions.md M9/S19 + decisions 7/8/12/19/21/37/38/42/51/57/
+// 61/65/85/86/89/98 + audit §4 the data-availability matrix + §6 the
+// resource-cost audit + §13 risks).
+//
+// S19 is M9 session 1 of 2 — MID-MILESTONE (the S14/S16 precedent): NO preview
+// upload, NO gate doc, NO agent-browser smoke, NO deploy. The repo version stays
+// 13.256-mcfound. S20 closes M9 (the M9 gate: the mcM9x preview + the production-
+// KV agent-browser smoke + the gate doc + the release-candidate review).
+//
+// S19 DECISION POINTS (author final — recorded per the S14-S18 precedent; the
+// decision log lives in this block + the execution-log session entry):
+// - S19-Audit-method = (c) BOTH — the check-script is the PRIMARY gate (the
+//   systematic section × state matrix lives here — the S13-S18 precedent; the
+//   REAL renderers/projections extracted via extractFnSrc + ts.transpileModule
+//   with controllable stubs [the data layer stubbed to return null/empty/stale —
+//   the S13/S14/S17 controllable-stub precedent]); local `npx wrangler dev` is
+//   an OPTIONAL visual spot-check (NOT required, NOT the primary gate — the
+//   mid-milestone S14/S16 precedent: NO preview upload, NO agent-browser smoke).
+// - S19-Fix-scope = (a) presentation-layer per gap — the default. The audit
+//   found NO presentation-layer gaps: the S04-S18 renderers + projections are
+//   ALREADY fail-closed by construction (each session built its fail-closed
+//   path — the no-empty-cards law, the MISSING-IS-NOT-ZERO law, the omit-row
+//   law, the both-or-neither portrait law, the no-false-empty schedule law, the
+//   no-filler related law, the no-bot-promotion telegram law all hold). The S19
+//   deliverable is therefore the ASSERTION group (the systematic matrix that
+//   LOCKS IN the existing resilience for regression protection), NOT renderer
+//   fixes. ZERO code changes to the renderers/projections (the byte-frozen
+//   surfaces stay byte-frozen — no resilience fix was warranted).
+// - S19-Stale-label = (a) verify the existing lastUpdatedHtml — the global
+//   «تاریخ به‌روزرسانی: ...» line (markup.ts lastUpdatedHtml, fed ctx.fetchedAt
+//   via pages.ts updatedHtml) IS the §16 freshness cue. NO new code, NO new
+//   per-section chip (the no-decorative-chips law — the facts panel "No
+//   individual tiles, decorative icons or unnecessary backgrounds"; spec §16
+//   "where useful" — the single-pool ctx.fetchedAt is the one stamp; a per-
+//   section cue is decorative noise). The assertion verifies the cue renders +
+//   is fail-closed (null fetchedAt → "").
+// - S19-Noindex = verify, NO code change — the buildMatchPage buildHead
+//   indexable:true is a LITERAL unconditional true (pages.ts — NOT gated on
+//   data availability). Partial data does NOT noindex (spec §17). The assertion
+//   is the fix.
+// - S19-Cascade-verification = assert the FULL cascade for each nav-destined
+//   section (summary/standings/form/schedule/venue): data-layer null/empty →
+//   renderer "" → sectionHtml omits (matchCentreMain skips) → matchNavHtml Q9=B
+//   filter omits the nav item. The S10→S11→جدول-nav precedent extended to all 5
+//   nav-destined sections via the REAL matchNavHtml extracted + fed empty parts.
+// ============================================================================
+
+// ---- (a) the noindex law (spec §17: "Partial data does not automatically
+// mean noindex") — the buildMatchPage buildHead indexable:true is a LITERAL
+// unconditional true, NOT gated on any data availability. A match with a
+// missing venue / missing scorers / missing HT score / missing standings stays
+// indexable:true. The assertion is the fix (NO code change — the literal is
+// already correct). ----
+(function () {
+  // isolate the buildMatchPage block (the function carrying the match-page
+  // buildHead call — the one with the SportsEvent JSON-LD node + ogImage).
+  const bmpStart = pagesSrc.indexOf("function buildMatchPage(");
+  const headIdx = bmpStart > -1 ? pagesSrc.indexOf("indexable: true,", bmpStart) : -1;
+  const bmpEnd = headIdx > -1 ? pagesSrc.indexOf("\n}", headIdx) : -1;
+  const bmpBlock = bmpStart > -1 && bmpEnd > -1 ? pagesSrc.slice(bmpStart, bmpEnd) : "";
+  check(bmpBlock.indexOf("indexable: true,") > -1,
+    "S19 noindex law: the buildMatchPage buildHead carries indexable: true (a LITERAL unconditional true — NOT a variable, NOT gated on data availability; spec §17 'Partial data does not automatically mean noindex'; a match with a missing venue/scorers/HT score/standings stays indexable — the assertion is the fix, NO code change; the match page NEVER noindexes for partial data)");
+  // verify the literal is NOT a conditional expression (no `? true : false`,
+  // no `&& true`, no variable). The only indexable: occurrence in the block
+  // must be the literal `true`.
+  const idxMatches = bmpBlock.match(/indexable:\s*[^,]+,/g) || [];
+  check(idxMatches.length === 1 && /indexable:\s*true,/.test(idxMatches[0]) && !/indexable:\s*[a-zA-Z_?&|]/.test(idxMatches[0].replace("indexable: true,", " ")),
+    "S19 noindex law unconditional: the indexable flag is the literal true, NOT a variable or a conditional expression (no `indexable: cond ? true : false`, no `indexable: hasData && true` — exactly one indexable: occurrence in the buildMatchPage block + it is the literal true; spec §17 'Partial data does not automatically mean noindex')");
+})();
+
+// ---- (b) the no-client-retries/polling law (spec §16: "No client
+// retries/polling for missing data") — the 4 inline scripts (the S04 countdown
+// matchHeadScript, the S06 nav matchNavScript, the S15 schedule matchScheduleScript,
+// the S16 FAQ matchFaqScript) are PURE DOM interaction: no fetch(, no
+// XMLHttpRequest, no new WebSocket, no KV-style .get()/.put(), no retry loop,
+// no polling interval. The ONLY timers are the S04 countdown setTimeout (a
+// countdown, NOT a data retry) + the S16 FAQ delayed-collapse setTimeout (a UI
+// delay mandated by decision 58, NOT a data retry). A missing dataset never
+// triggers a client-side refetch — the page renders with what the server had. ----
+(function () {
+  const scripts = [
+    { name: "matchHeadScript", src: extractFnSrc(pagesSrc, "matchHeadScript") || "" },
+    { name: "matchNavScript", src: extractFnSrc(pagesSrc, "matchNavScript") || "" },
+    { name: "matchScheduleScript", src: extractFnSrc(pagesSrc, "matchScheduleScript") || "" },
+    { name: "matchFaqScript", src: extractFnSrc(pagesSrc, "matchFaqScript") || "" }
+  ];
+  // the banned data-fetch/retry/poll patterns (NOT the UI timers — the S04
+  // countdown setTimeout + the S16 FAQ delayed-collapse setTimeout are allowed;
+  // they are UI timers, NOT data retries). fetch( / XMLHttpRequest /
+  // new WebSocket / KV .get()/.put() / explicit retry/poll identifiers.
+  // NOTE: getAttribute/getElementById/matchMedia DO NOT match \\.get\\s*\\(
+  // (the \\( must immediately follow `get` with optional whitespace —
+  // getAttribute has `Attribute` between `get` and `(`).
+  const banned = /\bfetch\s*\(|XMLHttpRequest|new\s+WebSocket|\.get\s*\(|\.put\s*\(|\bretry\b|\bpoll(?:ing)?\b/i;
+  let allClean = true;
+  let detail = "";
+  for (const s of scripts) {
+    if (!s.src) { allClean = false; detail = s.name + " not extracted"; break; }
+    if (banned.test(s.src)) { allClean = false; detail = s.name + " carries a banned data-fetch/retry/poll pattern"; break; }
+  }
+  check(allClean,
+    "S19 no-client-retries/polling law: the 4 inline scripts (S04 matchHeadScript, S06 matchNavScript, S15 matchScheduleScript, S16 matchFaqScript) are PURE DOM interaction — ZERO fetch(, ZERO XMLHttpRequest, ZERO WebSocket, ZERO KV .get()/.put(), ZERO retry, ZERO polling (spec §16 'No client retries/polling for missing data'; the ONLY timers are the S04 countdown setTimeout + the S16 FAQ delayed-collapse setTimeout — both UI timers mandated by decisions 92/58, NOT data retries; a missing dataset never triggers a client-side refetch — the page renders with what the server had" + (detail ? "; " + detail : "") + ")");
+})();
+
+// ---- (c) the full cascade verification for all 5 nav-destined sections
+// (spec §16: "One unavailable dataset must not break the whole page" + §3:
+// "Sections should contract, rearrange or disappear according to data
+// availability" + decision 12: "Navigation contains only primary sections; no
+// empty-section links"). The cascade: data-layer null/empty → renderer "" →
+// sectionHtml omits (matchCentreMain skips the section) → matchNavHtml Q9=B
+// adaptive filter omits the nav item (no broken anchor). The S10→S11→جدول-nav
+// precedent extended to ALL 5 nav-destined sections via the REAL matchNavHtml
+// extracted + fed empty parts. ----
+(function () {
+  // extract the REAL matchNavHtml + MC_NAV_DESTS from pages.ts. matchNavHtml's
+  // signature carries a braced type annotation ({ summary: string; ... }) so
+  // the S11 extractFnSrc (which stops at the FIRST { after `function name(`)
+  // would stop at the type annotation's }, NOT the function body. Use a PAREN-
+  // aware extraction: match the signature's () first, then find the body { +
+  // brace-match from there (the S11/S18 extraction precedent, extended for the
+  // braced-signature case). MC_NAV_DESTS is a simple const (no brace-in-
+  // signature issue) so the slice works.
+  function extractFnParenAware(src, name) {
+    const re = new RegExp("function " + name + "\\(");
+    const m = re.exec(src);
+    if (!m) return null;
+    const start = m.index;
+    // paren-match the parameter list to find the matching ) that closes the
+    // signature (skips braced type annotations INSIDE the params).
+    const openParen = src.indexOf("(", start);
+    let pdepth = 0, sigEnd = -1;
+    for (let i = openParen; i < src.length; i++) {
+      if (src[i] === "(") pdepth++;
+      else if (src[i] === ")") { pdepth--; if (pdepth === 0) { sigEnd = i; break; } }
+    }
+    if (sigEnd < 0) return null;
+    // after the ), skip the return type annotation (: string / : <type>) to
+    // find the body { — the return type for matchNavHtml is `string` (no
+    // braces), so the next { after the ) is the body start.
+    const bodyBrace = src.indexOf("{", sigEnd);
+    if (bodyBrace < 0) return null;
+    let depth = 0, end = -1;
+    for (let i = bodyBrace; i < src.length; i++) {
+      if (src[i] === "{") depth++;
+      else if (src[i] === "}") { depth--; if (depth === 0) { end = i; break; } }
+    }
+    return end < 0 ? null : src.slice(start, end + 1);
+  }
+  const navFnSrc = extractFnParenAware(pagesSrc, "matchNavHtml") || "";
+  const destsStart = pagesSrc.indexOf("const MC_NAV_DESTS:");
+  const destsEnd = pagesSrc.indexOf("];", destsStart);
+  const destsSrc = destsStart > -1 && destsEnd > -1 ? pagesSrc.slice(destsStart, destsEnd + 2) : "";
+  if (!navFnSrc || !destsSrc) {
+    bad("S19 cascade extraction: matchNavHtml or MC_NAV_DESTS not extracted from pages.ts for the cascade verification");
+    return;
+  }
+  const tsMod = require(path.join(root, "node_modules", "typescript"));
+  const stub = "var esc = function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;');}; var matchNavScript = function(){return '';};\n";
+  let navFn = null;
+  try {
+    const js = tsMod.transpileModule(stub + destsSrc + "\n" + navFnSrc, { compilerOptions: { module: tsMod.ModuleKind.None, target: tsMod.ScriptTarget.ES2020 } }).outputText;
+    navFn = new Function(js + "\n; return matchNavHtml;")();
+  } catch (e) { navFn = null; }
+  check(typeof navFn === "function",
+    "S19 cascade extraction: the REAL matchNavHtml + MC_NAV_DESTS extracted from pages.ts via extractFnSrc + ts.transpileModule (the S11/S18 extraction precedent — esc + matchNavScript stubbed; the nav-script always rides the part but is irrelevant to the cascade — only the nav ITEMS matter; the Q9=B adaptive filter is the REAL code, never re-implemented)");
+  if (!navFn) return;
+
+  // (c1) ALL empty → NO nav items (the <nav> omits entirely). The back-to-top
+  // button + the script still ride, but the nav is gone — no broken anchors.
+  const allEmpty = navFn({ summary: "", standings: "", form: "", venue: "", schedule: "" });
+  check(allEmpty.indexOf('<nav class="mnav"') === -1 && (allEmpty.match(/mnav-item/g) || []).length === 0,
+    "S19 cascade all-empty: ALL 5 nav-destined sections empty (data-layer null across the board) → NO nav items render + the <nav> omits entirely (the Q9=B adaptive filter; decision 12 'no empty-section links'; the back-to-top button + the script still ride but the nav is gone — no broken anchors; spec §16 'One unavailable dataset must not break the whole page')");
+
+  // (c2) EACH section alone → ONLY that section's nav item renders (the cascade
+  // per section: data-layer null for the other 4 → their renderers "" → their
+  // nav items omit; the one present section's nav item renders). The 5 cases
+  // map to the 5 MC_NAV_DESTS ids.
+  const cases = [
+    { key: "summary", id: "mcentre-summary", parts: { summary: "<div>SUMMARY</div>", standings: "", form: "", venue: "", schedule: "" } },
+    { key: "standings", id: "mcentre-standings", parts: { summary: "", standings: "<div>STANDINGS</div>", form: "", venue: "", schedule: "" } },
+    { key: "form", id: "mcentre-form", parts: { summary: "", standings: "", form: "<div>FORM</div>", venue: "", schedule: "" } },
+    { key: "schedule", id: "mcentre-schedule", parts: { summary: "", standings: "", form: "", venue: "", schedule: "<div>SCHEDULE</div>" } },
+    { key: "venue", id: "mcentre-venue", parts: { summary: "", standings: "", form: "", venue: "<div>VENUE</div>", schedule: "" } }
+  ];
+  for (const c of cases) {
+    const out = navFn(c.parts);
+    const items = (out.match(/data-target="(mcentre-[^"]+)"/g) || []).map((s) => s.replace(/^data-target="|"$/g, ""));
+    check(items.length === 1 && items[0] === c.id,
+      "S19 cascade " + c.key + "-only: the " + c.id + " section alone present (the other 4 data-layer null → renderers \"\" → nav items omit) → ONLY the " + c.id + " nav item renders (the Q9=B adaptive filter — no broken anchors to empty sections; decision 12 'no empty-section links'; spec §3 'Sections should contract, rearrange or disappear according to data availability')");
+  }
+
+  // (c3) the sectionHtml omits for an empty section (matchCentreMain skips it —
+  // the no-empty-cards law at the composer level). Feed ALL parts empty → NO
+  // <section id="mcentre-..."> anchors render except the hero (always present).
+  const emptyMain = mc.matchCentreMain({ hero: "<div>HERO</div>", summary: "", form: "", related: "", footerHook: "", nav: "", standings: "", venue: "", schedule: "", faq: "", telegram: "" });
+  check(emptyMain.indexOf('id="mcentre-summary"') === -1 && emptyMain.indexOf('id="mcentre-standings"') === -1 && emptyMain.indexOf('id="mcentre-form"') === -1 && emptyMain.indexOf('id="mcentre-venue"') === -1 && emptyMain.indexOf('id="mcentre-schedule"') === -1 && emptyMain.indexOf('id="mcentre-faq"') === -1 && emptyMain.indexOf('id="mcentre-related"') === -1 && emptyMain.indexOf('id="mcentre-telegram"') === -1 && emptyMain.indexOf('id="mcentre-footer-hook"') === -1 && emptyMain.indexOf('id="mcentre-nav"') === -1 && emptyMain.indexOf('id="mcentre-hero"') > -1,
+    "S19 cascade sectionHtml omits: matchCentreMain skips every empty section (the no-empty-cards law at the composer level — an empty part never renders a hollow <section>; the sectionHtml helper returns \"\" for whitespace-only content; ONLY the always-present hero renders; spec §16 'No large empty cards, fake zeroes, blank charts, empty image frames or excessive warnings' + §3 'Sections should ... disappear according to data availability')");
+})();
+
+// ---- (d) the specific degenerate cases (spec §16 examples — MANDATORY
+// coverage). The audit CONFIRMS each holds (the S04-S18 renderers + projections
+// are fail-closed by construction). The assertions below LOCK IN the behavior. ----
+
+// (d1) Missing scorers → keep the score, omit the event list (Q4=A — finished
+// scorers are NOT in the data pool; the S04 hero already omits the scorer
+// block). Verify the finished hero carries the score + the «پایان بازی» status
+// but NO scorer/event markup (spec §16 example: "No scorers: keep score, omit
+// event list").
+check(/mscore/.test(heroFinished) && /mfin/.test(heroFinished) && !/گلزن|scorer|event-list|mevent|mscorers/.test(heroFinished),
+  "S19 degenerate missing-scorers: the finished hero keeps the score (.mscore) + the «پایان بازی» status (.mfin) but omits the event/scorer list entirely (Q4=A — finished scorers are NOT in the data pool; spec §16 example 'No scorers: keep score, omit event list'; the scorer block NEVER renders — zero invention; the hero keeps meaningful identity with the score, the MISSING-IS-NOT-ZERO law)");
+
+// (d2) Missing HT score → omit the row (spec §16 example: "No HT score: omit
+// row"). The HT score is unavailable by construction (the pool slim drops
+// score.halfTime — audit §4 row 66 + §5 R6); the facts table NEVER carries an
+// HT row + score.halfTime is read NOWHERE in the seo layer. Verify both.
+check(!/halfTime|score\.halfTime|نیمه\u200cبازی|HT score/.test(pagesSrc) && !/halfTime|score\.halfTime/.test(mcSrc) && !/halfTime|score\.halfTime/.test(read("src/seo/narrative.ts")) && !/halfTime|score\.halfTime/.test(read("src/seo/standings-window.ts")),
+  "S19 degenerate missing-HT: the facts table carries NO half-time score row (HT is unavailable by construction — the pool slim drops score.halfTime; audit §4 row 66 + §5 R6; spec §16 example 'No HT score: omit row' — the row is NEVER added, NOT a fake 0-0; score.halfTime is read NOWHERE in the seo layer [pages.ts + match-centre.ts + narrative.ts + standings-window.ts]; the MISSING-IS-NOT-ZERO law)");
+
+// (d3) Missing portraits (one) → hide BOTH (decision 7/8/85 — the S05
+// both-or-neither law). The renderer enforces the law INDEPENDENT of the
+// projection: a one-sided portraitHtml (home set, away "") collapses to NO
+// portrait on either side. Verify via the REAL matchHeroHtml.
+(function () {
+  const oneSided = mc.matchHeroHtml({
+    ...heroBase,
+    home: { ...heroBase.home, portraitHtml: '<img class="mport" src="https://x/h.png" alt="">' },
+    away: { ...heroBase.away, portraitHtml: "" },
+    live: false, finished: false, scored: false, scoreTxt: "", liveTxt: ""
+  });
+  check(oneSided.indexOf('class="mport"') === -1,
+    "S19 degenerate one-portrait: a one-sided portrait (home set, away missing) → BOTH portraits hide (decision 7/8 the both-or-neither law — the cinematic face-off exists ONLY when both portraits are available; the renderer enforces the law independent of the projection [the projection's hArt && aArt gate is the first line, the renderer's ports gate is the second]; decision 85 the onerror DOM walk is the runtime belt-and-braces; NO half a face-off ever reaches the DOM)");
+  // both present → both render (the both-or-neither law's positive branch)
+  const both = mc.matchHeroHtml({
+    ...heroBase,
+    home: { ...heroBase.home, portraitHtml: '<img class="mport" src="https://x/h.png" alt="">' },
+    away: { ...heroBase.away, portraitHtml: '<img class="mport" src="https://x/a.png" alt="">' },
+    live: false, finished: false, scored: false, scoreTxt: "", liveTxt: ""
+  });
+  check((both.match(/class="mport"/g) || []).length === 2,
+    "S19 degenerate both-portraits: BOTH portraits present → both render (the both-or-neither law's positive branch — the cinematic face-off renders ONLY when both sides carry a portrait atom; the S05 heroArtSrv projection resolves both + the renderer re-enforces; decision 85 the onerror DOM walk removes BOTH at runtime if either image fails)");
+})();
+
+// (d4) Missing team crest → the branded monogram fallback (decision 85 — the
+// S04 .mcrest-mono). Verify the crestHtml projection produces the monogram when
+// no crest + the <img> onerror removes the failed img at runtime.
+check(/function crestHtml/.test(pagesSrc) && /mcrest-mono/.test(pagesSrc) && /onerror="this\.remove\(\)"/.test(pagesSrc),
+  "S19 degenerate missing-crest: the crestHtml projection produces the .mcrest-mono branded monogram fallback when no crest (decision 85) + the <img> onerror=\"this.remove()\" removes a failed crest img at runtime (the team name stays visible — NO empty image frame; spec §16 'No ... empty image frames'; the crest onerror=\"this.remove()\" is distinct from the portrait onerror DOM walk [decision 85] — a failed crest removes ONLY itself, a failed portrait removes BOTH)");
+
+// (d5) Missing competition crest → omit the emblem <img> (decision 98 — the
+// chip shows the name + link only, NO empty image frame). Verify the compHtml
+// projection gates the emblem <img> on m.competition.emblem + the onerror
+// removes a failed emblem.
+check(/emblem \? '<img class="mcomplogo"/.test(pagesSrc) && /onerror="this\.remove\(\)"/.test(pagesSrc),
+  "S19 degenerate missing-comp-crest: the compHtml projection omits the emblem <img> when m.competition.emblem is null (decision 98 — the chip shows the name + link only, NO empty image frame; the onerror=\"this.remove()\" removes a failed emblem img at runtime; spec §5 'Omit the crest if unavailable; do not show an empty image frame'; the Q4=A no-invention discipline)");
+
+// (d6) Fewer-than-five results → show the available count + an honest sample
+// window (spec §16 example: "Fewer than five results: show available count and
+// honest sample window"). The S12 form strip renders the available dots (1-5)
+// + the sumHtml count «N برد · N مساوی · N شکست»; the S13 metrics carry the
+// sampleHtml «در N بازی [compFa]» (the played count — the honest shared window,
+// decisions 33/34). Verify the projections build these atoms.
+check(/sumHtml = toFaDigits\(String\(cnt\.W\)\) \+ " برد/.test(pagesSrc) && /sampleHtml: "در " \+ toFaDigits\(String\(met\.played\)\) \+ " بازی/.test(pagesSrc),
+  "S19 degenerate fewer-than-five: the S12 form strip shows the available count (sumHtml «N برد · N مساوی · N شکست» — the actual W/D/L counts from the dots, NOT a fake 5) + the S13 metrics carry the honest sample window (sampleHtml «در N بازی [compFa]» where N = played — decisions 33/34 the shared sample-window label; spec §16 example 'Fewer than five results: show available count and honest sample window'; the <3-results gate → the seasonHtml chip fallback, no fake per-match granularity; the MISSING-IS-NOT-ZERO law)");
+
+// (d7) Empty schedule dataset → do NOT claim there are no fixtures (spec §16
+// example: "Empty schedule dataset: do not claim there are no fixtures"). The
+// S15 no-false-empty law: an EMPTY window renders the coverage note ALONE,
+// NEVER «بدون مسابقه». Verify via the REAL matchScheduleHtml renderer output
+// for an empty window + the MC_SCHEDULE_COVERAGE_NOTE constant value (NOT the
+// mcSrc comments — the comments REFERENCE the law by name «بدون مسابقه» as a
+// prohibition; the RENDERED output + the constant must never carry the phrase).
+(function () {
+  const emptyWinOut = mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true });
+  // extract the MC_SCHEDULE_COVERAGE_NOTE constant value from mcSrc
+  const noteMatch = mcSrc.match(/const MC_SCHEDULE_COVERAGE_NOTE = "([^"]+)"/);
+  const noteVal = noteMatch ? noteMatch[1] : "";
+  check(emptyWinOut.indexOf("بدون مسابقه") === -1 && emptyWinOut.indexOf("بدون بازی") === -1 && noteVal.indexOf("بدون مسابقه") === -1 && noteVal.indexOf("بدون بازی") === -1 && /MC_SCHEDULE_COVERAGE_NOTE/.test(mcSrc) && emptyWinOut.indexOf("mcentre-schedule-note") > -1,
+    "S19 degenerate empty-schedule: the S15 schedule renderer NEVER claims «بدون مسابقه» / «بدون بازی» in the RENDERED output or the coverage-note constant (the no-false-empty law — spec §16 example 'Empty schedule dataset: do not claim there are no fixtures'; an EMPTY window renders the coverage note ALONE — the MC_SCHEDULE_COVERAGE_NOTE constant; the REAL matchScheduleHtml output for an empty window carries the .mcentre-schedule-note + NO banned phrase; the milestones S19 test list: 'Empty schedule without false no-match statement'; the mcSrc COMMENTS reference «بدون مسابقه» as the PROHIBITED phrase — the rendered output + the constant must never carry it)");
+})();
+
+// ---- (e) the stale freshness cue (decision S19-Stale-label=(a) — spec §16:
+// "Show stale cached data with small contextual freshness labels" + "Never
+// imply stale data was freshly verified"). The existing global lastUpdatedHtml
+// (markup.ts — «تاریخ به‌روزرسانی: <time>...») fed ctx.fetchedAt via pages.ts
+// updatedHtml IS the freshness cue. NO new per-section chip (the no-decorative-
+// chips law). Verify the cue renders on the match page + is fail-closed (null
+// fetchedAt → ""). ----
+(function () {
+  const markupSrc = read("src/seo/markup.ts");
+  check(/updatedHtml: M\.lastUpdatedHtml\(ctx\.fetchedAt\)/.test(pagesSrc) && /function lastUpdatedHtml\(fetchedAt/.test(markupSrc) && /if \(!fetchedAt\) return ""/.test(markupSrc) && /تاریخ به\u200cروزرسانی/.test(markupSrc),
+    "S19 stale freshness cue: the existing global lastUpdatedHtml (markup.ts — «تاریخ به‌روزرسانی: <time>...») fed ctx.fetchedAt via pages.ts updatedHtml IS the §16 freshness cue (decision S19-Stale-label=(a) — verify, NO new code, NO new per-section chip; the no-decorative-chips law — the facts panel 'No individual tiles, decorative icons or unnecessary backgrounds'; the cue is fail-closed: null fetchedAt → \"\"; spec §16 'Show stale cached data with small contextual freshness labels' + 'Never imply stale data was freshly verified' — the stamp is the page's global ctx.fetchedAt, the single-pool stamp; a per-section cue is decorative noise UNLESS the section's data is materially staler than the page's global stamp, which the single-pool architecture prevents)");
+})();
+
+// ---- (f) the lifecycle consistency (spec §16 + the S18 telegram precedent).
+// Every section must render consistently across upcoming/live/finished. The S18
+// telegram block is lifecycle-independent by construction (already asserted
+// S18). S19 verifies the OTHER sections handle lifecycle correctly. ----
+
+// (f1) S04 hero lifecycle: the three states share the same shell (the section
+// open + the comp header + the face-off) — decision 10 "same core identity
+// across upcoming, live and finished states". The branches differ ONLY in the
+// center column (upcoming = .mkick + .mcount; live = .mscore + .mlive;
+// finished = .mscore + .mfin). The scorer block NEVER renders in any state.
+// NOTE: the precise `class="X"` matching (with the closing quote) avoids the
+// `mkick` substring matching `mkickdate` (the date line renders in every state).
+check(heroUpcoming.indexOf('class="mkick"') > -1 && heroUpcoming.indexOf('class="mcount"') > -1 && heroUpcoming.indexOf('class="mscore"') === -1 && heroUpcoming.indexOf('class="mlive"') === -1 && heroUpcoming.indexOf('class="mfin"') === -1 &&
+  heroLive.indexOf('class="mscore"') > -1 && heroLive.indexOf('class="mlive"') > -1 && heroLive.indexOf('class="mkick"') === -1 && heroLive.indexOf('class="mcount"') === -1 && heroLive.indexOf('class="mfin"') === -1 &&
+  heroFinished.indexOf('class="mscore"') > -1 && heroFinished.indexOf('class="mfin"') > -1 && heroFinished.indexOf('class="mkick"') === -1 && heroFinished.indexOf('class="mcount"') === -1 && heroFinished.indexOf('class="mlive"') === -1,
+  "S19 lifecycle S04 hero: the three lifecycle states share the same shell (decision 10 'same core identity across upcoming, live and finished states') + branch ONLY in the center column (upcoming = .mkick + .mcount countdown mount; live = .mscore + .mlive status; finished = .mscore + .mfin «پایان بازی» — the scorer block NEVER renders in any state, Q4=A; the same comp header + face-off + role labels + .mkickdate render across all three; the precise class matching avoids the mkick/mkickdate substring collision — spec §5 'Same core identity across upcoming, live and finished states')");
+
+// (f2) S07 summary lifecycle: the answer sentence renders in every state (every
+// match has an answer sentence — the summary is always present, the خلاصه nav
+// item always lights); the result block («نتیجه نهایی») rides ONLY when
+// finished (the resultHtml atom — the S07 projection gates it on the finished
+// flag). Verify via the REAL matchSummaryHtml.
+(function () {
+  const sumUpcoming = mc.matchSummaryHtml({ answerHtml: "ANSWER", factsRows: [{ label: "رقابت", valueHtml: "PL" }], resultHtml: "", narrativeHtml: "" });
+  const sumFinished = mc.matchSummaryHtml({ answerHtml: "ANSWER", factsRows: [{ label: "رقابت", valueHtml: "PL" }], resultHtml: "<h2>نتیجه نهایی</h2>", narrativeHtml: "" });
+  check(sumUpcoming.indexOf('id="answer"') > -1 && sumUpcoming.indexOf("نتیجه نهایی") === -1 &&
+    sumFinished.indexOf('id="answer"') > -1 && sumFinished.indexOf("نتیجه نهایی") > -1,
+    "S19 lifecycle S07 summary: the answer-first briefing card (id=answer) renders in EVERY lifecycle state (every match has an answer sentence — the summary is always present, the خلاصه nav item always lights; decision 19 'Summary includes editorial briefing ... only when reliable data exists' — the answer sentence is always reliable); the result block («نتیجه نهایی») rides ONLY when finished (the resultHtml atom — the S07 projection gates it on the finished flag; the no-empty-cards law holds across lifecycle states — the result block omits for upcoming/live, NO placeholder)");
+})();
+
+// (f3) S08 narrative lifecycle: the engine picks the variant tense —
+// upcoming/live use the pre-match variants; finished uses the past-tense +
+// significance variants (decision 49). The eligibility is lifecycle-INDEPENDENT
+// (the trigger(sm, top3) does NOT read lifecycle — narrativePlan line 414-416);
+// the lifecycle ONLY affects selectVariant (the tense). Verify a qualifying
+// match produces a .mcentre-narrative element in ALL three lifecycle states.
+(function () {
+  const narrUpcoming = ne.narrativeHtml(mkSm(mkS({ rivalryFa: "ال کلاسیکو" })), ctxNone, "upcoming");
+  const narrLive = ne.narrativeHtml(mkSm(mkS({ rivalryFa: "ال کلاسیکو" })), ctxNone, "live");
+  const narrFinished = ne.narrativeHtml(mkSm(mkS({ rivalryFa: "ال کلاسیکو" })), ctxNone, "finished");
+  check(narrUpcoming.indexOf("mcentre-narrative") > -1 && narrLive.indexOf("mcentre-narrative") > -1 && narrFinished.indexOf("mcentre-narrative") > -1,
+    "S19 lifecycle S08 narrative: the narrative engine produces a .mcentre-narrative element for a qualifying match across all three lifecycle states (decision 49 'Lifecycle-specific narrative wording: upcoming pre-match, live retains pre-match, finished verified result/significance'; the eligibility is lifecycle-INDEPENDENT — the trigger(sm, top3) does NOT read lifecycle; the lifecycle ONLY affects selectVariant [the tense]; the element renders consistently — the variant text differs but the .mcentre-narrative wrapper is always present when a category qualifies)");
+})();
+
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");
