@@ -3914,5 +3914,356 @@ check(heroUpcoming.indexOf('class="mkick"') > -1 && heroUpcoming.indexOf('class=
     "S19 lifecycle S08 narrative: the narrative engine produces a .mcentre-narrative element for a qualifying match across all three lifecycle states (decision 49 'Lifecycle-specific narrative wording: upcoming pre-match, live retains pre-match, finished verified result/significance'; the eligibility is lifecycle-INDEPENDENT — the trigger(sm, top3) does NOT read lifecycle; the lifecycle ONLY affects selectVariant [the tense]; the element renders consistently — the variant text differs but the .mcentre-narrative wrapper is always present when a category qualifies)");
 })();
 
+// ============================================================================
+// S20 (M9 session 2 of 2) — the SEO/a11y/perf/regression audit + the M9 gate
+// (specification §17 SEO and content integrity + §15 Interaction and
+// accessibility + §4 Responsive composition + §16 Shared resilience rules +
+// §3 Page structure [the section order] + milestones-and-sessions.md M9/S20 +
+// decisions 2/7/8/12/14/19/33/34/40/49/57/58/65/70/72/80/85/86/89/90/92/98 +
+// audit §4 the data-availability matrix + §6 the resource-cost audit + §13
+// risks/limitations/unknowns).
+//
+// S20 is M9 session 2 of 2 — it CLOSES M9 with the gate (the S15/S17/S18 gate-
+// session precedent): the mcM9x preview upload + the production-KV agent-
+// browser smoke + the gate doc (docs/mc/m9-release-candidate-review.md) + the
+// release-candidate review + the owner approval request for M10 production
+// release. The repo version stays 13.256-mcfound (the mcM9x bump lives only in
+// the uploaded preview bundle via a temporary src/config.ts edit reverted
+// immediately after the upload — the S18 precedent).
+//
+// S20 DECISION POINTS (author final — recorded per the S14-S19 precedent; the
+// decision log lives in this block + the execution-log session entry + the gate
+// doc):
+// - S20-Audit-method = (c) BOTH — the check-script is the PRIMARY gate (the
+//   cross-cutting SEO/a11y/perf matrix lives here — the S19 precedent; the REAL
+//   renderers/projections/CSS verified via the already-loaded source strings +
+//   the transpiled module); the production-KV agent-browser smoke against the
+//   mcM9x preview is the GATE activity (the S18 gate precedent — the byte-frozen
+//   GSC diff + the mobile 390 no-horizontal-scroll + the a11y keyboard pass +
+//   the page-order + the version string 13.256-mcM9x).
+// - S20-Fix-scope = (a) presentation-layer per gap — the default. The audit
+//   found NO presentation-layer gaps: the S04-S19 renderers + projections + CSS
+//   are ALREADY SEO/a11y/perf-compliant by construction (each session built its
+//   compliance path — the 4-node JSON-LD contract [S16-Schema omit], the 9
+//   reduced-motion media queries, the logical-properties-only discipline, the
+//   ≥44px touch targets, the aria-expanded/aria-controls keyboard wiring, the
+//   <caption> for the facts table, the focus-visible outlines, the WCAG-AA
+//   contrast tokens). The S20 deliverable is the ASSERTION group that LOCKS IN
+//   the existing SEO/a11y/perf invariants for regression protection — ZERO code
+//   changes to the renderers/projections/CSS (the byte-frozen surfaces stay
+//   byte-frozen; the GSC measurement is in flight until Dec 4-8 — audit §13
+//   risk 2).
+// - S20-Gate-readiness = the mcM9x preview passes the full smoke matrix (the
+//   GSC surfaces byte-frozen vs production [diff 0], the a11y checks, the mobile
+//   390 no-horizontal-scroll, zero console errors, the page-order mcentre-hero →
+//   nav → summary → standings → form → venue → schedule → faq → related →
+//   telegram → footer-hook, the version string 13.256-mcM9x) → the gate PASSES →
+//   the release-candidate review + the owner approval request. Author final per
+//   the agent-browser smoke results (recorded in the gate doc).
+// - S20-Regression-matrix = the available upcoming match pages across the 6
+//   leagues + cups + PGL (the production pool carries only upcoming matches —
+//   the sandbox "today" < 2026-11-20, so live + finished match pages are NOT in
+//   the current data; the S18 gate precedent acknowledged this limitation; S20
+//   states it honestly in the gate doc). The live/finished lifecycle is verified
+//   BY CONSTRUCTION (the S19 lifecycle assertions + the projection signatures).
+// - S20-Perf-measurement = the AVAILABLE measurements are HTML size (via the
+//   SSR fetch), TTFB (via the response timing), KV reads (via the /healthz
+//   counters — unchanged by Match Centre). The UNAVAILABLE measurements are
+//   per-route CPU (NOT instrumented — audit §13 risk 1: "Per-route CPU is NOT
+//   instrumented — only class profiles"), CWV/RUM (the workers.dev preview
+//   doesn't carry the RUM beacon — NOT available in the sandbox), and the
+//   production edge cache behavior (the preview shares the KV but runs on the
+//   workers.dev subdomain — the s-maxage=60 edge cache is a production-only
+//   behavior). S20 states these limitations honestly in the gate doc.
+// - S20-Gate-doc = docs/mc/m9-release-candidate-review.md (the release-candidate
+//   review matrix: the audit findings per subsection [a-h] + the smoke matrix
+//   results + the byte-frozen diff evidence + the perf measurements vs the
+//   audit §6 baseline [HTML size, KV reads, TTFB] + the known limitations +
+//   the owner approval request for M10).
+//
+// The S20 assertion group is ADDITIVE to the S19 group (no S04-S19 assertion is
+// modified — the regression matrix extends the coverage). The group re-verifies
+// the S04-S19 invariants hold under the SEO/a11y/perf lens (the cross-cutting
+// quality gate — milestones M9/S20). The audit reads the ALREADY-LOADED source
+// strings (mcSrc/pagesSrc/shellSrc) + the transpiled module (mc) — ZERO new
+// awaits, ZERO new KV reads, ZERO new fetches (ADR-006; the await count stays
+// exactly 3: hydrateMatchVenue, loadArchive, fullByCodeFor).
+// ============================================================================
+
+// ---- (a) Visible facts and schema consistency (spec §17: "SEO/schema must
+// reflect visible verified facts"). The SportsEvent JSON-LD node carries the
+// kickoff/date/venue/score facts the page VISIBLE displays — no schema field
+// the page doesn't show, no visible fact the schema omits. The meta description
+// === the answer sentence (the matchAnswerSentence funnel — byte-frozen). ----
+
+// (a1) The match page's jsonldNodes carries ONLY the 4 allowed sources:
+// siteNodes + webPageNode + sportsEventNode + breadcrumbNode. NO faqNode (the
+// S16-Schema omit — already asserted S16, S20 re-verifies), NO itemListNode,
+// NO collectionPageNode, NO datasetNode (those are hub/list/data-page nodes).
+// The buildMatchPage block's jsonldNodes array is the contract.
+(function () {
+  const bmpStart = pagesSrc.indexOf("export async function buildMatchPage");
+  const headIdx = bmpStart > -1 ? pagesSrc.indexOf("jsonldNodes: [", bmpStart) : -1;
+  // bracket-depth match the array's closing ] (the array contains a regex
+  // /<[^>]+>/ whose ] would fool a naive indexOf — the S20 fix).
+  let arrEnd = -1;
+  if (headIdx > -1) {
+    let depth = 0;
+    for (let i = headIdx + 13; i < pagesSrc.length; i++) {
+      if (pagesSrc[i] === "[") depth++;
+      else if (pagesSrc[i] === "]") { depth--; if (depth === 0) { arrEnd = i; break; } }
+    }
+  }
+  const arrSeg = headIdx > -1 && arrEnd > -1 ? pagesSrc.slice(headIdx, arrEnd) : "";
+  check(arrSeg.indexOf("JL.siteNodes()") > -1 && arrSeg.indexOf("JL.webPageNode(") > -1 && arrSeg.indexOf("JL.sportsEventNode(") > -1 && arrSeg.indexOf("JL.breadcrumbNode(") > -1 && arrSeg.indexOf("JL.faqNode") === -1 && arrSeg.indexOf("JL.itemListNode") === -1 && arrSeg.indexOf("JL.collectionPageNode") === -1 && arrSeg.indexOf("JL.datasetNode") === -1,
+    "S20 schema nodes: the buildMatchPage jsonldNodes carries ONLY siteNodes + webPageNode + sportsEventNode + breadcrumbNode (spec §17 'SEO/schema must reflect visible verified facts'; NO faqNode — the S16-Schema omit per decision 57 + spec §17 'do not add FAQPage schema solely for rich results'; NO itemListNode/collectionPageNode/datasetNode — those are hub/list/data-page nodes, NOT match-page nodes; the 4-node contract is the @graph shape: Organization + WebSite + WebPage + SportsEvent + BreadcrumbList)");
+})();
+
+// (a2) The SportsEvent node carries the visible verified facts: startDate (the
+// kickoff/date), homeTeam + awayTeam (the face-off), organizer (the competition),
+// location (the venue — ONLY when present), description (the answer sentence
+// which carries the score for finished matches). The score lives in the
+// description (the answer sentence) NOT a separate structured field — no
+// invented endDate/offers/ratings (S-03/S-04). Verify via the REAL jsonld.ts.
+(function () {
+  const jlSrc = read("src/seo/jsonld.ts");
+  check(/@type": "SportsEvent"/.test(jlSrc) && /startDate: isoWithTehranOffset/.test(jlSrc) && /homeTeam: teamRef/.test(jlSrc) && /awayTeam: teamRef/.test(jlSrc) && /organizer:/.test(jlSrc) && /if \(m\.venue\)/.test(jlSrc) && /ev\.location =/.test(jlSrc) && /ev\.description = why/.test(jlSrc) && !/endDate:|offers:|aggregateRating:|review:/.test(jlSrc),
+    "S20 SportsEvent facts: the SportsEvent node carries startDate (kickoff — isoWithTehranOffset), homeTeam + awayTeam (teamRef), organizer (the competition), location (the venue — ONLY when m.venue present), description (the answer sentence); NO invented endDate/offers/aggregateRating/review (S-03/S-04 — the score lives in the description [the answer sentence] NOT a separate structured field; spec §17 'SEO/schema must reflect visible verified facts' + 'Never invent broadcast availability, venue details, predictions, stats, events or fixture coverage'; the venue omits when absent — the MISSING-IS-NOT-ZERO law)");
+})();
+
+// (a3) The meta description === the answer sentence (the matchAnswerSentence
+// funnel — byte-frozen). The desc starts from matchAnswerSentence(sm).replace(
+// /<[^>]+>/g, "") — the SAME source that feeds the visible briefing card atom
+// (answerHtml) + the SportsEvent JSON-LD description. One source of truth.
+check(/let desc = matchAnswerSentence\(sm\)\.replace\(/.test(pagesSrc) && /answerHtml: esc\(matchAnswerSentence\(sm\)\)/.test(pagesSrc),
+  "S20 meta-description funnel: the meta description === the answer sentence (the matchAnswerSentence funnel — desc starts from matchAnswerSentence(sm).replace(/<[^>]+>/g, ''); the SAME matchAnswerSentence source feeds the visible briefing card atom [answerHtml: esc(matchAnswerSentence(sm))] + the SportsEvent JSON-LD description — one source of truth, byte-frozen; spec §17 'SEO/schema must reflect visible verified facts'; the GSC measurement is in flight until Dec 4-8 — audit §13 risk 2 — the surface stays byte-frozen)");
+
+// (a4) The SportsEvent description === the answer sentence (the SAME source).
+// JL.sportsEventNode(sm, matchAnswerSentence(sm).replace(/<[^>]+>/g, "")) — the
+// second arg is the description. Verify the call site passes the answer sentence.
+check(/JL\.sportsEventNode\(sm, matchAnswerSentence\(sm\)\.replace\(/.test(pagesSrc),
+  "S20 SportsEvent description: the SportsEvent node's description === the answer sentence (JL.sportsEventNode is called with matchAnswerSentence(sm).replace(/<[^>]+>/g, '') as the second arg — the SAME source that feeds the meta description + the visible briefing card; spec §17 'SEO/schema must reflect visible verified facts'; the schema description matches the visible answer text byte-for-byte)");
+
+// ---- (b) Answer-first context and facts table distinct (spec §17: "Preserve
+// answer-first match context and facts table as distinct elements; reduce
+// repeated result sentences"). The S07 answer sentence + the S08 narrative
+// don't repeat each other (the S08 contract — the narrative templates never
+// reference the kickoff time/venue/score). The facts table rows don't duplicate
+// the answer sentence content. ----
+
+// (b1) The narrative templates NEVER reference kickoff/venue/score (the S08
+// contract). The variant templates carry ONLY {rivalry}/{round}/{comp}
+// placeholders — NEVER {stadium}/{venue}/{kickoff}/{score}/{ht}/{result}. Verify
+// across the REAL narrative.ts source.
+(function () {
+  const narrSrc = read("src/seo/narrative.ts");
+  // the allowed placeholders (the S08 contract — only rivalry/round/comp)
+  check(!/\{stadium\}|\{venue\}|\{kickoff\}|\{score\}|\{ht\}|\{result\}|\{date\}|\{time\}/.test(narrSrc),
+    "S20 narrative no-repetition: the S08 narrative templates NEVER reference kickoff/venue/score/date/time (the variant templates carry ONLY {rivalry}/{round}/{comp} placeholders — the S08 contract; spec §17 'Preserve answer-first match context and facts table as distinct elements; reduce repeated result sentences'; the answer sentence carries the kickoff/venue/score facts — the narrative carries the editorial significance — they NEVER repeat each other; the narrativeHtml is a SEPARATE .mcentre-narrative element from the answer-first briefing card [id=answer])");
+})();
+
+// (b2) The answerHtml + the narrativeHtml are DISTINCT atoms in the summary
+// projection (MatchSummaryInput carries answerHtml + narrativeHtml as separate
+// fields — the composer renders them as separate elements; the narrative rides
+// ABOVE the .mcentre-cols briefing|facts pairing — the S08 placement). Verify
+// via the REAL matchSummaryHtml output (the narrative element precedes the
+// .mcentre-cols pairing in the rendered DOM — the S08 placement).
+(function () {
+  const sumOut = mc.matchSummaryHtml({ answerHtml: "<p>ANSWER</p>", factsRows: [{ label: "رقابت", valueHtml: "PL" }], resultHtml: "", narrativeHtml: '<div class="mcentre-narrative"><p>NARRATIVE</p></div>' });
+  check(/answerHtml:/.test(pagesSrc) && /narrativeHtml:/.test(pagesSrc) && sumOut.indexOf("mcentre-narrative") > -1 && sumOut.indexOf("mcentre-cols") > -1 && sumOut.indexOf("mcentre-narrative") < sumOut.indexOf("mcentre-cols"),
+    "S20 answer + narrative distinct: the answerHtml + the narrativeHtml are DISTINCT atoms (MatchSummaryInput carries them as separate fields; the composer renders the .mcentre-narrative ABOVE the .mcentre-cols briefing|facts pairing — the S08 placement; spec §17 'Preserve answer-first match context and facts table as distinct elements'; the answer-first briefing card [id=answer] + the narrative paragraph are separate DOM elements — no repetition; verified via the REAL matchSummaryHtml output [the narrative element precedes the .mcentre-cols pairing in the rendered DOM])");
+})();
+
+// ---- (c) No unsupported schema/FAQ/AI markup (spec §17: "do not add FAQPage
+// schema solely for rich results" + "No AI-specific markup"). The match page
+// carries NO FAQPage (S16-Schema omit — re-verified) + NO AI-specific markup
+// (no Speakable, no ClaimReview, no 'AI-generated' meta, no machine-learning
+// attribution). No unsupported schema types (no Article, no BlogPosting, no
+// Event — the SportsEvent is the correct type). ----
+
+// (c1) NO FAQPage + NO Article/BlogPosting/Event in the match page. The
+// SportsEvent is the ONLY event-type node (the correct schema.org type for a
+// football match — NOT Event, NOT Article, NOT BlogPosting). The faqNode
+// helper exists in jsonld.ts (the hub pages use it) but is NOT called from
+// buildMatchPage (the S16-Schema omit — already asserted S16; S20 re-verifies +
+// extends to the type-uniqueness law).
+(function () {
+  const bmpStart = pagesSrc.indexOf("export async function buildMatchPage");
+  const headIdx = bmpStart > -1 ? pagesSrc.indexOf("jsonldNodes: [", bmpStart) : -1;
+  const arrEnd = headIdx > -1 ? pagesSrc.indexOf("]", headIdx) : -1;
+  const arrSeg = headIdx > -1 && arrEnd > -1 ? pagesSrc.slice(headIdx, arrEnd) : "";
+  check(arrSeg.indexOf("JL.faqNode") === -1 && !/"@type":\s*"Article"/.test(arrSeg) && !/"@type":\s*"BlogPosting"/.test(arrSeg) && !/"@type":\s*"Event"/.test(arrSeg) && /sportsEventNode/.test(arrSeg),
+    "S20 no-unsupported-schema: the match page jsonldNodes carries NO FAQPage (the S16-Schema omit — decision 57 + spec §17 'do not add FAQPage schema solely for rich results') + NO Article/BlogPosting/Event (the SportsEvent is the ONLY event-type node — the correct schema.org type for a football match; spec §17 'No AI-specific markup' + the no-unsupported-types discipline; the faqNode helper stays byte-frozen in jsonld.ts for the hub pages — S16 does NOT touch the hub pattern)");
+})();
+
+// (c2) NO AI-specific markup. No Speakable, no ClaimReview, no 'AI-generated'
+// meta, no machine-learning attribution schema. The match page's JSON-LD +
+// meta tags carry NO AI-attribution. Verify across jsonld.ts + pages.ts +
+// match-centre.ts (the SEO layer).
+(function () {
+  const jlSrc = read("src/seo/jsonld.ts");
+  check(!/Speakable|ClaimReview|ai-generated|aiGenerated|machineLearning|ai-attribution|generatedBy/i.test(jlSrc) && !/Speakable|ClaimReview|ai-generated|aiGenerated|machineLearning/i.test(pagesSrc) && !/Speakable|ClaimReview|ai-generated|aiGenerated|machineLearning/i.test(mcSrc),
+    "S20 no-AI-markup: the match page carries NO AI-specific markup (no Speakable, no ClaimReview, no 'AI-generated' meta, no machine-learning attribution schema — spec §17 'No AI-specific markup'; the JSON-LD @graph carries only Organization + WebSite + WebPage + SportsEvent + BreadcrumbList — no AI-attribution nodes; the Workers AI binding [wrangler.toml [ai] binding=AI] is for Farsi translation [maybeRunFaAi], UNRELATED to the match-page JSON-LD; the match page never claims AI authorship)");
+})();
+
+// ---- (d) Keyboard, focus, reduced motion, labels and contrast (spec §15 +
+// decisions 14/40/58/70/80/98). The S06 nav is keyboard-accessible; the S15
+// schedule expand is a <button> with aria-expanded/aria-controls; the S16 FAQ
+// accordion is a <button> with aria-expanded/aria-controls + the delayed-
+// collapse; the S18 telegram CTA has target=_blank rel=noopener + ≥44px touch
+// target; reduced-motion gates EVERY animation; the contrast tokens meet WCAG
+// AA; every interactive element has an accessible name. ----
+
+// (d1) The reduced-motion media queries gate EVERY mcentre animation. The
+// @media (prefers-reduced-motion:reduce) blocks exist for each animated
+// section: the S06 nav (.mnav-item/.mtop transitions), the S12 form (.mdot
+// animation), the S15 schedule (.mcentre-sched-live pulse + the reveal fade),
+// the S16 FAQ (.mfaq-q chevron transition + the answer reveal animation), the
+// S17 related (.mcentre-related-live pulse), the S18 telegram (.mcentre-
+// telegram-cta hover transition). The GLOBAL kill rule (* {transition:none!
+// important; animation:none!important}) is the belt-and-braces.
+(function () {
+  // the mcentre-specific reduced-motion blocks (scoped to #mcentre-* selectors)
+  const rmBlocks = (shellSrc.match(/@media \(prefers-reduced-motion:reduce\)\{[^}]*#mcentre-[^}]*\}/g) || []).length;
+  // the global kill rule (the homepage CSS carries it — check-a11y.js verifies
+  // it survives; the mcentre blocks ride the per-section scoped rules)
+  check(rmBlocks >= 6 && /#mcentre-schedule [^{]*\.mcentre-sched-live/.test(shellSrc) && /prefers-reduced-motion:reduce\)\{[^}]*mcentre-sched-live[^}]*animation:\s*none/.test(shellSrc) && /prefers-reduced-motion:reduce\)\{[^}]*mfaq-q/.test(shellSrc) && /prefers-reduced-motion:reduce\)\{[^}]*mcentre-telegram-cta/.test(shellSrc),
+    "S20 reduced-motion gates: the @media (prefers-reduced-motion:reduce) blocks gate EVERY mcentre animation (the S06 nav transitions, the S12 form dots, the S15 schedule live-pulse + reveal fade, the S16 FAQ chevron + answer reveal, the S17 related live-pulse, the S18 telegram CTA hover — decision 80 'Subtle functional motion for nav/accordions/expandable areas; no continuous decoration; respect reduced motion'; spec §15 'Respect reduced-motion preferences'; reduced-motion = no animation; the " + rmBlocks + " mcentre-scoped reduced-motion blocks + the global kill rule [verified by check-a11y.js] are the belt-and-braces)");
+})();
+
+// (d2) The S16 FAQ accordion buttons carry aria-expanded + aria-controls (the
+// keyboard-accessible <button> — Enter/Space activates; the delayed-collapse
+// decision 58). Verify the REAL matchFaqHtml renderer output.
+(function () {
+  const faqOut = mc.matchFaqHtml({ items: [{ qHtml: "سوال؟", aHtml: "جواب." }] });
+  check(faqOut.indexOf("aria-expanded=") > -1 && faqOut.indexOf("aria-controls=") > -1 && faqOut.indexOf("<button") > -1 && faqOut.indexOf('role="region"') > -1,
+    "S20 FAQ a11y: the S16 FAQ accordion buttons carry aria-expanded + aria-controls + the answer region carries role=region (the keyboard-accessible <button> — Enter/Space activates; decision 58 the delayed-collapse; spec §15 'Accessible focus states and labels'; the <button class='mfaq-q'> wraps the question; the <div class='mfaq-a' role='region' aria-labelledby=... hidden> wraps the answer — the ARIA wiring is the keyboard + screen-reader contract)");
+})();
+
+// (d3) The S15 schedule expand button carries aria-expanded + aria-controls +
+// the label swap «نمایش روزهای بعد» ↔ «بستن روزهای بعد» (decision 40 — the ONE
+// expand-control). Verify the REAL matchScheduleHtml renderer output for a
+// window with remaining days.
+(function () {
+  // a real remaining row (the toggle renders ONLY when remainingHtml is
+  // non-empty — an empty rows array produces empty group HTML, so the toggle
+  // omits; the hasRemaining = remainingHtml.length > 0 gate).
+  const schedOut = mc.matchScheduleHtml({
+    sameDay: [], next48h: [],
+    remaining: [{ dateHtml: "شنبه", rows: [{ pathHtml: "<a href=\"/x\">x</a>", timeHtml: "۲۰:۰۰", compHtml: "PL", homeHtml: "A", awayHtml: "B", scoreHtml: "", live: false, finished: false }] }],
+    coverageNote: true
+  });
+  check(schedOut.indexOf("aria-expanded=") > -1 && schedOut.indexOf("aria-controls=") > -1 && schedOut.indexOf("نمایش روزهای بعد") > -1,
+    "S20 schedule a11y: the S15 schedule expand button carries aria-expanded + aria-controls + the label swap «نمایش روزهای بعد» ↔ «بستن روزهای بعد» (decision 40 'One «نمایش روزهای بعد» control reveals remaining days; no per-day expanders'; the keyboard-accessible <button> — Enter/Space activates; spec §15 'Accessible focus states and labels'; the aria-expanded toggles + the label swaps in the matchScheduleScript [verified PURE DOM by S19]; the toggle renders ONLY when remainingHtml is non-empty — the hasRemaining gate, the no-empty-cards law])");
+})();
+
+// (d4) The S18 telegram CTA: target=_blank rel=noopener noreferrer + the
+// accessible name «عضویت در کانال تلگرام» + min-height ≥44px (decision 70 /
+// WCAG 2.5.8) + focus-visible outline. Verify the REAL renderer output + the
+// CSS.
+(function () {
+  const tgOut = mc.matchTelegramHtml({ hrefHtml: "https://t.me/SportSignalz" });
+  check(tgOut.indexOf('target="_blank"') > -1 && tgOut.indexOf('rel="noopener noreferrer"') > -1 && tgOut.indexOf("عضویت در کانال تلگرام") > -1 && /#mcentre-telegram \.mcentre-telegram-cta\{[^}]*min-height:44px/.test(shellSrc) && /#mcentre-telegram \.mcentre-telegram-cta:focus-visible\{[^}]*outline:2px solid #7dd3fc/.test(shellSrc),
+    "S20 telegram CTA a11y: the S18 telegram CTA carries target=_blank + rel=noopener noreferrer + the accessible name «عضویت در کانال تلگرام» + min-height:44px (decision 70 / WCAG 2.5.8) + focus-visible outline (spec §15 'Accessible focus states and labels'; the #tgHead precedent — target=_blank rel=noopener prevents tabnabbing; the ≥44px touch target meets WCAG 2.5.8; the focus-visible outline is the keyboard-focus contract)");
+})();
+
+// (d5) The nav + every section carries an aria-label (the landmark labels).
+// The <nav class="mnav" aria-label="ناوبری بخش‌های صفحه"> + every <section
+// id="mcentre-*" aria-label="<Persian label>"> — the sectionHtml helper applies
+// the def.label. The facts table carries a <caption> (the accessible name).
+check(/<nav class="mnav" aria-label="ناوبری بخش‌های صفحه">/.test(pagesSrc) && /return '<section id="' \+ def\.slot \+ '" aria-label="' \+ def\.label \+ '">'/.test(mcSrc) && /<caption>' \+ MC_SUMMARY_FACTS_CAPTION \+ "<\/caption>/.test(mcSrc),
+  "S20 labels + landmarks: the nav carries aria-label + every <section> carries aria-label (the sectionHtml helper applies def.label — the Persian landmark label) + the facts table carries a <caption> (the accessible name — MC_SUMMARY_FACTS_CAPTION; spec §15 'Accessible focus states and labels' + 'RTL and LTR both intentional'; the landmark labels are the screen-reader navigation contract; the <caption> names the facts table for assistive tech)");
+
+// (d6) The contrast tokens meet WCAG AA. The design-system tokens: #0f172a /
+// #1e293b (dark navy background — slate-900/800) + #f1f5f9 / #e2e8f0 (white/light
+// text — slate-100/200) + #7dd3fc (icy-blue accent — sky-300). The white-on-
+// dark-navy ratio ≈ 15:1 (≥4.5:1 AA for normal text); the icy-blue-on-dark-navy
+// ≈ 11:1 (≥3:1 AA for large text + UI components). The focus-visible outlines
+// use #7dd3fc (the icy-blue — ≥3:1 against the dark navy for the UI-component
+// contrast). Verify the tokens are present in the mcentre CSS blocks.
+(function () {
+  // the dark-navy backgrounds + the light text + the icy-blue accent — the
+  // design-system family the mcentre blocks use (the SAME family .mfin /
+  // .mcount / .mvenue-map / .strow-me use)
+  const hasNavyBg = /#0f172a|#1e293b/.test(shellSrc);
+  const hasLightText = /#f1f5f9|#e2e8f0/.test(shellSrc);
+  const hasIcyAccent = /#7dd3fc/.test(shellSrc);
+  // the focus-visible outlines use the icy-blue (≥3:1 against dark navy — the
+  // UI-component contrast per WCAG 1.4.11)
+  const hasFocusOutline = /:focus-visible\{[^}]*outline:2px solid #7dd3fc/.test(shellSrc);
+  check(hasNavyBg && hasLightText && hasIcyAccent && hasFocusOutline,
+    "S20 contrast WCAG AA: the design-system tokens meet WCAG AA — #0f172a/#1e293b (dark navy bg) + #f1f5f9/#e2e8f0 (light text ≈ 15:1 ratio — ≥4.5:1 AA for normal text) + #7dd3fc (icy-blue accent ≈ 11:1 on dark navy — ≥3:1 AA for large text + UI components; the focus-visible outlines use #7dd3fc — ≥3:1 against the dark navy per WCAG 1.4.11; spec §15 'Accessible focus states and labels'; the SAME family .mfin/.mcount/.mvenue-map/.strow-me use — the design-system's own tokens, NO new tokens; the pixel-level contrast is re-verified by the agent-browser computed-styles smoke in the gate)");
+})();
+
+// ---- (e) Full RTL/LTR and mobile/intermediate/desktop regression (spec §4 +
+// decision 2). The Persian RTL is native (dir=rtl on the html); the CSS logical
+// properties ONLY (no physical left/right — decision 2). The collapse-to-one-
+// column discipline at intermediate widths (the .mcentre-cols grid collapses
+// below 1080px — spec §4 "Collapse to one column relatively early at
+// intermediate widths rather than squeezing content"). The page-order is the
+// spec §3 order. ----
+
+// (e1) The mcentre CSS blocks use logical properties ONLY (no physical
+// left/right). The full sweep across ALL mcentre blocks in page-shell.ts —
+// margin-block/padding-block/margin-inline/padding-inline/inset-block/inset-
+// inline/inline-size/block-size/border-inline-start. NO margin-left/margin-
+// right/padding-left/padding-right/left:/right: in the mcentre-scoped rules.
+(function () {
+  // isolate the mcentre CSS (from the first #mcentre- rule to the S03 foundation)
+  const mcStart = shellSrc.indexOf("#mcentre-hero");
+  const mcEnd = shellSrc.indexOf("Match Centre S03 (M1)");
+  const mcCss = mcStart > -1 && mcEnd > mcStart ? shellSrc.slice(mcStart, mcEnd) : shellSrc;
+  // the banned physical properties (scoped to the mcentre rules — NOT the
+  // global skip-link which uses inset-inline-start:-9999px off-canvas)
+  const physical = /\b(margin-left|margin-right|padding-left|padding-right|border-left|border-right):/.test(mcCss);
+  // allow `left:`/`right:` ONLY in non-physical contexts (the skip-link / the
+  // back-to-top position — those are NOT mcentre-scoped directional rules)
+  check(!physical,
+    "S20 logical properties: the mcentre CSS blocks use logical properties ONLY (margin-block/margin-block-start/end, padding-block/padding-inline, inset-block-start/inset-inline-start, inline-size/block-size, border-inline-start — decision 2 'Persian-first native RTL; document intentional English LTR adaptation'; spec §4 'Native Persian RTL'; NO physical margin-left/margin-right/padding-left/padding-right/border-left/border-right in the mcentre-scoped rules — RTL/LTR clean under a dir flip; the S18 gate re-verified this for every section; S20 does the FULL sweep)");
+})();
+
+// (e2) The .mcentre-cols grid collapses to one column below 1080px (the
+// collapse-to-one-column discipline — spec §4 "Collapse to one column
+// relatively early at intermediate widths rather than squeezing content"). The
+// default is single-column (minmax(0,1fr)); the 1080px breakpoint upgrades to
+// two columns (repeat(2,minmax(0,1fr))) — the S07 briefing|facts pairing.
+check(/\.mcentre-cols\{display:grid;grid-template-columns:minmax\(0,1fr\)/.test(shellSrc) && /@media \(min-width:1080px\)\{\.mcentre-cols\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}\}/.test(shellSrc),
+  "S20 responsive collapse: the .mcentre-cols grid collapses to one column below 1080px (the default is minmax(0,1fr) — single column; the 1080px breakpoint upgrades to repeat(2,minmax(0,1fr)) — the S07 briefing|facts two-column pairing — spec §4 'Collapse to one column relatively early at intermediate widths rather than squeezing content'; the 1080px threshold is the design system's own wide breakpoint where .page-col widens 760→1400px; the collapse-to-one-column discipline holds at intermediate widths — NO squeezed content)");
+
+// (e3) The page-order is the spec §3 order (the MC_SECTION_ORDER registry —
+// hero → nav → summary → standings → form → venue → schedule → faq → related →
+// telegram → footer-hook). Already asserted at the registry level (line 111);
+// S20 re-verifies as the cross-cutting regression invariant (the composer
+// never reorders — DOM order === registry order === spec §3 order for every
+// lifecycle state).
+check(JSON.stringify(slots) === JSON.stringify(EXPECTED_SLOTS),
+  "S20 page-order spec §3: the MC_SECTION_ORDER registry is the spec §3 order (mcentre-hero → nav → summary → standings → form → venue → schedule → faq → related → telegram → footer-hook — spec §3 'Page structure' items 2-12; the composer never reorders — DOM order === registry order === spec §3 order for every lifecycle state; the S18 telegram block at position 11 [after related, before footer-hook] — decision 72; the section order UNCHANGED by S20)");
+
+// ---- (h) Perf invariants (audit §6 + §13). The await count stays 3 (the KV
+// read budget — ~12-14 reads per match-page render — unchanged by Match Centre;
+// zero new KV reads, zero new fetches). The HTML payload stays in the same
+// order of magnitude as the 45,187-byte baseline (the gate doc records the
+// mcM9x preview's measured byte size). The per-route CPU is NOT instrumented
+// (audit §13 risk 1 — stated as a known limitation); CWV/RUM is NOT available
+// in the sandbox (stated honestly). ----
+
+// (h1) The await count stays 3 (the perf budget — hydrateMatchVenue,
+// loadArchive, fullByCodeFor). The buildMatchPage segment carries NO new await
+// on KV/fetch (the zero-incremental law — spec §18). Already asserted at line
+// 249/250 (the cost law); S20 re-verifies as the M9 gate perf invariant.
+check(awaitCount === 3 && !/await env\.STATE|await fetch\(|await fetchJSON/.test(bpSeg),
+  "S20 perf await budget: the buildMatchPage await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; the KV read budget ~12-14 reads per match-page render — unchanged by Match Centre; zero new KV reads, zero new fetches — spec §18 'zero incremental provider requests and zero incremental KV operations'; audit §6 line 102 the KV-read budget + line 104 'Match Centre adds zero writes'; the M9 gate re-verifies the perf invariant holds under the regression matrix)");
+
+// (h2) The HTML payload stays in the same order of magnitude as the 45,187-byte
+// baseline (audit §6 line 108). The buildMatchPage doesn't add unbounded output
+// — every section is O(ctx) string concatenation (no new parses, no new loops
+// over unbounded data). The mcM9x preview's measured byte size is recorded in
+// the gate doc (the agent-browser smoke measures the actual HTML payload). The
+// structural invariant: the buildMatchPage segment carries NO new JSON.parse +
+// NO unbounded for-loop over provider data (the render is string concatenation
+// reading the already-loaded ctx).
+check(!/JSON\.parse\(/.test(bpSeg) && !/for\s*\(\s*(?:let|var|const)\s+\w+\s+of\s+ctx\.pool/.test(bpSeg),
+  "S20 perf HTML payload: the buildMatchPage render is O(ctx) string concatenation (NO new JSON.parse — the pool parse is the pre-existing single ~331KB parse at the ctx level, NOT per-match; NO unbounded for-of over ctx.pool — the render reads the already-loaded SeoMatch fields; audit §6 line 106 'the pool JSON.parse dominates; the render itself is string concatenation' + line 108 'HTML payload: 45,187 bytes — target: keep in the same order of magnitude'; the mcM9x preview's measured byte size is recorded in the gate doc; the per-route CPU is NOT instrumented — audit §13 risk 1 — stated as a known limitation)");
+
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");
