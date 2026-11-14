@@ -650,20 +650,131 @@ export interface MatchScheduleInput {
 // empty law: NEVER «بدون مسابقه»).
 const MC_SCHEDULE_TITLE = "بازی‌های هفته";
 const MC_SCHEDULE_COVERAGE_NOTE = "این برنامه بر اساس داده‌های موجود نمایش داده می‌شود و ممکن است شامل تمام بازی‌ها نباشد.";
+// S15: the broadcast-row vocabulary (the S04 hero status vocabulary, compacted).
+// The upcoming marker «در انتظار» (a SCHEDULED row — scoreHtml "" — carries the
+// upcoming marker, NOT a fake 0-0; the S14 scoreHtml "" law — MISSING IS NOT
+// ZERO). The live aria-label «در جریان» (the S04 hero .mscore aria-label — the
+// live dot carries it). The finished status «پایان» (the S04 hero «پایان بازی»
+// compacted — the broadcast row's compact status). The expand-control labels
+// «نمایش روزهای بعد» ↔ «بستن روزهای بعد» (decision 40: ONE control, no
+// per-date expanders; the label swaps via the inline matchScheduleScript in
+// pages.ts).
+const MC_SCHEDULE_UPCOMING = "در انتظار";
+const MC_SCHEDULE_LIVE_LABEL = "در جریان";
+const MC_SCHEDULE_FINISHED_LABEL = "پایان";
+const MC_SCHEDULE_EXPAND_SHOW = "نمایش روزهای بعد";
+const MC_SCHEDULE_EXPAND_HIDE = "بستن روزهای بعد";
 
-// The schedule renderer (S14 = the pure-data layer). S14 renders the
-// <h2>«بازی‌های هفته»</h2> section title + the discreet coverage note ALONE
-// — the day-grouped rows + the «نمایش روزهای بعد» expand control + the
-// inline JS are ALL S15 (the atoms are forward-compatible in
-// MatchScheduleInput). NO inline JS, NO expand control this session. The
-// no-false-empty law: an EMPTY window (sameDay/next48h/remaining all empty)
-// still renders the coverage note (coverageNote:true — NEVER «بدون
-// مسابقه»); a window that can't be anchored (no fixture date → the
-// projection returns coverageNote:false) → "" (the section omits entirely
-// — every match carries a utcDate, so this is the degenerate guard).
+// S15: one broadcast row (spec §11 «Compact broadcast-style rows: kickoff time,
+// competition, team crests/names, central score or upcoming indicator, status
+// where available»). Decision S15-Crest: NAME-ONLY — spec §11 «team crests/names»
+// allows name-only; the S14 atoms carry NO crestHtml (homeHtml/awayHtml/pathHtml
+// carry the names), so the rows are name-only — the lower-risk option (NO S14
+// atom/projection co-evolution). The row: the timeHtml (the <time> atom) + the
+// compHtml + the pathHtml (the teams — home – away, with the <a> link when the
+// row carries a path) + the scoreHtml (the Persian-digit «H – A») OR the
+// upcoming marker «در انتظار» (a SCHEDULED row — scoreHtml "" — NEVER a fake
+// 0-0; the S14 MISSING-IS-NOT-ZERO law). The status: live → the live dot (the
+// .mcentre-sched-live <i> with the «در جریان» aria-label — the S04 hero
+// vocabulary) + the score; finished → «پایان» + the score; scheduled →
+// «در انتظار» (no score). Pure string composition — the composer stays the S02
+// pure leaf (the atoms arrive pre-escaped from pages.ts; ZERO client-script —
+// the inline JS rides pages.ts's matchScheduleScript, the S06 precedent).
+function scheduleRowHtml(r: MatchScheduleRowInput): string {
+  const statusCls = r.live ? " is-live" : r.finished ? " is-fin" : " is-sched";
+  let resultCell: string;
+  if (r.scoreHtml) {
+    // a scored row (live or finished) — the score + the status indicator
+    const statusHtml = r.live
+      ? '<i class="mcentre-sched-live" aria-label="' + MC_SCHEDULE_LIVE_LABEL + '"></i>'
+      : r.finished
+      ? '<span class="mcentre-sched-fin">' + MC_SCHEDULE_FINISHED_LABEL + "</span>"
+      : "";
+    resultCell = '<span class="mcentre-sched-result"><span class="mcentre-sched-score">' + r.scoreHtml + "</span>" + statusHtml + "</span>";
+  } else {
+    // a SCHEDULED row — the upcoming marker «در انتظار» (NOT a fake 0-0 — the
+    // S14 scoreHtml "" law: MISSING IS NOT ZERO; spec §11 «central score or
+    // upcoming indicator» — the upcoming indicator, NOT a fabricated score)
+    resultCell = '<span class="mcentre-sched-result"><span class="mcentre-sched-upcoming">' + MC_SCHEDULE_UPCOMING + "</span></span>";
+  }
+  return '<div class="mcentre-sched-row' + statusCls + '">' +
+    '<span class="mcentre-sched-time">' + r.timeHtml + "</span>" +
+    '<span class="mcentre-sched-comp">' + r.compHtml + "</span>" +
+    '<span class="mcentre-sched-teams">' + r.pathHtml + "</span>" +
+    resultCell +
+    "</div>";
+}
+
+// S15: one day group — the localized date heading (faDateD2 — spec §11 «Group
+// fixtures under localized date headings») + the broadcast rows (chronological).
+// Decision S15-Date: the dateHtml heading renders CONSISTENTLY for ALL day groups
+// (sameDay + next48h + remaining) — NO special «امروز» label (sameDay = the
+// fixture's Tehran calendar day, NOT necessarily «today» — «امروز» would be
+// misleading when the fixture is not today; the faDateD2 heading is always
+// accurate). An EMPTY group (rows.length === 0) → "" (the no-empty-cards law —
+// a bare date heading with no rows omits).
+function scheduleGroupHtml(g: MatchScheduleDayGroup): string {
+  if (!g || !g.rows || !g.rows.length) return "";
+  return '<h3 class="mcentre-sched-date">' + g.dateHtml + "</h3>" +
+    '<div class="mcentre-sched-rows">' + g.rows.map(scheduleRowHtml).join("") + "</div>";
+}
+
+// The schedule renderer (S15 = the presentation). S14 shipped the pure-data
+// layer (the <h2>«بازی‌های هفته»</h2> title + the discreet coverage note ALONE);
+// S15 EXTENDS the renderer to consume the S14 day-group atoms (sameDay/next48h/
+// remaining + the pre-built MatchScheduleRowInput atoms) — the broadcast rows +
+// the localized date headings + the one «نمایش روزهای بعد» expand control. The
+// atoms are byte-frozen (S14's windowSchedule + the MatchScheduleInput
+// projection — S15 EXTENDS the renderer, NOT the atoms; decision S15-Crest:
+// name-only — NO crestHtml atom added). The day groups render in chronological
+// order: sameDay (the fixture's Tehran calendar day — spec §11 «Same-day matches
+// first») → next48h (the emphasized 48h — spec §11 «Emphasize the next 48 hours»;
+// decision S15-Emphasis: a subtle icy-blue border-inline-start on the
+// .mcentre-sched-soon wrapper) → remaining (collapsed behind the «نمایش روزهای
+// بعد» control — decision 40: ONE control, no per-date expanders). The expand
+// control renders ONLY when there are remaining groups (hasRemaining) — ONE
+// <button> (keyboard-accessible — the milestones S15 test list: «keyboard
+// interaction»; aria-expanded toggles via the inline matchScheduleScript in
+// pages.ts; the label swaps «نمایش روزهای بعد» ↔ «بستن روزهای بعد») + the
+// remaining container (id=mcentre-sched-remaining, hidden initially — the script
+// toggles the hidden attribute). The coverage note rides at the END (decision
+// S15-Note — spec §11 «one discreet coverage note» with no placement constraint;
+// the note qualifies the rows above it). The no-false-empty law: an EMPTY window
+// (sameDay/next48h/remaining all empty) still renders the coverage note
+// (coverageNote:true — NEVER «بدون مسابقه», spec §11) — NO rows, NO button, NO
+// remaining container (the empty-window output is byte-identical to S14); a
+// window that can't be anchored (no fixture date → the projection returns
+// coverageNote:false) → "" (the section omits entirely — every match carries a
+// utcDate, so this is the degenerate guard). The composer stays the S02 pure leaf
+// — ZERO client-script here (the inline JS rides pages.ts's matchScheduleScript,
+// appended to the schedule part in buildMatchPage — the S06 nav-script-rides-the-
+// part + the S04 countdown-script-rides-the-hero-part precedent).
 export function matchScheduleHtml(s: MatchScheduleInput): string {
   if (!s || !s.coverageNote) return "";
+  const sameDayHtml = (s.sameDay || []).map(scheduleGroupHtml).join("");
+  const next48hHtml = (s.next48h || []).map(scheduleGroupHtml).join("");
+  const remainingHtml = (s.remaining || []).map(scheduleGroupHtml).join("");
+  const hasRemaining = remainingHtml.length > 0;
+  // the expand control — ONE button (decision 40) + the collapsed remaining
+  // container. Renders ONLY when there are remaining groups.
+  const expandHtml = hasRemaining
+    ? '<button class="mcentre-sched-toggle" type="button" aria-expanded="false" aria-controls="mcentre-sched-remaining">' + MC_SCHEDULE_EXPAND_SHOW + "</button>" +
+      '<div id="mcentre-sched-remaining" class="mcentre-sched-remaining" hidden>' + remainingHtml + "</div>"
+    : "";
+  // the next48h emphasis (spec §11 «Emphasize the next 48 hours») — a wrapper
+  // with the subtle icy-blue border-inline-start (the CSS block). Wraps ONLY the
+  // next48h groups (sameDay + remaining render un-emphasized). When next48h is
+  // empty, the wrapper omits (the no-empty-cards law).
+  const next48hBlock = next48hHtml
+    ? '<div class="mcentre-sched-soon">' + next48hHtml + "</div>"
+    : "";
+  // the coverage note rides at the END (decision S15-Note) — AFTER the rows +
+  // the expand control + the remaining container. The no-false-empty law: an
+  // EMPTY window (all groups empty) → the note renders ALONE (coverageNote:true
+  // — NEVER «بدون مسابقه»; the output is byte-identical to S14's empty-window
+  // case — sameDayHtml/next48hBlock/expandHtml all "").
   return '<div class="mcentre-schedule"><h2>' + MC_SCHEDULE_TITLE + "</h2>" +
+    sameDayHtml + next48hBlock + expandHtml +
     '<p class="mcentre-schedule-note">' + MC_SCHEDULE_COVERAGE_NOTE + "</p></div>";
 }
 

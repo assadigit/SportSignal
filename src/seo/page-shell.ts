@@ -663,6 +663,66 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
   #mcentre-venue .mcentre-venue-mark{font-size:.64rem;padding-inline:7px}
   #mcentre-schedule .mcentre-schedule-note{font-size:.7rem;padding-block:8px;padding-inline:10px}
 }
+/* ---- Match Centre S15 (M6): the schedule presentation — the broadcast rows
+   + the localized date headings + the «نمایش روزهای بعد» expand control
+   (specification §11 "Weekly fixture schedule", M6/S15, decisions 39/40/41/42,
+   audit §4 row 74 + §12 row S15). S15 EXTENDS the S14 schedule section (the
+   <h2>«بازی‌های هفته»</h2> + the coverage note) with the day-grouped broadcast
+   rows + the date headings + the one expand control. The atoms arrive
+   pre-built from pages.ts's matchScheduleInput (the S14 forward-compatible
+   projection — S15 EXTENDS the renderer, NOT the atoms; decision S15-Crest:
+   name-only — spec §11 "team crests/names" allows name-only, the S14 atoms
+   carry NO crestHtml). The expand control: ONE button (decision 40 — "One
+   «نمایش روزهای بعد» control reveals remaining days; no per-date expanders"),
+   keyboard-accessible (a <button>), aria-expanded toggles, the label swaps
+   («نمایش روزهای بعد» ↔ «بستن روزهای بعد») via the inline matchScheduleScript
+   in pages.ts (the S06 nav-script-rides-the-part precedent). The remaining
+   container starts collapsed (hidden) + a gentle fade-in on expand (reduced-
+   motion = no animation — the S06 precedent). The next48h emphasis (spec §11
+   "Emphasize the next 48 hours") — a subtle icy-blue border-inline-start on
+   the .mcentre-sched-soon wrapper. The coverage note rides at the END
+   (decision S15-Note). Placed AFTER S14 (the venue + the schedule note) and
+   BEFORE S03 (the responsive/spacing/RTL foundation) — chronological session
+   order: S04 → S05 → S06 → S07 → S08 → S11 → S12 → S13 → S14 → S15 → S03.
+   CSS logical properties ONLY (RTL/LTR clean under a dir flip, decision 2);
+   the block's own icy/navy tokens; the 600px mobile layout — no horizontal
+   scroll (the rows stay one line, the names truncate, the score stays
+   prominent — the S12 .formresults precedent). */
+#mcentre-schedule .mcentre-sched-date{font-size:.78rem;font-weight:600;margin-block-end:4px;margin-block-start:14px;color:var(--muted,#9aa4b2);letter-spacing:.2px}
+#mcentre-schedule .mcentre-sched-date:first-child{margin-block-start:8px}
+#mcentre-schedule .mcentre-sched-rows{display:flex;flex-direction:column;gap:2px}
+#mcentre-schedule .mcentre-sched-row{display:flex;align-items:baseline;gap:.5rem;padding-block:5px;padding-inline:8px;border-radius:6px;background:rgba(15,23,42,.3)}
+#mcentre-schedule .mcentre-sched-row.is-live{background:rgba(125,211,252,.08)}
+#mcentre-schedule .mcentre-sched-time{flex:0 0 auto;font-size:.72rem;font-weight:600;color:#cbd5e1;font-variant-numeric:tabular-nums}
+#mcentre-schedule .mcentre-sched-comp{flex:0 1 auto;font-size:.68rem;color:var(--muted,#9aa4b2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mcentre-schedule .mcentre-sched-teams{flex:1 1 auto;min-width:0;font-size:.76rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mcentre-schedule .mcentre-sched-teams a{color:#e2e8f0;text-decoration:none}
+#mcentre-schedule .mcentre-sched-teams a:hover{text-decoration:underline}
+#mcentre-schedule .mcentre-sched-result{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:.3rem}
+#mcentre-schedule .mcentre-sched-score{font-size:.78rem;font-weight:800;color:#e2e8f0;font-variant-numeric:tabular-nums}
+#mcentre-schedule .mcentre-sched-upcoming{font-size:.68rem;color:var(--muted,#9aa4b2)}
+#mcentre-schedule .mcentre-sched-live{display:inline-block;width:7px;height:7px;border-radius:50%;background:#7dd3fc;animation:mcsched-pulse 1.4s ease-in-out infinite;align-self:center}
+@keyframes mcsched-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){#mcentre-schedule .mcentre-sched-live{animation:none}}
+#mcentre-schedule .mcentre-sched-fin{font-size:.62rem;color:var(--muted,#9aa4b2)}
+#mcentre-schedule .mcentre-sched-soon{border-inline-start:2px solid rgba(125,211,252,.5);padding-inline-start:8px;margin-block-start:4px}
+#mcentre-schedule .mcentre-sched-toggle{display:block;width:100%;margin-block-start:10px;padding-block:7px;padding-inline:10px;border:1px solid var(--border,#334155);border-radius:6px;background:rgba(15,23,42,.4);color:#7dd3fc;font-size:.74rem;font-weight:600;cursor:pointer;text-align:center}
+#mcentre-schedule .mcentre-sched-toggle:hover{background:rgba(125,211,252,.1);border-color:rgba(125,211,252,.4)}
+#mcentre-schedule .mcentre-sched-toggle:focus-visible{outline:2px solid #7dd3fc;outline-offset:2px}
+#mcentre-schedule .mcentre-sched-remaining:not([hidden]){animation:mcsched-reveal .25s ease}
+@keyframes mcsched-reveal{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#mcentre-schedule .mcentre-sched-remaining:not([hidden]){animation:none}}
+@media (max-width:600px){
+  #mcentre-schedule .mcentre-sched-date{font-size:.72rem;margin-block-start:10px}
+  #mcentre-schedule .mcentre-sched-row{gap:.35rem;padding-block:4px;padding-inline:6px}
+  #mcentre-schedule .mcentre-sched-time{font-size:.68rem}
+  #mcentre-schedule .mcentre-sched-comp{font-size:.62rem}
+  #mcentre-schedule .mcentre-sched-teams{font-size:.72rem}
+  #mcentre-schedule .mcentre-sched-score{font-size:.74rem}
+  #mcentre-schedule .mcentre-sched-upcoming{font-size:.62rem}
+  #mcentre-schedule .mcentre-sched-fin{font-size:.58rem}
+  #mcentre-schedule .mcentre-sched-toggle{font-size:.7rem;padding-block:6px;padding-inline:8px}
+}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
    effect on any page without a mcentre-* section. Breakpoints and tokens are

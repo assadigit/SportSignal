@@ -359,6 +359,27 @@ function matchHeadScript(): string {
     "<\/script>";
 }
 
+// The schedule expand-control script (S15 — inline, CSP-legal: the page shell
+// already carries inline scripts: the S04 countdown/copy script + the S06 nav
+// script). The «نمایش روزهای بعد» control (decision 40: ONE control, no
+// per-date expanders). The click handler toggles the remaining groups'
+// container's `hidden` attribute + the button's `aria-expanded` + the label
+// («نمایش روزهای بعد» ↔ «بستن روزهای بعد»). Pure DOM — no imports, no fetch,
+// no timer, no polling. Reduced-motion = instant (the CSS fade-in on expand is
+// gated by the prefers-reduced-motion media query; the script itself does no
+// motion — the S06 precedent). Rides the schedule part (the S06 nav-script-
+// rides-the-nav-part precedent + the S04 countdown-script-rides-the-hero-part
+// precedent — the script function lives in pages.ts; the composer produces ONLY
+// the button + container markup, staying the S02 pure leaf). The handler no-ops
+// when the button isn't found (a degenerate page with no schedule section — the
+// script rides ONLY when the schedule part renders, via the buildMatchPage
+// ternary, but the no-op guard is the belt-and-braces defense).
+function matchScheduleScript(): string {
+  return "<script>\n" +
+    "(function(){var btn=document.querySelector('.mcentre-sched-toggle');if(!btn)return;var box=document.getElementById(btn.getAttribute('aria-controls'));if(!box)return;var SHOW='\u0646\u0645\u0627\u06CC\u0634 \u0631\u0648\u0632\u0647\u0627\u06CC \u0628\u0639\u062F';var HIDE='\u0628\u0633\u062A\u0646 \u0631\u0648\u0632\u0647\u0627\u06CC \u0628\u0639\u062F';btn.addEventListener('click',function(){var open=btn.getAttribute('aria-expanded')==='true';if(open){box.hidden=true;btn.setAttribute('aria-expanded','false');btn.textContent=SHOW}else{box.hidden=false;btn.setAttribute('aria-expanded','true');btn.textContent=HIDE}})})();\n" +
+    "<\/script>";
+}
+
 
 // ================= MATCH PAGE =================
 // v13.82-matchday: now async — the render hydrates the venue (FD detail,
@@ -1004,7 +1025,7 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
     standings: standingsHtml,
     form: formPartHtml,
     venue: venueHtml,
-    schedule: scheduleHtml,
+    schedule: scheduleHtml ? scheduleHtml + matchScheduleScript() : "",
     related: similarCard,
     footerHook: related
   });

@@ -2542,7 +2542,7 @@ check(mc.matchVenueHtml({ nameHtml: "" }) === "" &&
   "S14 venue renderer: the compact information card — the <h2>«ورزشگاه»</h2> title + the stadium name (.mcentre-venue-name) + the discreet verified-source mark «تأییدشده» (.mcentre-venue-mark); NO map/preview/external-nav (decisions 37/38); the stadium name shows venueFa AS-IS (NO «ورزشگاه » prepend — the R1 no-double pattern); fail-closed: nameHtml \"\" → \"\" (the no-empty-cards law — a missing venue is NOT «ورزشگاه نامشخص»)");
 check(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: false }) === "" &&
   mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true }) === '<div class="mcentre-schedule"><h2>بازی\u200cهای هفته</h2><p class="mcentre-schedule-note">این برنامه بر اساس داده\u200cهای موجود نمایش داده می\u200cشود و ممکن است شامل تمام بازی\u200cها نباشد.</p></div>',
-  "S14 schedule renderer: the <h2>«بازی\u200cهای هفته»</h2> section title + the discreet tracked-universe coverage note (.mcentre-schedule-note) ALONE — S15 ships the rows + the «نمایش روزهای بعد» expand control + the inline JS; the no-false-empty law: an EMPTY window still renders the coverage note (coverageNote:true — NEVER «بدون مسابقه», spec §11); fail-closed: coverageNote:false (the degenerate guard — no fixture date) → \"\" (the section omits entirely); NO inline JS, NO expand control this session");
+  "S14 schedule renderer (S15 co-evolution): the <h2>«بازی\u200cهای هفته»</h2> section title + the discreet tracked-universe coverage note (.mcentre-schedule-note) — S15 EXTENDS the renderer to consume the day-group atoms (the rows + the date headings + the «نمایش روزهای بعد» expand control) for NON-EMPTY windows, but an EMPTY window (sameDay/next48h/remaining all empty) still renders the coverage note ALONE (byte-identical to S14 — the no-false-empty law: coverageNote:true — NEVER «بدون مسابقه», spec §11; NO rows, NO button, NO remaining container); fail-closed: coverageNote:false (the degenerate guard — no fixture date) → \"\" (the section omits entirely); the inline JS rides pages.ts's matchScheduleScript (the S06 precedent — the composer stays the pure leaf)");
 // the empty-window case: the coverage note renders ALONE (not «بدون مسابقه») — the no-false-empty law
 check(/mcentre-schedule-note/.test(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true })) &&
   !/بدون\s*مسابقه/.test(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true })),
@@ -2618,7 +2618,7 @@ check(mc.matchVenueHtml({ nameHtml: "ورزشگاه آلیانز آرنا" }).in
 check(mc.matchVenueHtml({ nameHtml: "" }) === "",
   "S14 integration (venue missing): a missing venue → nameHtml \"\" → the panel omits entirely (the no-empty-cards law — a missing venue is NOT «ورزشگاه نامشخص»; the mcentre-venue section omits, the ورزشگاه nav item stays filtered out)");
 check(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true }).includes("mcentre-schedule-note") && !/نمایش\s*روزهای\s*بعد/.test(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true })),
-  "S14 integration (empty window): the schedule section renders the coverage note ALONE (the no-false-empty law) — NO «نمایش روزهای بعد» expand control (S15 ships the expand control; S14 is the pure-data layer — NO inline JS, NO expand control this session)");
+  "S14 integration (empty window) (S15 co-evolution): the schedule section renders the coverage note ALONE (the no-false-empty law) — NO «نمایش روزهای بعد» expand control for an EMPTY window (S15 ships the expand control ONLY when there are remaining groups — an empty window has none; the empty-window output is byte-identical to S14)");
 
 // (f) the wiring — buildMatchPage calls matchVenueInput/matchVenueHtml +
 // matchScheduleInput/matchScheduleHtml + passes venue + schedule to BOTH
@@ -2630,8 +2630,8 @@ check(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNo
 check(/const venueHtml = matchVenueHtml\(matchVenueInput\(sm\)\);/.test(pagesSrc) && /const scheduleHtml = matchScheduleHtml\(matchScheduleInput\(sm, ctx\)\);/.test(pagesSrc),
   "S14 wiring call: buildMatchPage calls matchVenueInput(sm) + matchVenueHtml(input) + matchScheduleInput(sm, ctx) + matchScheduleHtml(input) — the projection reads the already-loaded data (the venue via the hydrateMatchVenue await; the schedule via the windowSchedule aggregation helper over the already-loaded ctx.pool — ZERO new awaits), the renderers are pure string composition in the composer");
 check(/matchNavHtml\(\{ summary: summaryHtml, standings: standingsHtml, form: formPartHtml, venue: venueHtml, schedule: scheduleHtml \}\)/.test(pagesSrc) &&
-  /venue: venueHtml,/.test(pagesSrc) && /schedule: scheduleHtml,/.test(pagesSrc),
-  "S14 wiring dual: the venue + schedule strings feed BOTH matchNavHtml (the ورزشگاه + بازی‌ها nav items — the adaptive Q9=B filter lights them only when their part is non-empty) AND matchCentreMain (the mcentre-venue + mcentre-schedule section anchors — the S11/S12/S13 dual-passing precedent)");
+  /venue: venueHtml,/.test(pagesSrc) && /schedule: scheduleHtml \? scheduleHtml \+ matchScheduleScript\(\)/.test(pagesSrc),
+  "S14 wiring dual (S15 co-evolution): the venue + schedule strings feed BOTH matchNavHtml (the ورزشگاه + بازی‌ها nav items — the adaptive Q9=B filter lights them only when their part is non-empty — the nav call passes schedule: scheduleHtml unchanged) AND matchCentreMain (the mcentre-venue + mcentre-schedule section anchors — the S11/S12/S13 dual-passing precedent; the S15 schedule part now carries the matchScheduleScript inline JS when the section renders — schedule: scheduleHtml ? scheduleHtml + matchScheduleScript() : empty-string, the ternary guard — no bare script on the degenerate-omitted section, the S06 nav-script-rides-the-part precedent)");
 check(/{ slot: "mcentre-venue", label: "ورزشگاه" }/.test(mcSrc) && /{ slot: "mcentre-schedule", label: "بازی\u200cهای هفته" }/.test(mcSrc) &&
   /"mcentre-venue": parts\.venue/.test(mcSrc) && /"mcentre-schedule": parts\.schedule/.test(mcSrc) &&
   !/"mcentre-metrics"/.test(mcSrc.match(/MC_SECTION_ORDER[\s\S]{0,900}/) && mcSrc.match(/MC_SECTION_ORDER[\s\S]{0,900}/)[0] || ""),
@@ -2714,7 +2714,7 @@ const s14CompVenue = extractFnSrc(mcSrc, "matchVenueHtml") || "";
 const s14CompSched = extractFnSrc(mcSrc, "matchScheduleHtml") || "";
 const s14CompStripped = (s14CompVenue + s14CompSched).replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
 check(s14CompVenue.length > 0 && s14CompSched.length > 0 && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|import /i.test(s14CompStripped),
-  "S14 composer purity: matchVenueHtml + matchScheduleHtml are pure string renderers (the composer stays the S02 pure leaf — zero imports/KV/fetch/client-scripts; the atoms arrive prebuilt from pages.ts; the schedule renderer renders the coverage note ONLY — the rows + the expand control are S15, NO inline JS this session)");
+  "S14 composer purity (S15 co-evolution): matchVenueHtml + matchScheduleHtml are pure string renderers (the composer stays the S02 pure leaf — zero imports/KV/fetch/client-scripts; the atoms arrive prebuilt from pages.ts; S15 EXTENDS matchScheduleHtml to produce the rows + the date headings + the expand-control MARKUP — the inline JS rides pages.ts's matchScheduleScript, the S06 nav-script-rides-the-part + the S04 countdown-script-rides-the-hero-part precedent — the composer carries NO <script>/addEventListener/fetch/timer code; the schedule script is gated by the S15 cost-law assertions below)");
 check(awaitCount === 3,
   "S14 await count: buildMatchPage's await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; the S14 venue + schedule are pure aggregation over the already-loaded data [the venue via the hydrateMatchVenue await; the schedule via the windowSchedule helper over the already-loaded ctx.pool] — ZERO new awaits; the zero-runtime-cost law holds)");
 
@@ -2738,6 +2738,134 @@ check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-venue \.mcentre-venue-panel\
   "S14 CSS mobile: at ≤600px the venue panel tightens (padding-inline 16→12px) + the venue name scales (.96rem) + the verified mark shrinks (.64rem) + the schedule note tightens (.7rem) — the compact panels stay inside the viewport, no horizontal scroll (spec §4 + §9; the 600px mobile breakpoint — the design system's own)");
 check(!/#mcentre-venue[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc) && !/#mcentre-schedule[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc),
   "S14 CSS logical properties: the S14 venue + schedule blocks use CSS logical properties ONLY (margin-block-start, padding-block, padding-inline, border-block-start, border-inline — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties)");
+
+// ---------- 16. S15 (M6): the schedule presentation — the broadcast rows + the
+// date headings + the «نمایش روزهای بعد» expand control (M6, session 2 of 2) ----------
+// specification §11 (Weekly fixture schedule) + milestones-and-sessions.md
+// M6/S15 + decisions 39/40/41/42 + audit §4 row 74 + §12 row S15. S15 EXTENDS
+// the S14 schedule renderer (matchScheduleHtml) to consume the S14 day-group
+// atoms (sameDay/next48h/remaining + the pre-built MatchScheduleRowInput atoms)
+// — the broadcast rows + the localized date headings + the one «نمایش روزهای
+// بعد» expand control + the inline matchScheduleScript in pages.ts. The atoms
+// are byte-frozen (S14's windowSchedule + the MatchScheduleInput projection —
+// S15 EXTENDS the renderer, NOT the atoms; decision S15-Crest: name-only). S15
+// CLOSES M6 — the M6 gate (the mcM6x preview upload + the production-KV
+// agent-browser smoke) ships AFTER the tests pass.
+
+// (a) the contract — matchScheduleHtml extends; scheduleRowHtml + scheduleGroupHtml
+// helpers; the new vocabulary constants; matchScheduleScript in pages.ts.
+check(typeof mc.matchScheduleHtml === "function" && /function scheduleRowHtml\(/.test(mcSrc) && /function scheduleGroupHtml\(/.test(mcSrc),
+  "S15 contract: matchScheduleHtml extends to consume the day groups (scheduleRowHtml + scheduleGroupHtml helpers in match-centre.ts — the broadcast row + the day-group renderers); the composer stays the S02 pure leaf (zero client-script — the inline JS rides pages.ts's matchScheduleScript)");
+check(/const MC_SCHEDULE_UPCOMING = "در انتظار";/.test(mcSrc) && /const MC_SCHEDULE_LIVE_LABEL = "در جریان";/.test(mcSrc) && /const MC_SCHEDULE_FINISHED_LABEL = "پایان";/.test(mcSrc) && /const MC_SCHEDULE_EXPAND_SHOW = "نمایش روزهای بعد";/.test(mcSrc) && /const MC_SCHEDULE_EXPAND_HIDE = "بستن روزهای بعد";/.test(mcSrc),
+  "S15 contract vocabulary: the broadcast-row constants — MC_SCHEDULE_UPCOMING «در انتظار» (the SCHEDULED upcoming marker) + MC_SCHEDULE_LIVE_LABEL «در جریان» (the S04 hero live aria-label) + MC_SCHEDULE_FINISHED_LABEL «پایان» (the S04 hero «پایان بازی» compacted) + MC_SCHEDULE_EXPAND_SHOW «نمایش روزهای بعد» + MC_SCHEDULE_EXPAND_HIDE «بستن روزهای بعد» (decision 40: the expand-control label swap)");
+check(/function matchScheduleScript\(/.test(pagesSrc),
+  "S15 contract script: pages.ts defines matchScheduleScript (the inline expand-control script — the S06 matchNavScript / S04 matchHeadScript precedent; rides the schedule part via the buildMatchPage ternary)");
+
+// (b) the REAL renderer — the broadcast rows + the date headings + the expand
+// control + the next48h emphasis + the chronological order + the upcoming
+// marker + the no-crest + the live/finished status + the no-false-empty + the
+// no-button-when-no-remaining + the coverage-note-at-end.
+var s15RowFin = { pathHtml: '<a href="/liverpool-vs-chelsea-2026-11-29">Liverpool – Chelsea</a>', timeHtml: '<time datetime="2026-11-29T15:00:00Z">۱۵:۰۰</time>', compHtml: "لیگ برتر انگلیس", homeHtml: "Liverpool", awayHtml: "Chelsea", scoreHtml: "۲ – ۱", live: false, finished: true };
+var s15RowSched = { pathHtml: '<a href="/dortmund-vs-leverkusen-2026-11-30">Dortmund – Leverkusen</a>', timeHtml: '<time datetime="2026-11-30T17:30:00Z">۱۷:۳۰</time>', compHtml: "بوندسلیگا", homeHtml: "Dortmund", awayHtml: "Leverkusen", scoreHtml: "", live: false, finished: false };
+var s15RowLive = { pathHtml: '<a href="/bayern-vs-leipzig-2026-12-02">Bayern – Leipzig</a>', timeHtml: '<time datetime="2026-12-02T19:30:00Z">۱۹:۳۰</time>', compHtml: "بوندسلیگا", homeHtml: "Bayern", awayHtml: "Leipzig", scoreHtml: "۱ – ۰", live: true, finished: false };
+var s15SameDay = [{ dateHtml: "، ۱۴ آذر (۴ دسامبر)", rows: [s15RowFin] }];
+var s15Next48h = [{ dateHtml: "، ۱۵ آذر (۵ دسامبر)", rows: [s15RowSched] }];
+var s15Remaining = [{ dateHtml: "، ۱۷ آذر (۷ دسامبر)", rows: [s15RowLive] }];
+var s15Full = mc.matchScheduleHtml({ sameDay: s15SameDay, next48h: s15Next48h, remaining: s15Remaining, coverageNote: true });
+check(s15Full.startsWith('<div class="mcentre-schedule">') && s15Full.includes("mcentre-sched-row") && s15Full.includes("mcentre-sched-time") && s15Full.includes("mcentre-sched-comp") && s15Full.includes("mcentre-sched-teams") && s15Full.includes("mcentre-sched-result"),
+  "S15 broadcast row: the compact broadcast-style row renders the timeHtml (.mcentre-sched-time) + the compHtml (.mcentre-sched-comp) + the teams (.mcentre-sched-teams — the pathHtml, name-only) + the result cell (.mcentre-sched-result — the score or the upcoming marker) — spec §11 «Compact broadcast-style rows: kickoff time, competition, team crests/names, central score or upcoming indicator, status where available»");
+check(s15Full.includes('<h3 class="mcentre-sched-date">') && s15Full.includes(s15SameDay[0].dateHtml) && s15Full.includes(s15Next48h[0].dateHtml) && s15Full.includes(s15Remaining[0].dateHtml),
+  "S15 date headings: one <h3 class=\"mcentre-sched-date\"> per day group with the dateHtml (faDateD2 — spec §11 «Group fixtures under localized date headings»); decision S15-Date: the heading renders CONSISTENTLY for ALL groups (sameDay + next48h + remaining — NO special «امروز» label)");
+check(s15Full.indexOf(s15SameDay[0].dateHtml) < s15Full.indexOf(s15Next48h[0].dateHtml) && s15Full.indexOf(s15Next48h[0].dateHtml) < s15Full.indexOf(s15Remaining[0].dateHtml),
+  "S15 chronological order: the day groups render in chronological order — sameDay (the fixture's day) → next48h (the emphasized 48h) → remaining (the collapsed days) — spec §11 «Same-day matches first» + «Emphasize the next 48 hours» + «Remaining days initially collapsed»; the milestones S15 test list: «chronological expansion»");
+check(s15Full.includes('<div class="mcentre-sched-soon">') && s15Full.indexOf("mcentre-sched-soon") < s15Full.indexOf(s15Next48h[0].dateHtml),
+  "S15 next48h emphasis: the next48h groups are wrapped in <div class=\"mcentre-sched-soon\"> (the subtle icy-blue border-inline-start — spec §11 «Emphasize the next 48 hours»; decision S15-Emphasis); the sameDay + remaining groups render un-emphasized");
+check(s15Full.indexOf("mcentre-sched-soon") >= 0 && !/mcentre-sched-soon"[^>]*\shidden/.test(s15Full),
+  "S15 initial 48h: the next48h groups render UNCOLLAPSED (visible by default — the milestones S15 test list: «initial 48h»; the remaining groups are the ONLY collapsed block, behind the «نمایش روزهای بعد» control)");
+check(s15Full.includes('<button class="mcentre-sched-toggle" type="button" aria-expanded="false" aria-controls="mcentre-sched-remaining">نمایش روزهای بعد</button>') && s15Full.includes('<div id="mcentre-sched-remaining" class="mcentre-sched-remaining" hidden>'),
+  "S15 expand control: ONE <button class=\"mcentre-sched-toggle\" type=\"button\" aria-expanded=\"false\" aria-controls=\"mcentre-sched-remaining\"> (decision 40: ONE «نمایش روزهای بعد» control, no per-date expanders; keyboard-accessible — a <button>; the milestones S15 test list: «keyboard interaction») + the collapsed remaining container <div id=\"mcentre-sched-remaining\" hidden> (the remaining groups initially collapsed — spec §11 «Remaining days initially collapsed»)");
+check((s15Full.match(/mcentre-sched-toggle/g) || []).length === 1,
+  "S15 one expand control: exactly ONE «نمایش روزهای بعد» button (decision 40: «One control reveals remaining days; no per-date expanders» — NO per-date expanders, NO multiple buttons)");
+check(s15Full.indexOf("mcentre-schedule-note") > s15Full.indexOf("mcentre-sched-toggle") && s15Full.indexOf("mcentre-schedule-note") > s15Full.indexOf("mcentre-sched-remaining"),
+  "S15 coverage note at end: the discreet coverage note rides at the END of the schedule section (decision S15-Note — AFTER the rows + the expand control + the remaining container; spec §11 «one discreet coverage note» with no placement constraint; the note qualifies the rows above it)");
+check(s15Full.includes('<span class="mcentre-sched-upcoming">در انتظار</span>') && !/mcentre-sched-score[^<]*۰[^<]*–[^<]*۰/.test(s15Full),
+  "S15 upcoming marker: a SCHEDULED row (scoreHtml \"\") renders the upcoming marker «در انتظار» (.mcentre-sched-upcoming) — NOT a fake 0-0 (the S14 scoreHtml \"\" law: MISSING IS NOT ZERO; spec §11 «central score or upcoming indicator» — the upcoming indicator, NOT a fabricated score; the milestones S15 test list: «missing crest/status»)");
+check(!/<img[^>]*crest/i.test(s15Full) && !/mcentre-sched-crest/.test(s15Full) && s15Full.includes("Liverpool – Chelsea") && s15Full.includes("Dortmund – Leverkusen"),
+  "S15 no crest (decision S15-Crest): the rows are NAME-ONLY — the teams render via homeHtml/awayHtml/pathHtml (the names), NO crest <img> markup (spec §11 «team crests/names» allows name-only; the S14 atoms carry NO crestHtml — the lower-risk option, NO S14 atom/projection co-evolution; the milestones S15 test list: «missing crest/status»)");
+check(s15Full.includes('<i class="mcentre-sched-live" aria-label="در جریان"></i>') && s15Full.includes("is-live"),
+  "S15 live indicator: a LIVE row (live:true, scoreHtml populated) renders the live dot <i class=\"mcentre-sched-live\" aria-label=\"در جریان\"> (the S04 hero .mscore aria-label vocabulary) + the score; the .mcentre-sched-row.is-live class (the milestones S15 test list: «partial/stale/empty data» — the live-overlay guards)");
+check(s15Full.includes('<span class="mcentre-sched-fin">پایان</span>') && s15Full.includes("is-fin"),
+  "S15 finished status: a FINISHED row (finished:true, scoreHtml populated) renders «پایان» (.mcentre-sched-fin — the S04 hero «پایان بازی» compacted) + the score (the Persian-digit «H – A»)");
+check(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true }) === '<div class="mcentre-schedule"><h2>بازی\u200cهای هفته</h2><p class="mcentre-schedule-note">این برنامه بر اساس داده\u200cهای موجود نمایش داده می\u200cشود و ممکن است شامل تمام بازی\u200cها نباشد.</p></div>' && !/mcentre-sched-row/.test(mc.matchScheduleHtml({ sameDay: [], next48h: [], remaining: [], coverageNote: true })),
+  "S15 no-false-empty (empty window): an EMPTY window (sameDay/next48h/remaining all empty) renders the coverage note ALONE — NO rows, NO button, NO remaining container (byte-identical to S14's empty-window case — the no-false-empty law: NEVER «بدون مسابقه», spec §11; the milestones S15 test list: «partial/stale/empty data»)");
+check(!/mcentre-sched-toggle/.test(mc.matchScheduleHtml({ sameDay: s15SameDay, next48h: s15Next48h, remaining: [], coverageNote: true })) && !/mcentre-sched-remaining/.test(mc.matchScheduleHtml({ sameDay: s15SameDay, next48h: s15Next48h, remaining: [], coverageNote: true })),
+  "S15 no button when no remaining: when remaining is empty (but sameDay/next48h have rows) → NO «نمایش روزهای بعد» button, NO remaining container (the expand control renders ONLY when there are remaining groups — hasRemaining; the no-empty-cards law)");
+check(mc.matchScheduleHtml({ sameDay: s15SameDay, next48h: s15Next48h, remaining: s15Remaining, coverageNote: false }) === "",
+  "S15 degenerate guard: coverageNote:false (the degenerate guard — no fixture date) → \"\" (the section omits entirely — every match carries a utcDate, so this is the S14 degenerate guard; S15 preserves it)");
+var s15Partial = mc.matchScheduleHtml({ sameDay: s15SameDay, next48h: [], remaining: [], coverageNote: true });
+check(s15Partial.includes("mcentre-sched-row") && !/mcentre-sched-soon/.test(s15Partial) && !/mcentre-sched-toggle/.test(s15Partial) && s15Partial.includes("mcentre-schedule-note"),
+  "S15 partial data: only sameDay present (next48h + remaining empty) → the sameDay rows render + the coverage note, NO .mcentre-sched-soon wrapper (next48h empty), NO expand button (remaining empty) — the partial dataset renders the present groups (the milestones S15 test list: «partial/stale/empty data»)");
+
+// (c) the inline JS — matchScheduleScript (presence + purity + the click handler
+// + the aria-expanded toggle + the label swap + the no-op guard). Extracted via
+// extractFnSrc (the S06 nav-script precedent — scoped to the function body).
+var s15SchedFn = extractFnSrc(pagesSrc, "matchScheduleScript") || "";
+check(s15SchedFn.length > 0 && /<script>/.test(s15SchedFn) && /addEventListener\('click'/.test(s15SchedFn),
+  "S15 script presence: matchScheduleScript returns a <script> tag + the click handler (addEventListener('click' — the expand-control toggle; the S06 nav-script precedent — inline, CSP-legal)");
+check(s15SchedFn.length > 0 && /aria-expanded/.test(s15SchedFn) && /box\.hidden/.test(s15SchedFn),
+  "S15 script toggle: the click handler toggles the remaining container's `hidden` attribute (box.hidden) + the button's aria-expanded (true ↔ false) — the milestones S15 test list: «keyboard interaction» (the button is keyboard-accessible, the aria-expanded toggles)");
+check(s15SchedFn.length > 0 && /var SHOW=/.test(s15SchedFn) && /var HIDE=/.test(s15SchedFn) && /btn\.textContent=SHOW/.test(s15SchedFn) && /btn\.textContent=HIDE/.test(s15SchedFn),
+  "S15 script label swap: the click handler swaps the button label («نمایش روزهای بعد» ↔ «بستن روزهای بعد») via the SHOW/HIDE variables + btn.textContent (decision 40: the label swaps; the expand → «بستن روزهای بعد», the collapse → «نمایش روزهای بعد»)");
+check(s15SchedFn.length > 0 && /if\(!btn\)return/.test(s15SchedFn),
+  "S15 script no-op guard: the handler no-ops when the button isn't found (if(!btn)return — a degenerate page with no schedule section; the script rides ONLY when the schedule part renders via the buildMatchPage ternary, but the no-op guard is the belt-and-braces defense)");
+var s15SchedFnStripped = s15SchedFn.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s15SchedFn.length > 0 && !/fetch\(|setInterval|setTimeout|XMLHttpRequest|new Image|import /i.test(s15SchedFnStripped),
+  "S15 script cost law: the inline schedule script is pure DOM — no fetch/timer/polling/new Image/imports (the S06 Q13=A precedent; rides the schedule part, no public-*.js bundle rename, no SW cache bump — ADR-006)");
+check(/@media \(prefers-reduced-motion:reduce\)\{#mcentre-schedule \.mcentre-sched-remaining:not\(\[hidden\]\)\{animation:none\}\}/.test(shellSrc) && /@media \(prefers-reduced-motion:reduce\)\{#mcentre-schedule \.mcentre-sched-live\{animation:none\}\}/.test(shellSrc),
+  "S15 reduced motion: the CSS gates the expand fade-in (.mcentre-sched-remaining:not([hidden]) animation:none) + the live-dot pulse (.mcentre-sched-live animation:none) under prefers-reduced-motion:reduce (the S06 precedent — reduced-motion = instant; the script itself does no motion)");
+
+// (d) the wiring — buildMatchPage appends matchScheduleScript to the schedule
+// part (the ternary guard) + the hero wiring unchanged (the schedule script
+// rides the schedule part, NOT the hero part).
+check(/schedule: scheduleHtml \? scheduleHtml \+ matchScheduleScript\(\) : ""/.test(pagesSrc),
+  "S15 wiring script: buildMatchPage appends matchScheduleScript to the schedule part via the ternary schedule: scheduleHtml ? scheduleHtml + matchScheduleScript() : empty-string (the script rides ONLY when the section renders — no bare script on the degenerate-omitted section; the S06 nav-script-rides-the-part precedent)");
+check(/hero: matchHeroHtml\(heroInput\) \+ matchActionsHtml\(sm, path\) \+ matchHeadScript\(\),/.test(pagesSrc),
+  "S15 wiring hero unchanged: the hero part stays matchHeroHtml + matchActionsHtml + matchHeadScript (the S04 precedent — the schedule script rides the schedule part, NOT the hero part; the hero wiring is byte-frozen)");
+
+// (e) the cost laws — the composer purity (matchScheduleHtml + scheduleRowHtml +
+// scheduleGroupHtml carry NO script/fetch/timer code) + the await count stays 3.
+var s15CompSched = extractFnSrc(mcSrc, "matchScheduleHtml") || "";
+var s15CompRow = extractFnSrc(mcSrc, "scheduleRowHtml") || "";
+var s15CompGroup = extractFnSrc(mcSrc, "scheduleGroupHtml") || "";
+var s15CompStripped = (s15CompSched + s15CompRow + s15CompGroup).replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s15CompSched.length > 0 && s15CompRow.length > 0 && s15CompGroup.length > 0 && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|import |<script/i.test(s15CompStripped),
+  "S15 composer purity: matchScheduleHtml + scheduleRowHtml + scheduleGroupHtml are pure string renderers (the composer stays the S02 pure leaf — zero imports/KV/fetch/client-scripts/<script>; the atoms arrive prebuilt from pages.ts; the inline JS rides pages.ts's matchScheduleScript — the S06/S04 precedent; the composer carries NO addEventListener/<script>/fetch/timer code)");
+check(awaitCount === 3,
+  "S15 await count: buildMatchPage's await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; S15 is a PRESENTATION session — the schedule reads the already-loaded ctx.pool via the S14 windowSchedule helper; ZERO new awaits, zero new KV reads, zero new fetches — ADR-006; the zero-runtime-cost law holds)");
+
+// (f) the CSS — the S15 style block rides page-shell.ts AFTER S14 (the venue +
+// the schedule note) and BEFORE S03 (the responsive/spacing/RTL foundation) —
+// chronological session order: S04 → S05 → S06 → S07 → S08 → S11 → S12 → S13 →
+// S14 → S15 → S03. Scoped to #mcentre-schedule; logical properties only; the
+// block's own icy/navy tokens; the 600px mobile layout — no horizontal scroll.
+check(shellSrc.indexOf("Match Centre S14 (M6)") < shellSrc.indexOf("Match Centre S15 (M6)") && shellSrc.indexOf("Match Centre S15 (M6)") < shellSrc.indexOf("Match Centre S03 (M1)"),
+  "S15 CSS placement: the S15 style block rides page-shell.ts AFTER S14 (the venue + the schedule note) and BEFORE S03 (the responsive/spacing/RTL foundation) — chronological session order: S04 → S05 → S06 → S07 → S08 → S11 → S12 → S13 → S14 → S15 → S03");
+check(/#mcentre-schedule \.mcentre-sched-row\{[^}]*display:flex/.test(shellSrc) && /#mcentre-schedule \.mcentre-sched-teams\{[^}]*text-overflow:ellipsis/.test(shellSrc) && /#mcentre-schedule \.mcentre-sched-score\{[^}]*font-weight:800/.test(shellSrc),
+  "S15 CSS broadcast row: the compact broadcast row — .mcentre-sched-row (display:flex — the one-line RTL layout) + .mcentre-sched-teams (text-overflow:ellipsis — the names truncate, the S12 .formresults precedent) + .mcentre-sched-score (font-weight:800 — the score stays prominent); the milestones S15 test list: «mobile readability»");
+check(/#mcentre-schedule \.mcentre-sched-date\{[^}]*font-weight:600/.test(shellSrc),
+  "S15 CSS date heading: the <h3> date heading — .mcentre-sched-date (font-weight:600, the localized faDateD2 heading; spec §11 «Group fixtures under localized date headings»)");
+check(/#mcentre-schedule \.mcentre-sched-toggle\{[^}]*color:#7dd3fc/.test(shellSrc) && /#mcentre-schedule \.mcentre-sched-toggle:focus-visible\{[^}]*outline:2px solid #7dd3fc/.test(shellSrc),
+  "S15 CSS expand control: the «نمایش روزهای بعد» button — .mcentre-sched-toggle (the icy-blue #7dd3fc, display:block width:100%) + the :focus-visible outline (keyboard-accessible — the milestones S15 test list: «keyboard interaction»; the focus ring #7dd3fc)");
+check(/#mcentre-schedule \.mcentre-sched-soon\{[^}]*border-inline-start:2px solid rgba\(125,211,252,.5\)/.test(shellSrc),
+  "S15 CSS next48h emphasis: the .mcentre-sched-soon wrapper carries the subtle icy-blue border-inline-start (spec §11 «Emphasize the next 48 hours»; decision S15-Emphasis — the next48h groups get the visual emphasis, the sameDay + remaining render un-emphasized)");
+check(/#mcentre-schedule \.mcentre-sched-remaining:not\(\[hidden\]\)\{[^}]*animation:mcsched-reveal/.test(shellSrc),
+  "S15 CSS remaining reveal: the .mcentre-sched-remaining:not([hidden]) carries the mcsched-reveal fade-in animation (the gentle expand transition — spec §15 «Gentle functional transitions for expandable schedule»; reduced-motion = no animation via the media query)");
+check(/#mcentre-schedule \.mcentre-sched-live\{[^}]*animation:mcsched-pulse/.test(shellSrc),
+  "S15 CSS live dot: the .mcentre-sched-live carries the mcsched-pulse animation (the live indicator — a small pulsing icy-blue dot; the S04 hero «در جریان» vocabulary; reduced-motion = no animation)");
+check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-schedule \.mcentre-sched-row\{[^}]*gap:\.35rem/.test(shellSrc) && /@media \(max-width:600px\)\{[\s\S]*?#mcentre-schedule \.mcentre-sched-teams\{[^}]*font-size:\.72rem/.test(shellSrc),
+  "S15 CSS mobile: at ≤600px the broadcast row tightens (gap .5→.35rem, padding-inline 8→6px) + the teams scale (.76→.72rem) + the score scales (.78→.74rem) — the rows stay one line, the names truncate, the score stays prominent, no horizontal scroll (spec §4 + §9; the milestones S15 test list: «mobile readability» — the 600px mobile breakpoint, the design system's own)");
+check(!/#mcentre-schedule[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc),
+  "S15 CSS logical properties: the S15 schedule block uses CSS logical properties ONLY (margin-block, margin-block-start, padding-block, padding-inline, border-inline-start, padding-inline-start — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties; the @keyframes + the reduced-motion media queries are NOT #mcentre-schedule-prefixed rules so the guard does not flag them)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");
