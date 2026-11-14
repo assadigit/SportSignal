@@ -201,6 +201,19 @@ function workerSrc() {
     // centre S10 group extracts it via ts.transpileModule with stubbed deps for
     // the behavioral assertions — the s05DateHelpers pattern, same as S08).
     "seo/standings-window.ts",
+    // Match Centre S16 (M7): the authored FAQ content — src/seo/faq-content.ts
+    // owns the facts-only Q/A copy (which questions, lifecycle phrasing, answer
+    // composition). Sits AFTER standings-window.ts (chronological session order;
+    // the composer stays the pure leaf — it never imports this module; S16's
+    // pages.ts matchFaqInput calls buildMatchFaqItems + escapes the raw { q, a }
+    // into the MatchFaqItemInput { qHtml, aHtml } atoms). The module reads the
+    // SeoMatch fields already loaded by the three pre-existing awaits + the pure
+    // faDateD1/faTime/compNameFa formatters — zero new awaits/KV/fetches (the
+    // zero-runtime-cost law). Registered for the concat-based self-checks (the
+    // check-match-centre S16 group extracts it via ts.transpileModule with
+    // stubbed deps for the behavioral assertions — the s05DateHelpers / S08
+    // narrative / S10 standings-window pattern).
+    "seo/faq-content.ts",
   ];
   const parts = [];
   for (const f of order) {

@@ -27,7 +27,15 @@ import { seoTeamFaName, seoTeamAltName } from "./team-names";
 // Match Centre S04 (M2): the hero renderer — the mcentre-hero MARKUP moved
 // to the composer (matchHeroHtml); THIS file builds the data projection
 // (matchHeroInput) and delegates. The legacy matchHeadHtml is retired.
-import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput } from "./match-centre";
+import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput, type MatchFaqInput, type MatchFaqItemInput } from "./match-centre";
+// Match Centre S16 (M7): the authored FAQ content — src/seo/faq-content.ts owns
+// the facts-only Q/A copy (which questions, lifecycle phrasing, answer
+// composition). THIS file's matchFaqInput projection calls buildMatchFaqItems
+// + escapes the raw { q, a } into the MatchFaqItemInput { qHtml, aHtml } atoms
+// (the S04 hero precedent — the composer is a pure leaf). The module reads the
+// SeoMatch fields already loaded by the three pre-existing awaits (zero new
+// awaits/KV/fetches — ADR-006; the zero-runtime-cost law).
+import { buildMatchFaqItems } from "./faq-content";
 // Match Centre S08 (M3): the deterministic narrative engine — the "why this
 // match matters" editorial layer. The engine runs HERE (pages.ts calls
 // narrativeHtml + passes the pre-built atom to the composer's MatchSummaryInput
@@ -377,6 +385,52 @@ function matchHeadScript(): string {
 function matchScheduleScript(): string {
   return "<script>\n" +
     "(function(){var btn=document.querySelector('.mcentre-sched-toggle');if(!btn)return;var box=document.getElementById(btn.getAttribute('aria-controls'));if(!box)return;var SHOW='\u0646\u0645\u0627\u06CC\u0634 \u0631\u0648\u0632\u0647\u0627\u06CC \u0628\u0639\u062F';var HIDE='\u0628\u0633\u062A\u0646 \u0631\u0648\u0632\u0647\u0627\u06CC \u0628\u0639\u062F';btn.addEventListener('click',function(){var open=btn.getAttribute('aria-expanded')==='true';if(open){box.hidden=true;btn.setAttribute('aria-expanded','false');btn.textContent=SHOW}else{box.hidden=false;btn.setAttribute('aria-expanded','true');btn.textContent=HIDE}})})();\n" +
+    "<\/script>";
+}
+
+// Match Centre S16 (M7): the FAQ accordion script — the delayed-collapse
+// behaviour (decision 58 + specification §12 "Multiple answers may remain open
+// briefly; previously opened answers collapse after a short delay, allowing
+// comparison without abrupt layout changes"). Inline, CSP-legal (the page
+// shell already carries inline scripts: the S04 countdown/copy script + the
+// S06 nav script + the S15 schedule script — the Q13=A precedent). Pure DOM —
+// no imports, no fetch, no polling (the S06/S04/S15 precedent).
+//
+// SCOPED setTimeout EXCEPTION (decision 58 mandates the delay; the cost law's
+// "no timer" was scoped to the S15 schedule script — the S04 countdown-timer
+// precedent already allows a part-script timer). The setTimeout here is the
+// ONLY timer in the FAQ script; it schedules the delayed collapse of the
+// previously-open answers when a new answer opens. The rapid-toggle test
+// (milestones S16): a second open during the delay window CANCELS the pending
+// collapse of the first (clearTimeout) — the previously-open answers stay open
+// + get re-scheduled. Reduced-motion (decision 80): the delay = 0 (instant
+// collapse) via a matchMedia check — the S06 precedent (reduced-motion =
+// instant); under prefers-reduced-motion:reduce, opening a new answer collapses
+// the others on the next tick (setTimeout(fn, 0) — effectively instant), so
+// only ONE answer is open at a time.
+//
+// Behaviour (the milestones S16 test list):
+// - single open: clicking a closed answer opens it (aria-expanded true, hidden
+//   removed). The other answers stay closed.
+// - multiple open: clicking a SECOND answer opens it; the first stays open
+//   BRIEFLY (the delay window) then collapses after DELAY (600ms).
+// - rapid toggles: a second open during the delay window cancels the pending
+//   collapse of the first (clearTimeout) — the first stays open + gets
+//   re-scheduled alongside the second.
+// - delay behaviour: the previously-open answer collapses after the delay
+//   (setTimeout fires → hidden restored, aria-expanded false).
+// - keyboard interaction: the button is a real <button> (keyboard-accessible;
+//   Enter/Space triggers the click — the native <button> behaviour); the
+//   script's click listener handles the toggle (the aria-expanded toggles).
+//
+// The handler no-ops when the list isn't found (a degenerate page with no FAQ
+// section — the script rides ONLY when the FAQ part renders, via the
+// buildMatchPage ternary, but the no-op guard is the belt-and-braces defense).
+// ONE delegated click listener on the .mcentre-faq-list container (the S15
+// schedule-toggle precedent — NOT per-button listeners).
+function matchFaqScript(): string {
+  return "<script>\n" +
+    "(function(){var list=document.querySelector('.mcentre-faq-list');if(!list)return;var rm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;var DELAY=rm?0:600;var timers={};function close(b,r){r.hidden=true;b.setAttribute('aria-expanded','false')}function open(b,r){r.hidden=false;b.setAttribute('aria-expanded','true')}function cancel(id){if(timers[id]){clearTimeout(timers[id]);delete timers[id]}}function schedule(b,r){var id=r.id;cancel(id);timers[id]=setTimeout(function(){close(b,r);delete timers[id]},DELAY)}list.addEventListener('click',function(e){var btn=e.target.closest('.mfaq-q');if(!btn)return;var rid=btn.getAttribute('aria-controls');var region=document.getElementById(rid);if(!region)return;if(btn.getAttribute('aria-expanded')==='true'){cancel(region.id);close(btn,region)}else{open(btn,region);var others=list.querySelectorAll('.mfaq-q[aria-expanded=\"true\"]');for(var i=0;i<others.length;i++){if(others[i]===btn)continue;var orid=others[i].getAttribute('aria-controls');var oregion=document.getElementById(orid);if(oregion)schedule(others[i],oregion)}}})})();\n" +
     "<\/script>";
 }
 
@@ -756,6 +810,47 @@ function matchScheduleInput(sm: SeoMatch, ctx: SeoCtx): MatchScheduleInput {
   };
 }
 
+// Match Centre S16 (M7): the FAQ projection — matchFaqInput. Builds the
+// MatchFaqItemInput atoms (the composer's matchFaqHtml contract —
+// src/seo/match-centre.ts) from the AUTHORED content in src/seo/faq-content.ts
+// (buildMatchFaqItems). ZERO new awaits, ZERO new KV reads, ZERO new fetches
+// (the zero-runtime-cost law — the S08 narrative + the S10/S11 standings + the
+// S12/S13 form/metrics + the S14 venue + the S15 schedule precedent). The
+// faq-content module reads the SeoMatch fields already loaded by buildMatchPage's
+// three pre-existing awaits (hydrateMatchVenue, loadArchive, fullByCodeFor) +
+// the pure faDateD1/faTime/compNameFa string formatters.
+//
+// S16 decision points (resolved + recorded per the session brief):
+// 1. The content source (audit §4 row "FAQ content" grade F → S16 authors it):
+//    src/seo/faq-content.ts's buildMatchFaqItems owns the facts-only Q/A copy
+//    (which questions, lifecycle phrasing, answer composition). THIS projection
+//    escapes the raw { q, a } into the MatchFaqItemInput { qHtml, aHtml } atoms
+//    (the S04 hero precedent — the composer is a pure leaf; the atoms arrive
+//    pre-escaped). Plain-text answers (no inner markup — the esc() discipline;
+//    the hub faqHtml precedent).
+// 2. The no-fabrication discipline (spec §12 + §17): a missing venue → that Q
+//    OMITS (buildMatchFaqItems skips it), NOT a placeholder. The kickoff +
+//    competition + timezone Qs are always answerable (every match carries a
+//    utcDate + a competition; the timezone answer is standalone editorial). An
+//    EMPTY FAQ (buildMatchFaqItems returns []) → items.length === 0 → matchFaqHtml
+//    returns "" → the section omits entirely (the no-empty-cards law; the
+//    S14/S15 no-false-empty precedent — NO fabricated Qs, NO placeholder answers).
+// 3. The schema decision (S16-Schema: OMIT) — the FAQPage JSON-LD node is NOT
+//    emitted for the match page (spec §12 caution; the SportsEvent node already
+//    carries the structured facts). The hub faqHtml()/faqNode() pattern stays
+//    byte-frozen. This projection builds ONLY the visible accordion atoms.
+// 4. The pre-existing slot (decision S16-2) — the mcentre-faq section slot
+//    ALREADY EXISTS in the S02 registry (MC_SECTION_ORDER line 111 + the bySlot
+//    map line 803). NO new nav destination, NO new section anchor (decision 13:
+//    FAQs are OUTSIDE the 5-item nav — خلاصه، جدول، فرم، بازی‌ها، ورزشگاه). The
+//    Q9=B adaptive filter unchanged (FAQ never lights a nav destination).
+function matchFaqInput(sm: SeoMatch): MatchFaqInput {
+  const raw = buildMatchFaqItems(sm);
+  return {
+    items: raw.map((qa): MatchFaqItemInput => ({ qHtml: esc(qa.q), aHtml: esc(qa.a) }))
+  };
+}
+
 export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
   let sm = findMatchBySlug(ctx, slug);
   if (!sm) return { html: "", notFound: true };
@@ -1017,6 +1112,17 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // (decision S14-2: NO new nav destination, NO new section anchor).
   const venueHtml = matchVenueHtml(matchVenueInput(sm));
   const scheduleHtml = matchScheduleHtml(matchScheduleInput(sm, ctx));
+  // S16: the FAQ string feeds the mcentre-faq slot (the pre-existing S02 slot —
+  // decision 13: FAQs are OUTSIDE the 5-item nav; the Q9=B adaptive filter is
+  // unchanged — FAQ never lights a nav destination). The accordion markup
+  // (matchFaqHtml) + the inline delayed-collapse script (matchFaqScript) ride
+  // the faq part via the ternary (the S15 schedule-script-rides-the-schedule-part
+  // precedent — the script rides ONLY when the section renders; no bare script
+  // on the degenerate-omitted section). The FAQ omits when no answerable Qs
+  // (the no-empty-cards law — the degenerate guard; every match carries a
+  // utcDate + a competition, so the minimum is the kickoff + competition +
+  // timezone Qs, but the guard holds if buildMatchFaqItems returns []).
+  const faqHtml = matchFaqHtml(matchFaqInput(sm));
   const navHtml = matchNavHtml({ summary: summaryHtml, standings: standingsHtml, form: formPartHtml, venue: venueHtml, schedule: scheduleHtml });
   const main = matchCentreMain({
     hero: matchHeroHtml(heroInput) + matchActionsHtml(sm, path) + matchHeadScript(),
@@ -1026,6 +1132,7 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
     form: formPartHtml,
     venue: venueHtml,
     schedule: scheduleHtml ? scheduleHtml + matchScheduleScript() : "",
+    faq: faqHtml ? faqHtml + matchFaqScript() : "",
     related: similarCard,
     footerHook: related
   });

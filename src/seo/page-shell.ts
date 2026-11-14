@@ -723,6 +723,53 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
   #mcentre-schedule .mcentre-sched-fin{font-size:.58rem}
   #mcentre-schedule .mcentre-sched-toggle{font-size:.7rem;padding-block:6px;padding-inline:8px}
 }
+/* ---- Match Centre S16 (M7): the FAQ accordion — the delayed-collapse
+   accordion (specification §12 "FAQ", M7/S16, decisions 57/58/64/80/13, audit
+   §4 row "FAQ content" + §12 row S16). The authored Q/A (src/seo/faq-content.ts)
+   renders as a custom button+region accordion (decision S16-Accordion: NOT
+   native <details> — the delayed-collapse of decision 58 cannot be expressed in
+   <details>; the S06 nav + S15 schedule precedent = custom button + JS). Each
+   Q is an <h3 class="mfaq-heading"> wrapping a <button class="mfaq-q">
+   (aria-expanded + aria-controls the region) + a <div class="mfaq-a"
+   role=region aria-labelledby hidden> (the answer <p>). The answer region
+   starts collapsed (hidden) — spec §12 "Expandable answers"; the inline
+   matchFaqScript in pages.ts (the delayed-collapse + the rapid-toggle
+   timer-cancel + the reduced-motion instant) rides the faq part. The chevron
+   (::after on the button — a CSS-drawn triangle that rotates 90° on open) is
+   the subtle functional-motion cue (decision 80 — gentle, not decorative; the
+   S15 mcsched-reveal precedent). Reduced-motion = no chevron transition + no
+   reveal animation (the S06/S15 precedent — the script's setTimeout delay is
+   also 0 under prefers-reduced-motion via the matchMedia check). Placed AFTER
+   S15 (the schedule presentation) and BEFORE S03 (the responsive/spacing/RTL
+   foundation) — chronological session order: S04 → S05 → S06 → S07 → S08 →
+   S11 → S12 → S13 → S14 → S15 → S16 → S03. CSS logical properties ONLY
+   (RTL/LTR clean under a dir flip, decision 2); the block's own icy/navy
+   tokens; the 600px mobile layout — no horizontal scroll (the answer region
+   wraps, no truncation — spec §12 "expandable answers"; the S15 row-truncation
+   does NOT apply here — the answers wrap freely). The existing .faqcard hub
+   CSS (line 142–147) stays byte-frozen — S16 adds the #mcentre-faq-scoped
+   accordion variant, does NOT modify .faqcard. */
+#mcentre-faq .mcentre-faq>h2{font-size:.95rem;font-weight:700;margin-block-end:8px;color:var(--fg,#e8eefc)}
+#mcentre-faq .mcentre-faq-list{display:flex;flex-direction:column;gap:0}
+#mcentre-faq .mfaq-item{border-block-end:1px solid var(--border,#334155)}
+#mcentre-faq .mfaq-item:last-child{border-block-end:none}
+#mcentre-faq .mfaq-heading{margin:0}
+#mcentre-faq .mfaq-q{display:flex;width:100%;align-items:center;gap:.5rem;padding-block:8px;padding-inline:10px;border:none;background:transparent;color:#e2e8f0;font-size:.84rem;font-weight:600;text-align:start;cursor:pointer}
+#mcentre-faq .mfaq-q:hover{color:#7dd3fc}
+#mcentre-faq .mfaq-q:focus-visible{outline:2px solid #7dd3fc;outline-offset:2px;border-radius:4px}
+#mcentre-faq .mfaq-q::after{content:"";flex:0 0 auto;width:0;height:0;border-inline-start:5px solid currentColor;border-block:4px solid transparent;transition:transform .2s ease}
+#mcentre-faq .mfaq-q[aria-expanded="true"]::after{transform:rotate(90deg)}
+#mcentre-faq .mfaq-a[hidden]{display:none}
+#mcentre-faq .mfaq-a:not([hidden]){animation:mfaq-reveal .25s ease}
+#mcentre-faq .mfaq-a p{margin:0;padding-block:2px 10px;padding-inline:10px;font-size:.8rem;line-height:1.8;color:var(--muted,#9aa4b2)}
+@keyframes mfaq-reveal{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#mcentre-faq .mfaq-q::after{transition:none}}
+@media (prefers-reduced-motion:reduce){#mcentre-faq .mfaq-a:not([hidden]){animation:none}}
+@media (max-width:600px){
+  #mcentre-faq .mcentre-faq>h2{font-size:.9rem}
+  #mcentre-faq .mfaq-q{font-size:.78rem;padding-block:7px;padding-inline:8px}
+  #mcentre-faq .mfaq-a p{font-size:.74rem;line-height:1.7;padding-block:2px 8px;padding-inline:8px}
+}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
    effect on any page without a mcentre-* section. Breakpoints and tokens are

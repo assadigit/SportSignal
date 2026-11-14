@@ -162,7 +162,7 @@ check(withNav.indexOf('id="mcentre-hero"') < withNav.indexOf('id="mcentre-nav"')
 
 // ---------- 3. wiring: buildMatchPage delegates, GSC surfaces stay ----------
 let wiringOk = true;
-if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml + the S12 form renderer matchFormHtml + the S13 metrics renderer matchMetricsHtml + the S14 venue renderer matchVenueHtml + the S14 schedule renderer matchScheduleHtml + the projection types)"); wiringOk = false; }
+if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput, type MatchFaqInput, type MatchFaqItemInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml + the S12 form renderer matchFormHtml + the S13 metrics renderer matchMetricsHtml + the S14 venue renderer matchVenueHtml + the S14 schedule renderer matchScheduleHtml + the S16 FAQ renderer matchFaqHtml + the projection types)"); wiringOk = false; }
 // S08: pages.ts imports the narrative engine (narrativeHtml + the lifecycle type).
 if (!/import \{ narrativeHtml, type NarrativeLifecycle \} from "\.\/narrative";/.test(pagesSrc)) { bad("wiring: pages.ts lost the narrative engine import (narrativeHtml + NarrativeLifecycle — the S08 deterministic narrative engine)"); wiringOk = false; }
 if (!/const main = matchCentreMain\(\{/.test(pagesSrc)) { bad("wiring: buildMatchPage no longer delegates its main assembly to matchCentreMain"); wiringOk = false; }
@@ -2866,6 +2866,210 @@ check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-schedule \.mcentre-sched-row
   "S15 CSS mobile: at ≤600px the broadcast row tightens (gap .5→.35rem, padding-inline 8→6px) + the teams scale (.76→.72rem) + the score scales (.78→.74rem) — the rows stay one line, the names truncate, the score stays prominent, no horizontal scroll (spec §4 + §9; the milestones S15 test list: «mobile readability» — the 600px mobile breakpoint, the design system's own)");
 check(!/#mcentre-schedule[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc),
   "S15 CSS logical properties: the S15 schedule block uses CSS logical properties ONLY (margin-block, margin-block-start, padding-block, padding-inline, border-inline-start, padding-inline-start — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties; the @keyframes + the reduced-motion media queries are NOT #mcentre-schedule-prefixed rules so the guard does not flag them)");
+
+// ---------- 17. S16 (M7): the FAQ accordion — the delayed-collapse behaviour
+// + the authored facts-only content (M7, session 1 of 2) ----------
+// specification §12 (FAQ) + milestones-and-sessions.md M7/S16 + decisions
+// 57/58/64/80/13 + audit §4 row "FAQ content" (grade F → S16 authors it) + §12
+// row S16. S16 ADDS the mcentre-faq section content: the authored Q/A
+// (src/seo/faq-content.ts — buildMatchFaqItems) + the accordion renderer
+// (match-centre.ts matchFaqHtml — custom button+region) + the inline delayed-
+// collapse script (pages.ts matchFaqScript — setTimeout + rapid-toggle cancel
+// + reduced-motion instant) + the CSS (page-shell.ts S16 block). The mcentre-faq
+// slot ALREADY EXISTS in the S02 registry (decision S16-2: NO new slot, NO new
+// section anchor); the faq?: string key ALREADY EXISTS in MatchCentreParts
+// (S02). NO new nav destination (decision 13: FAQs are OUTSIDE the 5-item nav).
+// S16 is M7 session 1 of 2 — MID-MILESTONE (S17 ships the related-matches list +
+// the M7 gate; S16 ships NO preview upload, NO gate doc).
+
+// (a) the contract — the new module (faq-content.ts) + the renderer
+// (matchFaqHtml) + the interfaces + the title constant + the script in pages.ts.
+const faqSrc = read("src/seo/faq-content.ts");
+check(typeof mc.matchFaqHtml === "function" && /export function matchFaqHtml\(/.test(mcSrc) && /export interface MatchFaqInput\b/.test(mcSrc) && /export interface MatchFaqItemInput\b/.test(mcSrc),
+  "S16 contract renderer: matchFaqHtml + the MatchFaqInput/MatchFaqItemInput interfaces live in match-centre.ts (the accordion MARKUP — the S12 matchFormHtml / S14 matchVenueHtml / S15 matchScheduleHtml precedent; the composer stays the S02 pure leaf for the markup — zero client-script)");
+check(/const MC_FAQ_TITLE = "[^"]+";/.test(mcSrc) && mcSrc.indexOf('const MC_FAQ_TITLE =') > -1 && /const MC_FAQ_TITLE = "[\u0600-\u06FF ]+";/.test(mcSrc),
+  "S16 contract title: the MC_FAQ_TITLE constant carries a Persian label «سوالات متداول» (matches the MC_SECTION_ORDER aria-label — the mcentre-faq slot label; the S15 MC_SCHEDULE_TITLE precedent)");
+check(/export function buildMatchFaqItems\(/.test(faqSrc) && /import type \{ SeoMatch \} from "\.\/data";/.test(faqSrc),
+  "S16 contract content: src/seo/faq-content.ts exports buildMatchFaqItems (the authored Q/A list — audit §4 row «FAQ content» grade F → S16 authors it, facts-only) + imports the SeoMatch type (the data shape already loaded by buildMatchPage's three pre-existing awaits)");
+check(/function matchFaqScript\(/.test(pagesSrc),
+  "S16 contract script: pages.ts defines matchFaqScript (the inline delayed-collapse accordion script — the S06 matchNavScript / S04 matchHeadScript / S15 matchScheduleScript precedent; rides the faq part via the buildMatchPage ternary)");
+check(/import \{ buildMatchFaqItems \} from "\.\/faq-content";/.test(pagesSrc) && /import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml,/.test(pagesSrc),
+  "S16 contract wiring: pages.ts imports matchFaqHtml from ./match-centre (the renderer) + buildMatchFaqItems from ./faq-content (the authored content) — the S04 hero/S14 venue/S15 schedule import precedent");
+
+// (b) the REAL renderer — the accordion markup (custom button+region + aria +
+// hidden + role=region + aria-labelledby) + the section wrapper + the
+// no-empty-cards + the partial-data behaviour.
+var s16Items = [
+  { qHtml: "بازی چه زمانی برگزار می\u200cشود؟", aHtml: "این بازی شنبه ۱۵ آبان ۱۴۰۵ ساعت ۱۶:۳۰ به وقت تهران برگزار می\u200cشود." },
+  { qHtml: "بازی کجا برگزار می\u200cشود؟", aHtml: "این بازی در ورزشگاه آنفیلد برگزار می\u200cشود." },
+  { qHtml: "این بازی در کدام رقابت است؟", aHtml: "این بازی در لیگ برتر انگلیس است." },
+  { qHtml: "ساعت بازی به وقت کجاست؟", aHtml: "ساعت همه بازی\u200cها به وقت تهران نمایش داده می\u200cشود." }
+];
+var s16Full = mc.matchFaqHtml({ items: s16Items });
+check(s16Full.startsWith('<div class="mcentre-faq"><h2>') && s16Full.includes('</h2><div class="mcentre-faq-list">') && s16Full.endsWith("</div></div>"),
+  "S16 section wrapper: matchFaqHtml returns <div class=\"mcentre-faq\"><h2>«سوالات متداول»</h2><div class=\"mcentre-faq-list\">…</div></div> (the .mcentre-faq-list is the click-delegation container the inline matchFaqScript queries — the S15 .mcentre-schedule wrapper precedent; the <section id=\"mcentre-faq\"> anchor is added by the composer's sectionHtml)");
+check(s16Full.includes('<div class="mfaq-item"><h3 class="mfaq-heading"><button class="mfaq-q" id="mfaq-q-0" type="button" aria-expanded="false" aria-controls="mfaq-a-0">') && s16Full.includes('</button></h3><div id="mfaq-a-0" class="mfaq-a" role="region" aria-labelledby="mfaq-q-0" hidden><p>'),
+  "S16 accordion markup: each Q/A is a custom button+region accordion item — <h3 class=\"mfaq-heading\"> wraps <button class=\"mfaq-q\" id aria-expanded=\"false\" aria-controls> (the question) + <div id class=\"mfaq-a\" role=\"region\" aria-labelledby hidden><p> (the answer). Decision S16-Accordion: custom button+region (NOT native <details> — the delayed-collapse of decision 58 cannot be expressed in <details>; the S06 nav + S15 schedule precedent = custom button + JS)");
+check(s16Full.includes('aria-expanded="false"') && s16Full.includes('aria-controls="mfaq-a-') && s16Full.includes('role="region"') && s16Full.includes('aria-labelledby="mfaq-q-') && s16Full.includes(" hidden>"),
+  "S16 a11y attributes: the button carries aria-expanded (false initially) + aria-controls (the region id); the region carries role=region + aria-labelledby (the button id) + hidden (collapsed initially — spec §12 «Expandable answers»; the accessible accordion pattern — the milestones S16 test list: «keyboard interaction»)");
+check((s16Full.match(/<button class="mfaq-q"/g) || []).length === 4 && (s16Full.match(/role="region"/g) || []).length === 4,
+  "S16 item count: 4 Q/A items render 4 buttons + 4 regions (the qHtml/aHtml atoms project verbatim — the S04 hero precedent)");
+check(s16Full.includes('id="mfaq-q-0"') && s16Full.includes('id="mfaq-q-1"') && s16Full.includes('id="mfaq-q-2"') && s16Full.includes('id="mfaq-q-3"') && s16Full.includes('id="mfaq-a-0"') && s16Full.includes('id="mfaq-a-3"'),
+  "S16 sequential ids: the buttons + regions carry sequential ids (mfaq-q-N / mfaq-a-N — the button's aria-controls points to the region's id; the region's aria-labelledby points to the button's id; the pairing is correct by construction)");
+check(mc.matchFaqHtml({ items: [] }) === "" && mc.matchFaqHtml(null) === "" && mc.matchFaqHtml(undefined) === "",
+  "S16 no-empty-cards: an EMPTY FAQ (items.length === 0 / null / undefined) → \"\" (the section omits entirely — the no-empty-cards law; the S14/S15 no-false-empty precedent — NO fabricated Qs, NO placeholder answers; the milestones S16 test list: «partial/empty data»)");
+check(mc.matchFaqHtml({ items: [s16Items[0]] }).includes("mfaq-q-0") && !/mfaq-q-1/.test(mc.matchFaqHtml({ items: [s16Items[0]] })),
+  "S16 partial data: a single Q/A renders ONE button + ONE region (mfaq-q-0 only, no mfaq-q-1 — the partial dataset renders the present items; the milestones S16 test list: «partial/empty data»)");
+check(!/<details/.test(s16Full) && !/<summary/.test(s16Full),
+  "S16 no native details: the accordion uses custom button+region (NOT native <details>/<summary> — decision S16-Accordion: the delayed-collapse of decision 58 cannot be expressed in <details>; the S06 nav + S15 schedule precedent = custom button + JS)");
+
+// (c) the authored content — buildMatchFaqItems extracted via ts.transpileModule
+// with stubbed deps (the s05DateHelpers / S08 narrative / S10 standings-window
+// pattern). The stubs control faDateD1/faTime/compNameFa; the module's pure
+// logic (the 4 questions + the lifecycle phrasing + the conditional venue +
+// the no-fabrication gate) runs unmodified.
+function faqContentEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const src = fs.readFileSync(path.join(root, "src", "seo", "faq-content.ts"), "utf8")
+    .replace(/^import\s+[^;]+;\n?/gm, "")
+    .replace(/^export\s+/gm, "");
+  const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.None, target: "ES2020" } }).outputText;
+  const stubs = {
+    faDateD1: function (iso) { return "D1(" + iso + ")"; },
+    faTime: function (iso) { return "T(" + iso + ")"; },
+    compNameFa: function (s) { return (s && s.competition && s.competition.faName) || ""; }
+  };
+  return new Function(...Object.keys(stubs), js + "\nreturn { buildMatchFaqItems };")(...Object.values(stubs));
+}
+const fc = faqContentEngine();
+check(typeof fc.buildMatchFaqItems === "function",
+  "S16 content extraction: the REAL buildMatchFaqItems extracted from faq-content.ts via ts.transpileModule with stubbed faDateD1/faTime/compNameFa (the s05DateHelpers / S08 narrative / S10 standings-window pattern — never re-implemented; the module's pure logic runs unmodified)");
+// a full upcoming match (utcDate + venue + competition) → 4 Qs
+var s16SmUpcoming = { s: { utcDate: "2026-11-29T15:00:00Z", venueFa: "ورزشگاه آنفیلد", competition: { faName: "لیگ برتر انگلیس", code: "PL" } }, raw: { status: "SCHEDULED" } };
+var s16UpcomingItems = fc.buildMatchFaqItems(s16SmUpcoming);
+check(s16UpcomingItems.length === 4,
+  "S16 content full upcoming: a full upcoming match (utcDate + venue + competition) → 4 Qs (kickoff + venue + competition + timezone — the S16-Content decision; compact per spec §12; the milestones S16 test list: «partial/empty data»)");
+check(s16UpcomingItems[0].q.indexOf("برگزار") >= 0 && s16UpcomingItems[0].q.indexOf("شود") >= 0 && s16UpcomingItems[0].a.indexOf("D1(2026-11-29T15:00:00Z)") >= 0 && s16UpcomingItems[0].a.indexOf("T(2026-11-29T15:00:00Z)") >= 0 && s16UpcomingItems[0].a.indexOf("به وقت تهران") >= 0,
+  "S16 content Q1 kickoff (upcoming): the first Q is the kickoff («برگزار … شود؟» — the upcoming phrasing) + the answer composes faDateD1 + faTime + «به وقت تهران» + the upcoming verb (lifecycle-aware — decision S16-Content; ALWAYS present — every match carries a utcDate)");
+check(s16UpcomingItems[1].q.indexOf("کجا") >= 0 && s16UpcomingItems[1].q.indexOf("شود") >= 0 && s16UpcomingItems[1].a.indexOf("ورزشگاه آنفیلد") >= 0,
+  "S16 content Q2 venue (upcoming): the second Q is the venue («کجا … شود؟» — the upcoming phrasing) + the answer carries the venue name (sm.s.venueFa — the S14 venue, ALREADY LOADED by hydrateMatchVenue; CONDITIONAL — omits when no venue)");
+check(s16UpcomingItems[2].q.indexOf("رقابت") >= 0 && s16UpcomingItems[2].a.indexOf("لیگ برتر انگلیس") >= 0,
+  "S16 content Q3 competition: the third Q is the competition («کدام رقابت» — compNameFa, the hero's .mchip context restated in Q&A form; ALWAYS present when compFa non-empty)");
+check(s16UpcomingItems[3].q.indexOf("وقت") >= 0 && s16UpcomingItems[3].a.indexOf("تهران") >= 0,
+  "S16 content Q4 timezone: the fourth Q is the timezone policy («به وقت کجاست؟» — standalone editorial, NOT derived from the match's data; ALWAYS present — the S16-Content decision)");
+// a finished match → the lifecycle phrasing swaps to past tense («برگزار شد»)
+var s16SmFinished = { s: { utcDate: "2026-11-29T15:00:00Z", venueFa: "ورزشگاه آنفیلد", competition: { faName: "لیگ برتر انگلیس", code: "PL" } }, raw: { status: "FINISHED" } };
+var s16FinishedItems = fc.buildMatchFaqItems(s16SmFinished);
+check(s16FinishedItems.length === 4 && s16FinishedItems[0].q.indexOf("برگزار") >= 0 && s16FinishedItems[0].q.indexOf("شود") < 0 && s16FinishedItems[0].a.indexOf("برگزار شد") >= 0 && s16FinishedItems[0].a.indexOf("شود") < 0,
+  "S16 content lifecycle (finished): a FINISHED match swaps the kickoff Q + answer to the past tense («برگزار شد؟» / «… برگزار شد.» — NOT «برگزار می‌شود»); the verb + the question phrasing pick the past form for FINISHED (the match has ended — the lifecycle-aware discipline; the milestones S16 test list: «partial/stale/empty data»)");
+var s16SmLive = { s: { utcDate: "2026-11-29T15:00:00Z", venueFa: "ورزشگاه آنفیلد", competition: { faName: "لیگ برتر انگلیس", code: "PL" } }, raw: { status: "IN_PLAY" } };
+var s16LiveItems = fc.buildMatchFaqItems(s16SmLive);
+check(s16LiveItems[0].a.indexOf("برگزار شد") >= 0 && s16LiveItems[0].a.indexOf("شود") < 0,
+  "S16 content lifecycle (live): a LIVE match (IN_PLAY) uses the past-tense verb («برگزار شد» — the match has started; the live/finished → past-form rule; the lifecycle-aware discipline)");
+// a no-venue match → the venue Q OMITS (the no-fabrication discipline)
+var s16SmNoVenue = { s: { utcDate: "2026-11-29T15:00:00Z", competition: { faName: "لیگ برتر انگلیس", code: "PL" } }, raw: { status: "SCHEDULED" } };
+var s16NoVenueItems = fc.buildMatchFaqItems(s16SmNoVenue);
+check(s16NoVenueItems.length === 3 && !s16NoVenueItems.some((it) => it.q.indexOf("بازی کجا") >= 0),
+  "S16 content no-venue (no-fabrication): a match with NO venue → the venue Q OMITS (3 Qs: kickoff + competition + timezone — NOT a placeholder «ورزشگاه نامشخص»; the no-fabrication discipline — spec §12 + §17; the S14 no-empty-cards precedent: a missing venue is NOT «ورزشگاه نامشخص»; the venue Q is uniquely identified by «بازی کجا» [the kickoff + timezone Qs carry «کجا» in «کجاست» but NOT the «بازی کجا» prefix])");// the degenerate guard — no sm / no utcDate / no competition
+check((fc.buildMatchFaqItems(null) || []).length === 0,
+  "S16 content degenerate (null sm): buildMatchFaqItems(null) → [] (the no-fabrication guard — the no-empty-cards law; the section omits entirely)");
+check(fc.buildMatchFaqItems({ s: {}, raw: { status: "SCHEDULED" } }).length === 1 && fc.buildMatchFaqItems({ s: {}, raw: { status: "SCHEDULED" } })[0].q.indexOf("وقت") >= 0,
+  "S16 content degenerate (no utcDate/venue/comp): a match with only the timezone-policy answer (no utcDate, no venue, no comp) → 1 Q (the timezone policy — the standalone editorial ALWAYS present; the kickoff + venue + competition Qs omit when their facts are unavailable — the no-fabrication discipline)");
+// the projection — matchFaqInput escapes the raw { q, a } into { qHtml, aHtml }
+var s16ProjFn = extractFnSrc(pagesSrc, "matchFaqInput") || "";
+check(s16ProjFn.length > 0 && /buildMatchFaqItems\(sm\)/.test(s16ProjFn) && /esc\(qa\.q\)/.test(s16ProjFn) && /esc\(qa\.a\)/.test(s16ProjFn) && /qHtml:/.test(s16ProjFn) && /aHtml:/.test(s16ProjFn),
+  "S16 projection contract: pages.ts carries matchFaqInput (the FAQ data projection — calls buildMatchFaqItems + escapes the raw { q, a } into the MatchFaqItemInput { qHtml, aHtml } atoms; the S04 hero precedent: pages.ts builds the atoms, the composer renders the markup; the REAL function extracted via extractFnSrc, never re-implemented)");
+
+// (d) the inline JS — matchFaqScript (presence + the delayed-collapse setTimeout
+// + the rapid-toggle clearTimeout + the reduced-motion matchMedia + the click
+// delegation + the aria-expanded toggle + the hidden toggle + the no-op guard +
+// the purity [setTimeout ALLOWED — the scoped exception]). Extracted via
+// extractFnSrc (the S06/S15 nav/schedule-script precedent).
+var s16FaqFn = extractFnSrc(pagesSrc, "matchFaqScript") || "";
+check(s16FaqFn.length > 0 && /<script>/.test(s16FaqFn) && /addEventListener\('click'/.test(s16FaqFn),
+  "S16 script presence: matchFaqScript returns a <script> tag + the click handler (addEventListener('click' — the accordion toggle; the S06 nav-script / S15 schedule-script precedent — inline, CSP-legal)");
+check(s16FaqFn.length > 0 && /setTimeout/.test(s16FaqFn),
+  "S16 script delayed-collapse (decision 58): the script uses setTimeout to schedule the delayed collapse of the previously-open answers (decision 58 MANDATES the delay — «multiple answers may remain open briefly; previously opened answers collapse after a short delay»; the scoped setTimeout exception — the S04 countdown-timer precedent; the cost law's «no timer» was scoped to the S15 schedule script — documented in the matchFaqScript header comment)");
+check(s16FaqFn.length > 0 && /clearTimeout/.test(s16FaqFn),
+  "S16 script rapid-toggle cancel: the script uses clearTimeout to cancel a pending collapse when a new answer opens during the delay window (the rapid-toggle test — milestones S16: «a second open during the delay window cancels the pending collapse of the first»; the previously-open answers stay open + get re-scheduled)");
+check(s16FaqFn.length > 0 && /matchMedia/.test(s16FaqFn) && /prefers-reduced-motion/.test(s16FaqFn) && /var DELAY=rm\?0:600/.test(s16FaqFn),
+  "S16 script reduced-motion (decision 80): the script checks matchMedia('(prefers-reduced-motion: reduce)') + sets DELAY = rm ? 0 : 600 (the delay value S16-Delay = 600ms; reduced-motion = 0 = instant collapse — the S06 precedent; under prefers-reduced-motion only ONE answer is open at a time — the collapse fires on the next tick)");
+check(s16FaqFn.length > 0 && /querySelector\('\.mcentre-faq-list'\)/.test(s16FaqFn),
+  "S16 script click delegation: the script queries the .mcentre-faq-list container (ONE delegated click listener — the S15 schedule-toggle precedent — NOT per-button listeners; the container is the click-delegation root)");
+check(s16FaqFn.length > 0 && /aria-expanded/.test(s16FaqFn) && /\.hidden/.test(s16FaqFn),
+  "S16 script toggle: the click handler toggles the answer region's `hidden` attribute (region.hidden) + the button's aria-expanded (true ↔ false) — the milestones S16 test list: «keyboard interaction» (the button is keyboard-accessible — a real <button>, Enter/Space triggers the click; the aria-expanded toggles)");
+check(s16FaqFn.length > 0 && /if\(!list\)return/.test(s16FaqFn),
+  "S16 script no-op guard: the handler no-ops when the list isn't found (if(!list)return — a degenerate page with no FAQ section; the script rides ONLY when the FAQ part renders via the buildMatchPage ternary, but the no-op guard is the belt-and-braces defense)");
+check(s16FaqFn.length > 0 && /schedule\(/.test(s16FaqFn) && /cancel\(/.test(s16FaqFn),
+  "S16 script schedule/cancel helpers: the script defines schedule(btn, region) [sets the delayed-collapse timer] + cancel(id) [clears a pending timer] — the rapid-toggle re-scheduling logic (a new open cancels + re-schedules the previously-open answers' collapse)");
+check(s16FaqFn.length > 0 && /querySelectorAll\('\.mfaq-q\[aria-expanded=/.test(s16FaqFn),
+  "S16 script other-open selector: when a new answer opens, the script queries all OTHER open answers (.mfaq-q[aria-expanded=\"true\"] — excluding the just-opened button) + schedules their delayed collapse (decision 58: «older opened answers collapse after a short delay when a new one opens»)");
+var s16FaqFnStripped = s16FaqFn.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s16FaqFn.length > 0 && !/fetch\(|setInterval|XMLHttpRequest|new Image|import /i.test(s16FaqFnStripped),
+  "S16 script cost law (scoped): the inline FAQ script is pure DOM — no fetch/polling/new Image/imports/setInterval (the S06 Q13=A precedent; the delay timer is the ALLOWED scoped exception — decision 58 mandates the delayed-collapse; the S04 countdown-timer precedent; rides the faq part, no public-*.js bundle rename, no SW cache bump — ADR-006)");
+
+// (e) the wiring — buildMatchPage appends matchFaqScript to the faq part (the
+// ternary guard) + the pre-existing faq?: string key + the pre-existing
+// mcentre-faq slot + NO new nav destination (decision 13).
+check(/faq: faqHtml \? faqHtml \+ matchFaqScript\(\) : ""/.test(pagesSrc),
+  "S16 wiring script: buildMatchPage appends matchFaqScript to the faq part via the ternary faq: faqHtml ? faqHtml + matchFaqScript() : empty-string (the script rides ONLY when the section renders — no bare script on the degenerate-omitted section; the S15 schedule-script-rides-the-schedule-part precedent)");
+check(/faq\?: string;/.test(mcSrc) && /"mcentre-faq": parts\.faq \|\| ""/.test(mcSrc),
+  "S16 wiring pre-existing slot: the faq?: string key ALREADY EXISTS in MatchCentreParts (the S02 optional key — S16 FILLS the already-existing slot; NO new interface field) + the mcentre-faq slot ALREADY EXISTS in the bySlot map (decision S16-2: NO new slot, NO new section anchor; the S14/S15 discipline)");
+check(/hero: matchHeroHtml\(heroInput\) \+ matchActionsHtml\(sm, path\) \+ matchHeadScript\(\),/.test(pagesSrc) && /schedule: scheduleHtml \? scheduleHtml \+ matchScheduleScript\(\) : "",/.test(pagesSrc),
+  "S16 wiring unchanged: the hero part stays matchHeroHtml + matchActionsHtml + matchHeadScript (the S04 precedent) + the schedule part stays scheduleHtml ? scheduleHtml + matchScheduleScript() : empty-string (the S15 precedent — the faq script rides the faq part, NOT the hero/schedule parts; the hero/schedule wiring is byte-frozen)");
+check(!/\{ id: "mcentre-faq", label:/.test(pagesSrc) && (pagesSrc.match(/id: "mcentre-[a-z-]+", label:/g) || []).filter((s) => /"mcentre-(summary|standings|form|schedule|venue)"/.test(s)).length === 5,
+  "S16 no new nav destination (decision 13): MC_NAV_DESTS keeps exactly the 5 nav items (خلاصه، جدول، فرم، بازی‌ها، ورزشگاه) — FAQ is NOT a nav destination (decision 13: «FAQs/SEO outside nav»; the Q9=B adaptive filter unchanged — FAQ never lights a nav destination; the milestones S16 test list: «no FAQPage schema solely for rich results» [the schema decision] + the nav stays 5 items)");
+
+// (f) the cost laws — the composer purity (matchFaqHtml carries NO script/fetch/
+// timer code) + the await count stays 3 + the faq-content module purity.
+var s16CompFaq = extractFnSrc(mcSrc, "matchFaqHtml") || "";
+var s16CompFaqStripped = s16CompFaq.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(s16CompFaq.length > 0 && !/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|import |<script/i.test(s16CompFaqStripped),
+  "S16 composer purity: matchFaqHtml is a pure string renderer (the composer stays the S02 pure leaf for the markup — zero imports/KV/fetch/timers/client-scripts/<script>; the atoms arrive prebuilt from pages.ts's matchFaqInput; the inline JS rides pages.ts's matchFaqScript — the S06/S04/S15 precedent; the composer carries NO setTimeout/addEventListener/<script>/fetch code — the scoped setTimeout exception lives in pages.ts, NOT the composer)");
+var s16FaqContentStripped = faqSrc.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+check(!/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener|\.get\(|\.put\(|env\.STATE|env\.AI|AI\.run|generateText|chat\.completions/i.test(s16FaqContentStripped),
+  "S16 faq-content purity: the authored FAQ module (src/seo/faq-content.ts) is pure-logic — zero AI/network/KV/timer/polling code (the S08 zero-runtime-cost law — the module reads the SeoMatch fields already loaded + the pure faDateD1/faTime/compNameFa string formatters; no AI, no network calls, no KV reads)");
+check(awaitCount === 3,
+  "S16 await count: buildMatchPage's await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; S16 is a PRESENTATION + AUTHORING session — the FAQ reads the already-loaded SeoMatch fields via the buildMatchFaqItems helper; ZERO new awaits, zero new KV reads, zero new fetches — ADR-006; the zero-runtime-cost law holds)");
+
+// (g) the no-FAQPage-schema law (spec §12 + decision 57 + S16-Schema: OMIT) —
+// the match page does NOT emit a FAQPage JSON-LD node; the hub faqNode helper
+// stays byte-frozen (the match page's jsonldNodes carries siteNodes + webPageNode
+// + sportsEventNode + breadcrumbNode — NO faqNode).
+check(!/JL\.faqNode|faqNode\(/.test(bpSeg),
+  "S16 no-FAQPage-schema (spec §12 + decision 57 + S16-Schema: OMIT): buildMatchPage's jsonldNodes does NOT include JL.faqNode (the match page's SportsEvent JSON-LD node already carries the kickoff/date/venue facts; spec §12 «No FAQPage schema solely to pursue Google FAQ rich results» — Google retired FAQ rich results in August 2023; the hub faqHtml()/faqNode() pattern stays byte-frozen — the /about, /methodology, /data hub pages + the window hubs keep their GEO FAQPage node; the match page takes the conservative omit path; the milestones S16 test list: «no FAQPage schema solely for rich results»)");
+check(/export function faqNode\(/.test(read("src/seo/jsonld.ts")),
+  "S16 hub faqNode byte-frozen: the JL.faqNode helper stays byte-frozen in jsonld.ts (the hub pages keep their GEO FAQPage node — S16 does NOT modify the hub pattern; the match-page omit decision does NOT touch the hub faqNode)");
+
+// (h) the CSS — the S16 style block rides page-shell.ts AFTER S15 (the schedule
+// presentation) and BEFORE S03 (the responsive/spacing/RTL foundation) —
+// chronological session order: S04 → S05 → S06 → S07 → S08 → S11 → S12 → S13 →
+// S14 → S15 → S16 → S03. Scoped to #mcentre-faq; logical properties only; the
+// block's own icy/navy tokens; the 600px mobile layout — no horizontal scroll.
+check(shellSrc.indexOf("Match Centre S15 (M6)") < shellSrc.indexOf("Match Centre S16 (M7)") && shellSrc.indexOf("Match Centre S16 (M7)") < shellSrc.indexOf("Match Centre S03 (M1)"),
+  "S16 CSS placement: the S16 style block rides page-shell.ts AFTER S15 (the schedule presentation) and BEFORE S03 (the responsive/spacing/RTL foundation) — chronological session order: S04 → S05 → S06 → S07 → S08 → S11 → S12 → S13 → S14 → S15 → S16 → S03");
+check(/#mcentre-faq \.mfaq-q\{[^}]*display:flex/.test(shellSrc) && /#mcentre-faq \.mfaq-q\{[^}]*cursor:pointer/.test(shellSrc),
+  "S16 CSS button: the <button class=\"mfaq-q\"> — display:flex (the question + the chevron ::after) + cursor:pointer (the interactive affordance; the S15 .mcentre-sched-toggle precedent)");
+check(/#mcentre-faq \.mfaq-q:focus-visible\{[^}]*outline:2px solid #7dd3fc/.test(shellSrc),
+  "S16 CSS focus-visible: the .mfaq-q:focus-visible carries the icy-blue #7dd3fc outline (keyboard-accessible — the milestones S16 test list: «keyboard interaction»; the focus ring #7dd3fc — the S15 .mcentre-sched-toggle precedent)");
+check(/#mcentre-faq \.mfaq-q::after\{[^}]*border-inline-start:5px solid currentColor/.test(shellSrc) && /#mcentre-faq \.mfaq-q\[aria-expanded="true"\]::after\{[^}]*transform:rotate\(90deg\)/.test(shellSrc),
+  "S16 CSS chevron: the .mfaq-q::after is a CSS-drawn triangle (border-inline-start:5px solid currentColor — the subtle functional-motion cue, decision 80) that rotates 90° when aria-expanded=true (the open/close indicator — gentle, not decorative; the S15 mcsched-reveal precedent)");
+check(/#mcentre-faq \.mfaq-a\[hidden\]\{[^}]*display:none/.test(shellSrc) && /#mcentre-faq \.mfaq-a:not\(\[hidden\]\)\{[^}]*animation:mfaq-reveal/.test(shellSrc),
+  "S16 CSS answer region: the .mfaq-a[hidden] → display:none (collapsed) + .mfaq-a:not([hidden]) → the mfaq-reveal fade-in animation (the gentle expand transition — spec §15 «Gentle functional transitions for accordions»; the answer region wraps, no truncation — spec §12 «expandable answers»; reduced-motion = no animation via the media query)");
+check(/@media \(prefers-reduced-motion:reduce\)\{#mcentre-faq \.mfaq-q::after\{[^}]*transition:none/.test(shellSrc) && /@media \(prefers-reduced-motion:reduce\)\{[^}]*#mcentre-faq \.mfaq-a:not\(\[hidden\]\)\{[^}]*animation:none/.test(shellSrc),
+  "S16 CSS reduced motion: the chevron transition (.mfaq-q::after transition:none) + the reveal animation (.mfaq-a:not([hidden]) animation:none) gate under prefers-reduced-motion:reduce (the S06/S15 precedent — reduced-motion = instant; the script's setTimeout delay is also 0 via the matchMedia check)");
+check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-faq \.mfaq-q\{[^}]*font-size:\.78rem/.test(shellSrc) && /@media \(max-width:600px\)\{[\s\S]*?#mcentre-faq \.mfaq-a p\{[^}]*font-size:\.74rem/.test(shellSrc),
+  "S16 CSS mobile: at ≤600px the button scales (.84→.78rem) + the answer scales (.8→.74rem) — the answer region wraps, no truncation, no horizontal scroll (spec §4 + §9 + §12 «expandable answers»; the milestones S16 test list: «mobile readability» + «long answers» — the 600px mobile breakpoint, the design system's own)");
+check(!/#mcentre-faq[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc),
+  "S16 CSS logical properties: the S16 FAQ block uses CSS logical properties ONLY (margin-block-end, padding-block, padding-inline, border-block-end, border-inline-start, padding-block-start, padding-block-end — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties; the @keyframes + the reduced-motion media queries are NOT #mcentre-faq-prefixed rules so the guard does not flag them)");
+check(/\.faqcard \.faqitem\{padding:6px 0;border-bottom:1px dashed rgba\(148,163,184,.16\)\}/.test(shellSrc),
+  "S16 hub .faqcard byte-frozen: the existing .faqcard hub CSS (line 142–147) stays byte-frozen — S16 adds the #mcentre-faq-scoped accordion variant, does NOT modify the hub .faqcard pattern (the /about, /methodology, /data hub pages keep their visible-FAQ pattern; the match-page FAQ is the expandable accordion variant)");
+
+// (i) the harness co-evolution — faq-content.ts joins the worker-src.js concat
+// AFTER standings-window.ts (the seo group grows; the S08 narrative / S10
+// standings-window precedent).
+check(harnessSrc.indexOf('"seo/faq-content.ts"') > -1 && harnessSrc.indexOf('"seo/faq-content.ts"') > harnessSrc.indexOf('"seo/standings-window.ts"'),
+  "S16 harness: worker-src.js carries seo/faq-content.ts after seo/standings-window.ts (the S16 authored-content module joins the concat — the seo group grows; the S08 narrative / S10 standings-window co-evolution precedent)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

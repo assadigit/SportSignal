@@ -778,6 +778,97 @@ export function matchScheduleHtml(s: MatchScheduleInput): string {
     '<p class="mcentre-schedule-note">' + MC_SCHEDULE_COVERAGE_NOTE + "</p></div>";
 }
 
+// ---- Match Centre S16 (M7): the FAQ accordion renderer (specification §12) ----
+//
+// S16 LAW (specification §12 "FAQ" + milestones-and-sessions.md M7/S16 +
+// decisions 57/58/64/80/13 + audit §4 row "FAQ content" + §12 row S16): the
+// FAQ renderer receives PRE-BUILT content atoms (every Q/A arrives pre-escaped
+// from pages.ts's matchFaqInput projection — the S04 hero precedent), so this
+// module stays the S02 pure leaf for the MARKUP (zero imports, zero KV, zero
+// client scripts — the inline JS rides pages.ts's matchFaqScript, the S06
+// nav-script + the S04 countdown-script + the S15 schedule-script precedent).
+// It owns the FAQ MARKUP: the <h2>«سوالات متداول» heading + each Q/A as a
+// custom button+region accordion (decision S16-Accordion: custom button+region,
+// NOT native <details> — the delayed-collapse of decision 58 cannot be
+// expressed in <details>; the S06 nav + S15 schedule precedent = custom button
+// + JS). The answer region starts collapsed (hidden) + role=region +
+// aria-labelledby the button (the accessible accordion pattern). The composer
+// carries NO script/fetch/timer code (the cost law — the delayed-collapse timer
+// that decision 58 mandates rides pages.ts's matchFaqScript, scoped to the faq
+// script; the S04 countdown-timer precedent — documented in the matchFaqScript
+// header comment in pages.ts).
+//
+// S16 DECISION POINTS (resolved + recorded per the session brief):
+// - S16-Accordion: custom button+region (NOT <details>). The button carries
+//   aria-expanded (false initially) + aria-controls the region id; the region
+//   carries role=region + aria-labelledby the button id + hidden initially.
+//   The <h3 class="mfaq-heading"> wraps the button so the FAQ has a semantic
+//   heading structure (the section's <h2> + each Q as an <h3> — the hub
+//   faqHtml <h3 class="faqq"> precedent, adapted to the accordion).
+// - S16-Delay: the delay value (600ms — the "short delay"; author final).
+//   The delayed-collapse behaviour (decision 58 + spec §12 "multiple answers
+//   may remain open briefly; previously opened answers collapse after a short
+//   delay") lives in the inline matchFaqScript in pages.ts (the delay timer is
+//   ALLOWED there — decision 58 mandates it; the S04 countdown-timer
+//   precedent; the cost law's "no timer" was scoped to the S15 schedule
+//   script — the scoped exception is documented in the matchFaqScript header).
+// - S16-Schema: OMIT the FAQPage JSON-LD node (spec §12 caution — "No FAQPage
+//   schema solely to pursue Google FAQ rich results"; Google retired FAQ rich
+//   results in August 2023; the match page's SportsEvent JSON-LD node already
+//   carries the kickoff/date/venue facts). The hub faqHtml()/faqNode() pattern
+//   stays byte-frozen (the hub pages keep their GEO FAQPage node — the match
+//   page takes the conservative omit path). This renderer carries NO JSON-LD.
+//
+// Fail-closed: an EMPTY FAQ (no answerable Qs — the degenerate guard; every
+// match carries a utcDate + a competition, so the minimum is the kickoff Q +
+// the competition Q + the timezone Q = 3 Qs, but the guard holds if
+// buildMatchFaqItems returns []) → items.length === 0 → "" (the section omits
+// entirely — the no-empty-cards law; the S14/S15 no-false-empty precedent).
+
+// The FAQ section title (matches the MC_SECTION_ORDER aria-label — line 111).
+const MC_FAQ_TITLE = "سوالات متداول";
+
+// One Q/A item — the pre-escaped atoms (the S04 hero precedent — the composer
+// is a pure leaf; pages.ts's matchFaqInput projection escapes the raw { q, a }
+// from src/seo/faq-content.ts's buildMatchFaqItems into these qHtml/aHtml
+// strings). Plain-text answers (no inner markup — the esc() discipline; the
+// hub faqHtml precedent).
+export interface MatchFaqItemInput {
+  qHtml: string; // the escaped question
+  aHtml: string; // the escaped answer (plain text, pre-escaped)
+}
+
+// The FAQ projection. The items array carries the pre-built Q/A atoms; an
+// empty array → "" (the no-empty-cards law — the section omits).
+export interface MatchFaqInput {
+  items: MatchFaqItemInput[];
+}
+
+// The FAQ accordion renderer (S16). Each Q/A is a custom button+region
+// accordion item: the <h3 class="mfaq-heading"> wraps the <button class="mfaq-q">
+// (the question, aria-expanded=false + aria-controls the region id) + the
+// <div class="mfaq-a" role=region aria-labelledby the button id hidden> (the
+// answer, a <p> inside). The .mcentre-faq-list wrapper is the click-delegation
+// container the inline matchFaqScript in pages.ts queries (the S15 schedule-
+// toggle precedent — ONE delegated click listener on the list, NOT per-button
+// listeners). The answer region starts collapsed (hidden) — spec §12
+// "Expandable answers"; the FAQPage JSON-LD is NOT emitted (S16-Schema: omit
+// — the spec §12 caution; the visible text in the DOM + the SportsEvent node
+// carry the facts). Pure string composition — the composer stays the S02 pure
+// leaf (zero client-script — the inline JS rides pages.ts's matchFaqScript).
+export function matchFaqHtml(f: MatchFaqInput): string {
+  if (!f || !f.items || !f.items.length) return "";
+  const items = f.items.map((it, i): string => {
+    const qId = "mfaq-q-" + i;
+    const aId = "mfaq-a-" + i;
+    return '<div class="mfaq-item">' +
+      '<h3 class="mfaq-heading"><button class="mfaq-q" id="' + qId + '" type="button" aria-expanded="false" aria-controls="' + aId + '">' + it.qHtml + "</button></h3>" +
+      '<div id="' + aId + '" class="mfaq-a" role="region" aria-labelledby="' + qId + '" hidden><p>' + it.aHtml + "</p></div>" +
+      "</div>";
+  }).join("");
+  return '<div class="mcentre-faq"><h2>' + MC_FAQ_TITLE + '</h2><div class="mcentre-faq-list">' + items + "</div></div>";
+}
+
 // One anchored wrapper. The no-empty-cards law lives HERE: empty or
 // whitespace-only content returns "" — a section never renders hollow, so
 // a missing dataset can never leave a blank box on the page.
