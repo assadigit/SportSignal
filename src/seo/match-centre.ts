@@ -1023,6 +1023,168 @@ export function matchRelatedHtml(r: MatchRelatedInput): string {
   return '<div class="mcentre-related"><h2>' + MC_RELATED_TITLE + '</h2><div class="mcentre-related-list">' + rows + "</div></div>";
 }
 
+// ---- Match Centre S18 (M8): the Telegram promotion block (specification §14) ----
+//
+// The FEATURED channel-promotion block placed AFTER the related-matches list
+// (decision 72 + spec §1 position 11) + BEFORE the existing global footer
+// (decision 65/72 — the global footer #about/.pagesfoot stays byte-frozen; the
+// telegram block is a NEW .mcentre-telegram variant, NOT a footer modification).
+// S18 is M8's single session — it CLOSES M8 (the M8 gate: the mcM8x preview
+// upload + the production-KV agent-browser smoke + the docs/mc/telegram-
+// promotion-matrix.md gate doc).
+//
+// S18 DECISION POINTS (resolved + recorded per the session brief):
+// - S18-URL: the channel URL is read from ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL
+//   at runtime (the wrangler var — the single source of truth; wrangler.toml
+//   line ~95 = "https://t.me/SportSignalz"). The homepage public.ts:12 constant
+//   ("https://t.me/sportsignalz" — lowercase; a SEPARATE homepage surface) stays
+//   byte-frozen (decision 65; the homepage #promoStrip/#tgHead/#tgPill surfaces
+//   are untouched — S18 composes a NEW .mcentre-telegram variant, NOT a
+//   modification of the homepage surfaces). The CTA href === the ctx.env value
+//   verbatim (NEVER the bot URL https://t.me/SportSignalAlertsBot — spec §14
+//   "No separate bot promotion"; decision 68 "one CTA"; the no-invention law —
+//   spec §14 "Reuse the verified channel URL ... never invent it").
+// - S18-Copy: the headline «اسپورت‌سیگنال را در تلگرام دنبال کنید تا هیچ مسابقه
+//   مهمی را از دست ندهید.» (decision 67 — the EXACT string, verbatim, NOT
+//   paraphrased) + the optional supporting line «از مسابقات بزرگ پیش‌رو باخبر
+//   بمانید.» (spec §14 — rendered ALWAYS, a fixed editorial subtitle; NOT
+//   conditional on an upcoming-match pool read — decision 71 consistency on
+//   every lifecycle state + the zero-runtime-cost law; the supporting line is a
+//   generic editorial promise that is always true when the channel covers
+//   football, so no data gate is needed). The CTA label «عضویت در کانال تلگرام»
+//   (the #tgHead owner-exact aria-label — src/pages/public.ts line ~756; the
+//   formal, clear, featured-block CTA label — NOT the informal #promoStrip .ps-fa
+//   «عضو کانالمون شو» variant).
+// - S18-Illustration (Q3=A RESOLVED 2026-11-11 — compose from existing verified
+//   assets, NOT a new authored illustration): the inline SVG is the #tgHead
+//   verified circled-Telegram-mark path (src/pages/public.ts line ~756 — the
+//   existing verified channel-icon asset). The football-themed atmosphere is the
+//   CSS dark-navy/icy-blue stadium gradient (the existing design-system tokens —
+//   #0f172a/#1e293b dark navy + #7dd3fc/#5ea0ff icy-blue, the SAME family
+//   .mfin/.mcount/.mvenue-map/.strow-me use; spec §5 "Atmosphere: Subtle dark
+//   stadium image or texture for depth"). NO stock imagery, NO oversized Telegram
+//   logo (decision 69 — the glyph is the brand mark at a featured-block size,
+//   NOT an oversized logo), NO new authored illustration file (Q3=A — compose
+//   from existing verified assets ONLY).
+// - S18-Asset-pin: N/A — the pure inline-SVG path (ADR-006 "prefer inline SEO-
+//   page <style>/<svg>"). Zero new pinned asset, zero _headers rule, zero sw.js
+//   bump, zero cap sweep (the _headers is at its 100-rule cap — audit §15 note 9;
+//   the inline path avoids the pin-vs-no-pin decision entirely).
+// - S18-Mobile-layout: the illustration (the inline SVG glyph) sits ALONGSIDE
+//   the text on desktop (a horizontal flex: the SVG mark on the inline-start, the
+//   headline+supporting+CTA on the inline-end) AND adapts ABOVE the text on
+//   mobile ≤600px (a stacked layout: the SVG mark centered above, the CTA full-
+//   width below). The block is full-width on mobile (decision 70). No horizontal
+//   scroll at 390px.
+// - S18-Script: ZERO client-script. The telegram block is a STATIC featured card
+//   (the S07 summary / S17 related precedent — a static block, NON-interactive;
+//   the CTA is a plain <a target="_blank" rel="noopener noreferrer"> — NO
+//   countdown, NO accordion, NO expand, NO pulse, NO glow animation; the only
+//   inline-JS exceptions are the S04 countdown / S06 nav / S15 schedule / S16
+//   FAQ — the telegram block is NOT one of them). Reduced-motion = no animation
+//   (a subtle CTA hover transition is gated by prefers-reduced-motion).
+//
+// The S02 contract S18 consumes (NO contract change — the slot + the key already
+// exist): the mcentre-telegram section slot ALREADY EXISTS in the S02 registry
+// (MC_SECTION_ORDER line 113, positioned AFTER mcentre-related + BEFORE
+// mcentre-footer-hook — exactly spec §1 position 11 + decision 72). NO new slot,
+// NO new section anchor, NO reorder. MatchCentreParts.telegram?: string is an
+// OPTIONAL key (the S02 contract — line 133; optional like faq/venue/schedule,
+// NOT required like hero/summary/form/related/footer-hook). buildMatchPage
+// previously omitted the telegram key; S18 ADDS the telegram: telegramHtml
+// wiring (the S14 venue / S15 schedule / S16 faq precedent — an optional key
+// FILLED for the first time). The part key + the slot stay.
+//
+// The nav: decision 13 — the Telegram block is OUTSIDE the 5-item nav
+// (خلاصه، جدول، فرم، بازی‌ها، ورزشگاه). S18 adds NO nav item. The Q9=B adaptive
+// filter unchanged (the telegram block never lights a nav destination; related +
+// FAQ are also outside the nav).
+//
+// Data provenance (the S14/S15/S16/S17 contract — ZERO new awaits): the channel
+// URL is ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL (the wrangler var — already bound,
+// zero new KV read, zero new fetch). The S02 buildMatchPage already receives ctx
+// (which carries ctx.env). NO new await. The illustration is inline SVG (zero
+// asset fetch). The await count stays exactly 3 (hydrateMatchVenue, loadArchive,
+// fullByCodeFor — ADR-006; the telegram block reads ctx.env only; ZERO new
+// awaits, ZERO new KV reads, ZERO new fetches).
+//
+// The only-valid-internal-links law does NOT apply (the CTA is an EXTERNAL link
+// to https://t.me/SportSignalz — target="_blank" rel="noopener noreferrer"; the
+// S15/S17 internal-links law is for match-page <a> links, the telegram CTA is
+// intentionally external). The href MUST equal exactly the
+// TELEGRAM_CHANNEL_PUBLIC_URL value (NEVER the bot URL, NEVER a fabricated URL —
+// spec §14 "never invent it").
+//
+// Fail-closed: an EMPTY/missing TELEGRAM_CHANNEL_PUBLIC_URL → hrefHtml "" → the
+// block omits (the no-empty-cards law — the block is editorial, NOT data-driven;
+// it has NO data-availability gate beyond the URL check — decision 71: always
+// renders when the URL is present, on every lifecycle state: upcoming + live +
+// finished; the S02 telegram?: "" path).
+
+// The Persian copy (decision 67 + spec §14 — verbatim, NOT paraphrased). The
+// headline carries a ZWNJ (U+200C) between اسپورت + سیگنال (اسپورت‌سیگنال); the
+// regular space between مسابقه + مهمی is a normal space (NOT a ZWNJ). The
+// supporting line carries a ZWNJ between پیش + رو (پیش‌رو). These are the
+// OWNER-EXACT strings — the S18-Copy=ALWAYS decision renders the supporting
+// line as a fixed editorial subtitle on every lifecycle state.
+const MC_TELEGRAM_HEADLINE = "اسپورت‌سیگنال را در تلگرام دنبال کنید تا هیچ مسابقه مهمی را از دست ندهید.";
+const MC_TELEGRAM_SUPPORTING = "از مسابقات بزرگ پیش‌رو باخبر بمانید.";
+// The CTA label — the #tgHead owner-exact aria-label (src/pages/public.ts line
+// ~756: "the accessible name stays the owner's exact «عضویت در کانال تلگرام»").
+// The formal, clear, featured-block CTA label (NOT the informal #promoStrip
+// .ps-fa «عضو کانالمون شو» variant).
+const MC_TELEGRAM_CTA_LABEL = "عضویت در کانال تلگرام";
+
+// The Telegram paper-plane glyph — the #tgHead verified channel-icon SVG path
+// (src/pages/public.ts line ~756 — the circled Telegram mark, the existing
+// verified Telegram-brand asset S18 composes from per Q3=A). Inlined at 56px (a
+// featured-block illustration size — prominent but NOT oversized; decision 69:
+// "no stock/oversized Telegram logo"). Zero new asset file, zero _headers pin,
+// zero sw.js bump (ADR-006 preferred — the inline SEO-page <svg> path).
+const MC_TELEGRAM_SVG = '<svg viewBox="0 0 24 24" width="56" height="56" aria-hidden="true" focusable="false"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>';
+
+// The telegram projection. The ONLY data atom is hrefHtml — the verified channel
+// URL (esc(ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL); "" → the block omits). The
+// headline + the supporting line + the CTA label + the SVG illustration are
+// composer-owned constants (the MC_VENUE_TITLE / MC_VENUE_VERIFIED_MARK
+// precedent — static Persian strings + the static SVG markup live in the
+// composer, NOT in the projection; the projection passes only the single data
+// atom, exactly as the S14 MatchVenueInput passes only nameHtml). The composer
+// is a pure leaf for the telegram MARKUP (the S07 summary / S17 related
+// precedent — the telegram block is NON-interactive, NO script).
+export interface MatchTelegramInput {
+  hrefHtml: string;  // the verified channel URL (esc(ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL)) — "" → the block omits (the fail-closed path; TELEGRAM_CHANNEL_PUBLIC_URL empty/missing)
+}
+
+// The Telegram promotion renderer (S18 = the M8 gate session — CLOSES M8). DOM =
+// the .mcentre-telegram featured block (the distinct dark navy/icy-blue
+// background — decision 68 "More prominent than an ordinary banner" + "Distinct
+// but consistent dark navy/icy-blue background") with TWO tracks: the .mcentre-
+// telegram-art (the inline SVG circled-Telegram-mark illustration — Q3=A, the
+// existing verified #tgHead asset) + the .mcentre-telegram-body (the .mcentre-
+// telegram-head headline [decision 67, verbatim] + the .mcentre-telegram-sub
+// supporting line [spec §14, rendered ALWAYS — decision S18-Copy] + the ONE
+// .mcentre-telegram-cta <a> [decision 68 "one CTA"; target="_blank"
+// rel="noopener noreferrer" — the #tgHead precedent; the accessible name = the
+// owner-exact «عضویت در کانال تلگرام» label; the touch target ≥44px — decision 70
+// / WCAG 2.5.8]). The CTA href === hrefHtml (the verified URL — NEVER the bot
+// URL, NEVER invented). Pure string composition — the composer stays the S02
+// pure leaf (ZERO client-script — the telegram block is a STATIC featured card,
+// NON-interactive; the S07 summary / S17 related precedent). Fail-closed:
+// hrefHtml "" → "" (the section omits entirely — the no-empty-cards law;
+// TELEGRAM_CHANNEL_PUBLIC_URL empty/missing → the block omits; otherwise it
+// ALWAYS renders on every lifecycle state — decision 71).
+export function matchTelegramHtml(t: MatchTelegramInput): string {
+  if (!t || !t.hrefHtml) return "";
+  return '<div class="mcentre-telegram">' +
+    '<div class="mcentre-telegram-art">' + MC_TELEGRAM_SVG + "</div>" +
+    '<div class="mcentre-telegram-body">' +
+    '<p class="mcentre-telegram-head">' + MC_TELEGRAM_HEADLINE + "</p>" +
+    '<p class="mcentre-telegram-sub">' + MC_TELEGRAM_SUPPORTING + "</p>" +
+    '<a class="mcentre-telegram-cta" href="' + t.hrefHtml + '" target="_blank" rel="noopener noreferrer">' + MC_TELEGRAM_CTA_LABEL + "</a>" +
+    "</div></div>";
+}
+
 // One anchored wrapper. The no-empty-cards law lives HERE: empty or
 // whitespace-only content returns "" — a section never renders hollow, so
 // a missing dataset can never leave a blank box on the page.

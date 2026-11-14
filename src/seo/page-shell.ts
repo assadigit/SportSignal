@@ -815,6 +815,53 @@ a:focus-visible,.mact:focus-visible,button:focus-visible{outline:2px solid #7dd3
   #mcentre-related .mcentre-related-upcoming{font-size:.62rem}
   #mcentre-related .mcentre-related-fin{font-size:.58rem}
 }
+/* ---- Match Centre S18 (M8): the Telegram promotion block — the featured
+   dark navy/icy-blue channel-promotion card (specification §14 "Telegram
+   promotion", M8/S18, decisions 65/66/67/68/69/70/71/72 + Q3=A RESOLVED
+   2026-11-11 + audit §4 row 78 + §12 row S18 + §15 note 9). S18 ADDS the
+   mcentre-telegram section content: the NEW matchTelegramHtml renderer +
+   the NEW matchTelegramInput projection. The mcentre-telegram section slot
+   ALREADY EXISTS in the S02 registry (decision 13 — the telegram block is
+   OUTSIDE the 5-item nav); MatchCentreParts.telegram?: string is an OPTIONAL
+   key (the S02 contract — S18 FILLS the already-existing optional key).
+   Decision 68: a FEATURED block, NOT a tiny banner — distinct dark navy/icy-
+   blue background (the block's own tokens: #0f172a/#1e293b dark navy +
+   #7dd3fc/#5ea0ff icy-blue — the SAME family .mfin/.mcount/.mvenue-map use).
+   Decision 69 / Q3=A: the illustration is the inline #tgHead verified
+   circled-Telegram-mark SVG (NO stock imagery, NO oversized logo, NO new
+   authored file — compose from existing verified assets ONLY). Decision 70:
+   full-width on mobile, illustration adapts above/alongside text, clear
+   tappable CTA (min-height ≥44px — the #tgHead 44px precedent / WCAG 2.5.8).
+   Decision 71: shows on every lifecycle state (upcoming/live/finished). Decision
+   72: AFTER related + BEFORE the global footer (the #about/.pagesfoot footer
+   stays byte-frozen — decision 65 reuse the existing footer; the telegram
+   block is a NEW .mcentre-telegram variant, NOT a footer modification). The
+   telegram block is a STATIC featured card (NO script — the S07 summary / S17
+   related precedent; reduced-motion = no animation — a subtle CTA hover
+   transition is gated by prefers-reduced-motion). CSS logical properties ONLY
+   (RTL/LTR clean under a dir flip, decision 2); the 600px mobile layout — no
+   horizontal scroll. The homepage #promoStrip/#tgHead/#tgPill surfaces
+   (src/pages/public.ts) stay byte-frozen (the S18 block is a NEW variant, NOT
+   a modification of the homepage surfaces — the S17 decision S17-Row precedent:
+   the S15 design vocabulary reused at the DESIGN level, NOT the CSS-class level). */
+#mcentre-telegram .mcentre-telegram{margin-block-start:14px;display:flex;flex-direction:row;align-items:center;gap:18px;padding-block:22px;padding-inline:22px;border-radius:14px;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border:1px solid rgba(125,211,252,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 26px -8px rgba(2,8,23,.6);position:relative;overflow:hidden}
+#mcentre-telegram .mcentre-telegram::before{content:"";position:absolute;inset-block-start:0;inset-inline-start:0;inline-size:100%;block-size:100%;background:radial-gradient(ellipse farthest-side at 85% 15%,rgba(125,211,252,.16) 0%,rgba(125,211,252,0) 60%);pointer-events:none}
+#mcentre-telegram .mcentre-telegram-art{flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#7dd3fc;position:relative;z-index:1;filter:drop-shadow(0 0 10px rgba(125,211,252,.35))}
+#mcentre-telegram .mcentre-telegram-body{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:8px;position:relative;z-index:1}
+#mcentre-telegram .mcentre-telegram-head{margin:0;font-size:1.02rem;font-weight:800;line-height:1.55;color:#f1f5f9}
+#mcentre-telegram .mcentre-telegram-sub{margin:0;font-size:.86rem;font-weight:500;line-height:1.6;color:rgba(226,232,240,.82)}
+#mcentre-telegram .mcentre-telegram-cta{align-self:flex-start;display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin-block-start:4px;padding-block:10px;padding-inline:22px;border-radius:999px;background:linear-gradient(180deg,#7dd3fc 0%,#5ea0ff 100%);color:#0f172a;font-size:.9rem;font-weight:800;text-decoration:none;border:none;box-shadow:0 4px 14px -4px rgba(125,211,252,.55),inset 0 1px 0 rgba(255,255,255,.4);transition:filter .15s ease,transform .15s ease}
+#mcentre-telegram .mcentre-telegram-cta:hover{filter:brightness(1.08);transform:translateY(-1px)}
+#mcentre-telegram .mcentre-telegram-cta:active{transform:translateY(0)}
+#mcentre-telegram .mcentre-telegram-cta:focus-visible{outline:2px solid #7dd3fc;outline-offset:3px}
+@media (prefers-reduced-motion:reduce){#mcentre-telegram .mcentre-telegram-cta{transition:none}#mcentre-telegram .mcentre-telegram-cta:hover{transform:none}#mcentre-telegram .mcentre-telegram-cta:active{transform:none}}
+@media (max-width:600px){
+  #mcentre-telegram .mcentre-telegram{flex-direction:column;align-items:stretch;gap:14px;padding-block:18px;padding-inline:16px}
+  #mcentre-telegram .mcentre-telegram-art{align-self:center}
+  #mcentre-telegram .mcentre-telegram-head{font-size:.94rem}
+  #mcentre-telegram .mcentre-telegram-sub{font-size:.8rem}
+  #mcentre-telegram .mcentre-telegram-cta{align-self:stretch}
+}
 /* ---- Match Centre S03 (M1): the responsive/spacing/RTL foundation for the
    mcentre-* section family (src/seo/match-centre.ts, S02). Id-scoped — zero
    effect on any page without a mcentre-* section. Breakpoints and tokens are

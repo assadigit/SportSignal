@@ -27,7 +27,7 @@ import { seoTeamFaName, seoTeamAltName } from "./team-names";
 // Match Centre S04 (M2): the hero renderer — the mcentre-hero MARKUP moved
 // to the composer (matchHeroHtml); THIS file builds the data projection
 // (matchHeroInput) and delegates. The legacy matchHeadHtml is retired.
-import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml, matchRelatedHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput, type MatchFaqInput, type MatchFaqItemInput, type MatchRelatedInput, type MatchRelatedRowInput } from "./match-centre";
+import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml, matchRelatedHtml, matchTelegramHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput, type MatchFaqInput, type MatchFaqItemInput, type MatchRelatedInput, type MatchRelatedRowInput, type MatchTelegramInput } from "./match-centre";
 // Match Centre S16 (M7): the authored FAQ content — src/seo/faq-content.ts owns
 // the facts-only Q/A copy (which questions, lifecycle phrasing, answer
 // composition). THIS file's matchFaqInput projection calls buildMatchFaqItems
@@ -915,6 +915,81 @@ function matchRelatedInput(sm: SeoMatch, ctx: SeoCtx, archive: any[]): MatchRela
   };
 }
 
+// Match Centre S18 (M8): the Telegram promotion projection — matchTelegramInput.
+// Builds the MatchTelegramInput atoms (the composer's matchTelegramHtml contract
+// — src/seo/match-centre.ts) from ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL (the
+// wrangler var — the single source of truth; wrangler.toml line ~95 =
+// "https://t.me/SportSignalz"). ZERO new awaits, ZERO new KV reads, ZERO new
+// fetches (the zero-runtime-cost law — the S08 narrative + the S10/S11 standings
+// + the S12/S13 form/metrics + the S14 venue + the S15 schedule + the S16 FAQ +
+// the S17 related precedent). The channel URL is a static config value (already
+// bound on ctx.env — NOT a KV read, NOT a fetch). The headline + the supporting
+// line + the CTA label + the SVG illustration are composer-owned constants
+// (src/seo/match-centre.ts — the MC_TELEGRAM_HEADLINE / MC_TELEGRAM_SUPPORTING /
+// MC_TELEGRAM_CTA_LABEL / MC_TELEGRAM_SVG constants; the MC_VENUE_TITLE precedent
+// — static Persian strings + the static SVG markup live in the composer, NOT in
+// the projection). THIS projection passes ONLY the single data atom: the
+// pre-escaped hrefHtml (the verified channel URL). The composer is a pure leaf
+// for the telegram MARKUP (the S07 summary / S17 related precedent — the telegram
+// block is NON-interactive, NO script).
+//
+// S18 decision points (resolved + recorded per the session brief — see the
+// matchTelegramHtml renderer header in src/seo/match-centre.ts for the full
+// decision log):
+// 1. S18-URL: read ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL (the wrangler var — the
+//    single source of truth). The verified value = "https://t.me/SportSignalz"
+//    (wrangler.toml line ~95). The homepage public.ts:12 constant
+//    ("https://t.me/sportsignalz" — lowercase) stays byte-frozen (a SEPARATE
+//    homepage surface — decision 65; the homepage #promoStrip/#tgHead/#tgPill
+//    surfaces are untouched). The CTA href === the ctx.env value verbatim (NEVER
+//    the bot URL https://t.me/SportSignalAlertsBot — spec §14 "No separate bot
+//    promotion"; the no-invention law — spec §14 "never invent it").
+// 2. S18-Copy: the supporting line «از مسابقات بزرگ پیش‌رو باخبر بمانید.» is
+//    rendered ALWAYS (a fixed editorial subtitle; NOT conditional on an
+//    upcoming-match pool read — decision 71 consistency + the zero-runtime-cost
+//    law). The headline «اسپورت‌سیگنال را در تلگرام دنبال کنید تا هیچ مسابقه
+//    مهمی را از دست ندهید.» (decision 67, verbatim) + the CTA label
+//    «عضویت در کانال تلگرام» (the #tgHead owner-exact aria-label) are composer-
+//    owned constants — THIS projection does NOT read sm (no match-specific data:
+//    the URL is global config, the copy is static editorial). The signature takes
+//    only ctx (what it uses: ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL) — the S14
+//    matchVenueInput(sm) "take only what you use" precedent.
+// 3. S18-Illustration (Q3=A — compose from existing verified assets): the inline
+//    SVG (the #tgHead verified circled-Telegram-mark path) is a composer-owned
+//    constant (MC_TELEGRAM_SVG). The football-themed atmosphere is the CSS dark-
+//    navy/icy-blue stadium gradient (the page-shell.ts S18 block — the existing
+//    design-system tokens). NO new authored illustration file, NO referenced
+//    <img> asset, NO _headers pin, NO sw.js bump (ADR-006 preferred — the inline
+//    SEO-page <svg> path; Q3=A satisfied).
+// 4. S18-Script: ZERO client-script. The telegram block is a STATIC featured card
+//    (the S07 summary / S17 related precedent). The CTA is a plain <a>. NO
+//    countdown/accordion/expand/pulse/glow. This projection builds NO script
+//    atom (contrast the S15 schedule-script + the S16 FAQ-script which ride
+//    their parts via the ternary — the telegram part is the bare matchTelegramHtml
+//    output, NO script suffix).
+// 5. The pre-existing slot (decision 13) — the mcentre-telegram section slot
+//    ALREADY EXISTS in the S02 registry (MC_SECTION_ORDER line 113 + the bySlot
+//    map). MatchCentreParts.telegram?: string is an OPTIONAL key (the S02
+//    contract — line 133; optional like faq/venue/schedule). S18 FILLS the
+//    already-existing optional key — NO new interface field, NO new slot, NO new
+//    nav destination (decision 13: the telegram block is OUTSIDE the 5-item nav —
+//    خلاصه، جدول، فرم، بازی‌ها، ورزشگاه; the Q9=B adaptive filter unchanged —
+//    the telegram block never lights a nav destination).
+//
+// Fail-closed: an EMPTY/missing TELEGRAM_CHANNEL_PUBLIC_URL → hrefHtml "" → the
+// block omits (the no-empty-cards law; the S02 telegram?: "" path). Otherwise
+// the block ALWAYS renders on every lifecycle state (decision 71 — upcoming +
+// live + finished; the telegram block has NO data-availability gate beyond the
+// URL check — it is editorial, NOT data-driven).
+function matchTelegramInput(ctx: SeoCtx): MatchTelegramInput {
+  // the channel URL — ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL (the wrangler var;
+  // already bound, zero new KV read, zero new fetch). NEVER invented (spec §14).
+  // The esc() guards against any stray HTML in the env value (the URL is a
+  // public non-secret — the esc discipline is defensive, the value is trusted).
+  const url = (ctx && ctx.env && ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL) || "";
+  return { hrefHtml: url ? esc(url) : "" };
+}
+
 export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
   let sm = findMatchBySlug(ctx, slug);
   if (!sm) return { html: "", notFound: true };
@@ -1204,6 +1279,18 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // utcDate + a competition, so the minimum is the kickoff + competition +
   // timezone Qs, but the guard holds if buildMatchFaqItems returns []).
   const faqHtml = matchFaqHtml(matchFaqInput(sm));
+  // S18: the telegram promotion block — the featured dark navy/icy-blue channel-
+  // promotion card (decision 68) placed AFTER related matches + BEFORE the global
+  // footer (decision 72 + spec §1 position 11). The block reads ctx.env.
+  // TELEGRAM_CHANNEL_PUBLIC_URL ONLY (zero new awaits, zero new KV reads, zero
+  // new fetches — the channel URL is a static config value, already bound). The
+  // block ALWAYS renders when the URL is present (decision 71 — every lifecycle
+  // state: upcoming + live + finished); an EMPTY/missing URL → matchTelegramHtml
+  // returns "" → the section omits (the no-empty-cards law — the S02 telegram?:
+  // "" fail-closed path). NO script suffix (the telegram block is a STATIC
+  // featured card — the S07 summary / S17 related precedent; contrast the S15
+  // schedule-script + the S16 FAQ-script which ride their parts via the ternary).
+  const telegramHtml = matchTelegramHtml(matchTelegramInput(ctx));
   const navHtml = matchNavHtml({ summary: summaryHtml, standings: standingsHtml, form: formPartHtml, venue: venueHtml, schedule: scheduleHtml });
   const main = matchCentreMain({
     hero: matchHeroHtml(heroInput) + matchActionsHtml(sm, path) + matchHeadScript(),
@@ -1215,6 +1302,7 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
     schedule: scheduleHtml ? scheduleHtml + matchScheduleScript() : "",
     faq: faqHtml ? faqHtml + matchFaqScript() : "",
     related: relatedHtml,
+    telegram: telegramHtml,
     footerHook: related
   });
   const html = pageShell({

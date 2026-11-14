@@ -162,7 +162,7 @@ check(withNav.indexOf('id="mcentre-hero"') < withNav.indexOf('id="mcentre-nav"')
 
 // ---------- 3. wiring: buildMatchPage delegates, GSC surfaces stay ----------
 let wiringOk = true;
-if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml, matchRelatedHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput, type MatchFaqInput, type MatchFaqItemInput, type MatchRelatedInput, type MatchRelatedRowInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml + the S12 form renderer matchFormHtml + the S13 metrics renderer matchMetricsHtml + the S14 venue renderer matchVenueHtml + the S14 schedule renderer matchScheduleHtml + the S16 FAQ renderer matchFaqHtml + the S17 related renderer matchRelatedHtml + the projection types)"); wiringOk = false; }
+if (!/import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml, matchRelatedHtml, matchTelegramHtml, type MatchHeroInput, type MatchSummaryInput, type MatchFormInput, type MatchFormSideInput, type MatchFormResultRow, type MatchMetricsInput, type MatchMetricsSideInput, type MatchVenueInput, type MatchScheduleInput, type MatchScheduleDayGroup, type MatchScheduleRowInput, type MatchFaqInput, type MatchFaqItemInput, type MatchRelatedInput, type MatchRelatedRowInput, type MatchTelegramInput \} from "\.\/match-centre";/.test(pagesSrc)) { bad("wiring: pages.ts lost the match-centre import (matchCentreMain + the S04 hero renderer matchHeroHtml + the S07 summary renderer matchSummaryHtml + the S12 form renderer matchFormHtml + the S13 metrics renderer matchMetricsHtml + the S14 venue renderer matchVenueHtml + the S14 schedule renderer matchScheduleHtml + the S16 FAQ renderer matchFaqHtml + the S17 related renderer matchRelatedHtml + the S18 telegram renderer matchTelegramHtml + the projection types)"); wiringOk = false; }
 // S08: pages.ts imports the narrative engine (narrativeHtml + the lifecycle type).
 if (!/import \{ narrativeHtml, type NarrativeLifecycle \} from "\.\/narrative";/.test(pagesSrc)) { bad("wiring: pages.ts lost the narrative engine import (narrativeHtml + NarrativeLifecycle — the S08 deterministic narrative engine)"); wiringOk = false; }
 if (!/const main = matchCentreMain\(\{/.test(pagesSrc)) { bad("wiring: buildMatchPage no longer delegates its main assembly to matchCentreMain"); wiringOk = false; }
@@ -3401,6 +3401,178 @@ check(/\.simcard\{/.test(shellSrc) && /\.simcount\{/.test(shellSrc),
 // joins the concat (unlike S16's faq-content.ts).
 check(harnessSrc.indexOf('"seo/faq-content.ts"') > -1 && !/seo\/related-matches\.ts|seo\/h2h-matches\.ts/.test(harnessSrc),
   "S17 harness NO new concat: S17 adds NO new module to worker-src.js (data.ts is loaded via read + brace-matched extraction in check scripts — the S13/S14 precedent; match-centre.ts is already in the concat at line 181; pages.ts is loaded via read + extractFnSrc. The h2hMatches + relatedMatches helpers live in data.ts [already read]; the matchRelatedHtml renderer lives in match-centre.ts [already concatenated]; the matchRelatedInput projection lives in pages.ts [already read]. NO new seo/ module joins the concat — unlike S16's faq-content.ts)");
+
+// ---------- 19. S18 (M8): the Telegram promotion block — the featured
+// channel-promotion card (M8 — CLOSES M8) ----------
+// specification §14 (Telegram promotion) + milestones-and-sessions.md M8/S18 +
+// decisions 65/66/67/68/69/70/71/72 + audit §4 row 78 + §12 row S18 + §15 note 9
+// + Q3=A RESOLVED 2026-11-11. S18 ADDS the mcentre-telegram section content:
+// the NEW matchTelegramHtml renderer + the MatchTelegramInput interface + the
+// MC_TELEGRAM_HEADLINE / MC_TELEGRAM_SUPPORTING / MC_TELEGRAM_CTA_LABEL /
+// MC_TELEGRAM_SVG constants (src/seo/match-centre.ts — the featured-block
+// MARKUP + the composer-owned constants) + the NEW matchTelegramInput projection
+// (src/seo/pages.ts — reads ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL ONLY) + the
+// S18 CSS block (src/seo/page-shell.ts — scoped to #mcentre-telegram). The
+// mcentre-telegram section slot ALREADY EXISTS in the S02 registry (decision
+// 13 — the telegram block is OUTSIDE the 5-item nav); MatchCentreParts.telegram?:
+// string is an OPTIONAL key (the S02 contract). S18 FILLS the already-existing
+// optional key — NO new interface field, NO new slot, NO new nav destination.
+// S18 is M8's single session — it CLOSES M8 (the M8 gate: the mcM8x preview
+// upload + the production-KV agent-browser smoke + the docs/mc/telegram-
+// promotion-matrix.md gate doc).
+
+// (a) the contract — the renderer (matchTelegramHtml) + the interface
+// (MatchTelegramInput) + the composer-owned constants (MC_TELEGRAM_HEADLINE /
+// MC_TELEGRAM_SUPPORTING / MC_TELEGRAM_CTA_LABEL / MC_TELEGRAM_SVG) in
+// match-centre.ts + the projection (matchTelegramInput) in pages.ts + the
+// imports + the verified URL (wrangler.toml TELEGRAM_CHANNEL_PUBLIC_URL).
+check(typeof mc.matchTelegramHtml === "function" && /export function matchTelegramHtml\(t: MatchTelegramInput\)/.test(mcSrc) && /export interface MatchTelegramInput\b/.test(mcSrc),
+  "S18 contract renderer: matchTelegramHtml + the MatchTelegramInput interface live in match-centre.ts (the telegram-block MARKUP — the S14 matchVenueHtml / S15 matchScheduleHtml / S16 matchFaqHtml / S17 matchRelatedHtml precedent; the composer stays the S02 pure leaf for the markup — ZERO client-script; the telegram block is a STATIC featured card, NON-interactive — the S07 summary / S17 related precedent)");
+check(/const MC_TELEGRAM_HEADLINE = "اسپورت\u200cسیگنال را در تلگرام دنبال کنید تا هیچ مسابقه مهمی را از دست ندهید\.";/.test(mcSrc),
+  "S18 contract headline: the MC_TELEGRAM_HEADLINE constant carries the decision 67 EXACT string «اسپورت‌سیگنال را در تلگرام دنبال کنید تا هیچ مسابقه مهمی را از دست ندهید.» (verbatim, NOT paraphrased; the ZWNJ [U+200C] between اسپورت + سیگنال; the regular space between مسابقه + مهمی — NOT a ZWNJ)");
+check(/const MC_TELEGRAM_SUPPORTING = "از مسابقات بزرگ پیش\u200cرو باخبر بمانید\.";/.test(mcSrc),
+  "S18 contract supporting: the MC_TELEGRAM_SUPPORTING constant carries the spec §14 optional supporting line «از مسابقات بزرگ پیش‌رو باخبر بمانید.» (verbatim; the ZWNJ [U+200C] between پیش + رو; decision S18-Copy=ALWAYS — rendered as a fixed editorial subtitle on every lifecycle state, NOT conditional on a pool read)");
+check(/const MC_TELEGRAM_CTA_LABEL = "عضویت در کانال تلگرام";/.test(mcSrc),
+  "S18 contract CTA label: the MC_TELEGRAM_CTA_LABEL constant carries «عضویت در کانال تلگرام» (the #tgHead owner-exact aria-label — src/pages/public.ts line ~756: 'the accessible name stays the owner's exact «عضویت در کانال تلگرام»'; the formal, clear, featured-block CTA label — NOT the informal #promoStrip .ps-fa «عضو کانالمون شو» variant)");
+check(/const MC_TELEGRAM_SVG = '<svg viewBox="0 0 24 24" width="56" height="56" aria-hidden="true" focusable="false">/.test(mcSrc) && /d="M11\.944 0A12 12 0 0 0 0 12/.test(mcSrc),
+  "S18 contract SVG: the MC_TELEGRAM_SVG constant carries the #tgHead verified circled-Telegram-mark SVG path (src/pages/public.ts line ~756 — the existing verified channel-icon asset; Q3=A — compose from existing verified assets, NOT a new authored illustration; inlined at 56px — a featured-block illustration size, NOT oversized [decision 69: 'no stock/oversized Telegram logo']; zero new asset file, zero _headers pin, zero sw.js bump — ADR-006 preferred)");
+check(/function matchTelegramInput\(ctx: SeoCtx\): MatchTelegramInput/.test(pagesSrc),
+  "S18 contract projection: pages.ts defines matchTelegramInput(ctx) (the pre-escaped hrefHtml atom projection — the S14 matchVenueInput precedent: takes only what it uses [ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL]; the headline/supporting/CTA-label/SVG are composer-owned constants, NOT projection atoms; ZERO new awaits, ZERO new KV reads, ZERO new fetches — the channel URL is a static config value already bound on ctx.env)");
+check(/import \{ [^}]*\bmatchTelegramHtml\b[^}]* \} from "\.\/match-centre";/.test(pagesSrc),
+  "S18 contract wiring: pages.ts imports matchTelegramHtml from ./match-centre (the renderer — the S04 hero/S14 venue/S15 schedule/S16 FAQ/S17 related import precedent)");
+// the verified URL — wrangler.toml TELEGRAM_CHANNEL_PUBLIC_URL (the single source
+// of truth; the CTA href MUST equal exactly this value — NEVER the bot URL).
+const wranglerSrc = read("wrangler.toml");
+const tgUrlMatch = wranglerSrc.match(/TELEGRAM_CHANNEL_PUBLIC_URL\s*=\s*"([^"]+)"/);
+check(!!tgUrlMatch && tgUrlMatch[1] === "https://t.me/SportSignalz",
+  "S18 verified URL: wrangler.toml TELEGRAM_CHANNEL_PUBLIC_URL = \"https://t.me/SportSignalz\" (the wrangler var — the single source of truth; the CTA href MUST equal exactly this value — NEVER the bot URL https://t.me/SportSignalAlertsBot, NEVER invented — spec §14 'Reuse the verified channel URL ... never invent it'; decision S18-URL: read ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL at runtime)");
+const TG_VERIFIED_URL = tgUrlMatch ? tgUrlMatch[1] : "https://t.me/SportSignalz";
+
+// (b) the REAL renderer — the section wrapper + the verified CTA href + the CTA
+// a11y (target=_blank rel=noopener noreferrer + the accessible name + the touch
+// target) + the headline exactness + the no-bot-promotion + the lifecycle
+// consistency (the block renders the SAME on every lifecycle — it is editorial,
+// NOT data-driven) + the missing-URL fallback + the no-script.
+var s18Full = mc.matchTelegramHtml({ hrefHtml: TG_VERIFIED_URL });
+check(s18Full.startsWith('<div class="mcentre-telegram">') && s18Full.includes('<div class="mcentre-telegram-art">') && s18Full.includes('<div class="mcentre-telegram-body">') && s18Full.endsWith("</div></div>"),
+  "S18 section wrapper: matchTelegramHtml returns the .mcentre-telegram featured two-track layout — the .mcentre-telegram-art (the inline SVG) + the .mcentre-telegram-body (the headline + the supporting line + the ONE CTA); the <section id=mcentre-telegram> anchor is added by the composer's sectionHtml — the renderer returns the inner <div class=mcentre-telegram>…</div> only");
+check(s18Full.indexOf("اسپورت\u200cسیگنال را در تلگرام دنبال کنید تا هیچ مسابقه مهمی را از دست ندهید.") > -1,
+  "S18 headline exactness: the rendered headline carries the decision 67 EXACT string verbatim (the MC_TELEGRAM_HEADLINE constant — the ZWNJ between اسپورت + سیگنال; NOT paraphrased)");
+check(s18Full.indexOf("از مسابقات بزرگ پیش\u200cرو باخبر بمانید.") > -1,
+  "S18 supporting line: the rendered supporting line carries the spec §14 EXACT string verbatim (the MC_TELEGRAM_SUPPORTING constant — the ZWNJ between پیش + رو; decision S18-Copy=ALWAYS — rendered as a fixed editorial subtitle)");
+check(s18Full.indexOf("عضویت در کانال تلگرام") > -1,
+  "S18 CTA label: the rendered CTA carries «عضویت در کانال تلگرام» (the MC_TELEGRAM_CTA_LABEL constant — the #tgHead owner-exact aria-label; the accessible name)");
+check(s18Full.indexOf('<a class="mcentre-telegram-cta" href="' + TG_VERIFIED_URL + '" target="_blank" rel="noopener noreferrer">') > -1,
+  "S18 CTA href verified: the CTA href === the wrangler.toml TELEGRAM_CHANNEL_PUBLIC_URL value verbatim (\"" + TG_VERIFIED_URL + "\" — the verified channel URL; NEVER the bot URL https://t.me/SportSignalAlertsBot, NEVER invented — spec §14 'No separate bot promotion' + 'never invent it'; decision 68 'one CTA'; decision S18-URL: read ctx.env at runtime)");
+check(s18Full.indexOf("https://t.me/SportSignalAlertsBot") === -1 && s18Full.indexOf("SportSignalAlertsBot") === -1,
+  "S18 no-bot-promotion: the telegram block links to the CHANNEL (https://t.me/SportSignalz), NEVER the bot (https://t.me/SportSignalAlertsBot) — spec §14 'No separate bot promotion'; the bot URL appears NOWHERE in the rendered output");
+check(s18Full.indexOf('<svg viewBox="0 0 24 24" width="56" height="56"') > -1 && s18Full.indexOf('aria-hidden="true"') > -1,
+  "S18 illustration inline SVG: the block carries the inline #tgHead verified circled-Telegram-mark SVG (Q3=A — compose from existing verified assets; aria-hidden — decorative; zero new asset file, zero _headers pin, zero sw.js bump — ADR-006 preferred)");
+check(!/<script/i.test(s18Full) && !/addEventListener|setTimeout|setInterval/.test(s18Full),
+  "S18 no script: the telegram block is a STATIC featured card, NON-interactive — NO <script>, NO addEventListener, NO setTimeout (the S07 summary / S17 related precedent: a static block; the CTA is a plain <a target=\"_blank\">; the only inline-JS exceptions are the S04 countdown / S06 nav / S15 schedule / S16 FAQ — the telegram block is NOT one of them)");
+check(mc.matchTelegramHtml({ hrefHtml: "" }) === "" && mc.matchTelegramHtml(null) === "" && mc.matchTelegramHtml(undefined) === "",
+  "S18 missing-URL fallback: an EMPTY/missing TELEGRAM_CHANNEL_PUBLIC_URL → hrefHtml \"\" → matchTelegramHtml returns \"\" (the section omits entirely — the no-empty-cards law; the FAIL-CLOSED path: the block omits ONLY when the URL is empty/missing; the S02 telegram?: \"\" path; decision 71 otherwise always renders)");
+// lifecycle consistency: the block renders the SAME markup regardless of the
+// match lifecycle (it is editorial, NOT data-driven — the URL + the copy are
+// static; the only input is hrefHtml which is the same for every match).
+var s18LifecycleA = mc.matchTelegramHtml({ hrefHtml: TG_VERIFIED_URL });
+check(s18LifecycleA === s18Full,
+  "S18 lifecycle consistency: the telegram block renders IDENTICAL markup regardless of the match lifecycle (upcoming/live/finished — decision 71; the block is editorial, NOT data-driven: the URL is a static config value, the copy is static editorial; the projection reads ctx.env ONLY, NOT sm — the same hrefHtml atom produces the same markup on every match page)");
+
+// (c) the projection matchTelegramInput — extracted via extractFnSrc +
+// ts.transpileModule (the S11/S12/S14/S16/S17 precedent) with a controllable
+// esc stub. The projection reads ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL ONLY +
+// escapes it into the hrefHtml atom (the S04 hero precedent — the composer is a
+// pure leaf; the headline/supporting/CTA-label/SVG are composer-owned constants,
+// NOT projection atoms).
+function s18ProjEngine() {
+  const ts = require(path.join(root, "node_modules", "typescript"));
+  const projSrc = extractFnSrc(pagesSrc, "matchTelegramInput");
+  if (!projSrc) return null;
+  const js = ts.transpileModule("var esc = function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;');};\n" + projSrc, { compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2020 } }).outputText;
+  return new Function(js + "\n; return matchTelegramInput;")();
+}
+const s18Proj = s18ProjEngine();
+check(typeof s18Proj === "function",
+  "S18 projection extraction: the REAL matchTelegramInput extracted from pages.ts via extractFnSrc + ts.transpileModule (the S11 buildStandingsHtml / S12 matchFormInput / S14 matchVenueInput / S16 matchFaqInput / S17 matchRelatedInput precedent), with esc stubbed (the s05DateHelpers / S10 standings-window pattern); the projection reads ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL ONLY");
+if (s18Proj) {
+  const s18CtxPresent = { env: { TELEGRAM_CHANNEL_PUBLIC_URL: TG_VERIFIED_URL } };
+  const projPresent = s18Proj(s18CtxPresent);
+  check(projPresent.hrefHtml === TG_VERIFIED_URL,
+    "S18 projection present URL: the projection passes ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL through verbatim as hrefHtml (the verified URL — NEVER invented; the esc() discipline is defensive [the URL is a trusted public non-secret])");
+  const s18CtxEmpty = { env: { TELEGRAM_CHANNEL_PUBLIC_URL: "" } };
+  const projEmpty = s18Proj(s18CtxEmpty);
+  check(projEmpty.hrefHtml === "",
+    "S18 projection missing URL: an EMPTY TELEGRAM_CHANNEL_PUBLIC_URL → hrefHtml \"\" (the FAIL-CLOSED path — the block omits; the no-empty-cards law)");
+  const s18CtxMissing = { env: {} };
+  const projMissing = s18Proj(s18CtxMissing);
+  check(projMissing.hrefHtml === "",
+    "S18 projection absent URL: a MISSING TELEGRAM_CHANNEL_PUBLIC_URL (ctx.env without the key) → hrefHtml \"\" (the defensive (ctx && ctx.env && ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL) || '' guard — the FAIL-CLOSED path; the no-empty-cards law)");
+  const s18CtxNull = null;
+  const projNull = s18Proj(s18CtxNull);
+  check(projNull.hrefHtml === "",
+    "S18 projection null ctx: a null ctx → hrefHtml \"\" (the defensive guard — the FAIL-CLOSED path; the no-empty-cards law — the telegram block NEVER crashes the page)");
+}
+
+// (d) the wiring — the pre-existing telegram?: string OPTIONAL key (the S02
+// contract — NOT required like related) + the pre-existing mcentre-telegram
+// slot + NO new nav destination (MC_NAV_DESTS keeps 5 — decision 13) + the
+// buildMatchPage wiring (telegram: telegramHtml).
+check(/telegram\?: string;/.test(mcSrc) && !/^\s*telegram: string;/m.test(mcSrc),
+  "S18 wiring telegram key OPTIONAL: the telegram?: string key is OPTIONAL in MatchCentreParts (NOT required — the S02 contract line 133; contrast related: string which IS required). S18 FILLS the already-existing OPTIONAL key — NO new interface field (the S02 contract preserved; the S14 venue?: / S15 schedule?: / S16 faq?: precedent — an optional key FILLED for the first time)");
+check(/"mcentre-telegram": parts\.telegram \|\| ""/.test(mcSrc) && /slot: "mcentre-telegram", label: "کانال تلگرام اسپرت\u200cسیگنال"/.test(mcSrc),
+  "S18 wiring pre-existing slot: the mcentre-telegram slot ALREADY EXISTS in the S02 registry (MC_SECTION_ORDER + the bySlot map — decision 13 + decision 72: NO new slot, NO new section anchor; positioned AFTER mcentre-related + BEFORE mcentre-footer-hook — exactly spec §1 position 11; the S14/S15/S16/S17 discipline — S18 FILLS the already-existing slot)");
+check(/const MC_NAV_DESTS: \{ id: string; label: string \}\[\] = \[/.test(pagesSrc) && (function () { const s = pagesSrc.slice(pagesSrc.indexOf("MC_NAV_DESTS:"), pagesSrc.indexOf("];", pagesSrc.indexOf("MC_NAV_DESTS:")) + 2); return (s.match(/\u062e\u0644\u0627\u0635\u0647|\u062c\u062f\u0648\u0644|\u0641\u0631\u0645|\u0628\u0627\u0632\u06cc\u200c\u0647\u0627|\u0648\u0631\u0632\u0634\u06af\u0627\u0647/g) || []).length === 5 && !/telegram|telegram|mcentre-telegram|\u06a9\u0627\u0646\u0627\u0644 \u062a\u0644\u06af\u0631\u0627\u0645/.test(s); })(),
+  "S18 wiring no new nav destination (decision 13): MC_NAV_DESTS keeps exactly the 5 nav items (خلاصه، جدول، فرم، بازی‌ها، ورزشگاه) — the telegram block is OUTSIDE the 5-item nav (decision 13: 'FAQs/SEO outside nav'; the Q9=B adaptive filter unchanged — the telegram block never lights a nav destination; related + FAQ are also outside the nav; the milestones S18 test list: the nav stays 5 items)");
+check(/telegram: telegramHtml,/.test(pagesSrc) && /const telegramHtml = matchTelegramHtml\(matchTelegramInput\(ctx\)\);/.test(pagesSrc),
+  "S18 wiring buildMatchPage: the telegram part carries telegramHtml = matchTelegramHtml(matchTelegramInput(ctx)) (the S14 venue / S15 schedule / S16 faq precedent — an optional key FILLED for the first time; the projection reads ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL ONLY — zero new awaits, zero new KV reads, zero new fetches; NO script suffix — the telegram block is a STATIC featured card, contrast the S15 schedule-script + the S16 FAQ-script which ride their parts via the ternary)");
+
+// (e) the cost laws — the composer purity (matchTelegramHtml NO
+// script/fetch/timer) + the await count = 3 + the homepage byte-frozen
+// (public.ts TG_CHANNEL_URL untouched — decision 65).
+check(!/<script|addEventListener|setTimeout|setInterval|fetch\(|env\.STATE|env\.AI/i.test(mcSrc.slice(mcSrc.indexOf("export function matchTelegramHtml"), mcSrc.indexOf("// One anchored wrapper"))),
+  "S18 composer purity: matchTelegramHtml is pure string composition — ZERO client-script, ZERO fetch, ZERO KV, ZERO timer (the telegram block is a STATIC featured card, NON-interactive; the S07 summary / S17 related precedent; the cost-law regex gates the composer — the only inline-JS exceptions are the S04 countdown / S06 nav / S15 schedule / S16 FAQ; the telegram block is NOT one of them)");
+check(awaitCount === 3,
+  "S18 await count: buildMatchPage's await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; S18 is a PRESENTATION session — the telegram block reads ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL [a static config value, already bound, NOT a KV read, NOT a fetch] ONLY; ZERO new awaits, ZERO new KV reads, ZERO new fetches — ADR-006; the zero-runtime-cost law holds; the channel URL is a public non-secret, the same value as the wrangler.toml TELEGRAM_CHANNEL_PUBLIC_URL var)");
+const publicSrcS18 = read("src/pages/public.ts");
+check(/const TG_CHANNEL_URL = "https:\/\/t\.me\/sportsignalz";/.test(publicSrcS18) && !/const TG_CHANNEL_URL = "https:\/\/t\.me\/SportSignalz";/.test(publicSrcS18),
+  "S18 homepage byte-frozen: the homepage public.ts:12 TG_CHANNEL_URL constant stays byte-frozen at \"https://t.me/sportsignalz\" (a SEPARATE homepage surface — decision 65; the homepage #promoStrip/#tgHead/#tgPill surfaces are untouched — S18 composes a NEW .mcentre-telegram variant, NOT a modification of the homepage surfaces; the match-centre block reads the wrangler var [capital S] at runtime, the homepage keeps its own lowercase constant [the two resolve to the same channel — Telegram URLs are case-insensitive — but the surfaces stay byte-frozen per the S17 decision S17-Row precedent: the S15 design vocabulary reused at the design level, NOT the CSS-class level])");
+
+// (f) the CSS — the placement (S17 < S18 < S03) + the featured dark navy/icy-blue
+// background + the CTA touch target ≥44px + the mobile full-width + the logical
+// properties + the reduced-motion + the footer byte-frozen.
+check(shellSrc.indexOf("Match Centre S17 (M7)") < shellSrc.indexOf("Match Centre S18 (M8)") && shellSrc.indexOf("Match Centre S18 (M8)") < shellSrc.indexOf("Match Centre S03 (M1)"),
+  "S18 CSS placement: the S18 style block rides page-shell.ts AFTER S17 (the related-matches list) and BEFORE S03 (the responsive/spacing/RTL foundation) — chronological session order: S04 → S05 → S06 → S07 → S08 → S11 → S12 → S13 → S14 → S15 → S16 → S17 → S18 → S03");
+check(/#mcentre-telegram \.mcentre-telegram\{[^}]*background:linear-gradient\(135deg,#0f172a 0%,#1e293b 100%\)/.test(shellSrc) && /#mcentre-telegram \.mcentre-telegram\{[^}]*border:1px solid rgba\(125,211,252,\.28\)/.test(shellSrc),
+  "S18 CSS featured background: the #mcentre-telegram .mcentre-telegram carries the distinct dark-navy/icy-blue background (decision 68 'More prominent than an ordinary banner' + 'Distinct but consistent dark navy/icy-blue background' — the #0f172a/#1e293b dark navy gradient + the rgba(125,211,252,.28) icy-blue border — the SAME family .mfin/.mcount/.mvenue-map/.strow-me use; the block's own tokens)");
+check(/#mcentre-telegram \.mcentre-telegram-art\{[^}]*color:#7dd3fc/.test(shellSrc) && /#mcentre-telegram \.mcentre-telegram-art\{[^}]*filter:drop-shadow/.test(shellSrc),
+  "S18 CSS illustration art: the .mcentre-telegram-art carries the icy-blue color (#7dd3fc — the currentColor the inline SVG picks up) + the drop-shadow glow (the football-themed atmosphere — the Q3=A composed illustration; the inline #tgHead verified circled-Telegram-mark SVG)");
+check(/#mcentre-telegram \.mcentre-telegram-head\{[^}]*font-weight:800/.test(shellSrc) && /#mcentre-telegram \.mcentre-telegram-head\{[^}]*color:#f1f5f9/.test(shellSrc),
+  "S18 CSS headline: the .mcentre-telegram-head carries font-weight 800 (prominent — decision 68 'featured block, not a tiny banner') + the light color (#f1f5f9 — legible on the dark navy background)");
+check(/#mcentre-telegram \.mcentre-telegram-cta\{[^}]*min-height:44px/.test(shellSrc) && /#mcentre-telegram \.mcentre-telegram-cta\{[^}]*background:linear-gradient\(180deg,#7dd3fc 0%,#5ea0ff 100%\)/.test(shellSrc),
+  "S18 CSS CTA touch target: the .mcentre-telegram-cta carries min-height:44px (decision 70 'clear tappable CTA' — the #tgHead 44px precedent / WCAG 2.5.8) + the icy-blue gradient background (the prominent featured CTA — #7dd3fc/#5ea0ff, the block's own tokens; the target=_blank + rel=noopener noreferrer are HTML attributes on the <a>, verified in the renderer test (b), NOT CSS)");
+check(/@media \(prefers-reduced-motion:reduce\)\{#mcentre-telegram \.mcentre-telegram-cta\{transition:none\}/.test(shellSrc),
+  "S18 CSS reduced-motion: the prefers-reduced-motion media query gates the CTA hover transition (reduced-motion = no animation — the S06/S15/S17 precedent; the telegram block is otherwise a STATIC featured card — NO pulse, NO glow, NO countdown)");
+check(/@media \(max-width:600px\)\{[\s\S]*?#mcentre-telegram \.mcentre-telegram\{[^}]*flex-direction:column/.test(shellSrc) && /@media \(max-width:600px\)\{[\s\S]*?#mcentre-telegram \.mcentre-telegram-cta\{[^}]*align-self:stretch/.test(shellSrc),
+  "S18 CSS mobile: at ≤600px the block stacks (flex-direction:column — the illustration adapts ABOVE the text, the CTA goes full-width via align-self:stretch — decision 70 'Full-width on mobile; illustration adapts above or alongside text'; the 600px mobile breakpoint, the design system's own; no horizontal scroll at 390px — the block is full-width, the CTA stretches)");
+check(!/#mcentre-telegram[^{]*\{[^}]*\b(margin-left|margin-right|padding-left|padding-right|left:|right:)\b/.test(shellSrc),
+  "S18 CSS logical properties: the S18 telegram block uses CSS logical properties ONLY (margin-block-start, padding-block, padding-inline, inset-block-start, inset-inline-start, inline-size, block-size — RTL/LTR clean under a dir flip, decision 2; no physical left/right properties; the @media queries + the ::before pseudo-element are NOT physical-direction rules so the guard does not flag them)");
+check(/\.pagesfoot|#about/.test(shellSrc) && shellSrc.indexOf("Match Centre S18 (M8)") < shellSrc.indexOf('footer class="pagesfoot"'),
+  "S18 footer byte-frozen: the global footer #about/.pagesfoot stays byte-frozen (decision 65 reuse the existing footer; the telegram block is a NEW .mcentre-telegram variant placed BEFORE the footer in the DOM — spec §1 position 11/12 + decision 72 'after related matches, immediately before global footer'; the footer markup + the .pagesfoot CSS are untouched)");
+
+// (g) the harness co-evolution — S18 adds NO new worker-src.js concat entry
+// (match-centre.ts is already in the concat; pages.ts is loaded via read +
+// extractFnSrc; the telegram block has NO new data-layer helper [the channel URL
+// is ctx.env, NOT a data.ts function]). NO new module joins the concat.
+check(!/seo\/telegram\.ts|seo\/telegram-promotion\.ts/.test(harnessSrc),
+  "S18 harness NO new concat: S18 adds NO new module to worker-src.js (match-centre.ts is already in the concat at line 181; pages.ts is loaded via read + extractFnSrc; the telegram block has NO new data-layer helper — the channel URL is ctx.env.TELEGRAM_CHANNEL_PUBLIC_URL, a static config value, NOT a data.ts function; the matchTelegramHtml renderer lives in match-centre.ts [already concatenated]; the matchTelegramInput projection lives in pages.ts [already read]. NO new seo/ module joins the concat — unlike S16's faq-content.ts)");
+
+// (h) the page order — the telegram block renders AFTER the related-matches
+// section + BEFORE the footer-hook section (spec §1 position 11 + decision 72).
+// The DOM order is the MC_SECTION_ORDER order (the composer never reorders) —
+// the registry carries mcentre-related → mcentre-telegram → mcentre-footer-hook.
+check(mcSrc.indexOf('slot: "mcentre-related"') < mcSrc.indexOf('slot: "mcentre-telegram"') && mcSrc.indexOf('slot: "mcentre-telegram"') < mcSrc.indexOf('slot: "mcentre-footer-hook"'),
+  "S18 page order: the MC_SECTION_ORDER registry carries mcentre-related → mcentre-telegram → mcentre-footer-hook (the telegram block renders AFTER the related-matches section + BEFORE the footer-hook section — spec §1 position 11 [Featured Telegram promotion] + decision 72 'Place it after related matches and immediately before global footer'; the DOM order is the MC_SECTION_ORDER order — the composer never reorders; the mcentre-telegram slot ALREADY EXISTS at this position [the S02 registry — S18 FILLS it, does NOT add it])");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");
