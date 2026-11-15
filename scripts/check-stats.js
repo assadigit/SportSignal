@@ -1345,24 +1345,25 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v126"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.256-mcfound"/.test(cfg) &&
-    /# v13\.256-mcfound/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.257-mcmatchcentre"/.test(cfg) &&
+    /# v13\.257-mcmatchcentre/.test(read("CHANGELOG.md"));
 })());
 
-// v13.256-mcfound (the Match Centre S03 + M1 gate, 2026-11-11): the version
-// pin rides forward in place (the S44.1 precedent — 13.254 -> 13.254.1 and
-// 13.255 -> 13.256 were moved the same way). This block started as the
-// v13.255-seospell release wiring (the S1 M2 SEO round: the F3 spelling fix
-// — an SEO-surface-only release that changed NO rank-badge surface, so the
-// v13.254 engine block above rode unchanged); its survivors (team-names.ts
-// + check-seo-teamnames.js + the test-chain wiring) ride forward under
-// 13.256-mcfound — the Match Centre foundation release that first moves the
-// version triple (see MATCH-CENTRE-EXECUTION-LOG.md S03).
-check("v13.256-mcfound (the release wiring — the Match Centre S03 + M1 gate round: the responsive/spacing/RTL foundation, CSS-only in the page-shell style block; the version triple's first Match Centre move; the v13.255 spelling-fix survivors ride unchanged)", (() => {
+// v13.257-mcmatchcentre (the Match Centre S22 + M10 gate, 2026-11-15): the
+// version pin rides forward in place (the S44.1/S03 precedent — 13.254 ->
+// 13.254.1, 13.255 -> 13.256 and 13.256 -> 13.257 were moved the same way).
+// This block started as the v13.255-seospell release wiring (the S1 M2 SEO
+// round: the F3 spelling fix — an SEO-surface-only release that changed NO
+// rank-badge surface, so the v13.254 engine block above rode unchanged); its
+// survivors (team-names.ts + check-seo-teamnames.js + the test-chain wiring)
+// ride forward under 13.257-mcmatchcentre — the Match Centre production
+// release that ships the S04-S18 sections to production (see
+// MATCH-CENTRE-EXECUTION-LOG.md S22 + docs/mc/m10-release-readiness.md).
+check("v13.257-mcmatchcentre (the release wiring — the Match Centre S22 + M10 gate round: the M10 production release; the Match Centre ships to production; Option B the fresh re-bundle with the version bump 13.256-mcfound -> 13.257-mcmatchcentre; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound foundation survivors ride unchanged)", (() => {
   const pkg = JSON.parse(read("package.json"));
   const fs = require("fs");
   const path = require("path");
-  return pkg.version === "13.256.0.0" &&
+  return pkg.version === "13.257.0.0" &&
     fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
     /node scripts\/check-seo-lastmod\.js && node scripts\/check-seo-teamnames\.js/.test(pkg.scripts.test);
