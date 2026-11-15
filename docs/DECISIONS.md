@@ -427,3 +427,69 @@ earlier decisions live in README §"Architecture decisions" and docs/adr/.)
 - **Who:** the owner (Option A), recorded by the parking agent.
   **Revisit:** on/after Dec 4, 2026 — re-fire the unchanged S2 start prompt
   with the fresh GSC export attached.
+
+---
+
+## 2026-11-15 — S23: the post-M10 hardening track session 1 (DISCOVERY + DOCUMENTATION)
+
+**Context:** the M10 milestone is CLOSED — the Match Centre ships to production
+(deployment `ab1395ee` / version `10c0a004` / `13.257-mcmatchcentre`). The
+post-M10 hardening track opens with S23 — a discovery + documentation session
+that produces a hardening report (`docs/mc/post-m10-hardening-report.md`),
+NOT a code deploy. The session ran 5 days before the Bayern vs Köln kickoff
+(`2026-11-20T19:30:00Z`) — so the live/finished lifecycle verification (H1,
+the #1 gap from the S20 gate) is deferred to S27 after the kickoff.
+
+**Decision 1 — NO hotfix for the MEDIUM a11y finding F1 (the hero double-wrap).**
+The S23 bug hunt found a systematic presentation-layer issue: the hero is
+double-wrapped in two `<section>` landmarks (`<section id="mcentre-hero"
+aria-label="تیم‌ها و وضعیت بازی">` from `pages.ts` sectionHtml wrapping
+`<section class="mcentre-hero" aria-label="خلاصه بازی">` from `match-centre.ts:223`).
+The inner aria-label «خلاصه بازی» (match summary) is semantically wrong for
+the hero. The one-line fix is `<section class="mcentre-hero" aria-label="خلاصه
+بازی">` → `<div class="mcentre-hero">` (+ the closing tag) — matching the
+other 10 sections' pattern. **The decision: do NOT hotfix.** The finding is
+MEDIUM (a11y landmark redundancy + a wrong label — confusing for screen reader
+users, NOT a visual breakage, NOT customer-facing, reversible, doesn't touch
+the GSC surfaces). Per AGENTS.md §5, production deploys are NOT under standing
+approval — a hotfix deploy would need the owner's explicit approval + the full
+S22 6-point post-deploy smoke matrix. The cost/benefit (a MEDIUM a11y fix vs.
+the deploy overhead + the SEO measurement window contamination risk) favors
+deferring the fix to S25 (a11y deep-dive), which will batch F1 + F2 + F3 + F4
+into a single deploy. The finding is documented in the hardening report for the
+owner to review + the fix is proposed for S25.
+- **Options considered:** (a) defer the fix to S25 (chosen — the MEDIUM
+  severity doesn't justify a hotfix deploy + the SEO measurement window
+  [Dec 4-8] is protected by minimizing production changes); (b) hotfix now on
+  a `fix/post-m10-hardening` branch + a fresh `wrangler versions upload` +
+  deploy (rejected — the deploy overhead + the owner-approval gate + the
+  smoke-matrix cost outweigh the MEDIUM-severity benefit; F1 is not
+  customer-facing); (c) ignore the finding (rejected — the finding is real +
+  systematic + documented for the follow-up session).
+- **Reason:** the S23 scope is DISCOVERY + DOCUMENTATION (the session produces
+  the report, NOT a deploy). The owner's prompt explicitly says "IF a critical
+  bug is found, S23 cuts a fix branch" — F1 is MEDIUM, not critical. The
+  hardening report proposes S25 as the fix session for F1-F4.
+- **Who:** the S23 agent (decision recorded per AGENTS.md §8 decision-log
+  discipline). **Revisit:** S25 (a11y deep-dive) — the owner may escalate to a
+  hotfix if they judge F1 urgent.
+
+**Decision 2 — the recommended follow-up session order (S25 → S27 → S24 → S26).**
+The hardening report proposes four follow-up sessions: S25 (a11y deep-dive),
+S27 (live/finished verification, after Nov 20), S24 (perf/CWV review, after
+Dec 8), S26 (UI/UX iteration). The recommended order optimizes for: (a) the
+a11y fixes first (the highest-impact findings F1-F4 + the cross-browser gap);
+(b) the live/finished verification at the natural Nov 20 window; (c) the perf
+review after the CWV data matures (needs ~1-2 weeks post-deploy + after the
+SEO measurement window close); (d) the UI/UX iteration last (the most
+subjective — builds on a clean a11y base).
+- **Options considered:** (a) S25 → S27 → S24 → S26 (chosen — the a11y fixes
+  first + the natural windows respected); (b) S24 first (rejected — the CWV
+  data needs ~1-2 weeks to be statistically meaningful + the SEO measurement
+  window [Dec 4-8] is the binding constraint); (c) S26 first (rejected — the
+  UI/UX iterations should build on a clean a11y base, not before).
+- **Reason:** the order minimizes the total elapsed time to a hardened
+  production + respects the binding constraints (the Nov 20 kickoff + the Dec
+  4-8 SEO window + the CWV data maturation). The owner may reorder.
+- **Who:** the S23 agent (the recommendation). **Revisit:** the owner picks the
+  next session from the proposed plan.
