@@ -146,6 +146,16 @@ check(/let sm = findMatchBySlug\(ctx, slug\);/.test(ogFn) &&
   /findArchivedMatchBySlug\(archive, slug\)/.test(ogFn) &&
   ogFn.indexOf("findArchivedMatchBySlug(archive, slug)") < ogFn.indexOf("if (!sm) return null;"),
   "og image: buildMatchOgPng consults the archive fallback before returning null (a restored page's og:image serves)");
+// v13.259.1-archttl: the immutable-surface render holds (the CPU-cliff mitigation)
+const routerSrc = read("src/seo/router.ts");
+check(/ARCHIVE_PAGE_TTL: 21600/.test(read("src/seo/config.ts")),
+  "archttl: ARCHIVE_PAGE_TTL = 21600 (6h) declared in seo/config.ts");
+check(/else if \(!sm\) pageHold\.v = SEO\.ARCHIVE_PAGE_TTL;/.test(routerSrc) &&
+  routerSrc.indexOf("else if (!sm) pageHold.v") > routerSrc.indexOf("if (/IN_PLAY|LIVE|PAUSED/.test(st))"),
+  "archttl: a successful render with a pool miss (archived, immutable) holds ARCHIVE_PAGE_TTL — after the live/upcoming branches");
+check(/wantCached\("\/og" \+ path, 3600,/.test(routerSrc) &&
+  /\/og\/match-/.test(routerSrc),
+  "archttl: the CPU-heavy resvg OG route is edge-cached (wantCached, 1h hold) — fresh OG fetches stop being a crash lottery");
 check(/const list = finishedRecent\(ctx, 30\);/.test(smBranch),
   "sitemap: the pool window (30d) still lists first — the archive extends, never replaces");
 // matchHash stability on an archived row (eval-extracted, the repo's style)

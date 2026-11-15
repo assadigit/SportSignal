@@ -850,3 +850,14 @@ counted + reported; every other child + T-25's >=3-link upcoming rule keep the
 full discipline). This is a check-semantics update for the new by-design
 sitemap-discovery surface, not a weakening: the crawl still fails on any
 404/redirect among linked pages, and non-archive orphans still fail the ratio.
+
+**Follow-up 2 (v13.259.1-archttl, same session):** the post-deploy live
+browser check surfaced "Worker exceeded resource limits" on fresh renders —
+Cloudflare analytics proved the condition PRE-EXISTED (37 exceededResources
+in the 3h before the deploy on 13.258; 789 on Nov 10): cold match-page
+renders run near the free-plan 10ms CPU cliff. Because the restore made 151
+immutable URLs crawlable, the re-render cadence was cut: ARCHIVE_PAGE_TTL
+6h for archived pages (a successful render with a pool miss) + wantCached
+edge caching for the resvg OG route (1h). The root render-cost problem is
+pre-existing, chronic, and documented as the follow-up (audit §6) — not
+caused by and not fully fixable within this session's scope.

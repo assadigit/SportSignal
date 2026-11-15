@@ -53,6 +53,25 @@ validity ahead of its ~Dec 8 judgment.
   untouched (no cap sweep needed). Version triple → `13.259.0.0` /
   `13.259-archserve`; the v13.254/v13.258 live release-wiring pins moved
   forward per the standing convention.
+- **v13.259.1-archttl (the same-session hotfix, deployed ~17:40 UTC):** the
+  post-deploy live verification (agent-browser) surfaced a **pre-existing
+  chronic condition**, not a new defect: cold match-page renders flirt with
+  the Workers free-plan 10ms CPU cliff (Cloudflare analytics: **37
+  exceededResources errors in the 3h BEFORE the 13.259 deploy** on the
+  untouched 13.258, and 789 on Nov 10 — the cold-render kill class the
+  v13.97-seocpu comments already documented). The 13.259 restore made 151
+  immutable URLs crawlable, raising fresh-render volume: a paced batch test
+  showed 3/18 cold archive renders killed at the limit. Mitigation (history
+  cannot change, so stop re-rendering it): **ARCHIVE_PAGE_TTL = 21600 (6h)**
+  — a successful render with a pool miss holds its edge-cache entry 24x
+  longer than the 900s window (`src/seo/config.ts` + the router's TTL
+  ladder); **the CPU-heavy resvg OG route is now edge-cached** via
+  `wantCached` (1h hold, matching its public max-age). Verified live: the
+  four previously-crashed URLs all render 200 on the new code; healthz
+  `13.259.1-archttl` ok; npm test exit 0 (3,615 OK = +3 archttl pins).
+  The ROOT cause (the render itself near the CPU cliff on cold isolates)
+  remains pre-existing and out of scope — documented in the audit §6 as the
+  follow-up with the evidence.
 - **Scope limit (honest):** the archive holds BIG matches only
   (`isBigForSeo`); small-market finished matches still 404 after 7 days
   (~1,400 impressions across ~146 pages of long tail). Extending the archive

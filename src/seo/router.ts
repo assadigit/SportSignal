@@ -664,17 +664,23 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   }
 
   // Per-match OG image (SO-04): /og/match-{slug}.png (text-only, no crests).
+  // v13.259.1-archttl: edge-cached via wantCached (1h hold, matching the
+  // public max-age) — the resvg render is CPU-heavy and the free-plan 10ms
+  // cliff makes every fresh OG fetch a crash lottery; the 13.259 restore
+  // added 151 archived cards to this surface.
   const ogMatch = /^\/og\/match-([a-z0-9-]+(?:-vs-[a-z0-9-]+-\d{4}-\d{2}-\d{2})?)\.png$/.exec(path);
   if (ogMatch) {
-    const slug = ogMatch[1];
-    const png = await F.buildMatchOgPng(env, slug).catch(() => null);
-    if (!png) return new Response("og image unavailable", { status: 404, headers: { "content-type": "text/plain" } });
-    return new Response(png, {
-      headers: {
-        "content-type": "image/png",
-        "cache-control": "public, max-age=3600",
-        "access-control-allow-origin": "*"
-      }
+    return wantCached("/og" + path, 3600, async () => {
+      const slug = ogMatch[1];
+      const png = await F.buildMatchOgPng(env, slug).catch(() => null);
+      if (!png) return new Response("og image unavailable", { status: 404, headers: { "content-type": "text/plain" } });
+      return new Response(png, {
+        headers: {
+          "content-type": "image/png",
+          "cache-control": "public, max-age=3600",
+          "access-control-allow-origin": "*"
+        }
+      });
     });
   }
 
@@ -715,13 +721,19 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
       // upcoming → the hold lapses just after kickoff (the next hit re-renders
       // into the live branch); finished → the full window (history is
       // immutable).
+      // v13.259.1-archttl: a SUCCESSFUL render with a pool MISS can only be
+      // an ARCHIVED match (buildMatchPage's fallback served it from the
+      // immutable seo_archive_v1) — history cannot change, so it holds for
+      // ARCHIVE_PAGE_TTL (6h): 24x fewer cold renders on the free-plan 10ms
+      // CPU cliff (the chronic exceededResources class — the 13.259 restore
+      // made 151 of these URLs crawlable, so the re-render cadence matters).
       const sm = findMatchBySlug(seoCtx, mm[1]);
       const st = sm ? String(sm.raw.status || "").toUpperCase() : "";
       if (/IN_PLAY|LIVE|PAUSED/.test(st)) pageHold.v = SEO.LIVE_PAGE_TTL;
       else if (sm && sm.raw.utcDate) {
         const secs = Math.ceil((new Date(sm.raw.utcDate).getTime() - Date.now()) / 1000);
         pageHold.v = Math.max(60, Math.min(SEO.SEO_PAGE_TTL, secs + 120));
-      }
+      } else if (!sm) pageHold.v = SEO.ARCHIVE_PAGE_TTL;
       return { body: r.html, status: 200 };
     }
     if (path === "/teams") return { body: buildTeamsIndexPage(seoCtx), status: 200 };

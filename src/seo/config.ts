@@ -88,6 +88,13 @@ export const SEO = {
   // v13.97-seocpu: live surfaces hold their render briefly so a running
   // score never freezes on a match page.
   LIVE_PAGE_TTL: 120,
+  // v13.259.1-archttl: ARCHIVED finished-match pages (served from the
+  // immutable seo_archive_v1, >7d past kickoff) hold their render for 6h —
+  // history cannot change, and the free-plan 10ms CPU cliff (the chronic
+  // cold-render kill class — 37 exceededResources in the 3h BEFORE the
+  // 13.259 deploy, 789 on Nov 10) makes every re-render a crash lottery.
+  // 6h = 24x fewer renders than the 900s window, operationally forgiving.
+  ARCHIVE_PAGE_TTL: 21600,
   // Sitemap edge cache.
   SITEMAP_CACHE_TTL: 600,
   // KV: per-URL honest lastmod map (F-05/G-06).

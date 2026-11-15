@@ -1350,7 +1350,7 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v126"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.259-archserve"/.test(cfg) &&
+    /export const VERSION = "13\.259\.1-archttl"/.test(cfg) &&
     /# v13\.259-archserve/.test(read("CHANGELOG.md"));
 })());
 
@@ -1373,7 +1373,7 @@ check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-div
   const pkg = JSON.parse(read("package.json"));
   const fs = require("fs");
   const path = require("path");
-  return pkg.version === "13.259.0.0" &&
+  return pkg.version === "13.259.1.0" &&
     fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-archserve.js")) &&
