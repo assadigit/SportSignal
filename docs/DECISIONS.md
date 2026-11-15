@@ -493,3 +493,154 @@ subjective — builds on a clean a11y base).
   4-8 SEO window + the CWV data maturation). The owner may reorder.
 - **Who:** the S23 agent (the recommendation). **Revisit:** the owner picks the
   next session from the proposed plan.
+
+---
+
+## 2026-11-15 — S25: the post-M10 hardening track session 2 (the a11y deep-dive — F1-F4 fixes + audit + deploy)
+
+**Context:** the M10 milestone is CLOSED + the post-M10 hardening track is OPEN.
+S23 (the hardening report) documented four a11y findings (F1-F4) + proposed S25
+as the fix session. S25 runs the full WCAG-AA audit (axe-core + WAVE style — the
+DOM/ARIA check categories), the cross-browser compatibility analysis (Safari/
+Firefox/Edge — the S23 §2.5 gap), the screen-reader announcement prediction
+(NVDA/VoiceOver — the accessibility tree), implements the F1-F4 fixes, and ships
+them to production. The audit is `docs/audits/2026-11-15-s25-a11y-audit.md`.
+
+**Decision 1 — the F4 fix: keep the outer `<section id="mcentre-nav">` as a
+non-landmark container (do NOT drop it).**
+The S23 F4 finding said "drop the wrapper or add the aria-label." S25's audit
+discovered the outer `<section id="mcentre-nav">` is LOAD-BEARING for the S06
+desktop sticky-nav fix: `page-shell.ts` carries
+`@media (min-width:601px){#mcentre-nav{display:contents}}` which dissolves the
+section's box so `.mnav{position:sticky;top:0}` sticks relative to `.page-col`
+(the grandparent) instead of the 48px-tall section. Dropping the section would
+break the desktop sticky nav (the nav would scroll away mid-content — the
+documented S06 defect). The fix: keep the outer `<section id="mcentre-nav">`
+but DROP its `aria-label` (a `<section>` without an accessible name is NOT
+exposed as a landmark per the HTML/ARIA spec) → the inner
+`<nav class="mnav" aria-label="ناوبری بخش‌های صفحه">` becomes the SINGLE
+landmark. The double-landmark (region + navigation with the same label) is
+collapsed to one (the navigation landmark). The `id="mcentre-nav"` anchor +
+the `display:contents` sticky-nav CSS + the `getElementById` references are
+all preserved. The S23 report's F4 wording ("has no aria-label") was slightly
+inaccurate — the outer section DID carry the aria-label (from `sectionHtml` +
+`MC_SECTION_ORDER`); the REAL issue was the double-landmark. The fix is the
+same (consolidate to one landmark), but the diagnosis is corrected here.
+- **Options considered:** (a) keep the outer section + drop its aria-label
+  (chosen — the non-landmark container preserves the sticky-nav architecture +
+  the id anchor + the display:contents rule; the inner nav is the single
+  landmark); (b) drop the outer section entirely (rejected — it would break
+  the S06 desktop sticky nav, a UX regression worse than the a11y finding);
+  (c) keep the outer section aria-label + change the inner `<nav>` to a `<div>`
+  (rejected — loses the native `<nav>` semantics for navigation; the outer
+  `<section>` "region" landmark is semantically weaker than the `<nav>`
+  "navigation" landmark); (d) keep both aria-labels (rejected — the
+  double-landmark is the F4 finding).
+- **Reason:** the outer section is load-bearing for the sticky nav; the
+  non-landmark container is the only fix that preserves the architecture +
+  collapses the double-landmark. The other 10 sections keep the `sectionHtml`
+  wrapper (their content starts with a `<div>`, so the outer
+  `<section aria-label>` is the needed landmark — the nav is the special case).
+- **Who:** the S25 agent (decision recorded per AGENTS.md §8 decision-log
+  discipline). **Revisit:** if the sticky-nav architecture is reworked (e.g.
+  the `display:contents` rule is retired), re-evaluate whether the outer
+  section is still needed.
+
+**Decision 2 — the F2 fix: descriptive alt with the Latin player name (the
+Persian transliteration is out of scope for S25).**
+The S23 F2 finding said "add descriptive alt or a visually-hidden span with the
+player names." S25's audit found the `player` field in
+`HERO_COVERAGE_RAW.wired` is the LATIN name (e.g. "Ellyes Skhiri", "Harry
+Kane"). The S23 report's example used the PERSIAN transliteration («هری کین»)
+which would require a Latin→Persian transliteration (a dictionary mapping or
+a transliteration library). S25 decided to use the LATIN name (honest +
+accurate + announced correctly by modern screen readers — NVDA + VoiceOver
+handle mixed-script text). The alt is `alt="تصویر ${player}، بازیکن ${teamFa}"`
+(the Persian lead «تصویر» + the Latin player name + the Persian «بازیکن» +
+the Persian team name). The Persian transliteration is a future enhancement
+(S26 UI/UX or a dedicated transliteration session). The `heroArtMetaSrv(t)`
+data-layer function exposes the `{src, player}`; the backward-compat
+`heroArtSrv(t)` (returns the `src` only) is preserved (the homepage `.mc-port`
+SSR mirror is UNTOUCHED — the byte-frozen surfaces hold). The defensive
+fallback (player empty → alt="") keeps the img never-broken.
+- **Options considered:** (a) descriptive alt with the Latin player name +
+  the Persian team name (chosen — honest, accurate, the data is available,
+  universally announced by modern screen readers; the Persian transliteration
+  is out of scope); (b) a Persian transliteration of the player name (rejected
+  — requires a Latin→Persian dictionary or a transliteration library, a new
+  dependency surface + a translation-quality risk; defer to S26 or a
+  dedicated transliteration session); (c) a visually-hidden `<span>` with the
+  player name adjacent to the portraits (rejected — the descriptive alt is
+  simpler + the img is the semantic container for the player identity; a
+  visually-hidden span is an alternative pattern but adds DOM nodes); (d)
+  keep `alt=""` (rejected — the F2 finding; a screen-reader user does not
+  learn the featured player).
+- **Reason:** the Latin name is the honest, accurate, available data; the
+  descriptive alt is the simplest semantic fix; the Persian transliteration
+  is a future enhancement that does not block the a11y improvement. The
+  defensive fallback + the backward-compat `heroArtSrv` preserve the homepage
+  byte-frozen surfaces.
+- **Who:** the S25 agent (decision recorded per AGENTS.md §8). **Revisit:** S26
+  (UI/UX iteration) or a dedicated transliteration session — the owner may
+  want the Persian player names (the report's F2 example used «هری کین»).
+
+**Decision 3 — the F3 fix: MODIFY the existing S06 nav script (NOT a new
+script) — the composer purity holds.**
+The S25 standing law says "S25 adds NO new script." The F3 fix needs the
+IntersectionObserver to toggle `aria-current` on scroll (alongside the
+existing `is-active` class). S25 decided this is a MODIFICATION of the
+existing S06 nav script (the `matchNavScript` function in `pages.ts`), NOT a
+new script. The composer purity (the S04 countdown / S06 nav / S15 schedule /
+S16 FAQ are the ONLY inline-JS exceptions) holds — S25 does NOT add a new
+exception; it modifies an existing one. The added lines
+(`i.removeAttribute('aria-current')` in the loop +
+`it.setAttribute('aria-current','true')` on the active item) are pure DOM
+(no fetch/timer/polling — the S06 cost law holds). The first nav item also
+carries `aria-current="true"` at render (server-side, in `matchNavHtml`) — a
+screen-reader user navigating by landmarks hears «خلاصه link, current»
+immediately at page load (no waiting for the scroll observer).
+- **Options considered:** (a) modify the existing S06 nav script to also
+  toggle aria-current (chosen — the aria-current is the screen-reader
+  contract alongside the is-active class [the visual contract]; the
+  modification is pure DOM, no new script, the composer purity holds); (b) a
+  new inline script for aria-current (rejected — violates the "S25 adds NO
+  new script" standing law + a new exception); (c) aria-current at render only,
+  no scroll update (rejected — the active section would not update on scroll,
+  defeating the purpose); (d) keep the is-active class only, no aria-current
+  (rejected — the F3 finding; the class is visual, the attribute is the
+  screen-reader contract).
+- **Reason:** the aria-current attribute is the screen-reader contract (WCAG
+  2.4.8 Location — the best-practice rule); the is-active class is the visual
+  contract. Both are needed (belt-and-braces). The modification of the existing
+  S06 nav script is within the S25 scope (the standing law prohibits NEW
+  scripts, not modifications of existing exceptions).
+- **Who:** the S25 agent (decision recorded per AGENTS.md §8). **Revisit:**
+  if a future session reworks the nav (e.g. a progress indicator or a 6th nav
+  item), re-evaluate the aria-current wiring.
+
+**Decision 4 — the deploy landed BEFORE Dec 8 (the cross-track SEO measurement
+window).**
+The S25 standing law says "S25 can deploy BEFORE Dec 8 IF the fixes don't
+touch the GSC surfaces (F1/F3/F4 are body-only; F2 is body-only — all safe)."
+S25's byte-frozen verification (MANDATORY before the deploy) PASSED: the
+source-level diff (the head-building files `page-shell.ts`/`jsonld.ts`/
+`markup.ts` UNCHANGED) + the runtime diff (the preview URL `<head>` vs the
+production `<head>` = DIFF 0 — the GSC surfaces title/canonical/og/twitter/h1/
+meta-desc/JSON-LD all BYTE-IDENTICAL; the homepage byte-frozen surfaces all
+present). The deploy landed at 2026-11-15T02:38:53Z (Version 181285b8 at
+100% traffic). The cross-track SEO measurement window (Dec 4-8) is PROTECTED
+— the GSC surfaces are byte-frozen.
+- **Options considered:** (a) deploy before Dec 8 (chosen — the F1-F4 fixes
+  are body-only, the byte-frozen diff is DIFF 0, the SEO measurement is
+  protected, the a11y fixes are safe to land now); (b) wait until after Dec 8
+  (rejected — no SEO-measurement risk since the GSC surfaces are byte-frozen;
+  delaying would postpone the a11y improvement unnecessarily); (c) do not
+  deploy, keep the fixes on a branch (rejected — the fixes are verified + the
+  audit is complete + the owner asked for the deploy).
+- **Reason:** the byte-frozen diff is DIFF 0 (the GSC surfaces are
+  byte-identical pre- and post-fix); the F1-F4 fixes are body-only; the SEO
+  measurement window is protected. The deploy is safe + the owner asked for it.
+- **Who:** the S25 agent (the deploy decision) + the owner (the credentials +
+  the session prompt = the explicit approval). **Revisit:** none (the deploy
+  landed; the rollback point is the S22 + post-merge re-deploy
+  `ab1395ee`/`10c0a004`/`13.257-mcmatchcentre`).
