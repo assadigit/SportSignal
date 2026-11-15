@@ -235,12 +235,35 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
     // bumped only when the text is actually edited).
     for (const p of STATIC_PAGES) rows += urlNode(p, SEO.CONTENT_VERSION);
   } else if (kind === "matches-upcoming" || kind === "matches-archive") {
-    if (kind === "matches-archive") await syncArchive(env, ctx);
-    const list = kind === "matches-upcoming" ? upcomingBig(ctx) : finishedRecent(ctx, 30);
-    candidates = list.map((sm) => ({
-      path: matchPath(sm.s.homeTeam.name, sm.s.awayTeam.name, sm.s.utcDate),
-      hash: matchHash(sm)
-    }));
+    if (kind === "matches-archive") {
+      // v13.259-archserve: syncArchive returns the CURRENT archive list —
+      // the finished-match pages past the pool's 7-day retention are served
+      // from it now (findArchivedMatchBySlug), so the archive child lists
+      // them too (the discovery backbone: internal links thin out past the
+      // 30-day team-page window). The 365-day cap is the archive's own
+      // (SEO.FINISHED_MATCH_ARCHIVE_DAYS) — no new magic number here.
+      const archRecs = await syncArchive(env, ctx);
+      const list = finishedRecent(ctx, 30);
+      candidates = list.map((sm) => ({
+        path: matchPath(sm.s.homeTeam.name, sm.s.awayTeam.name, sm.s.utcDate),
+        hash: matchHash(sm)
+      }));
+      const seenArch = new Set(candidates.map((c) => c.path));
+      for (const rec of archRecs || []) {
+        const row = rec && rec.m;
+        if (!row || !row.homeTeam || !row.awayTeam || !row.utcDate) continue;
+        const p = matchPath(row.homeTeam.name, row.awayTeam.name, row.utcDate);
+        if (seenArch.has(p)) continue; // still in the pool window — already listed
+        seenArch.add(p);
+        candidates.push({ path: p, hash: matchHash({ raw: row, s: row } as any) });
+      }
+    } else {
+      const list = upcomingBig(ctx);
+      candidates = list.map((sm) => ({
+        path: matchPath(sm.s.homeTeam.name, sm.s.awayTeam.name, sm.s.utcDate),
+        hash: matchHash(sm)
+      }));
+    }
     // de-dup by path (rematches/double fixtures)
     const seen = new Set<string>();
     candidates = candidates.filter((c) => (seen.has(c.path) ? false : (seen.add(c.path), true)));
@@ -585,8 +608,15 @@ export function buildBingSiteAuth(): string {
 // the same resvg-wasm machinery as the Telegram cards, cached at the edge.
 export async function buildMatchOgPng(env: Env, slug: string): Promise<ArrayBuffer | null> {
   const ctx = await getSeoCtx(env);
-  const { findMatchBySlug } = await import("./data");
-  const sm = findMatchBySlug(ctx, slug);
+  const { findMatchBySlug, findArchivedMatchBySlug } = await import("./data");
+  let sm = findMatchBySlug(ctx, slug);
+  if (!sm) {
+    // v13.259-archserve: the OG image follows the page it belongs to — a
+    // restored archived match serves its card (with the final score) too;
+    // one bounded archive read on the miss path only (fail-closed).
+    const archive = await loadArchive(env).catch(() => [] as any[]);
+    sm = findArchivedMatchBySlug(archive, slug);
+  }
   if (!sm) return null;
   const m = sm.s;
   const esc2 = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

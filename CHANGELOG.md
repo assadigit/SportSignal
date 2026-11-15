@@ -4,6 +4,62 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.259-archserve — the GSC 404-cliff fix: finished match pages serve from the 365-day archive (2026-11-15, `main`)
+
+The Nov 15 Search Console export (`docs/audits/2026-11-15-gsc-read.md`) exposed
+the site's biggest self-inflicted SEO wound: **159 not-found URLs**. Every
+finished match page 404s ~7 days after kickoff (the pool's retention cutoff in
+`src/match-pool.ts`), while the 365-day `seo_archive_v1` (U-05) already held
+158 finished big matches that no serving path ever read. 161 of the 264 match
+pages in the GSC report (52% of match-page impressions, 131 clicks of history,
+and nearly the whole positions-8–20 growth zone — PSG–Barcelona 854 impr,
+Real Madrid–RB Leipzig 388, Atalanta–Kairat 351, Santander–Real Madrid 302,
+Man Utd–Roma 283, Monaco–Nordsjælland 275…) were dead URLs. The M2
+spelling-fix measurement pages (Leipzig/Nordsjælland/Roma) were past the same
+cliff — a 404 cannot win clicks, so the fix also restores that measurement's
+validity ahead of its ~Dec 8 judgment.
+
+- **`src/seo/data.ts`** — `findArchivedMatchBySlug(recs, slug)`: the
+  out-of-pool lookup over `seo_archive_v1` records (the pubMatch-shaped rows
+  serve as BOTH `raw` and `s`; earliest-kickoff-wins on same-day duplicates,
+  mirroring `findMatchBySlug`); `SeoMatch.archived?: boolean` marks the
+  fallback. `hydrateMatchVenue` skips the home-ground table for archived rows
+  (stage/roundRaw do not survive the archive shape — a neutral final could
+  otherwise hydrate a WRONG home stadium; the FD-detail branch stays: real
+  provider data only, KV-cached 24h, fail-closed).
+- **`src/seo/pages.ts`** — `buildMatchPage`: the archive load is HOISTED to
+  the top (the same single bounded KV read the related-matches block already
+  made — one call site, not two); when the pool lookup misses, the archive
+  fallback runs BEFORE the notFound return. **The await count stays exactly
+  3** (loadArchive, hydrateMatchVenue, fullByCodeFor — ADR-006). The restored
+  pages render through the SAME frozen builders — zero surface drift on any
+  live page (the byte-freeze law holds through the Dec 4–8 measurement
+  window; verified DIFF 0 post-deploy).
+- **`src/seo/files.ts`** — the `matches-archive` sitemap child now lists the
+  pool window (30d) PLUS the 365-day archive (syncArchive's return value —
+  no second KV read), deduped by path, pool rows first, lastmods through the
+  same change-only `matchHash` discipline. The first rebuild pings the
+  restored URLs through IndexNow (batched, rate-limited, parked-drain).
+- **`scripts/seo-check.js` (T-05)** — the orphan rule is now archive-aware: matches-archive URLs are exempt from the orphan ratio (finished history pages are sitemap-discovery BY DESIGN per U-05 + this release; their team-page links thin out past the 30-day recent-results window, and the depth-3 crawl's 150-per-level breadth cap cannot observe most team pages). The exemption is explicit, counted + reported in the pass line; every other child keeps the full discipline, as does T-25's >=3-link rule for upcoming 14-day matches. Verified: 247 PASS / 0 FAIL against production post-deploy.
+- **`scripts/check-archserve.js`** (NEW, wired into `npm test`) — 28
+  assertions: the real `findArchivedMatchBySlug` behavior against the
+  production KV shape (9 slug-resolution cases incl. wrong-date/malformed/
+  unarchived/empty/null misses — the T-06 404 contract holds), the
+  buildMatchPage wiring + the 3-await cost law, the venue honesty guard, the
+  sitemap merge, and the archserve-scoped freeze guard (title ladder + answer
+  sentence untouched).
+- **No client asset changed** — a server-side release: the SW cache stays
+  `sportsignal-v126`, the client bundle stays `public-13.80.js`, `_headers`
+  untouched (no cap sweep needed). Version triple → `13.259.0.0` /
+  `13.259-archserve`; the v13.254/v13.258 live release-wiring pins moved
+  forward per the standing convention.
+- **Scope limit (honest):** the archive holds BIG matches only
+  (`isBigForSeo`); small-market finished matches still 404 after 7 days
+  (~1,400 impressions across ~146 pages of long tail). Extending the archive
+  scope is an owner A/B decision recorded in the audit §4 — NOT silently
+  changed here.
+
+
 # Match Centre S27-cont auto-check — the Nov 20 LIVE/FINISHED "don't forget" workflow added 2026-11-15 (`aed4ea4`; NO version bump, NO deploy, NO worker code change; `main`, 2026-11-15)
 
 The owner asked for an automatic check so they would not forget to re-run the S27-cont lifecycle verification on Nov 20. Added:

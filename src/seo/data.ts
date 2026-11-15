@@ -126,6 +126,12 @@ export function isBigForSeo(m: any, top3: Record<string, Set<string>>): boolean 
 export interface SeoMatch {
   raw: any;      // pool row (status/score truth)
   s: any;        // shaped (pubMatch) row for display
+  // v13.259-archserve: true when this SeoMatch was synthesized from the
+  // 365-day seo_archive_v1 (U-05) instead of the live pool — the row is a
+  // pubMatch-shaped archived row serving as BOTH raw and s. Carriers of
+  // this flag must NOT invent data the archive shape lost (see
+  // hydrateMatchVenue's home-ground guard).
+  archived?: boolean;
 }
 
 // v13.205-lcpreveal (F-C1, Phase 3): the server-side hero-portrait lookup.
@@ -350,6 +356,34 @@ export function findMatchBySlug(ctx: SeoCtx, slug: string): SeoMatch | null {
   return best as SeoMatch | null;
 }
 
+// v13.259-archserve: out-of-pool match lookup — the 365-day seo_archive_v1
+// (U-05) serves finished match pages after the 7-day pool retention drops
+// them (GSC 2026-11-15: 159 not-found URLs, ~52% of match-page impressions
+// stranded — docs/audits/2026-11-15-gsc-read.md §2). The archive rows are
+// pubMatch-shaped rows frozen at syncArchive time; such a row serves as
+// BOTH raw and s (it carries status/utcDate/id/teams/competition/score —
+// every field the match-page path reads off either side). The earliest
+// kickoff wins on same-day duplicates, mirroring findMatchBySlug.
+// `archived: true` marks the fallback so venue hydration skips the
+// home-ground table (stage/roundRaw do not survive the archive shape — a
+// neutral-final row could otherwise hydrate a WRONG home stadium; the
+// FD-detail path stays, it serves real data only).
+export function findArchivedMatchBySlug(recs: any[], slug: string): SeoMatch | null {
+  const m = /^([a-z0-9-]+)-vs-([a-z0-9-]+)-(\d{4}-\d{2}-\d{2})$/.exec(slug);
+  if (!m) return null;
+  const [, homeSlug, awaySlug, day] = m;
+  let best: any = null;
+  for (const rec of recs || []) {
+    const row = rec && rec.m ? rec.m : null;
+    if (!row || !row.homeTeam || !row.awayTeam || !row.utcDate) continue;
+    if (String(row.utcDate).slice(0, 10) !== day) continue;
+    if (teamSlug(row.homeTeam.name) !== homeSlug || teamSlug(row.awayTeam.name) !== awaySlug) continue;
+    if (!best || new Date(row.utcDate).getTime() < new Date(best.utcDate).getTime()) best = row;
+  }
+  if (!best) return null;
+  return { raw: best, s: best, archived: true };
+}
+
 export function findTeamBySlug(ctx: SeoCtx, slug: string): TeamEntry | null {
   const indexed = teamsIndex(ctx);
   for (const e of indexed) {
@@ -398,7 +432,13 @@ export async function hydrateMatchVenue(env: Env, sm: SeoMatch | null): Promise<
   // v13.85-stadiumchip: the table + gate moved to src/grounds.ts — shared
   // with pubMatch (the public payload) so the homepage chips and the match
   // pages agree on ONE source of truth.
-  const g = homeGround(
+  // v13.259-archserve: ARCHIVED rows skip the home-ground table — the
+  // archive shape (pubMatch) does not carry stage/roundRaw, so the neutral-
+  // final exclusion inside homeGround cannot run and a one-off final could
+  // hydrate a WRONG home stadium (invented venue — the S-03/S-04 honesty
+  // law forbids it). The FD-detail branch below stays: it serves real
+  // provider data only, KV-cached 24h, fail-closed.
+  const g = (sm as any).archived ? null : homeGround(
     sm.raw.homeTeam && sm.raw.homeTeam.name,
     sm.raw.stage,
     sm.raw.roundRaw

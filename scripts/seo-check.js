@@ -167,6 +167,13 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
   // ---------------- T-02: sitemaps ----------------
   section("T-02 sitemaps");
   const allSitemapUrls = [];
+  // v13.259-archserve: per-child URL sets — the T-05 orphan rule exempts
+  // the matches-archive child (finished history pages are sitemap-discovery
+  // BY DESIGN, U-05 + the 13.259 archserve decision: their team-page links
+  // thin out past the 30-day recent-results window, and the depth-3 crawl's
+  // 150-per-level breadth cap cannot see most team pages anyway). The
+  // upcoming child + every other child keep the full orphan discipline.
+  const childUrls = {};
   {
     const res = await fetchRaw(B + CONFIG.SITEMAP_INDEX);
     const xml = await body(res);
@@ -202,6 +209,7 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       if (dupes) fail("T-02", kind + ".xml: " + dupes + " duplicate URLs");
       if (!badHost && !nonHttps && !missingLastmod && !dupes) pass("T-02", kind + ".xml all URLs canonical+https+lastmod, no dupes");
       allSitemapUrls.push(...locs);
+      childUrls[kind] = new Set(locs);
     }
     // priority/changefreq must NOT be present (Google ignores, spec F-05)
     const idx = await fetchRaw(B + CONFIG.SITEMAP_INDEX);
@@ -384,11 +392,22 @@ async function body(res) { try { return await res.text(); } catch (e) { return "
       frontier = next.slice(0, 150); // breadth cap for runtime
     }
     pass("T-05", "crawled " + visited.size + " internal URLs to depth 3, " + bad + " errors");
-    // orphan check: sitemap URLs with zero inbound links
-    const orphans = allSitemapUrls.filter((u) => !inbound.has(u) && !CONFIG.TEMPLATE_PATHS.some((t) => u === B + t));
+    // orphan check: sitemap URLs with zero inbound links.
+    // v13.259-archserve: matches-archive URLs are EXEMPT from the ratio —
+    // finished history pages are sitemap-discovery by design (U-05 + the
+    // archserve decision; their internal links thin out past the team
+    // pages' 30-day recent-results window, and the capped depth-3 crawl
+    // cannot observe most team pages). They are counted + reported, and
+    // every other child (pages/teams/competitions/matches-upcoming) keeps
+    // the full orphan discipline — as does T-25's ≥3-link rule for every
+    // upcoming 14-day match.
+    const archiveSet = childUrls["matches-archive"] || new Set();
+    const ratioUrls = allSitemapUrls.filter((u) => !archiveSet.has(u));
+    const orphans = ratioUrls.filter((u) => !inbound.has(u) && !CONFIG.TEMPLATE_PATHS.some((t) => u === B + t));
+    const archiveOnly = [...archiveSet].filter((u) => !inbound.has(u));
     const orphanSample = orphans.slice(0, 10);
-    if (orphans.length > allSitemapUrls.length * 0.2) fail("T-05", orphans.length + " sitemap URLs have no inbound links (sample: " + orphanSample.join(", ") + ")");
-    else pass("T-05", "no significant orphan pages (" + orphans.length + " of " + allSitemapUrls.length + ")");
+    if (orphans.length > ratioUrls.length * 0.2) fail("T-05", orphans.length + " sitemap URLs have no inbound links (sample: " + orphanSample.join(", ") + ")");
+    else pass("T-05", "no significant orphan pages (" + orphans.length + " of " + ratioUrls.length + "; " + archiveOnly.length + " archive-history URLs exempt [sitemap-discovery by design, U-05])");
   }
 
   // ---------------- T-06: invented URL → true 404 ----------------

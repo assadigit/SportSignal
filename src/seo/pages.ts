@@ -10,7 +10,7 @@ import { esc, faTime, faDateD1, faDateD2, tehranDayKey, utcTime, statusLabelFa, 
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, relatedMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtMetaSrv, heroArtSrv } from "./data";
+import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findArchivedMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, relatedMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtMetaSrv, heroArtSrv } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -1020,8 +1020,27 @@ function matchTelegramInput(ctx: SeoCtx): MatchTelegramInput {
 }
 
 export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
+  // v13.259-archserve: the archive loads ONCE at the top — this is the SAME
+  // bounded KV read the related-matches block below used to make at its own
+  // call site (v13.87), hoisted so the out-of-pool fallback (below) and the
+  // form/related projections (which already took it as a param) SHARE it.
+  // The three pre-existing loads (loadArchive, hydrateMatchVenue,
+  // fullByCodeFor — ADR-006) stay exactly three; the KV read count per
+  // render is UNCHANGED.
+  const archive = await loadArchive(ctx.env).catch(() => [] as any[]);
   let sm = findMatchBySlug(ctx, slug);
-  if (!sm) return { html: "", notFound: true };
+  if (!sm) {
+    // v13.259-archserve: the slug missed the 7-day pool — the match either
+    // never existed (still notFound → the T-06 404 contract holds) or it
+    // is a FINISHED match past the pool's 7-day retention. The 365-day
+    // seo_archive_v1 (U-05) serves the latter: URL stability for finished
+    // match pages (GSC 2026-11-15: 159 not-found URLs, ~5,072 stranded
+    // impressions — docs/audits/2026-11-15-gsc-read.md §2). The restored
+    // page renders through the SAME frozen builders — zero surface drift
+    // on any live page (the byte-freeze law holds).
+    sm = findArchivedMatchBySlug(archive, slug);
+    if (!sm) return { html: "", notFound: true };
+  }
   sm = await hydrateMatchVenue(ctx.env, sm);
   const m = sm.s;
   const path = matchPath(m.homeTeam.name, m.awayTeam.name, m.utcDate);
@@ -1126,7 +1145,10 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // a 2-dot "form" reads as noise).
   // v13.87: the archive load is one bounded KV read per match-page render
   // (fail-closed on error \u2014 the strip drops, the page never breaks).
-  const archive = await loadArchive(ctx.env).catch(() => [] as any[]);
+  // v13.259-archserve: the load itself moved to the TOP of buildMatchPage
+  // (the out-of-pool fallback needs it before the notFound return) — the
+  // hoisted `archive` binding above serves every consumer below; ZERO extra
+  // KV reads, the three-load cost law holds.
   // v13.93-fullrec: the match's competition FULL cached table — every side
   // gets its season chip (bottom-half league sides were invisible to the
   // top-8 payload compacts). ONE bounded cache-only KV read, fail-closed

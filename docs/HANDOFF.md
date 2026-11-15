@@ -2,95 +2,89 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for the whole session.
 
-## This session (S27-cont — the option-B continuation attempted 2026-11-15; BLOCKED by timing [fired 5 days before the kickoff]; the pre-match baseline re-confirmed byte-frozen DIFF 0 vs §1.4.2; NO code change, NO deploy, NO cron; H1 stays OPEN)
+## This session (S28 — the SEO weekly read + the GSC 404-cliff fix; v13.259-archserve deployed 2026-11-15)
 
-**S27-cont is the option-B continuation of S27** (DECISIONS decision 3 — the owner
-starts a new session during the live window + another after FT+900s). The owner
-fired it on 2026-11-15 (the same day as S27, ~50 min after the §1.4.2 baseline
-capture) to run the M1 (live) + M2 (finished) lifecycle verification against the
-REAL Bayern vs Köln match. **The session was started 5 days before the Bayern vs
-Köln kickoff** (`2026-11-20T19:30:00Z` = Fri Nov 20 23:00 Tehran). The M1 + M2
-windows are BOTH in the future + **could NOT run in this session** — the
-production scheduler itself confirms the match is not yet live (`/healthz`
-`sched_mode:IDLE / sched_reason:beyond-horizon / sched_live_now:0` — NOT a
-sandbox-clock artefact; the production `/healthz` agrees with the session clock).
-This is a **timing block, NOT a bug** (no stop-and-ask trigger per AGENTS.md §5 —
-§5 covers risky irreversible actions, not a calendar mismatch). S27-cont ran the
-**read-only pre-match baseline drift-check** instead: the Bayern page HTTP 200 /
-125,656 bytes; the GSC surfaces byte-frozen (title/canonical/og/twitter/h1/meta-
-description/JSON-LD/og:image/robots — byte-identical to §1.4.2, **DIFF 0**, no
-drift since the S27 capture ~50 min earlier); the `.mkick`×1 + `.mcount`×1 +
-`data-kickoff="2026-11-20T19:30:00Z"` PRESENT; the `.mlive`/`.mfin`/`.mscore`/
-result block «نتیجه نهایی»/scorer block/live-status «در جریان» ALL ABSENT (Q4=A —
-the scorer NEVER renders); the answer-first `id="answer"` = 1 DOM element; the
-S25 F1 fix LIVE (`hero_is_div:"DIV"`); the version string NOT in the match HTML;
-zero console errors at desktop 1440 + mobile 390; no horizontal scroll
-(scrollWidth === clientWidth === innerWidth at both viewports). The render-hold
-logic in `router.ts` (lines 720-724 + `seo/config.ts` `LIVE_PAGE_TTL:120` /
-`SEO_PAGE_TTL:900`) confirmed by source inspection (the await count stays 3). NO
-critical bug → NO code change → NO deploy → **NO cron scheduling** (the owner
-chose option B, NOT option A; overriding the owner's explicit choice would
-violate AGENTS.md's collision order — the owner's explicit instruction beats the
-file). H1 stays OPEN. The owner re-fires option B on Nov 20: M1 at ~19:35 UTC
-(kickoff + 5 min, clears the `LIVE_PAGE_TTL:120` render-hold) + M2 at ~21:35–
-21:45 UTC (FT + the `SEO_PAGE_TTL:900` render-hold; FT ~21:15–21:25 UTC → visit
-~21:40 UTC to be safe). The S27-cont record is at
-`docs/mc/post-m10-hardening-report.md` §1.4.4 + DECISIONS decision 4. The
-S27-cont prompt is self-contained + re-fireable verbatim at the Nov 20 windows.
+**S28 is the weekly GSC review session** (growth plan §9 — the owner's Nov 15
+export) that found and fixed the site's biggest SEO defect. Full analysis:
+`docs/audits/2026-11-15-gsc-read.md`; decision: DECISIONS (the archserve
+entry, 2026-11-15); changelog: the `# v13.259-archserve` entry.
 
-**The prior S27 session (same day) — S27 is the live/finished lifecycle verification session (the H1 deferred work
-from the S23 hardening report §1.2).** The session was started on 2026-11-15
-(Sun Nov 15, 2026, Asia/Tehran) — **5 days before the Bayern vs Köln kickoff**
-(`2026-11-20T19:30:00Z` = Fri Nov 20 23:00 Tehran). The live window (during the
-match, after the 19:30 UTC kickoff) + the finished window (after FT + the 900s
-render-hold) are BOTH in the future. The `/healthz` confirmed `sched_live_now:0`
-(NO live matches) + the 30 homepage match links are ALL dated Nov 20+ (NO finished
-matches in the pool to verify against). **S27 therefore ran the pre-match
-baseline (the H1-upcoming re-verification + the byte-frozen GSC baseline that the
-Nov 20 windows will be compared against) + documented the exact M1 [live] + M2
-[finished] verification plan for Nov 20. NO code changes, NO deploy. H1 stays
-OPEN.** The S27 record is at `docs/mc/post-m10-hardening-report.md` §1.4 + the 2
-screenshots in `docs/assets/s27-lifecycle/`.
+**The finding:** the Nov 15 Search Console export showed **159 not-found
+URLs** (Coverage critical class). Root cause: the KV pool prunes finished
+matches at 7 days (`src/match-pool.ts`), `findMatchBySlug` reads only the
+pool, so every finished match page 404s a week after the game — while the
+365-day `seo_archive_v1` (U-05) already held 158 finished big matches that
+no serving path ever read. 161 of 264 match pages in the GSC report were
+dead URLs carrying **52% of match-page impressions + 131 clicks of history**
+(PSG–Barcelona 854 impr, Real Madrid–RB Leipzig 388, Atalanta–Kairat 351,
+Santander–Real Madrid 302, Man Utd–Roma 283, Monaco–Nordsjælland 275…) —
+the whole positions-8–20 growth zone, AND the M2 spelling-fix measurement
+pages (a 404 cannot win clicks; the ~Dec 8 judgment would have read as
+failure while the pages were simply dead).
 
-**The pre-match baseline (the Bayern vs Köln page, UPCOMING state — verified
-2026-11-15T03:01Z via curl + the agent-browser, Chromium 0.43.0):**
-- `/healthz` = `ok:true / version:13.258-mca11y / degraded:false / pool_matches:348 / sched_next_ko:2026-11-20T19:30:00.000Z / sched_next_wake:2026-11-20T18:30:00.000Z / sched_mode:IDLE / sched_live_now:0` — the S25 deploy is LIVE, NO live matches.
-- The upcoming-state markers PRESENT: `.mkick`×1 + `.mcount`×1 + `data-kickoff="2026-11-20T19:30:00Z"`.
-- The live/finished/scorer markers ABSENT: `.mlive`×0 + `.mfin`×0 + `.mscore`×0 + the result block «نتیجه نهایی»×0 + the scorer block×0 (Q4=A — the scorer NEVER renders).
-- The answer-first briefing `id="answer"` PRESENT. The S25 F1 fix LIVE (the hero inner wrapper is a `<div>`, NOT a `<section>` — `hero_is_div:"DIV"`).
-- The GSC surfaces byte-frozen (byte-identical to the S22/S23/S25 records): the title, canonical, og:title, twitter:title, h1, meta-description (the answer sentence), og:url, og:type, og:image, robots, the JSON-LD ×1 block. The version string NOT in the match page HTML.
-- The device matrix: desktop 1440 + mobile 390 — BOTH zero console errors + no horizontal scroll (scrollWidth === clientWidth === innerWidth at both viewports). Screenshots: `docs/assets/s27-lifecycle/s27-desktop-1440-bayern-koln-prematch.png` + `s27-mobile-390-bayern-koln-prematch.png`.
-- The render-hold logic in `router.ts` (lines 720-724 + `seo/config.ts` `LIVE_PAGE_TTL:120` / `SEO_PAGE_TTL:900`) confirmed by source inspection (the await count stays 3 — S27 is read-only, NO renderer touch).
-- NO critical bug found → NO hotfix → NO deploy.
+**The fix (v13.259-archserve, deployed):**
+- `src/seo/data.ts` — `findArchivedMatchBySlug` (the out-of-pool lookup;
+  the pubMatch-shaped archive rows serve as BOTH raw and s; earliest-kickoff
+  wins on same-day duplicates) + `SeoMatch.archived?` + the venue-honesty
+  guard in `hydrateMatchVenue` (archived rows skip the home-ground table —
+  stage/roundRaw do not survive the archive shape, so a neutral final could
+  otherwise hydrate a WRONG stadium; the FD-detail path stays, real data
+  only).
+- `src/seo/pages.ts` — `buildMatchPage`: the archive load hoisted to the top
+  (the SAME single KV read the related-matches block already made) + the
+  fallback before the notFound return. **The await count stays exactly 3**
+  (ADR-006; check-match-centre green).
+- `src/seo/files.ts` — the `matches-archive` sitemap child lists the pool
+  30-day window PLUS the 365-day archive (syncArchive's return, deduped by
+  path, lastmods through the same change-only matchHash); the per-match OG
+  image (`buildMatchOgPng`) follows its page (the archive fallback).
+- `scripts/check-archserve.js` (NEW, wired into `npm test` after
+  check-seo-lastmod) — 29 assertions: slug-resolution behavior against the
+  production KV shape, the wiring + 3-await cost law, the venue guard, the
+  sitemap merge, the OG follow, and the archserve-scoped freeze guard.
+- Verified: `npm test` exit 0 (**3,612 OK** = the 3,583 baseline + 29 new);
+  the local `wrangler dev` smoke with a seeded archive (restored URLs 200
+  with full surfaces — title/canonical/robots/answer-sentence/h1/result
+  block/«پایان بازی»/JSON-LD SportsEvent with location/breadcrumbs/og:image;
+  invented URL still 404 — the T-06 contract holds; the archive child lists
+  the restored URLs; the archived OG PNG renders 200 with the final score).
 
-**The Nov 20 verification plan (DEFERRED — the H1-live + H1-finished windows):**
-- **M1 (live, DURING the match, after the 19:30 UTC kickoff, before FT):** verify the `.mlive` pulse (the live dot + the «در جریان» aria-label) + the `.mscore` (the live score); the cron `*/10` tick refreshes the live overlay (the `LIVE_PAGE_TTL:120` render-hold — re-fetch within 120s); the scorer block ABSENT (Q4=A); the result block ABSENT (lives ONLY when finished); the GSC surfaces byte-frozen (the title may carry the FT score if the projection updates it — verify; if it changes, that is EXPECTED for a live→finished title update, NOT a byte-freeze violation). Zero console errors. Mobile 390 no horizontal scroll. The `sched_live_now` in `/healthz` should read `>0` during the window.
-- **M2 (finished, AFTER FT + the 900s render-hold):** verify the `.mfin` «پایان بازی» status + the final `.mscore` + the result block «نتیجه نهایی» (the S07 projection gates it on the finished flag); the scorer block ABSENT (Q4=A — NEVER renders, even when finished); the GSC surfaces byte-frozen (or the title update verified if the projection carries the FT score — compare against the §1.4.2 baseline). Zero console errors. Mobile 390 no horizontal scroll.
-- **The timing windows:** the live window opens at kickoff + the 120s render-hold (visit ≥2 min after kickoff). The finished window opens at FT + the 900s render-hold (visit ≥15 min after FT). The `sched_next_wake` is `2026-11-20T18:30:00Z` (the cron wakes 1 hour before kickoff to arm the live sweep).
+**The rest of the weekly read (audit §3, all deferred by the measurement
+discipline):** team pages 0.65% CTR on 2,456 impressions (the
+«بازی بعدی» intent — 1,205 impr, 3 clicks) → the S2 title test after Dec 4;
+standings intent («جایگاه‌های…» 678 impr, 0 clicks) → S2 snippet work;
+structured-data warnings (location 13 = data-coverage task behind the Dec 8
+freeze; endDate/offers/performer = principled omissions, S-03/S-04);
+zero backlinks (Phase 3); indexed = 659 (KPI table filled).
 
-**The H1 status:** H1-upcoming RE-VERIFIED (the pre-match baseline + the byte-frozen GSC baseline, 5 days closer to the match). H1-live + H1-finished remain DEFERRED to the Nov 20 windows. **H1 stays OPEN** until the live + finished marker verification runs. The owner's choice on how to run the Nov 20 windows (the S27 TLDR's A/B/C/D options) is the next decision.
+**Standing laws honoured:** the GSC surfaces + the answer sentence
+byte-frozen (verified DIFF 0 on the live Bayern page post-deploy — the
+cross-track Dec 4–8 measurement window stays PROTECTED); team-name spellings
+unchanged; `wrangler deploy` used the versioned path with instant rollback;
+no client asset changed (SW stays `sportsignal-v126`, bundle stays
+`public-13.80.js`, `_headers` untouched); the await-count law (3);
+the composer purity; zero credentials in any tracked file (the GitHub PAT
+and the CF tokens were used ONLY in the environment/URL, never persisted in
+git config or committed — `git config -l | grep -c ghp_` = 0).
 
-**Standing laws honoured (unchanged):**
-- The composer purity (no new inline JS — S27 is read-only).
-- `buildMatchPage`'s await count stays exactly 3 (`hydrateMatchVenue`, `loadArchive`, `fullByCodeFor` — ADR-006; S27 is read-only, NO renderer touch).
-- GSC surfaces + the answer sentence byte-frozen (verified — the §1.4.2 baseline).
-- The homepage `#promoStrip`/`#tgHead`/`#tgPill`/`#tgPillGo` + the `#about`/`.pagesfoot` footer byte-frozen (decision 65 — verified by S23/S25; not re-checked in S27 to keep the read-only visit to the Bayern match page only).
-- `wrangler deploy` FORBIDDEN (S27 is NO deploy; the production stays at the S25 deploy).
-- The version bump law (the version stays `13.258-mca11y` — NO bump in S27).
-- The cross-track SEO measurement window (Dec 4-8) is PROTECTED — the GSC surfaces are byte-frozen (S27 is read-only; NO deploy; NO code change).
-- Zero credentials in any tracked file (the GitHub PAT was used ONLY for the one-shot docs-commit push, in the URL, never persisted in git config; the clone's `remote.origin.url` PAT was PURGED before the push via `git remote set-url origin https://github.com/assadigit/SportSignal.git`; `git config -l | grep ghp_` = zero matches).
+**The owner's open A/B (audit §4):** extend the archive scope to ALL
+finished matches (~1,400-impression long tail, ~4x KV blob) — recommended:
+re-evaluate with the Dec 4 export. **The S27 H1 follow-up is unchanged:**
+the Nov 20 Bayern vs Köln live/finished windows (M1 ~19:35 UTC, M2
+~21:35–21:45 UTC) — the auto-verify workflow (`.github/workflows/
+s27-lifecycle-verify.yml`) fires on its own.
 
 ## Current state (machine)
 
-- **Version:** `13.258-mca11y` (`src/config.ts` VERSION / `package.json` version `13.258.0.0`; UNCHANGED by S27 — the S25 deploy version). The npm test baseline stays **3,583 OK** (3,573 baseline + 10 new S25 a11y assertions; S27 touches NO code — not re-run; `npx tsc --noEmit` clean [no code touched]; `git diff --check` clean).
-- **Deploy:** Cloudflare Worker `ucl-notifier`, deployed via `npx wrangler versions deploy` (versioned deploy + instant rollback). Current production deployment `181285b8-c97d-4942-9d66-dafff2bd382a` (created 2026-11-15T02:38:53Z — the S25 a11y deep-dive; 100% traffic; the F1-F4 fixes LIVE; UNCHANGED by S27). Rollback: `npx wrangler rollback` restores the S22 + post-merge re-deploy (`ab1395ee` / `10c0a004` / `13.257-mcmatchcentre` — the previous deployment); the second rollback target is `88649642`/`b48bae21`/`13.255-seospell`.
+- **Version:** `13.259-archserve` (`src/config.ts` VERSION / `package.json` version `13.259.0.0`; the S28 deploy version — the GSC 404-cliff fix). The npm test baseline is now **3,612 OK** (the 3,583 S25 baseline + 29 new S28 archserve assertions; `npx tsc --noEmit` clean; `git diff --check` clean).
+- **Deploy:** Cloudflare Worker `ucl-notifier`, deployed via `npx wrangler versions deploy` (versioned deploy + instant rollback). Current production deployment = the S28 `13.259-archserve` version (see `git log` + the deploy record below; 100% traffic; the archive serving + the archive sitemap child LIVE). Rollback: `npx wrangler rollback` restores `181285b8-c97d-4942-9d66-dafff2bd382a` (the S25 `13.258-mca11y` deploy); further targets: `ab1395ee`/`10c0a004`/`13.257-mcmatchcentre`, then `88649642`/`b48bae21`/`13.255-seospell`.
 - **Production hostnames:** `sportsignal.ir` (apex, the Custom Domain — the edge cache revalidates within the SWR=300 window) + `football.sportsignal.ir` (301s to apex except `/webhook`, `/api/`, `/admin`) + `ucl-notifier.sportsignal.workers.dev` (the workers.dev alias serving production traffic — NEVER treat as a scratch environment).
-- **Branch:** `main` (canonical). HEAD = the S27-cont docs commit (the timing-block + drift-check record — see `git log` after the push; the prior S27 docs commit was `36ac23b`). `feat/match-centre` was merged at `c058035` on 2026-11-15 (the owner's instruction); S23 added `cb9f7b5` (the docs commit); S25 added the F1-F4 + audit commit; S27 added the pre-match baseline docs commit (`36ac23b`); S27-cont adds the timing-block + drift-check docs commit.
-- **Commands:** `npm test` (tsc + the check scripts — must exit 0 before every push; the baseline is **3,583 OK** from S25; S27 touches NO code). **npm only, never `bun install`** (breaks `@resvg/resvg-wasm`; AGENTS §11). Port for local dev: `npx wrangler dev` (8787; `wrangler.dev.toml` is the local config — git-ignored). Deploy: `CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=a796fdfe… npx wrangler versions upload` → `npx wrangler versions deploy --version-id <id> --percentage 100 --yes` (FORBIDDEN in S27 — the verification session; only if a critical bug is found).
+- **Branch:** `main` (canonical). HEAD = the S28 archserve commit (code + docs + the filed GSC exports). `feat/match-centre` was merged at `c058035` on 2026-11-15; S25 added the F1-F4 + audit commit; S27/S27-cont added their docs commits; S28 adds the 404-cliff fix + the weekly-read audit.
+- **Commands:** `npm test` (tsc + the check scripts — must exit 0 before every push; the baseline is **3,612 OK** from S28). **npm only, never `bun install`** (breaks `@resvg/resvg-wasm`; AGENTS §11). Port for local dev: `npx wrangler dev` (8787; needs CLOUDFLARE_API_TOKEN in the env for the remote AI binding; local KV = the `preview_id` namespace — seed it with `wrangler kv key put --namespace-id 3d0548d6… --local`). Deploy: `CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=a796fdfe… npx wrangler versions upload` → `npx wrangler versions deploy --version-id <id> --percentage 100 --yes`.
 - **Cron triggers:** `*/10 * * * *` + `27 */4 * * *` (re-armed; UNCHANGED by S27). The pool `pool_matches: 348` + the `sched_next_ko: 2026-11-20T19:30:00.000Z` (the Bayern vs Köln kickoff) + the `sched_next_wake: 2026-11-20T18:30:00.000Z` (the cron wakes 1 hour before kickoff to arm the live sweep) + `sched_live_now:0` (NO live matches until Nov 20).
 - **Key folders:** `src/` (worker modules; `scripts/lib/worker-src.js` carries the bundle file ORDER — co-evolve when adding files; UNCHANGED by S27); `assets/` (immutable versioned client payload — UNCHANGED by S25/S27; the SW cache stays `sportsignal-v126` + the client bundle stays `public-13.80.js`); `docs/` (RUNBOOK, HANDOFF, specs, audits, `docs/mc/` the Match Centre milestone docs, `docs/audits/2026-11-15-s25-a11y-audit.md` the S25 audit, `docs/history/` session records); `docs/assets/s25-a11y/` (the S25 before/after screenshots); `docs/assets/s27-lifecycle/` (the S27 pre-match baseline screenshots — NEW).
 - **Backups:** KV is live state; no routine file backups (RUNBOOK §5 has the KV key contracts). Never rename KV keys. KV schema is additive across versions (no renames, ever → rollback-safe).
-- **Standing limits:** `_headers` sits at the 100-rule cap — every new pin needs a cap sweep. The cross-track SEO measurement window is Dec 4-8 (the GSC surfaces must stay byte-frozen through it — S25's body-only fixes comply; S27 is read-only; verified DIFF 0). Team-name spellings must NOT change before ~Dec 8 (the S1 M2 spelling fix is mid-measurement).
+- **Standing limits:** `_headers` sits at the 100-rule cap — every new pin needs a cap sweep. The cross-track SEO measurement window is Dec 4-8 (the GSC surfaces must stay byte-frozen through it — S25's body-only fixes + S28's archive restoration comply; verified DIFF 0 post-S28-deploy). Team-name spellings must NOT change before ~Dec 8 (the S1 M2 spelling fix is mid-measurement). The S28 archive scope stays BIG matches only (`isBigForSeo`) until the owner's A/B (audit §4).
 
 ## The S27 documented gaps (the follow-up — the Nov 20 windows)
 

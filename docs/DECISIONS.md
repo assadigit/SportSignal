@@ -803,3 +803,50 @@ re-fire windows. **H1 stays OPEN** until the owner re-fires option B on Nov 20.
   critical lifecycle bug is found in either window, STOP + present the bug + the
   proposed fix + the deploy plan (the `wrangler deploy` FORBIDDEN — use
   `wrangler versions deploy` if a fix is needed).
+
+## 2026-11-15 — S28 (SEO weekly read): serve finished match pages from the 365-day archive (v13.259-archserve) — the GSC 404-cliff fix
+
+**Context.** The Nov 15 Search Console export (`docs/audits/2026-11-15-gsc-read.md`)
+showed 159 not-found URLs: every finished match page 404s ~7 days after kickoff
+(the pool retention in `src/match-pool.ts`), while the 365-day `seo_archive_v1`
+(U-05) already stored 158 finished big matches that no serving path read. 161
+of 264 match pages in the GSC report were dead URLs carrying 52% of
+match-page impressions — including the whole positions-8–20 growth zone and
+the M2 spelling-fix measurement pages.
+
+**Decision.** Serve archived finished matches from `seo_archive_v1` when the
+slug misses the pool (`findArchivedMatchBySlug`), list them in the
+`matches-archive` sitemap child, and serve their per-match OG images. The
+archive load in `buildMatchPage` is hoisted (same single KV read, await
+count stays 3); venue hydration skips the home-ground table for archived
+rows (the archive shape loses stage/roundRaw — a neutral final could
+otherwise hydrate a wrong stadium); the FD-detail path stays (real data
+only). Frozen GSC surfaces untouched — verified DIFF 0 on live pages after
+deploy; restored pages render through the same frozen templates.
+
+**Options considered.**
+1. Serve the existing big-match archive (CHOSEN) — zero new data pipeline,
+   covers ~70% of the 404 impression mass including every page with clicks.
+2. Extend `syncArchive` to ALL finished matches — covers the ~1,400-impression
+   long tail but ~4x the KV blob and more write budget per change; deferred
+   to the owner as an A/B (audit §4) to decide with the Dec 4 export.
+3. Do nothing until the Dec 4 read — rejected: the 404 cliff deletes
+   ~30–40 pages of accumulated position history every week and was
+   invalidating the M2 measurement itself.
+
+**Who decided.** The agent (S28), under the growth plan's URL-stability rule
+(§4 "After the game: keep URL stable") and AGENTS.md §5's standing approval
+for deploys; the archive-scope extension (option 2) is explicitly left to the
+owner.
+
+**When to revisit.** With the Dec 4–8 GSC export: 404 count draining from
+159 toward <40, indexed count rising from 659, restored pages holding
+position; the owner's A/B on extending the archive scope to all finished
+matches.
+
+**Follow-up (same session):** `scripts/seo-check.js` T-05's orphan rule is now
+archive-aware — matches-archive URLs are exempt from the orphan ratio (explicit,
+counted + reported; every other child + T-25's >=3-link upcoming rule keep the
+full discipline). This is a check-semantics update for the new by-design
+sitemap-discovery surface, not a weakening: the crawl still fails on any
+404/redirect among linked pages, and non-archive orphans still fail the ratio.
