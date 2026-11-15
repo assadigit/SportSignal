@@ -644,3 +644,110 @@ present). The deploy landed at 2026-11-15T02:38:53Z (Version 181285b8 at
   the session prompt = the explicit approval). **Revisit:** none (the deploy
   landed; the rollback point is the S22 + post-merge re-deploy
   `ab1395ee`/`10c0a004`/`13.257-mcmatchcentre`).
+
+---
+
+## 2026-11-15 — S27: the post-M10 hardening track session 3 (the live/finished lifecycle verification — the pre-match baseline + the Nov 20 deferral; VERIFICATION, NO code change)
+
+**Context:** the M10 milestone is CLOSED + the post-M10 hardening track is OPEN.
+S25 (the a11y deep-dive) is DONE + DEPLOYED at `13.258-mca11y` (the F1-F4 fixes
+LIVE). S27 is the live/finished lifecycle verification session (the H1 deferred
+work from the S23 hardening report §1.2). The session was started on 2026-11-15
+(Sun Nov 15, 2026, Asia/Tehran) — **5 days before the Bayern vs Köln kickoff**
+(`2026-11-20T19:30:00Z` = Fri Nov 20 23:00 Tehran). The live window (during the
+match, after the 19:30 UTC kickoff) + the finished window (after FT + the 900s
+render-hold) are BOTH in the future. The `/healthz` confirmed `sched_live_now:0`
+(NO live matches in the pool) + the 30 homepage match links are ALL dated Nov 20+
+(NO finished matches in the pool to verify against). S27 therefore ran the
+**pre-match baseline** (the H1-upcoming re-verification + the byte-frozen GSC
+baseline that the Nov 20 windows will be compared against) + documented the exact
+M1 (live) + M2 (finished) verification plan for Nov 20. **NO code changes, NO
+deploy.** H1 stays OPEN.
+
+**Decision 1 — the pre-match baseline is the S27 deliverable (NOT the live +
+finished verification).** The live + finished marker verification (H1-live +
+H1-finished) cannot run in this session — the match is 5 days away + there are NO
+live or finished matches in the pool. The cheap, valuable, time-independent work
+S27 CAN do is the pre-match baseline: re-verify the Bayern page's UPCOMING state
+5 days closer to the match (the `.mkick` + `.mcount` + `data-kickoff` markers +
+the live/finished/scorer markers ABSENT) + capture the byte-frozen GSC surfaces
+(the title, canonical, og/twitter, h1, meta-description, JSON-LD, og:image,
+robots) that the Nov 20 live/finished windows will be compared against. This
+directly serves H1 (the baseline is the reference for the live→finished title
+update verification) + confirms the production is healthy 5 days out. The S27
+pre-match baseline is recorded at `docs/mc/post-m10-hardening-report.md` §1.4 +
+the 2 screenshots in `docs/assets/s27-lifecycle/`.
+- **Options considered:** (a) run the pre-match baseline + document the Nov 20
+  plan + defer M1/M2 to the Nov 20 windows (chosen — the only honest option; the
+  live + finished windows are not reachable 5 days before the match); (b) wait
+  + do nothing until Nov 20 (rejected — the pre-match baseline is cheap +
+  valuable + captures the byte-frozen reference; waiting wastes the session);
+  (c) pretend M1/M2 are done (rejected — violates AGENTS.md §1 honesty + §9 the
+  done-criteria; the live + finished states were NOT observed in this session).
+- **Reason:** AGENTS.md §1 (honesty — never say "done" unless run in this
+  session) + §9 (the done-criteria — be strict) + the S27 stop-and-ask rule (the
+  Nov 20 kickoff missed → defer to the next live match; the finished state
+  persists in the pool until the cron rolls it off). The session ran 5 days
+  before the kickoff; the live + finished windows are in the future; the
+  pre-match baseline is the valuable, safe, time-independent work.
+- **Who:** the S27 agent (decision recorded per AGENTS.md §8 decision-log
+  discipline). **Revisit:** the Nov 20 windows (the H1-live + H1-finished
+  verification — the owner's choice on how to run them: the S27 TLDR's A/B/C/D
+  options).
+
+**Decision 2 — H1 stays OPEN; the Nov 20 verification plan is documented (NOT
+executed).** The S23 hardening report §1.2 documented the H1 markers checklist
+(the upcoming + live + finished columns). S27 re-verified the upcoming column
+(the pre-match baseline) + documented the exact M1 (live) + M2 (finished)
+verification steps for the Nov 20 windows (the `LIVE_PAGE_TTL:120` render-hold
+for the live state; the `SEO_PAGE_TTL:900` render-hold for the finished state;
+the `.mlive` pulse + the `.mfin` «پایان بازی» + the result block «نتیجه نهایی»
++ the scorer block ABSENT [Q4=A] + the GSC surfaces byte-frozen or the title
+update verified). H1 is NOT closed — the live + finished marker verification is
+deferred. The owner's choice on how to run the Nov 20 windows (the S27 TLDR's
+A/B/C/D options) is the next decision.
+- **Options considered:** (a) keep H1 OPEN + document the Nov 20 plan (chosen —
+  the honest status; the live + finished verification did not run); (b) mark H1
+  CLOSED on the pre-match baseline alone (rejected — the live + finished markers
+  were NOT observed; marking H1 closed would violate the done-criteria); (c)
+  mark H1 CLOSED + note the deferral (rejected — "CLOSED + deferred" is
+  contradictory + misleading).
+- **Reason:** the S27 done-criteria (the task prompt) says "mark H1 CLOSED" ONLY
+  if the live + finished verification is done. Since it is NOT done (the match is
+  5 days away), H1 stays OPEN. The pre-match baseline is a PARTIAL completion
+  (H1-upcoming re-verified) — recorded honestly.
+- **Who:** the S27 agent (the status decision). **Revisit:** the Nov 20 windows
+  (after the live + finished marker verification runs, H1 can be CLOSED).
+
+**Decision 3 — the Nov 20 windows: the owner's choice (A/B/C/D), the
+recommended path is B.** The Nov 20 live + finished verification needs the owner's
+input on how to run it (the windows are time-sensitive + the cron-fired-agent
+reliability is uncertain). The options:
+- **(A)** the agent schedules cron jobs (via the `cron` tool) to auto-run M1
+  [live, Nov 20 ~19:35 UTC — 5 min after the kickoff] + M2 [finished, Nov 20
+  ~21:35 UTC — ~15 min after FT+900s]. The cron-fired agent would be a fresh
+  context (it would need to read AGENTS.md + the docs + use the agent-browser +
+  verify + commit + push). The reliability of a cron-fired agent doing a full
+  verification + commit + push is uncertain.
+- **(B)** the owner starts a new session during the live window (Nov 20, ~19:35
+  UTC — after the kickoff) for M1 + another after FT+900s (~21:35 UTC) for M2
+  (the recommended reliable path — a fresh session with the full context + the
+  owner's oversight; the next-session prompt is at the end of the S27 TLDR).
+- **(C)** defer to a single session after FT+900s (skip M1 live, do M2 finished
+  + rely on the render-hold to confirm the live→finished transition logic — a
+  weaker verification, but a single session).
+- **(D)** other (the owner's call).
+- **Options considered:** (a) A (the cron auto-run) — automated but the
+  reliability is uncertain + the timing is tricky (the match duration varies);
+  (b) B (the owner's two short sessions) — chosen as the recommended path (the
+  most reliable + the owner's oversight); (c) C (the single finished-only
+  session) — a weaker verification; (d) D (the owner's call).
+- **Reason:** the Nov 20 windows are time-sensitive (the live window is during
+  the match; the finished window is after FT+900s) + the verification needs the
+  full agent context (AGENTS.md + the docs + the agent-browser + the commit +
+  push). A fresh owner-started session (B) is the most reliable path. The cron
+  auto-run (A) is feasible but the cron-fired agent's reliability is uncertain
+  (it would be a fresh context + the timing risks missing the window). The owner
+  decides.
+- **Who:** the S27 agent (the recommendation). **Revisit:** the owner picks an
+  option; the Nov 20 verification runs; H1 can then be CLOSED.

@@ -74,7 +74,69 @@ The S23 verification confirms the UPCOMING state holds against REAL production t
 - The render-hold logic in `router.ts` is preserved (the await count stays 3 — verified by the S20 assertion + unchanged by S23).
 - The structural protection (the hero's three states share the shell + branch ONLY in the center column) is confirmed by source inspection (`match-centre.ts` line 223 — the hero renderer; the lifecycle branching is in the center column assembly).
 
-**H1 status: the verification PLAN + the markers are documented. The live/finished verification is DEFERRED to S27 (after Nov 20).**
+**H1 status after S23: the verification PLAN + the markers are documented. The live/finished verification is DEFERRED to S27 (after Nov 20).**
+
+### 1.4 The S27 pre-match baseline record (2026-11-15 — 5 days before the Nov 20 kickoff)
+
+> S27 is the live/finished lifecycle verification session (the H1 deferred work). It was started on 2026-11-15 (Sun Nov 15, 2026, Asia/Tehran) — **5 days before the Bayern vs Köln kickoff** (`2026-11-20T19:30:00Z` = Fri Nov 20 23:00 Tehran). The live window (during the match, after the 19:30 UTC kickoff) + the finished window (after FT + the 900s render-hold) are BOTH in the future. S27 therefore runs the **pre-match baseline** (the upcoming-state verification of the Bayern page + the byte-frozen GSC baseline that the Nov 20 live/finished windows will be compared against) + re-confirms the Nov 20 verification plan. **NO code changes** (S27 is a verification session). **H1 stays OPEN** — the live + finished marker verification is deferred to the Nov 20 windows (the owner's choice on how to run them — see the A/B/C/D options in the S27 TLDR).
+
+#### 1.4.1 The production state at the S27 start (verified 2026-11-15T03:01Z)
+
+- `/healthz` = `ok:true / version:13.258-mca11y / degraded:false / pool_matches:348 / sched_next_ko:2026-11-20T19:30:00.000Z / sched_next_wake:2026-11-20T18:30:00.000Z / sched_mode:IDLE / sched_reason:beyond-horizon / sched_live_sweep:none / sched_live_now:0 / sched_stale_live:0 / sched_feed_ok:true`. The version `13.258-mca11y` matches the S25 deploy (deployment `181285b8`, created 2026-11-15T02:38:53Z — the F1-F4 fixes LIVE). **NO live matches in the pool** (`sched_live_now:0`).
+- The pool scan: the homepage carries 30 dated match links — ALL dated Nov 20+ (the earliest is `bayern-munich-vs-1-koln-2026-11-20`; the rest span Nov 21–25 + Dec 5/12/19/29). **NO finished matches** in the pool to verify the finished-state markers against (the cron has rolled off the previous weekends' finished matches; the pool is forward-looking ~7 days, all upcoming). The `/matches/today` hub carries zero match links (today Nov 15 is a quiet match day — the weekend density is Nov 21-22).
+
+#### 1.4.2 The Bayern page pre-match baseline (the upcoming state — verified 2026-11-15T03:01Z)
+
+The Bayern vs Köln match page (`https://sportsignal.ir/matches/bayern-munich-vs-1-koln-2026-11-20`) was verified in the UPCOMING state via curl (the raw HTML) + the agent-browser (the live DOM, desktop 1440 + mobile 390). This is the **H1-upcoming** re-verification (5 days closer to the match than the S23 baseline) + the **byte-frozen GSC baseline** that the Nov 20 live/finished windows will be compared against.
+
+**The H1 markers checklist — the upcoming column (re-verified S27):**
+
+| Marker | Expected (upcoming) | curl (raw HTML) | agent-browser desktop 1440 | agent-browser mobile 390 |
+|---|---|---|---|---|
+| Hero center column `.mkick` + `.mcount` | present | `.mkick`×1, `.mcount`×1 ✓ | `mkick:1, mcount:1` ✓ | `mkick:1, mcount:1` ✓ |
+| `.mcount` `data-kickoff` attr | `2026-11-20T19:30:00Z` | `data-kickoff="2026-11-20T19:30:00Z"` ✓ | `2026-11-20T19:30:00Z` ✓ | (desktop-verified) |
+| `.mlive` pulse | absent | 0 ✓ | `mlive:0` ✓ | `mlive:0` ✓ |
+| `.mfin` «پایان بازی» status | absent | `.mfin`×0 ✓ (the 2 raw «پایان بازی» hits are in the answer-card lifecycle text + a CSS comment, NOT rendered status) | `mfin:0` ✓ | `mfin:0` ✓ |
+| `.mscore` (live/finished score) | absent | 0 ✓ | `mscore:0` ✓ | (desktop-verified) |
+| Live status «در جریان» | absent | 0 ✓ | (desktop-verified) | (desktop-verified) |
+| Result block «نتیجه نهایی» | absent | 0 ✓ | (desktop-verified) | (desktop-verified) |
+| Scorer block (Q4=A — NEVER renders) | absent | `mscorer/mgoals/mscorers`×0 ✓ | `mscorer:0` ✓ | `mscorer:0` ✓ |
+| Answer-first briefing `id="answer"` | present | ×1 ✓ | `answer:1` ✓ | (desktop-verified) |
+| The S25 F1 fix — hero inner wrapper is `<div>` (NOT `<section>`) | present (S25 LIVE) | (raw HTML: `<div class="mcentre-hero">`) ✓ | `hero_is_div:"DIV"` ✓ | (desktop-verified) |
+
+**The byte-frozen GSC surfaces (the baseline for the Nov 20 windows — curl, 2026-11-15T03:01Z):**
+
+- `<title>⚽ بایرن مونیخ – کلن | بوندسلیگا، ۲۹ آبان | اسپرت سیگنال</title>` — byte-identical to the S22/S23/S25 records.
+- `<link rel="canonical" href="https://sportsignal.ir/matches/bayern-munich-vs-1-koln-2026-11-20">` — byte-identical.
+- `<meta property="og:title" content="⚽ بایرن مونیخ – کلن | بوندسلیگا، ۲۹ آبان | اسپرت سیگنال">` — byte-identical.
+- `<meta name="twitter:title" content="⚽ بایرن مونیخ – کلن | بوندسلیگا، ۲۹ آبان | اسپرت سیگنال">` — byte-identical.
+- `<h1 class="pageh1">بایرن مونیخ – کلن | بوندسلیگا، ۲۹ آبان (۲۰ نوامبر)</h1>` — byte-identical.
+- `<meta name="description" content="بایرن مونیخ در بوندسلیگا میزبان کلن است؛ این بازی جمعه ۲۹ آبان ۱۴۰۵ (۲۰ نوامبر ۲۰۲۶) ساعت ۲۳:۰۰ به وقت تهران…">` — the answer sentence, byte-identical (the meta description === the answer sentence, one source of truth).
+- `<meta property="og:url" content="https://sportsignal.ir/matches/bayern-munich-vs-1-koln-2026-11-20">`, `<meta property="og:type" content="website">`, `<meta property="og:image" content="https://sportsignal.ir/og/match-bayern-munich-vs-1-koln-2026-11-20.png">` — present.
+- `<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">` — present.
+- The JSON-LD `<script type="application/ld+json">` ×1 block (the Organization + WebSite + WebPage + SportsEvent + BreadcrumbList @graph) — present.
+- The version string is NOT in the match page HTML (`grep -cE '13\.258|13\.257|mcM9x|mcfound|matchcentre'` = 0 — the version appears ONLY in `/healthz` + `/api/status`).
+- The Cloudflare Web Analytics beacon (`cloudflareinsights`) IS present (P3 — the CWV/RUM data is being collected; for S24 after Dec 8).
+- The hero portraits `<img class="mport">` ×2 carry `loading="lazy"` (P1 — the LCP anti-pattern finding, UNCHANGED by S25; for S24 after Dec 8). The S25 F2 fix carries the descriptive `alt` (verified in the live DOM via the S25 audit — NOT re-checked in S27 to keep the read-only visit minimal).
+
+**The device matrix (agent-browser, Chromium 0.43.0):**
+
+| Viewport | scrollWidth | clientWidth | innerWidth | overflowX | Console errors | Screenshot |
+|---|---|---|---|---|---|---|
+| 1440 (desktop) | 1440 | 1440 | 1440 | 0 (no hscroll) | 0 | `docs/assets/s27-lifecycle/s27-desktop-1440-bayern-koln-prematch.png` |
+| 390 (mobile) | 390 | 390 | 390 | 0 (no hscroll) | 0 | `docs/assets/s27-lifecycle/s27-mobile-390-bayern-koln-prematch.png` |
+
+**No critical bug found in the pre-match baseline.** The upcoming state holds 5 days before the match. The GSC surfaces are byte-frozen. The S25 F1 fix is LIVE (the hero inner wrapper is a `<div>`, not a `<section>`). The scorer block is ABSENT (Q4=A). Zero console errors. Mobile 390 no horizontal scroll. The render-hold logic in `router.ts` (lines 720-724 + `seo/config.ts` `LIVE_PAGE_TTL:120` / `SEO_PAGE_TTL:900`) is preserved exactly (the await count stays 3 — S27 is read-only, NO renderer touch).
+
+#### 1.4.3 The Nov 20 verification plan (the M1 live + M2 finished windows — DEFERRED)
+
+The live + finished marker verification (the H1-live + H1-finished columns of the §1.2 markers table) **cannot run in this session** — the match is 5 days away. The plan for the Nov 20 windows:
+
+- **M1 — the live verification (DURING the match, after the 19:30 UTC kickoff, before FT):** open `https://sportsignal.ir/matches/bayern-munich-vs-1-koln-2026-11-20` in the agent-browser (desktop 1440 + mobile 390). Verify: the `.mlive` pulse (the live dot + the «در جریان» aria-label) + the `.mscore` (the live score); the live status «در جریان»; the cron `*/10` tick refreshes the live overlay (the `LIVE_PAGE_TTL:120` render-hold — re-fetch within 120s); the scorer block ABSENT (Q4=A); the result block ABSENT (lives ONLY when finished); the GSC surfaces byte-frozen (the title may carry the FT score if the projection updates it — verify; if it changes, that is EXPECTED for a live→finished title update, NOT a byte-freeze violation). Zero console errors. Mobile 390 no horizontal scroll. The `sched_live_now` in `/healthz` should read `>0` during the window (the cron's live-sweep armed).
+- **M2 — the finished verification (AFTER FT + the 900s render-hold):** open the same URL. Verify: the `.mfin` «پایان بازی» status + the final `.mscore`; the result block «نتیجه نهایی» renders (the S07 projection gates it on the finished flag); the scorer block ABSENT (Q4=A — NEVER renders, even when finished); the GSC surfaces byte-frozen (or the title update verified if the projection carries the FT score — compare against the §1.4.2 baseline). Zero console errors. Mobile 390 no horizontal scroll.
+- **The timing windows:** the kickoff is `2026-11-20T19:30:00Z` (Fri Nov 20 23:00 Tehran). The live window opens at kickoff + the render-hold (the `LIVE_PAGE_TTL:120` means the live render is held for 120s, then refreshed — visit ≥2 min after kickoff to catch the live state). The finished window opens at FT + `SEO_PAGE_TTL:900` (15 min — the finished render is held for 900s after FT; visit ≥15 min after FT to catch the stable finished state). The `sched_next_wake` is `2026-11-20T18:30:00Z` (the cron wakes 1 hour before kickoff to arm the live sweep).
+
+**H1 status after S27: H1-upcoming RE-VERIFIED (the pre-match baseline + the byte-frozen GSC surfaces, 5 days closer to the match). H1-live + H1-finished remain DEFERRED to the Nov 20 windows. H1 stays OPEN until the live + finished marker verification runs. The owner's choice on how to run the Nov 20 windows (the S27 TLDR's A/B/C/D options) determines the next step.**
 
 ---
 
