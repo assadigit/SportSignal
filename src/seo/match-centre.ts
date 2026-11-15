@@ -220,14 +220,24 @@ export function matchHeroHtml(h: MatchHeroInput): string {
   center += '<div class="mkickdate">' + h.kickDateHtml + "</div>";
   if (h.countHtml) center += h.countHtml;
   if (h.venueHtml) center += h.venueHtml;
-  return '<section class="mcentre-hero" aria-label="خلاصه بازی">' +
+  // S25 a11y F1: the hero renders as an inner <div class="mcentre-hero">
+  // (NOT a <section>) — the outer <section id="mcentre-hero"
+  // aria-label="تیم‌ها و وضعیت بازی"> (from sectionHtml, applied by
+  // matchCentreMain) is the SINGLE landmark. The wrong inner aria-label
+  // «خلاصه بازی» (a summary-section label, semantically wrong for the hero)
+  // is DROPPED. This matches the other 10 sections' pattern (inner
+  // <div class="mcentre-X">, outer <section id="mcentre-X" aria-label="…">)
+  // — the hero was the ONLY section with the double-wrap. The composer stays
+  // a pure leaf (no data work; the await count stays 3; the GSC surfaces in
+  // the <head> are NOT touched — the fix is body-only).
+  return '<div class="mcentre-hero">' +
     '<div class="mcentre-hero-comp"><span class="mchip">' + h.compHtml + "</span></div>" +
     '<div class="mcentre-hero-face">' +
     heroSideHtml(h.home, MC_HERO_HOME_LABEL, "", homePort) +
     '<div class="mcenter">' + center + "</div>" +
     heroSideHtml(h.away, MC_HERO_AWAY_LABEL, "away", awayPort) +
     "</div>" +
-    "</section>";
+    "</div>";
 }
 
 // ---- Match Centre S07 (M3): the summary & editorial system (specification §5) ----
@@ -1218,6 +1228,23 @@ function sectionHtml(def: MatchCentreSectionDef, inner: string): string {
 // padded) so the DOM order equals the specification §3 order for every
 // lifecycle state (upcoming / live / finished render the same shell — the
 // sections differ only by content).
+//
+// S25 a11y F4: the nav slot is a SPECIAL case. The nav part (built in
+// pages.ts) carries its OWN <nav aria-label> landmark (the Persian
+// navigation label). The sectionHtml wrapper would add a SECOND <section
+// id="mcentre-nav" aria-label="…"> landmark — two labeled landmarks with
+// the same name (a screen reader announces «region» + «navigation» for
+// one nav). The fix: the nav slot renders a NON-LANDMARK container —
+// <section id="mcentre-nav"> with NO aria-label. A <section> without an
+// accessible name is NOT exposed as a landmark per the HTML/ARIA spec, so
+// the inner <nav> becomes the SINGLE landmark. The id="mcentre-nav" anchor
+// + the #mcentre-nav{display:contents} sticky-nav CSS (page-shell.ts — the
+// S06 desktop sticky-persistence fix) + the getElementById references are
+// ALL preserved (only the aria-label is dropped). The other 10 sections
+// keep the sectionHtml wrapper (their content starts with a <div>, so the
+// outer <section aria-label> is the needed landmark). The composer stays a
+// pure leaf (no nav/observer/script code — the S06 purity assertion holds;
+// the await count stays 3).
 export function matchCentreMain(parts: MatchCentreParts): string {
   const bySlot: Record<string, string> = {
     "mcentre-hero": parts.hero,
@@ -1233,6 +1260,19 @@ export function matchCentreMain(parts: MatchCentreParts): string {
     "mcentre-footer-hook": parts.footerHook
   };
   let out = "";
-  for (const def of MC_SECTION_ORDER) out += sectionHtml(def, bySlot[def.slot] || "");
+  for (const def of MC_SECTION_ORDER) {
+    const inner = bySlot[def.slot] || "";
+    if (def.slot === "mcentre-nav") {
+      // S25 F4: the nav's outer container is a NON-LANDMARK <section> (no
+      // aria-label) — the inner <nav class="mnav" aria-label="…"> is the
+      // single landmark. The empty-input + whitespace-only guards mirror
+      // sectionHtml (the no-empty-cards law — a bare <section> never
+      // renders; the fail-closed behavior holds for the all-empty input).
+      if (!inner || !inner.trim()) continue;
+      out += '<section id="mcentre-nav">' + inner + "</section>";
+    } else {
+      out += sectionHtml(def, inner);
+    }
+  }
   return out;
 }

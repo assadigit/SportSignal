@@ -320,12 +320,16 @@ const heroFinished = mc.matchHeroHtml({ ...heroBase, live: false, finished: true
 check(typeof mc.matchHeroHtml === "function" && /export interface MatchHeroInput/.test(mcSrc) && /export interface MatchHeroSideInput/.test(mcSrc),
   "S04 contract: matchHeroHtml + MatchHeroInput/MatchHeroSideInput exported (the pre-escaped projection — the composer stays import-free)");
 
-// (b) the hero landmark: the inner aria-label «خلاصه بازی» is PRESERVED
-// (check-stats v13.81 lineage; the near-duplicate with the summary section
-// stays until S20's a11y dedup).
-const heroOpen = '<section class="mcentre-hero" aria-label="خلاصه بازی">';
-check(heroUpcoming.startsWith(heroOpen) && heroLive.startsWith(heroOpen) && heroFinished.startsWith(heroOpen) && (heroUpcoming.match(/aria-label="خلاصه بازی"/g) || []).length === 1,
-  "S04 landmark: the hero opens <section class=\"mcentre-hero\" aria-label=\"خلاصه بازی\"> — the pinned inner landmark survives the rework (S20 owns the dedup)");
+// (b) the hero landmark: S25 a11y F1 dedup — the hero renders as an inner
+// <div class="mcentre-hero"> (NOT a <section>) — the outer <section
+// id="mcentre-hero" aria-label="تیم‌ها و وضعیت بازی"> (from sectionHtml,
+// applied by matchCentreMain) is the SINGLE landmark. The wrong inner
+// aria-label «خلاصه بازی» (a summary-section label, semantically wrong for
+// the hero) is DROPPED. This matches the other 10 sections' pattern (inner
+// <div class="mcentre-X">, outer <section id="mcentre-X" aria-label="…">).
+const heroOpen = '<div class="mcentre-hero">';
+check(heroUpcoming.startsWith(heroOpen) && heroLive.startsWith(heroOpen) && heroFinished.startsWith(heroOpen) && (heroUpcoming.match(/aria-label="خلاصه بازی"/g) || []).length === 0,
+  "S25 a11y F1: the hero opens <div class=\"mcentre-hero\"> (NOT a <section> — the S25 dedup dropped the double-wrap + the wrong inner aria-label «خلاصه بازی»; the outer <section id=\"mcentre-hero\" aria-label=\"تیم‌ها و وضعیت بازی\"> is the single landmark, matching the other 10 sections' pattern)");
 
 // (c) competition header — the restrained line ABOVE the teams (decision 98)
 const compIdx = (h) => h.indexOf('<div class="mcentre-hero-comp">');
@@ -452,10 +456,10 @@ check(!heroOnePort.includes("mport") && !heroUpcoming.includes("mport") && !hero
 // the pure leaf; heroArtSrv is the SHARED data-layer lookup, S05-relocated)
 check(/, heroArtSrv \} from "\.\/data";/.test(pagesSrc),
   "S05 wiring: pages.ts imports heroArtSrv from ./data (the shared lookup — relocated verbatim from seo/router.ts; no router→pages cycle)");
-check(/const hArt = heroArtSrv\(m\.homeTeam\);/.test(pagesSrc) && /const aArt = heroArtSrv\(m\.awayTeam\);/.test(pagesSrc) &&
-  /const ports = hArt && aArt \? \{ h: portraitHtml\(hArt\), a: portraitHtml\(aArt\) \} : null;/.test(pagesSrc) &&
+check(/const hArt = heroArtMetaSrv\(m\.homeTeam\);/.test(pagesSrc) && /const aArt = heroArtMetaSrv\(m\.awayTeam\);/.test(pagesSrc) &&
+  /const ports = hArt && aArt \? \{ h: portraitHtml\(hArt\.src, hArt\.player, faName\(m\.homeTeam\)\), a: portraitHtml\(aArt\.src, aArt\.player, faName\(m\.awayTeam\)\) \} : null;/.test(pagesSrc) &&
   /portraitHtml: ports \? ports\.h : ""/.test(pagesSrc) && /portraitHtml: ports \? ports\.a : ""/.test(pagesSrc),
-  "S05 projection: BOTH sides resolve through heroArtSrv before either atom is built (both-or-neither at the data layer too — one covered side alone renders nothing)");
+  "S05 projection + S25 a11y F2: BOTH sides resolve through heroArtMetaSrv (the shared lookup, now returning {src, player}) before either atom is built (both-or-neither at the data layer — one covered side alone renders nothing); the portraitHtml atom carries the player + the Persian team name so the <img alt> is descriptive (the featured player's identity, NOT in the adjacent text)");
 
 // (e) the Q1=A kickoff atoms — Tehran wall clock + the display-TZ label +
 // the Latin UTC island; the D1 full localized date; the frozen surfaces
@@ -532,8 +536,8 @@ check(/\{ id: "mcentre-summary", label: "خلاصه" \}/.test(pagesSrc) &&
   "S06 destinations: the five spec §3 nav targets (خلاصه/جدول/فرم/بازی‌ها/ورزشگاه — decisions 11/13) registered in page order");
 
 // (e) the nav item shape — href + data-target (the observer + click driver)
-check(/'<a class="mnav-item" href="#' \+ d\.id \+ '" data-target="' \+ d\.id \+ '">' \+ esc\(d\.label\) \+ '<\/a>'/.test(pagesSrc),
-  "S06 nav item: each item is <a class=\"mnav-item\" href=\"#mcentre-X\" data-target=\"mcentre-X\">LABEL</a> — the data-target drives the IntersectionObserver + the click handler");
+check(/'<a class="mnav-item"' \+ \(i === 0 \? ' aria-current="true"' : ""\) \+ ' href="#' \+ d\.id \+ '" data-target="' \+ d\.id \+ '">' \+ esc\(d\.label\) \+ '<\/a>'/.test(pagesSrc),
+  "S25 a11y F3 nav item: the first item (i===0) carries aria-current=\"true\" at render (the active section at page load — خلاصه first); the IntersectionObserver updates aria-current on scroll (the matchNavScript toggles aria-current alongside the is-active class — the screen-reader contract + the visual contract, belt-and-braces)");
 
 // (f) Q12 back-to-top: the button + the decorative chevron SVG, hidden initially
 check(pagesSrc.includes('<button class="mtop" type="button" aria-label="بازگشت به بالا" hidden>') &&
@@ -1490,7 +1494,7 @@ function standingsRendererEngine() {
     SEO: {}, absUrl: function () { return ""; }, matchPath: function () { return ""; }, compSlug: function () { return ""; }, teamSlug: function () { return ""; },
     faTime: function () { return ""; }, faDateD1: function () { return ""; }, faDateD2: function () { return ""; }, tehranDayKey: function () { return ""; }, utcTime: function () { return ""; }, statusLabelFa: function () { return ""; }, weekendWindowTehran: function () { return null; },
     COMP_EN: {},
-    upcomingBig: function () { return []; }, upcomingFollowed: function () { return []; }, isBigForSeo: function () { return false; }, finishedRecent: function () { return []; }, teamMatches: function () { return { upcoming: [], finished: [] }; }, compMatches: function () { return []; }, teamsIndex: function () { return []; }, compsIndex: function () { return []; }, findMatchBySlug: function () { return null; }, findTeamBySlug: function () { return null; }, payloadTop3: function () { return {}; }, hydrateMatchVenue: async function () { return null; }, similarMatches: function () { return []; }, teamStandingsWindow: function () { return null; }, teamForm: function () { return null; }, teamSeasonRecord: function () { return null; }, heroArtSrv: function () { return null; },
+    upcomingBig: function () { return []; }, upcomingFollowed: function () { return []; }, isBigForSeo: function () { return false; }, finishedRecent: function () { return []; }, teamMatches: function () { return { upcoming: [], finished: [] }; }, compMatches: function () { return []; }, teamsIndex: function () { return []; }, compsIndex: function () { return []; }, findMatchBySlug: function () { return null; }, findTeamBySlug: function () { return null; }, payloadTop3: function () { return {}; }, hydrateMatchVenue: async function () { return null; }, similarMatches: function () { return []; }, teamStandingsWindow: function () { return null; }, teamForm: function () { return null; }, teamSeasonRecord: function () { return null; }, heroArtMetaSrv: function () { return null; }, heroArtSrv: function () { return null; },
     JL: {}, buildHead: function () { return ""; }, pageShell: function () { return ""; },
     seoTeamFaName: function (t) { return (t && (t.faName || t.name)) || ""; }, seoTeamAltName: function () { return null; },
     matchCentreMain: function () { return ""; }, matchHeroHtml: function () { return ""; }, matchSummaryHtml: function () { return ""; },
@@ -1862,7 +1866,7 @@ function formProjectionEngine() {
     SEO: {}, absUrl: function () { return ""; }, matchPath: function () { return ""; }, compSlug: function () { return ""; }, teamSlug: function () { return ""; },
     faTime: function () { return ""; }, faDateD1: function () { return ""; }, tehranDayKey: function () { return ""; }, utcTime: function () { return ""; }, statusLabelFa: function () { return ""; }, weekendWindowTehran: function () { return null; },
     COMP_EN: {},
-    upcomingBig: function () { return []; }, upcomingFollowed: function () { return []; }, isBigForSeo: function () { return false; }, finishedRecent: function () { return []; }, teamMatches: function () { return { upcoming: [], finished: [] }; }, compMatches: function () { return []; }, teamsIndex: function () { return []; }, compsIndex: function () { return []; }, findMatchBySlug: function () { return null; }, findTeamBySlug: function () { return null; }, payloadTop3: function () { return {}; }, hydrateMatchVenue: async function () { return null; }, similarMatches: function () { return []; }, teamStandingsWindow: function () { return null; }, heroArtSrv: function () { return null; },
+    upcomingBig: function () { return []; }, upcomingFollowed: function () { return []; }, isBigForSeo: function () { return false; }, finishedRecent: function () { return []; }, teamMatches: function () { return { upcoming: [], finished: [] }; }, compMatches: function () { return []; }, teamsIndex: function () { return []; }, compsIndex: function () { return []; }, findMatchBySlug: function () { return null; }, findTeamBySlug: function () { return null; }, payloadTop3: function () { return {}; }, hydrateMatchVenue: async function () { return null; }, similarMatches: function () { return []; }, teamStandingsWindow: function () { return null; }, heroArtMetaSrv: function () { return null; }, heroArtSrv: function () { return null; },
     JL: {}, buildHead: function () { return ""; }, pageShell: function () { return ""; },
     seoTeamAltName: function () { return null; },
     matchCentreMain: function () { return ""; }, matchHeroHtml: function () { return ""; }, matchSummaryHtml: function () { return ""; }, matchFormHtml: function () { return ""; },
@@ -2271,7 +2275,7 @@ function metricsProjectionEngine() {
     SEO: {}, absUrl: function () { return ""; }, matchPath: function () { return ""; }, compSlug: function () { return ""; }, teamSlug: function () { return ""; },
     faTime: function () { return ""; }, faDateD1: function () { return ""; }, faDateD2: function () { return ""; }, tehranDayKey: function () { return ""; }, utcTime: function () { return ""; }, statusLabelFa: function () { return ""; }, weekendWindowTehran: function () { return null; },
     COMP_EN: {},
-    upcomingBig: function () { return []; }, upcomingFollowed: function () { return []; }, isBigForSeo: function () { return false; }, finishedRecent: function () { return []; }, teamMatches: function () { return { upcoming: [], finished: [] }; }, compMatches: function () { return []; }, teamsIndex: function () { return []; }, compsIndex: function () { return []; }, findMatchBySlug: function () { return null; }, findTeamBySlug: function () { return null; }, payloadTop3: function () { return {}; }, hydrateMatchVenue: async function () { return null; }, similarMatches: function () { return []; }, teamStandingsWindow: function () { return null; }, teamForm: function () { return null; }, teamSeasonRecord: function () { return null; }, heroArtSrv: function () { return null; },
+    upcomingBig: function () { return []; }, upcomingFollowed: function () { return []; }, isBigForSeo: function () { return false; }, finishedRecent: function () { return []; }, teamMatches: function () { return { upcoming: [], finished: [] }; }, compMatches: function () { return []; }, teamsIndex: function () { return []; }, compsIndex: function () { return []; }, findMatchBySlug: function () { return null; }, findTeamBySlug: function () { return null; }, payloadTop3: function () { return {}; }, hydrateMatchVenue: async function () { return null; }, similarMatches: function () { return []; }, teamStandingsWindow: function () { return null; }, teamForm: function () { return null; }, teamSeasonRecord: function () { return null; }, heroArtMetaSrv: function () { return null; }, heroArtSrv: function () { return null; },
     JL: {}, buildHead: function () { return ""; }, pageShell: function () { return ""; },
     seoTeamAltName: function () { return null; },
     matchCentreMain: function () { return ""; }, matchHeroHtml: function () { return ""; }, matchSummaryHtml: function () { return ""; }, matchFormHtml: function () { return ""; }, matchMetricsHtml: function () { return ""; },
@@ -4264,6 +4268,95 @@ check(awaitCount === 3 && !/await env\.STATE|await fetch\(|await fetchJSON/.test
 // reading the already-loaded ctx).
 check(!/JSON\.parse\(/.test(bpSeg) && !/for\s*\(\s*(?:let|var|const)\s+\w+\s+of\s+ctx\.pool/.test(bpSeg),
   "S20 perf HTML payload: the buildMatchPage render is O(ctx) string concatenation (NO new JSON.parse — the pool parse is the pre-existing single ~331KB parse at the ctx level, NOT per-match; NO unbounded for-of over ctx.pool — the render reads the already-loaded SeoMatch fields; audit §6 line 106 'the pool JSON.parse dominates; the render itself is string concatenation' + line 108 'HTML payload: 45,187 bytes — target: keep in the same order of magnitude'; the mcM9x preview's measured byte size is recorded in the gate doc; the per-route CPU is NOT instrumented — audit §13 risk 1 — stated as a known limitation)");
+
+// ---- S25 a11y deep-dive (the F1-F4 fixes — docs/audits/2026-11-15-s25-a11y-audit.md).
+// The fixes are presentation-layer (body-only — the GSC surfaces in the <head>
+// are NOT touched; the await count stays 3; the composer purity holds — S25
+// MODIFIES the existing S06 nav script to also toggle aria-current, NOT a new
+// script). Each fix is pinned by a render check + a source check. ----
+
+// (s25-F1) The hero renders as an inner <div class="mcentre-hero"> (NOT a
+// <section>) — the outer <section id="mcentre-hero" aria-label="تیم‌ها و وضعیت
+// بازی"> (from sectionHtml) is the SINGLE landmark. The wrong inner aria-label
+// «خلاصه بازی» is DROPPED. (The source-level pin is at line 330-332; this block
+// adds the data-layer + the structural reinforcement.)
+check(/return '<div class="mcentre-hero">' \+/.test(mcSrc) && !/'<section class="mcentre-hero" aria-label="خلاصه بازی">'/.test(mcSrc),
+  "S25 a11y F1 source: match-centre.ts matchHeroHtml returns '<div class=\"mcentre-hero\">' (NOT a <section aria-label=\"خلاصه بازی\">); the wrong inner aria-label is DROPPED — the outer <section id=\"mcentre-hero\" aria-label=\"تیم‌ها و وضعیت بازی\"> is the single landmark (matches the other 10 sections' pattern)");
+
+// (s25-F2) The portrait <img alt> is descriptive (the player name + the
+// Persian team name). The data layer (data.ts heroArtMetaSrv) exposes the
+// player; the projection (pages.ts portraitHtml) builds the alt. The
+// backward-compat heroArtSrv (the homepage .mc-port mirror) is preserved.
+(function () {
+  const dataSrc = read("src/seo/data.ts");
+  check(/export function heroArtMetaSrv\(t: any\): \{ src: string; player: string \} \| null/.test(dataSrc) &&
+    /export function heroArtSrv\(t: any\): string \| null/.test(dataSrc) &&
+    /const HERO_ART_SSR = new Map<string, \{ src: string; player: string \}>\(\);/.test(dataSrc) &&
+    /for \(const w of HERO_COVERAGE_RAW\.wired\) HERO_ART_SSR\.set\(w\.name, \{ src: w\.src, player: w\.player \|\| "" \}\)/.test(dataSrc),
+    "S25 a11y F2 data layer: src/seo/data.ts exports heroArtMetaSrv (returns {src, player}) + the backward-compat heroArtSrv (returns src — the homepage .mc-port mirror is UNTOUCHED, the byte-frozen surfaces hold); HERO_ART_SSR maps name → {src, player} (the player field from HERO_COVERAGE_RAW.wired — the Latin name); pure map read, zero KV/fetch");
+  const pStart = pagesSrc.indexOf("function portraitHtml(");
+  const pEnd = pagesSrc.indexOf("function gcalBasic(", pStart);
+  const pSrc = pStart >= 0 && pEnd > pStart ? pagesSrc.slice(pStart, pEnd) : "";
+  check(pSrc.length > 0 && /function portraitHtml\(src: string, player: string, teamFa: string\): string/.test(pSrc) &&
+    /const alt = player \? "تصویر " \+ esc\(player\) \+ "، بازیکن " \+ esc\(teamFa\) : "";/.test(pSrc) &&
+    /'<img class="mport" src="' \+ esc\(src\) \+ '" alt="' \+ alt \+ '" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="88" height="88"/.test(pSrc),
+    "S25 a11y F2 projection: pages.ts portraitHtml(src, player, teamFa) builds the descriptive alt «تصویر ${player}، بازیکن ${teamFa}» (the Persian lead «تصویر» + the Latin player name [from HERO_COVERAGE_RAW.wired] + the Persian «بازیکن» + the Persian team name [faName]); the defensive fallback (player empty → alt=\"\") keeps the img never-broken; the onerror removes BOTH portraits (decision 85, unchanged)");
+})();
+
+// (s25-F3) The nav aria-current: the FIRST item carries aria-current="true" at
+// render (the active section at page load) + the IntersectionObserver toggles
+// it on scroll. The aria-current is ALONGSIDE the is-active class (the
+// screen-reader contract + the visual contract — belt-and-braces).
+(function () {
+  // render: the matchNavHtml build (the source regex at line 539 pins the
+  // exact shape; this block pins the map((d, i) => ...) + the i===0 gate).
+  check(/present\.map\(\(d, i\) =>/.test(pagesSrc) && /i === 0 \? ' aria-current="true"' : ""/.test(pagesSrc),
+    "S25 a11y F3 render: matchNavHtml uses present.map((d, i) => ...) + the i===0 item carries aria-current=\"true\" at render (the active section at page load — خلاصه first when present; a screen-reader user navigating by landmarks hears «current» immediately, without waiting for the scroll observer)");
+  // scroll: the matchNavScript IntersectionObserver toggles aria-current.
+  const navFnStart = pagesSrc.indexOf("function matchNavScript");
+  const navFnEnd = pagesSrc.indexOf("function matchActionsHtml", navFnStart);
+  const navFnSrc = navFnStart >= 0 && navFnEnd > navFnStart ? pagesSrc.slice(navFnStart, navFnEnd) : "";
+  check(navFnSrc.length > 0 && /setAttribute\('aria-current','true'\)/.test(navFnSrc) && /removeAttribute\('aria-current'\)/.test(navFnSrc),
+    "S25 a11y F3 scroll update: the matchNavScript IntersectionObserver toggles aria-current on scroll (setAttribute('aria-current','true') on the active item + removeAttribute('aria-current') on the others — alongside the is-active class; the MODIFICATION of the existing S06 nav script, NOT a new script — the composer purity holds)");
+  // the nav script stays pure DOM (no new fetch/timer/polling — the S06 cost law).
+  check(navFnSrc.length > 0 && !/fetch\(|setInterval|setTimeout|XMLHttpRequest|new Image/.test(navFnSrc),
+    "S25 a11y F3 cost law: the modified matchNavScript stays pure DOM (no fetch/timer/polling/new Image — the S06 cost law holds; the aria-current toggle adds ZERO runtime cost)");
+})();
+
+// (s25-F4) The nav's outer <section id="mcentre-nav"> carries NO aria-label
+// (a non-landmark container — a <section> without an accessible name is NOT
+// exposed as a landmark per the HTML/ARIA spec). The inner <nav class="mnav"
+// aria-label="ناوبری بخش‌های صفحه"> is the SINGLE landmark. The id anchor +
+// the display:contents sticky-nav CSS (the load-bearing S06 desktop fix) are
+// preserved. Verified via the REAL matchCentreMain render with a nav part.
+(function () {
+  const navPart = '<nav class="mnav" aria-label="ناوبری بخش‌های صفحه"><a class="mnav-item" aria-current="true" href="#mcentre-summary" data-target="mcentre-summary">خلاصه</a></nav>';
+  const out = mc.matchCentreMain({ hero: "<div>HERO</div>", nav: navPart, summary: "<div>SUMMARY</div>", form: "", related: "", footerHook: "" });
+  const navSecStart = out.indexOf('<section id="mcentre-nav">');
+  const navSecClose = out.indexOf('</section>', navSecStart);
+  const navSec = navSecStart > -1 && navSecClose > -1 ? out.slice(navSecStart, navSecClose + 10) : "";
+  check(navSecStart > -1 && !/ aria-label=/.test(navSec.slice(0, 32)) && navSec.indexOf('<nav class="mnav" aria-label="ناوبری بخش‌های صفحه">') > -1,
+    "S25 a11y F4 render: the nav's outer <section id=\"mcentre-nav\"> carries NO aria-label (a non-landmark container); the inner <nav class=\"mnav\" aria-label=\"ناوبری بخش‌های صفحه\"> is the SINGLE landmark; the double-landmark (region + navigation with the same label) is COLLAPSED to one (the navigation landmark)");
+  // the sectionHtml helper is UNCHANGED for the other 10 sections (the F4
+  // special-case is in matchCentreMain, not sectionHtml — the sectionHtml
+  // return pattern still matches the S20 landmark assertion at line ~4174).
+  check(/return '<section id="' \+ def\.slot \+ '" aria-label="' \+ def\.label \+ '">' \+ inner \+ "<\/section>";/.test(mcSrc),
+    "S25 a11y F4 sectionHtml unchanged: the sectionHtml helper keeps the '<section id=\"…\" aria-label=\"…\">' return for the other 10 sections (the F4 special-case is in matchCentreMain — the nav slot renders '<section id=\"mcentre-nav\">' with no aria-label; the sectionHtml pattern is preserved, the S20 landmark assertion [line ~4174] still passes)");
+  // the nav special-case is in matchCentreMain (the composer purity holds —
+  // match-centre.ts carries NO nav/observer/script code, the S06 purity law).
+  check(/if \(def\.slot === "mcentre-nav"\)/.test(mcSrc) && /'<section id="mcentre-nav">' \+ inner \+ "<\/section>"/.test(mcSrc),
+    "S25 a11y F4 matchCentreMain: the nav slot is special-cased in matchCentreMain (def.slot === 'mcentre-nav' → '<section id=\"mcentre-nav\">' with no aria-label); the other 10 sections keep the sectionHtml wrapper; the composer purity holds (match-centre.ts carries no nav/observer/script — the S06 purity law)");
+})();
+
+// (s25-byte-frozen) The GSC surfaces + the answer sentence in pages.ts are
+// byte-frozen (the F1-F4 fixes are body-only — the <head> is NOT touched).
+// The buildHead call + the pageShell call + the matchAnswerSentence funnel
+// (the meta description === the answer sentence === the SportsEvent JSON-LD
+// description — one source of truth) are UNCHANGED. The runtime byte-frozen
+// diff verification (the M2 close-out + the M3 post-deploy smoke) compares
+// the <head> of the post-fix render against the pre-fix render — DIFF 0.
+check(/buildHead\(/.test(pagesSrc) && /pageShell\(/.test(pagesSrc) && /matchAnswerSentence\(sm\)/.test(pagesSrc),
+  "S25 byte-frozen: the GSC surfaces + the answer sentence in pages.ts are byte-frozen (the buildHead + pageShell + matchAnswerSentence funnel — the meta description === the answer sentence === the SportsEvent JSON-LD description, one source of truth; the F1-F4 fixes are body-only — the <head> is NOT touched; the runtime byte-frozen diff [the <head> DIFF 0] is the M2 close-out + the M3 post-deploy smoke step)");
 
 if (failures) { console.error("\ncheck-match-centre: " + failures + " failure(s)"); process.exit(1); }
 console.log("check-match-centre: all checks passed");

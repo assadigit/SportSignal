@@ -459,11 +459,16 @@ const pagesSrc = read("src/seo/pages.ts");
 const shellSrc81 = read("src/seo/page-shell.ts");
 // Match Centre S04 (M2): the hero markup moved to the composer — the pins
 // that walked the legacy matchHeadHtml builder now read match-centre.ts
-// (the markup owner) alongside pages.ts (the projection owner). The pinned
-// landmark label «خلاصه بازی» is PRESERVED on the new inner hero section
-// (the near-duplicate with the summary section stays — S20 owns the dedup).
+// (the markup owner) alongside pages.ts (the projection owner). S25 a11y F1:
+// the hero landmark dedup — the inner <section class="mcentre-hero"
+// aria-label="خلاصه بازی"> became an inner <div class="mcentre-hero"> (the
+// outer <section id="mcentre-hero" aria-label="تیم‌ها و وضعیت بازی"> from
+// sectionHtml is the SINGLE landmark). The wrong inner aria-label «خلاصه
+// بازی» (a summary-section label, semantically wrong for the hero) is
+// DROPPED — the inner element carries NO aria-label now (matches the other
+// 10 sections' pattern: inner <div>, outer <section aria-label>).
 const mcSrc81 = read("src/seo/match-centre.ts");
-check("match page carries the scoreboard head (the hero landmark, now mcentre-hero)", /'<section class="mcentre-hero" aria-label="خلاصه بازی">'/.test(mcSrc81) && !/class="matchhead"/.test(pagesSrc));
+check("match page carries the scoreboard head (the hero landmark, now mcentre-hero — S25 F1: the inner <div class=\"mcentre-hero\">, NOT a <section aria-label>; the wrong «خلاصه بازی» label dropped)", /'<div class="mcentre-hero">'/.test(mcSrc81) && !/'<section class="mcentre-hero" aria-label="خلاصه بازی">'/.test(mcSrc81) && !/class="matchhead"/.test(pagesSrc));
 check("matchhead renders both crests + monogram fallback", /function crestHtml\(t: any\)/.test(pagesSrc) && /class="mcrest"/.test(pagesSrc) && /mcrest-mono/.test(pagesSrc));
 check("match page countdown element only for upcoming (data-kickoff)", /class="mcount" data-kickoff="/.test(pagesSrc));
 check("match page countdown script ticks + Persian digits + kickoff stop", /querySelector\('\.mcount'\)/.test(pagesSrc) && /setTimeout\(tick,30000\)/.test(pagesSrc) && /\\u06F0\\u06F1/.test(pagesSrc));
@@ -497,7 +502,7 @@ const routerSrc = read("src/seo/router.ts");
 // hero projection also reads) — the v13.205 pin below walks with them.
 const dataSrc = read("src/seo/data.ts");
 
-check("v13.205-lcpreveal (F-C1, Phase 3 — the P0): the SSR mirror ships the slide-1 presentation the client CONFIRMS — the router consults the GENERATED hero-coverage map (the same HERO_ART source of truth public-13.68.js's heroArtFor reads, drift-gated by check-hero-coverage) via heroArtSrv (name||faName, the heroArtFor contract; Match Centre S05 relocated the map + lookup VERBATIM to seo/data.ts — the shared data-layer home the match-centre hero projection also reads — so the router now imports it from ./data and ONE coverage decision feeds every SSR surface), and when EITHER hero team has coverage: the anchor's unhide replace ALSO emits the mc-clean class (the exact mcFitScan contract — any port carrying an <img> — so the DCL scan + every per-port MutationObserver re-scan keep it, never re-swapping the scene), the two .mc-port containers ship the SSR portraits (lazy + async + no-referrer, the shared .mc-port img CSS rule fits every source; absolutely-positioned in fixed boxes = CLS-neutral) and the scene art rides a media-scoped (max-width:899px — the mobile card zone) fetchpriority=high preload so the fetch starts at HTML-parse time instead of behind the render-blocking external stylesheet (the measured ~1.4s load-delay root cause; scene-4-2 44KB with coverage (the v13.206 re-encode; was the 264KB effectively-lossless scene-4 at v13.205), else the 55KB scene-2 ghost-figure fallback — no scene swap ever lands post-paint for covered heroes, killing the late LCP candidate)", /import \{ HERO_COVERAGE_RAW \} from "\.\.\/hero-coverage";/.test(dataSrc) && /const HERO_ART_SSR = new Map<string, string>\(\);/.test(dataSrc) && /HERO_ART_SSR\.get\(t\.name\) \|\| HERO_ART_SSR\.get\(t\.faName\)/.test(dataSrc) && /heroArtSrv \} from "\.\/data";|heroArtSrv, type SeoCtx/.test(routerSrc) && /'<div class="mc-port mc-port-h">\<\/div>'\.replace/.test(routerSrc) === false && /html\.replace\('<div class="mc-port mc-port-h"><\/div>', '<div class="mc-port mc-port-h">' \+ port\(hArt\) \+ "<\/div>"\)/.test(routerSrc) && /html\.replace\('<div class="mc-port mc-port-a"><\/div>', '<div class="mc-port mc-port-a">' \+ port\(aArt\) \+ "<\/div>"\)/.test(routerSrc) && /mcClean = !!\(hArt \|\| aArt\)/.test(routerSrc) && /mcClean \? "\/ui\/mc\/scene-4-2\.webp" : "\/ui\/mc\/scene-2\.webp"/.test(routerSrc) && /'<link rel="preload" href="' \+ scene \+ '" as="image" media="\(max-width:899px\)" fetchpriority="high">\\n<\/head>'/.test(routerSrc) && /hero-mcard' \+ \(mcClean \? " mc-clean" : ""\) \+ '" id="heroMCard"/.test(routerSrc));
+check("v13.205-lcpreveal (F-C1, Phase 3 — the P0): the SSR mirror ships the slide-1 presentation the client CONFIRMS — the router consults the GENERATED hero-coverage map (the same HERO_ART source of truth public-13.68.js's heroArtFor reads, drift-gated by check-hero-coverage) via heroArtSrv (name||faName, the heroArtFor contract; Match Centre S05 relocated the map + lookup VERBATIM to seo/data.ts — the shared data-layer home the match-centre hero projection also reads — so the router now imports it from ./data and ONE coverage decision feeds every SSR surface), and when EITHER hero team has coverage: the anchor's unhide replace ALSO emits the mc-clean class (the exact mcFitScan contract — any port carrying an <img> — so the DCL scan + every per-port MutationObserver re-scan keep it, never re-swapping the scene), the two .mc-port containers ship the SSR portraits (lazy + async + no-referrer, the shared .mc-port img CSS rule fits every source; absolutely-positioned in fixed boxes = CLS-neutral) and the scene art rides a media-scoped (max-width:899px — the mobile card zone) fetchpriority=high preload so the fetch starts at HTML-parse time instead of behind the render-blocking external stylesheet (the measured ~1.4s load-delay root cause; scene-4-2 44KB with coverage (the v13.206 re-encode; was the 264KB effectively-lossless scene-4 at v13.205), else the 55KB scene-2 ghost-figure fallback — no scene swap ever lands post-paint for covered heroes, killing the late LCP candidate)", /import \{ HERO_COVERAGE_RAW \} from "\.\.\/hero-coverage";/.test(dataSrc) && /const HERO_ART_SSR = new Map<string, \{ src: string; player: string \}>\(\);/.test(dataSrc) && /HERO_ART_SSR\.get\(t\.name\) \|\| HERO_ART_SSR\.get\(t\.faName\)/.test(dataSrc) && /heroArtSrv \} from "\.\/data";|heroArtSrv, type SeoCtx/.test(routerSrc) && /'<div class="mc-port mc-port-h">\<\/div>'\.replace/.test(routerSrc) === false && /html\.replace\('<div class="mc-port mc-port-h"><\/div>', '<div class="mc-port mc-port-h">' \+ port\(hArt\) \+ "<\/div>"\)/.test(routerSrc) && /html\.replace\('<div class="mc-port mc-port-a"><\/div>', '<div class="mc-port mc-port-a">' \+ port\(aArt\) \+ "<\/div>"\)/.test(routerSrc) && /mcClean = !!\(hArt \|\| aArt\)/.test(routerSrc) && /mcClean \? "\/ui\/mc\/scene-4-2\.webp" : "\/ui\/mc\/scene-2\.webp"/.test(routerSrc) && /'<link rel="preload" href="' \+ scene \+ '" as="image" media="\(max-width:899px\)" fetchpriority="high">\\n<\/head>'/.test(routerSrc) && /hero-mcard' \+ \(mcClean \? " mc-clean" : ""\) \+ '" id="heroMCard"/.test(routerSrc));
 check("v13.205-lcpreveal (F-H1, Phase 3): the league emblems are SELF-HOSTED — LEAGUE_LOGOS in src/tables.ts (the SHARED file — the edit ships with the proven bot-neutrality argument in the file header: the only bot-side reference is card.ts's dead import, no bot module reads .emblem, the eval harness stubs the map empty) points every one of the 21 codes at the local /emblems/*.webp pack (256×256 square contain-normalized WebP from the same api-sports art, 4-23KB each, VLM-quality-checked — ~1.2MB of third-party PNGs retire from the wire; the square intrinsic ratio also resolves F-M4's aspect-ratio mismatch) + all 21 files exist on disk + no media.api-sports.io URL remains anywhere in src/", (() => { const t = read("src/tables.ts"); const fs2 = require("fs"); const codes = ["cl","el","ecl","pl","pd","sa","fl1","bl1","al","fa_cup","efl_cup","cdr","coppa_italia","dfb_pokal","pgl","hazfi_cup","wc","ec","copa","afcon","afc"]; const filesOk = codes.every((c) => fs2.existsSync(path.join(__dirname, "..", "assets", "emblems", c + ".webp"))); return codes.every((c) => t.includes('"/emblems/' + c + '.webp"')) && filesOk && !/media\.api-sports\.io/.test(read("src/tables.ts")) && !/media\.api-sports\.io/.test(read("src/public-matches.ts")); })());
 check("v13.205-lcpreveal (F-H2, Phase 3): the hero art re-encodes — /ui/stadium-lights-2.webp (q68/aq68, 192KB PNG -> 70KB WebP at 1400×467; the ~97%-semi-transparent soft-gradient content sets WebP's floor near 65KB at visually-safe quality — VLM-reviewed clean under the real screen-blend composite; the <=60KB audit target yields to the preserve-visual-identity rule) + /ui/sportsignal-pc-match-hud-2.webp (q86, 122KB -> 57KB, VLM-reviewed pixel-aligned; loading=lazy so <=899px phones never fetch the PC-only frame — the PC card is display:none there) + /bg-2.webp referenced by public-13.80.css body:before (92KB JPEG -> 39KB WebP q63, VLM-reviewed clean under the dark scrim) + admin/login templates follow the bg swap + og/default.png recompressed in place (294KB -> 89KB palette PNG, VLM-acceptable, 1-day freshness rule — no rename ceremony needed)", (() => { const fs2 = require("fs"); const st = fs2.statSync(path.join(__dirname, "..", "assets", "ui", "stadium-lights-2.webp")).size; const hud = fs2.statSync(path.join(__dirname, "..", "assets", "ui", "sportsignal-pc-match-hud-2.webp")).size; const bg = fs2.statSync(path.join(__dirname, "..", "assets", "bg-2.webp")).size; const og = fs2.statSync(path.join(__dirname, "..", "assets", "og", "default.png")).size; const c80 = read("assets/public-13.80.css"); return st > 40000 && st <= 75000 && hud <= 61440 && bg <= 40960 && og <= 122880 && /url\(\/bg-2\.webp\) center\/cover no-repeat\}/.test(c80) && !/bg\.jpg/.test(c80) && read("src/pages/admin-css.ts").includes("url('/bg-2.webp')") && read("src/pages/login.ts").includes("url('/bg-2.webp')"); })());
 const stylesSharedSrc = read("src/pages/styles-shared.ts");
@@ -1345,25 +1350,30 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v126"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.257-mcmatchcentre"/.test(cfg) &&
-    /# v13\.257-mcmatchcentre/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.258-mca11y"/.test(cfg) &&
+    /# v13\.258-mca11y/.test(read("CHANGELOG.md"));
 })());
 
-// v13.257-mcmatchcentre (the Match Centre S22 + M10 gate, 2026-11-15): the
+// v13.258-mca11y (the Match Centre S25 + a11y deep-dive, 2026-11-15): the
 // version pin rides forward in place (the S44.1/S03 precedent — 13.254 ->
-// 13.254.1, 13.255 -> 13.256 and 13.256 -> 13.257 were moved the same way).
-// This block started as the v13.255-seospell release wiring (the S1 M2 SEO
-// round: the F3 spelling fix — an SEO-surface-only release that changed NO
-// rank-badge surface, so the v13.254 engine block above rode unchanged); its
-// survivors (team-names.ts + check-seo-teamnames.js + the test-chain wiring)
-// ride forward under 13.257-mcmatchcentre — the Match Centre production
-// release that ships the S04-S18 sections to production (see
-// MATCH-CENTRE-EXECUTION-LOG.md S22 + docs/mc/m10-release-readiness.md).
-check("v13.257-mcmatchcentre (the release wiring — the Match Centre S22 + M10 gate round: the M10 production release; the Match Centre ships to production; Option B the fresh re-bundle with the version bump 13.256-mcfound -> 13.257-mcmatchcentre; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound foundation survivors ride unchanged)", (() => {
+// 13.254.1, 13.255 -> 13.256, 13.256 -> 13.257 and 13.257 -> 13.258 were moved
+// the same way). This block started as the v13.255-seospell release wiring
+// (the S1 M2 SEO round: the F3 spelling fix — an SEO-surface-only release that
+// changed NO rank-badge surface, so the v13.254 engine block above rode
+// unchanged); its survivors (team-names.ts + check-seo-teamnames.js + the
+// test-chain wiring) ride forward under 13.258-mca11y — the S25 a11y
+// deep-dive (the F1-F4 fixes: the hero double-wrap → <div>, the nav
+// aria-current at render + on scroll, the outer nav section → non-landmark,
+// the portrait descriptive alt). The fixes are body-only (the GSC surfaces +
+// the answer sentence byte-frozen — the <head> is NOT touched; the SW cache
+// stays sportsignal-v126 + the client bundle stays public-13.80.js — S25 is a
+// server-side release; no client asset renamed). See
+// docs/audits/2026-11-15-s25-a11y-audit.md + MATCH-CENTRE-EXECUTION-LOG.md S25.
+check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-dive round: the F1-F4 fixes — the hero double-wrap → <div>, the nav aria-current at render + on scroll, the outer nav section → non-landmark container, the portrait descriptive alt; the fixes are body-only — the GSC surfaces + the answer sentence byte-frozen, the <head> NOT touched; the SW cache stays sportsignal-v126 + the client bundle stays public-13.80.js — a server-side release; the version bump 13.257-mcmatchcentre -> 13.258-mca11y; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound + the v13.257-mcmatchcentre survivors ride unchanged)", (() => {
   const pkg = JSON.parse(read("package.json"));
   const fs = require("fs");
   const path = require("path");
-  return pkg.version === "13.257.0.0" &&
+  return pkg.version === "13.258.0.0" &&
     fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
     /node scripts\/check-seo-lastmod\.js && node scripts\/check-seo-teamnames\.js/.test(pkg.scripts.test);

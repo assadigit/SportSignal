@@ -10,7 +10,7 @@ import { esc, faTime, faDateD1, faDateD2, tehranDayKey, utcTime, statusLabelFa, 
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, relatedMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtSrv } from "./data";
+import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, relatedMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtMetaSrv, heroArtSrv } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -181,10 +181,24 @@ function crestHtml(t: any): string {
 // .mc-port SSR vocabulary (lazy + async + no-referrer — the v13.205 mirror);
 // the onerror is a PURE DOM walk that removes BOTH portraits when either
 // image fails (decision 85: hide both, fall back to the S04 no-portrait
-// scoreboard — no retry, no fetch, no timer). Decorative alt="" — the team
-// names sit directly below (the crest alt="" precedent).
-function portraitHtml(src: string): string {
-  return '<img class="mport" src="' + esc(src) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="88" height="88" ' +
+// scoreboard — no retry, no fetch, no timer).
+//
+// S25 a11y F2: the portrait now carries a DESCRIPTIVE alt (NOT decorative
+// alt=""). The Persian lead «تصویر» + the Latin player name (from
+// HERO_COVERAGE_RAW.wired — the coverage data carries the Latin name; a
+// Persian transliteration is out of scope for S25) + the Persian «بازیکن» +
+// the Persian team name (faName). The team name is in the adjacent .mname
+// div too — the alt is self-contained (a screen-reader user hearing just
+// the portrait learns BOTH the player AND the team). The crests
+// (.mcrest) + the competition logo (.mcomplogo) stay alt="" (decorative —
+// the team/competition names are in the adjacent .mname/.mchip text). The
+// defensive fallback: if player is empty (should not happen — the coverage
+// data always carries it), the alt falls back to "" (the old decorative
+// behavior) so the img is never broken. The onerror removes BOTH portraits
+// when either fails (decision 85 — no retry).
+function portraitHtml(src: string, player: string, teamFa: string): string {
+  const alt = player ? "تصویر " + esc(player) + "، بازیکن " + esc(teamFa) : "";
+  return '<img class="mport" src="' + esc(src) + '" alt="' + alt + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="88" height="88" ' +
     "onerror=\"var h=this.closest('.mcentre-hero');if(h)h.querySelectorAll('.mport').forEach(function(x){x.remove()})\">";
 }
 
@@ -231,9 +245,14 @@ function matchHeroInput(sm: SeoMatch): MatchHeroInput {
   // S05 both-or-neither (decisions 7/8): BOTH clubs must carry library
   // portrait coverage — one covered side alone renders NO portrait at all
   // (the composer enforces the same law again on the atoms).
-  const hArt = heroArtSrv(m.homeTeam);
-  const aArt = heroArtSrv(m.awayTeam);
-  const ports = hArt && aArt ? { h: portraitHtml(hArt), a: portraitHtml(aArt) } : null;
+  // S25 a11y F2: heroArtMetaSrv (the shared lookup, now returning {src, player})
+  // replaces heroArtSrv so the portraitHtml atom can carry the descriptive alt
+  // (the player name). The both-or-neither law holds by construction —
+  // heroArtMetaSrv reads the SAME map as heroArtSrv (the {src, player} object
+  // is null when the team has no coverage; both sides must be non-null).
+  const hArt = heroArtMetaSrv(m.homeTeam);
+  const aArt = heroArtMetaSrv(m.awayTeam);
+  const ports = hArt && aArt ? { h: portraitHtml(hArt.src, hArt.player, faName(m.homeTeam)), a: portraitHtml(aArt.src, aArt.player, faName(m.awayTeam)) } : null;
   // the chip's inner content — emblem omitted when unavailable, never an
   // empty image frame (decision 98); the <a> keeps the competition hub link.
   const compHtml = (emblem ? '<img class="mcomplogo" src="' + esc(emblem) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' : "") +
@@ -302,8 +321,18 @@ function matchNavHtml(parts: { summary: string; standings?: string; form: string
                  (parts.venue || "");
     return html && html.trim().length > 0;
   });
-  const items = present.map(d =>
-    '<a class="mnav-item" href="#' + d.id + '" data-target="' + d.id + '">' + esc(d.label) + '</a>'
+  // S25 a11y F3: the FIRST nav item carries aria-current="true" at render
+  // (the active section at page load — the first destination, خلاصه, is the
+  // topmost content section; a screen-reader user navigating by landmarks
+  // hears «خلاصه link, current» immediately, without waiting for the scroll
+  // observer). The IntersectionObserver (matchNavScript) updates aria-current
+  // on scroll — toggling it to the newly-active item. The aria-current is
+  // ALONGSIDE the existing is-active CLASS (the visual highlight) — the
+  // attribute is the screen-reader contract, the class is the visual
+  // contract (the belt-and-braces). The i===0 index is the present-array
+  // order (the MC_NAV_DESTS page order — خلاصه first when present).
+  const items = present.map((d, i) =>
+    '<a class="mnav-item"' + (i === 0 ? ' aria-current="true"' : "") + ' href="#' + d.id + '" data-target="' + d.id + '">' + esc(d.label) + '</a>'
   ).join("");
   // The back-to-top button + the observer script always ride the nav part
   // (the hero is always present on a match page, so the button has a target
@@ -329,7 +358,7 @@ function matchNavHtml(parts: { summary: string; standings?: string; form: string
 // no fetch, no timer, no polling, no imports.
 function matchNavScript(): string {
   return "<script>\n" +
-    "(function(){function init(){var hero=document.querySelector('.mcentre-hero');var topBtn=document.querySelector('.mtop');var nav=document.querySelector('.mnav');var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;if(nav){var items=nav.querySelectorAll('.mnav-item');if(items.length&&'IntersectionObserver'in window){var obs=new IntersectionObserver(function(es){es.forEach(function(e){var it=nav.querySelector('.mnav-item[data-target=\"'+e.target.id+'\"]');if(!it)return;if(e.isIntersecting){items.forEach(function(i){i.classList.remove('is-active')});it.classList.add('is-active')}})},{rootMargin:'-20% 0px -60% 0px',threshold:0});items.forEach(function(i){var t=document.getElementById(i.getAttribute('data-target'));if(t)obs.observe(t)});items.forEach(function(i){i.addEventListener('click',function(ev){ev.preventDefault();var t=document.getElementById(i.getAttribute('data-target'));if(!t)return;t.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'})})})}}if(hero&&topBtn&&'IntersectionObserver'in window){var hobs=new IntersectionObserver(function(es){es.forEach(function(e){topBtn.hidden=e.isIntersecting})},{threshold:0});hobs.observe(hero);topBtn.addEventListener('click',function(){window.scrollTo({top:0,behavior:reduce?'auto':'smooth'})})}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();\n" +
+    "(function(){function init(){var hero=document.querySelector('.mcentre-hero');var topBtn=document.querySelector('.mtop');var nav=document.querySelector('.mnav');var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;if(nav){var items=nav.querySelectorAll('.mnav-item');if(items.length&&'IntersectionObserver'in window){var obs=new IntersectionObserver(function(es){es.forEach(function(e){var it=nav.querySelector('.mnav-item[data-target=\"'+e.target.id+'\"]');if(!it)return;if(e.isIntersecting){items.forEach(function(i){i.classList.remove('is-active');i.removeAttribute('aria-current')});it.classList.add('is-active');it.setAttribute('aria-current','true')}})},{rootMargin:'-20% 0px -60% 0px',threshold:0});items.forEach(function(i){var t=document.getElementById(i.getAttribute('data-target'));if(t)obs.observe(t)});items.forEach(function(i){i.addEventListener('click',function(ev){ev.preventDefault();var t=document.getElementById(i.getAttribute('data-target'));if(!t)return;t.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'})})})}}if(hero&&topBtn&&'IntersectionObserver'in window){var hobs=new IntersectionObserver(function(es){es.forEach(function(e){topBtn.hidden=e.isIntersecting})},{threshold:0});hobs.observe(hero);topBtn.addEventListener('click',function(){window.scrollTo({top:0,behavior:reduce?'auto':'smooth'})})}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();\n" +
     "<\/script>";
 }
 

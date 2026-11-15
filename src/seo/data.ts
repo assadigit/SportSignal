@@ -139,12 +139,36 @@ export interface SeoMatch {
 // match-centre hero projection (pages.ts matchHeroInput) can read the SAME
 // lookup without a router→pages import cycle — one coverage decision for
 // every SSR surface. Pure map read: zero KV, zero fetch.
-const HERO_ART_SSR = new Map<string, string>();
-for (const w of HERO_COVERAGE_RAW.wired) HERO_ART_SSR.set(w.name, w.src);
+//
+// S25 a11y F2: the map now carries BOTH the src AND the player name (the
+// `player` field in HERO_COVERAGE_RAW.wired — the Latin player name, e.g.
+// "Ellyes Skhiri", "Harry Kane"). heroArtSrv(t) stays backward-compatible
+// (returns the src string — the homepage .mc-port mirror is UNTOUCHED, the
+// byte-frozen surfaces hold). The NEW heroArtMetaSrv(t) returns {src,
+// player} so the match-centre hero projection (pages.ts matchHeroInput) can
+// build a descriptive <img alt> for the portraits (the player name is the
+// ONLY place the featured player identity appears — the adjacent text
+// carries the team names, not the player names; a screen-reader user
+// otherwise does not learn WHICH players are featured). Pure map read:
+// zero KV, zero fetch — the data is already in HERO_COVERAGE_RAW.wired.
+const HERO_ART_SSR = new Map<string, { src: string; player: string }>();
+for (const w of HERO_COVERAGE_RAW.wired) HERO_ART_SSR.set(w.name, { src: w.src, player: w.player || "" });
 export function heroArtSrv(t: any): string | null {
   if (!t) return null;
   const a = HERO_ART_SSR.get(t.name) || HERO_ART_SSR.get(t.faName);
-  return a || null;
+  return a ? a.src : null;
+}
+// S25 a11y F2: returns the full hero-art meta {src, player} for the
+// match-centre hero projection (pages.ts matchHeroInput). The `player` is
+// the Latin name from HERO_COVERAGE_RAW.wired (a Persian transliteration is
+// out of scope for S25 — the Latin name is honest + accurate + announced
+// correctly by modern screen readers). Returns null when the team has no
+// library portrait (the both-or-neither law — the projection collapses to
+// the no-portrait scoreboard; heroArtSrv + heroArtMetaSrv agree by
+// construction since they read the same map).
+export function heroArtMetaSrv(t: any): { src: string; player: string } | null {
+  if (!t) return null;
+  return HERO_ART_SSR.get(t.name) || HERO_ART_SSR.get(t.faName) || null;
 }
 
 const PLAYABLE_FUTURE = (raw: any, now: number) =>
