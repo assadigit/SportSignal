@@ -1,0 +1,124 @@
+# SportSignal — S27 lifecycle auto-verify (the "don't forget" check)
+#
+# Runs the S27 production probe (scripts/s27-lifecycle-check.js) at the two
+# Nov 20 windows so the owner does NOT have to remember to re-fire the agent
+# session, AND on manual dispatch. Creates a GitHub Issue with the verdict so
+# the owner gets pinged (GitHub watches their own repo → email/web notify).
+#
+# Schedule (UTC, GitHub cron runs on the default branch = main):
+#   35 19 20 11 *  → M1 LIVE  (Nov 20 19:35 UTC; kickoff 19:30 + LIVE_PAGE_TTL:120)
+#   40 21 20 11 *  → M2 FINISHED (Nov 20 21:40 UTC; FT ~21:15-25 + SEO_PAGE_TTL:900)
+#
+# The script polls for up to MAX_WAIT_SEC (handles GitHub schedule delays + the
+# render-hold), so even a few-minutes-late cron still catches the live state.
+#
+# A year-guard skips scheduled runs outside Nov 2026 (cron recurs yearly — the
+# guard prevents 2027+ noise; manual dispatch always runs).
+#
+# This workflow is READ-ONLY against production: it does NOT deploy, does NOT
+# change the worker, does NOT touch the GSC-byte-freeze / await-count invariants.
+# NO secret is required — the issue is created with the auto-provided
+# GITHUB_TOKEN (permissions: issues: write). Telegram pings can be added later
+# by setting TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID repo secrets (not set here).
+name: s27-lifecycle-verify
+
+on:
+  schedule:
+    - cron: "35 19 20 11 *" # M1 LIVE
+    - cron: "40 21 20 11 *" # M2 FINISHED
+  workflow_dispatch:
+    inputs:
+      window:
+        description: "Which lifecycle window to verify"
+        required: false
+        type: choice
+        default: "auto"
+        options: ["auto", "live", "finished", "upcoming"]
+      match_url:
+        description: "Match page URL (default: Bayern vs Köln Nov 20)"
+        required: false
+        default: "https://sportsignal.ir/matches/bayern-munich-vs-1-koln-2026-11-20"
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Determine expected window
+        id: win
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            S="${{ github.event.schedule }}"
+            if [ "$S" = "35 19 20 11 *" ]; then echo "window=live" >> "$GITHUB_OUTPUT"
+            elif [ "$S" = "40 21 20 11 *" ]; then echo "window=finished" >> "$GITHUB_OUTPUT"
+            else echo "window=auto" >> "$GITHUB_OUTPUT"; fi
+          else
+            echo "window=${{ inputs.window }}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "match_url=${{ inputs.match_url || 'https://sportsignal.ir/matches/bayern-munich-vs-1-koln-2026-11-20' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Year guard (skip stale yearly runs — cron recurs yearly)
+        id: guard
+        if: github.event_name == 'schedule'
+        run: |
+          YM=$(date -u +%Y%m)
+          if [ "$YM" != "202611" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::scheduled run outside Nov 2026 (current $YM) — no-op (cron recurs yearly; guard prevents 2027+ noise)"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run S27 lifecycle check
+        id: check
+        if: steps.guard.outputs.skip != 'true'
+        continue-on-error: true
+        env:
+          MATCH_URL: ${{ steps.win.outputs.match_url }}
+          EXPECTED_WINDOW: ${{ steps.win.outputs.window }}
+          MAX_WAIT_SEC: "420"
+          POLL_SEC: "60"
+        run: node scripts/s27-lifecycle-check.js
+
+      - name: Create issue with verdict
+        if: always() && steps.guard.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '# S27 lifecycle check — no report produced (script did not complete)';
+            if (fs.existsSync('/tmp/s27-report.md')) {
+              body = fs.readFileSync('/tmp/s27-report.md', 'utf8');
+            }
+            let status = 'UNKNOWN';
+            try {
+              const v = JSON.parse(fs.readFileSync('/tmp/s27-verdict.json', 'utf8'));
+              status = v.status || 'UNKNOWN';
+            } catch (e) {}
+            const win = '${{ steps.win.outputs.window }}';
+            const ts = new Date().toISOString();
+            const outcome = '${{ steps.check.outcome }}';
+            const title = `[S27-Lifecycle] ${win.toUpperCase()} — ${status} — Bayern vs Köln (${ts.slice(0,10)})`;
+            const footer = [
+              '',
+              '---',
+              `_Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}_`,
+              `_Step outcome: ${outcome} · window: ${win} · triggered: ${context.eventName}_`,
+              '',
+              'This issue was auto-created by the `s27-lifecycle-verify` workflow so the owner does not forget to re-run the S27 verification. If status is FAIL, re-fire the S27-cont agent prompt (read AGENTS.md first) and investigate. If PASS, H1 is confirmed for this window.'
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body: body + footer
+            });
