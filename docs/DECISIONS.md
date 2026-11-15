@@ -751,3 +751,55 @@ reliability is uncertain). The options:
   decides.
 - **Who:** the S27 agent (the recommendation). **Revisit:** the owner picks an
   option; the Nov 20 verification runs; H1 can then be CLOSED.
+
+## 2026-11-15 — S27-cont: the option-B continuation attempted 5 days before the kickoff (BLOCKED by timing; the pre-match baseline re-confirmed byte-frozen DIFF 0; NO code change, NO deploy, NO cron; H1 stays OPEN)
+
+The owner fired the S27-cont continuation session on 2026-11-15 (the same day as
+S27, ~50 min after the §1.4.2 baseline capture) to run **option B** (decision 3 —
+the owner starts a new session during the live window + another after FT+900s)
+against the REAL Bayern vs Köln match. **The session was started 5 days before
+the kickoff** (`2026-11-20T19:30:00Z`). The M1 (live) + M2 (finished) windows are
+BOTH in the future + could NOT run — the production scheduler itself confirms the
+match is not yet live (`/healthz` `sched_mode:IDLE / sched_reason:beyond-horizon /
+sched_live_now:0`). This is a **timing block, NOT a bug**.
+
+**Decision 4 — the S27-cont timing block: record honestly + re-confirm the Nov 20
+re-fire windows; NO code change, NO deploy, NO cron scheduling (the owner chose
+option B).** S27-cont ran the read-only pre-match baseline drift-check (DIFF 0 vs
+§1.4.2 — the GSC surfaces byte-frozen, no drift since the S27 capture ~50 min
+earlier; the markers match; the F1 fix LIVE; the scorer ABSENT [Q4=A]; zero
+console errors; mobile 390 no horizontal scroll) + re-confirmed the Nov 20
+re-fire windows. **H1 stays OPEN** until the owner re-fires option B on Nov 20.
+- **Options considered:** (a) record the timing block + re-confirm the Nov 20
+  re-fire windows + commit the honest docs record (chosen — the only honest
+  option; the M1/M2 windows cannot run 5 days before the kickoff); (b) silently
+  switch to option A (schedule cron jobs for Nov 20 ~19:35 UTC + ~21:35 UTC) —
+  REJECTED (the owner explicitly chose option B; overriding the owner's explicit
+  choice violates AGENTS.md's collision order — the owner's explicit instruction
+  beats the file; + the cron-fired agent's reliability is uncertain per decision
+  3 + the credential/sandbox-persistence risk across 5 days); (c) fabricate the
+  live/finished verification against a non-live page — REJECTED (AGENTS.md §9 —
+  be strict; never claim "done" for anything weaker than verified-live); (d) stop
+  + ask the owner before recording — REJECTED (§5's stop-and-ask covers risky
+  irreversible actions [force-push, data deletion, customer-facing actions, DNS
+  changes], NOT a calendar mismatch; the read-only drift-check + the honest docs
+  record are within the standing approval for commits/pushes).
+- **Reason:** the M1/M2 windows are time-bound to the Nov 20 match (the live
+  window is during the match; the finished window is after FT+900s). The session
+  was fired 5 days early. The only honest, AGENTS.md-compliant action is to record
+  the timing block + re-confirm the pre-match baseline (DIFF 0 — protects the
+  Dec 4-8 SEO measurement window) + re-confirm the exact Nov 20 re-fire windows
+  for option B. NO code change (no bug found). NO deploy (the version stays
+  `13.258-mca11y`). NO cron (the owner chose option B, NOT option A). H1 stays
+  OPEN.
+- **The Nov 20 re-fire windows (option B):** M1 (live) at ~19:35 UTC (kickoff
+  19:30 UTC + 5 min, clears the `LIVE_PAGE_TTL:120` render-hold); M2 (finished)
+  at ~21:35–21:45 UTC (FT ~21:15–21:25 UTC + the `SEO_PAGE_TTL:900` render-hold =
+  ~21:30–21:40 UTC; visit ~21:40 UTC to be safe). The owner re-fires the S27-cont
+  prompt verbatim at those times.
+- **Who:** the S27-cont agent (the status decision). **Revisit:** the owner
+  re-fires option B on Nov 20 (M1 + M2); the live/finished marker verification
+  runs; H1 can then be CLOSED (IF both windows verify + no critical bug). IF a
+  critical lifecycle bug is found in either window, STOP + present the bug + the
+  proposed fix + the deploy plan (the `wrangler deploy` FORBIDDEN — use
+  `wrangler versions deploy` if a fix is needed).
