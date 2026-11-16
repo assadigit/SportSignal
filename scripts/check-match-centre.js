@@ -454,7 +454,10 @@ check(!heroOnePort.includes("mport") && !heroUpcoming.includes("mport") && !hero
 
 // (d) the projection pins — pages.ts computes the atoms (the composer stays
 // the pure leaf; heroArtSrv is the SHARED data-layer lookup, S05-relocated)
-check(/, heroArtSrv \} from "\.\/data";/.test(pagesSrc),
+// (v13.260.0-teamidx / SEO Session 4 C1: the ./data import also carries
+// isSelectedTeam for the team-page indexability rule — trailing additions
+// after heroArtSrv are legal; the S05 lookup import itself is what's pinned.)
+check(/, heroArtSrv(, [A-Za-z]+)* \} from "\.\/data";/.test(pagesSrc),
   "S05 wiring: pages.ts imports heroArtSrv from ./data (the shared lookup — relocated verbatim from seo/router.ts; no router→pages cycle)");
 check(/const hArt = heroArtMetaSrv\(m\.homeTeam\);/.test(pagesSrc) && /const aArt = heroArtMetaSrv\(m\.awayTeam\);/.test(pagesSrc) &&
   /const ports = hArt && aArt \? \{ h: portraitHtml\(hArt\.src, hArt\.player, faName\(m\.homeTeam\)\), a: portraitHtml\(aArt\.src, aArt\.player, faName\(m\.awayTeam\)\) \} : null;/.test(pagesSrc) &&

@@ -66,6 +66,28 @@ function redirect(location: string, code = 301): Response {
   });
 }
 
+// C6 (SEO Session 4): the non-prod environment guard (R-13) extended to the
+// machine files — sitemap.xml + the sitemap children, feed.xml, calendar.ics,
+// /api/matches.json, llms.txt and llms-full.txt now carry
+// `x-robots-tag: noindex, nofollow` on every NON-production host (workers.dev,
+// localhost), matching what HTML pages, robots.txt and BingSiteAuth already
+// did. Production hosts never get the header. Applied OUTSIDE wantCached on
+// purpose: the edge cache key is host-independent (edge-internal.sportsignal
+// + path), so baking the header into a cached render could leak across
+// environments — a workers.dev render would stamp noindex into a copy later
+// served to production, and a production render would serve workers.dev an
+// unguarded copy. Post-cache application makes the guard per-request: prod
+// copies stay clean by construction, non-prod responses are always guarded.
+// Budget: on non-prod only, one Headers clone + Response wrap per request —
+// zero KV, zero subrequest, no render-cost change; production returns the
+// cached Response object untouched.
+function guardNonProdMachineFile(res: Response, isProd: boolean): Response {
+  if (isProd || res.headers.get("x-robots-tag")) return res;
+  const h = new Headers(res.headers);
+  h.set("x-robots-tag", "noindex, nofollow");
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
+}
+
 // ------------------------------------------------------------ homepage (R-01)
 
 function heroH1(sm: SeoMatch | null): string {
@@ -525,7 +547,8 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
     });
   }
   if (path === "/llms.txt") {
-    return new Response(F.buildLlmsTxt(), { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" } });
+    // C6: guarded outside any cache (direct response — same as robots.txt).
+    return guardNonProdMachineFile(new Response(F.buildLlmsTxt(), { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" } }), isProd);
   }
   if (path === "/.well-known/security.txt") {
     return new Response(F.buildSecurityTxt(), { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" } });
@@ -608,47 +631,47 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   // after the wantCached/withEtag declarations — the S2 lesson about
   // verifying read/write order, caught by tsc TS2448).
   if (path === "/llms-full.txt") {
-    return wantCached("/llms-full.txt", 3600, async () => withEtag(F.buildLlmsFullTxt(), {
+    return guardNonProdMachineFile(await wantCached("/llms-full.txt", 3600, async () => withEtag(F.buildLlmsFullTxt(), {
       "content-type": "text/plain; charset=utf-8",
       "cache-control": "public, max-age=3600"
-    }));
+    })), isProd); // C6: non-prod guard applied post-cache
   }
 
   if (path === "/sitemap.xml") {
-    return wantCached("/sitemap.xml", SEO.SITEMAP_CACHE_TTL, async () => {
+    return guardNonProdMachineFile(await wantCached("/sitemap.xml", SEO.SITEMAP_CACHE_TTL, async () => {
       const xml = await F.buildSitemapIndex(env);
       // v13.207-condget (F-M5): ETag on the machine files so crawlers can
       // revalidate instead of re-downloading (the bodies are stable within a
       // data epoch — the honest <lastmod> map rides the content hash).
       return withEtag(xml, F.sitemapHeaders(SEO.SITEMAP_CACHE_TTL));
-    });
+    }), isProd); // C6: non-prod guard applied post-cache
   }
   const smMatch = /^\/sitemaps\/([a-z-]+)\.xml$/.exec(path);
   if (smMatch) {
     const kind = smMatch[1];
     const allowed = ["pages", "competitions", "teams", "matches-upcoming", "matches-archive"];
     if (!allowed.includes(kind)) return notFoundResponse(req, isProd);
-    return wantCached("/sitemaps/" + kind + ".xml", SEO.SITEMAP_CACHE_TTL, async () => {
+    return guardNonProdMachineFile(await wantCached("/sitemaps/" + kind + ".xml", SEO.SITEMAP_CACHE_TTL, async () => {
       const { xml, changedUrls } = await F.buildSitemap(env, kind);
       // F-16/T-11: ping IndexNow for URLs whose content changed.
       if (changedUrls.length) ctx.waitUntil(pingIndexNowIfChanged(env, changedUrls).catch(() => { }));
       return withEtag(xml, F.sitemapHeaders(SEO.SITEMAP_CACHE_TTL)); // v13.207-condget (F-M5)
-    });
+    }), isProd); // C6: non-prod guard applied post-cache
   }
   if (path === "/calendar.ics") {
-    return wantCached("/calendar.ics", SEO.HTML_CACHE_TTL, async () => {
+    return guardNonProdMachineFile(await wantCached("/calendar.ics", SEO.HTML_CACHE_TTL, async () => {
       const ics = await F.buildCalendar(env);
       return withEtag(ics, { "content-type": "text/calendar; charset=utf-8", "cache-control": "public, max-age=300" }); // v13.207-condget (F-M5)
-    });
+    }), isProd); // C6: non-prod guard applied post-cache
   }
   if (path === "/feed.xml") {
-    return wantCached("/feed.xml", SEO.HTML_CACHE_TTL, async () => {
+    return guardNonProdMachineFile(await wantCached("/feed.xml", SEO.HTML_CACHE_TTL, async () => {
       const xml = await F.buildFeed(env);
       return withEtag(xml, { "content-type": "application/atom+xml; charset=utf-8", "cache-control": "public, max-age=300" }); // v13.207-condget (F-M5)
-    });
+    }), isProd); // C6: non-prod guard applied post-cache
   }
   if (path === "/api/matches.json") {
-    return wantCached("/api/matches.json", 300, async () => {
+    return guardNonProdMachineFile(await wantCached("/api/matches.json", 300, async () => {
       const json = await F.buildMatchesJson(env);
       // v13.207-condget (F-M5): ETag rides the public JSON too (CORS: the
       // tag is usable by non-browser clients; browsers fetch this file
@@ -660,7 +683,7 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
         "access-control-allow-methods": "GET, OPTIONS",
         "x-content-type-options": "nosniff"
       });
-    });
+    }), isProd); // C6: non-prod guard applied post-cache
   }
 
   // Per-match OG image (SO-04): /og/match-{slug}.png (text-only, no crests).

@@ -47,7 +47,17 @@ export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promi
     } catch (e) { }
   }
   const edgeJson = (data) => {
-    const res = jsonResponse(data, undefined, { "cache-control": "public, max-age=60" });
+    // C8 (SEO Session 4): + s-maxage=60 — the explicit shared-cache TTL.
+    // Live-observed 2026-11-16: zone-edge HITs on this route serve
+    // `cache-control: public, max-age=14400` (Cloudflare's default edge TTL
+    // stamp on the cached JSON) instead of the code's 60s — and a browser
+    // honors that stamped max-age, so a polled copy could freeze in the
+    // browser for up to 4h. s-maxage tells every shared cache (the zone edge
+    // layer + caches.default) the intended edge TTL explicitly, while the
+    // browser-facing max-age=60 semantics are unchanged. Correctness per the
+    // v13.111-quotaslim design: the live overlay itself refreshes on the
+    // ~10-min cron cadence, and the browser revalidates every 60s.
+    const res = jsonResponse(data, undefined, { "cache-control": "public, max-age=60, s-maxage=60" });
     if (edgeCacheable) {
       try {
         ctx.waitUntil(cacheApi.put(req, res.clone()).catch(() => { }));

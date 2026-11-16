@@ -89,12 +89,16 @@ if (/if\s*\(\s*inm\s*&&\s*inm\.trim\(\)\s*===\s*tag/.test(src)) bad("the strict 
 else ok("no strict ETag equality code anywhere (the F-M5 root cause stays dead)");
 
 // --- 6. ETag on the five machine-file surfaces ---
+// (v13.260.0-teamidx / SEO Session 4 C6: the routes now wrap wantCached in
+// guardNonProdMachineFile(res, isProd) — the non-prod x-robots-tag applied
+// OUTSIDE the edge cache. The withEtag wrap still rides INSIDE each render
+// callback; the regexes follow the new call shape.)
 const machine = [
-  ["sitemap index", /return wantCached\("\/sitemap\.xml"[\s\S]*?return withEtag\(xml, F\.sitemapHeaders/],
-  ["sitemap child", /return wantCached\("\/sitemaps\/" \+ kind \+ "\.xml"[\s\S]*?return withEtag\(xml, F\.sitemapHeaders/],
-  ["calendar.ics", /return wantCached\("\/calendar\.ics"[\s\S]*?return withEtag\(ics/],
-  ["feed.xml", /return wantCached\("\/feed\.xml"[\s\S]*?return withEtag\(xml/],
-  ["matches.json", /return wantCached\("\/api\/matches\.json"[\s\S]*?return withEtag\(json/],
+  ["sitemap index", /return guardNonProdMachineFile\(await wantCached\("\/sitemap\.xml"[\s\S]*?return withEtag\(xml, F\.sitemapHeaders/],
+  ["sitemap child", /return guardNonProdMachineFile\(await wantCached\("\/sitemaps\/" \+ kind \+ "\.xml"[\s\S]*?return withEtag\(xml, F\.sitemapHeaders/],
+  ["calendar.ics", /return guardNonProdMachineFile\(await wantCached\("\/calendar\.ics"[\s\S]*?return withEtag\(ics/],
+  ["feed.xml", /return guardNonProdMachineFile\(await wantCached\("\/feed\.xml"[\s\S]*?return withEtag\(xml/],
+  ["matches.json", /return guardNonProdMachineFile\(await wantCached\("\/api\/matches\.json"[\s\S]*?return withEtag\(json/],
 ];
 let mOk = 0;
 for (const [label, re] of machine) {

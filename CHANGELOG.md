@@ -4,6 +4,65 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.260.0-teamidx — SEO Session 4: the crawl/index foundation (C1 team-page allowlist + C6 non-prod machine-file guard + C8 edge TTL; 2026-11-16, `main`)
+
+The FIRST implementation session of the 15-session SEO program (Sessions
+1-3 were audit/keyword-mapping/architecture, no code). Three confirmed
+issues fixed in the smallest surface that fully solves each; full evidence
+trail + pre/post machine counts in
+`seo-implementation/audit/CRAWL-INDEX-CHANGELOG.md` + the session report
+`seo-implementation/session-reports/SESSION-04.md`.
+
+- **C1 (the central fix):** team pages are now indexable ONLY for the 13
+  selected clubs (`isSelectedTeam`, `src/seo/data.ts` — the domestic-league
+  keys of `CONFIG.BIG_TEAMS_BY_LEAGUE`: PL/PD/SA/FL1/BL1; A-League excluded
+  as site-hidden, EL/ECL are duplicate names; provider-variant folding via
+  `normAlias` — "FC Internazionale Milano" and "Club Atlético de Madrid"
+  resolve onto the config keys, so the two provider-derived canonical slugs
+  keep their pages indexable). `teams.xml` filters to the allowlist:
+  **87 → 13 rows** (total sitemap URLs 383 → 309); every non-selected team
+  page keeps serving 200 + self-canonical + full content + ALL internal
+  links (the `/teams` tiles, the match-page «تیم‌ها» links) but now carries
+  `noindex, follow` — the noindex-must-stay-crawlable law; `teamsIndex`
+  itself still generates both sides of every eligible fixture (the crawl
+  path). The selected-13 rule is `indexable = selected AND ≥1 upcoming`
+  (the existing `MIN_UPCOMING_FOR_INDEX` law rides unchanged); competition
+  pages' rule untouched. **Budget: zero-marginal** — in-memory Set
+  membership on data already read; no new KV reads/writes, no new
+  subrequests, no render-cost change; the 13 kept lastmod hashes are
+  byte-identical (no restamp, no KV write, no IndexNow ping; the 74 removed
+  rows leave the candidate set — removals never ping).
+- **C6 (low severity):** the non-prod environment guard (`x-robots-tag:
+  noindex, nofollow`, R-13) now covers the machine files too —
+  `/sitemap.xml`, the `/sitemaps/*.xml` children, `/feed.xml`,
+  `/calendar.ics`, `/api/matches.json`, `/llms.txt`, `/llms-full.txt`
+  (workers.dev + localhost only; production never gets the header — applied
+  OUTSIDE the edge cache so a non-prod render can never stamp noindex into
+  a cached copy served to production, and vice versa).
+- **C8 (the optional one-liner, done):** `/api/public-matches` responses
+  now declare `s-maxage=60` alongside `max-age=60` — live-observed
+  2026-11-16: zone-edge HITs on this route served
+  `cache-control: public, max-age=14400` (Cloudflare's default edge-TTL
+  stamp on the cached JSON), a header a browser honors, so a polled copy
+  could freeze client-side for up to 4h. The explicit shared-cache TTL
+  normalizes the edge hold to the designed 60s; browser semantics unchanged.
+- **Tests:** NEW `scripts/check-seo-crawlindex.js` wired into `npm test`
+  (13 gates: C1 behavior on 18 provider-variant cases + the admin-overlay
+  memo rebuild, C1 wiring + the filter-before-push order, the teamsIndex
+  both-sides scope law, C6's 7-route post-cache guard + isProd
+  short-circuit, C8's s-maxage, the robots-only-/admin crawlability law).
+  The v13.254/v13.258 release-wiring version pins moved forward per the
+  standing convention. Suite result: **3,628 OK** (baseline 3,615 + 13 new
+  gates; the two shape-pinned assertions in check-conditional-gets /
+  check-match-centre rode forward with the new call shapes, intent intact).
+- **No client asset changed** — a server-side release: SW cache stays
+  `sportsignal-v126`, client bundle stays `public-13.80.js`, stylesheet
+  stays `public-13.87.css`, `_headers` untouched (no cap sweep needed).
+  No title/H1/description byte changed on any page class (the Dec 4-8
+  measurement freeze holds — verified by pre/post page diffs on
+  barcelona/fulham + the homepage + a match page). Version triple →
+  `13.260.0.0` / `13.260.0-teamidx`.
+
 # SEO Program Session 3 — final keyword-to-URL mapping and SEO architecture (NO version bump, NO worker code change; `main`, 2026-11-16)
 
 The architecture session of the 15-session SEO program: Session 2's

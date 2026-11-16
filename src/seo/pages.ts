@@ -10,7 +10,7 @@ import { esc, faTime, faDateD1, faDateD2, tehranDayKey, utcTime, statusLabelFa, 
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findArchivedMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, relatedMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtMetaSrv, heroArtSrv } from "./data";
+import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findArchivedMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, relatedMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtMetaSrv, heroArtSrv, isSelectedTeam } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -1958,7 +1958,15 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
     ? '<p class="altnote">' + esc(name + " با نام «" + seoTeamAltName(entry) + "» هم شناخته می‌شود.") + "</p>"
     : "";
   const { upcoming, finished } = teamMatches(ctx, entry.name);
-  const indexable = upcoming.length >= SEO.MIN_UPCOMING_FOR_INDEX;
+  // C1 (SEO Session 4): indexability = selected club AND ≥1 upcoming big
+  // match. The 13 selected clubs keep the existing MIN_UPCOMING_FOR_INDEX
+  // rule (INDEXABILITY-MATRIX row 9: index at ≥1, noindex at 0 — unchanged);
+  // every non-selected team page now serves `noindex, follow` (row 10) while
+  // keeping its 200 + self-canonical + full content + internal links (the
+  // noindex-must-stay-crawlable law). robots-meta level ONLY: title, H1 and
+  // visible bytes are untouched (the Dec 4-8 measurement freeze holds —
+  // verified by the post-deploy page diff).
+  const indexable = isSelectedTeam(entry.name) && upcoming.length >= SEO.MIN_UPCOMING_FOR_INDEX;
   const path = "/teams/" + slug;
   const trail = [{ name: "خانه", href: "/" }, { name: "تیم‌ها", href: "/teams" }, { name }];
   const next = upcoming[0];

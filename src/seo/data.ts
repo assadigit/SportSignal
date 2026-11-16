@@ -9,7 +9,7 @@ import { getCachedMatches } from "../match-pool";
 import { applyLiveOverlay, pubMatch, teamRankSets, attachTeamRanks } from "../public-matches";
 import { COMP_EN } from "../tables";
 import { ensureFaAiCache, ensureFaVenueCache, translateVenue, translateCompetition } from "../translate";
-import { normalizeTeamName } from "../teams";
+import { normalizeTeamName, normAlias } from "../teams";
 // v13.85-stadiumchip: the home-ground table + one-off-neutral gate moved to
 // the root module grounds.ts (shared with pubMatch — one source of truth).
 import { homeGround, curatedVenueFa } from "../grounds";
@@ -269,6 +269,48 @@ export interface TeamEntry {
   slug: string;
   upcomingBig: number;
   next: SeoMatch | null;
+}
+
+// --- C1 (SEO Session 4): the selected-club team-page allowlist test ---
+//
+// The indexability law (MASTER-SEO-SPEC §2 "Team pages"; Session 3's
+// ROUTE-AND-CANONICAL-PLAN §2.3): only the 13 selected European clubs get
+// INDEXABLE team pages + teams.xml rows. Every other pool team keeps its
+// page (200, self-canonical, fully linked — the noindex-must-stay-crawlable
+// rule) but serves `noindex, follow` and leaves the sitemap.
+//
+// The selected set = the DOMESTIC league keys of CONFIG.BIG_TEAMS_BY_LEAGUE
+// (PL/PD/SA/FL1/BL1). EL/ECL entries repeat the same European names (no new
+// clubs), and AL (A-League, 5 clubs) is site-hidden at every public read
+// surface (v13.173-noal) — its clubs are NOT part of the SEO selected 13.
+//
+// Normalization mirrors shouldReport's proven pairing (match-classify.ts):
+// the set is built with normalizeTeamName over the CONFIG names, lookups go
+// through normAlias so provider-legal variants fold onto the config keys —
+// verified pairs: "FC Internazionale Milano" → "intermilan" =
+// normalizeTeamName("Inter Milan"), and "Club Atlético de Madrid" →
+// "atleticomadrid" = normalizeTeamName("Atlético Madrid") (the two
+// provider-derived canonical slugs, ROUTE-AND-CANONICAL-PLAN §7).
+//
+// Budget: in-memory Set membership on data already read — zero KV reads,
+// zero subrequests, zero measurable CPU. The memo re-checks the CONFIG
+// object identity (the admin overlay replaces CONFIG.BIG_TEAMS_BY_LEAGUE
+// wholesale — teamNormCache's sig pattern) so an admin-selected club
+// becomes indexable without a redeploy.
+const SEO_SELECTED_LEAGUES = ["PL", "PD", "SA", "FL1", "BL1"];
+let selectedTeamMemo: { sig: any; norms: Set<string> } | null = null;
+export function isSelectedTeam(name: string): boolean {
+  if (!selectedTeamMemo || selectedTeamMemo.sig !== CONFIG.BIG_TEAMS_BY_LEAGUE) {
+    const norms = new Set<string>();
+    for (const lg of SEO_SELECTED_LEAGUES) {
+      for (const t of ((CONFIG.BIG_TEAMS_BY_LEAGUE || {})[lg] as string[]) || []) {
+        const n = normalizeTeamName(t);
+        if (n) norms.add(n);
+      }
+    }
+    selectedTeamMemo = { sig: CONFIG.BIG_TEAMS_BY_LEAGUE, norms };
+  }
+  return selectedTeamMemo.norms.has(normAlias(name));
 }
 
 // Teams index — every pool team with at least one UPCOMING big match

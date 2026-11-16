@@ -20,7 +20,7 @@ import { COMP_EN } from "../tables";
 import { translateCompetition } from "../translate";
 import { pubMatch } from "../public-matches";
 import type { SeoCtx, SeoMatch } from "./data";
-import { getSeoCtx, upcomingBig, finishedRecent, teamsIndex, compsIndex, payloadTop3, isBigForSeo } from "./data";
+import { getSeoCtx, upcomingBig, finishedRecent, teamsIndex, compsIndex, payloadTop3, isBigForSeo, isSelectedTeam } from "./data";
 
 // ---------------------------------------------------------------- helpers
 
@@ -271,7 +271,22 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
     for (const c of candidates) rows += urlNode(c.path, map[c.path]);
     return { xml: urlsetXml(rows), changedUrls: changed.map(absUrl) };
   } else if (kind === "teams") {
+    // C1 (SEO Session 4): teams.xml lists ONLY the selected clubs (the
+    // allowlist is the authority — MASTER-SEO-SPEC §2; ROUTE-AND-CANONICAL-
+    // PLAN §2.3/§6: 87 → 13 rows). teamsIndex keeps generating both sides
+    // of every eligible fixture (it powers the /teams index tiles and the
+    // match-page «تیم‌ها» links — the crawl path that keeps the noindexed
+    // URLs readable by Google); only the sitemap rows are filtered, so the
+    // invariant "sitemaps list only canonical, indexable, 200 URLs" becomes
+    // fully true for teams (non-selected team pages serve noindex from this
+    // deploy). Budget: an in-memory Set membership test on the entries the
+    // iteration already produced — zero extra KV/subrequest/CPU. Lastmod
+    // semantics untouched: the 13 kept rows hash identically (stable
+    // lastmods); the 74 removed rows simply leave the candidate set — no
+    // ping, no KV write (removals are not "changes"; GSC re-reads the child
+    // on its own cadence).
     for (const e of teamsIndex(ctx)) {
+      if (!isSelectedTeam(e.name)) continue;
       const hash = sha1ish(e.name + "|" + e.upcomingBig + "|" + (e.next ? e.next.s.utcDate : ""));
       candidates.push({ path: "/teams/" + e.slug, hash });
     }
