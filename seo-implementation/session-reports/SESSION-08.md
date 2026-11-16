@@ -68,11 +68,13 @@ SW stays `sportsignal-v126`; the client bundle stays `public-13.80.js`; the styl
 
 ## 6. Deploy
 
-Versioned deploy via the repo's established ritual (RUNBOOK §2): `npm test` (exit 0) → local `wrangler dev` smoke (worker boots) → `npx wrangler versions upload` → `npx wrangler versions deploy --version-id <id> --percentage 100 --yes` → live verify. The deployment ID + the live `/healthz` version are recorded in `docs/HANDOFF.md` + the tracker after the deploy completes.
+Versioned deploy via the repo's established ritual (RUNBOOK §2): `npm test` (exit 0) → local `wrangler dev` smoke (worker boots) → `npx wrangler versions upload` (Version ID `b313aada-04cf-4c0d-bdc9-2ca7527114dd`) → `npx wrangler versions deploy --version-id b313aada-04cf-4c0d-bdc9-2ca7527114dd --percentage 100 --yes` → live verify. **Deployed: `b313aada-04cf-4c0d-bdc9-2ca7527114dd` (`13.264.0-teampages`) @ 100%.** Live `/healthz` confirms version `13.264.0-teampages`. The deployment ID is recorded in `docs/HANDOFF.md` + the tracker.
 
 **Cloudflare budget of this change:** zero new KV reads (the `webPageNode` call is an in-memory object literal built from `path` + `ctx.fetchedAt` already in scope); zero new KV writes (`kv_writes_day:0`); zero new subrequests; zero new fetches; zero render-cost additions (a small object appended to an existing array). Well within the free-tier budget.
 
 **Deploy-window check:** today is 2026-11-16 (Mon) — NOT Nov 20 (the Bayern–Köln S27 auto-verify windows: kickoff 19:30 UTC, M1 ~19:35, M2 ~21:35-45 UTC). Safe to deploy.
+
+**Live verify (2026-11-16 20:09 UTC):** `/healthz` version = `13.264.0-teampages` ✓; `ok:false` + `pool_matches:0` + `pool_age_min:-1` (the KV read quota is STILL exceeded — pre-existing, NOT a code issue; self-heals at UTC midnight); `kv_writes_day:0` (zero new writes); `/teams/barcelona` returns 404 (correct — the data-path: `findTeamBySlug` returns nothing when the pool is empty; mirrors the Session 7 match-page 404 on the empty pool). The SSR-structural change (the WebPage node) is verified by the `check-seo-teampages.js` offline gates + the tsx render harness (14/14 assertions pass on a seeded ctx). The data-dependent surface (the rendered team-page @graph WebPage node + the upcoming-matches list + the recent results) self-verifies once the quota resets at UTC midnight.
 
 ## 7. The KV read quota (pre-existing, STILL OPEN)
 

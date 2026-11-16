@@ -12,8 +12,7 @@ Session 4; Session 8 owns the CONTENT of the 13 selected-club team pages
 those match-detail footer-hook links point to). The Dec 4-8 measurement
 freeze applies to the team-page title/H1 bytes (the parked S2 title test
 reads GSC on Dec 4 — Session 8 owns the content + the structural JSON-LD,
-NOT the title bytes pre-gate). **Deployed (versioned): recorded at deploy
-time** (`13.264.0-teampages`) @ 100%. All phase acceptance criteria met
+NOT the title bytes pre-gate). **Deployed (versioned): `b313aada-04cf-4c0d-bdc9-2ca7527114dd`** (`13.264.0-teampages`) @ 100%. All phase acceptance criteria met
 (SESSION-08.md).
 
 - **The audit (read-first, no code):** `buildTeamPage` (`src/seo/pages.ts`) is
@@ -101,9 +100,9 @@ time** (`13.264.0-teampages`) @ 100%. All phase acceptance criteria met
 ## Current state (machine)
 
 - **Version:** `13.264.0-teampages` (`src/config.ts` / `package.json` `13.264.0.0`). npm test baseline **3,685 OK** (`npx tsc --noEmit` clean + 52 check scripts — the +1 is the new `check-seo-teampages.js`; verified this session — was 3,676).
-- **Deploy:** Worker `ucl-notifier`, versioned deploys only. Current deployment recorded at deploy time (`13.264.0-teampages`; 2026-11-16, deployed @100%). Rollback chain: `3e3a65e7` (13.263.0-matchlinks, Session 7) → `7df40334` (13.262.0-homepage, Session 6) → `1d70129b` (13.261.0-matchlife, Session 5) → `7d92e633` (13.260.1-teamidx, Session 4) → `24c62781` (13.260.0-teamidx) → `c97ae70b` (byte-identical S28.1) → earlier. Rollback = `npx wrangler rollback`.
+- **Deploy:** Worker `ucl-notifier`, versioned deploys only. Current deployment `b313aada-04cf-4c0d-bdc9-2ca7527114dd` (`13.264.0-teampages`; 2026-11-16, deployed @100%). Rollback chain: `3e3a65e7` (13.263.0-matchlinks, Session 7) → `7df40334` (13.262.0-homepage, Session 6) → `1d70129b` (13.261.0-matchlife, Session 5) → `7d92e633` (13.260.1-teamidx, Session 4) → `24c62781` (13.260.0-teamidx) → `c97ae70b` (byte-identical S28.1) → earlier. Rollback = `npx wrangler rollback`.
 - **Production hostnames:** `sportsignal.ir` (apex Custom Domain), `football.sportsignal.ir` (301→apex except `/webhook`,`/api/`,`/admin`), `ucl-notifier.sportsignal.workers.dev` (noindex-guarded alias — HTML AND machine files since Session 4; never a scratch env).
-- **Branch:** `main` (canonical; HEAD = the Session 8 code checkpoint, pending the close-out commit). Session 8 commits: the code checkpoint (the team-page @graph WebPage node + the check-seo-teampages.js gate + version bump) + the close-out.
+- **Branch:** `main` (canonical; HEAD = `24f0889` — the Session 8 code checkpoint + close-out in one commit; ls-remote verified). Session 8 commit: `24f0889` (the team-page @graph WebPage node + the check-seo-teampages.js gate + version bump + the report/tracker/handoff/decisions + the Session 9 prompt).
 - **Commands:** `npm test` (must exit 0 before every push). **npm only, never `bun install`**. Local dev: `npx wrangler dev --port 8787` (needs `CLOUDFLARE_API_TOKEN` in env for the remote AI binding). Deploy needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID=a796fdfe…` in the env.
 - **Cron triggers:** `*/10 * * * *` + `27 */4 * * *` (unchanged). Live healthz at Session 8 close (2026-11-16 19:59 UTC): version `13.263.0-matchlinks` (the S8 deploy lands after this read); `ok:false` + `pool_matches:0` + `pool_age_min:-1` due to the KV read quota (pre-existing, self-heals at UTC midnight); `degraded:false`; `kv_writes_day:0` (zero new writes — the Session 8 change is a structural JSON-LD node, an in-memory object literal).
 - **Key folders:** `src/` (worker modules; `scripts/lib/worker-src.js` carries the bundle ORDER — co-evolve), `assets/` (immutable versioned client payload; SW `sportsignal-v126`, bundle `public-13.80.js`, stylesheet `public-13.87.css`), `docs/` (RUNBOOK, specs, audits, history), `sportsignal-seo-implementation/` (the SEO spec pack — owner's, tracker updated per session), `seo-implementation/` (the SEO program working tree: audits, keyword research, architecture, session reports, next-session prompts).
@@ -134,7 +133,7 @@ Session 04 ✅ Completed / verified in production (2026-11-16) — the crawl/ind
 Session 05 ✅ Completed / deployed (2026-11-17) — the match-URL lifecycle mechanism (INERT by default); 3,652 OK.
 Session 06 ✅ Completed / deployed (2026-11-17) — the homepage one-month window + carousel crawlability + curated-selection promise; 3,675 OK. Deployment `7df40334…` @100%.
 Session 07 ✅ Completed / deployed (2026-11-17) — the match-detail footer-hook team-link gating (spec §9 / C1 disposition) + the metadata audit (title/H1/meta/OG/JSON-LD/answer-sentence funnel verified correct + byte-frozen; date/time/timezone verified; the 13 GSC "Missing field location" items verified against the MISSING-IS-NOT-ZERO law); 3,676 OK. Deployment `3e3a65e7…` @100%.
-Session 08 ✅ Completed / deployed (2026-11-16) — the selected-club team-page @graph WebPage node (structural JSON-LD hygiene — the team page was the lone page-class without one; the byte-frozen title/H1/description/answer untouched) + the audit (content + indexability + internal links verified already complete) + the new `check-seo-teampages.js` gate (8 gates); 3,685 OK. Deployment recorded at deploy time @100%.
+Session 08 ✅ Completed / deployed (2026-11-16) — the selected-club team-page @graph WebPage node (structural JSON-LD hygiene — the team page was the lone page-class without one; the byte-frozen title/H1/description/answer untouched) + the audit (content + indexability + internal links verified already complete) + the new `check-seo-teampages.js` gate (8 gates); 3,685 OK. Deployment `b313aada-04cf-4c0d-bdc9-2ca7527114dd` @100%. Commit `24f0889` (ls-remote verified).
 `seo-implementation/next-session-prompt.md` holds the Session 9 start prompt
 (competition pages). Progress source of truth:
 `sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md`.
