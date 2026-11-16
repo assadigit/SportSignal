@@ -892,3 +892,46 @@ deploy) starts only when the owner fires
 `seo-implementation/next-session-prompt.md` in a new session. The C1 team-page
 scope decision (87 pool-derived team URLs vs the 14-club allowlist) belongs
 to Sessions 3+8 with GSC/backlink evidence — never a blind deletion.
+
+
+## 2026-11-16 — SEO Program S2: keyword validation facts that bind later sessions (13-club correction; one-URL rules; exclusions; no-volume discipline)
+
+**Context.** Session 2 (the dedicated keyword session) validated the
+200-phrase seed bank against the 2026-11-15 GSC export and produced the
+374-row validated keyword map. Four non-obvious judgment calls were made
+that later sessions must inherit rather than re-litigate without new
+evidence.
+
+**Decisions.** (1) **Allowlist count correction:** the selected-club
+allowlist is **13 European clubs** (PL 5 + PD 3 + SA 2 + FL1 1 + BL1 2,
+machine-verified from `src/config.ts:38-100`), not the "14" recorded in the
+Session 1 audit and the Session 2 start prompt — a propagated miscount; all
+later docs use 13. (2) **One-URL-per-intent mapping law** (time-qualified →
+time hubs; club-dominant → team page; competition-dominant → competition
+page; both-clubs → match detail CONDITIONAL on editorial coverage; result →
+match detail post-match; derby-discovery → homepage; English → Session 12
+future) plus the 7-entry cannibalization register — Session 3's blueprint
+inherits these; deviations need evidence. (3) **Exclusions documented, not
+silently dropped:** broadcast («مکان تماشای/ساعت پخش», incl. the export's
+#1 clicking visible query, 8 clicks), lineup («ترکیب»), ticket («بلیت»)
+intents and all non-selected-club team-page targeting are excluded with
+reasons in the map; the non-selected demand (~102 visible next-match
+impressions; 114 URLs / 8 clicks / 0.62% CTR) is preserved as the C1/S1
+evidence pack for the Session 3 architecture decision — flagged, not
+solved. (4) **No-volume discipline:** no volume tool existed, so every
+volume field reads "unavailable — never invented"; GSC site metrics are kept
+in separate labeled columns and are never treated as market volume; the
+match-detail "conditional" status encodes that no URL may be created for a
+hypothetical fixture.
+
+**Who decided.** The agent (SEO Session 2), under the phase file's
+acceptance criteria and AGENT-INSTRUCTIONS §5 (the keyword-research
+contract: never fabricate volume/CPC/difficulty; map to one canonical URL;
+exclude unsupported intents).
+
+**When to revisit.** Session 3 (keyword-to-URL architecture) consumes the
+map as-is; the C1/S1 team-page disposition and the top-3-standings
+coverage-route decision belong to Session 3 with owner sign-off; volume
+validation becomes possible only if the owner supplies Keyword
+Planner/Trends access or a fresh GSC export (top evidence request,
+SESSION-02.md §9).

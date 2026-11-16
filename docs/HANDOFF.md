@@ -2,53 +2,50 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for the whole session.
 
-## This session (SEO Program Session 1 — the repository + production technical SEO audit; docs-only, 2026-11-16)
+## This session (SEO Program Session 2 — keyword research validation; docs-only, 2026-11-16)
 
-The owner started the **formal 15-session SEO implementation program** (the
-`sportsignal-seo-implementation/` spec pack, v1.0, extracted from the owner's
-zip in `9fcc6a3`). Session 1 was audit-only per the phase file: **no worker
-code change, no version bump**; a pipeline-verification deploy of
-byte-identical code was performed and verified (see below).
+The dedicated keyword session of the 15-session SEO program. **No worker
+code change, no version bump, no deploy (no runtime change by design).**
+All phase acceptance criteria met (374-phrase validated map, zero invented
+volumes, zero ineligible URL assignments).
 
-- **Deliverables:** `seo-implementation/audit/REPOSITORY-AND-TECHNICAL-AUDIT.md`
-  (the full verified architecture + the confirmed-vs-suspected issue register
-  C1-C8 / S1-S4), `seo-implementation/audit/URL-INVENTORY.csv` (391 rows),
-  `seo-implementation/audit/CLOUDFLARE-RESOURCE-BASELINE.md`,
-  `seo-implementation/session-reports/SESSION-01.md`, and
-  `seo-implementation/next-session-prompt.md` (Session 2 = keyword research
-  validation — the owner starts it in a NEW session with that prompt).
-- **Headline confirmed findings:** C1 team pages are generated for BOTH sides
-  of every eligible match (87 in the live sitemap incl. non-selected clubs —
-  the mechanism behind GSC's 127 team URLs / 0.65% CTR); C2 zero hreflang / no
-  EN URLs (client-side toggle only); C3 SportsEvent `location` is
-  venue-conditional (the 13 GSC missing-location items); C4 the 159-404 cliff
-  is ALREADY mitigated in production (S28 archive serve; 151 archive URLs 200
-  + in sitemap). The selected-club allowlist = the 14 European clubs in
-  `CONFIG.BIG_TEAMS_BY_LEAGUE` (`src/config.ts:38-100`).
-- **Verified live this session:** version match (repo HEAD == production
-  `13.259.1-archttl`), full redirect matrix (6 single-hop 301s), 404 +
-  noindex, workers.dev noindex guard, sitemap index + 5 children (383 URLs),
-  robots.txt, canonicals on 12 sampled pages, JSON-LD types per page type,
-  rendered desktop 1440px (0 console errors) + mobile 390px (no horizontal
-  scroll), and the honest `/matches/tomorrow` empty state on a genuinely
-  empty day. `npm test` exit 0 (3,615 OK) before every push.
-- **Deploy:** versioned deploy `c97ae70b-c4b8-4a11-a840-34d8b93f19a7` @100%
-  (byte-identical code — docs-only session; pipeline verification per the
-  owner's start prompt). Rollback unchanged: `npx wrangler rollback` →
-  `79688dbf` (13.259.1-archttl).
+- **Deliverables:** `seo-implementation/keyword-research/` —
+  KEYWORD-VALIDATION-REPORT.md, VALIDATED-KEYWORD-MAP.csv (374 rows: 202
+  GSC-observed exact strings / 39 Google-autocomplete-validated fa-IR /
+  133 research candidates), SERP-SAMPLES.md, EVIDENCE-LOG.md. Plus the
+  tracker Session-02 row, SESSION-02.md, and the Session 3 standalone
+  prompt in `seo-implementation/next-session-prompt.md`.
+- **Correction recorded:** the selected-club allowlist has **13 European
+  clubs, not 14** (machine-counted from `src/config.ts`; Session 1 and the
+  Session 2 start prompt carried the miscount). Also: Inter/Atlético serve
+  at provider-derived slugs (`internazionale-milano`, `club-atletico-de-madrid`),
+  not the pinned `TEAM_SLUGS` values — a Session 3 URL-identity question.
+- **Headline findings:** next-match demand concentrates in Barcelona
+  (~77% of visible next-match impressions) then Bayern/Inter/Milan/Liverpool;
+  `/matches/tomorrow` is the best-CTR surface (8.26%); the match-detail
+  exact-slug pattern is the strongest ranking surface (best query pos 3.25);
+  the #1 clicking visible query is broadcast-intent (deliberately excluded);
+  team-page CTR is poor for selected (0.69%) AND non-selected (0.62%) clubs
+  — a title/snippet problem (the parked Dec 4 test), not just selection.
+- **Evidence discipline:** no volume tool existed — every volume field reads
+  "unavailable" (never invented); Google SERP is CAPTCHA-blocked and
+  Bing-Persian empty from this sandbox — SERP formats documented via Google
+  Suggest fa/IR + Google News RSS fa/IR + live competitor fetches
+  (ScoreYab/Soot360/365Scores; TVeto challenged), all tool+date+locale
+  labeled in EVIDENCE-LOG.md. `npm test` exit 0 (3,615 OK) before push.
 
-**Next:** the owner fires Session 2 (keyword research validation) with
-`seo-implementation/next-session-prompt.md`. Program docs:
-`sportsignal-seo-implementation/` (spec, read-only except the tracker) +
-`seo-implementation/` (working tree). The program's 15 sessions run alongside
-the repo's own tracks below — coordinate through the standing limits.
+**Next:** the owner fires Session 3 (keyword-to-URL architecture — docs/
+planning only; implementation starts in Session 4) with
+`seo-implementation/next-session-prompt.md`. A fresh GSC export (16 months,
+URL-level samples, queries×pages) remains the program's top evidence
+request for Sessions 3-8.
 
 ## Current state (machine)
 
 - **Version:** `13.259.1-archttl` (`src/config.ts` / `package.json` `13.259.1.0`). npm test baseline **3,615 OK** (`npx tsc --noEmit` clean; re-verified this session).
 - **Deploy:** Worker `ucl-notifier`, versioned deploys only (`npx wrangler versions upload` → `versions deploy --version-id <id> --percentage 100 --yes`). Current deployment `c97ae70b-c4b8-4a11-a840-34d8b93f19a7` (byte-identical S28.1 code; 2026-11-16). Rollback chain: `79688dbf` (13.259.1-archttl) → `10d0b018` (13.259-archserve) → `181285b8` (13.258-mca11y) → earlier.
 - **Production hostnames:** `sportsignal.ir` (apex Custom Domain), `football.sportsignal.ir` (301→apex except `/webhook`,`/api/`,`/admin`), `ucl-notifier.sportsignal.workers.dev` (noindex-guarded alias — never a scratch env).
-- **Branch:** `main` (canonical; HEAD = the SEO Session 1 close-out docs commit — `git log --oneline -5`). `feat/match-centre` merged; `chore/tidy-root` dormant.
+- **Branch:** `main` (canonical; HEAD = the SEO Session 2 close-out docs commit — `git log --oneline -5`). `feat/match-centre` merged; `chore/tidy-root` dormant.
 - **Commands:** `npm test` (must exit 0 before every push). **npm only, never `bun install`**. Local dev: `npx wrangler dev` (8787). Deploy needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID=a796fdfe…` in the env.
 - **Cron triggers:** `*/10 * * * *` + `27 */4 * * *` (unchanged; API-verified 2026-11-16). Live healthz: pool 324 matches, KV writes 131/day (of 1,000), subreq 31/tick, `degraded:false`, next kickoff Bayern–Köln 2026-11-20T19:30Z.
 - **Key folders:** `src/` (worker modules; `scripts/lib/worker-src.js` carries the bundle ORDER — co-evolve), `assets/` (immutable versioned client payload; SW `sportsignal-v126`, bundle `public-13.80.js`), `docs/` (RUNBOOK, specs, audits, history), `sportsignal-seo-implementation/` (the SEO spec pack — owner's, tracker updated per session), `seo-implementation/` (the SEO program working tree: audits, session reports, next-session prompts, keyword research).
@@ -65,7 +62,11 @@ the repo's own tracks below — coordinate through the standing limits.
 
 ## SEO program state (the 15-session track)
 
-Session 01 ✅ Completed / verified in production (2026-11-16) — audit + docs;
-`seo-implementation/next-session-prompt.md` holds the Session 2 start prompt
-(keyword research validation; docs-only, no deploy). Progress source of
-truth: `sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md`.
+Session 01 ✅ Completed / verified in production (2026-11-16) — audit + docs.
+Session 02 ✅ Completed, docs-only, no deploy (2026-11-16) — keyword
+validation: 374-phrase map + one-URL rules + cannibalization register;
+allowlist corrected to **13** European clubs.
+`seo-implementation/next-session-prompt.md` holds the Session 3 start prompt
+(keyword-to-URL architecture; docs/planning only — implementation starts in
+Session 4). Progress source of truth:
+`sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md`.

@@ -4,6 +4,50 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# SEO Program Session 2 — keyword research validation and expansion (NO version bump, NO worker code change; `main`, 2026-11-16)
+
+The dedicated keyword session of the 15-session SEO program. Analysis and
+documentation only — nothing in `src/` or `assets/` changed, the version
+stays `13.259.1-archttl`, and NO deploy was performed (no runtime change,
+per the phase file and the session start prompt).
+
+- **`seo-implementation/keyword-research/VALIDATED-KEYWORD-MAP.csv`** — NEW,
+  374 evidence-tagged phrases (202 GSC-observed exact strings re-derived from
+  the 2026-11-15 export / 39 Google-Suggest-validated fa-IR forms / 133
+  research candidates), each with language, geography, intent, tail, cluster,
+  ONE existing-URL target (homepage / time hubs / match-detail-conditional /
+  13 selected-club team pages / 7 competition pages / English-future),
+  priority, status (303 retain-active, 14 passive, 33 hold, 24 excluded with
+  reasons: broadcast/lineup/ticket/non-selected-club/navigational). Zero
+  volumes invented — every volume field reads "unavailable". The 200-phrase
+  seed bank stays unchanged in version history; the map supersedes it.
+- **`seo-implementation/keyword-research/KEYWORD-VALIDATION-REPORT.md`** — NEW:
+  GSC re-query segmentation (Iran 99.2% of country clicks / 92.7% of
+  impressions; mobile 94.8%/96.6%; 55.8% of impressions / 90.8% of clicks
+  privacy-unattributed; intent buckets across all 375 visible queries),
+  allowlist verification with the **13-clubs-not-14 correction**, seed-bank
+  validation (70/70 GSC claims verified; 6 non-selected team targets
+  re-mapped), one-URL-per-intent rules + the 7-entry cannibalization
+  register, the revised P1/P2/P3 list, limitations, and the Session 3 input
+  pack (incl. the top-3-standings coverage-route fact: 66% of observed
+  match-detail GSC rows involve no selected club).
+- **`seo-implementation/keyword-research/SERP-SAMPLES.md`** — NEW: per-cluster
+  SERP/format evidence (Google Suggest fa/IR + Google News RSS fa/IR + live
+  competitor formats ScoreYab/Soot360/365Scores) and the honest
+  access-limitation table (Google SERP CAPTCHA-walled, Bing-Persian empty,
+  TVeto Cloudflare-challenged from this environment).
+- **`seo-implementation/keyword-research/EVIDENCE-LOG.md`** — NEW (fourth
+  deliverable): every evidence source with tool+date+locale, the raw
+  autocomplete and News-RSS data, the repo-source verification table, and a
+  re-verification recipe.
+- **`sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md`** — Session 02
+  row: Completed (docs-only; `npm test` exit 0, 3,615 OK baseline matched).
+- **`seo-implementation/session-reports/SESSION-02.md`** + the rewritten
+  `seo-implementation/next-session-prompt.md`** — the session report per
+  AGENT-INSTRUCTIONS §9 and the complete standalone Session 3 start prompt
+  (keyword-to-URL architecture), printed to the owner in the session's final
+  response. `docs/HANDOFF.md` + `docs/DECISIONS.md` updated per AGENTS.md §10.
+
 # SEO Program Session 1 — the repository + production technical SEO audit (NO version bump, NO worker code change; `main`, 2026-11-16)
 
 The owner's formal 15-session SEO implementation program starts (spec pack
