@@ -4,6 +4,54 @@ Format: date · decision · options considered · reason · who · revisit when.
 (Adopted with the universal AGENTS.md rules on 2026-11-08; this file is new —
 earlier decisions live in README §"Architecture decisions" and docs/adr/.)
 
+## 2026-11-17 — SEO Session 5: the season-end noindex transition ships INERT (flag false + empty dates map — the first real run awaits owner approval)
+
+- **Decision:** the lifecycle MECHANISM ships now (`isSeasonEndedOrdinary` predicate + `HeadInput.noindex` field + `buildMatchPage` wiring + the sitemap archive filter + the 23-gate transition test + the policy + the classification CSV), but `SEO.SEASON_END_NOINDEX_ENABLED = false` and `SEO.SEASON_END_DATES = {}` (empty map) mean NO real page transitions. The live behavior is byte-identical to Session 4.
+- **Options:** (a) ship mechanism INERT + defer the first run to owner approval (chosen), (b) ship mechanism + immediately enable with the publicly-known 2025-26 season-end dates, (c) docs-only (policy + CSV, no code).
+- **Reason:** MASTER-SEO-SPEC §4 + the session contract require "propose, do not execute, the first batch unless the owner explicitly approves it in-session." The 2025-26 season is closed, but all 151 current archive matches are 2026-27 season (still open — ends May 2027), so even with the flag on + dates populated, no current match would transition. The mechanism is test-proven (23 gates) and zero-marginal-cost; the flag gate is the honest expression of "the first real transition is an owner decision." Option (b) would execute URL-level effects without in-session approval; option (c) would leave the code unwritten and the transition unproven.
+- **Who decided:** the agent (the safe, reversible default per AGENTS.md §1; the owner lifts the flag in a future session after confirming the FD `season.endDate` values).
+- **Revisit:** when the owner approves the first batch — confirm the dates against a fresh FD standings fetch, populate `SEASON_END_DATES`, set `SEASON_END_NOINDEX_ENABLED = true`, versioned deploy, verify live.
+
+## 2026-11-17 — SEO Session 5: the marquee retention signals M1-M5 + the ≥1-click M5 threshold
+
+- **Decision:** a finished match stays indexable through season-end when ANY of: M1 selected-club involvement (`shouldReport`), M2 the curated `s.big` featured list, M3 QF+ knockout stage, M4 derby/historic rivalry, M5 slug in `SEO.MARQUEE_MATCH_SLUGS` (demonstrated GSC demand). The M5 set is seeded with every match-detail URL that earned ≥1 click in the 2026-11-15 GSC export (51 slugs, 190 clicks — conservative, retains MORE not fewer).
+- **Options:** (a) ≥1 click threshold (chosen), (b) ≥2 or ≥3 clicks (stricter), (c) impressions-based threshold, (d) no M5 slug override (rely on M1-M4 structural signals only).
+- **Reason:** the site's match-detail total is 190 clicks across 264 URLs; 51 URLs earned ≥1 click. A threshold of ≥1 retains the entire evidenced-demand surface. A stricter threshold would drop 1-click URLs — NOT chosen because a single click is demonstrated intent and the noindex transition is reversible (flipping the flag back restores the page). Impressions alone do not retain (the Atalanta–Kairat class: 329 impr, 0 clicks, pos 12.36 = passive one-off intent). M5 is the override for matches with demonstrated demand but no structural marquee signal (e.g. bologna-vs-monza, getafe-vs-rayo-vallecano). A fresh 16-month GSC export would refine the set.
+- **Who decided:** the agent (evidence-based threshold from the 2026-11-15 GSC export; recorded in MATCH-LIFECYCLE-POLICY.md §4).
+- **Revisit:** when a fresh GSC export arrives — refresh `MARQUEE_MATCH_SLUGS` with the updated click-earner list.
+
+## 2026-11-17 — SEO Session 5: the noindex transition is robots-meta level ONLY (like C1 — never robots.txt, never 404/301 for ordinary season-end pages)
+
+- **Decision:** the season-end ordinary transition flips ONLY the `<meta name="robots">` to `noindex, follow` and removes the URL from `matches-archive.xml`. The page stays HTTP 200 + self-canonical + crawlable. No robots.txt entry. No 301. No 404. No KV/data deletion.
+- **Options:** (a) robots-meta + sitemap removal only (chosen), (b) 301 redirect to the competition page, (c) 404/410 the page, (d) robots.txt Disallow.
+- **Reason:** MASTER-SEO-SPEC §4 Phase C ("A noindex page must remain crawlable so Google can see the directive. Do not block it in robots.txt at the same time.") + the C1 precedent (Session 4: non-selected team pages serve `noindex, follow` + 200 + crawlable, fully reversible per URL). The three separated concerns: index eligibility ≠ page availability ≠ data retention. Option (b) violates route plan §9 (no bulk redirects); (c) loses the page (data retention concern); (d) violates the crawlability law (test-pinned: robots.txt = Allow: / + Disallow: /admin only). The transition is fully reversible (flip the flag back → the page returns to `index, follow` + re-enters the sitemap on the next build; the KV row was never touched).
+- **Who decided:** the agent (the law is explicit in MASTER-SEO-SPEC §4; recorded in MATCH-LIFECYCLE-POLICY.md §6).
+- **Revisit:** only if the owner wants a different disposition for a specific URL class (a per-URL editorial override).
+
+## 2026-11-17 — SEO Session 5: the S19-safe implementation pattern (a sibling noindex field, not a variable indexable)
+
+- **Decision:** `buildMatchPage` keeps its literal `indexable: true` (the `check-match-centre.js` S19 regex forbids a variable there). The season-end transition hooks through a NEW sibling `noindex?: boolean` field on `HeadInput` (`src/seo/page-shell.ts`); `buildHead` derives `robots = "noindex, follow"` when `h.noindex` is true, falling through to the existing `indexable` logic otherwise.
+- **Options:** (a) sibling `noindex?: boolean` field (chosen), (b) change `indexable: true` to `indexable: !isSeasonEndedOrdinary(sm)` (variable), (c) a separate robots-meta override string field.
+- **Reason:** option (b) is forbidden by the S19 noindex law (`check-match-centre.js:3634-3655`: the regex `/indexable:\s*[a-zA-Z_?&|]/` catches any variable or conditional expression after stripping the literal `true,`). Option (a) preserves the S19 invariant (exactly one `indexable:` occurrence, the literal `true`) while enabling the transition — the `noindex:` field name has no `indexable:` substring so the regex doesn't trip. Option (c) would be a broader surface than needed. The 23-gate test proves the S19 law holds + the `noindex:` field is wired correctly.
+- **Who decided:** the agent (the S19 constraint is test-pinned; the sibling-field pattern is the smallest safe surface).
+- **Revisit:** only if the S19 law is ever relaxed (which would require updating `check-match-centre.js`).
+
+## 2026-11-17 — SEO Session 5: the season-boundary source is the FD v4 season.endDate field (not invented — the code map starts empty)
+
+- **Decision:** a competition's season is "closed" when `now > SEO.SEASON_END_DATES[code]`, where the map is populated from the football-data.org v4 `season.endDate` field (the same field `src/composers.ts:286` reads for pre-season detection). The code map starts EMPTY — the owner confirms the dates against a fresh FD standings fetch before enabling.
+- **Options:** (a) FD `season.endDate` as the source, empty map in code (chosen), (b) publicly-known 2025-26 close dates baked into code, (c) a date-based heuristic (finished + age > N days).
+- **Reason:** the session contract says "do not invent dates." The FD `season.endDate` is the authoritative source the site already uses. An empty map is conservative (no code in the map = season assumed still open = no transitions, regardless of the flag). The publicly-known 2025-26 close dates are recorded in MATCH-LIFECYCLE-POLICY.md §3 as REFERENCE (with the "confirm against FD before enabling" caveat) — NOT baked into code. Option (c) would be a heuristic, not a real season boundary. The tests use injected fixtures (not the production map) so the mechanism is proven without depending on the dates.
+- **Who decided:** the agent (the honest, conservative choice; the owner controls the actual values).
+- **Revisit:** when the owner enables the first run — populate the map from a fresh FD standings fetch.
+
+## 2026-11-17 — SEO Session 5: the render-time predicate design (no batch job — bounded/idempotent/resumable by construction)
+
+- **Decision:** the season-end transition is a pure render-time predicate evaluated at page-render time and at sitemap-build time. No batch job, no per-match cron, no sweep.
+- **Options:** (a) render-time predicate (chosen), (b) a bounded seasonal batch job, (c) a manual admin action.
+- **Reason:** MASTER-SEO-SPEC §4 Phase C + §10 require "bounded, idempotent, resumable." A render-time predicate is inherently all three: every render evaluates it (no state to corrupt), no sweep to resume, zero KV writes. It's the smallest possible surface — an in-memory predicate on data already loaded (the `sm` fields from the existing pool/archive read). Option (b) would add a new job (the spec says "prefer the existing deployment/data-management job; do not create per-match cron jobs"); option (c) would require a new admin endpoint. The predicate is zero-marginal-cost (exactly like C1's `isSelectedTeam` Set membership test).
+- **Who decided:** the agent (the smallest surface that satisfies the spec).
+- **Revisit:** only if the transition needs to be applied retroactively to a large historical batch (a one-time admin action would be the tool, not a recurring job).
+
 ## 2026-11-16 — SEO Session 4: C1 implemented as Option A's core with a named predicate (isSelectedTeam)
 
 - **Decision:** the selected-club allowlist test lives as `isSelectedTeam(name)` in `src/seo/data.ts` (an in-memory Set over the domestic-league keys of `CONFIG.BIG_TEAMS_BY_LEAGUE`, `normAlias` lookups, the `teamNormCache`-style admin-overlay memo), consumed by exactly two sites: the teams.xml branch (`src/seo/files.ts`, filter before any row is pushed) and the team-page robots rule (`src/seo/pages.ts`, `indexable = selected AND ≥1 upcoming`).
