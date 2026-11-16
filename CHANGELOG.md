@@ -4,6 +4,52 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# SEO Program Session 1 — the repository + production technical SEO audit (NO version bump, NO worker code change; `main`, 2026-11-16)
+
+The owner's formal 15-session SEO implementation program starts (spec pack
+`sportsignal-seo-implementation/`, v1.0, extracted from the owner's zip).
+Session 1 is audit-only per its phase file — this entry records the
+documentation deliverables and the pipeline-verification deploy; nothing in
+`src/` or `assets/` changed and the version stays `13.259.1-archttl`.
+
+- **`sportsignal-seo-implementation/`** — the owner's spec pack extracted at
+  the repo root (30 files: master spec, strategy, GSC baseline, 200-phrase
+  keyword bank, AGENT-INSTRUCTIONS, 15 phase files, handoff template, the
+  reference GSC export + homepage screenshot). The folder did not previously
+  exist; nothing was flattened or overwritten.
+- **`seo-implementation/audit/REPOSITORY-AND-TECHNICAL-AUDIT.md`** — the
+  verified architecture (routing table, KV-only SSR data flow, the
+  selected-club allowlist = the 14 European clubs, match slug/lifecycle +
+  the S28 archive serve, sitemap index 383 URLs, robots, canonicals, zero
+  hreflang, venue-conditional SportsEvent location) + the live verification
+  record (redirect matrix, 404, workers.dev guard, rendered desktop+mobile)
+  + the confirmed-vs-suspected issue register (C1: team pages generated for
+  both sides of every eligible match — 87 in the sitemap incl. non-selected
+  clubs; C2: no hreflang/EN URLs; C3: the 13 GSC missing-location items;
+  C4: the 159-404 cliff already mitigated by S28; C5-C8 minor).
+- **`seo-implementation/audit/URL-INVENTORY.csv`** — 391 rows: every sitemap
+  URL typed + the machine files/special routes, with this-session HTTP
+  verification marks.
+- **`seo-implementation/audit/CLOUDFLARE-RESOURCE-BASELINE.md`** — the
+  free-tier baseline (bindings, 2 cron triggers API-verified, measured
+  healthz usage: KV writes 117/day of 1,000, subreq 31/tick of ~50, the
+  chronic 10ms CPU-cliff record and its S28.1 mitigation).
+- **`seo-implementation/session-reports/SESSION-01.md`** +
+  **`seo-implementation/next-session-prompt.md`** — the session report and
+  the complete standalone Session 2 start prompt (keyword research
+  validation; docs-only, no deploy).
+- **`sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md`** — Session 01
+  row completed; `docs/HANDOFF.md` rewritten for the program start.
+- **Deploy (verification only):** versioned deploy
+  `c97ae70b-c4b8-4a11-a840-34d8b93f19a7` @100% of byte-identical code
+  (docs-only session; exercises the pipeline per the owner's start prompt);
+  post-deploy healthz + surface spot-checks all green; rollback chain
+  unchanged.
+- **Verified:** `npm test` exit 0 (**3,615 OK**, matches the S28 baseline);
+  production `13.259.1-archttl` == repo HEAD before and after; live
+  redirect matrix 6/6; sitemap children 15/7/87/123/151 URLs; mobile 390px
+  no horizontal scroll; zero console errors at 1440px.
+
 # v13.259-archserve — the GSC 404-cliff fix: finished match pages serve from the 365-day archive (2026-11-15, `main`)
 
 The Nov 15 Search Console export (`docs/audits/2026-11-15-gsc-read.md`) exposed

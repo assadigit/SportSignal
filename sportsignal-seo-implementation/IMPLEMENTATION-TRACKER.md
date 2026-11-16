@@ -4,7 +4,7 @@ Status values: `Not started` / `In progress` / `Blocked` / `Completed` / `Verifi
 
 | Session | Focus | Status | Commit SHA(s) | Push | Deploy / environment | Verification | Handoff prompt |
 |---:|---|---|---|---|---|---|---|
-| 01 | Repository, production and technical SEO audit | Not started | — | — | — | — | — |
+| 01 | Repository, production and technical SEO audit | Completed / verified in production | `9fcc6a3`, `809bafb` + session close-out docs commit | Yes (ls-remote verified) | Worker `ucl-notifier` versioned deploy `c97ae70b-c4b8-4a11-a840-34d8b93f19a7` @100% (byte-identical code — docs-only session; pipeline verification) | Live: healthz `13.259.1-archttl` ok, all page types + sitemaps + redirect matrix verified 2026-11-16 (report: `seo-implementation/session-reports/SESSION-01.md`) | `seo-implementation/next-session-prompt.md` |
 | 02 | Keyword research validation and expansion (dedicated) | Not started | — | — | — | — | — |
 | 03 | Final keyword-to-URL mapping and SEO architecture | Not started | — | — | — | — | — |
 | 04 | Crawl, index, canonical, sitemap and redirect foundation | Not started | — | — | — | — | — |

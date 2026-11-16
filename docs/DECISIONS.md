@@ -861,3 +861,34 @@ immutable URLs crawlable, the re-render cadence was cut: ARCHIVE_PAGE_TTL
 edge caching for the resvg OG route (1h). The root render-cost problem is
 pre-existing, chronic, and documented as the follow-up (audit §6) — not
 caused by and not fully fixable within this session's scope.
+
+## 2026-11-16 — SEO Program S1: start the 15-session spec-pack program; audit-only Session 1 + the pipeline-verification deploy of identical code
+
+**Context.** The owner uploaded `sportsignal-seo-implementation.zip`
+(spec pack v1.0 — a 15-session, audit-first SEO program with its own
+AGENT-INSTRUCTIONS contract, 200-phrase keyword bank and GSC baseline) and
+fired Session 1 with a start prompt requiring extraction, full audit, and
+deploy-through-the-existing-mechanism even for the audit session.
+
+**Decision.** (1) Extract the pack to the repo root as
+`sportsignal-seo-implementation/` (mandated by the spec; the folder did not
+exist; the zip stays — never delete owner files). (2) Create
+`seo-implementation/` as the program's working tree (audits, session
+reports, next-session prompts) so the spec pack stays pristine except its
+tracker. (3) Session 1 makes NO worker code change (phase acceptance
+criteria) — the "deploy" requirement is satisfied by a versioned deploy of
+byte-identical code (pipeline verification; instant rollback untouched),
+verified post-deploy via healthz + surface spot-checks. (4) The program's
+sessions run alongside the repo's internal S1/S2 SEO mini-track; the Dec 4-8
+measurement freeze and the team-name spelling freeze bind BOTH tracks, and
+the Session 2 prompt carries the coordination notes.
+
+**Who decided.** The agent (SEO Session 1), under the owner's start prompt +
+AGENT-INSTRUCTIONS §7.9 (deploy via the existing mechanism) and the phase
+file's no-code-change acceptance criterion.
+
+**When to revisit.** Session 2 (keyword research validation — docs-only, no
+deploy) starts only when the owner fires
+`seo-implementation/next-session-prompt.md` in a new session. The C1 team-page
+scope decision (87 pool-derived team URLs vs the 14-club allowlist) belongs
+to Sessions 3+8 with GSC/backlink evidence — never a blind deletion.
