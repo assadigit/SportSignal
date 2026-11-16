@@ -61,7 +61,7 @@ Full register in the audit §14. Headlines:
 |---|---|---|
 | Spec pack extraction | `9fcc6a3` | pushed to `main` (verified via ls-remote) |
 | Audit deliverables (3 files) | `809bafb` | pushed to `main` (verified via ls-remote) |
-| Session report + tracker + Session 2 prompt + repo docs | (this commit) | pushed after this report (see tracker) |
+| Session report + tracker + Session 2 prompt + repo docs | `7ef3a83` | pushed to `main` (ls-remote verified) |
 
 Push discipline followed: `git fetch` before push (no concurrent movement — rebase not needed), one-shot token URL push (token never persisted in git config), `git ls-remote` verification after each push.
 
