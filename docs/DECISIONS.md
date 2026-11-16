@@ -1332,3 +1332,107 @@ empty-state copy) after Dec 4-8 with a fresh 16-month GSC export; S06-H4
 (visible curation copy) in a future UI iteration (Session 26 or a dedicated UI
 round); S06-H6 (the featured-match priority vs nearest) when the owner
 reviews the divergence (a product decision, not an SEO one).
+
+---
+
+## S09 — SEO Session 9: the competition-page @graph CollectionPage node + the date-hub/empty-state verification (2026-11-17)
+
+**The decision set.** Session 9 owns the competition pages (the
+`/competitions/{slug}` family — keyword map §2.8-2.13; 7 live competition
+pages: PL, PD, SA, FL1, BL1, UCL, DFB-Pokal) + the date hub pages
+(`/matches/today`, `/matches/tomorrow`, `/matches/this-week`,
+`/matches/this-weekend`) + the empty-state behavior. The audit (read-first)
+confirmed the competition-page content + the date-hub machinery are already
+complete + byte-frozen; the ONE code change is the competition-page @graph
+CollectionPage node (the Session 8-noted gap — the competition detail page
+was the lone competition-family page without a WebPage/CollectionPage node).
+
+- **S09-1 — the competition-page @graph CollectionPage node.**
+  `buildCompetitionPage`'s `jsonldNodes` gains
+  `JL.collectionPageNode(path, "برنامه بازی‌های " + String(cNameFa),
+  ctx.fetchedAt)` between `siteNodes()` and `sportsOrganizationNode`. The
+  @graph is now Organization + WebSite + CollectionPage + SportsOrganization +
+  ItemList (when indexable) + BreadcrumbList — matching the spec Step-3
+  contract ("the @graph carries Organization + WebSite + WebPage +
+  BreadcrumbList"). CollectionPage is the accurate type here: the page's
+  primary content is a collection of that competition's upcoming fixtures
+  (the `itemListNode` when indexable) + the full standings table — the
+  `sportsOrganizationNode` already carries the competition-entity semantics,
+  so the page-level node describes the collection, not the entity. This
+  mirrors the Session 8 team-page fix (the team page gained `webPageNode`;
+  the competition detail page gains `collectionPageNode` for parity with its
+  sibling pages — the `/competitions` index + the `/matches` hub + the time
+  hubs all use `collectionPageNode`). Structural JSON-LD hygiene only (the
+  CollectionPage node is machine-readable, invisible to the SERP snippet —
+  does NOT contaminate the Dec 4-8 GSC measurement). Zero KV/fetch/CPU cost
+  (in-memory object literal built from `path` + `ctx.fetchedAt` + the
+  already-computed `cNameFa`). Verified by the new
+  `check-seo-competitionpages.js` 8 gates + the seeded tsx render harness
+  (`scripts/s9-competition-smoke.ts` — 30/30 assertions pass: the @graph
+  carries the CollectionPage node with the correct @id/url/name/inLanguage/
+  dateModified/isPartOf; NO SportsEvent; the @graph node order; the
+  byte-frozen title/H1; the answer lead; the indexable rule; the
+  self-canonical; the crawlable `<a href>` match row).
+
+- **S09-2 — the audit confirms the date-hub + empty-state behavior is already
+  correct (the S06-H3 refinement is post-Dec-4).** `buildHub`
+  (`src/seo/pages.ts`) already emits `JL.collectionPageNode(def.path,
+  def.h1, ctx.fetchedAt)` + `JL.itemListNode` + `JL.faqNode` +
+  `JL.breadcrumbNode` in its `jsonldNodes`; the hubs are self-canonical +
+  indexable (the C5 decision: empty hubs stay indexable —
+  `/matches/tomorrow` is the site's best-CTR surface at 8.26% WITH an honest
+  empty state). The empty-state behavior is correct: a hub with zero
+  upcoming matches renders «مسابقه‌ای در راه نیست» in the list + the FAQ
+  answers honestly + the answer sentence uses `def.desc`. The S06-H3
+  follow-up (the tomorrow-empty-state refinement to the spec's suggested
+  Persian copy «برای فردا مسابقه مهمی در میان دیدارهای منتخب اسپرت سیگنال
+  ثبت نشده است…») is a post-Dec-4 decision with a fresh GSC export —
+  documented, NOT changed this session (the empty-state copy is a
+  GSC-measured surface on `/matches/tomorrow` — byte-frozen through Dec 4-8).
+  No code change to the date hubs.
+
+- **S09-3 — the competition-page title/H1 bytes ARE byte-frozen (the actual
+  byte change is a post-Dec-4 decision with a fresh GSC export).** The
+  competition-page title («{لیگ} — برنامه بازی‌های بزرگ پیش‌رو | اسپرت
+  سیگنال» — the curated framing «بازی‌های بزرگ پیش‌رو» is the differentiator
+  vs the full-coverage competitors) + the H1 («برنامه بازی‌های X») + the meta
+  description + the answer sentence + the competition-name spellings are ALL
+  GSC-measured surfaces byte-frozen through Dec 4-8. Session 9 owns them but
+  defers the bytes — the actual byte change is a post-Dec-4 decision with a
+  fresh 16-month GSC export (the program's top evidence request — it would
+  validate the competition-page title/H1 against the actual query surface:
+  the «بازی‌های لیگ برتر انگلیس» / «برنامه سری‌آ» / «بازی‌های لالیگا»
+  competition-schedule heads). The CollectionPage node (S09-1) is NOT a
+  GSC-measured surface — safe under the freeze. Verified by the
+  `check-seo-competitionpages.js` freeze gates (gates 3 + 4 pin the
+  byte-frozen title template + the H1).
+
+- **S09-4 — the KV read quota is STILL exceeded at Session 9 close
+  (pre-existing, NOT a code issue).** Live `/healthz` at Session 9 close
+  (2026-11-16 23:50 UTC): `ok:false` + `pool_matches:0` + `pool_age_min:-1`
+  — the pool is unreadable. This is the SAME pre-existing infrastructure
+  issue tracked since Session 5 close (the account's 100,000 KV reads/day
+  free-plan limit is exceeded; the pool/archive data persists but can't be
+  read until the quota resets at UTC midnight). The competition-page data
+  surfaces (the upcoming matches list, the full standings table, the rendered
+  CollectionPage node on a detail page WITH upcoming matches) CANNOT be
+  live-verified while the quota is exceeded — they self-verify once the quota
+  resets at UTC midnight. The SSR-structural change (the CollectionPage node)
+  is verified by the `check-seo-competitionpages.js` offline gates + the tsx
+  render harness (30/30 assertions pass on a seeded ctx). The deploy is safe
+  regardless of the quota state — the code change has zero new KV reads (it
+  cannot worsen the quota issue). The owner should investigate the
+  read-source; a Workers Paid plan ($5/mo → 1M reads/day) is the durable fix.
+
+**Who decided.** The agent (SEO Session 9), on the trace evidence (the
+buildCompetitionPage audit), the keyword map §2.8-2.13, the spec §2/§9, the
+route plan §5 (the competition-page indexable rule + the empty-hub C5
+decision), the Dec 4-8 freeze (the inherited constraint), and the Session 8
+note that the competition detail page has the SAME @graph gap the team page
+had.
+
+**When to revisit.** S09-3 (the competition-page title/H1 byte change) after
+Dec 4-8 with a fresh 16-month GSC export; the S06-H3 follow-up (the
+tomorrow-empty-state refinement) after Dec 4-8 with the same export; S09-4
+(the KV read quota) at every session close until the owner resolves it
+(investigate the read-source or upgrade to Workers Paid).

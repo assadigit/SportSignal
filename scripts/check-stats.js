@@ -1350,18 +1350,21 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v126"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.264\.0-teampages"/.test(cfg) &&
-    /# v13\.264\.0-teampages/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.265\.0-competitions"/.test(cfg) &&
+    /# v13\.265\.0-competitions/.test(read("CHANGELOG.md"));
 })());
 
 // v13.258-mca11y (the Match Centre S25 + a11y deep-dive, 2026-11-15): the
 // version pin rides forward in place (the S44.1/S03 precedent — 13.254 ->
 // 13.254.1, 13.255 -> 13.256, 13.256 -> 13.257 and 13.257 -> 13.258 were moved
-// the same way). This block started as the v13.255-seospell release wiring
-// (the S1 M2 SEO round: the F3 spelling fix — an SEO-surface-only release that
-// changed NO rank-badge surface, so the v13.254 engine block above rode
-// unchanged); its survivors (team-names.ts + check-seo-teamnames.js + the
-// test-chain wiring) ride forward under 13.258-mca11y — the S25 a11y
+// the same way; 13.258 -> 13.260.0-teamidx (S4) -> 13.261.0-matchlife (S5) ->
+// 13.262.0-homepage (S6) -> 13.263.0-matchlinks (S7) -> 13.264.0-teampages (S8)
+// -> 13.265.0-competitions (S9) the same way). This block started as the
+// v13.255-seospell release wiring (the S1 M2 SEO round: the F3 spelling fix —
+// an SEO-surface-only release that changed NO rank-badge surface, so the
+// v13.254 engine block above rode unchanged); its survivors (team-names.ts +
+// check-seo-teamnames.js + check-seo-teampages.js + check-seo-competitionpages.js
+// + the test-chain wiring) ride forward under 13.258-mca11y — the S25 a11y
 // deep-dive (the F1-F4 fixes: the hero double-wrap → <div>, the nav
 // aria-current at render + on scroll, the outer nav section → non-landmark,
 // the portrait descriptive alt). The fixes are body-only (the GSC surfaces +
@@ -1369,20 +1372,27 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
 // stays sportsignal-v126 + the client bundle stays public-13.80.js — S25 is a
 // server-side release; no client asset renamed). See
 // docs/audits/2026-11-15-s25-a11y-audit.md + MATCH-CENTRE-EXECUTION-LOG.md S25.
+// S9 (13.265.0-competitions): the competition-page @graph CollectionPage node
+// (buildCompetitionPage's jsonldNodes gains JL.collectionPageNode — the same
+// page-level grounding every sibling page emits) + the new
+// check-seo-competitionpages.js gate (8 gates pinning the CollectionPage node +
+// no-SportsEvent + the byte-frozen title/H1 + the answer lead + the indexable
+// rule + the crawlable links + the standings table + the @graph order).
 check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-dive round: the F1-F4 fixes — the hero double-wrap → <div>, the nav aria-current at render + on scroll, the outer nav section → non-landmark container, the portrait descriptive alt; the fixes are body-only — the GSC surfaces + the answer sentence byte-frozen, the <head> NOT touched; the SW cache stays sportsignal-v126 + the client bundle stays public-13.80.js — a server-side release; the version bump 13.257-mcmatchcentre -> 13.258-mca11y; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound + the v13.257-mcmatchcentre survivors ride unchanged)", (() => {
   const pkg = JSON.parse(read("package.json"));
   const fs = require("fs");
   const path = require("path");
-  return pkg.version === "13.264.0.0" &&
+  return pkg.version === "13.265.0.0" &&
     fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-archserve.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-crawlindex.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teampages.js")) &&
+    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-competitionpages.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-match-lifecycle.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-homepage.js")) &&
     /node scripts\/check-seo-lastmod\.js && node scripts\/check-archserve\.js && node scripts\/check-seo-teamnames\.js/.test(pkg.scripts.test) &&
-    /node scripts\/check-seo-crawlindex\.js && node scripts\/check-seo-teampages\.js && node scripts\/check-seo-match-lifecycle\.js/.test(pkg.scripts.test) &&
+    /node scripts\/check-seo-crawlindex\.js && node scripts\/check-seo-teampages\.js && node scripts\/check-seo-competitionpages\.js && node scripts\/check-seo-match-lifecycle\.js/.test(pkg.scripts.test) &&
     /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js/.test(pkg.scripts.test);
 })());
 

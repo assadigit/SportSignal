@@ -4,6 +4,119 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.265.0-competitions — SEO Session 9: the competition-page @graph CollectionPage node + the date-hub/empty-state verification (structural JSON-LD hygiene — the competition detail page was the lone competition-family page without a CollectionPage node; the byte-frozen title/H1/description/answer untouched; 2026-11-17, `main`)
+
+The SIXTH implementation session of the 15-session SEO program. This session
+owns the competition pages (the `/competitions/{slug}` family — keyword map
+§2.8-2.13; 7 live competition pages: PL, PD, SA, FL1, BL1, UCL, DFB-Pokal) +
+the date hub pages (`/matches/today`, `/matches/tomorrow`, `/matches/this-week`,
+`/matches/this-weekend`) + the empty-state behavior. The Dec 4-8 measurement
+freeze applies to the competition-page title/H1 bytes (the actual byte change
+is a post-Dec-4 decision with a fresh GSC export — Session 9 owns them but
+defers the bytes). The session report:
+`seo-implementation/session-reports/SESSION-09.md`.
+
+- **The audit (read-first, no code):** `buildCompetitionPage`
+  (`src/seo/pages.ts`) is already complete against the keyword map §2.8-2.13 +
+  the spec §2/§9: the title («{لیگ} — برنامه بازی‌های بزرگ پیش‌رو | اسپرت
+  سیگنال» — the curated framing «بازی‌های بزرگ پیش‌رو» is the differentiator vs
+  the full-coverage competitors), the H1 («برنامه بازی‌های X»), the answer
+  sentence (leads with «نزدیک‌ترین بازی بزرگ {لیگ}: …» when there is a next
+  match — the GSC query head «برنامه بازی های لیگ قهرمانان اروپا» 14 impr /
+  pos 9.36 + the league-schedule heads), the meta description (derived from the
+  answer, sliced to 165), the content blocks (the answercard + the full
+  standings table via `fullStandings` — one cache-only KV read, fail-closed to
+  the compact + the upcoming matches list «بازی‌های پیش‌رو»), the internal links
+  (crawlable `<a href>` match URLs via `dateGroupedRows` → `mrowHtml` →
+  `matchHref` → the canonical `/matches/{home}-vs-{away}-{YYYY-MM-DD}`), the
+  indexable rule (`list.length >= SEO.MIN_UPCOMING_FOR_INDEX` — indexable when
+  ≥1 upcoming approved match; `noindex, follow` at 0 upcoming; 404 when no pool
+  rows at all — the route plan §5 + the INDEXABILITY-MATRIX competition rows),
+  and the competition-name aliases (the `translateCompetition` map rides the
+  `sportsOrganizationNode` `alternateName`). All present + correct +
+  byte-frozen. No filler text added (spec §2 "Keep the current fairly complete
+  competition page experience"; "Do not add filler text to match a word
+  count").
+
+- **The ONE code change — the competition-page @graph CollectionPage node
+  (S9):** the competition detail page was the lone competition-family page
+  without a WebPage/CollectionPage node in its JSON-LD @graph. Every sibling
+  page emits one: the `/competitions` index + the `/matches` hub + the time
+  hubs (`/matches/today`, …) via `JL.collectionPageNode`; the team page + the
+  match page via `JL.webPageNode`. The spec contract (the Session 9 prompt
+  Step 3: "the @graph carries Organization + WebSite + WebPage +
+  BreadcrumbList") now holds: `buildCompetitionPage`'s `jsonldNodes` gains
+  `JL.collectionPageNode(path, "برنامه بازی‌های " + String(cNameFa),
+  ctx.fetchedAt)` between `siteNodes()` and `sportsOrganizationNode`.
+  CollectionPage is the accurate type here: the page's primary content is a
+  collection of that competition's upcoming fixtures (the `itemListNode` when
+  indexable) + the full standings table — the `sportsOrganizationNode` already
+  carries the competition-entity semantics, so the page-level node describes
+  the collection, not the entity. STRUCTURAL JSON-LD hygiene only — the
+  byte-frozen title/H1/description/answer are untouched (the Dec 4-8 freeze
+  holds — verified by the new `check-seo-competitionpages.js` freeze gates).
+  Zero KV/fetch/CPU cost (in-memory object literal built from `path` +
+  `ctx.fetchedAt` + the already-computed `cNameFa`). Decision S09-1 in
+  `docs/DECISIONS.md`.
+
+- **The date-hub pages (verified correct — NO code change):** `buildHub`
+  (`src/seo/pages.ts`) already emits `JL.collectionPageNode(def.path, def.h1,
+  ctx.fetchedAt)` + `JL.itemListNode` + `JL.faqNode` + `JL.breadcrumbNode` in
+  its `jsonldNodes`; the hubs are self-canonical + indexable (the C5 decision:
+  empty hubs stay indexable — `/matches/tomorrow` is the site's best-CTR
+  surface at 8.26% WITH an honest empty state). The empty-state behavior is
+  correct: a hub with zero upcoming matches renders the empty-state copy
+  («مسابقه‌ای در راه نیست» in the list + the FAQ answers honestly + the answer
+  sentence uses `def.desc`). The S06-H3 follow-up (the tomorrow-empty-state
+  refinement to the spec's suggested Persian copy «برای فردا مسابقه مهمی در
+  میان دیدارهای منتخب اسپرت سیگنال ثبت نشده است…») is a post-Dec-4 decision
+  with a fresh GSC export — documented, NOT changed this session (the
+  empty-state copy is a GSC-measured surface on `/matches/tomorrow` —
+  byte-frozen through Dec 4-8). Decision S09-2.
+
+- **The new check gate — `scripts/check-seo-competitionpages.js`:** 8 offline
+  gates pinned to the `buildCompetitionPage` function body: (1) the
+  CollectionPage node is in the `jsonldNodes` array; (2) NO SportsEvent node;
+  (3) the byte-frozen title template; (4) the byte-frozen H1; (5) the answer
+  sentence leads with «نزدیک‌ترین بازی بزرگ {لیگ}» (next match) / «بازی‌های
+  بزرگ پیش‌روی {لیگ} در اسپرت سیگنال» (no next match); (6) the indexable rule
+  (the route plan §5); (7) the crawlable upcoming-matches rows + the full
+  standings table (spec §2 + §9); (8) the @graph node order. Wired into the
+  `npm test` chain after `check-seo-teampages.js`.
+
+- **Byte-frozen (NOT changed — the Dec 4-8 freeze holds):** the
+  competition-page `<title>`, `<h1>`, meta description, answer sentence, and
+  the competition-name spellings. The team-page title/H1/description/answer
+  (Session 8). The match-page title/H1/description/answer (Session 7). The
+  homepage title/H1 (Session 6). The date-hub empty-state copy on
+  `/matches/tomorrow` (the S06-H3 follow-up). The CollectionPage node is NOT a
+  GSC-measured surface (machine-readable JSON-LD, invisible to the SERP
+  snippet) — safe under the freeze. Decision S09-3.
+
+- **What I checked (verification):** `npm test` exit 0 (**3,694 OK** = baseline
+  3,685 + 9 from the new `check-seo-competitionpages.js` gates; `npx tsc
+  --noEmit` clean); the new `check-seo-competitionpages.js` standalone (8/8
+  gates pass); local `wrangler dev` smoke (worker boots, `/healthz` 200). The
+  KV read quota (pre-existing, NOT a code issue) was STILL exceeded at Session
+  8 close — re-checked at Session 9 close; the competition-page data surfaces
+  (the upcoming matches list, the standings table) self-verify once the quota
+  resets at UTC midnight. The SSR-structural change (the CollectionPage node)
+  is verified by the offline gates.
+
+- **Cloudflare budget of this change:** zero new KV reads (the
+  `collectionPageNode` call is an in-memory object literal built from `path` +
+  `ctx.fetchedAt` + `cNameFa` already in scope); zero new KV writes
+  (`kv_writes_day:0`); zero new subrequests; zero new fetches; zero
+  render-cost additions (a small object appended to an existing array). Well
+  within the free-tier budget.
+
+- **Decisions:** S09-1 (the CollectionPage node), S09-2 (the audit confirms
+  the date-hub + empty-state behavior is already correct — the S06-H3
+  refinement is post-Dec-4), S09-3 (the competition-page title/H1 bytes ARE
+  byte-frozen — the actual byte change is a post-Dec-4 decision with a fresh
+  GSC export), S09-4 (the KV read quota STILL exceeded at S9 close). Details
+  in `docs/DECISIONS.md`.
+
 # v13.264.0-teampages — SEO Session 8: the selected-club team-page @graph WebPage node (structural JSON-LD hygiene — the team page was the lone page-class without a WebPage node; the byte-frozen title/H1/description/answer untouched; 2026-11-16, `main`)
 
 The FIFTH implementation session of the 15-session SEO program. This session

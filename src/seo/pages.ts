@@ -2243,6 +2243,26 @@ export async function buildCompetitionPage(ctx: SeoCtx, slug: string): Promise<{
         path, title, description: desc, indexable,
         jsonldNodes: [
           ...JL.siteNodes(),
+          // S9: the competition-page @graph carries a CollectionPage node —
+          // the same page-level grounding every sibling page emits (the
+          // /competitions index + the /matches hub + the time hubs all use
+          // JL.collectionPageNode; the team page uses JL.webPageNode; the
+          // match page uses JL.webPageNode). The competition detail page was
+          // the lone competition-family page without a WebPage/CollectionPage
+          // node, so the @graph was missing the page-level subject the spec
+          // contract (Step 3: "@graph carries Organization + WebSite +
+          // WebPage + BreadcrumbList") names. CollectionPage is the accurate
+          // type here: the page's primary content is a collection of that
+          // competition's upcoming fixtures (the ItemList when indexable) +
+          // the full standings table — the SportsOrganization node already
+          // carries the competition-entity semantics, so the page-level node
+          // describes the collection, not the entity. STRUCTURAL JSON-LD
+          // hygiene only — the byte-frozen title/H1/description/answer are
+          // untouched (the Dec 4-8 measurement freeze holds); the node
+          // describes the page itself (path + name + dateModified + language
+          // + site membership), never a fixture (no SportsEvent — the
+          // competition page is not an event).
+          JL.collectionPageNode(path, "برنامه بازی‌های " + String(cNameFa), ctx.fetchedAt),
           JL.sportsOrganizationNode(code),
           indexable ? JL.itemListNode(list, "بازی‌های " + cNameFa) : null,
           JL.breadcrumbNode(trail)
