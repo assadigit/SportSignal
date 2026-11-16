@@ -135,8 +135,35 @@ if (wiringOk) ok("C1 wiring: teams.xml filters to the allowlist before any row i
 const teamsIndexFn = dataSrc.slice(dataSrc.indexOf("export function teamsIndex"), dataSrc.indexOf("export interface CompEntry"));
 let scopeOk = true;
 if (!teamsIndexFn.includes('for (const side of ["homeTeam", "awayTeam"] as const)')) { bad("teamsIndex no longer iterates both sides — the crawl path for noindexed URLs is broken"); scopeOk = false; }
-if (teamsIndexFn.includes("isSelectedTeam")) { bad("teamsIndex itself must NOT filter by the allowlist (it powers the /teams tiles + match-page links)"); scopeOk = false; }
+if (teamsIndexFn.includes("isSelectedTeam")) { bad("teamsIndex itself must NOT filter by the allowlist (it powers the /teams tiles; the match-page footer-hook team LINKS are gated on isSelectedTeam per Session 7 — spec §9 — but teamsIndex still generates BOTH sides for the /teams index tiles)"); scopeOk = false; }
 if (scopeOk) ok("scope law: teamsIndex still generates BOTH sides of every eligible fixture (the crawl path for the noindexed URLs)");
+
+// ---- 3b. Session 7: the match-detail footer-hook team-link gating (spec §9) ----
+// The match-detail footer-hook («پیوندهای مرتبط» → «تیم‌ها» line) must link
+// ONLY selected-club team pages. A non-selected club's team page exists as
+// 200 + noindex,follow but spec §9 says "Do not generate a link to an
+// unindexable/thin team page simply because the team exists in the provider
+// database." So the <a href="/teams/..."> is gated on isSelectedTeam; a
+// non-selected club renders its Persian name as plain text (the name stays
+// visible for the reader; the crawlable link is gated). This is body-only —
+// the byte-frozen <head> (title/H1/description/answer-sentence funnel) is
+// untouched (the check-match-centre.js S20/S25 gates hold).
+let s7Ok = true;
+// (a) both team links are gated on isSelectedTeam (the match-page footer-hook)
+// isSelectedTeam(m.homeTeam.name) / isSelectedTeam(m.awayTeam.name) are the
+// match-page-specific call shapes (the team-page indexable rule uses entry.name)
+if (!pagesSrc.includes("isSelectedTeam(m.homeTeam.name)")) { bad("Session 7: the home-team footer-hook link is not gated on isSelectedTeam(m.homeTeam.name) (spec §9 — non-selected clubs must NOT get a team-page <a href>)"); s7Ok = false; }
+if (!pagesSrc.includes("isSelectedTeam(m.awayTeam.name)")) { bad("Session 7: the away-team footer-hook link is not gated on isSelectedTeam(m.awayTeam.name) (spec §9 — non-selected clubs must NOT get a team-page <a href>)"); s7Ok = false; }
+// (b) the <a href="/teams/..."> is in the isSelectedTeam TRUE branch (the link is conditional, not the default)
+if (!/isSelectedTeam\(m\.homeTeam\.name\)\s*\?\s*'<a href="\/teams\/' \+ teamSlug\(m\.homeTeam\.name\)/.test(pagesSrc)) { bad("Session 7: the home-team <a href> must be inside the isSelectedTeam true-branch (the link is the conditional, not the default)"); s7Ok = false; }
+if (!/isSelectedTeam\(m\.awayTeam\.name\)\s*\?\s*'<a href="\/teams\/' \+ teamSlug\(m\.awayTeam\.name\)/.test(pagesSrc)) { bad("Session 7: the away-team <a href> must be inside the isSelectedTeam true-branch (the link is the conditional, not the default)"); s7Ok = false; }
+// (c) the non-selected fallback (plain-text team name, NO <a href>) exists in the false branch
+if (!/: esc\(faName\(m\.homeTeam\)\)/.test(pagesSrc)) { bad("Session 7: the home-team non-selected fallback (plain-text name, no link) is missing"); s7Ok = false; }
+if (!/: esc\(faName\(m\.awayTeam\)\)/.test(pagesSrc)) { bad("Session 7: the away-team non-selected fallback (plain-text name, no link) is missing"); s7Ok = false; }
+// (d) the OLD unconditional pattern (both teams always linked inline) is GONE
+// the old pattern had '</a> · <a href="/teams/' inline (both links in one string literal)
+if (pagesSrc.includes("</a> · <a href=\"/teams/")) { bad("Session 7: the OLD unconditional both-teams-linked inline pattern is still present (spec §9 violation — non-selected clubs must NOT get a team-page link)"); s7Ok = false; }
+if (s7Ok) ok("Session 7: the match-detail footer-hook team links are gated on isSelectedTeam (spec §9 — only the 13 selected clubs get a crawlable <a href>; non-selected clubs render as plain text; the byte-frozen <head> is untouched)");
 
 // ---- 4. C6 wiring: the non-prod machine-file guard ----
 const routerSrc = fs.readFileSync(path.join(root, "src", "seo", "router.ts"), "utf8");
@@ -200,4 +227,4 @@ if (disallows.length === 1 && disallows[0] === "Disallow: /admin") {
 }
 
 if (failures) { console.error("FAIL check-seo-crawlindex: " + failures + " failure(s)"); process.exit(1); }
-console.log("OK   check-seo-crawlindex: all " + oks + " crawl/index foundation gates passed (C1 behavior+wiring+scope, C6 guard, C8 TTL, robots law)");
+console.log("OK   check-seo-crawlindex: all " + oks + " crawl/index foundation gates passed (C1 behavior+wiring+scope, S7 footer-hook team-link gating, C6 guard, C8 TTL, robots law)");

@@ -4,6 +4,123 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.263.0-matchlinks — SEO Session 7: the match-detail footer-hook team-link gating (the spec §9 / C1 disposition — only selected-club team pages get a crawlable <a href>; non-selected clubs render as plain text; the byte-frozen <head> untouched; 2026-11-17, `main`)
+
+The FOURTH implementation session of the 15-session SEO program. The match-
+detail page is the site's primary click surface (264 GSC URLs / 190 clicks /
+6,338 impressions — most of the site's clicks; the «بارسلونا مقابل منچستر
+سیتی 2026» query alone = 6 clicks / 103 impr / pos 3.25, the site's best
+query). This session turns to the match-detail template and metadata: the
+audit of the title/H1/meta/OG/JSON-LD/answer-sentence funnel (all verified
+correct + byte-frozen through the Dec 4-8 GSC measurement window), the
+date/time/timezone correctness (the `isoWithTehranOffset` SportsEvent
+`startDate` + the H1 with both calendars — verified correct), the 13 GSC
+"Missing field location" items (verified against the MISSING-IS-NOT-ZERO
+law — the SportsEvent `location` omits when `m.venue` is absent; never
+fabricate), and the ONE code change: the footer-hook team-link gating on
+`isSelectedTeam` (spec §9: "Do not generate a link to an unindexable/thin
+team page simply because the team exists in the provider database" + the
+C1 disposition: only the 13 selected clubs get indexable team pages; non-
+selected clubs get `noindex, follow`). The session report:
+`seo-implementation/session-reports/SESSION-07.md`.
+
+- **The footer-hook team-link gating (the spec §9 / C1 disposition):** the
+  match-detail footer-hook («پیوندهای مرتبط» → «تیم‌ها» line) previously
+  linked BOTH teams' pages unconditionally — `<a href="/teams/{slug}">` for
+  both sides, regardless of whether the team is on the 13-club selected
+  allowlist. But per spec §9 + the C1 disposition (Session 4): only the 13
+  selected clubs get indexable team pages; non-selected clubs get `noindex,
+  follow` (200 + self-canonical + crawlable, but NOT indexable). Spec §9
+  says "Do not generate a link to an unindexable/thin team page simply
+  because the team exists in the provider database." Session 7 gates the
+  `<a href="/teams/...">` on `isSelectedTeam(m.homeTeam.name)` /
+  `isSelectedTeam(m.awayTeam.name)` — the SAME predicate that gates the
+  team-page indexable rule (`buildTeamPage`) + the sitemap `teams.xml`
+  filter. A selected club renders `<a href="/teams/{slug}">{name}</a>`; a
+  non-selected club renders its Persian name as plain text (the name stays
+  visible for the reader; the crawlable link is gated). This is BODY-ONLY —
+  the byte-frozen `<head>` (title/H1/description/answer-sentence funnel +
+  the SportsEvent JSON-LD) is untouched (the `check-match-centre.js`
+  S20/S25 byte-freeze gates hold; verified by `npm test`).
+
+- **The metadata audit (read-first, no byte changes):** the match-title
+  ladder (⚽ pairing | competition، date | brand, ≤65 chars — the keyword
+  map §2.15 plan), the H1 with both calendars (Shamsi + Gregorian via
+  `faDateD2`), the meta-description === answer-sentence === SportsEvent-
+  JSON-LD-description funnel (one `matchAnswerSentence` source), the
+  SportsEvent `startDate` (`isoWithTehranOffset` — Tehran +03:30 fixed
+  since 2022, computed from wall-clock delta, never a tz-string), the
+  SportsEvent `location` (omits when `m.venue` is absent — the MISSING-
+  IS-NOT-ZERO law), the @graph 5-node contract (Organization + WebSite +
+  WebPage + SportsEvent + BreadcrumbList — NO FAQPage, NO endDate, NO
+  offers, NO aggregateRating, NO review), the per-match OG image
+  (`/og/match-{slug}.png` — text-only 1200×630), the 365-day archive serve
+  (`findArchivedMatchBySlug`), the related/h2h/schedule blocks, the venue.
+  ALL verified correct + byte-frozen. The Dec 4-8 freeze applies to the
+  match-page title/description/H1 bytes — Session 7 owns them but the
+  actual byte change is a post-Dec-4 decision with a fresh GSC export.
+
+- **The 13 GSC "Missing field location" items (spec §6):** per MASTER-SEO-
+  SPEC §6, the GSC enhancement report's "Missing field location" (13 items)
+  does NOT identify its schema type. Verified against the actual match-page
+  JSON-LD: the SportsEvent `location` (StadiumOrArena) is OMITTED when
+  `m.venue` is absent (the `if (m.venue)` guard in `sportsEventNode`). The
+  13 items are the no-venue matches — Google's informational warning ("if
+  you have a location, add it"). Per spec §6: "Never fabricate an address
+  or use a generic placeholder. Only add schema matching visible page
+  content." The current behavior is CORRECT — the MISSING-IS-NOT-ZERO law
+  holds. NO change (do not fabricate).
+
+- **The date/time/timezone verification:** the kickoff is always Gregorian
+  ISO 8601 UTC in the SportsEvent `startDate` (via `isoWithTehranOffset`
+  which computes the Tehran +03:30 offset from the wall-clock delta — the
+  venue timezone is not in the data, so it is never invented). The display
+  is Tehran-time + Jalali: the H1 uses `faDateD2` (Shamsi + Gregorian),
+  the hero uses `faDateD1` (full «شنبه ۱۵ آبان ۱۴۰۵ (۵ نوامبر ۲۰۲۶)»),
+  the facts-table date row uses `fullWhenHtml` (Jalali + Gregorian parens
+  + Tehran + UTC). All correct — no change.
+
+- **The test gate (the Session 7 gate):** a NEW gate in
+  `scripts/check-seo-crawlindex.js` (section 3b) verifies the footer-hook
+  team-link gating: (a) both team links are gated on
+  `isSelectedTeam(m.homeTeam.name)` / `isSelectedTeam(m.awayTeam.name)`;
+  (b) the `<a href="/teams/...">` is in the `isSelectedTeam` TRUE branch
+  (the link is the conditional, not the default); (c) the non-selected
+  fallback (plain-text team name, NO `<a href>`) exists in the FALSE
+  branch; (d) the OLD unconditional pattern (`</a> · <a href="/teams/` —
+  both teams always linked inline) is GONE. The gate also updates the
+  `teamsIndex` scope-law comment to reflect that the match-page footer-hook
+  team LINKS are now gated (teamsIndex still generates BOTH sides for the
+  `/teams` index tiles). `npm test` baseline: **3,676 OK** (was 3,675 at
+  Session 6 close; +1 from the new Session 7 gate).
+
+- **The Cloudflare budget (zero marginal cost):** the `isSelectedTeam`
+  predicate is a pure in-memory set lookup (the `selectedTeamMemo` cached
+  Set, rebuilt only when `CONFIG.BIG_TEAMS_BY_LEAGUE` changes identity —
+  the admin-overlay sig pattern). Two calls per match-page render add
+  microseconds of CPU. ZERO new KV reads (3 → 3), ZERO new KV writes
+  (0 → 0), ZERO new subrequests (28-46 → 28-46), ZERO new fetches. The
+  free-tier budget is unchanged. The `ARCHIVE_PAGE_TTL` (6h) is frozen
+  (the C7 CPU-cliff mitigation).
+
+- **The KV read quota (pre-existing, STILL OPEN):** the account's 100,000
+  KV reads/day free-plan limit is STILL exceeded at Session 7 start (the
+  live `/healthz` shows `ok:false` + `pool_matches:0`). The match data
+  surfaces (the rendered match-page footer-hook with the team-link gating)
+  self-verify once the quota resets at UTC midnight. The SSR-structural
+  surfaces (the worker boots, the router, the /healthz version bump) are
+  verified live. The durable fix is a Workers Paid plan ($5/mo → 1M
+  reads/day). This is a pre-existing infrastructure issue, NOT a code
+  issue.
+
+- **The deploy:** Worker `ucl-notifier`, versioned. `npm test` exit 0
+  (3,676 OK) → `npx wrangler versions upload` → `npx wrangler versions
+  deploy --version-id <id> --percentage 100 --yes` → verify `/healthz`
+  (version bump `13.262.0-homepage` → `13.263.0-matchlinks`; `ok:false`
+  stays — the KV quota is pre-existing). Rollback = `npx wrangler rollback`.
+  Avoid deploys in the Nov 20 Bayern–Köln S27 auto-verify windows (kickoff
+  19:30 UTC; M1 ~19:35, M2 ~21:35-45 UTC — NOT today).
+
 # v13.262.0-homepage — SEO Session 6: homepage, featured match and the one-month fixture window (the 30-day DISPLAY horizon reconciliation + the hero-card carousel crawlability fix + the curated-selection promise; 2026-11-17, `main`)
 
 The THIRD implementation session of the 15-session SEO program. The homepage

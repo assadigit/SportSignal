@@ -1127,8 +1127,25 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
     : "";
 
   // Related links (P-18)
+  // SEO Session 7 (spec §9 internal links + the C1 disposition): only
+  // selected-club team pages are indexable (the 13-club allowlist); a
+  // non-selected club's team page exists as 200 + noindex,follow but spec
+  // §9 says "Do not generate a link to an unindexable/thin team page
+  // simply because the team exists in the provider database." So the
+  // footer-hook team line links ONLY selected clubs; a non-selected club
+  // renders its Persian name as plain text (the name stays visible for
+  // the reader; the crawlable <a href> is gated on isSelectedTeam —
+  // the same predicate that gates the team-page indexable rule + the
+  // sitemap teams.xml filter). This is body-only — the byte-frozen
+  // <head> (title/H1/description/answer-sentence funnel) is untouched.
+  const homeTeamHtml = isSelectedTeam(m.homeTeam.name)
+    ? '<a href="/teams/' + teamSlug(m.homeTeam.name) + '">' + esc(faName(m.homeTeam)) + '</a>'
+    : esc(faName(m.homeTeam));
+  const awayTeamHtml = isSelectedTeam(m.awayTeam.name)
+    ? '<a href="/teams/' + teamSlug(m.awayTeam.name) + '">' + esc(faName(m.awayTeam)) + '</a>'
+    : esc(faName(m.awayTeam));
   const related = '<div class="card"><h2>پیوندهای مرتبط</h2><ul class="prose" style="list-style:none;padding:0">' +
-    '<li>🔨 تیم‌ها: <a href="/teams/' + teamSlug(m.homeTeam.name) + '">' + esc(faName(m.homeTeam)) + '</a> · <a href="/teams/' + teamSlug(m.awayTeam.name) + '">' + esc(faName(m.awayTeam)) + "</a></li>" +
+    "<li>🔨 تیم\u200cها: " + homeTeamHtml + " · " + awayTeamHtml + "</li>" +
     '<li>🏆 رقابت: <a href="/competitions/' + compSlug(m.competition.code) + '">' + esc(compFa) + "</a></li>" +
     '<li>📅 <a href="/matches/today">بازی‌های امروز</a> · <a href="/matches/this-week">بازی‌های این هفته</a> · <a href="/matches">همه بازی‌های بزرگ</a></li>' +
     "</ul></div>";
