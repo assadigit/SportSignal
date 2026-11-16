@@ -167,12 +167,22 @@ if (routerSrc.includes('PRODUCTION_HOSTS: ["sportsignal.ir", "football.sportsign
   bad("PRODUCTION_HOSTS changed unexpectedly — C6 must not alter the production-host list");
 }
 
-// ---- 5. C8: the public-matches shared-cache TTL declaration ----
+// ---- 5. C8: record-and-skip (the measured outcome) ----
+// The one-line s-maxage=60 normalization was attempted in 13.260.0 and
+// live-tested: the Workers free-plan edge floor overrides BOTH max-age and
+// s-maxage on Cache API entries (zone HITs still stamp max-age=14400). No
+// one-line header fix exists → the phase contract's record-and-skip. The
+// gate pins: (a) the original max-age=60 header (no dead declaration), and
+// (b) the record-and-skip marker comment pointing at the changelog evidence.
 const swrSrc = fs.readFileSync(path.join(root, "src", "public-swr.ts"), "utf8");
-if (swrSrc.includes('"cache-control": "public, max-age=60, s-maxage=60"')) {
-  ok("C8: /api/public-matches declares s-maxage=60 alongside max-age=60 (the 14400 edge-stamp normalization)");
+if (swrSrc.includes('"cache-control": "public, max-age=60"') && !swrSrc.includes("s-maxage=60\"")) {
+  if (swrSrc.includes("C8 (SEO Session 4, record-and-skip")) {
+    ok("C8: record-and-skip pinned (edge floor measured overriding s-maxage; header stays max-age=60; evidence pointer present)");
+  } else {
+    bad("public-swr.ts lost the C8 record-and-skip marker comment (the evidence pointer)");
+  }
 } else {
-  bad("public-swr.ts lost the s-maxage=60 edge TTL declaration");
+  bad("public-swr.ts cache-control deviates from the C8 record-and-skip outcome (expected plain max-age=60)");
 }
 
 // ---- 6. the crawlability law: robots.txt blocks only /admin ----

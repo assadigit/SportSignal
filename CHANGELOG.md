@@ -39,22 +39,40 @@ trail + pre/post machine counts in
   (workers.dev + localhost only; production never gets the header — applied
   OUTSIDE the edge cache so a non-prod render can never stamp noindex into
   a cached copy served to production, and vice versa).
-- **C8 (the optional one-liner, done):** `/api/public-matches` responses
-  now declare `s-maxage=60` alongside `max-age=60` — live-observed
-  2026-11-16: zone-edge HITs on this route served
-  `cache-control: public, max-age=14400` (Cloudflare's default edge-TTL
-  stamp on the cached JSON), a header a browser honors, so a polled copy
-  could freeze client-side for up to 4h. The explicit shared-cache TTL
-  normalizes the edge hold to the designed 60s; browser semantics unchanged.
+- **C8 (the optional item — attempted, measured, REVERTED → record-and-skip):**
+  the one-line candidate (`s-maxage=60` on the `/api/public-matches`
+  response) shipped in 13.260.0 and was live-tested: **the Workers
+  free-plan edge floor overrides both `max-age` and `s-maxage` on Cache
+  API entries** — zone HITs still serve `cache-control: public,
+  max-age=14400` (measured post-deploy 2026-11-16: MISS =
+  `max-age=60, s-maxage=60`; HIT at age 3 = `max-age=14400,
+  s-maxage=60`). No one-line cache-header fix exists, so per the phase
+  contract ("normalize only if it's a one-line cache-header fix, else
+  record and skip") the declaration was reverted in **13.260.1** with
+  the full evidence recorded in
+  `seo-implementation/audit/CRAWL-INDEX-CHANGELOG.md` §C8. The residual
+  staleness vector (a browser honors the stamped 14400 max-age on the
+  polled copy; the service worker passes `/api/*` through to the default
+  network stack) is a CLIENT-side fix (the poll fetch's cache option +
+  the bundle rename + SW bump ritual) — flagged for the owner, out of
+  Session 4's server-side scope.
 - **Tests:** NEW `scripts/check-seo-crawlindex.js` wired into `npm test`
   (13 gates: C1 behavior on 18 provider-variant cases + the admin-overlay
   memo rebuild, C1 wiring + the filter-before-push order, the teamsIndex
   both-sides scope law, C6's 7-route post-cache guard + isProd
-  short-circuit, C8's s-maxage, the robots-only-/admin crawlability law).
-  The v13.254/v13.258 release-wiring version pins moved forward per the
-  standing convention. Suite result: **3,628 OK** (baseline 3,615 + 13 new
-  gates; the two shape-pinned assertions in check-conditional-gets /
-  check-match-centre rode forward with the new call shapes, intent intact).
+  short-circuit, the C8 record-and-skip outcome pin, the robots-only-/admin
+  crawlability law). The v13.254/v13.258 release-wiring version pins moved
+  forward per the standing convention; the two shape-pinned assertions in
+  check-conditional-gets / check-match-centre rode forward with the new
+  call shapes, intent intact. Suite result: **3,628 OK** (baseline 3,615
+  + 13 new gates).
+- **v13.260.1-teamidx (the same-session C8 revert, per the phase
+  contract):** the measured-evidence revert described above — the
+  s-maxage declaration removed (it normalizes nothing on the free plan),
+  the record-and-skip marker comment + evidence pointer left in
+  `src/public-swr.ts`, the check gate re-pinned to the record-and-skip
+  outcome. C1 + C6 unchanged. Version triple → `13.260.1.0` /
+  `13.260.1-teamidx`.
 - **No client asset changed** — a server-side release: SW cache stays
   `sportsignal-v126`, client bundle stays `public-13.80.js`, stylesheet
   stays `public-13.87.css`, `_headers` untouched (no cap sweep needed).
