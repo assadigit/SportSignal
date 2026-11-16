@@ -62,8 +62,8 @@
 
 | Checkpoint | Commit | Push |
 |---|---|---|
-| The three architecture deliverables (KEYWORD-TO-URL-MAP.md, INDEXABILITY-MATRIX.csv, ROUTE-AND-CANONICAL-PLAN.md) | (filled at commit time — see git log) | pushed to `main` (ls-remote verified) |
-| Session report + tracker update + Session 4 prompt + repo docs (HANDOFF/CHANGELOG/DECISIONS) | (filled at commit time) | pushed to `main` (ls-remote verified) |
+| The three architecture deliverables (KEYWORD-TO-URL-MAP.md, INDEXABILITY-MATRIX.csv, ROUTE-AND-CANONICAL-PLAN.md) | `a3dd1c7` | pushed to `main` (ls-remote verified) |
+| Session report + tracker update + Session 4 prompt + repo docs (HANDOFF/CHANGELOG/DECISIONS) | `a045ffe` | pushed to `main` (ls-remote verified; remote main = `a045ffe`) |
 
 Push discipline: `git fetch` before push (no concurrent movement), one-shot token-URL push (token never persisted in git config, files, logs or reports), `git ls-remote` verification after each push.
 
