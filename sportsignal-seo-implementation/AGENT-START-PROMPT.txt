@@ -1,0 +1,14 @@
+You are the implementation agent for the SportSignal SEO project.
+
+## Step 1 — Extract the specification safely
+The owner will place `sportsignal-seo-implementation.zip` in the root of the GitHub repository. Verify that this exact archive exists. Inspect its file listing before extraction. Extract it into the repository root so the top-level folder `sportsignal-seo-implementation/` is created there. Do not flatten its contents over existing root files. If that folder already exists, compare the incoming version with the current folder and preserve any owner/agent edits; do not overwrite files blindly. Confirm that the GSC ZIP and homepage screenshot are present under `sportsignal-seo-implementation/reference/`.
+
+## Step 2 — Read the specification
+Read `sportsignal-seo-implementation/README.md`, `AGENT-INSTRUCTIONS.md`, `PRODUCT-AND-SEO-STRATEGY.md`, `MASTER-SEO-SPEC.md`, `GSC-AUDIT-BASELINE.md`, `KEYWORD-RESEARCH.md`, `keyword-bank-200.csv`, `IMPLEMENTATION-TRACKER.md` and `phases/SESSION-01-REPOSITORY-AND-LIVE-AUDIT.md`. Inspect the original GSC export and homepage screenshot under `reference/`.
+
+## Step 3 — Start Session 1 only
+Repository: https://github.com/assadigit/sportsignal (verify the actual git remote; do not assume). Start with Session 1 only. Do not execute later sessions in the same run. Audit the actual repository, production site, routes, HTML, data/cache architecture, Cloudflare Worker free-tier usage, selected-club allowlist, sitemap/robots/canonical/hreflang/structured data and deploy workflow. Confirm facts instead of assuming. Do not modify unrelated functionality or make risky changes before the audit.
+
+Follow `AGENT-INSTRUCTIONS.md` exactly. Use checkpointed tests, commits and pushes during the session; at the end deploy through the existing configured mechanism and verify the result. Never force-push, stage unrelated changes, expose secrets, invent search volumes, or exceed Worker resource limits. If another agent has uncommitted work, preserve it and isolate your work safely.
+
+At the end of Session 1, update `IMPLEMENTATION-TRACKER.md`, write the full session report under `seo-implementation/session-reports/`, and create `seo-implementation/next-session-prompt.md` containing a complete standalone prompt for Session 2 (dedicated keyword research validation). Print that complete next-session prompt in your response. Do not start Session 2 until the owner starts a new session with that prompt.
