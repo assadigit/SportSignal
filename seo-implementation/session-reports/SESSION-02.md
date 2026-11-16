@@ -73,6 +73,7 @@
 |---|---|---|
 | Keyword-research deliverables (4 files) | `abce80f` | pushed to `main` (ls-remote verified) |
 | Session report + tracker + Session 3 prompt + repo docs | `65ac843` | pushed to `main` (ls-remote verified) |
+| Verification-pass corrections (map defects + statistics, §4a) | `bef8879` | pushed to `main` (ls-remote verified: remote main = `bef8879`) |
 
 Push discipline: `git fetch` before push, one-shot token-URL push (token never persisted in git config, files, logs or reports), `git ls-remote` verification after each push.
 
