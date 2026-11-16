@@ -51,7 +51,7 @@
 |---|---|---|---|
 | The foundation release (C1+C6+C8 attempt, tests, version, changelog) | `2a405f7` | yes (ls-remote verified) | `24c62781-04b5-4fe3-84ea-911951644386` @100% |
 | The C8 record-and-skip revert (13.260.1) | `c805910` | yes (ls-remote verified) | `7d92e633-5b78-41ad-ac60-6dbbe6d2728d` @100% (current) |
-| The session close-out (this report, changelog deliverable, tracker, Session 5 prompt, HANDOFF, DECISIONS) | (this commit) | yes | none (docs-only) |
+| The session close-out (this report, changelog deliverable, tracker, Session 5 prompt, HANDOFF, DECISIONS) | `f313cf1` | yes (ls-remote verified; remote main = `f313cf1`) | none (docs-only) |
 
 **Live verification of the final state (2026-11-16, all machine-run):**
 
