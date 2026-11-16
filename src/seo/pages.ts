@@ -10,7 +10,7 @@ import { esc, faTime, faDateD1, faDateD2, tehranDayKey, utcTime, statusLabelFa, 
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findArchivedMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, relatedMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtMetaSrv, heroArtSrv, isSelectedTeam } from "./data";
+import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findArchivedMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, relatedMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtMetaSrv, heroArtSrv, isSelectedTeam, isSeasonEndedOrdinary } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -1362,6 +1362,14 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
       title,
       description: desc,
       indexable: true,
+      // SEO Session 5 (MATCH-LIFECYCLE-POLICY.md §6): the season-end
+      // ordinary transition. The S19 noindex law requires the indexable
+      // flag stay the literal true here — this sibling noindex flag is the
+      // safe hook. When isSeasonEndedOrdinary(sm) is true (flag on + season
+      // closed + finished + not marquee), buildHead emits
+      // "noindex, follow" — the page stays 200 + self-canonical +
+      // crawlable. Default (flag off): false → no change from Session 4.
+      noindex: finished && isSeasonEndedOrdinary(sm),
       ogImage: absUrl("/og/match-" + slug + ".png"),
       jsonldNodes: [
         ...JL.siteNodes(),

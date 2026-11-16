@@ -8,13 +8,13 @@ import { CONFIG } from "../config";
 import { getCachedMatches } from "../match-pool";
 import { applyLiveOverlay, pubMatch, teamRankSets, attachTeamRanks } from "../public-matches";
 import { COMP_EN } from "../tables";
-import { ensureFaAiCache, ensureFaVenueCache, translateVenue, translateCompetition } from "../translate";
+import { ensureFaAiCache, ensureFaVenueCache, translateVenue, translateCompetition, isQuarterFinalOrLater } from "../translate";
 import { normalizeTeamName, normAlias } from "../teams";
 // v13.85-stadiumchip: the home-ground table + one-off-neutral gate moved to
 // the root module grounds.ts (shared with pubMatch — one source of truth).
 import { homeGround, curatedVenueFa } from "../grounds";
 import { isLiveStatus } from "../match-model";
-import { shouldReport, isSiteHiddenMatch } from "../match-classify";
+import { shouldReport, isSiteHiddenMatch, isDerby, isTrueBigDuel } from "../match-classify";
 import { fetchJSON } from "../utils";
 import { SEO } from "./config";
 import { teamSlug, compSlug, matchPath } from "../slugs";
@@ -349,6 +349,48 @@ export function teamsIndex(ctx: SeoCtx): TeamEntry[] {
     if (!bySlug.has(e.slug)) bySlug.set(e.slug, e);
   }
   return Array.from(bySlug.values());
+}
+
+// ---- Match-URL lifecycle (SEO Session 5 — MATCH-LIFECYCLE-POLICY.md) ----
+// isMarqueeMatch: the keep-indexable test (policy §4-§5). A finished match
+// stays indexable through season-end when ANY marquee signal is true:
+//   M1+M3: shouldReport(raw) — selected-club involvement OR QF+ CL/cup tie
+//   M2:    sm.s.big — the curated both-sides featured list (PSG-Barcelona class)
+//   M4:    isDerby OR isTrueBigDuel — evergreen rivalry intent
+//   M5:    slug in SEO.MARQUEE_MATCH_SLUGS — demonstrated GSC demand (>=1 click)
+// Pure: reads only sm fields already loaded. Zero KV/CPU cost.
+export function isMarqueeMatch(sm: SeoMatch): boolean {
+  const raw = sm && sm.raw;
+  if (!raw) return false;
+  if (shouldReport(raw)) return true;                 // M1 + M3
+  if (sm.s && sm.s.big) return true;                   // M2
+  if (isDerby(raw) || isTrueBigDuel(raw)) return true; // M4
+  const slug = matchPath(sm.s.homeTeam.name, sm.s.awayTeam.name, sm.s.utcDate)
+    .replace(/^\/matches\//, "");
+  if (SEO.MARQUEE_MATCH_SLUGS.has(slug)) return true;  // M5
+  return false;
+}
+
+// isSeasonEndedOrdinary: the noindex-transition test (policy §2 Phase C +
+// §6). Returns true ONLY when ALL hold:
+//   1. SEO.SEASON_END_NOINDEX_ENABLED is true (the owner-approval gate)
+//   2. the match is FINISHED
+//   3. the competition's season has closed (now > SEASON_END_DATES[code])
+//   4. the match is NOT marquee (isMarqueeMatch returns false)
+// When false (the default — flag off, map empty, or season still open), the
+// match stays indexable. The page ALWAYS stays 200 + self-canonical +
+// crawlable; only the robots meta and sitemap membership change. Pure
+// predicate — zero new I/O (the zero-runtime-cost law).
+export function isSeasonEndedOrdinary(sm: SeoMatch): boolean {
+  if (!SEO.SEASON_END_NOINDEX_ENABLED) return false;
+  if (!sm || !sm.raw) return false;
+  if (String(sm.raw.status || "").toUpperCase() !== "FINISHED") return false;
+  const code = sm.raw.competition && sm.raw.competition.code;
+  if (!code) return false;
+  const endStr = SEO.SEASON_END_DATES[code];
+  if (!endStr) return false;                           // conservative: no date = season open
+  if (Date.now() <= new Date(endStr).getTime()) return false;
+  return !isMarqueeMatch(sm);                          // ordinary = NOT marquee
 }
 
 export interface CompEntry {

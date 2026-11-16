@@ -99,7 +99,83 @@ export const SEO = {
   SITEMAP_CACHE_TTL: 600,
   // KV: per-URL honest lastmod map (F-05/G-06).
   KV_SEO_LASTMOD: "seo_lastmod_v1",
-  KV_SEO_INDEXNOW: "seo_indexnow_v1"
+  KV_SEO_INDEXNOW: "seo_indexnow_v1",
+  // ---- Match-URL lifecycle (SEO Session 5 — MATCH-LIFECYCLE-POLICY.md) ----
+  // The season-end noindex transition is an owner-approved mechanism: the
+  // MECHANISM ships (the predicate + the buildHead wiring + the sitemap
+  // filter + the transition test), but NO real page transitions until BOTH
+  // this flag is true AND the competition's end date is in the map below.
+  // Default false = the live site is byte-identical to the Session 4 close.
+  // See MATCH-LIFECYCLE-POLICY.md §7 (the owner-approval point).
+  SEASON_END_NOINDEX_ENABLED: false,
+  // Competition season-end dates (ISO) — the season-boundary source of truth.
+  // Populated from the football-data.org v4 `season.endDate` field (the same
+  // field composers.ts:286 reads for pre-season detection). Starts EMPTY —
+  // the owner confirms the dates against a fresh FD standings fetch before
+  // enabling. A code not in the map = season considered still open
+  // (conservative default). Reference dates recorded in
+  // MATCH-LIFECYCLE-POLICY.md §3 (NOT baked into code — do not invent dates).
+  SEASON_END_DATES: {} as Record<string, string>,
+  // Marquee-match slug override (M5 — demonstrated GSC demand). Seeded from
+  // the 2026-11-15 GSC export: every match-detail URL with >=1 click (51
+  // slugs, 190 clicks total — the evidenced demand surface). Conservative:
+  // retains MORE, not fewer. A fresh 16-month GSC export would refine this
+  // set (MATCH-LIFECYCLE-POLICY.md §4 M5). A slug in this set stays
+  // indexable through season-end regardless of the structural marquee
+  // signals (selected-club / s.big / QF+ / derby).
+  MARQUEE_MATCH_SLUGS: new Set([
+    "barcelona-vs-manchester-city-2026-12-08",
+    "paris-saint-germain-vs-barcelona-2026-10-20",
+    "real-madrid-vs-rb-leipzig-2026-10-21",
+    "barcelona-vs-aston-villa-2026-11-03",
+    "bologna-vs-monza-2026-10-31",
+    "real-racing-club-de-santander-vs-real-madrid-2026-11-01",
+    "venezia-vs-internazionale-milano-2026-10-28",
+    "sabah-vs-barcelona-2026-11-25",
+    "lorient-vs-stade-brestois-29-2026-10-31",
+    "getafe-vs-rayo-vallecano-de-madrid-2026-10-19",
+    "bayern-munich-vs-arsenal-2026-10-21",
+    "barcelona-vs-villarreal-2026-11-22",
+    "valencia-vs-real-madrid-2026-11-07",
+    "paris-saint-germain-vs-roma-2026-11-25",
+    "ogc-nice-vs-stade-rennais-2026-10-30",
+    "manchester-united-vs-roma-2026-11-03",
+    "manchester-city-vs-ssc-napoli-2026-11-24",
+    "crvena-zvezda-vs-inter-club-d-escaldes-2026-11-05",
+    "como-vs-venezia-2026-11-01",
+    "atalanta-vs-kairat-almaty-2026-11-05",
+    "arsenal-vs-real-madrid-2026-12-09",
+    "villarreal-vs-sabah-2026-12-08",
+    "tsg-hoffenheim-vs-schalke-04-2026-11-08",
+    "sunderland-vs-chelsea-2026-11-08",
+    "ssc-napoli-vs-roma-2026-10-24",
+    "sporting-clube-de-portugal-vs-manchester-united-2026-11-25",
+    "slavia-praha-vs-arsenal-2026-11-04",
+    "shakhtar-donetsk-vs-fenerbahce-2026-11-25",
+    "real-madrid-vs-psv-2026-11-24",
+    "porto-vs-psv-2026-10-20",
+    "paris-saint-germain-vs-es-troyes-2026-11-07",
+    "paderborn-07-vs-eintracht-frankfurt-2026-11-07",
+    "olympique-lyonnais-vs-ogc-nice-2026-10-18",
+    "newcastle-united-vs-manchester-united-2026-12-02",
+    "monaco-vs-nordsjaelland-2026-11-05",
+    "lech-poznan-vs-sunderland-2026-10-22",
+    "le-havre-vs-paris-saint-germain-2026-10-30",
+    "lazio-vs-cagliari-2026-11-01",
+    "lask-linz-vs-slovan-bratislava-2026-11-03",
+    "koln-vs-1-union-berlin-2026-10-27",
+    "internazionale-milano-vs-shakhtar-donetsk-2026-10-21",
+    "hamburger-sv-vs-vfb-stuttgart-2026-10-17",
+    "galatasaray-vs-aston-villa-2026-11-24",
+    "como-vs-manchester-united-2026-10-21",
+    "borussia-dortmund-vs-real-betis-balompie-2026-11-04",
+    "athletic-club-vs-real-madrid-2026-12-06",
+    "arsenal-vs-manchester-united-2026-12-19",
+    "arsenal-vs-hull-city-2026-11-07",
+    "acf-fiorentina-vs-juventus-2026-11-08",
+    "ac-milan-vs-bologna-2026-10-28",
+    "1-fsv-mainz-05-vs-bayern-munich-2026-11-07"
+  ])
 };
 
 // v13.80-canonical-hrefs: COMP_SLUGS/TEAM_SLUGS/compSlug/teamSlug/matchPath

@@ -19,6 +19,14 @@ export interface HeadInput {
   title: string;                // unique per URL (P-04)
   description: string;          // 70–160 chars (P-05)
   indexable: boolean;           // P-07
+  // SEO Session 5 (MATCH-LIFECYCLE-POLICY.md): the season-end ordinary
+  // transition flips ONLY the robots meta to noindex, follow — the page
+  // stays 200 + self-canonical + crawlable. This sibling field lets
+  // buildMatchPage keep its literal `indexable: true` (the S19 noindex law
+  // forbids a variable there) while still emitting noindex for ordinary
+  // season-ended matches. When true, robots = "noindex, follow" regardless
+  // of indexable; when false/absent, the existing indexable logic stands.
+  noindex?: boolean;
   ogImage?: string;             // absolute URL (SO-01..SO-04)
   ogType?: string;              // website | article
   jsonldNodes: any[];           // P-10
@@ -31,9 +39,15 @@ export function buildHead(h: HeadInput): string {
   // 404 status + meta noindex decide), but emitting a fictional URL was
   // cosmetic dishonesty — the Phase 5 audit's F-L1 cleanup.
   const canonical = h.path ? absUrl(h.path) : "";
-  const robots = h.indexable
-    ? "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
-    : "noindex, follow";
+  // SEO Session 5: h.noindex (the season-end ordinary transition) takes
+  // precedence — the page stays 200 + self-canonical + crawlable, only the
+  // robots meta flips. Falls through to the existing indexable logic
+  // otherwise (team/competition pages use the variable indexable path).
+  const robots = h.noindex
+    ? "noindex, follow"
+    : (h.indexable
+      ? "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+      : "noindex, follow");
   const img = h.ogImage || absUrl(SEO.OG_DEFAULT_IMAGE);
   let s = "<title>" + esc(h.title) + "</title>\n";
   s += '<meta name="description" content="' + esc(h.description) + "\">\n";

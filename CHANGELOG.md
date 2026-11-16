@@ -4,6 +4,66 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.261.0-matchlife — SEO Session 5: match-URL lifecycle + seasonal indexing (the season-end noindex transition mechanism + MATCH-LIFECYCLE-POLICY.md + MATCH-URL-CLASSIFICATION.csv; 2026-11-17, `main`)
+
+The SECOND implementation session of the 15-session SEO program. Gives
+match-detail URLs a safe, evidenced lifecycle so the site does not
+continuously accumulate low-value indexable pages — while protecting the
+historical assets that carry the site's clicks. Full thresholds + rationale
+in `seo-implementation/architecture/MATCH-LIFECYCLE-POLICY.md`; the
+machine-derived URL classification in
+`seo-implementation/audit/MATCH-URL-CLASSIFICATION.csv` (274 rows = 123
+upcoming + 151 archive); the session report
+`seo-implementation/session-reports/SESSION-05.md`.
+
+- **The mechanism (shipped, INERT by default):** a pure render-time
+  predicate `isSeasonEndedOrdinary(sm)` (`src/seo/data.ts`) evaluates at
+  page-render time and at sitemap-build time. When ALL of (flag on + match
+  FINISHED + competition season closed + NOT marquee) are true, the page's
+  robots meta flips to `noindex, follow` and the URL leaves
+  `matches-archive.xml`. The page ALWAYS stays 200 + self-canonical +
+  crawlable. Zero new KV writes, zero new fetches, zero new awaits (the
+  zero-runtime-cost law — an in-memory predicate on data already loaded,
+  exactly like C1's `isSelectedTeam`).
+- **The S19 noindex law preserved:** `buildMatchPage` keeps its literal
+  `indexable: true` (the `check-match-centre.js` S19 regex forbids a
+  variable there). The transition hooks through a NEW sibling `noindex?:
+  boolean` field on `HeadInput` (`src/seo/page-shell.ts`) — `buildHead`
+  derives `robots = "noindex, follow"` when `h.noindex` is true, falling
+  through to the existing `indexable` logic otherwise.
+- **The owner-approval gate:** `SEO.SEASON_END_NOINDEX_ENABLED = false`
+  (default) + an empty `SEO.SEASON_END_DATES` map (`src/seo/config.ts`).
+  The mechanism is fully built and test-proven, but NO real page
+  transitions until the owner (a) confirms the season-end dates against a
+  fresh football-data.org `season.endDate` fetch, (b) populates the map,
+  and (c) flips the flag. The 2025-26 European season is closed, but all
+  151 current archive matches are 2026-27 season (still open) — the first
+  real transition is a 2027 decision.
+- **Marquee retention (the PSG-Barcelona class):** `isMarqueeMatch(sm)`
+  retains indexable through season-end when ANY of: selected-club
+  involvement (M1), the curated `s.big` featured list (M2), QF+ knockout
+  stage (M3), derby/historic rivalry (M4), or slug in
+  `SEO.MARQUEE_MATCH_SLUGS` (M5 — demonstrated GSC demand, seeded with the
+  51 click-earning match-detail URLs from the 2026-11-15 GSC export).
+- **The 404 class formalized (matrix row 17):** the custom 404 + the
+  archive-serve fallback stay the correct terminal dispositions for
+  unknown/out-of-archive slugs (the T-06 contract). No bulk redirects
+  (route plan §9). No deletions (the three separated concerns — index
+  eligibility ≠ page availability ≠ data retention).
+- **Tests:** new `scripts/check-seo-match-lifecycle.js` (23 gates: behavior
+  across all transition states, marquee retention, S19 law preservation,
+  wiring, sitemap filter, no-regression, resource purity, policy+CSV
+  existence). Wired into `npm test` after `check-seo-crawlindex.js`.
+  Baseline 3,628 → **3,652 OK** (exit 0).
+- **No client asset changed** — the SW cache (`sportsignal-v126`), the
+  bundle (`public-13.80.js`), the stylesheet (`public-13.87.css`), and
+  `_headers` are all untouched (a server-side release; no cap sweep
+  needed).
+- **Budget:** `/healthz` unchanged — the predicate is pure (zero new KV
+  writes/subrequests/CPU). The sitemap filter removes rows from the
+  candidate set BEFORE `candidates.push` (same as C1's 74 removed team
+  rows — removals are not changes, no IndexNow ping, no KV write).
+
 # v13.260.0-teamidx — SEO Session 4: the crawl/index foundation (C1 team-page allowlist + C6 non-prod machine-file guard + C8 edge TTL; 2026-11-16, `main`)
 
 The FIRST implementation session of the 15-session SEO program (Sessions

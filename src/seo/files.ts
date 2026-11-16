@@ -20,7 +20,7 @@ import { COMP_EN } from "../tables";
 import { translateCompetition } from "../translate";
 import { pubMatch } from "../public-matches";
 import type { SeoCtx, SeoMatch } from "./data";
-import { getSeoCtx, upcomingBig, finishedRecent, teamsIndex, compsIndex, payloadTop3, isBigForSeo, isSelectedTeam } from "./data";
+import { getSeoCtx, upcomingBig, finishedRecent, teamsIndex, compsIndex, payloadTop3, isBigForSeo, isSelectedTeam, isSeasonEndedOrdinary } from "./data";
 
 // ---------------------------------------------------------------- helpers
 
@@ -252,6 +252,14 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
       for (const rec of archRecs || []) {
         const row = rec && rec.m;
         if (!row || !row.homeTeam || !row.awayTeam || !row.utcDate) continue;
+        // SEO Session 5 (MATCH-LIFECYCLE-POLICY.md §6): skip season-ended
+        // ordinary matches — they serve noindex (the page stays 200 +
+        // crawlable) and leave the sitemap. Mirrors the C1 precedent
+        // (if (!isSelectedTeam(e.name)) continue; before the candidate push).
+        // Default (flag off): isSeasonEndedOrdinary returns false → no rows
+        // skipped → sitemap byte-identical to Session 4. Zero KV writes
+        // (removals are not changes — same as C1's 74 removed team rows).
+        if (isSeasonEndedOrdinary({ raw: row, s: row } as any)) continue;
         const p = matchPath(row.homeTeam.name, row.awayTeam.name, row.utcDate);
         if (seenArch.has(p)) continue; // still in the pool window — already listed
         seenArch.add(p);
