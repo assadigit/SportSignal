@@ -69,7 +69,7 @@
 | Checkpoint | Commit | Push |
 |---|---|---|
 | Keyword-research deliverables (4 files) | `abce80f` | pushed to `main` (ls-remote verified) |
-| Session report + tracker + Session 3 prompt + repo docs | this commit | pushed to `main` (ls-remote verified; SHA recorded post-push per the Session 1 close-out pattern) |
+| Session report + tracker + Session 3 prompt + repo docs | `65ac843` | pushed to `main` (ls-remote verified) |
 
 Push discipline: `git fetch` before push, one-shot token-URL push (token never persisted in git config, files, logs or reports), `git ls-remote` verification after each push.
 
