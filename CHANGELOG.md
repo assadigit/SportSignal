@@ -4,6 +4,58 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# SEO Program Session 3 — final keyword-to-URL mapping and SEO architecture (NO version bump, NO worker code change; `main`, 2026-11-16)
+
+The architecture session of the 15-session SEO program: Session 2's
+validated 369-phrase map + Session 1's audit converted into ONE approved
+blueprint. Analysis and documentation only — nothing in `src/` or
+`assets/` changed, the version stays `13.259.1-archttl`, and NO deploy
+was performed (no runtime change, per the phase file and the session
+start prompt). Implementation starts in Session 4.
+
+- **`seo-implementation/keyword-research/KEYWORD-TO-URL-MAP.md`** — NEW:
+  the mapping — 15 URL classes (homepage; matches hub + pagination;
+  4 time hubs; 13 selected-club team pages; 5 leagues + UCL + DFB-Pokal;
+  conditional match detail) × one primary intent cluster each,
+  machine-derived from the validated map (312 retained rows across 27
+  target URLs, 0 off-allowlist, 0 hypothetical match URLs); Persian
+  title/H1/meta PLANS per class (GSC-measured surfaces byte-frozen
+  through the Dec 4-8 gates — team-page title work strictly after the
+  Dec 4 gate) + English Session-12 plan slots; the held clusters stay
+  explicit non-mapping (EL/ECL/FA Cup/Copa/Coppa → Session 9; English →
+  Session 12). Zero deviations from the one-URL law; zero pages existing
+  solely for a keyword variant.
+- **`seo-implementation/architecture/INDEXABILITY-MATRIX.csv`** — NEW:
+  every existing route class (16 rows, homepage through legacy GET
+  actions) × disposition (index/noindex/404/keep-out-of-sitemap) ×
+  robots-meta × canonical rule × sitemap inclusion × evidence × the
+  session that implements it.
+- **`seo-implementation/architecture/ROUTE-AND-CANONICAL-PLAN.md`** —
+  NEW: the canonical strategy per class (self-canonical everywhere;
+  `?page=N≥2` keeps the query — verified live); **the C1 disposition
+  plan** (74 non-selected team URLs → `noindex, follow` + teams sitemap
+  87→13 = total 383→309; never robots-blocked/404/redirected; per-URL
+  demand evidence table; fully reversible; Session 4 implements at zero
+  marginal KV/subrequest/CPU); **the top-3-standings route STAYS** (the
+  de-facto "independently important match" implementation behind 70% of
+  match-detail rows); empty hubs stay indexable (C5 resolved); the
+  Inter/Atlético provider-derived slugs ARE canonical; hreflang = zero
+  until Session 12; the Session 4-12 sequencing table with budgets.
+- **Live cross-checks (2026-11-16):** teams.xml 87 = 13 selected + 74
+  non-selected with all 13 selected slugs present; non-selected team
+  URLs (`/teams/fulham`, `/teams/lecce`) confirmed indexable today; the
+  `/teams` + `/competitions` indexes verified; `?page=2/3` self-canonical
+  with query; all 5 sitemap children counted (15/7/87/123/151).
+- **Program bookkeeping:** tracker Session-03 row (Completed, docs-only);
+  `seo-implementation/session-reports/SESSION-03.md` (AGENT-INSTRUCTIONS
+  §9); `seo-implementation/next-session-prompt.md` rewritten as the
+  complete standalone **Session 4** start prompt (crawl/index/canonical/
+  sitemap/redirect foundation — the FIRST implementation session),
+  printed to the owner in the session's final response.
+  `docs/HANDOFF.md` + `docs/DECISIONS.md` updated per AGENTS.md §10
+  (three S3 decision entries: the C1 disposition rationale, the
+  top-3-route decision, the architecture stances).
+
 # SEO Program Session 2 — keyword research validation and expansion (NO version bump, NO worker code change; `main`, 2026-11-16)
 
 The dedicated keyword session of the 15-session SEO program. Analysis and

@@ -967,3 +967,129 @@ the corrections are counts and build artifacts, not judgments.
 
 **When to revisit.** Session 3 consumes the corrected map (369 rows). The
 184/264 figure feeds Session 3's top-3-standings-route decision.
+
+
+## 2026-11-16 — SEO Program S3: the C1 team-page disposition — 74 non-selected team URLs go noindex (never blocked, never deleted), sitemap 87→13
+
+**Context.** Session 3 (keyword-to-URL architecture) had to decide the
+fate of the 87-URL teams sitemap: `teamsIndex`
+(`src/seo/data.ts:276-310`) generates team pages for BOTH sides of every
+eligible pool match, so 74 non-selected-club URLs are live, indexable,
+self-canonical and sitemapped today (verified live 2026-11-16). GSC
+(2026-11-15 export, machine-derived this session): 114 non-selected team
+URLs / 8 clicks / 1,297 impressions / 0.62% CTR vs the 13 selected clubs
+/ 8 clicks / 1,159 / 0.69%. The spec's law (MASTER-SEO-SPEC §2 "Team
+pages") requires demand/backlink review before noindex/redirect/404 —
+never blind deletion.
+
+**Decision.** (1) The 74 non-selected team URLs become `noindex, follow`
+and are removed from `teams.xml` (87 → 13 rows, total sitemap 383 → 309).
+(2) NEVER robots-blocked (robots.txt stays `Disallow: /admin` only),
+never 404/410, never redirected, never deleted: the pages keep serving
+200, self-canonical, with ALL internal links intact (`/teams` index
+tiles, match-page «تیم‌ها» links) so Google can read the noindex
+directive. (3) The demand review is executed per-URL (ROUTE-AND-CANONICAL-
+PLAN §2.2): the 8 click-earners are 1-click-each URLs over ~3 months
+(Sporting CP 36 impr, Napoli 19, Thun 11, Tottenham 9, Bochum 7, Union
+Berlin 5, Hertha 3, Egnatia 1); the impression heads are matchup
+spillover (Sabah/Copenhagen/Twente are selected clubs' UCL opponents —
+served by the match-detail pages); top-10 URLs carry 48% of the
+impressions. (4) No backlink tool exists in this program — recorded
+honestly; the compensating controls are full per-URL reversibility (one
+meta tag) and a season-end re-read of the demand table (any non-selected
+club with sustained clicks becomes an owner-decision allowlist-promotion
+candidate — a product decision, never automated). (5) Implementation =
+Session 4, Option A preferred (sitemap child filter + team-page
+indexable-rule flip via the in-memory 13-club allowlist; zero marginal
+KV/subrequest/CPU).
+
+**Options considered.** (a) noindex + keep 200/crawlable/linked
+(chosen); (b) 404/410 the non-selected URLs (rejected: breaks the
+internal-link graph and deletes served content for real fixtures; spec
+Phase D requires content-gone); (c) 301 to competition/homepage
+(rejected: no true equivalent destination; spec Phase D forbids); (d)
+keep everything indexable (rejected: contradicts the owner's
+selected-clubs-only decision and concentrates crawl budget away from the
+13 keepers); (e) restrict `teamsIndex` generation itself (rejected as
+the vehicle: it also powers the `/teams` index and match-page links that
+must KEEP working for all teams — the noindex crawlability law).
+
+**Who decided.** The agent (SEO Session 3), under the phase file's
+disposition mandate, the spec's demand-review-first law, and the owner's
+standing selected-clubs-only team-page decision (GSC-AUDIT-BASELINE:
+"keep dedicated, indexable team pages only for manually selected
+clubs").
+
+**When to revisit.** Session 4 implements and verifies (GSC coverage:
+the 74 URLs moving to "Excluded by noindex"; watch for anomalies).
+Season end, or whenever a fresh GSC export with URL-level data arrives:
+re-read the demand table for promotion candidates. If the owner ever
+wants aggressive pruning instead, that is a new decision requiring new
+evidence.
+
+
+## 2026-11-16 — SEO Program S3: the top-3-standings coverage route STAYS as the "independently important match" implementation
+
+**Context.** `isBigForSeo` (`src/seo/data.ts:114-122`) marks a fixture
+SEO-eligible when either side sits in the competition's top-3 standings,
+independent of the selected-club allowlist. 184 of 264 (70%) observed
+match-detail GSC rows exist via this route (Session 2 verification-pass
+count). The phase file required Session 3 to say explicitly whether the
+route stays.
+
+**Decision.** It stays, unchanged, as the de-facto implementation of
+PRODUCT-AND-SEO-STRATEGY §4.B ("important non-selected-club matches …
+verified table/competition signals"). It is bounded (top-3 of covered
+competitions only), automated from the cached standings (no new
+fetches), and it produces the URLs behind the observed one-off matchup
+demand (Atalanta–Kairat 329 impr, Monaco–Nordsjaelland 244, Man
+Utd–Roma 210 — passive heads at pos 12+). Removing it would orphan ~70%
+of observed match-detail demand. The owner may narrow or overlay it with
+manual exceptions later — flagged as revisit-able, not changed here.
+
+**Who decided.** The agent (SEO Session 3), on the demand evidence and
+the spec's exception model.
+
+**When to revisit.** Any season boundary or owner product decision about
+match coverage breadth; Session 5 (lifecycle) inherits the route as
+eligibility law either way.
+
+
+## 2026-11-16 — SEO Program S3: architecture stances — pagination self-canonical kept, empty hubs stay indexable, provider-derived Inter/Atlético slugs are canonical, hreflang zero until Session 12
+
+**Context.** The phase file required dispositions on the remaining
+route-class questions: `?page=N` canonicalization, empty-hub
+indexability (C5), the `/teams`+`/competitions` index pages, and the
+Inter/Atlético slug divergence (the live URLs are the provider-derived
+`/teams/internazionale-milano` and `/teams/club-atletico-de-madrid`,
+NOT the pinned `TEAM_SLUGS` values `inter-milan`/`atletico-madrid`).
+
+**Decisions.** (1) **Pagination:** each `?page=N≥2` keeps its
+self-canonical INCLUDING the query (SS-03 policy, verified live on pages
+2-3): each page is a distinct 50-match slice with its own GSC rows;
+consolidating would de-index real content. `?page=1`/bare → `/matches`.
+Sitemaps never list pagination URLs (correct). The suspected S2 item
+(Google honoring the query-kept canonical) is carried to Session 4's
+verify list for a fresh GSC export — no policy change on suspicion. (2)
+**Empty hubs stay indexable** (C5 resolved as deliberate): daily
+noindex oscillation would be worse than the thin day;
+`/matches/tomorrow` is the site's best-CTR surface (8.26%) WITH the
+honest empty state. (3) **`/teams` and `/competitions` index pages stay
+indexable** — they are the crawl backbone for the noindexed team URLs.
+(4) **The provider-derived slugs ARE the canonical URLs** (what GSC, the
+sitemap and every internal link use); no slug "fix" — that would be a
+URL migration for zero benefit; Session 8 may align the dead
+`TEAM_SLUGS` pins as a no-op tidiness fix. URL identity, not a spelling
+change — the Dec 8 freeze is untouched. (5) **hreflang: zero until
+Session 12** (spec §7 forbids hreflang for absent translations; zero
+English-query evidence); every URL class carries an English title/H1
+plan SLOT only.
+
+**Who decided.** The agent (SEO Session 3), on live verification
+(pagination canonicals, index pages, slug presence) and the inherited
+evidence base.
+
+**When to revisit.** S2 with a fresh GSC export (Session 4); empty-state
+content refinement in Session 9 (indexability itself is final);
+Session 12 owns the EN-architecture/hreflang decision with its own
+evidence gathering.

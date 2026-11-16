@@ -1,90 +1,86 @@
-# SportSignal SEO Program — Session 3 Start Prompt (Keyword-to-URL Mapping and SEO Architecture)
+# SportSignal SEO Program — Session 4 Start Prompt (Crawl, Index, Canonical, Sitemap and Redirect Foundation)
 
 Read AGENTS.md in the repo root first and follow it for the whole session.
 
-You are the implementation agent for the SportSignal SEO project, Session 3 of 15: **final keyword-to-URL mapping and SEO architecture** — converting Session 2's validated keyword map and Session 1's audit into ONE approved mapping/blueprint document set. This is a planning/documentation session: the phase file's deliverables are the map, an indexability matrix, and a route/canonical plan. Implementation happens in Sessions 4+.
+You are the implementation agent for the SportSignal SEO project, Session 4 of 15: **crawl, index, canonical, sitemap and redirect foundation** — the FIRST implementation session of the program. Sessions 1-3 produced the audit, the validated keyword map, and the approved architecture blueprint; this session turns the blueprint's foundation items into verified production code.
 
 ## Step 0 — Credentials (supplied by the owner at session start; never commit them)
 
-The owner provides per session: a GitHub classic token (repo push), and optionally a fresh GSC export and/or keyword-tool access. Use credentials only in the environment / one-shot push URL (`git push https://x-access-token:<token>@… main`), never in git config, files, commits, logs or reports. If something you need is missing, say so and proceed with what exists — never fabricate. **If you can bring a fresh GSC export (ideally 16 months, with URL-level page samples and the queries×pages matrix), Session 3's evidence base upgrades sharply — it is the program's top evidence request (see SESSION-02.md §9.1).**
+The owner provides per session: a GitHub classic token (repo push) and a Cloudflare API token + account ID (deploy). Use credentials only in the environment / one-shot push URL (`git push https://x-access-token:<token>@… main`), never in git config, files, commits, logs or reports. If something you need is missing, say so and proceed with what exists — never fabricate. **A fresh GSC export (ideally 16 months, with URL-level page samples and the queries×pages matrix) remains the program's top evidence request — it would unlock the S1/S4 URL-identity questions and the S2 pagination-verification task below.**
 
 ## Step 1 — Repository
 
-- Repository: `https://github.com/assadigit/SportSignal` (verify the actual `git remote -v`; the owner also writes it as `assadigit/sportsignal` — same repo).
-- Branch: `main` only. Session 2 closed with its deliverables commit + the session close-out commit (run `git log --oneline -8` to confirm HEAD; the tracker's Session 02 row records the session's commits).
+- Repository: `https://github.com/assadigit/SportSignal` (verify the actual `git remote -v`; the owner also writes `assadigit/sportsignal` — same repo).
+- Branch: `main` only. Session 3 closed with its deliverables commit + the session close-out commit (run `git log --oneline -8` to confirm HEAD; the tracker's Session 03 row records the session's commits).
 - Clone fresh, verify `git status` is clean, and confirm no uncommitted concurrent-agent work (if any exists: preserve it, isolate your changes, never reset/clean/force-push).
-- Live production site: `https://sportsignal.ir` (Worker `ucl-notifier`). Do not deploy in this session — Session 3 is planning/documentation; any code change you believe is required is a PROPOSAL in the blueprint, not an edit.
+- Live production site: `https://sportsignal.ir` (Worker `ucl-notifier`, versioned deploys only). This session DOES deploy — through the repo's established ritual only.
 
 ## Step 2 — Mandatory reading order (all in the repo)
 
-1. `AGENTS.md` (repo root — the operating contract; sections 5-7 govern git/secrets)
+1. `AGENTS.md` (repo root — the operating contract; sections 5-7 govern git/secrets/deploy)
 2. `sportsignal-seo-implementation/README.md`
 3. `sportsignal-seo-implementation/AGENT-INSTRUCTIONS.md` (the master execution contract)
-4. `sportsignal-seo-implementation/PRODUCT-AND-SEO-STRATEGY.md` + `MASTER-SEO-SPEC.md` (§2-3 are the page-eligibility and architecture law your blueprint implements)
+4. `sportsignal-seo-implementation/PRODUCT-AND-SEO-STRATEGY.md` + `MASTER-SEO-SPEC.md` (§2-3 page-eligibility law, §4 lifecycle, §5 technical requirements)
 5. `sportsignal-seo-implementation/GSC-AUDIT-BASELINE.md`
-6. `sportsignal-seo-implementation/phases/SESSION-03-KEYWORD-TO-URL-ARCHITECTURE.md` (this session's scope)
-7. `seo-implementation/audit/REPOSITORY-AND-TECHNICAL-AUDIT.md` (Session 1's verified architecture + the C1-C8/S1-S4 issue register)
-8. `seo-implementation/keyword-research/KEYWORD-VALIDATION-REPORT.md` (Session 2's validation — §6 one-URL rules, §6.2 cannibalization register, §8 revised priorities, §10 inputs prepared for you)
-9. `seo-implementation/keyword-research/VALIDATED-KEYWORD-MAP.csv` (369 unique rows — your mapping input; note the `target_url`, `status`, `priority` columns and the one-URL rules; the 2026-11-16 verification pass removed 5 duplicate rows and fixed one placeholder target — see KEYWORD-VALIDATION-REPORT.md §12)
-10. `seo-implementation/keyword-research/SERP-SAMPLES.md` + `EVIDENCE-LOG.md` (format evidence + every evidence source with tool/date/locale)
-11. `seo-implementation/session-reports/SESSION-01.md` + `SESSION-02.md`
-12. `sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md` (progress source of truth)
+6. `sportsignal-seo-implementation/phases/SESSION-04-TECHNICAL-CRAWL-INDEX-FOUNDATION.md` (this session's scope)
+7. `seo-implementation/audit/REPOSITORY-AND-TECHNICAL-AUDIT.md` (Session 1: the verified architecture, the C1-C8/S1-S4 register, §12 live-verification record, §13 deploy ritual)
+8. `seo-implementation/audit/CLOUDFLARE-RESOURCE-BASELINE.md` (the budget every change must state)
+9. `seo-implementation/keyword-research/KEYWORD-VALIDATION-REPORT.md` (§6 one-URL rules — the mapping law your changes must not break)
+10. `seo-implementation/keyword-research/KEYWORD-TO-URL-MAP.md` (Session 3: 15 URL classes, owner rules, the metadata plans)
+11. `seo-implementation/architecture/INDEXABILITY-MATRIX.csv` (Session 3: every route class × disposition × evidence × implementing session — **your worklist**)
+12. `seo-implementation/architecture/ROUTE-AND-CANONICAL-PLAN.md` (Session 3: canonical strategy per class, the C1 disposition plan §2, pagination policy §4, sitemap plan §6, sequencing §10 — **your implementation spec**)
+13. `seo-implementation/session-reports/SESSION-01.md` + `SESSION-02.md` + `SESSION-03.md`
+14. `sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md` (progress source of truth)
+15. `docs/RUNBOOK.md` §2 (the deploy ritual) — and re-check `docs/HANDOFF.md` for the current state
 
-## Step 3 — Session 1+2 facts you must build on (verified; do not re-audit)
+## Step 3 — Session 1-3 facts you must build on (verified; do not re-audit)
 
-**Selected-club allowlist — CORRECTED COUNT: 13 European clubs (not 14 — Session 1 and earlier docs carried a miscount; machine-verified from `src/config.ts:38-100`):** Arsenal, Chelsea, Manchester United, Manchester City, Liverpool (PL); Barcelona, Real Madrid, Atlético Madrid (PD); Inter Milan, AC Milan (SA); Paris Saint-Germain (FL1); Bayern München, Borussia Dortmund (BL1). A-League (5 clubs) is site-hidden. Team-name spellings are byte-frozen until ~Dec 8; the live team-page slugs include the provider-derived `/teams/internazionale-milano` and `/teams/club-atletico-de-madrid` (NOT the pinned `inter-milan`/`atletico-madrid`) — a URL-identity question for you, not a spelling change.
+**Architecture (Session 1, all live-verified):** Cloudflare Worker `ucl-notifier`, TypeScript, zero framework; SSR HTML from KV (the SEO layer reads only KV — `getSeoCtx`: payload + pool + overlay, no request-time provider fetches); hand-rolled router (`src/seo/router.ts`); npm test = `tsc --noEmit` + 48 check scripts (baseline **3,615 OK**); deploy = versioned (`npx wrangler versions upload` → `versions deploy --version-id <id> --percentage 100 --yes`); rollback via `npx wrangler rollback`. Host normalization already complete and verified (6 single-hop 301s: http→https, www→apex, football→apex, trailing-slash, uppercase, `/public`→`/`). robots.txt = `Allow: /` + `Disallow: /admin` + sitemap line (correct; `/api/` deliberately crawlable). Self-canonical on every HTML page (`src/seo/page-shell.ts:33-40`); `?page=1`/bare path → `/matches`, `?page=N≥2` self-canonical WITH the query (SS-03 policy — Session 3 decided: KEEP). Sitemap = index + 5 children (`files.ts`): pages 15 / competitions 7 / teams 87 / matches-upcoming 123 / matches-archive 151 = 383 URLs; honest change-only lastmods (`seo_lastmod_v1`); IndexNow pings changed URLs only (15-min rate limit + parked-URL drain — do not break this).
 
-**Current URL architecture (live-verified Session 1):** `/`, `/matches` (+`?page=N`), `/matches/today|tomorrow|this-week|this-weekend`, `/matches/{home}-vs-{away}-{YYYY-MM-DD}` (365-day archive serve), `/teams/{slug}`, `/competitions/{slug}` (7 live: bundesliga, premier-league, serie-a, ligue-1, la-liga, champions-league, dfb-pokal), static pages. Sitemap = index + 5 children, 383 URLs (teams child: 87 URLs — the C1 problem).
+**The C1 problem you are fixing (Session 3 decision, evidence table in ROUTE-AND-CANONICAL-PLAN §2):** `teamsIndex` (`src/seo/data.ts:276-310`) generates team entries for BOTH sides of every eligible pool match. Live: 87 team URLs = 13 selected + 74 non-selected; GSC: 114 non-selected URLs / 8 clicks / 1,297 impr / 0.62% CTR (vs the 13 selected: 8 / 1,159 / 0.69%). **The approved disposition: the 74 non-selected team URLs → `noindex, follow` + removed from `teams.xml` (87 → 13). NEVER robots-blocked, never 404/redirect/deleted — pages keep serving 200, self-canonical, and keep ALL internal links (the `/teams` index tiles, match-page «تیم‌ها» links) so Google can read the noindex.** Implementation options A (preferred: filter the sitemap child + flip the team-page indexable rule via the allowlist; zero marginal KV/subrequest/CPU — an in-memory `CONFIG.BIG_TEAMS_BY_LEAGUE` membership test on data already read) or B (a `teamPageEligibility()` helper per MASTER-SEO-SPEC §3) — both documented in the route plan §2.3. **The selected-club allowlist = 13 European clubs** (machine-verified: Arsenal, Chelsea, Man Utd, Man City, Liverpool / Barcelona, Real Madrid, Atlético Madrid / Inter, Milan / PSG / Bayern, Dortmund — `src/config.ts:38-100`; the live slugs incl. provider-derived `/teams/internazionale-milano` and `/teams/club-atletico-de-madrid` ARE canonical — do not "fix" `TEAM_SLUGS`). A-League (5 clubs) is site-hidden. `teamsIndex` itself MUST keep generating both sides (it powers the `/teams` index page and match-page team links — the crawl path for the noindexed URLs).
 
-**C1 (your central decision):** team pages are generated for BOTH sides of every eligible match (`src/seo/data.ts:276-310`), not from the allowlist — 87 live URLs incl. non-selected clubs; GSC showed 127 team URLs / 16 clicks / 0.65% CTR. Session 2 quantified the split: the 13 selected-club URLs carry 8 clicks / 1,159 impr (0.69% CTR, all 13 present in GSC; Barcelona 564 + Real Madrid 178 = 64% of impressions) vs 114 non-selected URLs with 8 clicks / 1,297 impr (0.62%). Non-selected next-match demand is real but shallow (Brighton 22, Como 21+44, Copenhagen 22, Twente 16, Roma 17, Malavan 13, Fajr Sepasi 13 visible impressions…; Iranian-club demand is out of product scope). The spec's rule (MASTER-SEO-SPEC §2 "Team pages") requires demand/backlink review before noindex/redirect/404 — never blind deletion.
+**The other confirmed foundation items (audit register + blueprint sequencing):**
+- **C6 (do):** non-prod `x-robots-tag: noindex, nofollow` missing on machine files (sitemaps/feed/calendar/matches.json/llms) on workers.dev — HTML pages have it; extend to the machine-file response headers on non-prod hosts only (production must NOT get the header). Low severity, trivial.
+- **C8 (optional):** `/api/public-matches` observed with edge `cache-control: public, max-age=14400` (Cloudflare default on the cached JSON) vs the code's 60s intent — harmless for correctness (SWR client); normalize only if it's a one-line cache-header fix, else record and skip.
+- **S2 (verify, needs page-level GSC data):** that `?page=2` reports in GSC as its own canonical URL (not consolidated). If no fresh export exists, record as unverifiable and move on — do NOT change the canonical policy on suspicion.
+- **404 class:** the custom 404 (noindex, follow + links home/today/matches/sitemap, no canonical — F-L1) is CORRECT for unknown slugs; the 159-not-found GSC class was already mitigated by the S28 archive serve (365-day `seo_archive_v1`; 151 archive URLs 200 + in sitemap). Do not add bulk redirects. Fix internal links to 404 URLs only where the phase's verification identifies a concrete broken link.
 
-**Match eligibility (verified):** a pool match is covered when it involves a selected club (`shouldReport`, `src/match-classify.ts:162-174`: league lists; CL/cups also QF+), OR — SEO-only — when either side sits in the competition's top-3 standings (`isBigForSeo`, `src/seo/data.ts:112-122`). **184 of 264 (70%)** observed match-detail GSC rows come from that top-3 route (corrected count — Session 2's verification pass; the initial 174/66% figure was a miscount). Your blueprint must say explicitly whether that route stays as the de-facto "independently important match" implementation.
+**What NOT to touch (Session 3 decisions that bind you):** the top-3-standings route (`isBigForSeo`) STAYS; empty time hubs STAY indexable (C5 resolved); `/teams` + `/competitions` index pages stay indexable; pagination self-canonical policy stays; no new redirects; no hreflang/EN URLs (Session 12); team-page TITLES are byte-frozen (the parked Dec 4 GSC title test) — your noindex change must not alter any title/H1/visible-text byte on any page.
 
-**Language reality:** Persian-first (`lang="fa" dir="rtl"`), Iran 99.2% of country clicks / 92.7% of impressions, mobile 94.8% of clicks. Zero English-query evidence; EN is a client-side toggle with zero hreflang. English work = evidence-led candidates for Session 12 only; your blueprint creates the *plan slots*, never URLs.
+**GSC baseline (2026-11-15 export, the only demand source):** 28-day chart 239 clicks / 9,301 impressions; match-detail pages carry most clicks; `/matches/tomorrow` 18 clicks / 218 impr / 8.26% CTR (best CTR — protect it); 55.8% of impressions / 90.8% of clicks privacy-unattributed. GSC impressions are site metrics, never market volumes; no volume tool has ever been available — never invent volume/CPC/difficulty.
 
-**Session 2's mapping law (already encoded in VALIDATED-KEYWORD-MAP.csv — inherit, don't re-litigate without evidence):**
-1. Time-qualified → time hub (امروز/امشب→today, فردا→tomorrow, این هفته→this-week, آخر هفته→this-weekend); homepage never competes for time-qualified queries.
-2. Club-dominant: one selected club named → that club's team page (incl. club+competition, club+امشب, club+weekday forms).
-3. Competition-dominant: league/UCL-qualified (incl. league+امشب) → competition page.
-4. Both-clubs matchup → match detail, CONDITIONAL on editorial coverage (selected club / top-3 route / derby / QF+). No hypothetical URLs, ever.
-5. Result queries → match detail (post-match; no live promise).
-6. Derbies → each covered edition's match page; derby-discovery → homepage.
-7. English → future (Session 12), no URL today.
-Plus the cannibalization watchlist (7 resolved overlaps — KEYWORD-VALIDATION-REPORT.md §6.2) and the Holds queue for Session 9 (EL/ECL/FA Cup/Copa/Coppa have NO competition pages today; DFB-Pokal is the only live cup page).
+**Repo-internal coordination:** team-name spellings byte-frozen until ~Dec 8; GSC-measured surfaces byte-frozen through **Dec 4-8, 2026** (your changes are robots-meta/sitemap/header-level, NOT frozen-surface bytes — but verify no title/description byte changes with a diff); **avoid deploys in the Nov 20 Bayern–Köln S27 auto-verify windows (kickoff 19:30 UTC; M1 ~19:35, M2 ~21:35-45 UTC)** — schedule your deploy outside them.
 
-**GSC baseline (2026-11-15 export, only demand source):** 28-day chart 239 clicks / 9,301 impressions; match-detail pages carry most clicks; `/matches/tomorrow` 18 clicks / 218 impr / 8.26% CTR (best CTR surface); top query «بارسلونا مقابل منچستر سیتی 2026» 6 clicks / pos 3.25; the #1 clicking query overall is a broadcast-intent query we deliberately exclude. 55.8% of impressions / 90.8% of clicks are privacy-unattributed. GSC impressions are site metrics, never market volumes; no volume tool has ever been available in this program — never invent volume/CPC/difficulty.
+## Step 4 — Session 4 scope (from the phase file + the blueprint)
 
-**Repo-internal overlaps to respect:** parked team-page title test (Dec 4 GSC gate) — your blueprint schedules any team-page title work AFTER that gate; team-name spelling freeze until ~Dec 8; the S27 auto-verify windows around Bayern–Köln Nov 20 19:30 UTC (avoid deploys).
-
-## Step 4 — Session 3 scope (from the phase file)
-
-1. Select one primary keyword/intent cluster per canonical URL (build from the validated map's clusters — do not fragment into per-phrase targeting; confirm no page exists solely for a keyword variant).
-2. Produce the full mapping across: homepage, the four time hubs + `/matches` (+pagination/`?page=N` policy), 5 domestic league pages + UCL + DFB-Pokal, the 13 selected-club team pages, and match-detail pages (conditional eligibility). Decide the fate of every CURRENT route class, including: the 87-URL teams sitemap (C1), non-selected team URLs (per-URL disposition with the demand evidence), `?page=N` canonicalization, empty-hub indexability (C5), and the `/teams`, `/competitions` index pages.
-3. Decide indexable / noindex / redirect / removed for each existing route CLASS with evidence (GSC rows, the audit's C/S register, Session 2's demand tables). No blind deletion; a `noindex` must stay crawlable (never robots-blocked).
-4. Resolve the overlaps the phase file names (matches vs date routes vs pagination vs query params) using Session 2's one-URL rules; document any case where you deviate and why.
-5. Create the content/metadata map for Persian and English separately (titles/H1/meta per URL class — as PLAN; the freeze means no live title changes before the Dec 4-8 gates; English = plan slots only).
-6. Cross-check the blueprint against the live routes (spot-verify anything you rely on that Sessions 1-2 did not already verify; don't re-audit wholesale).
+1. **Implement the C1 foundation fix** (the blueprint §2.3): sitemap `teams.xml` 87 → 13 rows (allowlist filter); non-selected team pages serve `noindex, follow` (keep 200 + self-canonical + all internal links). Acceptance: teams.xml lists exactly the 13 selected-club URLs; a sampled non-selected team URL (e.g. `/teams/fulham`) returns 200 + `noindex, follow` + self-canonical; `/teams/barcelona` unchanged (indexable, same title bytes); `/teams` index still lists all pool teams; match pages still link both teams.
+2. **C6:** add the non-prod `x-robots-tag: noindex, nofollow` to machine-file responses (verify the guard does NOT apply to production `sportsignal.ir`).
+3. **C8 (optional, one-line only):** the `/api/public-matches` edge TTL normalization — or record-and-skip with the reason.
+4. **Re-verify the foundation** per the phase file: HTTP/HTTPS + host variants (all already 301 — re-run the matrix live); robots.txt never blocks any noindex target (it must not grow); sitemaps list only canonical/indexable/200 URLs (post-C1 this is fully true for teams — verify no noindex/redirect/404 rows in ANY child); no redirect chains/loops (single-hop only); canonical tags correct on every class (spot-check per the matrix); fix any identified internal link to a 404.
+5. **Verify pagination per the blueprint §4:** `?page=N≥2` self-canonical + indexable + clamped; no new query-param surfaces; S2 GSC check only if a fresh export exists.
+6. Write `seo-implementation/audit/CRAWL-INDEX-CHANGELOG.md` (the phase deliverable): every change, pre/post sitemap URL counts and samples (pre: teams 87, total 383; post: teams 13, total 309 — machine-count both live before/after).
 
 **Deliverables (exact paths):**
-- `seo-implementation/keyword-research/KEYWORD-TO-URL-MAP.md` (the mapping: URL class → primary cluster → representative phrases → title/H1/description plan → owner rule)
-- `seo-implementation/architecture/INDEXABILITY-MATRIX.csv` (every existing route class × disposition: index/noindex/redirect/404 × evidence × session that implements it)
-- `seo-implementation/architecture/ROUTE-AND-CANONICAL-PLAN.md` (canonical strategy per class, pagination/query-param policy, the C1 team-page disposition plan with its evidence table, the top-3-standings route decision, hreflang stance pending Session 12)
+- Code changes for the confirmed issues above (`src/` only where needed — smallest change that fully solves each; no drive-by refactors)
+- `seo-implementation/audit/CRAWL-INDEX-CHANGELOG.md`
+- Pre/post sitemap URL counts and samples (inside the changelog)
+- Plus the program contract: tracker Session 04 row, `seo-implementation/session-reports/SESSION-04.md`, the rewritten `seo-implementation/next-session-prompt.md` (Session 5 — match lifecycle), printed in full in your final response.
 
-**Acceptance criteria (from the phase file):** every indexable URL class has a clear purpose, target intent, owner rule and canonical strategy; team and match eligibility follows the editorial allowlist/exception model; the plan is reviewed against existing routes before implementation.
-
-Also per the program contract: update `sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md` (Session 03 row), write `seo-implementation/session-reports/SESSION-03.md` (AGENT-INSTRUCTIONS §9), and replace `seo-implementation/next-session-prompt.md` with the complete standalone Session 4 prompt (crawl/index/canonical/sitemap/redirect foundation — Session 4 is the first implementation session), printed in full in your final response.
+**Acceptance criteria (from the phase file):** build and tests pass; canonical, robots and sitemap behaviour verified on production; **no bulk redirects or mass deindexing without URL-level evidence** (the C1 evidence is the per-URL table in the blueprint §2.2 — cite it in the changelog).
 
 ## Step 5 — Git, tests, deploy rules for this session
 
-- Docs/planning only: **no `src/`, `assets/`, config or workflow changes.** If you believe a code change is required, it goes into the blueprint as a proposal with its Cloudflare free-tier budget (KV reads/writes, subrequests, CPU — see `seo-implementation/audit/CLOUDFLARE-RESOURCE-BASELINE.md`), never as an edit.
-- Run `npm install` (npm only, never bun) and `npm test` before your push; the suite must exit 0 (baseline 3,615 OK). No deploy (no runtime change) — state this explicitly in the report.
-- Checkpointed commits with `seo(s03): …` messages; push one-shot with the token; fetch before push; verify with `git ls-remote`. Never force-push, never stage unrelated files, never commit secrets.
-- End with the repo-convention updates (AGENTS.md §10): `docs/HANDOFF.md`, `CHANGELOG.md` (docs-only entry, no version bump), `docs/DECISIONS.md` (every non-obvious disposition call, esp. the C1 decision rationale), then the TLDR report in your final response with the full Session 4 prompt pasted for the owner.
+- `npm install` (npm only, never bun) and `npm test` before your push; the suite must exit 0 (baseline 3,615 OK — new checks you add for the C1 filter should increase the count; record the new number).
+- This session DEPLOYS: `npm test` → `npx wrangler dev` local smoke of the changed routes (teams sitemap, a non-selected team page, a selected team page) → **versioned deploy** (`CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=a796fdfe… npx wrangler versions upload` → `npx wrangler versions deploy --version-id <id> --percentage 100 --yes`) → verify live OUTSIDE the Nov 20 windows → record the deployment ID in the tracker/report. Rollback = `npx wrangler rollback`.
+- Deploy-time ritual detail: state the Cloudflare budget of every change (the C1 fix is zero-marginal by design — prove it: no new KV reads/writes, no new subrequests, no render-cost change; `/healthz` before/after).
+- Checkpointed commits with `seo(s04): …` messages; push one-shot with the token; fetch before push; verify with `git ls-remote`. Never force-push, never stage unrelated files, never commit secrets.
+- End with the repo-convention updates (AGENTS.md §10): `docs/HANDOFF.md`, `CHANGELOG.md` (with the version entry if you bump the version string per the repo's deploy convention — follow the existing convention), `docs/DECISIONS.md` (the implementation choices: Option A vs B, any deviation), then the TLDR report in your final response with the full Session 5 prompt pasted for the owner.
 
 ## Step 6 — Standing constraints (carry into every session)
 
-- Measurement freeze: GSC-measured surfaces + team-name spellings stay byte-frozen through **Dec 4-8, 2026**. Your blueprint may PLAN title/metadata changes; implementation of frozen-surface changes must be scheduled after the gates.
-- Avoid deploys around the Nov 20 Bayern–Köln lifecycle-verification windows (kickoff 19:30 UTC).
-- Cloudflare free tier is the budget (KV writes ~117/day of 1,000; ~50 subrequests/tick; 10ms CPU cliff). Every proposed implementation item must state its budget.
-- GSC impressions are site impressions, not market volumes; average position is aggregated. Do not model traffic upside without stated assumptions.
-- Do not start Session 4 work in this session; do not execute later sessions.
+- Measurement freeze: GSC-measured surfaces + team-name spellings stay byte-frozen through **Dec 4-8, 2026**. Session 4's changes (robots meta, sitemap rows, headers) are NOT frozen bytes, but verify with a page diff that no title/H1/description byte changed on any page class.
+- Avoid deploys around the Nov 20 Bayern–Köln lifecycle-verification windows (kickoff 19:30 UTC; M1 ~19:35, M2 ~21:35-45 UTC).
+- Cloudflare free tier is the budget (KV writes ~117/day of 1,000; ~50 subrequests/tick; 10ms CPU cliff on cold renders — the C7 guardrail). Every change states its budget.
+- GSC impressions are site impressions, not market volumes. Do not model traffic upside without stated assumptions.
+- Do not start Session 5 work in this session; do not execute later sessions' scopes (team-page content is Session 8; competition/date pages are Session 9; lifecycle thresholds are Session 5).
+- If the same approach fails three times, change approach; if genuinely blocked (missing credential, broken production, unverifiable risk), stop and say so with the exact blocker — never fabricate work, commits, test outcomes, or GSC results.
