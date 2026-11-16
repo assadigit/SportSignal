@@ -4,6 +4,35 @@ Format: date · decision · options considered · reason · who · revisit when.
 (Adopted with the universal AGENTS.md rules on 2026-11-08; this file is new —
 earlier decisions live in README §"Architecture decisions" and docs/adr/.)
 
+## 2026-11-16 — SEO Session 4: C1 implemented as Option A's core with a named predicate (isSelectedTeam)
+
+- **Decision:** the selected-club allowlist test lives as `isSelectedTeam(name)` in `src/seo/data.ts` (an in-memory Set over the domestic-league keys of `CONFIG.BIG_TEAMS_BY_LEAGUE`, `normAlias` lookups, the `teamNormCache`-style admin-overlay memo), consumed by exactly two sites: the teams.xml branch (`src/seo/files.ts`, filter before any row is pushed) and the team-page robots rule (`src/seo/pages.ts`, `indexable = selected AND ≥1 upcoming`).
+- **Options:** (a) Option A's core with the named predicate (chosen), (b) Option B's broader `teamPageEligibility()` helper consumed by sitemap + robots-meta + future internal-link weighting, (c) inline membership tests at each consumer.
+- **Reason:** the two current consumers need exactly one shared test; Option B's extra surface has no consumer before Session 10 (internal linking) and would be speculative code; (c) would drift. The named predicate IS Option A plus the one-source-of-truth property B wanted. Decided by the agent (a cheap, reversible choice per AGENTS.md §1); recorded as the route plan §2.3 implementation.
+- **Revisit:** Session 8/10 if internal-link weighting or tile ordering needs the broader eligibility surface.
+
+## 2026-11-16 — SEO Session 4: the selected-13 set = the domestic league keys only (AL excluded)
+
+- **Decision:** `SEO_SELECTED_LEAGUES = ["PL","PD","SA","FL1","BL1"]` — the A-League (AL) clubs are NOT part of the SEO selected set even though they sit in `CONFIG.BIG_TEAMS_BY_LEAGUE`.
+- **Options:** (a) domestic keys only (chosen), (b) all `BIG_TEAMS_BY_LEAGUE` names (would include the 5 site-hidden A-League clubs).
+- **Reason:** AL is site-hidden at every public read surface (v13.173-noal) and the program's selected-13 definition (Sessions 2-3, machine-verified) is the 13 European clubs; EL/ECL entries repeat the domestic names. Decided per the Session 3 blueprint (route plan §2.3); pinned by a test gate (13 names asserted).
+- **Revisit:** only if the owner un-hides A-League or promotes a club via the admin overlay (the memo handles overlay changes without redeploy).
+
+## 2026-11-16 — SEO Session 4: C6 guard applied OUTSIDE the edge cache (post-cache), not baked into renders
+
+- **Decision:** `guardNonProdMachineFile(res, isProd)` wraps the seven machine-file route responses AFTER `wantCached` returns, cloning headers only on non-prod; production responses pass through untouched.
+- **Options:** (a) post-cache application (chosen), (b) bake `...(isProd ? {} : {x-robots-tag…})` into each render's headers (the robots.txt pattern).
+- **Reason:** the edge cache key is host-independent (`edge-internal.sportsignal.ir` + path), so a baked header leaks across environments — a workers.dev render would stamp noindex into a cached copy later served to production (violating "production must NOT get the header"), and a production render would serve workers.dev unguarded. Post-cache application makes the guard per-request. robots.txt/BingSiteAuth keep the baked form (they are not cache-served). Decided by the agent; verified live in both directions.
+- **Revisit:** only if a machine file ever becomes non-cached or per-host cache keys appear.
+
+## 2026-11-16 — SEO Session 4: C8 record-and-skip (the s-maxage fix measured ineffective on the free plan)
+
+- **Decision:** the one-line `s-maxage=60` normalization for `/api/public-matches` was shipped (13.260.0), live-measured (zone HITs still stamp `max-age=14400` — the Workers free-plan edge floor overrides both `max-age` and `s-maxage` on Cache API entries), and REVERTED (13.260.1) per the phase contract ("normalize only if it's a one-line cache-header fix, else record and skip"). The record-and-skip marker + evidence pointer stay in `src/public-swr.ts`; the outcome is test-pinned.
+- **Options:** (a) revert + record (chosen), (b) keep the harmless-but-ineffective declaration, (c) escalate to a client-asset change (poll fetch `cache` option + bundle rename + SW bump) or a zone Cache Rule.
+- **Reason:** shipping an ineffective declaration is dead code with a false comment; the client-side fix is out of Session 4's server-side scope and needs the owner's call. (b) rejected on the repo's smallest-change law; (c) flagged, not executed.
+- **Revisit:** owner decision — the client-side poll fix or the zone Cache Rule would remove the residual staleness vector (a browser honors the stamped 14400 max-age on the poll path for up to ~4h). Evidence: `seo-implementation/audit/CRAWL-INDEX-CHANGELOG.md` §C8.
+
+
 ## 2026-11-09 — Team rank badge placement: beside the name, outer flank (S37)
 
 - **Decision:** the rank chip sits immediately beside the team NAME (never on
