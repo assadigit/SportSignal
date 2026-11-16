@@ -4,6 +4,12 @@
 
 
 import { CONFIG } from "./config";
+// S06 (SEO Session 6): the display-window constant for the homepage fixture
+// boxes + the payload's `upcoming` array (the JSON-LD ItemList source). The
+// root CONFIG carries the 92-day DATA horizon; SEO.UPCOMING_DISPLAY_DAYS is
+// the 30-day DISPLAY horizon (spec §1/§2 — "up to one month"). The seo/config
+// leaf has no imports → no cycle risk into this root src module.
+import { SEO } from "./seo/config";
 import { LEAGUE_LOGOS, COMP_EN } from "./tables";
 import type { Env } from "./types";
 import { fetchJSON, getNowTehran } from "./utils";
@@ -662,16 +668,21 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     pollHintSec = actPub.pollHintSec;
     schedMode = actPub.mode;
   } catch (e) { }
-  const eom = new Date(now);
-  eom.setMonth(eom.getMonth() + 1, 0);
-  eom.setHours(23, 59, 59, 999);
+  // S06 (SEO Session 6): the payload's `upcoming` array now rides the 30-day
+  // DISPLAY horizon (was "end of current month" — a variable ≤30-day window
+  // that under-represented the visible boxes early in the month). 30 days
+  // from now keeps the JSON-LD ItemList (router.ts) + the client's
+  // DATA.upcoming consistent with the homepage topspot/uclspot boxes (both
+  // 30 days). The 92-day pool fetch (CONFIG.LONG_VIEW_DAYS) is unchanged —
+  // the data is available before it enters the display window.
+  const displayHorizon = now + SEO.UPCOMING_DISPLAY_DAYS * 864e5;
   const liveRank = (m) => isLiveStatus(m.status) ? 0 : 1;
   const select = (pool) => ({
     // v13.109-consolidated: the CONSOLIDATED tier — the website IS the
     // consolidated surface ("games this week" lists): one-desired fixtures
     // stay listed exactly as before; only the bot's individual pushes went
     // strict. (Was shouldNotify pre-v13.109 — same semantics as shouldReport.)
-    upcoming: pool.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && m.status !== "FINISHED" && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > now) && new Date(m.utcDate).getTime() <= eom.getTime()).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 50),
+    upcoming: pool.filter((m) => (shouldReport(m) || isTopTeamInvolved(m)) && m.status !== "FINISHED" && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > now) && new Date(m.utcDate).getTime() <= displayHorizon).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 50),
     // v12.5: "نتایج اخیر" must carry the whole week — the old 12-hour window
     // emptied the card every morning after a matchday, so this week's CL
     // results (the exact ones the bot notified on Telegram) never showed.
@@ -702,7 +713,7 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
   // beyond the six-slide cap) is NOT keyed here — those stay listed.
   const heroKeys = new Set(heroList.map((m) => String(m.id || "") + "|" + m.utcDate));
   const BOX_NEAR_MS = 7 * 864e5;
-  const lgPool = matches.filter((m) => m.status !== "FINISHED" && isDomesticLeagueCode(m.competition.code) && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > now && new Date(m.utcDate).getTime() <= now + 90 * 864e5)).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
+  const lgPool = matches.filter((m) => m.status !== "FINISHED" && isDomesticLeagueCode(m.competition.code) && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > now && new Date(m.utcDate).getTime() <= now + SEO.UPCOMING_DISPLAY_DAYS * 864e5)).sort((a, b) => liveRank(a) - liveRank(b) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
   const bigLgOf = (m) => isMasterClash(m) || isDerby(m) || isTopTable(m);
   const byKick = (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime();
   const lgBig = lgPool.filter((m) => bigLgOf(m)).sort(byKick);
@@ -783,7 +794,7 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
     };
   });
   const cups = cupsRaw.filter((c) => !(CONFIG.INTL_COMPETITIONS[c.code] && !c.next));
-  const clMatches = matches.filter((m) => m.competition.code === "CL" && m.status !== "FINISHED" && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > Date.now() && new Date(m.utcDate).getTime() <= Date.now() + 90 * 864e5)).sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
+  const clMatches = matches.filter((m) => m.competition.code === "CL" && m.status !== "FINISHED" && (isLiveStatus(m.status) || new Date(m.utcDate).getTime() > Date.now() && new Date(m.utcDate).getTime() <= Date.now() + SEO.UPCOMING_DISPLAY_DAYS * 864e5)).sort((a, b) => (isLiveStatus(a.status) ? 0 : 1) - (isLiveStatus(b.status) ? 0 : 1) || new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()).slice(0, 16);
   // v13.100-priority: the site's UCL card follows the user's rule too —
   // both-sides followed (+featured bonus) lead «مسابقات مهم لیگ قهرمانان
   // اروپا», one-side follow next, kickoff inside each tier; LIVE matches

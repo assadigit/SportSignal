@@ -1425,7 +1425,19 @@ function paginationHtml(path: string, page: number, totalPages: number): string 
 
 // ================= /matches (paginated) =================
 export function buildMatchesPage(ctx: SeoCtx, page: number): string {
-  const all = upcomingBig(ctx);
+  // S06 (SEO Session 6 — spec §2 "Show up to 30 days ahead"; keyword map §2.2
+  // «برنامه بازی فوتبال در یک ماه آینده» + pagination): the /matches hub
+  // DISPLAY window = 30 days from now. `upcomingBig` (data.ts) stays at 92
+  // days — it is the DATA/DISCOVERY horizon (the sitemap-upcoming child,
+  // feed.xml, matches.json all read `upcomingBig` uncapped). The hub narrows
+  // to 30 days for display; pagination rides the 30-day set (page 2+ exists
+  // only when > PER_PAGE matches fall inside 30 days). Zero KV/fetch cost —
+  // a filter on the already-loaded ctx.shaped list.
+  const displayHorizon = Date.now() + SEO.UPCOMING_DISPLAY_DAYS * 864e5;
+  const all = upcomingBig(ctx).filter((sm) => {
+    const ko = sm.s.utcDate ? Date.parse(sm.s.utcDate) : NaN;
+    return !isNaN(ko) && ko <= displayHorizon;
+  });
   const totalPages = Math.max(1, Math.ceil(all.length / PER_PAGE));
   const p = Math.min(Math.max(1, page), totalPages);
   const slice = all.slice((p - 1) * PER_PAGE, p * PER_PAGE);

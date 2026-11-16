@@ -28,6 +28,11 @@ globalThis.COMP_EN = compEn;
 const translateCompetition = () => "x";
 const LEAGUE_LOGOS = {};
 globalThis.pubMatch = (m) => m;
+// S06 (SEO Session 6): the cups block (lgPool + clMatches + the upcoming
+// filter) now reads SEO.UPCOMING_DISPLAY_DAYS (the 30-day DISPLAY horizon —
+// was the literal `90`). The eval slice's import is stripped by worker-src,
+// so provide the stub here. The block only reads UPCOMING_DISPLAY_DAYS.
+globalThis.SEO = { UPCOMING_DISPLAY_DAYS: 30 };
 // v13.248-rankchip: the ucl card's matches now stamp team ranks through
 // attachTeamRanks (not under test here — identity stub, same as pubMatch).
 globalThis.attachTeamRanks = (p) => p;

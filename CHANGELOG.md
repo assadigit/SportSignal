@@ -4,6 +4,112 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.262.0-homepage — SEO Session 6: homepage, featured match and the one-month fixture window (the 30-day DISPLAY horizon reconciliation + the hero-card carousel crawlability fix + the curated-selection promise; 2026-11-17, `main`)
+
+The THIRD implementation session of the 15-session SEO program. The homepage
+is the site's front door: the surface that orients every visitor and crawler
+to the curated fixture coverage. This session reconciles the homepage's
+fixture window with the spec's "up to one month", fixes a JS-only-navigation
+defect on the featured-match card, and makes the curated-selection promise
+explicit in the DOM — all without touching the byte-frozen GSC-measured
+title/H1 surfaces (the Dec 4-8 freeze holds). The session report:
+`seo-implementation/session-reports/SESSION-06.md`.
+
+- **The horizon reconciliation (the 92→30 DISPLAY split):** the spec
+  (MASTER-SEO-SPEC §1 line 20 / §2 line 59) says "up to one month" / "Show up
+  to 30 days ahead". The code used 92 days on the listing surfaces
+  (`upcomingBig`/`upcomingFollowed`) and 90 days on the homepage boxes
+  (`public-matches.ts` topspot/uclspot), with a third value (end-of-current-
+  month) on the payload's `upcoming` array. Session 6 splits the two concerns:
+  a NEW `SEO.UPCOMING_DISPLAY_DAYS = 30` constant (`src/seo/config.ts`) is the
+  DISPLAY window — the surfaces a visitor sees (the homepage topspot/uclspot
+  boxes + the `/matches` hub listing + the payload `upcoming` array that feeds
+  the JSON-LD ItemList). The 92-day horizon stays as the DATA/DISCOVERY window
+  (`upcomingBig`/`upcomingFollowed` unchanged) — the KV pool fetch
+  (`CONFIG.LONG_VIEW_DAYS`) + the sitemap-upcoming child + `feed.xml` +
+  `matches.json` carry the broad URL discovery set. The reconciliation decision
+  is recorded in `docs/DECISIONS.md` (S06-H1): display = 30 days (the spec),
+  discovery = 92 days (broad crawl discovery; the URLs are canonical +
+  indexable, so the sitemap carrying them is spec §5-compliant).
+- **The homepage boxes (topspot + uclspot):** narrowed from 90 → 30 days
+  (`SEO.UPCOMING_DISPLAY_DAYS`). The domestic-first-then-UCL ordering is
+  structural (the topspot card precedes the uclspot card in `public.ts`; the
+  segregation is enforced upstream by `isDomesticLeagueCode` vs `code ===
+  "CL"`) — unchanged, correct per spec §1 "domestic leagues first, then
+  Champions League". UCL editorial importance is preserved through the
+  dedicated uclspot card (featured treatment), NOT an incorrect list ordering.
+- **The `/matches` hub:** narrowed from 92 → 30 days via a filter on
+  `upcomingBig(ctx)` (`buildMatchesPage`). Pagination rides the 30-day set
+  (page 2+ exists only when > PER_PAGE matches fall inside 30 days). The hub
+  stays indexable; the honest empty state is unchanged.
+- **The hero-card carousel crawlability fix (D5/D6):** the homepage's
+  featured-match card anchor shipped with `href="#"` in SSR — the real
+  `/matches/{slug}` URL was set client-side only (`public-13.80.js`
+  `renderHeroSpot`), so the featured match was NOT crawlable without JS (a
+  JS-only-navigation defect, spec §2 "Keep the card accessible, crawlable
+  through a regular anchor link"). Fixed: `buildHomePage` now sets the hero
+  card anchor's SSR href to `M.matchHref(nextBig.s)` (slide 1's canonical
+  match URL); the client rewrites it per active slide (progressive
+  enhancement — the SSR href is the crawlable fallback). Same fix for the
+  mobile `a.hero-mcard` anchor. The carousel SLIDES 2-6 (which the single
+  anchor reuses per active slide) get a NEW sr-only `<nav>` block
+  (`carouselNavHtml`) with a real `<a href>` to every carousel slide, emitted
+  when the carousel has ≥ 2 slides — so the whole carousel is crawlable, not
+  just slide 1. Zero KV/fetch cost (built from the existing `p.heroMatches`
+  payload rows).
+- **The curated-selection promise (D3):** the spec §2 "Do not claim all
+  matches are covered. Say selected/important matches" + the phase file "Make
+  curated-selection promise explicit" required an explicit curation
+  statement. The homepage had no such copy (only a sr-only page-contents
+  summary). Added a NEW sr-only `<p>` with the curated-selection promise
+  («از دیدارهای بزرگ لیگ برتر انگلیس، لالیگا، سری‌آ، بوندسلیگا و لیگ یک فرانسه
+  تا حساس‌ترین رقابت‌های لیگ قهرمانان اروپا و جام‌های حذفی؛ اسپرت سیگنال
+  مهم‌ترین بازی‌های پیش‌رو را گلچین و معرفی می‌کند.») — additive to the
+  existing sr-only page-summary, no visible layout change (the phase file
+  "Preserve homepage layout and current design system"). The competition-name
+  spellings match the site's live forms (router.ts meta description +
+  pages-static.ts + pages.ts:2107).
+- **The byte-frozen surfaces (NOT changed — the Dec 4-8 freeze holds):** the
+  homepage `<title>` «برنامه بازی‌های مهم فوتبال | تاریخ و ساعت شروع | اسپرت
+  سیگنال» and the dynamic `<h1>` «بازی بزرگ بعدی: {home} – {away}» are
+  byte-identical to the pre-S06 values (keyword map §2.1 "keep it; change
+  scheduled: none before Dec 4-8"). The dynamic meta description (next big
+  match, Shamsi-first) is unchanged. The divergence between the live dynamic
+  H1 and the keyword-map §2.1 PLAN H1 («مهم‌ترین بازی‌های فوتبال اروپا را از
+  دست ندهید»-family) is documented in `docs/DECISIONS.md` (S06-H2) — the H1
+  change is a post-Dec-4 decision (the live dynamic H1 captures the
+  «بازی بعدی بارسا» / «بازی بعدی بایرن مونیخ» next-match query heads, which
+  are real GSC demand).
+- **The `/matches/tomorrow` hub:** STAYS indexable (C5). The honest empty
+  state is unchanged (the current copy «در برنامه فعلی اسپرت سیگنال بازی‌ای
+  برای فردا ثبت نشده است…» is honest — scoped to SportSignal's program, no
+  "no football tomorrow" claim). The spec's exact empty-state copy is a
+  post-Dec-4 refinement (the hub is the best-CTR surface at 8.26% — do not
+  regress); documented in DECISIONS.md (S06-H3).
+- **Featured-match logic (reported, NOT changed):** the spec §1 line 21 says
+  "Featured hero match: nearest upcoming match (not the highest-rated future
+  match)". The code's `pickHeroMatch` returns the highest-PRIORITY match in
+  the 8-hour carousel envelope (v13.194-herocarousel, owner-approved — the
+  2026-10-14 lesson: priority dominates kickoff recency across the slate).
+  This is a documented divergence from the spec's "nearest upcoming"; the
+  carousel's 8-hour envelope IS the spec's "same day/night grouping". NOT
+  changed this session (owner-approved behavior; changing it is a product
+  decision — flagged for owner awareness in the session report §9).
+- **Tests:** NEW `scripts/check-seo-homepage.js` (23 gates: the horizon
+  constant, the homepage boxes, the upcoming array, the /matches hub, the
+  data-horizon-preserved, the hero-card crawlability, the carousel nav, the
+  curation promise, the title/H1 frozen, the robots/canonical no-regression,
+  the zero-resource). `check-cups.js` + `live-derby-test.js` co-evolved (the
+  `SEO.UPCOMING_DISPLAY_DAYS` stub for the eval slices; the live-derby-test
+  m-out offset fixed to a deterministic 10-day in-window value + the 2
+  box-length assertions updated for the 30-day window). **npm test baseline
+  now 3,675 OK** (was 3,652 — +23 from the new check; the live-derby-test
+  assertions are 2 net-new + 1 rewritten, no net count change there). Version
+  triple `13.262.0.0` / `13.262.0-homepage`. No client asset changed (SW v126,
+  `public-13.80.js`, `public-13.87.css`, `_headers` untouched — a
+  server-side release; the carousel nav + curation promise are SSR HTML
+  injections, not client-bundle changes).
+
 # v13.261.0-matchlife — SEO Session 5: match-URL lifecycle + seasonal indexing (the season-end noindex transition mechanism + MATCH-LIFECYCLE-POLICY.md + MATCH-URL-CLASSIFICATION.csv; 2026-11-17, `main`)
 
 The SECOND implementation session of the 15-session SEO program. Gives

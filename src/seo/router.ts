@@ -95,6 +95,35 @@ function heroH1(sm: SeoMatch | null): string {
   return "بازی بزرگ بعدی: " + (sm.s.homeTeam.faName || sm.s.homeTeam.name) + " – " + (sm.s.awayTeam.faName || sm.s.awayTeam.name);
 }
 
+// S06 (SEO Session 6 — MASTER-SEO-SPEC §2 "Keep the card accessible, crawlable
+// through a regular anchor link"; §9 "Homepage → current featured match"): the
+// carousel crawlability nav. The homepage ships ONE visible hero-card anchor
+// per viewport (PC + mobile); the client (public-13.80.js renderHeroSpot)
+// rewrites that single anchor's href per active carousel slide — so non-active
+// slides have NO crawlable href in the DOM at any time (a JS-only-navigation
+// defect). This sr-only <nav> stamps a real <a href> to EVERY carousel slide
+// (the payload's heroMatches array, 0-6 rows) so Google and no-JS visitors can
+// reach every highlighted fixture. Emitted only when the carousel has >= 2
+// slides (the 1-slide case is already covered by the hero-card anchor's SSR
+// href, set below). The nav rides OUTSIDE every container the client JS
+// re-renders, so it survives hydration unchanged. Zero KV/fetch cost — built
+// from the existing payload rows.
+function carouselNavHtml(heroMatches: any): string {
+  if (!Array.isArray(heroMatches) || heroMatches.length < 2) return "";
+  const items: string[] = [];
+  for (const m of heroMatches) {
+    if (!m || !m.homeTeam || !m.awayTeam || !m.utcDate) continue;
+    const href = M.matchHref(m);
+    const home = (m.homeTeam.faName || m.homeTeam.name) || "";
+    const away = (m.awayTeam.faName || m.awayTeam.name) || "";
+    const comp = M.compNameFa(m);
+    const date = faDateD2(m.utcDate);
+    items.push('<li><a href="' + esc(href) + '">' + esc(home + " – " + away + "، " + comp + "، " + date) + "</a></li>");
+  }
+  if (!items.length) return "";
+  return '<nav class="sr-only" aria-label="بازی\u200cهای برجسته پیش\u200cرو"><h2>بازی\u200cهای برجسته پیش\u200cرو</h2><ul>' + items.join("") + "</ul></nav>";
+}
+
 // The client's keyOf/listSig formats (public-13.x.js) mirrored server-side:
 // when the fresh /api/public-matches payload carries the SAME lists the
 // server rendered, the client skips its rebuild entirely (PF-06/PF-08 —
@@ -251,13 +280,36 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
   // The ONE <h1> (P-12) — sr-only (uifix, see above); a short sr-only page
   // summary follows it (A-04/A-01). The client JS leaves these nodes alone
   // (they live outside every container the JS re-renders).
+  // S06 (SEO Session 6): the hero-card anchor now carries slide 1's REAL
+  // match URL in SSR (not "#") — see the unhide replacement below. Two new
+  // sr-only atoms ride alongside the page-summary line (both OUTSIDE every
+  // client-re-rendered container, so they survive hydration unchanged):
+  //   · CURATION_PROMISE — the curated-selection promise (spec §2 "Do not
+  //     claim all matches are covered. Say selected/important matches"; phase
+  //     file "Make curated-selection promise explicit"). The homepage title/H1
+  //     are byte-frozen through Dec 4-8 (GSC-measured surfaces), so the
+  //     promise rides as a NEW sr-only paragraph, NOT a title/H1 change.
+  //   · carouselNav — a sr-only <nav> with a real <a href> to every carousel
+  //     slide (spec §2 "crawlable through a regular anchor link"; §9). The
+  //     hero-card anchor covers slide 1; the nav covers slides 2-6 (the
+  //     carousel). Emitted only when the carousel has >= 2 slides.
+  const heroHref = nextBig ? esc(M.matchHref(nextBig.s)) : "#";
+  const CURATION_PROMISE = "از دیدارهای بزرگ لیگ برتر انگلیس، لالیگا، سری\u200cآ، بوندسلیگا و لیگ یک فرانسه تا حساس\u200cترین رقابت\u200cهای لیگ قهرمانان اروپا و جام\u200cهای حذفی؛ اسپرت سیگنال مهم\u200cترین بازی\u200cهای پیش\u200cرو را گلچین و معرفی می\u200cکند.";
+  const carouselNav = carouselNavHtml(p.heroMatches);
   html = html.replace('<a class="hero-card" id="bigHeroCard"',
     '<h1 class="hero-h1">' + esc(heroH1(nextBig)) + "</h1>\n" +
-    '<p class="sr-only">در این صفحه: بازی بزرگ بعدی، بازی‌های زنده، بازی‌های مهم پیش‌رو، جدول لیگ‌ها و نتایج اخیر — همه به وقت تهران.</p>\n<a class="hero-card" id="bigHeroCard"');
+    '<p class="sr-only">در این صفحه: بازی بزرگ بعدی، بازی‌های زنده، بازی‌های مهم پیش‌رو، جدول لیگ‌ها و نتایج اخیر — همه به وقت تهران.</p>\n' +
+    '<p class="sr-only">' + esc(CURATION_PROMISE) + "</p>\n" +
+    carouselNav + "\n" +
+    '<a class="hero-card" id="bigHeroCard"');
 
   // Cards hidden by default must SHOW their server content for no-JS
   // visitors; the client JS re-manages display on load (same rules).
-  if (heroHtml) html = html.replace('<a class="hero-card" id="bigHeroCard" style="display:none" href="#">', '<a class="hero-card" id="bigHeroCard" href="#">');
+  // S06 (SEO Session 6): the hero-card anchor's href is the REAL match URL
+  // (slide 1), not "#". The client (public-13.80.js renderHeroSpot) rewrites
+  // it per active slide — progressive enhancement; the SSR href is the
+  // crawlable fallback for slide 1 + the no-JS destination.
+  if (heroHtml) html = html.replace('<a class="hero-card" id="bigHeroCard" style="display:none" href="#">', '<a class="hero-card" id="bigHeroCard" href="' + heroHref + '">');
   // v13.164-matchcard: the mobile card unhides under the SAME rule as the PC
   // card (a hero exists ⇒ content visible for no-JS; CSS decides which card
   // the viewport shows — ≤899px the mobile card, ≥900px the PC card).
@@ -301,7 +353,7 @@ export async function buildHomePage(ctx: SeoCtx, isProd = true): Promise<string>
     const scene = mcClean ? "/ui/mc/scene-4-2.webp" : "/ui/mc/scene-2.webp";
     html = html.replace("</head>", '<link rel="preload" href="' + scene + '" as="image" media="(max-width:899px)" fetchpriority="high">\n</head>');
   }
-  if (mheroHtml) html = html.replace('<a class="hero-mcard" id="heroMCard" style="display:none" href="#" dir="ltr">', '<a class="hero-mcard' + (mcClean ? " mc-clean" : "") + '" id="heroMCard" href="#" dir="ltr">');
+  if (mheroHtml) html = html.replace('<a class="hero-mcard" id="heroMCard" style="display:none" href="#" dir="ltr">', '<a class="hero-mcard' + (mcClean ? " mc-clean" : "") + '" id="heroMCard" href="' + heroHref + '" dir="ltr">');
   // v13.165-mcfa: the scroll hint unhides under the SAME rule (a hero
   // exists => the hint shows for no-JS too; CSS decides which viewport
   // paints it — <=899px; renderMCard re-manages it client-side).

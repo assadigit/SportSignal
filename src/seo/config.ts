@@ -60,6 +60,17 @@ export const SEO = {
   // Match lifecycle policy (spec).
   FINISHED_MATCH_ARCHIVE_DAYS: 365,
   MIN_UPCOMING_FOR_INDEX: 1,
+  // S06 (SEO Session 6 — MASTER-SEO-SPEC §1 line 20 / §2 line 59): the
+  // DISPLAY window for the homepage fixture boxes + the `/matches` hub =
+  // "up to one month" = 30 days from now. The 92-day horizon
+  // (`upcomingBig`/`upcomingFollowed` in data.ts + `CONFIG.LONG_VIEW_DAYS`
+  // in the root config) is the DATA/DISCOVERY window — the KV pool fetch
+  // (so fixtures are available before they enter the display window) and
+  // the sitemap/feed/API surfaces (broad URL discovery). This 30-day
+  // constant is the DISPLAY window ONLY — the surfaces a visitor sees
+  // (the homepage topspot/uclspot boxes + the /matches listing). The
+  // reconciliation is recorded in docs/DECISIONS.md (decision S06-H1).
+  UPCOMING_DISPLAY_DAYS: 30,
   // Honest lastmod for hand-written pages: bumped ONLY when their content
   // is actually edited (spec F-05 — never "now on every build").
   // v13.215-attribution (SS-08): every page footer gained the data-source
