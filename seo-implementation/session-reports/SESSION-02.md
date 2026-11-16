@@ -11,8 +11,9 @@
 3. Re-verified the selected-club allowlist from source (`src/config.ts:38-100`) including the admin-overlay nuance (`src/admin.ts:56-79`) — and recorded a **correction: the allowlist has 13 European clubs, not 14** (machine-counted; Session 1 and the start prompt carried a miscount).
 4. Validated the seed bank: all 70 "GSC observed" claims verified present in Queries.csv with matching metrics; 6 ineligible team-page targets re-mapped (non-selected clubs); fuzzy targets resolved to exactly one URL type each; the seed file itself left unchanged (version-history rule).
 5. Gathered fresh demand evidence within this sandbox's real limits: Google Suggest autocomplete (20 heads, `hl=fa&gl=IR`, 177 suggestions), Google News RSS (6 queries, fa/IR), live competitor formats (ScoreYab, Soot360, 365Scores fetched; TVeto Cloudflare-blocked), live sportsignal.ir page titles + the 87-URL teams sitemap. Direct Google SERP and Bing-Persian were tested and are NOT accessible from this environment — recorded as limitations, never worked around with fabricated data.
-6. Built the validated keyword map: **374 rows** (200 seed-annotated + 174 expansion), clustered, one-URL-per-intent rules, cannibalization register, 24 documented exclusions (broadcast/lineup/ticket/non-selected/navigational), 33 holds, zero volumes invented.
-7. Updated the tracker (Session 02 row), wrote this report, and created the standalone Session 3 prompt.
+6. Built the validated keyword map: **374 rows in the initial build** (200 seed-annotated + 174 expansion), clustered, one-URL-per-intent rules, cannibalization register, 24 documented exclusions (broadcast/lineup/ticket/non-selected/navigational), 33 holds, zero volumes invented.
+7. **Post-delivery verification pass (same session):** independently re-derived every headline number from the raw export and repo source. Confirmed the segmentation arithmetic exactly (privacy gap 55.8%/90.8%; Iran 99.2%/92.7%; mobile 94.8%/96.6%; team-page split 13 URLs 0.69% vs 114 URLs 0.62%; 70/70 seed GSC claims). Found and fixed four defects in place: (a) row 73's `TEAM?` placeholder target URL → `/teams/internazionale-milano`; (b) 5 exact-duplicate keyword rows with conflicting targets (removed; both-clubs row re-resolved to match detail per rule 4); (c) the "174 of 264 (66%)" non-selected-club share was a miscount — true value **184 of 264 (70%)**, corrected in all four documents; (d) evidence-class counts corrected to the unique counts (**198 GSC-observed / 38 autocomplete / 133 candidates = 369 rows**). The corrected map passes all integrity checks (0 placeholders, 0 off-allowlist team targets, 0 retained rows without targets, 0 duplicates, 0 invented volumes; all GSC strings + per-string metrics verified against raw Queries.csv). Full detail: KEYWORD-VALIDATION-REPORT.md §12.
+8. Updated the tracker (Session 02 row), wrote this report, and created the standalone Session 3 prompt.
 
 ## 2. Findings — confirmed vs corrected vs still open
 
@@ -21,7 +22,7 @@
 - `/matches/tomorrow` is the site's best-CTR surface (18 clicks / 218 impr / 8.26%) — the tomorrow query family justifies P1.
 - «بارسلونا مقابل منچستر سیتی 2026» is the site's best query (6 clicks / 103 impr / avg pos 3.25) — the exact-slug match-detail URL pattern is the strongest ranking surface; the conditional-matchup mapping rule is validated by it.
 - The top-clicking visible query overall is a broadcast-intent query («مکان تماشای بولونیا درمقابل مونتزا», 8 clicks) — deliberately excluded per the product promise; broadcast+lineup+ticket intents total ~345 impr / 8 of 23 attributed clicks.
-- 174 of 264 match-detail GSC rows (66%) involve no selected club — they exist via the live `isBigForSeo` top-3-standings route (`src/seo/data.ts:112-122`), the automated "important table race" mechanism. The keyword map treats those URLs as legitimate conditional targets.
+- 174 of 264 match-detail GSC rows (66%) involve no selected club — **corrected to 184 of 264 (70%) by the post-delivery verification pass (see §4a)** — they exist via the live `isBigForSeo` top-3-standings route (`src/seo/data.ts:112-122`), the automated "important table race" mechanism. The keyword map treats those URLs as legitimate conditional targets.
 - Team-page CTR is poor across the board: 13 selected-club URLs → 8 clicks / 1,159 impr (0.69%) vs 114 non-selected URLs → 8 clicks / 1,297 impr (0.62%). The team-page problem is a title/snippet/template problem (the repo's parked Dec 4 title test), not merely a selection problem.
 - Zero English-query evidence (1 Latin string total; no English-geo demand). English stays Session 12 candidates; no English SERP sampling was justified (per the phase rule, only evidenced geographies may be sampled).
 
@@ -38,7 +39,7 @@
 ## 3. Files changed (this session — all docs, no code)
 
 - `seo-implementation/keyword-research/KEYWORD-VALIDATION-REPORT.md` — NEW (main report: method, segmentation, allowlist verification, seed validation, clusters + one-URL rules + cannibalization register, revised priority list, limitations, Session 3 inputs).
-- `seo-implementation/keyword-research/VALIDATED-KEYWORD-MAP.csv` — NEW (374 rows; 19 columns incl. evidence class/source, language, geography, GSC site metrics, tail, intent, cluster, target page type + exact URL, priority, status, notes).
+- `seo-implementation/keyword-research/VALIDATED-KEYWORD-MAP.csv` — NEW (initially 374 rows, **369 after the §4a verification pass**; 19 columns incl. evidence class/source, language, geography, GSC site metrics, tail, intent, cluster, target page type + exact URL, priority, status, notes).
 - `seo-implementation/keyword-research/SERP-SAMPLES.md` — NEW (per-cluster format evidence + the honest access-limitation table).
 - `seo-implementation/keyword-research/EVIDENCE-LOG.md` — NEW (fourth deliverable: every evidence source with tool+date+locale, raw autocomplete/News-RSS data, re-verification recipe).
 - `sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md` — Session 02 row updated.
@@ -50,8 +51,10 @@
 
 ## 4. Implementation decisions and deviations
 
+**4a. The post-delivery verification pass (§1 item 7).** After the initial deliverables were committed (`abce80f`), a second verification sweep re-derived every claim from the raw sources. It corrected the map (369 rows now) and four documents' statistics; the corrections are documented in KEYWORD-VALIDATION-REPORT.md §12 and in the commit that follows `2d9f51e`. Nothing about the strategic conclusions changed — the corrections are counts, not judgments.
+
 1. **No code changes, no deploy** — per the phase file and the start prompt ("Docs/analysis only"; "No deploy (no runtime change)"). The Session 1 pipeline-verification deploy is NOT repeated: this session changed nothing the Worker serves, and the start prompt explicitly forbids deploying.
-2. **Expansion to 374 rows instead of stopping at 200** — the phase says "at least 200 … only if useful"; the useful additions were (a) 105 additional GSC-observed exact strings (incl. spelling/ZWNJ/digit variants that prove how fragmented the demand is, the excluded-intent documentation, and the C1/S1 demand rows), (b) 39 autocomplete-validated forms, (c) 3 DFB-Pokal candidates (the only cup with a live page).
+2. **Expansion to 374 initial rows instead of stopping at 200** — the phase says "at least 200 … only if useful"; the useful additions were (a) 105 additional GSC-observed exact strings (incl. spelling/ZWNJ/digit variants that prove how fragmented the demand is, the excluded-intent documentation, and the C1/S1 demand rows), (b) 39 autocomplete-validated forms (one later folded into its GSC duplicate by the §4a pass), (c) 3 DFB-Pokal candidates (the only cup with a live page). Final unique count: 369.
 3. **Volume discipline** — no volume tool was available; every `search_volume` cell reads "unavailable — no volume tool access (never invented)". GSC site metrics live in separate, clearly-labeled columns.
 4. **Status taxonomy introduced** (Retain–active / Retain–passive / Hold / Excluded–reason) to keep "passive" pattern demand (standings-vs, timeline, one-off matchups) distinct from actively-targeted phrases — an honest middle ground the seed bank lacked.
 5. **Seed bank untouched** — corrections (6 re-mapped rows, priority revisions, resolved fuzzy targets) live only in the validated map, with the change reasons in the notes column; the original bank stays pristine per the pack's preservation rule.
@@ -61,7 +64,7 @@
 
 - `npm install` (npm only, per AGENTS.md §11): completed.
 - `npm test`: **exit 0** — `npx tsc --noEmit` clean + 48 check scripts, **3,615 OK** assertions, 0 failures (matches the Session 1 baseline exactly; expected — zero code changed).
-- Deliverable integrity checks (run in the map-build script): 374 rows; 0 keywords mapped to non-allowlist team URLs; 0 retained keywords without an existing-URL-type target; 0 GSC-observed rows lacking re-derived metrics; 0 volumes invented.
+- Deliverable integrity checks (initial build script + the §4a verification pass): **369 unique rows**; 0 keywords mapped to non-allowlist team URLs; 0 retained keywords without an existing-URL-type target; 0 GSC-observed rows lacking re-derived metrics; 0 volumes invented; 0 duplicate keyword rows; 0 placeholder targets.
 - Cross-verification: all 70 seed-bank GSC claims matched the raw Queries.csv; the 28-day chart sum (239 clicks / 9,301 impressions) reproduced the baseline numbers exactly.
 
 ## 6. Checkpoints (commits, SHAs, push status)
@@ -92,7 +95,7 @@ Push discipline: `git fetch` before push, one-shot token-URL push (token never p
 
 | Criterion | Result |
 |---|---|
-| ≥ 200 candidate phrases documented with evidence class, language, geography, intent, tail, target page type, priority, status | **Met — 374 rows**, all columns populated |
+| ≥ 200 candidate phrases documented with evidence class, language, geography, intent, tail, target page type, priority, status | **Met — 369 unique rows** (post-dedup; the initial build had 374 incl. 5 duplicates), all columns populated |
 | Volume only where a named source + location/time basis exists | **Met — all volumes "unavailable"**, never invented |
 | No keyword assigned to an ineligible URL type | **Met — 0 violations** (non-allowlist teams, hypothetical match URLs, non-existent competition pages all excluded or held) |
 | Exact GSC strings separate from candidates | **Met** (`evidence_class`/`evidence_source` columns) |

@@ -18,7 +18,7 @@ Every evidence source used by `KEYWORD-VALIDATION-REPORT.md`, `VALIDATED-KEYWORD
 
 - **Tool:** `suggestqueries.google.com/complete/search?client=firefox&hl=fa&gl=IR` (public autocomplete endpoint).
 - **Date:** 2026-11-16. **Locale:** hl=fa, gl=IR. **Method:** one request per head query, 0.6s spacing, responses parsed as JSON.
-- **What it proves / doesn't:** a returned completion is a real query form typed by users in that locale — it validates query *shapes*, never volumes. 39 new rows in the validated map carry `evidence_class=Autocomplete-validated` from this source.
+- **What it proves / doesn't:** a returned completion is a real query form typed by users in that locale — it validates query *shapes*, never volumes. 39 rows carried `evidence_class=Autocomplete-validated` in the initial map build; after the §12 verification-pass dedupe, 38 unique autocomplete rows remain (one was folded into its GSC-observed duplicate).
 - **Raw completions (all 20 heads, 177 suggestions):**
 
   - **بازی بعدی بارسلونا**
@@ -280,7 +280,7 @@ Fetched live 2026-11-16 via curl (desktop UA):
 |---|---|---|
 | Selected-club allowlist | `src/config.ts:38-100` `BIG_TEAMS_BY_LEAGUE` | **13 European clubs** (PL 5, PD 3, SA 2, FL1 1, BL1 2) + EL/ECL repeat-lists (11) + A-League 5 (site-hidden via `SITE_HIDDEN_LEAGUES`, `config.ts:32`) |
 | Admin overlay | `src/admin.ts:56-79` `getSettings` | KV `bot_settings_v1` overlay + `clubs_catalog` canonicalization; SEO router returns before `applySettings` (request flow), so SEO uses compiled defaults unless cron mutated the isolate |
-| Match eligibility | `src/match-classify.ts:162-174` `shouldReport` + `src/seo/data.ts:112-122` `isBigForSeo` | selected club (league lists) OR QF+ (CL/cups) for shouldReport; **plus top-3 standings of the competition** for SEO — the automated "important table race" route behind 66% of observed match-detail rows |
+| Match eligibility | `src/match-classify.ts:162-174` `shouldReport` + `src/seo/data.ts:112-122` `isBigForSeo` | selected club (league lists) OR QF+ (CL/cups) for shouldReport; **plus top-3 standings of the competition** for SEO — the automated "important table race" route behind 70% (184/264) of observed match-detail rows |
 | Team-page generation (C1) | `src/seo/data.ts:276-310` `teamsIndex` | both sides of every eligible pool match — 87 live URLs incl. non-selected clubs |
 | Slug pins | `src/slugs.ts:45-70` `TEAM_SLUGS` | 26 pinned famous-club slugs; provider-name divergence for Inter/Atlético (see A5) |
 

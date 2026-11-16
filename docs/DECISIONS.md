@@ -935,3 +935,35 @@ coverage-route decision belong to Session 3 with owner sign-off; volume
 validation becomes possible only if the owner supplies Keyword
 Planner/Trends access or a fresh GSC export (top evidence request,
 SESSION-02.md §9).
+
+
+## 2026-11-16 — SEO Program S2 (verification pass): four corrections to the first-build deliverables, applied in place
+
+**Context.** After the Session 2 deliverables were committed, a second
+verification sweep re-derived every headline number from the raw GSC export
+and repo source. It confirmed the segmentation arithmetic exactly (privacy
+gap 55.8%/90.8%; Iran 99.2%/92.7%; mobile 94.8%/96.6%; the 13-vs-114
+team-page split; all 70 seed GSC claims) and found four defects in the
+first-build map and its companion docs.
+
+**Decisions.** (1) **Row 73's literal `TEAM?` placeholder target** («بازی
+بعدی اینتر») corrected to the live slug `/teams/internazionale-milano`
+(provider-derived; the pinned `inter-milan` is NOT the served URL). (2)
+**Five exact-duplicate keyword rows removed** (222, 293, 295, 302, 358);
+the both-clubs duplicate «بازی بارسلونا و پاریس کی است» was re-resolved to
+match-detail-conditional per one-URL rule 4 — the conflicting team-page
+mapping was a mis-build, not a judgment call. (3) **The "174 of 264 (66%)"
+non-selected-club share of match-detail rows was a miscount — the exact
+value is 184 of 264 (70%)**; corrected in the validation report, session
+report, Session 3 prompt, and this log. (4) **Evidence-class counts restated
+as unique counts: 198 GSC-observed / 38 autocomplete / 133 candidates =
+369 rows** (the "202/39" figures double-counted duplicates). The corrected
+map passes all integrity checks; details in KEYWORD-VALIDATION-REPORT.md
+§12 and SESSION-02.md §4a.
+
+**Who decided.** The agent (SEO Session 2 verification pass), applying the
+program's verify-before-handing-off rule; no strategic conclusion changed —
+the corrections are counts and build artifacts, not judgments.
+
+**When to revisit.** Session 3 consumes the corrected map (369 rows). The
+184/264 figure feeds Session 3's top-3-standings-route decision.

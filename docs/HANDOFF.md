@@ -6,15 +6,25 @@
 
 The dedicated keyword session of the 15-session SEO program. **No worker
 code change, no version bump, no deploy (no runtime change by design).**
-All phase acceptance criteria met (374-phrase validated map, zero invented
-volumes, zero ineligible URL assignments).
+All phase acceptance criteria met (369-phrase validated map after the
+same-session verification pass, zero invented volumes, zero ineligible URL
+assignments).
 
 - **Deliverables:** `seo-implementation/keyword-research/` —
-  KEYWORD-VALIDATION-REPORT.md, VALIDATED-KEYWORD-MAP.csv (374 rows: 202
-  GSC-observed exact strings / 39 Google-autocomplete-validated fa-IR /
+  KEYWORD-VALIDATION-REPORT.md, VALIDATED-KEYWORD-MAP.csv (369 unique rows:
+  198 GSC-observed exact strings / 38 Google-autocomplete-validated fa-IR /
   133 research candidates), SERP-SAMPLES.md, EVIDENCE-LOG.md. Plus the
   tracker Session-02 row, SESSION-02.md, and the Session 3 standalone
   prompt in `seo-implementation/next-session-prompt.md`.
+- **Verification pass (same session):** an independent re-derivation of every
+  headline number confirmed the segmentation arithmetic (privacy gap, Iran/
+  mobile shares, the 13-vs-114 team-page split, 70/70 seed GSC claims) and
+  fixed four defects in place: one `TEAM?` placeholder target (row 73 →
+  `/teams/internazionale-milano`), 5 duplicate keyword rows (one with a
+  conflicting target, re-resolved to match detail per one-URL rule 4), the
+  "174/264 (66%)" non-selected share of match-detail rows (true value
+  **184/264 = 70%**), and the evidence-class counts. Details:
+  KEYWORD-VALIDATION-REPORT.md §12, SESSION-02.md §4a.
 - **Correction recorded:** the selected-club allowlist has **13 European
   clubs, not 14** (machine-counted from `src/config.ts`; Session 1 and the
   Session 2 start prompt carried the miscount). Also: Inter/Atlético serve
@@ -64,8 +74,8 @@ request for Sessions 3-8.
 
 Session 01 ✅ Completed / verified in production (2026-11-16) — audit + docs.
 Session 02 ✅ Completed, docs-only, no deploy (2026-11-16) — keyword
-validation: 374-phrase map + one-URL rules + cannibalization register;
-allowlist corrected to **13** European clubs.
+validation: 369-unique-phrase map (post-verification-pass) + one-URL rules +
+cannibalization register; allowlist corrected to **13** European clubs.
 `seo-implementation/next-session-prompt.md` holds the Session 3 start prompt
 (keyword-to-URL architecture; docs/planning only — implementation starts in
 Session 4). Progress source of truth:

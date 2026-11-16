@@ -6,13 +6,13 @@
 - **Session:** SEO Implementation Program, Session 2 of 15 (dedicated keyword session)
 - **Author:** SEO implementation agent (per `AGENT-INSTRUCTIONS.md` §5 keyword-research contract)
 - **Code changes:** **None.** Analysis/documentation only, per the phase file. No deploy (no runtime change).
-- **Companion files:** `VALIDATED-KEYWORD-MAP.csv` (374 rows), `SERP-SAMPLES.md`, `EVIDENCE-LOG.md`
+- **Companion files:** `VALIDATED-KEYWORD-MAP.csv` (369 rows after the §12 verification pass), `SERP-SAMPLES.md`, `EVIDENCE-LOG.md`
 
 ---
 
 ## 1. Executive summary
 
-The 200-phrase seed bank was validated against the original GSC export, expanded to **374 evidence-tagged phrases** (202 GSC-observed exact strings, 39 Google-autocomplete-validated variants, 133 research candidates), clustered, and mapped to exactly one existing URL type per landing intent. Every volume field is honestly **"unavailable"** — no Keyword Planner/Trends access existed this session, and the spec's never-invent rule was applied without exception.
+The 200-phrase seed bank was validated against the original GSC export, expanded to **369 unique evidence-tagged phrases** (198 GSC-observed exact strings, 38 Google-autocomplete-validated variants, 133 research candidates — post-dedup counts; the initial build's 374 rows contained 5 duplicates, removed by the verification pass in §12), clustered, and mapped to exactly one existing URL type per landing intent. Every volume field is honestly **"unavailable"** — no Keyword Planner/Trends access existed this session, and the spec's never-invent rule was applied without exception.
 
 The five findings that matter most for Session 3:
 
@@ -84,7 +84,7 @@ The export contains **no live-score, no betting** query in the visible set; broa
 
 Two structural facts for Session 3:
 
-- **174 of the 264 match-detail rows (66%) involve no selected club.** They exist because the current implementation's `isBigForSeo` (`src/seo/data.ts:112-122`) adds any fixture where either side sits in the competition's **top-3 standings** — the automated "important table race" route (product-strategy route B). This is a real, live editorial mechanism, not a bug; the keyword map treats those match URLs as legitimate *conditional* targets (pattern-based, never hypothetical).
+- **174 of the 264 match-detail rows (66%) involve no selected club.** *(Corrected 2026-11-16 verification pass: the exact count is **184 of 264 (70%)** — see §12.)* They exist because the current implementation's `isBigForSeo` (`src/seo/data.ts:112-122`) adds any fixture where either side sits in the competition's **top-3 standings** — the automated "important table race" route (product-strategy route B). This is a real, live editorial mechanism, not a bug; the keyword map treats those match URLs as legitimate *conditional* targets (pattern-based, never hypothetical).
 - **Team-page demand concentrates in 2 of 13 clubs:** Barcelona (564 impr) + Real Madrid (178) = 64% of all selected-club team impressions. Seven of the thirteen selected clubs have ≤25 team-page impressions each.
 
 ## 4. Allowlist verification (the ONLY team-page targets)
@@ -141,16 +141,18 @@ Documented evidence now in the map (9 `Non-selected-team demand (C1 evidence)` r
 
 ## 7. Validated map statistics (VALIDATED-KEYWORD-MAP.csv)
 
+*(Counts below are post-deduplication, corrected by the 2026-11-16 verification pass — see §12. The original build had 374 rows including 5 exact-duplicate keyword rows and one placeholder target; those defects were fixed in place, preserving all unique phrases and evidence.)*
+
 | Dimension | Values |
 |---|---|
-| **Total rows** | **374** (≥ 200 required) — 200 seed-annotated + 174 expansion |
-| Evidence class | 202 GSC-observed (all with re-derived site metrics) · 39 Autocomplete-validated (Google Suggest fa-IR, 2026-11-16) · 133 Research-candidate |
-| Language | 354 fa · 20 en |
+| **Total rows** | **369** (≥ 200 required) — 200 seed-derived + 169 expansion; 5 duplicate rows removed by the verification pass |
+| Evidence class | 198 GSC-observed (all with re-derived site metrics) · 38 Autocomplete-validated (Google Suggest fa-IR, 2026-11-16) · 133 Research-candidate |
+| Language | 349 fa · 20 en |
 | Geography | fa → Iran (GSC country report) · en → "no evidenced geography" |
-| Status | 303 Retain–active · 14 Retain–passive (URL pattern captures; no active work) · 33 Hold (no eligible URL today) · 24 Excluded (broadcast 8, lineup 2, ticket 1, non-selected club 12, navigational 1) |
-| Priority | P1 43 (40 retained + 3 excluded demand markers) · P2 243 · P3 88 |
-| Target types (retained) | Match detail (conditional) 92 · Team page–selected club 102 · Time hubs 55 · Competition pages 50 · Homepage 18 (+7 secondary) · Matches hub 3 · English–future 20 |
-| **Integrity checks** | 0 keywords on non-allowlist team URLs · 0 retained keywords without a target · 0 GSC-observed rows lacking metrics · 0 volumes invented |
+| Status | 298 Retain–active · 14 Retain–passive (URL pattern captures; no active work) · 33 Hold (no eligible URL today) · 24 Excluded (broadcast 5, lineup 2, ticket 1, non-selected club 15, navigational 1) |
+| Priority | P1 43 · P2 238 · P3 88 |
+| Target types (retained) | Match detail (conditional) 86 · Team page–selected club 100 · Time hubs 55 (today 35 / tomorrow 11 / this-week 5 / this-weekend 4) · Competition pages 50 · Homepage 18 · Matches hub 3 |
+| **Integrity checks** | 0 keywords on non-allowlist team URLs · 0 retained keywords without a target · 0 GSC-observed rows lacking metrics · 0 volumes invented · 0 duplicate keyword rows (all 369 unique) |
 
 ## 8. Revised priority list (proposal for Session 3 sequencing)
 
@@ -178,14 +180,14 @@ Core discovery heads without evidence, EL/ECL/FA-Cup/Copa/Coppa holds (Session 9
 2. **35-day chart only** (10 Oct – 13 Nov 2026): the "Last 3 months" filter label overstates the daily-data window; all trend statements are snapshot statements. The 28-day sum (239 clicks / 9,301 impr) matches the baseline exactly.
 3. **Privacy gap (55.8% impr / 90.8% clicks unattributed)** — see §3.2. A fresh GSC export (ideally 16 months, URL-level page samples, and the queries×pages matrix) remains the single highest-value evidence upgrade the owner can provide; it would also unlock the S1/S4 URL-identity questions.
 4. **Google SERP format evidence is indirect.** Direct google.com SERPs are CAPTCHA-walled from this sandbox; Bing returned zero Persian results from this vantage; TVeto is Cloudflare-challenged. SERP formats were therefore documented from Google Suggest (real Google, fa/IR), Google News RSS (real Google News, fa/IR), and live competitor pages — see SERP-SAMPLES.md for per-cluster notes and the exact access limitations. Positions from GSC stand in as Google-side evidence of who outranks us.
-5. **Autocomplete ≠ volume.** Suggest data validates that a query *form* is typed by real users in the fa/IR locale; it says nothing about frequency. All 39 autocomplete rows are tagged accordingly.
+5. **Autocomplete ≠ volume.** Suggest data validates that a query *form* is typed by real users in the fa/IR locale; it says nothing about frequency. All 38 autocomplete rows (39 collected; one folded into its GSC-observed duplicate by the §12 dedupe) are tagged accordingly.
 6. **The map is a snapshot.** Coverage (top-3 standings route) changes with the tables; matchup "conditional" targets inherit that flux by design.
 
 ## 10. Feeds into Session 3 (keyword-to-URL architecture) — inputs ready
 
 1. The **374-row validated map** with one-URL rules (§6.1) and the cannibalization register (§6.2).
 2. The **C1 decision pack**: 13-club team-target list with live slugs (incl. the Inter/Atlético slug divergence), the 114-URL non-selected demand table, the both-sides-generation mechanism (`seo/data.ts:276-310`), and the 0.69%/0.62% CTR comparison.
-3. The **match-eligibility fact** that 66% of match-detail GSC rows come from the top-3-standings route — Session 3 should decide whether that route stays (it is the de-facto "independently important match" implementation) and say so in the architecture doc.
+3. The **match-eligibility fact** that **184 of 264 (70%)** match-detail GSC rows come from the top-3-standings route (corrected from the initially-recorded 174/66% — §12) — Session 3 should decide whether that route stays (it is the de-facto "independently important match" implementation) and say so in the architecture doc.
 4. The **parked-measurement coordination**: team-page title pattern (Dec 4 gate) and spelling freeze (Dec 8) — this map's targeting does not require touching either surface; Session 3's architecture must schedule any team-page title work after the gates.
 5. **Holds queue for Session 9:** EL/ECL/FA Cup/Copa del Rey/Coppa Italia competition-page decisions, each with the honest current answer (homepage section only).
 
@@ -193,10 +195,23 @@ Core discovery heads without evidence, EL/ECL/FA-Cup/Copa/Coppa holds (Session 9
 
 | Criterion | Status |
 |---|---|
-| ≥ 200 candidate phrases documented with evidence class, language, geography, intent, tail length, target page type, priority, status | **Met — 374 rows**, every column populated |
+| ≥ 200 candidate phrases documented with evidence class, language, geography, intent, tail length, target page type, priority, status | **Met — 369 unique rows** (post-dedup; 374 with the original build's 5 duplicates), every column populated |
 | Volume populated ONLY where a named source + location/time basis exists | **Met — every volume field reads "unavailable — no volume tool access (never invented)"**; GSC site metrics kept in separate, clearly-labeled columns |
 | No keyword assigned to an ineligible URL type | **Met — 0 non-allowlist team URLs, 0 hypothetical match URLs (all match targets conditional), 0 retained rows without an existing-URL-type target** |
 | Exact GSC strings kept strictly separate from candidates | **Met — `evidence_class` + `evidence_source` columns** |
 | Exclusions with explicit reasons | **Met — 24 excluded rows (broadcast/lineup/ticket/non-selected/navigational)** |
 | Cluster synonyms → one landing intent; cannibalization identified | **Met — §6 rules + register** |
 | Tracker + session report + next-session prompt | Done (see tracker row 02, `../session-reports/SESSION-02.md`, `../next-session-prompt.md`) |
+
+## 12. Post-delivery verification pass (2026-11-16, same session)
+
+An independent re-verification of the deliverables against the raw export and repo source (all numbers machine-re-derived, never hand-computed) **confirmed** the segmentation arithmetic exactly — privacy gap 55.8% of impressions / 90.8% of clicks unattributed; Iran 99.2% of country clicks / 92.7% of impressions; mobile 94.8% / 96.6%; team-page split 13 selected-club URLs (8 clicks / 1,159 impr / 0.69%) vs 114 non-selected (8 / 1,297 / 0.62%); all 70 seed-bank GSC claims present with matching metrics — and found four defects, all fixed in place:
+
+1. **Row 73 placeholder:** «بازی بعدی اینتر» carried the literal build-script placeholder `TEAM?` as its target URL — corrected to `/teams/internazionale-milano` (the live provider-derived slug, per §4).
+2. **Five exact-duplicate keyword rows** (ids 222, 293, 295, 302, 358 vs their originals 49/50/72/109/110), two of them with *conflicting* targets (e.g. «بازی بارسلونا و پاریس کی است» mapped to both the Barcelona team page and a match-detail pattern). Resolution: the GSC-observed row was kept for each pair; the both-clubs query was re-resolved to **match detail (conditional)** per one-URL rule 4; the autocomplete duplicate of «بازی بعدی اینترمیلان» was folded into the GSC row. Dedupe notes are recorded in the kept rows' `notes` column.
+3. **The "174 of 264 (66%)" non-selected-club share of match-detail rows was miscounted** — the exact count is **184 of 264 (70%)**. Corrected in §3.4, §10, the session report, and the Session 3 prompt. (The count excludes the 4 time-hub URLs from the 268 `/matches/`-prefixed page rows; selection membership was tested on exact home/away slug segments against the 13-club allowlist slugs.)
+4. **Evidence-class counts were inflated by the duplicates** — "202 GSC-observed" was 198 unique strings (plus 4 duplicate rows), "39 autocomplete" was 38 unique. The corrected counts (198 / 38 / 133 = 369) are in §7 and supersede the numbers in the first-pass narrative of this report and in the session report's §1; the map file itself is now the authoritative count.
+
+**Also verified in this pass:** every raw GSC query string not carried as its own map row (172 of 375) falls into one of the defensible classes — one-off fixture pairings whose live match URLs exist under the conditional pattern (e.g. «منچستر یونایتد مقابل آ اس رم» → `/matches/manchester-united-vs-roma-2026-11-03`, 283 impr in Pages.csv; «صباح…بارسلونا» → the live `/matches/sabah-vs-barcelona-2026-11-25`), standings-vs/timeline passive rows whose URL pattern captures them without active targeting, excluded-intent rows (broadcast/lineup/ticket) documented in the map, and non-selected-club demand rows preserved as C1 evidence. One uncovered query had clicks (صباح مقابل بارسلونا, 1 click / 30 impr) — it belongs to the covered Sabah–Barcelona fixture's conditional cluster and is now noted here for completeness.
+
+The corrected map passes every integrity check: 369 unique rows, 0 placeholders, 0 off-allowlist team targets, 0 retained rows without an existing-URL target, 0 invented volumes, all 198 GSC-observed strings and their per-string metrics verified against the raw Queries.csv.

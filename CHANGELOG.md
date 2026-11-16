@@ -12,15 +12,19 @@ stays `13.259.1-archttl`, and NO deploy was performed (no runtime change,
 per the phase file and the session start prompt).
 
 - **`seo-implementation/keyword-research/VALIDATED-KEYWORD-MAP.csv`** — NEW,
-  374 evidence-tagged phrases (202 GSC-observed exact strings re-derived from
-  the 2026-11-15 export / 39 Google-Suggest-validated fa-IR forms / 133
-  research candidates), each with language, geography, intent, tail, cluster,
+  **369 unique evidence-tagged phrases after the same-session verification
+  pass** (198 GSC-observed exact strings re-derived from the 2026-11-15
+  export / 38 Google-Suggest-validated fa-IR forms / 133 research
+  candidates), each with language, geography, intent, tail, cluster,
   ONE existing-URL target (homepage / time hubs / match-detail-conditional /
   13 selected-club team pages / 7 competition pages / English-future),
-  priority, status (303 retain-active, 14 passive, 33 hold, 24 excluded with
+  priority, status (298 retain-active, 14 passive, 33 hold, 24 excluded with
   reasons: broadcast/lineup/ticket/non-selected-club/navigational). Zero
   volumes invented — every volume field reads "unavailable". The 200-phrase
   seed bank stays unchanged in version history; the map supersedes it.
+  *(Verification pass: the initial 374-row build contained one placeholder
+  target URL and 5 exact-duplicate keyword rows — fixed in place; see the
+  report §12.)*
 - **`seo-implementation/keyword-research/KEYWORD-VALIDATION-REPORT.md`** — NEW:
   GSC re-query segmentation (Iran 99.2% of country clicks / 92.7% of
   impressions; mobile 94.8%/96.6%; 55.8% of impressions / 90.8% of clicks
@@ -29,8 +33,9 @@ per the phase file and the session start prompt).
   validation (70/70 GSC claims verified; 6 non-selected team targets
   re-mapped), one-URL-per-intent rules + the 7-entry cannibalization
   register, the revised P1/P2/P3 list, limitations, and the Session 3 input
-  pack (incl. the top-3-standings coverage-route fact: 66% of observed
-  match-detail GSC rows involve no selected club).
+  pack (incl. the top-3-standings coverage-route fact: **184 of 264 = 70%** of
+  observed match-detail GSC rows involve no selected club — corrected from the
+  initially-recorded 174/66% by the verification pass, report §12).
 - **`seo-implementation/keyword-research/SERP-SAMPLES.md`** — NEW: per-cluster
   SERP/format evidence (Google Suggest fa/IR + Google News RSS fa/IR + live
   competitor formats ScoreYab/Soot360/365Scores) and the honest
