@@ -1350,8 +1350,8 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v126"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.263\.0-matchlinks"/.test(cfg) &&
-    /# v13\.263\.0-matchlinks/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.264\.0-teampages"/.test(cfg) &&
+    /# v13\.264\.0-teampages/.test(read("CHANGELOG.md"));
 })());
 
 // v13.258-mca11y (the Match Centre S25 + a11y deep-dive, 2026-11-15): the
@@ -1373,15 +1373,16 @@ check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-div
   const pkg = JSON.parse(read("package.json"));
   const fs = require("fs");
   const path = require("path");
-  return pkg.version === "13.263.0.0" &&
+  return pkg.version === "13.264.0.0" &&
     fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-archserve.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-crawlindex.js")) &&
+    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teampages.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-match-lifecycle.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-homepage.js")) &&
     /node scripts\/check-seo-lastmod\.js && node scripts\/check-archserve\.js && node scripts\/check-seo-teamnames\.js/.test(pkg.scripts.test) &&
-    /node scripts\/check-seo-crawlindex\.js && node scripts\/check-seo-match-lifecycle\.js/.test(pkg.scripts.test) &&
+    /node scripts\/check-seo-crawlindex\.js && node scripts\/check-seo-teampages\.js && node scripts\/check-seo-match-lifecycle\.js/.test(pkg.scripts.test) &&
     /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js/.test(pkg.scripts.test);
 })());
 

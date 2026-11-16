@@ -2089,6 +2089,19 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
         path, title, description: desc, indexable,
         jsonldNodes: [
           ...JL.siteNodes(),
+          // S8: the team-page @graph carries a WebPage node — the same
+          // grounding every other page type emits (match: webPageNode; hubs +
+          // /teams + /competitions indexes: collectionPageNode). The team
+          // page was the lone page-class without a WebPage/CollectionPage
+          // node, so the @graph was missing the page-level subject the
+          // spec contract (Step 3: "@graph carries Organization + WebSite +
+          // WebPage + BreadcrumbList") names. This is STRUCTURAL JSON-LD
+          // hygiene only — the byte-frozen title/H1/description/answer are
+          // untouched (the Dec 4-8 measurement freeze holds); the node
+          // describes the page itself (path + dateModified + language +
+          // site membership), never a fixture (no SportsEvent — the team
+          // page is not an event).
+          JL.webPageNode(path, ctx.fetchedAt, { name: "برنامه بازی‌های " + name }),
           JL.sportsTeamNode(entry),
           indexable ? JL.itemListNode(upcoming, "بازی‌های " + name) : null,
           JL.breadcrumbNode(trail)

@@ -4,6 +4,98 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.264.0-teampages — SEO Session 8: the selected-club team-page @graph WebPage node (structural JSON-LD hygiene — the team page was the lone page-class without a WebPage node; the byte-frozen title/H1/description/answer untouched; 2026-11-16, `main`)
+
+The FIFTH implementation session of the 15-session SEO program. This session
+owns the CONTENT + the structural JSON-LD of the 13 selected-club team pages
+(the `/teams/{slug}` family; keyword map §2.7 — 127 team URLs generated only
+16 clicks from 2,456 impressions at 0.65% CTR in the baseline; the C1
+disposition already noindexed the 74 non-selected team URLs in Session 4;
+the match-detail footer-hook links point HERE). The Dec 4-8 measurement
+freeze applies to the team-page title/H1 bytes (the parked S2 title test
+reads GSC on Dec 4 — Session 8 owns the content + the structural JSON-LD,
+NOT the title bytes pre-gate). The session report:
+`seo-implementation/session-reports/SESSION-08.md`.
+
+- **The audit (read-first, no code):** `buildTeamPage` (`src/seo/pages.ts`)
+  is already complete — the title ladder (the keyword map §2.7 byte-frozen
+  template + the v13.229-teamladder >65 rung), the H1 («برنامه بازی‌های X»),
+  the answer sentence (leads with «بازی بعدی X» when there is a next match
+  — the GSC query head «بازی بعدی بارسا» 179 impr / pos 9.97), the meta
+  description (derived from the answer, sliced to 165), the content blocks
+  (the upcoming fixtures list «بازی‌های پیش‌روی X», the standings window
+  card with the competition link, the form/season record card, the recent
+  results «نتایج اخیر», the related-matches card), the internal links
+  (crawlable `<a href>` match URLs via `dateGroupedRows` → `mrowHtml` →
+  `matchHref` → the canonical `/matches/{home}-vs-{away}-{YYYY-MM-DD}`), the
+  indexable rule (the C1 disposition: `isSelectedTeam(entry.name) &&
+  upcoming.length >= SEO.MIN_UPCOMING_FOR_INDEX`), the team-name overrides
+  (the S1 M2 F3 spelling fix in `src/seo/team-names.ts`), and the teams.xml
+  13-row filter (Session 4, gated by `check-seo-crawlindex.js`). All present
+  + correct + byte-frozen.
+
+- **The ONE code change — the team-page @graph WebPage node (S8):** the team
+  page was the lone page-class without a WebPage/CollectionPage node in its
+  JSON-LD @graph. Every other page-class emits one: the match page via
+  `JL.webPageNode(path, ctx.fetchedAt)`; the hubs (`/matches`, `/matches/today`,
+  …) + the `/teams` index + the `/competitions` index via
+  `JL.collectionPageNode(path, …)`; the competition detail page… also lacks
+  one (the same gap, deferred to Session 9 — competition pages are Session 9's
+  scope). The spec contract (the Session 8 prompt Step 3: "the @graph carries
+  Organization + WebSite + WebPage + BreadcrumbList") now holds for the team
+  page: `buildTeamPage`'s `jsonldNodes` array gains `JL.webPageNode(path,
+  ctx.fetchedAt, { name: "برنامه بازی‌های " + name })` between `siteNodes()`
+  and `sportsTeamNode`. This is STRUCTURAL JSON-LD hygiene only — the node
+  describes the page itself (path + dateModified + inLanguage fa-IR + site
+  membership + the page's H1 intent), never a fixture (no SportsEvent — the
+  team page is not an event; the MISSING-IS-NOT-ZERO law holds). The
+  byte-frozen title/H1/description/answer are untouched (the Dec 4-8 freeze
+  holds — verified by the new `check-seo-teampages.js` freeze gates).
+
+- **The new check gate — `scripts/check-seo-teampages.js`:** 8 offline gates
+  pinned to the `buildTeamPage` function body: (1) the WebPage node is in
+  the `jsonldNodes` array; (2) NO SportsEvent node; (3) the byte-frozen title
+  ladder + the >65 rung; (4) the byte-frozen H1; (5) the answer sentence
+  leads with «بازی بعدی X» (next match) / «برنامه بازی‌های X در اسپرت
+  سیگنال» (no next match); (6) the indexable rule (the C1 disposition); (7)
+  the crawlable upcoming-matches rows + the recent-results block (spec §9);
+  (8) the @graph node order (siteNodes → webPageNode → sportsTeamNode →
+  [itemListNode] → breadcrumbNode). Wired into the `npm test` chain after
+  `check-seo-crawlindex.js`.
+
+- **The version bump + the test baseline:** `package.json` `13.263.0.0` →
+  `13.264.0.0`; `src/config.ts` `VERSION` `13.263.0-matchlinks` →
+  `13.264.0-teampages`; `package-lock.json` resynced via `npm install`;
+  the `check-stats.js` v13.254-rankbadge + v13.258-mca11y release-wiring
+  pins ride forward to `13.264.0.0` + the new `check-seo-teampages.js`
+  existence + the test-chain regex. `npm test` baseline: **3,676 OK →
+  3,684 OK** (the +8 = the new `check-seo-teampages.js` gates; the
+  `check-stats.js` count is unchanged — the v13.254/v13.258 pins rode
+  forward, not added).
+
+- **The Dec 4-8 freeze coordination (the standing constraint):** the team-
+  page title/H1 bytes ARE GSC-measured surfaces — the parked S2 title test
+  reads GSC on Dec 4; Session 8 makes NO title/H1 byte change pre-gate.
+  After the gate: apply the test's winning pattern, then continue the
+  content-depth work. The WebPage node is NOT a GSC-measured surface (it is
+  machine-readable JSON-LD, invisible to the SERP title/H1 snippet) — safe
+  under the freeze.
+
+- **The KV read quota (the pre-existing infrastructure issue, NOT a code
+  issue):** the account's 100,000 KV reads/day free-plan limit was exceeded
+  at Session 5 close and STILL exceeded at Session 6/7 close. The team-page
+  data surfaces (upcoming approved matches list, competition chips, recent/
+  final results) CANNOT be verified live while the quota is exceeded — they
+  self-verify once the quota resets at UTC midnight. The SSR-structural
+  change (the WebPage node) is verified by the `check-seo-teampages.js`
+  offline gates. The owner should investigate the read-source; a Workers
+  Paid plan ($5/mo → 1M reads/day) is the durable fix.
+
+- **Deploy:** versioned deploy (the repo's established ritual — `npm test`
+  → local `wrangler dev` smoke → `npx wrangler versions upload` →
+  `versions deploy --version-id <id> --percentage 100 --yes` → live verify).
+  See `docs/HANDOFF.md` + `seo-implementation/session-reports/SESSION-08.md`.
+
 # v13.263.0-matchlinks — SEO Session 7: the match-detail footer-hook team-link gating (the spec §9 / C1 disposition — only selected-club team pages get a crawlable <a href>; non-selected clubs render as plain text; the byte-frozen <head> untouched; 2026-11-17, `main`)
 
 The FOURTH implementation session of the 15-session SEO program. The match-
