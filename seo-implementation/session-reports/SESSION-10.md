@@ -280,7 +280,7 @@ reads/day).
 
 ## 8. Commit SHAs
 
-- The code checkpoint: `<S10-SHA>` — `seo(s10): the /teams index tile ordering
+- The code checkpoint: `dbf1afd` — `seo(s10): the /teams index tile ordering
   — the 13 selected clubs first (the ONE explicit S10 decision — route plan
   §2.3 + §10; the sort rides in buildTeamsIndexPage, the presentation layer)
   + the check-seo-internallinks.js gate + the s10-internallinks-smoke.ts
