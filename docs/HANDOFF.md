@@ -126,9 +126,11 @@ the data-dependent gaps are the owner's next phase.)
 
 ## Open follow-ups
 
-- **The 00:20 UTC Nov 18 verification job (re-scheduled this session after
-  the original was found missing from the scheduler):** the S17+S18
-  page-level live verification + the `seo(s17-verify)` docs commit.
+- **The post-quota-reset verification jobs (re-scheduled this session after
+  the original was found missing from the scheduler; recreated as a
+  self-deleting poller + a backup one-time trigger when the scheduler's
+  clock skew surfaced):** the S17+S18 page-level live verification + the
+  `seo(s17-verify)` docs commit + the S19 `/healthz ok:true` confirmation.
 - **The Nov 20+ first-natural-goal watch:** Bayern–Köln Friday 19:30 UTC —
   the first live goal alert under the new layer (with followed teams);
   check the D1 `notified_v1` `goal:*` rows + the delivery ledger after the

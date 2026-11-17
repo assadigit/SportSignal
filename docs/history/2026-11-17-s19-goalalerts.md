@@ -14,9 +14,14 @@ evening). Per the owner's S19 prompt; the audit is
 - **The S17+S18 page-level live verification job was found MISSING from the
   scheduler** (the 2026-11-18T00:20 UTC job the S17/S18 reports scheduled —
   it never fired and no result exists). It was RE-CREATED during this
-  session's start (one-time job, fires 00:20 UTC after the KV-quota reset;
-  the job verifies `/healthz ok:true` + the FAQPage/editorial cards on the
-  live pages and makes the `seo(s17-verify)` docs commit if all pass). Live
+  session's start — first as a one-time 00:20 UTC job, then (when the cron
+  scheduler's clock proved to run ~3.5h ahead of real UTC — external
+  authorities GitHub/Telegram both confirm the sandbox clock) as a pair of
+  self-deleting jobs: a 30-min poller + a one-time backup trigger whose fire
+  time lands after the real UTC-midnight KV reset under every clock
+  interpretation. The job verifies `/healthz ok:true` + the FAQPage/editorial
+  cards on the live pages and makes the `seo(s17-verify)` docs commit if all
+  pass. Live
   `/healthz` at session start: `ok:false` + `pool_matches:0` + `version:
   13.271.0-content` — the documented KV read-quota exhaustion (crossed
   ~11:05 UTC Nov 17; resets UTC midnight), NOT a failure; the version proved
