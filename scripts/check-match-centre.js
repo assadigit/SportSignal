@@ -2900,8 +2900,8 @@ check(/export function buildMatchFaqItems\(/.test(faqSrc) && /import type \{ Seo
   "S16 contract content: src/seo/faq-content.ts exports buildMatchFaqItems (the authored Q/A list — audit §4 row «FAQ content» grade F → S16 authors it, facts-only) + imports the SeoMatch type (the data shape already loaded by buildMatchPage's three pre-existing awaits)");
 check(/function matchFaqScript\(/.test(pagesSrc),
   "S16 contract script: pages.ts defines matchFaqScript (the inline delayed-collapse accordion script — the S06 matchNavScript / S04 matchHeadScript / S15 matchScheduleScript precedent; rides the faq part via the buildMatchPage ternary)");
-check(/import \{ buildMatchFaqItems \} from "\.\/faq-content";/.test(pagesSrc) && /import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml,/.test(pagesSrc),
-  "S16 contract wiring: pages.ts imports matchFaqHtml from ./match-centre (the renderer) + buildMatchFaqItems from ./faq-content (the authored content) — the S04 hero/S14 venue/S15 schedule import precedent");
+check(/import \{[^}]*buildMatchFaqItems[^}]*\} from "\.\/faq-content";/.test(pagesSrc) && /import \{ matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchMetricsHtml, matchVenueHtml, matchScheduleHtml, matchFaqHtml,/.test(pagesSrc),
+  "S16 contract wiring (import re-pinned at S17): pages.ts imports matchFaqHtml from ./match-centre (the renderer) + buildMatchFaqItems from ./faq-content (the authored content — the S17 session extends the same import with buildTeamFaqItems for the team-page FAQ) — the S04 hero/S14 venue/S15 schedule import precedent");
 
 // (b) the REAL renderer — the accordion markup (custom button+region + aria +
 // hidden + role=region + aria-labelledby) + the section wrapper + the
@@ -3025,7 +3025,7 @@ check(/faq\?: string;/.test(mcSrc) && /"mcentre-faq": parts\.faq \|\| ""/.test(m
 check(/hero: matchHeroHtml\(heroInput\) \+ matchActionsHtml\(sm, path\) \+ matchHeadScript\(\),/.test(pagesSrc) && /schedule: scheduleHtml \? scheduleHtml \+ matchScheduleScript\(\) : "",/.test(pagesSrc),
   "S16 wiring unchanged: the hero part stays matchHeroHtml + matchActionsHtml + matchHeadScript (the S04 precedent) + the schedule part stays scheduleHtml ? scheduleHtml + matchScheduleScript() : empty-string (the S15 precedent — the faq script rides the faq part, NOT the hero/schedule parts; the hero/schedule wiring is byte-frozen)");
 check(!/\{ id: "mcentre-faq", label:/.test(pagesSrc) && (pagesSrc.match(/id: "mcentre-[a-z-]+", label:/g) || []).filter((s) => /"mcentre-(summary|standings|form|schedule|venue)"/.test(s)).length === 5,
-  "S16 no new nav destination (decision 13): MC_NAV_DESTS keeps exactly the 5 nav items (خلاصه، جدول، فرم، بازی‌ها، ورزشگاه) — FAQ is NOT a nav destination (decision 13: «FAQs/SEO outside nav»; the Q9=B adaptive filter unchanged — FAQ never lights a nav destination; the milestones S16 test list: «no FAQPage schema solely for rich results» [the schema decision] + the nav stays 5 items)");
+  "S16 no new nav destination (decision 13): MC_NAV_DESTS keeps exactly the 5 nav items (خلاصه، جدول، فرم، بازی‌ها، ورزشگاه) — FAQ is NOT a nav destination (decision 13: «FAQs/SEO outside nav»; the Q9=B adaptive filter unchanged — FAQ never lights a nav destination; the milestones S16 test list: the nav stays 5 items [the schema-decision note: the S16-Schema omit was SUPERSEDED by the SEO follow-up S17 spec — the match-page FAQPage node IS now emitted, fed from the same authored buildMatchFaqItems array; see the (g) gate below + check-seo-faq.js])");
 
 // (f) the cost laws — the composer purity (matchFaqHtml carries NO script/fetch/
 // timer code) + the await count stays 3 + the faq-content module purity.
@@ -3039,14 +3039,21 @@ check(!/fetch\(|XMLHttpRequest|new Image|setTimeout|setInterval|addEventListener
 check(awaitCount === 3,
   "S16 await count: buildMatchPage's await count stays 3 (hydrateMatchVenue, loadArchive, fullByCodeFor — the pre-existing loads; S16 is a PRESENTATION + AUTHORING session — the FAQ reads the already-loaded SeoMatch fields via the buildMatchFaqItems helper; ZERO new awaits, zero new KV reads, zero new fetches — ADR-006; the zero-runtime-cost law holds)");
 
-// (g) the no-FAQPage-schema law (spec §12 + decision 57 + S16-Schema: OMIT) —
-// the match page does NOT emit a FAQPage JSON-LD node; the hub faqNode helper
-// stays byte-frozen (the match page's jsonldNodes carries siteNodes + webPageNode
-// + sportsEventNode + breadcrumbNode — NO faqNode).
-check(!/JL\.faqNode|faqNode\(/.test(bpSeg),
-  "S16 no-FAQPage-schema (spec §12 + decision 57 + S16-Schema: OMIT): buildMatchPage's jsonldNodes does NOT include JL.faqNode (the match page's SportsEvent JSON-LD node already carries the kickoff/date/venue facts; spec §12 «No FAQPage schema solely to pursue Google FAQ rich results» — Google retired FAQ rich results in August 2023; the hub faqHtml()/faqNode() pattern stays byte-frozen — the /about, /methodology, /data hub pages + the window hubs keep their GEO FAQPage node; the match page takes the conservative omit path; the milestones S16 test list: «no FAQPage schema solely for rich results»)");
+// (g) the FAQPage-schema law — SUPERSEDED by the SEO follow-up track S17
+// (docs/specs/seo-followup-track.md §Session 17, the P1-6 gap fix): the S17
+// spec is the owner-authorized GEO emit path the S16-Schema omit decision
+// itself anticipated («the SAME authored content could feed a future FAQPage
+// node if the owner authorizes the GEO emit path»). The match page NOW emits
+// the FAQPage node, fed from the SAME buildMatchFaqItems array that feeds
+// the visible accordion (the T-20 byte-identical contract — NOT a SERP
+// rich-result play: Google retired FAQ rich results in August 2023; a GEO
+// surface so AI answer engines quote the EXACT visible Q&A). The hub
+// faqNode helper stays byte-frozen (the match page's jsonldNodes carries
+// siteNodes + webPageNode + sportsEventNode + faqNode + breadcrumbNode).
+check(/faqHtml \? JL\.faqNode\(buildMatchFaqItems\(sm\)\) : null/.test(bpSeg),
+  "S17 FAQPage-schema emit (supersedes the S16-Schema omit — the owner-authorized GEO emit path): buildMatchPage's jsonldNodes carries `faqHtml ? JL.faqNode(buildMatchFaqItems(sm)) : null` — the FAQPage node fed from the SAME buildMatchFaqItems array that feeds the visible accordion (the T-20 byte-identical contract; NOT «solely to pursue Google FAQ rich results» — Google retired them in August 2023 — a GEO surface so AI answer engines quote the EXACT visible Q&A with a citation; the ternary guard keeps the degenerate empty list off the node — the no-empty-cards law; gated in full by check-seo-faq.js)");
 check(/export function faqNode\(/.test(read("src/seo/jsonld.ts")),
-  "S16 hub faqNode byte-frozen: the JL.faqNode helper stays byte-frozen in jsonld.ts (the hub pages keep their GEO FAQPage node — S16 does NOT modify the hub pattern; the match-page omit decision does NOT touch the hub faqNode)");
+  "S16 hub faqNode byte-frozen: the JL.faqNode helper stays byte-frozen in jsonld.ts (the hub pages keep their GEO FAQPage node — the S17 match-page emit REUSES the same helper, never modifies it)");
 
 // (h) the CSS — the S16 style block rides page-shell.ts AFTER S15 (the schedule
 // presentation) and BEFORE S03 (the responsive/spacing/RTL foundation) —
@@ -4003,9 +4010,11 @@ check(heroUpcoming.indexOf('class="mkick"') > -1 && heroUpcoming.indexOf('class=
 // the page doesn't show, no visible fact the schema omits. The meta description
 // === the answer sentence (the matchAnswerSentence funnel — byte-frozen). ----
 
-// (a1) The match page's jsonldNodes carries ONLY the 4 allowed sources:
-// siteNodes + webPageNode + sportsEventNode + breadcrumbNode. NO faqNode (the
-// S16-Schema omit — already asserted S16, S20 re-verifies), NO itemListNode,
+// (a1) The match page's jsonldNodes carries the 5 allowed sources:
+// siteNodes + webPageNode + sportsEventNode + faqNode + breadcrumbNode.
+// The faqNode is the S17 GEO emit (the SEO follow-up track — supersedes the
+// S16-Schema omit; fed from the same buildMatchFaqItems array as the visible
+// accordion; gated in full by check-seo-faq.js), NO itemListNode,
 // NO collectionPageNode, NO datasetNode (those are hub/list/data-page nodes).
 // The buildMatchPage block's jsonldNodes array is the contract.
 (function () {
@@ -4022,8 +4031,8 @@ check(heroUpcoming.indexOf('class="mkick"') > -1 && heroUpcoming.indexOf('class=
     }
   }
   const arrSeg = headIdx > -1 && arrEnd > -1 ? pagesSrc.slice(headIdx, arrEnd) : "";
-  check(arrSeg.indexOf("JL.siteNodes()") > -1 && arrSeg.indexOf("JL.webPageNode(") > -1 && arrSeg.indexOf("JL.sportsEventNode(") > -1 && arrSeg.indexOf("JL.breadcrumbNode(") > -1 && arrSeg.indexOf("JL.faqNode") === -1 && arrSeg.indexOf("JL.itemListNode") === -1 && arrSeg.indexOf("JL.collectionPageNode") === -1 && arrSeg.indexOf("JL.datasetNode") === -1,
-    "S20 schema nodes: the buildMatchPage jsonldNodes carries ONLY siteNodes + webPageNode + sportsEventNode + breadcrumbNode (spec §17 'SEO/schema must reflect visible verified facts'; NO faqNode — the S16-Schema omit per decision 57 + spec §17 'do not add FAQPage schema solely for rich results'; NO itemListNode/collectionPageNode/datasetNode — those are hub/list/data-page nodes, NOT match-page nodes; the 4-node contract is the @graph shape: Organization + WebSite + WebPage + SportsEvent + BreadcrumbList)");
+  check(arrSeg.indexOf("JL.siteNodes()") > -1 && arrSeg.indexOf("JL.webPageNode(") > -1 && arrSeg.indexOf("JL.sportsEventNode(") > -1 && arrSeg.indexOf("faqHtml ? JL.faqNode(buildMatchFaqItems(sm)) : null") > -1 && arrSeg.indexOf("JL.breadcrumbNode(") > -1 && arrSeg.indexOf("JL.itemListNode") === -1 && arrSeg.indexOf("JL.collectionPageNode") === -1 && arrSeg.indexOf("JL.datasetNode") === -1,
+    "S20 schema nodes (re-pinned at S17): the buildMatchPage jsonldNodes carries siteNodes + webPageNode + sportsEventNode + faqNode + breadcrumbNode (spec §17 'SEO/schema must reflect visible verified facts'; the faqNode is the S17 GEO emit — the SAME buildMatchFaqItems array as the visible accordion, the T-20 byte-identical contract; NO itemListNode/collectionPageNode/datasetNode — those are hub/list/data-page nodes, NOT match-page nodes; the 5-node contract is the @graph shape: Organization + WebSite + WebPage + SportsEvent + FAQPage + BreadcrumbList)");
 })();
 
 // (a2) The SportsEvent node carries the visible verified facts: startDate (the
@@ -4081,26 +4090,36 @@ check(/JL\.sportsEventNode\(sm, matchAnswerSentence\(sm\)\.replace\(/.test(pages
     "S20 answer + narrative distinct: the answerHtml + the narrativeHtml are DISTINCT atoms (MatchSummaryInput carries them as separate fields; the composer renders the .mcentre-narrative ABOVE the .mcentre-cols briefing|facts pairing — the S08 placement; spec §17 'Preserve answer-first match context and facts table as distinct elements'; the answer-first briefing card [id=answer] + the narrative paragraph are separate DOM elements — no repetition; verified via the REAL matchSummaryHtml output [the narrative element precedes the .mcentre-cols pairing in the rendered DOM])");
 })();
 
-// ---- (c) No unsupported schema/FAQ/AI markup (spec §17: "do not add FAQPage
-// schema solely for rich results" + "No AI-specific markup"). The match page
-// carries NO FAQPage (S16-Schema omit — re-verified) + NO AI-specific markup
-// (no Speakable, no ClaimReview, no 'AI-generated' meta, no machine-learning
-// attribution). No unsupported schema types (no Article, no BlogPosting, no
-// Event — the SportsEvent is the correct type). ----
+// ---- (c) No unsupported schema/AI markup (spec §17: "No AI-specific
+// markup"). The match page's FAQPage node is the S17 GEO emit (fed from the
+// SAME authored array as the visible accordion — NOT an unsupported type; the
+// S16-Schema omit was superseded by the SEO follow-up S17 spec) + NO
+// AI-specific markup (no Speakable, no ClaimReview, no 'AI-generated' meta,
+// no machine-learning attribution). No unsupported schema types (no Article,
+// no BlogPosting, no Event — the SportsEvent is the correct type). ----
 
-// (c1) NO FAQPage + NO Article/BlogPosting/Event in the match page. The
-// SportsEvent is the ONLY event-type node (the correct schema.org type for a
-// football match — NOT Event, NOT Article, NOT BlogPosting). The faqNode
-// helper exists in jsonld.ts (the hub pages use it) but is NOT called from
-// buildMatchPage (the S16-Schema omit — already asserted S16; S20 re-verifies +
-// extends to the type-uniqueness law).
+// (c1) The FAQPage (the S17 GEO emit — re-pinned) + NO Article/BlogPosting/Event
+// in the match page. The SportsEvent is the ONLY event-type node (the correct
+// schema.org type for a football match — NOT Event, NOT Article, NOT
+// BlogPosting). The faqNode helper is reused unmodified from jsonld.ts (the
+// hub SS-06 builder) + is called from buildMatchPage with the SAME
+// buildMatchFaqItems(sm) source as the visible accordion.
 (function () {
   const bmpStart = pagesSrc.indexOf("export async function buildMatchPage");
   const headIdx = bmpStart > -1 ? pagesSrc.indexOf("jsonldNodes: [", bmpStart) : -1;
-  const arrEnd = headIdx > -1 ? pagesSrc.indexOf("]", headIdx) : -1;
+  // bracket-depth match (the naive indexOf("]") truncates inside the
+  // /<[^>]>/ regex — the S20(a1) fix, applied here at S17).
+  let arrEnd = -1;
+  if (headIdx > -1) {
+    let depth = 0;
+    for (let i = headIdx + 13; i < pagesSrc.length; i++) {
+      if (pagesSrc[i] === "[") depth++;
+      else if (pagesSrc[i] === "]") { depth--; if (depth === 0) { arrEnd = i; break; } }
+    }
+  }
   const arrSeg = headIdx > -1 && arrEnd > -1 ? pagesSrc.slice(headIdx, arrEnd) : "";
-  check(arrSeg.indexOf("JL.faqNode") === -1 && !/"@type":\s*"Article"/.test(arrSeg) && !/"@type":\s*"BlogPosting"/.test(arrSeg) && !/"@type":\s*"Event"/.test(arrSeg) && /sportsEventNode/.test(arrSeg),
-    "S20 no-unsupported-schema: the match page jsonldNodes carries NO FAQPage (the S16-Schema omit — decision 57 + spec §17 'do not add FAQPage schema solely for rich results') + NO Article/BlogPosting/Event (the SportsEvent is the ONLY event-type node — the correct schema.org type for a football match; spec §17 'No AI-specific markup' + the no-unsupported-types discipline; the faqNode helper stays byte-frozen in jsonld.ts for the hub pages — S16 does NOT touch the hub pattern)");
+  check(arrSeg.indexOf("faqHtml ? JL.faqNode(buildMatchFaqItems(sm)) : null") > -1 && !/"@type":\s*"Article"/.test(arrSeg) && !/"@type":\s*"BlogPosting"/.test(arrSeg) && !/"@type":\s*"Event"/.test(arrSeg) && /sportsEventNode/.test(arrSeg),
+    "S20 no-unsupported-schema (re-pinned at S17): the match page jsonldNodes carries the FAQPage node (the S17 GEO emit — fed from the SAME buildMatchFaqItems array as the visible accordion, the T-20 byte-identical contract; the S16-Schema omit was superseded by the SEO follow-up S17 spec — NOT «solely for rich results», a GEO surface) + NO Article/BlogPosting/Event (the SportsEvent is the ONLY event-type node — the correct schema.org type for a football match; spec §17 'No AI-specific markup' + the no-unsupported-types discipline; the faqNode helper is reused unmodified from jsonld.ts for the hub pages AND the match page)");
 })();
 
 // (c2) NO AI-specific markup. No Speakable, no ClaimReview, no 'AI-generated'

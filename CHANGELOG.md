@@ -4,6 +4,64 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.270.0-faq — SEO Follow-up Session 17: the FAQ structured data + the visible Q&A on the detail pages (2026-11-17, `main`)
+
+The second session of the SEO follow-up track (the data-independent, freeze-safe
+gap fixes — `docs/specs/seo-followup-track.md` §Session 17). Fixes the **P1-6
+gap** from the `docs/audits/2026-11-17-seo-gap-and-swot-audit.md`: the
+`FAQPage` + `Question` + `Answer` structured data existed only on the date hubs
+— the team + match detail pages (the click-earner page types) had none, so the
+AI answer engines had no quotable Q&A on the pages that earn the
+«بازی بعدی X» queries.
+
+- **S17-M1 — the FAQPage + the visible Q&A on the team page.** The authored
+  Q&A (`buildTeamFaqItems` in `src/seo/faq-content.ts` — the module's ownership
+  extends from the match Q&A to the team Q&A): «بازی بعدی [team] کی است؟» (the
+  next fixture — the date + the competition + the Tehran time; the honest
+  empty answer when nothing is queued, the hub empty-state precedent),
+  «بازی‌های [team] در کدام لیگ است؟» (the DISTINCT competitions the team's own
+  upcoming fixtures name — league + cup both named honestly; omits when the
+  window is empty), «ساعت بازی بعدی [team] به وقت تهران چند است؟» (the Tehran
+  kickoff + the true UTC pointer). The visible section rides the hub faqcard
+  pattern (`M.faqHtml` — the LAST section of `main`, BELOW the answer-sentence;
+  zero new CSS) + the `FAQPage` node rides the @graph (`JL.faqNode`, after the
+  optional ItemList, before the BreadcrumbList — the hub order). ONE source
+  array feeds both — the visible text and the JSON-LD agree byte-for-byte (the
+  T-20 contract).
+- **S17-M2 — the FAQPage on the match page (the GEO emit path).** The match
+  page already had the VISIBLE accordion (the Match Centre S16, live since
+  Nov 14 — kickoff/venue-conditional/competition/timezone Q&A); what it
+  deliberately lacked was the `FAQPage` node (the S16-Schema omit decision:
+  "no FAQPage schema solely to pursue Google FAQ rich results" — Google
+  retired them in August 2023). The S17 spec is the owner-authorized GEO emit
+  path that decision itself anticipated: the node is now wired
+  (`faqHtml ? JL.faqNode(buildMatchFaqItems(sm)) : null` in `buildMatchPage`'s
+  `jsonldNodes`), fed from the SAME authored array that feeds the visible
+  accordion — byte-identical q/a, one source. NOT a SERP play — a GEO surface
+  so AI answer engines (AI Overviews, ChatGPT, Perplexity, Claude) can quote
+  the EXACT visible Q&A with a citation.
+- **The no-broadcast-claims law holds:** the Q&A answers time/venue/league
+  facts ONLY — never a "where to watch" / «پخش زنده» question (S-04/S-05).
+- **The freeze-safety:** the FAQ is ADDITIVE — an additive JSON-LD node + an
+  additive visible section BELOW the answer-sentence. The byte-frozen
+  title/H1/description/answer-sentence bytes are NOT touched (the Dec 4-8
+  freeze holds; the byte-frozen team-page surfaces re-verified by the gate).
+- **The MISSING-IS-NOT-ZERO law holds:** the venue Q omits when no venue; the
+  team Q2/Q3 omit when the window is empty; no «نامشخص» placeholders.
+- **New check gate:** `check-seo-faq.js` (15 gates — the FAQPage on both
+  detail pages, the REAL `buildTeamFaqItems` behavior via the transpileModule
+  extraction, the no-broadcast-claim rule, the freeze-coordination, the
+  MISSING-IS-NOT-ZERO law, the T-20 contract) wired into the `npm test` chain.
+  Three `check-match-centre.js` gates that pinned the superseded S16-Schema
+  omit are re-pinned to the emit contract (+ the S16 import pin accepts the
+  extended `buildTeamFaqItems` import).
+- **Cloudflare budget:** zero new KV-read/subrequest/CPU — the FAQ is pure
+  string composition on already-loaded data (the team's `teamMatches` list +
+  the match's already-loaded fields).
+- Version bump `13.269.0-entity-image` → `13.270.0-faq`; `npm test` exit 0
+  (3,757 → 3,773 OK); `npx tsc --noEmit` clean. Deployed + live-verified (the
+  `/healthz` version + the FAQPage on the live team + match pages).
+
 # v13.269.0-entity-image — SEO Session 16: the entity-grounding parity + the image sitemap (2026-11-17, `main`)
 
 The first session of the SEO follow-up track (the data-independent, freeze-safe

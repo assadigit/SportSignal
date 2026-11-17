@@ -35,7 +35,7 @@ import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchM
 // (the S04 hero precedent — the composer is a pure leaf). The module reads the
 // SeoMatch fields already loaded by the three pre-existing awaits (zero new
 // awaits/KV/fetches — ADR-006; the zero-runtime-cost law).
-import { buildMatchFaqItems } from "./faq-content";
+import { buildMatchFaqItems, buildTeamFaqItems } from "./faq-content";
 // Match Centre S08 (M3): the deterministic narrative engine — the "why this
 // match matters" editorial layer. The engine runs HERE (pages.ts calls
 // narrativeHtml + passes the pre-built atom to the composer's MatchSummaryInput
@@ -1402,6 +1402,18 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
         ...JL.siteNodes(),
         JL.webPageNode(path, ctx.fetchedAt),
         JL.sportsEventNode(sm, matchAnswerSentence(sm).replace(/<[^>]+>/g, "")),
+        // S17-M2 (the P1-6 gap fix — the SEO follow-up track): the match-page
+        // FAQPage node — the owner-authorized GEO emit path (the S17 spec
+        // supersedes the Match Centre S16-Schema omit decision; NOT a SERP
+        // rich-result play — Google retired FAQ rich results in 2023 — a GEO
+        // surface so AI answer engines quote the EXACT visible Q&A). The node
+        // is fed from the SAME buildMatchFaqItems(sm) array that feeds the
+        // visible accordion above (matchFaqInput → matchFaqHtml) — the q/a
+        // strings are byte-identical, one source (the T-20 contract). Guarded
+        // by the faqHtml ternary (the degenerate empty list omits the node —
+        // the no-empty-cards law). Pure string composition on already-loaded
+        // data: zero new awaits/KV-reads/fetches (the zero-runtime-cost law).
+        faqHtml ? JL.faqNode(buildMatchFaqItems(sm)) : null,
         JL.breadcrumbNode(trail)
       ]
     }),
@@ -2086,6 +2098,21 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
       M.compNameFa(next.s) + "، " + faDateD1(next.s.utcDate) + " ساعت " +
       faTime(next.s.utcDate) + " به وقت تهران.";
   }
+  // S17-M1 (the P1-6 gap fix — the SEO follow-up track): the team-page FAQ.
+  // The authored Q&A (faq-content.ts buildTeamFaqItems — «بازی بعدی X کی است؟»
+  // / «بازی‌های X در کدام لیگ است؟» / «ساعت بازی بعدی X به وقت تهران چند
+  // است؟») — real, data-sourced (the team's OWN upcoming list — teamMatches,
+  // one of this builder's pre-existing loads; zero new awaits/KV/fetches),
+  // Persian, NEVER a "where to watch" Q (the no-broadcast-claims law). The
+  // ONE array feeds BOTH the visible section (M.faqHtml — the hub faqcard
+  // pattern, appended BELOW the answer card at the end of main) AND the
+  // FAQPage JSON-LD node (JL.faqNode — inside the @graph, after the optional
+  // ItemList, before the BreadcrumbList, the hub order) — the T-20
+  // byte-identical contract. Freeze-safe: an additive JSON-LD node + an
+  // additive visible section BELOW the answer-sentence — NOT a byte-frozen
+  // title/H1/description/answer-sentence byte (the Dec 4-8 freeze holds; the
+  // answer/title/desc/H1 expressions above are untouched).
+  const teamFaq = buildTeamFaqItems(name, upcoming);
   // v13.88-formagg: append the standings position to the answer (feeds the
   // answercard AND the meta description — honest data from the window's own
   // snapshot row; «ردهٔ» is the natural Persian ordinal intro).
@@ -2114,7 +2141,13 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
     formCard +
     (finished.length
       ? '<div class="card"><h2>نتایج اخیر</h2>' + dateGroupedRows(finished, true) + "</div>"
-      : "") + simCard;
+      : "") + simCard +
+    // S17-M1: the visible Q&A — the LAST section of main (AFTER the answer
+    // card + the schedule/standings/form/results/related cards — the match
+    // page's FAQ-after-related placement; the hub faqcard markup, zero new
+    // CSS). Omits when the authored list is empty (the no-empty-cards law —
+    // buildTeamFaqItems returns [] only for a nameless degenerate).
+    (teamFaq.length ? M.faqHtml(teamFaq) : "");
   return {
     html: pageShell({
       head: buildHead({
@@ -2142,6 +2175,14 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
           JL.webPageNode(path, ctx.fetchedAt, { name: "برنامه بازی‌های " + name }),
           JL.sportsTeamNode(entry),
           indexable ? JL.itemListNode(upcoming, "بازی‌های " + name) : null,
+          // S17-M1: the FAQPage node — the same teamFaq array the visible
+          // section renders (the T-20 byte-identical contract; the hub @graph
+          // order: … ItemList → FAQPage → BreadcrumbList). NOT a SERP
+          // rich-result play (Google retired FAQ rich results in 2023) — a
+          // GEO surface so AI answer engines quote the EXACT visible Q&A.
+          // Omits on the degenerate empty list (an FAQPage with zero
+          // Questions would be invalid — the filter(Boolean) drops it).
+          teamFaq.length ? JL.faqNode(teamFaq) : null,
           JL.breadcrumbNode(trail)
         ].filter(Boolean)
       }),

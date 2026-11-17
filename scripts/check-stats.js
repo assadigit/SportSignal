@@ -722,7 +722,10 @@ check("v13.85-stadiumchip: grounds.ts is the one table+gate (root module)", (() 
 })());
 check("team pages carry the similar-matches strip (sibling loop)", (() => {
   const p = read("src/seo/pages.ts");
-  return /const sims = next \? similarMatches\(ctx, next, 6\) : \[\];/.test(p) && /simCard;/m.test(p) && /بازی‌های مرتبط /.test(p);
+  // S17 (13.270.0-faq): the main assembly's tail was `simCard;` until the
+  // team-page FAQ section was appended BELOW it (`simCard +` … the faqcard) —
+  // the pin follows the extended expression (the strip still rides the page).
+  return /const sims = next \? similarMatches\(ctx, next, 6\) : \[\];/.test(p) && /simCard(\s*\+|;)/m.test(p) && /بازی‌های مرتبط /.test(p);
 })());
 check("pubMatch adopts the home-ground table (fills-only, provider wins)", (() => {
   const p = read("src/public-matches.ts");
@@ -1350,8 +1353,8 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v126"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.269\.0-entity-image"/.test(cfg) &&
-    /# v13\.269\.0-entity-image/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.270\.0-faq"/.test(cfg) &&
+    /# v13\.270\.0-faq/.test(read("CHANGELOG.md"));
 })());
 
 // v13.258-mca11y (the Match Centre S25 + a11y deep-dive, 2026-11-15): the
@@ -1462,11 +1465,33 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
 // public-13.80.js). Freeze-safe (a JSON-LD field + a machine-file extension —
 // NOT a byte-frozen title/H1/description/answer-sentence byte; the Dec 4-8
 // freeze holds).
+//
+// S17 (13.270.0-faq): the SEO follow-up track Session 17 (the P1-6 gap fix —
+// docs/specs/seo-followup-track.md §Session 17). M1: the team-page FAQ — the
+// authored buildTeamFaqItems (src/seo/faq-content.ts — «بازی بعدی X کی است؟» /
+// «بازی‌های X در کدام لیگ است؟» / «ساعت بازی بعدی X به وقت تهران چند است؟»)
+// + the visible M.faqHtml faqcard section (the LAST section of buildTeamPage's
+// main — BELOW the answer-sentence) + the JL.faqNode FAQPage node in the
+// @graph (one source array feeds both — the T-20 byte-identical contract).
+// M2: the match-page FAQPage node — `faqHtml ? JL.faqNode(buildMatchFaqItems(sm))
+// : null` in buildMatchPage's jsonldNodes, fed from the SAME authored array as
+// the visible accordion (the owner-authorized GEO emit path — the S17 spec
+// supersedes the Match Centre S16-Schema omit decision; the three
+// check-match-centre.js gates that pinned the omit are re-pinned to the emit
+// contract). The new check gate: check-seo-faq.js (15 gates — the FAQPage on
+// both detail pages, the real data-sourced Persian Q&A, the no-broadcast-
+// claim rule, the freeze-coordination, the MISSING-IS-NOT-ZERO law, the T-20
+// contract). Server-side-only — no client asset renamed (the SW cache stays
+// sportsignal-v126 + the client bundle stays public-13.80.js). Freeze-safe
+// (an additive JSON-LD node + an additive visible section BELOW the
+// answer-sentence — NOT a byte-frozen title/H1/description/answer-sentence
+// byte; the Dec 4-8 freeze holds). Zero new KV-read/subrequest/CPU (pure
+// string composition on already-loaded data).
 check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-dive round: the F1-F4 fixes — the hero double-wrap → <div>, the nav aria-current at render + on scroll, the outer nav section → non-landmark container, the portrait descriptive alt; the fixes are body-only — the GSC surfaces + the answer sentence byte-frozen, the <head> NOT touched; the SW cache stays sportsignal-v126 + the client bundle stays public-13.80.js — a server-side release; the version bump 13.257-mcmatchcentre -> 13.258-mca11y; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound + the v13.257-mcmatchcentre survivors ride unchanged)", (() => {
   const pkg = JSON.parse(read("package.json"));
   const fs = require("fs");
   const path = require("path");
-  return pkg.version === "13.269.0.0" &&
+  return pkg.version === "13.270.0.0" &&
     fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-archserve.js")) &&
@@ -1480,9 +1505,10 @@ check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-div
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-performance.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-entity-parity.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-image-sitemap.js")) &&
+    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-faq.js")) &&
     /node scripts\/check-seo-lastmod\.js && node scripts\/check-archserve\.js && node scripts\/check-seo-teamnames\.js/.test(pkg.scripts.test) &&
     /node scripts\/check-seo-crawlindex\.js && node scripts\/check-seo-teampages\.js && node scripts\/check-seo-competitionpages\.js && node scripts\/check-seo-internallinks\.js && node scripts\/check-seo-persian-entities\.js && node scripts\/check-seo-match-lifecycle\.js/.test(pkg.scripts.test) &&
-    /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js && node scripts\/check-seo-performance\.js && node scripts\/check-seo-entity-parity\.js && node scripts\/check-seo-image-sitemap\.js/.test(pkg.scripts.test);
+    /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js && node scripts\/check-seo-performance\.js && node scripts\/check-seo-entity-parity\.js && node scripts\/check-seo-image-sitemap\.js && node scripts\/check-seo-faq\.js/.test(pkg.scripts.test);
 })());
 
 

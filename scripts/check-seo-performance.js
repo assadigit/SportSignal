@@ -145,11 +145,14 @@ else bad("S14/bundle: the core-13.16.js does NOT load with defer — the core di
 // 7. The freeze-coordination gate — the preconnect is a <link> in <head>,
 //    NOT a title/H1/description/answer byte. The version bump records the
 //    change (13.267.0-persian-entities -> 13.268.0-perf-preconnect at S14;
-//    subsequent sessions bump forward — 13.269.0-entity-image at S16, etc.).
-//    The invariant: the version is >= 13.268.0 (the preconnect shipped + is
-//    preserved through later versions).
+//    subsequent sessions bump forward — 13.269.0-entity-image at S16,
+//    13.270.0-faq at S17, etc.). The invariant: the version is >= 13.268.0
+//    (the preconnect shipped + is preserved through later versions).
 // ============================================================
-const versionBumped = /export const VERSION = "13\.(26[8-9]|[3-9][0-9]{2})\./.test(configSrc);
+// S17 (13.270.0-faq): the band regex was extended — the S14/S16 form
+// (26[8-9]|[3-9][0-9]{2}) did not anticipate 13.270+ (a latent under-match
+// that first bit at the S17 bump; the invariant is unchanged: >= 13.268.0).
+const versionBumped = /export const VERSION = "13\.(26[89]|2[7-9][0-9]|[3-9][0-9]{2})\./.test(configSrc);
 if (versionBumped) ok("S14/freeze: the version is >= 13.268.0 (the preconnect shipped at S14 + is preserved through later versions — NOT a GSC-measured title/H1/description/answer byte; the Dec 4-8 freeze holds)");
 else bad("S14/freeze: the VERSION regressed below 13.268.0 (the preconnect shipped at 13.268.0 — a later version MUST preserve it; the version MUST be >= 13.268.0 per the repo convention)");
 

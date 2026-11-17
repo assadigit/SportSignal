@@ -1,56 +1,111 @@
-# SportSignal SEO Follow-up Track — Next-Session Prompt (Session 17: the FAQ on the detail pages)
+# SportSignal SEO Follow-up Track — Next-Session Prompt (Session 18: the content depth on the detail pages — the P1-1 gap, the biggest ranking lever)
 
 Read AGENTS.md in the repo root first and follow it for the whole session.
 
-You are the implementation agent for the SportSignal SEO follow-up track, Session 17: the FAQ structured data + the visible Q&A on the team + match detail pages (the P1-6 gap from the `docs/audits/2026-11-17-seo-gap-and-swot-audit.md`). The spec plan is `docs/specs/seo-followup-track.md`. Session 16 (the entity-grounding parity + the image sitemap) is DONE — deployed `13.269.0-entity-image` (deployment `2481f840-b7da-4093-a4b7-db4c7888f90e` @100%), commit `142377f`, npm test 3,757 OK.
+You are the implementation agent for the SportSignal SEO follow-up track, Session 18: the editorial body content on the team + competition + match detail pages (the P1-1 gap from `docs/audits/2026-11-17-seo-gap-and-swot-audit.md` — the highest-leverage CONTENT session: the thin-content risk is the likely #1 reason the 412 indexed URLs earn only 250 clicks). The spec plan is `docs/specs/seo-followup-track.md` §Session 18. Session 17 (the FAQ structured data + the visible Q&A on the team + match pages) is DONE — deployed `13.270.0-faq` (deployment `62c3b14d-7dae-42e5-8d47-06d21d53176a` @100%), npm test 3,773 OK; the page-level live verification completes at the KV-quota reset (the scheduled 2026-11-18T00:20 UTC job — check its result in `seo-implementation/session-reports/SESSION-17.md` §7 + the HANDOFF before you start; if it failed, fix THAT first).
 
 ## The context (read in this order)
 
 1. `AGENTS.md` (the repo root — the operating contract).
-2. `docs/specs/seo-followup-track.md` (the multi-session spec — Session 17 = the FAQ).
-3. `docs/audits/2026-11-17-seo-gap-and-swot-audit.md` (the gap audit — P1-6 is the FAQ gap; note 5 of 18 audit gaps were verification errors, corrected in S16 + the S17 investigation).
-4. `seo-implementation/session-reports/SESSION-16.md` (the S16 report — the entity parity + the image sitemap + the gap-audit corrections).
-5. `docs/HANDOFF.md` + `docs/DECISIONS.md` (the current state — S16 deployed).
-6. The source: `src/seo/jsonld.ts` (the JSON-LD builders — the `faqNode` function exists for the date hubs; reuse it), `src/seo/pages.ts` (the team-page + match-page builders — where the FAQ node + the visible Q&A are added), `src/seo/page-shell.ts` (the head + the body shell).
+2. `docs/specs/seo-followup-track.md` (the multi-session spec — Session 18 = the content depth).
+3. `docs/audits/2026-11-17-seo-gap-and-swot-audit.md` (the gap audit — P1-1 is the content-depth gap; note 6 of 18 audit gaps now carry corrections — see DECISIONS S16-3 + S17-3).
+4. `seo-implementation/session-reports/SESSION-17.md` (the S17 report — the FAQ session; your session builds on its patterns: the faq-content.ts authoring discipline, the T-20 one-source contract, the freeze-coordination, the seeded harness).
+5. `docs/HANDOFF.md` + `docs/DECISIONS.md` (the current state — S17 deployed).
+6. The source: `src/seo/pages.ts` (the team/competition/match builders — where the editorial body goes), `src/seo/narrative.ts` (the Match Centre S08 deterministic narrative engine — the "why this match matters" precedent for data-sourced editorial), `src/seo/faq-content.ts` (the authored-content module — the S17 extension pattern), `src/seo/page-shell.ts`.
 
 ## The objective
 
-Add the `FAQPage` + `Question` + `Answer` structured data + a visible Q&A section to the team + match detail pages. The Q&A is real (sourced from the fixture data) + Persian. NEVER a "where to watch" Q (the no-broadcast-claims law — S-04/S-05). Freeze-safe (an additive JSON-LD node + the visible Q&A BELOW the answer-sentence — NOT a byte-frozen title/H1/description/answer-sentence byte; the Dec 4-8 freeze holds).
+Add substantive editorial body content BELOW the answer-sentence on the
+team/competition/match detail pages: the team's season narrative / form guide;
+the competition's structure / title race; the match preview / H2H history.
+Persian, original (NO scraped/aggregated text — the original-content rule),
+E-E-A-T-grounded (cite the data source: football-data.org). Freeze-safe
+(additive body content BELOW the answer-sentence — NOT a byte-frozen
+title/H1/description/answer-sentence byte; the Dec 4-8 freeze holds).
+
+**The scope note (the spec's own words):** "This session may be split across
+multiple pages (the team page first, then the competition, then the match)."
+If the full three-page pass does not fit one session, do the TEAM page first
+(the biggest query class), ship it verified, and hand the competition + match
+pages to a Session 18b.
 
 ## The milestones
 
-- **S17-M1 — the FAQPage on the team page.** Add the `FAQPage` JSON-LD node + a visible Q&A section BELOW the answer-sentence. The Q&A (real, data-sourced, Persian):
-  - "بازی بعدی [team] کی است؟" → the next fixture (the date + the competition + the Tehran time).
-  - "بازی‌های [team] در کدام لیگ است؟" → the competition name.
-  - "ساعت بازی به وقت تهران؟" → the kickoff time in Tehran.
-  Reuse the existing `faqNode` builder (jsonld.ts — it already builds the FAQPage for the date hubs) + the existing date/time formatters (`tehranParts`, the Jalali calendar). NEVER a "where to watch" / "پخش زنده" Q.
-- **S17-M2 — the FAQPage on the match page.** The same for the match page:
-  - "بازی [home] – [away] چه ساعتی شروع می‌شود؟" → the kickoff time in Tehran.
-  - "این بازی در کدام ورزشگاه است؟" → the venue (if present — the MISSING-IS-NOT-ZERO law: omit the Q if no venue).
-  - "این بازی در کامل لیگ است؟" → the competition name.
-- **New check gate:** `check-seo-faq.js` (the FAQPage on the team + match pages; the real Q&A; the no-broadcast-claim rule — no "پخش زنده"/"watch live"/"where to watch" Q; the freeze-coordination — the Q&A is BELOW the answer-sentence; the MISSING-IS-NOT-ZERO law for the venue Q).
-- **Version bump:** 13.269.0-entity-image → 13.270.0-faq (per the repo convention). Update `src/config.ts` + `package.json` + the `check-stats.js` LIVE version pin (both the v13.258-mca11y pin + the v13.254-rankbadge pin) + the `check-seo-performance.js` version gate (already accepts >= 13.268.0).
-- **Deploy + verify live:** `npm test` exit 0 → the local wrangler dev smoke → the versioned deploy (`npx wrangler versions upload` → `npx wrangler versions deploy --version-id <id> --percentage 100 --yes`) → verify the FAQPage on the live team + match pages.
+- **S18-M1 — the editorial body section on the team page.** A substantive
+  Persian editorial section BELOW the answer-sentence (the team's season so
+  far: the standings position narrative, the form, the upcoming run — sourced
+  from the already-loaded data: `teamMatches`, `teamStandingsWindow`,
+  `teamFormCardHtml`'s archive, `fullByCode`). Original prose composed from
+  the real fields (the narrative.ts deterministic-template precedent — never
+  scraped text, never invented facts). Coordinate the placement with the S17
+  faqcard (the last section of main): the editorial body goes BEFORE the FAQ
+  (the content, then the Q&A) — re-verify the S17 gates still pass after the
+  reposition if you move the faqcard.
+- **S18-M2 (if it fits the session) — the competition page + the match page.**
+  The competition's structure / title race (from the standings + the code);
+  the match preview (the H2H from the archive + the rivalry metadata the
+  narrative engine already reads). Same laws.
+- **New check gate:** `check-seo-content-depth.js` (the editorial body
+  section; the minimum content depth per page class; the freeze-coordination
+  — the body is BELOW the answer-sentence; the original-content rule — no
+  scraped/aggregated text markers).
+- **A seeded render harness** (the s17-faq-smoke.ts pattern) asserting the
+  REAL rendered editorial content on the seeded pages.
+- **Version bump:** 13.270.0-faq → 13.271.0-content (per the repo convention;
+  update the version triple + the `check-stats.js` LIVE pins + the
+  `check-seo-performance.js` band if needed — it now accepts >= 13.268.0).
+- **Deploy + verify live:** `npm test` exit 0 → the harness → the local
+  wrangler dev smoke → the versioned deploy → verify the live pages.
 
 ## The standing constraints (carry into the session)
 
-- npm only (never `bun install`); `npm test` exit 0 before every push; versioned deploys only; the Cloudflare free-tier budget (KV writes ≤ 1,000/day; ~50 subrequests/tick; the 10ms CPU cliff — every change states its budget; the FAQ is pure string concatenation on already-loaded data → zero new KV-read/subrequest/CPU).
-- The freeze-safety rule: the byte-frozen surfaces (the title/H1/description/answer-sentence) are NOT touched. The FAQ is ADDITIVE (a JSON-LD node + the visible Q&A BELOW the answer-sentence).
-- No deploys in the Nov 20 Bayern–Köln S27 auto-verify windows (M1 ~19:35 UTC, M2 ~21:35-45 UTC — check the date before the deploy).
-- The commit-message convention: `seo(s17): …`. The one-shot token push; the ls-remote verify. No secrets in the commits. Rotate the GitHub + Cloudflare tokens before starting (they were used across S14-S16).
+- npm only; `npm test` exit 0 before every push; versioned deploys only; the
+  Cloudflare free-tier budget (state your budget: the editorial content is
+  string composition on already-loaded data → zero new KV-read/subrequest/CPU
+  — anything that needs a new load MUST be argued in DECISIONS first); no new
+  per-request fetches; no client polling.
+- The freeze-safety rule: the byte-frozen surfaces are NOT touched. The body
+  content is ADDITIVE (BELOW the answer-sentence).
+- **The KV read-quota reality (NEW — from the S17 session):** the quota
+  exhausts under peak traffic (Nov 17: crossed 100k by ~11:05 UTC). Schedule
+  your LIVE verification accordingly — early UTC (before ~09:00) or after the
+  UTC-midnight reset; if the live pages 404 with `/healthz ok:false` +
+  `pool_matches:0`, that is the quota, NOT your change (verify with the
+  differential: the previous deployment shows the same state; the analytics
+  evidence pattern is in the SESSION-17 report §7).
+- No deploys in the Nov 20 Bayern–Köln S27 auto-verify windows (M1 ~19:35
+  UTC, M2 ~21:35-45 UTC — check the date first).
+- The commit convention: `seo(s18): …`. The one-shot token push + the
+  ls-remote verify. No secrets in the commits. Rotate the tokens if the owner
+  supplies fresh ones (the S14-S17 tokens were used across four sessions).
+- The original-content rule: the editorial prose is COMPOSED from the real
+  data fields (deterministic templates over the loaded values — the
+  narrative.ts precedent) — never scraped, never aggregated, never invented.
+  The no-broadcast-claims law + the MISSING-IS-NOT-ZERO law hold.
 
 ## The deliverables
 
-- The `check-seo-faq.js` gate (wired into the `npm test` chain).
-- The version bump (13.269.0 → 13.270.0) + the `check-stats.js` LIVE pin update.
-- The SESSION-17 report (`seo-implementation/session-reports/SESSION-17.md`).
-- The HANDOFF/CHANGELOG/DECISIONS/tracker updates.
-- The commit + the one-shot token push (ls-remote verified) + the live verification.
+- The editorial body content (the page-builder changes + the authored content
+  module — extend `narrative.ts` or a new `content-*.ts` module; one file one
+  responsibility; do NOT bloat `pages.ts`).
+- The `check-seo-content-depth.js` gate wired into the `npm test` chain.
+- The seeded render harness (`scripts/s18-content-smoke.ts`).
+- The version bump + the `check-stats.js` LIVE pin update.
+- The SESSION-18 report + the HANDOFF/CHANGELOG/DECISIONS updates + the
+  next-session prompt.
+- The commit + the one-shot token push (ls-remote verified) + the versioned
+  deploy + the live verification.
 
-## After S17
+## After S18
 
-Session 18 = the content depth on the detail pages (the P1-1 gap — the biggest ranking lever: the editorial body content BELOW the answer-sentence). See `docs/specs/seo-followup-track.md` §Session 18. The data-dependent gaps (P0-1 CWV, P0-2 before/after GSC, P0-3 CPU cliff, P1-5 pagination, P2-3 allowlist) are the owner's next phase (need the fresh GSC data + the Workers Paid plan + the post-Dec-8 freeze-lift) — see `docs/specs/seo-followup-track.md` §"The data-dependent gaps".
+The data-dependent gaps (P0-1 CWV, P0-2 before/after GSC, P0-3 CPU cliff,
+P1-5 pagination, P2-3 allowlist) are the owner's next phase (need the fresh
+GSC data + the Workers Paid plan + the post-Dec-8 freeze-lift) — see
+`docs/specs/seo-followup-track.md` §"The data-dependent gaps". The audit doc
+amendment (the 6 corrected gaps) remains a docs-only follow-up.
 
 ## Credentials
 
-Credentials used across S14-S16, not stored. The owner should rotate the GitHub + Cloudflare tokens before starting S17.
+Credentials used across S14-S17, not stored. The owner should rotate the
+GitHub + Cloudflare tokens before starting S18 (the S17 verification job also
+uses the current ones — rotate after it completes).
