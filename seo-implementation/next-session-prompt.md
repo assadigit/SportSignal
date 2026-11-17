@@ -1,90 +1,144 @@
-# SEO Program Session 15 Start Prompt — Final Regression, Production QA and Handoff
+# SportSignal SEO Program — PROJECT COMPLETE (the 15-session close-out handoff)
 
 Read AGENTS.md in the repo root first and follow it for the whole session.
 
-You are the implementation agent for the SportSignal SEO project, Session 15 of 15: the final regression + the production QA + the handoff (the route plan §10 — the phase file `sportsignal-seo-implementation/phases/SESSION-15-FINAL-QA-REGRESSION-AND-HANDOFF.md`). Sessions 1-14 produced the audit, the validated keyword map, the approved architecture blueprint, the deployed crawl/index foundation (C1/C6/C8 live), the match-URL lifecycle mechanism (shipped INERT), the homepage one-month window + carousel crawlability + curated-selection promise (deployed 13.262.0-homepage), the match-detail footer-hook team-link gating + the metadata audit (deployed 13.263.0-matchlinks), the selected-club team-page @graph WebPage node + the team-page content audit + the new check-seo-teampages.js gate (deployed 13.264.0-teampages), the competition-page @graph CollectionPage node + the date-hub/empty-state verification + the new check-seo-competitionpages.js gate + the seeded render harness (deployed 13.265.0-competitions), the /teams index tile ordering — the 13 selected clubs first (deployed 13.266.0-internallinks), the Persian entity-naming/metadata polish — spelling-freeze-aware — og:type=article on the 3 detail page types (the S07-H4 follow-up) + the SEO_EXTRA_ALIASES map carrying the GSC-evidenced Persian short-form aliases (the Barcelona «بارسا» alias) + the TEAM_SLUGS no-op tidiness fix + the new check-seo-persian-entities.js gate + the seeded render harness (deployed 13.267.0-persian-entities), the EN architecture + hreflang decision — **Option (b) maintain the single-language stance, FINAL** (docs-only — S12), the structured-data + GSC enhancement validation — **the 13 "Missing field location" GSC Critical items + the 4 non-critical issue types are ALL the honest "missing recommended field" class — the schema type IS SportsEvent; the MISSING-IS-NOT-ZERO law holds; the SportsEvent JSON-LD is schema.org-VALID; the existing gates already pin the contract** (docs-only — S13), and the mobile performance + the GSC monitoring + the optional GA4 decision — **the preconnect to crests.football-data.org IMPLEMENTED on the homepage + the SEO page shell (freeze-safe — the S24-P2 item); the S24-P1 hero-lazy REJECTED (the hero is the LCP with `fetchpriority="high"` + a preload); the GA4 DEFER (the consent/perf prerequisites not met; the Cloudflare Web Analytics cookieless RUM is already installed); the GSC monitoring view (the per-page-class markdown report + the cadence + the GSC filter instructions)** (deployed 13.268.0-perf-preconnect — S14). This session is the FINAL regression — the 15-session SEO program close-out (the route plan §10 — the phase file SESSION-15-FINAL-QA-REGRESSION-AND-HANDOFF.md).
+## Status: the 15-session SportSignal SEO implementation program is COMPLETE
 
-Step 0 — Credentials (supplied by the owner at session start; never commit them)
-The owner provides per session: a GitHub classic token (repo push) and a Cloudflare API token + account ID (deploy). Use credentials only in the environment / one-shot push URL (git push https://x-access-token:<token>@… main), never in git config, files, commits, logs or reports. If something you need is missing, say so and proceed with what exists — never fabricate. A fresh GSC export (ideally 16 months, with URL-level page samples + the queries×pages matrix + the enhancement/Critical-issues CSVs + the Core Web Vitals report) remains the program's top evidence request — for Session 15 it would validate the full-program regression (the page-class performance after Sessions 4-14). The owner should ALSO supply, if accessible: the Chrome UX Report (CrUX) / PageSpeed Insights data for `sportsignal.ir` (the mobile Core Web Vitals — LCP, INP, CLS — per URL class — the S14 preconnect's post-deploy measurement); the Cloudflare Workers Analytics (the `workersInvocationsAdaptive` GraphQL — the CPU/subrequest/outcome per invocation, the 10ms CPU cliff). The Dec 4-8 freeze applies to the GSC-measured surfaces (all title/H1 bytes + the team-name spellings + the date-hub empty-state copy on /matches/tomorrow) — Session 15 is the final regression; IF the session runs on/after Dec 9, the freeze has lifted + the byte-frozen surfaces can be touched (the S2 title-test re-fire, the S06-H3 follow-up, the S1 spelling-fix judgement, the S11 SEO_EXTRA_ALIASES extension, the S13-1 option (c) Events rich-result eligibility revisit). IF the session runs BEFORE Dec 9, the freeze holds — the regression is read-only on the byte-frozen surfaces (verify they are unchanged; do NOT touch them). NEVER change the byte-frozen title/H1/description/answer-sentence bytes if the session runs before Dec 9 (the Dec 4-8 freeze holds).
+Session 15 (the final regression + the production QA + the handoff) is DONE
+(2026-11-17, docs-only — the regression is CLEAN; no deploy). The route plan
+§10 sequencing (Sessions 1-15) is DONE. **There is no Session 16.** The
+implementation work is complete; the residual work is owner-driven follow-ups.
 
-Step 1 — Repository
-Repository: https://github.com/assadigit/SportSignal (verify the actual git remote -v; the owner also writes assadigit/sportsignal — same repo).
-Branch: main only. Session 14 closed with the deploy of 13.268.0-perf-preconnect (the preconnect to crests.football-data.org on the homepage + the SEO page shell + the S24-P1 hero-lazy REJECTION + the GA4 DEFER + the GSC monitoring view + the new check-seo-performance.js gate + the DECISIONS S14-1/2/3/4/5 + the ROUTE-AND-CANONICAL-PLAN §10 Session 14 row + the SESSION-14 report + the HANDOFF/CHANGELOG/tracker updates + this Session 15 prompt) and the session close-out (run git log --oneline -8 to confirm HEAD; the tracker's Session 14 row records the session's commit + the deploy `a4cc2982-c6fa-493f-907b-e71d89c1f33f` @100%; remote main = the S14 commit).
-Clone fresh, verify git status is clean, and confirm no uncommitted concurrent-agent work (if any exists: preserve it, isolate your changes, never reset/clean/force-push).
-Live production site: https://sportsignal.ir (Worker ucl-notifier, versioned deploys only). This session DEPLOYS only if the regression surfaces a real bug that needs a code fix — through the repo's established ritual only. Current live: 13.268.0-perf-preconnect, deployment a4cc2982-c6fa-493f-907b-e71d89c1f33f @100% (= repo HEAD at Session 14 close-out). NOTE: the account's KV read quota (100,000/day free-plan) was exceeded at Session 5/6/7/8/9 close (it resets at UTC midnight but gets exceeded again during the day); at Session 10 + 11 deploy + Session 12 + 13 + 14 close it was healthy (ok:true + pool_matches:324). Verify the quota has reset before your live smoke; if still exceeded, the Persian + EN entity-name data surfaces (the rendered faName on team/match/competition pages) + the structured-data surfaces (the SportsEvent/SportsTeam/SportsOrganization nodes) will be empty (this is a pre-existing infrastructure issue, NOT a code issue). The owner should investigate the read-source; a Workers Paid plan ($5/mo → 1M reads/day) is the durable fix AND the prerequisite for any future /en/ URL architecture (the S12-1 axis 2) AND the GA4 budget priority (the S14-3 decision).
+This file is the "project complete" handoff (the phase file's deliverable:
+"the last session handoff prompt (or explicit 'project complete' handoff if
+no further session is needed)"). If the owner wants to pursue any of the
+residual follow-ups below, a fresh session prompt would be written for that
+specific follow-up (one of the options in §3).
 
-Step 2 — Mandatory reading order (all in the repo)
-AGENTS.md (repo root — the operating contract; sections 5-7 govern git/secrets/deploy)
-sportsignal-seo-implementation/README.md
-sportsignal-seo-implementation/AGENT-INSTRUCTIONS.md (the master execution contract)
-sportsignal-seo-implementation/PRODUCT-AND-SEO-STRATEGY.md + MASTER-SEO-SPEC.md (§11 measurement; §10 Cloudflare free-tier guardrails; §6 the JSON-LD @graph contract per page class; §7 Persian + English SEO; §8 titles/meta/on-page language; §9 internal links)
-sportsignal-seo-implementation/GSC-AUDIT-BASELINE.md (the per-class GSC rows + the indexing snapshot + the device breakdown [Mobile = 94.8% of clicks] + the 13 "Missing field location" Critical-issues items [Session 13 resolved — docs-only])
-seo-implementation/architecture/ROUTE-AND-CANONICAL-PLAN.md (§8 the hreflang stance — FINAL, Session 12 decided Option (b); §10 sequencing — Session 15 = the final regression)
-seo-implementation/keyword-research/KEYWORD-TO-URL-MAP.md (§2.1-2.15 the per-class metadata plans; §5 the held clusters; §6 the freeze coordination)
-seo-implementation/session-reports/SESSION-14.md + SESSION-13.md + SESSION-12.md + SESSION-11.md (the inherited state — the mobile performance + GSC monitoring + GA4 [S14], the structured-data validation [docs-only, S13], the EN architecture decision [Option (b), FINAL, S12], the Persian entity-naming/metadata polish [S11])
-seo-implementation/GSC-MONITORING-VIEW.md (the Session 14 GSC monitoring view — the per-page-class view + the cadence + the GSC filter instructions; baseline 250 clicks / 9,465 impr / 412 URLs)
-docs/specs/GA4-EVALUATION.md (the Session 14 GA4 evaluation — the default DEFER decision + the prerequisites + the recommended path)
-sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md (progress source of truth — Sessions 1-14 all completed)
-docs/RUNBOOK.md §2 (the deploy ritual) + §3 (the post-deploy verification) — and re-check docs/HANDOFF.md for the current state (the KV quota issue + the Session 14 preconnect deploy [13.268.0-perf-preconnect] + the Session 12 EN decision [FINAL — Option (b)] + the Session 13 structured-data decision [docs-only] + the Session 14 GA4 DEFER + the S14 Cloudflare-beacon-extension follow-up + the S14 CrUX/PageSpeed data request + the S10-2 homepage→team/competition gap follow-up + the S11 SEO_EXTRA_ALIASES future-additions follow-up + the S12 EN re-litigation gate + the S13 Events rich-result eligibility revisit + the S13 Rich Results Test manual re-run request)
+## 1. What was delivered (the 15-session summary)
 
-Step 3 — Session 1-14 facts you must build on (verified; do not re-audit)
-Architecture (Session 1, live-verified): Cloudflare Worker ucl-notifier, TypeScript, zero framework; SSR HTML from KV only (getSeoCtx: payload + pool + overlay); hand-rolled router (src/seo/router.ts); npm test = tsc --noEmit + 56 check scripts (baseline 3,738 OK — the S14 session added check-seo-performance.js [17 gates] + bumped the count from 3,720 to 3,738); versioned deploys (npx wrangler versions upload → versions deploy --version-id <id> --percentage 100 --yes); rollback via npx wrangler rollback.
+The full-program report is `seo-implementation/FINAL-SEO-IMPLEMENTATION-REPORT.md`.
+The per-session chain:
 
-The performance state (Session 14, deployed + verified live): the S24-P2 preconnect to crests.football-data.org is LIVE on the homepage (`src/pages/public.ts`) + the SEO page shell (`src/seo/page-shell.ts` — covers match/team/competition/hubs/static). The preconnect is placed EARLY in `<head>` (after viewport, before icons/themeInit/font-preloads/stylesheet) with NO `crossorigin` (crest `<img>` requests are non-CORS). The S24-P1 hero `loading="lazy"` was REJECTED (the hero poster `/hero-poster.jpg` is the above-the-fold LCP image — already ships `fetchpriority="high"` + a media-scoped `(max-width:899px)` preload [v13.224-herolcp]; the below-the-fold crest/portrait/emblem images ALREADY use `loading="lazy"`). The bundle (`public-13.80.js`, 181KB) + the core dictionary (`core-13.16.js`) load with `defer`. The CSS (`public-13.87.css`, 142KB) via standard `<link>`. The SW cache stays `sportsignal-v126`. The new `check-seo-performance.js` gate (17 gates) pins the contract. The PageSpeed Insights API was quota-blocked without an API key; the CrUX API requires a Google API key — the structural analysis (the render path + the KV-read count + the CPU cliff) is the fallback. The 10ms CPU cliff on cold match renders is CHRONIC (37 exceededResources in 3h on v13.258; P50 ≈ 1ms [cache hits], P99 up to ~124ms [cold renders] — the C7 audit). The preconnect does NOT add to the Worker CPU (it is a client-side hint).
+| S | Outcome | Deploy / version | Test count |
+|---:|---|---|---:|
+| 1 | audit + docs | `c97ae70b` (`13.259.1`) | 3,615 |
+| 2 | docs-only; 369-phrase map | none | 3,615 |
+| 3 | docs-only; the architecture | none | 3,615 |
+| 4 | the crawl/index foundation (C1/C6/C8) | `7d92e633` (`13.260.1`) | 3,628 |
+| 5 | the match-URL lifecycle (INERT) | `1d70129b` (`13.261.0`) | 3,652 |
+| 6 | the homepage window + carousel crawlability | `7df40334` (`13.262.0`) | 3,675 |
+| 7 | the match-detail footer-hook team-link gating | `3e3a65e7` (`13.263.0`) | 3,676 |
+| 8 | the team-page @graph WebPage node | `b313aada` (`13.264.0`) | 3,685 |
+| 9 | the competition-page @graph CollectionPage node | `fc07b557` (`13.265.0`) | 3,694 |
+| 10 | the /teams tile ordering (13 selected first) | `12793863` (`13.266.0`) | 3,704 |
+| 11 | the Persian entity-naming/metadata polish | `21efcee2` (`13.267.0`) | 3,720 |
+| 12 | docs-only; the EN decision — Option (b), FINAL | none | 3,720 |
+| 13 | docs-only; the structured-data validation | none | 3,720 |
+| 14 | the preconnect + the GSC monitoring view + the GA4 DEFER | `a4cc2982` (`13.268.0`) | 3,738 |
+| 15 | docs-only; the final regression — CLEAN, no deploy | none (stays `a4cc2982`) | 3,738 |
 
-The GSC monitoring state (Session 14, documentation): the `seo-implementation/GSC-MONITORING-VIEW.md` report defines the per-page-class GSC monitoring view (the URL-pattern × the clicks/impressions/CTR/position) + the monitoring cadence (weekly for the top 4 page classes, monthly for the full snapshot, post-Dec-8 for the freeze-lift measurement) + the GSC filter instructions. Baseline: 250 clicks / 9,465 impressions / 412 URLs; Mobile = 94.8% of clicks; Iran = 98.4% of clicks. No dashboard tool built (a markdown report + the GSC filter instructions is sufficient).
+**Live production:** `https://sportsignal.ir` — deployment
+`a4cc2982-c6fa-493f-907b-e71d89c1f33f` @100% = `13.268.0-perf-preconnect`.
 
-The GA4 state (Session 14, DEFER): GA4 is NOT installed (no `<script>` tag, no `gtag()` call, no GA4 measurement ID — verified). The Cloudflare Web Analytics (cookieless RUM) IS already installed on the homepage (the `beacon.min.js` with `send.to: /cdn-cgi/rum`; cookieless, deferred via `type="module"`, ~10KB). The consent management platform is NOT established; the privacy policy is NOT updated for analytics cookies; the performance budget for the GA4 script is NOT allocated. The prerequisites (a CMP + a privacy policy update + a performance budget + the jurisdictional assessment + the Workers Paid plan decision) must be met before any GA4 install. The recommended path: extend the Cloudflare beacon to the SEO pages (one-line, cookieless, freeze-safe) + use the GSC monitoring view + pursue the Workers Paid plan first. The full evaluation is in `docs/specs/GA4-EVALUATION.md`.
+## 2. The final regression verdict (Session 15)
 
-The structured-data state (Session 13, docs-only — verified): every public HTML page ships a JSON-LD `<script type="application/ld+json">` block in `<head>`. The SportsEvent node (match detail) emits location ONLY when a true venue exists (the `if (m.venue)` guard — the MISSING-IS-NOT-ZERO law). The 13 "Missing field location" GSC Critical items + the 4 non-critical issue types are ALL the honest "missing recommended field" class — no code change, no deploy (the Schema Markup Validator confirms both the with-venue + no-venue match pages are schema.org-VALID). The existing gates (`check-match-centre.js` S20 + `seo-check.js` T-04) pin the SportsEvent contract.
+The regression is CLEAN. `npm test` exit 0 (3,738 OK; `npx tsc --noEmit`
+clean). The live crawl of 19 HTML pages + 4 machine files: every page 200 +
+the correct canonical/robots/title/H1/description/JSON-LD/preconnect + ZERO
+hreflang. The MISSING-IS-NOT-ZERO law holds. The 13-club allowlist + the C1
+disposition hold (4 non-selected slugs verified noindex,follow). The /teams
+tile ordering holds. The no-fake-offers / no-invented-data law holds. The
+Cloudflare budget is healthy (`ok:true` + `pool_matches:324` +
+`kv_writes_day:403` + `subreq_last_tick:31`). The byte-frozen surfaces are
+unchanged (git clean — the session runs before Dec 9, the Dec 4-8 freeze
+HOLDS). No deploy (docs-only).
 
-The hreflang/EN state (Session 12, FINAL): ZERO hreflang, ZERO /en/ URLs. The EN/FA toggle is client-side only (the ?lang=en query). The route plan §8 stance is FINAL (Option (b)).
+## 3. The owner's options (the residual follow-ups — owner-driven)
 
-What NOT to touch (unless the session runs on/after Dec 9 AND the regression surfaces a real issue): the byte-frozen surfaces (the competition-page title/H1/description/answer [S9], the team-page title/H1/description/answer [S8], the match-page title/H1/description/answer-sentence [S7], the homepage title/H1 [S6], the date-hub empty-state copy on /matches/tomorrow [S06-H3]) are byte-frozen through Dec 4-8; the team-name spellings in fa-dict.ts ARE byte-frozen through Dec 4-8 (the S1 M2 F3 spelling fix is LIVE and mid-measurement — judge ~Dec 8); the isSelectedTeam predicate + the 13-club allowlist STAY (Session 4 decision); the non-selected team pages STAY noindex, follow (the C1 disposition); the teams.xml 13-row filter STAYS; the match-detail footer-hook team-link gating STAYS (Session 7); the /teams index selected-clubs-first sort STAYS (Session 10); the S11 og:type=article + SEO_EXTRA_ALIASES + TEAM_SLUGS no-op STAY (Session 11 — durable); the S12 EN architecture decision STAYS (Session 12 — FINAL, Option (b)); the S13 structured-data decision STAYS (Session 13 — docs-only); the S14 preconnect STAYS (Session 14 — freeze-safe, deployed); avoid deploys in the Nov 20 Bayern–Köln S27 auto-verify windows (kickoff 19:30 UTC; M1 ~19:35, M2 ~21:35-45 UTC — sched_next_ko: 2026-11-20T19:30:00.000Z; check the date before you deploy); Cloudflare free tier is the budget (KV writes ~330/day of 1,000; ~50 subrequests/tick; the 10ms CPU cliff on cold renders — C7; the KV read quota [100,000/day] is exceeded DAILY — investigate before deploying; the Session 12 + 13 + 14 close had it healthy: ok:true + pool_matches:324).
+The program's implementation work is complete. These are owner-driven
+follow-ups that need owner input/data. **If the owner wants to pursue any of
+these, paste the matching option below into a fresh session with the
+credentials — a new session prompt would be written for that specific
+follow-up.** The full backlog is in
+`seo-implementation/FINAL-SEO-IMPLEMENTATION-REPORT.md` §5.
 
-Step 4 — Session 15 scope (from the route plan §10 + the phase file SESSION-15-FINAL-QA-REGRESSION-AND-HANDOFF.md)
-Session 15 is the FINAL regression — the 15-session SEO program close-out (the route plan §10 — the phase file `sportsignal-seo-implementation/phases/SESSION-15-FINAL-QA-REGRESSION-AND-HANDOFF.md`).
+### Option A — the post-Dec-8 freeze-lift decisions (needs the fresh 16-month GSC export)
 
-The phase file's required work:
-1. Re-run all unit/integration/build/lint tests. `npm test` must exit 0 (the baseline is 3,738 OK — the S14 count; record the number). `npx tsc --noEmit` clean. All 56 check scripts pass.
-2. Crawl or sample all URL classes: homepage, match, selected/non-selected team, core/non-core competition, today/tomorrow/weekly pages, pagination and expired match. Sample the live URLs — verify the 200 status + the canonical + the robots + the title/H1/description + the JSON-LD + the crawlable links. Use the GSC monitoring view (`seo-implementation/GSC-MONITORING-VIEW.md`) as the URL-class sampling guide.
-3. Verify title, H1, meta description, canonical, robots, hreflang, structured data, sitemap membership, status code and crawlable links. The hreflang verification: ZERO hreflang (the S12 Option (b) FINAL decision — verify the router has no `/en/` branch + no hreflang tags). The structured-data verification: the SportsEvent node on the match pages (the MISSING-IS-NOT-ZERO law — the `if (m.venue)` guard). The sitemap membership: the teams.xml 13-row filter (the selected clubs only). The crawlable links: the homepage → the featured match + the selected team/competition pages (the spec §9 internal-links contract — note the S10-2 follow-up: the homepage does NOT link directly to `/teams/<slug>` or `/competitions/<slug>` — this is a documented gap, NOT a regression).
-4. Verify no unsupported live/broadcast claims and no unselected club page has become indexable. The no-live-broadcast-claims law (the S-04 no-fake-offers + the S-05 no-invented-data laws). The 13-club allowlist (the isSelectedTeam predicate — Session 4). The non-selected team pages STAY noindex, follow (the C1 disposition — verify with a live `curl -s https://sportsignal.ir/teams/<non-selected-slug> | grep robots`).
-5. Verify Cloudflare resource consumption and no new unbounded provider requests/jobs. The KV read quota (100,000/day — was exceeded at Sessions 5-9; healthy at Sessions 10-14 close). The KV writes (~330/day of 1,000). The subrequests (~50/tick). The 10ms CPU cliff (the C7 audit — the chronic cold-render exposure). The cron triggers (`*/10 * * * *` + `27 */4 * * *`). The S14 preconnect adds ZERO runtime cost (it is a client-side hint — verify the `/healthz` budget before/after is unchanged).
-6. Verify deployment and key production routes. Inspect Worker logs/analytics where available. The live `/healthz` (`ok:true` + `pool_matches:324` + `degraded:false` + `version:13.268.0-perf-preconnect`). The key routes: `/` (homepage 200), `/matches/<slug>` (match-detail 200), `/teams/<selected-slug>` (team-detail 200 + indexable), `/teams/<non-selected-slug>` (team-detail 200 + noindex,follow), `/competitions/<slug>` (competition-detail 200), `/matches/tomorrow` + `/matches/today` (date hubs 200), `/matches` (matches hub 200), `/teams` + `/competitions` (index pages 200), `/sitemap.xml` + `/teams.xml` + `/robots.txt` (machine files 200). The preconnect present in the homepage + the match/team/competition page HTML (the S14 verification re-run).
-7. Compare post-deploy GSC baseline only after enough data has accumulated; do not claim ranking improvements immediately. The 2026-11-15 GSC export is the baseline (the GSC monitoring view §1). A FRESH 16-month GSC export (the post-Dec-8 measurement) is the standing request — IF the owner supplies it, compare the page-class performance. Do NOT claim ranking improvements without the before/after data + the seasonality note (the spec §11: "Compare equivalent windows and note seasonality. Do not attribute changes to an algorithm update without evidence.").
-8. Produce residual backlog and a future monitoring calendar. The residual backlog: the open follow-ups from the HANDOFF (the S24 per-route CPU via GraphQL; the S26 UI/UX iteration; the S1/S2 SEO mini-track post-Dec-8; the S25 follow-up smokes; the C8 client-side staleness vector; the KV read quota [the Workers Paid plan]; the season-end lifecycle first run [May 2027]; the S10-2 homepage→team/competition gap; the S11 SEO_EXTRA_ALIASES extension; the S12 EN re-litigation gate; the S13 Events rich-result eligibility revisit; the S13 Rich Results Test manual re-run; the S14 Cloudflare-beacon-extension to SEO pages; the S14 CrUX/PageSpeed data request). The future monitoring calendar: the GSC monitoring view cadence (weekly/monthly/post-Dec-8) + the post-Dec-8 freeze-lift decisions (the S2 title-test re-fire, the S06-H3 follow-up, the S1 spelling-fix judgement, the S11 SEO_EXTRA_ALIASES extension, the S13-1 option (c) Events rich-result eligibility revisit).
+After Dec 8, with a fresh 16-month GSC export, the owner may revisit the
+byte-frozen surfaces: the S2 title-test re-fire; the S06-H3 date-hub
+empty-state copy; the S1 spelling-fix judgement (judge ~Dec 8); the S11
+SEO_EXTRA_ALIASES extension (new GSC-observed Persian variants); the S13-1
+option (c) Events rich-result eligibility revisit (the curated stadium-lookup
+— ONLY where a true venue value exists; NEVER fabricate). **The owner should
+supply the fresh 16-month GSC export (with the URL-level page samples + the
+queries×pages matrix + the enhancement/Critical-issues CSVs + the Core Web
+Vitals report) — the program's top evidence request.**
 
-Deliverables (the phase file):
-- `seo-implementation/FINAL-SEO-IMPLEMENTATION-REPORT.md` — the full-program report (the 15-session summary + the per-session deploy/version/test-count chain + the per-page-class verification matrix + the residual backlog + the future monitoring calendar).
-- the completed tracker (`sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md` — the Session 15 row).
-- residual risks/backlog (in the FINAL-SEO-IMPLEMENTATION-REPORT.md + the HANDOFF).
-- the last session handoff prompt (or explicit "project complete" handoff if no further session is needed).
+### Option B — the CrUX / PageSpeed Insights data (needs a Google API key OR the owner-supplied data)
 
-Spelling-freeze-aware discipline: IF Session 15 runs BEFORE Dec 9, the regression is read-only on the byte-frozen surfaces (verify they are unchanged; do NOT touch them). IF Session 15 runs on/after Dec 9, the freeze has lifted + the byte-frozen surfaces can be touched (but ONLY if the regression surfaces a real issue that needs a byte change — the regression itself should not touch the frozen surfaces unless a bug is found). The GSC monitoring view + the GA4 evaluation are documentation deliverables (no byte-frozen surface touched). NEVER change the byte-frozen title/H1/description/answer-sentence bytes if the session runs before Dec 9 (the Dec 4-8 freeze holds).
+The owner should supply the CrUX / PageSpeed Insights data for
+sportsignal.ir (the mobile LCP / INP / CLS per URL class — the S14
+preconnect's post-deploy measurement) OR a Google API key for the CrUX API.
+The structural analysis (the render path + the KV-read count + the CPU cliff)
+is the current fallback.
 
-Step 5 — Git, tests, deploy rules for this session
-npm install (npm only, never bun) and npm test before your push; the suite must exit 0 (baseline 3,738 OK — the S14 count; record the number).
+### Option C — the Workers Paid plan ($5/mo) — the durable infrastructure fix
 
-If the regression surfaces a real bug that needs a code fix: npm test → npx wrangler dev local smoke of the fix → versioned deploy → verify live → record the deployment ID. Rollback = npx wrangler rollback. If NO runtime change (the regression is clean — all URL classes 200, all gates pass, all byte-frozen surfaces unchanged, no unsupported claims, no unselected club page indexable), no deploy — say so explicitly (the same discipline as Session 12 Option (b) + Session 13 docs-only). The phase file's acceptance criteria: "All changes have commit/push/deploy evidence; no known Critical regression; unresolved data/access limits documented; production verification results are factual."
+The owner should decide on the Workers Paid plan ($5/mo → 1M KV reads/day +
+30s CPU limit). This is the durable fix for: the chronic KV read-quota
+exhaustion (100,000/day free-plan — exceeded daily at S5-S9; healthy at
+S10-S15 close); the chronic 10ms CPU cliff (the C7 audit — 4,832
+exceededResources over Nov 16-17); AND the prerequisite for any future `/en/`
+URL architecture (the S12-1 axis 2); AND the GA4 budget priority (the S14-3
+decision).
 
-Deploy-time ritual detail: state the Cloudflare budget of every change; /healthz before/after; verify the KV read quota has reset (re-check at S15 close). Version bump per the repo convention IF code changed. Avoid the Nov 20 Bayern–Köln S27 auto-verify windows (kickoff 19:30 UTC; M1 ~19:35, M2 ~21:35-45 UTC — check the date before you deploy; the S14 close had sched_next_ko: 2026-11-20T19:30:00.000Z — 3 days from the S14 close; the S15 session may fall in or near this window — DO NOT deploy in the M1/M2 windows).
+### Option D — the S14 Cloudflare beacon extension to SEO pages (the GA4 alternative)
 
-Checkpointed commits with seo(s15): … messages; push one-shot with the token; fetch before push; verify with git ls-remote. Never force-push, never stage unrelated files, never commit secrets.
+The homepage ships the Cloudflare Web Analytics cookieless beacon; the SEO
+pages (`src/seo/page-shell.ts`) do NOT. A future session could extend the
+beacon to the SEO pages (one-line `<script>` in the `pageShell` head —
+cookieless, deferred via `type="module"`, freeze-safe) IF the owner wants the
+per-page-class RUM WITHOUT the GA4 consent burden. This is the recommended
+path per `docs/specs/GA4-EVALUATION.md` §6.
 
-End with the repo-convention updates (AGENTS.md §10): docs/HANDOFF.md, CHANGELOG.md, docs/DECISIONS.md (the Session 15 regression findings + any decision), the FINAL-SEO-IMPLEMENTATION-REPORT.md, the completed tracker, then the TLDR report in your final response (with the explicit "project complete" handoff if no further session is needed, OR the next-session prompt if residual work remains).
+### Option E — the product/UX follow-ups (S26 + S10-2 + S25)
 
-Step 6 — Standing constraints (carry into every session)
-Measurement freeze: GSC-measured surfaces + team-name spellings byte-frozen through Dec 4-8, 2026. IF Session 15 runs before Dec 9: the freeze holds — the regression is read-only on the byte-frozen surfaces. IF Session 15 runs on/after Dec 9: the freeze has lifted. The S12 EN architecture decision (FINAL — Option (b)) STAYS — do NOT re-litigate it in Session 15. The S13 structured-data decision (docs-only — the 13 items are the honest "missing recommended field" class) STAYS — do NOT re-litigate it in Session 15. The S14 GA4 DEFER STAYS — do NOT install GA4 in Session 15 without the prerequisites (the CMP + the privacy policy + the performance budget). The S14 preconnect STAYS — it is freeze-safe + deployed.
+S26 (UI/UX iteration: hero rendering, nav UX, FAQ discoverability, schedule
+density, telegram CTA — S06-H4 belongs here); S10-2 (the homepage →
+team/competition spec §9 gap — the homepage does NOT link directly to
+`/teams/<slug>` or `/competitions/<slug>`; a "link placement" change that
+touches the shared homepage renderers with visual side-effects); S25 follow-up
+smokes (NVDA/VoiceOver + Safari/Firefox/Edge live confirmations — owner
+sessions needed).
 
-Cloudflare free tier is the budget (KV writes ~330/day of 1,000; ~50 subrequests/tick; 10ms CPU cliff on cold renders — C7; KV reads 100,000/day — was exceeded at Sessions 5-9; healthy at Sessions 10-14 close). Every change states its budget. No new KV write paths without a change-only discipline; no render-cost additions.
+### Option F — the season-end lifecycle first run (May 2027)
 
-GSC impressions are site impressions, not market volumes. Do not model traffic upside without stated assumptions. Do not claim ranking improvements without the before/after data + the seasonality note (the spec §11).
+The S5 match-URL lifecycle mechanism is shipped + test-proven but INERT (the
+`SEASON_END_NOINDEX_ENABLED` flag is false + the `SEASON_END_DATES` map is
+empty). To enable: confirm FD `season.endDate` values → populate
+`SEASON_END_DATES` → set `SEASON_END_NOINDEX_ENABLED = true` → versioned deploy
+→ verify live. The first real transition is a May 2027 decision (after the
+2026-27 season closes).
 
-Do not execute later sessions' scopes (Session 15 IS the final session — there is no Session 16). The final regression = 15.
+### Option G — the S12 EN re-litigation gate (FINAL — only if all three axes flip)
 
-If the same approach fails three times, change approach; if genuinely blocked (missing credential, broken production, unverifiable risk), stop and say so with the exact blocker — never fabricate work, commits, test outcomes, or GSC results.
+A future session that wants to build `/en/` URLs must re-litigate ALL THREE
+evidence axes: (1) English-query demand in a fresh 16-month GSC export; (2) a
+Workers Paid plan in place (the 2× KV-read demand); (3) a demonstrated
+competitive angle against the English-native publishers. The keyword map §2
+English plan slots stay as the documented Option (a) contingency.
 
-That's the full Session 15 prompt — paste it into a fresh session along with the credentials to start Session 15 (the final regression).
+## 4. The standing monitoring cadence (the GSC monitoring view)
 
-One note: I recommend rotating the GitHub + Cloudflare tokens before starting Session 15 — they were used in the Session 14 session and have now been shared across multiple turns.
+The `seo-implementation/GSC-MONITORING-VIEW.md` defines the cadence: weekly
+for the top 4 page classes (the homepage, the match-detail, the selected-team,
+the competition); monthly for the full snapshot; post-Dec-8 for the
+freeze-lift measurement. The standing health checks (every session / every
+deploy) are in the FINAL-SEO-IMPLEMENTATION-REPORT.md §6.3.
+
+## 5. Credentials
+
+Credentials used across Sessions 14 + 15, not stored. **The owner should
+rotate the GitHub + Cloudflare tokens** (they were shared across multiple
+turns).

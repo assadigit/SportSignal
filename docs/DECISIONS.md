@@ -4,6 +4,128 @@ Format: date · decision · options considered · reason · who · revisit when.
 (Adopted with the universal AGENTS.md rules on 2026-11-08; this file is new —
 earlier decisions live in README §"Architecture decisions" and docs/adr/.)
 
+## 2026-11-17 — SEO Session 15 (S15-1): the final regression is CLEAN — no bug found; no deploy. The 15-session SEO program close-out (the route plan §10 — the phase file SESSION-15-FINAL-QA-REGRESSION-AND-HANDOFF.md).
+
+- **Decision:** the final regression is CLEAN. `npm test` exit 0 (3,738 OK =
+  the S14 baseline; no new check added — the regression is read-only; `npx
+  tsc --noEmit` clean). The live crawl of 19 HTML pages + 4 machine files:
+  EVERY page returns HTTP 200 + the correct canonical + the correct robots +
+  the title/H1/description + the JSON-LD + the S14 preconnect + ZERO hreflang.
+  The MISSING-IS-NOT-ZERO law holds (the with-venue match emits `location: Camp
+  Nou`; the no-venue match correctly OMITS location; no
+  endDate/offers/aggregateRating fabricated). The 13-club allowlist + the C1
+  disposition hold (the teams.xml = exactly 13 rows; 4 non-selected team slugs
+  verified `noindex, follow`). The /teams tile ordering holds (the 13 selected
+  clubs first). The no-fake-offers / no-invented-data law holds (zero
+  live-broadcast claims on the match page). The Cloudflare budget is healthy
+  (`ok:true` + `pool_matches:324` + `kv_writes_day:403` + `subreq_last_tick:31`
+  + `degraded:false`). The Workers Analytics GraphQL confirms the chronic C7
+  10ms CPU cliff (4,832 exceededResources over Nov 16-17 — NOT caused by the
+  SEO program, zero Worker CPU added across S4-S14). The cron triggers
+  unchanged. **No deploy** (docs-only — the same discipline as S12 Option (b)
+  + S13 docs-only). The live deployment `a4cc2982-c6fa-493f-907b-e71d89c1f33f`
+  @100% = `13.268.0-perf-preconnect` STAYS.
+- **Options considered:** (a) docs-only, no deploy (the regression is clean)
+  [chosen — no bug found; every URL class 200 + the correct SEO contracts; all
+  56 check scripts pass; the byte-frozen surfaces unchanged; no unsupported
+  claims; no unselected club page indexable]; (b) deploy a fix [rejected —
+  there is no fix to deploy; the regression surfaced no bug].
+- **Reason:** the phase file's acceptance criteria: "All changes have
+  commit/push/deploy evidence; no known Critical regression; unresolved
+  data/access limits documented; production verification results are
+  factual." The regression satisfies all four: the commit/push evidence is the
+  `seo(s15)` docs checkpoint (ls-remote verified); no Critical regression (the
+  crawl is clean); the unresolved access limits (the fresh GSC export + the
+  CrUX data) are documented; the production verification is factual (every
+  claim verified live). Deploying without a code change would be a no-op
+  versioned deploy (pointless + a budget waste).
+- **Who decided.** The agent (SEO Session 15), on the phase file's required
+  work + the route plan §10 Session 15 row + the Dec 4-8 freeze (the session
+  runs before Dec 9 — read-only) + the S12/S13/S14 inherited decisions (STAY).
+- **When to revisit.** The post-Dec-8 freeze-lift decisions (the S2 title-test
+  re-fire, the S06-H3 follow-up, the S1 spelling-fix judgement, the S11
+  SEO_EXTRA_ALIASES extension, the S13-1 option (c) Events rich-result
+  eligibility revisit) — all need the fresh 16-month GSC export. The
+  measurement requests (the fresh GSC export + the CrUX data) + the
+  infrastructure decisions (the Workers Paid plan) are owner-driven.
+
+## 2026-11-17 — SEO Session 15 (S15-2): the freeze-coordination — the session runs before Dec 9, the Dec 4-8 freeze HOLDS; the regression is read-only on the byte-frozen surfaces.
+
+- **Decision:** Session 15 runs before Dec 9 (2026-11-17). The Dec 4-8
+  measurement freeze HOLDS — the regression is read-only on the byte-frozen
+  surfaces. `git status` is clean — zero `src/` changes this session (the
+  definitive proof: the byte-frozen source surfaces are untouched). Session 15
+  is docs-only (the deliverables are markdown reports — no
+  `src/`/`scripts/`/`assets/` change, no version bump, no deploy). The
+  byte-frozen surfaces verified UNCHANGED (the live crawl confirms the bytes
+  match the documented frozen values): the homepage title/H1 (S6); the
+  match-page title/H1/description/answer-sentence (S7); the team-page
+  title/H1/description/answer (S8); the competition-page
+  title/H1/description/answer (S9); the date-hub empty-state copy on
+  `/matches/tomorrow` (S06-H3 — the source bytes in `src/seo/pages.ts`
+  unchanged); the team-name spellings in `fa-dict.ts` (the S1 M2 F3 fix —
+  mid-measurement, judge ~Dec 8). The S11 freeze-safe changes
+  (og:type=article + SEO_EXTRA_ALIASES + TEAM_SLUGS no-op) stay durable (live:
+  og:type=article confirmed on all 3 detail page types). The S12 EN decision
+  (FINAL — Option (b)) stays. The S13 structured-data decision (docs-only)
+  stays. The S14 preconnect (freeze-safe) + the GA4 DEFER stay.
+- **Options considered:** (a) read-only freeze verification (the session runs
+  before Dec 9) [chosen — the freeze holds; the regression verifies the
+  byte-frozen surfaces are unchanged; no byte-frozen surface touched]; (b)
+  touch the byte-frozen surfaces [rejected — the Dec 4-8 freeze holds; the
+  regression surfaced no bug that needs a byte change].
+- **Reason:** the prompt's standing constraint: "NEVER change the byte-frozen
+  title/H1/description/answer-sentence bytes if the session runs before Dec 9
+  (the Dec 4-8 freeze holds)." The regression is the final verification — it
+  does not touch the frozen surfaces. The post-Dec-8 freeze-lift decisions are
+  the residual backlog.
+- **Who decided.** The agent (SEO Session 15), on the Dec 4-8 freeze
+  constraint + the S06-H3/S1/S2/S11/S13-1 inherited freeze-lift gates.
+- **When to revisit.** Dec 9+ (the freeze lifts) — the post-Dec-8 freeze-lift
+  decisions (S15-1's revisit list).
+
+## 2026-11-17 — SEO Session 15 (S15-3): the 15-session SEO program is COMPLETE. There is no Session 16.
+
+- **Decision:** the 15-session SportSignal SEO implementation program is
+  COMPLETE. The route plan §10 sequencing (Sessions 1-15) is DONE. The
+  implementation work delivered: the crawl/index foundation (C1/C6/C8); the
+  match-URL lifecycle mechanism (INERT — the May 2027 decision); the homepage
+  one-month window + carousel crawlability + curated-selection promise; the
+  match-detail footer-hook team-link gating; the team-page @graph WebPage node
+  + the competition-page @graph CollectionPage node; the /teams index tile
+  ordering (the 13 selected clubs first); the Persian entity-naming/metadata
+  polish (og:type=article + SEO_EXTRA_ALIASES); the EN architecture decision
+  (FINAL — Option (b)); the structured-data validation (the
+  MISSING-IS-NOT-ZERO law; the SportsEvent JSON-LD is schema.org-VALID); the
+  mobile-performance preconnect (freeze-safe) + the GSC monitoring view + the
+  GA4 DEFER + the GA4 evaluation. The residual work is owner-driven follow-ups
+  (the post-Dec-8 freeze-lift decisions + the measurement requests + the
+  Workers Paid plan + the product/UX follow-ups) — NOT a further
+  implementation session. The "project complete" handoff is delivered in
+  `seo-implementation/next-session-prompt.md`.
+- **Options considered:** (a) declare the program COMPLETE (the route plan
+  §10 is DONE; the regression is clean) [chosen]; (b) open a Session 16
+  [rejected — the route plan is a 15-session program; there is no Session 16
+  scope; the residual work is owner-driven, not an implementation session].
+- **Reason:** the route plan §10 sequencing defines 15 sessions; Session 15 is
+  the final regression + the handoff. The residual follow-ups (the post-Dec-8
+  freeze-lift decisions + the measurement requests + the Workers Paid plan +
+  the product/UX follow-ups) are owner-driven decisions that need owner
+  input/data (the fresh GSC export, the CrUX data, the paid-plan decision) —
+  they are NOT further implementation work the agent can do autonomously.
+- **Who decided.** The agent (SEO Session 15), on the route plan §10
+  sequencing (Sessions 1-15) + the phase file's deliverables (the
+  FINAL-SEO-IMPLEMENTATION-REPORT.md + the "project complete" handoff).
+- **When to revisit.** When the owner supplies the fresh 16-month GSC export
+  AND/OR decides on the Workers Paid plan AND/OR wants to pursue a specific
+  follow-up (the S2 title-test re-fire, the S06-H3 follow-up, the S1
+  spelling-fix judgement, the S11 SEO_EXTRA_ALIASES extension, the S13-1
+  option (c) Events rich-result eligibility revisit, the S26 UI/UX iteration,
+  the S10-2 homepage→team/competition gap, the S14 Cloudflare beacon extension
+  to SEO pages) — a fresh session prompt would be written then (the
+  `seo-implementation/next-session-prompt.md` "project complete" handoff lists
+  these as the owner's options).
+
 ## 2026-11-17 — SEO Session 14 (S14-1): the preconnect to crests.football-data.org — IMPLEMENTED, freeze-safe (the S24-P2 item). A `<link rel="preconnect" href="https://crests.football-data.org">` added to BOTH the homepage `<head>` (`src/pages/public.ts`) AND the SEO page shell `<head>` (`src/seo/page-shell.ts` — covers match/team/competition/hubs/static). The DNS+TCP+TLS handshake starts at HTML-byte-0 so the first crest `<img>` that parses below the fold fetches without the handshake delay.
 
 - **Decision:** IMPLEMENT the preconnect (the S24-P2 parked item — the post-Dec-8 perf/CWV track). The preconnect is a render-performance HINT — the browser opens the DNS+TCP+TLS connection to crests.football-data.org at HTML-parse time (byte-0) instead of waiting for the first `<img class="mcrest|stcrest|...">` discovery below the fold. Zero new runtime fetch, zero subrequest, zero KV read, zero Worker CPU (the `<link>` is a static string in the HTML template; the browser MAY open the connection but the Worker does NOT fetch). NO `crossorigin` attribute — crest `<img>` requests are non-CORS (`referrerpolicy="no-referrer"`; simple image requests); a `crossorigin` preconnect would open a SEPARATE connection that the image fetches would NOT reuse, defeating the optimization. Placed EARLY in `<head>` (after the viewport meta, before the icons / the themeInit / the font preloads / the stylesheet) so the handshake precedes the render-blocking stylesheet parse. Version bump: 13.267.0-persian-entities → 13.268.0-perf-preconnect. Deployed: version `a4cc2982-c6fa-493f-907b-e71d89c1f33f` @100%. Live-verified: the preconnect is present in the homepage HTML + the match-page HTML + the team-page HTML + the competition-page HTML. The new `check-seo-performance.js` gate (17 gates) pins the contract. `npm test` 3,720 → 3,738 OK.

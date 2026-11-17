@@ -4,6 +4,85 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# SEO Session 15 (docs-only; no version bump, no deploy) — the final regression + the production QA + the handoff: the 15-session SEO program CLOSE-OUT (2026-11-17, `main`)
+
+The TWELFTH + FINAL session of the 15-session SEO program. This session owns
+the final regression + the production QA + the handoff (the route plan §10 —
+the phase file
+`sportsignal-seo-implementation/phases/SESSION-15-FINAL-QA-REGRESSION-AND-HANDOFF.md`).
+**Docs-only — the regression is CLEAN (no bug found; no deploy).** The live
+deployment `a4cc2982-c6fa-493f-907b-e71d89c1f33f` @100% =
+`13.268.0-perf-preconnect` (Session 14) STAYS. **The 15-session SEO program
+is COMPLETE. There is no Session 16.**
+
+- **The freeze status:** the session runs BEFORE Dec 9 (2026-11-17). **The
+  Dec 4-8 freeze HOLDS** — the regression is read-only on the byte-frozen
+  surfaces (verified unchanged; NOT touched). The S12 EN decision (FINAL —
+  Option (b)), the S13 structured-data decision (docs-only), the S14 GA4 DEFER
+  + preconnect STAY — Session 15 does NOT re-litigate them.
+
+- **The test suite re-run:** `npm test` exit 0 (**3,738 OK** = the S14
+  baseline; no new check script added — the regression is read-only; `npx
+  tsc --noEmit` clean). All 56 check scripts pass.
+
+- **The URL-class crawl (the per-page-class verification matrix):** 19 HTML
+  pages + 4 machine files sampled live against `https://sportsignal.ir` on
+  2026-11-17. EVERY page returns HTTP 200 + the correct canonical + the
+  correct robots + the title/H1/description + the JSON-LD + the S14 preconnect
+  + ZERO hreflang. The classes: the homepage; the match-detail (with-venue
+  [Barcelona–Man City, `location: Camp Nou`] + no-venue [Lazio–Lecce, no
+  location — the MISSING-IS-NOT-ZERO law] + expired [Arsenal–Leeds — the S5
+  INERT-lifecycle state]); the selected team (`/teams/barcelona` — indexable);
+  the non-selected team (×4 slugs: fulham, leeds-united, le-havre, juventus —
+  ALL `noindex, follow`); the core + non-core competition (Champions League +
+  DFB-Pokal); the date hubs (today/tomorrow); the weekly pages
+  (this-week/this-weekend); the matches hub; the teams + competitions index
+  pages; the pagination (`?page=2`); the machine files (robots.txt,
+  sitemap.xml, sitemaps/teams.xml [exactly 13 rows], sitemaps/competitions.xml
+  [7 rows]).
+
+- **The laws re-confirmed live:** the MISSING-IS-NOT-ZERO law (S13); the
+  13-club allowlist + the C1 disposition (S4); the /teams tile ordering (S10);
+  the ZERO hreflang stance (S12 Option (b) FINAL); the no-fake-offers /
+  no-invented-data law (S-04/S-05); the S14 preconnect (freeze-safe, zero
+  Worker CPU); the GA4 DEFER (S14).
+
+- **The Cloudflare resource state:** the live `/healthz` — `ok:true` +
+  `pool_matches:324` + `kv_writes_day:403` (of 1,000) + `degraded:false` +
+  `subreq_last_tick:31` + `version:13.268.0-perf-preconnect` (the KV quota
+  healthy). The Workers Analytics GraphQL (the Nov 16-17 window): `success` =
+  22,359 invocations; `exceededResources` = 4,832 (the chronic C7 10ms CPU
+  cliff — avg ~11ms CPU each; **NOT caused by the SEO program — zero Worker
+  CPU added across S4-S14**); `clientDisconnected` = 40. The cron triggers
+  unchanged (`*/10 * * * *` + `27 */4 * * *`).
+
+- **The byte-frozen surfaces (the read-only freeze verification):** `git
+  status` is clean — zero `src/` changes this session (the definitive proof).
+  Session 15 is docs-only (the deliverables are markdown reports — no
+  `src/`/`scripts/`/`assets/` change, no version bump, no deploy).
+
+- **The GSC baseline comparison — NOT claimed** (the spec §11 seasonality
+  discipline): the fresh 16-month GSC export (the post-Dec-8 measurement) is
+  the standing request — NOT supplied this session. No ranking improvement is
+  claimed.
+
+- **Decisions:** S15-1 (the final regression is CLEAN — no bug found; no
+  deploy), S15-2 (the freeze-coordination — the session runs before Dec 9, the
+  freeze HOLDS; the regression is read-only on the byte-frozen surfaces),
+  S15-3 (the 15-session SEO program is COMPLETE). Details in `docs/DECISIONS.md`.
+
+- **Deliverables:** the `seo-implementation/FINAL-SEO-IMPLEMENTATION-REPORT.md`
+  (the full-program report); the `seo-implementation/session-reports/SESSION-15.md`;
+  the completed tracker (the Session 15 row); the ROUTE-AND-CANONICAL-PLAN §10
+  Session 15 row; the "project complete" handoff in
+  `seo-implementation/next-session-prompt.md`.
+
+- **Cloudflare budget of this session:** zero. Docs-only — no
+  `src/`/`scripts/`/`assets/` change, no version bump, no deploy. Zero new KV
+  reads/writes, zero new subrequests, zero new Worker CPU, zero new cron paths.
+
+---
+
 # v13.268.0-perf-preconnect — SEO Session 14: the mobile performance + the GSC monitoring + the optional GA4 decision (2026-11-17, `main`)
 
 The ELEVENTH session of the 15-session SEO program. This session owns the
