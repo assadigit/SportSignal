@@ -4,6 +4,188 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.267.0-persian-entities — SEO Session 11: the Persian entity-naming/metadata polish (spelling-freeze-aware — og:type=article on detail pages + the Barcelona «بارسا» JSON-LD alias + the TEAM_SLUGS no-op tidiness fix; 2026-11-17, `main`)
+
+The EIGHTH implementation session of the 15-session SEO program. This session
+owns the Persian entity naming/metadata polish (the route plan §10 — Session 11
+= Persian entity naming + metadata polish). Spelling-freeze-aware: the
+team-name spellings in fa-dict.ts ARE byte-frozen through Dec 4-8 (the S1 M2
+F3 spelling fix is LIVE and mid-measurement, judge ~Dec 8) — any fa-dict.ts
+spelling change to a SELECTED club's name is a post-Dec-4 decision. The
+non-frozen metadata surfaces (the alternateName JSON-LD aliases + the
+non-title metadata [og:type, og:locale] + the TEAM_SLUGS no-op tidiness fix
++ the breadcrumbs' Persian wording) are NOT GSC-measured surfaces (machine-
+readable JSON-LD / non-title metadata) — safe under the freeze IF they do
+not touch the byte-frozen title/H1/description/answer-sentence bytes.
+
+Three freeze-safe changes shipped this session:
+
+1. **og:type=article on the 3 detail page types (the S07-H4 follow-up — spec
+   §8 + keyword map §2.7/2.8-2.13/2.15).** `buildMatchPage` +
+   `buildTeamPage` + `buildCompetitionPage` now pass `ogType: "article"` to
+   `buildHead`; hubs/index pages keep the default `og:type=website`
+   (the homepage, `/matches` hub, the 4 time hubs, `/teams` index,
+   `/competitions` index). og:type is a `<meta>` tag in `<head>` — NOT in
+   the SERP snippet, NOT a GSC-measured surface (machine-readable metadata).
+   The byte-frozen title/H1/description/answer-sentence bytes are untouched
+   (the Dec 4-8 freeze holds). Verified by the new `check-seo-persian-entities.js`
+   gate (the og:type=article pin on the 3 detail page types + the og:type=website
+   default on the hubs/index pages) + the seeded render harness.
+
+2. **The SEO_EXTRA_ALIASES map — the GSC-observed Persian short-form aliases
+   (the S1 M2 alternateName discipline, extended to the GSC-observed short
+   form for a non-overridden selected club).** `src/seo/team-names.ts` gains
+   a new `SEO_EXTRA_ALIASES` map keyed by `normTeamKey()`; `seoTeamAltNames`
+   now consults it and appends the aliases to the JSON-LD alternateName
+   array (machine-readable, invisible to the SERP snippet). The first entry
+   is the Barcelona «بارسا» alias — GSC evidence: 179 impressions for
+   «بازی بعدی بارسا» in GSC-AUDIT-BASELINE.md (the 2026-11-15 export). The
+   visible faName/SEO name bytes («بارسلونا» in the title/H1/answer/
+   breadcrumbs) stay byte-frozen — only the JSON-LD alternateName gains the
+   alias. The alias rides BOTH the match-page SportsEvent.homeTeam/awayTeam
+   alternateName AND the team-page SportsTeam.alternateName. The S-05 no-
+   invented-data rule holds: every alias cites its GSC evidence (the
+   impression count + the query string in the per-alias comment). The S1
+   M2 / F3 override layer (Leipzig «لایپزیگ»/«لایپزیش», Nordsjaelland
+   «نورشلان»/«نوردشیلند», Roma «رم»/«آ س رم») stays byte-frozen through
+   Dec 4-8 — verified by the existing `check-seo-teamnames.js` gate (the
+   type-strip regex extended to handle the new `: Record<string, string[]> =`
+   annotation; the 7 override cases + the 4 control teams pass byte-identical).
+
+3. **The TEAM_SLUGS no-op tidiness fix (route plan §7 — the live provider-
+   derived slugs for Inter + Atlético are now EXPLICIT pins).** `src/slugs.ts`
+   gains `"Club Atlético de Madrid": "club-atletico-de-madrid"` +
+   `"FC Internazionale Milano": "internazionale-milano"` — the live canonical
+   URLs that the football-data.org provider names produce through
+   `teamSlug()`'s NFD-strip derivation. The pinned values match the
+   derivation output EXACTLY (true no-op: zero URL change, zero byte-frozen
+   surface change); the explicit pins align the table with reality (the
+   dead `inter-milan` / `atletico-madrid` entries stay for the sportscore/TSP
+   short-form providers). Verified by the new `check-seo-persian-entities.js`
+   gate (the explicit pins + the no-op proof: `teamSlug("FC Internazionale
+   Milano") === "internazionale-milano"`; `teamSlug("Club Atlético de Madrid")
+   === "club-atletico-de-madrid"`).
+
+The byte-frozen surfaces (the match-page title/H1/description/answer-sentence
+[Session 7 verified], the team-page title/H1/description/answer [Session 8
+verified], the competition-page title/H1/description/answer [Session 9
+verified], the homepage title/H1 [Session 6 verified], the date-hub
+empty-state copy on /matches/tomorrow [the S06-H3 follow-up is post-Dec-4])
+are ALL untouched. The team-name spellings in fa-dict.ts (the S1 M2 F3
+spelling fix + the non-selected team dictionary) are byte-frozen — the
+SEO_EXTRA_ALIASES extension lives in `src/seo/team-names.ts` only (the scope
+law from S1 M2 holds: nothing outside `src/seo/` references the override
+layer; the bot/cards/digests render from fa-dict.ts and stay byte-identical).
+
+### Modified (runtime)
+
+- `src/seo/pages.ts` — `buildMatchPage` + `buildTeamPage` +
+  `buildCompetitionPage` gain `ogType: "article"` in their `buildHead` calls
+  (the S07-H4 follow-up — spec §8 + keyword map §2.7/2.8-2.13/2.15). The
+  byte-frozen title/H1/description/answer-sentence bytes are untouched.
+- `src/seo/team-names.ts` — gains the `SEO_EXTRA_ALIASES` map (the GSC-observed
+  Persian short-form aliases) + the `seoTeamAltNames` function consults it
+  (the alias rides the JSON-LD alternateName array ONLY). The first entry is
+  the Barcelona «بارسا» alias (GSC evidence: 179 impressions for «بازی بعدی
+  بارسا»).
+- `src/slugs.ts` — `TEAM_SLUGS` gains the explicit pins for
+  `"Club Atlético de Madrid": "club-atletico-de-madrid"` +
+  `"FC Internazionale Milano": "internazionale-milano"` (the route plan §7
+  no-op tidiness fix — the live provider-derived slugs are now EXPLICIT pins;
+  zero URL change).
+
+### Modified (tests)
+
+- `scripts/check-seo-teamnames.js` — the type-strip regex chain gains a new
+  `.replace(/: Record<string, string\[\]> =/, " =")` line (the S11
+  SEO_EXTRA_ALIASES annotation). The existing 7 override cases + the 4
+  control teams pass byte-identical (the S1 M2 / F3 spelling-fix discipline
+  holds — the override layer stays byte-frozen through Dec 4-8).
+- `scripts/check-seo-persian-entities.js` — NEW. 15 offline gates pinning:
+  (1) og:type=article on the 3 detail page types (buildMatchPage +
+  buildTeamPage + buildCompetitionPage); (2) og:type=website default on the
+  hubs/index pages (buildMatchesPage + buildTeamsIndexPage +
+  buildCompetitionsIndexPage + buildHub + buildHomePage); (3) og:locale=fa_IR
+  pinned in page-shell.ts; (4) the SEO_EXTRA_ALIASES map exists +
+  Barcelona «بارسا» alias (with the GSC evidence comment); (5)
+  seoTeamAltNames consults SEO_EXTRA_ALIASES; (6) the Barcelona behavior
+  (faName=«بارسلونا» byte-frozen, altName=null, altNames=[«بارسلونا»,
+  «بارسا»]); (7) the Barcelona short-form provider name resolves the same
+  alias (normTeamKey folds); (8) Leipzig (the S1 M2 / F3 override case)
+  unchanged; (9) Chelsea (a non-overridden selected club with NO
+  GSC-evidenced short form) — altNames=[«چلسی»]; (10) jsonld.ts wired
+  (sportsEventNode + sportsTeamNode consult seoTeamAltNames); (11) the
+  byte-frozen title/H1 ladders (match S7 + team S8 + competition S9) are
+  byte-identical; (12) TEAM_SLUGS carries the explicit pins for the live
+  provider-derived slugs; (13) the explicit pins match the derivation output
+  (the no-op proof); (14) fa-dict.ts unchanged (the dictionary spellings
+  stay — the SEO_EXTRA_ALIASES extension lives in src/seo/team-names.ts
+  only). Wired into the `npm test` chain after `check-seo-internallinks.js`.
+- `scripts/s11-persian-entities-smoke.ts` — NEW. A seeded tsx render harness:
+  a SeoCtx with 4 upcoming matches (Barcelona/Leipzig, Real Madrid/Inter,
+  Arsenal/Bayern, Chelsea/AC Milan) renders the match page (Barcelona vs
+  RB Leipzig — exercises BOTH the Barcelona «بارسا» alias AND the Leipzig
+  override) + the team page (Barcelona — exercises the SportsTeam
+  alternateName) + the competition page (La Liga — exercises the og:type=article
+  + the SportsOrganization.alternateName) + the homepage (exercises the
+  og:type=website default) + the /teams index (exercises the og:type=website
+  hub pattern) + the TEAM_SLUGS no-op tidiness fix. **34/34 assertions pass.**
+- `scripts/check-stats.js` — the version-sync pins ride forward to
+  `13.267.0-persian-entities` + the new `check-seo-persian-entities.js`
+  existence + the test-chain regex (the VERSION + CHANGELOG assertions
+  update to `13.267.0-persian-entities`); the v13.258-mca11y block (the
+  consolidated live version pin) bumps to `13.267.0.0` + adds the new gate
+  existence + the test-chain regex with `check-seo-persian-entities.js`.
+
+### Modified (docs + version)
+
+- `src/config.ts` — `VERSION` `13.266.0-internallinks` →
+  `13.267.0-persian-entities`.
+- `package.json` — `version` `13.266.0.0` → `13.267.0.0`; the `test` script
+  chain gains `&& node scripts/check-seo-persian-entities.js`.
+- `CHANGELOG.md` — the `# v13.267.0-persian-entities` entry (this file).
+- `docs/HANDOFF.md` — rewritten for Session 11.
+- `docs/DECISIONS.md` — S11-1 (the og:type=article on the 3 detail page
+  types — the S07-H4 follow-up), S11-2 (the SEO_EXTRA_ALIASES map +
+  Barcelona «بارسا» alias — the GSC-evidenced short-form alias), S11-3 (the
+  TEAM_SLUGS no-op tidiness fix — route plan §7), S11-4 (the
+  freeze-coordination: the alternateName JSON-LD aliases + the non-title
+  metadata are NOT GSC-measured surfaces; the byte-frozen title/H1/
+  description/answer-sentence bytes are untouched), S11-5 (the KV quota
+  healthy at deploy).
+- `sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md` — the Session 11
+  row (Completed / deployed).
+- `seo-implementation/session-reports/SESSION-11.md` — the session report.
+- `seo-implementation/next-session-prompt.md` — the Session 12 start prompt
+  (EN architecture + hreflang decision).
+
+### No client asset changed
+
+SW stays `sportsignal-v126`; the client bundle stays `public-13.80.js`; the
+stylesheet stays `public-13.87.css`. The change is server-side-only (the
+RUNBOOK §2 rule) — the og:type=article pin + the SEO_EXTRA_ALIASES extension
++ the TEAM_SLUGS no-op tidiness fix all render server-side in the HTML
+`<head>` / the JSON-LD `<script>` block / the in-memory slug table; no
+client asset renamed.
+
+### Cloudflare budget of this change
+
+zero new KV reads (the og:type=article pin + the SEO_EXTRA_ALIASES lookup
++ the TEAM_SLUGS pin are all in-memory operations on data already in
+scope); zero new KV writes (`kv_writes_day:147` at deploy time — unchanged
+by the S11 change); zero new subrequests; zero new fetches; zero
+render-cost additions (a small `ogType: "article"` string in the buildHead
+call + a small SEO_EXTRA_ALIASES map lookup in seoTeamAltNames + a
+constant-time TEAM_SLUGS lookup). Well within the free-tier budget.
+
+### Deploy-window check
+
+today is 2026-11-17 (the deploy landed at 02:35 UTC 2026-11-17) — NOT Nov 20
+(the Bayern–Köln S27 auto-verify windows: kickoff 19:30 UTC, M1 ~19:35,
+M2 ~21:35-45 UTC; `sched_next_ko: 2026-11-20T19:30:00.000Z`). Safe to deploy.
+
+---
+
 # v13.266.0-internallinks — SEO Session 10: the internal-linking + navigation refinement (the /teams index tile ordering — the ONE explicit Session 10 decision; markup-only per the route plan §10; 2026-11-17, `main`)
 
 The SEVENTH implementation session of the 15-session SEO program. This session

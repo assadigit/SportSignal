@@ -1350,8 +1350,8 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v126"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.266\.0-internallinks"/.test(cfg) &&
-    /# v13\.266\.0-internallinks/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.267\.0-persian-entities"/.test(cfg) &&
+    /# v13\.267\.0-persian-entities/.test(read("CHANGELOG.md"));
 })());
 
 // v13.258-mca11y (the Match Centre S25 + a11y deep-dive, 2026-11-15): the
@@ -1393,11 +1393,34 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
 // hero-card anchor regression) + the seeded render harness
 // (scripts/s10-internallinks-smoke.ts — 29 assertions). Markup-only (route plan
 // §10) — no new URLs, no canonical/indexability changes, no new KV/fetches.
+// S11 (13.267.0-persian-entities): the Persian entity-naming/metadata polish —
+// spelling-freeze-aware (the alternateName JSON-LD aliases + the non-title
+// metadata [og:type, og:locale] + the TEAM_SLUGS no-op tidiness fix are NOT
+// GSC-measured surfaces; the byte-frozen title/H1/description/answer-sentence
+// bytes are untouched). Three freeze-safe changes: (1) og:type=article on the
+// 3 detail page types (match/team/competition — the S07-H4 follow-up; hubs/
+// index pages keep og:type=website); (2) the SEO_EXTRA_ALIASES map in
+// src/seo/team-names.ts carries the GSC-observed short-form aliases (the
+// Barcelona «بارسا» alias — GSC evidence: 179 impressions for «بازی بعدی بارسا»
+// in GSC-AUDIT-BASELINE.md; the alias rides the JSON-LD alternateName array
+// ONLY — the visible faName/SEO name bytes stay byte-frozen); (3) the
+// TEAM_SLUGS no-op tidiness fix (the live provider-derived slugs for Inter +
+// Atlético — internazionale-milano / club-atletico-de-madrid — are now EXPLICIT
+// pins; the derivation produced them all along — zero URL change, zero
+// byte-frozen surface change; route plan §7). + the new
+// check-seo-persian-entities.js gate (15 gates pinning the og:type=article +
+// og:locale=fa_IR + the SEO_EXTRA_ALIASES + the Barcelona «بارسا» alias + the
+// byte-frozen title/H1 ladders unchanged + the TEAM_SLUGS no-op + the fa-dict.ts
+// scope law) + the seeded render harness (scripts/s11-persian-entities-smoke.ts
+// — 34 assertions: the match/team/competition detail pages + the homepage + the
+// /teams index + the TEAM_SLUGS pins). Server-side-only — no client asset
+// renamed (the SW cache stays sportsignal-v126 + the client bundle stays
+// public-13.80.js).
 check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-dive round: the F1-F4 fixes — the hero double-wrap → <div>, the nav aria-current at render + on scroll, the outer nav section → non-landmark container, the portrait descriptive alt; the fixes are body-only — the GSC surfaces + the answer sentence byte-frozen, the <head> NOT touched; the SW cache stays sportsignal-v126 + the client bundle stays public-13.80.js — a server-side release; the version bump 13.257-mcmatchcentre -> 13.258-mca11y; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound + the v13.257-mcmatchcentre survivors ride unchanged)", (() => {
   const pkg = JSON.parse(read("package.json"));
   const fs = require("fs");
   const path = require("path");
-  return pkg.version === "13.266.0.0" &&
+  return pkg.version === "13.267.0.0" &&
     fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-archserve.js")) &&
@@ -1405,10 +1428,11 @@ check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-div
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teampages.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-competitionpages.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-internallinks.js")) &&
+    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-persian-entities.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-match-lifecycle.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-homepage.js")) &&
     /node scripts\/check-seo-lastmod\.js && node scripts\/check-archserve\.js && node scripts\/check-seo-teamnames\.js/.test(pkg.scripts.test) &&
-    /node scripts\/check-seo-crawlindex\.js && node scripts\/check-seo-teampages\.js && node scripts\/check-seo-competitionpages\.js && node scripts\/check-seo-internallinks\.js && node scripts\/check-seo-match-lifecycle\.js/.test(pkg.scripts.test) &&
+    /node scripts\/check-seo-crawlindex\.js && node scripts\/check-seo-teampages\.js && node scripts\/check-seo-competitionpages\.js && node scripts\/check-seo-internallinks\.js && node scripts\/check-seo-persian-entities\.js && node scripts\/check-seo-match-lifecycle\.js/.test(pkg.scripts.test) &&
     /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js/.test(pkg.scripts.test);
 })());
 

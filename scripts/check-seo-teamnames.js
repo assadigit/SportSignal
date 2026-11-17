@@ -30,6 +30,10 @@ const stripped = tnSrc
   .replace(/^import\s+\{[^}]+\}\s+from\s+"[^"]+";\n/m, "")              // the normTeamKey import (injected below)
   .replace(/^export interface[\s\S]*?\n\}\n/m, "")                       // the erasable interface block
   .replace(/: Record<string, SeoTeamNameOverride> =/, " =")
+  // S11: the new SEO_EXTRA_ALIASES map carries `: Record<string, string[]> =`
+  // — the same type-strip pattern (the S1 M2 strip extended to the S11 alias
+  // map so the eval harness still parses the file after the S11 extension).
+  .replace(/: Record<string, string\[\]> =/, " =")
   .replace(/\(t: any\): string \| null \{/g, "(t) {")
   .replace(/\(t: any\): string\[\] \{/g, "(t) {")
   .replace(/\(t: any\): string \{/g, "(t) {")

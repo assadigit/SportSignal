@@ -52,6 +52,23 @@ export const TEAM_SLUGS: Record<string, string> = {
   "Real Madrid CF": "real-madrid",
   "Atl\u00E9tico Madrid": "atletico-madrid",
   "Inter Milan": "inter-milan",
+  // S11 (Persian entity naming/metadata polish — route plan §7 no-op
+  // tidiness fix): the LIVE canonical URLs for these two selected clubs are
+  // PROVIDER-DERIVED (the football-data.org legal forms). The pinned
+  // `inter-milan` / `atletico-madrid` entries above are DEAD (the provider
+  // names "FC Internazionale Milano" / "Club Atlético de Madrid" miss the
+  // pinned keys + fall through to teamSlug()'s NFD-strip derivation, which
+  // produces the same kebab slug the explicit pin would). Adding the
+  // provider-name keys here aligns the table with reality — the slug the
+  // derivation produces IS the slug the explicit pin returns, so this is a
+  // true no-op: zero URL change, zero byte-frozen surface change (the team
+  // page's faName + the Persian name agreement hold — verified by the
+  // route plan §7 audit + the new check-seo-persian-entities.js gate). The
+  // dead `inter-milan` / `atletico-madrid` entries stay for the
+  // sportscore/TSP short-form providers (they remain valid for the short
+  // spellings — never dead code, just the alternate-key form).
+  "Club Atl\u00E9tico de Madrid": "club-atletico-de-madrid",
+  "FC Internazionale Milano": "internazionale-milano",
   "AC Milan": "ac-milan",
   "Paris Saint-Germain": "paris-saint-germain",
   "FC Bayern M\u00FCnchen": "bayern-munich",

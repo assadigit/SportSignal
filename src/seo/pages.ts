@@ -1379,6 +1379,16 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
       title,
       description: desc,
       indexable: true,
+      // S11 (Persian entity naming/metadata polish — S07-H4 follow-up): the
+      // match-detail page is an ARTICLE (spec §8 + the keyword map §2.15
+      // plan; the S07-H4 decision was a post-Dec-4 follow-up — verified the
+      // current state [every page defaulted to og:type=website] + decided to
+      // refine: match/team/competition detail pages emit og:type=article;
+      // hubs/index pages keep og:type=website). og:type is a <meta> tag in
+      // <head> — NOT in the SERP snippet, NOT a GSC-measured surface
+      // (machine-readable metadata). The byte-frozen title/H1/description/
+      // answer-sentence bytes are untouched (the Dec 4-8 freeze holds).
+      ogType: "article",
       // SEO Session 5 (MATCH-LIFECYCLE-POLICY.md §6): the season-end
       // ordinary transition. The S19 noindex law requires the indexable
       // flag stay the literal true here — this sibling noindex flag is the
@@ -2109,6 +2119,12 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
     html: pageShell({
       head: buildHead({
         path, title, description: desc, indexable,
+        // S11 (Persian entity naming/metadata polish — S07-H4 follow-up):
+        // the team-detail page is an ARTICLE (spec §8 + keyword map §2.7).
+        // og:type=article is NOT a GSC-measured surface (the SERP snippet
+        // does not show og:type) — the byte-frozen title/H1/description/
+        // answer-sentence bytes are untouched (the Dec 4-8 freeze holds).
+        ogType: "article",
         jsonldNodes: [
           ...JL.siteNodes(),
           // S8: the team-page @graph carries a WebPage node — the same
@@ -2263,6 +2279,13 @@ export async function buildCompetitionPage(ctx: SeoCtx, slug: string): Promise<{
     html: pageShell({
       head: buildHead({
         path, title, description: desc, indexable,
+        // S11 (Persian entity naming/metadata polish — S07-H4 follow-up):
+        // the competition-detail page is an ARTICLE (spec §8 + keyword map
+        // §2.8-2.13). og:type=article is NOT a GSC-measured surface (the
+        // SERP snippet does not show og:type) — the byte-frozen title/H1/
+        // description/answer-sentence bytes are untouched (the Dec 4-8
+        // freeze holds).
+        ogType: "article",
         jsonldNodes: [
           ...JL.siteNodes(),
           // S9: the competition-page @graph carries a CollectionPage node —
