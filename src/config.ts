@@ -1,7 +1,7 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.271.0-content";
+export const VERSION = "13.272.0-goalert";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -412,6 +412,18 @@ export const CONFIG: Record<string, any> = {
   // when the admin opens the members card. Keyed by chat id.
   KV_USER_PROFILES: "user_profiles_v1",
   KV_MATCH_STATUS: "match_status_v1",
+  // v13.272-goalert (S19): the goal-event layer's LAST-KNOWN-SCORE snapshot
+  // map — { [matchKey]: {h, a, d} } for in-window LIVE matches with a real
+  // score, write-only-when-changed (the match_status_v1 discipline), TTL 2
+  // days. Read ONLY on ticks with live-scored in-window matches (zero cost
+  // on quiet ticks); written at most once per tick and only when a score,
+  // status or window membership actually changed (~30-60 writes on the
+  // busiest Saturday slate vs the 1,000/day quota).
+  KV_GOAL_SNAPSHOTS: "goal_snapshots_v1",
+  // v13.272-goalert (S19): the per-tick cap on goal fan-out units — the
+  // Saturday 3pm-slate burst bound. Units past the cap defer (baseline
+  // retained) and ride the next 10-min tick with an accurate score line.
+  GOAL_ALERT_MAX_UNITS: 6,
   // v13.230-channelbase: the Telegram Channel Mirror PAUSE marker. Written
   // ONLY on state transitions (paused on a permanent channel error class,
   // resumed on config-change detection / owner action — DISCOVERY §7.6),

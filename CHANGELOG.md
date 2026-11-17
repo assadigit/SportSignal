@@ -4,6 +4,77 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.272.0-goalert — Telegram Alerts Track Session 19: the live goal alerts (2026-11-17, `main`)
+
+The first session of the Telegram alerts track (per-user live goal alerts +
+the subscription/persistence/distribution machinery behind them). Adds the
+GOAL-EVENT layer: a goal in any followed team's live match now reaches the
+follower's chat within one cron tick (~10 minutes worst case), composed from
+REAL score deltas in the existing LIVE sweep — zero new schedulers, zero new
+providers, zero changes to the SEO surfaces (the Dec 4-8 freeze holds).
+
+- **S19-M1 — the detection layer (`src/goal-alert.ts`, the
+  `notify-status.ts` structural twin).** One compact KV snapshot map
+  (`goal_snapshots_v1`) holds the last-known score of every in-window LIVE
+  match (kickoff ±[−6h, +4h], a REAL `score.fullTime` required —
+  MISSING-IS-NOT-ZERO: no score, no row, never a fake 0-0), written
+  write-only-when-changed (the `match_status_v1` discipline, TTL 2 days).
+  At each tick the fresh live score is diffed against the snapshot: a
+  forward delta is a goal event with score-side attribution (which of
+  home/away incremented; a both-sides tick credits both without inventing
+  an order). FIRST SIGHTING SEEDS, NEVER FIRES (an outage-recovered 2-0 is
+  not 2 goal events); a BACKWARD movement (provider correction) advances
+  the baseline silently. FAIL-CLOSED: a provider gap mid-match retains the
+  snapshot row, so the next good sweep fires the missed goal(s) once, late
+  — never a burst from a reset baseline.
+- **S19-M2 — the claim + the audience.** The per-goal dedupe rides
+  `notified_v1` verbatim (the D1 write-first `INSERT OR IGNORE` PK
+  extension) with the ntype `goal:<h>-<a>` — the score tuple AFTER the
+  goal: a 2-1 then 3-1 match alerts twice, a re-sweep of the same 3-1
+  alerts zero times, at most one alert per score tuple per match ever. The
+  audience is the EXISTING team-follow subscriptions (`userFollowsMatch`
+  one/both): a goal fans out to chats following EITHER side — no new
+  subscription surface.
+- **S19-M3 — the send path.** The fan-out rides the existing transport
+  (`sendTelegram`: retries, 429 pause-wait, dead-letter outbox, dead-chat
+  pruning) + the per-chat delivery ledger (`notify_deliveries_v1`), with
+  the match card from `cachedCardPng` ONLY (cache-only — the v13.94.1
+  CPU-keeper law: a goal burst must never resvg-render; text fallback per
+  chat). The compact Persian-first alert («گُل!» + teams + competition +
+  «نتیجه: *۲-۰*» in Persian digits + the «گلِ X» side attribution; the «۲ گل
+  برای X» multi-goal variant; the English twin for en chats) — never
+  scorer names or minutes the sweep data does not carry. Budget-reserved
+  BEFORE any claim (full/lean/defer — the v13.94 fan-out reservation
+  semantics) and capped at `GOAL_ALERT_MAX_UNITS` (6) units per tick: the
+  worst Saturday-slate burst is bounded and deferred units ride the next
+  tick with the baseline retained (an accurate, slightly late alert).
+- **The honesty gate (DECISIONS S19-3):** red-card alerts are SCOPED OUT —
+  the wired providers expose no live incident source (football-data v4
+  free tier: fixtures+scores only; the LIVE sweep's shape carries scores
+  only). Never fabricated, never half-guessed. Channel-mirror goal posts
+  + the sportscore scorer enrichment are S20 backlog (DECISIONS S19-5).
+- **The gates.** New `scripts/check-s19-goalalert.js` (52 gates — the
+  wiring, the two-layer write-first order, the delta law incl. the
+  no-data/no-fake-zero law + fail-closed re-sweeps, the per-tuple claim
+  idempotency, the EITHER-side fan-out, the cache-only card law, the burst
+  cap, zero new schedulers/providers, the version triple, no red-card
+  fabrication) wired into the `npm test` chain; the seeded harness
+  `scripts/s19-goal-smoke.ts` (22/22 — the 0-0 → 1-0 → 2-0 timeline with
+  the exact alert sequence, the re-sweep zero, the provider-error gap +
+  the no-burst recovery, the fail-closed D1 outage, the EITHER-side
+  audience, the engine composition regression) through the REAL
+  `detectGoalEvents` with the mock KV/D1 + a captured Telegram transport.
+- **The regression law:** the notify-engine's own types (kickoff/result
+  pushes) are UNTOUCHED — the goal layer is a new hook in `runNotifyPhase`
+  after `detectStatusChanges`, before the engine, with its own try/catch.
+- Version bump `13.271.0-content` → `13.272.0-goalert` (the version triple
+  + the check-stats LIVE pins + this entry). Budget: +1 KV read/tick with
+  live-scored in-window matches (zero on quiet ticks); ≤1 KV write/tick
+  change-guarded (~30-60 on the busiest Saturday slate vs the 1,000/day
+  quota); 1 D1 write per goal event; the fan-out behind the existing
+  per-tick ~50-subrequest reservation. No client asset renamed (the SW
+  cache stays `sportsignal-v126` — server-side only).
+
 # v13.271.0-content — SEO Follow-up Session 18: the editorial body content on the team + competition detail pages (2026-11-17, `main`)
 
 The third session of the SEO follow-up track (the data-independent, freeze-safe

@@ -146,6 +146,17 @@ function workerSrc() {
     // dependency direction stays acyclic.
     "digest-uclnight.ts",
     "notify-engine.ts", "notify-status.ts", "notify-audit.ts",
+    // v13.272-goalert (S19): the goal-event layer — the notify-status.ts
+    // structural twin (KV snapshot map + delta law + the per-goal D1 claim
+    // through saveNotifiedMatch + the side-following fan-out). Sits with
+    // the notify group right after notify-audit; consumed by cron-notify
+    // below. Its card/users/user-store/match-dedupe references are function
+    // grabs (hoisted, position-independent — the notify-engine precedent,
+    // which also imports users.ts from above this point in the concat);
+    // card.ts stays outside the concat (read directly by the checks that
+    // need it — the check-reliability precedent), so check-s19-goalalert
+    // stubs cachedCardPng/sendPhotoBinary in its behavioral evals.
+    "goal-alert.ts",
     // v13.92-d1userstore: the user-data seam (D1 primary / legacy KV
     // fallback) — sits before users.ts (its top-level delegate) and every
     // consumer below (bot/admin-bot/notify prunes). All harness grabs on
