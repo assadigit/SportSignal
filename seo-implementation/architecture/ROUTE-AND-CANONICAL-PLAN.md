@@ -154,16 +154,22 @@ The live canonical URLs for two selected clubs are **provider-derived**: `/teams
 
 ---
 
-## 8. Hreflang stance (pending Session 12)
+## 8. Hreflang stance — FINAL (Session 12 decided: Option (b) — maintain the single-language stance)
 
-**Current state (audit C2): zero hreflang, zero English URLs.** The EN/FA toggle is client-side only; every page ships `<html lang="fa" dir="rtl">`; `scripts/seo-check.js:461-463` codifies the single-language decision (T-08).
+**Current state (audit C2, re-verified Session 12): zero hreflang, zero English URLs.** The EN/FA toggle is client-side only (the `?lang=en` query — a runtime display toggle, NOT a URL architecture); every page ships `<html lang="fa" dir="rtl">`; `scripts/seo-check.js:461-463` codifies the single-language decision (T-08 — "site is single-language (fa) — hreflang not applicable"). The only `lang="en"` references in the codebase are the client-side EN button + the `html[lang="en"]` CSS rules in `src/pages/public.ts` (the display toggle, NOT server-side EN pages).
 
-**This blueprint's stance:**
+**Session 12 decided Option (b) — the single-language stance is FINAL (no longer "pending Session 12").** The decision (`docs/DECISIONS.md` S12-1) rests on three independently-verified evidence axes, all decisive for (b):
 
-1. **No hreflang and no EN URLs before Session 12.** Emitting hreflang for an absent or non-equivalent translation is a spec violation (MASTER-SEO-SPEC §7) and there is zero English-query evidence to justify URLs (374/375 visible queries Persian; the sole Latin string is a club name).
-2. Session 12 decides between (a) `/en/` URL architecture with genuinely localized pages + reciprocal hreflang, or (b) maintaining the single-language stance. The decision needs evidence Session 12 must gather itself (English-query demand in a fresh GSC export, EN SERP formats, the localization cost against the Worker budget).
-3. **Plan slots only** (KEYWORD-TO-URL-MAP §2): every URL class carries an English title/H1 plan slot so Session 12 can act without re-deriving the mapping. No URL, no markup, no canonical change before that session.
-4. **Constraint carried forward:** if Session 12 builds EN URLs, each language page self-canonicals per language URL and the hreflang set must be reciprocal and complete (fa-IR + en) — including `x-default` only if a genuine language-neutral entry exists.
+1. **English-query demand = ZERO.** Session 12 re-verified the demand directly from the 2026-11-15 GSC export (`Queries.csv`): 375 visible query rows, 374 Persian (or Persian-with-a-club-name-token), the 1 Latin-only string is "kups" (KuPS — the Finnish club, a one-off European-tie opponent; 1 impression, 0 clicks). ZERO full English queries. Iran = 248 clicks / 8,774 impressions (98.4% of clicks); the top English-speaking countries (US/UK/Canada/Ireland) collectively = 0 clicks / ~23 impressions at poor positions (Persian-diaspora searches, not English queries). Mobile = 94.8% of clicks.
+2. **The localization cost against the Worker budget is NOT justified.** Building `/en/` URLs doubles the page count (~383 → ~766 sitemap URLs) + doubles the KV-read demand (each EN page render reads the same `getSeoCtx` data) — and the 100,000 KV reads/day free-plan limit is ALREADY exceeded DAILY (Sessions 5-11). The 10ms CPU/invocation cliff is chronic (37 `exceededResources` in 3h on v13.258, 789 on Nov 10); doubling the page count doubles the cold-render exposure. The free-tier budget cannot absorb the doubling; a Workers Paid plan ($5/mo → 1M reads/day) is a prerequisite for any future `/en/` architecture.
+3. **The EN SERP is saturated** by high-authority English-native publishers (BBC Sport, ESPN, the league-official sites, Flashscore, Sofascore). The curation differentiator («برنامه بازی‌های مهم فوتبال») does not translate to a competitive English advantage. The site's best-CTR surfaces are ALL Persian-query surfaces.
+
+**The FINAL stance (S12-1, S12-2):**
+
+1. **No hreflang and no `/en/` URLs.** Emitting hreflang for an absent or non-equivalent translation is a spec violation (MASTER-SEO-SPEC §7 — "Do not emit hreflang for an absent or non-equivalent translation"), and there is zero English-query evidence to justify the URLs. The client-side `?lang=en` toggle stays as the ONLY English surface — it is NOT an SEO surface and was never the basis for an EN URL architecture.
+2. **The keyword map §2 English plan slots are RETIRED as active plan slots** — they remain in the map as the documented Option (a) contingency (what the EN titles/H1s WOULD be if a future session re-litigates and chooses Option (a)), but they are no longer "pending Session 12" slots. A future session that wants to build `/en/` URLs must re-litigate ALL THREE evidence axes (S12-1 revisit clause) with a fresh 16-month GSC export showing real English-query demand + a Workers Paid plan in place + a demonstrated competitive angle.
+3. **No URL, no markup, no canonical change.** Every FA page stays self-canonical; `<html lang="fa" dir="rtl">` stays; `og:locale=fa_IR` stays; the T-08 live-audit gate stays.
+4. **Constraint carried forward (for any future Option (a) re-litigation):** if a future session builds EN URLs, each language page self-canonicals per language URL and the hreflang set must be reciprocal and complete (fa-IR + en) — including `x-default` only if a genuine language-neutral entry exists.
 
 ---
 
@@ -190,6 +196,6 @@ The live canonical URLs for two selected clubs are **provider-derived**: `/teams
 | Competition/date/empty-state content decisions + the held-competitions threshold review | 9 | content-first; no thin pages |
 | Internal linking/nav (tile order, anchor wording per the cannibalization checklist) | 10 | markup-only |
 | Persian entity naming/metadata polish | 11 | spelling-freeze-aware (post-Dec 8 for frozen surfaces) |
-| EN architecture + hreflang decision | 12 | new URLs only with evidence; localization cost stated |
+| EN architecture + hreflang decision | 12 (DONE — Option (b): maintain the single-language stance, FINAL) | docs-only; no new URLs (zero English-query demand + the 2× KV-read/CPU cost is not justified on the free plan; see §8 + DECISIONS S12-1) |
 
 **Standing constraints carried into every implementation session:** the Dec 4-8 measurement freeze (GSC-measured surfaces + team-name spellings byte-frozen); no deploys in the Nov 20 Bayern–Köln S27 windows (kickoff 19:30 UTC; M1 ~19:35, M2 ~21:35-45 UTC); npm only; `npm test` exit 0 before every push; versioned deploys only; no new per-request fetches, no client polling, no unbounded cron.

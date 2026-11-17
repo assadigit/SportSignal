@@ -4,6 +4,83 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# SEO Session 12 — the EN architecture + hreflang decision: Option (b) maintain the single-language stance, FINAL (docs-only — no version bump, no deploy; 2026-11-17, `main`)
+
+The NINTH session of the 15-session SEO program. This session owns the EN
+architecture + hreflang/canonical equivalence decision (the route plan §8 +
+§10 — the phase file `sportsignal-seo-implementation/phases/SESSION-12-ENGLISH-SEO-AND-HREFLANG.md`).
+**Decision: Option (b) — maintain the single-language stance, FINAL.**
+SportSignal stays a single-language (Persian-first) site. No `/en/` URL
+architecture. No hreflang. The client-side `?lang=en` toggle (the EN button
++ the `html[lang="en"]` CSS rules in `src/pages/public.ts`) stays as the
+ONLY English surface — a runtime display toggle, NOT a URL architecture.
+
+**Docs-only session: no `src/` change, no `scripts/` change, no `assets/`
+change, no version bump (stays `13.267.0-persian-entities` / `13.267.0.0`),
+no deploy (the live deployment `21efcee2-269a-4ad1-819c-b6027822607a` @100%
+stays).** `npm test` exit 0 — **3,720 OK** (the baseline; no new check
+added, no code changed). The Dec 4-8 freeze is moot: Option (b) touches NO
+byte-frozen surface (no title/H1/description/answer bytes; no team-name
+spellings; no `/matches/tomorrow` empty-state copy).
+
+The decision rests on three independently-verified evidence axes, all
+decisive for (b) (full detail in `docs/DECISIONS.md` S12-1):
+
+1. **English-query demand = ZERO (the decisive axis).** Re-verified this
+   session directly from the 2026-11-15 GSC export (`Queries.csv`): 375
+   visible query rows (23 clicks / 4,289 impressions), 374 Persian (or
+   Persian-with-a-club-name-token), the 1 Latin-only string is "kups" (KuPS
+   — the Finnish club Kuopion Palloseura, a one-off European-tie opponent;
+   1 impression, 0 clicks). ZERO full English queries. Iran = 248 clicks /
+   8,774 impressions (98.4% of clicks); the top English-speaking countries
+   (US/UK/Canada/Ireland) collectively = 0 clicks / ~23 impressions at poor
+   positions (Persian-diaspora searches, not English queries). Mobile =
+   94.8% of clicks. The existing 3-month snapshot is SUFFICIENT — zero
+   demand is zero demand regardless of the window.
+
+2. **The localization cost against the Worker budget is NOT justified.**
+   Building `/en/` URLs doubles the page count (~383 → ~766 sitemap URLs) +
+   doubles the KV-read demand (each EN page render reads the same
+   `getSeoCtx` data) — and the 100,000 KV reads/day free-plan limit is
+   ALREADY exceeded DAILY (Sessions 5-11). The 10ms CPU/invocation cliff is
+   chronic (37 `exceededResources` in 3h on v13.258, 789 on Nov 10);
+   doubling the page count doubles the cold-render exposure. The free-tier
+   budget cannot absorb the doubling; a Workers Paid plan ($5/mo → 1M
+   reads/day) is the prerequisite for any future `/en/` architecture.
+
+3. **The EN SERP is saturated** by high-authority English-native publishers
+   (BBC Sport, ESPN, the league-official sites, Flashscore, Sofascore). The
+   curation differentiator («برنامه بازی‌های مهم فوتبال») does not translate
+   to a competitive English advantage. The site's best-CTR surfaces are ALL
+   Persian-query surfaces.
+
+The spec §7 law: "Do not emit hreflang for an absent or non-equivalent
+translation." Zero English URLs today = hreflang would be a spec violation.
+
+Files changed this session (docs-only): `docs/DECISIONS.md` (S12-1/S12-2/
+S12-3 prepended), `seo-implementation/architecture/ROUTE-AND-CANONICAL-PLAN.md`
+(§8 rewritten to "FINAL — Session 12 decided: Option (b)"; §10 sequencing
+row updated to "DONE"), `seo-implementation/session-reports/SESSION-12.md`
+(new), `docs/HANDOFF.md` (rewritten for Session 12), this CHANGELOG entry,
+`sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md` (the Session 12
+row), `seo-implementation/next-session-prompt.md` (the Session 13 prompt).
+
+The keyword map §2 English plan slots (the per-class "English plan slot
+(Session 12)" lines) are RETIRED as active plan slots — they stay in the
+map as the documented Option (a) contingency (what the EN titles/H1s WOULD
+be if a future session re-litigates and chooses Option (a)). A future
+session that wants to build `/en/` URLs must re-litigate ALL THREE evidence
+axes (English-query demand in a fresh 16-month GSC export + a Workers Paid
+plan in place + a demonstrated competitive angle) per the S12-1 revisit
+clause.
+
+The fresh 16-month GSC export remains the program's top evidence request —
+but the existing 3-month snapshot is SUFFICIENT for the S12 decision (zero
+English-query demand is zero regardless of the window). The fresh export
+would validate the frozen-surface byte decisions post-Dec-4 (S09-3, S08,
+S07-H2, S06-H2, S06-H3) + the SEO_EXTRA_ALIASES future-additions + any
+future EN re-litigation.
+
 # v13.267.0-persian-entities — SEO Session 11: the Persian entity-naming/metadata polish (spelling-freeze-aware — og:type=article on detail pages + the Barcelona «بارسا» JSON-LD alias + the TEAM_SLUGS no-op tidiness fix; 2026-11-17, `main`)
 
 The EIGHTH implementation session of the 15-session SEO program. This session

@@ -2,213 +2,161 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
-## This session (SEO Program Session 11 — Persian entity naming/metadata polish; EIGHTH implementation session, 2026-11-17)
+## This session (SEO Program Session 12 — EN architecture + hreflang decision; NINTH session, 2026-11-17, docs-only)
 
-The Persian entity-naming/metadata-polish session of the 15-session SEO
-program: spelling-freeze-aware — the alternateName JSON-LD aliases + the
-non-title metadata (og:type, og:locale) + the TEAM_SLUGS no-op tidiness
-fix are NOT GSC-measured surfaces (machine-readable JSON-LD / non-title
-metadata) — safe under the Dec 4-8 freeze IF they do not touch the
-byte-frozen title/H1/description/answer-sentence bytes.
-**Deployed (versioned): `21efcee2-269a-4ad1-819c-b6027822607a`**
-(`13.267.0-persian-entities`) @ 100%. All phase acceptance criteria met
-(SESSION-11.md — to be written next).
+The EN architecture + hreflang decision session of the 15-session SEO
+program (the route plan §8 + §10). **Decision: Option (b) — maintain the
+single-language stance, FINAL.** SportSignal stays a single-language
+(Persian-first) site. No `/en/` URL architecture. No hreflang. The
+client-side `?lang=en` toggle (the EN button + the `html[lang="en"]` CSS
+rules in `src/pages/public.ts`) stays as the ONLY English surface — a
+runtime display toggle, NOT a URL architecture. **Docs-only session: no
+code change, no version bump, no deploy.** The live deployment stays at
+`13.267.0-persian-entities` (deployment `21efcee2-269a-4ad1-819c-b6027822607a`
+@100% — the Session 11 deploy).
 
-- **The THREE freeze-safe changes (S11 — route plan §10 + the keyword map
-  §2.1-2.15 + spec §7/§8):**
+- **The decision (S12-1 — three independently-verified evidence axes, all
+  decisive for (b)):**
 
-  1. **og:type=article on the 3 detail page types (the S07-H4 follow-up).**
-     `buildMatchPage` + `buildTeamPage` + `buildCompetitionPage`
-     (`src/seo/pages.ts`) now pass `ogType: "article"` to `buildHead`.
-     Hubs/index pages (the homepage, `/matches` hub, the 4 time hubs,
-     `/teams` index, `/competitions` index) keep the default
-     `og:type=website` (they pass NO `ogType` — the `page-shell.ts`
-     default stands). og:type is a `<meta>` tag in `<head>` — NOT in the
-     SERP snippet, NOT a GSC-measured surface (machine-readable metadata).
-     The byte-frozen title/H1/description/answer-sentence bytes are
-     untouched (the Dec 4-8 freeze holds). Verified live: the match page
-     `/matches/barcelona-vs-villarreal-2026-11-22` carries
-     `og:type=article`; the team page `/teams/barcelona` carries
-     `og:type=article`; the competition page `/competitions/la-liga`
-     carries `og:type=article`; the homepage `/` carries `og:type=website`
-     (the default).
+  1. **English-query demand = ZERO (the decisive axis).** Re-verified
+     this session directly from the 2026-11-15 GSC export
+     (`sportsignal-seo-implementation/reference/sportsignal.ir-GSC-11-15.zip`
+     → `Queries.csv`). Across **375 visible query rows** (23 clicks /
+     4,289 impressions), **374 are Persian** (or Persian-with-a-club-name-
+     token). The **1 Latin-only string is "kups"** (KuPS — the Finnish
+     club Kuopion Palloseura, a one-off European-tie opponent; **1
+     impression, 0 clicks**, pos 7). One mixed row "بازی como" ("بازی" =
+     Persian "match" + "como" = the Italian club Como; 1 impression, 0
+     clicks) is a Persian query with a club-name token. **ZERO full
+     English queries** — no "Arsenal next match", "Champions League
+     fixtures", "Barcelona next game" or any English phrase. The country
+     evidence (Countries.csv) corroborates: Iran = **248 clicks / 8,774
+     impressions** (98.4% of clicks, 92.8% of impressions); Afghanistan =
+     1 click / 438 impressions (Persian-speaking — Dari); the top
+     English-speaking countries (US 0/12 pos 22.67, UK 0/6 pos 10.33,
+     Canada 0/3 pos 24.67, Ireland 0/2) collectively carry **0 clicks /
+     ~23 impressions at poor positions** — Persian-diaspora users
+     searching in Persian, NOT English queries. Mobile = 94.8% of clicks.
+     The keyword map §5 held cluster (20 English rows) has zero
+     GSC-observed demand. **The existing 3-month snapshot is SUFFICIENT**
+     — zero demand is zero demand regardless of the window; a fresh
+     16-month export would only strengthen the finding.
 
-  2. **The SEO_EXTRA_ALIASES map — the GSC-observed Persian short-form
-     aliases (the S1 M2 alternateName discipline, extended to the
-     GSC-observed short form for a non-overridden selected club).**
-     `src/seo/team-names.ts` gains a new `SEO_EXTRA_ALIASES` map keyed by
-     `normTeamKey()`; `seoTeamAltNames` now consults it and appends the
-     aliases to the JSON-LD alternateName array (machine-readable,
-     invisible to the SERP snippet). The first entry is the Barcelona
-     «بارسا» alias — GSC evidence: 179 impressions for «بازی بعدی بارسا»
-     in `sportsignal-seo-implementation/GSC-AUDIT-BASELINE.md` (the
-     2026-11-15 export). The alias rides BOTH the match-page
-     `SportsEvent.homeTeam.alternateName` AND the team-page
-     `SportsTeam.alternateName` (both nodes call `seoTeamAltNames`). The
-     visible faName/SEO name bytes («بارسلونا» in the title/H1/answer/
-     breadcrumbs) stay byte-frozen — only the JSON-LD alternateName gains
-     the alias. Verified live: the match page
-     `/matches/barcelona-vs-villarreal-2026-11-22`
-     `SportsEvent.homeTeam.alternateName = ["بارسلونا", "بارسا"]` + the
-     team page `/teams/barcelona` `SportsTeam.alternateName =
-     ["بارسلونا", "بارسا"]`. The S-05 no-invented-data rule holds: every
-     alias cites its GSC evidence (the impression count + the query
-     string in the per-alias comment). The S1 M2 / F3 override layer
-     (Leipzig «لایپزیگ»/«لایپزیش», Nordsjaelland «نورشلان»/«نوردشیلند»,
-     Roma «رم»/«آ س رم») stays byte-frozen through Dec 4-8 — verified by
-     the existing `check-seo-teamnames.js` gate (the type-strip regex
-     extended to handle the new `: Record<string, string[]> =`
-     annotation; the 7 override cases + the 4 control teams pass
-     byte-identical).
+  2. **The localization cost against the Worker budget is NOT justified.**
+     Building `/en/` URLs doubles the page count (~383 → ~766 sitemap
+     URLs; every FA page gets an EN mirror). Each EN page render reads
+     the SAME KV data (`getSeoCtx` = payload + pool + overlay), so **the
+     KV read budget doubles** — and the 100,000 KV reads/day free-plan
+     limit is **ALREADY exceeded DAILY** (Sessions 5-11). The 10ms
+     CPU/invocation cliff is chronic (37 `exceededResources` in 3h on
+     v13.258, 789 on Nov 10); doubling the page count doubles the
+     cold-render exposure. The free-tier budget cannot absorb the
+     doubling. A Workers Paid plan ($5/mo → 1M reads/day) is the
+     prerequisite for any future `/en/` architecture.
 
-  3. **The TEAM_SLUGS no-op tidiness fix (route plan §7 — the live
-     provider-derived slugs for Inter + Atlético are now EXPLICIT pins).**
-     `src/slugs.ts` `TEAM_SLUGS` gains `"Club Atlético de Madrid":
-     "club-atletico-de-madrid"` + `"FC Internazionale Milano":
-     "internazionale-milano"` — the live canonical URLs that the
-     football-data.org provider names produce through `teamSlug()`'s
-     NFD-strip derivation. The pinned values match the derivation output
-     EXACTLY (true no-op: zero URL change, zero byte-frozen surface
-     change); the explicit pins align the table with reality (the dead
-     `inter-milan` / `atletico-madrid` entries stay for the sportscore/
-     TSP short-form providers). Verified by the new
-     `check-seo-persian-entities.js` gate (the explicit pins + the no-op
-     proof: `teamSlug("FC Internazionale Milano") === "internazionale-
-     milano"`; `teamSlug("Club Atlético de Madrid") === "club-atletico-
-     de-madrid"`).
+  3. **The EN SERP is saturated** by high-authority English-native
+     publishers (BBC Sport, ESPN, the Premier League / La Liga / Serie A
+     / Bundesliga / Ligue 1 official sites, Flashscore, Sofascore). The
+     curation differentiator («برنامه بازی‌های مهم فوتبال») does not
+     translate to a competitive English advantage. The site's best-CTR
+     surfaces (`/matches/tomorrow` 8.26% CTR; the Barcelona–Man City
+     match page 8.18% CTR) are ALL Persian-query surfaces.
 
-- **The new check gate — `scripts/check-seo-persian-entities.js`:** 15
-  offline gates pinning: (1) og:type=article on the 3 detail page types;
-  (2) og:type=website default on the hubs/index pages (incl. buildHub +
-  buildHomePage); (3) og:locale=fa_IR pinned in page-shell.ts; (4) the
-  SEO_EXTRA_ALIASES map exists + Barcelona «بارسا» alias (with the GSC
-  evidence comment); (5) seoTeamAltNames consults SEO_EXTRA_ALIASES; (6)
-  the Barcelona behavior (faName=«بارسلونا» byte-frozen, altName=null,
-  altNames=[«بارسلونا», «بارسا»]); (7) the Barcelona short-form provider
-  name resolves the same alias (normTeamKey folds); (8) Leipzig (the S1 M2
-  / F3 override case) unchanged; (9) Chelsea (a non-overridden selected
-  club with NO GSC-evidenced short form) — altNames=[«چلسی»]; (10)
-  jsonld.ts wired (sportsEventNode + sportsTeamNode consult
-  seoTeamAltNames); (11) the byte-frozen title/H1 ladders (match S7 +
-  team S8 + competition S9) are byte-identical; (12) TEAM_SLUGS carries
-  the explicit pins for the live provider-derived slugs; (13) the
-  explicit pins match the derivation output (the no-op proof); (14)
-  fa-dict.ts unchanged (the dictionary spellings stay — the
-  SEO_EXTRA_ALIASES extension lives in src/seo/team-names.ts only).
-  Wired into the `npm test` chain after `check-seo-internallinks.js`.
+- **The spec §7 law:** "Do not emit hreflang for an absent or non-
+  equivalent translation." Zero English URLs today = hreflang would be a
+  spec violation. The route plan §8 stance is now FINAL (no longer
+  "pending Session 12").
 
-- **The seeded render harness — `scripts/s11-persian-entities-smoke.ts`:**
-  a seeded SeoCtx with 4 upcoming matches (Barcelona/Leipzig, Real
-  Madrid/Inter, Arsenal/Bayern, Chelsea/AC Milan) renders the match page
-  (Barcelona vs RB Leipzig — exercises BOTH the Barcelona «بارسا» alias
-  AND the Leipzig override) + the team page (Barcelona — exercises the
-  SportsTeam.alternateName) + the competition page (La Liga — exercises
-  the og:type=article + the SportsOrganization.alternateName) + the
-  homepage (exercises the og:type=website default) + the /teams index
-  (exercises the og:type=website hub pattern) + the TEAM_SLUGS no-op
-  tidiness fix. **34/34 assertions pass.**
+- **The EN/hreflang state re-verified (audit C2 holds):** a codebase
+  `grep` for `hreflang` / `/en/` / `lang="en"` / `x-default` /
+  `alternate.*hreflang` confirmed: zero hreflang emission; zero `/en/`
+  URLs (the router `src/seo/router.ts` has no `/en/` branch — the
+  route-family regex matches only the FA paths); the only `lang="en"`
+  references are the client-side EN button + the `html[lang="en"]` CSS
+  rules in `src/pages/public.ts` (the display toggle); every page ships
+  `<html lang="fa" dir="rtl">` (page-shell.ts line 107); `og:locale=fa_IR`
+  pinned (page-shell.ts line 71); `scripts/seo-check.js:461-463`
+  codifies the single-language decision (T-08 — a LIVE-audit gate, NOT in
+  the offline `npm test` chain; it passes).
 
-- **Byte-frozen (NOT changed — the Dec 4-8 freeze holds):** the
-  competition-page title/H1/description/answer (Session 9), the
-  team-page title/H1/description/answer (Session 8), the match-page
-  title/H1/description/answer-sentence (Session 7), the homepage title/H1
-  (Session 6), the date-hub empty-state copy on /matches/tomorrow
-  (S06-H3). The team-name spellings in fa-dict.ts (the S1 M2 F3 spelling
-  fix + the non-selected team dictionary) are byte-frozen — the
-  SEO_EXTRA_ALIASES extension lives in `src/seo/team-names.ts` only (the
-  scope law from S1 M2 holds: nothing outside `src/seo/` references the
-  override layer; the bot/cards/digests render from fa-dict.ts and stay
-  byte-identical — verified by the existing `check-seo-teamnames.js`
-  scope-law gate). Decision S11-4.
+- **The keyword map §2 English plan slots — RETIRED as active plan
+  slots.** The per-class "English plan slot (Session 12)" lines (§2.1
+  homepage, §2.2 matches hub, §2.3-2.6 the four time hubs, §2.7 team,
+  §2.8-2.13 competitions, §2.15 match detail) stay in the map as the
+  documented Option (a) contingency (what the EN titles/H1s WOULD be if a
+  future session re-litigates and chooses Option (a)), but they are no
+  longer "pending Session 12" slots. The keyword map is NOT edited (it is
+  a Session 3 deliverable; the route plan §8 FINAL stance + the DECISIONS
+  S12-1 entry are the governance record that retires them as active).
 
-- **What I checked (verification):** `npm test` exit 0 (**3,720 OK** =
-  baseline 3,704 + 16 from the new `check-seo-persian-entities.js` gates
-  + summary; `npx tsc --noEmit` clean); the new
-  `check-seo-persian-entities.js` standalone (15/15 gates pass); the
-  existing `check-seo-teamnames.js` (still passes — the 7 override cases
-  + the 4 control teams byte-identical after the S11 SEO_EXTRA_ALIASES
-  extension); the seeded tsx render harness (`scripts/s11-persian-entities-smoke.ts`
-  — 34/34 assertions pass); local `wrangler dev` smoke (worker boots
-  cleanly; `/healthz` 503 + `pool_matches:0` on the empty local KV —
-  expected; the homepage renders `og:type=website` + the byte-frozen
-  title; `/teams/barcelona` + `/competitions/la-liga` return 404 on the
-  empty local KV — same as Session 8/9/10 local smoke). Live: version
-  `13.267.0-persian-entities` on `/healthz` ✓ (ok:true + pool_matches:324
-  + kv_writes_day:153 — the KV quota had reset at UTC midnight; healthy
-  at deploy); the match page `/matches/barcelona-vs-villarreal-2026-11-22`
-  renders `og:type=article` + the `SportsEvent.homeTeam.alternateName =
-  ["بارسلونا", "بارسا"]` (the GSC-evidenced short form rides the JSON-LD
-  array) + the byte-frozen title `⚽ بارسلونا – ویارئال | لالیگا، ۱ آذر (۲۲
-  نوامبر) | اسپرت سیگنال` unchanged ✓; the team page `/teams/barcelona`
-  renders `og:type=article` + the `SportsTeam.alternateName =
-  ["بارسلونا", "بارسا"]` + the byte-frozen title `بارسلونا — برنامه بازی
-  بعدی و ساعت شروع | اسپرت سیگنال` unchanged ✓; the competition page
-  `/competitions/la-liga` renders `og:type=article` + the byte-frozen
-  title `لالیگا — برنامه بازی‌های بزرگ پیش‌رو | اسپرت سیگنال` unchanged ✓;
-  the homepage `/` renders `og:type=website` (the default) + the
-  byte-frozen title `برنامه بازی‌های مهم فوتبال | تاریخ و ساعت شروع | اسپرت
-  سیگنال` unchanged ✓. **The S11 data-surface self-verify is COMPLETE.**
+- **What I checked (verification):** the GSC Queries.csv / Countries.csv /
+  Devices.csv extracted directly from the 2026-11-15 export zip (§2.1 —
+  the 375 rows / 374 Persian / 1 Latin-only "kups" / the country +
+  device breakdown); the codebase `grep` for hreflang/EN references (§3
+  of the Session 12 report — zero hreflang, zero `/en/` URLs, the only
+  `lang="en"` is the display toggle); `npm test` exit 0 (**3,720 OK** =
+  the baseline; no new check added, no code changed — verified before the
+  push; `npx tsc --noEmit` clean); the live `/healthz` at session close
+  (`ok:true` + `pool_matches:324` + `kv_writes_day:178` + `degraded:false`
+  + `version:13.267.0-persian-entities` — the KV quota is healthy; no
+  deploy).
 
-- **The KV read quota (healthy at deploy; the daily-exceedance issue
-  continues):** Live `/healthz` at Session 11 deploy (2026-11-17 02:35
-  UTC): `ok:true` + `pool_matches:324` + `pool_age_min:55` +
-  `kv_writes_day:153` + `degraded:false`. The KV quota had reset at UTC
-  midnight (early UTC). The S11 data-surface self-verify is COMPLETE.
-  The owner should continue to investigate the read-source (the quota
-  gets exceeded DAILY during peak traffic); a Workers Paid plan ($5/mo →
-  1M reads/day) remains the durable fix. Decision S11-5.
+- **Byte-frozen (NOT changed — the Dec 4-8 freeze holds; the S12 session
+  is docs-only):** the competition-page title/H1/description/answer
+  (Session 9), the team-page title/H1/description/answer (Session 8), the
+  match-page title/H1/description/answer-sentence (Session 7), the
+  homepage title/H1 (Session 6), the date-hub empty-state copy on
+  `/matches/tomorrow` (S06-H3), the team-name spellings in fa-dict.ts
+  (the S1 M2 F3 spelling fix is LIVE and mid-measurement — judge ~Dec 8).
+  The S11 freeze-safe changes (og:type=article + SEO_EXTRA_ALIASES +
+  TEAM_SLUGS no-op) stay durable.
 
-- **Cloudflare budget of this change:** zero new KV reads (the
-  og:type=article pin + the SEO_EXTRA_ALIASES lookup + the TEAM_SLUGS
-  pin are all in-memory operations on data already in scope); zero new
-  KV writes (`kv_writes_day:153` at deploy — unchanged by the S11
-  change); zero new subrequests; zero new fetches; zero render-cost
-  additions (a small `ogType: "article"` string in the buildHead call
-  + a small SEO_EXTRA_ALIASES map lookup in seoTeamAltNames + a
-  constant-time TEAM_SLUGS lookup). Well within the free-tier budget.
+- **Cloudflare budget of this change:** zero new KV reads (docs-only — no
+  code, no render path change); zero new KV writes; zero new subrequests;
+  zero new fetches; zero render-cost additions. The decision (Option (b))
+  cannot worsen the KV-read quota issue — it adds nothing to the runtime.
 
-- **Decisions:** S11-1 (the og:type=article on the 3 detail page types —
-  the S07-H4 follow-up), S11-2 (the SEO_EXTRA_ALIASES map +
-  Barcelona «بارسا» alias — the GSC-evidenced short-form alias), S11-3
-  (the TEAM_SLUGS no-op tidiness fix — route plan §7), S11-4 (the
-  freeze-coordination: the alternateName JSON-LD aliases + the non-title
-  metadata are NOT GSC-measured surfaces; the byte-frozen title/H1/
-  description/answer-sentence bytes are untouched), S11-5 (the KV quota
-  healthy at deploy). Details in `docs/DECISIONS.md`.
+- **Decisions:** S12-1 (the EN architecture + hreflang decision — Option
+  (b), FINAL, with the three evidence axes), S12-2 (the freeze-
+  coordination — docs-only, no byte-frozen surface touched, no
+  code/deploy/version bump), S12-3 (the KV read quota healthy at session
+  close; no deploy). Details in `docs/DECISIONS.md`.
 
-- **Next session (Session 12):** the EN architecture + hreflang decision
-  (the route plan §8 — Session 12 decides between (a) `/en/` URL
-  architecture with genuinely localized pages + reciprocal hreflang, or
-  (b) maintaining the single-language stance; the decision needs
-  evidence Session 12 must gather itself — English-query demand in a
-  fresh GSC export, EN SERP formats, the localization cost against the
-  Worker budget). The next-session prompt is in
-  `seo-implementation/next-session-prompt.md`. A fresh GSC export (16
-  months, URL-level) remains the top evidence request.
+- **Next session (Session 13):** the structured data + GSC enhancement
+  validation (the route plan §10 — the phase file
+  `sportsignal-seo-implementation/phases/SESSION-13-STRUCTURED-DATA.md`).
+  The next-session prompt is in `seo-implementation/next-session-prompt.md`.
+  The fresh 16-month GSC export remains the program's top evidence request
+  — but the existing 3-month snapshot is SUFFICIENT for the S12 decision
+  (zero English-query demand is zero regardless of the window); the fresh
+  export would validate the frozen-surface byte decisions post-Dec-4 +
+  the SEO_EXTRA_ALIASES future-additions + any future EN re-litigation.
 
 ## Current state (machine)
 
-- **Version:** `13.267.0-persian-entities` (`src/config.ts` / `package.json` `13.267.0.0`). npm test baseline **3,720 OK** (`npx tsc --noEmit` clean + 55 check scripts — the +1 is the new `check-seo-persian-entities.js`; verified this session — was 3,704).
-- **Deploy:** Worker `ucl-notifier`, versioned deploys only. Current deployment `21efcee2-269a-4ad1-819c-b6027822607a` (`13.267.0-persian-entities`; 2026-11-17, deployed @100%). Rollback chain: `12793863` (13.266.0-internallinks, Session 10) → `fc07b557` (13.265.0-competitions, Session 9) → `b313aada` (13.264.0-teampages, Session 8) → `3e3a65e7` (13.263.0-matchlinks, Session 7) → `7df40334` (13.262.0-homepage, Session 6) → `1d70129b` (13.261.0-matchlife, Session 5) → `7d92e633` (13.260.1-teamidx, Session 4) → `24c62781` (13.260.0-teamidx) → `c97ae70b` (byte-identical S28.1) → earlier. Rollback = `npx wrangler rollback`.
+- **Version:** `13.267.0-persian-entities` (`src/config.ts` / `package.json` `13.267.0.0`) — UNCHANGED by the docs-only S12 session. npm test baseline **3,720 OK** (`npx tsc --noEmit` clean + 55 check scripts — UNCHANGED; no new check added; verified before the push).
+- **Deploy:** Worker `ucl-notifier`, versioned deploys only. Current deployment `21efcee2-269a-4ad1-819c-b6027822607a` (`13.267.0-persian-entities`; 2026-11-17, deployed @100% — the Session 11 deploy; UNCHANGED by the docs-only S12 session). Rollback chain: `12793863` (13.266.0-internallinks, Session 10) → `fc07b557` (13.265.0-competitions, Session 9) → `b313aada` (13.264.0-teampages, Session 8) → `3e3a65e7` (13.263.0-matchlinks, Session 7) → `7df40334` (13.262.0-homepage, Session 6) → `1d70129b` (13.261.0-matchlife, Session 5) → `7d92e633` (13.260.1-teamidx, Session 4) → `24c62781` (13.260.0-teamidx) → `c97ae70b` (byte-identical S28.1) → earlier. Rollback = `npx wrangler rollback`.
 - **Production hostnames:** `sportsignal.ir` (apex Custom Domain), `football.sportsignal.ir` (301→apex except `/webhook`,`/api/`,`/admin`), `ucl-notifier.sportsignal.workers.dev` (noindex-guarded alias — HTML AND machine files since Session 4; never a scratch env).
-- **Branch:** `main` (canonical; HEAD = `037ef33` — the Session 11 code checkpoint; ls-remote verified). Session 11 commit: `seo(s11): the Persian entity-naming/metadata polish — spelling-freeze-aware (the og:type=article on the 3 detail page types [the S07-H4 follow-up] + the SEO_EXTRA_ALIASES map carrying the GSC-evidenced Persian short-form aliases [the Barcelona «بارسا» alias] + the TEAM_SLUGS no-op tidiness fix [route plan §7]) + the new check-seo-persian-entities.js gate + the seeded render harness + version bump`.
+- **Branch:** `main` (canonical; HEAD = the S12 docs checkpoint — ls-remote verified after the one-shot token push). Session 12 commit: `seo(s12): the EN architecture + hreflang decision — Option (b) maintain the single-language stance, FINAL …` (docs-only — DECISIONS S12-1/2/3 + ROUTE-AND-CANONICAL-PLAN §8 FINAL + the §10 sequencing row + the SESSION-12 report + the HANDOFF/CHANGELOG/tracker + the Session 13 prompt).
 - **Commands:** `npm test` (must exit 0 before every push). **npm only, never `bun install`**. Local dev: `npx wrangler dev --config wrangler.dev.toml --port 8787 --local` (the dev config has no [ai] remote binding — safe without the token). Deploy needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID=a796fdfe…` in the env.
-- **Cron triggers:** `*/10 * * * *` + `27 */4 * * *` (unchanged). Live healthz at Session 11 close: version `13.267.0-persian-entities`; the KV quota had reset at UTC midnight (2026-11-17 02:35 UTC: `ok:true` + `pool_matches:324` + `pool_age_min:55`); `degraded:false`; `kv_writes_day:153` (unchanged by the S11 change — zero new writes; the S11 changes are in-memory og:type=article + SEO_EXTRA_ALIASES lookup + TEAM_SLUGS pin). **The S11 data-surface self-verify is COMPLETE** (post-quota-reset): the match page `/matches/barcelona-vs-villarreal-2026-11-22` renders `og:type=article` + `SportsEvent.homeTeam.alternateName = ["بارسلونا", "بارسا"]`; the team page `/teams/barcelona` renders `og:type=article` + `SportsTeam.alternateName = ["بارسلونا", "بارسا"]`; the competition page `/competitions/la-liga` renders `og:type=article`; the homepage renders `og:type=website` (the default); all byte-frozen titles unchanged.
+- **Cron triggers:** `*/10 * * * *` + `27 */4 * * *` (unchanged). Live healthz at Session 12 close: version `13.267.0-persian-entities` (unchanged — no deploy); the KV quota is healthy (`ok:true` + `pool_matches:324` + `kv_writes_day:178` + `degraded:false`); `sched_next_ko: 2026-11-20T19:30:00.000Z` (the Bayern–Köln S27 auto-verify window — days away; noted for the next session's deploy-window check).
 - **Key folders:** `src/` (worker modules; `scripts/lib/worker-src.js` carries the bundle ORDER — co-evolve), `assets/` (immutable versioned client payload; SW `sportsignal-v126`, bundle `public-13.80.js`, stylesheet `public-13.87.css`), `docs/` (RUNBOOK, specs, audits, history), `sportsignal-seo-implementation/` (the SEO spec pack — owner's, tracker updated per session), `seo-implementation/` (the SEO program working tree: audits, keyword research, architecture, session reports, next-session prompts).
 - **Backups:** KV is live state; no routine file backups (RUNBOOK §5 KV key contracts). Never rename KV keys.
-- **Standing limits:** `_headers` at the 100-rule cap. **Cross-track SEO measurement window Dec 4-8: the GSC surfaces + team-name spellings stay byte-frozen through it.** The competition-page title/H1/description/answer ARE byte-frozen (Session 9 verified; Session 11 did not touch them). The team-page title/H1/description/answer ARE byte-frozen (Session 8 verified). The match-page title/H1/description/answer-sentence ARE byte-frozen (Session 7 verified). The homepage title/H1 ARE byte-frozen (Session 6). The date-hub empty-state copy on `/matches/tomorrow` IS byte-frozen (the S06-H3 follow-up is post-Dec-4). The team-name spellings in fa-dict.ts ARE byte-frozen (the S1 M2 F3 spelling fix is LIVE and mid-measurement — judge ~Dec 8). The S11 changes (og:type=article + SEO_EXTRA_ALIASES + TEAM_SLUGS no-op) are NOT GSC-measured surfaces (machine-readable JSON-LD / non-title metadata) — safe under the freeze. The S28 archive scope stays BIG matches only until the owner's A/B. Avoid deploys in the Nov 20 Bayern–Köln verification windows (M1 ~19:35 UTC, M2 ~21:35-45 UTC). Cloudflare free-tier budget: the 10ms CPU cliff on cold match renders is chronic; **the KV read quota (100,000/day free-plan) is exceeded DAILY** (it resets at UTC midnight but gets exceeded again during the day — Sessions 5-10 all closed with it exceeded at end-of-day; at Session 11 deploy it had just reset at UTC midnight: `ok:true` + `pool_matches:324`) — investigate the read-source; a Workers Paid plan ($5/mo → 1M reads/day) is the durable fix.
+- **Standing limits:** `_headers` at the 100-rule cap. **Cross-track SEO measurement window Dec 4-8: the GSC surfaces + team-name spellings stay byte-frozen through it.** The competition-page title/H1/description/answer ARE byte-frozen (Session 9 verified). The team-page title/H1/description/answer ARE byte-frozen (Session 8 verified). The match-page title/H1/description/answer-sentence ARE byte-frozen (Session 7 verified). The homepage title/H1 ARE byte-frozen (Session 6). The date-hub empty-state copy on `/matches/tomorrow` IS byte-frozen (the S06-H3 follow-up is post-Dec-4). The team-name spellings in fa-dict.ts ARE byte-frozen (the S1 M2 F3 spelling fix is LIVE and mid-measurement — judge ~Dec 8). The S11 changes (og:type=article + SEO_EXTRA_ALIASES + TEAM_SLUGS no-op) are NOT GSC-measured surfaces (machine-readable JSON-LD / non-title metadata) — safe under the freeze; durable. **The S12 decision (Option (b) — maintain the single-language stance) is FINAL; no `/en/` URLs, no hreflang; a future re-litigation requires the three evidence axes (English-query demand + Workers Paid plan + a competitive angle).** The S28 archive scope stays BIG matches only until the owner's A/B. Avoid deploys in the Nov 20 Bayern–Köln verification windows (M1 ~19:35 UTC, M2 ~21:35-45 UTC). Cloudflare free-tier budget: the 10ms CPU cliff on cold match renders is chronic; **the KV read quota (100,000/day free-plan) is exceeded DAILY** (it resets at UTC midnight but gets exceeded again during the day — Sessions 5-11 all closed with it exceeded; at Session 12 close it was healthy: `ok:true` + `pool_matches:324`) — investigate the read-source; a Workers Paid plan ($5/mo → 1M reads/day) is the durable fix AND the prerequisite for any future `/en/` URL architecture.
 
-## Open follow-ups from the previous tracks (updated by Session 11)
+## Open follow-ups from the previous tracks (updated by Session 12)
 
-- **Nov 20 (S27 option B):** the auto-verify workflow fires around Bayern–Köln; the owner re-fires the M1/M2 window sessions per the S27-cont record.
+- **Nov 20 (S27 option B):** the auto-verify workflow fires around Bayern–Köln; the owner re-fires the M1/M2 window sessions per the S27-cont record. (`sched_next_ko: 2026-11-20T19:30:00.000Z`.)
 - **S24 (perf/CWV):** after Dec 8 — P1 hero `loading="lazy"`, P2 preconnect to crests.football-data.org, per-route CPU via GraphQL.
 - **S26 (UI/UX iteration):** after S25 (done) — hero rendering, nav UX, FAQ discoverability, schedule density, telegram CTA. **S06-H4 (the visible curation copy) belongs here or in a dedicated UI round.**
 - **S1/S2 SEO mini-track:** S1 spelling fix LIVE and mid-measurement (judge ~Dec 8); S2 title test parked — re-fire on/after Dec 4 with a fresh GSC export. **The program's Session 9/10/11 (competition/team pages + internal linking + Persian entity-naming) consumes the S2 title-test result after Dec 4 for the frozen-surface byte decisions (S09-3, S08, S07-H2, S06-H2).**
 - **S25 follow-up smokes:** NVDA/VoiceOver + Safari/Firefox/Edge live confirmations (owner sessions needed).
 - **C8 client-side staleness vector (Session 4):** the `/api/public-matches` zone-edge HIT stamp (`max-age=14400`) is browser-honored on the poll path — client-side fix or zone Cache Rule; owner decision.
-- **KV read quota (Session 5/6/7/8/9/10/11, STILL OPEN):** the account's 100,000 KV reads/day free-plan limit is exceeded DAILY (it resets at UTC midnight but gets exceeded again during the day). Investigate the read-source; consider a Workers Paid plan ($5/mo → 1M reads/day). **Session 11's data-surface self-verify is COMPLETE** (the quota had reset at UTC midnight 2026-11-17 02:35 UTC; the live pages confirm the og:type=article + the alternateName «بارسا» alias + the byte-frozen titles).
+- **KV read quota (Session 5/6/7/8/9/10/11/12, STILL OPEN):** the account's 100,000 KV reads/day free-plan limit is exceeded DAILY (it resets at UTC midnight but gets exceeded again during the day). Investigate the read-source; consider a Workers Paid plan ($5/mo → 1M reads/day). **Session 12 close: the quota is healthy** (`ok:true` + `pool_matches:324` + `degraded:false`; no deploy — docs-only session). **A Workers Paid plan is ALSO the prerequisite for any future `/en/` URL architecture** (the S12-1 axis 2 — the 2× KV-read demand).
 - **Season-end lifecycle first run (Session 5, unchanged):** the mechanism is shipped + test-proven but INERT (flag false + empty dates map). To enable: confirm FD `season.endDate` values → populate `SEASON_END_DATES` → set `SEASON_END_NOINDEX_ENABLED = true` → versioned deploy → verify live. The first real transition is a May 2027 decision (after the 2026-27 season closes).
-- **S10-2 follow-up (the homepage → team/competition spec §9 gap):** the homepage does NOT link directly to `/teams/<slug>` or `/competitions/<slug>` (spec §9 lists "Homepage → ... selected competition sections and selected team pages"). Closing it is a "link placement" change (in-scope per route plan §10) but touches the shared homepage standings/cups renderers (`markup.ts`) with visual side-effects — a Session 12+ follow-up (the EN/hreflang session or a dedicated internal-link pass).
+- **S10-2 follow-up (the homepage → team/competition spec §9 gap):** the homepage does NOT link directly to `/teams/<slug>` or `/competitions/<slug>` (spec §9 lists "Homepage → ... selected competition sections and selected team pages"). Closing it is a "link placement" change (in-scope per route plan §10) but touches the shared homepage standings/cups renderers (`markup.ts`) with visual side-effects — a Session 13+ follow-up.
+- **S11 SEO_EXTRA_ALIASES extension — future additions:** after Dec 4-8, with a fresh 16-month GSC export, validate the alias coverage — add NEW GSC-observed Persian variants as further `SEO_EXTRA_ALIASES` entries (every alias cites its GSC evidence per the S-05 rule).
+- **S12 EN architecture decision (FINAL — Option (b)):** a future session that wants to build `/en/` URLs must re-litigate ALL THREE evidence axes (English-query demand in a fresh 16-month GSC export + a Workers Paid plan in place + a demonstrated competitive angle against the English-native publishers). The keyword map §2 English plan slots stay as the documented Option (a) contingency.
 
 ## SEO program state (the 15-session track)
 
@@ -221,8 +169,9 @@ Session 06 ✅ Completed / deployed (2026-11-17) — the homepage one-month wind
 Session 07 ✅ Completed / deployed (2026-11-17) — the match-detail footer-hook team-link gating + the metadata audit; 3,676 OK. Deployment `3e3a65e7…` @100%.
 Session 08 ✅ Completed / deployed (2026-11-16) — the selected-club team-page @graph WebPage node + the new `check-seo-teampages.js` gate; 3,685 OK. Deployment `b313aada…` @100%.
 Session 09 ✅ Completed / deployed (2026-11-17) — the competition-page @graph CollectionPage node + the date-hub/empty-state verification + the new `check-seo-competitionpages.js` gate + the seeded render harness; 3,694 OK. Deployment `fc07b557…` @100%.
-Session 10 ✅ Completed / deployed (2026-11-17) — the `/teams` index tile ordering (the 13 selected clubs first — the ONE explicit S10 decision; the sort rides in buildTeamsIndexPage, the presentation layer, so teamsIndex stays the raw unfiltered generator per the Session 4 C1 law) + the new `check-seo-internallinks.js` gate (9 gates) + the seeded render harness (`scripts/s10-internallinks-smoke.ts` — 29/29 assertions pass); 3,704 OK. Deployment `12793863…` @100%.
-Session 11 ✅ Completed / deployed (2026-11-17) — the Persian entity-naming/metadata polish (spelling-freeze-aware — og:type=article on the 3 detail page types [the S07-H4 follow-up — spec §8 + keyword map §2.7/2.8-2.13/2.15] + the SEO_EXTRA_ALIASES map carrying the GSC-evidenced Persian short-form aliases [the Barcelona «بارسا» alias — GSC evidence: 179 impressions for «بازی بعدی بارسا» in GSC-AUDIT-BASELINE.md; the alias rides the JSON-LD alternateName array ONLY — the visible faName/SEO name bytes stay byte-frozen through Dec 4-8] + the TEAM_SLUGS no-op tidiness fix [route plan §7 — the live provider-derived slugs for Inter + Atlético are now EXPLICIT pins; zero URL change, zero byte-frozen surface change]) + the new `check-seo-persian-entities.js` gate (15 gates) + the seeded render harness (`scripts/s11-persian-entities-smoke.ts` — 34/34 assertions pass); 3,720 OK. Deployment `21efcee2…` @100%.
-`seo-implementation/next-session-prompt.md` holds the Session 12 start prompt
-(EN architecture + hreflang decision). Progress source of truth:
+Session 10 ✅ Completed / deployed (2026-11-17) — the `/teams` index tile ordering (the 13 selected clubs first) + the new `check-seo-internallinks.js` gate + the seeded render harness; 3,704 OK. Deployment `12793863…` @100%.
+Session 11 ✅ Completed / deployed (2026-11-17) — the Persian entity-naming/metadata polish (og:type=article + SEO_EXTRA_ALIASES + TEAM_SLUGS no-op) + the new `check-seo-persian-entities.js` gate + the seeded render harness; 3,720 OK. Deployment `21efcee2…` @100%.
+Session 12 ✅ Completed, docs-only, no deploy (2026-11-17) — the EN architecture + hreflang decision: **Option (b) — maintain the single-language stance, FINAL** (zero English-query demand [375 GSC rows; 374 Persian; the 1 Latin-only string "kups" = the Finnish club KuPS, 1 impression, 0 clicks; zero full English queries; Iran = 248 clicks / 8,774 impr = 98.4% of clicks] + the localization cost against the Worker budget not justified [2× KV-read on a quota already exceeded daily + 2× CPU-cliff exposure + the sitemap doubles] + the EN SERP saturated by high-authority English-native publishers). The route plan §8 stance updated to FINAL; the keyword map §2 English plan slots RETIRED as active plan slots (the documented Option (a) contingency stays); the S12-1/S12-2/S12-3 DECISIONS entries. No code change, no version bump, no deploy; npm test 3,720 OK (baseline unchanged).
+`seo-implementation/next-session-prompt.md` holds the Session 13 start prompt
+(structured data + GSC enhancement validation). Progress source of truth:
 `sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md`.
