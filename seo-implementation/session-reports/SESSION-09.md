@@ -268,7 +268,7 @@ within the free-tier budget.
 UTC 2026-11-16) — NOT Nov 20 (the Bayern–Köln S27 auto-verify windows:
 kickoff 19:30 UTC, M1 ~19:35, M2 ~21:35-45 UTC). Safe to deploy.
 
-**Live verify (2026-11-16 23:51 UTC):** `/healthz` version =
+**Live verify (2026-11-16 23:51 UTC, pre-quota-reset):** `/healthz` version =
 `13.265.0-competitions` ✓; `ok:false` + `pool_matches:0` + `pool_age_min:-1`
 (the KV read quota is STILL exceeded — pre-existing, NOT a code issue;
 self-heals at UTC midnight); `kv_writes_day:0` (zero new writes);
@@ -276,12 +276,35 @@ self-heals at UTC midnight); `kv_writes_day:0` (zero new writes);
 CollectionPage node in the JSON-LD ✓. The competition detail page
 (`/competitions/premier-league`) returns 404 (correct — the data-path:
 `compsIndex` returns no entry when the pool is empty; mirrors the Session 8
-team-page 404 on the empty pool). The SSR-structural change (the
-CollectionPage node) is verified by the `check-seo-competitionpages.js`
-offline gates + the tsx render harness (30/30 assertions pass on a seeded
-ctx). The data-dependent surface (the rendered competition-page @graph
-CollectionPage node + the upcoming-matches list + the full standings table)
-self-verifies once the quota resets at UTC midnight.
+team-page 404 on the empty pool).
+
+**Live data-surface verify (2026-11-17 00:02 UTC, POST-quota-reset — the S09
+data-surface self-verify is COMPLETE):** the KV quota reset at UTC midnight
+(2026-11-17 00:01 UTC: `ok:true` + `pool_matches:324` + `pool_age_min:81`).
+Live verification of `/competitions/premier-league` (a competition WITH
+upcoming matches): HTTP 200 ✓; robots `index, follow` ✓ (indexable, ≥1
+upcoming); the @graph carries a `CollectionPage` node (`@id` =
+`https://sportsignal.ir/competitions/premier-league#webpage`, name
+«برنامه بازی‌های لیگ برتر انگلیس», `inLanguage: fa-IR`, `isPartOf:
+https://sportsignal.ir/#website`) ✓; the @graph node order
+`Organization → WebSite → CollectionPage → SportsOrganization → ItemList →
+BreadcrumbList` ✓ (exactly as pinned by `check-seo-competitionpages.js` gate
+8); the byte-frozen title «لیگ برتر انگلیس — برنامه بازی‌های بزرگ پیش‌رو |
+اسپرت سیگنال» ✓; the byte-frozen H1 «برنامه بازی‌های لیگ برتر انگلیس» ✓;
+the self-canonical `https://sportsignal.ir/competitions/premier-league` ✓;
+crawlable `<a href="/matches/…">` match rows ✓ (5 real PL fixtures incl.
+`manchester-city-vs-fulham-2026-11-21`, `bournemouth-vs-nottingham-forest-2026-11-21`,
+`chelsea-vs-leeds-united-2026-11-21`); the full standings table (`class="stbox"`)
+✓; the `SportsOrganization` + `ItemList` + `BreadcrumbList` nodes ✓.
+`/competitions/champions-league` (second competition): HTTP 200 ✓; the
+CollectionPage node ✓; the byte-frozen title «لیگ قهرمانان اروپا — برنامه
+بازی‌های بزرگ پیش‌رو | اسپرت سیگنال» ✓; crawlable match hrefs ✓
+(`galatasaray-vs-aston-villa-2026-11-24`, `bod-glimt-vs-lask-linz-2026-11-24`).
+The `/competitions` INDEX shows the empty-state «رقابتی در برنامه پیش‌رو نیست.»
+— a stale CF cache (HIT, age ~750s, cached during the KV quota outage when the
+pool was empty; `s-maxage=60` + `stale-while-revalidate=300` will revalidate it
+within the window; NOT an S9 code issue — the detail pages prove the pool has
+big matches). **The S09 data-surface self-verify is COMPLETE.**
 
 ## 7. The KV read quota (pre-existing, STILL OPEN)
 
@@ -308,27 +331,25 @@ issue).
 
 ## 8. Commit SHAs
 
-- The code checkpoint: `seo(s09): the competition-page @graph CollectionPage
-  node + the check-seo-competitionpages.js gate + version bump` (the
-  CollectionPage node in `buildCompetitionPage`, the new check script, the
-  seeded render harness, the version bump, the check-stats pins, the
-  CHANGELOG entry).
-- The close-out: `seo(s09): session close-out — the report, tracker, handoff,
-  decisions + Session 10 prompt`.
+- The code checkpoint: `29c270f` — `seo(s09): the competition-page @graph
+  CollectionPage node + the check-seo-competitionpages.js gate + version bump`
+  (the CollectionPage node in `buildCompetitionPage`, the new check script, the
+  seeded render harness, the version bump, the check-stats pins, the CHANGELOG
+  entry, the report/tracker/handoff/decisions, the Session 10 prompt — one
+  commit; ls-remote verified — remote main = `29c270f6b982ea391bd3ef51d66030a841ac41dd`).
 
 Recorded in `sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md`
 Session 09 row after the push.
 
 ## 9. Unresolved risks / open follow-ups
 
-- **The S09 data-surface self-verify** (the competition-page @graph
-  CollectionPage node + the byte-frozen title/H1 + the crawlable match hrefs
-  + the full standings table on the LIVE rendered page): once the KV quota
-  resets at UTC midnight, re-verify live on `/competitions/premier-league`
-  (200 + `index, follow` + the @graph `CollectionPage` node + the byte-frozen
-  title/H1 + the crawlable `<a href>` match rows + the full standings table).
-  The SSR-structural change is already verified by the offline gates + the
-  tsx harness.
+- **The S09 data-surface self-verify** (COMPLETE — 2026-11-17 00:02 UTC,
+  post-quota-reset): `/competitions/premier-league` + `/competitions/champions-league`
+  render 200 + the @graph CollectionPage node + the byte-frozen title/H1 +
+  the crawlable match hrefs + the standings table — verified live. The
+  `/competitions` INDEX empty-state is a stale CF cache from the KV quota
+  outage (revalidates within the `stale-while-revalidate` window; NOT an S9
+  code issue).
 - **The competition-page title/H1 byte change (S09-3):** after Dec 4-8, with
   a fresh 16-month GSC export, decide whether to adjust the competition-page
   title/H1 bytes against the actual query surface (the «بازی‌های لیگ برتر
