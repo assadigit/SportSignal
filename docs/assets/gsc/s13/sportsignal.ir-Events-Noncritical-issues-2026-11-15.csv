@@ -1,0 +1,5 @@
+Issue,Validation,Items
+Missing field 'endDate',Not Started,31
+Missing field 'offers',Not Started,31
+Missing field 'performer',Not Started,31
+Missing field 'address' (in 'location'),Not Started,18

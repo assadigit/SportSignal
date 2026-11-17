@@ -4,6 +4,66 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# SEO Session 13 — the structured-data + GSC enhancement validation: the 13 "Missing field location" GSC Critical items + the 4 non-critical issue types are ALL the honest "missing recommended field" class (docs-only — no version bump, no deploy; 2026-11-17, `main`)
+
+The TENTH session of the 15-session SEO program. This session owns the
+structured-data errors + the GSC enhancement validation (the route plan §10 —
+the phase file `sportsignal-seo-implementation/phases/SESSION-13-STRUCTURED-DATA.md`).
+**Decision: the 13 "Missing field location" GSC Critical items + the 4 non-
+critical issue types are ALL the honest "missing recommended field" class —
+the schema type IS SportsEvent (confirmed from the GSC Events enhancement
+report + the live JSON-LD); the MISSING-IS-NOT-ZERO law holds; NO code change,
+NO deploy.**
+
+The GSC "Events" enhancement report (`docs/assets/gsc/sportsignal.ir-Events-2026-11-15.zip`
+→ `Critical issues.csv` + `Non-critical issues.csv` — copied to
+`docs/assets/gsc/s13/`) was inspected directly. The "Events" report is
+Google's enhancement report for the Event/SportsEvent schema type. The report
+shows ONE Critical issue type + FOUR non-critical issue types:
+
+- `Missing field 'location'` — 13 items, Critical — the no-venue matches
+  (NEITHER the home-ground table `src/grounds.ts` NOR the FD v4 detail call
+  `hydrateMatchVenue` returned a venue; the `if (m.venue)` guard in
+  `jsonld.ts:149-154` omits `location` — the MISSING-IS-NOT-ZERO law).
+- `Missing field 'address' (in 'location')` — 18 items, Non-critical — the
+  matches WITH a venue name but WITHOUT an address (the data source carries
+  the venue NAME only).
+- `Missing field 'endDate'` — 31 items, Non-critical — the FD data does NOT
+  carry the match end time (S-05 no-invented-data law — OMITTED).
+- `Missing field 'offers'` — 31 items, Non-critical — SportSignal does NOT
+  sell tickets / carry ticket data (S-04 no-fake-offers law — OMITTED).
+- `Missing field 'performer'` — 31 items, Non-critical — the teams are
+  already in `homeTeam`/`awayTeam`; adding player names as `performer` is NOT
+  part of the page's content contract + would be filler.
+
+NONE is a real structured-data error. The 13 "Missing field location" Critical
+items are Google's rich-result ELIGIBILITY warning (the Events rich result
+recommends `location`), NOT a schema.org validation error. Google does NOT
+penalize recommended-field absence. The Schema Markup Validator
+(validator.schema.org — the authoritative schema.org validator) confirms BOTH
+the with-venue match (Barcelona–Man City) AND the no-venue match (Lazio–Lecce)
+are schema.org-VALID — "no errors, no warnings" on WebPage + BreadcrumbList +
+SportsEvent (schema.org treats `location`/`address`/`endDate`/`offers`/
+`performer` as RECOMMENDED, not required). The Rich Results Test was
+reCAPTCHA-blocked for automated access (the GSC Events report IS the batch
+Rich Results Test result). The existing gates (`check-match-centre.js` S20
+SportsEvent-facts gate at lines 4037-4038 + the `seo-check.js` T-04 live-audit
+gate) ALREADY pin the SportsEvent contract + the MISSING-IS-NOT-ZERO law + the
+absence of `endDate`/`offers`/`aggregateRating`/`review` — so no new
+`check-seo-structured-data.js` gate is needed.
+
+**Docs-only session: no `src/` change, no `scripts/` change, no `assets/`
+change, no version bump (stays `13.267.0-persian-entities` / `13.267.0.0`),
+no deploy (the live deployment `21efcee2-269a-4ad1-819c-b6027822607a` @100%
+stays).** `npm test` exit 0 — **3,720 OK** (the baseline; no new check added,
+no code changed). The Dec 4-8 freeze is moot: the S13 inspection is read-only
+(no byte-frozen surface touched, no JSON-LD addition, no JSON-LD removal).
+Validation evidence saved in `docs/assets/gsc/s13/` (the GSC Events CSVs + the
+live JSON-LD snapshots + the Schema Markup Validator screenshots + the
+README). Decisions S13-1/S13-2/S13-3 in `docs/DECISIONS.md`. The Session 13
+report: `seo-implementation/session-reports/SESSION-13.md`. The Session 14
+prompt: `seo-implementation/next-session-prompt.md`.
+
 # SEO Session 12 — the EN architecture + hreflang decision: Option (b) maintain the single-language stance, FINAL (docs-only — no version bump, no deploy; 2026-11-17, `main`)
 
 The NINTH session of the 15-session SEO program. This session owns the EN
