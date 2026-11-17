@@ -108,6 +108,16 @@ export function pageShell(opts: {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- v13.268-perf (S14/S24-P2): preconnect to the crest image origin
+     (crests.football-data.org). Every SEO page (match/team/competition/
+     hubs) renders crests + emblems from this external host — the facts
+     panel, the standings tables, the breadcrumb competition chip. The
+     handshake starts at HTML-byte-0 so the first crest <img> that parses
+     below fetches without the DNS+TLS delay. A render-performance HINT
+     only — zero new runtime fetch/subrequest/KV-read/CPU; NOT a GSC-
+     measured title/H1/description/answer byte (freeze-safe per Dec 4-8).
+     No crossorigin (crest <img> requests are non-CORS). -->
+<link rel="preconnect" href="https://crests.football-data.org">
 ${themeInit}
 <!-- v13.239-seofont: the Persian design-system fonts, EXACTLY like the
      homepage — the SEO shell used to preload the retired v13.6 Vazirmatn

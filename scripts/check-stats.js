@@ -1350,8 +1350,8 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v126"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.267\.0-persian-entities"/.test(cfg) &&
-    /# v13\.267\.0-persian-entities/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.268\.0-perf-preconnect"/.test(cfg) &&
+    /# v13\.268\.0-perf-preconnect/.test(read("CHANGELOG.md"));
 })());
 
 // v13.258-mca11y (the Match Centre S25 + a11y deep-dive, 2026-11-15): the
@@ -1416,11 +1416,41 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
 // /teams index + the TEAM_SLUGS pins). Server-side-only — no client asset
 // renamed (the SW cache stays sportsignal-v126 + the client bundle stays
 // public-13.80.js).
+// S14 (13.268.0-perf-preconnect): the mobile performance session (route plan
+// §10 + the phase file SESSION-14-PERFORMANCE-GSC-AND-OPTIONAL-GA4.md). The
+// S24 parked items: P1 hero loading="lazy" REJECTED with reasoning (the hero
+// poster /hero-poster.jpg is the above-the-fold LCP image — already ships
+// fetchpriority="high" + a media-scoped (max-width:899px) preload at
+// v13.224-herolcp; adding loading="lazy" to an above-the-fold LCP image
+// would DELAY the LCP; the below-the-fold crest/portrait/emblem images
+// ALREADY use loading="lazy"); P2 preconnect to crests.football-data.org
+// IMPLEMENTED, freeze-safe (a render-performance HINT — the DNS+TCP+TLS
+// handshake starts at HTML-byte-0 so the first crest <img> that parses below
+// the fold fetches without the handshake delay; added to BOTH the homepage
+// <head> [src/pages/public.ts] AND the SEO page shell <head> [src/seo/
+// page-shell.ts — covers match/team/competition/hubs]; NO crossorigin — crest
+// <img> requests are non-CORS [referrerpolicy="no-referrer"], a crossorigin
+// preconnect would open a separate connection the image fetches would NOT
+// reuse). Zero new runtime fetch/subrequest/KV-read/CPU — a HINT only. NOT a
+// GSC-measured title/H1/description/answer byte (freeze-safe per Dec 4-8 —
+// the same class as the S11 og:type + SEO_EXTRA_ALIASES non-title metadata
+// changes). + the new check-seo-performance.js gate (15 gates: the preconnect
+// on the homepage + the page shell, the early-in-head placement, the
+// no-crossorigin discipline, the S24-P1 hero-lazy REJECTION + the LCP
+// fetchpriority=high protection, the below-the-fold loading="lazy"
+// discipline, the deferred JS bundle, the freeze-coordination gate, the GSC
+// monitoring view + the GA4 DEFER decision-record). The GSC monitoring view
+// (seo-implementation/GSC-MONITORING-VIEW.md) + the GA4 evaluation
+// (docs/specs/GA4-EVALUATION.md — the default DEFER decision: GA4 NOT
+// installed; the consent management platform + the privacy policy update +
+// the performance budget are the prerequisites) are documentation-only.
+// Server-side-only — no client asset renamed (the SW cache stays
+// sportsignal-v126 + the client bundle stays public-13.80.js).
 check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-dive round: the F1-F4 fixes — the hero double-wrap → <div>, the nav aria-current at render + on scroll, the outer nav section → non-landmark container, the portrait descriptive alt; the fixes are body-only — the GSC surfaces + the answer sentence byte-frozen, the <head> NOT touched; the SW cache stays sportsignal-v126 + the client bundle stays public-13.80.js — a server-side release; the version bump 13.257-mcmatchcentre -> 13.258-mca11y; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound + the v13.257-mcmatchcentre survivors ride unchanged)", (() => {
   const pkg = JSON.parse(read("package.json"));
   const fs = require("fs");
   const path = require("path");
-  return pkg.version === "13.267.0.0" &&
+  return pkg.version === "13.268.0.0" &&
     fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-archserve.js")) &&
@@ -1431,9 +1461,10 @@ check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-div
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-persian-entities.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-match-lifecycle.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-homepage.js")) &&
+    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-performance.js")) &&
     /node scripts\/check-seo-lastmod\.js && node scripts\/check-archserve\.js && node scripts\/check-seo-teamnames\.js/.test(pkg.scripts.test) &&
     /node scripts\/check-seo-crawlindex\.js && node scripts\/check-seo-teampages\.js && node scripts\/check-seo-competitionpages\.js && node scripts\/check-seo-internallinks\.js && node scripts\/check-seo-persian-entities\.js && node scripts\/check-seo-match-lifecycle\.js/.test(pkg.scripts.test) &&
-    /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js/.test(pkg.scripts.test);
+    /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js && node scripts\/check-seo-performance\.js/.test(pkg.scripts.test);
 })());
 
 

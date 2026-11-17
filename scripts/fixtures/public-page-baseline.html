@@ -3,6 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- v13.268-perf (S14/S24-P2): preconnect to the crest image origin
+     (crests.football-data.org — the external host every team/competition
+     emblem + standings crest is fetched from). The handshake (DNS + TCP +
+     TLS) starts at HTML-byte-0 instead of waiting for the first <img
+     class="mcrest|stcrest|..."> discovery below the fold, so the crest
+     fetches that DO enter the viewport (the big-matches box, the UCL
+     table, the cups) start immediately. A render-performance HINT only —
+     zero new runtime fetch, zero subrequest, zero KV read, zero CPU; NOT
+     a GSC-measured title/H1/description byte (freeze-safe per the Dec 4-8
+     discipline — the same class as the S11 og:type + SEO_EXTRA_ALIASES
+     non-title metadata changes). No crossorigin (crest <img> requests are
+     non-CORS — a crossorigin preconnect would open a separate connection
+     that the image fetches would NOT reuse). -->
+<link rel="preconnect" href="https://crests.football-data.org">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">

@@ -4,6 +4,83 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.268.0-perf-preconnect — SEO Session 14: the mobile performance + the GSC monitoring + the optional GA4 decision (2026-11-17, `main`)
+
+The ELEVENTH session of the 15-session SEO program. This session owns the
+mobile performance + the GSC monitoring + the optional GA4 decision (the
+route plan §10 — the phase file
+`sportsignal-seo-implementation/phases/SESSION-14-PERFORMANCE-GSC-AND-OPTIONAL-GA4.md`).
+
+**The S24 parked items resolved:**
+
+- **P1 hero `loading="lazy"` — REJECTED with reasoning.** The hero poster
+  (`/hero-poster.jpg`) is the above-the-fold LCP image. It already ships
+  `fetchpriority="high"` + a media-scoped `(max-width:899px)` preload
+  (v13.224-herolcp). Adding `loading="lazy"` to an above-the-fold LCP image
+  would DELAY the LCP (the browser defers lazy images until near-viewport).
+  The below-the-fold images (crests, mc-port portraits, emblems, standings
+  logos) ALREADY use `loading="lazy"` (verified — the check-seo-performance.js
+  gate pins the discipline). P1 is satisfied where appropriate + correctly
+  NOT applied to the hero.
+
+- **P2 preconnect to crests.football-data.org — IMPLEMENTED, freeze-safe.**
+  A `<link rel="preconnect" href="https://crests.football-data.org">` added
+  to BOTH the homepage `<head>` (`src/pages/public.ts`) AND the SEO page
+  shell `<head>` (`src/seo/page-shell.ts` — covers match/team/competition/
+  hubs/static). The DNS+TCP+TLS handshake starts at HTML-byte-0 so the first
+  crest `<img>` that parses below the fold fetches without the handshake
+  delay. A render-performance HINT only — zero new runtime fetch, zero
+  subrequest, zero KV read, zero CPU. NOT a GSC-measured title/H1/description/
+  answer byte (freeze-safe per the Dec 4-8 discipline — the same class as
+  the S11 og:type + SEO_EXTRA_ALIASES non-title metadata changes). NO
+  `crossorigin` — crest `<img>` requests are non-CORS
+  (`referrerpolicy="no-referrer"`); a crossorigin preconnect would open a
+  separate connection the image fetches would NOT reuse.
+
+**The bundle audit:** the `public-13.80.js` bundle (181KB) loads with
+`defer` — no render-blocking (no split needed — defer is the right strategy
+for a single bundle on a mobile-first audience [Mobile = 94.8% of clicks]).
+The `core-13.16.js` is also deferred. No bundle/CSS rename — the preconnect
+is a `<link>` in `<head>`, not a bundle/CSS change.
+
+**The documentation deliverables:** the GSC monitoring view
+(`seo-implementation/GSC-MONITORING-VIEW.md` — the per-page-class monitoring
+view + the cadence + the GSC filter instructions; baseline 250 clicks /
+9,465 impr / 412 URLs) + the GA4 evaluation (`docs/specs/GA4-EVALUATION.md`
+— the default DEFER decision; the Cloudflare Web Analytics cookieless RUM
+is already installed; the CMP + the privacy policy + the performance budget
+are the prerequisites).
+
+**The mobile CWV audit (structural analysis):** the PageSpeed Insights API
+was quota-blocked without an API key; the CrUX API requires a Google API
+key (not supplied). The structural analysis (the render path + the KV-read
+count + the CPU cliff) is the fallback. The 10ms CPU cliff on cold match
+renders is CHRONIC (37 exceededResources in 3h on v13.258; P50 ≈ 1ms [cache
+hits], P99 up to ~124ms [cold renders] — the C7 audit). The preconnect does
+NOT add to the Worker CPU (it is a client-side hint).
+
+**Version bump:** 13.267.0-persian-entities → 13.268.0-perf-preconnect.
+Server-side-only — no client asset renamed (the SW cache stays
+`sportsignal-v126` + the bundle stays `public-13.80.js` + the stylesheet
+stays `public-13.87.css`). The `_headers` cap is untouched.
+
+**The new check gate:** `scripts/check-seo-performance.js` (17 gates) —
+wired into the `npm test` chain.
+
+**Cloudflare budget:** zero new KV reads / writes / subrequests / CPU (the
+preconnect is a client-side hint). The GA4 DEFER adds nothing to the runtime.
+
+**Byte-frozen (NOT changed — the Dec 4-8 freeze holds):** all the
+title/H1/description/answer-sentence bytes (Sessions 6-9) + the date-hub
+empty-state copy (S06-H3) + the team-name spellings in fa-dict.ts (S1 M2
+F3). The S14 preconnect is a render-performance HINT — NOT a byte-frozen
+surface.
+
+**Decisions:** S14-1 (the preconnect — IMPLEMENTED, freeze-safe), S14-2 (the
+S24-P1 hero-lazy — REJECTED with reasoning), S14-3 (the GA4 DEFER), S14-4
+(the GSC monitoring view), S14-5 (the freeze-coordination). Details in
+`docs/DECISIONS.md`.
+
 # SEO Session 13 — the structured-data + GSC enhancement validation: the 13 "Missing field location" GSC Critical items + the 4 non-critical issue types are ALL the honest "missing recommended field" class (docs-only — no version bump, no deploy; 2026-11-17, `main`)
 
 The TENTH session of the 15-session SEO program. This session owns the
