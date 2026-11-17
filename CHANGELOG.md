@@ -4,6 +4,98 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.266.0-internallinks — SEO Session 10: the internal-linking + navigation refinement (the /teams index tile ordering — the ONE explicit Session 10 decision; markup-only per the route plan §10; 2026-11-17, `main`)
+
+The SEVENTH implementation session of the 15-session SEO program. This session
+owns the internal linking + navigation relationships (tile order, anchor
+wording per the cannibalization checklist — keyword map §3 + the route plan
+§2.3/§10 + MASTER-SEO-SPEC §9). The Dec 4-8 measurement freeze applies to the
+GSC-measured surfaces (all title/H1 bytes + the team-name spellings + the
+date-hub empty-state copy on /matches/tomorrow). Anchor text in `<a href>`
+link text is NOT a GSC-measured surface (it's not in the SERP snippet) — but
+the visible link text IS user-facing, so any anchor change is diff-verified +
+recorded in DECISIONS.md. Session 10's work is markup-only (anchor text + tile
+order + link placement) — safe under the freeze (no byte-frozen surface touched).
+
+**The ONE code change — the `/teams` index tile ordering (S10 — route plan
+§2.3 + §10):** `teamsIndex` (`src/seo/data.ts`) now sorts the 13 selected
+clubs (isSelectedTeam) FIRST in the `/teams` index tile grid + the linkItemList
+JSON-LD, with the chronological-by-next-kickoff tiebreaker WITHIN each group.
+Cosmetic only — the non-selected tiles stay (the crawlability law: a noindex
+page stays crawlable so Google can read the directive; the 74 non-selected
+team URLs keep their internal links from the `/teams` index tiles + the
+match-page footer-hook). Zero KV cost (in-memory isSelectedTeam check on the
+data already read). The visible==machine contract holds (the tile grid + the
+linkItemList JSON-LD consume the same `teamsIndex` returned array — SS-13).
+The sitemap `teams.xml` membership is unaffected (the isSelectedTeam filter is
+post-iteration). The bySlug de-dup (U-03 one-URL-per-content) is stable under
+the reordering (slug-colliding entries share the same isSelectedTeam result via
+normAlias normalization). The route plan §2.3 named this "Session 10's call,
+cosmetic only" — the call is YES (the 13 indexable team pages lead the grid;
+the non-selected tiles follow as the crawl path). Decision S10-1 in
+`docs/DECISIONS.md`.
+
+**The audit (read-first, no code) — the cross-page internal-link graph traced:**
+every internal-link surface verified crawlable `<a href>` (no JS-only
+navigation, no `href="#"` placeholders in the tile grids): the homepage hero-card
+anchor + the sr-only carousel nav (S6), the match-page footer-hook «تیم‌ها» line
++ the competition link + the date links (S7, the isSelectedTeam gating intact),
+the team-page upcoming-matches block + the standings-window `.stmore` link (S8),
+the competition-page upcoming-matches block + the full standings table (S9), the
+`/teams` + `/competitions` index tile grids + the linkItemList JSON-LD (SS-13
+visible==machine), the date-hub hubTiles() shortcut grid (all 4 sibling hubs),
+the `/matches` paginated hub, + the breadcrumbs on every page (home → section →
+page). The anchor wording is already aligned with the destination page's H1
+intent (the /teams tile carries the team name; the /competitions tile carries
+the competition faName; the match-page facts-table competition link carries
+`<compFa>`). The cannibalization checklist (keyword map §3 — the 7 resolved
+overlaps) is NOT worsened by the tile-ordering change (the selected-clubs-first
+sort does not create a new overlap or worsen a resolved one — the tiles point to
+the same URLs, in a reordered sequence; the homepage-vs-matches rule is
+unaffected). Decision S10-2 (the audit findings — the homepage → team/competition
+spec §9 gap documented as a Session 11+ follow-up).
+
+**The new check gate — `scripts/check-seo-internallinks.js`:** 8 offline gates:
+(1) the teamsIndex selected-clubs-first sort (the S10 decision); (2) the /teams
+index visible==machine contract (SS-13); (3) the /competitions index
+visible==machine contract; (4) crawlable `<a href>` in the team-page +
+competition-page + date-hub match lists (dateGroupedRows); (5) the hubTiles()
+cross-hub nav (all 4 sibling hubs); (6) the breadcrumb discipline (every page
+class carries a trail); (7) the S7 footer-hook team-link gating regression
+pin; (8) the S6 homepage hero-card anchor regression pin. Wired into the
+`npm test` chain after `check-seo-competitionpages.js`.
+
+**The seeded render harness — `scripts/s10-internallinks-smoke.ts`:** a seeded
+SeoCtx with 4 upcoming matches (each one selected club vs one non-selected
+club, ascending dates) renders the `/teams` index + the `/matches/this-week`
+hub + the `/matches/arsenal-vs-juventus` match page and asserts: (1) the 13
+selected clubs come first in the teamsIndex return (Arsenal, Barcelona,
+Chelsea, Bayern); (2) the non-selected clubs follow in chronological order
+(Juventus, Roma, Lazio, Torino); (3) the tile href order == the teamsIndex entry
+order; (4) the linkItemList JSON-LD url order == the tile href order (visible
+== machine, SS-13); (5) 8 crawlable `<a href="/teams/...">` tiles, no `href="#"`;
+(6) the hub renders ≥4 crawlable `<a href="/matches/...">` match rows + the
+hubTiles cross-hub nav + the breadcrumb; (7) the match-page footer-hook links
+Arsenal (selected) as `<a href="/teams/arsenal">` + does NOT link Juventus
+(non-selected) — plain text only (the S7 gating); (8) the match-page
+competition + date links + breadcrumb. **29/29 assertions pass.**
+
+**Byte-frozen (NOT changed — the Dec 4-8 freeze holds):** the competition-page
+title/H1/description/answer (Session 9), the team-page title/H1/description/
+answer (Session 8), the match-page title/H1/description/answer (Session 7), the
+homepage title/H1 (Session 6), the date-hub empty-state copy on /matches/tomorrow
+(S06-H3). The teamsIndex sort is NOT a GSC-measured surface (it reorders tiles,
+not the page's title/H1/description/answer — the /teams index title/H1 is
+unchanged). The anchor text in the tiles is the team name (unchanged). The
+CollectionPage + WebPage + BreadcrumbList JSON-LD nodes are machine-readable
+(invisible to the SERP snippet). Safe under the freeze. Decision S10-3.
+
+**Cloudflare budget of this change:** zero new KV reads (the isSelectedTeam
+check is an in-memory Set membership lookup on data already in scope); zero
+new KV writes (`kv_writes_day:0`); zero new subrequests; zero new fetches; zero
+render-cost additions (a comparator function on an already-iterated array). Well
+within the free-tier budget.
+
 # v13.265.0-competitions — SEO Session 9: the competition-page @graph CollectionPage node + the date-hub/empty-state verification (structural JSON-LD hygiene — the competition detail page was the lone competition-family page without a CollectionPage node; the byte-frozen title/H1/description/answer untouched; 2026-11-17, `main`)
 
 The SIXTH implementation session of the 15-session SEO program. This session

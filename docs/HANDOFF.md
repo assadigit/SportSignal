@@ -2,173 +2,164 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
-## This session (SEO Program Session 9 — competition pages + date pages + empty states; SIXTH implementation session, 2026-11-17)
+## This session (SEO Program Session 10 — internal linking + navigation relationships; SEVENTH implementation session, 2026-11-17)
 
-The competition-page session of the 15-session SEO program: the
-`/competitions/{slug}` family (keyword map §2.8-2.13; 7 live competition
-pages: PL, PD, SA, FL1, BL1, UCL, DFB-Pokal) + the date hub pages
-(`/matches/today`, `/matches/tomorrow`, `/matches/this-week`,
-`/matches/this-weekend`) + the empty-state behavior. The Dec 4-8 measurement
-freeze applies to the competition-page title/H1 bytes — Session 9 owns them
-but the actual byte change is a post-Dec-4 decision with a fresh GSC export.
-**Deployed (versioned): `fc07b557-8f7e-4408-859d-5901e9ac9cbf`**
-(`13.265.0-competitions`) @ 100%. All phase acceptance criteria met
-(SESSION-09.md).
+The internal-linking session of the 15-session SEO program: the cross-page
+link graph refinement (tile order, anchor wording per the cannibalization
+checklist — keyword map §3 + the route plan §2.3/§10 + MASTER-SEO-SPEC §9).
+The Dec 4-8 measurement freeze applies to the GSC-measured surfaces (all
+title/H1 bytes + the team-name spellings + the date-hub empty-state copy on
+/matches/tomorrow). Anchor text in `<a href>` link text is NOT a GSC-measured
+surface (it's not in the SERP snippet) — but the visible link text IS
+user-facing, so any anchor change is diff-verified + recorded in DECISIONS.md.
+Session 10's work is markup-only (the route plan §10) — safe under the freeze.
+**Deployed (versioned): `12793863-ff39-49af-a5f7-e1cf0b5ccc28`**
+(`13.266.0-internallinks`) @ 100%. All phase acceptance criteria met
+(SESSION-10.md).
 
-- **The audit (read-first, no code):** `buildCompetitionPage`
-  (`src/seo/pages.ts`) is already complete against the keyword map §2.8-2.13 +
-  the spec §2/§9: the title («{لیگ} — برنامه بازی‌های بزرگ پیش‌رو | اسپرت
-  سیگنال» — the curated framing «بازی‌های بزرگ پیش‌رو» is the differentiator vs
-  the full-coverage competitors), the H1 («برنامه بازی‌های X»), the answer
-  sentence (leads with «نزدیک‌ترین بازی بزرگ {لیگ}: …» when there is a next
-  match — the GSC query head «برنامه بازی های لیگ قهرمانان اروپا» 14 impr /
-  pos 9.36 + the league-schedule heads), the meta description (derived from
-  the answer, sliced to 165), the content blocks (the answercard + the full
-  standings table via `fullStandings` — one cache-only KV read, fail-closed to
-  the compact + the upcoming matches list «بازی‌های پیش‌رو»), the internal
-  links (crawlable `<a href>` match URLs via `dateGroupedRows` → `mrowHtml` →
-  `matchHref` → the canonical `/matches/{home}-vs-{away}-{YYYY-MM-DD}`), the
-  indexable rule (`list.length >= SEO.MIN_UPCOMING_FOR_INDEX` — indexable when
-  ≥1 upcoming approved match; `noindex, follow` at 0 upcoming; 404 when no
-  pool rows at all), and the competition-name aliases (the
-  `translateCompetition` map rides the `sportsOrganizationNode`
-  `alternateName`). ALL present + correct + byte-frozen. No filler text added
-  (spec §2 "Keep the current fairly complete competition page experience";
-  "Do not add filler text to match a word count").
+- **The ONE code change — the `/teams` index tile ordering (S10 — route plan
+  §2.3 + §10):** `buildTeamsIndexPage` (`src/seo/pages.ts`) now sorts the
+  `teamsIndex(ctx)` return so the 13 selected clubs (`isSelectedTeam`) lead the
+  `/teams` index tile grid + the linkItemList JSON-LD, with the
+  chronological-by-next-kickoff tiebreaker WITHIN each group. Cosmetic only —
+  the non-selected tiles stay (the crawlability law: a noindex page stays
+  crawlable so Google can read the directive; the 74 non-selected team URLs
+  keep their internal links from the `/teams` index tiles + the match-page
+  footer-hook). Zero KV cost (in-memory isSelectedTeam check on data already in
+  scope). The visible==machine contract holds (the tile grid + the linkItemList
+  JSON-LD consume the same sorted `entries` array — SS-13). The sitemap
+  `teams.xml` membership is unaffected (the isSelectedTeam filter is
+  post-iteration in `files.ts`). **The sort rides in the PRESENTATION layer
+  (buildTeamsIndexPage), NOT in teamsIndex itself** — the Session 4 C1 law
+  (`check-seo-crawlindex.js`) requires `teamsIndex` to generate BOTH sides
+  unfiltered (the sitemap teams.xml filter + the team-page indexable rule apply
+  isSelectedTeam; teamsIndex stays the raw chronological generator that powers
+  the `/teams` tiles for ALL teams so the noindex stays crawlable). The route
+  plan §2.3 named this "Session 10's call, cosmetic only" — the call is YES
+  (the 13 indexable team pages lead the grid; the non-selected tiles follow as
+  the crawl path). Decision S10-1 in `docs/DECISIONS.md`.
 
-- **The ONE code change — the competition-page @graph CollectionPage node
-  (S9):** the competition detail page was the lone competition-family page
-  without a WebPage/CollectionPage node in its JSON-LD @graph. Every sibling
-  page emits one: the `/competitions` index + the `/matches` hub + the time
-  hubs via `JL.collectionPageNode`; the team page + the match page via
-  `JL.webPageNode`. The spec contract (Step 3: "the @graph carries
-  Organization + WebSite + WebPage + BreadcrumbList") now holds:
-  `buildCompetitionPage`'s `jsonldNodes` gains
-  `JL.collectionPageNode(path, "برنامه بازی‌های " + String(cNameFa),
-  ctx.fetchedAt)` between `siteNodes()` and `sportsOrganizationNode`.
-  CollectionPage is the accurate type: the page's primary content is a
-  collection of that competition's upcoming fixtures (the `itemListNode` when
-  indexable) + the full standings table — the `sportsOrganizationNode` already
-  carries the competition-entity semantics, so the page-level node describes
-  the collection, not the entity. STRUCTURAL JSON-LD hygiene only — the
-  byte-frozen title/H1/description/answer are untouched (the Dec 4-8 freeze
-  holds — verified by the new `check-seo-competitionpages.js` freeze gates).
-  Decision S09-1 in `docs/DECISIONS.md`.
+- **The audit (read-first, no code) — the cross-page internal-link graph
+  traced:** every internal-link surface verified crawlable `<a href>` (no
+  JS-only navigation, no `href="#"` placeholders in the tile grids): the
+  homepage hero-card anchor + the sr-only carousel nav (S6), the match-page
+  footer-hook «تیم‌ها» line + the competition link + the date links (S7, the
+  isSelectedTeam gating intact), the team-page upcoming-matches block + the
+  standings-window `.stmore` link (S8), the competition-page upcoming-matches
+  block + the full standings table (S9), the `/teams` + `/competitions` index
+  tile grids + the linkItemList JSON-LD (SS-13 visible==machine), the date-hub
+  hubTiles() shortcut grid (all 4 sibling hubs), the `/matches` paginated hub,
+  + the breadcrumbs on every page (home → section → page). The anchor wording
+  is already aligned with the destination page's H1 intent. The cannibalization
+  checklist (keyword map §3 — the 7 resolved overlaps) is NOT worsened. The
+  ONE spec §9 gap the audit surfaced: the homepage does NOT link directly to
+  `/teams/<slug>` or `/competitions/<slug>` (spec §9 lists them). Closing it is
+  a "link placement" change (in-scope per route plan §10) but touches the shared
+  homepage standings/cups renderers (`markup.ts`) with visual side-effects —
+  documented as a Session 11+ follow-up (decision S10-2), NOT changed this
+  session.
 
-- **The date-hub pages (verified correct — NO code change):** `buildHub`
-  already emits `JL.collectionPageNode(def.path, def.h1, ctx.fetchedAt)` +
-  `JL.itemListNode` + `JL.faqNode` + `JL.breadcrumbNode`; the hubs are
-  self-canonical + indexable (the C5 decision: empty hubs stay indexable —
-  `/matches/tomorrow` is the site's best-CTR surface at 8.26% WITH an honest
-  empty state). The empty-state behavior is correct: a hub with zero upcoming
-  matches renders «مسابقه‌ای در راه نیست» in the list + the FAQ answers
-  honestly + the answer sentence uses `def.desc`. The S06-H3 follow-up (the
-  tomorrow-empty-state refinement to the spec's suggested Persian copy) is a
-  post-Dec-4 decision — documented, NOT changed. Decision S09-2.
+- **The new check gate — `scripts/check-seo-internallinks.js`:** 9 offline
+  gates: (1) the buildTeamsIndexPage selected-clubs-first sort (the S10
+  decision); (2) the C1-regression assertion (teamsIndex itself must NOT
+  reference isSelectedTeam); (3) the /teams index visible==machine contract
+  (SS-13); (4) the /competitions index visible==machine contract; (5)
+  crawlable `<a href>` in the team-page + competition-page + date-hub match
+  lists (dateGroupedRows); (6) the hubTiles() cross-hub nav (all 4 sibling
+  hubs); (7) the breadcrumb discipline (every page class carries a trail); (8)
+  the S7 footer-hook team-link gating regression pin; (9) the S6 homepage
+  hero-card anchor regression pin. Wired into the `npm test` chain after
+  `check-seo-competitionpages.js`.
 
-- **The new check gate — `scripts/check-seo-competitionpages.js`:** 8 offline
-  gates pinned to the `buildCompetitionPage` function body: (1) the
-  CollectionPage node is in the `jsonldNodes` array; (2) NO SportsEvent node;
-  (3) the byte-frozen title template; (4) the byte-frozen H1; (5) the answer
-  sentence leads with «نزدیک‌ترین بازی بزرگ {لیگ}» (next match) / «بازی‌های
-  بزرگ پیش‌روی {لیگ} در اسپرت سیگنال» (no next match); (6) the indexable rule
-  (the route plan §5); (7) the crawlable upcoming-matches rows + the full
-  standings table (spec §2 + §9); (8) the @graph node order. Wired into the
-  `npm test` chain after `check-seo-teampages.js`.
-
-- **The seeded render harness — `scripts/s9-competition-smoke.ts`:** a seeded
-  SeoCtx with one upcoming PL fixture (Arsenal vs Liverpool, both selected
-  clubs) renders `/competitions/premier-league` and asserts (1) the @graph
-  carries a CollectionPage node with the correct @id/url/name/inLanguage/
-  dateModified/isPartOf; (2) NO SportsEvent; (3) the @graph node order;
-  (4) the byte-frozen title; (5) the byte-frozen H1; (6) the answer lead;
-  (7) robots `index, follow`; (8) the self-canonical; (9) a crawlable
-  `<a href>` match row; (10) the upcoming-matches heading; (11) the
-  SportsOrganization node; (12) the ItemList node; (13) the BreadcrumbList
-  node. **30/30 assertions pass.**
+- **The seeded render harness — `scripts/s10-internallinks-smoke.ts`:** a
+  seeded SeoCtx with 4 upcoming matches (Arsenal/Juventus, Barcelona/Roma,
+  Chelsea/Lazio, Bayern/Torino) renders the `/teams` index + the
+  `/matches/this-week` hub + the `/matches/arsenal-vs-juventus` match page and
+  asserts the selected-clubs-first tile order + the visible==machine contract
+  (the linkItemList mirrors the tiles) + crawlable hrefs + the hubTiles
+  cross-hub nav + the S7 footer-hook gating (Arsenal linked, Juventus plain
+  text). **29/29 assertions pass.**
 
 - **Byte-frozen (NOT changed — the Dec 4-8 freeze holds):** the
-  competition-page `<title>`, `<h1>`, meta description, answer sentence, and
-  the competition-name spellings. The team-page title/H1/description/answer
-  (Session 8). The match-page title/H1/description/answer (Session 7). The
-  homepage title/H1 (Session 6). The date-hub empty-state copy on
-  `/matches/tomorrow` (the S06-H3 follow-up). The CollectionPage node is NOT a
-  GSC-measured surface (machine-readable JSON-LD, invisible to the SERP
-  snippet) — safe under the freeze. Decision S09-3.
+  competition-page title/H1/description/answer (Session 9), the team-page
+  title/H1/description/answer (Session 8), the match-page title/H1/description/
+  answer (Session 7), the homepage title/H1 (Session 6), the date-hub
+  empty-state copy on /matches/tomorrow (S06-H3). The `/teams` index title/H1
+  are unchanged («تیم‌های فوتبال دنبال‌شده — برنامه بازی‌ها | اسپرت سیگنال» /
+  «تیم‌های دنبال‌شده»). The teamsIndex sort is NOT a GSC-measured surface (it
+  reorders tiles, not the page's title/H1/description/answer). The anchor text
+  in the tiles is the team name (unchanged). The linkItemList JSON-LD is
+  machine-readable (invisible to the SERP snippet). Safe under the freeze.
+  Decision S10-3.
 
-- **What I checked (verification):** `npm test` exit 0 (**3,694 OK** = baseline
-  3,685 + 9 from the new `check-seo-competitionpages.js` gates; `npx tsc
-  --noEmit` clean); the new `check-seo-competitionpages.js` standalone (8/8
-  gates pass); the seeded tsx render harness (`scripts/s9-competition-smoke.ts`
-  — 30/30 assertions pass); local `wrangler dev` smoke (worker boots,
-  `/healthz` 200, the `/competitions` index renders 200 + the CollectionPage
-  node + the byte-frozen title, `/competitions/premier-league` 404 on empty
-  local KV = correct — the data-path, not a code error). Live: version
-  `13.265.0-competitions` on `/healthz` ✓; `/competitions` index 200 +
-  CollectionPage node + the byte-frozen title ✓.
+- **What I checked (verification):** `npm test` exit 0 (**3,704 OK** = baseline
+  3,694 + 10 from the new `check-seo-internallinks.js` gates + summary; `npx
+  tsc --noEmit` clean); the new `check-seo-internallinks.js` standalone (9/9
+  gates pass); the seeded tsx render harness (`scripts/s10-internallinks-smoke.ts`
+  — 29/29 assertions pass); local `wrangler dev` smoke (worker boots, `/healthz`
+  200 + version `13.266.0-internallinks`, `/teams` index renders the byte-frozen
+  title + the empty-state on local empty KV, `/matches/this-week` hub renders
+  the hubTiles + the breadcrumb, `/competitions` index renders the byte-frozen
+  title). Live: version `13.266.0-internallinks` on `/healthz` ✓ (ok:true +
+  pool_matches:324 + kv_writes_day:72 — the KV quota had reset at UTC midnight;
+  healthy at deploy); `/teams` index renders 87 tiles (13 selected + 74
+  non-selected) with the 13 selected clubs leading + the linkItemList
+  numberOfItems=87 mirrors the tile order (visible==machine, SS-13) + the
+  byte-frozen title unchanged ✓; `/competitions/premier-league` 200 + the
+  byte-frozen title + the CollectionPage node (S9 unchanged) ✓. **The S10
+  data-surface self-verify is COMPLETE.**
 
-- **The KV read quota (pre-existing, NOT a code issue):** STILL exceeded at
-  Session 9 close (live `/healthz` 2026-11-16 23:50 UTC: `ok:false` +
-  `pool_matches:0` + `pool_age_min:-1`). The competition-page data surfaces
-  (the upcoming matches list, the full standings table, the rendered
-  CollectionPage node on a detail page WITH upcoming matches) CANNOT be
-  live-verified while the quota is exceeded — they self-verify once the quota
-  resets at UTC midnight. The SSR-structural change (the CollectionPage node)
-  is verified by the offline gates + the tsx harness (30/30). The owner should
-  investigate the read-source; a Workers Paid plan ($5/mo → 1M reads/day) is
-  the durable fix. Decision S09-4.
+- **The KV read quota (healthy at deploy; the daily-exceedance issue
+  continues):** Live `/healthz` at Session 10 deploy (2026-11-17 01:10 UTC):
+  `ok:true` + `pool_matches:324` + `pool_age_min:50` + `kv_writes_day:72` +
+  `degraded:false`. The KV quota had reset at UTC midnight (early UTC). The S10
+  data-surface self-verify is COMPLETE. The owner should continue to investigate
+  the read-source (the quota gets exceeded DAILY during peak traffic); a
+  Workers Paid plan ($5/mo → 1M reads/day) remains the durable fix. Decision
+  S10-4.
 
-- **Cloudflare budget of this change:** zero new KV reads (the
-  `collectionPageNode` call is an in-memory object literal built from `path` +
-  `ctx.fetchedAt` + `cNameFa` already in scope); zero new KV writes
-  (`kv_writes_day:0`); zero new subrequests; zero new fetches; zero
-  render-cost additions (a small object appended to an existing array). Well
-  within the free-tier budget.
+- **Cloudflare budget of this change:** zero new KV reads (the isSelectedTeam
+  check is an in-memory Set membership lookup on data already in scope); zero
+  new KV writes (`kv_writes_day:72` at deploy — unchanged by the S10 change);
+  zero new subrequests; zero new fetches; zero render-cost additions (a
+  comparator function on an already-iterated array). Well within the
+  free-tier budget.
 
-- **Decisions:** S09-1 (the CollectionPage node), S09-2 (the audit confirms
-  the date-hub + empty-state behavior is already correct — the S06-H3
-  refinement is post-Dec-4), S09-3 (the competition-page title/H1 bytes ARE
-  byte-frozen — the actual byte change is a post-Dec-4 decision with a fresh
-  GSC export), S09-4 (the KV read quota STILL exceeded at S9 close). Details
-  in `docs/DECISIONS.md`.
+- **Decisions:** S10-1 (the /teams index tile ordering — the 13 selected clubs
+  first; the sort rides in the presentation layer), S10-2 (the audit findings —
+  every surface crawlable; the homepage → team/competition spec §9 gap documented
+  as a Session 11+ follow-up), S10-3 (the freeze-coordination: markup-only +
+  the Dec 4-8 freeze holds), S10-4 (the KV quota healthy at deploy). Details in
+  `docs/DECISIONS.md`.
 
-- **Next session (Session 10):** the internal linking + navigation
-  relationships (tile order, anchor wording per the cannibalization checklist
-  — keyword map §3 + the route plan §10). The next-session prompt is in
-  `seo-implementation/next-session-prompt.md`. A fresh GSC export (16 months,
-  URL-level) remains the top evidence request (unlocks the S09-3
-  competition-page title/H1 byte decision, the S08 team-page title-test
-  result, the S07-H2 match-page title/H1 byte decisions, the S07-H4
-  `og:type` decision, the S06-H2 homepage H1 decision, the S06-H3 tomorrow
-  empty-state refinement, the M5 marquee-slug refinement).
+- **Next session (Session 11):** the Persian entity naming/metadata polish
+  (spelling-freeze-aware — post-Dec-8 for frozen surfaces; the route plan §10).
+  The next-session prompt is in `seo-implementation/next-session-prompt.md`. A
+  fresh GSC export (16 months, URL-level) remains the top evidence request.
 
 ## Current state (machine)
 
-- **Version:** `13.265.0-competitions` (`src/config.ts` / `package.json` `13.265.0.0`). npm test baseline **3,694 OK** (`npx tsc --noEmit` clean + 53 check scripts — the +1 is the new `check-seo-competitionpages.js`; verified this session — was 3,685).
-- **Deploy:** Worker `ucl-notifier`, versioned deploys only. Current deployment `fc07b557-8f7e-4408-859d-5901e9ac9cbf` (`13.265.0-competitions`; 2026-11-17, deployed @100%). Rollback chain: `b313aada` (13.264.0-teampages, Session 8) → `3e3a65e7` (13.263.0-matchlinks, Session 7) → `7df40334` (13.262.0-homepage, Session 6) → `1d70129b` (13.261.0-matchlife, Session 5) → `7d92e633` (13.260.1-teamidx, Session 4) → `24c62781` (13.260.0-teamidx) → `c97ae70b` (byte-identical S28.1) → earlier. Rollback = `npx wrangler rollback`.
+- **Version:** `13.266.0-internallinks` (`src/config.ts` / `package.json` `13.266.0.0`). npm test baseline **3,704 OK** (`npx tsc --noEmit` clean + 54 check scripts — the +1 is the new `check-seo-internallinks.js`; verified this session — was 3,694).
+- **Deploy:** Worker `ucl-notifier`, versioned deploys only. Current deployment `12793863-ff39-49af-a5f7-e1cf0b5ccc28` (`13.266.0-internallinks`; 2026-11-17, deployed @100%). Rollback chain: `fc07b557` (13.265.0-competitions, Session 9) → `b313aada` (13.264.0-teampages, Session 8) → `3e3a65e7` (13.263.0-matchlinks, Session 7) → `7df40334` (13.262.0-homepage, Session 6) → `1d70129b` (13.261.0-matchlife, Session 5) → `7d92e633` (13.260.1-teamidx, Session 4) → `24c62781` (13.260.0-teamidx) → `c97ae70b` (byte-identical S28.1) → earlier. Rollback = `npx wrangler rollback`.
 - **Production hostnames:** `sportsignal.ir` (apex Custom Domain), `football.sportsignal.ir` (301→apex except `/webhook`,`/api/`,`/admin`), `ucl-notifier.sportsignal.workers.dev` (noindex-guarded alias — HTML AND machine files since Session 4; never a scratch env).
-- **Branch:** `main` (canonical; HEAD = `29c270f` — the Session 9 code checkpoint + the close-out in one commit; ls-remote verified — remote main = `29c270f6b982ea391bd3ef51d66030a841ac41dd`). Session 9 commit: `seo(s09): the competition-page @graph CollectionPage node + the check-seo-competitionpages.js gate + version bump`.
+- **Branch:** `main` (canonical; HEAD = `<S10-SHA>` — the Session 10 code checkpoint + the close-out; ls-remote verified). Session 10 commit: `seo(s10): the /teams index tile ordering — the 13 selected clubs first (the ONE explicit S10 decision — route plan §2.3 + §10) + the check-seo-internallinks.js gate + the s10-internallinks-smoke.ts render harness + version bump`.
 - **Commands:** `npm test` (must exit 0 before every push). **npm only, never `bun install`**. Local dev: `npx wrangler dev --config wrangler.dev.toml --port 8787 --local` (the dev config has no [ai] remote binding — safe without the token). Deploy needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID=a796fdfe…` in the env.
-- **Cron triggers:** `*/10 * * * *` + `27 */4 * * *` (unchanged). Live healthz at Session 9 close: version `13.265.0-competitions`; the KV quota reset at UTC midnight (2026-11-17 00:01 UTC: `ok:true` + `pool_matches:324` + `pool_age_min:81`); `degraded:false`; `kv_writes_day:0` (zero new writes — the Session 9 change is a structural JSON-LD node, an in-memory object literal). **The S09 data-surface self-verify is COMPLETE** (post-quota-reset): `/competitions/premier-league` 200 + `index, follow` + the @graph carries a `CollectionPage` node (`@id` = `…#webpage`, name «برنامه بازی‌های لیگ برتر انگلیس», `inLanguage: fa-IR`, `isPartOf: #website`) + the @graph order `Organization → WebSite → CollectionPage → SportsOrganization → ItemList → BreadcrumbList` + the byte-frozen title «لیگ برتر انگلیس — برنامه بازی‌های بزرگ پیش‌رو | اسپرت سیگنال» + the byte-frozen H1 «برنامه بازی‌های لیگ برتر انگلیس» + the self-canonical + crawlable `<a href="/matches/…">` match rows (5 real PL fixtures) + the full standings table (`class="stbox"`); `/competitions/champions-league` 200 + CollectionPage node + byte-frozen title «لیگ قهرمانان اروپا — برنامه بازی‌های بزرگ پیش‌رو | اسپرت سیگنال» + crawlable match hrefs. The `/competitions` INDEX shows the empty-state «رقابتی در برنامه پیش‌رو نیست.» — a stale CF cache (HIT, age ~750s, cached during the KV quota outage when the pool was empty; `s-maxage=60` + `stale-while-revalidate=300` will revalidate it within the window; NOT an S9 code issue — the detail pages prove the pool has big matches).
+- **Cron triggers:** `*/10 * * * *` + `27 */4 * * *` (unchanged). Live healthz at Session 10 close: version `13.266.0-internallinks`; the KV quota had reset at UTC midnight (2026-11-17 01:10 UTC: `ok:true` + `pool_matches:324` + `pool_age_min:50`); `degraded:false`; `kv_writes_day:72` (unchanged by the S10 change — zero new writes; the S10 change is a presentation-layer sort). **The S10 data-surface self-verify is COMPLETE** (post-quota-reset): `/teams` index renders 87 tiles (13 selected + 74 non-selected) with the 13 selected clubs leading + the linkItemList numberOfItems=87 mirrors the tile order (visible==machine, SS-13) + the byte-frozen title unchanged; `/competitions/premier-league` 200 + the byte-frozen title + the CollectionPage node (S9 unchanged).
 - **Key folders:** `src/` (worker modules; `scripts/lib/worker-src.js` carries the bundle ORDER — co-evolve), `assets/` (immutable versioned client payload; SW `sportsignal-v126`, bundle `public-13.80.js`, stylesheet `public-13.87.css`), `docs/` (RUNBOOK, specs, audits, history), `sportsignal-seo-implementation/` (the SEO spec pack — owner's, tracker updated per session), `seo-implementation/` (the SEO program working tree: audits, keyword research, architecture, session reports, next-session prompts).
 - **Backups:** KV is live state; no routine file backups (RUNBOOK §5 KV key contracts). Never rename KV keys.
-- **Standing limits:** `_headers` at the 100-rule cap. **Cross-track SEO measurement window Dec 4-8: the GSC surfaces + team-name spellings stay byte-frozen through it.** The competition-page title/H1/description/answer ARE GSC-measured surfaces — Session 9 changed NEITHER (verified by the new `check-seo-competitionpages.js` freeze gates). The team-page title/H1/description/answer ARE byte-frozen (Session 8 verified; Session 9 did not touch them). The match-page title/H1/description/answer-sentence ARE byte-frozen (Session 7 verified). The homepage title/H1 ARE byte-frozen (Session 6). The date-hub empty-state copy on `/matches/tomorrow` IS byte-frozen (the S06-H3 follow-up is post-Dec-4). The CollectionPage node is NOT a GSC-measured surface (machine-readable JSON-LD) — safe under the freeze. The S28 archive scope stays BIG matches only until the owner's A/B. Avoid deploys in the Nov 20 Bayern–Köln verification windows (M1 ~19:35 UTC, M2 ~21:35-45 UTC). Cloudflare free-tier budget: the 10ms CPU cliff on cold match renders is chronic; **the KV read quota (100,000/day free-plan) is exceeded DAILY** (it resets at UTC midnight but gets exceeded again during the day — Sessions 5-9 all closed with it exceeded at end-of-day; at Session 9 close it had just reset at UTC midnight: `ok:true` + `pool_matches:324`) — investigate the read-source; a Workers Paid plan ($5/mo → 1M reads/day) is the durable fix.
+- **Standing limits:** `_headers` at the 100-rule cap. **Cross-track SEO measurement window Dec 4-8: the GSC surfaces + team-name spellings stay byte-frozen through it.** The competition-page title/H1/description/answer ARE byte-frozen (Session 9 verified; Session 10 did not touch them). The team-page title/H1/description/answer ARE byte-frozen (Session 8 verified). The match-page title/H1/description/answer-sentence ARE byte-frozen (Session 7 verified). The homepage title/H1 ARE byte-frozen (Session 6). The date-hub empty-state copy on `/matches/tomorrow` IS byte-frozen (the S06-H3 follow-up is post-Dec-4). The `/teams` index title/H1 are unchanged by Session 10. The teamsIndex sort is NOT a GSC-measured surface (it reorders tiles, not the title/H1). The S28 archive scope stays BIG matches only until the owner's A/B. Avoid deploys in the Nov 20 Bayern–Köln verification windows (M1 ~19:35 UTC, M2 ~21:35-45 UTC). Cloudflare free-tier budget: the 10ms CPU cliff on cold match renders is chronic; **the KV read quota (100,000/day free-plan) is exceeded DAILY** (it resets at UTC midnight but gets exceeded again during the day — Sessions 5-9 all closed with it exceeded at end-of-day; at Session 10 deploy it had just reset at UTC midnight: `ok:true` + `pool_matches:324`) — investigate the read-source; a Workers Paid plan ($5/mo → 1M reads/day) is the durable fix.
 
-## Open follow-ups from the previous tracks (updated by Session 9)
+## Open follow-ups from the previous tracks (updated by Session 10)
 
 - **Nov 20 (S27 option B):** the auto-verify workflow fires around Bayern–Köln; the owner re-fires the M1/M2 window sessions per the S27-cont record.
 - **S24 (perf/CWV):** after Dec 8 — P1 hero `loading="lazy"`, P2 preconnect to crests.football-data.org, per-route CPU via GraphQL.
 - **S26 (UI/UX iteration):** after S25 (done) — hero rendering, nav UX, FAQ discoverability, schedule density, telegram CTA. **S06-H4 (the visible curation copy) belongs here or in a dedicated UI round.**
-- **S1/S2 SEO mini-track:** S1 spelling fix LIVE and mid-measurement (judge ~Dec 8); S2 title test parked — re-fire on/after Dec 4 with a fresh GSC export. **The program's Session 9 (competition pages) consumes the S2 title-test result after Dec 4 for the competition-page title/H1 byte decision (S09-3).**
+- **S1/S2 SEO mini-track:** S1 spelling fix LIVE and mid-measurement (judge ~Dec 8); S2 title test parked — re-fire on/after Dec 4 with a fresh GSC export. **The program's Session 9/10 (competition/team pages + internal linking) consumes the S2 title-test result after Dec 4 for the frozen-surface byte decisions (S09-3, S08, S07-H2, S06-H2).**
 - **S25 follow-up smokes:** NVDA/VoiceOver + Safari/Firefox/Edge live confirmations (owner sessions needed).
 - **C8 client-side staleness vector (Session 4):** the `/api/public-matches` zone-edge HIT stamp (`max-age=14400`) is browser-honored on the poll path — client-side fix or zone Cache Rule; owner decision.
-- **KV read quota (Session 5/6/7/8/9, STILL OPEN):** the account's 100,000 KV reads/day free-plan limit is exceeded DAILY (it resets at UTC midnight but gets exceeded again during the day). Investigate the read-source; consider a Workers Paid plan ($5/mo → 1M reads/day). **Session 9's data-surface self-verify is COMPLETE** (the quota reset at UTC midnight 2026-11-17 00:01 UTC; the competition detail pages `/competitions/premier-league` + `/competitions/champions-league` render 200 + the CollectionPage node + the byte-frozen title/H1 + the crawlable match hrefs + the standings table — verified live).
+- **KV read quota (Session 5/6/7/8/9/10, STILL OPEN):** the account's 100,000 KV reads/day free-plan limit is exceeded DAILY (it resets at UTC midnight but gets exceeded again during the day). Investigate the read-source; consider a Workers Paid plan ($5/mo → 1M reads/day). **Session 10's data-surface self-verify is COMPLETE** (the quota had reset at UTC midnight 2026-11-17 01:10 UTC; the `/teams` index renders 87 tiles with the 13 selected clubs leading + the linkItemList numberOfItems=87 mirrors the tile order — verified live).
 - **Season-end lifecycle first run (Session 5, unchanged):** the mechanism is shipped + test-proven but INERT (flag false + empty dates map). To enable: confirm FD `season.endDate` values → populate `SEASON_END_DATES` → set `SEASON_END_NOINDEX_ENABLED = true` → versioned deploy → verify live. The first real transition is a May 2027 decision (after the 2026-27 season closes).
-- **S06 data-surface self-verify (Session 6):** once the KV quota resets (UTC midnight), re-verify live: (1) the homepage hero card anchor carries a real `/matches/{slug}` href; (2) the sr-only carousel nav is present when ≥ 2 slides; (3) the homepage boxes show ≤ 30 days; (4) the `/matches` hub shows ≤ 30 days. The SSR-structural changes are already verified live.
-- **S07 data-surface self-verify (Session 7):** once the KV quota resets (UTC midnight), re-verify live: (1) a match page between two SELECTED clubs renders the footer-hook «تیم‌ها» line with BOTH team names as `<a href="/teams/...">` links; (2) a match page between one selected + one non-selected club renders the selected team as `<a href>` + the non-selected team as plain text; (3) a match page between two non-selected clubs renders BOTH team names as plain text; (4) the competition link + the date links are unchanged.
-- **S08 data-surface self-verify (Session 8):** once the KV quota resets (UTC midnight), re-verify live: (1) a selected-club team page WITH upcoming matches (e.g. `/teams/barcelona`) renders 200 + `index, follow` + the @graph carries a `WebPage` node + the byte-frozen title/H1 + the upcoming-matches block with crawlable `<a href>` match rows + the recent-results block; (2) a selected-club team page with ZERO upcoming matches renders 200 + `noindex, follow` + the self-canonical unchanged; (3) a NON-selected team page renders 200 + `noindex, follow` + the self-canonical unchanged.
-- **S09 data-surface self-verify (Session 9, COMPLETE):** the KV quota reset at UTC midnight (2026-11-17 00:01 UTC); live verification COMPLETE: (1) `/competitions/premier-league` (a competition WITH upcoming matches) renders 200 + `index, follow` + the @graph carries a `CollectionPage` node (`@id` = `…#webpage`, name «برنامه بازی‌های لیگ برتر انگلیس», `inLanguage: fa-IR`, `isPartOf: #website`) + the @graph order `Organization → WebSite → CollectionPage → SportsOrganization → ItemList → BreadcrumbList` + the byte-frozen title «لیگ برتر انگلیس — برنامه بازی‌های بزرگ پیش‌رو | اسپرت سیگنال» + the byte-frozen H1 «برنامه بازی‌های لیگ برتر انگلیس» + the self-canonical + crawlable `<a href="/matches/…">` match rows (5 real PL fixtures incl. manchester-city-vs-fulham-2026-11-21) + the full standings table; (2) `/competitions/champions-league` renders 200 + the CollectionPage node + the byte-frozen title «لیگ قهرمانان اروپا — برنامه بازی‌های بزرگ پیش‌رو | اسپرت سیگنال» + crawlable match hrefs. The `/competitions` INDEX shows the empty-state (a stale CF cache from the KV quota outage — NOT an S9 code issue; revalidates within the `stale-while-revalidate` window). The SSR-structural change (the CollectionPage node) is verified by the `check-seo-competitionpages.js` offline gates + the tsx render harness (`scripts/s9-competition-smoke.ts` — 30/30 assertions pass) + the live data-surface verification.
-- **S10 scope note (internal linking + nav):** Session 10 owns the internal linking + navigation relationships (tile order, anchor wording per the cannibalization checklist — keyword map §3 + the route plan §10). The competition pages NOW carry the CollectionPage node (S09-1) + the crawlable match rows + the standings table — the internal-link surface Session 10 refines is already crawlable.
+- **S10-2 follow-up (the homepage → team/competition spec §9 gap):** the homepage does NOT link directly to `/teams/<slug>` or `/competitions/<slug>` (spec §9 lists "Homepage → ... selected competition sections and selected team pages"). Closing it is a "link placement" change (in-scope per route plan §10) but touches the shared homepage standings/cups renderers (`markup.ts`) with visual side-effects — a Session 11+ follow-up (the Persian/entity naming session or a dedicated internal-link pass).
 
 ## SEO program state (the 15-session track)
 
@@ -180,7 +171,8 @@ Session 05 ✅ Completed / deployed (2026-11-17) — the match-URL lifecycle mec
 Session 06 ✅ Completed / deployed (2026-11-17) — the homepage one-month window + carousel crawlability + curated-selection promise; 3,675 OK. Deployment `7df40334…` @100%.
 Session 07 ✅ Completed / deployed (2026-11-17) — the match-detail footer-hook team-link gating + the metadata audit; 3,676 OK. Deployment `3e3a65e7…` @100%.
 Session 08 ✅ Completed / deployed (2026-11-16) — the selected-club team-page @graph WebPage node + the new `check-seo-teampages.js` gate; 3,685 OK. Deployment `b313aada…` @100%.
-Session 09 ✅ Completed / deployed (2026-11-17) — the competition-page @graph CollectionPage node (structural JSON-LD hygiene — the competition detail page was the lone competition-family page without one; the byte-frozen title/H1/description/answer untouched) + the date-hub/empty-state verification (buildHub already correct — no code change; the S06-H3 refinement is post-Dec-4) + the new `check-seo-competitionpages.js` gate (8 gates) + the seeded render harness (`scripts/s9-competition-smoke.ts` — 30/30 assertions pass); 3,694 OK. Deployment `fc07b557-8f7e-4408-859d-5901e9ac9cbf` @100%.
-`seo-implementation/next-session-prompt.md` holds the Session 10 start prompt
-(internal linking + nav). Progress source of truth:
+Session 09 ✅ Completed / deployed (2026-11-17) — the competition-page @graph CollectionPage node + the date-hub/empty-state verification + the new `check-seo-competitionpages.js` gate + the seeded render harness; 3,694 OK. Deployment `fc07b557…` @100%.
+Session 10 ✅ Completed / deployed (2026-11-17) — the `/teams` index tile ordering (the 13 selected clubs first — the ONE explicit S10 decision; the sort rides in buildTeamsIndexPage, the presentation layer, so teamsIndex stays the raw unfiltered generator per the Session 4 C1 law) + the new `check-seo-internallinks.js` gate (9 gates) + the seeded render harness (`scripts/s10-internallinks-smoke.ts` — 29/29 assertions pass); 3,704 OK. Deployment `12793863…` @100%.
+`seo-implementation/next-session-prompt.md` holds the Session 11 start prompt
+(Persian entity naming/metadata polish). Progress source of truth:
 `sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md`.

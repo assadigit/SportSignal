@@ -1659,7 +1659,29 @@ export function buildWeekendPage(ctx: SeoCtx): string {
 
 // ================= TEAMS =================
 export function buildTeamsIndexPage(ctx: SeoCtx): string {
-  const entries = teamsIndex(ctx);
+  // S10 (internal linking + nav — route plan §2.3 + §10): the 13 selected
+  // clubs surface FIRST in the /teams index tile grid + the linkItemList
+  // JSON-LD. Cosmetic only — the non-selected tiles stay (the crawlability
+  // law: a noindex page stays crawlable so Google can read the directive; the
+  // 74 non-selected team URLs keep their internal links from the /teams index
+  // tiles + the match-page footer-hook). Zero KV cost (in-memory isSelectedTeam
+  // check on the data already read). The sort rides in the PRESENTATION layer
+  // (buildTeamsIndexPage), NOT in teamsIndex itself — the Session 4 C1 law
+  // (check-seo-crawlindex.js) requires teamsIndex to generate BOTH sides
+  // unfiltered (the sitemap teams.xml filter + the team-page indexable rule
+  // apply isSelectedTeam; teamsIndex stays the raw chronological generator that
+  // powers the /teams tiles for ALL teams so the noindex stays crawlable).
+  // The selected-first comparator runs BEFORE the chronological tiebreaker so
+  // the 13 indexable team pages lead the grid; slug-colliding entries share the
+  // same isSelectedTeam result (normAlias normalizes), so the order is stable.
+  // The visible==machine contract holds: both the tile grid + the linkItemList
+  // below consume this `entries` array (SS-13).
+  const entries = teamsIndex(ctx).sort((a, b) => {
+    const sa = isSelectedTeam(a.name) ? 0 : 1;
+    const sb = isSelectedTeam(b.name) ? 0 : 1;
+    if (sa !== sb) return sa - sb;
+    return (a.next && b.next ? new Date(a.next.raw.utcDate).getTime() - new Date(b.next.raw.utcDate).getTime() : 0);
+  });
   const path = "/teams";
   const trail = [{ name: "خانه", href: "/" }, { name: "تیم‌ها" }];
   let grid = "";
