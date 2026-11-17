@@ -1,144 +1,56 @@
-# SportSignal SEO Program — PROJECT COMPLETE (the 15-session close-out handoff)
+# SportSignal SEO Follow-up Track — Next-Session Prompt (Session 17: the FAQ on the detail pages)
 
 Read AGENTS.md in the repo root first and follow it for the whole session.
 
-## Status: the 15-session SportSignal SEO implementation program is COMPLETE
+You are the implementation agent for the SportSignal SEO follow-up track, Session 17: the FAQ structured data + the visible Q&A on the team + match detail pages (the P1-6 gap from the `docs/audits/2026-11-17-seo-gap-and-swot-audit.md`). The spec plan is `docs/specs/seo-followup-track.md`. Session 16 (the entity-grounding parity + the image sitemap) is DONE — deployed `13.269.0-entity-image` (deployment `2481f840-b7da-4093-a4b7-db4c7888f90e` @100%), commit `142377f`, npm test 3,757 OK.
 
-Session 15 (the final regression + the production QA + the handoff) is DONE
-(2026-11-17, docs-only — the regression is CLEAN; no deploy). The route plan
-§10 sequencing (Sessions 1-15) is DONE. **There is no Session 16.** The
-implementation work is complete; the residual work is owner-driven follow-ups.
+## The context (read in this order)
 
-This file is the "project complete" handoff (the phase file's deliverable:
-"the last session handoff prompt (or explicit 'project complete' handoff if
-no further session is needed)"). If the owner wants to pursue any of the
-residual follow-ups below, a fresh session prompt would be written for that
-specific follow-up (one of the options in §3).
+1. `AGENTS.md` (the repo root — the operating contract).
+2. `docs/specs/seo-followup-track.md` (the multi-session spec — Session 17 = the FAQ).
+3. `docs/audits/2026-11-17-seo-gap-and-swot-audit.md` (the gap audit — P1-6 is the FAQ gap; note 5 of 18 audit gaps were verification errors, corrected in S16 + the S17 investigation).
+4. `seo-implementation/session-reports/SESSION-16.md` (the S16 report — the entity parity + the image sitemap + the gap-audit corrections).
+5. `docs/HANDOFF.md` + `docs/DECISIONS.md` (the current state — S16 deployed).
+6. The source: `src/seo/jsonld.ts` (the JSON-LD builders — the `faqNode` function exists for the date hubs; reuse it), `src/seo/pages.ts` (the team-page + match-page builders — where the FAQ node + the visible Q&A are added), `src/seo/page-shell.ts` (the head + the body shell).
 
-## 1. What was delivered (the 15-session summary)
+## The objective
 
-The full-program report is `seo-implementation/FINAL-SEO-IMPLEMENTATION-REPORT.md`.
-The per-session chain:
+Add the `FAQPage` + `Question` + `Answer` structured data + a visible Q&A section to the team + match detail pages. The Q&A is real (sourced from the fixture data) + Persian. NEVER a "where to watch" Q (the no-broadcast-claims law — S-04/S-05). Freeze-safe (an additive JSON-LD node + the visible Q&A BELOW the answer-sentence — NOT a byte-frozen title/H1/description/answer-sentence byte; the Dec 4-8 freeze holds).
 
-| S | Outcome | Deploy / version | Test count |
-|---:|---|---|---:|
-| 1 | audit + docs | `c97ae70b` (`13.259.1`) | 3,615 |
-| 2 | docs-only; 369-phrase map | none | 3,615 |
-| 3 | docs-only; the architecture | none | 3,615 |
-| 4 | the crawl/index foundation (C1/C6/C8) | `7d92e633` (`13.260.1`) | 3,628 |
-| 5 | the match-URL lifecycle (INERT) | `1d70129b` (`13.261.0`) | 3,652 |
-| 6 | the homepage window + carousel crawlability | `7df40334` (`13.262.0`) | 3,675 |
-| 7 | the match-detail footer-hook team-link gating | `3e3a65e7` (`13.263.0`) | 3,676 |
-| 8 | the team-page @graph WebPage node | `b313aada` (`13.264.0`) | 3,685 |
-| 9 | the competition-page @graph CollectionPage node | `fc07b557` (`13.265.0`) | 3,694 |
-| 10 | the /teams tile ordering (13 selected first) | `12793863` (`13.266.0`) | 3,704 |
-| 11 | the Persian entity-naming/metadata polish | `21efcee2` (`13.267.0`) | 3,720 |
-| 12 | docs-only; the EN decision — Option (b), FINAL | none | 3,720 |
-| 13 | docs-only; the structured-data validation | none | 3,720 |
-| 14 | the preconnect + the GSC monitoring view + the GA4 DEFER | `a4cc2982` (`13.268.0`) | 3,738 |
-| 15 | docs-only; the final regression — CLEAN, no deploy | none (stays `a4cc2982`) | 3,738 |
+## The milestones
 
-**Live production:** `https://sportsignal.ir` — deployment
-`a4cc2982-c6fa-493f-907b-e71d89c1f33f` @100% = `13.268.0-perf-preconnect`.
+- **S17-M1 — the FAQPage on the team page.** Add the `FAQPage` JSON-LD node + a visible Q&A section BELOW the answer-sentence. The Q&A (real, data-sourced, Persian):
+  - "بازی بعدی [team] کی است؟" → the next fixture (the date + the competition + the Tehran time).
+  - "بازی‌های [team] در کدام لیگ است؟" → the competition name.
+  - "ساعت بازی به وقت تهران؟" → the kickoff time in Tehran.
+  Reuse the existing `faqNode` builder (jsonld.ts — it already builds the FAQPage for the date hubs) + the existing date/time formatters (`tehranParts`, the Jalali calendar). NEVER a "where to watch" / "پخش زنده" Q.
+- **S17-M2 — the FAQPage on the match page.** The same for the match page:
+  - "بازی [home] – [away] چه ساعتی شروع می‌شود؟" → the kickoff time in Tehran.
+  - "این بازی در کدام ورزشگاه است؟" → the venue (if present — the MISSING-IS-NOT-ZERO law: omit the Q if no venue).
+  - "این بازی در کامل لیگ است؟" → the competition name.
+- **New check gate:** `check-seo-faq.js` (the FAQPage on the team + match pages; the real Q&A; the no-broadcast-claim rule — no "پخش زنده"/"watch live"/"where to watch" Q; the freeze-coordination — the Q&A is BELOW the answer-sentence; the MISSING-IS-NOT-ZERO law for the venue Q).
+- **Version bump:** 13.269.0-entity-image → 13.270.0-faq (per the repo convention). Update `src/config.ts` + `package.json` + the `check-stats.js` LIVE version pin (both the v13.258-mca11y pin + the v13.254-rankbadge pin) + the `check-seo-performance.js` version gate (already accepts >= 13.268.0).
+- **Deploy + verify live:** `npm test` exit 0 → the local wrangler dev smoke → the versioned deploy (`npx wrangler versions upload` → `npx wrangler versions deploy --version-id <id> --percentage 100 --yes`) → verify the FAQPage on the live team + match pages.
 
-## 2. The final regression verdict (Session 15)
+## The standing constraints (carry into the session)
 
-The regression is CLEAN. `npm test` exit 0 (3,738 OK; `npx tsc --noEmit`
-clean). The live crawl of 19 HTML pages + 4 machine files: every page 200 +
-the correct canonical/robots/title/H1/description/JSON-LD/preconnect + ZERO
-hreflang. The MISSING-IS-NOT-ZERO law holds. The 13-club allowlist + the C1
-disposition hold (4 non-selected slugs verified noindex,follow). The /teams
-tile ordering holds. The no-fake-offers / no-invented-data law holds. The
-Cloudflare budget is healthy (`ok:true` + `pool_matches:324` +
-`kv_writes_day:403` + `subreq_last_tick:31`). The byte-frozen surfaces are
-unchanged (git clean — the session runs before Dec 9, the Dec 4-8 freeze
-HOLDS). No deploy (docs-only).
+- npm only (never `bun install`); `npm test` exit 0 before every push; versioned deploys only; the Cloudflare free-tier budget (KV writes ≤ 1,000/day; ~50 subrequests/tick; the 10ms CPU cliff — every change states its budget; the FAQ is pure string concatenation on already-loaded data → zero new KV-read/subrequest/CPU).
+- The freeze-safety rule: the byte-frozen surfaces (the title/H1/description/answer-sentence) are NOT touched. The FAQ is ADDITIVE (a JSON-LD node + the visible Q&A BELOW the answer-sentence).
+- No deploys in the Nov 20 Bayern–Köln S27 auto-verify windows (M1 ~19:35 UTC, M2 ~21:35-45 UTC — check the date before the deploy).
+- The commit-message convention: `seo(s17): …`. The one-shot token push; the ls-remote verify. No secrets in the commits. Rotate the GitHub + Cloudflare tokens before starting (they were used across S14-S16).
 
-## 3. The owner's options (the residual follow-ups — owner-driven)
+## The deliverables
 
-The program's implementation work is complete. These are owner-driven
-follow-ups that need owner input/data. **If the owner wants to pursue any of
-these, paste the matching option below into a fresh session with the
-credentials — a new session prompt would be written for that specific
-follow-up.** The full backlog is in
-`seo-implementation/FINAL-SEO-IMPLEMENTATION-REPORT.md` §5.
+- The `check-seo-faq.js` gate (wired into the `npm test` chain).
+- The version bump (13.269.0 → 13.270.0) + the `check-stats.js` LIVE pin update.
+- The SESSION-17 report (`seo-implementation/session-reports/SESSION-17.md`).
+- The HANDOFF/CHANGELOG/DECISIONS/tracker updates.
+- The commit + the one-shot token push (ls-remote verified) + the live verification.
 
-### Option A — the post-Dec-8 freeze-lift decisions (needs the fresh 16-month GSC export)
+## After S17
 
-After Dec 8, with a fresh 16-month GSC export, the owner may revisit the
-byte-frozen surfaces: the S2 title-test re-fire; the S06-H3 date-hub
-empty-state copy; the S1 spelling-fix judgement (judge ~Dec 8); the S11
-SEO_EXTRA_ALIASES extension (new GSC-observed Persian variants); the S13-1
-option (c) Events rich-result eligibility revisit (the curated stadium-lookup
-— ONLY where a true venue value exists; NEVER fabricate). **The owner should
-supply the fresh 16-month GSC export (with the URL-level page samples + the
-queries×pages matrix + the enhancement/Critical-issues CSVs + the Core Web
-Vitals report) — the program's top evidence request.**
+Session 18 = the content depth on the detail pages (the P1-1 gap — the biggest ranking lever: the editorial body content BELOW the answer-sentence). See `docs/specs/seo-followup-track.md` §Session 18. The data-dependent gaps (P0-1 CWV, P0-2 before/after GSC, P0-3 CPU cliff, P1-5 pagination, P2-3 allowlist) are the owner's next phase (need the fresh GSC data + the Workers Paid plan + the post-Dec-8 freeze-lift) — see `docs/specs/seo-followup-track.md` §"The data-dependent gaps".
 
-### Option B — the CrUX / PageSpeed Insights data (needs a Google API key OR the owner-supplied data)
+## Credentials
 
-The owner should supply the CrUX / PageSpeed Insights data for
-sportsignal.ir (the mobile LCP / INP / CLS per URL class — the S14
-preconnect's post-deploy measurement) OR a Google API key for the CrUX API.
-The structural analysis (the render path + the KV-read count + the CPU cliff)
-is the current fallback.
-
-### Option C — the Workers Paid plan ($5/mo) — the durable infrastructure fix
-
-The owner should decide on the Workers Paid plan ($5/mo → 1M KV reads/day +
-30s CPU limit). This is the durable fix for: the chronic KV read-quota
-exhaustion (100,000/day free-plan — exceeded daily at S5-S9; healthy at
-S10-S15 close); the chronic 10ms CPU cliff (the C7 audit — 4,832
-exceededResources over Nov 16-17); AND the prerequisite for any future `/en/`
-URL architecture (the S12-1 axis 2); AND the GA4 budget priority (the S14-3
-decision).
-
-### Option D — the S14 Cloudflare beacon extension to SEO pages (the GA4 alternative)
-
-The homepage ships the Cloudflare Web Analytics cookieless beacon; the SEO
-pages (`src/seo/page-shell.ts`) do NOT. A future session could extend the
-beacon to the SEO pages (one-line `<script>` in the `pageShell` head —
-cookieless, deferred via `type="module"`, freeze-safe) IF the owner wants the
-per-page-class RUM WITHOUT the GA4 consent burden. This is the recommended
-path per `docs/specs/GA4-EVALUATION.md` §6.
-
-### Option E — the product/UX follow-ups (S26 + S10-2 + S25)
-
-S26 (UI/UX iteration: hero rendering, nav UX, FAQ discoverability, schedule
-density, telegram CTA — S06-H4 belongs here); S10-2 (the homepage →
-team/competition spec §9 gap — the homepage does NOT link directly to
-`/teams/<slug>` or `/competitions/<slug>`; a "link placement" change that
-touches the shared homepage renderers with visual side-effects); S25 follow-up
-smokes (NVDA/VoiceOver + Safari/Firefox/Edge live confirmations — owner
-sessions needed).
-
-### Option F — the season-end lifecycle first run (May 2027)
-
-The S5 match-URL lifecycle mechanism is shipped + test-proven but INERT (the
-`SEASON_END_NOINDEX_ENABLED` flag is false + the `SEASON_END_DATES` map is
-empty). To enable: confirm FD `season.endDate` values → populate
-`SEASON_END_DATES` → set `SEASON_END_NOINDEX_ENABLED = true` → versioned deploy
-→ verify live. The first real transition is a May 2027 decision (after the
-2026-27 season closes).
-
-### Option G — the S12 EN re-litigation gate (FINAL — only if all three axes flip)
-
-A future session that wants to build `/en/` URLs must re-litigate ALL THREE
-evidence axes: (1) English-query demand in a fresh 16-month GSC export; (2) a
-Workers Paid plan in place (the 2× KV-read demand); (3) a demonstrated
-competitive angle against the English-native publishers. The keyword map §2
-English plan slots stay as the documented Option (a) contingency.
-
-## 4. The standing monitoring cadence (the GSC monitoring view)
-
-The `seo-implementation/GSC-MONITORING-VIEW.md` defines the cadence: weekly
-for the top 4 page classes (the homepage, the match-detail, the selected-team,
-the competition); monthly for the full snapshot; post-Dec-8 for the
-freeze-lift measurement. The standing health checks (every session / every
-deploy) are in the FINAL-SEO-IMPLEMENTATION-REPORT.md §6.3.
-
-## 5. Credentials
-
-Credentials used across Sessions 14 + 15, not stored. **The owner should
-rotate the GitHub + Cloudflare tokens** (they were shared across multiple
-turns).
+Credentials used across S14-S16, not stored. The owner should rotate the GitHub + Cloudflare tokens before starting S17.
