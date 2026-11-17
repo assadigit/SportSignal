@@ -2,81 +2,149 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
-## This session (SEO Follow-up Track Session 18 — the editorial body content on the detail pages; 2026-11-17 — DONE in code + deployed + version-verified live; the page-level live verification rides the S17 00:20 UTC job after the KV-quota reset)
+## This session (Telegram Alerts Track Session 19 — the live goal alerts; 2026-11-17 — DONE in code + deployed + version-verified live; the first natural goal alert lands Nov 20+ with the post-break fixture resumption)
 
-**The objective (the P1-1 gap, `docs/specs/seo-followup-track.md` §Session 18):**
-substantive ORIGINAL Persian editorial prose BELOW the answer-sentence on the
-team + competition detail pages — composed deterministically from the
-already-loaded data (the narrative.ts precedent), never scraped, never
-invented, E-E-A-T-grounded, freeze-safe. **DONE.** (The owner prompt arrived
-with an assumed P1-7/P1-8 numbering that does not exist in the repo audit —
-see DECISIONS S18-4; both prompt-assumed items were already shipped, so the
-session executed the repo's real next open P1 item, P1-1.)
+**The objective (the owner's S19 brief):** per-user live goal alerts — goal
+events detected from REAL score deltas in the existing LIVE sweep, fanned
+out to team-following chats through the existing engine/transport, with the
+subscription/persistence/distribution machinery behind them. **DONE.**
 
-- **S18-M1 — the team page ✅.** `src/seo/editorial.ts`
-  `buildTeamEditorialHtml`: «وضعیت فصل X» — the standings-position narrative
-  (pos/points/played/W-D-L + the honest bands) + the recent-results run
-  (the team's OWN finished matches, flat/fullTime/archive score shapes all
-  covered) + the upcoming-run close + the E-E-A-T source note. BELOW the
-  answer-sentence, ABOVE the S17 faqcard.
-- **S18-M2 — the competition page ✅.** `buildCompetitionEditorialHtml`:
-  «تصویر کلی X» — the title-race read (leader + gap + 2nd/3rd names from the
-  SAME rows the visible table renders) + the coverage note; a cup without a
-  table degrades to the coverage note alone.
-- **The match page: NO new prose (DECISIONS S18-3)** — the S08 narrative +
-  the facts table + the FAQ already cover it; zero match-page bytes changed.
-- **The gates ✅.** `check-seo-content-depth.js` (15 gates) wired into the
-  `npm test` chain — exit 0, **3,789 OK**; `npx tsc --noEmit` clean; the
-  seeded harness `scripts/s18-content-smoke.ts` **29/29** (incl. the S17 FAQ
-  regression under the new neighbor + the byte-frozen title/H1).
-- **The version ✅.** `13.270.0-faq` → `13.271.0-content` (the version triple
-  + the check-stats LIVE pins + the CHANGELOG entry).
+- **S19-M1 — the detection layer ✅.** `src/goal-alert.ts` (the
+  `notify-status.ts` structural twin; one hook in `runNotifyPhase` after
+  `detectStatusChanges`, own try/catch): the KV snapshot map
+  `goal_snapshots_v1` (last-known scores of in-window LIVE matches,
+  kickoff [−6h, +4h], a REAL score required — MISSING-IS-NOT-ZERO;
+  write-only-when-changed, TTL 2d) + the delta law (score-side
+  attribution; FIRST SIGHTING SEEDS NEVER FIRES; backward movement =
+  correction, silent; a provider gap RETAINS the baseline — the next good
+  sweep fires the missed goal(s) once, late, never a burst).
+- **S19-M2 — the claim + the audience ✅.** The per-goal dedupe rides
+  `notified_v1` verbatim (D1 write-first `INSERT OR IGNORE`; `ntype`
+  `goal:<h>-<a>` — the score tuple AFTER the goal; at most one alert per
+  tuple per match ever). The audience is the EXISTING team follows
+  (`userFollowsMatch` one/both — EITHER side fans out; zero new
+  subscription surface).
+- **S19-M3 — the send path ✅.** The existing transport (retries/429/
+  outbox/dead-chat + the per-chat delivery ledger) + cache-only cards
+  (`cachedCardPng` — the v13.94.1 CPU-keeper law; text fallback per chat)
+  + the compact Persian-first alert («گُل!» + teams + competition +
+  «نتیجه: *۲-۰*» + «گلِ X», the «۲ گل برای X» variant, the en twin — never
+  scorer names/minutes the sweep does not carry) + the TWO-LAYER
+  WRITE-FIRST (reservation BEFORE any write; the D1 claim BEFORE any
+  send; the snapshot advances only processed rows) + `GOAL_ALERT_MAX_UNITS`
+  = 6/tick.
+- **The honesty gate ✅.** Red-card alerts SCOPED OUT (DECISIONS S19-3 —
+  no incident source on the wired providers; never fabricated). Channel
+  goal posts + the scorer enrichment = S20 backlog (S19-5).
+- **The gates ✅.** `check-s19-goalalert.js` (52 gates) wired into the
+  `npm test` chain — **3,841 OK / 0 FAIL, exit 0**; `npx tsc --noEmit`
+  clean; the harness `s19-goal-smoke.ts` **22/22** (the 0-0 → 1-0 → 2-0
+  timeline, the re-sweep zero, the provider-gap no-burst recovery, the
+  fail-closed D1 outage, EITHER-side fan-out, the engine composition
+  regression) through the REAL `detectGoalEvents` + mock KV/D1 + a
+  captured transport.
 - **The deploy ✅ (version-verified live).** Deployment
-  `0fad7482-3e36-43ea-a2d8-b78b1b6247a7` @100%; the live `/healthz` reports
-  `version: 13.271.0-content`. The page-level live check is blocked by the
-  same Nov 17 KV read-quota exhaustion the S17 deploy hit (resets UTC
-  midnight; the S17 scheduled 00:20 UTC job covers both sessions' page checks
-  — the code path is proven by the 29/29 harness + the 3,789-gate suite + the
-  local wrangler-dev smoke on the seeded KV).
-- **Budget:** zero new KV-read/subrequest/CPU (pure string composition on
-  already-loaded data). No client asset renamed.
+  `7c54e223-b39f-4c9f-9bde-ea7d06047610` @100%; the live `/healthz`
+  reports `version: 13.272.0-goalert`. Local boot smoke clean (workerd);
+  the miniflare cron-test endpoint is blocked by a wrangler-4.50 sandbox
+  bug (ScheduledController DataCloneError — tooling, documented in the
+  session report §4). Bot surface read-verified (`getMe` + the webhook,
+  0 pending). **Honest limit:** the Nov 14–19 international break means no
+  live match exists until Fri Nov 20 19:30 UTC — the goal path is
+  harness/gate/boot proven; the first natural production alert lands
+  Nov 20+.
 
 ## Current state (machine)
 
-- **Version:** `13.270.0-faq` (`src/config.ts` / `package.json` `13.270.0.0`). npm test baseline **3,773 OK** (`npx tsc --noEmit` clean + 57 check scripts — the S16 baseline 3,757 + the 15-gate `check-seo-faq.js` + the re-pinned gates re-counted). The S17 harness: `npx tsx scripts/s17-faq-smoke.ts` (26/26 — manual, not in the test chain, the s9/s10/s11 precedent).
-- **Deploy:** Worker `ucl-notifier`, versioned deploys only. Current deployment `62c3b14d-7dae-42e5-8d47-06d21d53176a` (`13.270.0-faq`; 2026-11-17 ~12:10 UTC, @100%). Rollback chain: `2481f840` (13.269.0-entity-image, S16) → `a4cc2982` (13.268.0-perf-preconnect, S14) → earlier (see the RUNBOOK). Rollback = `npx wrangler rollback`.
-- **The KV incident at the S17 deploy (2026-11-17 ~11:05 UTC):** the read quota (100,000/day free) exhausted under peak traffic — the documented chronic issue, today 3 hours earlier than the Sessions 5-9 pattern; the analytics evidence + the differential are in the SESSION-17 report §7. The durable fix remains the owner's Workers Paid plan decision ($5/mo → 1M reads/day). The quota resets at UTC midnight; the scheduled verification job completes the S17 page-level live check at 00:20 UTC.
-- **Production hostnames:** `sportsignal.ir` (apex Custom Domain), `football.sportsignal.ir` (301→apex except `/webhook`,`/api/`,`/admin`), `ucl-notifier.sportsignal.workers.dev` (noindex-guarded alias).
-- **Branch:** `main` (canonical; HEAD = the S17 checkpoint — ls-remote verified after the one-shot token push). Session 17 commit: `seo(s17): …` (the code + the gate + the docs: the SESSION-17 report + the HANDOFF/CHANGELOG/DECISIONS updates + the S18 next-session prompt).
-- **Commands:** `npm test` (must exit 0 before every push). **npm only, never `bun install`**. Local dev: `npx wrangler dev --config wrangler.dev.toml --port 8787 --local` (the dev config has no [ai] remote binding). Deploy needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` in the env. Versioned deploy: `npx wrangler versions upload` → `npx wrangler versions deploy --version-id <id> --percentage 100 --yes`.
-- **Cron triggers:** `*/10 * * * *` + `27 */4 * * *` (unchanged).
-- **Key folders:** `src/` (worker modules; `scripts/lib/worker-src.js` carries the bundle ORDER — co-evolve), `assets/` (immutable versioned client payload; SW `sportsignal-v126`, bundle `public-13.80.js`, stylesheet `public-13.87.css`), `docs/` (RUNBOOK, specs, audits, history), `seo-implementation/` (the SEO working tree: session reports, next-session-prompt.md).
-- **Backups:** KV is live state; no routine file backups (RUNBOOK §5 KV key contracts). Never rename KV keys.
-- **Standing limits:** the Dec 4-8 measurement freeze holds (the byte-frozen title/H1/description/answer-sentence bytes — S17 verified additive-only); the S12 single-language stance FINAL; `_headers` at the 100-rule cap; avoid deploys in the Nov 20 Bayern–Köln windows (M1 ~19:35 UTC, M2 ~21:35-45 UTC — 3 days away at the S17 close); the KV read quota + the 10ms CPU cliff remain the owner's Workers Paid plan decision.
+- **Version:** `13.272.0-goalert` (`src/config.ts` / `package.json`
+  `13.272.0.0`). npm test baseline **3,841 OK** (`npx tsc --noEmit` clean +
+  58 check scripts — the S18 baseline 3,789 + the 52-gate
+  `check-s19-goalalert.js`). The S19 harness: `npx tsx
+  scripts/s19-goal-smoke.ts` (22/22 — manual, not in the test chain, the
+  s17/s18 precedent).
+- **Deploy:** Worker `ucl-notifier`, versioned deploys only. Current
+  deployment `7c54e223-b39f-4c9f-9bde-ea7d06047610` (`13.272.0-goalert`;
+  2026-11-17 ~20:05 UTC, @100%). Rollback chain: `0fad7482`
+  (13.271.0-content, S18) → `62c3b14d` (13.270.0-faq, S17) → `2481f840`
+  (13.269.0-entity-image, S16) → earlier (see the RUNBOOK). Rollback =
+  `npx wrangler rollback`.
+- **The KV read-quota exhaustion (the standing condition):** crossed
+  ~11:05 UTC Nov 17 (the S17/S18 condition); `/healthz ok:false` +
+  `pool_matches:0` until the UTC-midnight reset. The re-scheduled one-time
+  verification job (00:20 UTC Nov 18) completes the S17+S18 page-level
+  live checks (`/healthz ok:true` + the FAQPage/editorial cards) and makes
+  the `seo(s17-verify)` docs commit if all pass. The durable fix remains
+  the owner's Workers Paid plan decision ($5/mo → 1M reads/day).
+- **Production hostnames:** `sportsignal.ir` (apex Custom Domain),
+  `football.sportsignal.ir` (301→apex except `/webhook`,`/api/`,`/admin`),
+  `ucl-notifier.sportsignal.workers.dev` (noindex-guarded alias).
+- **Branch:** `main`. Session 19 commits: `audit(s19)` (the audit doc) +
+  `v13.272-goalert` (the code + the gates + the docs) + the docs close-out
+  commit. The bot-track session reports live in `docs/history/`
+  (`2026-11-17-s19-goalalerts.md`).
+- **Commands:** `npm test` (must exit 0 before every push). **npm only,
+  never `bun install`**. Local dev: `npx wrangler dev --config
+  wrangler.dev.toml --port 8787 --local`. NOTE: the local D1 needs
+  `npx wrangler d1 execute sportsignal-users --config wrangler.dev.toml
+  --local --file=db/users-schema.sql` once after a state wipe; the S19
+  seeder is `node scripts/s19-seed-local-kv.js <h> <a>`. The miniflare
+  cron-test endpoint (—test-scheduled) is broken in this sandbox
+  (wrangler 4.50 DataCloneError) — use the harness for tick logic.
+  Deploy needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` in the
+  env. Versioned deploy: `npx wrangler versions upload` → `npx wrangler
+  versions deploy --version-id <id> --percentage 100 --yes`.
+- **Cron triggers:** `*/10 * * * *` + `27 */4 * * *` (unchanged — the goal
+  layer adds ZERO new schedulers).
+- **Key folders:** `src/` (worker modules; `scripts/lib/worker-src.js`
+  carries the bundle ORDER — goal-alert.ts sits after notify-audit.ts),
+  `assets/` (immutable versioned client payload; SW `sportsignal-v126`,
+  bundle `public-13.80.js`, stylesheet `public-13.87.css` — untouched by
+  S19), `docs/` (RUNBOOK, HANDOFF, specs, audits, history), `docs/history/`
+  (the bot-track session reports).
+- **Standing limits:** the Dec 4-8 freeze holds (zero SEO/GEO surface bytes
+  changed in S19 — pinned by the check gates); `_headers` at the 100-rule
+  cap; **no deploys in the Nov 20 Bayern–Köln windows (M1 ~19:35 UTC, M2
+  ~21:35-45 UTC — the first natural goal-alert window; watch, don't
+  deploy)**; the KV read quota + the 10ms CPU cliff remain the owner's
+  Workers Paid plan decision.
 
-## The SEO follow-up track state
+## The alerts track state
 
-Session 16 ✅ Completed / deployed + verified live (2026-11-17) — the entity-grounding parity + the image sitemap; 3,757 OK. Deployment `2481f840…` @100%.
-Session 17 ✅ Completed in code + deployed + version-verified live (2026-11-17) — the FAQPage + the visible Q&A on the team + match detail pages; 3,773 OK; the harness 26/26. Deployment `62c3b14d…` @100%. The page-level live verification completes at the KV-quota reset (the scheduled 00:20 UTC job).
-Session 18 ⬜ NEXT — the content depth on the detail pages (the P1-1 gap — the biggest ranking lever). See `docs/specs/seo-followup-track.md` §Session 18 + the next-session prompt (`seo-implementation/next-session-prompt.md`).
-The data-dependent gaps (P0-1 CWV, P0-2 before/after GSC, P0-3 CPU cliff, P1-5 pagination, P2-3 allowlist) — the owner's next phase (`docs/specs/seo-followup-track.md` §"The data-dependent gaps").
+Session 19 ✅ Completed in code + deployed + version-verified live
+(2026-11-17) — the live goal alerts (detection/claim/fan-out + the gates);
+3,841 OK; the harness 22/22. Deployment `7c54e223…` @100%. The first
+natural live verification window: Nov 20+ (the post-break fixtures).
+Session 20 ⬜ NEXT — the S20 preview: the per-match subscription UX
+(deep-links, `/follow match`), red-card alerts IF a real source
+materializes, alert pacing/quiet-hours, the channel goal posts + the
+scorer enrichment, the Workers AI enrichment ideas parked in
+`docs/telegram-channel-mirror/ENRICHMENT.md`.
 
-(The 15-session SEO program 2026-11-16/17 is COMPLETE — the per-session rows
-live in the git history + `seo-implementation/FINAL-SEO-IMPLEMENTATION-REPORT.md`;
-the owner's 15-session tracker `sportsignal-seo-implementation/IMPLEMENTATION-TRACKER.md`
-stays closed.)
+(The SEO follow-up track Sessions 16-18 are COMPLETE — see
+`seo-implementation/session-reports/` + the FINAL-SEO-IMPLEMENTATION-REPORT;
+the data-dependent gaps are the owner's next phase.)
 
 ## Open follow-ups
 
-- **The S17 page-level live verification (the scheduled 00:20 UTC job, 2026-11-18)** — the FAQPage on the live team + match pages after the KV-quota reset; the `seo(s17-verify)` docs commit.
-- **The KV read-quota exhaustion (the owner decision)** — today it exhausted by 11:05 UTC (112,086 reads; the analytics evidence in the SESSION-17 report §7). The Workers Paid plan ($5/mo → 1M reads/day) is the durable fix + the prerequisite for the `/en/` architecture + the GA4 budget. Until then: the SEO detail pages 404 for the tail of each UTC day after the quota crosses.
-- **Session 18 (the content depth — P1-1, the biggest ranking lever)** — the next session; the prompt is ready.
-- **The audit doc amendment** (the 6 corrected gaps — a docs-only pass; DECISIONS S16-3 + S17-3).
-- **The post-Dec-8 freeze-lift decisions** (unchanged — the S2 title-test, the S06-H3 copy, the S1 spelling judgement, the S11 SEO_EXTRA_ALIASES extension, the S13-1 Events revisit — all need the fresh 16-month GSC export).
-- **Nov 20 (S27 option B):** the auto-verify workflow fires around Bayern–Köln (`sched_next_ko` was 2026-11-20T19:30:00.000Z at the S15 close); the owner re-fires the M1/M2 window sessions; no deploys in those windows.
-- The remaining S15-close backlog (the CrUX measurement, the Workers Logs per-route CPU, the S14 beacon extension IF wanted, the S26 UI/UX iteration, the C8 staleness vector, the May-2027 season-end lifecycle first run) — unchanged, owner-driven.
+- **The 00:20 UTC Nov 18 verification job (re-scheduled this session after
+  the original was found missing from the scheduler):** the S17+S18
+  page-level live verification + the `seo(s17-verify)` docs commit.
+- **The Nov 20+ first-natural-goal watch:** Bayern–Köln Friday 19:30 UTC —
+  the first live goal alert under the new layer (with followed teams);
+  check the D1 `notified_v1` `goal:*` rows + the delivery ledger after the
+  match. No deploys in the M1/M2 windows.
+- **The KV read-quota exhaustion (the owner decision)** — unchanged (the
+  Workers Paid plan is the durable fix).
+- **The wrangler-4.50 sandbox DataCloneError** on the miniflare
+  scheduled-test endpoint (tooling; the harness covers tick logic; revisit
+  if a future wrangler upgrade lands).
+- The S20 backlog (per-match subscriptions, red cards IF a real source,
+  quiet hours, channel goal posts, scorer enrichment).
+- The post-Dec-8 freeze-lift decisions + the remaining S15-close backlog
+  (unchanged, owner-driven).
 
-**Credentials used, not stored.** The GitHub + Cloudflare tokens were used
-across S14-S17 (the S17 session used them for the clone, the push, the
-deploy, + the KV analytics) — the owner should rotate them after the S17
-verification job completes (the scheduled job needs the current tokens).
+**Credentials used, not stored.** The GitHub + Cloudflare + Telegram +
+football-data tokens were used this session (the clone, the push, the
+deploy, the API probes, the bot surface checks) — the owner should rotate
+them after the 00:20 UTC verification job completes (it needs the current
+tokens).

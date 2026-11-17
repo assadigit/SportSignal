@@ -1892,3 +1892,63 @@ title/H1 byte changes) after Dec 4 with a fresh 16-month GSC export.
   `.editorsrc`) instead of a new DOM element or a link farm. Decided by the
   agent (the footer already links the source; the prose cites provenance
   once, per the E-E-A-T grounding ask).
+
+## S19 (2026-11-17) — Telegram Alerts Track Session 19: the live goal alerts
+
+- **S19-1 — the snapshot store: one compact KV key (`goal_snapshots_v1`).**
+  The last-known-score state lives in a single KV map written
+  write-only-when-changed (the `match_status_v1` discipline, TTL 2 days),
+  read only on ticks with live-scored in-window matches. Options rejected:
+  extending the LIVE overlay (that is the public serve path's blob, written
+  under budget/headroom gates — internal bot state must not ride it), and
+  extending the pool row (the pool is the full-sweep snapshot, not per-tick
+  state; the live sweep merges in memory). Decided by the agent from the
+  notify-status precedent (the audit's §4).
+- **S19-2 — the event model: one alert per (tick, match, delta-side), keyed
+  by the post-goal score tuple.** The claim ntype is `goal:<h>-<a>` — the
+  score AFTER the goal: a 2-1 then 3-1 match alerts twice, a re-sweep of
+  the same 3-1 alerts zero times, at most one alert per score tuple per
+  match ever (a disallowed-goal correction that re-crosses the same tuple
+  is suppressed — the repo's fail-toward-fewer-notifications law). First
+  sighting seeds, never fires; backward movement (correction) advances the
+  baseline silently; a multi-goal same-side tick is one honest alert («۲ گل
+  برای X»); a both-sides tick credits both WITHOUT inventing an order (the
+  order is not in the data). Decided by the agent from the owner's S19
+  brief (the per-goal claim-key directive) + the never-fabricate law.
+- **S19-3 — red-card alerts SCOPED OUT (the honesty gate).** The audit
+  verified: football-data v4 free tier exposes fixtures + scores only (no
+  live incidents endpoint); the LIVE sweep's shape carries scores only;
+  sportscore's wired day-fixture payload carries status + scores (the
+  per-event detail the website's scorer enrichment fetches is not part of
+  the sweep and carries no card data). No real incident source exists on
+  the wired providers → red-card alerts are NOT built, never fabricated,
+  never half-guessed. Revisit: only when a real incident source is actually
+  wired (then a new audit + a new session).
+- **S19-4 — goals fire from LIVE rows only.** A LIVE→FINISHED score delta
+  (the last-minute goal) does NOT fire a goal alert: the engine's FT push
+  lands within minutes carrying the final score, and post-FT provider
+  corrections (FD does correct scores after the whistle) would otherwise
+  fabricate «گُل!» hours after the match. A FINISHED row that flickers back
+  to LIVE is a FIRST-SIGHTING seed (the snapshot row was dropped on
+  finish), so a zombie flicker can never fake a goal. Decided by the agent
+  (the correction-noise vs the minutes-late-goal trade-off; the FT push
+  covers the information).
+- **S19-5 — the channel-mirror goal post + the sportscore scorer
+  enrichment are S20 backlog.** The S19 brief's no-scope-creep rule (no
+  channel/broadcast features): the goal alert is private-fan-out only in
+  S19. The claim-key shape extends naturally (`channelEventKeyMatch` +
+  the tuple) when S20 wires it. The scorer enrichment (scorer names +
+  minutes from the sportscore per-event detail the website already uses)
+  is a per-match extra fetch — an S20 budget decision, never invented in
+  S19.
+- **S19-6 — the alert shape: compact, cache-only, capped.** The goal alert
+  follows the HT-alert shape (headline + teams + competition + score +
+  attribution; NO promo footer — a live moment, `withChannelCta` rides it
+  per the parity law); the card is `cachedCardPng` ONLY (the v13.94.1
+  CPU-keeper law — a goal burst must never resvg-render); lean (text-only)
+  applies to every goal unit when the full cost does not fit (the text IS
+  the payload); `GOAL_ALERT_MAX_UNITS = 6` per tick bounds the Saturday
+  3pm-slate burst (audience-size sorted; the tail defers cleanly and rides
+  the next tick with the baseline retained — an accurate, slightly late
+  alert). Decided by the agent from the engine's own reservation semantics
+  + the free-tier budget statement.
