@@ -1350,8 +1350,8 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v126"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.268\.0-perf-preconnect"/.test(cfg) &&
-    /# v13\.268\.0-perf-preconnect/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.269\.0-entity-image"/.test(cfg) &&
+    /# v13\.269\.0-entity-image/.test(read("CHANGELOG.md"));
 })());
 
 // v13.258-mca11y (the Match Centre S25 + a11y deep-dive, 2026-11-15): the
@@ -1446,11 +1446,27 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
 // the performance budget are the prerequisites) are documentation-only.
 // Server-side-only — no client asset renamed (the SW cache stays
 // sportsignal-v126 + the client bundle stays public-13.80.js).
+//
+// S16 (13.269.0-entity-image): the SEO follow-up track Session 16 (the
+// data-independent, freeze-safe gap fixes — docs/specs/seo-followup-track.md).
+// M1: the match-page SportsEvent homeTeam/awayTeam SportsTeam nodes now carry
+// the same TEAM_ENTITY_LINKS sameAs (Wikipedia + Wikidata) as the team-page
+// sportsTeamNode (the P1-2 entity-grounding parity gap fix — src/seo/jsonld.ts
+// teamRef). M2: the image sitemap — the <image:image> extension on every
+// sitemap entry (the per-match OG image /og/match-<slug>.png + the site OG
+// default /og/default.png for the other paths) + the xmlns:image namespace
+// (the P2-4 gap fix — src/seo/files.ts urlNode + urlsetXml + ogImageForPath).
+// Two new check gates: check-seo-entity-parity.js (7 gates) + check-seo-
+// image-sitemap.js (10 gates). Server-side-only — no client asset renamed
+// (the SW cache stays sportsignal-v126 + the client bundle stays
+// public-13.80.js). Freeze-safe (a JSON-LD field + a machine-file extension —
+// NOT a byte-frozen title/H1/description/answer-sentence byte; the Dec 4-8
+// freeze holds).
 check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-dive round: the F1-F4 fixes — the hero double-wrap → <div>, the nav aria-current at render + on scroll, the outer nav section → non-landmark container, the portrait descriptive alt; the fixes are body-only — the GSC surfaces + the answer sentence byte-frozen, the <head> NOT touched; the SW cache stays sportsignal-v126 + the client bundle stays public-13.80.js — a server-side release; the version bump 13.257-mcmatchcentre -> 13.258-mca11y; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound + the v13.257-mcmatchcentre survivors ride unchanged)", (() => {
   const pkg = JSON.parse(read("package.json"));
   const fs = require("fs");
   const path = require("path");
-  return pkg.version === "13.268.0.0" &&
+  return pkg.version === "13.269.0.0" &&
     fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-archserve.js")) &&
@@ -1462,9 +1478,11 @@ check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-div
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-match-lifecycle.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-homepage.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-performance.js")) &&
+    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-entity-parity.js")) &&
+    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-image-sitemap.js")) &&
     /node scripts\/check-seo-lastmod\.js && node scripts\/check-archserve\.js && node scripts\/check-seo-teamnames\.js/.test(pkg.scripts.test) &&
     /node scripts\/check-seo-crawlindex\.js && node scripts\/check-seo-teampages\.js && node scripts\/check-seo-competitionpages\.js && node scripts\/check-seo-internallinks\.js && node scripts\/check-seo-persian-entities\.js && node scripts\/check-seo-match-lifecycle\.js/.test(pkg.scripts.test) &&
-    /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js && node scripts\/check-seo-performance\.js/.test(pkg.scripts.test);
+    /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js && node scripts\/check-seo-performance\.js && node scripts\/check-seo-entity-parity\.js && node scripts\/check-seo-image-sitemap\.js/.test(pkg.scripts.test);
 })());
 
 

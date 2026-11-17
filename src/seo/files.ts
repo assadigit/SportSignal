@@ -178,12 +178,35 @@ function matchHash(sm: SeoMatch): string {
   m.competition.code, m.score ? JSON.stringify(m.score) : ""].join("|"));
 }
 
-function urlNode(path: string, lastmod: string): string {
-  return "  <url><loc>" + xmlEsc(absUrl(path)) + "</loc><lastmod>" + xmlEsc(lastmod) + "</lastmod></url>\n";
+// S16-M2 (the image sitemap — the P2-4 gap fix): an optional images array
+// per URL declares the page's image(s) to Google Image search via the
+// <image:image> extension (xmlns:image). The match pages declare their
+// specific per-match OG image (/og/match-<slug>.png — the same art the
+// JSON-LD image + the og:image meta carry); the team/competition/static
+// pages declare the site OG default (/og/default.png — mirrors their
+// og:image meta). Pure string concatenation on the already-iterated rows —
+// zero new KV-read/subrequest/CPU. Freeze-safe (a machine-file extension —
+// NOT a byte-frozen title/H1/description/answer-sentence byte).
+function imageNodes(images?: string[]): string {
+  if (!images || !images.length) return "";
+  return images.map((u) => "    <image:image><image:loc>" + xmlEsc(u) + "</image:loc></image:image>\n").join("");
+}
+
+function urlNode(path: string, lastmod: string, images?: string[]): string {
+  return "  <url><loc>" + xmlEsc(absUrl(path)) + "</loc><lastmod>" + xmlEsc(lastmod) + "</lastmod>\n" + imageNodes(images) + "  </url>\n";
 }
 
 function urlsetXml(rows: string): string {
-  return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + rows + "</urlset>\n";
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n' + rows + "</urlset>\n";
+}
+
+// S16-M2: the per-path OG image — the match pages' specific /og/match-<slug>.png;
+// the other paths' site OG default. Computed from the path (no data lookup).
+function ogImageForPath(path: string): string[] {
+  if (path.startsWith("/matches/")) {
+    return [absUrl("/og/match-" + path.slice("/matches/".length) + ".png")];
+  }
+  return [absUrl(SEO.OG_DEFAULT_IMAGE)];
 }
 
 export async function buildSitemapIndex(env: Env): Promise<string> {
@@ -233,7 +256,7 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
   if (kind === "pages") {
     // Hand-written pages: lastmod = the content version stamp (SEO_AUDIT:
     // bumped only when the text is actually edited).
-    for (const p of STATIC_PAGES) rows += urlNode(p, SEO.CONTENT_VERSION);
+    for (const p of STATIC_PAGES) rows += urlNode(p, SEO.CONTENT_VERSION, ogImageForPath(p));
   } else if (kind === "matches-upcoming" || kind === "matches-archive") {
     if (kind === "matches-archive") {
       // v13.259-archserve: syncArchive returns the CURRENT archive list —
@@ -276,7 +299,7 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
     const seen = new Set<string>();
     candidates = candidates.filter((c) => (seen.has(c.path) ? false : (seen.add(c.path), true)));
     const { map, changed } = await computeLastmods(env, candidates);
-    for (const c of candidates) rows += urlNode(c.path, map[c.path]);
+    for (const c of candidates) rows += urlNode(c.path, map[c.path], ogImageForPath(c.path));
     return { xml: urlsetXml(rows), changedUrls: changed.map(absUrl) };
   } else if (kind === "teams") {
     // C1 (SEO Session 4): teams.xml lists ONLY the selected clubs (the
@@ -299,7 +322,7 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
       candidates.push({ path: "/teams/" + e.slug, hash });
     }
     const { map, changed } = await computeLastmods(env, candidates);
-    for (const c of candidates) rows += urlNode(c.path, map[c.path]);
+    for (const c of candidates) rows += urlNode(c.path, map[c.path], ogImageForPath(c.path));
     return { xml: urlsetXml(rows), changedUrls: changed.map(absUrl) };
   } else if (kind === "competitions") {
     for (const e of compsIndex(ctx)) {
@@ -307,7 +330,7 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
       candidates.push({ path: "/competitions/" + e.slug, hash });
     }
     const { map, changed } = await computeLastmods(env, candidates);
-    for (const c of candidates) rows += urlNode(c.path, map[c.path]);
+    for (const c of candidates) rows += urlNode(c.path, map[c.path], ogImageForPath(c.path));
     return { xml: urlsetXml(rows), changedUrls: changed.map(absUrl) };
   }
   return { xml: urlsetXml(rows), changedUrls: [] };

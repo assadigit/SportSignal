@@ -4,6 +4,64 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.269.0-entity-image — SEO Session 16: the entity-grounding parity + the image sitemap (2026-11-17, `main`)
+
+The first session of the SEO follow-up track (the data-independent, freeze-safe
+gap fixes — `docs/specs/seo-followup-track.md`). Addresses the gaps from the
+`docs/audits/2026-11-17-seo-gap-and-swot-audit.md` that are NOT blocked on the
+GSC/GA4 data (the site is fresh — GSC needs a few months; GA4 unavailable) AND
+NOT blocked on the Workers Paid plan AND freeze-safe.
+
+- **S16-M1 — the entity-grounding parity (the P1-2 gap fix).** The match-page
+  `SportsEvent` `homeTeam`/`awayTeam` `SportsTeam` nodes now carry the same
+  `TEAM_ENTITY_LINKS` `sameAs` (Wikipedia + Wikidata) as the team-page
+  `sportsTeamNode`. The match page is the click-earner page type; the entity
+  grounding is now consistent across the page types (e.g. FC Barcelona →
+  `https://www.wikidata.org/wiki/Q7156` on BOTH the team page AND the match
+  page). Pure static-map lookup (zero new KV-read/subrequest/CPU — rule §1.5).
+  Freeze-safe (a JSON-LD field — NOT a byte-frozen title/H1/description/answer
+  byte).
+
+- **S16-M2 — the image sitemap (the P2-4 gap fix).** The sitemap entries now
+  declare the page's image(s) to Google Image search via the `<image:image>`
+  extension (`xmlns:image`). The match pages declare their specific per-match
+  OG image (`/og/match-<slug>.png` — the same art the JSON-LD `image` + the
+  `og:image` meta carry); the team/competition/static pages declare the site
+  OG default (`/og/default.png` — mirrors their `og:image` meta). Pure string
+  concatenation on the already-iterated rows — zero new KV-read/subrequest/CPU.
+  Freeze-safe (a machine-file extension — NOT a byte-frozen surface).
+
+- **The gap-audit corrections (3 of 18 gaps were verification errors):** the
+  P1-3 visible-breadcrumb gap was WRONG (the breadcrumb IS visible — `<nav
+  class="crumbs" aria-label="مسیر صفحه">` — the audit's English grep missed
+  the Persian aria-label); the P2-1 Cloudflare-beacon-on-SEO-pages gap was
+  WRONG (the beacon IS on every SEO page — live-verified: 4 references); the
+  P3-1 `/teams.xml` soft-404 gap was WRONG (`/teams.xml` returns HTTP 404 — a
+  correct 404, not a soft-404). These three are NOT gaps — removed from the
+  follow-up track.
+
+- **New check gates:** `check-seo-entity-parity.js` (7 gates: the teamRef
+  sameAs, the sportsTeamNode parity, the TEAM_ENTITY_LINKS import, the
+  homeTeam+awayTeam usage, the freeze-coordination, the organizer contract
+  intact) + `check-seo-image-sitemap.js` (10 gates: the urlNode images param,
+  the `<image:image>` emission, the xmlns:image namespace, the ogImageForPath
+  per-match + default logic, the 4 builder call sites, the freeze-coordination).
+  Wired into the `npm test` chain.
+
+- **Version bump:** 13.268.0-perf-preconnect → 13.269.0-entity-image
+  (`src/config.ts` + `package.json` 13.268.0.0 → 13.269.0.0 + the
+  `check-stats.js` LIVE version pin updated [both the v13.258-mca11y pin + the
+  v13.254-rankbadge pin] + the S16 comment block). Server-side-only — no client
+  asset renamed (the SW cache stays `sportsignal-v126` + the client bundle stays
+  `public-13.80.js`).
+
+- **Cloudflare budget:** zero new KV reads/writes, zero new subrequests, zero
+  new Worker CPU, zero new cron paths. The `sameAs` is a pure static-map
+  lookup; the image sitemap is pure string concatenation on already-iterated
+  rows. The `/healthz` budget snapshot is unchanged.
+
+---
+
 # SEO Session 15 (docs-only; no version bump, no deploy) — the final regression + the production QA + the handoff: the 15-session SEO program CLOSE-OUT (2026-11-17, `main`)
 
 The TWELFTH + FINAL session of the 15-session SEO program. This session owns

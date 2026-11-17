@@ -77,12 +77,24 @@ export function breadcrumbNode(trail: { name: string; href?: string }[]): any {
 }
 
 function teamRef(name: string): any {
-  return {
+  const node: any = {
     "@type": "SportsTeam",
     name: name,
     sport: "Football",
     url: absUrl("/teams/" + teamSlug(name))
   };
+  // S16-M1 (the entity-grounding parity — the P1-2 gap fix): the same
+  // verified-map sameAs as sportsTeamNode (src/seo/entity-links.ts — every
+  // URL fetch-and-confirmed, provenance in that file's header). The match
+  // page is the click-earner page type; the homeTeam/awayTeam SportsTeam
+  // nodes now carry the same Wikipedia + Wikidata sameAs as the team page
+  // (e.g. FC Barcelona → Q7156). Pure static-map lookup (no fetching — rule
+  // §1.5; zero new KV-read/subrequest/CPU); a team without a verified pair
+  // omits sameAs (rule §1.1 — never guessed). Freeze-safe (a JSON-LD field
+  // — NOT a byte-frozen title/H1/description/answer-sentence byte).
+  const links = TEAM_ENTITY_LINKS[name];
+  if (links && links.length) node.sameAs = links;
+  return node;
 }
 
 export function eventStatusOf(status: string): string {

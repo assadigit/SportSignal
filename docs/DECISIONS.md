@@ -4,6 +4,30 @@ Format: date · decision · options considered · reason · who · revisit when.
 (Adopted with the universal AGENTS.md rules on 2026-11-08; this file is new —
 earlier decisions live in README §"Architecture decisions" and docs/adr/.)
 
+## 2026-11-17 — SEO Follow-up Session 16 (S16-1): the entity-grounding parity — the match-page SportsTeam `sameAs` = the team-page SportsTeam `sameAs` (the P1-2 gap fix).
+
+- **Decision:** the `teamRef` function (`src/seo/jsonld.ts`) now looks up `TEAM_ENTITY_LINKS[name]` + adds the `sameAs` (Wikipedia + Wikidata) to the match-page `SportsEvent` `homeTeam`/`awayTeam` `SportsTeam` nodes — the same verified-map lookup the team-page `sportsTeamNode` uses. The match page is the click-earner page type; the entity grounding is now consistent across the page types. Live-verified: Barcelona→Q7156 + Man City→Q50602 on the match page (was bare before). Freeze-safe (a JSON-LD field). Zero new KV-read/subrequest/CPU.
+- **Options considered:** (a) add the sameAs to teamRef [chosen — the parity fix; pure static-map lookup; freeze-safe]; (b) leave the match-page SportsTeam bare [rejected — the click-earner page type had the weaker grounding].
+- **Reason:** the gap audit (P1-2) found the match-page SportsTeam nodes lacked the sameAs the team-page SportsTeam had. The entity grounding (the knowledge-graph reconciliation) was weaker on the highest-traffic page type.
+- **Who decided.** The agent (SEO Follow-up Session 16), on the gap audit P1-2 + the spec §3/SS-05 entity-grounding rule.
+- **When to revisit.** If the TEAM_ENTITY_LINKS map is extended (new teams), the parity applies automatically (the same lookup).
+
+## 2026-11-17 — SEO Follow-up Session 16 (S16-2): the image sitemap — the `<image:image>` extension on every sitemap entry + the xmlns:image namespace (the P2-4 gap fix).
+
+- **Decision:** the sitemap entries now declare the page's image(s) to Google Image search via the `<image:image>` extension. The match pages declare their specific per-match OG image (`/og/match-<slug>.png`); the team/competition/static pages declare the site OG default (`/og/default.png`). The `urlNode` + `urlsetXml` + a new `ogImageForPath` helper in `src/seo/files.ts`. Live-verified: 13 image:image on teams.xml + 130 on matches-upcoming + the xmlns:image namespace. Freeze-safe (a machine-file extension). Zero new KV-read/subrequest/CPU.
+- **Options considered:** (a) declare the per-match OG image + the site default [chosen — the specific image for the matches + a consistent default for the others]; (b) declare the crest images [rejected — the crest isn't easily available in the sitemap builder's candidate data + the external crest is already discoverable via the HTML crawl]; (c) no image sitemap [rejected — the P2-4 gap].
+- **Reason:** the gap audit (P2-4) found no image sitemap. The image-search visibility was undeclared. The match-page OG images (the self-hosted dynamic images) are the most valuable to declare.
+- **Who decided.** The agent (SEO Follow-up Session 16), on the gap audit P2-4.
+- **When to revisit.** If the team/competition pages gain per-page OG images (beyond the default), the `ogImageForPath` can be extended to declare them.
+
+## 2026-11-17 — SEO Follow-up Session 16 (S16-3): the gap-audit corrections — 3 of 18 gaps were verification errors (the P1-3 breadcrumb + the P2-1 beacon + the P3-1 /teams.xml are NOT gaps).
+
+- **Decision:** three gaps from the `docs/audits/2026-11-17-seo-gap-and-swot-audit.md` were re-verified during the S16 implementation + found to be NON-gaps. (1) P1-3 (the visible breadcrumb) — the breadcrumb IS visible (`<nav class="crumbs" aria-label="مسیر صفحه">` — Persian aria-label; the audit's English grep missed it). (2) P2-1 (the Cloudflare beacon on SEO pages) — the beacon IS on every SEO page (the page-shell.ts includes it; live-verified: 4 references). (3) P3-1 (the /teams.xml soft-404) — /teams.xml returns HTTP 404 (a correct 404; the audit saw the HTML 404 page + misread it as a 200 soft-404). These three are removed from the follow-up track.
+- **Options considered:** (a) re-verify every audit gap before implementing [chosen — the audit had a 17% error rate from English greps on a Persian site + a missed HTTP status check]; (b) implement the audit as-is [rejected — would have "fixed" non-gaps + wasted effort].
+- **Reason:** the audit's verification methodology was insufficient for a Persian-language site (English grep patterns) + didn't check the HTTP status code for the /teams.xml claim. The re-verification caught 3 false positives before any wasted implementation.
+- **Who decided.** The agent (SEO Follow-up Session 16), on the live re-verification.
+- **When to revisit.** The audit doc (`docs/audits/2026-11-17-seo-gap-and-swot-audit.md`) should be amended with these corrections (a future docs-only pass).
+
 ## 2026-11-17 — SEO Session 15 (S15-1): the final regression is CLEAN — no bug found; no deploy. The 15-session SEO program close-out (the route plan §10 — the phase file SESSION-15-FINAL-QA-REGRESSION-AND-HANDOFF.md).
 
 - **Decision:** the final regression is CLEAN. `npm test` exit 0 (3,738 OK =
