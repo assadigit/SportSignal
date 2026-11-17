@@ -1353,8 +1353,8 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v126"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.270\.0-faq"/.test(cfg) &&
-    /# v13\.270\.0-faq/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.271\.0-content"/.test(cfg) &&
+    /# v13\.271\.0-content/.test(read("CHANGELOG.md"));
 })());
 
 // v13.258-mca11y (the Match Centre S25 + a11y deep-dive, 2026-11-15): the
@@ -1491,7 +1491,7 @@ check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-div
   const pkg = JSON.parse(read("package.json"));
   const fs = require("fs");
   const path = require("path");
-  return pkg.version === "13.270.0.0" &&
+  return pkg.version === "13.271.0.0" &&
     fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-archserve.js")) &&
@@ -1506,9 +1506,11 @@ check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-div
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-entity-parity.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-image-sitemap.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-faq.js")) &&
+    fs.existsSync(path.join(__dirname, "..", "src", "seo", "editorial.ts")) &&
+    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-content-depth.js")) &&
     /node scripts\/check-seo-lastmod\.js && node scripts\/check-archserve\.js && node scripts\/check-seo-teamnames\.js/.test(pkg.scripts.test) &&
     /node scripts\/check-seo-crawlindex\.js && node scripts\/check-seo-teampages\.js && node scripts\/check-seo-competitionpages\.js && node scripts\/check-seo-internallinks\.js && node scripts\/check-seo-persian-entities\.js && node scripts\/check-seo-match-lifecycle\.js/.test(pkg.scripts.test) &&
-    /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js && node scripts\/check-seo-performance\.js && node scripts\/check-seo-entity-parity\.js && node scripts\/check-seo-image-sitemap\.js && node scripts\/check-seo-faq\.js/.test(pkg.scripts.test);
+    /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js && node scripts\/check-seo-performance\.js && node scripts\/check-seo-entity-parity\.js && node scripts\/check-seo-image-sitemap\.js && node scripts\/check-seo-faq\.js && node scripts\/check-seo-content-depth\.js/.test(pkg.scripts.test);
 })());
 
 

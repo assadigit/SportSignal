@@ -36,6 +36,16 @@ import { matchCentreMain, matchHeroHtml, matchSummaryHtml, matchFormHtml, matchM
 // SeoMatch fields already loaded by the three pre-existing awaits (zero new
 // awaits/KV/fetches — ADR-006; the zero-runtime-cost law).
 import { buildMatchFaqItems, buildTeamFaqItems } from "./faq-content";
+// SEO Follow-up Track Session 18 (S18 — the P1-1 gap fix,
+// docs/specs/seo-followup-track.md §Session 18): the authored editorial
+// body-content module — src/seo/editorial.ts owns the substantive Persian
+// prose BELOW the answer-sentence on the team + competition detail pages
+// (the faq-content.ts S17 sibling-discipline: one file one responsibility,
+// pages.ts stays the assembler). The functions read ONLY the arguments
+// buildTeamPage/buildCompetitionPage already hold (stw/meRow/finished/
+// upcoming + the competition table rows the page's own grid renders) —
+// zero new awaits, zero new KV reads, zero new fetches (ADR-006).
+import { buildTeamEditorialHtml, buildCompetitionEditorialHtml } from "./editorial";
 // Match Centre S08 (M3): the deterministic narrative engine — the "why this
 // match matters" editorial layer. The engine runs HERE (pages.ts calls
 // narrativeHtml + passes the pre-built atom to the composer's MatchSummaryInput
@@ -2142,6 +2152,19 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
     (finished.length
       ? '<div class="card"><h2>نتایج اخیر</h2>' + dateGroupedRows(finished, true) + "</div>"
       : "") + simCard +
+    // S18-M1 (the P1-1 gap fix — the SEO follow-up track): the editorial
+    // body card — the substantive Persian prose (the standings-position
+    // narrative + the recent-results run + the upcoming-run close), composed
+    // by src/seo/editorial.ts from the SAME already-loaded data the cards
+    // above render (stw/meRow + finished + upcoming — zero new awaits/KV/
+    // fetches). Placed AFTER the answer card + the data cards, BEFORE the
+    // S17 faqcard (the content, then the Q&A — the S18 brief's placement
+    // directive; the faqcard stays the LAST section of main). The card's
+    // paragraphs degrade honestly per MISSING-IS-NOT-ZERO; the h2 + the
+    // lead + the E-E-A-T source note always render. Freeze-safe (an
+    // additive visible section BELOW the answer-sentence — NOT a byte-frozen
+    // title/H1/description/answer-sentence byte; the Dec 4-8 freeze holds).
+    buildTeamEditorialHtml({ name, stw, meRow, finished, upcoming }) +
     // S17-M1: the visible Q&A — the LAST section of main (AFTER the answer
     // card + the schedule/standings/form/results/related cards — the match
     // page's FAQ-after-related placement; the hub faqcard markup, zero new
@@ -2315,6 +2338,19 @@ export async function buildCompetitionPage(ctx: SeoCtx, slug: string): Promise<{
   const main =
     '<div class="answercard">' + esc(answer) + "</div>" +
     standingsBlock +
+    // S18-M2 (the P1-1 gap fix — the SEO follow-up track): the editorial
+    // body card — the competition's title-race read + the coverage note,
+    // composed by src/seo/editorial.ts from the SAME rows the «جدول» block
+    // renders (st.teams — zero new awaits/KV/fetches; a cup with no table
+    // degrades to the coverage note alone, MISSING-IS-NOT-ZERO). Placed
+    // AFTER the answer card + the standings table, BEFORE the fixtures
+    // list. Freeze-safe (an additive visible section BELOW the
+    // answer-sentence — NOT a byte-frozen surface; the Dec 4-8 freeze holds).
+    buildCompetitionEditorialHtml({
+      cNameFa: String(cNameFa),
+      rows: st && Array.isArray(st.teams) ? st.teams : [],
+      upcomingCount: list.length
+    }) +
     '<div class="card"><div class="listhead"><h2>بازی‌های پیش‌رو</h2><span class="pagesub">' + toFaDigits(String(list.length)) + " بازی</span></div>" + dateGroupedRows(list, false) + "</div>";
   return {
     html: pageShell({

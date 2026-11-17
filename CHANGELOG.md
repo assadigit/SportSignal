@@ -4,6 +4,53 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.271.0-content — SEO Follow-up Session 18: the editorial body content on the team + competition detail pages (2026-11-17, `main`)
+
+The third session of the SEO follow-up track (the data-independent, freeze-safe
+gap fixes — `docs/specs/seo-followup-track.md` §Session 18). Fixes the **P1-1
+gap** (the thin-content risk) from the
+`docs/audits/2026-11-17-seo-gap-and-swot-audit.md`: the team/competition pages
+were technically correct but editorially thin — the likely #1 reason the 412
+indexed URLs earn only 250 clicks. The session adds substantive ORIGINAL
+Persian prose composed deterministically from the already-loaded data (the
+`narrative.ts` S08 precedent — never scraped, never aggregated, never
+invented).
+
+- **S18-M1 — the editorial body card on the team page.** The new authored
+  module `src/seo/editorial.ts` (the `faq-content.ts` S17 sibling-discipline:
+  one file one responsibility) builds «وضعیت فصل X» — up to three paragraphs:
+  the standings-position narrative (pos + points + played + W/D/L from the
+  SAME snapshot row the standings window renders + the honest position bands),
+  the recent-results run (the team's OWN finished matches, newest-first with
+  scores), and the upcoming-run close (the queued count + the next pair +
+  the distinct competitions). Placed BELOW the answer-sentence + ABOVE the
+  S17 faqcard (the content, then the Q&A). Paragraphs degrade honestly per
+  MISSING-IS-NOT-ZERO (no standings row / no finished / no upcoming → that
+  paragraph omits, never a «نامعلوم» placeholder); the E-E-A-T source note
+  (football-data.org) rides every card. Zero new awaits/KV/fetches.
+- **S18-M2 — the editorial body card on the competition page.** The same
+  module builds «تصویر کلی X» — the title-race read (the leader + the
+  second-place gap + the 2nd/3rd names from the SAME rows the visible table
+  renders) + the coverage note (the page's honest scope). Placed AFTER the
+  standings table, BEFORE the fixtures list. A cup with no standings table
+  degrades to the coverage note alone (no fabricated table).
+- **The match page takes NO new prose (DECISIONS S18-3).** The Match Centre
+  S08 narrative engine + the facts table + the S17 FAQ already give it
+  editorial depth; the audit's P1-1 named the team/competition pages.
+- **New gate:** `check-seo-content-depth.js` (15 gates — the module contract,
+  the REAL builder behavior via transpileModule extraction, the placement
+  order, the freeze-coordination, the original-content rule, the
+  zero-runtime-cost law) wired into the `npm test` chain.
+- **Seeded harness:** `scripts/s18-content-smoke.ts` (29/29 — the REAL
+  builders: the full editorial card + the placement order + the S17 FAQ
+  regression + the byte-frozen title/H1 + the honest degradations).
+- Version bump 13.270.0-faq → 13.271.0-content; `npm test` exit 0
+  (3,788 OK); `npx tsc --noEmit` clean. Freeze-safe (additive body content
+  BELOW the answer-sentence — NOT a byte-frozen title/H1/description/
+  answer-sentence byte; the Dec 4-8 freeze holds). Zero new
+  KV-read/subrequest/CPU (pure string composition on already-loaded data).
+  No client asset renamed.
+
 # v13.270.0-faq — SEO Follow-up Session 17: the FAQ structured data + the visible Q&A on the detail pages (2026-11-17, `main`)
 
 The second session of the SEO follow-up track (the data-independent, freeze-safe

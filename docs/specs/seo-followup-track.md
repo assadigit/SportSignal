@@ -118,6 +118,8 @@ more audit gaps** — see the corrections below — so S17 is now the FAQ sessio
 
 ## Session 18 — the content depth on the detail pages (the P1-1 gap — the biggest ranking lever)
 
+**STATUS (2026-11-17, S18): DONE in code + deployed (13.271.0-content, deployment 0fad7482 @100%) + version-verified live; the page-level live verification rides the S17 00:20 UTC job after the KV-quota reset — see seo-implementation/session-reports/SESSION-18.md.**
+
 **The objective:** add substantive editorial body content to the team/competition/match
 detail pages. This is the highest-leverage CONTENT session (the thin-content risk is
 likely the #1 reason the 412 indexed URLs earn only 250 clicks).

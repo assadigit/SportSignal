@@ -2,59 +2,42 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
-## This session (SEO Follow-up Track Session 17 — the FAQ structured data + the visible Q&A on the detail pages; 2026-11-17 — DONE in code + deployed + version-verified live; the page-level live verification completes at the UTC-midnight KV-quota reset)
+## This session (SEO Follow-up Track Session 18 — the editorial body content on the detail pages; 2026-11-17 — DONE in code + deployed + version-verified live; the page-level live verification rides the S17 00:20 UTC job after the KV-quota reset)
 
-**The objective (the P1-6 gap, `docs/specs/seo-followup-track.md` §Session 17):**
-the `FAQPage` + `Question` + `Answer` structured data + a visible Q&A section on
-the team + match detail pages — real (fixture-sourced) + Persian + NEVER a
-"where to watch" Q + freeze-safe. **DONE.**
+**The objective (the P1-1 gap, `docs/specs/seo-followup-track.md` §Session 18):**
+substantive ORIGINAL Persian editorial prose BELOW the answer-sentence on the
+team + competition detail pages — composed deterministically from the
+already-loaded data (the narrative.ts precedent), never scraped, never
+invented, E-E-A-T-grounded, freeze-safe. **DONE.** (The owner prompt arrived
+with an assumed P1-7/P1-8 numbering that does not exist in the repo audit —
+see DECISIONS S18-4; both prompt-assumed items were already shipped, so the
+session executed the repo's real next open P1 item, P1-1.)
 
-- **S17-M1 — the team page ✅.** `buildTeamFaqItems` (`src/seo/faq-content.ts`):
-  «بازی بعدی [team] کی است؟» (ALWAYS — the honest empty answer on the empty
-  window) / «بازی‌های [team] در کدام لیگ است؟» (the distinct competitions the
-  team's own fixtures name — CONDITIONAL) / «ساعت بازی بعدی [team] به وقت
-  تهران چند است؟» (CONDITIONAL). The visible faqcard (`M.faqHtml`, the hub
-  pattern, the LAST section of main — BELOW the answer-sentence, zero new CSS)
-  + the `JL.faqNode` FAQPage node in the @graph — ONE source array feeds both
-  (the T-20 byte-identical contract).
-- **S17-M2 — the match page ✅.** `faqHtml ? JL.faqNode(buildMatchFaqItems(sm)) : null`
-  in `buildMatchPage`'s jsonldNodes — the FAQPage node fed from the SAME
-  authored array as the visible accordion (the owner-authorized GEO emit path;
-  the S17 spec supersedes the Match Centre S16-Schema omit decision — DECISIONS
-  S17-2; the three pinned `check-match-centre.js` gates re-pinned).
-- **The new gate ✅.** `check-seo-faq.js` (15 gates) wired into the `npm test`
-  chain; `npm test` exit 0 — **3,773 OK**; `npx tsc --noEmit` clean; the
-  seeded render harness `scripts/s17-faq-smoke.ts` **26/26** (the REAL
-  builders: the team page 3-Q FAQPage + the visible faqcard + the T-20
-  contract + the byte-frozen title/H1; the with-venue match 4-Q FAQPage; the
-  no-venue omission; the empty-window honest answer).
-- **The version ✅.** `13.269.0-entity-image` → `13.270.0-faq` (the version
-  triple + the `check-stats.js` LIVE pins + the CHANGELOG entry). The
-  `check-seo-performance.js` version band extended for 13.270+ (a latent
-  under-match — DECISIONS-in-place).
+- **S18-M1 — the team page ✅.** `src/seo/editorial.ts`
+  `buildTeamEditorialHtml`: «وضعیت فصل X» — the standings-position narrative
+  (pos/points/played/W-D-L + the honest bands) + the recent-results run
+  (the team's OWN finished matches, flat/fullTime/archive score shapes all
+  covered) + the upcoming-run close + the E-E-A-T source note. BELOW the
+  answer-sentence, ABOVE the S17 faqcard.
+- **S18-M2 — the competition page ✅.** `buildCompetitionEditorialHtml`:
+  «تصویر کلی X» — the title-race read (leader + gap + 2nd/3rd names from the
+  SAME rows the visible table renders) + the coverage note; a cup without a
+  table degrades to the coverage note alone.
+- **The match page: NO new prose (DECISIONS S18-3)** — the S08 narrative +
+  the facts table + the FAQ already cover it; zero match-page bytes changed.
+- **The gates ✅.** `check-seo-content-depth.js` (15 gates) wired into the
+  `npm test` chain — exit 0, **3,789 OK**; `npx tsc --noEmit` clean; the
+  seeded harness `scripts/s18-content-smoke.ts` **29/29** (incl. the S17 FAQ
+  regression under the new neighbor + the byte-frozen title/H1).
+- **The version ✅.** `13.270.0-faq` → `13.271.0-content` (the version triple
+  + the check-stats LIVE pins + the CHANGELOG entry).
 - **The deploy ✅ (version-verified live).** Deployment
-  `62c3b14d-7dae-42e5-8d47-06d21d53176a` @100%; the live `/healthz` reports
-  `version: 13.270.0-faq`.
-- **The page-level live verification — BLOCKED at deploy time by the KV
-  read-quota exhaustion; the completion is SCHEDULED.** The account's KV
-  namespace crossed the 100,000-reads/day free limit at ~11:05 UTC Nov 17
-  (the analytics: 112,086 reads by 12:00 UTC; the S16 live verification at
-  11:05 UTC landed minutes before the exhaustion, the S17 deploy at ~12:10 UTC
-  after). Until the UTC-midnight reset the KV-sourced routes degrade
-  (`/healthz ok:false` + `pool_matches:0`; the SEO detail pages 404 — the
-  pool read fails). **NOT the S17 change:** the differential — the PREVIOUS
-  deployment (`2481f840…`, S16, verified healthy this morning) shows the
-  IDENTICAL state right now; the S17 diff touches zero KV wiring. A one-shot
-  verification job fires at **2026-11-18T00:20 UTC** (after the reset + the
-  00:10 cron tick) to verify the live `/healthz ok:true` + the FAQPage on the
-  team + match pages, then finalize the SESSION-17 report §7 + push the
-  `seo(s17-verify)` docs commit. **Until then the S17 status is: deployed +
-  version-verified live; the page-level FAQ verification pending the reset**
-  (the code path is proven by the 26/26 harness + the 3,773-gate suite).
-- **The audit correction (DECISIONS S17-3):** the match page HAS had a visible
-  FAQ since Nov 14 (the Match Centre S16 accordion) — the P1-6 gap was the
-  FAQPage NODE (correct in the audit) — the audit's "no FAQ on the match page"
-  framing is corrected. Running total: 6 of 18 audit gaps carry corrections.
+  `0fad7482-3e36-43ea-a2d8-b78b1b6247a7` @100%; the live `/healthz` reports
+  `version: 13.271.0-content`. The page-level live check is blocked by the
+  same Nov 17 KV read-quota exhaustion the S17 deploy hit (resets UTC
+  midnight; the S17 scheduled 00:20 UTC job covers both sessions' page checks
+  — the code path is proven by the 29/29 harness + the 3,789-gate suite + the
+  local wrangler-dev smoke on the seeded KV).
 - **Budget:** zero new KV-read/subrequest/CPU (pure string composition on
   already-loaded data). No client asset renamed.
 

@@ -1856,3 +1856,39 @@ Session 11+ (the Persian/entity naming session or a dedicated internal-link
 pass); S10-4 (the KV read quota) at every session close until the owner
 resolves it; the Dec 4-8 freeze surfaces (the competition/team/match/homepage
 title/H1 byte changes) after Dec 4 with a fresh 16-month GSC export.
+
+
+## S18 (2026-11-17) — SEO Follow-up Session 18: the editorial body content
+
+- **S18-1 — the module home.** A NEW `src/seo/editorial.ts` owns the authored
+  editorial copy for the team + competition pages (the `faq-content.ts` S17
+  sibling discipline: one file one responsibility; pages.ts stays the
+  assembler; never pages.ts bloat). Decided by the agent (the session brief's
+  deliverable named this option; the AGENTS.md god-module rule points the
+  same way).
+- **S18-2 — the placement.** The editorial card sits BELOW the answer-sentence
+  and ABOVE the S17 faqcard on the team page (the content, then the Q&A); on
+  the competition page AFTER the standings table and BEFORE the fixtures list.
+  Decided by the agent from the S18 brief's placement directive (freeze-safe:
+  additive body content below the answer-sentence).
+- **S18-3 — the match page takes NO new editorial prose.** The Match Centre
+  S08 narrative engine + the facts table + the S16/S17 FAQ already give the
+  match page editorial depth; the audit's P1-1 named the team/competition
+  pages. Decided by the agent (no thin surface left on the match page worth
+  new prose; the freeze surface untouched).
+- **S18-4 — the session-numbering reconciliation.** The S18 owner prompt
+  assumed P1-7 (BreadcrumbList) + P1-8 (internal linking). The repo's audit
+  (`docs/audits/2026-11-17-seo-gap-and-swot-audit.md`) numbers the gaps
+  P1-1..P1-6 only. Per the prompt's own Task 18-0 rule, the repo audit file
+  governs: both prompt-assumed items were already shipped (visible
+  breadcrumbs live since P-17 — the S16 investigation corrected the P1-3
+  claim as a verification error; the internal-link system live across
+  v13.85/v13.87/v13.93 + the Match Centre related block), so S18 executed
+  the repo's real next open item per the track spec §Session 18: P1-1, the
+  content depth on the team + competition detail pages. Revisit: none — the
+  follow-up track's next sessions are the data-dependent owner phase.
+- **S18-5 — the E-E-A-T source note.** Every editorial card carries one
+  Persian provenance line (football-data.org — the footer srcline's mirror,
+  `.editorsrc`) instead of a new DOM element or a link farm. Decided by the
+  agent (the footer already links the source; the prose cites provenance
+  once, per the E-E-A-T grounding ask).
