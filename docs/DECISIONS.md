@@ -1994,3 +1994,26 @@ title/H1 byte changes) after Dec 4 with a fresh 16-month GSC export.
   and ghost-row classes must never render, and a phantom "upcoming" row
   for a finished game must never persist. Decided by the agent (the
   audit §3 landmines).
+- **S20-7 — the women-marker set carries the provider's "(w)" form.** The
+  spec's women markers (Women/Frauen/Femenino/Femenil) miss sportscore's
+  actual senior-women naming form — live-verified in the 2026-11-19 feed:
+  women's internationals are named like "Italy (w)" / "Germany U16 Women".
+  The hygiene LAW (senior men only) is the contract; the marker set is its
+  implementation — so the filter also tests the literal "(w)". Without it a
+  senior women's row whose names carry only the "(w)" marker (no "Women"
+  text, no U-age marker) could pass as a senior-men row. Decided by the
+  agent from live provider evidence during the S20 build (the audit §3
+  women-noise landmine).
+- **S20-8 — the national-team fa-dict seed ships ~110 entries, not the
+  spec's "~40".** Every entry is either a name form harvested LIVE from the
+  Nov-2026 sportscore feeds (the exact spellings the showcase window will
+  actually render: IR Iran, Turkiye, Czechia Republic, South Korea, USA,
+  United Arab Emirates, Bosnia and Herzegovina, Saint Vincent and the
+  Grenadines …) or the standard form of a flagship nation certain to appear
+  in a future UEFA-NL/AFCON/CONCACAF window (England, France, Germany,
+  Spain, Italy, Netherlands, Egypt, Morocco, Mexico …). No invented names;
+  uncovered minor nations keep the honest English fallback + the AI learner
+  path. The wider seed means the showcase rows (ایران–عراق etc.) render
+  Persian on day one. Decided by the agent during the S20 build (the
+  spec's "~40" was an approximation; the criterion stayed "curated,
+  provider-form, no AI-translated flagships").

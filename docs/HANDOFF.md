@@ -2,36 +2,175 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
-## This session (S20 PLANNING — the all-matches day pages; 2026-11-18 — the audit + the spec, awaiting the implementation session)
+## This session (S20 — the all-matches day pages; 2026-11-18 — BUILT + GATED + DEPLOYED @100%; the post-fill live verification rides the ~19:00 UTC first full sweep + a self-checking cron poller)
 
 **The objective (the owner's 2026-11-18 brief):** «بازی‌های امروز»
 (`/matches/today`) and «بازی‌های فردا» (`/matches/tomorrow`) must show
 ALL of the day's matches — never an empty page on days without marquee
-fixtures — chronological, desired teams ranked higher. **PLANNED — the
-implementation is the NEXT session (S20).**
+fixtures — chronological, desired teams ranked higher. **DONE — deployed
+2026-11-18 ~13:21 UTC (versioned `0346be4d…` @100%, version
+`13.273.0-dayhub`), outside the Nov 20 Bayern–Köln no-deploy windows.**
+The ranking law was already shipped (the hubs list every pool match
+big-first + chronological — the audit's §1 finding); S20 widened the
+DATA UNIVERSE, not the page builders.
 
-- **The audit (docs/audits/2026-11-18-allmatches-day-pages.md):** the
-  hubs ALREADY list every pool match big-first + chronological (the
-  ranking law the owner asked for is shipped); the real gap is the DATA
-  UNIVERSE — during FIFA windows the tracked competitions are empty
-  (verified live: 0 rows Nov 18–19, the today page's honest empty state)
-  while real football exists (44 friendlies incl. Iraq–IR Iran, 18 AFCON
-  qualifiers, 9 CONCACAF NL, 8 UEFA NL on Nov 17; 4 Brasileirão matches
-  Nov 18). Provider probes verified: FD free tier takes all 10 comps in
-  ONE batched call (DED/PPL/ELC/BSA included); the sportscore intl slugs
-  work but carry reversed duplicates, ghost rows, and youth/women noise
-  (the hygiene law). The side-effect map confirms the new rows reach ONLY
-  the time hubs + match pages (homepage/`/matches`/sitemap/teams/bot/
-  goal-alerts all stay gated).
-- **The spec (docs/specs/allmatches-day-pages.md):** M1 the FD four
-  (`FD_DAYVIEW_COMPS`, `CONFIG.LEAGUES` untouched — admin-state trap);
-  M2 the emptiness-gated senior-intl fill + hygiene + cadence parity;
-  M3 the check gates + the seeded harness; M4 version 13.273.0-dayhub +
-  deploy (outside the Nov 20 Bayern–Köln windows) + the live verify ON
-  THE CURRENT BREAK (the Nov 18–19 window is the showcase scenario).
-  DECISIONS S20-1…S20-6 recorded.
-- **The next-session prompt lives in the owner chat** (self-contained:
-  read AGENTS.md → the audit → the spec → build).
+- **M1 — the FD four + the Persian names ✅** (commit `f10ba4f`):
+  `CONFIG.FD_DAYVIEW_COMPS = [DED,PPL,ELC,BSA]` appended ONLY to the FD
+  fetch URLs (`provider-fd.ts` — the ONE URL site for the full sweep AND
+  the live sweep, so in-flight Brasileirão statuses ride the same call —
+  and `providers.ts fetchLongView`). Same single batched FD call — +0
+  subrequests (re-verified live this session: 10 comps, errorCode none).
+  `CONFIG.LEAGUES` UNTOUCHED (the admin-state trap — check-gated).
+  FA_COMPS + the 8 new codes + COMP_EN twins + the curated fa-dict
+  national-team seed (~110 entries, every key a live-verified PROVIDER
+  name form: «IR Iran»→ایران, «Turkiye»→ترکیه, «Czechia Republic»→چک …).
+- **M2 — the international fill ✅** (commit `4cbe6f3`): new
+  `src/provider-intl.ts` — the emptiness-gated scan ([today−1d, tomorrow]
+  × 4 intl slugs, ONLY when no CLUB match kicks off in [now−1d, now+1d];
+  the FD-4 codes deliberately don't count — BSA plays THROUGH windows;
+  club days pay ZERO extra calls; the 44-metered stop is the backstop) +
+  the HYGIENE LAW (`sanitizeIntlRows`: the senior-men filter incl. the
+  provider's live-verified "(w)" women's form + the unordered-pair+date
+  collapse keeping the most-progressed status — the reversed-dupe/ghost/
+  youth classes die BEFORE the pool). Wired: the fill in
+  `fetchMatchesFromAPI`, the live-sweep sanitize, `SS_LIVE_ELIGIBLE` + 4,
+  the cron-pool cadence relevance (window days sweep like matchdays), the
+  reuse-guard extension. Zero page-builder changes.
+- **M3 — the gates + the harness ✅** (commit `60c0fed`):
+  `check-s20-dayhubs.js` (46 gates, static + behavioral — the REAL
+  translateCompetition + the REAL provider-intl module eval'd whole)
+  wired into `npm test` (3,841 → **3,887 OK / 0 FAIL, exit 0**; tsc
+  clean). `s20-dayhub-smoke.ts` **34/34** (club-day ordering, break-day
+  hygiene incl. the reversed-dupe collapse + the ghost's finished row not
+  rendering as upcoming, dead-day honesty, the side-effect map, the
+  goal-alert zero-audience skip — no claim, baseline advances).
+  `s20-seed-local-kv.js` the local break-day seeder.
+- **M4 — version + deploy + verify ✅ (partial — see below):** the
+  version triple + the check-stats LIVE pins + the check-s19 pin
+  ride-forward + the CHANGELOG entry (commit `60c0fed`). LOCAL
+  wrangler-dev smoke with the seeded break-day pool: `/healthz
+  13.273.0-dayhub + ok:true + pool_matches:5`; `/matches/today` 200 with
+  **5 rows** (Cruzeiro–Palmeiras + Flamengo–Paranaense with «سری آ برزیل»،
+  عراق–ایران «بازی دوستانه ملی»، دانمارک–نروژ «لیگ ملت‌های اروپا»،
+  آمریکا–مکزیک «لیگ ملت‌های کونکاکاف» — the answer card «۵ بازی امروز در
+  برنامه است. نزدیک‌ترین: عراق – ایران …»); `/matches/tomorrow` 200
+  honest-empty; the homepage 200. DEPLOYED `0346be4d-a641-4775-b4ee-f1bad29e36d0`
+  @100% (2026-11-18 ~13:21 UTC — before Nov 20 by 2 days). LIVE verified
+  immediately: `/healthz ok:true + version 13.273.0-dayhub` + healthy
+  ticks (subreq_last_tick 31, degraded false); homepage + `/matches` +
+  `/sitemap.xml` unchanged (no new-comp rows); the pre-fill day pages
+  still the honest empty state (the pool was last swept at ~13:00 UTC by
+  the OLD code — the gated fill runs only inside a FULL sweep, and the
+  IDLE discovery cadence is 6h → the first fill lands ~19:00 UTC).
+  **The post-fill live verification (the tomorrow page listing the
+  Brasileirão + the pool growth + an intl match page 200) rides a
+  self-checking 30-min cron poller** (the S19 verification-job pattern);
+  the session report `docs/history/2026-11-18-s20-dayhubs.md` §2a will
+  carry the measured evidence. Honesty note: on 2026-11-18 all of
+  Tehran-Nov-18's internationals are FINISHED (they don't list on the
+  hubs — upcoming/live only), so the TODAY page's correct state pre-20:30
+  UTC is the honest empty state; the Brasileirão rows (22:30+ UTC
+  kickoffs = Tehran Nov 19) list on `/matches/tomorrow` from the fill
+  onward and roll onto `/matches/today` after Tehran midnight (UTC
+  20:30).
+
+## Current state (machine)
+
+- **Version:** `13.273.0-dayhub` (`src/config.ts` / `package.json`
+  `13.273.0.0`). npm test baseline **3,887 OK / 0 FAIL, exit 0**
+  (`npx tsc --noEmit` clean + 59 check scripts — the S19 baseline 3,841 +
+  the 46-gate `check-s20-dayhubs.js`). The S20 harness: `npx tsx
+  scripts/s20-dayhub-smoke.ts` (34/34 — manual, not in the test chain,
+  the s17/s18/s19 precedent). The local seeder: `node
+  scripts/s20-seed-local-kv.js`.
+- **Deploy:** Worker `ucl-notifier`, versioned deploys only. Current
+  deployment `0346be4d-a641-4775-b4ee-f1bad29e36d0`
+  (`13.273.0-dayhub`; 2026-11-18 ~13:21 UTC, @100%). Rollback chain:
+  `7c54e223` (13.272.0-goalert, S19) → `0fad7482` (13.271.0-content, S18)
+  → `62c3b14d` (13.270.0-faq, S17) → earlier (see the RUNBOOK). Rollback =
+  `npx wrangler rollback`.
+- **Production hostnames:** `sportsignal.ir` (apex Custom Domain),
+  `football.sportsignal.ir` (301→apex except `/webhook`,`/api/`,`/admin`),
+  `ucl-notifier.sportsignal.workers.dev` (noindex-guarded alias).
+- **Branch:** `main`. Session 20 commits: `s20-m1` (`f10ba4f`) +
+  `s20-m2` (`4cbe6f3`) + `v13.273-dayhub` (`60c0fed`, the gates + the
+  harness + the version triple) + the docs close-out commit. The session
+  report: `docs/history/2026-11-18-s20-dayhubs.md`.
+- **Commands:** `npm test` (must exit 0 before every push). **npm only,
+  never `bun install`**. Local dev: `npx wrangler dev --config
+  wrangler.dev.toml --port 8787 --local` (the local D1 needs `npx wrangler
+  d1 execute sportsignal-users --config wrangler.dev.toml --local
+  --file=db/users-schema.sql` once after a state wipe). The miniflare
+  cron-test endpoint (—test-scheduled) is broken in this sandbox
+  (wrangler 4.50 DataCloneError) — use the harness for tick logic.
+  Deploy needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` in the
+  env. Versioned deploy: `npx wrangler versions upload` → `npx wrangler
+  versions deploy --version-id <id> --percentage 100 --yes`.
+- **Cron triggers:** `*/10 * * * *` + `27 */4 * * *` (unchanged — S20 adds
+  ZERO new schedulers).
+- **Key folders:** `src/` (worker modules; `scripts/lib/worker-src.js`
+  carries the bundle ORDER — `provider-intl.ts` sits after
+  `provider-sportscore.ts`), `assets/` (immutable versioned client
+  payload; SW `sportsignal-v126`, bundle `public-13.80.js`, stylesheet
+  `public-13.87.css` — untouched by S20), `docs/` (RUNBOOK, HANDOFF,
+  specs, audits, history).
+- **Standing limits:** the Dec 4-8 freeze HOLDS (S20 changed zero
+  byte-frozen SEO/GEO surfaces, zero client assets — check-gated); `_headers`
+  at the 100-rule cap (no new pins — no new assets); **no deploys during
+  the Nov 20 Bayern–Köln windows (M1 ~19:35 UTC, M2 ~21:35-45 UTC — the
+  first natural goal-alert windows: watch, don't deploy)**; the KV read
+  quota + the 10ms CPU cliff remain the owner's Workers Paid plan
+  decision. The fill's budget: +0 FD subrequests, ≤12 gated sportscore
+  calls only on window days, pool worst case ~230KB (under the 331KB
+  slim norm).
+
+## The alerts track state
+
+Session 19 ✅ Completed + deployed + version-verified live (2026-11-17).
+Session 20 ✅ **Completed + deployed @100% (2026-11-18) — the all-matches
+day pages** (the audit + the spec + the four milestones + the gates +
+the harness + the deploy; the post-fill live verification rides the
+~19:00 UTC first full sweep + the self-checking poller; the first natural
+goal window Nov 20 will also be the first goal-alert run over the widened
+universe — BSA Friday matches now ride the same FD live sweep).
+Session 21+ ⬜ — the OLD S20 preview moves here: the per-match
+subscription UX (deep-links, `/follow match`), red-card alerts IF a real
+source materializes, alert pacing/quiet-hours, the channel goal posts +
+the scorer enrichment, the Workers AI enrichment ideas parked in
+`docs/telegram-channel-mirror/ENRICHMENT.md`.
+
+(The SEO follow-up track Sessions 16-18 are COMPLETE — see
+`seo-implementation/session-reports/` + the FINAL-SEO-IMPLEMENTATION-REPORT;
+the data-dependent gaps are the owner's next phase.)
+
+## Open follow-ups
+
+- **The S20 post-fill live verification** (the 30-min self-checking cron
+  poller, in-session): confirm `/matches/tomorrow` lists the Brasileirão
+  after the ~19:00 UTC first fill, the pool growth (~380-460), an intl
+  pool-backed match page 200, the unchanged surfaces, and (after UTC
+  20:30) the BSA rows on `/matches/today`; then §2a of the session
+  report + the final TLDR. Self-deletes on completion.
+- **The Nov 20+ first-natural-goal watch:** Bayern–Köln Friday 19:30 UTC —
+  the first live goal alert under the S19 layer (with followed teams);
+  now ALSO the first goal window over the widened universe. Check the D1
+  `notified_v1` `goal:*` rows + the delivery ledger after the match. No
+  deploys in the M1/M2 windows.
+- **The KV read-quota exhaustion (the owner decision)** — unchanged (the
+  Workers Paid plan is the durable fix).
+- **The wrangler-4.50 sandbox DataCloneError** on the miniflare
+  scheduled-test endpoint (tooling; the harness covers tick logic).
+- The S21+ alerts backlog (per-match subscriptions, red cards IF a real
+  source, quiet hours, channel goal posts, scorer enrichment).
+- The post-Dec-8 freeze-lift decisions + the remaining S15-close backlog
+  (unchanged, owner-driven).
+
+**Credentials used, not stored.** The GitHub + Cloudflare + Telegram +
+football-data tokens were used across the S19/S20 sessions (the clone,
+the push, the deploy, the API probes, the live verification) — the owner
+should rotate them when development pauses.
+
+
 
 ## This session (Telegram Alerts Track Session 19 — the live goal alerts; 2026-11-17 — DONE in code + deployed + version-verified live; the first natural goal alert lands Nov 20+ with the post-break fixture resumption)
 
@@ -85,107 +224,3 @@ subscription/persistence/distribution machinery behind them. **DONE.**
   harness/gate/boot proven; the first natural production alert lands
   Nov 20+.
 
-## Current state (machine)
-
-- **Version:** `13.272.0-goalert` (`src/config.ts` / `package.json`
-  `13.272.0.0`). npm test baseline **3,841 OK** (`npx tsc --noEmit` clean +
-  58 check scripts — the S18 baseline 3,789 + the 52-gate
-  `check-s19-goalalert.js`). The S19 harness: `npx tsx
-  scripts/s19-goal-smoke.ts` (22/22 — manual, not in the test chain, the
-  s17/s18 precedent).
-- **Deploy:** Worker `ucl-notifier`, versioned deploys only. Current
-  deployment `7c54e223-b39f-4c9f-9bde-ea7d06047610` (`13.272.0-goalert`;
-  2026-11-17 ~20:05 UTC, @100%). Rollback chain: `0fad7482`
-  (13.271.0-content, S18) → `62c3b14d` (13.270.0-faq, S17) → `2481f840`
-  (13.269.0-entity-image, S16) → earlier (see the RUNBOOK). Rollback =
-  `npx wrangler rollback`.
-- **The KV read-quota exhaustion (the standing condition):** crossed
-  ~11:05 UTC Nov 17 (the S17/S18 condition); `/healthz ok:false` +
-  `pool_matches:0` until the UTC-midnight reset. **The post-reset
-  verification COMPLETED 2026-11-18 ~11:19 UTC** (`ok:true` +
-  `pool_matches:342` + `version: 13.272.0-goalert`; the S17 FAQ + S18
-  editorial page-level checks all passed — the `seo(s17-verify)` commit +
-  SESSION-17 §7 / SESSION-18 §6 / the S19 history §4 carry the evidence;
-  the verification cron jobs self-deleted). The durable fix remains
-  the owner's Workers Paid plan decision ($5/mo → 1M reads/day).
-- **Production hostnames:** `sportsignal.ir` (apex Custom Domain),
-  `football.sportsignal.ir` (301→apex except `/webhook`,`/api/`,`/admin`),
-  `ucl-notifier.sportsignal.workers.dev` (noindex-guarded alias).
-- **Branch:** `main`. Session 19 commits: `audit(s19)` (the audit doc) +
-  `v13.272-goalert` (the code + the gates + the docs) + the docs close-out
-  commit. The bot-track session reports live in `docs/history/`
-  (`2026-11-17-s19-goalalerts.md`).
-- **Commands:** `npm test` (must exit 0 before every push). **npm only,
-  never `bun install`**. Local dev: `npx wrangler dev --config
-  wrangler.dev.toml --port 8787 --local`. NOTE: the local D1 needs
-  `npx wrangler d1 execute sportsignal-users --config wrangler.dev.toml
-  --local --file=db/users-schema.sql` once after a state wipe; the S19
-  seeder is `node scripts/s19-seed-local-kv.js <h> <a>`. The miniflare
-  cron-test endpoint (—test-scheduled) is broken in this sandbox
-  (wrangler 4.50 DataCloneError) — use the harness for tick logic.
-  Deploy needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` in the
-  env. Versioned deploy: `npx wrangler versions upload` → `npx wrangler
-  versions deploy --version-id <id> --percentage 100 --yes`.
-- **Cron triggers:** `*/10 * * * *` + `27 */4 * * *` (unchanged — the goal
-  layer adds ZERO new schedulers).
-- **Key folders:** `src/` (worker modules; `scripts/lib/worker-src.js`
-  carries the bundle ORDER — goal-alert.ts sits after notify-audit.ts),
-  `assets/` (immutable versioned client payload; SW `sportsignal-v126`,
-  bundle `public-13.80.js`, stylesheet `public-13.87.css` — untouched by
-  S19), `docs/` (RUNBOOK, HANDOFF, specs, audits, history), `docs/history/`
-  (the bot-track session reports).
-- **Standing limits:** the Dec 4-8 freeze holds (zero SEO/GEO surface bytes
-  changed in S19 — pinned by the check gates); `_headers` at the 100-rule
-  cap; **no deploys in the Nov 20 Bayern–Köln windows (M1 ~19:35 UTC, M2
-  ~21:35-45 UTC — the first natural goal-alert window; watch, don't
-  deploy)**; the KV read quota + the 10ms CPU cliff remain the owner's
-  Workers Paid plan decision.
-
-## The alerts track state
-
-Session 19 ✅ Completed in code + deployed + version-verified live
-(2026-11-17) — the live goal alerts (detection/claim/fan-out + the gates);
-3,841 OK; the harness 22/22. Deployment `7c54e223…` @100%. The first
-natural live verification window: Nov 20+ (the post-break fixtures).
-Session 20 ⬜ NEXT — **RESEQUENCED by the owner (2026-11-18): the
-all-matches day pages** (the audit + the spec are DONE — see the session
-block at the top; the universe extension for «بازی‌های امروز/فردا»:
-FD free-4 + the hygiene-filtered senior internationals, the emptiness
-gated scan, the cadence parity; version 13.273.0-dayhub).
-Session 21+ ⬜ — the OLD S20 preview moves here: the per-match
-subscription UX (deep-links, `/follow match`), red-card alerts IF a real
-source materializes, alert pacing/quiet-hours, the channel goal posts +
-the scorer enrichment, the Workers AI enrichment ideas parked in
-`docs/telegram-channel-mirror/ENRICHMENT.md`.
-
-(The SEO follow-up track Sessions 16-18 are COMPLETE — see
-`seo-implementation/session-reports/` + the FINAL-SEO-IMPLEMENTATION-REPORT;
-the data-dependent gaps are the owner's next phase.)
-
-## Open follow-ups
-
-- **The post-quota-reset verification jobs — DONE (2026-11-18 ~11:19
-  UTC):** the S17+S18 page-level live verification passed every check
-  (FAQPage nodes, the editorial placement order, the byte-frozen
-  title/H1, the with-venue 4-Q / no-venue 3-Q match pages) + the S19
-  `/healthz ok:true` confirmation — the `seo(s17-verify)` docs commit;
-  the self-deleting jobs removed from the scheduler.
-- **The Nov 20+ first-natural-goal watch:** Bayern–Köln Friday 19:30 UTC —
-  the first live goal alert under the new layer (with followed teams);
-  check the D1 `notified_v1` `goal:*` rows + the delivery ledger after the
-  match. No deploys in the M1/M2 windows.
-- **The KV read-quota exhaustion (the owner decision)** — unchanged (the
-  Workers Paid plan is the durable fix).
-- **The wrangler-4.50 sandbox DataCloneError** on the miniflare
-  scheduled-test endpoint (tooling; the harness covers tick logic; revisit
-  if a future wrangler upgrade lands).
-- The S21+ alerts backlog (per-match subscriptions, red cards IF a real
-  source, quiet hours, channel goal posts, scorer enrichment) — moved
-  from S20 by the owner's 2026-11-18 resequencing.
-- The post-Dec-8 freeze-lift decisions + the remaining S15-close backlog
-  (unchanged, owner-driven).
-
-**Credentials used, not stored.** The GitHub + Cloudflare + Telegram +
-football-data tokens were used across the S19/S20-planning sessions (the
-clone, the push, the deploy, the API probes, the bot surface checks, the
-KV pool read) — the owner should rotate them when development pauses.
