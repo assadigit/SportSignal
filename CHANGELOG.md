@@ -4,6 +4,82 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.273.0-dayhub — Session 20: the all-matches day pages (2026-11-18, `main`)
+
+The «بازی‌های امروز» (`/matches/today`) and «بازی‌های فردا»
+(`/matches/tomorrow`) hubs must list ALL of the day's matches — never an
+empty page just because no marquee team plays. The hubs already listed every
+pool match big-first + chronological (the audit's surprise finding — the
+ranking the owner asked for was shipped); the real gap was the DATA
+UNIVERSE: during FIFA windows the tracked competitions go empty while real
+football exists. This release WIDENS THE DATA UNIVERSE, not the page
+builders:
+
+- **The FD four** — `CONFIG.FD_DAYVIEW_COMPS = [DED, PPL, ELC, BSA]`
+  (Eredivisie, Primeira Liga, EFL Championship, Brasileirão) appended to
+  the football-data fetch URLs in BOTH `provider-fd.ts` (the ONE URL site
+  for the full sweep AND the cheap live sweep — in-flight Brasileirão
+  scores ride the same call) and `providers.ts fetchLongView` (the 92-day
+  rebuild). Same single batched FD call (verified live: 10 comps,
+  `errorCode` none) — **+0 subrequests**. `CONFIG.LEAGUES` is UNTOUCHED
+  (live-mutable admin state — the audit §4 trap; a check gate FAILS if the
+  codes leak in).
+- **The senior-international fill** — `src/provider-intl.ts`: the four
+  sportscore slugs (`international-friendly` / `caf-africa-cup-of-nations` /
+  `concacaf-nations-league` / `uefa-nations-league`) scan
+  [today−1d, tomorrow] ONLY when no CLUB match kicks off in [now−1d,
+  now+1d] (the emptiness gate tests the tracked CLUB rows only — the FD-4
+  comps deliberately don't count: BSA plays THROUGH windows; the gate never
+  closes itself on its own output). Club days pay ZERO extra sportscore
+  calls; the 44-metered budget-stop stays the hard backstop (≤12 calls when
+  open). THE HYGIENE LAW: no intl row enters the pool without the
+  senior-men filter (U16–U23 + women markers incl. the provider's
+  live-verified "(w)" form) + the unordered-pair+date collapse keeping the
+  most-progressed status — the audit's verified reversed-duplicate
+  (Qatar–South Korea), ghost-row (Tahiti–Cook Islands) and youth/women
+  noise classes never render.
+- **The cadence parity (S20-5)** — senior-intl rows count as
+  cadence-relevant in the cron-pool relevance filter (window days sweep like
+  matchdays: the 2h full sweep + slotted live sweeps) and
+  `SS_LIVE_ELIGIBLE` gains the four codes (in-flight internationals get
+  10-min live score updates). Break-day internationals keep matchday
+  freshness instead of going stale 4–6h.
+- **The Persian names** — `FA_COMPS` + the 8 new codes
+  (اردیویزه هلند / لیگ برتر پرتغال / چمپیونشیپ انگلیس / سری آ برزیل /
+  بازی دوستانه ملی / جام ملت‌های آفریقا / لیگ ملت‌های کونکاکاف / لیگ
+  ملت‌های اروپا) + `COMP_EN` twins + a curated fa-dict national-team seed
+  (~110 entries, every key the PROVIDER name form verified live against
+  the sportscore fixtures API on 2026-11-17/18: «IR Iran»→ایران،
+  «Turkiye»→ترکیه، «Czechia Republic»→چک, «South Korea»→کره جنوبی،
+  «USA»→آمریکا …).
+- **Everything else stays gated off** (the audit's side-effect map): the
+  homepage lists, `/matches`, sitemap-upcoming, the teams index, the 365d
+  archive, the bot, and the goal-alert claims all filter by
+  importance/follows and keep doing so — the new rows reach ONLY the time
+  hubs + pool-backed match pages. The goal-alert no-audience skip stays
+  pinned (a zero-audience international claims nothing, the baseline
+  advances). The hub empty state stays honest for genuinely dead days
+  (MISSING-IS-NOT-ZERO).
+- **The gates + harness** — `scripts/check-s20-dayhubs.js` (static +
+  behavioral gates: the FD-URL sites, the CONFIG.LEAGUES trap, the slug
+  set, the hygiene law incl. the reversed-dupe/ghost-row collapses and the
+  club-day gate law, the 44-stop, SS_LIVE_ELIGIBLE, the cadence extension,
+  FA_COMPS/COMP_EN, the goal-alert skip, the version triple) wired into
+  the `npm test` chain; `scripts/s20-dayhub-smoke.ts` (the seeded harness:
+  club-day ordering, break-day hygiene, dead-day honesty, the side-effect
+  map, the goal-alert zero-audience skip) +
+  `scripts/s20-seed-local-kv.js` (the local break-day seeder).
+- **Budget**: +0 FD subrequests, the gated intl scan (≤12 calls, only on
+  window days), KV reads/writes unchanged, pool worst case ~550 rows ≈
+  230KB (under the 331KB slim norm). No new assets (the `_headers` cap
+  untouched), no client bundle rename (a server-side release — the SW
+  cache stays `sportsignal-v126`).
+
+Session: `docs/history/2026-11-18-s20-dayhubs.md`; the audit
+(`docs/audits/2026-11-18-allmatches-day-pages.md`) + the spec
+(`docs/specs/allmatches-day-pages.md`) carry the full evidence.
+Credentials used, not stored.
+
 # v13.272.0-goalert — Telegram Alerts Track Session 19: the live goal alerts (2026-11-17, `main`)
 
 The first session of the Telegram alerts track (per-user live goal alerts +
