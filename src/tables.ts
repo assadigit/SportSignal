@@ -85,7 +85,18 @@ export const COMP_EN = {
   "EC": "European Championship",
   "COPA": "Copa Am\xE9rica",
   "AFCON": "Africa Cup of Nations",
-  "AFC": "AFC Asian Cup"
+  "AFC": "AFC Asian Cup",
+  // v13.273-dayhub (S20): the day-hub universe codes — the EN twins of the
+  // 8 new FA_COMPS entries (translate.ts). The 4 FD leagues + the 4
+  // senior-international comps (the sportscore fill).
+  "DED": "Eredivisie",
+  "PPL": "Primeira Liga",
+  "ELC": "EFL Championship",
+  "BSA": "Brasileir\xE3o",
+  "INTL_FR": "International Friendly",
+  "AFCON_Q": "CAF Africa Cup of Nations",
+  "CONCACAF_NL": "CONCACAF Nations League",
+  "UEFA_NL": "UEFA Nations League"
 };
 export const STAGE_FA = {
   // v13.108-fasync: the new UCL format's league stage — the live pool sends

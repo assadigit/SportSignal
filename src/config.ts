@@ -18,6 +18,22 @@ export const CONFIG: Record<string, any> = {
   // morning/week-ahead/night digests. An AL-following user keeps the site
   // and loses the push — the explicit product trade the owner asked for.
   BOT_SILENT_LEAGUES: ["AL"],
+  // v13.273-dayhub (S20, DECISIONS S20-1/S20-2): the day-hub data universe
+  // extension — 4 extra football-data FREE-tier competitions (Eredivisie /
+  // Primeira Liga / EFL Championship / Brasileirão) appended ONLY to the FD
+  // fetch URLs (provider-fd.ts fetchFootballData + providers.ts
+  // fetchLongView), so /matches/today («بازی‌های امروز») and /matches/tomorrow
+  // («بازی‌های فردا») list every senior club fixture of the day — BSA plays
+  // THROUGH FIFA windows (the break-day filler), ELC fills midweek club days.
+  // Same single batched FD call (verified live: all 10 comps accepted,
+  // errorCode none) → +0 subrequests. CONFIG.LEAGUES stays UNTOUCHED: it is
+  // live-mutable ADMIN state (applySettings overwrites it from the KV
+  // settings blob, src/admin.ts:84) — the monitored-league/bot semantics
+  // must not silently change (the audit §4 trap; check-s20-dayhubs.js
+  // fails if these codes ever leak into CONFIG.LEAGUES). Rows from these
+  // comps reach ONLY the time hubs + pool-backed match pages (the audit's
+  // side-effect map: homepage//matches/sitemap/teams/bot all stay gated).
+  FD_DAYVIEW_COMPS: ["DED", "PPL", "ELC", "BSA"],
   // v13.173-noal (owner): "Avoid Australian League and Games altogether,
   // currently shows melbourn city vs melbourne victory." The website now
   // hides every SITE_HIDDEN_LEAGUES row at ALL public read surfaces: the

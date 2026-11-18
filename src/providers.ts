@@ -24,7 +24,11 @@ export async function fetchLongView(env: Env) {
   const fresh = cached && cached.fetchedAt && Date.now() - new Date(cached.fetchedAt).getTime() < 6 * 36e5;
   const horizon = cached && Array.isArray(cached.matches) && cached.matches.length ? Math.max(0, ...cached.matches.map((m) => new Date(m.utcDate || 0).getTime())) : 0;
   if (fresh && horizon > Date.now() + 60 * 864e5) return cached.matches;
-  const fdLeagues = CONFIG.LEAGUES.filter((c) => !["EL", "ECL"].includes(c));
+  // v13.273-dayhub (S20): the long view's FD chunks carry the day-view four
+  // (FD_DAYVIEW_COMPS — DED/PPL/ELC/BSA) too, so a 92-day pool rebuild
+  // widens the day-hub universe the same way (same chunk count, bigger
+  // responses — +0 subrequests; CONFIG.LEAGUES untouched, S20-2).
+  const fdLeagues = [...CONFIG.LEAGUES, ...(CONFIG.FD_DAYVIEW_COMPS || [])].filter((c) => !["EL", "ECL"].includes(c));
   const allMatches = [];
   const seen = new Set();
   const pushUnique = (list) => {

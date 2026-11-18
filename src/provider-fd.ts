@@ -25,7 +25,15 @@ export async function fetchFootballData(env: Env, opts?) {
   const liveMode = !!(opts && opts.live);
   const dateFrom = new Date(Date.now() - pastDays * 864e5).toISOString().split("T")[0];
   const dateTo = new Date(Date.now() + futureDays * 864e5).toISOString().split("T")[0];
-  const fdLeagues = CONFIG.LEAGUES.filter((c) => !["EL", "ECL"].includes(c));
+  // v13.273-dayhub (S20): the FD URL carries the day-view four
+  // (FD_DAYVIEW_COMPS — DED/PPL/ELC/BSA) appended to the monitored leagues
+  // so the day hubs list every senior club fixture. One batched call either
+  // way (verified live: 10 comps, errorCode none) — +0 subrequests; the rows
+  // stay out of CONFIG.LEAGUES (the admin-state trap — S20-2). This is the
+  // ONE URL-construction site for BOTH the full sweep and the cheap live
+  // sweep (opts narrows dates only), so in-flight Brasileirão matches get
+  // live statuses from the same call too.
+  const fdLeagues = [...CONFIG.LEAGUES, ...(CONFIG.FD_DAYVIEW_COMPS || [])].filter((c) => !["EL", "ECL"].includes(c));
   // v13.43-cpukeeper: print the ACTUAL range length (live sweeps are ±2d, not
   // the config's 10-day total).
   console.log(`\u{1F4C5} Date range: ${dateFrom} to ${dateTo} (${pastDays + futureDays} days${liveMode ? ", live sweep" : `, ${CONFIG.DATE_RANGE_DAYS} total`})`);
