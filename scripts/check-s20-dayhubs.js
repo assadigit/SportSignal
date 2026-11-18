@@ -119,9 +119,9 @@ check("s20: the hygiene law — the unordered-pair+date collapse keeps the MOST-
 check("s20: the emptiness gate — the CLUB codes (CONFIG.LEAGUES + EL/ECL + PGL + the domestic cups; the FD-4 and the intl codes deliberately NOT counted), the [now-1d, now+1d] window",
   /codes\.add\("EL"\);[\s\S]{0,120}codes\.add\("ECL"\);[\s\S]{0,80}codes\.add\("PGL"\);[\s\S]{0,200}DOMESTIC_CUP_IDS/.test(intlSrc) &&
   /t >= now - 864e5 && t <= now \+ 864e5/.test(intlSrc));
-check("s20: the emptiness gate wiring — fetchMatchesFromAPI hooks the fill AFTER the 3 sources (the club picture is complete), merging the sanitized rows",
-  /const intlRows = await fetchIntlDayFill\(env, \[\.\.\.merged\.values\(\)\]\);/.test(provSrc) &&
-  /fetchIntlDayFill\(env, \[\.\.\.merged\.values\(\)\]\)[\s\S]{0,800}canonDedupe\(\[\.\.\.merged\.values\(\)\]\)/.test(provSrc));
+check("s20: the emptiness gate wiring — fetchMatchesFromAPI hooks the fill BETWEEN TSP and the sportscore CLUB fan-out (v13.273.1-dayhubfix: the verified live failure — a post-fan-out fill budget-stopped at 0 calls after FD 6 + TSP 8 + fan-out 27 + a standings refresh), with the gate fed by merged (FD+TSP) + opts.clubContext (the cached pool, in memory at cron-pool — sportscore-only club rows like PGL close it too; ZERO new KV reads)",
+  /if \(s\.name === "sportscore"\) \{\s*\n\s*const intlRows = await fetchIntlDayFill\(env, \[\.\.\.merged\.values\(\), \.\.\.\(\(opts && opts\.clubContext\) \|\| \[\]\)\]\);/.test(provSrc) &&
+  /fetchMatchesFromAPI\(budgetHard \? \{ \.\.\.env, KV_BUDGET_HOLD: true \} : env, \{ clubContext: cachedPool \}\)/.test(poolSrc));
 check("s20: the 44-metered budget-stop rides the intl scan (the hard backstop)",
   /subrequestCount\(\) >= 44/.test(intlSrc));
 check("s20: the scan window is [today-1d, tomorrow] (three UTC dates — the Tehran today/tomorrow buckets)",
@@ -151,9 +151,9 @@ check("s20: provider-intl.ts rides the worker concat (the bundle order, after pr
   /"provider-breaker\.ts", "provider-wikipedia\.ts", "provider-sportscore\.ts", "provider-intl\.ts", "provider-tsp\.ts"/.test(wsSrc));
 check("s20: zero page-builder changes — buildHub's shape (upcomingFollowed + the day filter + the honest empty state) untouched by S20",
   /const all = upcomingFollowed\(ctx\)\.filter\(def\.filter\);/.test(pagesSrc));
-check("s20: the version triple — src/config.ts 13.273.0-dayhub + package.json 13.273.0.0",
-  /export const VERSION = "13\.273\.0-dayhub";/.test(cfgSrc) &&
-  pkg.version === "13.273.0.0");
+check("s20: the version triple — src/config.ts 13.273.1-dayhub + package.json 13.273.1.0",
+  /export const VERSION = "13\.273\.1-dayhub";/.test(cfgSrc) &&
+  pkg.version === "13.273.1.0");
 check("s20: the check is wired into the npm test chain",
   /node scripts\/check-s20-dayhubs\.js/.test(pkg.scripts.test));
 check("s20: the seeded harness + the local seeder exist (the s17/s18/s19 convention)",

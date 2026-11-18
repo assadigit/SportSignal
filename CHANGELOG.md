@@ -4,6 +4,46 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.273.1-dayhub — the dayhub fix: the intl fill rides the ONLY budget slot with headroom (2026-11-18, `main`)
+
+The v13.273.0 emptiness-gated fill shipped with the intl scan hooked AFTER
+the three sources — the 2026-11-18 14:10 UTC full sweep proved that slot
+dead live: by the time the fan-out (FD 6 + TSP 8 + sportscore club day
+fan-out 27) plus a standings refresh had run, the meter already sat ≥44,
+the fill's own 44-stop fired at 0 calls, and ZERO international rows
+entered a pool whose gate was provably open (the sweep landed +53 FD-4
+rows — ELC/BSA fixtures for Nov 20+ — but not one Nov 17–19 friendly or
+Nations-League row). The fix:
+
+- **The fill moves BETWEEN TSP and the sportscore CLUB fan-out** (inside
+  the source loop, at the `sportscore` source's turn, before its gate
+  check) — the only slot with real headroom. When the emptiness gate is
+  open, the club fan-out's own [now−1d, now+1d] window is provably empty
+  of club matches anyway; its ~27 calls still run AFTER the fill (bounded
+  by the same 44-stop — a window day loses nothing real, the club rows
+  were not in-window to begin with). Club days still pay ZERO extra
+  sportscore calls (the gate stays shut there — unchanged law).
+- **The gate now also feeds on `opts.clubContext`** — the tick's cached
+  pool rows, which cron-pool already holds in memory (`{ clubContext:
+  cachedPool }`, ZERO new KV reads), so sportscore-only club rows (PGL —
+  its only source is the sportscore day fan-out, invisible to the FD+TSP
+  merge) close the gate exactly like FD/TSP rows do. The gate's club-day
+  law is unchanged: CONFIG.LEAGUES + EL/ECL + PGL + the domestic cups
+  count; the FD-4 and the intl codes still never close it.
+- **Gates ride forward**: check-s20-dayhubs' wiring gate re-pinned to the
+  new position + the `clubContext` pass; check-reliability's
+  sequential-sources gate carries the fill hook (window widened
+  900→1800 chars for the inserted comment+code); the version triple
+  13.273.0 → 13.273.1 (config + package + lock + the check-stats LIVE
+  pins + the S19 forward-riding pin).
+- **Budget**: unchanged — ≤12 gated intl calls (now in the headroom slot
+  instead of the post-fan-out dead slot), zero new KV reads (the pool
+  rows were already in memory), zero page-builder changes.
+
+Session: `docs/history/2026-11-18-s20-dayhubs.md` (§2 — the 14:10 UTC
+failure + the fix; §2a — the post-fill production verification).
+Credentials used, not stored.
+
 # v13.273.0-dayhub — Session 20: the all-matches day pages (2026-11-18, `main`)
 
 The «بازی‌های امروز» (`/matches/today`) and «بازی‌های فردا»

@@ -2,17 +2,19 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
-## This session (S20 — the all-matches day pages; 2026-11-18 — BUILT + GATED + DEPLOYED @100%; the post-fill live verification rides the ~19:00 UTC first full sweep + a self-checking cron poller)
+## This session (S20 — the all-matches day pages; 2026-11-18 — BUILT + GATED + DEPLOYED @100% + the mid-session dayhub fix `13.273.1-dayhub` redeployed; the post-fill live verification rides the ~20:10 UTC full sweep + a self-checking cron poller)
 
 **The objective (the owner's 2026-11-18 brief):** «بازی‌های امروز»
 (`/matches/today`) and «بازی‌های فردا» (`/matches/tomorrow`) must show
 ALL of the day's matches — never an empty page on days without marquee
 fixtures — chronological, desired teams ranked higher. **DONE — deployed
 2026-11-18 ~13:21 UTC (versioned `0346be4d…` @100%, version
-`13.273.0-dayhub`), outside the Nov 20 Bayern–Köln no-deploy windows.**
-The ranking law was already shipped (the hubs list every pool match
-big-first + chronological — the audit's §1 finding); S20 widened the
-DATA UNIVERSE, not the page builders.
+`13.273.0-dayhub`), then REDEPLOYED same day as `13.273.1-dayhub` after
+the ~14:10 UTC first full sweep live-proved the fill's original slot dead
+(0 intl rows, meter ≥44 — see M4.5 below)**, outside the Nov 20 Bayern–Köln
+no-deploy windows. The ranking law was already shipped (the hubs list
+every pool match big-first + chronological — the audit's §1 finding); S20
+widened the DATA UNIVERSE, not the page builders.
 
 - **M1 — the FD four + the Persian names ✅** (commit `f10ba4f`):
   `CONFIG.FD_DAYVIEW_COMPS = [DED,PPL,ELC,BSA]` appended ONLY to the FD
@@ -59,12 +61,31 @@ DATA UNIVERSE, not the page builders.
   immediately: `/healthz ok:true + version 13.273.0-dayhub` + healthy
   ticks (subreq_last_tick 31, degraded false); homepage + `/matches` +
   `/sitemap.xml` unchanged (no new-comp rows); the pre-fill day pages
-  still the honest empty state (the pool was last swept at ~13:00 UTC by
-  the OLD code — the gated fill runs only inside a FULL sweep, and the
-  IDLE discovery cadence is 6h → the first fill lands ~19:00 UTC).
+  still the honest empty state (the pool was last swept at ~14:10 UTC by
+  the ORIGINAL code — the gated fill runs only inside a FULL sweep, and
+  that first sweep live-proved the fill's post-fan-out slot DEAD: FD 6 +
+  TSP 8 + the club day fan-out 27 + a standings refresh left the meter
+  ≥44, so the fill's own 44-stop fired at 0 calls — +53 FD-4 rows landed,
+  ZERO intl rows on a provably-open gate day).
+- **M4.5 — the dayhub fix (`13.273.1-dayhub`, this session) ✅:** the fill
+  moves BETWEEN TSP and the sportscore CLUB fan-out (the only budget slot
+  with headroom — when the gate is open, the fan-out's own [now−1d,
+  now+1d] window is provably empty of club matches; its ~27 calls still
+  run after the fill, bounded by the same 44-stop) + the gate feeds on
+  `opts.clubContext` (the tick's cached pool rows, already in memory at
+  cron-pool — ZERO new KV reads) so sportscore-only club rows (PGL) close
+  it exactly like FD/TSP rows. Gates re-pinned (check-s20 wiring gate +
+  check-reliability's sequential-sources gate carry the fill hook; the
+  version pins 13.273.0 → 13.273.1 across the triple + the check-stats
+  LIVE pins + the S19 ride-forward), `npm test` **3,887 OK / 0 FAIL,
+  exit 0**, tsc clean, harness **34/34** against the REAL re-wired code.
+  Redeployed versioned `13.273.1-dayhub` during the IDLE window — the
+  fill's first real production run = the next full sweep, **~20:10 UTC**
+  (the 6h IDLE discovery cadence from the ~14:10 UTC sweep).
   **The post-fill live verification (the tomorrow page listing the
-  Brasileirão + the pool growth + an intl match page 200) rides a
-  self-checking 30-min cron poller** (the S19 verification-job pattern);
+  Brasileirão + the internationals + the pool growth + an intl match page
+  200) rides a self-checking 30-min cron poller** (the S19
+  verification-job pattern);
   the session report `docs/history/2026-11-18-s20-dayhubs.md` §2a will
   carry the measured evidence. Honesty note: on 2026-11-18 all of
   Tehran-Nov-18's internationals are FINISHED (they don't list on the
@@ -76,17 +97,19 @@ DATA UNIVERSE, not the page builders.
 
 ## Current state (machine)
 
-- **Version:** `13.273.0-dayhub` (`src/config.ts` / `package.json`
-  `13.273.0.0`). npm test baseline **3,887 OK / 0 FAIL, exit 0**
+- **Version:** `13.273.1-dayhub` (`src/config.ts` / `package.json`
+  `13.273.1.0`). npm test baseline **3,887 OK / 0 FAIL, exit 0**
   (`npx tsc --noEmit` clean + 59 check scripts — the S19 baseline 3,841 +
   the 46-gate `check-s20-dayhubs.js`). The S20 harness: `npx tsx
   scripts/s20-dayhub-smoke.ts` (34/34 — manual, not in the test chain,
   the s17/s18/s19 precedent). The local seeder: `node
   scripts/s20-seed-local-kv.js`.
 - **Deploy:** Worker `ucl-notifier`, versioned deploys only. Current
-  deployment `0346be4d-a641-4775-b4ee-f1bad29e36d0`
-  (`13.273.0-dayhub`; 2026-11-18 ~13:21 UTC, @100%). Rollback chain:
-  `7c54e223` (13.272.0-goalert, S19) → `0fad7482` (13.271.0-content, S18)
+  deployment `81b1d4f0-e5b6-4293-909c-cf5d93690131`
+  (`13.273.1-dayhub`; 2026-11-18 ~14:47 UTC, @100%; post-deploy `/healthz`
+  `ok:true` + the new version + healthy ticks, all surfaces 200). Rollback
+  chain: `0346be4d` (13.273.0-dayhub, S20 M4) → `7c54e223`
+  (13.272.0-goalert, S19) → `0fad7482` (13.271.0-content, S18)
   → `62c3b14d` (13.270.0-faq, S17) → earlier (see the RUNBOOK). Rollback =
   `npx wrangler rollback`.
 - **Production hostnames:** `sportsignal.ir` (apex Custom Domain),
@@ -94,7 +117,8 @@ DATA UNIVERSE, not the page builders.
   `ucl-notifier.sportsignal.workers.dev` (noindex-guarded alias).
 - **Branch:** `main`. Session 20 commits: `s20-m1` (`f10ba4f`) +
   `s20-m2` (`4cbe6f3`) + `v13.273-dayhub` (`60c0fed`, the gates + the
-  harness + the version triple) + the docs close-out commit. The session
+  harness + the version triple) + the docs close-out commit (`5f5f2b4`) +
+  the dayhubfix commit (`13.273.1`). The session
   report: `docs/history/2026-11-18-s20-dayhubs.md`.
 - **Commands:** `npm test` (must exit 0 before every push). **npm only,
   never `bun install`**. Local dev: `npx wrangler dev --config

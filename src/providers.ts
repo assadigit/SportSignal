@@ -252,7 +252,12 @@ export async function fetchLiveSweep(env: Env, cachedPool) {
   console.log(`\u26A1 Live sweep: pool=${pool.length} fetched=${fetched.length} (fd=${fdCount} spsc=${ssCount}) merged=${merged.length} live=${liveN}`);
   return merged;
 }
-export async function fetchMatchesFromAPI(env: Env) {
+export async function fetchMatchesFromAPI(env: Env, opts?) {
+  // v13.273.1-dayhubfix: opts.clubContext — the tick's cached pool rows
+  // (cron-pool already holds them in memory; ZERO new KV reads). The
+  // emptiness gate feeds on it so sportscore-only club rows (PGL — the
+  // only PGL source is the sportscore day fan-out) close the gate exactly
+  // like FD/TSP rows do.
   // v13.54.1-poolbreak: the sources run SEQUENTIALLY in priority order
   // with meter gates (was Promise.all concurrency). The 2026-09-30 deadlock:
   // the pool KV had expired (24h TTL, change-only writes, break week) → every
@@ -272,6 +277,30 @@ export async function fetchMatchesFromAPI(env: Env) {
   const merged = new Map();
   const used = [];
   for (const s of sources) {
+    // v13.273.1-dayhubfix (S20-3): THE EMPTINESS-GATED FILL runs BETWEEN
+    // TSP and the sportscore CLUB day fan-out — the only slot with real
+    // headroom. The verified live failure this fixes: after FD (6 calls)
+    // + TSP (8) + the club fan-out (27) + a standings refresh the meter
+    // already sits ≥44, so a post-fan-out fill budget-stopped at 0 calls
+    // and the internationals NEVER entered the pool (the 2026-11-18 14:10
+    // UTC sweep: +53 FD-4 rows, 0 intl rows, gate provably open). When the
+    // gate IS open, the club fan-out's own [now-1d, now+1d] window is
+    // provably empty of club matches anyway — its 27 calls still run after
+    // the fill (bounded by the 44-stop; a window day loses nothing real).
+    // The gate feeds on merged (FD+TSP) + opts.clubContext (the cached
+    // pool, already in memory at cron-pool — ZERO new KV reads) so
+    // sportscore-only club rows (PGL) close it exactly like the rest.
+    if (s.name === "sportscore") {
+      const intlRows = await fetchIntlDayFill(env, [...merged.values(), ...((opts && opts.clubContext) || [])]);
+      if (intlRows.length) {
+        for (const x of intlRows) {
+          const k = `${x.competition.code}|${normalizeTeamName(x.homeTeam.name)}|${normalizeTeamName(x.awayTeam.name)}|${(x.utcDate || "").slice(0, 10)}`;
+          if (!merged.has(k)) merged.set(k, x);
+        }
+        used.push("intlfill");
+        console.log(`\u2705 intl day-fill contributed ${intlRows.length} rows (pool ${merged.size})`);
+      }
+    }
     if (subrequestCount() > s.gate) {
       console.log(`\u23ED\uFE0F Source ${s.name} skipped \u2014 subrequest budget ${subrequestCount()}/48 (gate ${s.gate})`);
       continue;
@@ -297,24 +326,6 @@ export async function fetchMatchesFromAPI(env: Env) {
     } catch (e) {
       console.error(`\u274C Source ${s.name} failed: ` + e.message);
     }
-  }
-  // v13.273-dayhub (S20-3): THE EMPTINESS-GATED SENIOR-INTERNATIONAL DAY
-  // FILL — the four intl slugs (friendlies / AFCON / CONCACAF NL / UEFA NL)
-  // scan [today-1d, tomorrow] ONLY when no CLUB match kicks off in
-  // [now-1d, now+1d] (the gate tests the sweep's fetched CLUB rows only —
-  // the FD-4 comps deliberately do not count, and the intl rows it returns
-  // never close the gate; club days pay zero extra sportscore calls, the
-  // 44-metered budget-stop stays the hard backstop). The rows pass the
-  // HYGIENE LAW inside the fill (senior-men filter + unordered-pair+date
-  // collapse) BEFORE they can reach the pool or any page.
-  const intlRows = await fetchIntlDayFill(env, [...merged.values()]);
-  if (intlRows.length) {
-    for (const x of intlRows) {
-      const k = `${x.competition.code}|${normalizeTeamName(x.homeTeam.name)}|${normalizeTeamName(x.awayTeam.name)}|${(x.utcDate || "").slice(0, 10)}`;
-      if (!merged.has(k)) merged.set(k, x);
-    }
-    used.push("intlfill");
-    console.log(`\u2705 intl day-fill contributed ${intlRows.length} rows (pool ${merged.size})`);
   }
   let matches = canonDedupe([...merged.values()]);
   let usedSource = used.join("+");

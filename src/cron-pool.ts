@@ -140,7 +140,12 @@ export async function runPoolPhase(env: Env, prevStatus, budgetHard: boolean, NO
       // this tick (env-scoped flag; see cacheMatches). The sweep itself
       // still runs — fresh match data feeds the notification pipeline
       // either way.
-      matches = await (poolBlind ? fetchLongView(budgetHard ? { ...env, KV_BUDGET_HOLD: true } : env) : fetchMatchesFromAPI(budgetHard ? { ...env, KV_BUDGET_HOLD: true } : env));
+      // v13.273.1-dayhubfix (S20): opts.clubContext — the cached pool rows
+      // this phase ALREADY holds in memory (poolBlob was read above — zero
+      // new KV reads) feed the intl fill's emptiness gate so
+      // sportscore-only club rows (PGL — the only PGL source is the
+      // sportscore day fan-out) close the gate exactly like FD/TSP rows.
+      matches = await (poolBlind ? fetchLongView(budgetHard ? { ...env, KV_BUDGET_HOLD: true } : env) : fetchMatchesFromAPI(budgetHard ? { ...env, KV_BUDGET_HOLD: true } : env, { clubContext: cachedPool }));
       fullSweepThisTick = true;
     }
   } catch (e) {
