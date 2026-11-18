@@ -1952,3 +1952,45 @@ title/H1 byte changes) after Dec 4 with a fresh 16-month GSC export.
   the next tick with the baseline retained — an accurate, slightly late
   alert). Decided by the agent from the engine's own reservation semantics
   + the free-tier budget statement.
+- **S20-1 — the day-hub universe: FD free-4 + senior internationals,
+  senior men only.** The owner's «بازی‌های امروز/فردا» ask is a data
+  universe problem (the hubs already list every pool match big-first +
+  chronological — audit §1). The v1 universe adds the FD free-tier
+  Eredivisie/Primeira Liga/Championship/Brasileirão (same single batched
+  FD call, verified live) and a curated senior-international set from
+  sportscore (friendlies, AFCON, CONCACAF NL, UEFA NL — the verified
+  Nov-2026 window content incl. Iraq–IR Iran). Youth and women's football
+  are filtered out (reversible). Notable non-free leagues (Saudi, MLS,
+  Argentina) are out of scope v1 — a future owner decision. Decided by
+  the agent from the audit; the owner may override before/during S20.
+- **S20-2 — `CONFIG.LEAGUES` is untouchable for this feature.** It is
+  live-mutable admin state (the KV settings blob overwrites it via
+  `applySettings`); adding codes there would silently change the admin
+  monitored-league semantics. The 4 FD comps ride a separate
+  `FD_DAYVIEW_COMPS` constant appended only to the FD fetch URLs; a
+  check gate fails if the codes leak into `CONFIG.LEAGUES`. Decided by
+  the agent (the audit §4 trap).
+- **S20-3 — the emptiness gate for the international scan.** The
+  sportscore intl slugs scan [today−1d, tomorrow] only when NO club match
+  (the tracked club codes) kicks off in [now−1d, now+1d] — club days pay
+  zero extra subrequests; window days fill. The gate tests club rows only
+  (never the intl rows it fetched, or it would close itself). The
+  44-metered budget-stop stays the hard backstop. Decided by the agent
+  (budget flat on normal days).
+- **S20-4 — the ranking law stays as-is.** `upcomingFollowed`'s
+  big-first → live-first → chronological sort already delivers "more
+  important clubs higher, sorted chronologically". No builder sort
+  changes in S20. Decided by the agent (the audit §1 finding).
+- **S20-5 — window days sweep like matchdays.** Senior-intl rows count
+  as cadence-relevant in the cron-pool relevance filter + live-sweep
+  eligibility, so break-day internationals get matchday-fresh statuses
+  and 10-min live scores instead of multi-hour staleness. Bot pushes stay
+  gated by shouldNotify (internationals never notify). Decided by the
+  agent (UX freshness vs a bounded sweep-cost increase during windows
+  only).
+- **S20-6 — the international data-hygiene law.** No intl row enters the
+  pool without the senior-men name filter and the unordered-pair+date
+  collapse keeping the most-progressed row — the verified reversed-dup
+  and ghost-row classes must never render, and a phantom "upcoming" row
+  for a finished game must never persist. Decided by the agent (the
+  audit §3 landmines).

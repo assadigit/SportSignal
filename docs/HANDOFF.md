@@ -2,6 +2,37 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
+## This session (S20 PLANNING — the all-matches day pages; 2026-11-18 — the audit + the spec, awaiting the implementation session)
+
+**The objective (the owner's 2026-11-18 brief):** «بازی‌های امروز»
+(`/matches/today`) and «بازی‌های فردا» (`/matches/tomorrow`) must show
+ALL of the day's matches — never an empty page on days without marquee
+fixtures — chronological, desired teams ranked higher. **PLANNED — the
+implementation is the NEXT session (S20).**
+
+- **The audit (docs/audits/2026-11-18-allmatches-day-pages.md):** the
+  hubs ALREADY list every pool match big-first + chronological (the
+  ranking law the owner asked for is shipped); the real gap is the DATA
+  UNIVERSE — during FIFA windows the tracked competitions are empty
+  (verified live: 0 rows Nov 18–19, the today page's honest empty state)
+  while real football exists (44 friendlies incl. Iraq–IR Iran, 18 AFCON
+  qualifiers, 9 CONCACAF NL, 8 UEFA NL on Nov 17; 4 Brasileirão matches
+  Nov 18). Provider probes verified: FD free tier takes all 10 comps in
+  ONE batched call (DED/PPL/ELC/BSA included); the sportscore intl slugs
+  work but carry reversed duplicates, ghost rows, and youth/women noise
+  (the hygiene law). The side-effect map confirms the new rows reach ONLY
+  the time hubs + match pages (homepage/`/matches`/sitemap/teams/bot/
+  goal-alerts all stay gated).
+- **The spec (docs/specs/allmatches-day-pages.md):** M1 the FD four
+  (`FD_DAYVIEW_COMPS`, `CONFIG.LEAGUES` untouched — admin-state trap);
+  M2 the emptiness-gated senior-intl fill + hygiene + cadence parity;
+  M3 the check gates + the seeded harness; M4 version 13.273.0-dayhub +
+  deploy (outside the Nov 20 Bayern–Köln windows) + the live verify ON
+  THE CURRENT BREAK (the Nov 18–19 window is the showcase scenario).
+  DECISIONS S20-1…S20-6 recorded.
+- **The next-session prompt lives in the owner chat** (self-contained:
+  read AGENTS.md → the audit → the spec → build).
+
 ## This session (Telegram Alerts Track Session 19 — the live goal alerts; 2026-11-17 — DONE in code + deployed + version-verified live; the first natural goal alert lands Nov 20+ with the post-break fixture resumption)
 
 **The objective (the owner's S19 brief):** per-user live goal alerts — goal
@@ -116,10 +147,15 @@ Session 19 ✅ Completed in code + deployed + version-verified live
 (2026-11-17) — the live goal alerts (detection/claim/fan-out + the gates);
 3,841 OK; the harness 22/22. Deployment `7c54e223…` @100%. The first
 natural live verification window: Nov 20+ (the post-break fixtures).
-Session 20 ⬜ NEXT — the S20 preview: the per-match subscription UX
-(deep-links, `/follow match`), red-card alerts IF a real source
-materializes, alert pacing/quiet-hours, the channel goal posts + the
-scorer enrichment, the Workers AI enrichment ideas parked in
+Session 20 ⬜ NEXT — **RESEQUENCED by the owner (2026-11-18): the
+all-matches day pages** (the audit + the spec are DONE — see the session
+block at the top; the universe extension for «بازی‌های امروز/فردا»:
+FD free-4 + the hygiene-filtered senior internationals, the emptiness
+gated scan, the cadence parity; version 13.273.0-dayhub).
+Session 21+ ⬜ — the OLD S20 preview moves here: the per-match
+subscription UX (deep-links, `/follow match`), red-card alerts IF a real
+source materializes, alert pacing/quiet-hours, the channel goal posts +
+the scorer enrichment, the Workers AI enrichment ideas parked in
 `docs/telegram-channel-mirror/ENRICHMENT.md`.
 
 (The SEO follow-up track Sessions 16-18 are COMPLETE — see
@@ -143,13 +179,13 @@ the data-dependent gaps are the owner's next phase.)
 - **The wrangler-4.50 sandbox DataCloneError** on the miniflare
   scheduled-test endpoint (tooling; the harness covers tick logic; revisit
   if a future wrangler upgrade lands).
-- The S20 backlog (per-match subscriptions, red cards IF a real source,
-  quiet hours, channel goal posts, scorer enrichment).
+- The S21+ alerts backlog (per-match subscriptions, red cards IF a real
+  source, quiet hours, channel goal posts, scorer enrichment) — moved
+  from S20 by the owner's 2026-11-18 resequencing.
 - The post-Dec-8 freeze-lift decisions + the remaining S15-close backlog
   (unchanged, owner-driven).
 
 **Credentials used, not stored.** The GitHub + Cloudflare + Telegram +
-football-data tokens were used this session (the clone, the push, the
-deploy, the API probes, the bot surface checks) — the owner should rotate
-them after the 00:20 UTC verification job completes (it needs the current
-tokens).
+football-data tokens were used across the S19/S20-planning sessions (the
+clone, the push, the deploy, the API probes, the bot surface checks, the
+KV pool read) — the owner should rotate them when development pauses.
