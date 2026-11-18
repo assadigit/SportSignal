@@ -167,15 +167,23 @@ that pinned the omit decision are re-pinned to the emit contract (see §5).
   early UTC; today it exhausted by 11:05 UTC under peak traffic). The S17
   change touches zero KV wiring (pure string composition; the freeze-safety
   diff shows the two extended lines only).
-- **The scheduled completion:** a one-shot verification job fires at
-  2026-11-18T00:20 UTC (after the UTC-midnight quota reset + the 00:10 cron
-  tick that repopulates the pool) to verify the live `/healthz` `ok:true` +
-  the FAQPage on the live team page + a with-venue match page + the
-  no-venue omission, then finalize §7 with the evidence + the
-  `seo(s17-verify)` docs commit. The S17 status until then: **deployed +
-  version-verified live; the page-level FAQ verification completes at the
-  quota reset** (the code path itself is proven by the 26/26 seeded-harness
-  assertions against the REAL builders + the 3,773-gate suite).
+- **The scheduled completion — DONE (2026-11-18 ~11:19 UTC, post-reset;
+  the `seo(s17-verify)` commit).** The quota reset at UTC midnight + the
+  00:10 cron tick repopulated the pool. The live evidence: `/healthz`
+  `ok:true` + `pool_matches:342` (the S19 close `13.272.0-goalert` serving
+  @100% — the deployed chain S17 `62c3b14d` → S18 `0fad7482` → S19
+  `7c54e223`, the S17 pages riding the S18/S19 deployments unchanged);
+  `/teams/barcelona` HTTP 200 with the FAQPage JSON-LD node in the `@graph`
+  (3 Questions) + the visible `card prose faqcard` + the byte-frozen title
+  «بارسلونا — برنامه بازی بعدی و ساعت شروع | اسپرت سیگنال» + H1
+  «برنامه بازی‌های بارسلونا» unchanged; the WITH-venue match page
+  `/matches/barcelona-vs-villarreal-2026-11-22` HTTP 200 with the FAQPage
+  node carrying 4 Questions incl. the venue Q «بازی کجا برگزار می‌شود؟» →
+  «ورزشگاه کمپ نو» (the home-ground table); the NO-venue match page
+  `/matches/athletic-club-vs-rcd-espanyol-de-barcelona-2026-11-20`
+  (Athletic Club absent from the home-ground table) HTTP 200 with 3
+  Questions — the venue Q OMITS (MISSING-IS-NOT-ZERO). **S17 status:
+  deployed + version-verified live + page-verified live.**
 
 ## 8. Cloudflare budget
 

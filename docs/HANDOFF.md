@@ -70,10 +70,12 @@ subscription/persistence/distribution machinery behind them. **DONE.**
   `npx wrangler rollback`.
 - **The KV read-quota exhaustion (the standing condition):** crossed
   ~11:05 UTC Nov 17 (the S17/S18 condition); `/healthz ok:false` +
-  `pool_matches:0` until the UTC-midnight reset. The re-scheduled one-time
-  verification job (00:20 UTC Nov 18) completes the S17+S18 page-level
-  live checks (`/healthz ok:true` + the FAQPage/editorial cards) and makes
-  the `seo(s17-verify)` docs commit if all pass. The durable fix remains
+  `pool_matches:0` until the UTC-midnight reset. **The post-reset
+  verification COMPLETED 2026-11-18 ~11:19 UTC** (`ok:true` +
+  `pool_matches:342` + `version: 13.272.0-goalert`; the S17 FAQ + S18
+  editorial page-level checks all passed — the `seo(s17-verify)` commit +
+  SESSION-17 §7 / SESSION-18 §6 / the S19 history §4 carry the evidence;
+  the verification cron jobs self-deleted). The durable fix remains
   the owner's Workers Paid plan decision ($5/mo → 1M reads/day).
 - **Production hostnames:** `sportsignal.ir` (apex Custom Domain),
   `football.sportsignal.ir` (301→apex except `/webhook`,`/api/`,`/admin`),
@@ -126,11 +128,12 @@ the data-dependent gaps are the owner's next phase.)
 
 ## Open follow-ups
 
-- **The post-quota-reset verification jobs (re-scheduled this session after
-  the original was found missing from the scheduler; recreated as a
-  self-deleting poller + a backup one-time trigger when the scheduler's
-  clock skew surfaced):** the S17+S18 page-level live verification + the
-  `seo(s17-verify)` docs commit + the S19 `/healthz ok:true` confirmation.
+- **The post-quota-reset verification jobs — DONE (2026-11-18 ~11:19
+  UTC):** the S17+S18 page-level live verification passed every check
+  (FAQPage nodes, the editorial placement order, the byte-frozen
+  title/H1, the with-venue 4-Q / no-venue 3-Q match pages) + the S19
+  `/healthz ok:true` confirmation — the `seo(s17-verify)` docs commit;
+  the self-deleting jobs removed from the scheduler.
 - **The Nov 20+ first-natural-goal watch:** Bayern–Köln Friday 19:30 UTC —
   the first live goal alert under the new layer (with followed teams);
   check the D1 `notified_v1` `goal:*` rows + the delivery ledger after the

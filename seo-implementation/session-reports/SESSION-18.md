@@ -98,12 +98,24 @@ untouched).
   `version: 13.271.0-content` — the new version IS serving production traffic
   at 100%.
 - **The page-level live verification — BLOCKED by the KV read-quota
-  exhaustion** (the same condition the S17 deploy hit: the quota crossed
-  ~11:05 UTC Nov 17 and resets at UTC midnight; `/healthz ok:false` +
-  `pool_matches:0`, the detail pages 404). The S17 scheduled 00:20 UTC job
-  will complete BOTH the S17 + the S18 page-level checks (the same pages);
-  the code path is proven by the 29/29 harness + the 3,789-gate suite + the
-  local dev smoke.
+  exhaustion at deploy time, COMPLETED at the reset (2026-11-18 ~11:19
+  UTC; the `seo(s17-verify)` commit).** The live evidence (the same pages
+  the harness pins, against production after the UTC-midnight reset):
+  `/teams/barcelona` HTTP 200 with the editorial card «وضعیت فصل بارسلونا»
+  in the pinned order `answercard` < `editorialcard` < `faqcard`
+  (byte offsets 76460 < 92954 < 93478 in the served HTML) + the S17
+  FAQPage node + the byte-frozen title/H1 unchanged;
+  `/competitions/la-liga` HTTP 200 with the editorial card «تصویر کلی
+  لالیگا» in the pinned order answercard < standings (`stbox`) <
+  editorialcard < the fixtures list («بازی‌های پیش‌رو») (82939 < 83175 <
+  89937 < 90554) + the byte-frozen title «لالیگا — برنامه بازی‌های بزرگ
+  پیش‌رو | اسپرت سیگنال»; the editorial body itself carries the title-race
+  read with LIVE standings (صدر: بارسلونا ۳۳ امتیاز + the 3-point gap +
+  رئال مادرید/اتلتیکو مادرید 2nd/3rd — the live table differs from the
+  seed's, as expected: the pinned contract is the STRUCTURE, the data rides
+  the same rows the visible table renders) + the coverage note + the
+  football-data.org source note. **S18 status: deployed + version-verified
+  live + page-verified live.**
 
 ## 7. Cloudflare budget
 

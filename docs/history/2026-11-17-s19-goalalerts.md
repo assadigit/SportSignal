@@ -151,8 +151,11 @@ backlog (DECISIONS S19-5) with the per-match subscription UX
 - **Live-verified (deploy level):** `/healthz` reports `version:
   13.272.0-goalert` — the new version IS serving production traffic at
   100%; the homepage serves 200. The `ok:false` + `pool_matches:0` fields
-  are the STILL-ACTIVE KV read-quota exhaustion (resets UTC midnight; the
-  re-scheduled 00:20 UTC job re-verifies `ok:true` after the reset).
+  were the STILL-ACTIVE KV read-quota exhaustion at deploy time — **the
+  post-reset confirmation (2026-11-18 ~11:19 UTC): `/healthz` `ok:true` +
+  `pool_matches:342` + `version: 13.272.0-goalert`** — the deploy-level
+  verification is complete (the `seo(s17-verify)` docs commit records it
+  together with the S17/S18 page-level checks).
 - **Bot surface (read-only, no messages sent):** `getMe` ok (the bot is
   alive); `getWebhookInfo` ok — the webhook `https://football.sportsignal.ir/webhook`,
   0 pending updates, no errors (the command surface incl. `/follow` is
