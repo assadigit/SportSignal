@@ -116,7 +116,13 @@ function workerSrc() {
     // orchestrator layer that imports them all. Order within the group keeps
     // the flat-eval dependency direction acyclic (function decls hoist, but
     // keep it obvious). provSeg15 in check-reliability spans breaker→telegram.
-    "provider-breaker.ts", "provider-wikipedia.ts", "provider-sportscore.ts", "provider-tsp.ts", "provider-fd.ts", "match-pool.ts", "provider-cups.ts", "providers.ts",
+    // v13.273-dayhub (S20): provider-intl.ts (the senior-international day
+    // fill — the emptiness-gated scan + the hygiene law) sits right after
+    // its sportScoreDay dependency; consumed by providers.ts (the full-sweep
+    // hook + the live-sweep sanitize) and cron-pool.ts (the cadence
+    // relevance) — both below it in the concat. check-s20-dayhubs grabs its
+    // predicates whole for the behavioral gates.
+    "provider-breaker.ts", "provider-wikipedia.ts", "provider-sportscore.ts", "provider-intl.ts", "provider-tsp.ts", "provider-fd.ts", "match-pool.ts", "provider-cups.ts", "providers.ts",
     "telegram.ts", "composers.ts",
     // v13.230-channelbase: the Telegram Channel Mirror foundation — the
     // destination model + the D1 channel_posts_v1 write-first claim + the

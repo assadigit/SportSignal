@@ -106,6 +106,13 @@ function hasSelectedTeam() { return false; }
 function isMasterClash() { return false; }
 function providerSuspended() { return false; }
 function clearProviderSuspension() {}
+// v13.273-dayhub (S20): the live sweep's sportscore merge now runs through
+// sanitizeIntlRows (the intl hygiene law) + reads INTL_DAY_CODES for the
+// live eligibility set. Stubbed here (identity — the club-row pass-through
+// semantics this harness tests); the REAL hygiene has its own dedicated
+// behavioral gates in check-s20-dayhubs.js (the module eval pattern).
+function sanitizeIntlRows(rows) { return rows || []; }
+var INTL_DAY_CODES = ["INTL_FR", "AFCON_Q", "CONCACAF_NL", "UEFA_NL"];
 function fetchPglTableFromWikipedia() { return null; }
 function fetchJSON() { return null; }
 function getNowTehran(env) { return new Date(); }

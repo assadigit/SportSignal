@@ -4,7 +4,7 @@
 // The individual provider clients live in provider-*.ts; the KV pool
 // persistence lives in match-pool.ts (v13.74-providersplit).
 import { CONFIG } from "./config";
-import { SPORTSCORE_SLUGS, TSP_LEAGUE_IDS, CUP_TSP_IDS } from "./tables";
+import { SPORTSCORE_SLUGS, TSP_LEAGUE_IDS, CUP_TSP_IDS, INTL_DAY_CODES } from "./tables";
 import type { Env } from "./types";
 import { fetchJSON, fetchWithRetry, subrequestCount } from "./utils";
 import { normalizeTeamName } from "./teams";
@@ -15,6 +15,7 @@ import { getRegisteredChats } from "./users";
 import { sendTelegram } from "./telegram";
 import { providerSuspended, suspendProvider } from "./provider-breaker";
 import { fetchFootballData } from "./provider-fd";
+import { fetchIntlDayFill, sanitizeIntlRows, isIntlDayCode } from "./provider-intl";
 import { tspEventToMatch, fetchTheSportsDB } from "./provider-tsp";
 import { sportScoreDay, fetchSportScore } from "./provider-sportscore";
 import { cacheMatches, getCachedMatches } from "./match-pool";
@@ -213,7 +214,12 @@ export async function fetchLiveSweep(env: Env, cachedPool) {
       // (the 429 penalty box) sportscore becomes its only live source.
       const nowMs = Date.now();
       const SS_LIVE_BACK = 6 * 36e5, SS_LIVE_FWD = 3 * 36e5;
-      const SS_LIVE_ELIGIBLE = ["EL", "ECL", "BL1", "FA_CUP", "EFL_CUP", "CDR", "COPPA_ITALIA", "PGL", "AL"];
+      // v13.273-dayhub (S20-5): the four senior-intl codes join the live
+      // eligibility — an in-flight international (kickoff in [-6h,+3h] or
+      // already live) arms its slug so the 10-min live sweep refreshes its
+      // score, exactly like an EL evening. Internationals still never
+      // notify (shouldNotify), this is score/status freshness only.
+      const SS_LIVE_ELIGIBLE = ["EL", "ECL", "BL1", "FA_CUP", "EFL_CUP", "CDR", "COPPA_ITALIA", "PGL", "AL", ...INTL_DAY_CODES];
       const eligible = new Set(SS_LIVE_ELIGIBLE);
       const need = new Set();
       for (const m of pool) {
@@ -226,8 +232,14 @@ export async function fetchLiveSweep(env: Env, cachedPool) {
       }
       if (need.size) {
         const ss = await fetchSportScore(env, { fromDays: 1, toDays: 0, slugs: [...need] });
-        ssCount = ss.length;
-        fetched.push(...ss);
+        // v13.273-dayhub (S20-6): the hygiene law applies to the LIVE
+        // sweep's intl rows too — the same sportscore feed carries the
+        // reversed duplicates + youth/women noise, and this merge is what
+        // an in-window international refreshes from. Club-coded rows pass
+        // through sanitizeIntlRows untouched.
+        const ssClean = sanitizeIntlRows(ss);
+        ssCount = ssClean.length;
+        fetched.push(...ssClean);
       } else {
         console.log("\u23ED\uFE0F sportscore live sweep: no eligible in-window pool match \u2014 0 calls (was 18)");
       }
@@ -286,9 +298,32 @@ export async function fetchMatchesFromAPI(env: Env) {
       console.error(`\u274C Source ${s.name} failed: ` + e.message);
     }
   }
+  // v13.273-dayhub (S20-3): THE EMPTINESS-GATED SENIOR-INTERNATIONAL DAY
+  // FILL — the four intl slugs (friendlies / AFCON / CONCACAF NL / UEFA NL)
+  // scan [today-1d, tomorrow] ONLY when no CLUB match kicks off in
+  // [now-1d, now+1d] (the gate tests the sweep's fetched CLUB rows only —
+  // the FD-4 comps deliberately do not count, and the intl rows it returns
+  // never close the gate; club days pay zero extra sportscore calls, the
+  // 44-metered budget-stop stays the hard backstop). The rows pass the
+  // HYGIENE LAW inside the fill (senior-men filter + unordered-pair+date
+  // collapse) BEFORE they can reach the pool or any page.
+  const intlRows = await fetchIntlDayFill(env, [...merged.values()]);
+  if (intlRows.length) {
+    for (const x of intlRows) {
+      const k = `${x.competition.code}|${normalizeTeamName(x.homeTeam.name)}|${normalizeTeamName(x.awayTeam.name)}|${(x.utcDate || "").slice(0, 10)}`;
+      if (!merged.has(k)) merged.set(k, x);
+    }
+    used.push("intlfill");
+    console.log(`\u2705 intl day-fill contributed ${intlRows.length} rows (pool ${merged.size})`);
+  }
   let matches = canonDedupe([...merged.values()]);
   let usedSource = used.join("+");
-  if (matches.length && !matches.some(shouldNotify)) {
+  // v13.273-dayhub (S20): a sweep carrying senior-intl day-view rows is
+  // NOT a "0 followed-team matches" sweep — the cached-pool reuse guard
+  // must not discard the window's internationals (a deep break with no
+  // big-vs-big fixture in the ±10d window would otherwise re-drop the
+  // freshly-filled rows every sweep).
+  if (matches.length && !matches.some(shouldNotify) && !matches.some((m) => isIntlDayCode(m && m.competition && m.competition.code))) {
     const pool = await getCachedMatches(env);
     if (pool.some(shouldNotify)) {
       console.log("\u26A0\uFE0F Live pool has 0 followed-team matches \u2014 reusing cached pool");

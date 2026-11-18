@@ -16,6 +16,7 @@
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { shouldReport } from "./match-classify";
+import { isIntlDayCode } from "./provider-intl";
 import { fetchMatchesFromAPI, fetchLiveSweep, fetchLongView } from "./providers";
 import { alertPhaseError } from "./monitoring";
 import { computeFixtureSignal, decideActivity, liveSweepSlotOpen } from "./scheduler";
@@ -48,7 +49,13 @@ export async function runPoolPhase(env: Env, prevStatus, budgetHard: boolean, NO
     // v13.118-fixsched: the fixture signal over the CONSOLIDATED tier — the
     // same shouldReport set that has driven pool cadence since v13.109 (the
     // competition selection / important-match definition is UNCHANGED).
-    const relevantPool = cachedPool.filter((m) => shouldReport(m));
+    // v13.273-dayhub (S20-5): senior-intl rows (the four day-view intl
+    // codes) now count as cadence-relevant TOO — window days behave like
+    // matchdays (the 2h full sweep + the slotted/tick live sweeps), so
+    // break-day internationals keep matchday-fresh statuses and 10-min
+    // live scores instead of going stale 4-6h (the audit's §5). Bot pushes
+    // stay gated by shouldNotify — internationals never notify.
+    const relevantPool = cachedPool.filter((m) => shouldReport(m) || isIntlDayCode(m && m.competition && m.competition.code));
     // Feed health: a recent total feed failure (providers.ts writes
     // feed_fail_v1 when every source comes back empty) arms the DEGRADED
     // fallback — a FAILED sweep is never mistaken for an empty schedule.

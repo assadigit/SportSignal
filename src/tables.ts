@@ -197,8 +197,26 @@ export const SPORTSCORE_SLUGS = {
   // the fixtures API (2026-01-13: Foolad Hormozgan 0-2 Esteghlal Tehran, Shams
   // Azar Qazvin 3-0 Tractor S.C.). Display-only: never added to the near-scan
   // slug filter, so the cron/bot budget and notification semantics are flat.
-  "HAZFI_CUP": "iran-cup"
+  "HAZFI_CUP": "iran-cup",
+  // v13.273-dayhub (S20): the SENIOR-INTERNATIONAL day-view slugs (the
+  // emptiness-gated fill, provider-intl.ts — friendlies + the three
+  // continental qualifiers/leagues that play through FIFA windows). Slugs
+  // verified live 2026-11-17/18 (44 friendlies incl. Iraq–IR Iran, 18 AFCON
+  // rows, 9 CONCACAF NL, 8 UEFA NL; 5 CONCACAF rows on Nov 18). NOT in the
+  // default full-sweep slug filter (fetchSportScore's hardcoded list) — the
+  // gated fill owns when they are scanned; the LIVE sweep can pass them
+  // through opts.slugs when an in-window intl match arms SS_LIVE_ELIGIBLE.
+  "INTL_FR": "international-friendly",
+  "AFCON_Q": "caf-africa-cup-of-nations",
+  "CONCACAF_NL": "concacaf-nations-league",
+  "UEFA_NL": "uefa-nations-league"
 };
+// v13.273-dayhub (S20): the senior-international day-view CODE set — the
+// keys of the four intl slugs above. Consumers: the emptiness-gated fill
+// (provider-intl.ts), the hygiene law's code test (sanitizeIntlRows), the
+// cron-pool cadence relevance (S20-5 — window days sweep like matchdays)
+// and SS_LIVE_ELIGIBLE (in-flight internationals get 10-min live scores).
+export const INTL_DAY_CODES = ["INTL_FR", "AFCON_Q", "CONCACAF_NL", "UEFA_NL"];
 export const TSP_LEAGUE_IDS = {
   "PL": 4328,
   "BL1": 4331,

@@ -141,8 +141,8 @@ check("config.ts pins the scheduler tunables (span/grace/soon/horizon/idle/degra
   /SCHED_MAX_LIVE_SPAN_MS: 195 \* 60 \* 1e3/.test(cfgSrc) && /SCHED_CONFIRM_GRACE_MS: 45 \* 60 \* 1e3/.test(cfgSrc) && /SCHED_UPCOMING_SOON_MS: 6 \* 60 \* 60 \* 1e3/.test(cfgSrc) && /SCHED_IDLE_HORIZON_MS: 48 \* 60 \* 60 \* 1e3/.test(cfgSrc) && /SCHED_IDLE_DISCOVERY_MS: 6 \* 60 \* 60 \* 1e3/.test(cfgSrc) && /SCHED_DEGRADED_IN_MS: 2 \* 60 \* 60 \* 1e3/.test(cfgSrc) && /SCHED_DEGRADED_OUT_MS: 4 \* 60 \* 60 \* 1e3/.test(cfgSrc) && /SCHED_FEED_FAIL_MS: 12 \* 60 \* 60 \* 1e3/.test(cfgSrc) && /BAKU_WINDOW_OPEN_MIN: 13 \* 60/.test(cfgSrc) && /BAKU_WINDOW_CLOSE_MIN: 2 \* 60/.test(cfgSrc) && /KV_FEED_FAIL: "feed_fail_v1"/.test(cfgSrc));
 check("the grabbed guards' literal spans are pinned to CONFIG (no drift: pubMatch + applyLiveOverlay carry 195*6e4)",
   /Date\.now\(\) - koMs > 195 \* 6e4/.test(pmSrc) && /staleSpanMs = 195 \* 6e4/.test(pmSrc) && /195\s*\*\s*6e4/.test(pubJs));
-check("cron-pool computes the fixture signal over the CONSOLIDATED tier (shouldReport — selection unchanged)",
-  /cachedPool\.filter\(\(m\) => shouldReport\(m\)\)/.test(poolSrc) && !/import \{ shouldNotify/.test(poolSrc));
+check("cron-pool computes the fixture signal over the CONSOLIDATED tier (shouldReport — selection unchanged; v13.273-dayhub S20-5: senior-intl rows now arm the cadence too, so window days sweep like matchdays — the STRICT shouldNotify tier still never drives cadence)",
+  /cachedPool\.filter\(\(m\) => shouldReport\(m\) \|\| isIntlDayCode\(m && m\.competition && m\.competition\.code\)\)/.test(poolSrc) && !/import \{ shouldNotify/.test(poolSrc));
 check("cron-pool arms the sweepFresh gate from the MODE's interval (IDLE stretches, active keeps 2h)",
   /NOW - lastSweep < act\.sweepIntervalMs/.test(poolSrc) && /computeFixtureSignal\(relevantPool, NOW\)/.test(poolSrc) && /decideActivity\(signal, \{ nowMs: NOW, feedOk \}\)/.test(poolSrc));
 check("cron-pool keeps the #cpu1 throttle shape (sweepFresh-first, live-sweep call, quiet reuse, full-sweep adjacency)",
