@@ -133,9 +133,9 @@ check("NO red-card fabrication: the composer emits goals ONLY from score deltas 
 check("ZERO new schedulers/providers: the crons stay */10 + the 27 */4 far-cup probe; the module fetches NOTHING",
   /crons = \["\*\/10 \* \* \* \*", "27 \*\/4 \* \* \*"\]/.test(wranglerSrc) &&
   !/fetch\(/.test(goalSrc));
-check("the version triple: src/config.ts 13.273.1-dayhub + package.json 13.273.1.0 (the pin rides forward with the v13.273-dayhub release — the S44.1/S03 precedent)",
-  /export const VERSION = "13\.273\.1-dayhub";/.test(cfgSrc) &&
-  pkg.version === "13.273.1.0");
+check("the version triple: src/config.ts 13.274.0-persianalias + package.json 13.274.0.0 (the pin rides forward with the v13.274-persianalias release — the S44.1/S03 precedent)",
+  /export const VERSION = "13\.274\.0-persianalias";/.test(cfgSrc) &&
+  pkg.version === "13.274.0.0");
 check("the eval-harness bundle order carries goal-alert.ts (the harness co-evolves in the SAME commit)",
   /"goal-alert\.ts",/.test(workerOrderSrc));
 check("the notify-engine's existing types are UNTOUCHED (kickoff/result zero-regression: the same NOTIFICATION_CONFIGS table + reservation call)",

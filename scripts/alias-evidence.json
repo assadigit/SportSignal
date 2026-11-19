@@ -1,0 +1,1255 @@
+{
+  "source": "/home/z/my-project/sportsignal/seo-implementation/keyword-research/VALIDATED-KEYWORD-MAP.csv",
+  "generated": "2026-11-19",
+  "clubs": [
+    {
+      "club": "FC Barcelona",
+      "normKeys": [
+        "fcbarcelona",
+        "barcelona"
+      ],
+      "url": "/teams/barcelona",
+      "tier": "A++",
+      "aliases": [
+        "بارسا",
+        "بارسلنا"
+      ],
+      "aliasEvidence": {
+        "بارسا": [
+          {
+            "keyword": "بازی بعدی بارسا",
+            "clicks": 0,
+            "impressions": 179,
+            "position": "9.97",
+            "target": "/teams/barcelona"
+          },
+          {
+            "keyword": "بازی بعدی بارسا کی است",
+            "clicks": 1,
+            "impressions": 8,
+            "position": "7.38",
+            "target": "/teams/barcelona"
+          },
+          {
+            "keyword": "تاریخ بازی بارسا و پاری سن ژرمن",
+            "clicks": 0,
+            "impressions": 11,
+            "position": "8.45",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی برگشت بارسا و پاریس",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "1",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "تاریخ بازی بعدی بارسا",
+            "clicks": 0,
+            "impressions": 3,
+            "position": "6.67",
+            "target": "/teams/barcelona"
+          },
+          {
+            "keyword": "زمان بازی بعدی بارسا",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "7",
+            "target": "/teams/barcelona"
+          },
+          {
+            "keyword": "بازی های آینده بارسا",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "10",
+            "target": "/teams/barcelona"
+          },
+          {
+            "keyword": "بازی های پیش روی بارسا",
+            "clicks": 0,
+            "impressions": 2,
+            "position": "9",
+            "target": "/teams/barcelona"
+          },
+          {
+            "keyword": "بازی های بعدی بارسا",
+            "clicks": 0,
+            "impressions": 4,
+            "position": "10",
+            "target": "/teams/barcelona"
+          },
+          {
+            "keyword": "برنامه بازی بارسا",
+            "clicks": 0,
+            "impressions": 8,
+            "position": "9.62",
+            "target": "/teams/barcelona"
+          },
+          {
+            "keyword": "بازی بهدی بارسا",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "9",
+            "target": "/teams/barcelona"
+          },
+          {
+            "keyword": "بازی بعد بارسا",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "8",
+            "target": "/teams/barcelona"
+          },
+          {
+            "keyword": "بارسا پاریس ۲۰۲۶",
+            "clicks": 0,
+            "impressions": 6,
+            "position": "4.17",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی بارسا و پاریس 2026",
+            "clicks": 0,
+            "impressions": 6,
+            "position": "10",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "تاریخ بازی پاریس و بارسا",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "7",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "تاریخ بازی بارسا پاریس",
+            "clicks": 0,
+            "impressions": 5,
+            "position": "12",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی پاریس و بارسا کی است",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "3",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی بارسا با پاریس کی است",
+            "clicks": 0,
+            "impressions": 2,
+            "position": "6",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی بارسا و پاری سن ژرمن کی است",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "8",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "زمان بازی پاریس و بارسا",
+            "clicks": 0,
+            "impressions": 2,
+            "position": "13",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "ساعت بازی پاریس بارسا",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "14",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          }
+        ],
+        "بارسلنا": [
+          {
+            "keyword": "بازی بعدی بارسلنا",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "6",
+            "target": "/teams/barcelona"
+          }
+        ]
+      }
+    },
+    {
+      "club": "Real Madrid CF",
+      "normKeys": [
+        "realmadrid"
+      ],
+      "url": "/teams/real-madrid",
+      "tier": "A++",
+      "aliases": [
+        "رئال",
+        "رئال مادرید",
+        "رئال‌مادرید",
+        "رئال مادرید"
+      ],
+      "aliasEvidence": {
+        "رئال": [
+          {
+            "keyword": "بازی بعدی رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "9",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "بازی بعدی رئال مادرید کی هست",
+            "clicks": 0,
+            "impressions": 2,
+            "position": "7.5",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "برنامه بازی رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "11",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "زمان بازی بعدی رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "10",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "رئال مادرید مقابل آربی لایپزیگ",
+            "clicks": 0,
+            "impressions": 100,
+            "position": "16.96",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "سانتاندر مقابل رئال مادرید",
+            "clicks": 1,
+            "impressions": 62,
+            "position": "14.68",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بروسیا دورتموند مقابل رئال بتیس",
+            "clicks": 0,
+            "impressions": 11,
+            "position": "14.64",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "لیورپول مقابل ویارئال",
+            "clicks": 0,
+            "impressions": 2,
+            "position": "17.5",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "آرسنال مقابل رئال مادرید کی است",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "8",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "زمان بازی آرسنال و رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "8",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی رئال بعدی",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "11",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "ساعت بازی امروز رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "10",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "بازی چهارشنبه رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "7",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "بازی یکشنبه رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "11",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "رئال مادرید چی وقت بازی دارد",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "8",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "تاریخ بازی ارسنال و رئال",
+            "clicks": 0,
+            "impressions": 3,
+            "position": "5.67",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "تاریخ بازی رئال و آرسنال",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "5",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی رئال و آرسنال کی است",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "6",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "آرسنال رئال مادرید 2026",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "4",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "رئال مادرید مقابل آرسنال ۲۰۲۶",
+            "clicks": 1,
+            "impressions": 7,
+            "position": "4.71",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "سانتاندر مقابل رئال مادرید ساعت چند است",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "18",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "مکان تماشای باشگاه فوتبال راسینگ سانتاندر درمقابل رئال مادرید",
+            "clicks": 0,
+            "impressions": 72,
+            "position": "8.6",
+            "target": "—"
+          },
+          {
+            "keyword": "ترکیب رئال مادرید درمقابل آربی لایپزیگ",
+            "clicks": 0,
+            "impressions": 47,
+            "position": "11.02",
+            "target": "—"
+          },
+          {
+            "keyword": "بلیت رئال مادرید درمقابل آربی لایپزیگ",
+            "clicks": 0,
+            "impressions": 21,
+            "position": "10.57",
+            "target": "—"
+          }
+        ],
+        "رئال مادرید": [
+          {
+            "keyword": "بازی بعدی رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "9",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "بازی بعدی رئال مادرید کی هست",
+            "clicks": 0,
+            "impressions": 2,
+            "position": "7.5",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "برنامه بازی رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "11",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "زمان بازی بعدی رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "10",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "رئال مادرید مقابل آربی لایپزیگ",
+            "clicks": 0,
+            "impressions": 100,
+            "position": "16.96",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "سانتاندر مقابل رئال مادرید",
+            "clicks": 1,
+            "impressions": 62,
+            "position": "14.68",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "آرسنال مقابل رئال مادرید کی است",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "8",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "زمان بازی آرسنال و رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "8",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "ساعت بازی امروز رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "10",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "بازی چهارشنبه رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "7",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "بازی یکشنبه رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "11",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "رئال مادرید چی وقت بازی دارد",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "8",
+            "target": "/teams/real-madrid"
+          },
+          {
+            "keyword": "آرسنال رئال مادرید 2026",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "4",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "رئال مادرید مقابل آرسنال ۲۰۲۶",
+            "clicks": 1,
+            "impressions": 7,
+            "position": "4.71",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "سانتاندر مقابل رئال مادرید ساعت چند است",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "18",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "مکان تماشای باشگاه فوتبال راسینگ سانتاندر درمقابل رئال مادرید",
+            "clicks": 0,
+            "impressions": 72,
+            "position": "8.6",
+            "target": "—"
+          },
+          {
+            "keyword": "ترکیب رئال مادرید درمقابل آربی لایپزیگ",
+            "clicks": 0,
+            "impressions": 47,
+            "position": "11.02",
+            "target": "—"
+          },
+          {
+            "keyword": "بلیت رئال مادرید درمقابل آربی لایپزیگ",
+            "clicks": 0,
+            "impressions": 21,
+            "position": "10.57",
+            "target": "—"
+          }
+        ],
+        "رئال‌مادرید": []
+      }
+    },
+    {
+      "club": "FC Bayern München",
+      "normKeys": [
+        "bayernmunich",
+        "bayernmunchen"
+      ],
+      "url": "/teams/bayern-munich",
+      "tier": "A+",
+      "aliases": [
+        "بایرن",
+        "بایرن مونیخ",
+        "بایرن‌مونیخ"
+      ],
+      "aliasEvidence": {
+        "بایرن": [
+          {
+            "keyword": "بازی بعدی بایرن مونیخ",
+            "clicks": 0,
+            "impressions": 37,
+            "position": "7.49",
+            "target": "/teams/bayern-munich"
+          },
+          {
+            "keyword": "بازی بعدی بایرن",
+            "clicks": 0,
+            "impressions": 16,
+            "position": "7.94",
+            "target": "/teams/bayern-munich"
+          },
+          {
+            "keyword": "بازی بعدی بایرن مونیخ در لیگ قهرمانان",
+            "clicks": 0,
+            "impressions": 12,
+            "position": "8.25",
+            "target": "/teams/bayern-munich"
+          },
+          {
+            "keyword": "برنامه بازی بایرن مونیخ",
+            "clicks": 0,
+            "impressions": 5,
+            "position": "7.2",
+            "target": "/teams/bayern-munich"
+          },
+          {
+            "keyword": "بایرن مقابل آرسنال",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "16",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "برنامه بازی های بایرن مونیخ",
+            "clicks": 0,
+            "impressions": 4,
+            "position": "6.5",
+            "target": "/teams/bayern-munich"
+          },
+          {
+            "keyword": "برنامه بازی بایرن",
+            "clicks": 0,
+            "impressions": 4,
+            "position": "6.5",
+            "target": "/teams/bayern-munich"
+          },
+          {
+            "keyword": "برنامه بازیهای بایرن مونیخ",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "9",
+            "target": "/teams/bayern-munich"
+          }
+        ],
+        "بایرن مونیخ": [
+          {
+            "keyword": "بازی بعدی بایرن مونیخ",
+            "clicks": 0,
+            "impressions": 37,
+            "position": "7.49",
+            "target": "/teams/bayern-munich"
+          },
+          {
+            "keyword": "بازی بعدی بایرن مونیخ در لیگ قهرمانان",
+            "clicks": 0,
+            "impressions": 12,
+            "position": "8.25",
+            "target": "/teams/bayern-munich"
+          },
+          {
+            "keyword": "برنامه بازی بایرن مونیخ",
+            "clicks": 0,
+            "impressions": 5,
+            "position": "7.2",
+            "target": "/teams/bayern-munich"
+          },
+          {
+            "keyword": "برنامه بازی های بایرن مونیخ",
+            "clicks": 0,
+            "impressions": 4,
+            "position": "6.5",
+            "target": "/teams/bayern-munich"
+          },
+          {
+            "keyword": "برنامه بازیهای بایرن مونیخ",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "9",
+            "target": "/teams/bayern-munich"
+          }
+        ],
+        "بایرن‌مونیخ": []
+      }
+    },
+    {
+      "club": "Manchester City FC",
+      "normKeys": [
+        "manchestercity"
+      ],
+      "url": "/teams/manchester-city",
+      "tier": "A+",
+      "aliases": [
+        "من سیتی",
+        "منچستر سیتی",
+        "منچسترسیتی"
+      ],
+      "aliasEvidence": {
+        "من سیتی": [
+          {
+            "keyword": "بازی بعدی من سیتی",
+            "clicks": 0,
+            "impressions": 2,
+            "position": "6",
+            "target": "/teams/manchester-city"
+          }
+        ],
+        "منچستر سیتی": [
+          {
+            "keyword": "بازی بعدی منچستر سیتی",
+            "clicks": 0,
+            "impressions": 17,
+            "position": "7.12",
+            "target": "/teams/manchester-city"
+          },
+          {
+            "keyword": "بازی بارسلونا و منچستر سیتی کی است",
+            "clicks": 0,
+            "impressions": 17,
+            "position": "6.06",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "تاریخ بازی بارسلونا و منچستر سیتی",
+            "clicks": 2,
+            "impressions": 20,
+            "position": "3.7",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بارسلونا مقابل منچستر سیتی 2026",
+            "clicks": 6,
+            "impressions": 103,
+            "position": "3.25",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "منچستر سیتی مقابل بارسلونا ۲۰۲۶",
+            "clicks": 0,
+            "impressions": 7,
+            "position": "6.14",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بارسلونا مقابل منچستر سیتی ۲۰۲۵",
+            "clicks": 0,
+            "impressions": 21,
+            "position": "6.24",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "مکان تماشای منچستر سیتی درمقابل باشگاه فوتبال برایتون اند هوو آلبیون",
+            "clicks": 0,
+            "impressions": 101,
+            "position": "8.8",
+            "target": "—"
+          }
+        ],
+        "منچسترسیتی": [
+          {
+            "keyword": "بازی بعدی منچسترسیتی",
+            "clicks": 0,
+            "impressions": 3,
+            "position": "7.33",
+            "target": "/teams/manchester-city"
+          }
+        ]
+      }
+    },
+    {
+      "club": "Arsenal FC",
+      "normKeys": [
+        "arsenal"
+      ],
+      "url": "/teams/arsenal",
+      "tier": "A+",
+      "aliases": [
+        "ارسنال",
+        "آرسنال"
+      ],
+      "aliasEvidence": {
+        "ارسنال": [
+          {
+            "keyword": "بازی بعدی ارسنال",
+            "clicks": 0,
+            "impressions": 10,
+            "position": "10.1",
+            "target": "/teams/arsenal"
+          },
+          {
+            "keyword": "تاریخ بازی ارسنال و رئال",
+            "clicks": 0,
+            "impressions": 3,
+            "position": "5.67",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          }
+        ],
+        "آرسنال": [
+          {
+            "keyword": "بازی بعدی آرسنال",
+            "clicks": 0,
+            "impressions": 14,
+            "position": "9.14",
+            "target": "/teams/arsenal"
+          },
+          {
+            "keyword": "بازی بعدی آرسنال در لیگ برتر انگلیس",
+            "clicks": 0,
+            "impressions": 15,
+            "position": "8.8",
+            "target": "/teams/arsenal"
+          },
+          {
+            "keyword": "بازی بعدی آرسنال در لیگ قهرمانان اروپا",
+            "clicks": 0,
+            "impressions": 4,
+            "position": "7.75",
+            "target": "/teams/arsenal"
+          },
+          {
+            "keyword": "بایرن مقابل آرسنال",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "16",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "آرسنال مقابل رئال مادرید کی است",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "8",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "زمان بازی آرسنال و رئال مادرید",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "8",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "تاریخ بازی رئال و آرسنال",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "5",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی رئال و آرسنال کی است",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "6",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "آرسنال رئال مادرید 2026",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "4",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "رئال مادرید مقابل آرسنال ۲۰۲۶",
+            "clicks": 1,
+            "impressions": 7,
+            "position": "4.71",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "آرسنال مقابل هال سیتی",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "36",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          }
+        ]
+      }
+    },
+    {
+      "club": "Liverpool FC",
+      "normKeys": [
+        "liverpool"
+      ],
+      "url": "/teams/liverpool",
+      "tier": "A+",
+      "aliases": [
+        "لیورپول"
+      ],
+      "aliasEvidence": {
+        "لیورپول": [
+          {
+            "keyword": "بازی بعدی لیورپول",
+            "clicks": 0,
+            "impressions": 24,
+            "position": "7.21",
+            "target": "/teams/liverpool"
+          },
+          {
+            "keyword": "برنامه بازی های لیورپول",
+            "clicks": 0,
+            "impressions": 9,
+            "position": "9.78",
+            "target": "/teams/liverpool"
+          },
+          {
+            "keyword": "بازی بعدی لیورپول در لیگ قهرمانان اروپا",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "6",
+            "target": "/teams/liverpool"
+          },
+          {
+            "keyword": "لیورپول مقابل ویارئال",
+            "clicks": 0,
+            "impressions": 2,
+            "position": "17.5",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          }
+        ]
+      }
+    },
+    {
+      "club": "FC Internazionale Milano",
+      "normKeys": [
+        "intermilan",
+        "internazionale"
+      ],
+      "url": "/teams/internazionale-milano",
+      "tier": "A+",
+      "aliases": [
+        "اینتر",
+        "اینتر میلان",
+        "اینترمیلان"
+      ],
+      "aliasEvidence": {
+        "اینتر": [
+          {
+            "keyword": "بازی بعدی اینترمیلان",
+            "clicks": 0,
+            "impressions": 22,
+            "position": "8.82",
+            "target": "/teams/internazionale-milano"
+          },
+          {
+            "keyword": "بازی بعدی اینتر",
+            "clicks": 0,
+            "impressions": 22,
+            "position": "9.41",
+            "target": "/teams/internazionale-milano"
+          }
+        ],
+        "اینتر میلان": [],
+        "اینترمیلان": [
+          {
+            "keyword": "بازی بعدی اینترمیلان",
+            "clicks": 0,
+            "impressions": 22,
+            "position": "8.82",
+            "target": "/teams/internazionale-milano"
+          }
+        ]
+      }
+    },
+    {
+      "club": "AC Milan",
+      "normKeys": [
+        "acmilan"
+      ],
+      "url": "/teams/ac-milan",
+      "tier": "A+",
+      "aliases": [
+        "آ.ث. میلان",
+        "میلان",
+        "آث میلان",
+        "آث‌میلان"
+      ],
+      "aliasEvidence": {
+        "آ.ث. میلان": [],
+        "میلان": [
+          {
+            "keyword": "بازی بعدی اینترمیلان",
+            "clicks": 0,
+            "impressions": 22,
+            "position": "8.82",
+            "target": "/teams/internazionale-milano"
+          },
+          {
+            "keyword": "بازی بعدی میلان",
+            "clicks": 0,
+            "impressions": 6,
+            "position": "6.83",
+            "target": "/teams/ac-milan"
+          },
+          {
+            "keyword": "بازی میلان",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "10",
+            "target": "/teams/ac-milan"
+          }
+        ],
+        "آث میلان": [],
+        "آث‌میلان": []
+      }
+    },
+    {
+      "club": "Paris Saint-Germain",
+      "normKeys": [
+        "parissaintgermain"
+      ],
+      "url": "/teams/paris-saint-germain",
+      "tier": "A",
+      "aliases": [
+        "پی‌اس‌جی",
+        "پی اس جی",
+        "PSG",
+        "پاری سن ژرمن",
+        "پاری‌سن‌ژرمن",
+        "پاریسن ژرمن",
+        "پاریس ژرمن"
+      ],
+      "aliasEvidence": {
+        "پی‌اس‌جی": [
+          {
+            "keyword": "لو آور مقابل پی‌اس‌جی",
+            "clicks": 0,
+            "impressions": 16,
+            "position": "18.56",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          }
+        ],
+        "پی اس جی": [],
+        "PSG": [],
+        "پاری سن ژرمن": [
+          {
+            "keyword": "بازی بعدی پاری سن ژرمن",
+            "clicks": 0,
+            "impressions": 2,
+            "position": "6.5",
+            "target": "/teams/paris-saint-germain"
+          },
+          {
+            "keyword": "تاریخ بازی بارسا و پاری سن ژرمن",
+            "clicks": 0,
+            "impressions": 11,
+            "position": "8.45",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "زمان بازی بارسلونا و پاری سن ژرمن",
+            "clicks": 0,
+            "impressions": 17,
+            "position": "9.41",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "تاریخ بازی بارسلونا و پاری سن ژرمن",
+            "clicks": 0,
+            "impressions": 8,
+            "position": "8.88",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "تاریخ بازی بارسلونا پاری سن ژرمن",
+            "clicks": 0,
+            "impressions": 3,
+            "position": "9",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی بارسا و پاری سن ژرمن کی است",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "8",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی بارسلونا و پاری سن ژرمن کی است",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "10",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          }
+        ],
+        "پاری‌سن‌ژرمن": [],
+        "پاریسن ژرمن": [
+          {
+            "keyword": "بازی بعدی پاریسن ژرمن",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "10",
+            "target": "/teams/paris-saint-germain"
+          }
+        ],
+        "پاریس ژرمن": [
+          {
+            "keyword": "بازی بعدی پاریس ژرمن",
+            "clicks": 0,
+            "impressions": 6,
+            "position": "7",
+            "target": "/teams/paris-saint-germain"
+          }
+        ]
+      }
+    },
+    {
+      "club": "Manchester United FC",
+      "normKeys": [
+        "manchesterunited"
+      ],
+      "url": "/teams/manchester-united",
+      "tier": "A",
+      "aliases": [
+        "من یونایتد",
+        "منچستریونایتد",
+        "منچستر یونایتد",
+        "منچستر"
+      ],
+      "aliasEvidence": {
+        "من یونایتد": [],
+        "منچستریونایتد": [],
+        "منچستر یونایتد": [
+          {
+            "keyword": "کومو مقابل منچستر یونایتد",
+            "clicks": 0,
+            "impressions": 2,
+            "position": "45",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی بعدی منچستر یونایتد",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "11",
+            "target": "/teams/manchester-united"
+          },
+          {
+            "keyword": "بازی منچستر یونایتد امشب ساعت چنده",
+            "clicks": 0,
+            "impressions": 3,
+            "position": "5.67",
+            "target": "/teams/manchester-united"
+          },
+          {
+            "keyword": "ترکیب اسپورتینگ درمقابل منچستر یونایتد",
+            "clicks": 0,
+            "impressions": 8,
+            "position": "10.75",
+            "target": "—"
+          }
+        ],
+        "منچستر": [
+          {
+            "keyword": "بازی بعدی منچستر سیتی",
+            "clicks": 0,
+            "impressions": 17,
+            "position": "7.12",
+            "target": "/teams/manchester-city"
+          },
+          {
+            "keyword": "بازی بارسلونا و منچستر سیتی کی است",
+            "clicks": 0,
+            "impressions": 17,
+            "position": "6.06",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "تاریخ بازی بارسلونا و منچستر سیتی",
+            "clicks": 2,
+            "impressions": 20,
+            "position": "3.7",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "کومو مقابل منچستر یونایتد",
+            "clicks": 0,
+            "impressions": 2,
+            "position": "45",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بارسلونا مقابل منچستر سیتی 2026",
+            "clicks": 6,
+            "impressions": 103,
+            "position": "3.25",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بازی بعدی منچستر یونایتد",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "11",
+            "target": "/teams/manchester-united"
+          },
+          {
+            "keyword": "بازی بعدی منچسترسیتی",
+            "clicks": 0,
+            "impressions": 3,
+            "position": "7.33",
+            "target": "/teams/manchester-city"
+          },
+          {
+            "keyword": "بازی منچستر یونایتد امشب ساعت چنده",
+            "clicks": 0,
+            "impressions": 3,
+            "position": "5.67",
+            "target": "/teams/manchester-united"
+          },
+          {
+            "keyword": "منچستر سیتی مقابل بارسلونا ۲۰۲۶",
+            "clicks": 0,
+            "impressions": 7,
+            "position": "6.14",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "بارسلونا مقابل منچستر سیتی ۲۰۲۵",
+            "clicks": 0,
+            "impressions": 21,
+            "position": "6.24",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          },
+          {
+            "keyword": "مکان تماشای منچستر سیتی درمقابل باشگاه فوتبال برایتون اند هوو آلبیون",
+            "clicks": 0,
+            "impressions": 101,
+            "position": "8.8",
+            "target": "—"
+          },
+          {
+            "keyword": "ترکیب اسپورتینگ درمقابل منچستر یونایتد",
+            "clicks": 0,
+            "impressions": 8,
+            "position": "10.75",
+            "target": "—"
+          }
+        ]
+      }
+    },
+    {
+      "club": "Borussia Dortmund",
+      "normKeys": [
+        "borussiadortmund"
+      ],
+      "url": "/teams/borussia-dortmund",
+      "tier": "A",
+      "aliases": [
+        "دورتموند",
+        "بروسیا دورتموند",
+        "بوروسیا دورتموند"
+      ],
+      "aliasEvidence": {
+        "دورتموند": [
+          {
+            "keyword": "بازی بعدی دورتموند",
+            "clicks": 0,
+            "impressions": 8,
+            "position": "7.12",
+            "target": "/teams/borussia-dortmund"
+          },
+          {
+            "keyword": "بروسیا دورتموند مقابل رئال بتیس",
+            "clicks": 0,
+            "impressions": 11,
+            "position": "14.64",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          }
+        ],
+        "بروسیا دورتموند": [
+          {
+            "keyword": "بروسیا دورتموند مقابل رئال بتیس",
+            "clicks": 0,
+            "impressions": 11,
+            "position": "14.64",
+            "target": "/matches/{home}-vs-{away}-{YYYY-MM-DD}"
+          }
+        ],
+        "بوروسیا دورتموند": []
+      }
+    },
+    {
+      "club": "Club Atlético de Madrid",
+      "normKeys": [
+        "atleticomadrid"
+      ],
+      "url": "/teams/club-atletico-de-madrid",
+      "tier": "A",
+      "aliases": [
+        "اتلتیکو",
+        "اتلتیکو مادرید"
+      ],
+      "aliasEvidence": {
+        "اتلتیکو": [
+          {
+            "keyword": "بازی بعدی اتلتیکو مادرید",
+            "clicks": 0,
+            "impressions": 4,
+            "position": "10.5",
+            "target": "/teams/club-atletico-de-madrid"
+          }
+        ],
+        "اتلتیکو مادرید": [
+          {
+            "keyword": "بازی بعدی اتلتیکو مادرید",
+            "clicks": 0,
+            "impressions": 4,
+            "position": "10.5",
+            "target": "/teams/club-atletico-de-madrid"
+          }
+        ]
+      }
+    },
+    {
+      "club": "Chelsea FC",
+      "normKeys": [
+        "chelsea"
+      ],
+      "url": "/teams/chelsea",
+      "tier": "A",
+      "aliases": [
+        "چلسی"
+      ],
+      "aliasEvidence": {
+        "چلسی": [
+          {
+            "keyword": "بازی بعدی چلسی",
+            "clicks": 0,
+            "impressions": 1,
+            "position": "11",
+            "target": "/teams/chelsea"
+          }
+        ]
+      }
+    }
+  ]
+}

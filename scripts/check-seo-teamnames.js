@@ -81,11 +81,19 @@ for (const [t, want] of altCases) {
 if (altOk) ok("alternateName arrays carry both spellings (SEO first, dictionary after, row faName last)");
 
 // behavior: control teams pass through untouched (byte-identity class)
+// PERSIAN-CLUB-ALIAS-SEO (2026-11-19): the control ROSTER swaps Real Madrid
+// and PSG for untouched teams. The former controls (Real Madrid CF, Paris
+// Saint-Germain FC) now carry GSC-evidenced SEO_EXTRA_ALIASES aliases
+// («رئال», «پی‌اس‌جی»…) that ride the JSON-LD alternateName array by
+// design — those arrays are gated explicitly by check-seo-persian-alias.js
+// (including the byte-frozen faName/seoTeamAltName assertions). The law
+// THIS gate enforces is unchanged: faName byte-identical, NO override
+// entry, no alias leak for non-aliased teams.
 const controls = [
   { name: "Chelsea FC", faName: "چلسی" },
-  { name: "Real Madrid CF", faName: "رئال مادرید" },
   { name: "SC Freiburg", faName: "فرایبورگ" },
-  { name: "Paris Saint-Germain FC", faName: "پاری سن ژرمن" }
+  { name: "Villarreal CF", faName: "ویارئال" },
+  { name: "Valencia CF", faName: "والنسیا" }
 ];
 let ctrlOk = true;
 for (const t of controls) {

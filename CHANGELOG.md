@@ -4,6 +4,54 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# v13.274.0-persianalias — the Persian club-alias SEO layer: the evidenced 13-club alias dictionary + the ambiguity-guarded resolver (2026-11-19, `main`)
+
+The PERSIAN-CLUB-ALIAS-SEO-SPEC task (repository root). The freeze-safe
+S11 pattern — GSC-evidenced Persian aliases riding the JSON-LD
+alternateName arrays ONLY — extends from its 1-club seed (Barcelona
+«بارسا») to the evidenced 9-club dictionary:
+
+- **SEO_EXTRA_ALIASES (src/seo/team-names.ts)** — «رئال» (Real Madrid,
+  GSC «بازی رئال بعدی» + the آرسنال matchup rows), «بایرن» (16 impr pos
+  7.94), «من سیتی» + «منچستر سیتی» (2 + 286 impr), «ارسنال» (the
+  no-madda spelling, 13 impr), «اینتر» + «اینترمیلان» (44 impr combined),
+  «میلان» (7 impr), «پی‌اس‌جی» + «پاریسن ژرمن» (16 impr +
+  autocomplete), «بروسیا دورتموند» (11 impr). Every entry cites its GSC
+  evidence inline (the S-05 no-invented-data rule); the ambiguous bare
+  strings (اینتر/میلان/منچستر/پاریس/اتلتیکو) ride ENTITY-SCOPED only —
+  a schema.org alternateName is entity metadata, never a query router;
+  the deferred candidates (من یونایتد, بوروسیا دورتموند, بارسلنا, the
+  ZWNJ joins, Latin PSG) stay research-only. Liverpool/Chelsea gain
+  NOTHING (their canonical names have no evidenced variant).
+- **src/seo/persian-alias.ts (NEW)** — the SEO-only query resolver: the
+  ambiguity law («اینتر» alone NEVER resolves — Inter Miami/اینترنت
+  collisions; the European-only «لیگ قهرمانان اروپا» phrase unlocks it,
+  a generic cup phrase does NOT), the Persian normalization folds
+  (Arabic ي/ك, ZWNJ→space, digits, dots — without merging اتلتیکو/
+  اتلتیک or بروسیا/بوروسیا), the matchup-pair resolver (query order,
+  the substring trap «میلان» inside «اینتر میلان» consumed). Zero
+  imports (the spec §8 separation law), zero KV/fetch/CPU, NOT wired
+  into any request path (research + future tooling).
+- **The additive research deliverables** — ALIAS-KEYWORD-RESEARCH-
+  2026-11-19.csv (34 evidence-labelled rows: 13 accepted, 4 deferred,
+  5 ambiguous, 5 intent rows, 7 excluded-intent rows) +
+  ALIAS-RESEARCH-REPORT-2026-11-19.md + the generators
+  (scripts/extract-alias-evidence.js, scripts/build-alias-keyword-csv.js
+  — read-only over the original VALIDATED-KEYWORD-MAP.csv, which is
+  NEVER overwritten).
+- **check-seo-persian-alias.js (NEW, 52 gates)** — alias/entity integrity,
+  URL/indexation integrity (13 canonical URLs, zero alias slugs), the
+  normalization folds, the ambiguity gates, the separation law, the
+  freeze-safety gates (the byte-frozen title/H1 ladders + fa-dict.ts
+  unchanged), the evidence law. Wired into the npm test chain. The S1-M2
+  control roster in check-seo-teamnames.js swaps Real Madrid/PSG (now
+  aliased) for Villarreal/Valencia — the byte-identity law itself is
+  unchanged.
+
+Freeze-safety: ZERO byte-frozen bytes touched (titles, H1s, descriptions,
+answer sentences, fa-dict spellings, the altNote). No deploy (the Dec 4-8
+freeze holds + the Nov 20 Bayern–Köln no-deploy windows respected).
+
 # v13.273.1-dayhub — the dayhub fix: the intl fill rides the ONLY budget slot with headroom (2026-11-18, `main`)
 
 The v13.273.0 emptiness-gated fill shipped with the intl scan hooked AFTER

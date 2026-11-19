@@ -1,7 +1,13 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
-export const VERSION = "13.273.1-dayhub";
+// v13.274-persianalias (PERSIAN-CLUB-ALIAS-SEO, 2026-11-19): the Persian
+// club-alias layer — the evidenced SEO_EXTRA_ALIASES extension (13-club
+// GSC-observed alias dictionary riding the JSON-LD alternateName arrays
+// ONLY) + the SEO-only query resolver (src/seo/persian-alias.ts — the
+// ambiguity-guarded entity resolution, never wired into any request path).
+// Freeze-safe: zero byte-frozen title/H1/description/answer bytes touched.
+export const VERSION = "13.274.0-persianalias";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",

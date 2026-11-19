@@ -59,6 +59,17 @@ const SEO_TEAM_NAME_OVERRIDES: Record<string, SeoTeamNameOverride> = {
 // Keys are normTeamKey() forms of the provider names. normTeamKey folds the
 // known provider variants ("FC Barcelona" → "fcbarcelona"; the bare "Barcelona"
 // → "barcelona") so the alias resolves for every provider spelling.
+//
+// PERSIAN-CLUB-ALIAS-SEO (2026-11-19, the additive extension): the map grew
+// from the 1-club S11 seed to the evidenced 13-club alias dictionary. The
+// SAME laws hold — every entry cites its evidence in the per-alias comment
+// (the additive research file: seo-implementation/keyword-research/
+// ALIAS-KEYWORD-RESEARCH-2026-11-19.csv, generated from the EXISTING
+// VALIDATED-KEYWORD-MAP.csv — never overwritten); ambiguous short strings
+// (اینتر/میلان/منچستر/پاریس/اتلتیکو) NEVER ride as a global normalization
+// key — an entity-scoped alternateName on the ONE canonical entity is
+// context-safe (schema.org alternateName is entity metadata, not a query
+// router); the canonical visible name stays the PRIMARY name byte.
 const SEO_EXTRA_ALIASES: Record<string, string[]> = {
   // GSC-AUDIT-BASELINE.md (the 2026-11-15 export) row:
   //   «بازی بعدی بارسا» — 0 clicks / 179 impressions / avg pos 9.97
@@ -70,7 +81,63 @@ const SEO_EXTRA_ALIASES: Record<string, string[]> = {
   // The visible faName/SEO name bytes are byte-frozen — only the JSON-LD
   // alternateName gains the alias (the Dec 4-8 freeze holds).
   fcbarcelona: ["بارسا"],
-  barcelona: ["بارسا"]
+  barcelona: ["بارسا"],
+  // Real Madrid — «رئال» (GSC: «بازی رئال بعدی» 1 impr + «تاریخ بازی ارسنال
+  // و رئال» 3 impr + «بازی رئال و آرسنال کی است» 1 impr, 2026-11-15 export;
+  // every row carries club context). Entity-scoped alternateName only — the
+  // bare «رئال» is never a global key (autocomplete: رئال بتیس/سوسیداد
+  // collisions — EVIDENCE-LOG A2 language-intent note).
+  realmadrid: ["رئال"],
+  // Bayern — «بایرن» (GSC: «بازی بعدی بایرن» 16 impr avg pos 7.94 +
+  // «برنامه بازی بایرن» 4 impr, 2026-11-15 export). The strongest
+  // non-Barcelona short form in the team-page cluster.
+  bayernmunich: ["بایرن"],
+  bayernmunchen: ["بایرن"],
+  // Manchester City — «من سیتی» (GSC: «بازی بعدی من سیتی» 2 impr avg pos 6)
+  // + the separated spelling «منچستر سیتی» (7 rows / 286 impr incl.
+  // «بارسلونا مقابل منچستر سیتی ۲۰۲۶» 103 impr, 2026-11-15 export). The
+  // dict spelling «منچسترسیتی» stays the canonical VISIBLE name byte.
+  manchestercity: ["من سیتی", "منچستر سیتی"],
+  // Arsenal — «ارسنال» without the madda (GSC: «بازی بعدی ارسنال» 10 impr +
+  // «تاریخ بازی ارسنال و رئال» 3 impr, 2026-11-15 export). The canonical
+  // visible name «آرسنال» keeps the madda (the dict byte).
+  arsenal: ["ارسنال"],
+  // Liverpool — no distinct evidenced alias («لیورپول» IS the canonical
+  // name; 4 GSC rows / 36 impr all use it). No entry — nothing to alias.
+  // Inter Milan — «اینتر» is AMBIGUOUS (EVIDENCE-LOG A2: the autocomplete
+  // head «بازی بعدی اینتر» completes to اینتر میامی / اینترنت before
+  // اینترمیلان) and «اینترمیلان» is the GSC-observed joined form
+  // («بازی بعدی اینترمیلان» 22 impr avg pos 8.82 + «بازی بعدی اینتر» 22
+  // impr — both already target /teams/internazionale-milano). Both ride as
+  // entity-scoped alternateName values of the Inter Milan entity ONLY — a
+  // schema.org alternateName never claims the bare string globally (the
+  // entity IS the disambiguator; the ambiguity guard lives in the
+  // query-normalization layer, never here).
+  internazionalemilano: ["اینتر", "اینترمیلان"],
+  intermilan: ["اینتر", "اینترمیلان"],
+  // AC Milan — «میلان» is AMBIGUOUS (the city; also the substring of
+  // «اینترمیلان»). GSC: «بازی بعدی میلان» 6 impr + «بازی میلان» 1 impr
+  // (both target /teams/ac-milan). Entity-scoped alternateName only.
+  milan: ["میلان"],
+  // PSG — «پی‌اس‌جی» (GSC: «لو آور مقابل پی‌اس‌جی» 16 impr, 2026-11-15
+  // export) + «پاریسن ژرمن» (autocomplete: «ساعت بازی بارسلونا و پاریسن
+  // ژرمن», EVIDENCE-LOG A2 fa/IR 2026-11-16 — a real Google-returned joined
+  // misspelling; a normalization INPUT, never preferred copy). The bare
+  // «پاریس» is NEVER listed (city/club ambiguity — the map's «پاریس…» rows
+  // all carry the ژرمن qualifier).
+  parissaintgermain: ["پی‌اس‌جی", "پاریسن ژرمن"],
+  // Borussia Dortmund — the full transliteration «بروسیا دورتموند»
+  // (GSC: «بروسیا دورتموند مقابل رئال بتیس» 11 impr; the canonical VISIBLE
+  // name is «دورتموند» per fa-dict). «بوروسیا دورتموند» (the other common
+  // transliteration) has ZERO rows in the current exports — deferred, NOT
+  // enabled (the no-invented-data rule).
+  borussiadortmund: ["بروسیا دورتموند"]
+  // Chelsea / Liverpool / Atlético / Manchester United — NO extra aliases:
+  // «چلسی»/«لیورپول» ARE the canonical names with no evidenced variants;
+  // «اتلتیکو» (4 impr, always as «اتلتیکو مادرید») and «من یونایتد» /
+  // «منچستریونایتد» (0 direct rows) stay deferred pending evidence. The
+  // bare «منچستر» is NEVER an alias (City/United ambiguity — every GSC row
+  // carries the full club word).
 };
 
 /**
