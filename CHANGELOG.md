@@ -4,6 +4,45 @@ All notable changes to the UCL Notifier are documented here, newest first.
 Version strings follow the value exposed by the live `/api/status` endpoint
 (see `src/worker.ts` `VERSION`).
 
+# The phase-2 freeze-lift reminder layer (docs-only, 2026-11-19, `main`)
+
+The owner's ask: "add something to github repo, to remind yourself, even if
+i forgot. like i say finish remaining work, you find it and do it on time."
+Phase 2 of the Persian-alias SEO work (the post-freeze follow-up to
+`v13.274.0-persianalias`, commit `6fd2f1d`) is blocked until the Dec 4-8
+2026 GSC measurement freeze lifts — this layer makes sure it is found and
+started on time, and never started early. Four read-only/docs-only surfaces:
+
+- **The date-gated banner** at the top of `docs/HANDOFF.md`: phase 2 starts
+  ONLY after the three unblocks — (1) Dec 9, 2026 or later; (2) the owner's
+  freeze-lift decision + the final measurement record (a date passing alone
+  is NOT proof); (3) the uploaded Dec 4-8 GSC export (absent ⇒ stop and
+  report; never fabricate metrics).
+- **The rewritten `seo-implementation/next-session-prompt.md`** — the full
+  phase-2 work order (the evidence re-derivation via
+  `scripts/extract-alias-evidence.js` against the fresh export, the
+  owner-gated S18 editorial alias mentions, the deferred candidates
+  (من یونایتد، بوروسیا دورتموند، Latin PSG، the ZWNJ joins), the gates, the
+  non-negotiables, the RUNBOOK §2 deploy ritual) — the first file a future
+  session reads for the SEO track.
+- **The scheduled workflow `.github/workflows/phase2-freeze-lift-reminder.yml`**
+  (Dec 9 + Dec 16 2026 UTC, year-guarded to Dec 2026, `issues: write` only,
+  no deploy, no secrets — the s27-lifecycle-verify pattern): opens a
+  `[PERSIAN-ALIAS-PHASE-2]` GitHub Issue carrying the complete next-session
+  prompt, so the owner gets pinged even if they forget. Dedupe-guarded (one
+  open reminder issue at a time) and completion-guarded (skips if phase 2
+  already shipped).
+- **The gate `scripts/check-phase2-freeze-lift.js`** (wired into `npm test`)
+  pinning every reminder surface (the prompt, the banner, the follow-up row,
+  the workflow's schedule + guards, this CHANGELOG entry) so the reminder
+  cannot silently rot across future sessions' doc churn.
+
+Zero runtime code, zero SEO surfaces, zero byte-frozen bytes, zero client
+assets, no version bump (docs + tooling only; the live deployment
+`5c87d8bd-2417-4b02-bbe5-db7de3328e10` @100% stays). DECISIONS PCA-2 records
+the retirement clause: when phase 2 ships, close the issue, disable the
+workflow, retire the banner + the gate the same session.
+
 # v13.274.0-persianalias — the Persian club-alias SEO layer: the evidenced 13-club alias dictionary + the ambiguity-guarded resolver (2026-11-19, `main`)
 
 The PERSIAN-CLUB-ALIAS-SEO-SPEC task (repository root). The freeze-safe

@@ -1,64 +1,92 @@
-# SportSignal — Next-Session Prompt (the Telegram alerts track continues: S20; the SEO follow-up track's page-level verification rides the 00:20 UTC job)
+# SportSignal — Next-Session Prompt (Persian-alias SEO phase 2: WAIT for the Dec 4-8 freeze lift, then finish the remaining work)
 
 Read AGENTS.md in the repo root first and follow it for the whole session.
 
-## State at the S19 close (2026-11-17)
+## ⚠️ THE STANDING RULE: phase 2 is DATE-GATED — do not start it early
 
-- The SEO follow-up track (S16-S18) is COMPLETE in code + deployed; the
-  page-level live verification was BLOCKED by the Nov 17 KV read-quota
-  exhaustion and rides the re-scheduled one-time job at
-  **2026-11-18T00:20 UTC** (the original schedule was found missing from
-  the scheduler during S19 and re-created). That job verifies `/healthz
-  ok:true` + the FAQPage/editorial cards on the live team/competition/match
-  pages and makes the `seo(s17-verify)` docs commit if all passes — check
-  its result FIRST next session; if it failed, fix THAT before anything
-  else.
-- The Telegram alerts track opened with **S19 (the live goal alerts)** —
-  DONE in code + deployed + version-verified live (`13.272.0-goalert`,
-  deployment `7c54e223…` @100%): goal events from REAL score deltas in the
-  LIVE sweep (the KV snapshot `goal_snapshots_v1` + the delta law:
-  MISSING-IS-NOT-ZERO, first-sighting seeds, fail-closed provider gaps),
-  the per-goal D1 claim `goal:<h>-<a>` in `notified_v1`, the EITHER-side
-  team-follow fan-out through the existing transport (cache-only cards,
-  Persian-first «گُل!» composition, the 6-unit/tick cap). Red-card alerts
-  are SCOPED OUT (no incident source — DECISIONS S19-3). The session
-  report: `docs/history/2026-11-17-s19-goalalerts.md`; the audit:
-  `docs/audits/2026-11-17-goal-alerts-audit.md`.
-- **The first natural live goal alert lands Nov 20+** (the international
-  break runs through Nov 19; Bayern–Köln Friday Nov 20 19:30 UTC opens the
-  window — ALSO the no-deploy M1/M2 windows). After that match: check D1
-  `notified_v1` for `goal:*` rows + `notify_deliveries_v1` verdicts — the
-  first production evidence of the layer.
+The Persian-alias SEO phase 2 (the post-freeze follow-up to commit `6fd2f1d`,
+`v13.274.0-persianalias`) is **blocked until the Dec 4-8 2026 GSC measurement
+freeze lifts (earliest Dec 9, 2026) AND the owner supplies the fresh Dec 4-8
+GSC export.** If a session lands before that: read this file, confirm the
+block below, and work on something else (the S21+ alerts backlog, or whatever
+the owner asks) — the phase-2 work order itself is frozen until the gate
+opens. A session asked to "finish remaining work" before Dec 9 finds this
+prompt first and does NOT touch the alias surfaces.
 
-## S20 (the next alerts session) — the preview, pick per owner priority
+**The THREE unblocks (all required, in order):**
 
-1. **The per-match subscription UX** — `/follow match <slug>` +
-   deep-links (`t.me/SportSignalAlertsBot?start=match_…`); the audience
-   model extends `userFollowsMatch` with a per-chat match-subscription
-   store (D1, the user-store seam). This is the S19 brief's deferred
-   Task 19-2 optional.
-2. **The channel goal posts** — mirror the goal alerts to
-   @SportSignalz (the claim-key shape extends `channelEventKeyMatch` with
-   the tuple; DISCOVERY §7 discipline; DECISIONS S19-5).
-3. **The scorer enrichment** — scorer names/minutes from the sportscore
-   per-event detail the website already fetches (a per-match extra
-   fetch — a budget decision; never invented, S19-5).
-4. **Alert pacing / quiet-hours preferences** (the S20 preview item).
-5. **Red-card alerts ONLY IF a real incident source is actually wired**
-   (a new audit first; otherwise it stays scoped out — DECISIONS S19-3).
+1. **The date:** it must be Dec 9, 2026 or later. A date passing alone is
+   NOT proof — continue to 2.
+2. **The owner's freeze-lift decision:** the owner confirms in the session
+   (or a `docs/DECISIONS.md` entry exists) that the freeze is lifted and the
+   final measurement record is in. Read `docs/HANDOFF.md` +
+   `docs/DECISIONS.md` for it.
+3. **The fresh Dec 4-8 GSC export:** the owner uploads it into the session.
+   **If absent: stop and report — NEVER fabricate metrics.** The alias
+   evidence re-derivation (scripts/extract-alias-evidence.js) runs against
+   the REAL export file only.
 
-## Standing constraints (unchanged)
+## State at the phase-1 close (2026-11-19)
 
-npm only; `npm test` exit 0 before every push (baseline **3,841 OK**);
-versioned deploys only; the free-tier budget statement (KV reads
-100k/day — the chronic exhaustion; KV writes 1,000/day; the 10ms CPU
-cliff; ~50 subrequests/tick); the Dec 4-8 freeze holds; **no deploys in
-the Nov 20 Bayern–Köln windows (M1 ~19:35 UTC, M2 ~21:35-45 UTC)**; no
-secrets in commits; the commit convention for the alerts track follows
-the bot/channel `v13.NNN-<tag>` form (the S19 precedent).
+- Phase 1 shipped as commit `6fd2f1d`, deployed `v13.274.0-persianalias`
+  (Version ID `5c87d8bd-2417-4b02-bbe5-db7de3328e10`, 2026-11-19 ~18:55 UTC,
+  live-verified: `/healthz ok:true`, all 8 aliased team pages 200 with the
+  alternateName arrays, the byte-frozen surfaces byte-identical). The full
+  close-out: `docs/HANDOFF.md` (the Persian Club-Alias SEO session block) +
+  `docs/DECISIONS.md` PCA-1.
+- `scripts/check-seo-persian-alias.js` (52 gates) rides `npm test`;
+  `scripts/persian-alias-smoke.ts` (27/27) is the manual harness.
+- `src/seo/persian-alias.ts` stays inert at runtime (imported by nothing —
+  the spec §8 separation law); wiring it is a product decision, not an SEO
+  tweak (only if the owner asks).
+- The research layer is ADDITIVE: `seo-implementation/keyword-research/
+  ALIAS-KEYWORD-RESEARCH-2026-11-19.csv` + `ALIAS-RESEARCH-REPORT-2026-11-19.md`;
+  the original `VALIDATED-KEYWORD-MAP.csv` is READ-ONLY (never overwritten).
+
+## Phase 2 — the work order (start ONLY after the three unblocks)
+
+a. **Re-derive the alias evidence.** Read the Dec 4-8 GSC export (the owner
+   uploads it — if absent, stop and report; never fabricate metrics). Run
+   scripts/extract-alias-evidence.js pointed at the new export; update the
+   ADDITIVE CSV (never overwrite the original map).
+b. **Visible copy — owner-gated.** Only if the owner approves visible-copy
+   changes: extend the S18 editorial body (src/seo/editorial.ts) with ONE
+   natural alias mention per club page (e.g. «بارسلونا (بارسا)») — no keyword
+   stuffing, no new FAQs, titles/H1s/descriptions change ONLY as the owner
+   directs.
+c. **The deferred candidates.** Re-evaluate من یونایتد، بوروسیا دورتموند،
+   Latin PSG, and the ZWNJ joins against the new evidence; enable only what
+   gained evidence, each with its evidence comment.
+d. **Optional (only if the owner asks):** wire persian-alias.ts into an
+   internal search/redirect helper — it is still inert; wiring it is a
+   product decision, not an SEO tweak.
+e. **Gates.** Add/extend gates for everything changed; `npm test` must stay
+   exit 0.
+
+## Non-negotiables (unchanged from phase 1)
+
+one canonical URL per club, no doorway pages, no unsupported intents
+(streaming/lineups/tickets/betting), the selected-team allowlist
+(`CONFIG.BIG_TEAMS_BY_LEAGUE`) untouched, no provider/KV/cron changes, never
+deploy during live-match windows (see HANDOFF standing limits), verify the
+remote before push AND before deploy (the S18b lesson), deploy via the
+RUNBOOK §2 ritual when authorized.
+
+## The reminder layer (this prompt is one surface of it)
+
+- The GitHub workflow `.github/workflows/phase2-freeze-lift-reminder.yml`
+  (scheduled Dec 9 + Dec 16, 2026 UTC, year-guarded, read-only) opens a
+  `[PERSIAN-ALIAS-PHASE-2]` issue so the owner gets pinged even if they
+  forget; the issue body carries this prompt verbatim.
+- `scripts/check-phase2-freeze-lift.js` (in `npm test`) pins all the reminder
+  surfaces so they cannot silently rot. After phase 2 ships: close the issue,
+  disable the workflow, and retire this block (the check is co-evolved the
+  same session).
+- If the owner just says "finish remaining work": find this prompt (or the
+  open `[PERSIAN-ALIAS-PHASE-2]` issue), check the three unblocks, and either
+  start phase 2 (unblocked) or report the block honestly.
 
 ## Credentials
 
-Credentials used across S14-S19, not stored. The owner supplies fresh
-tokens per session; the 00:20 UTC job needs the current ones until it
-completes.
+Credentials are re-supplied by the owner per session; never stored, never
+committed. Say "credentials used, not stored" in the report.

@@ -2,6 +2,31 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
+## ⚠️ PERSIAN-ALIAS PHASE 2 — BLOCKED UNTIL THE FREEZE LIFTS (earliest Dec 9, 2026)
+
+Phase 2 of the Persian-alias SEO work (the post-freeze follow-up to commit
+`6fd2f1d` / `v13.274.0-persianalias`) is **date-gated: do NOT start it before
+Dec 9, 2026, and do not start it on the date alone.** The THREE unblocks, in
+order: (1) it is Dec 9, 2026 or later; (2) the owner's freeze-lift decision
+and the final measurement record are in (read this file's session blocks +
+`docs/DECISIONS.md` — **a date passing alone is NOT proof**); (3) the owner
+supplies the fresh **Dec 4-8 GSC export** — if absent, stop and report; never
+fabricate metrics. The full work order (evidence re-derivation via
+`scripts/extract-alias-evidence.js`, the owner-gated S18 editorial alias
+mentions, the deferred candidates, the gates) lives in
+`seo-implementation/next-session-prompt.md`. **If the owner says "finish
+remaining work":** find that prompt, check the three unblocks, and either
+start phase 2 or report the block honestly.
+
+**The reminder layer (2026-11-19, the owner's ask):** the scheduled
+read-only workflow `.github/workflows/phase2-freeze-lift-reminder.yml`
+(Dec 9 + Dec 16 UTC, year-guarded to Dec 2026) opens a
+`[PERSIAN-ALIAS-PHASE-2]` GitHub Issue so the owner gets pinged even if they
+forget; `scripts/check-phase2-freeze-lift.js` (in `npm test`) pins all the
+reminder surfaces so they cannot silently rot. **After phase 2 ships:** close
+the issue, disable the workflow, retire the banner + the check the same
+session (the check is co-evolved with the retirement).
+
 ## This session (Persian Club-Alias SEO — 2026-11-19 — BUILT + DEPLOYED + LIVE-VERIFIED (the owner authorized the deploy later the same day; commit `6fd2f1d`, Version ID `5c87d8bd-2417-4b02-bbe5-db7de3328e10`))
 
 **The objective (the owner's PERSIAN-CLUB-ALIAS-SEO-SPEC.md, repo root):**
@@ -316,6 +341,13 @@ the data-dependent gaps are the owner's next phase.)
   scheduled-test endpoint (tooling; the harness covers tick logic).
 - The S21+ alerts backlog (per-match subscriptions, red cards IF a real
   source, quiet hours, channel goal posts, scorer enrichment).
+- **The Persian-alias phase-2 reminder layer (Dec 9, 2026):** the scheduled
+  workflow opens the `[PERSIAN-ALIAS-PHASE-2]` issue on Dec 9 (+ the Dec 16
+  backup nudge) — then phase 2 starts ONLY after the three unblocks (the
+  date, the owner's freeze-lift decision + final measurement record, the
+  uploaded Dec 4-8 GSC export — see the banner at the top of this file).
+  After phase 2 ships: close the issue, disable the workflow, retire the
+  banner + the check-phase2-freeze-lift gate the same session.
 - The post-Dec-8 freeze-lift decisions + the remaining S15-close backlog
   (unchanged, owner-driven).
 
