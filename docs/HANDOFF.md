@@ -2,7 +2,7 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
-## This session (S20 — the all-matches day pages; 2026-11-18 — BUILT + GATED + DEPLOYED @100% + the mid-session dayhub fix `13.273.1-dayhub` redeployed; the post-fill live verification rides the ~20:10 UTC full sweep + a self-checking cron poller)
+## This session (S20 — the all-matches day pages; 2026-11-18/19 — BUILT + GATED + DEPLOYED @100% + the mid-session dayhub fix `13.273.1-dayhub` + the post-fill live verification MEASURED (§2a): the today hub lists 7 rows on the FIFA-window break day — DONE)
 
 **The objective (the owner's 2026-11-18 brief):** «بازی‌های امروز»
 (`/matches/today`) and «بازی‌های فردا» (`/matches/tomorrow`) must show
@@ -82,18 +82,20 @@ widened the DATA UNIVERSE, not the page builders.
   Redeployed versioned `13.273.1-dayhub` during the IDLE window — the
   fill's first real production run = the next full sweep, **~20:10 UTC**
   (the 6h IDLE discovery cadence from the ~14:10 UTC sweep).
-  **The post-fill live verification (the tomorrow page listing the
-  Brasileirão + the internationals + the pool growth + an intl match page
-  200) rides a self-checking 30-min cron poller** (the S19
-  verification-job pattern);
-  the session report `docs/history/2026-11-18-s20-dayhubs.md` §2a will
-  carry the measured evidence. Honesty note: on 2026-11-18 all of
-  Tehran-Nov-18's internationals are FINISHED (they don't list on the
-  hubs — upcoming/live only), so the TODAY page's correct state pre-20:30
-  UTC is the honest empty state; the Brasileirão rows (22:30+ UTC
-  kickoffs = Tehran Nov 19) list on `/matches/tomorrow` from the fill
-  onward and roll onto `/matches/today` after Tehran midnight (UTC
-  20:30).
+  **The post-fill live verification (MEASURED 2026-11-19 00:48 UTC —
+  done, in §2a):** the fill ran in production on BOTH post-fix sweeps
+  (the ~20:1x UTC window [Nov 17–19] — proven by the pool-backed
+  `/matches/iraq-vs-ir-iran-2026-11-17` 200 with real content — and the
+  ~23:41 UTC window [Nov 18–20]); `/matches/today` (Tehran Nov 19)
+  lists **7 rows** (the six Brasileirão fixtures «سری آ برزیل» + the
+  fill's «بازی دوستانه ملی» row Western Springs–Tonga) with the answer
+  card «امروز ۷ بازی …» — NOT the empty state, on a FIFA-window break
+  day; pool 342 → 395 → **451**; `/matches/tomorrow` 6 rows (3 BSA +
+  Bayern–Köln + 2 more); `/matches/usa-vs-haiti-2026-11-18` 200
+  (FINISHED — kept its page, never lists as upcoming);
+  homepage//matches/sitemap re-checked with ZERO new-comp rows (the
+  side-effect map held); hygiene live-clean (no youth/women/ghost
+  rows render);
 
 ## Current state (machine)
 
@@ -118,8 +120,10 @@ widened the DATA UNIVERSE, not the page builders.
 - **Branch:** `main`. Session 20 commits: `s20-m1` (`f10ba4f`) +
   `s20-m2` (`4cbe6f3`) + `v13.273-dayhub` (`60c0fed`, the gates + the
   harness + the version triple) + the docs close-out commit (`5f5f2b4`) +
-  the dayhubfix commit (`13.273.1`). The session
-  report: `docs/history/2026-11-18-s20-dayhubs.md`.
+  the dayhubfix commit (`14f6e9d`, `13.273.1`) + the §2a post-fill
+  evidence commit (the session report's measured close-out). The session
+  report: `docs/history/2026-11-18-s20-dayhubs.md` (§2a = the measured
+  post-fill evidence).
 - **Commands:** `npm test` (must exit 0 before every push). **npm only,
   never `bun install`**. Local dev: `npx wrangler dev --config
   wrangler.dev.toml --port 8787 --local` (the local D1 needs `npx wrangler
@@ -151,12 +155,14 @@ widened the DATA UNIVERSE, not the page builders.
 ## The alerts track state
 
 Session 19 ✅ Completed + deployed + version-verified live (2026-11-17).
-Session 20 ✅ **Completed + deployed @100% (2026-11-18) — the all-matches
-day pages** (the audit + the spec + the four milestones + the gates +
-the harness + the deploy; the post-fill live verification rides the
-~19:00 UTC first full sweep + the self-checking poller; the first natural
-goal window Nov 20 will also be the first goal-alert run over the widened
-universe — BSA Friday matches now ride the same FD live sweep).
+Session 20 ✅ **Completed + deployed @100% (2026-11-18) + post-fill verified
+live (2026-11-19) — the all-matches day pages** (the audit + the spec +
+the four milestones + the gates + the harness + the deploy + the
+mid-session dayhubfix `13.273.1` + the MEASURED §2a: the today hub
+listing 7 rows on the FIFA-window break day, pool 451, both fill runs
+proven via pool-backed intl pages; the first natural goal window Nov 20
+will also be the first goal-alert run over the widened universe — BSA
+Friday matches now ride the same FD live sweep).
 Session 21+ ⬜ — the OLD S20 preview moves here: the per-match
 subscription UX (deep-links, `/follow match`), red-card alerts IF a real
 source materializes, alert pacing/quiet-hours, the channel goal posts +
@@ -169,12 +175,10 @@ the data-dependent gaps are the owner's next phase.)
 
 ## Open follow-ups
 
-- **The S20 post-fill live verification** (the 30-min self-checking cron
-  poller, in-session): confirm `/matches/tomorrow` lists the Brasileirão
-  after the ~19:00 UTC first fill, the pool growth (~380-460), an intl
-  pool-backed match page 200, the unchanged surfaces, and (after UTC
-  20:30) the BSA rows on `/matches/today`; then §2a of the session
-  report + the final TLDR. Self-deletes on completion.
+- ~~The S20 post-fill live verification~~ **DONE** (measured 2026-11-19
+  00:48 UTC, §2a of the session report: both fill runs proven, 7 rows on
+  the break-day today hub, pool 451, three intl match pages 200, the
+  side-effect map re-checked clean; both verifier cron jobs deleted).
 - **The Nov 20+ first-natural-goal watch:** Bayern–Köln Friday 19:30 UTC —
   the first live goal alert under the S19 layer (with followed teams);
   now ALSO the first goal window over the widened universe. Check the D1
