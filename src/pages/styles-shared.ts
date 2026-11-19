@@ -12,10 +12,19 @@
 // v13.134-typelight: the numeric/meta surfaces (time-digits, venue-pill,
 //   count-num, count-label) moved to Peyda at lighter weights; the theme
 //   init pins dark (the dark/light toggle is temporarily retired).
+// v13.275.1-endigits: the Peyda URLs carry the ?v=13.275 cache-bust — the
+//   patched font bytes (Latin digit codepoints now draw true Latin glyphs)
+//   changed IN PLACE under the same filenames, and /fonts/* rides a 7-day
+//   max-age; without a URL change every warm-HTTP-cache visitor (SW fetch
+//   included — the SW's plain fetch() honors the HTTP cache) would keep
+//   painting the OLD Persian-digit outlines for up to a week. The versioned
+//   URL rotates the cache key for EVERY visitor on their next load. Bump
+//   the query on every future Peyda byte change (the immutable-asset law,
+//   applied to fonts).
 
 export const THEME_INIT_SCRIPT = `<script>try{var t="dark",l=localStorage.getItem("ucl_lang")||"fa",d=document.documentElement;d.setAttribute("data-theme",t);d.setAttribute("lang",l);d.setAttribute("dir",l==="en"?"ltr":"rtl");}catch(e){}<\/script>`;
 
-export const FONT_FACES_STYLE = `<style>@font-face{font-family:'Morabba';src:url('/fonts/MorabbaVF.woff2') format('woff2');font-weight:250 900;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-ExtraBold.woff2') format('woff2');font-weight:800;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Black.woff2') format('woff2');font-weight:900;font-style:normal;font-display:swap}
+export const FONT_FACES_STYLE = `<style>@font-face{font-family:'Morabba';src:url('/fonts/MorabbaVF.woff2') format('woff2');font-weight:250 900;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Regular.woff2?v=13.275') format('woff2');font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Medium.woff2?v=13.275') format('woff2');font-weight:500;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-SemiBold.woff2?v=13.275') format('woff2');font-weight:600;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Bold.woff2?v=13.275') format('woff2');font-weight:700;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-ExtraBold.woff2?v=13.275') format('woff2');font-weight:800;font-style:normal;font-display:swap}@font-face{font-family:'Peyda';src:url('/fonts/Peyda-Black.woff2?v=13.275') format('woff2');font-weight:900;font-style:normal;font-display:swap}
 /* v13.164-matchcard: the mobile HUD card's squared techno face (the owner's
      reference card's own typography). Self-hosted latin subsets (~10KB
      each); fetched ONLY when the mobile card's rules match text — no

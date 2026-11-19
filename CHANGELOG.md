@@ -1,3 +1,32 @@
+# v13.275.1-endigits — the cache-bust: every visitor flips to Latin digits on their NEXT load (2026-11-19, `main`)
+
+The v13.275.0 follow-up, minutes after the first deploy: the patched font
+BYTES changed in place under the same `/fonts/Peyda-*.woff2` filenames, and
+`/fonts/*` rides a 7-day `max-age` HTTP policy — a warm-HTTP-cache visitor
+(including the SW's own plain `fetch()`, which honors the HTTP cache even
+after the v127 SW-cache wipe) would keep painting the OLD Persian-digit
+outlines for up to a week. The live verification caught exactly this: a
+fresh-visitor session rendered 100% Latin numerals, while the session that
+had visited pre-deploy still painted Persian digits from its disk cache.
+
+THE FIX — the immutable-asset law applied to fonts: every Peyda URL now
+carries a `?v=13.275` cache-bust query (the six `@font-face` src URLs in
+`src/pages/styles-shared.ts` `FONT_FACES_STYLE` + the two preload hrefs in
+`src/pages/public.ts` + the two in `src/seo/page-shell.ts`). The query
+rotates the browser-cache key AND the SW cache key for EVERY visitor on
+their next load — Workers Static Assets serves the same bytes regardless of
+the query string (verified live: `?v=13.275` md5 == the patched file).
+Future Peyda byte changes bump the query (the check-stats v13.133 pin now
+enforces that every Peyda URL stays versioned). Morabba/Chakra
+Petch/Poppins Digits are untouched (their bytes never changed).
+
+The three page templates changed → the byte-parity baselines re-frozen
+(`check-admin-parity --update`, the sanctioned procedure for INTENDED
+output changes). SW cache stays sportsignal-v127 (the versioned URLs are
+new cache keys; no further bump needed). Version triple
+13.275.0-endigits -> 13.275.1-endigits + package 13.275.1.0 + the
+check-stats LIVE pins + the check-s19/check-s20 version triples.
+
 # v13.275.0-endigits — the Peyda font-digit repair: EN always renders Latin numerals (2026-11-19, `main`)
 
 The owner's directive, verbatim: "In language EN of sportsignal the numerals

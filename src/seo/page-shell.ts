@@ -128,8 +128,8 @@ ${themeInit}
      variable 250–900 + Peyda 400–900 + Chakra Petch + Poppins Digits,
      all self-hosted, CSP font-src 'self') and the homepage's preload
      trio (body face 400/800 + the heading variable font). -->
-<link rel="preload" href="/fonts/Peyda-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/Peyda-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Peyda-Regular.woff2?v=13.275" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Peyda-ExtraBold.woff2?v=13.275" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/MorabbaVF.woff2" as="font" type="font/woff2" crossorigin>
 ${FONT_FACES_STYLE}
 <link rel="stylesheet" href="/public-13.87.css">

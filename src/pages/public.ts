@@ -69,8 +69,8 @@ export const PUBLIC_PAGE = `<!doctype html>
 <!-- v13.133-persiantype: preloads follow the new stack — the body face
      (Peyda 400/800) + the heading variable font (MorabbaVF, one file for
      every heading weight). SemiBold/Bold arrive lazily with the tables. -->
-<link rel="preload" href="/fonts/Peyda-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/Peyda-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Peyda-Regular.woff2?v=13.275" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Peyda-ExtraBold.woff2?v=13.275" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/MorabbaVF.woff2" as="font" type="font/woff2" crossorigin>
 <!-- v13.224-herolcp (SS-20, Phase-2 S6): the hero poster preload — the
      Phase-7 final diagnostic (docs/WEB_OPTIMIZATION_RESULTS.md §18.4) and this
