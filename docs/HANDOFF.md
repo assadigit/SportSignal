@@ -2,7 +2,7 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
-## This session (Persian Club-Alias SEO — 2026-11-19 — DONE IN CODE, not deployed (the Dec 4-8 freeze + the Nov 20 no-deploy windows hold); committed + pushed)
+## This session (Persian Club-Alias SEO — 2026-11-19 — BUILT + DEPLOYED + LIVE-VERIFIED (the owner authorized the deploy later the same day; commit `6fd2f1d`, Version ID `5c87d8bd-2417-4b02-bbe5-db7de3328e10`))
 
 **The objective (the owner's PERSIAN-CLUB-ALIAS-SEO-SPEC.md, repo root):**
 improve Persian SEO coverage for canonical club names, colloquial aliases
@@ -10,7 +10,7 @@ and natural-language match searches (بارسا / رئال / من سیتی / ب�
 بارسا / ساعت بازی بارسلونا امشب / بازی بارسا با بایرن / نتیجه بازی رئال
 مادرید) — WITHOUT doorway pages, duplicate URLs, provider changes, or
 touching the frozen measured surfaces. **DONE — `v13.274.0-persianalias`
-on `main` (commit pushed; no deploy — see the standing limits).**
+on `main` + DEPLOYED 2026-11-19 ~18:55 UTC + live-verified (below).**
 
 - **M1 — the audit + the evidence extraction ✅.** The repo-first workflow
   (spec §3): AGENTS.md → the spec → the git state (clean, `main`, the S20
@@ -48,21 +48,85 @@ on `main` (commit pushed; no deploy — see the standing limits).**
   check-seo-teamnames.js control roster swaps Real Madrid/PSG (now
   aliased, gated in the new check) for Villarreal/Valencia — the
   byte-identity law itself unchanged.
-- **M5 — docs + commit ✅.** CHANGELOG (`v13.274.0-persianalias`), DECISIONS
-  (PCA-1), this HANDOFF section, the version triple
+- **M5 — the deploy (the owner's same-day authorization, 2026-11-19) ✅.**
+  The RUNBOOK §2 ritual held: `npm test` exit 0 re-run on the exact deploy
+  tree → the local `wrangler dev` smoke (the seed-local-alias-smoke.js
+  pool: `/healthz` `13.274.0-persianalias` + `/` 200 + the team/match pages
+  rendering the aliases through REAL workerd) → remote fetched immediately
+  before deploy (0 ahead) → `npx wrangler deploy` ~18:55 UTC
+  (**Version ID `5c87d8bd-2417-4b02-bbe5-db7de3328e10`**) — safely BEFORE
+  the Nov 20 Bayern–Köln no-deploy windows (M1 ~19:35 UTC Nov 20) and
+  before the Dec 4-8 freeze window. Rollback = `npx wrangler rollback`
+  (the previous deployment; KV additive — safe).
+- **M6 — the live verification (all read from sportsignal.ir) ✅.**
+  `/healthz`: `ok:true` + `version:13.274.0-persianalias` + 3 full ticks
+  (last_cron 0→1 min, `degraded:false`, writes 673→676 normal band,
+  subreq 31-35, `sched_mode:UPCOMING`). All 8 aliased team pages 200 with
+  the LIVE alternateName arrays (بارسلونا/بارسا، رئال مادرید/رئال، بایرن
+  مونیخ/بایرن، منچسترسیتی/من سیتی/منچستر سیتی، آرسنال/ارسنال، اینتر
+  میلان/اینتر/اینترمیلان، آث میلان/میلان، پاری سن ژرمن/پی‌اس‌جی/پاریسن
+  ژرمن، دورتموند/بروسیا دورتموند). The byte-frozen surfaces verified
+  LIVE unchanged: the Barcelona team title/H1 + the homepage title byte-
+  identical. The side-effect map all 200: `/` + `/matches` +
+  `/matches/today` (85KB content) + `/matches/tomorrow` + `/teams` +
+  `/competitions` + `/sitemap.xml` + the archived match page sample.
+
+- **M1 — the audit + the evidence extraction ✅.** The repo-first workflow
+  (spec §3): AGENTS.md → the spec → the git state (clean, `main`, the S20
+  close-out at HEAD) → the SEO research inventory re-verified (369-row
+  VALIDATED-KEYWORD-MAP.csv: 198 GSC-observed / 38 autocomplete-validated /
+  133 research-candidates; EVIDENCE-LOG A2 ambiguity evidence; the S11
+  SEO_EXTRA_ALIASES 1-club precedent; the 13-club selected-team allowlist
+  `CONFIG.BIG_TEAMS_BY_LEAGUE`; the canonical slugs incl. the
+  provider-derived `internazionale-milano`/`club-atletico-de-madrid`).
+  `scripts/extract-alias-evidence.js` machine-derived the per-alias GSC
+  evidence (`scripts/alias-evidence.json`) — every figure traceable.
+- **M2 — the additive research deliverables ✅.**
+  `seo-implementation/keyword-research/ALIAS-KEYWORD-RESEARCH-2026-11-19.csv`
+  (34 evidence-labelled rows: 13 accepted, 4 deferred, 5 ambiguous, 5 intent,
+  7 excluded-intent) + `ALIAS-RESEARCH-REPORT-2026-11-19.md`. The original
+  map/evidence files are READ-ONLY inputs — never overwritten (gated).
+- **M3 — the implementation ✅ (freeze-safe).** `SEO_EXTRA_ALIASES`
+  extended to the evidenced 9-club dictionary (رئال / بایرن / من سیتی +
+  منچستر سیتی / ارسنال / اینتر + اینترمیلان / میلان / پی‌اس‌جی +
+  پاریسن ژرمن / بروسیا دورتموند — every entry citing its GSC evidence
+  inline) + the NEW `src/seo/persian-alias.ts` (the ambiguity-guarded
+  query resolver — اینتر/میلان/منچستر/پاریس/اتلتیکو NEVER resolve alone;
+  the UCL-phrase unlock; the normalization folds without over-folding;
+  the matchup-pair resolver with the substring trap; zero imports, zero
+  KV/fetch/CPU, wired into NO request path). The aliases ride the JSON-LD
+  alternateName arrays ONLY — the byte-frozen titles/H1s/descriptions/
+  answers + `fa-dict.ts` are byte-identical (gated).
+- **M4 — the gates + the smoke ✅.** NEW `scripts/check-seo-persian-alias.js`
+  (52 gates: alias/entity integrity, URL/indexation integrity (13 canonical
+  URLs, zero alias slugs), the normalization folds, the ambiguity gates,
+  the separation law, the freeze-safety gates, the evidence law) wired
+  into `npm test` (**3,887 → 3,940 OK / 0 FAIL, exit 0**; tsc clean).
+  `scripts/persian-alias-smoke.ts` **27/27** (the REAL module through tsx —
+  every spec example query + the ambiguity + the matchup pairs). The
+  check-seo-teamnames.js control roster swaps Real Madrid/PSG (now
+  aliased, gated in the new check) for Villarreal/Valencia — the
+  byte-identity law itself unchanged.
+- **M5 — the first commit ✅.** CHANGELOG (`v13.274.0-persianalias`), DECISIONS
+  (PCA-1), the version triple
   (13.273.1-dayhub → 13.274.0-persianalias) + the check-stats LIVE pins +
   the S19/S20 ride-forwards re-pinned. Pushed to `main` (one-shot token
-  push, no token persisted).
+  push, no token persisted) — commit `6fd2f1d`. The M5/M6 deploy + live
+  verification above were the owner's same-day follow-up authorization;
+  the second commit records the deploy outcome in this HANDOFF (+ the
+  seed-local-alias-smoke.js local-dev seeder, never run against prod).
 
-**Not deployed — deliberately:** the Dec 4-8 GSC measurement freeze holds
-(zero byte-frozen bytes touched; the alias layer is the S11 freeze-safe
-class, but the deploy itself waits for the owner's post-gate call — ALSO
-avoiding the Nov 20 Bayern–Köln no-deploy windows). The code is inert in
-production terms: `persian-alias.ts` is imported by nothing at runtime;
-the extended alternateName arrays ride the existing JSON-LD builders that
-already ship. Deploy = the RUNBOOK §2 ritual whenever the owner lifts the
-gate (`npx wrangler versions upload` → `deploy --percentage 100` → verify
-`/healthz`).
+**Deployed + freeze intact:** the owner authorized the deploy later the
+same day (2026-11-19). The Dec 4-8 freeze still HOLDS — zero byte-frozen
+bytes touched (gated + live-verified: the Barcelona team title/H1 + the
+homepage title byte-identical); the deploy landed ~18:55 UTC, safely
+BEFORE the Nov 20 Bayern–Köln no-deploy windows (M1 ~19:35 UTC Nov 20).
+`persian-alias.ts` stays inert at runtime (imported by nothing); the
+extended alternateName arrays ride the existing JSON-LD builders. The
+post-Dec-8 follow-ups (visible-copy alias mentions in the S18 editorial
+body, the deferred candidates, the fresh-export re-derivation) remain
+the owner's next phase — see the DECISIONS PCA-1 revisit clause.
+
 
 ## This session (S20 — the all-matches day pages; 2026-11-18/19 — BUILT + GATED + DEPLOYED @100% + the mid-session dayhub fix `13.273.1-dayhub` + the post-fill live verification MEASURED (§2a): the today hub lists 7 rows on the FIFA-window break day — DONE)
 

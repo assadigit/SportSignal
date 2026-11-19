@@ -49,8 +49,24 @@ alternateName arrays ONLY — extends from its 1-club seed (Barcelona
   unchanged.
 
 Freeze-safety: ZERO byte-frozen bytes touched (titles, H1s, descriptions,
-answer sentences, fa-dict spellings, the altNote). No deploy (the Dec 4-8
-freeze holds + the Nov 20 Bayern–Köln no-deploy windows respected).
+answer sentences, fa-dict spellings, the altNote).
+
+**DEPLOYED 2026-11-19 ~18:55 UTC** (the owner's same-day authorization —
+the full RUNBOOK §2 ritual held: `npm test` exit 0 re-run on the deploy
+tree → the local wrangler-dev smoke through real workerd with the
+seeded alias pool → remote fetched 0-ahead immediately before `npx
+wrangler deploy`) — Version ID `5c87d8bd-2417-4b02-bbe5-db7de3328e10`,
+safely BEFORE the Nov 20 Bayern–Köln no-deploy windows (M1 ~19:35 UTC
+Nov 20) and before the Dec 4-8 freeze window (the freeze itself holds:
+the byte-frozen surfaces live-verified byte-identical post-deploy).
+Live verification, all read from sportsignal.ir: `/healthz`
+`ok:true` + `version:13.274.0-persianalias` + 3 full ticks (degraded
+false, writes/subrequests in normal bands) + all 8 aliased team pages
+200 with the correct alternateName arrays + the side-effect map all 200
+(`/`, `/matches`, `/matches/today` 85KB content, `/matches/tomorrow`,
+`/teams`, `/competitions`, `/sitemap.xml`, the archived match sample).
+Rollback = `npx wrangler rollback` (the previous deployment; the KV
+schema is additive — safe).
 
 # v13.273.1-dayhub — the dayhub fix: the intl fill rides the ONLY budget slot with headroom (2026-11-18, `main`)
 
