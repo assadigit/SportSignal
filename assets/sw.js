@@ -5,6 +5,21 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v127 (v13.275.0-endigits: bumped from v126 — the
+//              Peyda font-digit repair: the custom Peyda build shipped with
+//              Latin digit codepoints (U+0030-0039) mapped to Persian-Indic
+//              glyph outlines, so EVERY Latin digit in the DOM rendered as a
+//              Persian numeral — in EN mode the UI text was English but every
+//              number (countdown, kickoff times, standings, rank chips, dates)
+//              displayed ۰-۹. The six Peyda weights are patched in place
+//              (same filenames): the ten Latin digit glyphs now carry the true
+//              Latin outlines from Poppins (the site's own numerics font,
+//              weight-matched 400-900, natural proportional advances) while
+//              the Persian digit codepoints (U+06F0-06F9) stay byte-identical
+//              — FA rendering is unchanged in shape. Fonts are cache-first
+//              assets: cache-first assets cannot refresh without a rename or
+//              a bump, the v13.39 rule; the bump strands every stale
+//              Persian-digit copy in the SW caches.
 // Cache name:  sportsignal-v126 (v13.254.1-rankbadgefix: bumped from v125 — the
 //              ADR-006 hotfix for the S44 crest-pill round: the first deploy's
 //              bytes carried the corner-mirror bug (the outer .rankchip's own
@@ -1026,7 +1041,7 @@
 //              standalone header Telegram icon with the REAL circled logo).
 //              Cache-first assets cannot refresh without a rename or a bump,
 //              the v13.39 rule; 13.73.js stays served + pinned one SEO TTL.
-const CACHE = "sportsignal-v126";
+const CACHE = "sportsignal-v127";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

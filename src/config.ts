@@ -1,13 +1,40 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
+// v13.275.0-endigits (2026-11-19): the Peyda font-digit repair — the
+// owner's EN-numerals directive ("In language EN of sportsignal the numerals
+// are farsi. make sure the En version always has English and latin
+// numerals"). ROOT CAUSE (measured, not guessed): the shipped Peyda webfont
+// build maps the LATIN digit codepoints U+0030-0039 to Persian-Indic glyph
+// outlines (glyph 'zero'..'nine' outlines are IDENTICAL to 'uni06F0'..
+// 'uni06F9' in all six weights), so even when the app correctly puts Latin
+// digits in the DOM (fmtNum() is EN-aware; the JS re-render swaps every SSR
+// Persian-codepoint numeral for Latin codepoints on load) the browser paints
+// Persian numerals in EN mode — countdown, kickoff times, standings, rank
+// chips, Top-N badges, dates, the sync line. THE FIX: the six Peyda woff2
+// files are patched IN PLACE (same filenames — the existence pins + preloads
+// keep passing): the ten Latin digit glyphs now carry the true Latin outlines
+// from Poppins (the site's own numerics font — the "Poppins Digits"
+// unicode-range subset already pairs with Peyda on the hero card),
+// weight-matched 400/500/600/700/800/900, natural proportional advances
+// (Peyda's original digits were proportional too; a forced tabular advance
+// made "114" read "1 14" in browser QA). The Persian digit codepoints
+// U+06F0-06F9 stay byte-identical — FA rendering unchanged in shape. The
+// documented Latin-island convention (the tzstamp «(تهران 3:30 GMT)» + the
+// utcnote «18:00 UTC» + Latin team names like "Telstar 1963") now renders
+// its Latin digits AS Latin — previously «Telstar 1963» displayed «۱۹۶۳»
+// inside the Latin name via the remap. SW cache sportsignal-v126 -> v127
+// (fonts are cache-first assets; the v13.39 rule — the bump strands the
+// stale Persian-digit copies). NO JS/CSS bundle change (public-13.80.js +
+// public-13.87.css stay); NO font filename change (the 7-day /fonts/*
+// freshness policy + the SW bump carry the rollout).
 // v13.274-persianalias (PERSIAN-CLUB-ALIAS-SEO, 2026-11-19): the Persian
 // club-alias layer — the evidenced SEO_EXTRA_ALIASES extension (13-club
 // GSC-observed alias dictionary riding the JSON-LD alternateName arrays
 // ONLY) + the SEO-only query resolver (src/seo/persian-alias.ts — the
 // ambiguity-guarded entity resolution, never wired into any request path).
 // Freeze-safe: zero byte-frozen title/H1/description/answer bytes touched.
-export const VERSION = "13.274.0-persianalias";
+export const VERSION = "13.275.0-endigits";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",

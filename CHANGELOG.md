@@ -1,8 +1,66 @@
-# Changelog
+# v13.275.0-endigits — the Peyda font-digit repair: EN always renders Latin numerals (2026-11-19, `main`)
 
-All notable changes to the UCL Notifier are documented here, newest first.
-Version strings follow the value exposed by the live `/api/status` endpoint
-(see `src/worker.ts` `VERSION`).
+The owner's directive, verbatim: "In language EN of sportsignal the numerals
+are farsi. make sure the En version always has English and latin numerals."
+
+**THE MEASURED ROOT CAUSE** (fontTools glyph-outline diff, not a guess): the
+shipped custom Peyda webfont build maps the LATIN digit codepoints
+U+0030-0039 to Persian-Indic glyph outlines — in ALL SIX weights the glyphs
+`zero`..`nine` carry outlines IDENTICAL to `uni06F0`..`uni06F9` (a
+"Persianized digits" font build). The app itself was already correct:
+`fmtNum()` is EN-aware (`curLang()==="en"?String(e):faNum(e)`), and on load
+the JS re-render swaps every SSR Persian-codepoint numeral for Latin
+codepoints (measured live: 996 Persian digit characters in the DOM at t=0,
+0 at t=1s, `html[lang]="en"`). The browser still PAINTED Persian numerals in
+EN mode — countdown tiles, kickoff times, standings points, `#N` rank
+chips, Top-N badges, dates, the sync line — because every Latin digit
+codepoint reached the Peyda outline (the body font:
+`body{font-family:Peyda,...}`) and drew a Persian glyph. A VLM read of the
+live EN homepage confirmed it: "Days ۰۳ | Hours ۱۸ | Min ۲۰", "۱۶:۳۰ /
+Sunday ۲۴ November", standings "۱۱ ۲۸".
+
+**THE FIX** — a font-level repair, bulletproof by construction (every
+element, every current and future code path that renders a Latin digit in
+EN mode gets a Latin glyph):
+
+- The six `assets/fonts/Peyda-{Regular,Medium,SemiBold,Bold,ExtraBold,Black}.woff2`
+  are patched IN PLACE (same filenames — the v13.133 existence pins, the
+  preload trio and the `FONT_FACES_STYLE` registration keep passing): the
+  ten Latin digit glyphs now carry the true Latin outlines from **Poppins**
+  (the site's own numerics font — the `"Poppins Digits"` unicode-range
+  subset already pairs Poppins digits with Peyda text on the hero card),
+  weight-matched 400/500/600/700/800/900, natural proportional advances.
+  (A first cut normalized the advances to a uniform tabular cell — browser
+  QA rejected it: a centered `1` made "114" read "1 14"; the shipped patch
+  keeps Poppins' own proportional advances, matching how the original
+  Peyda digits behaved.)
+- The Persian digit codepoints U+06F0-06F9 are BYTE-IDENTICAL to the
+  previous build (verified outline-by-outline against the pre-patch
+  backups) — FA rendering is unchanged in shape. The FA live audit found
+  every FA numeric surface already uses Persian codepoints (faNum/
+  toFaDigits): the hero countdown (`hcD=۰۲`), standings rows, rank chips
+  (`#۶`), dates and times.
+- The documented "Latin-island convention" now renders as documented: the
+  tzstamp «(تهران 3:30 GMT)» (the owner's literal example — Latin digits +
+  the literal GMT), the utcnote «19:30 UTC», and Latin team names —
+  «Telstar 1963» previously displayed «۱۹۶۳» INSIDE the Latin name via the
+  remap; that bug rides away with this fix.
+- **SW cache sportsignal-v126 -> v127** (fonts are cache-first assets;
+  cache-first assets cannot refresh without a rename or a bump, the v13.39
+  rule — the bump strands every stale Persian-digit copy in the SW
+  caches). Non-SW visitors ride the documented 7-day `/fonts/*` freshness
+  window.
+- NO JS/CSS bundle change (`public-13.80.js` + `public-13.87.css` stay);
+  NO font filename change; NO served-HTML change. The bot's card renderer
+  is untouched (it embeds its own Vazirmatn TTFs, which have true Latin
+  digits).
+
+Verification: fontTools structural audit (Latin≠Persian outlines for all
+10 digits × 6 weights; Persian glyphs + Latin letters untouched), a local
+browser render test (EN cards all-Latin and tight; FA card Persian with
+the GMT island Latin) reviewed by a VLM, the full `npm test` gate suite,
+and the post-deploy live check on sportsignal.ir (EN: countdown/standings/
+dates all Latin; FA: unchanged Persian).
 
 # The phase-2 freeze-lift reminder layer (docs-only, 2026-11-19, `main`)
 
@@ -46,6 +104,8 @@ assets, no version bump (docs + tooling only; the live deployment
 `5c87d8bd-2417-4b02-bbe5-db7de3328e10` @100% stays). DECISIONS PCA-2 records
 the retirement clause: when phase 2 ships, close the issue, disable the
 workflow, retire the banner + the gate the same session.
+
+202bd0 (fix(i18n): v13.275.0-endigits — the Peyda font-digit repair: EN always renders Latin numerals)
 
 # v13.274.0-persianalias — the Persian club-alias SEO layer: the evidenced 13-club alias dictionary + the ambiguity-guarded resolver (2026-11-19, `main`)
 
