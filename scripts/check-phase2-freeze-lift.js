@@ -15,9 +15,16 @@
 //      FIRST thing every future session reads after AGENTS.md/HANDOFF).
 //   2. docs/HANDOFF.md — the phase-2 banner + the Open follow-ups row.
 //   3. The GitHub workflow .github/workflows/phase2-freeze-lift-reminder.yml
-//      (Dec 9 + Dec 16 UTC, year-guarded 202612, read-only) that opens a
-//      GitHub Issue on the repo so the OWNER gets pinged even if they forget.
+//      (Dec 9 + Dec 16 UTC, year-guarded 202612, read-only) that PINGS the
+//      standing [PERSIAN-ALIAS-PHASE-2] GitHub issue (assadigit/SportSignal#4,
+//      opened 2026-11-19 carrying the full phase-2 prompt; a comment notifies
+//      the owner — the issue creator + the repo watcher) so the owner gets
+//      pinged even if they forget.
 //   4. The CHANGELOG entry recording the layer.
+//
+// COMPLETION SIGNAL: when phase 2 ships, the retirement clause (DECISIONS
+// PCA-2) deletes THIS file — its absence from main is the workflow's
+// completion guard (the workflow then no-ops).
 //
 // GATE DESIGN: everything here is a docs/workflow existence+content pin.
 // Assertions test CONTENT ANCHORS over whitespace-normalized text (markdown
@@ -147,10 +154,19 @@ if (exists(wfPath)) {
       !/run:.*\b(deploy|npm publish)\b/.test(wf)
   );
   check(
-    "the workflow issue body carries the full next-session prompt (self-contained: AGENTS.md-first + the export upload step)",
-    /Read AGENTS\.md in the repo root first/.test(wf) &&
+    "the workflow pings the standing issue (comment = notification) with the three unblocks + the never-fabricate law + the self-retirement note",
+    /Read AGENTS\.md in the repo root first/.test(wf) === false && // the prompt lives in the ISSUE, the workflow only points at it
       /PERSIAN-ALIAS-PHASE-2/.test(wf) &&
-      /GSC export/i.test(wf)
+      /createComment/.test(wf) &&
+      /never fabricate/i.test(wf) &&
+      /Dec 4-8/.test(wf) &&
+      /finish remaining work/i.test(wf)
+  );
+  check(
+    "the workflow is completion-guarded (skips when the gate file is retired = phase 2 shipped)",
+    /check-phase2-freeze-lift\.js/.test(wf) &&
+      /404/.test(wf) &&
+      /shipped/.test(wf)
   );
   check(
     "the workflow instructs closing itself after phase 2 ships (the reminder must not outlive its purpose)",

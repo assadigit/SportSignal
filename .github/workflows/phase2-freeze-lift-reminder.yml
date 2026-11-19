@@ -6,10 +6,13 @@
 # github repo, to remind yourself, even if i forgot. like i say finish
 # remaining work, you find it and do it on time."
 #
-# WHAT IT DOES: opens a GitHub Issue on the repo (the owner watches their own
-# repo → email/web notification) containing the FULL phase-2 next-session
-# prompt, so all they have to do is re-fire an agent session and paste it —
-# or literally say "finish remaining work" and the agent finds this issue.
+# WHAT IT DOES: on Dec 9 + Dec 16, 2026 it PINGS the standing reminder issue
+# (assadigit/SportSignal#4, opened 2026-11-19 with the full phase-2 prompt):
+# a new comment (which notifies everyone watching the repo — the owner gets
+# the email/web ping) + the issue is (re)opened + (re)labeled so it stays at
+# the top of the tracker. The owner just re-fires an agent session and says
+# "finish remaining work" — the issue + the HANDOFF banner + the
+# next-session-prompt carry everything needed.
 #
 # Schedule (UTC, GitHub cron runs on the default branch = main):
 #   10 8 9 12 *   → Dec 9, 2026 08:10 UTC (freeze-lift day; 11:40 Tehran)
@@ -18,9 +21,14 @@
 # A year-guard skips scheduled runs outside Dec 2026 (cron recurs yearly —
 # the guard prevents 2027+ noise; manual dispatch always runs).
 #
+# COMPLETION GUARD: phase 2 ships with the retirement of the reminder layer
+# itself (DECISIONS PCA-2): the session deletes scripts/check-phase2-freeze-lift.js
+# from the repo. If that file is gone from the default branch, phase 2 has
+# shipped — this workflow no-ops (and the standing issue should be closed).
+#
 # This workflow is READ-ONLY against production: it does NOT deploy, does NOT
 # change the worker, does NOT touch the GSC byte-freeze, and needs NO secret —
-# the issue is created with the auto-provided GITHUB_TOKEN
+# the comment is created with the auto-provided GITHUB_TOKEN
 # (permissions: issues: write).
 name: phase2-freeze-lift-reminder
 
@@ -51,90 +59,81 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Check for phase-2 completion marker (skip if already done)
+      # COMPLETION GUARD: the gate file's absence from the default branch is
+      # the phase-2-shipped signal (PCA-2 retirement clause). Uses the GitHub
+      # API contents endpoint — no checkout needed.
+      - name: Completion guard (phase 2 already shipped? gate file retired?)
         id: done
         if: steps.guard.outputs.skip != 'true'
-        run: |
-          # Phase 2 ships as a CHANGELOG entry + a version bump; if the repo
-          # already carries a phase-2 entry, the reminder has done its job —
-          # do not spam a second/third issue.
-          if grep -q "phase-2 freeze-lift reminder layer" CHANGELOG.md 2>/dev/null && \
-             git log --oneline -1 --grep="phase-2" | grep -q "alias"; then
-            echo "done=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "done=false" >> "$GITHUB_OUTPUT"
-          fi
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let shipped = false;
+            try {
+              await github.rest.repos.getContent({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                path: 'scripts/check-phase2-freeze-lift.js',
+                ref: context.ref
+              });
+              // file still exists → phase 2 NOT shipped yet
+            } catch (e) {
+              if (e.status === 404) shipped = true; // retired → shipped
+              else throw e;
+            }
+            core.setOutput('shipped', shipped ? 'true' : 'false');
+            if (shipped) {
+              core.notice('Phase 2 already shipped (the gate file was retired per PCA-2) — no reminder needed.');
+            }
 
-      - name: Dedupe — does an open phase-2 reminder issue already exist?
-        id: dedupe
-        if: steps.guard.outputs.skip != 'true' && steps.done.outputs.done != 'true'
+      # Find the standing reminder issue (opened 2026-11-19). If it was
+      # closed without phase 2 shipping (misclick / stale bot), reopen it.
+      - name: Locate the standing reminder issue
+        id: find
+        if: steps.guard.outputs.skip != 'true' && steps.done.outputs.shipped != 'true'
         uses: actions/github-script@v7
         with:
           script: |
             const { data } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              state: 'open',
               labels: 'phase-2-reminder',
-              per_page: 1
+              state: 'all',
+              per_page: 5
             });
-            core.setOutput('exists', data.length > 0 ? 'true' : 'false');
+            const issue = data.find(i => i.title.includes('PERSIAN-ALIAS-PHASE-2'));
+            if (!issue) {
+              core.setFailed('No [PERSIAN-ALIAS-PHASE-2] reminder issue found — re-fire the PCA-2 session or create it from seo-implementation/next-session-prompt.md');
+              return;
+            }
+            core.setOutput('number', issue.number);
+            core.setOutput('state', issue.state);
+            if (issue.state === 'closed') {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'open'
+              });
+              core.notice('Reopened issue #' + issue.number + ' (phase 2 has not shipped).');
+            }
 
-      - name: Create the phase-2 reminder issue
-        if: steps.guard.outputs.skip != 'true' && steps.done.outputs.done != 'true' && steps.dedupe.outputs.exists != 'true'
+      - name: Ping the issue (comment = owner notification)
+        if: steps.guard.outputs.skip != 'true' && steps.done.outputs.shipped != 'true' && steps.find.outputs.number
         uses: actions/github-script@v7
         with:
           script: |
-            const body = `## The Persian-alias SEO phase 2 is ready to start 🎯
+            const nudge = `${{ github.event.schedule == '10 8 16 12 *' && '**Backup nudge (Dec 16):** still waiting — ' || '' }}The **Dec 4-8 2026 GSC measurement freeze has lifted** (today is past the earliest lift date, Dec 9). Phase 2 of the Persian-alias SEO work can start.
 
-            The **Dec 4-8 2026 GSC measurement freeze has lifted** (earliest lift: Dec 9, 2026 — today or later). This issue is the standing reminder the owner asked for on 2026-11-19: *"remind yourself, even if I forgot — I say finish remaining work, you find it and do it on time."*
+            **To the owner:** upload the fresh **Dec 4-8 GSC export** (Search Results export from Google Search Console, 16-month range if possible) into the next agent session and say *"finish remaining work"* — the agent will find this issue and the full work order in \`seo-implementation/next-session-prompt.md\`.
 
-            ### ⚠️ Before any visible-surface change — the THREE unblocks
+            **To the agent reading this:** before ANY visible-surface change, verify the three unblocks (see the issue body above + the HANDOFF banner): (1) the date is Dec 9, 2026 or later; (2) the owner's freeze-lift decision + final measurement record (read \`docs/HANDOFF.md\` + \`docs/DECISIONS.md\` — a date passing alone is NOT proof); (3) the uploaded Dec 4-8 GSC export. **If the export is absent: stop and report — never fabricate metrics.**
 
-            1. **The date:** it must be Dec 9, 2026 or later. A date passing alone is NOT proof — continue to 2.
-            2. **The owner's freeze-lift decision:** the owner must confirm in the session (or a DECISIONS.md entry must exist) that the freeze is lifted and the final measurement record is in. Read \`docs/HANDOFF.md\` + \`docs/DECISIONS.md\` for it.
-            3. **The fresh Dec 4-8 GSC export:** the owner uploads it into the session. **If absent: stop and report — NEVER fabricate metrics.**
+            _Scheduled ping from the \`phase2-freeze-lift-reminder\` workflow (run ${context.runId}). After phase 2 ships: close this issue, disable the workflow, retire the banner + the gate (PCA-2)._`;
 
-            ### 📋 The phase-2 next-session prompt (paste this into a new agent session)
-
-            \`\`\`
-            Read AGENTS.md in the repo root first and follow it for the whole session.
-
-            Repository: assadigit/sportsignal. Persian-alias SEO, phase 2 (post-freeze).
-
-            1. Read AGENTS.md first, then docs/HANDOFF.md, then this brief. Inspect git status/branch/recent commits before editing.
-
-            2. Context (already shipped, commit 6fd2f1d, deployed v13.274.0-persianalias on 2026-11-19 18:55 UTC, Version ID 5c87d8bd-2417-4b02-bbe5-db7de3328e10):
-               - SEO_EXTRA_ALIASES in src/seo/team-names.ts: the evidenced 9-club Persian alias dictionary riding JSON-LD alternateName only.
-               - src/seo/persian-alias.ts: the ambiguity-guarded query resolver — imported by NOTHING at runtime yet.
-               - Research: seo-implementation/keyword-research/ ALIAS-KEYWORD-RESEARCH-2026-11-19.csv + ALIAS-RESEARCH-REPORT-2026-11-19.md (additive; the original VALIDATED-KEYWORD-MAP.csv is read-only).
-               - Gates: scripts/check-seo-persian-alias.js (52 gates) + scripts/persian-alias-smoke.ts (27/27) in/with npm test.
-
-            3. The Dec 4-8 2026 GSC measurement freeze MUST have lifted before any visible-surface change: verify by reading docs/HANDOFF.md + docs/DECISIONS.md for the owner's freeze-lift decision and the final measurement record. A date passing alone is NOT proof.
-
-            4. Work, in order:
-               a. Read the Dec 4-8 GSC export (the owner uploads it — if absent, stop and report; never fabricate metrics). Re-derive the alias evidence with scripts/extract-alias-evidence.js pointed at the new export; update the additive CSV (never overwrite the original map).
-               b. If the owner approves visible-copy changes: extend the S18 editorial body (src/seo/editorial.ts) with ONE natural alias mention per club page (e.g. «بارسلونا (بارسا)») — no keyword stuffing, no new FAQs, titles/H1s/descriptions change ONLY as the owner directs.
-               c. Re-evaluate the deferred candidates (من یونایتد، بوروسیا دورتموند، Latin PSG, the ZWNJ joins) against the new evidence; enable only what gained evidence, each with its evidence comment.
-               d. Optional (only if the owner asks): wire persian-alias.ts into an internal search/redirect helper — it is still inert; wiring it is a product decision, not an SEO tweak.
-               e. Add/extend gates for everything changed; npm test must stay exit 0.
-
-            5. Non-negotiables: one canonical URL per club, no doorway pages, no unsupported intents (streaming/lineups/tickets/betting), the selected-team allowlist (CONFIG.BIG_TEAMS_BY_LEAGUE) untouched, no provider/KV/cron changes, never deploy during live-match windows (see HANDOFF standing limits), verify the remote before push AND before deploy (S18b lesson).
-
-            6. Deliver: commits+push to main, deploy via the RUNBOOK §2 ritual when authorized, post-deploy healthz + page verification, updated HANDOFF/DECISIONS/CHANGELOG, and a final report with files changed, decisions, evidence, tests, and deployment status.
-            \`\`\`
-
-            ### ✅ After phase 2 ships
-
-            Close this issue and disable this workflow (Settings → Actions → disable \`phase2-freeze-lift-reminder\`, or delete the workflow file) so it does not fire again next year (the year-guard already no-ops 2027+ scheduled runs, but disabling is cleaner).
-
-            ---
-            _Auto-created by the \`phase2-freeze-lift-reminder\` workflow (scheduled ${context.eventName}, run ${context.runId}). Read-only reminder — no deploy, no worker change, no secrets._`;
-
-            await github.rest.issues.create({
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: '[PERSIAN-ALIAS-PHASE-2] Finish the remaining work — freeze lifted Dec 9, upload the Dec 4-8 GSC export',
-              body: body,
-              labels: ['phase-2-reminder']
+              issue_number: ${{ steps.find.outputs.number }},
+              body: nudge
             });

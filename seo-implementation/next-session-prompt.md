@@ -74,17 +74,21 @@ RUNBOOK §2 ritual when authorized.
 
 ## The reminder layer (this prompt is one surface of it)
 
-- The GitHub workflow `.github/workflows/phase2-freeze-lift-reminder.yml`
-  (scheduled Dec 9 + Dec 16, 2026 UTC, year-guarded, read-only) opens a
-  `[PERSIAN-ALIAS-PHASE-2]` issue so the owner gets pinged even if they
-  forget; the issue body carries this prompt verbatim.
+- The standing GitHub issue **assadigit/SportSignal#4**
+  (`[PERSIAN-ALIAS-PHASE-2]`, labeled `phase-2-reminder`) carries this full
+  prompt in its body — visible on GitHub even without the repo docs.
+- The scheduled workflow `.github/workflows/phase2-freeze-lift-reminder.yml`
+  (Dec 9 + Dec 16, 2026 UTC, year-guarded, read-only) pings issue #4 with a
+  comment (+ reopens it if closed early) so the owner gets notified even if
+  they forget; it no-ops once phase 2 ships (its completion guard: the gate
+  file below retired from `main`).
 - `scripts/check-phase2-freeze-lift.js` (in `npm test`) pins all the reminder
-  surfaces so they cannot silently rot. After phase 2 ships: close the issue,
-  disable the workflow, and retire this block (the check is co-evolved the
-  same session).
-- If the owner just says "finish remaining work": find this prompt (or the
-  open `[PERSIAN-ALIAS-PHASE-2]` issue), check the three unblocks, and either
-  start phase 2 (unblocked) or report the block honestly.
+  surfaces so they cannot silently rot. After phase 2 ships: close issue #4,
+  disable the workflow, and retire this prompt's reminder section + the gate
+  (the check is co-evolved the same session).
+- If the owner just says "finish remaining work": find this prompt (or issue
+  #4), check the three unblocks, and either start phase 2 (unblocked) or
+  report the block honestly.
 
 ## Credentials
 

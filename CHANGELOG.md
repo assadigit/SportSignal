@@ -27,15 +27,19 @@ started on time, and never started early. Four read-only/docs-only surfaces:
   session reads for the SEO track.
 - **The scheduled workflow `.github/workflows/phase2-freeze-lift-reminder.yml`**
   (Dec 9 + Dec 16 2026 UTC, year-guarded to Dec 2026, `issues: write` only,
-  no deploy, no secrets — the s27-lifecycle-verify pattern): opens a
-  `[PERSIAN-ALIAS-PHASE-2]` GitHub Issue carrying the complete next-session
-  prompt, so the owner gets pinged even if they forget. Dedupe-guarded (one
-  open reminder issue at a time) and completion-guarded (skips if phase 2
-  already shipped).
+  no deploy, no secrets — the s27-lifecycle-verify pattern): pings the
+  standing `[PERSIAN-ALIAS-PHASE-2]` GitHub issue (assadigit/SportSignal#4,
+  opened 2026-11-19 with the full phase-2 prompt in its body) — a comment
+  + reopen, which notifies the owner (the issue creator + repo watcher)
+  even if they forget. Completion-guarded: it no-ops once the gate file is
+  retired (= phase 2 shipped, per PCA-2), and it reopens the issue if it
+  was closed before phase 2 shipped.
 - **The gate `scripts/check-phase2-freeze-lift.js`** (wired into `npm test`)
   pinning every reminder surface (the prompt, the banner, the follow-up row,
   the workflow's schedule + guards, this CHANGELOG entry) so the reminder
-  cannot silently rot across future sessions' doc churn.
+  cannot silently rot across future sessions' doc churn. The standing
+  GitHub issue (assadigit/SportSignal#4) carries the complete phase-2
+  prompt outside the repo docs — the workflow's ping target.
 
 Zero runtime code, zero SEO surfaces, zero byte-frozen bytes, zero client
 assets, no version bump (docs + tooling only; the live deployment
