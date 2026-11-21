@@ -386,8 +386,10 @@ const check = (name, cond) => {
   check("morning digest: Sydney gets NO empty digest (games finished before their 9am — no spam)", !keyExists("digest_sent_2026-10-20_8960654513") && !keyExists("digest_sent_2026-10-21_8960654513"));
   const wk = okSends.filter((s) => s.text.includes("جدول لیگ") || s.text.includes("End of week"));
   check("weekly tables (Monday): sent to every chat", CHATS.every((c) => wk.some((s) => s.chatId === c.id)));
+  // v13.276-slim (A2): HT alerts are REMOVED — a PAUSED transition (the
+  // timeline still drives one on M1) must send NOTHING to anyone now.
   const ht = okSends.filter((s) => s.text.includes("استراحت") || s.text.includes("Half time"));
-  check("HT alert: broadcast to ALL 7 chats (master big match)", CHATS.every((c) => ht.some((s) => s.chatId === c.id)));
+  check("HT alert: RETIRED (v13.276-slim A2) — the PAUSED window sends nothing to any chat", ht.length === 0);
 
   // ================= F. same flow for everyone (agenda 3, dynamic) =================
   const publicSurfaces = {
@@ -398,8 +400,7 @@ const check = (name, cond) => {
     "UCL preview": (c) => okSends.some((s) => s.chatId === c && (s.text.includes("شب لیگ قهرمانان اروپا") || s.text.includes("Champions League night"))),
     "morning digest (tz-realistic)": (c) => c === 8960654513 || okSends.some((s) => s.chatId === c && (s.text.includes("بازی‌های بزرگ امروز") || s.text.includes("Today's big matches"))),
     "night digest": (c) => okSends.some((s) => s.chatId === c && (s.text.includes("خلاصه نتایج شب") || s.text.includes("Night results"))),
-    "weekly tables": (c) => wk.some((s) => s.chatId === c),
-    "HT alert": (c) => ht.some((s) => s.chatId === c)
+    "weekly tables": (c) => wk.some((s) => s.chatId === c)
   };
   for (const [name, fn] of Object.entries(publicSurfaces)) {
     const admin = fn(92788333);

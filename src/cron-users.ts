@@ -1,14 +1,17 @@
 // SportSignal — the cron USER PHASE: the registered-chat list (guarded,
 // fail-closed), the dead-letter outbox drain, the 6h admin heartbeat
-// (v13.70: loud when CHAT_ID is unparseable), the migration broadcast,
-// FA-AI learning (gated on the SOFT budget) and the user-cap check.
-// Returns the chat list (null = guarded failure; the shell skips the tick).
-// Extracted from cron.ts in v13.75-cronsplit.
+// (v13.70: loud when CHAT_ID is unparseable), the migration broadcast and
+// the user-cap check. Returns the chat list (null = guarded failure; the
+// shell skips the tick). Extracted from cron.ts in v13.75-cronsplit.
+// v13.276-slim (C3): the FA-AI auto-learner block is REMOVED — the
+// owner-approved live strip. fa-ai.ts, the [ai] binding, the
+// fa_teams_ai/fa_venues_ai dictionaries and the ADMIN force-run
+// (/api/fa-ai-run, admin-ops.ts) all stay; only the per-tick/per-request
+// auto-runs are gone.
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { getRegisteredChats, checkUserCap } from "./users";
 import { sendTelegram, drainOutbox } from "./telegram";
-import { maybeRunFaAi } from "./fa-ai";
 import { alertPhaseError } from "./monitoring";
 import { maybeBroadcastMigration } from "./migration";
 
@@ -75,19 +78,11 @@ export async function runUserPhase(env: Env, budgetSoft: boolean) {
   } catch (e) {
     console.error("Migration broadcast failed: " + e.message);
   }
-  try {
-    // v13.44-quotaguard: FA-AI learning is a cosmetic write — skip under
-    // the SOFT governor (names re-learn on a healthier day; the existing
-    // fa_teams_ai cache keeps serving reads).
-    if (!budgetSoft) {
-      const fa = await maybeRunFaAi(env);
-      if (fa && fa.ok && fa.learned) console.log(`\u{1F9E0} FA-AI: ${fa.learned} new Persian names learned (${fa.totalLearned} total)`);
-    } else {
-      console.log("\u{1F4B0} KV write budget: FA-AI learning skipped (soft governor)");
-    }
-  } catch (e) {
-    console.error("FA-AI cron step failed: " + e.message);
-  }
+  // v13.276-slim (C3): the FA-AI learning block (the per-tick auto-run,
+  // soft-governed) is REMOVED — the owner-approved live strip. Persian
+  // name learning is now ADMIN-FORCED only (/api/fa-ai-run in
+  // admin-ops.ts); the learned fa_teams_ai / fa_venues_ai caches keep
+  // serving every read exactly as before.
   await checkUserCap(env, chatIds.length);
   return chatIds;
 }

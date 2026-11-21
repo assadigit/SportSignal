@@ -7,8 +7,8 @@
 //   the unordered-pair collapse; the emptiness-gate wiring + the 44-stop;
 //   SS_LIVE_ELIGIBLE + the cron-pool cadence extension; the live-sweep
 //   sanitize + the reuse-guard extension; COMP_EN twins + the fa-dict
-//   national-team seed; the goal-alert no-audience skip still present (the
-//   intl rows claim nothing); the version triple.
+//   national-team seed; the version triple. (v13.276-slim A1: the
+//   goal-alert no-audience check is REMOVED with the goal layer.)
 //   BEHAVIORAL — the REAL translateCompetition (grabbed from the transformed
 //   source) + the REAL provider-intl module (eval'd whole, imports stubbed):
 //   the reversed-dupe collapse, the ghost-row collapse, the youth/women drops
@@ -88,7 +88,6 @@ const tablesSrc = readSrc("tables.ts");
 const translateSrc = readSrc("translate.ts");
 const faDictSrc = readSrc("fa-dict.ts");
 const poolSrc = readSrc("cron-pool.ts");
-const goalSrc = readSrc("goal-alert.ts");
 const pagesSrc = readSrc("seo/pages.ts");
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8"));
 const wsSrc = fs.readFileSync(path.join(__dirname, "lib", "worker-src.js"), "utf8");
@@ -145,15 +144,16 @@ check("s20: the fa-dict national-team seed carries the PROVIDER name forms (IR I
   faDictSrc.includes('"Czechia Republic": "چک"') &&
   faDictSrc.includes('"South Korea": "کره جنوبی"') &&
   faDictSrc.includes('"USA": "آمریکا"'));
-check("s20: the goal-alert no-audience skip still present (a zero-audience intl match claims nothing, the baseline advances)",
-  /if \(!matchChats\.length\) \{ out\.noChats\+\+; done\.add\(ev\.key\); continue; \}/.test(goalSrc));
+check("s20: the goal-event layer is fully REMOVED (v13.276-slim A1 — goal-alert.ts and its cron-notify hook are gone; the intl rows never claimed anything in it anyway)",
+  !fs.existsSync(path.join(SRC_DIR, "goal-alert.ts")) &&
+  !/goal-alert/.test(readSrc("cron-notify.ts")));
 check("s20: provider-intl.ts rides the worker concat (the bundle order, after provider-sportscore)",
   /"provider-breaker\.ts", "provider-wikipedia\.ts", "provider-sportscore\.ts", "provider-intl\.ts", "provider-tsp\.ts"/.test(wsSrc));
 check("s20: zero page-builder changes — buildHub's shape (upcomingFollowed + the day filter + the honest empty state) untouched by S20",
   /const all = upcomingFollowed\(ctx\)\.filter\(def\.filter\);/.test(pagesSrc));
-check("s20: the version triple — src/config.ts 13.275.1-endigits + package.json 13.275.1.0 (the pin rides forward with the v13.275.1-endigits release)",
-  /export const VERSION = "13\.275\.1-endigits";/.test(cfgSrc) &&
-  pkg.version === "13.275.1.0");
+check("s20: the version triple — src/config.ts 13.276-slim + package.json 13.276.0 (the pin rides forward with the v13.276-slim release)",
+  /export const VERSION = "13\.276\.0-slim";/.test(cfgSrc) &&
+  pkg.version === "13.276.0");
 check("s20: the check is wired into the npm test chain",
   /node scripts\/check-s20-dayhubs\.js/.test(pkg.scripts.test));
 check("s20: the seeded harness + the local seeder exist (the s17/s18/s19 convention)",

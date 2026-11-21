@@ -462,18 +462,24 @@ var MEM_DEDUPE = new Set();
   check("status: alert fires exactly once once KV recovers", STATUS_SENT.length === baseline + 1);
   await detectStatusChanges(stEnv, [postMatch("POSTPONED")]);
   check("status: same status again → no duplicate (map transition consumed)", STATUS_SENT.length === baseline + 1);
-  // --- HT scenario: big match SCHEDULED → PAUSED ---
+  // --- HT scenario: big match SCHEDULED → PAUSED (v13.276-slim A2: RETIRED) ---
+  // The HT alert track is removed — a PAUSED transition must send nothing
+  // whether or not the dedupe map persists (the suppression logic that
+  // used to gate the HT fan-out is gone with it; the status map still
+  // records PAUSED so the transition history stays accurate).
   const htEnv = { STATE: makeStatusStore() };
   await detectStatusChanges(htEnv, [htMatch("SCHEDULED")]);
   check("status: HT baseline (SCHEDULED) sends nothing", STATUS_SENT.length === baseline + 1);
   putFails = true;
   await detectStatusChanges(htEnv, [htMatch("PAUSED")]);
-  check("status: HT alert suppressed while dedupe map un-persisted", STATUS_SENT.length === baseline + 1);
+  check("status: HT RETIRED (v13.276-slim A2) — PAUSED sends nothing even with KV failing", STATUS_SENT.length === baseline + 1);
   putFails = false;
   await detectStatusChanges(htEnv, [htMatch("PAUSED")]);
-  check("status: HT alert fires exactly once when KV recovers", STATUS_SENT.length === baseline + 2);
+  check("status: HT RETIRED — PAUSED sends nothing when KV recovers either", STATUS_SENT.length === baseline + 1);
   await detectStatusChanges(htEnv, [htMatch("PAUSED")]);
-  check("status: HT same status → no duplicate", STATUS_SENT.length === baseline + 2);
+  check("status: HT same status → still nothing (no duplicate, no resurrection)", STATUS_SENT.length === baseline + 1);
+  const htMap = await htEnv.STATE.get("match_status_v1", "json");
+  check("status: the map still records the PAUSED transition (history intact)", htMap && Object.values(htMap).includes("PAUSED"));
 
   // ===== v13.38-qc: behavioral proof — the outbox DRAIN is write-first and
   // at-most-once per entry even when the KV write fails mid-drain (the last

@@ -397,7 +397,7 @@ const advMatch = Object.assign({}, faMatch, {
   check("week-ahead lines: bold teams + PLAIN time + italic comp (v13.107)", wEnt.bold.some((b) => b.includes("Arsenal FC")) && wa.includes("۲۱:۰۰") && wEnt.code.length === 0 && wEnt.italic.some((c) => c.includes("Premier League")));
 
   // =====================================================================
-  // 3) notify-status: HT + postponement (entity-styled alerts)
+  // 3) notify-status: HT retirement + postponement (entity-styled alerts)
   // =====================================================================
   globalThis.CONFIG = Object.assign(globalThis.CONFIG, { KV_MATCH_STATUS: "match_status_v1" });
   globalThis.normalizeTeamName = (n) => String(n || "").toLowerCase();
@@ -425,15 +425,12 @@ const advMatch = Object.assign({}, faMatch, {
   const htMatch = { homeTeam: { name: "Real Madrid CF" }, awayTeam: { name: "Liverpool FC" }, competition: { code: "PL" }, utcDate: ko, status: "SCHEDULED", score: { fullTime: { home: 1, away: 1 } } };
   await detectStatusChanges(stEnv, [htMatch]); // tick 1: baseline SCHEDULED persisted
   htMatch.status = "PAUSED";
-  await detectStatusChanges(stEnv, [htMatch]); // tick 2: SCHEDULED -> PAUSED = HT
-  const ht = HT_SENT.find((s) => s.text.includes("استراحت"));
-  check("HT alert sent (status transition)", !!ht);
-  if (ht) {
-    const hEnt = mdv2Entities(ht.text);
-    check("HT alert parses under the entity-aware gate", mdv2Safe(ht.text));
-    check("HT alert teams are BOLD + score is BOLD", hEnt.bold.some((b) => b.includes("Real Madrid CF") && b.includes("Liverpool FC")) && hEnt.bold.some((b) => b === "۱\\-۱"));
-    check("HT alert competition is ITALIC", hEnt.italic.some((c) => c.includes("Premier League")));
-  }
+  await detectStatusChanges(stEnv, [htMatch]); // tick 2: SCHEDULED -> PAUSED
+  // v13.276-slim (A2): HT alerts are RETIRED — the PAUSED transition sends
+  // nothing (the status map still records PAUSED; the styling checks that
+  // used to live here went with the composer).
+  check("HT alert RETIRED (v13.276-slim A2): a SCHEDULED→PAUSED transition sends NOTHING", HT_SENT.length === 0);
+  check("the status map still records the PAUSED transition (history intact for a future re-add)", JSON.parse(stStore.get("match_status_v1"))["real madrid cf|liverpool fc|PL"] === "PAUSED");
   const postMatch = { homeTeam: { name: "Ali (X). United" }, awayTeam: { name: "B-Team_FC" }, competition: { code: "CL" }, utcDate: ko, status: "SCHEDULED", score: { fullTime: { home: null, away: null } } };
   await detectStatusChanges(stEnv, [postMatch]); // tick 1: baseline
   postMatch.status = "POSTPONED";

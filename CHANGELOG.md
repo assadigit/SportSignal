@@ -1,3 +1,79 @@
+# v13.276.0-slim — the live strip: 7 non-core features REMOVED (KV/subrequest headroom on the free plan) (2026-11-21, `main`)
+
+The owner-approved removal deploy. Seven non-core features went out in one
+commit — every one of them burned the Cloudflare FREE plan's shared budgets
+(KV 1,000 writes/day, ~50 subrequests/invocation) for product-surface value
+the core (pre-match reminders, kickoff pushes + DRAIN_SELF, FT pushes with
+the 6h window + 24h backfill, big-match broadcasts, POSTPONED/CANCELLED
+alerts, the channel mirror, the website + SEO, the audit + per-chat repair,
+the governors, /healthz and ALL Tier B features) does not depend on:
+
+  A1 GOAL ALERTS — the S19 layer is deleted outright: src/goal-alert.ts
+     (git rm), the cron-notify hook + its try/catch, CONFIG's snapshot-map
+     key + fan-out cap, and the two s19 test harnesses
+     (check-s19-goalalert.js + s19-goal-smoke.ts, git rm; the s20 smoke's
+     goal section stripped). Cost reclaimed: ~30-60 KV writes on the
+     busiest Saturday slate + up to 6 fan-out units per live tick.
+     Rollback: revert the commit (the layer was fully self-contained).
+
+  A2 HT ALERTS — the notify-status PAUSED→HT track (the HT array, the
+     first-transition detection, the big-match fan-out + the :ht channel
+     post) is removed. The status map STILL records PAUSED (transition
+     history intact), POSTPONED/CANCELLED alerts + their channel posts are
+     untouched, and the channel-mirror :ht key mapping stays for a re-add.
+
+  A3 SWEEP RETIMING (option a) — decideActivity's LIVE and POST_MATCH
+     modes drop from every-tick live sweeps to the ~20min slot grid
+     (:00/:20/:40; PRE_MATCH keeps every tick — kickoff pushes stay
+     minute-tight), pollHint 60/90→120 on both; the live-overlay write
+     drops its ≥10-min age top-up (now fullSweep || liveChanged only — the
+     HEAL semantics untouched: stale-live rows still downgrade to FINISHED
+     in the row mapping). FT pushes land ≤20min late worst-case, well
+     inside the 6h window. cron-pool.ts unchanged.
+
+  A4 SCORER ENRICHMENT — enrichLiveMatches (the ≤4 FD /v4/matches/{id}
+     detail calls + their 90s live_detail_* KV rows per prewarm tick) +
+     the cron-public prewarm hook are deleted; applyLiveDetail STAYS
+     (unit-tested, tree-shaken) and the live overlay keeps
+     status/score/minute true (it never depended on the enrichment).
+
+  C1 HERO TRANSFER WATCH — the automatic FD.org squad polling
+     (watchHeroTransfers, ≤5 clubs/tick + pacing constants) is unwired
+     from cron-public; the KV registry (hero_rotation_v1), the
+     /api/hero-rotation report, heroClubActive, every pure primitive and
+     the manual heroes:rotate / clubs:alt commands all stay.
+
+  C3 FA-AI AUTO-LEARNER — the per-tick cron-users block + the three
+     per-request public-swr background hooks are removed. fa-ai.ts, the
+     [ai] binding, the fa_teams_ai/fa_venues_ai dictionaries and the ADMIN
+     force-run (/api/fa-ai-run) stay — the learner is admin-forced only.
+
+  C4 FAR-CUP CRON — the "27 */4 * * *" trigger + its api.ts scheduled
+     branch are removed; the probe itself keeps running from the quiet
+     ticks (cron-maintenance, the same cup_far_scan_v1 4h due-gate — the
+     coverage cadence is unchanged), maybeScanCupFixtures untouched.
+
+TEST-SUITE: check-s19-goalalert/s19-goal-smoke git-rm'd + unwired from the
+chain; s20-dayhub-smoke stripped of its goal section; check-s20-dayhubs
+drops the goalSrc read (the removal itself is asserted); check-scheduler
+4b/4c flip to slot/120 + a POST_MATCH follows-check + the pollA ladder
+120/120/60/120/300/900 (3b/13b stay "tick", the cron-pool wiring regex
+unchanged); check-hero-clubs inverts the watch wiring checks; check-
+reliability #quota2 pins the admin-only learner path, #nospam10/#standsteady/
+#epochflow/#swrsolid assert the removals; check-channel-mirror (the k cron
+check → single trigger; h3 + the m3 envelope re-pinned without the HT
+event); check-lifecycle/check-mdstyle/check-no-miss assert HT retirement
+(the status map still records PAUSED); check-stats re-pins the
+enrichment-removal + the version triple; live-derby drops the enrichment
+grab + stubs. Expected busiest-day KV writes post-removal: ~700-810 of
+1,000 (was ~850+ with goal snapshots + HT/status churn at 10-min cadence).
+
+ROLLBACK: `npx wrangler rollback` (restores code + triggers — verify the
+4-hourly trigger reappears; if not, revert wrangler.toml + redeploy the old
+commit). No data rollback needed: every orphaned key class is TTL-bound
+(goal snapshots 2d, live_detail rows 90s) or a harmless persistent registry
+(hero_rotation_v1).
+
 # v13.275.1-endigits — the cache-bust: every visitor flips to Latin digits on their NEXT load (2026-11-19, `main`)
 
 The v13.275.0 follow-up, minutes after the first deploy: the patched font

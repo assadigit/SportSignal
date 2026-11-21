@@ -805,13 +805,16 @@ const check = (name, cond) => {
     const claimedPostponed = envS.USERS_DB._tables.channel_posts_v1.size;
     await detectStatusChanges(envS, [statusMatch("POSTPONED")]);
     check("h3. same status again ⇒ no duplicate channel post", claimedPostponed === 1 && CH.length === 1);
-    // HT alert → the :ht key
+    // v13.276-slim (A2): HT alerts are REMOVED — a PAUSED transition now
+    // sends nothing and claims no :ht channel post (the status map still
+    // records PAUSED; POSTPONED/CANCELLED + their channel posts stay).
     const htEnv = { STATE: makeStore(), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
     const htMatch = (status) => ({ id: "s2", utcDate: new Date(Date.now() - 4e6).toISOString(), status, competition: { code: "PL" }, homeTeam: { name: "Arsenal FC" }, awayTeam: { name: "Liverpool FC" }, score: { fullTime: { home: 1, away: 1 } } });
     CH.length = 0;
+    PV.length = 0;
     await detectStatusChanges(htEnv, [htMatch("SCHEDULED")]);
     await detectStatusChanges(htEnv, [htMatch("PAUSED")]);
-    check("h3. HT (PAUSED) transition ⇒ ONE channel post on the :ht key", CH.length === 1 && htEnv.USERS_DB._tables.channel_posts_v1.has("fa-football\u0000match:" + matchKey(htMatch("PAUSED")) + ":ht"));
+    check("h3. v13.276-slim A2: HT (PAUSED) transition sends NOTHING (retired) and claims NO :ht channel post", CH.length === 0 && PV.length === 0 && !htEnv.USERS_DB._tables.channel_posts_v1.has("fa-football\u0000match:" + matchKey(htMatch("PAUSED")) + ":ht"));
     // fail-closed: a failing status-map save suppresses the channel copy too
     const envF = { STATE: makeStore({ failWrites: true }), USERS_DB: makeD1(), TELEGRAM_CHANNEL_CHAT_ID: CHAT_ID };
     const fm = (status) => ({ id: "s3", utcDate: new Date(Date.now() - 36e5).toISOString(), status, competition: { code: "SA" }, homeTeam: { name: "Inter Milan" }, awayTeam: { name: "AC Milan" }, score: { fullTime: { home: 0, away: 0 } } });
@@ -1197,7 +1200,7 @@ G("function tzOffsetMinutes(tz"),
       const cfg = { type: "pre-match-1h" };
       return fn(g, cfg) === 8 && fn(g, cfg, true) === 10;
     })());
-    check("k. NO new cron triggers (the two documented crons unchanged)", /crons = \["\*\/10 \* \* \* \*", "27 \*\/4 \* \* \*"\]/.test(read("wrangler.toml")));
+    check("k. NO new cron triggers (v13.276-slim C4: back to the single 10-min tick — the 4-hourly far-cup probe cron is removed)", /crons = \["\*\/10 \* \* \* \*"\]/.test(read("wrangler.toml")));
     check("k. the notify.ch breadcrumb rides the completion blob's existing put (zero extra KV writes)", /ch: channelActive\(env\) \? takeChannelTickStats\(\) : null/.test(read("src/cron.ts")));
     check("k. channel-mirror.ts imports no provider (no new fetch/polling class)", !/provider/.test(read("src/channel-mirror.ts").replace(/\/\/[^\n]*/g, "")));
     check("k. the engine claim sits AFTER saveNotifiedMatch (the private write-first gate)", (() => { const s = grabFn("async function sendNotificationIfNeeded(match, config, chatGroups, env, counts, notifiedMatches, deadChats, deferred)"); return s.indexOf("await saveNotifiedMatch") >= 0 && s.indexOf("await claimChannelPost") > s.indexOf("await saveNotifiedMatch") && s.indexOf("await claimChannelPost") < s.indexOf("for (const g of chatGroups)"); })());
@@ -1778,15 +1781,20 @@ G("function tzOffsetMinutes(tz"),
       };
       const off = await budgetRun(opts, false);
       const on = await budgetRun(opts, true);
-      // events: 2 match-start (M1 collapses with -big) + 1 HT (M1 master) + 2 results = 5
-      // (d1Channel counts PREPARED statements: 5×2 effective + the stage
-      // collapse's idempotent re-claims — honest D1-op metering)
-      check("m3. match-night: the channel events stay inside the documented envelope (≤6 events incl. the night digest ⇒ ≤13 D1 channel ops incl. the collapse no-ops)",
-        on.chanRows >= 5 && on.chanRows <= 6 && on.d1Channel <= 13 && on.d1Channel >= 8);
+      // events: 2 match-start (M1 collapses with -big) + 2 results = 4
+      // (v13.276-slim A2: the HT channel post is gone with the HT alerts;
+      // the 19:05 kickoff pushes still fire from the pool — match-start is
+      // time-window based — and the 20:50 full sweep sees both FTs, so only
+      // the HT event left the envelope)
+      // (d1Channel counts PREPARED statements: 4×2 effective + the stage
+      // collapse's idempotent re-claims + the night digest — honest D1-op
+      // metering)
+      check("m3. match-night: the channel events stay inside the documented envelope (≤5 events incl. the night digest ⇒ ≤11 D1 channel ops incl. the collapse no-ops — v13.276-slim: no HT post)",
+        on.chanRows >= 4 && on.chanRows <= 5 && on.d1Channel <= 11 && on.d1Channel >= 8);
       check("m3. match-night: the KV-write delta ≤ 3 (the result composers' standings snapshots — the measured correction to DISCOVERY §8's 0)",
         on.kvPuts - off.kvPuts >= 0 && on.kvPuts - off.kvPuts <= 3);
-      check("m3. match-night: the channel fetch delta ≤ 9 (cards/dice/text per event, within the +2-per-unit reservations)",
-        on.fetches - off.fetches >= 4 && on.fetches - off.fetches <= 9);
+      check("m3. match-night: the channel fetch delta ≤ 9 (cards/dice/text per event, within the +2-per-unit reservations — one event fewer than pre-slim)",
+        on.fetches - off.fetches >= 3 && on.fetches - off.fetches <= 9);
       check("m3. match-night: the private sends are unchanged configured vs not",
         on.allTg - on.chanSends === off.allTg);
     }

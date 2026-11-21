@@ -19,12 +19,15 @@
 //               ACTIVE_WINDOW_AHEAD_MS) — live sweep every 10-min tick.
 //   LIVE        an authoritative live status on a PLAUSIBLY-live row, or the
 //               fixture-based fallback (kickoff passed, provider status
-//               still SCHEDULED/TIMED within the live span) — live sweep
-//               every tick.
+//               still SCHEDULED/TIMED within the live span) — live sweep on
+//               the ~20min slot grid (v13.276-slim A3: was every tick; the
+//               goal/HT alert layers that needed 10-min latency are gone,
+//               FT pushes ride the 6h window + the 24h backfill either way).
 //   POST_MATCH  a FINISHED result inside the 195min confirmation window, or
 //               an unconfirmed finish (live status past the live span but
-//               within the 45min confirmation grace) — live sweep every
-//               tick while confirmation is pending.
+//               within the 45min confirmation grace) — live sweep on the
+//               ~20min slot grid while confirmation is pending
+//               (v13.276-slim A3: was every tick).
 //   DEGRADED    the fixture feed failed recently (feed_fail_v1 marker) —
 //               NEVER treat a failure as "no football": the Baku fallback
 //   window (13:00–02:00 Asia/Baku, pure-arithmetic UTC+4, no DST) sets a
@@ -223,19 +226,26 @@ export function decideActivity(sig, ctx?) {
   };
   // 1. LIVE — authoritative live rows, or the fixture fallback (kickoff
   //    passed, status unconfirmed): Mode D's "should be active".
+  //    v13.276-slim (A3): liveSweep "tick"→"slot" + pollHintSec 60→120 —
+  //    the sweep grid drops to :00/:20/:40 (the goal/HT layers that needed
+  //    10-min live latency are removed; the overlay + FT pushes tolerate
+  //    20min fine — a slot-missed FT lands ≤20min late, well inside the 6h
+  //    result window).
   if (sig.liveN > 0 || sig.startedN > 0) {
     return Object.assign(base, {
       mode: "LIVE", reason: "live:" + sig.liveN + (sig.startedN ? " started-unconfirmed:" + sig.startedN : ""),
-      sweepIntervalMs: maint, liveSweep: "tick", pollHintSec: 60,
+      sweepIntervalMs: maint, liveSweep: "slot", pollHintSec: 120,
       wakeAtMs: nowMs + span
     });
   }
   // 2. POST_MATCH — provider-confirmed finishes inside the confirmation
   //    window, or unconfirmed finishes (stale-live within grace).
+  //    v13.276-slim (A3): liveSweep "tick"→"slot" + pollHintSec 90→120
+  //    (the same retiming as LIVE).
   if (sig.confirmN > 0 || sig.liveStaleN > 0) {
     return Object.assign(base, {
       mode: "POST_MATCH", reason: "confirm:" + sig.confirmN + (sig.liveStaleN ? " unconfirmed:" + sig.liveStaleN : ""),
-      sweepIntervalMs: maint, liveSweep: "tick", pollHintSec: 90,
+      sweepIntervalMs: maint, liveSweep: "slot", pollHintSec: 120,
       wakeAtMs: nowMs + grace
     });
   }

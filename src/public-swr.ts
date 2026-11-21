@@ -17,7 +17,10 @@ import type { Env } from "./types";
 import { jsonResponse } from "./utils";
 import { CONFIG } from "./config";
 import { fetchPublicMatches, applyLiveOverlay } from "./public-matches";
-import { maybeRunFaAi } from "./fa-ai";
+// v13.276-slim (C3): the three per-request FA-AI background hooks are
+// REMOVED — the owner-approved live strip. The FA-AI learner is
+// admin-forced only now (/api/fa-ai-run, admin-ops.ts); fa-ai.ts and the
+// [ai] binding stay.
 
 export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promise<Response> {
   // v13.111-quotaslim: the EDGE CACHE layer. The public page's JS polls
@@ -104,7 +107,6 @@ export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promi
         // burned budget in a dying invocation (see fetchPublicMatches).
         ctx.waitUntil(fetchPublicMatches(env, req, { skipLongView: true }).catch((e) => console.warn("SWR bg refresh failed: " + e.message)));
       }
-      if (env.AI) ctx.waitUntil(maybeRunFaAi(env).catch((e) => console.warn("FA-AI bg run failed: " + e.message)));
       const served = applyLiveOverlay(Object.assign({}, kv.data), ov);
       if (ov && ov.ts) served.liveAt = new Date(ov.ts).toISOString();
       if (stale) {
@@ -131,7 +133,6 @@ export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promi
     const snap = await env.STATE.get(CONFIG.KV_PUBLIC_SNAPSHOT, "json").catch(() => null);
     if (snap && snap.data && (snap.data.upcoming || snap.data.finished || snap.data.topSpot || snap.data.ucl || snap.data.standings)) {
       ctx.waitUntil(fetchPublicMatches(env, req, { skipLongView: true }).catch((e) => console.warn("Snapshot bg refresh failed: " + e.message)));
-      if (env.AI) ctx.waitUntil(maybeRunFaAi(env).catch((e) => console.warn("FA-AI bg run failed: " + e.message)));
       const served = applyLiveOverlay(Object.assign({}, snap.data), ov);
       if (ov && ov.ts) served.liveAt = new Date(ov.ts).toISOString();
       const epochMs = Date.parse(snap.data.fetchedAt || "") || snap.ts || 0;
@@ -145,7 +146,6 @@ export async function handlePublicMatchesApi(req: Request, env: Env, ctx): Promi
     // rebuild is now pool-first (see fetchPublicMatches) so even this path
     // is fast unless the pool is gone too.
     const data = await fetchPublicMatches(env, req);
-    if (env.AI) ctx.waitUntil(maybeRunFaAi(env).catch((e) => console.warn("FA-AI bg run failed: " + e.message)));
     return edgeJson(data);
   } catch (e) {
     console.error("public-matches route failed: " + e.message);

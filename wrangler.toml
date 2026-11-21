@@ -55,13 +55,16 @@ binding = "USERS_DB"
 database_name = "sportsignal-users"
 database_id = "c64064ff-aa78-4c73-80cd-e2805d550a5b"
 
-# v14.0.5-cupgap: TWO triggers — the 10-min tick (bot + pool) + the lean
-# 4-hourly far-cup probe (see probeCupFarFixtures in providers.ts + the
-# api.ts scheduled branch; minute 27 keeps it between the :20/:30 ticks).
+# v13.276-slim (C4): ONE trigger again — the 10-min tick. The lean 4-hourly
+# far-cup probe cron ("27 */4 * * *") is REMOVED, the owner-approved live
+# strip; the probe itself KEEPS RUNNING from the quiet ticks
+# (cron-maintenance.ts, due-gated every CUP_FAR_SCAN_MS = 4h — the same
+# marker, so the coverage cadence is unchanged; it just rides the main
+# invocation's budget-gated quiet ticks instead of its own trigger).
 # v13.95-accountmigration: triggers were re-armed by deploy #2 after the
 # secret set + state re-sync (the two-phase cutover is complete).
 [triggers]
-crons = ["*/10 * * * *", "27 */4 * * *"]
+crons = ["*/10 * * * *"]
 
 # v13.117-kickoff: the self-referencing service binding — the kickoff drain
 # chain's transport. When a tick's fan-out reservation defers in-window
@@ -96,8 +99,9 @@ TELEGRAM_CHANNEL_PUBLIC_URL = "https://t.me/SportSignalz"
 
 # v12.x-ai-translate: Workers AI binding for automatic Farsi club name translation.
 # The worker's translateTeam function checks the AI-learned names (KV fa_teams_ai)
-# before falling back to the English name. The AI runs on each /api/public-matches
-# request via maybeRunFaAi to incrementally translate any new Latin names.
+# before falling back to the English name. v13.276-slim (C3): the automatic
+# per-request learning runs are REMOVED — the learner is admin-forced via
+# /api/fa-ai-run (admin-ops.ts → maybeRunFaAi(env, true)).
 [ai]
 binding = "AI"
 # Secrets (BOT_TOKEN, CHAT_ID, API_TOKEN, ADMIN_TOKEN, ADMIN_PASS, WEBHOOK_SECRET)

@@ -6,7 +6,11 @@
 //
 // Reads the real concatenated worker source (single source of truth).
 const fs = require("fs");
+const path = require("path");
 const src = require("./lib/worker-src")();
+// v13.276-slim C3: admin-ops.ts read directly (the #quota2 FA-AI check pins
+// the admin force-run path — the only learner entry point left).
+const adminOpsSrc = fs.readFileSync(path.join(__dirname, "..", "src", "admin-ops.ts"), "utf8");
 
 let failed = 0;
 const check = (name, cond) => {
@@ -274,7 +278,7 @@ check("#nospam9 last_full_sweep folded into cron_status_v1", /last_full_sweep: f
 // v13.37-nospam2: the four remaining "snapshot-as-dedupe" send paths must
 // fail CLOSED — if the dedupe/snapshot state can't be persisted, the send is
 // suppressed (a missed alert beats a duplicate storm).
-check("#nospam10 status-map put is fail-closed (statusMapSaved gate)", /let statusMapSaved = false;/.test(src) && /if \(alerts\.length && statusMapSaved\) \{/.test(src) && /if \(htAlerts\.length && statusMapSaved\) \{/.test(src));
+check("#nospam10 status-map put is fail-closed (statusMapSaved gate)", /let statusMapSaved = false;/.test(src) && /if \(alerts\.length && statusMapSaved\) \{/.test(src) && !/htAlerts/.test(src));
 check("#nospam10 status-map suppression logged", /suppressing status-change alerts this tick/.test(src));
 check("#nospam10 table-top snapshot put is fail-closed (snapSaved gate)", /let snapSaved = false;/.test(src) && /if \(!snapSaved\) continue;/.test(src));
 check("#nospam10 table-top suppression logged", /skipping coronation check this tick/.test(src));
@@ -399,7 +403,7 @@ check("#quota1 truemeter: no leftover prewarm code after the blob", src.lastInde
 check("#quota2 governor thresholds in CONFIG (700 soft / 850 hard)", /KV_WRITES_SOFT: 700/.test(src) && /KV_WRITES_HARD: 850/.test(src));
 check("#quota2 governor reads the day accumulator from prevStatus", /prevStatus\.kv_day === kvDay/.test(src));
 check("#quota2 soft/hard levels computed from writesSoFarToday", /const budgetSoft = writesSoFarToday >= CONFIG\.KV_WRITES_SOFT;/.test(src) && /const budgetHard = writesSoFarToday >= CONFIG\.KV_WRITES_HARD;/.test(src));
-check("#quota2 FA-AI learning gated on soft", /if \(!budgetSoft\) \{[\s\S]{0,260}maybeRunFaAi/.test(src));
+check("#quota2 v13.276-slim C3: FA-AI auto-learning is UNWIRED from the tick (the learner is admin-forced only — /api/fa-ai-run in admin-ops.ts keeps the force-run)", !/if \(!budgetSoft\) \{[\s\S]{0,260}maybeRunFaAi/.test(src) && /maybeRunFaAi\(env, true\)/.test(adminOpsSrc));
 check("#quota2 prewarm gated on soft", /\(fullSweepThisTick \|\| liveChanged\) && pubStale && !budgetSoft\) \{/.test(src));
 check("#quota2 hard hold plumbs the pool-cache skip (scoped env flag)", /budgetHard \? \{ \.\.\.env, KV_BUDGET_HOLD: true \} : env/.test(src));
 check("#quota2 cacheMatches honors the hold", /env && env\.KV_BUDGET_HOLD\)[\s\S]{0,220}return;/.test(src));
@@ -634,7 +638,7 @@ check("#swrsolid applyLiveOverlay defined (harness reachable; export stripped by
 // so the prewarm/overlay checks keep covering cron-public.ts and the
 // completion-blob checks keep covering cron.ts (the shell).
 const cronSeg52 = (src.match(/\/\/ ===== src\/cron-preflight\.ts =====[\s\S]*?(?=\/\/ ===== src\/monitoring\.ts =====)/) || [""])[0];
-check("#swrsolid cron writes the overlay (changed / full-sweep / 10-min gate)", /fullSweepThisTick \|\| liveChanged \|\| ovAge >= 6e5/.test(cronSeg52) && /KV_LIVE_OVERLAY, JSON\.stringify\(\{ ts: now, rows: liveRows \}\)/.test(cronSeg52));
+check("#swrsolid cron writes the overlay (changed / full-sweep — v13.276-slim A3: the ≥10min ovAge top-up gate is removed with the between-slot top-up)", /fullSweepThisTick \|\| liveChanged\) \{/.test(cronSeg52) && /KV_LIVE_OVERLAY, JSON\.stringify\(\{ ts: now, rows: liveRows \}\)/.test(cronSeg52) && !/ovAge/.test(cronSeg52));
 check("#swrsolid overlay write honors the HARD governor (budgetHard)", /liveRows\.length && !budgetHard && subrequestCount\(\) < 40/.test(cronSeg52));
 check("#swrsolid liveChanged signal hoisted (shared by prewarm + overlay)", /let liveChanged = false;[\s\S]{0,200}liveFingerprint\(matches\) !== liveFingerprint\(poolRef\)/.test(cronSeg52));
 check("#swrsolid overlay write sits BEFORE the completion blob (writes fold)", cronSeg52.indexOf("Live overlay write failed") > -1 && cronSeg52.indexOf("Live overlay write failed") < cronSeg52.indexOf("kvWritesDay = kvWritesThisTick + 1"));
@@ -659,7 +663,7 @@ check("#standsteady snapshot fallback covers EVERY standings code (was PGL-only)
 check("#standsteady the UCL card rides the same snapshot fallback", /const uclStarted = stCL \? stCL\.started !== false : snapUcl \? snapUcl\.started !== false : true;/.test(src) && /snapUcl && Array\.isArray\(snapUcl\.teams\) && snapUcl\.teams\.length \? snapUcl\.teams : null/.test(src));
 check("#standsteady snapshot refreshes on break-week (empty-list) builds — sweep-success gated, NOT list-emptiness gated", /if \(!\(liveSweepFailed \|\| poolEmpty\) && CONFIG\.KV_PUBLIC_SNAPSHOT\) \{[\s\S]{0,400}KV_PUBLIC_SNAPSHOT, JSON\.stringify\(\{ ts: Date\.now\(\), data \}\)/.test(src) && !/if \(upcoming\.length \|\| finished\.length\) \{[\s\S]{0,1500}?KV_PUBLIC_SNAPSHOT, JSON\.stringify/.test(src));
 check("#standsteady FD standings respect the provider suspension (the 429 penalty box)", src.split("async function fetchStandings")[1] && /providerSuspended\(env, "football-data"\)/.test(src.split("async function fetchStandings")[1].slice(0, 5500)));
-check("#standsteady FD live-detail enrichment is PREWARM-only (visitor rebuilds skip it)", /if \(prewarm\) await enrichLiveMatches\(env, matches\);/.test(src));
+check("#standsteady v13.276-slim A4: the FD live-detail enrichment is REMOVED entirely (was prewarm-only; the scorer fetch + its cache rows are gone)", !/enrichLiveMatches/.test(src));
 check("#standsteady R6: live sweep narrows sportscore to in-window pool leagues", /SS_LIVE_ELIGIBLE/.test(src) && /fetchSportScore\(env, \{ fromDays: 1, toDays: 0, slugs: \[\.\.\.need\] \}\)/.test(src));
 check("#standsteady coronation fetches fresh ONLY for leagues with a just-finished match", /codeHadFT \? \{ freshMs: 6e5 \} : undefined/.test(src));
 check("#standsteady result lines + weekly digest + admin endpoint keep the 10-min freshness", /fetchStandings\(env, code, true, \{ freshMs: 6e5 \}\)/.test(src));
@@ -739,7 +743,7 @@ check("#epochflow the tick pre-warms via SELF-FETCH (fresh invocation budget, no
 check("#epochflow self-fetch fallback keeps the meter-gated in-tick rebuild", /else if \(subrequestCount\(\) < 30\) \{\s*\n\s*await fetchPublicMatches\(env, null, \{ prewarm: true, pool: matches \}\);/.test(src));
 check("#epochflow quiet tick ADVANCES the pool stamp when >90min old (header clock + TTL stay alive)", /if \(!fullSweepThisTick && matches === poolRef && poolBlob && poolBlob\.fetchedAt && Date\.now\(\) - new Date\(poolBlob\.fetchedAt\)\.getTime\(\) > CONFIG\.POOL_STAMP_REFRESH_MS/.test(src) && /await cacheMatches\(env, poolRef, poolBlob\.source \|\| "quiet-verify"\);/.test(src));
 check("#epochflow quiet tick owns the standings refresh (2h marker-gated phase)", /const marker = await env\.STATE\.get\(CONFIG\.KV_STAND_REFRESH\)\.catch\(\(\) => null\);/.test(src) && /KV_STAND_REFRESH: "stand_refresh_v1"/.test(src) && /for \(const c of \["PL", "PD", "SA", "BL1", "FL1", "CL", "PGL"\]\) \{/.test(src));
-check("#epochflow live scorer enrichment moved into the tick (self-fetch rebuilds don't fetch)", /if \(liveChanged && subrequestCount\(\) < 36\) \{/.test(src) && /await enrichLiveMatches\(env, matches\);/.test(src.split("v13.53-standsteady semantics preserved")[1] || ""));
+check("#epochflow v13.276-slim A4: the tick-time scorer enrichment block is REMOVED (self-fetch rebuilds never fetched; now nobody does)", !/if \(liveChanged && subrequestCount\(\) < 36\) \{/.test(src) && !/enrichLiveMatches/.test(src));
 check("#epochflow FD standings non-ok responses are VISIBLE + 429 suspends the circuit", /console\.warn\("Standings " \+ code \+ ": FD HTTP " \+ res\.status/.test(src) && /if \(res\.status === 429\) \{\s*\n\s*await suspendProvider\(env, "football-data"\)\.catch\(\(\) => \{\}\);/.test(src));
 
 // ---------------------------------------------------------------------------

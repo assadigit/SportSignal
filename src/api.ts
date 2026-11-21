@@ -15,7 +15,6 @@ import { shouldNotify } from "./match-classify";
 import { fetchFootballData } from "./provider-fd";
 import { fetchSportScore } from "./provider-sportscore";
 import { fetchTheSportsDB } from "./provider-tsp";
-import { probeCupFarFixtures } from "./provider-cups";
 import { getRegisteredChats, getBotMembers } from "./users";
 import { validateWebhook, isAdminAuthed, getAdminCookieToken, getClubsCatalog, applySettings, clubsSearch } from "./admin";
 import { handleAdminLoginGet, handleAdminLoginPost, handleAdminLogout, handleAdminChangePassword } from "./auth";
@@ -414,24 +413,13 @@ const worker_default = {
   },
   async scheduled(event, env, ctx) {
     console.log("\u23F0 Scheduled event triggered");
-    // v14.0.5-cupgap: the lean far-cup probe trigger ("27 */4 * * *" — see
-    // wrangler.toml). Runs probeCupFarFixtures INSTEAD of the full tick:
-    // ~10 subrequests total (pool read + 7 sportscore probe calls + pool
-    // write), never touching the notify/standings machinery that already
-    // rides the invocation subrequest ceiling (the 04:31Z incident). The
-    // match is "any trigger that is NOT the 10-min tick" so temporary probe
-    // schedules (verification runs) route here automatically.
-    if (event && event.cron && event.cron !== "*/10 * * * *") {
-      try {
-        const r = await probeCupFarFixtures(env);
-        console.log(`\u{1F3AF} far-cup cron done: added ${r.added}, scanned ${r.scanned}`);
-        pingHealthcheck(env, ctx, true);
-      } catch (error) {
-        console.error("Far-cup probe failed:", error);
-        pingHealthcheck(env, ctx, false, error);
-      }
-      return;
-    }
+    // v13.276-slim (C4): the lean far-cup probe branch (the "27 */4"
+    // trigger routing straight to the far-cup probe instead of the full
+    // tick) is REMOVED with its cron trigger — the owner-approved live
+    // strip. The probe now runs exclusively from the quiet ticks
+    // (cron-maintenance.ts, the same cup_far_scan_v1 due-gate), so a
+    // single */10 trigger serves every path again. Every scheduled event
+    // is the 10-min tick.
     try {
       const tick = await executeScheduledLogic(env);
       // v13.45-sightlines: dead man's switch — success ping AFTER the tick

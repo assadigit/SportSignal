@@ -1,7 +1,7 @@
 // scripts/s20-dayhub-smoke.ts
 // Session 20 — the ALL-MATCHES DAY PAGES seeded harness (the
-// s17-faq-smoke/s18-content-smoke/s19-goal-smoke pattern). The REAL
-// builders + the REAL hygiene predicates + the REAL goal layer, seeded:
+// s17-faq-smoke/s18-content-smoke pattern). The REAL
+// builders + the REAL hygiene predicates, seeded:
 //   (a) a normal CLUB day — the today hub lists big + non-big + FD-4 rows in
 //       the pinned order (big first, then chronological — the ranking law
 //       the owner asked for, now over the widened universe);
@@ -13,10 +13,10 @@
 //       fabricated matches);
 //   (d) the SIDE-EFFECT MAP — shouldReport || top3-involvement and
 //       upcomingBig (the /matches hub + sitemap-upcoming + feed source)
-//       stay FREE of every new-comp row;
-//   (e) the GOAL-ALERT zero-audience skip — an in-flight Iraq–IR Iran goal
-//       with no national-team followers claims nothing, sends nothing, and
-//       the baseline still advances.
+//       stay FREE of every new-comp row.
+//   (v13.276-slim A1: PART (e) — the goal-alert zero-audience skip — was
+//   stripped with the goal-event layer; the s19-goal-smoke.ts harness is
+//   git-rm'd in the same commit.)
 // Run: npx tsx scripts/s20-dayhub-smoke.ts
 // (Timing tolerance: the today-day seeds sit ~25-90min ahead of now — the
 // same-day Tehran bucket assumption the s17/s18 harnesses make.)
@@ -26,8 +26,6 @@ async function main() {
   const intl = await import("../src/provider-intl.ts");
   const pm = await import("../src/public-matches.ts");
   const classify = await import("../src/match-classify.ts");
-  const goalAlert = await import("../src/goal-alert.ts");
-  const mock = await import("./lib/mock-env.js") as any;
 
   let pass = 0, fail = 0;
   const assert = (name: string, cond: boolean, detail?: string) => {
@@ -175,49 +173,9 @@ async function main() {
     dataMod.upcomingFollowed(ctxD).length === 8);
 
   // ============================================================
-  // PART (e) — the goal-alert zero-audience skip
+  // PART (e) — the goal-alert zero-audience skip — was REMOVED in
+  // v13.276-slim (A1) together with the goal-event layer itself.
   // ============================================================
-  console.log("\n--- PART (e): the goal-alert zero-audience skip ---");
-  const kv = mock.makeKV();
-  const d1 = mock.makeD1({});
-  const SENT: any[] = [];
-  const env: any = { STATE: kv, USERS_DB: d1, BOT_TOKEN: "test-token", CHAT_ID: "501", TEHRAN_TZ: "Asia/Tehran", SIM_NOTIFIED_KEY: undefined };
-  await d1.prepare("INSERT OR IGNORE INTO chats (chat_id, joined_at) VALUES (?1, ?2)").bind(501, "2026-11-01").run();
-  await d1.prepare("INSERT INTO user_prefs (chat_id, teams, tz, lang, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)")
-    .bind(501, JSON.stringify(["FC Barcelona"]), "Asia/Tehran", "fa", "2026-11-01").run();
-  const realFetch = globalThis.fetch;
-  globalThis.fetch = (async (url: any, init?: any) => {
-    const u = String(url);
-    if (/api\.telegram\.org\/bot[^/]+\/sendMessage/.test(u)) {
-      const body = JSON.parse(String(init && init.body));
-      SENT.push({ kind: "text", chatId: body.chat_id });
-      return new Response(JSON.stringify({ ok: true, result: { message_id: SENT.length } }), { status: 200 });
-    }
-    return new Response(JSON.stringify({ ok: true }), { status: 200 });
-  }) as any;
-  const KO = new Date(Date.now() - 30 * 6e4).toISOString();
-  const intlMatch = (h: number | null, a: number | null) => ({
-    id: "s20-intl-1",
-    competition: { code: "INTL_FR", name: "International Friendly", emblem: null },
-    homeTeam: { name: "Iraq", crest: null },
-    awayTeam: { name: "IR Iran", crest: null },
-    utcDate: KO, status: "IN_PLAY",
-    score: h == null ? null : { fullTime: { home: h, away: a } }
-  });
-  let r = await goalAlert.detectGoalEvents(env, [intlMatch(0, 0)]);
-  assert("the 0-0 first sighting seeds the baseline and fires nothing",
-    r.events === 0 && SENT.length === 0);
-  r = await goalAlert.detectGoalEvents(env, [intlMatch(1, 0)]);
-  assert("the Iraq goal fires an EVENT but CLAIMS nothing — zero-audience (no national-team followers)",
-    r.events === 0 && r.noChats === 1, "events=" + r.events + " noChats=" + r.noChats);
-  assert("the zero-audience skip sends NOTHING (no Telegram calls)",
-    SENT.length === 0, "sent=" + JSON.stringify(SENT));
-  assert("the baseline still ADVANCES (the snapshot reads 1-0 — the next sweep will not re-derive the goal)",
-    (() => { const snap = kv._map.get("goal_snapshots_v1"); if (!snap) return false; const j = JSON.parse(snap.v); return Object.values(j).some((row: any) => row.h === 1 && row.a === 0); })(),
-    JSON.stringify(kv._map.get("goal_snapshots_v1")));
-  assert("the notified ledger carries ZERO goal claims for the intl match",
-    [...d1._tables.notified_v1.keys()].filter((k) => String(k).includes("goal:")).length === 0);
-  globalThis.fetch = realFetch;
 
   console.log("\ns20-dayhub-smoke: " + pass + " passed, " + fail + " failed");
   if (fail) process.exit(1);

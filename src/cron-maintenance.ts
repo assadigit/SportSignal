@@ -47,8 +47,10 @@ export async function runPoolMaintenance(env: Env, ctx) {
   // rule as the cup scan above — 7 sportscore calls). Fills the ECL box
   // between Thursday matchdays and watches the Hazfi slug for the first
   // announced round; see probeCupFarFixtures for the whole story. Internally
-  // due-gated every CUP_FAR_SCAN_MS (4h) — the lean "27 */4" cron branch in
-  // api.ts shares the same marker, so the two entry points can't double-run.
+  // due-gated every CUP_FAR_SCAN_MS (4h). v13.276-slim (C4): this quiet-tick
+  // probe is the probe's ONLY entry point now — the "27 */4" lean cron
+  // trigger and its api.ts scheduled branch are removed (the same marker
+  // means the coverage cadence is unchanged).
   if (!fullSweepThisTick && !budgetSoft && matches === poolRef) {
     try {
       const r = await probeCupFarFixtures(env);

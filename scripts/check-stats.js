@@ -669,8 +669,10 @@ check("similarMatches is upcoming-only + self-excluded + pairing-deduped + cappe
 check("team page renders the sibling card (h2 + count chip + mrow rows) — S17 retired the match-page similarCard; the team-page simCard keeps similarMatches + M.mrowHtml byte-frozen", /'<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">'/.test(pagesSrc) && /sims\.map\(\(x, i\) => M\.mrowHtml\(x, i, false\)\)/.test(pagesSrc) && /const sims = next \? similarMatches\(ctx, next, 6\) : \[\];/.test(pagesSrc));
 check("buildMatchPage is async + awaits the hydration before rendering", /export async function buildMatchPage\(ctx: SeoCtx, slug: string\): Promise<\{ html: string; notFound: boolean \}>/.test(pagesSrc) && /sm = await hydrateMatchVenue\(ctx\.env, sm\);/.test(pagesSrc));
 check("seo router awaits the async buildMatchPage", /const r = await buildMatchPage\(seoCtx, mm\[1\]\);/.test(routerSrc82));
-// live-detail venue adoption (free data — the fetch is already paid for)
-check("enrichLiveMatches extracts det.venue from the already-made detail fetch", /venue: typeof det\.venue === "string" && det\.venue\.trim\(\) \? det\.venue\.trim\(\) : null,/.test(pubSrc82));
+// live-detail venue adoption — v13.276-slim (A4): the enrichment FETCH is
+// REMOVED (the venue-extraction site inside it went with it); the adopted-
+// venue BEHAVIOR stays asserted through applyLiveDetail below.
+check("v13.276-slim A4: the live-detail enrichment fetch is gone from public-matches.ts (applyLiveDetail stays)", !/enrichLiveMatches/.test(pubSrc82) && /export function applyLiveDetail\(m, detail\)/.test(pubSrc82));
 check("mvenue-map + simcard + simcount styles present in page-shell", /a\.mvenue-map\{/.test(shellSrc81) && /a\.mvenue-map:hover\{/.test(shellSrc81) && /\.simcard\{/.test(shellSrc81) && /\.simcount\{/.test(shellSrc81));
 // behavioral: applyLiveDetail adopts venue (fills, never overwrites)
 {
@@ -1353,8 +1355,8 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
     (hdr.match(/\n\//g) || []).length <= 100 &&
     /const CACHE = "sportsignal-v127"/.test(sw) &&
     /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.275\.1-endigits"/.test(cfg) &&
-    /# v13\.275\.1-endigits/.test(read("CHANGELOG.md"));
+    /export const VERSION = "13\.276\.0-slim"/.test(cfg) &&
+    /# v13\.276\.0-slim/.test(read("CHANGELOG.md"));
 })());
 
 // v13.258-mca11y (the Match Centre S25 + a11y deep-dive, 2026-11-15): the
@@ -1491,7 +1493,7 @@ check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-div
   const pkg = JSON.parse(read("package.json"));
   const fs = require("fs");
   const path = require("path");
-  return pkg.version === "13.275.1.0" &&
+  return pkg.version === "13.276.0" &&
     fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
     fs.existsSync(path.join(__dirname, "..", "scripts", "check-archserve.js")) &&

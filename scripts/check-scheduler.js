@@ -247,8 +247,8 @@ console.log("\n=== scenario 4: confirmed live → live updates enabled ===");
   const sig = computeFixtureSignal([row(-30 * MIN, "IN_PLAY", { minute: 67 })], NOW);
   const act = decideActivity(sig, { nowMs: NOW, feedOk: true });
   check("4a. authoritative IN_PLAY → LIVE", act.mode === "LIVE");
-  check("4b. LIVE live-sweeps every tick (the existing 10-min cadence preserved)", act.liveSweep === "tick");
-  check("4c. LIVE keeps the 60s client poll (live latency untouched)", act.pollHintSec === 60);
+  check("4b. LIVE live-sweeps on the ~20min slot grid (v13.276-slim A3: was every tick — the goal/HT layers that needed 10-min latency are removed)", act.liveSweep === "slot");
+  check("4c. LIVE slows the client poll hint to 120s (v13.276-slim A3: was 60s)", act.pollHintSec === 120);
   const started = computeFixtureSignal([row(-12 * MIN, "TIMED")], NOW);
   const startedAct = decideActivity(started, { nowMs: NOW, feedOk: true });
   check("4d. fixture fallback: kickoff passed but provider still TIMED → LIVE (Mode D unconfirmed-active)", startedAct.mode === "LIVE" && /started-unconfirmed/.test(startedAct.reason));
@@ -266,7 +266,10 @@ console.log("\n=== scenario 5: simultaneous matches → ONE decision ===");
 console.log("\n=== scenario 6: confirmed FT stops live polling ===");
 {
   const sig = computeFixtureSignal([row(-40 * MIN, "IN_PLAY")], NOW); // still live
-  check("6a. a FINISHED row 40min ago keeps POST_MATCH confirmation", decideActivity(computeFixtureSignal([row(-40 * MIN, "FINISHED")], NOW), { nowMs: NOW, feedOk: true }).mode === "POST_MATCH");
+  const postAct = decideActivity(computeFixtureSignal([row(-40 * MIN, "FINISHED")], NOW), { nowMs: NOW, feedOk: true });
+  check("6a. a FINISHED row 40min ago keeps POST_MATCH confirmation", postAct.mode === "POST_MATCH");
+  check("6a-slot. POST_MATCH follows LIVE onto the ~20min slot grid (v13.276-slim A3: was every tick)", postAct.liveSweep === "slot");
+  check("6a-hint. POST_MATCH poll hint is 120s (v13.276-slim A3: was 90s)", postAct.pollHintSec === 120);
   const longDone = computeFixtureSignal([row(-4 * H, "FINISHED")], NOW);
   const act = decideActivity(longDone, { nowMs: NOW, feedOk: true });
   check("6b. FINISHED 4h ago → beyond the 195min confirmation window → IDLE (live polling stopped)", act.mode === "IDLE");
@@ -477,7 +480,7 @@ console.log("\n=== the slot grid + the poll-hint ladder ===");
   ladder.SOON = decideActivity(computeFixtureSignal([row(3 * H, "SCHEDULED")], NOW), { nowMs: NOW, feedOk: true }).pollHintSec;
   ladder.FAR = decideActivity(computeFixtureSignal([row(2 * D, "SCHEDULED")], NOW), { nowMs: NOW, feedOk: true }).pollHintSec;
   ladder.IDLE = decideActivity(computeFixtureSignal([], NOW), { nowMs: NOW, feedOk: true }).pollHintSec;
-  check("pollA. the ladder is non-decreasing toward quiet (60/90/60/120/300/900)", ladder.LIVE === 60 && ladder.POST === 90 && ladder.PRE === 60 && ladder.SOON === 120 && ladder.FAR === 300 && ladder.IDLE === 900);
+  check("pollA. the ladder is non-decreasing toward quiet (120/120/60/120/300/900 — v13.276-slim A3: LIVE 60→120, POST 90→120)", ladder.LIVE === 120 && ladder.POST === 120 && ladder.PRE === 60 && ladder.SOON === 120 && ladder.FAR === 300 && ladder.IDLE === 900);
 }
 
 console.log("\n=== CONFIG default pairing (the schedCfg fallback contract) ===");

@@ -1,27 +1,23 @@
-// SportSignal — v13.133-clubalt: the TRANSFER WATCH (runtime tier of the
-// club alternates library). The library (assets/players/clubs/** + its
-// manifest) exists because players retire and move (owner directive
-// 2026-10-21: "players retire, so their picture must alternate; players go
-// to other clubs, so their picture must alternate — track the transfers
-// market and when a player retires/moves, remove him from that club's
-// jersey database and use another alternative"). This module is the track:
+// SportSignal — v13.133-clubalt: the club alternates library's runtime
+// tier. The library (assets/players/clubs/** + its manifest) exists because
+// players retire and move (owner directive 2026-10-21: "players retire, so
+// their picture must alternate; players go to other clubs, so their picture
+// must alternate — track the transfers market and when a player retires/
+// moves, remove him from that club's jersey database and use another
+// alternative").
 //
-//   WATCH   watchHeroTransfers() — staggered Football-Data.org squad checks
-//           (/v4/teams/{id} carries the CURRENT squad): is the club's
-//           ACTIVE hero still on it? Round-robin cursor, ≤5 clubs per quiet
-//           tick, per-club interval 84h normally / 12h inside transfer
-//           windows (Jan + Jun-Sep 10). Shares the football-data circuit:
-//           suspended → skip; 429 → suspend (the quota is the sweep's too).
-//   LOG     KV hero_rotation_v1 — an EVENT per departure (open → resolved
-//           when the rotation deploy lands or the player reappears), plus
-//           the watch cursor. Write discipline: one write per sweep tick
-//           that checked clubs (≤ ~6/day normal, ≤ ~48/day in windows —
-//           the 700/day budget holds).
-//   EXPOSE  heroRotationReport() — /api/hero-rotation (admin-gated): the
-//           departure worklist with, for each event, the suggested NEXT
-//           candidate (chosen from the club's bench BY THE LIVE SQUAD —
-//           only a player still on the roster is suggested) and the
-//           one-command rotation procedure.
+// v13.276-slim (C1): the AUTOMATIC transfer watch (the staggered FD.org
+// /v4/teams/{id} squad checks, ≤5 clubs per quiet tick, 84h/12h per-club
+// intervals, the ≥25min anti-storm gap) is REMOVED — the owner-approved
+// live strip. KEPT, unchanged: the KV registry
+// (hero_rotation_v1 — the accumulated events/cursor persist and stay
+// readable), the /api/hero-rotation report, heroClubActive() (the
+// event-aware effective-hero resolver), every pure primitive
+// (squadHasPlayer / isTransferWindow / watchIntervalMs / pickWatchBatch /
+// mergeWatchResult / suggestNext) and the manual rotation commands
+// (npm run heroes:rotate + clubs:alt — the agentic tier that verifies a
+// live squad BEFORE promoting). A future re-add re-wires one cron hook;
+// the registry disciplines are all still here.
 //
 // The ROTATION itself stays agentic-side BY DESIGN (the documented tier
 // split, INSTRUCTIONS §13/§14): promoting a bench candidate rewrites the
@@ -39,8 +35,6 @@
 
 import { CONFIG } from "./config";
 import type { Env } from "./types";
-import { fetchJSON, subrequestCount } from "./utils";
-import { providerSuspended, suspendProvider } from "./provider-breaker";
 import { HERO_CLUB_ALTERNATES_RAW } from "./hero-club-alternates";
 
 // ---------- the alternates index (lazy, isolate-safe) ----------
@@ -222,105 +216,6 @@ function suggestNext(candidates, squadNames) {
   return null;
 }
 
-// ---------- the KV facade (fail-silent: never breaks a tick) ----------
-
-var WATCH_BATCH = 5;         // FD calls per active tick (10/min free tier)
-var WATCH_SUBREQ_MAX = 38;   // headroom gate (herogap uses 42; we ADD calls)
-var SWEEP_MIN_GAP_MS = 25 * 60e3; // anti-storm: ≥25min between sweeps
-
-export async function watchHeroTransfers(env: Env) {
-  try {
-    if (await providerSuspended(env, "football-data")) return;
-    var idx = alternatesIndex();
-    if (!idx.n) return;
-    var stored = await env.STATE.get(CONFIG.KV_HERO_ROTATION, "json").catch(function () { return null; });
-    var reg = stored && stored.events !== undefined ? stored : { schema: 1, checked: {}, events: {} };
-    var nowMs = Date.now();
-
-    // anti-storm: a sweep at most every 25 minutes (a full 96-club
-    // transfer-window re-due after a deploy must not loop the tick)
-    var lastSweep = reg.last_sweep_at ? Date.parse(reg.last_sweep_at) : 0;
-    if (nowMs - lastSweep < SWEEP_MIN_GAP_MS) return;
-
-    var pick = pickWatchBatch(idx.slugs, reg.checked, reg.cursor, nowMs, WATCH_BATCH);
-    if (!pick.batch.length) return;
-    reg.cursor = pick.nextCursor;
-    reg.last_sweep_at = new Date(nowMs).toISOString();
-
-    var dirty = false;
-    var newEvents = [];
-    var resolvedNow = [];
-    for (var i = 0; i < pick.batch.length; i++) {
-      var slug = pick.batch[i];
-      var entry = idx.bySlug.get(slug);
-      if (!entry || !entry.fdTeamId || !entry.active) continue;
-      var squadNames = [];
-      try {
-        var data = await fetchJSON("https://api.football-data.org/v4/teams/" + entry.fdTeamId, 2, {
-          "X-Auth-Token": env.API_TOKEN || "",
-        });
-        if (data && data.squad) {
-          for (var s = 0; s < data.squad.length; s++) {
-            if (data.squad[s] && data.squad[s].name) squadNames.push(data.squad[s].name);
-          }
-        }
-      } catch (e) {
-        if (String(e.message || "").indexOf("429") >= 0) {
-          // the shared FD quota is exhausted — suspend the circuit (the
-          // main sweep honors it too) and stop this sweep cleanly
-          await suspendProvider(env, "football-data");
-          console.warn("🖼️ herorotation: FD 429 — provider suspended, sweep stopped (resumes next due tick)");
-          break;
-        }
-        continue; // one club's fetch glitch must not sink the sweep
-      }
-      var inSquad = squadHasPlayer(squadNames, entry.active);
-      var merged = mergeWatchResult(reg, slug, {
-        inSquad: inSquad,
-        squadNames: squadNames,
-        activePlayer: entry.active,
-        candidates: entry.candidates || [],
-      }, nowMs);
-      if (merged.dirty) dirty = true;
-      reg = merged.reg;
-      for (var n = 0; n < merged.newEvents.length; n++) newEvents.push(merged.newEvents[n]);
-      for (var r = 0; r < merged.resolvedNow.length; r++) resolvedNow.push(merged.resolvedNow[r]);
-    }
-
-    // prune: resolved events older than 30d, events for clubs gone from
-    // the index (league turnover)
-    var cutoff = nowMs - 30 * 864e5;
-    var evSlugs = Object.keys(reg.events);
-    for (var p = 0; p < evSlugs.length; p++) {
-      var es = evSlugs[p];
-      var e2 = reg.events[es];
-      var resolvedMs = e2.resolved_at ? Date.parse(e2.resolved_at) : 0;
-      if ((e2.status === "resolved" && resolvedMs && resolvedMs < cutoff) || !idx.bySlug.has(es)) {
-        delete reg.events[es];
-        dirty = true;
-      }
-    }
-
-    if (newEvents.length) {
-      console.warn("🖼️ herorotation: DEPARTED hero(s): " + newEvents.map(function (s) {
-        return reg.events[s].club + " — " + reg.events[s].player +
-          (reg.events[s].suggested_next ? " → suggest " + reg.events[s].suggested_next.player : " → no bench candidate in squad");
-      }).join("; "));
-    }
-    if (resolvedNow.length) {
-      console.log("🖼️ herorotation: resolved: " + resolvedNow.join(", "));
-    }
-    if (dirty) {
-      reg.updated_at = new Date(nowMs).toISOString();
-      await env.STATE.put(CONFIG.KV_HERO_ROTATION, JSON.stringify(reg)).catch(function (e) {
-        console.warn("hero rotation registry write failed: " + e.message);
-      });
-    }
-  } catch (e) {
-    console.warn("hero transfer watch failed: " + e.message);
-  }
-}
-
 // ---------- the resolver (event-aware active hero) ----------
 //
 // The EFFECTIVE hero for a club right now: the library's active candidate,
@@ -385,12 +280,16 @@ export async function heroRotationReport(env: Env, reset) {
       note: "the club alternates library (assets/players/clubs/) — 3-4 pre-fetched, VLM-style-gated candidates per big-5 club; rotation = a local manifest promotion, never a scraping session",
     },
     watch: {
+      // v13.276-slim (C1): the automatic watch is retired — these fields
+      // surface the LAST registry state (a future re-add or the manual
+      // rotation commands keep them meaningful); active is the verdict.
+      active: false,
       interval_hours: isTransferWindow(now) ? 12 : 84,
       transfer_window: isTransferWindow(now),
       cursor: reg2.cursor || 0,
       clubs_checked: checkedCount,
       last_sweep_at: reg2.last_sweep_at || null,
-      batch_per_sweep: WATCH_BATCH,
+      batch_per_sweep: 5,
     },
     counts: { open: open, resolved_recent: resolved },
     events: events,

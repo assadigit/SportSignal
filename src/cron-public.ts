@@ -1,22 +1,22 @@
 // SportSignal — the cron PUBLIC phase: the live-changed fingerprint, the
-// live scorer enrichment, the public-payload prewarm (self-fetch first,
-// in-tick fallback) and the LIVE OVERLAY write (the serve path's
-// never-stale-live guarantee). Concat order in the eval harness keeps
-// this module BEFORE the shell so its writes precede the completion
-// blob's meter fold (the #quota1/#swrsolid order checks). Extracted from
-// cron.ts in v13.75-cronsplit.
+// public-payload prewarm (self-fetch first, in-tick fallback) and the LIVE
+// OVERLAY write (the serve path's never-stale-live guarantee). Concat order
+// in the eval harness keeps this module BEFORE the shell so its writes
+// precede the completion blob's meter fold (the #quota1/#swrsolid order
+// checks). Extracted from cron.ts in v13.75-cronsplit.
+// v13.276-slim: the live scorer enrichment (A4) and the hero transfer
+// watch hook (C1) are REMOVED from this phase — the owner-approved live
+// strip.
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { subrequestCount } from "./utils";
 import { normalizeTeamName } from "./teams";
-import { fetchPublicMatches, enrichLiveMatches } from "./public-matches";
+import { fetchPublicMatches } from "./public-matches";
 import { liveFingerprint } from "./monitoring";
 // v13.129-herogaploop: the hero-portrait gap scan (detection + KV registry
 // write — src/hero-gaps.ts). Runs from THIS tick's in-memory pool: zero
 // extra fetches; the registry write is merge-disciplined (1/day + new teams).
 import { noteHeroGaps } from "./hero-gaps";
-// v13.133-clubalt: the transfer watch (FD.org squad checks — src/hero-rotation.ts).
-import { watchHeroTransfers } from "./hero-rotation";
 
 export async function runPublicPhase(env: Env, ctx) {
   const { fullSweepThisTick, budgetSoft, budgetHard, matches, poolRef } = ctx;
@@ -56,17 +56,9 @@ export async function runPublicPhase(env: Env, ctx) {
   // waitUntil rebuild (pool-first, cache-only standings, no long view)
   // lands the writes in ~15-20 ops. Fallback: the in-tick rebuild, still
   // meter-gated <30 like the old prewarm.
-  if (liveChanged && subrequestCount() < 36) {
-    // v13.53-standsteady semantics preserved: live scorers enrichment is
-    // cron-owned (a goal → the next tick's prewarm re-enriched within
-    // ~10min). The self-fetch rebuild is visitor-shaped (no fetches), so
-    // the tick enriches directly before publishing.
-    try {
-      await enrichLiveMatches(env, matches);
-    } catch (e) {
-      console.warn("Live scorer enrichment failed: " + e.message);
-    }
-  }
+  // v13.276-slim (A4): the live scorer enrichment that ran before this
+  // prewarm (≤4 FD detail calls + sleeps) is REMOVED — live-overlay truth
+  // (status/score/minute) never depended on it.
   try {
     const pub = await env.STATE.get(CONFIG.KV_PUBLIC_MATCHES, "json").catch(() => null) as any;
     const pubStale = !pub || !pub.ts || Date.now() - pub.ts >= 555e3;
@@ -103,14 +95,17 @@ export async function runPublicPhase(env: Env, ctx) {
   // as playing"). Written when:
   //   - live data CHANGED this tick (the fingerprint gate above — goal,
   //     kickoff, HT, FT), or
-  //   - a FULL SWEEP ran (authoritative refresh, ≤12/day), or
-  //   - anything is live and the blob is ≥10min old (minute freshness
-  //     between events — bounded ~6 writes/hour).
-  // NOT gated on budgetSoft: this is correctness, not cosmetics, and its
-  // worst case is ~40-60 writes on a busy matchday. The HARD governor
+  //   - a FULL SWEEP ran (authoritative refresh, ≤12/day).
+  // v13.276-slim (A3): the ≥10-minute age top-up is REMOVED — with the
+  // live sweep on the ~20min slot grid, an unchanged-fingerprint
+  // between-slot tick has nothing new to persist (the previous top-up
+  // refreshed the blob's ts for no data change). The HEAL semantics are untouched: the
+  // row mapping below still downgrades stale-live rows to FINISHED, and
+  // every live-sweep tick that sees a change rewrites the blob. NOT gated
+  // on budgetSoft: this is correctness, not cosmetics. The HARD governor
   // still holds it (budgetHard), and the subrequest headroom rule (the
   // 21:40Z incident lesson) keeps it off ticks that live at the real cap.
-  // 2 KV ops (1 read + 1 write) when it fires; zero on quiet days.
+  // 1-2 KV ops when it fires; zero on quiet days.
   try {
     const now = Date.now();
     const ovWin = 6 * 36e5;
@@ -142,9 +137,11 @@ export async function runPublicPhase(env: Env, ctx) {
       };
     });
     if (liveRows.length && !budgetHard && subrequestCount() < 40) {
-      const prevOv = await env.STATE.get(CONFIG.KV_LIVE_OVERLAY, "json").catch(() => null);
-      const ovAge = prevOv && prevOv.ts ? now - prevOv.ts : Infinity;
-      if (fullSweepThisTick || liveChanged || ovAge >= 6e5) {
+      // v13.276-slim (A3): the gate is fullSweepThisTick || liveChanged —
+      // the age-top-up read/write pair is gone with the between-slot
+      // top-up (one fewer KV read on every live tick; the blob still
+      // rewrites on every change-bearing sweep).
+      if (fullSweepThisTick || liveChanged) {
         await env.STATE.put(CONFIG.KV_LIVE_OVERLAY, JSON.stringify({ ts: now, rows: liveRows }), { expirationTtl: CONFIG.KV_LIVE_OVERLAY_TTL || 21600 }).catch(() => {
         });
       }
@@ -169,20 +166,10 @@ export async function runPublicPhase(env: Env, ctx) {
   } catch (e) {
     console.warn("hero gap scan failed: " + e.message);
   }
-  // v13.133-clubalt: the TRANSFER WATCH — is each club's active hero still
-  // on his squad (FD.org /v4/teams/{id})? Staggered: ≤5 clubs per quiet
-  // tick, round-robin cursor, per-club interval 84h / 12h in transfer
-  // windows, ≥25min between sweeps (src/hero-rotation.ts). Departures are
-  // logged to KV hero_rotation_v1 and surfaced by /api/hero-rotation; the
-  // rotation itself is the agentic heroes:rotate command (INSTRUCTIONS
-  // §14). Gated tighter than the gap scan (we ADD subrequests); shares the
-  // football-data circuit (suspends on 429 like the main sweep). Fail-silent
-  // by contract — the watch must never cost a notification.
-  try {
-    if (!budgetHard && subrequestCount() < 38) {
-      await watchHeroTransfers(env);
-    }
-  } catch (e) {
-    console.warn("hero transfer watch failed: " + e.message);
-  }
+  // v13.276-slim (C1): the TRANSFER WATCH hook (the staggered ≤5 FD.org
+  // squad checks per quiet tick) is REMOVED — the owner-approved live
+  // strip. The watch primitives, the KV registry (hero_rotation_v1),
+  // the /api/hero-rotation report and the manual heroes:rotate /
+  // clubs:alt commands all stay (src/hero-rotation.ts); only the automatic
+  // per-tick squad polling is gone. Rollback: revert this commit.
 }

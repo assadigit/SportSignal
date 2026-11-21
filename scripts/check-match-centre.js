@@ -4129,7 +4129,7 @@ check(/JL\.sportsEventNode\(sm, matchAnswerSentence\(sm\)\.replace\(/.test(pages
 (function () {
   const jlSrc = read("src/seo/jsonld.ts");
   check(!/Speakable|ClaimReview|ai-generated|aiGenerated|machineLearning|ai-attribution|generatedBy/i.test(jlSrc) && !/Speakable|ClaimReview|ai-generated|aiGenerated|machineLearning/i.test(pagesSrc) && !/Speakable|ClaimReview|ai-generated|aiGenerated|machineLearning/i.test(mcSrc),
-    "S20 no-AI-markup: the match page carries NO AI-specific markup (no Speakable, no ClaimReview, no 'AI-generated' meta, no machine-learning attribution schema — spec §17 'No AI-specific markup'; the JSON-LD @graph carries only Organization + WebSite + WebPage + SportsEvent + BreadcrumbList — no AI-attribution nodes; the Workers AI binding [wrangler.toml [ai] binding=AI] is for Farsi translation [maybeRunFaAi], UNRELATED to the match-page JSON-LD; the match page never claims AI authorship)");
+    "S20 no-AI-markup: the match page carries NO AI-specific markup (no Speakable, no ClaimReview, no 'AI-generated' meta, no machine-learning attribution schema — spec §17 'No AI-specific markup'; the JSON-LD @graph carries only Organization + WebSite + WebPage + SportsEvent + BreadcrumbList — no AI-attribution nodes; the Workers AI binding [wrangler.toml [ai] binding=AI] is for the admin-forced Farsi translation runs (v13.276-slim C3: the per-request auto-hooks are removed), UNRELATED to the match-page JSON-LD; the match page never claims AI authorship)");
 })();
 
 // ---- (d) Keyboard, focus, reduced motion, labels and contrast (spec §15 +

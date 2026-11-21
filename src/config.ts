@@ -34,7 +34,7 @@
 // ONLY) + the SEO-only query resolver (src/seo/persian-alias.ts — the
 // ambiguity-guarded entity resolution, never wired into any request path).
 // Freeze-safe: zero byte-frozen title/H1/description/answer bytes touched.
-export const VERSION = "13.275.1-endigits";
+export const VERSION = "13.276.0-slim";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
@@ -461,18 +461,10 @@ export const CONFIG: Record<string, any> = {
   // when the admin opens the members card. Keyed by chat id.
   KV_USER_PROFILES: "user_profiles_v1",
   KV_MATCH_STATUS: "match_status_v1",
-  // v13.272-goalert (S19): the goal-event layer's LAST-KNOWN-SCORE snapshot
-  // map — { [matchKey]: {h, a, d} } for in-window LIVE matches with a real
-  // score, write-only-when-changed (the match_status_v1 discipline), TTL 2
-  // days. Read ONLY on ticks with live-scored in-window matches (zero cost
-  // on quiet ticks); written at most once per tick and only when a score,
-  // status or window membership actually changed (~30-60 writes on the
-  // busiest Saturday slate vs the 1,000/day quota).
-  KV_GOAL_SNAPSHOTS: "goal_snapshots_v1",
-  // v13.272-goalert (S19): the per-tick cap on goal fan-out units — the
-  // Saturday 3pm-slate burst bound. Units past the cap defer (baseline
-  // retained) and ride the next 10-min tick with an accurate score line.
-  GOAL_ALERT_MAX_UNITS: 6,
+  // v13.276-slim (A1): the S19 goal-event layer's KV snapshot map + its
+  // per-tick fan-out cap are REMOVED with the layer itself — the
+  // owner-approved live strip. Any orphaned snapshot key expires via its
+  // own 2-day TTL; no data rollback is needed.
   // v13.230-channelbase: the Telegram Channel Mirror PAUSE marker. Written
   // ONLY on state transitions (paused on a permanent channel error class,
   // resumed on config-change detection / owner action — DISCOVERY §7.6),
@@ -483,7 +475,11 @@ export const CONFIG: Record<string, any> = {
   KV_CHANNEL_MIRROR: "channel_mirror_v1",
   // v13.37-nospam2: audit admin-alert rate-limit stamp (one gap alert / 6h).
   KV_AUDIT_ALERT: "audit_alert_v1",
-  KV_LIVE_DETAIL: "live_detail_",
+  // v13.276-slim (A4): the scorer-enrichment layer's 90s live-detail cache
+  // key prefix is REMOVED with the enrichment fetch itself (≤4 FD
+  // /v4/matches/{id} calls per prewarm tick + their KV rows).
+  // applyLiveDetail stays (tree-shaken, still unit-tested); orphaned
+  // detail rows expire via their own 90s TTL within minutes.
   // v13.82-matchday: per-match venue cache for the match-page hydration
   // (hydrateMatchVenue in seo/data.ts) — {v: "Stadium Name"|null} per FD
   // numeric id, 24h TTL, positive AND negative (a venue-less match is
@@ -686,7 +682,9 @@ export const CONFIG: Record<string, any> = {
   //                             nothing within it → IDLE.
   //   SCHED_IDLE_DISCOVERY_MS — IDLE fixture-discovery cadence (the task's
   //                             "no relevant matches → discovery ~6h"). The
-  //                             far-cup probe keeps its own 4h cron.
+  //                             far-cup probe rides the quiet ticks (the
+  //                             4-hourly lean cron was removed in
+  //                             v13.276-slim — CUP_FAR_SCAN_MS gates it).
   //   SCHED_DEGRADED_IN_MS / _OUT_MS — the feed-fail fallback cadences:
   //                             inside the Baku window 2h (conservative),
   //                             outside 4h. A FAILED sweep is never read as
@@ -724,8 +722,10 @@ export const CONFIG: Record<string, any> = {
   CUP_SCAN_TTL_MS: 5 * 3600 * 1e3,
   CUP_SCAN_HOT_TTL_MS: 30 * 60 * 1e3,
   // v14.0.5-cupgap: the far-cup probe cadence (ECL Thursdays + the Hazfi
-  // grid — see probeCupFarFixtures in providers.ts). 4h: 6 runs/day max,
-  // 7 fetches each, always on quiet ticks or its own lean cron invocation.
+  // grid — see probeCupFarFixtures in provider-cups.ts). 4h: ~6 runs/day
+  // max, 7 fetches each — since v13.276-slim (C4) the probe runs ONLY on
+  // quiet ticks (cron-maintenance.ts); the "27 */4" lean cron trigger and
+  // its api.ts scheduled branch are removed.
   KV_CUP_FAR_SCAN: "cup_far_scan_v1",
   CUP_FAR_SCAN_MS: 4 * 3600 * 1e3,
   ONE_DAY_MS: 24 * 60 * 60 * 1e3,

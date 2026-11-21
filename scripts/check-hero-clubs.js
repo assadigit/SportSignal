@@ -13,8 +13,9 @@
 //     the transfer-window cadence, the round-robin batch pick, the event
 //     merge: departure → open, return/rotation → resolved, write
 //     discipline) behave per the contract in src/hero-rotation.ts.
-//  4) WIRING — the cron hook is subrequest-gated, the admin route exists,
-//     the KV key is configured, watchHeroTransfers is fail-silent.
+//  4) WIRING — v13.276-slim (C1): the automatic transfer watch is REMOVED
+//     from the cron hook (inverted checks below); the admin route stays,
+//     the KV key stays, the pure primitives above stay.
 const fs = require("fs");
 const path = require("path");
 const src = require("./lib/worker-src")();
@@ -230,17 +231,15 @@ check("watch interval: 84h normal, 12h in-window",
 
 // ---- 4) wiring ----------------------------------------------------------------
 const cronSrc = fs.readFileSync(path.join(ROOT, "src", "cron-public.ts"), "utf8");
-check("cron hook: watchHeroTransfers gated (budgetHard + subrequest < 38)",
-  /watchHeroTransfers\(env\)/.test(cronSrc) && /subrequestCount\(\) < 38[\s\S]{0,200}watchHeroTransfers/.test(cronSrc));
-check("cron hook: fail-silent (try/catch around the watch)",
-  /catch \(e\) \{\s*console\.warn\("hero transfer watch failed: " \+ e\.message\);/.test(cronSrc));
+check("v13.276-slim C1: the automatic transfer watch is UNWIRED (no cron hook, no subrequest gate left in cron-public.ts)",
+  !/watchHeroTransfers/.test(cronSrc) && !/hero transfer watch failed/.test(cronSrc));
 const apiSrc = fs.readFileSync(path.join(ROOT, "src", "admin-ops.ts"), "utf8");
 check("admin route /api/hero-rotation registered (admin-gated)",
   apiSrc.includes('"/api/hero-rotation"') && apiSrc.includes("heroRotationReport(env, reset)"));
 const configSrc = fs.readFileSync(path.join(ROOT, "src", "config.ts"), "utf8");
 check("KV key KV_HERO_ROTATION configured", configSrc.includes('KV_HERO_ROTATION: "hero_rotation_v1"'));
-check("watchHeroTransfers is fail-silent (outer try/catch)",
-  /async function watchHeroTransfers\(env\) \{\s*try \{/.test(src.replace(/: Env/g, "")));
+check("v13.276-slim C1: the watch runner itself is gone from hero-rotation.ts (the report/resolver/primitives stay)",
+  !/async function watchHeroTransfers/.test(src.replace(/: Env/g, "")) && /function heroRotationReport/.test(src.replace(/: Env/g, "")));
 
 if (fails) {
   console.error("FAILURES: " + fails);

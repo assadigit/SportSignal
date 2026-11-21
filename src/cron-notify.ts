@@ -4,21 +4,18 @@
 // alerts (full sweeps only) and the notification audit. Returns the
 // notify breadcrumb for the completion blob. Extracted from cron.ts in
 // v13.75-cronsplit.
+// v13.276-slim (A1): the goal-event layer (the S19 module + its per-tick
+// hook here) is REMOVED — the owner-approved live strip. The module, its KV
+// snapshot map and the per-tick fan-out cap are gone; the score-delta
+// alerts rode ~30-60 extra KV writes on the busiest Saturday slate against
+// the 1,000/day free quota. Rollback: revert this commit (the S19 layer
+// was fully self-contained).
 import { CONFIG } from "./config";
 import type { Env } from "./types";
 import { shouldNotify } from "./match-classify";
 import { translateTeam } from "./translate";
 import { sendMatchNotifications, repairPerChatGaps, primeUclParticipants } from "./notify-engine";
 import { detectStatusChanges } from "./notify-status";
-// v13.272-goalert (S19): the goal-event layer — score-delta detection over
-// the tick's merged LIVE pool + the per-goal fan-out to side-following
-// chats. Runs AFTER detectStatusChanges (its own KV map discipline twin)
-// and BEFORE the engine: goal alerts are the tick's most time-critical
-// content and the engine's match-start units keep their own kickoff-drain
-// rescue chain for budget deferrals (a deferred goal rides the next tick
-// with the baseline retained — the delta recomputes with an accurate
-// score line).
-import { detectGoalEvents } from "./goal-alert";
 import { auditNotifications } from "./notify-audit";
 import { broadcastBigMatchResults, broadcastBigMatchKickoff } from "./digest-bigmatch";
 import { maybeSendMorningDigest } from "./digest-morning";
@@ -65,15 +62,6 @@ export async function runNotifyPhase(env: Env, ctx) {
  // ~35-90ms of CPU the free-plan budget couldn't afford. The stale sched_v1:*
   // keys expire via their 7-day TTL on their own.)
   await detectStatusChanges(env, matches);
-  // v13.272-goalert (S19): the goal-event pass — own try/catch like every
-  // other step (a goal-alert failure must never touch the sweep below);
-  // the module itself is fail-closed on every store interaction.
-  try {
-    const ga = await detectGoalEvents(env, matches);
-    if (ga && (ga.events || ga.deferred)) console.log(`\u26BD Goal alerts: events=${ga.events} sent=${ga.sent} deferred=${ga.deferred} noChats=${ga.noChats} seeded=${ga.seeded}`);
-  } catch (e) {
-    console.error("Goal-alert step failed: " + e.message);
-  }
   const worthyMatches = matches.filter(shouldNotify);
   console.log(`\u{1F3AF} Matches meeting notification criteria: ${worthyMatches.length}`);
   const now = new Date();

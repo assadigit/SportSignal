@@ -259,7 +259,9 @@ they are healthy. A tick that genuinely exceeds ~48 FETCHES is the real
 failure class (watch the closing log line's `true subrequest total` split).
 
 **Governor rules (never bypass):** SOFT (700) sheds cosmetic writes (public
-prewarm, FA-AI learning); HARD (850) also holds the pool-cache write + pages the
+prewarm; v13.276-slim C3 also removed the tick's FA-AI learning block — the
+learner is admin-forced only now, so nothing else sheds here); HARD (850) also
+holds the pool-cache write + pages the
 admin once/12h. **The anti-spam set (dedupe records, outbox, execution lock,
 status blob) is NEVER gated** — spam prevention beats budget pressure.
 
@@ -322,12 +324,12 @@ curl -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
 | `pending_sends_v1` | telegram send failures | outbox, drained at tick start, 6 attempts max, exponential backoff |
 | `matches_v13_tracked` | provider sweeps | the match pool (600+ matches incl. long-view) |
 | `match_status_v1` | notifications | per-match status snapshots for change detection |
-| `live_detail_` + `venue_v1_` | live enrichment (cron prewarm) + match-page renders | `live_detail_{fdId}`: scorer/minute/venue detail for live matches (TTL 90s, refetch-guarded); `venue_v1_{fdId}` (13.82): `{v:name\|null}` venue cache, 24h TTL positive AND negative, written ONLY from the match-page render path (fail-closed — any error renders the page without venue) |
+| `venue_v1_` | match-page renders | `{v:name\|null}` venue cache, 24h TTL positive AND negative, written ONLY from the match-page render path (fail-closed — any error renders the page without venue). (v13.276-slim A4: the `live_detail_{fdId}` scorer/minute/venue rows are RETIRED with the enrichment fetch — 90s TTL, gone within minutes) |
 | `public_matches_v1` + `cache:snapshot:v1` | public pipeline | live public payload (12-min TTL) + 7-day stale-serve source (the snapshot serves instantly when the payload expires — v13.52) |
-| `live_overlay_v1` | cron tick (v13.52) | the live overlay: {id, teams, day, status, minute, score} rows for live/just-finished matches, written on every live change + full sweeps + ≥10-min top-ups while live (TTL 6h); the serve path patches it into every public response — a FINISHED game is purged from the live lists immediately |
+| `live_overlay_v1` | cron tick (v13.52) | the live overlay: {id, teams, day, status, minute, score} rows for live/just-finished matches, written on every live change + full sweeps (v13.276-slim A3: the ≥10-min top-ups are REMOVED — the live sweep itself is on the :00/:20/:40 slot grid in LIVE/POST_MATCH; HEAL semantics intact); the serve path patches it into every public response — a FINISHED game is purged from the live lists immediately |
 | `hero_gaps_v1` | cron tick (v13.129-herogaploop) | the hero-portrait gap registry: fixture teams (live/upcoming 7-day window + the featured hero match) that have no wired HERO_ART artwork. Write-disciplined: 1 write per NEW gap team + 1 daily bump per team (seen_days/hero_picks count distinct UTC days); resolved teams retained 7 days, 30-day unseen pruned, 300-team cap (~1 write/day typical). Read via `GET /api/hero-gaps` (admin) or `npm run heroes:report`; the fill procedure is INSTRUCTIONS §13 |
-| `hero_rotation_v1` | cron tick (v13.133-clubalt) | the TRANSFER WATCH registry: departure events for clubs whose active hero left (FD.org `/v4/teams/{id}` squad checks — ≤5 clubs per quiet tick, round-robin cursor, 84h per-club interval / 12h inside transfer windows, ≥25min between sweeps), plus the watch cursor. One write per sweep tick that checked clubs (≤ ~6/day normal, ≤ ~48/day in windows). Events resolve when the player returns or a rotation deploy changes the active player. Read via `GET /api/hero-rotation` (admin); the rotation procedure is INSTRUCTIONS §14 (`npm run heroes:rotate -- --club <slug>` — local, network-free) |
-| `fa_teams_ai` / `fa_venues_ai` / `fa_ai_last_run` | FA-AI learner (gated ≥15 min apart, marker only when work exists since 13.45) | AI-learned Persian names |
+| `hero_rotation_v1` | (v13.276-slim C1: the AUTOMATIC transfer watch is RETIRED — no writer on the tick anymore) | the TRANSFER WATCH registry's persisted state: departure events + the watch cursor from the retired FD.org squad checks (≤5 clubs/quiet tick, 84h/12h intervals). KEPT readable: `GET /api/hero-rotation` (admin) surfaces the last state; the rotation procedure is INSTRUCTIONS §14 (`npm run heroes:rotate -- --club <slug>` — local, network-free, verifies the live squad before promoting). A future re-add re-wires one cron hook |
+| `fa_teams_ai` / `fa_venues_ai` / `fa_ai_last_run` | FA-AI learner — since v13.276-slim C3 ADMIN-FORCED only (`POST /api/fa-ai-run`, admin-gated); the per-tick + per-request auto-runs are removed | AI-learned Persian names (the learned caches keep serving every read) |
 | `execution_lock` | tick start | overlap guard, `LOCK_TIMEOUT` 240s |
 | `bot_settings_v1`, `clubs_catalog`, `varzesh3_clubs_v1`, `standings_*`, `weekly_tables_v1`, `last_api_source`, `heartbeat_sent_v1`, `audit_alert_v1`, `migration_v1`, `upd_<id>` (bot dedupe, TTL 600s) | various | settings/catalogs/audit |
 | `weekly_tables_cursor_v1` / `weekly_tables_payload_v1` | weekly digest (13.124) | the chunked Monday digest's resumable state: CURSOR `{week, ts, pending:{fa,en}}` (remove-before-send per burst; TTL 8d; a >12h-old cursor is stale → dropped; ABSENT = idle — the digest only holds a cursor while delivering) and PAYLOAD (the week's rendered snapshot: per-lang tables + stickers + week-ahead; standings fetched once/week). A live cursor at rest = a digest mid-drain or paused on the KV-write quota (self-heals next tick) |
@@ -337,6 +339,7 @@ curl -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
 
 **Orphans (self-cleaning or inert — do not "clean up" without checking TTLs):**
 `sched_v1:*` (156 keys, 7-day TTLs expire ~2026-09-22), `canary_match_v1` (TTL),
+`goal_snapshots_v1` (v13.276-slim A1 — 2-day TTL, gone by ~2026-11-23),
 legacy never-read: `REGISTERED_CHATS_LIST`, standalone `heartbeat`,
 `last_full_sweep`, `matches_v3/v4_store`. Deleting them is safe but pointless —
 they cost reads nothing.

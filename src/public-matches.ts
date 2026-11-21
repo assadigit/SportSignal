@@ -1,6 +1,9 @@
 // SportSignal — the public /api/public-matches pipeline: KV cache with
-// refresh lock + per-IP rate limit, live enrichment (minute/scorers/venue),
-// standings/cups/UCL/topSpot/week shaping and the 7-day snapshot fallback.
+// refresh lock + per-IP rate limit, standings/cups/UCL/topSpot/week
+// shaping and the 7-day snapshot fallback. (v13.276-slim A4: the live
+// scorer-enrichment fetch is REMOVED; the serve-time live overlay keeps
+// status/score/minute true without it, and applyLiveDetail stays for any
+// future re-add.)
 
 
 import { CONFIG } from "./config";
@@ -12,7 +15,7 @@ import { CONFIG } from "./config";
 import { SEO } from "./seo/config";
 import { LEAGUE_LOGOS, COMP_EN } from "./tables";
 import type { Env } from "./types";
-import { fetchJSON, getNowTehran } from "./utils";
+import { getNowTehran } from "./utils";
 import { normalizeTeamName, normTeamKey } from "./teams";
 import { homeGround, curatedVenueFa } from "./grounds";
 import { translateTeam, translateCompetition, translateVenue, ensureFaAiCache, ensureFaVenueCache, isDomesticCup } from "./translate";
@@ -245,45 +248,14 @@ export function attachTeamRanks(p, m, rankSets) {
   if (Number.isInteger(ar) && ar > 0) p.awayTeam.rank = ar;
   return p;
 }
-export async function enrichLiveMatches(env: Env, matches) {
-  const live = matches.filter((m) => isLiveStatus(m.status) && /^\d+$/.test(String(m.id)));
-  for (const m of live.slice(0, 4)) {
-    try {
-      const key = CONFIG.KV_LIVE_DETAIL + m.id;
-      const cached = await env.STATE.get(key, "json").catch(() => null);
-      if (cached) {
-        applyLiveDetail(m, cached);
-        continue;
-      }
-      const d = await fetchJSON("https://api.football-data.org/v4/matches/" + m.id, 2, { "X-Auth-Token": env.API_TOKEN });
-      const det = d && d.match ? d.match : d;
-      if (!det) continue;
-      const detail: any = {
-        minute: det.minute != null ? det.minute : null,
-        // v13.82-matchday: the detail fetch is ALREADY paid for — adopt the
-        // venue when the endpoint carries one (pubMatch maps it; the live
-        // rows on home/lists then show the stadium chip for free).
-        venue: typeof det.venue === "string" && det.venue.trim() ? det.venue.trim() : null,
-        scorers: (det.scorers || []).map((s) => ({
-          minute: s.minute != null ? s.minute : null,
-          type: s.type || "GOAL",
-          scorer: s.scorer && s.scorer.name ? s.scorer.name : null,
-          team: s.team && s.team.name ? s.team.name : null
-        }))
-      };
-      if (det.score && det.score.fullTime) {
-        detail.scoreFullTime = { home: det.score.fullTime.home, away: det.score.fullTime.away };
-      }
-      await env.STATE.put(key, JSON.stringify(detail), { expirationTtl: 90 }).catch(() => {
-      });
-      applyLiveDetail(m, detail);
-    } catch (e) {
-      console.error("Live detail fail for " + m.id + ": " + e.message);
-    }
-    await new Promise((r) => setTimeout(r, 1400));
-  }
-  return matches;
-}
+// v13.276-slim (A4): the cron-owned FD live-detail enrichment pass —
+// ≤4 matches/tick through /v4/matches/{id} (minute/scorers/venue) + the
+// 90s live-detail KV rows — is REMOVED, the owner-approved live strip.
+// The serve-time LIVE OVERLAY (applyLiveOverlay below) patches
+// status/score/minute from the tick's own sweep data and never depended
+// on it; the saved budget is ≤4 FD calls + ~5.6s of sleeps per prewarm
+// tick. applyLiveDetail is KEPT (unit-tested, tree-shaken) for a future
+// re-add; the enrichment cache key prefix is retired with the pass.
 export function applyLiveDetail(m, detail) {
   if (detail.minute != null) m.minute = detail.minute;
   if (detail.scorers) m.scorers = detail.scorers;
@@ -529,14 +501,10 @@ export async function fetchPublicMatches(env: Env, req, opts?: PubOpts) {
       // still see data).
       if (!matches.length && !(opts && opts.skipLongView)) matches = await fetchLongView(env);
     }
-    // v13.53-standsteady: FD live-detail enrichment (scorers) runs on PREWARM
-    // (cron) builds ONLY. The serve-time live overlay patches status/score/
-    // minute into EVERY payload served — live truth never depends on this
-    // call — and a goal fires liveChanged → the tick's prewarm re-enriches
-    // scorers within ~10min. Visitor rebuilds skip it entirely: up to 4 FD
-    // calls + 5.6s of sleeps saved on EVERY refresh during live windows
-    // (both the API burn and the rebuild latency the user reported).
-    if (prewarm) await enrichLiveMatches(env, matches);
+    // v13.276-slim (A4): the prewarm-time live-detail enrichment call is
+    // REMOVED with the scorer enrichment (see the note above
+    // applyLiveDetail) — prewarm builds straight from the pool the tick
+    // already fetched.
   } catch (e) {
     console.error("Public provider sweep failed (serving stale): " + e.message);
     liveSweepFailed = true;

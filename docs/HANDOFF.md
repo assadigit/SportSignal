@@ -30,6 +30,70 @@ pins all the reminder surfaces so they cannot silently rot. **After phase 2
 ships:** close issue #4, disable the workflow, retire the banner + the check
 the same session (the check is co-evolved with the retirement).
 
+## This session (v13.276.0-slim — the live strip: 7 non-core features REMOVED; 2026-11-21 — the owner-approved removal deploy)
+
+**The objective (the owner's approved removal spec):** take out seven
+non-core features in one commit to reclaim Cloudflare FREE-plan budget
+headroom (KV 1,000 writes/day, ~50 subrequests/invocation), leaving every
+core surface — pre-match reminders (72h/24h/3h/1h/5min), kickoff pushes +
+DRAIN_SELF, FT pushes (6h window + 24h backfill), big-match broadcasts,
+POSTPONED/CANCELLED alerts, bot commands, the channel mirror
+@SportSignalz, the website + SEO, the live-overlay correctness law, the
+notification audit + per-chat repair, kv-webmeter/SOFT-HARD governors,
+/healthz and ALL Tier B features — untouched.
+
+- **A1 goal alerts — REMOVED.** `src/goal-alert.ts` git-rm'd; the
+  cron-notify hook + try/catch, `KV_GOAL_SNAPSHOTS`/`GOAL_ALERT_MAX_UNITS`
+  and the two s19 harnesses went with it. Rollback = revert the commit
+  (the layer was self-contained).
+- **A2 HT alerts — REMOVED** (notify-status: the HT array, PAUSED
+  detection, the HT fan-out + :ht channel post). The status map still
+  records PAUSED; POSTPONED/CANCELLED untouched; the :ht key mapping stays
+  in channel-mirror.ts.
+- **A3 sweep retiming (option a).** LIVE + POST_MATCH liveSweep
+  "tick"→"slot" (:00/:20/:40), pollHint 60/90→120; PRE_MATCH keeps "tick".
+  The live-overlay write drops the ≥10-min age top-up (now
+  fullSweep || liveChanged; HEAL semantics intact). cron-pool unchanged.
+- **A4 scorer enrichment — REMOVED** (enrichLiveMatches + the cron-public
+  prewarm hook + `KV_LIVE_DETAIL`). `applyLiveDetail` stays (tested,
+  tree-shaken); the live overlay never depended on the enrichment.
+- **C1 hero transfer watch — UNWIRED** (watchHeroTransfers + pacing
+  constants out of the tick). KV `hero_rotation_v1`, the
+  /api/hero-rotation report, heroClubActive, the pure primitives and the
+  manual heroes:rotate / clubs:alt commands all stay.
+- **C3 FA-AI auto-learner — UNWIRED** (the cron-users block + the three
+  public-swr per-request hooks). fa-ai.ts, the [ai] binding, the
+  dictionaries and the ADMIN force-run (/api/fa-ai-run) stay.
+- **C4 far-cup cron — REMOVED** (the "27 */4" trigger + the api.ts
+  scheduled branch). The probe keeps running from the quiet ticks
+  (cron-maintenance, the same cup_far_scan_v1 4h due-gate); wrangler.toml
+  is back to the SINGLE `*/10 * * * *` trigger — verify ONE schedule in
+  the dashboard post-deploy.
+
+**Test-suite co-evolution (all green: `npx tsc --noEmit` zero errors +
+`npm test` full chain, 3887 checks):** check-s19-goalalert/s19-goal-smoke
+git-rm'd + unwired; s20-dayhub-smoke stripped of its goal section;
+check-s20-dayhubs asserts the removal + re-pins the version triple;
+check-scheduler 4b/4c → slot/120 + a POST_MATCH follows-check + the pollA
+ladder 120/120/60/120/300/900 (3b/13b stay "tick"); check-hero-clubs
+inverts the watch wiring; check-reliability #quota2 pins the admin-only
+learner, #nospam10/#standsteady/#epochflow/#swrsolid assert the removals;
+check-channel-mirror k-cron → single trigger, h3 + the m3 envelope
+re-pinned without the HT event; check-lifecycle/check-mdstyle/
+check-no-miss assert HT retirement (the status map still records PAUSED);
+check-stats re-pins the enrichment removal + the version triple (the
+version follows the repo convention `13.276.0-slim`); live-derby drops the
+enrichment grab/stubs. RUNBOOK §7/§8 rows updated (governor list,
+live_detail retirement, overlay cadence, hero_rotation_v1 writer, FA-AI
+admin-forced, goal_snapshots orphan note).
+
+**Rollback:** `npx wrangler rollback` (restores code + triggers — verify
+the 4-hourly trigger reappears; if not, revert wrangler.toml + redeploy
+the old commit). No data rollback needed (all orphaned keys TTL-bound or
+harmless). **Monitoring:** first live matchday — sweeps at :00/:20/:40
+only, NO "Goal alerts"/"HT alerts" log lines, FT pushes ≤20 min; 48h of
+/healthz. Expected busiest-day KV writes: ~700-810 of 1,000.
+
 ## This session (Persian Club-Alias SEO — 2026-11-19 — BUILT + DEPLOYED + LIVE-VERIFIED (the owner authorized the deploy later the same day; commit `6fd2f1d`, Version ID `5c87d8bd-2417-4b02-bbe5-db7de3328e10`))
 
 **The objective (the owner's PERSIAN-CLUB-ALIAS-SEO-SPEC.md, repo root):**

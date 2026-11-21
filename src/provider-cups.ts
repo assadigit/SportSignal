@@ -1,6 +1,7 @@
 // SportSignal — the domestic-cup scans: the big-team team-view scan
 // (maybeScanCupFixtures, marker cup_scan_v1) + the far-cup probe
-// (probeCupFarFixtures, marker cup_far_scan_v1, own 4-hourly cron). Cup
+// (probeCupFarFixtures, marker cup_far_scan_v1 — since v13.276-slim (C4)
+// it runs from the quiet ticks only, no cron of its own). Cup
 // rows land in the pool via match-pool's cacheMatches. Extracted from
 // providers.ts in v13.74-providersplit.
 import { CONFIG } from "./config";
@@ -127,8 +128,12 @@ function cupEventToMatch(e, code) {
   }
   return base;
 }
-// v14.0.5-cupgap: the FAR CUP PROBE — its OWN scheduled invocation (cron
-// trigger "27 */4 * * *", see wrangler.toml + the api.ts scheduled branch).
+// v14.0.5-cupgap: the FAR CUP PROBE. v13.276-slim (C4): the dedicated
+// "27 */4" cron trigger (and its api.ts scheduled branch) are REMOVED —
+// the owner-approved live strip — and the probe now runs from the QUIET
+// TICKS only (cron-maintenance.ts's headroom-gated phase; same
+// cup_far_scan_v1 due-gate, so the effective cadence is unchanged: ~6
+// runs/day, 7 fetches each, never on a busy tick).
 // Two cups have schedules upstream that the ±1d day-sweep can never see
 // between matchdays:
 //   - ECL: league-phase matchdays are THURSDAYS (next: Oct 22 — 18 games
@@ -142,21 +147,13 @@ function cupEventToMatch(e, code) {
 //     stay "برنامه‌ای هنوز اعلام نشده" forever without a probe. A coarse
 //     +3/+7/+12/+17d grid catches an announced round within ~3 days
 //     (announcements run ≥1 week ahead).
-// WHY A DEDICATED INVOCATION: the 2026-10-11T04:31Z incident — the full
-// sweep's own fan-out (FD intl + 27 sportscore day calls + KV ops, which
-// the code's fetch-only meter undercounts) already rides Cloudflare's
-// per-invocation subrequest ceiling; running the probe's 7 calls inside
-// the same invocation starved the day sweep's tail ("Too many
-// subrequests" on the last slug-days AND the first probe call). This lean
-// path uses ~10 subrequests total and never collides with a tick (minute
-// 27 — the :20 tick is done by ~:22, the :30 tick hasn't started).
-// 7 fetches × 6 runs/day = 42 unmetered-slug calls/day; the pool write
+// 7 fetches × ~6 runs/day = 42 unmetered-slug calls/day; the pool write
 // rides cacheMatches' change-only + canonDedupe logic.
 export async function probeCupFarFixtures(env: Env) {
-  // due-gate: shared by BOTH entry points (the quiet-tick phase in cron.ts
-  // and the lean "27 */4" cron branch in api.ts) — the KV marker means only
-  // one run per CUP_FAR_SCAN_MS window regardless of which fires first.
-  // A total fetch failure writes a short 30-min fail marker (retry sooner).
+  // due-gate (v13.276-slim C4: the quiet-tick phase in cron-maintenance.ts
+  // is the only entry point now) — the KV marker means only one run per
+  // CUP_FAR_SCAN_MS window. A total fetch failure writes a short 30-min
+  // fail marker (retry sooner).
   try {
     const marker = await env.STATE.get(CONFIG.KV_CUP_FAR_SCAN).catch(() => null);
     if (marker) return { added: 0, scanned: 0, skipped: true };
