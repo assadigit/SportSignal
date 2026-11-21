@@ -567,7 +567,281 @@ export function buildFaTeamDict() {
     "Venezuela": "ونزوئلا",
     // Oceania:
     "Tahiti": "تاهیتی",
-    "Cook Islands": "جزایر کوک"
+    "Cook Islands": "جزایر کوک",
+    // ---- v13.277-clubdata: EFL Championship 2026-27 — the promoted three
+    // (Wrexham, Bolton, Lincoln). FD 2026-27 roster verified 2026-11-21.
+    // Wrexham AFC — verified
+    "Wrexham AFC": "ورکسام",
+    "Wrexham": "ورکسام",
+    // Bolton Wanderers FC — verified
+    "Bolton Wanderers FC": "بولتون",
+    "Bolton Wanderers": "بولتون",
+    // Lincoln City FC — verified
+    "Lincoln City FC": "لینکولن سیتی",
+    "Lincoln City": "لینکولن سیتی",
+
+    // ---- v13.277-clubdata: EFL League One 2026-27 — the 15 clubs the dict
+    // did not cover (Wikipedia 2026-27 season roster, verified 2026-11-21).
+    // Persian names per fa.wikipedia titles (media short forms where
+    // established); full evidence: docs/audits/club-translation-data/
+    // Barnsley FC — verified
+    "Barnsley FC": "بارنسلی",
+    "Barnsley": "بارنسلی",
+    // Blackpool FC — verified
+    "Blackpool FC": "بلکپول",
+    "Blackpool": "بلکپول",
+    // Burton Albion FC — verified
+    "Burton Albion FC": "برتون آلبیون",
+    "Burton Albion": "برتون آلبیون",
+    // Cambridge United FC — verified
+    "Cambridge United FC": "کمبریج یونایتد",
+    "Cambridge United": "کمبریج یونایتد",
+    // Doncaster Rovers FC — verified
+    "Doncaster Rovers FC": "دونکستر روورز",
+    "Doncaster Rovers": "دونکستر روورز",
+    // Huddersfield Town AFC — verified
+    "Huddersfield Town AFC": "هادرزفیلد",
+    "Huddersfield Town A.F.C.": "هادرزفیلد",
+    "Huddersfield Town": "هادرزفیلد",
+    // Milton Keynes Dons FC — verified
+    "Milton Keynes Dons FC": "میلتون کینز دونز",
+    "Milton Keynes Dons": "میلتون کینز دونز",
+    "MK Dons": "میلتون کینز دونز",
+    // Notts County FC — verified
+    "Notts County FC": "نوتس کانتی",
+    "Notts County": "نوتس کانتی",
+    // Plymouth Argyle FC — verified
+    "Plymouth Argyle FC": "پلیموث آرگیل",
+    "Plymouth Argyle": "پلیموث آرگیل",
+    // Stockport County FC — verified
+    "Stockport County FC": "استوک‌پورت کانتی",
+    "Stockport County": "استوک‌پورت کانتی",
+    // Stevenage FC — verified
+    "Stevenage FC": "استیونج",
+    "Stevenage": "استیونج",
+    // Wycombe Wanderers FC — verified
+    "Wycombe Wanderers FC": "وایکام واندررز",
+    "Wycombe Wanderers": "وایکام واندررز",
+    // Bromley FC — verified
+    "Bromley FC": "بروملی",
+    "Bromley": "بروملی",
+    // Leyton Orient FC — verified
+    "Leyton Orient FC": "لیتون اورینت",
+    "Leyton Orient": "لیتون اورینت",
+    // AFC Wimbledon — verified
+    "AFC Wimbledon": "ویمبلدون",
+
+    // ---- v13.277-clubdata: Serie B 2026-27 — 16 clubs (Wikipedia season
+    // roster). Cesena has no fa.wiki article — established media form چزنا.
+    // SS Arezzo — probable (clubdata evidence)
+    "SS Arezzo": "آرتزو",
+    "Arezzo Calcio": "آرتزو",
+    // Ascoli Calcio 1898 FC — verified
+    "Ascoli Calcio 1898 FC": "آسکولی",
+    "Ascoli Calcio": "آسکولی",
+    "Ascoli": "آسکولی",
+    // US Avellino 1912 — verified
+    "US Avellino 1912": "آولینو",
+    "Avellino": "آولینو",
+    // Benevento Calcio — verified
+    "Benevento Calcio": "بنونتو",
+    "Benevento": "بنونتو",
+    // Carrarese Calcio 1908 — verified
+    "Carrarese Calcio 1908": "کاررارزه",
+    "Carrarese": "کاررارزه",
+    // US Catanzaro 1929 — verified
+    "US Catanzaro 1929": "کاتانزارو",
+    "Catanzaro": "کاتانزارو",
+    // Cesena FC — probable (clubdata evidence)
+    "Cesena FC": "چزنا",
+    "Cesena Calcio": "چزنا",
+    "Cesena": "چزنا",
+    // SS Juve Stabia — verified
+    "SS Juve Stabia": "یووه استابیا",
+    "Juve Stabia": "یووه استابیا",
+    // Mantova 1911 — verified
+    "Mantova 1911": "منتووا",
+    "Mantova FC": "منتووا",
+    "Mantova": "منتووا",
+    // Modena FC 2018 — verified
+    "Modena FC 2018": "مودنا",
+    "Modena FC": "مودنا",
+    "Modena": "مودنا",
+    // Calcio Padova — verified
+    "Calcio Padova": "پادوا",
+    "Padova": "پادوا",
+    "Padova Calcio": "پادوا",
+    // Palermo FC — verified
+    "Palermo FC": "پالرمو",
+    "Palermo": "پالرمو",
+    // UC Sampdoria — verified
+    "UC Sampdoria": "سمپدوریا",
+    "U.C. Sampdoria": "سمپدوریا",
+    "Sampdoria": "سمپدوریا",
+    // FC Südtirol — verified
+    "FC Südtirol": "سودتیرول",
+    "Sudtirol": "سودتیرول",
+    // LR Vicenza — verified
+    "LR Vicenza": "ویچنزا",
+    "LR Vicenza Virtus": "ویچنزا",
+    "Vicenza": "ویچنزا",
+    // Virtus Entella — verified
+    "Virtus Entella": "ویرتوس انتلا",
+    "Entella": "ویرتوس انتلا",
+
+    // ---- v13.277-clubdata: Bundesliga 2026-27 — SV 07 Elversberg (the
+    // promoted side the dict missed).
+    // SV 07 Elversberg — probable (clubdata evidence)
+    "SV 07 Elversberg": "الورسبرگ",
+    "SV Elversberg": "الورسبرگ",
+    "Elversberg": "الورسبرگ",
+
+    // ---- v13.277-clubdata: 2. Bundesliga 2026-27 — 10 clubs (Wikipedia
+    // season roster).
+    // Hertha BSC — verified
+    "Hertha BSC": "هرتا برلین",
+    "Hertha Berlin": "هرتا برلین",
+    // Arminia Bielefeld — verified
+    "Arminia Bielefeld": "آرمینیا بیله‌فلد",
+    "DSC Arminia Bielefeld": "آرمینیا بیله‌فلد",
+    // Eintracht Braunschweig — verified
+    "Eintracht Braunschweig": "آینتراخت برانشوایگ",
+    "Braunschweig": "آینتراخت برانشوایگ",
+    // FC Energie Cottbus — verified
+    "FC Energie Cottbus": "انرژی کوتبوس",
+    "Energie Cottbus": "انرژی کوتبوس",
+    // Dynamo Dresden — verified
+    "Dynamo Dresden": "دینامو درسدن",
+    "SG Dynamo Dresden": "دینامو درسدن",
+    // SpVgg Greuther Fürth — verified
+    "SpVgg Greuther Fürth": "گروتر فورث",
+    "Greuther Fürth": "گروتر فورث",
+    "Greuther Furth": "گروتر فورث",
+    // 1. FC Kaiserslautern — verified
+    "1. FC Kaiserslautern": "کایزرسلاوترن",
+    "FC Kaiserslautern": "کایزرسلاوترن",
+    "Kaiserslautern": "کایزرسلاوترن",
+    // Karlsruher SC — verified
+    "Karlsruher SC": "کارلسروهه",
+    "Karlsruher": "کارلسروهه",
+    // 1. FC Nürnberg — verified
+    "1. FC Nürnberg": "نورنبرگ",
+    "FC Nürnberg": "نورنبرگ",
+    "Nurnberg": "نورنبرگ",
+    // VfL Osnabrück — probable (clubdata evidence)
+    "VfL Osnabrück": "اوسنابروک",
+    "Osnabrück": "اوسنابروک",
+
+    // ---- v13.277-clubdata: Ligue 1 2026-27 — ES Troyes AC (promoted).
+    // ES Troyes AC — verified
+    "ES Troyes AC": "تروا",
+    "Troyes AC": "تروا",
+    "Troyes": "تروا",
+
+    // ---- v13.277-clubdata: La Liga 2026-27 — Real Racing Club de
+    // Santander (promoted).
+    // Real Racing Club de Santander — verified
+    "Real Racing Club de Santander": "راسینگ سانتاندر",
+    "Racing Santander": "راسینگ سانتاندر",
+    "Racing de Santander": "راسینگ سانتاندر",
+
+    // ---- v13.277-clubdata: LaLiga 2 (Segunda División) 2026-27 — 16 clubs
+    // (Wikipedia season roster). Includes the RESERVE TEAMS Celta Fortuna +
+    // Real Sociedad B with DISTINCT names (the parent-club stem-fold fix).
+    // Albacete Balompié — verified
+    "Albacete Balompié": "آلباسته",
+    "Albacete": "آلباسته",
+    // FC Andorra — probable (clubdata evidence)
+    "FC Andorra": "اف‌سی آندورا",
+    // Burgos CF — verified
+    "Burgos CF": "بورگوس",
+    "Burgos": "بورگوس",
+    // Cádiz CF — verified
+    "Cádiz CF": "کادیس",
+    "Cadiz CF": "کادیس",
+    // CD Castellón — verified
+    "CD Castellón": "کاستیون",
+    "Castellón": "کاستیون",
+    // RC Celta Fortuna — probable (clubdata evidence)
+    "RC Celta Fortuna": "سلتا فورتونا",
+    "Celta Fortuna": "سلتا فورتونا",
+    // AD Ceuta FC — verified
+    "AD Ceuta FC": "دپورتیوا سئوتا",
+    "AD Ceuta": "دپورتیوا سئوتا",
+    // Córdoba CF — verified
+    "Córdoba CF": "کوردوبا",
+    "Cordoba CF": "کوردوبا",
+    // SD Eibar — verified
+    "SD Eibar": "ایبار",
+    "Eibar": "ایبار",
+    // CD Eldense — verified
+    "CD Eldense": "الدنسه",
+    "Eldense": "الدنسه",
+    // Granada CF — verified
+    "Granada CF": "گرانادا",
+    "Granada": "گرانادا",
+    // Real Oviedo — verified
+    "Real Oviedo": "رئال اویدو",
+    // Real Sociedad B — probable (clubdata evidence)
+    "Real Sociedad B": "رئال سوسیداد ب",
+    "Real Sociedad de Fútbol B": "رئال سوسیداد ب",
+    // CE Sabadell FC — verified
+    "CE Sabadell FC": "سابادل",
+    "CE Sabadell": "سابادل",
+    // Sporting de Gijón — verified
+    "Sporting de Gijón": "اسپورتینگ خیخون",
+    "Sporting Gijón": "اسپورتینگ خیخون",
+    "Real Sporting de Gijón": "اسپورتینگ خیخون",
+    // CD Tenerife — verified
+    "CD Tenerife": "تنریف",
+    "Tenerife": "تنریف",
+
+    // ---- v13.277-clubdata: UCL historical layer — the 30-season window
+    // (1996-97 → 2025-26) extension. The 2005-06 → 2024-25 window was already
+    // covered; these are the still-active 1996-97 → 2004-05 group-stage
+    // participants (spec 3.2 priorities 1-3) + the 2025-26 league-phase
+    // additions. Defunct participants (Košice, Lierse) are DEFERRED with
+    // reasons in clubdata-2026-27.json — no active-club records for them.
+    // SC Heerenveen — verified
+    "SC Heerenveen": "هیرنفین",
+    "Heerenveen": "هیرنفین",
+    // Willem II — verified
+    "Willem II": "ویلم دوم",
+    // Brøndby IF — verified
+    "Brøndby IF": "بروندبی",
+    "Brondby IF": "بروندبی",
+    "Brondby": "بروندبی",
+    // IFK Göteborg — probable (clubdata evidence)
+    "IFK Göteborg": "گوتنبری",
+    // AIK Fotboll — probable (clubdata evidence)
+    "AIK Fotboll": "آی‌ای‌ک",
+    "AIK": "آی‌ای‌ک",
+    // Helsingborgs IF — probable (clubdata evidence)
+    "Helsingborgs IF": "هلسینگبوری",
+    "Helsingborg": "هلسینگبوری",
+    "HIF": "هلسینگبوری",
+    // Widzew Łódź — verified
+    "Widzew Łódź": "ویدزف ووچ",
+    // Boavista FC — verified
+    "Boavista FC": "بوآویشتا",
+    "Boavista": "بوآویشتا",
+    // Paphos FC — probable (clubdata evidence)
+    "Paphos FC": "پافوس",
+    // Royale Union Saint-Gilloise — probable (clubdata evidence)
+    "Royale Union Saint-Gilloise": "یونیون سن‌ژیلوآز",
+    "Union Saint-Gilloise": "یونیون سن‌ژیلوآز",
+    "Union SG": "یونیون سن‌ژیلوآز",
+    // ---- v13.277-clubdata: UCL historical layer — the 30-season window
+    // (1996-97 → 2025-26) extension. The 2005-06 → 2024-25 window was already
+    // covered; these are the still-active 1996-97 → 2004-05 group-stage
+    // participants (spec 3.2 priorities 1-3) + the 2025-26 league-phase
+    // additions. Defunct participants (Košice, Lierse) are DEFERRED with
+    // reasons in clubdata-2026-27.json — no active-club records for them.
+    // Olympiacos FC — existing-extension (clubdata evidence)
+    "PAE Olympiakos SFP": "المپیاکوس",
+    // Qarabağ Ağdam FK — existing-extension (clubdata evidence)
+    "Qarabağ Ağdam FK": "قره‌باغ",
+
   };
   return FA_TEAMS;
 }

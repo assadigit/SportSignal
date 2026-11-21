@@ -152,8 +152,8 @@ check("s20: provider-intl.ts rides the worker concat (the bundle order, after pr
 check("s20: zero page-builder changes — buildHub's shape (upcomingFollowed + the day filter + the honest empty state) untouched by S20",
   /const all = upcomingFollowed\(ctx\)\.filter\(def\.filter\);/.test(pagesSrc));
 check("s20: the version triple — src/config.ts 13.276-slim + package.json 13.276.0 (the pin rides forward with the v13.276-slim release)",
-  /export const VERSION = "13\.276\.0-slim";/.test(cfgSrc) &&
-  pkg.version === "13.276.0");
+  /export const VERSION = "13\.277\.0-clubdata";/.test(cfgSrc) &&
+  pkg.version === "13.277.0");
 check("s20: the check is wired into the npm test chain",
   /node scripts\/check-s20-dayhubs\.js/.test(pkg.scripts.test));
 check("s20: the seeded harness + the local seeder exist (the s17/s18/s19 convention)",

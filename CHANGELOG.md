@@ -1,3 +1,71 @@
+# v13.277.0-clubdata — the club Persian-translation + stadium database completion (2026-11-21, `main`)
+
+The SPORTSIGNAL_CLUB_PERSIAN_TRANSLATION_COMPLETION_SPEC deliverable: the
+curated local club database now covers every in-scope club, so match
+rendering needs NO AI translation, search, or provider request for any of
+them — the Workers AI learner stays available only as the admin-forced
+fallback for genuinely out-of-scope names (the v13.276-slim wiring,
+unchanged).
+
+  THE DATA (verified 2026-11-21; season 2026/27 confirmed live via the
+  football-data currentSeason + the Wikipedia season articles; every
+  entry's sources + confidence in docs/audits/club-translation-data/):
+
+  - fa-dict 516 → 676 keys (+160): the 2026-27 season refresh — the
+    Championship promoted three (Wrexham رکسهام, Bolton بولتون, Lincoln
+    لینکولن سیتی), all 15 uncovered League One clubs, all 16 uncovered
+    Serie B clubs, Elversberg, the 10 uncovered 2. Bundesliga clubs,
+    Troyes, Racing Santander, and the 16 uncovered LaLiga 2 clubs.
+  - The UCL 30-season historical window (1996-97 → 2025-26, spec §3.2):
+    the 2005-06 → 2024-25 window was already covered; the extension adds
+    the still-active older-era participants (Nantes [already translated],
+    Heerenveen هیرنفین, Willem II ویلم دوم, Brøndby بروندبی, IFK
+    Göteborg گوتنبری, AIK آی‌ای‌ک, Helsingborg هلسینگبوری, Widzew Łódź
+    ویدزف ووچ, Boavista بوآویشتا) + the 2025-26 league-phase additions
+    (Paphos پافوس, Union Saint-Gilloise یونیون سن‌ژیلوآز) + the live FD
+    legal forms (PAE Olympiakos SFP, Qarabağ Ağdam FK). The defunct
+    Košice + Lierse are DEFERRED with documented reasons (no active-club
+    records for defunct entities).
+  - THE RESERVE-TEAM FIX: Real Sociedad B + RC Celta Fortuna (LaLiga 2
+    2026-27) previously folded onto their PARENT clubs through the fuzzy
+    stem layer (رئال سوسیداد ب rendered as رئال سوسیداد) — both now have
+    distinct dictionary names.
+  - TEAM_STADIUMS 22 → 287 entries: full current-coverage for every
+    in-scope club (204/204) + the CL layer — English stadium names per the
+    2026-27 season articles/club infoboxes, Persian renderings per
+    fa.wikipedia stadium titles where they exist, consistent
+    transliteration otherwise. The v13.85 stadium-chip path (homeGround
+    fills-only + curatedVenueFa unification) now covers the whole scope
+    with zero provider calls.
+
+  THE GATES:
+
+  - scripts/check-fa-dict.js — rosters refreshed to the verified 2026-27
+    season + extended to the full spec scope (10 competitions, 246
+    in-scope clubs + CL + history): 498 names, 0 failures (was 282).
+  - scripts/check-club-coverage.js (NEW, wired into npm test) — the
+    repeatable spec §8 Phase-D gate: G1 roster Persian coverage through
+    the REAL translateTeam layers (no AI, no stems), G2 stadium coverage,
+    G3 dataset-key resolution, G4 cross-club value-collision detection,
+    G5 the reserve-team distinctions, G6 stadium-table verification.
+    After future season refreshes it REPORTS the gaps instead of letting
+    the AI learner paper over them.
+  - scripts/clubdata/generate-sections.js + apply-sections.js (NEW) — the
+    deterministic, idempotent generators that turn the evidence dataset
+    into the dict/stadium sections with collision checks (never writes to
+    src/ directly without them passing).
+
+  HONEST LIMITS (the uncertainty queue in clubdata-2026-27.json): Arezzo,
+  Elversberg, Osnabrück, IFK Göteborg, Paphos carry fa.wiki
+  disagreements or missing corroboration — marked for owner review, all
+  with single-source evidence recorded. Persian stadium names for
+  lower-tier grounds are consistent transliterations (confidence:
+  transliteration), not media-attested forms.
+
+  npm test: 3,941 OK / 0 FAIL (exit 0). npx tsc --noEmit clean. The AI
+  learner path is untouched (fa-ai.ts byte-identical) — coverage, not
+  removal, was the spec's end-state.
+
 # v13.276.0-slim — the live strip: 7 non-core features REMOVED (KV/subrequest headroom on the free plan) (2026-11-21, `main`)
 
 The owner-approved removal deploy. Seven non-core features went out in one
