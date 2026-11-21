@@ -134,6 +134,97 @@ for (const [lg, clubsObj] of Object.entries(DATA.stadiumsExistingClubs)) {
 }
 console.log(`G6 dataset stadium entries verified: ${stadEntries}`);
 
+// G7: THE AI-LEARNER NO-WORK PROOF (spec §4.2 end-state + §10: "The existing
+// application lookup resolves names locally without making translation
+// requests for covered clubs"). Runs the REAL collectUnknownTeamNames
+// (eval'd from the worker concat — the same function the learner uses)
+// against a simulated public payload containing EVERY in-scope roster club
+// + the CL 2026-27 league phase + the historical layer: the unknown-name
+// set must be EMPTY, i.e. the Workers AI learner would have zero names to
+// translate for the covered universe.
+const collectSrc = src.match(/function collectUnknownTeamNames\(data\) \{[\s\S]*?\n\}/);
+if (!collectSrc) { fail("G7", "collectUnknownTeamNames not found in worker source"); }
+else {
+  const collect = new Function("translateTeam", "return (" + collectSrc[0] + ")")(translateLocal);
+  const allRosterClubs = [];
+  for (const [lg, teams] of Object.entries(ROSTERS)) for (const t of teams) allRosterClubs.push(t);
+  const payload = {
+    upcoming: [{ homeTeam: { name: allRosterClubs[0] }, awayTeam: { name: allRosterClubs[1] } }],
+    finished: [{ homeTeam: { name: allRosterClubs[2] }, awayTeam: { name: allRosterClubs[3] } }],
+    ucl: { teams: allRosterClubs.map((n) => ({ name: n })), matches: [{ homeTeam: { name: allRosterClubs[4] }, awayTeam: { name: allRosterClubs[5] } }] },
+    standings: { PL: { teams: allRosterClubs.slice(0, 60).map((n) => ({ name: n })) } }
+  };
+  const unknown = collect(payload);
+  const unknownInScope = unknown.filter((n) => {
+    // only count names that ARE roster clubs (the payload contains nothing else)
+    return Object.values(ROSTERS).some((teams) => teams.includes(n));
+  });
+  if (unknownInScope.length) { for (const n of unknownInScope) fail("G7", `AI learner would be asked about covered club: ${n}`); }
+  else console.log(`G7 AI-learner unknown names among all ${allRosterClubs.length} covered roster clubs: 0`);
+}
+
+// G8: pubMatch render smoke for the NEW clubs (spec §10: "Stable IDs, match
+// rendering ... remain intact"). Exercises the REAL pubMatch + homeGround +
+// curatedVenueFa from the worker concat for one match per sample of the
+// newly-covered clubs: the Persian name AND the Persian venue chip must
+// resolve through the production path.
+const pubSrcFn = src.match(/function pubMatch\(m\) \{[\s\S]*?\n\}/);
+if (!pubSrcFn) { fail("G8", "pubMatch not found in worker source"); }
+else {
+  const groundsSeg = src.match(/let cache = null;[\s\S]*?return cache\.map;\n\}/)[0] + "\n" +
+    src.match(/function isOneOffNeutral\([^)]*\) \{[\s\S]*?\n\}/)[0] + "\n" +
+    src.match(/function homeGround\([^)]*\) \{[\s\S]*?\n\}/)[0] + "\n" +
+    src.match(/let vCache = null;[\s\S]*?\n\}/)[0];
+  const CONFIGStub = { TEAM_STADIUMS: STADIUMS };
+  new Function("CONFIG", groundsSeg + "\nglobalThis.homeGround = homeGround; globalThis.curatedVenueFa = curatedVenueFa; globalThis.isOneOffNeutral = isOneOffNeutral;")(CONFIGStub);
+  globalThis.translateTeam = translateLocal;
+  globalThis.translateCompetition = () => "لیگ";
+  globalThis.translateVenue = (v) => (v ? (STADIUMS[Object.keys(STADIUMS).find((k) => STADIUMS[k].en === v)] || {}).fa || v : v);
+  globalThis.LEAGUE_LOGOS = {};
+  globalThis.isLiveStatus = (s) => s === "LIVE";
+  globalThis.isFeaturedMatch = () => false;
+  // pubMatch's other cross-module deps: stubbed to neutral values (the fields
+  // under test are faName/venue/venueFa — roundLabel/href/derby tags ride the
+  // neutral branches)
+  globalThis.roundLabel = () => "";
+  globalThis.matchHref = () => "/matches/x";
+  globalThis.matchPath = () => "/matches/x";
+  globalThis.GUARD = () => true;
+  globalThis.isMasterPair = () => false;
+  globalThis.isDerby = () => null;
+  globalThis.rivalryName = () => null;
+  globalThis.normTeamKey = normTeamKey;
+  globalThis.normalizeTeamName = normTeamKey;
+  const pubMatch = new Function(pubSrcFn[0].replace(/^function pubMatch/, "return function pubMatch"))();
+  const samples = [
+    { home: "Wrexham AFC", away: "Bolton Wanderers FC", venue: null },
+    { home: "Palermo FC", away: "Sampdoria", venue: null },
+    { home: "Hertha BSC", away: "1. FC Kaiserslautern", venue: null },
+    { home: "SD Eibar", away: "Real Oviedo", venue: "Estadio Municipal de Ipurúa" },
+    { home: "Real Sociedad B", away: "CD Tenerife", venue: null }
+  ];
+  for (const s of samples) {
+    const m = {
+      utcDate: "2026-11-21T15:00:00Z", status: "SCHEDULED", stage: "REGULAR", roundRaw: "",
+      competition: { code: "TEST" },
+      homeTeam: { name: s.home, crest: null }, awayTeam: { name: s.away, crest: null },
+      venue: s.venue, score: null
+    };
+    try {
+      const p = pubMatch(m);
+      const homeFa = p.homeTeam && (p.homeTeam.faName || p.homeTeam.name);
+      const venueFa = p.venueFa || null;
+      const venueEn = p.venue || null;
+      const parentFold = s.home === "Real Sociedad B" && homeFa === FA_TEAMS["Real Sociedad"];
+      if (!homeFa || homeFa === s.home) fail("G8", `${s.home} rendered untranslated in pubMatch`);
+      else if (parentFold) fail("G8", `Real Sociedad B still renders as the parent name`);
+      else if (!venueEn) fail("G8", `${s.home}: no venue (homeGround miss)`);
+      else if (!venueFa || venueFa === venueEn) fail("G8", `${s.home}: venue chip not Persian (${venueFa})`);
+      else console.log(`G8 pubMatch: ${s.home} -> ${homeFa} @ ${venueFa} (${venueEn})`);
+    } catch (e) { fail("G8", `pubMatch threw for ${s.home}: ${e.message}`); }
+  }
+}
+
 // summary
 const dictCount = Object.keys(FA_TEAMS).length;
 const stadCount = Object.keys(STADIUMS).length;
