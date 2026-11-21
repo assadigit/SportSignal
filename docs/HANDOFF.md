@@ -2,6 +2,46 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
+## This session (v13.277.0-clubdata — the club Persian-translation + stadium database completion; 2026-11-21 — DEPLOYED + LIVE-VERIFIED)
+
+**The task:** `SPORTSIGNAL_CLUB_PERSIAN_TRANSLATION_COMPLETION_SPEC.md` (repo
+root). The complete local club database so match rendering needs NO AI
+translation for any in-scope club. **Status: DONE per the spec's §10
+definition of done.** Full evidence: `docs/audits/club-translation-data/`
+(the M1 audit, the master dataset with per-entry sources + confidence, the
+roster archive, the final report with every count).
+
+- **M1 audit** (`d822580`): the traced provider→dict→render path, the
+  measured 2026-27 baseline (141/204 Persian, 16/204 stadiums, 63 gaps, the
+  Real Sociedad B parent-fold bug, the AI-learner status post-v13.276-slim).
+- **M2-M6** (`7c1ba06`): season 2026/27 verified live (FD currentSeason +
+  Wikipedia season articles; FD free tier carries no EL1/SB/BL2/SD — those
+  rosters came from the season articles, cross-checked via the
+  promotion/relegation consistency). `src/fa-dict.ts` 516 → 676 keys;
+  `TEAM_STADIUMS` 22 → 287; the UCL 30-season historical window extension
+  (1996-97 → 2004-05 extraction + the 2025-26 FD pull); the reserve-team
+  fix; new gates `check-club-coverage.js` (G1-G8, in `npm test`) +
+  deterministic idempotent generators under `scripts/clubdata/`.
+- **M7** (`a2343e6`): the G7 AI-no-work proof (the REAL
+  collectUnknownTeamNames finds 0 unknowns across all 240 covered roster
+  clubs) + the G8 pubMatch render smoke (Persian names + Persian venue chips
+  through the production path, incl. the reserve-team distinction).
+- **M8**: `npm test` 3,951 OK / 0 FAIL; `wrangler deploy` Version ID
+  `7b254f47-2384-4d2e-87d3-dc5ad48c2092` (2026-11-21 ~21:55 UTC); live
+  `/healthz` ok:true + 13.277.0-clubdata + pool 493; the live payload renders
+  the new coverage (Frosinone فروزینونه, Venezia ونیز, Paris FC پاری‌اف‌سی,
+  Hull هال سیتی; Persian venue chips live).
+- **Open for owner review (the uncertainty queue, all documented):** Arezzo,
+  Elversberg, Osnabrück, IFK Göteborg, Paphos, Wimbledon short-form,
+  Boavista's division status, Betis's temporary La Cartuja relocation. The
+  daily KV-budget `degraded` flag is the pre-existing free-tier reality
+  (936/1000 writes that day) — unrelated to this data-only deploy.
+- **Next season refresh procedure:** update the roster snapshot + clubdata
+  JSON in `docs/audits/club-translation-data/`, run
+  `node scripts/clubdata/generate-sections.js` (collision check) →
+  `apply-sections.js` (idempotent insert) → `npm test` — the
+  check-club-coverage gate reports exactly what is missing.
+
 ## ⚠️ PERSIAN-ALIAS PHASE 2 — BLOCKED UNTIL THE FREEZE LIFTS (earliest Dec 9, 2026)
 
 Phase 2 of the Persian-alias SEO work (the post-freeze follow-up to commit
