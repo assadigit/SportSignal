@@ -2,12 +2,19 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
-## This session (v13.278.0-farsisitename — the Farsi site-name swap; 2026-11-22 — DEPLOYED + LIVE-VERIFIED)
+## This session (v13.278.0-farsisitename — the Farsi site-name swap; 2026-11-22 — BUILT + GATED + PUSHED; the DEPLOY rides the scheduled live-safe window)
 
 **The task (the owner's ask, verbatim):** "I want the english version of
 name becomes farsi in search and 'sportsignal' becomes ' اسپرت سیگنال ' …
 in latin version : SportSignal / in farsi searches: اسپرت سیگنال."
-**Status: DONE + deployed + live-verified.** Full evidence:
+**Status: the code is DONE + pushed to `main` (4ab17b5); the DEPLOY is
+SCHEDULED, not yet run** — at session close three matches were LIVE
+(Juventus-Venezia, Twente-Willem II, Burnley-Blackburn) and the fixture
+list runs wall-to-wall (Barcelona-Villarreal 13:00, Paris FC-Angers 14:00,
+Liverpool-ManUtd 16:30, Milan-Frosinone 17:00, Atalanta-Inter 19:45,
+Getafe-Atlético 20:00 UTC), so the no-live-window deploy discipline holds.
+The first quiet gap is ~15:50-16:30 UTC (19:20-20:00 Tehran): after
+Paris FC FT, before the Liverpool KO. Full evidence:
 `docs/history/2026-11-22-s21-farsisitename.md` + the CHANGELOG
 v13.278.0-farsisitename entry.
 
