@@ -65,6 +65,28 @@ own cadence — the SERP append flips to «اسپرت سیگنال» as the page
 re-index (typically days, not minutes); the live HTML/JSON-LD swap is
 verifiable immediately.
 
+**DEPLOYED 2026-11-22 ~14:05 UTC (17:35 Tehran) — the owner's same-day
+force-deploy order ("Do it, Deploy Push commit. Force deploy it." — the
+explicit instruction that outranks the no-live-window deploy discipline
+per AGENTS.md §0 rule order).** Pre-deploy on the clean clone:
+`bun install --frozen-lockfile` → `npm test` exit 0, zero FAILs; GitHub
+`main` == local HEAD == `cec49e9` verified via `git ls-remote`. `npx
+wrangler deploy` — Version ID `0f3fc73d-5fc0-4dc1-a326-c4edb6606db6`,
+commit `cec49e9`; all bindings intact (STATE KV, STATS_DB, USERS_DB,
+DRAIN_SELF, AI, the channel vars) + the `*/10` cron re-armed. Live-verified
+post-deploy: `/healthz` ok:true + "13.278.0-farsisitename" + pool 508;
+og:site_name «اسپرت سیگنال» on /, /teams, /matches/today + the marquee
+match page; both JSON-LD nodes swapped (name «اسپرت سیگنال» /
+alternateName "SportSignal"); the Atom + ICS feed names Farsi with the
+PRODID staying Latin; the PWA manifest names staying Latin; sw.js v128;
+workers.dev noindex (R-13). Two started-unconfirmed matches were in flight
+(the owner-forced window): outbox_depth 0, admin_alerts_ok true, degraded
+false — no notification failures pre- or post-deploy. The homepage HTML
+rode the CF edge cache (s-maxage=60, swr=300) for ~5 min, then
+revalidated to the new render. Rollback: `wrangler rollback` or redeploy
+`7b254f47` (13.277.0-clubdata). Full record:
+`docs/history/2026-11-22-s21-farsisitename.md` (§ the owner-forced deploy).
+
 # v13.277.0-clubdata — the club Persian-translation + stadium database completion (2026-11-21, `main`)
 
 The SPORTSIGNAL_CLUB_PERSIAN_TRANSLATION_COMPLETION_SPEC deliverable: the

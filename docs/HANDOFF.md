@@ -2,20 +2,31 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
-## This session (v13.278.0-farsisitename — the Farsi site-name swap; 2026-11-22 — BUILT + GATED + PUSHED; the DEPLOY rides the scheduled live-safe window)
+## This session (v13.278.0-farsisitename — the Farsi site-name swap; 2026-11-22 — DEPLOYED + LIVE-VERIFIED, the owner-forced deploy)
 
 **The task (the owner's ask, verbatim):** "I want the english version of
 name becomes farsi in search and 'sportsignal' becomes ' اسپرت سیگنال ' …
 in latin version : SportSignal / in farsi searches: اسپرت سیگنال."
-**Status: the code is DONE + pushed to `main` (4ab17b5); the DEPLOY is
-SCHEDULED, not yet run** — at session close three matches were LIVE
-(Juventus-Venezia, Twente-Willem II, Burnley-Blackburn) and the fixture
-list runs wall-to-wall (Barcelona-Villarreal 13:00, Paris FC-Angers 14:00,
-Liverpool-ManUtd 16:30, Milan-Frosinone 17:00, Atalanta-Inter 19:45,
-Getafe-Atlético 20:00 UTC), so the no-live-window deploy discipline holds.
-The first quiet gap is ~15:50-16:30 UTC (19:20-20:00 Tehran): after
-Paris FC FT, before the Liverpool KO. Full evidence:
-`docs/history/2026-11-22-s21-farsisitename.md` + the CHANGELOG
+**Status: DEPLOYED + LIVE-VERIFIED.** The S21 close left the deploy
+scheduled for the first quiet gap; the owner then explicitly ordered the
+force deploy ("Do it, Deploy Push commit. Force deploy it." — the owner's
+explicit instruction outranks the no-live-window discipline per AGENTS.md
+§0 rule order), so `wrangler deploy` ran 2026-11-22 ~14:05 UTC (17:35
+Tehran): Version ID `0f3fc73d-5fc0-4dc1-a326-c4edb6606db6`, commit `cec49e9`.
+Live evidence (all verified post-deploy): `/healthz` ok:true +
+"13.278.0-farsisitename" + pool 508 + outbox 0; og:site_name «اسپرت سیگنال»
+on /, /teams, /matches/today + the marquee match page; WebSite +
+Organization JSON-LD `name`=«اسپرت سیگنال» / `alternateName`="SportSignal";
+the Atom `<title>` + ICS `X-WR-CALNAME` «بازی‌های بزرگ فوتبال — اسپرت
+سیگنال»; the Farsi link-alternate titles + og:image:alt; the PWA manifest
+names + ICS PRODID + twitter:site correctly still Latin; sw.js serves
+v128; workers.dev stays noindex. Two started-unconfirmed matches were in
+flight at deploy time (live:0, started-unconfirmed:2 — the owner-forced
+window): no notification failures observed (outbox_depth 0,
+admin_alerts_ok true, degraded false, both pre- and post-deploy healthz).
+Rollback reference: redeploy the 13.277.0-clubdata upload
+(`7b254f47-2384-4d2e-87d3-dc5ad48c2092`) or `wrangler rollback`. Full
+record: `docs/history/2026-11-22-s21-farsisitename.md` + the CHANGELOG
 v13.278.0-farsisitename entry.
 
 - **The diagnosis:** Google's site-name append (the " - SportSignal" in the
