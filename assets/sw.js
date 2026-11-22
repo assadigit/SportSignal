@@ -5,6 +5,20 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v128 (v13.278.0-farsisitename: bumped from v127 —
+//              the Farsi site-name swap round: every search-facing
+//              site-name signal (the WebSite + Organization JSON-LD name,
+//              og:site_name on the page-shell + the homepage, the Farsi
+//              head phrases — feed titles, link-alternate titles, image
+//              alts) now renders the FARSI brand «اسپرت سیگنال», with the
+//              Latin "SportSignal" riding alternateName (the owner's
+//              2026-11-22 ask: Farsi searches → اسپرت سیگنال, Latin
+//              contexts → SportSignal). NO client asset renamed (the
+//              v13.39 rename rule does not fire — the change rides served
+//              HTML only); the bump is the routine evict so the
+//              SWR/offline-fallback page copies carrying the OLD
+//              Latin-brand head leave the cache (the v13.227-rumzone
+//              served-HTML precedent).
 // Cache name:  sportsignal-v127 (v13.275.0-endigits: bumped from v126 — the
 //              Peyda font-digit repair: the custom Peyda build shipped with
 //              Latin digit codepoints (U+0030-0039) mapped to Persian-Indic
@@ -1041,7 +1055,7 @@
 //              standalone header Telegram icon with the REAL circled logo).
 //              Cache-first assets cannot refresh without a rename or a bump,
 //              the v13.39 rule; 13.73.js stays served + pinned one SEO TTL.
-const CACHE = "sportsignal-v127";
+const CACHE = "sportsignal-v128";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

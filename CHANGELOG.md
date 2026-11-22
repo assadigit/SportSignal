@@ -1,3 +1,70 @@
+# v13.278.0-farsisitename — the Farsi site-name swap: search shows «اسپرت سیگنال», Latin contexts keep SportSignal (2026-11-22, `main`)
+
+The owner's directive, verbatim: "I want the english version of name becomes
+farsi in search and 'sportsignal' becomes ' اسپرت سیگنال ' ... in latin
+version : SportSignal / in farsi searches: اسپرت سیگنال."
+
+**THE MEASURED ROOT CAUSE** (live fetch, not a guess): the owner's SERP
+example — «بارسلونا – منچسترسیتی | لیگ قهرمانان اروپا، ۱۷ آذر -
+SportSignal» — showed a LATIN brand appended to a Farsi title. The live
+match page's own `<title>` is 53 chars and brandless: the SS-10 65-char trim
+ladder (v13.228-farsibrand's +15-char «| اسپرت سیگنال» rung pushes the
+assembled title to 68) drops the brand rung exactly on the long marquee
+titles. The " - SportSignal" suffix is GOOGLE's own site-name append, read
+from the site-name signals the worker served: the WebSite JSON-LD
+`name:"SportSignal"`, `og:site_name content="SportSignal"` — both LATIN,
+on a site whose `inLanguage` is fa-IR and whose every title brand rung is
+already «اسپرت سیگنال».
+
+THE SWAP — the search-facing site-name signals lead with the FARSI name
+(the owner's rule: Farsi searches → «اسپرت سیگنال», Latin contexts →
+"SportSignal"):
+
+- `src/seo/jsonld.ts`: BOTH `organizationNode()` and `websiteNode()` now
+  carry `name: SEO.SITE_NAME_FA` + `alternateName: SEO.SITE_NAME` — the
+  WebSite node is Google's PRIMARY site-name signal; per Google's site-name
+  guidance the alternateName carries the other-language form of the same
+  entity, which is exactly the Latin brand.
+- `src/seo/page-shell.ts` (every SEO page head): `og:site_name` renders
+  `SEO.SITE_NAME_FA`; the feed/calendar `<link rel="alternate">` titles
+  («تقویم …» / «به‌روزرسانی‌های …») carry the Farsi brand.
+- `src/pages/public.ts` (the homepage template): `og:site_name` +
+  `og:image:alt` + `twitter:image:alt` + the two link-alternate titles
+  carry the Farsi brand.
+- `src/seo/files.ts`: the ICS `X-WR-CALNAME` + the Atom feed `<title>`
+  («بازی‌های بزرگ فوتبال — اسپرت سیگنال») carry the Farsi brand.
+
+THE LATIN FORM SURVIVES ITS OWN CONTEXTS (documented in DECISIONS S21-1):
+the domain, the PWA install names (`application-name` /
+`apple-mobile-web-app-title`), the ICS `PRODID` (a technical identifier),
+llms.txt / llms-full.txt (the English machine surfaces — they already carry
+the dual name "SportSignal (اسپرت سیگنال)"), the `twitter:site` handle, and
+the visible body copy (the narrative big-club variants, the footer © line)
+— out of scope for this search-signal round, listed as the optional
+follow-up.
+
+Freeze-safe: ZERO byte-frozen title/H1/description/answer bytes touched (a
+JSON-LD field + head metadata only — the Dec 4-8 freeze holds). Server-side
+only: NO client asset renamed (the bundle stays public-13.80.js, the
+stylesheet public-13.87.css). SW cache v127 -> v128: the routine evict for
+a served-HTML edit (the v13.227-rumzone precedent) so the SWR/
+offline-fallback page copies carrying the OLD Latin-brand head leave the
+cache. Zero new KV-read/subrequest/CPU (pure string constants).
+
+The homepage template changed -> the byte-parity baseline re-frozen
+(`check-admin-parity --update`, the sanctioned procedure for INTENDED
+output changes; admin + login baselines byte-identical). Version triple
+13.277.0-clubdata -> 13.278.0-farsisitename + package 13.278.0 + the
+check-stats LIVE pins (the SW v128 chain, the VERSION pin, the CHANGELOG
+heading pin) + the check-s20 ride-forward pin + a NEW v13.278 wiring check
+(both jsonld nodes swapped, og:site_name + the Farsi head phrases, the PWA
+names staying Latin, the feeds, the PRODID) + the check-mc-heroes SW pin.
+
+NOTE FOR THE OWNER: Google re-crawls and re-renders the site name on its
+own cadence — the SERP append flips to «اسپرت سیگنال» as the pages
+re-index (typically days, not minutes); the live HTML/JSON-LD swap is
+verifiable immediately.
+
 # v13.277.0-clubdata — the club Persian-translation + stadium database completion (2026-11-21, `main`)
 
 The SPORTSIGNAL_CLUB_PERSIAN_TRANSLATION_COMPLETION_SPEC deliverable: the

@@ -342,7 +342,10 @@ export async function buildCalendar(env: Env): Promise<string> {
   const ctx = await getSeoCtx(env);
   const list = upcomingBig(ctx).filter((sm) => new Date(sm.s.utcDate).getTime() < Date.now() + 30 * 864e5).slice(0, 120);
   let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//SportSignal//Fixtures//FA\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n";
-  ics += "X-WR-CALNAME:" + icsEsc("بازی‌های بزرگ فوتبال — SportSignal") + "\r\n";
+  // v13.278-farsisitename: the calendar NAME is a Farsi phrase — the brand
+  // inside renders Farsi («اسپرت سیگنال»); the PRODID above stays the Latin
+  // identifier (an iCalendar technical field, not a display name).
+  ics += "X-WR-CALNAME:" + icsEsc("بازی‌های بزرگ فوتبال — اسپرت سیگنال") + "\r\n";
   ics += "X-WR-TIMEZONE:UTC\r\n";
   for (const sm of list) {
     const m = sm.s;
@@ -396,7 +399,9 @@ export async function buildFeed(env: Env): Promise<string> {
     return updated;
   };
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<feed xmlns="http://www.w3.org/2005/Atom">\n';
-  xml += "<title>" + xmlEsc("بازی‌های بزرگ فوتبال — SportSignal") + "</title>\n";
+  // v13.278-farsisitename: the feed <title> is a Farsi phrase — the brand
+  // inside renders Farsi (the page-title «| اسپرت سیگنال» rung precedent).
+  xml += "<title>" + xmlEsc("بازی‌های بزرگ فوتبال — اسپرت سیگنال") + "</title>\n";
   xml += "<id>" + xmlEsc(SEO.SITE_URL + "/feed.xml") + "</id>\n";
   xml += '<link rel="self" href="' + xmlEsc(SEO.SITE_URL + "/feed.xml") + '"/>\n';
   xml += '<link rel="alternate" href="' + xmlEsc(SEO.SITE_URL + "/") + '"/>\n';

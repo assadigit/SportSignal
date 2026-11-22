@@ -2,6 +2,37 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
+## This session (v13.278.0-farsisitename — the Farsi site-name swap; 2026-11-22 — DEPLOYED + LIVE-VERIFIED)
+
+**The task (the owner's ask, verbatim):** "I want the english version of
+name becomes farsi in search and 'sportsignal' becomes ' اسپرت سیگنال ' …
+in latin version : SportSignal / in farsi searches: اسپرت سیگنال."
+**Status: DONE + deployed + live-verified.** Full evidence:
+`docs/history/2026-11-22-s21-farsisitename.md` + the CHANGELOG
+v13.278.0-farsisitename entry.
+
+- **The diagnosis:** Google's site-name append (the " - SportSignal" in the
+  owner's SERP example) read the LATINE WebSite JSON-LD `name` +
+  `og:site_name`; the match title itself is brandless at 53 chars (the
+  SS-10 ladder drops the brand rung on long titles — correct, unchanged).
+- **The swap:** WebSite + Organization JSON-LD `name`=«اسپرت سیگنال» with
+  `alternateName`="SportSignal"; og:site_name (page-shell + homepage) +
+  the Farsi head phrases (feed titles, link-alternate titles, image alts,
+  ICS CALNAME) carry the Farsi brand; the Latin form keeps the domain/PWA/
+  PRODID/llms.txt/twitter:site/body-copy contexts (DECISIONS S21-1).
+- **The wiring:** SW v127 -> v128 (the served-HTML evict), version triple
+  13.278.0, the check-stats LIVE pins + the NEW v13.278 wiring check, the
+  s20/mc-heroes ride-forward pins, the public-page baseline re-frozen.
+- **Freeze-safe:** zero byte-frozen title/H1/description/answer bytes; the
+  Dec 4-8 GSC measurement window is untouched by this round.
+- **The SERP flip itself takes days** (Google re-crawls on its own
+  cadence); the live HTML/JSON-LD swap verified immediately post-deploy.
+- **Optional follow-up (NOT shipped, owner's call):** the visible body-copy
+  brand mentions — the narrative big-club variants
+  («دیدار دو تیم منتخب SportSignal …», pinned by check-match-centre S09)
+  + the footer «© SportSignal» line — could also render the Farsi brand;
+  out of scope for this search-signal round.
+
 ## This session (v13.277.0-clubdata — the club Persian-translation + stadium database completion; 2026-11-21 — DEPLOYED + LIVE-VERIFIED)
 
 **The task:** `SPORTSIGNAL_CLUB_PERSIAN_TRANSLATION_COMPLETION_SPEC.md` (repo

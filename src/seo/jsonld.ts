@@ -35,8 +35,16 @@ export function organizationNode(): any {
   return {
     "@type": "Organization",
     "@id": SEO.SITE_URL + "/#organization",
-    name: SEO.SITE_NAME,
-    alternateName: SEO.SITE_NAME_FA,
+    // v13.278-farsisitename (the owner's 2026-11-22 ask): the Persian site
+    // leads with the FARSI name — «اسپرت سیگنال» — in every search-facing
+    // site-name signal; the Latin "SportSignal" rides alternateName (the
+    // form Google/Bing fall back to for Latin-script contexts; per Google's
+    // site-name guidance the alternateName carries the other-language form
+    // of the same entity). The old name:"SportSignal" let Google append
+    // " - SportSignal" to Farsi SERP titles whose 65-char trim ladder had
+    // dropped the brand rung; the swap makes that append «اسپرت سیگنال».
+    name: SEO.SITE_NAME_FA,
+    alternateName: SEO.SITE_NAME,
     url: SEO.SITE_URL + "/",
     logo: {
       "@type": "ImageObject",
@@ -56,8 +64,14 @@ export function websiteNode(): any {
     "@type": "WebSite",
     "@id": SEO.SITE_URL + "/#website",
     url: SEO.SITE_URL + "/",
-    name: SEO.SITE_NAME,
-    alternateName: SEO.SITE_NAME_FA,
+    // v13.278-farsisitename: THE primary Google site-name signal (the
+    // WebSite structured-data name outranks og:site_name + homepage
+    // hints). inLanguage is fa-IR, every page title brand rung is
+    // «اسپرت سیگنال» — the name field now agrees with both; the Latin
+    // "SportSignal" moves to alternateName (the owner's rule: Farsi
+    // searches → اسپرت سیگنال, Latin contexts → SportSignal).
+    name: SEO.SITE_NAME_FA,
+    alternateName: SEO.SITE_NAME,
     description: SEO.SITE_TAGLINE,
     inLanguage: "fa-IR",
     publisher: { "@id": SEO.SITE_URL + "/#organization" }

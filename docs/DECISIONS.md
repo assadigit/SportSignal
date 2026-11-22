@@ -2034,3 +2034,25 @@ title/H1 byte changes) after Dec 4 with a fresh 16-month GSC export.
   Persian on day one. Decided by the agent during the S20 build (the
   spec's "~40" was an approximation; the criterion stayed "curated,
   provider-form, no AI-translated flagships").
+
+
+## S21 (2026-11-22) — the Farsi site-name swap: which surfaces flip, which stay Latin
+
+- **S21-1 — the two-form brand law.** The brand has exactly TWO forms and
+  each carries its own surfaces: the FARSI «اسپرت سیگنال» leads every
+  SEARCH-FACING site-name signal — the WebSite + Organization JSON-LD
+  `name` (Google's primary site-name system input), `og:site_name` on the
+  page-shell + the homepage, and every Farsi head phrase (the ICS
+  X-WR-CALNAME, the Atom feed `<title>`, the feed/calendar
+  link-alternate titles, the homepage og/twitter image alts) — with the
+  LATIN "SportSignal" riding `alternateName` (per Google's site-name
+  guidance, the other-language form of the same entity). The LATIN form
+  keeps its own contexts: the domain, the PWA install names
+  (`application-name`/`apple-mobile-web-app-title`), the ICS `PRODID` (a
+  technical identifier, not a display name), llms.txt/llms-full.txt (the
+  English machine surfaces, already dual-named), the `twitter:site`
+  handle, and the visible body copy (the narrative big-club variants, the
+  footer © line — the optional follow-up, owner's call). Decided by the
+  agent from the owner's 2026-11-22 directive ("in latin version :
+  SportSignal / in farsi searches: اسپرت سیگنال"); the diagnosis + the
+  surface map live in docs/history/2026-11-22-s21-farsisitename.md.

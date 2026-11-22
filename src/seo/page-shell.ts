@@ -64,7 +64,13 @@ export function buildHead(h: HeadInput): string {
   s += '<meta name="color-scheme" content="dark light">\n';
   // Open Graph (SO-01)
   s += '<meta property="og:type" content="' + (h.ogType || "website") + '">\n';
-  s += '<meta property="og:site_name" content="SportSignal">\n';
+  // v13.278-farsisitename: og:site_name carries the FARSI name — it is a
+  // search-facing site-name hint (Google's site-name system reads it after
+  // WebSite structured data) and og:locale is fa_IR; the Latin "SportSignal"
+  // stays available via the WebSite/Organization alternateName. It embodies
+  // the owner's rule: Farsi surfaces → «اسپرت سیگنال», Latin contexts →
+  // SportSignal.
+  s += '<meta property="og:site_name" content="' + esc(SEO.SITE_NAME_FA) + '">\n';
   s += '<meta property="og:title" content="' + esc(h.title) + "\">\n";
   s += '<meta property="og:description" content="' + esc(h.description) + "\">\n";
   if (canonical) s += '<meta property="og:url" content="' + esc(canonical) + "\">\n";
@@ -84,8 +90,11 @@ export function buildHead(h: HeadInput): string {
   s += '<meta name="twitter:image" content="' + esc(img) + "\">\n";
   s += '<meta name="twitter:image:alt" content="' + esc(h.title) + "\">\n";
   // Machine files (F-11..F-14)
-  s += '<link rel="alternate" type="text/calendar" href="/calendar.ics" title="تقویم SportSignal">\n';
-  s += '<link rel="alternate" type="application/atom+xml" href="/feed.xml" title="به‌روزرسانی‌های SportSignal">\n';
+  // v13.278-farsisitename: the feed/calendar link titles are Farsi
+  // sentences — the brand inside them renders Farsi too (the same
+  // «| اسپرت سیگنال» title-rung precedent, v13.228-farsibrand).
+  s += '<link rel="alternate" type="text/calendar" href="/calendar.ics" title="تقویم ' + esc(SEO.SITE_NAME_FA) + '">\n';
+  s += '<link rel="alternate" type="application/atom+xml" href="/feed.xml" title="به‌روزرسانی‌های ' + esc(SEO.SITE_NAME_FA) + '">\n';
   if (h.extraHead) s += h.extraHead;
   // JSON-LD last in head (P-10)
   s += JL.jsonldScript(h.jsonldNodes);

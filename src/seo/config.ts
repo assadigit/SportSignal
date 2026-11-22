@@ -12,6 +12,17 @@ export const SEO = {
   PRODUCTION_HOSTS: ["sportsignal.ir", "football.sportsignal.ir"],
   // The Telegram webhook host — never redirect these paths (POSTs must land).
   NO_REDIRECT_PREFIXES: ["/webhook", "/api/", "/admin"],
+  // v13.278-farsisitename (the owner's 2026-11-22 ask): the brand has TWO
+  // forms and the SEARCH-FACING signals lead with the Farsi one — Farsi
+  // searches show «اسپرت سیگنال», Latin contexts keep "SportSignal". The
+  // jsonld.ts Organization/WebSite nodes carry name=SITE_NAME_FA +
+  // alternateName=SITE_NAME (Google's site-name system), page-shell +
+  // the homepage og:site_name render SITE_NAME_FA, and every Farsi head
+  // phrase (feed titles, link-alternate titles, image alts) uses the Farsi
+  // form. The Latin form survives where Latin is the context: the domain,
+  // the PWA install names, the ICS PRODID, llms.txt/llms-full.txt (the
+  // English machine surfaces, which already carry the dual name), the
+  // twitter:site handle, and the body-copy mentions.
   SITE_NAME: "SportSignal",
   SITE_NAME_FA: "اسپرت سیگنال",
   BRAND: "SportSignal",

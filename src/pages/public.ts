@@ -39,13 +39,16 @@ export const PUBLIC_PAGE = `<!doctype html>
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-title" content="SportSignal">
 <meta name="application-name" content="SportSignal">
+<!-- v13.278-farsisitename: the PWA install names stay the Latin brand
+     (the owner's "in latin version: SportSignal" — browser/home-screen
+     surfaces are Latin-brand contexts, like the domain itself). -->
 <!-- v13.4-live-css: live badges / loading states are pure CSS
      (live-beep / live-breath / loading-spin keyframes) — zero payload,
      zero third-party requests. (The dotLottie CDN player was removed.) -->
 <meta name="description" content="__SEO_DESC__">
 <meta name="robots" content="__SEO_ROBOTS__">
-<link rel="alternate" type="text/calendar" href="/calendar.ics" title="تقویم SportSignal">
-<link rel="alternate" type="application/atom+xml" href="/feed.xml" title="به‌روزرسانی‌های SportSignal">
+<link rel="alternate" type="text/calendar" href="/calendar.ics" title="تقویم اسپرت سیگنال">
+<link rel="alternate" type="application/atom+xml" href="/feed.xml" title="به‌روزرسانی‌های اسپرت سیگنال">
 <meta property="og:type" content="website">
 <meta property="og:title" content="__SEO_OG_TITLE__">
 <meta property="og:description" content="__SEO_OG_DESC__">
@@ -53,9 +56,9 @@ export const PUBLIC_PAGE = `<!doctype html>
 <meta property="og:image" content="__SEO_OG_IMAGE__">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="SportSignal — بازی‌های بزرگ فوتبال">
+<meta property="og:image:alt" content="اسپرت سیگنال — بازی‌های بزرگ فوتبال">
 <meta property="og:locale" content="fa_IR">
-<meta property="og:site_name" content="SportSignal">
+<meta property="og:site_name" content="اسپرت سیگنال">
 <meta name="twitter:card" content="summary_large_image">
 <!-- v13.225-socialsec (SS-26): the verified X profile handle — hardcoded
      here like og:site_name above (the template's own precedent); the twin
@@ -64,7 +67,7 @@ export const PUBLIC_PAGE = `<!doctype html>
 <meta name="twitter:title" content="__SEO_OG_TITLE__">
 <meta name="twitter:description" content="__SEO_OG_DESC__">
 <meta name="twitter:image" content="__SEO_OG_IMAGE__">
-<meta name="twitter:image:alt" content="SportSignal — بازی‌های بزرگ فوتبال">
+<meta name="twitter:image:alt" content="اسپرت سیگنال — بازی‌های بزرگ فوتبال">
 <link rel="canonical" href="https://sportsignal.ir/">
 <!-- v13.133-persiantype: preloads follow the new stack — the body face
      (Peyda 400/800) + the heading variable font (MorabbaVF, one file for
