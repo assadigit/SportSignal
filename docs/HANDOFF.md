@@ -2,6 +2,14 @@
 
 > Agents: read AGENTS.md in the repo root first, and follow it for this whole session.
 
+## This session (v13.279.0-gsc404remediation — the GSC 404 remediation, fix phase; 2026-11-23 — BUILT+GATED, NOT YET DEPLOYED, awaiting the owner Step-4 checkpoint approval)
+
+**The task:** the audit-approved fix phase for the 2026-11-23 GSC 220-404 finding (P1 the frozen 301 map; P2-B the all-FINISHED archive scope + per-match keys; P3 the cup-tie seed script; P4 the teamSlug alias fold; P5 the entity fallback shells + a-league 410; P6 the lite pool-miss render path). **Status: the code is complete, npm test green (3,963 checks), wrangler-dev smoke-verified locally (the 301 map, the 410s, the fallback shells, the stranger gate), committed on the branch fix/gsc-404-remediation.** The deploy + the three one-time KV writes (seed-lost-cup-ties --write, backfill-archive-keys --write, backfill-smallmarket-archive --write) wait for the owner explicit approval per the brief Step-4 checkpoint. Pre-write KV backups exist: /home/z/work/backups-2026-11-23/ (seo_archive_v1 + matches_v13_tracked, fetched 2026-11-23 ~21:24 UTC — AGENTS.md §6 fresh-backup rule).
+
+- **Deploy plan (post-approval):** merge fix/gsc-404-remediation → main, push (one-shot token), then npm test → npx wrangler dev smoke → npx wrangler deploy inside a no-live-match window (check live fixtures first), then live-verify /healthz + the homepage + one live match page. Then run the three scripts --write legs (paced ~1 write/s), then the full 220-URL re-probe + paced sitemap sweep (the remediation report Step 5) and write docs/audits/2026-11-23-gsc404-remediation.md.
+- **Watch items:** the archived pages form-strip/related body sections render leaner under P6 (title/H1/description/answer stay byte-identical — verified by the freeze gates); if the archive ever exceeds ~5,000 entries the matches-archive sitemap child needs pagination; the PGL/EL/ECL/cup backfill residuals drain as 410.
+- **Credentials used, not stored** (session-local env file outside the repo); the owner should rotate every token shared in chat after the session.
+
 ## This session (v13.278.0-farsisitename — the Farsi site-name swap; 2026-11-22 — DEPLOYED + LIVE-VERIFIED, the owner-forced deploy)
 
 **The task (the owner's ask, verbatim):** "I want the english version of

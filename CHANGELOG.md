@@ -1,3 +1,69 @@
+# v13.279.0-gsc404remediation — the GSC 404 remediation (P1–P6, the audit-approved fix phase; 2026-11-23)
+
+The 2026-11-23/24 GSC audit found 220 "Not found" URLs (export growth
+4 → 74 → 159 → 213 → 220) with four confirmed mechanisms. This release
+implements the audit's fix plan (the owner pre-approved the fix phase;
+each mechanism's own audit doc carries the evidence). NOT yet deployed at
+commit time — the change rides the owner's deploy checkpoint (Step 4 of
+the remediation brief).
+
+**P1 — the frozen legacy-URL 301 map** (`src/slugs.ts` +
+`src/seo/router.ts`): 14 verified dead URLs (the 12 provider name/date
+variant match forms + the seeded cup tie's date/name form + the
+`/teams/magdeburg` duplicate) 301 to their canonical twins with
+`Cache-Control: public, max-age=31536000` — a pure header response
+BEFORE any KV read or render. One audit-table correction, live-verified:
+the Levante–Atlético twin is `…-2026-10-31` (200), not the brief's
+`…-2026-10-30` (404).
+
+**P2-B — the archive scope** (`src/seo/files.ts`): `syncArchive` drops
+the big-gate — every FINISHED tracked match is retained in the 365-day
+`seo_archive_v1` (the audit's PRIMARY driver: the pool prunes at
+kickoff+7d and every non-big finished match 404'd forever — 141 URLs).
+Per-match keys `seo_archive_v1/m/{slug}` (written once per new row,
+earliest-kickoff guard, 370d TTL) + `loadArchiveMatch` (the slug-keyed
+bounded lookup, blob fallback for legacy rows).
+
+**P3 — the lost cup ties** (`scripts/seed-lost-cup-ties.js`): the 2
+DFB-Pokal Round-2 fixtures (Bayern 6–1 1. FC Magdeburg 2026-10-28,
+Dortmund 3–2 Werder Bremen 2026-10-27; Wikipedia-verified — FD's free
+tier carries no DFB-Pokal) seeded into the archive. DRY-RUN ONLY at
+commit time — the write rides the owner's checkpoint.
+
+**P4 — the teamSlug alias fold** (`src/slugs.ts`): Tottenham Hotspur →
+tottenham, Bayern München/Munich → bayern-munich, Milan → ac-milan,
+1. FC Magdeburg/Magdeburg → 1-magdeburg — known variants resolve
+THROUGH the TEAM_SLUGS pins (U-02 canonical slugs never change; future
+variant URLs stop being minted).
+
+**P5 — stable entity pages** (`src/seo/pages.ts` + router): a known
+competition slug or a known team (pinned club or archive-remembered)
+renders the honest "no upcoming big fixtures" shell at 200 + noindex
+during calendar gaps (the C1 noindex-must-stay-crawlable precedent)
+instead of the cyclic 404. `a-league` answers 410 (the v13.173-noal
+owner order). Fallbacks never enter sitemaps.
+
+**P6 — the CPU-cliff lite path** (`src/seo/router.ts` + `data.ts`):
+the `/matches/{slug}` family dispatches before the shared `getSeoCtx`;
+a pool miss resolves the ONE ~1KB per-match key and renders through
+`liteSeoCtx` (no multi-MB blob parse, no 340-row shaping, no 7-standings
+read). Pattern-valid stranger slugs answer 410 (faster index removal);
+malformed slugs keep the 404. Frozen surfaces (title/H1/description/
+answer sentence) derive only from the archived row — byte-identical;
+the archived pages' form-strip/related body sections render leaner
+(documented, flagged at the checkpoint).
+
+**The one-time scripts** (all dry-run by default, `--write` gated):
+`scripts/seed-lost-cup-ties.js`, `scripts/backfill-archive-keys.js`
+(171 per-match keys for the existing 180 blob rows), and
+`scripts/backfill-smallmarket-archive.js` (340 verified FD candidates
+in the GSC window; EL/ECL/cups/PGL are documented residuals).
+
+**The gates**: four new checks (redirects/slugfold/archivescope/
+entityfallback) wired into `npm test`; the v13.254/v13.258/v13.278
+release pins demoted HISTORICAL per convention; the new
+v13.279.0-gsc404remediation LIVE pin. Full suite: 3,963 checks green.
+
 # v13.278.0-farsisitename — the Farsi site-name swap: search shows «اسپرت سیگنال», Latin contexts keep SportSignal (2026-11-22, `main`)
 
 The owner's directive, verbatim: "I want the english version of name becomes
