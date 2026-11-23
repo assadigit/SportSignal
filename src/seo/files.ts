@@ -20,7 +20,7 @@ import { COMP_EN } from "../tables";
 import { translateCompetition } from "../translate";
 import { pubMatch } from "../public-matches";
 import type { SeoCtx, SeoMatch } from "./data";
-import { getSeoCtx, upcomingBig, finishedRecent, teamsIndex, compsIndex, payloadTop3, isBigForSeo, isSelectedTeam, isSeasonEndedOrdinary } from "./data";
+import { getSeoCtx, upcomingBig, finishedRecent, teamsIndex, compsIndex, isSelectedTeam, isSeasonEndedOrdinary } from "./data";
 
 // ---------------------------------------------------------------- helpers
 
@@ -49,6 +49,21 @@ interface ArchiveRec {
   fin: string;   // ISO time we saw it finished (approximates status change)
 }
 
+// v13.279-gsc404 (P2-B): the per-match archive keys. Every finished match's
+// row is ALSO written under seo_archive_v1/m/{slug} (the SAME slug the match
+// page URL carries) so the pool-miss render path reads ONE ~1 KB key instead
+// of parsing the multi-MB blob on the free-plan 10ms CPU cliff (the chronic
+// exceededResources 503 class). The blob stays as the sitemap-generation
+// mirror + the team-form/h2h source; keys are written ONCE per finished
+// match (earliest-kickoff row wins the slug on the rare same-day duplicate —
+// findArchivedMatchBySlug parity). TTL 370d — the row itself is pruned from
+// the blob at 365d; the key self-expires just after, no deletion writes.
+export const ARCHIVE_KEY_PREFIX = "seo_archive_v1/m/";
+
+export function archiveMatchKey(slug: string): string {
+  return ARCHIVE_KEY_PREFIX + slug;
+}
+
 export async function loadArchive(env: Env): Promise<ArchiveRec[]> {
   const rec = await env.STATE.get(SEO.KV_SEO_LASTMOD.slice(0, 0) || "seo_archive_v1", "json").catch(() => null);
   return rec && Array.isArray(rec.matches) ? rec.matches : [];
@@ -58,36 +73,102 @@ async function saveArchive(env: Env, list: ArchiveRec[]): Promise<void> {
   await env.STATE.put("seo_archive_v1", JSON.stringify({ matches: list }), { expirationTtl: 400 * 86400 }).catch((e: any) => { });
 }
 
-// Append pool finished big-matches to the archive (change-only, 365d cap).
+// v13.279-gsc404 (P6): the slug-addressed single-match archive lookup — the
+// page path's bounded read. One ~1 KB key; falls back to the blob scan only
+// for rows that predate the per-match keys (the one-time backfill script
+// seeds those — scripts/backfill-archive-keys.js). Returns the ArchiveRec
+// ({m, fin}) or null.
+export async function loadArchiveMatch(env: Env, slug: string): Promise<ArchiveRec | null> {
+  if (!slug) return null;
+  const rec = await env.STATE.get(archiveMatchKey(slug), "json").catch(() => null);
+  if (rec && rec.m && rec.m.utcDate) return rec as ArchiveRec;
+  // legacy rows (written before the per-match keys existed): blob fallback
+  const list = await loadArchive(env);
+  for (const r of list) {
+    if (!r || !r.m || !r.m.utcDate) continue;
+    if (archiveRowSlug(r.m) === slug) return r;
+  }
+  return null;
+}
+
+// The slug an archived row's URL would carry (same derivation as every
+// other surface — one vocabulary, findArchivedMatchBySlug parity).
+function archiveRowSlug(row: any): string {
+  if (!row || !row.homeTeam || !row.awayTeam || !row.utcDate) return "";
+  return matchPath(row.homeTeam.name, row.awayTeam.name, row.utcDate).replace(/^\/matches\//, "");
+}
+
+// The earliest-kickoff row per slug from a rec list (the per-match key's
+// tie-break — mirrors findArchivedMatchBySlug's earliest-wins rule).
+function earliestRecBySlug(recs: ArchiveRec[]): Map<string, ArchiveRec> {
+  const bySlug = new Map<string, ArchiveRec>();
+  for (const r of recs) {
+    if (!r || !r.m || !r.m.utcDate) continue;
+    const slug = archiveRowSlug(r.m);
+    if (!slug) continue;
+    const prev = bySlug.get(slug);
+    if (!prev || new Date(r.m.utcDate).getTime() < new Date(prev.m.utcDate).getTime()) bySlug.set(slug, r);
+  }
+  return bySlug;
+}
+
+// Append pool FINISHED matches to the archive (change-only, 365d cap).
 // Called from the sitemap builder + match pages (bounded: edge caches make
 // this run at most a few times per 10 minutes).
+// v13.279-gsc404 (P2-B — the owner-approved archive-scope widening): the
+// big-gate is GONE. syncArchive now retains EVERY finished tracked match
+// (not just big ones) — the audit's PRIMARY 404 driver was exactly this
+// gate: the KV pool prunes every row kickoff+7d and every non-big finished
+// match 404'd forever (141 confirmed dead URLs, 2026-11-23). FINISHED-only
+// + 365-day retention + change-only writes stay exactly as before (write
+// rate is still ~1 blob write per sweep — the set only grows when a match
+// finishes). Per-match keys ride along: each NEW row writes its
+// seo_archive_v1/m/{slug} key once (bounded by the finished-match count;
+// earliest-kickoff guard on the rare duplicate).
 export async function syncArchive(env: Env, ctx: SeoCtx): Promise<ArchiveRec[]> {
   const archive = await loadArchive(env);
   const byKey = new Map<string, ArchiveRec>();
   for (const r of archive) {
     if (r && r.m && r.m.utcDate) byKey.set(String(r.m.id || "") + "|" + r.m.utcDate, r);
   }
-  const top3 = payloadTop3(ctx.payload);
-  let changed = false;
+  const added: ArchiveRec[] = [];
   const nowIso = new Date().toISOString();
   const cutoff = Date.now() - (SEO.FINISHED_MATCH_ARCHIVE_DAYS - 5) * 864e5;
   for (let i = 0; i < ctx.pool.length; i++) {
     const raw = ctx.pool[i];
     const s = ctx.shaped[i];
     if (!raw || !raw.utcDate || raw.status !== "FINISHED") continue;
-    if (!(isBigForSeo(raw, top3) || s.big)) continue;
+    // P2-B: the big-gate that used to stand here (isBigForSeo || s.big) is
+    // deliberately removed — see the block comment above. Every finished
+    // tracked match is retained now.
     const key = String(raw.id || "") + "|" + raw.utcDate;
     if (!byKey.has(key)) {
-      byKey.set(key, { m: s, fin: nowIso });
-      changed = true;
+      const rec: ArchiveRec = { m: s, fin: nowIso };
+      byKey.set(key, rec);
+      added.push(rec);
     }
   }
   // prune older than retention (U-05: keep 365 days)
-  let list = Array.from(byKey.values());
-  const pruned = list.filter((r) => new Date(r.m.utcDate).getTime() > cutoff);
-  if (pruned.length !== list.length) changed = true;
-  list = pruned;
-  if (changed) await saveArchive(env, list);
+  const full = Array.from(byKey.values());
+  const list = full.filter((r) => new Date(r.m.utcDate).getTime() > cutoff);
+  // change-only write (the old discipline holds: the blob is rewritten only
+  // when a row was added or the retention prune dropped one)
+  if (added.length || list.length !== full.length) await saveArchive(env, list);
+  // P2-B: write the per-match keys for the rows this sweep ADDED (once per
+  // finished match; the pre-existing rows are seeded by the one-time
+  // backfill script — no unbounded scans here).
+  if (added.length) {
+    const earliest = earliestRecBySlug(archive.concat(added));
+    for (const rec of added) {
+      const slug = archiveRowSlug(rec.m);
+      if (!slug) continue;
+      const winner = earliest.get(slug);
+      if (!winner || winner !== rec) continue; // a same-slug earlier kickoff owns the key
+      const existing = await env.STATE.get(archiveMatchKey(slug), "json").catch(() => null);
+      if (existing && existing.m && new Date(existing.m.utcDate).getTime() <= new Date(rec.m.utcDate).getTime()) continue;
+      await env.STATE.put(archiveMatchKey(slug), JSON.stringify(rec), { expirationTtl: 370 * 86400 }).catch(() => { });
+    }
+  }
   return list;
 }
 
@@ -659,14 +740,18 @@ export function buildBingSiteAuth(): string {
 // the same resvg-wasm machinery as the Telegram cards, cached at the edge.
 export async function buildMatchOgPng(env: Env, slug: string): Promise<ArrayBuffer | null> {
   const ctx = await getSeoCtx(env);
-  const { findMatchBySlug, findArchivedMatchBySlug } = await import("./data");
+  const { findMatchBySlug } = await import("./data");
   let sm = findMatchBySlug(ctx, slug);
   if (!sm) {
     // v13.259-archserve: the OG image follows the page it belongs to — a
     // restored archived match serves its card (with the final score) too;
     // one bounded archive read on the miss path only (fail-closed).
-    const archive = await loadArchive(env).catch(() => [] as any[]);
-    sm = findArchivedMatchBySlug(archive, slug);
+    // v13.279-gsc404 (P6): the miss path reads the ONE per-match key
+    // (~1 KB — the same bounded loadArchiveMatch the match page's lite
+    // path uses) instead of parsing the whole multi-MB blob; legacy rows
+    // without a key still resolve via loadArchiveMatch's blob fallback.
+    const rec = await loadArchiveMatch(env, slug).catch(() => null);
+    if (rec && rec.m && rec.m.utcDate) sm = { raw: rec.m, s: rec.m, archived: true } as any;
   }
   if (!sm) return null;
   const m = sm.s;

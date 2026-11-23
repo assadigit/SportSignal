@@ -440,6 +440,56 @@ export function findMatchBySlug(ctx: SeoCtx, slug: string): SeoMatch | null {
   return best as SeoMatch | null;
 }
 
+// ------------------------------------------------------- v13.279-gsc404 (P6)
+// The pool-miss lite path's helpers. The 10ms free-plan CPU cliff made
+// every archived-match cold render a crash lottery: the render paid the
+// full getSeoCtx (the payload loads + the 7 standings reads + shaping
+// ~340 pool rows through pubMatch) AND the multi-MB seo_archive_v1 parse
+// — for a page whose frozen surfaces (title/H1/description/answer
+// sentence) need only the one archived row. The lite path reads the raw
+// pool ONCE (presence detection), then the ONE per-match archive key.
+
+// The raw pool blob as the lite path needs it (no shaping, no overlay, no
+// standings, no payload) — one bounded KV read.
+export async function loadRawPool(env: Env): Promise<{ rows: any[]; fetchedAt: string | null }> {
+  try {
+    const rec = await env.STATE.get(CONFIG.KV_MATCHES_KEY, "json").catch(() => null);
+    if (rec && Array.isArray(rec.matches)) return { rows: rec.matches, fetchedAt: rec.fetchedAt || null };
+  } catch (e) { /* fail-closed: an empty pool routes to the archive path */ }
+  return { rows: [], fetchedAt: null };
+}
+
+// Pool-presence detection on RAW rows — the SAME matcher findMatchBySlug
+// runs (teamSlug on the raw names, day equality, earliest kickoff wins),
+// so the two paths agree on every slug. Returns the raw row when present.
+export function matchInPoolBySlug(poolRows: any[], slug: string): any | null {
+  const m = /^([a-z0-9-]+)-vs-([a-z0-9-]+)-(\d{4}-\d{2}-\d{2})$/.exec(slug);
+  if (!m) return null;
+  const [, homeSlug, awaySlug, day] = m;
+  let best: any = null;
+  for (const raw of poolRows || []) {
+    if (!raw || !raw.homeTeam || !raw.awayTeam || !raw.utcDate) continue;
+    if (String(raw.utcDate).slice(0, 10) !== day) continue;
+    if (teamSlug(raw.homeTeam.name) !== homeSlug || teamSlug(raw.awayTeam.name) !== awaySlug) continue;
+    if (!best || new Date(raw.utcDate).getTime() < new Date(best.utcDate).getTime()) best = raw;
+  }
+  return best;
+}
+
+// The LITE SEO context for archived-match renders. The raw pool rows ride
+// BOTH pool and shaped (the slim persisted rows already carry the fields
+// the form/related projections read off shaped rows — homeTeam.{name,
+// faName}, score.fullTime, competition.code; see match-pool.ts's slim
+// whitelist). The payload is an empty standings shell: the standings
+// window falls through to fullByCodeFor, which buildMatchPage loads
+// anyway. fetchedAt is the pool stamp (the same "last updated" the full
+// path shows). The title/H1/description/answer-sentence derive ONLY from
+// the archived row — the GSC-measured surfaces stay byte-identical.
+export function liteSeoCtx(env: Env, poolRows: any[], fetchedAt: string | null): SeoCtx {
+  const rows = Array.isArray(poolRows) ? poolRows : [];
+  return { env, payload: { standings: {} }, pool: rows, shaped: rows, fetchedAt, degraded: false } as SeoCtx;
+}
+
 // v13.259-archserve: out-of-pool match lookup — the 365-day seo_archive_v1
 // (U-05) serves finished match pages after the 7-day pool retention drops
 // them (GSC 2026-11-15: 159 not-found URLs, ~52% of match-page impressions
