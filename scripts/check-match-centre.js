@@ -1502,7 +1502,11 @@ function standingsRendererEngine() {
     seoTeamFaName: function (t) { return (t && (t.faName || t.name)) || ""; }, seoTeamAltName: function () { return null; },
     matchCentreMain: function () { return ""; }, matchHeroHtml: function () { return ""; }, matchSummaryHtml: function () { return ""; },
     narrativeHtml: function () { return ""; }, matchStandingsWindow: function () { return null; },
-    loadArchive: async function () { return []; }, fetchStandings: async function () { return null; }, translateTeam: function () { return ""; }
+    loadArchive: async function () { return []; }, fetchStandings: async function () { return null; }, translateTeam: function () { return ""; },
+    // v13.279-gsc404 (P5): the fallback resolvers' module-level imports —
+    // the COMP_SLUG_BY_SLUG reverse-map loop runs at MODULE scope (the stubs
+    // must exist before the eval; buildStandingsHtml never reads them).
+    COMP_SLUGS: {}, TEAM_SLUGS: {}, translateCompetition: function () { return ""; }
   };
   return new Function(...Object.keys(stubs), js + "\nreturn { buildStandingsHtml };")(...Object.values(stubs));
 }
@@ -1875,6 +1879,10 @@ function formProjectionEngine() {
     matchCentreMain: function () { return ""; }, matchHeroHtml: function () { return ""; }, matchSummaryHtml: function () { return ""; }, matchFormHtml: function () { return ""; },
     narrativeHtml: function () { return ""; }, matchStandingsWindow: function () { return null; },
     loadArchive: async function () { return []; }, fetchStandings: async function () { return null; }, translateTeam: function () { return ""; },
+    // v13.279-gsc404 (P5): the fallback resolvers' module-level imports —
+    // the COMP_SLUG_BY_SLUG reverse-map loop runs at MODULE scope (the stubs
+    // must exist before the eval; buildStandingsHtml never reads them).
+    COMP_SLUGS: {}, TEAM_SLUGS: {}, translateCompetition: function () { return ""; },
     M: { nameHtml: function (s) { return String(s == null ? "" : s); } }
   };
   return new Function(...Object.keys(stubs), js + "\nreturn { matchFormInput };")(...Object.values(stubs));
@@ -2284,6 +2292,10 @@ function metricsProjectionEngine() {
     matchCentreMain: function () { return ""; }, matchHeroHtml: function () { return ""; }, matchSummaryHtml: function () { return ""; }, matchFormHtml: function () { return ""; }, matchMetricsHtml: function () { return ""; },
     narrativeHtml: function () { return ""; }, matchStandingsWindow: function () { return null; },
     loadArchive: async function () { return []; }, fetchStandings: async function () { return null; }, translateTeam: function () { return ""; },
+    // v13.279-gsc404 (P5): the fallback resolvers' module-level imports —
+    // the COMP_SLUG_BY_SLUG reverse-map loop runs at MODULE scope (the stubs
+    // must exist before the eval; buildStandingsHtml never reads them).
+    COMP_SLUGS: {}, TEAM_SLUGS: {}, translateCompetition: function () { return ""; },
     M: { nameHtml: function (s) { return String(s == null ? "" : s); } }
   };
   return new Function(...Object.keys(stubs), js + "\nreturn { matchMetricsInput };")(...Object.values(stubs));

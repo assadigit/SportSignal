@@ -667,7 +667,7 @@ check("similarMatches is upcoming-only + self-excluded + pairing-deduped + cappe
 // similarCard (replaced by the spec §13 unified related-matches list — matchRelatedHtml);
 // the team-page simCard keeps similarMatches + M.mrowHtml byte-frozen (decision S17-Legacy).
 check("team page renders the sibling card (h2 + count chip + mrow rows) — S17 retired the match-page similarCard; the team-page simCard keeps similarMatches + M.mrowHtml byte-frozen", /'<div class="card simcard"><h2>بازی‌های مرتبط <span class="simcount">'/.test(pagesSrc) && /sims\.map\(\(x, i\) => M\.mrowHtml\(x, i, false\)\)/.test(pagesSrc) && /const sims = next \? similarMatches\(ctx, next, 6\) : \[\];/.test(pagesSrc));
-check("buildMatchPage is async + awaits the hydration before rendering", /export async function buildMatchPage\(ctx: SeoCtx, slug: string\): Promise<\{ html: string; notFound: boolean \}>/.test(pagesSrc) && /sm = await hydrateMatchVenue\(ctx\.env, sm\);/.test(pagesSrc));
+check("buildMatchPage is async + awaits the hydration before rendering", /export async function buildMatchPage\(ctx: SeoCtx, slug: string, preloaded\?: any\): Promise<\{ html: string; notFound: boolean \}>/.test(pagesSrc) && /sm = await hydrateMatchVenue\(ctx\.env, sm\);/.test(pagesSrc));
 check("seo router awaits the async buildMatchPage", /const r = await buildMatchPage\(seoCtx, mm\[1\]\);/.test(routerSrc82));
 // live-detail venue adoption — v13.276-slim (A4): the enrichment FETCH is
 // REMOVED (the venue-extraction site inside it went with it); the adopted-
@@ -1252,112 +1252,7 @@ check("v13.252-pillreset (HISTORICAL pin \u2014 demoted at v13.253-alwaysshow: t
 
 check("v13.253-alwaysshow (HISTORICAL pin \u2014 demoted at v13.254-rankbadge: the S44 crest-pill round renamed the client-referenced assets this check pinned \u2014 public-13.78.js -> 13.79.js + public-13.85.css -> 13.86.css \u2014 and rewrote the rank surfaces (the pill rides the crest, the S40 plain number + .team-r row retire); the S43 always-show LAW itself survives unchanged and is re-pinned in the v13.254 live check)", true);
 
-check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10: the owner\u0027s approved container, signed off in the sandbox replica (\u201cI only approve the number container (e.g #5)\u201d \u2014 the popover/section-icon extras were reverted there before this round) now rides the production site: the standing leaves the name\u0027s row and rides the CREST as a small anchored \u201c#N\u201d pill \u2014 Persian digits with a leading # that must not flip in RTL (dir=\"ltr\" + unicode-bidi:isolate), a solid dark disc in the navy family with a thin steel border, pinned to the crest\u0027s bottom corner on the row\u0027s OUTER flank (home = inline-start corner, away = inline-end corner \u2014 ONE logical rule per side, the mirror that stays correct in RTL and LTR), the #liveCard\u0027s 28px crests and the narrow-screen 37px crests stepping the pill down. The name row reverts to the plain pre-badge .team markup for every team. The S38 tap+hover tooltip rides the unchanged .rankchip class; the hero carousel stays badge-free (the spec scope law). THE PLUMBING: version 13.254, the JS rename 13.78 -> 13.79 + the stylesheet rename 13.85 -> 13.86 + SW v124 -> v125, the _headers pins for both new names with CAP SWEEP #21 evicting the expired /public-13.41.js + /public-13.52.css pins (files stay on disk), the v13.253 live check demoted to HISTORICAL with its survivors re-pinned here, the page baseline re-frozen via --update (an intended output change \u2014 the served HTML\u0027s asset references)", (() => {
-  const pub = read("src/pages/public.ts");
-  const cfg = read("src/config.ts");
-  const sw = read("assets/sw.js");
-  const js80 = read("assets/public-13.80.js");
-  const css87 = read("assets/public-13.87.css");
-  const pm = read("src/public-matches.ts");
-  const mk = read("src/seo/markup.ts");
-  const dt = read("src/seo/data.ts");
-  const shell = read("src/seo/page-shell.ts");
-  const hdr = read("assets/_headers");
-  const cov = read("src/hero-coverage.ts");
-  const fs = require("fs");
-  const path = require("path");
-  return !!js80 && !!css87 &&
-    // (0) the v13.242-249 survivors re-pinned on the LIVE bundle + the served HTML
-    /function mset\(el,v\)\{if\(!el\)return;var tx=fmtNum\(v<10\?"0"\+v:String\(v\)\);el\.textContent!==tx&&\(el\.textContent=tx\)\}/.test(js80) &&
-    /mset\(mcDd,dd\),mset\(mcHh,hh\),mset\(mcMm,mm\)/.test(js80) &&
-    /<script src="\/public-13\.80\.js" defer>/.test(pub) &&
-    /box-shadow:inset 0 1px 0 rgba\(255,255,255,\.25\),0 8px 26px -6px rgba\(2,44,66,\.8\),0 12px 34px rgba\(1,8,20,\.55\),0 0 34px rgba\(34,211,238,\.55\),0 0 10px rgba\(103,232,249,\.4\);color:#FFFFFF;/.test(pub) &&
-    // (0b) THE S43 ALWAYS-SHOW LAW (unchanged): no pill localStorage verdict is
-    // read or written anywhere in the served source; BOTH channel links + the
-    // 20% scroll gate + the rotator still wire (a tap navigates only)
-    !/sp_pill_joined/.test(pub) && !/sp_pill_dismissed/.test(pub) &&
-    !/joinedAt/.test(pub) && !/lsGet/.test(pub) && !/lsSet/.test(pub) &&
-    !/function joined\(/.test(pub) && !/apply\(false\)/.test(pub) && !/var DAY=/.test(pub) &&
-    /var shown=false,pulsed=false,tDelay=null,tFall=null;/.test(pub) &&
-    /goBtn=document\.getElementById\("tgPillGo"\)/.test(pub) &&
-    /window\.addEventListener\("scroll",onScroll,\{passive:true\}\);/.test(pub) &&
-    /apply\(max>0&&y>=window\.innerHeight\*\.2\)/.test(pub) &&
-    /if\(sub\)\{setInterval\(tickSub,3200\)\}/.test(pub) &&
-    /id="tgPill" href="\$\{TG_CHANNEL_URL\}" target="_blank"/.test(pub) &&
-    /id="tgPillGo" href="\$\{TG_CHANNEL_URL\}" target="_blank"/.test(pub) &&
-    // (1) the S37 rank-chip survivors (the server resolution law + the SSR twins)
-    /export function teamRankSets\(stMap\) \{/.test(pm) &&
-    /export function rankApplicable\(m\) \{/.test(pm) &&
-    /export function attachTeamRanks\(p, m, rankSets\) \{/.test(pm) &&
-    /const RANK_KO_STAGES = new Set\(\["PLAYOFF_ROUND", "ROUND_OF_16", "ROUND_OF_32", "QUARTER_FINALS", "QUARTER_FINAL", "SEMI_FINALS", "SEMI_FINAL", "FINAL", "THIRD_PLACE", "FINAL_THIRD"\]\);/.test(pm) &&
-    /const rankSets = teamRankSets\(stMap\);/.test(pm) &&
-    /matches: clBox\.map\(\(m\) => attachTeamRanks\(pubMatch\(m\), m, rankSets\)\)/.test(pm) &&
-    /const shaped = pool\.map\(\(m\) => attachTeamRanks\(pubMatch\(m\), m, rankSets\)\);/.test(dt) &&
-    /function rankChipHtml\(t: any, m: any\): string \{/.test(mk) &&
-    /class="rankchip" title="/.test(mk) && /<span dir="ltr">#/.test(mk) &&
-    // (2) the S44 engine: the crest pill + the name-only row + the table-naming label
-    /n\.className="rankchip";var d=document\.createElement\("span"\);d\.setAttribute\("dir","ltr"\);d\.textContent="#"\+fmtNum\(r\);n\.appendChild\(d\)/.test(js80) &&
-    /function teamRow\(e\)\{var r=document\.createElement\("div"\);r\.className="team";var n=curLang\(\)==="en"\?e\.name:e\.faName\|\|e\.name;return nameInto\(r,n\),r\}/.test(js80) &&
-    /function logo\(e,badge\)\{/.test(js80) &&
-    /badge&&a\.appendChild\(badge\),a\}/.test(js80) &&
-    /logo\(n\.homeTeam,rankBadge\(n\.homeTeam,n\)\)/.test(js80) &&
-    /logo\(n\.awayTeam,rankBadge\(n\.awayTeam,n\)\)/.test(js80) &&
-    /logo\(e\.homeTeam,rankBadge\(e\.homeTeam,e\)\)/.test(js80) &&
-    /logo\(e\.awayTeam,rankBadge\(e\.awayTeam,e\)\)/.test(js80) &&
-    /logo\(side\)/.test(js80) && !/logo\(side,rankBadge/.test(js80) &&
-    /ordNum\(r\)\+" in "\+\(l\?l\+" table":"the table"\)/.test(js80) &&
-    /\\u0631\\u062A\\u0628\\u0647 "\+fmtNum\(r\)\+" \\u062F\\u0631 \\u062C\\u062F\\u0648\\u0644"\+\(l\?" "\+l:""\)/.test(js80) &&
-    // (2b) the S38 tooltip engine rides the .rankchip class unchanged
-    /setAttribute\("data-tip",i\)/.test(js80) &&
-    /t\.id="rankTip",t\.className="ranktip",t\.setAttribute\("role","tooltip"\)/.test(js80) &&
-    /document\.addEventListener\("click",function\(e\)\{var t=e\.target&&e\.target\.closest\?e\.target\.closest\("\.rankchip"\):null/.test(js80) &&
-    /RANK_TIP_MQL&&RANK_TIP_MQL\.matches\)return/.test(js80) &&
-    /function rankTipStrip\(e\)\{try\{e&&e\.getAttribute\("title"\)&&e\.removeAttribute\("title"\)\}catch\(d\)\{\}\}/.test(js80) &&
-    /function rerenderAll\(\)\{rankTipHide\(\),applyView\(\)/.test(js80) &&
-    // (3) the stylesheet: the anchored pill + the per-side outer-corner mirror + the step-downs
-    /\.match \.side \.logo\{position:relative;overflow:visible\}/.test(css87) &&
-    /\.rankchip\{position:absolute;bottom:var\(--rc-nub\);z-index:2;--rc-nub:-4px;--rank-chip-bg:#0c1524;--rank-chip-border:#46648f;--rank-chip-ink:#edf3ff;/.test(css87) &&
-    /\.rankchip>span\{direction:ltr;unicode-bidi:isolate\}/.test(css87) &&
-    /\.match \.side \.logo \.rankchip\{inset-inline-start:var\(--rc-nub\);inset-inline-end:auto\}/.test(css87) &&
-    /\.match \.side\.away \.logo \.rankchip\{inset-inline-end:var\(--rc-nub\);inset-inline-start:auto\}/.test(css87) &&
-    /\[data-theme=light\] \.rankchip\{--rank-chip-bg:#f1f5f9;--rank-chip-border:#94a3b8;--rank-chip-ink:#1e293b\}/.test(css87) &&
-    /#liveCard \.logo \.rankchip\{--rc-nub:-3px;height:14px;min-width:14px;padding:0 3px;font-size:8px\}/.test(css87) &&
-    /@media \(max-width:600px\)\{\.match \.side \.logo \.rankchip\{height:16px;min-width:16px;padding:0 3px;font-size:9px;--rc-nub:-3px\}\}/.test(css87) &&
-    !/\.team\.team-r\{/.test(css87) && !/\.team\.team-r \.tn\{/.test(css87) &&
-    /\.ranktip\{--ranktip-bg:#0c1728;--ranktip-ink:#D6E9FA;position:fixed;left:0;top:0;z-index:70;/.test(css87) &&
-    /\.ranktip\.up::after\{top:100%;border-top-color:var\(--ranktip-bg\)\}/.test(css87) &&
-    /\.ranktip\.down::after\{bottom:100%;border-bottom-color:var\(--ranktip-bg\)\}/.test(css87) &&
-    /\[data-theme=light\] \.ranktip\{--ranktip-bg:#ffffff;--ranktip-ink:#31567c;/.test(css87) &&
-    // (4) the SSR twin mirrors the pill (the badge inside the .logo wrapper; the plain name row)
-    mk.includes("'<span class=\"rankchip\" title=\"' + esc(label) + '\" aria-label=\"' + esc(label) + '\" data-tip=\"' + esc(label) + '\"><span dir=\"ltr\">#' + toFaDigits(String(pos)) + \"</span></span>\"") &&
-    /export function logoHtml\(t: any, badge\?: string\): string \{/.test(mk) &&
-    (mk.match(/logoHtml\(t, rankChipHtml\(t, m\)\)/g) || []).length === 2 &&
-    mk.includes("'<div class=\"side away\"><div class=\"team\">' + nameHtml(teamName) + \"</div>\" + logoHtml") &&
-    !/team-r/.test(mk.replace(/\/\/[^\n]*/g, "")) &&
-    /const cn = m && m\.competition \? compNameFa\(m\) : "";/ .test(mk) &&
-    /\u0631\u062A\u0628\u0647 " \+ toFaDigits\(String\(pos\)\) \+ " \u062F\u0631 \u062C\u062F\u0648\u0644" \+ \(cn \? " " \+ cn : ""\)/.test(mk) &&
-    // (5) the plumbing: reference bumps + pins + cap sweep #21 + SW + coverage + version + the retention files
-    /href="\/public-13\.87\.css"/.test(pub) &&
-    /href="\/public-13\.87\.css"/.test(shell) &&
-    /\/public-13\.80\.js\n  Cache-Control: public, max-age=31536000, immutable/.test(hdr) &&
-    /\/public-13\.87\.css\n  Cache-Control: public, max-age=31536000, immutable/.test(hdr) &&
-    /\/public-13\.78\.js\n  Cache-Control: public, max-age=31536000, immutable/.test(hdr) &&
-    /\/public-13\.85\.css\n  Cache-Control: public, max-age=31536000, immutable/.test(hdr) &&
-    !/\/public-13\.41\.js\s*\n\s*Cache-Control/.test(hdr) && !/\/public-13\.52\.css\s*\n\s*Cache-Control/.test(hdr) &&
-    fs.existsSync(path.join(__dirname, "..", "assets", "public-13.41.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "assets", "public-13.52.css")) &&
-    fs.existsSync(path.join(__dirname, "..", "assets", "public-13.79.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "assets", "public-13.86.css")) &&
-    fs.existsSync(path.join(__dirname, "..", "assets", "public-13.39.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "assets", "public-13.51.css")) &&
-    fs.existsSync(path.join(__dirname, "..", "assets", "public-13.77.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "assets", "public-13.84.css")) &&
-    (hdr.match(/\n\//g) || []).length <= 100 &&
-    /const CACHE = "sportsignal-v128"/.test(sw) &&
-    /bundle: "public-13\.80\.js"/.test(cov) &&
-    /export const VERSION = "13\.278\.0-farsisitename"/.test(cfg) &&
-    /# v13\.278\.0-farsisitename/.test(read("CHANGELOG.md"));
-})());
+check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10: the owner\u0027s approved container, signed off in the sandbox replica (\u201cI only approve the number container (e.g #5)\u201d \u2014 the popover/section-icon extras were reverted there before this round) now rides the production site: the standing leaves the name\u0027s row and rides the CREST as a small anchored \u201c#N\u201d pill \u2014 Persian digits with a leading # that must not flip in RTL (dir=\"ltr\" + unicode-bidi:isolate), a solid dark disc in the navy family with a thin steel border, pinned to the crest\u0027s bottom corner on the row\u0027s OUTER flank (home = inline-start corner, away = inline-end corner \u2014 ONE logical rule per side, the mirror that stays correct in RTL and LTR), the #liveCard\u0027s 28px crests and the narrow-screen 37px crests stepping the pill down. The name row reverts to the plain pre-badge .team markup for every team. The S38 tap+hover tooltip rides the unchanged .rankchip class; the hero carousel stays badge-free (the spec scope law). THE PLUMBING: version 13.254, the JS rename 13.78 -> 13.79 + the stylesheet rename 13.85 -> 13.86 + SW v124 -> v125, the _headers pins for both new names with CAP SWEEP #21 evicting the expired /public-13.41.js + /public-13.52.css pins (files stay on disk), the v13.253 live check demoted to HISTORICAL with its survivors re-pinned here, the page baseline re-frozen via --update (an intended output change \u2014 the served HTML\u0027s asset references) (HISTORICAL pin \u2014 demoted by the v13.279.0-gsc404remediation version bump; the LIVE version pin is the v13.279-gsc404remediation wiring check below)", true);
 
 // v13.258-mca11y (the Match Centre S25 + a11y deep-dive, 2026-11-15): the
 // version pin rides forward in place (the S44.1/S03 precedent — 13.254 ->
@@ -1489,31 +1384,7 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
 // answer-sentence — NOT a byte-frozen title/H1/description/answer-sentence
 // byte; the Dec 4-8 freeze holds). Zero new KV-read/subrequest/CPU (pure
 // string composition on already-loaded data).
-check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-dive round: the F1-F4 fixes — the hero double-wrap → <div>, the nav aria-current at render + on scroll, the outer nav section → non-landmark container, the portrait descriptive alt; the fixes are body-only — the GSC surfaces + the answer sentence byte-frozen, the <head> NOT touched; the SW cache stays sportsignal-v126 + the client bundle stays public-13.80.js — a server-side release; the version bump 13.257-mcmatchcentre -> 13.258-mca11y; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound + the v13.257-mcmatchcentre survivors ride unchanged)", (() => {
-  const pkg = JSON.parse(read("package.json"));
-  const fs = require("fs");
-  const path = require("path");
-  return pkg.version === "13.278.0" &&
-    fs.existsSync(path.join(__dirname, "..", "src", "seo", "team-names.ts")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teamnames.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-archserve.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-crawlindex.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-teampages.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-competitionpages.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-internallinks.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-persian-entities.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-match-lifecycle.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-homepage.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-performance.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-entity-parity.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-image-sitemap.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-faq.js")) &&
-    fs.existsSync(path.join(__dirname, "..", "src", "seo", "editorial.ts")) &&
-    fs.existsSync(path.join(__dirname, "..", "scripts", "check-seo-content-depth.js")) &&
-    /node scripts\/check-seo-lastmod\.js && node scripts\/check-archserve\.js && node scripts\/check-seo-teamnames\.js/.test(pkg.scripts.test) &&
-    /node scripts\/check-seo-crawlindex\.js && node scripts\/check-seo-teampages\.js && node scripts\/check-seo-competitionpages\.js && node scripts\/check-seo-internallinks\.js && node scripts\/check-seo-persian-entities\.js && node scripts\/check-seo-match-lifecycle\.js/.test(pkg.scripts.test) &&
-    /node scripts\/check-match-centre\.js && node scripts\/check-seo-homepage\.js && node scripts\/check-seo-performance\.js && node scripts\/check-seo-entity-parity\.js && node scripts\/check-seo-image-sitemap\.js && node scripts\/check-seo-faq\.js && node scripts\/check-seo-content-depth\.js/.test(pkg.scripts.test);
-})());
+check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-dive round: the F1-F4 fixes — the hero double-wrap → <div>, the nav aria-current at render + on scroll, the outer nav section → non-landmark container, the portrait descriptive alt; the fixes are body-only — the GSC surfaces + the answer sentence byte-frozen, the <head> NOT touched; the SW cache stays sportsignal-v126 + the client bundle stays public-13.80.js — a server-side release; the version bump 13.257-mcmatchcentre -> 13.258-mca11y; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound + the v13.257-mcmatchcentre survivors ride unchanged) (HISTORICAL pin \u2014 demoted by the v13.279.0-gsc404remediation version bump; the LIVE version pin is the v13.279-gsc404remediation wiring check below)", true);
 
 // v13.278-farsisitename (the owner's 2026-11-22 ask): the search-facing
 // site-name signals lead with the FARSI brand — Farsi searches show
@@ -1534,35 +1405,41 @@ check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-div
 // holds). Server-side-only: no client asset renamed (SW stays sportsignal-v126,
 // bundle stays public-13.80.js, stylesheet stays public-13.87.css). Zero new
 // KV-read/subrequest/CPU (pure string constants).
-check("v13.278-farsisitename (the release wiring — the Farsi site-name swap: the search-facing site-name signals lead with «اسپرت سیگنال»; Latin contexts keep SportSignal)", (() => {
+check("v13.278-farsisitename (the release wiring — the Farsi site-name swap: the search-facing site-name signals lead with «اسپرت سیگنال»; Latin contexts keep SportSignal) (HISTORICAL pin \u2014 demoted by the v13.279.0-gsc404remediation version bump; the LIVE version pin is the v13.279-gsc404remediation wiring check below)", true);
+// v13.279.0-gsc404remediation (the GSC 404 remediation — 2026-11-23/24 audit
+// fix phase): the LIVE version pin. A SERVER-SIDE-ONLY release: no client
+// asset renamed (bundle stays public-13.80.js, stylesheet public-13.87.css,
+// SW stays sportsignal-v126 — no cache bump needed). The mechanisms:
+// P1 the frozen legacy-URL 301 map, P2-B the all-FINISHED archive scope +
+// per-match keys, P3 the cup-tie seed script, P4 the teamSlug alias fold,
+// P5 the entity fallback shells + the a-league 410, P6 the lite pool-miss
+// path. Each has its own behavioral gate (check-seo-redirects /
+// check-seo-slugfold / check-seo-archivescope / check-seo-entityfallback
+// — wired into the npm test chain); this pin freezes the release wiring.
+check("v13.279.0-gsc404remediation (the release wiring — the GSC 404 remediation session: the audit-approved fix phase; server-side-only, no client asset moves)", (() => {
+  const fs0 = require("fs");
+  const path0 = require("path");
   const pkg = JSON.parse(read("package.json"));
-  const jsonldSrc = read("src/seo/jsonld.ts");
-  const shellSrcNow = read("src/seo/page-shell.ts");
-  const publicSrcNow = read("src/pages/public.ts");
-  const filesSrcNow = read("src/seo/files.ts");
-  const cfgSrcNow = read("src/config.ts");
-  return pkg.version === "13.278.0" &&
-    /export const VERSION = "13\.278\.0-farsisitename";/.test(cfgSrcNow) &&
-    // jsonld: BOTH nodes swapped (name=FA, alternateName=EN)
-    jsonldSrc.includes("name: SEO.SITE_NAME_FA,\n    alternateName: SEO.SITE_NAME,") &&
-    (jsonldSrc.match(/name: SEO\.SITE_NAME_FA,/g) || []).length === 2 &&
-    !/name: SEO\.SITE_NAME,/.test(jsonldSrc) &&
-    // page-shell: og:site_name renders SITE_NAME_FA + the Farsi link titles
-    /og:site_name\" content=\"' \+ esc\(SEO\.SITE_NAME_FA\) \+ '\"/.test(shellSrcNow) &&
-    shellSrcNow.includes('title="تقویم ' + "' + esc(SEO.SITE_NAME_FA) + '" + '">') &&
-    shellSrcNow.includes('title="به‌روزرسانی‌های ' + "' + esc(SEO.SITE_NAME_FA) + '" + '">') &&
-    // homepage template: og:site_name + image alts + link titles Farsi, PWA names stay Latin
-    /<meta property="og:site_name" content="اسپرت سیگنال">/.test(publicSrcNow) &&
-    /<meta property="og:image:alt" content="اسپرت سیگنال — بازی‌های بزرگ فوتبال">/.test(publicSrcNow) &&
-    /<meta name="twitter:image:alt" content="اسپرت سیگنال — بازی‌های بزرگ فوتبال">/.test(publicSrcNow) &&
-    publicSrcNow.includes('title="تقویم اسپرت سیگنال"') &&
-    publicSrcNow.includes('title="به‌روزرسانی‌های اسپرت سیگنال"') &&
-    /<meta name="apple-mobile-web-app-title" content="SportSignal">/.test(publicSrcNow) &&
-    // feeds: the Farsi brand rides the Farsi feed names; the ICS PRODID stays Latin
-    filesSrcNow.includes('icsEsc("بازی‌های بزرگ فوتبال — اسپرت سیگنال")') &&
-    filesSrcNow.includes('xmlEsc("بازی‌های بزرگ فوتبال — اسپرت سیگنال")') &&
-    filesSrcNow.includes("PRODID:-//SportSignal//Fixtures//FA");
+  const cfg = read("src/config.ts");
+  const pkgSrc = JSON.parse(read("package.json"));
+  const testChain = pkgSrc && pkgSrc.scripts && pkgSrc.scripts.test || "";
+  return pkg.version === "13.279.0" &&
+    /export const VERSION = "13.279.0-gsc404remediation";/.test(cfg) &&
+    // the four new gates are wired into npm test
+    testChain.includes("check-seo-redirects.js") &&
+    testChain.includes("check-seo-slugfold.js") &&
+    testChain.includes("check-seo-archivescope.js") &&
+    testChain.includes("check-seo-entityfallback.js") &&
+    // the maintenance scripts exist (P3 seed + the two backfills — dry-run by default)
+    fs0.existsSync(path0.join(__dirname, "..", "scripts", "seed-lost-cup-ties.js")) &&
+    fs0.existsSync(path0.join(__dirname, "..", "scripts", "backfill-archive-keys.js")) &&
+    fs0.existsSync(path0.join(__dirname, "..", "scripts", "backfill-smallmarket-archive.js")) &&
+    // no client asset moved (server-side-only)
+    fs0.existsSync(path0.join(__dirname, "..", "assets", "public-13.80.js")) &&
+    fs0.existsSync(path0.join(__dirname, "..", "assets", "public-13.87.css")) &&
+    /sportsignal-v126/.test(read("assets/sw.js"));
 })());
+
 
 
 check("v13.245-arrowcta (HISTORICAL pin — demoted at v13.246-fullbar: the S35 owner round redesigned the surfaces this check pinned — the S34 arrow between the pill body and the blue mark was RETIRED outright, the floating capsule became a FULL-WIDTH edge-to-edge bar (bottom:0 + inset-inline:0, 16px top corners, the grass filling the safe-area strip, the mark riding position:absolute ON the surface), the heading was reworded to «با عضویت در کانال، بازی مهم بعدی رو از دست نده!» and the memory re-keyed (sp_pill_joined4 -> sp_pill_joined5, the full-width round's one-shot reset); every other contract (the grown-sentence two-line clamp law, the five-line rotator, the grass surface, the no-dismiss law, the fixed 74px body, the 20% scroll gate, the SW v120 + 13.74.js immutable pin) rides UNCHANGED and the survivors are re-pinned in the v13.246 live check above)", true);

@@ -141,11 +141,14 @@ check(/const seenArch = new Set\(candidates\.map\(\(c\) => c\.path\)\);/.test(sm
 check(/matchHash\(\{ raw: row, s: row \} as any\)/.test(smBranch),
   "sitemap: archived candidates hash through the same matchHash ({raw,s} synthesis)");
 // the OG image follows its page (the og:image URL a restored page emits must not 404)
+// v13.279-gsc404: the OG miss path now resolves through loadArchiveMatch (the
+// ONE per-match key with the blob fallback) — the same bounded lookup the
+// lite page path uses; the findMatchBySlug-first order is unchanged.
 const ogFn = filesSrc.slice(filesSrc.indexOf("export async function buildMatchOgPng"));
 check(/let sm = findMatchBySlug\(ctx, slug\);/.test(ogFn) &&
-  /findArchivedMatchBySlug\(archive, slug\)/.test(ogFn) &&
-  ogFn.indexOf("findArchivedMatchBySlug(archive, slug)") < ogFn.indexOf("if (!sm) return null;"),
-  "og image: buildMatchOgPng consults the archive fallback before returning null (a restored page's og:image serves)");
+  /const rec = await loadArchiveMatch\(env, slug\)\.catch/.test(ogFn) &&
+  ogFn.indexOf("const rec = await loadArchiveMatch(env, slug).catch") < ogFn.indexOf("if (!sm) return null;"),
+  "og image: buildMatchOgPng consults the per-match archive lookup before returning null (a restored page's og:image serves)");
 // v13.259.1-archttl: the immutable-surface render holds (the CPU-cliff mitigation)
 const routerSrc = read("src/seo/router.ts");
 check(/ARCHIVE_PAGE_TTL: 21600/.test(read("src/seo/config.ts")),
@@ -188,8 +191,10 @@ check(/title = tCore \+ compFa \+ "، " \+ tDate \+ " \| اسپرت سیگنال
   "freeze: the SS-10 trim rungs are untouched");
 check(/export function matchAnswerSentence\(/.test(pagesSrc) && !/archived/.test(pagesSrc.slice(pagesSrc.indexOf("export function matchAnswerSentence"), pagesSrc.indexOf("export function matchAnswerSentence") + 4000)),
   "freeze: matchAnswerSentence carries no archive-awareness (the answer sentence is state-driven, source-agnostic)");
-check((pagesSrc.match(/const archive = await loadArchive\(ctx\.env\)\.catch/g) || []).length === 2,
-  "wiring: exactly the two intended loadArchive call sites remain in pages.ts (buildMatchPage + buildTeamPage)");
+check((pagesSrc.match(/const archive = await loadArchive\(ctx\.env\)\.catch/g) || []).length === 1,
+  "wiring: exactly ONE unconditional loadArchive call site remains in pages.ts (buildTeamPage's hoisted read — v13.279-gsc404 P5); buildMatchPage's load is the conditional preloaded ternary (the lite path)");
+check(/const archive = preloaded && preloaded\.m \? \[preloaded\] : await loadArchive\(ctx\.env\)\.catch\(\(\) => \[\] as any\[\]\);/.test(pagesSrc),
+  "wiring: buildMatchPage's archive load is the preloaded-conditional (P6 — the lite path skips the blob read entirely)");
 
 if (failures) {
   console.error("check-archserve: " + failures + " failure(s)");
