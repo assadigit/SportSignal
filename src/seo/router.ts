@@ -13,6 +13,11 @@ import * as M from "./markup";
 import * as JL from "./jsonld";
 import { PUBLIC_PAGE } from "../pages/public";
 import { toFaDigits } from "../utils";
+// v13.279-gsc404: the frozen legacy-URL redirect map (P1 — the 12 verified
+// variant match URLs + the cup-tie form + the magdeburg team duplicate) and
+// the intentionally-gone competition set (P5/P2 — a-league, v13.173-noal).
+import { LEGACY_URL_REDIRECTS, GONE_COMP_SLUGS } from "../slugs";
+import { loadRawPool, matchInPoolBySlug, liteSeoCtx } from "./data";
 import {
   buildMatchPage, buildMatchesPage, buildTodayPage, buildTomorrowPage,
   buildThisWeekPage, buildWeekendPage, buildTeamsIndexPage, buildTeamPage,
@@ -63,6 +68,44 @@ function redirect(location: string, code = 301): Response {
       location,
       "cache-control": "public, max-age=3600"
     }
+  });
+}
+
+// v13.279-gsc404 (P1 — frozen 301 map): the permanent redirect emission for
+// the legacy-URL map. A pure header response — zero KV reads, zero renders
+// (the two most-requested dead URLs in the GSC export now cost ~nothing —
+// this REDUCES cliff pressure). One-year public caching is safe: the map is
+// frozen (a variant form will never again be canonical). Bypasses wantCached
+// entirely — a redirect needs no page key.
+function legacyRedirect(target: string): Response {
+  return new Response(null, {
+    status: 301,
+    headers: {
+      location: absUrl(target),
+      "cache-control": "public, max-age=31536000"
+    }
+  });
+}
+
+// v13.279-gsc404 (P2-B/P5 — the Gone response): the SAME Persian shell the
+// 404 path renders (build404Page — pure static build, zero KV reads, the
+// v13.97-seocpu contract holds) with status 410 — Google drops 410s from
+// the index materially faster than 404s. Used for (a) pattern-valid match
+// slugs with no pool row, no redirect-map entry and no archive row (the
+// TRUE-STRANGER class under the P2-B scope), and (b) GONE_COMP_SLUGS
+// (a-league — the v13.173-noal owner order). No edge caching: wantCached
+// stores 200s only, so a future legit page at the same URL never inherits
+// a cached Gone.
+function goneResponse(req: Request, isProd: boolean): Response {
+  let body: string;
+  try {
+    body = build404Page();
+  } catch (e) {
+    body = "<!doctype html><html lang=\"fa\" dir=\"rtl\"><meta charset=\"utf-8\"><title>صفحه پیدا نشد | اسپرت سیگنال</title><body><h1>صفحه پیدا نشد</h1><p><a href=\"/\">بازگشت به خانه</a></p></body></html>";
+  }
+  return new Response(body, {
+    status: 410,
+    headers: htmlHeaders(!isProd, { "x-robots-tag": "noindex, nofollow" })
   });
 }
 
@@ -759,14 +802,87 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
     });
   }
 
+  // ---------- P1: the frozen legacy-URL 301 map (GSC 404 remediation) ----------
+  // v13.279-gsc404: 14 verified dead URLs (the 12 provider name/date variant
+  // match forms + the seeded cup-tie's date/name variant + the magdeburg team
+  // duplicate) 301 to their canonical twins — a pure header response BEFORE
+  // any KV read or render (~0 CPU, and the two most-requested dead URLs in
+  // the GSC export stop costing the cliff anything). Sits AFTER the machine
+  // files (no path collision) and BEFORE the HTML render family. Unmapped
+  // slugs keep today's behavior (pool → archive → 404/410). The map itself
+  // lives in src/slugs.ts (frozen; gated by check-seo-redirects.js).
+  const legacyTarget = LEGACY_URL_REDIRECTS[path];
+  if (legacyTarget) return legacyRedirect(legacyTarget);
+
   // ---------- HTML pages ----------
   // v13.97-seocpu: per-colo render hold, decided per render (the page knows
   // its own liveness). Default 15 min; live/upcoming match pages, live
   // listings and the homepage hold shorter (a running score must not
   // freeze). Public edge freshness is unchanged — only the render cadence.
   const pageHold = { v: SEO.SEO_PAGE_TTL };
+  // The match-slug family's hub keywords — the /matches/{segment} regex
+  // would otherwise swallow the time-hub paths before they reach their own
+  // branches below (v13.279-gsc404: the match dispatch moved ABOVE the shared
+  // getSeoCtx so the lite path never pays the context build).
+  const MATCH_HUB_SEGMENTS = new Set(["today", "tomorrow", "this-week", "this-weekend"]);
+
   const renderPage = async (): Promise<{ body: string; status: number } | null> => {
     pageHold.v = SEO.SEO_PAGE_TTL;
+    // ---------- v13.279-gsc404 (P6): the match-slug dispatch ----------
+    // This family gets its OWN flow BEFORE the shared getSeoCtx below: the
+    // pool-miss lite path must not pay the full context build (payload
+    // loads + 7 standings reads + shaping ~340 rows) — that was the
+    // free-plan 10ms-CPU cliff's biggest single cost on exactly these
+    // archived-match renders. The pool-HIT path builds the same context as
+    // ever and renders through the same frozen builders (byte-identical).
+    {
+      const mm = /^\/matches\/([a-z0-9-]+)$/.exec(path);
+      if (mm && !MATCH_HUB_SEGMENTS.has(mm[1])) {
+        const rawPool = await loadRawPool(env);
+        const poolHit = matchInPoolBySlug(rawPool.rows, mm[1]);
+        if (poolHit) {
+          const seoCtx = await getSeoCtx(env);
+          // v13.82-matchday: async — the render may hydrate the venue (one
+          // KV-cached FD detail call on first visit per match; fail-closed).
+          const r = await buildMatchPage(seoCtx, mm[1]);
+          if (r.notFound) return null;
+          // v13.97-seocpu: live → short hold (the score moves every minute);
+          // upcoming → the hold lapses just after kickoff (the next hit
+          // re-renders into the live branch); finished → the full window
+          // (history is immutable).
+          const sm = findMatchBySlug(seoCtx, mm[1]);
+          const st = sm ? String(sm.raw.status || "").toUpperCase() : "";
+          if (/IN_PLAY|LIVE|PAUSED/.test(st)) pageHold.v = SEO.LIVE_PAGE_TTL;
+          else if (sm && sm.raw.utcDate) {
+            const secs = Math.ceil((new Date(sm.raw.utcDate).getTime() - Date.now()) / 1000);
+            pageHold.v = Math.max(60, Math.min(SEO.SEO_PAGE_TTL, secs + 120));
+          } else if (!sm) pageHold.v = SEO.ARCHIVE_PAGE_TTL;
+          return { body: r.html, status: 200 };
+        }
+        // pool miss → the bounded per-match archive key (P2-B). Legacy rows
+        // that predate the keys still resolve (loadArchiveMatch's blob
+        // fallback — same cost as today, no regression while the one-time
+        // backfill script seeds the keys).
+        const rec = await F.loadArchiveMatch(env, mm[1]);
+        if (!rec || !rec.m || !rec.m.utcDate) {
+          // P2-B: no redirect-map entry (those fired at the top of the router),
+          // no pool row, no archive row → a TRUE STRANGER (or a URL Google
+          // minted from nothing). Pattern-valid match slugs answer 410 (the
+          // audit's faster-removal code); malformed slugs keep the 404 below
+          // (the T-06 contract — the slug family regexes in this file).
+          if (/^([a-z0-9-]+)-vs-([a-z0-9-]+)-(\d{4}-\d{2}-\d{2})$/.test(mm[1])) {
+            return { body: "", status: 410 };
+          }
+          return null;
+        }
+        const liteCtx = liteSeoCtx(env, rawPool.rows, rawPool.fetchedAt);
+        const r = await buildMatchPage(liteCtx, mm[1], rec);
+        if (r.notFound) return null;
+        // v13.259.1-archttl: immutable history — the 6h render hold.
+        pageHold.v = SEO.ARCHIVE_PAGE_TTL;
+        return { body: r.html, status: 200 };
+      }
+    }
     const seoCtx = await getSeoCtx(env);
     if (path === "/") {
       // the landing page stays the freshest surface (the hero may be live).
@@ -786,36 +902,17 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
     if (path === "/matches/tomorrow") return { body: buildTomorrowPage(seoCtx), status: 200 };
     if (path === "/matches/this-week") return { body: buildThisWeekPage(seoCtx), status: 200 };
     if (path === "/matches/this-weekend") return { body: buildWeekendPage(seoCtx), status: 200 };
-    const mm = /^\/matches\/([a-z0-9-]+)$/.exec(path);
-    if (mm) {
-      // v13.82-matchday: async — the render may hydrate the venue (one
-      // KV-cached FD detail call on first visit per match; fail-closed).
-      const r = await buildMatchPage(seoCtx, mm[1]);
-      if (r.notFound) return null;
-      // v13.97-seocpu: live → short hold (the score moves every minute);
-      // upcoming → the hold lapses just after kickoff (the next hit re-renders
-      // into the live branch); finished → the full window (history is
-      // immutable).
-      // v13.259.1-archttl: a SUCCESSFUL render with a pool MISS can only be
-      // an ARCHIVED match (buildMatchPage's fallback served it from the
-      // immutable seo_archive_v1) — history cannot change, so it holds for
-      // ARCHIVE_PAGE_TTL (6h): 24x fewer cold renders on the free-plan 10ms
-      // CPU cliff (the chronic exceededResources class — the 13.259 restore
-      // made 151 of these URLs crawlable, so the re-render cadence matters).
-      const sm = findMatchBySlug(seoCtx, mm[1]);
-      const st = sm ? String(sm.raw.status || "").toUpperCase() : "";
-      if (/IN_PLAY|LIVE|PAUSED/.test(st)) pageHold.v = SEO.LIVE_PAGE_TTL;
-      else if (sm && sm.raw.utcDate) {
-        const secs = Math.ceil((new Date(sm.raw.utcDate).getTime() - Date.now()) / 1000);
-        pageHold.v = Math.max(60, Math.min(SEO.SEO_PAGE_TTL, secs + 120));
-      } else if (!sm) pageHold.v = SEO.ARCHIVE_PAGE_TTL;
-      return { body: r.html, status: 200 };
-    }
+    // (the /matches/{slug} family was dispatched ABOVE, before the shared
+    // getSeoCtx — v13.279-gsc404 P6.)
     if (path === "/teams") return { body: buildTeamsIndexPage(seoCtx), status: 200 };
     const tm = /^\/teams\/([a-z0-9-]+)$/.exec(path);
     if (tm) {
       // v13.88-formagg: async — the team form card loads the seo archive
       // (one bounded KV read, fail-closed) before rendering.
+      // v13.279-gsc404 (P5): buildTeamPage's own known-team fallback renders
+      // the honest empty-state shell (200 + noindex) for pinned clubs and
+      // archive-remembered teams during calendar gaps — r.notFound now means
+      // a TRUE stranger (the 404 below).
       const r = await buildTeamPage(seoCtx, tm[1]);
       if (r.notFound) return null;
       return { body: r.html, status: 200 };
@@ -823,8 +920,20 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
     if (path === "/competitions") return { body: buildCompetitionsIndexPage(seoCtx), status: 200 };
     const cm = /^\/competitions\/([a-z0-9-]+)$/.exec(path);
     if (cm) {
+      // v13.279-gsc404 (P5/P2): the intentionally-gone competition — 410.
+      // a-league is owner-ordered hidden (v13.173-noal, 2026-10-24: hidden
+      // from every SEO surface; its rows never reach a page, list or
+      // sitemap URL) and Google indexed the entity page from the pre-hide
+      // era — 410 states the death explicitly (faster removal than the
+      // cyclic 404 it was getting at every calendar gap). The check runs
+      // BEFORE buildCompetitionPage so the known-comp fallback can never
+      // resurrect a dead-by-design entity.
+      if (GONE_COMP_SLUGS.has(cm[1])) return { body: "", status: 410 };
       // v13.89-stdetail: async — the full standings table reads the
       // cache-only KV copy (one bounded read, fail-closed to compact).
+      // v13.279-gsc404 (P5): buildCompetitionPage's own known-comp fallback
+      // renders the honest empty-state shell (200 + noindex) for known
+      // competition slugs during calendar gaps.
       const r = await buildCompetitionPage(seoCtx, cm[1]);
       if (r.notFound) return null;
       return { body: r.html, status: 200 };
@@ -861,6 +970,13 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   // what renderPage decided) — cache hits never evaluate it.
   const page = await wantCached("/html" + key, () => pageHold.v, async () => {
     const r = await renderPage();
+    if (r && r.status === 410) {
+      // v13.279-gsc404 (P2-B/P5): the intentional-death marker from
+      // renderPage (true-stranger match slugs + GONE_COMP_SLUGS). The SAME
+      // Persian shell the 404 renders, status 410. never edge-cached
+      // (wantCached stores 200s only).
+      return goneResponse(req, isProd);
+    }
     if (!r) {
       // SS-12: the unknown-team/comp/match 404 renders WITHOUT a second
       // getSeoCtx — build404Page() is a pure static render, so the 404 path
