@@ -5,7 +5,7 @@
 // (P-18), honest data only. Static trust pages live in pages-static.ts.
 
 import { SEO, absUrl } from "./config";
-import { matchPath, compSlug, teamSlug } from "../slugs";
+import { matchPath, compSlug, teamSlug, TEAM_SLUGS, COMP_SLUGS } from "../slugs";
 import { esc, faTime, faDateD1, faDateD2, tehranDayKey, utcTime, statusLabelFa, weekendWindowTehran } from "./utils";
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
@@ -76,7 +76,11 @@ import { loadArchive } from "./files";
 // v13.89-stdetail: full-table sources for the competition pages — both
 // cache-only/reads-only (the seo layer never triggers a provider sweep).
 import { fetchStandings } from "../composers";
-import { translateTeam } from "../translate";
+// v13.279-gsc404 (P5): translateCompetition joins translateTeam here — the
+// fallback entity shells resolve their Persian names through the SAME
+// curated dictionaries the payload shaping uses (deterministic, no KV,
+// no invented names).
+import { translateTeam, translateCompetition } from "../translate";
 
 const PER_PAGE = 50;
 
@@ -1029,7 +1033,7 @@ function matchTelegramInput(ctx: SeoCtx): MatchTelegramInput {
   return { hrefHtml: url ? esc(url) : "" };
 }
 
-export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
+export async function buildMatchPage(ctx: SeoCtx, slug: string, preloaded?: any): Promise<{ html: string; notFound: boolean }> {
   // v13.259-archserve: the archive loads ONCE at the top — this is the SAME
   // bounded KV read the related-matches block below used to make at its own
   // call site (v13.87), hoisted so the out-of-pool fallback (below) and the
@@ -1037,7 +1041,13 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
   // The three pre-existing loads (loadArchive, hydrateMatchVenue,
   // fullByCodeFor — ADR-006) stay exactly three; the KV read count per
   // render is UNCHANGED.
-  const archive = await loadArchive(ctx.env).catch(() => [] as any[]);
+  // v13.279-gsc404 (P6 — the lite path): when the router already resolved
+  // the archived record through loadArchiveMatch (ONE ~1KB per-match key —
+  // the router's pool-miss branch), it passes it here as `preloaded` and
+  // this builder skips the blob read entirely (the multi-MB parse was the
+  // free-plan 10ms-CPU cliff's biggest single cost on exactly these
+  // renders). The full path (pool hits) is byte-for-byte unchanged.
+  const archive = preloaded && preloaded.m ? [preloaded] : await loadArchive(ctx.env).catch(() => [] as any[]);
   let sm = findMatchBySlug(ctx, slug);
   if (!sm) {
     // v13.259-archserve: the slug missed the 7-day pool — the match either
@@ -1048,8 +1058,16 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string): Promise<{ html:
     // impressions — docs/audits/2026-11-15-gsc-read.md §2). The restored
     // page renders through the SAME frozen builders — zero surface drift
     // on any live page (the byte-freeze law holds).
-    sm = findArchivedMatchBySlug(archive, slug);
-    if (!sm) return { html: "", notFound: true };
+    if (preloaded && preloaded.m && preloaded.m.utcDate) {
+      // P6: the pre-resolved per-match key row — the same {m, fin} shape
+      // the blob holds, serving as BOTH raw and s (archived:true marks it
+      // for hydrateMatchVenue's home-ground skip, exactly like the blob
+      // fallback's rows).
+      sm = { raw: preloaded.m, s: preloaded.m, archived: true };
+    } else {
+      sm = findArchivedMatchBySlug(archive, slug);
+      if (!sm) return { html: "", notFound: true };
+    }
   }
   sm = await hydrateMatchVenue(ctx.env, sm);
   const m = sm.s;
@@ -2038,9 +2056,66 @@ function teamFormCardHtml(ctx: SeoCtx, entryName: string, fa: string, archive: a
   return '<div class="card formstrip"><h2>' + title + "</h2>" + (dots ? formLegendHtml() : "") + row + "</div>";
 }
 
+// v13.279-gsc404 (P5): the known-team resolver for the team-page fallback —
+// (a) a pinned club's canonical slug (reverse of TEAM_SLUGS — the first
+// key in insertion order wins, e.g. "Lazio" over "SS Lazio"), carrying the
+// dictionary faName the payload shaping itself would resolve
+// (translateTeam — the curated dict, deterministic, no KV); (b) a team the
+// 365-day archive remembers (the earliest mention wins), carrying the
+// archived row's own name + faName — honest data the site itself served.
+// Returns null for true strangers (the router keeps the 404 for them).
+function knownTeamFallback(slug: string, archive: any[]): TeamEntry | null {
+  if (!slug) return null;
+  for (const name of Object.keys(TEAM_SLUGS)) {
+    if (TEAM_SLUGS[name] === slug) {
+      return { name, faName: translateTeam(name) || null, slug, upcomingBig: 0, next: null };
+    }
+  }
+  for (const rec of archive || []) {
+    const m = rec && rec.m;
+    if (!m || !m.utcDate) continue;
+    for (const side of ["homeTeam", "awayTeam"]) {
+      const t = m[side];
+      if (t && t.name && teamSlug(t.name) === slug) {
+        return { name: t.name, faName: t.faName || null, slug, upcomingBig: 0, next: null };
+      }
+    }
+  }
+  return null;
+}
+
+// v13.279-gsc404 (P5): the known-competition resolver — the reverse of
+// COMP_SLUGS (every value is a real competition by construction, U-02).
+// buildCompetitionPage renders the honest empty-state shell for these
+// during calendar gaps (the GSC cyclic-404 set: europa-league,
+// conference-league, persian-gulf-pro-league, dfb-pokal). The
+// intentionally-gone set (a-league — GONE_COMP_SLUGS in slugs.ts, the
+// v13.173-noal owner order) is answered 410 at the ROUTER and never
+// reaches this resolver.
+const COMP_SLUG_BY_SLUG: Record<string, string> = {};
+for (const code of Object.keys(COMP_SLUGS)) COMP_SLUG_BY_SLUG[COMP_SLUGS[code]] = code;
+
 export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean }> {
-  const entry = findTeamBySlug(ctx, slug);
-  if (!entry) return { html: "", notFound: true };
+  // v13.279-gsc404 (P5): the archive load hoisted ABOVE the entry
+  // resolution — the known-team fallback (knownTeamFallback below) needs
+  // it; the load count stays ONE (this is the same bounded read the form
+  // card below always made, just earlier in the flow).
+  const archive = await loadArchive(ctx.env).catch(() => [] as any[]);
+  let entry = findTeamBySlug(ctx, slug);
+  if (!entry) {
+    // v13.279-gsc404 (P5 — stable entity pages): the pool has no rows for
+    // this team RIGHT NOW, but the entity may still be KNOWN — a pinned
+    // club (a TEAM_SLUGS value) or a team the 365-day archive remembers
+    // (a cup-tie participant: 1. FC Magdeburg, Rot-Weiss Essen, SG
+    // Sonnenhof Großaspach — the GSC 2026-11-23 cyclic-404 set). The page
+    // renders the SAME shell in the honest "no upcoming big fixtures"
+    // state at 200 + noindex,follow (indexable=false below — the C1
+    // noindex-must-stay-crawlable precedent) instead of notFound. The
+    // fallback NEVER enters a sitemap child (teams.xml iterates the
+    // pool-derived teamsIndex only — gated by check-seo-entityfallback.js).
+    entry = knownTeamFallback(slug, archive);
+    if (!entry) return { html: "", notFound: true };
+  }
   // S1 M2 (F3): the team page's own name rides the SEO override (Leipzig
   // renders «لایپزیگ» in the title/H1/answer; the dictionary spelling is
   // shown once via altNote below).
@@ -2088,9 +2163,10 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
   const stw = teamStandingsWindow(ctx, entry.name, next, fullByCode);
   const stWinCard = stw ? buildStandingsWindowHtml(stw) : "";
   // v13.88-formagg: the team's own form card (dots or season record) —
-  // one bounded archive read, fail-closed (error → dots path stays dark,
-  // the season chip still lights from the payload).
-  const archive = await loadArchive(ctx.env).catch(() => [] as any[]);
+  // ONE bounded archive read (the load hoisted to the top of this builder
+  // by v13.279-gsc404 P5 — the SAME read serves the known-team fallback
+  // and the form card), fail-closed (error → dots path stays dark, the
+  // season chip still lights from the payload).
   const formCard = teamFormCardHtml(ctx, entry.name, name, archive, fullByCode);
   // v13.88-formagg: the standings position rides the answer sentence when
   // the window found the team's row (pos/points from the SAME snapshot the
@@ -2297,13 +2373,36 @@ async function fullByCodeFor(ctx: SeoCtx, codes: (string | null | undefined)[]):
 
 export async function buildCompetitionPage(ctx: SeoCtx, slug: string): Promise<{ html: string; notFound: boolean; code?: string }> {
   const entries = compsIndex(ctx);
-  const entry = entries.find((e) => e.slug === slug);
-  if (!entry) return { html: "", notFound: true };
+  let entry = entries.find((e) => e.slug === slug);
+  if (!entry) {
+    // v13.279-gsc404 (P5 — stable entity pages): the pool has no rows for
+    // this competition RIGHT NOW, but the slug can still name a KNOWN
+    // competition (every COMP_SLUGS value is real by construction — U-02;
+    // the GSC 2026-11-23 cyclic-404 set: europa-league, conference-league,
+    // persian-gulf-pro-league, dfb-pokal). The page renders the SAME shell
+    // in the honest "no upcoming big fixtures" state — 200 + noindex
+    // (indexable below: the fixtures list is empty), its standings table
+    // still served from the payload/full cache when one exists (the PGL
+    // fallback carries the real Wikipedia-sourced table). The fallback
+    // NEVER enters a sitemap child (competitions.xml iterates the
+    // pool-derived compsIndex only — gated by check-seo-entityfallback.js).
+    // GONE_COMP_SLUGS (a-league — the v13.173-noal owner order) is answered
+    // 410 at the ROUTER before this builder runs.
+    const code = COMP_SLUG_BY_SLUG[slug];
+    if (!code) return { html: "", notFound: true };
+    entry = { code, slug, upcomingBig: 0, next: null };
+  }
   const code = entry.code;
   const list = compMatches(ctx, code);
   const indexable = list.length >= SEO.MIN_UPCOMING_FOR_INDEX;
   const path = "/competitions/" + slug;
-  const cNameFa = (entry.next && entry.next.s.competition.faName) || COMP_EN[code] || code;
+  // v13.279-gsc404 (P5): the fallback state's Persian name — live pages
+  // still resolve cNameFa from the next match's own competition.faName
+  // (byte-identical); the fallback (entry.next = null) uses the SAME
+  // translateCompetition dictionary the payload/labels use («لیگ اروپا»,
+  // «لیگ قهرمانان اروپا», «جام حذفی آلمان» …) so the shell renders Farsi,
+  // never a bare English fallback.
+  const cNameFa = (entry.next && entry.next.s.competition.faName) || translateCompetition(code) || COMP_EN[code] || code;
   const cNameEn = COMP_EN[code] || code;
   const trail = [{ name: "خانه", href: "/" }, { name: "رقابت‌ها", href: "/competitions" }, { name: String(cNameFa) }];
   const next = list[0];
@@ -2351,7 +2450,13 @@ export async function buildCompetitionPage(ctx: SeoCtx, slug: string): Promise<{
       rows: st && Array.isArray(st.teams) ? st.teams : [],
       upcomingCount: list.length
     }) +
-    '<div class="card"><div class="listhead"><h2>بازی‌های پیش‌رو</h2><span class="pagesub">' + toFaDigits(String(list.length)) + " بازی</span></div>" + dateGroupedRows(list, false) + "</div>";
+    // v13.279-gsc404 (P5): the honest fixtures card — the pool-derived path
+    // always carries ≥1 row (compsIndex's big-match gate), so this empty
+    // branch fires ONLY for the known-competition fallback state; live
+    // competition pages render byte-identically to before.
+    (list.length
+      ? '<div class="card"><div class="listhead"><h2>بازی‌های پیش‌رو</h2><span class="pagesub">' + toFaDigits(String(list.length)) + " بازی</span></div>" + dateGroupedRows(list, false) + "</div>"
+      : '<div class="card"><div class="listhead"><h2>بازی‌های پیش‌رو</h2></div><div class="empty">در حال حاضر بازی پیش‌روی ' + esc(String(cNameFa)) + " در برنامه نزدیک نیست؛ به‌محض اعلام برنامه، همین صفحه به‌روزرسانی می‌شود.</div></div>");
   return {
     html: pageShell({
       head: buildHead({
