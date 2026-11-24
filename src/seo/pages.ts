@@ -1739,11 +1739,26 @@ export function buildTeamsIndexPage(ctx: SeoCtx): string {
     const d = e.next
       ? "بازی بعدی: " + faName(e.next.s.homeTeam) + " – " + faName(e.next.s.awayTeam) + "، " + faDateD2(e.next.s.utcDate)
       : "";
+    // v13.280-teamtilecrests (the owner's 2026-11-24 ask): the club crest
+    // rides inline-start of the tile title (the .stname.haslogo / .logo
+    // precedent — flex row, fixed 24px slot, object-fit contain). The <img>
+    // is decorative (alt=""; the adjacent .ttxt span is the accessible
+    // name), lazy + no-referrer + onerror self-removal (the .mcrest
+    // fail-soft precedent — a dead crest URL degrades to the plain text
+    // tile, never a broken-image box), and width/height are fixed so the
+    // grid paints with zero CLS. The anchor keeps its byte-exact
+    // 'class="hubtile" href="/teams/{slug}"' shape (the SS-13 crawlable
+    // anchor + the seo-check tile regex); the crest-aware .t.tlogo gate
+    // leaves every plain .t tile (competitions hub, static pages) byte-
+    // identical.
+    const crest = e.crest
+      ? '<img class="tc" src="' + esc(e.crest) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="24" height="24" onerror="this.remove()">'
+      : "";
     // S1 M2 (F3): the tile title rides the SEO override so the index agrees
     // with the team page it links to (the machine list below uses the same
     // names — the SS-13 visible==machine contract).
-    grid += '<a class="hubtile" href="/teams/' + e.slug + '"><div class="t">' + esc(seoTeamFaName(e)) +
-      '</div><div class="d">' + esc(d) + "</div></a>";
+    grid += '<a class="hubtile" href="/teams/' + e.slug + '"><div class="t' + (crest ? " tlogo" : "") + '">' + crest +
+      '<span class="ttxt">' + esc(seoTeamFaName(e)) + '</span></div><div class="d">' + esc(d) + "</div></a>";
   }
   if (!grid) grid = '<div class="empty">در حال حاضر بازی پیش‌رویی برای تیم‌های دنبال‌شده در برنامه نیست.</div>';
   const main = '<div class="answercard">صفحه هر تیم، برنامه بازی‌های بزرگ بعدی و نتایج اخیر آن تیم را نشان می‌دهد — به وقت تهران و با لینک به صفحه هر بازی.</div>' +

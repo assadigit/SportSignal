@@ -1252,7 +1252,7 @@ check("v13.252-pillreset (HISTORICAL pin \u2014 demoted at v13.253-alwaysshow: t
 
 check("v13.253-alwaysshow (HISTORICAL pin \u2014 demoted at v13.254-rankbadge: the S44 crest-pill round renamed the client-referenced assets this check pinned \u2014 public-13.78.js -> 13.79.js + public-13.85.css -> 13.86.css \u2014 and rewrote the rank surfaces (the pill rides the crest, the S40 plain number + .team-r row retire); the S43 always-show LAW itself survives unchanged and is re-pinned in the v13.254 live check)", true);
 
-check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10: the owner\u0027s approved container, signed off in the sandbox replica (\u201cI only approve the number container (e.g #5)\u201d \u2014 the popover/section-icon extras were reverted there before this round) now rides the production site: the standing leaves the name\u0027s row and rides the CREST as a small anchored \u201c#N\u201d pill \u2014 Persian digits with a leading # that must not flip in RTL (dir=\"ltr\" + unicode-bidi:isolate), a solid dark disc in the navy family with a thin steel border, pinned to the crest\u0027s bottom corner on the row\u0027s OUTER flank (home = inline-start corner, away = inline-end corner \u2014 ONE logical rule per side, the mirror that stays correct in RTL and LTR), the #liveCard\u0027s 28px crests and the narrow-screen 37px crests stepping the pill down. The name row reverts to the plain pre-badge .team markup for every team. The S38 tap+hover tooltip rides the unchanged .rankchip class; the hero carousel stays badge-free (the spec scope law). THE PLUMBING: version 13.254, the JS rename 13.78 -> 13.79 + the stylesheet rename 13.85 -> 13.86 + SW v124 -> v125, the _headers pins for both new names with CAP SWEEP #21 evicting the expired /public-13.41.js + /public-13.52.css pins (files stay on disk), the v13.253 live check demoted to HISTORICAL with its survivors re-pinned here, the page baseline re-frozen via --update (an intended output change \u2014 the served HTML\u0027s asset references) (HISTORICAL pin \u2014 demoted by the v13.279.0-gsc404remediation version bump; the LIVE version pin is the v13.279-gsc404remediation wiring check below)", true);
+check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10: the owner\u0027s approved container, signed off in the sandbox replica (\u201cI only approve the number container (e.g #5)\u201d \u2014 the popover/section-icon extras were reverted there before this round) now rides the production site: the standing leaves the name\u0027s row and rides the CREST as a small anchored \u201c#N\u201d pill \u2014 Persian digits with a leading # that must not flip in RTL (dir=\"ltr\" + unicode-bidi:isolate), a solid dark disc in the navy family with a thin steel border, pinned to the crest\u0027s bottom corner on the row\u0027s OUTER flank (home = inline-start corner, away = inline-end corner \u2014 ONE logical rule per side, the mirror that stays correct in RTL and LTR), the #liveCard\u0027s 28px crests and the narrow-screen 37px crests stepping the pill down. The name row reverts to the plain pre-badge .team markup for every team. The S38 tap+hover tooltip rides the unchanged .rankchip class; the hero carousel stays badge-free (the spec scope law). THE PLUMBING: version 13.254, the JS rename 13.78 -> 13.79 + the stylesheet rename 13.85 -> 13.86 + SW v124 -> v125, the _headers pins for both new names with CAP SWEEP #21 evicting the expired /public-13.41.js + /public-13.52.css pins (files stay on disk), the v13.253 live check demoted to HISTORICAL with its survivors re-pinned here, the page baseline re-frozen via --update (an intended output change \u2014 the served HTML\u0027s asset references) (HISTORICAL pin \u2014 demoted by the v13.279.0-gsc404remediation version bump, then carried (the v13.279 pin itself demoted at v13.280.0-teamtilecrests); the LIVE version pin is the v13.280-teamtilecrests wiring check below)", true);
 
 // v13.258-mca11y (the Match Centre S25 + a11y deep-dive, 2026-11-15): the
 // version pin rides forward in place (the S44.1/S03 precedent — 13.254 ->
@@ -1384,7 +1384,7 @@ check("v13.254-rankbadge (the release wiring \u2014 the S44 session, 2026-11-10:
 // answer-sentence — NOT a byte-frozen title/H1/description/answer-sentence
 // byte; the Dec 4-8 freeze holds). Zero new KV-read/subrequest/CPU (pure
 // string composition on already-loaded data).
-check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-dive round: the F1-F4 fixes — the hero double-wrap → <div>, the nav aria-current at render + on scroll, the outer nav section → non-landmark container, the portrait descriptive alt; the fixes are body-only — the GSC surfaces + the answer sentence byte-frozen, the <head> NOT touched; the SW cache stays sportsignal-v126 + the client bundle stays public-13.80.js — a server-side release; the version bump 13.257-mcmatchcentre -> 13.258-mca11y; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound + the v13.257-mcmatchcentre survivors ride unchanged) (HISTORICAL pin \u2014 demoted by the v13.279.0-gsc404remediation version bump; the LIVE version pin is the v13.279-gsc404remediation wiring check below)", true);
+check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-dive round: the F1-F4 fixes — the hero double-wrap → <div>, the nav aria-current at render + on scroll, the outer nav section → non-landmark container, the portrait descriptive alt; the fixes are body-only — the GSC surfaces + the answer sentence byte-frozen, the <head> NOT touched; the SW cache stays sportsignal-v126 + the client bundle stays public-13.80.js — a server-side release; the version bump 13.257-mcmatchcentre -> 13.258-mca11y; the version triple's production move; the v13.255 spelling-fix + the v13.256-mcfound + the v13.257-mcmatchcentre survivors ride unchanged) (HISTORICAL pin \u2014 demoted by the v13.279.0-gsc404remediation version bump, then carried (the v13.279 pin itself demoted at v13.280.0-teamtilecrests); the LIVE version pin is the v13.280-teamtilecrests wiring check below)", true);
 
 // v13.278-farsisitename (the owner's 2026-11-22 ask): the search-facing
 // site-name signals lead with the FARSI brand — Farsi searches show
@@ -1405,7 +1405,7 @@ check("v13.258-mca11y (the release wiring — the Match Centre S25 a11y deep-div
 // holds). Server-side-only: no client asset renamed (SW stays sportsignal-v126,
 // bundle stays public-13.80.js, stylesheet stays public-13.87.css). Zero new
 // KV-read/subrequest/CPU (pure string constants).
-check("v13.278-farsisitename (the release wiring — the Farsi site-name swap: the search-facing site-name signals lead with «اسپرت سیگنال»; Latin contexts keep SportSignal) (HISTORICAL pin \u2014 demoted by the v13.279.0-gsc404remediation version bump; the LIVE version pin is the v13.279-gsc404remediation wiring check below)", true);
+check("v13.278-farsisitename (the release wiring — the Farsi site-name swap: the search-facing site-name signals lead with «اسپرت سیگنال»; Latin contexts keep SportSignal) (HISTORICAL pin \u2014 demoted by the v13.279.0-gsc404remediation version bump, then carried (the v13.279 pin itself demoted at v13.280.0-teamtilecrests); the LIVE version pin is the v13.280-teamtilecrests wiring check below)", true);
 // v13.279.0-gsc404remediation (the GSC 404 remediation — 2026-11-23/24 audit
 // fix phase): the LIVE version pin. A SERVER-SIDE-ONLY release: no client
 // asset renamed (bundle stays public-13.80.js, stylesheet public-13.87.css,
@@ -1416,30 +1416,50 @@ check("v13.278-farsisitename (the release wiring — the Farsi site-name swap: t
 // path. Each has its own behavioral gate (check-seo-redirects /
 // check-seo-slugfold / check-seo-archivescope / check-seo-entityfallback
 // — wired into the npm test chain); this pin freezes the release wiring.
-check("v13.279.0-gsc404remediation (the release wiring — the GSC 404 remediation session: the audit-approved fix phase; server-side-only, no client asset moves)", (() => {
-  const fs0 = require("fs");
-  const path0 = require("path");
-  const pkg = JSON.parse(read("package.json"));
-  const cfg = read("src/config.ts");
-  const pkgSrc = JSON.parse(read("package.json"));
-  const testChain = pkgSrc && pkgSrc.scripts && pkgSrc.scripts.test || "";
-  return pkg.version === "13.279.0" &&
-    /export const VERSION = "13.279.0-gsc404remediation";/.test(cfg) &&
-    // the four new gates are wired into npm test
-    testChain.includes("check-seo-redirects.js") &&
-    testChain.includes("check-seo-slugfold.js") &&
-    testChain.includes("check-seo-archivescope.js") &&
-    testChain.includes("check-seo-entityfallback.js") &&
-    // the maintenance scripts exist (P3 seed + the two backfills — dry-run by default)
-    fs0.existsSync(path0.join(__dirname, "..", "scripts", "seed-lost-cup-ties.js")) &&
-    fs0.existsSync(path0.join(__dirname, "..", "scripts", "backfill-archive-keys.js")) &&
-    fs0.existsSync(path0.join(__dirname, "..", "scripts", "backfill-smallmarket-archive.js")) &&
-    // no client asset moved (server-side-only)
-    fs0.existsSync(path0.join(__dirname, "..", "assets", "public-13.80.js")) &&
-    fs0.existsSync(path0.join(__dirname, "..", "assets", "public-13.87.css")) &&
-    /sportsignal-v126/.test(read("assets/sw.js"));
-})());
+// (v13.280.0-teamtilecrests: the LIVE version pin moved to the v13.280
+// check below; this v13.279 pin is demoted to HISTORICAL — the mechanisms'
+// behavioral gates stay LIVE in the npm test chain.)
+check("v13.279.0-gsc404remediation (the release wiring — the GSC 404 remediation session: the audit-approved fix phase; server-side-only, no client asset moves; the four behavioral gates check-seo-redirects / check-seo-slugfold / check-seo-archivescope / check-seo-entityfallback stay LIVE in the npm test chain — they pin the mechanisms, not the version) (HISTORICAL pin — demoted by the v13.280.0-teamtilecrests version bump; the LIVE version pin is the v13.280-teamtilecrests wiring check below)", true);
 
+// v13.280.0-teamtilecrests (the owner's 2026-11-24 ask — "Add club's
+// logo/sigil (from API) in this page: /teams"): the LIVE version pin. A
+// SERVER-SIDE-ONLY release: no client asset renamed (bundle stays
+// public-13.80.js, stylesheet public-13.87.css, SW cache stays
+// sportsignal-v128 — server-side src changes do NOT require a cache bump,
+// the RUNBOOK §2 rule; the /teams HTML itself is network-first in the SW
+// so returning users get the crests on their very next navigation). The
+// mechanism: TeamEntry.crest (data.ts — the pool row's own crest URL +
+// the adoption-across-rows guard), the tile renderer (pages.ts — the
+// .t.tlogo flex row + the lazy/no-referrer/fail-soft 24px .tc img inside
+// the byte-identical crawlable hubtile anchor), the CSS (page-shell.ts —
+// .hubtile .t.tlogo + .hubtile img.tc, zero-CLS fixed slot). The crest
+// origin (crests.football-data.org) is ALREADY preconnected at HTML-
+// byte-0 (the v13.268-perf shell preconnect — check-seo-performance).
+check("v13.280.0-teamtilecrests (the release wiring — the /teams index tile crests: the club's own provider crest rides the tile title row; server-side-only, no client asset moves)", (() => {
+  const fs1 = require("fs");
+  const path1 = require("path");
+  const pkg1 = JSON.parse(read("package.json"));
+  const cfg1 = read("src/config.ts");
+  const pages1 = read("src/seo/pages.ts");
+  const data1 = read("src/seo/data.ts");
+  const shell1 = read("src/seo/page-shell.ts");
+  return pkg1.version === "13.280.0" &&
+    /export const VERSION = "13.280.0-teamtilecrests";/.test(cfg1) &&
+    // the tile renderer: the crawlable anchor keeps its byte-exact shape + the crest img rides the .t.tlogo row
+    /<a class="hubtile" href="\/teams\/' \+ e\.slug \+ '">\<div class="t' \+ \(crest \? " tlogo" : ""\) \+ '">'/.test(pages1) &&
+    /<img class="tc" src="' \+ esc\(e\.crest\) \+ '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="24" height="24" onerror="this.remove\(\)">/.test(pages1) &&
+    // the data layer: TeamEntry.crest + the adoption-across-rows guard
+    /crest\?: string \| null;/.test(data1) &&
+    /crest: t\.crest \|\| null, upcomingBig: 0, next: null \}/.test(data1) &&
+    /if \(!e\.crest && t\.crest\) e\.crest = t\.crest;/.test(data1) &&
+    // the CSS: the .tlogo gate + the 24px zero-CLS slot
+    /\.hubtile \.t\.tlogo\{display:flex;align-items:center;gap:8px;min-width:0\}/.test(shell1) &&
+    /\.hubtile img\.tc\{flex:0 0 24px;width:24px;height:24px;object-fit:contain;display:block\}/.test(shell1) &&
+    // no client asset moved (server-side-only)
+    fs1.existsSync(path1.join(__dirname, "..", "assets", "public-13.80.js")) &&
+    fs1.existsSync(path1.join(__dirname, "..", "assets", "public-13.87.css")) &&
+    /const CACHE = "sportsignal-v128";/.test(read("assets/sw.js"));
+})());
 
 
 check("v13.245-arrowcta (HISTORICAL pin — demoted at v13.246-fullbar: the S35 owner round redesigned the surfaces this check pinned — the S34 arrow between the pill body and the blue mark was RETIRED outright, the floating capsule became a FULL-WIDTH edge-to-edge bar (bottom:0 + inset-inline:0, 16px top corners, the grass filling the safe-area strip, the mark riding position:absolute ON the surface), the heading was reworded to «با عضویت در کانال، بازی مهم بعدی رو از دست نده!» and the memory re-keyed (sp_pill_joined4 -> sp_pill_joined5, the full-width round's one-shot reset); every other contract (the grown-sentence two-line clamp law, the five-line rotator, the grass surface, the no-dismiss law, the fixed 74px body, the 20% scroll gate, the SW v120 + 13.74.js immutable pin) rides UNCHANGED and the survivors are re-pinned in the v13.246 live check above)", true);

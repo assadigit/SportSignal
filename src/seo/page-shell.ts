@@ -168,6 +168,14 @@ ${FONT_FACES_STYLE}
 .hubtile:hover{border-color:rgba(94,160,255,.5)}
 .hubtile .t{font-weight:700;font-size:1rem}
 .hubtile .d{font-size:.8rem;color:var(--muted,#9aa4b2);margin-top:4px;line-height:1.7}
+/* v13.280-teamtilecrests (the owner's 2026-11-24 ask): the /teams tile crest —
+   the club's FD crest <img> rides inline-start of the tile title row. The
+   .tlogo gate keeps every plain .t tile (competitions hub, static pages)
+   byte-identical; the 24px flex slot + object-fit contain mirror the
+   .stname.haslogo standings precedent (fixed width/height = zero CLS; in RTL
+   the crest lands on the row's inline start automatically). */
+.hubtile .t.tlogo{display:flex;align-items:center;gap:8px;min-width:0}
+.hubtile img.tc{flex:0 0 24px;width:24px;height:24px;object-fit:contain;display:block}
 .match a.match,.mrow a.match,.spotitem a.match{color:inherit;text-decoration:none}
 .listhead{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between;margin:14px 0 4px}
 .listhead h2{margin:0;font-size:1.05rem}

@@ -267,6 +267,14 @@ export interface TeamEntry {
   name: string;       // provider (English) name
   faName: string | null;
   slug: string;
+  // v13.280-teamtilecrests (the owner's 2026-11-24 ask): the club crest
+  // URL the pool row itself carries (FD's crests.football-data.org/{id}.png
+  // on every match row — the same field the match-page .mcrest, the
+  // standings .stname.haslogo and the team-page .logo rows already render).
+  // Optional: the knownTeamFallback/findTeamBySlug shells construct entries
+  // without a crest (their pages render text-only tiles — the graceful
+  // branch, exactly like a standings row without a catalog crest).
+  crest?: string | null;
   upcomingBig: number;
   next: SeoMatch | null;
 }
@@ -329,9 +337,15 @@ export function teamsIndex(ctx: SeoCtx): TeamEntry[] {
       if (!t || !t.name) continue;
       let e = byName.get(t.name);
       if (!e) {
-        e = { name: t.name, faName: (s[side] && s[side].faName) || null, slug: "", upcomingBig: 0, next: null };
+        e = { name: t.name, faName: (s[side] && s[side].faName) || null, slug: "", crest: t.crest || null, upcomingBig: 0, next: null };
         byName.set(t.name, e);
       }
+      // v13.280-teamtilecrests: crest adoption across rows — the first row
+      // that carries a crest wins for the team (the fetchMatchesFromAPI
+      // providers.ts precedent: FD rows + TSP/sportscore adoption, so a
+      // team whose first row predates a crest-bearing merge still resolves
+      // one). Zero KV/subrequest cost — reads a field already in memory.
+      if (!e.crest && t.crest) e.crest = t.crest;
       e.upcomingBig++;
       if (!e.next || new Date(raw.utcDate).getTime() < new Date(e.next.raw.utcDate).getTime()) {
         e.next = { raw, s };

@@ -1,3 +1,55 @@
+# v13.280.0-teamtilecrests — the /teams index tile crests (2026-11-24)
+
+The owner's ask (verbatim): "Add club's logo/sigil (from API) in this
+page: https://sportsignal.ir/teams". The /teams hub tiles rendered text
+only (name + next fixture); every OTHER crest-bearing surface (the match
+page .mcrest, the standings .stname.haslogo, the team page .logo rows)
+already renders the club's own provider crest. This release closes that
+gap: each /teams tile now leads with the club's crest.
+
+**The mechanism (3 pieces, server-side-only — no client asset moved,
+bundle stays public-13.80.js, stylesheet stays public-13.87.css, SW cache
+stays sportsignal-v128 per the RUNBOOK §2 server-side rule):**
+
+- **The data layer** (`src/seo/data.ts`): `TeamEntry.crest` — the pool
+  row's OWN crest URL (FD's crests.football-data.org/{id}.png, the exact
+  field the match pages already render), set at entry creation with an
+  adoption-across-rows guard (the providers.ts merge precedent — a team
+  whose first row predates a crest-bearing merge still resolves one).
+  Optional on the interface so the knownTeamFallback/findTeamBySlug
+  shells construct without it. Zero KV/subrequest/CPU — reads a field
+  already in memory at page render.
+- **The tile renderer** (`src/seo/pages.ts`): the crest `<img class="tc">`
+  rides inline-start of the tile title row (`.t.tlogo` flex + `.ttxt`
+  span) — decorative `alt=""` (the adjacent .ttxt is the accessible
+  name), `loading="lazy" decoding="async" referrerpolicy="no-referrer"`,
+  fixed `width="24" height="24"` (zero CLS), `onerror="this.remove()"`
+  (the .mcrest fail-soft precedent — a dead crest URL degrades to the
+  plain text tile, never a broken-image box). The crawlable anchor keeps
+  its byte-exact `<a class="hubtile" href="/teams/{slug}">` shape (the
+  SS-13 contract + the seo-check live tile regex); teams whose rows
+  carry no crest render the unchanged plain `.t` tile (the graceful
+  branch). The GSC-measured title/H1/description/answer bytes are
+  untouched (freeze-safe).
+- **The CSS** (`src/seo/page-shell.ts`): `.hubtile .t.tlogo` (flex row,
+  `min-width:0`) + `.hubtile img.tc` (24px fixed flex slot,
+  `object-fit:contain`) — the .tlogo GATE leaves every plain `.t` tile
+  (the competitions hub, the static pages' hubgrid) byte-identical. The
+  crest origin (crests.football-data.org) is already preconnected at
+  HTML-byte-0 (the v13.268-perf shell preconnect — the first tile crest
+  fetch rides the warmed connection; no new preconnect needed).
+
+**Verification (this session):** `npm test` green — **3,964 OK / 0 FAIL**
+(the new v13.280 live wiring pin + the v13.279 pin demoted to HISTORICAL,
+its four behavioral gates stay LIVE; the s20 version-triple pin evolved).
+`npx wrangler dev --local` smoke with a seeded crest-bearing pool: 6
+tiles render — 4 with the crest img (byte-exact FD URLs), 2 plain-tile
+fallbacks (crest-null teams), ItemList numberOfItems 6 == 6 visible
+tiles (SS-13 holds), the competitions hub + /matches/today + / + /about
+all 200 and untouched (0 .tlogo rows outside /teams), the CSS shipped
+in the served HTML. Live verification post-deploy:
+`docs/history/2026-11-24-s23-teamtilecrests-deploy.md`.
+
 # v13.279.0-gsc404remediation — the GSC 404 remediation (P1–P6, the audit-approved fix phase; 2026-11-23)
 
 The 2026-11-23/24 GSC audit found 220 "Not found" URLs (export growth
