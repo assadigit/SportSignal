@@ -7,6 +7,29 @@ each mechanism's own audit doc carries the evidence). NOT yet deployed at
 commit time — the change rides the owner's deploy checkpoint (Step 4 of
 the remediation brief).
 
+**DEPLOYED + LIVE-VERIFIED** 2026-11-23 ~22:33 UTC (the owner's approval:
+"I approve, Push commit merge deploy.") — fast-forward merged
+`fix/gsc-404-remediation` → `main` (`ba90b8a → c58a814`, pushed,
+ls-remote verified), fresh `npm test` 3,963 OK / 0 FAIL, deployed in a
+clean no-live window, **Version ID `2803a28f-9f23-4896-9fa9-05e49a779e65`**
+(`wrangler rollback` → 13.278.0-farsisitename `0f3fc73d`). The three
+one-time KV writes ran against a fresh pre-write backup: the 2 lost
+DFB-Pokal ties seeded (blob 180 → 182), 171 per-match keys backfilled,
+340 small-market rows written (blob → 522; the key-phase interrupt
+completed ~00:03 UTC 2026-11-24 post-midnight quota-safe — 103 keys incl.
+the runtime's sweep-window additions; final invariant: blob 650 rows →
+641 unique slugs = 641 keys = the 641-URL archive child). The live re-probe: all 14 frozen 301s, both cup ties 200,
+a-league 410 + noindex, strangers 410, malformed 404, the /teams/1-magdeburg
+fallback shell 200 + noindex,follow, upcoming match page 200 indexable,
+workers.dev guard intact, and the paced archive-child sweep **641/641 URLs
+render 200** (a documented 107-URL transient 503 class on still-in-pool
+finished renders under the sweep's artificial load — the pre-existing
+free-tier CPU cliff on the unchanged pool-HIT path; all recovered to 200;
+not a regression; a P6-style lite render for pool-HIT finished rows is
+the recorded follow-up). Full evidence:
+`docs/audits/2026-11-23-gsc404-remediation.md` +
+`docs/history/2026-11-23-s22-gsc404remediation-deploy.md`.
+
 **P1 — the frozen legacy-URL 301 map** (`src/slugs.ts` +
 `src/seo/router.ts`): 14 verified dead URLs (the 12 provider name/date
 variant match forms + the seeded cup tie's date/name form + the
