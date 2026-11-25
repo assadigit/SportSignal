@@ -78,6 +78,26 @@ Deploy: `npx wrangler deploy` (the RUNBOOK §2 ritual); rollback = flip
 revert). Post-deploy: the owner's GSC steps (resubmit sitemap.xml; watch
 the 36 noindex URLs migrate to "Not found (410)").
 
+**The deploy record + the v13.281.1 frozen-source hotfix (2026-11-25):**
+deployed 8370b7c → Version 622f5e5e (~04:33 UTC, clean no-live window).
+The live matrix immediately exposed the frozen-source hazard: the
+`bot_settings_v1` admin overlay (the owner's followed clubs —
+Tottenham/Juventus/AS Roma, provider-form spellings) REPLACES
+`CONFIG.BIG_TEAMS_BY_LEAGUE` in any isolate that served a
+public-matches/cron path, and that isolate's teams.xml (04:48) listed the
+overlay clubs while the router 410-gated them — a sitemap listing 410 URLs
+(the overlay forms also miss the TEAM_ALIASES folds, dropping Inter/Atleti
+from the set). **v13.281.1** (f1f0f7b → Version be62fd5e, ~05:07 UTC):
+`isSelectedTeam` reads the FROZEN module-init capture in strict mode —
+the selected set is deterministic across isolates; legacy keeps the live
+CONFIG read (the C1 dynamic-rebuild law — the rollback contract). The
+guard scripts co-evolved (check-seo-teamstrict 35 gates with the
+frozen-source behavioral pin — an overlay swap must NOT change the
+strict set; check-seo-crawlindex's overlay test flipped to the frozen
+law). npm test 4,005 OK / 0 FAIL. Live post-fix: teams.xml = the 13
+frozen selected, the /teams HTML = the same 13, Inter/Atleti indexable
+again.
+
 # v13.280.0-teamtilecrests — the /teams index tile crests (2026-11-24)
 
 The owner's ask (verbatim): "Add club's logo/sigil (from API) in this
