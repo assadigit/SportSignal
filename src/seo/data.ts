@@ -316,9 +316,66 @@ export function isSelectedTeam(name: string): boolean {
         if (n) norms.add(n);
       }
     }
+    // v13.281.0-teamstrict (D1 — owner decision 2026-11-25): the Iranian big
+    // four joins the selected set — SEO LAYER ONLY. The extra names live in
+    // SEO config (SEO.SEO_EXTRA_SELECTED_TEAMS: the exact PGL provider forms
+    // "Persepolis" / "Esteghlal Tehran" / "Sepahan" / "Tractor S.C." + their
+    // variant spellings) and fold through the SAME normalizeTeamName memo
+    // pattern, so "Tractor S.C." and "Tractor" both hit (while
+    // "Esteghlal Khozestan" — a different club — never does: its norm key is
+    // distinct). CONFIG.BIG_TEAMS_BY_LEAGUE itself stays untouched: the
+    // shouldReport/shouldNotify tiers (the Telegram bot shares this Worker)
+    // never see the Iranian four — only the SEO surfaces do.
+    for (const t of (SEO.SEO_EXTRA_SELECTED_TEAMS || [])) {
+      const n = normalizeTeamName(t);
+      if (n) norms.add(n);
+    }
     selectedTeamMemo = { sig: CONFIG.BIG_TEAMS_BY_LEAGUE, norms };
   }
   return selectedTeamMemo.norms.has(normAlias(name));
+}
+
+// v13.281.0-teamstrict — THE one match-eligibility predicate for every SEO
+// surface that must decide "does this match belong to the indexable site?"
+// (syncArchive retention, the matches-upcoming/matches-archive children, the
+// match-page noindex,follow gate). Arms, in order:
+//   1. shouldReport(m)      — the methodology predicate (selected-club
+//                             involvement OR CL/cup QF+): the documented
+//                             subject of the site.
+//   2. isSelectedTeam side  — D1 widening: any of the 17 selected clubs,
+//                             including the Iranian big four in PGL ties
+//                             (PGL matches never pass shouldReport — PGL is
+//                             not in BIG_TEAMS_BY_LEAGUE — so without this
+//                             arm the big-four pages would never earn
+//                             sitemap/tile rows).
+//   3. top3 involvement    — the existing 5-league top-of-table rule (the
+//                             second branch of isBigForSeo; a caller without
+//                             a payload — the archived lite path — passes no
+//                             top3 and simply skips this arm).
+//   4. isMarqueeMatch       — the conservative widening so nothing
+//                             legitimate is lost: the curated both-sides
+//                             big list (M2), the named derbies (M4) and the
+//                             GSC-clicked MARQUEE_MATCH_SLUGS set (M5 —
+//                             demonstrated demand, "retains MORE, not
+//                             fewer", the Session-5 policy) stay indexable.
+// LEGACY MODE: returns true unconditionally (the pre-v13.281 behavior —
+// every tracked match eligible; every edit of this session sits behind
+// SEO.TEAM_PAGE_POLICY at its call sites or right here).
+export function isSeoEligibleMatch(m: any, top3?: Record<string, Set<string>>): boolean {
+  if (SEO.TEAM_PAGE_POLICY !== "strict") return true;
+  if (!m || !m.competition) return false;
+  if (shouldReport(m)) return true;
+  const h = m.homeTeam && m.homeTeam.name;
+  const a = m.awayTeam && m.awayTeam.name;
+  if ((h && isSelectedTeam(h)) || (a && isSelectedTeam(a))) return true;
+  if (top3 && m.competition.code) {
+    const set = top3[m.competition.code];
+    if (set && (set.has(normalizeTeamName(h)) || set.has(normalizeTeamName(a)))) return true;
+  }
+  try {
+    if (isMarqueeMatch({ raw: m, s: m } as any)) return true;
+  } catch (e) { /* a malformed row fails closed */ }
+  return false;
 }
 
 // Teams index — every pool team with at least one UPCOMING big match
@@ -330,7 +387,16 @@ export function teamsIndex(ctx: SeoCtx): TeamEntry[] {
   ctx.shaped.forEach((s, i) => {
     const raw = ctx.pool[i];
     if (!raw || !raw.homeTeam || !raw.utcDate) return;
-    if (!isBigForSeo(raw, top3) && !s.big) return;
+    // v13.281.0-teamstrict (D1): selected-team involvement now also earns a
+    // tile entry — the Iranian big four's PGL fixtures are not "big" under
+    // isBigForSeo (PGL is not in BIG_TEAMS_BY_LEAGUE), so without this arm
+    // persepolis/esteghlal-tehran/sepahan/tractor-s-c would NEVER enter the
+    // /teams universe, the tiles or teams.xml. The /teams index renderer +
+    // the sitemap filter apply the isSelectedTeam cut downstream (strict
+    // mode); this arm only widens WHO can qualify. Legacy: byte-identical.
+    const selectedInvolved = SEO.TEAM_PAGE_POLICY === "strict" &&
+      (isSelectedTeam(raw.homeTeam.name) || (raw.awayTeam && isSelectedTeam(raw.awayTeam.name)));
+    if (!isBigForSeo(raw, top3) && !s.big && !selectedInvolved) return;
     if (!PLAYABLE_FUTURE(raw, now)) return;
     for (const side of ["homeTeam", "awayTeam"] as const) {
       const t = raw[side];

@@ -197,6 +197,104 @@ export const SEO = {
     "acf-fiorentina-vs-juventus-2026-11-08",
     "ac-milan-vs-bologna-2026-10-28",
     "1-fsv-mainz-05-vs-bayern-munich-2026-11-07"
+  ]),
+  // ---- v13.281.0-teamstrict (the 2026-11-25 owner-approved strict entity
+  // gating — the GSC "Excluded by 'noindex'" remediation). The audit
+  // (2026-11-25) proved the C1-era containment law leaks: the site renders a
+  // page for EVERY club that ever appears in a tracked match (334+ slugs,
+  // 79 tiles, JSON-LD teamRef urls on both sides of every match page) and
+  // then contains the sprawl with noindex — Google keeps discovering the
+  // URLs (36+ in the GSC noindex report, growing every matchday). The
+  // owner-approved fix flips the law: the indexable entity surface becomes
+  // an explicit allowlist (17 teams / 10 competitions), non-selected team
+  // pages 410, off-policy match pages serve noindex,follow, and the
+  // discovery vectors (JSON-LD urls, /teams tiles, sitemap rows) emit ONLY
+  // for the allowed set. MASTER-SEO-SPEC §2 "Team pages" says it plainly:
+  // "Only selected-club pages are indexable... Never create a page per
+  // provider team." The C1 "noindex-must-stay-crawlable" interpretation is
+  // SUPERSEDED by this owner decision (docs/DECISIONS.md, 2026-11-25).
+  // ---- THE ROLLBACK SWITCH ----
+  // "strict" (default) = the new law. "legacy" = the pre-v13.281 behavior
+  // byte-for-byte: no router 410 gate, knownTeamFallback unrestricted,
+  // JSON-LD urls for both teams + raw-code organizer urls, /teams tiles for
+  // every eligible pool team, syncArchive ungated (every finished row),
+  // sitemap children unfiltered, the three new competitions stay
+  // noindex-until-fixtures. Every behavioral edit of this session sits
+  // behind this flag (rg-verifiable at every edit site).
+  TEAM_PAGE_POLICY: "strict" as "strict" | "legacy",
+  // ---- D1 (owner decision, 2026-11-25): the authoritative selected-team
+  // slug allowlist — 13 + the Iranian big four = 17, hard cap 40. The 13
+  // are the LIVE slugs verified byte-for-byte against teams.xml + the live
+  // /teams/{slug} URLs (2026-11-25): note club-atletico-de-madrid and
+  // internazionale-milano are PROVIDER-DERIVED forms (teamSlug("Atlético
+  // Madrid") = "atletico-madrid" would MISS them — the S11 route-plan §7
+  // lesson; these are hard-coded from the live URLs, never derived). The 4:
+  // persepolis, esteghlal-tehran, sepahan, tractor-s-c (teamSlug of the
+  // live PGL provider names — verified against today's pool rows).
+  SELECTED_TEAM_SLUGS: new Set([
+    "arsenal",
+    "chelsea",
+    "manchester-united",
+    "manchester-city",
+    "liverpool",
+    "barcelona",
+    "real-madrid",
+    "club-atletico-de-madrid",
+    "internazionale-milano",
+    "ac-milan",
+    "paris-saint-germain",
+    "bayern-munich",
+    "borussia-dortmund",
+    "persepolis",
+    "esteghlal-tehran",
+    "sepahan",
+    "tractor-s-c"
+  ]),
+  // The D1 hard cap: the allowlist may not exceed 40 slugs (a typo'd paste
+  // or a future append spree fails fast instead of re-widening the sprawl).
+  SELECTED_TEAM_SLUGS_CAP: 40,
+  // ---- D1: the SEO-layer-only extension of the selected set — the Iranian
+  // big four as EXACT PROVIDER names (verified in matches_v13_tracked
+  // 2026-11-25: "Persepolis", "Esteghlal Tehran", "Sepahan", "Tractor S.C.").
+  // Variant spellings ride along (the CONFIG.BIG_TEAMS_BY_LEAGUE precedent
+  // of carrying both provider forms) so provider drift on any single name
+  // cannot silently delist a club: "Tractor" (short form), "Esteghlal"
+  // (short form — normAlias keys "esteghlal" vs "esteghlalkhozestan" never
+  // collide), "Sepahan SC"/"Persepolis FC" (legal-form folds via the
+  // NORM_BASE_TOKENS strip). NOTE: "Esteghlal Khozestan" is a DIFFERENT club
+  // (Abadan-based) and is deliberately NOT selected. SEO LAYER ONLY —
+  // CONFIG.BIG_TEAMS_BY_LEAGUE and match-classify.ts stay untouched (the
+  // Telegram bot's notification semantics must not change; the bot shares
+  // this Worker).
+  SEO_EXTRA_SELECTED_TEAMS: [
+    "Persepolis",
+    "Persepolis FC",
+    "Esteghlal Tehran",
+    "Esteghlal",
+    "Sepahan",
+    "Sepahan SC",
+    "Tractor S.C.",
+    "Tractor"
+  ],
+  // ---- D2+D3 (owner decisions, 2026-11-25): the 10 indexable competitions
+  // — the 7 already-featured (PL/PD/SA/FL1/BL1/CL/DFB_POKAL) plus
+  // persian-gulf-pro-league, europa-league and copa-del-rey (both in the
+  // documented methodology; the audit's raw-code JSON-LD leak —
+  // /competitions/bsa, /ded, /elc, /ppl, /concacaf-nl, /afcon-q, /intl-fr,
+  // /uefa-nl — is killed by gating organizer urls on THIS set: a raw-code
+  // slug is never in it, so the url field is omitted instead of pointing at
+  // a 404).
+  SELECTED_COMPETITION_SLUGS: new Set([
+    "premier-league",
+    "la-liga",
+    "serie-a",
+    "bundesliga",
+    "ligue-1",
+    "champions-league",
+    "dfb-pokal",
+    "europa-league",
+    "copa-del-rey",
+    "persian-gulf-pro-league"
   ])
 };
 

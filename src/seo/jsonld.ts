@@ -10,6 +10,11 @@ import { tehranParts } from "./utils";
 import { COMP_EN } from "../tables";
 import { translateCompetition } from "../translate";
 import { TEAM_ENTITY_LINKS, COMP_ENTITY_LINKS } from "./entity-links";
+// v13.281.0-teamstrict: isSelectedTeam gates the teamRef "url" field (the
+// audit's PRIMARY Google discovery vector — a SportsTeam url on every match
+// page minted /teams/{slug} for BOTH sides of every match). data.ts imports
+// nothing from jsonld.ts, so this value import is cycle-free.
+import { isSelectedTeam } from "./data";
 // S1 M2 (F3): the SEO-only spelling overrides — the alternateName arrays
 // carry BOTH spellings (searcher + dictionary) so the structured data
 // matches what people type AND what the page shows.
@@ -94,9 +99,19 @@ function teamRef(name: string): any {
   const node: any = {
     "@type": "SportsTeam",
     name: name,
-    sport: "Football",
-    url: absUrl("/teams/" + teamSlug(name))
+    sport: "Football"
   };
+  // v13.281.0-teamstrict (the no-leak law): the url field rides ONLY for
+  // the 17 selected clubs (strict mode). The field was the audit's PRIMARY
+  // Google discovery vector — SportsTeam urls on BOTH sides of every match
+  // page minted /teams/{slug} for ~334 clubs, 66 of them as live noindex
+  // pages. A non-selected club keeps name, sport, sameAs and alternateName
+  // (the entity stays grounded — Wikipedia/Wikidata — only the internal
+  // URL advertisement goes). Legacy mode: the url returns for both sides
+  // byte-for-byte (the rollback contract).
+  if (SEO.TEAM_PAGE_POLICY !== "strict" || isSelectedTeam(name)) {
+    node.url = absUrl("/teams/" + teamSlug(name));
+  }
   // S16-M1 (the entity-grounding parity — the P1-2 gap fix): the same
   // verified-map sameAs as sportsTeamNode (src/seo/entity-links.ts — every
   // URL fetch-and-confirmed, provenance in that file's header). The match
@@ -142,6 +157,16 @@ export function sportsEventNode(sm: SeoMatch, why: string): any {
   // fetching; an unverified competition omits sameAs).
   const organizerName = COMP_EN[m.competition.code] || m.competition.code;
   const organizerLinks = COMP_ENTITY_LINKS[organizerName];
+  // v13.281.0-teamstrict (the no-leak law, organizer arm): the competition
+  // url rides ONLY when the code maps through COMP_SLUGS onto one of the 10
+  // SELECTED_COMPETITION_SLUGS (D2+D3) — an indexable competition page.
+  // The audit's raw-code leak class dies here: codes absent from the pretty
+  // map (DED/PPL/ELC/BSA/CONCACAF_NL/AFCON_Q/INTL_FR/UEFA_NL) derive raw
+  // slugs that 404 — their organizer nodes now omit the url (name, sameAs
+  // and alternateName stay; only the dead-URL advertisement goes). Legacy
+  // mode: the url returns for every code byte-for-byte.
+  const organizerSlug = compSlug(m.competition.code);
+  const organizerHasUrl = SEO.TEAM_PAGE_POLICY !== "strict" || SEO.SELECTED_COMPETITION_SLUGS.has(organizerSlug);
   const ev: any = {
     "@type": "SportsEvent",
     "@id": url + "#event",
@@ -156,7 +181,7 @@ export function sportsEventNode(sm: SeoMatch, why: string): any {
     organizer: {
       "@type": "SportsOrganization",
       name: organizerName,
-      url: absUrl("/competitions/" + compSlug(m.competition.code)),
+      ...(organizerHasUrl ? { url: absUrl("/competitions/" + organizerSlug) } : {}),
       ...(organizerLinks && organizerLinks.length ? { sameAs: organizerLinks } : {})
     },
     mainEntityOfPage: url,
@@ -345,9 +370,16 @@ export function sportsOrganizationNode(code: string): any {
     "@id": absUrl("/competitions/" + compSlug(code)) + "#org",
     name,
     alternateName: translateCompetition(code) || undefined,
-    sport: "Football",
-    url: absUrl("/competitions/" + compSlug(code))
+    sport: "Football"
   };
+  // v13.281.0-teamstrict (the no-leak law, comp-page arm): the node's own
+  // url rides only for the 10 selected competition slugs (strict mode) —
+  // a non-selected competition page serves noindex,follow and its JSON-LD
+  // stops advertising the URL; a raw-code slug (never in the selected set)
+  // can never leak a 404 path here. Legacy mode: unchanged bytes.
+  if (SEO.TEAM_PAGE_POLICY !== "strict" || SEO.SELECTED_COMPETITION_SLUGS.has(compSlug(code))) {
+    node.url = absUrl("/competitions/" + compSlug(code));
+  }
   // SS-05 (Phase-2 spec §3): same verified-map grounding as sportsTeamNode
   // — keyed by the COMP_EN canonical name (the map's own key contract).
   if (node.alternateName === undefined) delete node.alternateName;

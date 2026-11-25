@@ -116,9 +116,12 @@ if (!teamsIndexPageBody) {
     bad("S10: buildTeamsIndexPage lost its S10 decision-trail comment (the route plan §2.3 + §10 citation — the cosmetic-only + crawlability-law + presentation-layer note)");
     s10SortOk = false;
   }
-  // the sort must consume teamsIndex(ctx) (the raw chronological source)
-  if (!/const entries = teamsIndex\(ctx\)\.sort\(/.test(teamsIndexPageBody)) {
-    bad("S10: buildTeamsIndexPage must sort the teamsIndex(ctx) return in-place (`const entries = teamsIndex(ctx).sort(...)`) — the selected-first reordering rides on the raw chronological source");
+  // v13.281.0-teamstrict: the sort consumes teamsIndex(ctx) (the raw
+  // chronological source) — with the strict-mode selected-only filter
+  // applied BEFORE it (legacy: the bare sort, byte-identical).
+  if (!/const all = teamsIndex\(ctx\);/.test(teamsIndexPageBody) ||
+      !/const entries = \(selectedOnly \? all\.filter\(\(e\) => isSelectedTeam\(e\.name\)\) : all\)\.sort\(/.test(teamsIndexPageBody)) {
+    bad("S10: buildTeamsIndexPage must derive `entries` from teamsIndex(ctx) through the flag-gated selected-only filter then the selected-first sort (v13.281 — legacy renders every eligible tile)");
     s10SortOk = false;
   }
 }
@@ -128,11 +131,18 @@ if (s10SortOk) ok("S10: buildTeamsIndexPage sorts the 13 selected clubs first (i
 // (the Session 4 check-seo-crawlindex.js gate — re-asserted here so the S10
 // presentation-layer sort cannot accidentally leak into the data layer.)
 const teamsIndexBody = fnBody(dataSrc, "teamsIndex");
-if (teamsIndexBody && /isSelectedTeam/.test(teamsIndexBody)) {
-  bad("S10/C1-regression: teamsIndex itself must NOT reference isSelectedTeam (the Session 4 C1 law — teamsIndex generates BOTH sides unfiltered; the S10 selected-first sort belongs in buildTeamsIndexPage, the presentation layer, NOT the data layer)");
+// v13.281.0-teamstrict SUPERSESION: the C1-era invariant (NO isSelectedTeam
+// in teamsIndex) is superseded by the owner-approved strict gating —
+// teamsIndex gains the flag-gated selected-team ELIGIBILITY arm (D1: the
+// Iranian big four must qualify; the presentation layer + sitemap apply the
+// selected cut). The NEW invariant: the arm is flag-gated (legacy mode must
+// never see it) and teamsIndex still iterates both sides of every admitted
+// fixture.
+if (teamsIndexBody && !/SEO\.TEAM_PAGE_POLICY === "strict"/.test(teamsIndexBody)) {
+  bad("S10/v13.281-regression: teamsIndex lost the TEAM_PAGE_POLICY gate on the selected-team eligibility arm (legacy mode must stay byte-identical — the rollback contract)");
   s10SortOk = false;
 }
-if (s10SortOk) ok("S10/C1-regression: teamsIndex stays the raw chronological generator (NO isSelectedTeam reference — the Session 4 C1 invariant holds; the sitemap teams.xml filter + the team-page indexable rule apply isSelectedTeam, not teamsIndex)");
+if (s10SortOk) ok("S10/v13.281-regression: teamsIndex widens eligibility via the flag-gated selected-team arm; the strict selected cut + the selected-first sort live in buildTeamsIndexPage (the presentation layer) + the sitemap filter (files.ts)");
 
 // ---- 2. the /teams index visible==machine contract (SS-13) ----
 // (teamsIndexPageBody is already declared in gate 1 above — reused here.)
@@ -141,9 +151,11 @@ if (!teamsIndexPageBody) {
   bad("SS-13: buildTeamsIndexPage not found in src/seo/pages.ts");
   teamsVmOk = false;
 } else {
-  // the tile grid + the linkItemList must both consume `entries` (the sorted teamsIndex return)
-  if (!/const entries = teamsIndex\(ctx\)\.sort\(/.test(teamsIndexPageBody)) {
-    bad("SS-13: buildTeamsIndexPage lost its `entries = teamsIndex(ctx).sort(...)` source (the /teams index tile grid + the linkItemList must consume the same sorted array)");
+  // the tile grid + the linkItemList must both consume `entries` (the
+  // filtered+sorted teamsIndex return — v13.281: strict mode filters to the
+  // selected clubs first)
+  if (!/const entries = \(selectedOnly \? all\.filter\(\(e\) => isSelectedTeam\(e\.name\)\) : all\)\.sort\(/.test(teamsIndexPageBody)) {
+    bad("SS-13: buildTeamsIndexPage lost its `entries` source (the flag-gated selected filter + the sort — the /teams index tile grid + the linkItemList must consume the same array)");
     teamsVmOk = false;
   }
   // the tile grid iterates entries
@@ -176,8 +188,12 @@ if (!compsIndexPageBody) {
   bad("SS-13: buildCompetitionsIndexPage not found in src/seo/pages.ts");
   compsVmOk = false;
 } else {
-  if (!/const entries = compsIndex\(ctx\);/.test(compsIndexPageBody)) {
-    bad("SS-13: buildCompetitionsIndexPage lost its `entries = compsIndex(ctx)` source (the /competitions index tile grid + the linkItemList must consume the same array)");
+  // v13.281.0-teamstrict: strict mode derives `entries` from the 10
+  // SELECTED_COMPETITION_SLUGS (pool-matched for next-fixture info, the
+  // honest empty tile otherwise); legacy keeps the bare compsIndex source.
+  if (!/const poolEntries = compsIndex\(ctx\);/.test(compsIndexPageBody) ||
+      !/Array\.from\(SEO\.SELECTED_COMPETITION_SLUGS\)\.map\(/.test(compsIndexPageBody)) {
+    bad("SS-13: buildCompetitionsIndexPage lost its v13.281 entries source (poolEntries + the strict 10-slug derivation — the tile grid + the linkItemList must consume the same array)");
     compsVmOk = false;
   }
   if (!/for \(const e of entries\)/.test(compsIndexPageBody)) {

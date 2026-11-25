@@ -40,8 +40,16 @@ const dataSrc = fs.readFileSync(path.join(root, "src", "seo", "data.ts"), "utf8"
   const fn = filesSrc.slice(filesSrc.indexOf("export async function syncArchive"), filesSrc.indexOf("export function robotsTxt")).replace(/\/\/[^\n]*/g, ""); // comments stripped — the gate tests CODE, not the rationale comments
   check(/if \(!raw \|\| !raw\.utcDate \|\| raw\.status !== "FINISHED"\) continue;/.test(fn),
     "scope: FINISHED-only retention (the pool-reconciliation statuses stay ineligible until settled)");
-  check(!/isBigForSeo|s\.big/.test(fn),
-    "scope: the big-gate is GONE from syncArchive — every finished tracked match is retained (P2-B)");
+  // v13.281.0-teamstrict (D4): the OLD big-gate (isBigForSeo || s.big)
+  // stays GONE — the strict-mode eligibility gate is the NEW law
+  // (isSeoEligibleMatch, flag-gated, legacy = every finished row —
+  // v13.279 behavior preserved byte-for-byte in legacy mode).
+  check(!/isBigForSeo|\bs\.big\b/.test(fn),
+    "scope: the old big-gate is GONE from syncArchive (P2-B — superseded at v13.281 by the flag-gated isSeoEligibleMatch predicate, never the old isBigForSeo/s.big form)");
+  check(/if \(SEO\.TEAM_PAGE_POLICY === "strict" && !isSeoEligibleMatch\(raw, top3\)\) continue;/.test(fn),
+    "scope: the v13.281 eligibility gate — strict mode retains only isSeoEligibleMatch rows; legacy retains every finished row (the rollback contract)");
+  check(/if \(newSlug && slugMap\.has\(newSlug\)\) continue;/.test(fn),
+    "scope: the v13.281 same-slug dedupe guard (a provider twin of an already-archived match never enters — the auckland/wellington twins class)");
   check(/const cutoff = Date\.now\(\) - \(SEO\.FINISHED_MATCH_ARCHIVE_DAYS - 5\) \* 864e5;/.test(fn),
     "scope: the 365-day retention window is unchanged (U-05)");
   check(/if \(added\.length \|\| list\.length !== full\.length\) await saveArchive\(env, list\);/.test(fn),

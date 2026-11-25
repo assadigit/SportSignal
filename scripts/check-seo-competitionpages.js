@@ -160,8 +160,15 @@ if (!body.includes('answer = "بازی‌های بزرگ پیش‌روی " + cNa
 if (answerOk) ok("S9: the answer sentence leads with «نزدیک‌ترین بازی بزرگ {لیگ}» (next match) / «بازی‌های بزرگ پیش‌روی {لیگ} در اسپرت سیگنال» (no next match) — the GSC query heads the page answers");
 
 // ---- 6. the indexable rule (the route plan §5 + the INDEXABILITY-MATRIX competition rows) ----
-if (!body.includes("const indexable = list.length >= SEO.MIN_UPCOMING_FOR_INDEX;")) {
-  bad("S9: buildCompetitionPage's indexable rule drifted (the route plan §5: indexable when ≥1 upcoming approved match; noindex, follow at 0 upcoming; 404 when no pool rows at all)");
+// v13.281.0-teamstrict (D2+D3): the rule is now flag-gated — strict mode
+// adds the SELECTED_COMPETITION_SLUGS allowlist (the owner-approved flips:
+// persian-gulf-pro-league, europa-league, copa-del-rey indexable even
+// during empty fixtures windows); both modes keep the honest ≥1-upcoming
+// rule for non-selected comps. The C1-era single-expression pin is
+// superseded; the detailed law lives in check-seo-teamstrict.js.
+if (!body.includes('const indexable = SEO.TEAM_PAGE_POLICY === "strict"') ||
+    !body.includes("? (SEO.SELECTED_COMPETITION_SLUGS.has(slug) || list.length >= SEO.MIN_UPCOMING_FOR_INDEX)")) {
+  bad("S9: buildCompetitionPage's indexable rule drifted (v13.281.0-teamstrict: strict = the 10-slug allowlist OR ≥1 upcoming; legacy = ≥1 upcoming only — the flag-gated D2/D3 law)");
 } else {
   ok("S9: buildCompetitionPage's indexable rule = list.length >= MIN_UPCOMING_FOR_INDEX (the route plan §5 + the INDEXABILITY-MATRIX competition rows — index at ≥1, noindex at 0)");
 }

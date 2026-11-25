@@ -68,8 +68,11 @@ const { teamSlug, compSlug, TEAM_SLUGS, COMP_SLUGS, GONE_COMP_SLUGS } = require(
   check(/let entry = entries\.find\(\(e\) => e\.slug === slug\);/.test(body) && /const code = COMP_SLUG_BY_SLUG\[slug\];/.test(body) &&
     /entry = \{ code, slug, upcomingBig: 0, next: null \};/.test(body),
     "comp: the known-competition fallback synthesizes the entry (reverse of COMP_SLUGS)");
-  check(/const indexable = list\.length >= SEO\.MIN_UPCOMING_FOR_INDEX;/.test(body),
-    "comp: the fallback state serves noindex (empty fixtures list)");
+  // v13.281.0-teamstrict (D2+D3): the comp indexable rule is flag-gated
+  // (strict: the 10-slug allowlist OR the honest >=1 rule; legacy: the bare
+  // >=1 rule). An empty NON-selected fallback state still serves noindex.
+  check(/const indexable = SEO\.TEAM_PAGE_POLICY === "strict"\s*\? \(SEO\.SELECTED_COMPETITION_SLUGS\.has\(slug\) \|\| list\.length >= SEO\.MIN_UPCOMING_FOR_INDEX\)\s*: list\.length >= SEO\.MIN_UPCOMING_FOR_INDEX;/.test(body),
+    "comp: the fallback state serves noindex (empty fixtures list; strict mode adds the D2/D3 allowlist flip)");
   check(!entriesOk(body) ? true : true, "(structural checks below carry the weight)");
   check(/\(list\.length\n \? '<div class="card"><div class="listhead"><h2>بازی‌های پیش‌رو<\/h2><span class="pagesub">'/.test(body) ||
     /list\.length\n      \? '/.test(body) && /در حال حاضر بازی پیش‌روی /.test(body),

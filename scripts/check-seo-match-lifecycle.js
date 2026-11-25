@@ -228,10 +228,15 @@ else {
   if (!s19Regex.test(stripped)) {
     ok("S19 regex safety: the noindex: sibling field does not trip the /indexable:\\s*[a-zA-Z_?&|]/ guard (the field name has no 'indexable:' substring)");
   } else { bad("S19: the noindex field trips the regex guard"); }
-  // The noindex: field IS present in the buildHead call
-  if (/noindex:\s*finished\s*&&\s*isSeasonEndedOrdinary/.test(bmpBlock)) {
-    ok("WIRING: buildMatchPage passes `noindex: finished && isSeasonEndedOrdinary(sm)` to buildHead (the transition hook)");
-  } else { bad("WIRING: the noindex: finished && isSeasonEndedOrdinary(sm) field not found in buildMatchPage's buildHead call"); }
+  // The noindex: field IS present in the buildHead call.
+  // v13.281.0-teamstrict: the expression grew the strict-mode eligibility
+  // arm (`|| (SEO.TEAM_PAGE_POLICY === "strict" && !isSeoEligibleMatch(
+  // sm.raw, payloadTop3(ctx.payload)))` — the D4 soft delist); the
+  // season-end arm stays the first operand verbatim.
+  if (/noindex:\s*\(finished\s*&&\s*isSeasonEndedOrdinary\(sm\)\)\s*\|\|/.test(bmpBlock) &&
+      /SEO\.TEAM_PAGE_POLICY === "strict" && !isSeoEligibleMatch\(sm\.raw, payloadTop3\(ctx\.payload\)\)/.test(bmpBlock)) {
+    ok("WIRING: buildMatchPage passes the flag-gated noindex expression to buildHead (the season-end transition hook + the v13.281 strict-mode off-policy soft delist)");
+  } else { bad("WIRING: the noindex field not found in buildMatchPage's buildHead call (expected the v13.281 form: (finished && isSeasonEndedOrdinary(sm)) || (strict && !isSeoEligibleMatch(...)))"); }
 }
 
 // ---- 5. page-shell HeadInput + buildHead robots derivation ----

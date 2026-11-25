@@ -38,8 +38,11 @@ function bad(msg) { console.error("FAIL check-seo-crawlindex: " + msg); failures
 const { normalizeTeamName, normAlias } = require(path.join(root, "src", "teams.ts"));
 const { CONFIG } = require(path.join(root, "src", "config.ts"));
 const dataSrc = fs.readFileSync(path.join(root, "src", "seo", "data.ts"), "utf8");
+// v13.281.0-teamstrict: the extraction window now ends at the eligibility
+// predicate comment (the isSelectedTeam block grew the Iranian-four arm +
+// isSeoEligibleMatch follows it — the slice must stop between them).
 const c1Start = dataSrc.indexOf("const SEO_SELECTED_LEAGUES");
-const c1End = dataSrc.indexOf("// Teams index — every pool team");
+const c1End = dataSrc.indexOf("// v13.281.0-teamstrict — THE one match-eligibility predicate");
 if (c1Start < 0 || c1End < 0 || c1End <= c1Start) {
   bad("isSelectedTeam block not found in src/seo/data.ts (marker moved?)");
   process.exit(1);
@@ -50,9 +53,12 @@ const c1Block = dataSrc.slice(c1Start, c1End)
   .replace(/\(name: string\): boolean/, "(name)")
   .replace(/new Set<string>\(\)/g, "new Set()")
   .replace(/ as string\[\]/g, "");
-const c1Factory = new Function("CONFIG", "normalizeTeamName", "normAlias",
+const c1Factory = new Function("CONFIG", "normalizeTeamName", "normAlias", "SEO",
   c1Block + "\nreturn { isSelectedTeam, SEO_SELECTED_LEAGUES };");
-const { isSelectedTeam, SEO_SELECTED_LEAGUES } = c1Factory(CONFIG, normalizeTeamName, normAlias);
+// v13.281.0-teamstrict: the SEO stub carries the real extra-selected
+// config (the Iranian big four) so the extracted predicate sees it.
+const { SEO } = require(path.join(root, "src", "seo", "config.ts"));
+const { isSelectedTeam, SEO_SELECTED_LEAGUES } = c1Factory(CONFIG, normalizeTeamName, normAlias, SEO);
 
 // the selected set draws from the domestic league keys only
 if (JSON.stringify(SEO_SELECTED_LEAGUES) === JSON.stringify(["PL", "PD", "SA", "FL1", "BL1"])) {
@@ -90,7 +96,25 @@ const variants = [
   ["Melbourne Victory", false],         // AL — site-hidden, NOT part of the SEO selected 13
   ["Sydney FC", false],
   ["Heart of Midlothian FC", false],
-  ["AS Roma", false]
+  ["AS Roma", false],
+  // v13.281.0-teamstrict (D1): the Iranian big four joins the selected set
+  // (SEO-layer only — exact PGL provider forms + the variant spellings,
+  // all verified against matches_v13_tracked 2026-11-25).
+  ["Persepolis", true],
+  ["Persepolis FC", true],
+  ["Esteghlal Tehran", true],
+  ["Esteghlal", true],
+  ["Sepahan", true],
+  ["Sepahan SC", true],
+  ["Tractor S.C.", true],
+  ["Tractor", true],
+  // the CRITICAL separation: Esteghlal Khozestan is a DIFFERENT club
+  // (Abadan-based, a PGL minnow) and must NEVER fold onto Esteghlal
+  // Tehran — normAlias("esteghlalkhozestan") !== "esteghlaltehran".
+  ["Esteghlal Khozestan", false],
+  ["Foolad Khozestan", false],
+  ["Gol Gohar FC", false],
+  ["Zob Ahan", false]
 ];
 let varOk = true;
 for (const [name, want] of variants) {
@@ -127,16 +151,45 @@ if (!teamsBranch.includes("if (!isSelectedTeam(e.name)) continue;")) { bad("team
 if (teamsBranch.indexOf("if (!isSelectedTeam(e.name)) continue;") > teamsBranch.indexOf("candidates.push")) { bad("teams filter must run BEFORE candidates.push (no noindex URL may enter the child)"); wiringOk = false; }
 if (!/import \{[^}]*isSelectedTeam[^}]*\} from "\.\/data";/.test(pagesSrc)) { bad("pages.ts lost the isSelectedTeam import"); wiringOk = false; }
 if (!pagesSrc.includes("const indexable = isSelectedTeam(entry.name) && upcoming.length >= SEO.MIN_UPCOMING_FOR_INDEX;")) { bad("buildTeamPage indexable rule lost the selected-club test"); wiringOk = false; }
-// the OTHER indexable sites (competition page) must be untouched by C1
-if (!pagesSrc.includes("const indexable = list.length >= SEO.MIN_UPCOMING_FOR_INDEX;")) { bad("competition-page indexable rule was unexpectedly changed (out of C1 scope)"); wiringOk = false; }
+// v13.281.0-teamstrict (D2+D3): the competition-page indexable rule is now
+// the allowlist OR the honest ≥1-upcoming rule (flag-gated). The C1-era
+// "untouched by C1" pin is superseded by the owner-approved competition
+// flips — the new law is pinned in check-seo-teamstrict.js in detail; here
+// the flag-gated shape itself.
+if (!pagesSrc.includes('const indexable = SEO.TEAM_PAGE_POLICY === "strict"')) { bad("competition-page indexable rule lost the v13.281 flag gate (the D2/D3 allowlist flip)"); wiringOk = false; }
+else if (!pagesSrc.includes("? (SEO.SELECTED_COMPETITION_SLUGS.has(slug) || list.length >= SEO.MIN_UPCOMING_FOR_INDEX)")) { bad("competition-page strict rule lost the selected-or-≥1-upcoming shape (D2+D3)"); wiringOk = false; }
 if (wiringOk) ok("C1 wiring: teams.xml filters to the allowlist before any row is pushed; team-page indexable = selected AND >=1 upcoming; competition rule untouched");
 
-// ---- 3. the scope law: teamsIndex keeps generating both sides ----
+// ---- 3. the scope law (v13.281.0-teamstrict SUPERSESION): teamsIndex
+// widens WHO qualifies (the selected-team arm) while the DOWNSTREAM
+// surfaces apply the selected cut ----
+// The C1-era law ("teamsIndex must not contain isSelectedTeam at all — the
+// /teams tiles must render BOTH sides so a noindex page stays crawlable")
+// is SUPERSEDED by the owner-approved strict gating (2026-11-25): non-
+// selected team pages 410 at the router, so a tile advertising one would
+// link to a dead URL. The NEW law: teamsIndex gains the selected-team
+// ELIGIBILITY arm (PGL big-four fixtures earn entries — without it the
+// Iranian four never qualify, PGL not being in BIG_TEAMS_BY_LEAGUE), and
+// the presentation layer (buildTeamsIndexPage) + the sitemap filter apply
+// the isSelectedTeam cut. teamsIndex still iterates BOTH sides of every
+// fixture it admits (the raw generator contract).
 const teamsIndexFn = dataSrc.slice(dataSrc.indexOf("export function teamsIndex"), dataSrc.indexOf("export interface CompEntry"));
 let scopeOk = true;
-if (!teamsIndexFn.includes('for (const side of ["homeTeam", "awayTeam"] as const)')) { bad("teamsIndex no longer iterates both sides — the crawl path for noindexed URLs is broken"); scopeOk = false; }
-if (teamsIndexFn.includes("isSelectedTeam")) { bad("teamsIndex itself must NOT filter by the allowlist (it powers the /teams tiles; the match-page footer-hook team LINKS are gated on isSelectedTeam per Session 7 — spec §9 — but teamsIndex still generates BOTH sides for the /teams index tiles)"); scopeOk = false; }
-if (scopeOk) ok("scope law: teamsIndex still generates BOTH sides of every eligible fixture (the crawl path for the noindexed URLs)");
+if (!teamsIndexFn.includes('for (const side of ["homeTeam", "awayTeam"] as const)')) { bad("teamsIndex no longer iterates both sides — the raw generator contract is broken"); scopeOk = false; }
+if (!teamsIndexFn.includes("selectedInvolved")) { bad("teamsIndex lost the v13.281 selected-team eligibility arm (the Iranian big four never qualify without it — D1)"); scopeOk = false; }
+if (!teamsIndexFn.includes('SEO.TEAM_PAGE_POLICY === "strict"')) { bad("teamsIndex lost the TEAM_PAGE_POLICY gate (legacy mode must stay byte-identical — the rollback contract)"); scopeOk = false; }
+if (scopeOk) ok("scope law (v13.281): teamsIndex widens eligibility via the flag-gated selected-team arm; the tiles + sitemap filters apply the selected cut downstream");
+// the presentation-layer cut: buildTeamsIndexPage filters to selected in strict mode
+const pagesSrc2 = fs.readFileSync(path.join(root, "src", "seo", "pages.ts"), "utf8");
+if (!pagesSrc2.includes("const entries = (selectedOnly ? all.filter((e) => isSelectedTeam(e.name)) : all).sort((a, b) => {")) {
+  bad("buildTeamsIndexPage lost the strict-mode selected-only filter (the /teams tiles must list ONLY the 17 selected clubs)");
+  scopeOk = false;
+} else if (!pagesSrc2.includes('const selectedOnly = SEO.TEAM_PAGE_POLICY === "strict";')) {
+  bad("buildTeamsIndexPage filter is not flag-gated (legacy mode must render every eligible tile — the rollback contract)");
+  scopeOk = false;
+} else {
+  ok("presentation law (v13.281): the /teams index tiles + ItemList list ONLY the selected clubs in strict mode (flag-gated; legacy renders both sides)");
+}
 
 // ---- 3b. Session 7: the match-detail footer-hook team-link gating (spec §9) ----
 // The match-detail footer-hook («پیوندهای مرتبط» → «تیم‌ها» line) must link

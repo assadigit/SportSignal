@@ -10,7 +10,7 @@ import { esc, faTime, faDateD1, faDateD2, tehranDayKey, utcTime, statusLabelFa, 
 import { toFaDigits } from "../utils";
 import { COMP_EN } from "../tables";
 import type { SeoCtx, SeoMatch, TeamEntry, CompEntry } from "./data";
-import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findArchivedMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, relatedMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtMetaSrv, heroArtSrv, isSelectedTeam, isSeasonEndedOrdinary } from "./data";
+import { upcomingBig, upcomingFollowed, isBigForSeo, finishedRecent, teamMatches, compMatches, teamsIndex, compsIndex, findMatchBySlug, findArchivedMatchBySlug, findTeamBySlug, payloadTop3, hydrateMatchVenue, similarMatches, relatedMatches, teamStandingsWindow, teamForm, teamSeasonRecord, teamCompMetrics, windowSchedule, heroArtMetaSrv, heroArtSrv, isSelectedTeam, isSeasonEndedOrdinary, isSeoEligibleMatch } from "./data";
 import * as M from "./markup";
 import * as JL from "./jsonld";
 import { buildHead, pageShell } from "./page-shell";
@@ -1424,7 +1424,18 @@ export async function buildMatchPage(ctx: SeoCtx, slug: string, preloaded?: any)
       // closed + finished + not marquee), buildHead emits
       // "noindex, follow" — the page stays 200 + self-canonical +
       // crawlable. Default (flag off): false → no change from Session 4.
-      noindex: finished && isSeasonEndedOrdinary(sm),
+      // v13.281.0-teamstrict (D4 — the SOFT delist): an off-policy match
+      // page (ELC/DED/PPL/BSA league ties, CONCACAF/AFCON/friendly/UEFA-NL
+      // internationals, non-big-four PGL ties — nothing passing
+      // isSeoEligibleMatch) serves noindex,follow instead of index. The
+      // page itself stays 200 from pool/archive (the day-hub display
+      // feature is a product surface and stays); only the robots meta
+      // flips — and the page is out of the sitemaps + future archive
+      // writes (their own strict gates). NEVER a 410 for these (the
+      // owner's soft option — they expire naturally as KV rows decay).
+      // Legacy mode: index,follow as before, byte-for-byte.
+      noindex: (finished && isSeasonEndedOrdinary(sm)) ||
+        (SEO.TEAM_PAGE_POLICY === "strict" && !isSeoEligibleMatch(sm.raw, payloadTop3(ctx.payload))),
       ogImage: absUrl("/og/match-" + slug + ".png"),
       jsonldNodes: [
         ...JL.siteNodes(),
@@ -1726,7 +1737,22 @@ export function buildTeamsIndexPage(ctx: SeoCtx): string {
   // same isSelectedTeam result (normAlias normalizes), so the order is stable.
   // The visible==machine contract holds: both the tile grid + the linkItemList
   // below consume this `entries` array (SS-13).
-  const entries = teamsIndex(ctx).sort((a, b) => {
+  //
+  // v13.281.0-teamstrict (D1 — SUPERSEDES the C1 tile-both-sides reading,
+  // owner decision 2026-11-25): in strict mode the /teams index lists ONLY the
+  // selected clubs — the 79-tile sprawl (13 selected + 66 noindex) was one of
+  // the two discovery vectors feeding the GSC "Excluded by 'noindex'" report.
+  // The non-selected team PAGES are 410 now (the router gate), so a tile link
+  // to one would be a link to a dead URL — the crawlability law's premise
+  // (a live noindex page needing a crawl path) no longer exists for them.
+  // teamsIndex itself still generates both sides (the raw generator feeds the
+  // sitemap filter + the selected-eligibility extension); the selected cut
+  // happens HERE, in the presentation layer, exactly where the old
+  // selected-first sort already lived. Legacy mode: every eligible tile
+  // renders (byte-for-byte the pre-v13.281 /teams page).
+  const selectedOnly = SEO.TEAM_PAGE_POLICY === "strict";
+  const all = teamsIndex(ctx);
+  const entries = (selectedOnly ? all.filter((e) => isSelectedTeam(e.name)) : all).sort((a, b) => {
     const sa = isSelectedTeam(a.name) ? 0 : 1;
     const sb = isSelectedTeam(b.name) ? 0 : 1;
     if (sa !== sb) return sa - sb;
@@ -2079,8 +2105,16 @@ function teamFormCardHtml(ctx: SeoCtx, entryName: string, fa: string, archive: a
 // 365-day archive remembers (the earliest mention wins), carrying the
 // archived row's own name + faName — honest data the site itself served.
 // Returns null for true strangers (the router keeps the 404 for them).
+// v13.281.0-teamstrict (defense in depth behind the router gate): in
+// strict mode the resolver answers ONLY the authoritative 17 selected slugs
+// (SEO.SELECTED_TEAM_SLUGS) — even if a bug let a non-selected slug reach
+// buildTeamPage, the fallback refuses to resurrect it (the page factory
+// that minted ~334 club pages is closed). Legacy mode: both sources as
+// before, byte-for-byte.
 function knownTeamFallback(slug: string, archive: any[]): TeamEntry | null {
   if (!slug) return null;
+  // v13.281.0-teamstrict: the selected-slug guard (defense in depth).
+  if (SEO.TEAM_PAGE_POLICY === "strict" && !SEO.SELECTED_TEAM_SLUGS.has(slug)) return null;
   for (const name of Object.keys(TEAM_SLUGS)) {
     if (TEAM_SLUGS[name] === slug) {
       return { name, faName: translateTeam(name) || null, slug, upcomingBig: 0, next: null };
@@ -2311,12 +2345,40 @@ export async function buildTeamPage(ctx: SeoCtx, slug: string): Promise<{ html: 
 
 // ================= COMPETITIONS =================
 export function buildCompetitionsIndexPage(ctx: SeoCtx): string {
-  const entries = compsIndex(ctx);
+  // v13.281.0-teamstrict (D2+D3): in strict mode the /competitions index
+  // tiles + the ItemList list EXACTLY the 10 SELECTED_COMPETITION_SLUGS —
+  // the hub stops advertising pool-derived micro-comps (ECL/COPPA_ITALIA/
+  // raw-code dayview leagues never made tiles anyway, but compsIndex could
+  // surface any comp with a big upcoming match; the allowlist is now the
+  // authority). The three newly selected (persian-gulf-pro-league,
+  // europa-league, copa-del-rey) render their honest tiles — with the next
+  // fixture line when compsIndex knows one, and the graceful empty tile
+  // otherwise (the same honest empty state the comp pages accept). Legacy
+  // mode: the pool-derived compsIndex tiles, byte-for-byte.
+  const poolEntries = compsIndex(ctx);
+  const bySlug = new Map<string, CompEntry>();
+  for (const e of poolEntries) bySlug.set(e.slug, e);
+  let entries = poolEntries;
+  if (SEO.TEAM_PAGE_POLICY === "strict") {
+    entries = Array.from(SEO.SELECTED_COMPETITION_SLUGS).map((slug) => {
+      const found = bySlug.get(slug);
+      if (found) return found;
+      // the honest empty tile for a selected comp outside the fixtures
+      // window (the buildCompetitionPage fallback-shell twin)
+      const code = COMP_SLUG_BY_SLUG[slug];
+      return { code: code || slug, slug, upcomingBig: 0, next: null };
+    });
+  }
   const path = "/competitions";
   const trail = [{ name: "خانه", href: "/" }, { name: "رقابت‌ها" }];
   let grid = "";
   for (const e of entries) {
-    const cName = (e.next && (e.next.s.competition.faName || COMP_EN[e.code])) || COMP_EN[e.code] || e.code;
+    // v13.281.0-teamstrict: the synthesized empty tiles carry no next row —
+    // lead with the competition's own Persian name (translateCompetition —
+    // the same dictionary the comp page's fallback title uses), never a
+    // bare English/code fallback.
+    const cName = (e.next && (e.next.s.competition.faName || COMP_EN[e.code])) ||
+      translateCompetition(e.code) || COMP_EN[e.code] || e.code;
     const d = e.next
       ? "بازی بعدی: " + faName(e.next.s.homeTeam) + " – " + faName(e.next.s.awayTeam) + "، " + faDateD2(e.next.s.utcDate)
       : "";
@@ -2409,7 +2471,20 @@ export async function buildCompetitionPage(ctx: SeoCtx, slug: string): Promise<{
   }
   const code = entry.code;
   const list = compMatches(ctx, code);
-  const indexable = list.length >= SEO.MIN_UPCOMING_FOR_INDEX;
+  // v13.281.0-teamstrict (D2+D3 — owner decisions 2026-11-25): the 10
+  // SELECTED_COMPETITION_SLUGS are indexable by ALLOWLIST, independent of
+  // the fixtures window — persian-gulf-pro-league, europa-league and
+  // copa-del-rey flip to index today (their known-comp fallback empty
+  // states are the owner-accepted honest "no fixtures right now" shells,
+  // served with the real standings table when one exists — the PGL page
+  // carries the payload's own Wikipedia-sourced table). A NON-selected
+  // competition page keeps the honest ≥1-upcoming rule in strict mode (a
+  // comp with upcoming rows renders 200+index as today; the empty fallback
+  // shells stay noindex). Legacy mode: the ≥1 rule for every comp,
+  // byte-for-byte.
+  const indexable = SEO.TEAM_PAGE_POLICY === "strict"
+    ? (SEO.SELECTED_COMPETITION_SLUGS.has(slug) || list.length >= SEO.MIN_UPCOMING_FOR_INDEX)
+    : list.length >= SEO.MIN_UPCOMING_FOR_INDEX;
   const path = "/competitions/" + slug;
   // v13.279-gsc404 (P5): the fallback state's Persian name — live pages
   // still resolve cNameFa from the next match's own competition.faName

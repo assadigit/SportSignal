@@ -34,7 +34,7 @@
 // ONLY) + the SEO-only query resolver (src/seo/persian-alias.ts — the
 // ambiguity-guarded entity resolution, never wired into any request path).
 // Freeze-safe: zero byte-frozen title/H1/description/answer bytes touched.
-export const VERSION = "13.280.0-teamtilecrests";
+export const VERSION = "13.281.0-teamstrict";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",

@@ -29,6 +29,10 @@ import {
 } from "./pages-static";
 import * as F from "./files";
 import { pingIndexNowIfChanged } from "./indexnow";
+// v13.281.0-teamstrict: the hidden-league (A-League) test for the archived
+// match 410 gate (D4's hard exception) — match-classify's isSiteHiddenMatch,
+// the same predicate the live pool filter uses.
+import { isSiteHiddenMatch } from "../match-classify";
 
 // v13.205-lcpreveal (F-C1, Phase 3): the server-side hero-portrait lookup
 // used by the homepage .mc-port SSR mirror below — Match Centre S05 (M2)
@@ -814,6 +818,29 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
   const legacyTarget = LEGACY_URL_REDIRECTS[path];
   if (legacyTarget) return legacyRedirect(legacyTarget);
 
+  // ---------- v13.281.0-teamstrict (Phase 2 — the core fix): fast static
+  // 410 for non-selected team slugs ----------
+  // The GSC "Excluded by 'noindex' tag" report's growth vector: /teams/
+  // {slug} renders a 200+noindex page for EVERY club that ever appears in
+  // any tracked match (~334 slugs), and Google keeps discovering them via
+  // the JSON-LD teamRef urls + the /teams tiles. Strict mode kills the
+  // class at the router: a team slug NOT in the authoritative 17-slug
+  // allowlist (SEO.SELECTED_TEAM_SLUGS — D1) answers 410 through the same
+  // goneResponse mechanism the GONE_COMP_SLUGS precedent built: a PURE
+  // STATIC render (build404Page — zero KV reads, zero getSeoCtx, the
+  // v13.97-seocpu discipline; never edge-cached — wantCached stores 200s
+  // only). This runs BEFORE any HTML family work and is the main CPU
+  // relief for the crawl bursts hammering dead team URLs (the error-1102
+  // 503 exposure). Legacy mode ("legacy") skips the gate byte-for-byte.
+  // The frozen LEGACY_URL_REDIRECTS map stays first (its /teams/magdeburg
+  // entry 301s before this gate fires — the map is frozen, unchanged).
+  {
+    const tmGate = /^\/teams\/([a-z0-9-]+)$/.exec(path);
+    if (tmGate && SEO.TEAM_PAGE_POLICY === "strict" && !SEO.SELECTED_TEAM_SLUGS.has(tmGate[1])) {
+      return goneResponse(req, isProd);
+    }
+  }
+
   // ---------- HTML pages ----------
   // v13.97-seocpu: per-colo render hold, decided per render (the page knows
   // its own liveness). Default 15 min; live/upcoming match pages, live
@@ -875,6 +902,18 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
           }
           return null;
         }
+        // v13.281.0-teamstrict (D4 — the A-League EXCEPTION): the owner-banned
+        // league's ARCHIVED rows 410 here. The live pool already filters
+        // hidden-league rows (v13.173-noal: their in-pool match pages 404),
+        // but the archive path bypassed the filter — the live leak the audit
+        // found (sydney-fc-vs-western-sydney-wanderers-2026-10-16 at 200+index
+        // + a matches-archive.xml row). The archived row's own competition
+        // code decides (one bounded KV read already paid by the lookup above).
+        // Legacy mode: the archived row renders as before (the rollback
+        // restores the pre-v13.281 bytes).
+        if (SEO.TEAM_PAGE_POLICY === "strict" && isSiteHiddenMatch(rec.m)) {
+          return { body: "", status: 410 };
+        }
         const liteCtx = liteSeoCtx(env, rawPool.rows, rawPool.fetchedAt);
         const r = await buildMatchPage(liteCtx, mm[1], rec);
         if (r.notFound) return null;
@@ -915,6 +954,16 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
       // a TRUE stranger (the 404 below).
       const r = await buildTeamPage(seoCtx, tm[1]);
       if (r.notFound) return null;
+      // v13.281.0-teamstrict (Phase 5 — stability): a SELECTED team page's
+      // content moves only when the pool moves; the edge copy refreshes at
+      // the same s-maxage=60 public cadence as every page (PF-01 untouched)
+      // — this raises only the per-colo RENDER hold to 30 minutes (24x
+      // fewer re-renders of the 17 highest-traffic entity pages; the
+      // free-plan 10ms CPU cliff — error 1102 — is exactly this class).
+      // Legacy mode: the default 15-min hold stands.
+      if (SEO.TEAM_PAGE_POLICY === "strict" && SEO.SELECTED_TEAM_SLUGS.has(tm[1])) {
+        pageHold.v = Math.max(pageHold.v, 1800);
+      }
       return { body: r.html, status: 200 };
     }
     if (path === "/competitions") return { body: buildCompetitionsIndexPage(seoCtx), status: 200 };
@@ -938,12 +987,18 @@ export async function handleSeoRequest(req: Request, env: Env, ctx: any, url: UR
       if (r.notFound) return null;
       return { body: r.html, status: 200 };
     }
-    if (path === "/about") return { body: buildAboutPage(seoCtx), status: 200 };
-    if (path === "/methodology") return { body: buildMethodologyPage(seoCtx), status: 200 };
-    if (path === "/contact") return { body: buildContactPage(seoCtx), status: 200 };
-    if (path === "/privacy") return { body: buildPrivacyPage(seoCtx), status: 200 };
-    if (path === "/terms") return { body: buildTermsPage(seoCtx), status: 200 };
-    if (path === "/data") return { body: buildDataPage(seoCtx), status: 200 };
+    if (path === "/about") { if (SEO.TEAM_PAGE_POLICY === "strict") pageHold.v = Math.max(pageHold.v, 3600); return { body: buildAboutPage(seoCtx), status: 200 }; }
+    if (path === "/methodology") { if (SEO.TEAM_PAGE_POLICY === "strict") pageHold.v = Math.max(pageHold.v, 3600); return { body: buildMethodologyPage(seoCtx), status: 200 }; }
+    if (path === "/contact") { if (SEO.TEAM_PAGE_POLICY === "strict") pageHold.v = Math.max(pageHold.v, 3600); return { body: buildContactPage(seoCtx), status: 200 }; }
+    if (path === "/privacy") { if (SEO.TEAM_PAGE_POLICY === "strict") pageHold.v = Math.max(pageHold.v, 3600); return { body: buildPrivacyPage(seoCtx), status: 200 }; }
+    if (path === "/terms") { if (SEO.TEAM_PAGE_POLICY === "strict") pageHold.v = Math.max(pageHold.v, 3600); return { body: buildTermsPage(seoCtx), status: 200 }; }
+    if (path === "/data") { if (SEO.TEAM_PAGE_POLICY === "strict") pageHold.v = Math.max(pageHold.v, 3600); return { body: buildDataPage(seoCtx), status: 200 }; }
+    // (v13.281.0-teamstrict Phase 5: the six hand-written text pages above
+    // are effectively immutable — CONTENT_VERSION lastmod discipline — so in
+    // strict mode their per-colo RENDER hold stretches to 1h (the error-1102
+    // CPU relief; public edge freshness PF-01 stays s-maxage=60). The human
+    // /sitemap page and the time hubs keep their default holds — their
+    // content moves with the entity sets / fixture lists, the R-04 floor.)
     if (path === "/sitemap") return { body: buildHumanSitemapPage(seoCtx), status: 200 };
     return null;
   };

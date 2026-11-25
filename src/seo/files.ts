@@ -14,15 +14,25 @@
 import type { Env } from "../types";
 import { CONFIG } from "../config";
 import { SEO, absUrl } from "./config";
-import { matchPath, compSlug, teamSlug } from "../slugs";
+import { matchPath, compSlug, teamSlug, COMP_SLUGS } from "../slugs";
 import { esc, tehranDayKey } from "./utils";
 import { COMP_EN } from "../tables";
 import { translateCompetition } from "../translate";
 import { pubMatch } from "../public-matches";
+// v13.281.0-teamstrict: the hidden-league exclusion (A-League rows never
+// enter a sitemap child) — match-classify's isSiteHiddenMatch, the same
+// predicate the live pool filter uses.
+import { isSiteHiddenMatch } from "../match-classify";
 import type { SeoCtx, SeoMatch } from "./data";
-import { getSeoCtx, upcomingBig, finishedRecent, teamsIndex, compsIndex, isSelectedTeam, isSeasonEndedOrdinary } from "./data";
+import { getSeoCtx, upcomingBig, upcomingFollowed, finishedRecent, teamsIndex, compsIndex, isSelectedTeam, isSeasonEndedOrdinary, isSeoEligibleMatch, payloadTop3 } from "./data";
 
 // ---------------------------------------------------------------- helpers
+
+// v13.281.0-teamstrict: the slug→code reverse of COMP_SLUGS (the strict
+// competitions.xml branch maps the 10 selected slugs back to their codes
+// for the lastmod hash — the same reverse buildCompetitionPage uses).
+const SELECTED_COMP_CODE_BY_SLUG: Record<string, string> = {};
+for (const code of Object.keys(COMP_SLUGS)) SELECTED_COMP_CODE_BY_SLUG[COMP_SLUGS[code]] = code;
 
 function xmlEsc(s: any): string {
   return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -125,15 +135,43 @@ function earliestRecBySlug(recs: ArchiveRec[]): Map<string, ArchiveRec> {
 // finishes). Per-match keys ride along: each NEW row writes its
 // seo_archive_v1/m/{slug} key once (bounded by the finished-match count;
 // earliest-kickoff guard on the rare duplicate).
+//
+// v13.281.0-teamstrict (D4 — SOFT delist, restores the gate v13.279 removed
+// but with the widening so nothing legitimate is lost): in strict mode only
+// FINISHED matches passing isSeoEligibleMatch are retained —
+// shouldReport (the methodology predicate) OR any of the 17 selected clubs
+// (D1: the Iranian big four's PGL ties) OR 5-league top-3 involvement OR
+// the marquee signals (curated big list / derbies / the GSC-clicked slug
+// set). Off-policy rows (ELC/DED/PPL/BSA league ties, internationals,
+// non-big-four PGL) stop entering the archive — their EXISTING KV rows stay
+// (soft: no mass deletion; they render 200+noindex,follow and expire at
+// their own 365d TTL). Hidden-league rows (A-League — the owner ban) never
+// pass shouldReport's universe in practice and the eligibility predicate's
+// arms all fail for them, so they stop entering too. Legacy mode: every
+// finished row retained (the v13.279 behavior, byte-for-byte).
+//
+// v13.281.0-teamstrict (the dedupe fix): a new row whose SLUG is already
+// archived no longer enters the blob. The v13.279/v13.280 archive carried
+// same-slug twins from provider id variance (live evidence 2026-11-25:
+// auckland-vs-melbourne-city-2026-10-17 ×2,
+// wellington-phoenix-vs-melbourne-victory-2026-10-18 ×3 — same fixture,
+// different ids/tsd- vs spsc- prefixes, each keying separately under
+// id|utcDate). The slug is the URL identity (a team cannot play the same
+// opponent twice on the same day); earliest kickoff wins the slug — the
+// same tie-break the per-match keys already apply.
 export async function syncArchive(env: Env, ctx: SeoCtx): Promise<ArchiveRec[]> {
   const archive = await loadArchive(env);
   const byKey = new Map<string, ArchiveRec>();
   for (const r of archive) {
     if (r && r.m && r.m.utcDate) byKey.set(String(r.m.id || "") + "|" + r.m.utcDate, r);
   }
+  // v13.281.0-teamstrict: the slug→earliest-record map of everything already
+  // archived (the dedupe guard's lookup — same derivation as the keys).
+  const slugMap = earliestRecBySlug(archive);
   const added: ArchiveRec[] = [];
   const nowIso = new Date().toISOString();
   const cutoff = Date.now() - (SEO.FINISHED_MATCH_ARCHIVE_DAYS - 5) * 864e5;
+  const top3 = payloadTop3(ctx.payload);
   for (let i = 0; i < ctx.pool.length; i++) {
     const raw = ctx.pool[i];
     const s = ctx.shaped[i];
@@ -141,11 +179,20 @@ export async function syncArchive(env: Env, ctx: SeoCtx): Promise<ArchiveRec[]> 
     // P2-B: the big-gate that used to stand here (isBigForSeo || s.big) is
     // deliberately removed — see the block comment above. Every finished
     // tracked match is retained now.
+    // v13.281.0-teamstrict: the eligibility gate RESTORED, widened — the
+    // isSeoEligibleMatch predicate (strict mode only; legacy archives all).
+    if (SEO.TEAM_PAGE_POLICY === "strict" && !isSeoEligibleMatch(raw, top3)) continue;
+    // v13.281.0-teamstrict: the same-slug dedupe guard — a provider twin of
+    // an already-archived match never enters (the blob's auckland/wellington
+    // twins class; earliest kickoff owns the slug either way).
+    const newSlug = archiveRowSlug(raw);
+    if (newSlug && slugMap.has(newSlug)) continue;
     const key = String(raw.id || "") + "|" + raw.utcDate;
     if (!byKey.has(key)) {
       const rec: ArchiveRec = { m: s, fin: nowIso };
       byKey.set(key, rec);
       added.push(rec);
+      if (newSlug) slugMap.set(newSlug, rec);
     }
   }
   // prune older than retention (U-05: keep 365 days)
@@ -339,6 +386,18 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
     // bumped only when the text is actually edited).
     for (const p of STATIC_PAGES) rows += urlNode(p, SEO.CONTENT_VERSION, ogImageForPath(p));
   } else if (kind === "matches-upcoming" || kind === "matches-archive") {
+    // v13.281.0-teamstrict (D4): the eligibility predicate gates BOTH match
+    // children in strict mode — a sitemap row is a discovery + index
+    // signal, so it may only list a match the site actually wants indexed
+    // (the match pages themselves render noindex,follow otherwise; listing
+    // them would contradict the robots meta). Hidden-league rows are
+    // excluded outright (the A-League leak the audit found:
+    // sydney-fc-vs-western-sydney-wanderers-2026-10-16 was a live
+    // matches-archive row). Legacy mode: both children list exactly what
+    // they listed before, byte-for-byte.
+    const strict = SEO.TEAM_PAGE_POLICY === "strict";
+    const top3 = payloadTop3(ctx.payload);
+    const eligible = (sm: SeoMatch) => !strict || (isSeoEligibleMatch(sm.raw, top3) && !isSiteHiddenMatch(sm.raw));
     if (kind === "matches-archive") {
       // v13.259-archserve: syncArchive returns the CURRENT archive list —
       // the finished-match pages past the pool's 7-day retention are served
@@ -348,7 +407,7 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
       // (SEO.FINISHED_MATCH_ARCHIVE_DAYS) — no new magic number here.
       const archRecs = await syncArchive(env, ctx);
       const list = finishedRecent(ctx, 30);
-      candidates = list.map((sm) => ({
+      candidates = list.filter((sm) => eligible(sm)).map((sm) => ({
         path: matchPath(sm.s.homeTeam.name, sm.s.awayTeam.name, sm.s.utcDate),
         hash: matchHash(sm)
       }));
@@ -356,6 +415,9 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
       for (const rec of archRecs || []) {
         const row = rec && rec.m;
         if (!row || !row.homeTeam || !row.awayTeam || !row.utcDate) continue;
+        // v13.281.0-teamstrict: hidden-league rows never list (A-League —
+        // the owner ban; their archived pages 410 at the router now).
+        if (strict && isSiteHiddenMatch(row)) continue;
         // SEO Session 5 (MATCH-LIFECYCLE-POLICY.md §6): skip season-ended
         // ordinary matches — they serve noindex (the page stays 200 +
         // crawlable) and leave the sitemap. Mirrors the C1 precedent
@@ -364,14 +426,27 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
         // skipped → sitemap byte-identical to Session 4. Zero KV writes
         // (removals are not changes — same as C1's 74 removed team rows).
         if (isSeasonEndedOrdinary({ raw: row, s: row } as any)) continue;
+        // v13.281.0-teamstrict: the eligibility gate — off-policy archived
+        // rows leave the child (soft delist; their pages stay 200 +
+        // noindex,follow and their KV rows expire at their own 365d TTL).
+        if (strict && !isSeoEligibleMatch(row, top3)) continue;
         const p = matchPath(row.homeTeam.name, row.awayTeam.name, row.utcDate);
         if (seenArch.has(p)) continue; // still in the pool window — already listed
         seenArch.add(p);
         candidates.push({ path: p, hash: matchHash({ raw: row, s: row } as any) });
       }
     } else {
-      const list = upcomingBig(ctx);
-      candidates = list.map((sm) => ({
+      // v13.281.0-teamstrict (D1): in strict mode the upcoming child's SOURCE
+      // widens from upcomingBig to upcomingFollowed (the full followed
+      // universe, no big filter) — the Iranian big four's PGL fixtures never
+      // pass isBigForSeo (PGL is not in BIG_TEAMS_BY_LEAGUE), so on the old
+      // source they could never be listed even though the predicate's
+      // selected-team arm makes them eligible. The eligible() filter below
+      // then cuts everything off-policy; the net set = the predicate
+      // universe (shouldReport OR selected-club OR top3 OR marquee).
+      // Legacy: upcomingBig, byte-for-byte.
+      const src = SEO.TEAM_PAGE_POLICY === "strict" ? upcomingFollowed(ctx) : upcomingBig(ctx);
+      candidates = src.filter((sm) => eligible(sm)).map((sm) => ({
         path: matchPath(sm.s.homeTeam.name, sm.s.awayTeam.name, sm.s.utcDate),
         hash: matchHash(sm)
       }));
@@ -406,9 +481,30 @@ export async function buildSitemap(env: Env, kind: string): Promise<{ xml: strin
     for (const c of candidates) rows += urlNode(c.path, map[c.path], ogImageForPath(c.path));
     return { xml: urlsetXml(rows), changedUrls: changed.map(absUrl) };
   } else if (kind === "competitions") {
-    for (const e of compsIndex(ctx)) {
-      const hash = sha1ish(e.code + "|" + e.upcomingBig + "|" + (e.next ? e.next.s.utcDate : ""));
-      candidates.push({ path: "/competitions/" + e.slug, hash });
+    // v13.281.0-teamstrict (D2+D3): in strict mode competitions.xml lists
+    // EXACTLY the 10 SELECTED_COMPETITION_SLUGS — the deterministic
+    // indexable set (every one of them a 200+index page now: the
+    // buildCompetitionPage allowlist flip). The 3 additions
+    // (persian-gulf-pro-league, europa-league, copa-del-rey) ride the same
+    // lastmod discipline (hash moves only when the comp's upcoming count or
+    // next kickoff moves). Legacy mode: the pool-derived compsIndex rows,
+    // byte-for-byte.
+    if (SEO.TEAM_PAGE_POLICY === "strict") {
+      const entries = compsIndex(ctx);
+      const bySlug = new Map<string, { code: string; slug: string; upcomingBig: number; next: SeoMatch | null }>();
+      for (const e of entries) bySlug.set(e.slug, e);
+      for (const slug of Array.from(SEO.SELECTED_COMPETITION_SLUGS)) {
+        const code = SELECTED_COMP_CODE_BY_SLUG[slug];
+        if (!code) continue;
+        const e = bySlug.get(slug);
+        const hash = sha1ish(code + "|" + (e ? e.upcomingBig : 0) + "|" + (e && e.next ? e.next.s.utcDate : ""));
+        candidates.push({ path: "/competitions/" + slug, hash });
+      }
+    } else {
+      for (const e of compsIndex(ctx)) {
+        const hash = sha1ish(e.code + "|" + e.upcomingBig + "|" + (e.next ? e.next.s.utcDate : ""));
+        candidates.push({ path: "/competitions/" + e.slug, hash });
+      }
     }
     const { map, changed } = await computeLastmods(env, candidates);
     for (const c of candidates) rows += urlNode(c.path, map[c.path], ogImageForPath(c.path));

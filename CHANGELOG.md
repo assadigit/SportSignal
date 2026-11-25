@@ -1,3 +1,83 @@
+# v13.281.0-teamstrict — the strict entity gating (2026-11-25)
+
+The 2026-11-25 audit's diagnosis (owner-approved for implementation the
+same day): the GSC "Excluded by 'noindex' tag" report grows every matchday
+because the site renders a 200+noindex page for EVERY club that ever
+appears in a tracked match (~334 slugs) and Google keeps discovering them
+— the JSON-LD `teamRef` urls on BOTH sides of every match page are the
+PRIMARY discovery vector, the 79-tile /teams index the second. The fix
+flips the containment law into an allowlist law (MASTER-SEO-SPEC §2's own
+text: "Only selected-club pages are indexable... Never create a page per
+provider team"):
+
+- **D1 — the 17 selected teams** (the 13 + the Iranian big four:
+  Persepolis, Esteghlal Tehran, Sepahan, Tractor S.C.). New
+  `SEO.SELECTED_TEAM_SLUGS` (byte-exact LIVE slugs — the provider forms
+  `club-atletico-de-madrid` / `internazionale-milano` included, the audit's
+  derived-from-display-names trap avoided), hard cap 40,
+  `SEO.SEO_EXTRA_SELECTED_TEAMS` (the exact PGL provider forms + variant
+  spellings — SEO LAYER ONLY: `CONFIG.BIG_TEAMS_BY_LEAGUE` and the bot's
+  notification semantics untouched, the Telegram bot shares this Worker).
+  Non-selected `/teams/{slug}` answers **410** through a pure-static
+  router gate BEFORE any getSeoCtx/KV read (the error-1102 CPU relief —
+  the same `goneResponse` mechanism the a-league precedent built). The
+  Iranian four's pages/tiles/sitemap rows become indexable
+  (`isSelectedTeam` extended + the `teamsIndex` selected-arm).
+- **D2+D3 — the 10 indexable competitions**
+  (`SEO.SELECTED_COMPETITION_SLUGS`): persian-gulf-pro-league,
+  europa-league, copa-del-rey flip to index today (the known-comp
+  fallback empty states are the honest "no fixtures right now" shells —
+  the PGL page carries its real table); competitions.xml = exactly the 10;
+  the /competitions hub tiles = exactly the 10.
+- **D4 — soft delist**: off-policy match pages (ELC/DED/PPL/BSA league
+  ties, CONCACAF/AFCON/intl friendly/UEFA-NL rows, non-big-four PGL ties)
+  render 200 + `noindex,follow` (the day-hub display feature stays),
+  leave BOTH match children + the archive writes; existing KV rows expire
+  at their own 365d TTL (NO mass deletion — the 1000-writes/day quota).
+  The A-League EXCEPTION (owner-banned): archived rows hard-410 at the
+  resolution path (the live sydney-fc leak the audit found) + the sitemap
+  exclusion.
+- **The no-leak JSON-LD law**: `teamRef` emits the url field ONLY for
+  selected clubs (name/sport/sameAs/alternateName stay); the organizer url
+  ONLY for the 10 selected slugs — the raw-code 404-leak class
+  (/competitions/bsa, /ded, /elc, /ppl, /concacaf-nl, /afcon-q, /intl-fr,
+  /uefa-nl) is dead.
+- **The eligibility predicate** `isSeoEligibleMatch` (shouldReport OR
+  selected-club OR 5-league-top3 OR marquee — the widening keeps the
+  GSC-clicked MARQUEE_MATCH_SLUGS indexable): gates the upcoming child
+  (source widened to `upcomingFollowed` in strict mode — the PGL big-four
+  fixtures could never list on the old `isBigForSeo` source), the archive
+  child, the restored `syncArchive` gate (the v13.279 removal re-gated,
+  widened so nothing legitimate is lost) + a **same-slug dedupe guard**
+  (the auckland×2 / wellington×3 provider-twin rows the 2026-11-25 blob
+  carried).
+- **The rollback switch** `SEO.TEAM_PAGE_POLICY` ("strict" default |
+  "legacy" restores the pre-v13.281 bytes): every behavioral edit sits
+  behind the flag — verified by a legacy-mode wrangler-dev smoke (fulham
+  200+noindex, both-sides tiles, the old sitemap sources) + the 33-gate
+  `scripts/check-seo-teamstrict.js` (wired into npm test BEFORE
+  check-seo-crawlindex).
+- **Stability (the error-1102 503 exposure)**: the 410 paths are
+  pure-static (zero KV); the selected team pages' render hold 15m→30m and
+  the six immutable text pages 15m→1h (public edge freshness PF-01 stays
+  s-maxage=60; the time hubs keep the 5-min floor). wantCached still
+  stores 200s only.
+- **Repo conventions co-evolved**: check-seo-crawlindex (the C1
+  both-sides scope law SUPERSEDED — the new selected-arm + presentation
+  cut law), check-seo-internallinks (the SS-13 entries sources),
+  check-seo-competitionpages + check-seo-entityfallback (the D2/D3
+  indexable flip), check-seo-match-lifecycle (the flag-gated noindex
+  expression), check-seo-archivescope (the re-gate + dedupe law), the
+  check-stats v13.280 pin demoted HISTORICAL + the v13.281 live pin, the
+  s20-dayhubs version pin, DECISIONS.md (the C1 reversal record),
+  `npm test` 4,002 OK / 0 FAIL, and the local smoke matrix
+  (`scripts/s281-seed-local-kv.js` — the strict + legacy both verified).
+
+Deploy: `npx wrangler deploy` (the RUNBOOK §2 ritual); rollback = flip
+`TEAM_PAGE_POLICY` to "legacy" + redeploy (or `wrangler rollback` + git
+revert). Post-deploy: the owner's GSC steps (resubmit sitemap.xml; watch
+the 36 noindex URLs migrate to "Not found (410)").
+
 # v13.280.0-teamtilecrests — the /teams index tile crests (2026-11-24)
 
 The owner's ask (verbatim): "Add club's logo/sigil (from API) in this

@@ -1435,18 +1435,14 @@ check("v13.279.0-gsc404remediation (the release wiring — the GSC 404 remediati
 // .hubtile .t.tlogo + .hubtile img.tc, zero-CLS fixed slot). The crest
 // origin (crests.football-data.org) is ALREADY preconnected at HTML-
 // byte-0 (the v13.268-perf shell preconnect — check-seo-performance).
-check("v13.280.0-teamtilecrests (the release wiring — the /teams index tile crests: the club's own provider crest rides the tile title row; server-side-only, no client asset moves)", (() => {
+check("v13.280.0-teamtilecrests (the release wiring — the /teams index tile crests: the club's own provider crest rides the tile title row; server-side-only, no client asset moves) (HISTORICAL pin — demoted by the v13.281.0-teamstrict version bump; the mechanism survivors (the byte-exact crawlable hubtile anchor + the .t.tlogo crest row, TeamEntry.crest + the adoption guard, the .tc CSS gate, the no-client-asset law) are re-pinned verbatim inside this check; the LIVE version pin is the v13.281-teamstrict wiring check below)", (() => {
   const fs1 = require("fs");
   const path1 = require("path");
-  const pkg1 = JSON.parse(read("package.json"));
-  const cfg1 = read("src/config.ts");
   const pages1 = read("src/seo/pages.ts");
   const data1 = read("src/seo/data.ts");
   const shell1 = read("src/seo/page-shell.ts");
-  return pkg1.version === "13.280.0" &&
-    /export const VERSION = "13.280.0-teamtilecrests";/.test(cfg1) &&
-    // the tile renderer: the crawlable anchor keeps its byte-exact shape + the crest img rides the .t.tlogo row
-    /<a class="hubtile" href="\/teams\/' \+ e\.slug \+ '">\<div class="t' \+ \(crest \? " tlogo" : ""\) \+ '">'/.test(pages1) &&
+  // the tile renderer: the crawlable anchor keeps its byte-exact shape + the crest img rides the .t.tlogo row
+  return /<a class="hubtile" href="\/teams\/' \+ e\.slug \+ '"><div class="t' \+ \(crest \? " tlogo" : ""\) \+ '">'/.test(pages1) &&
     /<img class="tc" src="' \+ esc\(e\.crest\) \+ '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="24" height="24" onerror="this.remove\(\)">/.test(pages1) &&
     // the data layer: TeamEntry.crest + the adoption-across-rows guard
     /crest\?: string \| null;/.test(data1) &&
@@ -1458,6 +1454,27 @@ check("v13.280.0-teamtilecrests (the release wiring — the /teams index tile cr
     // no client asset moved (server-side-only)
     fs1.existsSync(path1.join(__dirname, "..", "assets", "public-13.80.js")) &&
     fs1.existsSync(path1.join(__dirname, "..", "assets", "public-13.87.css")) &&
+    /const CACHE = "sportsignal-v128";/.test(read("assets/sw.js"));
+})());
+
+// v13.281.0-teamstrict (the 2026-11-25 owner-approved strict entity gating
+// — the GSC "Excluded by 'noindex'" remediation): the LIVE version pin. A
+// SERVER-SIDE-ONLY release (no client asset renamed, no SW bump — the
+// RUNBOOK §2 rule). The whole behavioral law (the 17-slug allowlist, the
+// router 410 gate, the JSON-LD no-leak law, the sitemap eligibility gates,
+// the syncArchive re-gate + dedupe, the competition flips) lives in
+// scripts/check-seo-teamstrict.js (wired into the npm test chain BEFORE
+// check-stats); this pin only carries the version triple + the
+// no-client-asset law.
+check("v13.281.0-teamstrict (the release wiring — the strict entity gating: the 17-team/10-competition allowlist, the router 410 gate, the JSON-LD no-leak law, the soft-delisted match pages; server-side-only, no client asset moves)", (() => {
+  const fs2 = require("fs");
+  const path2 = require("path");
+  const pkg2 = JSON.parse(read("package.json"));
+  const cfg2 = read("src/config.ts");
+  return pkg2.version === "13.281.0" &&
+    /export const VERSION = "13.281.0-teamstrict";/.test(cfg2) &&
+    fs2.existsSync(path2.join(__dirname, "..", "assets", "public-13.80.js")) &&
+    fs2.existsSync(path2.join(__dirname, "..", "assets", "public-13.87.css")) &&
     /const CACHE = "sportsignal-v128";/.test(read("assets/sw.js"));
 })());
 
