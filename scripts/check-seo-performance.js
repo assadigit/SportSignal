@@ -129,7 +129,7 @@ else bad("S14/P1-satisfied: the mobile featured-match card portraits (mc-port) l
 // ============================================================
 // 6. The JS bundle loads with defer (no render-blocking) — the
 //    public-13.80.js bundle is 181KB but loads with defer so it does NOT
-//    block the HTML parse or the first paint. The core-13.16.js is also
+//    block the HTML parse or the first paint. The core-13.17.js is also
 //    deferred. No bundle split needed (defer is the right strategy for a
 //    single 181KB bundle on a mobile-first audience).
 // ============================================================
@@ -137,9 +137,9 @@ const bundleDefer = /<script src="\/public-13\.80\.js" defer>/.test(publicSrc);
 if (bundleDefer) ok("S14/bundle: the public-13.80.js bundle (181KB) loads with defer — no render-blocking (the HTML parse + first paint proceed without waiting for the bundle; no split needed — defer is the right strategy for a single bundle on a mobile-first audience)");
 else bad("S14/bundle: the public-13.80.js bundle does NOT load with defer — the bundle MUST stay deferred (a render-blocking bundle would regress the FCP + the LCP on mobile)");
 
-const coreDefer = /<script src="\/core-13\.16\.js" defer>/.test(publicSrc);
-if (coreDefer) ok("S14/bundle: the core-13.16.js (the I18N dictionary) loads with defer — no render-blocking");
-else bad("S14/bundle: the core-13.16.js does NOT load with defer — the core dictionary MUST stay deferred");
+const coreDefer = /<script src="\/core-13\.17\.js" defer>/.test(publicSrc); // v13.282-enparity: the read follows the 13.16 -> 13.17 rename (the EN-parity dictionary round)
+if (coreDefer) ok("S14/bundle: the core-13.17.js (the I18N dictionary) loads with defer — no render-blocking");
+else bad("S14/bundle: the core-13.17.js does NOT load with defer — the core dictionary MUST stay deferred");
 
 // ============================================================
 // 7. The freeze-coordination gate — the preconnect is a <link> in <head>,

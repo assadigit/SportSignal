@@ -5,6 +5,15 @@
 //   - fetch:    network-first for navigations (always-fresh HTML/API),
 //              cache-first for static assets (fonts, images),
 //              stale-while-revalidate for the main page HTML.
+// Cache name:  sportsignal-v129 (v13.282.0-enparity: bumped from v128 —
+//              the EN-parity round: the served homepage HTML changes (the
+//              data-i/data-ia hooks on the footer nav links, the visit
+//              counter, the stats card, the src-attrib, the skip link; the
+//              language-aware /api/visit beacon) and the client core
+//              renames core-13.16.js -> core-13.17.js (the dictionary
+//              additions + trAria + the sslangchange event). The bump is
+//              the routine evict so the SWR/offline-fallback page copies
+//              still referencing the old core leave the cache.
 // Cache name:  sportsignal-v128 (v13.278.0-farsisitename: bumped from v127 —
 //              the Farsi site-name swap round: every search-facing
 //              site-name signal (the WebSite + Organization JSON-LD name,
@@ -1055,7 +1064,7 @@
 //              standalone header Telegram icon with the REAL circled logo).
 //              Cache-first assets cannot refresh without a rename or a bump,
 //              the v13.39 rule; 13.73.js stays served + pinned one SEO TTL.
-const CACHE = "sportsignal-v128";
+const CACHE = "sportsignal-v129";
 const CORE_URLS = [
   "/",
   "/site.webmanifest",

@@ -726,7 +726,7 @@ html[lang="en"] .ps-fa{display:none}
      keyboard users must tab INTO the header to reach is not a bypass;
      moving it before <header> restores the WCAG 2.4.3 expected order
      without touching the visual (it stays off-canvas until :focus). -->
-<a class="skip-link" href="#main">پرش به محتوا</a>
+<a class="skip-link" href="#main" data-i="skipContent">پرش به محتوا</a>
 <!-- v13.237-promobar (owner): the approved top-bar design replaces the
      v13.236 rotator — a static message pair + two CTAs (the style block
      above carries the full design law). Rides AFTER the skip link (the
@@ -755,7 +755,7 @@ html[lang="en"] .ps-fa{display:none}
      \xAB\u062E\u0627\u0646\u0647 \u062F\u0631\u0628\u0627\u0631\u0647 \u062A\u0645\u0627\u0633\xBB nav rides the header's start side on PC (phones get
      it in the footer) \u2014 v12.26 right-aligned with the logo, not centered. -->
 <a class="brand" href="/" aria-label="SportSignal"><img src="/logo.png" alt="SportSignal" width="146" height="50" referrerpolicy="no-referrer"></a>
-<nav class="mainnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="#about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="#contact" data-i="navContact">\u062A\u0645\u0627\u0633</a></nav>
+<nav class="mainnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC" data-ia="navAriaLabel"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="#about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="#contact" data-i="navContact">\u062A\u0645\u0627\u0633</a></nav>
 <div class="head-actions"><!-- v13.242-faglow (S31): the phone-only Telegram CHANNEL icon — now a
      STANDALONE button DIVIDED from the EN language pill (the owner's
      "divide EN with Telegram icon in mobile"): it sits OUTSIDE .tb-btns
@@ -1185,7 +1185,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      the same rule the swipe + keyboard handlers already use), so the FA
      defaults below label carLeft «مسابقه بعدی» and carRight «مسابقه
      قبلی»; LTR keeps left=previous (the controller re-labels both on
-     load + every language toggle via the core-13.16.js dictionary —
+     load + every language toggle via the core-13.17.js dictionary —
      carPrev/carNext/carRegion). display:none by default; the client
      adds .on at TWO or more slides — a single hero keeps the plain card
      and a no-JS visitor never sees dead controls. -->
@@ -1415,12 +1415,12 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      with percentages. Cookieless; the unique dedup uses a salted one-way hash
      (IP never stored) \u2014 see /privacy. -->
 <div class="card" id="statsCard">
-<h2>\u{1F4CA} \u0622\u0645\u0627\u0631 \u0628\u0627\u0632\u062F\u06CC\u062F \u0632\u0646\u062F\u0647</h2>
-<div class="sbox" id="statsBox"><span class="slbl">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC…</span></div>
+<h2 data-i="hStatsLive">\u{1F4CA} \u0622\u0645\u0627\u0631 \u0628\u0627\u0632\u062F\u06CC\u062F \u0632\u0646\u062F\u0647</h2>
+<div class="sbox" id="statsBox"><span class="slbl" data-i="vcLoading">\u062F\u0631 \u062D\u0627\u0644 \u0628\u0627\u0631\u06AF\u0630\u0627\u0631\u06CC…</span></div>
 </div>
 </div>
 </main>
-<footer id="about"><nav class="footnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="/matches">\u0628\u0627\u0632\u06CC\u200C\u0647\u0627</a><a href="/matches/today">\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0627\u0645\u0631\u0648\u0632</a><a href="/teams">\u062A\u06CC\u0645\u200C\u0647\u0627</a><a href="/competitions">\u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627</a><a href="/about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="/methodology">\u0631\u0648\u0634 \u06A9\u0627\u0631</a><a href="/contact" data-i="navContact">\u062A\u0645\u0627\u0633</a><a href="/data">\u062F\u0627\u062F\u0647\u200C\u0647\u0627</a><a href="/privacy">\u062D\u0631\u06CC\u0645 \u062E\u0635\u0648\u0635\u06CC</a><a href="/terms">\u0634\u0631\u0627\u06CC\u0637 \u0627\u0633\u062A\u0641\u0627\u062F\u0647</a><a href="/sitemap">\u0646\u0642\u0634\u0647 \u0633\u0627\u06CC\u062A</a></nav>
+<footer id="about"><nav class="footnav" aria-label="\u0646\u0627\u0648\u0628\u0631\u06CC \u0627\u0635\u0644\u06CC" data-ia="navAriaLabel"><a href="/" data-i="navHome">\u062E\u0627\u0646\u0647</a><a href="/matches" data-i="navMatches">\u0628\u0627\u0632\u06CC\u200C\u0647\u0627</a><a href="/matches/today" data-i="navToday">\u0628\u0627\u0632\u06CC\u200C\u0647\u0627\u06CC \u0627\u0645\u0631\u0648\u0632</a><a href="/teams" data-i="navTeams">\u062A\u06CC\u0645\u200C\u0647\u0627</a><a href="/competitions" data-i="navComps">\u0631\u0642\u0627\u0628\u062A\u200C\u0647\u0627</a><a href="/about" data-i="navAbout">\u062F\u0631\u0628\u0627\u0631\u0647</a><a href="/methodology" data-i="navMethod">\u0631\u0648\u0634 \u06A9\u0627\u0631</a><a href="/contact" data-i="navContact">\u062A\u0645\u0627\u0633</a><a href="/data" data-i="navData">\u062F\u0627\u062F\u0647\u200C\u0647\u0627</a><a href="/privacy" data-i="navPrivacy">\u062D\u0631\u06CC\u0645 \u062E\u0635\u0648\u0635\u06CC</a><a href="/terms" data-i="navTerms">\u0634\u0631\u0627\u06CC\u0637 \u0627\u0633\u062A\u0641\u0627\u062F\u0647</a><a href="/sitemap" data-i="navSitemap">\u0646\u0642\u0634\u0647 \u0633\u0627\u06CC\u062A</a></nav>
 <div class="aboutbox">
 <h3 data-i="hAbout">\u{1F4D8} \u062F\u0631\u0628\u0627\u0631\u0647 SportSignal</h3>
 <p data-i="aboutTag" class="about-tag">\u0642\u0631\u0627\u0631 \u0646\u06CC\u0633\u062A \u0647\u0631 \u0645\u0633\u0627\u0628\u0642\u0647\u200C\u0627\u06CC \u0631\u0627 \u0628\u0628\u06CC\u0646\u06CC\u061B \u0641\u0642\u0637 \u0646\u0628\u0627\u06CC\u062F \u0628\u0627\u0632\u06CC \u0645\u0647\u0645 \u0631\u0627 \u0627\u0632 \u062F\u0633\u062A \u0628\u062F\u0647\u06CC.</p>
@@ -1445,8 +1445,8 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
      secondary (the footer's 12px var(--footer) baseline), below the fold.
      Mirrors the pageShell footers (src/seo/page-shell.ts) so every SEO
      page type carries it. -->
-<div class="src-attrib">\u0645\u0646\u0628\u0639 \u062F\u0627\u062F\u0647: <a href="https://www.football-data.org/" target="_blank" rel="noopener" style="color:inherit">football-data.org</a></div>
-<div class="visitcount" id="visitCount"><span class="vc-l">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده دیروز:</span> <span class="vc-n" id="vcYesterday">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدیدکننده این ماه:</span> <span class="vc-n" id="vcMonth">—</span> <span class="vc-sep">·</span> <span class="vc-l">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div></footer>
+<div class="src-attrib"><span data-i="srcAttrib">\u0645\u0646\u0628\u0639 \u062F\u0627\u062F\u0647:</span> <a href="https://www.football-data.org/" target="_blank" rel="noopener" style="color:inherit">football-data.org</a></div>
+<div class="visitcount" id="visitCount"><span class="vc-l" data-i="vcTodayLbl">بازدید امروز:</span> <span class="vc-n" id="vcToday">—</span> <span class="vc-sep">·</span> <span class="vc-l" data-i="vcYesterdayLbl">بازدیدکننده دیروز:</span> <span class="vc-n" id="vcYesterday">—</span> <span class="vc-sep">·</span> <span class="vc-l" data-i="vcMonthLbl">بازدیدکننده این ماه:</span> <span class="vc-n" id="vcMonth">—</span> <span class="vc-sep">·</span> <span class="vc-l" data-i="vcTotalLbl">بازدید کل:</span> <span class="vc-n" id="vcTotal">—</span></div></footer>
 <!-- v12.20 (the user's ask): sticky Telegram join CTA \u2014 the hero button
      scrolls away with the header; once the user is past it, this bottom bar
      keeps the primary call-to-action one tap away (safe-area padded). -->
@@ -1495,7 +1495,7 @@ pointer-transparent, parked under prefers-reduced-motion (CSS). -->
 </a>
 <a id="tgPillGo" href="${TG_CHANNEL_URL}" target="_blank" rel="noopener noreferrer" aria-label="عضویت در کانال تلگرام"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a>
 </div>
-<script src="/core-13.16.js" defer><\/script>
+<script src="/core-13.17.js" defer><\/script>
 <script>var PAGE_TZ = "__PAGE_TZ__";<\/script>
 <!-- v13.201-carstack: the JS rename 13.64 -> 13.65 (the stacking
      repair: carGhost strips the carried .car-in class from every ghost
@@ -1703,34 +1703,59 @@ mcFitScan();
      in the background (ctx.waitUntil: page view + daily unique dedup via a
      salted one-way hash + country code + online-now). The JSON response fills
      BOTH the footer counter and the live stats box. No cookies, no IP storage
-     — see /privacy. */
+     — see /privacy.
+     v13.282-enparity: the fill is now language-aware (FA: Persian labels +
+     fa-IR digits; EN: English labels + Latin digits) and re-renders on every
+     language toggle via the sslangchange event — see the IIFE body. */
 (function(){if(document.visibilityState==='prerender')return;
+/* v13.282-enparity: the beacon fill is LANGUAGE-AWARE — FA keeps the
+   Persian labels + fa-IR digits (faNum); EN renders English labels +
+   Latin digits (enNum/vn). L() prefers the core-13.17.js I18N dictionary
+   (deferred core has executed by the time the async fill lands; the
+   inline FALL pair below covers a parse-time race), and the memoized
+   payload + the sslangchange listener (applyLang fires it on every
+   language toggle) re-render BOTH surfaces so a mid-session switch
+   re-labels AND re-digits the footer counter + the live stats box.
+   EN country names resolve from the payload's c.code via
+   Intl.DisplayNames (fallback c.name). */
+function lang(){try{return localStorage.getItem('ucl_lang')||'fa'}catch(e){return'fa'}}
 function faNum(n){try{return Number(n).toLocaleString('fa-IR')}catch(e){return String(n)}}
+function enNum(n){try{return Number(n).toLocaleString('en-US')}catch(e){return String(n)}}
+function vn(n){return lang()==='en'?enNum(n):faNum(n)}
+var FALL={fa:{stOnline:"\u{1F534} \u0622\u0646\u0644\u0627\u06CC\u0646 \u0627\u06A9\u0646\u0648\u0646",stTodayViews:"\u0628\u0627\u0632\u062F\u06CC\u062F \u0627\u0645\u0631\u0648\u0632",stTodayVisitors:"\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u0627\u0645\u0631\u0648\u0632",stYesterdayVisitors:"\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u062F\u06CC\u0631\u0648\u0632",stMonthVisitors:"\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u0627\u06CC\u0646 \u0645\u0627\u0647",stTotalViews:"\u0628\u0627\u0632\u062F\u06CC\u062F \u06A9\u0644",stCap:"\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647\u0627\u06CC \u0627\u0645\u0631\u0648\u0632 \u0628\u0647 \u06A9\u0634\u0648\u0631",stThCountry:"\u06A9\u0634\u0648\u0631",stThCount:"\u062A\u0639\u062F\u0627\u062F",stThPct:"\u062F\u0631\u0635\u062F"},en:{stOnline:"\u{1F534} Online now",stTodayViews:"Views today",stTodayVisitors:"Visitors today",stYesterdayVisitors:"Visitors yesterday",stMonthVisitors:"Visitors this month",stTotalViews:"Total views",stCap:"Today's visitors by country",stThCountry:"Country",stThCount:"Visitors",stThPct:"Share"}};
+function L(k){var l=lang();try{var d=(typeof I18N!=='undefined')&&I18N[l];if(d&&d[k])return d[k];}catch(e){}var f=FALL[l]||FALL.fa;return (f&&f[k])||FALL.fa[k]||k;}
+function cName(c){if(lang()!=='en'||!c.code)return c.name;try{return new Intl.DisplayNames(['en'],{type:'region'}).of(c.code)||c.name;}catch(e){return c.name;}}
 function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
 function renderStatsBox(d){
   var box=document.getElementById('statsBox');if(!box)return;
   var h='';
-  h+='<div class="srow"><span class="slbl">\u{1F534} \u0622\u0646\u0644\u0627\u06CC\u0646 \u0627\u06A9\u0646\u0648\u0646</span><span class="sval live">'+faNum(d.online||0)+'</span></div>';
-  h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F \u0627\u0645\u0631\u0648\u0632</span><span class="sval">'+faNum(d.today_views||0)+'</span></div>';
-  h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u0627\u0645\u0631\u0648\u0632</span><span class="sval">'+faNum(d.today_visitors||0)+'</span></div>';
-  h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u062F\u06CC\u0631\u0648\u0632</span><span class="sval">'+faNum(d.yesterday_visitors||0)+'</span></div>';
-  h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u0646\u062F\u0647 \u0627\u06CC\u0646 \u0645\u0627\u0647</span><span class="sval">'+faNum(d.month_visitors||0)+'</span></div>';
-  h+='<div class="srow"><span class="slbl">\u0628\u0627\u0632\u062F\u06CC\u062F \u06A9\u0644</span><span class="sval">'+faNum(d.total_views||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">'+L('stOnline')+'</span><span class="sval live">'+vn(d.online||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">'+L('stTodayViews')+'</span><span class="sval">'+vn(d.today_views||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">'+L('stTodayVisitors')+'</span><span class="sval">'+vn(d.today_visitors||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">'+L('stYesterdayVisitors')+'</span><span class="sval">'+vn(d.yesterday_visitors||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">'+L('stMonthVisitors')+'</span><span class="sval">'+vn(d.month_visitors||0)+'</span></div>';
+  h+='<div class="srow"><span class="slbl">'+L('stTotalViews')+'</span><span class="sval">'+vn(d.total_views||0)+'</span></div>';
   var cs=d.countries||[];
   if(cs.length){
-    h+='<div class="scap">\u0628\u0627\u0632\u062F\u06CC\u062F\u06A9\u0646\u062F\u0647\u0627\u06CC \u0627\u0645\u0631\u0648\u0632 \u0628\u0647 \u06A9\u0634\u0648\u0631</div>';
-    h+='<table><thead><tr><th>\u06A9\u0634\u0648\u0631</th><th>\u062A\u0639\u062F\u0627\u062F</th><th>\u062F\u0631\u0635\u062F</th></tr></thead><tbody>';
+    h+='<div class="scap">'+L('stCap')+'</div>';
+    h+='<table><thead><tr><th>'+L('stThCountry')+'</th><th>'+L('stThCount')+'</th><th>'+L('stThPct')+'</th></tr></thead><tbody>';
     cs.forEach(function(c){
-      h+='<tr><td><span class="cflag">'+c.flag+'</span> '+c.name+'</td><td class="cnum">'+faNum(c.visitors)+'</td><td class="cpct">'+faNum(c.pct)+'\u066A</td></tr>';
+      h+='<tr><td><span class="cflag">'+c.flag+'</span> '+cName(c)+'</td><td class="cnum">'+vn(c.visitors)+'</td><td class="cpct">'+vn(c.pct)+(lang()==='en'?'%':'\u066A')+'</td></tr>';
     });
     h+='</tbody></table>';
   }
   box.innerHTML=h;
 }
+var MEMO=null;
+function fill(d){
+  MEMO=d;
+  set('vcToday',vn(d.today_views||0));set('vcYesterday',vn(d.yesterday_visitors||0));set('vcMonth',vn(d.month_visitors||0));set('vcTotal',vn(d.total_views||0));
+  renderStatsBox(d);
+}
+try{document.addEventListener('sslangchange',function(){if(MEMO)fill(MEMO);});}catch(e){}
 try{fetch('/api/visit',{cache:'no-store',keepalive:true,credentials:'same-origin'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
   if(!d)return;
-  set('vcToday',faNum(d.today_views||0));set('vcYesterday',faNum(d.yesterday_visitors||0));set('vcMonth',faNum(d.month_visitors||0));set('vcTotal',faNum(d.total_views||0));
-  renderStatsBox(d);
+  fill(d);
 }).catch(function(){});}catch(e){}
 })();<\/script>
 <!-- v13.208-lastmod (F-H3, Phase 5): Cloudflare Web Analytics beacon — the

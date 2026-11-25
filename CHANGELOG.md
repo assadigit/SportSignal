@@ -1,3 +1,58 @@
+# v13.282.0-enparity — EN-mode parity: the visit counter + the internal links (2026-11-25)
+
+The owner's directive: "In farsi: everything farsi; in english: english."
+Two live defects measured on the EN homepage (localStorage `ucl_lang=en`
++ the language pill):
+
+- **The cookieless visit counter stayed Farsi in EN.** The footer
+  `#visitCount` labels («بازدید امروز:» …) had no `data-i` hooks, and the
+  `/api/visit` beacon IIFE was language-blind: `faNum()` always formatted
+  fa-IR digits, and the live stats box (`#statsBox` — «📊 آمار بازدید
+  زنده», the six stat rows, the countries table) rendered Persian labels
+  + Persian numerals whatever the mode.
+- **Nine footer internal-page links stayed Persian in EN.** `/matches`
+  («بازی‌ها»), `/matches/today`, `/teams`, `/competitions`,
+  `/methodology`, `/data`, `/privacy`, `/terms`, `/sitemap` carried no
+  `data-i` hooks — only navHome/navAbout/navContact translated.
+
+The fix (client-side only; zero KV/D1/prerender/SEO-frozen byte changes):
+
+- **core-13.17.js** (the ADR-006 rename of core-13.16.js): 28 new
+  dictionary keys in BOTH languages — navMatches/navToday/navTeams/
+  navComps/navMethod/navData/navPrivacy/navTerms/navSitemap,
+  navAriaLabel, skipContent, hStatsLive, vcLoading, the vc*Lbl counter
+  labels, the st* stats-box strings, srcAttrib. `applyLang()` now also
+  runs `trAria()` (the new `data-ia` hook translates aria-labels — the
+  nav landmarks' accessible name) and dispatches the `sslangchange`
+  CustomEvent so page-local listeners can re-render language-dependent
+  DOM.
+- **public.ts**: `data-i`/`data-ia` hooks on the footer nav (every
+  internal link), the four counter label spans, the stats card h2 + the
+  loading label, the src-attrib line, the skip link; the beacon IIFE
+  rewritten language-aware — `vn()` renders fa-IR digits in FA and Latin
+  (en-US) digits in EN, `L()` resolves labels from the core dictionary
+  (inline fallback pair for the parse-time race), EN country names come
+  from the payload's `c.code` via `Intl.DisplayNames` (fallback
+  `c.name`), the percent sign follows the language (٪ vs %), and the
+  memoized payload + the `sslangchange` listener re-render BOTH the
+  footer counter and the stats box on every mid-session toggle.
+- **admin.ts / login.ts**: the core script reference follows the rename.
+- **assets/_headers**: `/core-13.17.js` pinned `immutable` (13.16.js
+  stays served + pinned one SEO TTL per the retention rule).
+- **sw.js**: cache `sportsignal-v128` → `v129` (the routine evict — the
+  served homepage HTML changed).
+- **Checks**: check-stats/check-seo-performance/check-hero-carousel
+  reads follow the rename; check-stats' _headers gate asserts the new
+  pin. The parity fixtures re-baselined
+  (`check-admin-parity --update`) for the intended template change.
+
+Known remaining FA-in-EN (accepted, invisible): the `sr-only` «بازی مهم»
+badge inside featured-match rows comes from the public-13.80.js bundle
+(client rebuild) — fixing it requires the next bundle rename round; the
+SEO sub-pages (/matches, /teams, …) remain Farsi-only server-rendered
+pages by design (the EN experience is the homepage app; the crawlers'
+FA SEO surfaces are untouched).
+
 # v13.281.0-teamstrict — the strict entity gating (2026-11-25)
 
 The 2026-11-25 audit's diagnosis (owner-approved for implementation the

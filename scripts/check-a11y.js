@@ -123,7 +123,10 @@ check("F-M6: .foot-base a clears the WCAG 2.5.8 AA 24px floor (12px x1.5 + 12 = 
 const pub = read("src/pages/public.ts");
 const bodyIdx = pub.indexOf("<body>");
 const headerIdx = pub.indexOf('<header id="topbar">');
-const skipIdx = pub.indexOf('<a class="skip-link" href="#main">');
+// v13.282-enparity: the homepage skip link gained data-i="skipContent"
+// (the EN-parity dictionary round — the label translates with the toggle);
+// the prefix match keeps the first-focusable question language-agnostic.
+const skipIdx = pub.indexOf('<a class="skip-link" href="#main"');
 check("F-L3: the homepage skip link precedes the topbar (first focusable in the DOM)", bodyIdx > -1 && skipIdx > bodyIdx && skipIdx < headerIdx);
 check("F-L3: the homepage has exactly ONE skip link", pub.split('class="skip-link"').length === 2);
 const shell = read("src/seo/page-shell.ts");

@@ -1,6 +1,33 @@
 // SportSignal — central configuration & static data tables.
 // KV keys and semantics are LIVE-STATE contracts — never rename casually.
 
+// v13.282.0-enparity (2026-11-25): the EN-parity round — the owner's
+// directive "In farsi: everything farsi; in english: english". TWO live
+// defects measured on the EN homepage: (1) the cookieless visit counter
+// (footer #visitCount + the live stats box #statsBox) rendered Farsi
+// labels AND fa-IR digits in EN mode — the beacon IIFE was lang-blind;
+// (2) the footer's nine internal-page links (/matches, /matches/today,
+// /teams, /competitions, /methodology, /data, /privacy, /terms,
+// /sitemap) stayed Persian in EN mode — no data-i hooks. THE FIX (all
+// client-side, zero KV/DB/prerender contracts touched):
+//   · core-13.16.js -> core-13.17.js (ADR-006 rename): the nav/counter/
+//     stats/attribution/skip strings join BOTH dictionaries; applyLang
+//     gains trAria (data-ia aria-label hooks) + dispatches the
+//     sslangchange CustomEvent.
+//   · public.ts: data-i/data-ia hooks on the footer nav, the counter
+//     labels, the stats card h2/loading, the src-attrib, the skip link;
+//     the /api/visit beacon IIFE rewritten language-aware (vn() digits:
+//     fa-IR in FA, en-US Latin in EN; L() label lookup via the core
+//     dictionary with an inline fallback pair; EN country names via
+//     Intl.DisplayNames from the payload's c.code; memoized payload +
+//     the ssllangchange listener so a mid-session toggle re-renders both
+//     surfaces).
+//   · admin.ts/login.ts: the core script reference follows the rename.
+//   · _headers: /core-13.17.js pinned immutable (13.16 stays pinned one
+//     SEO TTL per the retention rule); sw.js cache v128 -> v129 (the
+//     routine evict — the served homepage HTML changed).
+//   · check-stats/check-seo-performance/check-hero-carousel: the reads
+//     follow the rename; check-stats gains the new pin assertion.
 // v13.275.0-endigits (2026-11-19): the Peyda font-digit repair — the
 // owner's EN-numerals directive ("In language EN of sportsignal the numerals
 // are farsi. make sure the En version always has English and latin
@@ -34,7 +61,7 @@
 // ONLY) + the SEO-only query resolver (src/seo/persian-alias.ts — the
 // ambiguity-guarded entity resolution, never wired into any request path).
 // Freeze-safe: zero byte-frozen title/H1/description/answer bytes touched.
-export const VERSION = "13.281.0-teamstrict";
+export const VERSION = "13.282.0-enparity";
 
 export const CONFIG: Record<string, any> = {
   API_URL: "https://api.football-data.org/v4/matches",
