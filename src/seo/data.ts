@@ -306,12 +306,31 @@ export interface TeamEntry {
 // wholesale — teamNormCache's sig pattern) so an admin-selected club
 // becomes indexable without a redeploy.
 const SEO_SELECTED_LEAGUES = ["PL", "PD", "SA", "FL1", "BL1"];
+// v13.281.0-teamstrict (the frozen-source law): the SEO selected set is the
+// AUTHORITATIVE 17 — it must NOT flap with isolate history. The live
+// deployment proved the hazard: applySettings (the bot's admin overlay,
+// bot_settings_v1) REPLACES CONFIG.BIG_TEAMS_BY_LEAGUE at runtime with the
+// owner's followed-club lists (which include Tottenham/Juventus/AS Roma and
+// carry provider-form spellings that miss the TEAM_ALIASES folds) — an
+// isolate that had served a public-matches/cron path rendered teams.xml
+// with the overlay set (Juventus/Roma/Tottenham rows) while the router's
+// static 410 gate killed their pages: the sitemap listed 410 URLs. Under
+// strict gating the SEO layer reads the FROZEN compile-time capture (taken
+// at module load, before any overlay ever runs) — the set is deterministic
+// across isolates. Legacy mode keeps reading the live CONFIG (the C1-era
+// dynamic-rebuild law — byte-for-byte rollback).
+const SEO_SELECTED_FROZEN = CONFIG.BIG_TEAMS_BY_LEAGUE;
 let selectedTeamMemo: { sig: any; norms: Set<string> } | null = null;
 export function isSelectedTeam(name: string): boolean {
-  if (!selectedTeamMemo || selectedTeamMemo.sig !== CONFIG.BIG_TEAMS_BY_LEAGUE) {
+  // strict: the frozen module-init reference (applySettings REPLACES the
+  // CONFIG field with a new object, so the captured reference keeps the
+  // compile-time value forever — the memo never rebuilds); legacy: the live
+  // field (the old sig-rebuild law — an admin overlay takes effect).
+  const source = SEO.TEAM_PAGE_POLICY === "strict" ? SEO_SELECTED_FROZEN : CONFIG.BIG_TEAMS_BY_LEAGUE;
+  if (!selectedTeamMemo || selectedTeamMemo.sig !== source) {
     const norms = new Set<string>();
     for (const lg of SEO_SELECTED_LEAGUES) {
-      for (const t of ((CONFIG.BIG_TEAMS_BY_LEAGUE || {})[lg] as string[]) || []) {
+      for (const t of ((source || {})[lg] as string[]) || []) {
         const n = normalizeTeamName(t);
         if (n) norms.add(n);
       }
@@ -330,7 +349,7 @@ export function isSelectedTeam(name: string): boolean {
       const n = normalizeTeamName(t);
       if (n) norms.add(n);
     }
-    selectedTeamMemo = { sig: CONFIG.BIG_TEAMS_BY_LEAGUE, norms };
+    selectedTeamMemo = { sig: source, norms };
   }
   return selectedTeamMemo.norms.has(normAlias(name));
 }

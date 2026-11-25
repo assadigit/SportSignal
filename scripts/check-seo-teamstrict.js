@@ -240,6 +240,27 @@ const filesSrc = fs.readFileSync(path.join(root, "src", "seo", "files.ts"), "utf
       }
     }
     if (thirteenOk) ok("behavioral: the 13 domestic-league config clubs stay selected");
+  // v13.281.0-teamstrict (the frozen-source law — the live 04:48 incident):
+  // an admin-overlay replacement of CONFIG.BIG_TEAMS_BY_LEAGUE must NOT
+  // change the strict-mode predicate (the isolate-history flap that made
+  // teams.xml list router-410 URLs).
+  const overlayProbe = JSON.parse(JSON.stringify(CONFIG.BIG_TEAMS_BY_LEAGUE));
+  overlayProbe.PL = overlayProbe.PL.concat(["Everton FC"]);
+  const origProbe = CONFIG.BIG_TEAMS_BY_LEAGUE;
+  let frozenOk = true;
+  try {
+    CONFIG.BIG_TEAMS_BY_LEAGUE = overlayProbe;
+    if (isSelectedTeam("Everton FC")) { bad("behavioral: the overlay swap CHANGED the strict-mode set — not frozen (the live incident class)"); frozenOk = false; }
+    if (!isSelectedTeam("Juventus FC") && isSelectedTeam("Arsenal FC")) { /* expected: the compile-time 13 hold; the overlay's extra club does not enter */ }
+    else { bad("behavioral: the frozen set lost the compile-time clubs after the overlay swap"); frozenOk = false; }
+  } finally { CONFIG.BIG_TEAMS_BY_LEAGUE = origProbe; }
+  if (frozenOk) ok("behavioral: the frozen-source law holds (the admin overlay never changes the strict SEO set — deterministic across isolates)");
+  if (/const source = SEO\.TEAM_PAGE_POLICY === "strict" \? SEO_SELECTED_FROZEN : CONFIG\.BIG_TEAMS_BY_LEAGUE;/.test(dataSrc) &&
+      /const SEO_SELECTED_FROZEN = CONFIG\.BIG_TEAMS_BY_LEAGUE;/.test(dataSrc)) {
+    ok("wiring: isSelectedTeam reads the FROZEN capture in strict mode (legacy reads the live CONFIG — the rollback contract)");
+  } else {
+    bad("wiring: the frozen-source expression not found in src/seo/data.ts (strict: frozen capture; legacy: the live field)");
+  }
     // A-League clubs stay rejected
     check(isSelectedTeam("Sydney FC") === false && isSelectedTeam("Melbourne Victory") === false,
       "behavioral: the A-League clubs stay rejected (site-hidden — not part of the selected 17)");

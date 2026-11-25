@@ -123,23 +123,41 @@ for (const [name, want] of variants) {
 }
 if (varOk) ok("provider-variant folding correct on all " + variants.length + " cases (incl. the two provider-derived canonical slugs; A-League clubs rejected)");
 
-// behavior: the admin-overlay rebuild (the teamNormCache sig law)
+// behavior: the frozen-source law (v13.281.0-teamstrict — SUPERSEDES the
+// C1-era admin-overlay rebuild for the SEO layer). The live deployment
+// proved the hazard: an isolate carrying the bot-settings overlay
+// (bot_settings_v1 REPLACES CONFIG.BIG_TEAMS_BY_LEAGUE — the owner's
+// followed clubs, Tottenham/Juventus/AS Roma in provider forms) rendered
+// teams.xml with those clubs while the router's static 410 gate killed
+// their pages — a sitemap listing 410 URLs. Under strict gating the SEO
+// set is the FROZEN module-init capture: an overlay swap must NOT change
+// the predicate (deterministic across isolates). Legacy mode keeps the
+// live CONFIG read (the old sig-rebuild law — the rollback contract,
+// pinned by source below).
 const overlay = JSON.parse(JSON.stringify(CONFIG.BIG_TEAMS_BY_LEAGUE));
 overlay.PL = overlay.PL.concat(["Everton FC"]);
 const origTeams = CONFIG.BIG_TEAMS_BY_LEAGUE;
 try {
   CONFIG.BIG_TEAMS_BY_LEAGUE = overlay;
-  if (isSelectedTeam("Everton FC")) {
-    ok("predicate rebuilds on CONFIG.BIG_TEAMS_BY_LEAGUE replacement (admin overlay takes effect without redeploy)");
+  if (!isSelectedTeam("Everton FC")) {
+    ok("frozen-source law (v13.281): the admin-overlay replacement does NOT change the SEO selected set in strict mode (the frozen module-init capture — deterministic across isolates; the sitemap can never list router-410 URLs again)");
   } else {
-    bad("predicate did NOT rebuild after the admin overlay replaced CONFIG.BIG_TEAMS_BY_LEAGUE");
+    bad("strict-mode predicate REBUILT after the admin overlay — the set is not frozen (the isolate-history flap class the live deploy exposed)");
   }
-  if (!isSelectedTeam("Fulham FC")) ok("overlay rebuild keeps non-selected teams rejected");
-  else bad("overlay rebuild broke the rejection side");
+  if (isSelectedTeam("Arsenal FC")) ok("the frozen set still carries the compile-time 13 after the overlay swap");
+  else bad("the frozen set lost the compile-time clubs after the overlay swap");
 } finally {
   CONFIG.BIG_TEAMS_BY_LEAGUE = origTeams;
 }
-if (!isSelectedTeam("Everton FC") && isSelectedTeam("Arsenal FC")) ok("memo restored after overlay test (sig re-check verified both directions)");
+if (!isSelectedTeam("Everton FC") && isSelectedTeam("Arsenal FC")) ok("predicate stable after the overlay test (the frozen source never rebuilds in strict mode)");
+// the legacy branch keeps the live-field read (the C1-era rebuild law)
+const dataSrcFrozen = dataSrc;
+if (!/const source = SEO\.TEAM_PAGE_POLICY === "strict" \? SEO_SELECTED_FROZEN : CONFIG\.BIG_TEAMS_BY_LEAGUE;/.test(dataSrcFrozen) ||
+    !/const SEO_SELECTED_FROZEN = CONFIG\.BIG_TEAMS_BY_LEAGUE;/.test(dataSrcFrozen)) {
+  bad("the frozen-source wiring not found in src/seo/data.ts (strict: the module-init capture; legacy: the live field — the rollback contract)");
+} else {
+  ok("wiring: strict reads the FROZEN capture, legacy reads the live CONFIG.BIG_TEAMS_BY_LEAGUE (the C1-era dynamic law preserved for rollback)");
+}
 
 // ---- 2. C1 wiring: the sitemap filter + the indexable rule ----
 const filesSrc = fs.readFileSync(path.join(root, "src", "seo", "files.ts"), "utf8");
